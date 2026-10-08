@@ -1,0 +1,63 @@
+# Copia este archivo a:
+#   Windows:  %APPDATA%\orbital\config.yaml
+#   Linux:    ~/.config/orbital/config.yaml
+# (o usa: orbital --config ruta\al\config.yaml)
+
+server:
+  host: 127.0.0.1      # deja 127.0.0.1: el acceso remoto entra por el túnel
+  port: 8710
+  # Token para Alexa / acceso remoto. Genera uno largo, p. ej.:
+  #   python -c "import secrets; print(secrets.token_urlsafe(32))"
+  token: "CAMBIA-ESTE-TOKEN"
+
+ui:
+  mode: browser        # browser (Edge/Chrome en kiosko) | window (pywebview) | none
+  # browser: 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
+
+steam:
+  enabled: true
+  # path: 'C:\Program Files (x86)\Steam'   # se autodetecta si lo omites
+
+stremio:
+  enabled: true
+  # executable: 'C:\Users\TU_USUARIO\AppData\Local\Programs\Stremio\stremio-shell-ng.exe'
+
+# Placeholders disponibles en args: {rom}, {rom_dir}, {rom_name}
+emulators:
+  - id: snes
+    name: Super Nintendo
+    executable: 'C:\RetroArch-Win64\retroarch.exe'
+    args: ["-L", 'C:\RetroArch-Win64\cores\snes9x_libretro.dll', "{rom}", "-f"]
+    rom_dirs: ['D:\ROMs\snes']
+    extensions: [.sfc, .smc, .zip]
+
+  - id: ps2
+    name: PlayStation 2
+    executable: 'C:\Emuladores\PCSX2\pcsx2-qt.exe'
+    args: ["-fullscreen", "-nogui", "{rom}"]
+    rom_dirs: ['D:\ROMs\ps2']
+    extensions: [.iso, .chd]
+
+  - id: gamecube
+    name: GameCube / Wii
+    executable: 'C:\Emuladores\Dolphin\Dolphin.exe'
+    args: ["-b", "-e", "{rom}"]
+    rom_dirs: ['D:\ROMs\gamecube', 'D:\ROMs\wii']
+    extensions: [.iso, .rvz, .gcz, .wbfs]
+
+  - id: psx
+    name: PlayStation
+    executable: 'C:\Emuladores\DuckStation\duckstation-qt-x64-ReleaseLTCG.exe'
+    args: ["-fullscreen", "-batch", "{rom}"]
+    rom_dirs: ['D:\ROMs\psx']
+    extensions: [.cue, .chd, .m3u]
+
+# Atajos extra: ejecutables o URLs/URIs.
+apps:
+  - id: esde
+    name: ES-DE
+    target: 'C:\ES-DE\ES-DE.exe'
+  - id: youtube
+    name: YouTube
+    target: "https://www.youtube.com/tv"
+    category: media

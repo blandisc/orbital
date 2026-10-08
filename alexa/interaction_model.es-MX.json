@@ -1,0 +1,46 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "mi consola",
+      "intents": [
+        { "name": "AMAZON.CancelIntent", "samples": [] },
+        { "name": "AMAZON.HelpIntent", "samples": [] },
+        { "name": "AMAZON.StopIntent", "samples": [] },
+        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
+        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        {
+          "name": "LaunchGameIntent",
+          "slots": [{ "name": "game", "type": "AMAZON.SearchQuery" }],
+          "samples": ["abre {game}", "abrir {game}", "juega {game}", "jugar {game}", "inicia {game}", "pon el juego {game}", "quiero jugar {game}"]
+        },
+        {
+          "name": "SearchMediaIntent",
+          "slots": [{ "name": "query", "type": "AMAZON.SearchQuery" }],
+          "samples": ["busca {query} en stremio", "pon {query} en stremio", "quiero ver {query}", "reproduce {query}"]
+        },
+        { "name": "OpenStremioIntent", "slots": [], "samples": ["abre stremio", "abrir stremio", "quiero ver una película", "quiero ver una serie"] },
+        { "name": "OpenSteamIntent", "slots": [], "samples": ["abre steam", "abre big picture", "abre la tienda"] },
+        { "name": "CloseGameIntent", "slots": [], "samples": ["cierra el juego", "cierra la aplicación", "sal del juego", "termina el juego"] },
+        { "name": "WhatsPlayingIntent", "slots": [], "samples": ["qué está abierto", "qué estoy jugando", "qué se está jugando"] },
+        {
+          "name": "NavigateIntent",
+          "slots": [{ "name": "direction", "type": "DIRECTION" }],
+          "samples": ["muévete a la {direction}", "muévete {direction}", "ve a la {direction}", "ve {direction}", "{direction}"]
+        }
+      ],
+      "types": [
+        {
+          "name": "DIRECTION",
+          "values": [
+            { "name": { "value": "up", "synonyms": ["arriba"] } },
+            { "name": { "value": "down", "synonyms": ["abajo"] } },
+            { "name": { "value": "left", "synonyms": ["izquierda"] } },
+            { "name": { "value": "right", "synonyms": ["derecha"] } },
+            { "name": { "value": "select", "synonyms": ["selecciona", "seleccionar", "aceptar", "ok"] } },
+            { "name": { "value": "back", "synonyms": ["atrás", "regresa", "volver"] } }
+          ]
+        }
+      ]
+    }
+  }
+}
