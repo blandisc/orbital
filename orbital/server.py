@@ -11,6 +11,7 @@ import threading
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
@@ -73,15 +74,34 @@ class EventBus:
             self.loop.call_soon_threadsafe(self.publish, event)
 
 
+_LOCAL_HOSTNAMES = {"127.0.0.1", "localhost", "::1"}
+
+
 def is_local_request(request: Request) -> bool:
-    """Local = viene del propio equipo y NO atravesó un proxy/túnel (cloudflared, ngrok...)."""
+    """Local = viene del propio equipo, NO atravesó un proxy/túnel y va dirigida a localhost.
+
+    Comprobar el Host importa: un túnel como Tailscale Funnel entrega las peticiones desde
+    127.0.0.1 y sin garantía de cabeceras de reenvío, pero con Host "tu-equipo.ts.net".
+    También evita ataques de DNS rebinding desde páginas web.
+    """
     if any(h in request.headers for h in _FORWARD_HEADERS):
         return False
-    host = request.client.host if request.client else ""
     try:
-        return ipaddress.ip_address(host).is_loopback
+        hostname = urlsplit("//" + request.headers.get("host", "")).hostname or ""
     except ValueError:
         return False
+    if hostname not in _LOCAL_HOSTNAMES:
+        return False
+    client = request.client.host if request.client else ""
+    try:
+        return ipaddress.ip_address(client).is_loopback
+    except ValueError:
+        return False
+
+
+def token_ok(request: Request, expected: str) -> bool:
+    token = request.headers.get("authorization", "").removeprefix("Bearer ").strip()
+    return bool(token) and bool(expected) and hmac.compare_digest(token, expected)
 
 
 def create_app(config: Config, catalog: Catalog | None = None, kiosk=None) -> FastAPI:
@@ -107,11 +127,8 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None) -> Fa
         origin = request.headers.get("origin")
         if origin and origin.rstrip("/") != f"{request.url.scheme}://{request.url.netloc}":
             return JSONResponse({"detail": "Origen no permitido"}, status_code=403)
-        if not is_local_request(request):
-            auth = request.headers.get("authorization", "")
-            token = auth.removeprefix("Bearer ").strip()
-            if not token or not hmac.compare_digest(token, config.server.token):
-                return JSONResponse({"detail": "Token inválido"}, status_code=401)
+        if not is_local_request(request) and not token_ok(request, config.server.token):
+            return JSONResponse({"detail": "Token inválido"}, status_code=401)
         return await call_next(request)
 
     @app.get("/api/health")
@@ -175,9 +192,8 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None) -> Fa
     def stop() -> dict:
         return {"stopped": catalog.launcher.stop()}
 
-    @app.post("/api/voice")
-    async def voice_command(body: VoiceRequest, request: Request) -> dict:
-        if not is_local_request(request):
+    async def run_voice(body: VoiceRequest, remote: bool) -> dict:
+        if remote:
             app.state.alexa_last = time.time()
         if body.intent:
             result = await run_in_threadpool(voice.handle_intent, body.intent, body.slots)
@@ -188,6 +204,12 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None) -> Fa
         for event in result.events:
             bus.publish(event)
         return result.as_dict()
+
+    app.state.run_voice = run_voice
+
+    @app.post("/api/voice")
+    async def voice_command(body: VoiceRequest, request: Request) -> dict:
+        return await run_voice(body, remote=not is_local_request(request))
 
     @app.get("/api/events")
     async def events(request: Request) -> StreamingResponse:
@@ -218,3 +240,28 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None) -> Fa
 
     app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")
     return app
+
+
+def create_public_app(config: Config, main_app: FastAPI) -> FastAPI:
+    """App mínima para internet (Alexa a través del túnel): solo voz y ping, siempre con token.
+
+    Corre en otro puerto (server.public_port). Aunque el túnel entregue las peticiones desde
+    127.0.0.1, aquí no hay excepciones para "local": sin token no se hace nada.
+    """
+    public = FastAPI(title="Orbital · Alexa", docs_url=None, redoc_url=None, openapi_url=None)
+
+    @public.middleware("http")
+    async def require_token(request: Request, call_next):
+        if not token_ok(request, config.server.token):
+            return JSONResponse({"detail": "Token inválido"}, status_code=401)
+        return await call_next(request)
+
+    @public.get("/api/ping")
+    def ping() -> dict:
+        return {"ok": True, "service": "orbital", "version": __version__}
+
+    @public.post("/api/voice")
+    async def voice_command(body: VoiceRequest) -> dict:
+        return await main_app.state.run_voice(body, remote=True)
+
+    return public

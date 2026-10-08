@@ -5,18 +5,21 @@ tus juegos de **Steam**, tus **emuladores**, **Stremio** y otras apps desde una 
 se controla con la voz a través de **Alexa**.
 
 ```
- ┌──────────── Legion Go (Windows 11 o SteamOS/Bazzite) ─────────────┐
- │                                                                   │
- │  Edge/Chromium en kiosko ──HTTP──▶ Orbital (Python, :8710)        │
- │  (UI + mando vía Gamepad API)        ├─ Steam (steam://rungameid) │
- │            ▲                         ├─ Emuladores (RetroArch, …) │
- │            └──── eventos SSE ────────├─ Stremio                   │
- │                                      └─ /api/voice                │
- │                                              ▲                    │
- │                         cloudflared (túnel HTTPS + token)         │
- └──────────────────────────────────────────────┼────────────────────┘
-                                                │
-   "Alexa, abre mi consola y juega Hades" ─▶ Skill de Alexa ─▶ AWS Lambda
+ ┌──────────────────── Legion Go (Windows 11) ─────────────────────┐
+ │                                                                 │
+ │  Edge en kiosko (perfil propio) ──▶ Orbital :8710 (solo local)  │
+ │  interfaz + mando (Gamepad API)       ├─ Steam                  │
+ │            ▲                          ├─ Emuladores (detectados)│
+ │            └──── eventos SSE ─────────├─ ES-DE (portadas, favs) │
+ │                                       ├─ Stremio (Seguir viendo)│
+ │                                       └─ voz                    │
+ │                                             ▲                   │
+ │                     Orbital :8711 (solo voz, con token)         │
+ │                                             ▲                   │
+ │                       Tailscale Funnel (HTTPS, gratis)          │
+ └─────────────────────────────────────────────┼───────────────────┘
+                                               │
+ "Alexa, pídele a mi consola que abra Hades" ─▶ Skill ─▶ AWS Lambda
 ```
 
 ## Qué hace
@@ -145,27 +148,91 @@ Cómo funciona:
 
 ## Alexa
 
-Alexa no puede hablar directamente con tu red local, así que el flujo es:
-**Alexa → AWS Lambda → túnel HTTPS → Orbital**, y el túnel exige el token de `config.yaml`.
+```
+"Alexa, pídele a mi consola que abra Zelda"
+   │  Alexa (nube de Amazon) → LaunchGameIntent, game="zelda"
+   ▼
+AWS Lambda (alexa/lambda_function.py) ── verifica que la petición es de TU skill
+   │  POST https://<tu-equipo>.<tailnet>.ts.net/api/voice   Authorization: Bearer <token>
+   ▼
+Tailscale Funnel (túnel HTTPS gratis, dirección fija) ──► 127.0.0.1:8711 en la Legion Go
+   ▼
+Orbital, puerto de Alexa (solo voz y ping, SIEMPRE con token) → abre Zelda con Ryujinx
+   ▼
+"Abriendo The Legend of Zelda…" (Alexa lo dice y aparece un aviso en pantalla)
+```
 
-1. **Túnel** (gratis con Cloudflare): instala `cloudflared` y crea un túnel con nombre hacia
-   `http://127.0.0.1:8710` (p. ej. `orbital.tudominio.com`). Cualquier petición que llegue por el
-   túnel necesita `Authorization: Bearer <token>`; sin él, Orbital responde 401.
-2. **Skill**: en la [consola de desarrolladores de Alexa](https://developer.amazon.com/alexa/console/ask)
-   crea una skill *Custom* en **Español (MX)** con backend "Provision your own" y pega
-   `alexa/interaction_model.es-MX.json` en el JSON Editor. El nombre de invocación es "mi consola".
-3. **Lambda**: crea una función Python 3.12 con `alexa/lambda_function.py`, añade el disparador
-   "Alexa Skills Kit" con el ID de tu skill y define las variables `ORBITAL_URL` y `ORBITAL_TOKEN`.
-4. Copia el ARN de la Lambda en el endpoint de la skill, compila y pruébala en la pestaña *Test*.
+**Seguridad:** el túnel solo llega al puerto **8711**, que únicamente acepta comandos de voz con el
+token. La interfaz y la API completa (8710) nunca salen a internet: además, rechazan cualquier
+petición cuyo `Host` no sea `localhost`, aunque alguien apunte el túnel ahí por error.
+`orbital alexa check` comprueba las tres cosas.
 
-Frases de ejemplo:
-- "Alexa, abre mi consola y juega Hades"
-- "Alexa, pídele a mi consola que busque Interstellar en Stremio"
-- "Alexa, dile a mi consola que cierre el juego"
-- "Alexa, dile a mi consola muévete a la derecha"
+### 1. Token y túnel (en la Legion Go)
 
-> "Cerrar el juego" solo termina los procesos que abrió Orbital (emuladores, apps). Los juegos de
-> Steam y Stremio los gestiona su propia app, así que Orbital no los cierra a ciegas.
+```powershell
+.venv\Scripts\python -m orbital alexa setup     # crea el token fijo y te dice los valores para la Lambda
+```
+
+1. Instala [Tailscale](https://tailscale.com/download) e inicia sesión (cuenta gratuita).
+2. En PowerShell: `tailscale funnel --bg 8711`. La primera vez te da un enlace para activar HTTPS y
+   Funnel en tu cuenta: ábrelo y acepta. Con `--bg` queda activo aunque reinicies.
+3. Reinicia Orbital y comprueba: `.venv\Scripts\python -m orbital alexa check`. Tiene que salir
+   todo en `OK`. Con `orbital alexa say "abre zelda"` pruebas un comando real por el túnel.
+
+### 2. La skill (consola de Alexa)
+
+1. Entra en la [consola de desarrolladores de Alexa](https://developer.amazon.com/alexa/console/ask)
+   con **la misma cuenta de Amazon que tu Echo** → *Create Skill*.
+2. Nombre: *Mi consola*. Idioma: **Spanish (MX)**. Tipo: *Other → Custom*. Hosting: *Provision your
+   own*. Plantilla: *Start from scratch*.
+3. *Interaction Model → JSON Editor*: pega `alexa/interaction_model.es-MX.json` → *Save* → *Build*.
+4. Copia el **Skill ID** (`amzn1.ask.skill...`).
+
+### 3. La Lambda (consola de AWS, nivel gratuito)
+
+1. En [AWS Lambda](https://console.aws.amazon.com/lambda) elige la región **US East (N. Virginia)**
+   → *Create function* → *Author from scratch*, runtime **Python 3.12**.
+2. Pega el contenido de `alexa/lambda_function.py` en el editor → *Deploy*.
+3. *Configuration → Environment variables*: `ORBITAL_URL`, `ORBITAL_TOKEN` (los que imprimió
+   `orbital alexa setup`) y `ALEXA_SKILL_ID`.
+4. *Add trigger → Alexa Skills Kit* → activa la verificación y pega el Skill ID.
+5. Copia el ARN de la función y pégalo en la skill: *Endpoint → AWS Lambda ARN → Default region* → *Save*.
+
+### 4. Probar
+
+En la consola de Alexa, pestaña *Test* → activa *Development*, y escribe o di:
+"abre mi consola" y luego "abre zelda". Como la skill queda en modo desarrollo, funciona en todos
+los Echo de tu cuenta sin publicarla.
+
+### Frases
+
+| Di… | Hace |
+|---|---|
+| "Alexa, abre mi consola" | Muestra Orbital (si saliste al escritorio) y pregunta qué quieres |
+| "Alexa, pídele a mi consola que abra Hollow Knight" | Abre el juego |
+| "Alexa, pídele a mi consola que abra Zelda con Eden" | Abre con el emulador alternativo |
+| "Alexa, pídele a mi consola que siga viendo" / "…que continúe The Office" | Retoma en Stremio |
+| "Alexa, pídele a mi consola que busque Dune en Stremio" | Abre la ficha (o la búsqueda) |
+| "Alexa, pídele a mi consola que cierre el juego" | Cierra el emulador en curso |
+| "Alexa, pídele a mi consola que salga al escritorio" / "…que muestre la consola" | Sale / vuelve |
+| "Alexa, dile a mi consola que se mueva a la derecha" | Mueve la selección |
+| "Alexa, pregúntale a mi consola qué está abierto" | Te dice qué está corriendo |
+
+### Atajos con Rutinas (frases cortas)
+
+Las skills propias siempre necesitan "pídele a mi consola que…". Para frases cortas usa las Rutinas
+de la app Alexa: *Más → Rutinas → +* → *Cuando esto ocurra: Voz* → "a jugar Zelda" → *Agregar
+acción → Personalizado* → `pídele a mi consola que abra zelda`. Ideas: "modo película" →
+`pídele a mi consola que siga viendo`; "apaga la consola" → `pídele a mi consola que salga al escritorio`.
+
+### Limitaciones conocidas
+
+- La Legion Go tiene que estar **encendida** con Orbital abierto: Alexa no puede despertarla.
+- **No lo pude probar con un Echo real**: está probada toda la cadena Lambda → túnel simulado →
+  Orbital, y el modelo de voz se valida automáticamente, pero la primera vez revisa la pestaña Test.
+- Hay un reporte de un usuario de que Tailscale 1.102.1 en Windows no publicaba Funnel en internet
+  (sí dentro de la tailnet). Si `alexa check` va bien pero la pestaña Test de Alexa dice que no
+  conecta, revisa la versión de Tailscale.
 
 ## API
 
@@ -177,6 +244,8 @@ Frases de ejemplo:
 | POST | `/api/prefs` | `{"id": …, "favorite": true, "hidden": false, "runner": "switch-eden"}` |
 | POST | `/api/prefs/unhide-all` | Vuelve a mostrar los juegos ocultos |
 | GET | `/api/system` | Wi-Fi y última actividad de Alexa |
+| GET | `/api/ui` · POST `/api/ui/exit` | ¿Se puede salir? · Salir al escritorio |
+| — | Puerto 8711: GET `/api/ping`, POST `/api/voice` | Solo para Alexa por el túnel, siempre con token |
 | GET | `/api/art/<id>?kind=cover\|hero` | Portada o fondo (solo imágenes asociadas a un elemento) |
 | GET | `/api/status` | Lo que está abierto |
 | POST | `/api/stop` | Cierra el proceso lanzado por Orbital |

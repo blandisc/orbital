@@ -105,7 +105,7 @@ def test_voice_launches_with_gamelist_name(catalog):
 
 
 def test_art_endpoint_only_serves_known_items(catalog):
-    with TestClient(create_app(catalog.config, catalog), client=("127.0.0.1", 1)) as c:
+    with TestClient(create_app(catalog.config, catalog), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
         zelda = catalog.find("zelda")
         assert c.get(f"/api/art/{zelda.id}").content == b"\x89PNG fake"
         assert c.get(f"/api/art/{catalog.find('metroid').id}").status_code == 404
@@ -174,7 +174,7 @@ def test_hero_prefers_fanart(esde_home, catalog):
     catalog.refresh()
     metroid = catalog.find("metroid dread")
     assert metroid.hero_path.endswith("fanart/Metroid Dread.jpg") and metroid.hero.endswith("?kind=hero")
-    with TestClient(create_app(catalog.config, catalog), client=("127.0.0.1", 1)) as c:
+    with TestClient(create_app(catalog.config, catalog), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
         assert c.get(metroid.hero).content == b"fan"
 
 

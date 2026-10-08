@@ -72,7 +72,7 @@ def test_voice_exit_and_reopen(library):
 
 def test_exit_endpoint(library):
     kiosk = FakeKiosk()
-    with TestClient(create_app(library.config, library, kiosk), client=("127.0.0.1", 1)) as c:
+    with TestClient(create_app(library.config, library, kiosk), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
         assert c.get("/api/ui").json() == {"can_exit": True}
         assert c.post("/api/ui/exit").json() == {"ok": True}
         for _ in range(40):
@@ -80,7 +80,7 @@ def test_exit_endpoint(library):
                 break
             time.sleep(0.05)
         assert kiosk.calls == ["close"]
-    with TestClient(create_app(library.config, library), client=("127.0.0.1", 1)) as c:
+    with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
         assert c.get("/api/ui").json() == {"can_exit": False}
         assert c.post("/api/ui/exit").status_code == 409
 

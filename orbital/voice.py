@@ -31,17 +31,29 @@ class VoiceResult:
 
 
 # Patrones para texto libre en español (también sirven para Home Assistant, atajos, etc.).
+# Imperativo ("abre"), subjuntivo ("pídele que abra") e infinitivo ("usa mi consola para abrir").
+_V = {
+    "open": r"(?:abre|abra|abrir|inicia|inicie|iniciar|lanza|lance|lanzar)",
+    "play": r"(?:abre|abra|abrir|juega|juegue|jugar|inicia|inicie|iniciar|lanza|lance|lanzar|pon|ponga|poner)",
+    "search": r"(?:busca|busque|buscar|pon|ponga|poner|reproduce|reproduzca|reproducir)",
+    "close": r"(?:cierra|cierre|cerrar|sal|salga|salir)",
+    "continue": r"(?:sigue|siga|seguir|continua|continue|continuar)",
+    "go": r"(?:ve|vaya|ir|vete|sal|salga|salir|muestra|muestre|mostrar)",
+    "move": r"(?:ve|vaya|ir|mueve(?:te)?|mueva(?:se)?|se mueva|moverse)",
+    "back": r"(?:vuelve|vuelva|volver|regresa|regrese|regresar)",
+}
+
 _TEXT_RULES: list[tuple[re.Pattern, str, str | None]] = [
-    (re.compile(r"^(?:busca|buscar|pon|reproduce)\s+(?P<v>.+?)\s+en\s+stremio$"), "SearchMediaIntent", "query"),
-    (re.compile(r"^(?:sigue|seguir|continua|continuar)(?:\s+viendo)?(?:\s+(?P<v>.+))?$"), "ContinueWatchingIntent", "show"),
-    (re.compile(r"^(?:abre|abrir|inicia|lanza)\s+stremio$"), "OpenStremioIntent", None),
-    (re.compile(r"^(?:abre|abrir)\s+(?:steam|big picture)$"), "OpenSteamIntent", None),
-    (re.compile(r"^(?:cierra|cerrar|salir de)\s+(?:el\s+)?(?:juego|aplicacion|app)$"), "CloseGameIntent", None),
-    (re.compile(r"^(?:que|que estoy)\s+(?:se esta jugando|jugando|esta abierto)$"), "WhatsPlayingIntent", None),
-    (re.compile(r"^(?:sal|salir|ve|ir|vete)\s+al\s+escritorio$|^(?:cierra|cerrar)\s+orbital$"), "ExitToDesktopIntent", None),
-    (re.compile(r"^(?:abre|abrir|vuelve a|volver a|regresa a)\s+(?:la\s+consola|orbital)$"), "OpenOrbitalIntent", None),
-    (re.compile(r"^(?:ve|ir|mueve(?:te)?)\s+(?:a\s+(?:la\s+)?)?(?P<v>\w+)$"), "NavigateIntent", "direction"),
-    (re.compile(r"^(?:abre|abrir|juega|jugar|inicia|lanza|pon)\s+(?P<v>.+)$"), "LaunchGameIntent", "game"),
+    (re.compile(rf"^{_V['search']}\s+(?P<v>.+?)\s+en\s+stremio$"), "SearchMediaIntent", "query"),
+    (re.compile(rf"^{_V['continue']}(?:\s+viendo)?(?:\s+(?P<v>.+))?$"), "ContinueWatchingIntent", "show"),
+    (re.compile(rf"^{_V['open']}\s+stremio$"), "OpenStremioIntent", None),
+    (re.compile(rf"^{_V['open']}\s+(?:steam|big picture)$"), "OpenSteamIntent", None),
+    (re.compile(rf"^{_V['close']}\s+(?:de\s+)?(?:el\s+|la\s+)?(?:juego|aplicacion|app)$"), "CloseGameIntent", None),
+    (re.compile(r"^(?:que|que estoy)\s+(?:se esta jugando|jugando|esta abierto|hay abierto)$"), "WhatsPlayingIntent", None),
+    (re.compile(rf"^{_V['go']}\s+(?:al\s+|el\s+)escritorio$|^{_V['close']}\s+orbital$"), "ExitToDesktopIntent", None),
+    (re.compile(rf"^(?:{_V['open']}|{_V['back']}\s+a|{_V['go']})\s+(?:la\s+consola|orbital)$"), "OpenOrbitalIntent", None),
+    (re.compile(rf"^{_V['move']}\s+(?:a\s+(?:la\s+)?)?(?P<v>\w+)$"), "NavigateIntent", "direction"),
+    (re.compile(rf"^{_V['play']}\s+(?:el\s+juego\s+)?(?P<v>.+)$"), "LaunchGameIntent", "game"),
 ]
 
 

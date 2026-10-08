@@ -10,7 +10,7 @@ REMOTE = ("203.0.113.9", 5000)
 @pytest.fixture
 def make_client(library):
     def make(client=LOCAL):
-        return TestClient(create_app(library.config, library), client=client)
+        return TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=client)
     return make
 
 

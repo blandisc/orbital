@@ -13,7 +13,7 @@ import uvicorn
 
 from .config import default_config_path, load_config
 from .kiosk import KioskWindow
-from .server import create_app
+from .server import create_app, create_public_app
 
 log = logging.getLogger("orbital")
 
@@ -101,6 +101,68 @@ def stremio_command(args, config) -> int:
     return 0
 
 
+def alexa_command(args, config) -> int:
+    from . import alexa_setup
+
+    path = config.source
+    token, created = alexa_setup.ensure_token(path)
+    url = args.url or alexa_setup.tailscale_url()
+    public_port = config.server.public_port or 8711
+
+    if args.action == "setup":
+        print("== Alexa para Orbital\n")
+        print(f"  Token     : {'creado y guardado' if created else 'ya existía'} en {path}")
+        if created:
+            print("              (reinicia Orbital para que lo use)")
+        print(f"  Puerto    : {public_port}  (solo voz y ping, siempre con token; la interfaz NO sale a internet)")
+        if url:
+            print(f"  Túnel     : {url}  (Tailscale)")
+        else:
+            print("  Túnel     : no detecté Tailscale. Instálalo desde https://tailscale.com/download e inicia sesión.")
+        print("\nPasos:")
+        print(f"  1. Abre el túnel (una sola vez, queda activo tras reiniciar):  tailscale funnel --bg {public_port}")
+        print("     La primera vez Tailscale te da un enlace para activar HTTPS y Funnel: ábrelo y acepta.")
+        print("  2. Comprueba:  orbital alexa check")
+        print("  3. En la Lambda (Configuración > Variables de entorno):")
+        print(f"       ORBITAL_URL   = {url or 'https://<tu-equipo>.<tu-tailnet>.ts.net'}")
+        print(f"       ORBITAL_TOKEN = {token}")
+        print("       ALEXA_SKILL_ID = <el ID de tu skill, amzn1.ask.skill....>")
+        print("     (no compartas el token: con él se controla tu consola)")
+        print("  4. Sigue la guía de la skill en el README (sección Alexa).")
+        return 0
+
+    if not url:
+        print("!! No sé la dirección del túnel. Usa --url https://<tu-equipo>.<tu-tailnet>.ts.net")
+        return 1
+    if args.action == "check":
+        print(f"Comprobando {url} ...")
+        checks = alexa_setup.check_tunnel(url, token)
+        for check in checks:
+            print(f"  {'OK' if check.ok else '!!'} {check.label}" + (f"\n     {check.detail}" if check.detail else ""))
+        ok = all(c.ok for c in checks)
+        print("\nTodo listo: prueba la skill en la pestaña Test de la consola de Alexa." if ok
+              else "\nHay problemas: revisa los puntos marcados con !!")
+        return 0 if ok else 1
+    ok, speech = alexa_setup.say(url, token, args.text)  # action == "say"
+    print(f"{'OK' if ok else '!!'} Orbital respondió: {speech}")
+    return 0 if ok else 1
+
+
+def serve(config, app, public_app) -> None:
+    """Interfaz/API en server.port y, si está activo, el puerto de Alexa en server.public_port."""
+    import asyncio
+
+    servers = [uvicorn.Server(uvicorn.Config(app, host=config.server.host, port=config.server.port, log_level="info"))]
+    if public_app is not None:
+        servers.append(uvicorn.Server(uvicorn.Config(public_app, host=config.server.host,
+                                                     port=config.server.public_port, log_level="warning")))
+
+    async def run_all():
+        await asyncio.gather(*(s.serve() for s in servers))
+
+    asyncio.run(run_all())
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="orbital", description="Interfaz de consola para Legion Go")
     parser.add_argument("-c", "--config", type=Path, help=f"Ruta del config.yaml (por defecto {default_config_path()})")
@@ -112,6 +174,11 @@ def main(argv: list[str] | None = None) -> None:
     st.add_argument("action", choices=["login", "key", "status", "logout"],
                     help="login: correo y contraseña · key: pegar la clave de sesión · status · logout")
     st.add_argument("value", nargs="?", help="la clave de sesión (para 'key')")
+    al = sub.add_parser("alexa", help="Configurar y comprobar Alexa")
+    al.add_argument("action", choices=["setup", "check", "say"],
+                    help="setup: token y pasos · check: prueba el túnel · say: envía un comando de prueba")
+    al.add_argument("text", nargs="?", default="qué está abierto", help="el comando para 'say'")
+    al.add_argument("--url", help="dirección pública del túnel (si no se detecta Tailscale)")
     args = parser.parse_args(argv)
     if args.command == "stremio" and args.action == "key" and not args.value:
         parser.error("falta la clave: orbital stremio key <clave>")
@@ -123,6 +190,10 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.command == "stremio":
         raise SystemExit(stremio_command(args, config))
+    if args.command == "alexa":
+        raise SystemExit(alexa_command(args, config))
+    if config.server.token_is_ephemeral:
+        log.warning("No hay token en config.yaml: Alexa no podrá conectarse. Ejecuta: orbital alexa setup")
 
     if args.list:
         from .catalog import Catalog
@@ -140,20 +211,17 @@ def main(argv: list[str] | None = None) -> None:
     mode = args.ui or config.ui.mode
     kiosk = KioskWindow(url, config.ui.browser) if mode == "browser" else None
     app = create_app(config, kiosk=kiosk)
+    public_app = create_public_app(config, app) if config.server.public_port else None
     if mode == "window":
         # pywebview necesita el hilo principal, así que el servidor va en segundo plano.
-        server = threading.Thread(
-            target=uvicorn.run, args=(app,),
-            kwargs={"host": config.server.host, "port": config.server.port, "log_level": "warning"},
-            daemon=True,
-        )
+        server = threading.Thread(target=serve, args=(config, app, public_app), daemon=True)
         server.start()
         wait_until_up(url)
         open_window(url)
         return
     if kiosk:
         threading.Thread(target=lambda: wait_until_up(url) and kiosk.open(), daemon=True).start()
-    uvicorn.run(app, host=config.server.host, port=config.server.port, log_level="info")
+    serve(config, app, public_app)
 
 if __name__ == "__main__":
     main()

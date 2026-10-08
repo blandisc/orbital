@@ -20,6 +20,10 @@ class ServerConfig:
     # Token obligatorio para cualquier petición que no venga de la propia máquina
     # (por ejemplo, la skill de Alexa entrando por un túnel).
     token: str = ""
+    # Puerto público SOLO para Alexa (voz + ping, siempre con token). El túnel apunta aquí,
+    # nunca al puerto principal. 0 lo desactiva.
+    public_port: int = DEFAULT_PORT + 1
+    token_is_ephemeral: bool = field(default=False, repr=False)
 
 
 @dataclass
@@ -158,8 +162,9 @@ def load_config(path: Path | None = None) -> Config:
     else:
         with path.open("r", encoding="utf-8") as fh:
             cfg = parse_config(yaml.safe_load(fh), source=path)
-    if not cfg.server.token:
-        # Sin token configurado, generamos uno efímero: el acceso remoto queda cerrado
-        # hasta que el usuario fije uno propio en config.yaml.
+    if cfg.server.token in ("", "CAMBIA-ESTE-TOKEN"):
+        # Sin token propio generamos uno efímero: Alexa queda desconectada hasta fijar uno
+        # (orbital alexa setup lo hace por ti).
         cfg.server.token = secrets.token_urlsafe(24)
+        cfg.server.token_is_ephemeral = True
     return cfg
