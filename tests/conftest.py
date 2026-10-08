@@ -69,6 +69,7 @@ def library(tmp_path):
         "steam": {"path": str(steam_root)},
         "stremio": {"executable": "stremio-test"},
         "esde": {"enabled": False},
+        "detect": {"enabled": False},
         "emulators": [{
             "id": "snes", "name": "Super Nintendo", "executable": "retroarch",
             "args": ["-L", "snes9x", "{rom}"], "rom_dirs": [str(roms)], "extensions": ["sfc", ".SMC"],

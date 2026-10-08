@@ -20,7 +20,7 @@ export function gameMenu(item) {
   return { title: item.title, options };
 }
 
-export function mainMenu({ soundEnabled, running, hiddenCount }) {
+export function mainMenu({ soundEnabled, running, hiddenCount, canExit = false }) {
   const options = [
     { icon: "⟳", label: "Actualizar biblioteca", command: { type: "refresh" } },
     { icon: "♪", label: "Sonidos", hint: soundEnabled ? "Sí" : "No", command: { type: "toggle-sound" } },
@@ -31,6 +31,20 @@ export function mainMenu({ soundEnabled, running, hiddenCount }) {
   if (hiddenCount) {
     options.push({ icon: "◎", label: "Mostrar juegos ocultos", hint: String(hiddenCount), command: { type: "unhide-all" } });
   }
+  if (canExit) {
+    options.push({ icon: "⏏", label: "Salir al escritorio", command: { type: "confirm-exit" } });
+  }
   options.push({ icon: "✕", label: "Cerrar menú", command: { type: "close" } });
   return { title: "Orbital", options };
+}
+
+/** Confirmación antes de salir: evita salir por un toque accidental. */
+export function exitMenu() {
+  return {
+    title: "¿Salir al escritorio? Orbital sigue escuchando a Alexa: di «abre la consola» para volver.",
+    options: [
+      { icon: "✕", label: "Cancelar", command: { type: "close" } },
+      { icon: "⏏", label: "Salir al escritorio", danger: true, command: { type: "exit" } },
+    ],
+  };
 }

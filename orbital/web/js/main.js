@@ -6,7 +6,7 @@ import { api } from "./core/api.js";
 import { duration } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, itemAt, restoreFocus, runnerName } from "./core/library.js";
-import { gameMenu, mainMenu } from "./core/menus.js";
+import { exitMenu, gameMenu, mainMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -25,6 +25,7 @@ const state = {
   hidden: 0,
   modality: "keyboard",
   running: null,
+  canExit: false,
   launchLockedUntil: 0,
 };
 
@@ -167,6 +168,11 @@ async function runCommand(command) {
       case "stop":
         await api.stop();
         return pollStatus();
+      case "confirm-exit":
+        return openMenu(exitMenu());
+      case "exit":
+        await api.exitToDesktop();
+        return ui.toast.show("Saliendo al escritorio…");
       case "unhide-all":
         await api.unhideAll();
         ui.toast.show("Juegos ocultos restaurados");
@@ -208,7 +214,9 @@ function handleAction(action) {
     case "select": return launch(item);
     case "alt": { const alt = alternativeRunner(item); return alt && launch(item, alt.id); }
     case "options": return openMenu(gameMenu(item));
-    case "menu": return openMenu(mainMenu({ soundEnabled: sound.enabled, running: state.running, hiddenCount: state.hidden }));
+    case "menu": return openMenu(mainMenu({
+      soundEnabled: sound.enabled, running: state.running, hiddenCount: state.hidden, canExit: state.canExit,
+    }));
     case "back":
     case "home":
       if (r || c) { sound.play("back"); setFocus(0, 0, { silent: true }); }
@@ -246,3 +254,4 @@ setInterval(pollSystem, 30_000);
 pollStatus();
 pollSystem();
 loadLibrary();
+api.ui().then(({ can_exit: canExit }) => { state.canExit = canExit; }).catch(() => {});

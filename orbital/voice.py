@@ -37,6 +37,8 @@ _TEXT_RULES: list[tuple[re.Pattern, str, str | None]] = [
     (re.compile(r"^(?:abre|abrir)\s+(?:steam|big picture)$"), "OpenSteamIntent", None),
     (re.compile(r"^(?:cierra|cerrar|salir de)\s+(?:el\s+)?(?:juego|aplicacion|app)$"), "CloseGameIntent", None),
     (re.compile(r"^(?:que|que estoy)\s+(?:se esta jugando|jugando|esta abierto)$"), "WhatsPlayingIntent", None),
+    (re.compile(r"^(?:sal|salir|ve|ir|vete)\s+al\s+escritorio$|^(?:cierra|cerrar)\s+orbital$"), "ExitToDesktopIntent", None),
+    (re.compile(r"^(?:abre|abrir|vuelve a|volver a|regresa a)\s+(?:la\s+consola|orbital)$"), "OpenOrbitalIntent", None),
     (re.compile(r"^(?:ve|ir|mueve(?:te)?)\s+(?:a\s+(?:la\s+)?)?(?P<v>\w+)$"), "NavigateIntent", "direction"),
     (re.compile(r"^(?:abre|abrir|juega|jugar|inicia|lanza|pon)\s+(?P<v>.+)$"), "LaunchGameIntent", "game"),
 ]
@@ -52,8 +54,9 @@ def parse_text(text: str) -> tuple[str, dict[str, str]] | None:
 
 
 class VoiceController:
-    def __init__(self, catalog: Catalog) -> None:
+    def __init__(self, catalog: Catalog, kiosk=None) -> None:
         self.catalog = catalog
+        self.kiosk = kiosk  # KioskWindow, o None si la interfaz no la abrió Orbital
 
     def handle_text(self, text: str) -> VoiceResult:
         parsed = parse_text(text)
@@ -115,6 +118,18 @@ class VoiceController:
     def _whats_playing_intent(self, slots: dict) -> VoiceResult:
         status = self.catalog.launcher.status()
         return VoiceResult(f"Está abierto {status['title']}." if status else "No hay nada abierto.")
+
+    def _exit_to_desktop_intent(self, slots: dict) -> VoiceResult:
+        if self.kiosk is None or not self.kiosk.is_open:
+            return VoiceResult("La consola no está abierta en pantalla.", ok=False)
+        self.kiosk.close()
+        return VoiceResult("Listo, saliste al escritorio. Di abre la consola para volver.")
+
+    def _open_orbital_intent(self, slots: dict) -> VoiceResult:
+        if self.kiosk is None:
+            return VoiceResult("No puedo abrir la pantalla de la consola desde aquí.", ok=False)
+        self.kiosk.open()
+        return VoiceResult("Abriendo la consola.")
 
     def _navigate_intent(self, slots: dict) -> VoiceResult:
         direction = DIRECTIONS.get(normalize(slots.get("direction", "")))

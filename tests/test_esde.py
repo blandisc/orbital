@@ -61,6 +61,7 @@ def catalog(esde_home):
         "steam": {"enabled": False},
         "stremio": {"enabled": False},
         "esde": {"path": str(esde_home)},
+        "detect": {"enabled": False},
         "emulators": [{
             "id": "switch", "name": "Nintendo Switch", "system": "switch", "executable": "ryujinx",
             "args": ["--fullscreen", "{rom}"], "extensions": [".nsp", ".xci"], "exclude": ["[upd]"],
@@ -129,6 +130,7 @@ def make_switch_catalog(esde_home, tmp_path, system_label=None):
     cfg = parse_config({
         "steam": {"enabled": False}, "stremio": {"enabled": False},
         "esde": {"path": str(esde_home)},
+        "detect": {"enabled": False},
         "emulators": [
             {"id": "switch", "name": "Nintendo Switch", "system": "switch",
              "executable": str(downloads / "**" / "Ryujinx.exe"), "args": ["--fullscreen", "{rom}"],

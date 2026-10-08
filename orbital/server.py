@@ -7,6 +7,7 @@ import hmac
 import ipaddress
 import json
 import logging
+import threading
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -83,9 +84,9 @@ def is_local_request(request: Request) -> bool:
         return False
 
 
-def create_app(config: Config, catalog: Catalog | None = None) -> FastAPI:
+def create_app(config: Config, catalog: Catalog | None = None, kiosk=None) -> FastAPI:
     catalog = catalog or Catalog(config)
-    voice = VoiceController(catalog)
+    voice = VoiceController(catalog, kiosk)
     bus = EventBus()
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -156,6 +157,18 @@ def create_app(config: Config, catalog: Catalog | None = None) -> FastAPI:
     @app.get("/api/status")
     def status() -> dict:
         return {"running": catalog.launcher.status()}
+
+    @app.get("/api/ui")
+    def ui_info() -> dict:
+        return {"can_exit": kiosk is not None}
+
+    @app.post("/api/ui/exit")
+    async def ui_exit() -> dict:
+        if kiosk is None:
+            raise HTTPException(409, "Esta ventana no la abrió Orbital: ciérrala tú (Alt+F4)")
+        # Se cierra un instante después para que la respuesta llegue a la página.
+        asyncio.get_running_loop().call_later(0.4, lambda: threading.Thread(target=kiosk.close, daemon=True).start())
+        return {"ok": True}
 
     @app.post("/api/stop")
     def stop() -> dict:

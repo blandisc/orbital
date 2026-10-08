@@ -13,7 +13,7 @@ from urllib.parse import quote
 from . import system
 from .config import Config
 from .launcher import Launcher
-from .library import emulators, esde, steam, stremio
+from .library import detect, emulators, esde, steam, stremio
 from .library.models import LibraryItem
 from .state import State
 
@@ -52,6 +52,9 @@ class Catalog:
         self.state = state or default_state(config)
         self.steam_root: Path | None = None
         self.esde: esde.EsdeLibrary | None = None
+        # Emuladores en uso: los de config.yaml + los detectados automáticamente.
+        self.emulators = list(config.emulators)
+        self.detected: dict[str, Path] = {}
         self.listeners: list[Listener] = []
         self._items: dict[str, LibraryItem] = {}
         self._lock = threading.Lock()
@@ -88,7 +91,14 @@ class Catalog:
                     cwd=str(self.esde.executable.parent),
                 )
             )
-        for emu, alternatives in emulators.split_alternatives(self.config.emulators):
+        self.emulators = list(self.config.emulators)
+        self.detected = {}
+        if self.config.detect.enabled:
+            dirs = detect.default_search_dirs(self.config.detect.dirs, self.esde.executable if self.esde else None)
+            result = detect.detect(dirs, skip_ids={e.id for e in self.config.emulators})
+            self.emulators = detect.merge(self.config.emulators, result.emulators)
+            self.detected = result.found
+        for emu, alternatives in emulators.split_alternatives(self.emulators):
             found += emulators.scan(emu, self.esde, alternatives)
         if self.config.stremio.enabled:
             found += stremio.items(self.config.stremio)
@@ -156,7 +166,7 @@ class Catalog:
                 members = [i for i in alpha if self.is_favorite(i)]
             elif cat["id"] == "emulators":
                 # Una fila por sistema, en el orden de config.yaml.
-                for emu in self.config.emulators:
+                for emu in self.emulators:
                     games = [i for i in items if i.category == "emulators" and i.source == emu.id]
                     if games:
                         rows.append({"id": f"emulators:{emu.id}", "title": emu.name,

@@ -27,74 +27,33 @@ esde:
   # path: 'C:\ES-DE\ES-DE'                 # versión portable
   # executable: 'C:\ES-DE\ES-DE.exe'
 
-# Cada emulador usa la carpeta de ES-DE de su "system" (p. ej. ROMs\switch).
-# Si tus ROMs están en otro sitio, añade:  rom_dirs: ['D:\ROMs\switch']
-# Placeholders en args: {rom}, {rom_dir}, {rom_name}
+# --- Emuladores --------------------------------------------------------------
+# Orbital los DETECTA SOLO: busca Ryujinx, Eden, Citron, Dolphin, mGBA, xemu, Xenia,
+# DuckStation, PCSX2, PPSSPP, melonDS y Cemu en Descargas, Escritorio, C:\Emuladores,
+# la carpeta Emulators de ES-DE, Archivos de programa, etc. Revisa con:  orbital --list
+detect:
+  enabled: true
+  # dirs: ['E:\Juegos\Emus']        # carpetas extra donde buscar
+
+# Solo si quieres cambiar algo de lo detectado (o añadir uno que no conozca), escríbelo
+# aquí con el mismo id: lo de este archivo manda. Ids detectables: switch, switch-eden,
+# switch-citron, switch-sudachi, gamecube, wii, gba, xbox, xbox360, psx, ps2, psp, nds, wiiu.
+# Placeholders en args: {rom}, {rom_dir}, {rom_name}. Las rutas aceptan comodines (* y **).
+emulators: []
+#  - id: gba                          # p. ej. usar RetroArch para GBA en vez de mGBA
+#    name: Game Boy Advance
+#    system: gba
+#    executable: 'C:\RetroArch-Win64\retroarch.exe'
+#    args: ["-L", 'C:\RetroArch-Win64\cores\mgba_libretro.dll', "-f", "{rom}"]
+#    extensions: [.gba, .zip, .7z]
 #
-# Las rutas admiten comodines, así no importa el número de versión de la carpeta:
-#   *  = cualquier nombre de carpeta      ** = cualquier subcarpeta, a cualquier profundidad
-# Si hay varias versiones descargadas, se usa la más reciente.
-# Revisa con "orbital --list" qué ejecutable encontró para cada uno.
-emulators:
-  # --- Nintendo Switch: Ryujinx (principal) + Eden (alternativo) ---
-  # Los juegos salen una sola vez. Se abren con Ryujinx, salvo los que en ES-DE
-  # tengan elegido Eden (Editar metadatos > Emulador alternativo), o si eliges
-  # Eden para todo el sistema en ES-DE (Otros ajustes > Emuladores alternativos).
-  - id: switch
-    name: Nintendo Switch
-    system: switch
-    executable: '%USERPROFILE%\Downloads\**\Ryujinx.exe'
-    args: ["--fullscreen", "{rom}"]
-    extensions: [.nsp, .xci, .nca, .nro]
-    exclude: ["[UPD]", "[DLC]", "(Update)", "(DLC)"]   # no mostrar actualizaciones ni DLC
-
-  - id: switch-eden
-    name: Eden
-    system: switch
-    executable: '%USERPROFILE%\Downloads\**\eden.exe'
-    args: ["-f", "-g", "{rom}"]
-
-  # --- GameCube y Wii: Dolphin ---
-  - id: gamecube
-    name: GameCube
-    system: gc
-    executable: '%USERPROFILE%\Downloads\**\Dolphin.exe'
-    args: ["-b", "-e", "{rom}"]
-    extensions: [.iso, .rvz, .gcz, .ciso, .gcm]
-
-  - id: wii
-    name: Wii
-    system: wii
-    executable: '%USERPROFILE%\Downloads\**\Dolphin.exe'
-    args: ["-b", "-e", "{rom}"]
-    extensions: [.iso, .rvz, .wbfs, .wia, .wad]
-
-  # --- Game Boy Advance: mGBA ---
-  - id: gba
-    name: Game Boy Advance
-    system: gba
-    executable: '%USERPROFILE%\Downloads\**\mGBA.exe'
-    args: ["-f", "{rom}"]
-    extensions: [.gba, .zip, .7z]
-  # Con RetroArch en vez de mGBA:
-  #   executable: 'C:\RetroArch-Win64\retroarch.exe'
-  #   args: ["-L", 'C:\RetroArch-Win64\cores\mgba_libretro.dll', "-f", "{rom}"]
-
-  # --- Xbox original: xemu (las ISO deben estar en formato XISO) ---
-  - id: xbox
-    name: Xbox
-    system: xbox
-    executable: '%USERPROFILE%\Downloads\**\xemu.exe'
-    args: ["-full-screen", "-dvd_path", "{rom}"]
-    extensions: [.iso]
-
-  # --- Xbox 360 (Xenia Canary), por si algún día lo usas ---
-  # - id: xbox360
-  #   name: Xbox 360
-  #   system: xbox360
-  #   executable: '%USERPROFILE%\Downloads\**\xenia_canary.exe'
-  #   args: ["--fullscreen", "{rom}"]
-  #   extensions: [.iso, .xex, .zar]
+#  - id: switch                       # p. ej. ROMs de Switch fuera de la carpeta de ES-DE
+#    name: Nintendo Switch
+#    system: switch
+#    executable: '%USERPROFILE%\Downloads\**\Ryujinx.exe'
+#    args: ["--fullscreen", "{rom}"]
+#    rom_dirs: ['D:\ROMs\switch']
+#    extensions: [.nsp, .xci]
 
 # Atajos extra: ejecutables o URLs/URIs. ES-DE ya aparece solo si se detecta.
 apps:

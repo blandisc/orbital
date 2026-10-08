@@ -33,3 +33,12 @@ test("menú general según el contexto", () => {
   // Un juego de Steam (no gestionado por Orbital) no se puede cerrar desde aquí.
   assert.equal(mainMenu({ running: { title: "Hades", managed: false } }).options.length, 3);
 });
+
+test("salir al escritorio pide confirmación y empieza en Cancelar", async () => {
+  const { exitMenu } = await import("../../orbital/web/js/core/menus.js");
+  const withExit = mainMenu({ soundEnabled: true, canExit: true });
+  assert.deepEqual(withExit.options.at(-2).command, { type: "confirm-exit" });
+  const confirm = exitMenu();
+  assert.equal(confirm.options[0].label, "Cancelar"); // el foco inicial es seguro
+  assert.deepEqual(confirm.options[1].command, { type: "exit" });
+});

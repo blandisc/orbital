@@ -24,7 +24,7 @@ se controla con la voz a través de **Alexa**.
 | Fuente | Cómo funciona |
 |---|---|
 | **Steam** | Lee `libraryfolders.vdf` + `appmanifest_*.acf` (todas las bibliotecas y discos), filtra Proton y runtimes, usa la portada local o la del CDN y lanza con `steam://rungameid/<id>`. Incluye un atajo a Big Picture. |
-| **Emuladores** | Cada emulador se define en `config.yaml` con su ejecutable, argumentos (`{rom}`, `{rom_dir}`, `{rom_name}`) y extensiones. Cada sistema tiene su propia fila en la pantalla. |
+| **Emuladores** | Se **detectan solos** (Ryujinx, Eden, Dolphin, mGBA, xemu, Xenia, DuckStation, PCSX2, PPSSPP, melonDS, Cemu…) en Descargas, Escritorio, `C:\Emuladores`, etc. Si quieres cambiar algo, se sobrescribe en `config.yaml`. Cada sistema tiene su propia fila. |
 | **ES-DE** | Si usas ES-DE, Orbital toma de ahí la carpeta de ROMs, los nombres del scraper, las portadas de `downloaded_media`, tus **favoritos** (fila propia) y oculta los juegos marcados como ocultos. También agrega un acceso a ES-DE. |
 | **Stremio** | Detecta Stremio 4/5 (o Flatpak en Linux); si no lo encuentra usa el protocolo `stremio://`. Por voz puede buscar títulos con `stremio:///search?search=…`. |
 | **Apps** | Cualquier ejecutable o URL (ES-DE, YouTube TV, Playnite…). |
@@ -38,7 +38,7 @@ se controla con la voz a través de **Alexa**.
 | A | Enter | Jugar |
 | X | X | Abrir con el emulador alternativo (p. ej. Eden) |
 | Y | Y | Opciones del juego: favorito, abrir con…, usar siempre…, ocultar |
-| ☰ / View | M | Menú: actualizar, sonidos, cerrar el juego, mostrar ocultos |
+| ☰ / View | M | Menú: actualizar, sonidos, cerrar el juego, mostrar ocultos, **salir al escritorio** |
 | B | Esc | Volver al inicio / cerrar menú |
 | LB / RB | RePág / AvPág | Saltar de 5 en 5 |
 
@@ -58,40 +58,53 @@ y las preferencias se guardan en `state.json`, junto a `config.yaml`.
    ```
    Esto instala Python si hace falta, crea un entorno virtual, copia `config.example.yaml` a
    `%APPDATA%\orbital\config.yaml` con un token aleatorio y crea el acceso directo de inicio.
-3. Edita `%APPDATA%\orbital\config.yaml`: solo tienes que cambiar la ruta `executable` de cada
-   emulador (las carpetas de ROMs salen de ES-DE).
+3. **No hace falta editar nada**: los emuladores se detectan solos y las ROMs, nombres y portadas
+   salen de ES-DE. Solo si algo no aparece, revisa `%APPDATA%\orbital\config.yaml`.
 4. Comprueba lo que detecta: `.venv\Scripts\python -m orbital --list`. Primero muestra un
    diagnóstico (`OK` / `!!`) de Steam, ES-DE y cada emulador, con cuántos juegos encontró.
 5. Arranca: `.venv\Scripts\python -m orbital` (abre Edge en pantalla completa).
 
+**Salir al escritorio:** menú ☰ → *Salir al escritorio* (pide confirmación), o "Alexa, dile a mi
+consola que salga al escritorio". Orbital sigue funcionando en segundo plano: "Alexa, dile a mi
+consola que abra la consola" la vuelve a mostrar.
+
+**Ventana propia:** Orbital abre Edge con un perfil aparte (`%LOCALAPPDATA%\orbital\browser`), así
+que no se mezcla con tu Edge de siempre, siempre abre en pantalla completa aunque Edge ya esté
+abierto y no muestra "¿Restaurar páginas?".
+
 **Tip para modo consola:** en Legion Space desactiva "abrir al iniciar" y en Windows configura el
 inicio de sesión automático; así, al encender la Legion Go, arranca directo en Orbital.
 
-### Emuladores incluidos en `config.example.yaml`
+### Emuladores detectados automáticamente
 
 | Sistema | Emulador | Carpeta ES-DE | Argumentos |
 |---|---|---|---|
-| Nintendo Switch | Ryujinx (principal) + Eden (alternativo) | `switch` | `--fullscreen {rom}` / `-f -g {rom}` |
-| GameCube | Dolphin | `gc` | `-b -e {rom}` |
-| Wii | Dolphin | `wii` | `-b -e {rom}` |
-| Game Boy Advance | mGBA (o RetroArch + mgba) | `gba` | `-f {rom}` |
-| Xbox | xemu (ISO en formato XISO) | `xbox` | `-full-screen -dvd_path {rom}` |
-| Xbox 360 (comentado) | Xenia Canary | `xbox360` | `--fullscreen {rom}` |
+| Nintendo Switch | Ryujinx (principal) · Eden / Citron / Sudachi (alternativos) | `switch` | `--fullscreen {rom}` / `-f -g {rom}` |
+| GameCube / Wii | Dolphin | `gc` / `wii` | `-b -e {rom}` |
+| Game Boy Advance | mGBA | `gba` | `-f {rom}` |
+| Xbox / Xbox 360 | xemu (ISO en XISO) / Xenia Canary | `xbox` / `xbox360` | `-full-screen -dvd_path {rom}` / `--fullscreen {rom}` |
+| PlayStation 1 / 2 / PSP | DuckStation / PCSX2 / PPSSPP | `psx` / `ps2` / `psp` | `-batch -fullscreen {rom}` / `--fullscreen {rom}` |
+| Nintendo DS / Wii U | melonDS / Cemu | `nds` / `wiiu` | `-f {rom}` / `-f -g {rom}` |
 
-En Switch, `exclude` evita que las actualizaciones y DLC (`[UPD]`, `[DLC]`) aparezcan como juegos.
+Busca en: Descargas (4 niveles de subcarpetas), Escritorio, `%USERPROFILE%\Emuladores`,
+`C:\Emuladores`, `C:\Emulators`, la carpeta `Emulators` de ES-DE, `%LOCALAPPDATA%\Programs` y
+Archivos de programa. Si hay dos copias del mismo emulador, usa la más reciente. Puedes añadir
+carpetas con `detect.dirs` o apagarlo con `detect.enabled: false`.
+
+En Switch se ignoran las actualizaciones y DLC (`[UPD]`, `[DLC]`) para que no salgan como juegos.
 
 **Varios emuladores para un sistema:** si dos emuladores tienen el mismo `system` (Ryujinx y Eden),
 los juegos salen una sola vez. Se abren con el primero de la lista, salvo que en ES-DE hayas
 elegido otro para ese juego (*Editar metadatos → Emulador alternativo*) o para todo el sistema
-(*Otros ajustes → Emuladores alternativos*). Orbital lo detecta por el nombre del ejecutable
-(o por `esde_label`).
+(*Otros ajustes → Emuladores alternativos*). También puedes elegirlo desde Orbital con el botón Y
+(*Usar siempre Eden*) o abrir una sola vez con el otro usando X.
 
-**Rutas con comodines:** `'%USERPROFILE%\Downloads\**\xemu.exe'` encuentra xemu en cualquier
-subcarpeta de Descargas, sin importar la versión. Si hay varias copias, usa la más reciente.
+**Rutas con comodines** (si configuras uno a mano): `'%USERPROFILE%\Downloads\**\xemu.exe'`
+encuentra xemu en cualquier subcarpeta de Descargas, sin importar la versión.
 
 > Ojo: el *Sensor de almacenamiento* de Windows puede borrar automáticamente lo que hay en
-> Descargas. Conviene mover los emuladores a algo como `C:\Emuladores` (y cambiar la ruta a
-> `'C:\Emuladores\**\xemu.exe'`), o revisar que esa opción esté desactivada.
+> Descargas. Conviene mover los emuladores a `C:\Emuladores` (Orbital también busca ahí), o
+> revisar que esa opción esté desactivada.
 
 ### SteamOS / Bazzite / Linux
 

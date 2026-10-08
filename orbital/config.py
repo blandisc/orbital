@@ -63,6 +63,14 @@ class EsdeConfig:
 
 
 @dataclass
+class DetectConfig:
+    """Detección automática de emuladores en Descargas, Escritorio, C:\\Emuladores, etc."""
+
+    enabled: bool = True
+    dirs: list[str] = field(default_factory=list)  # carpetas extra donde buscar
+
+
+@dataclass
 class StremioConfig:
     enabled: bool = True
     executable: str | None = None  # None = autodetectar
@@ -86,6 +94,7 @@ class Config:
     steam: SteamConfig = field(default_factory=SteamConfig)
     stremio: StremioConfig = field(default_factory=StremioConfig)
     esde: EsdeConfig = field(default_factory=EsdeConfig)
+    detect: DetectConfig = field(default_factory=DetectConfig)
     emulators: list[EmulatorConfig] = field(default_factory=list)
     apps: list[AppConfig] = field(default_factory=list)
     source: Path | None = None
@@ -123,6 +132,7 @@ def parse_config(raw: dict[str, Any] | None, source: Path | None = None) -> Conf
         steam=_section(SteamConfig, raw.get("steam")),
         stremio=_section(StremioConfig, raw.get("stremio")),
         esde=_section(EsdeConfig, raw.get("esde")),
+        detect=_section(DetectConfig, raw.get("detect")),
         emulators=[_section(EmulatorConfig, e) for e in raw.get("emulators") or []],
         apps=[_section(AppConfig, a) for a in raw.get("apps") or []],
         source=source,

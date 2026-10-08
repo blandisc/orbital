@@ -20,6 +20,8 @@ export const api = {
   system: () => request("/api/system"),
   setPrefs: (id, prefs) => post("/api/prefs", { id, ...prefs }),
   unhideAll: () => post("/api/prefs/unhide-all"),
+  ui: () => request("/api/ui"),
+  exitToDesktop: () => post("/api/ui/exit"),
   /** Suscripción a eventos del servidor con reconexión automática. */
   events(onEvent) {
     const connect = () => {
