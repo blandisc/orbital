@@ -62,18 +62,67 @@ def print_diagnostics(catalog) -> None:
             print(f"    {ok if exe else bad}{name} [{role}, {origin}]: {exe or 'NO ENCONTRADO -> ' + each.executable}")
 
 
+def stremio_command(args, config) -> int:
+    from .catalog import Catalog, STREMIO_KEY
+    from .library.stremio_api import StremioError
+
+    catalog = Catalog(config)
+    try:
+        if args.action == "login":
+            import getpass
+
+            email = input("Correo de Stremio: ").strip()
+            password = getpass.getpass("Contraseña (no se guarda): ")
+            key = catalog.stremio_client.login(email, password)
+            count = catalog.link_stremio(key)
+            print(f"Listo: cuenta vinculada, {count} títulos en tu biblioteca.")
+        elif args.action == "key":
+            count = catalog.link_stremio(args.value)
+            print(f"Listo: clave guardada, {count} títulos en tu biblioteca.")
+        elif args.action == "logout":
+            catalog.unlink_stremio()
+            print("Cuenta de Stremio desvinculada de Orbital.")
+        else:  # status
+            if not catalog.credentials.get(STREMIO_KEY):
+                print("Stremio no está vinculado. Usa: orbital stremio login")
+                return 1
+            catalog.refresh_stremio()
+            if catalog.stremio_error:
+                print(f"!! {catalog.stremio_error}")
+                return 1
+            watching = [i for i in catalog.stremio_library() if i.category == "continue"]
+            print(f"OK Stremio vinculado: {len(catalog.stremio_library())} títulos, {len(watching)} en Seguir viendo")
+            for item in sorted(watching, key=lambda i: i.last_watched or 0, reverse=True)[:10]:
+                pct = f"{item.progress:.0%}" if item.progress else ""
+                print(f"   {item.title:<40} {item.subtitle:<22} {pct}")
+    except StremioError as exc:
+        print(f"!! {exc}")
+        return 1
+    return 0
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="orbital", description="Interfaz de consola para Legion Go")
     parser.add_argument("-c", "--config", type=Path, help=f"Ruta del config.yaml (por defecto {default_config_path()})")
     parser.add_argument("--ui", choices=["browser", "window", "none"], help="Sobrescribe ui.mode")
     parser.add_argument("--list", action="store_true", help="Muestra la biblioteca detectada y sale")
     parser.add_argument("-v", "--verbose", action="store_true")
+    sub = parser.add_subparsers(dest="command")
+    st = sub.add_parser("stremio", help="Vincular tu cuenta de Stremio (fila Seguir viendo)")
+    st.add_argument("action", choices=["login", "key", "status", "logout"],
+                    help="login: correo y contraseña · key: pegar la clave de sesión · status · logout")
+    st.add_argument("value", nargs="?", help="la clave de sesión (para 'key')")
     args = parser.parse_args(argv)
+    if args.command == "stremio" and args.action == "key" and not args.value:
+        parser.error("falta la clave: orbital stremio key <clave>")
 
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     config = load_config(args.config)
     log.info("Configuración: %s", config.source)
+
+    if args.command == "stremio":
+        raise SystemExit(stremio_command(args, config))
 
     if args.list:
         from .catalog import Catalog

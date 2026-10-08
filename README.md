@@ -26,7 +26,7 @@ se controla con la voz a través de **Alexa**.
 | **Steam** | Lee `libraryfolders.vdf` + `appmanifest_*.acf` (todas las bibliotecas y discos), filtra Proton y runtimes, usa la portada local o la del CDN y lanza con `steam://rungameid/<id>`. Incluye un atajo a Big Picture. |
 | **Emuladores** | Se **detectan solos** (Ryujinx, Eden, Dolphin, mGBA, xemu, Xenia, DuckStation, PCSX2, PPSSPP, melonDS, Cemu…) en Descargas, Escritorio, `C:\Emuladores`, etc. Si quieres cambiar algo, se sobrescribe en `config.yaml`. Cada sistema tiene su propia fila. |
 | **ES-DE** | Si usas ES-DE, Orbital toma de ahí la carpeta de ROMs, los nombres del scraper, las portadas de `downloaded_media`, tus **favoritos** (fila propia) y oculta los juegos marcados como ocultos. También agrega un acceso a ES-DE. |
-| **Stremio** | Detecta Stremio 4/5 (o Flatpak en Linux); si no lo encuentra usa el protocolo `stremio://`. Por voz puede buscar títulos con `stremio:///search?search=…`. |
+| **Stremio** | Abre Stremio 4/5 y, si vinculas tu cuenta, muestra la fila **Seguir viendo** con pósters, progreso y episodio (T2 E4); con A abre directo la ficha de ese episodio. Por voz: "sigue viendo", "continúa The Office", "busca Dune en Stremio". |
 | **Apps** | Cualquier ejecutable o URL (ES-DE, YouTube TV, Playnite…). |
 | **Voz** | `/api/voice` acepta intents de Alexa o texto libre en español ("abre hollow knight", "busca dune en stremio", "cierra el juego", "ve a la derecha"). |
 
@@ -114,6 +114,34 @@ mkdir -p ~/.config/orbital && cp config.example.yaml ~/.config/orbital/config.ya
 cp scripts/orbital.service ~/.config/systemd/user/ && systemctl --user enable --now orbital
 ```
 En Game Mode puedes añadir Chromium como "juego no de Steam" apuntando a `http://127.0.0.1:8710`.
+
+## Stremio: "Seguir viendo"
+
+Vincula tu cuenta una vez (en la Legion Go, con teclado):
+
+```powershell
+.venv\Scripts\python -m orbital stremio login     # correo y contraseña (la contraseña no se guarda)
+.venv\Scripts\python -m orbital stremio status    # comprueba y lista lo que tienes a medias
+```
+
+Si prefieres no escribir tu contraseña: abre web.stremio.com con tu sesión, abre la consola del
+navegador (F12) y ejecuta `JSON.parse(localStorage.getItem("profile")).auth.key`; luego
+`orbital stremio key <esa-clave>`. Para desvincular: `orbital stremio logout`.
+
+Cómo funciona:
+
+- Orbital guarda solo la **clave de sesión** en `%APPDATA%\orbital\secrets.json` (solo tu usuario
+  puede leerlo). Nunca se envía a la interfaz web.
+- Lee tu biblioteca con la API de Stremio (`api.strem.io`, `datastoreGet`) y aplica la misma regla
+  que Stremio para "Seguir viendo": no quitado y con progreso guardado. Se actualiza al arrancar, al
+  cerrar Stremio y cada 3 minutos mientras la interfaz está abierta, sin bloquearla.
+- Al pulsar A abre `stremio:///detail/<tipo>/<id>/<episodio>`, la ficha del episodio en Stremio.
+- Lo que no está a medias no tiene fila, pero la voz lo encuentra ("abre The Office").
+
+> ⚠️ La API de Stremio **no es oficial**: el formato se tomó del código de Stremio (stremio-core).
+> Si Stremio la cambia, la fila desaparece y `orbital stremio status` muestra el error; el resto de
+> Orbital sigue igual. Tampoco pude comprobar desde aquí que los enlaces `stremio:///detail/...`
+> abran el episodio en tu versión de Stremio para Windows; si solo abren el inicio, avísame.
 
 ## Alexa
 

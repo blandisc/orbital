@@ -5,7 +5,7 @@
 import { api } from "./core/api.js";
 import { duration } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
-import { alternativeRunner, clampFocus, itemAt, restoreFocus, runnerName } from "./core/library.js";
+import { alternativeRunner, clampFocus, itemAt, primaryLabel, restoreFocus, runnerName } from "./core/library.js";
 import { exitMenu, gameMenu, mainMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
@@ -59,9 +59,10 @@ function renderHints() {
     ui.hints.render([{ glyph: g.select, label: "Elegir" }, { glyph: g.back, label: "Cerrar" }]);
     return;
   }
-  const alt = alternativeRunner(current());
+  const item = current();
+  const alt = alternativeRunner(item);
   ui.hints.render([
-    { glyph: g.select, label: "Jugar" },
+    { glyph: g.select, label: item ? primaryLabel(item) : "Jugar" },
     alt && { glyph: g.alt, label: `Con ${alt.name}` },
     { glyph: g.options, label: "Opciones" },
     { glyph: g.rows, label: "Filas", secondary: true },
@@ -232,6 +233,9 @@ function handleEvent(event) {
     ui.status.pulseAlexa();
   } else if (event.type === "navigate") {
     handleAction(event.direction);
+  } else if (event.type === "library-changed") {
+    loadLibrary();
+    return;
   } else if (event.type === "closed") {
     ui.launch.hide();
     const played = duration(event.seconds);

@@ -26,3 +26,10 @@ test("initial", () => {
   assert.equal(initial("zelda"), "Z");
   assert.equal(initial(""), "?");
 });
+
+test("verbo para multimedia y porcentaje", async () => {
+  const { percent } = await import("../../orbital/web/js/core/format.js");
+  assert.equal(lastPlayed(ago(2 * 3600), NOW, "Visto"), "Visto hace 2 h");
+  assert.equal(percent(1 / 3), "33 %");
+  assert.equal(percent(0), null);
+});

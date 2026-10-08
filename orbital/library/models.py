@@ -31,6 +31,9 @@ class LibraryItem:
     default_runner: str | None = None
     steam_appid: int | None = None
     favorite: bool = False
+    # Multimedia (Stremio): progreso 0..1 y última vez que se vio (epoch).
+    progress: float | None = None
+    last_watched: float | None = None
     # Imágenes en disco; se sirven por /api/art/<id> sin exponer la ruta.
     art_path: str | None = None
     hero_path: str | None = None
@@ -49,6 +52,7 @@ class LibraryItem:
             "image": self.image,
             "hero": self.hero,
             "favorite": self.favorite,
+            "progress": self.progress,
             "runners": [{"id": r.id, "name": r.name} for r in self.runners],
             "runner": self.runner().id if self.runners else None,
         }

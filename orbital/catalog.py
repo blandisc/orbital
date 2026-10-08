@@ -5,6 +5,7 @@ from __future__ import annotations
 import difflib
 import logging
 import threading
+import time
 import unicodedata
 from collections.abc import Callable
 from pathlib import Path
@@ -13,14 +14,19 @@ from urllib.parse import quote
 from . import system
 from .config import Config
 from .launcher import Launcher
-from .library import detect, emulators, esde, steam, stremio
+from .credentials import Credentials
+from .library import detect, emulators, esde, steam, stremio, stremio_api
 from .library.models import LibraryItem
 from .state import State
+
+STREMIO_KEY = "stremio_auth_key"
+STREMIO_STALE_SECONDS = 180
 
 log = logging.getLogger(__name__)
 
 CATEGORIES = [
     {"id": "recent", "title": "Jugado recientemente"},
+    {"id": "continue", "title": "Seguir viendo"},
     {"id": "favorites", "title": "Favoritos"},
     {"id": "steam", "title": "Steam"},
     {"id": "emulators", "title": "Emuladores"},
@@ -44,8 +50,34 @@ def default_state(config: Config) -> State:
     return State(config.source.parent / "state.json")
 
 
+def default_credentials(config: Config) -> Credentials:
+    return Credentials(config.source.parent / "secrets.json" if config.source else None)
+
+
+def stremio_item(w: stremio_api.Watchable) -> LibraryItem:
+    season, episode = w.episode
+    if episode is not None:
+        detail = f"T{season} E{episode}" if season is not None else f"Episodio {episode}"
+    else:
+        detail = "Película" if w.type == "movie" else "Serie" if w.type == "series" else ""
+    return LibraryItem(
+        id=f"stremio:{w.id}",
+        title=w.name,
+        # Solo "Seguir viendo" tiene fila; el resto de la biblioteca sirve para la voz.
+        category="continue" if w.in_continue else "stremio",
+        source="stremio",
+        subtitle=" · ".join(filter(None, ["Stremio", detail])),
+        image=w.poster,
+        hero=w.background,
+        uri=w.deep_link,
+        progress=w.progress,
+        last_watched=w.last_watched,
+    )
+
+
 class Catalog:
-    def __init__(self, config: Config, launcher: Launcher | None = None, state: State | None = None) -> None:
+    def __init__(self, config: Config, launcher: Launcher | None = None, state: State | None = None,
+                 credentials: Credentials | None = None, stremio_client: stremio_api.StremioAPI | None = None) -> None:
         self.config = config
         self.launcher = launcher or Launcher()
         self.launcher.on_exit = self._session_ended
@@ -55,6 +87,12 @@ class Catalog:
         # Emuladores en uso: los de config.yaml + los detectados automáticamente.
         self.emulators = list(config.emulators)
         self.detected: dict[str, Path] = {}
+        self.credentials = credentials or default_credentials(config)
+        self.stremio_client = stremio_client or stremio_api.StremioAPI()
+        self.stremio_error: str | None = None
+        self._stremio_items: list[LibraryItem] = []
+        self._stremio_fetched = 0.0
+        self._stremio_busy = threading.Lock()
         self.listeners: list[Listener] = []
         self._items: dict[str, LibraryItem] = {}
         self._lock = threading.Lock()
@@ -114,6 +152,7 @@ class Catalog:
                     argv=[] if is_uri else [app.target, *app.args],
                 )
             )
+        found += self._stremio_items
         for item in found:
             url = f"/api/art/{quote(item.id, safe=':')}"
             if item.art_path:
@@ -123,7 +162,63 @@ class Catalog:
         with self._lock:
             self._items = {item.id: item for item in found}
         log.info("Catálogo: %d elementos", len(found))
+        self.refresh_stremio(background=True)
         return len(found)
+
+    # --- Stremio -------------------------------------------------------------
+    @property
+    def stremio_linked(self) -> bool:
+        return bool(self.credentials.get(STREMIO_KEY))
+
+    def refresh_stremio(self, background: bool = False) -> bool:
+        """Descarga la biblioteca de Stremio. En segundo plano no bloquea a quien llama."""
+        if not self.config.stremio.enabled or not self.stremio_linked:
+            return False
+        if background:
+            threading.Thread(target=self.refresh_stremio, daemon=True).start()
+            return True
+        if not self._stremio_busy.acquire(blocking=False):
+            return False  # ya hay una descarga en curso
+        try:
+            raw = self.stremio_client.library(self.credentials.get(STREMIO_KEY))
+            items = [stremio_item(w) for w in stremio_api.parse_library(raw)]
+            self.stremio_error = None
+        except stremio_api.StremioError as exc:
+            log.warning("Stremio: %s", exc)
+            self.stremio_error = str(exc)
+            return False
+        finally:
+            self._stremio_fetched = time.time()
+            self._stremio_busy.release()
+        with self._lock:
+            self._items = {k: v for k, v in self._items.items() if v.source != "stremio"}
+            self._items.update({i.id: i for i in items})
+        changed = [i.id for i in items] != [i.id for i in self._stremio_items] or any(
+            a.progress != b.progress for a, b in zip(items, self._stremio_items))
+        self._stremio_items = items
+        if changed:
+            self._notify({"type": "library-changed"})
+        return True
+
+    def refresh_stremio_if_stale(self) -> None:
+        if time.time() - self._stremio_fetched > STREMIO_STALE_SECONDS:
+            self.refresh_stremio(background=True)
+
+    def link_stremio(self, auth_key: str) -> int:
+        """Guarda la clave de sesión y comprueba que funciona. Devuelve cuántos títulos hay."""
+        raw = self.stremio_client.library(auth_key)  # lanza StremioError si la clave no sirve
+        self.credentials.set(STREMIO_KEY, auth_key)
+        self.refresh_stremio()
+        return len(raw)
+
+    def unlink_stremio(self) -> None:
+        self.credentials.set(STREMIO_KEY, None)
+        with self._lock:
+            self._items = {k: v for k, v in self._items.items() if v.source != "stremio"}
+        self._stremio_items = []
+
+    def stremio_library(self) -> list[LibraryItem]:
+        return [i for i in self.items() if i.source == "stremio"]
 
     # --- consulta ------------------------------------------------------------
     def items(self, include_hidden: bool = False) -> list[LibraryItem]:
@@ -150,7 +245,8 @@ class Catalog:
         if item.runners:
             data["runner"] = self.runner_for(item).id
         history = self.state.history(item.id)
-        data["last_played"] = history.get("last_played")
+        # En Stremio manda su propia fecha (abrir la ficha no significa haberlo visto).
+        data["last_played"] = item.last_watched if item.source == "stremio" else history.get("last_played")
         data["playtime"] = history.get("playtime", 0)
         return data
 
@@ -161,7 +257,11 @@ class Catalog:
         rows = []
         for cat in CATEGORIES:
             if cat["id"] == "recent":
-                members = [by_id[i] for i in self.state.recent() if i in by_id]
+                # Juegos y apps; lo que se ve en Stremio va en "Seguir viendo".
+                members = [by_id[i] for i in self.state.recent() if i in by_id and by_id[i].source != "stremio"]
+            elif cat["id"] == "continue":
+                members = sorted((i for i in items if i.category == "continue"),
+                                 key=lambda i: i.last_watched or 0, reverse=True)
             elif cat["id"] == "favorites":
                 members = [i for i in alpha if self.is_favorite(i)]
             elif cat["id"] == "emulators":
@@ -178,15 +278,24 @@ class Catalog:
                 rows.append({**cat, "items": [self.describe(i) for i in members]})
         return rows
 
+    def grouped_items(self, row_id: str) -> list[LibraryItem]:
+        """Elementos de una fila, en el mismo orden que la interfaz."""
+        row = next((r for r in self.grouped() if r["id"] == row_id), None)
+        return [self.get(i["id"]) for i in row["items"]] if row else []
+
     def hidden_count(self) -> int:
         return sum(1 for i in self.items(include_hidden=True) if self.state.prefs(i.id).get("hidden"))
 
-    def find(self, query: str, category: str | None = None) -> LibraryItem | None:
+    def find(self, query: str, category: str | None = None, *, source: str | None = None,
+             exclude_source: str | None = None) -> LibraryItem | None:
         """Búsqueda difusa por título, pensada para lo que transcribe Alexa."""
         target = normalize(query)
         if not target:
             return None
-        candidates = [i for i in self.items() if category is None or i.category == category]
+        candidates = [i for i in self.items()
+                      if (category is None or i.category == category)
+                      and (source is None or i.source == source)
+                      and (exclude_source is None or i.source != exclude_source)]
         by_name = {normalize(i.title): i for i in candidates}
         if target in by_name:
             return by_name[target]
@@ -245,6 +354,10 @@ class Catalog:
         """El juego o emulador se cerró: guarda el tiempo y vuelve a Orbital."""
         self.state.record_session(item_id, seconds)
         system.bring_to_front()
-        event = {"type": "closed", "id": item_id, "title": title, "seconds": int(seconds)}
+        if item_id == "media:stremio":
+            self.refresh_stremio(background=True)  # el progreso de "Seguir viendo" cambió
+        self._notify({"type": "closed", "id": item_id, "title": title, "seconds": int(seconds)})
+
+    def _notify(self, event: dict) -> None:
         for listener in list(self.listeners):
             listener(event)

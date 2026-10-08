@@ -33,6 +33,7 @@ class VoiceResult:
 # Patrones para texto libre en español (también sirven para Home Assistant, atajos, etc.).
 _TEXT_RULES: list[tuple[re.Pattern, str, str | None]] = [
     (re.compile(r"^(?:busca|buscar|pon|reproduce)\s+(?P<v>.+?)\s+en\s+stremio$"), "SearchMediaIntent", "query"),
+    (re.compile(r"^(?:sigue|seguir|continua|continuar)(?:\s+viendo)?(?:\s+(?P<v>.+))?$"), "ContinueWatchingIntent", "show"),
     (re.compile(r"^(?:abre|abrir|inicia|lanza)\s+stremio$"), "OpenStremioIntent", None),
     (re.compile(r"^(?:abre|abrir)\s+(?:steam|big picture)$"), "OpenSteamIntent", None),
     (re.compile(r"^(?:cierra|cerrar|salir de)\s+(?:el\s+)?(?:juego|aplicacion|app)$"), "CloseGameIntent", None),
@@ -49,7 +50,7 @@ def parse_text(text: str) -> tuple[str, dict[str, str]] | None:
     for pattern, intent, slot in _TEXT_RULES:
         m = pattern.match(clean)
         if m:
-            return intent, ({slot: m.group("v")} if slot else {})
+            return intent, ({slot: m.group("v")} if slot and m.group("v") else {})
     return None
 
 
@@ -83,11 +84,34 @@ class VoiceController:
         name = slots.get("game", "")
         if not name:
             return VoiceResult("¿Qué juego quieres abrir?", ok=False)
-        item = self.catalog.find(name)
+        name, runner = self._split_runner(name)
+        # Primero juegos y apps; si no hay, algo de tu biblioteca de Stremio ("abre The Office").
+        item = self.catalog.find(name, exclude_source="stremio") or self.catalog.find(name, source="stremio")
         if item is None:
             return VoiceResult(f"No encontré {name} en tu biblioteca.", ok=False)
-        self.catalog.launch(item.id)
-        return VoiceResult(f"Abriendo {item.title}.")
+        runner_id = None
+        if runner:
+            match = next((r for r in item.runners if normalize(r.name) == runner), None)
+            if match is None:
+                return VoiceResult(f"{item.title} no se puede abrir con {runner}.", ok=False)
+            runner_id = match.id
+        self.catalog.launch(item.id, runner_id)
+        if item.source == "stremio":
+            return VoiceResult(f"Abriendo {item.title} en Stremio.")
+        return VoiceResult(f"Abriendo {item.title} con {runner}." if runner else f"Abriendo {item.title}.")
+
+    def _split_runner(self, name: str) -> tuple[str, str | None]:
+        """ "zelda con eden" -> ("zelda", "eden") si "eden" es un emulador conocido.
+
+        Alexa no permite otro slot junto a una búsqueda libre, así que el emulador viene
+        dentro del mismo texto y lo separamos aquí.
+        """
+        match = re.match(r"^(?P<game>.+?)\s+(?:con|en)\s+(?P<runner>[\w-]+)$", normalize(name))
+        if not match:
+            return name, None
+        known = {normalize(r.name) for i in self.catalog.items() for r in i.runners}
+        runner = match.group("runner")
+        return (match.group("game"), runner) if runner in known else (name, None)
 
     def _open_stremio_intent(self, slots: dict) -> VoiceResult:
         self.catalog.launch("media:stremio")
@@ -97,8 +121,30 @@ class VoiceController:
         query = slots.get("query", "")
         if not query:
             return VoiceResult("¿Qué quieres ver?", ok=False)
+        # Si ya está en tu biblioteca de Stremio, abre su ficha directamente.
+        item = self.catalog.find(query, source="stremio")
+        if item is not None:
+            self.catalog.launch(item.id)
+            return VoiceResult(f"Abriendo {item.title} en Stremio.")
         self.catalog.search_media(query)
         return VoiceResult(f"Buscando {query} en Stremio.")
+
+    def _continue_watching_intent(self, slots: dict) -> VoiceResult:
+        show = slots.get("show", "")
+        if not self.catalog.stremio_linked:
+            return VoiceResult("Primero conecta tu cuenta de Stremio con orbital stremio login.", ok=False)
+        if show:
+            item = self.catalog.find(show, source="stremio")
+            if item is None:
+                return VoiceResult(f"No encontré {show} en tu biblioteca de Stremio.", ok=False)
+        else:
+            watching = self.catalog.grouped_items("continue")
+            if not watching:
+                return VoiceResult("No tienes nada a medias en Stremio.", ok=False)
+            item = watching[0]
+        self.catalog.launch(item.id)
+        detail = item.subtitle.removeprefix("Stremio").strip(" ·")
+        return VoiceResult(f"Continuando {item.title}{', ' + detail if detail else ''}.")
 
     def _open_steam_intent(self, slots: dict) -> VoiceResult:
         if self.catalog.get("steam:bigpicture") is None:

@@ -33,3 +33,11 @@ test("isGame", () => {
   assert.equal(isGame({ category: "steam" }), true);
   assert.equal(isGame({ category: "media" }), false);
 });
+
+test("etiqueta del botón principal", async () => {
+  const { primaryLabel } = await import("../../orbital/web/js/core/library.js");
+  assert.equal(primaryLabel({ source: "switch", category: "emulators" }), "Jugar");
+  assert.equal(primaryLabel({ source: "stremio", progress: .4 }), "Continuar");
+  assert.equal(primaryLabel({ source: "stremio", progress: null }), "Ver");
+  assert.equal(isGame({ source: "stremio", category: "continue" }), false);
+});

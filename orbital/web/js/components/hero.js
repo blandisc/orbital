@@ -1,7 +1,7 @@
 import { h, mount, svg } from "../core/dom.js";
-import { duration, lastPlayed } from "../core/format.js";
+import { duration, lastPlayed, percent } from "../core/format.js";
 import { ICONS, systemIconName } from "../core/icons.js";
-import { alternativeRunner, isGame, runnerName } from "../core/library.js";
+import { alternativeRunner, isGame, isWatchable, primaryLabel, runnerName } from "../core/library.js";
 import { Button } from "./button.js";
 
 /** Información grande del juego seleccionado: sistema, título, datos y acciones. */
@@ -28,16 +28,17 @@ export function createHero({ onAction }) {
     title.textContent = item.title;
     title.classList.toggle("hero__title--long", item.title.length > 28);
 
+    const watchable = isWatchable(item);
     const list = [
-      lastPlayed(item.last_played) || (isGame(item) ? "Sin jugar todavía" : null),
-      duration(item.playtime) && `${duration(item.playtime)} en total`,
+      lastPlayed(item.last_played, Date.now(), watchable ? "Visto" : "Jugado") || (isGame(item) ? "Sin jugar todavía" : null),
+      watchable ? percent(item.progress) && `${percent(item.progress)} visto` : duration(item.playtime) && `${duration(item.playtime)} en total`,
     ].filter(Boolean).map((text) => h("span", {}, text));
     if (item.favorite) list.push(h("span", { class: "hero__fact--favorite" }, "★ Favorito"));
     mount(facts, list.flatMap((node, i) => (i ? [h("span", { "aria-hidden": "true" }, "·"), node] : [node])));
 
     const alt = alternativeRunner(item);
     mount(actions,
-      Button({ label: "▶ Jugar", glyph: glyphs.select, variant: "primary", onPress: () => onAction("select") }),
+      Button({ label: `▶ ${primaryLabel(item)}`, glyph: glyphs.select, variant: "primary", onPress: () => onAction("select") }),
       alt && Button({ label: `⇄ Abrir con ${alt.name}`, glyph: glyphs.alt, onPress: () => onAction("alt") }),
       Button({ label: "☰", glyph: glyphs.options, ariaLabel: "Opciones", onPress: () => onAction("options") }));
   }

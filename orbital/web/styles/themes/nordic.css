@@ -28,6 +28,8 @@
   --color-live: var(--palette-cyan-300);
   --color-idle: var(--palette-navy-500);
   --color-scrim: rgba(5, 9, 18, .55);
+  --color-progress: var(--palette-blue-300);
+  --color-progress-track: rgba(255, 255, 255, .22);
 
   --gradient-primary: linear-gradient(180deg, var(--palette-blue-200), var(--palette-blue-500));
   --gradient-card: linear-gradient(160deg, var(--palette-navy-600), #121c2e);

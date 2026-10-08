@@ -1,16 +1,19 @@
 /** Formatos de texto para la interfaz (puros, con pruebas en tests/web). */
 
-export function lastPlayed(ts, now = Date.now()) {
+/** "Jugado hace 2 h" / "Visto ayer"... `verb` cambia para multimedia. */
+export function lastPlayed(ts, now = Date.now(), verb = "Jugado") {
   if (!ts) return null;
   const s = now / 1000 - ts;
-  if (s < 60) return "Jugado ahora";
-  if (s < 3600) return `Jugado hace ${Math.round(s / 60)} min`;
-  if (s < 86400) return `Jugado hace ${Math.round(s / 3600)} h`;
+  if (s < 60) return `${verb} ahora`;
+  if (s < 3600) return `${verb} hace ${Math.round(s / 60)} min`;
+  if (s < 86400) return `${verb} hace ${Math.round(s / 3600)} h`;
   const days = Math.round(s / 86400);
-  if (days === 1) return "Jugado ayer";
-  if (days < 30) return `Jugado hace ${days} días`;
-  return `Jugado el ${new Date(ts * 1000).toLocaleDateString("es")}`;
+  if (days === 1) return `${verb} ayer`;
+  if (days < 30) return `${verb} hace ${days} días`;
+  return `${verb} el ${new Date(ts * 1000).toLocaleDateString("es")}`;
 }
+
+export const percent = (fraction) => (fraction > 0 ? `${Math.round(fraction * 100)} %` : null);
 
 export function duration(seconds) {
   if (!seconds || seconds < 60) return null;

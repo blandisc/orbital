@@ -14,6 +14,7 @@ export const ICONS = {
 /** Ícono del sistema de un elemento de la biblioteca. */
 export function systemIconName(item) {
   if (!item) return "apps";
+  if (item.source === "stremio" || item.category === "media") return "media";
   const text = `${item.source} ${item.subtitle}`.toLowerCase();
   if (item.category === "steam" || item.source === "steam") return "steam";
   if (text.includes("switch")) return "switch";

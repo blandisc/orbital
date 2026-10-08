@@ -31,5 +31,11 @@ export const alternativeRunner = (item) => item?.runners?.find((r) => r.id !== i
 export const runnerName = (item, runnerId) =>
   item?.runners?.find((r) => r.id === (runnerId || item.runner))?.name ?? null;
 
+/** Algo de tu biblioteca de Stremio (película o serie). */
+export const isWatchable = (item) => item?.source === "stremio";
+
 /** Las apps y la multimedia no muestran "Sin jugar todavía". */
-export const isGame = (item) => item && item.category !== "media" && item.category !== "apps";
+export const isGame = (item) => !!item && !isWatchable(item) && item.category !== "media" && item.category !== "apps";
+
+/** Texto del botón principal según lo que sea. */
+export const primaryLabel = (item) => (isWatchable(item) ? (item.progress > 0 ? "Continuar" : "Ver") : "Jugar");

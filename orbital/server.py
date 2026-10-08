@@ -120,6 +120,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None) -> Fa
 
     @app.get("/api/library")
     def library() -> dict:
+        catalog.refresh_stremio_if_stale()  # en segundo plano; avisa con "library-changed"
         return {"rows": catalog.grouped(), "hidden": catalog.hidden_count()}
 
     @app.post("/api/library/refresh")
