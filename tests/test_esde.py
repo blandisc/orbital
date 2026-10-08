@@ -21,6 +21,7 @@ GAMELIST = """<?xml version="1.0"?>
     <game>
         <path>./sub/Mario Kart 8 Deluxe.xci</path>
         <name>Mario Kart 8 Deluxe</name>
+        <altemulator>Eden (Standalone)</altemulator>
     </game>
     <game>
         <path>./Hidden Game.nsp</path>
@@ -111,7 +112,52 @@ def test_art_endpoint_only_serves_known_items(catalog):
 
 
 def test_missing_gamelist_falls_back_to_filename(tmp_path):
-    assert esde.load_gamelist(tmp_path / "nope.xml") == {}
+    assert esde.load_gamelist(tmp_path / "nope.xml") == esde.Gamelist()
     bad = tmp_path / "bad.xml"
     bad.write_text("<gameList><game>")
-    assert esde.load_gamelist(bad) == {}
+    assert esde.load_gamelist(bad) == esde.Gamelist()
+
+
+def make_switch_catalog(esde_home, tmp_path, system_label=None):
+    downloads = tmp_path / "Downloads"
+    for rel in ["publish/Ryujinx.exe", "Eden-Windows-v0.0.3/eden.exe"]:
+        (downloads / rel).parent.mkdir(parents=True, exist_ok=True)
+        (downloads / rel).write_bytes(b"")
+    if system_label:
+        gl = esde_home / "gamelists" / "switch" / "gamelist.xml"
+        gl.write_text(gl.read_text().replace("Ryujinx (Standalone)", system_label))
+    cfg = parse_config({
+        "steam": {"enabled": False}, "stremio": {"enabled": False},
+        "esde": {"path": str(esde_home)},
+        "emulators": [
+            {"id": "switch", "name": "Nintendo Switch", "system": "switch",
+             "executable": str(downloads / "**" / "Ryujinx.exe"), "args": ["--fullscreen", "{rom}"],
+             "extensions": [".nsp", ".xci"], "exclude": ["[upd]"]},
+            {"id": "switch-eden", "name": "Eden", "system": "switch",
+             "executable": str(downloads / "Eden-*" / "eden.exe"), "args": ["-f", "-g", "{rom}"]},
+        ],
+    })
+    cat = Catalog(cfg, FakeLauncher())
+    cat.refresh()
+    return cat
+
+
+def test_two_switch_emulators_share_one_list(esde_home, tmp_path):
+    cat = make_switch_catalog(esde_home, tmp_path)
+    switch_games = [i for i in cat.items() if i.category == "emulators"]
+    assert len(switch_games) == 3 and {i.source for i in switch_games} == {"switch"}
+    assert [r["title"] for r in cat.grouped() if r["id"].startswith("emulators")] == ["Nintendo Switch"]
+
+
+def test_esde_choice_per_game_and_glob_paths(esde_home, tmp_path):
+    cat = make_switch_catalog(esde_home, tmp_path)
+    mk = cat.find("mario kart")  # <altemulator>Eden (Standalone)</altemulator>
+    assert mk.argv[0].endswith("eden.exe") and mk.argv[1:3] == ["-f", "-g"]
+    assert mk.subtitle == "Nintendo Switch · Eden"
+    zelda = cat.find("zelda")  # sistema: Ryujinx (Standalone) -> principal
+    assert zelda.argv[0].endswith("Ryujinx.exe") and zelda.argv[1] == "--fullscreen"
+
+
+def test_system_level_choice(esde_home, tmp_path):
+    cat = make_switch_catalog(esde_home, tmp_path, system_label="Eden (Standalone)")
+    assert cat.find("metroid dread").argv[0].endswith("eden.exe")

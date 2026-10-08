@@ -48,6 +48,9 @@ class EmulatorConfig:
     recursive: bool = True
     # Texto que, si aparece en el nombre del archivo, lo excluye (p. ej. "[UPD]", "[DLC]").
     exclude: list[str] = field(default_factory=list)
+    # Texto que identifica a este emulador en ES-DE ("Eden" casa con "Eden (Standalone)").
+    # Si se omite se usa el nombre del ejecutable.
+    esde_label: str | None = None
 
 
 @dataclass

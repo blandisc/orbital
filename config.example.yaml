@@ -30,32 +30,42 @@ esde:
 # Cada emulador usa la carpeta de ES-DE de su "system" (p. ej. ROMs\switch).
 # Si tus ROMs están en otro sitio, añade:  rom_dirs: ['D:\ROMs\switch']
 # Placeholders en args: {rom}, {rom_dir}, {rom_name}
-# CAMBIA las rutas "executable" por las de tu equipo.
+#
+# Las rutas admiten comodines, así no importa el número de versión de la carpeta:
+#   *  = cualquier nombre de carpeta      ** = cualquier subcarpeta, a cualquier profundidad
+# Si hay varias versiones descargadas, se usa la más reciente.
+# Revisa con "orbital --list" qué ejecutable encontró para cada uno.
 emulators:
-  # --- Nintendo Switch: Ryujinx (o su fork Ryubing) ---
+  # --- Nintendo Switch: Ryujinx (principal) + Eden (alternativo) ---
+  # Los juegos salen una sola vez. Se abren con Ryujinx, salvo los que en ES-DE
+  # tengan elegido Eden (Editar metadatos > Emulador alternativo), o si eliges
+  # Eden para todo el sistema en ES-DE (Otros ajustes > Emuladores alternativos).
   - id: switch
     name: Nintendo Switch
     system: switch
-    executable: '%USERPROFILE%\Emulators\Ryujinx\Ryujinx.exe'
+    executable: '%USERPROFILE%\Downloads\**\Ryujinx.exe'
     args: ["--fullscreen", "{rom}"]
     extensions: [.nsp, .xci, .nca, .nro]
     exclude: ["[UPD]", "[DLC]", "(Update)", "(DLC)"]   # no mostrar actualizaciones ni DLC
-  # Si usas Eden / Citron / Sudachi (forks de Yuzu), cambia por:
-  #   executable: '%USERPROFILE%\Emulators\Eden\eden.exe'
-  #   args: ["-f", "-g", "{rom}"]
+
+  - id: switch-eden
+    name: Eden
+    system: switch
+    executable: '%USERPROFILE%\Downloads\**\eden.exe'
+    args: ["-f", "-g", "{rom}"]
 
   # --- GameCube y Wii: Dolphin ---
   - id: gamecube
     name: GameCube
     system: gc
-    executable: '%USERPROFILE%\Emulators\Dolphin-x64\Dolphin.exe'
+    executable: '%USERPROFILE%\Downloads\**\Dolphin.exe'
     args: ["-b", "-e", "{rom}"]
     extensions: [.iso, .rvz, .gcz, .ciso, .gcm]
 
   - id: wii
     name: Wii
     system: wii
-    executable: '%USERPROFILE%\Emulators\Dolphin-x64\Dolphin.exe'
+    executable: '%USERPROFILE%\Downloads\**\Dolphin.exe'
     args: ["-b", "-e", "{rom}"]
     extensions: [.iso, .rvz, .wbfs, .wia, .wad]
 
@@ -63,7 +73,7 @@ emulators:
   - id: gba
     name: Game Boy Advance
     system: gba
-    executable: '%USERPROFILE%\Emulators\mGBA\mGBA.exe'
+    executable: '%USERPROFILE%\Downloads\**\mGBA.exe'
     args: ["-f", "{rom}"]
     extensions: [.gba, .zip, .7z]
   # Con RetroArch en vez de mGBA:
@@ -74,17 +84,17 @@ emulators:
   - id: xbox
     name: Xbox
     system: xbox
-    executable: '%USERPROFILE%\Emulators\xemu\xemu.exe'
+    executable: '%USERPROFILE%\Downloads\**\xemu.exe'
     args: ["-full-screen", "-dvd_path", "{rom}"]
     extensions: [.iso]
 
-  # --- Xbox 360: Xenia Canary ---
-  - id: xbox360
-    name: Xbox 360
-    system: xbox360
-    executable: '%USERPROFILE%\Emulators\xenia_canary\xenia_canary.exe'
-    args: ["--fullscreen", "{rom}"]
-    extensions: [.iso, .xex, .zar]
+  # --- Xbox 360 (Xenia Canary), por si algún día lo usas ---
+  # - id: xbox360
+  #   name: Xbox 360
+  #   system: xbox360
+  #   executable: '%USERPROFILE%\Downloads\**\xenia_canary.exe'
+  #   args: ["--fullscreen", "{rom}"]
+  #   extensions: [.iso, .xex, .zar]
 
 # Atajos extra: ejecutables o URLs/URIs. ES-DE ya aparece solo si se detecta.
 apps:

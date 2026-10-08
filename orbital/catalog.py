@@ -72,8 +72,8 @@ class Catalog:
                     cwd=str(self.esde.executable.parent),
                 )
             )
-        for emu in self.config.emulators:
-            found += emulators.scan(emu, self.esde)
+        for emu, alternatives in emulators.split_alternatives(self.config.emulators):
+            found += emulators.scan(emu, self.esde, alternatives)
         if self.config.stremio.enabled:
             found += stremio.items(self.config.stremio)
         for app in self.config.apps:

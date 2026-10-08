@@ -79,12 +79,13 @@ def print_diagnostics(catalog) -> None:
     counts: dict[str, int] = {}
     for item in catalog.items():
         counts[item.source] = counts.get(item.source, 0) + 1
-    for emu in catalog.config.emulators:
-        found = emulators.executable_found(emu)
+    for emu, alternatives in emulators.split_alternatives(catalog.config.emulators):
         dirs = ", ".join(str(d) for d in emulators.rom_dirs(emu, lib)) or "sin carpeta"
-        print(f"  {ok if found else bad}{emu.name}: {counts.get(emu.id, 0)} juegos en {dirs}")
-        if not found:
-            print(f"     no existe el ejecutable: {emu.executable}")
+        print(f"  {emu.name}: {counts.get(emu.id, 0)} juegos en {dirs}")
+        for each in [emu, *alternatives]:
+            exe = emulators.resolve_executable(each)
+            role = "principal" if each is emu else "alternativo (si ES-DE lo elige)"
+            print(f"    {ok if exe else bad}{each.name} [{role}]: {exe or 'NO ENCONTRADO -> ' + each.executable}")
 
 
 def main(argv: list[str] | None = None) -> None:

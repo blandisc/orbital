@@ -25,6 +25,14 @@ class GameMeta:
     name: str | None = None
     favorite: bool = False
     hidden: bool = False
+    altemulator: str | None = None  # emulador elegido para este juego en ES-DE
+
+
+@dataclass
+class Gamelist:
+    games: dict[str, GameMeta] = field(default_factory=dict)
+    # Emulador alternativo elegido para todo el sistema (<alternativeEmulator><label>).
+    system_emulator: str | None = None
 
 
 @dataclass
@@ -33,15 +41,23 @@ class EsdeLibrary:
     rom_root: Path
     media_root: Path
     executable: Path | None = None
-    _gamelists: dict[str, dict[str, GameMeta]] = field(default_factory=dict)
+    _gamelists: dict[str, Gamelist] = field(default_factory=dict)
 
     def system_dir(self, system: str) -> Path:
         return self.rom_root / system
 
-    def meta(self, system: str, rom: Path) -> GameMeta:
+    def gamelist(self, system: str) -> Gamelist:
         if system not in self._gamelists:
             self._gamelists[system] = load_gamelist(self.home / "gamelists" / system / "gamelist.xml")
-        return self._gamelists[system].get(_key(rom.relative_to(self.system_dir(system))), GameMeta())
+        return self._gamelists[system]
+
+    def meta(self, system: str, rom: Path) -> GameMeta:
+        key = _key(rom.relative_to(self.system_dir(system)))
+        return self.gamelist(system).games.get(key, GameMeta())
+
+    def chosen_emulator(self, system: str, rom: Path) -> str | None:
+        """Etiqueta del emulador elegido en ES-DE: primero el del juego, luego el del sistema."""
+        return self.meta(system, rom).altemulator or self.gamelist(system).system_emulator
 
     def cover(self, system: str, rom: Path) -> Path | None:
         rel = rom.relative_to(self.system_dir(system)).with_suffix("")
@@ -62,9 +78,9 @@ def _bool(text: str | None) -> bool:
     return (text or "").strip().lower() == "true"
 
 
-def load_gamelist(path: Path) -> dict[str, GameMeta]:
+def load_gamelist(path: Path) -> Gamelist:
     if not path.exists():
-        return {}
+        return Gamelist()
     text = path.read_text(encoding="utf-8", errors="replace")
     # ES-DE escribe varios elementos raíz (<alternativeEmulator> + <gameList>); los envolvemos.
     text = re.sub(r"^\s*<\?xml[^>]*\?>", "", text)
@@ -72,7 +88,7 @@ def load_gamelist(path: Path) -> dict[str, GameMeta]:
         root = ET.fromstring(f"<root>{text}</root>")
     except ET.ParseError as exc:
         log.warning("gamelist inválido %s: %s", path, exc)
-        return {}
+        return Gamelist()
     games = {}
     for node in root.iter("game"):
         rom_path = node.findtext("path")
@@ -81,8 +97,10 @@ def load_gamelist(path: Path) -> dict[str, GameMeta]:
                 name=(node.findtext("name") or "").strip() or None,
                 favorite=_bool(node.findtext("favorite")),
                 hidden=_bool(node.findtext("hidden")),
+                altemulator=(node.findtext("altemulator") or "").strip() or None,
             )
-    return games
+    label = (root.findtext("alternativeEmulator/label") or "").strip() or None
+    return Gamelist(games=games, system_emulator=label)
 
 
 def read_settings(home: Path) -> dict[str, str]:

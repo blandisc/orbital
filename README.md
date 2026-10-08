@@ -55,14 +55,27 @@ inicio de sesión automático; así, al encender la Legion Go, arranca directo e
 
 | Sistema | Emulador | Carpeta ES-DE | Argumentos |
 |---|---|---|---|
-| Nintendo Switch | Ryujinx / Ryubing (o Eden, Citron, Sudachi) | `switch` | `--fullscreen {rom}` (forks de Yuzu: `-f -g {rom}`) |
+| Nintendo Switch | Ryujinx (principal) + Eden (alternativo) | `switch` | `--fullscreen {rom}` / `-f -g {rom}` |
 | GameCube | Dolphin | `gc` | `-b -e {rom}` |
 | Wii | Dolphin | `wii` | `-b -e {rom}` |
 | Game Boy Advance | mGBA (o RetroArch + mgba) | `gba` | `-f {rom}` |
 | Xbox | xemu (ISO en formato XISO) | `xbox` | `-full-screen -dvd_path {rom}` |
-| Xbox 360 | Xenia Canary | `xbox360` | `--fullscreen {rom}` |
+| Xbox 360 (comentado) | Xenia Canary | `xbox360` | `--fullscreen {rom}` |
 
 En Switch, `exclude` evita que las actualizaciones y DLC (`[UPD]`, `[DLC]`) aparezcan como juegos.
+
+**Varios emuladores para un sistema:** si dos emuladores tienen el mismo `system` (Ryujinx y Eden),
+los juegos salen una sola vez. Se abren con el primero de la lista, salvo que en ES-DE hayas
+elegido otro para ese juego (*Editar metadatos → Emulador alternativo*) o para todo el sistema
+(*Otros ajustes → Emuladores alternativos*). Orbital lo detecta por el nombre del ejecutable
+(o por `esde_label`).
+
+**Rutas con comodines:** `'%USERPROFILE%\Downloads\**\xemu.exe'` encuentra xemu en cualquier
+subcarpeta de Descargas, sin importar la versión. Si hay varias copias, usa la más reciente.
+
+> Ojo: el *Sensor de almacenamiento* de Windows puede borrar automáticamente lo que hay en
+> Descargas. Conviene mover los emuladores a algo como `C:\Emuladores` (y cambiar la ruta a
+> `'C:\Emuladores\**\xemu.exe'`), o revisar que esa opción esté desactivada.
 
 ### SteamOS / Bazzite / Linux
 
