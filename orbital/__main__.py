@@ -65,6 +65,28 @@ def open_ui(mode: str, url: str, browser: str | None) -> None:
                       "--autoplay-policy=no-user-gesture-required"])
 
 
+def print_diagnostics(catalog) -> None:
+    from .library import emulators
+
+    ok, bad = "OK ", "!! "
+    print("== Diagnóstico")
+    print(f"  {ok if catalog.steam_root else bad}Steam: {catalog.steam_root or 'no encontrado'}")
+    lib = catalog.esde
+    if catalog.config.esde.enabled:
+        print(f"  {ok if lib else bad}ES-DE: {lib.home if lib else 'no encontrado (pon esde.path)'}")
+        if lib:
+            print(f"     ROMs: {lib.rom_root}   portadas: {lib.media_root}")
+    counts: dict[str, int] = {}
+    for item in catalog.items():
+        counts[item.source] = counts.get(item.source, 0) + 1
+    for emu in catalog.config.emulators:
+        found = emulators.executable_found(emu)
+        dirs = ", ".join(str(d) for d in emulators.rom_dirs(emu, lib)) or "sin carpeta"
+        print(f"  {ok if found else bad}{emu.name}: {counts.get(emu.id, 0)} juegos en {dirs}")
+        if not found:
+            print(f"     no existe el ejecutable: {emu.executable}")
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="orbital", description="Interfaz de consola para Legion Go")
     parser.add_argument("-c", "--config", type=Path, help=f"Ruta del config.yaml (por defecto {default_config_path()})")
@@ -83,6 +105,7 @@ def main(argv: list[str] | None = None) -> None:
 
         catalog = Catalog(config)
         catalog.refresh()
+        print_diagnostics(catalog)
         for row in catalog.grouped():
             print(f"\n== {row['title']} ({len(row['items'])})")
             for item in row["items"]:

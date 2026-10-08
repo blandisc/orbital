@@ -1,62 +1,93 @@
-# Copia este archivo a:
-#   Windows:  %APPDATA%\orbital\config.yaml
-#   Linux:    ~/.config/orbital/config.yaml
-# (o usa: orbital --config ruta\al\config.yaml)
+# Configuración de Orbital para la Legion Go (Windows 11).
+# Copia este archivo a %APPDATA%\orbital\config.yaml (el instalador lo hace por ti).
+# Después de editarlo, comprueba con:  .venv\Scripts\python -m orbital --list
+#
+# En las rutas puedes usar variables como %USERPROFILE% o %LOCALAPPDATA%.
 
 server:
-  host: 127.0.0.1      # deja 127.0.0.1: el acceso remoto entra por el túnel
+  host: 127.0.0.1      # deja 127.0.0.1: Alexa entra por el túnel de Cloudflare
   port: 8710
-  # Token para Alexa / acceso remoto. Genera uno largo, p. ej.:
-  #   python -c "import secrets; print(secrets.token_urlsafe(32))"
-  token: "CAMBIA-ESTE-TOKEN"
+  token: "CAMBIA-ESTE-TOKEN"   # el instalador pone uno aleatorio
 
 ui:
-  mode: browser        # browser (Edge/Chrome en kiosko) | window (pywebview) | none
-  # browser: 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
+  mode: browser        # browser = Edge en pantalla completa | window | none
 
 steam:
-  enabled: true
-  # path: 'C:\Program Files (x86)\Steam'   # se autodetecta si lo omites
+  enabled: true        # la ruta se detecta sola
 
 stremio:
+  enabled: true        # se detecta solo (Stremio 4 o 5)
+
+# ES-DE: Orbital lee de aquí tu carpeta de ROMs, los nombres de los juegos,
+# las portadas que ya descargaste con el scraper y tus favoritos.
+esde:
   enabled: true
-  # executable: 'C:\Users\TU_USUARIO\AppData\Local\Programs\Stremio\stremio-shell-ng.exe'
+  # Solo si no se detecta solo:
+  # path: '%USERPROFILE%\ES-DE'            # instalador (carpeta con settings\ y gamelists\)
+  # path: 'C:\ES-DE\ES-DE'                 # versión portable
+  # executable: 'C:\ES-DE\ES-DE.exe'
 
-# Placeholders disponibles en args: {rom}, {rom_dir}, {rom_name}
+# Cada emulador usa la carpeta de ES-DE de su "system" (p. ej. ROMs\switch).
+# Si tus ROMs están en otro sitio, añade:  rom_dirs: ['D:\ROMs\switch']
+# Placeholders en args: {rom}, {rom_dir}, {rom_name}
+# CAMBIA las rutas "executable" por las de tu equipo.
 emulators:
-  - id: snes
-    name: Super Nintendo
-    executable: 'C:\RetroArch-Win64\retroarch.exe'
-    args: ["-L", 'C:\RetroArch-Win64\cores\snes9x_libretro.dll', "{rom}", "-f"]
-    rom_dirs: ['D:\ROMs\snes']
-    extensions: [.sfc, .smc, .zip]
+  # --- Nintendo Switch: Ryujinx (o su fork Ryubing) ---
+  - id: switch
+    name: Nintendo Switch
+    system: switch
+    executable: '%USERPROFILE%\Emulators\Ryujinx\Ryujinx.exe'
+    args: ["--fullscreen", "{rom}"]
+    extensions: [.nsp, .xci, .nca, .nro]
+    exclude: ["[UPD]", "[DLC]", "(Update)", "(DLC)"]   # no mostrar actualizaciones ni DLC
+  # Si usas Eden / Citron / Sudachi (forks de Yuzu), cambia por:
+  #   executable: '%USERPROFILE%\Emulators\Eden\eden.exe'
+  #   args: ["-f", "-g", "{rom}"]
 
-  - id: ps2
-    name: PlayStation 2
-    executable: 'C:\Emuladores\PCSX2\pcsx2-qt.exe'
-    args: ["-fullscreen", "-nogui", "{rom}"]
-    rom_dirs: ['D:\ROMs\ps2']
-    extensions: [.iso, .chd]
-
+  # --- GameCube y Wii: Dolphin ---
   - id: gamecube
-    name: GameCube / Wii
-    executable: 'C:\Emuladores\Dolphin\Dolphin.exe'
+    name: GameCube
+    system: gc
+    executable: '%USERPROFILE%\Emulators\Dolphin-x64\Dolphin.exe'
     args: ["-b", "-e", "{rom}"]
-    rom_dirs: ['D:\ROMs\gamecube', 'D:\ROMs\wii']
-    extensions: [.iso, .rvz, .gcz, .wbfs]
+    extensions: [.iso, .rvz, .gcz, .ciso, .gcm]
 
-  - id: psx
-    name: PlayStation
-    executable: 'C:\Emuladores\DuckStation\duckstation-qt-x64-ReleaseLTCG.exe'
-    args: ["-fullscreen", "-batch", "{rom}"]
-    rom_dirs: ['D:\ROMs\psx']
-    extensions: [.cue, .chd, .m3u]
+  - id: wii
+    name: Wii
+    system: wii
+    executable: '%USERPROFILE%\Emulators\Dolphin-x64\Dolphin.exe'
+    args: ["-b", "-e", "{rom}"]
+    extensions: [.iso, .rvz, .wbfs, .wia, .wad]
 
-# Atajos extra: ejecutables o URLs/URIs.
+  # --- Game Boy Advance: mGBA ---
+  - id: gba
+    name: Game Boy Advance
+    system: gba
+    executable: '%USERPROFILE%\Emulators\mGBA\mGBA.exe'
+    args: ["-f", "{rom}"]
+    extensions: [.gba, .zip, .7z]
+  # Con RetroArch en vez de mGBA:
+  #   executable: 'C:\RetroArch-Win64\retroarch.exe'
+  #   args: ["-L", 'C:\RetroArch-Win64\cores\mgba_libretro.dll', "-f", "{rom}"]
+
+  # --- Xbox original: xemu (las ISO deben estar en formato XISO) ---
+  - id: xbox
+    name: Xbox
+    system: xbox
+    executable: '%USERPROFILE%\Emulators\xemu\xemu.exe'
+    args: ["-full-screen", "-dvd_path", "{rom}"]
+    extensions: [.iso]
+
+  # --- Xbox 360: Xenia Canary ---
+  - id: xbox360
+    name: Xbox 360
+    system: xbox360
+    executable: '%USERPROFILE%\Emulators\xenia_canary\xenia_canary.exe'
+    args: ["--fullscreen", "{rom}"]
+    extensions: [.iso, .xex, .zar]
+
+# Atajos extra: ejecutables o URLs/URIs. ES-DE ya aparece solo si se detecta.
 apps:
-  - id: esde
-    name: ES-DE
-    target: 'C:\ES-DE\ES-DE.exe'
   - id: youtube
     name: YouTube
     target: "https://www.youtube.com/tv"

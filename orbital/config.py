@@ -46,6 +46,17 @@ class EmulatorConfig:
     rom_dirs: list[str] = field(default_factory=list)
     extensions: list[str] = field(default_factory=list)
     recursive: bool = True
+    # Texto que, si aparece en el nombre del archivo, lo excluye (p. ej. "[UPD]", "[DLC]").
+    exclude: list[str] = field(default_factory=list)
+
+
+@dataclass
+class EsdeConfig:
+    """ES-DE: de aquí salen la carpeta de ROMs, los nombres, las portadas y los favoritos."""
+
+    enabled: bool = True
+    path: str | None = None  # carpeta de datos de ES-DE (la que tiene settings/ y gamelists/)
+    executable: str | None = None  # ES-DE.exe; None = autodetectar
 
 
 @dataclass
@@ -71,9 +82,14 @@ class Config:
     ui: UiConfig = field(default_factory=UiConfig)
     steam: SteamConfig = field(default_factory=SteamConfig)
     stremio: StremioConfig = field(default_factory=StremioConfig)
+    esde: EsdeConfig = field(default_factory=EsdeConfig)
     emulators: list[EmulatorConfig] = field(default_factory=list)
     apps: list[AppConfig] = field(default_factory=list)
     source: Path | None = None
+
+
+def expand(path: str) -> str:
+    return os.path.expanduser(os.path.expandvars(path))
 
 
 def _section(cls, data: dict[str, Any] | None):
@@ -103,6 +119,7 @@ def parse_config(raw: dict[str, Any] | None, source: Path | None = None) -> Conf
         ui=_section(UiConfig, raw.get("ui")),
         steam=_section(SteamConfig, raw.get("steam")),
         stremio=_section(StremioConfig, raw.get("stremio")),
+        esde=_section(EsdeConfig, raw.get("esde")),
         emulators=[_section(EmulatorConfig, e) for e in raw.get("emulators") or []],
         apps=[_section(AppConfig, a) for a in raw.get("apps") or []],
         source=source,
@@ -112,6 +129,9 @@ def parse_config(raw: dict[str, Any] | None, source: Path | None = None) -> Conf
     if dupes:
         raise ValueError(f"IDs duplicados en la configuración: {', '.join(sorted(dupes))}")
     for emu in cfg.emulators:
+        # Permite %USERPROFILE%, %APPDATA%, ~ ... en las rutas.
+        emu.executable = expand(emu.executable)
+        emu.rom_dirs = [expand(d) for d in emu.rom_dirs]
         emu.extensions = [e.lower() if e.startswith(".") else f".{e.lower()}" for e in emu.extensions]
     if cfg.ui.mode not in {"browser", "window", "none"}:
         raise ValueError("ui.mode debe ser 'browser', 'window' o 'none'")

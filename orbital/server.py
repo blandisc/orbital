@@ -19,7 +19,6 @@ from pydantic import BaseModel
 from . import __version__
 from .catalog import Catalog
 from .config import Config
-from .library import steam
 from .voice import VoiceController
 
 log = logging.getLogger(__name__)
@@ -154,12 +153,13 @@ def create_app(config: Config, catalog: Catalog | None = None) -> FastAPI:
 
         return StreamingResponse(stream(), media_type="text/event-stream")
 
-    @app.get("/api/art/steam/{appid}")
-    def steam_art(appid: str) -> FileResponse:
-        path = steam.local_art_path(catalog.steam_root, appid) if catalog.steam_root else None
-        if path is None:
+    @app.get("/api/art/{item_id:path}")
+    def art(item_id: str) -> FileResponse:
+        # Solo se sirven portadas que el escaneo asoció a un elemento: nunca rutas arbitrarias.
+        item = catalog.get(item_id)
+        if item is None or not item.art_path or not Path(item.art_path).is_file():
             raise HTTPException(404)
-        return FileResponse(path)
+        return FileResponse(item.art_path)
 
     app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")
     return app

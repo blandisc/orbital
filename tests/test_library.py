@@ -34,7 +34,7 @@ def test_clean_title():
 
 
 def test_grouped_order(library):
-    assert [r["id"] for r in library.grouped()] == ["steam", "emulators", "media", "apps"]
+    assert [r["id"] for r in library.grouped()] == ["steam", "emulators:snes", "media", "apps"]
 
 
 def test_find_fuzzy(library):

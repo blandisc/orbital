@@ -15,6 +15,9 @@ class LibraryItem:
     uri: str | None = None
     argv: list[str] = field(default_factory=list)
     cwd: str | None = None
+    favorite: bool = False
+    # Portada en disco; se sirve por /api/art/<id> sin exponer la ruta.
+    art_path: str | None = None
 
     def public(self) -> dict:
         return {
@@ -24,4 +27,5 @@ class LibraryItem:
             "source": self.source,
             "subtitle": self.subtitle,
             "image": self.image,
+            "favorite": self.favorite,
         }

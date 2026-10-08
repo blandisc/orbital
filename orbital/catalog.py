@@ -7,15 +7,17 @@ import logging
 import threading
 import unicodedata
 from pathlib import Path
+from urllib.parse import quote
 
 from .config import Config
 from .launcher import Launcher
-from .library import emulators, steam, stremio
+from .library import emulators, esde, steam, stremio
 from .library.models import LibraryItem
 
 log = logging.getLogger(__name__)
 
 CATEGORIES = [
+    {"id": "favorites", "title": "Favoritos"},
     {"id": "steam", "title": "Steam"},
     {"id": "emulators", "title": "Emuladores"},
     {"id": "media", "title": "Multimedia"},
@@ -34,6 +36,7 @@ class Catalog:
         self.config = config
         self.launcher = launcher or Launcher()
         self.steam_root: Path | None = None
+        self.esde: esde.EsdeLibrary | None = None
         self._items: dict[str, LibraryItem] = {}
         self._lock = threading.Lock()
 
@@ -56,8 +59,21 @@ class Catalog:
                 )
             else:
                 log.info("Steam no encontrado")
+        self.esde = esde.find(self.config.esde)
+        if self.esde and self.esde.executable:
+            found.append(
+                LibraryItem(
+                    id="app:esde",
+                    title="ES-DE",
+                    category="apps",
+                    source="esde",
+                    subtitle="Todos tus sistemas",
+                    argv=[str(self.esde.executable)],
+                    cwd=str(self.esde.executable.parent),
+                )
+            )
         for emu in self.config.emulators:
-            found += emulators.scan(emu)
+            found += emulators.scan(emu, self.esde)
         if self.config.stremio.enabled:
             found += stremio.items(self.config.stremio)
         for app in self.config.apps:
@@ -72,6 +88,9 @@ class Catalog:
                     argv=[] if is_uri else [app.target, *app.args],
                 )
             )
+        for item in found:
+            if item.art_path:
+                item.image = f"/api/art/{quote(item.id, safe=':')}"
         with self._lock:
             self._items = {item.id: item for item in found}
         log.info("Catálogo: %d elementos", len(found))
@@ -90,7 +109,17 @@ class Catalog:
         items = self.items()
         rows = []
         for cat in CATEGORIES:
-            members = [i.public() for i in items if i.category == cat["id"]]
+            if cat["id"] == "favorites":
+                members = [i.public() for i in sorted(items, key=lambda i: i.title.lower()) if i.favorite]
+            elif cat["id"] == "emulators":
+                # Una fila por sistema, en el orden de config.yaml.
+                for emu in self.config.emulators:
+                    games = [i.public() for i in items if i.category == "emulators" and i.source == emu.id]
+                    if games:
+                        rows.append({"id": f"emulators:{emu.id}", "title": emu.name, "items": games})
+                continue
+            else:
+                members = [i.public() for i in items if i.category == cat["id"]]
             if members:
                 rows.append({**cat, "items": members})
         return rows

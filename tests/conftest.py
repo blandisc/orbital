@@ -60,6 +60,7 @@ def library(tmp_path):
         "server": {"token": "secreto"},
         "steam": {"path": str(steam_root)},
         "stremio": {"executable": "stremio-test"},
+        "esde": {"enabled": False},
         "emulators": [{
             "id": "snes", "name": "Super Nintendo", "executable": "retroarch",
             "args": ["-L", "snes9x", "{rom}"], "rom_dirs": [str(roms)], "extensions": ["sfc", ".SMC"],

@@ -84,13 +84,15 @@ def scan(steam_root: Path) -> list[LibraryItem]:
             appid, name = state.get("appid"), state.get("name")
             if not appid or not name or not _is_game(appid, name) or appid in items:
                 continue
+            art = local_art_path(steam_root, appid)
             items[appid] = LibraryItem(
                 id=f"steam:{appid}",
                 title=name,
                 category="steam",
                 source="steam",
                 subtitle="Steam",
-                image=f"/api/art/steam/{appid}" if local_art_path(steam_root, appid) else CDN.format(appid=appid),
+                image=None if art else CDN.format(appid=appid),
+                art_path=str(art) if art else None,
                 uri=f"steam://rungameid/{appid}",
             )
     return sorted(items.values(), key=lambda i: i.title.lower())

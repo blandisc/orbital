@@ -24,7 +24,8 @@ se controla con la voz a través de **Alexa**.
 | Fuente | Cómo funciona |
 |---|---|
 | **Steam** | Lee `libraryfolders.vdf` + `appmanifest_*.acf` (todas las bibliotecas y discos), filtra Proton y runtimes, usa la portada local o la del CDN y lanza con `steam://rungameid/<id>`. Incluye un atajo a Big Picture. |
-| **Emuladores** | Cada emulador se define en `config.yaml` con su ejecutable, argumentos (`{rom}`, `{rom_dir}`, `{rom_name}`), carpetas y extensiones. Limpia los nombres (`Chrono_Trigger (USA) [!].smc` → *Chrono Trigger*). |
+| **Emuladores** | Cada emulador se define en `config.yaml` con su ejecutable, argumentos (`{rom}`, `{rom_dir}`, `{rom_name}`) y extensiones. Cada sistema tiene su propia fila en la pantalla. |
+| **ES-DE** | Si usas ES-DE, Orbital toma de ahí la carpeta de ROMs, los nombres del scraper, las portadas de `downloaded_media`, tus **favoritos** (fila propia) y oculta los juegos marcados como ocultos. También agrega un acceso a ES-DE. |
 | **Stremio** | Detecta Stremio 4/5 (o Flatpak en Linux); si no lo encuentra usa el protocolo `stremio://`. Por voz puede buscar títulos con `stremio:///search?search=…`. |
 | **Apps** | Cualquier ejecutable o URL (ES-DE, YouTube TV, Playnite…). |
 | **Voz** | `/api/voice` acepta intents de Alexa o texto libre en español ("abre hollow knight", "busca dune en stremio", "cierra el juego", "ve a la derecha"). |
@@ -41,12 +42,27 @@ Con teclado: flechas, Enter, Esc y R. Los indicadores de abajo cambian según us
    ```
    Esto instala Python si hace falta, crea un entorno virtual, copia `config.example.yaml` a
    `%APPDATA%\orbital\config.yaml` con un token aleatorio y crea el acceso directo de inicio.
-3. Edita `%APPDATA%\orbital\config.yaml` con las rutas de tus emuladores y ROMs.
-4. Comprueba lo que detecta: `.venv\Scripts\python -m orbital --list`
+3. Edita `%APPDATA%\orbital\config.yaml`: solo tienes que cambiar la ruta `executable` de cada
+   emulador (las carpetas de ROMs salen de ES-DE).
+4. Comprueba lo que detecta: `.venv\Scripts\python -m orbital --list`. Primero muestra un
+   diagnóstico (`OK` / `!!`) de Steam, ES-DE y cada emulador, con cuántos juegos encontró.
 5. Arranca: `.venv\Scripts\python -m orbital` (abre Edge en pantalla completa).
 
 **Tip para modo consola:** en Legion Space desactiva "abrir al iniciar" y en Windows configura el
 inicio de sesión automático; así, al encender la Legion Go, arranca directo en Orbital.
+
+### Emuladores incluidos en `config.example.yaml`
+
+| Sistema | Emulador | Carpeta ES-DE | Argumentos |
+|---|---|---|---|
+| Nintendo Switch | Ryujinx / Ryubing (o Eden, Citron, Sudachi) | `switch` | `--fullscreen {rom}` (forks de Yuzu: `-f -g {rom}`) |
+| GameCube | Dolphin | `gc` | `-b -e {rom}` |
+| Wii | Dolphin | `wii` | `-b -e {rom}` |
+| Game Boy Advance | mGBA (o RetroArch + mgba) | `gba` | `-f {rom}` |
+| Xbox | xemu (ISO en formato XISO) | `xbox` | `-full-screen -dvd_path {rom}` |
+| Xbox 360 | Xenia Canary | `xbox360` | `--fullscreen {rom}` |
+
+En Switch, `exclude` evita que las actualizaciones y DLC (`[UPD]`, `[DLC]`) aparezcan como juegos.
 
 ### SteamOS / Bazzite / Linux
 
@@ -113,7 +129,7 @@ orbital/
   launcher.py    # procesos y URIs multiplataforma
   voice.py       # intents de Alexa y comandos de texto
   server.py      # API FastAPI + SSE + seguridad
-  library/       # steam.py, emulators.py, stremio.py, vdf.py
+  library/       # steam.py, emulators.py, esde.py, stremio.py, vdf.py
   web/           # interfaz (HTML/CSS/JS, Gamepad API)
 alexa/           # Lambda + modelo de interacción
 scripts/         # instalación en Windows y servicio systemd
@@ -122,8 +138,9 @@ scripts/         # instalación en Windows y servicio systemd
 ## Hoja de ruta
 
 - [ ] Accesos directos "no Steam" (`shortcuts.vdf` binario) para quien usa Steam ROM Manager.
-- [ ] Portadas para ROMs (SteamGridDB o carpetas de *boxart* de ES-DE).
-- [ ] Favoritos y "jugado recientemente".
+- [x] Portadas, nombres y favoritos de ES-DE.
+- [ ] Portadas de SteamGridDB para lo que ES-DE no tenga.
+- [ ] "Jugado recientemente".
 - [ ] Volver a Orbital automáticamente al cerrar un juego (traer la ventana al frente).
 - [ ] Temas visuales (retomar los de orbit-shell: B2 Green CRT, A-Prime, Nordic).
 - [ ] Control de volumen y suspensión por voz.
