@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 _NOT_GAMES = ("proton", "steam linux runtime", "steamworks common", "steamvr")
 _NOT_GAME_IDS = {"228980", "1070560", "1391110", "1628350"}
 
-CDN = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/library_600x900.jpg"
+CDN = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{name}.jpg"
 
 
 def _windows_registry_path() -> Path | None:
@@ -85,25 +85,29 @@ def scan(steam_root: Path) -> list[LibraryItem]:
             if not appid or not name or not _is_game(appid, name) or appid in items:
                 continue
             art = local_art_path(steam_root, appid)
+            hero = local_art_path(steam_root, appid, "library_hero")
             items[appid] = LibraryItem(
                 id=f"steam:{appid}",
                 title=name,
                 category="steam",
                 source="steam",
                 subtitle="Steam",
-                image=None if art else CDN.format(appid=appid),
+                image=None if art else CDN.format(appid=appid, name="library_600x900"),
+                hero=None if hero else CDN.format(appid=appid, name="library_hero"),
                 art_path=str(art) if art else None,
+                hero_path=str(hero) if hero else None,
+                steam_appid=int(appid) if appid.isdigit() else None,
                 uri=f"steam://rungameid/{appid}",
             )
     return sorted(items.values(), key=lambda i: i.title.lower())
 
 
-def local_art_path(steam_root: Path, appid: str) -> Path | None:
+def local_art_path(steam_root: Path, appid: str, name: str = "library_600x900") -> Path | None:
     if not appid.isdigit():
         return None
     cache = steam_root / "appcache" / "librarycache"
     # Steam antiguo: <appid>_library_600x900.jpg; Steam reciente: <appid>/library_600x900.jpg
-    for candidate in (cache / f"{appid}_library_600x900.jpg", cache / appid / "library_600x900.jpg"):
+    for candidate in (cache / f"{appid}_{name}.jpg", cache / appid / f"{name}.jpg"):
         if candidate.exists():
             return candidate
     return None

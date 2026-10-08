@@ -11,6 +11,8 @@ class FakeLauncher:
         self.opened: list[str] = []
         self.ran: list[list[str]] = []
         self.current = None
+        self.on_exit = None
+        self.steam_appids: list[int | None] = []
 
     def open_uri(self, uri):
         self.opened.append(uri)
@@ -19,11 +21,17 @@ class FakeLauncher:
         self.ran.append(argv)
         return object()  # basta con que no sea None: cuenta como proceso propio
 
-    def track(self, item_id, title, process):
+    def track(self, item_id, title, process, steam_appid=None):
+        self.steam_appids.append(steam_appid)
         self.current = {"id": item_id, "title": title, "managed": process is not None}
 
     def status(self):
         return self.current
+
+    def finish(self, seconds):
+        """Simula que el juego en curso se cerró tras `seconds` segundos."""
+        cur, self.current = self.current, None
+        self.on_exit(cur["id"], cur["title"], seconds)
 
     def stop(self):
         was = self.current is not None and self.current["managed"]

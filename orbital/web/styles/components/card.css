@@ -1,0 +1,27 @@
+/* Card: portada de un juego o app. */
+.card {
+  position: relative; flex: none;
+  width: var(--card-width); height: var(--card-height);
+  border-radius: var(--radius-lg); overflow: hidden; text-align: left;
+  background: var(--gradient-card); border: 1px solid var(--color-border); box-shadow: var(--shadow-card);
+  transition:
+    width var(--duration-base) var(--ease-out), height var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) ease, border-color var(--duration-base) ease, opacity var(--duration-base);
+}
+.card__image { display: block; width: 100%; height: 100%; object-fit: cover; }
+.card__initial { position: absolute; top: var(--space-3); left: var(--space-4); font-size: var(--text-2xl); font-weight: var(--weight-bold); color: var(--color-text-faint); }
+.card__badge { position: absolute; top: .65rem; left: .7rem; color: var(--color-favorite); text-shadow: 0 1px 4px #000; }
+.card__meta { position: absolute; inset: auto 0 0 0; padding: var(--space-4) var(--space-4) var(--space-3); background: var(--gradient-card-meta); }
+.card__title {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  font-size: var(--text-md); font-weight: var(--weight-medium); line-height: 1.2;
+}
+.card__subtitle { color: var(--color-text-muted); font-size: var(--text-xs); }
+.card--no-art .card__meta { inset: 0; display: flex; flex-direction: column; justify-content: flex-end; }
+.card--no-art .card__badge { left: auto; right: .7rem; }
+.card--focused {
+  width: calc(var(--card-width) * var(--card-focus-scale));
+  height: calc(var(--card-height) * var(--card-focus-scale));
+  border: 3px solid var(--color-accent); box-shadow: var(--ring-focus);
+}
+.card--dimmed { opacity: .6; }

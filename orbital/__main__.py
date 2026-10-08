@@ -84,8 +84,9 @@ def print_diagnostics(catalog) -> None:
         print(f"  {emu.name}: {counts.get(emu.id, 0)} juegos en {dirs}")
         for each in [emu, *alternatives]:
             exe = emulators.resolve_executable(each)
-            role = "principal" if each is emu else "alternativo (si ES-DE lo elige)"
-            print(f"    {ok if exe else bad}{each.name} [{role}]: {exe or 'NO ENCONTRADO -> ' + each.executable}")
+            role = "principal" if each is emu else "alternativo (ES-DE o menú Y de Orbital)"
+            name = emulators.runner_name(each, exe)
+            print(f"    {ok if exe else bad}{name} [{role}]: {exe or 'NO ENCONTRADO -> ' + each.executable}")
 
 
 def main(argv: list[str] | None = None) -> None:

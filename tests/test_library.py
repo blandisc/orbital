@@ -26,7 +26,8 @@ def test_emulator_scan_filters_and_cleans(library):
     roms = sorted(i.title for i in library.items() if i.category == "emulators")
     assert roms == ["Chrono Trigger", "Super Mario World"]
     item = library.find("super mario world")
-    assert item.argv[1:3] == ["-L", "snes9x"] and item.argv[3].endswith("Super Mario World (USA).sfc")
+    argv = item.runner().argv
+    assert argv[1:3] == ["-L", "snes9x"] and argv[3].endswith("Super Mario World (USA).sfc")
 
 
 def test_clean_title():
@@ -47,6 +48,7 @@ def test_find_fuzzy(library):
 def test_launch_uri_vs_process(library):
     library.launch("steam:367520")
     assert library.launcher.opened == ["steam://rungameid/367520"]
+    assert library.launcher.steam_appids == [367520]
     library.launch("media:stremio")
     assert library.launcher.ran == [["stremio-test"]]
 

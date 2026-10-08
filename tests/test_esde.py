@@ -152,12 +152,38 @@ def test_two_switch_emulators_share_one_list(esde_home, tmp_path):
 def test_esde_choice_per_game_and_glob_paths(esde_home, tmp_path):
     cat = make_switch_catalog(esde_home, tmp_path)
     mk = cat.find("mario kart")  # <altemulator>Eden (Standalone)</altemulator>
-    assert mk.argv[0].endswith("eden.exe") and mk.argv[1:3] == ["-f", "-g"]
-    assert mk.subtitle == "Nintendo Switch · Eden"
+    argv = mk.runner().argv
+    assert argv[0].endswith("eden.exe") and argv[1:3] == ["-f", "-g"]
+    assert [r.name for r in mk.runners] == ["Ryujinx", "Eden"]
     zelda = cat.find("zelda")  # sistema: Ryujinx (Standalone) -> principal
-    assert zelda.argv[0].endswith("Ryujinx.exe") and zelda.argv[1] == "--fullscreen"
+    argv = zelda.runner().argv
+    assert argv[0].endswith("Ryujinx.exe") and argv[1] == "--fullscreen"
 
 
 def test_system_level_choice(esde_home, tmp_path):
     cat = make_switch_catalog(esde_home, tmp_path, system_label="Eden (Standalone)")
-    assert cat.find("metroid dread").argv[0].endswith("eden.exe")
+    assert cat.find("metroid dread").runner().argv[0].endswith("eden.exe")
+
+
+def test_hero_prefers_fanart(esde_home, catalog):
+    fanart = esde_home / "downloaded_media" / "switch" / "fanart"
+    fanart.mkdir(parents=True)
+    (fanart / "Metroid Dread.jpg").write_bytes(b"fan")
+    catalog.refresh()
+    metroid = catalog.find("metroid dread")
+    assert metroid.hero_path.endswith("fanart/Metroid Dread.jpg") and metroid.hero.endswith("?kind=hero")
+    with TestClient(create_app(catalog.config, catalog), client=("127.0.0.1", 1)) as c:
+        assert c.get(metroid.hero).content == b"fan"
+
+
+def test_prefer_alternative_runner(esde_home, tmp_path):
+    cat = make_switch_catalog(esde_home, tmp_path)
+    zelda = cat.find("zelda")
+    cat.launch(zelda.id, "switch-eden")  # X: abrir una vez con Eden
+    assert cat.launcher.ran[-1][0].endswith("eden.exe")
+    assert cat.describe(zelda)["runner"] == "switch"  # el predeterminado no cambia
+    cat.set_prefs(zelda.id, runner="switch-eden")  # "Usar siempre Eden"
+    cat.launch(zelda.id)
+    assert cat.launcher.ran[-1][0].endswith("eden.exe")
+    with pytest.raises(ValueError):
+        cat.set_prefs(zelda.id, runner="dolphin")

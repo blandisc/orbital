@@ -1,0 +1,12 @@
+/* Backdrop: fondo héroe a pantalla completa con fundido entre dos capas. */
+.backdrop { position: fixed; inset: 0; z-index: -1; background: var(--gradient-backdrop); }
+.backdrop__layer {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center 30%;
+  opacity: 0; transform: scale(1.04);
+  transition: opacity var(--duration-fade) var(--ease-out), transform 6s linear;
+}
+.backdrop__layer--visible { opacity: 1; transform: scale(1); }
+/* Si solo hay portada vertical, se difumina un poco para que no se vea pixelada. */
+.backdrop__layer--poster { filter: blur(2px) saturate(1.1); }
+.backdrop__scrim { position: absolute; inset: 0; background: var(--scrim-hero); }

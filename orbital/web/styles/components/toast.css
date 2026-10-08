@@ -1,0 +1,8 @@
+/* Toast: aviso breve arriba al centro. */
+.toast {
+  position: fixed; top: var(--space-6); left: 50%; z-index: var(--z-toast); transform: translateX(-50%);
+  padding: var(--space-3) var(--space-6); border-radius: var(--radius-md);
+  background: var(--color-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--color-accent);
+  box-shadow: var(--shadow-overlay); font-size: var(--text-md); animation: rise-in var(--duration-base) var(--ease-out);
+}
+.toast--error { border-left-color: var(--color-danger); }

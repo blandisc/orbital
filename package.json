@@ -1,0 +1,9 @@
+{
+  "name": "orbital-web",
+  "private": true,
+  "description": "Interfaz de Orbital: módulos ES nativos, sin paso de compilación ni dependencias.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/web/*.test.mjs"
+  }
+}

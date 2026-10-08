@@ -1,0 +1,45 @@
+/*
+ * Tokens de diseño — capa 2: semánticos del tema Nordic.
+ * Para crear otro tema (B2 verde CRT, A-Prime...) copia este archivo, cambia
+ * los valores y usa <html data-theme="nombre">. Los componentes no cambian.
+ */
+[data-theme="nordic"] {
+  color-scheme: dark;
+
+  --color-bg: var(--palette-navy-900);
+  --color-bg-deep: var(--palette-navy-950);
+  --color-bg-glow: var(--palette-navy-700);
+  --color-surface: rgba(22, 34, 56, .92);
+  --color-surface-card: var(--palette-navy-600);
+  --color-surface-card-2: #121c2e;
+  --color-glass: rgba(255, 255, 255, .06);
+  --color-glass-strong: rgba(255, 255, 255, .11);
+  --color-glass-hover: rgba(255, 255, 255, .18);
+  --color-border: rgba(255, 255, 255, .1);
+  --color-text: var(--palette-white);
+  --color-text-muted: var(--palette-slate-300);
+  --color-text-faint: rgba(255, 255, 255, .14);
+  --color-accent: var(--palette-blue-300);
+  --color-accent-strong: var(--palette-blue-500);
+  --color-on-accent: #0b1424;
+  --color-favorite: var(--palette-gold-300);
+  --color-danger: var(--palette-red-300);
+  --color-success: var(--palette-green-300);
+  --color-live: var(--palette-cyan-300);
+  --color-idle: var(--palette-navy-500);
+  --color-scrim: rgba(5, 9, 18, .55);
+
+  --gradient-primary: linear-gradient(180deg, var(--palette-blue-200), var(--palette-blue-500));
+  --gradient-card: linear-gradient(160deg, var(--palette-navy-600), #121c2e);
+  --gradient-card-meta: linear-gradient(transparent, rgba(10, 16, 28, .92) 45%);
+  --gradient-backdrop: radial-gradient(ellipse at 70% 20%, var(--palette-navy-700), var(--palette-navy-900) 70%);
+  --scrim-hero:
+    linear-gradient(90deg, rgba(10, 16, 28, .95) 0%, rgba(10, 16, 28, .72) 40%, rgba(10, 16, 28, .12) 78%),
+    linear-gradient(0deg, rgba(10, 16, 28, 1) 6%, rgba(10, 16, 28, 0) 55%);
+
+  --shadow-card: 0 14px 30px rgba(0, 0, 0, .35);
+  --shadow-overlay: 0 30px 80px rgba(0, 0, 0, .5);
+  --shadow-primary: 0 8px 24px rgba(95, 147, 240, .35);
+  --ring-focus: 0 0 0 5px rgba(140, 184, 255, .18), 0 0 34px rgba(140, 184, 255, .35), 0 20px 44px rgba(0, 0, 0, .5);
+  --blur-glass: blur(14px);
+}

@@ -12,7 +12,7 @@ from pathlib import Path
 
 from ..config import EmulatorConfig
 from .esde import EsdeLibrary
-from .models import LibraryItem
+from .models import LibraryItem, Runner
 
 log = logging.getLogger(__name__)
 
@@ -62,6 +62,14 @@ def rom_dirs(emu: EmulatorConfig, esde: EsdeLibrary | None) -> list[Path]:
     if esde and emu.system:
         return [esde.system_dir(emu.system)]
     return []
+
+
+def runner_name(emu: EmulatorConfig, exe: Path | None) -> str:
+    """Nombre corto para la interfaz: "Ryujinx", "Eden", "Dolphin"..."""
+    if emu.esde_label:
+        return emu.esde_label
+    stem = (exe or Path(emu.executable.replace("*", ""))).stem
+    return stem if any(c.isupper() for c in stem) else stem.capitalize()
 
 
 def esde_key(emu: EmulatorConfig) -> str:
@@ -118,23 +126,29 @@ def scan(
             meta = esde.meta(system, rom) if system else None
             if meta and meta.hidden:
                 continue
-            runner = emu
+            runners = [
+                Runner(c.id, runner_name(c, exes[c.id]), build_argv(c, exes[c.id], rom), str(exes[c.id].parent) if exes[c.id] else None)
+                for c in candidates
+                if c is emu or exes[c.id] is not None  # alternativas solo si están instaladas
+            ]
+            default = emu
             chosen = esde.chosen_emulator(system, rom) if system else None
             if chosen:
-                runner = next((c for c in candidates if esde_key(c) in chosen.lower()), emu)
-            exe = exes[runner.id]
+                default = next((c for c in candidates if esde_key(c) in chosen.lower()), emu)
             art = esde.cover(system, rom) if system else None
+            hero = esde.hero(system, rom) if system else None
             items.append(
                 LibraryItem(
                     id=_item_id(emu.id, rom),
                     title=(meta.name if meta and meta.name else clean_title(rom.name)),
                     category="emulators",
                     source=emu.id,
-                    subtitle=emu.name if runner is emu else f"{emu.name} · {runner.name}",
-                    argv=build_argv(runner, exe, rom),
-                    cwd=str(exe.parent) if exe else None,
+                    subtitle=emu.name,
+                    runners=runners,
+                    default_runner=default.id,
                     favorite=bool(meta and meta.favorite),
                     art_path=str(art) if art else None,
+                    hero_path=str(hero) if hero else None,
                 )
             )
     return sorted(items, key=lambda i: i.title.lower())

@@ -1,0 +1,16 @@
+/* Punto de entrada de estilos: el orden importa (tokens → tema → base → componentes). */
+@import url("tokens.css");
+@import url("themes/nordic.css");
+@import url("base.css");
+@import url("components/backdrop.css");
+@import url("components/pill.css");
+@import url("components/glyph.css");
+@import url("components/button.css");
+@import url("components/status-bar.css");
+@import url("components/hero.css");
+@import url("components/card.css");
+@import url("components/shelf.css");
+@import url("components/hints.css");
+@import url("components/sheet.css");
+@import url("components/launch-overlay.css");
+@import url("components/toast.css");

@@ -24,7 +24,7 @@ orbital = "orbital.__main__:main"
 include = ["orbital*"]
 
 [tool.setuptools.package-data]
-orbital = ["web/*"]
+orbital = ["web/*.html", "web/js/**/*.js", "web/styles/**/*.css"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

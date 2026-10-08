@@ -1,4 +1,4 @@
-"""Catálogo unificado: junta todas las fuentes y lanza cualquier elemento."""
+"""Catálogo unificado: junta todas las fuentes, aplica las preferencias y lanza cualquier elemento."""
 
 from __future__ import annotations
 
@@ -6,23 +6,30 @@ import difflib
 import logging
 import threading
 import unicodedata
+from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import quote
 
+from . import system
 from .config import Config
 from .launcher import Launcher
 from .library import emulators, esde, steam, stremio
 from .library.models import LibraryItem
+from .state import State
 
 log = logging.getLogger(__name__)
 
 CATEGORIES = [
+    {"id": "recent", "title": "Jugado recientemente"},
     {"id": "favorites", "title": "Favoritos"},
     {"id": "steam", "title": "Steam"},
     {"id": "emulators", "title": "Emuladores"},
     {"id": "media", "title": "Multimedia"},
     {"id": "apps", "title": "Apps"},
 ]
+
+# listener(evento) — el servidor lo usa para avisar a la interfaz.
+Listener = Callable[[dict], None]
 
 
 def normalize(text: str) -> str:
@@ -31,12 +38,21 @@ def normalize(text: str) -> str:
     return " ".join("".join(c if c.isalnum() else " " for c in text).split())
 
 
+def default_state(config: Config) -> State:
+    if config.source is None:
+        return State(None)
+    return State(config.source.parent / "state.json")
+
+
 class Catalog:
-    def __init__(self, config: Config, launcher: Launcher | None = None) -> None:
+    def __init__(self, config: Config, launcher: Launcher | None = None, state: State | None = None) -> None:
         self.config = config
         self.launcher = launcher or Launcher()
+        self.launcher.on_exit = self._session_ended
+        self.state = state or default_state(config)
         self.steam_root: Path | None = None
         self.esde: esde.EsdeLibrary | None = None
+        self.listeners: list[Listener] = []
         self._items: dict[str, LibraryItem] = {}
         self._lock = threading.Lock()
 
@@ -89,40 +105,71 @@ class Catalog:
                 )
             )
         for item in found:
+            url = f"/api/art/{quote(item.id, safe=':')}"
             if item.art_path:
-                item.image = f"/api/art/{quote(item.id, safe=':')}"
+                item.image = url
+            if item.hero_path:
+                item.hero = url + "?kind=hero"
         with self._lock:
             self._items = {item.id: item for item in found}
         log.info("Catálogo: %d elementos", len(found))
         return len(found)
 
     # --- consulta ------------------------------------------------------------
-    def items(self) -> list[LibraryItem]:
+    def items(self, include_hidden: bool = False) -> list[LibraryItem]:
         with self._lock:
-            return list(self._items.values())
+            items = list(self._items.values())
+        if include_hidden:
+            return items
+        return [i for i in items if not self.state.prefs(i.id).get("hidden")]
 
     def get(self, item_id: str) -> LibraryItem | None:
         with self._lock:
             return self._items.get(item_id)
 
+    def is_favorite(self, item: LibraryItem) -> bool:
+        # La preferencia de Orbital manda sobre el favorito de ES-DE.
+        return self.state.prefs(item.id).get("favorite", item.favorite)
+
+    def runner_for(self, item: LibraryItem, runner_id: str | None = None):
+        return item.runner(runner_id or self.state.prefs(item.id).get("runner"))
+
+    def describe(self, item: LibraryItem) -> dict:
+        data = item.public()
+        data["favorite"] = self.is_favorite(item)
+        if item.runners:
+            data["runner"] = self.runner_for(item).id
+        history = self.state.history(item.id)
+        data["last_played"] = history.get("last_played")
+        data["playtime"] = history.get("playtime", 0)
+        return data
+
     def grouped(self) -> list[dict]:
         items = self.items()
+        by_id = {i.id: i for i in items}
+        alpha = sorted(items, key=lambda i: i.title.lower())
         rows = []
         for cat in CATEGORIES:
-            if cat["id"] == "favorites":
-                members = [i.public() for i in sorted(items, key=lambda i: i.title.lower()) if i.favorite]
+            if cat["id"] == "recent":
+                members = [by_id[i] for i in self.state.recent() if i in by_id]
+            elif cat["id"] == "favorites":
+                members = [i for i in alpha if self.is_favorite(i)]
             elif cat["id"] == "emulators":
                 # Una fila por sistema, en el orden de config.yaml.
                 for emu in self.config.emulators:
-                    games = [i.public() for i in items if i.category == "emulators" and i.source == emu.id]
+                    games = [i for i in items if i.category == "emulators" and i.source == emu.id]
                     if games:
-                        rows.append({"id": f"emulators:{emu.id}", "title": emu.name, "items": games})
+                        rows.append({"id": f"emulators:{emu.id}", "title": emu.name,
+                                     "items": [self.describe(i) for i in games]})
                 continue
             else:
-                members = [i.public() for i in items if i.category == cat["id"]]
+                members = [i for i in items if i.category == cat["id"]]
             if members:
-                rows.append({**cat, "items": members})
+                rows.append({**cat, "items": [self.describe(i) for i in members]})
         return rows
+
+    def hidden_count(self) -> int:
+        return sum(1 for i in self.items(include_hidden=True) if self.state.prefs(i.id).get("hidden"))
 
     def find(self, query: str, category: str | None = None) -> LibraryItem | None:
         """Búsqueda difusa por título, pensada para lo que transcribe Alexa."""
@@ -140,19 +187,42 @@ class Catalog:
         close = difflib.get_close_matches(target, list(by_name), n=1, cutoff=0.6)
         return by_name[close[0]] if close else None
 
-    # --- acciones ------------------------------------------------------------
-    def launch(self, item_id: str) -> LibraryItem:
+    # --- preferencias --------------------------------------------------------
+    def set_prefs(self, item_id: str, *, favorite: bool | None = None, hidden: bool | None = None,
+                  runner: str | None = None, clear_runner: bool = False) -> dict:
         item = self.get(item_id)
         if item is None:
             raise KeyError(item_id)
-        if item.argv:
+        if favorite is not None:
+            self.state.set_pref(item_id, "favorite", favorite)
+        if hidden is not None:
+            self.state.set_pref(item_id, "hidden", True if hidden else None)
+        if runner is not None:
+            if runner not in {r.id for r in item.runners}:
+                raise ValueError(f"{item.title} no tiene el emulador {runner}")
+            self.state.set_pref(item_id, "runner", None if runner == item.default_runner else runner)
+        if clear_runner:
+            self.state.set_pref(item_id, "runner", None)
+        return self.describe(item)
+
+    # --- acciones ------------------------------------------------------------
+    def launch(self, item_id: str, runner_id: str | None = None) -> LibraryItem:
+        item = self.get(item_id)
+        if item is None:
+            raise KeyError(item_id)
+        runner = self.runner_for(item, runner_id)
+        if runner:
+            proc = self.launcher.run(runner.argv, cwd=runner.cwd)
+            self.launcher.track(item.id, item.title, proc)
+        elif item.argv:
             proc = self.launcher.run(item.argv, cwd=item.cwd)
             self.launcher.track(item.id, item.title, proc)
         elif item.uri:
             self.launcher.open_uri(item.uri)
-            self.launcher.track(item.id, item.title, None)
+            self.launcher.track(item.id, item.title, None, steam_appid=item.steam_appid)
         else:
             raise ValueError(f"{item.title} no tiene forma de lanzarse")
+        self.state.record_launch(item.id)
         return item
 
     def search_media(self, query: str) -> str:
@@ -160,3 +230,11 @@ class Catalog:
         self.launcher.open_uri(uri)
         self.launcher.track("media:stremio", f"Stremio: {query}", None)
         return uri
+
+    def _session_ended(self, item_id: str, title: str, seconds: float) -> None:
+        """El juego o emulador se cerró: guarda el tiempo y vuelve a Orbital."""
+        self.state.record_session(item_id, seconds)
+        system.bring_to_front()
+        event = {"type": "closed", "id": item_id, "title": title, "seconds": int(seconds)}
+        for listener in list(self.listeners):
+            listener(event)

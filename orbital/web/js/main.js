@@ -1,0 +1,248 @@
+/**
+ * Controlador de la app: une estado, API, entrada y componentes.
+ * Los componentes solo pintan; aquí vive el "qué pasa cuando…".
+ */
+import { api } from "./core/api.js";
+import { duration } from "./core/format.js";
+import { createInput, GLYPHS } from "./core/input.js";
+import { alternativeRunner, clampFocus, itemAt, restoreFocus, runnerName } from "./core/library.js";
+import { gameMenu, mainMenu } from "./core/menus.js";
+import { sound } from "./core/sound.js";
+import { createBackdrop } from "./components/backdrop.js";
+import { createHero } from "./components/hero.js";
+import { createHints } from "./components/hints.js";
+import { createLaunchOverlay } from "./components/launch-overlay.js";
+import { createSheet } from "./components/sheet.js";
+import { createShelf } from "./components/shelf.js";
+import { createStatusBar } from "./components/status-bar.js";
+import { createToast } from "./components/toast.js";
+
+const LAUNCH_COOLDOWN_MS = 3000;
+
+const state = {
+  rows: [],
+  focus: { r: 0, c: 0 },
+  hidden: 0,
+  modality: "keyboard",
+  running: null,
+  launchLockedUntil: 0,
+};
+
+const current = () => itemAt(state.rows, state.focus.r, state.focus.c);
+const glyphs = () => GLYPHS[state.modality];
+
+// ---------------------------------------------------------------- componentes
+const ui = {
+  backdrop: createBackdrop(),
+  status: createStatusBar({ onBrand: () => handleAction("menu") }),
+  hero: createHero({ onAction: (action) => handleAction(action) }),
+  shelf: createShelf({ onPick: (r, c) => pick(r, c) }),
+  hints: createHints(),
+  sheet: createSheet({
+    onCommand: (command) => runCommand(command),
+    onMove: () => sound.play("move"),
+    onClose: () => renderHints(),
+  }),
+  launch: createLaunchOverlay(),
+  toast: createToast(),
+};
+
+document.getElementById("app").replaceWith(
+  ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.sheet.el, ui.launch.el, ui.toast.el,
+);
+
+// ---------------------------------------------------------------- render
+function renderHints() {
+  const g = glyphs();
+  if (ui.sheet.isOpen) {
+    ui.hints.render([{ glyph: g.select, label: "Elegir" }, { glyph: g.back, label: "Cerrar" }]);
+    return;
+  }
+  const alt = alternativeRunner(current());
+  ui.hints.render([
+    { glyph: g.select, label: "Jugar" },
+    alt && { glyph: g.alt, label: `Con ${alt.name}` },
+    { glyph: g.options, label: "Opciones" },
+    { glyph: g.rows, label: "Filas", secondary: true },
+    { glyph: g.menu, label: "Menú", end: true },
+  ].filter(Boolean));
+}
+
+function setFocus(r, c, { silent = false } = {}) {
+  const next = clampFocus(state.rows, r, c);
+  const moved = next.r !== state.focus.r || next.c !== state.focus.c;
+  state.focus = next;
+  ui.shelf.setFocus(next.r, next.c);
+  if (moved || silent) {
+    const item = current();
+    ui.hero.update(item, glyphs());
+    ui.backdrop.show(item?.hero || item?.image, { poster: !!item && !item.hero });
+  }
+  if (moved && !silent) sound.play("move");
+  renderHints();
+}
+
+function setModality(modality) {
+  if (state.modality === modality) return;
+  state.modality = modality;
+  document.body.dataset.input = modality;
+  ui.hero.update(current(), glyphs(), { immediate: true });
+  renderHints();
+}
+
+// ---------------------------------------------------------------- datos
+async function loadLibrary({ refresh = false, keepId = current()?.id } = {}) {
+  const rowId = state.rows[state.focus.r]?.id;
+  try {
+    const data = refresh ? await api.refresh() : await api.library();
+    state.rows = data.rows;
+    state.hidden = data.hidden || 0;
+    ui.shelf.setRows(state.rows, {
+      emptyTitle: "Tu biblioteca está vacía",
+      emptyText: "Revisa config.yaml y abre el menú → Actualizar biblioteca.",
+    });
+    const { r, c } = restoreFocus(state.rows, { rowId, itemId: keepId, ...state.focus });
+    state.focus = { r, c };
+    setFocus(r, c, { silent: true });
+    if (refresh) ui.toast.show("Biblioteca actualizada");
+  } catch (err) {
+    ui.toast.show(`No pude cargar la biblioteca: ${err.message}`, { error: true });
+  }
+}
+
+async function pollStatus() {
+  try {
+    state.running = (await api.status()).running;
+    ui.status.setRunning(state.running);
+  } catch { /* el servidor puede estar reiniciando */ }
+}
+
+async function pollSystem() {
+  try {
+    ui.status.setSystem(await api.system());
+  } catch { /* idem */ }
+}
+
+// ---------------------------------------------------------------- acciones
+async function launch(item, runner = null) {
+  if (!item || Date.now() < state.launchLockedUntil) return; // evita dobles pulsaciones de A
+  state.launchLockedUntil = Date.now() + LAUNCH_COOLDOWN_MS;
+  sound.play("open");
+  const name = runnerName(item, runner);
+  ui.launch.show(item, name ? `${item.subtitle} · ${name}` : item.subtitle);
+  try {
+    await api.launch(item.id, runner);
+    pollStatus();
+  } catch (err) {
+    state.launchLockedUntil = 0;
+    ui.launch.hide();
+    sound.play("error");
+    ui.toast.show(err.message, { error: true });
+  }
+}
+
+function pick(r, c) {
+  // Ratón/táctil: el primer toque selecciona, el segundo abre.
+  if (r === state.focus.r && c === state.focus.c) return launch(current());
+  setFocus(r, c);
+}
+
+const findItem = (id) => state.rows.flatMap((row) => row.items).find((i) => i.id === id);
+
+async function runCommand(command) {
+  try {
+    switch (command.type) {
+      case "launch":
+        return launch(findItem(command.id), command.runner || null);
+      case "prefs":
+        await api.setPrefs(command.id, command.prefs);
+        sound.play("select");
+        if (command.message) ui.toast.show(command.message);
+        return loadLibrary({ keepId: command.id });
+      case "refresh":
+        return loadLibrary({ refresh: true });
+      case "toggle-sound":
+        sound.enabled = !sound.enabled;
+        return sound.play("select");
+      case "stop":
+        await api.stop();
+        return pollStatus();
+      case "unhide-all":
+        await api.unhideAll();
+        ui.toast.show("Juegos ocultos restaurados");
+        return loadLibrary();
+      case "close":
+        return sound.play("back");
+    }
+  } catch (err) {
+    sound.play("error");
+    ui.toast.show(err.message, { error: true });
+  }
+}
+
+function openMenu(menu) {
+  if (!menu) return;
+  sound.play("menu");
+  ui.sheet.open(menu);
+  renderHints();
+}
+
+function handleAction(action) {
+  if (ui.launch.visible) {
+    if (action === "back") ui.launch.hide();
+    return;
+  }
+  if (ui.sheet.handle(action)) {
+    if (action === "back") sound.play("back");
+    return;
+  }
+  const { r, c } = state.focus;
+  const item = current();
+  switch (action) {
+    case "up": return setFocus(r - 1, c);
+    case "down": return setFocus(r + 1, c);
+    case "left": return setFocus(r, c - 1);
+    case "right": return setFocus(r, c + 1);
+    case "pageleft": return setFocus(r, c - 5);
+    case "pageright": return setFocus(r, c + 5);
+    case "select": return launch(item);
+    case "alt": { const alt = alternativeRunner(item); return alt && launch(item, alt.id); }
+    case "options": return openMenu(gameMenu(item));
+    case "menu": return openMenu(mainMenu({ soundEnabled: sound.enabled, running: state.running, hiddenCount: state.hidden }));
+    case "back":
+    case "home":
+      if (r || c) { sound.play("back"); setFocus(0, 0, { silent: true }); }
+      return;
+    case "refresh": return loadLibrary({ refresh: true });
+  }
+}
+
+// ---------------------------------------------------------------- eventos del servidor
+function handleEvent(event) {
+  if (event.type === "toast") {
+    ui.toast.show(event.message, { error: event.ok === false });
+    ui.status.pulseAlexa();
+  } else if (event.type === "navigate") {
+    handleAction(event.direction);
+  } else if (event.type === "closed") {
+    ui.launch.hide();
+    const played = duration(event.seconds);
+    ui.toast.show(played ? `De vuelta. Jugaste ${event.title} ${played}` : `De vuelta de ${event.title}`);
+    loadLibrary({ keepId: event.id });
+  }
+  pollStatus();
+}
+
+// ---------------------------------------------------------------- arranque
+createInput({ onAction: handleAction, onModality: setModality });
+api.events(handleEvent);
+// Al volver a la ventana (p. ej. tras cerrar un juego) refresca recientes y tiempo jugado.
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) { pollStatus(); loadLibrary(); }
+});
+document.body.dataset.input = state.modality;
+setInterval(pollStatus, 5000);
+setInterval(pollSystem, 30_000);
+pollStatus();
+pollSystem();
+loadLibrary();

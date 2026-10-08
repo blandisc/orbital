@@ -15,8 +15,10 @@ from ..config import EsdeConfig, expand
 
 log = logging.getLogger(__name__)
 
-# Orden de preferencia de la imagen: la portada encaja mejor en las tarjetas verticales.
-MEDIA_KINDS = ("covers", "miximages", "screenshots")
+# Orden de preferencia: la portada encaja en las tarjetas verticales; el fondo grande
+# (héroe) queda mejor con fanart o capturas horizontales.
+COVER_KINDS = ("covers", "miximages", "screenshots")
+HERO_KINDS = ("fanart", "screenshots", "titlescreens")
 IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".webp")
 
 
@@ -60,8 +62,14 @@ class EsdeLibrary:
         return self.meta(system, rom).altemulator or self.gamelist(system).system_emulator
 
     def cover(self, system: str, rom: Path) -> Path | None:
+        return self.media(system, rom, COVER_KINDS)
+
+    def hero(self, system: str, rom: Path) -> Path | None:
+        return self.media(system, rom, HERO_KINDS)
+
+    def media(self, system: str, rom: Path, kinds: tuple[str, ...]) -> Path | None:
         rel = rom.relative_to(self.system_dir(system)).with_suffix("")
-        for kind in MEDIA_KINDS:
+        for kind in kinds:
             base = self.media_root / system / kind / rel
             for ext in IMAGE_EXTS:
                 candidate = base.with_name(base.name + ext)

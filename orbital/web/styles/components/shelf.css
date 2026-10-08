@@ -1,0 +1,9 @@
+/* Shelf: filas de tarjetas; se ve una fila a la vez con la siguiente asomando. */
+.shelf { position: absolute; left: 0; right: 0; bottom: 3.6rem; height: calc(var(--row-height) + var(--space-4)); overflow: hidden; }
+.shelf__rows { transition: transform var(--duration-slow) var(--ease-out); }
+.shelf__row { height: var(--row-height); padding: 0 var(--page-gutter); }
+.shelf__heading { display: flex; align-items: baseline; gap: var(--space-2); height: var(--space-8); font-size: var(--text-lg); font-weight: var(--weight-medium); transition: opacity var(--duration-base); }
+.shelf__count { color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-regular); }
+.shelf__row:not(.shelf__row--current) .shelf__heading { opacity: .55; }
+.shelf__track { display: flex; align-items: flex-end; gap: var(--card-gap); height: calc(var(--row-height) - var(--space-8) - .2rem); transition: transform var(--duration-slow) var(--ease-out); }
+.shelf__empty { padding-top: var(--space-4); color: var(--color-text-muted); }

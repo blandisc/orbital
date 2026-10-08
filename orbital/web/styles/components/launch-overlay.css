@@ -1,0 +1,13 @@
+/* LaunchOverlay: pantalla "Abriendo…" con el arte del juego. */
+.launch { position: fixed; inset: 0; z-index: var(--z-overlay); display: grid; place-items: center; background: var(--color-bg); animation: fade-in var(--duration-base) ease; overflow: hidden; }
+.launch__backdrop { position: absolute; inset: -2rem; background-size: cover; background-position: center; filter: blur(28px) brightness(.45); }
+.launch__content { position: relative; display: flex; align-items: center; gap: var(--space-8); }
+.launch__cover { width: 12rem; height: 18rem; border-radius: var(--radius-lg); background: var(--color-surface-card) center / cover; box-shadow: var(--shadow-overlay); animation: rise-in var(--duration-slow) var(--ease-out); }
+.launch__label { color: var(--color-accent); font-size: var(--text-sm); font-weight: var(--weight-medium); letter-spacing: var(--tracking-wider); text-transform: uppercase; }
+.launch__title { max-width: 26rem; margin: var(--space-2) 0; font-size: var(--text-2xl); font-weight: var(--weight-bold); line-height: 1.1; }
+.launch__subtitle { color: var(--color-text-muted); font-size: var(--text-md); }
+.launch__spinner { width: 2rem; height: 2rem; margin-top: var(--space-6); border-radius: 50%; border: 3px solid var(--color-text-faint); border-top-color: var(--color-accent); animation: spin .9s linear infinite; }
+@media (max-width: 700px) {
+  .launch__content { flex-direction: column; text-align: center; padding: 0 var(--page-gutter); }
+  .launch__spinner { margin-inline: auto; }
+}

@@ -30,8 +30,24 @@ se controla con la voz a través de **Alexa**.
 | **Apps** | Cualquier ejecutable o URL (ES-DE, YouTube TV, Playnite…). |
 | **Voz** | `/api/voice` acepta intents de Alexa o texto libre en español ("abre hollow knight", "busca dune en stremio", "cierra el juego", "ve a la derecha"). |
 
-Controles: **D-pad / stick** para moverte, **A** para abrir, **B** para volver y **Y** para actualizar la biblioteca.
-Con teclado: flechas, Enter, Esc y R. Los indicadores de abajo cambian según uses el mando o el teclado.
+### Controles
+
+| Mando | Teclado | Acción |
+|---|---|---|
+| D-pad / stick | Flechas | Moverse (↑↓ cambia de fila) |
+| A | Enter | Jugar |
+| X | X | Abrir con el emulador alternativo (p. ej. Eden) |
+| Y | Y | Opciones del juego: favorito, abrir con…, usar siempre…, ocultar |
+| ☰ / View | M | Menú: actualizar, sonidos, cerrar el juego, mostrar ocultos |
+| B | Esc | Volver al inicio / cerrar menú |
+| LB / RB | RePág / AvPág | Saltar de 5 en 5 |
+
+Con el ratón o la pantalla táctil: un toque selecciona y el segundo abre. Los indicadores del pie
+cambian solos según uses el mando o el teclado.
+
+Al cerrar un emulador (o un juego de Steam en Windows, que se detecta por el registro de Steam),
+Orbital vuelve al frente, guarda el tiempo jugado y actualiza "Jugado recientemente". El historial
+y las preferencias se guardan en `state.json`, junto a `config.yaml`.
 
 ## Instalación en la Legion Go (Windows 11)
 
@@ -116,7 +132,11 @@ Frases de ejemplo:
 |---|---|---|
 | GET | `/api/library` | Biblioteca agrupada por filas |
 | POST | `/api/library/refresh` | Vuelve a escanear |
-| POST | `/api/launch` | `{"id": "steam:367520"}` |
+| POST | `/api/launch` | `{"id": "steam:367520", "runner": null}` (`runner` = emulador alternativo) |
+| POST | `/api/prefs` | `{"id": …, "favorite": true, "hidden": false, "runner": "switch-eden"}` |
+| POST | `/api/prefs/unhide-all` | Vuelve a mostrar los juegos ocultos |
+| GET | `/api/system` | Wi-Fi y última actividad de Alexa |
+| GET | `/api/art/<id>?kind=cover\|hero` | Portada o fondo (solo imágenes asociadas a un elemento) |
 | GET | `/api/status` | Lo que está abierto |
 | POST | `/api/stop` | Cierra el proceso lanzado por Orbital |
 | POST | `/api/voice` | `{"intent": "...", "slots": {...}}` o `{"text": "abre hades"}` |
@@ -126,11 +146,47 @@ Seguridad: las peticiones que vienen del propio equipo no necesitan token; las q
 o a través de un proxy o túnel (cabeceras `X-Forwarded-For`, `CF-Connecting-IP`…) sí. Las peticiones con
 un `Origin` de otra web se rechazan, para que una página maliciosa no pueda lanzar cosas en tu equipo.
 
+## Interfaz (frontend)
+
+Módulos ES nativos que Edge ejecuta directamente: **sin paso de compilación, sin dependencias**.
+
+```
+orbital/web/
+  index.html                 # solo carga main.css y main.js
+  styles/
+    tokens.css               # capa 1: primitivos (paleta, espacios, tipografía, movimiento, layout)
+    themes/nordic.css        # capa 2: tokens semánticos del tema (--color-accent, --scrim-hero...)
+    base.css                 # reset y globales
+    components/*.css         # un archivo por componente, nomenclatura BEM (.card__title, .card--focused)
+    main.css                 # orden de importación
+  js/
+    main.js                  # controlador: estado + API + entrada + componentes
+    components/              # Card, Shelf, Hero, Button, Glyph, Sheet, StatusBar, Hints,
+                             # LaunchOverlay, Toast, Backdrop — fábricas que devuelven { el, … }
+    core/                    # dom (helper h()), api, input, menus, library, format, sound, storage, tokens
+```
+
+Reglas del sistema:
+
+- **Los componentes solo usan tokens semánticos**, nunca colores ni medidas sueltas ni primitivos
+  (`--palette-*`). Para un tema nuevo (B2 verde CRT, A-Prime…) copia `themes/nordic.css`, cambia los
+  valores, impórtalo en `main.css` y pon `<html data-theme="b2">`.
+- **El DOM se crea con `h()`** (`core/dom.js`) usando `textContent`: los títulos de los juegos nunca
+  se insertan como HTML.
+- **Los componentes no conocen la lógica**: reciben datos y callbacks (`onPress`, `onCommand`). Los
+  menús son datos (`core/menus.js`) con un `command` que ejecuta `main.js`.
+- **La entrada se abstrae en acciones** (`up`, `select`, `options`…): teclado, rueda, táctil, mando
+  y Alexa (`navigate`) pasan por el mismo `handleAction`.
+- El layout que necesita JS (ancho de tarjeta, alto de fila) se lee de los tokens con `tokenPx()`,
+  no está duplicado en el código.
+- La lógica pura (`format`, `library`, `menus`, `input`) tiene pruebas con `node --test`.
+
 ## Desarrollo
 
 ```bash
 pip install -e ".[dev]"
-pytest
+pytest                              # backend (Python)
+npm test                            # lógica del frontend (node --test, sin dependencias)
 python -m orbital --ui none -v      # solo el servidor; abre http://127.0.0.1:8710
 ```
 
@@ -142,8 +198,10 @@ orbital/
   launcher.py    # procesos y URIs multiplataforma
   voice.py       # intents de Alexa y comandos de texto
   server.py      # API FastAPI + SSE + seguridad
+  state.py       # recientes, tiempo jugado y preferencias (state.json)
+  system.py      # traer Orbital al frente (Windows) y estado del Wi-Fi
   library/       # steam.py, emulators.py, esde.py, stremio.py, vdf.py
-  web/           # interfaz (HTML/CSS/JS, Gamepad API)
+  web/           # interfaz (ver "Interfaz")
 alexa/           # Lambda + modelo de interacción
 scripts/         # instalación en Windows y servicio systemd
 ```
@@ -152,9 +210,10 @@ scripts/         # instalación en Windows y servicio systemd
 
 - [ ] Accesos directos "no Steam" (`shortcuts.vdf` binario) para quien usa Steam ROM Manager.
 - [x] Portadas, nombres y favoritos de ES-DE.
+- [x] "Jugado recientemente", tiempo jugado, favoritos y ocultos propios.
+- [x] Volver a Orbital automáticamente al cerrar un juego.
+- [x] Tema Nordic con sistema de tokens.
+- [ ] Temas B2 Green CRT y A-Prime (solo falta su archivo de tokens).
 - [ ] Portadas de SteamGridDB para lo que ES-DE no tenga.
-- [ ] "Jugado recientemente".
-- [ ] Volver a Orbital automáticamente al cerrar un juego (traer la ventana al frente).
-- [ ] Temas visuales (retomar los de orbit-shell: B2 Green CRT, A-Prime, Nordic).
 - [ ] Control de volumen y suspensión por voz.
 - [ ] Empaquetar como `.exe` (PyInstaller) para no depender de Python.

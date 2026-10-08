@@ -54,3 +54,32 @@ def test_voice_endpoint(make_client, library):
                    headers={"Authorization": "Bearer secreto"})
         assert r.json() == {"ok": True, "speech": "Abriendo Hollow Knight."}
         assert c.post("/api/voice", json={}, headers={"Authorization": "Bearer secreto"}).status_code == 422
+
+
+def test_prefs_endpoint(make_client):
+    with make_client() as c:
+        r = c.post("/api/prefs", json={"id": "steam:367520", "favorite": True})
+        assert r.json()["favorite"] is True
+        assert c.get("/api/library").json()["rows"][0]["id"] == "favorites"
+        c.post("/api/prefs", json={"id": "steam:367520", "hidden": True})
+        assert c.get("/api/library").json()["hidden"] == 1
+        assert c.post("/api/prefs/unhide-all").json() == {"restored": 1}
+        assert c.post("/api/prefs", json={"id": "nada", "favorite": True}).status_code == 404
+
+
+def test_system_and_alexa_indicator(make_client):
+    with make_client(REMOTE) as c:
+        auth = {"Authorization": "Bearer secreto"}
+        assert c.get("/api/system", headers=auth).json()["alexa_last"] is None
+        c.post("/api/voice", json={"text": "abre hades"}, headers=auth)
+        assert c.get("/api/system", headers=auth).json()["alexa_last"] > 0
+
+
+def test_closed_event_reaches_ui(make_client, library):
+    with make_client() as c:
+        app_bus = c.app.state.bus
+        queue = app_bus.subscribe()
+        library.launch("steam:367520")
+        library.launcher.finish(60)
+        event = c.portal.call(queue.get)
+        assert event["type"] == "closed" and event["title"] == "Hollow Knight"
