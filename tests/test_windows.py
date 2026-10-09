@@ -51,6 +51,6 @@ def test_kiosk_open_and_close(tmp_path):
     fake = tmp_path / "browser.cmd"
     fake.write_text("@ping -n 30 127.0.0.1 >nul\n")
     kiosk = KioskWindow("http://x", str(fake), tmp_path / "perfil")
-    assert kiosk.open() and kiosk.is_open
-    assert kiosk.close() and not kiosk.is_open
+    assert kiosk.open() and kiosk.is_open and not kiosk.exited_by_user
+    assert kiosk.close() and not kiosk.is_open and kiosk.exited_by_user
     assert kiosk.close() is False

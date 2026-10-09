@@ -84,6 +84,7 @@ class KioskWindow:
         self.browser = browser
         self.profile_dir = profile_dir or default_profile_dir()
         self._process: subprocess.Popen | None = None
+        self.exited_by_user = False  # "Salir al escritorio": no la reabrimos sola al cerrar un juego
         self._lock = threading.Lock()
 
     @property
@@ -92,6 +93,7 @@ class KioskWindow:
 
     def open(self) -> bool:
         with self._lock:
+            self.exited_by_user = False
             if self.is_open:
                 return system.bring_to_front()
             exe = find_browser(self.browser)
@@ -109,6 +111,7 @@ class KioskWindow:
         """Sale al escritorio. Orbital sigue escuchando (Alexa puede volver a abrirla)."""
         with self._lock:
             proc, self._process = self._process, None
+            self.exited_by_user = True
         if proc is None or proc.poll() is not None:
             return False
         if sys.platform == "win32":

@@ -81,6 +81,7 @@ class Catalog:
         self.config = config
         self.launcher = launcher or Launcher()
         self.launcher.on_exit = self._session_ended
+        self.kiosk = None  # KioskWindow si Orbital abrió la interfaz (la reabre al cerrar un juego)
         self.state = state or default_state(config)
         self.steam_root: Path | None = None
         self.esde: esde.EsdeLibrary | None = None
@@ -353,7 +354,10 @@ class Catalog:
     def _session_ended(self, item_id: str, title: str, seconds: float) -> None:
         """El juego o emulador se cerró: guarda el tiempo y vuelve a Orbital."""
         self.state.record_session(item_id, seconds)
-        system.bring_to_front()
+        if self.kiosk is not None and not self.kiosk.exited_by_user:
+            self.kiosk.open()  # al frente o, si alguien cerró la ventana, otra vez abierta
+        else:
+            system.bring_to_front()
         if item_id == "media:stremio":
             self.refresh_stremio(background=True)  # el progreso de "Seguir viendo" cambió
         self._notify({"type": "closed", "id": item_id, "title": title, "seconds": int(seconds)})

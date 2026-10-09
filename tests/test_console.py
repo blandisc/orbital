@@ -48,17 +48,31 @@ def test_kiosk_open_and_close(tmp_path):
 class FakeKiosk:
     def __init__(self):
         self.is_open = True
+        self.exited_by_user = False
         self.calls = []
 
     def open(self):
         self.calls.append("open")
-        self.is_open = True
+        self.is_open, self.exited_by_user = True, False
         return True
 
     def close(self):
         self.calls.append("close")
-        self.is_open = False
+        self.is_open, self.exited_by_user = False, True
         return True
+
+
+def test_game_end_reopens_window_unless_user_exited(library, monkeypatch):
+    fronted = []
+    monkeypatch.setattr("orbital.catalog.system.bring_to_front", lambda: fronted.append(1) or True)
+    kiosk = FakeKiosk()
+    create_app(library.config, library, kiosk)
+    kiosk.is_open = False  # alguien cerró Edge (Alt+F4) mientras jugaba
+    library._session_ended("emu:x", "Juego", 60)
+    assert kiosk.calls == ["open"] and kiosk.is_open
+    kiosk.close()  # Salir al escritorio a propósito: no la reabrimos sola
+    library._session_ended("emu:x", "Juego", 60)
+    assert kiosk.calls == ["open", "close"] and fronted == [1]
 
 
 def test_voice_exit_and_reopen(library):

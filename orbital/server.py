@@ -106,6 +106,8 @@ def token_ok(request: Request, expected: str) -> bool:
 
 def create_app(config: Config, catalog: Catalog | None = None, kiosk=None) -> FastAPI:
     catalog = catalog or Catalog(config)
+    if kiosk is not None:
+        catalog.kiosk = kiosk
     voice = VoiceController(catalog, kiosk)
     bus = EventBus()
     @asynccontextmanager
