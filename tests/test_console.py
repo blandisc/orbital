@@ -128,6 +128,28 @@ def test_backup_copies_lose_even_if_newer(tmp_path):
     assert found["mgba.exe"] == only_backup and "dolphin.exe" in found
 
 
+def test_without_console_logs_go_to_file(tmp_path, monkeypatch):
+    import sys
+
+    from orbital import __main__ as entry
+
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    assert entry.ensure_streams() is None  # con consola no toca nada
+    (tmp_path / "orbital").mkdir()
+    (tmp_path / "orbital" / "orbital.log").write_text("anterior", encoding="utf-8")
+    monkeypatch.setattr(sys, "stdout", None)  # así arranca pythonw.exe
+    monkeypatch.setattr(sys, "stderr", None)
+    path = entry.ensure_streams()
+    try:
+        assert path == tmp_path / "orbital" / "orbital.log"
+        print("Configuración lista")
+        assert sys.stderr is sys.stdout
+    finally:
+        sys.stdout.close()
+    assert path.read_text(encoding="utf-8") == "Configuración lista\n"
+    assert (tmp_path / "orbital" / "orbital.log.1").read_text(encoding="utf-8") == "anterior"
+
+
 def test_psp_accepts_chd():
     psp = next(k for k in detect.KNOWN if k.id == "psp")
     assert ".chd" in psp.extensions  # PPSSPP abre CHD desde la 1.15

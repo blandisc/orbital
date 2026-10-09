@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
+import sys
 import threading
 import time
 import urllib.request
@@ -163,7 +165,28 @@ def serve(config, app, public_app) -> None:
     asyncio.run(run_all())
 
 
+def log_file_path() -> Path:
+    base = os.environ.get("LOCALAPPDATA") or os.environ.get("XDG_STATE_HOME") or str(Path.home() / ".local" / "state")
+    return Path(base) / "orbital" / "orbital.log"
+
+
+def ensure_streams() -> Path | None:
+    """Con pythonw.exe (acceso directo de inicio) no hay consola: sys.stdout/stderr son None y
+    uvicorn no arranca. En ese caso todo va a orbital.log (y la ejecución anterior a orbital.log.1)."""
+    if sys.stdout is not None and sys.stderr is not None:
+        return None
+    path = log_file_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists():
+        path.replace(path.with_suffix(".log.1"))
+    stream = open(path, "w", encoding="utf-8", buffering=1)  # noqa: SIM115 - vive todo el proceso
+    sys.stdout = sys.stdout or stream
+    sys.stderr = sys.stderr or stream
+    return path
+
+
 def main(argv: list[str] | None = None) -> None:
+    ensure_streams()
     parser = argparse.ArgumentParser(prog="orbital", description="Interfaz de consola para Legion Go")
     parser.add_argument("-c", "--config", type=Path, help=f"Ruta del config.yaml (por defecto {default_config_path()})")
     parser.add_argument("--ui", choices=["browser", "window", "none"], help="Sobrescribe ui.mode")
