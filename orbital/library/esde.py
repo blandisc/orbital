@@ -44,6 +44,7 @@ class EsdeLibrary:
     media_root: Path
     executable: Path | None = None
     _gamelists: dict[str, Gamelist] = field(default_factory=dict)
+    _default_emulators: dict[str, str] | None = None
 
     def system_dir(self, system: str) -> Path:
         return self.rom_root / system
@@ -58,8 +59,15 @@ class EsdeLibrary:
         return self.gamelist(system).games.get(key, GameMeta())
 
     def chosen_emulator(self, system: str, rom: Path) -> str | None:
-        """Etiqueta del emulador elegido en ES-DE: primero el del juego, luego el del sistema."""
-        return self.meta(system, rom).altemulator or self.gamelist(system).system_emulator
+        """Etiqueta del emulador elegido en ES-DE: el del juego, el del sistema o el de es_systems.xml."""
+        return (self.meta(system, rom).altemulator or self.gamelist(system).system_emulator
+                or self.default_emulator(system))
+
+    def default_emulator(self, system: str) -> str | None:
+        """Primer <command> del sistema en custom_systems/es_systems.xml (el que ES-DE usa por defecto)."""
+        if self._default_emulators is None:
+            self._default_emulators = load_default_emulators(self.home / "custom_systems" / "es_systems.xml")
+        return self._default_emulators.get(system)
 
     def cover(self, system: str, rom: Path) -> Path | None:
         return self.media(system, rom, COVER_KINDS)
@@ -109,6 +117,26 @@ def load_gamelist(path: Path) -> Gamelist:
             )
     label = (root.findtext("alternativeEmulator/label") or "").strip() or None
     return Gamelist(games=games, system_emulator=label)
+
+
+def load_default_emulators(path: Path) -> dict[str, str]:
+    """Sistema -> etiqueta de su primer <command label="..."> en un es_systems.xml propio."""
+    if not path.exists():
+        return {}
+    try:
+        text = re.sub(r"^\s*<\?xml[^>]*\?>", "", path.read_text(encoding="utf-8-sig", errors="replace"))
+        root = ET.fromstring(text)
+    except ET.ParseError as exc:
+        log.warning("No pude leer %s: %s", path, exc)
+        return {}
+    defaults: dict[str, str] = {}
+    for system in root.iter("system"):
+        name = (system.findtext("name") or "").strip()
+        command = system.find("command")
+        label = (command.get("label") or "").strip() if command is not None else ""
+        if name and label:
+            defaults[name] = label
+    return defaults
 
 
 def read_settings(home: Path) -> dict[str, str]:

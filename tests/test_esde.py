@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pytest
@@ -190,6 +191,32 @@ def test_esde_choice_per_game_and_glob_paths(esde_home, tmp_path):
 def test_system_level_choice(esde_home, tmp_path):
     cat = make_switch_catalog(esde_home, tmp_path, system_label="Eden (Standalone)")
     assert cat.find("metroid dread").runner().argv[0].endswith("eden.exe")
+
+
+CUSTOM_SYSTEMS = """<?xml version="1.0" encoding="UTF-8"?>
+<!-- es_systems.xml propio -->
+<systemList>
+    <system>
+        <name>switch</name>
+        <command label="Eden (Standalone)">%STARTDIR%=C:\\eden call "C:\\eden\\launch-eden.cmd" -f -g %ROM%</command>
+        <command label="Ryujinx (Standalone)">%EMULATOR_RYUJINX% %ROM%</command>
+    </system>
+</systemList>
+"""
+
+
+def test_default_emulator_from_custom_systems(esde_home, tmp_path):
+    (esde_home / "custom_systems").mkdir()
+    (esde_home / "custom_systems" / "es_systems.xml").write_text(CUSTOM_SYSTEMS, encoding="utf-8")
+    assert esde.load_default_emulators(esde_home / "custom_systems" / "es_systems.xml") == {"switch": "Eden (Standalone)"}
+    # La elección del sistema en el gamelist (Ryujinx) manda sobre el es_systems.xml...
+    cat = make_switch_catalog(esde_home, tmp_path)
+    assert cat.find("zelda").runner().argv[0].endswith("Ryujinx.exe")
+    # ...y sin ella, se usa el primer <command> (Eden), como hace ES-DE.
+    gl = esde_home / "gamelists" / "switch" / "gamelist.xml"
+    gl.write_text(re.sub(r"<alternativeEmulator>.*?</alternativeEmulator>", "", gl.read_text(), flags=re.S))
+    cat = make_switch_catalog(esde_home, tmp_path)
+    assert cat.find("zelda").runner().argv[0].endswith("eden.exe")
 
 
 def test_hero_prefers_fanart(esde_home, catalog):

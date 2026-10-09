@@ -69,6 +69,9 @@ class Launcher:
         kwargs: dict = {"cwd": cwd, "stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
         if sys.platform == "win32":
             kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
+            if argv and argv[0].lower().endswith((".cmd", ".bat")):
+                # Un .cmd (launch-eden.cmd) abriría una consola negra encima de Orbital.
+                kwargs["creationflags"] |= subprocess.CREATE_NO_WINDOW  # type: ignore[attr-defined]
         else:
             kwargs["start_new_session"] = True
         return subprocess.Popen(argv, **kwargs)
@@ -127,9 +130,25 @@ class Launcher:
             cur = self.current
         if cur is None or cur.process is None or cur.process.poll() is not None:
             return False
+        if sys.platform == "win32":
+            # terminate() solo cierra el proceso directo: con un .cmd (launch-eden.cmd) o un
+            # emulador que abre hijos, el juego seguiría abierto. taskkill /T cierra el árbol,
+            # primero pidiendo cerrar las ventanas y, si no responden, a la fuerza.
+            _taskkill(cur.process.pid)
+            try:
+                cur.process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                _taskkill(cur.process.pid, force=True)
+            return True
         cur.process.terminate()
         try:
             cur.process.wait(timeout=5)
         except subprocess.TimeoutExpired:
             cur.process.kill()
         return True
+
+
+def _taskkill(pid: int, force: bool = False) -> None:
+    cmd = ["taskkill", "/PID", str(pid), "/T"] + (["/F"] if force else [])
+    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
