@@ -81,6 +81,29 @@ def test_settings_and_espath(esde_home):
     assert lib.executable == esde_home.parent / "ES-DE.exe"
 
 
+def test_portable_default_rom_dir(esde_home, monkeypatch):
+    # ROMDirectory vacío: instalado -> ~/ROMs; portable (portable.txt) -> junto a ES-DE.exe.
+    settings = esde_home / "settings" / "es_settings.xml"
+    settings.write_text('<?xml version="1.0"?>\n<string name="ROMDirectory" value="" />\n')
+    monkeypatch.setattr(Path, "home", lambda: esde_home.parent / "usuario")
+    cfg = parse_config({"esde": {"path": str(esde_home)}}).esde
+    assert esde.find(cfg).rom_root == esde_home.parent / "usuario" / "ROMs"
+    (esde_home.parent / "portable.txt").write_bytes(b"")
+    assert esde.find(cfg).rom_root == esde_home.parent / "ROMs"
+
+
+def test_finds_portable_in_downloads(tmp_path, monkeypatch):
+    portable = tmp_path / "Downloads" / "ES-DE"
+    (portable / "ES-DE" / "settings").mkdir(parents=True)
+    (portable / "ES-DE.exe").write_bytes(b"")
+    (portable / "portable.txt").write_bytes(b"")
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    monkeypatch.setattr(esde.sys, "platform", "win32")
+    assert portable / "ES-DE" in esde.candidate_homes()
+    lib = esde.find(parse_config({}).esde)
+    assert lib.home == portable / "ES-DE" and lib.rom_root == portable / "ROMs"
+
+
 def test_gamelist_names_hidden_exclude(catalog):
     titles = sorted(i.title for i in catalog.items() if i.category == "emulators")
     assert titles == ["Mario Kart 8 Deluxe", "Metroid Dread", "The Legend of Zelda: Tears of the Kingdom"]

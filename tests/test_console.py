@@ -115,6 +115,24 @@ def test_detects_known_emulators(downloads):
     assert eden.args == ["-f", "-g", "{rom}"] and eden.system == "switch" and eden.esde_label == "Eden"
 
 
+def test_backup_copies_lose_even_if_newer(tmp_path):
+    d = tmp_path / "Emulators"
+    good = touch(d / "eden" / "eden.exe", mtime=1_000)
+    touch(d / "eden.bak-pre-zen4-20261002-1439" / "eden.exe", mtime=2_000)
+    touch(d / "ryujinx-old" / "Ryujinx.exe", mtime=2_000)
+    only_backup = touch(d / "backup" / "mGBA" / "mGBA.exe")
+    touch(d / "Dolphin-x64" / "Dolphin.exe")  # "-x64" no es un respaldo
+    found = detect.find_executables([detect.SearchDir(d)])
+    assert found["eden.exe"] == good
+    assert found["ryujinx.exe"].parent.name == "ryujinx-old"  # si solo hay respaldo, se usa
+    assert found["mgba.exe"] == only_backup and "dolphin.exe" in found
+
+
+def test_psp_accepts_chd():
+    psp = next(k for k in detect.KNOWN if k.id == "psp")
+    assert ".chd" in psp.extensions  # PPSSPP abre CHD desde la 1.15
+
+
 def test_config_overrides_detection(downloads):
     mine = parse_config({"emulators": [{"id": "gba", "name": "GBA (RetroArch)", "executable": "retroarch"}]}).emulators
     result = detect.detect([detect.SearchDir(downloads)], skip_ids={"gba"})

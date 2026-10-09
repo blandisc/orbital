@@ -119,12 +119,23 @@ def read_settings(home: Path) -> dict[str, str]:
     return dict(re.findall(r'<string\s+name="([^"]+)"\s+value="([^"]*)"', text))
 
 
+def _portable_homes(base: Path) -> list[Path]:
+    """ES-DE portable descomprimido en `base` (p. ej. Descargas\\ES-DE\\ES-DE.exe + datos en ES-DE\\)."""
+    try:
+        dirs = [base, *(p for p in base.iterdir() if p.is_dir())]
+    except OSError:
+        return []
+    return [d / "ES-DE" for d in dirs if (d / "ES-DE.exe").is_file()]
+
+
 def candidate_homes() -> list[Path]:
     homes = [Path.home() / "ES-DE"]
     if sys.platform == "win32":
         # Versión portable típica: C:\ES-DE\ES-DE.exe con los datos en C:\ES-DE\ES-DE
         for drive in ("C:\\", "D:\\"):
             homes += [Path(drive) / "ES-DE" / "ES-DE", Path(drive) / "ES-DE"]
+        for base in (Path.home() / "Downloads", Path.home() / "Desktop"):
+            homes += _portable_homes(base)
     return homes
 
 
@@ -163,7 +174,9 @@ def find(cfg: EsdeConfig) -> EsdeLibrary | None:
             return default
         return Path(expand(value.replace("%ESPATH%", espath)))
 
-    rom_root = resolve(settings.get("ROMDirectory"), Path.home() / "ROMs")
+    # Sin ROMDirectory, ES-DE usa ~/ROMs, salvo en modo portable (portable.txt): ahí es %ESPATH%\ROMs.
+    portable = (Path(espath) / "portable.txt").is_file()
+    rom_root = resolve(settings.get("ROMDirectory"), Path(espath) / "ROMs" if portable else Path.home() / "ROMs")
     media_root = resolve(settings.get("MediaDirectory"), home / "downloaded_media")
     log.info("ES-DE: datos=%s ROMs=%s", home, rom_root)
     return EsdeLibrary(home=home, rom_root=rom_root, media_root=media_root, executable=exe)

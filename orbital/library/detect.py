@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -58,7 +59,7 @@ KNOWN: tuple[KnownEmulator, ...] = (
     KnownEmulator("ps2", "PlayStation 2", "ps2", ("pcsx2-qt.exe", "pcsx2-qt"),
                   ("-batch", "-fullscreen", "{rom}"), (".iso", ".chd", ".cso"), label="PCSX2"),
     KnownEmulator("psp", "PSP", "psp", ("ppssppwindows64.exe", "ppssppsdl"),
-                  ("--fullscreen", "{rom}"), (".iso", ".cso", ".pbp"), label="PPSSPP"),
+                  ("--fullscreen", "{rom}"), (".iso", ".cso", ".chd", ".pbp"), label="PPSSPP"),
     KnownEmulator("nds", "Nintendo DS", "nds", ("melonds.exe", "melonds"),
                   ("-f", "{rom}"), (".nds", ".zip"), label="melonDS"),
     KnownEmulator("wiiu", "Wii U", "wiiu", ("cemu.exe",),
@@ -120,10 +121,26 @@ def _walk(root: Path, depth: int):
             continue
 
 
+_BACKUP_DIR = re.compile(r"\.bak|[-_. ](bak|backup|old|respaldo)\b|^(bak|backup|old|respaldo)\b", re.IGNORECASE)
+
+
+def _is_backup(path: Path, root: Path) -> bool:
+    """¿Está dentro de una carpeta de respaldo (eden.bak-2026…, ryujinx-old)?"""
+    try:
+        parts = path.parent.relative_to(root).parts
+    except ValueError:
+        parts = path.parent.parts
+    return any(_BACKUP_DIR.search(part) for part in parts)
+
+
 def find_executables(dirs: list[SearchDir]) -> dict[str, Path]:
-    """Nombre de ejecutable en minúsculas -> la copia más reciente encontrada."""
+    """Nombre de ejecutable en minúsculas -> la copia más reciente encontrada.
+
+    Las copias en carpetas de respaldo solo se usan si no hay otra: la fecha del .exe viene del
+    zip original, así que un respaldo puede parecer "más nuevo" que la versión en uso.
+    """
     wanted = {name for known in KNOWN for name in known.exe_names}
-    found: dict[str, Path] = {}
+    found: dict[str, tuple[tuple[bool, float], Path]] = {}
     seen: set[Path] = set()
     for search in dirs:
         root = search.path
@@ -135,11 +152,12 @@ def find_executables(dirs: list[SearchDir]) -> dict[str, Path]:
             if name not in wanted:
                 continue
             try:
-                if name not in found or path.stat().st_mtime > found[name].stat().st_mtime:
-                    found[name] = path
+                rank = (not _is_backup(path, root), path.stat().st_mtime)
             except OSError:
                 continue
-    return found
+            if name not in found or rank > found[name][0]:
+                found[name] = (rank, path)
+    return {name: path for name, (_, path) in found.items()}
 
 
 def detect(dirs: list[SearchDir], skip_ids: set[str] = frozenset()) -> Detection:
