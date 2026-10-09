@@ -138,9 +138,9 @@ def test_spanish_conjugations_reach_same_intent():
 # --------------------------------------------------------------------- asistente
 def test_ensure_token_keeps_comments(tmp_path):
     cfg = tmp_path / "config.yaml"
-    cfg.write_text('# mi config\nserver:\n  port: 8710\n  token: "CAMBIA-ESTE-TOKEN"   # cámbialo\nui:\n  mode: browser\n')
+    cfg.write_text('# mi config\nserver:\n  port: 8710\n  token: "CAMBIA-ESTE-TOKEN"   # cámbialo\nui:\n  mode: browser\n', encoding="utf-8")
     token, created = alexa_setup.ensure_token(cfg)
-    text = cfg.read_text()
+    text = cfg.read_text(encoding="utf-8")
     assert created and len(token) > 30 and text.startswith("# mi config")
     assert yaml.safe_load(text)["server"] == {"port": 8710, "token": token}
     assert alexa_setup.ensure_token(cfg) == (token, False)  # idempotente

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -173,7 +175,7 @@ def test_hero_prefers_fanart(esde_home, catalog):
     (fanart / "Metroid Dread.jpg").write_bytes(b"fan")
     catalog.refresh()
     metroid = catalog.find("metroid dread")
-    assert metroid.hero_path.endswith("fanart/Metroid Dread.jpg") and metroid.hero.endswith("?kind=hero")
+    assert Path(metroid.hero_path) == fanart / "Metroid Dread.jpg" and metroid.hero.endswith("?kind=hero")
     with TestClient(create_app(catalog.config, catalog), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
         assert c.get(metroid.hero).content == b"fan"
 

@@ -24,7 +24,7 @@ def ensure_token(config_path: Path) -> tuple[str, bool]:
     """
     import yaml
 
-    text = config_path.read_text(encoding="utf-8") if config_path.exists() else ""
+    text = config_path.read_text(encoding="utf-8-sig") if config_path.exists() else ""
     server = (yaml.safe_load(text) or {}).get("server") or {}
     current = str(server.get("token") or "").strip()
     if current not in PLACEHOLDER_TOKENS:
