@@ -1,9 +1,11 @@
-"""Skill personalizada de Alexa para Orbital (AWS Lambda, Python 3.12, sin dependencias).
+"""Skill personalizada de Alexa para Orbital (Python, sin dependencias).
 
-Variables de entorno de la Lambda (las imprime `orbital alexa setup`):
-  ORBITAL_URL     Dirección pública del túnel (p. ej. https://legion.tu-tailnet.ts.net)
-  ORBITAL_TOKEN   El mismo valor que server.token en config.yaml
-  ALEXA_SKILL_ID  (recomendado) El ID de tu skill: la Lambda rechaza peticiones de otras skills
+Funciona igual como skill alojada por Amazon ("Alexa-hosted", recomendado: sin cuenta de AWS) o
+como Lambda propia. La configuración sale de `orbital.json` junto a este archivo (lo genera
+`orbital alexa setup`) o de variables de entorno, que tienen prioridad:
+  url       / ORBITAL_URL     Dirección pública del túnel (p. ej. https://legion.tu-tailnet.ts.net)
+  token     / ORBITAL_TOKEN   El mismo valor que server.token en config.yaml
+  skill_id  / ALEXA_SKILL_ID  (opcional) El ID de tu skill: rechaza peticiones de otras skills
 """
 
 from __future__ import annotations
@@ -12,14 +14,33 @@ import json
 import os
 import urllib.error
 import urllib.request
+from pathlib import Path
 
-ORBITAL_URL = os.environ.get("ORBITAL_URL", "").rstrip("/")
-ORBITAL_TOKEN = os.environ.get("ORBITAL_TOKEN", "")
-ALEXA_SKILL_ID = os.environ.get("ALEXA_SKILL_ID", "")
+
+def _settings() -> dict:
+    path = Path(__file__).with_name("orbital.json")
+    try:
+        data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    except ValueError:
+        data = {}
+    return {
+        "url": (os.environ.get("ORBITAL_URL") or data.get("url") or "").rstrip("/"),
+        "token": os.environ.get("ORBITAL_TOKEN") or data.get("token") or "",
+        "skill_id": os.environ.get("ALEXA_SKILL_ID") or data.get("skill_id") or "",
+    }
+
+
+_SETTINGS = _settings()
+ORBITAL_URL = _SETTINGS["url"]
+ORBITAL_TOKEN = _SETTINGS["token"]
+ALEXA_SKILL_ID = _SETTINGS["skill_id"]
 TIMEOUT = 6  # Alexa corta a los ~8 s
 
-HELP = ("Puedes decir: abre Hollow Knight, abre Zelda con Eden, sigue viendo, "
-        "busca Interstellar en Stremio, cierra el juego o sal al escritorio.")
+HELP = ("Puedes decir: abre Hollow Knight, pon Interstellar, sigue viendo, pausa, "
+        "adelanta cinco minutos, pon subtítulos en español, siguiente episodio o cierra el juego.")
+# Intents de Amazon que se pueden decir con la skill abierta ("pausa", "continúa", "siguiente").
+BUILT_IN = {"AMAZON.PauseIntent": "PauseIntent", "AMAZON.ResumeIntent": "ResumeIntent",
+            "AMAZON.NextIntent": "NextEpisodeIntent"}
 OFFLINE = "No pude conectar con tu consola. ¿Está encendida y con Orbital abierto?"
 
 
@@ -37,7 +58,7 @@ def speak(text: str, end: bool = True) -> dict:
 def call_orbital(intent: str, slots: dict[str, str] | None = None) -> dict:
     """Envía el intent a Orbital. Devuelve {"ok", "speech"}; lanza Unreachable si no hay conexión."""
     if not ORBITAL_URL or not ORBITAL_TOKEN:
-        return {"ok": False, "speech": "La skill no está configurada: faltan ORBITAL_URL u ORBITAL_TOKEN."}
+        return {"ok": False, "speech": "La skill no está configurada: falta la dirección o el token de tu consola."}
     req = urllib.request.Request(
         f"{ORBITAL_URL}/api/voice",
         data=json.dumps({"intent": intent, "slots": slots or {}}).encode(),
@@ -50,7 +71,7 @@ def call_orbital(intent: str, slots: dict[str, str] | None = None) -> dict:
             return {"ok": bool(data.get("ok")), "speech": data.get("speech", "Listo.")}
     except urllib.error.HTTPError as exc:
         if exc.code == 401:
-            return {"ok": False, "speech": "Tu consola rechazó el token. Revisa ORBITAL_TOKEN."}
+            return {"ok": False, "speech": "Tu consola rechazó el token. Vuelve a copiar el archivo orbital de la skill."}
         if exc.code in (502, 503, 504):
             raise Unreachable from exc  # el túnel está, pero Orbital no responde
         return {"ok": False, "speech": "Tu consola respondió con un error."}
@@ -106,6 +127,8 @@ def lambda_handler(event: dict, context=None) -> dict:
             return speak("No entendí. " + HELP, end=False)
         if name == "AMAZON.NavigateHomeIntent":
             name, slots = "NavigateIntent", {"direction": "home"}
+        elif name in BUILT_IN:
+            name, slots = BUILT_IN[name], {}
         else:
             slots = slot_values(intent)
         return speak(call_orbital(name, slots)["speech"])

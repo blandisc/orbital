@@ -494,6 +494,62 @@ class Catalog:
             fallback_subs=(lambda: self.streams.subtitles(auth, kind, video_id, subs)) if subs else None)
         self.launcher.track("media:player", title, process, runner="Reproductor")
 
+    @property
+    def native_player(self) -> bool:
+        """¿Se puede reproducir en el reproductor de Orbital (elegido, instalado y con cuenta)?"""
+        return self.config.stremio.player == "orbital" and self.stremio_linked and player.find_mpv() is not None
+
+    def play_title(self, kind: str, meta_id: str, video_id: str, title: str) -> None:
+        """Para la voz: pone algo sin preguntar, con la fuente recomendada. Buscar fuentes tarda
+        unos segundos (Alexa corta a los ~8 s), así que se hace en segundo plano."""
+        if not self.native_player:
+            self.play_stremio(kind, meta_id, video_id, title)
+            return
+
+        def run() -> None:
+            try:
+                found = self.stream_sources(kind, video_id)
+                if not found:
+                    self._notify({"type": "toast", "message": f"No encontré fuentes para {title}", "ok": False})
+                    return
+                self.play_source(kind, meta_id, video_id, found[0].index, title)
+            except Exception as exc:  # noqa: BLE001 - se avisa en pantalla
+                log.exception("No pude poner %s", title)
+                self._notify({"type": "toast", "message": f"No pude poner {title}: {exc}", "ok": False})
+
+        threading.Thread(target=run, daemon=True, name="play-title").start()
+
+    def play_next_episode(self) -> str | None:
+        """El episodio que sigue al que se está viendo en el reproductor; None si no hay."""
+        current = self.player.current if self.player.playing else None
+        if current is None or current.meta.get("kind") != "series":
+            return None
+        meta_id = current.meta["meta_id"]
+        info = self.cinemeta.meta("series", meta_id)
+        next_id = cinemeta.next_episode(info, current.meta["video_id"])
+        if next_id is None:
+            return None
+        episode = next((e for s in cinemeta.seasons(info) for e in s["episodes"] if e["id"] == next_id), None)
+        season = next((s["season"] for s in cinemeta.seasons(info) if episode in s["episodes"]), None)
+        label = f"T{season} E{episode['episode']}" if episode and season is not None else "el siguiente episodio"
+        name = info.get("name") or current.meta.get("title") or ""
+        self.player.stop()  # guarda el avance del episodio actual
+        self.play_title("series", meta_id, next_id, f"{name} · {label}".strip(" ·"))
+        return label
+
+    def player_subtitles(self, lang: str) -> bool:
+        """Subtítulos en ese idioma: los del video o, si no trae, los de tus addons."""
+        if self.player.select_language("sub", lang):
+            return True
+        current = self.player.current
+        auth = self.credentials.get(STREMIO_KEY)
+        if current is None or not auth:
+            return False
+        urls = self.streams.subtitles(auth, current.meta["kind"], current.meta["video_id"], lang)
+        if urls:
+            self.player.add_subtitles(urls[0], lang)
+        return bool(urls)
+
     def _player_finished(self, meta: dict, position: float, duration: float, watched: float) -> None:
         """Guarda en tu cuenta de Stremio dónde te quedaste (Seguir viendo, en Orbital y en Stremio)."""
         auth = self.credentials.get(STREMIO_KEY)

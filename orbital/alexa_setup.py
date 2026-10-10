@@ -47,6 +47,41 @@ def ensure_token(config_path: Path) -> tuple[str, bool]:
     return token, True
 
 
+def read_token(config_path: Path) -> str | None:
+    """El token de config.yaml, sin crear nada (para comprobar o probar)."""
+    import yaml
+
+    if not config_path.exists():
+        return None
+    server = (yaml.safe_load(config_path.read_text(encoding="utf-8-sig")) or {}).get("server") or {}
+    token = str(server.get("token") or "").strip()
+    return None if token in PLACEHOLDER_TOKENS else token
+
+
+# ----------------------------------------------------------------------------- skill
+SKILL_SOURCE = Path(__file__).resolve().parent.parent / "alexa"
+
+
+def skill_files(url: str | None, token: str, skill_id: str = "") -> dict[str, str]:
+    """Los archivos de la carpeta `lambda` de la skill alojada por Amazon (Alexa-hosted), más el
+    modelo de voz para pegar en el editor JSON."""
+    # Sin túnel todavía, la URL va vacía: la skill dice "no está configurada" en vez de "apagada".
+    config = {"url": url or "", "token": token}
+    if skill_id:
+        config["skill_id"] = skill_id
+    return {
+        "lambda_function.py": (SKILL_SOURCE / "lambda_function.py").read_text(encoding="utf-8"),
+        "orbital.json": json.dumps(config, indent=2) + "\n",
+        "interaction_model.es-MX.json": (SKILL_SOURCE / "interaction_model.es-MX.json").read_text(encoding="utf-8"),
+    }
+
+
+def write_skill(dest: Path, files: dict[str, str]) -> None:
+    dest.mkdir(parents=True, exist_ok=True)
+    for name, content in files.items():
+        (dest / name).write_text(content, encoding="utf-8")
+
+
 # ----------------------------------------------------------------------------- túnel
 def tailscale_exe() -> str | None:
     found = shutil.which("tailscale")

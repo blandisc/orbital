@@ -9,7 +9,7 @@
 | 2b | Subtítulos en inglés por defecto | Ya vienen así en el reproductor de Orbital (`stremio.subtitles: en`). Solo si usas `player: stremio`: en Stremio, Configuración → Reproductor → idioma de subtítulos = English |
 | 2c | Reproductor de Orbital (mpv) | Ya instalado en `%LOCALAPPDATA%\orbital\mpv` (compilación de shinchiro, sin firma digital). Para volver al de Stremio: `player: stremio` en config.yaml |
 | 3 | Permiso de micrófono para dictar | La primera vez que uses "Dictar" en Buscar, acepta el permiso del micrófono |
-| 4 | Alexa | `orbital alexa setup` → instalar Tailscale → `tailscale funnel --bg 8711` → skill y Lambda (README, sección Alexa) → `orbital alexa check` |
+| 4 | Alexa | Instalar Tailscale → `tailscale funnel --bg 8711` → `orbital alexa setup` → skill alojada por Amazon (README, sección Alexa) → `orbital alexa check` |
 | 5 | (Opcional) Mover los emuladores fuera de Descargas | El Sensor de almacenamiento de Windows puede borrar Descargas; Orbital también busca en `C:\Emuladores` |
 
 ## Probar con el mando
@@ -54,3 +54,8 @@
 - [ ] "…que busque Dune" → búsqueda de Orbital ya escrita.
 - [ ] "…que salga al escritorio" / "…que abra la consola".
 - [ ] "Alexa, pregúntale a mi consola qué está abierto".
+- [ ] "…que ponga Interstellar": arranca en el reproductor de Orbital sin tocar el control.
+- [ ] Con un video puesto: "…que pause", "…que adelante 5 minutos", "…que ponga subtítulos en español", "…que cambie el audio a inglés".
+- [ ] Con una serie puesta: "…que ponga el siguiente episodio".
+- [ ] "…que abra (un juego) en la nube" abre tu juego de GeForce NOW.
+- [ ] Con la Legion Go apagada: Alexa dice que no pudo conectar con tu consola.

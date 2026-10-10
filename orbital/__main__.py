@@ -107,11 +107,13 @@ def alexa_command(args, config) -> int:
     from . import alexa_setup
 
     path = config.source
-    token, created = alexa_setup.ensure_token(path)
     url = args.url or alexa_setup.tailscale_url()
     public_port = config.server.public_port or 8711
 
     if args.action == "setup":
+        token, created = alexa_setup.ensure_token(path)
+        skill_dir = path.parent / "alexa-skill"
+        alexa_setup.write_skill(skill_dir, alexa_setup.skill_files(url, token, args.skill_id or ""))
         print("== Alexa para Orbital\n")
         print(f"  Token     : {'creado y guardado' if created else 'ya existía'} en {path}")
         if created:
@@ -120,19 +122,21 @@ def alexa_command(args, config) -> int:
         if url:
             print(f"  Túnel     : {url}  (Tailscale)")
         else:
-            print("  Túnel     : no detecté Tailscale. Instálalo desde https://tailscale.com/download e inicia sesión.")
+            print("  Túnel     : no detecté Tailscale. Instálalo desde https://tailscale.com/download e inicia sesión,")
+            print("              y vuelve a correr este comando para que la skill lleve la dirección.")
+        print(f"  Skill     : {skill_dir}")
+        print("              (orbital.json lleva el token: no lo compartas, con él se controla tu consola)")
         print("\nPasos:")
         print(f"  1. Abre el túnel (una sola vez, queda activo tras reiniciar):  tailscale funnel --bg {public_port}")
         print("     La primera vez Tailscale te da un enlace para activar HTTPS y Funnel: ábrelo y acepta.")
         print("  2. Comprueba:  orbital alexa check")
-        print("  3. En la Lambda (Configuración > Variables de entorno):")
-        print(f"       ORBITAL_URL   = {url or 'https://<tu-equipo>.<tu-tailnet>.ts.net'}")
-        print(f"       ORBITAL_TOKEN = {token}")
-        print("       ALEXA_SKILL_ID = <el ID de tu skill, amzn1.ask.skill....>")
-        print("     (no compartas el token: con él se controla tu consola)")
-        print("  4. Sigue la guía de la skill en el README (sección Alexa).")
+        print("  3. Crea la skill alojada por Amazon (README, sección Alexa) y pega ahí los archivos de la carpeta Skill.")
         return 0
 
+    token = alexa_setup.read_token(path)
+    if not token:
+        print("!! No hay token en config.yaml. Corre primero: orbital alexa setup")
+        return 1
     if not url:
         print("!! No sé la dirección del túnel. Usa --url https://<tu-equipo>.<tu-tailnet>.ts.net")
         return 1
@@ -202,6 +206,7 @@ def main(argv: list[str] | None = None) -> None:
                     help="setup: token y pasos · check: prueba el túnel · say: envía un comando de prueba")
     al.add_argument("text", nargs="?", default="qué está abierto", help="el comando para 'say'")
     al.add_argument("--url", help="dirección pública del túnel (si no se detecta Tailscale)")
+    al.add_argument("--skill-id", help="ID de tu skill (amzn1.ask.skill…): la skill rechaza peticiones de otras")
     args = parser.parse_args(argv)
     if args.command == "stremio" and args.action == "key" and not args.value:
         parser.error("falta la clave: orbital stremio key <clave>")

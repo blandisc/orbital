@@ -19,7 +19,7 @@ se controla con la voz a través de **Alexa**.
  │                       Tailscale Funnel (HTTPS, gratis)          │
  └─────────────────────────────────────────────┼───────────────────┘
                                                │
- "Alexa, pídele a mi consola que abra Hades" ─▶ Skill ─▶ AWS Lambda
+ "Alexa, pídele a mi consola que abra Hades" ─▶ Skill (alojada por Amazon)
 ```
 
 ## Qué hace
@@ -164,7 +164,7 @@ Cómo funciona:
 "Alexa, pídele a mi consola que abra Zelda"
    │  Alexa (nube de Amazon) → LaunchGameIntent, game="zelda"
    ▼
-AWS Lambda (alexa/lambda_function.py) ── verifica que la petición es de TU skill
+Skill alojada por Amazon (alexa/lambda_function.py, gratis, sin cuenta de AWS)
    │  POST https://<tu-equipo>.<tailnet>.ts.net/api/voice   Authorization: Bearer <token>
    ▼
 Tailscale Funnel (túnel HTTPS gratis, dirección fija) ──► 127.0.0.1:8711 en la Legion Go
@@ -174,43 +174,49 @@ Orbital, puerto de Alexa (solo voz y ping, SIEMPRE con token) → abre Zelda con
 "Abriendo The Legend of Zelda…" (Alexa lo dice y aparece un aviso en pantalla)
 ```
 
+Lo que necesitas: una cuenta de **Tailscale** y una de **desarrollador de Alexa** (con la misma cuenta
+de Amazon de tu Echo). Las dos son gratis y no piden tarjeta. Si la Legion Go está apagada, la skill
+responde "No pude conectar con tu consola. ¿Está encendida?".
+
 **Seguridad:** el túnel solo llega al puerto **8711**, que únicamente acepta comandos de voz con el
 token. La interfaz y la API completa (8710) nunca salen a internet: además, rechazan cualquier
 petición cuyo `Host` no sea `localhost`, aunque alguien apunte el túnel ahí por error.
 `orbital alexa check` comprueba las tres cosas.
 
-### 1. Token y túnel (en la Legion Go)
-
-```powershell
-.venv\Scripts\python -m orbital alexa setup     # crea el token fijo y te dice los valores para la Lambda
-```
+### 1. Túnel (en la Legion Go)
 
 1. Instala [Tailscale](https://tailscale.com/download) e inicia sesión (cuenta gratuita).
 2. En PowerShell: `tailscale funnel --bg 8711`. La primera vez te da un enlace para activar HTTPS y
    Funnel en tu cuenta: ábrelo y acepta. Con `--bg` queda activo aunque reinicies.
-3. Reinicia Orbital y comprueba: `.venv\Scripts\python -m orbital alexa check`. Tiene que salir
-   todo en `OK`. Con `orbital alexa say "abre zelda"` pruebas un comando real por el túnel.
+3. Prepara la skill:
+
+   ```powershell
+   .venv\Scripts\python -m orbital alexa setup
+   ```
+
+   Crea el token (si no existía) y deja en `%APPDATA%\orbital\alexa-skill\` los tres archivos de la
+   skill: `lambda_function.py`, `orbital.json` (dirección del túnel y token: **no lo compartas**) y
+   `interaction_model.es-MX.json`.
+4. Comprueba: `.venv\Scripts\python -m orbital alexa check`. Tiene que salir todo en `OK`. Con
+   `orbital alexa say "abre zelda"` pruebas un comando real por el túnel.
 
 ### 2. La skill (consola de Alexa)
 
 1. Entra en la [consola de desarrolladores de Alexa](https://developer.amazon.com/alexa/console/ask)
    con **la misma cuenta de Amazon que tu Echo** → *Create Skill*.
-2. Nombre: *Mi consola*. Idioma: **Spanish (MX)**. Tipo: *Other → Custom*. Hosting: *Provision your
-   own*. Plantilla: *Start from scratch*.
-3. *Interaction Model → JSON Editor*: pega `alexa/interaction_model.es-MX.json` → *Save* → *Build*.
-4. Copia el **Skill ID** (`amzn1.ask.skill...`).
+2. Nombre: *Mi consola*. Idioma: **Spanish (MX)**. Tipo: *Other → Custom*. Hosting:
+   **Alexa-hosted (Python)**, región *US East (N. Virginia)*. Plantilla: *Start from scratch*.
+3. *Build → Interaction Model → JSON Editor*: pega `interaction_model.es-MX.json` → *Save* → *Build skill*.
+4. Pestaña *Code*: reemplaza todo `lambda_function.py` con el de la carpeta; con *New File* crea
+   `lambda/orbital.json` y pega el tuyo → *Save* → *Deploy*.
+5. (Opcional) Copia el **Skill ID** (`amzn1.ask.skill...`) y corre
+   `orbital alexa setup --skill-id amzn1.ask.skill...`; vuelve a pegar `orbital.json`. Así la skill
+   rechaza peticiones que no vengan de ella.
 
-### 3. La Lambda (consola de AWS, nivel gratuito)
+¿Prefieres tu propia Lambda en AWS? El mismo `lambda_function.py` funciona ahí con las variables de
+entorno `ORBITAL_URL`, `ORBITAL_TOKEN` y `ALEXA_SKILL_ID` (tienen prioridad sobre `orbital.json`).
 
-1. En [AWS Lambda](https://console.aws.amazon.com/lambda) elige la región **US East (N. Virginia)**
-   → *Create function* → *Author from scratch*, runtime **Python 3.12**.
-2. Pega el contenido de `alexa/lambda_function.py` en el editor → *Deploy*.
-3. *Configuration → Environment variables*: `ORBITAL_URL`, `ORBITAL_TOKEN` (los que imprimió
-   `orbital alexa setup`) y `ALEXA_SKILL_ID`.
-4. *Add trigger → Alexa Skills Kit* → activa la verificación y pega el Skill ID.
-5. Copia el ARN de la función y pégalo en la skill: *Endpoint → AWS Lambda ARN → Default region* → *Save*.
-
-### 4. Probar
+### 3. Probar
 
 En la consola de Alexa, pestaña *Test* → activa *Development*, y escribe o di:
 "abre mi consola" y luego "abre zelda". Como la skill queda en modo desarrollo, funciona en todos
@@ -223,12 +229,20 @@ los Echo de tu cuenta sin publicarla.
 | "Alexa, abre mi consola" | Muestra Orbital (si saliste al escritorio) y pregunta qué quieres |
 | "Alexa, pídele a mi consola que abra Hollow Knight" | Abre el juego |
 | "Alexa, pídele a mi consola que abra Zelda con Eden" | Abre con el emulador alternativo |
-| "Alexa, pídele a mi consola que siga viendo" / "…que continúe The Office" | Retoma en Stremio |
-| "Alexa, pídele a mi consola que busque Dune en Stremio" | Abre la ficha (o la búsqueda) |
-| "Alexa, pídele a mi consola que cierre el juego" | Cierra el emulador en curso |
+| "Alexa, pídele a mi consola que abra Fortnite en la nube" | Abre tu juego de GeForce NOW |
+| "Alexa, pídele a mi consola que ponga Interstellar" / "…que quiero ver Dune" | Lo pone en el reproductor de Orbital con la fuente recomendada (si hay varias coincidencias, abre Buscar) |
+| "Alexa, pídele a mi consola que siga viendo" / "…que continúe The Office" | Retoma donde te quedaste |
+| "Alexa, pídele a mi consola que pause" / "…que reanude el video" | Pausa / sigue |
+| "Alexa, pídele a mi consola que adelante 5 minutos" / "…que regrese un minuto" | Adelanta / regresa |
+| "Alexa, pídele a mi consola que ponga subtítulos en español" / "…que quite los subtítulos" | Subtítulos (los del video o, si no trae, los de tu addon) |
+| "Alexa, pídele a mi consola que cambie el audio a inglés" | Audio en otro idioma, si el video lo trae |
+| "Alexa, pídele a mi consola que ponga el siguiente episodio" | Siguiente episodio |
+| "Alexa, pídele a mi consola que cierre el juego" | Cierra el emulador o el video en curso |
 | "Alexa, pídele a mi consola que salga al escritorio" / "…que muestre la consola" | Sale / vuelve |
 | "Alexa, dile a mi consola que se mueva a la derecha" | Mueve la selección |
 | "Alexa, pregúntale a mi consola qué está abierto" | Te dice qué está corriendo |
+
+Con la skill abierta ("Alexa, abre mi consola") también sirven "pausa", "continúa" y "siguiente".
 
 ### Atajos con Rutinas (frases cortas)
 
@@ -240,7 +254,7 @@ acción → Personalizado* → `pídele a mi consola que abra zelda`. Ideas: "mo
 ### Limitaciones conocidas
 
 - La Legion Go tiene que estar **encendida** con Orbital abierto: Alexa no puede despertarla.
-- **No lo pude probar con un Echo real**: está probada toda la cadena Lambda → túnel simulado →
+- **No lo pude probar con un Echo real**: está probada toda la cadena skill → túnel simulado →
   Orbital, y el modelo de voz se valida automáticamente, pero la primera vez revisa la pestaña Test.
 - Hay un reporte de un usuario de que Tailscale 1.102.1 en Windows no publicaba Funnel en internet
   (sí dentro de la tailnet). Si `alexa check` va bien pero la pestaña Test de Alexa dice que no
@@ -324,7 +338,7 @@ orbital/
   system.py      # traer Orbital al frente (Windows) y estado del Wi-Fi
   library/       # steam.py, emulators.py, esde.py, stremio.py, vdf.py
   web/           # interfaz (ver "Interfaz")
-alexa/           # Lambda + modelo de interacción
+alexa/           # código de la skill + modelo de voz
 scripts/         # instalación en Windows y servicio systemd
 ```
 

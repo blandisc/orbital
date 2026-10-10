@@ -20,6 +20,13 @@ DIRECTIONS = {
 }
 
 
+LANGUAGES = {"ingles": "en", "espanol": "es", "english": "en", "spanish": "es", "en": "en", "es": "es"}
+LANGUAGE_NAMES = {"en": "inglés", "es": "español"}
+NO_TOAST = {"type": "noop"}  # la interfaz ignora este evento
+SEEK_BACK = {"back", "regresa", "regrese", "retrocede", "retroceda", "atrasa", "atrase", "atras"}
+CLOUD = re.compile(r"\s+(?:en|desde)\s+(?:la\s+nube|geforce(?:\s+now)?|gfn)$")
+
+
 @dataclass
 class VoiceResult:
     speech: str
@@ -45,6 +52,21 @@ _V = {
 }
 
 _TEXT_RULES: list[tuple[re.Pattern, str, str | None]] = [
+    # Reproductor de Orbital (van primero: "pon subtítulos" no es abrir un juego llamado así).
+    # Sin slot fijo: los grupos con nombre son los slots.
+    (re.compile(r"^(?:pausa|pause|pon pausa|ponle pausa|ponga pausa)(?:\s+(?:el video|la pelicula|la serie))?$"),
+     "PauseIntent", None),
+    (re.compile(r"^(?:reanuda|reanude|quita la pausa|quite la pausa|dale play|dele play)(?:\s+el video)?$"),
+     "ResumeIntent", None),
+    (re.compile(r"^(?P<direction>adelanta|adelante|avanza|avance|regresa|regrese|retrocede|retroceda|atrasa|atrase)"
+                r"(?:\s+el video)?\s+(?:(?P<amount>\d+)|un|una)\s+(?P<unit>minutos?|segundos?)$"), "SeekIntent", None),
+    (re.compile(r"^(?:pon|ponga|activa|active)(?:\s+los)?\s+subtitulos(?:\s+en\s+(?P<language>\w+))?$"),
+     "SubtitlesIntent", None),
+    (re.compile(r"^(?:quita|quite|apaga|apague)\s+los\s+subtitulos$|^sin subtitulos$"), "SubtitlesOffIntent", None),
+    (re.compile(r"^(?:pon|ponga|cambia|cambie)(?:\s+el)?\s+(?:audio|idioma)\s+(?:en|a)\s+(?P<language>\w+)$"),
+     "AudioLanguageIntent", None),
+    (re.compile(r"^(?:(?:pon|ponga|pasa al|pase al)\s+)?(?:el\s+)?siguiente\s+(?:episodio|capitulo)$|^el que sigue$"),
+     "NextEpisodeIntent", None),
     (re.compile(rf"^{_V['search']}\s+(?P<v>.+?)\s+en\s+stremio$"), "SearchMediaIntent", "query"),
     (re.compile(rf"^{_V['continue']}(?:\s+viendo)?(?:\s+(?P<v>.+))?$"), "ContinueWatchingIntent", "show"),
     # "quiero ver dune", "reproduce the office": como en Alexa.
@@ -65,7 +87,9 @@ def parse_text(text: str) -> tuple[str, dict[str, str]] | None:
     for pattern, intent, slot in _TEXT_RULES:
         m = pattern.match(clean)
         if m:
-            return intent, ({slot: m.group("v")} if slot and m.group("v") else {})
+            if slot:
+                return intent, ({slot: m.group("v")} if m.group("v") else {})
+            return intent, {k: v for k, v in m.groupdict().items() if v}
     return None
 
 
@@ -99,6 +123,14 @@ class VoiceController:
         name = slots.get("game", "")
         if not name:
             return VoiceResult("¿Qué juego quieres abrir?", ok=False)
+        cloud = CLOUD.search(normalize(name))
+        if cloud:  # "abre Fortnite en la nube / en GeForce NOW"
+            name = normalize(name)[:cloud.start()]
+            item = self.catalog.find(name, source="geforcenow")
+            if item is None:
+                return VoiceResult(f"{name} no está en tus juegos de GeForce NOW.", ok=False)
+            self.catalog.launch(item.id)
+            return VoiceResult(f"Abriendo {item.title} en GeForce NOW.")
         name, runner = self._split_runner(name)
         # Primero juegos y apps; si no hay, algo de tu biblioteca de Stremio ("abre The Office").
         item = (self.catalog.find(name, exclude_source=("stremio", "cinemeta"))
@@ -116,9 +148,9 @@ class VoiceController:
             if match is None:
                 return VoiceResult(f"{item.title} no se puede abrir con {runner}.", ok=False)
             runner_id = match.id
-        self.catalog.launch(item.id, runner_id)
         if item.source == "stremio":
-            return VoiceResult(f"Abriendo {item.title} en Stremio.")
+            return self._watch_item(item)
+        self.catalog.launch(item.id, runner_id)
         return VoiceResult(f"Abriendo {item.title} con {runner}." if runner else f"Abriendo {item.title}.")
 
     def _split_runner(self, name: str) -> tuple[str, str | None]:
@@ -145,8 +177,7 @@ class VoiceController:
         # Si ya está en tu biblioteca de Stremio, se abre directo.
         item = self.catalog.find(query, source="stremio")
         if item is not None:
-            self.catalog.launch(item.id)
-            return VoiceResult(f"Abriendo {item.title} en Stremio.")
+            return self._watch_item(item)
         try:
             exact = self._watch_exact(query)
         except cinemeta.CinemetaError:  # sin catálogo: la búsqueda de Stremio
@@ -173,7 +204,7 @@ class VoiceController:
         if match is None:
             return None
         if match["kind"] == "movie":
-            self.catalog.play_stremio("movie", match["meta_id"], None, match["title"])
+            self.catalog.play_title("movie", match["meta_id"], match["meta_id"], match["title"])
             return VoiceResult(f"Poniendo {match['title']}.")
         return VoiceResult(f"Abriendo {match['title']}. Elige el episodio.", events=[self._show_view({"serie": match["meta_id"]})])
 
@@ -190,9 +221,24 @@ class VoiceController:
             if not watching:
                 return VoiceResult("No tienes nada a medias en Stremio.", ok=False)
             item = watching[0]
-        self.catalog.launch(item.id)
         detail = item.subtitle.removeprefix("Stremio").strip(" ·")
-        return VoiceResult(f"Continuando {item.title}{', ' + detail if detail else ''}.")
+        result = self._watch_item(item)
+        if result.ok and not result.events:
+            result.speech = f"Continuando {item.title}{', ' + detail if detail else ''}."
+        return result
+
+    def _watch_item(self, item) -> VoiceResult:
+        """Algo de tu biblioteca de Stremio: el episodio o la película donde ibas; una serie sin
+        episodio pendiente abre sus episodios en Orbital."""
+        extra = item.extra or {}
+        kind, meta_id, video_id = extra.get("kind"), extra.get("meta_id"), extra.get("video_id")
+        if kind in ("movie", "series") and meta_id and video_id:
+            self.catalog.play_title(kind, meta_id, video_id, item.title)
+            return VoiceResult(f"Poniendo {item.title}.")
+        if kind == "series" and meta_id:
+            return VoiceResult(f"Abriendo {item.title}. Elige el episodio.", events=[self._show_view({"serie": meta_id})])
+        self.catalog.launch(item.id)
+        return VoiceResult(f"Abriendo {item.title} en Stremio.")
 
     def _open_steam_intent(self, slots: dict) -> VoiceResult:
         if self.catalog.get("steam:bigpicture") is None:
@@ -230,3 +276,75 @@ class VoiceController:
         if not direction:
             return VoiceResult("No entendí hacia dónde moverme.", ok=False)
         return VoiceResult("Listo.", events=[{"type": "navigate", "direction": direction}])
+
+    # --- reproductor de Orbital -------------------------------------------------------------
+    # Sin aviso en la interfaz (events=[NO_TOAST]): el video está encima y mpv ya lo muestra.
+    def _playing(self) -> VoiceResult | None:
+        """None si hay algo en el reproductor de Orbital; si no, la respuesta para Alexa."""
+        if self.catalog.player.playing:
+            return None
+        return VoiceResult("No hay nada reproduciéndose en Orbital.", ok=False)
+
+    def _pause_intent(self, slots: dict) -> VoiceResult:
+        if (idle := self._playing()) is not None:
+            return idle
+        self.catalog.player.set_pause(True)
+        return VoiceResult("En pausa.", events=[NO_TOAST])
+
+    def _resume_intent(self, slots: dict) -> VoiceResult:
+        if (idle := self._playing()) is not None:
+            return idle
+        self.catalog.player.set_pause(False)
+        return VoiceResult("Listo.", events=[NO_TOAST])
+
+    def _seek_intent(self, slots: dict) -> VoiceResult:
+        if (idle := self._playing()) is not None:
+            return idle
+        unit = normalize(slots.get("unit", ""))
+        minutes = unit.startswith("min")
+        try:
+            amount = abs(int(float(slots.get("amount", ""))))
+        except ValueError:
+            amount = 1 if unit else 30  # "adelanta un minuto" / "adelanta un poco"
+        seconds = amount * (60 if minutes else 1)
+        back = normalize(slots.get("direction", "")) in SEEK_BACK
+        self.catalog.player.seek(-seconds if back else seconds)
+        what = f"{amount} minuto{'s' if amount != 1 else ''}" if minutes else f"{amount} segundos"
+        return VoiceResult(f"{'Regresando' if back else 'Adelantando'} {what}.", events=[NO_TOAST])
+
+    def _language(self, slots: dict) -> str | None:
+        return LANGUAGES.get(normalize(slots.get("language", "")))
+
+    def _subtitles_intent(self, slots: dict) -> VoiceResult:
+        if (idle := self._playing()) is not None:
+            return idle
+        lang = self._language(slots) or self.catalog.config.stremio.subtitles or "en"
+        name = LANGUAGE_NAMES.get(lang, lang)
+        if self.catalog.player_subtitles(lang):
+            return VoiceResult(f"Subtítulos en {name}.", events=[NO_TOAST])
+        return VoiceResult(f"No encontré subtítulos en {name} para esto.", ok=False, events=[NO_TOAST])
+
+    def _subtitles_off_intent(self, slots: dict) -> VoiceResult:
+        if (idle := self._playing()) is not None:
+            return idle
+        self.catalog.player.subtitles_off()
+        return VoiceResult("Sin subtítulos.", events=[NO_TOAST])
+
+    def _audio_language_intent(self, slots: dict) -> VoiceResult:
+        if (idle := self._playing()) is not None:
+            return idle
+        lang = self._language(slots)
+        if lang is None:
+            return VoiceResult("¿En qué idioma? Inglés o español.", ok=False)
+        name = LANGUAGE_NAMES.get(lang, lang)
+        if self.catalog.player.select_language("audio", lang):
+            return VoiceResult(f"Audio en {name}.", events=[NO_TOAST])
+        return VoiceResult(f"Este video no trae audio en {name}.", ok=False, events=[NO_TOAST])
+
+    def _next_episode_intent(self, slots: dict) -> VoiceResult:
+        if (idle := self._playing()) is not None:
+            return idle
+        label = self.catalog.play_next_episode()
+        if label is None:
+            return VoiceResult("No hay un episodio siguiente.", ok=False, events=[NO_TOAST])
+        return VoiceResult(f"Poniendo {label}.")

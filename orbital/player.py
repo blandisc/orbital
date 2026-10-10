@@ -262,6 +262,34 @@ class OrbitalPlayer:
     def show_progress(self) -> None:
         self.mpv.command("show-progress")
 
+    # --- para la voz -----------------------------------------------------------------------
+    def set_pause(self, paused: bool) -> None:
+        self.mpv.command("set_property", "pause", paused)
+        self.show_progress()
+
+    def seek(self, seconds: float) -> None:
+        self.mpv.command("seek", seconds, "relative")
+        self.show_progress()
+
+    def select_language(self, kind: str, lang: str) -> bool:
+        """Cambia a la pista de audio o subtítulos en ese idioma, si el video la trae."""
+        codes = {c.lower() for c in build_lang_list(lang)}
+        track = next((t for t in self.mpv.get("track-list") or []
+                      if t.get("type") == kind and str(t.get("lang") or "").lower() in codes), None)
+        if track is None:
+            return False
+        self.mpv.command("set_property", "aid" if kind == "audio" else "sid", track["id"])
+        self.mpv.command(*PlayerRemote.FEEDBACK["audio" if kind == "audio" else "sub"])
+        return True
+
+    def add_subtitles(self, url: str, lang: str) -> None:
+        self.mpv.command("sub-add", url, "select", "Subtítulos", lang)
+        self.mpv.command(*PlayerRemote.FEEDBACK["sub"])
+
+    def subtitles_off(self) -> None:
+        self.mpv.command("set_property", "sid", "no")
+        self.mpv.command(*PlayerRemote.FEEDBACK["sub"])
+
     def stop(self) -> None:
         if self.current and self.current.process.poll() is None:
             self.mpv.command("quit")

@@ -3,87 +3,478 @@
     "languageModel": {
       "invocationName": "mi consola",
       "intents": [
-        { "name": "AMAZON.CancelIntent", "samples": [] },
-        { "name": "AMAZON.HelpIntent", "samples": [] },
-        { "name": "AMAZON.StopIntent", "samples": [] },
-        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
-        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
         {
           "name": "LaunchGameIntent",
-          "slots": [{ "name": "game", "type": "AMAZON.SearchQuery" }],
+          "slots": [
+            {
+              "name": "game",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
           "samples": [
-            "abre {game}", "juega {game}", "inicia {game}", "pon el juego {game}", "quiero jugar {game}",
-            "abra {game}", "juegue {game}", "inicie {game}", "ponga el juego {game}",
-            "abrir {game}", "jugar {game}", "iniciar {game}"
+            "abre {game}",
+            "juega {game}",
+            "inicia {game}",
+            "pon el juego {game}",
+            "quiero jugar {game}",
+            "abra {game}",
+            "juegue {game}",
+            "inicie {game}",
+            "ponga el juego {game}",
+            "abrir {game}",
+            "jugar {game}",
+            "iniciar {game}"
           ]
         },
         {
           "name": "ContinueWatchingIntent",
-          "slots": [{ "name": "show", "type": "AMAZON.SearchQuery" }],
+          "slots": [
+            {
+              "name": "show",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
           "samples": [
-            "sigue viendo", "continúa", "pon lo que estaba viendo", "quiero seguir viendo",
-            "siga viendo", "continúe", "ponga lo que estaba viendo",
-            "seguir viendo", "continuar",
-            "sigue viendo {show}", "continúa {show}", "siga viendo {show}", "continúe {show}",
-            "seguir viendo {show}", "continuar {show}"
+            "sigue viendo",
+            "continúa",
+            "pon lo que estaba viendo",
+            "quiero seguir viendo",
+            "siga viendo",
+            "continúe",
+            "ponga lo que estaba viendo",
+            "seguir viendo",
+            "continuar",
+            "sigue viendo {show}",
+            "continúa {show}",
+            "siga viendo {show}",
+            "continúe {show}",
+            "seguir viendo {show}",
+            "continuar {show}"
           ]
         },
         {
           "name": "SearchMediaIntent",
-          "slots": [{ "name": "query", "type": "AMAZON.SearchQuery" }],
+          "slots": [
+            {
+              "name": "query",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
           "samples": [
-            "busca {query} en stremio", "pon {query} en stremio", "quiero ver {query}", "reproduce {query}",
-            "busque {query} en stremio", "ponga {query} en stremio", "reproduzca {query}",
-            "buscar {query} en stremio", "ver {query}", "reproducir {query}"
+            "busca {query} en stremio",
+            "pon {query} en stremio",
+            "quiero ver {query}",
+            "reproduce {query}",
+            "busque {query} en stremio",
+            "ponga {query} en stremio",
+            "reproduzca {query}",
+            "buscar {query} en stremio",
+            "ver {query}",
+            "reproducir {query}"
           ]
         },
         {
           "name": "OpenStremioIntent",
           "slots": [],
-          "samples": ["abre stremio", "abra stremio", "abrir stremio", "quiero ver una película", "quiero ver una serie"]
+          "samples": [
+            "abre stremio",
+            "abra stremio",
+            "abrir stremio",
+            "quiero ver una película",
+            "quiero ver una serie"
+          ]
         },
         {
           "name": "OpenSteamIntent",
           "slots": [],
-          "samples": ["abre steam", "abra steam", "abrir steam", "abre big picture", "abra big picture", "abre la tienda", "abra la tienda"]
+          "samples": [
+            "abre steam",
+            "abra steam",
+            "abrir steam",
+            "abre big picture",
+            "abra big picture",
+            "abre la tienda",
+            "abra la tienda"
+          ]
         },
         {
           "name": "CloseGameIntent",
           "slots": [],
-          "samples": ["cierra el juego", "cierre el juego", "cerrar el juego", "sal del juego", "salga del juego", "termina el juego", "termine el juego", "cierra la aplicación", "cierre la aplicación"]
+          "samples": [
+            "cierra el juego",
+            "cierre el juego",
+            "cerrar el juego",
+            "sal del juego",
+            "salga del juego",
+            "termina el juego",
+            "termine el juego",
+            "cierra la aplicación",
+            "cierre la aplicación"
+          ]
         },
         {
           "name": "WhatsPlayingIntent",
           "slots": [],
-          "samples": ["qué está abierto", "qué estoy jugando", "qué se está jugando", "qué hay abierto"]
+          "samples": [
+            "qué está abierto",
+            "qué estoy jugando",
+            "qué se está jugando",
+            "qué hay abierto"
+          ]
         },
         {
           "name": "ExitToDesktopIntent",
           "slots": [],
-          "samples": ["sal al escritorio", "salga al escritorio", "salir al escritorio", "ve al escritorio", "vaya al escritorio", "ir al escritorio", "muestra el escritorio", "muestre el escritorio"]
+          "samples": [
+            "sal al escritorio",
+            "salga al escritorio",
+            "salir al escritorio",
+            "ve al escritorio",
+            "vaya al escritorio",
+            "ir al escritorio",
+            "muestra el escritorio",
+            "muestre el escritorio"
+          ]
         },
         {
           "name": "OpenOrbitalIntent",
           "slots": [],
-          "samples": ["muestra la consola", "muestre la consola", "mostrar la consola", "vuelve a la consola", "vuelva a la consola", "volver a la consola", "abre orbital", "abra orbital"]
+          "samples": [
+            "muestra la consola",
+            "muestre la consola",
+            "mostrar la consola",
+            "vuelve a la consola",
+            "vuelva a la consola",
+            "volver a la consola",
+            "abre orbital",
+            "abra orbital"
+          ]
         },
         {
           "name": "NavigateIntent",
-          "slots": [{ "name": "direction", "type": "DIRECTION" }],
-          "samples": ["muévete a la {direction}", "muévete {direction}", "ve a la {direction}", "ve {direction}", "se mueva a la {direction}", "vaya a la {direction}", "vaya {direction}", "{direction}"]
+          "slots": [
+            {
+              "name": "direction",
+              "type": "DIRECTION"
+            }
+          ],
+          "samples": [
+            "muévete a la {direction}",
+            "muévete {direction}",
+            "ve a la {direction}",
+            "ve {direction}",
+            "se mueva a la {direction}",
+            "vaya a la {direction}",
+            "vaya {direction}",
+            "{direction}"
+          ]
+        },
+        {
+          "name": "AMAZON.PauseIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.ResumeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NextIntent",
+          "samples": []
+        },
+        {
+          "name": "PauseIntent",
+          "samples": [
+            "pausa el video",
+            "pausa la película",
+            "pausa la serie",
+            "pon pausa",
+            "ponle pausa",
+            "pause",
+            "pause el video",
+            "pause la película",
+            "ponga pausa",
+            "pausar el video",
+            "detén el video",
+            "detenga el video"
+          ]
+        },
+        {
+          "name": "ResumeIntent",
+          "samples": [
+            "reanuda",
+            "reanude",
+            "reanudar",
+            "reanuda el video",
+            "reanude el video",
+            "quita la pausa",
+            "quite la pausa",
+            "dale play",
+            "dele play",
+            "sigue con el video",
+            "siga con el video"
+          ]
+        },
+        {
+          "name": "SeekIntent",
+          "slots": [
+            {
+              "name": "direction",
+              "type": "SEEK_DIRECTION"
+            },
+            {
+              "name": "amount",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "unit",
+              "type": "TIME_UNIT"
+            }
+          ],
+          "samples": [
+            "{direction} {amount} {unit}",
+            "{direction} el video {amount} {unit}",
+            "{direction} un {unit}",
+            "{direction} el video un {unit}",
+            "{direction} un poco",
+            "{direction} el video un poco"
+          ]
+        },
+        {
+          "name": "SubtitlesIntent",
+          "slots": [
+            {
+              "name": "language",
+              "type": "LANGUAGE"
+            }
+          ],
+          "samples": [
+            "pon subtítulos",
+            "ponga subtítulos",
+            "activa los subtítulos",
+            "active los subtítulos",
+            "pon subtítulos en {language}",
+            "ponga subtítulos en {language}",
+            "subtítulos en {language}",
+            "cambia los subtítulos a {language}",
+            "cambie los subtítulos a {language}",
+            "pon los subtítulos en {language}",
+            "ponga los subtítulos en {language}"
+          ]
+        },
+        {
+          "name": "SubtitlesOffIntent",
+          "samples": [
+            "quita los subtítulos",
+            "quite los subtítulos",
+            "quitar los subtítulos",
+            "apaga los subtítulos",
+            "apague los subtítulos",
+            "sin subtítulos"
+          ]
+        },
+        {
+          "name": "AudioLanguageIntent",
+          "slots": [
+            {
+              "name": "language",
+              "type": "LANGUAGE"
+            }
+          ],
+          "samples": [
+            "pon el audio en {language}",
+            "ponga el audio en {language}",
+            "audio en {language}",
+            "cambia el audio a {language}",
+            "cambie el audio a {language}",
+            "cambia el idioma a {language}",
+            "cambie el idioma a {language}",
+            "ponlo en {language}",
+            "póngalo en {language}"
+          ]
+        },
+        {
+          "name": "NextEpisodeIntent",
+          "samples": [
+            "siguiente episodio",
+            "siguiente capítulo",
+            "pon el siguiente episodio",
+            "ponga el siguiente episodio",
+            "pon el siguiente capítulo",
+            "ponga el siguiente capítulo",
+            "el que sigue",
+            "pasa al siguiente episodio",
+            "pase al siguiente episodio"
+          ]
         }
       ],
       "types": [
         {
           "name": "DIRECTION",
           "values": [
-            { "name": { "value": "up", "synonyms": ["arriba"] } },
-            { "name": { "value": "down", "synonyms": ["abajo"] } },
-            { "name": { "value": "left", "synonyms": ["izquierda"] } },
-            { "name": { "value": "right", "synonyms": ["derecha"] } },
-            { "name": { "value": "select", "synonyms": ["selecciona", "seleccione", "seleccionar", "aceptar", "ok"] } },
-            { "name": { "value": "back", "synonyms": ["atrás", "regresa", "regrese", "volver"] } },
-            { "name": { "value": "home", "synonyms": ["inicio", "al inicio"] } }
+            {
+              "name": {
+                "value": "up",
+                "synonyms": [
+                  "arriba"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "down",
+                "synonyms": [
+                  "abajo"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "left",
+                "synonyms": [
+                  "izquierda"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "right",
+                "synonyms": [
+                  "derecha"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "select",
+                "synonyms": [
+                  "selecciona",
+                  "seleccione",
+                  "seleccionar",
+                  "aceptar",
+                  "ok"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "back",
+                "synonyms": [
+                  "atrás",
+                  "regresa",
+                  "regrese",
+                  "volver"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "home",
+                "synonyms": [
+                  "inicio",
+                  "al inicio"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SEEK_DIRECTION",
+          "values": [
+            {
+              "name": {
+                "value": "forward",
+                "synonyms": [
+                  "adelanta",
+                  "adelante",
+                  "avanza",
+                  "avance",
+                  "adelantar",
+                  "avanzar"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "back",
+                "synonyms": [
+                  "regresa",
+                  "regrese",
+                  "retrocede",
+                  "retroceda",
+                  "atrasa",
+                  "atrase",
+                  "regresar",
+                  "retroceder"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TIME_UNIT",
+          "values": [
+            {
+              "name": {
+                "value": "minutes",
+                "synonyms": [
+                  "minuto",
+                  "minutos"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "seconds",
+                "synonyms": [
+                  "segundo",
+                  "segundos"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "LANGUAGE",
+          "values": [
+            {
+              "name": {
+                "value": "en",
+                "synonyms": [
+                  "inglés",
+                  "english"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "es",
+                "synonyms": [
+                  "español",
+                  "castellano",
+                  "latino"
+                ]
+              }
+            }
           ]
         }
       ]

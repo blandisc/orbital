@@ -137,14 +137,16 @@ def test_voice_continue_and_search(linked):
     assert r.ok and r.speech == "Continuando Game of Thrones, T3 E9."
     assert sent(linked).endswith("tt0944947:3:9?autoPlay=true")
     assert voice.handle_text("continua interstellar").speech == "Continuando Interstellar, Película."
-    # Buscar algo que ya está en tu biblioteca abre su ficha, no la búsqueda.
-    assert voice.handle_text("busca the office en stremio").speech == "Abriendo The Office en Stremio."
+    # Buscar algo que ya está en tu biblioteca lo abre (una serie sin episodio pendiente: sus episodios).
+    office = voice.handle_text("busca the office en stremio")
+    assert office.speech == "Abriendo The Office. Elige el episodio."
+    assert office.events == [{"type": "reload", "view": {"serie": "tt0386676"}}]
     # Sin coincidencia exacta: la búsqueda de Orbital ya escrita, para elegir con el mando.
     result = voice.handle_text("busca dune en stremio")
     assert result.speech == "Buscando dune. Elige con el control."
     assert result.events == [{"type": "reload", "view": {"buscar": "dune"}}]
     # "abre X" sirve también para series, pero los juegos tienen prioridad.
-    assert voice.handle_text("abre the office").speech == "Abriendo The Office en Stremio."
+    assert voice.handle_text("abre the office").speech == "Abriendo The Office. Elige el episodio."
 
 
 def test_voice_without_stremio_account(library):
