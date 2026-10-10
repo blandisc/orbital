@@ -30,9 +30,9 @@ def test_unknown_game(library):
 
 
 def test_search_media(library):
-    VoiceController(library).handle_intent("SearchMediaIntent", {"query": "El Padrino"})
-    # Con Stremio instalado (config de prueba) el enlace va como argumento del ejecutable.
-    assert library.launcher.ran[-1] == ["stremio-test", "stremio:///search?search=El%20Padrino"]
+    result = VoiceController(library).handle_intent("SearchMediaIntent", {"query": "El Padrino"})
+    # Sin coincidencia exacta, la búsqueda de Orbital con el texto ya escrito (se elige con el mando).
+    assert result.events == [{"type": "reload", "view": {"buscar": "El Padrino"}}]
 
 
 def test_close_only_managed_processes(library):
@@ -50,3 +50,11 @@ def test_navigate_emits_event(library):
 
 def test_unknown_intent(library):
     assert not VoiceController(library).handle_intent("MakeCoffeeIntent").ok
+
+
+def test_natural_watch_phrases():
+    from orbital.voice import parse_text
+
+    assert parse_text("quiero ver dune") == ("SearchMediaIntent", {"query": "dune"})
+    assert parse_text("reproduce the office") == ("SearchMediaIntent", {"query": "the office"})
+    assert parse_text("sigue viendo")[0] == "ContinueWatchingIntent"  # no se confunde

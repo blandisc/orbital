@@ -94,3 +94,8 @@ def test_ui_reload(make_client):
 def test_power_rejects_unknown_actions(make_client):
     with make_client() as c:
         assert c.post("/api/power", json={"action": "format-c"}).status_code == 400
+
+
+def test_ui_reload_only_allows_known_views(make_client):
+    with make_client() as c:
+        assert c.post("/api/ui/reload", json={"view": {"buscar": "dune", "evil": "x"}}).json() == {"ok": True}

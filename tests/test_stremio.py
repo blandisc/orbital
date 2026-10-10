@@ -133,8 +133,10 @@ def test_voice_continue_and_search(linked):
     assert voice.handle_text("continua interstellar").speech == "Continuando Interstellar, Película."
     # Buscar algo que ya está en tu biblioteca abre su ficha, no la búsqueda.
     assert voice.handle_text("busca the office en stremio").speech == "Abriendo The Office en Stremio."
-    assert voice.handle_text("busca dune en stremio").speech == "Buscando dune en Stremio."
-    assert sent(linked) == "stremio:///search?search=dune"
+    # Sin coincidencia exacta: la búsqueda de Orbital ya escrita, para elegir con el mando.
+    result = voice.handle_text("busca dune en stremio")
+    assert result.speech == "Buscando dune. Elige con el control."
+    assert result.events == [{"type": "reload", "view": {"buscar": "dune"}}]
     # "abre X" sirve también para series, pero los juegos tienen prioridad.
     assert voice.handle_text("abre the office").speech == "Abriendo The Office en Stremio."
 
@@ -190,3 +192,19 @@ def test_seasons_put_specials_last_and_play_links():
     assert [e["title"] for e in s[0]["episodes"]] == ["A1", "A2"]
     assert cinemeta.play_link("series", "tt3", "tt3:1:2") == "stremio:///detail/series/tt3/tt3:1:2?autoPlay=true"
     assert cinemeta.play_link("movie", "tt1") == "stremio:///detail/movie/tt1/tt1?autoPlay=true"
+
+
+def test_voice_exact_title_plays_movie_or_opens_episodes(linked, monkeypatch):
+    from orbital.library import cinemeta
+
+    catalog = {"movie": [{"id": "tt15239678", "name": "Dune: Part Two"}],
+               "series": [{"id": "tt0386676", "name": "The Office", "releaseInfo": "2005"}]}
+    monkeypatch.setattr(cinemeta.Cinemeta, "search", lambda self, kind, q: catalog[kind])
+    voice = VoiceController(linked)
+    assert voice.handle_text("busca dune part two en stremio").speech == "Poniendo Dune: Part Two."
+    assert sent(linked) == "stremio:///detail/movie/tt15239678/tt15239678?autoPlay=true"
+    # "abre X" que no es juego ni está en tu biblioteca: si es una serie, sus episodios en Orbital.
+    linked.unlink_stremio()
+    result = voice.handle_text("abre the office")
+    assert result.speech == "Abriendo The Office. Elige el episodio."
+    assert result.events == [{"type": "reload", "view": {"serie": "tt0386676"}}]

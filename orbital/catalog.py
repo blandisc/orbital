@@ -316,7 +316,7 @@ class Catalog:
         return sum(1 for i in self.items(include_hidden=True) if self.state.prefs(i.id).get("hidden"))
 
     def find(self, query: str, category: str | None = None, *, source: str | None = None,
-             exclude_source: str | None = None) -> LibraryItem | None:
+             exclude_source: str | tuple[str, ...] | None = None) -> LibraryItem | None:
         """Búsqueda difusa por título, pensada para lo que transcribe Alexa."""
         target = normalize(query)
         if not target:
@@ -324,7 +324,8 @@ class Catalog:
         candidates = [i for i in self.items()
                       if (category is None or i.category == category)
                       and (source is None or i.source == source)
-                      and (exclude_source is None or i.source != exclude_source)]
+                      and (exclude_source is None or i.source not in
+                           ((exclude_source,) if isinstance(exclude_source, str) else exclude_source))]
         by_name = {normalize(i.title): i for i in candidates}
         if target in by_name:
             return by_name[target]

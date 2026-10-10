@@ -256,9 +256,11 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         return {"ok": True}
 
     @app.post("/api/ui/reload")
-    def ui_reload() -> dict:
-        """Recarga la interfaz abierta (tras actualizar Orbital no hace falta reiniciarlo)."""
-        bus.publish_threadsafe({"type": "reload"})
+    def ui_reload(body: dict | None = None) -> dict:
+        """Recarga la interfaz abierta (tras actualizar Orbital no hace falta reiniciarlo).
+        `view`: abrir directo una vista — {"buscar": "dune"} o {"serie": "tt0386676"}."""
+        view = {k: str(v) for k, v in (body or {}).get("view", {}).items() if k in ("buscar", "serie")}
+        bus.publish_threadsafe({"type": "reload", "view": view})
         return {"ok": True}
 
     @app.post("/api/ui/resume")

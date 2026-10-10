@@ -7,6 +7,7 @@ import re
 from dataclasses import dataclass, field
 
 from .catalog import Catalog, normalize
+from .library import cinemeta
 
 log = logging.getLogger(__name__)
 
@@ -46,6 +47,8 @@ _V = {
 _TEXT_RULES: list[tuple[re.Pattern, str, str | None]] = [
     (re.compile(rf"^{_V['search']}\s+(?P<v>.+?)\s+en\s+stremio$"), "SearchMediaIntent", "query"),
     (re.compile(rf"^{_V['continue']}(?:\s+viendo)?(?:\s+(?P<v>.+))?$"), "ContinueWatchingIntent", "show"),
+    # "quiero ver dune", "reproduce the office": como en Alexa.
+    (re.compile(r"^(?:quiero ver|reproduce|reproduzca|reproducir)\s+(?P<v>.+)$"), "SearchMediaIntent", "query"),
     (re.compile(rf"^{_V['open']}\s+stremio$"), "OpenStremioIntent", None),
     (re.compile(rf"^{_V['open']}\s+(?:steam|big picture)$"), "OpenSteamIntent", None),
     (re.compile(rf"^{_V['close']}\s+(?:de\s+)?(?:el\s+|la\s+)?(?:juego|aplicacion|app)$"), "CloseGameIntent", None),
@@ -98,9 +101,15 @@ class VoiceController:
             return VoiceResult("¿Qué juego quieres abrir?", ok=False)
         name, runner = self._split_runner(name)
         # Primero juegos y apps; si no hay, algo de tu biblioteca de Stremio ("abre The Office").
-        item = self.catalog.find(name, exclude_source="stremio") or self.catalog.find(name, source="stremio")
+        item = (self.catalog.find(name, exclude_source=("stremio", "cinemeta"))
+                or self.catalog.find(name, source="stremio"))
         if item is None:
-            return VoiceResult(f"No encontré {name} en tu biblioteca.", ok=False)
+            # Ni juego ni biblioteca: ¿es una película o serie? ("abre The Office")
+            try:
+                watch = self._watch_exact(name)
+            except cinemeta.CinemetaError:
+                watch = None
+            return watch or VoiceResult(f"No encontré {name} en tu biblioteca.", ok=False)
         runner_id = None
         if runner:
             match = next((r for r in item.runners if normalize(r.name) == runner), None)
@@ -133,13 +142,40 @@ class VoiceController:
         query = slots.get("query", "")
         if not query:
             return VoiceResult("¿Qué quieres ver?", ok=False)
-        # Si ya está en tu biblioteca de Stremio, abre su ficha directamente.
+        # Si ya está en tu biblioteca de Stremio, se abre directo.
         item = self.catalog.find(query, source="stremio")
         if item is not None:
             self.catalog.launch(item.id)
             return VoiceResult(f"Abriendo {item.title} en Stremio.")
-        self.catalog.search_media(query)
-        return VoiceResult(f"Buscando {query} en Stremio.")
+        try:
+            exact = self._watch_exact(query)
+        except cinemeta.CinemetaError:  # sin catálogo: la búsqueda de Stremio
+            self.catalog.search_media(query)
+            return VoiceResult(f"Buscando {query} en Stremio.")
+        if exact:
+            return exact
+        # Varias opciones: la búsqueda de Orbital ya escrita, para elegir con el mando.
+        return VoiceResult(f"Buscando {query}. Elige con el control.", events=[self._show_view({"buscar": query})])
+
+    def _show_view(self, view: dict) -> dict:
+        """Trae Orbital al frente con una vista abierta (búsqueda o episodios)."""
+        if self.kiosk is not None:
+            self.kiosk.open()
+        return {"type": "reload", "view": view}
+
+    def _watch_exact(self, query: str) -> VoiceResult | None:
+        """Si el título coincide exacto con una película o serie: la película se pone directo y la
+        serie abre sus episodios en Orbital. None si no hay coincidencia exacta."""
+        target = normalize(query)
+        movies = self.catalog.cinemeta.search("movie", query)
+        series = self.catalog.cinemeta.search("series", query)
+        match = next((r for r in cinemeta.search_results(query, movies, series) if normalize(r["title"]) == target), None)
+        if match is None:
+            return None
+        if match["kind"] == "movie":
+            self.catalog.play_stremio("movie", match["meta_id"], None, match["title"])
+            return VoiceResult(f"Poniendo {match['title']}.")
+        return VoiceResult(f"Abriendo {match['title']}. Elige el episodio.", events=[self._show_view({"serie": match["meta_id"]})])
 
     def _continue_watching_intent(self, slots: dict) -> VoiceResult:
         show = slots.get("show", "")

@@ -29,7 +29,7 @@
 .search__results {
   display: flex; align-items: flex-end; gap: var(--card-gap);
   min-height: calc(var(--card-height) * var(--card-focus-scale) + var(--space-4));
-  padding: var(--space-4) var(--space-2) var(--space-2); margin: 0 calc(-1 * var(--space-2));
+  padding: var(--space-4) var(--space-2) 3.2rem; /* espacio para el pie de cada resultado */ margin: 0 calc(-1 * var(--space-2));
   overflow-x: auto; scrollbar-width: none;
 }
 

@@ -318,7 +318,10 @@ function handleAction(action) {
 
 // ---------------------------------------------------------------- eventos del servidor
 function handleEvent(event) {
-  if (event.type === "reload") return location.reload();
+  if (event.type === "reload") { // con `view`, abre esa vista (?buscar=… / ?serie=…)
+    const query = new URLSearchParams(event.view || {}).toString();
+    return location.assign(location.pathname + (query ? `?${query}` : ""));
+  }
   if (event.type === "toast") {
     ui.toast.show(event.message, { error: event.ok === false });
     ui.status.pulseAlexa();

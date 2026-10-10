@@ -81,6 +81,7 @@ export function createSearch({ onOpen, onMove, onClose }) {
         if (mine !== token) return;
         items = data.results;
         mount(results, items.map((item, i) => Card(item, {
+          caption: true,
           onPress: () => {
             zone = "results";
             resultIndex = i;
