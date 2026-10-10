@@ -77,11 +77,11 @@ class ComboDetector:
 # Botones XInput -> teclas virtuales de Windows, para apps sin soporte de mando (Stremio).
 DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT = 0x0001, 0x0002, 0x0004, 0x0008
 A_BUTTON, B_BUTTON, X_BUTTON, Y_BUTTON = 0x1000, 0x2000, 0x4000, 0x8000
-VK_SPACE, VK_ESCAPE, VK_LEFT, VK_UP, VK_RIGHT, VK_DOWN, VK_F = 0x20, 0x1B, 0x25, 0x26, 0x27, 0x28, 0x46
+VK_SPACE, VK_ESCAPE, VK_LEFT, VK_UP, VK_RIGHT, VK_DOWN, VK_F11 = 0x20, 0x1B, 0x25, 0x26, 0x27, 0x28, 0x7A
 PLAYER_KEYS = {
     A_BUTTON: VK_SPACE,  # pausa / reanuda
     B_BUTTON: VK_ESCAPE,  # volver
-    Y_BUTTON: VK_F,  # pantalla completa
+    Y_BUTTON: VK_F11,  # pantalla completa (en Stremio 5 es F11; F no hace nada)
     DPAD_LEFT: VK_LEFT, DPAD_RIGHT: VK_RIGHT,  # retroceder / adelantar
     DPAD_UP: VK_UP, DPAD_DOWN: VK_DOWN,  # volumen
 }

@@ -58,8 +58,9 @@ def default_credentials(config: Config) -> Credentials:
     return Credentials(config.source.parent / "secrets.json" if config.source else None)
 
 
-def bring_app_to_front(exe: str, timeout: float = 10.0) -> bool:
-    """Espera la ventana de `exe` y la trae al frente (Windows)."""
+def bring_app_to_front(exe: str, timeout: float = 10.0, fullscreen: bool = False) -> bool:
+    """Espera la ventana de `exe` y la trae al frente (Windows). Con `fullscreen`, además la pone
+    en pantalla completa (F11) si aún no lo está: F11 alterna, por eso primero se mide."""
     if sys.platform != "win32":
         return False
     from . import windows
@@ -69,6 +70,11 @@ def bring_app_to_front(exe: str, timeout: float = 10.0) -> bool:
     while time.time() < deadline:
         hwnd = windows.main_window(windows.pids_by_exe(exe))
         if hwnd and windows.focus(hwnd):
+            if fullscreen:
+                time.sleep(1.5)  # que el reproductor termine de abrir
+                if windows.foreground() == hwnd and not windows.is_fullscreen(hwnd):
+                    from .gamepad import VK_F11, send_key
+                    send_key(VK_F11)
             return True
         time.sleep(.4)
     return False
@@ -417,7 +423,9 @@ class Catalog:
             self.launcher.track_exe("media:stremio", title, Path(argv[0]).name, runner="Stremio")
             # Si Stremio ya estaba abierto, recibe el enlace en su ventana de siempre... detrás de
             # Orbital: sin esto, "no pasa nada". La traemos al frente cuando exista.
-            threading.Thread(target=bring_app_to_front, args=(Path(argv[0]).name,), daemon=True).start()
+            player = bool(uri and uri.startswith("stremio:///player/"))
+            threading.Thread(target=bring_app_to_front, args=(Path(argv[0]).name,),
+                             kwargs={"fullscreen": player}, daemon=True).start()
         else:
             self.launcher.open_uri(uri or "stremio://")
             self.launcher.track("media:stremio", title, None)

@@ -34,7 +34,7 @@
 - [ ] Buscar: escribir 2-3 letras con el teclado del mando; los resultados aparecen solos.
 - [ ] Dictar en Buscar (botón ☰ o la tecla Dictar).
 - [ ] Una serie abre sus episodios; LB/RB cambia de temporada.
-- [ ] En el reproductor de Stremio: A pausa, ←/→ adelanta/regresa, ↑/↓ volumen, Y pantalla completa, B vuelve.
+- [ ] En el reproductor de Stremio: A pausa, ←/→ adelanta/regresa, ↑/↓ volumen, Y pantalla completa (F11), B vuelve. Verificado: Stremio acepta las teclas que manda Orbital.
 - [ ] Al elegir un episodio o película aparece "Elige la fuente" con la recomendada enfocada; arranca sola en 5 s o con A; ↑/↓ para otra.
 - [ ] La fuente elegida abre directo el reproductor de Stremio (sin su lista de fuentes).
 - [ ] Al cerrar Stremio, Orbital vuelve y "Seguir viendo" se actualiza (con la cuenta vinculada).

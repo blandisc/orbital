@@ -227,3 +227,23 @@ def suspend(pids: set[int]) -> int:
 
 def resume(pids: set[int]) -> int:
     return _nt_process_call(pids, "NtResumeProcess")
+
+
+def is_fullscreen(hwnd: int) -> bool:
+    """¿La ventana cubre todo su monitor? (para no alternar pantalla completa por error)."""
+    if not WIN or not hwnd:
+        return False
+    rect = wintypes.RECT()
+    user32.GetWindowRect(hwnd, ctypes.byref(rect))
+    monitor = user32.MonitorFromWindow(hwnd, 2)  # MONITOR_DEFAULTTONEAREST
+
+    class MonitorInfo(ctypes.Structure):
+        _fields_ = [("cbSize", wintypes.DWORD), ("rcMonitor", wintypes.RECT),
+                    ("rcWork", wintypes.RECT), ("dwFlags", wintypes.DWORD)]
+
+    info = MonitorInfo()
+    info.cbSize = ctypes.sizeof(info)
+    if not user32.GetMonitorInfoW(monitor, ctypes.byref(info)):
+        return False
+    m = info.rcMonitor
+    return rect.left <= m.left and rect.top <= m.top and rect.right >= m.right and rect.bottom >= m.bottom
