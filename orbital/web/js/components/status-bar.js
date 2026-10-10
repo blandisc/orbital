@@ -1,11 +1,12 @@
-import { h, svg } from "../core/dom.js";
+import { h, mount, svg } from "../core/dom.js";
+import { Glyph } from "./glyph.js";
 import { clock } from "../core/format.js";
 import { ICONS } from "../core/icons.js";
 
 const ALEXA_LIVE_SECONDS = 600;
 
 /** Barra superior: marca (abre el menú), juego en curso, Alexa, Wi-Fi, batería y hora. */
-export function createStatusBar({ onBrand }) {
+export function createStatusBar({ onBrand, onSection }) {
   const playingTitle = h("span", { class: "status-bar__playing-title" });
   const playingLabel = h("span", { class: "status-bar__playing-label" }, "En curso");
   const playing = h("span", { class: "status-bar__playing", hidden: true },
@@ -18,11 +19,24 @@ export function createStatusBar({ onBrand }) {
   const battery = h("span", { class: "battery", hidden: true }, h("b", { class: "battery__body" }, level), bolt, batteryText);
   const time = h("span", { class: "status-bar__clock" });
 
+  const tabs = h("nav", { class: "status-bar__tabs", "aria-label": "Secciones" });
   const el = h("header", { class: "status-bar" },
     h("button", { class: "status-bar__brand", type: "button", "aria-label": "Orbital: menú", onClick: onBrand },
       svg(ICONS.mark), h("span", { class: "status-bar__wordmark" }, "orbital")),
-    playing,
-    h("div", { class: "status-bar__right" }, alexa, wifi, battery, time));
+    tabs,
+    h("div", { class: "status-bar__right" }, playing, alexa, wifi, battery, time));
+
+  /** Pestañas de sección (Inicio, Juegos, Películas y series, Apps) con LB/RB a los lados. */
+  function setSections(sections, active, glyphs) {
+    const [prev, next] = (glyphs?.section || "").split(" ");
+    mount(tabs,
+      prev && Glyph(prev, { small: true }),
+      sections.map((section) => h("button", {
+        class: ["status-bar__tab", section.id === active && "status-bar__tab--active"], type: "button",
+        "aria-current": section.id === active ? "page" : null, onClick: () => onSection?.(section.id),
+      }, section.title)),
+      next && Glyph(next, { small: true }));
+  }
 
   function setRunning(running) {
     playing.hidden = !running;
@@ -75,5 +89,5 @@ export function createStatusBar({ onBrand }) {
   setInterval(tick, 10_000);
   watchBattery();
 
-  return { el, setRunning, setSystem, pulseAlexa };
+  return { el, setRunning, setSystem, setSections, pulseAlexa };
 }

@@ -79,3 +79,17 @@ test("Stremio: las series abren episodios, las películas se ven, Buscar busca",
   assert.equal(primaryLabel(peli), "Ver");
   assert.equal(primaryLabel({ id: "media:search", source: "search" }), "Buscar");
 });
+
+test("secciones: cada fila en su lugar; Inicio vacío cae en Juegos; secciones vacías no salen", async () => {
+  const { sectionRows, visibleSections } = await import("../../orbital/web/js/core/library.js");
+  const rows = ["recent", "continue", "steam", "geforcenow", "emulators:switch", "media", "movies", "series", "apps"]
+    .map((id) => ({ id, items: [1] }));
+  const ids = (sec) => sectionRows(rows, sec).map((r) => r.id);
+  assert.deepEqual(ids("home"), ["recent", "continue"]);
+  assert.deepEqual(ids("games"), ["steam", "geforcenow", "emulators:switch"]);
+  assert.deepEqual(ids("media"), ["continue", "media", "movies", "series"]);
+  assert.deepEqual(ids("apps"), ["apps"]);
+  const fresh = rows.filter((r) => !["recent", "continue"].includes(r.id));
+  assert.deepEqual(sectionRows(fresh, "home").map((r) => r.id), ["steam", "geforcenow", "emulators:switch"]);
+  assert.deepEqual(visibleSections([{ id: "steam" }]).map((s) => s.id), ["home", "games"]);
+});

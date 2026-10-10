@@ -139,8 +139,8 @@ export function createEpisodes({ onPlay, onMove, onClose }) {
     else if (!data) return true;
     else if (action === "up") setIndex(index - 1);
     else if (action === "down") setIndex(index + 1);
-    else if (action === "pageleft" || action === "left") setSeason(season - 1);
-    else if (action === "pageright" || action === "right") setSeason(season + 1);
+    else if (["prevsection", "pageleft", "left"].includes(action)) setSeason(season - 1);
+    else if (["nextsection", "pageright", "right"].includes(action)) setSeason(season + 1);
     else if (action === "select") play();
     return true;
   }

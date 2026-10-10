@@ -11,7 +11,9 @@ test("teclas", () => {
   assert.equal(keyToAction("ArrowLeft"), "left");
   assert.equal(keyToAction("Enter"), "select");
   assert.equal(keyToAction("Y"), "options");
-  assert.equal(keyToAction("q"), null);
+  assert.equal(keyToAction("q"), "prevsection"); // Q y E cambian de sección
+  assert.equal(keyToAction("E"), "nextsection");
+  assert.equal(keyToAction("z"), null);
 });
 
 test("botones y stick del mando", () => {

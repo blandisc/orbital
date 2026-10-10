@@ -8,11 +8,13 @@ export const KEYMAP = {
   Enter: "select", " ": "select", Escape: "back", Backspace: "back",
   x: "alt", y: "options", o: "options", m: "menu", ContextMenu: "options",
   PageUp: "pageleft", PageDown: "pageright", F5: "refresh",
+  q: "prevsection", e: "nextsection",
 };
 
 // Índices del mapeo estándar de la Gamepad API (Legion Go, Xbox, 8BitDo...).
 export const PADMAP = {
-  0: "select", 1: "back", 2: "alt", 3: "options", 4: "pageleft", 5: "pageright",
+  // LB/RB cambian de sección (Inicio, Juegos, Películas y series, Apps); LT/RT saltan de 5 en 5.
+  0: "select", 1: "back", 2: "alt", 3: "options", 4: "prevsection", 5: "nextsection", 6: "pageleft", 7: "pageright",
   8: "menu", 9: "menu", 12: "up", 13: "down", 14: "left", 15: "right",
   // 16 (Home/Guía) no: lo atiende el servidor para ir y volver entre Orbital y el juego.
 };
@@ -20,8 +22,8 @@ export const PADMAP = {
 export const REPEATABLE = new Set(["up", "down", "left", "right", "pageleft", "pageright"]);
 
 export const GLYPHS = {
-  gamepad: { select: "A", back: "B", alt: "X", options: "Y", menu: "☰", rows: "↕", page: "LB RB", home: "Home" },
-  keyboard: { select: "Enter", back: "Esc", alt: "X", options: "Y", menu: "M", rows: "↑↓", page: "RePág AvPág" },
+  gamepad: { select: "A", back: "B", alt: "X", options: "Y", menu: "☰", rows: "↕", page: "LT RT", section: "LB RB", home: "Home" },
+  keyboard: { select: "Enter", back: "Esc", alt: "X", options: "Y", menu: "M", rows: "↑↓", page: "RePág AvPág", section: "Q E" },
 };
 
 export const keyToAction = (key) => KEYMAP[key] ?? KEYMAP[key?.toLowerCase?.()] ?? null;

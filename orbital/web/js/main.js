@@ -5,7 +5,7 @@
 import { api } from "./core/api.js";
 import { duration } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
-import { alternativeRunner, clampFocus, isSeries, itemAt, restoreFocus, rowJump, runnerName } from "./core/library.js";
+import { alternativeRunner, clampFocus, isSeries, itemAt, restoreFocus, rowJump, runnerName, sectionRows, visibleSections } from "./core/library.js";
 import { rumble } from "./core/haptics.js";
 import { footerHints } from "./core/hints.js";
 import { exitMenu, gameMenu, mainMenu, powerMenu, stopMenu, windowsMenu } from "./core/menus.js";
@@ -33,6 +33,9 @@ const state = {
   canExit: false,
   launchLockedUntil: 0,
   memory: {}, // id de fila -> último juego enfocado en esa fila
+  allRows: [], // todas las filas; `rows` son las de la sección actual
+  section: "home", // Inicio, Juegos, Películas y series, Apps (LB/RB)
+  sectionFocus: {}, // sección -> { rowId, itemId } donde te quedaste
   stremioLinked: false, // con cuenta: Orbital elige la fuente (si no, la lista de Stremio)
   popId: null, // juego recién marcado como favorito (su estrella se anima)
 };
@@ -43,7 +46,7 @@ const glyphs = () => GLYPHS[state.modality];
 // ---------------------------------------------------------------- componentes
 const ui = {
   backdrop: createBackdrop(),
-  status: createStatusBar({ onBrand: () => handleAction("menu") }),
+  status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id) }),
   hero: createHero({ onAction: (action) => handleAction(action) }),
   shelf: createShelf({ onPick: (r, c) => pick(r, c) }),
   hints: createHints(),
@@ -86,7 +89,7 @@ function renderHints() {
   }
   if (!ui.sheet.isOpen && ui.episodes.isOpen) {
     return ui.hints.render([{ glyph: g.select, label: "Ver" }, { glyph: g.rows, label: "Episodio" },
-      { glyph: g.page, label: "Temporada" }, { glyph: g.back, label: "Volver", end: true }]);
+      { glyph: g.section, label: "Temporada" }, { glyph: g.back, label: "Volver", end: true }]);
   }
   if (!ui.sheet.isOpen && ui.search.isOpen) return ui.hints.render(ui.search.hints(g));
   const { r, c } = state.focus;
@@ -124,16 +127,51 @@ function setModality(modality) {
   if (state.modality === modality) return;
   state.modality = modality;
   document.body.dataset.input = modality;
+  renderSections();
   ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   renderHints();
 }
 
 // ---------------------------------------------------------------- datos
+function renderSections() {
+  ui.status.setSections(visibleSections(state.allRows), state.section, glyphs());
+}
+
+/** Cambia de sección (LB/RB) recordando dónde estabas en la que dejas. */
+function goToSection(id, direction = 0) {
+  if (id === state.section) return;
+  const list = visibleSections(state.allRows);
+  const from = list.findIndex((s) => s.id === state.section);
+  const to = list.findIndex((s) => s.id === id);
+  state.sectionFocus[state.section] = { rowId: state.rows[state.focus.r]?.id, itemId: current()?.id };
+  state.section = id;
+  state.rows = sectionRows(state.allRows, id);
+  ui.shelf.setRows(state.rows, { emptyTitle: "Nada por aquí todavía", emptyText: "" });
+  const saved = state.sectionFocus[id] || {};
+  const { r, c } = restoreFocus(state.rows, { rowId: saved.rowId, itemId: saved.itemId, r: 0, c: 0 });
+  state.focus = { r: -1, c: -1 }; // fuerza a redibujar héroe y fondo
+  setFocus(r, c, { silent: true });
+  ui.shelf.slide(direction || Math.sign(to - from));
+  sound.play("move");
+  renderSections();
+}
+
+function stepSection(delta) {
+  const list = visibleSections(state.allRows);
+  const i = list.findIndex((s) => s.id === state.section);
+  const next = list[i + delta];
+  if (next) goToSection(next.id, delta);
+  else rumble("edge");
+}
+
 async function loadLibrary({ refresh = false, keepId = current()?.id } = {}) {
   const rowId = state.rows[state.focus.r]?.id;
   try {
     const data = refresh ? await api.refresh() : await api.library();
-    state.rows = data.rows;
+    state.allRows = data.rows;
+    if (!visibleSections(state.allRows).some((s) => s.id === state.section)) state.section = "home";
+    state.rows = sectionRows(state.allRows, state.section);
+    renderSections();
     state.hidden = data.hidden || 0;
     ui.shelf.setRows(state.rows, {
       emptyTitle: "Tu biblioteca está vacía",
@@ -325,6 +363,8 @@ function handleAction(action) {
     case "down": { const t = rowJump(state.rows, state.memory, r, 1); return setFocus(t.r, t.c); }
     case "left": return setFocus(r, c - 1, { edge: "left" });
     case "right": return setFocus(r, c + 1, { edge: "right" });
+    case "prevsection": return stepSection(-1);
+    case "nextsection": return stepSection(1);
     case "pageleft": return setFocus(r, c - 5, { edge: "left" });
     case "pageright": return setFocus(r, c + 5, { edge: "right" });
     case "select": return launch(item);
@@ -334,8 +374,9 @@ function handleAction(action) {
       soundEnabled: sound.enabled, running: state.running, hiddenCount: state.hidden, canExit: state.canExit,
     }));
     case "back":
-    case "home":
+    case "home": // B: al inicio de la sección; si ya estás ahí, a la sección Inicio
       if (r || c) { sound.play("back"); setFocus(0, 0, { silent: true }); }
+      else if (state.section !== "home") goToSection("home", -1);
       return;
     case "refresh": return loadLibrary({ refresh: true });
   }

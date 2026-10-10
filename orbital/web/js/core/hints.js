@@ -10,6 +10,7 @@ export function footerHints(glyphs, { sheetOpen = false, atHome = true, longRow 
   }
   return [
     { glyph: glyphs.rows, label: "Cambiar de fila" },
+    glyphs.section && { glyph: glyphs.section, label: "Sección", secondary: true },
     longRow && { glyph: glyphs.page, label: "Saltar 5", secondary: true },
     !atHome && { glyph: glyphs.back, label: "Inicio", secondary: true },
     // Con un juego abierto, recuerda cómo volver a él (Home solo existe en el mando).

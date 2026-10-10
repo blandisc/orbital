@@ -2,7 +2,7 @@
  * Definición de menús como datos (puros y probables). Cada opción lleva un `command`
  * que ejecuta el controlador de la app; así la vista no conoce la lógica.
  */
-import { runnerName } from "./library.js";
+import { isGame, isWatchable, primaryLabel, runnerName } from "./library.js";
 
 export function gameMenu(item, { running = null } = {}) {
   if (!item) return null;
@@ -13,8 +13,16 @@ export function gameMenu(item, { running = null } = {}) {
       { icon: "stop", label: `Cerrar ${running.runner || "el juego"}`, danger: true,
         command: { type: "confirm-stop", title: item.title, runner: running.runner } },
     ]
-    : [{ icon: "play", label: "Jugar", hint: runnerName(item), command: { type: "launch", id: item.id } }];
-  for (const runner of isOpen ? [] : item.runners || []) {
+    : [{
+      // La acción de lo que es: Jugar, Ver, Episodios, Abrir, Buscar (antes decía "Jugar" en todo).
+      icon: item.source === "search" ? "search" : "play",
+      label: item.category === "apps" ? "Abrir" : primaryLabel(item),
+      hint: isGame(item) ? runnerName(item) : isWatchable(item) ? "Stremio" : null,
+      command: { type: "launch", id: item.id },
+    }];
+  if (item.source === "search") return { title: item.title, options: [...options, { icon: "close", label: "Cancelar", command: { type: "close" } }] };
+  // Emuladores alternativos: solo en juegos.
+  for (const runner of isOpen || !isGame(item) ? [] : item.runners || []) {
     if (runner.id === item.runner) continue;
     options.push({ icon: "swap", label: `Abrir con ${runner.name}`, hint: "solo esta vez", command: { type: "launch", id: item.id, runner: runner.id } });
     options.push({ icon: "check", label: `Usar siempre ${runner.name}`, command: { type: "prefs", id: item.id, prefs: { runner: runner.id }, message: `${item.title} se abrirá con ${runner.name}` } });

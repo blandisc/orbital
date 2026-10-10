@@ -87,3 +87,24 @@ export const primaryLabel = (item, runningId = null) => {
   if (isSeries(item)) return "Episodios";
   return isWatchable(item) ? (item.progress > 0 ? "Continuar" : "Ver") : "Jugar";
 };
+
+/**
+ * Secciones de la barra superior (se cambian con LB/RB), para no navegar 13 filas seguidas.
+ * Inicio mezcla lo tuyo; cada fila puede estar en más de una sección.
+ */
+export const SECTIONS = [
+  { id: "home", title: "Inicio", rows: (id) => ["recent", "continue", "favorites"].includes(id) },
+  { id: "games", title: "Juegos", rows: (id) => ["steam", "geforcenow"].includes(id) || id.startsWith("emulators:") },
+  { id: "media", title: "Películas y series", rows: (id) => ["continue", "media", "movies", "series"].includes(id) },
+  { id: "apps", title: "Apps", rows: (id) => id === "apps" },
+];
+
+/** Filas de una sección. Una sección vacía (p. ej. Inicio sin nada jugado) cae en Juegos. */
+export function sectionRows(rows, sectionId) {
+  const section = SECTIONS.find((s) => s.id === sectionId) ?? SECTIONS[0];
+  const picked = rows.filter((row) => section.rows(row.id));
+  return picked.length || section.id !== "home" ? picked : sectionRows(rows, "games");
+}
+
+/** Secciones con contenido (las vacías no se muestran en la barra). */
+export const visibleSections = (rows) => SECTIONS.filter((s) => s.id === "home" || rows.some((r) => s.rows(r.id)));

@@ -72,3 +72,15 @@ test("apagado: suspender primero; reiniciar y apagar marcados como peligrosos", 
   assert.deepEqual(menu.options.map((o) => o.label), ["Suspender", "Reiniciar", "Apagar", "Cancelar"]);
   assert.deepEqual(menu.options.filter((o) => o.danger).map((o) => o.command.action), ["restart", "shutdown"]);
 });
+
+test("el menú Y dice lo que es: Ver, Episodios, Abrir; emuladores solo en juegos", () => {
+  const first = (item) => gameMenu(item).options[0];
+  assert.equal(first({ id: "cinemeta:movie:tt1", title: "Dune", source: "cinemeta", category: "movies" }).label, "Ver");
+  assert.equal(first({ id: "cinemeta:series:tt2", title: "The Office", source: "cinemeta", category: "series" }).label, "Episodios");
+  assert.equal(first({ id: "app:youtube", title: "YouTube", source: "app", category: "apps" }).label, "Abrir");
+  assert.equal(first(zelda).label, "Jugar");
+  const movie = gameMenu({ id: "cinemeta:movie:tt1", title: "Dune", source: "cinemeta", category: "movies",
+    runners: [{ id: "a", name: "Eden" }, { id: "b", name: "Ryujinx" }], runner: "a" });
+  assert.ok(!movie.options.some((o) => o.label.startsWith("Abrir con")));
+  assert.deepEqual(gameMenu({ id: "media:search", title: "Buscar", source: "search" }).options.map((o) => o.label), ["Buscar", "Cancelar"]);
+});

@@ -102,6 +102,13 @@ export function createShelf({ onPick }) {
     return card ? { rect: card.getBoundingClientRect(), ratio: Number(card.dataset.ratio) } : null;
   }
 
+  /** Animación al cambiar de sección (dirección: 1 = a la derecha). */
+  function slide(direction) {
+    el.classList.remove("shelf--from-right", "shelf--from-left");
+    void el.offsetWidth;
+    el.classList.add(direction > 0 ? "shelf--from-right" : "shelf--from-left");
+  }
+
   window.addEventListener("resize", () => { measure(); setFocus(focus.r, focus.c); });
-  return { el, setRows, setFocus, bump, focused };
+  return { el, setRows, setFocus, bump, focused, slide };
 }
