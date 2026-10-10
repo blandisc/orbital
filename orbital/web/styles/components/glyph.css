@@ -1,9 +1,20 @@
 /* Glyph: botón del mando o tecla ("A", "Esc"...). */
 .glyph {
-  display: inline-grid; place-items: center;
-  min-width: var(--glyph-size); height: var(--glyph-size); padding: 0 .35rem;
+  display: inline-grid; place-items: center; flex: none;
+  min-width: var(--glyph-size); height: var(--glyph-size); padding: 0 .4rem;
   border-radius: var(--radius-pill);
   background: var(--color-text); color: var(--color-bg);
-  font: var(--weight-black) var(--text-xs) var(--font-ui);
+  font: var(--weight-black) var(--text-xs) / 1 var(--font-ui);
 }
-.glyph--sm { min-width: 1.4rem; height: 1.4rem; font-size: var(--text-2xs); background: rgba(0, 0, 0, .25); color: inherit; }
+/* Con mando, los botones de cara llevan su color (A verde, B rojo, X azul, Y amarillo),
+   como en el mando de la Legion Go: se reconocen sin leer la letra. */
+[data-input="gamepad"] .glyph--a { background: var(--color-pad-a); }
+[data-input="gamepad"] .glyph--b { background: var(--color-pad-b); }
+[data-input="gamepad"] .glyph--x { background: var(--color-pad-x); }
+[data-input="gamepad"] .glyph--y { background: var(--color-pad-y); }
+/* Dentro de un botón: chip discreto del color del texto del botón. */
+.glyph--sm {
+  min-width: 1.45rem; height: 1.45rem; padding: 0 .35rem; font-size: var(--text-2xs);
+  background: rgba(255, 255, 255, .14); color: inherit;
+}
+.button--primary .glyph--sm { background: rgba(11, 20, 36, .16); }

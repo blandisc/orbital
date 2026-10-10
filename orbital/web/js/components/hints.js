@@ -8,6 +8,8 @@ import { Glyph } from "./glyph.js";
 export function createHints() {
   const el = h("footer", { class: "hints" });
   const render = (items) => mount(el, items.map(({ glyph, label, end, secondary }) =>
-    h("span", { class: ["hints__item", end && "hints__item--end", secondary && "hints__item--secondary"] }, Glyph(glyph), label)));
+    h("span", { class: ["hints__item", end && "hints__item--end", secondary && "hints__item--secondary"] },
+      // "LB RB" son dos botones: un glifo para cada uno.
+      glyph.split(" ").map((g) => Glyph(g)), label)));
   return { el, render };
 }

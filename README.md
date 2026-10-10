@@ -65,7 +65,8 @@ y las preferencias se guardan en `state.json`, junto a `config.yaml`.
    salen de ES-DE. Solo si algo no aparece, revisa `%APPDATA%\orbital\config.yaml`.
 4. Comprueba lo que detecta: `.venv\Scripts\python -m orbital --list`. Primero muestra un
    diagnóstico (`OK` / `!!`) de Steam, ES-DE y cada emulador, con cuántos juegos encontró.
-5. Arranca: `.venv\Scripts\python -m orbital` (abre Edge en pantalla completa).
+5. Arranca: `.venv\Scripts\python -m orbital` (abre Edge en pantalla completa). Cuando arranca
+   solo con Windows (sin consola), el registro queda en `%LOCALAPPDATA%\orbital\orbital.log`.
 
 **Salir al escritorio:** menú ☰ → *Salir al escritorio* (pide confirmación), o "Alexa, dile a mi
 consola que salga al escritorio". Orbital sigue funcionando en segundo plano: "Alexa, dile a mi

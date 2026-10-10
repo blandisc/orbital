@@ -11,7 +11,8 @@ export function createStatusBar({ onBrand }) {
   const wifi = h("span", { hidden: true }, svg(ICONS.wifi));
   const level = h("i", { class: "battery__level" });
   const batteryText = h("span");
-  const battery = h("span", { class: "battery", hidden: true }, h("b", { class: "battery__body" }, level), batteryText);
+  const bolt = svg(ICONS.bolt);
+  const battery = h("span", { class: "battery", hidden: true }, h("b", { class: "battery__body" }, level), bolt, batteryText);
   const time = h("span", { class: "status-bar__clock" });
 
   const el = h("header", { class: "status-bar" },
@@ -54,7 +55,9 @@ export function createStatusBar({ onBrand }) {
         battery.classList.toggle("battery--low", pct <= 15 && !info.charging);
         battery.classList.toggle("battery--charging", info.charging);
         level.style.width = `calc(${pct}% - 4px)`;
-        batteryText.textContent = `${pct}%${info.charging ? " ⚡" : ""}`;
+        bolt.style.display = info.charging ? "" : "none";
+        batteryText.textContent = `${pct} %`;
+        battery.title = info.charging ? "Cargando" : "Batería";
       };
       update();
       info.addEventListener("levelchange", update);

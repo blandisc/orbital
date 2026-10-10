@@ -25,6 +25,16 @@ export function restoreFocus(rows, { rowId, itemId, r, c }) {
 
 export const itemAt = (rows, r, c) => rows[r]?.items[c] ?? null;
 
+/**
+ * Cuánto desplazar una fila (px) para que la tarjeta `c` quede a la izquierda con una de
+ * contexto, sin pasarse del final: una fila corta no se mueve y una larga no deja hueco.
+ */
+export function rowOffset(count, c, { step, grow = 0, visible }) {
+  const total = count * step + grow; // la enfocada mide `grow` de más
+  const max = Math.max(0, total - visible);
+  return Math.min(Math.max(0, c - 1) * step, max);
+}
+
 /** El emulador alternativo (p. ej. Eden cuando el predeterminado es Ryujinx). */
 export const alternativeRunner = (item) => item?.runners?.find((r) => r.id !== item.runner) ?? null;
 

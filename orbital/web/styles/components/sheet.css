@@ -1,9 +1,33 @@
 /* Sheet: menú modal navegable con mando (opciones del juego, menú general). */
-.sheet { position: fixed; inset: 0; z-index: var(--z-overlay); display: grid; place-items: center; background: var(--color-scrim); backdrop-filter: blur(6px); animation: fade-in var(--duration-base) ease; }
-.sheet__panel { width: min(28rem, 92vw); padding: var(--space-5); border-radius: var(--radius-xl); background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-overlay); animation: rise-in var(--duration-base) var(--ease-out); }
-.sheet__title { padding: var(--space-1) var(--space-3) var(--space-3); color: var(--color-text-muted); font-size: var(--text-md); line-height: 1.4; }
-.sheet__item { display: flex; align-items: center; gap: var(--space-3); width: 100%; padding: .85rem var(--space-4); border-radius: var(--radius-md); font-size: var(--text-lg); text-align: left; }
-.sheet__icon { width: 1.6rem; text-align: center; color: var(--color-accent); }
-.sheet__hint { margin-left: auto; color: var(--color-text-muted); font-size: var(--text-sm); }
-.sheet__item--focused { background: var(--color-glass-strong); outline: 2px solid var(--color-accent); }
+.sheet {
+  position: fixed; inset: 0; z-index: var(--z-overlay); display: grid; place-items: center;
+  background: var(--color-scrim); backdrop-filter: blur(6px);
+  animation: fade-in var(--duration-base) var(--ease-out);
+}
+.sheet__panel {
+  width: min(28rem, 92vw); max-height: calc(100vh - 8rem); overflow-y: auto;
+  padding: var(--space-3); border-radius: var(--radius-xl);
+  background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-overlay);
+  animation: rise-in var(--duration-base) var(--ease-out);
+}
+.sheet--leaving { animation: fade-out var(--duration-exit) var(--ease-in) forwards; }
+.sheet--leaving .sheet__panel { animation: sink-out var(--duration-exit) var(--ease-in) forwards; }
+.sheet__title {
+  padding: var(--space-3) var(--space-4) var(--space-3); color: var(--color-text-muted);
+  font-size: var(--text-md); line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.sheet__items { display: flex; flex-direction: column; gap: 2px; }
+.sheet__item {
+  position: relative; display: flex; align-items: center; gap: var(--space-3);
+  width: 100%; min-height: 3.2rem; padding: 0 var(--space-4); border-radius: var(--radius-md);
+  font-size: var(--text-lg); text-align: left;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+.sheet__item:hover { background: var(--color-glass); }
+.sheet__icon { flex: none; width: 1.6rem; text-align: center; color: var(--color-accent); }
+.sheet__hint { margin-left: auto; padding-left: var(--space-4); color: var(--color-text-muted); font-size: var(--text-sm); white-space: nowrap; }
+/* Foco: fondo + anillo interior (no cambia el tamaño del elemento). */
+.sheet__item--focused, .sheet__item--focused:hover { background: var(--color-glass-strong); box-shadow: inset 0 0 0 2px var(--color-accent); }
 .sheet__item--danger .sheet__icon { color: var(--color-danger); }
+.sheet__item--danger.sheet__item--focused { box-shadow: inset 0 0 0 2px var(--color-danger); }

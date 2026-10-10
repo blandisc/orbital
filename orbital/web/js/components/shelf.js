@@ -1,4 +1,5 @@
 import { h, mount } from "../core/dom.js";
+import { rowOffset } from "../core/library.js";
 import { tokenPx } from "../core/tokens.js";
 import { Card } from "./card.js";
 
@@ -14,9 +15,13 @@ export function createShelf({ onPick }) {
   let metrics = null;
 
   const measure = () => {
+    const card = tokenPx("--card-width");
     metrics = {
-      step: tokenPx("--card-width") + tokenPx("--card-gap"),
+      step: card + tokenPx("--card-gap"),
+      // Lo que crece la tarjeta enfocada (empuja a las demás con su margen).
+      grow: card * (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--card-focus-scale")) - 1 || 0),
       rowHeight: tokenPx("--row-height"),
+      visible: el.clientWidth - 2 * tokenPx("--page-gutter"),
     };
   };
 
@@ -56,7 +61,7 @@ export function createShelf({ onPick }) {
         if (focused) card.setAttribute("aria-current", "true");
         else card.removeAttribute("aria-current");
       });
-      if (isCurrent) track.style.transform = `translateX(${-Math.max(0, c - 1) * metrics.step}px)`;
+      if (isCurrent) track.style.transform = `translateX(${-rowOffset(cards.length, c, metrics)}px)`;
     });
   }
 

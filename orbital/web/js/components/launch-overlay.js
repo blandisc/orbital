@@ -1,4 +1,4 @@
-import { cssUrl, h } from "../core/dom.js";
+import { cssUrl, h, hideAfterExit } from "../core/dom.js";
 
 /** Pantalla "Abriendo…". Se oculta cuando el juego toma la pantalla o tras `timeout`. */
 export function createLaunchOverlay({ timeout = 8000 } = {}) {
@@ -9,14 +9,17 @@ export function createLaunchOverlay({ timeout = 8000 } = {}) {
   const el = h("div", { class: "launch", hidden: true, role: "status", "aria-live": "assertive" },
     backdrop,
     h("div", { class: "launch__content" }, cover,
-      h("div", {}, h("div", { class: "launch__label" }, "Abriendo"), title, subtitle, h("div", { class: "launch__spinner" }))));
+      h("div", { class: "launch__text" }, h("div", { class: "launch__label" }, "Abriendo"), title, subtitle,
+        h("div", { class: "launch__progress", "aria-hidden": "true" }))));
   let timer;
+  let cancelExit = () => {};
 
   function show(item, detail) {
     backdrop.style.backgroundImage = cssUrl(item.hero || item.image);
     cover.style.backgroundImage = cssUrl(item.image);
     title.textContent = item.title;
     subtitle.textContent = detail;
+    cancelExit();
     el.hidden = false;
     clearTimeout(timer);
     timer = setTimeout(hide, timeout);
@@ -24,11 +27,11 @@ export function createLaunchOverlay({ timeout = 8000 } = {}) {
 
   function hide() {
     clearTimeout(timer);
-    el.hidden = true;
+    cancelExit = hideAfterExit(el, "launch--leaving", 350);
   }
 
   // Cuando el emulador/juego toma el foco, la ventana de Orbital lo pierde.
   window.addEventListener("blur", () => { if (!el.hidden) setTimeout(hide, 600); });
 
-  return { el, show, hide, get visible() { return !el.hidden; } };
+  return { el, show, hide, get visible() { return !el.hidden && !el.classList.contains("launch--leaving"); } };
 }

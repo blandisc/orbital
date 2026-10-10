@@ -23,6 +23,4 @@ export function duration(seconds) {
   return m && h < 10 ? `${h} h ${m} min` : `${h} h`;
 }
 
-export const initial = (title) => (title || "?").trim().charAt(0).toUpperCase() || "?";
-
 export const clock = (date = new Date()) => date.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });

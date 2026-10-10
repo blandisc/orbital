@@ -34,13 +34,14 @@ export function createHero({ onAction }) {
       watchable ? percent(item.progress) && `${percent(item.progress)} visto` : duration(item.playtime) && `${duration(item.playtime)} en total`,
     ].filter(Boolean).map((text) => h("span", {}, text));
     if (item.favorite) list.push(h("span", { class: "hero__fact--favorite" }, "★ Favorito"));
-    mount(facts, list.flatMap((node, i) => (i ? [h("span", { "aria-hidden": "true" }, "·"), node] : [node])));
+    mount(facts, list.flatMap((node, i) => (i ? [h("span", { class: "hero__fact-sep", "aria-hidden": "true" }, "·"), node] : [node])));
 
     const alt = alternativeRunner(item);
     mount(actions,
-      Button({ label: `▶ ${primaryLabel(item)}`, glyph: glyphs.select, variant: "primary", onPress: () => onAction("select") }),
-      alt && Button({ label: `⇄ Abrir con ${alt.name}`, glyph: glyphs.alt, onPress: () => onAction("alt") }),
-      Button({ label: "☰", glyph: glyphs.options, ariaLabel: "Opciones", onPress: () => onAction("options") }));
+      Button({ label: primaryLabel(item), glyph: glyphs.select, variant: "primary", onPress: () => onAction("select") }),
+      alt && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
+      // Antes era "☰", el mismo glifo del botón Menú del mando: se confundían.
+      Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction("options") }));
   }
 
   /** Actualiza con una transición corta. `immediate` evita la animación (p. ej. al cambiar glifos). */

@@ -5,7 +5,8 @@
 import { api } from "./core/api.js";
 import { duration } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
-import { alternativeRunner, clampFocus, itemAt, primaryLabel, restoreFocus, runnerName } from "./core/library.js";
+import { alternativeRunner, clampFocus, itemAt, restoreFocus, runnerName } from "./core/library.js";
+import { footerHints } from "./core/hints.js";
 import { exitMenu, gameMenu, mainMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
@@ -53,21 +54,15 @@ document.getElementById("app").replaceWith(
 );
 
 // ---------------------------------------------------------------- render
+const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LB/RB
+
 function renderHints() {
-  const g = glyphs();
-  if (ui.sheet.isOpen) {
-    ui.hints.render([{ glyph: g.select, label: "Elegir" }, { glyph: g.back, label: "Cerrar" }]);
-    return;
-  }
-  const item = current();
-  const alt = alternativeRunner(item);
-  ui.hints.render([
-    { glyph: g.select, label: item ? primaryLabel(item) : "Jugar" },
-    alt && { glyph: g.alt, label: `Con ${alt.name}` },
-    { glyph: g.options, label: "Opciones" },
-    { glyph: g.rows, label: "Filas", secondary: true },
-    { glyph: g.menu, label: "Menú", end: true },
-  ].filter(Boolean));
+  const { r, c } = state.focus;
+  ui.hints.render(footerHints(glyphs(), {
+    sheetOpen: ui.sheet.isOpen,
+    atHome: !r && !c,
+    longRow: (state.rows[r]?.items.length ?? 0) >= LONG_ROW,
+  }));
 }
 
 function setFocus(r, c, { silent = false } = {}) {

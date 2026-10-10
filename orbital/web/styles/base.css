@@ -6,7 +6,11 @@ html {
   background: var(--color-bg);
 }
 
+/* Retícula de página: barra de estado / héroe (se estira) / filas / controles.
+   Cada zona tiene su propio carril, así nada puede encimarse con nada. */
 body {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   height: 100vh;
   overflow: hidden;
   /* Transparente a propósito: el color de fondo está en <html> y así el Backdrop
@@ -30,7 +34,11 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 }
 
 @keyframes fade-in { from { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(1rem) scale(.98); } }
+@keyframes sink-out { to { opacity: 0; transform: translateY(.5rem) scale(.98); } }
+@keyframes drop-in { from { opacity: 0; transform: translate(-50%, -.75rem); } }
+@keyframes lift-out { to { opacity: 0; transform: translate(-50%, -.5rem); } }
 @keyframes spin { to { transform: rotate(1turn); } }
 @keyframes pulse { 50% { transform: scale(1.9); } }
 

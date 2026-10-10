@@ -1,8 +1,15 @@
-/* Toast: aviso breve arriba al centro. */
+/* Toast: aviso breve arriba al centro.
+   Las animaciones incluyen el translate(-50%) del centrado: si no, el aviso brinca de lado al entrar. */
 .toast {
-  position: fixed; top: var(--space-6); left: 50%; z-index: var(--z-toast); transform: translateX(-50%);
-  padding: var(--space-3) var(--space-6); border-radius: var(--radius-md);
-  background: var(--color-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--color-accent);
-  box-shadow: var(--shadow-overlay); font-size: var(--text-md); animation: rise-in var(--duration-base) var(--ease-out);
+  position: fixed; top: var(--space-5); left: 50%; z-index: var(--z-toast); transform: translateX(-50%);
+  display: flex; align-items: center; gap: var(--space-3);
+  max-width: min(40rem, calc(100vw - 2 * var(--page-gutter)));
+  min-height: 3.3rem; padding: var(--space-2) var(--space-5) var(--space-2) var(--space-4);
+  border-radius: var(--radius-md); line-height: 1.35;
+  background: var(--color-surface); border: 1px solid var(--color-border); backdrop-filter: var(--blur-glass);
+  box-shadow: var(--shadow-overlay); font-size: var(--text-md);
+  animation: drop-in var(--duration-base) var(--ease-out);
 }
-.toast--error { border-left-color: var(--color-danger); }
+.toast::before { content: ""; flex: none; width: .55rem; height: .55rem; border-radius: 50%; background: var(--color-accent); box-shadow: 0 0 10px var(--color-accent); }
+.toast--error::before { background: var(--color-danger); box-shadow: 0 0 10px var(--color-danger); }
+.toast--leaving { animation: lift-out var(--duration-exit) var(--ease-in) forwards; }

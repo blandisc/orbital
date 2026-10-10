@@ -61,26 +61,33 @@
   --tracking-wider: .12em;
 
   /* Movimiento */
-  --duration-fast: 150ms;
-  --duration-base: 250ms;
-  --duration-slow: 450ms;
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
+  --duration-slow: 320ms;
   --duration-fade: 600ms;
+  --duration-exit: 160ms; /* las salidas, más cortas que las entradas */
   --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --ease-in: cubic-bezier(.4, 0, 1, 1);
+  --ease-emphasis: cubic-bezier(.3, 1.3, .5, 1); /* un poco de rebote para el foco */
 
   /* Capas */
   --z-base: 0;
   --z-overlay: 5;
   --z-toast: 10;
 
-  /* Layout de consola: todo escala con el ancho (16 px a 1280 px, hasta TV 4K) */
-  --root-size: clamp(12px, 1.25vw, 34px);
+  /* Layout de consola: el lienzo mide al menos 80 × 50 rem. Escala con el ancho, pero
+     sin pasarse del alto: así 16:10 (Legion Go) y 16:9 (TV) caben sin encimarse.
+     1280×800 → 16 px · 1920×1080 → 21,6 px · 2560×1600 → 32 px. */
+  --root-size: clamp(12px, min(1.25vw, 2vh), 34px);
   --page-gutter: var(--space-10);
   --card-width: 8.4rem;
   --card-height: 12.6rem;
   --card-gap: var(--space-4);
-  --card-focus-scale: 1.18;
-  --row-height: 16.6rem;
-  --hero-height: 15.5rem;
+  --card-focus-scale: 1.16;
+  --card-radius: var(--radius-md);
+  --row-heading-height: 2.4rem;
+  --row-height: calc(var(--row-heading-height) + var(--card-height) * var(--card-focus-scale) + var(--space-5));
+  --row-peek: 2.6rem; /* cuánto asoma la fila siguiente */
   --control-height: 3.1rem;
   --glyph-size: 1.65rem;
   --progress-height: .3rem;

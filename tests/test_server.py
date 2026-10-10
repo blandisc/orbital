@@ -20,6 +20,7 @@ def test_local_access_without_token(make_client):
         assert rows[0]["title"] == "Steam"
         assert "argv" not in rows[0]["items"][0]  # no se exponen comandos
         assert c.get("/").status_code == 200
+        assert c.get("/styles/main.css").headers["cache-control"] == "no-cache"
 
 
 def test_remote_requires_token(make_client):

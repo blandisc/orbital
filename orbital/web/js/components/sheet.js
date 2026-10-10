@@ -1,4 +1,4 @@
-import { h, mount } from "../core/dom.js";
+import { h, hideAfterExit, mount } from "../core/dom.js";
 
 /**
  * Menú modal navegable con mando. Recibe un menú como datos ({ title, options })
@@ -11,6 +11,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
   const el = h("div", { class: "sheet", hidden: true, onClick: (e) => e.target === el && close() }, panel);
   let menu = null;
   let index = 0;
+  let cancelExit = () => {};
 
   function render() {
     title.textContent = menu.title;
@@ -26,6 +27,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
   function open(next) {
     menu = next;
     index = 0;
+    cancelExit();
     render();
     el.hidden = false;
   }
@@ -33,7 +35,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
   function close() {
     if (!menu) return;
     menu = null;
-    el.hidden = true;
+    cancelExit = hideAfterExit(el, "sheet--leaving");
     onClose?.();
   }
 

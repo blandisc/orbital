@@ -1,20 +1,38 @@
-/* Hero: información del juego seleccionado. */
-.hero { margin: var(--space-14) var(--page-gutter) 0; height: var(--hero-height); }
-.hero__content { max-width: 38rem; transition: opacity var(--duration-base) ease, transform var(--duration-base) ease; }
-.hero__content--leaving { opacity: 0; transform: translateY(.4rem); }
+/* Hero: información del juego seleccionado.
+   Ocupa el espacio libre de la retícula y apila su contenido ABAJO: así los botones
+   quedan siempre a la misma altura aunque el título tenga una o dos líneas. */
+.hero {
+  display: flex; flex-direction: column; justify-content: flex-end;
+  min-height: 0; padding: var(--space-4) var(--page-gutter) var(--space-5);
+}
+.hero__content {
+  max-width: min(40rem, 58vw);
+  transition: opacity var(--duration-fast) var(--ease-out), transform var(--duration-base) var(--ease-out);
+}
+/* Salida corta y acelerando; la entrada usa la transición base (desacelerando). */
+.hero__content--leaving {
+  opacity: 0; transform: translateY(.35rem);
+  transition-duration: 90ms; transition-timing-function: var(--ease-in);
+}
 .hero__eyebrow {
   display: flex; align-items: center; gap: var(--space-2); min-height: 1.3rem;
   color: var(--color-accent); font-weight: var(--weight-medium); font-size: var(--text-sm);
   letter-spacing: var(--tracking-wide); text-transform: uppercase;
 }
-.hero__eyebrow svg { width: 1.35rem; height: 1.35rem; stroke: currentColor; fill: none; stroke-width: 2; }
+.hero__eyebrow svg { flex: none; width: 1.2rem; height: 1.2rem; stroke: currentColor; fill: none; stroke-width: 2; }
 .hero__title {
-  margin: var(--space-3) 0; font-size: var(--text-display); line-height: 1.02;
+  margin: var(--space-2) 0 var(--space-3); padding-bottom: .06em; /* que line-clamp no corte g, p, j */
+  font-size: var(--text-display); line-height: 1.04; text-wrap: balance;
   font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-  text-shadow: 0 2px 30px rgba(0, 0, 0, .4);
+  text-shadow: 0 2px 24px rgba(0, 0, 0, .55);
 }
 .hero__title--long { font-size: var(--text-3xl); }
-.hero__facts { display: flex; flex-wrap: wrap; gap: var(--space-3); min-height: 1.5rem; color: var(--color-text-muted); font-size: var(--text-md); }
+.hero__facts {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3);
+  min-height: 1.5rem; color: var(--color-text-muted); font-size: var(--text-md);
+  font-variant-numeric: tabular-nums;
+}
+.hero__fact-sep { opacity: .5; }
 .hero__fact--favorite { color: var(--color-favorite); }
-.hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-6); }
+.hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); }

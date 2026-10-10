@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { alternativeRunner, clampFocus, isGame, restoreFocus, runnerName } from "../../orbital/web/js/core/library.js";
+import { alternativeRunner, clampFocus, isGame, restoreFocus, rowOffset, runnerName } from "../../orbital/web/js/core/library.js";
 
 const rows = [
   { id: "recent", items: [{ id: "a" }, { id: "b" }] },
@@ -40,4 +40,12 @@ test("etiqueta del botón principal", async () => {
   assert.equal(primaryLabel({ source: "stremio", progress: .4 }), "Continuar");
   assert.equal(primaryLabel({ source: "stremio", progress: null }), "Ver");
   assert.equal(isGame({ source: "stremio", category: "continue" }), false);
+});
+
+test("rowOffset: las filas cortas no se mueven y las largas no dejan hueco al final", () => {
+  const m = { step: 100, grow: 20, visible: 1000 };
+  assert.equal(rowOffset(5, 4, m), 0); // 5 tarjetas caben: no se desplaza
+  assert.equal(rowOffset(30, 0, m), 0);
+  assert.equal(rowOffset(30, 5, m), 400); // una de contexto a la izquierda
+  assert.equal(rowOffset(30, 29, m), 30 * 100 + 20 - 1000); // pegada al final, sin hueco
 });

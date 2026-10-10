@@ -1,11 +1,20 @@
-/* StatusBar: marca, juego en curso, Alexa, Wi-Fi, batería y hora. */
-.status-bar { display: flex; align-items: center; gap: var(--space-4); height: 3.3rem; margin: var(--space-6) var(--page-gutter) 0; }
+/* StatusBar: marca, juego en curso, Alexa, Wi-Fi, batería y hora.
+   Los indicadores van en cápsulas de vidrio: se leen sobre cualquier fondo. */
+.status-bar {
+  display: flex; align-items: center; gap: var(--space-3);
+  height: 3.3rem; margin: var(--space-5) var(--page-gutter) 0;
+}
 .status-bar__logo { width: 1rem; height: 1rem; border-radius: 50%; border: 3px solid var(--color-accent); box-shadow: 0 0 10px var(--color-accent); }
 .status-bar__brand { font-weight: var(--weight-medium); }
-.status-bar__right { margin-left: auto; display: flex; align-items: center; gap: var(--space-5); font-size: var(--text-lg); }
-.status-bar__clock { font-variant-numeric: tabular-nums; }
+.status-bar__right {
+  margin-left: auto; display: flex; align-items: center; gap: var(--space-5);
+  height: 100%; padding: 0 1.2rem; border-radius: var(--radius-md);
+  background: var(--color-glass); border: 1px solid var(--color-border); backdrop-filter: var(--blur-glass);
+  font-size: var(--text-md);
+}
+.status-bar__clock { font-size: var(--text-lg); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums; }
 
-.indicator { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-md); }
+.indicator { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); }
 .indicator__dot { width: .55rem; height: .55rem; border-radius: 50%; background: var(--color-idle); }
 .indicator--live .indicator__dot { background: var(--color-live); box-shadow: 0 0 10px var(--color-live); }
 .indicator--pulse .indicator__dot { animation: pulse 1s ease 2; }
@@ -14,11 +23,13 @@
 .wifi__dot { fill: var(--color-text); stroke: none; }
 .wifi--weak .wifi__arc--2, .wifi--weak .wifi__arc--3, .wifi--fair .wifi__arc--3 { stroke: var(--color-text-faint); }
 
-.battery { display: inline-flex; align-items: center; gap: var(--space-2); }
-.battery__body { position: relative; width: 1.9rem; height: .95rem; border: 2px solid var(--color-text); border-radius: 4px; }
-.battery__body::after { content: ""; position: absolute; right: -5px; top: 25%; width: 3px; height: 50%; background: var(--color-text); border-radius: 0 2px 2px 0; }
-.battery__level { position: absolute; inset: 2px auto 2px 2px; background: var(--color-text); border-radius: 1px; }
+.battery { display: inline-flex; align-items: center; gap: var(--space-2); font-variant-numeric: tabular-nums; }
+.battery__body { position: relative; width: 1.75rem; height: .9rem; border: 2px solid var(--color-text-muted); border-radius: 4px; }
+.battery__body::after { content: ""; position: absolute; right: -5px; top: 25%; width: 3px; height: 50%; background: var(--color-text-muted); border-radius: 0 2px 2px 0; }
+.battery__level { position: absolute; inset: 2px auto 2px 2px; background: var(--color-text); border-radius: 1px; transition: width var(--duration-slow) var(--ease-out); }
+.battery__bolt { width: .95rem; height: .95rem; fill: var(--color-success); }
 .battery--low .battery__level { background: var(--color-danger); }
+.battery--low { color: var(--color-danger); }
 .battery--charging .battery__level { background: var(--color-success); }
 
 @media (max-width: 700px) { .status-bar .indicator { display: none; } }

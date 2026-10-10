@@ -240,8 +240,17 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None) -> Fa
             raise HTTPException(404)
         return FileResponse(path, headers={"Cache-Control": "max-age=86400"})
 
-    app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")
+    app.mount("/", WebFiles(directory=WEB_DIR, html=True), name="web")
     return app
+
+
+class WebFiles(StaticFiles):
+    """La interfaz siempre se revalida (ETag): tras actualizar Orbital, Edge no mezcla CSS o JS viejos."""
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
 
 
 def create_public_app(config: Config, main_app: FastAPI) -> FastAPI:

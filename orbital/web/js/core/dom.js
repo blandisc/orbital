@@ -45,3 +45,32 @@ export function svg(markup) {
 
 /** Valor seguro para background-image. */
 export const cssUrl = (url) => (url ? `url("${String(url).replace(/["\\\n]/g, "\\$&")}")` : "none");
+
+/**
+ * Oculta `el` después de su animación de salida (la clase `leavingClass` la define en CSS).
+ * Si no hay animación (movimiento reducido) se oculta igual tras `fallbackMs`.
+ * Devuelve una función que cancela la salida (por si se vuelve a mostrar antes de terminar).
+ */
+export function hideAfterExit(el, leavingClass, fallbackMs = 250) {
+  if (el.hidden) return () => {};
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    clearTimeout(timer);
+    el.removeEventListener("animationend", onEnd);
+    el.classList.remove(leavingClass);
+    el.hidden = true;
+  };
+  const onEnd = (event) => { if (event.target === el) finish(); };
+  const timer = setTimeout(finish, fallbackMs);
+  el.addEventListener("animationend", onEnd);
+  el.classList.add(leavingClass);
+  return () => {
+    if (done) return;
+    done = true;
+    clearTimeout(timer);
+    el.removeEventListener("animationend", onEnd);
+    el.classList.remove(leavingClass);
+  };
+}

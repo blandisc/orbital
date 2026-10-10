@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { duration, initial, lastPlayed } from "../../orbital/web/js/core/format.js";
+import { duration, lastPlayed } from "../../orbital/web/js/core/format.js";
 
 const NOW = 1_800_000_000_000;
 const ago = (seconds) => NOW / 1000 - seconds;
@@ -20,11 +20,6 @@ test("duration", () => {
   assert.equal(duration(25 * 60), "25 min");
   assert.equal(duration(3600 + 20 * 60), "1 h 20 min");
   assert.equal(duration(14 * 3600 + 5 * 60), "14 h");
-});
-
-test("initial", () => {
-  assert.equal(initial("zelda"), "Z");
-  assert.equal(initial(""), "?");
 });
 
 test("verbo para multimedia y porcentaje", async () => {
