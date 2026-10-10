@@ -22,6 +22,7 @@
   --color-on-primary: var(--palette-ink-1000);
   --color-favorite: var(--palette-amber-300);
   --color-danger: var(--palette-red-400);
+  --color-warning: var(--palette-amber-300);
   --color-live: var(--palette-teal-300);
   --color-idle: var(--palette-ink-500);
   --color-progress: var(--palette-paper);
