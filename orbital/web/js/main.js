@@ -426,6 +426,7 @@ api.ui().then(({ can_exit: canExit, stremio_linked: linked }) => {
 // Enlaces directos: ?buscar=dune abre la búsqueda con ese texto; ?serie=tt0386676 sus episodios.
 // (Para la voz: "busca Dune" puede llegar directo aquí.)
 const params = new URLSearchParams(location.search);
+if (params.get("seccion")) state.section = params.get("seccion"); // home | games | media | apps
 if (params.get("buscar")) ui.search.open(params.get("buscar"));
 else if (params.get("serie")) {
   ui.episodes.open({ id: `cinemeta:series:${params.get("serie")}`, meta_id: params.get("serie"), title: "", source: "cinemeta" });

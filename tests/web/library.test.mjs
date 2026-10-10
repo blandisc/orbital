@@ -87,7 +87,7 @@ test("secciones: cada fila en su lugar; Inicio vacío cae en Juegos; secciones v
   const ids = (sec) => sectionRows(rows, sec).map((r) => r.id);
   assert.deepEqual(ids("home"), ["recent", "continue"]);
   assert.deepEqual(ids("games"), ["steam", "geforcenow", "emulators:switch"]);
-  assert.deepEqual(ids("media"), ["continue", "media", "movies", "series"]);
+  assert.deepEqual(ids("media"), ["media", "continue", "movies", "series"]); // Buscar primero
   assert.deepEqual(ids("apps"), ["apps"]);
   const fresh = rows.filter((r) => !["recent", "continue"].includes(r.id));
   assert.deepEqual(sectionRows(fresh, "home").map((r) => r.id), ["steam", "geforcenow", "emulators:switch"]);

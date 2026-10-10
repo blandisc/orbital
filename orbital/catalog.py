@@ -22,6 +22,7 @@ from .state import State
 
 STREMIO_KEY = "stremio_auth_key"
 STREMIO_STALE_SECONDS = 180
+CONTINUE_LIMIT = 20  # "Seguir viendo": los más recientes
 STEAM_STATS_DELAY = 6  # s tras cerrar un juego de Steam, antes de releer sus horas
 
 log = logging.getLogger(__name__)
@@ -331,8 +332,9 @@ class Catalog:
                                  if i.source not in ("stremio", "cinemeta")), reverse=True)
                 members = [i for last, _, i in played if last][:15]
             elif cat["id"] == "continue":
+                # Stremio guarda todo lo que alguna vez empezaste (años): lo reciente, no 134 títulos.
                 members = sorted((i for i in items if i.category == "continue"),
-                                 key=lambda i: i.last_watched or 0, reverse=True)
+                                 key=lambda i: i.last_watched or 0, reverse=True)[:CONTINUE_LIMIT]
             elif cat["id"] == "favorites":
                 members = [i for i in alpha if self.is_favorite(i)]
             elif cat["id"] == "emulators":

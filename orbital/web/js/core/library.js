@@ -95,7 +95,9 @@ export const primaryLabel = (item, runningId = null) => {
 export const SECTIONS = [
   { id: "home", title: "Inicio", rows: (id) => ["recent", "continue", "favorites"].includes(id) },
   { id: "games", title: "Juegos", rows: (id) => ["steam", "geforcenow"].includes(id) || id.startsWith("emulators:") },
-  { id: "media", title: "Películas y series", rows: (id) => ["continue", "media", "movies", "series"].includes(id) },
+  // Buscar (fila "media") primero: en esta sección es la acción principal.
+  { id: "media", title: "Películas y series", rows: (id) => ["continue", "media", "movies", "series"].includes(id),
+    order: ["media", "continue", "movies", "series"] },
   { id: "apps", title: "Apps", rows: (id) => id === "apps" },
 ];
 
@@ -103,6 +105,7 @@ export const SECTIONS = [
 export function sectionRows(rows, sectionId) {
   const section = SECTIONS.find((s) => s.id === sectionId) ?? SECTIONS[0];
   const picked = rows.filter((row) => section.rows(row.id));
+  if (section.order) picked.sort((a, b) => section.order.indexOf(a.id) - section.order.indexOf(b.id));
   return picked.length || section.id !== "home" ? picked : sectionRows(rows, "games");
 }
 
