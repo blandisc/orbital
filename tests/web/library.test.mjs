@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { alternativeRunner, clampFocus, isGame, restoreFocus, rowJump, rowOffset, runnerName } from "../../orbital/web/js/core/library.js";
+import { alternativeRunner, clampFocus, clampRatio, coverRatio, isGame, restoreFocus, rowJump, rowOffset, runnerName } from "../../orbital/web/js/core/library.js";
 
 const rows = [
   { id: "recent", items: [{ id: "a" }, { id: "b" }] },
@@ -39,15 +39,26 @@ test("etiqueta del botón principal", async () => {
   assert.equal(primaryLabel({ source: "switch", category: "emulators" }), "Jugar");
   assert.equal(primaryLabel({ source: "stremio", progress: .4 }), "Continuar");
   assert.equal(primaryLabel({ source: "stremio", progress: null }), "Ver");
+  assert.equal(primaryLabel({ id: "emu:1", source: "switch" }, "emu:1"), "Continuar"); // sigue abierto
   assert.equal(isGame({ source: "stremio", category: "continue" }), false);
 });
 
 test("rowOffset: las filas cortas no se mueven y las largas no dejan hueco al final", () => {
-  const m = { step: 100, grow: 20, visible: 1000 };
-  assert.equal(rowOffset(5, 4, m), 0); // 5 tarjetas caben: no se desplaza
-  assert.equal(rowOffset(30, 0, m), 0);
-  assert.equal(rowOffset(30, 5, m), 400); // una de contexto a la izquierda
-  assert.equal(rowOffset(30, 29, m), 30 * 100 + 20 - 1000); // pegada al final, sin hueco
+  const m = { gap: 10, grow: 20, visible: 1000 };
+  const thirty = Array(30).fill(90); // 90 + 10 de espacio = 100 por tarjeta
+  assert.equal(rowOffset(Array(5).fill(90), 4, m), 0); // 5 tarjetas caben: no se desplaza
+  assert.equal(rowOffset(thirty, 0, m), 0);
+  assert.equal(rowOffset(thirty, 5, m), 400); // una de contexto a la izquierda
+  assert.equal(rowOffset(thirty, 29, m), 30 * 100 - 10 + 20 - 1000); // pegada al final, sin hueco
+  assert.equal(rowOffset([60, 140, 90, 90], 2, { gap: 10, visible: 100 }), 70); // anchos distintos
+});
+
+test("coverRatio: cada sistema con su proporción; GBA cuadrada", () => {
+  assert.equal(coverRatio({ source: "gba" }), 1);
+  assert.equal(coverRatio({ source: "switch-eden" }), .618);
+  assert.equal(coverRatio({ source: "steam", category: "steam" }), .667);
+  assert.equal(coverRatio({ source: "stremio", category: "media" }), .667);
+  assert.equal(clampRatio(1.765), 1.15); // captura mal descargada
 });
 
 test("rowJump: cada fila recuerda su juego; las nuevas empiezan en el primero", () => {

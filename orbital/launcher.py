@@ -133,8 +133,12 @@ class Launcher:
                     "started": cur.started, "runner": cur.runner,
                     "pid": cur.process.pid if cur.process is not None else None}
 
-    def stop(self) -> bool:
-        """Cierra el proceso lanzado por Orbital. Devuelve False si no hay nada que cerrar."""
+    def stop(self, force: bool = False) -> bool:
+        """Cierra el proceso lanzado por Orbital. Devuelve False si no hay nada que cerrar.
+
+        `force`: ya lo confirmaste en Orbital, así que se cierra de inmediato. Sin esto, algunos
+        emuladores (Eden con "confirmar al detener") abren su propio "¿Seguro?" con el mando a medias.
+        """
         with self._lock:
             cur = self.current
         if cur is None or cur.process is None or cur.process.poll() is not None:
@@ -143,7 +147,7 @@ class Launcher:
             # terminate() solo cierra el proceso directo: con un .cmd (launch-eden.cmd) o un
             # emulador que abre hijos, el juego seguiría abierto. taskkill /T cierra el árbol,
             # primero pidiendo cerrar las ventanas y, si no responden, a la fuerza.
-            _taskkill(cur.process.pid)
+            _taskkill(cur.process.pid, force=force)
             try:
                 cur.process.wait(timeout=5)
             except subprocess.TimeoutExpired:

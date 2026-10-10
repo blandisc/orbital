@@ -54,3 +54,26 @@ def test_kiosk_open_and_close(tmp_path):
     assert kiosk.open() and kiosk.is_open and not kiosk.exited_by_user
     assert kiosk.close() and not kiosk.is_open and kiosk.exited_by_user
     assert kiosk.close() is False
+
+
+def test_kiosk_reopens_when_closed_without_exit(tmp_path):
+    # Una "ventana" que se cierra sola al instante: se reabre, pero máximo 3 veces por minuto.
+    count = tmp_path / "count.txt"
+    fake = tmp_path / "browser.cmd"
+    fake.write_text(f"@echo x>>\"{count}\"\n")
+    kiosk = KioskWindow("http://x", str(fake), tmp_path / "perfil")
+    kiosk.REOPEN_DELAY = 0.05
+    assert kiosk.open()
+    assert wait_for(lambda: count.exists() and len(count.read_text().split()) == 4)  # 1 + 3 reaperturas
+    time.sleep(0.5)
+    assert len(count.read_text().split()) == 4
+
+
+def test_kiosk_not_reopened_after_exit_to_desktop(tmp_path):
+    fake = tmp_path / "browser.cmd"
+    fake.write_text("@ping -n 30 127.0.0.1 >nul\n")
+    kiosk = KioskWindow("http://x", str(fake), tmp_path / "perfil")
+    kiosk.REOPEN_DELAY = 0.05
+    assert kiosk.open() and kiosk.close()
+    time.sleep(0.4)
+    assert not kiosk.is_open

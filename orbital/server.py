@@ -173,6 +173,9 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
 
     @app.post("/api/launch")
     def launch(body: LaunchRequest) -> dict:
+        running = catalog.launcher.status()
+        if running and running["id"] == body.id and not body.runner and shell.resume():
+            return {"ok": True, "resumed": True}
         try:
             item = catalog.launch(body.id, body.runner)
         except KeyError:

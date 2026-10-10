@@ -1,9 +1,15 @@
 import { h, svg } from "../core/dom.js";
 import { shortAgo } from "../core/format.js";
 import { ICONS, systemIconName } from "../core/icons.js";
+import { clampRatio, coverRatio } from "../core/library.js";
 
 /** Portada de un juego/app. Si no hay imagen (o falla), muestra el ícono de su tipo y el título. */
-export function Card(item, { onPress, showAgo = false, pop = false } = {}) {
+/**
+ * Todas las tarjetas miden lo mismo de alto; el ancho sigue la proporción de la portada
+ * (GBA cuadrada, Switch alta). Hasta que carga la imagen se usa la típica del sistema.
+ * `onRatio` avisa si la real es distinta (la fila recalcula su desplazamiento).
+ */
+export function Card(item, { onPress, onRatio, showAgo = false, pop = false } = {}) {
   const meta = h("span", { class: "card__meta" },
     h("strong", { class: "card__title" }, item.title),
     h("small", { class: "card__subtitle" }, item.subtitle));
@@ -22,11 +28,23 @@ export function Card(item, { onPress, showAgo = false, pop = false } = {}) {
     "aria-label": item.title,
     onClick: onPress,
   });
+  const setRatio = (ratio) => {
+    card.dataset.ratio = String(ratio);
+    card.style.setProperty("--ratio", String(ratio));
+  };
+  setRatio(coverRatio(item));
   if (item.image) {
     // Sin loading="lazy": las filas de abajo están fuera de vista y cada portada aparecería
     // vacía un instante al cambiar de fila. Son archivos locales; se cargan de una vez.
     const img = h("img", { class: "card__image", src: item.image, alt: "", decoding: "async" });
-    img.addEventListener("load", () => img.classList.add("card__image--loaded"), { once: true });
+    img.addEventListener("load", () => {
+      img.classList.add("card__image--loaded");
+      const real = clampRatio(img.naturalWidth / img.naturalHeight);
+      if (Math.abs(real - Number(card.dataset.ratio)) > .02) {
+        setRatio(real);
+        onRatio?.();
+      }
+    }, { once: true });
     img.addEventListener("error", () => {
       card.classList.replace("card--has-art", "card--no-art");
       img.replaceWith(fallback());

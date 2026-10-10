@@ -33,7 +33,7 @@ class FakeLauncher:
         cur, self.current = self.current, None
         self.on_exit(cur["id"], cur["title"], seconds)
 
-    def stop(self):
+    def stop(self, force=False):
         was = self.current is not None and self.current["managed"]
         self.current = None
         return was

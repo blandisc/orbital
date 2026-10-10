@@ -53,3 +53,9 @@ test("cerrar el juego siempre pide confirmación y por defecto sigue jugando", (
   const close = mainMenu({ running }).options.find((o) => o.label === "Cerrar Zelda");
   assert.deepEqual(close.command, { type: "confirm-stop", title: "Zelda", runner: "Eden" });
 });
+
+test("Y sobre el juego abierto: continuar o cerrar, no abrir otra copia", () => {
+  const menu = gameMenu(zelda, { running: { id: zelda.id, runner: "Eden" } });
+  assert.deepEqual(menu.options.slice(0, 2).map((o) => o.label), ["Continuar", "Cerrar Eden"]);
+  assert.ok(!menu.options.some((o) => o.command.type === "launch"));
+});

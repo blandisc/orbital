@@ -16,11 +16,10 @@ export function createShelf({ onPick }) {
   let metrics = null;
 
   const measure = () => {
-    const card = tokenPx("--card-width");
     metrics = {
-      step: card + tokenPx("--card-gap"),
-      // Lo que crece la tarjeta enfocada (empuja a las demás con su margen).
-      grow: card * (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--card-focus-scale")) - 1 || 0),
+      cardHeight: tokenPx("--card-height"),
+      gap: tokenPx("--card-gap"),
+      scale: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--card-focus-scale")) || 1,
       rowHeight: tokenPx("--row-height"),
       visible: el.clientWidth - 2 * tokenPx("--page-gutter"),
     };
@@ -37,6 +36,7 @@ export function createShelf({ onPick }) {
     rowEls = rows.map((row, r) => {
       const cards = row.items.map((item, c) => Card(item, {
         onPress: () => onPick(r, c), showAgo: row.id === "recent", pop: item.id === popId,
+        onRatio: () => r === focus.r && place(), // la portada real cambió el ancho
       }));
       const track = h("div", { class: "shelf__track", role: "list" }, cards);
       const count = h("span", { class: "shelf__count" }, String(row.items.length));
@@ -71,8 +71,18 @@ export function createShelf({ onPick }) {
         if (focused) card.setAttribute("aria-current", "true");
         else card.removeAttribute("aria-current");
       });
-      if (isCurrent) track.style.transform = `translateX(${-rowOffset(cards.length, c, metrics)}px)`;
     });
+    place();
+  }
+
+  /** Desplaza la fila actual según el ancho real de cada tarjeta. */
+  function place() {
+    const row = rowEls[focus.r];
+    if (!row || !metrics) return;
+    const widths = row.cards.map((card) => metrics.cardHeight * Number(card.dataset.ratio));
+    const grow = (widths[focus.c] ?? 0) * (metrics.scale - 1);
+    const x = rowOffset(widths, focus.c, { gap: metrics.gap, grow, visible: metrics.visible });
+    row.track.style.transform = `translateX(${-x}px)`;
   }
 
   /** Ya no hay más hacia ese lado: la tarjeta se empuja un poco para que se note. */

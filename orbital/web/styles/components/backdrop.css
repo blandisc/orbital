@@ -1,15 +1,38 @@
-/* Backdrop: arte del juego a pantalla completa, con fundido entre dos capas.
-   La base y el velo toman el tono del juego (--art-tint), así el color nunca "salta". */
+/* Backdrop: el arte del juego, compuesto a la derecha y fundido hacia su color (--art-tint).
+   Las máscaras (no velos oscuros) dejan el arte limpio donde se ve y el fondo tranquilo detrás
+   del texto y de las filas. */
 .backdrop { position: fixed; inset: 0; z-index: -1; background: var(--color-tinted-bg); overflow: hidden; }
 .backdrop__layer {
-  position: absolute; inset: 0;
-  background-size: cover; background-position: center 30%;
-  opacity: 0; transform: scale(1.05);
-  transition: opacity var(--duration-tint) var(--ease-out), transform 8s linear;
+  position: absolute; inset: 0; opacity: 0;
+  transition: opacity var(--duration-tint) var(--ease-out);
 }
-.backdrop__layer--visible { opacity: 1; transform: scale(1); }
-/* Solo portada vertical (sin fanart): ampliada sería un mosaico pixelado. Desenfocada se vuelve
-   un campo de color del juego, que es lo que el fondo necesita. */
-.backdrop__layer--poster { inset: -10%; filter: blur(3.5rem) saturate(1.3); }
-.backdrop__layer--poster.backdrop__layer--visible { opacity: .55; }
+.backdrop__layer--visible { opacity: 1; }
+
+/* Fanart: lado derecho, fundido por la izquierda y por abajo; deriva lenta. */
+.backdrop__art {
+  position: absolute; inset: 0 0 0 22%;
+  background-size: cover; background-position: center 28%;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 42%), linear-gradient(0deg, transparent 30%, #000 72%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 42%), linear-gradient(0deg, transparent 30%, #000 72%);
+  mask-composite: intersect;
+  transform: scale(1.06); transform-origin: 70% 30%;
+  transition: transform 9s linear;
+}
+.backdrop__layer--visible .backdrop__art { transform: scale(1); }
+
+/* Solo portada: halo de color detrás (la misma imagen, muy desenfocada) y la caja nítida. */
+.backdrop__box { display: none; }
+.backdrop__layer--poster .backdrop__art {
+  inset: -15% -10% -15% 35%; filter: blur(4.5rem) saturate(1.4); opacity: .5; transform: none;
+  -webkit-mask-image: radial-gradient(closest-side, #000, transparent); mask-image: radial-gradient(closest-side, #000, transparent);
+}
+.backdrop__layer--poster .backdrop__box {
+  display: block; position: absolute; top: 5.2rem; right: calc(var(--page-gutter) + 3rem);
+  height: 19rem; width: auto; max-width: 26rem; object-fit: contain;
+  border-radius: var(--radius-lg); box-shadow: 0 2.2rem 4.5rem rgba(0, 0, 0, .6);
+  transform: translateY(.6rem); transition: transform var(--duration-tint) var(--ease-out);
+}
+.backdrop__layer--poster.backdrop__layer--visible .backdrop__box { transform: none; }
+/* Velo mínimo: arriba para la hora y a la izquierda para el título. */
 .backdrop__scrim { position: absolute; inset: 0; background: var(--scrim-hero); }

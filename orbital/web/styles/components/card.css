@@ -3,7 +3,7 @@
    portadas traen su logo). Sin portada, muestra la inicial y el título. */
 .card {
   position: relative; flex: none;
-  width: var(--card-width); height: var(--card-height);
+  width: calc(var(--card-height) * var(--ratio, .667)); height: var(--card-height);
   border-radius: var(--card-radius); overflow: hidden; text-align: left;
   background: var(--gradient-card); box-shadow: var(--shadow-card);
   /* El foco escala desde la esquina inferior izquierda y empuja a las vecinas con el
@@ -11,6 +11,7 @@
   transform-origin: 0 100%;
   transition:
     transform var(--duration-base) var(--ease-spring), margin var(--duration-base) var(--ease-out),
+    width var(--duration-slow) var(--ease-out),
     box-shadow var(--duration-base) var(--ease-out), opacity var(--duration-base) var(--ease-out),
     filter var(--duration-base) var(--ease-out);
 }
@@ -60,7 +61,7 @@
 .card__subtitle { color: var(--color-text-muted); font-size: var(--text-2xs); }
 .card--focused {
   transform: scale(var(--card-focus-scale));
-  margin-right: calc(var(--card-width) * (var(--card-focus-scale) - 1));
+  margin-right: calc(var(--card-height) * var(--ratio, .667) * (var(--card-focus-scale) - 1));
   box-shadow: var(--ring-focus);
 }
 .card--dimmed { opacity: .4; filter: saturate(.6); }

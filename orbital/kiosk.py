@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import time
 from pathlib import Path
 
 from . import system
@@ -79,12 +80,18 @@ def build_command(browser: str, url: str, profile_dir: Path) -> list[str]:
 class KioskWindow:
     """Abre, trae al frente y cierra la ventana de la interfaz."""
 
-    def __init__(self, url: str, browser: str | None = None, profile_dir: Path | None = None) -> None:
+    REOPEN_DELAY = 1.5  # s antes de reabrir una ventana que se cerró sola
+    MAX_REOPENS = 3  # por minuto: si Edge falla de verdad, no entramos en un ciclo
+
+    def __init__(self, url: str, browser: str | None = None, profile_dir: Path | None = None,
+                 keep_open: bool = True) -> None:
         self.url = url
         self.browser = browser
         self.profile_dir = profile_dir or default_profile_dir()
         self._process: subprocess.Popen | None = None
         self.exited_by_user = False  # "Salir al escritorio": no la reabrimos sola al cerrar un juego
+        self.keep_open = keep_open  # consola: si la ventana se cierra sin "Salir al escritorio", vuelve
+        self._reopens: list[float] = []
         self._lock = threading.Lock()
 
     @property
@@ -105,7 +112,25 @@ class KioskWindow:
             self._process = subprocess.Popen(build_command(exe, self.url, self.profile_dir),
                                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             log.info("Interfaz abierta (pid %s)", self._process.pid)
+            if self.keep_open:
+                threading.Thread(target=self._watch, args=(self._process,), daemon=True).start()
             return True
+
+    def _watch(self, proc: subprocess.Popen) -> None:
+        """Si la ventana se cierra sola (o con Alt+F4), la reabre: en modo consola Orbital siempre está."""
+        proc.wait()
+        time.sleep(self.REOPEN_DELAY)
+        with self._lock:
+            if self.exited_by_user or self._process is not proc:
+                return
+            now = time.monotonic()
+            self._reopens = [t for t in self._reopens if now - t < 60]
+            if len(self._reopens) >= self.MAX_REOPENS:
+                log.warning("La ventana de Orbital se cerró %d veces en un minuto; no la reabro", self.MAX_REOPENS)
+                return
+            self._reopens.append(now)
+        log.info("La ventana de Orbital se cerró sin \"Salir al escritorio\": la reabro")
+        self.open()
 
     def close(self) -> bool:
         """Sale al escritorio. Orbital sigue escuchando (Alexa puede volver a abrirla)."""

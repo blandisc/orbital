@@ -46,7 +46,8 @@ class FakeLauncher:
 
     def status(self): return self.running
 
-    def stop(self):
+    def stop(self, force=False):
+        self.forced = force
         self.stopped = self.running is not None and self.running.get("managed")
         return self.stopped
 
@@ -108,7 +109,7 @@ def test_hold_closes_managed_game():
     shell, win, _ = make(MANAGED)
     shell.hold_start()
     shell.hold_complete()
-    assert shell.stop_game() and shell.catalog.launcher.stopped
+    assert shell.stop_game() and shell.catalog.launcher.stopped and shell.catalog.launcher.forced
 
 
 def test_hold_also_works_with_emulator_opened_elsewhere():

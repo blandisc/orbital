@@ -34,14 +34,33 @@ export function rowJump(rows, memory, r, delta) {
   return clampFocus(rows, target, memory[rows[target]?.id] ?? 0);
 }
 
+/** Proporción típica (ancho / alto) de las portadas de cada sistema, medida en una biblioteca real. */
+export const COVER_RATIOS = { gba: 1, gamecube: .71, wii: .71, xbox: .705, xbox360: .705, steam: .667, psp: .57, switch: .618 };
+export const RATIO_RANGE = [.55, 1.15]; // una captura mal descargada no deforma la fila
+
+export const clampRatio = (ratio) => clamp(ratio, ...RATIO_RANGE);
+
+/** Proporción con la que se pinta la tarjeta antes de que cargue su imagen. */
+export function coverRatio(item) {
+  const system = String(item?.source || "").replace(/-.*/, ""); // "switch-eden" -> "switch"
+  return COVER_RATIOS[system] ?? COVER_RATIOS[item?.category] ?? .667;
+}
+
 /**
  * Cuánto desplazar una fila (px) para que la tarjeta `c` quede a la izquierda con una de
  * contexto, sin pasarse del final: una fila corta no se mueve y una larga no deja hueco.
+ * `widths`: ancho de cada tarjeta (cambia con la proporción de su portada).
  */
-export function rowOffset(count, c, { step, grow = 0, visible }) {
-  const total = count * step + grow; // la enfocada mide `grow` de más
+export function rowOffset(widths, c, { gap, grow = 0, visible }) {
+  const lefts = [];
+  let x = 0;
+  for (const w of widths) {
+    lefts.push(x);
+    x += w + gap;
+  }
+  const total = Math.max(0, x - gap) + grow; // la enfocada mide `grow` de más
   const max = Math.max(0, total - visible);
-  return Math.min(Math.max(0, c - 1) * step, max);
+  return Math.min(lefts[Math.max(0, c - 1)] ?? 0, max);
 }
 
 /** El emulador alternativo (p. ej. Eden cuando el predeterminado es Ryujinx). */
@@ -57,4 +76,8 @@ export const isWatchable = (item) => item?.source === "stremio";
 export const isGame = (item) => !!item && !isWatchable(item) && item.category !== "media" && item.category !== "apps";
 
 /** Texto del botón principal según lo que sea. */
-export const primaryLabel = (item) => (isWatchable(item) ? (item.progress > 0 ? "Continuar" : "Ver") : "Jugar");
+/** Texto del botón principal. `runningId`: lo que está abierto ahora (se continúa, no se relanza). */
+export const primaryLabel = (item, runningId = null) => {
+  if (item && item.id === runningId) return "Continuar";
+  return isWatchable(item) ? (item.progress > 0 ? "Continuar" : "Ver") : "Jugar";
+};

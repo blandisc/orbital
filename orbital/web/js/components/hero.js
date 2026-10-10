@@ -14,7 +14,7 @@ export function createHero({ onAction }) {
   const el = h("main", { class: "hero" }, content);
   let timer;
 
-  function fill(item, glyphs) {
+  function fill(item, glyphs, runningId) {
     if (!item) {
       mount(eyebrow);
       title.textContent = "Orbital";
@@ -38,19 +38,19 @@ export function createHero({ onAction }) {
 
     const alt = alternativeRunner(item);
     mount(actions,
-      Button({ label: primaryLabel(item), glyph: glyphs.select, variant: "primary", onPress: () => onAction("select") }),
-      alt && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
+      Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", onPress: () => onAction("select") }),
+      alt && item.id !== runningId && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
       // Antes era "☰", el mismo glifo del botón Menú del mando: se confundían.
       Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction("options") }));
   }
 
   /** Actualiza con una transición corta. `immediate` evita la animación (p. ej. al cambiar glifos). */
-  function update(item, glyphs, { immediate = false } = {}) {
+  function update(item, glyphs, { immediate = false, runningId = null } = {}) {
     clearTimeout(timer);
-    if (immediate) return fill(item, glyphs);
+    if (immediate) return fill(item, glyphs, runningId);
     content.classList.add("hero__content--leaving");
     timer = setTimeout(() => {
-      fill(item, glyphs);
+      fill(item, glyphs, runningId);
       content.classList.remove("hero__content--leaving");
     }, 110);
   }

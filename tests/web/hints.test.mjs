@@ -22,3 +22,9 @@ test("fuera del inicio enseña cómo volver, y LB/RB solo en filas largas", () =
 test("con un menú abierto solo Elegir y Cerrar", () => {
   assert.deepEqual(footerHints(GLYPHS.keyboard, { sheetOpen: true }).map((i) => i.glyph), ["Enter", "Esc"]);
 });
+
+test("con un juego abierto el pie recuerda Home para volver (solo con mando)", () => {
+  const running = { title: "Zelda" };
+  assert.deepEqual(footerHints(GLYPHS.gamepad, { running }).at(-2), { glyph: "Home", label: "Volver a Zelda" });
+  assert.ok(!footerHints(GLYPHS.keyboard, { running }).some((i) => i.glyph === "Home"));
+});

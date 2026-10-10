@@ -66,6 +66,7 @@ function renderHints() {
     sheetOpen: ui.sheet.isOpen,
     atHome: !r && !c,
     longRow: (state.rows[r]?.items.length ?? 0) >= LONG_ROW,
+    running: state.running?.managed ? state.running : null,
   }));
 }
 
@@ -79,7 +80,7 @@ function setFocus(r, c, { silent = false, edge = null } = {}) {
   ui.shelf.setFocus(next.r, next.c);
   if (moved || silent) {
     const item = current();
-    ui.hero.update(item, glyphs());
+    ui.hero.update(item, glyphs(), { runningId: state.running?.id });
     ui.backdrop.show(item?.hero || item?.image, { poster: !!item && !item.hero });
   }
   if (moved && !silent) sound.play("move");
@@ -90,7 +91,7 @@ function setModality(modality) {
   if (state.modality === modality) return;
   state.modality = modality;
   document.body.dataset.input = modality;
-  ui.hero.update(current(), glyphs(), { immediate: true });
+  ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   renderHints();
 }
 
@@ -118,8 +119,14 @@ async function loadLibrary({ refresh = false, keepId = current()?.id } = {}) {
 
 async function pollStatus() {
   try {
-    state.running = (await api.status()).running;
-    ui.status.setRunning(state.running);
+    const running = (await api.status()).running;
+    const changed = running?.id !== state.running?.id;
+    state.running = running;
+    ui.status.setRunning(running);
+    if (changed) { // "Jugar" <-> "Continuar" y el pie, sin esperar a moverse
+      ui.hero.update(current(), glyphs(), { immediate: true, runningId: running?.id });
+      renderHints();
+    }
   } catch { /* el servidor puede estar reiniciando */ }
 }
 
@@ -132,6 +139,10 @@ async function pollSystem() {
 // ---------------------------------------------------------------- acciones
 async function launch(item, runner = null) {
   if (!item || Date.now() < state.launchLockedUntil) return; // evita dobles pulsaciones de A
+  if (!runner && item.id === state.running?.id) { // sigue abierto: se continúa, no se abre otra copia
+    sound.play("select");
+    return api.resume();
+  }
   state.launchLockedUntil = Date.now() + LAUNCH_COOLDOWN_MS;
   sound.play("open");
   const name = runnerName(item, runner);
@@ -225,7 +236,7 @@ function handleAction(action) {
     case "pageright": return setFocus(r, c + 5, { edge: "right" });
     case "select": return launch(item);
     case "alt": { const alt = alternativeRunner(item); return alt && launch(item, alt.id); }
-    case "options": return openMenu(gameMenu(item));
+    case "options": return openMenu(gameMenu(item, { running: state.running }));
     case "menu": return openMenu(mainMenu({
       soundEnabled: sound.enabled, running: state.running, hiddenCount: state.hidden, canExit: state.canExit,
     }));

@@ -83,9 +83,8 @@
      1280×800 → 16 px · 1920×1080 → 21,6 px · 2560×1600 → 32 px. */
   --root-size: clamp(12px, min(1.25vw, 2vh), 34px);
   --page-gutter: var(--space-10);
-  --card-width: 8.4rem;
-  --card-height: 12.6rem;
-  --card-gap: var(--space-4);
+  --card-height: 12.6rem; /* el ancho sale de la proporción de cada portada */
+  --card-gap: var(--space-6);
   --card-focus-scale: 1.12;
   --card-radius: var(--radius-md);
   --row-heading-height: 2.4rem;

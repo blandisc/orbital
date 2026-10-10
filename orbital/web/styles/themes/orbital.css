@@ -35,10 +35,8 @@
   --color-tinted-bg: color-mix(in oklab, var(--art-tint) 55%, var(--palette-ink-1000));
   --color-scrim: color-mix(in oklab, var(--palette-ink-1000) 62%, transparent);
   --scrim-hero:
-    linear-gradient(180deg, color-mix(in oklab, var(--color-tinted-bg) 92%, transparent) 0%, color-mix(in oklab, var(--color-tinted-bg) 55%, transparent) 12%, transparent 26%),
-    linear-gradient(90deg, var(--color-tinted-bg) 0%, color-mix(in oklab, var(--color-tinted-bg) 85%, transparent) 30%,
-      color-mix(in oklab, var(--color-tinted-bg) 20%, transparent) 62%, transparent 88%),
-    linear-gradient(0deg, var(--color-tinted-bg) 0%, color-mix(in oklab, var(--color-tinted-bg) 92%, transparent) 34%, transparent 64%);
+    linear-gradient(180deg, color-mix(in oklab, var(--color-tinted-bg) 80%, transparent) 0%, transparent 18%),
+    linear-gradient(90deg, color-mix(in oklab, var(--color-tinted-bg) 70%, transparent) 0%, transparent 45%);
   --gradient-card: linear-gradient(160deg, var(--palette-ink-800), var(--palette-ink-900));
 
   --shadow-card: 0 .5rem 1.4rem rgba(0, 0, 0, .35);

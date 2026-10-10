@@ -20,7 +20,7 @@ export const PADMAP = {
 export const REPEATABLE = new Set(["up", "down", "left", "right", "pageleft", "pageright"]);
 
 export const GLYPHS = {
-  gamepad: { select: "A", back: "B", alt: "X", options: "Y", menu: "☰", rows: "↕", page: "LB RB" },
+  gamepad: { select: "A", back: "B", alt: "X", options: "Y", menu: "☰", rows: "↕", page: "LB RB", home: "Home" },
   keyboard: { select: "Enter", back: "Esc", alt: "X", options: "Y", menu: "M", rows: "↑↓", page: "RePág AvPág" },
 };
 

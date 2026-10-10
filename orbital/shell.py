@@ -122,10 +122,10 @@ class ConsoleShell:
 
     def stop_game(self) -> bool:
         target, self.hold = self.hold, None
-        if self.catalog.launcher.stop():
+        if self.catalog.launcher.stop(force=True):  # ya se confirmó en Orbital
             return True
         if target and target.get("pid") and sys.platform == "win32":
-            subprocess.run(["taskkill", "/PID", str(target["pid"]), "/T"], capture_output=True,
+            subprocess.run(["taskkill", "/PID", str(target["pid"]), "/T", "/F"], capture_output=True,
                            creationflags=subprocess.CREATE_NO_WINDOW)  # type: ignore[attr-defined]
             return True
         return False

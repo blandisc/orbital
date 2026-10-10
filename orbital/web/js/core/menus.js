@@ -4,10 +4,17 @@
  */
 import { runnerName } from "./library.js";
 
-export function gameMenu(item) {
+export function gameMenu(item, { running = null } = {}) {
   if (!item) return null;
-  const options = [{ icon: "play", label: "Jugar", hint: runnerName(item), command: { type: "launch", id: item.id } }];
-  for (const runner of item.runners || []) {
+  const isOpen = running?.id === item.id;
+  const options = isOpen
+    ? [
+      { icon: "play", label: "Continuar", hint: running.runner, command: { type: "resume" } },
+      { icon: "stop", label: `Cerrar ${running.runner || "el juego"}`, danger: true,
+        command: { type: "confirm-stop", title: item.title, runner: running.runner } },
+    ]
+    : [{ icon: "play", label: "Jugar", hint: runnerName(item), command: { type: "launch", id: item.id } }];
+  for (const runner of isOpen ? [] : item.runners || []) {
     if (runner.id === item.runner) continue;
     options.push({ icon: "swap", label: `Abrir con ${runner.name}`, hint: "solo esta vez", command: { type: "launch", id: item.id, runner: runner.id } });
     options.push({ icon: "check", label: `Usar siempre ${runner.name}`, command: { type: "prefs", id: item.id, prefs: { runner: runner.id }, message: `${item.title} se abrirá con ${runner.name}` } });
