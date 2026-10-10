@@ -94,8 +94,15 @@ class Launcher:
     def _watch_steam(self, running: Running, appid: int) -> None:
         deadline = time.time() + self.STEAM_START_TIMEOUT
         while steam_running_appid() != appid:
-            if time.time() > deadline or self.current is not running:
-                return  # no llegó a arrancar o ya se abrió otra cosa
+            if self.current is not running:
+                return  # ya se abrió otra cosa
+            if time.time() > deadline:
+                # No llegó a arrancar: que no quede "En curso" para siempre.
+                with self._lock:
+                    if self.current is running:
+                        self.current = None
+                log.info("%s no arrancó en %d s; deja de estar en curso", running.title, self.STEAM_START_TIMEOUT)
+                return
             time.sleep(self.POLL)
         running.started = time.time()
         while steam_running_appid() == appid:

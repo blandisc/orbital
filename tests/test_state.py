@@ -66,3 +66,15 @@ def test_parse_netsh_any_language():
     es = "    Nombre                 : Wi-Fi\n    SSID                   : MiCasa\n    BSSID                  : aa:bb\n    Señal                 : 82%\n"
     assert parse_netsh(es) == {"signal": 82, "ssid": "MiCasa"}
     assert parse_netsh("No hay interfaces") is None
+
+
+def test_steam_game_that_never_starts_is_not_running_forever(monkeypatch):
+    from orbital import launcher as launcher_mod
+
+    monkeypatch.setattr(launcher_mod, "steam_running_appid", lambda: 0)  # Steam abierto, juego no
+    lau = launcher_mod.Launcher()
+    lau.STEAM_START_TIMEOUT, lau.POLL = 0.05, 0.01
+    running = launcher_mod.Running("steam:1", "Be My Horde", None)
+    lau.current = running
+    lau._watch_steam(running, 1)
+    assert lau.status() is None
