@@ -30,6 +30,16 @@
   text-shadow: 0 2px 30px rgba(0, 0, 0, .45);
 }
 .hero__title--long { font-size: var(--text-3xl); }
+/* Logotipo del título (Stremio): ocupa el lugar del texto, alineado a la izquierda. */
+.hero__logo {
+  display: block; width: auto; max-width: min(30rem, 100%); max-height: 7.5rem; margin: var(--space-3) 0 var(--space-4);
+  object-fit: contain; object-position: left bottom; filter: drop-shadow(0 .3rem 1.2rem rgba(0, 0, 0, .55));
+  animation: fade-in var(--duration-slow) var(--ease-out);
+}
+.hero__description {
+  max-width: 36rem; margin-top: var(--space-3); color: var(--color-text-muted); font-size: var(--text-md); line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 .hero__facts {
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3);
   min-height: 1.5rem; color: var(--color-text-muted); font-size: var(--text-md);

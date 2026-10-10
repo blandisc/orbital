@@ -52,9 +52,9 @@ def test_parse_library_follows_stremio_rules():
     assert [w.name for w in items] == ["Game of Thrones", "Interstellar", "Anime temporal", "The Office", "Otro"]
     got, interstellar, anime, office, other = items
     assert got.in_continue and got.episode == (3, 9) and got.progress == pytest.approx(1 / 3)
-    assert got.deep_link == "stremio:///detail/series/tt0944947/tt0944947:3:9"
+    assert got.deep_link == "stremio:///detail/series/tt0944947/tt0944947:3:9?autoPlay=true"
     assert got.background == "https://images.metahub.space/background/medium/tt0944947/img"
-    assert interstellar.deep_link == "stremio:///detail/movie/tt0816692" and interstellar.episode == (None, None)
+    assert interstellar.deep_link == "stremio:///detail/movie/tt0816692/tt0816692?autoPlay=true" and interstellar.episode == (None, None)
     assert anime.in_continue and anime.episode == (None, 7) and anime.background is None
     assert not office.in_continue and not other.in_continue  # sin progreso / tipo "other"
 
@@ -101,7 +101,8 @@ def test_continue_row(linked):
     assert "The Office" not in [i["title"] for r in rows.values() for i in r["items"]]  # sin fila propia
     assert "recent" not in rows  # abrir algo de Stremio no ensucia "Jugado recientemente"
     linked.launch("stremio:tt0816692")
-    assert linked.launcher.opened[-1] == "stremio:///detail/movie/tt0816692"
+    # Con Stremio instalado se le pasa el enlace como argumento; sin él, se abre el URI.
+    assert sent(linked) == "stremio:///detail/movie/tt0816692/tt0816692?autoPlay=true"
     assert "recent" not in {r["id"] for r in linked.grouped()}
 
 
@@ -118,16 +119,22 @@ def test_failure_keeps_last_list_and_notifies_changes(linked):
     assert [i.title for i in linked.grouped_items("continue")] == ["Game of Thrones"]
 
 
+def sent(catalog) -> str:
+    """Último enlace que se mandó a Stremio: como argumento del ejecutable o como URI."""
+    ran = [argv[-1] for argv in catalog.launcher.ran if argv and str(argv[-1]).startswith("stremio:")]
+    return ran[-1] if ran else catalog.launcher.opened[-1]
+
+
 def test_voice_continue_and_search(linked):
     voice = VoiceController(linked)
     r = voice.handle_text("sigue viendo")
     assert r.ok and r.speech == "Continuando Game of Thrones, T3 E9."
-    assert linked.launcher.opened[-1].endswith("tt0944947:3:9")
+    assert sent(linked).endswith("tt0944947:3:9?autoPlay=true")
     assert voice.handle_text("continua interstellar").speech == "Continuando Interstellar, Película."
     # Buscar algo que ya está en tu biblioteca abre su ficha, no la búsqueda.
     assert voice.handle_text("busca the office en stremio").speech == "Abriendo The Office en Stremio."
     assert voice.handle_text("busca dune en stremio").speech == "Buscando dune en Stremio."
-    assert linked.launcher.opened[-1] == "stremio:///search?search=dune"
+    assert sent(linked) == "stremio:///search?search=dune"
     # "abre X" sirve también para series, pero los juegos tienen prioridad.
     assert voice.handle_text("abre the office").speech == "Abriendo The Office en Stremio."
 
@@ -152,3 +159,34 @@ def test_voice_launch_with_runner(tmp_path):
     assert voice.handle_text("abre zelda").speech == f"Abriendo {zelda.title}."
     assert cat.launcher.ran[-1][0] == "ryujinx"
     assert not voice.handle_text("abre zelda con dolphin").ok
+
+
+def test_cinemeta_search_keeps_relevance_and_promotes_exact():
+    from orbital.library import cinemeta
+
+    # "ofice": Cinemeta ya pone The Office primero; "Oficer" empieza igual pero no debe ganarle.
+    series = [{"id": "tt3", "name": "The Office", "releaseInfo": "2005"}, {"id": "tt9", "name": "Oficer"},
+              {"id": "tt3", "name": "The Office"}]
+    movies = [{"id": "tt1", "name": "Bad Day at the Office"}]
+    results = cinemeta.search_results("ofice", movies, series)
+    assert [r["title"] for r in results] == ["The Office", "Bad Day at the Office", "Oficer"]  # sin duplicados
+    exact = cinemeta.search_results("oficer", movies, series)
+    assert exact[0]["title"] == "Oficer"  # coincidencia exacta: primero
+    office = results[0]
+    assert office["kind"] == "series" and office["meta_id"] == "tt3" and office["subtitle"] == "Serie · 2005"
+
+
+def test_seasons_put_specials_last_and_play_links():
+    from orbital.library import cinemeta
+
+    meta = {"videos": [
+        {"id": "tt3:2:1", "season": 2, "episode": 1, "name": "B"},
+        {"id": "tt3:0:1", "season": 0, "episode": 1, "name": "Especial"},
+        {"id": "tt3:1:2", "season": 1, "episode": 2, "name": "A2"},
+        {"id": "tt3:1:1", "season": 1, "episode": 1, "name": "A1"},
+    ]}
+    s = cinemeta.seasons(meta)
+    assert [x["label"] for x in s] == ["Temporada 1", "Temporada 2", "Especiales"]
+    assert [e["title"] for e in s[0]["episodes"]] == ["A1", "A2"]
+    assert cinemeta.play_link("series", "tt3", "tt3:1:2") == "stremio:///detail/series/tt3/tt3:1:2?autoPlay=true"
+    assert cinemeta.play_link("movie", "tt1") == "stremio:///detail/movie/tt1/tt1?autoPlay=true"

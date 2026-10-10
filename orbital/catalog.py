@@ -15,7 +15,7 @@ from . import system
 from .config import Config
 from .launcher import Launcher
 from .credentials import Credentials
-from .library import detect, emulators, esde, steam, stremio, stremio_api
+from .library import cinemeta, detect, emulators, esde, steam, stremio, stremio_api
 from .library.models import LibraryItem
 from .state import State
 
@@ -31,6 +31,8 @@ CATEGORIES = [
     {"id": "steam", "title": "Steam"},
     {"id": "emulators", "title": "Emuladores"},
     {"id": "media", "title": "Multimedia"},
+    {"id": "movies", "title": "Películas populares"},
+    {"id": "series", "title": "Series populares"},
     {"id": "apps", "title": "Apps"},
 ]
 
@@ -77,7 +79,8 @@ def stremio_item(w: stremio_api.Watchable) -> LibraryItem:
 
 class Catalog:
     def __init__(self, config: Config, launcher: Launcher | None = None, state: State | None = None,
-                 credentials: Credentials | None = None, stremio_client: stremio_api.StremioAPI | None = None) -> None:
+                 credentials: Credentials | None = None, stremio_client: stremio_api.StremioAPI | None = None,
+                 cinemeta_client: cinemeta.Cinemeta | None = None) -> None:
         self.config = config
         self.launcher = launcher or Launcher()
         self.launcher.on_exit = self._session_ended
@@ -94,6 +97,8 @@ class Catalog:
         self._stremio_items: list[LibraryItem] = []
         self._stremio_fetched = 0.0
         self._stremio_busy = threading.Lock()
+        self.cinemeta = cinemeta_client or cinemeta.Cinemeta()
+        self._cinemeta_items: list[LibraryItem] = []
         self.listeners: list[Listener] = []
         self._items: dict[str, LibraryItem] = {}
         self._lock = threading.Lock()
@@ -154,6 +159,7 @@ class Catalog:
                 )
             )
         found += self._stremio_items
+        found += self._cinemeta_items
         for item in found:
             url = f"/api/art/{quote(item.id, safe=':')}"
             if item.art_path:
@@ -164,6 +170,8 @@ class Catalog:
             self._items = {item.id: item for item in found}
         log.info("Catálogo: %d elementos", len(found))
         self.refresh_stremio(background=True)
+        if not self._cinemeta_items:
+            self.refresh_cinemeta(background=True)
         return len(found)
 
     # --- Stremio -------------------------------------------------------------
@@ -199,6 +207,26 @@ class Catalog:
         self._stremio_items = items
         if changed:
             self._notify({"type": "library-changed"})
+        return True
+
+    def refresh_cinemeta(self, background: bool = False) -> bool:
+        """Películas y series populares (catálogo público de Stremio; no necesita cuenta)."""
+        if not self.config.stremio.enabled:
+            return False
+        if background:
+            threading.Thread(target=self.refresh_cinemeta, daemon=True).start()
+            return True
+        try:
+            items = [*cinemeta.catalog_items("movie", self.cinemeta.catalog("movie")),
+                     *cinemeta.catalog_items("series", self.cinemeta.catalog("series"))]
+        except cinemeta.CinemetaError as exc:
+            log.warning("Populares de Stremio: %s", exc)
+            return False
+        with self._lock:
+            self._items = {k: v for k, v in self._items.items() if v.source != "cinemeta"}
+            self._items.update({i.id: i for i in items})
+        self._cinemeta_items = items
+        self._notify({"type": "library-changed"})
         return True
 
     def refresh_stremio_if_stale(self) -> None:
@@ -330,6 +358,10 @@ class Catalog:
         item = self.get(item_id)
         if item is None:
             raise KeyError(item_id)
+        if item.source in ("stremio", "cinemeta") or item.id == "media:stremio":
+            self.open_stremio(item.uri if item.id != "media:stremio" else None, item.title)
+            self.state.record_launch(item.id)
+            return item
         runner = self.runner_for(item, runner_id)
         if runner:
             proc = self.launcher.run(runner.argv, cwd=runner.cwd)
@@ -345,10 +377,26 @@ class Catalog:
         self.state.record_launch(item.id)
         return item
 
+    def open_stremio(self, uri: str | None, title: str) -> None:
+        """Abre Stremio (opcionalmente en un enlace) y lo vigila por su ejecutable: si ya estaba
+        abierto, el proceso que lanzamos le pasa el enlace y termina al instante."""
+        argv = stremio.find_stremio(self.config.stremio)
+        if argv:
+            self.launcher.run([*argv, uri] if uri else argv)
+            self.launcher.track_exe("media:stremio", title, Path(argv[0]).name, runner="Stremio")
+        else:
+            self.launcher.open_uri(uri or "stremio://")
+            self.launcher.track("media:stremio", title, None)
+
+    def play_stremio(self, kind: str, meta_id: str, video_id: str | None, title: str) -> str:
+        """Reproduce directo (autoPlay) una película o un episodio elegido en Orbital."""
+        uri = cinemeta.play_link(kind, meta_id, video_id)
+        self.open_stremio(uri, title)
+        return uri
+
     def search_media(self, query: str) -> str:
         uri = stremio.search_uri(query)
-        self.launcher.open_uri(uri)
-        self.launcher.track("media:stremio", f"Stremio: {query}", None)
+        self.open_stremio(uri, f"Stremio: {query}")
         return uri
 
     def _session_ended(self, item_id: str, title: str, seconds: float) -> None:

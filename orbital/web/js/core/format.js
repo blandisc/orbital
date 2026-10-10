@@ -37,3 +37,15 @@ export function duration(seconds) {
 }
 
 export const clock = (date = new Date()) => date.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
+
+const GENRES = {
+  Action: "Acción", Adventure: "Aventura", Animation: "Animación", Biography: "Biografía", Comedy: "Comedia",
+  Crime: "Crimen", Documentary: "Documental", Drama: "Drama", Family: "Familiar", Fantasy: "Fantasía",
+  History: "Historia", Horror: "Terror", Music: "Música", Musical: "Musical", Mystery: "Misterio", Romance: "Romance",
+  "Sci-Fi": "Ciencia ficción", "Science Fiction": "Ciencia ficción", Sport: "Deportes", Thriller: "Suspenso",
+  War: "Bélica", Western: "Western", "Reality-TV": "Reality", "Talk-Show": "Talk show", "Game-Show": "Concurso",
+  News: "Noticias", Short: "Corto",
+};
+
+/** Géneros de Cinemeta (en inglés) en español; los desconocidos se dejan igual. */
+export const genres = (list = []) => list.map((g) => GENRES[g] ?? g);

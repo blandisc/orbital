@@ -39,3 +39,9 @@ test("shortAgo para la etiqueta de Jugado recientemente", () => {
   assert.equal(shortAgo(ago(26 * 3600), now), "ayer");
   assert.equal(shortAgo(ago(4 * 86400), now), "4 d");
 });
+
+test("géneros de Cinemeta en español", async () => {
+  const { genres } = await import("../../orbital/web/js/core/format.js");
+  assert.deepEqual(genres(["Sci-Fi", "Thriller", "Raro"]), ["Ciencia ficción", "Suspenso", "Raro"]);
+  assert.deepEqual(genres(), []);
+});

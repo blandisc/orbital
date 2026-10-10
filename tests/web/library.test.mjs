@@ -68,3 +68,14 @@ test("rowJump: cada fila recuerda su juego; las nuevas empiezan en el primero", 
   assert.deepEqual(rowJump(rs, { b: 9 }, 0, 1), { r: 1, c: 2 }); // se ajusta si la fila se acortó
   assert.deepEqual(rowJump(rs, {}, 2, 1), { r: 2, c: 0 }); // no se sale de la última
 });
+
+test("Stremio: las series abren episodios, las películas se ven, Buscar busca", async () => {
+  const { isSeries, primaryLabel } = await import("../../orbital/web/js/core/library.js");
+  const serie = { id: "cinemeta:series:tt0386676", source: "cinemeta" };
+  const peli = { id: "cinemeta:movie:tt1", source: "cinemeta" };
+  assert.ok(isSeries(serie) && !isSeries(peli));
+  assert.ok(isSeries({ kind: "series", source: "cinemeta", id: "x" })); // resultado de búsqueda
+  assert.equal(primaryLabel(serie), "Episodios");
+  assert.equal(primaryLabel(peli), "Ver");
+  assert.equal(primaryLabel({ id: "media:search", source: "search" }), "Buscar");
+});

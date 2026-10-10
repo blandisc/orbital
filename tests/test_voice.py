@@ -31,7 +31,8 @@ def test_unknown_game(library):
 
 def test_search_media(library):
     VoiceController(library).handle_intent("SearchMediaIntent", {"query": "El Padrino"})
-    assert library.launcher.opened[-1] == "stremio:///search?search=El%20Padrino"
+    # Con Stremio instalado (config de prueba) el enlace va como argumento del ejecutable.
+    assert library.launcher.ran[-1] == ["stremio-test", "stremio:///search?search=El%20Padrino"]
 
 
 def test_close_only_managed_processes(library):

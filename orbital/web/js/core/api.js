@@ -25,6 +25,9 @@ export const api = {
   resume: () => post("/api/ui/resume"),
   windows: () => request("/api/windows"),
   power: (action) => post("/api/power", { action }),
+  stremioSearch: (q) => request(`/api/stremio/search?q=${encodeURIComponent(q)}`),
+  stremioEpisodes: (id) => request(`/api/stremio/episodes/${encodeURIComponent(id)}`),
+  stremioPlay: (body) => post("/api/stremio/play", body),
   focusWindow: (id) => post("/api/windows/focus", { id }),
   /** Suscripción a eventos del servidor con reconexión automática. */
   events(onEvent) {

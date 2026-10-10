@@ -6,6 +6,7 @@ import ctypes
 import logging
 import os
 import sys
+import time
 from ctypes import wintypes
 
 log = logging.getLogger(__name__)
@@ -75,7 +76,12 @@ def focus(hwnd: int) -> bool:
     user32.keybd_event(0x12, 0, 0, 0)
     ok = bool(user32.SetForegroundWindow(hwnd))
     user32.keybd_event(0x12, 0, 2, 0)
-    return ok
+    if not ok or user32.GetForegroundWindow() != hwnd:
+        # Si aun así se niega (otra app tiene el "candado" del foco), SwitchToThisWindow es lo
+        # que usa Alt+Tab y Windows lo respeta.
+        user32.SwitchToThisWindow(hwnd, True)
+        time.sleep(.05)
+    return user32.GetForegroundWindow() == hwnd
 
 
 def minimize(hwnd: int) -> None:
@@ -114,6 +120,27 @@ def process_tree(root: int) -> set[int]:
                 tree.add(child)
                 pending.append(child)
     return tree
+
+
+def pids_by_exe(name: str) -> set[int]:
+    """Procesos cuyo ejecutable se llama `name` ("stremio-shell-ng.exe")."""
+    if not WIN:
+        return set()
+    snapshot = kernel32.CreateToolhelp32Snapshot(0x2, 0)
+    if snapshot in (None, wintypes.HANDLE(-1).value):
+        return set()
+    found: set[int] = set()
+    try:
+        entry = _ProcessEntry()
+        entry.dwSize = ctypes.sizeof(entry)
+        ok = kernel32.Process32FirstW(snapshot, ctypes.byref(entry))
+        while ok:
+            if entry.szExeFile.lower() == name.lower():
+                found.add(entry.th32ProcessID)
+            ok = kernel32.Process32NextW(snapshot, ctypes.byref(entry))
+    finally:
+        kernel32.CloseHandle(snapshot)
+    return found
 
 
 def main_window(pids: set[int]) -> int:

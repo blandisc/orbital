@@ -39,3 +39,24 @@ def test_releasing_early_cancels():
 def test_only_select_or_only_start_do_nothing():
     d = ComboDetector()
     assert run(d, [(0, BACK), (2, BACK), (3, START), (5, START)]) == []
+
+
+def test_remote_maps_buttons_to_keys_with_repeat_on_dpad():
+    from orbital.gamepad import A_BUTTON, DPAD_RIGHT, VK_RIGHT, VK_SPACE, KeyRemote
+
+    r = KeyRemote(delay=.35, rate=.1)
+    assert r.update(A_BUTTON, 0) == [VK_SPACE]
+    assert r.update(A_BUTTON, 1) == []  # A no se repite
+    assert r.update(DPAD_RIGHT, 2) == [VK_RIGHT]
+    assert r.update(DPAD_RIGHT, 2.2) == []
+    assert r.update(DPAD_RIGHT, 2.4) == [VK_RIGHT]  # mantener: sigue adelantando
+    assert r.update(DPAD_RIGHT, 2.51) == [VK_RIGHT]
+
+
+def test_remote_ignores_orbital_shortcuts():
+    from orbital.gamepad import A_BUTTON, KeyRemote
+
+    r = KeyRemote()
+    assert r.update(GUIDE | A_BUTTON, 0) == []  # Home+algo: de Orbital o del emulador
+    assert r.update(BACK | START, 1) == []  # Select+Start: cerrar
+    assert r.update(A_BUTTON, 2) == [0x20]

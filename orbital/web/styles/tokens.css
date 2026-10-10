@@ -77,6 +77,8 @@
   /* Capas */
   --z-base: 0;
   --z-overlay: 5;
+  --z-hints: 6; /* el pie de controles sigue visible sobre búsqueda y episodios */
+  --z-launch: 7;
   --z-toast: 10;
 
   /* Layout de consola: el lienzo mide al menos 80 × 50 rem. Escala con el ancho, pero

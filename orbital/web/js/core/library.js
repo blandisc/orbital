@@ -70,7 +70,11 @@ export const runnerName = (item, runnerId) =>
   item?.runners?.find((r) => r.id === (runnerId || item.runner))?.name ?? null;
 
 /** Algo de tu biblioteca de Stremio (película o serie). */
-export const isWatchable = (item) => item?.source === "stremio";
+export const isWatchable = (item) => item?.source === "stremio" || item?.source === "cinemeta";
+
+/** Serie del catálogo de Stremio: A abre sus episodios en Orbital en lugar de reproducir. */
+export const isSeries = (item) => item?.source === "cinemeta" && item?.id?.startsWith("cinemeta:series:")
+  || item?.kind === "series";
 
 /** Las apps y la multimedia no muestran "Sin jugar todavía". */
 export const isGame = (item) => !!item && !isWatchable(item) && item.category !== "media" && item.category !== "apps";
@@ -79,5 +83,7 @@ export const isGame = (item) => !!item && !isWatchable(item) && item.category !=
 /** Texto del botón principal. `runningId`: lo que está abierto ahora (se continúa, no se relanza). */
 export const primaryLabel = (item, runningId = null) => {
   if (item && item.id === runningId) return "Continuar";
+  if (item?.source === "search") return "Buscar";
+  if (isSeries(item)) return "Episodios";
   return isWatchable(item) ? (item.progress > 0 ? "Continuar" : "Ver") : "Jugar";
 };

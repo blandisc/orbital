@@ -17,7 +17,7 @@ import threading
 import time
 
 from . import windows
-from .gamepad import HOLD_ARM, HOLD_TOTAL, GamepadWatcher
+from .gamepad import HOLD_ARM, HOLD_TOTAL, GamepadWatcher, KeyRemote, send_key
 from .library.detect import KNOWN
 
 log = logging.getLogger(__name__)
@@ -25,8 +25,11 @@ log = logging.getLogger(__name__)
 BROWSERS = {"msedge.exe", "chrome.exe", "chromium.exe"}
 EMULATOR_EXES = {n for k in KNOWN for n in k.exe_names if n.endswith(".exe")} | {
     "retroarch.exe", "citron.exe", "sudachi.exe", "yuzu.exe", "rpcs3.exe", "duckstation-qt-x64-releaseltcg.exe",
+    "stremio-shell-ng.exe", "stremio.exe",
 }
 LEGION_SPACE = "legionspace.exe"
+# Apps sin soporte de mando: mientras están al frente, el mando se traduce a teclas.
+REMOTE_APPS = {"stremio-shell-ng.exe", "stremio.exe"}
 # Nunca se cierran con Select+Start aunque Steam tenga un juego abierto.
 NOT_GAMES = BROWSERS | {"steam.exe", "steamwebhelper.exe", "explorer.exe", "es-de.exe", LEGION_SPACE,
                         "claude.exe", "discord.exe", "python.exe", "pythonw.exe"}
@@ -44,6 +47,8 @@ class ConsoleShell:
         self.overlay = overlay  # GameOverlay (aviso encima del juego); se crea en start()
         self.return_to = 0  # ventana del juego a la que volver
         self.hold: dict | None = None  # juego que se está por cerrar (Select+Start)
+        self._remotes = [KeyRemote() for _ in range(4)]
+        self._fg_cache = (0.0, "")  # (cuándo, exe al frente): no preguntar a Windows 240 veces/s
         self._legion_last = 0.0
         self._legion_allowed = False
         self._stop = threading.Event()
@@ -158,6 +163,22 @@ class ConsoleShell:
         {"home": self.home, "hold-start": self.hold_start, "hold-cancel": self.hold_cancel,
          "hold-complete": self.hold_complete}[event]()
 
+    # --------------------------------------------------------------- control remoto (Stremio)
+    def foreground_exe(self, now: float) -> str:
+        if now - self._fg_cache[0] > .25:
+            self._fg_cache = (now, self.win.exe_name(self.win.pid_of(self.win.foreground())))
+        return self._fg_cache[1]
+
+    def on_buttons(self, slot: int, buttons: int, now: float, send=send_key) -> None:
+        """Stremio no tiene soporte de mando: mientras está al frente, A pausa, la cruceta
+        adelanta/regresa y sube/baja volumen, Y pantalla completa, B vuelve."""
+        remote = self._remotes[slot]
+        if self.foreground_exe(now) not in REMOTE_APPS:
+            remote.reset()
+            return
+        for vk in remote.update(buttons, now):
+            send(vk)
+
     # --------------------------------------------------------------- ventanas abiertas
     def open_windows(self) -> list[dict]:
         """Apps y juegos abiertos (sin Orbital), para saltar entre ellos con el mando."""
@@ -207,7 +228,7 @@ class ConsoleShell:
             from .overlay import GameOverlay
             overlay = GameOverlay()
             self.overlay = overlay if overlay.start() else None
-        GamepadWatcher(self.on_gamepad).start()  # sin XInput, Legion L sigue funcionando
+        GamepadWatcher(self.on_gamepad, self.on_buttons).start()  # sin XInput, Legion L sigue funcionando
         threading.Thread(target=self._watch_foreground, daemon=True, name="legion-l").start()
         return True
 

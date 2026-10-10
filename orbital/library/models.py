@@ -37,6 +37,8 @@ class LibraryItem:
     # Imágenes en disco; se sirven por /api/art/<id> sin exponer la ruta.
     art_path: str | None = None
     hero_path: str | None = None
+    # Datos extra para el héroe (Stremio: año, calificación, géneros, sinopsis, logotipo).
+    extra: dict = field(default_factory=dict)
 
     def runner(self, runner_id: str | None = None) -> Runner | None:
         wanted = runner_id or self.default_runner
@@ -55,4 +57,5 @@ class LibraryItem:
             "progress": self.progress,
             "runners": [{"id": r.id, "name": r.name} for r in self.runners],
             "runner": self.runner().id if self.runners else None,
+            **({"extra": self.extra} if self.extra else {}),
         }

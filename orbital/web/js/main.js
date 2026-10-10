@@ -5,15 +5,17 @@
 import { api } from "./core/api.js";
 import { duration } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
-import { alternativeRunner, clampFocus, itemAt, restoreFocus, rowJump, runnerName } from "./core/library.js";
+import { alternativeRunner, clampFocus, isSeries, itemAt, restoreFocus, rowJump, runnerName } from "./core/library.js";
 import { rumble } from "./core/haptics.js";
 import { footerHints } from "./core/hints.js";
 import { exitMenu, gameMenu, mainMenu, powerMenu, stopMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
+import { createEpisodes } from "./components/episodes.js";
 import { createHints } from "./components/hints.js";
 import { createLaunchOverlay } from "./components/launch-overlay.js";
+import { createSearch } from "./components/search.js";
 import { createSheet } from "./components/sheet.js";
 import { createShelf } from "./components/shelf.js";
 import { createStatusBar } from "./components/status-bar.js";
@@ -48,18 +50,34 @@ const ui = {
     onMove: () => sound.play("move"),
     onClose: () => renderHints(),
   }),
+  search: createSearch({
+    onOpen: (result) => openWatchable(result),
+    onMove: () => sound.play("move"),
+    onClose: () => { sound.play("back"); renderHints(); },
+  }),
+  episodes: createEpisodes({
+    onPlay: (play) => playStremio(play),
+    onMove: () => sound.play("move"),
+    onClose: () => { sound.play("back"); renderHints(); },
+  }),
   launch: createLaunchOverlay(),
   toast: createToast(),
 };
 
 document.getElementById("app").replaceWith(
-  ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.sheet.el, ui.launch.el, ui.toast.el,
+  ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.episodes.el, ui.sheet.el, ui.launch.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
 const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LB/RB
 
 function renderHints() {
+  const g = glyphs();
+  if (!ui.sheet.isOpen && ui.episodes.isOpen) {
+    return ui.hints.render([{ glyph: g.select, label: "Ver" }, { glyph: g.rows, label: "Episodio" },
+      { glyph: g.page, label: "Temporada" }, { glyph: g.back, label: "Volver", end: true }]);
+  }
+  if (!ui.sheet.isOpen && ui.search.isOpen) return ui.hints.render(ui.search.hints(g));
   const { r, c } = state.focus;
   ui.hints.render(footerHints(glyphs(), {
     sheetOpen: ui.sheet.isOpen,
@@ -141,8 +159,41 @@ async function pollSystem() {
 }
 
 // ---------------------------------------------------------------- acciones
+/** Películas y series (Stremio): las series abren sus episodios en Orbital; el resto se reproduce. */
+function openWatchable(item) {
+  if (isSeries(item)) {
+    sound.play("open");
+    ui.episodes.open(item);
+    return renderHints();
+  }
+  return playStremio({ kind: "movie", id: item.meta_id || item.id.split(":").pop(), title: item.title, item });
+}
+
+async function playStremio({ kind, id, video_id: videoId = null, title, item }) {
+  if (Date.now() < state.launchLockedUntil) return;
+  state.launchLockedUntil = Date.now() + LAUNCH_COOLDOWN_MS;
+  sound.play("open");
+  rumble("launch");
+  ui.launch.show({ ...item, title }, "Stremio");
+  try {
+    await api.stremioPlay({ kind, id, video_id: videoId, title });
+    pollStatus();
+  } catch (err) {
+    state.launchLockedUntil = 0;
+    ui.launch.hide();
+    sound.play("error");
+    ui.toast.show(err.message, { error: true });
+  }
+}
+
 async function launch(item, runner = null) {
   if (!item || Date.now() < state.launchLockedUntil) return; // evita dobles pulsaciones de A
+  if (item.source === "search") {
+    sound.play("open");
+    ui.search.open();
+    return renderHints();
+  }
+  if (isSeries(item)) return openWatchable(item);
   if (!runner && item.id === state.running?.id) { // sigue abierto: se continúa, no se abre otra copia
     sound.play("select");
     return api.resume();
@@ -240,6 +291,8 @@ function handleAction(action) {
     if (action === "back") sound.play("back");
     return;
   }
+  // Vistas a pantalla completa: los episodios pueden abrirse encima de la búsqueda.
+  if (ui.episodes.handle(action) || ui.search.handle(action)) return renderHints();
   const { r, c } = state.focus;
   const item = current();
   switch (action) {
@@ -297,3 +350,11 @@ pollStatus();
 pollSystem();
 loadLibrary();
 api.ui().then(({ can_exit: canExit }) => { state.canExit = canExit; }).catch(() => {});
+
+// Enlaces directos: ?buscar=dune abre la búsqueda con ese texto; ?serie=tt0386676 sus episodios.
+// (Para la voz: "busca Dune" puede llegar directo aquí.)
+const params = new URLSearchParams(location.search);
+if (params.get("buscar")) ui.search.open(params.get("buscar"));
+else if (params.get("serie")) {
+  ui.episodes.open({ id: `cinemeta:series:${params.get("serie")}`, meta_id: params.get("serie"), title: "", source: "cinemeta" });
+}

@@ -74,6 +74,59 @@ class ComboDetector:
         return events
 
 
+# Botones XInput -> teclas virtuales de Windows, para apps sin soporte de mando (Stremio).
+DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT = 0x0001, 0x0002, 0x0004, 0x0008
+A_BUTTON, B_BUTTON, X_BUTTON, Y_BUTTON = 0x1000, 0x2000, 0x4000, 0x8000
+VK_SPACE, VK_ESCAPE, VK_LEFT, VK_UP, VK_RIGHT, VK_DOWN, VK_F = 0x20, 0x1B, 0x25, 0x26, 0x27, 0x28, 0x46
+PLAYER_KEYS = {
+    A_BUTTON: VK_SPACE,  # pausa / reanuda
+    B_BUTTON: VK_ESCAPE,  # volver
+    Y_BUTTON: VK_F,  # pantalla completa
+    DPAD_LEFT: VK_LEFT, DPAD_RIGHT: VK_RIGHT,  # retroceder / adelantar
+    DPAD_UP: VK_UP, DPAD_DOWN: VK_DOWN,  # volumen
+}
+REPEATING = {DPAD_LEFT, DPAD_RIGHT, DPAD_UP, DPAD_DOWN}
+
+
+class KeyRemote:
+    """Convierte botones del mando en teclas (con autorrepetición en la cruceta).
+
+    Ignora todo mientras Home o Select/Start estén presionados: esos son atajos de Orbital.
+    """
+
+    def __init__(self, keymap: dict[int, int] = PLAYER_KEYS, delay: float = .35, rate: float = .12) -> None:
+        self.keymap = keymap
+        self.delay = delay
+        self.rate = rate
+        self._next: dict[int, float] = {}
+
+    def update(self, buttons: int, now: float) -> list[int]:
+        if buttons & (GUIDE | BACK | START):
+            self._next.clear()
+            return []
+        keys = []
+        for bit, vk in self.keymap.items():
+            if not buttons & bit:
+                self._next.pop(bit, None)
+            elif bit not in self._next:
+                self._next[bit] = now + self.delay
+                keys.append(vk)
+            elif bit in REPEATING and now >= self._next[bit]:
+                self._next[bit] = now + self.rate
+                keys.append(vk)
+        return keys
+
+    def reset(self) -> None:
+        self._next.clear()
+
+
+def send_key(vk: int) -> None:
+    """Pulsa y suelta una tecla como si fuera del teclado (Windows)."""
+    user32 = ctypes.windll.user32
+    user32.keybd_event(vk, 0, 0, 0)
+    user32.keybd_event(vk, 0, 2, 0)  # KEYEVENTF_KEYUP
+
+
 class _XInputGamepad(ctypes.Structure):
     _fields_ = [("wButtons", ctypes.c_ushort), ("bLeftTrigger", ctypes.c_ubyte), ("bRightTrigger", ctypes.c_ubyte),
                 ("sThumbLX", ctypes.c_short), ("sThumbLY", ctypes.c_short),
@@ -98,8 +151,10 @@ class GamepadWatcher:
 
     POLL = 1 / 60
 
-    def __init__(self, on_event: Callable[[str], None]) -> None:
+    def __init__(self, on_event: Callable[[str], None],
+                 on_buttons: Callable[[int, int, float], None] | None = None) -> None:
         self.on_event = on_event
+        self.on_buttons = on_buttons  # (mando, botones, ahora): para el control remoto de Stremio
         self._detectors = [ComboDetector() for _ in range(4)]
         self._stop = threading.Event()
 
@@ -129,4 +184,9 @@ class GamepadWatcher:
                         self.on_event(event)
                     except Exception:  # noqa: BLE001 - un fallo aquí no debe matar el hilo
                         log.exception("Error atendiendo %s", event)
+                if self.on_buttons:
+                    try:
+                        self.on_buttons(slot, buttons, now)
+                    except Exception:  # noqa: BLE001
+                        log.exception("Error en el control remoto")
             self._stop.wait(self.POLL)

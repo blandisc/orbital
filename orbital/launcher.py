@@ -25,6 +25,7 @@ class Running:
     process: subprocess.Popen | None  # None cuando se lanzó vía URI (Steam, Stremio)
     started: float = field(default_factory=time.time)
     runner: str | None = None  # "Eden", "Ryujinx"... para preguntar "¿Cerrar…?"
+    exe: str | None = None  # apps de instancia única (Stremio): se vigila el ejecutable, no el proceso
 
 
 def steam_running_appid() -> int | None:
@@ -87,6 +88,35 @@ class Launcher:
         elif steam_appid and steam_running_appid() is not None:
             threading.Thread(target=self._watch_steam, args=(running, steam_appid), daemon=True).start()
 
+    EXE_START_TIMEOUT = 30  # s para que aparezca el ejecutable vigilado
+
+    def track_exe(self, item_id: str, title: str, exe: str, runner: str | None = None) -> None:
+        """Para apps de instancia única: si ya estaba abierta, el proceso que lanzamos le pasa el
+        enlace y termina al instante. Lo fiable es vigilar que su ejecutable siga existiendo."""
+        running = Running(item_id, title, None, runner=runner, exe=exe)
+        with self._lock:
+            self.current = running
+        threading.Thread(target=self._watch_exe, args=(running,), daemon=True).start()
+
+    def _watch_exe(self, running: Running) -> None:
+        from . import windows
+
+        deadline = time.time() + self.EXE_START_TIMEOUT
+        while not windows.pids_by_exe(running.exe):
+            if self.current is not running:
+                return
+            if time.time() > deadline:
+                with self._lock:
+                    if self.current is running:
+                        self.current = None
+                return
+            time.sleep(self.POLL / 2)
+        while windows.pids_by_exe(running.exe):
+            if self.current is not running:
+                return  # se abrió otra cosa: ya no es lo que estamos midiendo
+            time.sleep(self.POLL)
+        self._finished(running)
+
     def _watch_process(self, running: Running) -> None:
         running.process.wait()
         self._finished(running)
@@ -129,9 +159,9 @@ class Launcher:
             if cur.process is not None and cur.process.poll() is not None:
                 self.current = None
                 return None
-            return {"id": cur.item_id, "title": cur.title, "managed": cur.process is not None,
+            return {"id": cur.item_id, "title": cur.title, "managed": cur.process is not None or cur.exe is not None,
                     "started": cur.started, "runner": cur.runner,
-                    "pid": cur.process.pid if cur.process is not None else None}
+                    "pid": cur.process.pid if cur.process is not None else _exe_pid(cur.exe)}
 
     def stop(self, force: bool = False) -> bool:
         """Cierra el proceso lanzado por Orbital. Devuelve False si no hay nada que cerrar.
@@ -141,6 +171,10 @@ class Launcher:
         """
         with self._lock:
             cur = self.current
+        if cur is not None and cur.exe and sys.platform == "win32":
+            subprocess.run(["taskkill", "/IM", cur.exe, "/T", "/F"], capture_output=True,
+                           creationflags=subprocess.CREATE_NO_WINDOW)  # type: ignore[attr-defined]
+            return True
         if cur is None or cur.process is None or cur.process.poll() is not None:
             return False
         if sys.platform == "win32":
@@ -159,6 +193,15 @@ class Launcher:
         except subprocess.TimeoutExpired:
             cur.process.kill()
         return True
+
+
+def _exe_pid(exe: str | None) -> int | None:
+    if not exe:
+        return None
+    from . import windows
+
+    pids = windows.pids_by_exe(exe)
+    return min(pids) if pids else None
 
 
 def _taskkill(pid: int, force: bool = False) -> None:

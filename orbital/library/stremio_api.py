@@ -100,10 +100,11 @@ class Watchable:
 
     @property
     def deep_link(self) -> str:
-        """Abre la ficha en Stremio; con el episodio, directo a elegir la fuente de ese episodio."""
+        """Con el episodio (o la película), directo a reproducir (autoPlay); si no, la ficha."""
         link = f"stremio:///detail/{self.type}/{self.id}"
-        if self.video_id and self.video_id != self.id:
-            link += f"/{self.video_id}"
+        video = self.video_id or (self.id if self.type == "movie" else None)
+        if video:
+            link += f"/{video}?autoPlay=true"
         return link
 
     @property

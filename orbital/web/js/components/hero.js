@@ -1,5 +1,5 @@
 import { h, mount, svg } from "../core/dom.js";
-import { duration, lastPlayed, percent } from "../core/format.js";
+import { duration, genres, lastPlayed, percent } from "../core/format.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { alternativeRunner, isGame, isWatchable, primaryLabel, runnerName } from "../core/library.js";
 import { Button } from "./button.js";
@@ -8,9 +8,14 @@ import { Button } from "./button.js";
 export function createHero({ onAction }) {
   const eyebrow = h("div", { class: "hero__eyebrow" });
   const title = h("h1", { class: "hero__title" });
+  // Logotipo del título (Stremio): más rico que el texto; si no carga, vuelve el texto.
+  const logo = h("img", { class: "hero__logo", alt: "", hidden: true });
+  logo.addEventListener("error", () => { logo.hidden = true; title.hidden = false; });
+  logo.addEventListener("load", () => { title.hidden = true; logo.hidden = false; });
   const facts = h("div", { class: "hero__facts" });
+  const description = h("p", { class: "hero__description" });
   const actions = h("div", { class: "hero__actions" });
-  const content = h("div", { class: "hero__content" }, eyebrow, title, facts, actions);
+  const content = h("div", { class: "hero__content" }, eyebrow, logo, title, facts, description, actions);
   const el = h("main", { class: "hero" }, content);
   let timer;
 
@@ -27,9 +32,18 @@ export function createHero({ onAction }) {
 
     title.textContent = item.title;
     title.classList.toggle("hero__title--long", item.title.length > 28);
+    const extra = item.extra || {};
+    title.hidden = false;
+    logo.hidden = true;
+    if (extra.logo) logo.src = extra.logo;
+    else logo.removeAttribute("src");
+    description.textContent = extra.description || "";
+    description.hidden = !extra.description;
 
     const watchable = isWatchable(item);
-    const list = [
+    const list = item.source === "cinemeta" ? [
+      extra.year, extra.rating && `★ ${extra.rating}`, genres(extra.genres).join(", "), extra.runtime,
+    ].filter(Boolean).map((text) => h("span", {}, text)) : [
       lastPlayed(item.last_played, Date.now(), watchable ? "Visto" : "Jugado") || (isGame(item) ? "Sin jugar todavía" : null),
       watchable ? percent(item.progress) && `${percent(item.progress)} visto` : duration(item.playtime) && `${duration(item.playtime)} en total`,
     ].filter(Boolean).map((text) => h("span", {}, text));

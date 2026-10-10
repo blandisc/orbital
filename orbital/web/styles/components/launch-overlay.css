@@ -1,6 +1,6 @@
 /* LaunchOverlay: pantalla "Abriendo…" con el arte del juego. */
 .launch {
-  position: fixed; inset: 0; z-index: var(--z-overlay); display: grid; place-items: center;
+  position: fixed; inset: 0; z-index: var(--z-launch); display: grid; place-items: center;
   background: var(--color-tinted-bg); overflow: hidden;
   animation: fade-in var(--duration-base) var(--ease-out);
 }

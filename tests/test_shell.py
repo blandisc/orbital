@@ -173,3 +173,16 @@ def test_hold_closes_steam_game_in_front(monkeypatch):
     shell.hold = None
     shell.hold_start()
     assert shell.hold is None
+
+
+def test_remote_only_drives_stremio():
+    shell, win, _ = make(None)
+    sent = []
+    win.windows[DESKTOP_APP] = ("Stremio", 30, "stremio-shell-ng.exe")
+    win.fg = GAME  # Eden al frente: el mando es del emulador
+    shell.on_buttons(0, 0x1000, 1.0, send=sent.append)
+    assert sent == []
+    win.fg = DESKTOP_APP  # Stremio al frente: A = Espacio (pausa)
+    shell.on_buttons(0, 0, 2.0, send=sent.append)
+    shell.on_buttons(0, 0x1000, 2.1, send=sent.append)
+    assert sent == [0x20]

@@ -21,6 +21,9 @@ class FakeLauncher:
         self.ran.append(argv)
         return object()  # basta con que no sea None: cuenta como proceso propio
 
+    def track_exe(self, item_id, title, exe, runner=None):
+        self.current = {"id": item_id, "title": title, "managed": True, "runner": runner, "exe": exe}
+
     def track(self, item_id, title, process, steam_appid=None, runner=None):
         self.steam_appids.append(steam_appid)
         self.current = {"id": item_id, "title": title, "managed": process is not None, "runner": runner}
@@ -79,3 +82,19 @@ def library(tmp_path):
     catalog = Catalog(cfg, FakeLauncher())
     catalog.refresh()
     return catalog
+
+
+@pytest.fixture(autouse=True)
+def offline_cinemeta(monkeypatch):
+    """Las pruebas nunca van a internet: el catálogo público de Stremio responde vacío."""
+    from orbital.library import cinemeta
+
+    monkeypatch.setattr(cinemeta.Cinemeta, "_get", lambda self, path: {"metas": []})
+
+
+@pytest.fixture(autouse=True)
+def no_installed_stremio(monkeypatch):
+    """Que las pruebas no dependan de si Stremio está instalado en esta máquina (abren el URI)."""
+    from orbital.library import stremio
+
+    monkeypatch.setattr(stremio, "find_stremio", lambda cfg: [cfg.executable] if cfg.executable else None)

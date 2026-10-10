@@ -45,6 +45,10 @@ def search_uri(query: str) -> str:
 def items(cfg: StremioConfig) -> list[LibraryItem]:
     argv = find_stremio(cfg)
     return [
+        # Abre la búsqueda de Orbital (teclado para mando, dictado y resultados vivos).
+        LibraryItem(id="media:search", title="Buscar", category="media", source="search",
+                    subtitle="Películas y series",
+                    extra={"description": "Escribe 2 o 3 letras o díctalo: los resultados aparecen solos."}),
         LibraryItem(
             id="media:stremio",
             title="Stremio",

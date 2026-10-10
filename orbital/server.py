@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from . import __version__, system
 from .catalog import Catalog
 from .config import Config
+from .library import cinemeta
 from .shell import ConsoleShell
 from .voice import VoiceController
 
@@ -204,6 +205,35 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     def stop() -> dict:
         # También cierra un emulador abierto desde ES-DE si se pidió con Select+Start.
         return {"stopped": shell.stop_game()}
+
+    # --- Stremio: explorar en Orbital, reproducir en Stremio ---------------------
+    @app.get("/api/stremio/search")
+    def stremio_search(q: str = "") -> dict:
+        if len(q.strip()) < 2:
+            return {"results": []}
+        try:
+            movies = catalog.cinemeta.search("movie", q)
+            series = catalog.cinemeta.search("series", q)
+        except cinemeta.CinemetaError as exc:
+            raise HTTPException(502, str(exc))
+        return {"results": cinemeta.search_results(q, movies, series)}
+
+    @app.get("/api/stremio/episodes/{meta_id}")
+    def stremio_episodes(meta_id: str) -> dict:
+        try:
+            meta = catalog.cinemeta.meta("series", meta_id)
+        except cinemeta.CinemetaError as exc:
+            raise HTTPException(502, str(exc))
+        return {"id": meta_id, "title": meta.get("name") or "", "seasons": cinemeta.seasons(meta),
+                "background": meta.get("background") or None, **cinemeta.describe_meta(meta)}
+
+    @app.post("/api/stremio/play")
+    def stremio_play(body: dict) -> dict:
+        kind, meta_id = body.get("kind"), str(body.get("id") or "")
+        if kind not in ("movie", "series") or not meta_id:
+            raise HTTPException(400, "Falta qué reproducir")
+        uri = catalog.play_stremio(kind, meta_id, body.get("video_id"), str(body.get("title") or "Stremio"))
+        return {"ok": True, "uri": uri}
 
     @app.get("/api/windows")
     def open_windows() -> dict:
