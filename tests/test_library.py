@@ -58,3 +58,32 @@ def test_config_rejects_unknown_and_duplicates():
         parse_config({"server": {"prot": 1}})
     with pytest.raises(ValueError, match="duplicados"):
         parse_config({"apps": [{"id": "a", "name": "A", "target": "x"}, {"id": "a", "name": "B", "target": "y"}]})
+
+
+def test_steam_hours_size_update_and_recent_outside_orbital(tmp_path):
+    from orbital.catalog import Catalog
+    from orbital.config import parse_config
+    from orbital.library import steam
+
+    from conftest import FakeLauncher, write_steam
+
+    root = tmp_path / "Steam"
+    write_steam(root, {"427520": "Factorio", "2767030": "Marvel Rivals"})
+    rivals = root / "steamapps" / "appmanifest_2767030.acf"
+    rivals.write_text(rivals.read_text().replace('"name"', '"StateFlags"\t\t"6"\n\t"SizeOnDisk"\t\t"93500000000"\n\t"name"'))
+    config = root / "userdata" / "123" / "config"
+    config.mkdir(parents=True)
+    (config / "localconfig.vdf").write_text(
+        '"UserLocalConfigStore"\n{\n"Software"\n{\n"Valve"\n{\n"Steam"\n{\n"apps"\n{\n'
+        '"427520"\n{\n"LastPlayed"\t\t"1787548526"\n"Playtime"\t\t"2226"\n}\n}\n}\n}\n}\n}\n')
+    factorio, marvel = sorted(steam.scan(root), key=lambda i: i.title)
+    assert factorio.extra["steam_playtime"] == 2226 * 60 and factorio.extra["steam_last_played"] == 1787548526
+    assert factorio.extra["logo"].endswith("/427520/logo.png") and not factorio.extra["update"]
+    assert marvel.extra["update"] and marvel.extra["size"] == 93_500_000_000
+
+    cat = Catalog(parse_config({"steam": {"path": str(root)}, "stremio": {"enabled": False},
+                                "esde": {"enabled": False}, "detect": {"enabled": False}}), FakeLauncher())
+    cat.refresh()
+    recent = next(r for r in cat.grouped() if r["id"] == "recent")
+    assert [i["title"] for i in recent["items"]] == ["Factorio"]  # jugado en Steam, no desde Orbital
+    assert recent["items"][0]["playtime"] == 2226 * 60

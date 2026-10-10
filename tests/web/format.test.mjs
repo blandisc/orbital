@@ -45,3 +45,11 @@ test("géneros de Cinemeta en español", async () => {
   assert.deepEqual(genres(["Sci-Fi", "Thriller", "Raro"]), ["Ciencia ficción", "Suspenso", "Raro"]);
   assert.deepEqual(genres(), []);
 });
+
+test("bytes: tamaño en disco legible", async () => {
+  const { bytes } = await import("../../orbital/web/js/core/format.js");
+  assert.equal(bytes(3_696_370_087), "3,7 GB");
+  assert.equal(bytes(93_500_000_000), "94 GB");
+  assert.equal(bytes(850_000_000), "850 MB");
+  assert.equal(bytes(0), null);
+});

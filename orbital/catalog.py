@@ -275,9 +275,15 @@ class Catalog:
             data["runner"] = self.runner_for(item).id
         history = self.state.history(item.id)
         # En Stremio manda su propia fecha (abrir la ficha no significa haberlo visto).
-        data["last_played"] = item.last_watched if item.source == "stremio" else history.get("last_played")
-        data["playtime"] = history.get("playtime", 0)
+        data["last_played"] = item.last_watched if item.source == "stremio" else self.last_played(item)
+        # Steam lleva sus propias horas (también lo jugado fuera de Orbital): la mayor de las dos.
+        data["playtime"] = max(history.get("playtime", 0), item.extra.get("steam_playtime", 0))
         return data
+
+    def last_played(self, item: LibraryItem) -> float | None:
+        """La última vez que se jugó: lo que registró Orbital o, en Steam, lo que registró Steam."""
+        last = max(self.state.history(item.id).get("last_played") or 0, item.extra.get("steam_last_played") or 0)
+        return last or None
 
     def grouped(self) -> list[dict]:
         items = self.items()
@@ -286,8 +292,11 @@ class Catalog:
         rows = []
         for cat in CATEGORIES:
             if cat["id"] == "recent":
-                # Juegos y apps; lo que se ve en Stremio va en "Seguir viendo".
-                members = [by_id[i] for i in self.state.recent() if i in by_id and by_id[i].source != "stremio"]
+                # Juegos y apps (también lo jugado en Steam fuera de Orbital); lo que se ve va en
+                # "Seguir viendo".
+                played = sorted(((self.last_played(i) or 0, i.id, i) for i in items
+                                 if i.source not in ("stremio", "cinemeta")), reverse=True)
+                members = [i for last, _, i in played if last][:15]
             elif cat["id"] == "continue":
                 members = sorted((i for i in items if i.category == "continue"),
                                  key=lambda i: i.last_watched or 0, reverse=True)

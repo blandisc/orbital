@@ -17,6 +17,8 @@ _NOT_GAMES = ("proton", "steam linux runtime", "steamworks common", "steamvr")
 _NOT_GAME_IDS = {"228980", "1070560", "1391110", "1628350"}
 
 CDN = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{name}.jpg"
+LOGO = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/logo.png"
+INSTALLED = "4"  # StateFlags: 4 = instalado y al día; otro valor = falta actualizar o se está instalando
 
 
 def _windows_registry_path() -> Path | None:
@@ -72,8 +74,33 @@ def _is_game(appid: str, name: str) -> bool:
     return appid not in _NOT_GAME_IDS and not any(word in lowered for word in _NOT_GAMES)
 
 
+def user_stats(steam_root: Path) -> dict[str, dict]:
+    """Horas jugadas y última vez de cada juego, como las lleva Steam (también lo que jugaste
+    fuera de Orbital). userdata/<cuenta>/config/localconfig.vdf: se usa la cuenta más reciente."""
+    configs = sorted(steam_root.glob("userdata/*/config/localconfig.vdf"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not configs:
+        return {}
+    try:
+        data = vdf.loads(configs[0].read_text(encoding="utf-8", errors="replace"))
+        apps = data["userlocalconfigstore"]["software"]["valve"]["steam"]["apps"]
+    except (KeyError, ValueError, OSError, TypeError) as exc:
+        log.warning("No pude leer las horas de Steam: %s", exc)
+        return {}
+    stats = {}
+    for appid, info in apps.items():
+        if not isinstance(info, dict):
+            continue
+        last, minutes = info.get("lastplayed"), info.get("playtime")
+        stats[appid] = {
+            "last_played": int(last) if str(last or "").isdigit() else 0,
+            "playtime": int(minutes) * 60 if str(minutes or "").isdigit() else 0,
+        }
+    return stats
+
+
 def scan(steam_root: Path) -> list[LibraryItem]:
     items: dict[str, LibraryItem] = {}
+    stats = user_stats(steam_root)
     for folder in library_folders(steam_root):
         for manifest in folder.glob("appmanifest_*.acf"):
             try:
@@ -98,6 +125,13 @@ def scan(steam_root: Path) -> list[LibraryItem]:
                 hero_path=str(hero) if hero else None,
                 steam_appid=int(appid) if appid.isdigit() else None,
                 uri=f"steam://rungameid/{appid}",
+                extra={
+                    "logo": LOGO.format(appid=appid),
+                    "size": int(state["sizeondisk"]) if str(state.get("sizeondisk", "")).isdigit() else 0,
+                    "update": str(state.get("stateflags", INSTALLED)) != INSTALLED,
+                    "steam_last_played": stats.get(appid, {}).get("last_played", 0),
+                    "steam_playtime": stats.get(appid, {}).get("playtime", 0),
+                },
             )
     return sorted(items.values(), key=lambda i: i.title.lower())
 

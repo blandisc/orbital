@@ -1,5 +1,5 @@
 import { h, mount, svg } from "../core/dom.js";
-import { duration, genres, lastPlayed, percent } from "../core/format.js";
+import { bytes, duration, genres, lastPlayed, percent } from "../core/format.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { alternativeRunner, isGame, isWatchable, primaryLabel, runnerName } from "../core/library.js";
 import { Button } from "./button.js";
@@ -47,6 +47,10 @@ export function createHero({ onAction }) {
       lastPlayed(item.last_played, Date.now(), watchable ? "Visto" : "Jugado") || (isGame(item) ? "Sin jugar todavía" : null),
       watchable ? percent(item.progress) && `${percent(item.progress)} visto` : duration(item.playtime) && `${duration(item.playtime)} en total`,
     ].filter(Boolean).map((text) => h("span", {}, text));
+    if (item.source === "steam") { // Steam: tamaño en disco y si le falta una actualización
+      if (bytes(extra.size)) list.push(h("span", {}, bytes(extra.size)));
+      if (extra.update) list.push(h("span", { class: "hero__fact--warning" }, "Actualización pendiente"));
+    }
     if (item.favorite) list.push(h("span", { class: "hero__fact--favorite" }, svg(ICONS.star), "Favorito"));
     mount(facts, list.flatMap((node, i) => (i ? [h("span", { class: "hero__fact-sep", "aria-hidden": "true" }, "·"), node] : [node])));
 

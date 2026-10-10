@@ -49,3 +49,10 @@ const GENRES = {
 
 /** Géneros de Cinemeta (en inglés) en español; los desconocidos se dejan igual. */
 export const genres = (list = []) => list.map((g) => GENRES[g] ?? g);
+
+/** Tamaño en disco legible: 3,7 GB · 850 MB. */
+export function bytes(n) {
+  if (!n || n < 1e6) return null;
+  const [value, unit] = n >= 1e9 ? [n / 1e9, "GB"] : [n / 1e6, "MB"];
+  return `${value.toLocaleString("es", { maximumFractionDigits: value < 10 ? 1 : 0 })} ${unit}`;
+}
