@@ -1,12 +1,15 @@
-/* Backdrop: fondo héroe a pantalla completa con fundido entre dos capas. */
-.backdrop { position: fixed; inset: 0; z-index: -1; background: var(--gradient-backdrop); }
+/* Backdrop: arte del juego a pantalla completa, con fundido entre dos capas.
+   La base y el velo toman el tono del juego (--art-tint), así el color nunca "salta". */
+.backdrop { position: fixed; inset: 0; z-index: -1; background: var(--color-tinted-bg); overflow: hidden; }
 .backdrop__layer {
   position: absolute; inset: 0;
   background-size: cover; background-position: center 30%;
-  opacity: 0; transform: scale(1.04);
-  transition: opacity var(--duration-fade) var(--ease-out), transform 6s linear;
+  opacity: 0; transform: scale(1.05);
+  transition: opacity var(--duration-tint) var(--ease-out), transform 8s linear;
 }
 .backdrop__layer--visible { opacity: 1; transform: scale(1); }
-/* Si solo hay portada vertical, se difumina un poco para que no se vea pixelada. */
-.backdrop__layer--poster { filter: blur(2px) saturate(1.1); }
+/* Solo portada vertical (sin fanart): ampliada sería un mosaico pixelado. Desenfocada se vuelve
+   un campo de color del juego, que es lo que el fondo necesita. */
+.backdrop__layer--poster { inset: -10%; filter: blur(3.5rem) saturate(1.3); }
+.backdrop__layer--poster.backdrop__layer--visible { opacity: .55; }
 .backdrop__scrim { position: absolute; inset: 0; background: var(--scrim-hero); }

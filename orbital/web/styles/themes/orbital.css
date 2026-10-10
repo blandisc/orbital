@@ -1,0 +1,49 @@
+/*
+ * Tokens de diseño — capa 2: semánticos del tema Orbital.
+ * La interfaz es grafito neutro; el color lo pone el juego enfocado (--art-tint / --art-accent,
+ * calculados de su portada en js/core/color.js). Para otro tema, copia este archivo, cambia
+ * los valores y usa <html data-theme="nombre">. Los componentes no cambian.
+ */
+[data-theme="orbital"] {
+  color-scheme: dark;
+
+  --color-bg: var(--palette-ink-950);
+  --color-surface: var(--palette-ink-900);
+  --color-surface-raised: var(--palette-ink-800);
+  --color-fill: rgba(255, 255, 255, .1); /* botones secundarios, chips */
+  --color-fill-hover: rgba(255, 255, 255, .16);
+  --color-hairline: rgba(255, 255, 255, .09);
+  --color-text: var(--palette-paper);
+  --color-text-muted: var(--palette-ink-300);
+  --color-text-faint: rgba(255, 255, 255, .18);
+  --color-accent: var(--art-accent); /* sale de la portada, siempre claro */
+  --color-focus: var(--palette-paper);
+  --color-primary: var(--palette-paper);
+  --color-on-primary: var(--palette-ink-1000);
+  --color-favorite: var(--palette-amber-300);
+  --color-danger: var(--palette-red-400);
+  --color-live: var(--palette-teal-300);
+  --color-idle: var(--palette-ink-500);
+  --color-progress: var(--palette-paper);
+  --color-progress-track: rgba(255, 255, 255, .2);
+  --color-pad-a: var(--palette-pad-green);
+  --color-pad-b: var(--palette-pad-red);
+  --color-pad-x: var(--palette-pad-blue);
+  --color-pad-y: var(--palette-pad-yellow);
+
+  /* El fondo toma el tono del juego, muy oscurecido. */
+  --color-tinted-bg: color-mix(in oklab, var(--art-tint) 55%, var(--palette-ink-1000));
+  --color-scrim: color-mix(in oklab, var(--palette-ink-1000) 62%, transparent);
+  --scrim-hero:
+    linear-gradient(180deg, color-mix(in oklab, var(--color-tinted-bg) 92%, transparent) 0%, color-mix(in oklab, var(--color-tinted-bg) 55%, transparent) 12%, transparent 26%),
+    linear-gradient(90deg, var(--color-tinted-bg) 0%, color-mix(in oklab, var(--color-tinted-bg) 85%, transparent) 30%,
+      color-mix(in oklab, var(--color-tinted-bg) 20%, transparent) 62%, transparent 88%),
+    linear-gradient(0deg, var(--color-tinted-bg) 0%, color-mix(in oklab, var(--color-tinted-bg) 92%, transparent) 34%, transparent 64%);
+  --gradient-card: linear-gradient(160deg, var(--palette-ink-800), var(--palette-ink-900));
+
+  --shadow-card: 0 .5rem 1.4rem rgba(0, 0, 0, .35);
+  --shadow-lifted: 0 1.1rem 2.4rem rgba(0, 0, 0, .55);
+  --shadow-overlay: 0 1.5rem 4rem rgba(0, 0, 0, .55);
+  /* Foco: anillo blanco separado de la portada por un hueco del color del fondo. */
+  --ring-focus: 0 0 0 .16rem var(--color-tinted-bg), 0 0 0 .34rem var(--color-focus), var(--shadow-lifted);
+}

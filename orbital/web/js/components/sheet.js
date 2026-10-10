@@ -1,8 +1,9 @@
-import { h, hideAfterExit, mount } from "../core/dom.js";
+import { h, hideAfterExit, mount, svg } from "../core/dom.js";
+import { ICONS } from "../core/icons.js";
 
 /**
- * Menú modal navegable con mando. Recibe un menú como datos ({ title, options })
- * y emite el `command` de la opción elegida.
+ * Menú lateral navegable con mando (entra desde la derecha). Recibe un menú como datos
+ * ({ title, subtitle?, options, cancel? }) y emite el `command` de la opción elegida.
  */
 export function createSheet({ onCommand, onMove, onClose }) {
   const title = h("div", { class: "sheet__title", id: "sheet-title" });
@@ -24,7 +25,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
       type: "button",
       role: "menuitem",
       onClick: () => choose(i),
-    }, h("span", { class: "sheet__icon", "aria-hidden": "true" }, option.icon), option.label,
+    }, h("span", { class: "sheet__icon" }, ICONS[option.icon] ? svg(ICONS[option.icon]) : null), option.label,
     option.hint && h("small", { class: "sheet__hint" }, option.hint))));
   }
 
@@ -63,7 +64,8 @@ export function createSheet({ onCommand, onMove, onClose }) {
       const delta = action === "up" || action === "left" ? -1 : 1;
       index = (index + delta + menu.options.length) % menu.options.length;
       onMove?.();
-      render();
+      // Solo cambia la clase: así el foco se desliza con transición en vez de redibujarse.
+      [...list.children].forEach((item, i) => item.classList.toggle("sheet__item--focused", i === index));
     } else if (action === "select") {
       choose();
     } else if (action === "back" || action === "options" || action === "menu") {

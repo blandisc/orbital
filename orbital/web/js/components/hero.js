@@ -33,7 +33,7 @@ export function createHero({ onAction }) {
       lastPlayed(item.last_played, Date.now(), watchable ? "Visto" : "Jugado") || (isGame(item) ? "Sin jugar todavía" : null),
       watchable ? percent(item.progress) && `${percent(item.progress)} visto` : duration(item.playtime) && `${duration(item.playtime)} en total`,
     ].filter(Boolean).map((text) => h("span", {}, text));
-    if (item.favorite) list.push(h("span", { class: "hero__fact--favorite" }, "★ Favorito"));
+    if (item.favorite) list.push(h("span", { class: "hero__fact--favorite" }, svg(ICONS.star), "Favorito"));
     mount(facts, list.flatMap((node, i) => (i ? [h("span", { class: "hero__fact-sep", "aria-hidden": "true" }, "·"), node] : [node])));
 
     const alt = alternativeRunner(item);

@@ -7,7 +7,7 @@ export function Card(item, { onPress, showAgo = false, pop = false } = {}) {
   const meta = h("span", { class: "card__meta" },
     h("strong", { class: "card__title" }, item.title),
     h("small", { class: "card__subtitle" }, item.subtitle));
-  const badge = item.favorite ? h("span", { class: ["card__badge", pop && "card__badge--pop"], "aria-label": "Favorito" }, "★") : null;
+  const badge = item.favorite ? h("span", { class: ["card__badge", pop && "card__badge--pop"], "aria-label": "Favorito" }, svg(ICONS.star)) : null;
   const ago = showAgo ? shortAgo(item.last_played) : null;
   const chip = ago ? h("span", { class: "card__chip" }, ago) : null;
   const progress = item.progress > 0

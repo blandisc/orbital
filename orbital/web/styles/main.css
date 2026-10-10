@@ -1,9 +1,8 @@
 /* Punto de entrada de estilos: el orden importa (tokens → tema → base → componentes). */
 @import url("tokens.css");
-@import url("themes/nordic.css");
+@import url("themes/orbital.css");
 @import url("base.css");
 @import url("components/backdrop.css");
-@import url("components/pill.css");
 @import url("components/glyph.css");
 @import url("components/button.css");
 @import url("components/status-bar.css");

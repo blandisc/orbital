@@ -6,7 +6,9 @@ const ALEXA_LIVE_SECONDS = 600;
 
 /** Barra superior: marca (abre el menú), juego en curso, Alexa, Wi-Fi, batería y hora. */
 export function createStatusBar({ onBrand }) {
-  const playing = h("span", { class: "pill pill--accent", hidden: true });
+  const playingTitle = h("span", { class: "status-bar__playing-title" });
+  const playing = h("span", { class: "status-bar__playing", hidden: true },
+    h("i", { class: "status-bar__live", "aria-hidden": "true" }), h("span", { class: "status-bar__playing-label" }, "En curso"), playingTitle);
   const alexa = h("span", { class: "indicator", hidden: true, title: "Alexa" }, h("i", { class: "indicator__dot" }), "Alexa");
   const wifi = h("span", { hidden: true }, svg(ICONS.wifi));
   const level = h("i", { class: "battery__level" });
@@ -16,14 +18,14 @@ export function createStatusBar({ onBrand }) {
   const time = h("span", { class: "status-bar__clock" });
 
   const el = h("header", { class: "status-bar" },
-    h("button", { class: "pill pill--interactive status-bar__brand", type: "button", onClick: onBrand },
-      h("span", { class: "status-bar__logo", "aria-hidden": "true" }), "Orbital"),
+    h("button", { class: "status-bar__brand", type: "button", "aria-label": "Orbital: menú", onClick: onBrand },
+      svg(ICONS.mark), h("span", { class: "status-bar__wordmark" }, "orbital")),
     playing,
     h("div", { class: "status-bar__right" }, alexa, wifi, battery, time));
 
   function setRunning(running) {
     playing.hidden = !running;
-    playing.textContent = running ? `▶ ${running.title}` : "";
+    playingTitle.textContent = running ? running.title : "";
   }
 
   function setSystem({ wifi: info, alexa_last: alexaLast }) {

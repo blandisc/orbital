@@ -10,14 +10,14 @@
      margen: transform no recalcula el layout de la tarjeta ni reacomoda su contenido. */
   transform-origin: 0 100%;
   transition:
-    transform var(--duration-base) var(--ease-emphasis), margin var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-spring), margin var(--duration-base) var(--ease-out),
     box-shadow var(--duration-base) var(--ease-out), opacity var(--duration-base) var(--ease-out),
     filter var(--duration-base) var(--ease-out);
 }
 /* Borde interior fino: separa portadas oscuras del fondo sin cambiar de tamaño al enfocar. */
 .card::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  box-shadow: inset 0 0 0 1px var(--color-border);
+  box-shadow: inset 0 0 0 1px var(--color-hairline);
 }
 .card__image { display: block; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--duration-base) var(--ease-out); }
 .card__image--loaded { opacity: 1; }
@@ -26,16 +26,18 @@
 .card__badge {
   position: absolute; top: var(--space-2); right: var(--space-2); z-index: 1;
   display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%;
-  background: rgba(10, 16, 28, .75); color: var(--color-favorite); font-size: var(--text-xs);
+  background: rgba(7, 7, 8, .78); color: var(--color-favorite);
   box-shadow: 0 1px 6px rgba(0, 0, 0, .4);
 }
-.card__badge--pop { animation: badge-pop 480ms var(--ease-emphasis); }
+.card__badge .icon { width: .85rem; height: .85rem;
+}
+.card__badge--pop { animation: badge-pop 480ms var(--ease-spring); }
 @keyframes badge-pop { from { transform: scale(0) rotate(-40deg); } 60% { transform: scale(1.35); } }
 /* "Jugado recientemente": hace cuánto, sobre la portada. */
 .card__chip {
   position: absolute; left: var(--space-2); bottom: var(--space-2); z-index: 1;
   padding: .12rem .5rem; border-radius: var(--radius-pill);
-  background: rgba(10, 16, 28, .8); backdrop-filter: blur(6px);
+  background: rgba(7, 7, 8, .8);
   color: var(--color-text); font-size: var(--text-2xs); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums;
 }
 /* Llegar al final de una fila: la tarjeta se empuja un poco (translate es independiente del scale del foco). */
@@ -58,11 +60,11 @@
   margin-right: calc(var(--card-width) * (var(--card-focus-scale) - 1));
   box-shadow: var(--ring-focus);
 }
-.card--dimmed { opacity: .5; filter: saturate(.7); }
+.card--dimmed { opacity: .4; filter: saturate(.6); }
 /* Progreso de lo que estás viendo (Stremio): sobre un degradado para que se lea en cualquier póster. */
 .card--has-progress::before {
   content: ""; position: absolute; inset: auto 0 0 0; height: 30%; pointer-events: none;
-  background: linear-gradient(transparent, rgba(10, 16, 28, .85));
+  background: linear-gradient(transparent, rgba(7, 7, 8, .85));
 }
 .card__progress {
   position: absolute; left: var(--space-2); right: var(--space-2); bottom: var(--space-2); z-index: 1;

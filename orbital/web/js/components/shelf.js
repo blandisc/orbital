@@ -12,6 +12,7 @@ export function createShelf({ onPick }) {
   const el = h("section", { class: "shelf", "aria-label": "Biblioteca" }, rowsEl);
   let rowEls = [];
   let focus = { r: 0, c: 0 };
+  let introduced = false; // la entrada escalonada solo al abrir Orbital
   let metrics = null;
 
   const measure = () => {
@@ -43,6 +44,12 @@ export function createShelf({ onPick }) {
       return { rowEl, track, cards, count };
     });
     mount(rowsEl, rowEls.map((x) => x.rowEl));
+    if (!introduced) {
+      introduced = true;
+      rowEls[0]?.cards.slice(0, 10).forEach((card, i) => card.style.setProperty("--i", i));
+      el.classList.add("shelf--intro");
+      setTimeout(() => el.classList.remove("shelf--intro"), 1200);
+    }
     setFocus(focus.r, focus.c);
   }
 

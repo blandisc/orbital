@@ -277,7 +277,7 @@ orbital/web/
   index.html                 # solo carga main.css y main.js
   styles/
     tokens.css               # capa 1: primitivos (paleta, espacios, tipografía, movimiento, layout)
-    themes/nordic.css        # capa 2: tokens semánticos del tema (--color-accent, --scrim-hero...)
+    themes/orbital.css       # capa 2: tokens semánticos (--color-accent sale de la portada: js/core/color.js)
     base.css                 # reset y globales
     components/*.css         # un archivo por componente, nomenclatura BEM (.card__title, .card--focused)
     main.css                 # orden de importación
@@ -291,7 +291,7 @@ orbital/web/
 Reglas del sistema:
 
 - **Los componentes solo usan tokens semánticos**, nunca colores ni medidas sueltas ni primitivos
-  (`--palette-*`). Para un tema nuevo (B2 verde CRT, A-Prime…) copia `themes/nordic.css`, cambia los
+  (`--palette-*`). Para un tema nuevo (B2 verde CRT, A-Prime…) copia `themes/orbital.css`, cambia los
   valores, impórtalo en `main.css` y pon `<html data-theme="b2">`.
 - **El DOM se crea con `h()`** (`core/dom.js`) usando `textContent`: los títulos de los juegos nunca
   se insertan como HTML.
@@ -334,7 +334,7 @@ scripts/         # instalación en Windows y servicio systemd
 - [x] Portadas, nombres y favoritos de ES-DE.
 - [x] "Jugado recientemente", tiempo jugado, favoritos y ocultos propios.
 - [x] Volver a Orbital automáticamente al cerrar un juego.
-- [x] Tema Nordic con sistema de tokens.
+- [x] Tema Orbital con sistema de tokens; el color lo toma de la portada del juego.
 - [ ] Temas B2 Green CRT y A-Prime (solo falta su archivo de tokens).
 - [ ] Portadas de SteamGridDB para lo que ES-DE no tenga.
 - [ ] Control de volumen y suspensión por voz.

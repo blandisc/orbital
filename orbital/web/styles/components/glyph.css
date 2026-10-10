@@ -1,20 +1,18 @@
-/* Glyph: botón del mando o tecla ("A", "Esc"...). */
+/* Glyph: botón del mando o tecla ("A", "Esc"...).
+   Con mando: círculos, y los de cara con su color (A verde, B rojo, X azul, Y amarillo).
+   Con teclado: teclas (rectángulo con borde inferior), para que no parezcan botones del mando. */
 .glyph {
   display: inline-grid; place-items: center; flex: none;
   min-width: var(--glyph-size); height: var(--glyph-size); padding: 0 .4rem;
   border-radius: var(--radius-pill);
-  background: var(--color-text); color: var(--color-bg);
-  font: var(--weight-black) var(--text-xs) / 1 var(--font-ui);
+  background: var(--color-fill-hover); color: var(--color-text);
+  font: var(--weight-bold) var(--text-xs) / 1 var(--font-text);
 }
-/* Con mando, los botones de cara llevan su color (A verde, B rojo, X azul, Y amarillo),
-   como en el mando de la Legion Go: se reconocen sin leer la letra. */
-[data-input="gamepad"] .glyph--a { background: var(--color-pad-a); }
-[data-input="gamepad"] .glyph--b { background: var(--color-pad-b); }
-[data-input="gamepad"] .glyph--x { background: var(--color-pad-x); }
-[data-input="gamepad"] .glyph--y { background: var(--color-pad-y); }
-/* Dentro de un botón: chip discreto del color del texto del botón. */
-.glyph--sm {
-  min-width: 1.45rem; height: 1.45rem; padding: 0 .35rem; font-size: var(--text-2xs);
-  background: rgba(255, 255, 255, .14); color: inherit;
-}
-.button--primary .glyph--sm { background: rgba(11, 20, 36, .16); }
+[data-input="keyboard"] .glyph { border-radius: var(--radius-xs); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .35); }
+[data-input="gamepad"] .glyph--a { background: var(--color-pad-a); color: var(--palette-ink-1000); }
+[data-input="gamepad"] .glyph--b { background: var(--color-pad-b); color: var(--palette-ink-1000); }
+[data-input="gamepad"] .glyph--x { background: var(--color-pad-x); color: var(--palette-ink-1000); }
+[data-input="gamepad"] .glyph--y { background: var(--color-pad-y); color: var(--palette-ink-1000); }
+/* Dentro de un botón: más pequeño. Sobre el botón claro, oscuro (salvo los de color). */
+.glyph--sm { min-width: 1.5rem; height: 1.5rem; font-size: var(--text-2xs); }
+.button--primary .glyph--sm:not([data-input="gamepad"] *) { background: var(--palette-ink-1000); color: var(--color-primary); }

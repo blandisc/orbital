@@ -4,23 +4,25 @@
  * usan los tokens semánticos que define cada tema (themes/*.css).
  */
 :root {
-  /* Paleta */
-  --palette-navy-950: #0a101c;
-  --palette-navy-900: #0d1626;
-  --palette-navy-850: #142036;
-  --palette-navy-800: #162238;
-  --palette-navy-700: #1d3152;
-  --palette-navy-600: #22324d;
-  --palette-navy-500: #5d6d85;
-  --palette-slate-300: #9fb0c8;
-  --palette-white: #eef3fb;
-  --palette-blue-200: #a9c9ff;
-  --palette-blue-300: #8cb8ff;
-  --palette-blue-500: #5f93f0;
-  --palette-cyan-300: #5fd4ff;
-  --palette-gold-300: #ffd36b;
-  --palette-red-300: #ff8f8f;
-  --palette-green-300: #7ee2a8;
+  /* Paleta: grafitos neutros (la interfaz no tiene color propio; el color lo pone el juego) */
+  --palette-ink-1000: #070708;
+  --palette-ink-950: #0c0c0e;
+  --palette-ink-900: #131316;
+  --palette-ink-850: #18181c;
+  --palette-ink-800: #1e1e23;
+  --palette-ink-700: #2a2a30;
+  --palette-ink-500: #55555d;
+  --palette-ink-300: #a3a3ab;
+  --palette-ink-200: #cdcdd3;
+  --palette-paper: #f5f4f0;
+  --palette-red-400: #f0574d;
+  --palette-amber-300: #f4c24d;
+  --palette-teal-300: #5fd6c6;
+  /* Botones de cara del mando (convención Xbox, la del GameSir y la Legion Go) */
+  --palette-pad-green: #5cbf6d;
+  --palette-pad-red: #e2514a;
+  --palette-pad-blue: #4a8ae8;
+  --palette-pad-yellow: #eec03a;
 
   /* Espaciado (múltiplos de 4 px a 16 px/rem) */
   --space-1: .25rem;
@@ -33,42 +35,43 @@
   --space-10: 2.5rem;
   --space-14: 3.5rem;
 
-  /* Radios */
-  --radius-sm: .5rem;
-  --radius-md: 1rem;
-  --radius-lg: 1.35rem;
-  --radius-xl: 1.6rem;
+  /* Radios: rectángulos suaves, no burbujas */
+  --radius-xs: .3rem;
+  --radius-sm: .45rem;
+  --radius-md: .6rem;
+  --radius-lg: .8rem;
   --radius-pill: 999px;
 
-  /* Tipografía */
-  --font-sans: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
-  --font-ui: system-ui, sans-serif;
-  --text-2xs: .72rem;
-  --text-xs: .8rem;
-  --text-sm: .9rem;
-  --text-md: 1.05rem;
-  --text-lg: 1.15rem;
-  --text-xl: 1.6rem;
-  --text-2xl: 2.6rem;
-  --text-3xl: 3rem;
-  --text-display: 4rem;
+  /* Tipografía: la de Windows, usando sus ejes de tamaño óptico */
+  --font-sans: "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-text: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --text-2xs: .7rem;
+  --text-xs: .78rem;
+  --text-sm: .88rem;
+  --text-md: 1rem;
+  --text-lg: 1.12rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2.4rem;
+  --text-3xl: 2.9rem;
+  --text-display: 3.7rem;
   --weight-regular: 400;
   --weight-medium: 600;
   --weight-bold: 700;
   --weight-black: 800;
-  --tracking-tight: -.02em;
-  --tracking-wide: .07em;
-  --tracking-wider: .12em;
+  --tracking-display: -.035em;
+  --tracking-tight: -.015em;
+  --tracking-caps: .14em;
 
-  /* Movimiento */
+  /* Movimiento: entradas desaceleran, salidas aceleran y son más cortas */
+  --duration-instant: 90ms;
   --duration-fast: 140ms;
   --duration-base: 220ms;
   --duration-slow: 320ms;
-  --duration-fade: 600ms;
-  --duration-exit: 160ms; /* las salidas, más cortas que las entradas */
-  --ease-out: cubic-bezier(.2, .8, .2, 1);
-  --ease-in: cubic-bezier(.4, 0, 1, 1);
-  --ease-emphasis: cubic-bezier(.3, 1.3, .5, 1); /* un poco de rebote para el foco */
+  --duration-tint: 700ms;
+  --duration-exit: 160ms;
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --ease-in: cubic-bezier(.5, 0, .75, 0);
+  --ease-spring: cubic-bezier(.34, 1.4, .64, 1); /* resorte corto, sin rebote visible */
 
   /* Capas */
   --z-base: 0;
@@ -83,12 +86,25 @@
   --card-width: 8.4rem;
   --card-height: 12.6rem;
   --card-gap: var(--space-4);
-  --card-focus-scale: 1.16;
+  --card-focus-scale: 1.12;
   --card-radius: var(--radius-md);
   --row-heading-height: 2.4rem;
   --row-height: calc(var(--row-heading-height) + var(--card-height) * var(--card-focus-scale) + var(--space-5));
   --row-peek: 2.6rem; /* cuánto asoma la fila siguiente */
-  --control-height: 3.1rem;
-  --glyph-size: 1.65rem;
-  --progress-height: .3rem;
+  --control-height: 3rem;
+  --glyph-size: 1.6rem;
+  --progress-height: .25rem;
+  --sheet-width: 26rem;
+}
+
+/* El color del juego enfocado: registrado para que cambie con transición suave. */
+@property --art-tint {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #18181c;
+}
+@property --art-accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #cdcdd3;
 }
