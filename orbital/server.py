@@ -205,6 +205,12 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         # También cierra un emulador abierto desde ES-DE si se pidió con Select+Start.
         return {"stopped": shell.stop_game()}
 
+    @app.post("/api/ui/reload")
+    def ui_reload() -> dict:
+        """Recarga la interfaz abierta (tras actualizar Orbital no hace falta reiniciarlo)."""
+        bus.publish_threadsafe({"type": "reload"})
+        return {"ok": True}
+
     @app.post("/api/ui/resume")
     def ui_resume() -> dict:
         """Vuelve al juego ("Seguir jugando")."""

@@ -84,3 +84,8 @@ def test_closed_event_reaches_ui(make_client, library):
         library.launcher.finish(60)
         event = c.portal.call(queue.get)
         assert event["type"] == "closed" and event["title"] == "Hollow Knight"
+
+
+def test_ui_reload(make_client):
+    with make_client() as c:
+        assert c.post("/api/ui/reload").json() == {"ok": True}

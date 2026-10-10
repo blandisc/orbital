@@ -250,6 +250,7 @@ function handleAction(action) {
 
 // ---------------------------------------------------------------- eventos del servidor
 function handleEvent(event) {
+  if (event.type === "reload") return location.reload();
   if (event.type === "toast") {
     ui.toast.show(event.message, { error: event.ok === false });
     ui.status.pulseAlexa();
