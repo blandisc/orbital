@@ -21,6 +21,7 @@ from .state import State
 
 STREMIO_KEY = "stremio_auth_key"
 STREMIO_STALE_SECONDS = 180
+STEAM_STATS_DELAY = 6  # s tras cerrar un juego de Steam, antes de releer sus horas
 
 log = logging.getLogger(__name__)
 
@@ -418,7 +419,23 @@ class Catalog:
             system.bring_to_front()
         if item_id == "media:stremio":
             self.refresh_stremio(background=True)  # el progreso de "Seguir viendo" cambió
+        elif item_id.startswith("steam:"):
+            # Steam guarda sus horas unos segundos después de cerrar el juego.
+            threading.Timer(STEAM_STATS_DELAY, self.refresh_steam_stats).start()
         self._notify({"type": "closed", "id": item_id, "title": title, "seconds": int(seconds)})
+
+    def refresh_steam_stats(self) -> None:
+        """Relee las horas y la última vez de Steam (barato: no reescanea la biblioteca)."""
+        if self.steam_root is None:
+            return
+        stats = steam.user_stats(self.steam_root)
+        with self._lock:
+            for item in self._items.values():
+                if item.source == "steam" and item.steam_appid is not None:
+                    got = stats.get(str(item.steam_appid), {})
+                    item.extra["steam_last_played"] = got.get("last_played", 0)
+                    item.extra["steam_playtime"] = got.get("playtime", 0)
+        self._notify({"type": "library-changed"})
 
     def _notify(self, event: dict) -> None:
         for listener in list(self.listeners):

@@ -87,3 +87,15 @@ def test_steam_hours_size_update_and_recent_outside_orbital(tmp_path):
     recent = next(r for r in cat.grouped() if r["id"] == "recent")
     assert [i["title"] for i in recent["items"]] == ["Factorio"]  # jugado en Steam, no desde Orbital
     assert recent["items"][0]["playtime"] == 2226 * 60
+
+
+def test_refresh_steam_stats_after_playing(library, monkeypatch):
+    import orbital.library.steam as steam
+
+    events = []
+    library.listeners.append(events.append)
+    monkeypatch.setattr(steam, "user_stats", lambda root: {"367520": {"last_played": 1790000000, "playtime": 7200}})
+    library.refresh_steam_stats()
+    hollow = library.describe(library.get("steam:367520"))
+    assert hollow["playtime"] == 7200 and hollow["last_played"] == 1790000000
+    assert events[-1] == {"type": "library-changed"}
