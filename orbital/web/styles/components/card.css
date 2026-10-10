@@ -40,6 +40,9 @@
   background: rgba(7, 7, 8, .8);
   color: var(--color-text); font-size: var(--text-2xs); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums;
 }
+/* En la enfocada, el héroe ya dice "Jugado hace…" en grande: la etiqueta solo taparía el logo. */
+.card--focused .card__chip { opacity: 0; }
+.card__chip { transition: opacity var(--duration-fast) var(--ease-out); }
 /* Llegar al final de una fila: la tarjeta se empuja un poco (translate es independiente del scale del foco). */
 .card--bump-left { animation: bump-left 220ms var(--ease-out); }
 .card--bump-right { animation: bump-right 220ms var(--ease-out); }
