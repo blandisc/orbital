@@ -88,7 +88,7 @@
   --card-gap: 1.85rem;
   --card-focus-scale: 1.2;
   --card-radius: var(--radius-md);
-  --row-heading-height: 2.4rem;
+  --row-heading-height: 3.2rem; /* título + espacio para la elevación y el anillo del foco */
   --row-height: calc(var(--row-heading-height) + var(--card-height) * var(--card-focus-scale) + var(--space-5));
   --row-peek: 2.6rem; /* cuánto asoma la fila siguiente */
   --control-height: 3rem;
