@@ -35,7 +35,11 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 | Flujo | Cómo | Estado |
 |---|---|---|
 | Abrir Stremio / YouTube / ES-DE / Big Picture | A | ✅ |
-| Navegar dentro de Stremio | depende de Stremio | ⚠️ Stremio no se maneja del todo con mando |
+| Ver una película o episodio | Elegir en Orbital → fuente recomendada (5 s o A) → reproductor de Orbital (mpv) a pantalla completa, desde donde te quedaste | ✅ |
+| En el reproductor | A pausa · ←/→ ±10 s (mantener: continuo) · LB/RB ±1 min · ↑/↓ volumen · X audio · Y subtítulos · B salir | ✅ |
+| Home en el reproductor | Pausa el video y va a Orbital; Home otra vez vuelve con la barra de progreso (A sigue) | ✅ |
+| Seguir viendo | Al salir del reproductor, el avance se guarda en tu cuenta de Stremio (Orbital, Stremio y otros dispositivos); al terminar un episodio, queda el siguiente | ✅ |
+| Navegar dentro de Stremio | depende de Stremio | ⚠️ Stremio no se maneja del todo con mando (con `player: stremio` se usa su reproductor) |
 | Volver a Orbital desde una app | Home o Legion L | ✅ |
 | Cambiar entre apps abiertas | ☰ → Ventanas abiertas | ✅ |
 

@@ -75,9 +75,20 @@ class FakeOverlay:
     def hide(self, delay_ms=0): self.calls.append(("hide",))
 
 
+class FakePlayer:
+    def __init__(self):
+        self.calls = []
+        self.remote = self
+
+    def pause(self): self.calls.append("pause")
+    def show_progress(self): self.calls.append("progress")
+    def update(self, buttons, now): self.calls.append(("buttons", buttons))
+
+
 class FakeCatalog:
     def __init__(self, running=None):
         self.launcher = FakeLauncher(running)
+        self.player = FakePlayer()
 
 
 def make(running=None):
@@ -244,3 +255,18 @@ def test_closing_a_paused_game_unfreezes_first():
     shell.hold = {"title": "x", "runner": "Eden", "pid": None}
     shell.stop_game()
     assert not win.suspended and shell.catalog.launcher.stopped
+
+
+def test_orbital_player_pauses_normally_and_gets_the_gamepad():
+    player_running = {"title": "Interstellar", "managed": True, "runner": "Reproductor", "pid": 30}
+    shell, win, _ = make(player_running)
+    win.windows[DESKTOP_APP] = ("Interstellar", 30, "mpv.exe")
+    win.fg = DESKTOP_APP
+    sent = []
+    shell.on_buttons(0, 0x1000, 1.0, send=sent.append)
+    assert shell.player.calls == [("buttons", 0x1000)] and sent == []  # comandos a mpv, no teclas
+    shell.home()
+    assert win.fg == ORBITAL and win.suspended == set()  # pausa de video, no congelar
+    assert shell.player.calls[-1] == "pause"
+    shell.home()
+    assert win.fg == DESKTOP_APP and shell.player.calls[-1] == "progress"

@@ -26,12 +26,13 @@ log = logging.getLogger(__name__)
 BROWSERS = {"msedge.exe", "chrome.exe", "chromium.exe"}
 EMULATOR_EXES = {n for k in KNOWN for n in k.exe_names if n.endswith(".exe")} | {
     "retroarch.exe", "citron.exe", "sudachi.exe", "yuzu.exe", "rpcs3.exe", "duckstation-qt-x64-releaseltcg.exe",
-    "stremio-shell-ng.exe", "stremio.exe", "geforcenowstreamer.exe",
+    "stremio-shell-ng.exe", "stremio.exe", "geforcenowstreamer.exe", "mpv.exe",
 }
+PLAYER_EXE = "mpv.exe"  # el reproductor de Orbital: se maneja por su tubería, no con teclas
 LEGION_SPACE = "legionspace.exe"
 # Pausa universal al ir a Orbital: solo emuladores (los juegos en línea perderían la conexión y
 # congelar Stremio dejaría su ventana trabada).
-NO_PAUSE = {"stremio-shell-ng.exe", "stremio.exe", "geforcenowstreamer.exe"}  # congelar la nube = desconectarte
+NO_PAUSE = {"stremio-shell-ng.exe", "stremio.exe", "geforcenowstreamer.exe", PLAYER_EXE}  # congelar la nube = desconectarte
 
 # Apps sin soporte de mando: mientras están al frente, el mando se traduce a teclas.
 REMOTE_APPS = {"stremio-shell-ng.exe", "stremio.exe"}
@@ -44,7 +45,7 @@ NOT_GAMES = BROWSERS | {"steam.exe", "steamwebhelper.exe", "explorer.exe", "es-d
                         "claude.exe", "discord.exe", "python.exe", "pythonw.exe"}
 APP_NAMES = {"chrome": "Chrome", "msedge": "Edge", "stremio-shell-ng": "Stremio", "steamwebhelper": "Steam",
              "steam": "Steam", "es-de": "ES-DE", "discord": "Discord", "explorer": "Explorador", "eden": "Eden",
-             "ryujinx": "Ryujinx", "dolphin": "Dolphin", "mgba": "mGBA", "xemu": "xemu", "ppssppwindows64": "PPSSPP"}
+             "ryujinx": "Ryujinx", "dolphin": "Dolphin", "mgba": "mGBA", "xemu": "xemu", "ppssppwindows64": "PPSSPP", "mpv": "Reproductor"}
 LEGION_DOUBLE_PRESS = 3.0  # s: dos toques de Legion L dejan abierto Legion Space
 
 
@@ -63,6 +64,10 @@ class ConsoleShell:
         self._legion_last = 0.0
         self._legion_allowed = False
         self._stop = threading.Event()
+
+    @property
+    def player(self):
+        return getattr(self.catalog, "player", None)
 
     # --------------------------------------------------------------- ventanas
     def is_orbital(self, hwnd: int) -> bool:
@@ -106,13 +111,19 @@ class ConsoleShell:
         target = self.game_window()
         if not target:
             return False
-        return self.win.focus(target)
+        focused = self.win.focus(target)
+        if focused and self.player and self.win.exe_name(self.win.pid_of(target)) == PLAYER_EXE:
+            self.player.show_progress()  # en pausa, con la barra: A para seguir
+        return focused
 
     # --------------------------------------------------------------- pausa universal
     def pause(self, hwnd: int) -> bool:
         """Congela el emulador al frente: imagen, sonido y lógica se detienen al instante, sea cual sea."""
         pid = self.win.pid_of(hwnd)
         exe = self.win.exe_name(pid)
+        if exe == PLAYER_EXE and self.player:
+            self.player.pause()  # un video se pausa normal (congelarlo cortaría el streaming)
+            return False
         if exe not in EMULATOR_EXES or exe in NO_PAUSE:
             return False
         pids = self.win.process_tree(pid)
@@ -235,8 +246,12 @@ class ConsoleShell:
     def on_buttons(self, slot: int, buttons: int, now: float, send=send_key) -> None:
         """Stremio no tiene soporte de mando: mientras está al frente, A pausa, la cruceta
         adelanta/regresa y sube/baja volumen, Y pantalla completa, B vuelve."""
+        exe = self.foreground_exe(now)
+        if exe == PLAYER_EXE and self.player:
+            self.player.remote.update(buttons, now)
+            return
         remote = self._remotes[slot]
-        if self.foreground_exe(now) not in REMOTE_APPS:
+        if exe not in REMOTE_APPS:
             remote.reset()
             return
         for vk in remote.update(buttons, now):

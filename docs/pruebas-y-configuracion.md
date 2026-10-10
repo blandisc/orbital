@@ -6,7 +6,8 @@
 |---|---|---|
 | 1 | Home no abra la Xbox Game Bar | Configuración → Juegos → Xbox Game Bar → desactivar "Abrir Xbox Game Bar con este botón del mando" |
 | 2 | Cuenta de Stremio (Seguir viendo, biblioteca) | `C:\Users\ferna\orbital\.venv\Scripts\python -m orbital stremio login` |
-| 2b | Subtítulos en inglés por defecto | En Stremio: Configuración → Reproductor → idioma de subtítulos = English (el reproductor de Stremio los elige solo) |
+| 2b | Subtítulos en inglés por defecto | Ya vienen así en el reproductor de Orbital (`stremio.subtitles: en`). Solo si usas `player: stremio`: en Stremio, Configuración → Reproductor → idioma de subtítulos = English |
+| 2c | Reproductor de Orbital (mpv) | Ya instalado en `%LOCALAPPDATA%\orbital\mpv` (compilación de shinchiro, sin firma digital). Para volver al de Stremio: `player: stremio` en config.yaml |
 | 3 | Permiso de micrófono para dictar | La primera vez que uses "Dictar" en Buscar, acepta el permiso del micrófono |
 | 4 | Alexa | `orbital alexa setup` → instalar Tailscale → `tailscale funnel --bg 8711` → skill y Lambda (README, sección Alexa) → `orbital alexa check` |
 | 5 | (Opcional) Mover los emuladores fuera de Descargas | El Sensor de almacenamiento de Windows puede borrar Descargas; Orbital también busca en `C:\Emuladores` |
@@ -36,8 +37,12 @@
 - [ ] Una serie abre sus episodios; LB/RB cambia de temporada.
 - [ ] En el reproductor de Stremio: A pausa, ←/→ adelanta/regresa, ↑/↓ volumen, Y pantalla completa (F11), B vuelve. Verificado: Stremio acepta las teclas que manda Orbital.
 - [ ] Al elegir un episodio o película aparece "Elige la fuente" con la recomendada enfocada; arranca sola en 5 s o con A; ↑/↓ para otra.
-- [ ] La fuente elegida abre directo el reproductor de Stremio (sin su lista de fuentes).
-- [ ] Al cerrar Stremio, Orbital vuelve y "Seguir viendo" se actualiza (con la cuenta vinculada).
+- [ ] La fuente elegida abre el reproductor de Orbital a pantalla completa (verificado: Interstellar arrancó en 1,5 s con audio y subtítulos en inglés).
+- [ ] En el reproductor: A pausa, ←/→ 10 s, LB/RB 1 min, ↑/↓ volumen, X audio, Y subtítulos, B sale y vuelve a Orbital.
+- [ ] Home en el reproductor pausa y va a Orbital; Home otra vez regresa con la barra de progreso.
+- [ ] Ver unos minutos, salir con B: "Seguir viendo" (en Orbital y en Stremio) muestra el avance; al volver a abrirlo sigue donde te quedaste.
+- [ ] Terminar un episodio: "Seguir viendo" pasa al siguiente.
+- [ ] Algo sin subtítulos en inglés dentro del video: se agregan los de tu addon de subtítulos (si tienes OpenSubtitles).
 
 ### Steam
 - [ ] El héroe muestra el logotipo, las horas reales y el tamaño; Marvel Rivals avisa "Actualización pendiente".

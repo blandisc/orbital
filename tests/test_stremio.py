@@ -46,6 +46,12 @@ class FakeStremio:
     def login(self, email, password):
         return "clave-buena"
 
+    def library_item(self, auth_key, item_id):
+        return next((i for i in self.items if i["_id"] == item_id), None)
+
+    def save_library_item(self, auth_key, item):
+        self.saved = getattr(self, "saved", []) + [item]
+
 
 def test_parse_library_follows_stremio_rules():
     items = stremio_api.parse_library(LIBRARY)
@@ -227,3 +233,44 @@ def test_sources_and_play_chosen_source_opens_player(linked, monkeypatch):
         assert c.post("/api/stremio/play", json={"kind": "series", "id": "tt1", "video_id": "tt1:1:1",
                                                  "source": data["sources"][0]["id"], "title": "Show"}).json() == {"ok": True}
     assert sent(linked).startswith("stremio:///player/")  # directo al reproductor, sin la lista de Stremio
+
+
+def test_chosen_source_plays_in_orbital_player_from_where_you_left(linked, monkeypatch):
+    from orbital import player
+    from orbital.library import streams
+
+    raw = [{"name": "[RD+] Torrentio\n1080p", "title": "Interstellar.2014.1080p\n👤 50 💾 9 GB",
+            "url": "https://torrentio/resolve/realdebrid/SECRETKEY/abc"}]
+    monkeypatch.setattr(streams.StreamFinder, "addons",
+                        lambda self, key: [{"name": "Torrentio RD", "url": "https://torrentio/manifest.json", "types": []}])
+    monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, addon, kind, vid: raw)
+    monkeypatch.setattr(player, "find_mpv", lambda: "C:/mpv/mpv.exe")
+    played = []
+
+    class FakePlayer:
+        def play(self, run, exe, url, title, meta, **options):
+            played.append((exe, url, title, meta, options))
+            return run([exe, url])
+
+    linked.player = FakePlayer()
+    src = linked.stream_sources("movie", "tt0816692")[0]
+    assert linked.play_source("movie", "tt0816692", "tt0816692", src.index, "Interstellar") == "orbital"
+    exe, url, title, meta, options = played[0]
+    assert url.endswith("SECRETKEY/abc") and meta["video_id"] == "tt0816692"
+    assert options["start"] == 5400 and options["audio"] == "en" and options["subtitles"] == "en"
+    assert linked.launcher.current["id"] == "media:player" and linked.launcher.current["runner"] == "Reproductor"
+    # Configurado para usar el reproductor de Stremio: como antes.
+    linked.config.stremio.player = "stremio"
+    linked.play_source("movie", "tt0816692", "tt0816692", src.index, "Interstellar")
+    assert sent(linked).startswith("stremio:///player/")
+
+
+def test_player_saves_progress_to_stremio(linked):
+    linked._player_finished({"kind": "movie", "meta_id": "tt0816692", "video_id": "tt0816692", "title": "Interstellar"},
+                            position=6000, duration=10140, watched=600)
+    saved = linked.stremio_client.saved[-1]
+    assert saved["_id"] == "tt0816692" and saved["state"]["timeOffset"] == 6_000_000
+    assert saved["poster"] == "https://p/int.jpg"  # el resto del item, tal cual
+    linked._player_finished({"kind": "movie", "meta_id": "tt0816692", "video_id": "tt0816692", "title": "x"},
+                            position=30, duration=10140, watched=5)
+    assert len(linked.stremio_client.saved) == 1  # abrir y cerrar sin ver nada no toca tu biblioteca

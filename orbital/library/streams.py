@@ -46,6 +46,8 @@ WORD_LANG = [
 LANG_NAMES = {"en": "Inglés", "es": "Español", "fr": "Francés", "it": "Italiano", "de": "Alemán", "pt": "Portugués",
               "ru": "Ruso", "ja": "Japonés", "ko": "Coreano", "zh": "Chino", "hi": "Hindi", "pl": "Polaco",
               "tr": "Turco", "uk": "Ucraniano", "nl": "Neerlandés"}
+# ISO 639-2, como etiquetan los addons de subtítulos (OpenSubtitles: "eng", "spa"…).
+LANG_CODES = {"en": "eng", "es": "spa", "fr": "fre", "it": "ita", "de": "ger", "pt": "por", "ja": "jpn"}
 SIZE = re.compile(r"💾\s*([\d.,]+)\s*(TB|GB|MB|KB)", re.I)
 SEEDERS = re.compile(r"👤\s*(\d+)")
 SITE = re.compile(r"⚙️\s*([^\n]+)")
@@ -203,22 +205,40 @@ class StreamFinder:
         for addon in (result.get("addons") or []) if isinstance(result, dict) else []:
             manifest = addon.get("manifest") or {}
             resources = [r if isinstance(r, str) else (r or {}).get("name") for r in manifest.get("resources", [])]
-            if "stream" in resources and addon.get("transportUrl"):
+            if {"stream", "subtitles"} & set(resources) and addon.get("transportUrl"):
                 addons.append({"name": manifest.get("name") or "Addon", "url": addon["transportUrl"],
-                               "types": manifest.get("types") or []})
+                               "types": manifest.get("types") or [], "resources": resources})
         self._addons = (time.time(), addons)
         return addons
 
-    def _fetch(self, addon: dict, kind: str, video_id: str) -> list[dict]:
+    def _get_json(self, addon: dict, path: str) -> dict:
         base = addon["url"].rsplit("/manifest.json", 1)[0]
-        req = urllib.request.Request(f"{base}/stream/{kind}/{quote(video_id)}.json", headers={"User-Agent": "Orbital"})
+        req = urllib.request.Request(f"{base}/{path}", headers={"User-Agent": "Orbital"})
+        with urllib.request.urlopen(req, timeout=self.timeout) as res:
+            return json.load(res) or {}
+
+    def _fetch(self, addon: dict, kind: str, video_id: str) -> list[dict]:
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as res:
-                streams = (json.load(res) or {}).get("streams") or []
+            streams = self._get_json(addon, f"stream/{kind}/{quote(video_id)}.json").get("streams") or []
         except (urllib.error.URLError, TimeoutError, ValueError) as exc:
             log.info("Sin fuentes de %s: %s", addon["name"], exc)
             return []
         return [s for s in streams if isinstance(s, dict) and (s.get("url") or s.get("infoHash"))]
+
+    def subtitles(self, auth_key: str, kind: str, video_id: str, lang: str) -> list[str]:
+        """URLs de subtítulos en tu idioma de tus addons (OpenSubtitles…), por si el video no trae."""
+        codes = {lang, LANG_CODES.get(lang, lang)}
+        urls = []
+        for addon in self.addons(auth_key):
+            if "subtitles" not in addon.get("resources", []):
+                continue
+            try:
+                subs = self._get_json(addon, f"subtitles/{kind}/{quote(video_id)}.json").get("subtitles") or []
+            except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+                log.info("Sin subtítulos de %s: %s", addon["name"], exc)
+                continue
+            urls += [s["url"] for s in subs if isinstance(s, dict) and s.get("url") and s.get("lang") in codes]
+        return urls
 
     def find(self, auth_key: str, kind: str, video_id: str, prefs: Preferences) -> list[Source]:
         key = f"{kind}:{video_id}:{prefs.audio}:{prefs.quality}"
@@ -226,7 +246,8 @@ class StreamFinder:
             hit = self._cache.get(key)
             if hit and time.time() - hit[0] < CACHE_SECONDS:
                 return hit[1]
-        addons = [a for a in self.addons(auth_key) if not a["types"] or kind in a["types"]]
+        addons = [a for a in self.addons(auth_key)
+                  if "stream" in a.get("resources", ["stream"]) and (not a["types"] or kind in a["types"])]
         with ThreadPoolExecutor(max_workers=max(1, len(addons))) as pool:
             results = list(pool.map(lambda a: (a, self._fetch(a, kind, video_id)), addons))
         sources, index = [], 0

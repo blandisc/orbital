@@ -12,7 +12,7 @@ from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import quote
 
-from . import system
+from . import player, system
 from .config import Config
 from .launcher import Launcher
 from .credentials import Credentials
@@ -128,6 +128,7 @@ class Catalog:
         self.cinemeta = cinemeta_client or cinemeta.Cinemeta()
         self._steam_art = geforcenow.SteamArt()
         self.streams = streams.StreamFinder(self.stremio_client)
+        self.player = player.OrbitalPlayer(on_finished=self._player_finished)
         self._cinemeta_items: list[LibraryItem] = []
         self.listeners: list[Listener] = []
         self._items: dict[str, LibraryItem] = {}
@@ -439,9 +440,9 @@ class Catalog:
             self.launcher.track_exe("media:stremio", title, Path(argv[0]).name, runner="Stremio")
             # Si Stremio ya estaba abierto, recibe el enlace en su ventana de siempre... detrás de
             # Orbital: sin esto, "no pasa nada". La traemos al frente cuando exista.
-            player = bool(uri and uri.startswith("stremio:///player/"))
+            in_player = bool(uri and uri.startswith("stremio:///player/"))
             threading.Thread(target=bring_app_to_front, args=(Path(argv[0]).name,),
-                             kwargs={"fullscreen": player}, daemon=True).start()
+                             kwargs={"fullscreen": in_player}, daemon=True).start()
         else:
             self.launcher.open_uri(uri or "stremio://")
             self.launcher.track("media:stremio", title, None)
@@ -463,13 +464,58 @@ class Catalog:
         return self.streams.find(self.credentials.get(STREMIO_KEY), kind, video_id, self.stream_prefs)
 
     def play_source(self, kind: str, meta_id: str, video_id: str, index: int, title: str) -> str:
-        """Abre el reproductor de Stremio directo con la fuente elegida (sin su lista de fuentes)."""
+        """Reproduce la fuente elegida: en el reproductor de Orbital (mpv, con el mando) o, si no
+        está o así se configuró, directo en el de Stremio (sin su lista de fuentes)."""
         source = self.streams.get(kind, video_id, self.stream_prefs, index)
         if source is None:
             raise ValueError("Esa fuente ya no está disponible; vuelve a cargar las fuentes")
+        mpv_exe = player.find_mpv() if self.config.stremio.player == "orbital" else None
+        url = player.stream_url(source.stream)
+        if mpv_exe and url:
+            self.play_native(mpv_exe, url, kind, meta_id, video_id, title)
+            return "orbital"
         uri = streams.player_link(source, cinemeta.MANIFEST, kind, meta_id, video_id)
         self.open_stremio(uri, title)
         return uri
+
+    def play_native(self, mpv_exe: str, url: str, kind: str, meta_id: str, video_id: str, title: str) -> None:
+        """mpv a pantalla completa, desde donde te quedaste (según Stremio)."""
+        auth = self.credentials.get(STREMIO_KEY)
+        start = 0.0
+        try:
+            start = stremio_api.resume_seconds(self.stremio_client.library_item(auth, meta_id), video_id)
+        except stremio_api.StremioError as exc:
+            log.info("No pude leer dónde ibas: %s", exc)
+        subs = self.config.stremio.subtitles
+        process = self.player.play(
+            self.launcher.run, mpv_exe, url, title,
+            {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title},
+            start=start, audio=self.config.stremio.audio, subtitles=subs,
+            fallback_subs=(lambda: self.streams.subtitles(auth, kind, video_id, subs)) if subs else None)
+        self.launcher.track("media:player", title, process, runner="Reproductor")
+
+    def _player_finished(self, meta: dict, position: float, duration: float, watched: float) -> None:
+        """Guarda en tu cuenta de Stremio dónde te quedaste (Seguir viendo, en Orbital y en Stremio)."""
+        auth = self.credentials.get(STREMIO_KEY)
+        if not auth or watched < 20:
+            return  # se abrió y cerró sin ver nada: no se toca tu biblioteca
+        kind, meta_id, video_id = meta["kind"], meta["meta_id"], meta["video_id"]
+        try:
+            info = self.cinemeta.meta(kind, meta_id)
+        except cinemeta.CinemetaError:
+            info = {}
+        next_video = cinemeta.next_episode(info, video_id) if kind == "series" and info else None
+        try:
+            raw = self.stremio_client.library_item(auth, meta_id)
+            item = stremio_api.with_progress(
+                raw, meta_id=meta_id, kind=kind, name=info.get("name") or meta.get("title") or meta_id,
+                poster=info.get("poster"), video_id=video_id, position=position, duration=duration,
+                watched=watched, next_video=next_video, now=time.time())
+            self.stremio_client.save_library_item(auth, item)
+            log.info("Progreso guardado en Stremio: %s %d/%d s", video_id, position, duration)
+        except stremio_api.StremioError as exc:
+            log.warning("No pude guardar el progreso en Stremio: %s", exc)
+        self.refresh_stremio(background=True)
 
     def search_media(self, query: str) -> str:
         uri = stremio.search_uri(query)

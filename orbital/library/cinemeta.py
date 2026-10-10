@@ -142,6 +142,15 @@ def seasons(meta: dict) -> list[dict]:
              "episodes": sorted(by_season[s], key=lambda e: e["episode"])} for s in order]
 
 
+def next_episode(meta: dict, video_id: str) -> str | None:
+    """El episodio que sigue a `video_id` (pasa de temporada; los especiales no cuentan)."""
+    episodes = [e["id"] for s in seasons(meta) if s["season"] != 0 for e in s["episodes"]]
+    if video_id in episodes:
+        i = episodes.index(video_id)
+        return episodes[i + 1] if i + 1 < len(episodes) else None
+    return None
+
+
 def search_results(query: str, movies: list[dict], series: list[dict], limit: int = 18) -> list[dict]:
     """Une películas y series alternando tipos (para que uno no tape al otro) y respetando el orden de
     Cinemeta, que ya ordena por relevancia y popularidad y tolera errores de dedo. Solo se sube una

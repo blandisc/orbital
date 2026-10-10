@@ -107,3 +107,11 @@ def no_geforcenow(monkeypatch):
 
     monkeypatch.setattr(geforcenow, "install_dir", lambda: None)
     monkeypatch.setattr(geforcenow, "read_shortcuts", lambda: [])
+
+
+@pytest.fixture(autouse=True)
+def no_installed_mpv(monkeypatch):
+    """Que las pruebas no usen el mpv real (puede haber uno instalado en LOCALAPPDATA)."""
+    from orbital import player
+
+    monkeypatch.setattr(player, "find_mpv", lambda: None)
