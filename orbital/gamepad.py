@@ -3,7 +3,9 @@
 El navegador solo ve el mando cuando Orbital tiene el foco, así que estos atajos se leen
 aquí, en el servidor, con XInput (Windows):
 
-  * Home (botón Guía)            -> ir a Orbital / volver al juego.
+  * Home (botón Guía), solo      -> ir a Orbital / volver al juego. Se dispara al SOLTARLO y
+                                   solo si no se tocó otro botón: Home+X, Home+B... siguen siendo
+                                   de los emuladores (Eden los usa).
   * Select + Start, mantenidos   -> "¿Cerrar el juego?" (con anillo de progreso).
 
 La lógica de botones (ComboDetector) es pura y tiene pruebas; el sondeo de XInput solo
@@ -39,14 +41,19 @@ class ComboDetector:
         self.arm = arm
         self.total = total
         self._guide = False
+        self._guide_chord = False  # se tocó otro botón mientras Home estaba presionado
         self._combo_since: float | None = None
         self._phase = "idle"  # idle -> armed -> done
 
     def update(self, buttons: int, now: float) -> list[str]:
         events: list[str] = []
         guide = bool(buttons & GUIDE)
-        if guide and not self._guide:
-            events.append("home")
+        if guide and buttons & ~GUIDE:
+            self._guide_chord = True
+        if not guide and self._guide:
+            if not self._guide_chord:
+                events.append("home")
+            self._guide_chord = False
         self._guide = guide
 
         combo = bool(buttons & BACK) and bool(buttons & START)

@@ -52,6 +52,15 @@ class FakeLauncher:
         return self.stopped
 
 
+class FakeOverlay:
+    def __init__(self):
+        self.calls = []
+
+    def show(self, title, detail, ms): self.calls.append(("show", title, detail))
+    def closing(self, title): self.calls.append(("closing", title))
+    def hide(self, delay_ms=0): self.calls.append(("hide",))
+
+
 class FakeCatalog:
     def __init__(self, running=None):
         self.launcher = FakeLauncher(running)
@@ -59,9 +68,9 @@ class FakeCatalog:
 
 def make(running=None):
     win = FakeWindows()
-    events = []
-    shell = ConsoleShell(FakeCatalog(running), FakeKiosk(win), events.append, win=win)
-    return shell, win, events
+    overlay = FakeOverlay()
+    shell = ConsoleShell(FakeCatalog(running), FakeKiosk(win), win=win, overlay=overlay)
+    return shell, win, overlay
 
 
 MANAGED = {"title": "Mario Party Superstars", "managed": True, "runner": "Eden", "pid": 99}
@@ -89,43 +98,37 @@ def test_home_in_orbital_without_game_stays():
     assert win.fg == ORBITAL
 
 
-def test_hold_select_start_asks_and_resume_returns_to_game():
-    shell, win, events = make(MANAGED)
+def test_hold_shows_overlay_in_game_and_closes_hard():
+    shell, win, overlay = make(MANAGED)
     shell.hold_start()
-    assert win.fg == ORBITAL and events[-1]["type"] == "hold" and events[-1]["phase"] == "start"
+    assert win.fg == GAME  # el aviso va encima del juego: no sales de él
+    assert overlay.calls == [("show", "Mantén para cerrar Eden", "Mario Party Superstars")]
     shell.hold_complete()
-    assert events[-1] == {"type": "confirm-stop", "title": "Mario Party Superstars", "runner": "Eden"}
-    assert shell.resume() and win.fg == GAME  # "Seguir jugando"
+    assert overlay.calls[1:] == [("closing", "Cerrando Eden"), ("hide",)]
+    assert shell.catalog.launcher.stopped and shell.catalog.launcher.forced  # de golpe, sin "¿Seguro?"
 
 
-def test_hold_released_early_cancels_and_returns():
-    shell, win, events = make(MANAGED)
+def test_hold_released_early_keeps_playing():
+    shell, win, overlay = make(MANAGED)
     shell.hold_start()
     shell.hold_cancel()
-    assert events[-1] == {"type": "hold", "phase": "cancel"} and win.fg == GAME
-
-
-def test_hold_closes_managed_game():
-    shell, win, _ = make(MANAGED)
-    shell.hold_start()
-    shell.hold_complete()
-    assert shell.stop_game() and shell.catalog.launcher.stopped and shell.catalog.launcher.forced
+    assert overlay.calls[-1] == ("hide",) and win.fg == GAME and not shell.catalog.launcher.stopped
 
 
 def test_hold_also_works_with_emulator_opened_elsewhere():
-    shell, win, events = make(None)  # Eden abierto desde ES-DE, no desde Orbital
+    shell, win, overlay = make(None)  # Eden abierto desde ES-DE, no desde Orbital
     shell.hold_start()
-    assert events[-1]["title"] == "Eden | Mario Party Superstars" and shell.hold["pid"] == 20
+    assert overlay.calls[0][2] == "Eden | Mario Party Superstars" and shell.hold["pid"] == 20
 
 
 def test_hold_ignored_in_orbital_and_in_other_apps():
-    shell, win, events = make(MANAGED)
+    shell, win, overlay = make(MANAGED)
     win.fg = ORBITAL
     shell.hold_start()  # en Orbital, Select/Start son el menú
-    shell2, win2, events2 = make(None)
+    shell2, win2, overlay2 = make(None)
     win2.fg = DESKTOP_APP
     shell2.hold_start()  # el Bloc de notas no es un juego
-    assert events == [] and events2 == [] and win2.fg == DESKTOP_APP
+    assert overlay.calls == [] and overlay2.calls == [] and win2.fg == DESKTOP_APP
 
 
 def test_legion_l_mirrors_home_and_double_press_keeps_legion_space():

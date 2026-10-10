@@ -112,7 +112,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         catalog.kiosk = kiosk
     voice = VoiceController(catalog, kiosk)
     bus = EventBus()
-    shell = ConsoleShell(catalog, kiosk, publish=bus.publish_threadsafe)
+    shell = ConsoleShell(catalog, kiosk)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):

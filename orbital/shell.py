@@ -1,8 +1,9 @@
 """Comportamiento de "consola": ir y volver entre Orbital y el juego con el mando.
 
   * Home (o Legion L): desde el juego -> Orbital; desde Orbital -> de vuelta al juego.
-  * Select + Start mantenidos en el juego -> Orbital muestra un anillo y luego
-    "¿Cerrar el juego?" ("Seguir jugando" es la opción por defecto).
+  * Select + Start mantenidos en el juego -> aviso encima del juego (sin salir de él) con una
+    barra que se llena; al completarse, el emulador se cierra de golpe y vuelves a Orbital.
+    Soltar antes = no pasa nada. Sostenerlo 1,5 s ya es la confirmación: sin "¿Seguro?".
 
 Las ventanas se manejan con `orbital.windows`; se puede inyectar otro objeto en pruebas.
 """
@@ -14,7 +15,6 @@ import subprocess
 import sys
 import threading
 import time
-from collections.abc import Callable
 
 from . import windows
 from .gamepad import HOLD_ARM, HOLD_TOTAL, GamepadWatcher
@@ -31,11 +31,11 @@ LEGION_DOUBLE_PRESS = 3.0  # s: dos toques de Legion L dejan abierto Legion Spac
 
 
 class ConsoleShell:
-    def __init__(self, catalog, kiosk=None, publish: Callable[[dict], None] = lambda event: None, win=windows) -> None:
+    def __init__(self, catalog, kiosk=None, win=windows, overlay=None) -> None:
         self.catalog = catalog
         self.kiosk = kiosk
-        self.publish = publish
         self.win = win
+        self.overlay = overlay  # GameOverlay (aviso encima del juego); se crea en start()
         self.return_to = 0  # ventana del juego a la que volver
         self.hold: dict | None = None  # juego que se está por cerrar (Select+Start)
         self._legion_last = 0.0
@@ -104,25 +104,35 @@ class ConsoleShell:
             return
         self.hold = target
         self.remember(fg)
-        self.show_orbital()
-        self.publish({"type": "hold", "phase": "start", "title": target["title"],
-                      "ms": int((HOLD_TOTAL - HOLD_ARM) * 1000)})
+        if self.overlay:
+            runner = target.get("runner") or "el juego"
+            self.overlay.show(f"Mantén para cerrar {runner}", target["title"], int((HOLD_TOTAL - HOLD_ARM) * 1000))
 
     def hold_cancel(self) -> None:
         if self.hold is None:
             return
         self.hold = None
-        self.publish({"type": "hold", "phase": "cancel"})
-        self.resume()
+        if self.overlay:
+            self.overlay.hide()  # nunca saliste del juego
 
     def hold_complete(self) -> None:
-        if self.hold is None:
+        target = self.hold
+        if target is None:
             return
-        self.publish({"type": "confirm-stop", "title": self.hold["title"], "runner": self.hold.get("runner")})
+        if self.overlay:
+            self.overlay.closing(f"Cerrando {target.get('runner') or 'el juego'}")
+        self.stop_game()
+        if self.overlay:
+            self.overlay.hide(delay_ms=350)
+        if target.get("pid"):
+            # Abierto desde ES-DE: nadie vigila su proceso, así que traemos Orbital nosotros.
+            # (Si lo lanzó Orbital, vuelve solo al terminar el proceso, con el tiempo jugado.)
+            self.show_orbital()
 
     def stop_game(self) -> bool:
+        """Cierra el juego de golpe (ya se confirmó: menú de Orbital o Select+Start sostenidos)."""
         target, self.hold = self.hold, None
-        if self.catalog.launcher.stop(force=True):  # ya se confirmó en Orbital
+        if self.catalog.launcher.stop(force=True):
             return True
         if target and target.get("pid") and sys.platform == "win32":
             subprocess.run(["taskkill", "/PID", str(target["pid"]), "/T", "/F"], capture_output=True,
@@ -161,6 +171,10 @@ class ConsoleShell:
     def start(self) -> bool:
         if sys.platform != "win32":
             return False
+        if self.overlay is None:
+            from .overlay import GameOverlay
+            overlay = GameOverlay()
+            self.overlay = overlay if overlay.start() else None
         GamepadWatcher(self.on_gamepad).start()  # sin XInput, Legion L sigue funcionando
         threading.Thread(target=self._watch_foreground, daemon=True, name="legion-l").start()
         return True

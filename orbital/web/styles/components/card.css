@@ -41,7 +41,7 @@
   color: var(--color-text-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 /* En la enfocada, el héroe ya dice "Jugado hace…" en grande. */
-.card--focused .card__chip { opacity: 0; }
+.card--focused .card__chip, .card--dimmed .card__chip { opacity: 0; } /* filas inactivas: no asoman */
 .card__chip { transition: opacity var(--duration-fast) var(--ease-out); }
 /* Llegar al final de una fila: la tarjeta se empuja un poco (translate es independiente del scale del foco). */
 .card--bump-left { animation: bump-left 220ms var(--ease-out); }

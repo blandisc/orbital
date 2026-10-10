@@ -12,7 +12,6 @@ import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
 import { createHints } from "./components/hints.js";
-import { createHoldOverlay } from "./components/hold-overlay.js";
 import { createLaunchOverlay } from "./components/launch-overlay.js";
 import { createSheet } from "./components/sheet.js";
 import { createShelf } from "./components/shelf.js";
@@ -49,12 +48,11 @@ const ui = {
     onClose: () => renderHints(),
   }),
   launch: createLaunchOverlay(),
-  hold: createHoldOverlay(),
   toast: createToast(),
 };
 
 document.getElementById("app").replaceWith(
-  ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.sheet.el, ui.launch.el, ui.hold.el, ui.toast.el,
+  ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.sheet.el, ui.launch.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -216,7 +214,6 @@ function openMenu(menu) {
 }
 
 function handleAction(action) {
-  if (ui.hold.visible) return; // mientras se sostiene Select+Start, nada más
   if (ui.launch.visible) {
     if (action === "back") ui.launch.hide();
     return;
@@ -258,20 +255,6 @@ function handleEvent(event) {
     handleAction(event.direction);
   } else if (event.type === "library-changed") {
     loadLibrary();
-    return;
-  } else if (event.type === "hold") {
-    // Select+Start sostenidos en el juego: Orbital ya está al frente.
-    if (event.phase === "start") {
-      ui.sheet.close();
-      ui.launch.hide();
-      ui.hold.show(event);
-    } else {
-      ui.hold.hide();
-    }
-    return;
-  } else if (event.type === "confirm-stop") {
-    ui.hold.hide();
-    openMenu(stopMenu(event));
     return;
   } else if (event.type === "closed") {
     ui.launch.hide();
