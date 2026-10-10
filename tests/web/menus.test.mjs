@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { gameMenu, mainMenu, stopMenu } from "../../orbital/web/js/core/menus.js";
+import { gameMenu, mainMenu, powerMenu, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch",
@@ -25,13 +25,13 @@ test("menú de juego favorito y sin alternativas", () => {
 
 test("menú general según el contexto", () => {
   const basic = mainMenu({ soundEnabled: true, running: null, hiddenCount: 0 });
-  assert.deepEqual(basic.options.map((o) => o.label), ["Actualizar biblioteca", "Sonidos", "Cerrar menú"]);
+  assert.deepEqual(basic.options.map((o) => o.label), ["Actualizar biblioteca", "Sonidos", "Ventanas abiertas", "Apagado", "Cerrar menú"]);
   const full = mainMenu({ soundEnabled: false, running: { title: "Zelda", managed: true }, hiddenCount: 3 });
   assert.deepEqual(full.options.map((o) => o.label),
-    ["Actualizar biblioteca", "Sonidos", "Cerrar Zelda", "Mostrar juegos ocultos", "Cerrar menú"]);
+    ["Actualizar biblioteca", "Sonidos", "Cerrar Zelda", "Mostrar juegos ocultos", "Ventanas abiertas", "Apagado", "Cerrar menú"]);
   assert.equal(full.options[1].hint, "No");
   // Un juego de Steam (no gestionado por Orbital) no se puede cerrar desde aquí.
-  assert.equal(mainMenu({ running: { title: "Hades", managed: false } }).options.length, 3);
+  assert.ok(!mainMenu({ running: { title: "Hades", managed: false } }).options.some((o) => o.label === "Cerrar Hades"));
 });
 
 test("salir al escritorio pide confirmación y empieza en Cancelar", async () => {
@@ -58,4 +58,17 @@ test("Y sobre el juego abierto: continuar o cerrar, no abrir otra copia", () => 
   const menu = gameMenu(zelda, { running: { id: zelda.id, runner: "Eden" } });
   assert.deepEqual(menu.options.slice(0, 2).map((o) => o.label), ["Continuar", "Cerrar Eden"]);
   assert.ok(!menu.options.some((o) => o.command.type === "launch"));
+});
+
+test("ventanas abiertas: una opción por ventana y aviso si no hay", () => {
+  const menu = windowsMenu([{ id: 7, app: "Stremio", title: "Stremio" }, { id: 9, app: "Chrome", title: "Google" }]);
+  assert.deepEqual(menu.options.map((o) => [o.label, o.hint]), [["Stremio", ""], ["Chrome", "Google"]]);
+  assert.deepEqual(menu.options[1].command, { type: "focus-window", id: 9 });
+  assert.equal(windowsMenu([]).options[0].label, "No hay otras ventanas abiertas");
+});
+
+test("apagado: suspender primero; reiniciar y apagar marcados como peligrosos", () => {
+  const menu = powerMenu();
+  assert.deepEqual(menu.options.map((o) => o.label), ["Suspender", "Reiniciar", "Apagar", "Cancelar"]);
+  assert.deepEqual(menu.options.filter((o) => o.danger).map((o) => o.command.action), ["restart", "shutdown"]);
 });

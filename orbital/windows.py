@@ -131,3 +131,42 @@ def main_window(pids: set[int]) -> int:
 
     user32.EnumWindows(enum, 0)
     return found[0] if found else 0
+
+
+GWL_EXSTYLE = -20
+WS_EX_TOOLWINDOW = 0x00000080
+GW_OWNER = 4
+DWMWA_CLOAKED = 14
+_SHELL_TITLES = {"Program Manager", "Windows Input Experience", "Settings", "Configuración"}
+
+
+def _cloaked(hwnd: int) -> bool:
+    """Windows 11 deja "ocultas" (cloaked) ventanas de apps suspendidas: no cuentan como abiertas."""
+    value = ctypes.c_int(0)
+    try:
+        ctypes.windll.dwmapi.DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, ctypes.byref(value), ctypes.sizeof(value))
+    except OSError:
+        return False
+    return bool(value.value)
+
+
+def app_windows() -> list[dict]:
+    """Ventanas de aplicación abiertas, como en Alt+Tab: visibles, con título, sin dueño y no herramientas."""
+    if not WIN:
+        return []
+    found: list[dict] = []
+
+    @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    def enum(hwnd, _):
+        if not user32.IsWindowVisible(hwnd) or user32.GetWindow(hwnd, GW_OWNER):
+            return True
+        if user32.GetWindowLongW(hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW:
+            return True
+        name = title(hwnd)
+        if not name or name in _SHELL_TITLES or _cloaked(hwnd):
+            return True
+        found.append({"hwnd": int(hwnd), "title": name, "exe": exe_name(pid_of(hwnd))})
+        return True
+
+    user32.EnumWindows(enum, 0)
+    return found

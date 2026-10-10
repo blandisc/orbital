@@ -6,8 +6,9 @@ import { api } from "./core/api.js";
 import { duration } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, itemAt, restoreFocus, rowJump, runnerName } from "./core/library.js";
+import { rumble } from "./core/haptics.js";
 import { footerHints } from "./core/hints.js";
-import { exitMenu, gameMenu, mainMenu, stopMenu } from "./core/menus.js";
+import { exitMenu, gameMenu, mainMenu, powerMenu, stopMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -71,7 +72,10 @@ function renderHints() {
 function setFocus(r, c, { silent = false, edge = null } = {}) {
   const next = clampFocus(state.rows, r, c);
   const moved = next.r !== state.focus.r || next.c !== state.focus.c;
-  if (!moved && edge && !silent) ui.shelf.bump(edge); // al final de la fila
+  if (!moved && edge && !silent) { // al final de la fila
+    ui.shelf.bump(edge);
+    rumble("edge");
+  }
   state.focus = next;
   const rowId = state.rows[next.r]?.id;
   if (rowId) state.memory[rowId] = next.c;
@@ -80,6 +84,8 @@ function setFocus(r, c, { silent = false, edge = null } = {}) {
     const item = current();
     ui.hero.update(item, glyphs(), { runningId: state.running?.id });
     ui.backdrop.show(item?.hero || item?.image, { poster: !!item && !item.hero });
+    const count = state.rows[next.r]?.items.length ?? 1;
+    ui.backdrop.parallax(count > 1 ? next.c / (count - 1) : 0);
   }
   if (moved && !silent) sound.play("move");
   renderHints();
@@ -143,8 +149,10 @@ async function launch(item, runner = null) {
   }
   state.launchLockedUntil = Date.now() + LAUNCH_COOLDOWN_MS;
   sound.play("open");
+  rumble("launch");
   const name = runnerName(item, runner);
-  ui.launch.show(item, name ? `${item.subtitle} · ${name}` : item.subtitle);
+  const from = item.id === current()?.id ? ui.shelf.focused() : null;
+  ui.launch.show(item, name ? `${item.subtitle} · ${name}` : item.subtitle, { from });
   try {
     await api.launch(item.id, runner);
     pollStatus();
@@ -185,6 +193,16 @@ async function runCommand(command) {
         return pollStatus();
       case "confirm-stop":
         return openMenu(stopMenu(command));
+      case "power-menu":
+        return openMenu(powerMenu());
+      case "power":
+        await api.power(command.action);
+        return ui.toast.show({ sleep: "Suspendiendo…", restart: "Reiniciando…", shutdown: "Apagando…" }[command.action]);
+      case "windows":
+        return openMenu(windowsMenu((await api.windows()).windows));
+      case "focus-window":
+        sound.play("select");
+        return api.focusWindow(command.id);
       case "resume":
         sound.play("back");
         return api.resume();

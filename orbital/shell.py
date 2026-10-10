@@ -27,6 +27,12 @@ EMULATOR_EXES = {n for k in KNOWN for n in k.exe_names if n.endswith(".exe")} | 
     "retroarch.exe", "citron.exe", "sudachi.exe", "yuzu.exe", "rpcs3.exe", "duckstation-qt-x64-releaseltcg.exe",
 }
 LEGION_SPACE = "legionspace.exe"
+# Nunca se cierran con Select+Start aunque Steam tenga un juego abierto.
+NOT_GAMES = BROWSERS | {"steam.exe", "steamwebhelper.exe", "explorer.exe", "es-de.exe", LEGION_SPACE,
+                        "claude.exe", "discord.exe", "python.exe", "pythonw.exe"}
+APP_NAMES = {"chrome": "Chrome", "msedge": "Edge", "stremio-shell-ng": "Stremio", "steamwebhelper": "Steam",
+             "steam": "Steam", "es-de": "ES-DE", "discord": "Discord", "explorer": "Explorador", "eden": "Eden",
+             "ryujinx": "Ryujinx", "dolphin": "Dolphin", "mgba": "mGBA", "xemu": "xemu", "ppssppwindows64": "PPSSPP"}
 LEGION_DOUBLE_PRESS = 3.0  # s: dos toques de Legion L dejan abierto Legion Space
 
 
@@ -84,7 +90,8 @@ class ConsoleShell:
         return self.win.focus(target)
 
     def target(self, hwnd: int) -> dict | None:
-        """Qué se cerraría con Select+Start: el juego que lanzó Orbital o un emulador al frente."""
+        """Qué se cerraría con Select+Start: el juego que lanzó Orbital, un emulador al frente o
+        el juego de Steam en curso (Steam lo reporta y su ventana es la que está al frente)."""
         running = self.catalog.launcher.status()
         if running and running.get("managed"):
             return {"title": running["title"], "runner": running.get("runner"), "pid": None}
@@ -93,7 +100,14 @@ class ConsoleShell:
         if exe in EMULATOR_EXES:
             name = exe.removesuffix(".exe")
             return {"title": self.win.title(hwnd) or name, "runner": name.capitalize(), "pid": pid}
+        if exe and exe not in NOT_GAMES and self.steam_running():
+            return {"title": self.win.title(hwnd) or "el juego", "runner": None, "pid": pid}
         return None
+
+    @staticmethod
+    def steam_running() -> bool:
+        from .launcher import steam_running_appid
+        return bool(steam_running_appid())
 
     def hold_start(self) -> None:
         fg = self.win.foreground()
@@ -143,6 +157,24 @@ class ConsoleShell:
     def on_gamepad(self, event: str) -> None:
         {"home": self.home, "hold-start": self.hold_start, "hold-cancel": self.hold_cancel,
          "hold-complete": self.hold_complete}[event]()
+
+    # --------------------------------------------------------------- ventanas abiertas
+    def open_windows(self) -> list[dict]:
+        """Apps y juegos abiertos (sin Orbital), para saltar entre ellos con el mando."""
+        items = []
+        for w in self.win.app_windows():
+            if self.is_orbital(w["hwnd"]):
+                continue
+            exe = w["exe"].removesuffix(".exe")
+            items.append({"id": w["hwnd"], "app": APP_NAMES.get(exe, exe.replace("-", " ").title()), "title": w["title"]})
+        return items
+
+    def focus_window(self, hwnd: int) -> bool:
+        # Solo ventanas que están en la lista ahora: nunca un identificador arbitrario.
+        if hwnd not in {w["id"] for w in self.open_windows()}:
+            return False
+        self.remember(hwnd)
+        return self.win.focus(hwnd)
 
     # --------------------------------------------------------------- Legion L
     def check_legion(self, fg: int, previous: int, now: float | None = None) -> None:

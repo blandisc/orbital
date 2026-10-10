@@ -14,13 +14,27 @@ export function createLaunchOverlay({ timeout = 8000 } = {}) {
   let timer;
   let cancelExit = () => {};
 
-  function show(item, detail) {
+  /**
+   * `from`: la portada en la fila ({ rect, ratio }). La portada "vuela" desde ahí hasta su lugar
+   * (transición de elemento compartido), así abrir un juego se siente continuo, no un corte.
+   */
+  function show(item, detail, { from = null } = {}) {
     backdrop.style.backgroundImage = cssUrl(item.hero || item.image);
     cover.style.backgroundImage = cssUrl(item.image);
+    cover.style.setProperty("--ratio", String(from?.ratio ?? .667));
     title.textContent = item.title;
     subtitle.textContent = detail;
     cancelExit();
     el.hidden = false;
+    if (from?.rect && cover.animate) {
+      const to = cover.getBoundingClientRect();
+      const dx = from.rect.left - to.left;
+      const dy = from.rect.top - to.top;
+      cover.animate([
+        { transform: `translate(${dx}px, ${dy}px) scale(${from.rect.width / to.width}, ${from.rect.height / to.height})`, borderRadius: "var(--card-radius)" },
+        { transform: "none" },
+      ], { duration: 520, easing: "cubic-bezier(.16, 1, .3, 1)" });
+    }
     clearTimeout(timer);
     timer = setTimeout(hide, timeout);
   }

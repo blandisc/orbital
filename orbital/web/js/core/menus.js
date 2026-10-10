@@ -39,6 +39,8 @@ export function mainMenu({ soundEnabled, running, hiddenCount, canExit = false }
   if (hiddenCount) {
     options.push({ icon: "show", label: "Mostrar juegos ocultos", hint: String(hiddenCount), command: { type: "unhide-all" } });
   }
+  options.push({ icon: "windows", label: "Ventanas abiertas", command: { type: "windows" } });
+  options.push({ icon: "power", label: "Apagado", command: { type: "power-menu" } });
   if (canExit) {
     options.push({ icon: "exit", label: "Salir al escritorio", command: { type: "confirm-exit" } });
   }
@@ -60,6 +62,28 @@ export function stopMenu({ title, runner }) {
     ],
     cancel: { type: "resume" },
   };
+}
+
+/** Apagado: Suspender va primero (lo más común y lo más inofensivo si se pulsa A sin querer). */
+export function powerMenu() {
+  return {
+    title: "Apagado",
+    options: [
+      { icon: "moon", label: "Suspender", command: { type: "power", action: "sleep" } },
+      { icon: "refresh", label: "Reiniciar", danger: true, command: { type: "power", action: "restart" } },
+      { icon: "power", label: "Apagar", danger: true, command: { type: "power", action: "shutdown" } },
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+    ],
+  };
+}
+
+/** "Ventanas abiertas": saltar a otra app o juego con el mando (como Alt+Tab o la Vista de tareas). */
+export function windowsMenu(windows) {
+  const options = windows.slice(0, 9).map((w) => ({
+    icon: "windows", label: w.app, hint: w.title === w.app ? "" : w.title, command: { type: "focus-window", id: w.id },
+  }));
+  if (!options.length) options.push({ icon: "check", label: "No hay otras ventanas abiertas", command: { type: "close" } });
+  return { title: "Ventanas abiertas", options };
 }
 
 /** Confirmación antes de salir: evita salir por un toque accidental. */

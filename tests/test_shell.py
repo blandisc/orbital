@@ -1,4 +1,12 @@
+import pytest
+
 from orbital.shell import ConsoleShell
+
+
+@pytest.fixture(autouse=True)
+def no_steam_game(monkeypatch):
+    # Que las pruebas no dependan de si Steam tiene un juego abierto en esta máquina.
+    monkeypatch.setattr(ConsoleShell, "steam_running", staticmethod(lambda: False))
 
 ORBITAL, GAME, DESKTOP_APP, LEGION = 1, 2, 3, 4
 
@@ -24,6 +32,7 @@ class FakeWindows:
     def process_tree(self, pid): return {pid, 20} if pid == 99 else {pid}  # launch-eden.cmd (99) -> eden (20)
     def main_window(self, pids): return next((h for h, w in self.windows.items() if w[1] in pids), 0)
     def minimize(self, h): self.minimized.append(h)
+    def app_windows(self): return [{"hwnd": h, "title": t, "exe": e} for h, (t, _, e) in self.windows.items()]
 
     def focus(self, h):
         self.fg = h
@@ -142,3 +151,25 @@ def test_legion_l_mirrors_home_and_double_press_keeps_legion_space():
     win.fg = LEGION
     shell.check_legion(LEGION, previous=GAME, now=111)  # dos toques seguidos
     assert win.fg == LEGION and win.minimized == [LEGION, LEGION]
+
+
+def test_open_windows_hides_orbital_and_only_focuses_listed():
+    shell, win, _ = make(None)
+    names = [w["app"] for w in shell.open_windows()]
+    assert "Edge" not in names and names[:2] == ["Eden", "Notepad"]  # Orbital (Edge) no aparece
+    assert shell.focus_window(DESKTOP_APP) and win.fg == DESKTOP_APP
+    assert not shell.focus_window(12345)  # un identificador que no está en la lista: nunca
+
+
+def test_hold_closes_steam_game_in_front(monkeypatch):
+    shell, win, overlay = make(None)
+    win.windows[DESKTOP_APP] = ("Hades II", 30, "hades2.exe")
+    win.fg = DESKTOP_APP
+    monkeypatch.setattr(ConsoleShell, "steam_running", staticmethod(lambda: True))
+    shell.hold_start()
+    assert shell.hold == {"title": "Hades II", "runner": None, "pid": 30}
+    assert overlay.calls[0][1] == "Mantén para cerrar el juego"
+    win.windows[DESKTOP_APP] = ("Steam", 30, "steamwebhelper.exe")  # Steam mismo: nunca
+    shell.hold = None
+    shell.hold_start()
+    assert shell.hold is None

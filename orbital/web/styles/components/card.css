@@ -58,11 +58,18 @@
   font-size: var(--text-sm); font-weight: var(--weight-medium); line-height: 1.2; overflow-wrap: anywhere;
 }
 .card__subtitle { color: var(--color-text-muted); font-size: var(--text-2xs); }
+/* Foco: el juego salta (resorte con rebote), se eleva un poco y proyecta un brillo de su propio
+   color sobre el fondo. Al perder el foco vuelve sin rebote (la transición base de .card). */
 .card--focused {
-  transform: scale(var(--card-focus-scale));
+  transform: translateY(-.35rem) scale(var(--card-focus-scale));
   margin-right: calc(var(--card-height) * var(--ratio, .667) * (var(--card-focus-scale) - 1));
-  box-shadow: var(--ring-focus);
+  box-shadow: var(--ring-focus), 0 1.4rem 3.2rem -.6rem color-mix(in oklab, var(--art-accent) 38%, transparent);
+  transition:
+    transform 360ms var(--ease-pop), margin var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-slow) var(--ease-out), width var(--duration-slow) var(--ease-out);
 }
+/* Jerarquía en la fila actual: las vecinas bajan un poco el brillo para que el foco mande. */
+.shelf__row--current .card:not(.card--focused) { filter: brightness(.78) saturate(.92); }
 .card--dimmed { opacity: .4; filter: saturate(.6); }
 /* Progreso de lo que estás viendo (Stremio): sobre un degradado para que se lea en cualquier póster. */
 .card--has-progress::before {

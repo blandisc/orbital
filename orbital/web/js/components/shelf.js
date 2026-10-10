@@ -96,6 +96,12 @@ export function createShelf({ onPick }) {
     card.addEventListener("animationend", () => card.classList.remove(cls), { once: true });
   }
 
+  /** Portada enfocada (posición en pantalla y proporción): de aquí sale la transición al abrir. */
+  function focused() {
+    const card = rowEls[focus.r]?.cards[focus.c];
+    return card ? { rect: card.getBoundingClientRect(), ratio: Number(card.dataset.ratio) } : null;
+  }
+
   window.addEventListener("resize", () => { measure(); setFocus(focus.r, focus.c); });
-  return { el, setRows, setFocus, bump };
+  return { el, setRows, setFocus, bump, focused };
 }

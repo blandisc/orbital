@@ -89,3 +89,8 @@ def test_closed_event_reaches_ui(make_client, library):
 def test_ui_reload(make_client):
     with make_client() as c:
         assert c.post("/api/ui/reload").json() == {"ok": True}
+
+
+def test_power_rejects_unknown_actions(make_client):
+    with make_client() as c:
+        assert c.post("/api/power", json={"action": "format-c"}).status_code == 400

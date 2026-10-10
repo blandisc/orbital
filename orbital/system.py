@@ -85,3 +85,21 @@ def wifi() -> dict | None:
         result = None
     _wifi_cache = (time.time(), result)
     return result
+
+
+POWER_ACTIONS = ("sleep", "restart", "shutdown")
+
+
+def power(action: str) -> None:
+    """Suspender / reiniciar / apagar el equipo (Windows), para manejar la consola solo con el mando."""
+    if action not in POWER_ACTIONS:
+        raise ValueError(action)
+    if sys.platform != "win32":
+        raise RuntimeError("Solo en Windows")
+    if action == "sleep":
+        # SetSuspendState(hibernar=False...): suspende (rundll32 con argumentos a veces hiberna).
+        import ctypes
+        ctypes.windll.powrprof.SetSuspendState(False, False, False)
+        return
+    flag = "/r" if action == "restart" else "/s"
+    subprocess.run(["shutdown", flag, "/t", "0"], creationflags=subprocess.CREATE_NO_WINDOW)  # type: ignore[attr-defined]

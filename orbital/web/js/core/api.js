@@ -23,6 +23,9 @@ export const api = {
   ui: () => request("/api/ui"),
   exitToDesktop: () => post("/api/ui/exit"),
   resume: () => post("/api/ui/resume"),
+  windows: () => request("/api/windows"),
+  power: (action) => post("/api/power", { action }),
+  focusWindow: (id) => post("/api/windows/focus", { id }),
   /** Suscripción a eventos del servidor con reconexión automática. */
   events(onEvent) {
     const connect = () => {

@@ -205,6 +205,26 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         # También cierra un emulador abierto desde ES-DE si se pidió con Select+Start.
         return {"stopped": shell.stop_game()}
 
+    @app.get("/api/windows")
+    def open_windows() -> dict:
+        """Ventanas abiertas (como Alt+Tab), para saltar entre ellas con el mando."""
+        return {"windows": shell.open_windows()}
+
+    @app.post("/api/windows/focus")
+    def focus_window(body: dict) -> dict:
+        if not shell.focus_window(int(body.get("id", 0))):
+            raise HTTPException(404, "Esa ventana ya no está abierta")
+        return {"ok": True}
+
+    @app.post("/api/power")
+    def power(body: dict) -> dict:
+        action = body.get("action")
+        if action not in system.POWER_ACTIONS:
+            raise HTTPException(400, "Acción desconocida")
+        # Un instante después, para que la respuesta llegue a la interfaz.
+        threading.Timer(0.6, system.power, args=(action,)).start()
+        return {"ok": True}
+
     @app.post("/api/ui/reload")
     def ui_reload() -> dict:
         """Recarga la interfaz abierta (tras actualizar Orbital no hace falta reiniciarlo)."""

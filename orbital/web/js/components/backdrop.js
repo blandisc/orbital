@@ -80,5 +80,10 @@ export function createBackdrop({ settle = 150 } = {}) {
     }, settle);
   }
 
-  return { el, show };
+  /** Paralaje: 0 = primer juego de la fila, 1 = último. */
+  function parallax(fraction) {
+    el.style.setProperty("--parallax", String(Math.min(1, Math.max(0, fraction))));
+  }
+
+  return { el, show, parallax };
 }
