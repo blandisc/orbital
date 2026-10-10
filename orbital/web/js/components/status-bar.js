@@ -7,8 +7,9 @@ const ALEXA_LIVE_SECONDS = 600;
 /** Barra superior: marca (abre el menú), juego en curso, Alexa, Wi-Fi, batería y hora. */
 export function createStatusBar({ onBrand }) {
   const playingTitle = h("span", { class: "status-bar__playing-title" });
+  const playingLabel = h("span", { class: "status-bar__playing-label" }, "En curso");
   const playing = h("span", { class: "status-bar__playing", hidden: true },
-    h("i", { class: "status-bar__live", "aria-hidden": "true" }), h("span", { class: "status-bar__playing-label" }, "En curso"), playingTitle);
+    h("i", { class: "status-bar__live", "aria-hidden": "true" }), playingLabel, playingTitle);
   const alexa = h("span", { class: "indicator", hidden: true, title: "Alexa" }, h("i", { class: "indicator__dot" }), "Alexa");
   const wifi = h("span", { hidden: true }, svg(ICONS.wifi));
   const level = h("i", { class: "battery__level" });
@@ -25,6 +26,8 @@ export function createStatusBar({ onBrand }) {
 
   function setRunning(running) {
     playing.hidden = !running;
+    playingLabel.textContent = running?.paused ? "En pausa" : "En curso";
+    playing.classList.toggle("status-bar__playing--paused", !!running?.paused);
     playingTitle.textContent = running ? running.title : "";
   }
 

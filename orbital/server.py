@@ -7,6 +7,7 @@ import hmac
 import ipaddress
 import json
 import logging
+import os
 import threading
 import time
 from contextlib import asynccontextmanager
@@ -106,6 +107,11 @@ def token_ok(request: Request, expected: str) -> bool:
     return bool(token) and bool(expected) and hmac.compare_digest(token, expected)
 
 
+def paused_path() -> Path:
+    """Qué quedó congelado (para descongelarlo si Orbital se cierra de golpe)."""
+    return Path(os.environ.get("LOCALAPPDATA") or Path.home() / ".local" / "state") / "orbital" / "paused.json"
+
+
 def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, shortcuts: bool = False) -> FastAPI:
     """`shortcuts`: activa los atajos globales del mando (Home, Select+Start, Legion L)."""
     catalog = catalog or Catalog(config)
@@ -113,7 +119,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         catalog.kiosk = kiosk
     voice = VoiceController(catalog, kiosk)
     bus = EventBus()
-    shell = ConsoleShell(catalog, kiosk)
+    shell = ConsoleShell(catalog, kiosk, pause_file=paused_path() if shortcuts else None)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -187,7 +193,10 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
 
     @app.get("/api/status")
     def status() -> dict:
-        return {"running": catalog.launcher.status()}
+        running = catalog.launcher.status()
+        if running is not None:
+            running["paused"] = shell.is_paused
+        return {"running": running}
 
     @app.get("/api/ui")
     def ui_info() -> dict:

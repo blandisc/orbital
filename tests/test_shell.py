@@ -24,6 +24,8 @@ class FakeWindows:
         }
         self.fg = GAME
         self.minimized = []
+        self.suspended = set()
+        self.resumed = []
 
     def foreground(self): return self.fg
     def is_window(self, h): return h in self.windows
@@ -33,6 +35,8 @@ class FakeWindows:
     def process_tree(self, pid): return {pid, 20} if pid == 99 else {pid}  # launch-eden.cmd (99) -> eden (20)
     def main_window(self, pids): return next((h for h, w in self.windows.items() if w[1] in pids), 0)
     def minimize(self, h): self.minimized.append(h)
+    def suspend(self, pids): self.suspended |= set(pids); return len(pids)
+    def resume(self, pids): self.suspended -= set(pids); self.resumed.append(set(pids)); return len(pids)
     def app_windows(self): return [{"hwnd": h, "title": t, "exe": e} for h, (t, _, e) in self.windows.items()]
 
     def focus(self, h):
@@ -206,3 +210,37 @@ def test_home_from_game_still_returns_after_passing_by_desktop():
     assert win.fg == ORBITAL
     shell.home()
     assert win.fg == GAME
+
+
+def test_home_pauses_the_emulator_and_resumes_on_return(tmp_path):
+    shell, win, _ = make(MANAGED)
+    shell.pause_file = tmp_path / "paused.json"
+    shell.home()  # Eden al frente -> Orbital, Eden congelado
+    assert win.fg == ORBITAL and win.suspended == {20} and shell.is_paused
+    assert shell.pause_file.read_text() == "[20]"
+    shell.home()  # de vuelta: primero se descongela
+    assert win.fg == GAME and not win.suspended and not shell.is_paused
+
+
+def test_pause_never_freezes_stremio_or_other_apps():
+    shell, win, _ = make(None)
+    win.windows[DESKTOP_APP] = ("Stremio", 30, "stremio-shell-ng.exe")
+    win.fg = DESKTOP_APP
+    shell.home()
+    assert win.suspended == set()
+
+
+def test_crash_recovery_resumes_frozen_game(tmp_path):
+    shell, win, _ = make(None)
+    shell.pause_file = tmp_path / "paused.json"
+    shell.pause_file.write_text("[20, 21]")
+    shell.recover_paused()
+    assert win.resumed == [{20, 21}] and not shell.pause_file.exists()
+
+
+def test_closing_a_paused_game_unfreezes_first():
+    shell, win, _ = make(MANAGED)
+    shell.home()
+    shell.hold = {"title": "x", "runner": "Eden", "pid": None}
+    shell.stop_game()
+    assert not win.suspended and shell.catalog.launcher.stopped

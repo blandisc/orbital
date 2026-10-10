@@ -17,6 +17,7 @@
 .status-bar__playing { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; color: var(--color-text-muted); animation: fade-in var(--duration-base) var(--ease-out); }
 .status-bar__live { width: .45rem; height: .45rem; border-radius: 50%; background: var(--color-live); animation: live 2.4s ease-in-out infinite; }
 @keyframes live { 50% { opacity: .35; } }
+.status-bar__playing--paused .status-bar__live { animation: none; background: var(--color-warning); }
 .status-bar__playing-label { font-size: var(--text-xs); font-weight: var(--weight-medium); letter-spacing: var(--tracking-caps); text-transform: uppercase; }
 .status-bar__playing-title { overflow: hidden; max-width: 22rem; color: var(--color-text); text-overflow: ellipsis; white-space: nowrap; }
 

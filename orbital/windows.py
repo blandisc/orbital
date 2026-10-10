@@ -197,3 +197,33 @@ def app_windows() -> list[dict]:
 
     user32.EnumWindows(enum, 0)
     return found
+
+
+PROCESS_SUSPEND_RESUME = 0x0800
+
+
+def _nt_process_call(pids: set[int], function: str) -> int:
+    """Llama NtSuspendProcess/NtResumeProcess sobre cada proceso. Devuelve cuántos funcionaron."""
+    if not WIN:
+        return 0
+    call = getattr(ctypes.windll.ntdll, function)
+    done = 0
+    for pid in pids:
+        handle = kernel32.OpenProcess(PROCESS_SUSPEND_RESUME, False, pid)
+        if not handle:
+            continue
+        try:
+            if call(handle) == 0:  # STATUS_SUCCESS
+                done += 1
+        finally:
+            kernel32.CloseHandle(handle)
+    return done
+
+
+def suspend(pids: set[int]) -> int:
+    """Congela procesos (pausa universal: imagen, sonido y lógica se detienen al instante)."""
+    return _nt_process_call(pids, "NtSuspendProcess")
+
+
+def resume(pids: set[int]) -> int:
+    return _nt_process_call(pids, "NtResumeProcess")

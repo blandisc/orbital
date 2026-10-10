@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import difflib
 import logging
+import sys
 import threading
 import time
 import unicodedata
@@ -55,6 +56,22 @@ def default_state(config: Config) -> State:
 
 def default_credentials(config: Config) -> Credentials:
     return Credentials(config.source.parent / "secrets.json" if config.source else None)
+
+
+def bring_app_to_front(exe: str, timeout: float = 10.0) -> bool:
+    """Espera la ventana de `exe` y la trae al frente (Windows)."""
+    if sys.platform != "win32":
+        return False
+    from . import windows
+
+    deadline = time.time() + timeout
+    time.sleep(.8)  # que alcance a navegar al enlace antes de mostrarse
+    while time.time() < deadline:
+        hwnd = windows.main_window(windows.pids_by_exe(exe))
+        if hwnd and windows.focus(hwnd):
+            return True
+        time.sleep(.4)
+    return False
 
 
 def stremio_item(w: stremio_api.Watchable) -> LibraryItem:
@@ -398,6 +415,9 @@ class Catalog:
         if argv:
             self.launcher.run([*argv, uri] if uri else argv)
             self.launcher.track_exe("media:stremio", title, Path(argv[0]).name, runner="Stremio")
+            # Si Stremio ya estaba abierto, recibe el enlace en su ventana de siempre... detrás de
+            # Orbital: sin esto, "no pasa nada". La traemos al frente cuando exista.
+            threading.Thread(target=bring_app_to_front, args=(Path(argv[0]).name,), daemon=True).start()
         else:
             self.launcher.open_uri(uri or "stremio://")
             self.launcher.track("media:stremio", title, None)

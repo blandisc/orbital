@@ -10,6 +10,7 @@ Las ventanas se manejan con `orbital.windows`; se puede inyectar otro objeto en 
 
 from __future__ import annotations
 
+import json
 import logging
 import subprocess
 import sys
@@ -28,6 +29,10 @@ EMULATOR_EXES = {n for k in KNOWN for n in k.exe_names if n.endswith(".exe")} | 
     "stremio-shell-ng.exe", "stremio.exe",
 }
 LEGION_SPACE = "legionspace.exe"
+# Pausa universal al ir a Orbital: solo emuladores (los juegos en línea perderían la conexión y
+# congelar Stremio dejaría su ventana trabada).
+NO_PAUSE = {"stremio-shell-ng.exe", "stremio.exe"}
+
 # Apps sin soporte de mando: mientras están al frente, el mando se traduce a teclas.
 REMOTE_APPS = {"stremio-shell-ng.exe", "stremio.exe"}
 # Nunca se cierran con Select+Start aunque Steam tenga un juego abierto.
@@ -44,10 +49,12 @@ LEGION_DOUBLE_PRESS = 3.0  # s: dos toques de Legion L dejan abierto Legion Spac
 
 
 class ConsoleShell:
-    def __init__(self, catalog, kiosk=None, win=windows, overlay=None) -> None:
+    def __init__(self, catalog, kiosk=None, win=windows, overlay=None, pause_file=None) -> None:
         self.catalog = catalog
         self.kiosk = kiosk
         self.win = win
+        self.paused: set[int] = set()  # procesos congelados al ir a Orbital (se descongelan al volver)
+        self.pause_file = pause_file  # si Orbital se cierra de golpe, al arrancar los descongela
         self.overlay = overlay  # GameOverlay (aviso encima del juego); se crea en start()
         self.return_to = 0  # ventana del juego a la que volver
         self.hold: dict | None = None  # juego que se está por cerrar (Select+Start)
@@ -90,14 +97,64 @@ class ConsoleShell:
                 log.debug("Home en Orbital sin juego al que volver")
             return
         self.remember(fg)
+        self.pause(fg)
         self.show_orbital()
 
     def resume(self) -> bool:
-        """Vuelve al juego. Devuelve False si no hay juego abierto."""
+        """Vuelve al juego (descongelándolo). Devuelve False si no hay juego abierto."""
+        self.unpause()
         target = self.game_window()
         if not target:
             return False
         return self.win.focus(target)
+
+    # --------------------------------------------------------------- pausa universal
+    def pause(self, hwnd: int) -> bool:
+        """Congela el emulador al frente: imagen, sonido y lógica se detienen al instante, sea cual sea."""
+        pid = self.win.pid_of(hwnd)
+        exe = self.win.exe_name(pid)
+        if exe not in EMULATOR_EXES or exe in NO_PAUSE:
+            return False
+        pids = self.win.process_tree(pid)
+        if self.win.suspend(pids):
+            self.paused |= pids
+            self._save_paused()
+            log.info("En pausa: %s", self.win.title(hwnd))
+            return True
+        return False
+
+    def unpause(self) -> None:
+        if self.paused:
+            self.win.resume(self.paused)
+            log.info("Fuera de pausa")
+            self.paused = set()
+            self._save_paused()
+
+    @property
+    def is_paused(self) -> bool:
+        return bool(self.paused)
+
+    def _save_paused(self) -> None:
+        if self.pause_file is None:
+            return
+        try:
+            self.pause_file.parent.mkdir(parents=True, exist_ok=True)
+            self.pause_file.write_text(json.dumps(sorted(self.paused)), encoding="utf-8")
+        except OSError as exc:
+            log.warning("No pude guardar la pausa: %s", exc)
+
+    def recover_paused(self) -> None:
+        """Si Orbital se cerró con un juego congelado, lo descongela (si no, quedaría trabado)."""
+        if self.pause_file is None or not self.pause_file.exists():
+            return
+        try:
+            pids = set(json.loads(self.pause_file.read_text(encoding="utf-8")))
+        except (OSError, ValueError):
+            pids = set()
+        if pids:
+            log.info("Descongelando lo que quedó en pausa: %s", sorted(pids))
+            self.win.resume(pids)
+        self.pause_file.unlink(missing_ok=True)
 
     def target(self, hwnd: int) -> dict | None:
         """Qué se cerraría con Select+Start: el juego que lanzó Orbital, un emulador al frente o
@@ -156,6 +213,7 @@ class ConsoleShell:
     def stop_game(self) -> bool:
         """Cierra el juego de golpe (ya se confirmó: menú de Orbital o Select+Start sostenidos)."""
         target, self.hold = self.hold, None
+        self.unpause()  # un proceso congelado no se cierra limpio
         if self.catalog.launcher.stop(force=True):
             return True
         if target and target.get("pid") and sys.platform == "win32":
@@ -229,6 +287,7 @@ class ConsoleShell:
     def start(self) -> bool:
         if sys.platform != "win32":
             return False
+        self.recover_paused()
         if self.overlay is None:
             from .overlay import GameOverlay
             overlay = GameOverlay()
@@ -247,6 +306,8 @@ class ConsoleShell:
                 if self.win.exe_name(self.win.pid_of(last)) != LEGION_SPACE:
                     previous = last  # lo que había antes de Legion Space
                 last = fg
+                if self.paused and self.win.pid_of(fg) in self.paused:
+                    self.unpause()  # volvió al juego por su cuenta (Alt+Tab, clic): que siga
                 self.check_legion(fg, previous)
             except Exception:  # noqa: BLE001
                 log.exception("Error vigilando la ventana al frente")
