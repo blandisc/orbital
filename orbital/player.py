@@ -188,6 +188,14 @@ def has_language(tracks: list[dict], kind: str, codes: set[str]) -> bool:
     return any(t.get("type") == kind and str(t.get("lang") or "").lower() in codes for t in tracks or [])
 
 
+def wrong_audio(tracks: list[dict], lang: str) -> bool:
+    """Las pistas de audio tienen idioma y ninguna es el tuyo (sin etiquetas no se sabe: no avisa)."""
+    tagged = [str(t.get("lang")).lower() for t in tracks or []
+              if t.get("type") == "audio" and t.get("lang") and str(t.get("lang")).lower() not in ("und", "mul")]
+    codes = {c.lower() for c in build_lang_list(lang)}
+    return bool(tagged) and not any(code in codes for code in tagged)
+
+
 class OrbitalPlayer:
     """Arranca mpv, lo vigila y al terminar avisa cuánto se vio (para Seguir viendo).
 
@@ -210,12 +218,13 @@ class OrbitalPlayer:
         process = run(build_command(mpv_exe, url, title, subtitles=subtitles, **options))
         playback = Playback(title, process, time.time(), meta)
         self.current = playback
-        threading.Thread(target=self._watch, args=(playback, float(options.get("start") or 0), subtitles, fallback_subs),
+        threading.Thread(target=self._watch, args=(playback, float(options.get("start") or 0), subtitles, fallback_subs,
+                                                   options.get("audio", "en")),
                          daemon=True, name="mpv").start()
         log.info("Reproduciendo en mpv: %s", title)
         return process
 
-    def _watch(self, playback: Playback, start: float, subtitles: str, fallback_subs) -> None:
+    def _watch(self, playback: Playback, start: float, subtitles: str, fallback_subs, audio: str = "en") -> None:
         # Mientras reproduce, pregunta la posición cada pocos segundos (al cerrar ya no se puede).
         position, duration, watched, subs_checked = start, 0.0, 0.0, False
         last = time.monotonic()
@@ -229,7 +238,11 @@ class OrbitalPlayer:
                 position, duration = float(pos), float(dur)
                 if not subs_checked:
                     subs_checked = True
-                    if start > 5:
+                    tracks = self.mpv.get("track-list") or []
+                    if wrong_audio(tracks, audio):
+                        # El archivo dice ser de otro idioma (un doblaje mal etiquetado): avisa en vez de callar.
+                        self.mpv.command("show-text", "Esta fuente no trae audio en tu idioma  ·  B para elegir otra", 6000)
+                    elif start > 5:
                         self.mpv.command("show-text", "Sigues donde te quedaste  ·  LB para regresar 1 min", 2600)
                     self._ensure_subtitles(subtitles, fallback_subs)
             last = now

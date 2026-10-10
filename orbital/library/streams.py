@@ -33,19 +33,35 @@ REQUEST_TIMEOUT = 15
 FLAG_LANG = {
     "🇬🇧": "en", "🇺🇸": "en", "🇲🇽": "es", "🇪🇸": "es", "🇦🇷": "es", "🇫🇷": "fr", "🇮🇹": "it", "🇩🇪": "de",
     "🇵🇹": "pt", "🇧🇷": "pt", "🇷🇺": "ru", "🇯🇵": "ja", "🇰🇷": "ko", "🇨🇳": "zh", "🇮🇳": "hi", "🇵🇱": "pl",
-    "🇹🇷": "tr", "🇺🇦": "uk", "🇳🇱": "nl",
+    "🇹🇷": "tr", "🇺🇦": "uk", "🇳🇱": "nl", "🇨🇿": "cs", "🇸🇰": "sk", "🇭🇺": "hu", "🇬🇷": "el", "🇸🇪": "sv",
+    "🇩🇰": "da", "🇳🇴": "no", "🇫🇮": "fi", "🇷🇴": "ro", "🇧🇬": "bg", "🇭🇷": "hr", "🇷🇸": "sr", "🇮🇱": "he",
+    "🇸🇦": "ar", "🇹🇭": "th", "🇻🇳": "vi", "🇮🇩": "id", "🇱🇹": "lt", "🇱🇻": "lv", "🇪🇪": "et",
 }
 WORD_LANG = [
     (re.compile(r"\b(lat|latino|castellano|spanish|español|espanol|esp|cast)\b", re.I), "es"),
-    (re.compile(r"\b(french|vff|vf|truefrench)\b", re.I), "fr"),
+    (re.compile(r"\b(french|vff|vf|vfq|truefrench)\b", re.I), "fr"),
     (re.compile(r"\b(ita|italian)\b", re.I), "it"),
     (re.compile(r"\b(german|deutsch|ger)\b", re.I), "de"),
     (re.compile(r"\b(rus|russian)\b", re.I), "ru"),
     (re.compile(r"\b(hindi)\b", re.I), "hi"),
+    # "CZ dabing", "SK dabing", "PL lektor", "dublado": doblajes que antes pasaban por inglés.
+    (re.compile(r"\b(cz|cze|czech|cesky|český|dabing)\b", re.I), "cs"),
+    (re.compile(r"\b(sk|slovak|slovensky|slovenský)\b", re.I), "sk"),
+    (re.compile(r"\b(pl|polish|polski|lektor)\b", re.I), "pl"),
+    (re.compile(r"\b(hun|hungarian|magyar)\b", re.I), "hu"),
+    (re.compile(r"\b(ptbr|pt-br|dublado|portuguese|portugues|português)\b", re.I), "pt"),
+    (re.compile(r"\b(ukr|ukrainian)\b", re.I), "uk"),
+    (re.compile(r"\b(turkish|türkçe|turkce)\b", re.I), "tr"),
+    (re.compile(r"\b(arabic)\b", re.I), "ar"),
+    (re.compile(r"\b(korean|kor)\b", re.I), "ko"),
+    (re.compile(r"\b(nordic|swedish|danish|norwegian|finnish)\b", re.I), "sv"),
 ]
 LANG_NAMES = {"en": "Inglés", "es": "Español", "fr": "Francés", "it": "Italiano", "de": "Alemán", "pt": "Portugués",
               "ru": "Ruso", "ja": "Japonés", "ko": "Coreano", "zh": "Chino", "hi": "Hindi", "pl": "Polaco",
-              "tr": "Turco", "uk": "Ucraniano", "nl": "Neerlandés"}
+              "tr": "Turco", "uk": "Ucraniano", "nl": "Neerlandés", "cs": "Checo", "sk": "Eslovaco",
+              "hu": "Húngaro", "el": "Griego", "sv": "Nórdico", "da": "Danés", "no": "Noruego", "fi": "Finés",
+              "ro": "Rumano", "bg": "Búlgaro", "hr": "Croata", "sr": "Serbio", "he": "Hebreo", "ar": "Árabe",
+              "th": "Tailandés", "vi": "Vietnamita", "id": "Indonesio", "lt": "Lituano", "lv": "Letón", "et": "Estonio"}
 # ISO 639-2, como etiquetan los addons de subtítulos (OpenSubtitles: "eng", "spa"…).
 LANG_CODES = {"en": "eng", "es": "spa", "fr": "fre", "it": "ita", "de": "ger", "pt": "por", "ja": "jpn"}
 SIZE = re.compile(r"💾\s*([\d.,]+)\s*(TB|GB|MB|KB)", re.I)

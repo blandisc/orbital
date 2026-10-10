@@ -122,6 +122,26 @@ def process_tree(root: int) -> set[int]:
     return tree
 
 
+def processes() -> dict[int, tuple[str, int]]:
+    """Todos los procesos: pid -> (ejecutable en minúsculas, pid del padre). Una sola foto."""
+    if not WIN:
+        return {}
+    snapshot = kernel32.CreateToolhelp32Snapshot(0x2, 0)
+    if snapshot in (None, wintypes.HANDLE(-1).value):
+        return {}
+    found: dict[int, tuple[str, int]] = {}
+    try:
+        entry = _ProcessEntry()
+        entry.dwSize = ctypes.sizeof(entry)
+        ok = kernel32.Process32FirstW(snapshot, ctypes.byref(entry))
+        while ok:
+            found[entry.th32ProcessID] = (entry.szExeFile.lower(), entry.th32ParentProcessID)
+            ok = kernel32.Process32NextW(snapshot, ctypes.byref(entry))
+    finally:
+        kernel32.CloseHandle(snapshot)
+    return found
+
+
 def pids_by_exe(name: str) -> set[int]:
     """Procesos cuyo ejecutable se llama `name` ("stremio-shell-ng.exe")."""
     if not WIN:
