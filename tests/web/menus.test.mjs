@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { gameMenu, mainMenu } from "../../orbital/web/js/core/menus.js";
+import { gameMenu, mainMenu, stopMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch",
@@ -41,4 +41,15 @@ test("salir al escritorio pide confirmación y empieza en Cancelar", async () =>
   const confirm = exitMenu();
   assert.equal(confirm.options[0].label, "Cancelar"); // el foco inicial es seguro
   assert.deepEqual(confirm.options[1].command, { type: "exit" });
+});
+
+test("cerrar el juego siempre pide confirmación y por defecto sigue jugando", () => {
+  const menu = stopMenu({ title: "Mario Party Superstars", runner: "Eden" });
+  assert.equal(menu.title, "¿Cerrar Mario Party Superstars?");
+  assert.deepEqual(menu.options.map((o) => o.label), ["Seguir jugando", "Cerrar Eden"]);
+  assert.deepEqual(menu.options[0].command, { type: "resume" });
+  assert.deepEqual(menu.cancel, { type: "resume" }); // B también regresa al juego
+  const running = { title: "Zelda", managed: true, runner: "Eden" };
+  const close = mainMenu({ running }).options.find((o) => o.label === "Cerrar Zelda");
+  assert.deepEqual(close.command, { type: "confirm-stop", title: "Zelda", runner: "Eden" });
 });

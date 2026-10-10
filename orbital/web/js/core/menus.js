@@ -26,7 +26,8 @@ export function mainMenu({ soundEnabled, running, hiddenCount, canExit = false }
     { icon: "♪", label: "Sonidos", hint: soundEnabled ? "Sí" : "No", command: { type: "toggle-sound" } },
   ];
   if (running?.managed) {
-    options.push({ icon: "■", label: `Cerrar ${running.title}`, danger: true, command: { type: "stop" } });
+    options.push({ icon: "■", label: `Cerrar ${running.title}`, danger: true,
+      command: { type: "confirm-stop", title: running.title, runner: running.runner } });
   }
   if (hiddenCount) {
     options.push({ icon: "◎", label: "Mostrar juegos ocultos", hint: String(hiddenCount), command: { type: "unhide-all" } });
@@ -36,6 +37,22 @@ export function mainMenu({ soundEnabled, running, hiddenCount, canExit = false }
   }
   options.push({ icon: "✕", label: "Cerrar menú", command: { type: "close" } });
   return { title: "Orbital", options };
+}
+
+/**
+ * "¿Cerrar el juego?" (Select+Start mantenidos, o el menú). "Seguir jugando" va primero:
+ * un A rápido nunca cierra nada, y B (cancel) también regresa al juego.
+ */
+export function stopMenu({ title, runner }) {
+  return {
+    title: `¿Cerrar ${title}?`,
+    subtitle: "Lo que no hayas guardado se perderá.",
+    options: [
+      { icon: "▶", label: "Seguir jugando", command: { type: "resume" } },
+      { icon: "■", label: runner ? `Cerrar ${runner}` : "Cerrar el juego", danger: true, command: { type: "stop" } },
+    ],
+    cancel: { type: "resume" },
+  };
 }
 
 /** Confirmación antes de salir: evita salir por un toque accidental. */

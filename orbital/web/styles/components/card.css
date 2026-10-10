@@ -29,6 +29,20 @@
   background: rgba(10, 16, 28, .75); color: var(--color-favorite); font-size: var(--text-xs);
   box-shadow: 0 1px 6px rgba(0, 0, 0, .4);
 }
+.card__badge--pop { animation: badge-pop 480ms var(--ease-emphasis); }
+@keyframes badge-pop { from { transform: scale(0) rotate(-40deg); } 60% { transform: scale(1.35); } }
+/* "Jugado recientemente": hace cuánto, sobre la portada. */
+.card__chip {
+  position: absolute; left: var(--space-2); bottom: var(--space-2); z-index: 1;
+  padding: .12rem .5rem; border-radius: var(--radius-pill);
+  background: rgba(10, 16, 28, .8); backdrop-filter: blur(6px);
+  color: var(--color-text); font-size: var(--text-2xs); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums;
+}
+/* Llegar al final de una fila: la tarjeta se empuja un poco (translate es independiente del scale del foco). */
+.card--bump-left { animation: bump-left 220ms var(--ease-out); }
+.card--bump-right { animation: bump-right 220ms var(--ease-out); }
+@keyframes bump-left { 40% { translate: -.45rem 0; } }
+@keyframes bump-right { 40% { translate: .45rem 0; } }
 .card__meta {
   position: absolute; inset: auto 0 0 0; display: flex; flex-direction: column; gap: .15rem;
   padding: var(--space-3);

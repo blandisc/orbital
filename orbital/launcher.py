@@ -24,6 +24,7 @@ class Running:
     title: str
     process: subprocess.Popen | None  # None cuando se lanzó vía URI (Steam, Stremio)
     started: float = field(default_factory=time.time)
+    runner: str | None = None  # "Eden", "Ryujinx"... para preguntar "¿Cerrar…?"
 
 
 def steam_running_appid() -> int | None:
@@ -77,8 +78,8 @@ class Launcher:
         return subprocess.Popen(argv, **kwargs)
 
     def track(self, item_id: str, title: str, process: subprocess.Popen | None,
-              steam_appid: int | None = None) -> None:
-        running = Running(item_id, title, process)
+              steam_appid: int | None = None, runner: str | None = None) -> None:
+        running = Running(item_id, title, process, runner=runner)
         with self._lock:
             self.current = running
         if process is not None:
@@ -122,7 +123,8 @@ class Launcher:
                 self.current = None
                 return None
             return {"id": cur.item_id, "title": cur.title, "managed": cur.process is not None,
-                    "started": cur.started}
+                    "started": cur.started, "runner": cur.runner,
+                    "pid": cur.process.pid if cur.process is not None else None}
 
     def stop(self) -> bool:
         """Cierra el proceso lanzado por Orbital. Devuelve False si no hay nada que cerrar."""

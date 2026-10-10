@@ -17,6 +17,8 @@
   font-size: var(--text-md); line-height: 1.4;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
+.sheet__title--question { padding-bottom: 0; color: var(--color-text); font-size: var(--text-xl); font-weight: var(--weight-bold); line-height: 1.2; }
+.sheet__subtitle { padding: var(--space-2) var(--space-4) var(--space-4); color: var(--color-text-muted); font-size: var(--text-md); }
 .sheet__items { display: flex; flex-direction: column; gap: 2px; }
 .sheet__item {
   position: relative; display: flex; align-items: center; gap: var(--space-3);

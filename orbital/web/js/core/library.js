@@ -26,6 +26,15 @@ export function restoreFocus(rows, { rowId, itemId, r, c }) {
 export const itemAt = (rows, r, c) => rows[r]?.items[c] ?? null;
 
 /**
+ * Foco al cambiar de fila: cada fila recuerda en qué juego te quedaste (`memory`: id de fila ->
+ * columna). Una fila que no has visitado empieza en su primer juego.
+ */
+export function rowJump(rows, memory, r, delta) {
+  const target = clamp(r + delta, 0, Math.max(0, rows.length - 1));
+  return clampFocus(rows, target, memory[rows[target]?.id] ?? 0);
+}
+
+/**
  * Cuánto desplazar una fila (px) para que la tarjeta `c` quede a la izquierda con una de
  * contexto, sin pasarse del final: una fila corta no se mueve y una larga no deja hueco.
  */

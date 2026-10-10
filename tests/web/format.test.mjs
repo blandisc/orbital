@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { duration, lastPlayed } from "../../orbital/web/js/core/format.js";
+import { duration, lastPlayed, shortAgo } from "../../orbital/web/js/core/format.js";
 
 const NOW = 1_800_000_000_000;
 const ago = (seconds) => NOW / 1000 - seconds;
@@ -27,4 +27,15 @@ test("verbo para multimedia y porcentaje", async () => {
   assert.equal(lastPlayed(ago(2 * 3600), NOW, "Visto"), "Visto hace 2 h");
   assert.equal(percent(1 / 3), "33 %");
   assert.equal(percent(0), null);
+});
+
+test("shortAgo para la etiqueta de Jugado recientemente", () => {
+  const now = Date.UTC(2026, 9, 9, 12);
+  const ago = (s) => now / 1000 - s;
+  assert.equal(shortAgo(null, now), null);
+  assert.equal(shortAgo(ago(30), now), "ahora");
+  assert.equal(shortAgo(ago(15 * 60), now), "15 min");
+  assert.equal(shortAgo(ago(3 * 3600), now), "3 h");
+  assert.equal(shortAgo(ago(26 * 3600), now), "ayer");
+  assert.equal(shortAgo(ago(4 * 86400), now), "4 d");
 });

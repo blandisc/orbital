@@ -6,15 +6,19 @@ import { h, hideAfterExit, mount } from "../core/dom.js";
  */
 export function createSheet({ onCommand, onMove, onClose }) {
   const title = h("div", { class: "sheet__title", id: "sheet-title" });
+  const subtitle = h("div", { class: "sheet__subtitle" });
   const list = h("div", { class: "sheet__items", role: "menu", "aria-labelledby": "sheet-title" });
-  const panel = h("div", { class: "sheet__panel" }, title, list);
-  const el = h("div", { class: "sheet", hidden: true, onClick: (e) => e.target === el && close() }, panel);
+  const panel = h("div", { class: "sheet__panel" }, title, subtitle, list);
+  const el = h("div", { class: "sheet", hidden: true, onClick: (e) => e.target === el && cancel() }, panel);
   let menu = null;
   let index = 0;
   let cancelExit = () => {};
 
   function render() {
     title.textContent = menu.title;
+    title.classList.toggle("sheet__title--question", !!menu.subtitle);
+    subtitle.textContent = menu.subtitle || "";
+    subtitle.hidden = !menu.subtitle;
     mount(list, menu.options.map((option, i) => h("button", {
       class: ["sheet__item", i === index && "sheet__item--focused", option.danger && "sheet__item--danger"],
       type: "button",
@@ -39,6 +43,13 @@ export function createSheet({ onCommand, onMove, onClose }) {
     onClose?.();
   }
 
+  /** B o clic fuera: cierra y, si el menú lo define, ejecuta su `cancel` (p. ej. volver al juego). */
+  function cancel() {
+    const command = menu?.cancel;
+    close();
+    if (command) onCommand(command);
+  }
+
   function choose(i = index) {
     const command = menu?.options[i]?.command;
     close();
@@ -56,7 +67,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
     } else if (action === "select") {
       choose();
     } else if (action === "back" || action === "options" || action === "menu") {
-      close();
+      cancel();
     }
     return true;
   }

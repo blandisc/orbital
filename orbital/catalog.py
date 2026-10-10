@@ -333,7 +333,7 @@ class Catalog:
         runner = self.runner_for(item, runner_id)
         if runner:
             proc = self.launcher.run(runner.argv, cwd=runner.cwd)
-            self.launcher.track(item.id, item.title, proc)
+            self.launcher.track(item.id, item.title, proc, runner=runner.name)
         elif item.argv:
             proc = self.launcher.run(item.argv, cwd=item.cwd)
             self.launcher.track(item.id, item.title, proc)

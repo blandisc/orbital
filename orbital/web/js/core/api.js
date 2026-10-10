@@ -22,6 +22,7 @@ export const api = {
   unhideAll: () => post("/api/prefs/unhide-all"),
   ui: () => request("/api/ui"),
   exitToDesktop: () => post("/api/ui/exit"),
+  resume: () => post("/api/ui/resume"),
   /** Suscripción a eventos del servidor con reconexión automática. */
   events(onEvent) {
     const connect = () => {

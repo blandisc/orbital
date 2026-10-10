@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { alternativeRunner, clampFocus, isGame, restoreFocus, rowOffset, runnerName } from "../../orbital/web/js/core/library.js";
+import { alternativeRunner, clampFocus, isGame, restoreFocus, rowJump, rowOffset, runnerName } from "../../orbital/web/js/core/library.js";
 
 const rows = [
   { id: "recent", items: [{ id: "a" }, { id: "b" }] },
@@ -48,4 +48,12 @@ test("rowOffset: las filas cortas no se mueven y las largas no dejan hueco al fi
   assert.equal(rowOffset(30, 0, m), 0);
   assert.equal(rowOffset(30, 5, m), 400); // una de contexto a la izquierda
   assert.equal(rowOffset(30, 29, m), 30 * 100 + 20 - 1000); // pegada al final, sin hueco
+});
+
+test("rowJump: cada fila recuerda su juego; las nuevas empiezan en el primero", () => {
+  const rs = [{ id: "a", items: [1, 2, 3, 4, 5, 6, 7, 8, 9] }, { id: "b", items: [1, 2, 3] }, { id: "c", items: [1] }];
+  assert.deepEqual(rowJump(rs, {}, 0, 1), { r: 1, c: 0 });
+  assert.deepEqual(rowJump(rs, { a: 7 }, 1, -1), { r: 0, c: 7 });
+  assert.deepEqual(rowJump(rs, { b: 9 }, 0, 1), { r: 1, c: 2 }); // se ajusta si la fila se acortó
+  assert.deepEqual(rowJump(rs, {}, 2, 1), { r: 2, c: 0 }); // no se sale de la última
 });

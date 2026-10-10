@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from . import __version__, system
 from .catalog import Catalog
 from .config import Config
+from .shell import ConsoleShell
 from .voice import VoiceController
 
 log = logging.getLogger(__name__)
@@ -104,23 +105,29 @@ def token_ok(request: Request, expected: str) -> bool:
     return bool(token) and bool(expected) and hmac.compare_digest(token, expected)
 
 
-def create_app(config: Config, catalog: Catalog | None = None, kiosk=None) -> FastAPI:
+def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, shortcuts: bool = False) -> FastAPI:
+    """`shortcuts`: activa los atajos globales del mando (Home, Select+Start, Legion L)."""
     catalog = catalog or Catalog(config)
     if kiosk is not None:
         catalog.kiosk = kiosk
     voice = VoiceController(catalog, kiosk)
     bus = EventBus()
+    shell = ConsoleShell(catalog, kiosk, publish=bus.publish_threadsafe)
+
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         bus.loop = asyncio.get_running_loop()
         catalog.listeners.append(bus.publish_threadsafe)
         await run_in_threadpool(catalog.refresh)
+        if shortcuts:
+            shell.start()
         yield
         catalog.listeners.remove(bus.publish_threadsafe)
 
     app = FastAPI(title="Orbital", version=__version__, lifespan=lifespan)
     app.state.catalog = catalog
     app.state.bus = bus
+    app.state.shell = shell
     app.state.alexa_last = None  # última vez que llegó un comando de voz remoto
 
     @app.middleware("http")
@@ -192,7 +199,14 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None) -> Fa
 
     @app.post("/api/stop")
     def stop() -> dict:
-        return {"stopped": catalog.launcher.stop()}
+        # También cierra un emulador abierto desde ES-DE si se pidió con Select+Start.
+        return {"stopped": shell.stop_game()}
+
+    @app.post("/api/ui/resume")
+    def ui_resume() -> dict:
+        """Vuelve al juego ("Seguir jugando")."""
+        shell.hold = None
+        return {"ok": shell.resume()}
 
     async def run_voice(body: VoiceRequest, remote: bool) -> dict:
         if remote:

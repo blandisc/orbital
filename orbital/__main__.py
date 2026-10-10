@@ -233,7 +233,7 @@ def main(argv: list[str] | None = None) -> None:
     url = f"http://127.0.0.1:{config.server.port}"
     mode = args.ui or config.ui.mode
     kiosk = KioskWindow(url, config.ui.browser) if mode == "browser" else None
-    app = create_app(config, kiosk=kiosk)
+    app = create_app(config, kiosk=kiosk, shortcuts=True)
     public_app = create_public_app(config, app) if config.server.public_port else None
     if mode == "window":
         # pywebview necesita el hilo principal, así que el servidor va en segundo plano.

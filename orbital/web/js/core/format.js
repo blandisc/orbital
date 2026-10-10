@@ -13,6 +13,19 @@ export function lastPlayed(ts, now = Date.now(), verb = "Jugado") {
   return `${verb} el ${new Date(ts * 1000).toLocaleDateString("es")}`;
 }
 
+/** Versión corta para una etiqueta sobre la portada: "ahora", "15 min", "3 h", "ayer", "4 d". */
+export function shortAgo(ts, now = Date.now()) {
+  if (!ts) return null;
+  const s = now / 1000 - ts;
+  if (s < 60) return "ahora";
+  if (s < 3600) return `${Math.round(s / 60)} min`;
+  if (s < 86400) return `${Math.round(s / 3600)} h`;
+  const days = Math.round(s / 86400);
+  if (days === 1) return "ayer";
+  if (days < 30) return `${days} d`;
+  return new Date(ts * 1000).toLocaleDateString("es", { day: "numeric", month: "short" });
+}
+
 export const percent = (fraction) => (fraction > 0 ? `${Math.round(fraction * 100)} %` : null);
 
 export function duration(seconds) {

@@ -1,12 +1,15 @@
 import { h, svg } from "../core/dom.js";
+import { shortAgo } from "../core/format.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 
 /** Portada de un juego/app. Si no hay imagen (o falla), muestra el ícono de su tipo y el título. */
-export function Card(item, { onPress } = {}) {
+export function Card(item, { onPress, showAgo = false, pop = false } = {}) {
   const meta = h("span", { class: "card__meta" },
     h("strong", { class: "card__title" }, item.title),
     h("small", { class: "card__subtitle" }, item.subtitle));
-  const badge = item.favorite ? h("span", { class: "card__badge", "aria-label": "Favorito" }, "★") : null;
+  const badge = item.favorite ? h("span", { class: ["card__badge", pop && "card__badge--pop"], "aria-label": "Favorito" }, "★") : null;
+  const ago = showAgo ? shortAgo(item.last_played) : null;
+  const chip = ago ? h("span", { class: "card__chip" }, ago) : null;
   const progress = item.progress > 0
     ? h("span", { class: "card__progress", role: "progressbar", "aria-valuenow": Math.round(item.progress * 100), "aria-valuemin": 0, "aria-valuemax": 100 },
       h("span", { class: "card__progress-fill", style: { width: `${Math.round(item.progress * 100)}%` } }))
@@ -32,6 +35,6 @@ export function Card(item, { onPress } = {}) {
   } else {
     card.append(fallback());
   }
-  card.append(...[badge, meta, progress].filter(Boolean));
+  card.append(...[badge, chip, meta, progress].filter(Boolean));
   return card;
 }

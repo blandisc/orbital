@@ -29,3 +29,12 @@ test("autorrepetición solo para moverse", () => {
   assert.deepEqual(r.update(new Set(), 450), []);
   assert.deepEqual(r.update(new Set(["select"]), 460), ["select"]); // nueva pulsación
 });
+
+test("swallow: lo que venía presionado no dispara hasta soltarlo", () => {
+  const r = new Repeater({ delay: 100, rate: 50 });
+  r.swallow(["menu", "up"]);
+  assert.deepEqual(r.update(new Set(["menu", "up"]), 0), []);
+  assert.deepEqual(r.update(new Set(["menu", "up"]), 1000), []); // ni con autorrepetición
+  assert.deepEqual(r.update(new Set(), 1001), []);
+  assert.deepEqual(r.update(new Set(["menu"]), 1002), ["menu"]); // la siguiente pulsación sí
+});

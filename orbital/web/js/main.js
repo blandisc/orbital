@@ -5,13 +5,14 @@
 import { api } from "./core/api.js";
 import { duration } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
-import { alternativeRunner, clampFocus, itemAt, restoreFocus, runnerName } from "./core/library.js";
+import { alternativeRunner, clampFocus, itemAt, restoreFocus, rowJump, runnerName } from "./core/library.js";
 import { footerHints } from "./core/hints.js";
-import { exitMenu, gameMenu, mainMenu } from "./core/menus.js";
+import { exitMenu, gameMenu, mainMenu, stopMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
 import { createHints } from "./components/hints.js";
+import { createHoldOverlay } from "./components/hold-overlay.js";
 import { createLaunchOverlay } from "./components/launch-overlay.js";
 import { createSheet } from "./components/sheet.js";
 import { createShelf } from "./components/shelf.js";
@@ -28,6 +29,8 @@ const state = {
   running: null,
   canExit: false,
   launchLockedUntil: 0,
+  memory: {}, // id de fila -> último juego enfocado en esa fila
+  popId: null, // juego recién marcado como favorito (su estrella se anima)
 };
 
 const current = () => itemAt(state.rows, state.focus.r, state.focus.c);
@@ -46,11 +49,12 @@ const ui = {
     onClose: () => renderHints(),
   }),
   launch: createLaunchOverlay(),
+  hold: createHoldOverlay(),
   toast: createToast(),
 };
 
 document.getElementById("app").replaceWith(
-  ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.sheet.el, ui.launch.el, ui.toast.el,
+  ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.sheet.el, ui.launch.el, ui.hold.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -65,10 +69,13 @@ function renderHints() {
   }));
 }
 
-function setFocus(r, c, { silent = false } = {}) {
+function setFocus(r, c, { silent = false, edge = null } = {}) {
   const next = clampFocus(state.rows, r, c);
   const moved = next.r !== state.focus.r || next.c !== state.focus.c;
+  if (!moved && edge && !silent) ui.shelf.bump(edge); // al final de la fila
   state.focus = next;
+  const rowId = state.rows[next.r]?.id;
+  if (rowId) state.memory[rowId] = next.c;
   ui.shelf.setFocus(next.r, next.c);
   if (moved || silent) {
     const item = current();
@@ -97,7 +104,9 @@ async function loadLibrary({ refresh = false, keepId = current()?.id } = {}) {
     ui.shelf.setRows(state.rows, {
       emptyTitle: "Tu biblioteca está vacía",
       emptyText: "Revisa config.yaml y abre el menú → Actualizar biblioteca.",
+      popId: state.popId,
     });
+    state.popId = null;
     const { r, c } = restoreFocus(state.rows, { rowId, itemId: keepId, ...state.focus });
     state.focus = { r, c };
     setFocus(r, c, { silent: true });
@@ -153,6 +162,7 @@ async function runCommand(command) {
         return launch(findItem(command.id), command.runner || null);
       case "prefs":
         await api.setPrefs(command.id, command.prefs);
+        if (command.prefs.favorite) state.popId = command.id;
         sound.play("select");
         if (command.message) ui.toast.show(command.message);
         return loadLibrary({ keepId: command.id });
@@ -164,6 +174,11 @@ async function runCommand(command) {
       case "stop":
         await api.stop();
         return pollStatus();
+      case "confirm-stop":
+        return openMenu(stopMenu(command));
+      case "resume":
+        sound.play("back");
+        return api.resume();
       case "confirm-exit":
         return openMenu(exitMenu());
       case "exit":
@@ -190,6 +205,7 @@ function openMenu(menu) {
 }
 
 function handleAction(action) {
+  if (ui.hold.visible) return; // mientras se sostiene Select+Start, nada más
   if (ui.launch.visible) {
     if (action === "back") ui.launch.hide();
     return;
@@ -201,12 +217,12 @@ function handleAction(action) {
   const { r, c } = state.focus;
   const item = current();
   switch (action) {
-    case "up": return setFocus(r - 1, c);
-    case "down": return setFocus(r + 1, c);
-    case "left": return setFocus(r, c - 1);
-    case "right": return setFocus(r, c + 1);
-    case "pageleft": return setFocus(r, c - 5);
-    case "pageright": return setFocus(r, c + 5);
+    case "up": { const t = rowJump(state.rows, state.memory, r, -1); return setFocus(t.r, t.c); }
+    case "down": { const t = rowJump(state.rows, state.memory, r, 1); return setFocus(t.r, t.c); }
+    case "left": return setFocus(r, c - 1, { edge: "left" });
+    case "right": return setFocus(r, c + 1, { edge: "right" });
+    case "pageleft": return setFocus(r, c - 5, { edge: "left" });
+    case "pageright": return setFocus(r, c + 5, { edge: "right" });
     case "select": return launch(item);
     case "alt": { const alt = alternativeRunner(item); return alt && launch(item, alt.id); }
     case "options": return openMenu(gameMenu(item));
@@ -230,6 +246,20 @@ function handleEvent(event) {
     handleAction(event.direction);
   } else if (event.type === "library-changed") {
     loadLibrary();
+    return;
+  } else if (event.type === "hold") {
+    // Select+Start sostenidos en el juego: Orbital ya está al frente.
+    if (event.phase === "start") {
+      ui.sheet.close();
+      ui.launch.hide();
+      ui.hold.show(event);
+    } else {
+      ui.hold.hide();
+    }
+    return;
+  } else if (event.type === "confirm-stop") {
+    ui.hold.hide();
+    openMenu(stopMenu(event));
     return;
   } else if (event.type === "closed") {
     ui.launch.hide();

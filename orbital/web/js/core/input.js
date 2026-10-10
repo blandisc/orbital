@@ -13,7 +13,8 @@ export const KEYMAP = {
 // Índices del mapeo estándar de la Gamepad API (Legion Go, Xbox, 8BitDo...).
 export const PADMAP = {
   0: "select", 1: "back", 2: "alt", 3: "options", 4: "pageleft", 5: "pageright",
-  8: "menu", 9: "menu", 12: "up", 13: "down", 14: "left", 15: "right", 16: "home",
+  8: "menu", 9: "menu", 12: "up", 13: "down", 14: "left", 15: "right",
+  // 16 (Home/Guía) no: lo atiende el servidor para ir y volver entre Orbital y el juego.
 };
 
 export const REPEATABLE = new Set(["up", "down", "left", "right", "pageleft", "pageright"]);
@@ -50,6 +51,14 @@ export class Repeater {
     this.held = new Map();
   }
 
+  /**
+   * Ignora lo que ya esté presionado hasta que se suelte. Al volver a Orbital desde un
+   * juego con Select+Start aún sostenidos, no deben abrir el menú.
+   */
+  swallow(active) {
+    for (const action of active) this.held.set(action, Infinity);
+  }
+
   /** Devuelve las acciones a disparar en este frame. */
   update(active, now) {
     const fire = [];
@@ -83,9 +92,14 @@ export function createInput({ onAction, onModality }) {
   }, { passive: true });
 
   const repeater = new Repeater();
+  // Durante un momento tras recuperar el foco, lo que llegue presionado se ignora.
+  let swallowUntil = 0;
+  window.addEventListener("focus", () => { swallowUntil = performance.now() + 250; });
   const loop = (now) => {
     const pads = navigator.getGamepads ? [...navigator.getGamepads()] : [];
-    const fire = repeater.update(padActions(pads), now);
+    const active = padActions(pads);
+    if (now < swallowUntil) repeater.swallow([...active].filter((a) => !repeater.held.has(a)));
+    const fire = repeater.update(active, now);
     if (fire.length) onModality("gamepad");
     fire.forEach(onAction);
     requestAnimationFrame(loop);

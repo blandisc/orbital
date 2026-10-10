@@ -45,8 +45,19 @@ se controla con la voz a través de **Alexa**.
 | B | Esc | Volver al inicio / cerrar menú |
 | LB / RB | RePág / AvPág | Saltar de 5 en 5 |
 
-Con el ratón o la pantalla táctil: un toque selecciona y el segundo abre. Los indicadores del pie
-cambian solos según uses el mando o el teclado.
+**Atajos globales** (funcionan aunque el juego esté al frente; mandos XInput, Windows):
+
+| Mando | Acción |
+|---|---|
+| Home (Guía) | Del juego a Orbital y, desde Orbital, de vuelta al juego |
+| Legion L | Igual que Home. Dos toques seguidos dejan abierto Legion Space |
+| Select + Start (mantener 1,5 s) | Un anillo se llena y pregunta "¿Cerrar…?" (*Seguir jugando* va primero; B también vuelve) |
+
+> Home abre la Xbox Game Bar por defecto. Para que no se encimen: *Configuración → Juegos →
+> Xbox Game Bar* → desactiva "Abrir Xbox Game Bar con este botón del mando".
+
+Cada fila recuerda en qué juego te quedaste. Con el ratón o la pantalla táctil: un toque selecciona
+y el segundo abre. Los indicadores del pie cambian solos según uses el mando o el teclado.
 
 Al cerrar un emulador (o un juego de Steam en Windows, que se detecta por el registro de Steam),
 Orbital vuelve al frente, guarda el tiempo jugado y actualiza "Jugado recientemente". El historial
