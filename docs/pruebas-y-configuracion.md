@@ -6,6 +6,7 @@
 |---|---|---|
 | 1 | Home no abra la Xbox Game Bar | Configuración → Juegos → Xbox Game Bar → desactivar "Abrir Xbox Game Bar con este botón del mando" |
 | 2 | Cuenta de Stremio (Seguir viendo, biblioteca) | `C:\Users\ferna\orbital\.venv\Scripts\python -m orbital stremio login` |
+| 2b | Subtítulos en inglés por defecto | En Stremio: Configuración → Reproductor → idioma de subtítulos = English (el reproductor de Stremio los elige solo) |
 | 3 | Permiso de micrófono para dictar | La primera vez que uses "Dictar" en Buscar, acepta el permiso del micrófono |
 | 4 | Alexa | `orbital alexa setup` → instalar Tailscale → `tailscale funnel --bg 8711` → skill y Lambda (README, sección Alexa) → `orbital alexa check` |
 | 5 | (Opcional) Mover los emuladores fuera de Descargas | El Sensor de almacenamiento de Windows puede borrar Descargas; Orbital también busca en `C:\Emuladores` |
@@ -34,6 +35,8 @@
 - [ ] Dictar en Buscar (botón ☰ o la tecla Dictar).
 - [ ] Una serie abre sus episodios; LB/RB cambia de temporada.
 - [ ] En el reproductor de Stremio: A pausa, ←/→ adelanta/regresa, ↑/↓ volumen, Y pantalla completa, B vuelve.
+- [ ] Al elegir un episodio o película aparece "Elige la fuente" con la recomendada enfocada; arranca sola en 5 s o con A; ↑/↓ para otra.
+- [ ] La fuente elegida abre directo el reproductor de Stremio (sin su lista de fuentes).
 - [ ] Al cerrar Stremio, Orbital vuelve y "Seguir viendo" se actualiza (con la cuenta vinculada).
 
 ### Steam
