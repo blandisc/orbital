@@ -8,7 +8,7 @@ def no_steam_game(monkeypatch):
     # Que las pruebas no dependan de si Steam tiene un juego abierto en esta máquina.
     monkeypatch.setattr(ConsoleShell, "steam_running", staticmethod(lambda: False))
 
-ORBITAL, GAME, DESKTOP_APP, LEGION = 1, 2, 3, 4
+ORBITAL, GAME, DESKTOP_APP, LEGION, DESKTOP = 1, 2, 3, 4, 5
 
 
 class FakeWindows:
@@ -20,6 +20,7 @@ class FakeWindows:
             GAME: ("Eden | Mario Party Superstars", 20, "eden.exe"),
             DESKTOP_APP: ("Bloc de notas", 30, "notepad.exe"),
             LEGION: ("Legion Space", 40, "legionspace.exe"),
+            DESKTOP: ("Program Manager", 50, "explorer.exe"),
         }
         self.fg = GAME
         self.minimized = []
@@ -186,3 +187,22 @@ def test_remote_only_drives_stremio():
     shell.on_buttons(0, 0, 2.0, send=sent.append)
     shell.on_buttons(0, 0x1000, 2.1, send=sent.append)
     assert sent == [0x20]
+
+
+def test_home_on_desktop_opens_orbital_and_stays():
+    shell, win, _ = make(None)
+    win.fg = DESKTOP  # escritorio (también tras "Salir al escritorio")
+    shell.home()
+    assert win.fg == ORBITAL
+    shell.home()  # sin juego abierto: Orbital no "regresa" al escritorio
+    assert win.fg == ORBITAL
+
+
+def test_home_from_game_still_returns_after_passing_by_desktop():
+    shell, win, _ = make(MANAGED)
+    shell.home()  # juego -> Orbital
+    win.fg = DESKTOP  # el usuario se asoma al escritorio
+    shell.home()  # escritorio -> Orbital (no reemplaza al juego como destino)
+    assert win.fg == ORBITAL
+    shell.home()
+    assert win.fg == GAME

@@ -31,6 +31,10 @@ LEGION_SPACE = "legionspace.exe"
 # Apps sin soporte de mando: mientras están al frente, el mando se traduce a teclas.
 REMOTE_APPS = {"stremio-shell-ng.exe", "stremio.exe"}
 # Nunca se cierran con Select+Start aunque Steam tenga un juego abierto.
+# Partes de Windows (escritorio, barra de tareas, menú Inicio, teclado táctil, bloqueo): Home desde
+# ahí lleva a Orbital, pero Orbital nunca "regresa" a ellas como si fueran un juego.
+SHELL_EXES = {"explorer.exe", "searchhost.exe", "startmenuexperiencehost.exe", "shellexperiencehost.exe",
+              "textinputhost.exe", "lockapp.exe", "applicationframehost.exe"}
 NOT_GAMES = BROWSERS | {"steam.exe", "steamwebhelper.exe", "explorer.exe", "es-de.exe", LEGION_SPACE,
                         "claude.exe", "discord.exe", "python.exe", "pythonw.exe"}
 APP_NAMES = {"chrome": "Chrome", "msedge": "Edge", "stremio-shell-ng": "Stremio", "steamwebhelper": "Steam",
@@ -74,7 +78,8 @@ class ConsoleShell:
         return 0
 
     def remember(self, hwnd: int) -> None:
-        if hwnd and not self.is_orbital(hwnd):
+        """Recuerda a qué volver con Home: un juego o una app, nunca el escritorio ni Orbital."""
+        if hwnd and not self.is_orbital(hwnd) and self.win.exe_name(self.win.pid_of(hwnd)) not in SHELL_EXES:
             self.return_to = hwnd
 
     # --------------------------------------------------------------- acciones
