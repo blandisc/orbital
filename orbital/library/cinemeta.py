@@ -21,6 +21,7 @@ from .models import LibraryItem
 log = logging.getLogger(__name__)
 
 BASE = "https://v3-cinemeta.strem.io"
+MANIFEST = f"{BASE}/manifest.json"  # addon del catálogo, para el enlace al reproductor
 CACHE_SECONDS = 6 * 3600
 KIND_LABEL = {"movie": "Película", "series": "Serie"}
 

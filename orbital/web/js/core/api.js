@@ -28,6 +28,8 @@ export const api = {
   stremioSearch: (q) => request(`/api/stremio/search?q=${encodeURIComponent(q)}`),
   stremioEpisodes: (id) => request(`/api/stremio/episodes/${encodeURIComponent(id)}`),
   stremioPlay: (body) => post("/api/stremio/play", body),
+  stremioSources: (kind, id, video) =>
+    request(`/api/stremio/sources?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`),
   focusWindow: (id) => post("/api/windows/focus", { id }),
   /** Suscripción a eventos del servidor con reconexión automática. */
   events(onEvent) {

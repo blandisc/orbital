@@ -208,3 +208,22 @@ def test_voice_exact_title_plays_movie_or_opens_episodes(linked, monkeypatch):
     result = voice.handle_text("abre the office")
     assert result.speech == "Abriendo The Office. Elige el episodio."
     assert result.events == [{"type": "reload", "view": {"serie": "tt0386676"}}]
+
+
+def test_sources_and_play_chosen_source_opens_player(linked, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from orbital.library import streams
+    from orbital.server import create_app
+
+    raw = [{"name": "[RD+] Torrentio\n1080p", "title": "Show.S01E01.1080p.WEB\n👤 50 💾 1.2 GB ⚙️ X",
+            "url": "https://torrentio/resolve/realdebrid/SECRETKEY/abc"}]
+    monkeypatch.setattr(streams.StreamFinder, "addons",
+                        lambda self, key: [{"name": "Torrentio RD", "url": "https://torrentio/manifest.json", "types": ["series"]}])
+    monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, addon, kind, vid: raw)
+    with TestClient(create_app(linked.config, linked), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
+        data = c.get("/api/stremio/sources", params={"kind": "series", "id": "tt1", "video": "tt1:1:1"}).json()
+        assert data["sources"][0]["resolution"] == "1080p" and "SECRETKEY" not in str(data)  # nada de claves
+        assert c.post("/api/stremio/play", json={"kind": "series", "id": "tt1", "video_id": "tt1:1:1",
+                                                 "source": data["sources"][0]["id"], "title": "Show"}).json() == {"ok": True}
+    assert sent(linked).startswith("stremio:///player/")  # directo al reproductor, sin la lista de Stremio

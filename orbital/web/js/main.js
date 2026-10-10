@@ -17,6 +17,7 @@ import { createHints } from "./components/hints.js";
 import { createLaunchOverlay } from "./components/launch-overlay.js";
 import { createSearch } from "./components/search.js";
 import { createSheet } from "./components/sheet.js";
+import { createSources } from "./components/sources.js";
 import { createShelf } from "./components/shelf.js";
 import { createStatusBar } from "./components/status-bar.js";
 import { createToast } from "./components/toast.js";
@@ -32,6 +33,7 @@ const state = {
   canExit: false,
   launchLockedUntil: 0,
   memory: {}, // id de fila -> último juego enfocado en esa fila
+  stremioLinked: false, // con cuenta: Orbital elige la fuente (si no, la lista de Stremio)
   popId: null, // juego recién marcado como favorito (su estrella se anima)
 };
 
@@ -56,6 +58,11 @@ const ui = {
     onClose: () => { sound.play("back"); renderHints(); },
   }),
   episodes: createEpisodes({
+    onPlay: (play) => chooseSource(play),
+    onMove: () => sound.play("move"),
+    onClose: () => { sound.play("back"); renderHints(); },
+  }),
+  sources: createSources({
     onPlay: (play) => playStremio(play),
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); },
@@ -65,7 +72,7 @@ const ui = {
 };
 
 document.getElementById("app").replaceWith(
-  ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.episodes.el, ui.sheet.el, ui.launch.el, ui.toast.el,
+  ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.episodes.el, ui.sources.el, ui.sheet.el, ui.launch.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -73,6 +80,10 @@ const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LB/RB
 
 function renderHints() {
   const g = glyphs();
+  if (!ui.sheet.isOpen && ui.sources.isOpen) {
+    return ui.hints.render([{ glyph: g.select, label: "Ver" }, { glyph: g.rows, label: "Otra fuente" },
+      { glyph: g.back, label: "Volver", end: true }]);
+  }
   if (!ui.sheet.isOpen && ui.episodes.isOpen) {
     return ui.hints.render([{ glyph: g.select, label: "Ver" }, { glyph: g.rows, label: "Episodio" },
       { glyph: g.page, label: "Temporada" }, { glyph: g.back, label: "Volver", end: true }]);
@@ -166,17 +177,26 @@ function openWatchable(item) {
     ui.episodes.open(item);
     return renderHints();
   }
-  return playStremio({ kind: "movie", id: item.meta_id || item.id.split(":").pop(), title: item.title, item });
+  return chooseSource({ kind: "movie", id: item.meta_id || item.id.split(":").pop(), title: item.title, item });
 }
 
-async function playStremio({ kind, id, video_id: videoId = null, title, item }) {
+/** Elegir fuente en Orbital (con tu cuenta de Stremio vinculada); sin cuenta, Stremio decide. */
+function chooseSource(play) {
+  if (!state.stremioLinked) return playStremio(play);
+  sound.play("open");
+  ui.sources.open({ ...play, video_id: play.video_id || play.id });
+  return renderHints();
+}
+
+async function playStremio({ kind, id, video_id: videoId = null, title, item, source = null }) {
   if (Date.now() < state.launchLockedUntil) return;
   state.launchLockedUntil = Date.now() + LAUNCH_COOLDOWN_MS;
   sound.play("open");
   rumble("launch");
   ui.launch.show({ ...item, title }, "Stremio");
   try {
-    await api.stremioPlay({ kind, id, video_id: videoId, title });
+    await api.stremioPlay({ kind, id, video_id: videoId, title, source });
+    if (ui.sources.isOpen) ui.sources.close();
     pollStatus();
   } catch (err) {
     state.launchLockedUntil = 0;
@@ -194,6 +214,11 @@ async function launch(item, runner = null) {
     return renderHints();
   }
   if (isSeries(item)) return openWatchable(item);
+  // Seguir viendo: el mismo episodio, eligiendo la fuente en Orbital.
+  const watch = item.extra;
+  if (item.source === "stremio" && watch?.video_id && ["movie", "series"].includes(watch.kind)) {
+    return chooseSource({ kind: watch.kind, id: watch.meta_id, video_id: watch.video_id, title: item.title, item });
+  }
   if (!runner && item.id === state.running?.id) { // sigue abierto: se continúa, no se abre otra copia
     sound.play("select");
     return api.resume();
@@ -292,7 +317,7 @@ function handleAction(action) {
     return;
   }
   // Vistas a pantalla completa: los episodios pueden abrirse encima de la búsqueda.
-  if (ui.episodes.handle(action) || ui.search.handle(action)) return renderHints();
+  if (ui.sources.handle(action) || ui.episodes.handle(action) || ui.search.handle(action)) return renderHints();
   const { r, c } = state.focus;
   const item = current();
   switch (action) {
@@ -352,7 +377,10 @@ setInterval(pollSystem, 30_000);
 pollStatus();
 pollSystem();
 loadLibrary();
-api.ui().then(({ can_exit: canExit }) => { state.canExit = canExit; }).catch(() => {});
+api.ui().then(({ can_exit: canExit, stremio_linked: linked }) => {
+  state.canExit = canExit;
+  state.stremioLinked = !!linked;
+}).catch(() => {});
 
 // Enlaces directos: ?buscar=dune abre la búsqueda con ese texto; ?serie=tt0386676 sus episodios.
 // (Para la voz: "busca Dune" puede llegar directo aquí.)

@@ -22,7 +22,7 @@ from pydantic import BaseModel
 from . import __version__, system
 from .catalog import Catalog
 from .config import Config
-from .library import cinemeta
+from .library import cinemeta, stremio_api
 from .shell import ConsoleShell
 from .voice import VoiceController
 
@@ -191,7 +191,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
 
     @app.get("/api/ui")
     def ui_info() -> dict:
-        return {"can_exit": kiosk is not None}
+        return {"can_exit": kiosk is not None, "stremio_linked": catalog.stremio_linked}
 
     @app.post("/api/ui/exit")
     async def ui_exit() -> dict:
@@ -227,13 +227,33 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         return {"id": meta_id, "title": meta.get("name") or "", "seasons": cinemeta.seasons(meta),
                 "background": meta.get("background") or None, **cinemeta.describe_meta(meta)}
 
+    @app.get("/api/stremio/sources")
+    def stremio_sources(kind: str, id: str, video: str | None = None) -> dict:
+        """Fuentes ordenadas por tus preferencias; la primera es la recomendada. Sin URLs."""
+        if kind not in ("movie", "series"):
+            raise HTTPException(400, "Tipo inválido")
+        try:
+            found = catalog.stream_sources(kind, video or id)
+        except stremio_api.StremioError as exc:
+            raise HTTPException(409, str(exc))
+        prefs = catalog.stream_prefs
+        return {"sources": [s.public() for s in found], "audio": prefs.audio, "quality": prefs.quality}
+
     @app.post("/api/stremio/play")
     def stremio_play(body: dict) -> dict:
         kind, meta_id = body.get("kind"), str(body.get("id") or "")
         if kind not in ("movie", "series") or not meta_id:
             raise HTTPException(400, "Falta qué reproducir")
-        uri = catalog.play_stremio(kind, meta_id, body.get("video_id"), str(body.get("title") or "Stremio"))
-        return {"ok": True, "uri": uri}
+        title = str(body.get("title") or "Stremio")
+        video_id = body.get("video_id") or (meta_id if kind == "movie" else None)
+        if body.get("source") is not None and video_id:
+            try:
+                catalog.play_source(kind, meta_id, video_id, int(body["source"]), title)
+            except ValueError as exc:
+                raise HTTPException(409, str(exc))
+            return {"ok": True}
+        catalog.play_stremio(kind, meta_id, body.get("video_id"), title)
+        return {"ok": True}
 
     @app.get("/api/windows")
     def open_windows() -> dict:

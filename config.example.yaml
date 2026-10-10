@@ -17,6 +17,8 @@ steam:
 
 stremio:
   enabled: true        # se detecta solo (Stremio 4 o 5)
+  audio: en            # Orbital elige la fuente con este idioma de audio (en, es…)
+  quality: 1080p       # 1080p o 4K (en una TV 4K)
 
 # ES-DE: Orbital lee de aquí tu carpeta de ROMs, los nombres de los juegos,
 # las portadas que ya descargaste con el scraper y tus favoritos.

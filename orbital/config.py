@@ -78,6 +78,9 @@ class DetectConfig:
 class StremioConfig:
     enabled: bool = True
     executable: str | None = None  # None = autodetectar
+    # Para elegir la fuente por ti: idioma del audio ("en", "es"…) y resolución ("1080p" o "4K").
+    audio: str = "en"
+    quality: str = "1080p"
 
 
 @dataclass

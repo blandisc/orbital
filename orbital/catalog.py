@@ -15,7 +15,7 @@ from . import system
 from .config import Config
 from .launcher import Launcher
 from .credentials import Credentials
-from .library import cinemeta, detect, emulators, esde, steam, stremio, stremio_api
+from .library import cinemeta, detect, emulators, esde, steam, stremio, stremio_api, streams
 from .library.models import LibraryItem
 from .state import State
 
@@ -75,6 +75,8 @@ def stremio_item(w: stremio_api.Watchable) -> LibraryItem:
         uri=w.deep_link,
         progress=w.progress,
         last_watched=w.last_watched,
+        # Para elegir la fuente en Orbital (Seguir viendo -> el mismo episodio).
+        extra={"kind": w.type, "meta_id": w.id, "video_id": w.video_id or (w.id if w.type == "movie" else None)},
     )
 
 
@@ -99,6 +101,7 @@ class Catalog:
         self._stremio_fetched = 0.0
         self._stremio_busy = threading.Lock()
         self.cinemeta = cinemeta_client or cinemeta.Cinemeta()
+        self.streams = streams.StreamFinder(self.stremio_client)
         self._cinemeta_items: list[LibraryItem] = []
         self.listeners: list[Listener] = []
         self._items: dict[str, LibraryItem] = {}
@@ -402,6 +405,25 @@ class Catalog:
     def play_stremio(self, kind: str, meta_id: str, video_id: str | None, title: str) -> str:
         """Reproduce directo (autoPlay) una película o un episodio elegido en Orbital."""
         uri = cinemeta.play_link(kind, meta_id, video_id)
+        self.open_stremio(uri, title)
+        return uri
+
+    @property
+    def stream_prefs(self) -> streams.Preferences:
+        return streams.Preferences(audio=self.config.stremio.audio, quality=self.config.stremio.quality)
+
+    def stream_sources(self, kind: str, video_id: str) -> list[streams.Source]:
+        """Fuentes de tus addons, ordenadas por tus preferencias (la primera es la recomendada)."""
+        if not self.stremio_linked:
+            raise stremio_api.StremioError("Vincula tu cuenta de Stremio: orbital stremio login")
+        return self.streams.find(self.credentials.get(STREMIO_KEY), kind, video_id, self.stream_prefs)
+
+    def play_source(self, kind: str, meta_id: str, video_id: str, index: int, title: str) -> str:
+        """Abre el reproductor de Stremio directo con la fuente elegida (sin su lista de fuentes)."""
+        source = self.streams.get(kind, video_id, self.stream_prefs, index)
+        if source is None:
+            raise ValueError("Esa fuente ya no está disponible; vuelve a cargar las fuentes")
+        uri = streams.player_link(source, cinemeta.MANIFEST, kind, meta_id, video_id)
         self.open_stremio(uri, title)
         return uri
 
