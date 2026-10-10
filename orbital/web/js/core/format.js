@@ -26,7 +26,7 @@ export function shortAgo(ts, now = Date.now()) {
   return new Date(ts * 1000).toLocaleDateString("es", { day: "numeric", month: "short" });
 }
 
-export const percent = (fraction) => (fraction > 0 ? `${Math.round(fraction * 100)} %` : null);
+export const percent = (fraction) => (fraction >= .005 ? `${Math.round(fraction * 100)} %` : null); // "0 %" no dice nada
 
 export function duration(seconds) {
   if (!seconds || seconds < 60) return null;

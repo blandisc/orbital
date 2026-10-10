@@ -21,6 +21,7 @@ export function createLaunchOverlay({ timeout = 8000 } = {}) {
   function show(item, detail, { from = null } = {}) {
     backdrop.style.backgroundImage = cssUrl(item.hero || item.image);
     cover.style.backgroundImage = cssUrl(item.image);
+    cover.hidden = !item.image; // sin portada, una tarjeta vacía se veía rota
     cover.style.setProperty("--ratio", String(from?.ratio ?? .667));
     title.textContent = item.title;
     subtitle.textContent = detail;

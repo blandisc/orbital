@@ -27,6 +27,7 @@ test("verbo para multimedia y porcentaje", async () => {
   assert.equal(lastPlayed(ago(2 * 3600), NOW, "Visto"), "Visto hace 2 h");
   assert.equal(percent(1 / 3), "33 %");
   assert.equal(percent(0), null);
+  assert.equal(percent(.001), null); // abrir y cerrar no es "0 % visto"
 });
 
 test("shortAgo para la etiqueta de Jugado recientemente", () => {

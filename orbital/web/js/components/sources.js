@@ -11,13 +11,19 @@ const AUTOPLAY_MS = 5000;
  */
 export function createSources({ onPlay, onMove, onClose }) {
   const backdrop = h("div", { class: "sources__backdrop" });
+  const poster = h("img", { class: "sources__poster", alt: "", hidden: true });
+  poster.addEventListener("load", () => { poster.hidden = false; });
+  poster.addEventListener("error", () => { poster.hidden = true; });
   const heading = h("div", { class: "sources__heading" });
   const title = h("h1", { class: "sources__title" });
   const subtitle = h("div", { class: "sources__subtitle" });
   const list = h("div", { class: "sources__list", role: "list" });
   const status = h("div", { class: "sources__status" });
+  // Izquierda: qué vas a ver. Derecha: las fuentes, la recomendada arriba.
   const el = h("section", { class: "sources", hidden: true, "aria-label": "Fuentes" },
-    backdrop, h("div", { class: "sources__head" }, heading, title, subtitle), status, list);
+    backdrop,
+    h("div", { class: "sources__head" }, poster, heading, title, subtitle),
+    h("div", { class: "sources__body" }, status, list));
 
   let request = null; // { kind, id, video_id, title, item }
   let found = [];
@@ -28,13 +34,10 @@ export function createSources({ onPlay, onMove, onClose }) {
 
   function chips(src) {
     return [
-      src.resolution && h("span", { class: "chip chip--strong" }, src.resolution),
       ...src.hdr.map((t) => h("span", { class: "chip" }, t)),
       h("span", { class: "chip" }, src.languages.join(" + ") || "—"),
-      bytes(src.size) && h("span", { class: "chip" }, bytes(src.size)),
-      src.cached && h("span", { class: "chip chip--good" }, "Lista al instante"),
+      src.cached && h("span", { class: "chip chip--good" }, "Al instante"),
       !src.cached && src.debrid && h("span", { class: "chip chip--warn" }, "Hay que descargarla"),
-      src.seeders > 0 && h("span", { class: "chip chip--muted" }, `${src.seeders} semillas`),
       ...src.tags.filter((t) => t !== "Tráiler").map((t) => h("span", { class: "chip chip--muted" }, t)),
     ].filter(Boolean);
   }
@@ -44,10 +47,14 @@ export function createSources({ onPlay, onMove, onClose }) {
       class: ["source", i === index && "source--focused", i === 0 && "source--recommended"], type: "button", role: "listitem",
       onClick: () => (i === index ? play() : setIndex(i)),
     },
-    i === 0 && h("span", { class: "source__badge" }, "Recomendada"),
-    h("span", { class: "source__release" }, src.release || src.addon),
-    h("span", { class: "source__chips" }, chips(src)),
-    h("span", { class: "source__meta" }, [src.addon, src.site].filter(Boolean).join(" · ")),
+    h("span", { class: ["source__res", src.resolution === "4K" && "source__res--4k"] }, src.resolution || "SD"),
+    h("span", { class: "source__main" },
+      h("span", { class: "source__release" }, src.release || src.addon),
+      h("span", { class: "source__chips" }, chips(src))),
+    h("span", { class: "source__side" },
+      i === 0 ? h("span", { class: "source__badge" }, "Recomendada") : null,
+      h("span", { class: "source__size" }, bytes(src.size) || ""),
+      h("span", { class: "source__meta" }, [src.addon, src.seeders > 0 && `${src.seeders} semillas`].filter(Boolean).join(" · "))),
     i === 0 && h("span", { class: "source__autoplay", "aria-hidden": "true" }))));
   }
 
@@ -91,6 +98,9 @@ export function createSources({ onPlay, onMove, onClose }) {
     found = [];
     index = 0;
     backdrop.style.backgroundImage = cssUrl(req.item?.hero || req.item?.image);
+    poster.hidden = true;
+    if (req.item?.image) poster.src = req.item.image;
+    else poster.removeAttribute("src");
     heading.textContent = "Elige la fuente";
     title.textContent = req.title;
     subtitle.textContent = "";
@@ -102,11 +112,22 @@ export function createSources({ onPlay, onMove, onClose }) {
       const data = await api.stremioSources(req.kind, req.id, req.video_id);
       if (mine !== token) return;
       found = data.sources;
-      subtitle.textContent = `Ordenadas para ti: audio en ${data.audio === "en" ? "inglés" : data.audio} · ${data.quality}`;
+      const meta = data.meta || {};
+      if (!title.textContent && meta.title) {
+        const [season, episode] = (req.video_id || "").split(":").slice(-2).map(Number);
+        const isEpisode = req.kind === "series" && req.video_id !== req.id && episode >= 0;
+        title.textContent = isEpisode ? `${meta.title} · T${season} E${episode}` : meta.title;
+      }
+      if (!req.item?.image && meta.poster) poster.src = meta.poster;
+      if (!req.item?.hero && meta.background) backdrop.style.backgroundImage = cssUrl(meta.background);
+      const facts = [meta.year, meta.runtime].filter(Boolean).join(" · ");
+      const audio = { en: "inglés", es: "español" }[data.audio] || data.audio;
+      subtitle.textContent = `${facts ? `${facts}
+` : ""}Ordenadas para ti: audio en ${audio} · ${data.quality}`;
       status.hidden = !!found.length;
       status.textContent = found.length ? "" : "Tus addons no encontraron fuentes para esto.";
       render();
-      startAutoplay();
+      if (req.autoplay !== false) startAutoplay();
     } catch (err) {
       if (mine === token) status.textContent = `No pude buscar fuentes: ${err.message}`;
     }

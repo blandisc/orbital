@@ -6,6 +6,7 @@ import time
 
 from orbital import launcher as launcher_mod
 from orbital import player
+from orbital.catalog import bring_game_to_front  # la real (conftest la apaga para el resto)
 from orbital.launcher import Launcher, Running, redact
 from orbital.library import streams
 
@@ -132,3 +133,40 @@ def test_player_warns_when_audio_is_another_language():
     assert not player.wrong_audio([{"type": "audio", "lang": "cze"}, {"type": "audio", "lang": "eng"}], "en")
     assert not player.wrong_audio([{"type": "audio"}], "en")  # sin etiqueta no se sabe
     assert not player.wrong_audio([{"type": "audio", "lang": "und"}], "en")
+
+
+class FocusWindows:
+    def __init__(self, fg_title="Orbital - Microsoft Edge", fg_exe="msedge.exe"):
+        self.fg = 1
+        self.windows = {1: (fg_title, 10, fg_exe), 2: ("xemu", 20, "xemu.exe")}
+        self.focused = []
+
+    def foreground(self): return self.fg
+    def title(self, h): return self.windows[h][0]
+    def pid_of(self, h): return self.windows[h][1]
+    def exe_name(self, pid): return next(w[2] for w in self.windows.values() if w[1] == pid)
+    def process_tree(self, pid): return {pid}
+    def main_window(self, pids): return next((h for h, w in self.windows.items() if w[1] in pids), 0)
+
+    def focus(self, h):
+        self.focused.append(h)
+        self.fg = h
+        return True
+
+
+class StatusLauncher:
+    def __init__(self, status): self._status = status
+    def status(self): return self._status
+
+
+def test_game_opened_behind_orbital_is_brought_forward():
+    win = FocusWindows()
+    assert bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", timeout=1, win=win)
+    assert win.focused == [2]
+
+
+def test_never_steals_focus_from_another_app():
+    win = FocusWindows(fg_title="Discord", fg_exe="discord.exe")
+    assert not bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", timeout=1, win=win)
+    assert win.focused == []
+    assert not bring_game_to_front(StatusLauncher(None), "x", timeout=1, win=FocusWindows())  # ya se cerró

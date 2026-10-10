@@ -34,6 +34,17 @@
 }
 .status-bar__tab:hover { color: var(--color-text); }
 .status-bar__tab--active { background: var(--color-primary); color: var(--color-on-primary); }
+/* Buscar: atajo global junto a la marca (botón Vista ⧉). Discreto hasta que lo señalas. */
+.status-bar__search {
+  display: inline-flex; align-items: center; gap: var(--space-2); margin-left: calc(-1 * var(--space-3));
+  padding: .4rem .5rem .4rem .85rem; border-radius: var(--radius-pill);
+  background: var(--color-fill); color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium);
+  transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
+}
+.status-bar__search svg { width: 1rem; height: 1rem; }
+.status-bar__search:hover { background: var(--color-fill-hover); color: var(--color-text); }
+.status-bar__search-glyph:empty { display: none; }
+@media (max-width: 1100px) { .status-bar__search > span:not(.status-bar__search-glyph) { display: none; } }
 .status-bar__right { margin-left: auto; display: flex; align-items: center; gap: var(--space-6); color: var(--color-text-muted); }
 .status-bar__clock { color: var(--color-text); font-family: var(--font-sans); font-size: var(--text-xl); font-weight: var(--weight-medium); letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums; }
 

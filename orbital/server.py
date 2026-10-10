@@ -200,7 +200,8 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
 
     @app.get("/api/ui")
     def ui_info() -> dict:
-        return {"can_exit": kiosk is not None, "stremio_linked": catalog.stremio_linked}
+        return {"can_exit": kiosk is not None, "stremio_linked": catalog.stremio_linked,
+                "player": "orbital" if catalog.native_player else "stremio"}
 
     @app.post("/api/ui/exit")
     async def ui_exit() -> dict:
@@ -246,7 +247,13 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         except stremio_api.StremioError as exc:
             raise HTTPException(409, str(exc))
         prefs = catalog.stream_prefs
-        return {"sources": [s.public() for s in found], "audio": prefs.audio, "quality": prefs.quality}
+        try:  # título, póster y fondo para la pantalla (de caché casi siempre)
+            meta = catalog.cinemeta.meta(kind, id)
+            info = {"title": meta.get("name") or "", "poster": meta.get("poster"), "background": meta.get("background"),
+                    **cinemeta.describe_meta(meta)}
+        except cinemeta.CinemetaError:
+            info = {}
+        return {"sources": [s.public() for s in found], "audio": prefs.audio, "quality": prefs.quality, "meta": info}
 
     @app.post("/api/stremio/play")
     def stremio_play(body: dict) -> dict:
@@ -288,7 +295,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     def ui_reload(body: dict | None = None) -> dict:
         """Recarga la interfaz abierta (tras actualizar Orbital no hace falta reiniciarlo).
         `view`: abrir directo una vista — {"buscar": "dune"} o {"serie": "tt0386676"}."""
-        view = {k: str(v) for k, v in (body or {}).get("view", {}).items() if k in ("buscar", "serie", "seccion")}
+        view = {k: str(v) for k, v in (body or {}).get("view", {}).items() if k in ("buscar", "serie", "seccion", "fuentes")}
         bus.publish_threadsafe({"type": "reload", "view": view})
         return {"ok": True}
 

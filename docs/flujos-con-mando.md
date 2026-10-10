@@ -10,7 +10,10 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 | Flujo | Cómo | Estado |
 |---|---|---|
 | Encender la Legion Go y llegar a Orbital | Acceso directo de inicio (`pythonw -m orbital`) | ✅ |
-| Moverse entre juegos y filas | D-pad / stick; LB/RB saltan de 5 en 5 | ✅ |
+| Moverse entre juegos y filas | D-pad / stick; LT/RT saltan de 5 en 5 | ✅ |
+| Cambiar de sección (Inicio, Juegos, Películas y series, Apps) | LB / RB | ✅ |
+| Buscar juegos, películas y series desde cualquier lugar | Vista (⧉) o la píldora "Buscar" de arriba; tus juegos salen primero, al instante | ✅ |
+| Películas y series | Abre en "Seguir viendo"; los catálogos debajo; Buscar es el atajo | ✅ |
 | Volver al inicio | B | ✅ |
 | Cada fila recuerda su último juego | automático | ✅ |
 | Llegar al final de una fila | la tarjeta rebota y el mando vibra | ✅ |
@@ -29,6 +32,26 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 | Cerrar desde Orbital | ☰ → Cerrar… o Y → Cerrar (pide confirmación) | ✅ |
 | El juego se cierra solo | Orbital vuelve al frente con el tiempo jugado | ✅ |
 | Juego de Steam | A lo abre; Select + Start lo cierra si está al frente | ⚠️ Steam puede mostrar sus propios avisos (sincronización en la nube, actualizaciones); se manejan con el mando en Steam, no en Orbital |
+
+## Entrar y salir de un juego: todos los casos
+
+Lo que Orbital hace en cada situación. La regla: **Orbital solo se pone al frente cuando el juego
+de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
+
+| Situación | Qué pasa | Estado |
+|---|---|---|
+| Abres un juego y su ventana aparece detrás de Orbital (Windows lo hace a veces) | Orbital se la pasa al frente en cuanto existe, solo si Orbital sigue al frente | ✅ (nuevo) |
+| El emulador se relanza a sí mismo al arrancar (xemu) | Orbital sigue al proceso nuevo; no sale encima del juego | ✅ (nuevo; antes salía a los 2 s) |
+| Un lanzador abre el juego y se cierra (`launch-eden.cmd`, lanzadores propios) | Orbital sigue al juego, no al lanzador | ✅ (nuevo) |
+| El juego se cierra normal (menú del juego, Select+Start, "cierra el juego") | Orbital al frente, con el tiempo jugado y la tarjeta enfocada | ✅ |
+| El juego truena | Igual que cerrarse: Orbital al frente con "De vuelta de…" | ✅ |
+| Home en el juego | Orbital al frente; el emulador se congela (un video se pausa) | ✅ |
+| Home otra vez, Legion L o A en "Continuar" | De vuelta al juego, descongelado | ✅ |
+| Vuelves al juego por tu cuenta (Alt+Tab, toque) | Se descongela solo | ✅ |
+| Orbital se cierra de golpe con un juego congelado | Al volver a abrir, lo descongela | ✅ |
+| Select+Start con un juego que siguió en otro proceso | Cierra ese proceso, no el lanzador que ya no existe | ✅ (nuevo) |
+| Abres desde ES-DE o Steam (no desde Orbital) | Home lleva a Orbital y regresa; Select+Start lo cierra si está al frente | ✅ |
+| Un aviso de Windows o de Steam sale encima | Orbital no compite por el foco; Home sigue funcionando | ⚠️ el aviso se maneja con el mando en su app |
 
 ## Multimedia y apps
 

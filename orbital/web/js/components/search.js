@@ -4,7 +4,8 @@ import { ICONS } from "../core/icons.js";
 import { Card } from "./card.js";
 
 /**
- * Buscar películas y series con el mando, sin sufrir con títulos largos:
+ * Buscar juegos, películas y series con el mando, sin sufrir con títulos largos:
+ *   · tus juegos y apps aparecen al instante (se buscan aquí, en tu biblioteca);
  *   · resultados vivos desde la 2ª letra (Cinemeta tolera errores: "ofice" -> The Office);
  *   · teclado alfabético grande (no QWERTY): A escribe, X borra, Y espacio, ↑ a los resultados;
  *   · dictado: decirlo en voz alta (reconocimiento de voz de Edge, español de México).
@@ -19,11 +20,11 @@ const ROWS = [
 const MIN_CHARS = 2;
 const DEBOUNCE_MS = 260;
 
-export function createSearch({ onOpen, onMove, onClose }) {
+export function createSearch({ onOpen, onMove, onClose, localSearch = () => [] }) {
   const field = h("div", { class: "search__field" });
   const caret = h("span", { class: "search__caret", "aria-hidden": "true" });
   const query = h("span", { class: "search__query" });
-  const placeholder = h("span", { class: "search__placeholder" }, "Película o serie");
+  const placeholder = h("span", { class: "search__placeholder" }, "Juego, película o serie");
   mount(field, svg(ICONS.search), query, caret, placeholder);
   const hint = h("div", { class: "search__hint" });
   const results = h("div", { class: "search__results", role: "list" });
@@ -64,35 +65,46 @@ export function createSearch({ onOpen, onMove, onClose }) {
     hint.textContent = message;
   }
 
+  function showResults(list) {
+    items = list;
+    mount(results, items.map((item, i) => Card(item, {
+      caption: true,
+      onPress: () => {
+        zone = "results";
+        resultIndex = i;
+        open();
+      },
+    })));
+    if (zone === "results") resultIndex = Math.min(resultIndex, Math.max(0, items.length - 1));
+    if (!items.length && zone === "results") zone = "keys";
+    render();
+  }
+
+  const count = (n) => `${n} resultado${n === 1 ? "" : "s"} · ↑ para elegir`;
+
   function schedule() {
     clearTimeout(timer);
     const q = text.trim();
+    token++;
     if (q.length < MIN_CHARS) {
-      items = [];
-      mount(results);
+      showResults([]);
       setHint(q ? "Sigue escribiendo…" : "Escribe 2 o 3 letras: los resultados aparecen solos.");
       return;
     }
-    setHint("Buscando…");
+    // Tus juegos y apps al instante; las películas y series llegan después, detrás de ellos.
+    const local = localSearch(q);
+    showResults(local);
+    setHint(local.length ? `${count(local.length)} · buscando películas y series…` : "Buscando…");
     timer = setTimeout(async () => {
       const mine = ++token;
       try {
         const data = await api.stremioSearch(q);
         if (mine !== token) return;
-        items = data.results;
-        mount(results, items.map((item, i) => Card(item, {
-          caption: true,
-          onPress: () => {
-            zone = "results";
-            resultIndex = i;
-            open();
-          },
-        })));
-        setHint(items.length ? `${items.length} resultados · ↑ para elegir` : `Sin resultados para «${q}»`);
-        if (zone === "results") resultIndex = Math.min(resultIndex, Math.max(0, items.length - 1));
-        render();
+        showResults([...local, ...data.results]);
+        setHint(items.length ? count(items.length) : `Sin resultados para «${q}»`);
       } catch (err) {
-        if (mine === token) setHint(`No pude buscar: ${err.message}`);
+        if (mine !== token) return;
+        setHint(local.length ? `${count(local.length)} · no pude buscar películas: ${err.message}` : `No pude buscar: ${err.message}`);
       }
     }, DEBOUNCE_MS);
   }
@@ -154,6 +166,7 @@ export function createSearch({ onOpen, onMove, onClose }) {
 
   function handle(action) {
     if (el.hidden || el.classList.contains("search--leaving")) return false;
+    if (action === "search") { close(); return true; } // el mismo atajo la cierra
     if (action === "back") { // B: de resultados al teclado; en el teclado borra; vacío, cierra
       if (zone === "results") zone = "keys";
       else if (text) press("delete");
@@ -210,6 +223,11 @@ export function createSearch({ onOpen, onMove, onClose }) {
     { glyph: g.back, label: "Volver", end: true },
   ];
 
-  return { el, open: show, close, handle, hints, get isOpen() { return !el.hidden; } };
+  /** La biblioteca cambió (o terminó de cargar después de abrir la búsqueda): rehace los resultados. */
+  function refresh() {
+    if (!el.hidden && text.trim().length >= MIN_CHARS) schedule();
+  }
+
+  return { el, open: show, close, handle, hints, refresh, get isOpen() { return !el.hidden; } };
 }
 

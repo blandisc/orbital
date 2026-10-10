@@ -82,6 +82,36 @@ def bring_app_to_front(exe: str, timeout: float = 10.0, fullscreen: bool = False
     return False
 
 
+ORBITAL_BROWSERS = {"msedge.exe", "chrome.exe", "chromium.exe"}
+
+
+def bring_game_to_front(launcher: Launcher, item_id: str, timeout: float = 30.0, win=None) -> bool:
+    """Windows no deja que una ventana nueva le quite el foco a otra app: el juego podía abrir
+    DETRÁS de Orbital y parecía que "no pasó nada". Cuando aparece su ventana y Orbital sigue al
+    frente, se la pasa al juego. Si ya estás en otra cosa, no se pelea por el foco."""
+    if win is None:
+        if sys.platform != "win32":
+            return False
+        from . import windows as win
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        status = launcher.status()
+        if not status or status.get("id") != item_id:
+            return False  # se cerró o se abrió otra cosa
+        hwnd = win.main_window(win.process_tree(status["pid"])) if status.get("pid") else 0
+        if hwnd:
+            fg = win.foreground()
+            if fg == hwnd:
+                return True
+            orbital_in_front = "Orbital" in win.title(fg) and win.exe_name(win.pid_of(fg)) in ORBITAL_BROWSERS
+            if not orbital_in_front:
+                return False
+            if win.focus(hwnd):
+                return True
+        time.sleep(.5)
+    return False
+
+
 def stremio_item(w: stremio_api.Watchable) -> LibraryItem:
     season, episode = w.episode
     if episode is not None:
@@ -420,9 +450,11 @@ class Catalog:
         if runner:
             proc = self.launcher.run(runner.argv, cwd=runner.cwd)
             self.launcher.track(item.id, item.title, proc, runner=runner.name)
+            self._to_front(item.id)
         elif item.argv:
             proc = self.launcher.run(item.argv, cwd=item.cwd)
             self.launcher.track(item.id, item.title, proc)
+            self._to_front(item.id)
         elif item.uri:
             self.launcher.open_uri(item.uri)
             self.launcher.track(item.id, item.title, None, steam_appid=item.steam_appid)
@@ -430,6 +462,11 @@ class Catalog:
             raise ValueError(f"{item.title} no tiene forma de lanzarse")
         self.state.record_launch(item.id)
         return item
+
+    def _to_front(self, item_id: str) -> None:
+        if sys.platform == "win32":
+            threading.Thread(target=bring_game_to_front, args=(self.launcher, item_id), daemon=True,
+                             name="to-front").start()
 
     def open_stremio(self, uri: str | None, title: str) -> None:
         """Abre Stremio (opcionalmente en un enlace) y lo vigila por su ejecutable: si ya estaba
@@ -493,6 +530,7 @@ class Catalog:
             start=start, audio=self.config.stremio.audio, subtitles=subs,
             fallback_subs=(lambda: self.streams.subtitles(auth, kind, video_id, subs)) if subs else None)
         self.launcher.track("media:player", title, process, runner="Reproductor")
+        self._to_front("media:player")
 
     @property
     def native_player(self) -> bool:

@@ -87,9 +87,24 @@ test("secciones: cada fila en su lugar; Inicio vacío cae en Juegos; secciones v
   const ids = (sec) => sectionRows(rows, sec).map((r) => r.id);
   assert.deepEqual(ids("home"), ["recent", "continue"]);
   assert.deepEqual(ids("games"), ["steam", "geforcenow", "emulators:switch"]);
-  assert.deepEqual(ids("media"), ["media", "continue", "movies", "series"]); // Buscar primero
+  assert.deepEqual(ids("media"), ["continue", "movies", "series", "media"]); // lo tuyo primero; Buscar es un atajo
   assert.deepEqual(ids("apps"), ["apps"]);
   const fresh = rows.filter((r) => !["recent", "continue"].includes(r.id));
   assert.deepEqual(sectionRows(fresh, "home").map((r) => r.id), ["steam", "geforcenow", "emulators:switch"]);
   assert.deepEqual(visibleSections([{ id: "steam" }]).map((s) => s.id), ["home", "games"]);
+});
+
+test("buscar en la biblioteca: juegos y apps, sin acentos, todas las palabras, primero lo que empieza igual", async () => {
+  const { searchLibrary } = await import("../../orbital/web/js/core/library.js");
+  const rows = [
+    { id: "steam", items: [{ id: "s1", title: "Hollow Knight", source: "steam" }, { id: "s2", title: "The Legend of Zelda", source: "switch" }] },
+    { id: "recent", items: [{ id: "s2", title: "The Legend of Zelda", source: "switch" }] },
+    { id: "media", items: [{ id: "media:search", title: "Buscar", source: "search" }] },
+    { id: "movies", items: [{ id: "c1", title: "Zelda la película", source: "cinemeta" }] },
+    { id: "emulators:gba", items: [{ id: "g1", title: "Zelda: The Minish Cap", source: "gba" }, { id: "g2", title: "Pokémon Esmeralda", source: "gba" }] },
+  ];
+  assert.deepEqual(searchLibrary(rows, "zelda").map((i) => i.id), ["g1", "s2"]); // sin duplicados ni Cinemeta
+  assert.deepEqual(searchLibrary(rows, "pokemon").map((i) => i.id), ["g2"]);
+  assert.deepEqual(searchLibrary(rows, "legend zel").map((i) => i.id), ["s2"]);
+  assert.deepEqual(searchLibrary(rows, "  "), []);
 });

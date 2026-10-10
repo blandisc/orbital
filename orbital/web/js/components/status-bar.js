@@ -6,7 +6,11 @@ import { ICONS } from "../core/icons.js";
 const ALEXA_LIVE_SECONDS = 600;
 
 /** Barra superior: marca (abre el menú), juego en curso, Alexa, Wi-Fi, batería y hora. */
-export function createStatusBar({ onBrand, onSection }) {
+export function createStatusBar({ onBrand, onSection, onSearch }) {
+  // Buscar siempre a la mano (botón Vista ⧉): juegos, películas y series desde cualquier sección.
+  const searchGlyph = h("span", { class: "status-bar__search-glyph" });
+  const search = h("button", { class: "status-bar__search", type: "button", "aria-label": "Buscar", onClick: () => onSearch?.() },
+    svg(ICONS.search), h("span", {}, "Buscar"), searchGlyph);
   const playingTitle = h("span", { class: "status-bar__playing-title" });
   const playingLabel = h("span", { class: "status-bar__playing-label" }, "En curso");
   const playing = h("span", { class: "status-bar__playing", hidden: true },
@@ -23,6 +27,7 @@ export function createStatusBar({ onBrand, onSection }) {
   const el = h("header", { class: "status-bar" },
     h("button", { class: "status-bar__brand", type: "button", "aria-label": "Orbital: menú", onClick: onBrand },
       svg(ICONS.mark), h("span", { class: "status-bar__wordmark" }, "orbital")),
+    search,
     tabs,
     h("div", { class: "status-bar__right" }, playing, alexa, wifi, battery, time));
 
@@ -36,6 +41,7 @@ export function createStatusBar({ onBrand, onSection }) {
         "aria-current": section.id === active ? "page" : null, onClick: () => onSection?.(section.id),
       }, section.title)),
       next && Glyph(next, { small: true }));
+    mount(searchGlyph, glyphs?.search && Glyph(glyphs.search, { small: true }));
   }
 
   function setRunning(running) {

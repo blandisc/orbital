@@ -115,3 +115,11 @@ def no_installed_mpv(monkeypatch):
     from orbital import player
 
     monkeypatch.setattr(player, "find_mpv", lambda: None)
+
+
+@pytest.fixture(autouse=True)
+def no_focus_threads(monkeypatch):
+    """Que las pruebas no dejen hilos esperando ventanas reales de juegos."""
+    from orbital import catalog
+
+    monkeypatch.setattr(catalog, "bring_game_to_front", lambda *args, **kwargs: False)

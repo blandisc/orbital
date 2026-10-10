@@ -95,9 +95,10 @@ export const primaryLabel = (item, runningId = null) => {
 export const SECTIONS = [
   { id: "home", title: "Inicio", rows: (id) => ["recent", "continue", "favorites"].includes(id) },
   { id: "games", title: "Juegos", rows: (id) => ["steam", "geforcenow"].includes(id) || id.startsWith("emulators:") },
-  // Buscar (fila "media") primero: en esta sección es la acción principal.
+  // Lo tuyo primero (Seguir viendo). Buscar es un atajo (botón Vista o la píldora de arriba), así
+  // que la fila de apps (Buscar, YouTube…) va al final.
   { id: "media", title: "Películas y series", rows: (id) => ["continue", "media", "movies", "series"].includes(id),
-    order: ["media", "continue", "movies", "series"] },
+    order: ["continue", "movies", "series", "media"] },
   { id: "apps", title: "Apps", rows: (id) => id === "apps" },
 ];
 
@@ -107,6 +108,27 @@ export function sectionRows(rows, sectionId) {
   const picked = rows.filter((row) => section.rows(row.id));
   if (section.order) picked.sort((a, b) => section.order.indexOf(a.id) - section.order.indexOf(b.id));
   return picked.length || section.id !== "home" ? picked : sectionRows(rows, "games");
+}
+
+const fold = (text) => String(text || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+/**
+ * Buscar en tu biblioteca (juegos y apps) desde el buscador global: todas las palabras deben
+ * aparecer en el título; primero lo que empieza igual. Películas y series las busca Cinemeta.
+ */
+export function searchLibrary(rows, query, limit = 8) {
+  const words = fold(query).split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const seen = new Set();
+  const found = [];
+  for (const item of rows.flatMap((row) => row.items)) {
+    if (seen.has(item.id) || ["search", "cinemeta", "stremio"].includes(item.source)) continue;
+    seen.add(item.id);
+    const title = fold(item.title);
+    if (words.every((w) => title.includes(w))) found.push({ item, starts: title.startsWith(words[0]) });
+  }
+  found.sort((a, b) => Number(b.starts) - Number(a.starts));
+  return found.slice(0, limit).map((f) => f.item);
 }
 
 /** Secciones con contenido (las vacías no se muestran en la barra). */
