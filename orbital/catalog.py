@@ -16,7 +16,7 @@ from . import system
 from .config import Config
 from .launcher import Launcher
 from .credentials import Credentials
-from .library import cinemeta, detect, emulators, esde, steam, stremio, stremio_api, streams
+from .library import cinemeta, detect, emulators, esde, geforcenow, steam, stremio, stremio_api, streams
 from .library.models import LibraryItem
 from .state import State
 
@@ -31,6 +31,7 @@ CATEGORIES = [
     {"id": "continue", "title": "Seguir viendo"},
     {"id": "favorites", "title": "Favoritos"},
     {"id": "steam", "title": "Steam"},
+    {"id": "geforcenow", "title": "GeForce NOW"},
     {"id": "emulators", "title": "Emuladores"},
     {"id": "media", "title": "Multimedia"},
     {"id": "movies", "title": "Películas populares"},
@@ -124,6 +125,7 @@ class Catalog:
         self._stremio_fetched = 0.0
         self._stremio_busy = threading.Lock()
         self.cinemeta = cinemeta_client or cinemeta.Cinemeta()
+        self._steam_art = geforcenow.SteamArt()
         self.streams = streams.StreamFinder(self.stremio_client)
         self._cinemeta_items: list[LibraryItem] = []
         self.listeners: list[Listener] = []
@@ -173,6 +175,10 @@ class Catalog:
             found += emulators.scan(emu, self.esde, alternatives)
         if self.config.stremio.enabled:
             found += stremio.items(self.config.stremio)
+        gfn_app = geforcenow.app_item()
+        if gfn_app:
+            found.append(gfn_app)
+            found += geforcenow.items(self._steam_art)
         for app in self.config.apps:
             is_uri = "://" in app.target
             found.append(
@@ -397,6 +403,14 @@ class Catalog:
             raise KeyError(item_id)
         if item.source in ("stremio", "cinemeta") or item.id == "media:stremio":
             self.open_stremio(item.uri if item.id != "media:stremio" else None, item.title)
+            self.state.record_launch(item.id)
+            return item
+        if item.source == "geforcenow":
+            # La app (y su reproductor en la nube) es de instancia única: se vigila por ejecutable.
+            exe = geforcenow.APP_EXE if item.id == "app:geforcenow" else geforcenow.STREAMER_EXE
+            self.launcher.run(item.argv, cwd=item.cwd)
+            self.launcher.track_exe(item.id, item.title, exe, runner="GeForce NOW")
+            threading.Thread(target=bring_app_to_front, args=(exe,), daemon=True).start()
             self.state.record_launch(item.id)
             return item
         runner = self.runner_for(item, runner_id)

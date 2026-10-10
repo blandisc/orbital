@@ -98,3 +98,12 @@ def no_installed_stremio(monkeypatch):
     from orbital.library import stremio
 
     monkeypatch.setattr(stremio, "find_stremio", lambda cfg: [cfg.executable] if cfg.executable else None)
+
+
+@pytest.fixture(autouse=True)
+def no_geforcenow(monkeypatch):
+    """Que las pruebas no lean la instalación ni los accesos directos reales de GeForce NOW."""
+    from orbital.library import geforcenow
+
+    monkeypatch.setattr(geforcenow, "install_dir", lambda: None)
+    monkeypatch.setattr(geforcenow, "read_shortcuts", lambda: [])

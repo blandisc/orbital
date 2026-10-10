@@ -26,12 +26,12 @@ log = logging.getLogger(__name__)
 BROWSERS = {"msedge.exe", "chrome.exe", "chromium.exe"}
 EMULATOR_EXES = {n for k in KNOWN for n in k.exe_names if n.endswith(".exe")} | {
     "retroarch.exe", "citron.exe", "sudachi.exe", "yuzu.exe", "rpcs3.exe", "duckstation-qt-x64-releaseltcg.exe",
-    "stremio-shell-ng.exe", "stremio.exe",
+    "stremio-shell-ng.exe", "stremio.exe", "geforcenowstreamer.exe",
 }
 LEGION_SPACE = "legionspace.exe"
 # Pausa universal al ir a Orbital: solo emuladores (los juegos en línea perderían la conexión y
 # congelar Stremio dejaría su ventana trabada).
-NO_PAUSE = {"stremio-shell-ng.exe", "stremio.exe"}
+NO_PAUSE = {"stremio-shell-ng.exe", "stremio.exe", "geforcenowstreamer.exe"}  # congelar la nube = desconectarte
 
 # Apps sin soporte de mando: mientras están al frente, el mando se traduce a teclas.
 REMOTE_APPS = {"stremio-shell-ng.exe", "stremio.exe"}
