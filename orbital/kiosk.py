@@ -77,6 +77,33 @@ def build_command(browser: str, url: str, profile_dir: Path) -> list[str]:
     return [browser, f"--user-data-dir={profile_dir}", "--kiosk", url, *FLAGS]
 
 
+def close_orphans(profile_dir: Path) -> int:
+    """Cierra ventanas de Orbital que quedaron de una sesión anterior (mismo perfil). Si no,
+    Edge le pasa la página a esa ventana vieja y la nueva se cierra al instante. Nunca toca tu
+    Edge normal: solo procesos con el perfil propio de Orbital."""
+    if sys.platform != "win32":
+        return 0
+    script = (
+        "Get-CimInstance Win32_Process -Filter \"Name='msedge.exe' or Name='chrome.exe'\" | "
+        "Where-Object { $_.CommandLine -and $_.CommandLine.Contains($env:ORBITAL_PROFILE) "
+        "-and $_.CommandLine -notmatch '--type=' } | ForEach-Object { $_.ProcessId }"
+    )
+    try:
+        out = subprocess.run(["powershell", "-NoProfile", "-Command", script], capture_output=True, text=True,
+                             timeout=15, env={**os.environ, "ORBITAL_PROFILE": f"--user-data-dir={profile_dir}"},
+                             creationflags=subprocess.CREATE_NO_WINDOW).stdout  # type: ignore[attr-defined]
+    except (OSError, subprocess.TimeoutExpired):
+        return 0
+    pids = [int(p) for p in out.split() if p.isdigit()]
+    for pid in pids:
+        subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True,
+                       creationflags=subprocess.CREATE_NO_WINDOW)  # type: ignore[attr-defined]
+    if pids:
+        log.info("Cerré %d ventana(s) de Orbital de una sesión anterior", len(pids))
+        time.sleep(.5)
+    return len(pids)
+
+
 class KioskWindow:
     """Abre, trae al frente y cierra la ventana de la interfaz."""
 
@@ -108,6 +135,7 @@ class KioskWindow:
                 log.warning("No encontré Edge/Chrome/Chromium; abre %s manualmente", self.url)
                 return False
             self.profile_dir.mkdir(parents=True, exist_ok=True)
+            close_orphans(self.profile_dir)
             mark_clean_exit(self.profile_dir)
             self._process = subprocess.Popen(build_command(exe, self.url, self.profile_dir),
                                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
