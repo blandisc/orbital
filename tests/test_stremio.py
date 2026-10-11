@@ -343,3 +343,20 @@ def test_my_list_and_trailer_helpers():
     assert trailer_id({"trailerStreams": [{"ytId": "abc"}]}) == "abc"
     assert trailer_id({"trailers": [{"source": "xyz", "type": "Trailer"}]}) == "xyz"
     assert trailer_id({}) is None
+
+
+def test_continue_is_ready_at_startup_from_the_last_download(tmp_path, monkeypatch):
+    """Al arrancar, Seguir viendo sale de la última descarga guardada: no se reacomoda segundos después."""
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    cfg = parse_config({"steam": {"enabled": False}, "esde": {"enabled": False}, "detect": {"enabled": False},
+                        "stremio": {"executable": "stremio-test"}}, source=tmp_path / "config.yaml")
+    creds = Credentials(tmp_path / "secrets.json")
+    first = Catalog(cfg, FakeLauncher(), credentials=creds, stremio_client=FakeStremio())
+    first.link_stremio("clave-buena")
+    offline = FakeStremio()
+    offline.fail = True  # el segundo arranque aún no descarga nada
+    again = Catalog(cfg, FakeLauncher(), credentials=creds, stremio_client=offline)
+    again.refresh()
+    assert [i.title for i in again.grouped_items("continue")] == ["Game of Thrones", "Interstellar", "Anime temporal"]
+    again.unlink_stremio()
+    assert not (tmp_path / "orbital" / "cache" / "stremio-library.json").exists()

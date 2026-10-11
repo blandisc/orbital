@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 
 
 @dataclass
@@ -43,6 +43,15 @@ class LibraryItem:
     media_key: str | None = None
     # Datos extra para el héroe (Stremio: año, calificación, géneros, sinopsis, logotipo).
     extra: dict = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> LibraryItem:
+        known = {k: v for k, v in data.items() if k in cls.__dataclass_fields__}
+        known["runners"] = [Runner(**r) for r in known.get("runners") or []]
+        return cls(**known)
 
     def runner(self, runner_id: str | None = None) -> Runner | None:
         wanted = runner_id or self.default_runner

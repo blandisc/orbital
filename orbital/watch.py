@@ -6,10 +6,13 @@ reproducir en mpv con el mando (siguiente episodio, otra fuente si una falla) y 
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 from . import player
 from .config import Config
@@ -122,7 +125,11 @@ class Watch:
         self.sessions = sessions
         self.launcher = launcher
         self.stremio_error: str | None = None
-        self.stremio_items: list[LibraryItem] = []
+        # La última biblioteca de Stremio, guardada: al arrancar, Seguir viendo y Continuar ya salen en su
+        # orden y no se reacomodan unos segundos después cuando llega la descarga nueva.
+        self._stremio_cache = (Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache"
+                               / "stremio-library.json") if config.source else None
+        self.stremio_items: list[LibraryItem] = self._load_stremio_cache()
         self.cinemeta_items: list[LibraryItem] = []
         self._stremio_fetched = 0.0
         self._stremio_busy = threading.Lock()
@@ -137,6 +144,25 @@ class Watch:
     @property
     def stremio_linked(self) -> bool:
         return bool(self.credentials.get(STREMIO_KEY))
+
+    def _load_stremio_cache(self) -> list[LibraryItem]:
+        if not self._stremio_cache or not self.stremio_linked:
+            return []
+        try:
+            return [LibraryItem.from_dict(d) for d in json.loads(self._stremio_cache.read_text(encoding="utf-8"))]
+        except (OSError, ValueError, TypeError):
+            return []
+
+    def _save_stremio_cache(self, items: list[LibraryItem]) -> None:
+        if not self._stremio_cache:
+            return
+        try:
+            self._stremio_cache.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self._stremio_cache.with_suffix(".tmp")
+            tmp.write_text(json.dumps([i.to_dict() for i in items], ensure_ascii=False), encoding="utf-8")
+            tmp.replace(self._stremio_cache)
+        except OSError:
+            log.warning("No pude guardar la biblioteca de Stremio en caché", exc_info=True)
 
     def refresh_stremio(self, background: bool = False) -> bool:
         """Descarga la biblioteca de Stremio. En segundo plano no bloquea a quien llama."""
@@ -163,6 +189,7 @@ class Watch:
         changed = [i.id for i in items] != [i.id for i in self.stremio_items] or any(
             a.progress != b.progress for a, b in zip(items, self.stremio_items, strict=False))
         self.stremio_items = items
+        self._save_stremio_cache(items)
         if changed:
             self.events.publish({"type": "library-changed"})
         return True
@@ -226,6 +253,8 @@ class Watch:
         self.credentials.set(STREMIO_KEY, None)
         self.store.replace_source("stremio", [])
         self.stremio_items = []
+        if self._stremio_cache:
+            self._stremio_cache.unlink(missing_ok=True)
 
     # --- películas y series en el reproductor de Orbital -----------------------------------------
     def setting(self, key: str, default=None):
