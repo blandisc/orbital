@@ -33,6 +33,11 @@ export function gameMenu(item, { running = null } = {}) {
       ? { icon: "check", label: "Quitar de Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: false, title: item.title } }
       : { icon: "star", label: "Añadir a Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: true, title: item.title } });
   }
+  // ¿No te gusta la portada o el fondo? Se descarta para siempre y se busca otra.
+  if (item.system && !isOpen) {
+    options.push({ icon: "refresh", label: "Otra portada", hint: "si esta no te gusta", command: { type: "art", id: item.id, kind: "cover", title: item.title } });
+    options.push({ icon: "refresh", label: "Otro fondo", command: { type: "art", id: item.id, kind: "hero", title: item.title } });
+  }
   // Emuladores alternativos: solo en juegos.
   for (const runner of isOpen || !isGame(item) ? [] : item.runners || []) {
     if (runner.id === item.runner) continue;

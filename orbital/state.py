@@ -18,13 +18,14 @@ class State:
     def __init__(self, path: Path | None = None) -> None:
         self.path = path
         self._lock = threading.Lock()
-        self._data: dict = {"history": {}, "prefs": {}, "settings": {}}
+        self._data: dict = {"history": {}, "prefs": {}, "settings": {}, "seen": {}}
         if path and path.exists():
             try:
                 loaded = json.loads(path.read_text(encoding="utf-8"))
                 self._data["history"] = dict(loaded.get("history", {}))
                 self._data["prefs"] = dict(loaded.get("prefs", {}))
                 self._data["settings"] = dict(loaded.get("settings", {}))
+                self._data["seen"] = dict(loaded.get("seen", {}))
             except (OSError, ValueError) as exc:
                 log.warning("No se pudo leer %s, empiezo de cero: %s", path, exc)
 
@@ -52,6 +53,24 @@ class State:
             entry = self._data["history"].setdefault(item_id, {"playtime": 0, "launches": 0})
             entry["playtime"] = int(entry.get("playtime", 0) + seconds)
             self._save()
+
+    # --- juegos nuevos -------------------------------------------------------
+    def mark_seen(self, item_ids: list[str], now: float | None = None) -> None:
+        """Anota cuándo apareció cada juego por primera vez. La primera vez que corre no hay nada
+        «nuevo»: todo lo que ya tenías cuenta como visto desde siempre."""
+        with self._lock:
+            seen = self._data["seen"]
+            first_run = not seen
+            fresh = [i for i in item_ids if i not in seen]
+            if not fresh:
+                return
+            for item_id in fresh:
+                seen[item_id] = 0 if first_run else (now or time.time())
+            self._save()
+
+    def first_seen(self, item_id: str) -> float | None:
+        with self._lock:
+            return self._data["seen"].get(item_id)
 
     def history(self, item_id: str) -> dict:
         with self._lock:

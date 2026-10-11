@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
 
 from .deps import Deps
 
@@ -17,6 +18,11 @@ class PrefsRequest(BaseModel):
     hidden: bool | None = None
     runner: str | None = None
     clear_runner: bool = False
+
+
+class ArtReplace(BaseModel):
+    id: str
+    kind: str
 
 
 def router(d: Deps) -> APIRouter:
@@ -50,11 +56,20 @@ def router(d: Deps) -> APIRouter:
     def setup() -> dict:
         return catalog.setup_status()
 
+    @r.post("/api/art-replace")
+    async def art_replace(req: ArtReplace) -> dict:
+        """«No me gusta esta imagen»: la descarta para siempre y busca otra (o queda el respaldo)."""
+        if req.kind not in ("cover", "hero", "logo"):
+            raise HTTPException(422, "Tipo de imagen desconocido")
+        found = await run_in_threadpool(catalog.replace_art, req.id, req.kind)
+        return {"ok": True, "found": found}
+
     @r.get("/api/art/{item_id:path}")
     def art(item_id: str, kind: str = "cover") -> FileResponse:
         # Solo se sirven imágenes que el escaneo asoció a un elemento: nunca rutas arbitrarias.
         item = catalog.get(item_id)
-        path = None if item is None else (item.hero_path if kind == "hero" else item.art_path)
+        paths = {"hero": "hero_path", "logo": "logo_path"}
+        path = None if item is None else getattr(item, paths.get(kind, "art_path"))
         if not path or not Path(path).is_file():
             raise HTTPException(404)
         return FileResponse(path, headers={"Cache-Control": "max-age=86400"})

@@ -20,6 +20,7 @@ export const api = {
   status: () => request("/api/status"),
   system: () => request("/api/system"),
   setPrefs: (id, prefs) => post("/api/prefs", { id, ...prefs }),
+  replaceArt: (id, kind) => post("/api/art-replace", { id, kind }),
   unhideAll: () => post("/api/prefs/unhide-all"),
   ui: () => request("/api/ui"),
   exitToDesktop: () => post("/api/ui/exit"),

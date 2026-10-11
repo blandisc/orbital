@@ -7,12 +7,29 @@ de ES-DE, además, se descarta si no sirve (una captura puesta como portada, por
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import re
 import struct
 from pathlib import Path
 
 IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".webp")
+# Respaldo para lo que no tiene arte (generado con Grok Imagine): siempre hay una imagen.
+PLACEHOLDER_DIR = Path(__file__).resolve().parents[1] / "web" / "img" / "placeholders"
+
+
+def placeholder(kind: str, system: str | None, seed: str = "") -> str:
+    """URL del respaldo ya hecho: varias opciones por sistema (hero-switch-1.jpg, hero-switch-2.jpg…)
+    y, si no hay de ese sistema, las genéricas. A cada juego le toca siempre la misma (por su id),
+    así no se ven todos iguales y no cambia entre escaneos."""
+    for prefix in ([f"{kind}-{system}", f"{kind}-generic"] if system else [f"{kind}-generic"]):
+        options = sorted(p.name for p in PLACEHOLDER_DIR.glob(f"{prefix}*.jpg")
+                         if re.fullmatch(rf"{re.escape(prefix)}(-\d+)?\.jpg", p.name))
+        if options:
+            pick = int(hashlib.sha1(seed.encode()).hexdigest(), 16) % len(options)
+            return f"/img/placeholders/{options[pick]}"
+    return f"/img/placeholders/{kind}-generic-1.jpg"
 KINDS = ("cover", "hero", "logo")
 
 

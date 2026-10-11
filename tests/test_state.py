@@ -81,3 +81,13 @@ def test_steam_game_that_never_starts_is_not_running_forever(monkeypatch):
     lau.current = running
     lau._watch_steam(running, 1)
     assert lau.status() is None
+
+
+def test_new_games_are_only_the_ones_that_arrive_later():
+    from orbital.state import State
+
+    state = State()
+    state.mark_seen(["a", "b"], now=100)
+    assert state.first_seen("a") == 0  # lo que ya tenías al estrenar la función no es "nuevo"
+    state.mark_seen(["a", "b", "c"], now=200)
+    assert state.first_seen("c") == 200 and state.first_seen("a") == 0

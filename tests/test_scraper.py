@@ -168,3 +168,15 @@ def test_saves_the_game_sheet_and_uses_its_title_when_esde_only_has_the_file_nam
     assert game_title("Mi nombre", entry, meta) == "Mi nombre"  # lo que escribiste en ES-DE manda
     assert game_extra(meta) == {"description": "Lead the Renegade Squadron.", "genres": ["Action", "Shooter"],
                                 "developer": "Rebellion", "year": "2007", "players": "4"}
+
+
+def test_placeholders_pick_a_stable_option_per_game(tmp_path, monkeypatch):
+    from orbital.library import media
+
+    for name in ["hero-switch-1.jpg", "hero-switch-2.jpg", "hero-generic.jpg", "hero-switchx.jpg"]:
+        (tmp_path / name).write_bytes(b"x")
+    monkeypatch.setattr(media, "PLACEHOLDER_DIR", tmp_path)
+    picks = {media.placeholder("hero", "switch", f"juego{i}") for i in range(20)}
+    assert picks == {"/img/placeholders/hero-switch-1.jpg", "/img/placeholders/hero-switch-2.jpg"}
+    assert media.placeholder("hero", "switch", "zelda") == media.placeholder("hero", "switch", "zelda")
+    assert media.placeholder("hero", "psp", "x") == "/img/placeholders/hero-generic.jpg"

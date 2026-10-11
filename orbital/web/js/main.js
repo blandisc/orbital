@@ -350,6 +350,13 @@ async function runCommand(command, context = null) {
         return loadLibrary({ keepId: command.id });
       case "refresh":
         return loadLibrary({ refresh: true });
+      case "art": {
+        ui.toast.show(`Buscando otra imagen para ${command.title}…`);
+        const res = await api.replaceArt(command.id, command.kind);
+        sound.play("select");
+        ui.toast.show(res.found ? "Listo: imagen nueva" : "No encontré otra; queda una de respaldo");
+        return loadLibrary({ keepId: command.id });
+      }
       case "mylist":
         await api.setInLibrary(command.kind, command.metaId, command.add);
         sound.play("select");
