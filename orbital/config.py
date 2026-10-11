@@ -99,6 +99,13 @@ class AppConfig:
 
 
 @dataclass
+class ArtConfig:
+    """Arte de los juegos que Orbital consigue por su cuenta (portada, fondo, logotipo)."""
+    scrape: bool = True  # buscar en internet lo que falte (libretro, TheGamesDB, Steam)
+    dir: str | None = None  # carpeta propia; por defecto %LOCALAPPDATA%\orbital\media
+
+
+@dataclass
 class SessionsConfig:
     """Que nada se quede abierto para siempre."""
     # Minutos que un video puede quedar en pausa antes de cerrarse solo (el avance se guarda en
@@ -120,6 +127,7 @@ class Config:
     esde: EsdeConfig = field(default_factory=EsdeConfig)
     detect: DetectConfig = field(default_factory=DetectConfig)
     sessions: SessionsConfig = field(default_factory=SessionsConfig)
+    art: ArtConfig = field(default_factory=ArtConfig)
     emulators: list[EmulatorConfig] = field(default_factory=list)
     apps: list[AppConfig] = field(default_factory=list)
     source: Path | None = None
@@ -159,6 +167,7 @@ def parse_config(raw: dict[str, Any] | None, source: Path | None = None) -> Conf
         esde=_section(EsdeConfig, raw.get("esde")),
         detect=_section(DetectConfig, raw.get("detect")),
         sessions=_section(SessionsConfig, raw.get("sessions")),
+        art=_section(ArtConfig, raw.get("art")),
         emulators=[_section(EmulatorConfig, e) for e in raw.get("emulators") or []],
         apps=[_section(AppConfig, a) for a in raw.get("apps") or []],
         source=source,

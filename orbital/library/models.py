@@ -37,6 +37,10 @@ class LibraryItem:
     # Imágenes en disco; se sirven por /api/art/<id> sin exponer la ruta.
     art_path: str | None = None
     hero_path: str | None = None
+    logo_path: str | None = None
+    # Juegos de emulador: sistema y nombre de la ROM, para buscarles arte (scraper propio).
+    system: str | None = None
+    media_key: str | None = None
     # Datos extra para el héroe (Stremio: año, calificación, géneros, sinopsis, logotipo).
     extra: dict = field(default_factory=dict)
 

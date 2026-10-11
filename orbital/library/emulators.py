@@ -12,6 +12,7 @@ from pathlib import Path
 
 from ..config import EmulatorConfig
 from .esde import EsdeLibrary
+from .media import MediaStore, good, image_size
 from .models import LibraryItem, Runner
 from .shortcuts import read_lnk, xenia_games
 
@@ -96,10 +97,51 @@ def split_alternatives(emus: list[EmulatorConfig]) -> list[tuple[EmulatorConfig,
     return groups
 
 
+def pick_art(media: MediaStore | None, esde: EsdeLibrary | None, system: str | None, key: str,
+             entry: Path, esde_system: str | None) -> dict[str, str | None]:
+    """Portada, fondo y logotipo: primero el arte propio de Orbital; si no hay, el de ES-DE, pero solo
+    si sirve (una captura no pasa como portada) y no lo rechazaste."""
+    found: dict[str, str | None] = {}
+    lookups = {"cover": "cover", "hero": "hero", "logo": "logo"}
+    for kind, method in lookups.items():
+        own = media.path(system, key, kind) if media and system else None
+        if own:
+            found[kind] = str(own)
+            continue
+        theirs = getattr(esde, method)(esde_system, entry) if esde and esde_system else None
+        usable = theirs is not None and good(kind, image_size(theirs), system)
+        if usable and media and system and media.is_rejected(system, key, kind, "esde"):
+            usable = False
+        found[kind] = str(theirs) if usable else None
+    return found
+
+
+def game_title(esde_name: str | None, entry: Path, own: dict | None) -> str:
+    """El nombre de ES-DE si alguien lo escribió; si es solo el del archivo («Call of Duty - Black Ops
+    II»), el de la ficha que trajo el scraper («Call of Duty: Black Ops II»)."""
+    from_file = clean_title(entry.name)
+    if esde_name and esde_name.strip().lower() != from_file.lower():
+        return esde_name
+    return (own or {}).get("title") or esde_name or from_file
+
+
+def game_extra(own: dict | None) -> dict:
+    """Datos de la ficha para el héroe: descripción, año, géneros, jugadores."""
+    if not own:
+        return {}
+    extra = {k: own[k] for k in ("description", "genres", "developer") if own.get(k)}
+    if own.get("released"):
+        extra["year"] = own["released"][:4]
+    if own.get("players"):
+        extra["players"] = own["players"]
+    return extra
+
+
 def scan(
     emu: EmulatorConfig,
     esde: EsdeLibrary | None = None,
     alternatives: list[EmulatorConfig] | None = None,
+    media: MediaStore | None = None,
 ) -> list[LibraryItem]:
     candidates = [emu, *(alternatives or [])]
     exes = {c.id: resolve_executable(c) for c in candidates}
@@ -149,20 +191,25 @@ def scan(
             chosen = esde.chosen_emulator(system, entry) if system else None
             if chosen:
                 default = next((c for c in candidates if esde_key(c) in chosen.lower()), emu)
-            art = esde.cover(system, entry) if system else None
-            hero = esde.hero(system, entry) if system else None
+            key = entry.relative_to(root).with_suffix("").as_posix()
+            art = pick_art(media, esde, emu.system, key, entry, system)
+            own = media.meta(emu.system, key) if media and emu.system else None
             items.append(
                 LibraryItem(
                     id=_item_id(emu.id, rom),
-                    title=(meta.name if meta and meta.name else clean_title(entry.name)),
+                    title=game_title(meta.name if meta else None, entry, own),
+                    extra=game_extra(own),
                     category="emulators",
                     source=emu.id,
                     subtitle=emu.name,
                     runners=runners,
                     default_runner=default.id,
                     favorite=bool(meta and meta.favorite),
-                    art_path=str(art) if art else None,
-                    hero_path=str(hero) if hero else None,
+                    art_path=art["cover"],
+                    hero_path=art["hero"],
+                    logo_path=art["logo"],
+                    system=emu.system,
+                    media_key=key if emu.system else None,
                 )
             )
     # Xbox 360: los juegos instalados dentro de Xenia (Games on Demand / Arcade), aunque no haya nada
@@ -173,10 +220,12 @@ def scan(
             if str(package).lower() in seen:
                 continue
             seen.add(str(package).lower())
+            art = pick_art(media, None, emu.system, name, package, None)
             items.append(LibraryItem(
                 id=_item_id(emu.id, package), title=name, category="emulators", source=emu.id, subtitle=emu.name,
                 runners=[Runner(emu.id, runner_name(emu, exe), build_argv(emu, exe, package), str(exe.parent))],
-                default_runner=emu.id))
+                default_runner=emu.id, art_path=art["cover"], hero_path=art["hero"], logo_path=art["logo"],
+                system=emu.system, media_key=name))
     return sorted(items, key=lambda i: i.title.lower())
 
 

@@ -10,6 +10,14 @@ from orbital.config import parse_config
 from orbital.library import esde
 from orbital.server import create_app
 
+
+def png(w, h):
+    """PNG con cabecera real: el escaneo descarta imágenes que no sirven (una captura como portada)."""
+    return b"\x89PNG\r\n\x1a\n" + (13).to_bytes(4, "big") + b"IHDR" + w.to_bytes(4, "big") + h.to_bytes(4, "big") + bytes(64)
+
+
+COVER, FANART = png(600, 900), png(1920, 1080)
+
 GAMELIST = """<?xml version="1.0"?>
 <alternativeEmulator>
     <label>Ryujinx (Standalone)</label>
@@ -52,8 +60,8 @@ def esde_home(tmp_path):
         (roms / name).write_bytes(b"")
     covers = home / "downloaded_media" / "switch" / "covers"
     (covers / "sub").mkdir(parents=True)
-    (covers / "Zelda TOTK [0100F2C0115B6000][v0].png").write_bytes(b"\x89PNG fake")
-    (covers / "sub" / "Mario Kart 8 Deluxe.jpg").write_bytes(b"jpg")
+    (covers / "Zelda TOTK [0100F2C0115B6000][v0].png").write_bytes(COVER)
+    (covers / "sub" / "Mario Kart 8 Deluxe.jpg").write_bytes(COVER)
     return home
 
 
@@ -132,7 +140,7 @@ def test_voice_launches_with_gamelist_name(catalog):
 def test_art_endpoint_only_serves_known_items(catalog):
     with TestClient(create_app(catalog.config, catalog), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
         zelda = catalog.find("zelda")
-        assert c.get(f"/api/art/{zelda.id}").content == b"\x89PNG fake"
+        assert c.get(f"/api/art/{zelda.id}").content == COVER
         assert c.get(f"/api/art/{catalog.find('metroid').id}").status_code == 404
         assert c.get("/api/art/../../etc/passwd").status_code == 404
 
@@ -221,12 +229,12 @@ def test_default_emulator_from_custom_systems(esde_home, tmp_path):
 def test_hero_prefers_fanart(esde_home, catalog):
     fanart = esde_home / "downloaded_media" / "switch" / "fanart"
     fanart.mkdir(parents=True)
-    (fanart / "Metroid Dread.jpg").write_bytes(b"fan")
+    (fanart / "Metroid Dread.jpg").write_bytes(FANART)
     catalog.refresh()
     metroid = catalog.find("metroid dread")
     assert Path(metroid.hero_path) == fanart / "Metroid Dread.jpg" and metroid.hero.endswith("?kind=hero")
     with TestClient(create_app(catalog.config, catalog), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
-        assert c.get(metroid.hero).content == b"fan"
+        assert c.get(metroid.hero).content == FANART
 
 
 def test_prefer_alternative_runner(esde_home, tmp_path):

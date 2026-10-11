@@ -1,0 +1,170 @@
+"""Scraper propio: validación de imágenes, búsqueda en TheGamesDB/Steam y «no me gusta»."""
+
+import struct
+from pathlib import Path
+
+from orbital.library.emulators import pick_art
+from orbital.library.media import MediaStore, good, image_size
+from orbital.library.scraper import Scraper, Target, clean, similar
+
+
+def png(w, h):
+    head = b"\x89PNG\r\n\x1a\n" + struct.pack(">I", 13) + b"IHDR" + struct.pack(">II", w, h) + b"\x08\x02\x00\x00\x00"
+    return head + b"\x00" * 4096
+
+
+def jpeg(w, h):
+    sof = b"\xff\xc0" + struct.pack(">H", 17) + b"\x08" + struct.pack(">HH", h, w) + b"\x03" + b"\x00" * 9
+    return b"\xff\xd8" + b"\xff\xe0" + struct.pack(">H", 16) + b"JFIF\x00" + b"\x00" * 9 + sof + b"\x00" * 4096
+
+
+def test_reads_image_size_from_the_header(tmp_path):
+    (tmp_path / "a.png").write_bytes(png(600, 900))
+    (tmp_path / "b.jpg").write_bytes(jpeg(1920, 1080))
+    assert image_size(tmp_path / "a.png") == (600, 900)
+    assert image_size(tmp_path / "b.jpg") == (1920, 1080)
+
+
+def test_a_screenshot_is_not_a_cover_and_a_small_image_is_not_a_hero():
+    assert not good("cover", (480, 272), "psp")  # la «portada» de Renegade Squadron era una captura
+    assert good("cover", (600, 900), "psp")
+    assert good("cover", (1530, 1370), "gba")  # las cajas de GBA son casi cuadradas
+    assert not good("cover", (1530, 1370), "psp")
+    assert good("hero", (1920, 1080))
+    assert not good("hero", (800, 600))
+    assert not good("hero", (1080, 1920))
+
+
+def test_clean_titles_for_searching():
+    assert clean("Simpsons, The - Hit & Run (USA, Japan)") == "The Simpsons - Hit & Run"
+    assert clean("Mario Party Superstars[01006FE013472000][US][v0]") == "Mario Party Superstars"
+    assert similar("Star Wars Battlefront - Renegade Squadron", "Star Wars Battlefront: Renegade Squadron") > 0.95
+
+
+SEARCH = """<a href="./game.php?id=11"><div class="card"><div class="card-footer bg-secondary"><p>Star Wars Battlefront: Elite Squadron</p></div></a>
+<a href="./game.php?id=12"><div class="card"><div class="card-footer bg-secondary"><p>Star Wars Battlefront: Renegade Squadron</p></div></a>"""
+GAME = """<img src="https://cdn.thegamesdb.net/images/original/boxart/front/12-1.jpg">
+<a href="https://cdn.thegamesdb.net/images/original/fanart/12-1.jpg"></a>
+<a href="https://cdn.thegamesdb.net/images/original/fanart/12-2.jpg"></a>
+<img src="https://cdn.thegamesdb.net/images/original/clearlogo/12.png">"""
+
+
+class FakeHttp:
+    def __init__(self, pages):
+        self.pages = pages
+        self.asked = []
+
+    def get(self, url):
+        self.asked.append(url)
+        for part, body in self.pages.items():
+            if part in url:
+                return body
+        return None
+
+
+def scraper(tmp_path, pages):
+    return Scraper(MediaStore(tmp_path / "media"), FakeHttp(pages))
+
+
+def test_fetches_cover_hero_and_logo_from_thegamesdb(tmp_path):
+    s = scraper(tmp_path, {
+        "search.php": SEARCH.encode(), "game.php?id=12": GAME.encode(),
+        "boxart/front/12-1.jpg": jpeg(600, 1000), "fanart/12-1.jpg": jpeg(1920, 1080), "clearlogo/12.png": png(800, 300),
+    })
+    target = Target("psp", "Star Wars Battlefront - Renegade Squadron (USA)", "Star Wars Battlefront: Renegade Squadron")
+    saved = s.fetch(target)
+    assert set(saved) == {"cover", "hero", "logo"}
+    assert saved["cover"] == tmp_path / "media" / "psp" / "cover" / "Star Wars Battlefront - Renegade Squadron (USA).jpg"
+    assert "platform_id%5B%5D=13" in next(u for u in s.http.asked if "search.php" in u)
+
+
+def test_a_screenshot_offered_as_cover_is_skipped(tmp_path):
+    s = scraper(tmp_path, {
+        "search.php": SEARCH.encode(), "game.php?id=12": GAME.encode(), "boxart/front/12-1.jpg": jpeg(480, 272),
+    })
+    target = Target("psp", "Renegade", "Star Wars Battlefront: Renegade Squadron", ["cover"])
+    assert s.fetch(target) == {}
+    assert not list((tmp_path / "media").rglob("*.part"))
+
+
+def test_wrong_game_is_not_taken(tmp_path):
+    s = scraper(tmp_path, {"search.php": SEARCH.encode(), "game.php": GAME.encode()})
+    assert s.fetch(Target("psp", "x", "Dante's Inferno")) == {}
+
+
+def test_dislike_rejects_the_image_and_brings_the_next_one(tmp_path):
+    s = scraper(tmp_path, {
+        "search.php": SEARCH.encode(), "game.php?id=12": GAME.encode(),
+        "fanart/12-1.jpg": jpeg(1920, 1080), "fanart/12-2.jpg": jpeg(2560, 1440),
+    })
+    target = Target("psp", "Renegade", "Star Wars Battlefront: Renegade Squadron", ["hero"])
+    s.fetch(target)
+    assert s.sources()["psp/Renegade/hero"].endswith("12-1.jpg")
+    s.replace(target, "hero")
+    assert s.sources()["psp/Renegade/hero"].endswith("12-2.jpg")
+    assert image_size(s.store.path("psp", "Renegade", "hero")) == (2560, 1440)
+
+
+def test_dislike_of_the_esde_image_hides_it(tmp_path):
+    store = MediaStore(tmp_path / "media")
+    s = Scraper(store, FakeHttp({}))
+    s.replace(Target("switch", "Mario Party", "Mario Party", ["hero"]), "hero")
+    assert store.is_rejected("switch", "Mario Party", "hero", "esde")
+
+
+class FakeEsde:
+    def __init__(self, files):
+        self.files = files
+
+    def cover(self, system, rom):
+        return self.files.get("cover")
+
+    def hero(self, system, rom):
+        return self.files.get("hero")
+
+    def logo(self, system, rom):
+        return self.files.get("logo")
+
+
+def test_own_art_wins_and_bad_esde_art_is_ignored(tmp_path):
+    shot = tmp_path / "shot.png"
+    shot.write_bytes(png(480, 272))
+    fan = tmp_path / "fan.jpg"
+    fan.write_bytes(jpeg(1920, 1080))
+    store = MediaStore(tmp_path / "media")
+    own = store.target("psp", "Renegade", "logo", ".png")
+    own.write_bytes(png(800, 300))
+    art = pick_art(store, FakeEsde({"cover": shot, "hero": fan}), "psp", "Renegade", Path("Renegade.iso"), "psp")
+    assert art == {"cover": None, "hero": str(fan), "logo": str(own)}
+    store.reject("psp", "Renegade", "hero", "esde")
+    assert pick_art(store, FakeEsde({"hero": fan}), "psp", "Renegade", Path("x"), "psp")["hero"] is None
+
+
+def test_steam_only_when_the_name_really_matches(tmp_path):
+    s = scraper(tmp_path, {
+        "storesearch": b'{"items": [{"id": 202970, "name": "Call of Duty\xc2\xae: Black Ops II"}]}',
+        "library_600x900_2x.jpg": jpeg(600, 900), "library_hero.jpg": jpeg(1920, 620), "logo.png": png(640, 360),
+    })
+    s.providers = [s.providers[2]]  # solo Steam
+    saved = s.fetch(Target("xbox360", "Call of Duty - Black Ops II", "Call of Duty - Black Ops II"))
+    assert set(saved) == {"cover", "hero", "logo"}
+    assert s.fetch(Target("gc", "Pikmin", "Pikmin")) == {}
+
+
+PAGE_WITH_META = GAME + """<h1>Star Wars Battlefront: Renegade Squadron</h1>
+<p class="game-overview">Lead the Renegade Squadron.</p><p>Developer(s): <a href="#">Rebellion</a></p>
+<p>Publishers(s): <a href="#">LucasArts</a></p><p>ReleaseDate: 2007-10-09</p><p>Players: 4</p><p>Genre(s): Action | Shooter</p>"""
+
+
+def test_saves_the_game_sheet_and_uses_its_title_when_esde_only_has_the_file_name(tmp_path):
+    from orbital.library.emulators import game_extra, game_title
+
+    s = scraper(tmp_path, {"search.php": SEARCH.encode(), "game.php?id=12": PAGE_WITH_META.encode()})
+    s.fetch(Target("psp", "Renegade", "Star Wars Battlefront - Renegade Squadron (USA)", ["meta"]))
+    meta = s.store.meta("psp", "Renegade")
+    assert meta["title"] == "Star Wars Battlefront: Renegade Squadron" and meta["genres"] == ["Action", "Shooter"]
+    entry = Path("Star Wars Battlefront - Renegade Squadron (USA).iso")
+    assert game_title("Star Wars Battlefront - Renegade Squadron", entry, meta) == meta["title"]
+    assert game_title("Mi nombre", entry, meta) == "Mi nombre"  # lo que escribiste en ES-DE manda
+    assert game_extra(meta) == {"description": "Lead the Renegade Squadron.", "genres": ["Action", "Shooter"],
+                                "developer": "Rebellion", "year": "2007", "players": "4"}

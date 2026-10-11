@@ -20,13 +20,15 @@ from pathlib import Path
 from urllib.parse import quote
 
 from . import player
-from .config import Config
+from .config import Config, expand
 from .credentials import Credentials
 from .events import EventBus
 from .focus import READY_TIMEOUT, bring_app_to_front, bring_game_to_front, game_ready, is_orbital_window, pin_orbital  # noqa: F401 - compatibilidad
 from .launcher import Launcher
 from .library import cinemeta, detect, emulators, esde, geforcenow, steam, stremio, stremio_api
+from .library.media import KINDS, MediaStore
 from .library.models import LibraryItem
+from .library.scraper import Scraper, Target
 from .sessions import QUICK_EXIT, Sessions  # noqa: F401
 from .state import State
 from .store import ItemStore
@@ -97,6 +99,10 @@ class Catalog:
         self._steam_art = geforcenow.SteamArt(
             Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" / "steam-appids.json"
             if config.source else None)
+        self.media = MediaStore(Path(expand(config.art.dir)) if config.art.dir else None)
+        self._scraper: Scraper | None = None
+        self._scraped: set[tuple[str, str, str]] = set()  # lo que ya se buscó en esta sesión (no insistir)
+        self._scraping = threading.Lock()
         self.scanning = False  # primer escaneo en curso (la interfaz sigue en su pantalla de arranque)
         self._refreshing = threading.Lock()  # un escaneo a la vez (arranque + botón "Actualizar")
         self.sessions = Sessions(config, self.state, self.launcher, self.store, self.events,
@@ -205,7 +211,7 @@ class Catalog:
             self.detected = result.found
         for emu, alternatives in emulators.split_alternatives(self.emulators):
             try:
-                found += emulators.scan(emu, self.esde, alternatives)
+                found += emulators.scan(emu, self.esde, alternatives, self.media)
             except Exception:  # noqa: BLE001 - un emulador con problemas no debe dejar a Orbital sin arrancar
                 log.exception("No pude leer los juegos de %s", emu.name)
         if self.config.stremio.enabled:
@@ -234,12 +240,72 @@ class Catalog:
                 item.image = url
             if item.hero_path:
                 item.hero = url + "?kind=hero"
+            if item.logo_path:
+                item.extra["logo"] = url + "?kind=logo"
         self.store.replace(found)
         log.info("Catálogo: %d elementos", len(found))
+        self.scrape_art(background=True)
         self.watch.refresh_stremio(background=True)
         if not self.watch.cinemeta_items:
             self.watch.refresh_cinemeta(background=True)
         return len(found)
+
+    # --- arte de los juegos (scraper propio) -----------------------------------------------------
+    def art_targets(self, force: bool = False) -> list[Target]:
+        """Juegos a los que les falta portada, fondo o logotipo (o el de ES-DE no sirve)."""
+        paths = {"cover": "art_path", "hero": "hero_path", "logo": "logo_path"}
+        targets = []
+        for item in self.store.all():
+            if not item.system or not item.media_key:
+                continue
+            kinds = [k for k in KINDS
+                     if not self.media.path(item.system, item.media_key, k)
+                     and (force or not getattr(item, paths[k]))]
+            if self.media.meta(item.system, item.media_key) is None:
+                kinds.append("meta")
+            if kinds:
+                targets.append(Target(item.system, item.media_key, item.title, kinds))
+        return targets
+
+    def scrape_art(self, background: bool = False) -> int:
+        """Busca el arte que falte; si consiguió algo, vuelve a escanear para mostrarlo."""
+        if not self.config.art.scrape:
+            return 0
+        if background:
+            threading.Thread(target=self.scrape_art, name="scraper", daemon=True).start()
+            return 0
+        if not self._scraping.acquire(blocking=False):
+            return 0
+        try:
+            targets = []
+            for t in self.art_targets():
+                kinds = [k for k in t.kinds if (t.system, t.key, k) not in self._scraped]
+                self._scraped.update((t.system, t.key, k) for k in kinds)
+                if kinds:
+                    targets.append(Target(t.system, t.key, t.title, kinds))
+            if not targets:
+                return 0
+            self._scraper = self._scraper or Scraper(self.media)
+            added = self._scraper.run(targets)
+        except Exception:  # noqa: BLE001 - sin internet o una fuente caída: se queda el arte que hay
+            log.exception("No pude buscar arte")
+            return 0
+        finally:
+            self._scraping.release()
+        if added:
+            log.info("Scraper: %d imágenes nuevas", added)
+            self.refresh()
+        return added
+
+    def replace_art(self, item_id: str, kind: str) -> bool:
+        """«No me gusta esta imagen»: la descarta y busca otra."""
+        item = self.store.get(item_id)
+        if item is None or not item.system or not item.media_key or kind not in KINDS:
+            return False
+        self._scraper = self._scraper or Scraper(self.media)
+        found = self._scraper.replace(Target(item.system, item.media_key, item.title, [kind]), kind)
+        self.refresh()
+        return found is not None
 
     def stremio_library(self) -> list[LibraryItem]:
         return [i for i in self.items() if i.source == "stremio"]

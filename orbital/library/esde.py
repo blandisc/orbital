@@ -75,6 +75,9 @@ class EsdeLibrary:
     def hero(self, system: str, rom: Path) -> Path | None:
         return self.media(system, rom, HERO_KINDS)
 
+    def logo(self, system: str, rom: Path) -> Path | None:
+        return self.media(system, rom, ("marquees",))
+
     def media(self, system: str, rom: Path, kinds: tuple[str, ...]) -> Path | None:
         rel = rom.relative_to(self.system_dir(system)).with_suffix("")
         for kind in kinds:

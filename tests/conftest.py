@@ -6,6 +6,13 @@ from orbital.catalog import Catalog
 from orbital.config import parse_config
 
 
+@pytest.fixture(autouse=True)
+def _no_network_art(monkeypatch, tmp_path):
+    """Las pruebas nunca salen a internet a buscar portadas ni tocan el arte real del usuario."""
+    monkeypatch.setattr("orbital.library.media.default_root", lambda: tmp_path / "media")
+    monkeypatch.setattr(Catalog, "scrape_art", lambda self, background=False: 0)
+
+
 class FakeLauncher:
     def __init__(self):
         self.opened: list[str] = []

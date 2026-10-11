@@ -94,6 +94,7 @@ def test_esde_lookups_use_the_shortcut_not_the_installed_game(tmp_path):
         meta = lambda self, system, rom: self._check(rom)  # noqa: E731
         chosen_emulator = meta
         cover = meta
+        logo = meta
         hero = meta
 
     emu = EmulatorConfig(id="xbox360", name="Xbox 360", executable=str(exe), system="xbox360",
