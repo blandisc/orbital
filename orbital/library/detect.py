@@ -52,7 +52,7 @@ KNOWN: tuple[KnownEmulator, ...] = (
                   ("-f", "{rom}"), (".gba", ".zip", ".7z"), label="mGBA"),
     KnownEmulator("xbox", "Xbox", "xbox", ("xemu.exe", "xemu"),
                   ("-full-screen", "-dvd_path", "{rom}"), (".iso",), label="xemu"),
-    KnownEmulator("xbox360", "Xbox 360", "xbox360", ("xenia_canary.exe", "xenia.exe"),
+    KnownEmulator("xbox360", "Xbox 360", "xbox360", ("xenia_canary.exe", "xenia_canary_netplay.exe", "xenia.exe"),
                   ("--fullscreen", "{rom}"), (".iso", ".xex", ".zar"), label="Xenia"),
     KnownEmulator("psx", "PlayStation", "psx", ("duckstation-qt-x64-releaseltcg.exe", "duckstation-qt"),
                   ("-batch", "-fullscreen", "{rom}"), (".cue", ".chd", ".m3u", ".pbp"), label="DuckStation"),
