@@ -26,6 +26,17 @@ log = logging.getLogger(__name__)
 QUICK_EXIT = 15  # s: un juego que se cierra antes, solo, seguramente no pudo abrir
 
 
+def memory_problem() -> str | None:
+    """El aviso de memoria si ahora mismo falta (la fuga de DWM o RAM casi llena); None si no."""
+    from . import health
+
+    try:
+        free_mb, dwm = health.free_ram_mb(), health.dwm_gpu_mb()
+    except OSError:
+        return None
+    return health.warning_message(free_mb, dwm) if health.needs_warning(free_mb, dwm) else None
+
+
 class Sessions:
     def __init__(self, config: Config, state: State, launcher: Launcher, store: ItemStore, events: EventBus,
                  runner_for: Callable, last_end: Callable[[], dict | None] = lambda: None) -> None:
@@ -170,6 +181,12 @@ class Sessions:
         # De dónde es, para decir qué revisar si no abrió: Steam, GeForce NOW o un emulador.
         kind = "steam" if item_id.startswith("steam:") else item.source if item and item.source == "geforcenow" else "emulator"
         event = {"type": "closed", "id": item_id, "title": title, "seconds": int(seconds), "crashed": crashed, "kind": kind}
+        if crashed:
+            # Con la memoria casi llena los emuladores truenan al arrancar aunque el juego esté bien:
+            # decirlo (antes: "revisa ROM, firmware, claves", que mandaba a buscar donde no era).
+            low = memory_problem()
+            if low:
+                event["low_memory"] = low
         end = self.last_end() if item_id == "media:player" else None
         if end:  # el reproductor anotó cómo terminó: "Terminaste Interstellar"
             event.update(title=end["title"], finished=end["finished"])

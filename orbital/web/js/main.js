@@ -796,7 +796,11 @@ function handleEvent(event) {
     // Al abrir otro juego se cierra el anterior: su "closed" no debe tapar la carga del nuevo.
     if (!ui.launch.visible || event.id === state.launchingId) ui.launch.hide();
     boot.land();
-    if (event.crashed) {
+    if (event.crashed && event.low_memory) {
+      // No abrió por falta de memoria (no por el juego): la causa real y Reiniciar a la mano.
+      sound.play("error");
+      openMenu(healthMenu(`${event.title} no pudo abrir: ${event.low_memory}`));
+    } else if (event.crashed) {
       // Se cerró solo a los pocos segundos: no es "de vuelta", es que no pudo abrir.
       sound.play("error");
       ui.toast.show(crashMessage(event), { error: true });

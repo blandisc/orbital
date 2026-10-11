@@ -190,3 +190,20 @@ def test_catalog_uses_detected_emulators(downloads, tmp_path, monkeypatch):
     assert [r.name for r in metroid.runners] == ["Ryujinx", "Eden"]
     assert cat.find("halo").runner().argv[1:3] == ["-full-screen", "-dvd_path"]
     assert "xbox" in cat.detected
+
+
+def test_quick_crash_with_low_memory_says_so(library, monkeypatch):
+    from orbital import health
+
+    monkeypatch.setattr(health, "free_ram_mb", lambda: 900)
+    monkeypatch.setattr(health, "dwm_gpu_mb", lambda: (16000, 1200))
+    events = []
+    library.listeners.append(events.append)
+
+    library.sessions.session_ended("emu:x", "Mario Party", 4)
+    closed = [e for e in events if e["type"] == "closed"][-1]
+    assert closed["crashed"] and "suspender no lo arregla" in closed["low_memory"]
+    monkeypatch.setattr(health, "dwm_gpu_mb", lambda: (500, 100))
+    monkeypatch.setattr(health, "free_ram_mb", lambda: 9000)
+    library.sessions.session_ended("emu:x", "Mario Party", 4)
+    assert "low_memory" not in [e for e in events if e["type"] == "closed"][-1]
