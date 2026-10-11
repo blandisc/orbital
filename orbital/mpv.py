@@ -18,6 +18,7 @@ import json
 import logging
 import threading
 import time
+from typing import Any
 
 log = logging.getLogger(__name__)
 
@@ -82,7 +83,7 @@ class Mpv:
         """Comando con argumentos por nombre (osd-overlay los necesita)."""
         return self._send({"command": args}, args.get("name"))
 
-    def get(self, prop: str):
+    def get(self, prop: str) -> Any:
         if prop in self.observe and self._observing:
             with self._cache_lock:
                 if prop in self._cache:

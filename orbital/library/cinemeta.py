@@ -34,7 +34,7 @@ class Cinemeta:
     def __init__(self, base: str = BASE, timeout: float = 10) -> None:
         self.base = base.rstrip("/")
         self.timeout = timeout
-        self._cache: dict[str, tuple[float, object]] = {}
+        self._cache: dict[str, tuple[float, dict]] = {}
         self._lock = threading.Lock()
 
     def _get(self, path: str) -> dict:

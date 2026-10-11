@@ -143,9 +143,9 @@ def tailscale_url() -> str | None:
     exe = tailscale_exe()
     if not exe:
         return None
-    kwargs = {"creationflags": subprocess.CREATE_NO_WINDOW} if sys.platform == "win32" else {}  # type: ignore[attr-defined]
     try:
-        out = subprocess.run([exe, "status", "--json"], capture_output=True, text=True, timeout=8, **kwargs)
+        out = subprocess.run([exe, "status", "--json"], capture_output=True, text=True, timeout=8,
+                             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     except (OSError, subprocess.TimeoutExpired):
         return None
     return parse_tailscale_status(out.stdout) if out.returncode == 0 else None

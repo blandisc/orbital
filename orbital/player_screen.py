@@ -47,6 +47,8 @@ class PlayerScreen:
 
     def _card_accept(self) -> None:
         card = self._card
+        if card is None:
+            return
         if card["kind"] == "skip":
             self._hide_card()
             self.mpv.command("seek", card["to"], "absolute")
@@ -55,6 +57,8 @@ class PlayerScreen:
 
     def _card_dismiss(self) -> None:
         card = self._card
+        if card is None:
+            return
         self._hide_card()
         if card["kind"] == "still":
             self._user_quit = True
@@ -148,7 +152,8 @@ class PlayerScreen:
             if self.on_sub_scale:
                 self._safe(self.on_sub_scale, self.sub_scale)
             option["label"] = f"Tamaño: {player_ui.sub_scale_label(self.sub_scale)}"
-            self._overlay(2, player_ui.menu_ass(self.menu))
+            if self.menu is not None:
+                self._overlay(2, player_ui.menu_ass(self.menu))
             return
         self.close_menu()
         if prop == "fetch":
@@ -186,6 +191,8 @@ class PlayerScreen:
 
     def _menu_press(self, button: str) -> None:
         menu = self.menu
+        if menu is None:
+            return
         if button in ("up", "down"):
             if menu.options:
                 menu.index = max(0, min(len(menu.options) - 1, menu.index + (-1 if button == "up" else 1)))

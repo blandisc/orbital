@@ -120,8 +120,9 @@ class Launcher:
     def _watch_exe(self, running: Running) -> None:
         from . import windows
 
+        exe = running.exe or ""
         deadline = time.time() + self.EXE_START_TIMEOUT
-        while not windows.pids_by_exe(running.exe):
+        while not windows.pids_by_exe(exe):
             if self.current is not running:
                 return
             if time.time() > deadline:
@@ -130,7 +131,7 @@ class Launcher:
                         self.current = None
                 return
             time.sleep(self.POLL / 2)
-        while windows.pids_by_exe(running.exe):
+        while windows.pids_by_exe(exe):
             if self.current is not running:
                 return  # se abrió otra cosa: ya no es lo que estamos midiendo
             time.sleep(self.POLL)

@@ -63,7 +63,7 @@ def wait_until_up(url: str, timeout: float = 20) -> bool:
 
 
 def open_window(url: str) -> None:
-    import webview  # pywebview, opcional: pip install "orbital[window]"
+    import webview  # type: ignore[import-not-found]  # pywebview, opcional: pip install "orbital[window]"
 
     webview.create_window("Orbital", url, fullscreen=True)
     webview.start()

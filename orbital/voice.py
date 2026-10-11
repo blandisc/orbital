@@ -73,7 +73,7 @@ def words_to_numbers(text: str) -> str:
     return re.sub(rf"\b({'|'.join(sorted(_UNITS, key=len, reverse=True))})\b", lambda m: str(_UNITS.index(m.group(1))), text)
 
 
-_EPISODE_ONLY = None  # se arma abajo, con _EPISODE
+_EPISODE_ONLY: list[re.Pattern] = []  # se arma abajo, con _EPISODE
 
 
 def episode_request(text: str) -> dict | None:

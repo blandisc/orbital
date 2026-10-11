@@ -30,18 +30,15 @@ VK_LWIN, VK_MENU, VK_SNAPSHOT = 0x5B, 0x12, 0x2C
 def _known_folder(guid: str) -> Path | None:
     if sys.platform != "win32":
         return None
-    import uuid
-
     from .quick import _GUID
 
     path = ctypes.c_wchar_p()
     if ctypes.windll.shell32.SHGetKnownFolderPath(ctypes.byref(_GUID.of(guid)), 0, None, ctypes.byref(path)):  # type: ignore[attr-defined]
         return None
     try:
-        return Path(path.value)
+        return Path(path.value) if path.value else None
     finally:
         ctypes.windll.ole32.CoTaskMemFree(path)  # type: ignore[attr-defined]
-        del uuid
 
 
 def folders() -> list[Path]:

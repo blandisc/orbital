@@ -187,7 +187,7 @@ class Watch:
         if not self._stremio_busy.acquire(blocking=False):
             return False  # ya hay una descarga en curso
         try:
-            raw = self.stremio_client.library(self.credentials.get(STREMIO_KEY))
+            raw = self.stremio_client.library(self.credentials.get(STREMIO_KEY) or "")
             items = [stremio_item(w) for w in stremio_api.parse_library(raw)]
             self.stremio_error = None
             self._enrich_continue(items)
@@ -303,7 +303,7 @@ class Watch:
         """Fuentes de tus addons, ordenadas por tus preferencias (la primera es la recomendada)."""
         if not self.stremio_linked:
             raise stremio_api.StremioError("Conecta tu cuenta de Stremio en Ajustes")
-        return self.streams.find(self.credentials.get(STREMIO_KEY), kind, video_id, prefs or self.stream_prefs)
+        return self.streams.find(self.credentials.get(STREMIO_KEY) or "", kind, video_id, prefs or self.stream_prefs)
 
     def _wire_player(self) -> None:
         """Lo que el reproductor le pregunta al catálogo (siguiente episodio, otras fuentes…)."""
@@ -393,7 +393,7 @@ class Watch:
         """Dónde ibas según Stremio (0 si no se sabe)."""
         try:
             return stremio_api.resume_seconds(
-                self.stremio_client.library_item(self.credentials.get(STREMIO_KEY), meta_id), video_id)
+                self.stremio_client.library_item(self.credentials.get(STREMIO_KEY) or "", meta_id), video_id)
         except stremio_api.StremioError as exc:
             log.info("No pude leer dónde ibas: %s", exc)
             return 0.0
@@ -402,7 +402,7 @@ class Watch:
         subs = self.subtitles_lang if subs is None else subs
         if subs == "forced":
             return None  # solo los forzados que trae el video: no se buscan subtítulos completos
-        auth = self.credentials.get(STREMIO_KEY)
+        auth = self.credentials.get(STREMIO_KEY) or ""
         return (lambda: self.streams.subtitles(auth, kind, video_id, subs)) if subs else None
 
     def play_native(self, mpv_exe: str, url: str, kind: str, meta_id: str, video_id: str, title: str,
@@ -665,33 +665,3 @@ class Watch:
             log.warning("No pude guardar el progreso en Stremio: %s", exc)
         if refresh:
             self.refresh_stremio(background=True)
-
-    def _player_finished(self, meta: dict, position: float, duration: float, watched: float) -> None:
-        self._save_progress(meta, position, duration, watched, refresh=True)
-
-    def _save_progress(self, meta: dict, position: float, duration: float, watched: float, refresh: bool) -> None:
-        """Guarda en tu cuenta de Stremio dónde te quedaste (Seguir viendo, en Orbital y en Stremio).
-        Se llama cada minuto, al pausar y al terminar; `watched` son los segundos vistos desde la vez anterior."""
-        auth = self.credentials.get(STREMIO_KEY)
-        if not auth or (refresh and watched < 20 and position < 60):
-            return  # se abrió y cerró sin ver nada: no se toca tu biblioteca
-        kind, meta_id, video_id = meta["kind"], meta["meta_id"], meta["video_id"]
-        try:
-            info = self.cinemeta.meta(kind, meta_id)
-        except cinemeta.CinemetaError:
-            info = {}
-        next_video = cinemeta.next_episode(info, video_id) if kind == "series" and info else None
-        try:
-            raw = self.stremio_client.library_item(auth, meta_id)
-            item = stremio_api.with_progress(
-                raw, meta_id=meta_id, kind=kind, name=info.get("name") or meta.get("title") or meta_id,
-                poster=info.get("poster"), video_id=video_id, position=position, duration=duration,
-                watched=watched, next_video=next_video, now=time.time(),
-                video_ids=[v["id"] for v in info.get("videos") or [] if isinstance(v, dict) and v.get("id")])
-            self.stremio_client.save_library_item(auth, item)
-            log.info("Progreso guardado en Stremio: %s %d/%d s", video_id, position, duration)
-        except stremio_api.StremioError as exc:
-            log.warning("No pude guardar el progreso en Stremio: %s", exc)
-        if refresh:
-            self.refresh_stremio(background=True)
-

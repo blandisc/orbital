@@ -28,8 +28,7 @@ jobs:
       - name: Revisión de código (ruff)
         run: python -m ruff check orbital tests scripts
 
-      - name: Tipos (pyright, solo informa)
-        continue-on-error: true
+      - name: Tipos (pyright)
         run: npx --yes pyright@1.1.390
 
       - name: Pruebas de Python

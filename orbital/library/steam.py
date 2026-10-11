@@ -90,10 +90,10 @@ def user_stats(steam_root: Path) -> dict[str, dict]:
     for appid, info in apps.items():
         if not isinstance(info, dict):
             continue
-        last, minutes = info.get("lastplayed"), info.get("playtime")
+        last, minutes = str(info.get("lastplayed") or ""), str(info.get("playtime") or "")
         stats[appid] = {
-            "last_played": int(last) if str(last or "").isdigit() else 0,
-            "playtime": int(minutes) * 60 if str(minutes or "").isdigit() else 0,
+            "last_played": int(last) if last.isdigit() else 0,
+            "playtime": int(minutes) * 60 if minutes.isdigit() else 0,
         }
     return stats
 

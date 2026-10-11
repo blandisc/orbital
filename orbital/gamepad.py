@@ -200,7 +200,7 @@ class _XInputCapabilitiesEx(ctypes.Structure):
 def _load_vendor():
     """XInputGetCapabilitiesEx (ordinal 108): da la marca (VendorId) de cada mando. None si no existe."""
     try:
-        fn = ctypes.WinDLL("xinput1_4.dll")[108]
+        fn = ctypes.WinDLL("xinput1_4.dll")[108]  # type: ignore[index]
     except (OSError, AttributeError):
         return None
     fn.argtypes = [ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(_XInputCapabilitiesEx)]
@@ -215,7 +215,7 @@ def _load_vendor():
 def _load_get_state():
     """XInputGetStateEx (ordinal 100): como XInputGetState pero incluye el botón Guía."""
     dll = ctypes.WinDLL("xinput1_4.dll")
-    fn = dll[100]
+    fn = dll[100]  # type: ignore[index]
     fn.argtypes = [ctypes.c_uint, ctypes.POINTER(_XInputState)]
     fn.restype = ctypes.c_uint
     return fn

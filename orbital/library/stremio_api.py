@@ -18,6 +18,7 @@ import urllib.request
 import zlib
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Any
 
 log = logging.getLogger(__name__)
 
@@ -102,12 +103,12 @@ def with_progress(raw: dict | None, *, meta_id: str, kind: str, name: str, poste
     Se parte del que ya existe y solo se toca `state`; si no existía, se crea como `temp` (así
     lo hace Stremio con lo que ves sin añadirlo a tu biblioteca). Tiempos en milisegundos.
     """
-    item = dict(raw or {
+    item: dict[str, Any] = dict(raw or {
         "_id": meta_id, "name": name, "type": kind, "poster": poster, "posterShape": "poster",
         "removed": True, "temp": True, "_ctime": _iso(now),
         "behaviorHints": {"defaultVideoId": None, "featuredVideoId": None, "hasScheduledVideos": False},
     })
-    state = dict(item.get("state") or {})
+    state: dict[str, Any] = dict(item.get("state") or {})
     if state.get("video_id") != video_id:
         state["timeWatched"] = 0
     pos_ms, dur_ms, watched_ms = int(position * 1000), int(duration * 1000), int(watched * 1000)
@@ -173,7 +174,7 @@ def library_toggled(raw: dict | None, *, meta_id: str, kind: str, name: str, pos
                     add: bool, now: float) -> dict:
     """El libraryItem dentro o fuera de tu biblioteca de Stremio ("Mi lista"): `removed` y `temp`
     son lo que Stremio usa para eso; el avance (state) no se toca."""
-    item = dict(raw or {
+    item: dict[str, Any] = dict(raw or {
         "_id": meta_id, "name": name, "type": kind, "poster": poster, "posterShape": "poster",
         "_ctime": _iso(now), "state": {},
         "behaviorHints": {"defaultVideoId": None, "featuredVideoId": None, "hasScheduledVideos": False},

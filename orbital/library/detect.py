@@ -160,7 +160,7 @@ def find_executables(dirs: list[SearchDir]) -> dict[str, Path]:
     return {name: path for name, (_, path) in found.items()}
 
 
-def detect(dirs: list[SearchDir], skip_ids: set[str] = frozenset()) -> Detection:
+def detect(dirs: list[SearchDir], skip_ids: set[str] | frozenset[str] = frozenset()) -> Detection:
     executables = find_executables(dirs)
     result = Detection()
     for known in KNOWN:

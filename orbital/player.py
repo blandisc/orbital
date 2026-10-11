@@ -388,7 +388,7 @@ class OrbitalPlayer(PlayerScreen):
 
     def _play_next(self, segment: Segment, auto: bool) -> None:
         info = segment.upnext
-        if not info or segment.closed:
+        if not isinstance(info, dict) or segment.closed:
             return
         self._hide_card()
         self._quiet_episodes = self._quiet_episodes + 1 if auto else 0

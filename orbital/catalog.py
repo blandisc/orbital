@@ -430,7 +430,8 @@ class Catalog:
     def grouped_items(self, row_id: str) -> list[LibraryItem]:
         """Elementos de una fila, en el mismo orden que la interfaz."""
         row = next((r for r in self.grouped() if r["id"] == row_id), None)
-        return [self.get(i["id"]) for i in row["items"]] if row else []
+        found = (self.get(i["id"]) for i in row["items"]) if row else ()
+        return [i for i in found if i is not None]
 
     def hidden_count(self) -> int:
         return sum(1 for i in self.items(include_hidden=True) if self.state.prefs(i.id).get("hidden"))
