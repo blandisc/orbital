@@ -249,6 +249,32 @@ def resume(pids: set[int]) -> int:
     return _nt_process_call(pids, "NtResumeProcess")
 
 
+def windows_of(pids: set[int]) -> list[int]:
+    """Ventanas visibles con título de esos procesos (un emulador tiene varias: lista y juego)."""
+    if not WIN or not pids:
+        return []
+    found: list[int] = []
+
+    @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    def enum(hwnd, _):
+        if user32.IsWindowVisible(hwnd) and user32.GetWindowTextLengthW(hwnd) and pid_of(hwnd) in pids:
+            found.append(hwnd)
+        return True
+
+    user32.EnumWindows(enum, 0)
+    return found
+
+
+def set_topmost(hwnd: int, on: bool) -> bool:
+    """Siempre encima (la pantalla de carga de Orbital tapa las ventanas del emulador mientras abre)."""
+    if not WIN or not hwnd:
+        return False
+    user32.SetWindowPos.argtypes = [wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+                                    ctypes.c_int, wintypes.UINT]
+    # HWND_TOPMOST (-1) / HWND_NOTOPMOST (-2); SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE
+    return bool(user32.SetWindowPos(hwnd, -1 if on else -2, 0, 0, 0, 0, 0x2 | 0x1 | 0x10))
+
+
 def is_fullscreen(hwnd: int) -> bool:
     """¿La ventana cubre todo su monitor? (para no alternar pantalla completa por error)."""
     if not WIN or not hwnd:

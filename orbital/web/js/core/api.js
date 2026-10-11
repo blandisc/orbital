@@ -15,6 +15,7 @@ export const api = {
   library: () => request("/api/library"),
   refresh: () => post("/api/library/refresh"),
   launch: (id, runner = null) => post("/api/launch", { id, runner }),
+  reveal: () => post("/api/launch/reveal"),
   stop: () => post("/api/stop"),
   status: () => request("/api/status"),
   system: () => request("/api/system"),

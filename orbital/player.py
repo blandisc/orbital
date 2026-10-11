@@ -188,6 +188,11 @@ def has_language(tracks: list[dict], kind: str, codes: set[str]) -> bool:
     return any(t.get("type") == kind and str(t.get("lang") or "").lower() in codes for t in tracks or [])
 
 
+def idle_expired(since: float, now: float, limit: float) -> bool:
+    """¿Lleva más de `limit` segundos en pausa? (0 = nunca se cierra solo)."""
+    return limit > 0 and now - since >= limit
+
+
 def wrong_audio(tracks: list[dict], lang: str) -> bool:
     """Las pistas de audio tienen idioma y ninguna es el tuyo (sin etiquetas no se sabe: no avisa)."""
     tagged = [str(t.get("lang")).lower() for t in tracks or []
@@ -205,11 +210,14 @@ class OrbitalPlayer:
 
     POLL = 3.0
 
-    def __init__(self, on_finished=None, mpv: Mpv | None = None) -> None:
+    def __init__(self, on_finished=None, mpv: Mpv | None = None, idle_seconds: float = 0, on_idle=None) -> None:
         self.mpv = mpv or Mpv()
         self.remote = PlayerRemote(self.mpv)
         self.current: Playback | None = None
         self.on_finished = on_finished  # (meta, posición, duración, segundos vistos)
+        # Un video olvidado en pausa (saliste con Home y te fuiste) se cierra solo; el avance se guarda.
+        self.idle_seconds = idle_seconds
+        self.on_idle = on_idle  # (título, minutos): para avisar en Orbital
 
     def play(self, run, mpv_exe: str, url: str, title: str, meta: dict, *, subtitles: str = "en",
              fallback_subs=None, **options) -> subprocess.Popen:
@@ -228,12 +236,22 @@ class OrbitalPlayer:
         # Mientras reproduce, pregunta la posición cada pocos segundos (al cerrar ya no se puede).
         position, duration, watched, subs_checked = start, 0.0, 0.0, False
         last = time.monotonic()
+        paused_since: float | None = None
         while playback.process.poll() is None:
             time.sleep(self.POLL)
             pos, dur = self.mpv.get("time-pos"), self.mpv.get("duration")
             now = time.monotonic()
+            paused = bool(self.mpv.get("pause"))
+            paused_since = (paused_since or now) if paused else None
+            if paused_since is not None and idle_expired(paused_since, now, self.idle_seconds):
+                log.info("%s llevaba %d min en pausa: se cierra (el avance queda guardado)",
+                         playback.title, self.idle_seconds // 60)
+                self.mpv.command("quit")
+                if self.on_idle:
+                    self.on_idle(playback.title, int(self.idle_seconds // 60))
+                paused_since = None
             if isinstance(pos, (int, float)) and isinstance(dur, (int, float)) and dur > 0:
-                if not self.mpv.get("pause"):
+                if not paused:
                     watched += min(now - last, abs(pos - position) + 1)
                 position, duration = float(pos), float(dur)
                 if not subs_checked:

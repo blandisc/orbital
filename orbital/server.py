@@ -120,6 +120,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     voice = VoiceController(catalog, kiosk)
     bus = EventBus()
     shell = ConsoleShell(catalog, kiosk, pause_file=paused_path() if shortcuts else None)
+    catalog.before_launch = shell.close_previous  # abrir algo nuevo cierra lo anterior (no queda olvidado)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -189,7 +190,14 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             raise HTTPException(404, "Elemento no encontrado")
         except (OSError, RuntimeError, ValueError) as exc:
             raise HTTPException(500, f"No se pudo abrir: {exc}")
-        return {"ok": True, "title": item.title}
+        # `reveal`: la pantalla de carga espera el evento launch-ready (el juego ya está listo).
+        return {"ok": True, "title": item.title, "reveal": catalog.revealing}
+
+    @app.post("/api/launch/reveal")
+    def launch_reveal() -> dict:
+        """B en la pantalla de carga: mostrar ya el juego (o lo que haya)."""
+        catalog.reveal_now()
+        return {"ok": True}
 
     @app.get("/api/status")
     def status() -> dict:
@@ -267,7 +275,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
                 catalog.play_source(kind, meta_id, video_id, int(body["source"]), title)
             except ValueError as exc:
                 raise HTTPException(409, str(exc))
-            return {"ok": True}
+            return {"ok": True, "reveal": catalog.revealing}
         catalog.play_stremio(kind, meta_id, body.get("video_id"), title)
         return {"ok": True}
 

@@ -40,6 +40,10 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 
 | Situación | Qué pasa | Estado |
 |---|---|---|
+| Abres un juego de un emulador | Pantalla de carga de Orbital (portada y fondo del juego) ENCIMA del emulador hasta que el juego está listo (pantalla completa o su nombre en la ventana); se funde a negro y aparece el juego. Ya no se ven la lista de Eden ni sus ventanas. B la salta | ✅ (nuevo; verificado: Smash Bros. listo en 13 s) |
+| Abres otra cosa con un juego abierto | Te pregunta "¿Cerrar X?" ("Volver a X" va primero); al aceptar, cierra el anterior y abre lo nuevo. Un video se cierra sin preguntar (su avance queda guardado) | ✅ (nuevo) |
+| Dejas un video en pausa | A los 15 min se cierra solo; sigues donde te quedaste (`sessions.video_idle_minutes`) | ✅ (nuevo) |
+| Dejas un juego congelado (saliste con Home) | A la hora se cierra solo y te avisa; lo no guardado se pierde (`sessions.game_idle_minutes`, 0 = nunca) | ✅ (nuevo) |
 | Abres un juego y su ventana aparece detrás de Orbital (Windows lo hace a veces) | Orbital se la pasa al frente en cuanto existe, solo si Orbital sigue al frente | ✅ (nuevo) |
 | El emulador se relanza a sí mismo al arrancar (xemu) | Orbital sigue al proceso nuevo; no sale encima del juego | ✅ (nuevo; antes salía a los 2 s) |
 | Un lanzador abre el juego y se cierra (`launch-eden.cmd`, lanzadores propios) | Orbital sigue al juego, no al lanzador | ✅ (nuevo) |

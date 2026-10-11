@@ -19,7 +19,14 @@
 @keyframes live { 50% { opacity: .35; } }
 .status-bar__playing--paused .status-bar__live { animation: none; background: var(--color-warning); }
 .status-bar__playing-label { font-size: var(--text-xs); font-weight: var(--weight-medium); letter-spacing: var(--tracking-caps); text-transform: uppercase; }
-.status-bar__playing-title { overflow: hidden; max-width: 22rem; color: var(--color-text); text-overflow: ellipsis; white-space: nowrap; }
+.status-bar__playing-title { overflow: hidden; max-width: 11rem; color: var(--color-text); text-overflow: ellipsis; white-space: nowrap; }
+/* Las pestañas van centradas: lo que está en curso no debe alcanzarlas. El punto ya dice el estado
+   (verde en curso, ámbar en pausa); la palabra solo cabe en pantallas anchas. */
+.status-bar__playing-label { display: none; }
+@media (min-width: 1700px) {
+  .status-bar__playing-label { display: inline; }
+  .status-bar__playing-title { max-width: 18rem; }
+}
 
 /* Secciones al centro: la activa en sólido; LB/RB a los lados. */
 .status-bar__tabs {

@@ -158,3 +158,9 @@ def test_subtitles_from_subtitle_addons_in_your_language(monkeypatch):
     monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, addon, kind, vid: asked.append(addon["name"]) or [])
     finder.find("key", "movie", "tt0816692", streams.Preferences())
     assert asked[-1] == "Torrentio"
+
+
+def test_idle_rule():
+    assert not player.idle_expired(0, 899, 900)
+    assert player.idle_expired(0, 900, 900)
+    assert not player.idle_expired(0, 10_000, 0)  # 0 = nunca

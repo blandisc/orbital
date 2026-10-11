@@ -84,3 +84,12 @@ test("el menú Y dice lo que es: Ver, Episodios, Abrir; emuladores solo en juego
   assert.ok(!movie.options.some((o) => o.label.startsWith("Abrir con")));
   assert.deepEqual(gameMenu({ id: "media:search", title: "Buscar", source: "search" }).options.map((o) => o.label), ["Buscar", "Cancelar"]);
 });
+
+test("abrir otra cosa con un juego abierto: pregunta, y quedarse va primero", async () => {
+  const { switchMenu } = await import("../../orbital/web/js/core/menus.js");
+  const menu = switchMenu({ running: { title: "Zelda" }, title: "Hades", command: { type: "launch", id: "steam:1", runner: null } });
+  assert.equal(menu.title, "¿Cerrar Zelda?");
+  assert.deepEqual(menu.options[0].command, { type: "resume" });
+  assert.deepEqual(menu.options[1].command, { type: "launch", id: "steam:1", runner: null, confirmed: true });
+  assert.equal(menu.options[1].danger, true);
+});

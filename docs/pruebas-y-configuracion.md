@@ -44,6 +44,16 @@
 - [ ] Terminar un episodio: "Seguir viendo" pasa al siguiente.
 - [ ] Algo sin subtítulos en inglés dentro del video: se agregan los de tu addon de subtítulos (si tienes OpenSubtitles).
 
+### GeForce NOW
+- [ ] En Juegos aparece la fila "GeForce NOW" con los juegos de tu "Mi biblioteca" que se pueden jugar (se lee de la app de GFN; ábrela de vez en cuando para que se actualice).
+- [ ] A en un juego de GFN lo abre directo en la nube (no lo pude probar: abre una sesión de tu cuenta).
+
+### Pantalla de carga y sesiones
+- [ ] Al abrir un juego de Eden no se ven la lista de juegos ni ventanas de Eden: la pantalla de Orbital se queda hasta que el juego arranca, se funde a negro y aparece el juego.
+- [ ] B en la pantalla de carga la salta.
+- [ ] Con un juego abierto, abrir otro pregunta "¿Cerrar…?" y "Volver a…" regresa al juego.
+- [ ] Un video en pausa 15 min se cierra solo; al reabrirlo sigue donde te quedaste.
+
 ### Steam
 - [ ] El héroe muestra el logotipo, las horas reales y el tamaño; Marvel Rivals avisa "Actualización pendiente".
 - [ ] Tras jugar algo de Steam, sus horas se actualizan en Orbital (unos segundos después de cerrar).

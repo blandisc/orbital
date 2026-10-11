@@ -270,3 +270,24 @@ def test_orbital_player_pauses_normally_and_gets_the_gamepad():
     assert shell.player.calls[-1] == "pause"
     shell.home()
     assert win.fg == DESKTOP_APP and shell.player.calls[-1] == "progress"
+
+
+def test_opening_something_else_closes_the_previous_game():
+    shell, win, _ = make(dict(MANAGED, id="eden:mario"))
+    shell.close_previous("steam:1")
+    assert shell.catalog.launcher.stopped and shell.catalog.launcher.forced
+    shell, win, _ = make(dict(MANAGED, id="eden:mario"))
+    shell.close_previous("eden:mario")  # el mismo juego ("Continuar"): no se cierra
+    assert not shell.catalog.launcher.stopped
+
+
+def test_frozen_game_closes_after_the_limit(tmp_path):
+    shell, win, _ = make(MANAGED)
+    notes = []
+    shell.catalog._notify = notes.append
+    shell.home()  # congelado
+    start = shell.paused_since
+    assert not shell.check_idle(start + 59 * 60)
+    assert shell.check_idle(start + 60 * 60)
+    assert shell.catalog.launcher.stopped and not shell.is_paused and not win.suspended  # se descongela para cerrar
+    assert notes and "llevaba 60 min" in notes[0]["message"]

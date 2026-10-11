@@ -233,7 +233,7 @@ def test_sources_and_play_chosen_source_opens_player(linked, monkeypatch):
         data = c.get("/api/stremio/sources", params={"kind": "series", "id": "tt1", "video": "tt1:1:1"}).json()
         assert data["sources"][0]["resolution"] == "1080p" and "SECRETKEY" not in str(data)  # nada de claves
         assert c.post("/api/stremio/play", json={"kind": "series", "id": "tt1", "video_id": "tt1:1:1",
-                                                 "source": data["sources"][0]["id"], "title": "Show"}).json() == {"ok": True}
+                                                 "source": data["sources"][0]["id"], "title": "Show"}).json() == {"ok": True, "reveal": False}
     assert sent(linked).startswith("stremio:///player/")  # directo al reproductor, sin la lista de Stremio
 
 

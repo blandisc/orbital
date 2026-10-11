@@ -5,7 +5,13 @@
   animation: fade-in var(--duration-base) var(--ease-out);
 }
 .launch--leaving { animation: fade-out var(--duration-base) var(--ease-in) forwards; }
-.launch__backdrop { position: absolute; inset: -2rem; background-size: cover; background-position: center; filter: blur(28px) brightness(.3) saturate(1.15); animation: launch-zoom 8s linear forwards; }
+/* El juego está listo: todo se funde a negro y el servidor corta al juego (de negro al primer
+   cuadro del juego, en vez de pasar por la lista de Eden o por Orbital). */
+.launch { transition: background-color 320ms var(--ease-in); }
+.launch > * { transition: opacity 320ms var(--ease-in), transform 320ms var(--ease-in); }
+.launch--revealing { background-color: #000; }
+.launch--revealing > * { opacity: 0; transform: scale(.985); }
+.launch__backdrop { position: absolute; inset: -2rem; background-size: cover; background-position: center; filter: blur(28px) brightness(.3) saturate(1.15); animation: launch-zoom 24s cubic-bezier(.2, .6, .3, 1) forwards; }
 .launch__content { position: relative; display: flex; align-items: center; gap: var(--space-8); padding: 0 var(--page-gutter); }
 .launch__cover {
   flex: none; height: 19rem; width: calc(19rem * var(--ratio, .667)); border-radius: var(--radius-lg);

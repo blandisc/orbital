@@ -98,6 +98,19 @@ class AppConfig:
 
 
 @dataclass
+class SessionsConfig:
+    """Que nada se quede abierto para siempre."""
+    # Minutos que un video puede quedar en pausa antes de cerrarse solo (el avance se guarda en
+    # Stremio y sigues donde te quedaste). 0 = nunca.
+    video_idle_minutes: int = 15
+    # Minutos que un juego puede quedar congelado (saliste con Home) antes de cerrarse solo. Lo no
+    # guardado se pierde, por eso es más largo. 0 = nunca.
+    game_idle_minutes: int = 60
+    # Abrir algo nuevo cierra lo que estaba abierto (como una consola): si no, quedaba olvidado.
+    close_previous: bool = True
+
+
+@dataclass
 class Config:
     server: ServerConfig = field(default_factory=ServerConfig)
     ui: UiConfig = field(default_factory=UiConfig)
@@ -105,6 +118,7 @@ class Config:
     stremio: StremioConfig = field(default_factory=StremioConfig)
     esde: EsdeConfig = field(default_factory=EsdeConfig)
     detect: DetectConfig = field(default_factory=DetectConfig)
+    sessions: SessionsConfig = field(default_factory=SessionsConfig)
     emulators: list[EmulatorConfig] = field(default_factory=list)
     apps: list[AppConfig] = field(default_factory=list)
     source: Path | None = None
@@ -143,6 +157,7 @@ def parse_config(raw: dict[str, Any] | None, source: Path | None = None) -> Conf
         stremio=_section(StremioConfig, raw.get("stremio")),
         esde=_section(EsdeConfig, raw.get("esde")),
         detect=_section(DetectConfig, raw.get("detect")),
+        sessions=_section(SessionsConfig, raw.get("sessions")),
         emulators=[_section(EmulatorConfig, e) for e in raw.get("emulators") or []],
         apps=[_section(AppConfig, a) for a in raw.get("apps") or []],
         source=source,

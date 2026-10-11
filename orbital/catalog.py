@@ -85,31 +85,87 @@ def bring_app_to_front(exe: str, timeout: float = 10.0, fullscreen: bool = False
 ORBITAL_BROWSERS = {"msedge.exe", "chrome.exe", "chromium.exe"}
 
 
-def bring_game_to_front(launcher: Launcher, item_id: str, timeout: float = 30.0, win=None) -> bool:
-    """Windows no deja que una ventana nueva le quite el foco a otra app: el juego podía abrir
-    DETRÁS de Orbital y parecía que "no pasó nada". Cuando aparece su ventana y Orbital sigue al
-    frente, se la pasa al juego. Si ya estás en otra cosa, no se pelea por el foco."""
+READY_TIMEOUT = 25.0  # s máximos con la pantalla de carga de Orbital encima
+READY_SETTLE = .6  # s tras detectar el juego: que pinte sus primeros cuadros
+FADE_TO_BLACK = .35  # s que tarda la pantalla de carga en irse a negro antes del corte
+
+
+def _words(text: str) -> set[str]:
+    return {w for w in normalize(text).split() if len(w) >= 3}
+
+
+def game_ready(windows: list[tuple[str, bool]], title: str, runner: str | None = None) -> bool:
+    """¿Ya está el juego (no la lista del emulador ni su ventana de carga)? Lo está si alguna ventana
+    ocupa toda la pantalla o su título nombra al juego ("Eden | Mario Party Superstars")."""
+    wanted = _words(title) - _words(runner or "")
+    for win_title, fullscreen in windows:
+        if fullscreen:
+            return True
+        found = _words(win_title)
+        if wanted and len(wanted & found) >= max(1, round(len(wanted) * .6)):
+            return True
+    return False
+
+
+def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runner: str | None = None,
+                        notify=None, skip: threading.Event | None = None, timeout: float = READY_TIMEOUT,
+                        win=None, sleep=time.sleep) -> bool:
+    """Pantalla de carga hasta que el juego esté listo, y luego el juego al frente.
+
+    Mientras el emulador abre se ven sus ventanas feas (la lista de juegos de Eden, una consola…).
+    Si Orbital está al frente, se queda ENCIMA (topmost) con su pantalla "Abriendo" hasta que el juego
+    está listo; entonces la pantalla se va a negro (evento launch-ready) y se corta al juego.
+    Windows tampoco deja que una ventana nueva le quite el foco a otra app: el juego podía quedar
+    detrás de Orbital. Si ya estás en otra cosa, no se pelea por el foco. `skip`: B en la pantalla
+    de carga (mostrar ya lo que haya)."""
     if win is None:
         if sys.platform != "win32":
             return False
         from . import windows as win
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        status = launcher.status()
-        if not status or status.get("id") != item_id:
-            return False  # se cerró o se abrió otra cosa
-        hwnd = win.main_window(win.process_tree(status["pid"])) if status.get("pid") else 0
-        if hwnd:
-            fg = win.foreground()
-            if fg == hwnd:
-                return True
-            orbital_in_front = "Orbital" in win.title(fg) and win.exe_name(win.pid_of(fg)) in ORBITAL_BROWSERS
-            if not orbital_in_front:
-                return False
-            if win.focus(hwnd):
-                return True
-        time.sleep(.5)
-    return False
+    notify = notify or (lambda event: None)
+    fg = win.foreground()
+    orbital = fg if "Orbital" in win.title(fg) and win.exe_name(win.pid_of(fg)) in ORBITAL_BROWSERS else 0
+    pinned = bool(orbital) and win.set_topmost(orbital, True)
+    target = 0
+    started = time.time()
+    try:
+        deadline = time.time() + timeout
+        while time.time() < deadline and not (skip and skip.is_set()):
+            status = launcher.status()
+            if not status or status.get("id") != item_id:
+                return False  # se cerró (o truena) o se abrió otra cosa: Orbital se queda
+            pids = win.process_tree(status["pid"]) if status.get("pid") else set()
+            hwnds = win.windows_of(pids) if pids else []
+            if hwnds:
+                target = hwnds[0]
+                info = [(win.title(h), win.is_fullscreen(h)) for h in hwnds]
+                ready = next((h for h, i in zip(hwnds, info) if game_ready([i], title, runner)), 0)
+                if ready or not pinned:
+                    target = ready or target
+                    if ready:
+                        log.info("%s listo tras %.1f s: %s", title, time.time() - started, win.title(ready))
+                    break
+            sleep(.3)
+        if pinned and not (skip and skip.is_set()) and time.time() >= deadline:
+            log.info("%s sin señal de listo en %.0f s: se muestra igual", title, timeout)
+        if not target:
+            status = launcher.status()
+            pids = win.process_tree(status["pid"]) if status and status.get("pid") else set()
+            target = win.main_window(pids) if pids else 0
+        if pinned:
+            sleep(READY_SETTLE)
+            notify({"type": "launch-ready", "id": item_id})  # la pantalla de carga se va a negro
+            sleep(FADE_TO_BLACK)
+    finally:
+        if pinned:
+            win.set_topmost(orbital, False)
+    if not target:
+        return False
+    fg = win.foreground()
+    if fg == target:
+        return True
+    orbital_in_front = "Orbital" in win.title(fg) and win.exe_name(win.pid_of(fg)) in ORBITAL_BROWSERS
+    return orbital_in_front and win.focus(target)
 
 
 def stremio_item(w: stremio_api.Watchable) -> LibraryItem:
@@ -158,7 +214,14 @@ class Catalog:
         self.cinemeta = cinemeta_client or cinemeta.Cinemeta()
         self._steam_art = geforcenow.SteamArt()
         self.streams = streams.StreamFinder(self.stremio_client)
-        self.player = player.OrbitalPlayer(on_finished=self._player_finished)
+        self.player = player.OrbitalPlayer(
+            on_finished=self._player_finished, idle_seconds=config.sessions.video_idle_minutes * 60,
+            on_idle=lambda title, minutes: self._notify({
+                "type": "toast", "message": f"Cerré {title}: llevaba {minutes} min en pausa. Sigues donde te quedaste."}))
+        # Antes de abrir algo, cerrar lo que estaba abierto (lo pone el servidor: shell.close_previous).
+        self.before_launch: Callable[[str], None] | None = None
+        self._reveal_skip = threading.Event()
+        self.revealing = False  # el último lanzamiento tiene pantalla de carga hasta launch-ready
         self._cinemeta_items: list[LibraryItem] = []
         self.listeners: list[Listener] = []
         self._items: dict[str, LibraryItem] = {}
@@ -431,9 +494,12 @@ class Catalog:
 
     # --- acciones ------------------------------------------------------------
     def launch(self, item_id: str, runner_id: str | None = None) -> LibraryItem:
+        self.revealing = False
         item = self.get(item_id)
         if item is None:
             raise KeyError(item_id)
+        if self.before_launch:
+            self.before_launch(item.id)
         if item.source in ("stremio", "cinemeta") or item.id == "media:stremio":
             self.open_stremio(item.uri if item.id != "media:stremio" else None, item.title)
             self.state.record_launch(item.id)
@@ -450,11 +516,11 @@ class Catalog:
         if runner:
             proc = self.launcher.run(runner.argv, cwd=runner.cwd)
             self.launcher.track(item.id, item.title, proc, runner=runner.name)
-            self._to_front(item.id)
+            self.revealing = self._to_front(item.id, item.title, runner.name)
         elif item.argv:
             proc = self.launcher.run(item.argv, cwd=item.cwd)
             self.launcher.track(item.id, item.title, proc)
-            self._to_front(item.id)
+            self.revealing = self._to_front(item.id, item.title)
         elif item.uri:
             self.launcher.open_uri(item.uri)
             self.launcher.track(item.id, item.title, None, steam_appid=item.steam_appid)
@@ -463,10 +529,20 @@ class Catalog:
         self.state.record_launch(item.id)
         return item
 
-    def _to_front(self, item_id: str) -> None:
-        if sys.platform == "win32":
-            threading.Thread(target=bring_game_to_front, args=(self.launcher, item_id), daemon=True,
-                             name="to-front").start()
+    def _to_front(self, item_id: str, title: str = "", runner: str | None = None) -> bool:
+        """Pantalla de carga hasta que el juego esté listo (ver bring_game_to_front). Devuelve si la
+        interfaz debe esperar el evento launch-ready en lugar de esconder "Abriendo" sola."""
+        if sys.platform != "win32":
+            return False
+        self._reveal_skip = threading.Event()
+        threading.Thread(target=bring_game_to_front, args=(self.launcher, item_id, title, runner),
+                         kwargs={"notify": self._notify, "skip": self._reveal_skip}, daemon=True,
+                         name="to-front").start()
+        return True
+
+    def reveal_now(self) -> None:
+        """B en la pantalla de carga: deja de esperar y muestra lo que haya."""
+        self._reveal_skip.set()
 
     def open_stremio(self, uri: str | None, title: str) -> None:
         """Abre Stremio (opcionalmente en un enlace) y lo vigila por su ejecutable: si ya estaba
@@ -503,6 +579,7 @@ class Catalog:
     def play_source(self, kind: str, meta_id: str, video_id: str, index: int, title: str) -> str:
         """Reproduce la fuente elegida: en el reproductor de Orbital (mpv, con el mando) o, si no
         está o así se configuró, directo en el de Stremio (sin su lista de fuentes)."""
+        self.revealing = False
         source = self.streams.get(kind, video_id, self.stream_prefs, index)
         if source is None:
             raise ValueError("Esa fuente ya no está disponible; vuelve a cargar las fuentes")
@@ -524,13 +601,15 @@ class Catalog:
         except stremio_api.StremioError as exc:
             log.info("No pude leer dónde ibas: %s", exc)
         subs = self.config.stremio.subtitles
+        if self.before_launch:
+            self.before_launch("media:player")
         process = self.player.play(
             self.launcher.run, mpv_exe, url, title,
             {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title},
             start=start, audio=self.config.stremio.audio, subtitles=subs,
             fallback_subs=(lambda: self.streams.subtitles(auth, kind, video_id, subs)) if subs else None)
         self.launcher.track("media:player", title, process, runner="Reproductor")
-        self._to_front("media:player")
+        self.revealing = self._to_front("media:player", title)
 
     @property
     def native_player(self) -> bool:

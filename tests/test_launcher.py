@@ -136,17 +136,26 @@ def test_player_warns_when_audio_is_another_language():
 
 
 class FocusWindows:
+    """Orbital (1) al frente; el emulador (pid 20) abre su lista (2) y luego el juego (3)."""
+
     def __init__(self, fg_title="Orbital - Microsoft Edge", fg_exe="msedge.exe"):
         self.fg = 1
-        self.windows = {1: (fg_title, 10, fg_exe), 2: ("xemu", 20, "xemu.exe")}
+        self.windows = {1: (fg_title, 10, fg_exe, False)}
         self.focused = []
+        self.topmost = []
+
+    def open(self, hwnd, title, fullscreen=False):
+        self.windows[hwnd] = (title, 20, "eden.exe", fullscreen)
 
     def foreground(self): return self.fg
     def title(self, h): return self.windows[h][0]
     def pid_of(self, h): return self.windows[h][1]
     def exe_name(self, pid): return next(w[2] for w in self.windows.values() if w[1] == pid)
     def process_tree(self, pid): return {pid}
-    def main_window(self, pids): return next((h for h, w in self.windows.items() if w[1] in pids), 0)
+    def windows_of(self, pids): return [h for h, w in self.windows.items() if w[1] in pids]
+    def main_window(self, pids): return next(iter(self.windows_of(pids)), 0)
+    def is_fullscreen(self, h): return self.windows[h][3]
+    def set_topmost(self, h, on): self.topmost.append((h, on)); return True
 
     def focus(self, h):
         self.focused.append(h)
@@ -159,14 +168,51 @@ class StatusLauncher:
     def status(self): return self._status
 
 
-def test_game_opened_behind_orbital_is_brought_forward():
+def test_game_ready_detection():
+    from orbital.catalog import game_ready
+    assert not game_ready([("Eden 0.0.3", False)], "Mario Party Superstars", "Eden")  # la lista de juegos
+    assert game_ready([("Eden | Mario Party Superstars | v1.1", False)], "Mario Party Superstars", "Eden")
+    assert game_ready([("xemu", True)], "Star Wars: Battlefront II", "xemu")  # pantalla completa
+    assert not game_ready([("Cargando shaders…", False)], "Zelda", None)
+
+
+def test_loading_screen_covers_the_emulator_until_the_game_is_ready():
     win = FocusWindows()
-    assert bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", timeout=1, win=win)
-    assert win.focused == [2]
+    win.open(2, "Eden 0.0.3")  # la lista de juegos de Eden: fea, tapada
+    events, steps = [], []
+
+    def sleep(seconds):
+        steps.append(seconds)
+        if len(steps) == 2:
+            win.open(3, "Eden | Mario Party Superstars")  # ya el juego
+
+    shown = bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Mario Party Superstars", "Eden",
+                                notify=events.append, timeout=5, win=win, sleep=sleep)
+    assert shown and win.focused == [3]
+    assert win.topmost == [(1, True), (1, False)]  # Orbital encima mientras abría, y luego ya no
+    assert events == [{"type": "launch-ready", "id": "x"}]
+
+
+def test_skip_shows_whatever_is_there():
+    import threading
+    win = FocusWindows()
+    win.open(2, "Eden 0.0.3")
+    skip = threading.Event()
+    skip.set()  # B en la pantalla de carga
+    assert bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Zelda", "Eden", skip=skip,
+                               timeout=5, win=win, sleep=lambda s: None)
+    assert win.focused == [2] and win.topmost[-1] == (1, False)
+
+
+def test_game_that_dies_while_loading_leaves_orbital_unpinned():
+    win = FocusWindows()
+    assert not bring_game_to_front(StatusLauncher(None), "x", "Zelda", timeout=5, win=win, sleep=lambda s: None)
+    assert win.topmost == [(1, True), (1, False)] and win.focused == []
 
 
 def test_never_steals_focus_from_another_app():
     win = FocusWindows(fg_title="Discord", fg_exe="discord.exe")
-    assert not bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", timeout=1, win=win)
-    assert win.focused == []
-    assert not bring_game_to_front(StatusLauncher(None), "x", timeout=1, win=FocusWindows())  # ya se cerró
+    win.open(2, "Eden | Zelda")
+    assert not bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Zelda", timeout=1, win=win,
+                                   sleep=lambda s: None)
+    assert win.focused == [] and win.topmost == []  # sin pantalla de carga encima de otra app

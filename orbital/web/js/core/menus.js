@@ -72,6 +72,22 @@ export function stopMenu({ title, runner }) {
   };
 }
 
+/**
+ * Abrir otra cosa con un juego abierto: Orbital cierra el anterior (no lo deja congelado para
+ * siempre). Como se pierde lo no guardado, se pregunta; "Volver a…" va primero (A sin querer = nada se pierde).
+ */
+export function switchMenu({ running, title, command }) {
+  return {
+    title: `¿Cerrar ${running.title}?`,
+    subtitle: `Para abrir ${title}. Lo que no hayas guardado se perderá.`,
+    options: [
+      { icon: "play", label: `Volver a ${running.title}`, command: { type: "resume" } },
+      { icon: "stop", label: `Cerrar y abrir ${title}`, danger: true, command: { ...command, confirmed: true } },
+    ],
+    cancel: { type: "close" },
+  };
+}
+
 /** Apagado: Suspender va primero (lo más común y lo más inofensivo si se pulsa A sin querer). */
 export function powerMenu() {
   return {

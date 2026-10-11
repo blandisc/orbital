@@ -55,6 +55,7 @@ class ConsoleShell:
         self.kiosk = kiosk
         self.win = win
         self.paused: set[int] = set()  # procesos congelados al ir a Orbital (se descongelan al volver)
+        self.paused_since: float | None = None  # desde cuándo (un juego olvidado se cierra solo)
         self.pause_file = pause_file  # si Orbital se cierra de golpe, al arrancar los descongela
         self.overlay = overlay  # GameOverlay (aviso encima del juego); se crea en start()
         self.return_to = 0  # ventana del juego a la que volver
@@ -129,6 +130,7 @@ class ConsoleShell:
         pids = self.win.process_tree(pid)
         if self.win.suspend(pids):
             self.paused |= pids
+            self.paused_since = self.paused_since or time.monotonic()
             self._save_paused()
             log.info("En pausa: %s", self.win.title(hwnd))
             return True
@@ -139,6 +141,7 @@ class ConsoleShell:
             self.win.resume(self.paused)
             log.info("Fuera de pausa")
             self.paused = set()
+            self.paused_since = None
             self._save_paused()
 
     @property
@@ -303,6 +306,7 @@ class ConsoleShell:
         if sys.platform != "win32":
             return False
         self.recover_paused()
+        self.unpin_orbital()
         if self.overlay is None:
             from .overlay import GameOverlay
             overlay = GameOverlay()
@@ -311,10 +315,50 @@ class ConsoleShell:
         threading.Thread(target=self._watch_foreground, daemon=True, name="legion-l").start()
         return True
 
+    # --------------------------------------------------------------- que nada quede abierto
+    @property
+    def sessions(self):
+        from .config import SessionsConfig
+        return getattr(getattr(self.catalog, "config", None), "sessions", None) or SessionsConfig()
+
+    def close_previous(self, new_id: str) -> None:
+        """Abrir algo nuevo cierra lo que estaba abierto (Orbital solo vigila uno: el anterior quedaba
+        olvidado, congelado, para siempre). La interfaz pregunta antes si era un juego."""
+        running = self.catalog.launcher.status()
+        if not self.sessions.close_previous or not running or not running.get("managed") or running.get("id") == new_id:
+            return
+        log.info("Se abre otra cosa: cierro %s", running["title"])
+        self.stop_game()
+
+    def check_idle(self, now: float) -> bool:
+        """Un juego congelado (saliste con Home) más de `game_idle_minutes` se cierra solo."""
+        limit = self.sessions.game_idle_minutes * 60
+        if not self.paused or not limit or self.paused_since is None or now - self.paused_since < limit:
+            return False
+        running = self.catalog.launcher.status()
+        title = running["title"] if running else "el juego"
+        pids = set(self.paused)
+        log.info("%s llevaba %d min congelado: se cierra", title, limit // 60)
+        if not self.stop_game() and sys.platform == "win32":  # abierto desde ES-DE: nadie más lo vigila
+            for pid in pids:
+                subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True,
+                               creationflags=subprocess.CREATE_NO_WINDOW)  # type: ignore[attr-defined]
+        notify = getattr(self.catalog, "_notify", None)
+        if notify:
+            notify({"type": "toast", "message": f"Cerré {title}: llevaba {limit // 60} min en pausa."})
+        return True
+
+    def unpin_orbital(self) -> None:
+        """Si Orbital se cerró con la pantalla de carga encima (topmost), que no se quede así."""
+        for w in self.win.app_windows():
+            if self.is_orbital(w["hwnd"]):
+                self.win.set_topmost(w["hwnd"], False)
+
     def _watch_foreground(self) -> None:
         last = previous = 0
         while not self._stop.wait(0.12):
             try:
+                self.check_idle(time.monotonic())
                 fg = self.win.foreground()
                 if fg == last:
                     continue

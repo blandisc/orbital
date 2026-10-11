@@ -22,6 +22,12 @@ stremio:
   subtitles: en        # idioma de subtítulos ("" = sin subtítulos)
   player: orbital      # orbital = reproductor propio con el mando (mpv); stremio = el de Stremio
 
+# Que nada se quede abierto para siempre.
+sessions:
+  video_idle_minutes: 15   # un video en pausa tanto tiempo se cierra (el avance queda guardado); 0 = nunca
+  game_idle_minutes: 60    # un juego congelado (saliste con Home) tanto tiempo se cierra; 0 = nunca
+  close_previous: true     # abrir otra cosa cierra lo que estaba abierto (te pregunta si es un juego)
+
 # ES-DE: Orbital lee de aquí tu carpeta de ROMs, los nombres de los juegos,
 # las portadas que ya descargaste con el scraper y tus favoritos.
 esde:
