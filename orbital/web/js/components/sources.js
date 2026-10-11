@@ -1,4 +1,5 @@
 import { api } from "../core/api.js";
+import { Badge, Chip } from "./ui.js";
 import { bytes } from "../core/format.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
 
@@ -30,11 +31,11 @@ export function createSources({ onPlay, onMove, onClose }) {
   /** Lo que importa para decidir, en orden: ¿arranca ya?, idioma, calidad de imagen y sonido. */
   function chips(src) {
     return [
-      src.cached ? h("span", { class: "chip chip--good" }, "Al instante")
-        : src.debrid ? h("span", { class: "chip chip--warn" }, "Tarda en empezar") : null,
-      h("span", { class: "chip" }, src.languages.join(" + ") || "Idioma desconocido"),
-      ...src.hdr.map((t) => h("span", { class: "chip" }, t === "DV" ? "Dolby Vision" : t)),
-      src.audio && h("span", { class: "chip" }, src.audio === "Atmos" ? "Dolby Atmos" : `Sonido ${src.audio}`),
+      src.cached ? Chip("Al instante", { tone: "good" })
+        : src.debrid ? Chip("Tarda en empezar", { tone: "warn" }) : null,
+      Chip(src.languages.join(" + ") || "Idioma desconocido"),
+      ...src.hdr.map((t) => Chip(t === "DV" ? "Dolby Vision" : t)),
+      src.audio && Chip(src.audio === "Atmos" ? "Dolby Atmos" : `Sonido ${src.audio}`),
     ].filter(Boolean);
   }
 
@@ -47,7 +48,7 @@ export function createSources({ onPlay, onMove, onClose }) {
     h("span", { class: "source__main" },
       h("span", { class: "source__chips" }, chips(src)),
       h("span", { class: "source__release" }, [src.release, bytes(src.size), src.addon].filter(Boolean).join(" · "))),
-    i === 0 && h("span", { class: "source__badge" }, "Recomendada"))));
+    i === 0 && Badge("Recomendada", { className: "source__badge" }))));
   }
 
   function setIndex(i) {

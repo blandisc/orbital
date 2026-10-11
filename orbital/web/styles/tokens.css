@@ -105,6 +105,13 @@
   --progress-height: .25rem;
   --sheet-width: 26rem;
   --keyboard-width: 54rem;
+  /* Tiles (pantallas nuevas: Inicio): radio grande, foco que crece poco, vecinos atenuados. */
+  --radius-xl: 1.1rem;
+  --radius-2xl: 1.4rem;
+  --tile-radius: var(--radius-xl);
+  --tile-focus-scale: 1.03;
+  --tile-dim-opacity: .72;
+  --tile-gap: 1.1rem;
   --key-height: 3.2rem;
   --inverse-scale: 1.06; /* teclas, chips y opciones enfocadas crecen un poco */
 }

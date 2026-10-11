@@ -8,7 +8,7 @@
   background: var(--color-fill-hover); color: var(--color-text);
   font: var(--weight-bold) var(--text-xs) / 1 var(--font-text);
 }
-[data-input="keyboard"] .glyph { border-radius: var(--radius-xs); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .35); }
+[data-input="keyboard"] .glyph { border-radius: var(--radius-xs); box-shadow: var(--shadow-keycap); }
 [data-input="gamepad"] .glyph--a { background: var(--color-pad-a); color: var(--palette-ink-1000); }
 [data-input="gamepad"] .glyph--b { background: var(--color-pad-b); color: var(--palette-ink-1000); }
 [data-input="gamepad"] .glyph--x { background: var(--color-pad-x); color: var(--palette-ink-1000); }

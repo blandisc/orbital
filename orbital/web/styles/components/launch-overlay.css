@@ -47,7 +47,7 @@
 .launch__cover {
   position: relative; z-index: 1; height: 17rem; width: calc(17rem * var(--ratio, .667)); border-radius: var(--radius-lg);
   background: var(--gradient-card) center / cover; transform-origin: 50% 50%;
-  box-shadow: 0 2rem 4rem -1rem rgba(0, 0, 0, .75), 0 0 6rem -1rem color-mix(in oklab, var(--art-accent) 45%, transparent);
+  box-shadow: var(--shadow-overlay), 0 0 6rem -1rem color-mix(in oklab, var(--art-accent) 45%, transparent);
   transition: transform 640ms cubic-bezier(.7, 0, .84, 0), opacity 560ms var(--ease-in);
 }
 .launch__orbit {
