@@ -6,6 +6,7 @@ import time
 
 from orbital import launcher as launcher_mod
 from orbital import player
+from orbital import catalog as catalog_mod
 from orbital.catalog import bring_game_to_front  # la real (conftest la apaga para el resto)
 from orbital.launcher import Launcher, Running, redact
 from orbital.library import streams
@@ -216,3 +217,24 @@ def test_never_steals_focus_from_another_app():
     assert not bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Zelda", timeout=1, win=win,
                                    sleep=lambda s: None)
     assert win.focused == [] and win.topmost == []  # sin pantalla de carga encima de otra app
+
+
+def test_waits_for_fullscreen_and_fades_orbital_over_the_game():
+    """El juego ya cargó pero sigue en ventana: se espera a la pantalla completa (sin brinco) y
+    Orbital se funde encima del juego en vez de un corte."""
+    win = FocusWindows()
+    win.alpha = []
+    win.set_alpha = lambda h, a: win.alpha.append(a)
+    win.open(3, "Eden | Mario Party Superstars", fullscreen=False)
+    steps = []
+
+    def sleep(seconds):
+        steps.append(seconds)
+        if len(steps) == 3:
+            win.open(3, "Eden | Mario Party Superstars", fullscreen=True)
+
+    assert bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Mario Party Superstars", "Eden",
+                               timeout=5, win=win, sleep=sleep, pinned=1)
+    assert len(steps) >= 3  # no cortó mientras seguía en ventana
+    assert win.focused == [3] and win.topmost == [(1, False)]  # ya venía fijada desde antes de lanzar
+    assert win.alpha[:-1] == list(catalog_mod.REVEAL_FADE) and win.alpha[-1] is None  # fundido y opaca al final

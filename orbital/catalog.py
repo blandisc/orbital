@@ -99,7 +99,7 @@ ORBITAL_BROWSERS = {"msedge.exe", "chrome.exe", "chromium.exe"}
 
 READY_TIMEOUT = 25.0  # s máximos con la pantalla de carga de Orbital encima
 READY_SETTLE = .6  # s tras detectar el juego: que pinte sus primeros cuadros
-FADE_TO_BLACK = .35  # s que tarda la pantalla de carga en irse a negro antes del corte
+FADE_TO_BLACK = .75  # s de la salida de la pantalla de carga (el "salto" al juego) antes del fundido
 
 
 def _words(text: str) -> set[str]:
@@ -119,27 +119,46 @@ def game_ready(windows: list[tuple[str, bool]], title: str, runner: str | None =
     return False
 
 
+def is_orbital_window(win, hwnd: int) -> bool:
+    return bool(hwnd) and "Orbital" in win.title(hwnd) and win.exe_name(win.pid_of(hwnd)) in ORBITAL_BROWSERS
+
+
+def pin_orbital(win=None) -> int:
+    """Orbital "siempre encima" ANTES de lanzar el emulador (antes se fijaba un instante después y
+    la ventana del emulador alcanzaba a asomarse). Solo si Orbital está al frente. Devuelve su ventana."""
+    if win is None:
+        if sys.platform != "win32":
+            return 0
+        from . import windows as win
+    fg = win.foreground()
+    return fg if is_orbital_window(win, fg) and win.set_topmost(fg, True) else 0
+
+
+FULLSCREEN_GRACE = 4.0  # s: el juego ya cargó (su nombre en la ventana) pero aún no ocupa la pantalla
+REVEAL_FADE = (210, 160, 110, 60, 20, 0)  # opacidad de Orbital al fundirse sobre el juego
+
+
 def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runner: str | None = None,
                         notify=None, skip: threading.Event | None = None, timeout: float = READY_TIMEOUT,
-                        win=None, sleep=time.sleep) -> bool:
-    """Pantalla de carga hasta que el juego esté listo, y luego el juego al frente.
+                        win=None, sleep=time.sleep, pinned: int | None = None) -> bool:
+    """Pantalla de carga hasta que el juego esté listo, y luego un fundido de Orbital al juego.
 
     Mientras el emulador abre se ven sus ventanas feas (la lista de juegos de Eden, una consola…).
-    Si Orbital está al frente, se queda ENCIMA (topmost) con su pantalla "Abriendo" hasta que el juego
-    está listo; entonces la pantalla se va a negro (evento launch-ready) y se corta al juego.
-    Windows tampoco deja que una ventana nueva le quite el foco a otra app: el juego podía quedar
-    detrás de Orbital. Si ya estás en otra cosa, no se pelea por el foco. `skip`: B en la pantalla
-    de carga (mostrar ya lo que haya)."""
+    Si Orbital está al frente, se queda ENCIMA (topmost) con su pantalla de carga hasta que el juego
+    está listo Y en pantalla completa (si no, se veía el emulador brincar de ventana a pantalla
+    completa). Entonces la pantalla de carga hace su salida (evento launch-ready), el juego pasa al
+    frente DEBAJO de Orbital y Orbital se funde hasta desaparecer: del cohete al juego, sin cortes.
+    Si ya estás en otra cosa, no se pelea por el foco. `skip`: B en la pantalla de carga.
+    `pinned`: la ventana de Orbital ya fijada encima antes de lanzar (pin_orbital)."""
     if win is None:
         if sys.platform != "win32":
             return False
         from . import windows as win
     notify = notify or (lambda event: None)
-    fg = win.foreground()
-    orbital = fg if "Orbital" in win.title(fg) and win.exe_name(win.pid_of(fg)) in ORBITAL_BROWSERS else 0
-    pinned = bool(orbital) and win.set_topmost(orbital, True)
+    orbital = pin_orbital(win) if pinned is None else pinned
     target = 0
     started = time.time()
+    grace = int(FULLSCREEN_GRACE / .3)
     try:
         deadline = time.time() + timeout
         while time.time() < deadline and not (skip and skip.is_set()):
@@ -152,32 +171,61 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
                 target = hwnds[0]
                 info = [(win.title(h), win.is_fullscreen(h)) for h in hwnds]
                 ready = next((h for h, i in zip(hwnds, info) if game_ready([i], title, runner)), 0)
-                if ready or not pinned:
+                if ready and orbital and not win.is_fullscreen(ready) and grace > 0:
+                    grace -= 1  # cargó, pero quizá está por pasar a pantalla completa: un momento
+                    target = ready
+                    sleep(.3)
+                    continue
+                if ready or not orbital:
                     target = ready or target
                     if ready:
                         log.info("%s listo tras %.1f s: %s", title, time.time() - started, win.title(ready))
                     break
             sleep(.3)
-        if pinned and not (skip and skip.is_set()) and time.time() >= deadline:
+        if orbital and not (skip and skip.is_set()) and time.time() >= deadline:
             log.info("%s sin señal de listo en %.0f s: se muestra igual", title, timeout)
         if not target:
             status = launcher.status()
             pids = win.process_tree(status["pid"]) if status and status.get("pid") else set()
             target = win.main_window(pids) if pids else 0
-        if pinned:
-            sleep(READY_SETTLE)
-            notify({"type": "launch-ready", "id": item_id})  # la pantalla de carga se va a negro
+        if orbital:
+            settle(win, target, sleep)
+            notify({"type": "launch-ready", "id": item_id})  # la pantalla de carga hace su salida
             sleep(FADE_TO_BLACK)
+            if target and win.foreground() != target:
+                win.focus(target)  # el juego al frente, aún debajo de Orbital (que sigue encima)
+            fade = getattr(win, "set_alpha", None)
+            if fade and target:
+                for alpha in REVEAL_FADE:  # Orbital se funde y aparece el juego
+                    fade(orbital, alpha)
+                    sleep(.04)
     finally:
-        if pinned:
+        if orbital:
             win.set_topmost(orbital, False)
+            fade = getattr(win, "set_alpha", None)
+            if fade:
+                fade(orbital, None)  # vuelve a ser opaca (ya detrás del juego)
     if not target:
         return False
     fg = win.foreground()
     if fg == target:
         return True
-    orbital_in_front = "Orbital" in win.title(fg) and win.exe_name(win.pid_of(fg)) in ORBITAL_BROWSERS
-    return orbital_in_front and win.focus(target)
+    return is_orbital_window(win, fg) and win.focus(target)
+
+
+def settle(win, hwnd: int, sleep, tries: int = 8) -> None:
+    """Espera a que la ventana del juego deje de cambiar de tamaño (dos lecturas iguales seguidas)."""
+    rect_of = getattr(win, "window_rect", None)
+    if not rect_of or not hwnd:
+        sleep(READY_SETTLE)
+        return
+    last = rect_of(hwnd)
+    for _ in range(tries):
+        sleep(READY_SETTLE / 3)
+        now = rect_of(hwnd)
+        if now == last:
+            return
+        last = now
 
 
 def stremio_item(w: stremio_api.Watchable) -> LibraryItem:
@@ -527,14 +575,16 @@ class Catalog:
             self.state.record_launch(item.id)
             return item
         runner = self.runner_for(item, runner_id)
-        if runner:
-            proc = self.launcher.run(runner.argv, cwd=runner.cwd)
-            self.launcher.track(item.id, item.title, proc, runner=runner.name)
-            self.revealing = self._to_front(item.id, item.title, runner.name)
-        elif item.argv:
-            proc = self.launcher.run(item.argv, cwd=item.cwd)
-            self.launcher.track(item.id, item.title, proc)
-            self.revealing = self._to_front(item.id, item.title)
+        if runner or item.argv:
+            # Orbital encima ANTES de lanzar: la ventana del emulador nunca se asoma.
+            pinned = self._pin()
+            try:
+                proc = self.launcher.run(runner.argv if runner else item.argv, cwd=runner.cwd if runner else item.cwd)
+            except BaseException:
+                self._unpin(pinned)
+                raise
+            self.launcher.track(item.id, item.title, proc, runner=runner.name if runner else None)
+            self.revealing = self._to_front(item.id, item.title, runner.name if runner else None, pinned=pinned)
         elif item.uri:
             self.launcher.open_uri(item.uri)
             self.launcher.track(item.id, item.title, None, steam_appid=item.steam_appid)
@@ -543,14 +593,25 @@ class Catalog:
         self.state.record_launch(item.id)
         return item
 
-    def _to_front(self, item_id: str, title: str = "", runner: str | None = None) -> bool:
+    @staticmethod
+    def _pin() -> int | None:
+        """Fija Orbital encima (si está al frente) antes de lanzar algo. None fuera de Windows."""
+        return pin_orbital() if sys.platform == "win32" else None
+
+    @staticmethod
+    def _unpin(pinned: int | None) -> None:
+        if pinned and sys.platform == "win32":
+            from . import windows
+            windows.set_topmost(pinned, False)
+
+    def _to_front(self, item_id: str, title: str = "", runner: str | None = None, pinned: int | None = None) -> bool:
         """Pantalla de carga hasta que el juego esté listo (ver bring_game_to_front). Devuelve si la
         interfaz debe esperar el evento launch-ready en lugar de esconder "Abriendo" sola."""
         if sys.platform != "win32":
             return False
         self._reveal_skip = threading.Event()
         threading.Thread(target=bring_game_to_front, args=(self.launcher, item_id, title, runner),
-                         kwargs={"notify": self._notify, "skip": self._reveal_skip}, daemon=True,
+                         kwargs={"notify": self._notify, "skip": self._reveal_skip, "pinned": pinned}, daemon=True,
                          name="to-front").start()
         return True
 
@@ -697,12 +758,13 @@ class Catalog:
         meta = self._media_meta(kind, meta_id, video_id, title, source) if source else \
             {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title}
         self._wire_player()
+        pinned = self._pin()
         process = self.player.play(
             self.launcher.run, mpv_exe, url, title, meta,
             start=start, audio=self.stream_prefs.audio, subtitles=self.subtitles_lang,
             fallback_subs=self._fallback_subs(kind, video_id))
         self.launcher.track("media:player", title, process, runner="Reproductor")
-        self.revealing = self._to_front("media:player", title)
+        self.revealing = self._to_front("media:player", title, pinned=pinned)
 
     def _load_in_player(self, kind: str, meta_id: str, video_id: str, title: str, source: streams.Source,
                         start: float = 0, message: str | None = None, tried: list[int] | None = None) -> bool:

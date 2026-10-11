@@ -275,6 +275,38 @@ def set_topmost(hwnd: int, on: bool) -> bool:
     return bool(user32.SetWindowPos(hwnd, -1 if on else -2, 0, 0, 0, 0, 0x2 | 0x1 | 0x10))
 
 
+GWL_EXSTYLE, WS_EX_LAYERED, LWA_ALPHA = -20, 0x80000, 0x2
+
+
+def set_alpha(hwnd: int, alpha: int | None) -> bool:
+    """Transparencia de toda la ventana (0-255), para fundir Orbital sobre el juego en vez de cortar.
+    `None` la deja como estaba (opaca, sin el estilo de capa)."""
+    if not WIN or not hwnd:
+        return False
+    user32.GetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int]
+    user32.SetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int, ctypes.c_long]
+    user32.SetLayeredWindowAttributes.argtypes = [wintypes.HWND, wintypes.DWORD, ctypes.c_ubyte, wintypes.DWORD]
+    style = user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+    if alpha is None:
+        if style & WS_EX_LAYERED:
+            user32.SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA)
+            user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style & ~WS_EX_LAYERED)
+        return True
+    if not style & WS_EX_LAYERED:
+        user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED)
+    return bool(user32.SetLayeredWindowAttributes(hwnd, 0, max(0, min(255, int(alpha))), LWA_ALPHA))
+
+
+def window_rect(hwnd: int) -> tuple[int, int, int, int] | None:
+    """(izquierda, arriba, derecha, abajo): para saber si la ventana del juego ya dejó de cambiar de tamaño."""
+    if not WIN or not hwnd:
+        return None
+    rect = wintypes.RECT()
+    if not user32.GetWindowRect(hwnd, ctypes.byref(rect)):
+        return None
+    return rect.left, rect.top, rect.right, rect.bottom
+
+
 def is_fullscreen(hwnd: int) -> bool:
     """¿La ventana cubre todo su monitor? (para no alternar pantalla completa por error)."""
     if not WIN or not hwnd:

@@ -123,3 +123,5 @@ def no_focus_threads(monkeypatch):
     from orbital import catalog
 
     monkeypatch.setattr(catalog, "bring_game_to_front", lambda *args, **kwargs: False)
+    # Ni fijar "siempre encima" una ventana real de Orbital que esté abierta mientras corren.
+    monkeypatch.setattr(catalog.Catalog, "_pin", staticmethod(lambda: None))
