@@ -30,10 +30,9 @@ export function createGames({ onFocus, onPick, onAction }) {
     h("div", { class: "games__head" }, heading),
     h("div", { class: "games__bar" }, filters, count),
     h("div", { class: "games__viewport" }, grid));
-  const orbit = h("div", { class: "games__orbit", "aria-hidden": "true" });
   const gallery = h("div", { class: "games__gallery" });
   const top = h("div", { class: "games__top" }, switcher);
-  const el = h("section", { class: "games", hidden: true, "aria-label": "Juegos" }, rail, main, sheet.el, gallery, top, orbit);
+  const el = h("section", { class: "games", hidden: true, "aria-label": "Juegos" }, rail, main, sheet.el, gallery, top);
 
   let rows = [];
   let list = [];
@@ -146,21 +145,32 @@ export function createGames({ onFocus, onPick, onAction }) {
     const i0 = index();
     const c = list[i0];
     list.forEach((item, i) => targets.set(`console:${i}`, { kind: "console", console: item }));
-    let ring = gallery.querySelector(".games__orbit-ring");
-    if (!ring || ring.childElementCount !== list.length) {
-      // Se arma una vez: al girar solo cambia --turn y las consolas se deslizan por la elipse.
-      ring = h("div", { class: "games__orbit-ring", style: { "--turn": i0 } },
+    let track = gallery.querySelector(".games__carousel");
+    if (!track || track.childElementCount !== list.length) {
+      // Se arma una vez: al girar solo cambian la posición y el tamaño de cada consola.
+      track = h("div", { class: "games__carousel" },
         list.map((item, i) => h("button", {
-          class: "games__planet", type: "button", tabindex: "-1", "data-focus-id": `console:${i}`,
-          style: { "--k": i, "--glow": systemColor(item.system) }, "aria-label": `${item.name}: ${item.count} juegos`,
+          class: "games__slide", type: "button", tabindex: "-1", "data-focus-id": `console:${i}`,
+          style: { "--glow": systemColor(item.system) }, "aria-label": `${item.name}: ${item.count} juegos`,
           onClick: () => onPick?.(targets.get(`console:${i}`), `console:${i}`),
-        }, h("span", { class: "games__planet-glow" }), h("span", { class: "games__planet-media" }, consoleImage(item, "games__planet-img")))));
-      mount(gallery, h("div", { class: "games__orbit-path" }), ring, h("div", { class: "games__gallery-info" }), h("div", { class: "games__gallery-recent" }));
+        }, h("span", { class: "games__slide-glow" }), consoleImage(item, "games__slide-img"))));
+      mount(gallery, track, h("div", { class: "games__gallery-info" }), h("div", { class: "games__gallery-recent" }));
     }
-    ring.style.setProperty("--turn", String(i0));
-    [...ring.children].forEach((node, i) => {
-      node.classList.toggle("games__planet--current", i === i0);
-      node.style.zIndex = String(100 - Math.abs(i - i0)); // el de enfrente tapa a los de atrás
+    // Carrusel continuo: cada consola se acomoda a la distancia más corta de la del frente
+    // (después de la última viene la primera). La que da la vuelta salta sin animarse, ya invisible.
+    const n = list.length;
+    [...track.children].forEach((node, k) => {
+      let d = ((k - i0) % n + n) % n;
+      if (d > n / 2) d -= n;
+      const a = Math.abs(d);
+      const wrapped = node.dataset.d !== undefined && Math.abs(Number(node.dataset.d) - d) > 1;
+      node.dataset.d = String(d);
+      node.classList.toggle("games__slide--current", d === 0);
+      node.classList.toggle("games__slide--jump", wrapped);
+      node.style.setProperty("--x", String(Math.sign(d) * (a === 0 ? 0 : 19 + (a - 1) * 14)));
+      node.style.setProperty("--s", a === 0 ? "1" : "0.58");
+      node.style.setProperty("--o", String([1, .55, .25, .08][a] ?? 0));
+      node.style.zIndex = String(10 - a);
     });
     const last = c?.last;
     mount(gallery.querySelector(".games__gallery-info"), c && [
@@ -218,20 +228,18 @@ export function createGames({ onFocus, onPick, onAction }) {
     focusId = keepRail ? `rail:${list.findIndex((c) => c.id === id)}` : "game:0";
     grid.dataset.shift = "0";
     sheet.reset();
-    playOrbit(direction);
+    playSwitch();
     paintAll();
     return true;
   }
 
-  function playOrbit(direction) {
-    const c = current();
-    if (!c) return;
-    mount(orbit, h("span", { class: "games__orbit-glow", style: { "--glow": systemColor(c.system) } }),
-      consoleImage(c, "games__orbit-img"), h("span", { class: "games__orbit-name" }, c.name));
-    el.classList.remove("games--orbit-next", "games--orbit-prev");
-    void el.offsetWidth;
-    el.classList.add(direction < 0 ? "games--orbit-prev" : "games--orbit-next");
+  /** Al cambiar de consola: el encabezado y las portadas aparecen con un fundido corto (nada se desliza). */
+  function playSwitch() {
+    main.classList.remove("games__main--switch");
+    void main.offsetWidth;
+    main.classList.add("games__main--switch");
   }
+
 
   function setFilter(id) {
     filterOf[consoleId] = id;
@@ -245,7 +253,7 @@ export function createGames({ onFocus, onPick, onAction }) {
     mode = "console";
     focusId = "game:0";
     sheet.reset();
-    playOrbit(1);
+    playSwitch();
     paintAll();
   }
 
@@ -268,8 +276,8 @@ export function createGames({ onFocus, onPick, onAction }) {
       const onSwitch = focusId.startsWith("view:");
       const turn = { left: -1, right: 1, pageleft: -1, pageright: 1 }[action];
       if (turn && !onSwitch) {
-        const i = index() + turn;
-        if (i < 0 || i >= list.length) return "edge";
+        if (list.length < 2) return "edge";
+        const i = (index() + turn + list.length) % list.length; // continuo: de la última a la primera
         consoleId = list[i].id;
         focusId = `console:${i}`;
         paintAll();

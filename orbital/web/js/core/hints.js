@@ -63,7 +63,6 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
   } else {
     list.push({ glyph: glyphs.select, label: "Ir a Juegos" });
   }
-  if (glyphs.page) list.push({ glyph: glyphs.page, label: target?.kind === "console" ? "Arriba" : "Consolas", secondary: true });
   if (glyphs.section) list.push({ glyph: glyphs.section, label: "Sección", secondary: true });
   if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${running.title}` });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });

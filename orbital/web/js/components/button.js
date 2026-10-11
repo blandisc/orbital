@@ -13,5 +13,5 @@ export function Button({ label, glyph, variant = "ghost", ariaLabel, onPress }) 
     tabindex: "-1",
     "aria-label": ariaLabel,
     onClick: onPress,
-  }, glyph && Glyph(glyph, { small: true }), label);
+  }, glyph && Glyph(glyph, { small: true }), h("span", { class: "button__label" }, label));
 }

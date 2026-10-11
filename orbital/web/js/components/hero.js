@@ -12,7 +12,7 @@ export function createHero({ onAction }) {
   // Logotipo del título (Stremio): más rico que el texto; si no carga, vuelve el texto.
   const logo = h("img", { class: "hero__logo", alt: "", hidden: true });
   logo.addEventListener("error", () => { logo.hidden = true; title.hidden = false; });
-  logo.addEventListener("load", () => { title.hidden = true; logo.hidden = false; });
+  logo.addEventListener("load", () => { title.hidden = true; logo.hidden = false; fit(); });
   const facts = h("div", { class: "hero__facts" });
   const description = h("p", { class: "hero__description" });
   const actions = h("div", { class: "hero__actions" });
@@ -25,6 +25,24 @@ export function createHero({ onAction }) {
   let tips = true; // Ajustes → Pantalla → Frases para Alexa
   const el = h("main", { class: "hero" }, content);
   let timer;
+
+  /**
+   * Que todo quepa y los botones nunca se corten: si no alcanza el alto, primero la descripción
+   * baja a una línea, luego se va, y al final el título queda en una línea.
+   */
+  function fit() {
+    description.classList.remove("hero__description--short");
+    title.classList.remove("hero__title--short");
+    description.style.display = "";
+    const overflows = () => content.scrollHeight > content.clientHeight + 1;
+    if (!overflows()) return;
+    description.classList.add("hero__description--short");
+    if (!overflows()) return;
+    description.style.display = "none";
+    if (!overflows()) return;
+    title.classList.add("hero__title--short");
+  }
+  if (globalThis.ResizeObserver) new ResizeObserver(() => fit()).observe(el);
 
   function fill(item, glyphs, runningId) {
     if (!item) {
@@ -75,6 +93,7 @@ export function createHero({ onAction }) {
       Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction("options") }));
     voice.hidden = !alexa || !tips;
     if (alexa && tips) mount(voice, svg(ICONS.assistant), h("span", {}, alexaTip(item, { runningId })));
+    fit();
   }
 
   /** Actualiza con una transición corta. `immediate` evita la animación (p. ej. al cambiar glifos). */

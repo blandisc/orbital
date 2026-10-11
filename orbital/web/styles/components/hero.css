@@ -54,7 +54,14 @@
 .hero__fact--warning { color: var(--color-warning); }
 .hero__fact--favorite { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--color-favorite); }
 .hero__fact--favorite .icon { width: 1rem; height: 1rem; }
-.hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+/* Los botones siempre en una fila: si no caben, se encogen y su texto termina en «…». */
+.hero__actions { display: flex; flex-wrap: nowrap; gap: var(--space-3); min-width: 0; flex: none; }
+.hero__actions .button { flex: 0 1 auto; min-width: 0; }
+.hero__actions .button__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.hero__actions .button > :not(.button__label) { flex: none; }
+/* Sin alto suficiente (descripción larga): la descripción en una línea, y el título también. */
+.hero__description--short { -webkit-line-clamp: 1; }
+.hero__title--short { -webkit-line-clamp: 1; }
 /* Botones y, a su derecha, la frase para Alexa (puede ser más ancha que el texto de arriba). */
 .hero__row {
   display: flex; align-items: center; gap: var(--space-5); margin-top: var(--space-5);

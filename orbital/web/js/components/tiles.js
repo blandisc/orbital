@@ -26,7 +26,8 @@ const art = (src, className = "tile__art") => {
 
 /** Dato debajo del título: lo que queda (videos) o cuándo jugaste (juegos). */
 export function detailOf(item, now = Date.now()) {
-  if (isWatchable(item)) return item.subtitle || null;
+  // «Película · quedan 1 h 40 min» → «quedan 1 h 40 min»: la barra de avance ya dice que es un video.
+  if (isWatchable(item)) return item.subtitle?.replace(/^Película · /, "") || null;
   const when = lastPlayed(item.last_played, now, "Jugaste");
   const total = item.playtime >= 600 ? duration(item.playtime) : null;
   return [when && when.replace("Jugaste hace", "jugaste hace").replace("Jugaste", "jugaste"), total && `${total} en total`]
@@ -80,7 +81,7 @@ export function WideTile(item, { focusId, onPress }) {
       h("strong", { class: "tile--wide__title" }, item.title),
       h("span", { class: "tile--wide__detail" },
         watch ? Progress(item.progress, { className: "tile--wide__progress" }) : svg(ICONS[systemIconName(item)] || ICONS.apps),
-        [watch ? null : kicker(item), shortDetail(item)].filter(Boolean).join(" · "))));
+        h("span", { class: "tile--wide__detail-text" }, [watch ? null : kicker(item), shortDetail(item)].filter(Boolean).join(" · ")))));
 }
 
 /** Consola: su foto (o la portada de lo último, si no hay foto), cuántos juegos y lo último que jugaste. */

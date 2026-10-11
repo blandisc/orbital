@@ -40,7 +40,7 @@ body[data-view="games"] .backdrop__space { opacity: 1; }
 .games__rail-arrow .icon { width: .9rem; height: .9rem; transform: rotate(-90deg); }
 .games__rail-key--next .games__rail-arrow .icon { transform: rotate(90deg); }
 .games__rail-item {
-  position: relative; display: grid; place-items: center; width: 4rem; height: 4rem; padding: .5rem; box-sizing: border-box;
+  position: relative; display: block; flex: none; width: 4rem; height: 4rem; padding: .5rem; box-sizing: border-box; overflow: hidden;
   border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-hairline);
   opacity: .55; transition: opacity var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-base) var(--ease-out);
 }
@@ -51,8 +51,8 @@ body[data-view="games"] .backdrop__space { opacity: 1; }
 }
 .games__rail-item.is-focused { opacity: 1; box-shadow: var(--ring-focus); transform: scale(1.06); }
 /* La foto cabe completa en su casilla (la del Xbox 360 es alta y se cortaba). */
-.games__rail-img { width: 100%; height: 100%; object-fit: contain; }
-.games__rail-img--logo { width: 62%; height: 62%; }
+.games__rail-img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.games__rail-img--logo { width: 62%; height: 62%; margin: 19% auto 0; }
 .games__rail-img--cover { border-radius: var(--radius-xs); }
 
 /* --- Centro: encabezado, filtros y portadas ----------------------------------------------------- */
@@ -126,38 +126,39 @@ body[data-view="games"] .backdrop__space { opacity: 1; }
   color: var(--color-text-muted); font-size: var(--text-sm); line-height: 1.5;
   display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
 }
-.game-panel__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: auto; }
+.game-panel__actions { display: flex; flex-wrap: nowrap; gap: var(--space-3); margin-top: auto; min-width: 0; }
+/* Siempre en una fila: si «Con Ryujinx» no cabe, los botones se encogen y el texto termina en «…». */
+.game-panel__actions .button { flex: 0 1 auto; min-width: 0; padding-right: 1rem; }
+.game-panel__actions .button__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.game-panel__actions .button > :not(.button__label) { flex: none; }
 
-/* --- Galería: las consolas giran sobre una elipse (Edge entiende sin()/cos() en CSS) ------------ */
-@property --turn { syntax: "<number>"; inherits: true; initial-value: 0; }
+/* --- Galería: carrusel de consolas ------------------------------------------------------------ */
 .games__gallery { position: absolute; inset: 0; overflow: hidden; }
 .games[data-mode="console"] .games__gallery { display: none; }
-.games__orbit-path {
-  position: absolute; left: 50%; top: 32%; width: 84vw; height: 22vh; margin: -11vh 0 0 -42vw;
-  border-radius: 50%; border: 1px solid var(--color-hairline-strong); opacity: .5; pointer-events: none;
+/* Carrusel plano y continuo: la consola al frente grande, las vecinas chicas y tenues a los lados.
+   Cada foto vive dentro de su franja: nunca baja hasta el nombre (el Xbox 360 y el Wii son altos). */
+.games__carousel { position: absolute; left: 0; right: 0; top: 19%; height: 30vh; }
+.games__slide {
+  position: absolute; left: 50%; top: 0; width: 34vh; height: 100%; margin-left: -17vh;
+  display: block; padding: 0; background: none;
+  transform: translateX(calc(var(--x) * 1vw)) scale(var(--s)); opacity: var(--o);
+  transition: transform 460ms cubic-bezier(.22, 1, .36, 1), opacity 460ms var(--ease-out);
 }
-.games__orbit-ring {
-  position: absolute; left: 50%; top: 32%; width: 0; height: 0;
-  transition: --turn 640ms cubic-bezier(.22, 1, .36, 1);
+.games__slide--jump { transition: none; }
+.games__slide-glow {
+  position: absolute; inset: -25%; border-radius: 50%; opacity: 0; transition: opacity 460ms var(--ease-out);
+  background: radial-gradient(circle, color-mix(in oklab, var(--glow) 32%, transparent), transparent 64%);
 }
-.games__planet {
-  --a: calc((var(--k) - var(--turn)) * .62rad); /* ángulo en la órbita: 0 = al frente */
-  --depth: calc((cos(var(--a)) + 1) / 2); /* 1 al frente, 0 atrás */
-  position: absolute; left: 0; top: 0; width: 15rem; height: 11rem; margin: -5.5rem 0 0 -7.5rem;
-  display: grid; place-items: center;
-  transform: translate(calc(sin(var(--a)) * 42vw), calc(cos(var(--a)) * 11vh)) scale(calc(.38 + var(--depth) * .72));
-  opacity: calc(var(--depth) * 1.6 - .45);
+.games__slide--current .games__slide-glow { opacity: 1; }
+.games__slide-img {
+  position: relative; display: block; width: 100%; height: 100%; object-fit: contain;
+  filter: drop-shadow(0 1.4rem 1.8rem rgba(0, 0, 0, .55));
 }
-.games__planet-glow {
-  position: absolute; inset: -30%; border-radius: 50%; opacity: calc(var(--depth) * var(--depth));
-  background: radial-gradient(circle, color-mix(in oklab, var(--glow) 34%, transparent), transparent 64%);
-}
-.games__planet-media { position: relative; display: grid; place-items: center; width: 100%; height: 100%; }
-.games__planet-img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 1.4rem 1.8rem rgba(0, 0, 0, .55)); }
-.games__planet-img--logo { max-width: 46%; max-height: 52%; }
-.games__planet-img--cover { max-height: 86%; border-radius: var(--radius-md); }
+.games__slide-img--logo { width: 50%; height: 50%; margin: 25% auto 0; }
+.games__slide-img--cover { width: 60%; margin: 0 auto; border-radius: var(--radius-md); }
+.games__slide.is-focused .games__slide-img { filter: drop-shadow(0 1.4rem 1.8rem rgba(0, 0, 0, .55)) drop-shadow(0 0 1.2rem color-mix(in oklab, var(--glow) 45%, transparent)); }
 .games__gallery-info {
-  position: absolute; left: 0; right: 0; top: 55%; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); text-align: center;
+  position: absolute; left: 0; right: 0; top: calc(19% + 30vh + var(--space-6)); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); text-align: center;
   animation: fade-in var(--duration-slow) var(--ease-out);
 }
 .games__gallery-title { font-family: var(--font-sans); font-size: var(--text-3xl); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); }
@@ -167,34 +168,10 @@ body[data-view="games"] .backdrop__space { opacity: 1; }
 .games__gallery-covers { display: flex; gap: var(--space-4); }
 
 /* --- Transición en órbita al cambiar de consola (vista Consola) -------------------------------- */
-.games__orbit {
-  position: fixed; inset: 0; z-index: var(--z-overlay); pointer-events: none; opacity: 0;
-  display: grid; place-items: center; place-content: center; gap: var(--space-4);
-}
-.games__orbit-glow {
-  position: absolute; left: 50%; top: 50%; width: 46vmin; height: 46vmin; margin: -23vmin 0 0 -23vmin; border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in oklab, var(--glow) 45%, transparent), transparent 68%);
-}
-.games__orbit-img { position: relative; width: 30vmin; height: 24vmin; object-fit: contain; filter: drop-shadow(0 2rem 3rem rgba(0, 0, 0, .6)); }
-.games__orbit-img--logo { width: 14vmin; }
-.games__orbit-name { position: relative; font-family: var(--font-sans); font-size: var(--text-2xl); font-weight: var(--weight-bold); text-align: center; }
-.games--orbit-next .games__orbit, .games--orbit-prev .games__orbit { animation: orbit-fade 720ms var(--ease-out) both; }
-.games--orbit-next .games__orbit-img { animation: orbit-in-next 720ms var(--ease-out) both; }
-.games--orbit-prev .games__orbit-img { animation: orbit-in-prev 720ms var(--ease-out) both; }
-.games--orbit-next .games__main, .games--orbit-prev .games__main { animation: orbit-settle 720ms var(--ease-out) both; }
-@keyframes orbit-fade { 0% { opacity: 0; } 18% { opacity: 1; } 62% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes orbit-in-next {
-  0% { transform: translate(38vw, -8vh) scale(.35) rotate(8deg); }
-  45% { transform: translate(0, 0) scale(1.05) rotate(0); }
-  100% { transform: translate(-6vw, 4vh) scale(.6); }
-}
-@keyframes orbit-in-prev {
-  0% { transform: translate(-38vw, -8vh) scale(.35) rotate(-8deg); }
-  45% { transform: translate(0, 0) scale(1.05) rotate(0); }
-  100% { transform: translate(6vw, 4vh) scale(.6); }
-}
-@keyframes orbit-settle { 0%, 40% { opacity: 0; transform: translateY(1.2rem); } }
-[data-motion="reduce"] .games__orbit { display: none; }
+/* Cambio de consola: un fundido corto del contenido, sin nada que cruce la pantalla. */
+.games__main--switch .games__heading, .games__main--switch .games__viewport { animation: games-switch 260ms var(--ease-out); }
+@keyframes games-switch { from { opacity: 0; } }
+[data-motion="reduce"] .games__main--switch * { animation: none; }
 
 /* Pantallas angostas: la ficha más estrecha. */
 @media (max-width: 1100px) { body[data-view="games"] { --games-sheet: 24rem; } }

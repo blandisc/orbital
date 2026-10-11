@@ -2,7 +2,7 @@ import { h, mount } from "../core/dom.js";
 import { buildHome, greeting } from "../core/home.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { ConsoleTile, FeatureTile, WideTile } from "./tiles.js";
-import { KeyHint, SectionHead } from "./ui.js";
+import { SectionHead } from "./ui.js";
 
 /**
  * Inicio: saludo, lo último que jugaste o viste a lo grande, cuatro tarjetas y tus consolas.
@@ -54,7 +54,6 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
 
     mount(consolesHead, model.consoles.length > 0 && SectionHead("Tus consolas", {
       meta: `${model.consoles.length} sistema${model.consoles.length === 1 ? "" : "s"} · ${model.games} juegos`,
-      end: glyphs.page && [KeyHint(glyphs.page, "te traen aquí")],
     }));
     model.consoles.forEach((c, i) => targets.set(`console:${i}`, { kind: "console", console: c }));
     renderConsoles();

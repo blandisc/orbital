@@ -31,6 +31,8 @@ CONSOLES = {
     "gc": ("Nintendo GameCube", ".iso", ["Pikmin 2", "Super Smash Bros. Melee"]),
     "gba": ("Game Boy Advance", ".gba", ["Pokemon Emerald", "Kirby Amazing Mirror", "Metroid Fusion"]),
     "psp": ("PlayStation Portable", ".iso", ["Metal Slug Anthology"]),
+    "xbox360": ("Xbox 360", ".iso", ["Halo 3", "Gears of War"]),
+    "wii": ("Nintendo Wii", ".iso", ["Wii Sports"]),
 }
 # Lo último que "jugaste" (minutos atrás): llena Continuar y el destacado.
 PLAYED = {"steam:1145360": 30, "Mario Party Superstars": 240, "Pikmin 2": 1500, "steam:367520": 2900, "Pokemon Emerald": 4000}

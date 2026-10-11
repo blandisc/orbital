@@ -41,6 +41,9 @@
 .tile--wide__detail svg { width: 1.05rem; height: 1.05rem; flex: none; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linejoin: round; }
 .tile--wide__detail { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text); opacity: .82; font-size: var(--text-sm); white-space: nowrap; }
 .tile--wide__progress { --progress-width: 4.5rem; flex: none; }
+/* El detalle nunca se sale de la tarjeta: si no cabe, termina en «…». */
+.tile--wide__title, .tile--wide__detail { min-width: 0; max-width: 100%; }
+.tile--wide__detail-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 /* Solo el título; el detalle (consola y hace cuánto, o lo que queda) aparece al enfocar la tarjeta. */
 .tile--wide__detail {
   max-height: 0; opacity: 0; transform: translateY(.3rem);
