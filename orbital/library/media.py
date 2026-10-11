@@ -99,10 +99,19 @@ def good(kind: str, size: tuple[int, int] | None, system: str | None = None) -> 
         # Las portadas son verticales (en GBA casi cuadradas) y no diminutas; una captura de PSP (480x272) no.
         return min(w, h) >= 180 and h >= w * (0.85 if system in SQUARE_BOXES else 1.1)
     if kind == "hero":
-        return w >= 960 and w >= h * 1.4
+        # Horizontal. Si es chica (captura de GBA, 240×160) igual sirve: se muestra en pixel art.
+        return w >= 240 and w >= h * 1.2
     if kind == "logo":
         return w >= 200
     return True
+
+
+HD_HERO = 960  # por debajo, el fondo es una captura chica: se dibuja nítida (pixel art), no borrosa
+
+
+def low_res(path: str | Path | None) -> bool:
+    size = image_size(Path(path)) if path else None
+    return bool(size and size[0] < HD_HERO)
 
 
 class MediaStore:

@@ -25,13 +25,14 @@ def test_reads_image_size_from_the_header(tmp_path):
     assert image_size(tmp_path / "b.jpg") == (1920, 1080)
 
 
-def test_a_screenshot_is_not_a_cover_and_a_small_image_is_not_a_hero():
+def test_a_screenshot_is_not_a_cover_but_can_be_a_background():
     assert not good("cover", (480, 272), "psp")  # la «portada» de Renegade Squadron era una captura
     assert good("cover", (600, 900), "psp")
     assert good("cover", (1530, 1370), "gba")  # las cajas de GBA son casi cuadradas
     assert not good("cover", (1530, 1370), "psp")
     assert good("hero", (1920, 1080))
-    assert not good("hero", (800, 600))
+    assert good("hero", (240, 160))  # captura de GBA: mejor que un fondo genérico (se ve en pixel art)
+    assert not good("hero", (160, 144))  # casi cuadrada (Game Boy): no llena un fondo
     assert not good("hero", (1080, 1920))
 
 
@@ -180,3 +181,21 @@ def test_placeholders_pick_a_stable_option_per_game(tmp_path, monkeypatch):
     assert picks == {"/img/placeholders/hero-switch-1.jpg", "/img/placeholders/hero-switch-2.jpg"}
     assert media.placeholder("hero", "switch", "zelda") == media.placeholder("hero", "switch", "zelda")
     assert media.placeholder("hero", "psp", "x") == "/img/placeholders/hero-generic.jpg"
+
+
+def test_official_art_wins_over_screenshots_from_any_source(tmp_path):
+    page = GAME.replace("fanart/12-2.jpg", "screenshot/12-1.jpg")
+    s = scraper(tmp_path, {
+        "search.php": SEARCH.encode(), "game.php?id=12": page.encode(),
+        "Named_Snaps": png(480, 272), "screenshot/12-1.jpg": jpeg(1280, 720), "fanart/12-1.jpg": jpeg(1920, 1080),
+    })
+    target = Target("psp", "Renegade", "Star Wars Battlefront: Renegade Squadron", ["hero"])
+    s.fetch(target)
+    assert s.sources()["psp/Renegade/hero"].endswith("fanart/12-1.jpg")  # libretro va primero, pero es captura
+
+
+def test_without_fanart_a_screenshot_is_better_than_nothing(tmp_path):
+    s = scraper(tmp_path, {"Named_Snaps": png(240, 160)})
+    s.providers = [s.providers[0]]  # solo libretro
+    saved = s.fetch(Target("gba", "Pokemon Pinball - Ruby & Sapphire (USA, Europe)", "Pokemon Pinball", ["hero"]))
+    assert "hero" in saved and "Named_Snaps" in s.sources()["gba/Pokemon Pinball - Ruby & Sapphire (USA, Europe)/hero"]

@@ -27,7 +27,7 @@ from .events import EventBus
 from .focus import READY_TIMEOUT, bring_app_to_front, bring_game_to_front, game_ready, is_orbital_window, pin_orbital  # noqa: F401 - compatibilidad
 from .launcher import Launcher
 from .library import cinemeta, detect, emulators, esde, geforcenow, steam, stremio, stremio_api
-from .library.media import KINDS, MediaStore, placeholder
+from .library.media import KINDS, MediaStore, low_res, placeholder
 from .library.models import LibraryItem
 from .library.scraper import Scraper, Target
 from .sessions import QUICK_EXIT, Sessions  # noqa: F401
@@ -242,6 +242,8 @@ class Catalog:
                 item.image = url
             if item.hero_path:
                 item.hero = url + "?kind=hero"
+                if low_res(item.hero_path):
+                    item.extra["hero_lowres"] = True
             if item.logo_path:
                 item.extra["logo"] = url + "?kind=logo"
             # Regla: todo lleva imagen. Sin portada o sin fondo, el respaldo de su sistema.
@@ -268,9 +270,10 @@ class Catalog:
         for item in self.store.all():
             if not item.system or not item.media_key:
                 continue
+            # Un fondo que es solo una captura chica también se intenta mejorar (fanart).
             kinds = [k for k in KINDS
                      if not self.media.path(item.system, item.media_key, k)
-                     and (force or not getattr(item, paths[k]))]
+                     and (force or not getattr(item, paths[k]) or (k == "hero" and low_res(item.hero_path)))]
             if self.media.meta(item.system, item.media_key) is None:
                 kinds.append("meta")
             if kinds:

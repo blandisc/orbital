@@ -40,6 +40,9 @@
 .tile--wide__detail { display: flex; align-items: center; gap: var(--space-3); color: var(--color-text); opacity: .82; font-size: var(--text-sm); white-space: nowrap; }
 .tile--wide__progress { --progress-width: 4.5rem; flex: none; }
 
+/* Captura chica de un juego retro: nítida, como en la consola (no un borrón estirado). */
+.tile--lowres .tile__art { image-rendering: pixelated; }
+
 /* Arte de respaldo (no tiene propio): un poco más tenue, para que se lea como «genérico». */
 .tile--placeholder .tile__art { opacity: .9; }
 

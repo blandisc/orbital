@@ -48,7 +48,7 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
   const alt = isWatchable(item) ? (isSeries(item) || item.extra?.kind === "series" ? "Episodios" : "Ficha")
     : alternativeRunner(item) && `Con ${alternativeRunner(item).name}`;
   const press = (action) => (event) => { event.stopPropagation(); onAction?.(action); };
-  return tile(focusId, ["tile--feature", item.extra?.placeholder_hero && "tile--placeholder"], onPress, item.title,
+  return tile(focusId, ["tile--feature", item.extra?.placeholder_hero && "tile--placeholder", item.extra?.hero_lowres && "tile--lowres"], onPress, item.title,
     art(item.hero || item.image),
     h("span", { class: "tile__shade tile--feature__shade" }),
     h("div", { class: "tile--feature__body" },
@@ -64,7 +64,7 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
 
 /** Tarjeta ancha: el arte horizontal a sangre y encima qué es, el título y lo que queda. */
 export function WideTile(item, { focusId, onPress }) {
-  return tile(focusId, ["tile--wide", item.extra?.placeholder_hero && "tile--placeholder"], onPress, item.title,
+  return tile(focusId, ["tile--wide", item.extra?.placeholder_hero && "tile--placeholder", item.extra?.hero_lowres && "tile--lowres"], onPress, item.title,
     art(item.hero || item.image),
     h("span", { class: "tile__shade" }),
     h("div", { class: "tile--wide__body" },
