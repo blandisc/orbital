@@ -59,6 +59,10 @@ class Updater:
         if self._checked and not force and time.monotonic() - self._checked[0] < CHECK_EVERY:
             return self._checked[1]
         info = UpdateInfo()
+        if getattr(sys, "frozen", False):
+            info.error = "Esta copia es Orbital.exe: se actualiza empaquetando la versión nueva (scripts/build_exe.py)."
+            self._checked = (time.monotonic(), info)
+            return info
         try:
             info.branch = self.git("rev-parse", "--abbrev-ref", "HEAD")
             self.git("fetch", "--quiet", "origin", info.branch, timeout=60)

@@ -45,7 +45,8 @@ def run(argv: list[str], spawn=subprocess.call, sleep=time.sleep, clock=time.mon
     crashes: list[float] = []
     env = {**os.environ, CHILD_ENV: "1"}
     while True:
-        code = spawn([sys.executable, "-m", "orbital", *argv], env=env)
+        command = [sys.executable, *argv] if getattr(sys, "frozen", False) else [sys.executable, "-m", "orbital", *argv]
+        code = spawn(command, env=env)  # empaquetado (Orbital.exe) el ejecutable ya es Orbital
         action, wait = decide(code, crashes, clock())
         if action == "stop":
             if code not in (0, RESTART):
