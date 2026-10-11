@@ -220,3 +220,24 @@ def test_watch_a_specific_episode_in_a_language(library, monkeypatch):
     assert played == [(("series", "tt0096697", "tt0096697:5:3", "The Simpsons · T5 E3"), {"audio": "es"})]
     missing = voice.handle_intent("WatchEpisodeIntent", {"series": "los simpson", "season": "40", "episode": "2"})
     assert not missing.ok and "no tiene temporada 40" in missing.speech
+
+
+def test_episode_hidden_inside_a_search_or_launch_still_plays(library, monkeypatch):
+    # Alexa suele mandarlo como búsqueda ("quiero ver {query}") y con números en letra.
+    from orbital.library import cinemeta
+    from orbital.voice import episode_request
+
+    assert episode_request("Los Simpson temporada cinco episodio tres en español") == \
+        {"series": "los simpson", "season": "5", "episode": "3", "language": "espanol"}
+    assert episode_request("el episodio veintidós de la temporada treinta y dos de los simpson") == \
+        {"episode": "22", "season": "32", "series": "los simpson"}
+    assert episode_request("dune") is None
+    monkeypatch.setattr(cinemeta.Cinemeta, "search", lambda self, kind, q: [{"id": "tt0096697", "name": "The Simpsons"}])
+    monkeypatch.setattr(cinemeta.Cinemeta, "meta", lambda self, kind, mid: {
+        "name": "The Simpsons", "videos": [{"id": "tt0096697:5:3", "season": 5, "episode": 3}]})
+    played = []
+    monkeypatch.setattr(library, "play_title", lambda *args, **kw: played.append(args[2]))
+    voice = VoiceController(library)
+    assert voice.handle_intent("SearchMediaIntent", {"query": "los simpson temporada cinco episodio tres en español"}).ok
+    assert voice.handle_intent("LaunchGameIntent", {"game": "los simpson temporada 5 episodio 3"}).ok
+    assert played == ["tt0096697:5:3", "tt0096697:5:3"]
