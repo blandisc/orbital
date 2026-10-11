@@ -54,6 +54,9 @@ class Sessions:
         # Por hilo: cada petición sabe si SU lanzamiento tiene pantalla de carga (antes era un solo
         # valor compartido y un lanzamiento por voz en segundo plano podía pisar el de la interfaz).
         self._local = threading.local()
+        # El último emulador abierto: si truena al arrancar se reintenta UNA vez (Eden a veces se
+        # cierra en el primer intento, sobre todo al volver de suspender, y al segundo abre bien).
+        self._last_launch: dict | None = None
         launcher.on_exit = self.session_ended
         launcher.on_timeout = lambda item_id, title: self.events.publish({
             "type": "toast", "ok": False,
@@ -68,8 +71,10 @@ class Sessions:
     def revealing(self, value: bool) -> None:
         self._local.revealing = value
 
-    def launch(self, item_id: str, runner_id: str | None = None, keep: bool = False) -> LibraryItem:
-        """`keep`: abrir sin cerrar lo que estaba abierto (lo pediste en "¿Cerrar…?")."""
+    def launch(self, item_id: str, runner_id: str | None = None, keep: bool = False,
+               retry: bool = False) -> LibraryItem:
+        """`keep`: abrir sin cerrar lo que estaba abierto (lo pediste en "¿Cerrar…?"). `retry`: es
+        el reintento automático tras tronar al arrancar (no se vuelve a reintentar)."""
         self.revealing = False
         item = self.store.get(item_id)
         if item is None:
@@ -98,6 +103,7 @@ class Sessions:
                 self.unpin(pinned)
                 raise
             self.launcher.track(item.id, item.title, proc, runner=runner.name if runner else None)
+            self._last_launch = {"id": item.id, "runner": runner_id, "retried": retry}
             self.revealing = self.to_front(item.id, item.title, runner.name if runner else None, pinned=pinned)
         elif item.uri:
             if item.source == "steam" and item.steam_appid and self.config.steam.silent_start:
@@ -164,10 +170,33 @@ class Sessions:
         self.open_stremio(uri, f"Stremio: {query}")
         return uri
 
+    def _retry_quick_crash(self, item_id: str, title: str, seconds: float) -> bool:
+        """Un emulador que se cerró solo en los primeros segundos se abre otra vez (una sola). La
+        pantalla de carga sigue; si vuelve a tronar, se avisa como siempre."""
+        last = self._last_launch
+        if (not last or last["id"] != item_id or last["retried"] or seconds >= QUICK_EXIT
+                or self.launcher.last_stopped_by_user or getattr(self.launcher, "last_was_already_open", False)):
+            return False
+        last["retried"] = True
+        log.warning("%s se cerró a los %d s al arrancar: lo intento otra vez", title, seconds)
+
+        def again() -> None:
+            try:
+                self.launch(item_id, last["runner"], keep=True, retry=True)
+            except Exception:  # noqa: BLE001 - si no se puede reintentar, se avisa como cierre normal
+                log.exception("No pude reintentar %s", title)
+                self.events.publish({"type": "closed", "id": item_id, "title": title, "seconds": int(seconds),
+                                     "crashed": True, "kind": "emulator"})
+
+        threading.Timer(1.5, again).start()
+        return True
+
     def session_ended(self, item_id: str, title: str, seconds: float) -> None:
         """El juego o emulador se cerró: guarda el tiempo, vuelve a Orbital y publica "closed"
         (Stremio refresca Seguir viendo y Steam relee sus horas al escucharlo)."""
         self.state.record_session(item_id, seconds)
+        if self._retry_quick_crash(item_id, title, seconds):
+            return
         if self.kiosk is not None and not self.kiosk.exited_by_user:
             self.kiosk.open()  # al frente o, si alguien cerró la ventana, otra vez abierta
         else:

@@ -207,3 +207,23 @@ def test_quick_crash_with_low_memory_says_so(library, monkeypatch):
     monkeypatch.setattr(health, "free_ram_mb", lambda: 9000)
     library.sessions.session_ended("emu:x", "Mario Party", 4)
     assert "low_memory" not in [e for e in events if e["type"] == "closed"][-1]
+
+
+def test_emulator_that_dies_on_start_is_retried_once(library, monkeypatch):
+    import time as _time
+
+    library.launcher.last_stopped_by_user = False
+    events = []
+    library.listeners.append(events.append)
+    game = next(i for i in library.items() if i.source == "snes")
+    library.sessions.launch(game.id)
+    library.launcher.finish(3)  # truena al arrancar
+    deadline = _time.monotonic() + 5
+    while len(library.launcher.ran) < 2 and _time.monotonic() < deadline:
+        _time.sleep(.05)
+    assert len(library.launcher.ran) == 2  # se abrió otra vez, solo
+    assert not [e for e in events if e["type"] == "closed"]  # sin aviso de error todavía
+    library.launcher.finish(3)  # vuelve a tronar: ahora sí se avisa
+    _time.sleep(2)
+    assert len(library.launcher.ran) == 2
+    assert [e for e in events if e["type"] == "closed"][-1]["crashed"]
