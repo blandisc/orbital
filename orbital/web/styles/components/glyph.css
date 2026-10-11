@@ -16,3 +16,6 @@
 /* Dentro de un botón: más pequeño. Sobre el botón claro, oscuro (salvo los de color). */
 .glyph--sm { min-width: 1.5rem; height: 1.5rem; font-size: var(--text-2xs); }
 .button--primary .glyph--sm:not([data-input="gamepad"] *) { background: var(--palette-ink-1000); color: var(--color-primary); }
+
+.glyph--drawn { padding: 0; }
+.glyph--drawn svg { width: 72%; height: 72%; }

@@ -60,6 +60,11 @@
 .title__action .icon { width: 1.3rem; height: 1.3rem; }
 .title__action small { color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-regular); }
 .title__action--primary { padding-inline: var(--space-6) var(--space-8); }
+/* Junto a los episodios no cabe todo: "Elegir fuente" queda como ícono (Y lo abre igual). */
+.title--series .title__action[data-id="sources"] { padding-inline: var(--space-4); }
+.title--series .title__action[data-id="sources"] span { display: none; }
+/* Los secundarios, más compactos: los tres caben en un renglón también junto a los episodios. */
+.title__action:not(.title__action--primary) { padding-inline: var(--space-4) var(--space-5); font-size: var(--text-md); }
 /* Foco invertido (como el menú): se ve desde el sofá. */
 .title__action--focused { background: var(--color-primary); color: var(--color-on-primary); transform: scale(1.04); }
 .title__action--focused small { color: inherit; opacity: .7; }
@@ -78,11 +83,11 @@
 .title[data-zone="episodes"] .title__tab--active { background: var(--color-primary); color: var(--color-on-primary); }
 .title__episodes {
   display: flex; flex-direction: column; gap: var(--space-2); min-height: 0; overflow-y: auto; scrollbar-width: none;
-  padding: var(--space-2); margin: calc(-1 * var(--space-2));
+  padding: var(--space-6) var(--space-2) var(--space-2); margin: 0 calc(-1 * var(--space-2));
+  position: relative; /* offsetTop de los episodios, relativo a la lista */
   /* Fundido arriba y abajo: lo que sigue se insinúa en vez de cortarse en seco bajo las pestañas. */
   -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 var(--space-8), #000 85%, transparent);
   mask-image: linear-gradient(180deg, transparent 0, #000 var(--space-8), #000 85%, transparent);
-  padding-top: var(--space-6);
 }
 /* Mientras el foco está en los botones, la lista se queda en segundo plano. */
 .title[data-zone="actions"] .title__episodes { opacity: .62; transition: opacity var(--duration-base) var(--ease-out); }

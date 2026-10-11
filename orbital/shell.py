@@ -48,10 +48,12 @@ APP_NAMES = {"chrome": "Chrome", "msedge": "Edge", "stremio-shell-ng": "Stremio"
              "steam": "Steam", "es-de": "ES-DE", "discord": "Discord", "explorer": "Explorador", "eden": "Eden",
              "ryujinx": "Ryujinx", "dolphin": "Dolphin", "mgba": "mGBA", "xemu": "xemu", "ppssppwindows64": "PPSSPP", "mpv": "Reproductor"}
 LEGION_DOUBLE_PRESS = 2.0  # s: dos toques de Legion L desde un juego lo cierran
+IDLE_WARNING = 600  # s antes de cerrar un juego olvidado: se avisa
 
 
 class ConsoleShell:
     def __init__(self, catalog, kiosk=None, win=windows, overlay=None, pause_file=None) -> None:
+        self._idle_warned = False
         self.catalog = catalog
         self.kiosk = kiosk
         self.win = win
@@ -317,7 +319,8 @@ class ConsoleShell:
             self._legion_left = {"hwnd": previous, "target": game}
             notify = getattr(self.catalog, "_notify", None)
             if notify:
-                notify({"type": "toast", "message": f"Toca Legion L otra vez para cerrar {game['title']}"})
+                notify({"type": "toast", "message": f"Toca Legion L otra vez para cerrar {game['title']}",
+                        "countdown": int(LEGION_DOUBLE_PRESS * 1000)})
 
     # --------------------------------------------------------------- arranque
     def start(self) -> bool:
@@ -351,8 +354,19 @@ class ConsoleShell:
     def check_idle(self, now: float) -> bool:
         """Un juego congelado (saliste con Home) más de `game_idle_minutes` se cierra solo."""
         limit = self.sessions.game_idle_minutes * 60
-        if not self.paused or not limit or self.paused_since is None or now - self.paused_since < limit:
+        if not self.paused or not limit or self.paused_since is None:
+            self._idle_warned = False
             return False
+        if now - self.paused_since < limit:
+            if limit > IDLE_WARNING and now - self.paused_since >= limit - IDLE_WARNING and not self._idle_warned:
+                self._idle_warned = True
+                running = self.catalog.launcher.status()
+                notify = getattr(self.catalog, "_notify", None)
+                if notify and running:
+                    notify({"type": "toast", "message": f"{running['title']} se cerrará en {IDLE_WARNING // 60} min si no "
+                                                        "vuelves (Home). Lo no guardado se pierde."})
+            return False
+        self._idle_warned = False
         running = self.catalog.launcher.status()
         title = running["title"] if running else "el juego"
         pids = set(self.paused)

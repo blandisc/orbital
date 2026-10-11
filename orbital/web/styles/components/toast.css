@@ -18,3 +18,8 @@
 /* Lo que entendió Alexa: micrófono en el color del juego. */
 .toast--voice .toast__icon { color: var(--color-accent); }
 .toast--leaving { animation: lift-out var(--duration-exit) var(--ease-in) forwards; }
+
+/* Cuenta regresiva: una línea que se vacía en la base del aviso. */
+.toast { overflow: hidden; }
+.toast__countdown { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--color-accent); transform-origin: left; animation: toast-countdown linear forwards; }
+@keyframes toast-countdown { to { transform: scaleX(0); } }

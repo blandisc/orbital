@@ -314,3 +314,14 @@ def test_watched_episodes_like_stremio():
                          name="X", poster=None, video_id="tt1:1:8", position=1300, duration=1320, watched=1300,
                          next_video="tt1:1:9", now=0, video_ids=ids)
     assert parse_watched(item["state"]["watched"], ids) == {"tt1:1:2", "tt1:1:3", "tt1:1:7", "tt1:1:8"}
+
+
+def test_voice_asks_which_when_two_share_the_name(linked, monkeypatch):
+    from orbital.library import cinemeta
+    catalog = {"movie": [{"id": "tt1160419", "name": "Dune", "releaseInfo": "2021"},
+                         {"id": "tt0087182", "name": "Dune", "releaseInfo": "1984"}], "series": []}
+    monkeypatch.setattr(cinemeta.Cinemeta, "search", lambda self, kind, q: catalog[kind])
+    result = VoiceController(linked).handle_text("busca dune en stremio")
+    assert result.speech.startswith("Encontré varias: Dune, película de 2021; Dune, película de 1984")
+    event = result.events[0]
+    assert event["type"] == "choose" and [o["meta_id"] for o in event["options"]] == ["tt1160419", "tt0087182"]

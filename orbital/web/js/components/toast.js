@@ -22,7 +22,9 @@ export function createToast({ duration = 3800, errorDuration = 6500 } = {}) {
     showing = true;
     cancelExit();
     const icon = toast.voice ? "mic" : toast.error ? "close" : "check";
-    mount(el, h("span", { class: "toast__icon", "aria-hidden": "true" }, svg(ICONS[icon])), h("span", {}, toast.message));
+    mount(el, h("span", { class: "toast__icon", "aria-hidden": "true" }, svg(ICONS[icon])), h("span", {}, toast.message),
+      // Cuenta regresiva visible (p. ej. los 2 s para el segundo toque de Legion L).
+      toast.countdown && h("span", { class: "toast__countdown", style: { animationDuration: `${toast.countdown}ms` } }));
     el.classList.toggle("toast--error", toast.error);
     el.classList.toggle("toast--voice", toast.voice);
     el.setAttribute("role", toast.error ? "alert" : "status");
@@ -33,15 +35,16 @@ export function createToast({ duration = 3800, errorDuration = 6500 } = {}) {
     el.style.animation = "";
     clearTimeout(timer);
     // Con más avisos esperando, cada uno se queda un poco menos (pero se lee).
-    const base = toast.error ? errorDuration : duration;
+    const base = toast.countdown ? toast.countdown + 300 : toast.error ? errorDuration : duration;
     timer = setTimeout(next, queue.length ? Math.max(2200, base * .6) : base);
   }
 
-  function show(message, { error = false, voice = false } = {}) {
+  function show(message, { error = false, voice = false, countdown = 0 } = {}) {
     if (!message) return;
     const last = queue.at(-1);
     if (last?.message === message) return; // el mismo aviso dos veces seguidas no aporta
-    queue.push({ message, error, voice });
+    if (countdown) queue.length = 0; // lo que tiene tiempo límite va ya, no detrás de otros avisos
+    queue.push({ message, error, voice, countdown });
     if (queue.length > 4) queue.splice(0, queue.length - 4);
     if (!showing) next();
   }

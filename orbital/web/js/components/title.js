@@ -73,7 +73,8 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
     action = Math.min(action, Math.max(0, buttons.length - 1));
     mount(actions, buttons.map((b, i) => h("button", {
       class: ["title__action", b.primary && "title__action--primary", zone === "actions" && i === action && "title__action--focused"],
-      type: "button", onClick: () => { zone = "actions"; action = i; run(b); },
+      type: "button", "data-id": b.id, "aria-label": b.label, title: b.label,
+      onClick: () => { zone = "actions"; action = i; run(b); },
     }, svg(ICONS[b.icon] || ICONS.play), h("span", {}, b.label), b.hint && h("small", {}, b.hint))));
   }
 
@@ -105,7 +106,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
           : ep.overview && h("span", { class: "episode__overview" }, ep.overview)));
     }));
     // Al abrir en un episodio avanzado (T8 E23), que quede al centro, no pegado al borde.
-    list.children[index]?.scrollIntoView({ block: "center", behavior: "auto" });
+    focusVisible(false, true);
   }
 
   function renderProgress() {
@@ -128,8 +129,18 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
     }
   }
 
-  function focusVisible(smooth = true) {
-    list.children[index]?.scrollIntoView({ block: "nearest", behavior: smooth ? "smooth" : "auto" });
+  /** Desplaza SOLO la lista (scrollIntoView también movía el contenedor y la lista quedaba bajo
+   * las pestañas). `center`: al abrir, el episodio en el que ibas queda al centro. */
+  function focusVisible(smooth = true, center = false) {
+    const node = list.children[index];
+    if (!node) return;
+    const top = node.offsetTop; // la lista es position:relative: relativo a ella
+    const bottom = top + node.offsetHeight;
+    let next = list.scrollTop;
+    if (center) next = top - (list.clientHeight - node.offsetHeight) / 2;
+    else if (top < list.scrollTop + 24) next = top - 24;
+    else if (bottom > list.scrollTop + list.clientHeight - 48) next = bottom - list.clientHeight + 48;
+    list.scrollTo({ top: Math.max(0, next), behavior: smooth ? "smooth" : "auto" });
   }
 
   function setIndex(i) {

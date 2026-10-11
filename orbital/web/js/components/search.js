@@ -44,7 +44,7 @@ export function rememberSearch(recent, query) {
   return [q, ...recent.filter((r) => r !== q)].slice(0, RECENT_MAX);
 }
 
-export function createSearch({ onOpen, onMove, onClose, localSearch = () => [] }) {
+export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], popular = () => [] }) {
   const field = h("div", { class: "search__field" });
   const caret = h("span", { class: "search__caret", "aria-hidden": "true" });
   const query = h("span", { class: "search__query" });
@@ -117,13 +117,22 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [] }
 
   /** Caja vacía: tus búsquedas recientes, para repetir una con dos botones. */
   function showRecent() {
+    // Caja vacía: tus búsquedas recientes y lo popular ahora (como Google TV), no una pantalla en blanco.
     const recent = storage.get(RECENT_KEY, []);
-    items = recent.map((q) => ({ recent: q }));
-    focusables = recent.map((q, i) => h("button", {
+    const trending = popular().slice(0, 10);
+    items = [...recent.map((q) => ({ recent: q })), ...trending];
+    const chips = recent.map((q, i) => h("button", {
       class: "search__recent", type: "button", onClick: () => { resultIndex = i; zone = "results"; open(); },
     }, svg(ICONS.search), q));
-    mount(results, focusables.length ? [h("span", { class: "search__group" }, "Recientes"), ...focusables] : []);
-    results.classList.add("search__results--recent");
+    const cards = trending.map((item, i) => Card(item, {
+      caption: true, onPress: () => { zone = "results"; resultIndex = recent.length + i; open(); },
+    }));
+    focusables = [...chips, ...cards];
+    mount(results, [
+      chips.length && h("span", { class: "search__group" }, "Recientes"), ...chips,
+      cards.length && h("span", { class: "search__group" }, "Populares"), ...cards,
+    ]);
+    results.classList.toggle("search__results--recent", !cards.length);
     if (!items.length && zone === "results") zone = "keys";
     render();
   }

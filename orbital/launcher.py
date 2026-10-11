@@ -67,6 +67,7 @@ class Launcher:
         self._lock = threading.Lock()
         self.current: Running | None = None
         self.on_exit = on_exit
+        self.on_timeout = None  # (id, título): lo lanzado nunca arrancó (Steam no lo abrió)
         self.last_stopped_by_user = False
 
     def open_uri(self, uri: str) -> None:
@@ -191,6 +192,8 @@ class Launcher:
                     if self.current is running:
                         self.current = None
                 log.info("%s no arrancó en %d s; deja de estar en curso", running.title, self.STEAM_START_TIMEOUT)
+                if self.on_timeout:
+                    self.on_timeout(running.item_id, running.title)
                 return
             time.sleep(self.POLL)
         running.started = time.time()

@@ -11,9 +11,7 @@
   transform-origin: 0 100%;
   transition:
     transform var(--duration-base) var(--ease-spring), margin var(--duration-base) var(--ease-out),
-    width var(--duration-slow) var(--ease-out),
-    box-shadow var(--duration-base) var(--ease-out), opacity var(--duration-base) var(--ease-out),
-    filter var(--duration-base) var(--ease-out);
+    box-shadow var(--duration-base) var(--ease-out), opacity var(--duration-base) var(--ease-out);
 }
 /* Borde interior fino: separa portadas oscuras del fondo sin cambiar de tamaño al enfocar. */
 .card::after {
@@ -73,10 +71,11 @@
   box-shadow: var(--ring-focus), 0 1.4rem 3.2rem -.6rem color-mix(in oklab, var(--art-accent) 38%, transparent);
   transition:
     transform 360ms var(--ease-pop), margin var(--duration-base) var(--ease-out),
-    box-shadow var(--duration-slow) var(--ease-out), width var(--duration-slow) var(--ease-out);
+    box-shadow var(--duration-slow) var(--ease-out);
 }
 /* Jerarquía en la fila actual: las vecinas bajan un poco el brillo para que el foco mande. */
-.shelf__row--current .card:not(.card--focused) { filter: brightness(.78) saturate(.92); }
+/* Con opacidad (la compone la GPU) en vez de filter en cada vecina, que se repintaba al moverse. */
+.shelf__row--current .card:not(.card--focused) { opacity: .74; }
 .card--dimmed { opacity: .4; filter: saturate(.6); }
 /* Progreso de lo que estás viendo (Stremio): sobre un degradado para que se lea en cualquier póster. */
 .card--has-progress::before {

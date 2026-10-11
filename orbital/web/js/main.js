@@ -64,6 +64,11 @@ const ui = {
     // Películas y series: su ficha encima de la búsqueda; un juego se abre (y la búsqueda se cierra).
     onOpen: (result) => (isWatchable(result) || result.kind ? openTitle(result) : (ui.search.close(), launch(result))),
     localSearch: (query) => searchLibrary(state.allRows, query),
+    // Populares: lo primero de películas y series, intercalado.
+    popular: () => {
+      const rows = ["movies", "series"].map((id) => state.allRows.find((r) => r.id === id)?.items ?? []);
+      return rows[0].flatMap((m, i) => [m, rows[1][i]]).filter(Boolean);
+    },
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); },
   }),
@@ -461,6 +466,10 @@ async function runCommand(command, context = null) {
         return watch({ ...command.play, keep: !!command.keep }, { confirmed: true });
       case "title":
         return openTitle(findItem(command.id));
+      case "title-ref":
+        return openTitle(command.ref);
+      case "search":
+        return openSearch(command.query || "");
       case "prefs":
         await api.setPrefs(command.id, command.prefs);
         if (command.prefs.favorite) state.popId = command.id;
@@ -609,10 +618,20 @@ function handleEvent(event) {
     return location.assign(location.pathname + (query ? `?${query}` : ""));
   }
   if (event.type === "open-view") return openView(event.view, event.message);
+  if (event.type === "choose") { // la voz encontró varias con el mismo nombre: ¿cuál?
+    ui.status.pulseAlexa();
+    return openMenu({
+      title: event.message,
+      options: [
+        ...event.options.map((o) => ({ icon: "media", label: o.title, hint: o.subtitle, command: { type: "title-ref", ref: o } })),
+        { icon: "search", label: "Ver todos los resultados", command: { type: "search", query: event.query } },
+      ],
+    });
+  }
   if (event.type === "launch-ready") return ui.launch.reveal();
   if (event.type === "settings") return applySettings(event.settings);
   if (event.type === "toast") {
-    ui.toast.show(event.message, { error: event.ok === false, voice: !!event.voice });
+    ui.toast.show(event.message, { error: event.ok === false, voice: !!event.voice, countdown: event.countdown || 0 });
     if (event.voice) ui.status.pulseAlexa();
   } else if (event.type === "navigate") {
     handleAction(event.direction);

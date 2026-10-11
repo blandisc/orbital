@@ -242,6 +242,17 @@ class VoiceController:
         # Varias opciones: la búsqueda de Orbital ya escrita, para elegir con el mando.
         return VoiceResult(f"Buscando {query}. Elige con el control.", events=[self._show_view({"buscar": query}, f"Buscando «{query}»")])
 
+    def _ask_which(self, query: str, options: list[dict]) -> VoiceResult:
+        """Varias con el mismo nombre (Dune de 1984 y de 2021): se pregunta en pantalla, como una
+        consola, en vez de poner la primera que salga."""
+        if self.kiosk is not None:
+            self.kiosk.open()
+        said = "; ".join(f"{o['title']}, {o['subtitle'].lower().replace(' · ', ' de ')}" for o in options[:3])
+        choices = [{k: o.get(k) for k in ("id", "title", "subtitle", "kind", "meta_id", "image", "hero")} for o in options[:6]]
+        return VoiceResult(f"Encontré varias: {said}. Elige con el control.",
+                           events=[{"type": "choose", "query": query, "options": choices,
+                                    "message": f"¿Cuál «{query}»?"}])
+
     def _show_view(self, view: dict, message: str = "") -> dict:
         """Trae Orbital al frente con una vista abierta (búsqueda o ficha), sin recargar la interfaz:
         no se pierde dónde estabas y se ve qué entendió Alexa."""
@@ -255,7 +266,10 @@ class VoiceController:
         target = normalize(query)
         movies = self.catalog.cinemeta.search("movie", query)
         series = self.catalog.cinemeta.search("series", query)
-        match = next((r for r in cinemeta.search_results(query, movies, series) if normalize(r["title"]) == target), None)
+        matches = [r for r in cinemeta.search_results(query, movies, series) if normalize(r["title"]) == target]
+        if len(matches) > 1:
+            return self._ask_which(query, matches)
+        match = matches[0] if matches else None
         if match is None:
             return None
         if match["kind"] == "movie":

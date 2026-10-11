@@ -4,8 +4,8 @@
 html {
   font-size: var(--root-size);
   background: var(--color-bg);
-  /* El color del juego entra despacio: se siente como luz, no como un cambio de tema. */
-  transition: --art-tint var(--duration-tint) var(--ease-out), --art-accent var(--duration-tint) var(--ease-out);
+  /* El color del juego ya no se anima aquí (animar una variable de la raíz recalculaba toda la página
+     en cada cuadro): solo el fondo hace el fundido (backdrop.css), que es lo que se nota. */
 }
 
 /* Retícula de página: barra de estado / héroe (se estira) / filas / controles.

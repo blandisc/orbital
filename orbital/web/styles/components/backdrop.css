@@ -1,7 +1,10 @@
 /* Backdrop: el arte del juego, compuesto a la derecha y fundido hacia su color (--art-tint).
    Las máscaras (no velos oscuros) dejan el arte limpio donde se ve y el fondo tranquilo detrás
    del texto y de las filas. */
-.backdrop { position: fixed; inset: 0; z-index: -1; background: var(--color-tinted-bg); overflow: hidden; }
+.backdrop {
+  position: fixed; inset: 0; z-index: -1; background-color: var(--color-tinted-bg); overflow: hidden;
+  transition: background-color var(--duration-tint) var(--ease-out); /* el color del juego entra como luz */
+}
 .backdrop__layer {
   position: absolute; inset: 0; opacity: 0;
   transition: opacity var(--duration-tint) var(--ease-out);

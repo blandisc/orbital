@@ -303,6 +303,9 @@ class Catalog:
         self.config = config
         self.launcher = launcher or Launcher()
         self.launcher.on_exit = self._session_ended
+        self.launcher.on_timeout = lambda item_id, title: self._notify({
+            "type": "toast", "ok": False,
+            "message": f"{title} no arrancó. Revisa Steam (puede estar actualizando o pidiendo algo en su ventana)."})
         self.kiosk = None  # KioskWindow si Orbital abrió la interfaz (la reabre al cerrar un juego)
         self.state = state or default_state(config)
         self.steam_root: Path | None = None
