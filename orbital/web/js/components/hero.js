@@ -72,7 +72,7 @@ export function createHero({ onAction }) {
       // Antes era "☰", el mismo glifo del botón Menú del mando: se confundían.
       Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction("options") }));
     voice.hidden = !alexa || !tips;
-    if (alexa && tips) mount(voice, svg(ICONS.mic), h("span", {}, alexaTip(item, { runningId })));
+    if (alexa && tips) mount(voice, svg(ICONS.assistant), h("span", {}, alexaTip(item, { runningId })));
   }
 
   /** Actualiza con una transición corta. `immediate` evita la animación (p. ej. al cambiar glifos). */

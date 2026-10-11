@@ -73,12 +73,18 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
 /** Pie de Juegos (lógica pura): en la galería, elegir consola; dentro, jugar y cambiar de consola. */
 export function gamesHints(glyphs, target, { mode = "console", primary = "Jugar", alt = null, gallery = false } = {}) {
   if (mode === "gallery") {
-    return [{ glyph: glyphs.rows === "↑↓" ? "← →" : "◀ ▶", label: "Otra consola" }, { glyph: glyphs.select, label: "Entrar" },
+    if (target?.kind === "view") {
+      return [{ glyph: glyphs.select, label: target.view === "gallery" ? "Ver en galería" : "Ver por consola" },
+        { glyph: glyphs.back, label: "Volver", end: true }];
+    }
+    return [{ glyph: glyphs.rows === "↑↓" ? "← →" : "◀ ▶", label: "Girar" }, { glyph: glyphs.select, label: "Entrar" },
+      { glyph: glyphs.rows === "↑↓" ? "↑" : "↕", label: "Cambiar vista", secondary: true },
       { glyph: glyphs.section, label: "Sección", secondary: true }, { glyph: glyphs.menu, label: "Menú", end: true }];
   }
   const list = [];
   if (target?.kind === "filter") list.push({ glyph: glyphs.select, label: "Filtrar" });
-  else if (target?.kind === "gallery") list.push({ glyph: glyphs.select, label: "Ver todas las consolas" });
+  else if (target?.kind === "view") list.push({ glyph: glyphs.select, label: target.view === "gallery" ? "Ver en galería" : "Ver por consola" });
+  else if (target?.kind === "rail") list.push({ glyph: glyphs.rows, label: "Otra consola" }, { glyph: glyphs.select, label: "Ver sus juegos" });
   else if (target?.kind === "game") {
     list.push({ glyph: glyphs.select, label: primary });
     if (alt) list.push({ glyph: glyphs.alt, label: alt });

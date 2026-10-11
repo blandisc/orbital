@@ -74,6 +74,7 @@
   --system-xbox360: #7fc241;
   --system-steam: #66c0f4;
   --system-geforcenow: #76b900;
+  --assistant-accent: #3cc8f4; /* Alexa: el anillo azul cuando acaba de escucharte */
   --system-default: var(--palette-ink-300);
 
   --gradient-tile-shade: linear-gradient(0deg, color-mix(in oklab, var(--palette-ink-1000) 92%, transparent) 0%,

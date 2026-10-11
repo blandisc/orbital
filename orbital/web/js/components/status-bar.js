@@ -16,8 +16,12 @@ export function createStatusBar({ onBrand, onSection, onSearch }) {
   // Lo abierto: un ícono quieto y su nombre (antes un punto verde que parpadeaba y no se entendía).
   const playing = h("span", { class: "status-bar__playing", hidden: true },
     h("span", { class: "status-bar__live", "aria-hidden": "true" }, svg(ICONS.play)), playingLabel, playingTitle);
-  // Alexa: solo un micrófono gris; se ilumina un momento cuando acaba de escucharte.
-  const alexa = h("span", { class: "indicator", hidden: true, title: "Alexa", "aria-label": "Alexa" }, svg(ICONS.mic));
+  // Alexa: el anillo de asistente de voz y su nombre, discretos ("Orbital está conectado a Alexa").
+  // Cuando acaba de escucharte, el anillo se pinta de azul y el texto dice «Te escuché» un momento.
+  const alexaLabel = h("span", { class: "assistant__label" }, "Alexa");
+  const alexa = h("span", { class: "assistant", hidden: true, title: "Conectado a Alexa: «Alexa, pídele a Orbital…»", "aria-label": "Conectado a Alexa" },
+    h("span", { class: "assistant__ring", "aria-hidden": "true" }, svg(ICONS.assistant)), alexaLabel);
+  let heardTimer = 0;
   const wifi = h("span", { hidden: true }, svg(ICONS.wifi));
   const level = h("i", { class: "battery__level" });
   const batteryText = h("span");
@@ -63,15 +67,19 @@ export function createStatusBar({ onBrand, onSection, onSearch }) {
       wifi.title = `${info.ssid || "Wi-Fi"} · ${info.signal}%`;
     }
     alexa.hidden = !alexaLast;
-    alexa.classList.toggle("indicator--live", !!alexaLast && Date.now() / 1000 - alexaLast < ALEXA_LIVE_SECONDS);
+    alexa.classList.toggle("assistant--live", !!alexaLast && Date.now() / 1000 - alexaLast < ALEXA_LIVE_SECONDS);
   }
 
   function pulseAlexa() {
     alexa.hidden = false;
-    alexa.classList.remove("indicator--pulse");
+    alexa.classList.remove("assistant--heard");
     void alexa.offsetWidth;
-    alexa.classList.add("indicator--live", "indicator--pulse");
+    alexa.classList.add("assistant--live", "assistant--heard");
+    alexaLabel.textContent = "Te escuché";
+    clearTimeout(heardTimer);
+    heardTimer = setTimeout(() => { alexa.classList.remove("assistant--heard"); alexaLabel.textContent = "Alexa"; }, 2400);
   }
+
 
   async function watchBattery() {
     if (!navigator.getBattery) return;

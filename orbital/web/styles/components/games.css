@@ -1,121 +1,172 @@
-/* Juegos (js/components/games.js): riel de consolas, filtros y portadas; o la galería en órbita.
-   El juego enfocado lo muestra el héroe de siempre (arriba); el fondo, el backdrop de siempre. */
-body[data-view="games"] { --games-rail: 5.4rem; }
-body[data-view="games"] .shelf { display: none; }
-body[data-view="games"] .hero { padding-left: calc(var(--page-gutter) + var(--games-rail) + var(--space-6)); }
-body[data-view="games"][data-games="gallery"] .hero { display: none; }
-/* Aquí manda la cuadrícula: el héroe se compacta (título en una línea, sin la frase de Alexa). */
-body[data-view="games"] .hero__voice { display: none; }
-body[data-view="games"] .hero__title { -webkit-line-clamp: 1; }
-body[data-view="games"] .hero__description { -webkit-line-clamp: 1; }
+/* Juegos (js/components/games.js + game-panel.js). Dos vistas: Consola (riel + portadas + ficha) y
+   Galería (las consolas en órbita). Ocupa todo el centro: el héroe no se usa aquí (la ficha lo sustituye). */
+body[data-view="games"] { --games-rail: 6.2rem; --games-sheet: min(33rem, 36vw); }
+body[data-view="games"] .hero, body[data-view="games"] .shelf { display: none; }
+/* Fondo de ambiente (estrellas y luz del color de lo enfocado), como el Inicio: el arte vive en la ficha. */
+body[data-view="games"] .backdrop__layer, body[data-view="games"] .backdrop__scrim { opacity: 0; }
+body[data-view="games"] .backdrop { transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--palette-ink-950); }
+body[data-view="games"] .backdrop__space { opacity: 1; }
 
 .games {
-  grid-row: 3; min-height: 0; position: relative;
-  /* Portadas un poco más chicas que en las filas: caben dos filas y el héroe respira. */
-  --card-height: 9rem; --card-focus-scale: 1.08;
+  grid-row: 2 / 4; min-height: 0; position: relative;
+  --card-height: 10rem; --card-focus-scale: 1.06;
 }
-body[data-games="gallery"] .games { grid-row: 2 / 4; }
 
-/* --- Riel de consolas (a la izquierda, a toda la altura) ------------------------------------- */
-.games__rail {
-  position: fixed; z-index: 2; left: var(--page-gutter); top: 7.2rem; bottom: 4.6rem; width: var(--games-rail);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-3);
+/* --- Selector de vista (arriba a la derecha): «Vista · Consola | Galería» ----------------------- */
+.games__top { position: absolute; z-index: 4; top: var(--space-3); right: var(--page-gutter); }
+.games__switch {
+  display: inline-flex; align-items: center; gap: var(--space-1); padding: .3rem;
+  border-radius: var(--radius-pill); background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-hairline);
 }
-.games[data-mode="gallery"] .games__rail { display: none; }
+.games__switch-label { padding: 0 var(--space-3) 0 var(--space-4); color: var(--color-text-muted); font-size: var(--text-sm); }
+.games__switch-option {
+  display: inline-flex; align-items: center; gap: var(--space-2); min-height: 2.4rem; padding: 0 var(--space-4);
+  border-radius: var(--radius-pill); color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium);
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-spring);
+}
+.games__switch-option .icon { width: 1.05rem; height: 1.05rem; }
+.games__switch-option--on { background: var(--color-fill-hover); color: var(--color-text); }
+.games__switch-option.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
+
+/* --- Riel de consolas (vista Consola) ----------------------------------------------------------- */
+.games__rail {
+  position: absolute; z-index: 2; left: var(--page-gutter); top: 0; bottom: var(--space-4); width: var(--games-rail);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2);
+}
+.games[data-view="gallery"] .games__rail, .games[data-mode="gallery"] .games__rail { display: none; }
 .games__rail-key { display: flex; flex-direction: column; align-items: center; gap: .15rem; color: var(--color-text-muted); }
+.games__rail-key--next { flex-direction: column-reverse; }
 .games__rail-arrow { display: grid; place-items: center; }
 .games__rail-arrow .icon { width: .9rem; height: .9rem; transform: rotate(-90deg); }
 .games__rail-key--next .games__rail-arrow .icon { transform: rotate(90deg); }
 .games__rail-item {
-  display: grid; place-items: center; width: 3.6rem; height: 3.6rem; border-radius: var(--radius-lg);
-  background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-hairline); opacity: .6;
-  transition: width var(--duration-base) var(--ease-out), height var(--duration-base) var(--ease-out), opacity var(--duration-base) var(--ease-out);
+  position: relative; display: grid; place-items: center; width: 4rem; height: 4rem; padding: .5rem; box-sizing: border-box;
+  border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-hairline);
+  opacity: .55; transition: opacity var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-base) var(--ease-out);
 }
 .games__rail-item--current {
-  width: 5rem; height: 5rem; opacity: 1;
-  background: radial-gradient(circle at 50% 30%, color-mix(in oklab, var(--glow) 40%, transparent), var(--color-surface) 72%);
+  opacity: 1; width: 5rem; height: 5rem;
+  background: radial-gradient(circle at 50% 30%, color-mix(in oklab, var(--glow) 38%, transparent), var(--color-surface) 75%);
   box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--glow) 60%, var(--color-hairline-strong));
 }
-.games__rail-item { overflow: hidden; }
-.games__rail-img { max-width: 80%; max-height: 72%; object-fit: contain; }
-.games__rail-img--logo { max-width: 60%; max-height: 60%; }
-.games__rail-img--cover { max-height: 86%; border-radius: var(--radius-xs); }
+.games__rail-item.is-focused { opacity: 1; box-shadow: var(--ring-focus); transform: scale(1.06); }
+/* La foto cabe completa en su casilla (la del Xbox 360 es alta y se cortaba). */
+.games__rail-img { width: 100%; height: 100%; object-fit: contain; }
+.games__rail-img--logo { width: 62%; height: 62%; }
+.games__rail-img--cover { border-radius: var(--radius-xs); }
 
-/* --- Filtros + cuadrícula ------------------------------------------------------------------- */
-.games__panel {
-  height: 100%; display: flex; flex-direction: column; gap: var(--space-3);
-  padding: 0 var(--page-gutter) 0 calc(var(--page-gutter) + var(--games-rail) + var(--space-6));
+/* --- Centro: encabezado, filtros y portadas ----------------------------------------------------- */
+.games__main {
+  position: absolute; top: 0; bottom: 0; left: calc(var(--page-gutter) + var(--games-rail) + var(--space-8));
+  right: calc(var(--games-sheet) + var(--page-gutter) + var(--space-8));
+  display: flex; flex-direction: column; gap: var(--space-5); min-height: 0;
 }
-.games[data-mode="gallery"] .games__panel { display: none; }
-.games__bar { display: flex; align-items: center; gap: var(--space-3); padding-top: var(--space-2); }
+.games[data-view="gallery"] .games__main { left: var(--page-gutter); }
+.games[data-mode="gallery"] .games__main, .games[data-mode="gallery"] .game-panel { display: none; }
+.games__head { min-height: 3.2rem; display: flex; align-items: center; padding-top: var(--space-2); }
+.games__heading { display: flex; align-items: center; gap: var(--space-4); min-width: 0; }
+.games__heading-media {
+  flex: none; display: grid; place-items: center; width: 4.4rem; height: 4.4rem; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in oklab, var(--glow) 40%, transparent), transparent 70%);
+}
+.games__heading-img { width: 100%; height: 100%; object-fit: contain; }
+.games__heading-img--logo { width: 60%; height: 60%; }
+.games__heading-text { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+.games__heading-title { display: flex; align-items: baseline; gap: var(--space-3); font-family: var(--font-sans); font-size: var(--text-2xl); font-weight: var(--weight-medium); letter-spacing: var(--tracking-tight); white-space: nowrap; }
+.games__heading-count { color: var(--color-text-muted); font-family: var(--font-text); font-size: var(--text-md); font-weight: var(--weight-regular); }
+.games__heading-back { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
+
+.games__bar { display: flex; align-items: center; gap: var(--space-3); }
 .games__filters { display: flex; align-items: center; gap: var(--space-3); }
-.games__filter--gallery { display: inline-flex; align-items: center; gap: var(--space-2); white-space: nowrap; }
-.games__filter { white-space: nowrap; }
-.games__filter--gallery .icon { width: 1.15rem; height: 1.15rem; }
-.games__filter-sep { width: 1px; height: 1.4rem; background: var(--color-hairline-strong); margin: 0 var(--space-1); }
 .games__filter {
-  min-height: 2.5rem; padding: 0 var(--space-5); border-radius: var(--radius-pill);
+  min-height: 2.5rem; padding: 0 var(--space-5); border-radius: var(--radius-pill); white-space: nowrap;
   box-shadow: inset 0 0 0 1px var(--color-hairline-strong); color: var(--color-text-muted); font-size: var(--text-sm);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-spring);
 }
 .games__filter--on { color: var(--color-text); box-shadow: inset 0 0 0 1.5px var(--color-text); font-weight: var(--weight-medium); }
 .games__filter.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; transform: scale(var(--inverse-scale)); }
 .games__count { margin-left: auto; color: var(--color-text-muted); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
-.games__viewport {
-  /* Dos filas a la vista (y espacio para el anillo y el crecer del foco). */
-  height: calc(2 * var(--card-height) + var(--space-6) + 2.6rem); overflow: hidden;
-  padding: 1.3rem .9rem .7rem; margin: -1.3rem -.9rem -.7rem;
-}
-.games__grid { display: flex; flex-wrap: wrap; align-content: flex-start; gap: var(--space-6) var(--space-6); transition: transform var(--duration-slow) var(--ease-out); }
-/* En la cuadrícula el foco crece en su lugar (en las filas empuja a la vecina; aquí reacomodaría todo). */
+/* Portadas: aire generoso con los filtros y entre ellas; la enfocada crece sin cortarse arriba. */
+.games__viewport { flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 1.6rem 1rem 1rem; margin: 0 -1rem; }
+.games__grid { display: flex; flex-wrap: wrap; align-content: flex-start; gap: var(--space-8) var(--space-6); transition: transform var(--duration-slow) var(--ease-out); }
 .games__grid .card--focused { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; z-index: 1; }
 .games__empty { color: var(--color-text-muted); font-size: var(--text-md); padding: var(--space-4) 0; }
 
-/* --- Galería: las consolas en órbita, la enfocada al centro ------------------------------------ */
-.games__gallery { position: relative; height: 100%; overflow: hidden; }
-.games[data-mode="console"] .games__gallery { display: none; }
-.games__ring {
-  position: absolute; left: -10%; right: -10%; top: 18%; height: 34%; border-radius: 50%;
-  border: 1.5px solid var(--color-hairline-strong); opacity: .5; pointer-events: none;
+/* --- Ficha lateral (game-panel.js): entra desde la derecha ------------------------------------ */
+.game-panel {
+  position: absolute; z-index: 3; top: 4.2rem; bottom: var(--space-4); right: var(--page-gutter); width: var(--games-sheet);
+  display: flex; flex-direction: column; overflow: hidden;
+  border-radius: var(--radius-2xl); background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-hairline), var(--shadow-overlay);
+  animation: sheet-in var(--duration-slow) var(--ease-out);
 }
-.games__carousel {
-  --planet: 15rem; --gap: 2.5rem;
-  position: absolute; top: 8%; left: 50%; display: flex; gap: var(--gap); align-items: center;
-  transform: translateX(calc(-1 * (var(--offset) * (var(--planet) + var(--gap)) + var(--planet) / 2)));
-  transition: transform var(--duration-slow) var(--ease-out);
+@keyframes sheet-in { from { opacity: 0; transform: translateX(2.5rem); } }
+.game-panel__art { position: relative; flex: none; height: 40%; overflow: hidden; transition: opacity var(--duration-base) var(--ease-out); }
+.game-panel__art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, var(--color-surface) 0%, transparent 55%); }
+.game-panel__img { width: 100%; height: 100%; object-fit: cover; }
+.game-panel__img--pixel { image-rendering: pixelated; }
+.game-panel__img--poster { object-fit: contain; background: var(--palette-ink-950); }
+.game-panel__body {
+  position: relative; flex: 1 1 auto; min-height: 0; margin-top: -3.2rem;
+  display: flex; flex-direction: column; gap: var(--space-4); padding: 0 var(--space-8) var(--space-6);
+  transition: opacity var(--duration-fast) var(--ease-out), transform var(--duration-base) var(--ease-out);
+}
+.game-panel--swap .game-panel__body, .game-panel--swap .game-panel__art { opacity: 0; transform: translateY(.4rem); transition-duration: 80ms; }
+.game-panel__logo { align-self: flex-start; max-width: 70%; max-height: 4.6rem; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
+.game-panel__title { font-family: var(--font-sans); font-size: var(--text-2xl); font-weight: var(--weight-bold); line-height: 1.1; letter-spacing: var(--tracking-tight); text-wrap: balance; }
+.game-panel__platform { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
+.game-panel__platform svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linejoin: round; }
+.game-panel__stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); gap: var(--space-3);
+  padding: var(--space-4) 0; border-block: 1px solid var(--color-hairline);
+}
+.game-panel__stat { display: flex; flex-direction: column; gap: .2rem; }
+.game-panel__stat-label { color: var(--color-text-muted); font-size: var(--text-xs); }
+.game-panel__stat-value { font-size: var(--text-md); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums; }
+.game-panel__description {
+  color: var(--color-text-muted); font-size: var(--text-sm); line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+}
+.game-panel__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: auto; }
+
+/* --- Galería: las consolas giran sobre una elipse (Edge entiende sin()/cos() en CSS) ------------ */
+@property --turn { syntax: "<number>"; inherits: true; initial-value: 0; }
+.games__gallery { position: absolute; inset: 0; overflow: hidden; }
+.games[data-mode="console"] .games__gallery { display: none; }
+.games__orbit-path {
+  position: absolute; left: 50%; top: 32%; width: 84vw; height: 22vh; margin: -11vh 0 0 -42vw;
+  border-radius: 50%; border: 1px solid var(--color-hairline-strong); opacity: .5; pointer-events: none;
+}
+.games__orbit-ring {
+  position: absolute; left: 50%; top: 32%; width: 0; height: 0;
+  transition: --turn 640ms cubic-bezier(.22, 1, .36, 1);
 }
 .games__planet {
-  flex: none; width: var(--planet); display: flex; flex-direction: column; align-items: center; gap: var(--space-3);
-  transform: scale(calc(1 - var(--d) * .2)); opacity: calc(1 - var(--d) * .22);
-  transition: transform var(--duration-slow) var(--ease-out), opacity var(--duration-slow) var(--ease-out);
+  --a: calc((var(--k) - var(--turn)) * .62rad); /* ángulo en la órbita: 0 = al frente */
+  --depth: calc((cos(var(--a)) + 1) / 2); /* 1 al frente, 0 atrás */
+  position: absolute; left: 0; top: 0; width: 15rem; height: 11rem; margin: -5.5rem 0 0 -7.5rem;
+  display: grid; place-items: center;
+  transform: translate(calc(sin(var(--a)) * 42vw), calc(cos(var(--a)) * 11vh)) scale(calc(.38 + var(--depth) * .72));
+  opacity: calc(var(--depth) * 1.6 - .45);
 }
-.games__planet--current { transform: scale(1.35); opacity: 1; }
-.games__planet-media {
-  display: grid; place-items: center; width: var(--planet); height: calc(var(--planet) * .72); border-radius: 50%;
+.games__planet-glow {
+  position: absolute; inset: -30%; border-radius: 50%; opacity: calc(var(--depth) * var(--depth));
+  background: radial-gradient(circle, color-mix(in oklab, var(--glow) 34%, transparent), transparent 64%);
 }
-.games__planet--current .games__planet-media { background: radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--glow) 38%, transparent), transparent 66%); }
-.games__planet-img { max-width: 92%; max-height: 92%; object-fit: contain; filter: drop-shadow(0 1.2rem 1.6rem rgba(0, 0, 0, .6)); }
+.games__planet-media { position: relative; display: grid; place-items: center; width: 100%; height: 100%; }
+.games__planet-img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 1.4rem 1.8rem rgba(0, 0, 0, .55)); }
 .games__planet-img--logo { max-width: 46%; max-height: 52%; }
 .games__planet-img--cover { max-height: 86%; border-radius: var(--radius-md); }
-.games__planet-name { color: var(--color-text-muted); font-size: var(--text-sm); }
-.games__planet--current .games__planet-name { display: none; } /* su nombre va grande debajo */
-.games__gallery-info { position: absolute; left: 0; right: 0; top: 56%; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); text-align: center; }
+.games__gallery-info {
+  position: absolute; left: 0; right: 0; top: 55%; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); text-align: center;
+  animation: fade-in var(--duration-slow) var(--ease-out);
+}
 .games__gallery-title { font-family: var(--font-sans); font-size: var(--text-3xl); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); }
 .games__gallery-meta { color: var(--color-text-muted); font-size: var(--text-md); }
-.games__gallery-recent {
-  --card-height: 7.4rem;
-  position: absolute; left: var(--page-gutter); right: var(--page-gutter); bottom: var(--space-4);
-  display: flex; flex-direction: column; gap: var(--space-3);
-}
+.games__gallery-recent { --card-height: 7.4rem; position: absolute; left: var(--page-gutter); right: var(--page-gutter); bottom: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
 .games__gallery-label { font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-medium); }
 .games__gallery-covers { display: flex; gap: var(--space-4); }
 
-/* En la galería el fondo es luz de ambiente (como el Inicio), no el arte a pantalla completa. */
-body[data-games="gallery"] .backdrop__layer, body[data-games="gallery"] .backdrop__scrim { opacity: 0; }
-body[data-games="gallery"] .backdrop { transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--palette-ink-950); }
-body[data-games="gallery"] .backdrop { --light-x: .5; --light-y: .35; }
-
-/* --- Transición en órbita: la consola nueva llega girando y la pantalla se asienta ------------- */
+/* --- Transición en órbita al cambiar de consola (vista Consola) -------------------------------- */
 .games__orbit {
   position: fixed; inset: 0; z-index: var(--z-overlay); pointer-events: none; opacity: 0;
   display: grid; place-items: center; place-content: center; gap: var(--space-4);
@@ -124,15 +175,14 @@ body[data-games="gallery"] .backdrop { --light-x: .5; --light-y: .35; }
   position: absolute; left: 50%; top: 50%; width: 46vmin; height: 46vmin; margin: -23vmin 0 0 -23vmin; border-radius: 50%;
   background: radial-gradient(circle, color-mix(in oklab, var(--glow) 45%, transparent), transparent 68%);
 }
-.games__orbit-img { position: relative; width: 30vmin; max-height: 26vmin; object-fit: contain; filter: drop-shadow(0 2rem 3rem rgba(0, 0, 0, .6)); }
+.games__orbit-img { position: relative; width: 30vmin; height: 24vmin; object-fit: contain; filter: drop-shadow(0 2rem 3rem rgba(0, 0, 0, .6)); }
 .games__orbit-img--logo { width: 14vmin; }
 .games__orbit-name { position: relative; font-family: var(--font-sans); font-size: var(--text-2xl); font-weight: var(--weight-bold); text-align: center; }
 .games--orbit-next .games__orbit, .games--orbit-prev .games__orbit { animation: orbit-fade 720ms var(--ease-out) both; }
 .games--orbit-next .games__orbit-img { animation: orbit-in-next 720ms var(--ease-out) both; }
 .games--orbit-prev .games__orbit-img { animation: orbit-in-prev 720ms var(--ease-out) both; }
-.games--orbit-next .games__panel, .games--orbit-prev .games__panel { animation: orbit-settle 720ms var(--ease-out) both; }
+.games--orbit-next .games__main, .games--orbit-prev .games__main { animation: orbit-settle 720ms var(--ease-out) both; }
 @keyframes orbit-fade { 0% { opacity: 0; } 18% { opacity: 1; } 62% { opacity: 1; } 100% { opacity: 0; } }
-/* Recorre un arco: entra pequeña desde el lado (atrás de la órbita), pasa al frente y se aleja. */
 @keyframes orbit-in-next {
   0% { transform: translate(38vw, -8vh) scale(.35) rotate(8deg); }
   45% { transform: translate(0, 0) scale(1.05) rotate(0); }
@@ -144,5 +194,7 @@ body[data-games="gallery"] .backdrop { --light-x: .5; --light-y: .35; }
   100% { transform: translate(6vw, 4vh) scale(.6); }
 }
 @keyframes orbit-settle { 0%, 40% { opacity: 0; transform: translateY(1.2rem); } }
-/* Con «reducir movimiento», solo un fundido corto. */
 [data-motion="reduce"] .games__orbit { display: none; }
+
+/* Pantallas angostas: la ficha más estrecha. */
+@media (max-width: 1100px) { body[data-view="games"] { --games-sheet: 24rem; } }

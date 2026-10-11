@@ -65,11 +65,19 @@
   letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums; line-height: 1;
 }
 
-.indicator { display: inline-grid; place-items: center; color: var(--color-text-faint); transition: color var(--duration-slow) var(--ease-out); }
-.indicator .icon { width: 1.15rem; height: 1.15rem; }
-.indicator--live { color: var(--color-text-muted); }
-.indicator--pulse { color: var(--color-text); animation: mic-heard 1.2s var(--ease-out); }
-@keyframes mic-heard { 30% { transform: scale(1.25); } }
+/* Alexa: anillo de asistente + nombre, en gris; azul y «Te escuché» justo después de oírte. */
+.assistant { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium); white-space: nowrap; }
+.assistant__ring { position: relative; display: grid; place-items: center; color: var(--color-text-faint); transition: color var(--duration-slow) var(--ease-out); }
+.assistant__ring .icon { width: 1.2rem; height: 1.2rem; stroke-width: 2.4; }
+.assistant--live .assistant__ring { color: color-mix(in oklab, var(--assistant-accent) 55%, var(--color-text-muted)); }
+.assistant__label { transition: color var(--duration-slow) var(--ease-out); }
+.assistant--heard { color: var(--color-text); }
+.assistant--heard .assistant__ring { color: var(--assistant-accent); filter: drop-shadow(0 0 6px color-mix(in oklab, var(--assistant-accent) 70%, transparent)); }
+.assistant--heard .assistant__ring::after {
+  content: ""; position: absolute; inset: -.3rem; border-radius: 50%;
+  box-shadow: 0 0 0 1.5px var(--assistant-accent); opacity: 0; animation: assistant-heard 1.1s var(--ease-out);
+}
+@keyframes assistant-heard { 0% { opacity: .9; transform: scale(.6); } 100% { opacity: 0; transform: scale(1.5); } }
 
 .wifi { display: block; width: 1.35rem; height: 1.1rem; fill: none; stroke: var(--color-text); stroke-width: 2; stroke-linecap: round; }
 .wifi__dot { fill: var(--color-text); stroke: none; }
@@ -89,13 +97,13 @@
 .battery--low .battery__level { background: var(--color-danger); }
 .battery--charging .battery__level { background: var(--color-text-faint); }
 
-@media (max-width: 700px) { .status-bar .indicator, .status-bar__playing { display: none; } }
+@media (max-width: 700px) { .status-bar .assistant, .status-bar__playing { display: none; } }
 
 /* Pantallas angostas: primero se van los textos de apoyo, nunca las pestañas ni la hora. */
 @media (max-width: 1300px) { .status-bar__playing-title { display: none; } }
 @media (max-width: 1000px) {
   .status-bar { gap: var(--space-4); }
-  .status-bar__wordmark, .status-bar .indicator { display: none; }
+  .status-bar__wordmark, .status-bar .assistant { display: none; }
   .status-bar__right { gap: var(--space-4); }
   .status-bar__clock { font-size: var(--text-lg); }
 }

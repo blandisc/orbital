@@ -54,6 +54,7 @@ const ui = {
     onAction: (action, target) => homeActivate(target, action),
   }),
   games: createGames({
+    onAction: (action, item) => gamesActivate({ kind: "game", item }, action),
     onFocus: (target) => gamesFocused(target),
     onPick: (target, id) => (ui.games.focusId === id ? gamesActivate(target) : ui.games.focus(id)),
   }),
@@ -236,24 +237,33 @@ function renderView() {
 let wantedConsole = null; // desde el Inicio (A sobre una consola): entrar justo a esa
 
 function renderGames() {
-  ui.games.render(state.allRows, { view: state.settings.games_view || "console", glyphs: glyphs(), consoleId: wantedConsole });
+  ui.games.render(state.allRows, { view: state.settings.games_view || "console", glyphs: glyphs(), runningId: state.running?.id, consoleId: wantedConsole });
   wantedConsole = null;
   document.body.dataset.games = ui.games.mode;
 }
 
-/** El héroe muestra el juego enfocado (como en las filas); en la galería, el fondo de la consola. */
+/** La ficha (dentro de Juegos) muestra el juego enfocado; el fondo toma su color (luz de ambiente). */
 function gamesFocused(target) {
   if (!inGames()) return;
   document.body.dataset.games = ui.games.mode;
   const item = target?.item ?? target?.console?.last ?? null;
-  if (target?.kind === "game") ui.hero.update(item, glyphs(), { runningId: state.running?.id });
-  ui.backdrop.show(item?.hero || item?.image || null, { poster: !!item && !item.hero, pixel: !!item?.extra?.hero_lowres });
+  if (item) ui.backdrop.show(item.hero || item.image || null);
+  const node = document.querySelector(`.games [data-focus-id="${ui.games.focusId}"]`);
+  if (node) {
+    const r = node.getBoundingClientRect();
+    ui.backdrop.light((r.left + r.width / 2) / innerWidth, (r.top + r.height / 2) / innerHeight);
+  }
   renderHints();
 }
 
 function gamesActivate(target, action = "select") {
   if (!target) return;
   if (target.kind === "filter") { sound.play("select"); return ui.games.setFilter(target.filter); }
+  if (target.kind === "view") { // Vista: Consola · Galería (se guarda como en Ajustes)
+    sound.play("select");
+    return api.setSettings({ games_view: target.view }).then(applySettings).catch((err) => ui.toast.show(err.message, { error: true }));
+  }
+  if (target.kind === "rail") return handleGames("right"); // A en el riel: a las portadas de esa consola
   if (target.kind === "gallery") { sound.play("open"); ui.games.showGallery(); document.body.dataset.games = ui.games.mode; return renderHints(); }
   if (target.kind === "console") { sound.play("open"); ui.games.enter(); document.body.dataset.games = ui.games.mode; return renderHints(); }
   const item = target.item;

@@ -32,7 +32,9 @@ export function createSheet({ onCommand, onMove, onClose }) {
     subtitle.hidden = !menu.subtitle;
     mount(list, menu.options.map((option, i) => h("button", {
       class: ["sheet__item", i === index && "sheet__item--focused", option.danger && "sheet__item--danger",
-        option.value !== undefined && "sheet__item--setting"],
+        option.value !== undefined && "sheet__item--setting",
+        // «Cancelar» / «Cerrar menú» van al final, separados del resto por una línea.
+        option.command?.type === "close" && "sheet__item--dismiss"],
       type: "button",
       role: "menuitem",
       onClick: () => choose(i),
@@ -41,8 +43,10 @@ export function createSheet({ onCommand, onMove, onClose }) {
     h("span", { class: "sheet__text" }, h("span", { class: "sheet__label" }, option.label),
       longHint(option.hint) && h("small", { class: "sheet__hint sheet__hint--below" }, option.hint)),
     // ‹ › solo en lo que se cambia con A o ◀/▶ (un estado, como "Conectada", no lleva flechas).
-    option.value !== undefined && h("span", { class: "sheet__value" },
-      option.command?.type === "setting" ? ["‹ ", option.value, " ›"] : option.value),
+    option.value !== undefined && h("span", { class: ["sheet__value", option.command?.type === "setting" && "sheet__value--choice"] },
+      option.command?.type === "setting"
+        ? [h("span", { class: "sheet__chev", "aria-hidden": "true" }, svg(ICONS.back)), option.value, h("span", { class: "sheet__chev sheet__chev--next", "aria-hidden": "true" }, svg(ICONS.chevron))]
+        : option.value),
     option.hint && !longHint(option.hint) && h("small", { class: "sheet__hint" }, option.hint))));
   }
 

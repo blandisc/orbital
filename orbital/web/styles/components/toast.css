@@ -16,8 +16,8 @@
 .toast--error .toast__icon { color: var(--color-danger); }
 /* Error: una franja roja a la izquierda, se distingue de lejos sin depender solo del ícono. */
 .toast--error { box-shadow: var(--shadow-overlay), inset 0 0 0 1px var(--color-hairline), inset .3rem 0 0 var(--color-danger); }
-/* Lo que entendió Alexa: micrófono en el color del juego. */
-.toast--voice .toast__icon { color: var(--color-accent); }
+/* Lo que entendió Alexa: su anillo, en el azul del asistente (igual que arriba). */
+.toast--voice .toast__icon { color: var(--assistant-accent); }
 .toast--leaving { animation: toast-out var(--duration-exit) var(--ease-in) forwards; }
 @keyframes toast-in { from { opacity: 0; transform: translateX(1.5rem); } }
 @keyframes toast-out { to { opacity: 0; transform: translateX(1rem); } }
@@ -26,3 +26,5 @@
 .toast { overflow: hidden; }
 .toast__countdown { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--color-accent); transform-origin: left; animation: toast-countdown linear forwards; }
 @keyframes toast-countdown { to { transform: scaleX(0); } }
+/* Con un menú lateral abierto el aviso sale a su izquierda: nunca encima del título del menú. */
+body:has(.sheet:not(.sheet--leaving)) .toast { right: calc(min(var(--sheet-width), 100vw) + var(--space-5)); }
