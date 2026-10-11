@@ -7,6 +7,7 @@ import time
 from orbital import launcher as launcher_mod
 from orbital import player
 from orbital import catalog as catalog_mod
+from orbital import focus as focus_mod
 from orbital.catalog import bring_game_to_front  # la real (conftest la apaga para el resto)
 from orbital.launcher import Launcher, Running, redact
 from orbital.library import streams
@@ -237,7 +238,7 @@ def test_waits_for_fullscreen_and_fades_orbital_over_the_game():
                                timeout=5, win=win, sleep=sleep, pinned=1)
     assert len(steps) >= 3  # no cortó mientras seguía en ventana
     assert win.focused == [3] and win.topmost == [(1, False)]  # ya venía fijada desde antes de lanzar
-    assert win.alpha[:-1] == list(catalog_mod.REVEAL_FADE) and win.alpha[-1] is None  # fundido y opaca al final
+    assert win.alpha[:-1] == list(focus_mod.REVEAL_FADE) and win.alpha[-1] is None  # fundido y opaca al final
 
 
 def test_video_waits_for_the_first_frame_not_the_black_window():

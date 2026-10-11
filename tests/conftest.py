@@ -120,8 +120,8 @@ def no_installed_mpv(monkeypatch):
 @pytest.fixture(autouse=True)
 def no_focus_threads(monkeypatch):
     """Que las pruebas no dejen hilos esperando ventanas reales de juegos."""
-    from orbital import catalog
+    from orbital import focus, sessions
 
-    monkeypatch.setattr(catalog, "bring_game_to_front", lambda *args, **kwargs: False)
+    monkeypatch.setattr(focus, "bring_game_to_front", lambda *args, **kwargs: False)
     # Ni fijar "siempre encima" una ventana real de Orbital que esté abierta mientras corren.
-    monkeypatch.setattr(catalog.Catalog, "_pin", staticmethod(lambda: None))
+    monkeypatch.setattr(sessions.Sessions, "pin", staticmethod(lambda: None))

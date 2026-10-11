@@ -64,14 +64,14 @@ class FakeKiosk:
 
 def test_game_end_reopens_window_unless_user_exited(library, monkeypatch):
     fronted = []
-    monkeypatch.setattr("orbital.catalog.system.bring_to_front", lambda: fronted.append(1) or True)
+    monkeypatch.setattr("orbital.sessions.system.bring_to_front", lambda: fronted.append(1) or True)
     kiosk = FakeKiosk()
     create_app(library.config, library, kiosk)
     kiosk.is_open = False  # alguien cerró Edge (Alt+F4) mientras jugaba
-    library._session_ended("emu:x", "Juego", 60)
+    library.sessions.session_ended("emu:x", "Juego", 60)
     assert kiosk.calls == ["open"] and kiosk.is_open
     kiosk.close()  # Salir al escritorio a propósito: no la reabrimos sola
-    library._session_ended("emu:x", "Juego", 60)
+    library.sessions.session_ended("emu:x", "Juego", 60)
     assert kiosk.calls == ["open", "close"] and fronted == [1]
 
 

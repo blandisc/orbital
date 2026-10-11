@@ -124,7 +124,7 @@ def test_play_next_episode_loads_the_following_in_the_same_player(library, monke
         def stop(self): stopped.append(True)
 
     library.player = Player()
-    monkeypatch.setattr(library, "_play_episode", lambda *args: played.append(args))
+    monkeypatch.setattr(library.watch, "_play_episode", lambda *args: played.append(args))
     assert library.play_next_episode() == "T2 E4"
     for _ in range(50):  # se carga en segundo plano (buscar la fuente tarda)
         if played:

@@ -79,8 +79,8 @@ def linked(tmp_path):
             break
         time.sleep(0.02)
     # Que termine del todo (también su aviso library-changed) antes de que la prueba escuche eventos.
-    if cat._stremio_busy.acquire(timeout=5):
-        cat._stremio_busy.release()
+    if cat.watch._stremio_busy.acquire(timeout=5):
+        cat.watch._stremio_busy.release()
     time.sleep(0.05)
     return cat
 
@@ -168,7 +168,7 @@ def test_voice_launch_with_runner(tmp_path):
                         source="switch", runners=[Runner("switch", "Ryujinx", ["ryujinx", "z"]),
                                                   Runner("switch-eden", "Eden", ["eden", "z"])],
                         default_runner="switch")
-    cat._items = {zelda.id: zelda}
+    cat.store.replace([zelda])
     voice = VoiceController(cat)
     assert voice.handle_text("abre zelda con eden").speech == f"Abriendo {zelda.title} con eden."
     assert cat.launcher.ran[-1][0] == "eden"
