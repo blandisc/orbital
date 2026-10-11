@@ -140,7 +140,7 @@ REVEAL_FADE = (210, 160, 110, 60, 20, 0)  # opacidad de Orbital al fundirse sobr
 
 def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runner: str | None = None,
                         notify=None, skip: threading.Event | None = None, timeout: float = READY_TIMEOUT,
-                        win=None, sleep=time.sleep, pinned: int | None = None) -> bool:
+                        win=None, sleep=time.sleep, pinned: int | None = None, ready_check=None) -> bool:
     """Pantalla de carga hasta que el juego esté listo, y luego un fundido de Orbital al juego.
 
     Mientras el emulador abre se ven sus ventanas feas (la lista de juegos de Eden, una consola…).
@@ -149,7 +149,8 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
     completa). Entonces la pantalla de carga hace su salida (evento launch-ready), el juego pasa al
     frente DEBAJO de Orbital y Orbital se funde hasta desaparecer: del cohete al juego, sin cortes.
     Si ya estás en otra cosa, no se pelea por el foco. `skip`: B en la pantalla de carga.
-    `pinned`: la ventana de Orbital ya fijada encima antes de lanzar (pin_orbital)."""
+    `pinned`: la ventana de Orbital ya fijada encima antes de lanzar (pin_orbital).
+    `ready_check()`: otra señal de "listo" (el reproductor: hasta la primera imagen, no una ventana negra)."""
     if win is None:
         if sys.platform != "win32":
             return False
@@ -167,6 +168,13 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
                 return False  # se cerró (o truena) o se abrió otra cosa: Orbital se queda
             pids = win.process_tree(status["pid"]) if status.get("pid") else set()
             hwnds = win.windows_of(pids) if pids else []
+            if ready_check is not None:
+                if hwnds and ready_check():
+                    target = hwnds[0]
+                    log.info("%s listo tras %.1f s", title, time.time() - started)
+                    break
+                sleep(.3)
+                continue
             if hwnds:
                 target = hwnds[0]
                 info = [(win.title(h), win.is_fullscreen(h)) for h in hwnds]
@@ -608,14 +616,16 @@ class Catalog:
             from . import windows
             windows.set_topmost(pinned, False)
 
-    def _to_front(self, item_id: str, title: str = "", runner: str | None = None, pinned: int | None = None) -> bool:
+    def _to_front(self, item_id: str, title: str = "", runner: str | None = None, pinned: int | None = None,
+                  ready=None, timeout: float = READY_TIMEOUT) -> bool:
         """Pantalla de carga hasta que el juego esté listo (ver bring_game_to_front). Devuelve si la
         interfaz debe esperar el evento launch-ready en lugar de esconder "Abriendo" sola."""
         if sys.platform != "win32":
             return False
         self._reveal_skip = threading.Event()
         threading.Thread(target=bring_game_to_front, args=(self.launcher, item_id, title, runner),
-                         kwargs={"notify": self._notify, "skip": self._reveal_skip, "pinned": pinned}, daemon=True,
+                         kwargs={"notify": self._notify, "skip": self._reveal_skip, "pinned": pinned,
+                                 "ready_check": ready, "timeout": timeout}, daemon=True,
                          name="to-front").start()
         return True
 
@@ -774,7 +784,9 @@ class Catalog:
             subtitles=self.subtitles_lang if subtitles is None else subtitles,
             fallback_subs=self._fallback_subs(kind, video_id, subtitles))
         self.launcher.track("media:player", title, process, runner="Reproductor")
-        self.revealing = self._to_front("media:player", title, pinned=pinned)
+        # Hasta la primera imagen del video (cargar un stream tarda): antes se veía la ventana negra de mpv.
+        self.revealing = self._to_front("media:player", title, pinned=pinned, timeout=player.STARTUP_TIMEOUT + 5,
+                                        ready=lambda: bool(self.player.segment and self.player.segment.playing))
 
     def _load_in_player(self, kind: str, meta_id: str, video_id: str, title: str, source: streams.Source,
                         start: float = 0, message: str | None = None, tried: list[int] | None = None) -> bool:

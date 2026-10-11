@@ -2,7 +2,7 @@ import { api } from "../core/api.js";
 import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { genres } from "../core/format.js";
 import { ICONS } from "../core/icons.js";
-import { episodeStates, titleActions } from "../core/watch.js";
+import { episodeStates, titleActions, titleProgress } from "../core/watch.js";
 
 /**
  * La ficha de una película o serie, a pantalla completa y con el mando (como Netflix o Apple TV):
@@ -19,6 +19,10 @@ export function createTitle({ onPlay, onSources, onMove, onClose }) {
   const facts = h("div", { class: "title__facts" });
   const description = h("p", { class: "title__description" });
   const people = h("div", { class: "title__people" });
+  const progressFill = h("span", { class: "title__progress-fill" });
+  const progressLabel = h("span", { class: "title__progress-label" });
+  const progress = h("div", { class: "title__progress", hidden: true },
+    h("span", { class: "title__progress-bar" }, progressFill), progressLabel);
   const actions = h("div", { class: "title__actions", role: "toolbar" });
   const status = h("div", { class: "title__status", role: "status" });
   const tabs = h("div", { class: "title__tabs", role: "tablist" });
@@ -26,7 +30,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose }) {
   const browser = h("div", { class: "title__browser" }, tabs, list);
   const el = h("section", { class: "title", hidden: true, "aria-label": "Ficha" },
     backdrop,
-    h("div", { class: "title__info" }, logo, name, facts, description, people, actions, status),
+    h("div", { class: "title__info" }, logo, name, facts, description, people, progress, actions, status),
     browser);
 
   let item = null;
@@ -99,11 +103,22 @@ export function createTitle({ onPlay, onSources, onMove, onClose }) {
         st.upcoming ? h("span", { class: "episode__date" }, st.upcoming)
           : ep.overview && h("span", { class: "episode__overview" }, ep.overview)));
     }));
-    focusVisible(false);
+    // Al abrir en un episodio avanzado (T8 E23), que quede al centro, no pegado al borde.
+    list.children[index]?.scrollIntoView({ block: "center", behavior: "auto" });
+  }
+
+  function renderProgress() {
+    const info = titleProgress(details);
+    progress.hidden = !info;
+    if (!info) return;
+    progressLabel.textContent = info.label;
+    progressFill.parentElement.hidden = info.fraction === null;
+    progressFill.style.width = `${Math.round((info.fraction || 0) * 100)}%`;
   }
 
   function render() {
     renderActions();
+    renderProgress();
     el.classList.toggle("title--series", kindOf() === "series" && seasons().length > 0);
     el.dataset.zone = zone;
     if (kindOf() === "series" && seasons().length) {

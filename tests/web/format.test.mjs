@@ -54,3 +54,10 @@ test("bytes: tamaño en disco legible", async () => {
   assert.equal(bytes(850_000_000), "850 MB");
   assert.equal(bytes(0), null);
 });
+
+test("al volver: un video no se juega", async () => {
+  const { closedMessage } = await import("../../orbital/web/js/core/format.js");
+  assert.equal(closedMessage({ id: "media:player", title: "The Simpsons · T8 E23", seconds: 900 }), "Guardé dónde ibas en The Simpsons · T8 E23");
+  assert.equal(closedMessage({ id: "app:youtube", title: "YouTube", seconds: 900 }), "De vuelta de YouTube");
+  assert.equal(closedMessage({ id: "steam:1", title: "Hades", seconds: 1800 }), "De vuelta. Jugaste Hades 30 min");
+});

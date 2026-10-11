@@ -56,3 +56,11 @@ export function bytes(n) {
   const [value, unit] = n >= 1e9 ? [n / 1e9, "GB"] : [n / 1e6, "MB"];
   return `${value.toLocaleString("es", { maximumFractionDigits: value < 10 ? 1 : 0 })} ${unit}`;
 }
+
+/** Qué decir al volver a Orbital: un video no se "juega"; una app no cuenta tiempo jugado. */
+export function closedMessage({ id = "", title, seconds }) {
+  if (id === "media:player") return `Guardé dónde ibas en ${title}`;
+  if (id.startsWith("media:") || id.startsWith("app:")) return `De vuelta de ${title}`;
+  const played = duration(seconds);
+  return played ? `De vuelta. Jugaste ${title} ${played}` : `De vuelta de ${title}`;
+}

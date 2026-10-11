@@ -10,6 +10,23 @@ const left = (resume) => {
 };
 
 /**
+ * La línea de avance bajo los datos (fuera de los botones, que así caben en un renglón):
+ * "T8 E23 · Homer's Enemy · quedan 11 min" con su barra, o "Sigue: T8 E24 · Nombre".
+ */
+export function titleProgress(details) {
+  const resume = details?.resume;
+  if (!resume) return null;
+  const started = resume.position > 0;
+  const fraction = started && resume.duration > 0 ? Math.min(1, resume.position / resume.duration) : null;
+  if ((details.kind || "movie") === "series") {
+    const episode = [resume.label, resume.episode_title].filter(Boolean).join(" · ");
+    return started ? { label: [episode, left(resume)].filter(Boolean).join(" · "), fraction }
+      : { label: `Sigue: ${episode}`, fraction: null };
+  }
+  return started ? { label: left(resume) ? left(resume).replace(/^q/, "Q") : "Casi terminada", fraction } : null;
+}
+
+/**
  * Botones de la ficha. El primero es lo más probable y lleva el foco:
  * "Continuar T3 E5" si ibas a medias, "Ver T3 E6" si terminaste el anterior, "Ver" si es nueva.
  */
@@ -23,14 +40,13 @@ export function titleActions(details, { kind = "movie" } = {}) {
     if (resume?.video_id) {
       const started = resume.position > 0;
       out.push({ id: "play", video_id: resume.video_id, primary: true, icon: "play",
-        label: `${started ? "Continuar" : "Ver"} ${resume.label || ""}`.trim(),
-        hint: started ? left(resume) : resume.episode_title || null });
+        label: `${started ? "Continuar" : "Ver"} ${resume.label || ""}`.trim() });
       if (started) out.push({ id: "restart", video_id: resume.video_id, icon: "refresh", label: "Desde el principio" });
     } else if (first) {
-      out.push({ id: "play", video_id: first.id, primary: true, icon: "play", label: "Ver T1 E1", hint: first.title });
+      out.push({ id: "play", video_id: first.id, primary: true, icon: "play", label: "Ver T1 E1" });
     }
   } else if (resume?.position > 0) {
-    out.push({ id: "play", primary: true, icon: "play", label: "Continuar", hint: left(resume) });
+    out.push({ id: "play", primary: true, icon: "play", label: "Continuar" });
     out.push({ id: "restart", icon: "refresh", label: "Desde el principio" });
   } else {
     out.push({ id: "play", primary: true, icon: "play", label: "Ver" });

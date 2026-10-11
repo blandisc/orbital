@@ -13,7 +13,7 @@ test("película: Ver, o Continuar con lo que queda y Desde el principio", () => 
   const half = titleActions({ kind: "movie", resume: { position: 3600, duration: 7200 } });
   assert.deepEqual(half.map((a) => a.id), ["play", "restart", "sources"]);
   assert.equal(half[0].label, "Continuar");
-  assert.equal(half[0].hint, "quedan 1 h");
+  assert.equal(half[0].hint, undefined); // lo que queda va en la línea de avance, no en el botón
   assert.ok(half[0].primary);
 });
 
@@ -23,7 +23,7 @@ test("serie: el foco empieza en el episodio en el que ibas (o el siguiente)", ()
   assert.equal(going[0].video_id, "s:2:1");
   assert.equal(going[1].id, "restart");
   const next = titleActions({ kind: "series", seasons, resume: { video_id: "s:1:2", label: "T1 E2", episode_title: "Dos", position: 0 } });
-  assert.deepEqual([next[0].label, next[0].hint], ["Ver T1 E2", "Dos"]);
+  assert.equal(next[0].label, "Ver T1 E2");
   assert.ok(!next.some((a) => a.id === "restart"));
   const fresh = titleActions({ kind: "series", seasons, resume: null });
   assert.deepEqual([fresh[0].label, fresh[0].video_id], ["Ver T1 E1", "s:1:1"]);
@@ -41,4 +41,14 @@ test("episodios: vistos, a medias y por estrenar", () => {
   assert.deepEqual(states.get("s:2:1"), { progress: .5 });
   assert.match(states.get("s:2:2").upcoming, /^Se estrena el 5/);
   assert.equal(states.get("s:0:1"), undefined); // los especiales no cuentan como vistos
+});
+
+test("avance fuera de los botones: con barra y lo que queda", async () => {
+  const { titleProgress } = await import("../../orbital/web/js/core/watch.js");
+  assert.deepEqual(titleProgress({ kind: "series", resume: { label: "T8 E23", episode_title: "Homer's Enemy", position: 732, duration: 1368 } }),
+    { label: "T8 E23 · Homer's Enemy · quedan 11 min", fraction: 732 / 1368 });
+  assert.deepEqual(titleProgress({ kind: "series", resume: { label: "T8 E24", episode_title: "Las Supermamás", position: 0 } }),
+    { label: "Sigue: T8 E24 · Las Supermamás", fraction: null });
+  assert.equal(titleProgress({ kind: "movie", resume: { position: 600, duration: 6600 } }).label, "Quedan 1 h 40 min");
+  assert.equal(titleProgress({ kind: "movie", resume: null }), null);
 });

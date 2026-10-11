@@ -5,7 +5,7 @@
 import { api } from "./core/api.js";
 import { h, svg } from "./core/dom.js";
 import { ICONS } from "./core/icons.js";
-import { duration } from "./core/format.js";
+import { closedMessage } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isWatchable, itemAt, restoreFocus, rowJump, runnerName, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
@@ -326,13 +326,16 @@ async function playStremio({ kind, id, video_id: videoId = null, title, item, so
   rumble("launch");
   state.launchingId = "media:player";
   const native = state.player === "orbital" && state.stremioLinked;
-  ui.launch.show({ ...(item || {}), title }, native ? "Reproductor de Orbital" : "Stremio");
+  ui.launch.show({ ...(item || {}), title }, native ? "" : "Se abre en Stremio");
   // Fases honestas: primero se busca la fuente (hasta unos segundos), luego se conecta.
   if (native && source === null) ui.launch.status("Buscando dónde verlo");
   try {
     const res = await api.stremioPlay({ kind, id, video_id: videoId, title, source, keep, from_start: fromStart });
     if (res.label) ui.launch.status("Conectando", res.label);
-    if (res.reveal) ui.launch.hold(); // Orbital tapa mientras abre el reproductor
+    if (res.reveal) { // Orbital tapa hasta que se ve la primera imagen (no una ventana negra)
+      ui.launch.hold();
+      ui.launch.status("Cargando video");
+    }
     if (ui.sources.isOpen) ui.sources.close();
     pollStatus();
   } catch (err) {
@@ -595,8 +598,7 @@ function handleEvent(event) {
       sound.play("error");
       ui.toast.show(`${event.title} se cerró enseguida. Revisa que el juego y el emulador estén completos (ROM, firmware, claves).`, { error: true });
     } else {
-      const played = duration(event.seconds);
-      ui.toast.show(played ? `De vuelta. Jugaste ${event.title} ${played}` : `De vuelta de ${event.title}`);
+      ui.toast.show(closedMessage(event));
     }
     loadLibrary({ keepId: event.id });
   }

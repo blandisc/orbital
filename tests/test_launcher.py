@@ -238,3 +238,20 @@ def test_waits_for_fullscreen_and_fades_orbital_over_the_game():
     assert len(steps) >= 3  # no cortó mientras seguía en ventana
     assert win.focused == [3] and win.topmost == [(1, False)]  # ya venía fijada desde antes de lanzar
     assert win.alpha[:-1] == list(catalog_mod.REVEAL_FADE) and win.alpha[-1] is None  # fundido y opaca al final
+
+
+def test_video_waits_for_the_first_frame_not_the_black_window():
+    """mpv abre su ventana negra al instante; Orbital tapa hasta que hay imagen."""
+    win = FocusWindows()
+    win.open(3, "The Simpsons · T8 E23", fullscreen=True)
+    frames = []
+    steps = []
+
+    def sleep(seconds):
+        steps.append(seconds)
+        if len(steps) == 4:
+            frames.append(True)  # llegó la primera imagen
+
+    assert bring_game_to_front(StatusLauncher({"id": "media:player", "pid": 20}), "media:player", "The Simpsons · T8 E23",
+                               timeout=5, win=win, sleep=sleep, pinned=1, ready_check=lambda: bool(frames))
+    assert len(steps) >= 4 and win.focused == [3]

@@ -3,7 +3,7 @@
    Derecha (series): temporadas y episodios. */
 .title {
   position: fixed; inset: 0; z-index: var(--z-overlay);
-  display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-10);
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: var(--space-10);
   padding: calc(var(--space-14) + var(--safe-y)) var(--page-gutter) calc(3.4rem + var(--space-4) + var(--safe-y));
   background: var(--color-tinted-bg);
   animation: fade-in var(--duration-slow) var(--ease-out);
@@ -42,6 +42,10 @@
 .title__people em { font-style: normal; color: var(--color-text-faint-strong); }
 .title__status { color: var(--color-text-muted); font-size: var(--text-md); }
 
+/* Dónde ibas: fuera de los botones (así caben en un renglón), con su barra. */
+.title__progress { display: flex; align-items: center; gap: var(--space-4); color: var(--color-text); font-size: var(--text-md); }
+.title__progress-bar { flex: none; width: 9rem; height: .35rem; border-radius: var(--radius-pill); background: var(--color-progress-track); overflow: hidden; }
+.title__progress-fill { display: block; height: 100%; background: var(--color-progress); }
 .title__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); min-height: var(--control-height); }
 .title__action {
   display: inline-flex; align-items: center; gap: var(--space-3);
@@ -58,7 +62,7 @@
 .title[data-zone="episodes"] .title__action--primary { box-shadow: inset 0 0 0 2px var(--color-hairline-strong); }
 
 /* Derecha: temporadas (LB/RB) y episodios (↑/↓) */
-.title__browser { display: none; flex-direction: column; min-height: 0; animation: rise-in 520ms var(--ease-out) 80ms backwards; }
+.title__browser { display: none; flex-direction: column; min-height: 0; overflow: hidden; animation: rise-in 520ms var(--ease-out) 80ms backwards; }
 .title--series .title__browser { display: flex; }
 .title__tabs { display: flex; gap: var(--space-2); padding-bottom: var(--space-5); overflow-x: auto; scrollbar-width: none; }
 .title__tab {
@@ -71,7 +75,10 @@
 .title__episodes {
   display: flex; flex-direction: column; gap: var(--space-2); min-height: 0; overflow-y: auto; scrollbar-width: none;
   padding: var(--space-2); margin: calc(-1 * var(--space-2));
-  -webkit-mask-image: linear-gradient(180deg, #000 85%, transparent); mask-image: linear-gradient(180deg, #000 85%, transparent);
+  /* Fundido arriba y abajo: lo que sigue se insinúa en vez de cortarse en seco bajo las pestañas. */
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 var(--space-8), #000 85%, transparent);
+  mask-image: linear-gradient(180deg, transparent 0, #000 var(--space-8), #000 85%, transparent);
+  padding-top: var(--space-6);
 }
 /* Mientras el foco está en los botones, la lista se queda en segundo plano. */
 .title[data-zone="actions"] .title__episodes { opacity: .62; transition: opacity var(--duration-base) var(--ease-out); }
