@@ -277,6 +277,31 @@ export function settingsMenu() {
       { icon: "check", label: "Revisar mi consola", hint: "Qué encontró Orbital y qué falta", command: { type: "setup" } },
       { icon: "folder", label: "Carpetas de juegos", hint: "Dónde busca cada emulador", command: { type: "folders" } },
       { icon: "windows", label: "Diagnóstico", hint: "Carpetas, memoria y últimos avisos", command: { type: "diagnostics" } },
+      { icon: "refresh", label: "Actualizar Orbital", hint: "Buscar una versión nueva", command: { type: "update-check" } },
+    ],
+  };
+}
+
+/** Actualizar Orbital: qué cambia y "Actualizar ahora" (prueba la versión nueva; si falla, vuelve). */
+export function updateMenu(info) {
+  if (info.busy) {
+    return { title: "Actualizando Orbital…", subtitle: "Te aviso cuando termine.", options: [{ icon: "check", label: "Entendido", command: { type: "close" } }] };
+  }
+  if (info.error) {
+    return { title: "Actualizar Orbital", subtitle: info.error, options: [{ icon: "check", label: "Entendido", command: { type: "close" } }] };
+  }
+  if (!info.available) {
+    return { title: "Actualizar Orbital", subtitle: "Ya tienes la versión más reciente.",
+      options: [{ icon: "refresh", label: "Buscar otra vez", command: { type: "update-check", force: true } },
+        { icon: "check", label: "Listo", command: { type: "close" } }] };
+  }
+  return {
+    title: `Hay ${info.available} cambio${info.available === 1 ? "" : "s"} nuevo${info.available === 1 ? "" : "s"}`,
+    subtitle: "Orbital se prueba antes de cambiar; si algo falla, te quedas con tu versión. Tarda un par de minutos.",
+    options: [
+      { icon: "refresh", label: "Actualizar ahora", command: { type: "update-apply" } },
+      ...info.changes.slice(0, 8).map((text) => ({ icon: "check", label: text, command: { type: "stay" } })),
+      { icon: "close", label: "Más tarde", command: { type: "close" } },
     ],
   };
 }

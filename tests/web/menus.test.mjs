@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { capturesMenu, diagnosticsMenu, foldersMenu, gameMenu, mainMenu, quickMenu, nextSetting, powerConfirmMenu, powerMenu, settingsPage, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
+import { capturesMenu, diagnosticsMenu, foldersMenu, gameMenu, updateMenu, mainMenu, quickMenu, nextSetting, powerConfirmMenu, powerMenu, settingsPage, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch",
@@ -196,4 +196,13 @@ test("carpetas de juegos: cada emulador con sus juegos y dónde los busca", () =
   assert.equal(menu.options[1].value, "1 juego");
   assert.equal(menu.options.at(-1).command.type, "refresh");
   assert.match(menu.subtitle, /orbital\\config\.yaml/);
+});
+
+test("actualizar: qué cambia, actualizar primero, y avisos claros si no se puede", () => {
+  const menu = updateMenu({ available: 2, changes: ["Panel rápido", "Capturas"], error: "", busy: false });
+  assert.equal(menu.title, "Hay 2 cambios nuevos");
+  assert.equal(menu.options[0].command.type, "update-apply");
+  assert.deepEqual(menu.options.slice(1, 3).map((o) => o.label), ["Panel rápido", "Capturas"]);
+  assert.match(updateMenu({ available: 0, changes: [] }).subtitle, /más reciente/);
+  assert.match(updateMenu({ available: 3, changes: [], error: "Hay cambios sin guardar" }).subtitle, /sin guardar/);
 });

@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isWatchable, itemAt, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints } from "./core/hints.js";
-import { capturesMenu, controlsMenu, controlsPage, diagnosticsMenu, exitMenu, foldersMenu, healthMenu, quickMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, windowsMenu } from "./core/menus.js";
+import { capturesMenu, controlsMenu, controlsPage, diagnosticsMenu, exitMenu, foldersMenu, healthMenu, quickMenu, updateMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -421,6 +421,12 @@ async function runCommand(command, context = null) {
         return openMenu(setupMenu(await api.setup()), nested(context));
       case "quick":
         return openQuick(context);
+      case "update-check":
+        ui.toast.show("Buscando una versión nueva…");
+        return openMenu(updateMenu(await api.checkUpdate(!!command.force)), nested(context));
+      case "update-apply":
+        await api.applyUpdate();
+        return ui.toast.show("Actualizando Orbital… puedes seguir usándolo.");
       case "folders":
         return openMenu(foldersMenu(await api.folders()), nested(context));
       case "quick-set": { // cambia y se queda en el panel, en la misma opción
@@ -552,6 +558,10 @@ function handleEvent(event) {
     return openMenu(healthMenu(event.message)); // "Reiniciar ahora" pide confirmar (y avisa si hay un juego abierto)
   }
   if (event.type === "open-quick") return openQuick();
+  if (event.type === "update-done") {
+    sound.play(event.ok ? "select" : "error");
+    return ui.toast.show(event.message, { error: !event.ok });
+  }
   if (event.type === "resumed") { // volvió de suspender: ponerse al día
     pollSystem();
     loadLibrary();

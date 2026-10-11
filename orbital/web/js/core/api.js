@@ -34,6 +34,8 @@ export const api = {
   diagnostics: () => request("/api/diagnostics"),
   quick: () => request("/api/quick"),
   folders: () => request("/api/folders"),
+  checkUpdate: (force = false) => request(`/api/update${force ? "?force=true" : ""}`),
+  applyUpdate: () => post("/api/update"),
   setQuick: (changes) => post("/api/quick", changes),
   captures: () => request("/api/captures"),
   openCapture: (path) => post("/api/captures/open", { path }),
