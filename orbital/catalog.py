@@ -35,6 +35,7 @@ CATEGORIES = [
     {"id": "jump", "title": "Continuar"},
     {"id": "recent", "title": "Jugado recientemente"},
     {"id": "continue", "title": "Seguir viendo"},
+    {"id": "mylist", "title": "Mi lista"},
     {"id": "favorites", "title": "Favoritos"},
     {"id": "steam", "title": "Steam"},
     {"id": "geforcenow", "title": "GeForce NOW"},
@@ -277,8 +278,20 @@ def stremio_item(w: stremio_api.Watchable) -> LibraryItem:
         last_watched=w.last_watched,
         # Para elegir la fuente en Orbital (Seguir viendo -> el mismo episodio).
         extra={"kind": w.type, "meta_id": w.id, "video_id": w.video_id or (w.id if w.type == "movie" else None),
+               "in_library": w.in_library,
                "eyebrow": " · ".join(filter(None, ["Película" if w.type == "movie" else "Serie", detail if episode else ""]))},
     )
+
+
+def trailer_id(info: dict) -> str | None:
+    """El video de YouTube del tráiler (Cinemeta: trailerStreams[].ytId o trailers[].source)."""
+    for stream in info.get("trailerStreams") or []:
+        if isinstance(stream, dict) and stream.get("ytId"):
+            return str(stream["ytId"])
+    for trailer in info.get("trailers") or []:
+        if isinstance(trailer, dict) and trailer.get("source") and trailer.get("type", "Trailer") == "Trailer":
+            return str(trailer["source"])
+    return None
 
 
 def enrich_watch_item(item: LibraryItem, info: dict) -> None:
@@ -582,6 +595,9 @@ class Catalog:
                 # Stremio guarda todo lo que alguna vez empezaste (años): lo reciente, no 134 títulos.
                 members = sorted((i for i in items if i.category == "continue"),
                                  key=lambda i: i.last_watched or 0, reverse=True)[:CONTINUE_LIMIT]
+            elif cat["id"] == "mylist":  # tu biblioteca de Stremio, lo último primero
+                members = sorted((i for i in items if i.source == "stremio" and i.extra.get("in_library")),
+                                 key=lambda i: i.last_watched or 0, reverse=True)
             elif cat["id"] == "favorites":
                 members = [i for i in alpha if self.is_favorite(i)]
             elif cat["id"] == "emulators":
@@ -1021,6 +1037,25 @@ class Catalog:
             self.player.add_subtitles(urls[0], lang)
         return bool(urls)
 
+    def setup_status(self) -> dict:
+        """Qué encontró Orbital (para "Tu consola", la pantalla de primer uso)."""
+        items = self.items()
+        games = [i for i in items if i.source not in ("stremio", "cinemeta", "search") and i.category not in ("apps", "media")]
+        systems: dict[str, int] = {}
+        for i in items:
+            if i.category == "emulators":
+                emu = next((e for e in self.emulators if e.id == i.source), None)
+                systems[emu.name if emu else i.source] = systems.get(emu.name if emu else i.source, 0) + 1
+        return {
+            "games": len(games),
+            "steam": sum(1 for i in items if i.source == "steam") if self.steam_root else None,
+            "emulators": systems,
+            "esde": self.esde is not None,
+            "stremio": self.stremio_linked,
+            "player": player.find_mpv() is not None,
+            "alexa": bool(self.config.server.token) and not self.config.server.token_is_ephemeral,
+        }
+
     def title_details(self, kind: str, meta_id: str) -> dict:
         """Todo para la ficha: datos, reparto, temporadas y dónde ibas (para "Continuar T3 E5")."""
         info = self.cinemeta.meta(kind, meta_id)
@@ -1031,6 +1066,7 @@ class Catalog:
             details["seasons"] = cinemeta.seasons(info)
         resume = None
         details["watched"] = []
+        details["in_library"] = False
         auth = self.credentials.get(STREMIO_KEY)
         if auth:
             try:
@@ -1039,6 +1075,7 @@ class Catalog:
                 log.info("No pude leer dónde ibas en %s: %s", meta_id, exc)
                 raw = None
             state = (raw or {}).get("state") or {}
+            details["in_library"] = bool(raw) and not raw.get("removed") and not raw.get("temp")
             if kind == "series":  # los vistos de verdad (no "todo lo anterior al que ibas")
                 ids = [v["id"] for v in info.get("videos") or [] if isinstance(v, dict) and v.get("id")]
                 details["watched"] = sorted(stremio_api.parse_watched(state.get("watched"), ids))
@@ -1051,7 +1088,33 @@ class Catalog:
                     resume = {"video_id": video_id, "position": position, "duration": duration,
                               "label": label, "episode_title": name}
         details["resume"] = resume
+        details["trailer"] = trailer_id(info)
         return details
+
+    def set_in_library(self, kind: str, meta_id: str, add: bool) -> None:
+        """Añadir o quitar de Mi lista (tu biblioteca de Stremio: se ve igual en Stremio)."""
+        auth = self.credentials.get(STREMIO_KEY)
+        if not auth:
+            raise stremio_api.StremioError("Conecta tu cuenta de Stremio en Ajustes")
+        try:
+            info = self.cinemeta.meta(kind, meta_id)
+        except cinemeta.CinemetaError:
+            info = {}
+        raw = self.stremio_client.library_item(auth, meta_id)
+        item = stremio_api.library_toggled(raw, meta_id=meta_id, kind=kind, name=info.get("name") or meta_id,
+                                           poster=info.get("poster"), add=add, now=time.time())
+        self.stremio_client.save_library_item(auth, item)
+        self.refresh_stremio()
+        self._notify({"type": "library-changed"})
+
+    def play_trailer(self, kind: str, meta_id: str) -> str:
+        """El tráiler en YouTube para TV (se maneja con el mando; Home vuelve a Orbital)."""
+        video = trailer_id(self.cinemeta.meta(kind, meta_id))
+        if not video:
+            raise LookupError("Este título no tiene tráiler")
+        url = f"https://www.youtube.com/tv#/watch?v={video}"
+        self.launcher.open_uri(url)
+        return url
 
     def _player_finished(self, meta: dict, position: float, duration: float, watched: float) -> None:
         self._save_progress(meta, position, duration, watched, refresh=True)
@@ -1102,7 +1165,11 @@ class Catalog:
         # Se cerró solo a los pocos segundos: casi siempre es que no pudo abrir (falta la ROM, el
         # firmware, una clave…). No es "de vuelta de": se avisa como problema.
         crashed = seconds < QUICK_EXIT and not self.launcher.last_stopped_by_user and not item_id.startswith(("media:", "app:"))
-        self._notify({"type": "closed", "id": item_id, "title": title, "seconds": int(seconds), "crashed": crashed})
+        event = {"type": "closed", "id": item_id, "title": title, "seconds": int(seconds), "crashed": crashed}
+        end = self.player.last_end if item_id == "media:player" else None
+        if end:  # el reproductor anotó cómo terminó: "Terminaste Interstellar"
+            event.update(title=end["title"], finished=end["finished"])
+        self._notify(event)
 
     def refresh_steam_stats(self) -> None:
         """Relee las horas y la última vez de Steam (barato: no reescanea la biblioteca)."""

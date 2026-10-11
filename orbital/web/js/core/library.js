@@ -100,8 +100,8 @@ export const SECTIONS = [
   { id: "games", title: "Juegos", rows: (id) => ["recent", "steam", "geforcenow"].includes(id) || id.startsWith("emulators:") },
   // Lo tuyo primero (Seguir viendo). Buscar es un atajo (botón Vista o la píldora de arriba), así
   // que la fila de apps (Buscar, YouTube…) va al final.
-  { id: "media", title: "Películas y series", rows: (id) => ["continue", "media", "movies", "series"].includes(id),
-    order: ["continue", "movies", "series", "media"] },
+  { id: "media", title: "Películas y series", rows: (id) => ["continue", "mylist", "media", "movies", "series"].includes(id),
+    order: ["continue", "mylist", "movies", "series", "media"] },
   { id: "apps", title: "Apps", rows: (id) => id === "apps" },
 ];
 

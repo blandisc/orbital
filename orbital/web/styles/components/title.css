@@ -60,9 +60,10 @@
 .title__action .icon { width: 1.3rem; height: 1.3rem; }
 .title__action small { color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-regular); }
 .title__action--primary { padding-inline: var(--space-6) var(--space-8); }
-/* Junto a los episodios no cabe todo: "Elegir fuente" queda como ícono (Y lo abre igual). */
-.title--series .title__action[data-id="sources"] { padding-inline: var(--space-4); }
-.title--series .title__action[data-id="sources"] span { display: none; }
+/* Los secundarios (Desde el principio, Tráiler, Mi lista, Elegir fuente) son solo ícono hasta que
+   tienen el foco, como en Netflix: así todo cabe en un renglón, también junto a los episodios. */
+.title__action:not(.title__action--primary):not(.title__action--focused) { padding-inline: var(--space-4); }
+.title__action:not(.title__action--primary):not(.title__action--focused) span { display: none; }
 /* Los secundarios, más compactos: los tres caben en un renglón también junto a los episodios. */
 .title__action:not(.title__action--primary) { padding-inline: var(--space-4) var(--space-5); font-size: var(--text-md); }
 /* Foco invertido (como el menú): se ve desde el sofá. */

@@ -169,6 +169,21 @@ def encode_watched(seen: set[str], video_ids: list[str]) -> str | None:
     return f"{video_ids[marks[-1]]}:{length}:{base64.b64encode(zlib.compress(bytes(bits))).decode()}"
 
 
+def library_toggled(raw: dict | None, *, meta_id: str, kind: str, name: str, poster: str | None,
+                    add: bool, now: float) -> dict:
+    """El libraryItem dentro o fuera de tu biblioteca de Stremio ("Mi lista"): `removed` y `temp`
+    son lo que Stremio usa para eso; el avance (state) no se toca."""
+    item = dict(raw or {
+        "_id": meta_id, "name": name, "type": kind, "poster": poster, "posterShape": "poster",
+        "_ctime": _iso(now), "state": {},
+        "behaviorHints": {"defaultVideoId": None, "featuredVideoId": None, "hasScheduledVideos": False},
+    })
+    item["removed"] = not add
+    item["temp"] = False if add else bool(item.get("temp"))
+    item["_mtime"] = _iso(now)
+    return item
+
+
 def dismissed(raw: dict, now: float) -> dict:
     """El libraryItem fuera de "Seguir viendo" (como el "Quitar" de Stremio: sin avance pendiente)."""
     item = dict(raw)
@@ -190,6 +205,7 @@ class Watchable:
     duration: int
     last_watched: float | None  # epoch
     in_continue: bool
+    in_library: bool = False  # en tu biblioteca de Stremio (Mi lista), no solo algo que viste
 
     @property
     def progress(self) -> float | None:
@@ -256,6 +272,7 @@ def parse_item(raw: dict) -> Watchable | None:
         last_watched=_epoch(state.get("lastWatched")),
         # Misma regla que stremio-core (LibraryItem::is_in_continue_watching).
         in_continue=kind != "other" and offset > 0,
+        in_library=not removed and not temp,
     )
 
 

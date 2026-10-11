@@ -104,7 +104,8 @@ def test_continue_row(linked):
     got = row["items"][0]
     assert got["subtitle"] == "T3 E9 · quedan 40 min" and got["progress"] == pytest.approx(1 / 3)
     assert got["hero"].startswith("https://images.metahub.space") and got["last_played"] > 0
-    assert "The Office" not in [i["title"] for r in rows.values() for i in r["items"]]  # sin fila propia
+    # The Office está en tu biblioteca sin avance: solo en "Mi lista", no en Seguir viendo.
+    assert [r for r, row in rows.items() if "The Office" in [i["title"] for i in row["items"]]] == ["mylist"]
     assert "recent" not in rows  # abrir algo de Stremio no ensucia "Jugado recientemente"
     linked.launch("stremio:tt0816692")
     # Con Stremio instalado se le pasa el enlace como argumento; sin él, se abre el URI.
@@ -325,3 +326,16 @@ def test_voice_asks_which_when_two_share_the_name(linked, monkeypatch):
     assert result.speech.startswith("Encontré varias: Dune, película de 2021; Dune, película de 1984")
     event = result.events[0]
     assert event["type"] == "choose" and [o["meta_id"] for o in event["options"]] == ["tt1160419", "tt0087182"]
+
+
+def test_my_list_and_trailer_helpers():
+    from orbital.catalog import trailer_id
+    from orbital.library.stremio_api import library_toggled
+    added = library_toggled(None, meta_id="tt1", kind="movie", name="Dune", poster=None, add=True, now=0)
+    assert added["removed"] is False and added["temp"] is False and added["state"] == {}
+    gone = library_toggled({**added, "state": {"timeOffset": 600}}, meta_id="tt1", kind="movie", name="Dune",
+                           poster=None, add=False, now=0)
+    assert gone["removed"] is True and gone["state"] == {"timeOffset": 600}  # el avance no se toca
+    assert trailer_id({"trailerStreams": [{"ytId": "abc"}]}) == "abc"
+    assert trailer_id({"trailers": [{"source": "xyz", "type": "Trailer"}]}) == "xyz"
+    assert trailer_id({}) is None

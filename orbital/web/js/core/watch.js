@@ -51,6 +51,10 @@ export function titleActions(details, { kind = "movie" } = {}) {
   } else {
     out.push({ id: "play", primary: true, icon: "play", label: "Ver" });
   }
+  if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
+  out.push(details.in_library
+    ? { id: "mylist", icon: "check", label: "En mi lista" }
+    : { id: "mylist", icon: "star", label: "Mi lista" });
   out.push({ id: "sources", icon: "swap", label: "Elegir fuente" });
   return out;
 }

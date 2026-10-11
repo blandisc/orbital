@@ -9,9 +9,9 @@ const seasons = [
 ];
 
 test("película: Ver, o Continuar con lo que queda y Desde el principio", () => {
-  assert.deepEqual(titleActions({ kind: "movie", resume: null }).map((a) => a.label), ["Ver", "Elegir fuente"]);
+  assert.deepEqual(titleActions({ kind: "movie", resume: null }).map((a) => a.label), ["Ver", "Mi lista", "Elegir fuente"]);
   const half = titleActions({ kind: "movie", resume: { position: 3600, duration: 7200 } });
-  assert.deepEqual(half.map((a) => a.id), ["play", "restart", "sources"]);
+  assert.deepEqual(half.map((a) => a.id), ["play", "restart", "mylist", "sources"]);
   assert.equal(half[0].label, "Continuar");
   assert.equal(half[0].hint, undefined); // lo que queda va en la línea de avance, no en el botón
   assert.ok(half[0].primary);
@@ -62,4 +62,10 @@ test("qué hay disponible, antes de elegir", async () => {
   assert.deepEqual(availability(sources), ["4K", "Dolby Vision", "Dolby Atmos", "Inglés, Español", "Al instante"]);
   assert.deepEqual(availability([]), []);
   assert.deepEqual(availability([{ resolution: "720p", hdr: [], languages: [] }]), ["720p"]);
+});
+
+test("tráiler y Mi lista en la ficha", async () => {
+  const { titleActions } = await import("../../orbital/web/js/core/watch.js");
+  const labels = titleActions({ kind: "movie", resume: null, trailer: "abc", in_library: true }).map((a) => a.label);
+  assert.deepEqual(labels, ["Ver", "Tráiler", "En mi lista", "Elegir fuente"]);
 });

@@ -113,3 +113,14 @@ test("abrir otra cosa con un juego abierto: pregunta, y quedarse va primero", as
   assert.equal(menu.options[1].danger, true);
   assert.deepEqual(menu.options[2].command, { type: "launch", id: "steam:1", runner: null, confirmed: true, keep: true }); // abrir sin cerrar
 });
+
+test("tu consola: lo que hay, lo que falta y Stremio se conecta ahí mismo", async () => {
+  const { setupMenu } = await import("../../orbital/web/js/core/menus.js");
+  const menu = setupMenu({ games: 30, steam: 14, emulators: { "Nintendo Switch": 6 }, esde: false, stremio: false, player: true, alexa: true });
+  assert.equal(menu.subtitle, "Encontré 30 juegos. Esto es lo que hay y lo que falta.");
+  const byLabel = Object.fromEntries(menu.options.map((o) => [o.label, o]));
+  assert.equal(byLabel.Steam.value, "✓ 14 juegos");
+  assert.equal(byLabel.Emuladores.hint, "Nintendo Switch (6)");
+  assert.deepEqual(byLabel.Stremio.command, { type: "stremio-login" });
+  assert.equal(setupMenu({ games: 0, steam: null, emulators: {} }).options[0].value, "No encontrado");
+});

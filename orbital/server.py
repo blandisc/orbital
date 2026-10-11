@@ -68,6 +68,7 @@ SETTINGS = {
     "reduce_motion": {True, False},
     "sounds": {True, False},
     "haptics": {True, False},
+    "welcomed": {True, False},  # ya vio "Tu consola" (la pantalla de primer uso)
 }
 
 
@@ -374,6 +375,31 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         catalog.unlink_stremio()
         return {"ok": True}
 
+    @app.post("/api/stremio/library")
+    def stremio_library(body: dict) -> dict:
+        """Mi lista: añadir o quitar."""
+        kind, meta_id = body.get("kind"), str(body.get("id") or "")
+        if kind not in ("movie", "series") or not meta_id:
+            raise HTTPException(400, "Falta qué añadir")
+        try:
+            catalog.set_in_library(kind, meta_id, bool(body.get("add")))
+        except stremio_api.StremioError as exc:
+            raise HTTPException(409, str(exc))
+        return {"ok": True, "in_library": bool(body.get("add"))}
+
+    @app.post("/api/stremio/trailer")
+    def stremio_trailer(body: dict) -> dict:
+        kind, meta_id = body.get("kind"), str(body.get("id") or "")
+        if kind not in ("movie", "series") or not meta_id:
+            raise HTTPException(400, "Falta de qué título")
+        try:
+            catalog.play_trailer(kind, meta_id)
+        except LookupError as exc:
+            raise HTTPException(404, str(exc))
+        except cinemeta.CinemetaError:
+            raise HTTPException(502, "No pude cargar el tráiler. Revisa tu conexión.")
+        return {"ok": True}
+
     @app.post("/api/stremio/dismiss")
     def stremio_dismiss(body: dict) -> dict:
         """Quitar de Seguir viendo."""
@@ -385,6 +411,10 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         except stremio_api.StremioError as exc:
             raise HTTPException(409, str(exc))
         return {"ok": True}
+
+    @app.get("/api/setup")
+    def setup() -> dict:
+        return catalog.setup_status()
 
     @app.get("/api/settings")
     def get_settings() -> dict:

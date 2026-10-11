@@ -324,6 +324,7 @@ class OrbitalPlayer:
         self._audio_lang = "en"
         self._fallback_subs = None
         self._user_quit = False  # B, Orbital o la voz lo cerraron: no es un fallo
+        self.last_end: dict | None = None  # cómo terminó lo último (para el aviso al volver)
         self._quiet_episodes = 0  # episodios encadenados sin tocar el mando
         self._buffering = False
         self.sub_scale = 1.0
@@ -349,6 +350,7 @@ class OrbitalPlayer:
         self.menu = None
         self._card = None
         self._user_quit = False
+        self.last_end = None
         self._quiet_episodes = 0
         self._subs_lang, self._fallback_subs = subtitles, fallback_subs
         self._audio_lang = options.get("audio", "en")
@@ -412,7 +414,7 @@ class OrbitalPlayer:
                     log.info("%s llevaba %d min en pausa: se cierra (el avance queda guardado)",
                              playback.title, self.idle_seconds // 60)
                     self._user_quit = True
-                    self.mpv.command("quit")
+                    self._quit()
                     if self.on_idle:
                         self.on_idle(playback.title, int(self.idle_seconds // 60))
                     paused_since = None
@@ -489,7 +491,7 @@ class OrbitalPlayer:
             retrying = bool(self._safe(self.on_failed, segment.meta, segment.position, True))
         if not retrying:
             self.toast("No pude reproducir esto con ninguna fuente", 4)
-            timer = threading.Timer(4, lambda: self.segment is segment and self.mpv.command("quit"))
+            timer = threading.Timer(4, lambda: self.segment is segment and self._quit())
             timer.daemon = True
             timer.start()
 
@@ -593,7 +595,7 @@ class OrbitalPlayer:
         if segment.meta.get("kind") == "series" and segment.upnext is None and segment.upnext_requested:
             return  # aún buscando el siguiente: un segundo más
         self._user_quit = True
-        self.mpv.command("quit")
+        self._quit()
 
     def _play_next(self, segment: Segment, auto: bool) -> None:
         info = segment.upnext
@@ -647,7 +649,7 @@ class OrbitalPlayer:
         self._hide_card()
         if card["kind"] == "still":
             self._user_quit = True
-            self.mpv.command("quit")
+            self._quit()
         elif card["kind"] == "next":
             card["segment"].upnext_dismissed = True  # se queda en los créditos; al final, sale
 
@@ -834,7 +836,7 @@ class OrbitalPlayer:
                 self.hide_hud()
             else:
                 self._user_quit = True
-                self.mpv.command("quit")
+                self._quit()
         elif button in ("x", "y"):
             self.open_menu("audio" if button == "x" else "sub")
         elif button in ("left", "right"):
@@ -858,6 +860,16 @@ class OrbitalPlayer:
             self.mpv.command("add", "volume", 5 if button == "up" else -5)
             volume = self.mpv.get("volume")
             self.toast(f"Volumen {int(volume)} %" if isinstance(volume, (int, float)) else "Volumen")
+
+    def _quit(self) -> None:
+        """Cierra mpv anotando ANTES cómo terminó (el catálogo lo lee al volver a Orbital: "Terminaste…"
+        en vez de "Guardé dónde ibas"). Antes de cerrar, no después: el lanzador puede ver el proceso
+        terminado antes que este vigilante."""
+        segment = self.segment
+        if segment is not None and self.current is not None:
+            finished = bool(segment.duration) and segment.position >= segment.duration * .9
+            self.last_end = {"title": self.current.title, "finished": finished, "kind": segment.meta.get("kind")}
+        self.mpv.command("quit")
 
     # --- para la voz -----------------------------------------------------------------------
     def set_pause(self, paused: bool) -> None:
@@ -891,7 +903,7 @@ class OrbitalPlayer:
     def stop(self) -> None:
         if self.current and self.current.process.poll() is None:
             self._user_quit = True
-            self.mpv.command("quit")
+            self._quit()
             try:
                 self.current.process.wait(timeout=3)
             except subprocess.TimeoutExpired:

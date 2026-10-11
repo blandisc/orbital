@@ -72,6 +72,8 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 | Ver una película o episodio | La ficha: "Continuar T3 E5 · quedan 22 min" o "Ver" con el foco, "Desde el principio", reparto y dirección; en series, los episodios abren en el que ibas (vistos con ✓, a medias con su barra, por estrenar con su fecha). A arranca directo con la fuente recomendada (pantalla de carga con fases: Buscando dónde verlo → Conectando · 1080p · Al instante) | ✅ |
 | Qué hay disponible | La ficha busca las fuentes al abrirse y lo dice antes de elegir: "4K · Dolby Vision · Atmos · Inglés, Español · Al instante" (y Ver arranca casi al instante) | ✅ (nuevo) |
 | Episodios vistos | Los ✓ salen de tu cuenta de Stremio; terminar un episodio en Orbital lo marca también allá | ✅ (nuevo) |
+| Mi lista y tráiler | En la ficha: ★ añade o quita de Mi lista (tu biblioteca de Stremio, fila propia en Películas y series); el tráiler se abre en YouTube para TV (Home vuelve). Los botones secundarios son ícono hasta que los enfocas | ✅ (nuevo) |
+| Al terminar un video | "Terminaste Interstellar" (si lo viste casi completo); si no, "Guardé dónde ibas en…" | ✅ (nuevo) |
 | Elegir la fuente a mano | Y en la ficha: panel lateral con cada fuente en palabras de persona (Al instante / Tarda en empezar, idioma, HDR, sonido); A ve con esa, B vuelve a la ficha | ✅ |
 | Una fuente no arranca o se corta | Prueba sola la siguiente en el mismo punto ("Esa fuente falló · probando otra"); si ninguna sirve, lo dice y vuelve a Orbital | ✅ (nuevo) |
 | En el reproductor | Barra de Orbital con título, progreso (con marcas de capítulos), audio, subtítulos, la fuente y la leyenda. A pausa · ←/→ adelantar (mantener: 10 s → 30 s → 1 min) · LB/RB capítulo (o ±1 min) · LT/RT episodio anterior/siguiente · ↑/↓ volumen · **B oculta la barra; con la barra oculta, sale** | ✅ |
@@ -105,6 +107,7 @@ Todo funciona igual con toques o con el control; Orbital cambia solo según lo q
 | Actualizar biblioteca, sonidos, mostrar ocultos | ☰ | ✅ |
 | Salir al escritorio y volver | ☰ → Salir al escritorio; Home para volver | ✅ |
 | Suspender, reiniciar, apagar | ☰ → Apagado. Reiniciar y Apagar piden confirmar (Cancelar primero) y avisan si hay un juego abierto | ✅ |
+| Tu consola | La primera vez (y en ☰ → Ajustes → Revisar mi consola): qué encontró Orbital (Steam, emuladores, ES-DE, Stremio, reproductor, Alexa) y cómo resolver lo que falta | ✅ (nuevo) |
 | Conectar Stremio | ☰ → Ajustes → Cuentas → Stremio: correo y contraseña con el teclado en pantalla (Y muestra la contraseña, LT/RT cambian de campo). Ya no hace falta la PC | ✅ (nuevo) |
 | Ajustes | ☰ → Ajustes: Reproducción (idioma del audio, subtítulos, calidad, tamaño de subtítulos), Pantalla (tamaño del texto, márgenes de la TV, reducir movimiento), Sonido y vibración, Cuentas. A o ◀/▶ cambian el valor sin cerrar el menú | ✅ (nuevo) |
 | Encender Orbital | Animación de arranque (planeta y órbitas) mientras se prepara la biblioteca; al volver de un juego, la interfaz "aterriza" | ✅ (nuevo) |

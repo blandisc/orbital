@@ -22,7 +22,7 @@ export function gameMenu(item, { running = null } = {}) {
     }];
   if (item.source === "search") return { title: item.title, options: [...options, { icon: "close", label: "Cancelar", command: { type: "close" } }] };
   // Películas y series: la ficha (reparto, episodios, elegir fuente) a un botón.
-  if (isWatchable(item) && !isOpen) options.push({ icon: "media", label: "Ver la ficha", command: { type: "title", id: item.id } });
+  if (isWatchable(item) && !isOpen) options.push({ icon: "info", label: "Ver la ficha", command: { type: "title", id: item.id } });
   if (item.source === "stremio" && item.category === "continue") {
     options.push({ icon: "hide", label: "Quitar de Seguir viendo", command: { type: "dismiss", id: item.id, title: item.title } });
   }
@@ -184,6 +184,7 @@ export function settingsMenu() {
     options: [
       ...Object.entries(SETTING_PAGES).map(([page, def]) => ({ icon: def.icon, label: def.title, command: { type: "settings", page } })),
       { icon: "mark", label: "Cuentas", command: { type: "settings", page: "accounts" } },
+      { icon: "check", label: "Revisar mi consola", hint: "Qué encontró Orbital y qué falta", command: { type: "setup" } },
     ],
   };
 }
@@ -195,7 +196,7 @@ export function settingsPage(page, settings, { now = Date.now() } = {}) {
     return {
       title: "Cuentas", crumb: "Cuentas",
       options: [
-        { icon: "media", label: "Stremio", value: settings.stremio_linked ? "Conectada" : "Sin conectar",
+        { icon: "trailer", label: "Stremio", value: settings.stremio_linked ? "Conectada" : "Sin conectar",
           command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
           hint: settings.stremio_linked ? "Seguir viendo y fuentes en Orbital" : "A para conectar tu cuenta" },
         { icon: "mic", label: "Alexa", value: settings.alexa ? "Configurada" : "Sin configurar", command: { type: "stay" },
@@ -222,6 +223,38 @@ export function stremioAccountMenu() {
     options: [
       { icon: "close", label: "Cancelar", command: { type: "close" } },
       { icon: "exit", label: "Desconectar", danger: true, command: { type: "stremio-logout" } },
+    ],
+  };
+}
+
+/**
+ * "Tu consola" (primer uso, y en Ajustes): qué encontró Orbital y cómo resolver lo que falta, sin
+ * leer un manual. Stremio se conecta aquí mismo; lo demás dice dónde poner las cosas.
+ */
+export function setupMenu(status) {
+  const systems = Object.entries(status.emulators || {});
+  const row = (icon, label, ok, value, hint, command = { type: "stay" }) =>
+    ({ icon, label, value: ok ? `✓ ${value}` : value, hint, command });
+  return {
+    title: "Tu consola",
+    subtitle: status.games ? `Encontré ${status.games} juego${status.games === 1 ? "" : "s"}. Esto es lo que hay y lo que falta.`
+      : "Aún no encontré juegos. Aquí está qué revisar.",
+    options: [
+      row("gamepad", "Steam", status.steam !== null, status.steam !== null ? `${status.steam} juegos` : "No encontrado",
+        status.steam !== null ? "Tus juegos instalados aparecen solos" : "Instala Steam e inicia sesión una vez"),
+      row("gamepad", "Emuladores", systems.length > 0, systems.length ? `${systems.length} sistemas` : "Ninguno",
+        systems.length ? systems.map(([name, n]) => `${name} (${n})`).join(", ")
+          : "Pon los emuladores en Descargas, el Escritorio o C:\\Emuladores y sus ROMs junto a ellos"),
+      row("folder", "ES-DE", status.esde, status.esde ? "Conectado" : "No encontrado",
+        status.esde ? "Portadas, favoritos y carpetas de ROMs de ES-DE" : "Opcional: si lo usas, sus portadas y favoritos llegan solos"),
+      row("trailer", "Stremio", status.stremio, status.stremio ? "Conectada" : "Conectar",
+        status.stremio ? "Seguir viendo, Mi lista y fuentes" : "A para conectar tu cuenta (películas y series)",
+        status.stremio ? { type: "stay" } : { type: "stremio-login" }),
+      row("play", "Reproductor", status.player, status.player ? "Listo" : "Falta mpv",
+        status.player ? "Películas y series con el mando" : "Corre scripts/install-windows.ps1 en la PC"),
+      row("mic", "Alexa", status.alexa, status.alexa ? "Configurada" : "Opcional",
+        status.alexa ? "«Alexa, pídele a mi consola…»" : "En la PC: orbital alexa setup"),
+      { icon: "check", label: "Listo", command: { type: "close" } },
     ],
   };
 }

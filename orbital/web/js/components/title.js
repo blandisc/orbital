@@ -12,7 +12,7 @@ import { availability, episodeStates, titleActions, titleProgress } from "../cor
  *     con su barra, los que no se han estrenado atenuados con su fecha;
  *   · A ve (Orbital elige la mejor fuente y arranca) · Y elige la fuente · B vuelve.
  */
-export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = () => false }) {
+export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = () => false, onNotice = () => {} }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
@@ -188,7 +188,29 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
     if (button.id === "play") play(episodeById(button.video_id));
     else if (button.id === "restart") play(episodeById(button.video_id), { fromStart: true });
     else if (button.id === "sources") sources();
+    else if (button.id === "mylist") toggleList();
+    else if (button.id === "trailer") trailer();
     else if (button.id === "retry") load();
+  }
+
+  async function toggleList() {
+    const add = !details.in_library;
+    try {
+      await api.setInLibrary(kindOf(), details.id, add);
+      details.in_library = add;
+      renderActions();
+      onNotice(add ? `${details.title} está en Mi lista` : `Quité ${details.title} de Mi lista`);
+    } catch (err) {
+      onNotice(err.message, true);
+    }
+  }
+
+  async function trailer() {
+    try {
+      await api.trailer(kindOf(), details.id);
+    } catch (err) {
+      onNotice(err.message, true);
+    }
   }
 
   function sources(ep = null) {

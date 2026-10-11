@@ -119,3 +119,10 @@ def test_connect_stremio_from_the_console(make_client, library, monkeypatch):
         assert bad.status_code == 401 and "no aceptó" in bad.json()["detail"]
         assert c.post("/api/stremio/login", json={"email": "yo@x.com", "password": "bien"}).json() == {"ok": True, "count": 42}
     assert seen == ["yo@x.com", "yo@x.com", "clave-sesion"]  # se guarda la clave de sesión, nunca la contraseña
+
+
+def test_setup_status_for_first_use(make_client):
+    with make_client() as c:
+        status = c.get("/api/setup").json()
+        assert {"games", "steam", "emulators", "esde", "stremio", "player", "alexa"} <= set(status)
+        assert c.post("/api/settings", json={"welcomed": True}).json()["welcomed"] is True

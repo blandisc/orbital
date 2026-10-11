@@ -34,7 +34,9 @@ export function createSheet({ onCommand, onMove, onClose }) {
       role: "menuitem",
       onClick: () => choose(i),
     }, h("span", { class: "sheet__icon" }, ICONS[option.icon] ? svg(ICONS[option.icon]) : null), h("span", { class: "sheet__label" }, option.label),
-    option.value !== undefined && h("span", { class: "sheet__value" }, "‹ ", option.value, " ›"),
+    // ‹ › solo en lo que se cambia con A o ◀/▶ (un estado, como "Conectada", no lleva flechas).
+    option.value !== undefined && h("span", { class: "sheet__value" },
+      option.command?.type === "setting" ? ["‹ ", option.value, " ›"] : option.value),
     option.hint && h("small", { class: "sheet__hint" }, option.hint))));
   }
 

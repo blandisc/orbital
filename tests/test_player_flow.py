@@ -193,3 +193,11 @@ def test_hud_says_when_it_ends_and_forced_subtitles_option():
     cmd = player.build_command("mpv.exe", "u", "t", audio="es", subtitles="forced")
     assert "--subs-with-matching-audio=forced" in cmd and "--slang=es,spa,Spanish,es-419" in cmd
     assert "--sid=no" in player.build_command("mpv.exe", "u", "t", subtitles="")
+
+
+def test_knows_how_it_ended_before_closing():
+    p, mpv = series_player(**{"time-pos": 5990.0, "duration": 6000.0})
+    p.tick(p.segment, 0, False)
+    p.hide_hud()
+    p.press("b")  # sale con la barra oculta, en los créditos
+    assert ("quit",) in mpv.sent and p.last_end == {"title": "Interstellar", "finished": True, "kind": "series"}

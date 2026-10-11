@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isWatchable, itemAt, restoreFocus, rowJump, runnerName, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints } from "./core/hints.js";
-import { exitMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, stopMenu, stremioAccountMenu, switchMenu, windowsMenu } from "./core/menus.js";
+import { exitMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, switchMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -76,6 +76,7 @@ const ui = {
     onPlay: (play) => watch(play),
     onSources: (play) => openSources(play),
     canPrefetch: () => state.stremioLinked,
+    onNotice: (message, error = false) => { sound.play(error ? "error" : "select"); ui.toast.show(message, { error }); },
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
@@ -217,10 +218,22 @@ function finishBoot() {
   if (!boot || boot.classList.contains("boot--leaving")) return;
   const wait = Math.max(0, BOOT_MIN_MS - performance.now());
   setTimeout(() => {
+    welcome();
     boot.classList.add("boot--leaving");
     document.body.dataset.landing = "boot";
     setTimeout(() => { boot.remove(); delete document.body.dataset.landing; }, 1100);
   }, wait);
+}
+
+/** La primera vez: "Tu consola" (qué encontró Orbital y qué falta), una sola vez. */
+async function welcome() {
+  try {
+    const settings = state.settings.welcomed === undefined ? await api.settings() : state.settings;
+    if (settings.welcomed) return;
+    const status = await api.setup();
+    setTimeout(() => openMenu(setupMenu(status)), 1200); // después de que aterrice la interfaz
+    applySettings(await api.setSettings({ welcomed: true }));
+  } catch { /* sin servidor: ya saldrá la próxima vez */ }
 }
 
 function bootStatus(text) {
@@ -522,6 +535,8 @@ async function runCommand(command, context = null) {
         ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
+      case "setup":
+        return openMenu(setupMenu(await api.setup()), nested(context));
       case "stremio-login":
         sound.play("open");
         ui.login.open();
@@ -623,7 +638,7 @@ function handleEvent(event) {
     return openMenu({
       title: event.message,
       options: [
-        ...event.options.map((o) => ({ icon: "media", label: o.title, hint: o.subtitle, command: { type: "title-ref", ref: o } })),
+        ...event.options.map((o) => ({ icon: "trailer", label: o.title, hint: o.subtitle, command: { type: "title-ref", ref: o } })),
         { icon: "search", label: "Ver todos los resultados", command: { type: "search", query: event.query } },
       ],
     });
