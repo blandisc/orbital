@@ -60,9 +60,9 @@
 .tile--console.tile--focused .tile--console__glow {
   background: radial-gradient(95% 75% at 50% 18%, color-mix(in oklab, var(--glow) 38%, transparent) 0%, transparent 75%);
 }
-.tile--console__media { position: relative; flex: 1 1 auto; min-height: 0; display: grid; place-items: center; padding: var(--space-4) var(--space-4) 0; }
+.tile--console__media { position: relative; flex: none; height: 5.4rem; display: grid; place-items: center; padding: var(--space-3) var(--space-4) 0; }
 .tile--console__photo {
-  max-width: 88%; max-height: 100%; object-fit: contain;
+  max-width: 88%; max-height: 4.8rem; object-fit: contain; /* fotos altas (Xbox 360) no tapan el texto */
   filter: drop-shadow(0 .7rem .9rem rgba(0, 0, 0, .6));
   transition: transform var(--duration-base) var(--ease-spring);
 }
@@ -70,7 +70,7 @@
 /* Steam y GeForce NOW: su logotipo en blanco, del tamaño visual de una foto de consola. */
 .tile--console__logo { height: 3.2rem; width: auto; opacity: .92; filter: drop-shadow(0 .5rem 1rem rgba(0, 0, 0, .5)); transition: transform var(--duration-base) var(--ease-spring); }
 .tile--console.tile--focused .tile--console__logo { transform: scale(1.06); opacity: 1; }
-.tile--console__cover { max-height: 100%; width: auto; border-radius: var(--radius-sm); box-shadow: var(--shadow-card); }
+.tile--console__cover { max-height: 4.8rem; width: auto; border-radius: var(--radius-sm); box-shadow: var(--shadow-card); }
 .tile--console__text { position: relative; display: flex; flex-direction: column; gap: .2rem; padding: var(--space-3) var(--space-4) var(--space-4); }
 .tile--console__name { font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold); line-height: 1.1; letter-spacing: var(--tracking-tight); }
 .tile--console__count { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
