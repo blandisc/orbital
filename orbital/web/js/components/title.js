@@ -1,4 +1,5 @@
 import { api } from "../core/api.js";
+import { Chip } from "./ui.js";
 import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { genres } from "../core/format.js";
 import { ICONS } from "../core/icons.js";
@@ -264,7 +265,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
       const data = await api.stremioSources(t.kind, t.id, t.video_id);
       if (mine !== token) return;
       const chips = availability(data.sources);
-      mount(avail, chips.length ? chips.map((c) => h("span", { class: ["chip", c === "Al instante" && "chip--good"] }, c))
+      mount(avail, chips.length ? chips.map((c) => Chip(c, { tone: c === "Al instante" ? "good" : null }))
         : h("span", { class: "title__avail-none" }, "Sin fuentes por ahora"));
       avail.hidden = false;
     } catch { /* sin conexión o sin cuenta: la ficha sigue igual */ }

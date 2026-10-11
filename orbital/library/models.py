@@ -68,6 +68,7 @@ class LibraryItem:
             "hero": self.hero,
             "favorite": self.favorite,
             "progress": self.progress,
+            **({"system": self.system} if self.system else {}),
             "runners": [{"id": r.id, "name": r.name} for r in self.runners],
             "runner": self.runner().id if self.runners else None,
             **({"extra": self.extra} if self.extra else {}),

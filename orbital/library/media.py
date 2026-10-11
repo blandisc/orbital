@@ -7,12 +7,29 @@ de ES-DE, además, se descarta si no sirve (una captura puesta como portada, por
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import re
 import struct
 from pathlib import Path
 
 IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".webp")
+# Respaldo para lo que no tiene arte (generado con Grok Imagine): siempre hay una imagen.
+PLACEHOLDER_DIR = Path(__file__).resolve().parents[1] / "web" / "img" / "placeholders"
+
+
+def placeholder(kind: str, system: str | None, seed: str = "") -> str:
+    """URL del respaldo ya hecho: varias opciones por sistema (hero-switch-1.jpg, hero-switch-2.jpg…)
+    y, si no hay de ese sistema, las genéricas. A cada juego le toca siempre la misma (por su id),
+    así no se ven todos iguales y no cambia entre escaneos."""
+    for prefix in ([f"{kind}-{system}", f"{kind}-generic"] if system else [f"{kind}-generic"]):
+        options = sorted(p.name for p in PLACEHOLDER_DIR.glob(f"{prefix}*.jpg")
+                         if re.fullmatch(rf"{re.escape(prefix)}(-\d+)?\.jpg", p.name))
+        if options:
+            pick = int(hashlib.sha1(seed.encode()).hexdigest(), 16) % len(options)
+            return f"/img/placeholders/{options[pick]}"
+    return f"/img/placeholders/{kind}-generic-1.jpg"
 KINDS = ("cover", "hero", "logo")
 
 
@@ -82,10 +99,19 @@ def good(kind: str, size: tuple[int, int] | None, system: str | None = None) -> 
         # Las portadas son verticales (en GBA casi cuadradas) y no diminutas; una captura de PSP (480x272) no.
         return min(w, h) >= 180 and h >= w * (0.85 if system in SQUARE_BOXES else 1.1)
     if kind == "hero":
-        return w >= 960 and w >= h * 1.4
+        # Horizontal. Si es chica (captura de GBA, 240×160) igual sirve: se muestra en pixel art.
+        return w >= 240 and w >= h * 1.2
     if kind == "logo":
         return w >= 200
     return True
+
+
+HD_HERO = 960  # por debajo, el fondo es una captura chica: se dibuja nítida (pixel art), no borrosa
+
+
+def low_res(path: str | Path | None) -> bool:
+    size = image_size(Path(path)) if path else None
+    return bool(size and size[0] < HD_HERO)
 
 
 class MediaStore:

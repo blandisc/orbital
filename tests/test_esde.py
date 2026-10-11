@@ -122,7 +122,10 @@ def test_covers_and_favorites(catalog):
     assert zelda.favorite and zelda.art_path.endswith(".png")
     assert zelda.image == f"/api/art/{zelda.id}"
     assert catalog.find("mario kart").art_path.endswith("Mario Kart 8 Deluxe.jpg")
-    assert catalog.find("metroid dread").image is None
+    # Sin portada nunca queda vacío: el respaldo de su sistema (y la tarjeta pone el título encima).
+    metroid = catalog.find("metroid dread")
+    assert metroid.image.startswith("/img/placeholders/cover-") and metroid.extra["placeholder_cover"]
+    assert metroid.hero.startswith("/img/placeholders/hero-")
     rows = catalog.grouped()
     assert rows[0]["title"] == "Favoritos" and [i["title"] for i in rows[0]["items"]] == [zelda.title]
 
@@ -257,3 +260,14 @@ def test_gamelist_with_bom(tmp_path):
     path.write_bytes('﻿<?xml version="1.0"?>\n<gameList><game><path>./Call of Duty.lnk</path>'
                      '<name>Call of Duty</name></game></gameList>'.encode())
     assert load_gamelist(path).games  # el BOM ya no la invalida
+
+
+def test_logo_is_served_as_logo(esde_home, catalog):
+    marquees = esde_home / "downloaded_media" / "switch" / "marquees"
+    marquees.mkdir(parents=True)
+    (marquees / "Metroid Dread.png").write_bytes(png(800, 300))
+    catalog.refresh()
+    metroid = catalog.find("metroid dread")
+    assert metroid.extra["logo"].endswith("?kind=logo")
+    with TestClient(create_app(catalog.config, catalog), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
+        assert c.get(metroid.extra["logo"]).content == png(800, 300)

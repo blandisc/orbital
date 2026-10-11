@@ -3,6 +3,7 @@ import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
 import { storage } from "../core/storage.js";
 import { Card } from "./card.js";
+import { createKeyboard } from "./keyboard.js";
 
 /**
  * Buscar juegos, películas y series con el mando, sin sufrir con títulos largos:
@@ -14,14 +15,16 @@ import { Card } from "./card.js";
  *   · con un teclado físico se escribe directo;
  *   · dictado: decirlo en voz alta (reconocimiento de voz de Edge, español de México).
  */
-const ROWS = [
+const layout = (cleared) => [
   [..."ABCDEFGHIJ"],
   [..."KLMNÑOPQRS"],
   [..."TUVWXYZ123"],
   [..."4567890-.'"],
-  [{ key: "space", label: "Espacio", span: 4 }, { key: "delete", label: "Borrar", span: 3 }, { key: "clear", label: "Borrar todo", span: 3 }],
+  [{ key: "space", label: "Espacio", span: 4 }, { key: "delete", label: "Borrar", span: 3 },
+    { key: "clear", label: cleared ? "Deshacer" : "Borrar todo", span: 3, tone: "action" }],
   // Acciones claras con dedo o con mando: salir, dictar y ver los resultados.
-  [{ key: "back", label: "Atrás", span: 2 }, { key: "dictate", label: "Dictar", span: 3 }, { key: "go", label: "Buscar", span: 5 }],
+  [{ key: "back", label: "Atrás", span: 2, tone: "action" }, { key: "dictate", label: "Dictar", span: 3, icon: "mic" },
+    { key: "go", label: "Buscar", span: 5, tone: "go" }],
 ];
 const MIN_CHARS = 2;
 const DEBOUNCE_MS = 260;
@@ -52,7 +55,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   mount(field, svg(ICONS.search), query, caret, placeholder);
   const hint = h("div", { class: "search__hint", role: "status" });
   const results = h("div", { class: "search__results", role: "list" });
-  const keys = h("div", { class: "search__keys" });
+  const keyboard = createKeyboard({ label: "Teclado de búsqueda", onPress: (key) => press(key) });
+  const keys = keyboard.el;
   const el = h("section", { class: "search", hidden: true, "aria-label": "Buscar" },
     h("div", { class: "search__top" }, field, hint), results, keys);
 
@@ -60,30 +64,21 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   let items = []; // lo que se puede enfocar en la fila: resultados o búsquedas recientes
   let focusables = [];
   let zone = "keys"; // "keys" | "results"
-  let row = 0;
-  let col = 0;
   let resultIndex = 0;
   let timer;
   let token = 0;
   let listening = null;
   let cancelExit = () => {};
 
-  const keyEls = ROWS.map((cells) => cells.map((cell) => {
-    const def = typeof cell === "string" ? { key: cell, label: cell, span: 1 } : cell;
-    const node = h("button", {
-      class: ["search__key", def.span > 1 && "search__key--wide", `search__key--${def.key.length > 1 ? def.key : "char"}`],
-      type: "button", style: { gridColumn: `span ${def.span}` }, onClick: () => press(def.key),
-    }, def.key === "dictate" ? svg(ICONS.mic) : null, def.label);
-    return { def, node };
-  }));
-  mount(keys, keyEls.flat().map((k) => k.node));
+  let shownCleared = false; // la tecla «Borrar todo» dice «Deshacer» justo después de usarla
+  keyboard.setLayout(layout(false));
 
   function render() {
     query.textContent = text;
     placeholder.hidden = !!text;
-    keyEls.forEach((cells, r) => cells.forEach((k, c) => k.node.classList.toggle("search__key--focused", zone === "keys" && r === row && c === col)));
-    const clearKey = keyEls.flat().find((k) => k.def.key === "clear");
-    if (clearKey) clearKey.node.lastChild.textContent = !text && cleared ? "Deshacer" : "Borrar todo";
+    const undo = !text && !!cleared;
+    if (undo !== shownCleared) { shownCleared = undo; keyboard.setLayout(layout(undo)); }
+    keyboard.active = zone === "keys";
     focusables.forEach((node, i) => node.classList.toggle(node.classList.contains("card") ? "card--focused" : "search__recent--focused",
       zone === "results" && i === resultIndex));
     field.classList.toggle("search__field--listening", !!listening);
@@ -244,22 +239,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   }
 
   function moveKeys(dr, dc) {
-    if (dr) {
-      const nextRow = row + dr;
-      if (nextRow < 0) {
-        if (items.length) { zone = "results"; return render(); }
-        return;
-      }
-      if (nextRow >= ROWS.length) return;
-      // Conserva la posición horizontal aproximada entre filas con teclas anchas.
-      const x = keyEls[row].slice(0, col).reduce((sum, k) => sum + k.def.span, 0);
-      row = nextRow;
-      let acc = 0;
-      col = keyEls[row].findIndex((k) => (acc += k.def.span) > x);
-      if (col < 0) col = keyEls[row].length - 1;
-    } else {
-      col = (col + dc + keyEls[row].length) % keyEls[row].length;
-    }
+    // Por arriba del teclado están los resultados.
+    if (keyboard.move(dr, dc) === "up" && items.length) zone = "results";
     render();
   }
 
@@ -294,7 +275,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     else if (action === "down") moveKeys(1, 0);
     else if (action === "left") moveKeys(0, -1);
     else if (action === "right") moveKeys(0, 1);
-    else if (action === "select") press(keyEls[row][col].def.key);
+    else if (action === "select") keyboard.press();
     else return true;
     onMove?.();
     render();

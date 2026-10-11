@@ -1,5 +1,6 @@
 import { api } from "../core/api.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
+import { createKeyboard } from "./keyboard.js";
 
 /**
  * Conectar Stremio con el mando (antes solo desde la PC: `orbital stremio login`).
@@ -12,7 +13,7 @@ const LETTERS = [[..."1234567890"], [..."qwertyuiop"], [..."asdfghjklñ"], [..."
 const SYMBOLS = [[..."1234567890"], [..."!#$%&*+=?/"], [..."-'\"():;,~^"], [..."<>[]{}|\\`€"]];
 const ACTIONS = [
   { key: "shift", label: "Mayúsculas", span: 2 }, { key: "symbols", label: "Símbolos", span: 2 },
-  { key: ".com", label: ".com", span: 2 }, { key: "delete", label: "Borrar", span: 2 }, { key: "next", label: "Siguiente", span: 2 },
+  { key: ".com", label: ".com", span: 2 }, { key: "delete", label: "Borrar", span: 2 }, { key: "next", label: "Siguiente", span: 2, tone: "go" },
 ];
 
 export function createLogin({ onDone, onMove, onClose }) {
@@ -21,7 +22,8 @@ export function createLogin({ onDone, onMove, onClose }) {
     password: { value: "", label: "Contraseña", node: h("div", { class: "login__field login__field--secret" }) },
   };
   const message = h("div", { class: "login__message", role: "status" });
-  const keys = h("div", { class: "login__keys" });
+  const keyboard = createKeyboard({ label: "Teclado", onPress: (key) => press(key) });
+  const keys = keyboard.el;
   const el = h("section", { class: "login", hidden: true, "aria-label": "Conectar Stremio" },
     h("div", { class: "login__head" },
       h("div", { class: "login__eyebrow" }, "Cuentas"),
@@ -35,13 +37,12 @@ export function createLogin({ onDone, onMove, onClose }) {
   let shift = false;
   let symbols = false;
   let reveal = false;
-  let row = 1;
-  let col = 0;
   let busy = false;
   let cancelExit = () => {};
 
-  const grid = () => [...(symbols ? SYMBOLS : LETTERS).map((r) => r.map((k) => ({ key: k, label: shift && !symbols ? k.toUpperCase() : k, span: 1 }))),
-    ACTIONS.map((a) => (a.key === "next" ? { ...a, label: active === "password" ? "Conectar" : "Siguiente" } : a))];
+  const grid = () => [...(symbols ? SYMBOLS : LETTERS).map((r) => r.map((k) => ({ key: k, label: shift && !symbols ? k.toUpperCase() : k }))),
+    ACTIONS.map((a) => ({ ...a, on: (a.key === "shift" && shift) || (a.key === "symbols" && symbols),
+      ...(a.key === "next" ? { label: active === "password" ? "Conectar" : "Siguiente" } : {}) }))];
 
   function renderFields() {
     for (const [name, field] of Object.entries(fields)) {
@@ -53,16 +54,9 @@ export function createLogin({ onDone, onMove, onClose }) {
   }
 
   function renderKeys() {
-    const rows = grid();
-    row = Math.min(row, rows.length - 1);
-    col = Math.min(col, rows[row].length - 1);
-    mount(keys, rows.flatMap((cells, r) => cells.map((cell, c) => h("button", {
-      class: ["login__key", cell.span > 1 && "login__key--wide", r === row && c === col && "login__key--focused",
-        cell.key === "next" && "login__key--go", (cell.key === "shift" && shift) || (cell.key === "symbols" && symbols) ? "login__key--on" : null],
-      type: "button", style: { gridColumn: `span ${cell.span}` },
-      onClick: () => { row = r; col = c; press(cell.key); },
-    }, cell.label))));
+    keyboard.setLayout(grid());
   }
+
 
   function render() {
     renderFields();
@@ -125,30 +119,14 @@ export function createLogin({ onDone, onMove, onClose }) {
     renderFields();
   }
 
-  function move(dr, dc) {
-    const rows = grid();
-    if (dr) {
-      const next = row + dr;
-      if (next < 0 || next >= rows.length) return false;
-      // Conserva la posición horizontal aproximada entre la fila de acciones (anchas) y las letras.
-      const x = rows[row].slice(0, col).reduce((sum, k) => sum + k.span, 0);
-      row = next;
-      let acc = 0;
-      col = rows[row].findIndex((k) => (acc += k.span) > x);
-      if (col < 0) col = rows[row].length - 1;
-    } else {
-      col = (col + dc + rows[row].length) % rows[row].length;
-    }
-    return true;
-  }
+
 
   function open() {
     cancelExit();
     fields.password.value = "";
     active = fields.email.value ? "password" : "email";
     shift = symbols = reveal = false;
-    row = 1;
-    col = 0;
+    keyboard.reset(1, 0);
     message.textContent = "";
     el.hidden = false;
     render();
@@ -168,9 +146,9 @@ export function createLogin({ onDone, onMove, onClose }) {
     if (action === "alt") { press("delete"); return true; }
     if (action === "options") { reveal = !reveal; renderFields(); return true; }
     if (action === "pageleft" || action === "pageright") { switchField(action === "pageleft" ? "email" : "password"); onMove?.(); return true; }
-    if (action === "select") { press(grid()[row][col].key); return true; }
+    if (action === "select") { keyboard.press(); return true; }
     const moved = { up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1] }[action];
-    if (moved && move(...moved)) { onMove?.(); renderKeys(); }
+    if (moved && !keyboard.move(...moved)) onMove?.();
     return true;
   }
 

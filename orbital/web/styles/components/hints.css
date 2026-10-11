@@ -7,7 +7,9 @@
 }
 .hints__item { display: inline-flex; align-items: center; gap: var(--space-2); white-space: nowrap; animation: fade-in var(--duration-base) var(--ease-out); }
 .hints__item--end { margin-left: auto; }
+/* Estado (mando, Stremio) a la izquierda; las pistas empiezan después. */
+.hints__status { display: inline-flex; gap: var(--space-2); margin-right: var(--space-4); }
 @media (max-width: 1000px) {
   .hints { gap: var(--space-4); overflow: hidden; }
-  .hints__item--secondary { display: none; }
+  .hints__item--secondary, .hints__status { display: none; }
 }

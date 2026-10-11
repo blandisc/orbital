@@ -3,13 +3,17 @@
 @import url("themes/orbital.css");
 @import url("base.css");
 @import url("components/backdrop.css");
+@import url("components/ui.css");
 @import url("components/glyph.css");
 @import url("components/button.css");
 @import url("components/status-bar.css");
 @import url("components/hero.css");
 @import url("components/card.css");
+@import url("components/tiles.css");
+@import url("components/home.css");
 @import url("components/shelf.css");
 @import url("components/hints.css");
+@import url("components/keyboard.css");
 @import url("components/sheet.css");
 @import url("components/launch-overlay.css");
 @import url("components/toast.css");

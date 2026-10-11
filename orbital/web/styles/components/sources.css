@@ -40,7 +40,7 @@
 
 .source__res {
   display: grid; place-items: center; height: 3.4rem; border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, .08); font-family: var(--font-sans); font-size: var(--text-md);
+  background: var(--color-chip-bg); font-family: var(--font-sans); font-size: var(--text-md);
   font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums;
 }
 .source__res--4k { color: var(--color-accent); }
@@ -48,27 +48,16 @@
 .source__main { display: grid; gap: var(--space-2); min-width: 0; }
 .source__chips { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); }
 .source__release { overflow: hidden; color: var(--color-text-muted); font-size: var(--text-xs); text-overflow: ellipsis; white-space: nowrap; }
-.source__badge {
-  padding: .1rem .55rem; border-radius: var(--radius-pill);
-  background: var(--color-primary); color: var(--color-on-primary);
-  font-size: var(--text-2xs); font-weight: var(--weight-bold); letter-spacing: .04em; text-transform: uppercase;
-}
 
-.chip {
-  padding: .14rem .55rem; border-radius: var(--radius-xs); background: rgba(255, 255, 255, .09);
-  font-size: var(--text-sm); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums;
-}
-.chip--good { color: var(--color-live); }
-.chip--warn { color: var(--color-warning); }
 
 /* Foco invertido, como el menú: inconfundible desde el sofá (antes, un borde de 2 px). */
-.source--focused, .source--focused:hover { background: var(--color-primary); color: var(--color-on-primary); }
-.source--focused .source__res { background: rgba(0, 0, 0, .1); color: inherit; }
+.source--focused, .source--focused:hover { background: var(--inverse-bg); color: var(--inverse-fg); }
+.source--focused .source__res { background: var(--on-light-fill-strong); color: inherit; }
 .source--focused .source__release { color: inherit; opacity: .7; }
-.source--focused .chip { background: rgba(0, 0, 0, .08); }
-.source--focused .chip--good { color: #0c7a6b; }
-.source--focused .chip--warn { color: #8a5b00; }
-.source--focused .source__badge { background: var(--color-on-primary); color: var(--color-primary); }
+.source--focused .chip { background: var(--on-light-fill); }
+.source--focused .chip--good { color: var(--on-light-live); }
+.source--focused .chip--warn { color: var(--on-light-warning); }
+.source--focused .badge { background: var(--color-on-primary); color: var(--color-primary); }
 
 @media (max-width: 760px) {
   .sources__panel { width: 100vw; border-left: 0; }

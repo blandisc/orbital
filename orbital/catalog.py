@@ -16,6 +16,7 @@ import json
 import logging
 import os
 import threading
+import time
 from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import quote
@@ -27,7 +28,7 @@ from .events import EventBus
 from .focus import READY_TIMEOUT, bring_app_to_front, bring_game_to_front, game_ready, is_orbital_window, pin_orbital  # noqa: F401 - compatibilidad
 from .launcher import Launcher
 from .library import cinemeta, detect, emulators, esde, geforcenow, steam, stremio, stremio_api
-from .library.media import KINDS, MediaStore
+from .library.media import KINDS, MediaStore, low_res, placeholder
 from .library.models import LibraryItem
 from .library.scraper import Scraper, Target
 from .sessions import QUICK_EXIT, Sessions  # noqa: F401
@@ -38,6 +39,7 @@ from .watch import STREMIO_KEY, STREMIO_STALE_SECONDS, Watch, enrich_watch_item,
 
 CONTINUE_LIMIT = 20  # "Seguir viendo": los más recientes
 JUMP_LIMIT = 16  # "Continuar" en Inicio
+NEW_FOR = 7 * 86400  # un juego es "nuevo" su primera semana
 STEAM_STATS_DELAY = 6  # s tras cerrar un juego de Steam, antes de releer sus horas
 
 log = logging.getLogger(__name__)
@@ -256,8 +258,18 @@ class Catalog:
                 item.image = url
             if item.hero_path:
                 item.hero = url + "?kind=hero"
+                if low_res(item.hero_path):
+                    item.extra["hero_lowres"] = True
             if item.logo_path:
                 item.extra["logo"] = url + "?kind=logo"
+            # Regla: todo lleva imagen. Sin portada o sin fondo, el respaldo de su sistema.
+            if not item.image and item.category not in ("apps", "media"):
+                item.image = placeholder("cover", item.system, item.id)
+                item.extra["placeholder_cover"] = True
+            if not item.hero:
+                item.hero = placeholder("hero", item.system, item.id)
+                item.extra["placeholder_hero"] = True
+        self.state.mark_seen([i.id for i in found if i.category in ("emulators", "steam")])
         self.store.replace(found)
         self._save_snapshot(found)
         log.info("Catálogo: %d elementos", len(found))
@@ -275,9 +287,10 @@ class Catalog:
         for item in self.store.all():
             if not item.system or not item.media_key:
                 continue
+            # Un fondo que es solo una captura chica también se intenta mejorar (fanart).
             kinds = [k for k in KINDS
                      if not self.media.path(item.system, item.media_key, k)
-                     and (force or not getattr(item, paths[k]))]
+                     and (force or not getattr(item, paths[k]) or (k == "hero" and low_res(item.hero_path)))]
             if self.media.meta(item.system, item.media_key) is None:
                 kinds.append("meta")
             if kinds:
@@ -354,6 +367,10 @@ class Catalog:
         data["last_played"] = item.last_watched if item.source == "stremio" else self.last_played(item)
         # Steam lleva sus propias horas (también lo jugado fuera de Orbital): la mayor de las dos.
         data["playtime"] = max(history.get("playtime", 0), item.extra.get("steam_playtime", 0))
+        # Recién llegado (en los últimos 7 días): la consola lo anuncia en Inicio.
+        seen = self.state.first_seen(item.id)
+        if seen and time.time() - seen < NEW_FOR:
+            data["new"] = True
         return data
 
     def last_played(self, item: LibraryItem) -> float | None:

@@ -1,0 +1,60 @@
+/* Inicio (js/components/home.js): solo el acomodo. Las piezas son tiles (tiles.css) y piezas base (ui.css).
+   Ocupa el carril del héroe y de las filas; las demás secciones siguen con héroe + filas. */
+.home {
+  grid-row: 2 / 4; min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column; gap: var(--space-5);
+  padding: var(--space-3) var(--page-gutter) var(--space-3);
+}
+body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
+
+.home__greeting { flex: none; display: flex; align-items: center; gap: var(--space-5); min-height: 3rem; }
+.home__hello { font-family: var(--font-sans); font-size: var(--text-3xl); font-weight: var(--weight-medium); letter-spacing: var(--tracking-display); }
+
+/* Arriba: destacado a la izquierda y 2×2 a la derecha, misma altura. */
+.home__top {
+  flex: 1 1 auto; min-height: 13rem; max-height: 22rem;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--tile-gap);
+}
+.home__top > .tile--feature:only-child { grid-column: 1 / -1; }
+.home__cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: var(--tile-gap); min-height: 0; }
+
+/* Abajo: tus consolas en una fila que se desplaza si no caben (6 a la vista). */
+.home__consoles { flex: none; display: flex; flex-direction: column; gap: var(--space-3); }
+.home__consoles-viewport { overflow: hidden; padding: .6rem; margin: -.6rem; } /* espacio para el anillo y el crecer */
+.home__consoles-track { display: flex; gap: var(--tile-gap); transition: transform var(--duration-slow) var(--ease-out); }
+.home__consoles-track > .tile--console { flex: 0 0 calc((100% - 5 * var(--tile-gap)) / 6); height: 11.2rem; }
+
+/* Fondo del Inicio: sin arte a pantalla completa; una luz del color de lo enfocado (cambia suave). */
+body[data-view="home"] .backdrop__layer, body[data-view="home"] .backdrop__scrim { opacity: 0; }
+body[data-view="home"] .backdrop {
+  transition: --art-tint var(--duration-tint) var(--ease-out);
+  background:
+    radial-gradient(70% 70% at 22% 12%, color-mix(in oklab, var(--art-tint) 85%, transparent) 0%, transparent 70%),
+    var(--palette-ink-950);
+}
+
+/* Entrada (al abrir Orbital): saludo, destacado, tarjetas y las consolas una tras otra. */
+.home--intro .home__greeting { animation: home-in 560ms var(--ease-out) both; }
+.home--intro .tile--feature { animation: home-in 640ms var(--ease-out) 90ms both; }
+.home--intro .home__cards .tile { animation: home-in 600ms var(--ease-out) 170ms both; }
+.home--intro .home__consoles-head { animation: home-in 560ms var(--ease-out) 260ms both; }
+.home--intro .tile--console { animation: home-in 620ms var(--ease-out) calc(300ms + var(--i, 0) * 45ms) both; }
+@keyframes home-in { from { opacity: 0; transform: translateY(1.2rem) scale(.985); } }
+
+/* Pantallas bajas (Legion Go en ventana): menos alto arriba y consolas más compactas. */
+@media (max-height: 760px) {
+  .home { gap: var(--space-3); }
+  .home__top { max-height: 17rem; }
+  .home__consoles-track > .tile--console { height: 9.2rem; }
+  .tile--console__media { height: 4.6rem; }
+  .tile--console__photo { max-height: 3.9rem; }
+}
+/* Angostas: 4 consolas a la vista y el destacado arriba de las tarjetas. */
+@media (max-width: 1000px) {
+  .home__consoles-track > .tile--console { flex-basis: calc((100% - 3 * var(--tile-gap)) / 4); }
+}
+@media (max-width: 760px) {
+  .home__top { grid-template-columns: 1fr; max-height: none; }
+  .home__cards { display: none; }
+  .home__consoles-track > .tile--console { flex-basis: calc((100% - var(--tile-gap)) / 2); }
+}

@@ -33,6 +33,11 @@ export function gameMenu(item, { running = null } = {}) {
       ? { icon: "check", label: "Quitar de Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: false, title: item.title } }
       : { icon: "star", label: "Añadir a Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: true, title: item.title } });
   }
+  // ¿No te gusta la portada o el fondo? Se descarta para siempre y se busca otra.
+  if (item.system && !isOpen) {
+    options.push({ icon: "refresh", label: "Otra portada", hint: "si esta no te gusta", command: { type: "art", id: item.id, kind: "cover", title: item.title } });
+    options.push({ icon: "refresh", label: "Otro fondo", command: { type: "art", id: item.id, kind: "hero", title: item.title } });
+  }
   // Emuladores alternativos: solo en juegos.
   for (const runner of isOpen || !isGame(item) ? [] : item.runners || []) {
     if (runner.id === item.runner) continue;
@@ -539,4 +544,18 @@ export function controlsMenu(controllers = []) {
 export function controlsPage(page) {
   const def = CONTROL_PAGES[page];
   return { title: def.title, crumb: def.title, options: def.rows.map(([label, value]) => row(label, value)) };
+}
+
+/** «Tienes 5 cosas a medias · ver todo»: la lista completa para retomar cualquiera. */
+export function pendingMenu(items) {
+  return {
+    title: "A medias",
+    options: [
+      ...items.map((item) => ({
+        icon: isWatchable(item) ? "play" : "gamepad", label: item.title, hint: isWatchable(item) ? item.subtitle : runnerName(item),
+        command: { type: "launch", id: item.id },
+      })),
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+    ],
+  };
 }

@@ -9,7 +9,13 @@ export function h(tag, props = {}, ...children) {
     if (value === undefined || value === null || value === false) continue;
     if (key === "class") el.className = classNames(value);
     else if (key === "dataset") Object.assign(el.dataset, value);
-    else if (key === "style") Object.assign(el.style, value);
+    else if (key === "style") {
+      // Las variables CSS (--color) necesitan setProperty; Object.assign las ignora.
+      for (const [prop, v] of Object.entries(value)) {
+        if (prop.startsWith("--")) el.style.setProperty(prop, v);
+        else el.style[prop] = v;
+      }
+    }
     else if (key.startsWith("on") && typeof value === "function") el.addEventListener(key.slice(2).toLowerCase(), value);
     else if (value === true) el.setAttribute(key, "");
     else el.setAttribute(key, value);
@@ -19,7 +25,7 @@ export function h(tag, props = {}, ...children) {
 }
 
 export function classNames(value) {
-  return (Array.isArray(value) ? value : [value]).filter(Boolean).join(" ");
+  return (Array.isArray(value) ? value.flat(Infinity) : [value]).filter(Boolean).join(" ");
 }
 
 export function append(parent, children) {

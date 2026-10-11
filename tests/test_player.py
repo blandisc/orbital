@@ -254,3 +254,19 @@ def test_each_series_keeps_its_own_language(library):
     assert prefs.audio == "es" and subs == ""
     other, other_subs = library.watch.language_for("tt0386676")  # otra serie: lo de Ajustes
     assert other.audio == library.watch.stream_prefs.audio and other_subs == library.watch.subtitles_lang
+
+
+def test_player_and_interface_share_one_palette():
+    """La barra del reproductor usa los mismos colores que la interfaz (antes eran copias a mano)."""
+    import json
+    import re
+    from pathlib import Path
+
+    from orbital import player_ui
+
+    web = Path(player_ui.__file__).parent / "web" / "styles"
+    palette = json.loads((web / "palette.json").read_text(encoding="utf-8"))
+    css = dict(re.findall(r"--palette-([\w-]+):\s*(#[0-9a-fA-F]{6});", (web / "tokens.css").read_text(encoding="utf-8")))
+    assert {k: v.lower() for k, v in css.items()} == {k: v for k, v in palette.items() if k != "_"}
+    assert player_ui.ass_color("#5cbf6d") == "&H6DBF5C&"
+    assert player_ui.GLYPH["A"] == player_ui.ass_color(palette["pad-green"])

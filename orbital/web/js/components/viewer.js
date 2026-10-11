@@ -48,5 +48,11 @@ export function createViewer({ onClose, onOpenVideo } = {}) {
     return true;
   }
 
-  return { el, open, close, handle, get isOpen() { return !el.hidden; } };
+  /** El pie mientras se ve una captura. */
+  function hints(g) {
+    const video = items[index]?.kind === "video";
+    return [...(video ? [{ glyph: g.select, label: "Ver clip" }] : []), { glyph: g.back, label: "Cerrar", end: true }];
+  }
+
+  return { el, open, close, handle, hints, get isOpen() { return !el.hidden; } };
 }

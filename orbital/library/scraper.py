@@ -47,7 +47,7 @@ LIBRETRO_SYSTEMS = {
     "genesis": "Sega - Mega Drive - Genesis", "megadrive": "Sega - Mega Drive - Genesis",
     "dreamcast": "Sega - Dreamcast", "saturn": "Sega - Saturn",
 }
-LIBRETRO = "https://thumbnails.libretro.com/{system}/Named_Boxarts/{name}.png"
+LIBRETRO = "https://thumbnails.libretro.com/{system}/{folder}/{name}.png"
 TGDB_SEARCH = "https://thegamesdb.net/search.php?name={name}&platform_id%5B%5D={platform}"
 TGDB_GAME = "https://thegamesdb.net/game.php?id={id}"
 TGDB_IMAGE = "https://cdn.thegamesdb.net/images/original/{path}"
@@ -70,6 +70,8 @@ class Candidate:
     kind: str
     url: str
     source: str
+    # 0 = arte oficial (fanart, héroe de Steam, caja); 1 = captura del juego (cuando no hay otra cosa).
+    rank: int = 0
 
 
 def clean(title: str) -> str:
@@ -167,11 +169,11 @@ class TheGamesDB:
         return [gid for score, gid in scored if score >= threshold]
 
     def images(self, game: int, kinds: set[str]) -> list[Candidate]:
-        found = re.findall(r"images/original/((boxart/front|fanart|clearlogo)/(\d+)-?(\d*)\.\w+)", self.page(game))
-        names = {"boxart/front": "cover", "fanart": "hero", "clearlogo": "logo"}
+        found = re.findall(r"images/original/((boxart/front|fanart|clearlogo|screenshot)/(\d+)-?(\d*)\.\w+)", self.page(game))
+        names = {"boxart/front": "cover", "fanart": "hero", "clearlogo": "logo", "screenshot": "hero"}
         # Orden natural: fanart/12-2 antes que fanart/12-10.
         found = sorted(set(found), key=lambda f: (f[1], int(f[3] or 0)))
-        return [Candidate(names[folder], TGDB_IMAGE.format(path=path), self.name)
+        return [Candidate(names[folder], TGDB_IMAGE.format(path=path), self.name, rank=1 if folder == "screenshot" else 0)
                 for path, folder, _, _ in found if names[folder] in kinds]
 
     def candidates(self, target: Target) -> list[Candidate]:
@@ -194,13 +196,18 @@ class Libretro:
     name = "libretro"
 
     def candidates(self, target: Target) -> list[Candidate]:
-        folder = LIBRETRO_SYSTEMS.get(target.system)
-        if folder is None or "cover" not in target.kinds:
+        system = LIBRETRO_SYSTEMS.get(target.system)
+        if system is None:
             return []
         # libretro cambia estos caracteres por "_" en los nombres de archivo.
-        name = re.sub(r'[&*/:`<>?\\|"]', "_", target.key)
-        url = LIBRETRO.format(system=urllib.parse.quote(folder), name=urllib.parse.quote(name))
-        return [Candidate("cover", url, self.name)]
+        name = urllib.parse.quote(re.sub(r'[&*/:`<>?\\|"]', "_", target.key))
+        url = lambda folder: LIBRETRO.format(system=urllib.parse.quote(system), folder=folder, name=name)  # noqa: E731
+        return [
+            Candidate("cover", url("Named_Boxarts"), self.name),
+            # Sin fanart: una captura del juego o su pantalla de título (mejor que un respaldo genérico).
+            Candidate("hero", url("Named_Snaps"), self.name, rank=1),
+            Candidate("hero", url("Named_Titles"), self.name, rank=1),
+        ]
 
 
 class Steam:
@@ -255,21 +262,22 @@ class Scraper:
                 self.store.save_meta(target.system, target.key, data)
         missing = [k for k in target.kinds if k != "meta" and not self.store.path(target.system, target.key, k)]
         saved: dict[str, Path] = {}
+        candidates: list[Candidate] = []
         for provider in self.providers:
             if not missing:
                 break
             try:
-                candidates = provider.candidates(target)
+                candidates += provider.candidates(target)
             except Exception:  # noqa: BLE001 - una fuente rota no debe parar a las demás
                 log.exception("Falló %s con %s", provider.name, target.title)
+        # Primero el arte oficial de todas las fuentes; las capturas, solo si no hubo nada mejor.
+        for cand in sorted(candidates, key=lambda c: c.rank):
+            if cand.kind not in missing or self.store.is_rejected(target.system, target.key, cand.kind, cand.url):
                 continue
-            for cand in candidates:
-                if cand.kind not in missing or self.store.is_rejected(target.system, target.key, cand.kind, cand.url):
-                    continue
-                path = self._download(target, cand)
-                if path:
-                    saved[cand.kind] = path
-                    missing.remove(cand.kind)
+            path = self._download(target, cand)
+            if path:
+                saved[cand.kind] = path
+                missing.remove(cand.kind)
         if missing:
             log.info("Sin %s para %s (%s)", ", ".join(missing), target.title, target.system)
         return saved

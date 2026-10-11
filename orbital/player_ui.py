@@ -13,18 +13,34 @@ mpv pinta texto y figuras ASS encima del video (comando osd-overlay). Aquí solo
 
 from __future__ import annotations
 
+import json
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 
 W, H = 1920, 1080  # coordenadas del lienzo (mpv escala a la pantalla)
 MARGIN = 96
 
-# Colores ASS (&HBBGGRR&) con la paleta de Orbital.
-TEXT = "&HF0F4F5&"
-MUTED = "&HA9B0B3&"
-ACCENT = "&H4D57F0&"  # #F0574D
-TRACK = "&H5A5A5A&"
-GLYPH = {"A": "&H5BC86B&", "B": "&H4F4FE8&", "X": "&HE6A33C&", "Y": "&H2BC7F2&"}  # verde, rojo, azul, amarillo
+# Colores: la misma paleta que la interfaz (web/styles/palette.json), en formato ASS (&HBBGGRR&).
+PALETTE = json.loads((Path(__file__).parent / "web" / "styles" / "palette.json").read_text(encoding="utf-8"))
+
+
+def ass_color(hex_color: str) -> str:
+    """#RRGGBB -> &HBBGGRR& (mpv/libass escribe los colores al revés)."""
+    r, g, b = hex_color[1:3], hex_color[3:5], hex_color[5:7]
+    return f"&H{b}{g}{r}&".upper()
+
+
+TEXT = ass_color(PALETTE["paper"])
+MUTED = ass_color(PALETTE["ink-300"])
+ACCENT = ass_color(PALETTE["red-400"])
+TRACK = ass_color(PALETTE["ink-500"])
+PANEL = ass_color(PALETTE["ink-900"])  # menús y tarjetas sobre el video
+ON_LIGHT = ass_color(PALETTE["ink-1000"])  # texto sobre la opción enfocada (fondo claro)
+SHADE = "&H000000&"  # degradado de la base (negro puro a propósito)
+# Botones del mando en su color, los mismos que en la interfaz: A verde, B rojo, X azul, Y amarillo.
+GLYPH = {"A": ass_color(PALETTE["pad-green"]), "B": ass_color(PALETTE["pad-red"]),
+         "X": ass_color(PALETTE["pad-blue"]), "Y": ass_color(PALETTE["pad-yellow"])}
 FONT = "Segoe UI Variable Display"
 
 LANGUAGES = {
@@ -152,9 +168,9 @@ def hud_ass(hud: Hud) -> str:
     """Barra inferior con todo lo que necesitas saber, sin tapar la película más de lo necesario."""
     lines = [
         # Degradado a negro en la base para que el texto se lea sobre cualquier escena.
-        _rect(0, 700, W, 80, "&H000000&", "E0"),
-        _rect(0, 780, W, 80, "&H000000&", "B0"),
-        _rect(0, 860, W, 220, "&H000000&", "70"),
+        _rect(0, 700, W, 80, SHADE, "E0"),
+        _rect(0, 780, W, 80, SHADE, "B0"),
+        _rect(0, 860, W, 220, SHADE, "70"),
     ]
     y = 800
     if hud.paused:
@@ -195,7 +211,7 @@ def menu_ass(menu: Menu) -> str:
     shown = menu.options[first:first + MENU_ROWS]
     height = 150 + row_h * max(1, len(shown)) + 70
     y0 = max(80, (H - height) / 2 - 60)
-    lines = [_rect(x, y0, width, height, "&H141418&", "18")]
+    lines = [_rect(x, y0, width, height, PANEL, "18")]
     tab_x = x + 40
     many = len(menu.tabs) > 1
     if many:
@@ -216,7 +232,7 @@ def menu_ass(menu: Menu) -> str:
         i = first + offset
         if i == menu.index:
             lines.append(_rect(x + 20, y - 8, width - 40, row_h - 8, TEXT, "10"))
-            color = "&H18141A&"
+            color = ON_LIGHT
         else:
             color = TEXT
         mark = "●  " if option.get("current") else "    "
@@ -235,7 +251,7 @@ def card_ass(title: str, subtitle: str = "", actions: list[tuple[str, str]] | No
     width = max(560, 64 + 19 * max(len(title), len(subtitle)), 64 + 15 * len(plain))
     height = 200 if subtitle else 156
     x, y = W - MARGIN - width, 680 - height
-    lines = [_rect(x, y, width, height, "&H141418&", "10")]
+    lines = [_rect(x, y, width, height, PANEL, "10")]
     if progress is not None:  # la cuenta atrás se ve como una barra que se vacía
         lines.append(_rect(x, y + height - 6, width * max(0.0, min(1.0, progress)), 6, ACCENT))
     lines.append(_text(x + 32, y + 26, esc(title), 36, bold=True))
@@ -249,7 +265,7 @@ def toast_ass(text: str) -> str:
     """Aviso corto arriba a la derecha (volumen, pista elegida)."""
     width = 40 + 17 * len(text)
     x = W - MARGIN - width
-    return "\n".join([_rect(x, 64, width, 64, "&H141418&", "30"), _text(x + 20, 76, esc(text), 30)])
+    return "\n".join([_rect(x, 64, width, 64, PANEL, "30"), _text(x + 20, 76, esc(text), 30)])
 
 
 def source_menu(sources: list[dict], tabs: list[str]) -> Menu:

@@ -1,0 +1,140 @@
+import { h, mount } from "../core/dom.js";
+import { buildHome, greeting } from "../core/home.js";
+import { measureFocusables, nextFocus } from "../core/spatial.js";
+import { ConsoleTile, FeatureTile, PendingChip, WideTile } from "./tiles.js";
+import { KeyHint, SectionHead } from "./ui.js";
+
+/**
+ * Inicio: saludo, lo último que jugaste o viste a lo grande, cuatro tarjetas y tus consolas.
+ * El foco se mueve por posición en pantalla (core/spatial.js), no por filas: así funciona con
+ * piezas de distinto tamaño. LT/RT saltan entre lo de arriba y las consolas. B vuelve al destacado.
+ *
+ * Callbacks: onFocus(target) al cambiar de pieza; onPick(target) al tocarla con el dedo o el ratón;
+ * onAction(action, target) para los botones del destacado. target = { kind, item?, console? }.
+ */
+export function createHome({ onFocus, onPick, onAction }) {
+  const hello = h("h1", { class: "home__hello" });
+  const pendingSlot = h("div", { class: "home__pending" });
+  const top = h("div", { class: "home__top" });
+  const consolesHead = h("div", { class: "home__consoles-head" });
+  const consolesTrack = h("div", { class: "home__consoles-track", role: "list" });
+  const el = h("section", { class: "home", hidden: true, "aria-label": "Inicio" },
+    h("div", { class: "home__greeting" }, hello, pendingSlot),
+    top,
+    h("div", { class: "home__consoles" }, consolesHead, h("div", { class: "home__consoles-viewport" }, consolesTrack)));
+
+  let model = null;
+  let targets = new Map(); // focus id -> target
+  let focusId = "feature";
+  let lastTop = "feature"; // LT/RT vuelven aquí desde las consolas
+  let lastConsole = "console:0";
+  let introduced = false;
+  let options = { runningId: null, glyphs: {} };
+
+  function render(rows, { runningId = null, glyphs = {} } = {}) {
+    options = { runningId, glyphs };
+    model = buildHome(rows, { runningId });
+    targets = new Map();
+    hello.textContent = greeting();
+    const pick = (id) => () => onPick?.(targets.get(id), id);
+
+    mount(pendingSlot, model.pending > 1 && PendingChip(model.pending, { onPress: pick("pending") }));
+    if (model.pending > 1) targets.set("pending", { kind: "pending", items: model.pendingItems });
+
+    const feature = model.feature
+      ? FeatureTile(model.feature, { runningId, glyphs, onPress: pick("feature"), onAction: (action) => onAction?.(action, targets.get("feature")) })
+      : h("div", { class: ["tile", "tile--feature", "tile--empty"], "data-focus-id": "feature" },
+        h("div", { class: "tile--feature__body" }, h("h2", { class: "tile--feature__title" }, "Empieza a jugar"),
+          h("span", { class: "tile--feature__detail" }, "Lo que abras aparecerá aquí para seguir donde te quedaste.")));
+    targets.set("feature", model.feature ? { kind: "item", item: model.feature } : { kind: "empty" });
+    const cards = model.cards.map((item, i) => {
+      targets.set(`card:${i}`, { kind: "item", item });
+      return WideTile(item, { focusId: `card:${i}`, onPress: pick(`card:${i}`) });
+    });
+    mount(top, feature, cards.length > 0 && h("div", { class: ["home__cards", `home__cards--${cards.length}`] }, cards));
+
+    mount(consolesHead, model.consoles.length > 0 && SectionHead("Tus consolas", {
+      meta: `${model.consoles.length} sistema${model.consoles.length === 1 ? "" : "s"} · ${model.games} juegos`,
+      end: glyphs.page && [KeyHint(glyphs.page, "te traen aquí")],
+    }));
+    model.consoles.forEach((c, i) => targets.set(`console:${i}`, { kind: "console", console: c }));
+    renderConsoles();
+
+    if (!targets.has(focusId)) focusId = "feature";
+    if (!introduced) { // entrada: saludo, destacado, tarjetas y las consolas una tras otra
+      introduced = true;
+      el.classList.add("home--intro");
+      setTimeout(() => el.classList.remove("home--intro"), 1400);
+    }
+    paint();
+  }
+
+  function renderConsoles() {
+    mount(consolesTrack, model.consoles.map((c, i) => ConsoleTile(c, {
+      focusId: `console:${i}`, index: i, glyphs: options.glyphs,
+      onPress: () => onPick?.(targets.get(`console:${i}`), `console:${i}`),
+    })));
+  }
+
+  /** Marca el foco, atenúa lo demás y mantiene la consola enfocada a la vista. */
+  function paint() {
+    const inConsoles = focusId.startsWith("console:");
+    for (const node of el.querySelectorAll("[data-focus-id]")) {
+      const focused = node.dataset.focusId === focusId;
+      node.classList.toggle("tile--focused", focused);
+      node.classList.toggle("tile--dimmed", !focused && node.dataset.focusId !== "pending");
+      if (focused) node.setAttribute("aria-current", "true");
+      else node.removeAttribute("aria-current");
+    }
+    el.dataset.zone = inConsoles ? "consoles" : "top";
+    keepConsoleVisible();
+    onFocus?.(targets.get(focusId));
+  }
+
+  function keepConsoleVisible() {
+    const node = consolesTrack.querySelector(`[data-focus-id="${focusId}"]`);
+    const viewport = consolesTrack.parentElement;
+    if (!node) return;
+    const left = node.offsetLeft;
+    const right = left + node.offsetWidth;
+    const shift = Number(consolesTrack.dataset.shift || 0);
+    let next = shift;
+    if (right - shift > viewport.clientWidth) next = right - viewport.clientWidth;
+    if (left - shift < 0) next = left;
+    consolesTrack.dataset.shift = String(next);
+    consolesTrack.style.transform = `translateX(${-next}px)`;
+  }
+
+  function focus(id) {
+    if (!targets.has(id) || id === focusId) return false;
+    if (focusId.startsWith("console:")) lastConsole = focusId;
+    else lastTop = focusId;
+    focusId = id;
+    paint();
+    return true;
+  }
+
+  /** Mueve el foco; devuelve true si se movió, "edge" si no hay nada hacia allá. */
+  function handle(action) {
+    const dirs = { up: "up", down: "down", left: "left", right: "right" };
+    if (dirs[action]) {
+      const next = nextFocus(measureFocusables(el), focusId, dirs[action]);
+      return next ? focus(next) : "edge";
+    }
+    if (action === "pageleft" || action === "pageright") {
+      if (!model?.consoles.length) return "edge";
+      return focus(focusId.startsWith("console:") ? lastTop : (targets.has(lastConsole) ? lastConsole : "console:0"));
+    }
+    if (action === "back") return focusId === "feature" ? "edge" : focus("feature");
+    return false;
+  }
+
+  return {
+    el, render, handle, focus,
+    show: () => { el.hidden = false; },
+    hide: () => { el.hidden = true; },
+    get current() { return targets.get(focusId) ?? null; },
+    get focusId() { return focusId; },
+    get visible() { return !el.hidden; },
+  };
+}
