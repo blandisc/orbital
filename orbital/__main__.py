@@ -207,19 +207,19 @@ def serve(config, app, public_app) -> None:
     asyncio.run(run_all())
 
 
-def log_file_path() -> Path:
+def log_file_path(name: str = "orbital.log") -> Path:
     base = os.environ.get("LOCALAPPDATA") or os.environ.get("XDG_STATE_HOME") or str(Path.home() / ".local" / "state")
-    return Path(base) / "orbital" / "orbital.log"
+    return Path(base) / "orbital" / name
 
 
-def ensure_streams() -> Path | None:
+def ensure_streams(name: str = "orbital.log") -> Path | None:
     """Con pythonw.exe (acceso directo de inicio) no hay consola: sys.stdout/stderr son None y
     uvicorn no arranca. En ese caso todo va a orbital.log, que se rota solo (runtime.RotatingStream)."""
     if sys.stdout is not None and sys.stderr is not None:
         return None
     from .runtime import RotatingStream
 
-    path = log_file_path()
+    path = log_file_path(name)
     stream = RotatingStream(path)
     sys.stdout = sys.stdout or stream
     sys.stderr = sys.stderr or stream
@@ -227,7 +227,13 @@ def ensure_streams() -> Path | None:
 
 
 def main(argv: list[str] | None = None) -> None:
-    log_path = ensure_streams()
+    from . import supervisor
+
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    serving = not any(a in raw_argv for a in ("stremio", "alexa", "--list", "-h", "--help"))
+    supervising = serving and not supervisor.is_child() and os.environ.get("ORBITAL_NO_SUPERVISOR") != "1"
+    # El vigilante escribe en su propio archivo: el Orbital de verdad rota orbital.log al arrancar.
+    log_path = ensure_streams("vigilante.log" if supervising else "orbital.log")
     parser = argparse.ArgumentParser(prog="orbital", description="Interfaz de consola para Legion Go")
     parser.add_argument("-c", "--config", type=Path, help=f"Ruta del config.yaml (por defecto {default_config_path()})")
     parser.add_argument("--ui", choices=["browser", "window", "none"], help="Sobrescribe ui.mode")
@@ -281,9 +287,11 @@ def main(argv: list[str] | None = None) -> None:
         log.info("Orbital ya está abierto: traigo su ventana")
         show_running(url)
         return
-    if not single_instance(wait=10):  # otro Orbital arrancando o cerrando que no termina
+    if not supervisor.is_child() and not single_instance(wait=10):  # otro Orbital que no termina de cerrar
         log.warning("Hay otro Orbital abierto que no responde; no abro un segundo")
         return
+    if supervising:  # el candado es del vigilante; el Orbital de verdad corre como su hijo
+        raise SystemExit(supervisor.run(raw_argv))
     holder: dict = {}
     kiosk = KioskWindow(url, config.ui.browser, keep_open=False,
                         on_closed=lambda: quit_orbital(holder.get("app"))) if mode == "browser" else None
