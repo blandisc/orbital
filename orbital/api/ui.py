@@ -1,0 +1,100 @@
+"""La interfaz: qué puede hacer, ajustes, wifi y mandos, y abrir/recargar/cerrar su ventana."""
+
+from __future__ import annotations
+
+import asyncio
+import threading
+
+from fastapi import APIRouter, HTTPException
+from fastapi.concurrency import run_in_threadpool
+
+from .. import __version__, system
+from .deps import Deps
+
+# Ajustes que se pueden cambiar desde la interfaz (y sus valores válidos).
+SETTINGS = {
+    "audio": {"en", "es"},
+    "subtitles": {"en", "es", "forced", ""},
+    "quality": {"4K", "1080p", "720p"},
+    "sub_scale": {.85, 1.0, 1.25, 1.5},
+    "text_size": {"normal", "large", "xlarge"},
+    "safe_area": {0, 2, 4, 6},
+    "reduce_motion": {True, False},
+    "sounds": {True, False},
+    "haptics": {True, False},
+    "welcomed": {True, False},  # ya vio "Tu consola" (la pantalla de primer uso)
+}
+VIEWS = ("buscar", "serie", "seccion", "fuentes")
+
+
+def router(d: Deps) -> APIRouter:
+    r = APIRouter()
+    catalog, shell, kiosk = d.catalog, d.shell, d.kiosk
+
+    @r.get("/api/health")
+    def health() -> dict:
+        return {"ok": True, "version": __version__}
+
+    @r.get("/api/system")
+    async def system_info() -> dict:
+        return {"wifi": await run_in_threadpool(system.wifi), "alexa_last": d.alexa_last}
+
+    @r.get("/api/controllers")
+    async def controllers() -> dict:
+        from ..gamepad import connected_controllers
+        return {"controllers": await run_in_threadpool(connected_controllers)}
+
+    @r.get("/api/ui")
+    def ui_info() -> dict:
+        return {"can_exit": kiosk is not None, "stremio_linked": catalog.stremio_linked,
+                "player": "orbital" if catalog.native_player else "stremio",
+                # Alexa configurada (token fijo): la interfaz enseña frases que puedes decirle.
+                "alexa": d.alexa_ready}
+
+    @r.get("/api/settings")
+    def get_settings() -> dict:
+        prefs = catalog.stream_prefs
+        return {"audio": prefs.audio, "quality": prefs.quality, "subtitles": catalog.subtitles_lang,
+                "sub_scale": float(catalog.setting("sub_scale", 1.0) or 1.0), "text_size": "normal", "safe_area": 4,
+                "reduce_motion": False, "sounds": True, "haptics": True, **catalog.state.settings(),
+                "stremio_linked": catalog.stremio_linked, "alexa": d.alexa_ready, "alexa_last": d.alexa_last}
+
+    @r.post("/api/settings")
+    def set_settings(body: dict) -> dict:
+        for key, value in body.items():
+            if key not in SETTINGS or value not in SETTINGS[key]:
+                raise HTTPException(422, f"Ajuste inválido: {key}")
+            catalog.state.set_setting(key, value)
+        return get_settings()
+
+    @r.post("/api/ui/exit")
+    async def ui_exit() -> dict:
+        if kiosk is None:
+            raise HTTPException(409, "Esta ventana no la abrió Orbital: ciérrala tú (Alt+F4)")
+        # Se cierra un instante después para que la respuesta llegue a la página.
+        asyncio.get_running_loop().call_later(0.4, lambda: threading.Thread(target=kiosk.close, daemon=True).start())
+        return {"ok": True}
+
+    @r.post("/api/ui/reload")
+    def ui_reload(body: dict | None = None) -> dict:
+        """Recarga la interfaz abierta (tras actualizar Orbital no hace falta reiniciarlo).
+        `view`: abrir directo una vista — {"buscar": "dune"} o {"serie": "tt0386676"}."""
+        view = {k: str(v) for k, v in (body or {}).get("view", {}).items() if k in VIEWS}
+        d.hub.publish_threadsafe({"type": "reload", "view": view})
+        return {"ok": True}
+
+    @r.post("/api/ui/show")
+    def ui_show() -> dict:
+        """El ícono del escritorio con Orbital ya abierto: trae (o reabre) la ventana en vez de otra copia."""
+        if kiosk is None:
+            raise HTTPException(409, "Esta interfaz no la abrió Orbital")
+        threading.Thread(target=kiosk.open, daemon=True).start()
+        return {"ok": True}
+
+    @r.post("/api/ui/resume")
+    def ui_resume() -> dict:
+        """Vuelve al juego ("Seguir jugando")."""
+        shell.hold = None
+        return {"ok": shell.resume()}
+
+    return r

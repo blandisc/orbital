@@ -69,6 +69,12 @@ class ConsoleShell:
         self._legion_left: dict | None = None  # el juego que dejaste con Legion L (para el 2.º toque)
         self._stop = threading.Event()
 
+    def notify(self, event: dict) -> None:
+        """Aviso para la interfaz (por el catálogo, que lo reparte a quien escuche)."""
+        notify = getattr(self.catalog, "notify", None)
+        if callable(notify):
+            notify(event)
+
     @property
     def player(self):
         return getattr(self.catalog, "player", None)
@@ -317,10 +323,8 @@ class ConsoleShell:
         self.show_orbital()
         if game:
             self._legion_left = {"hwnd": previous, "target": game}
-            notify = getattr(self.catalog, "_notify", None)
-            if notify:
-                notify({"type": "toast", "message": f"Toca Legion L otra vez para cerrar {game['title']}",
-                        "countdown": int(LEGION_DOUBLE_PRESS * 1000)})
+            self.notify({"type": "toast", "message": f"Toca Legion L otra vez para cerrar {game['title']}",
+                         "countdown": int(LEGION_DOUBLE_PRESS * 1000)})
 
     # --------------------------------------------------------------- arranque
     def start(self) -> bool:
@@ -336,9 +340,8 @@ class ConsoleShell:
         threading.Thread(target=self._watch_foreground, daemon=True, name="legion-l").start()
         # Memoria (RAM y la de video que usa DWM): se anota cada 5 min y avisa si los juegos no van a poder abrir.
         from .health import HealthMonitor
-        notify = getattr(self.catalog, "_notify", lambda event: None)
         running = lambda: (self.catalog.launcher.status() or {}).get("title", "")  # noqa: E731
-        HealthMonitor(notify, running).start()
+        HealthMonitor(self.notify, running).start()
         return True
 
     # --------------------------------------------------------------- que nada quede abierto
@@ -366,9 +369,8 @@ class ConsoleShell:
             if limit > IDLE_WARNING and now - self.paused_since >= limit - IDLE_WARNING and not self._idle_warned:
                 self._idle_warned = True
                 running = self.catalog.launcher.status()
-                notify = getattr(self.catalog, "_notify", None)
-                if notify and running:
-                    notify({"type": "toast", "message": f"{running['title']} se cerrará en {IDLE_WARNING // 60} min si no "
+                if running:
+                    self.notify({"type": "toast", "message": f"{running['title']} se cerrará en {IDLE_WARNING // 60} min si no "
                                                         "vuelves (Home). Lo no guardado se pierde."})
             return False
         self._idle_warned = False
@@ -380,9 +382,7 @@ class ConsoleShell:
             for pid in pids:
                 subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True,
                                creationflags=subprocess.CREATE_NO_WINDOW)  # type: ignore[attr-defined]
-        notify = getattr(self.catalog, "_notify", None)
-        if notify:
-            notify({"type": "toast", "message": f"Cerré {title}: llevaba {limit // 60} min en pausa."})
+        self.notify({"type": "toast", "message": f"Cerré {title}: llevaba {limit // 60} min en pausa."})
         return True
 
     def unpin_orbital(self) -> None:

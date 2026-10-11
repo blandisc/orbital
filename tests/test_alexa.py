@@ -205,7 +205,7 @@ def test_public_app_always_requires_token(public):
     auth = {"Authorization": "Bearer secreto"}
     assert client.get("/api/ping", headers=auth).json()["service"] == "orbital"
     assert client.post("/api/voice", json={"text": "abre hades"}, headers=auth).json()["speech"] == "Abriendo Hades."
-    assert main.state.alexa_last is not None
+    assert main.state.deps.alexa_last is not None
     # Solo existen voz y ping: ni la interfaz, ni la biblioteca, ni lanzar cosas.
     for path in ("/", "/api/library", "/docs", "/openapi.json"):
         assert client.get(path, headers=auth).status_code == 404

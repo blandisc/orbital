@@ -120,8 +120,6 @@ class Catalog:
     def notify(self, event: dict) -> None:
         self.events.publish(event)
 
-    _notify = notify  # nombre anterior
-
     @property
     def player(self):
         return self.watch.player

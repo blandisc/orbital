@@ -83,7 +83,34 @@ def test_closed_event_reaches_ui(make_client, library):
         library.launch("steam:367520")
         library.launcher.finish(60)
         event = c.portal.call(queue.get)
+        while event["type"] == "status":  # el estado también llega por aquí
+            event = c.portal.call(queue.get)
         assert event["type"] == "closed" and event["title"] == "Hollow Knight"
+
+
+def test_status_is_pushed_when_something_opens(make_client, library):
+    with make_client() as c:
+        queue = c.app.state.bus.subscribe()
+        library.launch("steam:367520")
+        event = c.portal.call(queue.get)
+        while event["type"] != "status" or not event["running"]:
+            event = c.portal.call(queue.get)
+        assert event["running"]["title"] == "Hollow Knight"
+        library.launcher.finish(60)
+        while event["type"] != "status" or event["running"]:
+            event = c.portal.call(queue.get)
+        assert event["running"] is None
+
+
+def test_diagnostics(make_client, tmp_path):
+    with make_client() as c:
+        log = tmp_path / "orbital.log"
+        log.write_text("INFO todo bien\nWARNING no pude abrir https://torrentio.example/clave-secreta/stream\n",
+                       encoding="utf-8")
+        c.app.state.deps.log_path = log
+        data = c.get("/api/diagnostics").json()
+        assert data["library"]["steam"] >= 2 and data["running"] is None
+        assert data["problems"] == ["WARNING no pude abrir https://torrentio.example/…"]  # sin la clave
 
 
 def test_ui_reload(make_client):

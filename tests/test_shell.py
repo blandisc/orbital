@@ -169,7 +169,7 @@ def test_legion_l_one_tap_goes_to_orbital_and_back():
 def test_legion_l_twice_closes_the_game():
     shell, win, overlay = make(MANAGED)
     notes = []
-    shell.catalog._notify = notes.append
+    shell.catalog.notify = notes.append
     win.fg = LEGION
     shell.check_legion(LEGION, previous=GAME, now=100)
     assert notes and "otra vez para cerrar" in notes[0]["message"]
@@ -304,7 +304,7 @@ def test_opening_something_else_closes_the_previous_game():
 def test_frozen_game_closes_after_the_limit(tmp_path):
     shell, win, _ = make(MANAGED)
     notes = []
-    shell.catalog._notify = notes.append
+    shell.catalog.notify = notes.append
     shell.home()  # congelado
     start = shell.paused_since
     assert not shell.check_idle(start + 59 * 60)
