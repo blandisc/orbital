@@ -18,6 +18,8 @@
   --color-text-muted: var(--palette-ink-300);
   --color-text-faint: rgba(255, 255, 255, .5); /* ≥ 4,5:1 (antes .18: el placeholder no se leía) */
   --color-text-faint-strong: rgba(255, 255, 255, .62);
+  --art-tint-neutral: rgb(24 24 28); /* sin color en la portada: grafito */
+  --art-accent-neutral: rgb(205 205 211);
   --color-accent: var(--art-accent); /* sale de la portada, siempre claro */
   --color-focus: var(--palette-paper);
   --color-primary: var(--palette-paper);
@@ -29,7 +31,6 @@
   --color-danger: var(--palette-red-400);
   --color-warning: var(--palette-amber-300);
   --color-live: var(--palette-teal-300);
-  --color-idle: #7a7a84;
   --color-progress: var(--palette-paper);
   --color-progress-track: rgba(255, 255, 255, .2);
   --color-pad-a: var(--palette-pad-green);
@@ -57,6 +58,15 @@
   --shadow-text: 0 2px 30px rgba(0, 0, 0, .45);
   --shadow-text-strong: 0 1px 14px rgba(0, 0, 0, .75);
   --shadow-logo: drop-shadow(0 .3rem 1.2rem rgba(0, 0, 0, .55));
+  /* Sombras para fotos y logotipos recortados (filter: drop-shadow sigue la silueta). */
+  --shadow-drop-sm: drop-shadow(0 .3rem .5rem rgba(0, 0, 0, .45));
+  --shadow-drop: drop-shadow(0 .5rem 1rem rgba(0, 0, 0, .5));
+  --shadow-drop-lg: drop-shadow(0 .7rem .9rem rgba(0, 0, 0, .6));
+  /* Máscaras (mask-image): opaco = se ve; transparente = se desvanece. No es un color de la interfaz. */
+  --mask-solid: #000;
+  --color-star: #fff; /* estrellas del fondo y de la pantalla de carga */
+  --color-video-bg: #000; /* detrás de un video o una captura: negro de verdad */
+  --on-color-fill: rgba(0, 0, 0, .12); /* relleno tenue sobre un fondo de color (opción peligrosa enfocada) */
   --shadow-badge: 0 1px 6px rgba(0, 0, 0, .4);
   --shadow-keycap: inset 0 -2px 0 rgba(0, 0, 0, .35);
   /* Dentro de algo con foco invertido (fondo claro): los acentos se oscurecen para leerse. */

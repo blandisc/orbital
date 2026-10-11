@@ -67,7 +67,7 @@ export function createShelf({ onPick, onSwipe }) {
         onPress: () => onPick(r, c), showAgo: row.id === "recent" || row.id === "jump", pop: item.id === popId,
         onRatio: () => r === focus.r && place(), // la portada real cambió el ancho
       }));
-      const track = h("div", { class: "shelf__track", role: "list" }, cards);
+      const track = h("div", { class: "shelf__track", role: "group" }, cards);
       const count = h("span", { class: "shelf__count" }, String(row.items.length));
       const rowEl = h("div", { class: "shelf__row" }, h("h2", { class: "shelf__heading" }, row.title, count), track);
       return { rowEl, track, cards, count };

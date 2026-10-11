@@ -60,12 +60,11 @@
   --weight-regular: 400;
   --weight-medium: 600;
   --weight-bold: 700;
-  --weight-black: 800;
   --tracking-display: -.035em;
   --tracking-tight: -.015em;
-  --tracking-caps: .14em;
 
   /* Movimiento: entradas desaceleran, salidas aceleran y son más cortas */
+  --duration-none: 0s; /* movimiento reducido: sin transición */
   --duration-instant: 90ms;
   --duration-fast: 140ms;
   --duration-base: 220ms;
@@ -76,9 +75,36 @@
   --ease-in: cubic-bezier(.5, 0, .75, 0);
   --ease-spring: cubic-bezier(.34, 1.4, .64, 1); /* resorte corto, sin rebote visible */
   --ease-pop: cubic-bezier(.22, 1.35, .42, 1); /* el juego enfocado "salta" y se asienta */
+  --ease-launch: cubic-bezier(.7, 0, .84, 0); /* la portada sale disparada al abrir un juego */
+  --ease-sweep: cubic-bezier(.45, 0, .55, 1); /* barrido de la barra de carga */
+  --duration-snap: 360ms; /* el foco de una portada, una sección que entra de lado */
+  --duration-enter: 520ms; /* algo que aparece: tarjetas, textos, insignias */
+  --duration-enter-long: 640ms; /* la primera entrada de una pantalla */
+  --duration-land: 760ms; /* el arranque de Orbital */
+  --duration-pulse: 1.1s; /* cursor de escribir, «te escuché» de Alexa */
+  --duration-breathe: 1.4s; /* algo que espera: dictando */
+  --duration-drift: 1.5s; /* el fondo sigue al foco (parallax) */
+  --duration-glow: 38s; /* la luz de ambiente respira */
+  --duration-stars: 140s; /* estrellas cercanas */
+  --duration-stars-far: 240s; /* estrellas lejanas */
+  /* Pantalla de carga (cinemática: más lenta a propósito) */
+  --duration-launch-travel: 5.5s;
+  --duration-launch-travel-near: 3.2s;
+  --duration-launch-orbit: 2.6s;
+  --duration-launch-sweep: 1.6s;
+  --duration-launch-reveal: 700ms;
+  --duration-launch-out: 420ms;
+  /* Escalonado: cada pieza entra un poco después que la anterior */
+  --stagger: 45ms;
+  --delay-1: 90ms;
+  --delay-2: 170ms;
+  --delay-3: 260ms;
 
-  /* Capas */
-  --z-base: 0;
+  /* Capas. Dentro de un componente: --z-behind / --z-raised / --z-above / --z-panel. */
+  --z-behind: -1;
+  --z-raised: 1;
+  --z-above: 2;
+  --z-panel: 3;
   --z-overlay: 5;
   --z-hints: 6; /* el pie de controles sigue visible sobre búsqueda y episodios */
   --z-launch: 7;
@@ -113,6 +139,7 @@
   --tile-dim-opacity: .72;
   --tile-gap: 1.1rem;
   --key-height: 3.2rem;
+  --focus-outline: 3px; /* contorno de :focus-visible (teclado y ratón) */
   --inverse-scale: 1.06; /* teclas, chips y opciones enfocadas crecen un poco */
 }
 

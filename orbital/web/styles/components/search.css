@@ -21,10 +21,10 @@
 .search__field .icon { width: 1.8rem; height: 1.8rem; color: var(--color-text-muted); flex: none; }
 .search__query { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
 .search__placeholder { color: var(--color-text-faint); }
-.search__caret { width: 3px; height: 1.1em; margin-left: 2px; border-radius: 2px; background: var(--color-text); animation: caret 1.1s steps(1) infinite; }
+.search__caret { width: 3px; height: 1.1em; margin-left: 2px; border-radius: 2px; background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
 @keyframes caret { 50% { opacity: 0; } }
 /* Dictando: la línea respira con el acento del juego. */
-.search__field--listening { border-color: var(--color-accent); animation: listening 1.4s ease-in-out infinite; }
+.search__field--listening { border-color: var(--color-accent); animation: listening var(--duration-breathe) ease-in-out infinite; }
 @keyframes listening { 50% { border-color: transparent; } }
 .search__hint { flex: 0 1 36%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-muted); font-size: var(--text-sm); }
 

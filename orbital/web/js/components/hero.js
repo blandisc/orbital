@@ -54,16 +54,15 @@ export function createHero({ onAction }) {
       return;
     }
     const runner = item.runners?.length > 1 ? ` · ${runnerName(item)}` : "";
-    const extraInfo = item.extra || {};
+    const extra = item.extra || {};
     // Seguir viendo: "Serie · T8 E23 · Homer's Enemy" (antes "Stremio · T8 E23").
     // Apps: su propio ícono (el de ES-DE, el de GeForce NOW…), no el genérico de cuadritos.
     const icon = appIcon(item);
     mount(eyebrow, icon ? h("img", { class: "hero__eyebrow-icon", src: icon, alt: "" }) : svg(ICONS[systemIconName(item)]),
-      h("span", {}, `${extraInfo.eyebrow || item.subtitle || item.category}${runner}`));
+      h("span", {}, `${extra.eyebrow || item.subtitle || item.category}${runner}`));
 
     title.textContent = item.title;
     title.classList.toggle("hero__title--long", item.title.length > 28);
-    const extra = item.extra || {};
     title.hidden = false;
     logo.hidden = true;
     if (extra.logo) logo.src = extra.logo;

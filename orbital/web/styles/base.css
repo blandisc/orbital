@@ -45,10 +45,10 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 
 /* Movimiento reducido (del sistema o de Ajustes): sin transiciones; los bucles, quietos. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; }
+  *, *::before, *::after { transition-duration: var(--duration-none) !important; animation-duration: var(--duration-none) !important; animation-iteration-count: 1 !important; }
 }
 [data-motion="reduce"] *, [data-motion="reduce"] *::before, [data-motion="reduce"] *::after {
-  transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important;
+  transition-duration: var(--duration-none) !important; animation-duration: var(--duration-none) !important; animation-iteration-count: 1 !important;
 }
 [data-motion="reduce"] { --card-focus-scale: 1.08; }
 
@@ -57,7 +57,7 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 [data-text-size="xlarge"] { --text-scale: 1.25; }
 
 /* Cualquier cosa enfocable sin foco propio: un anillo visible, nunca nada. */
-:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+:focus-visible { outline: var(--focus-outline) solid var(--color-focus); outline-offset: var(--focus-outline); }
 
 /* Ventanas estrechas o móviles */
 @media (max-width: 700px) {
@@ -86,11 +86,11 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 /* Aterrizaje: al terminar el arranque o al volver de un juego, la interfaz entra desde un poco
    más cerca y se asienta (como al salir de un juego en PS5), en vez de aparecer de golpe. */
 [data-landing] .status-bar, [data-landing] .hero, [data-landing] .home, [data-landing] .shelf, [data-landing] .hints {
-  animation: land 760ms var(--ease-out) both;
+  animation: land var(--duration-land) var(--ease-out) both;
 }
-[data-landing="boot"] .hero { animation-delay: 120ms; }
-[data-landing="boot"] .shelf { animation-delay: 200ms; }
-[data-landing="boot"] .hints { animation-delay: 280ms; }
+[data-landing="boot"] .hero { animation-delay: var(--delay-1); }
+[data-landing="boot"] .shelf { animation-delay: var(--delay-2); }
+[data-landing="boot"] .hints { animation-delay: var(--delay-3); }
 @keyframes land { from { opacity: 0; transform: scale(1.04) translateY(.6rem); } }
 
 /* Las imágenes son decorado: sin puntero ni arrastre. Así Edge no les pone encima su botón de

@@ -24,7 +24,7 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 .home__consoles-track { display: flex; gap: var(--tile-gap); transition: transform var(--duration-slow) var(--ease-out); }
 /* 6 enteras y la séptima asomando (así se nota que hay más); el borde se desvanece hacia ese lado. */
 .home__consoles-track > .tile--console { flex: 0 0 calc((100% - 6 * var(--tile-gap)) / 6.35); height: 11rem; }
-.home__consoles-viewport { --fade-left: #000; --fade-right: #000; -webkit-mask-image: linear-gradient(90deg, var(--fade-left) 0, #000 8%, #000 86%, var(--fade-right) 100%); mask-image: linear-gradient(90deg, var(--fade-left) 0, #000 8%, #000 86%, var(--fade-right) 100%); }
+.home__consoles-viewport { --fade-left: var(--mask-solid); --fade-right: var(--mask-solid); -webkit-mask-image: linear-gradient(90deg, var(--fade-left) 0, var(--mask-solid) 8%, var(--mask-solid) 86%, var(--fade-right) 100%); mask-image: linear-gradient(90deg, var(--fade-left) 0, var(--mask-solid) 8%, var(--mask-solid) 86%, var(--fade-right) 100%); }
 .home__consoles-viewport--more { --fade-right: transparent; }
 .home__consoles-viewport--before { --fade-left: transparent; }
 
@@ -33,11 +33,11 @@ body[data-view="home"] .backdrop__layer, body[data-view="home"] .backdrop__scrim
 body[data-view="home"] .backdrop { transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--palette-ink-950); }
 
 /* Entrada (al abrir Orbital): saludo, destacado, tarjetas y las consolas una tras otra. */
-.home--intro .home__greeting { animation: home-in 560ms var(--ease-out) both; }
-.home--intro .tile--feature { animation: home-in 640ms var(--ease-out) 90ms both; }
-.home--intro .home__cards .tile { animation: home-in 600ms var(--ease-out) 170ms both; }
-.home--intro .home__consoles-head { animation: home-in 560ms var(--ease-out) 260ms both; }
-.home--intro .tile--console { animation: home-in 620ms var(--ease-out) calc(300ms + var(--i, 0) * 45ms) both; }
+.home--intro .home__greeting { animation: home-in var(--duration-enter) var(--ease-out) both; }
+.home--intro .tile--feature { animation: home-in var(--duration-enter-long) var(--ease-out) var(--delay-1) both; }
+.home--intro .home__cards .tile { animation: home-in var(--duration-enter-long) var(--ease-out) var(--delay-2) both; }
+.home--intro .home__consoles-head { animation: home-in var(--duration-enter) var(--ease-out) var(--delay-3) both; }
+.home--intro .tile--console { animation: home-in var(--duration-enter-long) var(--ease-out) calc(var(--delay-3) + (var(--i, 0) + 1) * var(--stagger)) both; }
 @keyframes home-in { from { opacity: 0; transform: translateY(1.2rem) scale(.985); } }
 
 /* Pantallas muy bajas (ventanas chicas): menos alto arriba y consolas más compactas.

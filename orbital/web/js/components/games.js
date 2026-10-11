@@ -23,7 +23,7 @@ export function createGames({ onFocus, onPick, onAction }) {
   const heading = h("div", { class: "games__heading" });
   const filters = h("div", { class: "games__filters", role: "tablist" });
   const count = h("span", { class: "games__count" });
-  const grid = h("div", { class: "games__grid", role: "list" });
+  const grid = h("div", { class: "games__grid", role: "group" });
   const sheet = createGamePanel({ onAction: (action, item) => onAction?.(action, item) });
   const main = h("div", { class: "games__main" },
     h("div", { class: "games__head" }, heading),

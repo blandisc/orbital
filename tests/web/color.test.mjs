@@ -18,7 +18,7 @@ test("gana el tono con más peso, no el promedio", () => {
 
 test("blancos, negros y grises no cuentan", () => {
   assert.equal(dominantHue(image([[255, 255, 255], 50], [[0, 0, 0], 50], [[128, 128, 130], 50])), null);
-  assert.deepEqual(paletteFor(null), { tint: "rgb(24 24 28)", accent: "rgb(205 205 211)" });
+  assert.deepEqual(paletteFor(null), { tint: "var(--art-tint-neutral)", accent: "var(--art-accent-neutral)" });
 });
 
 test("el acento siempre es claro y el fondo siempre oscuro", () => {

@@ -2,7 +2,7 @@
    Las máscaras (no velos oscuros) dejan el arte limpio donde se ve y el fondo tranquilo detrás
    del texto y de las filas. */
 .backdrop {
-  position: fixed; inset: 0; z-index: -1; background-color: var(--color-tinted-bg); overflow: hidden;
+  position: fixed; inset: 0; z-index: var(--z-behind); background-color: var(--color-tinted-bg); overflow: hidden;
   transition: background-color var(--duration-tint) var(--ease-out); /* el color del juego entra como luz */
 }
 .backdrop__layer {
@@ -16,26 +16,26 @@
 .backdrop__art {
   position: absolute; inset: 0 0 0 22%;
   background-size: cover; background-position: center 28%;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 42%), linear-gradient(0deg, transparent 30%, #000 72%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, var(--mask-solid) 42%), linear-gradient(0deg, transparent 30%, var(--mask-solid) 72%);
   -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(90deg, transparent 0%, #000 42%), linear-gradient(0deg, transparent 30%, #000 72%);
+  mask-image: linear-gradient(90deg, transparent 0%, var(--mask-solid) 42%), linear-gradient(0deg, transparent 30%, var(--mask-solid) 72%);
   mask-composite: intersect;
   /* Paralaje: el arte se desplaza un poco según avanzas en la fila (--parallax de 0 a 1).
      Sin la deriva continua de antes: repintaba una capa enmascarada a pantalla completa sin parar. */
   translate: calc(var(--parallax, 0) * -3rem) 0;
-  transition: translate 1.4s var(--ease-out);
+  transition: translate var(--duration-drift) var(--ease-out);
 }
 
 /* Solo portada: halo de color detrás (la misma imagen, muy desenfocada) y la caja nítida. */
 .backdrop__box { display: none; }
 .backdrop__layer--poster .backdrop__art {
   inset: -15% -10% -15% 35%; filter: blur(4.5rem) saturate(1.4); opacity: .5; transform: none;
-  -webkit-mask-image: radial-gradient(closest-side, #000, transparent); mask-image: radial-gradient(closest-side, #000, transparent);
+  -webkit-mask-image: radial-gradient(closest-side, var(--mask-solid), transparent); mask-image: radial-gradient(closest-side, var(--mask-solid), transparent);
 }
 .backdrop__layer--poster .backdrop__box {
   display: block; position: absolute; top: 5.2rem; right: calc(var(--page-gutter) + 3rem);
   height: 19rem; width: auto; max-width: 26rem; object-fit: contain;
-  border-radius: var(--radius-lg); box-shadow: 0 2.2rem 4.5rem rgba(0, 0, 0, .6);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-overlay);
   transform: translateY(.6rem); transition: transform var(--duration-tint) var(--ease-out);
 }
 .backdrop__layer--poster.backdrop__layer--visible .backdrop__box { transform: none; }
@@ -60,11 +60,11 @@ body[data-view="home"] .backdrop__space { opacity: 1; }
 }
 .backdrop__glow--follow {
   transform: translate3d(calc(var(--light-x, .25) * 100vw), calc(var(--light-y, .3) * 100vh), 0);
-  transition: transform 1.6s var(--ease-out);
+  transition: transform var(--duration-drift) var(--ease-out);
 }
 .backdrop__glow--drift {
   width: 60vmax; height: 60vmax; margin: -30vmax 0 0 -30vmax; opacity: .55;
-  animation: glow-drift 38s ease-in-out infinite alternate;
+  animation: glow-drift var(--duration-glow) ease-in-out infinite alternate;
 }
 @keyframes glow-drift {
   from { transform: translate3d(78vw, 85vh, 0) scale(1); }
@@ -80,17 +80,17 @@ body[data-view="home"] .backdrop__space { opacity: 1; }
 .backdrop__stars--far {
   opacity: .35;
   background-image:
-    radial-gradient(1px 1px at 40px 60px, #fff, transparent), radial-gradient(1px 1px at 210px 330px, #fff, transparent),
-    radial-gradient(1px 1px at 380px 140px, #fff, transparent), radial-gradient(1px 1px at 520px 470px, #fff, transparent),
-    radial-gradient(1px 1px at 120px 520px, #fff, transparent), radial-gradient(1px 1px at 600px 250px, #fff, transparent),
-    radial-gradient(1px 1px at 300px 600px, #fff, transparent), radial-gradient(1px 1px at 450px 40px, #fff, transparent);
-  animation: stars-drift 240s linear infinite;
+    radial-gradient(1px 1px at 40px 60px, var(--color-star), transparent), radial-gradient(1px 1px at 210px 330px, var(--color-star), transparent),
+    radial-gradient(1px 1px at 380px 140px, var(--color-star), transparent), radial-gradient(1px 1px at 520px 470px, var(--color-star), transparent),
+    radial-gradient(1px 1px at 120px 520px, var(--color-star), transparent), radial-gradient(1px 1px at 600px 250px, var(--color-star), transparent),
+    radial-gradient(1px 1px at 300px 600px, var(--color-star), transparent), radial-gradient(1px 1px at 450px 40px, var(--color-star), transparent);
+  animation: stars-drift var(--duration-stars-far) linear infinite;
 }
 .backdrop__stars--near {
   opacity: .5;
   background-image:
-    radial-gradient(1.6px 1.6px at 90px 200px, #fff, transparent), radial-gradient(1.4px 1.4px at 330px 420px, #fff, transparent),
-    radial-gradient(1.8px 1.8px at 560px 90px, #fff, transparent), radial-gradient(1.4px 1.4px at 250px 40px, #fff, transparent);
-  animation: stars-drift 140s linear infinite;
+    radial-gradient(1.6px 1.6px at 90px 200px, var(--color-star), transparent), radial-gradient(1.4px 1.4px at 330px 420px, var(--color-star), transparent),
+    radial-gradient(1.8px 1.8px at 560px 90px, var(--color-star), transparent), radial-gradient(1.4px 1.4px at 250px 40px, var(--color-star), transparent);
+  animation: stars-drift var(--duration-stars) linear infinite;
 }
 @keyframes stars-drift { to { transform: translate3d(-640px, -640px, 0); } }

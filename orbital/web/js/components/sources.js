@@ -15,7 +15,7 @@ export function createSources({ onPlay, onMove, onClose }) {
   const heading = h("div", { class: "sources__heading" }, "Elegir fuente");
   const title = h("h2", { class: "sources__title" });
   const subtitle = h("div", { class: "sources__subtitle" });
-  const list = h("div", { class: "sources__list", role: "list" });
+  const list = h("div", { class: "sources__list", role: "group" });
   const status = h("div", { class: "sources__status", role: "status" });
   const panel = h("div", { class: "sources__panel" },
     h("div", { class: "sources__head" }, heading, title, subtitle), status, list);

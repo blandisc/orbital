@@ -53,9 +53,9 @@ export function dominantHue(pixels) {
 
 const css = ([r, g, b]) => `rgb(${r} ${g} ${b})`;
 
-/** Colores del tema para un tono. Sin tono (portada gris), grafito neutro. */
+/** Colores del tema para un tono. Sin tono (portada gris), el grafito neutro del tema (tokens). */
 export function paletteFor(dominant) {
-  if (!dominant) return { tint: "rgb(24 24 28)", accent: "rgb(205 205 211)" };
+  if (!dominant) return { tint: "var(--art-tint-neutral)", accent: "var(--art-accent-neutral)" };
   const { hue, saturation } = dominant;
   return {
     tint: css(hslToRgb([hue, Math.min(saturation, .55), .2])),

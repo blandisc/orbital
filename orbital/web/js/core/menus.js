@@ -24,19 +24,19 @@ export function gameMenu(item, { running = null } = {}) {
   // Películas y series: la ficha (reparto, episodios, elegir fuente) a un botón.
   if (isWatchable(item) && !isOpen) options.push({ icon: "info", label: "Ver la ficha", command: { type: "title", id: item.id } });
   if (item.source === "stremio" && item.category === "continue") {
-    options.push({ icon: "hide", label: "Quitar de Seguir viendo", command: { type: "dismiss", id: item.id, title: item.title } });
+    options.push({ icon: "minus", label: "Quitar de Seguir viendo", command: { type: "dismiss", id: item.id, title: item.title } });
   }
   // Mi lista (tu biblioteca de Stremio) sin tener que abrir la ficha.
   const watch = item.source === "stremio" && item.extra?.meta_id ? item.extra : null;
   if (watch) {
     options.push(watch.in_library
       ? { icon: "check", label: "Quitar de Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: false, title: item.title } }
-      : { icon: "star", label: "Añadir a Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: true, title: item.title } });
+      : { icon: "plus", label: "Añadir a Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: true, title: item.title } });
   }
   // ¿No te gusta la portada o el fondo? Se descarta para siempre y se busca otra.
   if (item.system && !isOpen) {
-    options.push({ icon: "refresh", label: "Otra portada", hint: "si esta no te gusta", command: { type: "art", id: item.id, kind: "cover", title: item.title } });
-    options.push({ icon: "refresh", label: "Otro fondo", command: { type: "art", id: item.id, kind: "hero", title: item.title } });
+    options.push({ icon: "cover", label: "Otra portada", hint: "si esta no te gusta", command: { type: "art", id: item.id, kind: "cover", title: item.title } });
+    options.push({ icon: "wide", label: "Otro fondo", command: { type: "art", id: item.id, kind: "hero", title: item.title } });
   }
   // Emuladores alternativos: solo en juegos.
   for (const runner of isOpen || !isGame(item) ? [] : item.runners || []) {

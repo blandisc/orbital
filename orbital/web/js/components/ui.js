@@ -29,7 +29,9 @@ export const SectionHead = (title, { meta = null, end = null, className = null }
     meta && h("span", { class: "section-head__meta" }, meta),
     end && h("span", { class: "section-head__end" }, end));
 
-/** Botón del mando + qué hace: «A Continuar». `glyph` puede traer dos («LB RB»). */
-export const KeyHint = (glyph, label, { className = null } = {}) =>
-  h("span", { class: ["key-hint", className] }, String(glyph).split(" ").map((g) => Glyph(g, { small: true })), label);
+/** Botón del mando + qué hace: «A Continuar». `glyph` puede traer dos («LB RB»). El pie de
+ * controles (hints.js) y cualquier leyenda se arman con esta misma pieza. */
+export const KeyHint = (glyph, label, { className = null, small = true } = {}) =>
+  h("span", { class: ["key-hint", className] }, String(glyph).split(" ").map((g) => Glyph(g, { small })),
+    h("span", { class: "key-hint__label" }, label));
 

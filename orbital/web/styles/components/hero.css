@@ -18,7 +18,7 @@
 /* Salida corta y acelerando; la entrada usa la transición base (desacelerando). */
 .hero__content--leaving {
   opacity: 0; transform: translateY(.35rem);
-  transition-duration: 90ms; transition-timing-function: var(--ease-in);
+  transition-duration: var(--duration-instant); transition-timing-function: var(--ease-in);
 }
 .hero__eyebrow {
   display: flex; align-items: center; gap: var(--space-2); min-height: 1.3rem;

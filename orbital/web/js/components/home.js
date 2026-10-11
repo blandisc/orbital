@@ -16,7 +16,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   const hello = h("h1", { class: "home__hello" });
   const top = h("div", { class: "home__top" });
   const consolesHead = h("div", { class: "home__consoles-head" });
-  const consolesTrack = h("div", { class: "home__consoles-track", role: "list" });
+  const consolesTrack = h("div", { class: "home__consoles-track", role: "group" });
   const el = h("section", { class: "home", hidden: true, "aria-label": "Inicio" },
     h("div", { class: "home__greeting" }, hello),
     top,

@@ -8,6 +8,7 @@ import { Button } from "./button.js";
  * Ficha lateral de un juego (Juegos A y B): entra desde la derecha y cambia con un fundido corto
  * al moverte entre portadas. Arte, logotipo, de dónde es, tres datos, la descripción y sus acciones.
  * Reutilizable: cualquier pantalla con una cuadrícula a la izquierda puede llevarla.
+ * Estilos: en games.css (ds-exception: `game-panel` comparte `games.css`).
  *
  * onAction("select" | "alt" | "options", item): lo mismo que A, X y Y.
  */

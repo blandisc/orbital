@@ -54,7 +54,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   const placeholder = h("span", { class: "search__placeholder" }, "Juego, película o serie");
   mount(field, svg(ICONS.search), query, caret, placeholder);
   const hint = h("div", { class: "search__hint", role: "status" });
-  const results = h("div", { class: "search__results", role: "list" });
+  const results = h("div", { class: "search__results", role: "group" });
   const keyboard = createKeyboard({ label: "Teclado de búsqueda", onPress: (key) => press(key) });
   const keys = keyboard.el;
   const el = h("section", { class: "search", hidden: true, "aria-label": "Buscar" },
@@ -292,6 +292,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   }
 
   function close() {
+    clearTimeout(timer);
+    token++; // una respuesta que llegue tarde ya no pinta nada
     listening?.stop();
     cancelExit = hideAfterExit(el, "search--leaving", 300);
     onClose?.();

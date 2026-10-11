@@ -28,7 +28,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
   const actions = h("div", { class: "title__actions", role: "toolbar" });
   const status = h("div", { class: "title__status", role: "status" });
   const tabs = h("div", { class: "title__tabs", role: "tablist" });
-  const list = h("div", { class: "title__episodes", role: "list" });
+  const list = h("div", { class: "title__episodes", role: "group" });
   const browser = h("div", { class: "title__browser" }, tabs, list);
   const el = h("section", { class: "title", hidden: true, "aria-label": "Ficha" },
     backdrop,

@@ -8,7 +8,7 @@
 }
 .hints__item { display: inline-flex; align-items: center; gap: .6rem; white-space: nowrap; animation: fade-in var(--duration-base) var(--ease-out); }
 .hints__item .glyph + .glyph { margin-left: -.25rem; } /* «LB RB»: un par, juntos */
-.hints__label { padding-top: .05em; } /* alineado al centro óptico del ícono */
+.hints__item .key-hint__label { padding-top: .05em; } /* alineado al centro óptico del ícono */
 .hints__item--end { margin-left: auto; }
 @media (max-width: 1000px) {
   .hints { gap: var(--space-5); overflow: hidden; }
