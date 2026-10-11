@@ -31,13 +31,16 @@ if ($NoStartup) {
     exit 0
 }
 
-# Acceso directo en la carpeta Inicio para que arranque con Windows.
-$startup = [Environment]::GetFolderPath("Startup")
+# Ícono en el escritorio (Orbital ya no arranca solo con Windows: lo abres tú, y al cerrar la
+# ventana se cierra). Si quedó el acceso directo de inicio de versiones anteriores, se quita.
+$old = Join-Path ([Environment]::GetFolderPath("Startup")) "Orbital.lnk"
+if (Test-Path $old) { Remove-Item $old }
+$desktop = [Environment]::GetFolderPath("Desktop")
 $shell = New-Object -ComObject WScript.Shell
-$lnk = $shell.CreateShortcut((Join-Path $startup "Orbital.lnk"))
+$lnk = $shell.CreateShortcut((Join-Path $desktop "Orbital.lnk"))
 $lnk.TargetPath = "$venv\Scripts\pythonw.exe"
 $lnk.Arguments = "-m orbital"
 $lnk.WorkingDirectory = $repo
 $lnk.IconLocation = "$repo\orbital\web\icons\orbital.ico"
 $lnk.Save()
-Write-Host "Listo. Orbital arrancará al iniciar sesión. Pruébalo ahora con: $venv\Scripts\python.exe -m orbital"
+Write-Host "Listo: Orbital está en tu escritorio. Al cerrar su ventana, se cierra."

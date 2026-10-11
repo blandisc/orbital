@@ -148,8 +148,19 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
       onModality("touch");
     }
   }, { capture: true, passive: true });
-  document.addEventListener("mousemove", () => {
-    if (performance.now() - lastTouch > 1000) onModality("keyboard");
+  // El ratón solo cambia la leyenda a teclado si se mueve DE VERDAD (40 px) y no estás usando el mando:
+  // el touchpad y el modo ratón de la Legion Go mandan movimientos mínimos sin parar, y la leyenda
+  // saltaba entre "A" y "Enter" todo el tiempo.
+  let lastPad = -Infinity;
+  let mouseFrom = null;
+  document.addEventListener("mousemove", (event) => {
+    const now = performance.now();
+    if (now - lastTouch < 1000 || now - lastPad < 2000) { mouseFrom = null; return; }
+    if (!mouseFrom) { mouseFrom = { x: event.screenX, y: event.screenY }; return; }
+    if (Math.hypot(event.screenX - mouseFrom.x, event.screenY - mouseFrom.y) > 40) {
+      mouseFrom = null;
+      onModality("keyboard");
+    }
   });
   // Rueda / touchpad: como mucho un paso cada 120 ms (un touchpad manda decenas de eventos).
   let lastWheel = 0;
@@ -171,6 +182,7 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
     const active = padActions(pads, sticks);
     if (now < swallowUntil) repeater.swallow([...active].filter((a) => !repeater.held.has(a)));
     const fire = repeater.update(active, now);
+    if (active.size) lastPad = now;
     if (fire.length) onModality("gamepad");
     fire.forEach((action) => onAction(action, { repeat: repeater.isRepeat(action) }));
     requestAnimationFrame(loop);

@@ -19,6 +19,38 @@ from .server import create_app, create_public_app
 
 log = logging.getLogger("orbital")
 
+def already_running(url: str) -> bool:
+    try:
+        with urllib.request.urlopen(url + "/api/health", timeout=1):
+            return True
+    except OSError:
+        return False
+
+
+def show_running(url: str) -> None:
+    req = urllib.request.Request(url + "/api/ui/show", data=b"{}", method="POST",
+                                 headers={"Content-Type": "application/json"})
+    try:
+        urllib.request.urlopen(req, timeout=3).close()
+    except OSError as exc:
+        log.warning("No pude mostrar la ventana de Orbital: %s", exc)
+
+
+def quit_orbital(app) -> None:
+    """Cerraste la ventana: Orbital se cierra. Antes, que ningún juego quede congelado ni Orbital
+    fijado encima."""
+    shell = getattr(getattr(app, "state", None), "shell", None)
+    try:
+        if shell is not None:
+            shell.unpause()
+            shell.unpin_orbital()
+    except Exception:  # noqa: BLE001
+        log.exception("Al cerrar Orbital")
+    log.info("Orbital cerrado")
+    logging.shutdown()
+    os._exit(0)
+
+
 def wait_until_up(url: str, timeout: float = 20) -> bool:
     deadline = time.time() + timeout
     while time.time() < deadline:
@@ -237,8 +269,15 @@ def main(argv: list[str] | None = None) -> None:
 
     url = f"http://127.0.0.1:{config.server.port}"
     mode = args.ui or config.ui.mode
-    kiosk = KioskWindow(url, config.ui.browser) if mode == "browser" else None
+    if already_running(url):  # el ícono del escritorio con Orbital ya abierto: solo mostrar la ventana
+        log.info("Orbital ya está abierto: traigo su ventana")
+        show_running(url)
+        return
+    holder: dict = {}
+    kiosk = KioskWindow(url, config.ui.browser, keep_open=False,
+                        on_closed=lambda: quit_orbital(holder.get("app"))) if mode == "browser" else None
     app = create_app(config, kiosk=kiosk, shortcuts=True)
+    holder["app"] = app
     public_app = create_public_app(config, app) if config.server.public_port else None
     if mode == "window":
         # pywebview necesita el hilo principal, así que el servidor va en segundo plano.

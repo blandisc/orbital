@@ -111,13 +111,14 @@ class KioskWindow:
     MAX_REOPENS = 3  # por minuto: si Edge falla de verdad, no entramos en un ciclo
 
     def __init__(self, url: str, browser: str | None = None, profile_dir: Path | None = None,
-                 keep_open: bool = True) -> None:
+                 keep_open: bool = True, on_closed=None) -> None:
         self.url = url
         self.browser = browser
         self.profile_dir = profile_dir or default_profile_dir()
         self._process: subprocess.Popen | None = None
         self.exited_by_user = False  # "Salir al escritorio": no la reabrimos sola al cerrar un juego
         self.keep_open = keep_open  # consola: si la ventana se cierra sin "Salir al escritorio", vuelve
+        self.on_closed = on_closed  # sin keep_open: cerraste la ventana (Orbital se cierra)
         self._reopens: list[float] = []
         self._lock = threading.Lock()
 
@@ -140,7 +141,7 @@ class KioskWindow:
             self._process = subprocess.Popen(build_command(exe, self.url, self.profile_dir),
                                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             log.info("Interfaz abierta (pid %s)", self._process.pid)
-            if self.keep_open:
+            if self.keep_open or self.on_closed:
                 threading.Thread(target=self._watch, args=(self._process,), daemon=True).start()
             return True
 
@@ -150,7 +151,13 @@ class KioskWindow:
         time.sleep(self.REOPEN_DELAY)
         with self._lock:
             if self.exited_by_user or self._process is not proc:
-                return
+                return  # "Salir al escritorio" u otra ventana nueva: no es que la cerraste
+        if not self.keep_open:
+            log.info("Cerraste la ventana de Orbital: Orbital se cierra (no se reabre sola)")
+            if self.on_closed:
+                self.on_closed()
+            return
+        with self._lock:
             now = time.monotonic()
             self._reopens = [t for t in self._reopens if now - t < 60]
             if len(self._reopens) >= self.MAX_REOPENS:

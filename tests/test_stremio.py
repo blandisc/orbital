@@ -78,6 +78,10 @@ def linked(tmp_path):
         if fake.calls >= 3:
             break
         time.sleep(0.02)
+    # Que termine del todo (también su aviso library-changed) antes de que la prueba escuche eventos.
+    if cat._stremio_busy.acquire(timeout=5):
+        cat._stremio_busy.release()
+    time.sleep(0.05)
     return cat
 
 

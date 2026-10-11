@@ -466,6 +466,14 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         bus.publish_threadsafe({"type": "reload", "view": view})
         return {"ok": True}
 
+    @app.post("/api/ui/show")
+    def ui_show() -> dict:
+        """El ícono del escritorio con Orbital ya abierto: trae (o reabre) la ventana en vez de otra copia."""
+        if kiosk is None:
+            raise HTTPException(409, "Esta interfaz no la abrió Orbital")
+        threading.Thread(target=kiosk.open, daemon=True).start()
+        return {"ok": True}
+
     @app.post("/api/ui/resume")
     def ui_resume() -> dict:
         """Vuelve al juego ("Seguir jugando")."""
