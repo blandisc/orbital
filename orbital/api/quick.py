@@ -13,9 +13,16 @@ from .deps import Deps
 
 
 def _inside_gallery(path: str) -> Path:
-    """Solo archivos de las carpetas de capturas: nunca rutas arbitrarias."""
-    target = Path(path).resolve()
-    if not any(target.is_relative_to(folder.resolve()) for folder in capture.folders()) or not target.is_file():
+    """Solo imágenes y videos de las carpetas de capturas: nunca rutas arbitrarias. Las rutas de red
+    (servidor compartido) se rechazan ANTES de tocarlas: resolverlas colgaba un hilo y abría una conexión SMB."""
+    if not path or chr(0) in path or path.startswith(("\\", "//")) or len(path) > 1024:
+        raise HTTPException(404, "Esa captura ya no está")
+    try:
+        target = Path(path).resolve()
+    except (OSError, ValueError) as exc:
+        raise HTTPException(404, "Esa captura ya no está") from exc
+    inside = any(target.is_relative_to(folder.resolve()) for folder in capture.folders())
+    if not inside or target.suffix.lower() not in capture.IMAGE_EXT | capture.VIDEO_EXT or not target.is_file():
         raise HTTPException(404, "Esa captura ya no está")
     return target
 
@@ -29,15 +36,23 @@ def router(d: Deps) -> APIRouter:
 
     @r.post("/api/quick")
     def set_quick(body: dict) -> dict:
+        # Se valida todo antes de tocar nada (tipos exactos: "false" no es un booleano).
+        number = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= v <= 100  # noqa: E731
+        if "volume" in body and not number(body["volume"]):
+            raise HTTPException(422, "Volumen: un número de 0 a 100")
+        if "brightness" in body and not number(body["brightness"]):
+            raise HTTPException(422, "Brillo: un número de 0 a 100")
+        if "muted" in body and not isinstance(body["muted"], bool):
+            raise HTTPException(422, "Silencio: sí o no")
+        if "power_mode" in body and (not isinstance(body["power_mode"], str) or body["power_mode"] not in quick.POWER_MODES):
+            raise HTTPException(422, "Modo de energía desconocido")
         if "volume" in body:
             quick.set_volume(level=int(body["volume"]))
         if "muted" in body:
-            quick.set_volume(muted=bool(body["muted"]))
+            quick.set_volume(muted=body["muted"])
         if "brightness" in body:
             quick.set_brightness(int(body["brightness"]))
         if "power_mode" in body:
-            if body["power_mode"] not in quick.POWER_MODES:
-                raise HTTPException(422, "Modo de energía desconocido")
             quick.set_power_mode(body["power_mode"])
         return quick.snapshot()
 

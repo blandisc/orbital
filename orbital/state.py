@@ -21,28 +21,51 @@ class State:
         self._data: dict = {"history": {}, "prefs": {}, "settings": {}, "seen": {}}
         if path and path.exists():
             try:
-                loaded = json.loads(path.read_text(encoding="utf-8"))
-                self._data["history"] = dict(loaded.get("history", {}))
-                self._data["prefs"] = dict(loaded.get("prefs", {}))
-                self._data["settings"] = dict(loaded.get("settings", {}))
-                self._data["seen"] = dict(loaded.get("seen", {}))
+                # utf-8-sig: si alguien lo abrió en el Bloc de notas, el BOM no lo invalida.
+                loaded = json.loads(path.read_text(encoding="utf-8-sig"))
+                if not isinstance(loaded, dict):
+                    raise ValueError("no es un objeto")
+                for key in self._data:
+                    value = loaded.get(key, {})
+                    self._data[key] = dict(value) if isinstance(value, dict) else {}
+                # Cada entrada del historial y de preferencias, con la forma esperada.
+                self._data["history"] = {k: v for k, v in self._data["history"].items() if isinstance(v, dict)}
+                self._data["prefs"] = {k: v for k, v in self._data["prefs"].items() if isinstance(v, dict)}
             except (OSError, ValueError) as exc:
-                log.warning("No se pudo leer %s, empiezo de cero: %s", path, exc)
+                # Antes se empezaba de cero y el primer guardado borraba favoritos y tiempo jugado:
+                # ahora el archivo que no se pudo leer queda a salvo como .bak.
+                backup = path.with_suffix(".bak")
+                try:
+                    path.replace(backup)
+                except OSError:
+                    backup = path
+                log.warning("No se pudo leer %s (queda en %s); empiezo de cero: %s", path, backup, exc)
 
     def _save(self) -> None:
+        """Escritura atómica (no se corrompe si se apaga la consola). Si Windows no deja escribir (un
+        antivirus o el indexador tienen el archivo), se reintenta y, si no, se avisa en el registro: nunca
+        tumba lo que se estaba haciendo (abrir un juego, cerrarlo)."""
         if not self.path:
             return
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = self.path.with_suffix(".tmp")
-        tmp.write_text(json.dumps(self._data, ensure_ascii=False, indent=1), encoding="utf-8")
-        tmp.replace(self.path)  # escritura atómica: no se corrompe si se apaga la consola
+        for attempt in range(3):
+            try:
+                self.path.parent.mkdir(parents=True, exist_ok=True)
+                tmp = self.path.with_suffix(".tmp")
+                tmp.write_text(json.dumps(self._data, ensure_ascii=False, indent=1), encoding="utf-8")
+                tmp.replace(self.path)
+                return
+            except OSError as exc:
+                if attempt == 2:
+                    log.warning("No pude guardar %s: %s", self.path, exc)
+                    return
+                time.sleep(.15)
 
     # --- historial -----------------------------------------------------------
     def record_launch(self, item_id: str, now: float | None = None) -> None:
         with self._lock:
             entry = self._data["history"].setdefault(item_id, {"playtime": 0, "launches": 0})
             entry["last_played"] = now or time.time()
-            entry["launches"] += 1
+            entry["launches"] = int(entry.get("launches") or 0) + 1
             self._save()
 
     def record_session(self, item_id: str, seconds: float) -> None:
@@ -51,7 +74,7 @@ class State:
             return
         with self._lock:
             entry = self._data["history"].setdefault(item_id, {"playtime": 0, "launches": 0})
-            entry["playtime"] = int(entry.get("playtime", 0) + seconds)
+            entry["playtime"] = int((entry.get("playtime") if isinstance(entry.get("playtime"), (int, float)) else 0) + seconds)
             self._save()
 
     # --- juegos nuevos -------------------------------------------------------

@@ -12,6 +12,16 @@ import { SectionHead } from "./ui.js";
  * Callbacks: onFocus(target) al cambiar de pieza; onPick(target) al tocarla con el dedo o el ratón;
  * onAction(action, target) para los botones del destacado. target = { kind, item?, console? }.
  */
+/** Sin nada jugado todavía: con juegos, invita a Juegos; sin ningún juego, a revisar qué falta. */
+function emptyFeature(hasGames) {
+  return h("div", { class: ["tile", "tile--feature", "tile--empty"], "data-focus-id": "feature" },
+    h("div", { class: "tile--feature__body" },
+      h("h2", { class: "tile--feature__title" }, hasGames ? "Empieza a jugar" : "Aún no encontré juegos"),
+      h("span", { class: "tile--feature__detail" }, hasGames
+        ? "Lo que abras aparecerá aquí para seguir donde te quedaste."
+        : "Te digo qué revisar: carpetas de juegos, Steam y emuladores.")));
+}
+
 export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   const hello = h("h1", { class: "home__hello" });
   const top = h("div", { class: "home__top" });
@@ -43,10 +53,8 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
 
     const feature = model.feature
       ? FeatureTile(model.feature, { runningId, glyphs, onPress: pick("feature"), onAction: (action) => onAction?.(action, targets.get("feature")) })
-      : h("div", { class: ["tile", "tile--feature", "tile--empty"], "data-focus-id": "feature" },
-        h("div", { class: "tile--feature__body" }, h("h2", { class: "tile--feature__title" }, "Empieza a jugar"),
-          h("span", { class: "tile--feature__detail" }, "Lo que abras aparecerá aquí para seguir donde te quedaste.")));
-    targets.set("feature", model.feature ? { kind: "item", item: model.feature } : { kind: "empty" });
+      : emptyFeature(model.consoles.length > 0);
+    targets.set("feature", model.feature ? { kind: "item", item: model.feature } : { kind: "empty", setup: !model.consoles.length });
     const cards = model.cards.map((item, i) => {
       targets.set(`card:${i}`, { kind: "item", item });
       return WideTile(item, { focusId: `card:${i}`, onPress: pick(`card:${i}`) });

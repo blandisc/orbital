@@ -24,6 +24,8 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from urllib.parse import quote
 
+from ..net import NET_ERRORS, read_json
+
 log = logging.getLogger(__name__)
 
 CACHE_SECONDS = 600
@@ -238,12 +240,13 @@ class StreamFinder:
         base = addon["url"].rsplit("/manifest.json", 1)[0]
         req = urllib.request.Request(f"{base}/{path}", headers={"User-Agent": "Orbital"})
         with urllib.request.urlopen(req, timeout=self.timeout) as res:
-            return json.load(res) or {}
+            data = read_json(res, timeout=self.timeout)
+        return data if isinstance(data, dict) else {}
 
     def _fetch(self, addon: dict, kind: str, video_id: str) -> list[dict]:
         try:
             streams = self._get_json(addon, f"stream/{kind}/{quote(video_id)}.json").get("streams") or []
-        except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+        except NET_ERRORS as exc:
             log.info("Sin fuentes de %s: %s", addon["name"], exc)
             return []
         return [s for s in streams if isinstance(s, dict) and (s.get("url") or s.get("infoHash"))]
@@ -257,7 +260,7 @@ class StreamFinder:
                 continue
             try:
                 subs = self._get_json(addon, f"subtitles/{kind}/{quote(video_id)}.json").get("subtitles") or []
-            except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+            except NET_ERRORS as exc:
                 log.info("Sin subtítulos de %s: %s", addon["name"], exc)
                 continue
             urls += [s["url"] for s in subs if isinstance(s, dict) and s.get("url") and s.get("lang") in codes]

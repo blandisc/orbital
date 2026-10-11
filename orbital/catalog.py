@@ -169,7 +169,7 @@ class Catalog:
             return False
         try:
             items = [LibraryItem.from_dict(d) for d in json.loads(self._snapshot.read_text(encoding="utf-8"))]
-        except (OSError, ValueError, TypeError) as exc:
+        except (OSError, ValueError, TypeError, AttributeError, KeyError) as exc:
             log.info("Biblioteca guardada ilegible (se escanea de cero): %s", exc)
             return False
         if not items:
@@ -194,7 +194,10 @@ class Catalog:
         if self.config.steam.enabled:
             self.steam_root = steam.find_steam(self.config.steam.path)
             if self.steam_root:
-                found += steam.scan(self.steam_root)
+                try:
+                    found += steam.scan(self.steam_root)
+                except Exception:  # noqa: BLE001 - un archivo de Steam roto no tumba el escaneo
+                    log.exception("No pude leer la biblioteca de Steam")
                 if self.config.steam.silent_start and self.config.source:  # no en pruebas
                     threading.Thread(target=steam.start_silent, args=(self.steam_root,), daemon=True).start()
                 found.append(

@@ -119,7 +119,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             await status
         unsubscribe()
 
-    app = FastAPI(title="Orbital", version=__version__, lifespan=lifespan)
+    app = FastAPI(title="Orbital", version=__version__, lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
     app.state.deps = d
     app.state.catalog = catalog
     app.state.bus = d.hub
@@ -184,6 +184,8 @@ class FailedTokens:
     def failed(self, key: str) -> float:
         """Anota un fallo; devuelve cuántos segundos esperar antes de responder."""
         now = self.clock()
+        if len(self._fails) > 500:  # quien rota cabeceras no hace crecer esto sin tope
+            self._fails = {k: v for k, v in self._fails.items() if v and now - v[-1] < self.WINDOW}
         recent = [t for t in self._fails.get(key, []) if now - t < self.WINDOW] + [now]
         self._fails[key] = recent
         if len(recent) >= self.BLOCK_AFTER:

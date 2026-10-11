@@ -125,6 +125,7 @@ def enrich_watch_item(item: LibraryItem, info: dict) -> None:
 
 
 
+_CACHE_LOCK = threading.Lock()
 RETRY_SECONDS = 1.5  # Cinemeta: espera antes del segundo intento
 
 class Watch:
@@ -166,17 +167,18 @@ class Watch:
             return []
         try:
             return [LibraryItem.from_dict(d) for d in json.loads(self._stremio_cache.read_text(encoding="utf-8"))]
-        except (OSError, ValueError, TypeError):
+        except (OSError, ValueError, TypeError, AttributeError, KeyError):
             return []
 
     def _save_stremio_cache(self, items: list[LibraryItem]) -> None:
         if not self._stremio_cache:
             return
         try:
-            self._stremio_cache.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self._stremio_cache.with_suffix(".tmp")
-            tmp.write_text(json.dumps([i.to_dict() for i in items], ensure_ascii=False), encoding="utf-8")
-            tmp.replace(self._stremio_cache)
+            with _CACHE_LOCK:  # la descarga y el enriquecimiento en segundo plano guardan a la vez
+                self._stremio_cache.parent.mkdir(parents=True, exist_ok=True)
+                tmp = self._stremio_cache.with_suffix(".tmp")
+                tmp.write_text(json.dumps([i.to_dict() for i in items], ensure_ascii=False), encoding="utf-8")
+                tmp.replace(self._stremio_cache)
         except OSError:
             log.warning("No pude guardar la biblioteca de Stremio en caché", exc_info=True)
 
@@ -191,12 +193,21 @@ class Watch:
             return False  # ya hay una descarga en curso
         try:
             raw = self.stremio_client.library(self.credentials.get(STREMIO_KEY) or "")
-            items = [stremio_item(w) for w in stremio_api.parse_library(raw)]
+            items = []
+            for w in stremio_api.parse_library(raw):
+                try:
+                    items.append(stremio_item(w))
+                except (TypeError, ValueError, AttributeError) as exc:
+                    log.warning("Stremio: se salta %s (%s)", getattr(w, "id", "?"), exc)
             self.stremio_error = None
             self._enrich_continue(items)
         except stremio_api.StremioError as exc:
             log.warning("Stremio: %s", exc)
             self.stremio_error = str(exc)
+            return False
+        except Exception as exc:  # noqa: BLE001 - nada raro de Stremio deja tu lista vacía en silencio
+            log.exception("Stremio: no pude leer tu biblioteca")
+            self.stremio_error = f"No pude leer tu biblioteca de Stremio ({type(exc).__name__})"
             return False
         finally:
             self._stremio_fetched = time.time()
@@ -245,7 +256,10 @@ class Watch:
         with ThreadPoolExecutor(max_workers=6) as pool:
             for item, info in pool.map(meta, wanted):
                 if info:
-                    enrich_watch_item(item, info)
+                    try:
+                        enrich_watch_item(item, info)
+                    except (TypeError, ValueError, AttributeError) as exc:  # una ficha rara no tumba al resto
+                        log.warning("Cinemeta: ficha rara de %s (%s)", item.title, exc)
 
     def dismiss_continue(self, meta_id: str) -> None:
         """"Quitar de Seguir viendo": en tu cuenta de Stremio (desaparece también en Stremio)."""
@@ -560,11 +574,11 @@ class Watch:
                         for e in season["episodes"]]
         return []
 
-    def _jump_episode(self, meta: dict, video_id: str) -> None:
+    def _jump_episode(self, meta: dict, video_id: str) -> bool:
         """Elegir un episodio desde el reproductor: lo pone donde ibas (o desde el principio)."""
         info = self.cinemeta.meta("series", meta["meta_id"])
         title, _ = self._episode_title(info, meta["meta_id"], video_id)
-        self._play_episode(meta["meta_id"], video_id, title, meta.get("binge"),
+        return self._play_episode(meta["meta_id"], video_id, title, meta.get("binge"),
                            start=self.resume_position(meta["meta_id"], video_id))
 
     @property

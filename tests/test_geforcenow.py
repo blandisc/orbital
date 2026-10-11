@@ -90,8 +90,9 @@ def test_steam_art_is_remembered_between_starts(tmp_path, monkeypatch):
         def __exit__(self, *exc):
             return False
 
-        def read(self, *a):
-            return _json.dumps({"items": self.items}).encode()
+        def read(self, *a):  # como una respuesta de red: el cuerpo una vez y luego vacío
+            body, self.items = (_json.dumps({"items": self.items}).encode(), None) if self.items is not None else (b"", None)
+            return body
 
     def fake_urlopen(req, timeout=0):
         calls.append(req.full_url)

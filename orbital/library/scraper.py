@@ -23,6 +23,7 @@ import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from ..net import NET_ERRORS, read_body
 from .media import IMAGE_EXTS, MediaStore, good, image_size
 
 log = logging.getLogger(__name__)
@@ -112,8 +113,8 @@ class Http:
         try:
             req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
             with urllib.request.urlopen(req, timeout=TIMEOUT) as res:
-                return res.read()
-        except (OSError, ValueError) as exc:
+                return read_body(res, timeout=TIMEOUT)
+        except NET_ERRORS as exc:
             log.debug("Sin respuesta de %s: %s", url, exc)
             return None
 

@@ -79,27 +79,31 @@ class PlayerScreen:
         self.mpv.command_named(name="osd-overlay", id=overlay_id, format="ass-events" if ass else "none",
                                data=ass or "", res_x=player_ui.W, res_y=player_ui.H, z=overlay_id)
 
-    def _hud(self, seeking: str = "") -> player_ui.Hud:
+    def _hud(self, current, seeking: str = "", *, position: float | None = None, paused: bool | None = None) -> player_ui.Hud:
         tracks = self.mpv.get("track-list") or []
-        meta = self.current.meta
+        meta = current.meta
         segment = self.segment
         chapters = segment.chapters if segment else []
-        position, duration = self.mpv.get("time-pos"), self.mpv.get("duration")
+        duration = self.mpv.get("duration")
+        if position is None:
+            position = self.mpv.get("time-pos")
         return player_ui.Hud(
-            title=self.current.title, detail=meta.get("detail") or ("Película" if meta.get("kind") == "movie" else ""),
-            position=position, duration=duration, paused=bool(self.mpv.get("pause")),
+            title=current.title, detail=meta.get("detail") or ("Película" if meta.get("kind") == "movie" else ""),
+            position=position, duration=duration, paused=bool(self.mpv.get("pause")) if paused is None else paused,
             audio=player_ui.current_label(tracks, "audio"), subtitles=player_ui.current_label(tracks, "sub"),
             source=meta.get("source_label", ""), series=meta.get("kind") == "series" and self.on_episode is not None,
             ends=player_ui.ends_at(position, duration), now=time.strftime("%H:%M"),
             chapters=[float(c["time"]) for c in chapters], chapter_titles=[str(c.get("title") or "") for c in chapters],
             facts=meta.get("facts", ""), description=meta.get("description", ""), seeking=seeking)
 
-    def show_hud(self, seeking: str = "") -> None:
+    def show_hud(self, seeking: str = "", *, position: float | None = None, paused: bool | None = None) -> None:
         """Barra inferior: se queda en pausa; reproduciendo, se va sola a los pocos segundos.
-        `seeking` («+30 s»): mientras adelantas, solo la barra y a dónde vas."""
-        if self.current is None or self.menu is not None:
+        `seeking` («+30 s»): mientras adelantas, solo la barra y a dónde vas. `position`/`paused`: lo que
+        el botón acaba de pedir (mpv tarda un instante en confirmarlo y la barra saldría atrasada)."""
+        current = self.current
+        if current is None or self.menu is not None:
             return
-        hud = self._hud(seeking)
+        hud = self._hud(current, seeking, position=position, paused=paused)
         self._overlay(1, player_ui.hud_ass(hud))
         self._hud_visible = True
         if self._hud_timer:
@@ -170,6 +174,9 @@ class PlayerScreen:
     def close_menu(self) -> None:
         self.menu = None
         self._overlay(2, None)
+        card = self._card
+        if card and card.get("kind") == "next" and card["segment"].upnext_deadline is not None:
+            card["segment"].upnext_deadline = time.monotonic() + UPNEXT_COUNTDOWN  # no arranca de golpe
         self._draw_card()
 
     def _choose(self, option: dict) -> None:
@@ -195,15 +202,14 @@ class PlayerScreen:
             if option.get("current") or not self.on_play_episode:
                 return
             self.toast(f"Cargando {option['label']}…", 4)
-            threading.Thread(target=self._safe, args=(self.on_play_episode, meta, value), daemon=True).start()
+            self._in_background(self.on_play_episode, meta, value, failed="No pude cargar ese episodio")
         elif prop == "source":
             if option.get("current") or self.current is None:
                 return
             position = self.mpv.get("time-pos")
             self.toast("Cambiando de fuente…", 4)
             if self.on_switch_source:
-                threading.Thread(target=self._safe, args=(self.on_switch_source, meta, value, float(position or 0)),
-                                 daemon=True).start()
+                self._in_background(self.on_switch_source, meta, value, float(position or 0), failed="No pude cambiar de fuente")
         else:  # aid / sid
             self.mpv.command("set_property", prop, value)
             kind = "Audio" if prop == "aid" else "Subtítulos"
@@ -258,6 +264,8 @@ class PlayerScreen:
     def press(self, button: str) -> None:
         """Un botón del mando con el reproductor al frente."""
         self._quiet_episodes = 0  # alguien está ahí
+        if self.current is None:
+            return
         if self.menu is not None:
             self._menu_press(button)
             return
@@ -268,8 +276,11 @@ class PlayerScreen:
                 self._card_dismiss()
             return
         if button == "a":
+            if time.monotonic() < self._loading_until:
+                return  # acaba de pedir otro episodio: A no pausa lo que está cargando
+            was_paused = bool(self.mpv.get("pause"))
             self.mpv.command("cycle", "pause")
-            self.show_hud()
+            self.show_hud(paused=not was_paused)
         elif button == "b":
             # Primero se va la barra; con la barra oculta, B sale.
             if self._hud_visible:
@@ -284,7 +295,7 @@ class PlayerScreen:
         elif button in ("left", "right"):
             step = seek_step(self.remote.held(button)) * (1 if button == "right" else -1)
             self.mpv.command("seek", step, "relative")
-            self.show_hud(seeking=player_ui.seek_label(step))
+            self.show_hud(seeking=player_ui.seek_label(step), position=self._expected_position(step))
         elif button in ("lb", "rb"):
             delta = -1 if button == "lb" else 1
             if self.segment is not None and len(self.segment.chapters) > 1:
@@ -292,20 +303,27 @@ class PlayerScreen:
                 self.show_hud()
             else:
                 self.mpv.command("seek", delta * CHAPTER_SEEK, "relative")
-                self.show_hud(seeking=player_ui.seek_label(delta * CHAPTER_SEEK))
+                self.show_hud(seeking=player_ui.seek_label(delta * CHAPTER_SEEK), position=self._expected_position(delta * CHAPTER_SEEK))
         elif button in ("lt", "rt"):
             meta = self.current.meta if self.current else {}
             if meta.get("kind") == "series" and self.on_episode:
                 self.toast("Episodio siguiente…" if button == "rt" else "Episodio anterior…", 3)
-                threading.Thread(target=self._safe, args=(self.on_episode, meta, -1 if button == "lt" else 1),
-                                 daemon=True).start()
+                self._in_background(self.on_episode, meta, -1 if button == "lt" else 1, failed="No pude cambiar de episodio")
         elif button in ("up", "down"):
+            before = self.mpv.get("volume")
             self.mpv.command("add", "volume", 5 if button == "up" else -5)
-            volume = self.mpv.get("volume")
-            if isinstance(volume, (int, float)):
-                self._show_notice(player_ui.volume_ass(volume), 1.6)
+            if isinstance(before, (int, float)) and not isinstance(before, bool):
+                self._show_notice(player_ui.volume_ass(max(0, min(100, before + (5 if button == "up" else -5)))), 1.6)
             else:
                 self.toast("Volumen")
+
+    def _expected_position(self, step: float) -> float | None:
+        """Adónde va el seek que se acaba de pedir (mpv lo confirma un instante después)."""
+        pos, dur = self.mpv.get("time-pos"), self.mpv.get("duration")
+        if not isinstance(pos, (int, float)):
+            return None
+        end = dur if isinstance(dur, (int, float)) and dur > 0 else pos + abs(step)
+        return max(0.0, min(float(end), pos + step))
 
     def _quit(self) -> None:
         """Cierra mpv anotando ANTES cómo terminó (el catálogo lo lee al volver a Orbital: "Terminaste…"

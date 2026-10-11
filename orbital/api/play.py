@@ -77,7 +77,10 @@ def router(d: Deps) -> APIRouter:
 
     @r.post("/api/windows/focus")
     def focus_window(body: dict) -> dict:
-        if not shell.focus_window(int(body.get("id", 0))):
+        window = body.get("id")
+        if not isinstance(window, int) or isinstance(window, bool):
+            raise HTTPException(422, "Falta la ventana")
+        if not shell.focus_window(window):
             raise HTTPException(404, "Esa ventana ya no está abierta")
         return {"ok": True}
 

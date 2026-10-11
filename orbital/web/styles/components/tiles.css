@@ -3,7 +3,8 @@
    cualquier pantalla; el acomodo de cada pantalla vive en su propio CSS (home.css…). */
 
 /* --- Destacado: lo último que jugaste o viste, con sus acciones como leyenda --------------- */
-.tile--feature { min-height: 0; background: var(--color-surface); }
+.tile--feature { min-height: 0; background: var(--color-surface); container-type: size; }
+@container (max-height: 16rem) { .tile--feature__detail { display: none; } .tile--feature__logo { max-height: 3.4rem; } }
 .tile--feature.tile--focused { transform: none; }
 .tile--feature__shade {
   background:

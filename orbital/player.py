@@ -25,6 +25,7 @@ vigilar, guardar el avance, fuentes que fallan y el siguiente episodio.
 from __future__ import annotations
 
 import logging
+import math
 import subprocess
 import threading
 import time
@@ -113,6 +114,7 @@ class OrbitalPlayer(PlayerScreen):
         self.last_end: dict | None = None  # cómo terminó lo último (para el aviso al volver)
         self._quiet_episodes = 0  # episodios encadenados sin tocar el mando
         self._buffering = False
+        self._loading_until = 0.0  # tras «Ver ahora», A no pausa lo que está cargando
         self.sub_scale = 1.0
         self.on_finished = on_finished  # (meta, posición, duración, segundos vistos)
         self.on_progress = None  # igual que on_finished, cada minuto y al pausar
@@ -167,6 +169,9 @@ class OrbitalPlayer(PlayerScreen):
             segment.duration = previous.duration
         elif previous is not None:
             self._close_segment(previous)  # otro episodio: lo visto del anterior se guarda ya
+        if self.menu is not None:  # el panel era del episodio anterior
+            self.menu = None
+            self._overlay(2, None)
         self._hide_card()
         if fallback_subs is not None:
             self._fallback_subs = fallback_subs
@@ -304,6 +309,19 @@ class OrbitalPlayer(PlayerScreen):
             self._safe(self.on_finished, segment.meta, segment.position, segment.duration,
                        segment.watched - segment.saved_watched)
 
+    def _in_background(self, fn, *args, failed: str) -> None:
+        """Algo que tarda (cargar otro episodio, otra fuente) en su hilo; si falla, se avisa en pantalla."""
+        def run() -> None:
+            try:
+                ok = fn(*args)
+            except Exception:  # noqa: BLE001
+                log.exception("Error en %s", getattr(fn, "__name__", fn))
+                ok = False
+            if ok is False:
+                self.toast(failed, 4)
+
+        threading.Thread(target=run, daemon=True, name="player-task").start()
+
     @staticmethod
     def _safe(fn, *args):
         try:
@@ -317,7 +335,8 @@ class OrbitalPlayer(PlayerScreen):
         if waiting:
             percent = self.mpv.get("cache-buffering-state")
             self._buffering = True
-            self.toast(f"Cargando… {int(percent)} %" if isinstance(percent, (int, float)) else "Cargando…", 2)
+            known = isinstance(percent, (int, float)) and math.isfinite(percent)
+            self.toast(f"Cargando… {int(percent)} %" if known else "Cargando…", 2)
         elif self._buffering:
             self._buffering = False
             self._overlay(3, None)
@@ -396,7 +415,8 @@ class OrbitalPlayer(PlayerScreen):
         self._quiet_episodes = self._quiet_episodes + 1 if auto else 0
         segment.upnext_dismissed = True  # que no se dispare dos veces
         self.toast(f"Cargando {info.get('label') or 'el siguiente episodio'}…", 6)
-        threading.Thread(target=self._safe, args=(info["play"],), daemon=True, name="next-episode").start()
+        self._in_background(info["play"], failed="No pude cargar el siguiente episodio")
+        self._loading_until = time.monotonic() + 3  # un segundo A no pausa lo que está cargando
 
     # --- subtítulos ------------------------------------------------------------------------------
     def _ensure_subtitles(self, lang: str, fallback_subs) -> None:

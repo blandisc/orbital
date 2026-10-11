@@ -163,13 +163,17 @@ class VoiceController:
     def handle_intent(self, intent: str, slots: dict[str, str] | None = None) -> VoiceResult:
         slots = {k: v for k, v in (slots or {}).items() if v}
         log.info("Voz: %s %s", intent, slots)
-        handler = getattr(self, "_" + re.sub(r"(?<!^)(?=[A-Z])", "_", intent).lower(), None)
+        # Solo los manejadores de intents (`_algo_intent`): el nombre viene de fuera (Alexa, el túnel).
+        name = "_" + re.sub(r"(?<!^)(?=[A-Z])", "_", str(intent or "")).lower()
+        handler = getattr(self, name, None) if name.endswith("_intent") and name.isidentifier() else None
         if handler is None:
             return VoiceResult("Ese comando todavía no está disponible.", ok=False)
         try:
             result = handler(slots)
         except Exception:  # noqa: BLE001 - el usuario oye un error amable, el log tiene el detalle
             log.exception("Error manejando %s", intent)
+            return VoiceResult("Algo salió mal al ejecutar el comando.", ok=False)
+        if not isinstance(result, VoiceResult):
             return VoiceResult("Algo salió mal al ejecutar el comando.", ok=False)
         if not result.events:
             result.events.append({"type": "toast", "message": result.speech, "ok": result.ok, "voice": True})

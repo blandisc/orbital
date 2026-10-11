@@ -20,6 +20,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
+from ..net import NET_ERRORS, read_json
+
 log = logging.getLogger(__name__)
 
 API_URL = "https://api.strem.io"
@@ -45,10 +47,10 @@ class StremioAPI:
         )
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as res:
-                body = json.load(res)
+                body = read_json(res, timeout=self.timeout)
         except urllib.error.HTTPError as exc:
             raise StremioError(f"Stremio respondió HTTP {exc.code}") from exc
-        except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+        except NET_ERRORS as exc:
             raise StremioError(f"No pude conectar con Stremio: {exc}") from exc
         if isinstance(body, dict) and body.get("error"):
             error = body["error"]
@@ -249,7 +251,7 @@ def _epoch(value) -> float | None:
         return None
     try:
         return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
-    except ValueError:
+    except (ValueError, OSError, OverflowError):  # fechas imposibles (año 1 o 9999)
         return None
 
 
@@ -279,5 +281,13 @@ def parse_item(raw: dict) -> Watchable | None:
 
 
 def parse_library(raw_items: list[dict]) -> list[Watchable]:
-    items = [w for w in (parse_item(r) for r in raw_items) if w]
+    items = []
+    for raw in raw_items if isinstance(raw_items, list) else []:
+        try:
+            item = parse_item(raw) if isinstance(raw, dict) else None
+        except (TypeError, ValueError, AttributeError, OverflowError, OSError) as exc:
+            log.warning("Stremio: se salta un elemento raro de tu biblioteca (%s)", exc)
+            continue
+        if item:
+            items.append(item)
     return sorted(items, key=lambda w: w.last_watched or 0, reverse=True)

@@ -26,6 +26,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import quote
 
+from ..net import NET_ERRORS, read_json
 from .models import LibraryItem
 
 log = logging.getLogger(__name__)
@@ -206,12 +207,13 @@ class SteamArt:
         try:
             req = urllib.request.Request(STEAM_SEARCH.format(term=quote(title)), headers={"User-Agent": "Orbital"})
             with urllib.request.urlopen(req, timeout=8) as res:
-                items = (json.load(res) or {}).get("items") or []
+                data = read_json(res, timeout=8)
+            items = (data.get("items") if isinstance(data, dict) else None) or []
             # "Apex Legends™" en Steam es "Apex Legends" aquí.
             exact = next((i for i in items if clean_title(i.get("name", "")).lower() == key), None)
             found = (exact or (items[0] if items else {})).get("id")
             remember = True
-        except (OSError, ValueError):
+        except (*NET_ERRORS, AttributeError, TypeError):
             found, remember = None, False  # sin red: no se guarda en disco, se reintenta al arrancar
         with self._lock:
             self._cache[key] = found

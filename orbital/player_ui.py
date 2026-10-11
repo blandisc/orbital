@@ -70,7 +70,7 @@ def esc(value: str) -> str:
 
 
 def clock(seconds: float | None) -> str:
-    if seconds is None or seconds < 0:
+    if not isinstance(seconds, (int, float)) or not math.isfinite(seconds) or seconds < 0:
         return "--:--"
     s = int(seconds)
     h, m, s = s // 3600, s % 3600 // 60, s % 60
@@ -232,6 +232,7 @@ def wrap(value: str, size: int, width: float, lines: int) -> list[str]:
             break
     if line and len(out) < lines:
         out.append(line)
+    out = [fit(x, size, width) for x in out]  # una palabra sola más ancha que el renglón (nombre de archivo)
     if out and " ".join(out) != " ".join(words):
         last = out[-1]
         while last and text_width(last + "…", size) > width:
@@ -595,6 +596,7 @@ def upnext_ass(title: str, eyebrow: str = "", *, seconds: int | None = None, pro
 
 def toast_ass(message: str) -> str:
     """Aviso corto arriba a la derecha («Subtítulos: Español», «Cargando… 40 %»)."""
+    message = fit(message, 24, W - 2 * MARGIN - 44, "semi")
     w = text_width(message, 24, "semi") + 44
     x = W - MARGIN - w
     return "\n".join([rrect(x, 64, w, 54, 27, PANEL, "30"), text(x + 22, 91, esc(message), 24, weight="semi", align=4)])
@@ -602,7 +604,12 @@ def toast_ass(message: str) -> str:
 
 def volume_ass(volume: float) -> str:
     """El volumen, con su barra (arriba a la derecha)."""
-    level = max(0.0, min(100.0, float(volume)))
+    try:
+        level = max(0.0, min(100.0, float(volume)))
+    except (TypeError, ValueError):
+        level = 0.0
+    if not math.isfinite(level):
+        level = 0.0
     w = 360
     x = W - MARGIN - w
     bar_x, bar_w = x + 70, 210
@@ -614,7 +621,9 @@ def volume_ass(volume: float) -> str:
 
 def ends_at(position: float | None, duration: float | None, now: float | None = None) -> str:
     """"23:40": la hora a la que termina si sigues viendo de corrido."""
-    if not duration or position is None or duration - position < 60:
+    if not all(isinstance(v, (int, float)) and math.isfinite(v) for v in (duration, position)):
+        return ""
+    if not duration or duration - position < 60 or duration - position > 86400 * 2:
         return ""
     return time.strftime("%H:%M", time.localtime((now if now is not None else time.time()) + duration - position))
 

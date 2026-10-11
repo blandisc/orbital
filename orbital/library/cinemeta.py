@@ -9,13 +9,14 @@ solo pone la pantalla de reproducción (enlace stremio:// con autoPlay).
 
 from __future__ import annotations
 
-import json
 import logging
 import threading
 import time
 import urllib.error
 import urllib.request
+from urllib.parse import quote
 
+from ..net import NET_ERRORS, read_json
 from .models import LibraryItem
 
 log = logging.getLogger(__name__)
@@ -24,6 +25,9 @@ BASE = "https://v3-cinemeta.strem.io"
 MANIFEST = f"{BASE}/manifest.json"  # addon del catálogo, para el enlace al reproductor
 CACHE_SECONDS = 6 * 3600
 KIND_LABEL = {"movie": "Película", "series": "Serie"}
+
+
+CACHE_MAX = 400  # respuestas guardadas a lo más (búsquedas y fichas)
 
 
 class CinemetaError(Exception):
@@ -45,12 +49,17 @@ class Cinemeta:
         req = urllib.request.Request(f"{self.base}{path}", headers={"User-Agent": "Orbital"})
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as res:
-                data = json.load(res)
-        except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+                data = read_json(res, timeout=self.timeout)
+        except NET_ERRORS as exc:
             raise CinemetaError(f"No pude leer el catálogo de Stremio: {exc}") from exc
         if not isinstance(data, dict):
             raise CinemetaError("Respuesta inesperada de Cinemeta")
         with self._lock:
+            if len(self._cache) >= CACHE_MAX:  # una consola siempre encendida: la caché no crece sin tope
+                now = time.time()
+                for key in [k for k, (at, _) in self._cache.items() if now - at >= CACHE_SECONDS] or \
+                        sorted(self._cache, key=lambda k: self._cache[k][0])[:CACHE_MAX // 4]:
+                    self._cache.pop(key, None)
             self._cache[path] = (time.time(), data)
         return data
 
@@ -66,7 +75,7 @@ class Cinemeta:
         return [m for m in metas if isinstance(m, dict) and m.get("id") and m.get("name")]
 
     def meta(self, kind: str, meta_id: str) -> dict:
-        meta = self._get(f"/meta/{kind}/{meta_id}.json").get("meta")
+        meta = self._get(f"/meta/{quote(kind)}/{quote(str(meta_id), safe=':')}.json").get("meta")
         if not isinstance(meta, dict):
             raise CinemetaError("Título no encontrado")
         return meta
@@ -95,23 +104,28 @@ def describe_meta(meta: dict) -> dict:
     return {
         "year": str(meta.get("releaseInfo") or meta.get("year") or "").strip(),
         "rating": rating if rating and rating != "0" else "",
-        "genres": [g for g in (meta.get("genres") or meta.get("genre") or []) if isinstance(g, str)][:3],
+        "genres": [g for g in _list(meta.get("genres") or meta.get("genre")) if isinstance(g, str)][:3],
         "description": str(meta.get("description") or "").strip(),
-        "logo": meta.get("logo") or None,
+        "logo": meta.get("logo") if isinstance(meta.get("logo"), str) else None,
         "runtime": str(meta.get("runtime") or "").strip(),
     }
+
+
+def _list(value) -> list:
+    """Cinemeta a veces manda un número o un texto donde va una lista: lista vacía."""
+    return value if isinstance(value, list) else []
 
 
 def _names(value) -> list[str]:
     if isinstance(value, str):
         return [n.strip() for n in value.split(",") if n.strip()]
-    return [str(n).strip() for n in value or [] if str(n).strip()]
+    return [str(n).strip() for n in _list(value) if str(n).strip()]
 
 
 def credits(meta: dict) -> dict:
     """Para la ficha: reparto, dirección, guion, estreno y premios (Cinemeta los trae; antes se tiraban)."""
     by_category: dict[str, list[str]] = {}
-    for link in meta.get("links") or []:
+    for link in _list(meta.get("links")):
         if isinstance(link, dict) and link.get("name"):
             by_category.setdefault(str(link.get("category") or "").lower(), []).append(str(link["name"]))
     cast = _names(meta.get("cast")) or by_category.get("cast", [])
@@ -145,16 +159,18 @@ def catalog_items(kind: str, metas: list[dict], limit: int = 30) -> list[Library
 def seasons(meta: dict) -> list[dict]:
     """Temporadas con sus episodios, en orden; los especiales (temporada 0) al final."""
     by_season: dict[int, list[dict]] = {}
-    for video in meta.get("videos") or []:
+    for video in _list(meta.get("videos")):
+        if not isinstance(video, dict):
+            continue
         season, episode = video.get("season"), video.get("episode")
         if not isinstance(season, int) or not isinstance(episode, int) or not video.get("id"):
             continue
         by_season.setdefault(season, []).append({
             "id": video["id"],
             "episode": episode,
-            "title": video.get("name") or video.get("title") or f"Episodio {episode}",
+            "title": str(video.get("name") or video.get("title") or f"Episodio {episode}"),
             "thumbnail": video.get("thumbnail") or None,
-            "overview": (video.get("overview") or video.get("description") or "").strip(),
+            "overview": str(video.get("overview") or video.get("description") or "").strip(),
             "released": video.get("released") or None,
         })
     order = sorted(by_season, key=lambda s: (s == 0, s))

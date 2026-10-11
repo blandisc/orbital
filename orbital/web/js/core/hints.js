@@ -49,7 +49,7 @@ export function shortTitle(title = "") {
  * Pie del Inicio según lo enfocado: A y X dicen exactamente qué hacen (lógica pura).
  * target = { kind: "item" | "console" | "pending" | "empty", item?, console? }
  */
-export function homeHints(glyphs, target, { running = null, primary = "Abrir", alt = null } = {}) {
+export function homeHints(glyphs, target, { running = null, primary = "Abrir", alt = null, sections = 2 } = {}) {
   const list = [];
   if (target?.kind === "console") {
     list.push({ glyph: glyphs.select, label: "Entrar" });
@@ -63,9 +63,9 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
     if (alt) list.push({ glyph: glyphs.alt, label: alt });
     list.push({ glyph: glyphs.options, label: "Opciones", secondary: true });
   } else {
-    list.push({ glyph: glyphs.select, label: "Ir a Juegos" });
+    list.push({ glyph: glyphs.select, label: target?.setup ? "Qué revisar" : "Ir a Juegos" });
   }
-  if (glyphs.section) list.push({ glyph: glyphs.section, label: "Sección", secondary: true });
+  if (glyphs.section && sections > 1) list.push({ glyph: glyphs.section, label: "Sección", secondary: true });
   if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${running.title}` });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
   return list;

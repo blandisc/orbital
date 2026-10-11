@@ -37,7 +37,14 @@ class Credentials:
                     log.warning("No pude descifrar %s (¿otro usuario de Windows u otro equipo?): "
                                 "vuelve a conectar Stremio", path)
                     return
-                self._data = json.loads(plain)
+                try:
+                    data = json.loads(plain)
+                except ValueError:
+                    data = None
+                if not isinstance(data, dict):
+                    log.warning("Credenciales ilegibles en %s: vuelve a conectar Stremio", path)
+                    return
+                self._data = data
             elif isinstance(raw, dict):
                 self._data = raw
                 if raw and dpapi.available():

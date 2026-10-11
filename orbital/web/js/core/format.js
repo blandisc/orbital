@@ -2,7 +2,8 @@
 
 /** "Jugado hace 2 h" / "Visto ayer"... `verb` cambia para multimedia. */
 export function lastPlayed(ts, now = Date.now(), verb = "Jugado") {
-  if (!ts) return null;
+  if (!Number.isFinite(Number(ts)) || !Number(ts)) return null; // fechas raras (texto, NaN): como si no hubiera
+  ts = Number(ts);
   const s = now / 1000 - ts;
   if (s < 60) return `${verb} ahora`;
   if (s < 3600) return `${verb} hace ${Math.round(s / 60)} min`;
@@ -15,7 +16,8 @@ export function lastPlayed(ts, now = Date.now(), verb = "Jugado") {
 
 /** Versión corta para una etiqueta sobre la portada: "ahora", "15 min", "3 h", "ayer", "4 d". */
 export function shortAgo(ts, now = Date.now()) {
-  if (!ts) return null;
+  if (!Number.isFinite(Number(ts)) || !Number(ts)) return null; // fechas raras (texto, NaN): como si no hubiera
+  ts = Number(ts);
   const s = now / 1000 - ts;
   if (s < 60) return "ahora";
   if (s < 3600) return `${Math.round(s / 60)} min`;

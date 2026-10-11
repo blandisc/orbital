@@ -31,6 +31,15 @@ SETTINGS = {
 VIEWS = ("buscar", "serie", "seccion", "fuentes")
 
 
+def valid_setting(key, value) -> bool:
+    """¿Ese valor sirve para ese ajuste? Mismo tipo que los permitidos (bool no pasa por número)."""
+    allowed = SETTINGS.get(key) if isinstance(key, str) else None
+    if allowed is None or isinstance(value, (list, dict)):
+        return False
+    return any(type(value) is type(option) and value == option for option in allowed) or (
+        isinstance(value, int) and not isinstance(value, bool) and any(type(o) is float and value == o for o in allowed))
+
+
 def router(d: Deps) -> APIRouter:
     r = APIRouter()
     catalog, shell, kiosk = d.catalog, d.shell, d.kiosk
@@ -68,9 +77,12 @@ def router(d: Deps) -> APIRouter:
 
     @r.post("/api/settings")
     def set_settings(body: dict) -> dict:
+        # Todo o nada: primero se valida el lote completo, con el tipo exacto (1 no es True, ni
+        # False es 0), y después se guarda. Antes un lote a medias quedaba aplicado a medias.
         for key, value in body.items():
-            if key not in SETTINGS or value not in SETTINGS[key]:
+            if not valid_setting(key, value):
                 raise HTTPException(422, f"Ajuste inválido: {key}")
+        for key, value in body.items():
             catalog.state.set_setting(key, value)
         return get_settings()
 
@@ -86,7 +98,8 @@ def router(d: Deps) -> APIRouter:
     def ui_reload(body: dict | None = None) -> dict:
         """Recarga la interfaz abierta (tras actualizar Orbital no hace falta reiniciarlo).
         `view`: abrir directo una vista — {"buscar": "dune"} o {"serie": "tt0386676"}."""
-        view = {k: str(v) for k, v in (body or {}).get("view", {}).items() if k in VIEWS}
+        raw = (body or {}).get("view") if isinstance(body, dict) else None
+        view = {k: str(v)[:200] for k, v in (raw if isinstance(raw, dict) else {}).items() if k in VIEWS}
         d.hub.publish_threadsafe({"type": "reload", "view": view})
         return {"ok": True}
 

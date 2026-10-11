@@ -145,6 +145,7 @@ function renderHints() {
       running: state.running?.managed ? state.running : null,
       primary: item && primaryLabel(item, state.running?.id),
       alt: item && altLabel(item),
+      sections: visibleSections(state.allRows).length,
     }));
   }
   const { r, c } = state.focus;
@@ -313,7 +314,7 @@ function homeFocused(target) {
 /** A (o un botón del destacado): abrir, entrar a la consola o ver la lista de lo que está a medias. */
 function homeActivate(target, action = "select") {
   if (!target) return;
-  if (target.kind === "empty") return goToSection("games", 1);
+  if (target.kind === "empty") return target.setup ? runCommand({ type: "setup" }) : goToSection("games", 1);
   if (target.kind === "search") return action === "select" ? openSearch() : rumble("edge");
   if (target.kind === "alexa") return action === "select" ? openMenu(alexaMenu()) : rumble("edge");
   if (target.kind === "console") {
@@ -344,6 +345,7 @@ function renderSections() {
 function goToSection(id, direction = 0) {
   if (id === state.section) return;
   const list = visibleSections(state.allRows);
+  if (!list.some((s) => s.id === id)) return; // una sección vacía no está en la barra: no se entra
   const from = list.findIndex((s) => s.id === state.section);
   const to = list.findIndex((s) => s.id === id);
   state.sectionFocus[state.section] = { rowId: state.rows[state.focus.r]?.id, itemId: current()?.id };

@@ -34,7 +34,8 @@ def router(d: Deps) -> APIRouter:
 
     @r.get("/search")
     def search(q: str = "") -> dict:
-        if len(q.strip()) < 2:
+        q = q.strip()[:120]  # nadie busca con más de 120 letras (y la URL de Cinemeta tiene límite)
+        if len(q) < 2:
             return {"results": []}
         # Películas y series a la vez (antes una tras otra: con internet lento, el doble de espera).
         with ThreadPoolExecutor(max_workers=2) as pool:

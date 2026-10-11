@@ -15,7 +15,7 @@ export const FILTERS = [
 /** Tus consolas, la que usaste más recientemente primero (la misma lista que el Inicio). */
 export const gameConsoles = (rows) => consoleList(rows);
 
-const byTitle = (a, b) => a.title.localeCompare(b.title, "es", { sensitivity: "base" });
+const byTitle = (a, b) => String(a.title ?? "").localeCompare(String(b.title ?? ""), "es", { sensitivity: "base" });
 
 /** Juegos de una consola con un filtro. Recientes: lo jugado primero (lo más nuevo arriba), luego A–Z. */
 export function consoleGames(rows, consoleId, filter = "recent") {

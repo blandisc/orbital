@@ -49,8 +49,8 @@ def image_size(path: Path) -> tuple[int, int] | None:
                 return _webp_size(head, f)
             if head[:2] == b"\xff\xd8":
                 return _jpeg_size(f)
-    except OSError:
-        return None
+    except (OSError, struct.error, IndexError, ValueError):
+        return None  # truncada o rara: como si no se supiera su tamaño (no tumba el escaneo)
     return None
 
 
