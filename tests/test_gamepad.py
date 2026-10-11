@@ -69,3 +69,13 @@ def test_remote_ignores_orbital_shortcuts():
     assert r.update(GUIDE | A_BUTTON, 0) == []  # Home+algo: de Orbital o del emulador
     assert r.update(BACK | START, 1) == []  # Select+Start: cerrar
     assert r.update(A_BUTTON, 2) == [0x20]
+
+
+
+def test_legion_go_controllers_close_with_start_select():
+    from orbital.gamepad import LEGION_CLOSE_COMBO, close_combo_for
+    assert close_combo_for(0x17EF) == LEGION_CLOSE_COMBO  # controles de la Legion Go
+    assert close_combo_for(0x3537) == BACK | START | GUIDE  # GameSir y demás: los tres
+    assert close_combo_for(None) == BACK | START | GUIDE
+    d = ComboDetector(arm=.25, total=1.5, combo=LEGION_CLOSE_COMBO)
+    assert run(d, [(0, BACK | START), (0.3, BACK | START), (1.6, BACK | START)]) == ["hold-start", "hold-complete"]

@@ -334,6 +334,11 @@ class ConsoleShell:
             self.overlay = overlay if overlay.start() else None
         GamepadWatcher(self.on_gamepad, self.on_buttons).start()  # sin XInput, Legion L sigue funcionando
         threading.Thread(target=self._watch_foreground, daemon=True, name="legion-l").start()
+        # Memoria (RAM y la de video que usa DWM): se anota cada 5 min y avisa si los juegos no van a poder abrir.
+        from .health import HealthMonitor
+        notify = getattr(self.catalog, "_notify", lambda event: None)
+        running = lambda: (self.catalog.launcher.status() or {}).get("title", "")  # noqa: E731
+        HealthMonitor(notify, running).start()
         return True
 
     # --------------------------------------------------------------- que nada quede abierto
