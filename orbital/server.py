@@ -10,6 +10,7 @@ import asyncio
 import contextlib
 import hmac
 import ipaddress
+import logging
 import os
 import threading
 import time
@@ -105,7 +106,12 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         else:
             await run_in_threadpool(catalog.refresh)
         status = asyncio.create_task(live.watch_status(d))
+        problems = live.ProblemNotifier(d.hub.publish_threadsafe) if shortcuts else None
+        if problems:
+            logging.getLogger("orbital").addHandler(problems)
         yield
+        if problems:
+            logging.getLogger("orbital").removeHandler(problems)
         status.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await status

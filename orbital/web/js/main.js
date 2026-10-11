@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isWatchable, itemAt, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints } from "./core/hints.js";
-import { controlsMenu, controlsPage, diagnosticsMenu, exitMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, windowsMenu } from "./core/menus.js";
+import { controlsMenu, controlsPage, diagnosticsMenu, exitMenu, healthMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -515,6 +515,15 @@ function handleEvent(event) {
   }
   if (event.type === "launch-ready") return ui.launch.reveal();
   if (event.type === "settings") return applySettings(event.settings);
+  if (event.type === "health") { // memoria casi llena: se pregunta, con Reiniciar a la mano
+    sound.play("error");
+    return openMenu(healthMenu(event.message)); // "Reiniciar ahora" pide confirmar (y avisa si hay un juego abierto)
+  }
+  if (event.type === "resumed") { // volvió de suspender: ponerse al día
+    pollSystem();
+    loadLibrary();
+    return pollStatus();
+  }
   if (event.type === "toast") {
     ui.toast.show(event.message, { error: event.ok === false, voice: !!event.voice, countdown: event.countdown || 0 });
     if (event.voice) ui.status.pulseAlexa();

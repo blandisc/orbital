@@ -11,7 +11,7 @@ def test_samples_go_to_csv_and_warning_is_rate_limited(tmp_path):
     assert not mon.check(now=9000)  # ya hay memoria
     lines = (tmp_path / "memoria.csv").read_text(encoding="utf-8").splitlines()
     assert lines[0].startswith("hora,ram_libre_mb") and len(lines) == 4 and lines[1].endswith(",900,54000,1300,Zelda")
-    assert len(notes) == 1 and "reinicia" in notes[0]["message"]
+    assert len(notes) == 1 and notes[0]["type"] == "health" and "suspender no lo arregla" in notes[0]["message"]
 
 
 def test_needs_warning():
@@ -24,3 +24,8 @@ def test_needs_warning():
 def test_real_measurement_does_not_crash():
     free = health.free_ram_mb()
     assert free is None or free > 0
+
+
+def test_warning_message_explains_the_dwm_leak():
+    assert "53 GB" in health.warning_message(900, (54000, 1300))  # 54000 MB
+    assert "900 MB" in health.warning_message(900, (300, 100))

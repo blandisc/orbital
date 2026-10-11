@@ -116,6 +116,18 @@ export function powerMenu() {
   };
 }
 
+/** Memoria casi llena (o la fuga de Windows): explicarlo y ofrecer reiniciar ya. */
+export function healthMenu(message) {
+  return {
+    title: "La consola necesita reiniciarse",
+    subtitle: message,
+    options: [
+      { icon: "close", label: "Más tarde", command: { type: "close" } },
+      { icon: "refresh", label: "Reiniciar ahora", danger: true, command: { type: "power-confirm", action: "restart" } },
+    ],
+  };
+}
+
 /** "Ventanas abiertas": saltar a otra app o juego con el mando (como Alt+Tab o la Vista de tareas). */
 export function windowsMenu(windows) {
   const options = windows.map((w) => ({

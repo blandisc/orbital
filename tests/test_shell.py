@@ -312,3 +312,20 @@ def test_frozen_game_closes_after_the_limit(tmp_path):
     assert shell.catalog.launcher.stopped and not shell.is_paused and not win.suspended  # se descongela para cerrar
     assert "se cerrará en 10 min" in notes[0]["message"]  # el aviso llega antes, a los 50 min
     assert "llevaba 60 min" in notes[-1]["message"]
+
+
+def test_sleep_is_noticed_by_a_late_check():
+    from orbital.shell import was_asleep
+
+    assert not was_asleep(0, 5.2)
+    assert was_asleep(0, 600)
+
+
+def test_waking_up_pauses_the_video_and_tells_the_ui():
+    shell, _, _ = make()
+    notes, paused, redetected = [], [], []
+    shell.catalog.notify = notes.append
+    shell.catalog.player = type("P", (), {"playing": True, "pause": lambda self: paused.append(1)})()
+    shell.gamepad = type("G", (), {"redetect": lambda self: redetected.append(1)})()
+    shell.on_resumed(1800)
+    assert paused == [1] and redetected == [1] and notes == [{"type": "resumed", "minutes": 30}]

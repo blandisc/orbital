@@ -222,6 +222,7 @@ class GamepadWatcher:
         self.on_buttons = on_buttons  # (mando, botones, ahora): para el control remoto de Stremio
         self._detectors = [ComboDetector() for _ in range(4)]
         self._stop = threading.Event()
+        self._redetect = threading.Event()
 
     def start(self) -> bool:
         if sys.platform != "win32":
@@ -239,12 +240,21 @@ class GamepadWatcher:
     def stop(self) -> None:
         self._stop.set()
 
+    def redetect(self) -> None:
+        """Tras suspender, los mandos se reconectan: volver a ver la marca de cada uno."""
+        self._redetect.set()
+
     def _run(self, get_state) -> None:
         state = _XInputState()
         vendor = _load_vendor()
         was_connected = [False] * 4
         while not self._stop.is_set():
             now = time.monotonic()
+            if self._redetect.is_set():
+                self._redetect.clear()
+                was_connected = [False] * 4
+                # Nada queda "mantenido" de antes de dormir (sin disparar eventos al soltar).
+                self._detectors = [ComboDetector() for _ in range(4)]
             for slot, detector in enumerate(self._detectors):
                 connected = get_state(slot, ctypes.byref(state)) == 0
                 if connected and not was_connected[slot] and vendor:

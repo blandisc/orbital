@@ -49,6 +49,12 @@ APP_NAMES = {"chrome": "Chrome", "msedge": "Edge", "stremio-shell-ng": "Stremio"
              "ryujinx": "Ryujinx", "dolphin": "Dolphin", "mgba": "mGBA", "xemu": "xemu", "ppssppwindows64": "PPSSPP", "mpv": "Reproductor"}
 LEGION_DOUBLE_PRESS = 2.0  # s: dos toques de Legion L desde un juego lo cierran
 IDLE_WARNING = 600  # s antes de cerrar un juego olvidado: se avisa
+SLEEP_CHECK = 5.0  # s entre comprobaciones de si la consola estuvo suspendida
+SLEEP_GAP = 30.0  # s de más: más que esto entre dos comprobaciones = estuvo dormida
+
+
+def was_asleep(last: float, now: float, every: float = SLEEP_CHECK, gap: float = SLEEP_GAP) -> bool:
+    return now - last > every + gap
 
 
 class ConsoleShell:
@@ -336,8 +342,10 @@ class ConsoleShell:
             from .overlay import GameOverlay
             overlay = GameOverlay()
             self.overlay = overlay if overlay.start() else None
-        GamepadWatcher(self.on_gamepad, self.on_buttons).start()  # sin XInput, Legion L sigue funcionando
+        self.gamepad = GamepadWatcher(self.on_gamepad, self.on_buttons)
+        self.gamepad.start()  # sin XInput, Legion L sigue funcionando
         threading.Thread(target=self._watch_foreground, daemon=True, name="legion-l").start()
+        threading.Thread(target=self._watch_sleep, daemon=True, name="sleep").start()
         # Memoria (RAM y la de video que usa DWM): se anota cada 5 min y avisa si los juegos no van a poder abrir.
         from .health import HealthMonitor
         running = lambda: (self.catalog.launcher.status() or {}).get("title", "")  # noqa: E731
@@ -390,6 +398,32 @@ class ConsoleShell:
         for w in self.win.app_windows():
             if self.is_orbital(w["hwnd"]):
                 self.win.set_topmost(w["hwnd"], False)
+
+    # --------------------------------------------------------------- volver de suspender
+    def _watch_sleep(self) -> None:
+        """Mientras la consola duerme, este hilo no corre: si "despierta" mucho después de lo
+        esperado, la consola estuvo suspendida."""
+        last = time.time()
+        while not self._stop.wait(SLEEP_CHECK):
+            now = time.time()
+            if was_asleep(last, now):
+                try:
+                    self.on_resumed(now - last)
+                except Exception:  # noqa: BLE001
+                    log.exception("Al volver de suspender")
+            last = now
+
+    def on_resumed(self, slept: float) -> None:
+        """Al despertar: los mandos se vuelven a reconocer, un video queda en pausa (no sigue
+        sonando sin que lo veas) y la interfaz se pone al día."""
+        log.info("La consola volvió de suspender (%d min dormida)", slept // 60)
+        gamepad = getattr(self, "gamepad", None)
+        if gamepad is not None:
+            gamepad.redetect()
+        player = self.player
+        if player is not None and getattr(player, "playing", False):
+            player.pause()
+        self.notify({"type": "resumed", "minutes": int(slept // 60)})
 
     def _watch_foreground(self) -> None:
         last = previous = 0

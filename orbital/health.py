@@ -114,6 +114,14 @@ def needs_warning(free_mb: int | None, dwm: tuple[int, int] | None) -> bool:
     return (free_mb is not None and free_mb < LOW_RAM_MB) or (dwm is not None and dwm[0] > DWM_HIGH_MB)
 
 
+def warning_message(free_mb: int | None, dwm: tuple[int, int] | None) -> str:
+    """El aviso en palabras: la fuga de DWM se explica (suspender no la arregla; reiniciar sí)."""
+    if dwm is not None and dwm[0] > DWM_HIGH_MB:
+        return (f"Windows está usando {dwm[0] / 1024:.0f} GB solo en dibujar las ventanas (una falla de Windows "
+                "que crece con los días). Reinicia la consola: suspender no lo arregla.")
+    return f"Quedan {free_mb or 0} MB de memoria libre: los juegos pueden no abrir. Reinicia la consola."
+
+
 def csv_path() -> Path:
     return Path(os.environ.get("LOCALAPPDATA", ".")) / "orbital" / "memoria.csv"
 
@@ -157,8 +165,8 @@ class HealthMonitor:
         if now - self._last_warning < WARN_EVERY:
             return False
         self._last_warning = now
-        self.notify({"type": "toast", "ok": False,
-                     "message": "Memoria casi llena: reinicia la consola para que los juegos abran bien"})
+        # La interfaz lo muestra como pregunta con "Reiniciar ahora" (no un aviso que se va solo).
+        self.notify({"type": "health", "ok": False, "message": warning_message(free_mb, dwm)})
         return True
 
     def start(self) -> None:

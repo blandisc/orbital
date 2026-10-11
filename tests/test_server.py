@@ -153,3 +153,21 @@ def test_setup_status_for_first_use(make_client):
         status = c.get("/api/setup").json()
         assert {"games", "steam", "emulators", "esde", "stremio", "player", "alexa"} <= set(status)
         assert c.post("/api/settings", json={"welcomed": True}).json()["welcomed"] is True
+
+
+def test_errors_are_shown_once_a_minute_without_keys():
+    import logging
+
+    from orbital.api.live import ProblemNotifier
+
+    seen = []
+    handler = ProblemNotifier(seen.append)
+    log = logging.getLogger("orbital.watch")
+    log.addHandler(handler)
+    try:
+        log.error("No pude abrir https://torrentio.example/clave-secreta/stream")
+        log.error("Otro error en el mismo minuto")
+        logging.getLogger("uvicorn").error("ajeno")
+    finally:
+        log.removeHandler(handler)
+    assert len(seen) == 1 and "clave-secreta" not in seen[0]["message"] and "Diagnóstico" in seen[0]["message"]

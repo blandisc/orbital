@@ -55,6 +55,35 @@ class SseHub:
             self.loop.call_soon_threadsafe(self.publish, event)
 
 
+class ProblemNotifier(logging.Handler):
+    """Los errores de Orbital también se avisan en pantalla (antes solo quedaban en el registro).
+    Uno por minuto como mucho, sin URLs (llevan claves) y con dónde ver más."""
+
+    EVERY = 60.0
+
+    def __init__(self, publish) -> None:
+        super().__init__(level=logging.ERROR)
+        self.publish = publish
+        self._last = float("-inf")
+
+    def emit(self, record: logging.LogRecord) -> None:
+        if not record.name.startswith("orbital") or record.name == "orbital.supervisor":
+            return
+        now = time.monotonic()
+        if now - self._last < self.EVERY:
+            return
+        self._last = now
+        try:
+            from ..launcher import redact
+            from .diagnostics import URL
+
+            text = URL.sub(lambda m: redact(m.group(0)), record.getMessage().splitlines()[0])[:160]
+            self.publish({"type": "toast", "ok": False,
+                          "message": f"Algo falló: {text}. Más en Ajustes → Diagnóstico."})
+        except Exception:  # noqa: BLE001 - avisar nunca debe romper el registro
+            pass
+
+
 def _comparable(status: dict) -> dict:
     running = status.get("running")
     return {"running": None if running is None else {k: v for k, v in running.items() if k != "pid"}}
