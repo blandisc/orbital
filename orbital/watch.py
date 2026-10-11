@@ -31,6 +31,19 @@ STREMIO_KEY = "stremio_auth_key"
 STREMIO_STALE_SECONDS = 180
 
 
+def language_code(code: str | None) -> str | None:
+    """Código de pista de mpv ("spa", "es-MX", "eng") -> el de Ajustes ("es", "en"); "" = sin
+    subtítulos; None si es otro idioma (no se recuerda)."""
+    if code == "":
+        return ""
+    code = (code or "").lower()
+    if code.startswith(("es", "spa")):
+        return "es"
+    if code.startswith("en"):
+        return "en"
+    return None
+
+
 def source_label(source: streams.Source, long: bool = False) -> str:
     """"1080p · Al instante" / "4K HDR · Torrentio": de dónde viene lo que ves, en pocas palabras."""
     quality = " ".join(p for p in (source.resolution or "SD", *source.hdr[:1]) if p)
@@ -270,6 +283,22 @@ class Watch:
     def subtitles_lang(self) -> str:
         return self.setting("subtitles", self.config.stremio.subtitles)
 
+    def language_for(self, meta_id: str) -> tuple[streams.Preferences, str]:
+        """Idioma de audio y subtítulos para un título: el que elegiste viéndolo (cada serie
+        recuerda el suyo) o, si nunca cambiaste, el de Ajustes."""
+        saved = self.state.prefs(f"stremio:{meta_id}")
+        prefs = self.stream_prefs
+        if saved.get("audio"):
+            prefs = streams.Preferences(audio=saved["audio"], quality=prefs.quality)
+        return prefs, saved.get("subtitles", self.subtitles_lang)
+
+    def _remember_language(self, meta: dict, kind: str, code: str) -> None:
+        """Cambiaste el audio o los subtítulos en el reproductor: esa serie (o película) lo recuerda."""
+        lang = language_code(code)
+        if meta.get("meta_id") and lang is not None:
+            self.state.set_pref(f"stremio:{meta['meta_id']}", kind, lang)
+            log.info("%s recordará %s: %s", meta.get("title") or meta["meta_id"], kind, lang or "sin subtítulos")
+
     def stream_sources(self, kind: str, video_id: str, prefs: streams.Preferences | None = None) -> list[streams.Source]:
         """Fuentes de tus addons, ordenadas por tus preferencias (la primera es la recomendada)."""
         if not self.stremio_linked:
@@ -286,6 +315,7 @@ class Watch:
         p.on_switch_source = self._switch_source
         p.on_episode = self._step_episode
         p.on_sub_scale = lambda scale: self.state.set_setting("sub_scale", scale)
+        p.on_language = self._remember_language
         p.sub_scale = float(self.setting("sub_scale", 1.0) or 1.0)
 
     @staticmethod
@@ -327,10 +357,12 @@ class Watch:
     def play_best(self, kind: str, meta_id: str, video_id: str, title: str, keep: bool = False,
                   from_start: bool = False) -> dict:
         """"Ver": sin lista de fuentes. Orbital elige la recomendada y arranca (la lista queda en Y)."""
-        source = self.best_source(kind, video_id)
+        prefs, subtitles = self.language_for(meta_id)
+        source = self.best_source(kind, video_id, prefs=prefs)
         if source is None:
             raise LookupError("No encontré dónde ver esto. Revisa tus complementos de Stremio.")
-        self.play_source(kind, meta_id, video_id, source.index, title, keep=keep, from_start=from_start)
+        self.play_source(kind, meta_id, video_id, source.index, title, keep=keep, from_start=from_start,
+                         prefs=prefs, subtitles=subtitles)
         return {"source": source.public(), "label": source_label(source)}
 
     def play_source(self, kind: str, meta_id: str, video_id: str, index: int, title: str, keep: bool = False,
@@ -340,7 +372,9 @@ class Watch:
         está o así se configuró, directo en el de Stremio (sin su lista de fuentes).
         `prefs`/`subtitles`: idioma pedido para esta vez ("…en español"); si no, el de Ajustes."""
         self.sessions.revealing = False
-        prefs = prefs or self.stream_prefs
+        saved_prefs, saved_subs = self.language_for(meta_id)
+        prefs = prefs or saved_prefs
+        subtitles = saved_subs if subtitles is None else subtitles
         source = self.streams.get(kind, video_id, prefs, index)
         if source is None:
             raise ValueError("Esa fuente ya no está disponible; vuelve a cargar las fuentes")

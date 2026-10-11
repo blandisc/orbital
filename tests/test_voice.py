@@ -58,3 +58,30 @@ def test_natural_watch_phrases():
     assert parse_text("quiero ver dune") == ("SearchMediaIntent", {"query": "dune"})
     assert parse_text("reproduce the office") == ("SearchMediaIntent", {"query": "the office"})
     assert parse_text("sigue viendo")[0] == "ContinueWatchingIntent"  # no se confunde
+
+
+@pytest.mark.parametrize("text, expected", [
+    ("cuánto le falta", ("TimeLeftIntent", {})),
+    ("toma una captura", ("CaptureIntent", {})),
+    ("sube el volumen", ("VolumeIntent", {"volume": "sube"})),
+    ("bájale volumen", ("VolumeIntent", {"volume": "bajale"})),
+    ("pon el volumen en 40", ("VolumeIntent", {"amount": "40"})),
+])
+def test_new_phrases(text, expected):
+    assert parse_text(text) == expected
+
+
+def test_volume_by_voice(library, monkeypatch):
+    from orbital import quick
+
+    state = {"level": 50, "muted": True}
+    monkeypatch.setattr(quick, "volume", lambda: dict(state))
+    monkeypatch.setattr(quick, "set_volume", lambda level=None, muted=None: state.update(level=level, muted=muted) or dict(state))
+    voice = VoiceController(library)
+    assert voice.handle_text("sube el volumen").speech == "Volumen en 60 por ciento." and state["muted"] is False
+    assert voice.handle_intent("VolumeIntent", {"volume": "down"}).speech == "Volumen en 50 por ciento."
+    assert voice.handle_text("pon el volumen en 120").speech == "Volumen en 100 por ciento."
+
+
+def test_time_left_needs_something_playing(library):
+    assert not VoiceController(library).handle_text("cuánto le falta").ok

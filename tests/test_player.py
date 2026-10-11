@@ -232,3 +232,25 @@ def test_touch_tap_pauses_and_double_tap_does_not_leave_fullscreen():
     assert "MBTN_LEFT cycle pause" in player.TOUCH_BINDINGS and "MBTN_LEFT_DBL ignore" in player.TOUCH_BINDINGS
     cmd = player.build_command("mpv.exe", "u", "t", bindings="C:/x/mpv-input.conf")
     assert "--input-conf=C:/x/mpv-input.conf" in cmd
+
+
+def test_choosing_audio_or_subtitles_is_remembered_for_that_series():
+    p, mpv = make_player()
+    p.current = player.Playback("Los Simpson", None, 0, {"meta_id": "tt0096697"})
+    seen = []
+    p.on_language = lambda meta, kind, lang: seen.append((meta["meta_id"], kind, lang))
+    p._choose({"label": "Español", "action": ("aid", 2), "lang": "spa"})
+    p._choose({"label": "Sin subtítulos", "action": ("sid", "no")})
+    assert seen == [("tt0096697", "audio", "spa"), ("tt0096697", "subtitles", "")]
+
+
+def test_each_series_keeps_its_own_language(library):
+    from orbital.watch import language_code
+
+    assert [language_code(c) for c in ("spa", "es-MX", "eng", "", "jpn")] == ["es", "es", "en", "", None]
+    library.watch._remember_language({"meta_id": "tt0096697", "title": "Los Simpson"}, "audio", "spa")
+    library.watch._remember_language({"meta_id": "tt0096697"}, "subtitles", "")
+    prefs, subs = library.watch.language_for("tt0096697")
+    assert prefs.audio == "es" and subs == ""
+    other, other_subs = library.watch.language_for("tt0386676")  # otra serie: lo de Ajustes
+    assert other.audio == library.watch.stream_prefs.audio and other_subs == library.watch.subtitles_lang

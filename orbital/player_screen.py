@@ -167,6 +167,10 @@ class PlayerScreen:
         self.mpv.command("set_property", prop, value)
         kind = "Audio" if prop == "aid" else "Subtítulos"
         self.toast(f"{kind}: {option['label'].split(' · ')[0]}")
+        if self.on_language and self.current is not None:  # que la serie lo recuerde
+            lang = "" if value == "no" else option.get("lang")
+            if lang is not None:
+                self._safe(self.on_language, self.current.meta, "audio" if prop == "aid" else "subtitles", lang)
 
     def _fetch_subs(self, lang: str) -> None:
         try:

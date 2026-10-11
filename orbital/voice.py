@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 from dataclasses import dataclass, field
 
 from .catalog import Catalog, normalize
@@ -23,6 +24,7 @@ DIRECTIONS = {
 LANGUAGES = {"ingles": "en", "espanol": "es", "english": "en", "spanish": "es", "en": "en", "es": "es"}
 LANGUAGE_NAMES = {"en": "inglés", "es": "español"}
 NO_TOAST = {"type": "noop"}  # la interfaz ignora este evento
+VOLUME_DOWN = {"down", "baja", "baje", "bajale", "bajarle", "menos"}
 SEEK_BACK = {"back", "regresa", "regrese", "retrocede", "retroceda", "atrasa", "atrase", "atras"}
 CLOUD = re.compile(r"\s+(?:en|desde)\s+(?:la\s+nube|geforce(?:\s+now)?|gfn)$")
 
@@ -106,6 +108,14 @@ _TEXT_RULES: list[tuple[re.Pattern, str, str | None]] = [
      "AudioLanguageIntent", None),
     (re.compile(r"^(?:(?:pon|ponga|pasa al|pase al)\s+)?(?:el\s+)?siguiente\s+(?:episodio|capitulo)$|^el que sigue$"),
      "NextEpisodeIntent", None),
+    (re.compile(r"^(?:cuanto|cuanto tiempo)\s+(?:le\s+)?(?:falta|queda)(?:\s+(?:al video|a la pelicula|al episodio))?$"),
+     "TimeLeftIntent", None),
+    (re.compile(r"^(?:toma|tome|haz|haga)\s+(?:una\s+)?captura(?:\s+de\s+pantalla)?$|^captura\s+(?:la\s+)?pantalla$"),
+     "CaptureIntent", None),
+    (re.compile(r"^(?P<volume>sube|suba|subele|baja|baje|bajale)(?:\s+el)?\s+volumen(?:\s+a\s+(?P<amount>\d+))?$"),
+     "VolumeIntent", None),
+    (re.compile(r"^(?:pon|ponga)\s+el\s+volumen\s+(?:en|a|al)\s+(?P<amount>\d+)(?:\s+por\s*ciento)?$"),
+     "VolumeIntent", None),
     (re.compile(rf"^{_V['search']}\s+(?P<v>.+?)\s+en\s+stremio$"), "SearchMediaIntent", "query"),
     (re.compile(rf"^{_V['continue']}(?:\s+viendo)?(?:\s+(?P<v>.+))?$"), "ContinueWatchingIntent", "show"),
     # "quiero ver dune", "reproduce the office": como en Alexa.
@@ -382,6 +392,45 @@ class VoiceController:
         self.catalog.player.seek(-seconds if back else seconds)
         what = f"{amount} minuto{'s' if amount != 1 else ''}" if minutes else f"{amount} segundos"
         return VoiceResult(f"{'Regresando' if back else 'Adelantando'} {what}.", events=[NO_TOAST])
+
+    def _time_left_intent(self, slots: dict) -> VoiceResult:
+        if (idle := self._playing()) is not None:
+            return idle
+        segment = self.catalog.player.segment
+        if segment is None or not segment.duration:
+            return VoiceResult("Todavía no sé cuánto dura.", ok=False)
+        left = max(0, segment.duration - segment.position)
+        ends = time.strftime("%H:%M", time.localtime(time.time() + left))
+        minutes = round(left / 60)
+        what = "menos de un minuto" if minutes < 1 else f"{minutes} minuto{'s' if minutes != 1 else ''}"
+        return VoiceResult(f"Faltan {what}; termina a las {ends}.")
+
+    def _capture_intent(self, slots: dict) -> VoiceResult:
+        from . import capture
+
+        status = self.catalog.launcher.status()
+        event = capture.take_and_describe(status["title"] if status else "")
+        return VoiceResult("Listo, guardé la captura." if event.get("ok", True) else event["message"],
+                           ok=event.get("ok", True), events=[event])
+
+    def _volume_intent(self, slots: dict) -> VoiceResult:
+        from . import quick
+
+        current = quick.volume()
+        if current is None:
+            return VoiceResult("No encuentro el control de volumen.", ok=False)
+        try:
+            amount = int(float(slots.get("amount", "")))
+        except ValueError:
+            amount = None
+        word = normalize(slots.get("volume", ""))
+        if amount is not None and not word:
+            level = amount  # "pon el volumen en 40"
+        else:
+            step = 10 if amount is None else amount
+            level = current["level"] + (-step if word in VOLUME_DOWN else step)
+        after = quick.set_volume(level=max(0, min(100, level)), muted=False) or current
+        return VoiceResult(f"Volumen en {after['level']} por ciento.")
 
     def _language(self, slots: dict) -> str | None:
         return LANGUAGES.get(normalize(slots.get("language", "")))

@@ -380,6 +380,52 @@
             "reproduce el capítulo {episode} de la temporada {season} de {series}",
             "reproduce el capítulo {episode} de la temporada {season} de {series} en {language}"
           ]
+        },
+        {
+          "name": "TimeLeftIntent",
+          "slots": [],
+          "samples": [
+            "cuánto le falta",
+            "cuánto falta",
+            "cuánto queda",
+            "cuánto le queda",
+            "cuánto le falta al video",
+            "cuánto le falta a la película",
+            "cuánto le falta al episodio",
+            "a qué hora termina"
+          ]
+        },
+        {
+          "name": "CaptureIntent",
+          "slots": [],
+          "samples": [
+            "toma una captura",
+            "toma captura",
+            "haz una captura",
+            "captura la pantalla",
+            "toma una captura de pantalla"
+          ]
+        },
+        {
+          "name": "VolumeIntent",
+          "slots": [
+            {
+              "name": "volume",
+              "type": "VOLUME_DIRECTION"
+            },
+            {
+              "name": "amount",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "{volume} el volumen",
+            "{volume} volumen",
+            "{volume} el volumen a {amount}",
+            "pon el volumen en {amount}",
+            "pon el volumen a {amount}",
+            "volumen al {amount} por ciento"
+          ]
         }
       ],
       "types": [
@@ -783,6 +829,35 @@
             {
               "name": {
                 "value": "Silicon Valley"
+              }
+            }
+          ]
+        },
+        {
+          "name": "VOLUME_DIRECTION",
+          "values": [
+            {
+              "name": {
+                "value": "up",
+                "synonyms": [
+                  "sube",
+                  "súbele",
+                  "suba",
+                  "más alto",
+                  "aumenta"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "down",
+                "synonyms": [
+                  "baja",
+                  "bájale",
+                  "baje",
+                  "más bajo",
+                  "disminuye"
+                ]
               }
             }
           ]

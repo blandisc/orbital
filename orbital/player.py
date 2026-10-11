@@ -122,6 +122,7 @@ class OrbitalPlayer(PlayerScreen):
         self.on_switch_source = None  # (meta, id_fuente, posición)
         self.on_episode = None  # (meta, ±1): episodio anterior / siguiente
         self.on_sub_scale = None  # (escala): para recordarla
+        self.on_language = None  # (meta, "audio" | "subtitles", código): el idioma que elegiste
         # Un video olvidado en pausa (saliste con Home y te fuiste) se cierra solo; el avance se guarda.
         self.idle_seconds = idle_seconds
         self.on_idle = on_idle  # (título, minutos): para avisar en Orbital

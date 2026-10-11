@@ -282,7 +282,7 @@ def track_menu(kind: str, tracks: list[dict], extra: list[dict] | None = None,
     for t in tracks:
         if t.get("type") == kind:
             options.append({"label": track_label(t), "action": ("aid" if kind == "audio" else "sid", t["id"]),
-                            "current": bool(t.get("selected"))})
+                            "current": bool(t.get("selected")), "lang": t.get("lang")})
     options += extra or []
     index = next((i for i, o in enumerate(options) if o.get("current")), 0)
     return Menu(kind, options, index, tabs or ["audio", "sub"])
