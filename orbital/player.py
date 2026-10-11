@@ -101,7 +101,7 @@ class OrbitalPlayer(PlayerScreen):
         self.remote = PlayerRemote(self.press)
         self.current: Playback | None = None
         self.segment: Segment | None = None
-        self.menu: player_ui.Menu | None = None
+        self.menu: player_ui.Panel | None = None  # panel de columnas abierto (X o Y)
         self._hud_timer: threading.Timer | None = None
         self._toast_timer: threading.Timer | None = None
         self._hud_visible = False
@@ -121,6 +121,8 @@ class OrbitalPlayer(PlayerScreen):
         self.sources_provider = None  # (meta) -> [{"id", "label", "current"}]
         self.on_switch_source = None  # (meta, id_fuente, posición)
         self.on_episode = None  # (meta, ±1): episodio anterior / siguiente
+        self.episodes_provider = None  # (meta) -> [{"id", "label", "current", "progress"?}] de la temporada
+        self.on_play_episode = None  # (meta, id_del_episodio): ver ese episodio
         self.on_sub_scale = None  # (escala): para recordarla
         self.on_language = None  # (meta, "audio" | "subtitles", código): el idioma que elegiste
         # Un video olvidado en pausa (saliste con Home y te fuiste) se cierra solo; el avance se guarda.
@@ -263,7 +265,7 @@ class OrbitalPlayer(PlayerScreen):
         segment.chapters = [c for c in chapters if isinstance(c, dict) and isinstance(c.get("time"), (int, float))]
         if wrong_audio(tracks, self._audio_lang):
             # El archivo dice ser de otro idioma (un doblaje mal etiquetado): avisa en vez de callar.
-            self.toast("Esta fuente no trae audio en tu idioma · X › Fuente para elegir otra", 6)
+            self.toast("Esta fuente no trae audio en tu idioma · Y › Fuente para elegir otra", 6)
         elif segment.start > 5:
             self.toast("Sigues donde te quedaste · ◀ regresa", 3.5)
         self._ensure_subtitles(self._subs_lang, self._fallback_subs)

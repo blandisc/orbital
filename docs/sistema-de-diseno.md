@@ -138,8 +138,21 @@ Cada una se marca en el código con `ds-exception: <motivo>` usando exactamente 
 ## 8. El reproductor (`orbital/player_ui.py`)
 
 Lo dibuja mpv encima del video (texto y figuras ASS), así que no usa este CSS, pero sí **la misma
-paleta** (`palette.json`) y el mismo idioma de botones. La propuesta de rediseño está en el lienzo de
-diseño (tableros «Reproductor»).
+paleta** (`palette.json`) y el mismo idioma de botones. Sigue los tableros «Reproductor» del lienzo de
+diseño y tiene sus propias piezas reutilizables en `player_ui.py`: `rrect`, `circle`, `ring` (cuenta
+atrás), `gradient` (velo sin franjas), `glyph`/`hints` (botones del mando), `buttons`, `text`/`fit`/`wrap`
+y el panel de columnas (`Panel`/`Column`). Los tamaños se escriben «como en CSS» (`FS` los convierte).
+
+| Estado | Qué se ve | Botones |
+|---|---|---|
+| Al tocar un botón | Título, barra partida por capítulos con su punto, tiempo y «termina a las…», idioma y fuente | A Pausa · X Audio y subtítulos · Y Más |
+| En pausa | Video oscurecido; título grande, datos, sinopsis y botones | Los mismos |
+| Adelantando (◀ ▶, LB/RB) | Solo la barra y, sobre el punto, la hora, cuánto salta y el capítulo | Mantén: más rápido |
+| X | Panel abajo: Audio · Subtítulos · Tamaño (el video sigue) | ◀ ▶ columna · A elegir · B cerrar |
+| Y | Panel «Más»: Episodios (series) · Fuente · Desde el principio | Igual |
+| Tarjetas | «Saltar intro» (botón claro), «Siguiente episodio» (anillo de cuenta atrás), «¿Sigues viendo?» | A / B |
+
+El reproductor no usa ☰ (Start es de Orbital: con Home, salir del juego).
 
 ## 9. Arte
 

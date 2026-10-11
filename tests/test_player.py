@@ -80,8 +80,8 @@ def test_a_pauses_and_shows_the_bar_with_the_legend():
     p.press("a")
     assert ("cycle", "pause") in mpv.sent
     hud = mpv.overlays[1]
-    assert "Interstellar" in hud and "EN PAUSA" in hud and "Subtítulos" in hud and "Volumen" in hud
-    assert "Audio: Inglés" in hud and "Subtítulos: Inglés" in hud and "10:00" in hud
+    assert "Interstellar" in hud and "En pausa" in hud and "Seguir" in hud and "Audio y subtítulos" in hud
+    assert "Subtítulos en inglés" in hud and "10:00" in hud and "EN PAUSA" not in hud
 
 
 def test_seek_and_volume():
@@ -90,15 +90,17 @@ def test_seek_and_volume():
     p.press("left")
     p.press("up")
     assert ("seek", 60, "relative") in mpv.sent and ("seek", -10, "relative") in mpv.sent
-    assert ("add", "volume", 5) in mpv.sent and "Volumen 80 %" in mpv.overlays[3]
+    assert ("add", "volume", 5) in mpv.sent and "}80" in mpv.overlays[3]  # el volumen, con su barra
+    assert "−10 s" in mpv.overlays[1]  # adelantando: la burbuja dice cuánto
 
 
 def test_audio_menu_lists_tracks_and_switches():
     p, mpv = make_player()
     p.press("x")
-    assert p.menu.kind == "audio" and [o["label"] for o in p.menu.options] == [
+    assert p.menu.kind == "tracks" and p.menu.column.key == "audio" and [o["label"] for o in p.menu.options] == [
         "Inglés · 5.1 · E-AC3", "Español · Latino · Estéreo · AAC"]
-    assert p.menu.index == 0 and "AUDIO" in mpv.overlays[2] and mpv.overlays.get(1) is None
+    assert [c.key for c in p.menu.columns] == ["audio", "sub", "size"]
+    assert p.menu.index == 0 and "Tamaño de los subtítulos" in mpv.overlays[2] and mpv.overlays.get(1) is None
     p.press("down")
     p.press("a")
     assert ("set_property", "aid", 2) in mpv.sent and p.menu is None and mpv.overlays[2] is None
@@ -108,9 +110,10 @@ def test_audio_menu_lists_tracks_and_switches():
 def test_subtitle_menu_has_off_and_addon_search():
     p, mpv = make_player()
     p._fallback_subs, p._subs_lang = (list), "es"
-    p.press("y")
+    p.press("x")
+    p.press("right")  # columna Subtítulos
     labels = [o["label"] for o in p.menu.options]
-    assert labels[0] == "Sin subtítulos" and "Español · Forzados" in labels and labels[-2].startswith("Buscar subtítulos") and labels[-1] == "Tamaño: Normal"
+    assert labels[0] == "Sin subtítulos" and "Español · Forzados" in labels and labels[-1].startswith("Buscar en español")
     assert p.menu.index == 1  # en la que está puesta
     p.press("up")
     p.press("a")
@@ -119,7 +122,7 @@ def test_subtitle_menu_has_off_and_addon_search():
 
 def test_b_closes_the_menu_before_closing_the_video():
     p, mpv = make_player()
-    p.press("y")
+    p.press("x")
     p.press("b")
     assert p.menu is None and ("quit",) not in mpv.sent
     p.press("b")

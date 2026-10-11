@@ -339,6 +339,8 @@ class Watch:
         p.sources_provider = self._player_sources
         p.on_switch_source = self._switch_source
         p.on_episode = self._step_episode
+        p.episodes_provider = self._season_episodes
+        p.on_play_episode = self._jump_episode
         p.on_sub_scale = lambda scale: self.state.set_setting("sub_scale", scale)
         p.idle_seconds = int(self.setting("video_idle_minutes", self.config.sessions.video_idle_minutes)) * 60
         p.on_language = self._remember_language
@@ -355,15 +357,25 @@ class Watch:
         return "", ""
 
     def _media_meta(self, kind: str, meta_id: str, video_id: str, title: str, source: streams.Source) -> dict:
-        """Lo que el reproductor necesita saber del video (y lo que se guarda en Stremio)."""
-        detail = ""
-        if kind == "series":
-            try:
-                label, name = self._episode_label(self.cinemeta.meta(kind, meta_id), video_id)
+        """Lo que el reproductor necesita saber del video (y lo que se guarda en Stremio). En pausa
+        muestra también los datos y la sinopsis (del episodio, si la hay; si no, de la serie)."""
+        detail, facts, description = "", "", ""
+        try:
+            info = self.cinemeta.meta(kind, meta_id)
+        except cinemeta.CinemetaError:
+            info = None
+        if info:
+            about = cinemeta.describe_meta(info)
+            facts = " · ".join(p for p in (about.get("year"), about.get("rating") and f"★ {about['rating']}",
+                                           ", ".join((about.get("genres") or [])[:2])) if p)
+            description = about.get("description") or ""
+            if kind == "series":
+                label, name = self._episode_label(info, video_id)
                 detail = " · ".join(p for p in (label, name) if p)
-            except cinemeta.CinemetaError:
-                pass
+                episode = next((e for s in cinemeta.seasons(info) for e in s["episodes"] if e["id"] == video_id), None)
+                description = (episode or {}).get("overview") or description
         return {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title, "detail": detail,
+                "facts": facts, "description": description,
                 "source": source.index, "source_label": source_label(source), "binge": source.binge,
                 "tried": [source.index]}
 
@@ -535,6 +547,25 @@ class Watch:
         title, _ = self._episode_title(info, meta["meta_id"], episodes[i])
         self._play_episode(meta["meta_id"], episodes[i], title, meta.get("binge"),
                            start=self.resume_position(meta["meta_id"], episodes[i]))
+
+    def _season_episodes(self, meta: dict) -> list[dict]:
+        """Y › Episodios en el reproductor: los de la temporada que estás viendo."""
+        try:
+            info = self.cinemeta.meta("series", meta["meta_id"])
+        except cinemeta.CinemetaError:
+            return []
+        for season in cinemeta.seasons(info):
+            if any(e["id"] == meta["video_id"] for e in season["episodes"]):
+                return [{"id": e["id"], "label": f"E{e['episode']} · {e['title']}", "current": e["id"] == meta["video_id"]}
+                        for e in season["episodes"]]
+        return []
+
+    def _jump_episode(self, meta: dict, video_id: str) -> None:
+        """Elegir un episodio desde el reproductor: lo pone donde ibas (o desde el principio)."""
+        info = self.cinemeta.meta("series", meta["meta_id"])
+        title, _ = self._episode_title(info, meta["meta_id"], video_id)
+        self._play_episode(meta["meta_id"], video_id, title, meta.get("binge"),
+                           start=self.resume_position(meta["meta_id"], video_id))
 
     @property
     def native_player(self) -> bool:

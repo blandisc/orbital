@@ -93,7 +93,8 @@ def test_next_episode_card_counts_down_and_plays_in_the_same_window():
     segment.upnext = p.next_provider(segment.meta)  # (lo busca en segundo plano)
     segment.upnext_requested = True
     p.tick(segment, 1, False)
-    assert "Siguiente episodio en 8" in mpv.overlays[4] and "Diversity Day" in mpv.overlays[4]
+    card = mpv.overlays[4]
+    assert "Siguiente episodio" in card and "Diversity Day" in card and "}8" in card  # cuenta atrás en el anillo
     p.tick(segment, 1 + player.UPNEXT_COUNTDOWN + .1, False)
     import time
     for _ in range(50):
@@ -139,21 +140,24 @@ def test_skip_intro_from_chapters():
     assert player.chapter_kind("End Credits") == "credits" and player.chapter_kind("Part B") is None
 
 
-def test_menu_tabs_and_subtitle_size():
+def test_panels_subtitle_size_and_more():
     p, mpv = make_player()
     p.sources_provider = lambda meta: [{"id": 3, "label": "1080p · Al instante", "current": True},
                                        {"id": 7, "label": "4K · Torrentio", "current": False}]
     switched = []
     p.on_switch_source = lambda meta, sid, pos: switched.append((sid, pos))
     p.press("x")
-    assert p.menu.tabs == ["audio", "sub", "source"] and "FUENTE" in mpv.overlays[2]
     p.press("rb")
-    assert p.menu.kind == "sub"
-    p.menu.index = len(p.menu.options) - 1
-    p.press("a")  # Tamaño: Normal -> Grande (se queda en el menú)
+    p.press("right")
+    assert p.menu.column.key == "size"
+    p.press("down")
+    p.press("a")  # Tamaño: Normal -> Grande (se queda en el panel)
     assert p.sub_scale == 1.25 and p.menu is not None and ("set_property", "sub-scale", 1.25) in mpv.sent
-    p.press("rb")
-    assert p.menu.kind == "source"
+    p.press("right")  # ya es la última columna: no se sale
+    assert p.menu.column.key == "size"
+    p.press("y")  # Y: Más (Fuente · Reproducción)
+    assert p.menu.kind == "more" and [c.key for c in p.menu.columns] == ["source", "playback"]
+    assert "Fuente" in mpv.overlays[2] and "Desde el principio" in mpv.overlays[2]
     p.press("down")
     p.press("a")
     import time
@@ -201,3 +205,39 @@ def test_knows_how_it_ended_before_closing():
     p.hide_hud()
     p.press("b")  # sale con la barra oculta, en los créditos
     assert ("quit",) in mpv.sent and p.last_end == {"title": "Interstellar", "finished": True, "kind": "series"}
+
+
+def test_more_lists_the_season_and_restarts():
+    p, mpv = series_player(**{"time-pos": 600.0, "duration": 1300.0})
+    jumped = []
+    p.episodes_provider = lambda meta: [{"id": "s:1:1", "label": "E1 · Pilot", "current": True},
+                                        {"id": "s:1:2", "label": "E2 · Diversity Day", "current": False}]
+    p.on_play_episode = lambda meta, vid: jumped.append(vid)
+    p.press("y")
+    assert [c.key for c in p.menu.columns] == ["episodes", "playback"] and p.menu.index == 0
+    assert "Viendo" in mpv.overlays[2]
+    p.press("down")
+    p.press("a")
+    import time
+    for _ in range(50):
+        if jumped:
+            break
+        time.sleep(.01)
+    assert jumped == ["s:1:2"] and p.menu is None
+    p.press("y")
+    p.press("right")
+    p.press("a")  # Desde el principio
+    assert ("seek", 0, "absolute") in mpv.sent
+
+
+def test_player_ui_pieces():
+    from orbital import player_ui as ui
+    assert ui.seek_label(10) == "+10 s" and ui.seek_label(-60) == "−1 min" and ui.seek_label(30) == "+30 s"
+    assert ui.wrap("uno dos tres cuatro", 30, 10_000, 1) == ["uno dos tres cuatro"]
+    assert ui.wrap("palabra " * 40, 26, 300, 2)[-1].endswith("…")
+    assert ui.fit("Un título larguísimo de verdad", 24, 120).endswith("…")
+    hud = ui.Hud("X", position=2000, duration=6000, chapters=[0, 1800, 4000], chapter_titles=["Intro", "Chapter 2", "El final"])
+    assert ui.chapter_at(hud) == "Capítulo 2"  # nombre genérico: solo el número
+    assert ui.ring(0, 0, 10, 2, 0, ui.TEXT) == "" and "m " in ui.ring(0, 0, 10, 2, .5, ui.TEXT)
+    assert "EN PAUSA" not in ui.hud_ass(ui.Hud("X", paused=True)) and "En pausa" in ui.hud_ass(ui.Hud("X", paused=True))
+
