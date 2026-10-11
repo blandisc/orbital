@@ -18,7 +18,9 @@ export function createHero({ onAction }) {
   const actions = h("div", { class: "hero__actions" });
   // Una frase para Alexa según lo enfocado (solo si Alexa está configurada).
   const voice = h("p", { class: "hero__voice", hidden: true });
-  const content = h("div", { class: "hero__content" }, eyebrow, logo, title, facts, description, actions, voice);
+  // La frase va al lado de los botones, no debajo: debajo se salía del destacado y se cortaba.
+  const row = h("div", { class: "hero__row" }, actions, voice);
+  const content = h("div", { class: "hero__content" }, eyebrow, logo, title, facts, description, row);
   let alexa = false;
   let tips = true; // Ajustes → Pantalla → Frases para Alexa
   const el = h("main", { class: "hero" }, content);

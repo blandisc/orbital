@@ -39,8 +39,11 @@ body[data-view="home"] .backdrop { transition: --art-tint var(--duration-tint) v
 .home--intro .tile--console { animation: home-in 620ms var(--ease-out) calc(300ms + var(--i, 0) * 45ms) both; }
 @keyframes home-in { from { opacity: 0; transform: translateY(1.2rem) scale(.985); } }
 
-/* Pantallas bajas (Legion Go en ventana): menos alto arriba y consolas más compactas. */
-@media (max-height: 760px) {
+/* Pantallas muy bajas (ventanas chicas): menos alto arriba y consolas más compactas.
+   La letra base sigue a la pantalla (min(1.25vw, 2vh)): cualquier pantalla mide al menos 50rem de alto
+   y no hace falta compactar. Solo por debajo de 600 px, donde la letra ya no puede bajar de 12 px
+   (antes 760 px: la TV al 300 % —720 px— se compactaba y quedaba un hueco abajo). */
+@media (max-height: 600px) {
   .home { gap: var(--space-3); }
   .home__top { max-height: 17rem; }
   .home__consoles-track > .tile--console { height: 9.2rem; }

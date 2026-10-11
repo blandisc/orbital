@@ -23,6 +23,9 @@ export function createSheet({ onCommand, onMove, onClose }) {
   let stack = []; // menús de los que vienes: [{ menu, index }]
   let cancelExit = () => {};
 
+  /** La ayuda va debajo del nombre si es larga o si a la derecha ya está el valor (‹ 70 % ›). */
+  const below = (option) => !!option.hint && (longHint(option.hint) || option.value !== undefined);
+
   function render() {
     back.textContent = stack.length ? stack.map((s) => s.menu.crumb || s.menu.title).join(" › ") : "";
     back.hidden = !stack.length;
@@ -39,11 +42,11 @@ export function createSheet({ onCommand, onMove, onClose }) {
     }, h("span", { class: "sheet__icon" }, ICONS[option.icon] ? svg(ICONS[option.icon]) : null),
     // Una descripción larga va debajo del nombre (en la misma línea lo aplastaba); un dato corto, a la derecha.
     h("span", { class: "sheet__text" }, h("span", { class: "sheet__label" }, option.label),
-      longHint(option.hint) && h("small", { class: "sheet__hint sheet__hint--below" }, option.hint)),
+      below(option) && h("small", { class: "sheet__hint sheet__hint--below" }, option.hint)),
     // ‹ › solo en lo que se cambia con A o ◀/▶ (un estado, como "Conectada", no lleva flechas).
     option.value !== undefined && h("span", { class: "sheet__value" },
-      option.command?.type === "setting" ? ["‹ ", option.value, " ›"] : option.value),
-    option.hint && !longHint(option.hint) && h("small", { class: "sheet__hint" }, option.hint))));
+      option.command?.type === "setting" || option.adjust ? ["‹ ", option.value, " ›"] : option.value),
+    option.hint && !below(option) && h("small", { class: "sheet__hint" }, option.hint))));
   }
 
   /** `stack`: de dónde vienes (para que B regrese); `index`: opción enfocada (al reabrir el mismo menú). */
