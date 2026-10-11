@@ -1,7 +1,7 @@
 /* StatusBar: marca, juego en curso, Alexa, Wi-Fi, batería y hora.
    Texto limpio sobre el velo superior del fondo; sin cápsulas ni vidrio. */
 .status-bar {
-  position: relative; display: flex; align-items: center; gap: var(--space-8);
+  position: relative; display: flex; align-items: center; gap: var(--space-8); min-width: 0;
   height: 3rem; margin: calc(var(--space-5) + var(--safe-y)) var(--page-gutter) 0;
   font-size: var(--text-md);
 }
@@ -28,10 +28,11 @@
   .status-bar__playing-title { max-width: 18rem; }
 }
 
-/* Secciones al centro: la activa en sólido; LB/RB a los lados. */
+/* Secciones al centro: la activa en sólido; LB/RB a los lados. Van en el flujo (antes, centradas
+   con position:absolute, se encimaban con Buscar y la hora en pantallas angostas). */
 .status-bar__tabs {
-  position: absolute; left: 50%; transform: translateX(-50%);
-  display: flex; align-items: center; gap: var(--space-1);
+  display: flex; align-items: center; gap: var(--space-1); min-width: 0; margin: 0 auto;
+  overflow-x: auto; scrollbar-width: none;
 }
 .status-bar__tabs .glyph { margin: 0 var(--space-2); }
 .status-bar__tab {
@@ -52,7 +53,7 @@
 .status-bar__search:hover { background: var(--color-fill-hover); color: var(--color-text); }
 .status-bar__search-glyph:empty { display: none; }
 @media (max-width: 1100px) { .status-bar__search > span:not(.status-bar__search-glyph) { display: none; } }
-.status-bar__right { margin-left: auto; display: flex; align-items: center; gap: var(--space-6); color: var(--color-text-muted); }
+.status-bar__right { flex: none; display: flex; align-items: center; gap: var(--space-6); color: var(--color-text-muted); }
 .status-bar__clock { color: var(--color-text); font-family: var(--font-sans); font-size: var(--text-xl); font-weight: var(--weight-medium); letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums; }
 
 .indicator { display: inline-flex; align-items: center; gap: var(--space-2); }
@@ -74,3 +75,17 @@
 .battery--charging .battery__level { background: var(--color-live); }
 
 @media (max-width: 700px) { .status-bar .indicator, .status-bar__playing { display: none; } }
+
+/* Pantallas angostas: primero se van los textos de apoyo, nunca las pestañas ni la hora. */
+@media (max-width: 1300px) { .status-bar__playing-title { display: none; } }
+@media (max-width: 1000px) {
+  .status-bar { gap: var(--space-4); }
+  .status-bar__wordmark, .status-bar .indicator { display: none; }
+  .status-bar__right { gap: var(--space-4); }
+  .status-bar__clock { font-size: var(--text-lg); }
+}
+@media (max-width: 760px) {
+  .status-bar__tabs .glyph, .battery > span:not(.battery__body) { display: none; }
+  .status-bar__tab { padding: .45rem .7rem; }
+}
+@media (max-width: 480px) { .status-bar__search, .battery { display: none; } }

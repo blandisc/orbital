@@ -38,5 +38,6 @@ $lnk = $shell.CreateShortcut((Join-Path $startup "Orbital.lnk"))
 $lnk.TargetPath = "$venv\Scripts\pythonw.exe"
 $lnk.Arguments = "-m orbital"
 $lnk.WorkingDirectory = $repo
+$lnk.IconLocation = "$repo\orbital\web\icons\orbital.ico"
 $lnk.Save()
 Write-Host "Listo. Orbital arrancará al iniciar sesión. Pruébalo ahora con: $venv\Scripts\python.exe -m orbital"

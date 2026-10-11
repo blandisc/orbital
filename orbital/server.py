@@ -165,9 +165,22 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     async def lifespan(_: FastAPI):
         bus.loop = asyncio.get_running_loop()
         catalog.listeners.append(bus.publish_threadsafe)
-        await run_in_threadpool(catalog.refresh)
         if shortcuts:
-            shell.start()
+            # De verdad (no en pruebas): la interfaz abre ya, con su animación de arranque, mientras
+            # se escanea la biblioteca; al terminar avisa (library-changed). Antes no se veía nada
+            # hasta que acababa el escaneo de Steam, emuladores y Stremio.
+            def scan() -> None:
+                try:
+                    catalog.refresh()
+                finally:
+                    catalog.scanning = False
+                    bus.publish_threadsafe({"type": "library-changed"})
+                shell.start()
+
+            catalog.scanning = True  # antes de que la interfaz pregunte
+            threading.Thread(target=scan, daemon=True, name="first-scan").start()
+        else:
+            await run_in_threadpool(catalog.refresh)
         yield
         catalog.listeners.remove(bus.publish_threadsafe)
 
@@ -194,7 +207,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     @app.get("/api/library")
     def library() -> dict:
         catalog.refresh_stremio_if_stale()  # en segundo plano; avisa con "library-changed"
-        return {"rows": catalog.grouped(), "hidden": catalog.hidden_count()}
+        return {"rows": catalog.grouped(), "hidden": catalog.hidden_count(), "scanning": catalog.scanning}
 
     @app.post("/api/library/refresh")
     def refresh() -> dict:

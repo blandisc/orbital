@@ -66,3 +66,10 @@
 .search__recent .icon { width: 1rem; height: 1rem; color: var(--color-text-muted); }
 .search__recent--focused { background: var(--color-primary); color: var(--color-on-primary); }
 .search__recent--focused .icon { color: inherit; }
+
+@media (max-height: 640px) {
+  .search { gap: var(--space-3); }
+  .search__key { height: 2.5rem; }
+  .search__hint { display: none; }
+}
+@media (max-width: 760px) { .search__hint { display: none; } .search__key { font-size: var(--text-md); } }

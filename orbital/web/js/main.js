@@ -190,12 +190,42 @@ function stepSection(delta) {
 
 let libraryRetry = 0;
 
+// ---------------------------------------------------------------- arranque y regreso
+const BOOT_MIN_MS = 1700; // que la animación de arranque se alcance a ver completa
+const boot = document.getElementById("boot");
+
+/** La biblioteca llegó: la cámara se zambulle en el planeta y aparece la interfaz. */
+function finishBoot() {
+  if (!boot || boot.classList.contains("boot--leaving")) return;
+  const wait = Math.max(0, BOOT_MIN_MS - performance.now());
+  setTimeout(() => {
+    boot.classList.add("boot--leaving");
+    document.body.dataset.landing = "boot";
+    setTimeout(() => { boot.remove(); delete document.body.dataset.landing; }, 1100);
+  }, wait);
+}
+
+function bootStatus(text) {
+  const node = boot?.querySelector(".boot__status");
+  if (node) node.textContent = text;
+}
+
+/** De vuelta de un juego: la interfaz "aterriza" (entra desde un poco más cerca) en vez de aparecer de golpe. */
+function land() {
+  document.body.dataset.landing = "return";
+  setTimeout(() => { if (document.body.dataset.landing === "return") delete document.body.dataset.landing; }, 800);
+}
+
 async function loadLibrary({ refresh = false, keepId = null } = {}) {
   const before = { ...state.focus };
   const wanted = keepId;
   try {
     if (refresh) ui.toast.show("Buscando juegos nuevos…");
     const data = refresh ? await api.refresh() : await api.library();
+    if (data.scanning && boot?.isConnected) { // primer escaneo: la pantalla de arranque espera su aviso
+      bootStatus("Preparando tu biblioteca…");
+      return;
+    }
     // Lo que importa es dónde estás AHORA (pudiste moverte mientras llegaba la respuesta).
     const moved = before.r !== state.focus.r || before.c !== state.focus.c;
     const itemId = moved || !wanted ? current()?.id : wanted;
@@ -218,6 +248,7 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     const { r, c } = restoreFocus(state.rows, { rowId, itemId, ...state.focus });
     state.focus = { r, c };
     setFocus(r, c, { silent: true });
+    finishBoot();
     if (refresh) {
       const countAfter = state.allRows.reduce((n, row) => n + row.items.length, 0);
       const diff = countAfter - countBefore;
@@ -225,7 +256,8 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     }
   } catch (err) {
     // Al arrancar el servidor puede no estar listo: se reintenta solo (y se avisa una vez).
-    if (libraryRetry === 0) ui.toast.show(`No pude cargar la biblioteca: ${err.message}. Reintentando…`, { error: true });
+    if (libraryRetry === 0 && !boot?.isConnected) ui.toast.show(`No pude cargar la biblioteca: ${err.message}. Reintentando…`, { error: true });
+    if (boot?.isConnected) bootStatus("Conectando con Orbital…");
     libraryRetry++;
     setTimeout(() => loadLibrary({ refresh: false, keepId }), Math.min(15_000, 1000 * 2 ** libraryRetry));
   }
@@ -557,6 +589,7 @@ function handleEvent(event) {
   } else if (event.type === "closed") {
     // Al abrir otro juego se cierra el anterior: su "closed" no debe tapar la carga del nuevo.
     if (!ui.launch.visible || event.id === state.launchingId) ui.launch.hide();
+    land();
     if (event.crashed) {
       // Se cerró solo a los pocos segundos: no es "de vuelta", es que no pudo abrir.
       sound.play("error");

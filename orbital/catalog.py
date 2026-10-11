@@ -283,6 +283,7 @@ class Catalog:
         self.before_launch: Callable[[str], None] | None = None
         self._reveal_skip = threading.Event()
         self.revealing = False  # el último lanzamiento tiene pantalla de carga hasta launch-ready
+        self.scanning = False  # primer escaneo en curso (la interfaz sigue en su pantalla de arranque)
         self._cinemeta_items: list[LibraryItem] = []
         self.listeners: list[Listener] = []
         self._items: dict[str, LibraryItem] = {}

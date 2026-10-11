@@ -69,3 +69,9 @@
 .source--focused .chip--good { color: #0c7a6b; }
 .source--focused .chip--warn { color: #8a5b00; }
 .source--focused .source__badge { background: var(--color-on-primary); color: var(--color-primary); }
+
+@media (max-width: 760px) {
+  .sources__panel { width: 100vw; border-left: 0; }
+  .source { grid-template-columns: 3.8rem minmax(0, 1fr); }
+  .source__badge { grid-column: 2; justify-self: start; }
+}

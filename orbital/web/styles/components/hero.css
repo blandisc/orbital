@@ -4,6 +4,7 @@
 .hero {
   display: flex; flex-direction: column; justify-content: flex-end;
   min-height: 0; padding: var(--space-4) var(--page-gutter) var(--space-5);
+  overflow: hidden; /* si no cabe, se recorta aquí: nunca sube por encima de la barra superior */
 }
 .hero__content {
   max-width: min(40rem, 58vw);
@@ -59,3 +60,20 @@
 }
 .hero__voice svg { flex: none; width: 1rem; height: 1rem; color: var(--color-accent); }
 .hero__voice span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Pantallas bajas (ventana, la Legion Go con escala alta): el título en una línea y sin lo accesorio. */
+@media (max-height: 760px) {
+  .hero__title { -webkit-line-clamp: 1; font-size: var(--text-3xl); }
+  .hero__title--long { font-size: var(--text-2xl); }
+  .hero__voice { display: none; }
+  .hero__description { -webkit-line-clamp: 1; }
+  .hero__actions { margin-top: var(--space-3); }
+}
+@media (max-height: 560px) {
+  .hero__eyebrow, .hero__description { display: none; }
+  .hero__logo { max-height: 4.5rem; }
+}
+@media (max-width: 760px) {
+  .hero__content { max-width: 100%; }
+  .hero__title { font-size: var(--text-2xl); }
+}

@@ -54,3 +54,5 @@
 .sheet__item--focused .sheet__icon, .sheet__item--focused .sheet__hint { color: inherit; }
 .sheet__item--danger .sheet__icon { color: var(--color-danger); }
 .sheet__item--danger.sheet__item--focused { background: var(--color-danger); color: var(--color-on-primary); }
+
+@media (max-width: 760px) { .sheet__panel { width: 100vw; border-left: 0; } }

@@ -1,29 +1,87 @@
-/* LaunchOverlay: pantalla "Abriendo…" con el arte del juego. */
+/* LaunchOverlay: el viaje de Orbital al juego.
+   Portada en órbita sobre un campo de estrellas que avanza; al estar listo, salto a velocidad luz
+   y a negro (luego Windows funde la ventana sobre el juego). Solo se animan transform y opacity:
+   nada de filtros animados ni capas que se repinten en la GPU integrada. */
 .launch {
   position: fixed; inset: 0; z-index: var(--z-launch); display: grid; place-items: center;
   background: var(--color-tinted-bg); overflow: hidden;
   animation: fade-in var(--duration-base) var(--ease-out);
+  transition: background-color 380ms var(--ease-in);
 }
 .launch--leaving { animation: fade-out var(--duration-base) var(--ease-in) forwards; }
-/* El juego está listo: todo se funde a negro y el servidor corta al juego (de negro al primer
-   cuadro del juego, en vez de pasar por la lista de Eden o por Orbital). */
-.launch { transition: background-color 320ms var(--ease-in); }
-.launch > * { transition: opacity 320ms var(--ease-in), transform 320ms var(--ease-in); }
-.launch--revealing { background-color: #000; }
-.launch--revealing > * { opacity: 0; transform: scale(.985); }
-.launch__backdrop { position: absolute; inset: -2rem; background-size: cover; background-position: center; filter: blur(28px) brightness(.3) saturate(1.15); animation: launch-zoom 24s cubic-bezier(.2, .6, .3, 1) forwards; }
-.launch__content { position: relative; display: flex; align-items: center; gap: var(--space-8); padding: 0 var(--page-gutter); }
-.launch__cover {
-  flex: none; height: 19rem; width: calc(19rem * var(--ratio, .667)); border-radius: var(--radius-lg);
-  background: var(--gradient-card) center / cover; transform-origin: 0 0;
-  box-shadow: 0 2rem 4rem -1rem rgba(0, 0, 0, .7), 0 0 5rem -1rem color-mix(in oklab, var(--art-accent) 35%, transparent);
+
+/* Arte del juego: desenfocado y oscuro, quieto (antes un desenfoque animado de 24 s). */
+.launch__backdrop {
+  position: absolute; inset: -3rem; background-size: cover; background-position: center;
+  filter: blur(30px) brightness(.2) saturate(1.25); transform: scale(1.04);
+  transition: opacity 420ms var(--ease-in), transform 700ms var(--ease-in);
 }
-.launch__text { animation: rise-in 480ms var(--ease-out) 140ms backwards; } /* entra cuando la portada ya llegó */
+
+/* Estrellas: dos capas de puntos que vienen hacia ti (cerca más rápido que lejos). */
+.launch__stars { position: absolute; inset: 0; pointer-events: none; }
+.launch__starfield {
+  position: absolute; inset: -50%; opacity: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20% 30%, rgba(255, 255, 255, .9), transparent),
+    radial-gradient(1px 1px at 70% 80%, rgba(255, 255, 255, .7), transparent),
+    radial-gradient(1.5px 1.5px at 85% 20%, color-mix(in oklab, var(--art-accent) 80%, white), transparent),
+    radial-gradient(1px 1px at 40% 65%, rgba(255, 255, 255, .6), transparent),
+    radial-gradient(1px 1px at 10% 85%, rgba(255, 255, 255, .5), transparent);
+  background-size: 22rem 22rem;
+  animation: launch-travel 5.5s linear infinite;
+}
+.launch__starfield--near { background-size: 31rem 31rem; animation-duration: 3.2s; animation-delay: -1.2s; }
+@keyframes launch-travel {
+  0% { transform: scale(.55); opacity: 0; }
+  25% { opacity: .9; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.launch__content {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--space-8);
+  padding: 0 var(--page-gutter); text-align: center;
+}
+
+/* Portada en el centro, con la órbita de la marca girando alrededor. */
+.launch__stage { position: relative; display: grid; place-items: center; height: 20rem; }
+.launch__cover {
+  position: relative; z-index: 1; height: 17rem; width: calc(17rem * var(--ratio, .667)); border-radius: var(--radius-lg);
+  background: var(--gradient-card) center / cover; transform-origin: 50% 50%;
+  box-shadow: 0 2rem 4rem -1rem rgba(0, 0, 0, .75), 0 0 6rem -1rem color-mix(in oklab, var(--art-accent) 45%, transparent);
+  transition: transform 640ms cubic-bezier(.7, 0, .84, 0), opacity 560ms var(--ease-in);
+}
+.launch__orbit {
+  position: absolute; left: 50%; top: 50%;
+  width: calc(17rem * var(--ratio, .667) + 13rem); height: 7.5rem; margin: -3.75rem 0 0 calc((17rem * var(--ratio, .667) + 13rem) / -2);
+  border-radius: 50%; border: 2px solid color-mix(in oklab, var(--art-accent) 70%, transparent);
+  transform: rotate(-24deg);
+  box-shadow: 0 0 1.2rem -.2rem color-mix(in oklab, var(--art-accent) 50%, transparent);
+  transition: transform 640ms var(--ease-in), opacity 480ms var(--ease-in);
+  animation: fade-in 600ms var(--ease-out) 200ms backwards;
+}
+/* El satélite recorre la elipse de verdad (offset-path), no un círculo. */
+.launch__satellite {
+  position: absolute; left: 0; top: 0; width: 12px; height: 12px; border-radius: 50%;
+  background: white; box-shadow: 0 0 .9rem .25rem color-mix(in oklab, var(--art-accent) 75%, white);
+  offset-path: ellipse(50% 50% at 50% 50%); offset-rotate: 0deg;
+  animation: launch-orbit 2.6s linear infinite;
+}
+@keyframes launch-orbit { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+/* Profundidad: el arco de enfrente pasa por delante de la portada; el de atrás, detrás. */
+.launch__orbit--front { z-index: 2; clip-path: inset(50% 0 0 0); box-shadow: none; }
+.launch--revealing .launch__orbit--front { transform: rotate(-24deg) scale(4); opacity: 0; }
+/* Sin portada (una app): solo la órbita, con un planeta de la marca al centro. */
+.launch--no-cover .launch__stage::before {
+  content: ""; position: absolute; width: 6rem; height: 6rem; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, var(--palette-ink-200) 45%, var(--palette-ink-700));
+  box-shadow: 0 0 4rem -.5rem color-mix(in oklab, var(--art-accent) 55%, transparent);
+}
+
+.launch__text { display: grid; justify-items: center; animation: rise-in 520ms var(--ease-out) 160ms backwards; transition: opacity 260ms var(--ease-in); }
 .launch__label { color: var(--color-accent); font-size: var(--text-sm); font-weight: var(--weight-medium); letter-spacing: var(--tracking-caps); text-transform: uppercase; }
-.launch__title { max-width: 26rem; margin: var(--space-2) 0; font-family: var(--font-sans); font-size: var(--text-2xl); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); line-height: 1.05; text-wrap: balance; }
+.launch__title { max-width: 40rem; margin: var(--space-2) 0; font-family: var(--font-sans); font-size: var(--text-2xl); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); line-height: 1.05; text-wrap: balance; }
 .launch__subtitle { color: var(--color-text-muted); font-size: var(--text-md); }
-/* Barra de carga: pista fina y un barrido de luz que recorre la pista (no sabemos cuánto falta,
-   así que no fingimos un porcentaje). */
+/* Barra de carga: pista fina y un barrido de luz (no sabemos cuánto falta: no fingimos un porcentaje). */
 .launch__progress { position: relative; width: 13rem; height: 3px; margin-top: var(--space-6); border-radius: var(--radius-pill); background: var(--color-progress-track); overflow: hidden; }
 .launch__progress::after {
   content: ""; position: absolute; inset: 0; width: 45%; border-radius: inherit;
@@ -31,8 +89,27 @@
   animation: launch-sweep 1.6s cubic-bezier(.45, 0, .55, 1) infinite;
 }
 @keyframes launch-sweep { from { transform: translateX(-100%); } to { transform: translateX(225%); } }
-@keyframes launch-zoom { from { transform: scale(1); } to { transform: scale(1.08); } }
-@media (max-width: 700px) {
-  .launch__content { flex-direction: column; text-align: center; }
-  .launch__progress { margin-inline: auto; }
+
+/* Destello del salto (del color del juego), y luego negro. */
+.launch__flash {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle at 50% 45%, color-mix(in oklab, var(--art-accent) 60%, white) 0%, transparent 60%);
+}
+
+/* --- Listo: salto a velocidad luz --------------------------------------------------------- */
+.launch--revealing { background-color: #000; }
+.launch--revealing .launch__backdrop { opacity: 0; transform: scale(1.25); }
+.launch--revealing .launch__starfield { animation-duration: .7s; animation-iteration-count: 1; }
+.launch--revealing .launch__starfield--near { animation-delay: 0s; }
+.launch--revealing .launch__cover { transform: scale(5.5); opacity: 0; }
+.launch--revealing .launch__orbit { transform: rotate(-24deg) scale(4); opacity: 0; }
+.launch--revealing .launch__text { opacity: 0; }
+.launch--revealing .launch__flash { animation: launch-flash 700ms var(--ease-out) forwards; }
+@keyframes launch-flash { 0% { opacity: 0; } 30% { opacity: .55; } 100% { opacity: 0; } }
+
+@media (max-width: 700px), (max-height: 520px) {
+  .launch__stage { height: 13rem; }
+  .launch__cover { height: 11rem; width: calc(11rem * var(--ratio, .667)); }
+  .launch__orbit { width: calc(11rem * var(--ratio, .667) + 8rem); height: 5rem; margin: -2.5rem 0 0 calc((11rem * var(--ratio, .667) + 8rem) / -2); }
+  .launch__content { gap: var(--space-4); }
 }

@@ -113,7 +113,17 @@
 .episode--focused .episode__overview, .episode--focused .episode__title, .episode--focused .episode__date { color: inherit; }
 .episode--focused .episode__overview { opacity: .75; }
 
-@media (max-width: 1100px) {
-  .title--series { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: var(--space-6); }
+/* Angosta o vertical: la identidad arriba (compacta) y los episodios debajo. */
+@media (max-width: 820px), (max-aspect-ratio: 1/1) {
+  .title--series { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: var(--space-5); }
   .title__info { justify-content: flex-start; }
+  .title__description { -webkit-line-clamp: 2; }
+  .title__people { display: none; }
+  .episode__thumb { width: 8.5rem; }
+}
+@media (max-height: 620px) {
+  .title { padding-top: calc(var(--space-6) + var(--safe-y)); }
+  .title__logo { max-height: 5rem; }
+  .title__description { -webkit-line-clamp: 2; }
+  .title__people { display: none; }
 }

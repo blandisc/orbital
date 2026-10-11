@@ -11,7 +11,8 @@ export const ICONS = {
   apps: '<svg viewBox="0 0 48 48"><rect x="8" y="8" width="13" height="13" rx="3"/><rect x="27" y="8" width="13" height="13" rx="3"/><rect x="8" y="27" width="13" height="13" rx="3"/><rect x="27" y="27" width="13" height="13" rx="3"/></svg>',
   wifi: '<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><path class="wifi__arc wifi__arc--3" d="M2 7a15 15 0 0 1 20 0"/><path class="wifi__arc wifi__arc--2" d="M5.5 10.5a10 10 0 0 1 13 0"/><path class="wifi__arc wifi__arc--1" d="M9 14a5 5 0 0 1 6 0"/><circle class="wifi__dot" cx="12" cy="17.5" r="1.2"/></svg>',
   // Marca: un planeta con su órbita inclinada.
-  mark: '<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="6.5" fill="currentColor"/><ellipse cx="16" cy="16" rx="14" ry="5.2" transform="rotate(-24 16 16)" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  // La marca (la misma del ícono): un planeta, dos órbitas que se cruzan y un satélite.
+  mark: '<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="6.2" fill="currentColor"/><g fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="16" cy="16" rx="14" ry="5.4" transform="rotate(-20 16 16)"/><ellipse cx="16" cy="16" rx="14" ry="5.4" transform="rotate(20 16 16)"/></g><circle cx="24.6" cy="21.3" r="1.9" fill="currentColor"/></svg>',
   // Interfaz: trazo uniforme (1,75 en retícula de 24), puntas redondeadas. Clase "icon".
   bolt: '<svg class="icon icon--fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2.5 5 13.5h6l-1 8 8-11h-6z"/></svg>',
   play: '<svg class="icon icon--fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6a.8.8 0 0 0 1.2.7l10.6-6.8a.8.8 0 0 0 0-1.4L9.2 4.5A.8.8 0 0 0 8 5.2z"/></svg>',
