@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import difflib
 import logging
+import os
 import threading
 from collections.abc import Callable
 from pathlib import Path
@@ -92,7 +93,10 @@ class Catalog:
         # Emuladores en uso: los de config.yaml + los detectados automáticamente.
         self.emulators = list(config.emulators)
         self.detected: dict[str, Path] = {}
-        self._steam_art = geforcenow.SteamArt()
+        # Portadas de GFN en disco (no en pruebas: sin config.yaml no se guarda nada).
+        self._steam_art = geforcenow.SteamArt(
+            Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" / "steam-appids.json"
+            if config.source else None)
         self.scanning = False  # primer escaneo en curso (la interfaz sigue en su pantalla de arranque)
         self._refreshing = threading.Lock()  # un escaneo a la vez (arranque + botón "Actualizar")
         self.sessions = Sessions(config, self.state, self.launcher, self.store, self.events,

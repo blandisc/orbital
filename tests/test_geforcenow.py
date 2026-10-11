@@ -73,3 +73,42 @@ def test_library_games_become_cards_without_duplicating_shortcuts(monkeypatch, t
     assert apex.argv[0] == "S.exe"  # el acceso directo manda
     assert raro.subtitle == "GeForce NOW · EA app" and raro.image == "https://b" and raro.hero == "https://h"
     assert raro.argv[0].endswith("GeForceNOWStreamer.exe")
+
+
+def test_steam_art_is_remembered_between_starts(tmp_path, monkeypatch):
+    import json as _json
+
+    calls = []
+
+    class Reply:
+        def __init__(self, items):
+            self.items = items
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self, *a):
+            return _json.dumps({"items": self.items}).encode()
+
+    def fake_urlopen(req, timeout=0):
+        calls.append(req.full_url)
+        if "Hades" in req.full_url:
+            return Reply([{"id": 1145360, "name": "Hades"}])
+        if "Caido" in req.full_url:
+            raise OSError("sin red")
+        return Reply([])
+
+    monkeypatch.setattr(geforcenow.urllib.request, "urlopen", fake_urlopen)
+    path = tmp_path / "cache" / "steam-appids.json"
+    art = geforcenow.SteamArt(path)
+    assert art.appid("Hades") == 1145360 and art.appid("Exclusivo de Epic") is None and art.appid("Caido") is None
+    art.save()
+    calls.clear()
+    again = geforcenow.SteamArt(path)  # otro arranque
+    assert again.appid("Hades") == 1145360 and again.appid("Exclusivo de Epic") is None
+    assert calls == []  # sin preguntar a Steam
+    again.appid("Caido")  # el fallo de red sí se reintenta
+    assert len(calls) == 1

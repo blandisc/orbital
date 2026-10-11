@@ -35,9 +35,17 @@ FLAGS = [
     "--no-first-run",
     "--no-default-browser-check",
     "--hide-crash-restore-bubble",
-    "--disable-features=Translate",
     "--autoplay-policy=no-user-gesture-required",
     "--overscroll-history-navigation=0",
+    # Más liviana: la ventana de Orbital no necesita extensiones, sincronizar, barra lateral ni
+    # compras. Medido en esta Legion Go: ~120 MB menos y 2 procesos menos (de ~910 MB / 17).
+    "--renderer-process-limit=1",
+    "--disable-extensions",
+    "--disable-background-networking",
+    "--disable-sync",
+    "--disable-default-apps",
+    "--no-pings",
+    "--disable-features=Translate,msEdgeSidebarV2,msShoppingTrigger,EdgeCollections",
 ]
 
 

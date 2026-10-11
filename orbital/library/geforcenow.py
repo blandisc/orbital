@@ -20,6 +20,7 @@ import os
 import re
 import sys
 import threading
+import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -172,11 +173,30 @@ def library_argv(streamer: str, game: dict) -> list[str]:
 
 
 class SteamArt:
-    """Portada, fondo y logotipo de la tienda de Steam por nombre (en caché)."""
+    """Portada, fondo y logotipo de la tienda de Steam por nombre (en caché).
 
-    def __init__(self) -> None:
+    Con `path`, lo encontrado se guarda en disco: antes cada arranque de Orbital volvía a preguntar
+    a Steam por los ~40 juegos de GFN (2 s de pantalla de arranque). "No está en Steam" se vuelve a
+    preguntar a la semana; un fallo de red, en el siguiente arranque."""
+
+    RETRY_MISSING = 7 * 24 * 3600
+
+    def __init__(self, path: Path | None = None) -> None:
+        self.path = path
         self._cache: dict[str, int | None] = {}
+        self._missing_since: dict[str, float] = {}
+        self._dirty = False
         self._lock = threading.Lock()
+        if path and path.exists():
+            try:
+                saved = json.loads(path.read_text(encoding="utf-8"))
+                now = time.time()
+                self._cache = {k: v for k, v in saved.get("appids", {}).items() if isinstance(v, int)}
+                for key, since in saved.get("missing", {}).items():
+                    if now - since < self.RETRY_MISSING:
+                        self._cache[key], self._missing_since[key] = None, since
+            except (OSError, ValueError, AttributeError) as exc:
+                log.info("Caché de portadas ilegible (se rehace): %s", exc)
 
     def appid(self, title: str) -> int | None:
         key = title.lower()
@@ -190,11 +210,31 @@ class SteamArt:
             # "Apex Legends™" en Steam es "Apex Legends" aquí.
             exact = next((i for i in items if clean_title(i.get("name", "")).lower() == key), None)
             found = (exact or (items[0] if items else {})).get("id")
+            remember = True
         except (OSError, ValueError):
-            found = None
+            found, remember = None, False  # sin red: no se guarda en disco, se reintenta al arrancar
         with self._lock:
             self._cache[key] = found
+            if remember:
+                self._dirty = True
+                if found is None:
+                    self._missing_since[key] = time.time()
         return found
+
+    def save(self) -> None:
+        with self._lock:
+            if not self.path or not self._dirty:
+                return
+            data = {"appids": {k: v for k, v in self._cache.items() if v is not None},
+                    "missing": dict(self._missing_since)}
+            self._dirty = False
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(data), encoding="utf-8")
+            tmp.replace(self.path)
+        except OSError as exc:
+            log.info("No pude guardar la caché de portadas: %s", exc)
 
 
 def items(art: SteamArt | None = None) -> list[LibraryItem]:
@@ -213,6 +253,8 @@ def items(art: SteamArt | None = None) -> list[LibraryItem]:
             if game["cms_id"] not in found:
                 found[game["cms_id"]] = _item(art, game["cms_id"], game["title"],
                                               library_argv(str(folder / STREAMER_EXE), game), game)
+    if hasattr(art, "save"):
+        art.save()
     return sorted(found.values(), key=lambda i: i.title.lower())
 
 
