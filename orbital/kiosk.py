@@ -37,6 +37,10 @@ FLAGS = [
     "--hide-crash-restore-bubble",
     "--autoplay-policy=no-user-gesture-required",
     "--overscroll-history-navigation=0",
+    # Sin DirectComposition: con el driver AMD de la Legion Go, cada vez que el kiosko a pantalla
+    # completa pasa al frente DWM se queda con 34-68 MB que nunca suelta (medido 2026-10-11: +1.3 GB
+    # en 30 cambios de foco; con este flag, 0 MB).
+    "--disable-direct-composition",
     # Más liviana: la ventana de Orbital no necesita extensiones, sincronizar, barra lateral ni
     # compras. Medido en esta Legion Go: ~120 MB menos y 2 procesos menos (de ~910 MB / 17).
     "--renderer-process-limit=1",
