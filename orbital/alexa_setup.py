@@ -163,7 +163,10 @@ def check_tunnel(url: str, token: str, fetch=_get) -> list[Check]:
 
 
 def say(url: str, token: str, text: str, fetch=_get) -> tuple[bool, str]:
-    status, body = fetch(f"{url.rstrip('/')}/api/voice", token, {"text": text})
+    try:
+        status, body = fetch(f"{url.rstrip('/')}/api/voice", token, {"text": text})
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        return False, f"No pude conectar con {url}: {exc}"
     if status != 200:
         return False, f"HTTP {status}: {body[:200]}"
     data = json.loads(body)
