@@ -29,3 +29,8 @@ test("LT/RT dan la vuelta entre consolas; se entra a la pedida, a la última o a
   assert.equal(pickConsole(list, null, "emulators:switch"), "emulators:switch");
   assert.equal(pickConsole(list, "borrada", null), "steam");
 });
+
+test("añadidos: lo que llegó más reciente primero; sin fecha, al final y por nombre", () => {
+  const added = [{ id: "emulators:x", items: [g("Viejo", 0, { added: 100 }), g("Nuevo", 0, { added: 900 }), g("Bsin"), g("Asin")] }];
+  assert.deepEqual(consoleGames(added, "emulators:x", "added").map((i) => i.id), ["Nuevo", "Viejo", "Asin", "Bsin"]);
+});

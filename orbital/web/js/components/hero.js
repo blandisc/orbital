@@ -15,7 +15,7 @@ export function createHero({ onAction }) {
   logo.addEventListener("load", () => { title.hidden = true; logo.hidden = false; fit(); });
   const facts = h("div", { class: "hero__facts" });
   const description = h("p", { class: "hero__description" });
-  const actions = h("div", { class: "hero__actions" });
+  const actions = h("div", { class: "button-row hero__actions" });
   // Una frase para Alexa según lo enfocado (solo si Alexa está configurada).
   const voice = h("p", { class: "hero__voice", hidden: true });
   // La frase va al lado de los botones, no debajo: debajo se salía del destacado y se cortaba.
@@ -88,7 +88,7 @@ export function createHero({ onAction }) {
     const alt = alternativeRunner(item);
     mount(actions,
       Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", onPress: () => onAction("select") }),
-      alt && item.id !== runningId && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
+      alt && item.id !== runningId && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, yields: true, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
       // Antes era "☰", el mismo glifo del botón Menú del mando: se confundían.
       Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction("options") }));
     voice.hidden = !alexa || !tips;

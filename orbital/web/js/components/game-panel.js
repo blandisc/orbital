@@ -43,9 +43,9 @@ export function createGamePanel({ onAction }) {
           stat("Jugadores", extra.players ? (Number(extra.players) > 1 ? `1 a ${extra.players}` : "1") : null),
           stat("Año", extra.year)),
         extra.description && h("p", { class: "game-panel__description" }, extra.description),
-        h("div", { class: "game-panel__actions" },
+        h("div", { class: "button-row game-panel__actions" },
           Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", onPress: () => onAction?.("select", item) }),
-          alt && item.id !== runningId && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, onPress: () => onAction?.("alt", item) }),
+          alt && item.id !== runningId && Button({ label: alt.name, ariaLabel: `Abrir con ${alt.name}`, glyph: glyphs.alt, yields: true, onPress: () => onAction?.("alt", item) }),
           Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction?.("options", item) })));
     };
     if (!changed) return fill(); // mismos datos (p. ej. cambió el glifo): sin animar

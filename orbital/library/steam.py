@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 
 from . import vdf
-from .models import LibraryItem
+from .models import LibraryItem, added_at
 
 log = logging.getLogger(__name__)
 
@@ -133,6 +133,7 @@ def scan(steam_root: Path) -> list[LibraryItem]:
                     "update": str(state.get("stateflags", INSTALLED)) != INSTALLED,
                     "steam_last_played": stats.get(appid, {}).get("last_played", 0),
                     "steam_playtime": stats.get(appid, {}).get("playtime", 0),
+                    "added": added_at(folder / "common" / state["installdir"]) if state.get("installdir") else None,
                 },
             )
     return sorted(items.values(), key=lambda i: i.title.lower())

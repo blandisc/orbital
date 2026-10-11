@@ -6,7 +6,7 @@ import { ICONS } from "../core/icons.js";
 const ALEXA_LIVE_SECONDS = 600;
 
 /** Barra superior: marca (abre el menú), juego en curso, Alexa, Wi-Fi, batería y hora. */
-export function createStatusBar({ onBrand, onSection, onSearch }) {
+export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
   // Buscar siempre a la mano (botón Vista ⧉): juegos, películas y series desde cualquier sección.
   const searchGlyph = h("span", { class: "status-bar__search-glyph" });
   const search = h("button", { class: "status-bar__search", type: "button", "aria-label": "Buscar", "data-focus-id": "search", onClick: () => onSearch?.() },
@@ -19,7 +19,9 @@ export function createStatusBar({ onBrand, onSection, onSearch }) {
   // Alexa: el anillo de asistente de voz y su nombre, discretos ("Orbital está conectado a Alexa").
   // Cuando acaba de escucharte, el anillo se pinta de azul y el texto dice «Te escuché» un momento.
   const alexaLabel = h("span", { class: "assistant__label" }, "Alexa");
-  const alexa = h("span", { class: "assistant", hidden: true, title: "Conectado a Alexa: «Alexa, pídele a Orbital…»", "aria-label": "Conectado a Alexa" },
+  // Se alcanza navegando (↑ desde el Inicio, como Buscar): A muestra ejemplos de qué pedirle.
+  const alexa = h("button", { class: "assistant", type: "button", hidden: true, "data-focus-id": "alexa",
+    "aria-label": "Alexa: ver ejemplos de órdenes", onClick: () => onAlexa?.() },
     h("span", { class: "assistant__ring", "aria-hidden": "true" }, svg(ICONS.assistant)), alexaLabel);
   let heardTimer = 0;
   const wifi = h("span", { hidden: true }, svg(ICONS.wifi));
@@ -106,5 +108,5 @@ export function createStatusBar({ onBrand, onSection, onSearch }) {
   setInterval(tick, 10_000);
   watchBattery();
 
-  return { el, setRunning, setSystem, setSections, pulseAlexa, searchButton: search };
+  return { el, setRunning, setSystem, setSections, pulseAlexa, searchButton: search, alexaButton: alexa };
 }

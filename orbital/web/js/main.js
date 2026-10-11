@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints } from "./core/hints.js";
-import { capturesMenu, controlsMenu, controlsPage, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, healthMenu, mainMenu, powerConfirmMenu, powerMenu, quickMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, updateMenu, windowsMenu } from "./core/menus.js";
+import { alexaMenu, capturesMenu, controlsMenu, controlsPage, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, healthMenu, mainMenu, powerConfirmMenu, powerMenu, quickMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, updateMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -45,10 +45,10 @@ const glyphs = () => GLYPHS[state.modality];
 // ---------------------------------------------------------------- componentes
 const ui = {
   backdrop: createBackdrop(),
-  status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch() }),
+  status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch(), onAlexa: () => openMenu(alexaMenu()) }),
   hero: createHero({ onAction: (action) => handleAction(action) }),
   home: createHome({
-    outside: () => [ui.status.searchButton], // Buscar (arriba) también se alcanza con ↑
+    outside: () => [ui.status.searchButton, ui.status.alexaButton], // Buscar y Alexa (arriba) también se alcanzan con ↑
     onFocus: (target) => homeFocused(target),
     onPick: (target, id) => (ui.home.focusId === id ? homeActivate(target) : ui.home.focus(id)),
     onAction: (action, target) => homeActivate(target, action),
@@ -136,10 +136,7 @@ function renderHints() {
   if (inGames() && !ui.sheet.isOpen) {
     const target = ui.games.current;
     const item = target?.item;
-    return ui.hints.render(gamesHints(g, target, {
-      mode: ui.games.mode, primary: item && primaryLabel(item, state.running?.id), alt: item && altLabel(item),
-      gallery: state.settings.games_view === "gallery",
-    }));
+    return ui.hints.render(gamesHints(g, target, { primary: item && primaryLabel(item, state.running?.id), alt: item && altLabel(item) }));
   }
   if (inHome() && !ui.sheet.isOpen) {
     const target = ui.home.current;
@@ -237,15 +234,13 @@ function renderView() {
 let wantedConsole = null; // desde el Inicio (A sobre una consola): entrar justo a esa
 
 function renderGames() {
-  ui.games.render(state.allRows, { view: state.settings.games_view || "console", glyphs: glyphs(), runningId: state.running?.id, consoleId: wantedConsole });
+  ui.games.render(state.allRows, { glyphs: glyphs(), runningId: state.running?.id, consoleId: wantedConsole });
   wantedConsole = null;
-  document.body.dataset.games = ui.games.mode;
 }
 
 /** La ficha (dentro de Juegos) muestra el juego enfocado; el fondo toma su color (luz de ambiente). */
 function gamesFocused(target) {
   if (!inGames()) return;
-  document.body.dataset.games = ui.games.mode;
   const item = target?.item ?? target?.console?.last ?? null;
   if (item) ui.backdrop.show(item.hero || item.image || null);
   const node = document.querySelector(`.games [data-focus-id="${ui.games.focusId}"]`);
@@ -259,13 +254,7 @@ function gamesFocused(target) {
 function gamesActivate(target, action = "select") {
   if (!target) return;
   if (target.kind === "filter") { sound.play("select"); return ui.games.setFilter(target.filter); }
-  if (target.kind === "view") { // Vista: Consola · Galería (se guarda como en Ajustes)
-    sound.play("select");
-    return api.setSettings({ games_view: target.view }).then(applySettings).catch((err) => ui.toast.show(err.message, { error: true }));
-  }
   if (target.kind === "rail") return handleGames("right"); // A en el riel: a las portadas de esa consola
-  if (target.kind === "gallery") { sound.play("open"); ui.games.showGallery(); document.body.dataset.games = ui.games.mode; return renderHints(); }
-  if (target.kind === "console") { sound.play("open"); ui.games.enter(); document.body.dataset.games = ui.games.mode; return renderHints(); }
   const item = target.item;
   if (action === "options") return openMenu(gameMenu(item, { running: state.running }));
   if (action === "alt") {
@@ -282,7 +271,6 @@ function handleGames(action, { repeat = false } = {}) {
   const moved = ui.games.handle(action === "home" ? "back" : action);
   if (moved === true) {
     sound.play(action === "pageleft" || action === "pageright" ? "open" : "move");
-    document.body.dataset.games = ui.games.mode;
     return renderHints();
   }
   if (moved === "edge") { if (!repeat) rumble("edge"); return; }
@@ -326,6 +314,7 @@ function homeActivate(target, action = "select") {
   if (!target) return;
   if (target.kind === "empty") return goToSection("games", 1);
   if (target.kind === "search") return action === "select" ? openSearch() : rumble("edge");
+  if (target.kind === "alexa") return action === "select" ? openMenu(alexaMenu()) : rumble("edge");
   if (target.kind === "console") {
     if (action === "alt" && target.console.last) return launch(target.console.last);
     if (action !== "select") { sound.play("error"); return rumble("edge"); }

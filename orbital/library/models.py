@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+from pathlib import Path
 
 
 @dataclass
@@ -38,6 +39,7 @@ class LibraryItem:
     art_path: str | None = None
     hero_path: str | None = None
     logo_path: str | None = None
+    icon_path: str | None = None  # apps: su ícono (p. ej. el de ES-DE, de su propia instalación)
     # Juegos de emulador: sistema y nombre de la ROM, para buscarles arte (scraper propio).
     system: str | None = None
     media_key: str | None = None
@@ -73,3 +75,12 @@ class LibraryItem:
             "runner": self.runner().id if self.runners else None,
             **({"extra": self.extra} if self.extra else {}),
         }
+
+
+def added_at(path) -> float | None:
+    """Cuándo llegó un juego a esta PC: la fecha de creación de su archivo o carpeta (en Windows
+    st_ctime es la creación, no cambia al abrirlo ni al actualizarlo)."""
+    try:
+        return Path(path).stat().st_ctime if path else None
+    except OSError:
+        return None

@@ -49,7 +49,10 @@ FLAGS = [
     "--disable-sync",
     "--disable-default-apps",
     "--no-pings",
-    "--disable-features=Translate,msEdgeSidebarV2,msShoppingTrigger,EdgeCollections",
+    # Sin los botones que Edge pone sobre las imágenes (búsqueda visual y su engrane) ni el mini
+    # menú al seleccionar texto: en una consola solo confunden. La página además los evita (base.css).
+    "--disable-features=Translate,msEdgeSidebarV2,msShoppingTrigger,EdgeCollections,"
+    "msVisualSearch,msEdgeVisualSearch,msImageHoverMenu,msQuickSearchMiniMenu,msEdgeMiniMenu",
 ]
 
 

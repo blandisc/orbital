@@ -49,7 +49,7 @@
 
 /* --- Fondo vivo (Inicio y galería de consolas) ------------------------------------------------- */
 .backdrop__space { position: absolute; inset: 0; overflow: hidden; opacity: 0; transition: opacity var(--duration-tint) var(--ease-out); }
-body[data-view="home"] .backdrop__space, body[data-games="gallery"] .backdrop__space { opacity: 1; }
+body[data-view="home"] .backdrop__space { opacity: 1; }
 
 /* Luz del color de lo enfocado: una sigue al foco (suave), otra deriva sola muy despacio. Gradientes
    ya difuminados (sin filter: blur, que es caro) que solo se mueven. */

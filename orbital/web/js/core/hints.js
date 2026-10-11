@@ -56,6 +56,8 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
     if (target.console.last) list.push({ glyph: glyphs.alt, label: `Seguir ${shortTitle(target.console.last.title)}` });
   } else if (target?.kind === "search") {
     list.push({ glyph: glyphs.select, label: "Buscar" });
+  } else if (target?.kind === "alexa") {
+    list.push({ glyph: glyphs.select, label: "Qué pedirle a Alexa" });
   } else if (target?.kind === "item") {
     list.push({ glyph: glyphs.select, label: primary });
     if (alt) list.push({ glyph: glyphs.alt, label: alt });
@@ -69,29 +71,19 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
   return list;
 }
 
-/** Pie de Juegos (lógica pura): en la galería, elegir consola; dentro, jugar y cambiar de consola. */
-export function gamesHints(glyphs, target, { mode = "console", primary = "Jugar", alt = null, gallery = false } = {}) {
-  if (mode === "gallery") {
-    if (target?.kind === "view") {
-      return [{ glyph: glyphs.select, label: target.view === "gallery" ? "Ver en galería" : "Ver por consola" },
-        { glyph: glyphs.back, label: "Volver", end: true }];
-    }
-    return [{ glyph: glyphs.rows === "↑↓" ? "← →" : "◀ ▶", label: "Girar" }, { glyph: glyphs.select, label: "Entrar" },
-      { glyph: glyphs.rows === "↑↓" ? "↑" : "↕", label: "Cambiar vista", secondary: true },
-      { glyph: glyphs.section, label: "Sección", secondary: true }, { glyph: glyphs.menu, label: "Menú", end: true }];
-  }
+/** Pie de Juegos (lógica pura): jugar lo enfocado, filtrar, o cambiar de consola en el riel. */
+export function gamesHints(glyphs, target, { primary = "Jugar", alt = null } = {}) {
   const list = [];
   if (target?.kind === "filter") list.push({ glyph: glyphs.select, label: "Filtrar" });
-  else if (target?.kind === "view") list.push({ glyph: glyphs.select, label: target.view === "gallery" ? "Ver en galería" : "Ver por consola" });
   else if (target?.kind === "rail") list.push({ glyph: glyphs.rows, label: "Otra consola" }, { glyph: glyphs.select, label: "Ver sus juegos" });
   else if (target?.kind === "game") {
     list.push({ glyph: glyphs.select, label: primary });
     if (alt) list.push({ glyph: glyphs.alt, label: alt });
     list.push({ glyph: glyphs.options, label: "Opciones", secondary: true });
   }
-  if (glyphs.page) list.push({ glyph: glyphs.page, label: "Otra consola" });
+  if (glyphs.page && target?.kind !== "rail") list.push({ glyph: glyphs.page, label: "Otra consola" });
   if (glyphs.section) list.push({ glyph: glyphs.section, label: "Sección", secondary: true });
-  list.push({ glyph: glyphs.back, label: gallery ? "Consolas" : "Inicio", secondary: true });
+  list.push({ glyph: glyphs.back, label: "Inicio", secondary: true });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
   return list;
 }

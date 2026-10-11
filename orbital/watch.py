@@ -205,11 +205,27 @@ class Watch:
         self._save_stremio_cache(items)
         if changed:
             self.events.publish({"type": "library-changed"})
+        # Mi lista también lleva sinopsis, calificación y logo (antes solo Seguir viendo): en
+        # segundo plano, para no demorar lo que ya se ve.
+        rest = [i for i in items if i.category != "continue" and not i.extra.get("description")]
+        if rest:
+            threading.Thread(target=self._enrich_rest, args=(items, rest), daemon=True).start()
         return True
+
+    def _enrich_rest(self, items: list[LibraryItem], rest: list[LibraryItem]) -> None:
+        self._enrich(rest)
+        if self.stremio_items is not items:
+            return  # llegó una descarga más nueva: ella se encarga
+        self.store.replace_source("stremio", items)
+        self._save_stremio_cache(items)
+        self.events.publish({"type": "library-changed"})
 
     def _enrich_continue(self, items: list[LibraryItem]) -> None:
         """Datos de Cinemeta para Seguir viendo (en paralelo y con caché: la segunda vez es al instante)."""
-        wanted = [i for i in items if i.category == "continue" and i.extra.get("kind") in ("movie", "series")]
+        self._enrich([i for i in items if i.category == "continue"])
+
+    def _enrich(self, items: list[LibraryItem]) -> None:
+        wanted = [i for i in items if i.extra.get("kind") in ("movie", "series")]
 
         def meta(item: LibraryItem):
             try:

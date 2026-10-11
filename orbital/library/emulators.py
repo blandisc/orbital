@@ -13,7 +13,7 @@ from pathlib import Path
 from ..config import EmulatorConfig
 from .esde import EsdeLibrary
 from .media import MediaStore, good, image_size
-from .models import LibraryItem, Runner
+from .models import LibraryItem, Runner, added_at
 from .shortcuts import read_lnk, xenia_games
 
 log = logging.getLogger(__name__)
@@ -198,7 +198,7 @@ def scan(
                 LibraryItem(
                     id=_item_id(emu.id, rom),
                     title=game_title(meta.name if meta else None, entry, own),
-                    extra=game_extra(own),
+                    extra={**game_extra(own), "added": added_at(rom)},
                     category="emulators",
                     source=emu.id,
                     subtitle=emu.name,
@@ -225,7 +225,7 @@ def scan(
                 id=_item_id(emu.id, package), title=name, category="emulators", source=emu.id, subtitle=emu.name,
                 runners=[Runner(emu.id, runner_name(emu, exe), build_argv(emu, exe, package), str(exe.parent))],
                 default_runner=emu.id, art_path=art["cover"], hero_path=art["hero"], logo_path=art["logo"],
-                system=emu.system, media_key=name))
+                system=emu.system, media_key=name, extra={"added": added_at(package)}))
     return sorted(items, key=lambda i: i.title.lower())
 
 

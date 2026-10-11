@@ -8,6 +8,14 @@
   background: var(--color-fill); color: var(--color-text);
   transition: background var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
 }
+/* Regla de la casa: una fila de botones nunca se parte ni se corta. Si no cabe, el botón marcado
+   .button--yield (la alternativa, «Con Ryujinx») se encoge y su texto termina en «…»; los demás
+   y los glifos quedan enteros. Cualquier fila: .button-row. */
+.button { min-width: 0; flex: 0 0 auto; }
+.button--yield { flex-shrink: 1; }
+.button__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.button > :not(.button__label) { flex: none; }
+.button-row { display: flex; flex-wrap: nowrap; gap: var(--space-3); min-width: 0; max-width: 100%; }
 .button:hover { background: var(--color-fill-hover); }
 .button:active { transform: scale(.97); }
 .button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }

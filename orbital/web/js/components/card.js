@@ -9,6 +9,10 @@ import { clampRatio, coverRatio } from "../core/library.js";
  * (GBA cuadrada, Switch alta). Hasta que carga la imagen se usa la típica del sistema.
  * `onRatio` avisa si la real es distinta (la fila recalcula su desplazamiento).
  */
+/** El ícono de una app: el que trae (ES-DE) o el logotipo de su plataforma. */
+const APP_ICONS = { "steam:bigpicture": "img/consoles/steam.svg", "app:geforcenow": "img/consoles/geforcenow.svg" };
+export const appIcon = (item) => (item.category === "apps" ? item.extra?.icon || APP_ICONS[item.id] || null : null);
+
 export function Card(item, { onPress, onRatio, showAgo = false, caption = false, pop = false } = {}) {
   const meta = h("span", { class: "card__meta" },
     h("strong", { class: "card__title" }, item.title),
@@ -26,7 +30,10 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
     ? h("span", { class: "card__progress", role: "progressbar", "aria-valuenow": Math.round(item.progress * 100), "aria-valuemin": 0, "aria-valuemax": 100 },
       h("span", { class: "card__progress-fill", style: { width: `${Math.round(item.progress * 100)}%` } }))
     : null;
-  const fallback = () => h("span", { class: "card__placeholder", "aria-hidden": "true" }, svg(ICONS[systemIconName(item)]));
+  const icon = appIcon(item);
+  const fallback = () => (icon
+    ? h("span", { class: "card__placeholder card__placeholder--app", "aria-hidden": "true" }, h("img", { class: "card__app-icon", src: icon, alt: "" }))
+    : h("span", { class: "card__placeholder", "aria-hidden": "true" }, svg(ICONS[systemIconName(item)])));
 
   const card = h("button", {
     // Portada de respaldo (sin arte propio): la imagen genérica con el nombre del juego encima.

@@ -39,6 +39,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
 
     // Fuera del Inicio pero alcanzable navegando: Buscar, arriba (↑ desde lo de arriba).
     targets.set("search", { kind: "search" });
+    targets.set("alexa", { kind: "alexa" });
 
     const feature = model.feature
       ? FeatureTile(model.feature, { runningId, glyphs, onPress: pick("feature"), onAction: (action) => onAction?.(action, targets.get("feature")) })
@@ -81,7 +82,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     for (const node of [...el.querySelectorAll("[data-focus-id]"), ...outside()]) {
       const focused = node.dataset.focusId === focusId;
       node.classList.toggle(node.classList.contains("tile") ? "tile--focused" : "is-focused", focused);
-      if (node.classList.contains("tile")) node.classList.toggle("tile--dimmed", !focused && focusId !== "search");
+      if (node.classList.contains("tile")) node.classList.toggle("tile--dimmed", !focused && focusId !== "search" && focusId !== "alexa");
       if (focused) node.setAttribute("aria-current", "true");
       else node.removeAttribute("aria-current");
     }
@@ -121,10 +122,13 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   function handle(action) {
     const dirs = { up: "up", down: "down", left: "left", right: "right" };
     if (dirs[action]) {
-      const pieces = [...measureFocusables(el), ...outside().map((node) => {
+      const bar = outside().filter((node) => !node.hidden).map((node) => {
         const r = node.getBoundingClientRect();
         return { id: node.dataset.focusId, x: r.left, y: r.top, w: r.width, h: r.height };
-      })];
+      });
+      // La barra de arriba es su propia fila: ← → van de Buscar a Alexa (no a la tarjeta más cercana).
+      const onBar = bar.some((p) => p.id === focusId);
+      const pieces = onBar && (action === "left" || action === "right") ? bar : [...measureFocusables(el), ...bar];
       const next = nextFocus(pieces, focusId, dirs[action]);
       return next ? focus(next) : "edge";
     }
@@ -138,8 +142,14 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
 
   return {
     el, render, handle, focus,
-    show: () => { el.hidden = false; },
-    hide: () => { el.hidden = true; },
+    show: () => {
+      el.hidden = false;
+      for (const node of outside()) node.classList.toggle("is-focused", node.dataset.focusId === focusId);
+    },
+    hide: () => { // Buscar y Alexa viven en la barra de arriba: fuera del Inicio no quedan marcados
+      el.hidden = true;
+      for (const node of outside()) node.classList.remove("is-focused");
+    },
     get current() { return targets.get(focusId) ?? null; },
     get focusId() { return focusId; },
     get visible() { return !el.hidden; },

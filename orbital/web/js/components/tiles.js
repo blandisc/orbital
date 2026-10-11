@@ -55,15 +55,15 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
       logo ? h("img", { class: "tile--feature__logo", src: logo, alt: item.title }) : h("h2", { class: "tile--feature__title" }, item.title),
       detailOf(item) && h("span", { class: "tile--feature__detail" }, detailOf(item)),
       Progress(item.progress, { className: "tile--feature__progress" }),
-      h("span", { class: "tile--feature__actions" },
+      h("span", { class: "button-row tile--feature__actions" },
         Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", onPress: press("select") }),
-        alt && !open && Button({ label: alt, glyph: glyphs.alt, onPress: press("alt") }),
+        alt && !open && Button({ label: alt, glyph: glyphs.alt, yields: true, onPress: press("alt") }),
         Button({ label: "Opciones", glyph: glyphs.options, onPress: press("options") }))));
 }
 
 /** Lo corto de una tarjeta ancha: «hace 11 h» (juegos) o «T8 E23 · quedan 10 min» (videos). */
 export function shortDetail(item, now = Date.now()) {
-  if (isWatchable(item)) return item.subtitle || null;
+  if (isWatchable(item)) return item.subtitle?.replace(/^Película · /, "") || null;
   const ago = shortAgo(item.last_played, now);
   return ago ? (ago === "ahora" || ago === "ayer" ? ago : `hace ${ago}`) : null;
 }

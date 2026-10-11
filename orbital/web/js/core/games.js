@@ -1,15 +1,12 @@
 /**
  * Pantalla Juegos (lógica pura, con pruebas en tests/web): tus consolas, los juegos de cada una
- * y los filtros. Dos maneras de verla (Ajustes → Pantalla → Juegos):
- *   · "console": entras directo a tu última consola; LT/RT cambian de consola (con la órbita como transición);
- *   · "gallery": primero la galería de consolas en órbita; A entra a una.
+ * y los filtros. Entras directo a tu última consola; LT/RT (o el riel) cambian de consola.
  */
 import { consoleList } from "./home.js";
 
-export const VIEWS = ["console", "gallery"];
-
 export const FILTERS = [
-  { id: "recent", label: "Recientes" },
+  { id: "recent", label: "Jugados" },
+  { id: "added", label: "Añadidos" },
   { id: "favorites", label: "Favoritos" },
   { id: "az", label: "A–Z" },
   { id: "unplayed", label: "Sin jugar" },
@@ -25,6 +22,7 @@ export function consoleGames(rows, consoleId, filter = "recent") {
   const items = rows.find((row) => row.id === consoleId)?.items ?? [];
   if (filter === "favorites") return items.filter((i) => i.favorite).sort(byTitle);
   if (filter === "az") return [...items].sort(byTitle);
+  if (filter === "added") return [...items].sort((a, b) => (b.added || 0) - (a.added || 0) || byTitle(a, b));
   if (filter === "unplayed") return items.filter((i) => !i.last_played).sort(byTitle);
   const played = items.filter((i) => i.last_played).sort((a, b) => b.last_played - a.last_played);
   return [...played, ...items.filter((i) => !i.last_played).sort(byTitle)];

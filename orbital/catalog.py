@@ -220,6 +220,7 @@ class Catalog:
                     subtitle="Todos tus sistemas",
                     argv=[str(self.esde.executable)],
                     cwd=str(self.esde.executable.parent),
+                    icon_path=str(self.esde.executable.parent / "resources" / "graphics" / "window_icon_256.png"),
                 )
             )
         self.emulators = list(self.config.emulators)
@@ -264,6 +265,8 @@ class Catalog:
                     item.extra["hero_lowres"] = True
             if item.logo_path:
                 item.extra["logo"] = url + "?kind=logo"
+            if item.icon_path and Path(item.icon_path).is_file():
+                item.extra["icon"] = url + "?kind=icon"
             # Regla: todo lleva imagen. Sin portada o sin fondo, el respaldo de su sistema.
             if not item.image and item.category not in ("apps", "media"):
                 item.image = placeholder("cover", item.system, item.id)
@@ -373,6 +376,8 @@ class Catalog:
         seen = self.state.first_seen(item.id)
         if seen and time.time() - seen < NEW_FOR:
             data["new"] = True
+        # Cuándo llegó (filtro «Añadidos»): lo que vio Orbital o, para lo que ya tenías, la fecha del archivo.
+        data["added"] = seen or item.extra.get("added") or None
         return data
 
     def last_played(self, item: LibraryItem) -> float | None:

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { capturesMenu, diagnosticsMenu, foldersMenu, gameMenu, tourMenu, updateMenu, mainMenu, quickMenu, nextSetting, powerConfirmMenu, powerMenu, settingsPage, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
+import { alexaMenu, capturesMenu, diagnosticsMenu, foldersMenu, gameMenu, tourMenu, updateMenu, mainMenu, quickMenu, nextSetting, powerConfirmMenu, powerMenu, settingsPage, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch",
@@ -227,4 +227,12 @@ test("atajos: todos en una hoja, desde Controles y desde el panel rápido", asyn
   const panel = quickMenu({ volume: null, brightness: null, power_mode: "performance", battery: null });
   assert.equal(panel.options.find((o) => o.label === "Energía").value, "Máximo");
   assert.equal(panel.options.at(-1).command.page, "atajos");
+});
+
+test("Alexa: ejemplos que no hacen nada al elegirlos y una salida al final", () => {
+  const menu = alexaMenu();
+  assert.match(menu.subtitle, /pídele a mi consola/);
+  assert.ok(menu.options.length >= 5);
+  assert.ok(menu.options.slice(0, -1).every((o) => o.command.type === "stay" && o.label.startsWith("«")));
+  assert.equal(menu.options.at(-1).command.type, "close");
 });

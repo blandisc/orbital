@@ -79,7 +79,7 @@ def router(d: Deps) -> APIRouter:
     def art(item_id: str, kind: str = "cover") -> FileResponse:
         # Solo se sirven imágenes que el escaneo asoció a un elemento: nunca rutas arbitrarias.
         item = catalog.get(item_id)
-        paths = {"hero": "hero_path", "logo": "logo_path"}
+        paths = {"hero": "hero_path", "logo": "logo_path", "icon": "icon_path"}
         path = None if item is None else getattr(item, paths.get(kind, "art_path"))
         if not path or not Path(path).is_file():
             raise HTTPException(404)

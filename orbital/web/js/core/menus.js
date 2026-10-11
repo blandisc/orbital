@@ -52,6 +52,29 @@ export function gameMenu(item, { running = null } = {}) {
   return { title: item.title, options };
 }
 
+/**
+ * Qué pedirle a Alexa: ejemplos reales (los entiende orbital/voice.py), por tema.
+ * Todas empiezan igual: «Alexa, pídele a mi consola que…».
+ */
+export const ALEXA_EXAMPLES = [
+  { icon: "gamepad", label: "«abra Zelda»", hint: "Abre un juego de cualquier consola" },
+  { icon: "gamepad", label: "«abra Mario Party con Ryujinx»", hint: "Con otro emulador" },
+  { icon: "close", label: "«cierre el juego»", hint: "Cierra lo que está abierto" },
+  { icon: "play", label: "«quiero ver Dune»", hint: "Busca la película o serie y la pone" },
+  { icon: "play", label: "«siga viendo»", hint: "Lo que dejaste a medias" },
+  { icon: "stop", label: "«pause»", hint: "Mientras ves algo; luego «reanude»" },
+  { icon: "sound", label: "«suba el volumen»", hint: "O «ponga el volumen en 30»" },
+];
+
+export function alexaMenu() {
+  return {
+    title: "Pídeselo a Alexa",
+    subtitle: "Empieza con «Alexa, pídele a mi consola que…» y sigue con lo que quieras:",
+    options: [...ALEXA_EXAMPLES.map((e) => ({ ...e, command: { type: "stay" } })),
+      { icon: "close", label: "Cerrar", command: { type: "close" } }],
+  };
+}
+
 export function mainMenu({ running, hiddenCount, canExit = false }) {
   const options = [
     { icon: "bolt", label: "Panel rápido", hint: "Volumen, brillo, energía · Home + LB", command: { type: "quick" } },
@@ -245,7 +268,6 @@ export const SETTING_VALUES = {
   sounds: [[true, "Sí"], [false, "No"]],
   haptics: [[true, "Sí"], [false, "No"]],
   voice_tips: [[true, "Sí"], [false, "No"]],
-  games_view: [["console", "Directo a tu consola"], ["gallery", "Galería de consolas"]],
   game_idle_minutes: [[60, "1 hora"], [120, "2 horas"], [30, "30 min"], [0, "Nunca"]],
   video_idle_minutes: [[15, "15 min"], [30, "30 min"], [60, "1 hora"], [0, "Nunca"]],
   close_previous: [[true, "Sí"], [false, "No"]],
@@ -267,8 +289,7 @@ const SETTING_PAGES = {
   display: { title: "Pantalla", icon: "show", options: [
     ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],
     ["reduce_motion", "Reducir movimiento", null],
-    ["voice_tips", "Frases para Alexa", "Debajo de los botones: qué decirle para lo que tienes enfocado"],
-    ["games_view", "Juegos", "Directo a tu última consola (LT/RT cambian) o primero todas en órbita"]] },
+    ["voice_tips", "Frases para Alexa", "Debajo de los botones: qué decirle para lo que tienes enfocado"]] },
   sound: { title: "Sonido y vibración", icon: "sound", options: [["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null]] },
   sessions: { title: "Juegos y videos abiertos", icon: "gamepad", options: [
     ["game_idle_minutes", "Cerrar un juego en pausa tras", "Lo congelado con Home; lo no guardado se pierde"],
