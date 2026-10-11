@@ -16,289 +16,75 @@ Además, como un servicio de streaming de verdad:
     pregunta "¿Sigues viendo?".
   * "Saltar intro" cuando el archivo marca la intro con capítulos (Intro, Opening, Recap…).
   * El avance se guarda cada minuto y al pausar, no solo al salir.
+
+Piezas: mpv.py (la tubería con mpv), playback.py (comando, idiomas, capítulos, datos de lo que se
+ve), player_screen.py (barra, tarjetas, menús y botones) y aquí el reproductor que lo junta: arrancar,
+vigilar, guardar el avance, fuentes que fallan y el siguiente episodio.
 """
 
 from __future__ import annotations
 
-import json
 import logging
-import os
-import re
 import subprocess
 import threading
 import time
-from dataclasses import dataclass, field
-from pathlib import Path
 
 from . import player_ui
-from .gamepad import (A_BUTTON, B_BUTTON, BACK, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, GUIDE, LT, RT, START,
-                      X_BUTTON, Y_BUTTON)
+from .gamepad import (  # noqa: F401 - las pruebas los piden a player
+    A_BUTTON,
+    B_BUTTON,
+    BACK,
+    DPAD_DOWN,
+    DPAD_LEFT,
+    DPAD_RIGHT,
+    DPAD_UP,
+    GUIDE,
+    LT,
+    RT,
+    START,
+    X_BUTTON,
+    Y_BUTTON,
+)
+from .mpv import PIPE, Mpv  # noqa: F401 - se importan desde aquí
+from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las piden a player
+    CHAPTER_SEEK,
+    CREDITS,
+    INTRO,
+    LANGS,
+    LB,
+    OSD_STYLE,
+    RB,
+    RECAP,
+    SAVE_EVERY,
+    SKIP_VISIBLE,
+    STARTUP_TIMEOUT,
+    STILL_WATCHING_AFTER,
+    STREMIO_SERVER,
+    TOUCH_BINDINGS,
+    UPNEXT_AT,
+    UPNEXT_COUNTDOWN,
+    UPNEXT_LOOKAHEAD,
+    Playback,
+    PlayerRemote,
+    Segment,
+    build_command,
+    build_lang_list,
+    chapter_kind,
+    find_mpv,
+    has_language,
+    idle_expired,
+    input_conf,
+    seek_step,
+    stream_url,
+    subtitle_options,
+    wrong_audio,
+)
+from .player_screen import PlayerScreen
 
 log = logging.getLogger(__name__)
 
-CHAPTER_SEEK = 60  # LB/RB sin capítulos: ±1 min
 
-PIPE = r"\\.\pipe\orbital-mpv"
-LB, RB = 0x0100, 0x0200
-STREMIO_SERVER = "http://127.0.0.1:11470"
-
-STARTUP_TIMEOUT = 45.0  # s sin imagen: esa fuente no sirve, se prueba otra
-SAVE_EVERY = 60.0  # s entre guardados del avance en Stremio
-UPNEXT_LOOKAHEAD = 180.0  # s antes del final: se busca ya el siguiente episodio (y su fuente)
-UPNEXT_AT = 30.0  # s antes del final (o al empezar los créditos): tarjeta "Siguiente episodio"
-UPNEXT_COUNTDOWN = 8.0
-STILL_WATCHING_AFTER = 3  # episodios seguidos sin tocar el mando -> "¿Sigues viendo?"
-SKIP_VISIBLE = 10.0  # s que se ofrece "Saltar intro"
-
-INTRO = re.compile(r"\b(intro|opening|op|recap|previously|resumen|anteriormente|apertura)\b", re.I)
-RECAP = re.compile(r"\b(recap|previously|resumen|anteriormente)\b", re.I)
-CREDITS = re.compile(r"\b(credits?|ending|ed|outro|créditos|creditos)\b", re.I)
-
-# Apariencia de los mensajes de mpv con la tipografía y la paleta de Orbital.
-OSD_STYLE = [
-    "--osd-font=Segoe UI Variable Display Semibold", "--osd-font-size=38", "--osd-color=#F5F4F0",
-    "--osd-border-size=0", "--osd-shadow-offset=2", "--osd-shadow-color=#99000000",
-    "--osd-bar-align-y=0.88", "--osd-bar-h=1.6", "--osd-bar-w=72", "--osd-margin-x=60", "--osd-margin-y=48",
-    "--sub-font=Segoe UI Variable Text Semibold", "--sub-font-size=44", "--sub-border-size=2.5",
-    "--sub-color=#F5F4F0", "--sub-border-color=#CC000000", "--sub-margin-y=56",
-]
-
-
-def find_mpv() -> str | None:
-    """mpv de Orbital (%LOCALAPPDATA%\\orbital\\mpv) o el del sistema."""
-    local = Path(os.environ.get("LOCALAPPDATA", "")) / "orbital" / "mpv" / "mpv.exe"
-    if local.exists():
-        return str(local)
-    from shutil import which
-
-    return which("mpv")
-
-
-def stream_url(stream: dict) -> str | None:
-    """URL que mpv puede abrir: directa (Real-Debrid, http) o un torrent vía el servidor de Stremio."""
-    if stream.get("url"):
-        return stream["url"]
-    if stream.get("infoHash"):
-        idx = stream.get("fileIdx")
-        return f"{STREMIO_SERVER}/{stream['infoHash']}/{idx if idx is not None else -1}"
-    return None
-
-
-LANGS = {"en": ["en", "eng", "English"], "es": ["es", "spa", "Spanish", "es-419"]}
-
-
-def build_lang_list(lang: str) -> list[str]:
-    return LANGS.get(lang, [lang])
-
-
-# Pantalla táctil: tocar el video pausa/reanuda (y Orbital muestra su barra); el doble toque ya no
-# saca de pantalla completa por accidente.
-TOUCH_BINDINGS = "MBTN_LEFT cycle pause\nMBTN_LEFT_DBL ignore\nMBTN_RIGHT ignore\n"
-
-
-def input_conf() -> str | None:
-    """Archivo de atajos de mpv de Orbital (se reescribe cada vez; vive junto a los datos de Orbital)."""
-    path = Path(os.environ.get("LOCALAPPDATA", "")) / "orbital" / "mpv-input.conf"
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(TOUCH_BINDINGS, encoding="utf-8")
-        return str(path)
-    except OSError:
-        return None
-
-
-def subtitle_options(subtitles: str, audio: str) -> list[str]:
-    """Qué subtítulos elige mpv solo. "forced": solo los forzados en tu idioma (los carteles y
-    diálogos en otro idioma de una película doblada), nunca los completos."""
-    if subtitles == "forced":
-        return [f"--slang={','.join(build_lang_list(audio))}", "--subs-with-matching-audio=forced",
-                "--subs-fallback=no", "--subs-fallback-forced=always"]
-    if not subtitles:
-        return ["--sid=no"]
-    return [f"--slang={','.join(build_lang_list(subtitles))}"]
-
-
-def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: str = "en",
-                  subtitles: str = "en", sub_files: list[str] | None = None, bindings: str | None = None,
-                  sub_scale: float = 1.0) -> list[str]:
-    cmd = [
-        mpv, url, f"--input-ipc-server={PIPE}", "--fullscreen", "--force-window=immediate",
-        # keep-open: al terminar se queda en el último cuadro (Orbital decide: siguiente episodio o
-        # salir). idle: si una fuente falla, mpv no se cierra; Orbital carga otra en la misma ventana.
-        "--keep-open=yes", "--idle=yes", "--osc=no", "--input-default-bindings=yes",
-        *([f"--input-conf={bindings}"] if bindings else []),
-        f"--title={title}", f"--force-media-title={title}",
-        f"--alang={','.join(build_lang_list(audio))}", *subtitle_options(subtitles, audio),
-        "--sub-auto=fuzzy", "--cache=yes", "--demuxer-max-bytes=400MiB", "--hwdec=auto-safe",
-        "--save-position-on-quit=no", "--msg-level=all=warn", "--background=#08080A", *OSD_STYLE,
-    ]
-    if abs(sub_scale - 1.0) > .01:
-        cmd.append(f"--sub-scale={sub_scale:g}")
-    if start > 5:
-        cmd.append(f"--start={int(start)}")
-    for sub in sub_files or []:
-        cmd.append(f"--sub-file={sub}")
-    return cmd
-
-
-def seek_step(repeats: int) -> int:
-    """Mantener ◀/▶ acelera: 10 s, luego 30 s y luego 1 min por paso (como en las TV)."""
-    if repeats < 4:
-        return 10
-    if repeats < 10:
-        return 30
-    return 60
-
-
-def chapter_kind(title: str) -> str | None:
-    """"intro" (se puede saltar), "credits" (aparece el siguiente episodio) o None."""
-    if not title:
-        return None
-    if CREDITS.search(title):
-        return "credits"
-    if INTRO.search(title):
-        return "intro"
-    return None
-
-
-@dataclass
-class Playback:
-    title: str
-    process: subprocess.Popen
-    started: float
-    meta: dict  # kind, meta_id, video_id: para guardar el progreso en Stremio
-
-
-@dataclass
-class Segment:
-    """Un archivo dentro de la misma ventana de mpv (un episodio, o la misma película en otra fuente)."""
-
-    meta: dict
-    title: str
-    url: str
-    start: float = 0.0
-    loaded: float = field(default_factory=time.monotonic)
-    position: float = 0.0
-    duration: float = 0.0
-    watched: float = 0.0
-    saved_watched: float = 0.0
-    playing: bool = False  # ya hubo imagen (mpv sabe la duración)
-    failed: bool = False
-    closed: bool = False
-    last_save: float = field(default_factory=time.monotonic)
-    last_tick: float = field(default_factory=time.monotonic)
-    chapters: list[dict] = field(default_factory=list)  # [{"title", "time"}]
-    skip_offered: set[int] = field(default_factory=set)
-    upnext: dict | bool | None = None  # {"label", "title", "play"}; False = no hay
-    upnext_requested: bool = False
-    upnext_dismissed: bool = False
-    upnext_deadline: float | None = None
-
-
-class Mpv:
-    """Habla con mpv por su tubería JSON (una línea por comando)."""
-
-    def __init__(self, pipe: str = PIPE) -> None:
-        self.pipe = pipe
-        self._lock = threading.Lock()
-
-    def _send(self, payload: dict, label) -> dict | None:
-        with self._lock:
-            try:
-                with open(self.pipe, "r+b", buffering=0) as fh:
-                    fh.write((json.dumps(payload) + "\n").encode())
-                    for _ in range(20):  # salta eventos hasta la respuesta
-                        line = fh.readline()
-                        if not line:
-                            return None
-                        data = json.loads(line)
-                        if "error" in data:
-                            return data
-            except (OSError, ValueError) as exc:
-                log.debug("mpv no respondió a %s: %s", label, exc)
-        return None
-
-    def command(self, *args) -> dict | None:
-        return self._send({"command": list(args)}, args)
-
-    def command_named(self, **args) -> dict | None:
-        """Comando con argumentos por nombre (osd-overlay los necesita)."""
-        return self._send({"command": args}, args.get("name"))
-
-    def get(self, prop: str):
-        reply = self.command("get_property", prop)
-        return reply.get("data") if reply and reply.get("error") == "success" else None
-
-    def show(self, text: str, ms: int = 1800) -> None:
-        self.command("show-text", text, ms)
-
-
-class PlayerRemote:
-    """Botones del mando -> nombres de botón ("a", "left"…), con autorrepetición al mantener la
-    cruceta y LB/RB. Qué hace cada uno lo decide el reproductor (depende de si hay un menú abierto)."""
-
-    BUTTONS = {A_BUTTON: "a", B_BUTTON: "b", X_BUTTON: "x", Y_BUTTON: "y", DPAD_LEFT: "left", DPAD_RIGHT: "right",
-               DPAD_UP: "up", DPAD_DOWN: "down", LB: "lb", RB: "rb", LT: "lt", RT: "rt"}
-    REPEAT = {DPAD_LEFT, DPAD_RIGHT, DPAD_UP, DPAD_DOWN, LB, RB}
-
-    def __init__(self, on_press, delay: float = .35, rate: float = .15) -> None:
-        self.on_press = on_press
-        self.delay = delay
-        self.rate = rate
-        self._next: dict[int, float] = {}
-        self._repeats: dict[str, int] = {}
-
-    def held(self, name: str) -> int:
-        """Cuántas veces se ha repetido ese botón sin soltarlo (0 = pulsación nueva)."""
-        return self._repeats.get(name, 0)
-
-    def actions(self, buttons: int, now: float) -> list[str]:
-        """Qué botones cuentan como pulsados en este momento (separado para poder probarlo)."""
-        if buttons & (GUIDE | BACK | START):
-            self._next.clear()  # Home y Select+Start son de Orbital
-            self._repeats.clear()
-            return []
-        out = []
-        for bit, name in self.BUTTONS.items():
-            if not buttons & bit:
-                self._next.pop(bit, None)
-                self._repeats.pop(name, None)
-                continue
-            if bit not in self._next:
-                self._next[bit] = now + self.delay
-                self._repeats[name] = 0
-            elif bit in self.REPEAT and now >= self._next[bit]:
-                self._next[bit] = now + self.rate
-                self._repeats[name] = self._repeats.get(name, 0) + 1
-            else:
-                continue
-            out.append(name)
-        return out
-
-    def update(self, buttons: int, now: float) -> None:
-        for name in self.actions(buttons, now):
-            self.on_press(name)
-
-
-def has_language(tracks: list[dict], kind: str, codes: set[str]) -> bool:
-    """¿El video ya trae una pista (audio/sub) en ese idioma?"""
-    return any(t.get("type") == kind and str(t.get("lang") or "").lower() in codes for t in tracks or [])
-
-
-def idle_expired(since: float, now: float, limit: float) -> bool:
-    """¿Lleva más de `limit` segundos en pausa? (0 = nunca se cierra solo)."""
-    return limit > 0 and now - since >= limit
-
-
-def wrong_audio(tracks: list[dict], lang: str) -> bool:
-    """Las pistas de audio tienen idioma y ninguna es el tuyo (sin etiquetas no se sabe: no avisa)."""
-    tagged = [str(t.get("lang")).lower() for t in tracks or []
-              if t.get("type") == "audio" and t.get("lang") and str(t.get("lang")).lower() not in ("und", "mul")]
-    codes = {c.lower() for c in build_lang_list(lang)}
-    return bool(tagged) and not any(code in codes for code in tagged)
-
-
-class OrbitalPlayer:
+class OrbitalPlayer(PlayerScreen):
     """Arranca mpv, lo vigila y avisa cuánto se vio (para Seguir viendo).
 
     El proceso lo lanza el Launcher de Orbital (así Home, la pausa, Select+Start y la vuelta a
@@ -357,6 +143,8 @@ class OrbitalPlayer:
         playback = Playback(title, process, time.time(), meta)
         self.current = playback
         self.segment = Segment(meta, title, url, start=float(options.get("start") or 0))
+        if hasattr(self.mpv, "start_observing"):
+            self.mpv.start_observing()  # mpv avisa de pausa, posición… en vez de preguntarle cada segundo
         threading.Thread(target=self._watch, args=(playback,), daemon=True, name="mpv").start()
         log.info("Reproduciendo en mpv: %s", title)
         return process
@@ -607,52 +395,6 @@ class OrbitalPlayer:
         self.toast(f"Cargando {info.get('label') or 'el siguiente episodio'}…", 6)
         threading.Thread(target=self._safe, args=(info["play"],), daemon=True, name="next-episode").start()
 
-    # --- tarjetas encima del video -------------------------------------------------------------
-    def _show_card(self, card: dict, now: float | None = None) -> None:
-        self._card = card
-        self._draw_card(now)
-
-    def _draw_card(self, now: float | None = None) -> None:
-        card = self._card
-        if card is None:
-            self._overlay(4, None)
-            return
-        if card["kind"] == "skip":
-            ass = player_ui.card_ass(card["label"], actions=[("A", card["label"]), ("B", "Seguir viendo")])
-        else:
-            segment = card["segment"]
-            info = segment.upnext or {}
-            label = " · ".join(p for p in (info.get("label"), info.get("title")) if p)
-            if card["kind"] == "still":
-                ass = player_ui.card_ass("¿Sigues viendo?", label, [("A", "Seguir viendo"), ("B", "Salir")])
-            else:
-                now = time.monotonic() if now is None else now
-                left = max(0.0, (segment.upnext_deadline or now) - now)
-                ass = player_ui.card_ass(f"Siguiente episodio en {int(left + .99)}", label,
-                                         [("A", "Ver ahora"), ("B", "Quedarme")], progress=left / UPNEXT_COUNTDOWN)
-        self._overlay(4, ass)
-
-    def _hide_card(self) -> None:
-        self._card = None
-        self._overlay(4, None)
-
-    def _card_accept(self) -> None:
-        card = self._card
-        if card["kind"] == "skip":
-            self._hide_card()
-            self.mpv.command("seek", card["to"], "absolute")
-        else:
-            self._play_next(card["segment"], auto=False)
-
-    def _card_dismiss(self) -> None:
-        card = self._card
-        self._hide_card()
-        if card["kind"] == "still":
-            self._user_quit = True
-            self._quit()
-        elif card["kind"] == "next":
-            card["segment"].upnext_dismissed = True  # se queda en los créditos; al final, sale
-
     # --- subtítulos ------------------------------------------------------------------------------
     def _ensure_subtitles(self, lang: str, fallback_subs) -> None:
         if not lang or fallback_subs is None:
@@ -674,202 +416,6 @@ class OrbitalPlayer:
 
     def show_progress(self) -> None:
         self.show_hud()
-
-    # --- interfaz encima del video (player_ui) -------------------------------------------------
-    def _overlay(self, overlay_id: int, ass: str | None) -> None:
-        self.mpv.command_named(name="osd-overlay", id=overlay_id, format="ass-events" if ass else "none",
-                               data=ass or "", res_x=player_ui.W, res_y=player_ui.H, z=overlay_id)
-
-    def show_hud(self) -> None:
-        """Barra inferior: se queda en pausa; reproduciendo, se va sola a los pocos segundos."""
-        if self.current is None or self.menu is not None:
-            return
-        tracks = self.mpv.get("track-list") or []
-        paused = bool(self.mpv.get("pause"))
-        meta = self.current.meta
-        segment = self.segment
-        hud = player_ui.Hud(
-            title=self.current.title, detail=meta.get("detail", ""),
-            position=self.mpv.get("time-pos"), duration=self.mpv.get("duration"), paused=paused,
-            audio=player_ui.current_label(tracks, "audio"), subtitles=player_ui.current_label(tracks, "sub"),
-            source=meta.get("source_label", ""), series=meta.get("kind") == "series" and self.on_episode is not None,
-            ends=player_ui.ends_at(self.mpv.get("time-pos"), self.mpv.get("duration")),
-            chapters=[float(c["time"]) for c in (segment.chapters if segment else [])])
-        self._overlay(1, player_ui.hud_ass(hud))
-        self._hud_visible = True
-        if self._hud_timer:
-            self._hud_timer.cancel()
-        if not paused:
-            self._hud_timer = threading.Timer(self.HUD_SECONDS, self._hide_hud_if_playing)
-            self._hud_timer.daemon = True
-            self._hud_timer.start()
-
-    def hide_hud(self) -> None:
-        if self._hud_timer:
-            self._hud_timer.cancel()
-        self._hud_visible = False
-        self._overlay(1, None)
-
-    def _hide_hud_if_playing(self) -> None:
-        if not self.mpv.get("pause"):
-            self.hide_hud()
-
-    def toast(self, text: str, seconds: float = 1.6) -> None:
-        self._overlay(3, player_ui.toast_ass(text))
-        if self._toast_timer:
-            self._toast_timer.cancel()
-        self._toast_timer = threading.Timer(seconds, lambda: self._overlay(3, None))
-        self._toast_timer.daemon = True
-        self._toast_timer.start()
-
-    # --- menú con pestañas: Audio · Subtítulos · Fuente ------------------------------------------
-    def _tabs(self) -> list[str]:
-        return ["audio", "sub"] + (["source"] if self.sources_provider and self.current else [])
-
-    def open_menu(self, kind: str) -> None:
-        tabs = self._tabs()
-        if kind == "source" and self.current is not None:
-            sources = self._safe(self.sources_provider, self.current.meta) or []
-            self.menu = player_ui.source_menu(sources, tabs)
-        else:
-            tracks = self.mpv.get("track-list") or []
-            extra = []
-            if kind == "sub":
-                if self._fallback_subs and self._subs_lang:
-                    extra.append({"label": f"Buscar subtítulos en {player_ui.language(self._subs_lang).lower()}…",
-                                  "action": ("fetch", self._subs_lang), "current": False})
-                extra.append({"label": f"Tamaño: {player_ui.sub_scale_label(self.sub_scale)}",
-                              "action": ("subscale", None), "current": False})
-            self.menu = player_ui.track_menu(kind, tracks, extra, tabs)
-        if self._hud_timer:
-            self._hud_timer.cancel()
-        self._hud_visible = False
-        self._overlay(1, None)
-        self._overlay(4, None)  # la tarjeta vuelve al cerrar el menú
-        self._overlay(2, player_ui.menu_ass(self.menu))
-
-    def close_menu(self) -> None:
-        self.menu = None
-        self._overlay(2, None)
-        self._draw_card()
-
-    def _choose(self, option: dict) -> None:
-        prop, value = option["action"]
-        if prop == "subscale":  # se queda en el menú: ves el cambio y sigues ajustando
-            self.sub_scale = player_ui.next_sub_scale(self.sub_scale)
-            self.mpv.command("set_property", "sub-scale", self.sub_scale)
-            if self.on_sub_scale:
-                self._safe(self.on_sub_scale, self.sub_scale)
-            option["label"] = f"Tamaño: {player_ui.sub_scale_label(self.sub_scale)}"
-            self._overlay(2, player_ui.menu_ass(self.menu))
-            return
-        self.close_menu()
-        if prop == "fetch":
-            self.toast("Buscando subtítulos…", 3)
-            threading.Thread(target=self._fetch_subs, args=(value,), daemon=True).start()
-            return
-        if prop == "source":
-            if option.get("current") or self.current is None:
-                return
-            position = self.mpv.get("time-pos")
-            self.toast("Cambiando de fuente…", 4)
-            if self.on_switch_source:
-                threading.Thread(target=self._safe, args=(self.on_switch_source, self.current.meta, value,
-                                                          float(position or 0)), daemon=True).start()
-            return
-        self.mpv.command("set_property", prop, value)
-        kind = "Audio" if prop == "aid" else "Subtítulos"
-        self.toast(f"{kind}: {option['label'].split(' · ')[0]}")
-
-    def _fetch_subs(self, lang: str) -> None:
-        try:
-            urls = self._fallback_subs() if self._fallback_subs else []
-        except Exception:  # noqa: BLE001
-            log.exception("No pude buscar subtítulos")
-            urls = []
-        if urls:
-            self.mpv.command("sub-add", urls[0], "select", "Subtítulos", lang)
-            self.toast(f"Subtítulos: {player_ui.language(lang)}")
-        else:
-            self.toast("No encontré subtítulos en tu addon", 2.5)
-
-    def _menu_press(self, button: str) -> None:
-        menu = self.menu
-        if button in ("up", "down"):
-            if menu.options:
-                menu.index = max(0, min(len(menu.options) - 1, menu.index + (-1 if button == "up" else 1)))
-                self._overlay(2, player_ui.menu_ass(menu))
-        elif button == "a" and menu.options:
-            self._choose(menu.options[menu.index])
-        elif button == "b":
-            self.close_menu()
-        elif button in ("lb", "rb", "left", "right"):
-            tabs = menu.tabs
-            i = tabs.index(menu.kind) if menu.kind in tabs else 0
-            self.open_menu(tabs[(i + (-1 if button in ("lb", "left") else 1)) % len(tabs)])
-        elif button in ("x", "y"):
-            kind = "audio" if button == "x" else "sub"
-            if kind == menu.kind:
-                self.close_menu()
-            else:
-                self.open_menu(kind)
-
-    # --- el mando ---------------------------------------------------------------------------------
-    def press(self, button: str) -> None:
-        """Un botón del mando con el reproductor al frente."""
-        self._quiet_episodes = 0  # alguien está ahí
-        if self.menu is not None:
-            self._menu_press(button)
-            return
-        if self._card is not None and button in ("a", "b"):
-            if button == "a":
-                self._card_accept()
-            else:
-                self._card_dismiss()
-            return
-        if button == "a":
-            self.mpv.command("cycle", "pause")
-            self.show_hud()
-        elif button == "b":
-            # Primero se va la barra; con la barra oculta, B sale.
-            if self._hud_visible:
-                self.hide_hud()
-            else:
-                self._user_quit = True
-                self._quit()
-        elif button in ("x", "y"):
-            self.open_menu("audio" if button == "x" else "sub")
-        elif button in ("left", "right"):
-            step = seek_step(self.remote.held(button))
-            self.mpv.command("seek", step if button == "right" else -step, "relative")
-            self.show_hud()
-        elif button in ("lb", "rb"):
-            delta = -1 if button == "lb" else 1
-            if self.segment is not None and len(self.segment.chapters) > 1:
-                self.mpv.command("add", "chapter", delta)
-            else:
-                self.mpv.command("seek", delta * CHAPTER_SEEK, "relative")
-            self.show_hud()
-        elif button in ("lt", "rt"):
-            meta = self.current.meta if self.current else {}
-            if meta.get("kind") == "series" and self.on_episode:
-                self.toast("Episodio siguiente…" if button == "rt" else "Episodio anterior…", 3)
-                threading.Thread(target=self._safe, args=(self.on_episode, meta, -1 if button == "lt" else 1),
-                                 daemon=True).start()
-        elif button in ("up", "down"):
-            self.mpv.command("add", "volume", 5 if button == "up" else -5)
-            volume = self.mpv.get("volume")
-            self.toast(f"Volumen {int(volume)} %" if isinstance(volume, (int, float)) else "Volumen")
-
-    def _quit(self) -> None:
-        """Cierra mpv anotando ANTES cómo terminó (el catálogo lo lee al volver a Orbital: "Terminaste…"
-        en vez de "Guardé dónde ibas"). Antes de cerrar, no después: el lanzador puede ver el proceso
-        terminado antes que este vigilante."""
-        segment = self.segment
-        if segment is not None and self.current is not None:
-            finished = bool(segment.duration) and segment.position >= segment.duration * .9
-            self.last_end = {"title": self.current.title, "finished": finished, "kind": segment.meta.get("kind")}
-        self.mpv.command("quit")
 
     # --- para la voz -----------------------------------------------------------------------
     def set_pause(self, paused: bool) -> None:
