@@ -6,7 +6,9 @@ aquí, en el servidor, con XInput (Windows):
   * Home (botón Guía), solo      -> ir a Orbital / volver al juego. Se dispara al SOLTARLO y
                                    solo si no se tocó otro botón: Home+X, Home+B... siguen siendo
                                    de los emuladores (Eden los usa).
-  * Select + Start, mantenidos   -> "¿Cerrar el juego?" (con anillo de progreso).
+  * Start + Select + Home, mantenidos -> cerrar el juego (barra que se llena encima del juego).
+                                   Los tres juntos: el GameSir usa Start+Select y Home sostenido
+                                   para cambiar de modo, y eso nunca debe cerrar un juego.
 
 La lógica de botones (ComboDetector) es pura y tiene pruebas; el sondeo de XInput solo
 existe en Windows.
@@ -27,7 +29,8 @@ GUIDE = 0x0400
 BACK = 0x0020
 START = 0x0010
 
-HOLD_ARM = 0.25  # s con Select+Start antes de reaccionar (evita toques accidentales)
+CLOSE_COMBO = GUIDE | BACK | START  # Start + Select + Home
+HOLD_ARM = 0.25  # s con el combo antes de reaccionar (evita toques accidentales)
 HOLD_TOTAL = 1.5  # s hasta preguntar si cerrar
 
 
@@ -56,7 +59,7 @@ class ComboDetector:
             self._guide_chord = False
         self._guide = guide
 
-        combo = bool(buttons & BACK) and bool(buttons & START)
+        combo = (buttons & CLOSE_COMBO) == CLOSE_COMBO
         if not combo:
             if self._phase == "armed":
                 events.append("hold-cancel")
@@ -167,7 +170,7 @@ class GamepadWatcher:
             log.warning("Sin XInput: los atajos del mando (Home, Select+Start) no funcionarán: %s", exc)
             return False
         threading.Thread(target=self._run, args=(get_state,), daemon=True, name="gamepad").start()
-        log.info("Atajos del mando activos: Home = Orbital/juego · Select+Start mantenido = cerrar juego")
+        log.info("Atajos del mando activos: Home = Orbital/juego · Start+Select+Home mantenidos = cerrar juego")
         return True
 
     def stop(self) -> None:

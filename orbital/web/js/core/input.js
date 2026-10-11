@@ -56,7 +56,7 @@ export class Repeater {
 
   /**
    * Ignora lo que ya esté presionado hasta que se suelte. Al volver a Orbital desde un
-   * juego con Select+Start aún sostenidos, no deben abrir el menú.
+   * juego con Start+Select+Home aún sostenidos, no deben abrir el menú.
    */
   swallow(active) {
     for (const action of active) this.held.set(action, Infinity);

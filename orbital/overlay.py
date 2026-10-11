@@ -1,4 +1,4 @@
-"""Aviso encima del juego: "Mantén Select + Start para cerrar".
+"""Aviso encima del juego: "Mantén Start + Select + Home para cerrar".
 
 Una ventana pequeña, centrada, siempre visible y que NO toma el foco: el juego sigue
 recibiendo el mando. Se dibuja con Tkinter (viene con Python) en su propio hilo.

@@ -20,9 +20,9 @@ def test_home_chords_belong_to_the_emulator():
     assert run(d, [(0.5, GUIDE), (0.6, 0)]) == ["home"]  # el siguiente Home solo sí
 
 
-def test_hold_select_start_arms_then_completes_once():
+def test_hold_start_select_home_arms_then_completes_once():
     d = ComboDetector(arm=.25, total=1.5)
-    both = BACK | START
+    both = BACK | START | GUIDE
     assert run(d, [(0, both), (0.2, both)]) == []  # un toque no hace nada
     assert run(d, [(0.3, both)]) == ["hold-start"]  # reacciona rápido (anillo en pantalla)
     assert run(d, [(1.0, both), (1.6, both), (2.5, both)]) == ["hold-complete"]  # una sola vez
@@ -31,14 +31,23 @@ def test_hold_select_start_arms_then_completes_once():
 
 def test_releasing_early_cancels():
     d = ComboDetector(arm=.25, total=1.5)
-    both = BACK | START
-    assert run(d, [(0, both), (0.5, both), (0.9, START)]) == ["hold-start", "hold-cancel"]
+    both = BACK | START | GUIDE
+    assert run(d, [(0, both), (0.5, both), (0.9, START | GUIDE)]) == ["hold-start", "hold-cancel"]
     assert run(d, [(1.0, both), (1.1, both)]) == []  # vuelve a empezar desde cero
 
 
 def test_only_select_or_only_start_do_nothing():
     d = ComboDetector()
     assert run(d, [(0, BACK), (2, BACK), (3, START), (5, START)]) == []
+
+
+def test_gamesir_mode_switch_never_closes_the_game():
+    # El GameSir cambia de modo con Start+Select sostenidos, o con Home sostenido: nada de eso cierra.
+    d = ComboDetector()
+    assert run(d, [(0, BACK | START), (3, BACK | START), (4, 0)]) == []
+    assert run(d, [(5, GUIDE), (8, GUIDE)]) == []
+    assert run(d, [(8.5, 0)]) == ["home"]  # soltar Home solo = ir a Orbital (como siempre)
+    assert run(d, [(9, GUIDE | START), (9.1, GUIDE | START | BACK), (9.2, 0)]) == []  # combo: Home no cuenta
 
 
 def test_remote_maps_buttons_to_keys_with_repeat_on_dpad():

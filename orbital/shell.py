@@ -1,7 +1,8 @@
 """Comportamiento de "consola": ir y volver entre Orbital y el juego con el mando.
 
-  * Home (o Legion L): desde el juego -> Orbital; desde Orbital -> de vuelta al juego.
-  * Select + Start mantenidos en el juego -> aviso encima del juego (sin salir de él) con una
+  * Home (o un toque de Legion L): desde el juego -> Orbital; desde Orbital -> de vuelta al juego.
+  * Legion L dos veces seguidas desde un juego -> se cierra (el primer toque ya te trajo a Orbital).
+  * Start + Select + Home mantenidos en el juego -> aviso encima del juego (sin salir de él) con una
     barra que se llena; al completarse, el emulador se cierra de golpe y vuelves a Orbital.
     Soltar antes = no pasa nada. Sostenerlo 1,5 s ya es la confirmación: sin "¿Seguro?".
 
@@ -46,7 +47,7 @@ NOT_GAMES = BROWSERS | {"steam.exe", "steamwebhelper.exe", "explorer.exe", "es-d
 APP_NAMES = {"chrome": "Chrome", "msedge": "Edge", "stremio-shell-ng": "Stremio", "steamwebhelper": "Steam",
              "steam": "Steam", "es-de": "ES-DE", "discord": "Discord", "explorer": "Explorador", "eden": "Eden",
              "ryujinx": "Ryujinx", "dolphin": "Dolphin", "mgba": "mGBA", "xemu": "xemu", "ppssppwindows64": "PPSSPP", "mpv": "Reproductor"}
-LEGION_DOUBLE_PRESS = 3.0  # s: dos toques de Legion L dejan abierto Legion Space
+LEGION_DOUBLE_PRESS = 2.0  # s: dos toques de Legion L desde un juego lo cierran
 
 
 class ConsoleShell:
@@ -63,7 +64,7 @@ class ConsoleShell:
         self._remotes = [KeyRemote() for _ in range(4)]
         self._fg_cache = (0.0, "")  # (cuándo, exe al frente): no preguntar a Windows 240 veces/s
         self._legion_last = 0.0
-        self._legion_allowed = False
+        self._legion_left: dict | None = None  # el juego que dejaste con Legion L (para el 2.º toque)
         self._stop = threading.Event()
 
     @property
@@ -280,26 +281,43 @@ class ConsoleShell:
 
     # --------------------------------------------------------------- Legion L
     def check_legion(self, fg: int, previous: int, now: float | None = None) -> None:
-        """Legion L abre Legion Space: lo minimizamos y hacemos lo mismo que Home, tomando
-        como punto de partida la ventana que estaba al frente antes (`previous`).
-        Dos toques seguidos (menos de 3 s) dejan Legion Space abierto."""
+        """Legion L abre Legion Space (no se puede reasignar): Orbital lo esconde al instante y lo usa
+        como botón propio, tomando como punto de partida la ventana de antes (`previous`).
+
+          * Un toque: igual que Home (del juego a Orbital, con pausa; de Orbital al juego).
+          * Dos toques seguidos desde un juego: se cierra ese juego, sin preguntar (el segundo toque
+            es la confirmación; tras el primero, Orbital avisa "Toca otra vez para cerrar…").
+        """
         now = time.monotonic() if now is None else now
         if self.win.exe_name(self.win.pid_of(fg)) != LEGION_SPACE:
-            self._legion_allowed = False
             return
-        if self._legion_allowed:
-            return
-        if now - self._legion_last < LEGION_DOUBLE_PRESS:
-            self._legion_allowed = True
-            log.info("Doble Legion L: se queda Legion Space")
+        self.win.minimize(fg)
+        left = self._legion_left
+        if left and now - self._legion_last < LEGION_DOUBLE_PRESS:
+            self._legion_left = None
+            self.hold = self.target(left["hwnd"]) or left["target"]
+            log.info("Legion L dos veces: cierro %s", self.hold.get("title"))
+            if self.overlay:
+                self.overlay.closing(f"Cerrando {self.hold.get('runner') or 'el juego'}")
+            self.stop_game()
+            if self.overlay:
+                self.overlay.hide(delay_ms=350)
+            self.show_orbital()
             return
         self._legion_last = now
-        self.win.minimize(fg)
+        self._legion_left = None
         if self.is_orbital(previous):
             self.resume()
-        else:
-            self.remember(previous)
-            self.show_orbital()
+            return
+        game = self.target(previous)
+        self.remember(previous)
+        self.pause(previous)
+        self.show_orbital()
+        if game:
+            self._legion_left = {"hwnd": previous, "target": game}
+            notify = getattr(self.catalog, "_notify", None)
+            if notify:
+                notify({"type": "toast", "message": f"Toca Legion L otra vez para cerrar {game['title']}"})
 
     # --------------------------------------------------------------- arranque
     def start(self) -> bool:

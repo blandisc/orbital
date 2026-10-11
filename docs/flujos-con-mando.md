@@ -26,12 +26,12 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 | Abrir un juego | A (la portada vuela a "Abriendo", el mando vibra) | ✅ |
 | Abrir con el emulador alternativo (Ryujinx/Eden) | X | ✅ |
 | Usar siempre otro emulador, favorito, ocultar | Y → menú lateral | ✅ |
-| Ir a Orbital sin cerrar el juego | Home (solo, al soltarlo) o Legion L | ✅ |
+| Ir a Orbital sin cerrar el juego | Home (solo, al soltarlo) o un toque de Legion L | ✅ |
 | Volver al juego desde Orbital | Home, Legion L, o A sobre el juego ("Continuar") | ✅ |
-| Cerrar el juego | Mantener Select + Start 1,5 s: aviso encima del juego y cierre inmediato | ✅ |
+| Cerrar el juego | GameSir: mantener Start + Select + Home 1,5 s (barra encima del juego, cierre inmediato). Controles de la Legion Go: Legion L dos veces seguidas. Ninguno choca con el cambio de modo del GameSir (Start+Select o Home sostenidos) | ✅ |
 | Cerrar desde Orbital | ☰ → Cerrar… o Y → Cerrar (pide confirmación) | ✅ |
 | El juego se cierra solo | Orbital vuelve al frente con el tiempo jugado | ✅ |
-| Juego de Steam | A lo abre; Select + Start lo cierra si está al frente | ⚠️ Steam puede mostrar sus propios avisos (sincronización en la nube, actualizaciones); se manejan con el mando en Steam, no en Orbital |
+| Juego de Steam | A lo abre; Start + Select + Home lo cierra si está al frente | ⚠️ Steam puede mostrar sus propios avisos (sincronización en la nube, actualizaciones); se manejan con el mando en Steam, no en Orbital |
 
 ## Entrar y salir de un juego: todos los casos
 
@@ -47,14 +47,14 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 | Abres un juego y su ventana aparece detrás de Orbital (Windows lo hace a veces) | Orbital se la pasa al frente en cuanto existe, solo si Orbital sigue al frente | ✅ (nuevo) |
 | El emulador se relanza a sí mismo al arrancar (xemu) | Orbital sigue al proceso nuevo; no sale encima del juego | ✅ (nuevo; antes salía a los 2 s) |
 | Un lanzador abre el juego y se cierra (`launch-eden.cmd`, lanzadores propios) | Orbital sigue al juego, no al lanzador | ✅ (nuevo) |
-| El juego se cierra normal (menú del juego, Select+Start, "cierra el juego") | Orbital al frente, con el tiempo jugado y la tarjeta enfocada | ✅ |
+| El juego se cierra normal (menú del juego, Start + Select + Home, Legion L ×2, "cierra el juego") | Orbital al frente, con el tiempo jugado y la tarjeta enfocada | ✅ |
 | El juego truena | Igual que cerrarse: Orbital al frente con "De vuelta de…" | ✅ |
 | Home en el juego | Orbital al frente; el emulador se congela (un video se pausa) | ✅ |
 | Home otra vez, Legion L o A en "Continuar" | De vuelta al juego, descongelado | ✅ |
 | Vuelves al juego por tu cuenta (Alt+Tab, toque) | Se descongela solo | ✅ |
 | Orbital se cierra de golpe con un juego congelado | Al volver a abrir, lo descongela | ✅ |
-| Select+Start con un juego que siguió en otro proceso | Cierra ese proceso, no el lanzador que ya no existe | ✅ (nuevo) |
-| Abres desde ES-DE o Steam (no desde Orbital) | Home lleva a Orbital y regresa; Select+Start lo cierra si está al frente | ✅ |
+| Cerrar un juego que siguió en otro proceso | Cierra ese proceso, no el lanzador que ya no existe | ✅ (nuevo) |
+| Abres desde ES-DE o Steam (no desde Orbital) | Home lleva a Orbital y regresa; Start + Select + Home lo cierra si está al frente | ✅ |
 | Un aviso de Windows o de Steam sale encima | Orbital no compite por el foco; Home sigue funcionando | ⚠️ el aviso se maneja con el mando en su app |
 
 ## Multimedia y apps
@@ -68,7 +68,7 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 | Home en el reproductor | Pausa el video y va a Orbital; Home otra vez vuelve con la barra de progreso (A sigue) | ✅ |
 | Seguir viendo | Al salir del reproductor, el avance se guarda en tu cuenta de Stremio (Orbital, Stremio y otros dispositivos); al terminar un episodio, queda el siguiente | ✅ |
 | Navegar dentro de Stremio | depende de Stremio | ⚠️ Stremio no se maneja del todo con mando (con `player: stremio` se usa su reproductor) |
-| Volver a Orbital desde una app | Home o Legion L | ✅ |
+| Volver a Orbital desde una app | Home o un toque de Legion L | ✅ |
 | Cambiar entre apps abiertas | ☰ → Ventanas abiertas | ✅ |
 
 ## Sistema

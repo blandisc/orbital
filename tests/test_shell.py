@@ -156,17 +156,37 @@ def test_hold_ignored_in_orbital_and_in_other_apps():
     assert overlay.calls == [] and overlay2.calls == [] and win2.fg == DESKTOP_APP
 
 
-def test_legion_l_mirrors_home_and_double_press_keeps_legion_space():
+def test_legion_l_one_tap_goes_to_orbital_and_back():
     shell, win, _ = make(MANAGED)
     win.fg = LEGION
     shell.check_legion(LEGION, previous=GAME, now=100)
-    assert win.minimized == [LEGION] and win.fg == ORBITAL
+    assert win.minimized == [LEGION] and win.fg == ORBITAL and win.suspended == {20}  # como Home, con pausa
     win.fg = LEGION
     shell.check_legion(LEGION, previous=ORBITAL, now=110)
-    assert win.fg == GAME  # desde Orbital, Legion L regresa al juego
+    assert win.fg == GAME and not win.suspended  # desde Orbital, de vuelta al juego
+
+
+def test_legion_l_twice_closes_the_game():
+    shell, win, overlay = make(MANAGED)
+    notes = []
+    shell.catalog._notify = notes.append
     win.fg = LEGION
-    shell.check_legion(LEGION, previous=GAME, now=111)  # dos toques seguidos
-    assert win.fg == LEGION and win.minimized == [LEGION, LEGION]
+    shell.check_legion(LEGION, previous=GAME, now=100)
+    assert notes and "otra vez para cerrar" in notes[0]["message"]
+    win.fg = LEGION
+    shell.check_legion(LEGION, previous=ORBITAL, now=101.2)  # segundo toque: ya estabas en Orbital
+    assert shell.catalog.launcher.stopped and shell.catalog.launcher.forced and not win.suspended
+    assert win.fg == ORBITAL and ("closing", "Cerrando Eden") in overlay.calls
+    assert win.minimized == [LEGION, LEGION]  # Legion Space nunca se queda
+
+
+def test_legion_l_twice_but_slow_is_just_two_taps():
+    shell, win, _ = make(MANAGED)
+    win.fg = LEGION
+    shell.check_legion(LEGION, previous=GAME, now=100)
+    win.fg = LEGION
+    shell.check_legion(LEGION, previous=ORBITAL, now=105)
+    assert win.fg == GAME and not shell.catalog.launcher.stopped
 
 
 def test_open_windows_hides_orbital_and_only_focuses_listed():

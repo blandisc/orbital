@@ -50,8 +50,8 @@ se controla con la voz a través de **Alexa**.
 | Mando | Acción |
 |---|---|
 | Home (Guía) | Del juego a Orbital y, desde Orbital, de vuelta al juego |
-| Legion L | Igual que Home. Dos toques seguidos dejan abierto Legion Space |
-| Select + Start (mantener 1,5 s) | Un anillo se llena y pregunta "¿Cerrar…?" (*Seguir jugando* va primero; B también vuelve) |
+| Legion L | Un toque: igual que Home. Dos toques seguidos desde un juego: lo cierra |
+| Start + Select + Home (mantener 1,5 s) | Una barra se llena encima del juego y lo cierra (soltar antes = nada). Los tres juntos para no chocar con el cambio de modo del GameSir |
 
 > Home abre la Xbox Game Bar por defecto. Para que no se encimen: *Configuración → Juegos →
 > Xbox Game Bar* → desactiva "Abrir Xbox Game Bar con este botón del mando".

@@ -57,7 +57,7 @@ export function mainMenu({ soundEnabled, running, hiddenCount, canExit = false }
 }
 
 /**
- * "¿Cerrar el juego?" (Select+Start mantenidos, o el menú). "Seguir jugando" va primero:
+ * "¿Cerrar el juego?" (el menú de Orbital). "Seguir jugando" va primero:
  * un A rápido nunca cierra nada, y B (cancel) también regresa al juego.
  */
 export function stopMenu({ title, runner }) {
