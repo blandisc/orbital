@@ -254,6 +254,7 @@ function gamesFocused(target) {
 function gamesActivate(target, action = "select") {
   if (!target) return;
   if (target.kind === "filter") { sound.play("select"); return ui.games.setFilter(target.filter); }
+  if (target.kind === "gallery") { sound.play("open"); ui.games.showGallery(); document.body.dataset.games = ui.games.mode; return renderHints(); }
   if (target.kind === "console") { sound.play("open"); ui.games.enter(); document.body.dataset.games = ui.games.mode; return renderHints(); }
   const item = target.item;
   if (action === "options") return openMenu(gameMenu(item, { running: state.running }));

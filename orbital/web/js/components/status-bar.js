@@ -16,7 +16,8 @@ export function createStatusBar({ onBrand, onSection, onSearch }) {
   // Lo abierto: un ícono quieto y su nombre (antes un punto verde que parpadeaba y no se entendía).
   const playing = h("span", { class: "status-bar__playing", hidden: true },
     h("span", { class: "status-bar__live", "aria-hidden": "true" }, svg(ICONS.play)), playingLabel, playingTitle);
-  const alexa = h("span", { class: "indicator", hidden: true, title: "Alexa" }, h("i", { class: "indicator__dot" }), "Alexa");
+  // Alexa: solo un micrófono gris; se ilumina un momento cuando acaba de escucharte.
+  const alexa = h("span", { class: "indicator", hidden: true, title: "Alexa", "aria-label": "Alexa" }, svg(ICONS.mic));
   const wifi = h("span", { hidden: true }, svg(ICONS.wifi));
   const level = h("i", { class: "battery__level" });
   const batteryText = h("span");

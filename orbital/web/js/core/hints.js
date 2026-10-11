@@ -78,6 +78,7 @@ export function gamesHints(glyphs, target, { mode = "console", primary = "Jugar"
   }
   const list = [];
   if (target?.kind === "filter") list.push({ glyph: glyphs.select, label: "Filtrar" });
+  else if (target?.kind === "gallery") list.push({ glyph: glyphs.select, label: "Ver todas las consolas" });
   else if (target?.kind === "game") {
     list.push({ glyph: glyphs.select, label: primary });
     if (alt) list.push({ glyph: glyphs.alt, label: alt });

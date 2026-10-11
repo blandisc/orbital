@@ -11,8 +11,12 @@
   transition: background var(--duration-fast) var(--ease-out);
 }
 .status-bar__brand:hover { background: var(--color-fill); }
-.status-bar__brand .mark { width: 1.6rem; height: 1.6rem; color: var(--color-accent); transition: color var(--duration-tint) var(--ease-out); }
-.status-bar__wordmark { font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); }
+.status-bar__brand { gap: .55rem; }
+.status-bar__brand .mark { width: 1.75rem; height: 1.75rem; color: var(--color-text); }
+.status-bar__wordmark {
+  font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-medium);
+  letter-spacing: .01em; line-height: 1; padding-bottom: .08em; /* centro óptico con el planeta */
+}
 
 .status-bar__playing { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; color: var(--color-text-muted); animation: fade-in var(--duration-base) var(--ease-out); }
 /* Lo abierto: un ▶ quieto (en pausa, ‖ en ámbar); sin parpadeos que distraigan. */
@@ -61,10 +65,11 @@
   letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums; line-height: 1;
 }
 
-.indicator { display: inline-flex; align-items: center; gap: var(--space-2); }
-.indicator__dot { width: .45rem; height: .45rem; border-radius: 50%; background: var(--color-idle); }
-.indicator--live .indicator__dot { background: var(--color-live); }
-.indicator--pulse .indicator__dot { animation: pulse 1s ease 2; }
+.indicator { display: inline-grid; place-items: center; color: var(--color-text-faint); transition: color var(--duration-slow) var(--ease-out); }
+.indicator .icon { width: 1.15rem; height: 1.15rem; }
+.indicator--live { color: var(--color-text-muted); }
+.indicator--pulse { color: var(--color-text); animation: mic-heard 1.2s var(--ease-out); }
+@keyframes mic-heard { 30% { transform: scale(1.25); } }
 
 .wifi { display: block; width: 1.35rem; height: 1.1rem; fill: none; stroke: var(--color-text); stroke-width: 2; stroke-linecap: round; }
 .wifi__dot { fill: var(--color-text); stroke: none; }

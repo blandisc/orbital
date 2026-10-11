@@ -1,9 +1,11 @@
-import { h, mount } from "../core/dom.js";
+import { h, mount, svg } from "../core/dom.js";
 import { shortAgo } from "../core/format.js";
 import { consoleGames, FILTERS, gameConsoles, pickConsole, stepConsole } from "../core/games.js";
 import { systemColor } from "../core/home.js";
+import { ICONS } from "../core/icons.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { Card } from "./card.js";
+import { Glyph } from "./glyph.js";
 
 /**
  * Juegos. El héroe (arriba, el componente de siempre) muestra el juego enfocado; aquí va lo demás:
@@ -30,6 +32,7 @@ export function createGames({ onFocus, onPick }) {
   let mode = "console"; // "console" | "gallery" (lo que se ve ahora)
   let view = "console"; // preferencia: Ajustes → Pantalla → Juegos
   let inside = false; // en modo galería: ya entraste a una consola
+  let peeking = false; // galería abierta desde «Todas las consolas» (con «directo a tu consola» en Ajustes)
   const filterOf = {}; // consola -> filtro
   const memory = {}; // consola -> juego enfocado
   let focusId = "game:0";
@@ -45,7 +48,7 @@ export function createGames({ onFocus, onPick }) {
     if (wanted !== view) { view = wanted; inside = false; }
     list = gameConsoles(rows);
     consoleId = pickConsole(list, ask, consoleId);
-    mode = view === "gallery" && !inside ? "gallery" : "console";
+    mode = (view === "gallery" && !inside) || peeking ? "gallery" : "console";
     el.dataset.mode = mode;
     paintAll();
   }
@@ -59,14 +62,15 @@ export function createGames({ onFocus, onPick }) {
 
   // --- riel: la consola actual en grande; las demás, chicas (se tocan con el dedo) ---------------
   function renderRail() {
+    const [prev, next] = (options.glyphs.page || "").split(" ");
     mount(rail,
-      options.glyphs.page && h("span", { class: "games__rail-key" }, options.glyphs.page.split(" ")[0]),
+      prev && h("span", { class: "games__rail-key" }, Glyph(prev, { small: true }), h("span", { class: "games__rail-arrow" }, svg(ICONS.chevron))),
       list.map((c) => h("button", {
         class: ["games__rail-item", c.id === consoleId && "games__rail-item--current"], type: "button", tabindex: "-1",
         "aria-label": c.name, "aria-current": c.id === consoleId ? "true" : null, style: { "--glow": systemColor(c.system) },
         onClick: () => switchTo(c.id, Math.sign(list.indexOf(c) - list.findIndex((x) => x.id === consoleId))),
       }, consoleImage(c, "games__rail-img"))),
-      options.glyphs.page && h("span", { class: "games__rail-key" }, options.glyphs.page.split(" ")[1]));
+      next && h("span", { class: "games__rail-key games__rail-key--next" }, h("span", { class: "games__rail-arrow" }, svg(ICONS.chevron)), Glyph(next, { small: true })));
   }
 
   const consoleImage = (c, className) => (c.photo
@@ -79,7 +83,11 @@ export function createGames({ onFocus, onPick }) {
     targets.clear();
     const filter = filterOf[consoleId] ?? "recent";
     games = c ? consoleGames(rows, consoleId, filter) : [];
-    mount(filters, FILTERS.map((f, i) => {
+    targets.set("gallery", { kind: "gallery" });
+    mount(filters, h("button", {
+      class: "games__filter games__filter--gallery", type: "button", tabindex: "-1", "data-focus-id": "gallery",
+      onClick: () => onPick?.(targets.get("gallery"), "gallery"),
+    }, svg(ICONS.gamepad), "Todas las consolas"), h("span", { class: "games__filter-sep", "aria-hidden": "true" }), FILTERS.map((f, i) => {
       targets.set(`filter:${i}`, { kind: "filter", filter: f.id });
       return h("button", {
         class: ["games__filter", f.id === filter && "games__filter--on"], type: "button", tabindex: "-1", role: "tab",
@@ -184,9 +192,19 @@ export function createGames({ onFocus, onPick }) {
     paint();
   }
 
+  /** Ver todas las consolas (la galería) aunque en Ajustes elegiste entrar directo; B regresa. */
+  function showGallery() {
+    inside = false;
+    peeking = view !== "gallery";
+    mode = "gallery";
+    el.dataset.mode = mode;
+    paintAll();
+  }
+
   /** Galería → dentro de la consola enfocada. */
   function enter() {
     inside = true;
+    peeking = false;
     mode = "console";
     el.dataset.mode = mode;
     focusId = "game:0";
@@ -208,7 +226,10 @@ export function createGames({ onFocus, onPick }) {
         paintAll();
         return true;
       }
-      if (action === "back") return "exit";
+      if (action === "back") {
+        if (peeking) { enter(); return true; } // vuelve a la consola en la que estabas
+        return "exit";
+      }
       return false;
     }
     if (action === "pageleft" || action === "pageright") {
@@ -230,7 +251,7 @@ export function createGames({ onFocus, onPick }) {
   }
 
   return {
-    el, render, handle, setFilter, enter, switchTo,
+    el, render, handle, setFilter, enter, switchTo, showGallery,
     focus: (id) => { if (targets.has(id)) { focusId = id; paint(); } },
     openConsole: (id) => { consoleId = id; inside = true; focusId = "game:0"; },
     show: () => { el.hidden = false; },
