@@ -270,3 +270,18 @@ def test_player_and_interface_share_one_palette():
     assert {k: v.lower() for k, v in css.items()} == {k: v for k, v in palette.items() if k != "_"}
     assert player_ui.ass_color("#5cbf6d") == "&H6DBF5C&"
     assert player_ui.GLYPH["A"] == player_ui.ass_color(palette["pad-green"])
+
+
+def test_background_option_matches_the_installed_mpv(monkeypatch):
+    """mpv 0.41 cambió --background (ahora none|color|tiles): con la forma vieja no abría nada."""
+    from orbital import playback
+
+    def fake(listing):
+        return lambda *a, **k: type("R", (), {"stdout": listing})()
+
+    playback.background_args.cache_clear()
+    monkeypatch.setattr(playback.subprocess, "run", fake("--background  Choices: none color tiles\n--background-color  Color\n"))
+    assert playback.background_args("mpv-nuevo.exe") == ("--background-color=#08080A",)
+    monkeypatch.setattr(playback.subprocess, "run", fake("--background  Color\n"))
+    assert playback.background_args("mpv-viejo.exe") == ("--background=#08080A",)
+    playback.background_args.cache_clear()

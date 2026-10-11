@@ -3,6 +3,7 @@ del mando y los datos de lo que se está viendo (Playback, Segment)."""
 
 from __future__ import annotations
 
+import functools
 import logging
 import os
 import re
@@ -27,6 +28,8 @@ from .gamepad import (
     Y_BUTTON,
 )
 from .mpv import PIPE
+
+NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)  # sin consola negra al preguntarle a mpv
 
 log = logging.getLogger(__name__)
 
@@ -55,6 +58,30 @@ OSD_STYLE = [
     "--sub-font=Segoe UI Variable Text Semibold", "--sub-font-size=44", "--sub-border-size=2.5",
     "--sub-color=#F5F4F0", "--sub-border-color=#CC000000", "--sub-margin-y=56",
 ]
+
+
+@functools.lru_cache(maxsize=4)
+def background_args(mpv: str, mtime: float = 0) -> tuple[str, ...]:
+    """El fondo gris de Orbital en mpv. mpv 0.41 cambió la opción: `--background` ahora es
+    none|color|tiles y el color va en `--background-color`; con la forma vieja, el mpv nuevo se
+    cierra al instante («Fatal error») y ninguna película abría. Se pregunta a mpv cuál entiende
+    (una vez por versión: `mtime` cambia si se actualiza)."""
+    try:
+        out = subprocess.run([mpv, "--list-options"], capture_output=True, text=True, encoding="utf-8",
+                             errors="replace", timeout=10, creationflags=NO_WINDOW).stdout
+    except (OSError, subprocess.SubprocessError):
+        return ()
+    if "--background-color" in out:
+        return ("--background-color=#08080A",)
+    return ("--background=#08080A",) if "--background" in out else ()
+
+
+def mpv_background(mpv: str) -> tuple[str, ...]:
+    try:
+        mtime = Path(mpv).stat().st_mtime
+    except OSError:
+        mtime = 0
+    return background_args(mpv, mtime)
 
 
 def find_mpv() -> str | None:
@@ -123,7 +150,7 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
         f"--title={title}", f"--force-media-title={title}",
         f"--alang={','.join(build_lang_list(audio))}", *subtitle_options(subtitles, audio),
         "--sub-auto=fuzzy", "--cache=yes", "--demuxer-max-bytes=400MiB", "--hwdec=auto-safe",
-        "--save-position-on-quit=no", "--msg-level=all=warn", "--background=#08080A", *OSD_STYLE,
+        "--save-position-on-quit=no", "--msg-level=all=warn", *mpv_background(mpv), *OSD_STYLE,
     ]
     if abs(sub_scale - 1.0) > .01:
         cmd.append(f"--sub-scale={sub_scale:g}")
