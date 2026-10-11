@@ -208,21 +208,20 @@ def log_file_path() -> Path:
 
 def ensure_streams() -> Path | None:
     """Con pythonw.exe (acceso directo de inicio) no hay consola: sys.stdout/stderr son None y
-    uvicorn no arranca. En ese caso todo va a orbital.log (y la ejecución anterior a orbital.log.1)."""
+    uvicorn no arranca. En ese caso todo va a orbital.log, que se rota solo (runtime.RotatingStream)."""
     if sys.stdout is not None and sys.stderr is not None:
         return None
+    from .runtime import RotatingStream
+
     path = log_file_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists():
-        path.replace(path.with_suffix(".log.1"))
-    stream = open(path, "w", encoding="utf-8", buffering=1)  # noqa: SIM115 - vive todo el proceso
+    stream = RotatingStream(path)
     sys.stdout = sys.stdout or stream
     sys.stderr = sys.stderr or stream
     return path
 
 
 def main(argv: list[str] | None = None) -> None:
-    ensure_streams()
+    log_path = ensure_streams()
     parser = argparse.ArgumentParser(prog="orbital", description="Interfaz de consola para Legion Go")
     parser.add_argument("-c", "--config", type=Path, help=f"Ruta del config.yaml (por defecto {default_config_path()})")
     parser.add_argument("--ui", choices=["browser", "window", "none"], help="Sobrescribe ui.mode")
@@ -247,6 +246,8 @@ def main(argv: list[str] | None = None) -> None:
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     config = load_config(args.config)
     log.info("Configuración: %s", config.source)
+    from .runtime import log_paths, single_instance
+    log_paths(config.source, log_path)
 
     if args.command == "stremio":
         raise SystemExit(stremio_command(args, config))
@@ -269,9 +270,12 @@ def main(argv: list[str] | None = None) -> None:
 
     url = f"http://127.0.0.1:{config.server.port}"
     mode = args.ui or config.ui.mode
-    if already_running(url):  # el ícono del escritorio con Orbital ya abierto: solo mostrar la ventana
+    if already_running(url):  # el ícono del escritorio con Orbital ya abierto: solo mostrar su ventana
         log.info("Orbital ya está abierto: traigo su ventana")
         show_running(url)
+        return
+    if not single_instance(wait=10):  # otro Orbital arrancando o cerrando que no termina
+        log.warning("Hay otro Orbital abierto que no responde; no abro un segundo")
         return
     holder: dict = {}
     kiosk = KioskWindow(url, config.ui.browser, keep_open=False,
