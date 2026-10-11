@@ -43,6 +43,7 @@ def router(d: Deps) -> APIRouter:
         running = catalog.launcher.status()
         if running and running["id"] == body.id and not body.runner and shell.resume():
             return {"ok": True, "resumed": True}
+        catalog.wait_ready()  # recién arrancado: que termine el escaneo (sabe qué emuladores hay)
         try:
             item = catalog.launch(body.id, body.runner, keep=body.keep)
         except KeyError:

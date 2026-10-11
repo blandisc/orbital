@@ -99,3 +99,18 @@ def test_refresh_steam_stats_after_playing(library, monkeypatch):
     hollow = library.describe(library.get("steam:367520"))
     assert hollow["playtime"] == 7200 and hollow["last_played"] == 1790000000
     assert events[-1] == {"type": "library-changed"}
+
+
+def test_library_from_last_start_is_shown_while_scanning(library, tmp_path):
+    library._snapshot = tmp_path / "library.json"
+    library.refresh()  # guarda la biblioteca
+    assert library._snapshot.exists()
+    from orbital.catalog import Catalog
+    from tests.conftest import FakeLauncher
+
+    fresh = Catalog(library.config, FakeLauncher())
+    fresh._snapshot = library._snapshot
+    assert fresh.load_snapshot()  # sin escanear: ya está todo
+    assert {i.id for i in fresh.items()} == {i.id for i in library.items()}
+    fresh._snapshot.write_text("{dañado", encoding="utf-8")
+    assert not fresh.load_snapshot()

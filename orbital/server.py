@@ -101,7 +101,8 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
                     d.hub.publish_threadsafe({"type": "library-changed"})
                 shell.start()
 
-            catalog.scanning = True  # antes de que la interfaz pregunte
+            # Con la biblioteca del último arranque, la interfaz entra ya; si no, espera el escaneo.
+            catalog.scanning = not catalog.load_snapshot()  # antes de que la interfaz pregunte
             threading.Thread(target=scan, daemon=True, name="first-scan").start()
         else:
             await run_in_threadpool(catalog.refresh)

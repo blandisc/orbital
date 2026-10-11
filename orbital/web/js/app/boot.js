@@ -5,7 +5,7 @@
 import { api } from "../core/api.js";
 import { setupMenu } from "../core/menus.js";
 
-const BOOT_MIN_MS = 1700; // que la animación de arranque se alcance a ver completa
+const BOOT_MIN_MS = 1100; // la animación de entrada (900 ms) se ve completa; antes 1700
 
 export function createBoot({ state, applySettings, openMenu, el = document.getElementById("boot") }) {
   /** La primera vez: "Tu consola" (qué encontró Orbital y qué falta), una sola vez. */

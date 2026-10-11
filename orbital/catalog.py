@@ -12,6 +12,7 @@ ellos solo conozcan una cosa.
 from __future__ import annotations
 
 import difflib
+import json
 import logging
 import os
 import threading
@@ -95,10 +96,11 @@ class Catalog:
         # Emuladores en uso: los de config.yaml + los detectados automáticamente.
         self.emulators = list(config.emulators)
         self.detected: dict[str, Path] = {}
-        # Portadas de GFN en disco (no en pruebas: sin config.yaml no se guarda nada).
-        self._steam_art = geforcenow.SteamArt(
-            Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" / "steam-appids.json"
-            if config.source else None)
+        # Cachés en disco (no en pruebas: sin config.yaml no se guarda nada).
+        cache = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" if config.source else None
+        self._steam_art = geforcenow.SteamArt(cache / "steam-appids.json" if cache else None)
+        # La biblioteca del último escaneo: la interfaz la muestra al instante mientras se escanea.
+        self._snapshot = cache / "library.json" if cache else None
         self.media = MediaStore(Path(expand(config.art.dir)) if config.art.dir else None)
         self._scraper: Scraper | None = None
         self._scraped: set[tuple[str, str, str]] = set()  # lo que ya se buscó en esta sesión (no insistir)
@@ -170,6 +172,38 @@ class Catalog:
             return self._refresh()
         finally:
             self._refreshing.release()
+
+    def wait_ready(self, timeout: float = 15) -> None:
+        """Espera (un poco) a que termine el escaneo en curso: abrir un juego necesita saber qué
+        emuladores hay, y al arrancar la biblioteca que se ve puede ser la guardada."""
+        if self._refreshing.acquire(timeout=timeout):
+            self._refreshing.release()
+
+    def load_snapshot(self) -> bool:
+        """La biblioteca del último arranque, para mostrarla ya. False si no hay (o está dañada)."""
+        if not self._snapshot or not self._snapshot.exists():
+            return False
+        try:
+            items = [LibraryItem.from_dict(d) for d in json.loads(self._snapshot.read_text(encoding="utf-8"))]
+        except (OSError, ValueError, TypeError) as exc:
+            log.info("Biblioteca guardada ilegible (se escanea de cero): %s", exc)
+            return False
+        if not items:
+            return False
+        self.store.replace(items)
+        log.info("Biblioteca guardada: %d elementos (escaneando para ponerla al día)", len(items))
+        return True
+
+    def _save_snapshot(self, items: list[LibraryItem]) -> None:
+        if not self._snapshot:
+            return
+        try:
+            self._snapshot.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self._snapshot.with_suffix(".tmp")
+            tmp.write_text(json.dumps([i.to_dict() for i in items]), encoding="utf-8")
+            tmp.replace(self._snapshot)
+        except (OSError, TypeError, ValueError) as exc:
+            log.info("No pude guardar la biblioteca: %s", exc)
 
     def _refresh(self) -> int:
         found: list[LibraryItem] = []
@@ -243,6 +277,7 @@ class Catalog:
             if item.logo_path:
                 item.extra["logo"] = url + "?kind=logo"
         self.store.replace(found)
+        self._save_snapshot(found)
         log.info("Catálogo: %d elementos", len(found))
         self.scrape_art(background=True)
         self.watch.refresh_stremio(background=True)
