@@ -49,12 +49,20 @@ export function stickDirection(x, y, previous = null) {
   return magnitude >= STICK_PRESS ? dominant(x, y) : null;
 }
 
+/**
+ * Solo mandos con el mapeo estándar (XInput: Xbox, GameSir, la Legion Go en modo mando). Windows
+ * también entrega los controles de la Legion Go como dispositivo genérico ("Legion-Controller",
+ * sin mapeo) con los ejes en reposo en -1: se leían como el stick empujado sin parar (el foco se
+ * movía solo y la leyenda saltaba entre teclado y mando).
+ */
+export const usablePad = (pad) => !!pad && pad.mapping === "standard";
+
 /** Acciones activas según el estado de los mandos (botones + stick izquierdo). `memory` guarda
  * la dirección del stick de cada mando entre frames (para la histéresis). */
 export function padActions(pads, memory = new Map()) {
   const active = new Set();
   pads.forEach((pad, i) => {
-    if (!pad) return;
+    if (!usablePad(pad)) return;
     for (const [index, action] of Object.entries(PADMAP)) {
       if (pad.buttons[index]?.pressed) active.add(action);
     }

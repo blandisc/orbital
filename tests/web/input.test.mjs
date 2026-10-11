@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { keyToAction, padActions, Repeater, stickDirection } from "../../orbital/web/js/core/input.js";
 
-const pad = (pressed = [], axes = [0, 0]) => ({
+const pad = (pressed = [], axes = [0, 0], mapping = "standard") => ({
   buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: pressed.includes(i) })),
   axes,
+  mapping,
 });
 
 test("teclas", () => {
@@ -62,4 +63,10 @@ test("swallow: lo que venía presionado no dispara hasta soltarlo", () => {
   assert.deepEqual(r.update(new Set(["menu", "up"]), 1000), []); // ni con autorrepetición
   assert.deepEqual(r.update(new Set(), 1001), []);
   assert.deepEqual(r.update(new Set(["menu"]), 1002), ["menu"]); // la siguiente pulsación sí
+});
+
+test("los controles genéricos de la Legion Go (sin mapeo, ejes en -1) no mueven nada", () => {
+  const legionHid = pad([], [-1, -1, -1, -1, -1, -1, 0, 0, 0, -1], "");
+  assert.deepEqual([...padActions([legionHid, legionHid])], []);
+  assert.deepEqual([...padActions([legionHid, pad([0])])], ["select"]); // el mando XInput sí
 });
