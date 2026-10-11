@@ -25,10 +25,10 @@ test("menú de juego favorito y sin alternativas", () => {
 
 test("menú general según el contexto", () => {
   const basic = mainMenu({ running: null, hiddenCount: 0 });
-  assert.deepEqual(basic.options.map((o) => o.label), ["Actualizar biblioteca", "Ventanas abiertas", "Ajustes", "Apagado", "Cerrar menú"]);
+  assert.deepEqual(basic.options.map((o) => o.label), ["Actualizar biblioteca", "Ventanas abiertas", "Controles", "Ajustes", "Apagado", "Cerrar menú"]);
   const full = mainMenu({ running: { title: "Zelda", managed: true }, hiddenCount: 3 });
   assert.deepEqual(full.options.map((o) => o.label),
-    ["Actualizar biblioteca", "Cerrar Zelda", "Mostrar juegos ocultos", "Ventanas abiertas", "Ajustes", "Apagado", "Cerrar menú"]);
+    ["Actualizar biblioteca", "Cerrar Zelda", "Mostrar juegos ocultos", "Ventanas abiertas", "Controles", "Ajustes", "Apagado", "Cerrar menú"]);
   // Un juego de Steam (no gestionado por Orbital) no se puede cerrar desde aquí.
   assert.ok(!mainMenu({ running: { title: "Hades", managed: false } }).options.some((o) => o.label === "Cerrar Hades"));
 });
@@ -123,4 +123,15 @@ test("tu consola: lo que hay, lo que falta y Stremio se conecta ahí mismo", asy
   assert.equal(byLabel.Emuladores.hint, "Nintendo Switch (6)");
   assert.deepEqual(byLabel.Stremio.command, { type: "stremio-login" });
   assert.equal(setupMenu({ games: 0, steam: null, emulators: {} }).options[0].value, "No encontrado");
+});
+
+test("controles: cada mando con su forma de cerrar, y cuál está conectado", async () => {
+  const { controlsMenu, controlsPage } = await import("../../orbital/web/js/core/menus.js");
+  const menu = controlsMenu([{ slot: 1, kind: "legion", close: "Start + Select" }]);
+  assert.equal(menu.options[0].hint, "Conectado (mando 1) · cerrar: Start + Select");
+  assert.equal(menu.options[1].hint, "No conectado ahora");
+  const legion = Object.fromEntries(controlsPage("legion").options.map((o) => [o.label, o.value]));
+  assert.equal(legion["Cerrar el juego"], "Mantén Start + Select");
+  const gamesir = Object.fromEntries(controlsPage("gamesir").options.map((o) => [o.label, o.value]));
+  assert.equal(gamesir["Cerrar el juego"], "Mantén Start + Select + Home");
 });

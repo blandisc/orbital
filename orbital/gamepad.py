@@ -34,6 +34,27 @@ LEGION_CLOSE_COMBO = BACK | START  # controles de la Legion Go: no tienen Home y
 LENOVO_VENDOR = 0x17EF
 
 
+VENDORS = {LENOVO_VENDOR: "legion", 0x3537: "gamesir", 0x045E: "xbox"}
+
+
+def connected_controllers() -> list[dict]:
+    """Los mandos conectados ahora y qué atajo de cerrar usa cada uno (para la pantalla Controles)."""
+    if sys.platform != "win32":
+        return []
+    try:
+        get_state, vendor = _load_get_state(), _load_vendor()
+    except (OSError, AttributeError):
+        return []
+    state, found = _XInputState(), []
+    for slot in range(4):
+        if get_state(slot, ctypes.byref(state)) != 0:
+            continue
+        vid = vendor(slot) if vendor else None
+        found.append({"slot": slot + 1, "kind": VENDORS.get(vid or 0, "other"),
+                      "close": "Start + Select" if close_combo_for(vid) == LEGION_CLOSE_COMBO else "Start + Select + Home"})
+    return found
+
+
 def close_combo_for(vendor_id: int | None) -> int:
     """Qué botones mantener para cerrar el juego según la marca del mando."""
     return LEGION_CLOSE_COMBO if vendor_id == LENOVO_VENDOR else CLOSE_COMBO

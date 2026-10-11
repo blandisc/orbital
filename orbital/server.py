@@ -412,6 +412,11 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             raise HTTPException(409, str(exc))
         return {"ok": True}
 
+    @app.get("/api/controllers")
+    async def controllers() -> dict:
+        from .gamepad import connected_controllers
+        return {"controllers": await run_in_threadpool(connected_controllers)}
+
     @app.get("/api/setup")
     def setup() -> dict:
         return catalog.setup_status()

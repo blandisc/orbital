@@ -52,6 +52,7 @@ export function mainMenu({ running, hiddenCount, canExit = false }) {
     options.push({ icon: "show", label: "Mostrar juegos ocultos", hint: String(hiddenCount), command: { type: "unhide-all" } });
   }
   options.push({ icon: "windows", label: "Ventanas abiertas", command: { type: "windows" } });
+  options.push({ icon: "gamepad", label: "Controles", hint: "Qué hace cada botón", command: { type: "controls" } });
   options.push({ icon: "mark", label: "Ajustes", hint: "Idioma, subtítulos, texto, sonido", command: { type: "settings" } });
   options.push({ icon: "power", label: "Apagado", command: { type: "power-menu" } });
   if (canExit) {
@@ -257,4 +258,69 @@ export function setupMenu(status) {
       { icon: "check", label: "Listo", command: { type: "close" } },
     ],
   };
+}
+
+// --- Controles: qué hace cada botón, con cada mando -------------------------------------------
+const row = (label, value) => ({ icon: "gamepad", label, value, command: { type: "stay" } });
+
+export const CONTROL_PAGES = {
+  legion: {
+    title: "Controles de la Legion Go",
+    rows: [
+      ["Ir a Orbital (sin cerrar)", "Legion L"],
+      ["Volver al juego", "Legion L o A"],
+      ["Cerrar el juego", "Mantén Start + Select"],
+      ["Cerrar el juego (otra forma)", "Legion L dos veces"],
+    ],
+  },
+  gamesir: {
+    title: "GameSir y otros mandos",
+    rows: [
+      ["Ir a Orbital (sin cerrar)", "Home"],
+      ["Volver al juego", "Home o A"],
+      ["Cerrar el juego", "Mantén Start + Select + Home"],
+    ],
+  },
+  orbital: {
+    title: "En Orbital",
+    rows: [
+      ["Moverte", "Cruceta o stick"], ["Abrir / jugar / ver", "A"], ["Atrás", "B"],
+      ["Opciones de lo enfocado", "Y"], ["Abrir con el otro emulador", "X"],
+      ["Cambiar de sección", "LB / RB"], ["Saltar de 5 en 5", "LT / RT"],
+      ["Buscar", "Vista ⧉"], ["Menú", "Menú ☰"], ["Cerrar desde Orbital", "☰ → Cerrar… o Y → Cerrar"],
+    ],
+  },
+  player: {
+    title: "Viendo una película o serie",
+    rows: [
+      ["Pausa / seguir", "A"], ["Adelantar / regresar", "◀ ▶ (mantén: más rápido)"],
+      ["Capítulo (o 1 min)", "LB / RB"], ["Episodio anterior / siguiente", "LT / RT"], ["Volumen", "▲ ▼"],
+      ["Audio · Subtítulos · Fuente", "X / Y (LB/RB cambian de pestaña)"],
+      ["Ocultar la barra; luego, salir", "B"], ["Saltar intro / ver el siguiente", "A en la tarjeta"],
+      ["Ir a Orbital", "Home o Legion L"],
+    ],
+  },
+};
+
+/** Controles: un mando por página; el conectado lo dice ("Conectado"). */
+export function controlsMenu(controllers = []) {
+  const connected = (kind) => controllers.filter((c) => (kind === "gamesir" ? c.kind !== "legion" : c.kind === kind));
+  const hint = (kind) => {
+    const found = connected(kind);
+    return found.length ? `Conectado (mando ${found.map((c) => c.slot).join(", ")}) · cerrar: ${found[0].close}` : "No conectado ahora";
+  };
+  return {
+    title: "Controles",
+    options: [
+      { icon: "gamepad", label: "Legion Go", hint: hint("legion"), command: { type: "controls", page: "legion" } },
+      { icon: "gamepad", label: "GameSir y otros", hint: hint("gamesir"), command: { type: "controls", page: "gamesir" } },
+      { icon: "windows", label: "En Orbital", hint: "Moverte, abrir, buscar, menú", command: { type: "controls", page: "orbital" } },
+      { icon: "trailer", label: "Viendo películas y series", hint: "El reproductor", command: { type: "controls", page: "player" } },
+    ],
+  };
+}
+
+export function controlsPage(page) {
+  const def = CONTROL_PAGES[page];
+  return { title: def.title, crumb: def.title, options: def.rows.map(([label, value]) => row(label, value)) };
 }

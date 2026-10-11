@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isWatchable, itemAt, restoreFocus, rowJump, runnerName, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints } from "./core/hints.js";
-import { exitMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, switchMenu, windowsMenu } from "./core/menus.js";
+import { controlsMenu, controlsPage, exitMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, switchMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -535,6 +535,9 @@ async function runCommand(command, context = null) {
         ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
+      case "controls":
+        if (command.page) return openMenu(controlsPage(command.page), nested(context));
+        return openMenu(controlsMenu((await api.controllers().catch(() => ({ controllers: [] }))).controllers), nested(context));
       case "setup":
         return openMenu(setupMenu(await api.setup()), nested(context));
       case "stremio-login":
