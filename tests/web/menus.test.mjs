@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { diagnosticsMenu, gameMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, settingsPage, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
+import { capturesMenu, diagnosticsMenu, gameMenu, mainMenu, quickMenu, nextSetting, powerConfirmMenu, powerMenu, settingsPage, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch",
@@ -25,10 +25,10 @@ test("menú de juego favorito y sin alternativas", () => {
 
 test("menú general según el contexto", () => {
   const basic = mainMenu({ running: null, hiddenCount: 0 });
-  assert.deepEqual(basic.options.map((o) => o.label), ["Actualizar biblioteca", "Ventanas abiertas", "Controles", "Ajustes", "Apagado", "Cerrar menú"]);
+  assert.deepEqual(basic.options.map((o) => o.label), ["Panel rápido", "Actualizar biblioteca", "Ventanas abiertas", "Controles", "Ajustes", "Apagado", "Cerrar menú"]);
   const full = mainMenu({ running: { title: "Zelda", managed: true }, hiddenCount: 3 });
   assert.deepEqual(full.options.map((o) => o.label),
-    ["Actualizar biblioteca", "Cerrar Zelda", "Mostrar juegos ocultos", "Ventanas abiertas", "Controles", "Ajustes", "Apagado", "Cerrar menú"]);
+    ["Panel rápido", "Actualizar biblioteca", "Cerrar Zelda", "Mostrar juegos ocultos", "Ventanas abiertas", "Controles", "Ajustes", "Apagado", "Cerrar menú"]);
   // Un juego de Steam (no gestionado por Orbital) no se puede cerrar desde aquí.
   assert.ok(!mainMenu({ running: { title: "Hades", managed: false } }).options.some((o) => o.label === "Cerrar Hades"));
 });
@@ -167,4 +167,23 @@ test("Mi lista se maneja desde la tarjeta, sin abrir la ficha", () => {
   const add = gameMenu({ ...item, extra: { ...item.extra, in_library: false } }).options.find((o) => o.command.type === "mylist");
   assert.equal(add.label, "Añadir a Mi lista");
   assert.equal(gameMenu({ id: "steam:1", title: "Hades", source: "steam", category: "steam" }).options.some((o) => o.command.type === "mylist"), false);
+});
+
+test("panel rápido: ◀/▶ ajustan de 10 en 10 sin pasarse; lo que no hay no aparece", () => {
+  const menu = quickMenu({ volume: { level: 95, muted: false }, brightness: null, power_mode: "balanced", battery: null },
+    { running: { id: "steam:1", title: "Hades", managed: true } });
+  const vol = menu.options.find((o) => o.label === "Volumen");
+  assert.deepEqual(vol.adjust.right.changes, { volume: 100, muted: false });
+  assert.deepEqual(vol.adjust.left.changes, { volume: 85, muted: false });
+  assert.deepEqual(vol.command.changes, { muted: true }); // A silencia
+  assert.ok(!menu.options.some((o) => o.label === "Brillo")); // monitor externo: sin brillo
+  const mode = menu.options.find((o) => o.label === "Modo de energía");
+  assert.equal(mode.value, "Equilibrado");
+  assert.equal(mode.adjust.right.changes.power_mode, "performance");
+  assert.ok(menu.options.some((o) => o.label === "Cerrar Hades"));
+});
+
+test("capturas vacías explican cómo hacer una", () => {
+  assert.match(capturesMenu([]).subtitle, /Home y pulsa RB/);
+  assert.equal(capturesMenu([{ name: "a", kind: "image", time: 0, path: "x" }]).options[0].command.type, "view-capture");
 });

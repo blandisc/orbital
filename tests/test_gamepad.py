@@ -79,3 +79,15 @@ def test_legion_go_controllers_close_with_start_select():
     assert close_combo_for(None) == BACK | START | GUIDE
     d = ComboDetector(arm=.25, total=1.5, combo=LEGION_CLOSE_COMBO)
     assert run(d, [(0, BACK | START), (0.3, BACK | START), (1.6, BACK | START)]) == ["hold-start", "hold-complete"]
+
+
+def test_home_plus_lb_opens_the_quick_panel_and_home_plus_rb_captures():
+    from orbital.gamepad import GUIDE, LB_BUTTON, RB_BUTTON, ComboDetector
+
+    d = ComboDetector()
+    assert d.update(GUIDE, 0) == []
+    assert d.update(GUIDE | LB_BUTTON, .1) == ["quick"]
+    assert d.update(GUIDE | LB_BUTTON, .2) == []  # mantener LB no repite
+    assert d.update(GUIDE, .3) == []
+    assert d.update(GUIDE | RB_BUTTON, .4) == ["capture"]
+    assert d.update(0, .5) == []  # soltar Home tras el acorde: no es "ir a Orbital"

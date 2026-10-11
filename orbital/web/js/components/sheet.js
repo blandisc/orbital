@@ -72,8 +72,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
     if (command) onCommand(command);
   }
 
-  function choose(i = index) {
-    const command = menu?.options[i]?.command;
+  function choose(i = index, command = menu?.options[i]?.command) {
     const context = { menu, index: i, stack: [...stack] };
     close();
     if (command) onCommand(command, context);
@@ -91,7 +90,8 @@ export function createSheet({ onCommand, onMove, onClose }) {
     } else if (action === "left" || action === "right") {
       // En un ajuste (‹ Grande ›), ◀/▶ cambian el valor; en lo demás, mueven como ↑/↓.
       const option = menu.options[index];
-      if (option?.value !== undefined && option.command) choose(index);
+      if (option?.adjust) choose(index, option.adjust[action]); // ◀/▶ con su propio paso (volumen, brillo)
+      else if (option?.value !== undefined && option.command) choose(index);
       else return handle(action === "left" ? "up" : "down");
     } else if (action === "select") {
       choose();

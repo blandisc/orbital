@@ -253,7 +253,20 @@ class ConsoleShell:
 
     def on_gamepad(self, event: str) -> None:
         {"home": self.home, "hold-start": self.hold_start, "hold-cancel": self.hold_cancel,
-         "hold-complete": self.hold_complete}[event]()
+         "hold-complete": self.hold_complete, "quick": self.quick_panel, "capture": self.capture}[event]()
+
+    def quick_panel(self) -> None:
+        """Home + LB: el panel rápido (brillo, volumen, energía…). Desde un juego, primero a Orbital."""
+        if not self.is_orbital(self.win.foreground()):
+            self.home()
+        self.notify({"type": "open-quick"})
+
+    def capture(self) -> None:
+        """Home + RB: captura de lo que está en pantalla (el juego), sin salir de él."""
+        from . import capture
+
+        threading.Thread(target=lambda: self.notify(capture.take_and_describe()), daemon=True,
+                         name="capture").start()
 
     # --------------------------------------------------------------- control remoto (Stremio)
     def foreground_exe(self, now: float) -> str:

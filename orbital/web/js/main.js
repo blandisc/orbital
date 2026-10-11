@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isWatchable, itemAt, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints } from "./core/hints.js";
-import { controlsMenu, controlsPage, diagnosticsMenu, exitMenu, healthMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, windowsMenu } from "./core/menus.js";
+import { capturesMenu, controlsMenu, controlsPage, diagnosticsMenu, exitMenu, healthMenu, quickMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -24,6 +24,7 @@ import { createStatusBar } from "./components/status-bar.js";
 import { createLogin } from "./components/login.js";
 import { createTitle, titleRef } from "./components/title.js";
 import { createToast } from "./components/toast.js";
+import { createViewer } from "./components/viewer.js";
 import { createBoot } from "./app/boot.js";
 import { createLaunching } from "./app/launching.js";
 import { createState } from "./core/store.js";
@@ -81,6 +82,10 @@ const ui = {
     onClose: () => { sound.play("back"); renderHints(); },
   }),
   launch: createLaunchOverlay(),
+  viewer: createViewer({
+    onClose: () => { sound.play("back"); renderHints(); },
+    onOpenVideo: (item) => api.openCapture(item.path).catch((err) => ui.toast.show(err.message, { error: true })),
+  }),
   toast: createToast(),
 };
 
@@ -90,7 +95,7 @@ const touchBack = h("button", { class: "touch-back", type: "button", "aria-label
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.sheet.el, ui.launch.el, ui.toast.el,
+  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -98,8 +103,11 @@ const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LT/RT
 
 function renderHints() {
   const g = glyphs();
-  const overlay = ui.sheet.isOpen || ui.sources.isOpen || ui.title.isOpen || ui.search.isOpen || ui.login.isOpen;
+  const overlay = ui.sheet.isOpen || ui.sources.isOpen || ui.title.isOpen || ui.search.isOpen || ui.login.isOpen || ui.viewer.isOpen;
   document.body.dataset.overlay = overlay ? "true" : "false";
+  if (ui.viewer.isOpen) {
+    return ui.hints.render([{ glyph: g.select, label: "Ver clip" }, { glyph: g.back, label: "Cerrar", end: true }]);
+  }
   if (!ui.sheet.isOpen && ui.login.isOpen) return ui.hints.render(ui.login.hints(g));
   if (!ui.sheet.isOpen && ui.sources.isOpen) {
     return ui.hints.render([{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra fuente" },
@@ -264,9 +272,16 @@ async function pollStatus() {
   } catch { /* el servidor puede estar reiniciando */ }
 }
 
+async function openQuick(context = null) {
+  sound.play("menu");
+  return openMenu(quickMenu(await api.quick(), { running: state.running, wifi: state.wifi }), nested(context));
+}
+
 async function pollSystem() {
   try {
-    ui.status.setSystem(await api.system());
+    const system = await api.system();
+    state.wifi = system.wifi;
+    ui.status.setSystem(system);
   } catch { /* idem */ }
 }
 
@@ -404,6 +419,20 @@ async function runCommand(command, context = null) {
         return openMenu(controlsMenu((await api.controllers().catch(() => ({ controllers: [] }))).controllers), nested(context));
       case "setup":
         return openMenu(setupMenu(await api.setup()), nested(context));
+      case "quick":
+        return openQuick(context);
+      case "quick-set": { // cambia y se queda en el panel, en la misma opción
+        const q = await api.setQuick(command.changes);
+        sound.play("move");
+        ui.sheet.open(quickMenu(q, { running: state.running, wifi: state.wifi }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
+        return renderHints();
+      }
+      case "captures":
+        state.captures = (await api.captures()).items;
+        return openMenu(capturesMenu(state.captures), nested(context));
+      case "view-capture":
+        sound.play("open");
+        return ui.viewer.open(state.captures || [], command.index);
       case "diagnostics":
         return openMenu(diagnosticsMenu(await api.diagnostics()), nested(context));
       case "stremio-login":
@@ -444,6 +473,7 @@ function handleAction(action, { repeat = false } = {}) {
     }
     return;
   }
+  if (ui.viewer.handle(action)) return renderHints();
   if (ui.sheet.handle(action)) {
     if (action === "back") sound.play("back");
     return renderHints();
@@ -519,6 +549,7 @@ function handleEvent(event) {
     sound.play("error");
     return openMenu(healthMenu(event.message)); // "Reiniciar ahora" pide confirmar (y avisa si hay un juego abierto)
   }
+  if (event.type === "open-quick") return openQuick();
   if (event.type === "resumed") { // volvió de suspender: ponerse al día
     pollSystem();
     loadLibrary();

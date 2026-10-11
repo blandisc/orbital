@@ -65,7 +65,8 @@ HOLD_TOTAL = 1.5  # s hasta preguntar si cerrar
 class ComboDetector:
     """Convierte el estado de los botones de UN mando en eventos.
 
-    Eventos: "home", "hold-start", "hold-cancel", "hold-complete".
+    Eventos: "home", "hold-start", "hold-cancel", "hold-complete", y con Home mantenido:
+    Home + LB = "quick" (panel rápido), Home + RB = "capture" (captura de pantalla).
     """
 
     def __init__(self, arm: float = HOLD_ARM, total: float = HOLD_TOTAL, combo: int = CLOSE_COMBO) -> None:
@@ -74,6 +75,7 @@ class ComboDetector:
         self.combo = combo
         self._guide = False
         self._guide_chord = False  # se tocó otro botón mientras Home estaba presionado
+        self._chord_seen = 0  # botones ya contados en este Home mantenido (uno por pulsación)
         self._combo_since: float | None = None
         self._phase = "idle"  # idle -> armed -> done
 
@@ -82,6 +84,11 @@ class ComboDetector:
         guide = bool(buttons & GUIDE)
         if guide and buttons & ~GUIDE:
             self._guide_chord = True
+            new = buttons & ~GUIDE & ~self._chord_seen
+            self._chord_seen |= buttons & ~GUIDE
+            events += [name for bit, name in HOME_CHORDS.items() if new & bit]
+        if not guide:
+            self._chord_seen = 0
         if not guide and self._guide:
             if not self._guide_chord:
                 events.append("home")
@@ -109,6 +116,9 @@ class ComboDetector:
 # Botones XInput -> teclas virtuales de Windows, para apps sin soporte de mando (Stremio).
 DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT = 0x0001, 0x0002, 0x0004, 0x0008
 A_BUTTON, B_BUTTON, X_BUTTON, Y_BUTTON = 0x1000, 0x2000, 0x4000, 0x8000
+LB_BUTTON, RB_BUTTON = 0x0100, 0x0200
+# Con Home mantenido. LB/RB y no X/Y/B: esos ya los usa Eden (Home+X modo dock, Home+B pantalla completa).
+HOME_CHORDS = {LB_BUTTON: "quick", RB_BUTTON: "capture"}
 # Los gatillos son analógicos en XInput; para el reproductor cuentan como botones (bits que XInput no usa).
 LT, RT = 0x10000, 0x20000
 TRIGGER_PRESSED = 100  # de 255

@@ -132,3 +132,15 @@ def no_focus_threads(monkeypatch):
     monkeypatch.setattr(focus, "bring_game_to_front", lambda *args, **kwargs: False)
     # Ni fijar "siempre encima" una ventana real de Orbital que esté abierta mientras corren.
     monkeypatch.setattr(sessions.Sessions, "pin", staticmethod(lambda: None))
+
+
+@pytest.fixture
+def make_client(library):
+    """Cliente HTTP de la app, como si viniera del propio equipo."""
+    from fastapi.testclient import TestClient
+
+    from orbital.server import create_app
+
+    def make(client=("127.0.0.1", 5000)):
+        return TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=client)
+    return make

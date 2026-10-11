@@ -49,6 +49,7 @@ export function gameMenu(item, { running = null } = {}) {
 
 export function mainMenu({ running, hiddenCount, canExit = false }) {
   const options = [
+    { icon: "bolt", label: "Panel rápido", hint: "Volumen, brillo, energía · Home + LB", command: { type: "quick" } },
     { icon: "refresh", label: "Actualizar biblioteca", command: { type: "refresh" } },
   ];
   if (running?.managed) {
@@ -113,6 +114,66 @@ export function powerMenu() {
       { icon: "power", label: "Apagar", danger: true, command: { type: "power-confirm", action: "shutdown" } },
       { icon: "close", label: "Cancelar", command: { type: "close" } },
     ],
+  };
+}
+
+const POWER_MODES = [["efficiency", "Ahorro de batería"], ["balanced", "Equilibrado"], ["performance", "Máximo rendimiento"]];
+const STEP = 10;
+
+/**
+ * Panel rápido (Home + LB, o ☰ → Panel rápido): volumen y brillo con ◀/▶, A silencia o cambia el
+ * modo de energía. Lo que no exista en el equipo (p. ej. brillo con monitor externo) no aparece.
+ */
+export function quickMenu(q, { running = null, wifi = null } = {}) {
+  const options = [];
+  if (q.volume) {
+    const { level, muted } = q.volume;
+    options.push({ icon: "sound", label: "Volumen", value: muted ? "Silencio" : `${level} %`, hint: "◀ ▶ ajustar · A silenciar",
+      command: { type: "quick-set", changes: { muted: !muted } },
+      adjust: { left: { type: "quick-set", changes: { volume: Math.max(0, level - STEP), muted: false } },
+        right: { type: "quick-set", changes: { volume: Math.min(100, level + STEP), muted: false } } } });
+  }
+  if (q.brightness != null) {
+    const b = q.brightness;
+    options.push({ icon: "bolt", label: "Brillo", value: `${b} %`, hint: "◀ ▶ ajustar",
+      command: { type: "quick-set", changes: { brightness: Math.min(100, b + STEP) } },
+      adjust: { left: { type: "quick-set", changes: { brightness: Math.max(5, b - STEP) } },
+        right: { type: "quick-set", changes: { brightness: Math.min(100, b + STEP) } } } });
+  }
+  if (q.power_mode) {
+    const i = Math.max(0, POWER_MODES.findIndex(([id]) => id === q.power_mode));
+    const step = (d) => ({ type: "quick-set", changes: { power_mode: POWER_MODES[(i + d + POWER_MODES.length) % POWER_MODES.length][0] } });
+    options.push({ icon: "power", label: "Modo de energía", value: POWER_MODES[i][1], hint: "El de Windows (los de Legion Space no)",
+      command: step(1), adjust: { left: step(-1), right: step(1) } });
+  }
+  if (q.battery) {
+    const { percent, plugged, minutes_left: left } = q.battery;
+    const time = left ? ` · quedan ${left >= 60 ? `${Math.floor(left / 60)} h ${left % 60} min` : `${left} min`}` : "";
+    options.push({ icon: "bolt", label: "Batería", value: `${percent} %`, hint: plugged ? "Conectada" : `Con batería${time}`, command: { type: "stay" } });
+  }
+  if (wifi) options.push({ icon: "wifi", label: "Wi-Fi", value: wifi.ssid || "Conectado", command: { type: "stay" } });
+  options.push({ icon: "windows", label: "Capturas", hint: "Home + RB captura sin salir del juego", command: { type: "captures" } });
+  if (running?.managed) {
+    options.push({ icon: "play", label: `Volver a ${running.title}`, command: { type: "resume" } });
+    options.push({ icon: "stop", label: `Cerrar ${running.title}`, danger: true,
+      command: { type: "confirm-stop", title: running.title, runner: running.runner } });
+  }
+  return { title: "Panel rápido", crumb: "Panel rápido", options };
+}
+
+/** Capturas y clips, lo más reciente primero. */
+export function capturesMenu(items) {
+  if (!items.length) {
+    return { title: "Capturas", subtitle: "Aún no hay capturas. En un juego: mantén Home y pulsa RB.",
+      options: [{ icon: "check", label: "Entendido", command: { type: "close" } }] };
+  }
+  return {
+    title: "Capturas", crumb: "Capturas",
+    options: items.map((item, i) => ({
+      icon: item.kind === "video" ? "play" : "windows", label: item.name,
+      hint: new Date(item.time * 1000).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" }),
+      command: { type: "view-capture", index: i },
+    })),
   };
 }
 
@@ -341,6 +402,7 @@ export const CONTROL_PAGES = {
       ["Volver al juego", "Legion L o A"],
       ["Cerrar el juego", "Mantén Start + Select"],
       ["Cerrar el juego (otra forma)", "Legion L dos veces"],
+      ["Panel rápido (volumen, brillo, energía)", "☰ → Panel rápido"],
     ],
   },
   gamesir: {
@@ -349,6 +411,8 @@ export const CONTROL_PAGES = {
       ["Ir a Orbital (sin cerrar)", "Home"],
       ["Volver al juego", "Home o A"],
       ["Cerrar el juego", "Mantén Start + Select + Home"],
+      ["Panel rápido (volumen, brillo, energía)", "Mantén Home + LB"],
+      ["Captura de pantalla", "Mantén Home + RB"],
     ],
   },
   orbital: {
