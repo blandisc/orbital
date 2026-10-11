@@ -1,0 +1,74 @@
+[
+ {
+  "id": "tt1160419",
+  "type": "movie",
+  "name": "Dune",
+  "releaseInfo": "2021",
+  "poster": "https://m.media-amazon.com/images/M/MV5BNWIyNmU5MGYtZDZmNi00ZjAwLWJlYjgtZTc0ZGIxMDE4ZGYwXkEyXkFqcGc@._V1_SX250.jpg",
+  "background": "https://images.metahub.space/background/medium/tt1160419/img",
+  "links": []
+ },
+ {
+  "id": "tt15239678",
+  "type": "movie",
+  "name": "Dune: Part Two",
+  "releaseInfo": "2024",
+  "poster": "https://m.media-amazon.com/images/M/MV5BNTc0YmQxMjEtODI5MC00NjFiLTlkMWUtOGQ5NjFmYWUyZGJhXkEyXkFqcGc@._V1_SX250.jpg",
+  "background": "https://images.metahub.space/background/medium/tt15239678/img",
+  "links": []
+ },
+ {
+  "id": "tt31378509",
+  "type": "movie",
+  "name": "Dune: Part Three",
+  "releaseInfo": "2026",
+  "poster": "https://m.media-amazon.com/images/M/MV5BYjk1NjgwZDMtYzI5OS00Y2Q4LWI1NmItNTE5OGU2NDVmMTAxXkEyXkFqcGc@._V1_SX250.jpg",
+  "background": "https://images.metahub.space/background/medium/tt31378509/img",
+  "links": []
+ },
+ {
+  "id": "tt0087182",
+  "type": "movie",
+  "name": "Dune",
+  "releaseInfo": "1984",
+  "poster": "https://m.media-amazon.com/images/M/MV5BMGJlMGM3NDAtOWNhMy00MWExLWI2MzEtMDQ0ZDIzZDY5ZmQ2XkEyXkFqcGc@._V1_SX250.jpg",
+  "background": "https://images.metahub.space/background/medium/tt0087182/img",
+  "links": []
+ },
+ {
+  "id": "tt1935156",
+  "type": "movie",
+  "name": "Jodorowsky's Dune",
+  "releaseInfo": "2013",
+  "poster": "https://m.media-amazon.com/images/M/MV5BMTU0MzcxMTAxMl5BMl5BanBnXkFtZTgwODMyMTIxMTE@._V1_SX250.jpg",
+  "background": "https://images.metahub.space/background/medium/tt1935156/img",
+  "links": []
+ },
+ {
+  "id": "tt11835714",
+  "type": "movie",
+  "name": "Dune Drifter",
+  "releaseInfo": "2020",
+  "poster": "https://m.media-amazon.com/images/M/MV5BZDZkNjFlYzYtMjNkMC00YmJiLWJkZDItZDIxYTU0MWJmNWNkXkEyXkFqcGc@._V1_SX250.jpg",
+  "background": "https://images.metahub.space/background/medium/tt11835714/img",
+  "links": []
+ },
+ {
+  "id": "tt15331462",
+  "type": "movie",
+  "name": "Planet Dune",
+  "releaseInfo": "2021",
+  "poster": "https://m.media-amazon.com/images/M/MV5BOTI3ZDZjMzAtZTkyYi00YTc4LWEyNDctYzNlOTc2ODIwMWNhXkEyXkFqcGc@._V1_SX250.jpg",
+  "background": "https://images.metahub.space/background/medium/tt15331462/img",
+  "links": []
+ },
+ {
+  "id": "tt0099474",
+  "type": "movie",
+  "name": "Dune Warriors",
+  "releaseInfo": "1991",
+  "poster": "https://m.media-amazon.com/images/M/MV5BNDk4ZjQzMGQtMDI1OC00NDY3LWFiMmItMmNmNTFjYmQwMDIzXkEyXkFqcGc@._V1_SX250.jpg",
+  "background": "https://images.metahub.space/background/medium/tt0099474/img",
+  "links": []
+ }
+]

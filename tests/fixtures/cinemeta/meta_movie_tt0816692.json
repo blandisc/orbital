@@ -1,0 +1,103 @@
+{
+ "id": "tt0816692",
+ "type": "movie",
+ "name": "Interstellar",
+ "year": "2014",
+ "releaseInfo": "2014",
+ "description": "In a dystopian future where Earth has become near-uninhabitable, a team of astronauts embark on a mission to find a new home for humanity.",
+ "genres": [
+  "Adventure",
+  "Sci-Fi"
+ ],
+ "imdbRating": "8.7",
+ "runtime": "169 min",
+ "poster": "https://images.metahub.space/poster/small/tt0816692/img",
+ "background": "https://images.metahub.space/background/medium/tt0816692/img",
+ "logo": "https://images.metahub.space/logo/medium/tt0816692/img",
+ "cast": [
+  "Matthew McConaughey",
+  "Anne Hathaway",
+  "Jessica Chastain"
+ ],
+ "director": [
+  "Christopher Nolan"
+ ],
+ "writer": [
+  "Jonathan Nolan",
+  "Christopher Nolan"
+ ],
+ "links": [
+  {
+   "name": "8.7",
+   "category": "imdb",
+   "url": "https://imdb.com/title/tt0816692"
+  },
+  {
+   "name": "Interstellar",
+   "category": "share",
+   "url": "https://www.strem.io/s/movie/interstellar-0816692"
+  },
+  {
+   "name": "Adventure",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/movie/top?genre=Adventure"
+  },
+  {
+   "name": "Sci-Fi",
+   "category": "Genres",
+   "url": "stremio:///discover/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/movie/top?genre=Sci-Fi"
+  },
+  {
+   "name": "Matthew McConaughey",
+   "category": "Cast",
+   "url": "stremio:///search?search=Matthew%20McConaughey"
+  },
+  {
+   "name": "Anne Hathaway",
+   "category": "Cast",
+   "url": "stremio:///search?search=Anne%20Hathaway"
+  },
+  {
+   "name": "Jessica Chastain",
+   "category": "Cast",
+   "url": "stremio:///search?search=Jessica%20Chastain"
+  },
+  {
+   "name": "Jonathan Nolan",
+   "category": "Writers",
+   "url": "stremio:///search?search=Jonathan%20Nolan"
+  },
+  {
+   "name": "Christopher Nolan",
+   "category": "Writers",
+   "url": "stremio:///search?search=Christopher%20Nolan"
+  },
+  {
+   "name": "Christopher Nolan",
+   "category": "Directors",
+   "url": "stremio:///search?search=Christopher%20Nolan"
+  }
+ ],
+ "trailerStreams": [
+  {
+   "title": "Interstellar",
+   "ytId": "LY19rHKAaAg"
+  },
+  {
+   "title": "Interstellar",
+   "ytId": "R8teZZ-loaI"
+  },
+  {
+   "title": "Interstellar",
+   "ytId": "ePbKGoIGAXY"
+  },
+  {
+   "title": "Interstellar",
+   "ytId": "zSWdZVtXT7E"
+  },
+  {
+   "title": "Interstellar",
+   "ytId": "827FNDpQWrQ"
+  }
+ ]
+}
