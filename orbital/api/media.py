@@ -51,7 +51,7 @@ def router(d: Deps) -> APIRouter:
         if kind not in ("movie", "series"):
             raise HTTPException(400, "Tipo inválido")
         try:
-            return catalog.title_details(kind, meta_id)
+            return catalog.watch.title_details(kind, meta_id)
         except cinemeta.CinemetaError:
             raise HTTPException(502, "No pude cargar la ficha. Revisa tu conexión e inténtalo de nuevo.")
 
@@ -70,7 +70,7 @@ def router(d: Deps) -> APIRouter:
         if kind not in ("movie", "series"):
             raise HTTPException(400, "Tipo inválido")
         try:
-            found = catalog.stream_sources(kind, video or id)
+            found = catalog.watch.stream_sources(kind, video or id)
         except stremio_api.StremioError as exc:
             raise HTTPException(409, str(exc))
         prefs = catalog.stream_prefs
@@ -92,11 +92,11 @@ def router(d: Deps) -> APIRouter:
         video_id = body.video_id or (meta_id if kind == "movie" else None)
         try:
             if body.source is not None and video_id:
-                catalog.play_source(kind, meta_id, video_id, body.source, title, keep=body.keep,
+                catalog.watch.play_source(kind, meta_id, video_id, body.source, title, keep=body.keep,
                                     from_start=body.from_start)
                 return {"ok": True, "reveal": catalog.revealing}
             if video_id and catalog.native_player:
-                chosen = catalog.play_best(kind, meta_id, video_id, title, keep=body.keep, from_start=body.from_start)
+                chosen = catalog.watch.play_best(kind, meta_id, video_id, title, keep=body.keep, from_start=body.from_start)
                 return {"ok": True, "reveal": catalog.revealing, **chosen}
         except stremio_api.StremioError as exc:
             raise HTTPException(409, str(exc))
@@ -104,7 +104,7 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(404, str(exc))
         except ValueError as exc:
             raise HTTPException(409, str(exc))
-        catalog.play_stremio(kind, meta_id, body.video_id, title)
+        catalog.sessions.play_stremio(kind, meta_id, body.video_id, title)
         return {"ok": True}
 
     @r.post("/login")
@@ -116,14 +116,14 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(422, "Escribe tu correo y tu contraseña de Stremio")
         try:
             key = catalog.stremio_client.login(email, password)
-            count = catalog.link_stremio(key)
+            count = catalog.watch.link_stremio(key)
         except stremio_api.StremioError as exc:
             raise HTTPException(401, f"Stremio no aceptó esos datos: {exc}")
         return {"ok": True, "count": count}
 
     @r.post("/logout")
     def logout() -> dict:
-        catalog.unlink_stremio()
+        catalog.watch.unlink_stremio()
         return {"ok": True}
 
     @r.post("/library")
@@ -131,7 +131,7 @@ def router(d: Deps) -> APIRouter:
         """Mi lista: añadir o quitar."""
         kind, meta_id = _title_ref(body, "Falta qué añadir")
         try:
-            catalog.set_in_library(kind, meta_id, bool(body.get("add")))
+            catalog.watch.set_in_library(kind, meta_id, bool(body.get("add")))
         except stremio_api.StremioError as exc:
             raise HTTPException(409, str(exc))
         return {"ok": True, "in_library": bool(body.get("add"))}
@@ -140,7 +140,7 @@ def router(d: Deps) -> APIRouter:
     def trailer(body: dict) -> dict:
         kind, meta_id = _title_ref(body, "Falta de qué título")
         try:
-            catalog.play_trailer(kind, meta_id)
+            catalog.watch.play_trailer(kind, meta_id)
         except LookupError as exc:
             raise HTTPException(404, str(exc))
         except cinemeta.CinemetaError:
@@ -154,7 +154,7 @@ def router(d: Deps) -> APIRouter:
         if not meta_id:
             raise HTTPException(400, "Falta qué quitar")
         try:
-            catalog.dismiss_continue(meta_id)
+            catalog.watch.dismiss_continue(meta_id)
         except stremio_api.StremioError as exc:
             raise HTTPException(409, str(exc))
         return {"ok": True}

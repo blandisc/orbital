@@ -29,8 +29,8 @@ def test_corrupt_state_starts_fresh(tmp_path):
 
 
 def test_recent_favorite_hidden_rows(library):
-    library.launch("steam:1145360")
-    library.launch("steam:367520")
+    library.sessions.launch("steam:1145360")
+    library.sessions.launch("steam:367520")
     rows = {r["id"]: r for r in library.grouped()}
     assert [i["title"] for i in rows["recent"]["items"]] == ["Hollow Knight", "Hades"]
     library.set_prefs("steam:367520", favorite=True, hidden=False)
@@ -45,7 +45,7 @@ def test_recent_favorite_hidden_rows(library):
 def test_session_end_records_time_and_notifies(library):
     events = []
     library.listeners.append(events.append)
-    library.launch("steam:367520")
+    library.sessions.launch("steam:367520")
     library.launcher.finish(1800)
     assert library.describe(library.get("steam:367520"))["playtime"] == 1800
     assert events == [{"type": "closed", "id": "steam:367520", "title": "Hollow Knight", "seconds": 1800,

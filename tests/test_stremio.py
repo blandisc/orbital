@@ -71,7 +71,7 @@ def linked(tmp_path):
     creds = Credentials(tmp_path / "secrets.json")
     fake = FakeStremio()
     cat = Catalog(cfg, FakeLauncher(), credentials=creds, stremio_client=fake)
-    cat.link_stremio("clave-buena")
+    cat.watch.link_stremio("clave-buena")
     cat.refresh()
     for _ in range(50):  # refresh() relanza la descarga en segundo plano
         if fake.calls >= 3:
@@ -89,13 +89,13 @@ def test_link_stores_key_privately(tmp_path):
     creds = Credentials(tmp_path / "secrets.json")
     cat = Catalog(cfg, FakeLauncher(), credentials=creds, stremio_client=FakeStremio())
     with pytest.raises(stremio_api.StremioError):
-        cat.link_stremio("clave-mala")
+        cat.watch.link_stremio("clave-mala")
     assert not cat.stremio_linked
-    cat.link_stremio("clave-buena")
+    cat.watch.link_stremio("clave-buena")
     assert Credentials(tmp_path / "secrets.json").get(STREMIO_KEY) == "clave-buena"
     if os.name != "nt":
         assert oct((tmp_path / "secrets.json").stat().st_mode & 0o777) == "0o600"
-    cat.unlink_stremio()
+    cat.watch.unlink_stremio()
     assert not cat.stremio_linked and cat.stremio_library() == []
 
 
@@ -110,7 +110,7 @@ def test_continue_row(linked):
     # The Office está en tu biblioteca sin avance: solo en "Mi lista", no en Seguir viendo.
     assert [r for r, row in rows.items() if "The Office" in [i["title"] for i in row["items"]]] == ["mylist"]
     assert "recent" not in rows  # abrir algo de Stremio no ensucia "Jugado recientemente"
-    linked.launch("stremio:tt0816692")
+    linked.sessions.launch("stremio:tt0816692")
     # Con Stremio instalado se le pasa el enlace como argumento; sin él, se abre el URI.
     assert sent(linked) == "stremio:///detail/movie/tt0816692/tt0816692?autoPlay=true"
     assert "recent" not in {r["id"] for r in linked.grouped()}
@@ -120,11 +120,11 @@ def test_failure_keeps_last_list_and_notifies_changes(linked):
     events = []
     linked.listeners.append(events.append)
     linked.stremio_client.fail = True
-    assert linked.refresh_stremio() is False and linked.stremio_error == "Session not found"
+    assert linked.watch.refresh_stremio() is False and linked.stremio_error == "Session not found"
     assert len(linked.grouped_items("continue")) == 3
     linked.stremio_client.fail = False
     linked.stremio_client.items = LIBRARY[:1]
-    assert linked.refresh_stremio() is True
+    assert linked.watch.refresh_stremio() is True
     assert events == [{"type": "library-changed"}]
     assert [i.title for i in linked.grouped_items("continue")] == ["Game of Thrones"]
 
@@ -218,7 +218,7 @@ def test_voice_exact_title_plays_movie_or_opens_episodes(linked, monkeypatch):
     assert voice.handle_text("busca dune part two en stremio").speech == "Poniendo Dune: Part Two."
     assert sent(linked) == "stremio:///detail/movie/tt15239678/tt15239678?autoPlay=true"
     # "abre X" que no es juego ni está en tu biblioteca: si es una serie, sus episodios en Orbital.
-    linked.unlink_stremio()
+    linked.watch.unlink_stremio()
     result = voice.handle_text("abre the office")
     assert result.speech == "Abriendo The Office. Elige el episodio."
     assert result.events == [{"type": "open-view", "view": {"serie": "tt0386676"}, "message": "Abriendo The Office"}]
@@ -261,25 +261,25 @@ def test_chosen_source_plays_in_orbital_player_from_where_you_left(linked, monke
             return run([exe, url])
 
     linked.player = FakePlayer()
-    src = linked.stream_sources("movie", "tt0816692")[0]
-    assert linked.play_source("movie", "tt0816692", "tt0816692", src.index, "Interstellar") == "orbital"
+    src = linked.watch.stream_sources("movie", "tt0816692")[0]
+    assert linked.watch.play_source("movie", "tt0816692", "tt0816692", src.index, "Interstellar") == "orbital"
     exe, url, title, meta, options = played[0]
     assert url.endswith("SECRETKEY/abc") and meta["video_id"] == "tt0816692"
     assert options["start"] == 5400 and options["audio"] == "en" and options["subtitles"] == "en"
     assert linked.launcher.current["id"] == "media:player" and linked.launcher.current["runner"] == "Reproductor"
     # Configurado para usar el reproductor de Stremio: como antes.
     linked.config.stremio.player = "stremio"
-    linked.play_source("movie", "tt0816692", "tt0816692", src.index, "Interstellar")
+    linked.watch.play_source("movie", "tt0816692", "tt0816692", src.index, "Interstellar")
     assert sent(linked).startswith("stremio:///player/")
 
 
 def test_player_saves_progress_to_stremio(linked):
-    linked._player_finished({"kind": "movie", "meta_id": "tt0816692", "video_id": "tt0816692", "title": "Interstellar"},
+    linked.watch._player_finished({"kind": "movie", "meta_id": "tt0816692", "video_id": "tt0816692", "title": "Interstellar"},
                             position=6000, duration=10140, watched=600)
     saved = linked.stremio_client.saved[-1]
     assert saved["_id"] == "tt0816692" and saved["state"]["timeOffset"] == 6_000_000
     assert saved["poster"] == "https://p/int.jpg"  # el resto del item, tal cual
-    linked._player_finished({"kind": "movie", "meta_id": "tt0816692", "video_id": "tt0816692", "title": "x"},
+    linked.watch._player_finished({"kind": "movie", "meta_id": "tt0816692", "video_id": "tt0816692", "title": "x"},
                             position=30, duration=10140, watched=5)
     assert len(linked.stremio_client.saved) == 1  # abrir y cerrar sin ver nada no toca tu biblioteca
 
@@ -352,11 +352,11 @@ def test_continue_is_ready_at_startup_from_the_last_download(tmp_path, monkeypat
                         "stremio": {"executable": "stremio-test"}}, source=tmp_path / "config.yaml")
     creds = Credentials(tmp_path / "secrets.json")
     first = Catalog(cfg, FakeLauncher(), credentials=creds, stremio_client=FakeStremio())
-    first.link_stremio("clave-buena")
+    first.watch.link_stremio("clave-buena")
     offline = FakeStremio()
     offline.fail = True  # el segundo arranque aún no descarga nada
     again = Catalog(cfg, FakeLauncher(), credentials=creds, stremio_client=offline)
     again.refresh()
     assert [i.title for i in again.grouped_items("continue")] == ["Game of Thrones", "Interstellar", "Anime temporal"]
-    again.unlink_stremio()
+    again.watch.unlink_stremio()
     assert not (tmp_path / "orbital" / "cache" / "stremio-library.json").exists()

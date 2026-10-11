@@ -59,7 +59,7 @@ def router(d: Deps) -> APIRouter:
     def get_settings() -> dict:
         prefs = catalog.stream_prefs
         return {"audio": prefs.audio, "quality": prefs.quality, "subtitles": catalog.subtitles_lang,
-                "sub_scale": float(catalog.setting("sub_scale", 1.0) or 1.0), "text_size": "normal", "safe_area": 4,
+                "sub_scale": float(catalog.watch.setting("sub_scale", 1.0) or 1.0), "text_size": "normal", "safe_area": 4,
                 "reduce_motion": False, "sounds": True, "haptics": True, "voice_tips": True,
                 "game_idle_minutes": d.config.sessions.game_idle_minutes,
                 "video_idle_minutes": d.config.sessions.video_idle_minutes,

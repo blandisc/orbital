@@ -108,19 +108,19 @@ def stremio_command(args, config) -> int:
             email = input("Correo de Stremio: ").strip()
             password = getpass.getpass("Contraseña (no se guarda): ")
             key = catalog.stremio_client.login(email, password)
-            count = catalog.link_stremio(key)
+            count = catalog.watch.link_stremio(key)
             print(f"Listo: cuenta vinculada, {count} títulos en tu biblioteca.")
         elif args.action == "key":
-            count = catalog.link_stremio(args.value)
+            count = catalog.watch.link_stremio(args.value)
             print(f"Listo: clave guardada, {count} títulos en tu biblioteca.")
         elif args.action == "logout":
-            catalog.unlink_stremio()
+            catalog.watch.unlink_stremio()
             print("Cuenta de Stremio desvinculada de Orbital.")
         else:  # status
             if not catalog.credentials.get(STREMIO_KEY):
                 print("Stremio no está vinculado. Usa: orbital stremio login")
                 return 1
-            catalog.refresh_stremio()
+            catalog.watch.refresh_stremio()
             if catalog.stremio_error:
                 print(f"!! {catalog.stremio_error}")
                 return 1

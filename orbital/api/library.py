@@ -25,7 +25,7 @@ def router(d: Deps) -> APIRouter:
 
     @r.get("/api/library")
     def library() -> dict:
-        catalog.refresh_stremio_if_stale()  # en segundo plano; avisa con "library-changed"
+        catalog.watch.refresh_stremio_if_stale()  # en segundo plano; avisa con "library-changed"
         return {"rows": catalog.grouped(), "hidden": catalog.hidden_count(), "scanning": catalog.scanning}
 
     @r.post("/api/library/refresh")

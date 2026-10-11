@@ -240,11 +240,11 @@ def test_hero_prefers_fanart(esde_home, catalog):
 def test_prefer_alternative_runner(esde_home, tmp_path):
     cat = make_switch_catalog(esde_home, tmp_path)
     zelda = cat.find("zelda")
-    cat.launch(zelda.id, "switch-eden")  # X: abrir una vez con Eden
+    cat.sessions.launch(zelda.id, "switch-eden")  # X: abrir una vez con Eden
     assert cat.launcher.ran[-1][0].endswith("eden.exe")
     assert cat.describe(zelda)["runner"] == "switch"  # el predeterminado no cambia
     cat.set_prefs(zelda.id, runner="switch-eden")  # "Usar siempre Eden"
-    cat.launch(zelda.id)
+    cat.sessions.launch(zelda.id)
     assert cat.launcher.ran[-1][0].endswith("eden.exe")
     with pytest.raises(ValueError):
         cat.set_prefs(zelda.id, runner="dolphin")

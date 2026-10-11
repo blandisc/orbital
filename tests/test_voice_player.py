@@ -103,9 +103,9 @@ def test_subtitles_fall_back_to_addons(voice, monkeypatch):
 
 
 def test_next_episode(voice, monkeypatch):
-    monkeypatch.setattr(voice.catalog, "play_next_episode", lambda: "T2 E4")
+    monkeypatch.setattr(voice.catalog.watch, "play_next_episode", lambda: "T2 E4")
     assert voice.handle_intent("NextEpisodeIntent").speech == "Poniendo T2 E4."
-    monkeypatch.setattr(voice.catalog, "play_next_episode", lambda: None)
+    monkeypatch.setattr(voice.catalog.watch, "play_next_episode", lambda: None)
     assert not voice.handle_intent("NextEpisodeIntent").ok
 
 
@@ -125,7 +125,7 @@ def test_play_next_episode_loads_the_following_in_the_same_player(library, monke
 
     library.player = Player()
     monkeypatch.setattr(library.watch, "_play_episode", lambda *args: played.append(args))
-    assert library.play_next_episode() == "T2 E4"
+    assert library.watch.play_next_episode() == "T2 E4"
     for _ in range(50):  # se carga en segundo plano (buscar la fuente tarda)
         if played:
             break
@@ -136,7 +136,7 @@ def test_play_next_episode_loads_the_following_in_the_same_player(library, monke
 
 def test_voice_plays_movies_in_orbital_player(library, monkeypatch):
     played = []
-    monkeypatch.setattr(library, "play_title", lambda *args: played.append(args))
+    monkeypatch.setattr(library.watch, "play_title", lambda *args: played.append(args))
     library.cinemeta.search = lambda kind, q: [{"id": "tt0816692", "name": "Interstellar"}] if kind == "movie" else []
     assert VoiceController(library).handle_text("quiero ver interstellar").speech == "Poniendo Interstellar."
     assert played == [("movie", "tt0816692", "tt0816692", "Interstellar")]
@@ -147,7 +147,7 @@ def test_open_game_in_the_cloud(library, monkeypatch):
                       argv=["GeForceNOWStreamer.exe", "--url-route=#?cmsId=1"])
     monkeypatch.setattr(library, "items", lambda: [gfn])
     launched = []
-    monkeypatch.setattr(library, "launch", lambda item_id, runner=None: launched.append(item_id))
+    monkeypatch.setattr(library.sessions, "launch", lambda item_id, runner=None: launched.append(item_id))
     voice = VoiceController(library)
     assert voice.handle_text("abre fortnite en la nube").speech == "Abriendo Fortnite en GeForce NOW."
     assert voice.handle_text("abre fortnite en geforce now").ok and launched == ["gfn:1", "gfn:1"]
@@ -222,7 +222,7 @@ def test_watch_a_specific_episode_in_a_language(library, monkeypatch):
     monkeypatch.setattr(cinemeta.Cinemeta, "meta", lambda self, kind, mid: {
         "name": "The Simpsons", "videos": [{"id": "tt0096697:5:3", "season": 5, "episode": 3}]})
     played = []
-    monkeypatch.setattr(library, "play_title", lambda *args, **kw: played.append((args, kw)))
+    monkeypatch.setattr(library.watch, "play_title", lambda *args, **kw: played.append((args, kw)))
     voice = VoiceController(library)
     r = voice.handle_intent("WatchEpisodeIntent", {"series": "los simpson", "season": "5", "episode": "3", "language": "es"})
     assert r.speech == "Poniendo The Simpsons, temporada 5, episodio 3 en español."
@@ -245,7 +245,7 @@ def test_episode_hidden_inside_a_search_or_launch_still_plays(library, monkeypat
     monkeypatch.setattr(cinemeta.Cinemeta, "meta", lambda self, kind, mid: {
         "name": "The Simpsons", "videos": [{"id": "tt0096697:5:3", "season": 5, "episode": 3}]})
     played = []
-    monkeypatch.setattr(library, "play_title", lambda *args, **kw: played.append(args[2]))
+    monkeypatch.setattr(library.watch, "play_title", lambda *args, **kw: played.append(args[2]))
     voice = VoiceController(library)
     assert voice.handle_intent("SearchMediaIntent", {"query": "los simpson temporada cinco episodio tres en español"}).ok
     assert voice.handle_intent("LaunchGameIntent", {"game": "los simpson temporada 5 episodio 3"}).ok

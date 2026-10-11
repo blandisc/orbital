@@ -191,7 +191,7 @@ class VoiceController:
             item = self.catalog.find(name, source="geforcenow")
             if item is None:
                 return VoiceResult(f"{name} no está en tus juegos de GeForce NOW.", ok=False)
-            self.catalog.launch(item.id)
+            self.catalog.sessions.launch(item.id)
             return VoiceResult(f"Abriendo {item.title} en GeForce NOW.")
         name, runner = self._split_runner(name)
         # Primero juegos y apps; si no hay, algo de tu biblioteca de Stremio ("abre The Office").
@@ -212,7 +212,7 @@ class VoiceController:
             runner_id = match.id
         if item.source == "stremio":
             return self._watch_item(item)
-        self.catalog.launch(item.id, runner_id)
+        self.catalog.sessions.launch(item.id, runner_id)
         return VoiceResult(f"Abriendo {item.title} con {runner}." if runner else f"Abriendo {item.title}.")
 
     def _split_runner(self, name: str) -> tuple[str, str | None]:
@@ -229,7 +229,7 @@ class VoiceController:
         return (match.group("game"), runner) if runner in known else (name, None)
 
     def _open_stremio_intent(self, slots: dict) -> VoiceResult:
-        self.catalog.launch("media:stremio")
+        self.catalog.sessions.launch("media:stremio")
         return VoiceResult("Abriendo Stremio.")
 
     def _search_media_intent(self, slots: dict) -> VoiceResult:
@@ -245,7 +245,7 @@ class VoiceController:
         try:
             exact = self._watch_exact(query)
         except cinemeta.CinemetaError:  # sin catálogo: la búsqueda de Stremio
-            self.catalog.search_media(query)
+            self.catalog.sessions.search_media(query)
             return VoiceResult(f"Buscando {query} en Stremio.")
         if exact:
             return exact
@@ -283,7 +283,7 @@ class VoiceController:
         if match is None:
             return None
         if match["kind"] == "movie":
-            self.catalog.play_title("movie", match["meta_id"], match["meta_id"], match["title"])
+            self.catalog.watch.play_title("movie", match["meta_id"], match["meta_id"], match["title"])
             return VoiceResult(f"Poniendo {match['title']}.")
         return VoiceResult(f"Abriendo {match['title']}. Elige el episodio.", events=[self._show_view({"serie": match["meta_id"]}, f"Abriendo {match['title']}")])
 
@@ -314,17 +314,17 @@ class VoiceController:
         extra = item.extra or {}
         kind, meta_id, video_id = extra.get("kind"), extra.get("meta_id"), extra.get("video_id")
         if kind in ("movie", "series") and meta_id and video_id:
-            self.catalog.play_title(kind, meta_id, video_id, item.title)
+            self.catalog.watch.play_title(kind, meta_id, video_id, item.title)
             return VoiceResult(f"Poniendo {item.title}.")
         if kind == "series" and meta_id:
             return VoiceResult(f"Abriendo {item.title}. Elige el episodio.", events=[self._show_view({"serie": meta_id}, f"Abriendo {item.title}")])
-        self.catalog.launch(item.id)
+        self.catalog.sessions.launch(item.id)
         return VoiceResult(f"Abriendo {item.title} en Stremio.")
 
     def _open_steam_intent(self, slots: dict) -> VoiceResult:
         if self.catalog.get("steam:bigpicture") is None:
             return VoiceResult("No encontré Steam en este equipo.", ok=False)
-        self.catalog.launch("steam:bigpicture")
+        self.catalog.sessions.launch("steam:bigpicture")
         return VoiceResult("Abriendo Steam.")
 
     def _close_game_intent(self, slots: dict) -> VoiceResult:
@@ -440,7 +440,7 @@ class VoiceController:
             return idle
         lang = self._language(slots) or self.catalog.config.stremio.subtitles or "en"
         name = LANGUAGE_NAMES.get(lang, lang)
-        if self.catalog.player_subtitles(lang):
+        if self.catalog.watch.player_subtitles(lang):
             return VoiceResult(f"Subtítulos en {name}.", events=[NO_TOAST])
         return VoiceResult(f"No encontré subtítulos en {name} para esto.", ok=False, events=[NO_TOAST])
 
@@ -464,7 +464,7 @@ class VoiceController:
     def _next_episode_intent(self, slots: dict) -> VoiceResult:
         if (idle := self._playing()) is not None:
             return idle
-        label = self.catalog.play_next_episode()
+        label = self.catalog.watch.play_next_episode()
         if label is None:
             return VoiceResult("No hay un episodio siguiente.", ok=False, events=[NO_TOAST])
         return VoiceResult(f"Poniendo {label}.")
@@ -493,6 +493,6 @@ class VoiceController:
             return VoiceResult(f"{name} no tiene temporada {season} episodio {episode}.", ok=False)
         lang = self._language(slots)
         label = f"{name} · T{season} E{episode}"
-        self.catalog.play_title("series", match["id"], video["id"], label, audio=lang)
+        self.catalog.watch.play_title("series", match["id"], video["id"], label, audio=lang)
         in_lang = f" en {LANGUAGE_NAMES.get(lang, lang)}" if lang else ""
         return VoiceResult(f"Poniendo {name}, temporada {season}, episodio {episode}{in_lang}.")

@@ -80,7 +80,7 @@ def test_closed_event_reaches_ui(make_client, library):
     with make_client() as c:
         app_bus = c.app.state.bus
         queue = app_bus.subscribe()
-        library.launch("steam:367520")
+        library.sessions.launch("steam:367520")
         library.launcher.finish(60)
         event = c.portal.call(queue.get)
         while event["type"] == "status":  # el estado también llega por aquí
@@ -91,7 +91,7 @@ def test_closed_event_reaches_ui(make_client, library):
 def test_status_is_pushed_when_something_opens(make_client, library):
     with make_client() as c:
         queue = c.app.state.bus.subscribe()
-        library.launch("steam:367520")
+        library.sessions.launch("steam:367520")
         event = c.portal.call(queue.get)
         while event["type"] != "status" or not event["running"]:
             event = c.portal.call(queue.get)
@@ -139,7 +139,7 @@ def test_connect_stremio_from_the_console(make_client, library, monkeypatch):
         return "clave-sesion"
 
     monkeypatch.setattr(library.stremio_client, "login", login)
-    monkeypatch.setattr(library, "link_stremio", lambda key: seen.append(key) or 42)
+    monkeypatch.setattr(library.watch, "link_stremio", lambda key: seen.append(key) or 42)
     with make_client() as c:
         assert c.post("/api/stremio/login", json={"email": "", "password": ""}).status_code == 422
         bad = c.post("/api/stremio/login", json={"email": "yo@x.com", "password": "mal"})

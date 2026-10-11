@@ -45,7 +45,7 @@ def router(d: Deps) -> APIRouter:
             return {"ok": True, "resumed": True}
         catalog.wait_ready()  # recién arrancado: que termine el escaneo (sabe qué emuladores hay)
         try:
-            item = catalog.launch(body.id, body.runner, keep=body.keep)
+            item = catalog.sessions.launch(body.id, body.runner, keep=body.keep)
         except KeyError:
             raise HTTPException(404, "Ese juego ya no está en tu biblioteca")
         except (OSError, RuntimeError, ValueError) as exc:
@@ -58,7 +58,7 @@ def router(d: Deps) -> APIRouter:
     @r.post("/api/launch/reveal")
     def launch_reveal() -> dict:
         """B en la pantalla de carga: mostrar ya el juego (o lo que haya)."""
-        catalog.reveal_now()
+        catalog.sessions.reveal_now()
         return {"ok": True}
 
     @r.get("/api/status")

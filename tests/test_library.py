@@ -46,10 +46,10 @@ def test_find_fuzzy(library):
 
 
 def test_launch_uri_vs_process(library):
-    library.launch("steam:367520")
+    library.sessions.launch("steam:367520")
     assert library.launcher.opened == ["steam://rungameid/367520"]
     assert library.launcher.steam_appids == [367520]
-    library.launch("media:stremio")
+    library.sessions.launch("media:stremio")
     assert library.launcher.ran == [["stremio-test"]]
 
 

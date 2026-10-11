@@ -61,16 +61,6 @@ CATEGORIES = [
 # listener(evento) — el servidor lo usa para avisar a la interfaz.
 Listener = Callable[[dict], None]
 
-# Lo que el servidor y la voz piden al catálogo y en realidad hace otra pieza.
-_SESSIONS_API = ("launch", "reveal_now", "open_stremio", "play_stremio", "search_media")
-_WATCH_API = (
-    "refresh_stremio", "dismiss_continue", "refresh_cinemeta", "refresh_stremio_if_stale", "link_stremio",
-    "unlink_stremio", "setting", "stream_sources", "best_source", "play_best", "play_source", "resume_position",
-    "play_native", "play_title", "play_next_episode", "player_subtitles", "title_details", "set_in_library",
-    "play_trailer", "_player_finished", "_save_progress", "_play_episode",
-)
-
-
 def default_state(config: Config) -> State:
     if config.source is None:
         return State(None)
@@ -115,14 +105,6 @@ class Catalog:
         self.events.subscribe(self._on_event)
 
     # --- piezas y compatibilidad ----------------------------------------------------------------
-    def __getattr__(self, name: str):
-        # Solo se llama si el atributo no existe aquí: delega lo que hacen Sessions y Watch.
-        if name in _SESSIONS_API:
-            return getattr(self.sessions, name)
-        if name in _WATCH_API:
-            return getattr(self.watch, name)
-        raise AttributeError(name)
-
     @property
     def listeners(self) -> list[Listener]:
         return self.events.listeners
