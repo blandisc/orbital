@@ -15,7 +15,9 @@ const ROWS = [
   [..."KLMNÑOPQRS"],
   [..."TUVWXYZ123"],
   [..."4567890:'&"],
-  [{ key: "space", label: "Espacio", span: 4 }, { key: "delete", label: "Borrar", span: 3 }, { key: "dictate", label: "Dictar", span: 3 }],
+  [{ key: "space", label: "Espacio", span: 4 }, { key: "delete", label: "Borrar", span: 3 }, { key: "clear", label: "Borrar todo", span: 3 }],
+  // Acciones claras con dedo o con mando: salir, dictar y ver los resultados.
+  [{ key: "back", label: "Atrás", span: 2 }, { key: "dictate", label: "Dictar", span: 3 }, { key: "go", label: "Buscar", span: 5 }],
 ];
 const MIN_CHARS = 2;
 const DEBOUNCE_MS = 260;
@@ -57,6 +59,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [] }
     query.textContent = text;
     placeholder.hidden = !!text;
     keyEls.forEach((cells, r) => cells.forEach((k, c) => k.node.classList.toggle("search__key--focused", zone === "keys" && r === row && c === col)));
+    const clearKey = keyEls.flat().find((k) => k.def.key === "clear");
+    if (clearKey) clearKey.node.lastChild.textContent = !text && cleared ? "Deshacer" : "Borrar todo";
     [...results.children].forEach((card, i) => card.classList.toggle("card--focused", zone === "results" && i === resultIndex));
     field.classList.toggle("search__field--listening", !!listening);
   }
@@ -109,13 +113,36 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [] }
     }, DEBOUNCE_MS);
   }
 
+  let cleared = ""; // lo que había antes de "Borrar todo" (para "Deshacer")
+
   function press(key) {
-    if (key === "delete") text = text.slice(0, -1);
-    else if (key === "space") text = text && !text.endsWith(" ") ? `${text} ` : text;
-    else if (key === "dictate") return dictate();
-    else text += key.toLowerCase();
+    if (key === "back") return close();
+    if (key === "go") return goToResults();
+    if (key === "dictate") return dictate();
+    if (key === "clear") {
+      // Borrar todo es fácil de pulsar sin querer: la misma tecla se vuelve "Deshacer".
+      if (!text && cleared) [text, cleared] = [cleared, ""];
+      else if (text) [cleared, text] = [text, ""];
+    } else {
+      cleared = "";
+      if (key === "delete") text = text.slice(0, -1);
+      else if (key === "space") text = text && !text.endsWith(" ") ? `${text} ` : text;
+      else text += key.toLowerCase();
+    }
     render();
     schedule();
+  }
+
+  /** "Buscar": salta a los resultados (si aún no llegan, busca ya sin esperar). */
+  function goToResults() {
+    if (items.length) {
+      zone = "results";
+      resultIndex = Math.min(resultIndex, items.length - 1);
+      render();
+      return;
+    }
+    if (text.trim().length >= MIN_CHARS) schedule();
+    else setHint("Escribe al menos 2 letras.");
   }
 
   function dictate() {
