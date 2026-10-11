@@ -40,6 +40,12 @@
 }
 .tile--wide__detail { display: flex; align-items: center; gap: var(--space-3); color: var(--color-text); opacity: .82; font-size: var(--text-sm); white-space: nowrap; }
 .tile--wide__progress { --progress-width: 4.5rem; flex: none; }
+/* Solo el título; el detalle (consola y hace cuánto, o lo que queda) aparece al enfocar la tarjeta. */
+.tile--wide__detail {
+  max-height: 0; opacity: 0; transform: translateY(.3rem);
+  transition: max-height var(--duration-base) var(--ease-out), opacity var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-out);
+}
+.tile--wide.tile--focused .tile--wide__detail { max-height: 2rem; opacity: .86; transform: none; }
 
 /* Captura chica de un juego retro: nítida, como en la consola (no un borrón estirado). */
 .tile--lowres .tile__art { image-rendering: pixelated; }
