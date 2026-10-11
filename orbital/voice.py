@@ -51,7 +51,15 @@ _V = {
     "back": r"(?:vuelve|vuelva|volver|regresa|regrese|regresar)",
 }
 
+_EPISODE = (r"(?:(?:temporada|season)\s+(?P<season>\d+)\s*,?\s*(?:episodio|capitulo|cap)\s+(?P<episode>\d+)"
+            r"|(?:episodio|capitulo|cap)\s+(?P<episode2>\d+)\s+de\s+la\s+temporada\s+(?P<season2>\d+))")
+
 _TEXT_RULES: list[tuple[re.Pattern, str, str | None]] = [
+    # "quiero ver los simpson temporada 5 episodio 3 en español"
+    (re.compile(rf"^(?:quiero ver|pon|ponga|ver|reproduce)\s+(?:el\s+)?(?P<series>.+?)\s*,?\s+{_EPISODE}"
+                r"(?:\s+en\s+(?P<language>\w+))?$"), "WatchEpisodeIntent", None),
+    (re.compile(rf"^(?:quiero ver|pon|ponga|ver)\s+(?:el\s+)?{_EPISODE}\s+de\s+(?P<series>.+?)"
+                r"(?:\s+en\s+(?P<language>\w+))?$"), "WatchEpisodeIntent", None),
     # Reproductor de Orbital (van primero: "pon subtítulos" no es abrir un juego llamado así).
     # Sin slot fijo: los grupos con nombre son los slots.
     (re.compile(r"^(?:pausa|pause|pon pausa|ponle pausa|ponga pausa)(?:\s+(?:el video|la pelicula|la serie))?$"),
@@ -89,7 +97,8 @@ def parse_text(text: str) -> tuple[str, dict[str, str]] | None:
         if m:
             if slot:
                 return intent, ({slot: m.group("v")} if m.group("v") else {})
-            return intent, {k: v for k, v in m.groupdict().items() if v}
+            found = {k.rstrip("2"): v for k, v in m.groupdict().items() if v}
+            return intent, found
     return None
 
 
@@ -348,3 +357,30 @@ class VoiceController:
         if label is None:
             return VoiceResult("No hay un episodio siguiente.", ok=False, events=[NO_TOAST])
         return VoiceResult(f"Poniendo {label}.")
+
+    # --- un episodio concreto ------------------------------------------------------------------
+    def _watch_episode_intent(self, slots: dict) -> VoiceResult:
+        """«Quiero ver Los Simpson temporada 5 episodio 3 (en español)»."""
+        show = (slots.get("series") or slots.get("show") or "").strip()
+        try:
+            season, episode = int(float(slots.get("season", ""))), int(float(slots.get("episode", "")))
+        except ValueError:
+            return VoiceResult("¿Qué temporada y qué episodio?", ok=False)
+        if not show:
+            return VoiceResult("¿De qué serie?", ok=False)
+        found = self.catalog.cinemeta.search("series", show)
+        if not found:
+            return VoiceResult(f"No encontré la serie {show}.", ok=False)
+        target = normalize(show)
+        match = next((m for m in found if normalize(m["name"]) == target), found[0])
+        meta = self.catalog.cinemeta.meta("series", match["id"])
+        video = next((v for v in meta.get("videos") or []
+                      if v.get("season") == season and v.get("episode") == episode and v.get("id")), None)
+        name = meta.get("name") or match["name"]
+        if video is None:
+            return VoiceResult(f"{name} no tiene temporada {season} episodio {episode}.", ok=False)
+        lang = self._language(slots)
+        label = f"{name} · T{season} E{episode}"
+        self.catalog.play_title("series", match["id"], video["id"], label, audio=lang)
+        in_lang = f" en {LANGUAGE_NAMES.get(lang, lang)}" if lang else ""
+        return VoiceResult(f"Poniendo {name}, temporada {season}, episodio {episode}{in_lang}.")

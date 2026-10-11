@@ -571,30 +571,34 @@ class Catalog:
     def stream_prefs(self) -> streams.Preferences:
         return streams.Preferences(audio=self.config.stremio.audio, quality=self.config.stremio.quality)
 
-    def stream_sources(self, kind: str, video_id: str) -> list[streams.Source]:
+    def stream_sources(self, kind: str, video_id: str, prefs: streams.Preferences | None = None) -> list[streams.Source]:
         """Fuentes de tus addons, ordenadas por tus preferencias (la primera es la recomendada)."""
         if not self.stremio_linked:
             raise stremio_api.StremioError("Vincula tu cuenta de Stremio: orbital stremio login")
-        return self.streams.find(self.credentials.get(STREMIO_KEY), kind, video_id, self.stream_prefs)
+        return self.streams.find(self.credentials.get(STREMIO_KEY), kind, video_id, prefs or self.stream_prefs)
 
-    def play_source(self, kind: str, meta_id: str, video_id: str, index: int, title: str, keep: bool = False) -> str:
+    def play_source(self, kind: str, meta_id: str, video_id: str, index: int, title: str, keep: bool = False,
+                    prefs: streams.Preferences | None = None, subtitles: str | None = None) -> str:
+        """`prefs`/`subtitles`: idioma pedido para esta vez ("…en español"); si no, el de config.yaml."""
         """Reproduce la fuente elegida: en el reproductor de Orbital (mpv, con el mando) o, si no
         está o así se configuró, directo en el de Stremio (sin su lista de fuentes)."""
         self.revealing = False
-        source = self.streams.get(kind, video_id, self.stream_prefs, index)
+        prefs = prefs or self.stream_prefs
+        source = self.streams.get(kind, video_id, prefs, index)
         if source is None:
             raise ValueError("Esa fuente ya no está disponible; vuelve a cargar las fuentes")
         mpv_exe = player.find_mpv() if self.config.stremio.player == "orbital" else None
         url = player.stream_url(source.stream)
         if mpv_exe and url:
-            self.play_native(mpv_exe, url, kind, meta_id, video_id, title, keep=keep)
+            self.play_native(mpv_exe, url, kind, meta_id, video_id, title, keep=keep, audio=prefs.audio,
+                             subtitles=subtitles)
             return "orbital"
         uri = streams.player_link(source, cinemeta.MANIFEST, kind, meta_id, video_id)
         self.open_stremio(uri, title)
         return uri
 
     def play_native(self, mpv_exe: str, url: str, kind: str, meta_id: str, video_id: str, title: str,
-                    keep: bool = False) -> None:
+                    keep: bool = False, audio: str | None = None, subtitles: str | None = None) -> None:
         """mpv a pantalla completa, desde donde te quedaste (según Stremio)."""
         auth = self.credentials.get(STREMIO_KEY)
         start = 0.0
@@ -602,13 +606,13 @@ class Catalog:
             start = stremio_api.resume_seconds(self.stremio_client.library_item(auth, meta_id), video_id)
         except stremio_api.StremioError as exc:
             log.info("No pude leer dónde ibas: %s", exc)
-        subs = self.config.stremio.subtitles
+        subs = self.config.stremio.subtitles if subtitles is None else subtitles
         if self.before_launch and not keep:
             self.before_launch("media:player")
         process = self.player.play(
             self.launcher.run, mpv_exe, url, title,
             {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title},
-            start=start, audio=self.config.stremio.audio, subtitles=subs,
+            start=start, audio=audio or self.config.stremio.audio, subtitles=subs,
             fallback_subs=(lambda: self.streams.subtitles(auth, kind, video_id, subs)) if subs else None)
         self.launcher.track("media:player", title, process, runner="Reproductor")
         self.revealing = self._to_front("media:player", title)
@@ -618,20 +622,32 @@ class Catalog:
         """¿Se puede reproducir en el reproductor de Orbital (elegido, instalado y con cuenta)?"""
         return self.config.stremio.player == "orbital" and self.stremio_linked and player.find_mpv() is not None
 
-    def play_title(self, kind: str, meta_id: str, video_id: str, title: str) -> None:
+    def play_title(self, kind: str, meta_id: str, video_id: str, title: str, audio: str | None = None) -> None:
         """Para la voz: pone algo sin preguntar, con la fuente recomendada. Buscar fuentes tarda
-        unos segundos (Alexa corta a los ~8 s), así que se hace en segundo plano."""
+        unos segundos (Alexa corta a los ~8 s), así que se hace en segundo plano.
+
+        `audio`: idioma pedido ("…en español"). Si ninguna fuente lo trae, se pone la mejor en tu
+        idioma de siempre con subtítulos en el pedido, y se avisa."""
         if not self.native_player:
             self.play_stremio(kind, meta_id, video_id, title)
             return
+        prefs = streams.Preferences(audio=audio, quality=self.config.stremio.quality) if audio else None
 
         def run() -> None:
             try:
-                found = self.stream_sources(kind, video_id)
+                found = self.stream_sources(kind, video_id, prefs)
                 if not found:
                     self._notify({"type": "toast", "message": f"No encontré fuentes para {title}", "ok": False})
                     return
-                self.play_source(kind, meta_id, video_id, found[0].index, title)
+                subtitles = None
+                if audio and audio != self.config.stremio.audio:
+                    if audio in found[0].languages:
+                        subtitles = ""  # lo pediste doblado: sin subtítulos encima
+                    else:
+                        subtitles = audio
+                        name = {"es": "español", "en": "inglés"}.get(audio, audio)
+                        self._notify({"type": "toast", "message": f"No hay audio en {name} para {title}: va con subtítulos en {name}"})
+                self.play_source(kind, meta_id, video_id, found[0].index, title, prefs=prefs, subtitles=subtitles)
             except Exception as exc:  # noqa: BLE001 - se avisa en pantalla
                 log.exception("No pude poner %s", title)
                 self._notify({"type": "toast", "message": f"No pude poner {title}: {exc}", "ok": False})

@@ -193,3 +193,30 @@ def test_read_token_never_writes(tmp_path):
     assert alexa_setup.read_token(cfg) is None
     cfg.write_text('server:\n  token: "abc"\n', encoding="utf-8")
     assert alexa_setup.read_token(cfg) == "abc"
+
+
+@pytest.mark.parametrize("text, expected", [
+    ("quiero ver los simpson temporada 5 episodio 3 en español",
+     {"series": "los simpson", "season": "5", "episode": "3", "language": "espanol"}),
+    ("pon the office temporada 2 capitulo 4", {"series": "the office", "season": "2", "episode": "4"}),
+    ("quiero ver el episodio 3 de la temporada 5 de los simpson", {"series": "los simpson", "season": "5", "episode": "3"}),
+])
+def test_episode_phrases(text, expected):
+    assert parse_text(text) == ("WatchEpisodeIntent", expected)
+
+
+def test_watch_a_specific_episode_in_a_language(library, monkeypatch):
+    from orbital.library import cinemeta
+
+    monkeypatch.setattr(cinemeta.Cinemeta, "search", lambda self, kind, q: [
+        {"id": "tt0096697", "name": "The Simpsons"}, {"id": "tt9", "name": "Otra"}])
+    monkeypatch.setattr(cinemeta.Cinemeta, "meta", lambda self, kind, mid: {
+        "name": "The Simpsons", "videos": [{"id": "tt0096697:5:3", "season": 5, "episode": 3}]})
+    played = []
+    monkeypatch.setattr(library, "play_title", lambda *args, **kw: played.append((args, kw)))
+    voice = VoiceController(library)
+    r = voice.handle_intent("WatchEpisodeIntent", {"series": "los simpson", "season": "5", "episode": "3", "language": "es"})
+    assert r.speech == "Poniendo The Simpsons, temporada 5, episodio 3 en español."
+    assert played == [(("series", "tt0096697", "tt0096697:5:3", "The Simpsons · T5 E3"), {"audio": "es"})]
+    missing = voice.handle_intent("WatchEpisodeIntent", {"series": "los simpson", "season": "40", "episode": "2"})
+    assert not missing.ok and "no tiene temporada 40" in missing.speech
