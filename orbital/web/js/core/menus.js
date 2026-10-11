@@ -65,7 +65,7 @@ export function mainMenu({ running, hiddenCount, canExit = false }) {
     options.push({ icon: "show", label: "Mostrar juegos ocultos", hint: String(hiddenCount), command: { type: "unhide-all" } });
   }
   options.push({ icon: "windows", label: "Ventanas abiertas", command: { type: "windows" } });
-  options.push({ icon: "gamepad", label: "Controles", hint: "Qué hace cada botón", command: { type: "controls" } });
+  options.push({ icon: "gamepad", label: "Atajos y controles", hint: "Qué hace cada botón y combinación", command: { type: "controls" } });
   options.push({ icon: "mark", label: "Ajustes", hint: "Idioma, subtítulos, texto, sonido", command: { type: "settings" } });
   options.push({ icon: "power", label: "Apagado", command: { type: "power-menu" } });
   if (canExit) {
@@ -122,7 +122,7 @@ export function powerMenu() {
   };
 }
 
-const POWER_MODES = [["efficiency", "Ahorro de batería"], ["balanced", "Equilibrado"], ["performance", "Máximo rendimiento"]];
+const POWER_MODES = [["efficiency", "Ahorro"], ["balanced", "Equilibrado"], ["performance", "Máximo"]];
 const STEP = 10;
 
 /**
@@ -148,7 +148,7 @@ export function quickMenu(q, { running = null, wifi = null } = {}) {
   if (q.power_mode) {
     const i = Math.max(0, POWER_MODES.findIndex(([id]) => id === q.power_mode));
     const step = (d) => ({ type: "quick-set", changes: { power_mode: POWER_MODES[(i + d + POWER_MODES.length) % POWER_MODES.length][0] } });
-    options.push({ icon: "power", label: "Modo de energía", value: POWER_MODES[i][1], hint: "El de Windows (los de Legion Space no)",
+    options.push({ icon: "power", label: "Energía", value: POWER_MODES[i][1], hint: "◀ ▶ cambiar",
       command: step(1), adjust: { left: step(-1), right: step(1) } });
   }
   if (q.battery) {
@@ -158,6 +158,7 @@ export function quickMenu(q, { running = null, wifi = null } = {}) {
   }
   if (wifi) options.push({ icon: "wifi", label: "Wi-Fi", value: wifi.ssid || "Conectado", command: { type: "stay" } });
   options.push({ icon: "windows", label: "Capturas", hint: "Home + RB captura sin salir del juego", command: { type: "captures" } });
+  options.push({ icon: "gamepad", label: "Atajos del mando", hint: "Todas las combinaciones", command: { type: "controls", page: "atajos" } });
   if (running?.managed) {
     options.push({ icon: "play", label: `Volver a ${running.title}`, command: { type: "resume" } });
     options.push({ icon: "stop", label: `Cerrar ${running.title}`, danger: true,
@@ -480,7 +481,39 @@ export function tourMenu(step, { legion = false } = {}) {
 }
 
 // --- Controles: qué hace cada botón, con cada mando -------------------------------------------
-const row = (label, value) => ({ icon: "gamepad", label, value, command: { type: "stay" } });
+const row = (label, value, hint) => ({ icon: "gamepad", label, value, hint, command: { type: "stay" } });
+
+/**
+ * Todos los atajos en una hoja, por situación. Valor = GameSir y mandos con Home; pie = Legion Go
+ * (su Home es Legion L y no tiene combinaciones con Home).
+ */
+export const SHORTCUTS = [
+  ["En un juego", null, null],
+  ["Ir a Orbital", "Home", "En pausa mientras tanto · Legion Go: Legion L"],
+  ["Volver al juego", "Home o A", "Legion Go: Legion L o A"],
+  ["Cerrar el juego", "Start+Select+Home", "Mantenlos · Legion Go: Start+Select"],
+  ["Panel rápido", "Home+LB", "Mantén Home · Legion Go: ☰ → Panel rápido"],
+  ["Captura", "Home+RB", "Mantén Home · Legion Go: pídeselo a Alexa"],
+  ["En Orbital", null, null],
+  ["Buscar", "Vista ⧉", null],
+  ["Menú", "☰", null],
+  ["Opciones", "Y", "Cerrar, favorito, otra portada…"],
+  ["Otro emulador", "X", null],
+  ["Cambiar de sección", "LB / RB", null],
+  ["Saltar de 5 en 5", "LT / RT", null],
+  ["Viendo algo", null, null],
+  ["Audio · Subtítulos", "X / Y", "Ahí mismo: cambiar de fuente"],
+  ["Adelantar", "◀ ▶", "Mantén: más rápido"],
+  ["Capítulo · episodio", "LB/RB · LT/RT", null],
+  ["Salir", "B", "Primero oculta la barra"],
+];
+
+function shortcutsPage() {
+  const options = SHORTCUTS.map(([label, value, hint]) => (value === null
+    ? { icon: "check", label: label.toUpperCase(), command: { type: "stay" } }
+    : row(label, value, hint ?? undefined)));
+  return { title: "Atajos del mando", crumb: "Atajos", options };
+}
 
 export const CONTROL_PAGES = {
   legion: {
@@ -532,8 +565,9 @@ export function controlsMenu(controllers = []) {
     return found.length ? `Conectado (mando ${found.map((c) => c.slot).join(", ")}) · cerrar: ${found[0].close}` : "No conectado ahora";
   };
   return {
-    title: "Controles",
+    title: "Atajos y controles",
     options: [
+      { icon: "gamepad", label: "Todos los atajos", hint: "En una hoja: juego, Orbital y videos", command: { type: "controls", page: "atajos" } },
       { icon: "gamepad", label: "Legion Go", hint: hint("legion"), command: { type: "controls", page: "legion" } },
       { icon: "gamepad", label: "GameSir y otros", hint: hint("gamesir"), command: { type: "controls", page: "gamesir" } },
       { icon: "windows", label: "En Orbital", hint: "Moverte, abrir, buscar, menú", command: { type: "controls", page: "orbital" } },
@@ -544,6 +578,7 @@ export function controlsMenu(controllers = []) {
 }
 
 export function controlsPage(page) {
+  if (page === "atajos") return shortcutsPage();
   const def = CONTROL_PAGES[page];
   return { title: def.title, crumb: def.title, options: def.rows.map(([label, value]) => row(label, value)) };
 }
