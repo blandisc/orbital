@@ -142,6 +142,16 @@ def alexa_command(args, config) -> int:
     url = args.url or alexa_setup.tailscale_url()
     public_port = config.server.public_port or 8711
 
+    if args.action == "rotate":
+        token = alexa_setup.rotate_token(path)
+        skill_dir = path.parent / "alexa-skill"
+        alexa_setup.write_skill(skill_dir, alexa_setup.skill_files(url, token, args.skill_id or ""))
+        print("Token nuevo guardado (cifrado) en " + str(path) + ". El anterior ya no sirve.")
+        print("1. Reinicia Orbital para que lo use.")
+        print(f"2. En la consola de Alexa, pega {skill_dir / 'orbital.json'} en la carpeta lambda de la skill y")
+        print("   pulsa Deploy. Después borra la carpeta alexa-skill: lleva el token y Orbital no la necesita.")
+        return 0
+
     if args.action == "protect-token":
         changed = alexa_setup.protect_token(path)
         print("Token cifrado con tu usuario de Windows en " + str(path) if changed
@@ -245,9 +255,10 @@ def main(argv: list[str] | None = None) -> None:
                     help="login: correo y contraseña · key: pegar la clave de sesión · status · logout")
     st.add_argument("value", nargs="?", help="la clave de sesión (para 'key')")
     al = sub.add_parser("alexa", help="Configurar y comprobar Alexa")
-    al.add_argument("action", choices=["setup", "check", "say", "protect-token"],
+    al.add_argument("action", choices=["setup", "check", "say", "protect-token", "rotate"],
                     help="setup: token y pasos · check: prueba el túnel · say: envía un comando de prueba · "
-                         "protect-token: cifra el token de config.yaml con tu usuario de Windows")
+                         "protect-token: cifra el token de config.yaml con tu usuario de Windows · "
+                         "rotate: token nuevo (el anterior deja de servir)")
     al.add_argument("text", nargs="?", default="qué está abierto", help="el comando para 'say'")
     al.add_argument("--url", help="dirección pública del túnel (si no se detecta Tailscale)")
     al.add_argument("--skill-id", help="ID de tu skill (amzn1.ask.skill…): la skill rechaza peticiones de otras")

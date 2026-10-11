@@ -237,3 +237,36 @@ def test_main_app_rejects_tunnel_host_without_token(library):
         assert c.post("/api/launch", json={"id": "steam:367520"}).status_code == 401
     with TestClient(create_app(library.config, library), base_url="http://localhost:8710", client=("127.0.0.1", 1)) as c:
         assert c.get("/api/library").status_code == 200
+
+
+def test_failed_tokens_slow_down_then_block():
+    from orbital.server import FailedTokens
+
+    now = [0.0]
+    guard = FailedTokens(clock=lambda: now[0])
+    delays = [guard.failed("x") for _ in range(8)]
+    assert delays[:4] == [0, 0, 0, 0] and delays[-1] > 0  # los primeros (un error de dedo) sin espera
+    for _ in range(FailedTokens.BLOCK_AFTER):
+        guard.failed("x")
+    assert guard.blocked("x") and not guard.blocked("otro")
+    now[0] += FailedTokens.BLOCK_FOR + 1
+    assert not guard.blocked("x")
+
+
+def test_public_app_answers_429_when_blocked(library):
+    from orbital.server import FailedTokens
+
+    guard = FailedTokens()
+    guard._blocked["127.0.0.1"] = guard.clock() + 60
+    main = create_app(library.config, library)
+    with TestClient(create_public_app(library.config, main, guard), client=("127.0.0.1", 5000)) as c:
+        r = c.get("/api/ping", headers={"Authorization": f"Bearer {library.config.server.token}"})
+    assert r.status_code == 429
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="DPAPI es de Windows")
+def test_rotate_gives_a_new_encrypted_token(tmp_path):
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text('server:\n  token: "viejo"\n', encoding="utf-8")
+    new = alexa_setup.rotate_token(cfg)
+    assert new != "viejo" and alexa_setup.read_token(cfg) == new and "viejo" not in cfg.read_text(encoding="utf-8")

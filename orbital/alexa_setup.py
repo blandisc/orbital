@@ -37,6 +37,17 @@ def ensure_token(config_path: Path) -> tuple[str, bool]:
     return token, True
 
 
+def rotate_token(config_path: Path) -> str:
+    """Un token nuevo (el anterior deja de servir). Devuelve el nuevo; hay que actualizar la skill."""
+    import yaml
+
+    text = config_path.read_text(encoding="utf-8-sig") if config_path.exists() else ""
+    server = (yaml.safe_load(text) or {}).get("server") or {}
+    token = secrets.token_urlsafe(32)
+    _write_token(config_path, text, server, seal(token), token)
+    return token
+
+
 def protect_token(config_path: Path) -> bool:
     """Cifra con DPAPI el token que ya está en config.yaml en texto plano. True si lo cambió."""
     import yaml

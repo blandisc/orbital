@@ -34,6 +34,7 @@ from .config import Config
 from .shell import ConsoleShell
 from .voice import VoiceController
 
+log = logging.getLogger(__name__)
 WEB_DIR = Path(__file__).parent / "web"
 _FORWARD_HEADERS = ("x-forwarded-for", "forwarded", "cf-connecting-ip", "x-real-ip")
 EventBus = SseHub  # nombre anterior
@@ -152,7 +153,49 @@ class WebFiles(StaticFiles):
         return response
 
 
-def create_public_app(config: Config, main_app: FastAPI) -> FastAPI:
+class FailedTokens:
+    """Frena a quien prueba tokens por el túnel: tras varios intentos fallidos desde el mismo lugar,
+    cada respuesta tarda más y, si sigue, se le bloquea un rato. Lo que entra por el túnel suele
+    venir de 127.0.0.1, así que también cuenta la cabecera X-Forwarded-For si existe."""
+
+    WINDOW = 300.0  # s que se recuerda un intento fallido
+    SLOW_AFTER = 5  # fallos: a partir de aquí cada respuesta tarda más (hasta MAX_DELAY)
+    BLOCK_AFTER = 30  # fallos en WINDOW: bloqueo
+    BLOCK_FOR = 900.0
+    MAX_DELAY = 5.0
+
+    def __init__(self, clock=time.monotonic) -> None:
+        self.clock = clock
+        self._fails: dict[str, list[float]] = {}
+        self._blocked: dict[str, float] = {}
+
+    @staticmethod
+    def key(request: Request) -> str:
+        forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+        return forwarded or (request.client.host if request.client else "?")
+
+    def blocked(self, key: str) -> bool:
+        until = self._blocked.get(key)
+        if until and self.clock() < until:
+            return True
+        self._blocked.pop(key, None)
+        return False
+
+    def failed(self, key: str) -> float:
+        """Anota un fallo; devuelve cuántos segundos esperar antes de responder."""
+        now = self.clock()
+        recent = [t for t in self._fails.get(key, []) if now - t < self.WINDOW] + [now]
+        self._fails[key] = recent
+        if len(recent) >= self.BLOCK_AFTER:
+            self._blocked[key] = now + self.BLOCK_FOR
+            log.warning("Demasiados tokens inválidos desde %s: bloqueado %d min", key, self.BLOCK_FOR // 60)
+        return min(self.MAX_DELAY, max(0, len(recent) - self.SLOW_AFTER) * 0.5)
+
+    def succeeded(self, key: str) -> None:
+        self._fails.pop(key, None)
+
+
+def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | None = None) -> FastAPI:
     """App mínima para internet (Alexa a través del túnel): solo voz y ping, siempre con token.
 
     Corre en otro puerto (server.public_port). Aunque el túnel entregue las peticiones desde
@@ -160,10 +203,17 @@ def create_public_app(config: Config, main_app: FastAPI) -> FastAPI:
     """
     public = FastAPI(title="Orbital · Alexa", docs_url=None, redoc_url=None, openapi_url=None)
 
+    guard = guard or FailedTokens()
+
     @public.middleware("http")
     async def require_token(request: Request, call_next):
+        key = FailedTokens.key(request)
+        if guard.blocked(key):
+            return JSONResponse({"detail": "Demasiados intentos"}, status_code=429)
         if not token_ok(request, config.server.token):
+            await asyncio.sleep(guard.failed(key))
             return JSONResponse({"detail": "Token inválido"}, status_code=401)
+        guard.succeeded(key)
         return await call_next(request)
 
     @public.get("/api/ping")
