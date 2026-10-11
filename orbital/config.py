@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import secrets
 from dataclasses import dataclass, field
@@ -183,6 +184,14 @@ def load_config(path: Path | None = None) -> Config:
     else:
         with path.open("r", encoding="utf-8") as fh:
             cfg = parse_config(yaml.safe_load(fh), source=path)
+    if cfg.server.token.startswith("dpapi:"):  # guardado cifrado con tu usuario de Windows
+        from .dpapi import reveal
+
+        try:
+            cfg.server.token = reveal(cfg.server.token)
+        except ValueError as exc:
+            logging.getLogger(__name__).warning("%s: Alexa queda desconectada hasta `orbital alexa setup`", exc)
+            cfg.server.token = ""
     if cfg.server.token in ("", "CAMBIA-ESTE-TOKEN"):
         # Sin token propio generamos uno efímero: Alexa queda desconectada hasta fijar uno
         # (orbital alexa setup lo hace por ti).

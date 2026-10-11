@@ -59,3 +59,27 @@ def test_reads_another_process_command_line():
     finally:
         child.kill()
         child.wait(5)
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="DPAPI es de Windows")
+def test_secrets_are_encrypted_and_old_plain_files_migrate(tmp_path):
+    import json
+
+    from orbital.credentials import Credentials
+
+    path = tmp_path / "secrets.json"
+    path.write_text(json.dumps({"stremio_auth": "clave-de-sesion"}), encoding="utf-8")
+    assert Credentials(path).get("stremio_auth") == "clave-de-sesion"  # el archivo viejo se lee
+    assert "clave-de-sesion" not in path.read_text(encoding="utf-8")  # y queda cifrado
+    creds = Credentials(path)
+    assert creds.get("stremio_auth") == "clave-de-sesion"
+    creds.set("otra", "valor")
+    assert Credentials(path).get("otra") == "valor" and "valor" not in path.read_text(encoding="utf-8")
+
+
+def test_unreadable_secrets_do_not_crash(tmp_path):
+    from orbital.credentials import Credentials
+
+    path = tmp_path / "secrets.json"
+    path.write_text('{"format": "orbital-dpapi-1", "data": "AAAA"}', encoding="utf-8")
+    assert Credentials(path).get("stremio_auth") is None

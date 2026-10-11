@@ -2,6 +2,7 @@ import importlib.util
 import io
 import json
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -145,7 +146,9 @@ def test_ensure_token_keeps_comments(tmp_path):
     token, created = alexa_setup.ensure_token(cfg)
     text = cfg.read_text(encoding="utf-8")
     assert created and len(token) > 30 and text.startswith("# mi config")
-    assert yaml.safe_load(text)["server"] == {"port": 8710, "token": token}
+    stored = yaml.safe_load(text)["server"]
+    assert stored["port"] == 8710 and token not in text  # en Windows se guarda cifrado (dpapi:…)
+    assert alexa_setup.read_token(cfg) == token
     assert alexa_setup.ensure_token(cfg) == (token, False)  # idempotente
 
 
@@ -153,15 +156,30 @@ def test_ensure_token_other_layouts(tmp_path):
     cfg = tmp_path / "a.yaml"
     cfg.write_text("server:\n  port: 1\n")
     token, _ = alexa_setup.ensure_token(cfg)
-    assert yaml.safe_load(cfg.read_text())["server"] == {"token": token, "port": 1}
+    assert yaml.safe_load(cfg.read_text())["server"]["port"] == 1 and alexa_setup.read_token(cfg) == token
     missing = tmp_path / "nuevo" / "config.yaml"
     token, _ = alexa_setup.ensure_token(missing)
-    assert yaml.safe_load(missing.read_text()) == {"server": {"token": token}}
+    assert list(yaml.safe_load(missing.read_text())) == ["server"] and alexa_setup.read_token(missing) == token
     flow = tmp_path / "flow.yaml"
     flow.write_text("server: {port: 1}\n")
     with pytest.raises(ValueError, match="a mano"):
         alexa_setup.ensure_token(flow)
     assert flow.read_text() == "server: {port: 1}\n"  # no lo rompe
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="DPAPI es de Windows")
+def test_existing_plain_token_can_be_encrypted(tmp_path):
+    from orbital.config import load_config
+
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text('server:\n  token: "mi-token-de-alexa"  # fijo\n', encoding="utf-8")
+    assert alexa_setup.protect_token(cfg)
+    text = cfg.read_text(encoding="utf-8")
+    assert "mi-token-de-alexa" not in text and text.startswith("server:")
+    assert alexa_setup.read_token(cfg) == "mi-token-de-alexa"
+    loaded = load_config(cfg)
+    assert loaded.server.token == "mi-token-de-alexa" and not loaded.server.token_is_ephemeral
+    assert not alexa_setup.protect_token(cfg)  # ya estaba cifrado
 
 
 def test_parse_tailscale_status():

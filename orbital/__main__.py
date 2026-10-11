@@ -142,6 +142,12 @@ def alexa_command(args, config) -> int:
     url = args.url or alexa_setup.tailscale_url()
     public_port = config.server.public_port or 8711
 
+    if args.action == "protect-token":
+        changed = alexa_setup.protect_token(path)
+        print("Token cifrado con tu usuario de Windows en " + str(path) if changed
+              else "Nada que cifrar (ya está cifrado, no hay token o este sistema no tiene DPAPI)")
+        return 0
+
     if args.action == "setup":
         token, created = alexa_setup.ensure_token(path)
         skill_dir = path.parent / "alexa-skill"
@@ -233,8 +239,9 @@ def main(argv: list[str] | None = None) -> None:
                     help="login: correo y contraseña · key: pegar la clave de sesión · status · logout")
     st.add_argument("value", nargs="?", help="la clave de sesión (para 'key')")
     al = sub.add_parser("alexa", help="Configurar y comprobar Alexa")
-    al.add_argument("action", choices=["setup", "check", "say"],
-                    help="setup: token y pasos · check: prueba el túnel · say: envía un comando de prueba")
+    al.add_argument("action", choices=["setup", "check", "say", "protect-token"],
+                    help="setup: token y pasos · check: prueba el túnel · say: envía un comando de prueba · "
+                         "protect-token: cifra el token de config.yaml con tu usuario de Windows")
     al.add_argument("text", nargs="?", default="qué está abierto", help="el comando para 'say'")
     al.add_argument("--url", help="dirección pública del túnel (si no se detecta Tailscale)")
     al.add_argument("--skill-id", help="ID de tu skill (amzn1.ask.skill…): la skill rechaza peticiones de otras")

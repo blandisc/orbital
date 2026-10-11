@@ -13,6 +13,8 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
+from .dpapi import PREFIX, reveal, seal
+
 PLACEHOLDER_TOKENS = {"", "CAMBIA-ESTE-TOKEN"}
 
 
@@ -28,23 +30,46 @@ def ensure_token(config_path: Path) -> tuple[str, bool]:
     server = (yaml.safe_load(text) or {}).get("server") or {}
     current = str(server.get("token") or "").strip()
     if current not in PLACEHOLDER_TOKENS:
-        return current, False
+        return reveal(current), False
 
     token = secrets.token_urlsafe(32)
+    _write_token(config_path, text, server, seal(token), token)  # en Windows, cifrado con tu usuario
+    return token, True
+
+
+def protect_token(config_path: Path) -> bool:
+    """Cifra con DPAPI el token que ya está en config.yaml en texto plano. True si lo cambió."""
+    import yaml
+
+    text = config_path.read_text(encoding="utf-8-sig")
+    server = (yaml.safe_load(text) or {}).get("server") or {}
+    current = str(server.get("token") or "").strip()
+    if current in PLACEHOLDER_TOKENS or current.startswith(PREFIX):
+        return False
+    sealed = seal(current)
+    if sealed == current:
+        return False  # fuera de Windows no se puede cifrar
+    _write_token(config_path, text, server, sealed, current)
+    return True
+
+
+def _write_token(config_path: Path, text: str, server: dict, stored: str, token: str) -> None:
+    """Pone `token: "<stored>"` en la sección server sin perder los comentarios del archivo."""
+    import yaml
+
     line = re.search(r'^(?P<indent>[ \t]+)token:.*$', text, re.MULTILINE)
     if line:
-        text = text[:line.start()] + f'{line.group("indent")}token: "{token}"' + text[line.end():]
+        text = text[:line.start()] + f'{line.group("indent")}token: "{stored}"' + text[line.end():]
     elif re.search(r"^server:[ \t]*$", text, re.MULTILINE):
-        text = re.sub(r"^server:[ \t]*$", f'server:\n  token: "{token}"', text, count=1, flags=re.MULTILINE)
+        text = re.sub(r"^server:[ \t]*$", f'server:\n  token: "{stored}"', text, count=1, flags=re.MULTILINE)
     elif not server and not re.search(r"^server:", text, re.MULTILINE):
-        text = f'server:\n  token: "{token}"\n' + (("\n" + text) if text else "")
+        text = f'server:\n  token: "{stored}"\n' + (("\n" + text) if text else "")
     else:
         raise ValueError(f'No sé editar la sección server de {config_path}: añade  token: "{token}"  a mano.')
-    if (yaml.safe_load(text) or {}).get("server", {}).get("token") != token:
+    if (yaml.safe_load(text) or {}).get("server", {}).get("token") != stored:
         raise ValueError(f"No pude guardar el token en {config_path}")
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config_path.write_text(text, encoding="utf-8")
-    return token, True
 
 
 def read_token(config_path: Path) -> str | None:
@@ -55,7 +80,7 @@ def read_token(config_path: Path) -> str | None:
         return None
     server = (yaml.safe_load(config_path.read_text(encoding="utf-8-sig")) or {}).get("server") or {}
     token = str(server.get("token") or "").strip()
-    return None if token in PLACEHOLDER_TOKENS else token
+    return None if token in PLACEHOLDER_TOKENS else reveal(token)
 
 
 # ----------------------------------------------------------------------------- skill

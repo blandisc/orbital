@@ -308,7 +308,7 @@ def test_frozen_game_closes_after_the_limit(tmp_path):
     shell.home()  # congelado
     start = shell.paused_since
     assert not shell.check_idle(start + 59 * 60)
-    assert shell.check_idle(start + 60 * 60)
+    assert shell.check_idle(start + 60 * 60 + 1)  # +1: start + 3600 - start puede dar 3599.999… en flotante
     assert shell.catalog.launcher.stopped and not shell.is_paused and not win.suspended  # se descongela para cerrar
     assert "se cerrará en 10 min" in notes[0]["message"]  # el aviso llega antes, a los 50 min
     assert "llevaba 60 min" in notes[-1]["message"]
