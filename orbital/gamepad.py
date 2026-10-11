@@ -29,7 +29,14 @@ GUIDE = 0x0400
 BACK = 0x0020
 START = 0x0010
 
-CLOSE_COMBO = GUIDE | BACK | START  # Start + Select + Home
+CLOSE_COMBO = GUIDE | BACK | START  # Start + Select + Home (GameSir: Start+Select y Home solos cambian de modo)
+LEGION_CLOSE_COMBO = BACK | START  # controles de la Legion Go: no tienen Home y no cambian de modo
+LENOVO_VENDOR = 0x17EF
+
+
+def close_combo_for(vendor_id: int | None) -> int:
+    """Qué botones mantener para cerrar el juego según la marca del mando."""
+    return LEGION_CLOSE_COMBO if vendor_id == LENOVO_VENDOR else CLOSE_COMBO
 HOLD_ARM = 0.25  # s con el combo antes de reaccionar (evita toques accidentales)
 HOLD_TOTAL = 1.5  # s hasta preguntar si cerrar
 
@@ -40,9 +47,10 @@ class ComboDetector:
     Eventos: "home", "hold-start", "hold-cancel", "hold-complete".
     """
 
-    def __init__(self, arm: float = HOLD_ARM, total: float = HOLD_TOTAL) -> None:
+    def __init__(self, arm: float = HOLD_ARM, total: float = HOLD_TOTAL, combo: int = CLOSE_COMBO) -> None:
         self.arm = arm
         self.total = total
+        self.combo = combo
         self._guide = False
         self._guide_chord = False  # se tocó otro botón mientras Home estaba presionado
         self._combo_since: float | None = None
@@ -59,7 +67,7 @@ class ComboDetector:
             self._guide_chord = False
         self._guide = guide
 
-        combo = (buttons & CLOSE_COMBO) == CLOSE_COMBO
+        combo = (buttons & self.combo) == self.combo
         if not combo:
             if self._phase == "armed":
                 events.append("hold-cancel")
@@ -148,6 +156,31 @@ class _XInputState(ctypes.Structure):
     _fields_ = [("dwPacketNumber", ctypes.c_uint), ("Gamepad", _XInputGamepad)]
 
 
+class _XInputCapabilities(ctypes.Structure):
+    _fields_ = [("Type", ctypes.c_ubyte), ("SubType", ctypes.c_ubyte), ("Flags", ctypes.c_ushort),
+                ("Gamepad", _XInputGamepad), ("wLeftMotorSpeed", ctypes.c_ushort), ("wRightMotorSpeed", ctypes.c_ushort)]
+
+
+class _XInputCapabilitiesEx(ctypes.Structure):
+    _fields_ = [("Capabilities", _XInputCapabilities), ("VendorId", ctypes.c_ushort), ("ProductId", ctypes.c_ushort),
+                ("ProductVersion", ctypes.c_ushort), ("unk1", ctypes.c_ushort), ("unk2", ctypes.c_uint)]
+
+
+def _load_vendor():
+    """XInputGetCapabilitiesEx (ordinal 108): da la marca (VendorId) de cada mando. None si no existe."""
+    try:
+        fn = ctypes.WinDLL("xinput1_4.dll")[108]
+    except (OSError, AttributeError):
+        return None
+    fn.argtypes = [ctypes.c_uint, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(_XInputCapabilitiesEx)]
+    fn.restype = ctypes.c_uint
+
+    def vendor(slot: int) -> int | None:
+        caps = _XInputCapabilitiesEx()
+        return caps.VendorId if fn(1, slot, 0, ctypes.byref(caps)) == 0 else None
+    return vendor
+
+
 def _load_get_state():
     """XInputGetStateEx (ordinal 100): como XInputGetState pero incluye el botón Guía."""
     dll = ctypes.WinDLL("xinput1_4.dll")
@@ -178,7 +211,8 @@ class GamepadWatcher:
             log.warning("Sin XInput: los atajos del mando (Home, Select+Start) no funcionarán: %s", exc)
             return False
         threading.Thread(target=self._run, args=(get_state,), daemon=True, name="gamepad").start()
-        log.info("Atajos del mando activos: Home = Orbital/juego · Start+Select+Home mantenidos = cerrar juego")
+        log.info("Atajos del mando activos: Home = Orbital/juego · cerrar juego = Start+Select+Home "
+                 "(controles de la Legion Go: Start+Select)")
         return True
 
     def stop(self) -> None:
@@ -186,10 +220,19 @@ class GamepadWatcher:
 
     def _run(self, get_state) -> None:
         state = _XInputState()
+        vendor = _load_vendor()
+        was_connected = [False] * 4
         while not self._stop.is_set():
             now = time.monotonic()
             for slot, detector in enumerate(self._detectors):
                 connected = get_state(slot, ctypes.byref(state)) == 0
+                if connected and not was_connected[slot] and vendor:
+                    # Un mando nuevo en este lugar: su atajo de cerrar depende de la marca.
+                    vid = vendor(slot)
+                    detector.combo = close_combo_for(vid)
+                    log.info("Mando %d (marca %s): cerrar juego con %s", slot + 1, f"{vid:04X}" if vid else "?",
+                             "Start+Select" if detector.combo == LEGION_CLOSE_COMBO else "Start+Select+Home")
+                was_connected[slot] = connected
                 buttons = state.Gamepad.wButtons if connected else 0
                 for event in detector.update(buttons, now):
                     try:
