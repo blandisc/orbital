@@ -146,7 +146,7 @@ def scan(
                 if c is emu or exes[c.id] is not None  # alternativas solo si están instaladas
             ]
             default = emu
-            chosen = esde.chosen_emulator(system, rom) if system else None
+            chosen = esde.chosen_emulator(system, entry) if system else None
             if chosen:
                 default = next((c for c in candidates if esde_key(c) in chosen.lower()), emu)
             art = esde.cover(system, entry) if system else None

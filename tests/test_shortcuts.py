@@ -65,3 +65,38 @@ def test_xbox360_shortcut_and_installed_game_are_one_card(tmp_path):
     items = emulators.scan(emu)
     assert [i.title for i in items] == ["Call of Duty - Black Ops II", "Minecraft"]  # el .lnk manda en el nombre
     assert items[0].runners[0].argv == [str(exe), "--fullscreen", str(pkg)]
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="crea un .lnk con Windows")
+def test_esde_lookups_use_the_shortcut_not_the_installed_game(tmp_path):
+    # Con ES-DE, Orbital preguntaba por la ruta del paquete (fuera de la carpeta de ROMs) y no arrancaba.
+    emu_dir = tmp_path / "xenia"
+    emu_dir.mkdir()
+    exe = emu_dir / "xenia_canary_netplay.exe"
+    exe.write_bytes(b"MZ")
+    pkg = emu_dir / "content" / "0" / "415608C3" / "00007000" / "3A2136"
+    make_package(pkg, "COD: Black Ops II")
+    roms = tmp_path / "ROMs" / "xbox360"
+    roms.mkdir(parents=True)
+    lnk = roms / "Call of Duty - Black Ops II.lnk"
+    make_lnk(lnk, exe, f'--fullscreen "{pkg}"')
+
+    class FakeEsde:
+        asked = []
+
+        def system_dir(self, system): return roms
+
+        def _check(self, rom):
+            self.asked.append(rom)
+            rom.relative_to(roms)  # truena si no es un archivo de la carpeta de ROMs
+            return None
+
+        meta = lambda self, system, rom: self._check(rom)  # noqa: E731
+        chosen_emulator = meta
+        cover = meta
+        hero = meta
+
+    emu = EmulatorConfig(id="xbox360", name="Xbox 360", executable=str(exe), system="xbox360",
+                         args=["--fullscreen", "{rom}"], extensions=[".iso"])
+    items = emulators.scan(emu, FakeEsde())
+    assert [i.title for i in items] == ["Call of Duty - Black Ops II"] and set(FakeEsde.asked) == {lnk}

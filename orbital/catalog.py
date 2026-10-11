@@ -267,7 +267,10 @@ class Catalog:
             self.emulators = detect.merge(self.config.emulators, result.emulators)
             self.detected = result.found
         for emu, alternatives in emulators.split_alternatives(self.emulators):
-            found += emulators.scan(emu, self.esde, alternatives)
+            try:
+                found += emulators.scan(emu, self.esde, alternatives)
+            except Exception:  # noqa: BLE001 - un emulador con problemas no debe dejar a Orbital sin arrancar
+                log.exception("No pude leer los juegos de %s", emu.name)
         if self.config.stremio.enabled:
             found += stremio.items(self.config.stremio)
         gfn_app = geforcenow.app_item()
