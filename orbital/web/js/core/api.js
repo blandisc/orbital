@@ -30,6 +30,7 @@ export const api = {
   stremioPlay: (body) => post("/api/stremio/play", body),
   stremioTitle: (kind, id) => request(`/api/stremio/title/${kind}/${encodeURIComponent(id)}`),
   settings: () => request("/api/settings"),
+  dismiss: (id) => post("/api/stremio/dismiss", { id }),
   setSettings: (changes) => post("/api/settings", changes),
   stremioSources: (kind, id, video) =>
     request(`/api/stremio/sources?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`),

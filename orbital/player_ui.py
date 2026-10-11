@@ -13,6 +13,7 @@ mpv pinta texto y figuras ASS encima del video (comando osd-overlay). Aquí solo
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 
 W, H = 1920, 1080  # coordenadas del lienzo (mpv escala a la pantalla)
@@ -98,6 +99,7 @@ class Hud:
     source: str = ""  # "1080p · Torrentio"
     chapters: list[float] = field(default_factory=list)  # inicio de cada capítulo (s)
     series: bool = False  # LT/RT cambian de episodio
+    ends: str = ""  # "23:40": a qué hora termina (como en las TV)
 
 
 @dataclass
@@ -174,8 +176,10 @@ def hud_ass(hud: Hud) -> str:
         lines.append(_rect(MARGIN + bar_w * done - 8, bar_y - 5, 16, 16, TEXT))
     lines.append(_text(MARGIN, bar_y + 22, clock(hud.position), 28))
     remaining = (hud.duration - hud.position) if hud.duration and hud.position is not None else None
-    lines.append(_text(W - MARGIN, bar_y + 22, f"-{clock(remaining)}" if remaining is not None else clock(hud.duration),
-                       28, MUTED, align=9))
+    right = f"-{clock(remaining)}" if remaining is not None else clock(hud.duration)
+    if hud.ends:
+        right += f"   ·   termina a las {hud.ends}"
+    lines.append(_text(W - MARGIN, bar_y + 22, right, 28, MUTED, align=9))
     lines.append(_text(W / 2, 1036, legend_line(legend_for(hud)), 26, align=2))
     return "\n".join(lines)
 
@@ -282,3 +286,10 @@ def track_menu(kind: str, tracks: list[dict], extra: list[dict] | None = None,
     options += extra or []
     index = next((i for i, o in enumerate(options) if o.get("current")), 0)
     return Menu(kind, options, index, tabs or ["audio", "sub"])
+
+
+def ends_at(position: float | None, duration: float | None, now: float | None = None) -> str:
+    """"23:40": la hora a la que termina si sigues viendo de corrido."""
+    if not duration or position is None or duration - position < 60:
+        return ""
+    return time.strftime("%H:%M", time.localtime((now if now is not None else time.time()) + duration - position))

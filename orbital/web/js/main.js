@@ -69,6 +69,7 @@ const ui = {
   title: createTitle({
     onPlay: (play) => watch(play),
     onSources: (play) => openSources(play),
+    canPrefetch: () => state.stremioLinked,
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
@@ -455,6 +456,11 @@ async function runCommand(command, context = null) {
         return loadLibrary({ keepId: command.id });
       case "refresh":
         return loadLibrary({ refresh: true });
+      case "dismiss":
+        await api.dismiss(command.id);
+        sound.play("select");
+        ui.toast.show(`Quité ${command.title} de Seguir viendo`);
+        return loadLibrary();
       case "stop":
         await api.stop();
         return pollStatus();

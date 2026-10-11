@@ -107,6 +107,17 @@ def input_conf() -> str | None:
         return None
 
 
+def subtitle_options(subtitles: str, audio: str) -> list[str]:
+    """Qué subtítulos elige mpv solo. "forced": solo los forzados en tu idioma (los carteles y
+    diálogos en otro idioma de una película doblada), nunca los completos."""
+    if subtitles == "forced":
+        return [f"--slang={','.join(build_lang_list(audio))}", "--subs-with-matching-audio=forced",
+                "--subs-fallback=no", "--subs-fallback-forced=always"]
+    if not subtitles:
+        return ["--sid=no"]
+    return [f"--slang={','.join(build_lang_list(subtitles))}"]
+
+
 def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: str = "en",
                   subtitles: str = "en", sub_files: list[str] | None = None, bindings: str | None = None,
                   sub_scale: float = 1.0) -> list[str]:
@@ -117,7 +128,7 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
         "--keep-open=yes", "--idle=yes", "--osc=no", "--input-default-bindings=yes",
         *([f"--input-conf={bindings}"] if bindings else []),
         f"--title={title}", f"--force-media-title={title}",
-        f"--alang={','.join(build_lang_list(audio))}", f"--slang={','.join(build_lang_list(subtitles))}",
+        f"--alang={','.join(build_lang_list(audio))}", *subtitle_options(subtitles, audio),
         "--sub-auto=fuzzy", "--cache=yes", "--demuxer-max-bytes=400MiB", "--hwdec=auto-safe",
         "--save-position-on-quit=no", "--msg-level=all=warn", "--background=#08080A", *OSD_STYLE,
     ]
@@ -680,6 +691,7 @@ class OrbitalPlayer:
             position=self.mpv.get("time-pos"), duration=self.mpv.get("duration"), paused=paused,
             audio=player_ui.current_label(tracks, "audio"), subtitles=player_ui.current_label(tracks, "sub"),
             source=meta.get("source_label", ""), series=meta.get("kind") == "series" and self.on_episode is not None,
+            ends=player_ui.ends_at(self.mpv.get("time-pos"), self.mpv.get("duration")),
             chapters=[float(c["time"]) for c in (segment.chapters if segment else [])])
         self._overlay(1, player_ui.hud_ass(hud))
         self._hud_visible = True

@@ -23,6 +23,9 @@ export function gameMenu(item, { running = null } = {}) {
   if (item.source === "search") return { title: item.title, options: [...options, { icon: "close", label: "Cancelar", command: { type: "close" } }] };
   // Películas y series: la ficha (reparto, episodios, elegir fuente) a un botón.
   if (isWatchable(item) && !isOpen) options.push({ icon: "media", label: "Ver la ficha", command: { type: "title", id: item.id } });
+  if (item.source === "stremio" && item.category === "continue") {
+    options.push({ icon: "hide", label: "Quitar de Seguir viendo", command: { type: "dismiss", id: item.id, title: item.title } });
+  }
   // Emuladores alternativos: solo en juegos.
   for (const runner of isOpen || !isGame(item) ? [] : item.runners || []) {
     if (runner.id === item.runner) continue;
@@ -146,7 +149,7 @@ export function powerConfirmMenu(action, running = null) {
 // Cada ajuste: sus valores en orden (A o ◀/▶ pasan al siguiente) y cómo se llaman.
 export const SETTING_VALUES = {
   audio: [["en", "Inglés"], ["es", "Español"]],
-  subtitles: [["en", "Inglés"], ["es", "Español"], ["", "Sin subtítulos"]],
+  subtitles: [["en", "Inglés"], ["es", "Español"], ["forced", "Solo forzados"], ["", "Sin subtítulos"]],
   quality: [["1080p", "1080p"], ["4K", "4K"], ["720p", "720p"]],
   sub_scale: [[1, "Normal"], [1.25, "Grande"], [1.5, "Muy grande"], [.85, "Pequeño"]],
   text_size: [["normal", "Normal"], ["large", "Grande"], ["xlarge", "Muy grande"]],
@@ -167,7 +170,7 @@ export function nextSetting(key, value) {
 
 const SETTING_PAGES = {
   playback: { title: "Reproducción", icon: "play", options: [
-    ["audio", "Idioma del audio", "Para elegir la fuente"], ["subtitles", "Subtítulos", null], ["quality", "Calidad", "Hasta dónde subir"],
+    ["audio", "Idioma del audio", "Para elegir la fuente"], ["subtitles", "Subtítulos", "Solo forzados: carteles y diálogos en otro idioma"], ["quality", "Calidad", "Hasta dónde subir"],
     ["sub_scale", "Tamaño de subtítulos", null]] },
   display: { title: "Pantalla", icon: "show", options: [
     ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],

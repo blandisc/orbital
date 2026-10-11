@@ -9,6 +9,7 @@ import threading
 import time
 import unicodedata
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.parse import quote
 
@@ -236,27 +237,60 @@ def settle(win, hwnd: int, sleep, tries: int = 8) -> None:
         last = now
 
 
+def time_left(seconds: float) -> str:
+    """"quedan 11 min" / "quedan 1 h 40 min" (vacío si falta menos de un minuto)."""
+    minutes = int(seconds // 60)
+    if minutes < 1:
+        return ""
+    hours, minutes = divmod(minutes, 60)
+    return f"quedan {hours} h {minutes} min" if hours and minutes else f"quedan {hours} h" if hours else f"quedan {minutes} min"
+
+
+CONTINUE_MIN_PROGRESS = .01  # menos del 1 % (lo abriste un momento): no ensucia Seguir viendo
+
+
 def stremio_item(w: stremio_api.Watchable) -> LibraryItem:
     season, episode = w.episode
     if episode is not None:
         detail = f"T{season} E{episode}" if season is not None else f"Episodio {episode}"
     else:
         detail = "Película" if w.type == "movie" else "Serie" if w.type == "series" else ""
+    left = (w.duration - w.time_offset) / 1000 if w.duration and w.time_offset > 0 else 0
+    # Terminaste un episodio y Stremio ya apunta al siguiente (sin avance): "Sigue: T8 E24".
+    next_up = w.type == "series" and w.time_offset <= 1 and not w.duration and episode is not None
+    subtitle = f"Sigue: {detail}" if next_up else " · ".join(filter(None, [detail, time_left(left)]))
+    barely = w.progress is not None and w.progress < CONTINUE_MIN_PROGRESS and not next_up
     return LibraryItem(
         id=f"stremio:{w.id}",
         title=w.name,
         # Solo "Seguir viendo" tiene fila; el resto de la biblioteca sirve para la voz.
-        category="continue" if w.in_continue else "stremio",
+        category="continue" if w.in_continue and not barely else "stremio",
         source="stremio",
-        subtitle=" · ".join(filter(None, ["Stremio", detail])),
+        subtitle=subtitle,
         image=w.poster,
         hero=w.background,
         uri=w.deep_link,
         progress=w.progress,
         last_watched=w.last_watched,
         # Para elegir la fuente en Orbital (Seguir viendo -> el mismo episodio).
-        extra={"kind": w.type, "meta_id": w.id, "video_id": w.video_id or (w.id if w.type == "movie" else None)},
+        extra={"kind": w.type, "meta_id": w.id, "video_id": w.video_id or (w.id if w.type == "movie" else None),
+               "eyebrow": " · ".join(filter(None, ["Película" if w.type == "movie" else "Serie", detail if episode else ""]))},
     )
+
+
+def enrich_watch_item(item: LibraryItem, info: dict) -> None:
+    """Seguir viendo con lo mismo que el catálogo: sinopsis, calificación, géneros, logo y el
+    nombre del episodio ("Serie · T8 E23 · Homer's Enemy")."""
+    item.extra.update({k: v for k, v in cinemeta.describe_meta(info).items() if v})
+    video_id = item.extra.get("video_id")
+    if item.extra.get("kind") == "series" and video_id:
+        for season in cinemeta.seasons(info):
+            for ep in season["episodes"]:
+                if ep["id"] == video_id:
+                    item.extra["episode_title"] = ep["title"]
+                    item.extra["eyebrow"] = f"Serie · T{season['season']} E{ep['episode']} · {ep['title']}"
+    if not item.hero and info.get("background"):
+        item.hero = info["background"]
 
 
 class Catalog:
@@ -393,6 +427,7 @@ class Catalog:
             raw = self.stremio_client.library(self.credentials.get(STREMIO_KEY))
             items = [stremio_item(w) for w in stremio_api.parse_library(raw)]
             self.stremio_error = None
+            self._enrich_continue(items)
         except stremio_api.StremioError as exc:
             log.warning("Stremio: %s", exc)
             self.stremio_error = str(exc)
@@ -409,6 +444,32 @@ class Catalog:
         if changed:
             self._notify({"type": "library-changed"})
         return True
+
+    def _enrich_continue(self, items: list[LibraryItem]) -> None:
+        """Datos de Cinemeta para Seguir viendo (en paralelo y con caché: la segunda vez es al instante)."""
+        wanted = [i for i in items if i.category == "continue" and i.extra.get("kind") in ("movie", "series")]
+
+        def meta(item: LibraryItem):
+            try:
+                return item, self.cinemeta.meta(item.extra["kind"], item.extra["meta_id"])
+            except cinemeta.CinemetaError:
+                return item, None
+
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            for item, info in pool.map(meta, wanted):
+                if info:
+                    enrich_watch_item(item, info)
+
+    def dismiss_continue(self, meta_id: str) -> None:
+        """"Quitar de Seguir viendo": en tu cuenta de Stremio (desaparece también en Stremio)."""
+        auth = self.credentials.get(STREMIO_KEY)
+        if not auth:
+            raise stremio_api.StremioError("Conecta tu cuenta de Stremio en Ajustes")
+        raw = self.stremio_client.library_item(auth, meta_id)
+        if raw:
+            self.stremio_client.save_library_item(auth, stremio_api.dismissed(raw, time.time()))
+        self.refresh_stremio()
+        self._notify({"type": "library-changed"})
 
     def refresh_cinemeta(self, background: bool = False) -> bool:
         """Películas y series populares (catálogo público de Stremio; no necesita cuenta)."""
@@ -764,6 +825,8 @@ class Catalog:
 
     def _fallback_subs(self, kind: str, video_id: str, subs: str | None = None):
         subs = self.subtitles_lang if subs is None else subs
+        if subs == "forced":
+            return None  # solo los forzados que trae el video: no se buscan subtítulos completos
         auth = self.credentials.get(STREMIO_KEY)
         return (lambda: self.streams.subtitles(auth, kind, video_id, subs)) if subs else None
 
@@ -948,6 +1011,7 @@ class Catalog:
         if kind == "series":
             details["seasons"] = cinemeta.seasons(info)
         resume = None
+        details["watched"] = []
         auth = self.credentials.get(STREMIO_KEY)
         if auth:
             try:
@@ -956,6 +1020,9 @@ class Catalog:
                 log.info("No pude leer dónde ibas en %s: %s", meta_id, exc)
                 raw = None
             state = (raw or {}).get("state") or {}
+            if kind == "series":  # los vistos de verdad (no "todo lo anterior al que ibas")
+                ids = [v["id"] for v in info.get("videos") or [] if isinstance(v, dict) and v.get("id")]
+                details["watched"] = sorted(stremio_api.parse_watched(state.get("watched"), ids))
             video_id = state.get("video_id") or None
             if video_id:
                 position = stremio_api.resume_seconds(raw, video_id)
@@ -987,7 +1054,8 @@ class Catalog:
             item = stremio_api.with_progress(
                 raw, meta_id=meta_id, kind=kind, name=info.get("name") or meta.get("title") or meta_id,
                 poster=info.get("poster"), video_id=video_id, position=position, duration=duration,
-                watched=watched, next_video=next_video, now=time.time())
+                watched=watched, next_video=next_video, now=time.time(),
+                video_ids=[v["id"] for v in info.get("videos") or [] if isinstance(v, dict) and v.get("id")])
             self.stremio_client.save_library_item(auth, item)
             log.info("Progreso guardado en Stremio: %s %d/%d s", video_id, position, duration)
         except stremio_api.StremioError as exc:

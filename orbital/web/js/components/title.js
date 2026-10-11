@@ -2,7 +2,7 @@ import { api } from "../core/api.js";
 import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { genres } from "../core/format.js";
 import { ICONS } from "../core/icons.js";
-import { episodeStates, titleActions, titleProgress } from "../core/watch.js";
+import { availability, episodeStates, titleActions, titleProgress } from "../core/watch.js";
 
 /**
  * La ficha de una película o serie, a pantalla completa y con el mando (como Netflix o Apple TV):
@@ -12,13 +12,14 @@ import { episodeStates, titleActions, titleProgress } from "../core/watch.js";
  *     con su barra, los que no se han estrenado atenuados con su fecha;
  *   · A ve (Orbital elige la mejor fuente y arranca) · Y elige la fuente · B vuelve.
  */
-export function createTitle({ onPlay, onSources, onMove, onClose }) {
+export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = () => false }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
   const facts = h("div", { class: "title__facts" });
   const description = h("p", { class: "title__description" });
   const people = h("div", { class: "title__people" });
+  const avail = h("div", { class: "title__avail", hidden: true });
   const progressFill = h("span", { class: "title__progress-fill" });
   const progressLabel = h("span", { class: "title__progress-label" });
   const progress = h("div", { class: "title__progress", hidden: true },
@@ -30,7 +31,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose }) {
   const browser = h("div", { class: "title__browser" }, tabs, list);
   const el = h("section", { class: "title", hidden: true, "aria-label": "Ficha" },
     backdrop,
-    h("div", { class: "title__info" }, logo, name, facts, description, people, progress, actions, status),
+    h("div", { class: "title__info" }, logo, name, facts, avail, description, people, progress, actions, status),
     browser);
 
   let item = null;
@@ -198,6 +199,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose }) {
       fillInfo({ ...data, title: data.title || item.title, background: data.background || item.hero || item.image,
         ...(item.extra?.logo ? { logo: item.extra.logo } : {}) });
       states = episodeStates(data, Date.now());
+      prefetch(mine);
       // Abre en el episodio en el que ibas (no en T1 E1).
       const resumeId = data.resume?.video_id;
       const at = Math.max(0, seasons().findIndex((s) => s.episodes.some((e) => e.id === resumeId)));
@@ -215,6 +217,24 @@ export function createTitle({ onPlay, onSources, onMove, onClose }) {
       details = { error: true, kind };
       render();
     }
+  }
+
+  /**
+   * Busca ya las fuentes de lo que se vería con "Ver" (quedan en caché del servidor: arranca casi al
+   * instante) y dice qué hay disponible: "4K · HDR · Inglés, Español · Al instante".
+   */
+  async function prefetch(mine) {
+    avail.hidden = true;
+    const t = canPrefetch() && target();
+    if (!t) return;
+    try {
+      const data = await api.stremioSources(t.kind, t.id, t.video_id);
+      if (mine !== token) return;
+      const chips = availability(data.sources);
+      mount(avail, chips.length ? chips.map((c) => h("span", { class: ["chip", c === "Al instante" && "chip--good"] }, c))
+        : h("span", { class: "title__avail-none" }, "Sin fuentes por ahora"));
+      avail.hidden = false;
+    } catch { /* sin conexión o sin cuenta: la ficha sigue igual */ }
   }
 
   /** `info`: { kind, meta_id, title, hero, image, extra } (lo que ya se sabe, para pintar al instante). */

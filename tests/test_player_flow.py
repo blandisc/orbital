@@ -183,3 +183,13 @@ def test_errors_in_plain_words():
     err = FileNotFoundError(2, "No such file", r"C:\Emus\Eden\eden.exe")
     assert humane_error(err) .startswith("No encuentro eden")
     assert "WinError" not in humane_error(OSError("[WinError 5] Acceso denegado"), "Hades")
+
+
+def test_hud_says_when_it_ends_and_forced_subtitles_option():
+    from orbital import player_ui
+    assert player_ui.ends_at(600, 6000, now=0) != "" and player_ui.ends_at(5990, 6000, now=0) == ""
+    hud = player_ui.hud_ass(player_ui.Hud("X", position=600, duration=6000, ends="23:40"))
+    assert "termina a las 23:40" in hud
+    cmd = player.build_command("mpv.exe", "u", "t", audio="es", subtitles="forced")
+    assert "--subs-with-matching-audio=forced" in cmd and "--slang=es,spa,Spanish,es-419" in cmd
+    assert "--sid=no" in player.build_command("mpv.exe", "u", "t", subtitles="")

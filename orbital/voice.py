@@ -278,7 +278,7 @@ class VoiceController:
             if not watching:
                 return VoiceResult("No tienes nada a medias en Stremio.", ok=False)
             item = watching[0]
-        detail = item.subtitle.removeprefix("Stremio").strip(" ·")
+        detail = item.subtitle.split(" · ")[0].removeprefix("Sigue: ")  # "T3 E9" (sin "quedan 40 min")
         result = self._watch_item(item)
         if result.ok and not result.events:
             result.speech = f"Continuando {item.title}{', ' + detail if detail else ''}."

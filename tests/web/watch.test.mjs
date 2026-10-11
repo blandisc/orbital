@@ -52,3 +52,14 @@ test("avance fuera de los botones: con barra y lo que queda", async () => {
   assert.equal(titleProgress({ kind: "movie", resume: { position: 600, duration: 6600 } }).label, "Quedan 1 h 40 min");
   assert.equal(titleProgress({ kind: "movie", resume: null }), null);
 });
+
+test("qué hay disponible, antes de elegir", async () => {
+  const { availability } = await import("../../orbital/web/js/core/watch.js");
+  const sources = [
+    { resolution: "1080p", hdr: [], audio: "5.1", languages: ["Inglés"], cached: true },
+    { resolution: "4K", hdr: ["DV"], audio: "Atmos", languages: ["Inglés", "Español"], cached: false },
+  ];
+  assert.deepEqual(availability(sources), ["4K", "Dolby Vision", "Dolby Atmos", "Inglés, Español", "Al instante"]);
+  assert.deepEqual(availability([]), []);
+  assert.deepEqual(availability([{ resolution: "720p", hdr: [], languages: [] }]), ["720p"]);
+});

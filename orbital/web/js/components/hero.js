@@ -32,7 +32,9 @@ export function createHero({ onAction }) {
       return;
     }
     const runner = item.runners?.length > 1 ? ` · ${runnerName(item)}` : "";
-    mount(eyebrow, svg(ICONS[systemIconName(item)]), h("span", {}, `${item.subtitle || item.category}${runner}`));
+    const extraInfo = item.extra || {};
+    // Seguir viendo: "Serie · T8 E23 · Homer's Enemy" (antes "Stremio · T8 E23").
+    mount(eyebrow, svg(ICONS[systemIconName(item)]), h("span", {}, `${extraInfo.eyebrow || item.subtitle || item.category}${runner}`));
 
     title.textContent = item.title;
     title.classList.toggle("hero__title--long", item.title.length > 28);
@@ -45,8 +47,12 @@ export function createHero({ onAction }) {
     description.hidden = !extra.description;
 
     const watchable = isWatchable(item);
+    const left = item.source === "stremio" ? (item.subtitle || "").split(" · ").find((p) => p.startsWith("quedan")) : null;
     const list = item.source === "cinemeta" ? [
       extra.year, extra.rating && `★ ${extra.rating}`, genres(extra.genres).join(", "), extra.runtime,
+    ].filter(Boolean).map((text) => h("span", {}, text)) : item.source === "stremio" ? [
+      left && left.replace(/^q/, "Q"), extra.rating && `★ ${extra.rating}`, genres(extra.genres).join(", "),
+      lastPlayed(item.last_played, Date.now(), "Visto"),
     ].filter(Boolean).map((text) => h("span", {}, text)) : [
       lastPlayed(item.last_played, Date.now(), watchable ? "Visto" : "Jugado") || (isGame(item) ? "Sin jugar todavía" : null),
       watchable ? percent(item.progress) && `${percent(item.progress)} visto` : duration(item.playtime) && `${duration(item.playtime)} en total`,

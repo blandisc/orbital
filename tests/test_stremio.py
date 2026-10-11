@@ -102,7 +102,7 @@ def test_continue_row(linked):
     assert row["title"] == "Seguir viendo"
     assert [i["title"] for i in row["items"]] == ["Game of Thrones", "Interstellar", "Anime temporal"]
     got = row["items"][0]
-    assert got["subtitle"] == "Stremio · T3 E9" and got["progress"] == pytest.approx(1 / 3)
+    assert got["subtitle"] == "T3 E9 · quedan 40 min" and got["progress"] == pytest.approx(1 / 3)
     assert got["hero"].startswith("https://images.metahub.space") and got["last_played"] > 0
     assert "The Office" not in [i["title"] for r in rows.values() for i in r["items"]]  # sin fila propia
     assert "recent" not in rows  # abrir algo de Stremio no ensucia "Jugado recientemente"
@@ -277,3 +277,40 @@ def test_player_saves_progress_to_stremio(linked):
     linked._player_finished({"kind": "movie", "meta_id": "tt0816692", "video_id": "tt0816692", "title": "x"},
                             position=30, duration=10140, watched=5)
     assert len(linked.stremio_client.saved) == 1  # abrir y cerrar sin ver nada no toca tu biblioteca
+
+
+def test_continue_cards_say_what_is_left_and_skip_what_you_barely_opened():
+    from orbital.catalog import enrich_watch_item, stremio_item, time_left
+    from orbital.library.stremio_api import Watchable, dismissed
+
+    def w(**kw):
+        base = dict(id="tt1", type="series", name="The Simpsons", poster=None, video_id="tt1:8:23", time_offset=732_000,
+                    duration=1_368_000, last_watched=0, in_continue=True)
+        return Watchable(**{**base, **kw})
+
+    item = stremio_item(w())
+    assert item.subtitle == "T8 E23 · quedan 10 min" and item.category == "continue"
+    assert stremio_item(w(time_offset=1, duration=0)).subtitle == "Sigue: T8 E23"  # el siguiente, listo
+    assert stremio_item(w(type="movie", video_id="tt1", time_offset=20_000, duration=6_000_000)).category == "stremio"  # 0,3 %
+    assert time_left(6000) == "quedan 1 h 40 min" and time_left(30) == ""
+    enrich_watch_item(item, {"description": "Springfield.", "imdbRating": "8.6",
+                             "videos": [{"id": "tt1:8:23", "season": 8, "episode": 23, "name": "Homer's Enemy"}]})
+    assert item.extra["description"] == "Springfield." and item.extra["eyebrow"] == "Serie · T8 E23 · Homer's Enemy"
+    gone = dismissed({"_id": "tt1", "state": {"timeOffset": 732_000, "video_id": "tt1:8:23"}}, 0)
+    assert gone["state"]["timeOffset"] == 0 and gone["state"]["video_id"] == "tt1:8:23"
+
+
+def test_watched_episodes_like_stremio():
+    from orbital.library.stremio_api import encode_watched, parse_watched, with_progress
+    ids = [f"tt1:1:{n}" for n in range(1, 11)]
+    stored = encode_watched({"tt1:1:2", "tt1:1:3", "tt1:1:7"}, ids)
+    assert stored.startswith("tt1:1:7:7:")  # ancla = el último visto, largo = su posición + 1
+    assert parse_watched(stored, ids) == {"tt1:1:2", "tt1:1:3", "tt1:1:7"}
+    # El catálogo creció por delante (se agregaron especiales): el ancla realinea.
+    assert parse_watched(stored, ["tt1:0:1", "tt1:0:2", *ids]) == {"tt1:1:2", "tt1:1:3", "tt1:1:7"}
+    assert parse_watched("basura", ids) == set() and parse_watched(None, ids) == set()
+    # Terminar un episodio en Orbital lo marca como visto (antes solo se guardaba la posición).
+    item = with_progress({"_id": "tt1", "state": {"watched": stored, "video_id": "tt1:1:8"}}, meta_id="tt1", kind="series",
+                         name="X", poster=None, video_id="tt1:1:8", position=1300, duration=1320, watched=1300,
+                         next_video="tt1:1:9", now=0, video_ids=ids)
+    assert parse_watched(item["state"]["watched"], ids) == {"tt1:1:2", "tt1:1:3", "tt1:1:7", "tt1:1:8"}

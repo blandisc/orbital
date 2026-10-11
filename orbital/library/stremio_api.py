@@ -9,10 +9,13 @@ la fila "Seguir viendo" (solo se registra el error).
 
 from __future__ import annotations
 
+import base64
+import binascii
 import json
 import logging
 import urllib.error
 import urllib.request
+import zlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
@@ -92,7 +95,8 @@ def resume_seconds(raw: dict | None, video_id: str) -> float:
 
 
 def with_progress(raw: dict | None, *, meta_id: str, kind: str, name: str, poster: str | None, video_id: str,
-                  position: float, duration: float, watched: float, next_video: str | None, now: float) -> dict:
+                  position: float, duration: float, watched: float, next_video: str | None, now: float,
+                  video_ids: list[str] | None = None) -> dict:
     """El libraryItem de Stremio con lo que viste en Orbital (para "Seguir viendo" en todos lados).
 
     Se parte del que ya existe y solo se toca `state`; si no existía, se crea como `temp` (así
@@ -118,10 +122,58 @@ def with_progress(raw: dict | None, *, meta_id: str, kind: str, name: str, poste
     if dur_ms and pos_ms >= dur_ms * WATCHED_AT:
         state["timesWatched"] = int(state["timesWatched"]) + 1
         state["flaggedWatched"] = 1
+        if video_ids and video_id in video_ids:  # ✓ en ese episodio, en Orbital y en Stremio
+            seen = parse_watched(state.get("watched"), video_ids) | {video_id}
+            state["watched"] = encode_watched(seen, video_ids) or state.get("watched")
         if next_video:  # sigue en "Seguir viendo", ya en el siguiente episodio
             state.update({"video_id": next_video, "timeOffset": 1, "timeWatched": 0, "duration": 0})
         else:
             state["timeOffset"] = 0  # terminada: sale de "Seguir viendo"
+    item["state"] = state
+    item["_mtime"] = _iso(now)
+    return item
+
+
+def parse_watched(watched: str | None, video_ids: list[str]) -> set[str]:
+    """Los episodios vistos según Stremio (state.watched).
+
+    Formato de stremio-core (WatchedBitField): "{video ancla}:{largo}:{bits}", con los bits en
+    base64 de zlib, uno por video en el orden del catálogo (el bit 0 es el menos significativo del
+    primer byte). El ancla es el último visto y alinea la lista si el catálogo cambió de largo."""
+    if not watched or not video_ids:
+        return set()
+    try:
+        anchor, length, data = watched.rsplit(":", 2)
+        bits = zlib.decompress(base64.b64decode(data))
+        length = int(length)
+    except (ValueError, zlib.error, binascii.Error):
+        return set()
+    offset = (length - 1) - video_ids.index(anchor) if anchor in video_ids else 0
+    seen = set()
+    for i, video in enumerate(video_ids):
+        bit = i + offset
+        if 0 <= bit < len(bits) * 8 and (bits[bit >> 3] >> (bit & 7)) & 1:
+            seen.add(video)
+    return seen
+
+
+def encode_watched(seen: set[str], video_ids: list[str]) -> str | None:
+    """Lo contrario de parse_watched (para marcar como visto lo que terminaste en Orbital)."""
+    marks = [i for i, video in enumerate(video_ids) if video in seen]
+    if not marks:
+        return None
+    length = marks[-1] + 1
+    bits = bytearray((length + 7) // 8)
+    for i in marks:
+        bits[i >> 3] |= 1 << (i & 7)
+    return f"{video_ids[marks[-1]]}:{length}:{base64.b64encode(zlib.compress(bytes(bits))).decode()}"
+
+
+def dismissed(raw: dict, now: float) -> dict:
+    """El libraryItem fuera de "Seguir viendo" (como el "Quitar" de Stremio: sin avance pendiente)."""
+    item = dict(raw)
+    state = dict(item.get("state") or {})
+    state["timeOffset"] = 0
     item["state"] = state
     item["_mtime"] = _iso(now)
     return item

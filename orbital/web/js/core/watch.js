@@ -67,9 +67,13 @@ export function episodeStates(details, now = Date.now()) {
   const order = seasons.filter((s) => s.season !== 0).flatMap((s) => s.episodes);
   const resume = details?.resume;
   const at = resume ? order.findIndex((e) => e.id === resume.video_id) : -1;
-  order.forEach((ep, i) => {
-    if (i < at) states.set(ep.id, { watched: true });
-  });
+  if (details?.watched?.length) { // los que Stremio sabe que viste
+    for (const id of details.watched) states.set(id, { watched: true });
+  } else { // sin ese dato: todo lo anterior al que ibas
+    order.forEach((ep, i) => {
+      if (i < at) states.set(ep.id, { watched: true });
+    });
+  }
   if (at >= 0 && resume.position > 0 && resume.duration > 0) {
     states.set(resume.video_id, { progress: Math.min(1, resume.position / resume.duration) });
   }
@@ -80,4 +84,21 @@ export function episodeStates(details, now = Date.now()) {
     }
   }
   return states;
+}
+
+const RES_ORDER = ["4K", "1080p", "720p", "480p"];
+
+/**
+ * Qué hay para ver, antes de elegir (como "4K · Dolby Vision · Atmos" de Apple TV): mejor
+ * resolución, HDR, sonido, idiomas y si alguna arranca al instante. Solo cuenta lo que se puede
+ * ver de verdad (las primeras fuentes, ya ordenadas por tus preferencias).
+ */
+export function availability(sources = [], { top = 12 } = {}) {
+  const list = sources.slice(0, top);
+  if (!list.length) return [];
+  const best = RES_ORDER.find((r) => list.some((s) => s.resolution === r));
+  const hdr = list.some((s) => s.hdr?.includes("DV")) ? "Dolby Vision" : list.some((s) => s.hdr?.length) ? "HDR" : null;
+  const atmos = list.some((s) => s.audio === "Atmos") ? "Dolby Atmos" : list.some((s) => s.audio === "5.1") ? "5.1" : null;
+  const languages = [...new Set(list.flatMap((s) => s.languages || []))].slice(0, 3);
+  return [best, hdr, atmos, languages.join(", "), list.some((s) => s.cached) ? "Al instante" : null].filter(Boolean);
 }

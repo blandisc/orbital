@@ -60,7 +60,7 @@ class PlayRequest(BaseModel):
 # Ajustes que se pueden cambiar desde la interfaz (y sus valores válidos).
 SETTINGS = {
     "audio": {"en", "es"},
-    "subtitles": {"en", "es", ""},
+    "subtitles": {"en", "es", "forced", ""},
     "quality": {"4K", "1080p", "720p"},
     "sub_scale": {.85, 1.0, 1.25, 1.5},
     "text_size": {"normal", "large", "xlarge"},
@@ -353,6 +353,18 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         except ValueError as exc:
             raise HTTPException(409, str(exc))
         catalog.play_stremio(kind, meta_id, body.video_id, title)
+        return {"ok": True}
+
+    @app.post("/api/stremio/dismiss")
+    def stremio_dismiss(body: dict) -> dict:
+        """Quitar de Seguir viendo."""
+        meta_id = str(body.get("id") or "").removeprefix("stremio:")
+        if not meta_id:
+            raise HTTPException(400, "Falta qué quitar")
+        try:
+            catalog.dismiss_continue(meta_id)
+        except stremio_api.StremioError as exc:
+            raise HTTPException(409, str(exc))
         return {"ok": True}
 
     @app.get("/api/settings")
