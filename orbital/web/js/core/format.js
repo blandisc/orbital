@@ -64,3 +64,10 @@ export function closedMessage({ id = "", title, seconds, finished = false }) {
   const played = duration(seconds);
   return played ? `De vuelta. Jugaste ${title} ${played}` : `De vuelta de ${title}`;
 }
+
+/** Se cerró solo a los pocos segundos: qué revisar según de dónde es el juego. */
+export function crashMessage({ title, kind = "emulator" }) {
+  if (kind === "steam") return `${title} se cerró enseguida. Si no llegó a abrir, revisa en Steam que esté instalado y actualizado.`;
+  if (kind === "geforcenow") return `${title} se cerró enseguida. Revisa tu conexión y tu sesión de GeForce NOW.`;
+  return `${title} se cerró enseguida. Revisa que el juego y el emulador estén completos (ROM, firmware, claves).`;
+}

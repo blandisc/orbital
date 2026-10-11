@@ -20,6 +20,8 @@ class FakeLauncher:
         self.current = None
         self.on_exit = None
         self.steam_appids: list[int | None] = []
+        self.last_stopped_by_user = False
+        self.last_was_already_open = False
 
     def open_uri(self, uri):
         self.opened.append(uri)

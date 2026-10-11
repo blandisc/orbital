@@ -163,8 +163,13 @@ class Sessions:
             system.bring_to_front()
         # Se cerró solo a los pocos segundos: casi siempre es que no pudo abrir (falta la ROM, el
         # firmware, una clave…). No es "de vuelta de": se avisa como problema.
-        crashed = seconds < QUICK_EXIT and not self.launcher.last_stopped_by_user and not item_id.startswith(("media:", "app:"))
-        event = {"type": "closed", "id": item_id, "title": title, "seconds": int(seconds), "crashed": crashed}
+        crashed = (seconds < QUICK_EXIT and not self.launcher.last_stopped_by_user
+                   and not getattr(self.launcher, "last_was_already_open", False)
+                   and not item_id.startswith(("media:", "app:")))
+        item = self.store.get(item_id)
+        # De dónde es, para decir qué revisar si no abrió: Steam, GeForce NOW o un emulador.
+        kind = "steam" if item_id.startswith("steam:") else item.source if item and item.source == "geforcenow" else "emulator"
+        event = {"type": "closed", "id": item_id, "title": title, "seconds": int(seconds), "crashed": crashed, "kind": kind}
         end = self.last_end() if item_id == "media:player" else None
         if end:  # el reproductor anotó cómo terminó: "Terminaste Interstellar"
             event.update(title=end["title"], finished=end["finished"])

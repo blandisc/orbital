@@ -31,6 +31,8 @@ class Running:
     # lanzador abre el juego y se cierra): se vigilan estos pids en su lugar.
     followers: set[int] = field(default_factory=set)
     stopped: bool = False  # lo cerró Orbital (no se cerró solo ni tronó)
+    # Ya estaba abierto cuando lo pediste (Steam solo lo trajo al frente): cerrarlo pronto no es una falla.
+    already_open: bool = False
 
 
 def redact(arg: str) -> str:
@@ -69,6 +71,7 @@ class Launcher:
         self.on_exit = on_exit
         self.on_timeout = None  # (id, título): lo lanzado nunca arrancó (Steam no lo abrió)
         self.last_stopped_by_user = False
+        self.last_was_already_open = False
 
     def open_uri(self, uri: str) -> None:
         log.info("Abriendo URI %s", redact(uri))
@@ -97,7 +100,8 @@ class Launcher:
 
     def track(self, item_id: str, title: str, process: subprocess.Popen | None,
               steam_appid: int | None = None, runner: str | None = None) -> None:
-        running = Running(item_id, title, process, runner=runner)
+        running = Running(item_id, title, process, runner=runner,
+                          already_open=bool(steam_appid) and steam_running_appid() == steam_appid)
         with self._lock:
             self.current = running
         if process is not None:
@@ -209,6 +213,7 @@ class Launcher:
         elapsed = time.time() - running.started
         log.info("%s terminó tras %.0f s", running.title, elapsed)
         self.last_stopped_by_user = running.stopped
+        self.last_was_already_open = running.already_open
         if self.on_exit:
             try:
                 self.on_exit(running.item_id, running.title, elapsed)

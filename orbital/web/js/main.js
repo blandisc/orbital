@@ -5,7 +5,7 @@
 import { api } from "./core/api.js";
 import { h, svg } from "./core/dom.js";
 import { ICONS } from "./core/icons.js";
-import { closedMessage } from "./core/format.js";
+import { closedMessage, crashMessage } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
@@ -788,7 +788,7 @@ function handleEvent(event) {
     if (event.crashed) {
       // Se cerró solo a los pocos segundos: no es "de vuelta", es que no pudo abrir.
       sound.play("error");
-      ui.toast.show(`${event.title} se cerró enseguida. Revisa que el juego y el emulador estén completos (ROM, firmware, claves).`, { error: true });
+      ui.toast.show(crashMessage(event), { error: true });
     } else {
       ui.toast.show(closedMessage(event));
     }

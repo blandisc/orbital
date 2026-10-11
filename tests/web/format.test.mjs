@@ -62,3 +62,11 @@ test("al volver: un video no se juega", async () => {
   assert.equal(closedMessage({ id: "app:youtube", title: "YouTube", seconds: 900 }), "De vuelta de YouTube");
   assert.equal(closedMessage({ id: "steam:1", title: "Hades", seconds: 1800 }), "De vuelta. Jugaste Hades 30 min");
 });
+
+test("si un juego se cierra enseguida, el aviso dice qué revisar según de dónde es", async () => {
+  const { crashMessage } = await import("../../orbital/web/js/core/format.js");
+  assert.match(crashMessage({ title: "Be My Horde", kind: "steam" }), /Steam/);
+  assert.doesNotMatch(crashMessage({ title: "Be My Horde", kind: "steam" }), /ROM/);
+  assert.match(crashMessage({ title: "Zelda", kind: "emulator" }), /ROM, firmware/);
+  assert.match(crashMessage({ title: "Fortnite", kind: "geforcenow" }), /GeForce NOW/);
+});

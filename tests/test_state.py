@@ -49,7 +49,21 @@ def test_session_end_records_time_and_notifies(library):
     library.launcher.finish(1800)
     assert library.describe(library.get("steam:367520"))["playtime"] == 1800
     assert events == [{"type": "closed", "id": "steam:367520", "title": "Hollow Knight", "seconds": 1800,
-                      "crashed": False}]
+                      "crashed": False, "kind": "steam"}]
+
+
+def test_quick_close_is_a_failure_unless_the_game_was_already_open(library):
+    """Un juego de Steam que ya estaba abierto (Steam solo lo trajo al frente) y se cierra pronto no
+    es «no pudo abrir»; uno recién abierto que se cierra solo a los segundos, sí (y dice que es de Steam)."""
+    events = []
+    library.listeners.append(events.append)
+    library.sessions.launch("steam:367520")
+    library.launcher.finish(5)
+    assert events[-1]["crashed"] and events[-1]["kind"] == "steam"
+    library.launcher.last_was_already_open = True
+    library.sessions.launch("steam:367520")
+    library.launcher.finish(5)
+    assert not events[-1]["crashed"]
 
 
 def test_launcher_watches_real_process():
