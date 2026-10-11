@@ -32,7 +32,8 @@
   position: absolute; inset: auto 0 0 0; z-index: 1; display: flex; flex-direction: column; gap: var(--space-1);
   padding: var(--space-4) var(--space-5); text-shadow: var(--shadow-text);
 }
-.tile--wide .tile__eyebrow { color: var(--color-text); opacity: .86; }
+/* Degradado más profundo abajo: el texto no compite con el arte (ni con su logo). */
+.tile--wide__shade { background: linear-gradient(0deg, color-mix(in oklab, var(--palette-ink-1000) 92%, transparent) 0%, color-mix(in oklab, var(--palette-ink-1000) 35%, transparent) 42%, transparent 62%); }
 .tile--wide__title {
   font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold); line-height: 1.15;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -66,6 +67,9 @@
   transition: transform var(--duration-base) var(--ease-spring);
 }
 .tile--console.tile--focused .tile--console__photo { transform: scale(1.08) translateY(-.1rem); }
+/* Steam y GeForce NOW: su logotipo en blanco, del tamaño de una foto de consola. */
+.tile--console__logo { height: 3.4rem; width: auto; opacity: .92; filter: drop-shadow(0 .5rem 1rem rgba(0, 0, 0, .5)); transition: transform var(--duration-base) var(--ease-spring); }
+.tile--console.tile--focused .tile--console__logo { transform: scale(1.08); opacity: 1; }
 .tile--console__cover { height: 4.6rem; width: auto; border-radius: var(--radius-sm); box-shadow: var(--shadow-card); }
 .tile--console__name { position: relative; font-family: var(--font-sans); font-size: var(--text-lg); line-height: 1.15; }
 .tile--console__count { position: relative; display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }

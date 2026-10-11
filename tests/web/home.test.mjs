@@ -30,10 +30,11 @@ test("consolas: la última usada primero, con su foto, cuántos juegos y los nue
   assert.deepEqual(consoles.map((c) => c.name), ["Steam", "Switch", "GameCube"]);
   const sw = consoles[1];
   assert.equal(sw.photo, "img/consoles/switch.png");
+  assert.equal(consoles[0].photo, "img/consoles/steam.svg"); // Steam: su logotipo
+  assert.equal(consoles[0].logo, true);
   assert.equal(sw.count, 2);
   assert.equal(sw.fresh, 1);
   assert.equal(sw.last.id, "mario");
-  assert.equal(consoles[0].photo, null); // Steam no tiene foto: usa la portada del último
   assert.equal(consoles[0].cover, "/a.jpg");
   assert.equal(games, 4);
 });

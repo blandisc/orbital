@@ -62,17 +62,28 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
         Button({ label: "Opciones", glyph: glyphs.options, onPress: press("options") }))));
 }
 
-/** Tarjeta ancha: el arte horizontal a sangre y encima qué es, el título y lo que queda. */
+/** Lo corto de una tarjeta ancha: «hace 11 h» (juegos) o «T8 E23 · quedan 10 min» (videos). */
+export function shortDetail(item, now = Date.now()) {
+  if (isWatchable(item)) return item.subtitle || null;
+  const ago = shortAgo(item.last_played, now);
+  return ago ? (ago === "ahora" || ago === "ayer" ? ago : `hace ${ago}`) : null;
+}
+
+/**
+ * Tarjeta ancha: el arte a sangre y solo dos renglones encima (el arte ya dice mucho; a veces
+ * trae su propio logo): el título, y «● Switch · hace 11 h» o el avance del video.
+ */
 export function WideTile(item, { focusId, onPress }) {
+  const watch = isWatchable(item);
   return tile(focusId, ["tile--wide", item.extra?.placeholder_hero && "tile--placeholder", item.extra?.hero_lowres && "tile--lowres"], onPress, item.title,
     art(item.hero || item.image),
-    h("span", { class: "tile__shade" }),
+    h("span", { class: "tile__shade tile--wide__shade" }),
     h("div", { class: "tile--wide__body" },
-      eyebrow(item),
       h("strong", { class: "tile--wide__title" }, item.title),
       h("span", { class: "tile--wide__detail" },
-        Progress(item.progress, { className: "tile--wide__progress" }),
-        detailOf(item))));
+        watch ? Progress(item.progress, { className: "tile--wide__progress" })
+          : h("span", { class: "tile__dot", style: { "--dot": systemColor(systemOf(item)) } }),
+        [watch ? null : kicker(item), shortDetail(item)].filter(Boolean).join(" · "))));
 }
 
 /** Consola: su foto (o la portada de lo último, si no hay foto), cuántos juegos y lo último que jugaste. */
@@ -87,7 +98,7 @@ export function ConsoleTile(system, { focusId, index = 0, glyphs = {}, onPress }
   },
   h("span", { class: "tile--console__glow" }),
   h("span", { class: "tile--console__media" },
-    system.photo ? art(system.photo, "tile--console__photo") : art(system.cover, "tile--console__cover")),
+    system.photo ? art(system.photo, system.logo ? "tile--console__logo" : "tile--console__photo") : art(system.cover, "tile--console__cover")),
   h("strong", { class: "tile--console__name" }, system.name),
   h("span", { class: "tile--console__count" }, `${system.count} juego${system.count === 1 ? "" : "s"}`,
     system.fresh > 0 && Badge(`+${system.fresh} nuevo${system.fresh === 1 ? "" : "s"}`)),

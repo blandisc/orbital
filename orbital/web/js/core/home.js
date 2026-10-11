@@ -11,14 +11,17 @@ export const CARDS = 4;
 
 /** Nombre corto y foto de cada sistema (ES-DE). Lo que no esté aquí usa el título de su fila. */
 export const SYSTEMS = {
-  switch: { name: "Switch", photo: "switch" },
-  gc: { name: "GameCube", photo: "gc" },
-  gamecube: { name: "GameCube", photo: "gc" },
-  wii: { name: "Wii", photo: "wii" },
-  gba: { name: "GBA", photo: "gba" },
-  psp: { name: "PSP", photo: "psp" },
-  xbox: { name: "Xbox", photo: "xbox" },
-  xbox360: { name: "Xbox 360", photo: "xbox360" },
+  switch: { name: "Switch", photo: "switch.png" },
+  gc: { name: "GameCube", photo: "gc.png" },
+  gamecube: { name: "GameCube", photo: "gc.png" },
+  wii: { name: "Wii", photo: "wii.png" },
+  gba: { name: "GBA", photo: "gba.png" },
+  psp: { name: "PSP", photo: "psp.png" },
+  xbox: { name: "Xbox", photo: "xbox.png" },
+  xbox360: { name: "Xbox 360", photo: "xbox360.png" },
+  // Plataformas de PC: no hay una consola que fotografiar, va su logotipo.
+  steam: { name: "Steam", photo: "steam.svg", logo: true },
+  geforcenow: { name: "GeForce NOW", photo: "geforcenow.svg", logo: true },
 };
 
 /** «Buenos días / Buenas tardes / Buenas noches». */
@@ -56,7 +59,8 @@ function consoles(rows) {
       system,
       name: SYSTEMS[system]?.name ?? row.title,
       count: row.items.length,
-      photo: SYSTEMS[system]?.photo ? `img/consoles/${SYSTEMS[system].photo}.png` : null,
+      photo: SYSTEMS[system]?.photo ? `img/consoles/${SYSTEMS[system].photo}` : null,
+      logo: !!SYSTEMS[system]?.logo,
       cover: last?.image ?? row.items[0]?.image ?? null, // sin foto de consola (Steam): la portada del último
       last,
       fresh: row.items.filter((i) => i.new).length,
