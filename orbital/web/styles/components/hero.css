@@ -54,7 +54,13 @@
 .hero__fact--warning { color: var(--color-warning); }
 .hero__fact--favorite { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--color-favorite); }
 .hero__fact--favorite .icon { width: 1rem; height: 1rem; }
-.hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); }
+.hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+/* Botones y, a su derecha, la frase para Alexa (puede ser más ancha que el texto de arriba). */
+.hero__row {
+  display: flex; align-items: center; gap: var(--space-5); margin-top: var(--space-5);
+  width: min(64rem, calc(100vw - 2 * var(--page-gutter)));
+}
+.hero__row .hero__voice { flex: 1 1 auto; min-width: 0; margin-top: 0; }
 
 /* Frase para Alexa: discreta, debajo de los botones; enseña la voz sin estorbar. */
 .hero__voice {
@@ -65,13 +71,16 @@
 .hero__voice svg { flex: none; width: 1rem; height: 1rem; color: var(--color-accent); }
 .hero__voice span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Pantallas bajas (ventana, la Legion Go con escala alta): el título en una línea y sin lo accesorio. */
-@media (max-height: 760px) {
+/* Pantallas muy bajas (ventanas chicas): el título en una línea y sin lo accesorio.
+   La letra base sigue a la pantalla (min(1.25vw, 2vh)): cualquier pantalla mide al menos 50rem de alto
+   y no hace falta compactar. Solo por debajo de 600 px, donde la letra ya no puede bajar de 12 px
+   (antes 760 px: la TV al 300 % —720 px— se compactaba y quedaba un hueco abajo). */
+@media (max-height: 600px) {
   .hero__title { -webkit-line-clamp: 1; font-size: var(--text-3xl); }
   .hero__title--long { font-size: var(--text-2xl); }
   .hero__voice { display: none; }
   .hero__description { -webkit-line-clamp: 1; }
-  .hero__actions { margin-top: var(--space-3); }
+  .hero__row { margin-top: var(--space-3); }
 }
 @media (max-height: 560px) {
   .hero__eyebrow, .hero__description { display: none; }

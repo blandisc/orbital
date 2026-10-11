@@ -133,14 +133,14 @@ export function quickMenu(q, { running = null, wifi = null } = {}) {
   const options = [];
   if (q.volume) {
     const { level, muted } = q.volume;
-    options.push({ icon: "sound", label: "Volumen", value: muted ? "Silencio" : `${level} %`, hint: "◀ ▶ ajustar · A silenciar",
+    options.push({ icon: "sound", label: "Volumen", value: muted ? "Silencio" : `${level} %`, hint: muted ? "A quita el silencio" : "A silencia",
       command: { type: "quick-set", changes: { muted: !muted } },
       adjust: { left: { type: "quick-set", changes: { volume: Math.max(0, level - STEP), muted: false } },
         right: { type: "quick-set", changes: { volume: Math.min(100, level + STEP), muted: false } } } });
   }
   if (q.brightness != null) {
     const b = q.brightness;
-    options.push({ icon: "bolt", label: "Brillo", value: `${b} %`, hint: "◀ ▶ ajustar",
+    options.push({ icon: "bolt", label: "Brillo", value: `${b} %`,
       command: { type: "quick-set", changes: { brightness: Math.min(100, b + STEP) } },
       adjust: { left: { type: "quick-set", changes: { brightness: Math.max(5, b - STEP) } },
         right: { type: "quick-set", changes: { brightness: Math.min(100, b + STEP) } } } });
@@ -148,7 +148,7 @@ export function quickMenu(q, { running = null, wifi = null } = {}) {
   if (q.power_mode) {
     const i = Math.max(0, POWER_MODES.findIndex(([id]) => id === q.power_mode));
     const step = (d) => ({ type: "quick-set", changes: { power_mode: POWER_MODES[(i + d + POWER_MODES.length) % POWER_MODES.length][0] } });
-    options.push({ icon: "power", label: "Energía", value: POWER_MODES[i][1], hint: "◀ ▶ cambiar",
+    options.push({ icon: "power", label: "Energía", value: POWER_MODES[i][1],
       command: step(1), adjust: { left: step(-1), right: step(1) } });
   }
   if (q.battery) {
