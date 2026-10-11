@@ -58,6 +58,12 @@
   padding: var(--space-3);
 }
 .card--has-art .card__meta { display: none; }
+/* Respaldo genérico: el nombre sí va encima (si no, todas se verían iguales). */
+.card--named .card__meta { display: flex; z-index: 1; }
+.card--named::before {
+  content: ""; position: absolute; inset: 40% 0 0 0; border-radius: 0 0 var(--card-radius) var(--card-radius); pointer-events: none;
+  background: var(--gradient-art-base);
+}
 .card__title {
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   font-size: var(--text-sm); font-weight: var(--weight-medium); line-height: 1.2; overflow-wrap: anywhere;

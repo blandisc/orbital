@@ -46,7 +46,7 @@ export function kicker(item) {
 export const systemColor = (system) => `var(--system-${system && /^[\w-]+$/.test(system) ? system : "default"}, var(--system-default))`;
 
 /** Filas de consola: una por emulador, más Steam y GeForce NOW si hay juegos. */
-function consoles(rows) {
+export function consoleList(rows) {
   const list = [];
   for (const row of rows) {
     const isEmu = row.id.startsWith("emulators:");
@@ -77,7 +77,7 @@ export function buildHome(rows, { runningId = null } = {}) {
   const pool = jump.length ? jump : favorites;
   const running = runningId ? pool.find((i) => i.id === runningId) : null;
   const ordered = running ? [running, ...pool.filter((i) => i !== running)] : pool;
-  const list = consoles(rows);
+  const list = consoleList(rows);
   return {
     pending: jump.length,
     pendingItems: jump,

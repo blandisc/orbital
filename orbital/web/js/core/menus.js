@@ -244,6 +244,7 @@ export const SETTING_VALUES = {
   sounds: [[true, "Sí"], [false, "No"]],
   haptics: [[true, "Sí"], [false, "No"]],
   voice_tips: [[true, "Sí"], [false, "No"]],
+  games_view: [["console", "Directo a tu consola"], ["gallery", "Galería de consolas"]],
   game_idle_minutes: [[60, "1 hora"], [120, "2 horas"], [30, "30 min"], [0, "Nunca"]],
   video_idle_minutes: [[15, "15 min"], [30, "30 min"], [60, "1 hora"], [0, "Nunca"]],
   close_previous: [[true, "Sí"], [false, "No"]],
@@ -265,7 +266,8 @@ const SETTING_PAGES = {
   display: { title: "Pantalla", icon: "show", options: [
     ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],
     ["reduce_motion", "Reducir movimiento", null],
-    ["voice_tips", "Frases para Alexa", "Debajo de los botones: qué decirle para lo que tienes enfocado"]] },
+    ["voice_tips", "Frases para Alexa", "Debajo de los botones: qué decirle para lo que tienes enfocado"],
+    ["games_view", "Juegos", "Directo a tu última consola (LT/RT cambian) o primero todas en órbita"]] },
   sound: { title: "Sonido y vibración", icon: "sound", options: [["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null]] },
   sessions: { title: "Juegos y videos abiertos", icon: "gamepad", options: [
     ["game_idle_minutes", "Cerrar un juego en pausa tras", "Lo congelado con Home; lo no guardado se pierde"],

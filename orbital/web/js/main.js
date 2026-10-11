@@ -9,12 +9,13 @@ import { closedMessage } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
-import { footerHints, homeHints, statusChips } from "./core/hints.js";
+import { footerHints, gamesHints, homeHints, statusChips } from "./core/hints.js";
 import { capturesMenu, controlsMenu, controlsPage, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, healthMenu, mainMenu, pendingMenu, powerConfirmMenu, powerMenu, quickMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, updateMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
 import { createHome } from "./components/home.js";
+import { createGames } from "./components/games.js";
 import { createHints } from "./components/hints.js";
 import { createLaunchOverlay } from "./components/launch-overlay.js";
 import { createSearch } from "./components/search.js";
@@ -34,7 +35,11 @@ const state = createState();
 
 // En Inicio lo enfocado es una pieza del Inicio (puede ser una consola: entonces no hay juego).
 const inHome = () => state.section === "home" && state.libraryLoaded;
-const current = () => (inHome() ? ui.home.current?.item ?? null : itemAt(state.rows, state.focus.r, state.focus.c));
+// Juegos tiene su propia vista (consolas + portadas); lo enfocado puede ser un filtro o una consola.
+const inGames = () => state.section === "games" && state.libraryLoaded;
+const current = () => (inHome() ? ui.home.current?.item ?? null
+  : inGames() ? ui.games.current?.item ?? null
+    : itemAt(state.rows, state.focus.r, state.focus.c));
 const glyphs = () => GLYPHS[state.modality];
 
 // ---------------------------------------------------------------- componentes
@@ -46,6 +51,10 @@ const ui = {
     onFocus: (target) => homeFocused(target),
     onPick: (target, id) => (ui.home.focusId === id ? homeActivate(target) : ui.home.focus(id)),
     onAction: (action, target) => homeActivate(target, action),
+  }),
+  games: createGames({
+    onFocus: (target) => gamesFocused(target),
+    onPick: (target, id) => (ui.games.focusId === id ? gamesActivate(target) : ui.games.focus(id)),
   }),
   shelf: createShelf({ onPick: (r, c) => pick(r, c), onSwipe: (swipe) => onSwipe(swipe) }),
   hints: createHints(),
@@ -103,7 +112,7 @@ const touchBack = h("button", { class: "touch-back", type: "button", "aria-label
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.home.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -122,6 +131,14 @@ function renderHints() {
   const overlay = topOverlay();
   document.body.dataset.overlay = ui.sheet.isOpen || overlay ? "true" : "false";
   if (!ui.sheet.isOpen && overlay) return ui.hints.render(overlay.hints(g));
+  if (inGames() && !ui.sheet.isOpen) {
+    const target = ui.games.current;
+    const item = target?.item;
+    return ui.hints.render(gamesHints(g, target, {
+      mode: ui.games.mode, primary: item && primaryLabel(item, state.running?.id), alt: item && altLabel(item),
+      gallery: state.settings.games_view === "gallery",
+    }));
+  }
   if (inHome() && !ui.sheet.isOpen) {
     const target = ui.home.current;
     const item = target?.item;
@@ -170,6 +187,7 @@ function setModality(modality) {
   document.body.dataset.input = modality;
   renderSections();
   if (inHome()) renderHome(); // los botones del destacado y de las consolas cambian de glifo
+  if (inGames()) renderGames();
   ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   renderHints();
 }
@@ -185,6 +203,7 @@ function applySettings(settings) {
   haptics.enabled = settings.haptics !== false;
   ui.hero.tips = settings.voice_tips !== false;
   if (state.libraryLoaded) ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
+  if (inGames()) renderGames(); // Ajustes → Juegos: directo a tu consola o la galería
 }
 
 // ---------------------------------------------------------------- Inicio
@@ -195,14 +214,80 @@ function altLabel(item) {
   return alt ? `Con ${alt.name}` : null;
 }
 
-/** Inicio o filas: el Inicio tiene su propia vista; las demás secciones, héroe + filas. */
+/** Inicio y Juegos tienen su propia vista; las demás secciones, héroe + filas. */
 function renderView() {
-  document.body.dataset.view = inHome() ? "home" : "rows";
+  document.body.dataset.view = inHome() ? "home" : inGames() ? "games" : "rows";
   if (inHome()) {
     ui.home.show();
     renderHome();
   } else {
     ui.home.hide();
+  }
+  if (inGames()) {
+    ui.games.show();
+    renderGames();
+  } else {
+    ui.games.hide();
+  }
+}
+
+// ---------------------------------------------------------------- Juegos
+let wantedConsole = null; // desde el Inicio (A sobre una consola): entrar justo a esa
+
+function renderGames() {
+  ui.games.render(state.allRows, { view: state.settings.games_view || "console", glyphs: glyphs(), consoleId: wantedConsole });
+  wantedConsole = null;
+  document.body.dataset.games = ui.games.mode;
+}
+
+/** El héroe muestra el juego enfocado (como en las filas); en la galería, el fondo de la consola. */
+function gamesFocused(target) {
+  if (!inGames()) return;
+  document.body.dataset.games = ui.games.mode;
+  const item = target?.item ?? target?.console?.last ?? null;
+  if (target?.kind === "game") ui.hero.update(item, glyphs(), { runningId: state.running?.id });
+  ui.backdrop.show(item?.hero || item?.image || null, { poster: !!item && !item.hero });
+  renderHints();
+}
+
+function gamesActivate(target, action = "select") {
+  if (!target) return;
+  if (target.kind === "filter") { sound.play("select"); return ui.games.setFilter(target.filter); }
+  if (target.kind === "console") { sound.play("open"); ui.games.enter(); document.body.dataset.games = ui.games.mode; return renderHints(); }
+  const item = target.item;
+  if (action === "options") return openMenu(gameMenu(item, { running: state.running }));
+  if (action === "alt") {
+    const alt = alternativeRunner(item);
+    if (alt) return launch(item, alt.id);
+    sound.play("error");
+    return rumble("edge");
+  }
+  return launch(item);
+}
+
+/** Botones en Juegos: moverse (spatial), LT/RT cambian de consola, A/X/Y sobre lo enfocado. */
+function handleGames(action, { repeat = false } = {}) {
+  const moved = ui.games.handle(action === "home" ? "back" : action);
+  if (moved === true) {
+    sound.play(action === "pageleft" || action === "pageright" ? "open" : "move");
+    document.body.dataset.games = ui.games.mode;
+    return renderHints();
+  }
+  if (moved === "edge") { if (!repeat) rumble("edge"); return; }
+  if (moved === "exit") return goToSection("home", -1);
+  const target = ui.games.current;
+  switch (action) {
+    case "select": return gamesActivate(target, "select");
+    case "alt": return gamesActivate(target, "alt");
+    case "options":
+      if (target?.kind === "game") return gamesActivate(target, "options");
+      sound.play("error");
+      return rumble("edge");
+    case "prevsection": return stepSection(-1);
+    case "nextsection": return stepSection(1);
+    case "search": return openSearch();
+    case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit }));
+    case "refresh": return loadLibrary({ refresh: true });
   }
 }
 
@@ -226,7 +311,8 @@ function homeActivate(target, action = "select") {
   if (target.kind === "console") {
     if (action === "alt" && target.console.last) return launch(target.console.last);
     if (action !== "select") { sound.play("error"); return rumble("edge"); }
-    state.sectionFocus.games = { rowId: target.console.id, itemId: target.console.last?.id };
+    wantedConsole = target.console.id;
+    ui.games.openConsole(target.console.id);
     return goToSection("games", 1);
   }
   const item = target.item;
@@ -260,7 +346,7 @@ function goToSection(id, direction = 0) {
   const saved = state.sectionFocus[id] || {};
   const { r, c } = restoreFocus(state.rows, { rowId: saved.rowId, itemId: saved.itemId, r: 0, c: 0 });
   state.focus = { r: -1, c: -1 }; // fuerza a redibujar héroe y fondo
-  if (inHome()) state.focus = { r, c };
+  if (inHome() || inGames()) state.focus = { r, c };
   else setFocus(r, c, { silent: true });
   ui.shelf.slide(direction || Math.sign(to - from));
   renderHints();
@@ -313,7 +399,7 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     const { r, c } = restoreFocus(state.rows, { rowId, itemId, ...state.focus });
     state.focus = { r, c };
     renderView();
-    if (inHome()) renderHints();
+    if (inHome() || inGames()) renderHints();
     else setFocus(r, c, { silent: true });
     boot.finish();
     if (refresh) {
@@ -337,6 +423,7 @@ function applyStatus(running) {
   ui.status.setRunning(running);
   if (changed) { // "Jugar" <-> "Volver al juego" y el pie, sin esperar a moverse
     if (!inHome()) ui.hero.update(current(), glyphs(), { immediate: true, runningId: running?.id });
+    if (inGames()) renderHints();
     renderHints();
     if (state.libraryLoaded) loadLibrary(); // la tarjeta "Abierto" de Continuar (y el destacado del Inicio)
   }
@@ -585,6 +672,7 @@ function handleAction(action, { repeat = false } = {}) {
   // Vistas a pantalla completa (OVERLAYS): la de más arriba se queda con el botón.
   if (OVERLAYS.some((view) => view.handle(action))) return renderHints();
   if (inHome()) return handleHome(action, { repeat });
+  if (inGames()) return handleGames(action, { repeat });
   const { r, c } = state.focus;
   const item = current();
   switch (action) {

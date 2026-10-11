@@ -1,0 +1,136 @@
+/* Juegos (js/components/games.js): riel de consolas, filtros y portadas; o la galería en órbita.
+   El juego enfocado lo muestra el héroe de siempre (arriba); el fondo, el backdrop de siempre. */
+body[data-view="games"] { --games-rail: 5.4rem; }
+body[data-view="games"] .shelf { display: none; }
+body[data-view="games"] .hero { padding-left: calc(var(--page-gutter) + var(--games-rail) + var(--space-6)); }
+body[data-view="games"][data-games="gallery"] .hero { display: none; }
+
+.games {
+  grid-row: 3; min-height: 0; position: relative;
+  /* Portadas un poco más chicas que en las filas: caben dos filas y el héroe respira. */
+  --card-height: 9.6rem; --card-focus-scale: 1.08;
+}
+body[data-games="gallery"] .games { grid-row: 2 / 4; }
+
+/* --- Riel de consolas (a la izquierda, a toda la altura) ------------------------------------- */
+.games__rail {
+  position: fixed; z-index: 2; left: var(--page-gutter); top: 7.2rem; bottom: 4.6rem; width: var(--games-rail);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-3);
+}
+.games[data-mode="gallery"] .games__rail { display: none; }
+.games__rail-key { font-size: var(--text-2xs); font-weight: var(--weight-bold); color: var(--color-text-muted); }
+.games__rail-item {
+  display: grid; place-items: center; width: 3.6rem; height: 3.6rem; border-radius: var(--radius-lg);
+  background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-hairline); opacity: .6;
+  transition: width var(--duration-base) var(--ease-out), height var(--duration-base) var(--ease-out), opacity var(--duration-base) var(--ease-out);
+}
+.games__rail-item--current {
+  width: 5rem; height: 5rem; opacity: 1;
+  background: radial-gradient(circle at 50% 30%, color-mix(in oklab, var(--glow) 40%, transparent), var(--color-surface) 72%);
+  box-shadow: var(--ring-focus);
+}
+.games__rail-img { max-width: 86%; max-height: 78%; object-fit: contain; }
+.games__rail-img--logo { max-width: 60%; max-height: 60%; }
+.games__rail-img--cover { max-height: 86%; border-radius: var(--radius-xs); }
+
+/* --- Filtros + cuadrícula ------------------------------------------------------------------- */
+.games__panel {
+  height: 100%; display: flex; flex-direction: column; gap: var(--space-3);
+  padding: 0 var(--page-gutter) 0 calc(var(--page-gutter) + var(--games-rail) + var(--space-6));
+}
+.games[data-mode="gallery"] .games__panel { display: none; }
+.games__bar { display: flex; align-items: center; gap: var(--space-2); }
+.games__filter {
+  min-height: 2.3rem; padding: 0 var(--space-4); border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px var(--color-hairline-strong); color: var(--color-text-muted); font-size: var(--text-sm);
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-spring);
+}
+.games__filter--on { color: var(--color-text); box-shadow: inset 0 0 0 1.5px var(--color-text); font-weight: var(--weight-medium); }
+.games__filter.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; transform: scale(var(--inverse-scale)); }
+.games__count { margin-left: auto; color: var(--color-text-muted); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+.games__viewport {
+  /* Dos filas a la vista (y espacio para el anillo y el crecer del foco). */
+  height: calc(2 * var(--card-height) + var(--space-5) + 1.4rem); overflow: hidden;
+  padding: .7rem; margin: -.7rem;
+}
+.games__grid { display: flex; flex-wrap: wrap; align-content: flex-start; gap: var(--space-5) var(--space-4); transition: transform var(--duration-slow) var(--ease-out); }
+/* En la cuadrícula el foco crece en su lugar (en las filas empuja a la vecina; aquí reacomodaría todo). */
+.games__grid .card--focused { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; z-index: 1; }
+.games__empty { color: var(--color-text-muted); font-size: var(--text-md); padding: var(--space-4) 0; }
+
+/* --- Galería: las consolas en órbita, la enfocada al centro ------------------------------------ */
+.games__gallery { position: relative; height: 100%; overflow: hidden; }
+.games[data-mode="console"] .games__gallery { display: none; }
+.games__ring {
+  position: absolute; left: -10%; right: -10%; top: 18%; height: 34%; border-radius: 50%;
+  border: 1.5px solid var(--color-hairline-strong); opacity: .5; pointer-events: none;
+}
+.games__carousel {
+  --planet: 15rem; --gap: 2.5rem;
+  position: absolute; top: 8%; left: 50%; display: flex; gap: var(--gap); align-items: center;
+  transform: translateX(calc(-1 * (var(--offset) * (var(--planet) + var(--gap)) + var(--planet) / 2)));
+  transition: transform var(--duration-slow) var(--ease-out);
+}
+.games__planet {
+  flex: none; width: var(--planet); display: flex; flex-direction: column; align-items: center; gap: var(--space-3);
+  transform: scale(calc(1 - var(--d) * .2)); opacity: calc(1 - var(--d) * .22);
+  transition: transform var(--duration-slow) var(--ease-out), opacity var(--duration-slow) var(--ease-out);
+}
+.games__planet--current { transform: scale(1.35); opacity: 1; }
+.games__planet-media {
+  display: grid; place-items: center; width: var(--planet); height: calc(var(--planet) * .72); border-radius: 50%;
+}
+.games__planet--current .games__planet-media { background: radial-gradient(circle at 50% 50%, color-mix(in oklab, var(--glow) 38%, transparent), transparent 66%); }
+.games__planet-img { max-width: 92%; max-height: 92%; object-fit: contain; filter: drop-shadow(0 1.2rem 1.6rem rgba(0, 0, 0, .6)); }
+.games__planet-img--logo { max-width: 46%; max-height: 52%; }
+.games__planet-img--cover { max-height: 86%; border-radius: var(--radius-md); }
+.games__planet-name { color: var(--color-text-muted); font-size: var(--text-sm); }
+.games__planet--current .games__planet-name { display: none; } /* su nombre va grande debajo */
+.games__gallery-info { position: absolute; left: 0; right: 0; top: 56%; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); text-align: center; }
+.games__gallery-title { font-family: var(--font-sans); font-size: var(--text-3xl); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); }
+.games__gallery-meta { color: var(--color-text-muted); font-size: var(--text-md); }
+.games__gallery-recent {
+  --card-height: 7.4rem;
+  position: absolute; left: var(--page-gutter); right: var(--page-gutter); bottom: var(--space-4);
+  display: flex; flex-direction: column; gap: var(--space-3);
+}
+.games__gallery-label { font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-medium); }
+.games__gallery-covers { display: flex; gap: var(--space-4); }
+
+/* En la galería el fondo es luz de ambiente (como el Inicio), no el arte a pantalla completa. */
+body[data-games="gallery"] .backdrop__layer, body[data-games="gallery"] .backdrop__scrim { opacity: 0; }
+body[data-games="gallery"] .backdrop {
+  background: radial-gradient(60% 60% at 50% 38%, color-mix(in oklab, var(--art-tint) 85%, transparent) 0%, transparent 70%), var(--palette-ink-950);
+}
+
+/* --- Transición en órbita: la consola nueva llega girando y la pantalla se asienta ------------- */
+.games__orbit {
+  position: fixed; inset: 0; z-index: var(--z-overlay); pointer-events: none; opacity: 0;
+  display: grid; place-items: center; place-content: center; gap: var(--space-4);
+}
+.games__orbit-glow {
+  position: absolute; left: 50%; top: 50%; width: 46vmin; height: 46vmin; margin: -23vmin 0 0 -23vmin; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in oklab, var(--glow) 45%, transparent), transparent 68%);
+}
+.games__orbit-img { position: relative; width: 30vmin; max-height: 26vmin; object-fit: contain; filter: drop-shadow(0 2rem 3rem rgba(0, 0, 0, .6)); }
+.games__orbit-img--logo { width: 14vmin; }
+.games__orbit-name { position: relative; font-family: var(--font-sans); font-size: var(--text-2xl); font-weight: var(--weight-bold); text-align: center; }
+.games--orbit-next .games__orbit, .games--orbit-prev .games__orbit { animation: orbit-fade 720ms var(--ease-out) both; }
+.games--orbit-next .games__orbit-img { animation: orbit-in-next 720ms var(--ease-out) both; }
+.games--orbit-prev .games__orbit-img { animation: orbit-in-prev 720ms var(--ease-out) both; }
+.games--orbit-next .games__panel, .games--orbit-prev .games__panel { animation: orbit-settle 720ms var(--ease-out) both; }
+@keyframes orbit-fade { 0% { opacity: 0; } 18% { opacity: 1; } 62% { opacity: 1; } 100% { opacity: 0; } }
+/* Recorre un arco: entra pequeña desde el lado (atrás de la órbita), pasa al frente y se aleja. */
+@keyframes orbit-in-next {
+  0% { transform: translate(38vw, -8vh) scale(.35) rotate(8deg); }
+  45% { transform: translate(0, 0) scale(1.05) rotate(0); }
+  100% { transform: translate(-6vw, 4vh) scale(.6); }
+}
+@keyframes orbit-in-prev {
+  0% { transform: translate(-38vw, -8vh) scale(.35) rotate(-8deg); }
+  45% { transform: translate(0, 0) scale(1.05) rotate(0); }
+  100% { transform: translate(6vw, 4vh) scale(.6); }
+}
+@keyframes orbit-settle { 0%, 40% { opacity: 0; transform: translateY(1.2rem); } }
+/* Con «reducir movimiento», solo un fundido corto. */
+[data-motion="reduce"] .games__orbit { display: none; }

@@ -29,7 +29,8 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   const fallback = () => h("span", { class: "card__placeholder", "aria-hidden": "true" }, svg(ICONS[systemIconName(item)]));
 
   const card = h("button", {
-    class: ["card", item.image ? "card--has-art" : "card--no-art", progress && "card--has-progress"],
+    // Portada de respaldo (sin arte propio): la imagen genérica con el nombre del juego encima.
+    class: ["card", item.image ? "card--has-art" : "card--no-art", item.extra?.placeholder_cover && "card--named", progress && "card--has-progress"],
     type: "button",
     "aria-label": item.title,
     onClick: onPress,

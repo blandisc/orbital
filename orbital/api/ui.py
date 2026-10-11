@@ -23,6 +23,7 @@ SETTINGS = {
     "sounds": {True, False},
     "haptics": {True, False},
     "voice_tips": {True, False},
+    "games_view": {"console", "gallery"},  # Juegos: directo a tu consola, o primero la galería
     "game_idle_minutes": {0, 30, 60, 120},
     "video_idle_minutes": {0, 15, 30, 60},
     "close_previous": {True, False},  # la frase de Alexa debajo de los botones del héroe
@@ -60,7 +61,7 @@ def router(d: Deps) -> APIRouter:
         prefs = catalog.stream_prefs
         return {"audio": prefs.audio, "quality": prefs.quality, "subtitles": catalog.subtitles_lang,
                 "sub_scale": float(catalog.watch.setting("sub_scale", 1.0) or 1.0), "text_size": "normal", "safe_area": 4,
-                "reduce_motion": False, "sounds": True, "haptics": True, "voice_tips": True,
+                "reduce_motion": False, "sounds": True, "haptics": True, "voice_tips": True, "games_view": "console",
                 "game_idle_minutes": d.config.sessions.game_idle_minutes,
                 "video_idle_minutes": d.config.sessions.video_idle_minutes,
                 "close_previous": d.config.sessions.close_previous, **catalog.state.settings(),
