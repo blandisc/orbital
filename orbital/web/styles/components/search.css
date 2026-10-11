@@ -73,3 +73,6 @@
   .search__hint { display: none; }
 }
 @media (max-width: 760px) { .search__hint { display: none; } .search__key { font-size: var(--text-md); } }
+/* Buscar: la acción principal del teclado; Atrás y Borrar todo, discretas pero siempre a mano. */
+.search__key--go { background: var(--color-fill-hover); color: var(--color-text); font-weight: var(--weight-bold); }
+.search__key--back, .search__key--clear { color: var(--color-text-muted); }

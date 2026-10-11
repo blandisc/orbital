@@ -97,7 +97,7 @@ def _bool(text: str | None) -> bool:
 def load_gamelist(path: Path) -> Gamelist:
     if not path.exists():
         return Gamelist()
-    text = path.read_text(encoding="utf-8", errors="replace")
+    text = path.read_text(encoding="utf-8-sig", errors="replace")  # algunos editores le ponen BOM
     # ES-DE escribe varios elementos raíz (<alternativeEmulator> + <gameList>); los envolvemos.
     text = re.sub(r"^\s*<\?xml[^>]*\?>", "", text)
     try:

@@ -329,7 +329,10 @@ class Catalog:
             self.emulators = detect.merge(self.config.emulators, result.emulators)
             self.detected = result.found
         for emu, alternatives in emulators.split_alternatives(self.emulators):
-            found += emulators.scan(emu, self.esde, alternatives)
+            try:
+                found += emulators.scan(emu, self.esde, alternatives)
+            except Exception:  # noqa: BLE001 - un emulador con problemas no debe dejar a Orbital sin arrancar
+                log.exception("No pude leer los juegos de %s", emu.name)
         if self.config.stremio.enabled:
             found += stremio.items(self.config.stremio)
         gfn_app = geforcenow.app_item()
@@ -698,10 +701,10 @@ class Catalog:
                 "tried": [source.index]}
 
     def best_source(self, kind: str, video_id: str, binge: str | None = None,
-                    skip: set[int] | None = None) -> streams.Source | None:
+                    skip: set[int] | None = None, prefs: streams.Preferences | None = None) -> streams.Source | None:
         """La fuente recomendada; en una serie, mejor la del mismo grupo que el episodio anterior
         (misma calidad e idioma: así lo hace Stremio con bingeGroup)."""
-        found = [s for s in self.stream_sources(kind, video_id) if s.index not in (skip or set())]
+        found = [s for s in self.stream_sources(kind, video_id, prefs) if s.index not in (skip or set())]
         if not found:
             return None
         if binge:
@@ -720,18 +723,21 @@ class Catalog:
         return {"source": source.public(), "label": source_label(source)}
 
     def play_source(self, kind: str, meta_id: str, video_id: str, index: int, title: str, keep: bool = False,
-                    from_start: bool = False) -> str:
+                    from_start: bool = False, prefs: streams.Preferences | None = None,
+                    subtitles: str | None = None) -> str:
         """Reproduce la fuente elegida: en el reproductor de Orbital (mpv, con el mando) o, si no
-        está o así se configuró, directo en el de Stremio (sin su lista de fuentes)."""
+        está o así se configuró, directo en el de Stremio (sin su lista de fuentes).
+        `prefs`/`subtitles`: idioma pedido para esta vez ("…en español"); si no, el de Ajustes."""
         self.revealing = False
-        source = self.streams.get(kind, video_id, self.stream_prefs, index)
+        prefs = prefs or self.stream_prefs
+        source = self.streams.get(kind, video_id, prefs, index)
         if source is None:
             raise ValueError("Esa fuente ya no está disponible; vuelve a cargar las fuentes")
         mpv_exe = player.find_mpv() if self.config.stremio.player == "orbital" else None
         url = player.stream_url(source.stream)
         if mpv_exe and url:
             self.play_native(mpv_exe, url, kind, meta_id, video_id, title, keep=keep, source=source,
-                             from_start=from_start)
+                             from_start=from_start, audio=prefs.audio, subtitles=subtitles)
             return "orbital"
         uri = streams.player_link(source, cinemeta.MANIFEST, kind, meta_id, video_id)
         self.open_stremio(uri, title)
@@ -746,12 +752,14 @@ class Catalog:
             log.info("No pude leer dónde ibas: %s", exc)
             return 0.0
 
-    def _fallback_subs(self, kind: str, video_id: str):
-        subs, auth = self.subtitles_lang, self.credentials.get(STREMIO_KEY)
+    def _fallback_subs(self, kind: str, video_id: str, subs: str | None = None):
+        subs = self.subtitles_lang if subs is None else subs
+        auth = self.credentials.get(STREMIO_KEY)
         return (lambda: self.streams.subtitles(auth, kind, video_id, subs)) if subs else None
 
     def play_native(self, mpv_exe: str, url: str, kind: str, meta_id: str, video_id: str, title: str,
-                    keep: bool = False, source: streams.Source | None = None, from_start: bool = False) -> None:
+                    keep: bool = False, source: streams.Source | None = None, from_start: bool = False,
+                    audio: str | None = None, subtitles: str | None = None) -> None:
         """mpv a pantalla completa, desde donde te quedaste (según Stremio)."""
         start = 0.0 if from_start else self.resume_position(meta_id, video_id)
         if self.before_launch and not keep:
@@ -762,8 +770,9 @@ class Catalog:
         pinned = self._pin()
         process = self.player.play(
             self.launcher.run, mpv_exe, url, title, meta,
-            start=start, audio=self.stream_prefs.audio, subtitles=self.subtitles_lang,
-            fallback_subs=self._fallback_subs(kind, video_id))
+            start=start, audio=audio or self.stream_prefs.audio,
+            subtitles=self.subtitles_lang if subtitles is None else subtitles,
+            fallback_subs=self._fallback_subs(kind, video_id, subtitles))
         self.launcher.track("media:player", title, process, runner="Reproductor")
         self.revealing = self._to_front("media:player", title, pinned=pinned)
 
@@ -857,18 +866,32 @@ class Catalog:
         """¿Se puede reproducir en el reproductor de Orbital (elegido, instalado y con cuenta)?"""
         return self.config.stremio.player == "orbital" and self.stremio_linked and player.find_mpv() is not None
 
-    def play_title(self, kind: str, meta_id: str, video_id: str, title: str) -> None:
+    def play_title(self, kind: str, meta_id: str, video_id: str, title: str, audio: str | None = None) -> None:
         """Para la voz: pone algo sin preguntar, con la fuente recomendada. Buscar fuentes tarda
-        unos segundos (Alexa corta a los ~8 s), así que se hace en segundo plano."""
+        unos segundos (Alexa corta a los ~8 s), así que se hace en segundo plano.
+
+        `audio`: idioma pedido ("…en español"). Si ninguna fuente lo trae, se pone la mejor en tu
+        idioma de siempre con subtítulos en el pedido, y se avisa."""
         if not self.native_player:
             self.play_stremio(kind, meta_id, video_id, title)
             return
+        prefs = streams.Preferences(audio=audio, quality=self.stream_prefs.quality) if audio else None
 
         def run() -> None:
             try:
-                self.play_best(kind, meta_id, video_id, title)
-            except LookupError:
-                self._notify({"type": "toast", "message": f"No encontré dónde ver {title}", "ok": False})
+                source = self.best_source(kind, video_id, prefs=prefs)
+                if source is None:
+                    self._notify({"type": "toast", "message": f"No encontré dónde ver {title}", "ok": False})
+                    return
+                subtitles = None
+                if audio and audio != self.stream_prefs.audio:
+                    if audio in source.languages:
+                        subtitles = ""  # lo pediste doblado: sin subtítulos encima
+                    else:
+                        subtitles = audio
+                        name = {"es": "español", "en": "inglés"}.get(audio, audio)
+                        self._notify({"type": "toast", "message": f"No hay audio en {name} para {title}: va con subtítulos en {name}"})
+                self.play_source(kind, meta_id, video_id, source.index, title, prefs=prefs, subtitles=subtitles)
             except Exception as exc:  # noqa: BLE001 - se avisa en pantalla
                 log.exception("No pude poner %s", title)
                 self._notify({"type": "toast", "message": f"No pude poner {title}: {exc}", "ok": False})

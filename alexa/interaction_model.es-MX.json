@@ -325,6 +325,61 @@
             "pasa al siguiente episodio",
             "pase al siguiente episodio"
           ]
+        },
+        {
+          "name": "WatchEpisodeIntent",
+          "slots": [
+            {
+              "name": "series",
+              "type": "SHOW_NAME"
+            },
+            {
+              "name": "season",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "episode",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "language",
+              "type": "LANGUAGE"
+            }
+          ],
+          "samples": [
+            "quiero ver {series} temporada {season} episodio {episode}",
+            "quiero ver {series} temporada {season} episodio {episode} en {language}",
+            "quiero ver el episodio {episode} de la temporada {season} de {series}",
+            "quiero ver el episodio {episode} de la temporada {season} de {series} en {language}",
+            "quiero ver {series} temporada {season} capítulo {episode}",
+            "quiero ver {series} temporada {season} capítulo {episode} en {language}",
+            "quiero ver el capítulo {episode} de la temporada {season} de {series}",
+            "quiero ver el capítulo {episode} de la temporada {season} de {series} en {language}",
+            "pon {series} temporada {season} episodio {episode}",
+            "pon {series} temporada {season} episodio {episode} en {language}",
+            "pon el episodio {episode} de la temporada {season} de {series}",
+            "pon el episodio {episode} de la temporada {season} de {series} en {language}",
+            "pon {series} temporada {season} capítulo {episode}",
+            "pon {series} temporada {season} capítulo {episode} en {language}",
+            "pon el capítulo {episode} de la temporada {season} de {series}",
+            "pon el capítulo {episode} de la temporada {season} de {series} en {language}",
+            "ponga {series} temporada {season} episodio {episode}",
+            "ponga {series} temporada {season} episodio {episode} en {language}",
+            "ponga el episodio {episode} de la temporada {season} de {series}",
+            "ponga el episodio {episode} de la temporada {season} de {series} en {language}",
+            "ponga {series} temporada {season} capítulo {episode}",
+            "ponga {series} temporada {season} capítulo {episode} en {language}",
+            "ponga el capítulo {episode} de la temporada {season} de {series}",
+            "ponga el capítulo {episode} de la temporada {season} de {series} en {language}",
+            "reproduce {series} temporada {season} episodio {episode}",
+            "reproduce {series} temporada {season} episodio {episode} en {language}",
+            "reproduce el episodio {episode} de la temporada {season} de {series}",
+            "reproduce el episodio {episode} de la temporada {season} de {series} en {language}",
+            "reproduce {series} temporada {season} capítulo {episode}",
+            "reproduce {series} temporada {season} capítulo {episode} en {language}",
+            "reproduce el capítulo {episode} de la temporada {season} de {series}",
+            "reproduce el capítulo {episode} de la temporada {season} de {series} en {language}"
+          ]
         }
       ],
       "types": [
@@ -473,6 +528,261 @@
                   "castellano",
                   "latino"
                 ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "SHOW_NAME",
+          "values": [
+            {
+              "name": {
+                "value": "Los Simpson"
+              }
+            },
+            {
+              "name": {
+                "value": "The Office"
+              }
+            },
+            {
+              "name": {
+                "value": "Friends"
+              }
+            },
+            {
+              "name": {
+                "value": "Futurama"
+              }
+            },
+            {
+              "name": {
+                "value": "Game of Thrones"
+              }
+            },
+            {
+              "name": {
+                "value": "Breaking Bad"
+              }
+            },
+            {
+              "name": {
+                "value": "Better Call Saul"
+              }
+            },
+            {
+              "name": {
+                "value": "The Big Bang Theory"
+              }
+            },
+            {
+              "name": {
+                "value": "How I Met Your Mother"
+              }
+            },
+            {
+              "name": {
+                "value": "Modern Family"
+              }
+            },
+            {
+              "name": {
+                "value": "Brooklyn Nine-Nine"
+              }
+            },
+            {
+              "name": {
+                "value": "Seinfeld"
+              }
+            },
+            {
+              "name": {
+                "value": "Stranger Things"
+              }
+            },
+            {
+              "name": {
+                "value": "The Last of Us"
+              }
+            },
+            {
+              "name": {
+                "value": "House of the Dragon"
+              }
+            },
+            {
+              "name": {
+                "value": "The Mandalorian"
+              }
+            },
+            {
+              "name": {
+                "value": "The Boys"
+              }
+            },
+            {
+              "name": {
+                "value": "Succession"
+              }
+            },
+            {
+              "name": {
+                "value": "Severance"
+              }
+            },
+            {
+              "name": {
+                "value": "The Bear"
+              }
+            },
+            {
+              "name": {
+                "value": "Ted Lasso"
+              }
+            },
+            {
+              "name": {
+                "value": "Dexter"
+              }
+            },
+            {
+              "name": {
+                "value": "Lost"
+              }
+            },
+            {
+              "name": {
+                "value": "Prison Break"
+              }
+            },
+            {
+              "name": {
+                "value": "Dr. House"
+              }
+            },
+            {
+              "name": {
+                "value": "Grey's Anatomy"
+              }
+            },
+            {
+              "name": {
+                "value": "Rick and Morty"
+              }
+            },
+            {
+              "name": {
+                "value": "Family Guy"
+              }
+            },
+            {
+              "name": {
+                "value": "South Park"
+              }
+            },
+            {
+              "name": {
+                "value": "Bob Esponja"
+              }
+            },
+            {
+              "name": {
+                "value": "Avatar: The Last Airbender"
+              }
+            },
+            {
+              "name": {
+                "value": "The Walking Dead"
+              }
+            },
+            {
+              "name": {
+                "value": "Peaky Blinders"
+              }
+            },
+            {
+              "name": {
+                "value": "La Casa de Papel"
+              }
+            },
+            {
+              "name": {
+                "value": "Dark"
+              }
+            },
+            {
+              "name": {
+                "value": "Narcos"
+              }
+            },
+            {
+              "name": {
+                "value": "Vikings"
+              }
+            },
+            {
+              "name": {
+                "value": "Shōgun"
+              }
+            },
+            {
+              "name": {
+                "value": "Midnight Mass"
+              }
+            },
+            {
+              "name": {
+                "value": "Two and a Half Men"
+              }
+            },
+            {
+              "name": {
+                "value": "That '70s Show"
+              }
+            },
+            {
+              "name": {
+                "value": "Malcolm in the Middle"
+              }
+            },
+            {
+              "name": {
+                "value": "El Chavo del 8"
+              }
+            },
+            {
+              "name": {
+                "value": "Pokémon"
+              }
+            },
+            {
+              "name": {
+                "value": "Dragon Ball Z"
+              }
+            },
+            {
+              "name": {
+                "value": "Naruto"
+              }
+            },
+            {
+              "name": {
+                "value": "One Piece"
+              }
+            },
+            {
+              "name": {
+                "value": "Attack on Titan"
+              }
+            },
+            {
+              "name": {
+                "value": "The Simpsons"
+              }
+            },
+            {
+              "name": {
+                "value": "Silicon Valley"
               }
             }
           ]

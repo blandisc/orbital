@@ -241,3 +241,12 @@ def test_prefer_alternative_runner(esde_home, tmp_path):
     assert cat.launcher.ran[-1][0].endswith("eden.exe")
     with pytest.raises(ValueError):
         cat.set_prefs(zelda.id, runner="dolphin")
+
+
+def test_gamelist_with_bom(tmp_path):
+    from orbital.library.esde import load_gamelist
+
+    path = tmp_path / "gamelist.xml"
+    path.write_bytes('﻿<?xml version="1.0"?>\n<gameList><game><path>./Call of Duty.lnk</path>'
+                     '<name>Call of Duty</name></game></gameList>'.encode("utf-8"))
+    assert load_gamelist(path).games  # el BOM ya no la invalida
