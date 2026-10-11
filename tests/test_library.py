@@ -61,11 +61,11 @@ def test_config_rejects_unknown_and_duplicates():
 
 
 def test_steam_hours_size_update_and_recent_outside_orbital(tmp_path):
+    from conftest import FakeLauncher, write_steam
+
     from orbital.catalog import Catalog
     from orbital.config import parse_config
     from orbital.library import steam
-
-    from conftest import FakeLauncher, write_steam
 
     root = tmp_path / "Steam"
     write_steam(root, {"427520": "Factorio", "2767030": "Marvel Rivals"})

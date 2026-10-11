@@ -2,14 +2,13 @@ import re
 from pathlib import Path
 
 import pytest
+from conftest import FakeLauncher
 from fastapi.testclient import TestClient
 
 from orbital.catalog import Catalog
 from orbital.config import parse_config
 from orbital.library import esde
 from orbital.server import create_app
-
-from conftest import FakeLauncher
 
 GAMELIST = """<?xml version="1.0"?>
 <alternativeEmulator>
@@ -248,5 +247,5 @@ def test_gamelist_with_bom(tmp_path):
 
     path = tmp_path / "gamelist.xml"
     path.write_bytes('﻿<?xml version="1.0"?>\n<gameList><game><path>./Call of Duty.lnk</path>'
-                     '<name>Call of Duty</name></game></gameList>'.encode("utf-8"))
+                     '<name>Call of Duty</name></game></gameList>'.encode())
     assert load_gamelist(path).games  # el BOM ya no la invalida

@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 
 import pytest
+from conftest import FakeLauncher
 from fastapi.testclient import TestClient
 
 from orbital.catalog import Catalog
@@ -13,8 +14,6 @@ from orbital.kiosk import KioskWindow, build_command, mark_clean_exit
 from orbital.library import detect
 from orbital.server import create_app
 from orbital.voice import VoiceController
-
-from conftest import FakeLauncher
 
 
 # --------------------------------------------------------------------- ventana

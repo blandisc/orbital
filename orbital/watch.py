@@ -161,7 +161,7 @@ class Watch:
             self._stremio_busy.release()
         self.store.replace_source("stremio", items)
         changed = [i.id for i in items] != [i.id for i in self.stremio_items] or any(
-            a.progress != b.progress for a, b in zip(items, self.stremio_items))
+            a.progress != b.progress for a, b in zip(items, self.stremio_items, strict=False))
         self.stremio_items = items
         if changed:
             self.events.publish({"type": "library-changed"})

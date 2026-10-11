@@ -109,7 +109,7 @@ def router(d: Deps, is_local) -> APIRouter:
                     try:
                         event = await asyncio.wait_for(queue.get(), timeout=KEEPALIVE)
                         yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
-                    except asyncio.TimeoutError:
+                    except TimeoutError:
                         yield ": ping\n\n"
             finally:
                 d.hub.unsubscribe(queue)

@@ -1,0 +1,52 @@
+name: Pruebas
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Instalar (versiones del lockfile)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.lock
+          python -m pip install --no-deps -e .
+
+      - name: Revisión de código (ruff)
+        run: python -m ruff check orbital tests scripts
+
+      - name: Tipos (pyright, solo informa)
+        continue-on-error: true
+        run: npx --yes pyright@1.1.390
+
+      - name: Pruebas de Python
+        run: python -m pytest -q
+
+      - name: Pruebas de la interfaz
+        run: node --test tests/web/*.test.mjs
+
+      - name: Empaquetado incluye la interfaz y los íconos
+        shell: bash
+        run: |
+          python -m pip install build
+          python -m build --wheel
+          python - <<'EOF'
+          import glob, zipfile
+          names = zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist()
+          for needed in ("orbital/web/index.html", "orbital/web/js/main.js", "orbital/web/icons/orbital.ico"):
+              assert needed in names, f"falta {needed} en el paquete"
+          print("ok:", len(names), "archivos")
+          EOF

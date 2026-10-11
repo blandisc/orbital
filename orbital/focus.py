@@ -126,7 +126,7 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
             if hwnds:
                 target = hwnds[0]
                 info = [(win.title(h), win.is_fullscreen(h)) for h in hwnds]
-                ready = next((h for h, i in zip(hwnds, info) if game_ready([i], title, runner)), 0)
+                ready = next((h for h, i in zip(hwnds, info, strict=False) if game_ready([i], title, runner)), 0)
                 if ready and orbital and not win.is_fullscreen(ready) and grace > 0:
                     grace -= 1  # cargó, pero quizá está por pasar a pantalla completa: un momento
                     target = ready

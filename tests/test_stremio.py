@@ -2,14 +2,13 @@ import os
 import time
 
 import pytest
+from conftest import FakeLauncher
 
 from orbital.catalog import STREMIO_KEY, Catalog
 from orbital.config import parse_config
 from orbital.credentials import Credentials
 from orbital.library import stremio_api
 from orbital.voice import VoiceController
-
-from conftest import FakeLauncher
 
 # Formato real de LibraryItem (stremio-core/src/types/library/library_item.rs)
 LIBRARY = [
@@ -161,6 +160,7 @@ def test_voice_without_stremio_account(library):
 
 def test_voice_launch_with_runner(tmp_path):
     from test_esde import GAMELIST  # noqa: F401  (misma estructura de ES-DE)
+
     from orbital.library.models import LibraryItem, Runner
     cfg = parse_config({"detect": {"enabled": False}, "steam": {"enabled": False}, "esde": {"enabled": False}})
     cat = Catalog(cfg, FakeLauncher())

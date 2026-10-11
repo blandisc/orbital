@@ -1,6 +1,6 @@
 from orbital import player
-from orbital.gamepad import A_BUTTON, B_BUTTON, DPAD_LEFT, DPAD_UP, GUIDE, X_BUTTON, Y_BUTTON
-from orbital.library import cinemeta, stremio_api, streams
+from orbital.gamepad import A_BUTTON, DPAD_LEFT, GUIDE, X_BUTTON, Y_BUTTON
+from orbital.library import cinemeta, streams, stremio_api
 
 RD_URL = "https://real-debrid.example/d/abc/movie.mkv"
 
@@ -107,7 +107,7 @@ def test_audio_menu_lists_tracks_and_switches():
 
 def test_subtitle_menu_has_off_and_addon_search():
     p, mpv = make_player()
-    p._fallback_subs, p._subs_lang = (lambda: []), "es"
+    p._fallback_subs, p._subs_lang = (list), "es"
     p.press("y")
     labels = [o["label"] for o in p.menu.options]
     assert labels[0] == "Sin subtítulos" and "Español · Forzados" in labels and labels[-2].startswith("Buscar subtítulos") and labels[-1] == "Tamaño: Normal"

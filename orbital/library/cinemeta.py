@@ -177,7 +177,7 @@ def search_results(query: str, movies: list[dict], series: list[dict], limit: in
     coincidencia exacta: "subir lo que empieza igual" ponía "Oficer" antes que "The Office" con "ofice"."""
     q = query.strip().lower()
     merged: list[tuple[str, dict]] = []
-    for pair in zip(series, movies):
+    for pair in zip(series, movies, strict=False):
         merged += [("series", pair[0]), ("movie", pair[1])]
     longer = series if len(series) > len(movies) else movies
     kind_left = "series" if longer is series else "movie"

@@ -22,8 +22,7 @@ from . import player
 from .config import Config
 from .credentials import Credentials
 from .events import EventBus
-from .focus import (READY_TIMEOUT, bring_app_to_front, bring_game_to_front, game_ready,  # noqa: F401 - compatibilidad
-                    is_orbital_window, pin_orbital)
+from .focus import READY_TIMEOUT, bring_app_to_front, bring_game_to_front, game_ready, is_orbital_window, pin_orbital  # noqa: F401 - compatibilidad
 from .launcher import Launcher
 from .library import cinemeta, detect, emulators, esde, geforcenow, steam, stremio, stremio_api
 from .library.models import LibraryItem
@@ -31,8 +30,7 @@ from .sessions import QUICK_EXIT, Sessions  # noqa: F401
 from .state import State
 from .store import ItemStore
 from .text import normalize
-from .watch import (STREMIO_KEY, STREMIO_STALE_SECONDS, Watch, enrich_watch_item, source_label,  # noqa: F401
-                    stremio_item, time_left, trailer_id)
+from .watch import STREMIO_KEY, STREMIO_STALE_SECONDS, Watch, enrich_watch_item, source_label, stremio_item, time_left, trailer_id  # noqa: F401
 
 CONTINUE_LIMIT = 20  # "Seguir viendo": los más recientes
 JUMP_LIMIT = 16  # "Continuar" en Inicio

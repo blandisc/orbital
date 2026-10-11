@@ -97,7 +97,7 @@ def print_diagnostics(catalog) -> None:
 
 
 def stremio_command(args, config) -> int:
-    from .catalog import Catalog, STREMIO_KEY
+    from .catalog import STREMIO_KEY, Catalog
     from .library.stremio_api import StremioError
 
     catalog = Catalog(config)

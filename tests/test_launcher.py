@@ -4,10 +4,9 @@ import subprocess
 import threading
 import time
 
+from orbital import focus as focus_mod
 from orbital import launcher as launcher_mod
 from orbital import player
-from orbital import catalog as catalog_mod
-from orbital import focus as focus_mod
 from orbital.catalog import bring_game_to_front  # la real (conftest la apaga para el resto)
 from orbital.launcher import Launcher, Running, redact
 from orbital.library import streams

@@ -1,10 +1,10 @@
 """El reproductor como servicio de streaming: B, adelantar, fuentes que fallan, siguiente episodio, intro."""
 
+from test_player import make_player
+
 from orbital import player
 from orbital.library import cinemeta, streams
 from orbital.server import humane_error
-
-from test_player import FakeMpv, make_player
 
 
 def series_player(**props):

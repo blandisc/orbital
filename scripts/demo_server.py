@@ -79,7 +79,7 @@ def build(tmp: Path):
     cinemeta.Cinemeta._get = lambda self, path: {"metas": []}
     stremio.find_stremio = lambda cfg: None
     geforcenow.install_dir = lambda: None
-    geforcenow.read_shortcuts = lambda: []
+    geforcenow.read_shortcuts = list
     return create_app(config, Catalog(config, DryLauncher()))
 
 

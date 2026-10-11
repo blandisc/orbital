@@ -134,7 +134,7 @@ LEGEND = [("A", "Pausa"), ("◀ ▶", "10 s"), ("LB RB", "1 min"), ("▲ ▼", "
           ("X", "Audio"), ("Y", "Subtítulos"), ("B", "Ocultar")]
 
 
-def legend_for(hud: "Hud") -> list[tuple[str, str]]:
+def legend_for(hud: Hud) -> list[tuple[str, str]]:
     """La leyenda dice lo que de verdad hace cada botón con ESTE video."""
     items = [("A", "Seguir" if hud.paused else "Pausa"), ("◀ ▶", "Adelantar"),
              ("LB RB", "Capítulo" if len(hud.chapters) > 1 else "1 min")]

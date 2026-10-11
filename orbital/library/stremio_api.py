@@ -17,7 +17,7 @@ import urllib.error
 import urllib.request
 import zlib
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 log = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ WATCHED_AT = 0.9  # mismo umbral que Stremio para dar algo por visto
 
 
 def _iso(when: float) -> str:
-    return datetime.fromtimestamp(when, timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.") + f"{int(when * 1000) % 1000:03d}Z"
+    return datetime.fromtimestamp(when, UTC).strftime("%Y-%m-%dT%H:%M:%S.") + f"{int(when * 1000) % 1000:03d}Z"
 
 
 def resume_seconds(raw: dict | None, video_id: str) -> float:

@@ -106,7 +106,7 @@ def no_geforcenow(monkeypatch):
     from orbital.library import geforcenow
 
     monkeypatch.setattr(geforcenow, "install_dir", lambda: None)
-    monkeypatch.setattr(geforcenow, "read_shortcuts", lambda: [])
+    monkeypatch.setattr(geforcenow, "read_shortcuts", list)
 
 
 @pytest.fixture(autouse=True)

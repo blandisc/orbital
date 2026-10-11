@@ -15,7 +15,7 @@ dependencies = [
 
 [project.optional-dependencies]
 window = ["pywebview>=5.0"]
-dev = ["pytest>=8.0", "httpx>=0.27"]
+dev = ["pytest>=8.0", "httpx>=0.27", "ruff>=0.6"]
 
 [project.scripts]
 orbital = "orbital.__main__:main"
@@ -24,7 +24,31 @@ orbital = "orbital.__main__:main"
 include = ["orbital*"]
 
 [tool.setuptools.package-data]
-orbital = ["web/*.html", "web/js/**/*.js", "web/styles/**/*.css"]
+orbital = ["web/*.html", "web/js/**/*.js", "web/styles/**/*.css", "web/icons/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py311"
+extend-exclude = ["alexa"]
+
+[tool.ruff.lint]
+# Errores reales y orden de imports; el estilo fino no bloquea.
+select = ["E9", "F", "I", "B", "UP", "PIE"]
+ignore = [
+    "B008",  # FastAPI usa llamadas en los valores por defecto
+    "B904",  # raise HTTPException dentro de except: el mensaje es para la persona, no la causa
+    "UP031", # "%" en un par de plantillas de texto fijas
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["orbital"]
+
+[tool.pyright]
+include = ["orbital"]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+reportAttributeAccessIssue = "warning"
+reportOptionalMemberAccess = "warning"
