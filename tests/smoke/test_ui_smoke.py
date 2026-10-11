@@ -4,11 +4,13 @@ Corren en CI (que instala Playwright y Chromium). En la Legion Go se saltan si P
 instalado: no hace falta para usar Orbital.
 
     pip install playwright && python -m playwright install chromium
-    python -m pytest tests/smoke
+    python -m pytest tests/smoke          (ORBITAL_SMOKE_BROWSER=msedge: con el Edge instalado)
 """
 
 from __future__ import annotations
 
+import json
+import os
 import socket
 import subprocess
 import sys
@@ -51,7 +53,7 @@ def server():
 @pytest.fixture
 def page(server):
     with playwright.sync_playwright() as p:
-        browser = p.chromium.launch()
+        browser = p.chromium.launch(channel=os.environ.get("ORBITAL_SMOKE_BROWSER") or None)
         page = browser.new_page(viewport={"width": 1280, "height": 800})
         errors: list[str] = []
         page.on("pageerror", lambda exc: errors.append(str(exc)))
@@ -61,24 +63,39 @@ def page(server):
         browser.close()
 
 
+def ready(page) -> None:
+    """Pasó la animación de arranque y, si salió "Tu consola" (primera vez), se cerró."""
+    page.wait_for_selector("#boot", state="detached", timeout=15_000)
+    page.wait_for_timeout(1500)  # "Tu consola" aparece un momento después de aterrizar
+    if page.locator(".sheet__title", has_text="Tu consola").is_visible():
+        page.keyboard.press("Escape")
+        page.wait_for_timeout(400)
+
+
+def status(server) -> dict:
+    with urllib.request.urlopen(f"{server}/api/status", timeout=5) as res:
+        return json.load(res)
+
+
 def test_boots_and_shows_the_library(page):
-    page.wait_for_selector("#boot", state="detached", timeout=15_000)  # la animación de arranque termina
-    page.keyboard.press("Escape")  # "Tu consola" sale la primera vez
-    assert page.get_by_text("Hollow Knight").first.is_visible() or page.get_by_text("Hades").first.is_visible()
+    ready(page)
+    page.locator('button.card[aria-label="Hollow Knight"]').first.wait_for(state="attached", timeout=5000)
+    assert page.locator("button.card").count() >= 6
 
 
 def test_opening_a_game_and_coming_back(page, server):
-    page.wait_for_selector("#boot", state="detached", timeout=15_000)
-    page.keyboard.press("Escape")
+    ready(page)
     page.keyboard.press("Enter")  # abre lo enfocado (el lanzador de prueba no abre nada de verdad)
-    page.wait_for_function("fetch('/api/status').then(r => r.json()).then(s => !!s.running)", timeout=10_000)
+    deadline = time.monotonic() + 10
+    while not status(server)["running"] and time.monotonic() < deadline:
+        time.sleep(.2)
+    assert status(server)["running"]
     urllib.request.urlopen(urllib.request.Request(f"{server}/api/stop", method="POST"), timeout=5)
-    page.get_by_text("De vuelta de").first.wait_for(timeout=10_000)  # llegó el aviso por SSE
+    page.locator(".toast", has_text="De vuelta de").wait_for(timeout=10_000)  # llegó el aviso por SSE
 
 
 def test_diagnostics_screen(page):
-    page.wait_for_selector("#boot", state="detached", timeout=15_000)
-    page.keyboard.press("Escape")
+    ready(page)
     page.locator(".status-bar__brand").click()  # el logo abre el menú
     page.get_by_text("Ajustes", exact=True).first.click()
     page.get_by_text("Diagnóstico", exact=True).first.click()
