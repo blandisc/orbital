@@ -79,7 +79,12 @@ def status(server) -> dict:
 
 def test_boots_and_shows_the_library(page):
     ready(page)
-    page.locator('button.card[aria-label="Hollow Knight"]').first.wait_for(state="attached", timeout=5000)
+    # Inicio: lo último que jugaste a lo grande y tus consolas (con foto; sin arte, el respaldo).
+    page.locator(".tile--feature").wait_for(timeout=5000)
+    assert page.locator(".tile--console").count() >= 4
+    assert page.locator(".tile--wide").count() == 4
+    page.keyboard.press("e")  # RB: a Juegos, con sus filas de portadas
+    page.locator('button.card[aria-label="Hollow Knight"]').first.wait_for(timeout=5000)
     assert page.locator("button.card").count() >= 6
 
 

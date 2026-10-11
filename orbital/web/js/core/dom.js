@@ -25,7 +25,7 @@ export function h(tag, props = {}, ...children) {
 }
 
 export function classNames(value) {
-  return (Array.isArray(value) ? value : [value]).filter(Boolean).join(" ");
+  return (Array.isArray(value) ? value.flat(Infinity) : [value]).filter(Boolean).join(" ");
 }
 
 export function append(parent, children) {

@@ -7,13 +7,14 @@ import { h, svg } from "./core/dom.js";
 import { ICONS } from "./core/icons.js";
 import { closedMessage } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
-import { alternativeRunner, clampFocus, isWatchable, itemAt, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
+import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
-import { footerHints } from "./core/hints.js";
-import { controlsMenu, controlsPage, diagnosticsMenu, exitMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, windowsMenu } from "./core/menus.js";
+import { footerHints, homeHints, statusChips } from "./core/hints.js";
+import { controlsMenu, controlsPage, diagnosticsMenu, exitMenu, gameMenu, mainMenu, pendingMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
+import { createHome } from "./components/home.js";
 import { createHints } from "./components/hints.js";
 import { createLaunchOverlay } from "./components/launch-overlay.js";
 import { createSearch } from "./components/search.js";
@@ -30,7 +31,9 @@ import { createState } from "./core/store.js";
 
 const state = createState();
 
-const current = () => itemAt(state.rows, state.focus.r, state.focus.c);
+// En Inicio lo enfocado es una pieza del Inicio (puede ser una consola: entonces no hay juego).
+const inHome = () => state.section === "home" && state.libraryLoaded;
+const current = () => (inHome() ? ui.home.current?.item ?? null : itemAt(state.rows, state.focus.r, state.focus.c));
 const glyphs = () => GLYPHS[state.modality];
 
 // ---------------------------------------------------------------- componentes
@@ -38,6 +41,11 @@ const ui = {
   backdrop: createBackdrop(),
   status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch() }),
   hero: createHero({ onAction: (action) => handleAction(action) }),
+  home: createHome({
+    onFocus: (target) => homeFocused(target),
+    onPick: (target, id) => (ui.home.focusId === id ? homeActivate(target) : ui.home.focus(id)),
+    onAction: (action, target) => homeActivate(target, action),
+  }),
   shelf: createShelf({ onPick: (r, c) => pick(r, c), onSwipe: (swipe) => onSwipe(swipe) }),
   hints: createHints(),
   sheet: createSheet({
@@ -90,23 +98,34 @@ const touchBack = h("button", { class: "touch-back", type: "button", "aria-label
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.sheet.el, ui.launch.el, ui.toast.el,
+  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.home.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.sheet.el, ui.launch.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
 const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LT/RT
 
+/**
+ * Vistas a pantalla completa, de arriba abajo: la primera abierta recibe los botones y pone el pie
+ * (Conectar Stremio sobre todo; las fuentes sobre la ficha; la ficha sobre la búsqueda). Una vista
+ * nueva se agrega aquí con { handle, hints, isOpen } y ya funciona con el mando.
+ */
+const OVERLAYS = [ui.login, ui.sources, ui.title, ui.search];
+const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
+
 function renderHints() {
   const g = glyphs();
-  const overlay = ui.sheet.isOpen || ui.sources.isOpen || ui.title.isOpen || ui.search.isOpen || ui.login.isOpen;
-  document.body.dataset.overlay = overlay ? "true" : "false";
-  if (!ui.sheet.isOpen && ui.login.isOpen) return ui.hints.render(ui.login.hints(g));
-  if (!ui.sheet.isOpen && ui.sources.isOpen) {
-    return ui.hints.render([{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra fuente" },
-      { glyph: g.back, label: "Volver", end: true }]);
+  const overlay = topOverlay();
+  document.body.dataset.overlay = ui.sheet.isOpen || overlay ? "true" : "false";
+  if (!ui.sheet.isOpen && overlay) return ui.hints.render(overlay.hints(g));
+  if (inHome() && !ui.sheet.isOpen) {
+    const target = ui.home.current;
+    const item = target?.item;
+    return ui.hints.render(homeHints(g, target, {
+      running: state.running?.managed ? state.running : null,
+      primary: item && primaryLabel(item, state.running?.id),
+      alt: item && altLabel(item),
+    }));
   }
-  if (!ui.sheet.isOpen && ui.title.isOpen) return ui.hints.render(ui.title.hints(g));
-  if (!ui.sheet.isOpen && ui.search.isOpen) return ui.hints.render(ui.search.hints(g));
   const { r, c } = state.focus;
   ui.hints.render(footerHints(glyphs(), {
     sheetOpen: ui.sheet.isOpen,
@@ -145,6 +164,7 @@ function setModality(modality) {
   state.modality = modality;
   document.body.dataset.input = modality;
   renderSections();
+  if (inHome()) renderHome(); // los botones del destacado y de las consolas cambian de glifo
   ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   renderHints();
 }
@@ -162,6 +182,60 @@ function applySettings(settings) {
   if (state.libraryLoaded) ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
 }
 
+// ---------------------------------------------------------------- Inicio
+/** X en el Inicio: la ficha (videos) o el otro emulador (juegos). */
+function altLabel(item) {
+  if (isWatchable(item)) return isSeries(item) || item.extra?.kind === "series" ? "Episodios" : "Ficha";
+  const alt = alternativeRunner(item);
+  return alt ? `Con ${alt.name}` : null;
+}
+
+/** Inicio o filas: el Inicio tiene su propia vista; las demás secciones, héroe + filas. */
+function renderView() {
+  document.body.dataset.view = inHome() ? "home" : "rows";
+  if (inHome()) {
+    ui.home.show();
+    renderHome();
+  } else {
+    ui.home.hide();
+  }
+}
+
+function renderHome() {
+  ui.home.render(state.allRows, { runningId: state.running?.id, glyphs: glyphs() });
+}
+
+/** El fondo toma la luz de lo enfocado; una consola, la de su último juego. */
+function homeFocused(target) {
+  if (!inHome()) return;
+  const item = target?.item ?? target?.console?.last ?? null;
+  ui.backdrop.show(item?.hero || item?.image || target?.console?.photo || null);
+  renderHints();
+}
+
+/** A (o un botón del destacado): abrir, entrar a la consola o ver la lista de lo que está a medias. */
+function homeActivate(target, action = "select") {
+  if (!target) return;
+  if (target.kind === "empty") return goToSection("games", 1);
+  if (target.kind === "pending") return action === "select" && openMenu(pendingMenu(target.items));
+  if (target.kind === "console") {
+    if (action === "alt" && target.console.last) return launch(target.console.last);
+    if (action !== "select") { sound.play("error"); return rumble("edge"); }
+    state.sectionFocus.games = { rowId: target.console.id, itemId: target.console.last?.id };
+    return goToSection("games", 1);
+  }
+  const item = target.item;
+  if (action === "options") return openMenu(gameMenu(item, { running: state.running }));
+  if (action === "alt") {
+    if (isWatchable(item)) return openTitle(item);
+    const alt = alternativeRunner(item);
+    if (alt) return launch(item, alt.id);
+    sound.play("error");
+    return rumble("edge");
+  }
+  return launch(item);
+}
+
 // ---------------------------------------------------------------- datos
 function renderSections() {
   ui.status.setSections(visibleSections(state.allRows), state.section, glyphs());
@@ -176,12 +250,15 @@ function goToSection(id, direction = 0) {
   state.sectionFocus[state.section] = { rowId: state.rows[state.focus.r]?.id, itemId: current()?.id };
   state.section = id;
   state.rows = sectionRows(state.allRows, id);
+  renderView();
   ui.shelf.setRows(state.rows, { emptyTitle: "Nada por aquí todavía", emptyText: "" });
   const saved = state.sectionFocus[id] || {};
   const { r, c } = restoreFocus(state.rows, { rowId: saved.rowId, itemId: saved.itemId, r: 0, c: 0 });
   state.focus = { r: -1, c: -1 }; // fuerza a redibujar héroe y fondo
-  setFocus(r, c, { silent: true });
+  if (inHome()) state.focus = { r, c };
+  else setFocus(r, c, { silent: true });
   ui.shelf.slide(direction || Math.sign(to - from));
+  renderHints();
   sound.play("move");
   renderSections();
 }
@@ -230,7 +307,9 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     libraryRetry = 0;
     const { r, c } = restoreFocus(state.rows, { rowId, itemId, ...state.focus });
     state.focus = { r, c };
-    setFocus(r, c, { silent: true });
+    renderView();
+    if (inHome()) renderHints();
+    else setFocus(r, c, { silent: true });
     boot.finish();
     if (refresh) {
       const countAfter = state.allRows.reduce((n, row) => n + row.items.length, 0);
@@ -252,9 +331,9 @@ function applyStatus(running) {
   state.running = running;
   ui.status.setRunning(running);
   if (changed) { // "Jugar" <-> "Volver al juego" y el pie, sin esperar a moverse
-    ui.hero.update(current(), glyphs(), { immediate: true, runningId: running?.id });
+    if (!inHome()) ui.hero.update(current(), glyphs(), { immediate: true, runningId: running?.id });
     renderHints();
-    if (state.libraryLoaded) loadLibrary(); // la tarjeta "Abierto" de Continuar
+    if (state.libraryLoaded) loadLibrary(); // la tarjeta "Abierto" de Continuar (y el destacado del Inicio)
   }
 }
 
@@ -268,6 +347,13 @@ async function pollSystem() {
   try {
     ui.status.setSystem(await api.system());
   } catch { /* idem */ }
+  renderStatusChips();
+}
+
+/** Pie: el mando conectado (con su batería) y Stremio. */
+async function renderStatusChips() {
+  const { controllers = [] } = await api.controllers().catch(() => ({}));
+  ui.hints.setStatus(statusChips({ controllers, stremioLinked: state.stremioLinked }));
 }
 
 // ---------------------------------------------------------------- películas y series
@@ -455,8 +541,9 @@ function handleAction(action, { repeat = false } = {}) {
     if (action === "back") sound.play("back");
     return renderHints();
   }
-  // Vistas a pantalla completa, de arriba abajo: fuentes sobre la ficha, la ficha sobre la búsqueda.
-  if (ui.login.handle(action) || ui.sources.handle(action) || ui.title.handle(action) || ui.search.handle(action)) return renderHints();
+  // Vistas a pantalla completa (OVERLAYS): la de más arriba se queda con el botón.
+  if (OVERLAYS.some((view) => view.handle(action))) return renderHints();
+  if (inHome()) return handleHome(action, { repeat });
   const { r, c } = state.focus;
   const item = current();
   switch (action) {
@@ -483,6 +570,27 @@ function handleAction(action, { repeat = false } = {}) {
       if (r || c) { sound.play("back"); setFocus(0, 0, { silent: true }); }
       else if (state.section !== "home") goToSection("home", -1);
       return;
+    case "refresh": return loadLibrary({ refresh: true });
+  }
+}
+
+/** Botones en el Inicio: moverse por posición (spatial), A/X/Y sobre lo enfocado, lo demás igual. */
+function handleHome(action, { repeat = false } = {}) {
+  const moved = ui.home.handle(action === "home" ? "back" : action);
+  if (moved === true) { sound.play("move"); return renderHints(); }
+  if (moved === "edge") { if (!repeat) rumble("edge"); return; }
+  const target = ui.home.current;
+  switch (action) {
+    case "select": return homeActivate(target, "select");
+    case "alt": return homeActivate(target, "alt");
+    case "options":
+      if (target?.kind === "item") return homeActivate(target, "options");
+      sound.play("error");
+      return rumble("edge");
+    case "prevsection": return stepSection(-1);
+    case "nextsection": return stepSection(1);
+    case "search": return openSearch();
+    case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit }));
     case "refresh": return loadLibrary({ refresh: true });
   }
 }
@@ -572,6 +680,7 @@ api.ui().then(({ can_exit: canExit, stremio_linked: linked, player, alexa }) => 
   ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   state.stremioLinked = !!linked;
   state.player = player || "stremio";
+  renderStatusChips();
 }).catch(() => {});
 
 // Enlaces directos: ?buscar=dune abre la búsqueda con ese texto; ?serie=tt0386676 su ficha.

@@ -43,3 +43,42 @@ export function shortTitle(title = "") {
   const clean = String(title).replace(/[™®©]/g, "").split(/\s*[:–—(]\s*/)[0].trim();
   return clean || String(title);
 }
+
+const PAD_NAMES = { gamesir: "GameSir", legion: "Legion Go", xbox: "Mando Xbox" };
+const BATTERY = { wired: "con cable", full: "batería llena", medium: "batería media", low: "batería baja", empty: "sin batería" };
+
+/** Chips de estado del pie: cada mando conectado (con su batería) y Stremio (lógica pura). */
+export function statusChips({ controllers = [], stremioLinked = false } = {}) {
+  const chips = controllers.map((pad) => ({
+    icon: "gamepad",
+    text: [PAD_NAMES[pad.kind] ?? "Mando", BATTERY[pad.battery]].filter(Boolean).join(" · "),
+    title: pad.close ? `Cerrar el juego: ${pad.close}` : null,
+  }));
+  if (stremioLinked) chips.push({ dot: "var(--color-live)", text: "Stremio" });
+  return chips;
+}
+
+/**
+ * Pie del Inicio según lo enfocado: A y X dicen exactamente qué hacen (lógica pura).
+ * target = { kind: "item" | "console" | "pending" | "empty", item?, console? }
+ */
+export function homeHints(glyphs, target, { running = null, primary = "Abrir", alt = null } = {}) {
+  const list = [];
+  if (target?.kind === "console") {
+    list.push({ glyph: glyphs.select, label: "Entrar" });
+    if (target.console.last) list.push({ glyph: glyphs.alt, label: `Seguir ${shortTitle(target.console.last.title)}` });
+  } else if (target?.kind === "pending") {
+    list.push({ glyph: glyphs.select, label: "Ver todo" });
+  } else if (target?.kind === "item") {
+    list.push({ glyph: glyphs.select, label: primary });
+    if (alt) list.push({ glyph: glyphs.alt, label: alt });
+    list.push({ glyph: glyphs.options, label: "Opciones", secondary: true });
+  } else {
+    list.push({ glyph: glyphs.select, label: "Ir a Juegos" });
+  }
+  if (glyphs.page) list.push({ glyph: glyphs.page, label: target?.kind === "console" ? "Arriba" : "Consolas", secondary: true });
+  if (glyphs.section) list.push({ glyph: glyphs.section, label: "Sección", secondary: true });
+  if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${running.title}` });
+  list.push({ glyph: glyphs.menu, label: "Menú", end: true });
+  return list;
+}

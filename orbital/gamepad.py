@@ -46,12 +46,14 @@ def connected_controllers() -> list[dict]:
     except (OSError, AttributeError):
         return []
     state, found = _XInputState(), []
+    battery = _load_battery()
     for slot in range(4):
         if get_state(slot, ctypes.byref(state)) != 0:
             continue
         vid = vendor(slot) if vendor else None
         found.append({"slot": slot + 1, "kind": VENDORS.get(vid or 0, "other"),
-                      "close": "Start + Select" if close_combo_for(vid) == LEGION_CLOSE_COMBO else "Start + Select + Home"})
+                      "close": "Start + Select" if close_combo_for(vid) == LEGION_CLOSE_COMBO else "Start + Select + Home",
+                      "battery": battery(slot) if battery else None})
     return found
 
 
@@ -200,6 +202,35 @@ def _load_vendor():
         caps = _XInputCapabilitiesEx()
         return caps.VendorId if fn(1, slot, 0, ctypes.byref(caps)) == 0 else None
     return vendor
+
+
+class _BatteryInformation(ctypes.Structure):
+    _fields_ = [("BatteryType", ctypes.c_ubyte), ("BatteryLevel", ctypes.c_ubyte)]
+
+
+BATTERY_LEVELS = {0: "empty", 1: "low", 2: "medium", 3: "full"}
+
+
+def _load_battery():
+    """XInputGetBatteryInformation: «wired» (con cable), «full», «medium», «low», «empty» o None."""
+    try:
+        fn = ctypes.WinDLL("xinput1_4.dll").XInputGetBatteryInformation
+    except (OSError, AttributeError):
+        return None
+    fn.argtypes = [ctypes.c_uint, ctypes.c_ubyte, ctypes.POINTER(_BatteryInformation)]
+    fn.restype = ctypes.c_uint
+
+    def read(slot: int) -> str | None:
+        info = _BatteryInformation()
+        if fn(slot, 0, ctypes.byref(info)) != 0:  # 0 = BATTERY_DEVTYPE_GAMEPAD
+            return None
+        if info.BatteryType == 1:  # BATTERY_TYPE_WIRED
+            return "wired"
+        if info.BatteryType in (0, 0xFF):  # desconectado o desconocido
+            return None
+        return BATTERY_LEVELS.get(info.BatteryLevel)
+
+    return read
 
 
 def _load_get_state():

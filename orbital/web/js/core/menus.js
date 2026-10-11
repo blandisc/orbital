@@ -387,3 +387,17 @@ export function controlsPage(page) {
   const def = CONTROL_PAGES[page];
   return { title: def.title, crumb: def.title, options: def.rows.map(([label, value]) => row(label, value)) };
 }
+
+/** «Tienes 5 cosas a medias · ver todo»: la lista completa para retomar cualquiera. */
+export function pendingMenu(items) {
+  return {
+    title: "A medias",
+    options: [
+      ...items.map((item) => ({
+        icon: isWatchable(item) ? "play" : "gamepad", label: item.title, hint: isWatchable(item) ? item.subtitle : runnerName(item),
+        command: { type: "launch", id: item.id },
+      })),
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+    ],
+  };
+}

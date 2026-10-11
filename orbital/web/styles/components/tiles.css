@@ -1,0 +1,89 @@
+/* Tiles (js/components/tiles.js): destacado, tarjeta ancha, consola y el aviso en píldora.
+   Comparten la base .tile de ui.css (radio, anillo de foco, atenuado). Reutilizables en
+   cualquier pantalla; el acomodo de cada pantalla vive en su propio CSS (home.css…). */
+
+/* --- Destacado: lo último que jugaste o viste, con sus acciones como leyenda --------------- */
+.tile--feature { min-height: 0; background: var(--color-surface); }
+.tile--feature__shade {
+  background:
+    linear-gradient(90deg, color-mix(in oklab, var(--palette-ink-1000) 88%, transparent) 0%, color-mix(in oklab, var(--palette-ink-1000) 55%, transparent) 42%, transparent 78%),
+    var(--gradient-tile-shade);
+}
+.tile--feature__body {
+  position: absolute; inset: auto auto 0 0; z-index: 1; width: min(68%, 34rem);
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3);
+  padding: var(--space-6) var(--space-8);
+}
+.tile--feature .tile__eyebrow { color: var(--color-accent); }
+.tile--feature__title {
+  font-family: var(--font-sans); font-size: var(--text-3xl); font-weight: var(--weight-bold); line-height: 1.02;
+  letter-spacing: var(--tracking-display); text-shadow: var(--shadow-text); text-wrap: balance; padding-bottom: .08em;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.tile--feature__logo { max-width: min(100%, 22rem); max-height: 6rem; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
+.tile--feature__detail { color: var(--color-text); opacity: .86; font-size: var(--text-md); text-shadow: var(--shadow-text); }
+.tile--feature__progress { --progress-width: 14rem; }
+.tile--feature__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-2); }
+.tile--empty { display: grid; background: var(--gradient-card); }
+
+/* --- Ancha: arte horizontal a sangre; encima qué es, el título y lo que queda ---------------- */
+.tile--wide { min-height: 0; background: var(--color-surface); }
+.tile--wide__body {
+  position: absolute; inset: auto 0 0 0; z-index: 1; display: flex; flex-direction: column; gap: var(--space-1);
+  padding: var(--space-4) var(--space-5); text-shadow: var(--shadow-text);
+}
+.tile--wide .tile__eyebrow { color: var(--color-text); opacity: .86; }
+.tile--wide__title {
+  font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold); line-height: 1.15;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tile--wide__detail { display: flex; align-items: center; gap: var(--space-3); color: var(--color-text); opacity: .82; font-size: var(--text-sm); white-space: nowrap; }
+.tile--wide__progress { --progress-width: 4.5rem; flex: none; }
+
+/* Arte de respaldo (no tiene propio): un poco más tenue, para que se lea como «genérico». */
+.tile--placeholder .tile__art { opacity: .9; }
+
+/* --- Consola: su foto sobre un brillo de su color, cuántos juegos y lo último ----------------- */
+.tile--console {
+  display: flex; flex-direction: column; gap: .15rem; padding: 0 var(--space-4) var(--space-3);
+  background: linear-gradient(180deg, var(--palette-ink-850) 0%, var(--palette-ink-900) 100%);
+}
+.tile--console__glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 80% at 50% 0%, color-mix(in oklab, var(--glow) 24%, transparent) 0%, transparent 70%);
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+.tile--console.tile--focused .tile--console__glow {
+  background: radial-gradient(120% 80% at 50% 0%, color-mix(in oklab, var(--glow) 42%, transparent) 0%, transparent 72%);
+}
+.tile--console__media { position: relative; flex: none; height: 5.2rem; display: grid; place-items: center; }
+.tile--console__photo {
+  max-width: 82%; max-height: 4.8rem; object-fit: contain;
+  filter: drop-shadow(0 .7rem .9rem rgba(0, 0, 0, .6));
+  transition: transform var(--duration-base) var(--ease-spring);
+}
+.tile--console.tile--focused .tile--console__photo { transform: scale(1.08) translateY(-.1rem); }
+.tile--console__cover { height: 4.6rem; width: auto; border-radius: var(--radius-sm); box-shadow: var(--shadow-card); }
+.tile--console__name { position: relative; font-family: var(--font-sans); font-size: var(--text-lg); line-height: 1.15; }
+.tile--console__count { position: relative; display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
+.tile--console__foot {
+  position: relative; margin-top: auto; padding-top: var(--space-2);
+  color: var(--color-text-muted); font-size: var(--text-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tile--console__foot--keys { display: none; gap: var(--space-3); color: var(--color-text); }
+.tile--console__foot--keys b { font-weight: var(--weight-bold); }
+.tile--console.tile--focused .tile--console__foot--last { display: none; }
+.tile--console.tile--focused .tile--console__foot--keys { display: flex; }
+[data-input="touch"] .tile--console__foot--keys { display: none !important; }
+[data-input="touch"] .tile--console.tile--focused .tile--console__foot--last { display: block; }
+
+/* --- Píldora enfocable («Tienes 5 cosas a medias · ver todo ›») ------------------------------- */
+.tile--pill {
+  display: inline-flex; align-items: center; gap: .2rem; min-height: 2.6rem; padding: 0 var(--space-3) 0 var(--space-5);
+  border-radius: var(--radius-pill); background: transparent; box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
+  color: var(--color-text); font-size: var(--text-md); cursor: pointer;
+}
+.tile--pill__more { color: var(--color-text-muted); }
+.tile--pill .icon { width: 1.1rem; height: 1.1rem; color: var(--color-text-muted); }
+.tile--pill.tile--focused { transform: none; background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; }
+.tile--pill.tile--focused .tile--pill__more, .tile--pill.tile--focused .icon { color: inherit; opacity: .7; }

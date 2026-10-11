@@ -25,6 +25,15 @@ from orbital.server import create_app  # noqa: E402
 
 GAMES = {"367520": "Hollow Knight", "1145360": "Hades", "504230": "Celeste", "632360": "Risk of Rain 2",
          "1086940": "Baldur's Gate 3", "413150": "Stardew Valley"}
+# Consolas inventadas (sin arte: así se ven los respaldos) para probar el Inicio y Tus consolas.
+CONSOLES = {
+    "switch": ("Nintendo Switch", ".nsp", ["Mario Party Superstars", "Super Mario Bros Wonder", "Zelda Tears of the Kingdom"]),
+    "gc": ("Nintendo GameCube", ".iso", ["Pikmin 2", "Super Smash Bros. Melee"]),
+    "gba": ("Game Boy Advance", ".gba", ["Pokemon Emerald", "Kirby Amazing Mirror", "Metroid Fusion"]),
+    "psp": ("PlayStation Portable", ".iso", ["Metal Slug Anthology"]),
+}
+# Lo último que "jugaste" (minutos atrás): llena Continuar y el destacado.
+PLAYED = {"steam:1145360": 30, "Mario Party Superstars": 240, "Pikmin 2": 1500, "steam:367520": 2900, "Pokemon Emerald": 4000}
 
 
 class DryLauncher:
@@ -67,8 +76,19 @@ def build(tmp: Path):
         '"libraryfolders"\n{\n\t"0"\n\t{\n\t\t"path"\t\t"%s"\n\t}\n}\n' % str(tmp / "Steam").replace("\\", "\\\\"))
     for appid, name in GAMES.items():
         (apps / f"appmanifest_{appid}.acf").write_text(f'"AppState"\n{{\n\t"appid"\t\t"{appid}"\n\t"name"\t\t"{name}"\n}}\n')
+    emulators = []
+    for system, (name, ext, titles) in CONSOLES.items():
+        roms = tmp / "ROMs" / system
+        roms.mkdir(parents=True)
+        for title in titles:
+            (roms / f"{title}{ext}").write_bytes(b"")
+        emulators.append({"id": system, "name": name, "system": system, "executable": str(tmp / "emu.exe"),
+                          "rom_dirs": [str(roms)], "extensions": [ext]})
+    (tmp / "emu.exe").write_bytes(b"")
     config = parse_config({
         "server": {"token": "demo"},
+        "emulators": emulators,
+        "art": {"scrape": False, "dir": str(tmp / "media")},
         "steam": {"path": str(tmp / "Steam")},
         "stremio": {"executable": ""},
         "esde": {"enabled": False},
@@ -80,7 +100,14 @@ def build(tmp: Path):
     stremio.find_stremio = lambda cfg: None
     geforcenow.install_dir = lambda: None
     geforcenow.read_shortcuts = list
-    return create_app(config, Catalog(config, DryLauncher()))
+    catalog = Catalog(config, DryLauncher())
+    catalog.refresh()
+    now = time.time()
+    for item in catalog.store.all():
+        minutes = PLAYED.get(item.id, PLAYED.get(item.title))
+        if minutes:
+            catalog.state.record_launch(item.id, now=now - minutes * 60)
+    return create_app(config, catalog)
 
 
 def main() -> None:
