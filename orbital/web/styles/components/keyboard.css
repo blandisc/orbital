@@ -1,0 +1,24 @@
+/* Keyboard: teclado en pantalla del sistema de diseño (Buscar, Conectar Stremio).
+   Teclas grandes (se aciertan desde el sofá); la enfocada usa el foco invertido común. */
+.keyboard {
+  display: grid; grid-template-columns: repeat(10, 1fr); gap: var(--space-2);
+  width: min(var(--keyboard-width), 100%);
+}
+.keyboard__key {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  height: var(--key-height); border-radius: var(--radius-md);
+  background: var(--color-fill); font-size: var(--text-lg); font-weight: var(--weight-medium);
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-spring);
+}
+.keyboard__key .icon { width: 1.15rem; height: 1.15rem; }
+.keyboard__key:hover { background: var(--color-fill-hover); }
+.keyboard__key:active { transform: scale(.96); }
+.keyboard__key--wide { font-size: var(--text-md); color: var(--color-text-muted); }
+.keyboard__key--action { color: var(--color-text-muted); }
+.keyboard__key--go { background: var(--color-fill-hover); color: var(--color-text); font-weight: var(--weight-bold); }
+.keyboard__key--on { color: var(--color-accent); box-shadow: inset 0 0 0 2px var(--color-hairline-strong); }
+.keyboard__key--focused, .keyboard__key--focused:hover {
+  background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale));
+}
+@media (max-height: 640px) { .keyboard { --key-height: 2.5rem; } }
+@media (max-width: 760px) { .keyboard__key { font-size: var(--text-md); } }

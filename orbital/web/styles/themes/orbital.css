@@ -22,6 +22,9 @@
   --color-focus: var(--palette-paper);
   --color-primary: var(--palette-paper);
   --color-on-primary: var(--palette-ink-1000);
+  /* Foco invertido (teclas, chips, pestañas, opciones de menú): fondo claro, texto oscuro. */
+  --inverse-bg: var(--color-primary);
+  --inverse-fg: var(--color-on-primary);
   --color-favorite: var(--palette-amber-300);
   --color-danger: var(--palette-red-400);
   --color-warning: var(--palette-amber-300);

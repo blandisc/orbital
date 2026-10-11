@@ -104,6 +104,9 @@
   --glyph-size: 1.6rem;
   --progress-height: .25rem;
   --sheet-width: 26rem;
+  --keyboard-width: 54rem;
+  --key-height: 3.2rem;
+  --inverse-scale: 1.06; /* teclas, chips y opciones enfocadas crecen un poco */
 }
 
 /* El color del juego enfocado: registrado para que cambie con transición suave. */
