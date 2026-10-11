@@ -61,8 +61,8 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
       .filter(Boolean).flatMap((t, i) => (i ? [h("span", { class: "title__sep", "aria-hidden": "true" }, "·"), t] : [t])));
     description.textContent = info.description || "";
     const lines = [
-      info.cast?.length && h("span", {}, h("em", {}, "Con "), info.cast.slice(0, 4).join(", ")),
-      info.directors?.length && h("span", {}, h("em", {}, "Dirección "), info.directors.join(", ")),
+      info.cast?.length > 0 && h("span", {}, h("em", {}, "Con "), info.cast.slice(0, 4).join(", ")),
+      info.directors?.length > 0 && h("span", {}, h("em", {}, "Dirección "), info.directors.join(", ")),
     ].filter(Boolean);
     mount(people, lines);
     people.hidden = !lines.length;

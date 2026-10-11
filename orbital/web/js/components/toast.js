@@ -24,7 +24,7 @@ export function createToast({ duration = 3800, errorDuration = 6500 } = {}) {
     const icon = toast.voice ? "mic" : toast.error ? "close" : "check";
     mount(el, h("span", { class: "toast__icon", "aria-hidden": "true" }, svg(ICONS[icon])), h("span", {}, toast.message),
       // Cuenta regresiva visible (p. ej. los 2 s para el segundo toque de Legion L).
-      toast.countdown && h("span", { class: "toast__countdown", style: { animationDuration: `${toast.countdown}ms` } }));
+      toast.countdown > 0 ? h("span", { class: "toast__countdown", style: { animationDuration: `${toast.countdown}ms` } }) : null);
     el.classList.toggle("toast--error", toast.error);
     el.classList.toggle("toast--voice", toast.voice);
     el.setAttribute("role", toast.error ? "alert" : "status");

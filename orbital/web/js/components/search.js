@@ -129,8 +129,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     }));
     focusables = [...chips, ...cards];
     mount(results, [
-      chips.length && h("span", { class: "search__group" }, "Recientes"), ...chips,
-      cards.length && h("span", { class: "search__group" }, "Populares"), ...cards,
+      chips.length > 0 && h("span", { class: "search__group" }, "Recientes"), ...chips,
+      cards.length > 0 && h("span", { class: "search__group" }, "Populares"), ...cards,
     ]);
     results.classList.toggle("search__results--recent", !cards.length);
     if (!items.length && zone === "results") zone = "keys";
