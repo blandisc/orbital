@@ -114,7 +114,7 @@ export function createSources({ onPlay, onMove, onClose }) {
 
   /** Pistas del pie mientras la lista de fuentes está abierta. */
   const hints = (g) => [{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra fuente" },
-    { glyph: g.back, label: "Volver", end: true }];
+    { glyph: g.back, label: "Atrás", end: true }];
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden; } };
 }

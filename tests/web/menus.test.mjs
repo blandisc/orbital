@@ -1,42 +1,49 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { alexaMenu, capturesMenu, diagnosticsMenu, foldersMenu, gameMenu, tourMenu, updateMenu, mainMenu, quickMenu, nextSetting, powerConfirmMenu, powerMenu, settingsPage, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
-  id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch",
+  id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch", system: "switch",
   runners: [{ id: "switch", name: "Ryujinx" }, { id: "switch-eden", name: "Eden" }],
 };
 
-test("menú de juego con emulador alternativo", () => {
+test("opciones de un juego: solo lo que no hace otro botón, emulador e imagen en su propia hoja", () => {
   const menu = gameMenu(zelda);
   assert.equal(menu.title, "Zelda");
-  assert.deepEqual(menu.options.map((o) => o.label), [
-    "Jugar", "Abrir con Eden", "Usar siempre Eden", "Añadir a favoritos", "Ocultar", "Cancelar",
-  ]);
-  assert.deepEqual(menu.options[1].command, { type: "launch", id: zelda.id, runner: "switch-eden" });
-  assert.deepEqual(menu.options[2].command.prefs, { runner: "switch-eden" });
+  assert.deepEqual(menu.options.map((o) => o.label), ["Añadir a favoritos", "Cambiar emulador", "Cambiar imagen", "Ocultar"]);
+  assert.ok(!menu.options.some((o) => o.command.type === "close")); // B cierra: sin «Cancelar»
+  const runners = runnerMenu(zelda);
+  assert.deepEqual(runners.options.map((o) => o.label), ["Abrir con Eden", "Usar siempre Eden"]);
+  assert.deepEqual(runners.options[0].command, { type: "launch", id: zelda.id, runner: "switch-eden" });
+  assert.deepEqual(runners.options[1].command.prefs, { runner: "switch-eden" });
+  assert.deepEqual(artMenu(zelda).options.map((o) => o.command.kind), ["cover", "hero"]);
 });
 
-test("menú de juego favorito y sin alternativas", () => {
-  const menu = gameMenu({ id: "steam:1", title: "Hades", favorite: true, runners: [] });
-  assert.deepEqual(menu.options.map((o) => o.label), ["Jugar", "Quitar de favoritos", "Ocultar", "Cancelar"]);
+test("opciones de un juego favorito y sin alternativas", () => {
+  const menu = gameMenu({ id: "steam:1", title: "Hades", favorite: true, runners: [], source: "steam", category: "steam" });
+  assert.deepEqual(menu.options.map((o) => o.label), ["Quitar de favoritos", "Ocultar"]);
+  assert.match(menu.options.at(-1).command.message, /Mostrar juegos ocultos/); // dice dónde recuperarlo
   assert.equal(gameMenu(null), null);
 });
 
-test("menú general según el contexto", () => {
+test("menú ☰: lo de todos los días; lo técnico en Ajustes → Mantenimiento", () => {
   const basic = mainMenu({ running: null, hiddenCount: 0 });
-  assert.deepEqual(basic.options.map((o) => o.label), ["Panel rápido", "Actualizar biblioteca", "Ventanas abiertas", "Atajos y controles", "Ajustes", "Apagado", "Cerrar menú"]);
+  assert.deepEqual(basic.options.map((o) => o.label), ["Panel rápido", "Cómo se usa", "Ajustes", "Apagar"]);
   const full = mainMenu({ running: { title: "Zelda", managed: true }, hiddenCount: 3 });
   assert.deepEqual(full.options.map((o) => o.label),
-    ["Panel rápido", "Actualizar biblioteca", "Cerrar Zelda", "Mostrar juegos ocultos", "Ventanas abiertas", "Atajos y controles", "Ajustes", "Apagado", "Cerrar menú"]);
+    ["Panel rápido", "Cerrar Zelda", "Mostrar juegos ocultos", "Cómo se usa", "Ajustes", "Apagar"]);
   // Un juego de Steam (no gestionado por Orbital) no se puede cerrar desde aquí.
   assert.ok(!mainMenu({ running: { title: "Hades", managed: false } }).options.some((o) => o.label === "Cerrar Hades"));
+  const maintenance = settingsPage("maintenance", {});
+  assert.deepEqual(maintenance.options.map((o) => o.command.type),
+    ["setup", "refresh", "folders", "windows", "diagnostics", "update-check"]);
+  assert.deepEqual(settingsMenu().options.map((o) => o.label),
+    ["Películas y series", "Pantalla y sonido", "Juegos y videos", "Cuentas", "Mantenimiento"]);
 });
 
-test("salir al escritorio pide confirmación y empieza en Cancelar", async () => {
-  const { exitMenu } = await import("../../orbital/web/js/core/menus.js");
-  const withExit = mainMenu({ soundEnabled: true, canExit: true });
-  assert.deepEqual(withExit.options.at(-2).command, { type: "confirm-exit" });
+test("salir al escritorio pide confirmación y empieza en Cancelar", () => {
+  const withExit = mainMenu({ canExit: true });
+  assert.deepEqual(withExit.options.at(-1).command, { type: "confirm-exit" });
   const confirm = exitMenu();
   assert.equal(confirm.options[0].label, "Cancelar"); // el foco inicial es seguro
   assert.deepEqual(confirm.options[1].command, { type: "exit" });
@@ -56,7 +63,7 @@ test("cerrar el juego siempre pide confirmación y por defecto sigue jugando", (
 test("Y sobre el juego abierto: continuar o cerrar, no abrir otra copia", () => {
   const menu = gameMenu(zelda, { running: { id: zelda.id, runner: "Eden" } });
   assert.deepEqual(menu.options.slice(0, 2).map((o) => o.label), ["Volver al juego", "Cerrar Eden"]);
-  assert.ok(!menu.options.some((o) => o.command.type === "launch"));
+  assert.ok(!menu.options.some((o) => o.command.type === "launch" || o.label === "Ocultar"));
 });
 
 test("ventanas abiertas: una opción por ventana y aviso si no hay", () => {
@@ -66,9 +73,9 @@ test("ventanas abiertas: una opción por ventana y aviso si no hay", () => {
   assert.equal(windowsMenu([]).options[0].label, "No hay otras ventanas abiertas");
 });
 
-test("apagado: suspender primero; reiniciar y apagar marcados como peligrosos", () => {
+test("apagar: suspender primero; reiniciar y apagar marcados como peligrosos", () => {
   const menu = powerMenu();
-  assert.deepEqual(menu.options.map((o) => o.label), ["Suspender", "Reiniciar", "Apagar", "Cancelar"]);
+  assert.deepEqual(menu.options.map((o) => o.label), ["Suspender", "Reiniciar", "Apagar"]);
   assert.deepEqual(menu.options.filter((o) => o.danger).map((o) => o.command), [
     { type: "power-confirm", action: "restart" }, { type: "power-confirm", action: "shutdown" }]); // piden confirmar
 });
@@ -82,58 +89,50 @@ test("confirmar apagar: Cancelar primero y aviso si hay un juego abierto", () =>
   assert.equal(powerConfirmMenu("restart").subtitle, "");
 });
 
-test("ajustes: cada opción muestra su valor y A pasa al siguiente", () => {
-  const page = settingsPage("playback", { audio: "en", subtitles: "", quality: "1080p", sub_scale: 1 });
+test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente", () => {
+  const page = settingsPage("playback", { audio: "en", subtitles: "forced", quality: "1080p", sub_scale: 1 });
   assert.deepEqual(page.options.map((o) => [o.label, o.value]), [
-    ["Idioma del audio", "Inglés"], ["Subtítulos", "Sin subtítulos"], ["Calidad", "1080p"], ["Tamaño de subtítulos", "Normal"]]);
+    ["Idioma", "Inglés"], ["Subtítulos", "Solo traducciones en pantalla"], ["Calidad", "1080p"], ["Letra de los subtítulos", "Normal"]]);
   assert.deepEqual(page.options[0].command, { type: "setting", key: "audio", value: "es", page: "playback" });
   assert.equal(nextSetting("subtitles", ""), "en"); // da la vuelta
-  const accounts = settingsPage("accounts", { stremio_linked: false, alexa: true, alexa_last: 1000 }, { now: 1000_000 + 600_000 });
-  assert.deepEqual(accounts.options.map((o) => o.value), ["Sin conectar", "Configurada"]);
+  const accounts = settingsPage("accounts", { stremio_linked: false });
+  assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Stremio", "Conectar"]]);
+  assert.deepEqual(accounts.options[0].command, { type: "stremio-login" });
 });
 
-test("el menú Y dice lo que es: Ver, Ver serie, Abrir; emuladores solo en juegos", () => {
-  const first = (item) => gameMenu(item).options[0];
-  assert.equal(first({ id: "cinemeta:movie:tt1", title: "Dune", source: "cinemeta", category: "movies" }).label, "Ver");
-  assert.equal(first({ id: "cinemeta:series:tt2", title: "The Office", source: "cinemeta", category: "series" }).label, "Ver serie");
-  assert.equal(first({ id: "app:youtube", title: "YouTube", source: "app", category: "apps" }).label, "Abrir");
-  assert.equal(first(zelda).label, "Jugar");
+test("las opciones de una película no repiten A ni X; la búsqueda solo busca", () => {
   const movie = gameMenu({ id: "cinemeta:movie:tt1", title: "Dune", source: "cinemeta", category: "movies",
     runners: [{ id: "a", name: "Eden" }, { id: "b", name: "Ryujinx" }], runner: "a" });
-  assert.ok(!movie.options.some((o) => o.label.startsWith("Abrir con")));
-  assert.deepEqual(gameMenu({ id: "media:search", title: "Buscar", source: "search" }).options.map((o) => o.label), ["Buscar", "Cancelar"]);
+  assert.ok(!movie.options.some((o) => ["launch", "title", "runner-menu"].includes(o.command.type)));
+  assert.deepEqual(gameMenu({ id: "media:search", title: "Buscar", source: "search" }).options.map((o) => o.label), ["Buscar"]);
 });
 
-test("abrir otra cosa con un juego abierto: pregunta, y quedarse va primero", async () => {
-  const { switchMenu } = await import("../../orbital/web/js/core/menus.js");
+test("abrir otra cosa con un juego abierto: pregunta, y quedarse va primero", () => {
   const menu = switchMenu({ running: { title: "Zelda" }, title: "Hades", command: { type: "launch", id: "steam:1", runner: null } });
   assert.equal(menu.title, "¿Cerrar Zelda?");
-  assert.deepEqual(menu.options[0].command, { type: "resume" });
-  assert.deepEqual(menu.options[1].command, { type: "launch", id: "steam:1", runner: null, confirmed: true });
+  assert.deepEqual(menu.options.map((o) => o.command), [{ type: "resume" },
+    { type: "launch", id: "steam:1", runner: null, confirmed: true }]);
   assert.equal(menu.options[1].danger, true);
-  assert.deepEqual(menu.options[2].command, { type: "launch", id: "steam:1", runner: null, confirmed: true, keep: true }); // abrir sin cerrar
 });
 
-test("tu consola: lo que hay, lo que falta y Stremio se conecta ahí mismo", async () => {
-  const { setupMenu } = await import("../../orbital/web/js/core/menus.js");
-  const menu = setupMenu({ games: 30, steam: 14, emulators: { "Nintendo Switch": 6 }, esde: false, stremio: false, player: true, alexa: true });
-  assert.equal(menu.subtitle, "Encontré 30 juegos. Esto es lo que hay y lo que falta.");
-  const byLabel = Object.fromEntries(menu.options.map((o) => [o.label, o]));
-  assert.equal(byLabel.Steam.value, "✓ 14 juegos");
-  assert.equal(byLabel.Emuladores.hint, "Nintendo Switch (6)");
-  assert.deepEqual(byLabel.Stremio.command, { type: "stremio-login" });
-  assert.equal(setupMenu({ games: 0, steam: null, emulators: {} }).options[0].value, "No encontrado");
+test("tu consola: dos renglones, y Stremio se conecta ahí mismo", () => {
+  const menu = setupMenu({ games: 30, stremio: false });
+  assert.equal(menu.subtitle, "Encontré 30 juegos.");
+  assert.deepEqual(menu.options.map((o) => o.label), ["Ver mis juegos", "Películas y series", "Listo"]);
+  assert.deepEqual(menu.options[1].command, { type: "stremio-login" });
+  const empty = setupMenu({ games: 0, stremio: true });
+  assert.equal(empty.subtitle, "Aún no encontré juegos.");
+  assert.equal(empty.options[0].label, "Dónde poner los juegos");
+  assert.equal(empty.options[1].value, "✓ Stremio");
 });
 
-test("controles: cada mando con su forma de cerrar, y cuál está conectado", async () => {
-  const { controlsMenu, controlsPage } = await import("../../orbital/web/js/core/menus.js");
-  const menu = controlsMenu([{ slot: 1, kind: "legion", close: "Start + Select" }]);
-  assert.equal(menu.options[1].hint, "Conectado (mando 1) · cerrar: Start + Select");
-  assert.equal(menu.options[2].hint, "No conectado ahora");
-  const legion = Object.fromEntries(controlsPage("legion").options.map((o) => [o.label, o.value]));
-  assert.equal(legion["Cerrar el juego"], "Mantén Start + Select");
-  const gamesir = Object.fromEntries(controlsPage("gamesir").options.map((o) => [o.label, o.value]));
-  assert.equal(gamesir["Cerrar el juego"], "Mantén Start + Select + Home");
+test("cómo se usa: una hoja, con el mando que tienes", () => {
+  const legion = controlsMenu([{ slot: 1, kind: "legion", close: "Start + Select" }]);
+  assert.deepEqual(legion.options.filter((o) => o.heading).map((o) => o.label), ["En un juego", "En Orbital", "Viendo algo"]);
+  const byLabel = (menu) => Object.fromEntries(menu.options.filter((o) => !o.heading).map((o) => [o.label, o.value]));
+  assert.equal(byLabel(legion)["Cerrar el juego"], "Mantén Start + Select");
+  assert.equal(byLabel(controlsMenu([]))["Cerrar el juego"], "Mantén Start + Select + Home");
+  assert.ok(legion.options.every((o) => o.heading || o.command.type === "stay"));
 });
 
 test("diagnóstico: avisa si Windows redirige la configuración y enseña los últimos avisos", () => {
@@ -169,18 +168,18 @@ test("Mi lista se maneja desde la tarjeta, sin abrir la ficha", () => {
   assert.equal(gameMenu({ id: "steam:1", title: "Hades", source: "steam", category: "steam" }).options.some((o) => o.command.type === "mylist"), false);
 });
 
-test("panel rápido: ◀/▶ ajustan de 10 en 10 sin pasarse; lo que no hay no aparece", () => {
-  const menu = quickMenu({ volume: { level: 95, muted: false }, brightness: null, power_mode: "balanced", battery: null },
+test("panel rápido: ◀/▶ ajustan de 10 en 10 sin pasarse; sin batería ni Wi-Fi (ya están arriba)", () => {
+  const menu = quickMenu({ volume: { level: 95, muted: false }, brightness: null, power_mode: "balanced", battery: { percent: 80 } },
     { running: { id: "steam:1", title: "Hades", managed: true } });
   const vol = menu.options.find((o) => o.label === "Volumen");
   assert.deepEqual(vol.adjust.right.changes, { volume: 100, muted: false });
   assert.deepEqual(vol.adjust.left.changes, { volume: 85, muted: false });
   assert.deepEqual(vol.command.changes, { muted: true }); // A silencia
-  assert.ok(!menu.options.some((o) => o.label === "Brillo")); // monitor externo: sin brillo
+  assert.ok(!menu.options.some((o) => ["Brillo", "Batería", "Wi-Fi"].includes(o.label)));
   const mode = menu.options.find((o) => o.label === "Energía");
   assert.equal(mode.value, "Equilibrado");
   assert.equal(mode.adjust.right.changes.power_mode, "performance");
-  assert.ok(menu.options.some((o) => o.label === "Cerrar Hades"));
+  assert.deepEqual(menu.options.map((o) => o.label).slice(-2), ["Capturas", "Volver a Hades"]); // cerrar: en ☰ o Y
 });
 
 test("capturas vacías explican cómo hacer una", () => {
@@ -201,6 +200,7 @@ test("carpetas de juegos: cada emulador con sus juegos y dónde los busca", () =
 test("actualizar: qué cambia, actualizar primero, y avisos claros si no se puede", () => {
   const menu = updateMenu({ available: 2, changes: ["Panel rápido", "Capturas"], error: "", busy: false });
   assert.equal(menu.title, "Hay 2 cambios nuevos");
+  assert.equal(menu.subtitle, "Tarda unos minutos.");
   assert.equal(menu.options[0].command.type, "update-apply");
   assert.deepEqual(menu.options.slice(1, 3).map((o) => o.label), ["Panel rápido", "Capturas"]);
   assert.match(updateMenu({ available: 0, changes: [] }).subtitle, /más reciente/);
@@ -216,24 +216,9 @@ test("guía rápida: paso a paso, con el atajo del mando que tienes", () => {
   assert.equal(last.options[0].command.type, "close");
 });
 
-test("atajos: todos en una hoja, desde Controles y desde el panel rápido", async () => {
-  const { controlsMenu, controlsPage } = await import("../../orbital/web/js/core/menus.js");
-  assert.equal(controlsMenu([]).options[0].command.page, "atajos");
-  const page = controlsPage("atajos");
-  const byLabel = Object.fromEntries(page.options.map((o) => [o.label, o]));
-  assert.equal(byLabel["Panel rápido"].value, "Home+LB");
-  assert.match(byLabel["Cerrar el juego"].hint, /Legion Go/);
-  assert.ok(page.options.every((o) => o.heading || o.command.type === "stay"));
-  assert.deepEqual(page.options.filter((o) => o.heading).map((o) => o.label), ["En un juego", "En Orbital", "Viendo algo"]); // encabezados, no opciones
-  const panel = quickMenu({ volume: null, brightness: null, power_mode: "performance", battery: null });
-  assert.equal(panel.options.find((o) => o.label === "Energía").value, "Máximo");
-  assert.equal(panel.options.at(-1).command.page, "atajos");
-});
-
-test("Alexa: ejemplos que no hacen nada al elegirlos y una salida al final", () => {
+test("Alexa: ejemplos que no hacen nada al elegirlos", () => {
   const menu = alexaMenu();
   assert.match(menu.subtitle, /pídele a mi consola/);
   assert.ok(menu.options.length >= 5);
-  assert.ok(menu.options.slice(0, -1).every((o) => o.command.type === "stay" && o.label.startsWith("«")));
-  assert.equal(menu.options.at(-1).command.type, "close");
+  assert.ok(menu.options.every((o) => o.command.type === "stay" && o.label.startsWith("«")));
 });

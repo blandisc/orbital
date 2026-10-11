@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints } from "./core/hints.js";
-import { alexaMenu, capturesMenu, controlsMenu, controlsPage, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, healthMenu, mainMenu, powerConfirmMenu, powerMenu, quickMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, updateMenu, windowsMenu } from "./core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, healthMenu, mainMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, updateMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -136,7 +136,7 @@ function renderHints() {
   if (inGames() && !ui.sheet.isOpen) {
     const target = ui.games.current;
     const item = target?.item;
-    return ui.hints.render(gamesHints(g, target, { primary: item && primaryLabel(item, state.running?.id), alt: item && altLabel(item) }));
+    return ui.hints.render(gamesHints(g, target));
   }
   if (inHome() && !ui.sheet.isOpen) {
     const target = ui.home.current;
@@ -146,12 +146,13 @@ function renderHints() {
       primary: item && primaryLabel(item, state.running?.id),
       alt: item && altLabel(item),
       sections: visibleSections(state.allRows).length,
+      onScreen: ui.home.focusId === "feature",
     }));
   }
   const { r, c } = state.focus;
   ui.hints.render(footerHints(glyphs(), {
     sheetOpen: ui.sheet.isOpen,
-    sheetNested: ui.sheet.depth > 0,
+    adjustable: ui.sheet.adjustable,
     atHome: !r && !c,
     longRow: (state.rows[r]?.items.length ?? 0) >= LONG_ROW,
     running: state.running?.managed ? state.running : null,
@@ -476,8 +477,8 @@ const { watch, launch, resumeRunning } = createLaunching({
 
 function openSources(play) {
   if (!state.stremioLinked) {
-    sound.play("error");
-    return ui.toast.show("Para elegir la fuente, conecta tu cuenta de Stremio (☰ → Ajustes → Cuentas)", { error: true });
+    ui.toast.show("Conecta Stremio para elegir la fuente");
+    return runCommand({ type: "stremio-login" });
   }
   sound.play("menu");
   ui.sources.open(play);
@@ -595,8 +596,11 @@ async function runCommand(command, context = null) {
         return renderHints();
       }
       case "controls":
-        if (command.page) return openMenu(controlsPage(command.page), nested(context));
         return openMenu(controlsMenu((await api.controllers().catch(() => ({ controllers: [] }))).controllers), nested(context));
+      case "runner-menu":
+        return openMenu(runnerMenu(command.item), nested(context));
+      case "art-menu":
+        return openMenu(artMenu(command.item), nested(context));
       case "setup":
         return openMenu(setupMenu(await api.setup()), nested(context));
       case "quick":
@@ -690,6 +694,7 @@ function handleAction(action, { repeat = false } = {}) {
     case "select": return launch(item);
     case "search": return openSearch();
     case "alt": {
+      if (isWatchable(item)) return openTitle(item); // X = la ficha, en todas las pantallas
       const alt = alternativeRunner(item);
       if (alt) return launch(item, alt.id);
       sound.play("error"); // X sin nada que hacer: un "no" suave en vez de silencio

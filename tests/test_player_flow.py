@@ -16,13 +16,16 @@ def series_player(**props):
     return p, mpv
 
 
-def test_b_hides_the_bar_first_and_then_leaves():
+def test_b_asks_before_leaving():
     p, mpv = make_player()
     p.press("a")  # pausa: la barra se queda
     assert mpv.overlays[1]
+    p.press("b")  # pregunta: «¿Salir de …?» (A sigue viendo, B sale)
+    assert mpv.overlays[1] is None and "¿Salir de Interstellar?" in mpv.overlays[4] and ("quit",) not in mpv.sent
+    p.press("a")  # seguir viendo
+    assert mpv.overlays[4] is None and ("quit",) not in mpv.sent
     p.press("b")
-    assert mpv.overlays[1] is None and ("quit",) not in mpv.sent
-    p.press("b")
+    p.press("b")  # ahora sí, salir
     assert ("quit",) in mpv.sent
 
 
@@ -147,7 +150,7 @@ def test_panels_subtitle_size_and_more():
     switched = []
     p.on_switch_source = lambda meta, sid, pos: switched.append((sid, pos))
     p.press("x")
-    p.press("rb")
+    p.press("right")
     p.press("right")
     assert p.menu.column.key == "size"
     p.press("down")
@@ -155,6 +158,8 @@ def test_panels_subtitle_size_and_more():
     assert p.sub_scale == 1.25 and p.menu is not None and ("set_property", "sub-scale", 1.25) in mpv.sent
     p.press("right")  # ya es la última columna: no se sale
     assert p.menu.column.key == "size"
+    p.press("y")  # dentro de un panel, X y Y lo cierran (no saltan al otro)
+    assert p.menu is None
     p.press("y")  # Y: Más (Fuente · Reproducción)
     assert p.menu.kind == "more" and [c.key for c in p.menu.columns] == ["source", "playback"]
     assert "Fuente" in mpv.overlays[2] and "Desde el principio" in mpv.overlays[2]
@@ -203,7 +208,8 @@ def test_knows_how_it_ended_before_closing():
     p, mpv = series_player(**{"time-pos": 5990.0, "duration": 6000.0})
     p.tick(p.segment, 0, False)
     p.hide_hud()
-    p.press("b")  # sale con la barra oculta, en los créditos
+    p.press("b")
+    p.press("b")  # sale en los créditos (tras confirmar)
     assert ("quit",) in mpv.sent and p.last_end == {"title": "Interstellar", "finished": True, "kind": "series"}
 
 

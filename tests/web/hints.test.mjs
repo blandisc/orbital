@@ -14,14 +14,15 @@ test("el pie no repite lo que ya dicen los botones del héroe", () => {
 
 test("fuera del inicio enseña cómo volver, LB/RB cambia de sección y LT/RT salta en filas largas", () => {
   const items = footerHints(GLYPHS.gamepad, { atHome: false, longRow: true });
-  assert.deepEqual(labels(items), ["Cambiar de fila", "Buscar", "Sección", "Saltar 5", "Al principio", "Menú"]);
+  assert.deepEqual(labels(items), ["Cambiar de fila", "Buscar", "Sección", "Saltar 5", "Atrás", "Menú"]);
   assert.equal(items[2].glyph, "LB RB");
   assert.equal(items[3].glyph, "LT RT");
   assert.equal(items[4].glyph, "B");
 });
 
-test("con un menú abierto solo Elegir y Cerrar", () => {
-  assert.deepEqual(footerHints(GLYPHS.keyboard, { sheetOpen: true }).map((i) => i.glyph), ["Enter", "Esc"]);
+test("con un menú abierto solo Elegir y Atrás; en un ajuste, ◀ ▶ Cambiar", () => {
+  assert.deepEqual(footerHints(GLYPHS.keyboard, { sheetOpen: true }).map((i) => i.label), ["Elegir", "Atrás"]);
+  assert.deepEqual(footerHints(GLYPHS.gamepad, { sheetOpen: true, adjustable: true }).map((i) => i.label), ["Cambiar", "Atrás"]);
 });
 
 test("con un juego abierto el pie recuerda Home para volver (solo con mando)", () => {

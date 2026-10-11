@@ -125,6 +125,8 @@ def test_b_closes_the_menu_before_closing_the_video():
     p.press("x")
     p.press("b")
     assert p.menu is None and ("quit",) not in mpv.sent
+    p.press("b")  # pregunta antes de salir
+    assert ("quit",) not in mpv.sent
     p.press("b")
     assert ("quit",) in mpv.sent
 

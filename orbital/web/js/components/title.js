@@ -350,11 +350,11 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
   const hints = (g) => (zone === "episodes"
     ? [{ glyph: g.select, label: "Ver" }, { glyph: g.options, label: "Fuente" }, { glyph: g.section, label: "Temporada" },
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
-      { glyph: g.back, label: "Arriba", end: true }].filter(Boolean)
+      { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : [{ glyph: g.select, label: buttons[action]?.label?.split(" · ")[0] || "Ver" }, { glyph: g.options, label: "Elegir fuente" },
       kindOf() === "series" && seasons().length && { glyph: g.rows, label: "Episodios" },
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
-      { glyph: g.back, label: "Volver", end: true }].filter(Boolean));
+      { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden; }, get current() { return item; } };
 }

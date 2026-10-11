@@ -4,16 +4,18 @@
  * Jugar, "Con Eden" y Opciones ya están en los botones del héroe con su glifo, así que el
  * pie no los repite: solo enseña cómo moverse y cómo volver.
  */
-export function footerHints(glyphs, { sheetOpen = false, sheetNested = false, atHome = true, longRow = false, running = null, rows = 2 } = {}) {
+export function footerHints(glyphs, { sheetOpen = false, adjustable = false, atHome = true, longRow = false, running = null, rows = 2 } = {}) {
   if (sheetOpen) {
-    return [{ glyph: glyphs.select, label: "Elegir" }, { glyph: glyphs.back, label: sheetNested ? "Atrás" : "Cerrar" }];
+    // En un ajuste (‹ Grande ›) lo que se hace es cambiarlo: ◀ ▶ (A también pasa al siguiente).
+    return [adjustable ? { glyph: glyphs.rows === "↑↓" ? "← →" : "◀ ▶", label: "Cambiar" } : { glyph: glyphs.select, label: "Elegir" },
+      { glyph: glyphs.back, label: "Atrás" }];
   }
   return [
     rows > 1 && { glyph: glyphs.rows, label: "Cambiar de fila" },
     glyphs.search && { glyph: glyphs.search, label: "Buscar", secondary: true },
     glyphs.section && { glyph: glyphs.section, label: "Sección", secondary: true },
     longRow && { glyph: glyphs.page, label: "Saltar 5", secondary: true },
-    !atHome && { glyph: glyphs.back, label: "Al principio", secondary: true },
+    !atHome && { glyph: glyphs.back, label: "Atrás", secondary: true },
     // Con un juego abierto, recuerda cómo volver a él (Home solo existe en el mando).
     running && glyphs.home && { glyph: glyphs.home, label: `Volver a ${running.title}` },
     { glyph: glyphs.menu, label: "Menú", end: true },
@@ -49,7 +51,7 @@ export function shortTitle(title = "") {
  * Pie del Inicio según lo enfocado: A y X dicen exactamente qué hacen (lógica pura).
  * target = { kind: "item" | "console" | "pending" | "empty", item?, console? }
  */
-export function homeHints(glyphs, target, { running = null, primary = "Abrir", alt = null, sections = 2 } = {}) {
+export function homeHints(glyphs, target, { running = null, primary = "Abrir", alt = null, sections = 2, onScreen = false } = {}) {
   const list = [];
   if (target?.kind === "console") {
     list.push({ glyph: glyphs.select, label: "Entrar" });
@@ -59,9 +61,11 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
   } else if (target?.kind === "alexa") {
     list.push({ glyph: glyphs.select, label: "Qué pedirle a Alexa" });
   } else if (target?.kind === "item") {
-    list.push({ glyph: glyphs.select, label: primary });
-    if (alt) list.push({ glyph: glyphs.alt, label: alt });
-    list.push({ glyph: glyphs.options, label: "Opciones", secondary: true });
+    if (!onScreen) { // el destacado ya enseña sus botones (A, X, Y): el pie no los repite
+      list.push({ glyph: glyphs.select, label: primary });
+      if (alt) list.push({ glyph: glyphs.alt, label: alt });
+      list.push({ glyph: glyphs.options, label: "Opciones", secondary: true });
+    }
   } else {
     list.push({ glyph: glyphs.select, label: target?.setup ? "Qué revisar" : "Ir a Juegos" });
   }
@@ -72,18 +76,13 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
 }
 
 /** Pie de Juegos (lógica pura): jugar lo enfocado, filtrar, o cambiar de consola en el riel. */
-export function gamesHints(glyphs, target, { primary = "Jugar", alt = null } = {}) {
+export function gamesHints(glyphs, target) {
   const list = [];
   if (target?.kind === "filter") list.push({ glyph: glyphs.select, label: "Filtrar" });
   else if (target?.kind === "rail") list.push({ glyph: glyphs.rows, label: "Otra consola" }, { glyph: glyphs.select, label: "Ver sus juegos" });
-  else if (target?.kind === "game") {
-    list.push({ glyph: glyphs.select, label: primary });
-    if (alt) list.push({ glyph: glyphs.alt, label: alt });
-    list.push({ glyph: glyphs.options, label: "Opciones", secondary: true });
-  }
+  // Un juego enfocado: la ficha de la derecha ya enseña Jugar, Con … y Opciones; el pie no los repite.
   if (glyphs.page && target?.kind !== "rail") list.push({ glyph: glyphs.page, label: "Otra consola" });
   if (glyphs.section) list.push({ glyph: glyphs.section, label: "Sección", secondary: true });
-  list.push({ glyph: glyphs.back, label: "Inicio", secondary: true });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
   return list;
 }

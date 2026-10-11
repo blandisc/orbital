@@ -4,52 +4,71 @@
  */
 import { isGame, isWatchable, primaryLabel, runnerName } from "./library.js";
 
+/**
+ * Opciones de lo enfocado (Y). Solo lo que no hace otro botón: A abre, X es la alternativa (otro
+ * emulador o la ficha). Sin «Cancelar»: B cierra cualquier hoja.
+ */
 export function gameMenu(item, { running = null } = {}) {
   if (!item) return null;
   const isOpen = running?.id === item.id;
+  if (item.source === "search") {
+    return { title: item.title, options: [{ icon: "search", label: "Buscar", command: { type: "launch", id: item.id } }] };
+  }
   const options = isOpen
     ? [
       { icon: "play", label: "Volver al juego", hint: running.runner, command: { type: "resume" } },
       { icon: "stop", label: `Cerrar ${running.runner || "el juego"}`, danger: true,
         command: { type: "confirm-stop", title: item.title, runner: running.runner } },
     ]
-    : [{
-      // La acción de lo que es: Jugar, Ver, Episodios, Abrir, Buscar (antes decía "Jugar" en todo).
-      icon: item.source === "search" ? "search" : "play",
-      label: item.category === "apps" ? "Abrir" : primaryLabel(item),
-      hint: isGame(item) ? runnerName(item) : isWatchable(item) ? "Stremio" : null,
-      command: { type: "launch", id: item.id },
-    }];
-  if (item.source === "search") return { title: item.title, options: [...options, { icon: "close", label: "Cancelar", command: { type: "close" } }] };
-  // Películas y series: la ficha (reparto, episodios, elegir fuente) a un botón.
-  if (isWatchable(item) && !isOpen) options.push({ icon: "info", label: "Ver la ficha", command: { type: "title", id: item.id } });
+    : [];
   if (item.source === "stremio" && item.category === "continue") {
     options.push({ icon: "minus", label: "Quitar de Seguir viendo", command: { type: "dismiss", id: item.id, title: item.title } });
   }
-  // Mi lista (tu biblioteca de Stremio) sin tener que abrir la ficha.
+  // Mi lista (tu biblioteca de Stremio): + para añadir, ✓ si ya está (como en los servicios de streaming).
   const watch = item.source === "stremio" && item.extra?.meta_id ? item.extra : null;
   if (watch) {
     options.push(watch.in_library
       ? { icon: "check", label: "Quitar de Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: false, title: item.title } }
       : { icon: "plus", label: "Añadir a Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: true, title: item.title } });
   }
-  // ¿No te gusta la portada o el fondo? Se descarta para siempre y se busca otra.
-  if (item.system && !isOpen) {
-    options.push({ icon: "cover", label: "Otra portada", hint: "si esta no te gusta", command: { type: "art", id: item.id, kind: "cover", title: item.title } });
-    options.push({ icon: "wide", label: "Otro fondo", command: { type: "art", id: item.id, kind: "hero", title: item.title } });
+  if (isGame(item) || item.category === "apps") {
+    options.push(item.favorite
+      ? { icon: "star-off", label: "Quitar de favoritos", command: { type: "prefs", id: item.id, prefs: { favorite: false }, message: "Quitado de favoritos" } }
+      : { icon: "star", label: "Añadir a favoritos", command: { type: "prefs", id: item.id, prefs: { favorite: true }, message: "Añadido a favoritos" } });
   }
-  // Emuladores alternativos: solo en juegos.
-  for (const runner of isOpen || !isGame(item) ? [] : item.runners || []) {
-    if (runner.id === item.runner) continue;
-    options.push({ icon: "swap", label: `Abrir con ${runner.name}`, hint: "solo esta vez", command: { type: "launch", id: item.id, runner: runner.id } });
-    options.push({ icon: "check", label: `Usar siempre ${runner.name}`, command: { type: "prefs", id: item.id, prefs: { runner: runner.id }, message: `${item.title} se abrirá con ${runner.name}` } });
+  // Emulador e imagen: cada uno en su propia hoja (antes eran cuatro opciones sueltas).
+  const others = isOpen || !isGame(item) ? [] : (item.runners || []).filter((r) => r.id !== item.runner);
+  if (others.length) options.push({ icon: "swap", label: "Cambiar emulador", hint: runnerName(item), command: { type: "runner-menu", item } });
+  if (item.system && !isOpen) options.push({ icon: "cover", label: "Cambiar imagen", command: { type: "art-menu", item } });
+  if (!isOpen) {
+    options.push({ icon: "hide", label: "Ocultar", danger: true,
+      command: { type: "prefs", id: item.id, prefs: { hidden: true }, message: `${item.title} oculto · ☰ → Mostrar juegos ocultos` } });
   }
-  options.push(item.favorite
-    ? { icon: "star-off", label: "Quitar de favoritos", command: { type: "prefs", id: item.id, prefs: { favorite: false }, message: "Quitado de favoritos" } }
-    : { icon: "star", label: "Añadir a favoritos", command: { type: "prefs", id: item.id, prefs: { favorite: true }, message: "Añadido a favoritos" } });
-  options.push({ icon: "hide", label: "Ocultar", danger: true, command: { type: "prefs", id: item.id, prefs: { hidden: true }, message: `${item.title} oculto. Recupéralo desde el menú` } });
-  options.push({ icon: "close", label: "Cancelar", command: { type: "close" } });
   return { title: item.title, options };
+}
+
+/** Cambiar emulador: solo esta vez, o siempre. */
+export function runnerMenu(item) {
+  const others = (item.runners || []).filter((r) => r.id !== item.runner);
+  return {
+    title: "Cambiar emulador", crumb: "Emulador", subtitle: `Ahora: ${runnerName(item)}`,
+    options: others.flatMap((runner) => [
+      { icon: "play", label: `Abrir con ${runner.name}`, hint: "Solo esta vez", command: { type: "launch", id: item.id, runner: runner.id } },
+      { icon: "check", label: `Usar siempre ${runner.name}`,
+        command: { type: "prefs", id: item.id, prefs: { runner: runner.id }, message: `${item.title} se abrirá con ${runner.name}` } },
+    ]),
+  };
+}
+
+/** Cambiar imagen: la portada o el fondo (la de ahora se descarta para siempre). */
+export function artMenu(item) {
+  return {
+    title: "Cambiar imagen", crumb: "Imagen", subtitle: "La de ahora se descarta y busco otra.",
+    options: [
+      { icon: "cover", label: "Otra portada", command: { type: "art", id: item.id, kind: "cover", title: item.title } },
+      { icon: "wide", label: "Otro fondo", command: { type: "art", id: item.id, kind: "hero", title: item.title } },
+    ],
+  };
 }
 
 /**
@@ -70,15 +89,16 @@ export function alexaMenu() {
   return {
     title: "Pídeselo a Alexa",
     subtitle: "Empieza con «Alexa, pídele a mi consola que…» y sigue con lo que quieras:",
-    options: [...ALEXA_EXAMPLES.map((e) => ({ ...e, command: { type: "stay" } })),
-      { icon: "close", label: "Cerrar", command: { type: "close" } }],
+    options: ALEXA_EXAMPLES.map((e) => ({ ...e, command: { type: "stay" } })),
   };
 }
 
+/**
+ * Menú (☰): solo lo de todos los días. Lo técnico vive en Ajustes → Mantenimiento.
+ */
 export function mainMenu({ running, hiddenCount, canExit = false }) {
   const options = [
-    { icon: "bolt", label: "Panel rápido", hint: "Volumen, brillo, energía · Home + LB", command: { type: "quick" } },
-    { icon: "refresh", label: "Actualizar biblioteca", command: { type: "refresh" } },
+    { icon: "bolt", label: "Panel rápido", hint: "Volumen, brillo y energía", command: { type: "quick" } },
   ];
   if (running?.managed) {
     options.push({ icon: "stop", label: `Cerrar ${running.title}`, danger: true,
@@ -87,14 +107,12 @@ export function mainMenu({ running, hiddenCount, canExit = false }) {
   if (hiddenCount) {
     options.push({ icon: "show", label: "Mostrar juegos ocultos", hint: String(hiddenCount), command: { type: "unhide-all" } });
   }
-  options.push({ icon: "windows", label: "Ventanas abiertas", command: { type: "windows" } });
-  options.push({ icon: "gamepad", label: "Atajos y controles", hint: "Qué hace cada botón y combinación", command: { type: "controls" } });
-  options.push({ icon: "mark", label: "Ajustes", hint: "Idioma, subtítulos, texto, sonido", command: { type: "settings" } });
-  options.push({ icon: "power", label: "Apagado", command: { type: "power-menu" } });
+  options.push({ icon: "gamepad", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });
+  options.push({ icon: "mark", label: "Ajustes", command: { type: "settings" } });
+  options.push({ icon: "power", label: "Apagar", hint: "Suspender, reiniciar o apagar", command: { type: "power-menu" } });
   if (canExit) {
     options.push({ icon: "exit", label: "Salir al escritorio", command: { type: "confirm-exit" } });
   }
-  options.push({ icon: "close", label: "Cerrar menú", command: { type: "close" } });
   return { title: "Orbital", options };
 }
 
@@ -115,8 +133,8 @@ export function stopMenu({ title, runner }) {
 }
 
 /**
- * Abrir otra cosa con un juego abierto: Orbital cierra el anterior (no lo deja congelado para
- * siempre). Como se pierde lo no guardado, se pregunta; "Volver a…" va primero (A sin querer = nada se pierde).
+ * Abrir otra cosa con un juego abierto: se cierra el anterior (no se queda congelado para siempre).
+ * Como se pierde lo no guardado, se pregunta; "Volver a…" va primero (A sin querer = nada se pierde).
  */
 export function switchMenu({ running, title, command }) {
   return {
@@ -125,22 +143,19 @@ export function switchMenu({ running, title, command }) {
     options: [
       { icon: "play", label: `Volver a ${running.title}`, command: { type: "resume" } },
       { icon: "stop", label: `Cerrar y abrir ${title}`, danger: true, command: { ...command, confirmed: true } },
-      // Ambos abiertos: Home sigue llevándote al último; el anterior ya no se cierra solo.
-      { icon: "play", label: `Abrir sin cerrar ${running.title}`, command: { ...command, confirmed: true, keep: true } },
     ],
     cancel: { type: "close" },
   };
 }
 
-/** Apagado: Suspender va primero (lo más común y lo más inofensivo si se pulsa A sin querer). */
+/** Apagar: Suspender va primero (lo más común y lo más inofensivo si se pulsa A sin querer). */
 export function powerMenu() {
   return {
-    title: "Apagado",
+    title: "Apagar",
     options: [
       { icon: "moon", label: "Suspender", command: { type: "power", action: "sleep" } },
       { icon: "refresh", label: "Reiniciar", danger: true, command: { type: "power-confirm", action: "restart" } },
       { icon: "power", label: "Apagar", danger: true, command: { type: "power-confirm", action: "shutdown" } },
-      { icon: "close", label: "Cancelar", command: { type: "close" } },
     ],
   };
 }
@@ -149,21 +164,21 @@ const POWER_MODES = [["efficiency", "Ahorro"], ["balanced", "Equilibrado"], ["pe
 const STEP = 10;
 
 /**
- * Panel rápido (Home + LB, o ☰ → Panel rápido): volumen y brillo con ◀/▶, A silencia o cambia el
- * modo de energía. Lo que no exista en el equipo (p. ej. brillo con monitor externo) no aparece.
+ * Panel rápido (Home + LB, o ☰ → Panel rápido): volumen, brillo y energía con ◀/▶ (A silencia), las
+ * capturas y volver al juego. La batería y el Wi-Fi ya están arriba, en la barra.
  */
-export function quickMenu(q, { running = null, wifi = null } = {}) {
+export function quickMenu(q, { running = null } = {}) {
   const options = [];
   if (q.volume) {
     const { level, muted } = q.volume;
-    options.push({ icon: "sound", label: "Volumen", value: muted ? "Silencio" : `${level} %`, hint: muted ? "A quita el silencio" : "A silencia",
+    options.push({ icon: "sound", label: "Volumen", value: muted ? "Silencio" : `${level} %`,
       command: { type: "quick-set", changes: { muted: !muted } },
       adjust: { left: { type: "quick-set", changes: { volume: Math.max(0, level - STEP), muted: false } },
         right: { type: "quick-set", changes: { volume: Math.min(100, level + STEP), muted: false } } } });
   }
   if (q.brightness != null) {
     const b = q.brightness;
-    options.push({ icon: "bolt", label: "Brillo", value: `${b} %`,
+    options.push({ icon: "sun", label: "Brillo", value: `${b} %`,
       command: { type: "quick-set", changes: { brightness: Math.min(100, b + STEP) } },
       adjust: { left: { type: "quick-set", changes: { brightness: Math.max(5, b - STEP) } },
         right: { type: "quick-set", changes: { brightness: Math.min(100, b + STEP) } } } });
@@ -174,19 +189,8 @@ export function quickMenu(q, { running = null, wifi = null } = {}) {
     options.push({ icon: "power", label: "Energía", value: POWER_MODES[i][1],
       command: step(1), adjust: { left: step(-1), right: step(1) } });
   }
-  if (q.battery) {
-    const { percent, plugged, minutes_left: left } = q.battery;
-    const time = left ? ` · quedan ${left >= 60 ? `${Math.floor(left / 60)} h ${left % 60} min` : `${left} min`}` : "";
-    options.push({ icon: "bolt", label: "Batería", value: `${percent} %`, hint: plugged ? "Conectada" : `Con batería${time}`, command: { type: "stay" } });
-  }
-  if (wifi) options.push({ icon: "wifi", label: "Wi-Fi", value: wifi.ssid || "Conectado", command: { type: "stay" } });
-  options.push({ icon: "windows", label: "Capturas", hint: "Home + RB captura sin salir del juego", command: { type: "captures" } });
-  options.push({ icon: "gamepad", label: "Atajos del mando", hint: "Todas las combinaciones", command: { type: "controls", page: "atajos" } });
-  if (running?.managed) {
-    options.push({ icon: "play", label: `Volver a ${running.title}`, command: { type: "resume" } });
-    options.push({ icon: "stop", label: `Cerrar ${running.title}`, danger: true,
-      command: { type: "confirm-stop", title: running.title, runner: running.runner } });
-  }
+  options.push({ icon: "show", label: "Capturas", hint: "Home + RB captura sin salir del juego", command: { type: "captures" } });
+  if (running?.managed) options.push({ icon: "play", label: `Volver a ${running.title}`, command: { type: "resume" } });
   return { title: "Panel rápido", crumb: "Panel rápido", options };
 }
 
@@ -231,7 +235,7 @@ export function windowsMenu(windows) {
 export function exitMenu() {
   return {
     title: "¿Salir al escritorio?",
-    subtitle: "Para volver: pulsa Home en el mando o dile a Alexa «abre la consola».",
+    subtitle: "Para volver, pulsa Home.",
     options: [
       { icon: "close", label: "Cancelar", command: { type: "close" } },
       { icon: "exit", label: "Salir al escritorio", danger: true, command: { type: "exit" } },
@@ -259,7 +263,7 @@ export function powerConfirmMenu(action, running = null) {
 // Cada ajuste: sus valores en orden (A o ◀/▶ pasan al siguiente) y cómo se llaman.
 export const SETTING_VALUES = {
   audio: [["en", "Inglés"], ["es", "Español"]],
-  subtitles: [["en", "Inglés"], ["es", "Español"], ["forced", "Solo forzados"], ["", "Sin subtítulos"]],
+  subtitles: [["en", "Inglés"], ["es", "Español"], ["forced", "Solo traducciones en pantalla"], ["", "Sin subtítulos"]],
   quality: [["1080p", "1080p"], ["4K", "4K"], ["720p", "720p"]],
   sub_scale: [[1, "Normal"], [1.25, "Grande"], [1.5, "Muy grande"], [.85, "Pequeño"]],
   text_size: [["normal", "Normal"], ["large", "Grande"], ["xlarge", "Muy grande"]],
@@ -283,18 +287,17 @@ export function nextSetting(key, value) {
 }
 
 const SETTING_PAGES = {
-  playback: { title: "Reproducción", icon: "play", options: [
-    ["audio", "Idioma del audio", "Para elegir la fuente"], ["subtitles", "Subtítulos", "Solo forzados: carteles y diálogos en otro idioma"], ["quality", "Calidad", "Hasta dónde subir"],
-    ["sub_scale", "Tamaño de subtítulos", null]] },
-  display: { title: "Pantalla", icon: "show", options: [
+  playback: { title: "Películas y series", icon: "play", options: [
+    ["audio", "Idioma", "En qué idioma prefieres oírlas"], ["subtitles", "Subtítulos", null], ["quality", "Calidad", null],
+    ["sub_scale", "Letra de los subtítulos", null]] },
+  display: { title: "Pantalla y sonido", icon: "show", options: [
     ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],
-    ["reduce_motion", "Reducir movimiento", null],
-    ["voice_tips", "Frases para Alexa", "Debajo de los botones: qué decirle para lo que tienes enfocado"]] },
-  sound: { title: "Sonido y vibración", icon: "sound", options: [["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null]] },
-  sessions: { title: "Juegos y videos abiertos", icon: "gamepad", options: [
-    ["game_idle_minutes", "Cerrar un juego en pausa tras", "Lo congelado con Home; lo no guardado se pierde"],
-    ["video_idle_minutes", "Cerrar un video en pausa tras", "Tu avance se guarda"],
-    ["close_previous", "Abrir algo nuevo cierra lo anterior", "Como una consola (antes pregunta si es un juego)"]] },
+    ["reduce_motion", "Reducir movimiento", null], ["voice_tips", "Frases para Alexa", null],
+    ["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null]] },
+  sessions: { title: "Juegos y videos", icon: "gamepad", options: [
+    ["game_idle_minutes", "Cerrar juegos olvidados en pausa", "Lo no guardado se pierde"],
+    ["video_idle_minutes", "Cerrar videos olvidados en pausa", "Tu avance se guarda"],
+    ["close_previous", "Abrir algo nuevo cierra lo anterior", null]] },
 };
 
 export function settingsMenu() {
@@ -302,11 +305,23 @@ export function settingsMenu() {
     title: "Ajustes",
     options: [
       ...Object.entries(SETTING_PAGES).map(([page, def]) => ({ icon: def.icon, label: def.title, command: { type: "settings", page } })),
-      { icon: "mark", label: "Cuentas", command: { type: "settings", page: "accounts" } },
-      { icon: "check", label: "Revisar mi consola", hint: "Qué encontró Orbital y qué falta", command: { type: "setup" } },
-      { icon: "folder", label: "Carpetas de juegos", hint: "Dónde busca cada emulador", command: { type: "folders" } },
-      { icon: "windows", label: "Diagnóstico", hint: "Carpetas, memoria y últimos avisos", command: { type: "diagnostics" } },
-      { icon: "refresh", label: "Actualizar Orbital", hint: "Buscar una versión nueva", command: { type: "update-check" } },
+      { icon: "trailer", label: "Cuentas", hint: "Stremio", command: { type: "settings", page: "accounts" } },
+      { icon: "folder", label: "Mantenimiento", hint: "Revisar, carpetas, actualizar", command: { type: "settings", page: "maintenance" } },
+    ],
+  };
+}
+
+/** Mantenimiento: lo técnico, junto y fuera del camino de todos los días. */
+export function maintenanceMenu() {
+  return {
+    title: "Mantenimiento", crumb: "Mantenimiento",
+    options: [
+      { icon: "check", label: "Revisar mi consola", hint: "Qué encontré y qué falta", command: { type: "setup" } },
+      { icon: "refresh", label: "Buscar juegos nuevos", command: { type: "refresh" } },
+      { icon: "folder", label: "Carpetas de juegos", command: { type: "folders" } },
+      { icon: "windows", label: "Ventanas abiertas", command: { type: "windows" } },
+      { icon: "windows", label: "Diagnóstico", command: { type: "diagnostics" } },
+      { icon: "refresh", label: "Actualizar Orbital", command: { type: "update-check" } },
     ],
   };
 }
@@ -326,11 +341,10 @@ export function updateMenu(info) {
   }
   return {
     title: `Hay ${info.available} cambio${info.available === 1 ? "" : "s"} nuevo${info.available === 1 ? "" : "s"}`,
-    subtitle: "Orbital se prueba antes de cambiar; si algo falla, te quedas con tu versión. Tarda un par de minutos.",
+    subtitle: "Tarda unos minutos.",
     options: [
       { icon: "refresh", label: "Actualizar ahora", command: { type: "update-apply" } },
       ...info.changes.slice(0, 8).map((text) => ({ icon: "check", label: text, command: { type: "stay" } })),
-      { icon: "close", label: "Más tarde", command: { type: "close" } },
     ],
   };
 }
@@ -401,18 +415,15 @@ export function diagnosticsMenu(d, { now = Date.now() } = {}) {
 }
 
 /** Una página de Ajustes con los valores actuales. */
-export function settingsPage(page, settings, { now = Date.now() } = {}) {
+export function settingsPage(page, settings) {
+  if (page === "maintenance") return maintenanceMenu();
   if (page === "accounts") {
-    const alexaAgo = settings.alexa_last ? Math.round((now / 1000 - settings.alexa_last) / 60) : null;
     return {
       title: "Cuentas", crumb: "Cuentas",
       options: [
-        { icon: "trailer", label: "Stremio", value: settings.stremio_linked ? "Conectada" : "Sin conectar",
+        { icon: "trailer", label: "Stremio", value: settings.stremio_linked ? "Conectada" : "Conectar",
           command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
-          hint: settings.stremio_linked ? "Seguir viendo y fuentes en Orbital" : "A para conectar tu cuenta" },
-        { icon: "assistant", label: "Alexa", value: settings.alexa ? "Configurada" : "Sin configurar", command: { type: "stay" },
-          hint: settings.alexa ? (alexaAgo === null ? "Aún no le has pedido nada" : `Última orden hace ${alexaAgo < 60 ? `${alexaAgo} min` : `${Math.round(alexaAgo / 60)} h`}`)
-            : "En la PC: orbital alexa setup" },
+          hint: settings.stremio_linked ? "Seguir viendo y fuentes" : "Para películas y series" },
       ],
     };
   }
@@ -430,7 +441,7 @@ export function settingsPage(page, settings, { now = Date.now() } = {}) {
 export function stremioAccountMenu() {
   return {
     title: "Cuenta de Stremio",
-    subtitle: "Si la desconectas, Orbital deja de ver Seguir viendo y tus fuentes hasta que la vuelvas a conectar.",
+    subtitle: "Dejarás de ver Seguir viendo y tus fuentes.",
     options: [
       { icon: "close", label: "Cancelar", command: { type: "close" } },
       { icon: "exit", label: "Desconectar", danger: true, command: { type: "stremio-logout" } },
@@ -439,33 +450,21 @@ export function stremioAccountMenu() {
 }
 
 /**
- * "Tu consola" (primer uso, y en Ajustes): qué encontró Orbital y cómo resolver lo que falta, sin
- * leer un manual. Stremio se conecta aquí mismo; lo demás dice dónde poner las cosas.
+ * "Tu consola" (primer uso, y en Mantenimiento): lo esencial en dos renglones. Lo técnico (ES-DE,
+ * el reproductor, Alexa) está en Diagnóstico.
  */
 export function setupMenu(status) {
-  const systems = Object.entries(status.emulators || {});
-  const row = (icon, label, ok, value, hint, command = { type: "stay" }) =>
-    ({ icon, label, value: ok ? `✓ ${value}` : value, hint, command });
+  const games = status.games || 0;
   return {
     title: "Tu consola",
-    subtitle: status.games ? `Encontré ${status.games} juego${status.games === 1 ? "" : "s"}. Esto es lo que hay y lo que falta.`
-      : "Aún no encontré juegos. Aquí está qué revisar.",
+    subtitle: games ? `Encontré ${games} juego${games === 1 ? "" : "s"}.` : "Aún no encontré juegos.",
     options: [
-      row("gamepad", "Steam", status.steam !== null, status.steam !== null ? `${status.steam} juegos` : "No encontrado",
-        status.steam !== null ? "Tus juegos instalados aparecen solos" : "Instala Steam e inicia sesión una vez"),
-      row("gamepad", "Emuladores", systems.length > 0, systems.length ? `${systems.length} sistemas` : "Ninguno",
-        systems.length ? systems.map(([name, n]) => `${name} (${n})`).join(", ")
-          : "Pon los emuladores en Descargas, el Escritorio o C:\\Emuladores y sus ROMs junto a ellos"),
-      row("folder", "ES-DE", status.esde, status.esde ? "Conectado" : "No encontrado",
-        status.esde ? "Portadas, favoritos y carpetas de ROMs de ES-DE" : "Opcional: si lo usas, sus portadas y favoritos llegan solos"),
-      row("trailer", "Stremio", status.stremio, status.stremio ? "Conectada" : "Conectar",
-        status.stremio ? "Seguir viendo, Mi lista y fuentes" : "A para conectar tu cuenta (películas y series)",
-        status.stremio ? { type: "stay" } : { type: "stremio-login" }),
-      row("play", "Reproductor", status.player, status.player ? "Listo" : "Falta mpv",
-        status.player ? "Películas y series con el mando" : "Corre scripts/install-windows.ps1 en la PC"),
-      row("assistant", "Alexa", status.alexa, status.alexa ? "Configurada" : "Opcional",
-        status.alexa ? "«Alexa, pídele a mi consola…»" : "En la PC: orbital alexa setup"),
-      { icon: "gamepad", label: "Cómo se usa (1 min)", hint: "Ir y volver de un juego, cerrarlo, el panel rápido", command: { type: "tour", step: 0 } },
+      games
+        ? { icon: "gamepad", label: "Ver mis juegos", value: `${games}`, command: { type: "close" } }
+        : { icon: "folder", label: "Dónde poner los juegos", hint: "Steam se encuentra solo. Emuladores: en Descargas, el Escritorio o C:\\Emuladores, con sus ROMs junto a ellos", command: { type: "stay" } },
+      status.stremio
+        ? { icon: "trailer", label: "Películas y series", value: "✓ Stremio", command: { type: "stay" } }
+        : { icon: "trailer", label: "Películas y series", value: "Conectar Stremio", command: { type: "stremio-login" } },
       { icon: "check", label: "Listo", command: { type: "close" } },
     ],
   };
@@ -500,107 +499,32 @@ export function tourMenu(step, { legion = false } = {}) {
     ],
   };
 }
-
-// --- Controles: qué hace cada botón, con cada mando -------------------------------------------
+// --- Cómo se usa: una hoja, con el mando que tienes conectado -----------------------------------
 const row = (label, value, hint) => ({ icon: "gamepad", label, value, hint, command: { type: "stay" } });
 
-/**
- * Todos los atajos en una hoja, por situación. Valor = GameSir y mandos con Home; pie = Legion Go
- * (su Home es Legion L y no tiene combinaciones con Home).
- */
-export const SHORTCUTS = [
-  ["En un juego", null, null],
-  ["Ir a Orbital", "Home", "En pausa mientras tanto · Legion Go: Legion L"],
-  ["Volver al juego", "Home o A", "Legion Go: Legion L o A"],
-  ["Cerrar el juego", "Start+Select+Home", "Mantenlos · Legion Go: Start+Select"],
-  ["Panel rápido", "Home+LB", "Mantén Home · Legion Go: ☰ → Panel rápido"],
-  ["Captura", "Home+RB", "Mantén Home · Legion Go: pídeselo a Alexa"],
-  ["En Orbital", null, null],
-  ["Buscar", "Vista ⧉", null],
-  ["Menú", "☰", null],
-  ["Opciones", "Y", "Cerrar, favorito, otra portada…"],
-  ["Otro emulador", "X", null],
-  ["Cambiar de sección", "LB / RB", null],
-  ["Saltar de 5 en 5", "LT / RT", null],
-  ["Viendo algo", null, null],
-  ["Audio · Subtítulos", "X / Y", "Ahí mismo: cambiar de fuente"],
-  ["Adelantar", "◀ ▶", "Mantén: más rápido"],
-  ["Capítulo · episodio", "LB/RB · LT/RT", null],
-  ["Salir", "B", "Primero oculta la barra"],
-];
-
-function shortcutsPage() {
-  const options = SHORTCUTS.map(([label, value, hint]) => (value === null
-    ? { heading: true, label }
-    : row(label, value, hint ?? undefined)));
-  return { title: "Atajos del mando", crumb: "Atajos", options };
+/** Lo que cambia según el mando: la Legion Go usa Legion L en vez de Home y no tiene combinaciones. */
+function gameRows(legion) {
+  return legion
+    ? [["Ir a Orbital", "Legion L"], ["Volver al juego", "Legion L o A"], ["Cerrar el juego", "Mantén Start + Select"],
+      ["Panel rápido", "☰ → Panel rápido"]]
+    : [["Ir a Orbital", "Home"], ["Volver al juego", "Home o A"], ["Cerrar el juego", "Mantén Start + Select + Home"],
+      ["Panel rápido", "Mantén Home + LB"], ["Captura", "Mantén Home + RB"]];
 }
 
-export const CONTROL_PAGES = {
-  legion: {
-    title: "Controles de la Legion Go",
-    rows: [
-      ["Ir a Orbital (sin cerrar)", "Legion L"],
-      ["Volver al juego", "Legion L o A"],
-      ["Cerrar el juego", "Mantén Start + Select"],
-      ["Cerrar el juego (otra forma)", "Legion L dos veces"],
-      ["Panel rápido (volumen, brillo, energía)", "☰ → Panel rápido"],
-    ],
-  },
-  gamesir: {
-    title: "GameSir y otros mandos",
-    rows: [
-      ["Ir a Orbital (sin cerrar)", "Home"],
-      ["Volver al juego", "Home o A"],
-      ["Cerrar el juego", "Mantén Start + Select + Home"],
-      ["Panel rápido (volumen, brillo, energía)", "Mantén Home + LB"],
-      ["Captura de pantalla", "Mantén Home + RB"],
-    ],
-  },
-  orbital: {
-    title: "En Orbital",
-    rows: [
-      ["Moverte", "Cruceta o stick"], ["Abrir / jugar / ver", "A"], ["Atrás", "B"],
-      ["Opciones de lo enfocado", "Y"], ["Abrir con el otro emulador", "X"],
-      ["Cambiar de sección", "LB / RB"], ["Saltar de 5 en 5", "LT / RT"],
-      ["Buscar", "Vista ⧉"], ["Menú", "Menú ☰"], ["Cerrar desde Orbital", "☰ → Cerrar… o Y → Cerrar"],
-    ],
-  },
-  player: {
-    title: "Viendo una película o serie",
-    rows: [
-      ["Pausa / seguir", "A"], ["Adelantar / regresar", "◀ ▶ (mantén: más rápido)"],
-      ["Capítulo (o 1 min)", "LB / RB"], ["Episodio anterior / siguiente", "LT / RT"], ["Volumen", "▲ ▼"],
-      ["Audio · Subtítulos · Fuente", "X / Y (LB/RB cambian de pestaña)"],
-      ["Ocultar la barra; luego, salir", "B"], ["Saltar intro / ver el siguiente", "A en la tarjeta"],
-      ["Ir a Orbital", "Home o Legion L"],
-    ],
-  },
+export const SHORTCUTS = {
+  orbital: [["Abrir", "A"], ["Atrás", "B"], ["Opciones", "Y"], ["Otro emulador o la ficha", "X"],
+    ["Cambiar de sección", "LB / RB"], ["Buscar", "Vista ⧉"], ["Menú", "☰"]],
+  player: [["Pausa", "A"], ["Adelantar", "◀ ▶"], ["Audio y subtítulos", "X"], ["Episodios y fuente", "Y"],
+    ["Capítulo · episodio", "LB/RB · LT/RT"], ["Volumen", "▲ ▼"], ["Salir", "B"]],
 };
 
-/** Controles: un mando por página; el conectado lo dice ("Conectado"). */
+/** «Cómo se usa»: una sola hoja en tres partes, con los atajos del mando que tienes. */
 export function controlsMenu(controllers = []) {
-  const connected = (kind) => controllers.filter((c) => (kind === "gamesir" ? c.kind !== "legion" : c.kind === kind));
-  const hint = (kind) => {
-    const found = connected(kind);
-    return found.length ? `Conectado (mando ${found.map((c) => c.slot).join(", ")}) · cerrar: ${found[0].close}` : "No conectado ahora";
-  };
+  const legion = controllers.some((c) => c.kind === "legion") && !controllers.some((c) => c.kind !== "legion");
+  const section = (title, rows) => [{ heading: true, label: title }, ...rows.map(([label, value]) => row(label, value))];
   return {
-    title: "Atajos y controles",
-    options: [
-      { icon: "gamepad", label: "Todos los atajos", hint: "En una hoja: juego, Orbital y videos", command: { type: "controls", page: "atajos" } },
-      { icon: "gamepad", label: "Legion Go", hint: hint("legion"), command: { type: "controls", page: "legion" } },
-      { icon: "gamepad", label: "GameSir y otros", hint: hint("gamesir"), command: { type: "controls", page: "gamesir" } },
-      { icon: "windows", label: "En Orbital", hint: "Moverte, abrir, buscar, menú", command: { type: "controls", page: "orbital" } },
-      { icon: "trailer", label: "Viendo películas y series", hint: "El reproductor", command: { type: "controls", page: "player" } },
-      { icon: "play", label: "Guía rápida", hint: "Un minuto, paso a paso", command: { type: "tour", step: 0 } },
-    ],
+    title: "Cómo se usa", crumb: "Cómo se usa",
+    options: [...section("En un juego", gameRows(legion)), ...section("En Orbital", SHORTCUTS.orbital),
+      ...section("Viendo algo", SHORTCUTS.player)],
   };
 }
-
-export function controlsPage(page) {
-  if (page === "atajos") return shortcutsPage();
-  const def = CONTROL_PAGES[page];
-  return { title: def.title, crumb: def.title, options: def.rows.map(([label, value]) => row(label, value)) };
-}
-

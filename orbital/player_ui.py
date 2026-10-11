@@ -384,7 +384,7 @@ def hud_ass(hud: Hud) -> str:
     if hud.detail:
         lines.append(text(MARGIN, 772, esc(fit(hud.detail, 24, 1300, "semi")), 24, MUTED, weight="semi"))
     lines.append(text(MARGIN, 806, esc(fit(hud.title, 48, 1500, "bold")), 48, weight="bold"))
-    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Más")]
+    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Más")]
     lines += [bar, _times(hud, BAR_Y + 28),
               text(MARGIN, 1022, esc(fit(info_line(hud), 22, 900, "semi")), 22, MUTED, weight="semi", align=4),
               hints(items, 1022, right=W - MARGIN)]
@@ -412,7 +412,7 @@ def paused_ass(hud: Hud) -> str:
         lines.append(text(MARGIN, y + 4, esc(line), 26, SOFT))
         y += 40
     y += 30
-    lines.append(buttons([("A", "Seguir"), ("X", "Audio y subtítulos"), ("Y", "Más")], MARGIN, y))
+    lines.append(buttons([("A", "Seguir"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Más")], MARGIN, y))
     bar, _ = progress_bar(hud)
     lines += [bar, _times(hud, BAR_Y + 28),
               text(MARGIN, 1022, esc(fit(info_line(hud), 22, 1200, "semi")), 22, MUTED, weight="semi", align=4)]

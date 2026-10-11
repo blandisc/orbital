@@ -3,7 +3,7 @@
 El mando, viendo algo:
   A pausa/seguir · ◀ ▶ adelantar/regresar (mantén: más rápido) · LB/RB capítulo (o 1 min) ·
   LT/RT episodio · ▲ ▼ volumen · X Audio y subtítulos · Y Más (episodios, fuente, desde el principio) ·
-  B oculta la barra; con la barra oculta, sale.
+  B pregunta «¿Salir de …?» (A sigue viendo, B sale).
 """
 
 from __future__ import annotations
@@ -36,6 +36,9 @@ class PlayerScreen:
             return
         if card["kind"] == "skip":
             ass = player_ui.skip_ass(card["label"])
+        elif card["kind"] == "quit":
+            ass = player_ui.upnext_ass(f"¿Salir de {card['title']}?", "Tu avance se guarda",
+                                       actions=[("A", "Seguir viendo"), ("B", "Salir")])
         else:
             segment = card["segment"]
             info = segment.upnext or {}
@@ -60,6 +63,8 @@ class PlayerScreen:
         if card["kind"] == "skip":
             self._hide_card()
             self.mpv.command("seek", card["to"], "absolute")
+        elif card["kind"] == "quit":
+            self._hide_card()  # A: seguir viendo
         else:
             self._play_next(card["segment"], auto=False)
 
@@ -68,7 +73,7 @@ class PlayerScreen:
         if card is None:
             return
         self._hide_card()
-        if card["kind"] == "still":
+        if card["kind"] in ("still", "quit"):
             self._user_quit = True
             self._quit()
         elif card["kind"] == "next":
@@ -240,8 +245,8 @@ class PlayerScreen:
             if column.options:
                 column.index = max(0, min(len(column.options) - 1, column.index + (-1 if button == "up" else 1)))
                 self._draw_panel()
-        elif button in ("left", "right", "lb", "rb"):
-            step = -1 if button in ("left", "lb") else 1
+        elif button in ("left", "right"):
+            step = -1 if button == "left" else 1
             if 0 <= panel.col + step < len(panel.columns):
                 panel.col += step
                 self._draw_panel()
@@ -249,16 +254,8 @@ class PlayerScreen:
             self._choose(column.options[column.index])
         elif button == "b":
             self.close_menu()
-        elif button == "x":
-            if panel.kind == "tracks":
-                self.close_menu()
-            else:
-                self.open_tracks()
-        elif button == "y":
-            if panel.kind == "more":
-                self.close_menu()
-            else:
-                self.open_more()
+        elif button in ("x", "y"):
+            self.close_menu()  # X y Y cierran el panel (como B); no saltan de uno a otro
 
     # --- el mando ---------------------------------------------------------------------------------
     def press(self, button: str) -> None:
@@ -282,12 +279,9 @@ class PlayerScreen:
             self.mpv.command("cycle", "pause")
             self.show_hud(paused=not was_paused)
         elif button == "b":
-            # Primero se va la barra; con la barra oculta, B sale.
-            if self._hud_visible:
-                self.hide_hud()
-            else:
-                self._user_quit = True
-                self._quit()
+            # B siempre pregunta (antes ocultaba la barra y, ya oculta, salía sin avisar): A sigue, B sale.
+            self.hide_hud()
+            self._show_card({"kind": "quit", "title": self.current.title})
         elif button == "x":
             self.open_tracks()
         elif button == "y":

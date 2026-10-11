@@ -144,5 +144,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
     return true;
   }
 
-  return { el, open, close, handle, get isOpen() { return !!menu; }, get depth() { return stack.length; } };
+  return { el, open, close, handle, get isOpen() { return !!menu; }, get depth() { return stack.length; },
+    /** La opción enfocada se cambia con ◀ ▶ (un ajuste, el volumen…). */
+    get adjustable() { const o = menu?.options[index]; return !!o && (o.command?.type === "setting" || !!o.adjust); } };
 }

@@ -141,7 +141,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     if (q.length < MIN_CHARS) {
       if (q) showResults([]);
       else showRecent();
-      setHint(q ? "Sigue escribiendo…" : "Escribe 2 o 3 letras: los resultados aparecen solos.");
+      setHint(q ? "Sigue escribiendo…" : "Escribe el nombre y verás los resultados.");
       return;
     }
     // Tus juegos y apps al instante; las películas y series llegan después, detrás de ellos.
@@ -300,12 +300,11 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   }
 
   /** Pistas del pie mientras la búsqueda está abierta. */
+  // Solo lo que hace falta saber: el teclado ya enseña Espacio, Borrar y Dictar (X, Y y ☰ siguen
+  // funcionando como atajos, pero no llenan el pie).
   const hints = (g) => [
     { glyph: g.select, label: zone === "results" ? "Abrir" : "Escribir" },
-    { glyph: g.alt, label: "Borrar" },
-    { glyph: g.options, label: "Espacio" },
-    { glyph: g.menu, label: "Dictar", secondary: true },
-    { glyph: g.back, label: zone === "results" ? "Al teclado" : "Volver", end: true },
+    { glyph: g.back, label: "Atrás", end: true },
   ];
 
   /** La biblioteca cambió (o terminó de cargar después de abrir la búsqueda): rehace los resultados. */

@@ -155,7 +155,7 @@ export function createLogin({ onDone, onMove, onClose }) {
   const hints = (g) => [
     { glyph: g.select, label: "Escribir" }, { glyph: g.alt, label: "Borrar" },
     { glyph: g.options, label: reveal ? "Ocultar contraseña" : "Ver contraseña" },
-    { glyph: g.page, label: "Cambiar de campo", secondary: true }, { glyph: g.back, label: "Volver", end: true },
+    { glyph: g.page, label: "Cambiar de campo", secondary: true }, { glyph: g.back, label: "Atrás", end: true },
   ];
 
   return { el, open, close, handle, hints, type, get isOpen() { return !el.hidden; },
