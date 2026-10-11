@@ -158,3 +158,13 @@ test("diagnóstico: rutas largas recortadas a lo último", () => {
   const menu = diagnosticsMenu({ version: "1", found: { mpv: "C:\\Users\\f\\AppData\\Local\\orbital\\mpv\\mpv.exe" } });
   assert.equal(menu.options.find((o) => o.label === "Reproductor").hint, "…\\orbital\\mpv\\mpv.exe");
 });
+
+test("Mi lista se maneja desde la tarjeta, sin abrir la ficha", () => {
+  const item = { id: "stremio:tt1", title: "Dune", source: "stremio", category: "stremio", extra: { kind: "movie", meta_id: "tt1", in_library: true } };
+  const remove = gameMenu(item).options.find((o) => o.command.type === "mylist");
+  assert.equal(remove.label, "Quitar de Mi lista");
+  assert.deepEqual(remove.command, { type: "mylist", kind: "movie", metaId: "tt1", add: false, title: "Dune" });
+  const add = gameMenu({ ...item, extra: { ...item.extra, in_library: false } }).options.find((o) => o.command.type === "mylist");
+  assert.equal(add.label, "Añadir a Mi lista");
+  assert.equal(gameMenu({ id: "steam:1", title: "Hades", source: "steam", category: "steam" }).options.some((o) => o.command.type === "mylist"), false);
+});

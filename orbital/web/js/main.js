@@ -158,6 +158,8 @@ function applySettings(settings) {
   root.dataset.motion = settings.reduce_motion ? "reduce" : "full";
   sound.enabled = settings.sounds !== false;
   haptics.enabled = settings.haptics !== false;
+  ui.hero.tips = settings.voice_tips !== false;
+  if (state.libraryLoaded) ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
 }
 
 // ---------------------------------------------------------------- datos
@@ -348,6 +350,11 @@ async function runCommand(command, context = null) {
         return loadLibrary({ keepId: command.id });
       case "refresh":
         return loadLibrary({ refresh: true });
+      case "mylist":
+        await api.setInLibrary(command.kind, command.metaId, command.add);
+        sound.play("select");
+        ui.toast.show(command.add ? `${command.title} está en Mi lista` : `Quité ${command.title} de Mi lista`);
+        return loadLibrary();
       case "dismiss":
         await api.dismiss(command.id);
         sound.play("select");

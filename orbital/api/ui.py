@@ -22,6 +22,7 @@ SETTINGS = {
     "reduce_motion": {True, False},
     "sounds": {True, False},
     "haptics": {True, False},
+    "voice_tips": {True, False},  # la frase de Alexa debajo de los botones del héroe
     "welcomed": {True, False},  # ya vio "Tu consola" (la pantalla de primer uso)
 }
 VIEWS = ("buscar", "serie", "seccion", "fuentes")
@@ -56,7 +57,7 @@ def router(d: Deps) -> APIRouter:
         prefs = catalog.stream_prefs
         return {"audio": prefs.audio, "quality": prefs.quality, "subtitles": catalog.subtitles_lang,
                 "sub_scale": float(catalog.setting("sub_scale", 1.0) or 1.0), "text_size": "normal", "safe_area": 4,
-                "reduce_motion": False, "sounds": True, "haptics": True, **catalog.state.settings(),
+                "reduce_motion": False, "sounds": True, "haptics": True, "voice_tips": True, **catalog.state.settings(),
                 "stremio_linked": catalog.stremio_linked, "alexa": d.alexa_ready, "alexa_last": d.alexa_last}
 
     @r.post("/api/settings")

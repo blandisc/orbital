@@ -20,6 +20,7 @@ export function createHero({ onAction }) {
   const voice = h("p", { class: "hero__voice", hidden: true });
   const content = h("div", { class: "hero__content" }, eyebrow, logo, title, facts, description, actions, voice);
   let alexa = false;
+  let tips = true; // Ajustes → Pantalla → Frases para Alexa
   const el = h("main", { class: "hero" }, content);
   let timer;
 
@@ -70,8 +71,8 @@ export function createHero({ onAction }) {
       alt && item.id !== runningId && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
       // Antes era "☰", el mismo glifo del botón Menú del mando: se confundían.
       Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction("options") }));
-    voice.hidden = !alexa;
-    if (alexa) mount(voice, svg(ICONS.mic), h("span", {}, alexaTip(item, { runningId })));
+    voice.hidden = !alexa || !tips;
+    if (alexa && tips) mount(voice, svg(ICONS.mic), h("span", {}, alexaTip(item, { runningId })));
   }
 
   /** Actualiza con una transición corta. `immediate` evita la animación (p. ej. al cambiar glifos). */
@@ -89,5 +90,5 @@ export function createHero({ onAction }) {
     }, 110);
   }
 
-  return { el, update, set alexa(on) { alexa = !!on; } };
+  return { el, update, set alexa(on) { alexa = !!on; }, set tips(on) { tips = !!on; } };
 }

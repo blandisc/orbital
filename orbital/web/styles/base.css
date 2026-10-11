@@ -41,8 +41,6 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 @keyframes fade-out { to { opacity: 0; } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(1rem) scale(.98); } }
 @keyframes sink-out { to { opacity: 0; transform: translateY(.5rem) scale(.98); } }
-@keyframes drop-in { from { opacity: 0; transform: translate(-50%, -.75rem); } }
-@keyframes lift-out { to { opacity: 0; transform: translate(-50%, -.5rem); } }
 @keyframes slide-in-right { from { transform: translateX(100%); } }
 @keyframes slide-out-right { to { transform: translateX(100%); } }
 @keyframes pulse { 50% { transform: scale(1.9); } }

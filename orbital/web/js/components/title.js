@@ -310,14 +310,21 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
       else if (act === "down" && series) { zone = "episodes"; onMove?.(); render(); return true; }
       else if (act === "select" && buttons[action]) run(buttons[action]);
       else if (act === "options" && !details.error) sources();
-      else if ((act === "prevsection" || act === "nextsection") && series) moved = setSeason(season + (act === "prevsection" ? -1 : 1));
+      else if ((act === "prevsection" || act === "nextsection") && series) {
+        // Cambiar de temporada desde los botones baja a los episodios: si no, el cambio no se ve.
+        setSeason(season + (act === "prevsection" ? -1 : 1));
+        zone = "episodes"; onMove?.(); render(); return true;
+      }
       if (moved) renderActions();
     } else {
       if (act === "up") {
         if (index === 0) { zone = "actions"; moved = true; render(); } else moved = setIndex(index - 1);
       } else if (act === "down") moved = setIndex(index + 1);
-      else if (["prevsection", "pageleft", "left"].includes(act)) moved = setSeason(season - 1);
-      else if (["nextsection", "pageright", "right"].includes(act)) moved = setSeason(season + 1);
+      else if (["prevsection", "left"].includes(act)) moved = setSeason(season - 1);
+      else if (["nextsection", "right"].includes(act)) moved = setSeason(season + 1);
+      // Series largas (Los Simpson tiene 35 temporadas): LT/RT saltan de 5 en 5, como en las filas largas.
+      else if (act === "pageleft") moved = setSeason(season - 5);
+      else if (act === "pageright") moved = setSeason(season + 5);
       else if (act === "select") play(episode());
       else if (act === "options") sources(episode());
     }
@@ -329,9 +336,11 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
   /** Pistas del pie según dónde está el foco. */
   const hints = (g) => (zone === "episodes"
     ? [{ glyph: g.select, label: "Ver" }, { glyph: g.options, label: "Fuente" }, { glyph: g.section, label: "Temporada" },
-      { glyph: g.back, label: "Arriba", end: true }]
+      seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
+      { glyph: g.back, label: "Arriba", end: true }].filter(Boolean)
     : [{ glyph: g.select, label: buttons[action]?.label?.split(" · ")[0] || "Ver" }, { glyph: g.options, label: "Elegir fuente" },
       kindOf() === "series" && seasons().length && { glyph: g.rows, label: "Episodios" },
+      kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
       { glyph: g.back, label: "Volver", end: true }].filter(Boolean));
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden; }, get current() { return item; } };

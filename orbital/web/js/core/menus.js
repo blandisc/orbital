@@ -26,6 +26,13 @@ export function gameMenu(item, { running = null } = {}) {
   if (item.source === "stremio" && item.category === "continue") {
     options.push({ icon: "hide", label: "Quitar de Seguir viendo", command: { type: "dismiss", id: item.id, title: item.title } });
   }
+  // Mi lista (tu biblioteca de Stremio) sin tener que abrir la ficha.
+  const watch = item.source === "stremio" && item.extra?.meta_id ? item.extra : null;
+  if (watch) {
+    options.push(watch.in_library
+      ? { icon: "check", label: "Quitar de Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: false, title: item.title } }
+      : { icon: "star", label: "Añadir a Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: true, title: item.title } });
+  }
   // Emuladores alternativos: solo en juegos.
   for (const runner of isOpen || !isGame(item) ? [] : item.runners || []) {
     if (runner.id === item.runner) continue;
@@ -158,6 +165,7 @@ export const SETTING_VALUES = {
   reduce_motion: [[false, "No"], [true, "Sí"]],
   sounds: [[true, "Sí"], [false, "No"]],
   haptics: [[true, "Sí"], [false, "No"]],
+  voice_tips: [[true, "Sí"], [false, "No"]],
 };
 
 export const settingLabel = (key, value) => (SETTING_VALUES[key]?.find(([v]) => v === value) ?? [null, String(value)])[1];
@@ -175,7 +183,8 @@ const SETTING_PAGES = {
     ["sub_scale", "Tamaño de subtítulos", null]] },
   display: { title: "Pantalla", icon: "show", options: [
     ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],
-    ["reduce_motion", "Reducir movimiento", null]] },
+    ["reduce_motion", "Reducir movimiento", null],
+    ["voice_tips", "Frases para Alexa", "Debajo de los botones: qué decirle para lo que tienes enfocado"]] },
   sound: { title: "Sonido y vibración", icon: "sound", options: [["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null]] },
 };
 
