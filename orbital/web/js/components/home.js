@@ -1,7 +1,7 @@
 import { h, mount } from "../core/dom.js";
 import { buildHome, greeting } from "../core/home.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
-import { ConsoleTile, FeatureTile, PendingChip, WideTile } from "./tiles.js";
+import { ConsoleTile, FeatureTile, WideTile } from "./tiles.js";
 import { KeyHint, SectionHead } from "./ui.js";
 
 /**
@@ -12,14 +12,13 @@ import { KeyHint, SectionHead } from "./ui.js";
  * Callbacks: onFocus(target) al cambiar de pieza; onPick(target) al tocarla con el dedo o el ratón;
  * onAction(action, target) para los botones del destacado. target = { kind, item?, console? }.
  */
-export function createHome({ onFocus, onPick, onAction }) {
+export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   const hello = h("h1", { class: "home__hello" });
-  const pendingSlot = h("div", { class: "home__pending" });
   const top = h("div", { class: "home__top" });
   const consolesHead = h("div", { class: "home__consoles-head" });
   const consolesTrack = h("div", { class: "home__consoles-track", role: "list" });
   const el = h("section", { class: "home", hidden: true, "aria-label": "Inicio" },
-    h("div", { class: "home__greeting" }, hello, pendingSlot),
+    h("div", { class: "home__greeting" }, hello),
     top,
     h("div", { class: "home__consoles" }, consolesHead, h("div", { class: "home__consoles-viewport" }, consolesTrack)));
 
@@ -38,8 +37,8 @@ export function createHome({ onFocus, onPick, onAction }) {
     hello.textContent = greeting();
     const pick = (id) => () => onPick?.(targets.get(id), id);
 
-    mount(pendingSlot, model.pending > 1 && PendingChip(model.pending, { onPress: pick("pending") }));
-    if (model.pending > 1) targets.set("pending", { kind: "pending", items: model.pendingItems });
+    // Fuera del Inicio pero alcanzable navegando: Buscar, arriba (↑ desde lo de arriba).
+    targets.set("search", { kind: "search" });
 
     const feature = model.feature
       ? FeatureTile(model.feature, { runningId, glyphs, onPress: pick("feature"), onAction: (action) => onAction?.(action, targets.get("feature")) })
@@ -59,6 +58,7 @@ export function createHome({ onFocus, onPick, onAction }) {
     }));
     model.consoles.forEach((c, i) => targets.set(`console:${i}`, { kind: "console", console: c }));
     renderConsoles();
+    requestAnimationFrame(keepConsoleVisible); // ya medido: decide si asoman más consolas
 
     if (!targets.has(focusId)) focusId = "feature";
     if (!introduced) { // entrada: saludo, destacado, tarjetas y las consolas una tras otra
@@ -71,7 +71,7 @@ export function createHome({ onFocus, onPick, onAction }) {
 
   function renderConsoles() {
     mount(consolesTrack, model.consoles.map((c, i) => ConsoleTile(c, {
-      focusId: `console:${i}`, index: i, glyphs: options.glyphs,
+      focusId: `console:${i}`, index: i,
       onPress: () => onPick?.(targets.get(`console:${i}`), `console:${i}`),
     })));
   }
@@ -79,10 +79,10 @@ export function createHome({ onFocus, onPick, onAction }) {
   /** Marca el foco, atenúa lo demás y mantiene la consola enfocada a la vista. */
   function paint() {
     const inConsoles = focusId.startsWith("console:");
-    for (const node of el.querySelectorAll("[data-focus-id]")) {
+    for (const node of [...el.querySelectorAll("[data-focus-id]"), ...outside()]) {
       const focused = node.dataset.focusId === focusId;
-      node.classList.toggle("tile--focused", focused);
-      node.classList.toggle("tile--dimmed", !focused && node.dataset.focusId !== "pending");
+      node.classList.toggle(node.classList.contains("tile") ? "tile--focused" : "is-focused", focused);
+      if (node.classList.contains("tile")) node.classList.toggle("tile--dimmed", !focused && focusId !== "search");
       if (focused) node.setAttribute("aria-current", "true");
       else node.removeAttribute("aria-current");
     }
@@ -103,6 +103,10 @@ export function createHome({ onFocus, onPick, onAction }) {
     if (left - shift < 0) next = left;
     consolesTrack.dataset.shift = String(next);
     consolesTrack.style.transform = `translateX(${-next}px)`;
+    // ¿Hay consolas fuera de la vista? El borde se desvanece y asoma la siguiente (si no, no se sabe).
+    const more = consolesTrack.scrollWidth - next - viewport.clientWidth > 4;
+    viewport.classList.toggle("home__consoles-viewport--more", more);
+    viewport.classList.toggle("home__consoles-viewport--before", next > 4);
   }
 
   function focus(id) {
@@ -118,7 +122,11 @@ export function createHome({ onFocus, onPick, onAction }) {
   function handle(action) {
     const dirs = { up: "up", down: "down", left: "left", right: "right" };
     if (dirs[action]) {
-      const next = nextFocus(measureFocusables(el), focusId, dirs[action]);
+      const pieces = [...measureFocusables(el), ...outside().map((node) => {
+        const r = node.getBoundingClientRect();
+        return { id: node.dataset.focusId, x: r.left, y: r.top, w: r.width, h: r.height };
+      })];
+      const next = nextFocus(pieces, focusId, dirs[action]);
       return next ? focus(next) : "edge";
     }
     if (action === "pageleft" || action === "pageright") {

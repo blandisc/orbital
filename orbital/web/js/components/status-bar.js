@@ -9,18 +9,20 @@ const ALEXA_LIVE_SECONDS = 600;
 export function createStatusBar({ onBrand, onSection, onSearch }) {
   // Buscar siempre a la mano (botón Vista ⧉): juegos, películas y series desde cualquier sección.
   const searchGlyph = h("span", { class: "status-bar__search-glyph" });
-  const search = h("button", { class: "status-bar__search", type: "button", "aria-label": "Buscar", onClick: () => onSearch?.() },
+  const search = h("button", { class: "status-bar__search", type: "button", "aria-label": "Buscar", "data-focus-id": "search", onClick: () => onSearch?.() },
     svg(ICONS.search), h("span", {}, "Buscar"), searchGlyph);
   const playingTitle = h("span", { class: "status-bar__playing-title" });
   const playingLabel = h("span", { class: "status-bar__playing-label" }, "En curso");
+  // Lo abierto: un ícono quieto y su nombre (antes un punto verde que parpadeaba y no se entendía).
   const playing = h("span", { class: "status-bar__playing", hidden: true },
-    h("i", { class: "status-bar__live", "aria-hidden": "true" }), playingLabel, playingTitle);
+    h("span", { class: "status-bar__live", "aria-hidden": "true" }, svg(ICONS.play)), playingLabel, playingTitle);
   const alexa = h("span", { class: "indicator", hidden: true, title: "Alexa" }, h("i", { class: "indicator__dot" }), "Alexa");
   const wifi = h("span", { hidden: true }, svg(ICONS.wifi));
   const level = h("i", { class: "battery__level" });
   const batteryText = h("span");
   const bolt = svg(ICONS.bolt);
-  const battery = h("span", { class: "battery", hidden: true }, h("b", { class: "battery__body" }, level), bolt, batteryText);
+  // La batería: el rayo va dentro de la pila (no al lado, en verde) y el número en gris.
+  const battery = h("span", { class: "battery", hidden: true }, h("b", { class: "battery__body" }, level, bolt), batteryText);
   const time = h("span", { class: "status-bar__clock" });
 
   const tabs = h("nav", { class: "status-bar__tabs", "aria-label": "Secciones" });
@@ -95,5 +97,5 @@ export function createStatusBar({ onBrand, onSection, onSearch }) {
   setInterval(tick, 10_000);
   watchBattery();
 
-  return { el, setRunning, setSystem, setSections, pulseAlexa };
+  return { el, setRunning, setSystem, setSections, pulseAlexa, searchButton: search };
 }

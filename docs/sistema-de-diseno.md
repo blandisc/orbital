@@ -23,7 +23,6 @@ las máscaras).
 | `Progress(fraction)` | Cuánto llevas de un video. |
 | `SectionHead(title, { meta, end })` | Título de una zona con su dato y algo a la derecha. |
 | `KeyHint(glyph, label)` | Botón del mando + qué hace («A Continuar»). |
-| `StatusChip({ icon, dot, text })` | Estado en el pie (mando y batería, Stremio). |
 | `.tile` | Superficie enfocable de las pantallas nuevas: mismo radio, anillo de foco y atenuado. |
 | `Button`, `Glyph` | Acciones con su glifo; el glifo del botón del mando en su color. |
 | `createKeyboard()` | Teclado en pantalla (Buscar, Conectar Stremio). |
@@ -31,7 +30,7 @@ las máscaras).
 ## 3. Tiles (`js/components/tiles.js` + `styles/components/tiles.css`)
 
 `FeatureTile` (lo último, a lo grande, con A/X/Y), `WideTile` (arte horizontal a sangre),
-`ConsoleTile` (foto real de la consola, juegos, nuevos, lo último) y `PendingChip`.
+y `ConsoleTile` (foto real de la consola, juegos, nuevos, lo último).
 
 ## 4. Comportamiento con el mando
 

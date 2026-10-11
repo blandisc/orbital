@@ -44,19 +44,6 @@ export function shortTitle(title = "") {
   return clean || String(title);
 }
 
-const PAD_NAMES = { gamesir: "GameSir", legion: "Legion Go", xbox: "Mando Xbox" };
-const BATTERY = { wired: "con cable", full: "batería llena", medium: "batería media", low: "batería baja", empty: "sin batería" };
-
-/** Chips de estado del pie: cada mando conectado (con su batería) y Stremio (lógica pura). */
-export function statusChips({ controllers = [], stremioLinked = false } = {}) {
-  const chips = controllers.map((pad) => ({
-    icon: "gamepad",
-    text: [PAD_NAMES[pad.kind] ?? "Mando", BATTERY[pad.battery]].filter(Boolean).join(" · "),
-    title: pad.close ? `Cerrar el juego: ${pad.close}` : null,
-  }));
-  if (stremioLinked) chips.push({ dot: "var(--color-live)", text: "Stremio" });
-  return chips;
-}
 
 /**
  * Pie del Inicio según lo enfocado: A y X dicen exactamente qué hacen (lógica pura).
@@ -67,8 +54,8 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
   if (target?.kind === "console") {
     list.push({ glyph: glyphs.select, label: "Entrar" });
     if (target.console.last) list.push({ glyph: glyphs.alt, label: `Seguir ${shortTitle(target.console.last.title)}` });
-  } else if (target?.kind === "pending") {
-    list.push({ glyph: glyphs.select, label: "Ver todo" });
+  } else if (target?.kind === "search") {
+    list.push({ glyph: glyphs.select, label: "Buscar" });
   } else if (target?.kind === "item") {
     list.push({ glyph: glyphs.select, label: primary });
     if (alt) list.push({ glyph: glyphs.alt, label: alt });

@@ -9,8 +9,8 @@ import { closedMessage } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
-import { footerHints, gamesHints, homeHints, statusChips } from "./core/hints.js";
-import { capturesMenu, controlsMenu, controlsPage, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, healthMenu, mainMenu, pendingMenu, powerConfirmMenu, powerMenu, quickMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, updateMenu, windowsMenu } from "./core/menus.js";
+import { footerHints, gamesHints, homeHints } from "./core/hints.js";
+import { capturesMenu, controlsMenu, controlsPage, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, healthMenu, mainMenu, powerConfirmMenu, powerMenu, quickMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, updateMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -48,6 +48,7 @@ const ui = {
   status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch() }),
   hero: createHero({ onAction: (action) => handleAction(action) }),
   home: createHome({
+    outside: () => [ui.status.searchButton], // Buscar (arriba) también se alcanza con ↑
     onFocus: (target) => homeFocused(target),
     onPick: (target, id) => (ui.home.focusId === id ? homeActivate(target) : ui.home.focus(id)),
     onAction: (action, target) => homeActivate(target, action),
@@ -307,7 +308,7 @@ function homeFocused(target) {
 function homeActivate(target, action = "select") {
   if (!target) return;
   if (target.kind === "empty") return goToSection("games", 1);
-  if (target.kind === "pending") return action === "select" && openMenu(pendingMenu(target.items));
+  if (target.kind === "search") return action === "select" ? openSearch() : rumble("edge");
   if (target.kind === "console") {
     if (action === "alt" && target.console.last) return launch(target.console.last);
     if (action !== "select") { sound.play("error"); return rumble("edge"); }
@@ -446,13 +447,6 @@ async function pollSystem() {
     state.wifi = system.wifi;
     ui.status.setSystem(system);
   } catch { /* idem */ }
-  renderStatusChips();
-}
-
-/** Pie: el mando conectado (con su batería) y Stremio. */
-async function renderStatusChips() {
-  const { controllers = [] } = await api.controllers().catch(() => ({}));
-  ui.hints.setStatus(statusChips({ controllers, stremioLinked: state.stremioLinked }));
 }
 
 // ---------------------------------------------------------------- películas y series
@@ -823,7 +817,6 @@ api.ui().then(({ can_exit: canExit, stremio_linked: linked, player, alexa }) => 
   ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   state.stremioLinked = !!linked;
   state.player = player || "stremio";
-  renderStatusChips();
 }).catch(() => {});
 
 // Enlaces directos: ?buscar=dune abre la búsqueda con ese texto; ?serie=tt0386676 su ficha.

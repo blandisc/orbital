@@ -43,10 +43,3 @@ test("frase para Alexa según lo enfocado", async () => {
   assert.match(alexaTip({ id: "x", title: "Hades", source: "steam" }, { runningId: "x" }), /cierre el juego/);
 });
 
-test("chips de estado del pie: mandos con su batería y Stremio", async () => {
-  const { statusChips } = await import("../../orbital/web/js/core/hints.js");
-  assert.deepEqual(statusChips({ controllers: [{ kind: "gamesir", battery: "medium", close: "Start + Select + Home" }], stremioLinked: true }).map((c) => c.text),
-    ["GameSir · batería media", "Stremio"]);
-  assert.deepEqual(statusChips({ controllers: [{ kind: "legion", battery: "wired" }] }).map((c) => c.text), ["Legion Go · con cable"]);
-  assert.deepEqual(statusChips(), []);
-});

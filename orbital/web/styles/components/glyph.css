@@ -1,21 +1,34 @@
-/* Glyph: botón del mando o tecla ("A", "Esc"...).
-   Con mando: círculos, y los de cara con su color (A verde, B rojo, X azul, Y amarillo).
-   Con teclado: teclas (rectángulo con borde inferior), para que no parezcan botones del mando. */
+/* Glyph: botón del mando o tecla («A», «LB», «Esc»…). Un solo diseño en toda la app (pie, botones,
+   pestañas, menús): mismo tamaño, centrado óptico con su texto y el color de cada botón de cara.
+   Con mando: botones de cara como en el control (disco oscuro con la letra en su color y un aro);
+   hombros y gatillos como píldora; Menú, Vista y la cruceta dibujados.
+   Con teclado: teclas con volumen (para que no parezcan botones del mando). */
 .glyph {
-  display: inline-grid; place-items: center; flex: none;
-  min-width: var(--glyph-size); height: var(--glyph-size); padding: 0 .4rem;
+  --glyph-ink: var(--color-text);
+  display: inline-grid; place-items: center; flex: none; box-sizing: border-box;
+  min-width: var(--glyph-size); height: var(--glyph-size); padding: 0 .42rem;
   border-radius: var(--radius-pill);
-  background: var(--color-fill-hover); color: var(--color-text);
-  font: var(--weight-bold) var(--text-xs) / 1 var(--font-text);
+  background: var(--glyph-bg); color: var(--glyph-ink);
+  box-shadow: inset 0 0 0 1.5px var(--glyph-ring);
+  font: var(--weight-bold) var(--text-2xs) / 1 var(--font-text); letter-spacing: .02em;
+  /* La caja del texto de Segoe queda baja: sube medio píxel para verse centrado en el círculo. */
+  padding-bottom: .06em;
 }
-[data-input="keyboard"] .glyph { border-radius: var(--radius-xs); box-shadow: var(--shadow-keycap); }
-[data-input="gamepad"] .glyph--a { background: var(--color-pad-a); color: var(--palette-ink-1000); }
-[data-input="gamepad"] .glyph--b { background: var(--color-pad-b); color: var(--palette-ink-1000); }
-[data-input="gamepad"] .glyph--x { background: var(--color-pad-x); color: var(--palette-ink-1000); }
-[data-input="gamepad"] .glyph--y { background: var(--color-pad-y); color: var(--palette-ink-1000); }
-/* Dentro de un botón: más pequeño. Sobre el botón claro, oscuro (salvo los de color). */
-.glyph--sm { min-width: 1.5rem; height: 1.5rem; font-size: var(--text-2xs); }
-.button--primary .glyph--sm:not([data-input="gamepad"] *) { background: var(--palette-ink-1000); color: var(--color-primary); }
+/* Botones de cara: disco oscuro, letra y aro de su color (A verde, B rojo, X azul, Y amarillo). */
+[data-input="gamepad"] .glyph--a { --glyph-ink: var(--color-pad-a); --glyph-ring: color-mix(in oklab, var(--color-pad-a) 70%, transparent); }
+[data-input="gamepad"] .glyph--b { --glyph-ink: var(--color-pad-b); --glyph-ring: color-mix(in oklab, var(--color-pad-b) 70%, transparent); }
+[data-input="gamepad"] .glyph--x { --glyph-ink: var(--color-pad-x); --glyph-ring: color-mix(in oklab, var(--color-pad-x) 70%, transparent); }
+[data-input="gamepad"] .glyph--y { --glyph-ink: var(--color-pad-y); --glyph-ring: color-mix(in oklab, var(--color-pad-y) 70%, transparent); }
+[data-input="gamepad"] .glyph--a, [data-input="gamepad"] .glyph--b,
+[data-input="gamepad"] .glyph--x, [data-input="gamepad"] .glyph--y { width: var(--glyph-size); padding: 0 0 .06em; font-size: var(--text-xs); }
+/* Teclado: tecla con borde y una sombra abajo (se ve "presionable"). */
+[data-input="keyboard"] .glyph, [data-input="touch"] .glyph {
+  border-radius: var(--radius-xs);
+  background: linear-gradient(180deg, var(--glyph-key-top), var(--glyph-bg));
+  box-shadow: inset 0 0 0 1px var(--glyph-ring), var(--shadow-keycap);
+}
+/* Dentro de un botón: un poco más chico. Sobre el botón claro, el disco sigue oscuro (se lee igual). */
+.glyph--sm { --glyph-size: 1.45rem; }
 
-.glyph--drawn { padding: 0; }
-.glyph--drawn svg { width: 72%; height: 72%; }
+.glyph--drawn { padding: 0; width: var(--glyph-size); }
+.glyph--drawn svg { width: 68%; height: 68%; }

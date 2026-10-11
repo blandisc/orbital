@@ -1,7 +1,6 @@
-import { h, svg } from "../core/dom.js";
+import { h } from "../core/dom.js";
 import { duration, lastPlayed, shortAgo } from "../core/format.js";
 import { kicker, systemColor, systemOf } from "../core/home.js";
-import { ICONS } from "../core/icons.js";
 import { alternativeRunner, isSeries, isWatchable, primaryLabel } from "../core/library.js";
 import { Button } from "./button.js";
 import { Badge, Progress } from "./ui.js";
@@ -87,26 +86,20 @@ export function WideTile(item, { focusId, onPress }) {
 }
 
 /** Consola: su foto (o la portada de lo último, si no hay foto), cuántos juegos y lo último que jugaste. */
-export function ConsoleTile(system, { focusId, index = 0, glyphs = {}, onPress }) {
+export function ConsoleTile(system, { focusId, index = 0, onPress }) {
   const last = system.last;
-  // Dos pies: lo último que jugaste y, al enfocarla, qué hacen A y X (lo cambia el CSS, sin redibujar).
-  const keys = glyphs.select && h("span", { class: "tile--console__foot tile--console__foot--keys" },
-    h("span", {}, h("b", {}, glyphs.select), " entrar"), last && glyphs.alt && h("span", {}, h("b", {}, glyphs.alt), " jugar"));
   return h("div", {
-    class: ["tile", "tile--console"], role: "button", tabindex: "-1", "data-focus-id": focusId, onClick: onPress,
+    class: ["tile", "tile--console", system.logo && "tile--console-logo"], role: "button", tabindex: "-1", "data-focus-id": focusId, onClick: onPress,
     "aria-label": `${system.name}: ${system.count} juegos`, style: { "--i": index, "--glow": systemColor(system.system) },
   },
   h("span", { class: "tile--console__glow" }),
   h("span", { class: "tile--console__media" },
     system.photo ? art(system.photo, system.logo ? "tile--console__logo" : "tile--console__photo") : art(system.cover, "tile--console__cover")),
-  h("strong", { class: "tile--console__name" }, system.name),
-  h("span", { class: "tile--console__count" }, `${system.count} juego${system.count === 1 ? "" : "s"}`,
-    system.fresh > 0 && Badge(`+${system.fresh} nuevo${system.fresh === 1 ? "" : "s"}`)),
-  h("span", { class: "tile--console__foot tile--console__foot--last" }, last ? `${last.title} · ${shortAgo(last.last_played)}` : "Sin jugar todavía"),
-  keys);
+  h("span", { class: "tile--console__text" },
+    h("strong", { class: "tile--console__name" }, system.name),
+    h("span", { class: "tile--console__count" }, `${system.count} juego${system.count === 1 ? "" : "s"}`,
+      system.fresh > 0 && Badge(`+${system.fresh} nuevo${system.fresh === 1 ? "" : "s"}`)),
+    // Lo último que jugaste ahí: lo que A/X retoman (el pie de la pantalla dice qué botón).
+    h("span", { class: "tile--console__foot" }, last ? `${last.title} · ${shortAgo(last.last_played)}` : "Sin jugar todavía")));
 }
 
-/** El aviso «Tienes 5 cosas a medias · ver todo ›» (enfocable: abre la lista completa). */
-export const PendingChip = (count, { focusId = "pending", onPress }) =>
-  h("div", { class: ["tile", "tile--pill"], role: "button", tabindex: "-1", "data-focus-id": focusId, onClick: onPress },
-    `Tienes ${count} cosa${count === 1 ? "" : "s"} a medias`, h("span", { class: "tile--pill__more" }, " · ver todo"), svg(ICONS.chevron));

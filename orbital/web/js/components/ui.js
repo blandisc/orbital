@@ -1,5 +1,4 @@
-import { h, svg } from "../core/dom.js";
-import { ICONS } from "../core/icons.js";
+import { h } from "../core/dom.js";
 import { Glyph } from "./glyph.js";
 
 /**
@@ -34,9 +33,3 @@ export const SectionHead = (title, { meta = null, end = null, className = null }
 export const KeyHint = (glyph, label, { className = null } = {}) =>
   h("span", { class: ["key-hint", className] }, String(glyph).split(" ").map((g) => Glyph(g, { small: true })), label);
 
-/** Estado del sistema en el pie: ícono o punto de color + texto. `strong`: lo abierto ahora. */
-export const StatusChip = ({ icon = null, dot = null, text, strong = false, title = null }) =>
-  h("span", { class: ["status-chip", strong && "status-chip--strong"], title },
-    icon && svg(ICONS[icon]),
-    dot && h("span", { class: "status-chip__dot", style: { "--status-dot": dot } }),
-    text);

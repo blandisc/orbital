@@ -101,7 +101,7 @@
   --row-height: calc(var(--row-heading-height) + var(--card-height) * var(--card-focus-scale) + var(--space-5));
   --row-peek: 2.6rem; /* cuánto asoma la fila siguiente */
   --control-height: 3rem;
-  --glyph-size: 1.6rem;
+  --glyph-size: 1.75rem;
   --progress-height: .25rem;
   --sheet-width: 26rem;
   --keyboard-width: 54rem;

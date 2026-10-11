@@ -8,6 +8,9 @@ import { ICONS } from "../core/icons.js";
  * Los submenús se apilan (☰ → Apagado → ¿Apagar?): B regresa un nivel, como en Xbox y Steam
  * Deck, en vez de cerrar todo. Solo en el primer nivel B ejecuta el `cancel` del menú.
  */
+/** ¿La pista es una descripción (va debajo) o un dato corto como «1» o «Ryujinx» (va a la derecha)? */
+const longHint = (hint) => !!hint && String(hint).length > 12;
+
 export function createSheet({ onCommand, onMove, onClose }) {
   const back = h("div", { class: "sheet__back", "aria-hidden": "true" });
   const title = h("div", { class: "sheet__title", id: "sheet-title" });
@@ -33,11 +36,14 @@ export function createSheet({ onCommand, onMove, onClose }) {
       type: "button",
       role: "menuitem",
       onClick: () => choose(i),
-    }, h("span", { class: "sheet__icon" }, ICONS[option.icon] ? svg(ICONS[option.icon]) : null), h("span", { class: "sheet__label" }, option.label),
+    }, h("span", { class: "sheet__icon" }, ICONS[option.icon] ? svg(ICONS[option.icon]) : null),
+    // Una descripción larga va debajo del nombre (en la misma línea lo aplastaba); un dato corto, a la derecha.
+    h("span", { class: "sheet__text" }, h("span", { class: "sheet__label" }, option.label),
+      longHint(option.hint) && h("small", { class: "sheet__hint sheet__hint--below" }, option.hint)),
     // ‹ › solo en lo que se cambia con A o ◀/▶ (un estado, como "Conectada", no lleva flechas).
     option.value !== undefined && h("span", { class: "sheet__value" },
       option.command?.type === "setting" ? ["‹ ", option.value, " ›"] : option.value),
-    option.hint && h("small", { class: "sheet__hint" }, option.hint))));
+    option.hint && !longHint(option.hint) && h("small", { class: "sheet__hint" }, option.hint))));
   }
 
   /** `stack`: de dónde vienes (para que B regrese); `index`: opción enfocada (al reabrir el mismo menú). */

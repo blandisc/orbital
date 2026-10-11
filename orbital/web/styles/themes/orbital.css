@@ -36,6 +36,10 @@
   --color-pad-b: var(--palette-pad-red);
   --color-pad-x: var(--palette-pad-blue);
   --color-pad-y: var(--palette-pad-yellow);
+  /* Íconos de botón (glyph.css): disco/tecla oscuros con un aro fino, iguales en toda la app. */
+  --glyph-bg: var(--palette-ink-850);
+  --glyph-key-top: var(--palette-ink-700);
+  --glyph-ring: rgba(255, 255, 255, .16);
 
   /* El fondo toma el tono del juego, muy oscurecido. */
   --color-tinted-bg: color-mix(in oklab, var(--art-tint) 55%, var(--palette-ink-1000));

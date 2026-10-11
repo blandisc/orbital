@@ -43,11 +43,13 @@
 .sheet__icon { display: grid; place-items: center; flex: none; width: 1.4rem; height: 1.4rem; color: var(--color-text-muted); transition: color var(--duration-fast) var(--ease-out); }
 .sheet__icon .icon { width: 100%; height: 100%; }
 .sheet__back { padding: 0 var(--space-3) var(--space-2); color: var(--color-text-muted); font-size: var(--text-xs); }
-.sheet__label { min-width: 0; }
+.sheet__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .15rem; padding-block: var(--space-2); }
+.sheet__label { min-width: 0; line-height: 1.2; }
 /* Ajustes: el valor actual a la derecha (‹ Grande ›); A o ◀/▶ lo cambian. */
-.sheet__item--setting { flex-wrap: wrap; row-gap: 0; padding-block: var(--space-2); }
+.sheet__item--setting { align-items: flex-start; }
+.sheet__item--setting .sheet__icon, .sheet__item--setting .sheet__value { margin-top: var(--space-3); }
 .sheet__value { margin-left: auto; font-weight: var(--weight-medium); white-space: nowrap; }
-.sheet__item--setting .sheet__hint { flex-basis: 100%; margin-left: calc(1.4rem + var(--space-4)); padding-left: 0; white-space: normal; }
+.sheet__text .sheet__hint--below { margin: 0; padding: 0; white-space: normal; line-height: 1.3; text-align: left; }
 .sheet__hint { margin-left: auto; padding-left: var(--space-4); color: var(--color-text-muted); font-size: var(--text-sm); white-space: nowrap; font-variant-numeric: tabular-nums; }
 /* Foco invertido (fondo claro, texto oscuro): se lee desde el sofá sin buscarlo. */
 .sheet__item--focused, .sheet__item--focused:hover { background: var(--color-primary); color: var(--color-on-primary); }

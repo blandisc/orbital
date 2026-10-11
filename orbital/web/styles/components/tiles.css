@@ -47,50 +47,34 @@
 /* Arte de respaldo (no tiene propio): un poco más tenue, para que se lea como «genérico». */
 .tile--placeholder .tile__art { opacity: .9; }
 
-/* --- Consola: su foto sobre un brillo de su color, cuántos juegos y lo último ----------------- */
+/* --- Consola: su foto (o logotipo) sobre un brillo de su color; nombre, juegos y lo último ---- */
 .tile--console {
-  display: flex; flex-direction: column; gap: .15rem; padding: 0 var(--space-4) var(--space-3);
+  display: flex; flex-direction: column; padding: 0;
   background: linear-gradient(180deg, var(--palette-ink-850) 0%, var(--palette-ink-900) 100%);
 }
 .tile--console__glow {
   position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(120% 80% at 50% 0%, color-mix(in oklab, var(--glow) 24%, transparent) 0%, transparent 70%);
+  background: radial-gradient(90% 70% at 50% 18%, color-mix(in oklab, var(--glow) 20%, transparent) 0%, transparent 72%);
   transition: opacity var(--duration-base) var(--ease-out);
 }
 .tile--console.tile--focused .tile--console__glow {
-  background: radial-gradient(120% 80% at 50% 0%, color-mix(in oklab, var(--glow) 42%, transparent) 0%, transparent 72%);
+  background: radial-gradient(95% 75% at 50% 18%, color-mix(in oklab, var(--glow) 38%, transparent) 0%, transparent 75%);
 }
-.tile--console__media { position: relative; flex: none; height: 5.2rem; display: grid; place-items: center; }
+.tile--console__media { position: relative; flex: 1 1 auto; min-height: 0; display: grid; place-items: center; padding: var(--space-4) var(--space-4) 0; }
 .tile--console__photo {
-  max-width: 82%; max-height: 4.8rem; object-fit: contain;
+  max-width: 88%; max-height: 100%; object-fit: contain;
   filter: drop-shadow(0 .7rem .9rem rgba(0, 0, 0, .6));
   transition: transform var(--duration-base) var(--ease-spring);
 }
-.tile--console.tile--focused .tile--console__photo { transform: scale(1.08) translateY(-.1rem); }
-/* Steam y GeForce NOW: su logotipo en blanco, del tamaño de una foto de consola. */
-.tile--console__logo { height: 3.4rem; width: auto; opacity: .92; filter: drop-shadow(0 .5rem 1rem rgba(0, 0, 0, .5)); transition: transform var(--duration-base) var(--ease-spring); }
-.tile--console.tile--focused .tile--console__logo { transform: scale(1.08); opacity: 1; }
-.tile--console__cover { height: 4.6rem; width: auto; border-radius: var(--radius-sm); box-shadow: var(--shadow-card); }
-.tile--console__name { position: relative; font-family: var(--font-sans); font-size: var(--text-lg); line-height: 1.15; }
-.tile--console__count { position: relative; display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
+.tile--console.tile--focused .tile--console__photo { transform: scale(1.06) translateY(-.1rem); }
+/* Steam y GeForce NOW: su logotipo en blanco, del tamaño visual de una foto de consola. */
+.tile--console__logo { height: 3.2rem; width: auto; opacity: .92; filter: drop-shadow(0 .5rem 1rem rgba(0, 0, 0, .5)); transition: transform var(--duration-base) var(--ease-spring); }
+.tile--console.tile--focused .tile--console__logo { transform: scale(1.06); opacity: 1; }
+.tile--console__cover { max-height: 100%; width: auto; border-radius: var(--radius-sm); box-shadow: var(--shadow-card); }
+.tile--console__text { position: relative; display: flex; flex-direction: column; gap: .2rem; padding: var(--space-3) var(--space-4) var(--space-4); }
+.tile--console__name { font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold); line-height: 1.1; letter-spacing: var(--tracking-tight); }
+.tile--console__count { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
 .tile--console__foot {
-  position: relative; margin-top: auto; padding-top: var(--space-2);
-  color: var(--color-text-muted); font-size: var(--text-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  margin-top: var(--space-1); color: var(--color-text-faint-strong); font-size: var(--text-xs);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.tile--console__foot--keys { display: none; gap: var(--space-3); color: var(--color-text); }
-.tile--console__foot--keys b { font-weight: var(--weight-bold); }
-.tile--console.tile--focused .tile--console__foot--last { display: none; }
-.tile--console.tile--focused .tile--console__foot--keys { display: flex; }
-[data-input="touch"] .tile--console__foot--keys { display: none !important; }
-[data-input="touch"] .tile--console.tile--focused .tile--console__foot--last { display: block; }
-
-/* --- Píldora enfocable («Tienes 5 cosas a medias · ver todo ›») ------------------------------- */
-.tile--pill {
-  display: inline-flex; align-items: center; gap: .2rem; min-height: 2.6rem; padding: 0 var(--space-3) 0 var(--space-5);
-  border-radius: var(--radius-pill); background: transparent; box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
-  color: var(--color-text); font-size: var(--text-md); cursor: pointer;
-}
-.tile--pill__more { color: var(--color-text-muted); }
-.tile--pill .icon { width: 1.1rem; height: 1.1rem; color: var(--color-text-muted); }
-.tile--pill.tile--focused { transform: none; background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; }
-.tile--pill.tile--focused .tile--pill__more, .tile--pill.tile--focused .icon { color: inherit; opacity: .7; }
