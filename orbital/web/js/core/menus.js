@@ -436,7 +436,38 @@ export function setupMenu(status) {
         status.player ? "Películas y series con el mando" : "Corre scripts/install-windows.ps1 en la PC"),
       row("mic", "Alexa", status.alexa, status.alexa ? "Configurada" : "Opcional",
         status.alexa ? "«Alexa, pídele a mi consola…»" : "En la PC: orbital alexa setup"),
+      { icon: "gamepad", label: "Cómo se usa (1 min)", hint: "Ir y volver de un juego, cerrarlo, el panel rápido", command: { type: "tour", step: 0 } },
       { icon: "check", label: "Listo", command: { type: "close" } },
+    ],
+  };
+}
+
+/**
+ * Guía rápida (la primera vez, desde "Tu consola", o en Controles): un paso por pantalla, con el
+ * atajo del mando que tienes conectado (Legion Go o GameSir/otros).
+ */
+export function tourMenu(step, { legion = false } = {}) {
+  const steps = [
+    { title: "Jugar y volver", text: legion
+      ? "A abre un juego. En el juego, un toque de Legion L te trae a Orbital (el juego queda en pausa); A o Legion L te regresan."
+      : "A abre un juego. En el juego, Home te trae a Orbital (el juego queda en pausa); A o Home te regresan." },
+    { title: "Cerrar un juego", text: legion
+      ? "Mantén Start + Select hasta que se llene la barra, o toca Legion L dos veces. Desde Orbital: Y sobre el juego → Cerrar."
+      : "Mantén Start + Select + Home hasta que se llene la barra. Desde Orbital: Y sobre el juego → Cerrar." },
+    { title: "Panel rápido", text: legion
+      ? "☰ → Panel rápido: volumen, brillo, modo de energía, batería y capturas."
+      : "Mantén Home y pulsa LB (o ☰ → Panel rápido): volumen, brillo, energía y batería. Home + RB toma una captura." },
+    { title: "Buscar y ver", text: "El botón Vista ⧉ busca juegos, películas y series. En Películas y series, A sigue donde te quedaste." },
+    { title: "Con la voz", text: "«Alexa, pídele a mi consola que abra Hades», «…que ponga Los Simpson temporada 3 episodio 2», «…cuánto le falta»." },
+  ];
+  const current = steps[step];
+  const last = step === steps.length - 1;
+  return {
+    title: current.title, crumb: `Guía ${step + 1} de ${steps.length}`, subtitle: current.text,
+    options: [
+      last ? { icon: "check", label: "¡Listo!", command: { type: "close" } }
+        : { icon: "play", label: "Siguiente", command: { type: "tour", step: step + 1 } },
+      ...(last ? [] : [{ icon: "close", label: "Saltar la guía", command: { type: "close" } }]),
     ],
   };
 }
@@ -500,6 +531,7 @@ export function controlsMenu(controllers = []) {
       { icon: "gamepad", label: "GameSir y otros", hint: hint("gamesir"), command: { type: "controls", page: "gamesir" } },
       { icon: "windows", label: "En Orbital", hint: "Moverte, abrir, buscar, menú", command: { type: "controls", page: "orbital" } },
       { icon: "trailer", label: "Viendo películas y series", hint: "El reproductor", command: { type: "controls", page: "player" } },
+      { icon: "play", label: "Guía rápida", hint: "Un minuto, paso a paso", command: { type: "tour", step: 0 } },
     ],
   };
 }

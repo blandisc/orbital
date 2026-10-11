@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { capturesMenu, diagnosticsMenu, foldersMenu, gameMenu, updateMenu, mainMenu, quickMenu, nextSetting, powerConfirmMenu, powerMenu, settingsPage, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
+import { capturesMenu, diagnosticsMenu, foldersMenu, gameMenu, tourMenu, updateMenu, mainMenu, quickMenu, nextSetting, powerConfirmMenu, powerMenu, settingsPage, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch",
@@ -205,4 +205,13 @@ test("actualizar: qué cambia, actualizar primero, y avisos claros si no se pued
   assert.deepEqual(menu.options.slice(1, 3).map((o) => o.label), ["Panel rápido", "Capturas"]);
   assert.match(updateMenu({ available: 0, changes: [] }).subtitle, /más reciente/);
   assert.match(updateMenu({ available: 3, changes: [], error: "Hay cambios sin guardar" }).subtitle, /sin guardar/);
+});
+
+test("guía rápida: paso a paso, con el atajo del mando que tienes", () => {
+  assert.match(tourMenu(0, { legion: true }).subtitle, /Legion L/);
+  assert.match(tourMenu(0, { legion: false }).subtitle, /Home/);
+  assert.deepEqual(tourMenu(0).options[0].command, { type: "tour", step: 1 });
+  const last = tourMenu(4);
+  assert.equal(last.options.length, 1);
+  assert.equal(last.options[0].command.type, "close");
 });

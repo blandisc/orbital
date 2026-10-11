@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isWatchable, itemAt, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints } from "./core/hints.js";
-import { capturesMenu, controlsMenu, controlsPage, diagnosticsMenu, exitMenu, foldersMenu, healthMenu, quickMenu, updateMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, windowsMenu } from "./core/menus.js";
+import { capturesMenu, controlsMenu, controlsPage, diagnosticsMenu, exitMenu, foldersMenu, healthMenu, quickMenu, tourMenu, updateMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -421,6 +421,13 @@ async function runCommand(command, context = null) {
         return openMenu(setupMenu(await api.setup()), nested(context));
       case "quick":
         return openQuick(context);
+      case "tour": { // con el atajo del mando conectado
+        if (state.legion === undefined) {
+          const pads = (await api.controllers().catch(() => ({ controllers: [] }))).controllers;
+          state.legion = pads.some((c) => c.kind === "legion");
+        }
+        return ui.sheet.open(tourMenu(command.step, { legion: state.legion }), { index: 0, stack: [] });
+      }
       case "update-check":
         ui.toast.show("Buscando una versión nueva…");
         return openMenu(updateMenu(await api.checkUpdate(!!command.force)), nested(context));
