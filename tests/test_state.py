@@ -46,7 +46,8 @@ def test_session_end_records_time_and_notifies(library):
     library.launch("steam:367520")
     library.launcher.finish(1800)
     assert library.describe(library.get("steam:367520"))["playtime"] == 1800
-    assert events == [{"type": "closed", "id": "steam:367520", "title": "Hollow Knight", "seconds": 1800}]
+    assert events == [{"type": "closed", "id": "steam:367520", "title": "Hollow Knight", "seconds": 1800,
+                      "crashed": False}]
 
 
 def test_launcher_watches_real_process():

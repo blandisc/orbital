@@ -89,6 +89,7 @@ class Source:
     release: str = ""
     tags: list[str] = field(default_factory=list)
     score: float = 0.0
+    binge: str | None = None  # behaviorHints.bingeGroup: misma calidad/idioma en el siguiente episodio
 
     def public(self) -> dict:
         """Lo que ve la interfaz: nada de URLs ni claves."""
@@ -96,8 +97,13 @@ class Source:
             "id": self.index, "addon": self.addon, "resolution": self.resolution, "hdr": self.hdr,
             "size": self.size, "seeders": self.seeders, "site": self.site, "cached": self.cached,
             "debrid": self.debrid, "languages": [LANG_NAMES.get(l, l) for l in self.languages],
-            "release": self.release, "tags": self.tags,
+            "release": self.release, "tags": self.tags, "audio": self.audio_label,
         }
+
+    @property
+    def audio_label(self) -> str:
+        """"Atmos", "5.1" o "" (para el chip de audio)."""
+        return next((t for t in ("Atmos", "5.1") if t in self.tags), "")
 
 
 def parse(stream: dict, addon: str, transport_url: str, index: int) -> Source:
@@ -107,6 +113,7 @@ def parse(stream: dict, addon: str, transport_url: str, index: int) -> Source:
     first = text.split("\n", 1)[0].strip()
     filename = (stream.get("behaviorHints") or {}).get("filename") or ""
     src = Source(index=index, addon=addon.split()[0] if addon else "", stream=stream, transport_url=transport_url)
+    src.binge = (stream.get("behaviorHints") or {}).get("bingeGroup") or None
     src.cached = "[RD+]" in name or "+]" in name.split("\n")[0]
     src.debrid = bool(re.search(r"\[(RD|AD|PM|DL|TB|OC)[ +\]]", name))
     # La resolución que declara el addon manda; el nombre del archivo solo si el addon no dice nada

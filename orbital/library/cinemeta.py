@@ -102,6 +102,26 @@ def describe_meta(meta: dict) -> dict:
     }
 
 
+def _names(value) -> list[str]:
+    if isinstance(value, str):
+        return [n.strip() for n in value.split(",") if n.strip()]
+    return [str(n).strip() for n in value or [] if str(n).strip()]
+
+
+def credits(meta: dict) -> dict:
+    """Para la ficha: reparto, dirección, guion, estreno y premios (Cinemeta los trae; antes se tiraban)."""
+    by_category: dict[str, list[str]] = {}
+    for link in meta.get("links") or []:
+        if isinstance(link, dict) and link.get("name"):
+            by_category.setdefault(str(link.get("category") or "").lower(), []).append(str(link["name"]))
+    cast = _names(meta.get("cast")) or by_category.get("cast", [])
+    directors = _names(meta.get("director")) or by_category.get("directors", [])
+    writers = _names(meta.get("writer")) or by_category.get("writers", [])
+    return {"cast": cast[:6], "directors": directors[:3], "writers": writers[:3],
+            "released": str(meta.get("released") or "")[:10], "awards": str(meta.get("awards") or "").strip(),
+            "country": str(meta.get("country") or "").strip()}
+
+
 def catalog_items(kind: str, metas: list[dict], limit: int = 30) -> list[LibraryItem]:
     category = "movies" if kind == "movie" else "series"
     items = []

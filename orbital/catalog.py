@@ -24,6 +24,7 @@ STREMIO_KEY = "stremio_auth_key"
 STREMIO_STALE_SECONDS = 180
 CONTINUE_LIMIT = 20  # "Seguir viendo": los más recientes
 STEAM_STATS_DELAY = 6  # s tras cerrar un juego de Steam, antes de releer sus horas
+QUICK_EXIT = 15  # s: un juego que se cierra antes, solo, seguramente no pudo abrir
 
 log = logging.getLogger(__name__)
 
@@ -42,6 +43,17 @@ CATEGORIES = [
 
 # listener(evento) — el servidor lo usa para avisar a la interfaz.
 Listener = Callable[[dict], None]
+
+
+def source_label(source: streams.Source, long: bool = False) -> str:
+    """"1080p · Al instante" / "4K HDR · Torrentio": de dónde viene lo que ves, en pocas palabras."""
+    quality = " ".join(p for p in (source.resolution or "SD", *source.hdr[:1]) if p)
+    parts = [quality, "Al instante" if source.cached else source.addon]
+    if long:
+        parts.append(" + ".join(streams.LANG_NAMES.get(l, l) for l in source.languages[:2]))
+        if source.size:
+            parts.append(f"{source.size / 1e9:.1f} GB")
+    return " · ".join(p for p in parts if p)
 
 
 def normalize(text: str) -> str:
@@ -218,6 +230,7 @@ class Catalog:
             on_finished=self._player_finished, idle_seconds=config.sessions.video_idle_minutes * 60,
             on_idle=lambda title, minutes: self._notify({
                 "type": "toast", "message": f"Cerré {title}: llevaba {minutes} min en pausa. Sigues donde te quedaste."}))
+        self._wire_player()
         # Antes de abrir algo, cerrar lo que estaba abierto (lo pone el servidor: shell.close_previous).
         self.before_launch: Callable[[str], None] | None = None
         self._reveal_skip = threading.Event()
@@ -567,17 +580,85 @@ class Catalog:
         self.open_stremio(uri, title)
         return uri
 
+    # --- películas y series en el reproductor de Orbital -----------------------------------------
+    def setting(self, key: str, default=None):
+        """Lo que elegiste en Ajustes manda; si no, config.yaml."""
+        return self.state.settings().get(key, default)
+
     @property
     def stream_prefs(self) -> streams.Preferences:
-        return streams.Preferences(audio=self.config.stremio.audio, quality=self.config.stremio.quality)
+        return streams.Preferences(audio=self.setting("audio", self.config.stremio.audio),
+                                   quality=self.setting("quality", self.config.stremio.quality))
 
-    def stream_sources(self, kind: str, video_id: str) -> list[streams.Source]:
+    @property
+    def subtitles_lang(self) -> str:
+        return self.setting("subtitles", self.config.stremio.subtitles)
+
+    def stream_sources(self, kind: str, video_id: str, prefs: streams.Preferences | None = None) -> list[streams.Source]:
         """Fuentes de tus addons, ordenadas por tus preferencias (la primera es la recomendada)."""
         if not self.stremio_linked:
-            raise stremio_api.StremioError("Vincula tu cuenta de Stremio: orbital stremio login")
-        return self.streams.find(self.credentials.get(STREMIO_KEY), kind, video_id, self.stream_prefs)
+            raise stremio_api.StremioError("Conecta tu cuenta de Stremio en Ajustes")
+        return self.streams.find(self.credentials.get(STREMIO_KEY), kind, video_id, prefs or self.stream_prefs)
 
-    def play_source(self, kind: str, meta_id: str, video_id: str, index: int, title: str, keep: bool = False) -> str:
+    def _wire_player(self) -> None:
+        """Lo que el reproductor le pregunta al catálogo (siguiente episodio, otras fuentes…)."""
+        p = self.player
+        p.on_progress = lambda meta, pos, dur, watched: self._save_progress(meta, pos, dur, watched, refresh=False)
+        p.on_failed = self._source_failed
+        p.next_provider = self._next_up
+        p.sources_provider = self._player_sources
+        p.on_switch_source = self._switch_source
+        p.on_episode = self._step_episode
+        p.on_sub_scale = lambda scale: self.state.set_setting("sub_scale", scale)
+        p.sub_scale = float(self.setting("sub_scale", 1.0) or 1.0)
+
+    @staticmethod
+    def _episode_label(info: dict, video_id: str) -> tuple[str, str]:
+        """("T3 E6", "Nombre del episodio") de un video de una serie ("", "") si no se encuentra."""
+        for season in cinemeta.seasons(info):
+            for episode in season["episodes"]:
+                if episode["id"] == video_id:
+                    prefix = "Especial" if season["season"] == 0 else f"T{season['season']}"
+                    return f"{prefix} E{episode['episode']}", episode["title"]
+        return "", ""
+
+    def _media_meta(self, kind: str, meta_id: str, video_id: str, title: str, source: streams.Source) -> dict:
+        """Lo que el reproductor necesita saber del video (y lo que se guarda en Stremio)."""
+        detail = ""
+        if kind == "series":
+            try:
+                label, name = self._episode_label(self.cinemeta.meta(kind, meta_id), video_id)
+                detail = " · ".join(p for p in (label, name) if p)
+            except cinemeta.CinemetaError:
+                pass
+        return {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title, "detail": detail,
+                "source": source.index, "source_label": source_label(source), "binge": source.binge,
+                "tried": [source.index]}
+
+    def best_source(self, kind: str, video_id: str, binge: str | None = None,
+                    skip: set[int] | None = None) -> streams.Source | None:
+        """La fuente recomendada; en una serie, mejor la del mismo grupo que el episodio anterior
+        (misma calidad e idioma: así lo hace Stremio con bingeGroup)."""
+        found = [s for s in self.stream_sources(kind, video_id) if s.index not in (skip or set())]
+        if not found:
+            return None
+        if binge:
+            same = next((s for s in found if s.binge == binge and s.score > found[0].score - 700), None)
+            if same:
+                return same
+        return found[0]
+
+    def play_best(self, kind: str, meta_id: str, video_id: str, title: str, keep: bool = False,
+                  from_start: bool = False) -> dict:
+        """"Ver": sin lista de fuentes. Orbital elige la recomendada y arranca (la lista queda en Y)."""
+        source = self.best_source(kind, video_id)
+        if source is None:
+            raise LookupError("No encontré dónde ver esto. Revisa tus complementos de Stremio.")
+        self.play_source(kind, meta_id, video_id, source.index, title, keep=keep, from_start=from_start)
+        return {"source": source.public(), "label": source_label(source)}
+
+    def play_source(self, kind: str, meta_id: str, video_id: str, index: int, title: str, keep: bool = False,
+                    from_start: bool = False) -> str:
         """Reproduce la fuente elegida: en el reproductor de Orbital (mpv, con el mando) o, si no
         está o así se configuró, directo en el de Stremio (sin su lista de fuentes)."""
         self.revealing = False
@@ -587,31 +668,126 @@ class Catalog:
         mpv_exe = player.find_mpv() if self.config.stremio.player == "orbital" else None
         url = player.stream_url(source.stream)
         if mpv_exe and url:
-            self.play_native(mpv_exe, url, kind, meta_id, video_id, title, keep=keep)
+            self.play_native(mpv_exe, url, kind, meta_id, video_id, title, keep=keep, source=source,
+                             from_start=from_start)
             return "orbital"
         uri = streams.player_link(source, cinemeta.MANIFEST, kind, meta_id, video_id)
         self.open_stremio(uri, title)
         return uri
 
-    def play_native(self, mpv_exe: str, url: str, kind: str, meta_id: str, video_id: str, title: str,
-                    keep: bool = False) -> None:
-        """mpv a pantalla completa, desde donde te quedaste (según Stremio)."""
-        auth = self.credentials.get(STREMIO_KEY)
-        start = 0.0
+    def resume_position(self, meta_id: str, video_id: str) -> float:
+        """Dónde ibas según Stremio (0 si no se sabe)."""
         try:
-            start = stremio_api.resume_seconds(self.stremio_client.library_item(auth, meta_id), video_id)
+            return stremio_api.resume_seconds(
+                self.stremio_client.library_item(self.credentials.get(STREMIO_KEY), meta_id), video_id)
         except stremio_api.StremioError as exc:
             log.info("No pude leer dónde ibas: %s", exc)
-        subs = self.config.stremio.subtitles
+            return 0.0
+
+    def _fallback_subs(self, kind: str, video_id: str):
+        subs, auth = self.subtitles_lang, self.credentials.get(STREMIO_KEY)
+        return (lambda: self.streams.subtitles(auth, kind, video_id, subs)) if subs else None
+
+    def play_native(self, mpv_exe: str, url: str, kind: str, meta_id: str, video_id: str, title: str,
+                    keep: bool = False, source: streams.Source | None = None, from_start: bool = False) -> None:
+        """mpv a pantalla completa, desde donde te quedaste (según Stremio)."""
+        start = 0.0 if from_start else self.resume_position(meta_id, video_id)
         if self.before_launch and not keep:
             self.before_launch("media:player")
+        meta = self._media_meta(kind, meta_id, video_id, title, source) if source else \
+            {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title}
+        self._wire_player()
         process = self.player.play(
-            self.launcher.run, mpv_exe, url, title,
-            {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title},
-            start=start, audio=self.config.stremio.audio, subtitles=subs,
-            fallback_subs=(lambda: self.streams.subtitles(auth, kind, video_id, subs)) if subs else None)
+            self.launcher.run, mpv_exe, url, title, meta,
+            start=start, audio=self.stream_prefs.audio, subtitles=self.subtitles_lang,
+            fallback_subs=self._fallback_subs(kind, video_id))
         self.launcher.track("media:player", title, process, runner="Reproductor")
         self.revealing = self._to_front("media:player", title)
+
+    def _load_in_player(self, kind: str, meta_id: str, video_id: str, title: str, source: streams.Source,
+                        start: float = 0, message: str | None = None, tried: list[int] | None = None) -> bool:
+        url = player.stream_url(source.stream)
+        if not url:
+            return False
+        meta = self._media_meta(kind, meta_id, video_id, title, source)
+        meta["tried"] = sorted(set(tried or []) | {source.index})
+        return self.player.load(url, title, meta, start=start, message=message,
+                                fallback_subs=self._fallback_subs(kind, video_id))
+
+    def _source_failed(self, meta: dict, position: float, alive: bool) -> bool:
+        """Una fuente no arrancó o se cortó: la siguiente mejor, en el mismo punto. True si se intenta."""
+        title = meta.get("title") or "esto"
+        if alive and meta.get("source") is not None:
+            tried = set(meta.get("tried") or [meta["source"]])
+            try:
+                source = self.best_source(meta["kind"], meta["video_id"], meta.get("binge"), skip=tried)
+            except stremio_api.StremioError:
+                source = None
+            if source is not None and len(tried) < 4:
+                log.info("Probando otra fuente para %s (%s)", title, source_label(source))
+                return self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], title, source,
+                                            start=position, message=f"Probando otra fuente · {source_label(source)}",
+                                            tried=list(tried))
+        self._notify({"type": "toast", "ok": False,
+                      "message": f"No pude reproducir {title}. Prueba otra fuente desde la ficha (Y)."})
+        return False
+
+    def _player_sources(self, meta: dict) -> list[dict]:
+        """Pestaña Fuente del reproductor: las mejores del título, la actual marcada."""
+        if meta.get("source") is None:
+            return []
+        found = self.stream_sources(meta["kind"], meta["video_id"])[:12]
+        return [{"id": s.index, "label": source_label(s, long=True), "current": s.index == meta["source"]}
+                for s in found]
+
+    def _switch_source(self, meta: dict, index: int, position: float) -> None:
+        source = self.streams.get(meta["kind"], meta["video_id"], self.stream_prefs, index)
+        if source is not None:
+            self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], meta.get("title") or "",
+                                 source, start=position, message=f"Cambiando a {source_label(source)}…")
+
+    def _episode_title(self, info: dict, meta_id: str, video_id: str) -> tuple[str, str]:
+        label, name = self._episode_label(info, video_id)
+        series = info.get("name") or meta_id
+        return f"{series} · {label}".strip(" ·"), " · ".join(p for p in (label, name) if p)
+
+    def _next_up(self, meta: dict) -> dict | None:
+        """Para la tarjeta "Siguiente episodio": cuál es y cómo ponerlo (la fuente se busca ya)."""
+        info = self.cinemeta.meta("series", meta["meta_id"])
+        next_id = cinemeta.next_episode(info, meta["video_id"])
+        if next_id is None:
+            return None
+        title, detail = self._episode_title(info, meta["meta_id"], next_id)
+        try:
+            self.stream_sources("series", next_id)  # que al llegar el momento ya esté buscada
+        except stremio_api.StremioError:
+            pass
+        label, name = self._episode_label(info, next_id)
+        return {"label": label, "title": name,
+                "play": lambda: self._play_episode(meta["meta_id"], next_id, title, meta.get("binge"))}
+
+    def _play_episode(self, meta_id: str, video_id: str, title: str, binge: str | None = None,
+                      start: float = 0) -> bool:
+        """Otro episodio en el mismo reproductor (sin volver a Orbital)."""
+        source = self.best_source("series", video_id, binge)
+        if source is None:
+            self.player.toast("No encontré dónde ver ese episodio", 4)
+            return False
+        return self._load_in_player("series", meta_id, video_id, title, source, start=start)
+
+    def _step_episode(self, meta: dict, delta: int) -> None:
+        """LT/RT en el reproductor: episodio anterior o siguiente."""
+        info = self.cinemeta.meta("series", meta["meta_id"])
+        episodes = [e["id"] for s in cinemeta.seasons(info) if s["season"] != 0 for e in s["episodes"]]
+        if meta["video_id"] not in episodes:
+            return
+        i = episodes.index(meta["video_id"]) + delta
+        if not 0 <= i < len(episodes):
+            self.player.toast("No hay episodio " + ("anterior" if delta < 0 else "siguiente"), 2.5)
+            return
+        title, _ = self._episode_title(info, meta["meta_id"], episodes[i])
+        self._play_episode(meta["meta_id"], episodes[i], title, meta.get("binge"),
+                           start=self.resume_position(meta["meta_id"], episodes[i]))
 
     @property
     def native_player(self) -> bool:
@@ -627,11 +803,9 @@ class Catalog:
 
         def run() -> None:
             try:
-                found = self.stream_sources(kind, video_id)
-                if not found:
-                    self._notify({"type": "toast", "message": f"No encontré fuentes para {title}", "ok": False})
-                    return
-                self.play_source(kind, meta_id, video_id, found[0].index, title)
+                self.play_best(kind, meta_id, video_id, title)
+            except LookupError:
+                self._notify({"type": "toast", "message": f"No encontré dónde ver {title}", "ok": False})
             except Exception as exc:  # noqa: BLE001 - se avisa en pantalla
                 log.exception("No pude poner %s", title)
                 self._notify({"type": "toast", "message": f"No pude poner {title}: {exc}", "ok": False})
@@ -648,13 +822,11 @@ class Catalog:
         next_id = cinemeta.next_episode(info, current.meta["video_id"])
         if next_id is None:
             return None
-        episode = next((e for s in cinemeta.seasons(info) for e in s["episodes"] if e["id"] == next_id), None)
-        season = next((s["season"] for s in cinemeta.seasons(info) if episode in s["episodes"]), None)
-        label = f"T{season} E{episode['episode']}" if episode and season is not None else "el siguiente episodio"
-        name = info.get("name") or current.meta.get("title") or ""
-        self.player.stop()  # guarda el avance del episodio actual
-        self.play_title("series", meta_id, next_id, f"{name} · {label}".strip(" ·"))
-        return label
+        title, _ = self._episode_title(info, meta_id, next_id)
+        label, _ = self._episode_label(info, next_id)
+        threading.Thread(target=self._play_episode, args=(meta_id, next_id, title, current.meta.get("binge")),
+                         daemon=True, name="next-episode").start()
+        return label or "el siguiente episodio"
 
     def player_subtitles(self, lang: str) -> bool:
         """Subtítulos en ese idioma: los del video o, si no trae, los de tus addons."""
@@ -669,10 +841,42 @@ class Catalog:
             self.player.add_subtitles(urls[0], lang)
         return bool(urls)
 
-    def _player_finished(self, meta: dict, position: float, duration: float, watched: float) -> None:
-        """Guarda en tu cuenta de Stremio dónde te quedaste (Seguir viendo, en Orbital y en Stremio)."""
+    def title_details(self, kind: str, meta_id: str) -> dict:
+        """Todo para la ficha: datos, reparto, temporadas y dónde ibas (para "Continuar T3 E5")."""
+        info = self.cinemeta.meta(kind, meta_id)
+        details = {"id": meta_id, "kind": kind, "title": info.get("name") or "", "poster": info.get("poster"),
+                   "background": info.get("background") or None, **cinemeta.describe_meta(info),
+                   **cinemeta.credits(info)}
+        if kind == "series":
+            details["seasons"] = cinemeta.seasons(info)
+        resume = None
         auth = self.credentials.get(STREMIO_KEY)
-        if not auth or watched < 20:
+        if auth:
+            try:
+                raw = self.stremio_client.library_item(auth, meta_id)
+            except stremio_api.StremioError as exc:
+                log.info("No pude leer dónde ibas en %s: %s", meta_id, exc)
+                raw = None
+            state = (raw or {}).get("state") or {}
+            video_id = state.get("video_id") or None
+            if video_id:
+                position = stremio_api.resume_seconds(raw, video_id)
+                duration = int(state.get("duration") or 0) / 1000
+                label, name = self._episode_label(info, video_id) if kind == "series" else ("", "")
+                if position or (kind == "series" and video_id != meta_id):
+                    resume = {"video_id": video_id, "position": position, "duration": duration,
+                              "label": label, "episode_title": name}
+        details["resume"] = resume
+        return details
+
+    def _player_finished(self, meta: dict, position: float, duration: float, watched: float) -> None:
+        self._save_progress(meta, position, duration, watched, refresh=True)
+
+    def _save_progress(self, meta: dict, position: float, duration: float, watched: float, refresh: bool) -> None:
+        """Guarda en tu cuenta de Stremio dónde te quedaste (Seguir viendo, en Orbital y en Stremio).
+        Se llama cada minuto, al pausar y al terminar; `watched` son los segundos vistos desde la vez anterior."""
+        auth = self.credentials.get(STREMIO_KEY)
+        if not auth or (refresh and watched < 20 and position < 60):
             return  # se abrió y cerró sin ver nada: no se toca tu biblioteca
         kind, meta_id, video_id = meta["kind"], meta["meta_id"], meta["video_id"]
         try:
@@ -690,7 +894,8 @@ class Catalog:
             log.info("Progreso guardado en Stremio: %s %d/%d s", video_id, position, duration)
         except stremio_api.StremioError as exc:
             log.warning("No pude guardar el progreso en Stremio: %s", exc)
-        self.refresh_stremio(background=True)
+        if refresh:
+            self.refresh_stremio(background=True)
 
     def search_media(self, query: str) -> str:
         uri = stremio.search_uri(query)
@@ -709,7 +914,10 @@ class Catalog:
         elif item_id.startswith("steam:"):
             # Steam guarda sus horas unos segundos después de cerrar el juego.
             threading.Timer(STEAM_STATS_DELAY, self.refresh_steam_stats).start()
-        self._notify({"type": "closed", "id": item_id, "title": title, "seconds": int(seconds)})
+        # Se cerró solo a los pocos segundos: casi siempre es que no pudo abrir (falta la ROM, el
+        # firmware, una clave…). No es "de vuelta de": se avisa como problema.
+        crashed = seconds < QUICK_EXIT and not self.launcher.last_stopped_by_user and not item_id.startswith(("media:", "app:"))
+        self._notify({"type": "closed", "id": item_id, "title": title, "seconds": int(seconds), "crashed": crashed})
 
     def refresh_steam_stats(self) -> None:
         """Relee las horas y la última vez de Steam (barato: no reescanea la biblioteca)."""

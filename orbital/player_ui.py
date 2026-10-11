@@ -3,10 +3,12 @@
 mpv pinta texto y figuras ASS encima del video (comando osd-overlay). Aquí solo se arma ese texto
 (funciones puras, con pruebas); player.py decide cuándo mostrarlo.
 
-  * Barra inferior: título, en qué vas, progreso, idioma de audio y subtítulos, y la leyenda de
-    qué hace cada botón del mando. Aparece al tocar cualquier botón y en pausa; se va sola.
-  * Menú de Audio / Subtítulos (X / Y): las pistas del video con su idioma; ↑/↓ y A para elegir.
-  * Aviso breve arriba a la derecha (volumen, "Subtítulos: Español"…).
+  * Barra inferior: título, en qué vas, progreso (con las marcas de los capítulos), idioma de audio
+    y subtítulos, de qué fuente viene y la leyenda de qué hace cada botón del mando. Aparece al
+    tocar cualquier botón y en pausa; se va sola.
+  * Menú con pestañas Audio / Subtítulos / Fuente (X, Y; LB/RB cambian de pestaña): ↑/↓ y A eligen.
+  * Tarjetas: "Saltar intro", "Siguiente episodio en 8" y "¿Sigues viendo?".
+  * Aviso breve arriba a la derecha (volumen, "Subtítulos: Español", "Cargando… 40 %").
 """
 
 from __future__ import annotations
@@ -93,13 +95,20 @@ class Hud:
     paused: bool = False
     audio: str = ""
     subtitles: str = ""
+    source: str = ""  # "1080p · Torrentio"
+    chapters: list[float] = field(default_factory=list)  # inicio de cada capítulo (s)
+    series: bool = False  # LT/RT cambian de episodio
 
 
 @dataclass
 class Menu:
-    kind: str  # "audio" | "sub"
+    kind: str  # "audio" | "sub" | "source"
     options: list[dict] = field(default_factory=list)  # {"label", "action", "current"}
     index: int = 0
+    tabs: list[str] = field(default_factory=lambda: ["audio", "sub"])
+
+
+TAB_NAMES = {"audio": "Audio", "sub": "Subtítulos", "source": "Fuente"}
 
 
 def _rect(x: float, y: float, w: float, h: float, color: str, alpha: str = "00") -> str:
@@ -120,7 +129,17 @@ def glyph(letter: str) -> str:
 
 
 LEGEND = [("A", "Pausa"), ("◀ ▶", "10 s"), ("LB RB", "1 min"), ("▲ ▼", "Volumen"),
-          ("X", "Audio"), ("Y", "Subtítulos"), ("B", "Salir")]
+          ("X", "Audio"), ("Y", "Subtítulos"), ("B", "Ocultar")]
+
+
+def legend_for(hud: "Hud") -> list[tuple[str, str]]:
+    """La leyenda dice lo que de verdad hace cada botón con ESTE video."""
+    items = [("A", "Seguir" if hud.paused else "Pausa"), ("◀ ▶", "Adelantar"),
+             ("LB RB", "Capítulo" if len(hud.chapters) > 1 else "1 min")]
+    if hud.series:
+        items.append(("LT RT", "Episodio"))
+    items += [("▲ ▼", "Volumen"), ("X", "Audio"), ("Y", "Subtítulos"), ("B", "Ocultar")]
+    return items
 
 
 def legend_line(items=LEGEND) -> str:
@@ -139,11 +158,16 @@ def hud_ass(hud: Hud) -> str:
     if hud.paused:
         lines.append(_text(MARGIN, y - 44, "EN PAUSA", 26, ACCENT, bold=True))
     lines.append(_text(MARGIN, y, esc(hud.title), 52, bold=True))
-    info = [hud.detail, f"Audio: {hud.audio}" if hud.audio else "", f"Subtítulos: {hud.subtitles}" if hud.subtitles else ""]
+    info = [hud.detail, f"Audio: {hud.audio}" if hud.audio else "", f"Subtítulos: {hud.subtitles}" if hud.subtitles else "",
+            hud.source]
     lines.append(_text(MARGIN, y + 66, esc("   ·   ".join(i for i in info if i)), 28, MUTED))
     # Progreso
     bar_y, bar_w = 932, W - 2 * MARGIN
     lines.append(_rect(MARGIN, bar_y, bar_w, 6, TRACK, "40"))
+    if hud.duration:
+        for start in hud.chapters[1:]:  # marcas de capítulo (como en YouTube y Apple TV)
+            if 0 < start < hud.duration:
+                lines.append(_rect(MARGIN + bar_w * start / hud.duration - 2, bar_y - 3, 4, 12, TEXT, "60"))
     if hud.duration and hud.position is not None:
         done = max(0.0, min(1.0, hud.position / hud.duration))
         lines.append(_rect(MARGIN, bar_y, max(6, bar_w * done), 6, ACCENT))
@@ -152,21 +176,40 @@ def hud_ass(hud: Hud) -> str:
     remaining = (hud.duration - hud.position) if hud.duration and hud.position is not None else None
     lines.append(_text(W - MARGIN, bar_y + 22, f"-{clock(remaining)}" if remaining is not None else clock(hud.duration),
                        28, MUTED, align=9))
-    lines.append(_text(W / 2, 1036, legend_line(), 26, align=2))
+    lines.append(_text(W / 2, 1036, legend_line(legend_for(hud)), 26, align=2))
     return "\n".join(lines)
 
 
+MENU_ROWS = 9  # filas visibles; el resto se desplaza con el foco
+
+
 def menu_ass(menu: Menu) -> str:
-    """Panel a la derecha con las pistas; la elegida lleva ●, la enfocada se resalta."""
-    title = "Audio" if menu.kind == "audio" else "Subtítulos"
-    row_h, width = 72, 620
+    """Panel a la derecha con pestañas (LB/RB) y las opciones; la elegida lleva ●, la enfocada se resalta."""
+    row_h, width = 72, 680
     x = W - MARGIN - width
-    height = 150 + row_h * len(menu.options) + 70
+    first = max(0, min(menu.index - MENU_ROWS // 2, len(menu.options) - MENU_ROWS))
+    shown = menu.options[first:first + MENU_ROWS]
+    height = 150 + row_h * max(1, len(shown)) + 70
     y0 = max(80, (H - height) / 2 - 60)
-    lines = [_rect(x, y0, width, height, "&H141418&", "18"),
-             _text(x + 40, y0 + 40, title.upper(), 26, ACCENT, bold=True)]
+    lines = [_rect(x, y0, width, height, "&H141418&", "18")]
+    tab_x = x + 40
+    many = len(menu.tabs) > 1
+    if many:
+        lines.append(_text(tab_x, y0 + 42, glyph("LB"), 22, MUTED))
+        tab_x += 60
+    for tab in menu.tabs:
+        name = TAB_NAMES.get(tab, tab).upper()
+        active = tab == menu.kind
+        lines.append(_text(tab_x, y0 + 40, name, 26, ACCENT if active else MUTED, bold=active))
+        tab_x += 26 * len(name) * .66 + 36
+    if many:
+        lines.append(_text(tab_x - 8, y0 + 42, glyph("RB"), 22, MUTED))
     y = y0 + 100
-    for i, option in enumerate(menu.options):
+    if not menu.options:
+        lines.append(_text(x + 44, y + 6, "Nada que elegir aquí", 30, MUTED))
+        y += row_h
+    for offset, option in enumerate(shown):
+        i = first + offset
         if i == menu.index:
             lines.append(_rect(x + 20, y - 8, width - 40, row_h - 8, TEXT, "10"))
             color = "&H18141A&"
@@ -180,6 +223,24 @@ def menu_ass(menu: Menu) -> str:
     return "\n".join(lines)
 
 
+def card_ass(title: str, subtitle: str = "", actions: list[tuple[str, str]] | None = None,
+             progress: float | None = None) -> str:
+    """Tarjeta abajo a la derecha (Saltar intro, Siguiente episodio, ¿Sigues viendo?), sobre la barra."""
+    legend = "      ".join(f"{glyph(k)}  {{\\1c{MUTED}}}{esc(v)}{{\\1c{TEXT}}}" for k, v in actions or [])
+    plain = "      ".join(f"{k}  {v}" for k, v in actions or [])
+    width = max(560, 64 + 19 * max(len(title), len(subtitle)), 64 + 15 * len(plain))
+    height = 200 if subtitle else 156
+    x, y = W - MARGIN - width, 680 - height
+    lines = [_rect(x, y, width, height, "&H141418&", "10")]
+    if progress is not None:  # la cuenta atrás se ve como una barra que se vacía
+        lines.append(_rect(x, y + height - 6, width * max(0.0, min(1.0, progress)), 6, ACCENT))
+    lines.append(_text(x + 32, y + 26, esc(title), 36, bold=True))
+    if subtitle:
+        lines.append(_text(x + 32, y + 76, esc(subtitle), 28, MUTED))
+    lines.append(_text(x + 32, y + height - 58, legend, 26))
+    return "\n".join(lines)
+
+
 def toast_ass(text: str) -> str:
     """Aviso corto arriba a la derecha (volumen, pista elegida)."""
     width = 40 + 17 * len(text)
@@ -187,7 +248,28 @@ def toast_ass(text: str) -> str:
     return "\n".join([_rect(x, 64, width, 64, "&H141418&", "30"), _text(x + 20, 76, esc(text), 30)])
 
 
-def track_menu(kind: str, tracks: list[dict], extra: list[dict] | None = None) -> Menu:
+def source_menu(sources: list[dict], tabs: list[str]) -> Menu:
+    """Pestaña Fuente: las demás fuentes del título (la actual con ●), para cambiar sin salir."""
+    options = [{"label": s["label"], "action": ("source", s["id"]), "current": bool(s.get("current"))} for s in sources]
+    index = next((i for i, o in enumerate(options) if o["current"]), 0)
+    return Menu("source", options, index, tabs)
+
+
+SUB_SCALES = [(1.0, "Normal"), (1.25, "Grande"), (1.5, "Muy grande"), (.85, "Pequeño")]
+
+
+def sub_scale_label(scale: float) -> str:
+    return next((name for value, name in SUB_SCALES if abs(value - scale) < .01), "Normal")
+
+
+def next_sub_scale(scale: float) -> float:
+    values = [v for v, _ in SUB_SCALES]
+    i = next((i for i, v in enumerate(values) if abs(v - scale) < .01), 0)
+    return values[(i + 1) % len(values)]
+
+
+def track_menu(kind: str, tracks: list[dict], extra: list[dict] | None = None,
+               tabs: list[str] | None = None) -> Menu:
     """Opciones del menú: las pistas del video (y "Sin subtítulos" / buscar en tu addon)."""
     options = []
     if kind == "sub":
@@ -199,4 +281,4 @@ def track_menu(kind: str, tracks: list[dict], extra: list[dict] | None = None) -
                             "current": bool(t.get("selected"))})
     options += extra or []
     index = next((i for i, o in enumerate(options) if o.get("current")), 0)
-    return Menu(kind, options, index)
+    return Menu(kind, options, index, tabs or ["audio", "sub"])

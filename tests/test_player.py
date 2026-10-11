@@ -110,7 +110,7 @@ def test_subtitle_menu_has_off_and_addon_search():
     p._fallback_subs, p._subs_lang = (lambda: []), "es"
     p.press("y")
     labels = [o["label"] for o in p.menu.options]
-    assert labels[0] == "Sin subtítulos" and "Español · Forzados" in labels and labels[-1].startswith("Buscar subtítulos")
+    assert labels[0] == "Sin subtítulos" and "Español · Forzados" in labels and labels[-2].startswith("Buscar subtítulos") and labels[-1] == "Tamaño: Normal"
     assert p.menu.index == 1  # en la que está puesta
     p.press("up")
     p.press("a")

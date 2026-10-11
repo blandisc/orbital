@@ -115,7 +115,10 @@ class VoiceController:
             log.exception("Error manejando %s", intent)
             return VoiceResult("Algo salió mal al ejecutar el comando.", ok=False)
         if not result.events:
-            result.events.append({"type": "toast", "message": result.speech, "ok": result.ok})
+            result.events.append({"type": "toast", "message": result.speech, "ok": result.ok, "voice": True})
+        elif NO_TOAST in result.events and not result.ok and self.catalog.player.playing:
+            # El video está encima: un "no pude" se ve en el reproductor (antes se perdía).
+            self.catalog.player.toast(result.speech, 4)
         return result
 
     # --- intents -------------------------------------------------------------
@@ -186,13 +189,14 @@ class VoiceController:
         if exact:
             return exact
         # Varias opciones: la búsqueda de Orbital ya escrita, para elegir con el mando.
-        return VoiceResult(f"Buscando {query}. Elige con el control.", events=[self._show_view({"buscar": query})])
+        return VoiceResult(f"Buscando {query}. Elige con el control.", events=[self._show_view({"buscar": query}, f"Buscando «{query}»")])
 
-    def _show_view(self, view: dict) -> dict:
-        """Trae Orbital al frente con una vista abierta (búsqueda o episodios)."""
+    def _show_view(self, view: dict, message: str = "") -> dict:
+        """Trae Orbital al frente con una vista abierta (búsqueda o ficha), sin recargar la interfaz:
+        no se pierde dónde estabas y se ve qué entendió Alexa."""
         if self.kiosk is not None:
             self.kiosk.open()
-        return {"type": "reload", "view": view}
+        return {"type": "open-view", "view": view, "message": message}
 
     def _watch_exact(self, query: str) -> VoiceResult | None:
         """Si el título coincide exacto con una película o serie: la película se pone directo y la
@@ -206,12 +210,12 @@ class VoiceController:
         if match["kind"] == "movie":
             self.catalog.play_title("movie", match["meta_id"], match["meta_id"], match["title"])
             return VoiceResult(f"Poniendo {match['title']}.")
-        return VoiceResult(f"Abriendo {match['title']}. Elige el episodio.", events=[self._show_view({"serie": match["meta_id"]})])
+        return VoiceResult(f"Abriendo {match['title']}. Elige el episodio.", events=[self._show_view({"serie": match["meta_id"]}, f"Abriendo {match['title']}")])
 
     def _continue_watching_intent(self, slots: dict) -> VoiceResult:
         show = slots.get("show", "")
         if not self.catalog.stremio_linked:
-            return VoiceResult("Primero conecta tu cuenta de Stremio con orbital stremio login.", ok=False)
+            return VoiceResult("Primero conecta tu cuenta de Stremio en Ajustes de Orbital.", ok=False)
         if show:
             item = self.catalog.find(show, source="stremio")
             if item is None:
@@ -236,7 +240,7 @@ class VoiceController:
             self.catalog.play_title(kind, meta_id, video_id, item.title)
             return VoiceResult(f"Poniendo {item.title}.")
         if kind == "series" and meta_id:
-            return VoiceResult(f"Abriendo {item.title}. Elige el episodio.", events=[self._show_view({"serie": meta_id})])
+            return VoiceResult(f"Abriendo {item.title}. Elige el episodio.", events=[self._show_view({"serie": meta_id}, f"Abriendo {item.title}")])
         self.catalog.launch(item.id)
         return VoiceResult(f"Abriendo {item.title} en Stremio.")
 

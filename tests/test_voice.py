@@ -21,7 +21,7 @@ def test_launch_by_voice(library):
     result = voice.handle_text("juega hades")
     assert result.ok and result.speech == "Abriendo Hades."
     assert library.launcher.opened[-1] == "steam://rungameid/1145360"
-    assert result.events == [{"type": "toast", "message": "Abriendo Hades.", "ok": True}]
+    assert result.events == [{"type": "toast", "message": "Abriendo Hades.", "ok": True, "voice": True}]
 
 
 def test_unknown_game(library):
@@ -32,7 +32,7 @@ def test_unknown_game(library):
 def test_search_media(library):
     result = VoiceController(library).handle_intent("SearchMediaIntent", {"query": "El Padrino"})
     # Sin coincidencia exacta, la búsqueda de Orbital con el texto ya escrito (se elige con el mando).
-    assert result.events == [{"type": "reload", "view": {"buscar": "El Padrino"}}]
+    assert result.events == [{"type": "open-view", "view": {"buscar": "El Padrino"}, "message": "Buscando «El Padrino»"}]
 
 
 def test_close_only_managed_processes(library):

@@ -80,6 +80,14 @@ class ComboDetector:
 # Botones XInput -> teclas virtuales de Windows, para apps sin soporte de mando (Stremio).
 DPAD_UP, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT = 0x0001, 0x0002, 0x0004, 0x0008
 A_BUTTON, B_BUTTON, X_BUTTON, Y_BUTTON = 0x1000, 0x2000, 0x4000, 0x8000
+# Los gatillos son analógicos en XInput; para el reproductor cuentan como botones (bits que XInput no usa).
+LT, RT = 0x10000, 0x20000
+TRIGGER_PRESSED = 100  # de 255
+
+
+def with_triggers(left: int, right: int) -> int:
+    return (LT if left > TRIGGER_PRESSED else 0) | (RT if right > TRIGGER_PRESSED else 0)
+
 VK_SPACE, VK_ESCAPE, VK_LEFT, VK_UP, VK_RIGHT, VK_DOWN, VK_F11 = 0x20, 0x1B, 0x25, 0x26, 0x27, 0x28, 0x7A
 PLAYER_KEYS = {
     A_BUTTON: VK_SPACE,  # pausa / reanuda
@@ -181,13 +189,16 @@ class GamepadWatcher:
         while not self._stop.is_set():
             now = time.monotonic()
             for slot, detector in enumerate(self._detectors):
-                buttons = state.Gamepad.wButtons if get_state(slot, ctypes.byref(state)) == 0 else 0
+                connected = get_state(slot, ctypes.byref(state)) == 0
+                buttons = state.Gamepad.wButtons if connected else 0
                 for event in detector.update(buttons, now):
                     try:
                         self.on_event(event)
                     except Exception:  # noqa: BLE001 - un fallo aquí no debe matar el hilo
                         log.exception("Error atendiendo %s", event)
                 if self.on_buttons:
+                    if connected:
+                        buttons |= with_triggers(state.Gamepad.bLeftTrigger, state.Gamepad.bRightTrigger)
                     try:
                         self.on_buttons(slot, buttons, now)
                     except Exception:  # noqa: BLE001

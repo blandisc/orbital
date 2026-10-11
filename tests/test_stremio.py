@@ -140,17 +140,18 @@ def test_voice_continue_and_search(linked):
     # Buscar algo que ya está en tu biblioteca lo abre (una serie sin episodio pendiente: sus episodios).
     office = voice.handle_text("busca the office en stremio")
     assert office.speech == "Abriendo The Office. Elige el episodio."
-    assert office.events == [{"type": "reload", "view": {"serie": "tt0386676"}}]
+    # Sin recargar la interfaz: se abre la vista y se ve qué entendió Alexa.
+    assert office.events == [{"type": "open-view", "view": {"serie": "tt0386676"}, "message": "Abriendo The Office"}]
     # Sin coincidencia exacta: la búsqueda de Orbital ya escrita, para elegir con el mando.
     result = voice.handle_text("busca dune en stremio")
     assert result.speech == "Buscando dune. Elige con el control."
-    assert result.events == [{"type": "reload", "view": {"buscar": "dune"}}]
+    assert result.events == [{"type": "open-view", "view": {"buscar": "dune"}, "message": "Buscando «dune»"}]
     # "abre X" sirve también para series, pero los juegos tienen prioridad.
     assert voice.handle_text("abre the office").speech == "Abriendo The Office. Elige el episodio."
 
 
 def test_voice_without_stremio_account(library):
-    assert "orbital stremio login" in VoiceController(library).handle_text("sigue viendo").speech
+    assert "Ajustes" in VoiceController(library).handle_text("sigue viendo").speech
 
 
 def test_voice_launch_with_runner(tmp_path):
@@ -215,7 +216,7 @@ def test_voice_exact_title_plays_movie_or_opens_episodes(linked, monkeypatch):
     linked.unlink_stremio()
     result = voice.handle_text("abre the office")
     assert result.speech == "Abriendo The Office. Elige el episodio."
-    assert result.events == [{"type": "reload", "view": {"serie": "tt0386676"}}]
+    assert result.events == [{"type": "open-view", "view": {"serie": "tt0386676"}, "message": "Abriendo The Office"}]
 
 
 def test_sources_and_play_chosen_source_opens_player(linked, monkeypatch):

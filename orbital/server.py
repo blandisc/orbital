@@ -10,6 +10,7 @@ import logging
 import os
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -44,6 +45,43 @@ class PrefsRequest(BaseModel):
     hidden: bool | None = None
     runner: str | None = None
     clear_runner: bool = False
+
+
+class PlayRequest(BaseModel):
+    kind: str
+    id: str
+    video_id: str | None = None
+    title: str = ""
+    source: int | None = None  # None: Orbital elige la recomendada y arranca
+    keep: bool = False
+    from_start: bool = False  # "Desde el principio"
+
+
+# Ajustes que se pueden cambiar desde la interfaz (y sus valores válidos).
+SETTINGS = {
+    "audio": {"en", "es"},
+    "subtitles": {"en", "es", ""},
+    "quality": {"4K", "1080p", "720p"},
+    "sub_scale": {.85, 1.0, 1.25, 1.5},
+    "text_size": {"normal", "large", "xlarge"},
+    "safe_area": {0, 2, 4, 6},
+    "reduce_motion": {True, False},
+    "sounds": {True, False},
+    "haptics": {True, False},
+}
+
+
+def humane_error(exc: Exception, what: str = "") -> str:
+    """Errores de Windows/Python en palabras de persona (lo técnico se queda en el log)."""
+    if isinstance(exc, FileNotFoundError):
+        name = Path(exc.filename).stem if getattr(exc, "filename", None) else (what or "el programa")
+        return f"No encuentro {name}. ¿Lo moviste o lo desinstalaste? Actualiza la biblioteca desde el menú (☰)."
+    if isinstance(exc, PermissionError):
+        return f"Windows no me deja abrir {what or 'esto'}. Prueba abrirlo una vez desde el escritorio."
+    text = str(exc)
+    if "WinError" in text or "Errno" in text:
+        return f"No pude abrir {what or 'esto'}."
+    return text
 
 
 class VoiceRequest(BaseModel):
@@ -188,9 +226,11 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         try:
             item = catalog.launch(body.id, body.runner, keep=body.keep)
         except KeyError:
-            raise HTTPException(404, "Elemento no encontrado")
+            raise HTTPException(404, "Ese juego ya no está en tu biblioteca")
         except (OSError, RuntimeError, ValueError) as exc:
-            raise HTTPException(500, f"No se pudo abrir: {exc}")
+            log.warning("No se pudo abrir %s: %s", body.id, exc)
+            found = catalog.get(body.id)
+            raise HTTPException(500, humane_error(exc, found.title if found else ""))
         # `reveal`: la pantalla de carga espera el evento launch-ready (el juego ya está listo).
         return {"ok": True, "title": item.title, "reveal": catalog.revealing}
 
@@ -232,12 +272,23 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     def stremio_search(q: str = "") -> dict:
         if len(q.strip()) < 2:
             return {"results": []}
+        # Películas y series a la vez (antes una tras otra: con internet lento, el doble de espera).
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            movies, series = pool.submit(catalog.cinemeta.search, "movie", q), pool.submit(catalog.cinemeta.search, "series", q)
+            try:
+                return {"results": cinemeta.search_results(q, movies.result(), series.result())}
+            except cinemeta.CinemetaError:
+                raise HTTPException(502, "Sin conexión con el catálogo de películas y series. Tus juegos siguen aquí.")
+
+    @app.get("/api/stremio/title/{kind}/{meta_id}")
+    def stremio_title(kind: str, meta_id: str) -> dict:
+        """La ficha: datos, reparto, temporadas y dónde ibas."""
+        if kind not in ("movie", "series"):
+            raise HTTPException(400, "Tipo inválido")
         try:
-            movies = catalog.cinemeta.search("movie", q)
-            series = catalog.cinemeta.search("series", q)
-        except cinemeta.CinemetaError as exc:
-            raise HTTPException(502, str(exc))
-        return {"results": cinemeta.search_results(q, movies, series)}
+            return catalog.title_details(kind, meta_id)
+        except cinemeta.CinemetaError:
+            raise HTTPException(502, "No pude cargar la ficha. Revisa tu conexión e inténtalo de nuevo.")
 
     @app.get("/api/stremio/episodes/{meta_id}")
     def stremio_episodes(meta_id: str) -> dict:
@@ -267,20 +318,46 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         return {"sources": [s.public() for s in found], "audio": prefs.audio, "quality": prefs.quality, "meta": info}
 
     @app.post("/api/stremio/play")
-    def stremio_play(body: dict) -> dict:
-        kind, meta_id = body.get("kind"), str(body.get("id") or "")
+    def stremio_play(body: PlayRequest) -> dict:
+        """Con `source`: esa fuente. Sin ella (y con el reproductor de Orbital): la recomendada, directo."""
+        kind, meta_id = body.kind, body.id
         if kind not in ("movie", "series") or not meta_id:
             raise HTTPException(400, "Falta qué reproducir")
-        title = str(body.get("title") or "Stremio")
-        video_id = body.get("video_id") or (meta_id if kind == "movie" else None)
-        if body.get("source") is not None and video_id:
-            try:
-                catalog.play_source(kind, meta_id, video_id, int(body["source"]), title, keep=bool(body.get("keep")))
-            except ValueError as exc:
-                raise HTTPException(409, str(exc))
-            return {"ok": True, "reveal": catalog.revealing}
-        catalog.play_stremio(kind, meta_id, body.get("video_id"), title)
+        title = body.title or "Stremio"
+        video_id = body.video_id or (meta_id if kind == "movie" else None)
+        try:
+            if body.source is not None and video_id:
+                catalog.play_source(kind, meta_id, video_id, body.source, title, keep=body.keep,
+                                    from_start=body.from_start)
+                return {"ok": True, "reveal": catalog.revealing}
+            if video_id and catalog.native_player:
+                chosen = catalog.play_best(kind, meta_id, video_id, title, keep=body.keep, from_start=body.from_start)
+                return {"ok": True, "reveal": catalog.revealing, **chosen}
+        except stremio_api.StremioError as exc:
+            raise HTTPException(409, str(exc))
+        except LookupError as exc:
+            raise HTTPException(404, str(exc))
+        except ValueError as exc:
+            raise HTTPException(409, str(exc))
+        catalog.play_stremio(kind, meta_id, body.video_id, title)
         return {"ok": True}
+
+    @app.get("/api/settings")
+    def get_settings() -> dict:
+        prefs = catalog.stream_prefs
+        return {"audio": prefs.audio, "quality": prefs.quality, "subtitles": catalog.subtitles_lang,
+                "sub_scale": float(catalog.setting("sub_scale", 1.0) or 1.0), "text_size": "normal", "safe_area": 4,
+                "reduce_motion": False, "sounds": True, "haptics": True, **catalog.state.settings(),
+                "stremio_linked": catalog.stremio_linked, "alexa": bool(config.server.token)
+                and not config.server.token_is_ephemeral, "alexa_last": app.state.alexa_last}
+
+    @app.post("/api/settings")
+    def set_settings(body: dict) -> dict:
+        for key, value in body.items():
+            if key not in SETTINGS or value not in SETTINGS[key]:
+                raise HTTPException(422, f"Ajuste inválido: {key}")
+            catalog.state.set_setting(key, value)
+        return get_settings()
 
     @app.get("/api/windows")
     def open_windows() -> dict:

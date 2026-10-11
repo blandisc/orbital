@@ -30,6 +30,7 @@ class Running:
     # El proceso lanzado ya terminó pero el juego sigue en otro (xemu se relanza a sí mismo; un
     # lanzador abre el juego y se cierra): se vigilan estos pids en su lugar.
     followers: set[int] = field(default_factory=set)
+    stopped: bool = False  # lo cerró Orbital (no se cerró solo ni tronó)
 
 
 def redact(arg: str) -> str:
@@ -66,6 +67,7 @@ class Launcher:
         self._lock = threading.Lock()
         self.current: Running | None = None
         self.on_exit = on_exit
+        self.last_stopped_by_user = False
 
     def open_uri(self, uri: str) -> None:
         log.info("Abriendo URI %s", redact(uri))
@@ -99,7 +101,9 @@ class Launcher:
             self.current = running
         if process is not None:
             threading.Thread(target=self._watch_process, args=(running,), daemon=True).start()
-        elif steam_appid and steam_running_appid() is not None:
+        elif steam_appid and (sys.platform == "win32" or steam_running_appid() is not None):
+            # En Windows siempre se vigila (aunque Steam aún no escriba su registro): si no, el
+            # juego quedaba "En curso" para siempre y "Continuar" no hacía nada.
             threading.Thread(target=self._watch_steam, args=(running, steam_appid), daemon=True).start()
 
     EXE_START_TIMEOUT = 30  # s para que aparezca el ejecutable vigilado
@@ -200,6 +204,7 @@ class Launcher:
                 self.current = None
         elapsed = time.time() - running.started
         log.info("%s terminó tras %.0f s", running.title, elapsed)
+        self.last_stopped_by_user = running.stopped
         if self.on_exit:
             try:
                 self.on_exit(running.item_id, running.title, elapsed)
@@ -227,6 +232,8 @@ class Launcher:
         """
         with self._lock:
             cur = self.current
+        if cur is not None:
+            cur.stopped = True
         if cur is not None and cur.exe and sys.platform == "win32":
             subprocess.run(["taskkill", "/IM", cur.exe, "/T", "/F"], capture_output=True,
                            creationflags=subprocess.CREATE_NO_WINDOW)  # type: ignore[attr-defined]

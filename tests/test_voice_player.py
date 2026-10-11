@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import time
 from pathlib import Path
 
 import pytest
@@ -43,6 +44,7 @@ class FakePlayer:
     def set_pause(self, paused): self.calls.append(("pause", paused))
     def seek(self, seconds): self.calls.append(("seek", seconds))
     def subtitles_off(self): self.calls.append(("subs", None))
+    def toast(self, text, seconds=1.6): self.calls.append(("toast", text))
     def add_subtitles(self, url, lang): self.calls.append(("add-subs", url, lang))
 
     def select_language(self, kind, lang):
@@ -86,7 +88,9 @@ def test_subtitles_and_audio(voice):
     assert voice.handle_intent("AudioLanguageIntent", {"language": "en"}).speech == "Audio en inglés."
     missing = voice.handle_intent("AudioLanguageIntent", {"language": "es"})
     assert not missing.ok and missing.speech == "Este video no trae audio en español."
-    assert voice.catalog.player.calls == [("sub", "en"), ("subs", None), ("audio", "en")]
+    # El "no" también se ve encima del video (antes solo lo decía Alexa).
+    assert voice.catalog.player.calls == [("sub", "en"), ("subs", None), ("audio", "en"),
+                                          ("toast", "Este video no trae audio en español.")]
 
 
 def test_subtitles_fall_back_to_addons(voice, monkeypatch):
@@ -105,7 +109,7 @@ def test_next_episode(voice, monkeypatch):
     assert not voice.handle_intent("NextEpisodeIntent").ok
 
 
-def test_play_next_episode_stops_and_plays_the_following(library, monkeypatch):
+def test_play_next_episode_loads_the_following_in_the_same_player(library, monkeypatch):
     from orbital.library import cinemeta
 
     meta = {"name": "The Office", "videos": [{"id": "s:2:3", "season": 2, "episode": 3},
@@ -120,9 +124,14 @@ def test_play_next_episode_stops_and_plays_the_following(library, monkeypatch):
         def stop(self): stopped.append(True)
 
     library.player = Player()
-    monkeypatch.setattr(library, "play_title", lambda *args: played.append(args))
+    monkeypatch.setattr(library, "_play_episode", lambda *args: played.append(args))
     assert library.play_next_episode() == "T2 E4"
-    assert stopped and played == [("series", "s", "s:2:4", "The Office · T2 E4")]
+    for _ in range(50):  # se carga en segundo plano (buscar la fuente tarda)
+        if played:
+            break
+        time.sleep(.02)
+    # Sin cerrar el reproductor: el siguiente se carga en la misma ventana.
+    assert not stopped and played == [("s", "s:2:4", "The Office · T2 E4", None)]
 
 
 def test_voice_plays_movies_in_orbital_player(library, monkeypatch):

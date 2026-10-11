@@ -18,12 +18,13 @@ class State:
     def __init__(self, path: Path | None = None) -> None:
         self.path = path
         self._lock = threading.Lock()
-        self._data: dict = {"history": {}, "prefs": {}}
+        self._data: dict = {"history": {}, "prefs": {}, "settings": {}}
         if path and path.exists():
             try:
                 loaded = json.loads(path.read_text(encoding="utf-8"))
                 self._data["history"] = dict(loaded.get("history", {}))
                 self._data["prefs"] = dict(loaded.get("prefs", {}))
+                self._data["settings"] = dict(loaded.get("settings", {}))
             except (OSError, ValueError) as exc:
                 log.warning("No se pudo leer %s, empiezo de cero: %s", path, exc)
 
@@ -87,3 +88,17 @@ class State:
                     del self._data["prefs"][item_id]
             self._save()
             return count
+
+    # --- ajustes (pantalla de Ajustes de Orbital) ------------------------------
+    def settings(self) -> dict:
+        with self._lock:
+            return dict(self._data["settings"])
+
+    def set_setting(self, key: str, value) -> None:
+        """`None` vuelve al valor por defecto (el de config.yaml o el de la interfaz)."""
+        with self._lock:
+            if value is None:
+                self._data["settings"].pop(key, None)
+            else:
+                self._data["settings"][key] = value
+            self._save()
