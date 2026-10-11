@@ -7,10 +7,10 @@ import { h, svg } from "./core/dom.js";
 import { ICONS } from "./core/icons.js";
 import { closedMessage } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
-import { alternativeRunner, clampFocus, isWatchable, itemAt, restoreFocus, rowJump, runnerName, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
+import { alternativeRunner, clampFocus, isWatchable, itemAt, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints } from "./core/hints.js";
-import { controlsMenu, controlsPage, exitMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, switchMenu, windowsMenu } from "./core/menus.js";
+import { controlsMenu, controlsPage, diagnosticsMenu, exitMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -24,26 +24,11 @@ import { createStatusBar } from "./components/status-bar.js";
 import { createLogin } from "./components/login.js";
 import { createTitle, titleRef } from "./components/title.js";
 import { createToast } from "./components/toast.js";
+import { createBoot } from "./app/boot.js";
+import { createLaunching } from "./app/launching.js";
+import { createState } from "./core/store.js";
 
-const LAUNCH_COOLDOWN_MS = 3000;
-
-const state = {
-  rows: [],
-  focus: { r: 0, c: 0 },
-  hidden: 0,
-  modality: "keyboard",
-  running: null,
-  canExit: false,
-  launchLockedUntil: 0,
-  memory: {}, // id de fila -> último juego enfocado en esa fila
-  allRows: [], // todas las filas; `rows` son las de la sección actual
-  section: "home", // Inicio, Juegos, Películas y series, Apps (LB/RB)
-  sectionFocus: {}, // sección -> { rowId, itemId } donde te quedaste
-  stremioLinked: false, // con cuenta: Orbital elige la fuente (si no, Stremio)
-  player: "stremio", // "orbital": se ve en el reproductor de Orbital (mpv)
-  popId: null, // juego recién marcado como favorito (su estrella se anima)
-  settings: {}, // Ajustes (los guarda el servidor)
-};
+const state = createState();
 
 const current = () => itemAt(state.rows, state.focus.r, state.focus.c);
 const glyphs = () => GLYPHS[state.modality];
@@ -210,42 +195,7 @@ function stepSection(delta) {
 let libraryRetry = 0;
 
 // ---------------------------------------------------------------- arranque y regreso
-const BOOT_MIN_MS = 1700; // que la animación de arranque se alcance a ver completa
-const boot = document.getElementById("boot");
-
-/** La biblioteca llegó: la cámara se zambulle en el planeta y aparece la interfaz. */
-function finishBoot() {
-  if (!boot || boot.classList.contains("boot--leaving")) return;
-  const wait = Math.max(0, BOOT_MIN_MS - performance.now());
-  setTimeout(() => {
-    welcome();
-    boot.classList.add("boot--leaving");
-    document.body.dataset.landing = "boot";
-    setTimeout(() => { boot.remove(); delete document.body.dataset.landing; }, 1100);
-  }, wait);
-}
-
-/** La primera vez: "Tu consola" (qué encontró Orbital y qué falta), una sola vez. */
-async function welcome() {
-  try {
-    const settings = state.settings.welcomed === undefined ? await api.settings() : state.settings;
-    if (settings.welcomed) return;
-    const status = await api.setup();
-    setTimeout(() => openMenu(setupMenu(status)), 1200); // después de que aterrice la interfaz
-    applySettings(await api.setSettings({ welcomed: true }));
-  } catch { /* sin servidor: ya saldrá la próxima vez */ }
-}
-
-function bootStatus(text) {
-  const node = boot?.querySelector(".boot__status");
-  if (node) node.textContent = text;
-}
-
-/** De vuelta de un juego: la interfaz "aterriza" (entra desde un poco más cerca) en vez de aparecer de golpe. */
-function land() {
-  document.body.dataset.landing = "return";
-  setTimeout(() => { if (document.body.dataset.landing === "return") delete document.body.dataset.landing; }, 800);
-}
+const boot = createBoot({ state, applySettings: (settings) => applySettings(settings), openMenu: (menu) => openMenu(menu) });
 
 async function loadLibrary({ refresh = false, keepId = null } = {}) {
   const before = { ...state.focus };
@@ -253,8 +203,8 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
   try {
     if (refresh) ui.toast.show("Buscando juegos nuevos…");
     const data = refresh ? await api.refresh() : await api.library();
-    if (data.scanning && boot?.isConnected) { // primer escaneo: la pantalla de arranque espera su aviso
-      bootStatus("Preparando tu biblioteca…");
+    if (data.scanning && boot.waiting) { // primer escaneo: la pantalla de arranque espera su aviso
+      boot.status("Preparando tu biblioteca…");
       return;
     }
     // Lo que importa es dónde estás AHORA (pudiste moverte mientras llegaba la respuesta).
@@ -279,7 +229,7 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     const { r, c } = restoreFocus(state.rows, { rowId, itemId, ...state.focus });
     state.focus = { r, c };
     setFocus(r, c, { silent: true });
-    finishBoot();
+    boot.finish();
     if (refresh) {
       const countAfter = state.allRows.reduce((n, row) => n + row.items.length, 0);
       const diff = countAfter - countBefore;
@@ -287,24 +237,28 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     }
   } catch (err) {
     // Al arrancar el servidor puede no estar listo: se reintenta solo (y se avisa una vez).
-    if (libraryRetry === 0 && !boot?.isConnected) ui.toast.show(`No pude cargar la biblioteca: ${err.message}. Reintentando…`, { error: true });
-    if (boot?.isConnected) bootStatus("Conectando con Orbital…");
+    if (libraryRetry === 0 && !boot.waiting) ui.toast.show(`No pude cargar la biblioteca: ${err.message}. Reintentando…`, { error: true });
+    if (boot.waiting) boot.status("Conectando con Orbital…");
     libraryRetry++;
     setTimeout(() => loadLibrary({ refresh: false, keepId }), Math.min(15_000, 1000 * 2 ** libraryRetry));
   }
 }
 
+/** Lo que está abierto: llega solo por SSE ("status") al cambiar; se pregunta tras abrir o cerrar algo. */
+function applyStatus(running) {
+  const changed = running?.id !== state.running?.id;
+  state.running = running;
+  ui.status.setRunning(running);
+  if (changed) { // "Jugar" <-> "Volver al juego" y el pie, sin esperar a moverse
+    ui.hero.update(current(), glyphs(), { immediate: true, runningId: running?.id });
+    renderHints();
+    if (state.libraryLoaded) loadLibrary(); // la tarjeta "Abierto" de Continuar
+  }
+}
+
 async function pollStatus() {
   try {
-    const running = (await api.status()).running;
-    const changed = running?.id !== state.running?.id;
-    state.running = running;
-    ui.status.setRunning(running);
-    if (changed) { // "Jugar" <-> "Volver al juego" y el pie, sin esperar a moverse
-      ui.hero.update(current(), glyphs(), { immediate: true, runningId: running?.id });
-      renderHints();
-      if (state.libraryLoaded) loadLibrary(); // la tarjeta "Abierto" de Continuar
-    }
+    applyStatus((await api.status()).running);
   } catch { /* el servidor puede estar reiniciando */ }
 }
 
@@ -325,21 +279,10 @@ function openTitle(item) {
   renderHints();
 }
 
-/** Un juego abierto que se cerraría al abrir otra cosa (un video no: su avance queda guardado). */
-function gameInTheWay(id) {
-  const running = state.running;
-  return running?.managed && running.id !== id && running.id !== "media:player" ? running : null;
-}
-
-/**
- * Ver algo. Sin `source`, Orbital elige la recomendada y arranca (sin lista de fuentes); con
- * `source`, esa. Sin cuenta de Stremio vinculada, lo abre Stremio.
- */
-function watch(play, { confirmed = false } = {}) {
-  const running = !confirmed && gameInTheWay("media:player");
-  if (running) return openMenu(switchMenu({ running, title: play.title, command: { type: "watch", play } }));
-  return playStremio(play);
-}
+const { watch, launch, resumeRunning } = createLaunching({
+  state, ui, current: () => current(), openMenu: (...args) => openMenu(...args), openTitle: (item) => openTitle(item),
+  openSearch: (query) => openSearch(query), pollStatus: () => pollStatus(),
+});
 
 function openSources(play) {
   if (!state.stremioLinked) {
@@ -349,92 +292,6 @@ function openSources(play) {
   sound.play("menu");
   ui.sources.open(play);
   renderHints();
-}
-
-async function playStremio({ kind, id, video_id: videoId = null, title, item, source = null, keep = false, from_start: fromStart = false }) {
-  if (Date.now() < state.launchLockedUntil) return;
-  state.launchLockedUntil = Date.now() + LAUNCH_COOLDOWN_MS;
-  sound.play("open");
-  rumble("launch");
-  state.launchingId = "media:player";
-  const native = state.player === "orbital" && state.stremioLinked;
-  ui.launch.show({ ...(item || {}), title }, native ? "" : "Se abre en Stremio");
-  // Fases honestas: primero se busca la fuente (hasta unos segundos), luego se conecta.
-  if (native && source === null) ui.launch.status("Buscando dónde verlo");
-  try {
-    const res = await api.stremioPlay({ kind, id, video_id: videoId, title, source, keep, from_start: fromStart });
-    if (res.label) ui.launch.status("Conectando", res.label);
-    if (res.reveal) { // Orbital tapa hasta que se ve la primera imagen (no una ventana negra)
-      ui.launch.hold();
-      ui.launch.status("Cargando video");
-    }
-    if (ui.sources.isOpen) ui.sources.close();
-    pollStatus();
-  } catch (err) {
-    state.launchLockedUntil = 0;
-    ui.launch.hide();
-    sound.play("error");
-    ui.toast.show(err.message, { error: true });
-  }
-}
-
-// ---------------------------------------------------------------- juegos y apps
-async function resumeRunning() {
-  sound.play("select");
-  try {
-    const res = await api.resume();
-    if (res.ok === false) { // la ventana ya no existe (se cerró por su cuenta): no dejar A muerto
-      sound.play("error");
-      ui.toast.show(`No encuentro la ventana de ${state.running?.title || "lo que estaba abierto"}. Ábrelo otra vez.`, { error: true });
-      pollStatus();
-    }
-  } catch (err) {
-    ui.toast.show(err.message, { error: true });
-  }
-}
-
-async function launch(item, runner = null, { confirmed = false, keep = false } = {}) {
-  if (!item || Date.now() < state.launchLockedUntil) return; // evita dobles pulsaciones de A
-  if (item.source === "search") return openSearch();
-  // Seguir viendo: A pone el episodio en el que ibas, directo (como Netflix). Y abre la ficha.
-  const watchExtra = item.extra;
-  if (item.source === "stremio" && watchExtra?.video_id && ["movie", "series"].includes(watchExtra.kind)) {
-    if (!confirmed && gameInTheWay("media:player")) {
-      return openMenu(switchMenu({ running: state.running, title: item.title,
-        command: { type: "watch", play: { kind: watchExtra.kind, id: watchExtra.meta_id, video_id: watchExtra.video_id, title: item.title, item } } }));
-    }
-    return playStremio({ kind: watchExtra.kind, id: watchExtra.meta_id, video_id: watchExtra.video_id, title: item.title, item });
-  }
-  if (isWatchable(item)) return openTitle(item); // del catálogo: primero la ficha
-  if (!runner && item.id === state.running?.id) return resumeRunning(); // sigue abierto: se continúa
-  const inTheWay = !confirmed && gameInTheWay(item.id);
-  if (inTheWay) return openMenu(switchMenu({ running: inTheWay, title: item.title, command: { type: "launch", id: item.id, runner } }));
-  state.launchingId = item.id;
-  state.launchLockedUntil = Date.now() + LAUNCH_COOLDOWN_MS;
-  sound.play("open");
-  rumble("launch");
-  const name = runnerName(item, runner);
-  const from = item.id === current()?.id ? ui.shelf.focused() : null;
-  ui.launch.show(item, name ? `${item.subtitle} · ${name}` : item.subtitle, { from });
-  try {
-    const res = await api.launch(item.id, runner, keep);
-    if (res.reveal) ui.launch.hold(); // Orbital tapa las ventanas del emulador hasta que el juego está listo
-    pollStatus();
-  } catch (err) {
-    state.launchLockedUntil = 0;
-    ui.launch.hide();
-    sound.play("error");
-    // Si hay otro emulador, ofrecerlo en el mismo momento (en vez de un callejón sin salida).
-    const alt = alternativeRunner(item);
-    if (alt && alt.id !== runner) {
-      return openMenu({ title: err.message, options: [
-        { icon: "swap", label: `Abrir con ${alt.name}`, command: { type: "launch", id: item.id, runner: alt.id } },
-        { icon: "refresh", label: "Actualizar biblioteca", command: { type: "refresh" } },
-        { icon: "close", label: "Entendido", command: { type: "close" } },
-      ] });
-    }
-    ui.toast.show(err.message, { error: true });
-  }
 }
 
 /** Buscar (botón Vista ⧉, la píldora de arriba o la tarjeta Buscar): juegos, películas y series. */
@@ -540,6 +397,8 @@ async function runCommand(command, context = null) {
         return openMenu(controlsMenu((await api.controllers().catch(() => ({ controllers: [] }))).controllers), nested(context));
       case "setup":
         return openMenu(setupMenu(await api.setup()), nested(context));
+      case "diagnostics":
+        return openMenu(diagnosticsMenu(await api.diagnostics()), nested(context));
       case "stremio-login":
         sound.play("open");
         ui.login.open();
@@ -631,6 +490,7 @@ function openView(view = {}, message = "") {
 }
 
 function handleEvent(event) {
+  if (event.type === "status") return applyStatus(event.running);
   if (event.type === "reload") { // tras actualizar Orbital (con `view`, abre esa vista al volver)
     const query = new URLSearchParams(event.view || {}).toString();
     return location.assign(location.pathname + (query ? `?${query}` : ""));
@@ -659,7 +519,7 @@ function handleEvent(event) {
   } else if (event.type === "closed") {
     // Al abrir otro juego se cierra el anterior: su "closed" no debe tapar la carga del nuevo.
     if (!ui.launch.visible || event.id === state.launchingId) ui.launch.hide();
-    land();
+    boot.land();
     if (event.crashed) {
       // Se cerró solo a los pocos segundos: no es "de vuelta", es que no pudo abrir.
       sound.play("error");
@@ -686,7 +546,7 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden) { pollStatus(); loadLibrary(); }
 });
 document.body.dataset.input = state.modality;
-setInterval(pollStatus, 5000);
+setInterval(pollStatus, 60_000); // red de seguridad: el estado llega por SSE al cambiar
 setInterval(pollSystem, 30_000);
 pollStatus();
 pollSystem();

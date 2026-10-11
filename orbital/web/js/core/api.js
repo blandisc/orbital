@@ -31,6 +31,7 @@ export const api = {
   stremioTitle: (kind, id) => request(`/api/stremio/title/${kind}/${encodeURIComponent(id)}`),
   settings: () => request("/api/settings"),
   setup: () => request("/api/setup"),
+  diagnostics: () => request("/api/diagnostics"),
   controllers: () => request("/api/controllers"),
   dismiss: (id) => post("/api/stremio/dismiss", { id }),
   setInLibrary: (kind, id, add) => post("/api/stremio/library", { kind, id, add }),

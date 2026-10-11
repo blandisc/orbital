@@ -186,6 +186,55 @@ export function settingsMenu() {
       ...Object.entries(SETTING_PAGES).map(([page, def]) => ({ icon: def.icon, label: def.title, command: { type: "settings", page } })),
       { icon: "mark", label: "Cuentas", command: { type: "settings", page: "accounts" } },
       { icon: "check", label: "Revisar mi consola", hint: "Qué encontró Orbital y qué falta", command: { type: "setup" } },
+      { icon: "windows", label: "Diagnóstico", hint: "Carpetas, memoria y últimos avisos", command: { type: "diagnostics" } },
+    ],
+  };
+}
+
+/** Rutas largas: solo lo último ("…\orbital\mpv\mpv.exe"), que es lo que importa. */
+const shortPath = (path, keep = 3) => {
+  const parts = String(path || "").split(/[\\/]/).filter(Boolean);
+  return parts.length > keep ? `…\\${parts.slice(-keep).join("\\")}` : String(path || "");
+};
+const mb = (n) => (n == null ? "—" : n >= 1024 ? `${(n / 1024).toFixed(1)} GB` : `${n} MB`);
+const ago = (seconds, now) => {
+  if (!seconds) return "Nunca";
+  const min = Math.round((now / 1000 - seconds) / 60);
+  return min < 1 ? "Hace un momento" : min < 60 ? `Hace ${min} min` : `Hace ${Math.round(min / 60)} h`;
+};
+
+/**
+ * Diagnóstico: lo que ve Orbital de su equipo. Para cuando algo "no sale": en qué carpeta guarda,
+ * si Windows le cambia AppData, qué encontró, memoria y los últimos avisos del registro.
+ */
+export function diagnosticsMenu(d, { now = Date.now() } = {}) {
+  const info = (icon, label, value, hint) => ({ icon, label, value, hint, command: { type: "stay" } });
+  const found = d.found || {};
+  const memory = d.memory || {};
+  const sources = Object.entries(d.library || {}).sort((a, b) => b[1] - a[1]);
+  const uptime = d.uptime == null ? "—" : d.uptime < 3600 ? `${Math.round(d.uptime / 60)} min` : `${Math.round(d.uptime / 3600)} h`;
+  const redirected = d.paths?.appdata_redirected;
+  return {
+    title: "Diagnóstico",
+    crumb: "Diagnóstico",
+    subtitle: `Orbital ${d.version} · abierto hace ${uptime}`,
+    options: [
+      info("folder", "Configuración", redirected ? "⚠ Redirigida" : "✓ En su lugar",
+        redirected ? `Windows guarda en ${shortPath(redirected)}: abre Orbital con su acceso directo` : shortPath(d.paths?.config) || "Valores por defecto"),
+      info("folder", "Registro", "orbital.log", shortPath(d.paths?.log) || "Sin archivo (consola)"),
+      info("play", "Reproductor", found.mpv ? "✓ mpv" : "Falta mpv", shortPath(found.mpv) || "Corre scripts/install-windows.ps1"),
+      info("gamepad", "Biblioteca", `${sources.reduce((n, [, c]) => n + c, 0)} elementos`,
+        sources.map(([s, c]) => `${s} ${c}`).join(" · ") || "Vacía"),
+      info("folder", "ES-DE", found.esde ? "✓ Conectado" : "No encontrado"),
+      info("trailer", "Stremio", found.stremio ? "✓ Conectada" : "Sin conectar"),
+      info("mic", "Alexa", found.alexa ? "✓ Configurada" : "Sin configurar", `Último comando: ${ago(found.alexa_last, now)}`),
+      info("windows", "Memoria libre", mb(memory.free_mb),
+        memory.dwm_shared_mb != null ? `Ventanas de Windows (DWM): ${mb(memory.dwm_shared_mb)}` : undefined),
+      info("gamepad", "Mandos", `${(d.controllers || []).length}`,
+        (d.controllers || []).map((c) => `${c.name || c.kind} (cerrar: ${c.close})`).join(" · ") || "Ninguno conectado"),
+      ...(d.problems?.length
+        ? d.problems.slice(-8).reverse().map((line) => info("mark", line.includes("ERROR") ? "Error" : "Aviso", "", line))
+        : [info("check", "Sin avisos recientes", "")]),
     ],
   };
 }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { gameMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, settingsPage, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
+import { diagnosticsMenu, gameMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, settingsPage, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch",
@@ -134,4 +134,27 @@ test("controles: cada mando con su forma de cerrar, y cuál está conectado", as
   assert.equal(legion["Cerrar el juego"], "Mantén Start + Select");
   const gamesir = Object.fromEntries(controlsPage("gamesir").options.map((o) => [o.label, o.value]));
   assert.equal(gamesir["Cerrar el juego"], "Mantén Start + Select + Home");
+});
+
+test("diagnóstico: avisa si Windows redirige la configuración y enseña los últimos avisos", () => {
+  const menu = diagnosticsMenu({
+    version: "1.0", uptime: 7200,
+    paths: { config: "C:/cfg.yaml", log: "C:/orbital.log", appdata_redirected: "C:/Packages/x/LocalCache" },
+    found: { mpv: "C:/mpv.exe", esde: true, stremio: false, alexa: true, alexa_last: 1000 - 120 },
+    library: { steam: 10, stremio: 4 }, memory: { free_mb: 2048, dwm_shared_mb: 900 },
+    controllers: [{ kind: "legion", name: "Legion Go", close: "Start + Select" }],
+    problems: ["WARNING uno", "ERROR dos"],
+  }, { now: 1000 * 1000 });
+  const byLabel = Object.fromEntries(menu.options.map((o) => [o.label, o]));
+  assert.equal(byLabel["Configuración"].value, "⚠ Redirigida");
+  assert.equal(byLabel["Biblioteca"].value, "14 elementos");
+  assert.equal(byLabel["Memoria libre"].value, "2.0 GB");
+  assert.equal(byLabel["Alexa"].hint, "Último comando: Hace 2 min");
+  assert.equal(menu.options.at(-2).label, "Error"); // lo más reciente primero
+  assert.ok(menu.options.every((o) => o.command.type === "stay"));
+});
+
+test("diagnóstico: rutas largas recortadas a lo último", () => {
+  const menu = diagnosticsMenu({ version: "1", found: { mpv: "C:\\Users\\f\\AppData\\Local\\orbital\\mpv\\mpv.exe" } });
+  assert.equal(menu.options.find((o) => o.label === "Reproductor").hint, "…\\orbital\\mpv\\mpv.exe");
 });
