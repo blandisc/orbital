@@ -32,7 +32,7 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 | Ir a Orbital sin cerrar el juego | Home (solo, al soltarlo) o un toque de Legion L | ✅ |
 | Volver al juego desde Orbital | Home, Legion L, o A sobre el juego ("Continuar") | ✅ |
 | Juego olvidado en pausa | Aviso 10 min antes de cerrarlo solo | ✅ (nuevo) |
-| Cerrar el juego | GameSir: mantener Start + Select + Home 1,5 s (barra encima del juego, cierre inmediato). Controles de la Legion Go: Legion L dos veces seguidas. Ninguno choca con el cambio de modo del GameSir (Start+Select o Home sostenidos) | ✅ |
+| Cerrar el juego | GameSir: mantener Start + Select + Home 1,5 s (barra encima del juego, cierre inmediato). Controles de la Legion Go: mantener Start + Select 1,5 s (no tienen Home ni cambio de modo) o Legion L dos veces seguidas. Ninguno choca con el cambio de modo del GameSir (Start+Select o Home sostenidos) | ✅ |
 | Cerrar desde Orbital | ☰ → Cerrar… o Y → Cerrar (pide confirmación) | ✅ |
 | El juego se cierra solo | Orbital vuelve al frente con el tiempo jugado | ✅ |
 | Juego de Steam | A lo abre; Start + Select + Home lo cierra si está al frente | ⚠️ Steam puede mostrar sus propios avisos (sincronización en la nube, actualizaciones); se manejan con el mando en Steam, no en Orbital |
