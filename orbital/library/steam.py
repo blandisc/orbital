@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import logging
 import os
+import subprocess
 import sys
+import time
 from pathlib import Path
 
 from . import vdf
@@ -149,3 +151,50 @@ def local_art_path(steam_root: Path, appid: str, name: str = "library_600x900") 
 
 def big_picture_uri() -> str:
     return "steam://open/bigpicture"
+
+
+# --- Steam en segundo plano -------------------------------------------------------------------
+# Abrir un juego con steam://rungameid cuando Steam está cerrado muestra TODA la ventana de Steam
+# (inicio, biblioteca…) antes del juego. Con Steam ya abierto en silencio (-silent: solo el ícono
+# junto al reloj) el enlace va directo al juego y la pantalla de carga de Orbital lo cubre.
+NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+DETACHED = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+
+
+def is_running() -> bool:
+    """¿Está abierto el cliente de Steam? (steam.exe)."""
+    if sys.platform != "win32":
+        return False
+    try:
+        out = subprocess.run(["tasklist", "/FI", "IMAGENAME eq steam.exe", "/NH"], capture_output=True, text=True,
+                             timeout=5, creationflags=NO_WINDOW).stdout
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return "steam.exe" in out.lower()
+
+
+def start_silent(steam_root: Path | None) -> bool:
+    """Abre Steam sin ventana (si no estaba abierto). True si ya estaba o se pudo abrir."""
+    if is_running():
+        return True
+    exe = steam_root / "steam.exe" if steam_root else None
+    if not exe or not exe.exists():
+        return False
+    try:
+        subprocess.Popen([str(exe), "-silent"], cwd=str(steam_root), stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL, creationflags=DETACHED)
+    except OSError:
+        log.warning("No pude abrir Steam en segundo plano", exc_info=True)
+        return False
+    log.info("Steam abierto en segundo plano (sin ventana)")
+    return True
+
+
+def ready_silent(steam_root: Path | None, timeout: float = 8.0) -> None:
+    """Antes de abrir un juego: si Steam estaba cerrado, lo abre en silencio y espera a que esté."""
+    if is_running() or not start_silent(steam_root):
+        return
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline and not is_running():
+        time.sleep(.25)
+    time.sleep(1.5)  # recién abierto: que tome el enlace en vez de abrir su ventana

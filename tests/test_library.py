@@ -114,3 +114,18 @@ def test_library_from_last_start_is_shown_while_scanning(library, tmp_path):
     assert {i.id for i in fresh.items()} == {i.id for i in library.items()}
     fresh._snapshot.write_text("{dañado", encoding="utf-8")
     assert not fresh.load_snapshot()
+
+
+def test_steam_game_opens_with_steam_already_in_the_background(library, monkeypatch):
+    """Con Steam cerrado, steam://rungameid mostraba toda su ventana: antes se abre en silencio."""
+    from orbital.library import steam
+
+    calls = []
+    monkeypatch.setattr(steam, "ready_silent", lambda root: calls.append(root))
+    item = next(i for i in library.items() if i.title == "Hollow Knight")
+    library.sessions.launch(item.id)
+    assert len(calls) == 1
+    assert library.launcher.opened[-1] == "steam://rungameid/367520"
+    library.config.steam.silent_start = False
+    library.sessions.launch(item.id)
+    assert len(calls) == 1  # apagado en config.yaml: como antes

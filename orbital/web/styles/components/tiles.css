@@ -4,6 +4,7 @@
 
 /* --- Destacado: lo último que jugaste o viste, con sus acciones como leyenda --------------- */
 .tile--feature { min-height: 0; background: var(--color-surface); }
+.tile--feature.tile--focused { transform: none; }
 .tile--feature__shade {
   background:
     linear-gradient(90deg, color-mix(in oklab, var(--palette-ink-1000) 88%, transparent) 0%, color-mix(in oklab, var(--palette-ink-1000) 55%, transparent) 42%, transparent 78%),
@@ -12,9 +13,8 @@
 .tile--feature__body {
   position: absolute; inset: auto auto 0 0; z-index: 1; width: min(82%, 40rem); max-height: 100%;
   display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3);
-  padding: var(--space-6) var(--space-8);
+  padding: var(--space-6);
 }
-.tile--feature .tile__eyebrow { color: var(--color-accent); }
 .tile--feature__title {
   font-family: var(--font-sans); font-size: var(--text-3xl); font-weight: var(--weight-bold); line-height: 1.02;
   letter-spacing: var(--tracking-display); text-shadow: var(--shadow-text); text-wrap: balance; padding-bottom: .08em;
@@ -30,7 +30,7 @@
 .tile--wide { min-height: 0; background: var(--color-surface); }
 .tile--wide__body {
   position: absolute; inset: auto 0 0 0; z-index: 1; display: flex; flex-direction: column; gap: var(--space-1);
-  padding: var(--space-4) var(--space-5); text-shadow: var(--shadow-text);
+  padding: var(--space-5) var(--space-6); text-shadow: var(--shadow-text);
 }
 /* Degradado más profundo abajo: el texto no compite con el arte (ni con su logo). */
 .tile--wide__shade { background: linear-gradient(0deg, color-mix(in oklab, var(--palette-ink-1000) 92%, transparent) 0%, color-mix(in oklab, var(--palette-ink-1000) 35%, transparent) 42%, transparent 62%); }
@@ -38,7 +38,8 @@
   font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold); line-height: 1.15;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.tile--wide__detail { display: flex; align-items: center; gap: var(--space-3); color: var(--color-text); opacity: .82; font-size: var(--text-sm); white-space: nowrap; }
+.tile--wide__detail svg { width: 1.05rem; height: 1.05rem; flex: none; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linejoin: round; }
+.tile--wide__detail { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text); opacity: .82; font-size: var(--text-sm); white-space: nowrap; }
 .tile--wide__progress { --progress-width: 4.5rem; flex: none; }
 /* Solo el título; el detalle (consola y hace cuánto, o lo que queda) aparece al enfocar la tarjeta. */
 .tile--wide__detail {
@@ -66,9 +67,9 @@
 .tile--console.tile--focused .tile--console__glow {
   background: radial-gradient(95% 75% at 50% 18%, color-mix(in oklab, var(--glow) 38%, transparent) 0%, transparent 75%);
 }
-.tile--console__media { position: relative; flex: none; height: 5.4rem; display: grid; place-items: center; padding: var(--space-3) var(--space-4) 0; }
+.tile--console__media { position: relative; flex: none; height: 5rem; display: grid; place-items: center; padding: var(--space-3) var(--space-4) 0; }
 .tile--console__photo {
-  max-width: 88%; max-height: 4.8rem; object-fit: contain; /* fotos altas (Xbox 360) no tapan el texto */
+  max-width: 88%; max-height: 4.4rem; object-fit: contain; /* fotos altas (Xbox 360) no tapan el texto */
   filter: drop-shadow(0 .7rem .9rem rgba(0, 0, 0, .6));
   transition: transform var(--duration-base) var(--ease-spring);
 }

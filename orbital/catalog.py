@@ -195,6 +195,8 @@ class Catalog:
             self.steam_root = steam.find_steam(self.config.steam.path)
             if self.steam_root:
                 found += steam.scan(self.steam_root)
+                if self.config.steam.silent_start and self.config.source:  # no en pruebas
+                    threading.Thread(target=steam.start_silent, args=(self.steam_root,), daemon=True).start()
                 found.append(
                     LibraryItem(
                         id="steam:bigpicture",

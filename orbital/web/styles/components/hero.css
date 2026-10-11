@@ -22,8 +22,7 @@
 }
 .hero__eyebrow {
   display: flex; align-items: center; gap: var(--space-2); min-height: 1.3rem;
-  color: var(--color-accent); font-weight: var(--weight-medium); font-size: var(--text-xs);
-  letter-spacing: var(--tracking-caps); text-transform: uppercase;
+  color: var(--color-text-muted); font-weight: var(--weight-medium); font-size: var(--text-sm);
   transition: color var(--duration-tint) var(--ease-out);
 }
 .hero__eyebrow svg { flex: none; width: 1.2rem; height: 1.2rem; stroke: currentColor; fill: none; stroke-width: 2; }

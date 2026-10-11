@@ -16,7 +16,7 @@ from . import focus, system
 from .config import Config
 from .events import EventBus
 from .launcher import Launcher
-from .library import cinemeta, geforcenow, stremio
+from .library import cinemeta, geforcenow, steam, stremio
 from .library.models import LibraryItem
 from .state import State
 from .store import ItemStore
@@ -89,6 +89,8 @@ class Sessions:
             self.launcher.track(item.id, item.title, proc, runner=runner.name if runner else None)
             self.revealing = self.to_front(item.id, item.title, runner.name if runner else None, pinned=pinned)
         elif item.uri:
+            if item.source == "steam" and item.steam_appid and self.config.steam.silent_start:
+                steam.ready_silent(steam.find_steam(self.config.steam.path))
             self.launcher.open_uri(item.uri)
             self.launcher.track(item.id, item.title, None, steam_appid=item.steam_appid)
         else:

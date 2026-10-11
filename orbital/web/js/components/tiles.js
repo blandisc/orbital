@@ -1,6 +1,7 @@
-import { h } from "../core/dom.js";
+import { h, svg } from "../core/dom.js";
 import { duration, lastPlayed, shortAgo } from "../core/format.js";
-import { kicker, systemColor, systemOf } from "../core/home.js";
+import { kicker, systemColor } from "../core/home.js";
+import { ICONS, systemIconName } from "../core/icons.js";
 import { alternativeRunner, isSeries, isWatchable, primaryLabel } from "../core/library.js";
 import { Button } from "./button.js";
 import { Badge, Progress } from "./ui.js";
@@ -32,9 +33,8 @@ export function detailOf(item, now = Date.now()) {
     .filter(Boolean).join(" · ") || null;
 }
 
-const eyebrow = (item, prefix = null) => h("span", { class: "tile__eyebrow" },
-  !isWatchable(item) && h("span", { class: "tile__dot", style: { "--dot": systemColor(systemOf(item)) } }),
-  [prefix, kicker(item)].filter(Boolean).join(" · "));
+/** De dónde es: el ícono de su plataforma y su nombre («Steam», «Switch», «Película»). */
+const platform = (item) => h("span", { class: "tile__platform" }, svg(ICONS[systemIconName(item)] || ICONS.apps), kicker(item));
 
 /**
  * Destacado: lo último que jugaste o viste, a lo grande, con sus acciones (A, X, Y) como leyenda.
@@ -42,7 +42,6 @@ const eyebrow = (item, prefix = null) => h("span", { class: "tile__eyebrow" },
  */
 export function FeatureTile(item, { focusId = "feature", runningId = null, glyphs, onPress, onAction }) {
   const open = item.id === runningId;
-  const prefix = open ? "Abierto ahora" : isWatchable(item) ? "Sigue viendo" : "Sigue jugando";
   const logo = item.extra?.logo;
   const alt = isWatchable(item) ? (isSeries(item) || item.extra?.kind === "series" ? "Episodios" : "Ficha")
     : alternativeRunner(item) && `Con ${alternativeRunner(item).name}`;
@@ -51,7 +50,7 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
     art(item.hero || item.image),
     h("span", { class: "tile__shade tile--feature__shade" }),
     h("div", { class: "tile--feature__body" },
-      eyebrow(item, prefix),
+      platform(item),
       logo ? h("img", { class: "tile--feature__logo", src: logo, alt: item.title }) : h("h2", { class: "tile--feature__title" }, item.title),
       detailOf(item) && h("span", { class: "tile--feature__detail" }, detailOf(item)),
       Progress(item.progress, { className: "tile--feature__progress" }),
@@ -80,8 +79,7 @@ export function WideTile(item, { focusId, onPress }) {
     h("div", { class: "tile--wide__body" },
       h("strong", { class: "tile--wide__title" }, item.title),
       h("span", { class: "tile--wide__detail" },
-        watch ? Progress(item.progress, { className: "tile--wide__progress" })
-          : h("span", { class: "tile__dot", style: { "--dot": systemColor(systemOf(item)) } }),
+        watch ? Progress(item.progress, { className: "tile--wide__progress" }) : svg(ICONS[systemIconName(item)] || ICONS.apps),
         [watch ? null : kicker(item), shortDetail(item)].filter(Boolean).join(" · "))));
 }
 

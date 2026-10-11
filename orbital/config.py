@@ -39,6 +39,8 @@ class UiConfig:
 class SteamConfig:
     enabled: bool = True
     path: str | None = None  # None = autodetectar
+    # Steam abierto en segundo plano (sin ventana): abrir un juego va directo al juego.
+    silent_start: bool = True
 
 
 @dataclass

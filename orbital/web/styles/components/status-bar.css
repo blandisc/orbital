@@ -24,10 +24,7 @@
 /* Las pestañas van centradas: lo que está en curso no debe alcanzarlas. El punto ya dice el estado
    (verde en curso, ámbar en pausa); la palabra solo cabe en pantallas anchas. */
 .status-bar__playing-label { display: none; }
-@media (min-width: 1700px) {
-  .status-bar__playing-label { display: inline; }
-  .status-bar__playing-title { max-width: 18rem; }
-}
+@media (min-width: 1700px) { .status-bar__playing-title { max-width: 18rem; } }
 
 /* Secciones al centro: la activa en sólido; LB/RB a los lados. Van en el flujo (antes, centradas
    con position:absolute, se encimaban con Buscar y la hora en pantallas angostas). */

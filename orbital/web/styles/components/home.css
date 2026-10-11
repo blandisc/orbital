@@ -3,7 +3,7 @@
 .home {
   grid-row: 2 / 4; min-height: 0; overflow: hidden;
   display: flex; flex-direction: column; gap: var(--space-5);
-  padding: var(--space-3) var(--page-gutter) var(--space-3);
+  padding: var(--space-5) var(--page-gutter) var(--space-5);
 }
 body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 
@@ -12,7 +12,7 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 
 /* Arriba: destacado a la izquierda y 2×2 a la derecha, misma altura. */
 .home__top {
-  flex: 1 1 auto; min-height: 13rem; max-height: 22rem;
+  flex: 1 1 auto; min-height: 13rem; max-height: 21rem;
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--tile-gap);
 }
 .home__top > .tile--feature:only-child { grid-column: 1 / -1; }
@@ -23,7 +23,7 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 .home__consoles-viewport { overflow: hidden; padding: .6rem; margin: -.6rem; } /* espacio para el anillo y el crecer */
 .home__consoles-track { display: flex; gap: var(--tile-gap); transition: transform var(--duration-slow) var(--ease-out); }
 /* 6 enteras y la séptima asomando (así se nota que hay más); el borde se desvanece hacia ese lado. */
-.home__consoles-track > .tile--console { flex: 0 0 calc((100% - 6 * var(--tile-gap)) / 6.35); height: 11.2rem; }
+.home__consoles-track > .tile--console { flex: 0 0 calc((100% - 6 * var(--tile-gap)) / 6.35); height: 11rem; }
 .home__consoles-viewport--more { -webkit-mask-image: linear-gradient(90deg, #000 86%, transparent 100%); mask-image: linear-gradient(90deg, #000 86%, transparent 100%); }
 .home__consoles-viewport--before { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 86%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 86%, transparent 100%); }
 
