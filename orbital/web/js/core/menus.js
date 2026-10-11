@@ -531,7 +531,7 @@ export const SHORTCUTS = [
 
 function shortcutsPage() {
   const options = SHORTCUTS.map(([label, value, hint]) => (value === null
-    ? { icon: "check", label: label.toUpperCase(), command: { type: "stay" } }
+    ? { heading: true, label }
     : row(label, value, hint ?? undefined)));
   return { title: "Atajos del mando", crumb: "Atajos", options };
 }

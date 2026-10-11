@@ -12,10 +12,9 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
   const search = h("button", { class: "status-bar__search", type: "button", "aria-label": "Buscar", "data-focus-id": "search", onClick: () => onSearch?.() },
     svg(ICONS.search), h("span", {}, "Buscar"), searchGlyph);
   const playingTitle = h("span", { class: "status-bar__playing-title" });
-  const playingLabel = h("span", { class: "status-bar__playing-label" }, "En curso");
   // Lo abierto: un ícono quieto y su nombre (antes un punto verde que parpadeaba y no se entendía).
   const playing = h("span", { class: "status-bar__playing", hidden: true },
-    h("span", { class: "status-bar__live", "aria-hidden": "true" }, svg(ICONS.play)), playingLabel, playingTitle);
+    h("span", { class: "status-bar__live", "aria-hidden": "true" }, svg(ICONS.play)), playingTitle);
   // Alexa: el anillo de asistente de voz y su nombre, discretos ("Orbital está conectado a Alexa").
   // Cuando acaba de escucharte, el anillo se pinta de azul y el texto dice «Te escuché» un momento.
   const alexaLabel = h("span", { class: "assistant__label" }, "Alexa");
@@ -55,7 +54,6 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
 
   function setRunning(running) {
     playing.hidden = !running;
-    playingLabel.textContent = running?.paused ? "En pausa" : "En curso";
     playing.classList.toggle("status-bar__playing--paused", !!running?.paused);
     playingTitle.textContent = running ? running.title : "";
   }

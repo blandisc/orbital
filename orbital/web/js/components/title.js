@@ -84,6 +84,18 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
       class: ["title__tab", i === season && "title__tab--active"], type: "button", role: "tab",
       onClick: () => setSeason(i),
     }, s.label)));
+    showSeasonTab();
+  }
+
+  /** La pestaña de la temporada actual siempre a la vista (también al abrir en la T8): solo se
+   * desplaza la tira, nunca la pantalla. */
+  function showSeasonTab(behavior = "auto") {
+    const tab = tabs.children[season];
+    if (!tab) return;
+    const left = tab.offsetLeft - tabs.offsetLeft;
+    if (left < tabs.scrollLeft || left + tab.offsetWidth > tabs.scrollLeft + tabs.clientWidth) {
+      tabs.scrollTo({ left: Math.max(0, left - tabs.clientWidth / 2 + tab.offsetWidth / 2), behavior });
+    }
   }
 
   function renderList() {
@@ -162,7 +174,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
     index = 0;
     renderTabs();
     renderList();
-    tabs.children[season]?.scrollIntoView({ inline: "nearest", behavior: "smooth" });
+    showSeasonTab("smooth");
     return true;
   }
 

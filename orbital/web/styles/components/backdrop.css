@@ -47,7 +47,7 @@
 /* Velo mínimo: arriba para la hora y a la izquierda para el título. */
 .backdrop__scrim { position: absolute; inset: 0; background: var(--scrim-hero); }
 
-/* --- Fondo vivo (Inicio y galería de consolas) ------------------------------------------------- */
+/* --- Fondo vivo (Inicio y Juegos) ------------------------------------------------- */
 .backdrop__space { position: absolute; inset: 0; overflow: hidden; opacity: 0; transition: opacity var(--duration-tint) var(--ease-out); }
 body[data-view="home"] .backdrop__space { opacity: 1; }
 

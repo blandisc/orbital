@@ -122,7 +122,10 @@ export function createGames({ onFocus, onPick, onAction }) {
       const card = Card(item, { onPress: () => onPick?.(targets.get(`game:${i}`), `game:${i}`) });
       card.dataset.focusId = `game:${i}`;
       return card;
-    }) : h("p", { class: "games__empty" }, filter === "favorites" ? "Aún no marcas favoritos en esta consola (Y → Añadir a favoritos)." : "Nada por aquí."));
+    }) : h("p", { class: "games__empty" }, filter === "favorites"
+      ? "Aún no tienes favoritos aquí. Para marcar uno, enfoca un juego y pulsa Y → Añadir a favoritos."
+      : "Nada por aquí."));
+    el.classList.toggle("games--empty", games.length === 0);
     if (!targets.has(focusId)) {
       const remembered = games.findIndex((g) => g.id === memory[consoleId]);
       focusId = games.length ? `game:${Math.max(0, remembered)}` : "filter:0";

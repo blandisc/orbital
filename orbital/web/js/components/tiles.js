@@ -24,6 +24,13 @@ const art = (src, className = "tile__art") => {
   return img;
 };
 
+/** Logotipo del destacado; si no carga, su lugar lo toma el título en texto. */
+function featureLogo(src, title) {
+  const img = h("img", { class: "tile--feature__logo", src, alt: title });
+  img.addEventListener("error", () => img.replaceWith(h("h2", { class: "tile--feature__title" }, title)), { once: true });
+  return img;
+}
+
 /** Dato debajo del título: lo que queda (videos) o cuándo jugaste (juegos). */
 export function detailOf(item, now = Date.now()) {
   // «Película · quedan 1 h 40 min» → «quedan 1 h 40 min»: la barra de avance ya dice que es un video.
@@ -52,7 +59,7 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
     h("span", { class: "tile__shade tile--feature__shade" }),
     h("div", { class: "tile--feature__body" },
       platform(item),
-      logo ? h("img", { class: "tile--feature__logo", src: logo, alt: item.title }) : h("h2", { class: "tile--feature__title" }, item.title),
+      logo ? featureLogo(logo, item.title) : h("h2", { class: "tile--feature__title" }, item.title),
       detailOf(item) && h("span", { class: "tile--feature__detail" }, detailOf(item)),
       Progress(item.progress, { className: "tile--feature__progress" }),
       h("span", { class: "button-row tile--feature__actions" },

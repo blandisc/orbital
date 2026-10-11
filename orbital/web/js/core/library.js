@@ -86,6 +86,7 @@ export const isGame = (item) => !!item && !isWatchable(item) && item.category !=
 export const primaryLabel = (item, runningId = null) => {
   if (item && item.id === runningId) return item.id === "media:player" ? "Volver al video" : "Volver al juego";
   if (item?.source === "search") return "Buscar";
+  if (item?.category === "apps") return "Abrir";
   if (isSeries(item)) return item.progress > 0 ? "Continuar" : "Ver serie";
   return isWatchable(item) ? (item.progress > 0 ? "Continuar" : "Ver") : "Jugar";
 };

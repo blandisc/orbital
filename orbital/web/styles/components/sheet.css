@@ -15,6 +15,8 @@
   border-left: 1px solid var(--color-hairline); box-shadow: var(--shadow-overlay);
   animation: slide-in-right var(--duration-slow) var(--ease-out);
 }
+/* Nada de la hoja se aplasta: si no cabe, el panel se desplaza (y la opción enfocada se mantiene a la vista). */
+.sheet__panel > * { flex-shrink: 0; }
 .sheet--leaving { animation: fade-out var(--duration-exit) var(--ease-in) forwards; }
 .sheet--leaving .sheet__panel { animation: slide-out-right var(--duration-exit) var(--ease-in) forwards; }
 
@@ -49,11 +51,13 @@
 .sheet__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .2rem; }
 .sheet__label { min-width: 0; line-height: 1.2; }
 .sheet__hint { margin-left: auto; padding-left: var(--space-4); color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-regular); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.sheet__text .sheet__hint--below { margin: 0; padding: 0; white-space: normal; line-height: 1.35; text-align: left; }
+.sheet__text .sheet__hint--below { margin: 0; padding: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; text-align: left; }
 /* Ajustes: el valor en una píldora con flechas suaves (A o ◀/▶ lo cambian). */
 .sheet__item--setting { align-items: flex-start; }
 .sheet__item--setting .sheet__icon, .sheet__item--setting .sheet__value { margin-top: .1rem; }
-.sheet__value { margin-left: auto; padding-left: var(--space-3); font-weight: var(--weight-medium); white-space: nowrap; color: var(--color-text-muted); align-self: center; }
+/* El valor nunca aplasta el nombre: a lo más 45 % y, si es largo, en varias líneas (alineado a la derecha). */
+.sheet__value { flex: 0 1 auto; max-width: 45%; margin-left: auto; padding-left: var(--space-3); font-weight: var(--weight-medium); text-align: right; overflow-wrap: anywhere; color: var(--color-text-muted); align-self: center; }
+.sheet__value--choice { flex: none; max-width: none; white-space: nowrap; }
 .sheet__value--choice {
   display: inline-flex; align-items: center; gap: var(--space-1); padding: .3rem .4rem; border-radius: var(--radius-pill);
   background: var(--color-fill); color: var(--color-text);
@@ -73,5 +77,9 @@
 .sheet__item--danger .sheet__icon { background: color-mix(in oklab, var(--color-danger) 18%, transparent); color: var(--color-danger); }
 .sheet__item--danger.sheet__item--focused { background: var(--color-danger); color: var(--color-on-primary); }
 .sheet__item--danger.sheet__item--focused .sheet__icon { background: rgba(0, 0, 0, .12); color: inherit; }
+
+/* Encabezado de sección dentro de una hoja (Atajos: «En un juego», «En Orbital»…): no se enfoca. */
+.sheet__heading { padding: var(--space-5) var(--space-3) var(--space-1); color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.sheet__heading:first-child { padding-top: 0; }
 
 @media (max-width: 760px) { .sheet__panel { width: 100vw; border-left: 0; } }

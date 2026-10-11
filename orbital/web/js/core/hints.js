@@ -4,12 +4,12 @@
  * Jugar, "Con Eden" y Opciones ya están en los botones del héroe con su glifo, así que el
  * pie no los repite: solo enseña cómo moverse y cómo volver.
  */
-export function footerHints(glyphs, { sheetOpen = false, sheetNested = false, atHome = true, longRow = false, running = null } = {}) {
+export function footerHints(glyphs, { sheetOpen = false, sheetNested = false, atHome = true, longRow = false, running = null, rows = 2 } = {}) {
   if (sheetOpen) {
     return [{ glyph: glyphs.select, label: "Elegir" }, { glyph: glyphs.back, label: sheetNested ? "Atrás" : "Cerrar" }];
   }
   return [
-    { glyph: glyphs.rows, label: "Cambiar de fila" },
+    rows > 1 && { glyph: glyphs.rows, label: "Cambiar de fila" },
     glyphs.search && { glyph: glyphs.search, label: "Buscar", secondary: true },
     glyphs.section && { glyph: glyphs.section, label: "Sección", secondary: true },
     longRow && { glyph: glyphs.page, label: "Saltar 5", secondary: true },

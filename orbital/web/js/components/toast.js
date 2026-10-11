@@ -21,7 +21,7 @@ export function createToast({ duration = 3800, errorDuration = 6500 } = {}) {
     }
     showing = true;
     cancelExit();
-    const icon = toast.voice ? "assistant" : toast.error ? "close" : "check";
+    const icon = toast.voice ? "assistant" : toast.error ? "close" : /…$/.test(toast.message) ? "refresh" : "check";
     mount(el, h("span", { class: "toast__icon", "aria-hidden": "true" }, svg(ICONS[icon])), h("span", {}, toast.message),
       // Cuenta regresiva visible (p. ej. los 2 s para el segundo toque de Legion L).
       toast.countdown > 0 ? h("span", { class: "toast__countdown", style: { animationDuration: `${toast.countdown}ms` } }) : null);

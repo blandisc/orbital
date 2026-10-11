@@ -31,7 +31,10 @@
   text-shadow: var(--shadow-text-strong); animation: rise-in 480ms var(--ease-out);
 }
 .title__logo { max-width: min(100%, 30rem); max-height: 9rem; width: auto; object-fit: contain; object-position: left center; filter: var(--shadow-logo); }
-.title__name { font-family: var(--font-sans); font-size: var(--text-3xl); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); line-height: 1.05; text-wrap: balance; }
+.title__name {
+  font-family: var(--font-sans); font-size: var(--text-3xl); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); line-height: 1.05; text-wrap: balance;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; padding-bottom: .2em; margin-bottom: -.14em;
+}
 .title__facts { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); color: var(--color-text); font-size: var(--text-md); font-variant-numeric: tabular-nums; }
 .title__sep { opacity: .5; }
 /* Lo que hay para ver (antes de elegir): 4K · HDR · Inglés, Español · Al instante. */
@@ -50,14 +53,17 @@
 .title__progress { display: flex; align-items: center; gap: var(--space-4); color: var(--color-text); font-size: var(--text-md); }
 .title__progress-bar { flex: none; width: 9rem; height: .35rem; border-radius: var(--radius-pill); background: var(--color-progress-track); overflow: hidden; }
 .title__progress-fill { display: block; height: 100%; background: var(--color-progress); }
-.title__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); min-height: var(--control-height); }
+.title__actions { display: flex; flex-wrap: nowrap; gap: var(--space-3); min-width: 0; margin-top: var(--space-4); min-height: var(--control-height); }
 .title__action {
   display: inline-flex; align-items: center; gap: var(--space-3);
   min-height: var(--control-height); padding: 0 var(--space-6) 0 var(--space-5); border-radius: var(--radius-md);
+  flex: none; min-width: 0; max-width: 100%;
   background: var(--color-fill); font-size: var(--text-lg); font-weight: var(--weight-medium); text-shadow: none;
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-base) var(--ease-spring);
 }
-.title__action .icon { width: 1.3rem; height: 1.3rem; }
+.title__action .icon { width: 1.3rem; height: 1.3rem; flex: none; }
+.title__action span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.title__action--primary { flex-shrink: 1; }
 .title__action small { color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-regular); }
 .title__action--primary { padding-inline: var(--space-6) var(--space-8); }
 /* Los secundarios (Desde el principio, Tráiler, Mi lista, Elegir fuente) son solo ícono hasta que
@@ -67,14 +73,14 @@
 /* Los secundarios, más compactos: los tres caben en un renglón también junto a los episodios. */
 .title__action:not(.title__action--primary) { padding-inline: var(--space-4) var(--space-5); font-size: var(--text-md); }
 /* Foco invertido (como el menú): se ve desde el sofá. */
-.title__action--focused { background: var(--color-primary); color: var(--color-on-primary); transform: scale(1.04); }
+.title__action--focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
 .title__action--focused small { color: inherit; opacity: .7; }
 .title[data-zone="episodes"] .title__action--primary { box-shadow: inset 0 0 0 2px var(--color-hairline-strong); }
 
 /* Derecha: temporadas (LB/RB) y episodios (↑/↓) */
 .title__browser { display: none; flex-direction: column; min-height: 0; overflow: hidden; animation: rise-in 520ms var(--ease-out) 80ms backwards; }
 .title--series .title__browser { display: flex; }
-.title__tabs { display: flex; gap: var(--space-2); padding-bottom: var(--space-5); overflow-x: auto; scrollbar-width: none; }
+.title__tabs { flex: none; display: flex; gap: var(--space-2); padding-bottom: var(--space-5); overflow-x: auto; scrollbar-width: none; }
 .title__tab {
   flex: none; padding: .55rem 1.1rem; border-radius: var(--radius-pill);
   color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium);

@@ -40,7 +40,7 @@ export function createBackdrop({ settle = 150 } = {}) {
     return { el: h("div", { class: "backdrop__layer" }, art, box), art, box };
   };
   const layers = [makeLayer(), makeLayer()];
-  // Fondo vivo (Inicio y galería): estrellas que derivan en dos capas y una luz del color de lo
+  // Fondo vivo (Inicio y Juegos): estrellas que derivan en dos capas y una luz del color de lo
   // enfocado que respira y se acerca a donde está el foco. Solo transformaciones (las mueve la
   // tarjeta gráfica sin repintar); «Reducir movimiento» las detiene.
   const space = h("div", { class: "backdrop__space" },

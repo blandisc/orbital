@@ -24,6 +24,7 @@ log = logging.getLogger(__name__)
 
 API_URL = "https://api.strem.io"
 METAHUB_BACKGROUND = "https://images.metahub.space/background/medium/{id}/img"
+METAHUB_POSTER = "https://images.metahub.space/poster/medium/{id}/img"
 
 
 class StremioError(Exception):

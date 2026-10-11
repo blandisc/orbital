@@ -24,8 +24,9 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 .home__consoles-track { display: flex; gap: var(--tile-gap); transition: transform var(--duration-slow) var(--ease-out); }
 /* 6 enteras y la séptima asomando (así se nota que hay más); el borde se desvanece hacia ese lado. */
 .home__consoles-track > .tile--console { flex: 0 0 calc((100% - 6 * var(--tile-gap)) / 6.35); height: 11rem; }
-.home__consoles-viewport--more { -webkit-mask-image: linear-gradient(90deg, #000 86%, transparent 100%); mask-image: linear-gradient(90deg, #000 86%, transparent 100%); }
-.home__consoles-viewport--before { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 86%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 8%, #000 86%, transparent 100%); }
+.home__consoles-viewport { --fade-left: #000; --fade-right: #000; -webkit-mask-image: linear-gradient(90deg, var(--fade-left) 0, #000 8%, #000 86%, var(--fade-right) 100%); mask-image: linear-gradient(90deg, var(--fade-left) 0, #000 8%, #000 86%, var(--fade-right) 100%); }
+.home__consoles-viewport--more { --fade-right: transparent; }
+.home__consoles-viewport--before { --fade-left: transparent; }
 
 /* Fondo del Inicio: sin arte a pantalla completa; una luz del color de lo enfocado (cambia suave). */
 body[data-view="home"] .backdrop__layer, body[data-view="home"] .backdrop__scrim { opacity: 0; }

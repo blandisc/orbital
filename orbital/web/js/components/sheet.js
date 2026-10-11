@@ -35,7 +35,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
     title.classList.toggle("sheet__title--question", !!menu.subtitle);
     subtitle.textContent = menu.subtitle || "";
     subtitle.hidden = !menu.subtitle;
-    mount(list, menu.options.map((option, i) => h("button", {
+    mount(list, menu.options.map((option, i) => option.heading ? h("div", { class: "sheet__heading", role: "presentation" }, option.label) : h("button", {
       class: ["sheet__item", i === index && "sheet__item--focused", option.danger && "sheet__item--danger",
         option.value !== undefined && "sheet__item--setting",
         // «Cancelar» / «Cerrar menú» van al final, separados del resto por una línea.
@@ -60,9 +60,33 @@ export function createSheet({ onCommand, onMove, onClose }) {
     menu = next;
     stack = from;
     index = Math.max(0, Math.min(at, next.options.length - 1));
+    if (menu.options[index]?.heading) index = step(index, 1);
     cancelExit();
     render();
     el.hidden = false;
+    reveal("auto");
+  }
+
+  /** La siguiente opción hacia `delta`, saltando los encabezados (da la vuelta). */
+  function step(from, delta) {
+    const n = menu.options.length;
+    let i = from;
+    for (let k = 0; k < n; k++) {
+      i = (i + delta + n) % n;
+      if (!menu.options[i].heading) return i;
+    }
+    return from;
+  }
+
+  /** Hojas más altas que la pantalla: la opción enfocada siempre a la vista (antes se salía por abajo). */
+  function reveal(behavior = "smooth") {
+    const node = list.children[index];
+    if (!node) return;
+    const top = node.offsetTop - panel.offsetTop;
+    const room = panel.clientHeight;
+    const pad = 96;
+    if (top + node.offsetHeight > panel.scrollTop + room - pad) panel.scrollTo({ top: top + node.offsetHeight - room + pad, behavior });
+    else if (top < panel.scrollTop + pad) panel.scrollTo({ top: Math.max(0, top - pad), behavior });
   }
 
   function close() {
@@ -80,6 +104,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
       menu = previous.menu;
       index = previous.index;
       render();
+      reveal("auto");
       return;
     }
     const command = menu?.cancel;
@@ -97,11 +122,11 @@ export function createSheet({ onCommand, onMove, onClose }) {
   function handle(action) {
     if (!menu) return false;
     if (action === "up" || action === "down") {
-      const delta = action === "up" ? -1 : 1;
-      index = (index + delta + menu.options.length) % menu.options.length;
+      index = step(index, action === "up" ? -1 : 1);
       onMove?.();
       // Solo cambia la clase: así el foco se desliza con transición en vez de redibujarse.
       [...list.children].forEach((item, i) => item.classList.toggle("sheet__item--focused", i === index));
+      reveal();
     } else if (action === "left" || action === "right") {
       // En un ajuste (‹ Grande ›), ◀/▶ cambian el valor; en lo demás, mueven como ↑/↓.
       const option = menu.options[index];

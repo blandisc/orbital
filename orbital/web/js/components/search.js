@@ -311,6 +311,6 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     if (!el.hidden && text.trim().length >= MIN_CHARS) schedule();
   }
 
-  return { el, open: show, close, handle, hints, refresh, type, get isOpen() { return !el.hidden; },
+  return { el, open: show, close, handle, hints, refresh, type, get isOpen() { return !el.hidden && !el.classList.contains("search--leaving"); },
     get typing() { return !el.hidden && !el.classList.contains("search--leaving"); } };
 }

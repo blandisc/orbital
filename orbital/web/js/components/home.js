@@ -148,7 +148,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     },
     hide: () => { // Buscar y Alexa viven en la barra de arriba: fuera del Inicio no quedan marcados
       el.hidden = true;
-      for (const node of outside()) node.classList.remove("is-focused");
+      for (const node of outside()) { node.classList.remove("is-focused"); node.removeAttribute("aria-current"); }
     },
     get current() { return targets.get(focusId) ?? null; },
     get focusId() { return focusId; },

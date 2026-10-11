@@ -154,6 +154,7 @@ function renderHints() {
     atHome: !r && !c,
     longRow: (state.rows[r]?.items.length ?? 0) >= LONG_ROW,
     running: state.running?.managed ? state.running : null,
+    rows: state.rows.length,
   }));
 }
 
@@ -202,7 +203,7 @@ function applySettings(settings) {
   haptics.enabled = settings.haptics !== false;
   ui.hero.tips = settings.voice_tips !== false;
   if (state.libraryLoaded) ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
-  if (inGames()) renderGames(); // Ajustes → Juegos: directo a tu consola o la galería
+  if (inGames()) renderGames(); // los ajustes pueden cambiar glifos y textos
 }
 
 // ---------------------------------------------------------------- Inicio

@@ -85,7 +85,8 @@ def stremio_item(w: stremio_api.Watchable) -> LibraryItem:
         category="continue" if w.in_continue and not barely else "stremio",
         source="stremio",
         subtitle=subtitle,
-        image=w.poster,
+        # Con id de IMDb, el póster de metahub (el de Amazon que guarda Stremio a veces ya no existe).
+        image=stremio_api.METAHUB_POSTER.format(id=w.id) if w.id.startswith("tt") else w.poster,
         hero=w.background,
         uri=w.deep_link,
         progress=w.progress,
@@ -123,6 +124,8 @@ def enrich_watch_item(item: LibraryItem, info: dict) -> None:
         item.hero = info["background"]
 
 
+
+RETRY_SECONDS = 1.5  # Cinemeta: espera antes del segundo intento
 
 class Watch:
     def __init__(self, config: Config, state: State, credentials: Credentials, stremio_client: stremio_api.StremioAPI,
@@ -214,6 +217,8 @@ class Watch:
 
     def _enrich_rest(self, items: list[LibraryItem], rest: list[LibraryItem]) -> None:
         self._enrich(rest)
+        if not any(i.extra.get("description") for i in rest):
+            return  # Cinemeta no respondió: nada que avisar (la próxima descarga lo reintenta)
         if self.stremio_items is not items:
             return  # llegó una descarga más nueva: ella se encarga
         self.store.replace_source("stremio", items)
@@ -228,10 +233,14 @@ class Watch:
         wanted = [i for i in items if i.extra.get("kind") in ("movie", "series")]
 
         def meta(item: LibraryItem):
-            try:
-                return item, self.cinemeta.meta(item.extra["kind"], item.extra["meta_id"])
-            except cinemeta.CinemetaError:
-                return item, None
+            # Con ~200 títulos a la vez alguno falla por un instante: un segundo intento antes de rendirse.
+            for attempt in range(2):
+                try:
+                    return item, self.cinemeta.meta(item.extra["kind"], item.extra["meta_id"])
+                except cinemeta.CinemetaError:
+                    if attempt == 0:
+                        time.sleep(RETRY_SECONDS)
+            return item, None
 
         with ThreadPoolExecutor(max_workers=6) as pool:
             for item, info in pool.map(meta, wanted):

@@ -223,7 +223,8 @@ test("atajos: todos en una hoja, desde Controles y desde el panel rápido", asyn
   const byLabel = Object.fromEntries(page.options.map((o) => [o.label, o]));
   assert.equal(byLabel["Panel rápido"].value, "Home+LB");
   assert.match(byLabel["Cerrar el juego"].hint, /Legion Go/);
-  assert.ok(page.options.every((o) => o.command.type === "stay"));
+  assert.ok(page.options.every((o) => o.heading || o.command.type === "stay"));
+  assert.deepEqual(page.options.filter((o) => o.heading).map((o) => o.label), ["En un juego", "En Orbital", "Viendo algo"]); // encabezados, no opciones
   const panel = quickMenu({ volume: null, brightness: null, power_mode: "performance", battery: null });
   assert.equal(panel.options.find((o) => o.label === "Energía").value, "Máximo");
   assert.equal(panel.options.at(-1).command.page, "atajos");
