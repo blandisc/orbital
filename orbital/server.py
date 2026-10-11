@@ -210,7 +210,9 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     @app.get("/api/ui")
     def ui_info() -> dict:
         return {"can_exit": kiosk is not None, "stremio_linked": catalog.stremio_linked,
-                "player": "orbital" if catalog.native_player else "stremio"}
+                "player": "orbital" if catalog.native_player else "stremio",
+                # Alexa configurada (token fijo): la interfaz enseña frases que puedes decirle.
+                "alexa": bool(config.server.token) and not config.server.token_is_ephemeral}
 
     @app.post("/api/ui/exit")
     async def ui_exit() -> dict:

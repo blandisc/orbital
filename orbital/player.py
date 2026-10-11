@@ -69,11 +69,28 @@ def build_lang_list(lang: str) -> list[str]:
     return LANGS.get(lang, [lang])
 
 
+# Pantalla táctil: tocar el video pausa/reanuda (y Orbital muestra su barra); el doble toque ya no
+# saca de pantalla completa por accidente.
+TOUCH_BINDINGS = "MBTN_LEFT cycle pause\nMBTN_LEFT_DBL ignore\nMBTN_RIGHT ignore\n"
+
+
+def input_conf() -> str | None:
+    """Archivo de atajos de mpv de Orbital (se reescribe cada vez; vive junto a los datos de Orbital)."""
+    path = Path(os.environ.get("LOCALAPPDATA", "")) / "orbital" / "mpv-input.conf"
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(TOUCH_BINDINGS, encoding="utf-8")
+        return str(path)
+    except OSError:
+        return None
+
+
 def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: str = "en",
-                  subtitles: str = "en", sub_files: list[str] | None = None) -> list[str]:
+                  subtitles: str = "en", sub_files: list[str] | None = None, bindings: str | None = None) -> list[str]:
     cmd = [
         mpv, url, f"--input-ipc-server={PIPE}", "--fullscreen", "--force-window=immediate",
         "--keep-open=no", "--idle=no", "--osc=no", "--input-default-bindings=yes",
+        *([f"--input-conf={bindings}"] if bindings else []),
         f"--title={title}", f"--force-media-title={title}",
         f"--alang={','.join(build_lang_list(audio))}", f"--slang={','.join(build_lang_list(subtitles))}",
         "--sub-auto=fuzzy", "--cache=yes", "--demuxer-max-bytes=400MiB", "--hwdec=auto-safe",
@@ -225,7 +242,7 @@ class OrbitalPlayer:
              fallback_subs=None, **options) -> subprocess.Popen:
         """`run(argv)` lanza el proceso; `fallback_subs()` da URLs de subtítulos si el video no trae."""
         self.stop()
-        process = run(build_command(mpv_exe, url, title, subtitles=subtitles, **options))
+        process = run(build_command(mpv_exe, url, title, subtitles=subtitles, bindings=input_conf(), **options))
         self.menu = None
         self._subs_lang, self._fallback_subs = subtitles, fallback_subs
         playback = Playback(title, process, time.time(), meta)
@@ -241,11 +258,15 @@ class OrbitalPlayer:
         position, duration, watched, subs_checked = start, 0.0, 0.0, False
         last = time.monotonic()
         paused_since: float | None = None
+        was_paused = False
         while playback.process.poll() is None:
             time.sleep(self.POLL)
             pos, dur = self.mpv.get("time-pos"), self.mpv.get("duration")
             now = time.monotonic()
             paused = bool(self.mpv.get("pause"))
+            if paused != was_paused and subs_checked:
+                self.show_hud()  # pausado con un toque en la pantalla (o por otro lado): que se vea la barra
+            was_paused = paused
             paused_since = (paused_since or now) if paused else None
             if paused_since is not None and idle_expired(paused_since, now, self.idle_seconds):
                 log.info("%s llevaba %d min en pausa: se cierra (el avance queda guardado)",

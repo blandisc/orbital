@@ -2,6 +2,7 @@ import { h, mount, svg } from "../core/dom.js";
 import { bytes, duration, genres, lastPlayed, percent } from "../core/format.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { alternativeRunner, isGame, isWatchable, primaryLabel, runnerName } from "../core/library.js";
+import { alexaTip } from "../core/hints.js";
 import { Button } from "./button.js";
 
 /** Información grande del juego seleccionado: sistema, título, datos y acciones. */
@@ -15,7 +16,10 @@ export function createHero({ onAction }) {
   const facts = h("div", { class: "hero__facts" });
   const description = h("p", { class: "hero__description" });
   const actions = h("div", { class: "hero__actions" });
-  const content = h("div", { class: "hero__content" }, eyebrow, logo, title, facts, description, actions);
+  // Una frase para Alexa según lo enfocado (solo si Alexa está configurada).
+  const voice = h("p", { class: "hero__voice", hidden: true });
+  const content = h("div", { class: "hero__content" }, eyebrow, logo, title, facts, description, actions, voice);
+  let alexa = false;
   const el = h("main", { class: "hero" }, content);
   let timer;
 
@@ -60,6 +64,8 @@ export function createHero({ onAction }) {
       alt && item.id !== runningId && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
       // Antes era "☰", el mismo glifo del botón Menú del mando: se confundían.
       Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction("options") }));
+    voice.hidden = !alexa;
+    if (alexa) mount(voice, svg(ICONS.mic), h("span", {}, alexaTip(item, { runningId })));
   }
 
   /** Actualiza con una transición corta. `immediate` evita la animación (p. ej. al cambiar glifos). */
@@ -73,5 +79,5 @@ export function createHero({ onAction }) {
     }, 110);
   }
 
-  return { el, update };
+  return { el, update, set alexa(on) { alexa = !!on; } };
 }

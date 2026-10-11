@@ -7,9 +7,37 @@ import { Card } from "./card.js";
  * Filas de tarjetas. Muestra una fila a la vez (la siguiente asoma) y desplaza la
  * fila actual para que la tarjeta enfocada quede a la izquierda con una de contexto.
  */
-export function createShelf({ onPick }) {
+export function createShelf({ onPick, onSwipe }) {
   const rowsEl = h("div", { class: "shelf__rows" });
   const el = h("section", { class: "shelf", "aria-label": "Biblioteca" }, rowsEl);
+  // Pantalla táctil (Legion Go sin dock): deslizar de lado recorre la fila; de arriba abajo cambia de fila.
+  let swipe = null;
+  let swallowClick = false;
+  el.addEventListener("pointerdown", (event) => {
+    if (event.pointerType !== "touch") return;
+    const r = rowEls.findIndex((x) => x.rowEl.contains(event.target));
+    swipe = { x: event.clientX, y: event.clientY, r: r < 0 ? focus.r : r };
+  });
+  el.addEventListener("pointerup", (event) => {
+    if (!swipe || event.pointerType !== "touch") return;
+    const dx = event.clientX - swipe.x;
+    const dy = event.clientY - swipe.y;
+    const { r } = swipe;
+    swipe = null;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 40) return; // un toque, no un deslizamiento
+    swallowClick = true;
+    setTimeout(() => { swallowClick = false; }, 350);
+    if (!metrics) measure();
+    if (Math.abs(dx) > Math.abs(dy)) {
+      const cardWidth = metrics.cardHeight * .667 + metrics.gap;
+      onSwipe?.({ r, dc: -Math.sign(dx) * Math.max(1, Math.round(Math.abs(dx) / cardWidth)) });
+    } else {
+      onSwipe?.({ dr: dy < 0 ? 1 : -1 });
+    }
+  });
+  el.addEventListener("pointercancel", () => { swipe = null; });
+  // El dedo que desliza no debe además abrir la tarjeta donde empezó.
+  el.addEventListener("click", (event) => { if (swallowClick) { event.stopPropagation(); event.preventDefault(); } }, true);
   let rowEls = [];
   let focus = { r: 0, c: 0 };
   let introduced = false; // la entrada escalonada solo al abrir Orbital

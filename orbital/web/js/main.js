@@ -3,6 +3,8 @@
  * Los componentes solo pintan; aquí vive el "qué pasa cuando…".
  */
 import { api } from "./core/api.js";
+import { h, svg } from "./core/dom.js";
+import { ICONS } from "./core/icons.js";
 import { duration } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, restoreFocus, rowJump, runnerName, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
@@ -49,7 +51,7 @@ const ui = {
   backdrop: createBackdrop(),
   status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch() }),
   hero: createHero({ onAction: (action) => handleAction(action) }),
-  shelf: createShelf({ onPick: (r, c) => pick(r, c) }),
+  shelf: createShelf({ onPick: (r, c) => pick(r, c), onSwipe: (swipe) => onSwipe(swipe) }),
   hints: createHints(),
   sheet: createSheet({
     onCommand: (command) => runCommand(command),
@@ -77,8 +79,13 @@ const ui = {
   toast: createToast(),
 };
 
+// Con el dedo no hay botón B: en las vistas encima (buscar, episodios, fuentes, menú) aparece "Atrás".
+const touchBack = h("button", { class: "touch-back", type: "button", "aria-label": "Atrás", onClick: () => handleAction("back") },
+  svg(ICONS.back), h("span", {}, "Atrás"));
+ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
+
 document.getElementById("app").replaceWith(
-  ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.episodes.el, ui.sources.el, ui.sheet.el, ui.launch.el, ui.toast.el,
+  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.episodes.el, ui.sources.el, ui.sheet.el, ui.launch.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -86,6 +93,8 @@ const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LB/RB
 
 function renderHints() {
   const g = glyphs();
+  const overlay = ui.sheet.isOpen || ui.sources.isOpen || ui.episodes.isOpen || ui.search.isOpen;
+  document.body.dataset.overlay = overlay ? "true" : "false";
   if (!ui.sheet.isOpen && ui.sources.isOpen) {
     return ui.hints.render([{ glyph: g.select, label: "Ver" }, { glyph: g.rows, label: "Otra fuente" },
       { glyph: g.back, label: "Volver", end: true }]);
@@ -301,6 +310,16 @@ function openSearch(initial = "") {
   renderHints();
 }
 
+/** Deslizar con el dedo: de lado recorre la fila, de arriba abajo cambia de fila. */
+function onSwipe({ r = state.focus.r, dc = 0, dr = 0 }) {
+  if (dr) {
+    const t = rowJump(state.rows, state.memory, state.focus.r, dr);
+    return setFocus(t.r, t.c);
+  }
+  const from = r === state.focus.r ? state.focus.c : (state.memory[state.rows[r]?.id] ?? 0);
+  return setFocus(r, from + dc, { edge: dc < 0 ? "left" : "right" });
+}
+
 function pick(r, c) {
   // Ratón/táctil: el primer toque selecciona, el segundo abre.
   if (r === state.focus.r && c === state.focus.c) return launch(current());
@@ -450,8 +469,10 @@ setInterval(pollSystem, 30_000);
 pollStatus();
 pollSystem();
 loadLibrary();
-api.ui().then(({ can_exit: canExit, stremio_linked: linked, player }) => {
+api.ui().then(({ can_exit: canExit, stremio_linked: linked, player, alexa }) => {
   state.canExit = canExit;
+  ui.hero.alexa = alexa;
+  ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   state.stremioLinked = !!linked;
   state.player = player || "stremio";
 }).catch(() => {});

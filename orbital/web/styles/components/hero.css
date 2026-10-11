@@ -50,3 +50,12 @@
 .hero__fact--favorite { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--color-favorite); }
 .hero__fact--favorite .icon { width: 1rem; height: 1rem; }
 .hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); }
+
+/* Frase para Alexa: discreta, debajo de los botones; enseña la voz sin estorbar. */
+.hero__voice {
+  display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-4);
+  color: var(--color-text-muted); font-size: var(--text-sm); font-style: italic;
+  animation: fade-in var(--duration-slow) var(--ease-out);
+}
+.hero__voice svg { flex: none; width: 1rem; height: 1rem; color: var(--color-accent); }
+.hero__voice span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

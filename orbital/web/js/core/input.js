@@ -26,6 +26,8 @@ export const GLYPHS = {
   gamepad: { select: "A", back: "B", alt: "X", options: "Y", menu: "☰", search: "⧉", rows: "↕", page: "LT RT", section: "LB RB", home: "Home" },
   keyboard: { select: "Enter", back: "Esc", alt: "X", options: "Y", menu: "M", search: "S", rows: "↑↓", page: "RePág AvPág", section: "Q E" },
 };
+// Con el dedo no hay botones que enseñar: los glifos se ocultan con CSS ([data-input="touch"]).
+GLYPHS.touch = GLYPHS.keyboard;
 
 export const keyToAction = (key) => KEYMAP[key] ?? KEYMAP[key?.toLowerCase?.()] ?? null;
 
@@ -88,7 +90,17 @@ export function createInput({ onAction, onModality }) {
     onModality("keyboard");
     onAction(action);
   });
-  document.addEventListener("mousemove", () => onModality("keyboard"));
+  // Un toque también genera eventos de ratón después: no deben devolver al modo teclado.
+  let lastTouch = 0;
+  document.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "touch") {
+      lastTouch = performance.now();
+      onModality("touch");
+    }
+  }, { capture: true, passive: true });
+  document.addEventListener("mousemove", () => {
+    if (performance.now() - lastTouch > 1000) onModality("keyboard");
+  });
   document.addEventListener("wheel", (event) => {
     const vertical = Math.abs(event.deltaY) > Math.abs(event.deltaX);
     onAction(vertical ? (event.deltaY > 0 ? "down" : "up") : (event.deltaX > 0 ? "right" : "left"));

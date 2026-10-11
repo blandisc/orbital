@@ -71,6 +71,20 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 | Volver a Orbital desde una app | Home o un toque de Legion L | ✅ |
 | Cambiar entre apps abiertas | ☰ → Ventanas abiertas | ✅ |
 
+## Con el dedo (Legion Go sin dock)
+
+Todo funciona igual con toques o con el control; Orbital cambia solo según lo que uses.
+
+| Flujo | Cómo | Estado |
+|---|---|---|
+| Recorrer una fila / cambiar de fila | Deslizar de lado / de arriba abajo | ✅ |
+| Ver un juego / abrirlo | Tocar la portada / tocarla otra vez | ✅ |
+| Cambiar de sección, buscar, menú | Tocar las pestañas, la píldora "Buscar" o la marca "orbital" | ✅ |
+| Volver (buscar, episodios, fuentes, menú) | Botón "Atrás" abajo a la izquierda (solo aparece al usar el dedo) | ✅ |
+| Saltar la pantalla de carga | Tocarla | ✅ |
+| En el reproductor | Tocar el video pausa o reanuda y muestra la barra; el doble toque ya no sale de pantalla completa | ✅ |
+| Ir a Orbital desde un juego | Legion L (un toque) | ✅ |
+
 ## Sistema
 
 | Flujo | Cómo | Estado |

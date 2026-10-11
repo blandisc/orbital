@@ -226,3 +226,9 @@ def test_idle_rule():
     assert not player.idle_expired(0, 899, 900)
     assert player.idle_expired(0, 900, 900)
     assert not player.idle_expired(0, 10_000, 0)  # 0 = nunca
+
+
+def test_touch_tap_pauses_and_double_tap_does_not_leave_fullscreen():
+    assert "MBTN_LEFT cycle pause" in player.TOUCH_BINDINGS and "MBTN_LEFT_DBL ignore" in player.TOUCH_BINDINGS
+    cmd = player.build_command("mpv.exe", "u", "t", bindings="C:/x/mpv-input.conf")
+    assert "--input-conf=C:/x/mpv-input.conf" in cmd
