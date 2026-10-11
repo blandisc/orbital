@@ -493,12 +493,13 @@ class Catalog:
         return self.describe(item)
 
     # --- acciones ------------------------------------------------------------
-    def launch(self, item_id: str, runner_id: str | None = None) -> LibraryItem:
+    def launch(self, item_id: str, runner_id: str | None = None, keep: bool = False) -> LibraryItem:
+        """`keep`: abrir sin cerrar lo que estaba abierto (lo pediste en "¿Cerrar…?")."""
         self.revealing = False
         item = self.get(item_id)
         if item is None:
             raise KeyError(item_id)
-        if self.before_launch:
+        if self.before_launch and not keep:
             self.before_launch(item.id)
         if item.source in ("stremio", "cinemeta") or item.id == "media:stremio":
             self.open_stremio(item.uri if item.id != "media:stremio" else None, item.title)
@@ -576,7 +577,7 @@ class Catalog:
             raise stremio_api.StremioError("Vincula tu cuenta de Stremio: orbital stremio login")
         return self.streams.find(self.credentials.get(STREMIO_KEY), kind, video_id, self.stream_prefs)
 
-    def play_source(self, kind: str, meta_id: str, video_id: str, index: int, title: str) -> str:
+    def play_source(self, kind: str, meta_id: str, video_id: str, index: int, title: str, keep: bool = False) -> str:
         """Reproduce la fuente elegida: en el reproductor de Orbital (mpv, con el mando) o, si no
         está o así se configuró, directo en el de Stremio (sin su lista de fuentes)."""
         self.revealing = False
@@ -586,13 +587,14 @@ class Catalog:
         mpv_exe = player.find_mpv() if self.config.stremio.player == "orbital" else None
         url = player.stream_url(source.stream)
         if mpv_exe and url:
-            self.play_native(mpv_exe, url, kind, meta_id, video_id, title)
+            self.play_native(mpv_exe, url, kind, meta_id, video_id, title, keep=keep)
             return "orbital"
         uri = streams.player_link(source, cinemeta.MANIFEST, kind, meta_id, video_id)
         self.open_stremio(uri, title)
         return uri
 
-    def play_native(self, mpv_exe: str, url: str, kind: str, meta_id: str, video_id: str, title: str) -> None:
+    def play_native(self, mpv_exe: str, url: str, kind: str, meta_id: str, video_id: str, title: str,
+                    keep: bool = False) -> None:
         """mpv a pantalla completa, desde donde te quedaste (según Stremio)."""
         auth = self.credentials.get(STREMIO_KEY)
         start = 0.0
@@ -601,7 +603,7 @@ class Catalog:
         except stremio_api.StremioError as exc:
             log.info("No pude leer dónde ibas: %s", exc)
         subs = self.config.stremio.subtitles
-        if self.before_launch:
+        if self.before_launch and not keep:
             self.before_launch("media:player")
         process = self.player.play(
             self.launcher.run, mpv_exe, url, title,

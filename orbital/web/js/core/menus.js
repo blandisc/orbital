@@ -83,6 +83,8 @@ export function switchMenu({ running, title, command }) {
     options: [
       { icon: "play", label: `Volver a ${running.title}`, command: { type: "resume" } },
       { icon: "stop", label: `Cerrar y abrir ${title}`, danger: true, command: { ...command, confirmed: true } },
+      // Ambos abiertos: Home sigue llevándote al último; el anterior ya no se cierra solo.
+      { icon: "play", label: `Abrir sin cerrar ${running.title}`, command: { ...command, confirmed: true, keep: true } },
     ],
     cancel: { type: "close" },
   };

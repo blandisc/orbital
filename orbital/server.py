@@ -35,6 +35,7 @@ _FORWARD_HEADERS = ("x-forwarded-for", "forwarded", "cf-connecting-ip", "x-real-
 class LaunchRequest(BaseModel):
     id: str
     runner: str | None = None
+    keep: bool = False  # abrir sin cerrar lo que estaba abierto
 
 
 class PrefsRequest(BaseModel):
@@ -185,7 +186,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         if running and running["id"] == body.id and not body.runner and shell.resume():
             return {"ok": True, "resumed": True}
         try:
-            item = catalog.launch(body.id, body.runner)
+            item = catalog.launch(body.id, body.runner, keep=body.keep)
         except KeyError:
             raise HTTPException(404, "Elemento no encontrado")
         except (OSError, RuntimeError, ValueError) as exc:
@@ -272,7 +273,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         video_id = body.get("video_id") or (meta_id if kind == "movie" else None)
         if body.get("source") is not None and video_id:
             try:
-                catalog.play_source(kind, meta_id, video_id, int(body["source"]), title)
+                catalog.play_source(kind, meta_id, video_id, int(body["source"]), title, keep=bool(body.get("keep")))
             except ValueError as exc:
                 raise HTTPException(409, str(exc))
             return {"ok": True, "reveal": catalog.revealing}

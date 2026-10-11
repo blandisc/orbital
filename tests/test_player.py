@@ -22,46 +22,108 @@ def test_command_full_screen_languages_and_resume():
 
 
 class FakeMpv:
-    def __init__(self):
+    """mpv falso: guarda comandos y responde propiedades."""
+
+    def __init__(self, props=None):
         self.sent = []
+        self.overlays = {}
+        self.props = {"pause": False, "time-pos": 600.0, "duration": 6000.0, "volume": 80, "track-list": TRACKS,
+                      **(props or {})}
 
     def command(self, *args):
         self.sent.append(args)
+        if args[:2] == ("set_property", "pause"):
+            self.props["pause"] = args[2]
+        if args == ("cycle", "pause"):
+            self.props["pause"] = not self.props["pause"]
+
+    def command_named(self, **args):
+        self.overlays[args["id"]] = args["data"] if args["format"] != "none" else None
+
+    def get(self, prop):
+        return self.props.get(prop)
 
 
-def test_remote_maps_buttons_to_mpv_commands():
-    remote = player.PlayerRemote(FakeMpv())
-    assert remote.actions(A_BUTTON, 0) == [("cycle", "pause")]
-    assert remote.actions(A_BUTTON, .1) == []  # mantener A no repite
-    assert remote.actions(0, .2) == []
-    assert remote.actions(B_BUTTON, .3) == [("quit",)]
-    assert remote.actions(X_BUTTON | Y_BUTTON, .4) == [("cycle", "audio"), ("cycle", "sub")]
-    assert remote.actions(player.RB, .5) == [("seek", 60, "relative")]
+TRACKS = [
+    {"id": 1, "type": "video"},
+    {"id": 1, "type": "audio", "lang": "eng", "codec": "eac3", "demux-channel-count": 6, "selected": True},
+    {"id": 2, "type": "audio", "lang": "spa", "title": "Latino", "codec": "aac", "demux-channel-count": 2},
+    {"id": 1, "type": "sub", "lang": "eng", "selected": True},
+    {"id": 2, "type": "sub", "lang": "spa", "forced": True},
+]
 
 
-def test_remote_repeats_seek_and_volume_while_held():
-    remote = player.PlayerRemote(FakeMpv(), delay=.35, rate=.15)
-    assert remote.actions(DPAD_LEFT, 0) == [("seek", -10, "relative")]
-    assert remote.actions(DPAD_LEFT, .2) == []
-    assert remote.actions(DPAD_LEFT, .36) == [("seek", -10, "relative")]
-    assert remote.actions(DPAD_LEFT, .52) == [("seek", -10, "relative")]
-    assert remote.actions(DPAD_UP, .6) == [("add", "volume", 5)]
+def make_player(**props):
+    mpv = FakeMpv(props)
+    p = player.OrbitalPlayer(mpv=mpv)
+    p.current = player.Playback("Interstellar", None, 0, {})
+    return p, mpv
 
 
-def test_remote_leaves_home_and_select_start_to_orbital():
-    remote = player.PlayerRemote(FakeMpv())
-    assert remote.actions(GUIDE | A_BUTTON, 0) == []
-    assert remote.actions(A_BUTTON, .1) == [("cycle", "pause")]  # al soltar Home, A vuelve a contar
+def test_remote_turns_buttons_into_names_with_repeat():
+    pressed = []
+    remote = player.PlayerRemote(pressed.append, delay=.35, rate=.15)
+    assert remote.actions(A_BUTTON, 0) == ["a"]
+    assert remote.actions(A_BUTTON, .5) == []  # mantener A no repite
+    assert remote.actions(0, .6) == []
+    assert remote.actions(X_BUTTON | Y_BUTTON, .7) == ["x", "y"]
+    assert remote.actions(DPAD_LEFT, 1) == ["left"]
+    assert remote.actions(DPAD_LEFT, 1.2) == []
+    assert remote.actions(DPAD_LEFT, 1.36) == ["left"]  # mantener: continuo
+    assert remote.actions(GUIDE | A_BUTTON, 2) == []  # Home es de Orbital
+    remote.update(player.RB, 3)
+    assert pressed == ["rb"]
 
 
-def test_remote_shows_feedback_after_each_action():
-    mpv = FakeMpv()
-    remote = player.PlayerRemote(mpv)
-    remote.update(DPAD_LEFT, 0)
-    remote.update(0, .1)
-    remote.update(Y_BUTTON, .2)
-    assert mpv.sent[0] == ("seek", -10, "relative") and mpv.sent[1] == ("show-progress",)
-    assert mpv.sent[2] == ("cycle", "sub") and mpv.sent[3][0] == "show-text"
+def test_a_pauses_and_shows_the_bar_with_the_legend():
+    p, mpv = make_player()
+    p.press("a")
+    assert ("cycle", "pause") in mpv.sent
+    hud = mpv.overlays[1]
+    assert "Interstellar" in hud and "EN PAUSA" in hud and "Subtítulos" in hud and "Volumen" in hud
+    assert "Audio: Inglés" in hud and "Subtítulos: Inglés" in hud and "10:00" in hud
+
+
+def test_seek_and_volume():
+    p, mpv = make_player()
+    p.press("rb")
+    p.press("left")
+    p.press("up")
+    assert ("seek", 60, "relative") in mpv.sent and ("seek", -10, "relative") in mpv.sent
+    assert ("add", "volume", 5) in mpv.sent and "Volumen 80 %" in mpv.overlays[3]
+
+
+def test_audio_menu_lists_tracks_and_switches():
+    p, mpv = make_player()
+    p.press("x")
+    assert p.menu.kind == "audio" and [o["label"] for o in p.menu.options] == [
+        "Inglés · 5.1 · E-AC3", "Español · Latino · Estéreo · AAC"]
+    assert p.menu.index == 0 and "AUDIO" in mpv.overlays[2] and mpv.overlays.get(1) is None
+    p.press("down")
+    p.press("a")
+    assert ("set_property", "aid", 2) in mpv.sent and p.menu is None and mpv.overlays[2] is None
+    assert "Audio: Español" in mpv.overlays[3]
+
+
+def test_subtitle_menu_has_off_and_addon_search():
+    p, mpv = make_player()
+    p._fallback_subs, p._subs_lang = (lambda: []), "es"
+    p.press("y")
+    labels = [o["label"] for o in p.menu.options]
+    assert labels[0] == "Sin subtítulos" and "Español · Forzados" in labels and labels[-1].startswith("Buscar subtítulos")
+    assert p.menu.index == 1  # en la que está puesta
+    p.press("up")
+    p.press("a")
+    assert ("set_property", "sid", "no") in mpv.sent
+
+
+def test_b_closes_the_menu_before_closing_the_video():
+    p, mpv = make_player()
+    p.press("y")
+    p.press("b")
+    assert p.menu is None and ("quit",) not in mpv.sent
+    p.press("b")
+    assert ("quit",) in mpv.sent
 
 
 def test_has_language():

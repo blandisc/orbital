@@ -41,7 +41,7 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 | Situación | Qué pasa | Estado |
 |---|---|---|
 | Abres un juego de un emulador | Pantalla de carga de Orbital (portada y fondo del juego) ENCIMA del emulador hasta que el juego está listo (pantalla completa o su nombre en la ventana); se funde a negro y aparece el juego. Ya no se ven la lista de Eden ni sus ventanas. B la salta | ✅ (nuevo; verificado: Smash Bros. listo en 13 s) |
-| Abres otra cosa con un juego abierto | Te pregunta "¿Cerrar X?" ("Volver a X" va primero); al aceptar, cierra el anterior y abre lo nuevo. Un video se cierra sin preguntar (su avance queda guardado) | ✅ (nuevo) |
+| Abres otra cosa con un juego abierto | Te pregunta "¿Cerrar X?": "Volver a X" (primero), "Cerrar y abrir" o "Abrir sin cerrar". Un video se cierra sin preguntar (su avance queda guardado) | ✅ (nuevo) |
 | Dejas un video en pausa | A los 15 min se cierra solo; sigues donde te quedaste (`sessions.video_idle_minutes`) | ✅ (nuevo) |
 | Dejas un juego congelado (saliste con Home) | A la hora se cierra solo y te avisa; lo no guardado se pierde (`sessions.game_idle_minutes`, 0 = nunca) | ✅ (nuevo) |
 | Abres un juego y su ventana aparece detrás de Orbital (Windows lo hace a veces) | Orbital se la pasa al frente en cuanto existe, solo si Orbital sigue al frente | ✅ (nuevo) |
@@ -63,7 +63,8 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 |---|---|---|
 | Abrir Stremio / YouTube / ES-DE / Big Picture | A | ✅ |
 | Ver una película o episodio | Elegir en Orbital → fuente recomendada (5 s o A) → reproductor de Orbital (mpv) a pantalla completa, desde donde te quedaste | ✅ |
-| En el reproductor | A pausa · ←/→ ±10 s (mantener: continuo) · LB/RB ±1 min · ↑/↓ volumen · X audio · Y subtítulos · B salir | ✅ |
+| En el reproductor | Barra de Orbital encima del video con título, progreso, idioma de audio y subtítulos, y la leyenda de cada botón. A pausa · ←/→ ±10 s (mantener: continuo) · LB/RB ±1 min · ↑/↓ volumen · B salir | ✅ |
+| Cambiar audio o subtítulos | X (audio) o Y (subtítulos) abren un menú con las pistas del video por idioma ("Inglés · 5.1 · E-AC3", "Español · Forzados", "Sin subtítulos", "Buscar subtítulos en…"); ↑/↓ y A eligen, B cierra | ✅ |
 | Home en el reproductor | Pausa el video y va a Orbital; Home otra vez vuelve con la barra de progreso (A sigue) | ✅ |
 | Seguir viendo | Al salir del reproductor, el avance se guarda en tu cuenta de Stremio (Orbital, Stremio y otros dispositivos); al terminar un episodio, queda el siguiente | ✅ |
 | Navegar dentro de Stremio | depende de Stremio | ⚠️ Stremio no se maneja del todo con mando (con `player: stremio` se usa su reproductor) |

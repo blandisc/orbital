@@ -92,4 +92,5 @@ test("abrir otra cosa con un juego abierto: pregunta, y quedarse va primero", as
   assert.deepEqual(menu.options[0].command, { type: "resume" });
   assert.deepEqual(menu.options[1].command, { type: "launch", id: "steam:1", runner: null, confirmed: true });
   assert.equal(menu.options[1].danger, true);
+  assert.deepEqual(menu.options[2].command, { type: "launch", id: "steam:1", runner: null, confirmed: true, keep: true }); // abrir sin cerrar
 });

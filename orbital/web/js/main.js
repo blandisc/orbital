@@ -239,7 +239,7 @@ function chooseSource(play, { confirmed = false } = {}) {
   return renderHints();
 }
 
-async function playStremio({ kind, id, video_id: videoId = null, title, item, source = null }) {
+async function playStremio({ kind, id, video_id: videoId = null, title, item, source = null, keep = false }) {
   if (Date.now() < state.launchLockedUntil) return;
   state.launchLockedUntil = Date.now() + LAUNCH_COOLDOWN_MS;
   sound.play("open");
@@ -247,7 +247,7 @@ async function playStremio({ kind, id, video_id: videoId = null, title, item, so
   state.launchingId = "media:player";
   ui.launch.show({ ...item, title }, state.player === "orbital" ? "Reproductor de Orbital" : "Stremio");
   try {
-    const res = await api.stremioPlay({ kind, id, video_id: videoId, title, source });
+    const res = await api.stremioPlay({ kind, id, video_id: videoId, title, source, keep });
     if (res.reveal) ui.launch.hold(); // Orbital tapa mientras abre el reproductor
     if (ui.sources.isOpen) ui.sources.close();
     pollStatus();
@@ -259,7 +259,7 @@ async function playStremio({ kind, id, video_id: videoId = null, title, item, so
   }
 }
 
-async function launch(item, runner = null, { confirmed = false } = {}) {
+async function launch(item, runner = null, { confirmed = false, keep = false } = {}) {
   if (!item || Date.now() < state.launchLockedUntil) return; // evita dobles pulsaciones de A
   if (item.source === "search") return openSearch();
   if (isSeries(item)) return openWatchable(item);
@@ -282,7 +282,7 @@ async function launch(item, runner = null, { confirmed = false } = {}) {
   const from = item.id === current()?.id ? ui.shelf.focused() : null;
   ui.launch.show(item, name ? `${item.subtitle} · ${name}` : item.subtitle, { from });
   try {
-    const res = await api.launch(item.id, runner);
+    const res = await api.launch(item.id, runner, keep);
     if (res.reveal) ui.launch.hold(); // Orbital tapa las ventanas del emulador hasta que el juego está listo
     pollStatus();
   } catch (err) {
@@ -314,9 +314,9 @@ async function runCommand(command) {
   try {
     switch (command.type) {
       case "launch":
-        return launch(findItem(command.id), command.runner || null, { confirmed: !!command.confirmed });
+        return launch(findItem(command.id), command.runner || null, { confirmed: !!command.confirmed, keep: !!command.keep });
       case "watch":
-        return chooseSource(command.play, { confirmed: true });
+        return chooseSource({ ...command.play, keep: !!command.keep }, { confirmed: true });
       case "prefs":
         await api.setPrefs(command.id, command.prefs);
         if (command.prefs.favorite) state.popId = command.id;

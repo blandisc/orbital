@@ -20,10 +20,13 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from . import player_ui
 from .gamepad import (A_BUTTON, B_BUTTON, BACK, DPAD_DOWN, DPAD_LEFT, DPAD_RIGHT, DPAD_UP, GUIDE, START,
                       X_BUTTON, Y_BUTTON)
 
 log = logging.getLogger(__name__)
+
+SEEK = {"left": -10, "right": 10, "lb": -60, "rb": 60}
 
 PIPE = r"\\.\pipe\orbital-mpv"
 LB, RB = 0x0100, 0x0200
@@ -114,6 +117,23 @@ class Mpv:
                 log.debug("mpv no respondió a %s: %s", args, exc)
         return None
 
+    def command_named(self, **args) -> dict | None:
+        """Comando con argumentos por nombre (osd-overlay los necesita)."""
+        with self._lock:
+            try:
+                with open(self.pipe, "r+b", buffering=0) as fh:
+                    fh.write((json.dumps({"command": args}) + "\n").encode())
+                    for _ in range(20):
+                        line = fh.readline()
+                        if not line:
+                            return None
+                        data = json.loads(line)
+                        if "error" in data:
+                            return data
+            except (OSError, ValueError) as exc:
+                log.debug("mpv no respondió a %s: %s", args.get("name"), exc)
+        return None
+
     def get(self, prop: str):
         reply = self.command("get_property", prop)
         return reply.get("data") if reply and reply.get("error") == "success" else None
@@ -123,64 +143,41 @@ class Mpv:
 
 
 class PlayerRemote:
-    """Botones del mando -> comandos de mpv (con autorrepetición al mantener ←/→ y ↑/↓)."""
+    """Botones del mando -> nombres de botón ("a", "left"…), con autorrepetición al mantener la
+    cruceta y LB/RB. Qué hace cada uno lo decide el reproductor (depende de si hay un menú abierto)."""
 
-    SEEK = {DPAD_LEFT: -10, DPAD_RIGHT: 10, LB: -60, RB: 60}
-    VOLUME = {DPAD_UP: 5, DPAD_DOWN: -5}
+    BUTTONS = {A_BUTTON: "a", B_BUTTON: "b", X_BUTTON: "x", Y_BUTTON: "y", DPAD_LEFT: "left", DPAD_RIGHT: "right",
+               DPAD_UP: "up", DPAD_DOWN: "down", LB: "lb", RB: "rb"}
+    REPEAT = {DPAD_LEFT, DPAD_RIGHT, DPAD_UP, DPAD_DOWN, LB, RB}
 
-    def __init__(self, mpv: Mpv, delay: float = .35, rate: float = .15) -> None:
-        self.mpv = mpv
+    def __init__(self, on_press, delay: float = .35, rate: float = .15) -> None:
+        self.on_press = on_press
         self.delay = delay
         self.rate = rate
         self._next: dict[int, float] = {}
 
-    def actions(self, buttons: int, now: float) -> list[tuple]:
-        """Qué comandos mandar en este momento (separado de mpv para poder probarlo)."""
+    def actions(self, buttons: int, now: float) -> list[str]:
+        """Qué botones cuentan como pulsados en este momento (separado para poder probarlo)."""
         if buttons & (GUIDE | BACK | START):
             self._next.clear()  # Home y Select+Start son de Orbital
             return []
         out = []
-        for bit in (A_BUTTON, B_BUTTON, X_BUTTON, Y_BUTTON, *self.SEEK, *self.VOLUME):
+        for bit, name in self.BUTTONS.items():
             if not buttons & bit:
                 self._next.pop(bit, None)
                 continue
-            repeat = bit in self.SEEK or bit in self.VOLUME
             if bit not in self._next:
                 self._next[bit] = now + self.delay
-            elif repeat and now >= self._next[bit]:
+            elif bit in self.REPEAT and now >= self._next[bit]:
                 self._next[bit] = now + self.rate
             else:
                 continue
-            out.append(self._action(bit))
+            out.append(name)
         return out
 
-    def _action(self, bit: int) -> tuple:
-        if bit == A_BUTTON:
-            return ("cycle", "pause")
-        if bit == B_BUTTON:
-            return ("quit",)
-        if bit == X_BUTTON:
-            return ("cycle", "audio")
-        if bit == Y_BUTTON:
-            return ("cycle", "sub")
-        if bit in self.SEEK:
-            return ("seek", self.SEEK[bit], "relative")
-        return ("add", "volume", self.VOLUME[bit])
-
-    # Lo que se ve después de cada botón (mpv expande ${…}; tras ":" va el texto si no hay pista).
-    FEEDBACK = {
-        "audio": ("show-text", "Audio · ${current-tracks/audio/lang:${current-tracks/audio/title:—}}", 1600),
-        "sub": ("show-text", "Subtítulos · ${current-tracks/sub/lang:no}", 1600),
-        "volume": ("show-text", "Volumen · ${volume}%", 900),
-    }
-
     def update(self, buttons: int, now: float) -> None:
-        for action in self.actions(buttons, now):
-            self.mpv.command(*action)
-            if action[0] == "seek" or action == ("cycle", "pause"):
-                self.mpv.command("show-progress")
-            elif action[0] != "quit":
-                self.mpv.command(*self.FEEDBACK[action[1]])
+        for name in self.actions(buttons, now):
+            self.on_press(name)
 
 
 def has_language(tracks: list[dict], kind: str, codes: set[str]) -> bool:
@@ -212,8 +209,13 @@ class OrbitalPlayer:
 
     def __init__(self, on_finished=None, mpv: Mpv | None = None, idle_seconds: float = 0, on_idle=None) -> None:
         self.mpv = mpv or Mpv()
-        self.remote = PlayerRemote(self.mpv)
+        self.remote = PlayerRemote(self.press)
         self.current: Playback | None = None
+        self.menu: player_ui.Menu | None = None
+        self._hud_timer: threading.Timer | None = None
+        self._toast_timer: threading.Timer | None = None
+        self._subs_lang = "en"
+        self._fallback_subs = None
         self.on_finished = on_finished  # (meta, posición, duración, segundos vistos)
         # Un video olvidado en pausa (saliste con Home y te fuiste) se cierra solo; el avance se guarda.
         self.idle_seconds = idle_seconds
@@ -224,6 +226,8 @@ class OrbitalPlayer:
         """`run(argv)` lanza el proceso; `fallback_subs()` da URLs de subtítulos si el video no trae."""
         self.stop()
         process = run(build_command(mpv_exe, url, title, subtitles=subtitles, **options))
+        self.menu = None
+        self._subs_lang, self._fallback_subs = subtitles, fallback_subs
         playback = Playback(title, process, time.time(), meta)
         self.current = playback
         threading.Thread(target=self._watch, args=(playback, float(options.get("start") or 0), subtitles, fallback_subs,
@@ -259,10 +263,11 @@ class OrbitalPlayer:
                     tracks = self.mpv.get("track-list") or []
                     if wrong_audio(tracks, audio):
                         # El archivo dice ser de otro idioma (un doblaje mal etiquetado): avisa en vez de callar.
-                        self.mpv.command("show-text", "Esta fuente no trae audio en tu idioma  ·  B para elegir otra", 6000)
+                        self.toast("Esta fuente no trae audio en tu idioma · B para elegir otra", 6)
                     elif start > 5:
-                        self.mpv.command("show-text", "Sigues donde te quedaste  ·  LB para regresar 1 min", 2600)
+                        self.toast("Sigues donde te quedaste · LB regresa 1 min", 3.5)
                     self._ensure_subtitles(subtitles, fallback_subs)
+                    self.show_hud()  # al empezar: qué estás viendo y qué hace cada botón
             last = now
         if self.current is playback:
             self.current = None
@@ -291,16 +296,123 @@ class OrbitalPlayer:
         self.mpv.command("set_property", "pause", True)
 
     def show_progress(self) -> None:
-        self.mpv.command("show-progress")
+        self.show_hud()
+
+    # --- interfaz encima del video (player_ui) -------------------------------------------------
+    HUD_SECONDS = 4.0
+
+    def _overlay(self, overlay_id: int, ass: str | None) -> None:
+        self.mpv.command_named(name="osd-overlay", id=overlay_id, format="ass-events" if ass else "none",
+                               data=ass or "", res_x=player_ui.W, res_y=player_ui.H, z=overlay_id)
+
+    def show_hud(self) -> None:
+        """Barra inferior: se queda en pausa; reproduciendo, se va sola a los pocos segundos."""
+        if self.current is None or self.menu is not None:
+            return
+        tracks = self.mpv.get("track-list") or []
+        paused = bool(self.mpv.get("pause"))
+        hud = player_ui.Hud(
+            title=self.current.title, detail=self.current.meta.get("detail", ""),
+            position=self.mpv.get("time-pos"), duration=self.mpv.get("duration"), paused=paused,
+            audio=player_ui.current_label(tracks, "audio"), subtitles=player_ui.current_label(tracks, "sub"))
+        self._overlay(1, player_ui.hud_ass(hud))
+        if self._hud_timer:
+            self._hud_timer.cancel()
+        if not paused:
+            self._hud_timer = threading.Timer(self.HUD_SECONDS, self._hide_hud_if_playing)
+            self._hud_timer.daemon = True
+            self._hud_timer.start()
+
+    def _hide_hud_if_playing(self) -> None:
+        if not self.mpv.get("pause"):
+            self._overlay(1, None)
+
+    def toast(self, text: str, seconds: float = 1.6) -> None:
+        self._overlay(3, player_ui.toast_ass(text))
+        if self._toast_timer:
+            self._toast_timer.cancel()
+        self._toast_timer = threading.Timer(seconds, lambda: self._overlay(3, None))
+        self._toast_timer.daemon = True
+        self._toast_timer.start()
+
+    def open_menu(self, kind: str) -> None:
+        tracks = self.mpv.get("track-list") or []
+        extra = []
+        if kind == "sub" and self._fallback_subs and self._subs_lang:
+            extra.append({"label": f"Buscar subtítulos en {player_ui.language(self._subs_lang).lower()}…",
+                          "action": ("fetch", self._subs_lang), "current": False})
+        self.menu = player_ui.track_menu(kind, tracks, extra)
+        self._overlay(1, None)
+        self._overlay(2, player_ui.menu_ass(self.menu))
+
+    def close_menu(self) -> None:
+        self.menu = None
+        self._overlay(2, None)
+
+    def _choose(self, option: dict) -> None:
+        prop, value = option["action"]
+        self.close_menu()
+        if prop == "fetch":
+            self.toast("Buscando subtítulos…", 3)
+            threading.Thread(target=self._fetch_subs, args=(value,), daemon=True).start()
+            return
+        self.mpv.command("set_property", prop, value)
+        kind = "Audio" if prop == "aid" else "Subtítulos"
+        self.toast(f"{kind}: {option['label'].split(' · ')[0]}")
+
+    def _fetch_subs(self, lang: str) -> None:
+        try:
+            urls = self._fallback_subs() if self._fallback_subs else []
+        except Exception:  # noqa: BLE001
+            log.exception("No pude buscar subtítulos")
+            urls = []
+        if urls:
+            self.mpv.command("sub-add", urls[0], "select", "Subtítulos", lang)
+            self.toast(f"Subtítulos: {player_ui.language(lang)}")
+        else:
+            self.toast("No encontré subtítulos en tu addon", 2.5)
+
+    def press(self, button: str) -> None:
+        """Un botón del mando con el reproductor al frente."""
+        if self.menu is not None:
+            menu = self.menu
+            if button in ("up", "down"):
+                menu.index = max(0, min(len(menu.options) - 1, menu.index + (-1 if button == "up" else 1)))
+                self._overlay(2, player_ui.menu_ass(menu))
+            elif button == "a" and menu.options:
+                self._choose(menu.options[menu.index])
+            elif button == "b":
+                self.close_menu()
+            elif button in ("x", "y"):
+                kind = "audio" if button == "x" else "sub"
+                if kind == menu.kind:
+                    self.close_menu()
+                else:
+                    self.open_menu(kind)
+            return
+        if button == "a":
+            self.mpv.command("cycle", "pause")
+            self.show_hud()
+        elif button == "b":
+            self.mpv.command("quit")
+        elif button in ("x", "y"):
+            self.open_menu("audio" if button == "x" else "sub")
+        elif button in SEEK:
+            self.mpv.command("seek", SEEK[button], "relative")
+            self.show_hud()
+        elif button in ("up", "down"):
+            self.mpv.command("add", "volume", 5 if button == "up" else -5)
+            volume = self.mpv.get("volume")
+            self.toast(f"Volumen {int(volume)} %" if isinstance(volume, (int, float)) else "Volumen")
 
     # --- para la voz -----------------------------------------------------------------------
     def set_pause(self, paused: bool) -> None:
         self.mpv.command("set_property", "pause", paused)
-        self.show_progress()
+        self.show_hud()
 
     def seek(self, seconds: float) -> None:
         self.mpv.command("seek", seconds, "relative")
-        self.show_progress()
+        self.show_hud()
 
     def select_language(self, kind: str, lang: str) -> bool:
         """Cambia a la pista de audio o subtítulos en ese idioma, si el video la trae."""
@@ -310,16 +422,17 @@ class OrbitalPlayer:
         if track is None:
             return False
         self.mpv.command("set_property", "aid" if kind == "audio" else "sid", track["id"])
-        self.mpv.command(*PlayerRemote.FEEDBACK["audio" if kind == "audio" else "sub"])
+        name = player_ui.language(track.get("lang")) or f"pista {track['id']}"
+        self.toast(f"{'Audio' if kind == 'audio' else 'Subtítulos'}: {name}")
         return True
 
     def add_subtitles(self, url: str, lang: str) -> None:
         self.mpv.command("sub-add", url, "select", "Subtítulos", lang)
-        self.mpv.command(*PlayerRemote.FEEDBACK["sub"])
+        self.toast(f"Subtítulos: {player_ui.language(lang)}")
 
     def subtitles_off(self) -> None:
         self.mpv.command("set_property", "sid", "no")
-        self.mpv.command(*PlayerRemote.FEEDBACK["sub"])
+        self.toast("Sin subtítulos")
 
     def stop(self) -> None:
         if self.current and self.current.process.poll() is None:

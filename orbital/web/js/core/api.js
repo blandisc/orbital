@@ -14,7 +14,7 @@ const post = (path, body) => request(path, { method: "POST", body: JSON.stringif
 export const api = {
   library: () => request("/api/library"),
   refresh: () => post("/api/library/refresh"),
-  launch: (id, runner = null) => post("/api/launch", { id, runner }),
+  launch: (id, runner = null, keep = false) => post("/api/launch", { id, runner, keep }),
   reveal: () => post("/api/launch/reveal"),
   stop: () => post("/api/stop"),
   status: () => request("/api/status"),
