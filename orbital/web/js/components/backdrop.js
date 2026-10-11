@@ -40,7 +40,13 @@ export function createBackdrop({ settle = 150 } = {}) {
     return { el: h("div", { class: "backdrop__layer" }, art, box), art, box };
   };
   const layers = [makeLayer(), makeLayer()];
-  const el = h("div", { class: "backdrop", "aria-hidden": "true" }, ...layers.map((l) => l.el), h("div", { class: "backdrop__scrim" }));
+  // Fondo vivo (Inicio y galería): estrellas que derivan en dos capas y una luz del color de lo
+  // enfocado que respira y se acerca a donde está el foco. Solo transformaciones (las mueve la
+  // tarjeta gráfica sin repintar); «Reducir movimiento» las detiene.
+  const space = h("div", { class: "backdrop__space" },
+    h("div", { class: "backdrop__aurora" }, h("span", { class: "backdrop__glow backdrop__glow--follow" }), h("span", { class: "backdrop__glow backdrop__glow--drift" })),
+    h("div", { class: "backdrop__stars backdrop__stars--far" }), h("div", { class: "backdrop__stars backdrop__stars--near" }));
+  const el = h("div", { class: "backdrop", "aria-hidden": "true" }, space, ...layers.map((l) => l.el), h("div", { class: "backdrop__scrim" }));
   let front = 0;
   let token = 0;
 
@@ -86,5 +92,11 @@ export function createBackdrop({ settle = 150 } = {}) {
     el.style.setProperty("--parallax", String(Math.min(1, Math.max(0, fraction))));
   }
 
-  return { el, show, parallax };
+  /** La luz va hacia lo enfocado (0..1 del ancho y del alto de la pantalla). */
+  function light(x, y) {
+    el.style.setProperty("--light-x", String(Math.min(1, Math.max(0, x))));
+    el.style.setProperty("--light-y", String(Math.min(1, Math.max(0, y))));
+  }
+
+  return { el, show, parallax, light };
 }

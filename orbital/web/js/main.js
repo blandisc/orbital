@@ -301,6 +301,12 @@ function homeFocused(target) {
   if (!inHome()) return;
   const item = target?.item ?? target?.console?.last ?? null;
   ui.backdrop.show(item?.hero || item?.image || target?.console?.photo || null);
+  // La luz del fondo se acerca a lo enfocado.
+  const node = document.querySelector(`[data-focus-id="${ui.home.focusId}"]`);
+  if (node) {
+    const r = node.getBoundingClientRect();
+    ui.backdrop.light((r.left + r.width / 2) / innerWidth, (r.top + r.height / 2) / innerHeight);
+  }
   renderHints();
 }
 

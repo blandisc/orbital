@@ -29,12 +29,7 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 
 /* Fondo del Inicio: sin arte a pantalla completa; una luz del color de lo enfocado (cambia suave). */
 body[data-view="home"] .backdrop__layer, body[data-view="home"] .backdrop__scrim { opacity: 0; }
-body[data-view="home"] .backdrop {
-  transition: --art-tint var(--duration-tint) var(--ease-out);
-  background:
-    radial-gradient(70% 70% at 22% 12%, color-mix(in oklab, var(--art-tint) 85%, transparent) 0%, transparent 70%),
-    var(--palette-ink-950);
-}
+body[data-view="home"] .backdrop { transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--palette-ink-950); }
 
 /* Entrada (al abrir Orbital): saludo, destacado, tarjetas y las consolas una tras otra. */
 .home--intro .home__greeting { animation: home-in 560ms var(--ease-out) both; }

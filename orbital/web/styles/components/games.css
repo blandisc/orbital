@@ -103,9 +103,8 @@ body[data-games="gallery"] .games { grid-row: 2 / 4; }
 
 /* En la galería el fondo es luz de ambiente (como el Inicio), no el arte a pantalla completa. */
 body[data-games="gallery"] .backdrop__layer, body[data-games="gallery"] .backdrop__scrim { opacity: 0; }
-body[data-games="gallery"] .backdrop {
-  background: radial-gradient(60% 60% at 50% 38%, color-mix(in oklab, var(--art-tint) 85%, transparent) 0%, transparent 70%), var(--palette-ink-950);
-}
+body[data-games="gallery"] .backdrop { transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--palette-ink-950); }
+body[data-games="gallery"] .backdrop { --light-x: .5; --light-y: .35; }
 
 /* --- Transición en órbita: la consola nueva llega girando y la pantalla se asienta ------------- */
 .games__orbit {

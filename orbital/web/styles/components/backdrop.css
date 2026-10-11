@@ -46,3 +46,51 @@
 }
 /* Velo mínimo: arriba para la hora y a la izquierda para el título. */
 .backdrop__scrim { position: absolute; inset: 0; background: var(--scrim-hero); }
+
+/* --- Fondo vivo (Inicio y galería de consolas) ------------------------------------------------- */
+.backdrop__space { position: absolute; inset: 0; overflow: hidden; opacity: 0; transition: opacity var(--duration-tint) var(--ease-out); }
+body[data-view="home"] .backdrop__space, body[data-games="gallery"] .backdrop__space { opacity: 1; }
+
+/* Luz del color de lo enfocado: una sigue al foco (suave), otra deriva sola muy despacio. Gradientes
+   ya difuminados (sin filter: blur, que es caro) que solo se mueven. */
+.backdrop__glow {
+  position: absolute; left: 0; top: 0; width: 80vmax; height: 80vmax; margin: -40vmax 0 0 -40vmax; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in oklab, var(--art-accent) 16%, transparent) 0%, color-mix(in oklab, var(--art-tint) 60%, transparent) 30%, transparent 64%);
+  will-change: transform;
+}
+.backdrop__glow--follow {
+  transform: translate3d(calc(var(--light-x, .25) * 100vw), calc(var(--light-y, .3) * 100vh), 0);
+  transition: transform 1.6s var(--ease-out);
+}
+.backdrop__glow--drift {
+  width: 60vmax; height: 60vmax; margin: -30vmax 0 0 -30vmax; opacity: .55;
+  animation: glow-drift 38s ease-in-out infinite alternate;
+}
+@keyframes glow-drift {
+  from { transform: translate3d(78vw, 85vh, 0) scale(1); }
+  to { transform: translate3d(62vw, 55vh, 0) scale(1.25); }
+}
+
+/* Estrellas: dos capas que derivan a distinta velocidad (paralaje). El patrón mide 640 px y la capa
+   se mueve justo eso: el ciclo no se nota. */
+.backdrop__stars {
+  position: absolute; left: 0; top: 0; width: calc(100% + 640px); height: calc(100% + 640px);
+  background-size: 640px 640px; will-change: transform;
+}
+.backdrop__stars--far {
+  opacity: .35;
+  background-image:
+    radial-gradient(1px 1px at 40px 60px, #fff, transparent), radial-gradient(1px 1px at 210px 330px, #fff, transparent),
+    radial-gradient(1px 1px at 380px 140px, #fff, transparent), radial-gradient(1px 1px at 520px 470px, #fff, transparent),
+    radial-gradient(1px 1px at 120px 520px, #fff, transparent), radial-gradient(1px 1px at 600px 250px, #fff, transparent),
+    radial-gradient(1px 1px at 300px 600px, #fff, transparent), radial-gradient(1px 1px at 450px 40px, #fff, transparent);
+  animation: stars-drift 240s linear infinite;
+}
+.backdrop__stars--near {
+  opacity: .5;
+  background-image:
+    radial-gradient(1.6px 1.6px at 90px 200px, #fff, transparent), radial-gradient(1.4px 1.4px at 330px 420px, #fff, transparent),
+    radial-gradient(1.8px 1.8px at 560px 90px, #fff, transparent), radial-gradient(1.4px 1.4px at 250px 40px, #fff, transparent);
+  animation: stars-drift 140s linear infinite;
+}
+@keyframes stars-drift { to { transform: translate3d(-640px, -640px, 0); } }
