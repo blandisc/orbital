@@ -24,12 +24,15 @@ from .state import State
 STREMIO_KEY = "stremio_auth_key"
 STREMIO_STALE_SECONDS = 180
 CONTINUE_LIMIT = 20  # "Seguir viendo": los más recientes
+JUMP_LIMIT = 16  # "Continuar" en Inicio
 STEAM_STATS_DELAY = 6  # s tras cerrar un juego de Steam, antes de releer sus horas
 QUICK_EXIT = 15  # s: un juego que se cierra antes, solo, seguramente no pudo abrir
 
 log = logging.getLogger(__name__)
 
 CATEGORIES = [
+    # Inicio: lo último que jugaste o viste, mezclado (como "Jump back in" de Xbox); lo abierto, primero.
+    {"id": "jump", "title": "Continuar"},
     {"id": "recent", "title": "Jugado recientemente"},
     {"id": "continue", "title": "Seguir viendo"},
     {"id": "favorites", "title": "Favoritos"},
@@ -552,7 +555,20 @@ class Catalog:
         by_id = {i.id: i for i in items}
         alpha = sorted(items, key=lambda i: i.title.lower())
         rows = []
+        running = self.launcher.status()
+        running_id = running["id"] if running else None
         for cat in CATEGORIES:
+            if cat["id"] == "jump":
+                games = [(self.last_played(i) or 0, i) for i in items if i.source not in ("stremio", "cinemeta")]
+                videos = [(i.last_watched or 0, i) for i in items if i.category == "continue"]
+                recent = sorted((p for p in games + videos if p[0]), key=lambda p: p[0], reverse=True)
+                members = [i for _, i in recent][:JUMP_LIMIT]
+                if running_id and running_id in by_id:  # lo abierto va primero (Home o A para volver)
+                    members = [by_id[running_id], *[i for i in members if i.id != running_id]][:JUMP_LIMIT]
+                if members:
+                    rows.append({**cat, "items": [{**self.describe(i), **({"live": True} if i.id == running_id else {})}
+                                                  for i in members]})
+                continue
             if cat["id"] == "recent":
                 # Juegos y apps (también lo jugado en Steam fuera de Orbital); lo que se ve va en
                 # "Seguir viendo".

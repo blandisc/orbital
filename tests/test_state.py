@@ -34,7 +34,9 @@ def test_recent_favorite_hidden_rows(library):
     rows = {r["id"]: r for r in library.grouped()}
     assert [i["title"] for i in rows["recent"]["items"]] == ["Hollow Knight", "Hades"]
     library.set_prefs("steam:367520", favorite=True, hidden=False)
-    assert [i["title"] for i in library.grouped()[1]["items"]] == ["Hollow Knight"]
+    assert [i["title"] for i in {r["id"]: r for r in library.grouped()}["favorites"]["items"]] == ["Hollow Knight"]
+    jump = {r["id"]: r for r in library.grouped()}["jump"]["items"]  # Inicio: lo último, lo abierto primero
+    assert [i["title"] for i in jump] == ["Hollow Knight", "Hades"] and jump[0].get("live")
     library.set_prefs("steam:1145360", hidden=True)
     assert library.find("hades") is None and library.hidden_count() == 1
     assert "Hades" not in [i["title"] for r in library.grouped() for i in r["items"]]

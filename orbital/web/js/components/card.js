@@ -14,6 +14,8 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
     h("strong", { class: "card__title" }, item.title),
     h("small", { class: "card__subtitle" }, item.subtitle));
   const badge = item.favorite ? h("span", { class: ["card__badge", pop && "card__badge--pop"], "aria-label": "Favorito" }, svg(ICONS.star)) : null;
+  // Lo que está abierto ahora (como las actividades de PS5): se ve desde la fila.
+  const live = item.live ? h("span", { class: "card__live" }, h("span", { class: "card__live-dot" }), "Abierto") : null;
   const ago = showAgo ? shortAgo(item.last_played) : null;
   // `caption`: título y "Serie · 2005" debajo (en la búsqueda no hay héroe que lo diga, y dos
   // portadas pueden ser casi iguales: The Office de EE. UU. y la británica).
@@ -57,6 +59,6 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   } else {
     card.append(fallback());
   }
-  card.append(...[badge, chip, meta, progress].filter(Boolean));
+  card.append(...[badge, live, chip, meta, progress].filter(Boolean));
   return card;
 }

@@ -77,7 +77,11 @@ export function createHero({ onAction }) {
   /** Actualiza con una transición corta. `immediate` evita la animación (p. ej. al cambiar glifos). */
   function update(item, glyphs, { immediate = false, runningId = null } = {}) {
     clearTimeout(timer);
-    if (immediate) return fill(item, glyphs, runningId);
+    if (immediate) {
+      // Si había una transición a medias, se cancela: que el héroe no se quede invisible.
+      content.classList.remove("hero__content--leaving");
+      return fill(item, glyphs, runningId);
+    }
     content.classList.add("hero__content--leaving");
     timer = setTimeout(() => {
       fill(item, glyphs, runningId);

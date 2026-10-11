@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isWatchable, itemAt, restoreFocus, rowJump, runnerName, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints } from "./core/hints.js";
-import { exitMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, stopMenu, switchMenu, windowsMenu } from "./core/menus.js";
+import { exitMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, stopMenu, stremioAccountMenu, switchMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -21,6 +21,7 @@ import { createSheet } from "./components/sheet.js";
 import { createSources } from "./components/sources.js";
 import { createShelf } from "./components/shelf.js";
 import { createStatusBar } from "./components/status-bar.js";
+import { createLogin } from "./components/login.js";
 import { createTitle, titleRef } from "./components/title.js";
 import { createToast } from "./components/toast.js";
 
@@ -78,6 +79,16 @@ const ui = {
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); },
   }),
+  login: createLogin({
+    onDone: (res) => {
+      state.stremioLinked = true;
+      sound.play("select");
+      ui.toast.show(`Listo: Stremio conectado · ${res.count} títulos en tu biblioteca`);
+      loadLibrary();
+    },
+    onMove: () => sound.play("move"),
+    onClose: () => { sound.play("back"); renderHints(); },
+  }),
   launch: createLaunchOverlay(),
   toast: createToast(),
 };
@@ -88,7 +99,7 @@ const touchBack = h("button", { class: "touch-back", type: "button", "aria-label
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.sheet.el, ui.launch.el, ui.toast.el,
+  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.sheet.el, ui.launch.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -96,8 +107,9 @@ const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LT/RT
 
 function renderHints() {
   const g = glyphs();
-  const overlay = ui.sheet.isOpen || ui.sources.isOpen || ui.title.isOpen || ui.search.isOpen;
+  const overlay = ui.sheet.isOpen || ui.sources.isOpen || ui.title.isOpen || ui.search.isOpen || ui.login.isOpen;
   document.body.dataset.overlay = overlay ? "true" : "false";
+  if (!ui.sheet.isOpen && ui.login.isOpen) return ui.hints.render(ui.login.hints(g));
   if (!ui.sheet.isOpen && ui.sources.isOpen) {
     return ui.hints.render([{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra fuente" },
       { glyph: g.back, label: "Volver", end: true }]);
@@ -270,9 +282,10 @@ async function pollStatus() {
     const changed = running?.id !== state.running?.id;
     state.running = running;
     ui.status.setRunning(running);
-    if (changed) { // "Jugar" <-> "Continuar" y el pie, sin esperar a moverse
+    if (changed) { // "Jugar" <-> "Volver al juego" y el pie, sin esperar a moverse
       ui.hero.update(current(), glyphs(), { immediate: true, runningId: running?.id });
       renderHints();
+      if (state.libraryLoaded) loadLibrary(); // la tarjeta "Abierto" de Continuar
     }
   } catch { /* el servidor puede estar reiniciando */ }
 }
@@ -500,6 +513,17 @@ async function runCommand(command, context = null) {
         ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
+      case "stremio-login":
+        sound.play("open");
+        ui.login.open();
+        return renderHints();
+      case "stremio-account":
+        return openMenu(stremioAccountMenu(), nested(context));
+      case "stremio-logout":
+        await api.stremioLogout();
+        state.stremioLinked = false;
+        ui.toast.show("Stremio desconectado");
+        return loadLibrary();
       case "stay":
         if (context) ui.sheet.open(context.menu, { index: context.index, stack: context.stack });
         return renderHints();
@@ -532,7 +556,7 @@ function handleAction(action, { repeat = false } = {}) {
     return renderHints();
   }
   // Vistas a pantalla completa, de arriba abajo: fuentes sobre la ficha, la ficha sobre la búsqueda.
-  if (ui.sources.handle(action) || ui.title.handle(action) || ui.search.handle(action)) return renderHints();
+  if (ui.login.handle(action) || ui.sources.handle(action) || ui.title.handle(action) || ui.search.handle(action)) return renderHints();
   const { r, c } = state.focus;
   const item = current();
   switch (action) {
@@ -616,8 +640,8 @@ createInput({
   onAction: handleAction,
   onModality: setModality,
   // Con un teclado físico, en Buscar se escribe directo (las letras no son atajos ahí).
-  onText: (char) => ui.search.type(char),
-  typing: () => ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen && !ui.sheet.isOpen,
+  onText: (char) => (ui.login.isOpen ? ui.login.type(char) : ui.search.type(char)),
+  typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
 });
 api.events(handleEvent);
 // Al volver a la ventana (p. ej. tras cerrar un juego) refresca recientes y tiempo jugado.

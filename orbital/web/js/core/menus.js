@@ -195,8 +195,9 @@ export function settingsPage(page, settings, { now = Date.now() } = {}) {
     return {
       title: "Cuentas", crumb: "Cuentas",
       options: [
-        { icon: "media", label: "Stremio", value: settings.stremio_linked ? "Conectada" : "Sin conectar", command: { type: "stay" },
-          hint: settings.stremio_linked ? "Seguir viendo y fuentes en Orbital" : "En la PC: orbital stremio login" },
+        { icon: "media", label: "Stremio", value: settings.stremio_linked ? "Conectada" : "Sin conectar",
+          command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
+          hint: settings.stremio_linked ? "Seguir viendo y fuentes en Orbital" : "A para conectar tu cuenta" },
         { icon: "mic", label: "Alexa", value: settings.alexa ? "Configurada" : "Sin configurar", command: { type: "stay" },
           hint: settings.alexa ? (alexaAgo === null ? "Aún no le has pedido nada" : `Última orden hace ${alexaAgo < 60 ? `${alexaAgo} min` : `${Math.round(alexaAgo / 60)} h`}`)
             : "En la PC: orbital alexa setup" },
@@ -210,5 +211,17 @@ export function settingsPage(page, settings, { now = Date.now() } = {}) {
       icon: def.icon, label, hint, value: settingLabel(key, settings[key]),
       command: { type: "setting", key, value: nextSetting(key, settings[key]), page },
     })),
+  };
+}
+
+/** Stremio conectado: desconectar pide confirmar (y "Cancelar" va primero). */
+export function stremioAccountMenu() {
+  return {
+    title: "Cuenta de Stremio",
+    subtitle: "Si la desconectas, Orbital deja de ver Seguir viendo y tus fuentes hasta que la vuelvas a conectar.",
+    options: [
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "exit", label: "Desconectar", danger: true, command: { type: "stremio-logout" } },
+    ],
   };
 }

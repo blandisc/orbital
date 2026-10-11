@@ -31,6 +31,8 @@ export const api = {
   stremioTitle: (kind, id) => request(`/api/stremio/title/${kind}/${encodeURIComponent(id)}`),
   settings: () => request("/api/settings"),
   dismiss: (id) => post("/api/stremio/dismiss", { id }),
+  stremioLogin: (email, password) => post("/api/stremio/login", { email, password }),
+  stremioLogout: () => post("/api/stremio/logout"),
   setSettings: (changes) => post("/api/settings", changes),
   stremioSources: (kind, id, video) =>
     request(`/api/stremio/sources?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`),

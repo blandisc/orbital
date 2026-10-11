@@ -64,7 +64,7 @@ export function createShelf({ onPick, onSwipe }) {
     }
     rowEls = rows.map((row, r) => {
       const cards = row.items.map((item, c) => Card(item, {
-        onPress: () => onPick(r, c), showAgo: row.id === "recent", pop: item.id === popId,
+        onPress: () => onPick(r, c), showAgo: row.id === "recent" || row.id === "jump", pop: item.id === popId,
         onRatio: () => r === focus.r && place(), // la portada real cambió el ancho
       }));
       const track = h("div", { class: "shelf__track", role: "list" }, cards);

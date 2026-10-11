@@ -355,6 +355,25 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         catalog.play_stremio(kind, meta_id, body.video_id, title)
         return {"ok": True}
 
+    @app.post("/api/stremio/login")
+    def stremio_login(body: dict) -> dict:
+        """Conectar Stremio desde la consola. La contraseña solo viaja a Stremio: no se guarda ni se
+        registra; Orbital guarda la clave de sesión que devuelve (igual que `orbital stremio login`)."""
+        email, password = str(body.get("email") or "").strip(), str(body.get("password") or "")
+        if not email or not password:
+            raise HTTPException(422, "Escribe tu correo y tu contraseña de Stremio")
+        try:
+            key = catalog.stremio_client.login(email, password)
+            count = catalog.link_stremio(key)
+        except stremio_api.StremioError as exc:
+            raise HTTPException(401, f"Stremio no aceptó esos datos: {exc}")
+        return {"ok": True, "count": count}
+
+    @app.post("/api/stremio/logout")
+    def stremio_logout() -> dict:
+        catalog.unlink_stremio()
+        return {"ok": True}
+
     @app.post("/api/stremio/dismiss")
     def stremio_dismiss(body: dict) -> dict:
         """Quitar de Seguir viendo."""

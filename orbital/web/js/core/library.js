@@ -95,8 +95,9 @@ export const primaryLabel = (item, runningId = null) => {
  * Inicio mezcla lo tuyo; cada fila puede estar en más de una sección.
  */
 export const SECTIONS = [
-  { id: "home", title: "Inicio", rows: (id) => ["recent", "continue", "favorites"].includes(id) },
-  { id: "games", title: "Juegos", rows: (id) => ["steam", "geforcenow"].includes(id) || id.startsWith("emulators:") },
+  // Inicio: una sola fila para retomar (juegos y videos juntos) y tus favoritos.
+  { id: "home", title: "Inicio", rows: (id) => ["jump", "favorites"].includes(id) },
+  { id: "games", title: "Juegos", rows: (id) => ["recent", "steam", "geforcenow"].includes(id) || id.startsWith("emulators:") },
   // Lo tuyo primero (Seguir viendo). Buscar es un atajo (botón Vista o la píldora de arriba), así
   // que la fila de apps (Buscar, YouTube…) va al final.
   { id: "media", title: "Películas y series", rows: (id) => ["continue", "media", "movies", "series"].includes(id),
