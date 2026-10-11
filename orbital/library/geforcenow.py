@@ -18,7 +18,6 @@ import json
 import logging
 import os
 import re
-import subprocess
 import sys
 import threading
 import urllib.request
@@ -69,33 +68,25 @@ def _shortcut_dirs() -> list[Path]:
     return [d for d in dirs if d.is_dir()]
 
 
-def read_shortcuts() -> list[dict]:
-    """Accesos directos de juegos de GFN: [{"title", "target", "arguments", "cms_id"}]."""
-    if sys.platform != "win32":
-        return []
-    script = (
-        "$sh = New-Object -ComObject WScript.Shell; "
-        "Get-ChildItem -LiteralPath $env:ORBITAL_DIRS.Split('|') -Recurse -Filter *.lnk -ErrorAction SilentlyContinue | "
-        "ForEach-Object { $l = $sh.CreateShortcut($_.FullName); "
-        "if ($l.TargetPath -like '*GeForceNOW*' -and $l.Arguments -like '*url-route*') { "
-        "[pscustomobject]@{title=$_.BaseName; target=$l.TargetPath; arguments=$l.Arguments} } } | ConvertTo-Json -Compress"
-    )
-    try:
-        out = subprocess.run(["powershell", "-NoProfile", "-Command", script], capture_output=True, text=True,
-                             encoding="utf-8", errors="replace", timeout=20,
-                             env={**os.environ, "ORBITAL_DIRS": "|".join(map(str, _shortcut_dirs()))},
-                             creationflags=subprocess.CREATE_NO_WINDOW).stdout.strip()  # type: ignore[attr-defined]
-        found = json.loads(out) if out else []
-    except (OSError, subprocess.TimeoutExpired, ValueError) as exc:
-        log.info("No pude leer accesos directos de GeForce NOW: %s", exc)
-        return []
-    found = found if isinstance(found, list) else [found]
+def read_shortcuts(dirs: list[Path] | None = None) -> list[dict]:
+    """Accesos directos de juegos de GFN: [{"title", "target", "arguments", "cms_id"}].
+    Se leen los .lnk directamente (antes: PowerShell + WScript.Shell, ~0,5 s por escaneo)."""
+    from .shortcuts import read_lnk
+
     games = []
-    for sc in found:
-        route = parse_route(sc.get("arguments") or "")
-        if route:
-            games.append({"title": sc["title"], "target": sc["target"], "arguments": sc["arguments"],
-                          "cms_id": route["cmsId"]})
+    for folder in dirs if dirs is not None else _shortcut_dirs():
+        try:
+            links = sorted(folder.rglob("*.lnk"))
+        except OSError:
+            continue
+        for link in links:
+            sc = read_lnk(link)
+            if sc is None or "geforcenow" not in sc.target.lower() or "url-route" not in sc.arguments:
+                continue
+            route = parse_route(sc.arguments)
+            if route:
+                games.append({"title": link.stem, "target": sc.target, "arguments": sc.arguments,
+                              "cms_id": route["cmsId"]})
     return games
 
 

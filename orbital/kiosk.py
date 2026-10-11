@@ -83,18 +83,16 @@ def close_orphans(profile_dir: Path) -> int:
     Edge normal: solo procesos con el perfil propio de Orbital."""
     if sys.platform != "win32":
         return 0
-    script = (
-        "Get-CimInstance Win32_Process -Filter \"Name='msedge.exe' or Name='chrome.exe'\" | "
-        "Where-Object { $_.CommandLine -and $_.CommandLine.Contains($env:ORBITAL_PROFILE) "
-        "-and $_.CommandLine -notmatch '--type=' } | ForEach-Object { $_.ProcessId }"
-    )
-    try:
-        out = subprocess.run(["powershell", "-NoProfile", "-Command", script], capture_output=True, text=True,
-                             timeout=15, env={**os.environ, "ORBITAL_PROFILE": f"--user-data-dir={profile_dir}"},
-                             creationflags=subprocess.CREATE_NO_WINDOW).stdout  # type: ignore[attr-defined]
-    except (OSError, subprocess.TimeoutExpired):
-        return 0
-    pids = [int(p) for p in out.split() if p.isdigit()]
+    from . import windows
+
+    profile = f"--user-data-dir={profile_dir}".lower()
+    pids = []
+    for pid, (exe, _parent) in windows.processes().items():
+        if exe not in ("msedge.exe", "chrome.exe"):
+            continue
+        line = windows.command_line(pid).lower()
+        if profile in line and "--type=" not in line:  # la ventana principal, no sus procesos hijos
+            pids.append(pid)
     for pid in pids:
         subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True,
                        creationflags=subprocess.CREATE_NO_WINDOW)  # type: ignore[attr-defined]

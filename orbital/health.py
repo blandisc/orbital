@@ -11,7 +11,6 @@ from __future__ import annotations
 import ctypes
 import logging
 import os
-import subprocess
 import sys
 import threading
 import time
@@ -45,22 +44,70 @@ def free_ram_mb() -> int | None:
     return int(status.ullAvailPhys // (1024 * 1024))
 
 
+def _pdh_sum(counter_paths: list[str]) -> list[float] | None:
+    """Suma de cada contador de Windows (con comodines: una instancia por adaptador). Con pdh.dll."""
+    from ctypes import wintypes
+
+    pdh = ctypes.windll.pdh  # type: ignore[attr-defined]
+    query = wintypes.HANDLE()
+    if pdh.PdhOpenQueryW(None, None, ctypes.byref(query)) != 0:
+        return None
+    try:
+        groups: list[list[wintypes.HANDLE]] = []
+        for path in counter_paths:
+            size = wintypes.DWORD(0)
+            pdh.PdhExpandWildCardPathW(None, path, None, ctypes.byref(size), 0)
+            if not size.value:
+                groups.append([])
+                continue
+            buf = ctypes.create_unicode_buffer(size.value)
+            if pdh.PdhExpandWildCardPathW(None, path, buf, ctypes.byref(size), 0) != 0:
+                groups.append([])
+                continue
+            names = [n for n in ctypes.wstring_at(ctypes.addressof(buf), size.value).split("\x00") if n]
+            handles = []
+            for name in names:
+                counter = wintypes.HANDLE()
+                if pdh.PdhAddEnglishCounterW(query, name, None, ctypes.byref(counter)) == 0:
+                    handles.append(counter)
+            groups.append(handles)
+        if pdh.PdhCollectQueryData(query) != 0:
+            return None
+
+        class _Value(ctypes.Structure):
+            _fields_ = [("CStatus", wintypes.DWORD), ("largeValue", ctypes.c_longlong)]
+
+        totals = []
+        for handles in groups:
+            total = 0.0
+            for counter in handles:
+                value = _Value()
+                if pdh.PdhGetFormattedCounterValue(counter, 0x400, None, ctypes.byref(value)) == 0:  # PDH_FMT_LARGE
+                    total += value.largeValue
+            totals.append(total)
+        return totals
+    finally:
+        pdh.PdhCloseQuery(query)
+
+
 def dwm_gpu_mb() -> tuple[int, int] | None:
-    """(compartida, dedicada) en MB que usa DWM según los contadores de Windows."""
+    """(compartida, dedicada) en MB que usa DWM según los contadores de Windows (sin PowerShell)."""
     if sys.platform != "win32":
         return None
-    script = ("$p = (Get-Process dwm -ErrorAction SilentlyContinue | Select-Object -First 1).Id; "
-              "if ($p) { $c = (Get-Counter \"\\GPU Process Memory(pid_${p}*)\\Shared Usage\","
-              "\"\\GPU Process Memory(pid_${p}*)\\Dedicated Usage\" -ErrorAction SilentlyContinue).CounterSamples; "
-              "$s = ($c | Where-Object { $_.Path -like '*shared*' } | Measure-Object CookedValue -Sum).Sum; "
-              "$d = ($c | Where-Object { $_.Path -like '*dedicated*' } | Measure-Object CookedValue -Sum).Sum; "
-              "'{0} {1}' -f [int]($s/1MB), [int]($d/1MB) }")
-    try:
-        out = subprocess.run(["powershell", "-NoProfile", "-Command", script], capture_output=True, text=True,
-                             timeout=30, creationflags=subprocess.CREATE_NO_WINDOW).stdout.split()  # type: ignore[attr-defined]
-        return int(out[0]), int(out[1])
-    except (OSError, subprocess.TimeoutExpired, ValueError, IndexError):
+    from . import windows
+
+    pids = windows.pids_by_exe("dwm.exe")
+    if not pids:
         return None
+    pid = min(pids)
+    try:
+        totals = _pdh_sum([rf"\GPU Process Memory(pid_{pid}_*)\Shared Usage",
+                           rf"\GPU Process Memory(pid_{pid}_*)\Dedicated Usage"])
+    except OSError:
+        return None
+    if not totals:
+        return None
+    return int(totals[0] // (1024 * 1024)), int(totals[1] // (1024 * 1024))
 
 
 def needs_warning(free_mb: int | None, dwm: tuple[int, int] | None) -> bool:

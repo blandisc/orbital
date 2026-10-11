@@ -42,3 +42,20 @@ def test_packaged_app_detection_does_not_crash():
 def test_virtualization_check_runs(tmp_path):
     # En una carpeta normal no hay redirección (en la app de Claude, AppData sí la tendría).
     assert runtime.virtualized_appdata(tmp_path) is None
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="procesos de Windows")
+def test_reads_another_process_command_line():
+    from orbital import windows
+
+    child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(5)", r"--user-data-dir=C:\Orbital Perfil"])
+    try:
+        deadline = time.monotonic() + 5
+        line = ""
+        while "--user-data-dir" not in line and time.monotonic() < deadline:
+            line = windows.command_line(child.pid)
+            time.sleep(.05)
+        assert r"--user-data-dir=C:\Orbital Perfil" in line
+    finally:
+        child.kill()
+        child.wait(5)

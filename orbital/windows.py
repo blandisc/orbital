@@ -122,6 +122,34 @@ def process_tree(root: int) -> set[int]:
     return tree
 
 
+def command_line(pid: int) -> str:
+    """La línea de comandos de un proceso ("" si no se puede leer). Sin WMI ni PowerShell:
+    NtQueryInformationProcess(ProcessCommandLineInformation), Windows 8.1 o posterior."""
+    if not WIN or not pid:
+        return ""
+    handle = kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+    if not handle:
+        return ""
+    try:
+        query = ctypes.windll.ntdll.NtQueryInformationProcess
+        query.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.ULONG, ctypes.POINTER(wintypes.ULONG)]
+        size = wintypes.ULONG(0)
+        query(handle, 60, None, 0, ctypes.byref(size))  # 60 = ProcessCommandLineInformation
+        if not size.value:
+            return ""
+        buf = ctypes.create_string_buffer(size.value)
+        if query(handle, 60, buf, size, ctypes.byref(size)) != 0:
+            return ""
+
+        class _UnicodeString(ctypes.Structure):
+            _fields_ = [("Length", ctypes.c_ushort), ("MaximumLength", ctypes.c_ushort), ("Buffer", ctypes.c_void_p)]
+
+        text = _UnicodeString.from_buffer(buf)
+        return ctypes.wstring_at(text.Buffer, text.Length // 2) if text.Buffer else ""
+    finally:
+        kernel32.CloseHandle(handle)
+
+
 def processes() -> dict[int, tuple[str, int]]:
     """Todos los procesos: pid -> (ejecutable en minúsculas, pid del padre). Una sola foto."""
     if not WIN:

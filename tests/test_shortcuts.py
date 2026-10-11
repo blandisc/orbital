@@ -100,3 +100,21 @@ def test_esde_lookups_use_the_shortcut_not_the_installed_game(tmp_path):
                          args=["--fullscreen", "{rom}"], extensions=[".iso"])
     items = emulators.scan(emu, FakeEsde())
     assert [i.title for i in items] == ["Call of Duty - Black Ops II"] and set(FakeEsde.asked) == {lnk}
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="crea un .lnk con Windows")
+def test_geforce_now_shortcuts_without_powershell(tmp_path, monkeypatch):
+    from orbital.library import geforcenow
+
+    monkeypatch.undo()  # el conftest apaga la lectura real de accesos directos de GFN
+
+    exe = tmp_path / "NVIDIA Corporation" / "GeForceNOW" / "CEF" / "GeForceNOW.exe"
+    exe.parent.mkdir(parents=True)
+    exe.write_bytes(b"MZ")
+    desktop = tmp_path / "Desktop"
+    (desktop / "Juegos").mkdir(parents=True)
+    make_lnk(desktop / "Juegos" / "Fortnite.lnk", exe, '--url-route="#?cmsId=100013311&launchSource=External"')
+    make_lnk(desktop / "Bloc de notas.lnk", tmp_path / "notepad.exe", "")
+    games = geforcenow.read_shortcuts([desktop])
+    assert [(g["title"], g["cms_id"]) for g in games] == [("Fortnite", "100013311")]
+    assert games[0]["target"].lower() == str(exe).lower()
