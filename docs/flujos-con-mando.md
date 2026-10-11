@@ -12,11 +12,13 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 | Encender la Legion Go y llegar a Orbital | Acceso directo de inicio (`pythonw -m orbital`) | ✅ |
 | Moverse entre juegos y filas | D-pad / stick; LT/RT saltan de 5 en 5 | ✅ |
 | Cambiar de sección (Inicio, Juegos, Películas y series, Apps) | LB / RB | ✅ |
-| Buscar juegos, películas y series desde cualquier lugar | Vista (⧉) o la píldora "Buscar" de arriba; tus juegos salen primero, al instante | ✅ |
-| Películas y series | Abre en "Seguir viendo"; los catálogos debajo; Buscar es el atajo | ✅ |
+| Buscar juegos, películas y series desde cualquier lugar | Vista (⧉) o la píldora "Buscar". Teclado grande: A escribe, X borra, Y espacio, **B vuelve**; Borrar todo (se vuelve Deshacer), Atrás, Dictar y Buscar. Con la caja vacía, tus búsquedas recientes. Resultados por grupo: Tus juegos y apps, Películas, Series. Con un teclado físico se escribe directo | ✅ |
+| Películas y series | Abre en "Seguir viendo" (A pone el episodio en el que ibas, directo; Y → Ver la ficha); los catálogos debajo abren la ficha | ✅ |
 | Volver al inicio | B | ✅ |
 | Cada fila recuerda su último juego | automático | ✅ |
 | Llegar al final de una fila | la tarjeta rebota y el mando vibra | ✅ |
+| Mantener la cruceta o el stick | Repite y, tras un momento, acelera; el rebote y la vibración del final de la fila solo en la pulsación. El stick usa el eje dominante (nunca fila y columna a la vez) | ✅ |
+| Menús dentro de menús (☰ → Apagado, Ajustes…) | B regresa un nivel; la ruta se ve arriba del menú (Orbital › Ajustes) | ✅ |
 | Si la ventana de Orbital se cierra sola | se reabre (máx. 3 veces por minuto) | ✅ |
 
 ## Jugar
@@ -40,7 +42,7 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 
 | Situación | Qué pasa | Estado |
 |---|---|---|
-| Abres un juego de un emulador | Pantalla de carga de Orbital (portada y fondo del juego) ENCIMA del emulador hasta que el juego está listo (pantalla completa o su nombre en la ventana); se funde a negro y aparece el juego. Ya no se ven la lista de Eden ni sus ventanas. B la salta | ✅ (nuevo; verificado: Smash Bros. listo en 13 s) |
+| Abres un juego de un emulador | Orbital se queda ENCIMA desde antes de abrir el emulador (nunca se asoma). Pantalla de carga: la portada en órbita sobre estrellas que avanzan. Cuando el juego está listo **y en pantalla completa** (espera hasta 4 s a que deje de cambiar de tamaño), salto a velocidad luz y Orbital se funde sobre el juego: sin brincos. B la salta | ✅ (nuevo) |
 | Abres otra cosa con un juego abierto | Te pregunta "¿Cerrar X?": "Volver a X" (primero), "Cerrar y abrir" o "Abrir sin cerrar". Un video se cierra sin preguntar (su avance queda guardado) | ✅ (nuevo) |
 | Dejas un video en pausa | A los 15 min se cierra solo; sigues donde te quedaste (`sessions.video_idle_minutes`) | ✅ (nuevo) |
 | Dejas un juego congelado (saliste con Home) | A la hora se cierra solo y te avisa; lo no guardado se pierde (`sessions.game_idle_minutes`, 0 = nunca) | ✅ (nuevo) |
@@ -49,6 +51,9 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 | Un lanzador abre el juego y se cierra (`launch-eden.cmd`, lanzadores propios) | Orbital sigue al juego, no al lanzador | ✅ (nuevo) |
 | El juego se cierra normal (menú del juego, Start + Select + Home, Legion L ×2, "cierra el juego") | Orbital al frente, con el tiempo jugado y la tarjeta enfocada | ✅ |
 | El juego truena | Igual que cerrarse: Orbital al frente con "De vuelta de…" | ✅ |
+| El juego se cierra solo a los pocos segundos | "X se cerró enseguida" como error (revisa ROM, firmware, claves), no "De vuelta de…" | ✅ (nuevo) |
+| El emulador no está (lo moviste o desinstalaste) | Mensaje claro y, si hay otro emulador, "Abrir con …" en el mismo momento | ✅ (nuevo) |
+| A sobre un juego que ya se cerró por su cuenta | "No encuentro la ventana de X" (antes A no hacía nada) | ✅ (nuevo) |
 | Home en el juego | Orbital al frente; el emulador se congela (un video se pausa) | ✅ |
 | Home otra vez, Legion L o A en "Continuar" | De vuelta al juego, descongelado | ✅ |
 | Vuelves al juego por tu cuenta (Alt+Tab, toque) | Se descongela solo | ✅ |
@@ -62,11 +67,15 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 | Flujo | Cómo | Estado |
 |---|---|---|
 | Abrir Stremio / YouTube / ES-DE / Big Picture | A | ✅ |
-| Ver una película o episodio | Elegir en Orbital → fuente recomendada (5 s o A) → reproductor de Orbital (mpv) a pantalla completa, desde donde te quedaste | ✅ |
-| En el reproductor | Barra de Orbital encima del video con título, progreso, idioma de audio y subtítulos, y la leyenda de cada botón. A pausa · ←/→ ±10 s (mantener: continuo) · LB/RB ±1 min · ↑/↓ volumen · B salir | ✅ |
-| Cambiar audio o subtítulos | X (audio) o Y (subtítulos) abren un menú con las pistas del video por idioma ("Inglés · 5.1 · E-AC3", "Español · Forzados", "Sin subtítulos", "Buscar subtítulos en…"); ↑/↓ y A eligen, B cierra | ✅ |
+| Ver una película o episodio | La ficha: "Continuar T3 E5 · quedan 22 min" o "Ver" con el foco, "Desde el principio", reparto y dirección; en series, los episodios abren en el que ibas (vistos con ✓, a medias con su barra, por estrenar con su fecha). A arranca directo con la fuente recomendada (pantalla de carga con fases: Buscando dónde verlo → Conectando · 1080p · Al instante) | ✅ |
+| Elegir la fuente a mano | Y en la ficha: panel lateral con cada fuente en palabras de persona (Al instante / Tarda en empezar, idioma, HDR, sonido); A ve con esa, B vuelve a la ficha | ✅ |
+| Una fuente no arranca o se corta | Prueba sola la siguiente en el mismo punto ("Esa fuente falló · probando otra"); si ninguna sirve, lo dice y vuelve a Orbital | ✅ (nuevo) |
+| En el reproductor | Barra de Orbital con título, progreso (con marcas de capítulos), audio, subtítulos, la fuente y la leyenda. A pausa · ←/→ adelantar (mantener: 10 s → 30 s → 1 min) · LB/RB capítulo (o ±1 min) · LT/RT episodio anterior/siguiente · ↑/↓ volumen · **B oculta la barra; con la barra oculta, sale** | ✅ |
+| Cambiar audio, subtítulos o fuente | X o Y abren un menú con pestañas Audio / Subtítulos / Fuente (LB/RB cambian de pestaña); en Subtítulos también el tamaño. ↑/↓ y A eligen, B cierra. Cambiar de fuente sigue en el mismo punto | ✅ |
 | Home en el reproductor | Pausa el video y va a Orbital; Home otra vez vuelve con la barra de progreso (A sigue) | ✅ |
-| Seguir viendo | Al salir del reproductor, el avance se guarda en tu cuenta de Stremio (Orbital, Stremio y otros dispositivos); al terminar un episodio, queda el siguiente | ✅ |
+| Saltar intro / resumen | Si el archivo marca la intro con capítulos, aparece "Saltar intro" unos segundos: A salta, B sigue viendo | ✅ (nuevo) |
+| Al terminar un episodio | Tarjeta "Siguiente episodio en 8" en los créditos (A ya, B me quedo); el siguiente se carga en el mismo reproductor. Tras 3 seguidos sin tocar el mando: "¿Sigues viendo?" | ✅ (nuevo) |
+| Seguir viendo | El avance se guarda en tu cuenta de Stremio cada minuto, al pausar y al salir (Orbital, Stremio y otros dispositivos); al terminar un episodio, queda el siguiente | ✅ |
 | Navegar dentro de Stremio | depende de Stremio | ⚠️ Stremio no se maneja del todo con mando (con `player: stremio` se usa su reproductor) |
 | Volver a Orbital desde una app | Home o un toque de Legion L | ✅ |
 | Cambiar entre apps abiertas | ☰ → Ventanas abiertas | ✅ |
@@ -80,7 +89,7 @@ Todo funciona igual con toques o con el control; Orbital cambia solo según lo q
 | Recorrer una fila / cambiar de fila | Deslizar de lado / de arriba abajo | ✅ |
 | Ver un juego / abrirlo | Tocar la portada / tocarla otra vez | ✅ |
 | Cambiar de sección, buscar, menú | Tocar las pestañas, la píldora "Buscar" o la marca "orbital" | ✅ |
-| Volver (buscar, episodios, fuentes, menú) | Botón "Atrás" abajo a la izquierda (solo aparece al usar el dedo) | ✅ |
+| Volver (buscar, ficha, fuentes, menú) | Botón "Atrás" abajo a la izquierda (solo aparece al usar el dedo) | ✅ |
 | Saltar la pantalla de carga | Tocarla | ✅ |
 | En el reproductor | Tocar el video pausa o reanuda y muestra la barra; el doble toque ya no sale de pantalla completa | ✅ |
 | Ir a Orbital desde un juego | Legion L (un toque) | ✅ |
@@ -91,7 +100,9 @@ Todo funciona igual con toques o con el control; Orbital cambia solo según lo q
 |---|---|---|
 | Actualizar biblioteca, sonidos, mostrar ocultos | ☰ | ✅ |
 | Salir al escritorio y volver | ☰ → Salir al escritorio; Home para volver | ✅ |
-| Suspender, reiniciar, apagar | ☰ → Apagado | ✅ |
+| Suspender, reiniciar, apagar | ☰ → Apagado. Reiniciar y Apagar piden confirmar (Cancelar primero) y avisan si hay un juego abierto | ✅ |
+| Ajustes | ☰ → Ajustes: Reproducción (idioma del audio, subtítulos, calidad, tamaño de subtítulos), Pantalla (tamaño del texto, márgenes de la TV, reducir movimiento), Sonido y vibración, Cuentas. A o ◀/▶ cambian el valor sin cerrar el menú | ✅ (nuevo) |
+| Encender Orbital | Animación de arranque (planeta y órbitas) mientras se prepara la biblioteca; al volver de un juego, la interfaz "aterriza" | ✅ (nuevo) |
 | Vista de tareas de Windows | 3 dedos hacia arriba (panel o pantalla) | ⚠️ funciona con Orbital abierto, pero la Vista de tareas no se maneja con mando: mejor ☰ → Ventanas abiertas |
 
 ## Fuera del alcance de Orbital (configuración única)
