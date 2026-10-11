@@ -33,6 +33,7 @@ export const api = {
   setup: () => request("/api/setup"),
   diagnostics: () => request("/api/diagnostics"),
   quick: () => request("/api/quick"),
+  folders: () => request("/api/folders"),
   setQuick: (changes) => post("/api/quick", changes),
   captures: () => request("/api/captures"),
   openCapture: (path) => post("/api/captures/open", { path }),

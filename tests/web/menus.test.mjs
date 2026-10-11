@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { capturesMenu, diagnosticsMenu, gameMenu, mainMenu, quickMenu, nextSetting, powerConfirmMenu, powerMenu, settingsPage, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
+import { capturesMenu, diagnosticsMenu, foldersMenu, gameMenu, mainMenu, quickMenu, nextSetting, powerConfirmMenu, powerMenu, settingsPage, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch",
@@ -186,4 +186,14 @@ test("panel rápido: ◀/▶ ajustan de 10 en 10 sin pasarse; lo que no hay no a
 test("capturas vacías explican cómo hacer una", () => {
   assert.match(capturesMenu([]).subtitle, /Home y pulsa RB/);
   assert.equal(capturesMenu([{ name: "a", kind: "image", time: 0, path: "x" }]).options[0].command.type, "view-capture");
+});
+
+test("carpetas de juegos: cada emulador con sus juegos y dónde los busca", () => {
+  const menu = foldersMenu({ emulators: [{ name: "Eden", games: 6, rom_dirs: ["C:\\Juegos\\Switch\\ROMs"] },
+    { name: "mGBA", games: 1, rom_dirs: [] }], config: "C:\\Users\\f\\AppData\\Roaming\\orbital\\config.yaml" });
+  assert.equal(menu.options[0].value, "6 juegos");
+  assert.equal(menu.options[0].hint, "…\\Switch\\ROMs");
+  assert.equal(menu.options[1].value, "1 juego");
+  assert.equal(menu.options.at(-1).command.type, "refresh");
+  assert.match(menu.subtitle, /orbital\\config\.yaml/);
 });

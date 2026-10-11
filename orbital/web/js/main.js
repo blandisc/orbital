@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isWatchable, itemAt, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints } from "./core/hints.js";
-import { capturesMenu, controlsMenu, controlsPage, diagnosticsMenu, exitMenu, healthMenu, quickMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, windowsMenu } from "./core/menus.js";
+import { capturesMenu, controlsMenu, controlsPage, diagnosticsMenu, exitMenu, foldersMenu, healthMenu, quickMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -421,6 +421,8 @@ async function runCommand(command, context = null) {
         return openMenu(setupMenu(await api.setup()), nested(context));
       case "quick":
         return openQuick(context);
+      case "folders":
+        return openMenu(foldersMenu(await api.folders()), nested(context));
       case "quick-set": { // cambia y se queda en el panel, en la misma opción
         const q = await api.setQuick(command.changes);
         sound.play("move");

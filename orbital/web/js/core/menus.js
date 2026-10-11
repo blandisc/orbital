@@ -239,6 +239,9 @@ export const SETTING_VALUES = {
   sounds: [[true, "Sí"], [false, "No"]],
   haptics: [[true, "Sí"], [false, "No"]],
   voice_tips: [[true, "Sí"], [false, "No"]],
+  game_idle_minutes: [[60, "1 hora"], [120, "2 horas"], [30, "30 min"], [0, "Nunca"]],
+  video_idle_minutes: [[15, "15 min"], [30, "30 min"], [60, "1 hora"], [0, "Nunca"]],
+  close_previous: [[true, "Sí"], [false, "No"]],
 };
 
 export const settingLabel = (key, value) => (SETTING_VALUES[key]?.find(([v]) => v === value) ?? [null, String(value)])[1];
@@ -259,6 +262,10 @@ const SETTING_PAGES = {
     ["reduce_motion", "Reducir movimiento", null],
     ["voice_tips", "Frases para Alexa", "Debajo de los botones: qué decirle para lo que tienes enfocado"]] },
   sound: { title: "Sonido y vibración", icon: "sound", options: [["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null]] },
+  sessions: { title: "Juegos y videos abiertos", icon: "gamepad", options: [
+    ["game_idle_minutes", "Cerrar un juego en pausa tras", "Lo congelado con Home; lo no guardado se pierde"],
+    ["video_idle_minutes", "Cerrar un video en pausa tras", "Tu avance se guarda"],
+    ["close_previous", "Abrir algo nuevo cierra lo anterior", "Como una consola (antes pregunta si es un juego)"]] },
 };
 
 export function settingsMenu() {
@@ -268,9 +275,27 @@ export function settingsMenu() {
       ...Object.entries(SETTING_PAGES).map(([page, def]) => ({ icon: def.icon, label: def.title, command: { type: "settings", page } })),
       { icon: "mark", label: "Cuentas", command: { type: "settings", page: "accounts" } },
       { icon: "check", label: "Revisar mi consola", hint: "Qué encontró Orbital y qué falta", command: { type: "setup" } },
+      { icon: "folder", label: "Carpetas de juegos", hint: "Dónde busca cada emulador", command: { type: "folders" } },
       { icon: "windows", label: "Diagnóstico", hint: "Carpetas, memoria y últimos avisos", command: { type: "diagnostics" } },
     ],
   };
+}
+
+/**
+ * Carpetas de juegos: cada emulador con cuántos juegos encontró y dónde los busca. Para agregar
+ * una carpeta, Actualizar biblioteca la encuentra sola si está en Descargas, el Escritorio o
+ * C:\Emuladores; si no, va en config.yaml (lo dice el pie).
+ */
+export function foldersMenu({ emulators = [], config = null }) {
+  const options = emulators.map((e) => ({
+    icon: "folder", label: e.name, value: `${e.games} juego${e.games === 1 ? "" : "s"}`,
+    hint: e.rom_dirs.length ? e.rom_dirs.map((d) => shortPath(d, 2)).join(" · ") : "Sin carpeta de juegos",
+    command: { type: "stay" },
+  }));
+  options.push({ icon: "refresh", label: "Buscar juegos nuevos", hint: "Descargas, Escritorio, C:\\Emuladores",
+    command: { type: "refresh" } });
+  return { title: "Carpetas de juegos", crumb: "Carpetas",
+    subtitle: config ? `Otras carpetas: rom_dirs en ${shortPath(config, 2)}` : "", options };
 }
 
 /** Rutas largas: solo lo último ("…\orbital\mpv\mpv.exe"), que es lo que importa. */

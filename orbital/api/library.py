@@ -46,6 +46,17 @@ def router(d: Deps) -> APIRouter:
     def unhide_all() -> dict:
         return {"restored": catalog.state.unhide_all()}
 
+    @r.get("/api/folders")
+    def folders() -> dict:
+        """Dónde busca Orbital: cada emulador con su programa y sus carpetas de juegos."""
+        counts: dict[str, int] = {}
+        for item in catalog.items():
+            if item.category == "emulators":
+                counts[item.source] = counts.get(item.source, 0) + 1
+        return {"emulators": [{"name": e.name, "executable": e.executable, "rom_dirs": list(e.rom_dirs),
+                               "games": counts.get(e.id, 0)} for e in catalog.emulators],
+                "config": str(d.config.source) if d.config.source else None}
+
     @r.get("/api/setup")
     def setup() -> dict:
         return catalog.setup_status()

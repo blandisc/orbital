@@ -171,3 +171,21 @@ def test_errors_are_shown_once_a_minute_without_keys():
     finally:
         log.removeHandler(handler)
     assert len(seen) == 1 and "clave-secreta" not in seen[0]["message"] and "Diagnóstico" in seen[0]["message"]
+
+
+def test_auto_close_times_can_be_changed_from_orbital(make_client, library):
+    from orbital.shell import ConsoleShell
+
+    with make_client() as c:
+        assert c.get("/api/settings").json()["game_idle_minutes"] == 60
+        assert c.post("/api/settings", json={"game_idle_minutes": 120, "close_previous": False}).status_code == 200
+        assert c.post("/api/settings", json={"game_idle_minutes": 7}).status_code == 422
+    sessions = ConsoleShell(library).sessions
+    assert sessions.game_idle_minutes == 120 and not sessions.close_previous
+    assert sessions.video_idle_minutes == library.config.sessions.video_idle_minutes  # lo demás, de config.yaml
+
+
+def test_folders_lists_each_emulator(make_client):
+    with make_client() as c:
+        snes = next(e for e in c.get("/api/folders").json()["emulators"] if e["name"] == "Super Nintendo")
+    assert snes["games"] == 2 and len(snes["rom_dirs"]) == 1

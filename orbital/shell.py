@@ -368,8 +368,15 @@ class ConsoleShell:
     # --------------------------------------------------------------- que nada quede abierto
     @property
     def sessions(self):
+        """Lo de config.yaml, con lo que cambiaste en Ajustes encima."""
+        from dataclasses import replace
+
         from .config import SessionsConfig
-        return getattr(getattr(self.catalog, "config", None), "sessions", None) or SessionsConfig()
+        base = getattr(getattr(self.catalog, "config", None), "sessions", None) or SessionsConfig()
+        state = getattr(self.catalog, "state", None)
+        saved = state.settings() if state is not None else {}
+        return replace(base, **{k: saved[k] for k in ("game_idle_minutes", "video_idle_minutes", "close_previous")
+                                if k in saved})
 
     def close_previous(self, new_id: str) -> None:
         """Abrir algo nuevo cierra lo que estaba abierto (Orbital solo vigila uno: el anterior quedaba

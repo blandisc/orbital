@@ -315,6 +315,7 @@ class Watch:
         p.on_switch_source = self._switch_source
         p.on_episode = self._step_episode
         p.on_sub_scale = lambda scale: self.state.set_setting("sub_scale", scale)
+        p.idle_seconds = int(self.setting("video_idle_minutes", self.config.sessions.video_idle_minutes)) * 60
         p.on_language = self._remember_language
         p.sub_scale = float(self.setting("sub_scale", 1.0) or 1.0)
 
