@@ -1,79 +1,56 @@
 import { api } from "../core/api.js";
 import { bytes } from "../core/format.js";
-import { cssUrl, h, hideAfterExit, mount } from "../core/dom.js";
-
-const AUTOPLAY_MS = 5000;
+import { h, hideAfterExit, mount } from "../core/dom.js";
 
 /**
- * Elegir la fuente con el mando (en lugar de la lista de Stremio, pensada para ratón).
- * Orbital ya la ordenó según tus preferencias: la recomendada viene enfocada y arranca sola en
- * 5 s (cualquier movimiento lo cancela). ↑/↓ recorren las demás, A reproduce, B vuelve.
+ * Elegir la fuente a mano (Y en la ficha): un panel a la derecha, encima de la ficha.
+ * Lo normal es no necesitarlo: "Ver" arranca solo con la recomendada. Aquí está todo lo demás,
+ * ordenado por tus preferencias y dicho en palabras de persona (lo técnico, en pequeño).
+ *   ↑/↓ fuente · A ver · B volver a la ficha
  */
+const AUDIO_NAMES = { en: "inglés", es: "español" };
+
 export function createSources({ onPlay, onMove, onClose }) {
-  const backdrop = h("div", { class: "sources__backdrop" });
-  const poster = h("img", { class: "sources__poster", alt: "", hidden: true });
-  poster.addEventListener("load", () => { poster.hidden = false; });
-  poster.addEventListener("error", () => { poster.hidden = true; });
-  const heading = h("div", { class: "sources__heading" });
-  const title = h("h1", { class: "sources__title" });
+  const heading = h("div", { class: "sources__heading" }, "Elegir fuente");
+  const title = h("h2", { class: "sources__title" });
   const subtitle = h("div", { class: "sources__subtitle" });
   const list = h("div", { class: "sources__list", role: "list" });
-  const status = h("div", { class: "sources__status" });
-  // Izquierda: qué vas a ver. Derecha: las fuentes, la recomendada arriba.
-  const el = h("section", { class: "sources", hidden: true, "aria-label": "Fuentes" },
-    backdrop,
-    h("div", { class: "sources__head" }, poster, heading, title, subtitle),
-    h("div", { class: "sources__body" }, status, list));
+  const status = h("div", { class: "sources__status", role: "status" });
+  const panel = h("div", { class: "sources__panel" },
+    h("div", { class: "sources__head" }, heading, title, subtitle), status, list);
+  const el = h("section", { class: "sources", hidden: true, "aria-label": "Fuentes",
+    onClick: (e) => e.target === el && close() }, panel);
 
   let request = null; // { kind, id, video_id, title, item }
   let found = [];
   let index = 0;
   let token = 0;
-  let autoplay = null;
   let cancelExit = () => {};
 
+  /** Lo que importa para decidir, en orden: ¿arranca ya?, idioma, calidad de imagen y sonido. */
   function chips(src) {
     return [
-      ...src.hdr.map((t) => h("span", { class: "chip" }, t)),
-      h("span", { class: "chip" }, src.languages.join(" + ") || "—"),
-      src.cached && h("span", { class: "chip chip--good" }, "Al instante"),
-      !src.cached && src.debrid && h("span", { class: "chip chip--warn" }, "Hay que descargarla"),
-      ...src.tags.filter((t) => t !== "Tráiler").map((t) => h("span", { class: "chip chip--muted" }, t)),
+      src.cached ? h("span", { class: "chip chip--good" }, "Al instante")
+        : src.debrid ? h("span", { class: "chip chip--warn" }, "Tarda en empezar") : null,
+      h("span", { class: "chip" }, src.languages.join(" + ") || "Idioma desconocido"),
+      ...src.hdr.map((t) => h("span", { class: "chip" }, t === "DV" ? "Dolby Vision" : t)),
+      src.audio && h("span", { class: "chip" }, src.audio === "Atmos" ? "Dolby Atmos" : `Sonido ${src.audio}`),
     ].filter(Boolean);
   }
 
   function render() {
     mount(list, found.map((src, i) => h("button", {
-      class: ["source", i === index && "source--focused", i === 0 && "source--recommended"], type: "button", role: "listitem",
+      class: ["source", i === index && "source--focused"], type: "button", role: "listitem",
       onClick: () => (i === index ? play() : setIndex(i)),
     },
     h("span", { class: ["source__res", src.resolution === "4K" && "source__res--4k"] }, src.resolution || "SD"),
     h("span", { class: "source__main" },
-      h("span", { class: "source__release" }, src.release || src.addon),
-      h("span", { class: "source__chips" }, chips(src))),
-    h("span", { class: "source__side" },
-      i === 0 ? h("span", { class: "source__badge" }, "Recomendada") : null,
-      h("span", { class: "source__size" }, bytes(src.size) || ""),
-      h("span", { class: "source__meta" }, [src.addon, src.seeders > 0 && `${src.seeders} semillas`].filter(Boolean).join(" · "))),
-    i === 0 && h("span", { class: "source__autoplay", "aria-hidden": "true" }))));
-  }
-
-  function stopAutoplay() {
-    clearTimeout(autoplay);
-    autoplay = null;
-    list.firstElementChild?.classList.remove("source--counting");
-  }
-
-  function startAutoplay() {
-    const first = list.firstElementChild;
-    if (!first) return;
-    first.classList.add("source--counting");
-    first.style.setProperty("--autoplay-ms", `${AUTOPLAY_MS}ms`);
-    autoplay = setTimeout(() => { index = 0; play(); }, AUTOPLAY_MS);
+      h("span", { class: "source__chips" }, chips(src)),
+      h("span", { class: "source__release" }, [src.release, bytes(src.size), src.addon].filter(Boolean).join(" · "))),
+    i === 0 && h("span", { class: "source__badge" }, "Recomendada"))));
   }
 
   function setIndex(i) {
-    stopAutoplay();
     const next = Math.max(0, Math.min(found.length - 1, i));
     if (next === index) return;
     list.children[index]?.classList.remove("source--focused");
@@ -84,7 +61,6 @@ export function createSources({ onPlay, onMove, onClose }) {
   }
 
   function play() {
-    stopAutoplay();
     const src = found[index];
     if (!src || !request) return;
     onPlay({ ...request, source: src.id });
@@ -94,60 +70,44 @@ export function createSources({ onPlay, onMove, onClose }) {
     request = req;
     const mine = ++token;
     cancelExit();
-    stopAutoplay();
     found = [];
     index = 0;
-    backdrop.style.backgroundImage = cssUrl(req.item?.hero || req.item?.image);
-    poster.hidden = true;
-    if (req.item?.image) poster.src = req.item.image;
-    else poster.removeAttribute("src");
-    heading.textContent = "Elige la fuente";
-    title.textContent = req.title;
+    title.textContent = req.title || "";
     subtitle.textContent = "";
     mount(list);
-    status.textContent = "Buscando fuentes en tus addons…";
+    status.textContent = "Buscando dónde verlo…";
     status.hidden = false;
     el.hidden = false;
     try {
       const data = await api.stremioSources(req.kind, req.id, req.video_id);
       if (mine !== token) return;
       found = data.sources;
-      const meta = data.meta || {};
-      if (!title.textContent && meta.title) {
-        const [season, episode] = (req.video_id || "").split(":").slice(-2).map(Number);
-        const isEpisode = req.kind === "series" && req.video_id !== req.id && episode >= 0;
-        title.textContent = isEpisode ? `${meta.title} · T${season} E${episode}` : meta.title;
-      }
-      if (!req.item?.image && meta.poster) poster.src = meta.poster;
-      if (!req.item?.hero && meta.background) backdrop.style.backgroundImage = cssUrl(meta.background);
-      const facts = [meta.year, meta.runtime].filter(Boolean).join(" · ");
-      const audio = { en: "inglés", es: "español" }[data.audio] || data.audio;
-      subtitle.textContent = `${facts ? `${facts}
-` : ""}Ordenadas para ti: audio en ${audio} · ${data.quality}`;
+      if (!title.textContent && data.meta?.title) title.textContent = data.meta.title;
+      subtitle.textContent = `Primero las de audio en ${AUDIO_NAMES[data.audio] || data.audio} y ${data.quality}. `
+        + "La recomendada es la que Orbital pone con «Ver».";
       status.hidden = !!found.length;
-      status.textContent = found.length ? "" : "Tus addons no encontraron fuentes para esto.";
+      status.textContent = found.length ? "" : "No encontré dónde ver esto. Revisa tus complementos en Stremio.";
       render();
-      if (req.autoplay !== false) startAutoplay();
     } catch (err) {
-      if (mine === token) status.textContent = `No pude buscar fuentes: ${err.message}`;
+      if (mine === token) status.textContent = err.message;
     }
   }
 
   function close() {
     if (el.hidden) return;
     token++;
-    stopAutoplay();
     cancelExit = hideAfterExit(el, "sources--leaving", 300);
     onClose?.();
   }
 
   function handle(action) {
     if (el.hidden || el.classList.contains("sources--leaving")) return false;
-    if (action === "back") close();
+    if (action === "back" || action === "options") close();
     else if (action === "up") setIndex(index - 1);
     else if (action === "down") setIndex(index + 1);
+    else if (action === "pageleft") setIndex(index - 5);
+    else if (action === "pageright") setIndex(index + 5);
     else if (action === "select") play();
-    else stopAutoplay(); // cualquier otro botón: me quedo eligiendo
     return true;
   }
 

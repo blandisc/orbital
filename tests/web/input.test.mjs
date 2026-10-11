@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { keyToAction, padActions, Repeater } from "../../orbital/web/js/core/input.js";
+import { keyToAction, padActions, Repeater, stickDirection } from "../../orbital/web/js/core/input.js";
 
 const pad = (pressed = [], axes = [0, 0]) => ({
   buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: pressed.includes(i) })),
@@ -18,8 +18,31 @@ test("teclas", () => {
 
 test("botones y stick del mando", () => {
   assert.deepEqual([...padActions([pad([0, 3])])].sort(), ["options", "select"]);
-  assert.deepEqual([...padActions([pad([], [0.9, -0.8])])].sort(), ["right", "up"]);
+  // En diagonal manda el eje dominante: nunca fila y columna a la vez.
+  assert.deepEqual([...padActions([pad([], [0.9, -0.8])])], ["right"]);
   assert.deepEqual([...padActions([pad([], [0.3, 0.2]), null])], []);
+});
+
+test("stick con histéresis: se activa al 55 % y se suelta por debajo del 35 %", () => {
+  assert.equal(stickDirection(.5, 0), null);
+  assert.equal(stickDirection(.6, 0), "right");
+  assert.equal(stickDirection(.4, 0, "right"), "right"); // tiembla en el borde: sigue igual
+  assert.equal(stickDirection(.3, 0, "right"), null);
+  assert.equal(stickDirection(.1, .7, "right"), "down"); // cambió claramente de eje
+  const memory = new Map();
+  assert.deepEqual([...padActions([pad([], [.6, 0])], memory)], ["right"]);
+  assert.deepEqual([...padActions([pad([], [.45, 0])], memory)], ["right"]);
+});
+
+test("mantener acelera y avisa que es repetición", () => {
+  const r = new Repeater({ delay: 300, rate: 100, fastRate: 50, accelerateAfter: 2 });
+  const on = new Set(["right"]);
+  r.update(on, 0);
+  assert.equal(r.isRepeat("right"), false);
+  assert.deepEqual(r.update(on, 300), ["right"]);
+  assert.equal(r.isRepeat("right"), true);
+  assert.deepEqual(r.update(on, 400), ["right"]); // 2ª repetición: ahora cada 50 ms
+  assert.deepEqual(r.update(on, 450), ["right"]);
 });
 
 test("autorrepetición solo para moverse", () => {

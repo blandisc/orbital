@@ -9,7 +9,7 @@ export function gameMenu(item, { running = null } = {}) {
   const isOpen = running?.id === item.id;
   const options = isOpen
     ? [
-      { icon: "play", label: "Continuar", hint: running.runner, command: { type: "resume" } },
+      { icon: "play", label: "Volver al juego", hint: running.runner, command: { type: "resume" } },
       { icon: "stop", label: `Cerrar ${running.runner || "el juego"}`, danger: true,
         command: { type: "confirm-stop", title: item.title, runner: running.runner } },
     ]
@@ -21,6 +21,8 @@ export function gameMenu(item, { running = null } = {}) {
       command: { type: "launch", id: item.id },
     }];
   if (item.source === "search") return { title: item.title, options: [...options, { icon: "close", label: "Cancelar", command: { type: "close" } }] };
+  // Películas y series: la ficha (reparto, episodios, elegir fuente) a un botón.
+  if (isWatchable(item) && !isOpen) options.push({ icon: "media", label: "Ver la ficha", command: { type: "title", id: item.id } });
   // Emuladores alternativos: solo en juegos.
   for (const runner of isOpen || !isGame(item) ? [] : item.runners || []) {
     if (runner.id === item.runner) continue;
@@ -35,10 +37,9 @@ export function gameMenu(item, { running = null } = {}) {
   return { title: item.title, options };
 }
 
-export function mainMenu({ soundEnabled, running, hiddenCount, canExit = false }) {
+export function mainMenu({ running, hiddenCount, canExit = false }) {
   const options = [
     { icon: "refresh", label: "Actualizar biblioteca", command: { type: "refresh" } },
-    { icon: "sound", label: "Sonidos", hint: soundEnabled ? "Sí" : "No", command: { type: "toggle-sound" } },
   ];
   if (running?.managed) {
     options.push({ icon: "stop", label: `Cerrar ${running.title}`, danger: true,
@@ -48,6 +49,7 @@ export function mainMenu({ soundEnabled, running, hiddenCount, canExit = false }
     options.push({ icon: "show", label: "Mostrar juegos ocultos", hint: String(hiddenCount), command: { type: "unhide-all" } });
   }
   options.push({ icon: "windows", label: "Ventanas abiertas", command: { type: "windows" } });
+  options.push({ icon: "mark", label: "Ajustes", hint: "Idioma, subtítulos, texto, sonido", command: { type: "settings" } });
   options.push({ icon: "power", label: "Apagado", command: { type: "power-menu" } });
   if (canExit) {
     options.push({ icon: "exit", label: "Salir al escritorio", command: { type: "confirm-exit" } });
@@ -96,8 +98,8 @@ export function powerMenu() {
     title: "Apagado",
     options: [
       { icon: "moon", label: "Suspender", command: { type: "power", action: "sleep" } },
-      { icon: "refresh", label: "Reiniciar", danger: true, command: { type: "power", action: "restart" } },
-      { icon: "power", label: "Apagar", danger: true, command: { type: "power", action: "shutdown" } },
+      { icon: "refresh", label: "Reiniciar", danger: true, command: { type: "power-confirm", action: "restart" } },
+      { icon: "power", label: "Apagar", danger: true, command: { type: "power-confirm", action: "shutdown" } },
       { icon: "close", label: "Cancelar", command: { type: "close" } },
     ],
   };
@@ -105,7 +107,7 @@ export function powerMenu() {
 
 /** "Ventanas abiertas": saltar a otra app o juego con el mando (como Alt+Tab o la Vista de tareas). */
 export function windowsMenu(windows) {
-  const options = windows.slice(0, 9).map((w) => ({
+  const options = windows.map((w) => ({
     icon: "windows", label: w.app, hint: w.title === w.app ? "" : w.title, command: { type: "focus-window", id: w.id },
   }));
   if (!options.length) options.push({ icon: "check", label: "No hay otras ventanas abiertas", command: { type: "close" } });
@@ -115,10 +117,95 @@ export function windowsMenu(windows) {
 /** Confirmación antes de salir: evita salir por un toque accidental. */
 export function exitMenu() {
   return {
-    title: "¿Salir al escritorio? Orbital sigue escuchando a Alexa: di «abre la consola» para volver.",
+    title: "¿Salir al escritorio?",
+    subtitle: "Para volver: pulsa Home en el mando o dile a Alexa «abre la consola».",
     options: [
       { icon: "close", label: "Cancelar", command: { type: "close" } },
       { icon: "exit", label: "Salir al escritorio", danger: true, command: { type: "exit" } },
     ],
+  };
+}
+
+/**
+ * Reiniciar y Apagar piden confirmar (un A de más ya no apaga la consola). Si hay un juego
+ * abierto, se dice: lo que no se guardó se pierde. "Cancelar" va primero.
+ */
+export function powerConfirmMenu(action, running = null) {
+  const verb = action === "restart" ? "Reiniciar" : "Apagar";
+  return {
+    title: `¿${verb} la consola?`,
+    subtitle: running?.managed ? `${running.title} sigue abierto: lo que no hayas guardado se perderá.` : "",
+    options: [
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: action === "restart" ? "refresh" : "power", label: verb, danger: true, command: { type: "power", action } },
+    ],
+  };
+}
+
+// --- Ajustes ------------------------------------------------------------------------------
+// Cada ajuste: sus valores en orden (A o ◀/▶ pasan al siguiente) y cómo se llaman.
+export const SETTING_VALUES = {
+  audio: [["en", "Inglés"], ["es", "Español"]],
+  subtitles: [["en", "Inglés"], ["es", "Español"], ["", "Sin subtítulos"]],
+  quality: [["1080p", "1080p"], ["4K", "4K"], ["720p", "720p"]],
+  sub_scale: [[1, "Normal"], [1.25, "Grande"], [1.5, "Muy grande"], [.85, "Pequeño"]],
+  text_size: [["normal", "Normal"], ["large", "Grande"], ["xlarge", "Muy grande"]],
+  safe_area: [[4, "Normal"], [6, "Grande"], [2, "Pequeño"], [0, "Sin margen"]],
+  reduce_motion: [[false, "No"], [true, "Sí"]],
+  sounds: [[true, "Sí"], [false, "No"]],
+  haptics: [[true, "Sí"], [false, "No"]],
+};
+
+export const settingLabel = (key, value) => (SETTING_VALUES[key]?.find(([v]) => v === value) ?? [null, String(value)])[1];
+
+/** El valor que sigue al actual (da la vuelta). */
+export function nextSetting(key, value) {
+  const values = SETTING_VALUES[key].map(([v]) => v);
+  const i = values.indexOf(value);
+  return values[(i + 1) % values.length];
+}
+
+const SETTING_PAGES = {
+  playback: { title: "Reproducción", icon: "play", options: [
+    ["audio", "Idioma del audio", "Para elegir la fuente"], ["subtitles", "Subtítulos", null], ["quality", "Calidad", "Hasta dónde subir"],
+    ["sub_scale", "Tamaño de subtítulos", null]] },
+  display: { title: "Pantalla", icon: "show", options: [
+    ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],
+    ["reduce_motion", "Reducir movimiento", null]] },
+  sound: { title: "Sonido y vibración", icon: "sound", options: [["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null]] },
+};
+
+export function settingsMenu() {
+  return {
+    title: "Ajustes",
+    options: [
+      ...Object.entries(SETTING_PAGES).map(([page, def]) => ({ icon: def.icon, label: def.title, command: { type: "settings", page } })),
+      { icon: "mark", label: "Cuentas", command: { type: "settings", page: "accounts" } },
+    ],
+  };
+}
+
+/** Una página de Ajustes con los valores actuales. */
+export function settingsPage(page, settings, { now = Date.now() } = {}) {
+  if (page === "accounts") {
+    const alexaAgo = settings.alexa_last ? Math.round((now / 1000 - settings.alexa_last) / 60) : null;
+    return {
+      title: "Cuentas", crumb: "Cuentas",
+      options: [
+        { icon: "media", label: "Stremio", value: settings.stremio_linked ? "Conectada" : "Sin conectar", command: { type: "stay" },
+          hint: settings.stremio_linked ? "Seguir viendo y fuentes en Orbital" : "En la PC: orbital stremio login" },
+        { icon: "mic", label: "Alexa", value: settings.alexa ? "Configurada" : "Sin configurar", command: { type: "stay" },
+          hint: settings.alexa ? (alexaAgo === null ? "Aún no le has pedido nada" : `Última orden hace ${alexaAgo < 60 ? `${alexaAgo} min` : `${Math.round(alexaAgo / 60)} h`}`)
+            : "En la PC: orbital alexa setup" },
+      ],
+    };
+  }
+  const def = SETTING_PAGES[page];
+  return {
+    title: def.title, crumb: def.title,
+    options: def.options.map(([key, label, hint]) => ({
+      icon: def.icon, label, hint, value: settingLabel(key, settings[key]),
+      command: { type: "setting", key, value: nextSetting(key, settings[key]), page },
+    })),
   };
 }

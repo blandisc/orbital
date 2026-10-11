@@ -7,14 +7,13 @@ import { h, svg } from "./core/dom.js";
 import { ICONS } from "./core/icons.js";
 import { duration } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
-import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, restoreFocus, rowJump, runnerName, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
-import { rumble } from "./core/haptics.js";
+import { alternativeRunner, clampFocus, isWatchable, itemAt, restoreFocus, rowJump, runnerName, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
+import { haptics, rumble } from "./core/haptics.js";
 import { footerHints } from "./core/hints.js";
-import { exitMenu, gameMenu, mainMenu, powerMenu, stopMenu, switchMenu, windowsMenu } from "./core/menus.js";
+import { exitMenu, gameMenu, mainMenu, powerConfirmMenu, powerMenu, settingsMenu, settingsPage, stopMenu, switchMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
-import { createEpisodes } from "./components/episodes.js";
 import { createHints } from "./components/hints.js";
 import { createLaunchOverlay } from "./components/launch-overlay.js";
 import { createSearch } from "./components/search.js";
@@ -22,6 +21,7 @@ import { createSheet } from "./components/sheet.js";
 import { createSources } from "./components/sources.js";
 import { createShelf } from "./components/shelf.js";
 import { createStatusBar } from "./components/status-bar.js";
+import { createTitle, titleRef } from "./components/title.js";
 import { createToast } from "./components/toast.js";
 
 const LAUNCH_COOLDOWN_MS = 3000;
@@ -38,9 +38,10 @@ const state = {
   allRows: [], // todas las filas; `rows` son las de la sección actual
   section: "home", // Inicio, Juegos, Películas y series, Apps (LB/RB)
   sectionFocus: {}, // sección -> { rowId, itemId } donde te quedaste
-  stremioLinked: false, // con cuenta: Orbital elige la fuente (si no, la lista de Stremio)
+  stremioLinked: false, // con cuenta: Orbital elige la fuente (si no, Stremio)
   player: "stremio", // "orbital": se ve en el reproductor de Orbital (mpv)
   popId: null, // juego recién marcado como favorito (su estrella se anima)
+  settings: {}, // Ajustes (los guarda el servidor)
 };
 
 const current = () => itemAt(state.rows, state.focus.r, state.focus.c);
@@ -54,24 +55,25 @@ const ui = {
   shelf: createShelf({ onPick: (r, c) => pick(r, c), onSwipe: (swipe) => onSwipe(swipe) }),
   hints: createHints(),
   sheet: createSheet({
-    onCommand: (command) => runCommand(command),
+    onCommand: (command, context) => runCommand(command, context),
     onMove: () => sound.play("move"),
     onClose: () => renderHints(),
   }),
   search: createSearch({
-    // Películas y series: episodios o fuentes encima de la búsqueda; un juego se abre (y la búsqueda se cierra).
-    onOpen: (result) => (isWatchable(result) ? openWatchable(result) : (ui.search.close(), launch(result))),
+    // Películas y series: su ficha encima de la búsqueda; un juego se abre (y la búsqueda se cierra).
+    onOpen: (result) => (isWatchable(result) || result.kind ? openTitle(result) : (ui.search.close(), launch(result))),
     localSearch: (query) => searchLibrary(state.allRows, query),
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); },
   }),
-  episodes: createEpisodes({
-    onPlay: (play) => chooseSource(play),
-    onMove: () => sound.play("move"),
+  title: createTitle({
+    onPlay: (play) => watch(play),
+    onSources: (play) => openSources(play),
+    onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
   sources: createSources({
-    onPlay: (play) => playStremio(play),
+    onPlay: (play) => watch(play),
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); },
   }),
@@ -79,44 +81,43 @@ const ui = {
   toast: createToast(),
 };
 
-// Con el dedo no hay botón B: en las vistas encima (buscar, episodios, fuentes, menú) aparece "Atrás".
+// Con el dedo no hay botón B: en las vistas encima (buscar, ficha, fuentes, menú) aparece "Atrás".
 const touchBack = h("button", { class: "touch-back", type: "button", "aria-label": "Atrás", onClick: () => handleAction("back") },
   svg(ICONS.back), h("span", {}, "Atrás"));
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.episodes.el, ui.sources.el, ui.sheet.el, ui.launch.el, ui.toast.el,
+  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.sheet.el, ui.launch.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
-const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LB/RB
+const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LT/RT
 
 function renderHints() {
   const g = glyphs();
-  const overlay = ui.sheet.isOpen || ui.sources.isOpen || ui.episodes.isOpen || ui.search.isOpen;
+  const overlay = ui.sheet.isOpen || ui.sources.isOpen || ui.title.isOpen || ui.search.isOpen;
   document.body.dataset.overlay = overlay ? "true" : "false";
   if (!ui.sheet.isOpen && ui.sources.isOpen) {
-    return ui.hints.render([{ glyph: g.select, label: "Ver" }, { glyph: g.rows, label: "Otra fuente" },
+    return ui.hints.render([{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra fuente" },
       { glyph: g.back, label: "Volver", end: true }]);
   }
-  if (!ui.sheet.isOpen && ui.episodes.isOpen) {
-    return ui.hints.render([{ glyph: g.select, label: "Ver" }, { glyph: g.rows, label: "Episodio" },
-      { glyph: g.section, label: "Temporada" }, { glyph: g.back, label: "Volver", end: true }]);
-  }
+  if (!ui.sheet.isOpen && ui.title.isOpen) return ui.hints.render(ui.title.hints(g));
   if (!ui.sheet.isOpen && ui.search.isOpen) return ui.hints.render(ui.search.hints(g));
   const { r, c } = state.focus;
   ui.hints.render(footerHints(glyphs(), {
     sheetOpen: ui.sheet.isOpen,
+    sheetNested: ui.sheet.depth > 0,
     atHome: !r && !c,
     longRow: (state.rows[r]?.items.length ?? 0) >= LONG_ROW,
     running: state.running?.managed ? state.running : null,
   }));
 }
 
-function setFocus(r, c, { silent = false, edge = null } = {}) {
+function setFocus(r, c, { silent = false, edge = null, repeat = false } = {}) {
   const next = clampFocus(state.rows, r, c);
   const moved = next.r !== state.focus.r || next.c !== state.focus.c;
-  if (!moved && edge && !silent) { // al final de la fila
+  // Al final de la fila: rebota y vibra solo en la pulsación, no en cada repetición al mantener.
+  if (!moved && edge && !silent && !repeat) {
     ui.shelf.bump(edge);
     rumble("edge");
   }
@@ -142,6 +143,17 @@ function setModality(modality) {
   renderSections();
   ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   renderHints();
+}
+
+/** Ajustes que cambian la interfaz: tamaño del texto, márgenes de la TV, movimiento, sonido. */
+function applySettings(settings) {
+  state.settings = settings;
+  const root = document.documentElement;
+  root.dataset.textSize = settings.text_size || "normal";
+  root.style.setProperty("--safe-area", `${settings.safe_area ?? 4}`);
+  root.dataset.motion = settings.reduce_motion ? "reduce" : "full";
+  sound.enabled = settings.sounds !== false;
+  haptics.enabled = settings.haptics !== false;
 }
 
 // ---------------------------------------------------------------- datos
@@ -176,29 +188,46 @@ function stepSection(delta) {
   else rumble("edge");
 }
 
-async function loadLibrary({ refresh = false, keepId = current()?.id } = {}) {
-  const rowId = state.rows[state.focus.r]?.id;
+let libraryRetry = 0;
+
+async function loadLibrary({ refresh = false, keepId = null } = {}) {
+  const before = { ...state.focus };
+  const wanted = keepId;
   try {
+    if (refresh) ui.toast.show("Buscando juegos nuevos…");
     const data = refresh ? await api.refresh() : await api.library();
+    // Lo que importa es dónde estás AHORA (pudiste moverte mientras llegaba la respuesta).
+    const moved = before.r !== state.focus.r || before.c !== state.focus.c;
+    const itemId = moved || !wanted ? current()?.id : wanted;
+    const rowId = state.rows[state.focus.r]?.id;
+    const countBefore = state.allRows.reduce((n, row) => n + row.items.length, 0);
     state.allRows = data.rows;
     if (!visibleSections(state.allRows).some((s) => s.id === state.section)) state.section = "home";
     state.rows = sectionRows(state.allRows, state.section);
     renderSections();
     state.hidden = data.hidden || 0;
     ui.shelf.setRows(state.rows, {
-      emptyTitle: "Tu biblioteca está vacía",
-      emptyText: "Revisa config.yaml y abre el menú → Actualizar biblioteca.",
+      emptyTitle: "Aún no encontré juegos",
+      emptyText: "Instala Steam o pon tus emuladores en Descargas, el Escritorio o C:\\Emuladores, y abre ☰ → Actualizar biblioteca.",
       popId: state.popId,
     });
     state.popId = null;
     if (!state.libraryLoaded) ui.search.refresh(); // abierta antes de que cargara: que salgan tus juegos
     state.libraryLoaded = true;
-    const { r, c } = restoreFocus(state.rows, { rowId, itemId: keepId, ...state.focus });
+    libraryRetry = 0;
+    const { r, c } = restoreFocus(state.rows, { rowId, itemId, ...state.focus });
     state.focus = { r, c };
     setFocus(r, c, { silent: true });
-    if (refresh) ui.toast.show("Biblioteca actualizada");
+    if (refresh) {
+      const countAfter = state.allRows.reduce((n, row) => n + row.items.length, 0);
+      const diff = countAfter - countBefore;
+      ui.toast.show(diff > 0 ? `Listo: ${diff} cosa${diff === 1 ? "" : "s"} nueva${diff === 1 ? "" : "s"}` : "Biblioteca al día");
+    }
   } catch (err) {
-    ui.toast.show(`No pude cargar la biblioteca: ${err.message}`, { error: true });
+    // Al arrancar el servidor puede no estar listo: se reintenta solo (y se avisa una vez).
+    if (libraryRetry === 0) ui.toast.show(`No pude cargar la biblioteca: ${err.message}. Reintentando…`, { error: true });
+    libraryRetry++;
+    setTimeout(() => loadLibrary({ refresh: false, keepId }), Math.min(15_000, 1000 * 2 ** libraryRetry));
   }
 }
 
@@ -221,15 +250,15 @@ async function pollSystem() {
   } catch { /* idem */ }
 }
 
-// ---------------------------------------------------------------- acciones
-/** Películas y series (Stremio): las series abren sus episodios en Orbital; el resto se reproduce. */
-function openWatchable(item) {
-  if (isSeries(item)) {
-    sound.play("open");
-    ui.episodes.open(item);
-    return renderHints();
-  }
-  return chooseSource({ kind: "movie", id: item.meta_id || item.id.split(":").pop(), title: item.title, item });
+// ---------------------------------------------------------------- películas y series
+/** La ficha (película o serie): datos, reparto, episodios, Continuar / Ver / Elegir fuente. */
+function openTitle(item) {
+  const ref = titleRef(item);
+  if (!ref) return;
+  if (ui.sources.isOpen) ui.sources.close();
+  sound.play("open");
+  ui.title.open(ref);
+  renderHints();
 }
 
 /** Un juego abierto que se cerraría al abrir otra cosa (un video no: su avance queda guardado). */
@@ -238,25 +267,39 @@ function gameInTheWay(id) {
   return running?.managed && running.id !== id && running.id !== "media:player" ? running : null;
 }
 
-/** Elegir fuente en Orbital (con tu cuenta de Stremio vinculada); sin cuenta, Stremio decide. */
-function chooseSource(play, { confirmed = false } = {}) {
+/**
+ * Ver algo. Sin `source`, Orbital elige la recomendada y arranca (sin lista de fuentes); con
+ * `source`, esa. Sin cuenta de Stremio vinculada, lo abre Stremio.
+ */
+function watch(play, { confirmed = false } = {}) {
   const running = !confirmed && gameInTheWay("media:player");
   if (running) return openMenu(switchMenu({ running, title: play.title, command: { type: "watch", play } }));
-  if (!state.stremioLinked) return playStremio(play);
-  sound.play("open");
-  ui.sources.open({ ...play, video_id: play.video_id || play.id });
-  return renderHints();
+  return playStremio(play);
 }
 
-async function playStremio({ kind, id, video_id: videoId = null, title, item, source = null, keep = false }) {
+function openSources(play) {
+  if (!state.stremioLinked) {
+    sound.play("error");
+    return ui.toast.show("Para elegir la fuente, conecta tu cuenta de Stremio (☰ → Ajustes → Cuentas)", { error: true });
+  }
+  sound.play("menu");
+  ui.sources.open(play);
+  renderHints();
+}
+
+async function playStremio({ kind, id, video_id: videoId = null, title, item, source = null, keep = false, from_start: fromStart = false }) {
   if (Date.now() < state.launchLockedUntil) return;
   state.launchLockedUntil = Date.now() + LAUNCH_COOLDOWN_MS;
   sound.play("open");
   rumble("launch");
   state.launchingId = "media:player";
-  ui.launch.show({ ...item, title }, state.player === "orbital" ? "Reproductor de Orbital" : "Stremio");
+  const native = state.player === "orbital" && state.stremioLinked;
+  ui.launch.show({ ...(item || {}), title }, native ? "Reproductor de Orbital" : "Stremio");
+  // Fases honestas: primero se busca la fuente (hasta unos segundos), luego se conecta.
+  if (native && source === null) ui.launch.status("Buscando dónde verlo");
   try {
-    const res = await api.stremioPlay({ kind, id, video_id: videoId, title, source, keep });
+    const res = await api.stremioPlay({ kind, id, video_id: videoId, title, source, keep, from_start: fromStart });
+    if (res.label) ui.launch.status("Conectando", res.label);
     if (res.reveal) ui.launch.hold(); // Orbital tapa mientras abre el reproductor
     if (ui.sources.isOpen) ui.sources.close();
     pollStatus();
@@ -268,19 +311,35 @@ async function playStremio({ kind, id, video_id: videoId = null, title, item, so
   }
 }
 
+// ---------------------------------------------------------------- juegos y apps
+async function resumeRunning() {
+  sound.play("select");
+  try {
+    const res = await api.resume();
+    if (res.ok === false) { // la ventana ya no existe (se cerró por su cuenta): no dejar A muerto
+      sound.play("error");
+      ui.toast.show(`No encuentro la ventana de ${state.running?.title || "lo que estaba abierto"}. Ábrelo otra vez.`, { error: true });
+      pollStatus();
+    }
+  } catch (err) {
+    ui.toast.show(err.message, { error: true });
+  }
+}
+
 async function launch(item, runner = null, { confirmed = false, keep = false } = {}) {
   if (!item || Date.now() < state.launchLockedUntil) return; // evita dobles pulsaciones de A
   if (item.source === "search") return openSearch();
-  if (isSeries(item)) return openWatchable(item);
-  // Seguir viendo: el mismo episodio, eligiendo la fuente en Orbital.
-  const watch = item.extra;
-  if (item.source === "stremio" && watch?.video_id && ["movie", "series"].includes(watch.kind)) {
-    return chooseSource({ kind: watch.kind, id: watch.meta_id, video_id: watch.video_id, title: item.title, item });
+  // Seguir viendo: A pone el episodio en el que ibas, directo (como Netflix). Y abre la ficha.
+  const watchExtra = item.extra;
+  if (item.source === "stremio" && watchExtra?.video_id && ["movie", "series"].includes(watchExtra.kind)) {
+    if (!confirmed && gameInTheWay("media:player")) {
+      return openMenu(switchMenu({ running: state.running, title: item.title,
+        command: { type: "watch", play: { kind: watchExtra.kind, id: watchExtra.meta_id, video_id: watchExtra.video_id, title: item.title, item } } }));
+    }
+    return playStremio({ kind: watchExtra.kind, id: watchExtra.meta_id, video_id: watchExtra.video_id, title: item.title, item });
   }
-  if (!runner && item.id === state.running?.id) { // sigue abierto: se continúa, no se abre otra copia
-    sound.play("select");
-    return api.resume();
-  }
+  if (isWatchable(item)) return openTitle(item); // del catálogo: primero la ficha
+  if (!runner && item.id === state.running?.id) return resumeRunning(); // sigue abierto: se continúa
   const inTheWay = !confirmed && gameInTheWay(item.id);
   if (inTheWay) return openMenu(switchMenu({ running: inTheWay, title: item.title, command: { type: "launch", id: item.id, runner } }));
   state.launchingId = item.id;
@@ -298,13 +357,25 @@ async function launch(item, runner = null, { confirmed = false, keep = false } =
     state.launchLockedUntil = 0;
     ui.launch.hide();
     sound.play("error");
+    // Si hay otro emulador, ofrecerlo en el mismo momento (en vez de un callejón sin salida).
+    const alt = alternativeRunner(item);
+    if (alt && alt.id !== runner) {
+      return openMenu({ title: err.message, options: [
+        { icon: "swap", label: `Abrir con ${alt.name}`, command: { type: "launch", id: item.id, runner: alt.id } },
+        { icon: "refresh", label: "Actualizar biblioteca", command: { type: "refresh" } },
+        { icon: "close", label: "Entendido", command: { type: "close" } },
+      ] });
+    }
     ui.toast.show(err.message, { error: true });
   }
 }
 
 /** Buscar (botón Vista ⧉, la píldora de arriba o la tarjeta Buscar): juegos, películas y series. */
 function openSearch(initial = "") {
-  if (ui.search.isOpen) return;
+  if (ui.search.isOpen) {
+    if (initial) ui.search.open(initial);
+    return;
+  }
   sound.play("open");
   ui.search.open(initial);
   renderHints();
@@ -329,13 +400,18 @@ function pick(r, c) {
 // En todas las filas (no solo las de la sección): también llega desde Buscar.
 const findItem = (id) => state.allRows.flatMap((row) => row.items).find((i) => i.id === id);
 
-async function runCommand(command) {
+/** Submenú: B regresa al menú del que vienes. */
+const nested = (context) => (context ? { stack: [...context.stack, { menu: context.menu, index: context.index }] } : {});
+
+async function runCommand(command, context = null) {
   try {
     switch (command.type) {
       case "launch":
         return launch(findItem(command.id), command.runner || null, { confirmed: !!command.confirmed, keep: !!command.keep });
       case "watch":
-        return chooseSource({ ...command.play, keep: !!command.keep }, { confirmed: true });
+        return watch({ ...command.play, keep: !!command.keep }, { confirmed: true });
+      case "title":
+        return openTitle(findItem(command.id));
       case "prefs":
         await api.setPrefs(command.id, command.prefs);
         if (command.prefs.favorite) state.popId = command.id;
@@ -344,29 +420,28 @@ async function runCommand(command) {
         return loadLibrary({ keepId: command.id });
       case "refresh":
         return loadLibrary({ refresh: true });
-      case "toggle-sound":
-        sound.enabled = !sound.enabled;
-        return sound.play("select");
       case "stop":
         await api.stop();
         return pollStatus();
       case "confirm-stop":
-        return openMenu(stopMenu(command));
+        return openMenu(stopMenu(command), nested(context));
       case "power-menu":
-        return openMenu(powerMenu());
+        return openMenu(powerMenu(), nested(context));
+      case "power-confirm":
+        return openMenu(powerConfirmMenu(command.action, state.running), nested(context));
       case "power":
         await api.power(command.action);
         return ui.toast.show({ sleep: "Suspendiendo…", restart: "Reiniciando…", shutdown: "Apagando…" }[command.action]);
       case "windows":
-        return openMenu(windowsMenu((await api.windows()).windows));
+        ui.toast.show("Buscando ventanas…");
+        return openMenu(windowsMenu((await api.windows()).windows), nested(context));
       case "focus-window":
         sound.play("select");
         return api.focusWindow(command.id);
       case "resume":
-        sound.play("back");
-        return api.resume();
+        return resumeRunning();
       case "confirm-exit":
-        return openMenu(exitMenu());
+        return openMenu(exitMenu(), nested(context));
       case "exit":
         await api.exitToDesktop();
         return ui.toast.show("Saliendo al escritorio…");
@@ -374,6 +449,19 @@ async function runCommand(command) {
         await api.unhideAll();
         ui.toast.show("Juegos ocultos restaurados");
         return loadLibrary();
+      case "settings":
+        if (!command.page) return openMenu(settingsMenu(), nested(context));
+        applySettings(await api.settings());
+        return openMenu(settingsPage(command.page, state.settings), nested(context));
+      case "setting": { // cambia y se queda en la misma página, en la misma opción
+        applySettings(await api.setSettings({ [command.key]: command.value }));
+        sound.play("select");
+        ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
+        return renderHints();
+      }
+      case "stay":
+        if (context) ui.sheet.open(context.menu, { index: context.index, stack: context.stack });
+        return renderHints();
       case "close":
         return sound.play("back");
     }
@@ -383,14 +471,14 @@ async function runCommand(command) {
   }
 }
 
-function openMenu(menu) {
+function openMenu(menu, options = {}) {
   if (!menu) return;
   sound.play("menu");
-  ui.sheet.open(menu);
+  ui.sheet.open(menu, options);
   renderHints();
 }
 
-function handleAction(action) {
+function handleAction(action, { repeat = false } = {}) {
   if (ui.launch.visible) {
     if (action === "back") { // B: no esperar más (muestra ya el juego o lo que haya)
       if (ui.launch.holding) api.reveal().catch(() => {});
@@ -400,30 +488,33 @@ function handleAction(action) {
   }
   if (ui.sheet.handle(action)) {
     if (action === "back") sound.play("back");
-    return;
+    return renderHints();
   }
-  // Vistas a pantalla completa: los episodios pueden abrirse encima de la búsqueda.
-  if (ui.sources.handle(action) || ui.episodes.handle(action) || ui.search.handle(action)) return renderHints();
+  // Vistas a pantalla completa, de arriba abajo: fuentes sobre la ficha, la ficha sobre la búsqueda.
+  if (ui.sources.handle(action) || ui.title.handle(action) || ui.search.handle(action)) return renderHints();
   const { r, c } = state.focus;
   const item = current();
   switch (action) {
     case "up": { const t = rowJump(state.rows, state.memory, r, -1); return setFocus(t.r, t.c); }
     case "down": { const t = rowJump(state.rows, state.memory, r, 1); return setFocus(t.r, t.c); }
-    case "left": return setFocus(r, c - 1, { edge: "left" });
-    case "right": return setFocus(r, c + 1, { edge: "right" });
+    case "left": return setFocus(r, c - 1, { edge: "left", repeat });
+    case "right": return setFocus(r, c + 1, { edge: "right", repeat });
     case "prevsection": return stepSection(-1);
     case "nextsection": return stepSection(1);
-    case "pageleft": return setFocus(r, c - 5, { edge: "left" });
-    case "pageright": return setFocus(r, c + 5, { edge: "right" });
+    case "pageleft": return setFocus(r, c - 5, { edge: "left", repeat });
+    case "pageright": return setFocus(r, c + 5, { edge: "right", repeat });
     case "select": return launch(item);
     case "search": return openSearch();
-    case "alt": { const alt = alternativeRunner(item); return alt && launch(item, alt.id); }
+    case "alt": {
+      const alt = alternativeRunner(item);
+      if (alt) return launch(item, alt.id);
+      sound.play("error"); // X sin nada que hacer: un "no" suave en vez de silencio
+      return rumble("edge");
+    }
     case "options": return openMenu(gameMenu(item, { running: state.running }));
-    case "menu": return openMenu(mainMenu({
-      soundEnabled: sound.enabled, running: state.running, hiddenCount: state.hidden, canExit: state.canExit,
-    }));
+    case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit }));
     case "back":
-    case "home": // B: al inicio de la sección; si ya estás ahí, a la sección Inicio
+    case "home": // B: al principio de la sección; si ya estás ahí, a la sección Inicio
       if (r || c) { sound.play("back"); setFocus(0, 0, { silent: true }); }
       else if (state.section !== "home") goToSection("home", -1);
       return;
@@ -432,15 +523,32 @@ function handleAction(action) {
 }
 
 // ---------------------------------------------------------------- eventos del servidor
+/** La voz pidió una vista (búsqueda o ficha): se abre aquí mismo, sin recargar la interfaz. */
+function openView(view = {}, message = "") {
+  if (message) ui.toast.show(message, { voice: true });
+  ui.status.pulseAlexa();
+  if (ui.sheet.isOpen) ui.sheet.close();
+  if (view.buscar !== undefined) {
+    if (ui.title.isOpen) ui.title.close();
+    return openSearch(String(view.buscar));
+  }
+  if (view.serie || view.pelicula) {
+    return openTitle({ kind: view.serie ? "series" : "movie", meta_id: view.serie || view.pelicula, title: "", source: "cinemeta" });
+  }
+  if (view.seccion) goToSection(view.seccion);
+}
+
 function handleEvent(event) {
-  if (event.type === "reload") { // con `view`, abre esa vista (?buscar=… / ?serie=…)
+  if (event.type === "reload") { // tras actualizar Orbital (con `view`, abre esa vista al volver)
     const query = new URLSearchParams(event.view || {}).toString();
     return location.assign(location.pathname + (query ? `?${query}` : ""));
   }
+  if (event.type === "open-view") return openView(event.view, event.message);
   if (event.type === "launch-ready") return ui.launch.reveal();
+  if (event.type === "settings") return applySettings(event.settings);
   if (event.type === "toast") {
-    ui.toast.show(event.message, { error: event.ok === false });
-    ui.status.pulseAlexa();
+    ui.toast.show(event.message, { error: event.ok === false, voice: !!event.voice });
+    if (event.voice) ui.status.pulseAlexa();
   } else if (event.type === "navigate") {
     handleAction(event.direction);
   } else if (event.type === "library-changed") {
@@ -449,15 +557,27 @@ function handleEvent(event) {
   } else if (event.type === "closed") {
     // Al abrir otro juego se cierra el anterior: su "closed" no debe tapar la carga del nuevo.
     if (!ui.launch.visible || event.id === state.launchingId) ui.launch.hide();
-    const played = duration(event.seconds);
-    ui.toast.show(played ? `De vuelta. Jugaste ${event.title} ${played}` : `De vuelta de ${event.title}`);
+    if (event.crashed) {
+      // Se cerró solo a los pocos segundos: no es "de vuelta", es que no pudo abrir.
+      sound.play("error");
+      ui.toast.show(`${event.title} se cerró enseguida. Revisa que el juego y el emulador estén completos (ROM, firmware, claves).`, { error: true });
+    } else {
+      const played = duration(event.seconds);
+      ui.toast.show(played ? `De vuelta. Jugaste ${event.title} ${played}` : `De vuelta de ${event.title}`);
+    }
     loadLibrary({ keepId: event.id });
   }
   pollStatus();
 }
 
 // ---------------------------------------------------------------- arranque
-createInput({ onAction: handleAction, onModality: setModality });
+createInput({
+  onAction: handleAction,
+  onModality: setModality,
+  // Con un teclado físico, en Buscar se escribe directo (las letras no son atajos ahí).
+  onText: (char) => ui.search.type(char),
+  typing: () => ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen && !ui.sheet.isOpen,
+});
 api.events(handleEvent);
 // Al volver a la ventana (p. ej. tras cerrar un juego) refresca recientes y tiempo jugado.
 document.addEventListener("visibilitychange", () => {
@@ -469,6 +589,7 @@ setInterval(pollSystem, 30_000);
 pollStatus();
 pollSystem();
 loadLibrary();
+api.settings().then(applySettings).catch(() => {});
 api.ui().then(({ can_exit: canExit, stremio_linked: linked, player, alexa }) => {
   state.canExit = canExit;
   ui.hero.alexa = alexa;
@@ -477,16 +598,15 @@ api.ui().then(({ can_exit: canExit, stremio_linked: linked, player, alexa }) => 
   state.player = player || "stremio";
 }).catch(() => {});
 
-// Enlaces directos: ?buscar=dune abre la búsqueda con ese texto; ?serie=tt0386676 sus episodios.
-// (Para la voz: "busca Dune" puede llegar directo aquí.)
+// Enlaces directos: ?buscar=dune abre la búsqueda con ese texto; ?serie=tt0386676 su ficha.
 const params = new URLSearchParams(location.search);
 if (params.get("seccion")) state.section = params.get("seccion"); // home | games | media | apps
 if (params.get("buscar")) ui.search.open(params.get("buscar"));
-else if (params.get("fuentes")) { // ?fuentes=movie:tt0816692 o series:tt0386676:1:1
+else if (params.get("serie") || params.get("pelicula")) {
+  openView({ serie: params.get("serie"), pelicula: params.get("pelicula") });
+} else if (params.get("fuentes")) { // ?fuentes=movie:tt0816692 o series:tt0386676:1:1
   const [kind, ...rest] = params.get("fuentes").split(":");
   const id = rest.slice(0, 1).join(":");
-  // Sin cuenta regresiva: llegar por enlace no es haber elegido ver algo.
-  ui.sources.open({ kind, id, video_id: rest.length > 1 ? rest.join(":") : id, title: "", autoplay: false });
-} else if (params.get("serie")) {
-  ui.episodes.open({ id: `cinemeta:series:${params.get("serie")}`, meta_id: params.get("serie"), title: "", source: "cinemeta" });
+  ui.sources.open({ kind, id, video_id: rest.length > 1 ? rest.join(":") : id, title: "" });
 }
+if (params.toString()) history.replaceState(null, "", location.pathname); // que F5 no la vuelva a abrir

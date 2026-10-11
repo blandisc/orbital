@@ -1,7 +1,7 @@
 /* Toast: aviso breve arriba al centro, con ícono (hecho / error).
    Las animaciones incluyen el translate(-50%) del centrado: si no, el aviso brinca de lado al entrar. */
 .toast {
-  position: fixed; top: var(--space-5); left: 50%; z-index: var(--z-toast); transform: translateX(-50%);
+  position: fixed; top: calc(var(--space-5) + var(--safe-y)); left: 50%; z-index: var(--z-toast); transform: translateX(-50%);
   display: flex; align-items: center; gap: var(--space-3);
   max-width: min(40rem, calc(100vw - 2 * var(--page-gutter)));
   min-height: 3rem; padding: var(--space-2) var(--space-5) var(--space-2) var(--space-3);
@@ -13,4 +13,8 @@
 .toast__icon { display: grid; place-items: center; flex: none; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--color-fill); color: var(--color-live); }
 .toast__icon .icon { width: 1rem; height: 1rem; stroke-width: 2.25; }
 .toast--error .toast__icon { color: var(--color-danger); }
+/* Error: una franja roja a la izquierda, se distingue de lejos sin depender solo del ícono. */
+.toast--error { box-shadow: var(--shadow-overlay), inset 0 0 0 1px var(--color-hairline), inset .3rem 0 0 var(--color-danger); }
+/* Lo que entendió Alexa: micrófono en el color del juego. */
+.toast--voice .toast__icon { color: var(--color-accent); }
 .toast--leaving { animation: lift-out var(--duration-exit) var(--ease-in) forwards; }

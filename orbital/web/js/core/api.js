@@ -27,8 +27,10 @@ export const api = {
   windows: () => request("/api/windows"),
   power: (action) => post("/api/power", { action }),
   stremioSearch: (q) => request(`/api/stremio/search?q=${encodeURIComponent(q)}`),
-  stremioEpisodes: (id) => request(`/api/stremio/episodes/${encodeURIComponent(id)}`),
   stremioPlay: (body) => post("/api/stremio/play", body),
+  stremioTitle: (kind, id) => request(`/api/stremio/title/${kind}/${encodeURIComponent(id)}`),
+  settings: () => request("/api/settings"),
+  setSettings: (changes) => post("/api/settings", changes),
   stremioSources: (kind, id, video) =>
     request(`/api/stremio/sources?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`),
   focusWindow: (id) => post("/api/windows/focus", { id }),

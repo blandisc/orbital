@@ -13,9 +13,11 @@
   --color-fill: rgba(255, 255, 255, .1); /* botones secundarios, chips */
   --color-fill-hover: rgba(255, 255, 255, .16);
   --color-hairline: rgba(255, 255, 255, .09);
+  --color-hairline-strong: rgba(255, 255, 255, .28);
   --color-text: var(--palette-paper);
   --color-text-muted: var(--palette-ink-300);
-  --color-text-faint: rgba(255, 255, 255, .18);
+  --color-text-faint: rgba(255, 255, 255, .5); /* ≥ 4,5:1 (antes .18: el placeholder no se leía) */
+  --color-text-faint-strong: rgba(255, 255, 255, .62);
   --color-accent: var(--art-accent); /* sale de la portada, siempre claro */
   --color-focus: var(--palette-paper);
   --color-primary: var(--palette-paper);
@@ -24,7 +26,7 @@
   --color-danger: var(--palette-red-400);
   --color-warning: var(--palette-amber-300);
   --color-live: var(--palette-teal-300);
-  --color-idle: var(--palette-ink-500);
+  --color-idle: #7a7a84;
   --color-progress: var(--palette-paper);
   --color-progress-track: rgba(255, 255, 255, .2);
   --color-pad-a: var(--palette-pad-green);
@@ -37,7 +39,7 @@
   --color-scrim: color-mix(in oklab, var(--palette-ink-1000) 62%, transparent);
   --scrim-hero:
     linear-gradient(180deg, color-mix(in oklab, var(--color-tinted-bg) 80%, transparent) 0%, transparent 18%),
-    linear-gradient(90deg, color-mix(in oklab, var(--color-tinted-bg) 70%, transparent) 0%, transparent 45%);
+    linear-gradient(90deg, color-mix(in oklab, var(--color-tinted-bg) 85%, transparent) 0%, transparent 55%);
   --gradient-card: linear-gradient(160deg, var(--palette-ink-800), var(--palette-ink-900));
 
   --shadow-card: 0 .5rem 1.4rem rgba(0, 0, 0, .35);

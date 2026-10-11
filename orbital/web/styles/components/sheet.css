@@ -10,7 +10,7 @@
 .sheet__panel {
   display: flex; flex-direction: column;
   width: min(var(--sheet-width), 100vw); height: 100%; overflow-y: auto;
-  padding: var(--space-10) var(--space-5) var(--space-6);
+  padding: calc(var(--space-10) + var(--safe-y)) calc(var(--space-5) + var(--safe-x) * .5) calc(var(--space-6) + var(--safe-y)) var(--space-5);
   background: var(--color-surface); border-left: 1px solid var(--color-hairline); box-shadow: var(--shadow-overlay);
   animation: slide-in-right var(--duration-slow) var(--ease-out);
 }
@@ -42,6 +42,12 @@
 .sheet__item:hover { background: var(--color-fill); }
 .sheet__icon { display: grid; place-items: center; flex: none; width: 1.4rem; height: 1.4rem; color: var(--color-text-muted); transition: color var(--duration-fast) var(--ease-out); }
 .sheet__icon .icon { width: 100%; height: 100%; }
+.sheet__back { padding: 0 var(--space-3) var(--space-2); color: var(--color-text-muted); font-size: var(--text-xs); }
+.sheet__label { min-width: 0; }
+/* Ajustes: el valor actual a la derecha (‹ Grande ›); A o ◀/▶ lo cambian. */
+.sheet__item--setting { flex-wrap: wrap; row-gap: 0; padding-block: var(--space-2); }
+.sheet__value { margin-left: auto; font-weight: var(--weight-medium); white-space: nowrap; }
+.sheet__item--setting .sheet__hint { flex-basis: 100%; margin-left: calc(1.4rem + var(--space-4)); padding-left: 0; white-space: normal; }
 .sheet__hint { margin-left: auto; padding-left: var(--space-4); color: var(--color-text-muted); font-size: var(--text-sm); white-space: nowrap; font-variant-numeric: tabular-nums; }
 /* Foco invertido (fondo claro, texto oscuro): se lee desde el sofá sin buscarlo. */
 .sheet__item--focused, .sheet__item--focused:hover { background: var(--color-primary); color: var(--color-on-primary); }

@@ -72,19 +72,21 @@ export const runnerName = (item, runnerId) =>
 /** Algo de tu biblioteca de Stremio (película o serie). */
 export const isWatchable = (item) => item?.source === "stremio" || item?.source === "cinemeta";
 
-/** Serie del catálogo de Stremio: A abre sus episodios en Orbital en lugar de reproducir. */
+/** Serie del catálogo de Stremio (su ficha muestra los episodios). */
 export const isSeries = (item) => item?.source === "cinemeta" && item?.id?.startsWith("cinemeta:series:")
   || item?.kind === "series";
 
 /** Las apps y la multimedia no muestran "Sin jugar todavía". */
 export const isGame = (item) => !!item && !isWatchable(item) && item.category !== "media" && item.category !== "apps";
 
-/** Texto del botón principal según lo que sea. */
-/** Texto del botón principal. `runningId`: lo que está abierto ahora (se continúa, no se relanza). */
+/**
+ * Texto del botón principal. `runningId`: lo que está abierto ahora (se vuelve a él, no se relanza).
+ * Un solo vocabulario: "Volver al juego" para algo abierto; "Continuar" solo para un video a medias.
+ */
 export const primaryLabel = (item, runningId = null) => {
-  if (item && item.id === runningId) return "Continuar";
+  if (item && item.id === runningId) return item.id === "media:player" ? "Volver al video" : "Volver al juego";
   if (item?.source === "search") return "Buscar";
-  if (isSeries(item)) return "Episodios";
+  if (isSeries(item)) return item.progress > 0 ? "Continuar" : "Ver serie";
   return isWatchable(item) ? (item.progress > 0 ? "Continuar" : "Ver") : "Jugar";
 };
 

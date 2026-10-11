@@ -31,29 +31,53 @@ GLYPHS.touch = GLYPHS.keyboard;
 
 export const keyToAction = (key) => KEYMAP[key] ?? KEYMAP[key?.toLowerCase?.()] ?? null;
 
-/** Acciones activas según el estado de los mandos (botones + stick izquierdo). */
-export function padActions(pads, deadzone = .5) {
+// Stick: se activa al 55 % y se suelta por debajo del 35 % (histéresis: un stick que tiembla en el
+// borde no dispara dos veces). En diagonal manda el eje dominante: nunca fila y columna a la vez.
+export const STICK_PRESS = .55;
+export const STICK_RELEASE = .35;
+
+const dominant = (x, y) => (Math.abs(x) >= Math.abs(y) ? (x < 0 ? "left" : "right") : (y < 0 ? "up" : "down"));
+
+/** Dirección del stick con zona muerta radial, eje dominante e histéresis. */
+export function stickDirection(x, y, previous = null) {
+  const magnitude = Math.hypot(x, y);
+  if (previous) {
+    if (magnitude < STICK_RELEASE) return null;
+    const now = dominant(x, y);
+    return magnitude >= STICK_PRESS && now !== previous ? now : previous;
+  }
+  return magnitude >= STICK_PRESS ? dominant(x, y) : null;
+}
+
+/** Acciones activas según el estado de los mandos (botones + stick izquierdo). `memory` guarda
+ * la dirección del stick de cada mando entre frames (para la histéresis). */
+export function padActions(pads, memory = new Map()) {
   const active = new Set();
-  for (const pad of pads) {
-    if (!pad) continue;
+  pads.forEach((pad, i) => {
+    if (!pad) return;
     for (const [index, action] of Object.entries(PADMAP)) {
       if (pad.buttons[index]?.pressed) active.add(action);
     }
     const [x = 0, y = 0] = pad.axes;
-    if (x < -deadzone) active.add("left");
-    if (x > deadzone) active.add("right");
-    if (y < -deadzone) active.add("up");
-    if (y > deadzone) active.add("down");
-  }
+    const direction = stickDirection(x, y, memory.get(i) || null);
+    memory.set(i, direction);
+    if (direction) active.add(direction);
+  });
   return active;
 }
 
-/** Convierte "botón mantenido" en pulsaciones con autorrepetición (solo para moverse). */
+/**
+ * Convierte "botón mantenido" en pulsaciones con autorrepetición (solo para moverse). Mantener
+ * acelera: tras `accelerateAfter` repeticiones el paso baja a `fastRate` (filas largas).
+ */
 export class Repeater {
-  constructor({ delay = 380, rate = 110 } = {}) {
+  constructor({ delay = 380, rate = 110, fastRate = 60, accelerateAfter = 8 } = {}) {
     this.delay = delay;
     this.rate = rate;
-    this.held = new Map();
+    this.fastRate = fastRate;
+    this.accelerateAfter = accelerateAfter;
+    this.held = new Map(); // acción -> próximo disparo
+    this.repeats = new Map(); // acción -> repeticiones sin soltar
   }
 
   /**
@@ -64,16 +88,29 @@ export class Repeater {
     for (const action of active) this.held.set(action, Infinity);
   }
 
+  /** ¿Esta acción se disparó por mantener el botón (no por una pulsación nueva)? */
+  isRepeat(action) {
+    return (this.repeats.get(action) || 0) > 0;
+  }
+
   /** Devuelve las acciones a disparar en este frame. */
   update(active, now) {
     const fire = [];
-    for (const action of [...this.held.keys()]) if (!active.has(action)) this.held.delete(action);
+    for (const action of [...this.held.keys()]) {
+      if (!active.has(action)) {
+        this.held.delete(action);
+        this.repeats.delete(action);
+      }
+    }
     for (const action of active) {
       if (!this.held.has(action)) {
         this.held.set(action, now + this.delay);
+        this.repeats.set(action, 0);
         fire.push(action);
       } else if (REPEATABLE.has(action) && now >= this.held.get(action)) {
-        this.held.set(action, now + this.rate);
+        const count = (this.repeats.get(action) || 0) + 1;
+        this.repeats.set(action, count);
+        this.held.set(action, now + (count >= this.accelerateAfter ? this.fastRate : this.rate));
         fire.push(action);
       }
     }
@@ -81,14 +118,27 @@ export class Repeater {
   }
 }
 
-/** Conecta teclado, rueda y mandos. onModality avisa si el usuario pasó a mando o teclado. */
-export function createInput({ onAction, onModality }) {
+/** ¿Es una tecla de texto? (para escribir en Buscar con un teclado físico) */
+export const isTextKey = (event) => event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey;
+
+/**
+ * Conecta teclado, rueda y mandos. onModality avisa si el usuario pasó a mando o teclado.
+ * onAction(acción, { repeat }) — `repeat`: viene de mantener el botón (sin rebote ni vibración).
+ * Mientras `typing()` es verdadero (el teclado de Buscar), las letras van a onText y no son atajos.
+ */
+export function createInput({ onAction, onModality, onText = null, typing = () => false }) {
   document.addEventListener("keydown", (event) => {
+    if (onText && typing() && (isTextKey(event) || event.key === "Backspace")) {
+      event.preventDefault();
+      onModality("keyboard");
+      onText(event.key === "Backspace" ? "\b" : event.key);
+      return;
+    }
     const action = keyToAction(event.key);
     if (!action) return;
     event.preventDefault();
     onModality("keyboard");
-    onAction(action);
+    onAction(action, { repeat: event.repeat });
   });
   // Un toque también genera eventos de ratón después: no deben devolver al modo teclado.
   let lastTouch = 0;
@@ -101,22 +151,28 @@ export function createInput({ onAction, onModality }) {
   document.addEventListener("mousemove", () => {
     if (performance.now() - lastTouch > 1000) onModality("keyboard");
   });
+  // Rueda / touchpad: como mucho un paso cada 120 ms (un touchpad manda decenas de eventos).
+  let lastWheel = 0;
   document.addEventListener("wheel", (event) => {
+    const now = performance.now();
+    if (now - lastWheel < 120) return;
+    lastWheel = now;
     const vertical = Math.abs(event.deltaY) > Math.abs(event.deltaX);
-    onAction(vertical ? (event.deltaY > 0 ? "down" : "up") : (event.deltaX > 0 ? "right" : "left"));
+    onAction(vertical ? (event.deltaY > 0 ? "down" : "up") : (event.deltaX > 0 ? "right" : "left"), { repeat: false });
   }, { passive: true });
 
   const repeater = new Repeater();
+  const sticks = new Map();
   // Durante un momento tras recuperar el foco, lo que llegue presionado se ignora.
   let swallowUntil = 0;
   window.addEventListener("focus", () => { swallowUntil = performance.now() + 250; });
   const loop = (now) => {
     const pads = navigator.getGamepads ? [...navigator.getGamepads()] : [];
-    const active = padActions(pads);
+    const active = padActions(pads, sticks);
     if (now < swallowUntil) repeater.swallow([...active].filter((a) => !repeater.held.has(a)));
     const fire = repeater.update(active, now);
     if (fire.length) onModality("gamepad");
-    fire.forEach(onAction);
+    fire.forEach((action) => onAction(action, { repeat: repeater.isRepeat(action) }));
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);

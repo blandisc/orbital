@@ -39,7 +39,7 @@ test("etiqueta del botón principal", async () => {
   assert.equal(primaryLabel({ source: "switch", category: "emulators" }), "Jugar");
   assert.equal(primaryLabel({ source: "stremio", progress: .4 }), "Continuar");
   assert.equal(primaryLabel({ source: "stremio", progress: null }), "Ver");
-  assert.equal(primaryLabel({ id: "emu:1", source: "switch" }, "emu:1"), "Continuar"); // sigue abierto
+  assert.equal(primaryLabel({ id: "emu:1", source: "switch" }, "emu:1"), "Volver al juego"); // sigue abierto: un solo vocabulario
   assert.equal(isGame({ source: "stremio", category: "continue" }), false);
 });
 
@@ -75,7 +75,7 @@ test("Stremio: las series abren episodios, las películas se ven, Buscar busca",
   const peli = { id: "cinemeta:movie:tt1", source: "cinemeta" };
   assert.ok(isSeries(serie) && !isSeries(peli));
   assert.ok(isSeries({ kind: "series", source: "cinemeta", id: "x" })); // resultado de búsqueda
-  assert.equal(primaryLabel(serie), "Episodios");
+  assert.equal(primaryLabel(serie), "Ver serie");
   assert.equal(primaryLabel(peli), "Ver");
   assert.equal(primaryLabel({ id: "media:search", source: "search" }), "Buscar");
 });

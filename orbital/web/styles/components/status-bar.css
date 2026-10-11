@@ -2,7 +2,7 @@
    Texto limpio sobre el velo superior del fondo; sin cápsulas ni vidrio. */
 .status-bar {
   position: relative; display: flex; align-items: center; gap: var(--space-8);
-  height: 3rem; margin: var(--space-5) var(--page-gutter) 0;
+  height: 3rem; margin: calc(var(--space-5) + var(--safe-y)) var(--page-gutter) 0;
   font-size: var(--text-md);
 }
 .status-bar__brand {

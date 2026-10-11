@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { gameMenu, mainMenu, powerMenu, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
+import { gameMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, settingsPage, stopMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch",
@@ -24,12 +24,11 @@ test("menú de juego favorito y sin alternativas", () => {
 });
 
 test("menú general según el contexto", () => {
-  const basic = mainMenu({ soundEnabled: true, running: null, hiddenCount: 0 });
-  assert.deepEqual(basic.options.map((o) => o.label), ["Actualizar biblioteca", "Sonidos", "Ventanas abiertas", "Apagado", "Cerrar menú"]);
-  const full = mainMenu({ soundEnabled: false, running: { title: "Zelda", managed: true }, hiddenCount: 3 });
+  const basic = mainMenu({ running: null, hiddenCount: 0 });
+  assert.deepEqual(basic.options.map((o) => o.label), ["Actualizar biblioteca", "Ventanas abiertas", "Ajustes", "Apagado", "Cerrar menú"]);
+  const full = mainMenu({ running: { title: "Zelda", managed: true }, hiddenCount: 3 });
   assert.deepEqual(full.options.map((o) => o.label),
-    ["Actualizar biblioteca", "Sonidos", "Cerrar Zelda", "Mostrar juegos ocultos", "Ventanas abiertas", "Apagado", "Cerrar menú"]);
-  assert.equal(full.options[1].hint, "No");
+    ["Actualizar biblioteca", "Cerrar Zelda", "Mostrar juegos ocultos", "Ventanas abiertas", "Ajustes", "Apagado", "Cerrar menú"]);
   // Un juego de Steam (no gestionado por Orbital) no se puede cerrar desde aquí.
   assert.ok(!mainMenu({ running: { title: "Hades", managed: false } }).options.some((o) => o.label === "Cerrar Hades"));
 });
@@ -56,7 +55,7 @@ test("cerrar el juego siempre pide confirmación y por defecto sigue jugando", (
 
 test("Y sobre el juego abierto: continuar o cerrar, no abrir otra copia", () => {
   const menu = gameMenu(zelda, { running: { id: zelda.id, runner: "Eden" } });
-  assert.deepEqual(menu.options.slice(0, 2).map((o) => o.label), ["Continuar", "Cerrar Eden"]);
+  assert.deepEqual(menu.options.slice(0, 2).map((o) => o.label), ["Volver al juego", "Cerrar Eden"]);
   assert.ok(!menu.options.some((o) => o.command.type === "launch"));
 });
 
@@ -70,13 +69,33 @@ test("ventanas abiertas: una opción por ventana y aviso si no hay", () => {
 test("apagado: suspender primero; reiniciar y apagar marcados como peligrosos", () => {
   const menu = powerMenu();
   assert.deepEqual(menu.options.map((o) => o.label), ["Suspender", "Reiniciar", "Apagar", "Cancelar"]);
-  assert.deepEqual(menu.options.filter((o) => o.danger).map((o) => o.command.action), ["restart", "shutdown"]);
+  assert.deepEqual(menu.options.filter((o) => o.danger).map((o) => o.command), [
+    { type: "power-confirm", action: "restart" }, { type: "power-confirm", action: "shutdown" }]); // piden confirmar
 });
 
-test("el menú Y dice lo que es: Ver, Episodios, Abrir; emuladores solo en juegos", () => {
+test("confirmar apagar: Cancelar primero y aviso si hay un juego abierto", () => {
+  const menu = powerConfirmMenu("shutdown", { title: "Zelda", managed: true });
+  assert.equal(menu.title, "¿Apagar la consola?");
+  assert.match(menu.subtitle, /Zelda sigue abierto/);
+  assert.equal(menu.options[0].label, "Cancelar");
+  assert.deepEqual(menu.options[1].command, { type: "power", action: "shutdown" });
+  assert.equal(powerConfirmMenu("restart").subtitle, "");
+});
+
+test("ajustes: cada opción muestra su valor y A pasa al siguiente", () => {
+  const page = settingsPage("playback", { audio: "en", subtitles: "", quality: "1080p", sub_scale: 1 });
+  assert.deepEqual(page.options.map((o) => [o.label, o.value]), [
+    ["Idioma del audio", "Inglés"], ["Subtítulos", "Sin subtítulos"], ["Calidad", "1080p"], ["Tamaño de subtítulos", "Normal"]]);
+  assert.deepEqual(page.options[0].command, { type: "setting", key: "audio", value: "es", page: "playback" });
+  assert.equal(nextSetting("subtitles", ""), "en"); // da la vuelta
+  const accounts = settingsPage("accounts", { stremio_linked: false, alexa: true, alexa_last: 1000 }, { now: 1000_000 + 600_000 });
+  assert.deepEqual(accounts.options.map((o) => o.value), ["Sin conectar", "Configurada"]);
+});
+
+test("el menú Y dice lo que es: Ver, Ver serie, Abrir; emuladores solo en juegos", () => {
   const first = (item) => gameMenu(item).options[0];
   assert.equal(first({ id: "cinemeta:movie:tt1", title: "Dune", source: "cinemeta", category: "movies" }).label, "Ver");
-  assert.equal(first({ id: "cinemeta:series:tt2", title: "The Office", source: "cinemeta", category: "series" }).label, "Episodios");
+  assert.equal(first({ id: "cinemeta:series:tt2", title: "The Office", source: "cinemeta", category: "series" }).label, "Ver serie");
   assert.equal(first({ id: "app:youtube", title: "YouTube", source: "app", category: "apps" }).label, "Abrir");
   assert.equal(first(zelda).label, "Jugar");
   const movie = gameMenu({ id: "cinemeta:movie:tt1", title: "Dune", source: "cinemeta", category: "movies",

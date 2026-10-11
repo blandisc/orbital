@@ -56,6 +56,7 @@ export function createShelf({ onPick, onSwipe }) {
   function setRows(rows, { emptyTitle, emptyText, popId } = {}) {
     if (!rows.length) {
       rowEls = [];
+      rowsEl.style.transform = ""; // si estabas en la fila 3, el aviso quedaba fuera de pantalla
       mount(rowsEl, h("div", { class: "shelf__row shelf__row--current" },
         h("h2", { class: "shelf__heading" }, emptyTitle),
         h("p", { class: "shelf__empty" }, emptyText)));

@@ -72,6 +72,13 @@ export function createLaunchOverlay({ timeout = 8000 } = {}) {
     timer = setTimeout(hide, 2500); // ya detrás del juego; por si el foco no cambia
   }
 
+  /** Qué está pasando, en fases ("Buscando dónde verlo…" → "Conectando · 1080p · Al instante"). */
+  function status(text, detail = null) {
+    if (el.hidden) return;
+    label.textContent = text;
+    if (detail !== null) subtitle.textContent = detail;
+  }
+
   function hide() {
     clearTimeout(timer);
     holding = false;
@@ -83,7 +90,7 @@ export function createLaunchOverlay({ timeout = 8000 } = {}) {
   window.addEventListener("blur", () => { if (!el.hidden && !holding) setTimeout(() => !holding && hide(), 600); });
 
   return {
-    el, show, hold, reveal, hide,
+    el, show, hold, reveal, hide, status,
     get holding() { return holding; },
     get visible() { return !el.hidden && !el.classList.contains("launch--leaving"); },
   };

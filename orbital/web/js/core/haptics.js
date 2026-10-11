@@ -7,9 +7,12 @@ const EFFECTS = {
   launch: { duration: 90, weakMagnitude: .2, strongMagnitude: .45 },
 };
 
+/** Se apaga desde Ajustes → Sonido y vibración. */
+export const haptics = { enabled: true };
+
 export function rumble(name) {
   const effect = EFFECTS[name];
-  if (!effect || !navigator.getGamepads) return;
+  if (!haptics.enabled || !effect || !navigator.getGamepads) return;
   for (const pad of navigator.getGamepads()) {
     pad?.vibrationActuator?.playEffect?.("dual-rumble", effect).catch(() => {});
   }

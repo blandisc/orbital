@@ -45,15 +45,18 @@
   /* Tipografía: la de Windows, usando sus ejes de tamaño óptico */
   --font-sans: "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   --font-text: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-  --text-2xs: .7rem;
-  --text-xs: .78rem;
-  --text-sm: .88rem;
-  --text-md: 1rem;
-  --text-lg: 1.12rem;
-  --text-xl: 1.5rem;
-  --text-2xl: 2.4rem;
-  --text-3xl: 2.9rem;
-  --text-display: 3.7rem;
+  /* Legible a 3 m: a 1080p el texto secundario no baja de ~18 px ni el cuerpo de ~23 px.
+     --text-scale lo sube Ajustes → Pantalla → Tamaño del texto (solo el texto, no el diseño). */
+  --text-scale: 1;
+  --text-2xs: calc(.82rem * var(--text-scale));
+  --text-xs: calc(.9rem * var(--text-scale));
+  --text-sm: calc(.98rem * var(--text-scale));
+  --text-md: calc(1.07rem * var(--text-scale));
+  --text-lg: calc(1.2rem * var(--text-scale));
+  --text-xl: calc(1.55rem * var(--text-scale));
+  --text-2xl: calc(2.4rem * var(--text-scale));
+  --text-3xl: calc(2.9rem * var(--text-scale));
+  --text-display: calc(3.7rem * var(--text-scale));
   --weight-regular: 400;
   --weight-medium: 600;
   --weight-bold: 700;
@@ -84,8 +87,12 @@
   /* Layout de consola: el lienzo mide al menos 80 × 50 rem. Escala con el ancho, pero
      sin pasarse del alto: así 16:10 (Legion Go) y 16:9 (TV) caben sin encimarse.
      1280×800 → 16 px · 1920×1080 → 21,6 px · 2560×1600 → 32 px. */
-  --root-size: clamp(12px, min(1.25vw, 2vh), 34px);
-  --page-gutter: var(--space-10);
+  --root-size: clamp(12px, min(1.25vw, 2vh), 44px); /* hasta 4K nativo (antes se quedaba chica) */
+  /* Zona segura de TV (overscan): por defecto 4 % a los lados; Ajustes → Márgenes de la TV. */
+  --safe-area: 4;
+  --safe-x: calc(var(--safe-area) * 1vw);
+  --safe-y: calc(var(--safe-area) * .6vh);
+  --page-gutter: max(var(--space-10), var(--safe-x));
   --card-height: 12.6rem; /* el ancho sale de la proporción de cada portada */
   --card-gap: 1.85rem;
   --card-focus-scale: 1.2;

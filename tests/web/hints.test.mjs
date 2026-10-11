@@ -7,17 +7,17 @@ const labels = (items) => items.map((i) => i.label);
 
 test("el pie no repite lo que ya dicen los botones del héroe", () => {
   const items = footerHints(GLYPHS.gamepad);
-  assert.deepEqual(labels(items), ["Cambiar de fila", "Sección", "Menú"]);
+  assert.deepEqual(labels(items), ["Cambiar de fila", "Buscar", "Sección", "Menú"]);
   assert.ok(!labels(items).includes("Jugar") && !labels(items).includes("Opciones"));
   assert.equal(items.at(-1).end, true);
 });
 
 test("fuera del inicio enseña cómo volver, LB/RB cambia de sección y LT/RT salta en filas largas", () => {
   const items = footerHints(GLYPHS.gamepad, { atHome: false, longRow: true });
-  assert.deepEqual(labels(items), ["Cambiar de fila", "Sección", "Saltar 5", "Inicio", "Menú"]);
-  assert.equal(items[1].glyph, "LB RB");
-  assert.equal(items[2].glyph, "LT RT");
-  assert.equal(items[3].glyph, "B");
+  assert.deepEqual(labels(items), ["Cambiar de fila", "Buscar", "Sección", "Saltar 5", "Al principio", "Menú"]);
+  assert.equal(items[2].glyph, "LB RB");
+  assert.equal(items[3].glyph, "LT RT");
+  assert.equal(items[4].glyph, "B");
 });
 
 test("con un menú abierto solo Elegir y Cerrar", () => {

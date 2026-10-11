@@ -47,9 +47,21 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 @keyframes slide-out-right { to { transform: translateX(100%); } }
 @keyframes pulse { 50% { transform: scale(1.9); } }
 
+/* Movimiento reducido (del sistema o de Ajustes): sin transiciones; los bucles, quietos. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
+  *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important; }
 }
+[data-motion="reduce"] *, [data-motion="reduce"] *::before, [data-motion="reduce"] *::after {
+  transition-duration: 0s !important; animation-duration: 0s !important; animation-iteration-count: 1 !important;
+}
+[data-motion="reduce"] { --card-focus-scale: 1.08; }
+
+/* Tamaño del texto (Ajustes → Pantalla). */
+[data-text-size="large"] { --text-scale: 1.12; }
+[data-text-size="xlarge"] { --text-scale: 1.25; }
+
+/* Cualquier cosa enfocable sin foco propio: un anillo visible, nunca nada. */
+:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
 
 /* Ventanas estrechas o móviles */
 @media (max-width: 700px) {
