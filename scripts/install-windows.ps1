@@ -31,16 +31,15 @@ if ($NoStartup) {
     exit 0
 }
 
-# Ícono en el escritorio (Orbital ya no arranca solo con Windows: lo abres tú, y al cerrar la
-# ventana se cierra). Si quedó el acceso directo de inicio de versiones anteriores, se quita.
-$old = Join-Path ([Environment]::GetFolderPath("Startup")) "Orbital.lnk"
-if (Test-Path $old) { Remove-Item $old }
-$desktop = [Environment]::GetFolderPath("Desktop")
+# Arranca con Windows y también tiene ícono en el escritorio. Si cierras su ventana, Orbital se
+# cierra (no se reabre sola); para volver, el ícono.
 $shell = New-Object -ComObject WScript.Shell
-$lnk = $shell.CreateShortcut((Join-Path $desktop "Orbital.lnk"))
-$lnk.TargetPath = "$venv\Scripts\pythonw.exe"
-$lnk.Arguments = "-m orbital"
-$lnk.WorkingDirectory = $repo
-$lnk.IconLocation = "$repo\orbital\web\icons\orbital.ico"
-$lnk.Save()
-Write-Host "Listo: Orbital está en tu escritorio. Al cerrar su ventana, se cierra."
+foreach ($folder in @([Environment]::GetFolderPath("Startup"), [Environment]::GetFolderPath("Desktop"))) {
+    $lnk = $shell.CreateShortcut((Join-Path $folder "Orbital.lnk"))
+    $lnk.TargetPath = "$venv\Scripts\pythonw.exe"
+    $lnk.Arguments = "-m orbital"
+    $lnk.WorkingDirectory = $repo
+    $lnk.IconLocation = "$repo\orbital\web\icons\orbital.ico"
+    $lnk.Save()
+}
+Write-Host "Listo: Orbital arranca con Windows y está en tu escritorio. Al cerrar su ventana, se cierra."
