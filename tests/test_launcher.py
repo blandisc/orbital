@@ -255,3 +255,11 @@ def test_video_waits_for_the_first_frame_not_the_black_window():
     assert bring_game_to_front(StatusLauncher({"id": "media:player", "pid": 20}), "media:player", "The Simpsons · T8 E23",
                                timeout=5, win=win, sleep=sleep, pinned=1, ready_check=lambda: bool(frames))
     assert len(steps) >= 4 and win.focused == [3]
+
+
+def test_xenia_waits_for_the_game_not_for_fullscreen():
+    from orbital.catalog import game_ready
+    empty = "Xenia-canary-netplay (netplay_canary_experimental@a8b2a5a8e on Oct 10 2026)"
+    assert not game_ready([(empty, True)], "Call of Duty - Black Ops II", "Xenia")
+    assert game_ready([(empty + " | COD: Black Ops II <415608C3> v1.0", True)], "Call of Duty - Black Ops II", "Xenia")
+    assert game_ready([("xemu", True)], "Star Wars: Battlefront II", "xemu")  # los demás: pantalla completa basta

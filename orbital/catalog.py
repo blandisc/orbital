@@ -115,8 +115,11 @@ def game_ready(windows: list[tuple[str, bool]], title: str, runner: str | None =
     """¿Ya está el juego (no la lista del emulador ni su ventana de carga)? Lo está si alguna ventana
     ocupa toda la pantalla o su título nombra al juego ("Eden | Mario Party Superstars")."""
     wanted = _words(title) - _words(runner or "")
+    # Xenia se pone en pantalla completa antes de cargar el juego: ahí solo cuenta que su título ya lo
+    # nombre ("Xenia… | COD: Black Ops II <415608C3>").
+    fullscreen_counts = "xenia" not in normalize(runner or "")
     for win_title, fullscreen in windows:
-        if fullscreen:
+        if fullscreen and fullscreen_counts:
             return True
         found = _words(win_title)
         if wanted and len(wanted & found) >= max(1, round(len(wanted) * .6)):
