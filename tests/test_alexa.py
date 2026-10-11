@@ -103,8 +103,11 @@ def test_interaction_model_is_valid():
     assert lm["invocationName"] == "mi consola"
     types = {t["name"] for t in lm["types"]}
     seen = {}
+    slot_types = {}  # Regla de Alexa: un nombre de slot = un solo tipo en todo el modelo
     for intent in lm["intents"]:
         slots = {s["name"]: s["type"] for s in intent.get("slots", [])}
+        for name, kind in slots.items():
+            assert slot_types.setdefault(name, kind) == kind, f"slot '{name}' con dos tipos ({intent['name']})"
         assert all(t.startswith("AMAZON.") or t in types for t in slots.values())
         for sample in intent["samples"]:
             assert sample not in seen, f"'{sample}' repetido en {intent['name']} y {seen.get(sample)}"

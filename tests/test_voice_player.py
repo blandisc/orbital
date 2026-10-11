@@ -17,8 +17,8 @@ ROOT = Path(__file__).parent.parent
     ("pausa", ("PauseIntent", {})),
     ("pon pausa", ("PauseIntent", {})),
     ("reanuda el video", ("ResumeIntent", {})),
-    ("adelanta 5 minutos", ("SeekIntent", {"direction": "adelanta", "amount": "5", "unit": "minutos"})),
-    ("regresa un minuto", ("SeekIntent", {"direction": "regresa", "unit": "minuto"})),
+    ("adelanta 5 minutos", ("SeekIntent", {"seek": "adelanta", "amount": "5", "unit": "minutos"})),
+    ("regresa un minuto", ("SeekIntent", {"seek": "regresa", "unit": "minuto"})),
     ("pon subtitulos en español", ("SubtitlesIntent", {"language": "espanol"})),
     ("pon subtítulos", ("SubtitlesIntent", {})),
     ("quita los subtitulos", ("SubtitlesOffIntent", {})),
@@ -68,10 +68,10 @@ def test_pause_resume_and_seek(voice):
     assert voice.handle_intent("PauseIntent").speech == "En pausa."
     voice.handle_intent("ResumeIntent")
     # Alexa manda los valores canónicos de los tipos (forward/back, minutes/seconds).
-    assert voice.handle_intent("SeekIntent", {"direction": "forward", "amount": "5", "unit": "minutes"}).speech \
+    assert voice.handle_intent("SeekIntent", {"seek": "forward", "amount": "5", "unit": "minutes"}).speech \
         == "Adelantando 5 minutos."
-    assert voice.handle_intent("SeekIntent", {"direction": "back", "unit": "minutes"}).speech == "Regresando 1 minuto."
-    assert voice.handle_intent("SeekIntent", {"direction": "forward"}).speech == "Adelantando 30 segundos."
+    assert voice.handle_intent("SeekIntent", {"seek": "back", "unit": "minutes"}).speech == "Regresando 1 minuto."
+    assert voice.handle_intent("SeekIntent", {"seek": "forward"}).speech == "Adelantando 30 segundos."
     assert voice.catalog.player.calls == [("pause", True), ("pause", False), ("seek", 300), ("seek", -60), ("seek", 30)]
 
 

@@ -238,7 +238,7 @@
           "name": "SeekIntent",
           "slots": [
             {
-              "name": "direction",
+              "name": "seek",
               "type": "SEEK_DIRECTION"
             },
             {
@@ -251,12 +251,12 @@
             }
           ],
           "samples": [
-            "{direction} {amount} {unit}",
-            "{direction} el video {amount} {unit}",
-            "{direction} un {unit}",
-            "{direction} el video un {unit}",
-            "{direction} un poco",
-            "{direction} el video un poco"
+            "{seek} {amount} {unit}",
+            "{seek} el video {amount} {unit}",
+            "{seek} un {unit}",
+            "{seek} el video un {unit}",
+            "{seek} un poco",
+            "{seek} el video un poco"
           ]
         },
         {

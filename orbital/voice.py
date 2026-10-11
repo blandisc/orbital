@@ -58,7 +58,7 @@ _TEXT_RULES: list[tuple[re.Pattern, str, str | None]] = [
      "PauseIntent", None),
     (re.compile(r"^(?:reanuda|reanude|quita la pausa|quite la pausa|dale play|dele play)(?:\s+el video)?$"),
      "ResumeIntent", None),
-    (re.compile(r"^(?P<direction>adelanta|adelante|avanza|avance|regresa|regrese|retrocede|retroceda|atrasa|atrase)"
+    (re.compile(r"^(?P<seek>adelanta|adelante|avanza|avance|regresa|regrese|retrocede|retroceda|atrasa|atrase)"
                 r"(?:\s+el video)?\s+(?:(?P<amount>\d+)|un|una)\s+(?P<unit>minutos?|segundos?)$"), "SeekIntent", None),
     (re.compile(r"^(?:pon|ponga|activa|active)(?:\s+los)?\s+subtitulos(?:\s+en\s+(?P<language>\w+))?$"),
      "SubtitlesIntent", None),
@@ -307,7 +307,7 @@ class VoiceController:
         except ValueError:
             amount = 1 if unit else 30  # "adelanta un minuto" / "adelanta un poco"
         seconds = amount * (60 if minutes else 1)
-        back = normalize(slots.get("direction", "")) in SEEK_BACK
+        back = normalize(slots.get("seek") or slots.get("direction", "")) in SEEK_BACK
         self.catalog.player.seek(-seconds if back else seconds)
         what = f"{amount} minuto{'s' if amount != 1 else ''}" if minutes else f"{amount} segundos"
         return VoiceResult(f"{'Regresando' if back else 'Adelantando'} {what}.", events=[NO_TOAST])
