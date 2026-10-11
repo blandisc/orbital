@@ -13,7 +13,8 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 | Moverse entre juegos y filas | D-pad / stick; LT/RT saltan de 5 en 5 | ✅ |
 | Cambiar de sección (Inicio, Juegos, Películas y series, Apps) | LB / RB | ✅ |
 | Buscar juegos, películas y series desde cualquier lugar | Vista (⧉) o la píldora "Buscar". Teclado grande: A escribe, X borra, Y espacio, **B vuelve**; Borrar todo (se vuelve Deshacer), Atrás, Dictar y Buscar. Con la caja vacía, tus búsquedas recientes. Resultados por grupo: Tus juegos y apps, Películas, Series. Con un teclado físico se escribe directo | ✅ |
-| Películas y series | Abre en "Seguir viendo" (A pone el episodio en el que ibas, directo; Y → Ver la ficha); los catálogos debajo abren la ficha | ✅ |
+| Películas y series | Abre en "Seguir viendo" ("T8 E23 · quedan 10 min"; A pone el episodio en el que ibas, directo; Y → Ver la ficha o Quitar de Seguir viendo); los catálogos debajo abren la ficha | ✅ |
+| Inicio | "Continuar": tus juegos y videos juntos, por fecha; lo que está abierto va primero con la píldora "Abierto" | ✅ (nuevo) |
 | Volver al inicio | B | ✅ |
 | Cada fila recuerda su último juego | automático | ✅ |
 | Llegar al final de una fila | la tarjeta rebota y el mando vibra | ✅ |
@@ -30,6 +31,7 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 | Usar siempre otro emulador, favorito, ocultar | Y → menú lateral | ✅ |
 | Ir a Orbital sin cerrar el juego | Home (solo, al soltarlo) o un toque de Legion L | ✅ |
 | Volver al juego desde Orbital | Home, Legion L, o A sobre el juego ("Continuar") | ✅ |
+| Juego olvidado en pausa | Aviso 10 min antes de cerrarlo solo | ✅ (nuevo) |
 | Cerrar el juego | GameSir: mantener Start + Select + Home 1,5 s (barra encima del juego, cierre inmediato). Controles de la Legion Go: Legion L dos veces seguidas. Ninguno choca con el cambio de modo del GameSir (Start+Select o Home sostenidos) | ✅ |
 | Cerrar desde Orbital | ☰ → Cerrar… o Y → Cerrar (pide confirmación) | ✅ |
 | El juego se cierra solo | Orbital vuelve al frente con el tiempo jugado | ✅ |
@@ -68,6 +70,8 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 |---|---|---|
 | Abrir Stremio / YouTube / ES-DE / Big Picture | A | ✅ |
 | Ver una película o episodio | La ficha: "Continuar T3 E5 · quedan 22 min" o "Ver" con el foco, "Desde el principio", reparto y dirección; en series, los episodios abren en el que ibas (vistos con ✓, a medias con su barra, por estrenar con su fecha). A arranca directo con la fuente recomendada (pantalla de carga con fases: Buscando dónde verlo → Conectando · 1080p · Al instante) | ✅ |
+| Qué hay disponible | La ficha busca las fuentes al abrirse y lo dice antes de elegir: "4K · Dolby Vision · Atmos · Inglés, Español · Al instante" (y Ver arranca casi al instante) | ✅ (nuevo) |
+| Episodios vistos | Los ✓ salen de tu cuenta de Stremio; terminar un episodio en Orbital lo marca también allá | ✅ (nuevo) |
 | Elegir la fuente a mano | Y en la ficha: panel lateral con cada fuente en palabras de persona (Al instante / Tarda en empezar, idioma, HDR, sonido); A ve con esa, B vuelve a la ficha | ✅ |
 | Una fuente no arranca o se corta | Prueba sola la siguiente en el mismo punto ("Esa fuente falló · probando otra"); si ninguna sirve, lo dice y vuelve a Orbital | ✅ (nuevo) |
 | En el reproductor | Barra de Orbital con título, progreso (con marcas de capítulos), audio, subtítulos, la fuente y la leyenda. A pausa · ←/→ adelantar (mantener: 10 s → 30 s → 1 min) · LB/RB capítulo (o ±1 min) · LT/RT episodio anterior/siguiente · ↑/↓ volumen · **B oculta la barra; con la barra oculta, sale** | ✅ |
@@ -101,6 +105,7 @@ Todo funciona igual con toques o con el control; Orbital cambia solo según lo q
 | Actualizar biblioteca, sonidos, mostrar ocultos | ☰ | ✅ |
 | Salir al escritorio y volver | ☰ → Salir al escritorio; Home para volver | ✅ |
 | Suspender, reiniciar, apagar | ☰ → Apagado. Reiniciar y Apagar piden confirmar (Cancelar primero) y avisan si hay un juego abierto | ✅ |
+| Conectar Stremio | ☰ → Ajustes → Cuentas → Stremio: correo y contraseña con el teclado en pantalla (Y muestra la contraseña, LT/RT cambian de campo). Ya no hace falta la PC | ✅ (nuevo) |
 | Ajustes | ☰ → Ajustes: Reproducción (idioma del audio, subtítulos, calidad, tamaño de subtítulos), Pantalla (tamaño del texto, márgenes de la TV, reducir movimiento), Sonido y vibración, Cuentas. A o ◀/▶ cambian el valor sin cerrar el menú | ✅ (nuevo) |
 | Encender Orbital | Animación de arranque (planeta y órbitas) mientras se prepara la biblioteca; al volver de un juego, la interfaz "aterriza" | ✅ (nuevo) |
 | Vista de tareas de Windows | 3 dedos hacia arriba (panel o pantalla) | ⚠️ funciona con Orbital abierto, pero la Vista de tareas no se maneja con mando: mejor ☰ → Ventanas abiertas |
