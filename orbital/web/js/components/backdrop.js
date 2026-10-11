@@ -44,8 +44,9 @@ export function createBackdrop({ settle = 150 } = {}) {
   let front = 0;
   let token = 0;
 
-  function swap(url, poster) {
+  function swap(url, poster, pixel = false) {
     const back = layers[1 - front];
+    back.el.classList.toggle("backdrop__layer--pixel", !!pixel); // captura chica de un juego retro
     back.art.style.backgroundImage = cssUrl(url);
     if (poster && url) back.box.src = url;
     else back.box.removeAttribute("src");
@@ -55,8 +56,8 @@ export function createBackdrop({ settle = 150 } = {}) {
     front = 1 - front;
   }
 
-  /** `poster`: la imagen es una portada vertical (no hay fanart). */
-  function show(url, { poster = false } = {}) {
+  /** `poster`: la imagen es una portada vertical (no hay fanart). `pixel`: captura chica (pixel art). */
+  function show(url, { poster = false, pixel = false } = {}) {
     const mine = ++token;
     // Espera un poco: si el usuario sigue moviéndose rápido no cargamos cada fondo.
     setTimeout(() => {
@@ -69,7 +70,7 @@ export function createBackdrop({ settle = 150 } = {}) {
       img.onload = () => {
         if (mine !== token) return;
         applyPalette(paletteOf(img, url));
-        swap(url, poster);
+        swap(url, poster, pixel);
       };
       img.onerror = () => {
         if (mine !== token) return;

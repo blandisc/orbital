@@ -173,7 +173,7 @@ function setFocus(r, c, { silent = false, edge = null, repeat = false } = {}) {
   if (moved || silent) {
     const item = current();
     ui.hero.update(item, glyphs(), { runningId: state.running?.id });
-    ui.backdrop.show(item?.hero || item?.image, { poster: !!item && !item.hero });
+    ui.backdrop.show(item?.hero || item?.image, { poster: !!item && !item.hero, pixel: !!item?.extra?.hero_lowres });
     const count = state.rows[next.r]?.items.length ?? 1;
     ui.backdrop.parallax(count > 1 ? next.c / (count - 1) : 0);
   }
@@ -246,7 +246,7 @@ function gamesFocused(target) {
   document.body.dataset.games = ui.games.mode;
   const item = target?.item ?? target?.console?.last ?? null;
   if (target?.kind === "game") ui.hero.update(item, glyphs(), { runningId: state.running?.id });
-  ui.backdrop.show(item?.hero || item?.image || null, { poster: !!item && !item.hero });
+  ui.backdrop.show(item?.hero || item?.image || null, { poster: !!item && !item.hero, pixel: !!item?.extra?.hero_lowres });
   renderHints();
 }
 

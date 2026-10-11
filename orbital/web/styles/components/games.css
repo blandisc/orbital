@@ -4,11 +4,15 @@ body[data-view="games"] { --games-rail: 5.4rem; }
 body[data-view="games"] .shelf { display: none; }
 body[data-view="games"] .hero { padding-left: calc(var(--page-gutter) + var(--games-rail) + var(--space-6)); }
 body[data-view="games"][data-games="gallery"] .hero { display: none; }
+/* Aquí manda la cuadrícula: el héroe se compacta (título en una línea, sin la frase de Alexa). */
+body[data-view="games"] .hero__voice { display: none; }
+body[data-view="games"] .hero__title { -webkit-line-clamp: 1; }
+body[data-view="games"] .hero__description { -webkit-line-clamp: 1; }
 
 .games {
   grid-row: 3; min-height: 0; position: relative;
   /* Portadas un poco más chicas que en las filas: caben dos filas y el héroe respira. */
-  --card-height: 9.6rem; --card-focus-scale: 1.08;
+  --card-height: 9rem; --card-focus-scale: 1.08;
 }
 body[data-games="gallery"] .games { grid-row: 2 / 4; }
 
