@@ -126,7 +126,7 @@
 }
 .battery__body::after { content: ""; position: absolute; right: -4.5px; top: 30%; width: 2.5px; height: 40%; background: var(--color-text-muted); border-radius: 0 2px 2px 0; }
 .battery__level { position: absolute; inset: 1.5px auto 1.5px 1.5px; background: var(--color-text-muted); border-radius: 2px; transition: width var(--duration-slow) var(--ease-out); }
-.battery__body .icon--fill { position: relative; width: .8rem; height: .8rem; color: var(--color-text); filter: drop-shadow(0 0 2px var(--palette-ink-1000)); }
+.battery__body .icon--fill { position: relative; width: .8rem; height: .8rem; color: var(--color-text); filter: drop-shadow(0 0 2px var(--color-art-shade)); }
 .battery--low { color: var(--color-danger); }
 .battery--low .battery__body { border-color: var(--color-danger); }
 .battery--low .battery__level { background: var(--color-danger); }
@@ -140,6 +140,8 @@
   .status-bar__playing-title { max-width: 6.5rem; }
   .battery > span:not(.battery__body) { display: none; }
 }
+/* Letra Muy grande: el % de batería también cede su sitio (con márgenes Grande la hora se salía). */
+@media (max-width: 1920px) { [data-text-size="xlarge"] .battery > span:not(.battery__body) { display: none; } }
 @media (max-width: 1000px) {
   .status-bar { gap: var(--space-4); }
   .status-bar__wordmark, .status-bar .assistant { display: none; }

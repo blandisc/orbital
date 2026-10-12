@@ -16,7 +16,7 @@
 }
 .detail-panel__img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .detail-panel__img--pixel { image-rendering: pixelated; }
-.detail-panel__img--poster { object-fit: contain; background: var(--palette-ink-950); }
+.detail-panel__img--poster { object-fit: contain; background: var(--color-backdrop-deep); }
 .detail-panel__body {
   position: relative; flex: 1 1 auto; min-height: 0; margin-top: -1.6rem;
   display: flex; flex-direction: column; gap: var(--space-4); padding: 0 var(--space-8) var(--space-6);

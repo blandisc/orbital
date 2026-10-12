@@ -1,7 +1,13 @@
 /* Login: conectar Stremio con el mando. Los campos arriba, el teclado grande abajo (se acierta
    desde el sofá); el campo activo con anillo, la contraseña con puntos (Y la muestra). */
 /* El marco (fondo, margen, entrada y salida) es .screen y el encabezado ScreenHead (ui.css). */
-.login { display: grid; grid-template-rows: auto auto 1fr; gap: var(--space-6); justify-items: center; }
+/* Las teclas, a la medida de la pantalla (como Buscar): con letra grande la última fila quedaba bajo el pie. */
+.login { display: grid; grid-template-rows: auto auto 1fr; gap: var(--space-6); justify-items: center; --key-height: min(3.2rem, 6vh); }
+/* Poca altura con letra Grande o Muy grande: fuera la explicación y menos aire, para que quepa el teclado. */
+@media (max-height: 820px) {
+  [data-text-size="large"] .login, [data-text-size="xlarge"] .login { gap: var(--space-3); }
+  [data-text-size="large"] .login__head .screen-head__lead, [data-text-size="xlarge"] .login__head .screen-head__lead { display: none; }
+}
 /* El teclado es el componente común (keyboard.css): aquí solo dónde va y cómo espera al conectar. */
 .login .keyboard { align-self: end; }
 .login--busy .keyboard { opacity: .5; pointer-events: none; }
@@ -16,7 +22,7 @@
 .login__field--active { background: var(--color-fill-hover); box-shadow: inset 0 0 0 2px var(--color-focus); }
 .login__label { color: var(--color-text-muted); font-size: var(--text-xs); font-weight: var(--weight-medium); }
 .login__value { min-height: 1.6em; font-size: var(--text-lg); font-weight: var(--weight-medium); white-space: pre; overflow: hidden; text-overflow: ellipsis; }
-.login__field--secret .login__value { letter-spacing: .12em; }
+.login__field--secret .login__value { letter-spacing: var(--tracking-secret); }
 /* El cursor de escribir: el único parpadeo permitido (es lo que dice «aquí se escribe»). */
 .login__caret { display: inline-block; width: 2px; height: 1.05em; margin-left: 2px; vertical-align: text-bottom; background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
 .login__message { min-height: 1.4em; color: var(--color-warning); font-size: var(--text-sm); text-align: center; }

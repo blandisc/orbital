@@ -4,7 +4,7 @@
 body[data-view="games"] .hero, body[data-view="games"] .shelf { display: none; }
 /* Fondo de ambiente (estrellas y luz del color de lo enfocado), como el Inicio: el arte vive en la ficha. */
 body[data-view="games"] .backdrop__layer, body[data-view="games"] .backdrop__scrim { opacity: 0; }
-body[data-view="games"] .backdrop { transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--palette-ink-950); }
+body[data-view="games"] .backdrop { transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--color-backdrop-deep); }
 body[data-view="games"] .backdrop__space { opacity: 1; }
 
 .games { grid-row: 2 / 4; --browse-inset: var(--page-gutter); }

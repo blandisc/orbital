@@ -60,6 +60,15 @@
   --shadow-logo: drop-shadow(0 .3rem 1.2rem rgba(0, 0, 0, .55));
   /* Un logo negro sobre transparente (el de Severance), pintado claro para el fondo oscuro. */
   --filter-logo-light: brightness(0) invert(1) var(--shadow-logo);
+  /* El fondo de ambiente (Inicio, Juegos, Para ti) y lo que va detrás de una portada que no llena. */
+  --color-backdrop-deep: var(--palette-ink-950);
+  /* La sombra sobre el arte: degradados que dejan leer el texto encima, contorno de un ícono sobre luz. */
+  --color-art-shade: var(--palette-ink-1000);
+  /* Superficies con relieve: la hoja lateral y la casilla de una consola, un poco más claras arriba. */
+  --gradient-sheet: linear-gradient(180deg, var(--palette-ink-850) 0%, var(--color-surface) 40%);
+  --gradient-console-tile: linear-gradient(180deg, var(--palette-ink-850) 0%, var(--palette-ink-900) 100%);
+  /* El planeta de la pantalla de carga cuando lo que abres no tiene portada (una app). */
+  --gradient-launch-planet: radial-gradient(circle at 35% 30%, var(--color-star), var(--palette-ink-200) 45%, var(--palette-ink-700));
   /* Sombras para fotos y logotipos recortados (filter: drop-shadow sigue la silueta). */
   --shadow-drop-sm: drop-shadow(0 .3rem .5rem rgba(0, 0, 0, .45));
   --shadow-drop: drop-shadow(0 .5rem 1rem rgba(0, 0, 0, .5));

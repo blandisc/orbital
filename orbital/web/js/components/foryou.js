@@ -171,7 +171,7 @@ export function createForYou({ onWatch, onLaunch, onMore, onConnect, onFocus, on
 
   /** Pistas del pie (X va en el selector de modo, no se repite aquí). */
   function hints(g) {
-    const end = { glyph: g.section, label: "Secciones", end: true };
+    const end = { glyph: g.section, label: "Sección", end: true };
     if (!data) return [end];
     if (mode === "mosaic") {
       if (mosaic.ambient) return [{ glyph: g.select, label: "Elegir" }, end];

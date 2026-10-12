@@ -62,6 +62,9 @@
   --weight-bold: 700;
   --tracking-display: -.035em;
   --tracking-tight: -.015em;
+  --tracking-label: .025em; /* letras chicas y en negrita: glifos, «Abierto» */
+  --tracking-secret: .12em; /* los puntos de una contraseña */
+  --blur-glass: 14px; /* vidrio: lo que flota sobre el arte (íconos del mosaico, el selector, Atrás táctil) */
 
   /* Movimiento: entradas desaceleran, salidas aceleran y son más cortas */
   --duration-none: 0s; /* movimiento reducido: sin transición */
@@ -119,7 +122,8 @@
   --safe-area: 4;
   --safe-x: calc(var(--safe-area) * 1vw);
   --safe-y: calc(var(--safe-area) * .6vh);
-  --page-gutter: max(var(--space-10), var(--safe-x));
+  /* El piso es chico a propósito: con uno grande, «Pequeño» y «Sin margen» se veían idénticos. */
+  --page-gutter: max(var(--space-4), var(--safe-x));
   --card-height: 12.6rem; /* el ancho sale de la proporción de cada portada */
   --card-gap: 1.85rem;
   --card-focus-scale: 1.2;

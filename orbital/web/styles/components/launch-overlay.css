@@ -79,7 +79,7 @@
 /* Sin portada (una app): solo la órbita, con un planeta de la marca al centro. */
 .launch--no-cover .launch__stage::before {
   content: ""; position: absolute; width: 6rem; height: 6rem; border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, var(--color-star), var(--palette-ink-200) 45%, var(--palette-ink-700));
+  background: var(--gradient-launch-planet);
   box-shadow: 0 0 4rem -.5rem color-mix(in oklab, var(--art-accent) 55%, transparent);
 }
 

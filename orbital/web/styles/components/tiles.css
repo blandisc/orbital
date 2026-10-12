@@ -9,10 +9,13 @@
 @container (max-height: 18rem) { .tile--feature .tile__platform { display: none; } .tile--feature__logo { max-height: 3.4rem; } }
 @container (max-height: 13rem) { .tile--feature__detail { display: none; } }
 @container (max-height: 20rem) { [data-text-size="xlarge"] .tile--feature .tile__platform { display: none; } }
+/* Un título largo sin logo (letra grande, 1280): no se encoge a media línea; con poco alto, un renglón con «…». */
+.tile--feature__title { flex-shrink: 0; }
+@container (max-height: 18rem) { .tile--feature__title { -webkit-line-clamp: 1; } }
 .tile--feature.tile--focused { transform: none; }
 .tile--feature__shade {
   background:
-    linear-gradient(90deg, color-mix(in oklab, var(--palette-ink-1000) 88%, transparent) 0%, color-mix(in oklab, var(--palette-ink-1000) 55%, transparent) 42%, transparent 78%),
+    linear-gradient(90deg, color-mix(in oklab, var(--color-art-shade) 88%, transparent) 0%, color-mix(in oklab, var(--color-art-shade) 55%, transparent) 42%, transparent 78%),
     var(--gradient-tile-shade);
 }
 .tile--feature__body {
@@ -42,7 +45,7 @@
   padding: var(--space-5) var(--space-6); text-shadow: var(--shadow-text);
 }
 /* Degradado más profundo abajo: el texto no compite con el arte (ni con su logo). */
-.tile--wide__shade { background: linear-gradient(0deg, color-mix(in oklab, var(--palette-ink-1000) 92%, transparent) 0%, color-mix(in oklab, var(--palette-ink-1000) 35%, transparent) 42%, transparent 62%); }
+.tile--wide__shade { background: linear-gradient(0deg, color-mix(in oklab, var(--color-art-shade) 92%, transparent) 0%, color-mix(in oklab, var(--color-art-shade) 35%, transparent) 42%, transparent 62%); }
 .tile--wide__title {
   font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold); line-height: 1.15;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .12em; margin-bottom: -.12em;
@@ -69,7 +72,7 @@
 /* --- Consola: su foto (o logotipo) sobre un brillo de su color; nombre, juegos y lo último ---- */
 .tile--console {
   display: flex; flex-direction: column; padding: 0;
-  background: linear-gradient(180deg, var(--palette-ink-850) 0%, var(--palette-ink-900) 100%);
+  background: var(--gradient-console-tile);
 }
 .tile--console__glow {
   position: absolute; inset: 0; pointer-events: none;

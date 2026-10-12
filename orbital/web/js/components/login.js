@@ -31,7 +31,7 @@ export function createLogin({ onDone, onMove, onClose }) {
   const keys = keyboard.el;
   const el = h("section", { class: "login screen", hidden: true, "aria-label": "Conectar Stremio" },
     ScreenHead({ eyebrow: "Cuentas", title: "Conectar Stremio", className: "login__head",
-      lead: "Para Seguir viendo, tus fuentes y el progreso en todos tus dispositivos. Tu contraseña solo se envía a Stremio; Orbital no la guarda." }),
+      lead: "Para «Seguir viendo», tus fuentes y el progreso en todos tus dispositivos. Tu contraseña solo se envía a Stremio; Orbital no la guarda." }),
     h("div", { class: "login__form" }, fields.email.node, fields.password.node, message),
     keys);
 

@@ -10,7 +10,7 @@
   border-radius: var(--radius-pill);
   background: var(--glyph-bg); color: var(--glyph-ink);
   box-shadow: inset 0 0 0 1.5px var(--glyph-ring);
-  font: var(--weight-bold) var(--text-2xs) / 1 var(--font-text); letter-spacing: .02em;
+  font: var(--weight-bold) var(--text-2xs) / 1 var(--font-text); letter-spacing: var(--tracking-label);
   /* La caja del texto de Segoe queda baja: sube medio píxel para verse centrado en el círculo. */
   padding-bottom: .06em;
 }

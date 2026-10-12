@@ -25,10 +25,10 @@ La única salida es una **excepción documentada**: la línea lleva `/* ds-excep
 | Capa | Archivo | Qué hay |
 |---|---|---|
 | Paleta | `palette.json` + `tokens.css` (`--palette-*`) | Los colores crudos. **Una sola paleta** para la interfaz y el reproductor (`player_ui.py` la lee del JSON). Una prueba verifica que coinciden. |
-| Primitivos | `tokens.css` | Espacio (`--space-*`), radios (`--radius-*`), letra (`--text-*`, `--weight-*`, `--tracking-*`), movimiento (`--duration-*`, `--ease-*`, `--delay-*`, `--stagger`), capas (`--z-*`), medidas de consola (`--card-*`, `--tile-*`, `--key-height`, `--sheet-width`…). |
-| Semánticos | `themes/orbital.css` | Lo que usan los componentes: `--color-*`, `--shadow-*` (cajas) y `--shadow-drop*` (siluetas), `--ring-focus`, foco invertido (`--inverse-bg/fg/scale`), sobre el arte (`--color-badge-bg`, `--gradient-tile-shade`), dentro de algo claro (`--on-light-*`) o de color (`--on-color-fill`), máscaras (`--mask-solid`), `--color-star`, `--color-video-bg`, `--assistant-accent`, el grafito neutro del arte (`--art-*-neutral`) y el color de cada consola (`--system-*`). |
+| Primitivos | `tokens.css` | Espacio (`--space-*`), radios (`--radius-*`), letra (`--text-*`, `--weight-*`, `--tracking-*`), vidrio (`--blur-glass`), movimiento (`--duration-*`, `--ease-*`, `--delay-*`, `--stagger`), capas (`--z-*`), medidas de consola (`--card-*`, `--tile-*`, `--key-height`, `--sheet-width`…). |
+| Semánticos | `themes/orbital.css` | Lo que usan los componentes: `--color-*`, `--shadow-*` (cajas) y `--shadow-drop*` (siluetas), `--ring-focus`, foco invertido (`--inverse-bg/fg/scale`), sobre el arte (`--color-badge-bg`, `--gradient-tile-shade`), dentro de algo claro (`--on-light-*`) o de color (`--on-color-fill`), máscaras (`--mask-solid`), fondo de ambiente (`--color-backdrop-deep`), sombra sobre el arte (`--color-art-shade`), relieves (`--gradient-sheet`, `--gradient-console-tile`, `--gradient-launch-planet`), `--color-star`, `--color-video-bg`, `--assistant-accent`, el grafito neutro del arte (`--art-*-neutral`) y el color de cada consola (`--system-*`). |
 
-**Los componentes solo usan tokens semánticos** (o primitivos de medida y movimiento). Un valor nuevo
+**Los componentes solo usan tokens semánticos** (o primitivos de medida y movimiento): nunca `--palette-*` directo. Un valor nuevo
 primero se nombra aquí: qué *es* (`--duration-enter`, «algo que aparece»), no cuánto vale.
 
 ### Movimiento

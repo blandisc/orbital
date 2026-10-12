@@ -61,8 +61,17 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     else logo.removeAttribute("src");
     name.hidden = !!info.logo;
     const runtime = info.runtime || "";
+    // Cada dato con su «·» delante, en un solo bloque: el punto nunca queda colgando al final del
+    // renglón; si un dato empieza renglón, su punto se oculta (title--fact-start).
     mount(facts, [info.year, info.rating && `★ ${info.rating}`, runtime, genres(info.genres || []).join(", ")]
-      .filter(Boolean).flatMap((t, i) => (i ? [h("span", { class: "title__sep", "aria-hidden": "true" }, "·"), t] : [t])));
+      .filter(Boolean).map((t, i) => h("span", { class: "title__fact" }, i > 0 && h("span", { class: "title__sep", "aria-hidden": "true" }, "·"), t)));
+    requestAnimationFrame(() => {
+      let top = null;
+      for (const fact of facts.children) {
+        fact.classList.toggle("title__fact--start", top !== null && fact.offsetTop > top + 2);
+        top = fact.offsetTop;
+      }
+    });
     description.textContent = info.description || "";
     const lines = [
       info.cast?.length > 0 && h("span", {}, h("em", {}, "Con "), info.cast.slice(0, 4).join(", ")),
