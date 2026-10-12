@@ -48,7 +48,7 @@ class State:
             loaded = json.loads(text)
             if not isinstance(loaded, dict):
                 raise ValueError("no es un objeto")
-        except ValueError as exc:
+        except (ValueError, RecursionError) as exc:
             # Dañado: queda a salvo con fecha (otro daño después no pisa este respaldo) y se empieza de cero.
             backup = path.with_name(f"{path.stem}-{time.strftime('%Y%m%d-%H%M%S')}.bak")
             try:

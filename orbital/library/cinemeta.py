@@ -65,14 +65,14 @@ class Cinemeta:
 
     def catalog(self, kind: str) -> list[dict]:
         metas = self._get(f"/catalog/{kind}/top.json").get("metas") or []
-        return [m for m in metas if isinstance(m, dict) and m.get("id") and m.get("name")]
+        return [m for m in metas if _usable(m)]
 
     def search(self, kind: str, query: str) -> list[dict]:
         """Búsqueda tolerante a errores ("ofice" encuentra The Office); 2-3 letras suelen bastar."""
         from urllib.parse import quote
 
         metas = self._get(f"/catalog/{kind}/top/search={quote(query.strip(), safe='')}.json").get("metas") or []
-        return [m for m in metas if isinstance(m, dict) and m.get("id") and m.get("name")]
+        return [m for m in metas if _usable(m)]
 
     def meta(self, kind: str, meta_id: str) -> dict:
         meta = self._get(f"/meta/{quote(kind)}/{quote(str(meta_id), safe=':')}.json").get("meta")
@@ -109,6 +109,12 @@ def describe_meta(meta: dict) -> dict:
         "logo": meta.get("logo") if isinstance(meta.get("logo"), str) else None,
         "runtime": str(meta.get("runtime") or "").strip(),
     }
+
+
+def _usable(meta) -> bool:
+    """Un título con id y nombre de texto: un nombre numérico (1917) o una lista tumbaban la biblioteca."""
+    return (isinstance(meta, dict) and isinstance(meta.get("id"), str) and meta["id"].strip()
+            and isinstance(meta.get("name"), str) and bool(meta["name"].strip()))
 
 
 def _list(value) -> list:

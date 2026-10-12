@@ -105,6 +105,8 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(404, str(exc))
         except ValueError as exc:
             raise HTTPException(409, str(exc))
+        except OSError as exc:  # el reproductor no abrió (falta, sin permiso…)
+            raise HTTPException(500, f"No pude abrir el reproductor: {exc.strerror or exc}")
         catalog.sessions.play_stremio(kind, meta_id, body.video_id, title)
         return {"ok": True}
 

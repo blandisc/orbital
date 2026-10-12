@@ -279,7 +279,8 @@ class PlayerScreen:
     def press(self, button: str) -> None:
         """Un botón del mando con el reproductor al frente."""
         self._quiet_episodes = 0  # alguien está ahí
-        if self.current is None:
+        current = self.current
+        if current is None:
             return
         if self.menu is not None:
             self._menu_press(button)
@@ -300,7 +301,7 @@ class PlayerScreen:
         elif button == "b":
             # B siempre pregunta (antes ocultaba la barra y, ya oculta, salía sin avisar): A sigue, B sale.
             self.hide_hud()
-            self._show_card({"kind": "quit", "title": self.current.title})
+            self._show_card({"kind": "quit", "title": current.title})
         elif button == "x":
             self.open_tracks()
         elif button == "y":
@@ -349,8 +350,8 @@ class PlayerScreen:
         """Cierra mpv anotando ANTES cómo terminó (el catálogo lo lee al volver a Orbital: "Terminaste…"
         en vez de "Guardé dónde ibas"). Antes de cerrar, no después: el lanzador puede ver el proceso
         terminado antes que este vigilante."""
-        segment = self.segment
-        if segment is not None and self.current is not None:
+        segment, current = self.segment, self.current
+        if segment is not None and current is not None:
             finished = bool(segment.duration) and segment.position >= segment.duration * .9
-            self.last_end = {"title": self.current.title, "finished": finished, "kind": segment.meta.get("kind")}
+            self.last_end = {"title": current.title, "finished": finished, "kind": segment.meta.get("kind")}
         self.mpv.command("quit")

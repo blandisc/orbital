@@ -164,16 +164,22 @@ class OrbitalPlayer(PlayerScreen):
              subtitles: str | None = None, message: str | None = None) -> bool:
         """Otro archivo en la misma ventana: el siguiente episodio, u otra fuente del mismo título.
         Lo que se vio del anterior se guarda. False si mpv ya no está abierto."""
-        if not self.playing:
+        playback = self.current
+        if playback is None or playback.process.poll() is not None:
             return False
-        previous = self.segment
-        same = previous is not None and previous.meta.get("video_id") == meta.get("video_id")
         segment = Segment(meta, title, url, start=start)
-        if same:  # la misma película en otra fuente: lo visto sigue contando como una sola vez
-            previous.closed = True
-            segment.watched, segment.saved_watched = previous.watched, previous.saved_watched
-            segment.duration, segment.position = previous.duration, previous.position
-        elif previous is not None:
+        with self._swap:  # mientras se buscaba la fuente pudo abrirse otro video: entonces este archivo ya no va
+            if self.current is not playback:
+                return False
+            previous = self.segment
+            same = previous is not None and previous.meta.get("video_id") == meta.get("video_id")
+            if same:  # la misma película en otra fuente: lo visto sigue contando como una sola vez
+                previous.closed = True
+                segment.watched, segment.saved_watched = previous.watched, previous.saved_watched
+                segment.duration, segment.position = previous.duration, previous.position
+            self.segment = segment
+            playback.title, playback.meta = title, meta
+        if previous is not None and not same:
             self._close_segment(previous)  # otro episodio: lo visto del anterior se guarda ya
         if self.menu is not None:  # el panel era del episodio anterior
             self.menu = None
@@ -183,9 +189,6 @@ class OrbitalPlayer(PlayerScreen):
             self._fallback_subs = fallback_subs
         if subtitles is not None:
             self._subs_lang = subtitles
-        self.segment = segment
-        if self.current is not None:
-            self.current.title, self.current.meta = title, meta
         self.mpv.command("set_property", "force-media-title", title)
         self.mpv.command("set_property", "start", f"{int(start)}" if start > 5 else "0")
         self._want.clear()  # lo pedido era del archivo anterior (p. ej. «en pausa»)
@@ -483,14 +486,16 @@ class OrbitalPlayer(PlayerScreen):
         self.toast("Sin subtítulos")
 
     def stop(self) -> None:
-        if self.current and self.current.process.poll() is None:
+        current = self.current  # una sola lectura: el vigilante puede ponerlo en None a la mitad
+        if current and current.process.poll() is None:
             self._user_quit = True
             self._quit()
             try:
-                self.current.process.wait(timeout=3)
+                current.process.wait(timeout=3)
             except subprocess.TimeoutExpired:
-                self.current.process.kill()
+                current.process.kill()
 
     @property
     def playing(self) -> bool:
-        return self.current is not None and self.current.process.poll() is None
+        current = self.current
+        return current is not None and current.process.poll() is None

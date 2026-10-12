@@ -219,3 +219,64 @@ def test_odd_rejected_art_file_does_not_break_change_image(tmp_path):
     lib._rejected_file().write_text("[]", encoding="utf-8")
     lib.reject("snes", "zelda", "cover", "https://x/a.png")
     assert lib.is_rejected("snes", "zelda", "cover", "https://x/a.png")
+
+
+# --- ronda 4 -------------------------------------------------------------------------------------
+def test_next_episode_keeps_the_language_of_the_series(library, monkeypatch):
+    from orbital.library import streams
+
+    info = {"id": "tt1", "name": "Serie", "videos": [{"id": f"tt1:1:{i}", "season": 1, "episode": i} for i in (1, 2)]}
+    monkeypatch.setattr(cinemeta.Cinemeta, "_get", lambda self, path: {"meta": info})
+    library.credentials.set("stremio_auth_key", "k")
+    sources = [streams.Source(index=i, addon="A", stream={"url": f"https://cdn/{i}.mkv"}, transport_url="https://a",
+                              resolution="1080p", languages=[lang], binge=f"grupo-{lang}", cached=True)
+               for i, lang in enumerate(("es", "en"))]
+    monkeypatch.setattr(library.watch, "stream_sources",
+                        lambda kind, vid, prefs=None: streams.rank(list(sources), prefs or library.watch.stream_prefs, kind))
+    library.state.set_pref("stremio:tt1", "audio", "es")  # esta serie, en español (Ajustes: inglés)
+    loaded = []
+    monkeypatch.setattr(library.watch.player, "load", lambda url, title, meta, **kw: loaded.append(url) or True)
+    library.watch._play_episode("tt1", "tt1:1:2", "Serie · T1 E2", binge="grupo-es")
+    assert loaded == ["https://cdn/0.mkv"]
+
+
+def test_odd_stremio_progress_is_zero_not_500():
+    for state in [{"video_id": "v", "timeOffset": "abc"}, {"video_id": "v", "timeOffset": 1e999},
+                  {"video_id": "v", "duration": "x", "timeOffset": 5000}, ["x"], "texto"]:
+        assert stremio_api.resume_seconds({"state": state}, "v") in (0.0, 5.0)
+    assert stremio_api.parse_watched(5, ["a"]) == set()
+    item = stremio_api.parse_item({"_id": "tt1", "name": 1917, "type": "movie"})
+    assert item is not None and item.name == "1917"
+    assert stremio_api.parse_item({"_id": ["x"], "name": "Peli", "type": "movie"}) is None
+
+
+def test_cinemeta_titles_must_be_text(monkeypatch):
+    metas = [{"id": "tt1", "name": 1917}, {"id": ["tt2"], "name": "x"}, {"id": "tt3", "name": ["a"]}, {"id": "tt4", "name": "Bien"}]
+    monkeypatch.setattr(cinemeta.Cinemeta, "_get", lambda self, path: {"metas": metas})
+    assert [m["id"] for m in cinemeta.Cinemeta().search("movie", "x")] == ["tt4"]
+
+
+def test_non_ascii_token_is_rejected_not_an_error():
+    from types import SimpleNamespace
+
+    from orbital.server import token_ok
+
+    ask = lambda value: SimpleNamespace(headers={"authorization": value})  # noqa: E731
+    assert not token_ok(ask("Bearer éé"), "secreto")  # antes: TypeError → 500
+    assert not token_ok(ask("Bearer secreto"), "sécreto")
+    assert token_ok(ask("Bearer sécreto"), "sécreto")
+
+
+def test_more_sizes():
+    from orbital.library import streams
+
+    size = lambda text: streams.parse({"title": f"x\n💾 {text}", "url": "https://x"}, "A", "https://a", 0).size  # noqa: E731
+    assert size("0,750 GB") == 750_000_000 and size("1,2,3 GB") == 0 and size("1.234.567 KB") == 1_234_567_000
+
+
+def test_library_json_gets_a_copy_of_extra():
+    from orbital.library.models import LibraryItem
+
+    item = LibraryItem(id="a", title="A", category="games", source="x", extra={"year": "2020"})
+    item.public()["extra"]["year"] = "otro"
+    assert item.extra["year"] == "2020"

@@ -87,12 +87,26 @@ def _iso(when: float) -> str:
     return datetime.fromtimestamp(when, UTC).strftime("%Y-%m-%dT%H:%M:%S.") + f"{int(when * 1000) % 1000:03d}Z"
 
 
+def as_int(value) -> int:
+    """Un número de Stremio; 0 si viene raro ("abc", 1e999, una lista)."""
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError, OverflowError):
+        return 0
+
+
+def state_of(raw) -> dict:
+    """El `state` de un elemento de la biblioteca de Stremio, siempre un diccionario."""
+    state = raw.get("state") if isinstance(raw, dict) else None
+    return state if isinstance(state, dict) else {}
+
+
 def resume_seconds(raw: dict | None, video_id: str) -> float:
     """Dónde ibas en ese episodio o película según Stremio (0 = desde el principio)."""
-    state = (raw or {}).get("state") or {}
+    state = state_of(raw)
     if state.get("video_id") != video_id:
         return 0.0
-    offset, duration = int(state.get("timeOffset") or 0), int(state.get("duration") or 0)
+    offset, duration = as_int(state.get("timeOffset")), as_int(state.get("duration"))
     if offset <= 0 or (duration and offset >= duration * WATCHED_AT):
         return 0.0
     return offset / 1000
@@ -111,20 +125,20 @@ def with_progress(raw: dict | None, *, meta_id: str, kind: str, name: str, poste
         "removed": True, "temp": True, "_ctime": _iso(now),
         "behaviorHints": {"defaultVideoId": None, "featuredVideoId": None, "hasScheduledVideos": False},
     })
-    state: dict[str, Any] = dict(item.get("state") or {})
+    state: dict[str, Any] = dict(state_of(item))
     if state.get("video_id") != video_id:
         state["timeWatched"] = 0
     pos_ms, dur_ms, watched_ms = int(position * 1000), int(duration * 1000), int(watched * 1000)
     state.update({
         "lastWatched": _iso(now), "video_id": video_id, "duration": dur_ms, "timeOffset": pos_ms,
-        "timeWatched": int(state.get("timeWatched") or 0) + watched_ms,
-        "overallTimeWatched": int(state.get("overallTimeWatched") or 0) + watched_ms,
+        "timeWatched": as_int(state.get("timeWatched")) + watched_ms,
+        "overallTimeWatched": as_int(state.get("overallTimeWatched")) + watched_ms,
     })
     state.setdefault("timesWatched", 0)
     state.setdefault("flaggedWatched", 0)
     state.setdefault("noNotif", False)
     if dur_ms and pos_ms >= dur_ms * WATCHED_AT:
-        state["timesWatched"] = int(state["timesWatched"]) + 1
+        state["timesWatched"] = as_int(state["timesWatched"]) + 1
         state["flaggedWatched"] = 1
         if video_ids and video_id in video_ids:  # ✓ en ese episodio, en Orbital y en Stremio
             seen = parse_watched(state.get("watched"), video_ids) | {video_id}
@@ -144,7 +158,7 @@ def parse_watched(watched: str | None, video_ids: list[str]) -> set[str]:
     Formato de stremio-core (WatchedBitField): "{video ancla}:{largo}:{bits}", con los bits en
     base64 de zlib, uno por video en el orden del catálogo (el bit 0 es el menos significativo del
     primer byte). El ancla es el último visto y alinea la lista si el catálogo cambió de largo."""
-    if not watched or not video_ids:
+    if not isinstance(watched, str) or not watched or not video_ids:
         return set()
     try:
         anchor, length, data = watched.rsplit(":", 2)
@@ -257,9 +271,11 @@ def _epoch(value) -> float | None:
 
 def parse_item(raw: dict) -> Watchable | None:
     item_id, name = raw.get("_id"), raw.get("name")
-    if not item_id or not name:
+    if isinstance(name, (int, float)) and not isinstance(name, bool):
+        name = str(name)  # «1917»: el título es un número
+    if not isinstance(item_id, str) or not item_id or not isinstance(name, str) or not name.strip():
         return None
-    state = raw.get("state") or {}
+    state = state_of(raw)
     kind = raw.get("type") or "other"
     removed, temp = bool(raw.get("removed")), bool(raw.get("temp"))
     offset = int(state.get("timeOffset") or 0)

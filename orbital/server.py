@@ -68,7 +68,9 @@ def is_local_request(request: Request) -> bool:
 
 def token_ok(request: Request, expected: str) -> bool:
     token = request.headers.get("authorization", "").removeprefix("Bearer ").strip()
-    return bool(token) and bool(expected) and hmac.compare_digest(token, expected)
+    # En bytes: compare_digest con texto no ASCII («Bearer é») lanzaba TypeError y daba 500.
+    return bool(token) and bool(expected) and hmac.compare_digest(token.encode("utf-8", "surrogatepass"),
+                                                                   expected.encode("utf-8", "surrogatepass"))
 
 
 def paused_path() -> Path:
@@ -226,6 +228,8 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
 
     guard = guard or FailedTokens()
     one_at_a_time: list[asyncio.Lock] = []  # los intentos fallidos esperan en fila, no en paralelo
+    waiting = [0]
+    MAX_WAITING = 20  # más que esto en fila: 429 al instante (no se acumulan conexiones abiertas)
 
     @public.middleware("http")
     async def require_token(request: Request, call_next):
@@ -236,10 +240,19 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
             return await call_next(request)
         if guard.blocked(key):
             return JSONResponse({"detail": "Demasiados intentos"}, status_code=429)
+        if waiting[0] >= MAX_WAITING:
+            guard.failed(key)
+            return JSONResponse({"detail": "Demasiados intentos"}, status_code=429)
         if not one_at_a_time:
             one_at_a_time.append(asyncio.Lock())
-        async with one_at_a_time[0]:  # 600 intentos a la vez ya no esperan 5 s en total, sino uno tras otro
-            await asyncio.sleep(guard.failed(key))
+        waiting[0] += 1
+        try:
+            async with one_at_a_time[0]:  # 600 intentos a la vez ya no esperan 5 s en total, sino uno tras otro
+                if guard.blocked(key):  # se bloqueó mientras esperaba en la fila
+                    return JSONResponse({"detail": "Demasiados intentos"}, status_code=429)
+                await asyncio.sleep(guard.failed(key))
+        finally:
+            waiting[0] -= 1
         return JSONResponse({"detail": "Token inválido"}, status_code=401)
 
     @public.get("/api/ping")

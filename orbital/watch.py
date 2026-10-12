@@ -445,7 +445,7 @@ class Watch:
         try:
             return stremio_api.resume_seconds(
                 self.stremio_client.library_item(self.credentials.get(STREMIO_KEY) or "", meta_id), video_id)
-        except stremio_api.StremioError as exc:
+        except (stremio_api.StremioError, ValueError, TypeError, AttributeError, OverflowError) as exc:
             log.info("No pude leer dónde ibas: %s", exc)
             return 0.0
 
@@ -467,11 +467,15 @@ class Watch:
             {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title}
         self._wire_player()
         pinned = self.sessions.pin()
-        process = self.player.play(
-            self.launcher.run, mpv_exe, url, title, meta,
-            start=start, audio=audio or self.stream_prefs.audio,
-            subtitles=self.subtitles_lang if subtitles is None else subtitles,
-            fallback_subs=self._fallback_subs(kind, video_id, subtitles))
+        try:
+            process = self.player.play(
+                self.launcher.run, mpv_exe, url, title, meta,
+                start=start, audio=audio or self.stream_prefs.audio,
+                subtitles=self.subtitles_lang if subtitles is None else subtitles,
+                fallback_subs=self._fallback_subs(kind, video_id, subtitles))
+        except BaseException:
+            self.sessions.unpin(pinned)  # mpv no abrió: Orbital no se queda «siempre encima»
+            raise
         self.launcher.track("media:player", title, process, runner="Reproductor")
         # Hasta la primera imagen del video (cargar un stream tarda): antes se veía la ventana negra de mpv.
         self.sessions.revealing = self.sessions.to_front("media:player", title, pinned=pinned, timeout=player.STARTUP_TIMEOUT + 5,
@@ -484,8 +488,9 @@ class Watch:
             return False
         meta = self._media_meta(kind, meta_id, video_id, title, source)
         meta["tried"] = sorted(set(tried or []) | {source.index})
+        _, subtitles = self.language_for(meta_id)  # los subtítulos que esta serie recuerda
         return self.player.load(url, title, meta, start=start, message=message,
-                                fallback_subs=self._fallback_subs(kind, video_id))
+                                fallback_subs=self._fallback_subs(kind, video_id, subtitles))
 
     def _source_failed(self, meta: dict, position: float, alive: bool) -> bool:
         """Una fuente no arrancó o se cortó: la siguiente mejor, en el mismo punto. True si se intenta."""
@@ -493,7 +498,8 @@ class Watch:
         if alive and meta.get("source") is not None:
             tried = set(meta.get("tried") or [meta["source"]])
             try:
-                source = self.best_source(meta["kind"], meta["video_id"], meta.get("binge"), skip=tried)
+                source = self.best_source(meta["kind"], meta["video_id"], meta.get("binge"), skip=tried,
+                                          prefs=self.language_for(meta["meta_id"])[0])
             except stremio_api.StremioError:
                 source = None
             if source is not None and len(tried) < 4:
@@ -509,13 +515,13 @@ class Watch:
         """Pestaña Fuente del reproductor: las mejores del título, la actual marcada."""
         if meta.get("source") is None:
             return []
-        found = self.stream_sources(meta["kind"], meta["video_id"])[:12]
+        found = self.stream_sources(meta["kind"], meta["video_id"], self.language_for(meta["meta_id"])[0])[:12]
         return [{"id": s.index, "label": source_label(s, long=True), "current": s.index == meta["source"]}
                 for s in found]
 
     def _switch_source(self, meta: dict, index: int, position: float) -> bool:
         """False si no se pudo (el reproductor lo avisa)."""
-        source = self.streams.get(meta["kind"], meta["video_id"], self.stream_prefs, index)
+        source = self.streams.get(meta["kind"], meta["video_id"], self.language_for(meta["meta_id"])[0], index)
         if source is None:
             return False
         return self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], meta.get("title") or "",
@@ -534,7 +540,7 @@ class Watch:
             return None
         title, detail = self._episode_title(info, meta["meta_id"], next_id)
         try:
-            self.stream_sources("series", next_id)  # que al llegar el momento ya esté buscada
+            self.stream_sources("series", next_id, self.language_for(meta["meta_id"])[0])  # que al llegar el momento ya esté buscada
         except stremio_api.StremioError:
             pass
         label, name = self._episode_label(info, next_id)
@@ -544,7 +550,8 @@ class Watch:
     def _play_episode(self, meta_id: str, video_id: str, title: str, binge: str | None = None,
                       start: float = 0) -> bool | None:
         """Otro episodio en el mismo reproductor (sin volver a Orbital). False: no cargó; None: ya se avisó."""
-        source = self.best_source("series", video_id, binge)
+        # El idioma que esta serie recuerda (antes: el de Ajustes, y el siguiente episodio salía en otro idioma).
+        source = self.best_source("series", video_id, binge, prefs=self.language_for(meta_id)[0])
         if source is None:
             self.player.toast("No encontré dónde ver ese episodio", 4)
             return None
@@ -667,15 +674,16 @@ class Watch:
             except stremio_api.StremioError as exc:
                 log.info("No pude leer dónde ibas en %s: %s", meta_id, exc)
                 raw = None
-            state = (raw or {}).get("state") or {}
+            raw = raw if isinstance(raw, dict) else None
+            state = stremio_api.state_of(raw)
             details["in_library"] = bool(raw) and not raw.get("removed") and not raw.get("temp")
             if kind == "series":  # los vistos de verdad (no "todo lo anterior al que ibas")
                 ids = [v["id"] for v in info.get("videos") or [] if isinstance(v, dict) and v.get("id")]
                 details["watched"] = sorted(stremio_api.parse_watched(state.get("watched"), ids))
-            video_id = state.get("video_id") or None
+            video_id = state.get("video_id") if isinstance(state.get("video_id"), str) else None
             if video_id:
                 position = stremio_api.resume_seconds(raw, video_id)
-                duration = int(state.get("duration") or 0) / 1000
+                duration = stremio_api.as_int(state.get("duration")) / 1000
                 label, name = self._episode_label(info, video_id) if kind == "series" else ("", "")
                 if position or (kind == "series" and video_id != meta_id):
                     resume = {"video_id": video_id, "position": position, "duration": duration,

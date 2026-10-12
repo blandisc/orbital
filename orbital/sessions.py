@@ -182,6 +182,10 @@ class Sessions:
         log.warning("%s se cerró a los %d s al arrancar: lo intento otra vez", title, seconds)
 
         def again() -> None:
+            # En ese segundo y medio abriste otra cosa (mando, Alexa): el reintento ya no toca.
+            if self._last_launch is not last or self.launcher.status() is not None:
+                log.info("No reintento %s: ya se abrió otra cosa", title)
+                return
             try:
                 self.launch(item_id, last["runner"], keep=True, retry=True)
             except Exception:  # noqa: BLE001 - si no se puede reintentar, se avisa como cierre normal

@@ -109,17 +109,23 @@ class Source:
 
 
 def _size_number(text: str) -> float:
-    """«1,5» y «1.5» son uno y medio; «1,234.5» y «1.234,5», mil doscientos y pico."""
+    """«1,5» y «1.5» son uno y medio; «1,234.5» y «1.234,5», mil doscientos y pico; «0,750», tres cuartos.
+    Lo que no se entiende queda en 0 (sin tamaño), no tira la fuente."""
     if "," in text and "." in text:
         decimal = "," if text.rfind(",") > text.rfind(".") else "."
         text = text.replace("." if decimal == "," else ",", "").replace(",", ".")
     elif "," in text:
-        text = text.replace(",", "") if re.fullmatch(r"\d{1,3}(,\d{3})+", text) else text.replace(",", ".")
+        thousands = re.fullmatch(r"[1-9]\d{0,2}(,\d{3})+", text)
+        text = text.replace(",", "") if thousands else text.replace(",", ".")
     elif text.count(".") > 1:
-        text = text.replace(".", "")
-    return float(text)
+        text = text.replace(".", "") if re.fullmatch(r"[1-9]\d{0,2}(\.\d{3})+", text) else ""
+    try:
+        return float(text)
+    except ValueError:
+        return 0.0
 
 
+CACHE_MAX = 200
 PARSE_ERRORS = (ValueError, TypeError, AttributeError, OverflowError, IndexError, KeyError)
 
 
@@ -314,6 +320,9 @@ class StreamFinder:
                 index += 1
         ranked = rank(sources, prefs, kind)
         with self._lock:
+            if len(self._cache) >= CACHE_MAX:  # una entrada por episodio visto: se van las más viejas
+                for old in sorted(self._cache, key=lambda k: self._cache[k][0])[:CACHE_MAX // 2]:
+                    del self._cache[old]
             self._cache[key] = (time.time(), ranked)
         return ranked
 
