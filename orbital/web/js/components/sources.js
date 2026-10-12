@@ -83,6 +83,9 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     subtitle.textContent = "";
     mount(list);
     status.textContent = "Buscando dónde verlo…";
+    const started = performance.now();
+    // Si falla otra vez enseguida, que se note que sí lo intentó (antes nada cambiaba en pantalla).
+    const settle = () => new Promise((resolve) => setTimeout(resolve, Math.max(0, 600 - (performance.now() - started))));
     status.hidden = false;
     status.classList.remove("sources__status--problem");
     retry.hidden = true;
@@ -90,6 +93,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     try {
       const data = await api.stremioSources(req.kind, req.id, req.video_id);
       if (mine !== token) return;
+      if (!Array.isArray(data?.sources)) throw new Error("No pude leer las fuentes. Intenta de nuevo.");
       found = data.sources;
       if (!title.textContent && data.meta?.title) title.textContent = data.meta.title;
       subtitle.textContent = `Primero las de audio en ${AUDIO_NAMES[data.audio] || data.audio} y ${data.quality}. `
@@ -100,6 +104,8 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
       failed = !found.length;
       render();
     } catch (err) {
+      if (mine !== token) return;
+      await settle();
       if (mine !== token) return;
       // El servidor ya explica por qué (sin Internet, sin complementos…) y qué hacer; A lo intenta otra vez.
       status.textContent = err.message;

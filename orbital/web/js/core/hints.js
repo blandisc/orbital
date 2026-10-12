@@ -5,7 +5,8 @@
  * pie no los repite: solo enseña cómo moverse y cómo volver.
  */
 export function footerHints(glyphs, { sheetOpen = false, adjustable = false, atHome = true, longRow = false, running = null, rows = 2,
-  primary = null, alt = null } = {}) {
+  primary = null, alt = null, informative = false } = {}) {
+  if (sheetOpen && informative) return [{ glyph: glyphs.back, label: "Atrás" }]; // solo se lee: A no hace nada
   if (sheetOpen) {
     // En un ajuste (‹ Grande ›) lo que se hace es cambiarlo: ◀ ▶ (A también pasa al siguiente).
     return [adjustable ? { glyph: glyphs.rows === "↑↓" ? "← →" : "◀ ▶", label: "Cambiar" } : { glyph: glyphs.select, label: "Elegir" },

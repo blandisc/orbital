@@ -35,6 +35,10 @@ class CinemetaError(Exception):
     pass
 
 
+class TitleNotFound(CinemetaError):
+    """El catálogo respondió, pero ese título no existe (404, no un problema de red)."""
+
+
 class Cinemeta:
     def __init__(self, base: str = BASE, timeout: float = 10) -> None:
         self.base = base.rstrip("/")
@@ -78,7 +82,7 @@ class Cinemeta:
     def meta(self, kind: str, meta_id: str) -> dict:
         meta = self._get(f"/meta/{quote(kind)}/{quote(str(meta_id), safe=':')}.json").get("meta")
         if not isinstance(meta, dict):
-            raise CinemetaError("Título no encontrado")
+            raise TitleNotFound("Título no encontrado")
         return meta
 
 

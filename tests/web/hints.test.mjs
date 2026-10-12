@@ -44,3 +44,7 @@ test("frase para Alexa según lo enfocado", async () => {
   assert.match(alexaTip({ id: "x", title: "Hades", source: "steam" }, { runningId: "x" }), /cierre el juego/);
 });
 
+
+test("en una hoja que solo se lee (ejemplos de Alexa), el pie no ofrece «Elegir»", () => {
+  assert.deepEqual(footerHints(GLYPHS.gamepad, { sheetOpen: true, informative: true }).map((i) => i.label), ["Atrás"]);
+});

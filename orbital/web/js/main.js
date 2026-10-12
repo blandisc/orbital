@@ -140,6 +140,8 @@ const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 function renderHints() {
   const g = glyphs();
+  // Te moviste después de ocultar algo: Y ya no deshace, así que el aviso deja de decirlo.
+  if (state.undoHide && !canUndoHide()) { state.undoHide = null; ui.toast.dismiss(); }
   const overlay = topOverlay();
   document.body.dataset.overlay = ui.sheet.isOpen || overlay ? "true" : "false";
   if (!ui.sheet.isOpen && overlay) return ui.hints.render(overlay.hints(g));
@@ -166,6 +168,7 @@ function renderHints() {
     alt: item && altLabel(item),
     sheetOpen: ui.sheet.isOpen,
     adjustable: ui.sheet.adjustable,
+    informative: ui.sheet.informative,
     atHome: !r && !c,
     longRow: (state.rows[r]?.items.length ?? 0) >= LONG_ROW,
     running: state.running?.managed ? state.running : null,
@@ -210,6 +213,9 @@ function setModality(modality) {
 
 /** Ajustes que cambian la interfaz: tamaño del texto, márgenes de la TV, movimiento, sonido. */
 function applySettings(settings) {
+  // Una respuesta ilegible o vacía no regresa todo a los valores de fábrica: se queda lo que había.
+  const known = ["audio", "text_size", "safe_area", "sounds", "quality"];
+  if (!settings || typeof settings !== "object" || !known.some((key) => key in settings)) return;
   state.settings = settings;
   const root = document.documentElement;
   root.dataset.textSize = settings.text_size || "normal";
@@ -398,6 +404,8 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
   try {
     if (refresh) ui.toast.show("Buscando juegos nuevos…");
     const data = refresh ? await api.refresh() : await api.library();
+    // Una respuesta sin filas no es «biblioteca vacía»: se reintenta como un error de red.
+    if (!(data?.scanning && boot.waiting) && !Array.isArray(data?.rows)) throw new Error("La biblioteca llegó incompleta");
     if (data.scanning && boot.waiting) { // primer escaneo: la pantalla de arranque espera su aviso
       boot.status("Preparando tu biblioteca…");
       return;
@@ -406,7 +414,7 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     const moved = before.r !== state.focus.r || before.c !== state.focus.c;
     const itemId = moved || !wanted ? current()?.id : wanted;
     const rowId = state.rows[state.focus.r]?.id;
-    const countBefore = state.allRows.reduce((n, row) => n + row.items.length, 0);
+    const countBefore = (state.allRows || []).reduce((n, row) => n + (row.items?.length ?? 0), 0);
     state.allRows = data.rows;
     if (!visibleSections(state.allRows).some((s) => s.id === state.section)) state.section = "home";
     state.rows = sectionRows(state.allRows, state.section);
@@ -434,7 +442,7 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     }
   } catch (err) {
     // Al arrancar el servidor puede no estar listo: se reintenta solo (y se avisa una vez).
-    if (libraryRetry === 0 && !boot.waiting) ui.toast.show(`No pude cargar la biblioteca: ${err.message}. Reintentando…`, { error: true });
+    if (libraryRetry === 0 && !boot.waiting) ui.toast.show(`No pude cargar la biblioteca (${err.message.replace(/\.$/, "")}). Reintentando…`, { error: true });
     if (boot.waiting) boot.status("Conectando con Orbital…");
     libraryRetry++;
     setTimeout(() => loadLibrary({ refresh: false, keepId }), Math.min(15_000, 1000 * 2 ** libraryRetry));
@@ -544,6 +552,7 @@ async function runCommand(command, context = null) {
       case "search":
         return openSearch(command.query || "");
       case "prefs":
+        if (command.prefs.hidden) ui.toast.show(`Ocultando ${command.title || ""}…`.replace(" …", "…")); // si tarda, se nota
         await api.setPrefs(command.id, command.prefs);
         if (command.prefs.favorite) state.popId = command.id;
         sound.play("select");
@@ -865,13 +874,13 @@ function handleEvent(event) {
     return openMenu({
       title: event.message,
       options: [
-        ...event.options.map((o) => ({ icon: "trailer", label: o.title, hint: o.subtitle, command: { type: "title-ref", ref: o } })),
+        ...(Array.isArray(event.options) ? event.options : []).map((o) => ({ icon: "trailer", label: o.title, hint: o.subtitle, command: { type: "title-ref", ref: o } })),
         { icon: "search", label: "Ver todos los resultados", command: { type: "search", query: event.query } },
       ],
     });
   }
   if (event.type === "launch-ready") return ui.launch.reveal();
-  if (event.type === "settings") return applySettings(event.settings);
+  if (event.type === "settings") return event.settings && applySettings(event.settings);
   if (event.type === "health") { // memoria casi llena
     // Con la ventana tapada (un juego o un video encima) no sale nada: ni sonido ni repintado, que
     // Orbital no se asome sobre el juego. Sale al volver a verse (visibilitychange).

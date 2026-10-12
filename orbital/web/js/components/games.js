@@ -164,8 +164,10 @@ export function createGames({ onFocus, onPick, onAction }) {
       ? "Aún no tienes favoritos aquí. Para marcar uno, enfoca un juego y pulsa Y → Añadir a favoritos."
       : "Nada por aquí."));
     el.classList.toggle("games--empty", games.length === 0);
-    if (!targets.has(focusId)) {
-      const remembered = games.findIndex((g) => g.id === memory[consoleId]);
+    const remembered = games.findIndex((g) => g.id === memory[consoleId]);
+    if (focusId.startsWith("game:") && remembered >= 0) {
+      focusId = `game:${remembered}`; // el foco sigue al juego, no a la posición (la lista se reordena al jugar)
+    } else if (!targets.has(focusId)) {
       focusId = games.length ? `game:${Math.max(0, remembered)}` : "filter:0";
     }
   }

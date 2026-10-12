@@ -363,3 +363,24 @@ def test_continue_is_ready_at_startup_from_the_last_download(tmp_path, monkeypat
     assert [i.title for i in again.grouped_items("continue")] == ["Game of Thrones", "Interstellar", "Anime temporal"]
     again.watch.unlink_stremio()
     assert not (tmp_path / "orbital" / "cache" / "stremio-library.json").exists()
+
+
+def test_missing_title_is_404_not_a_network_error(make_client, library, monkeypatch):
+    """La interfaz distingue «no existe» (404) de «sin conexión» (502)."""
+    from orbital.library import cinemeta
+
+    def missing(*args):
+        raise cinemeta.TitleNotFound("Título no encontrado")
+
+    monkeypatch.setattr(library.cinemeta, "meta", missing)
+    with make_client() as c:
+        assert c.get("/api/stremio/episodes/tt0").status_code == 404
+        assert c.get("/api/stremio/title/series/tt0").status_code == 404
+
+    def offline(*args):
+        raise cinemeta.CinemetaError("timeout")
+
+    monkeypatch.setattr(library.cinemeta, "meta", offline)
+    with make_client() as c:
+        answer = c.get("/api/stremio/episodes/tt0")
+        assert answer.status_code == 502 and "conexión" in answer.json()["detail"]

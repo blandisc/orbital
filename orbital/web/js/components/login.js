@@ -120,6 +120,7 @@ export function createLogin({ onDone, onMove, onClose }) {
   /** Teclado físico: una letra, o "\b" para borrar; Enter avanza o conecta. */
   function type(char) {
     if (el.hidden || busy) return;
+    if (char === "\n") return press("next"); // Enter: siguiente campo, o conectar
     const field = fields[active];
     if (char === "\b") field.value = field.value.slice(0, -1);
     else field.value += char;

@@ -58,6 +58,7 @@ test("bytes: tamaño en disco legible", async () => {
 test("al volver: un video no se juega", async () => {
   const { closedMessage } = await import("../../orbital/web/js/core/format.js");
   assert.equal(closedMessage({ id: "media:player", title: "The Simpsons · T8 E23", seconds: 900 }), "Guardé dónde ibas en The Simpsons · T8 E23");
+  assert.equal(closedMessage({ id: "app:x", seconds: 0 }), "De vuelta"); // sin título: nunca «De vuelta de undefined»
   assert.equal(closedMessage({ id: "media:player", title: "Interstellar", finished: true }), "Terminaste Interstellar");
   assert.equal(closedMessage({ id: "app:youtube", title: "YouTube", seconds: 900 }), "De vuelta de YouTube");
   assert.equal(closedMessage({ id: "steam:1", title: "Hades", seconds: 1800 }), "De vuelta. Jugaste Hades 30 min");

@@ -4,8 +4,21 @@ async function request(path, options = {}) {
     ...options,
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(data.detail || res.statusText), { status: res.status });
+  const text = await res.text().catch(() => "");
+  let data = {};
+  if (text) {
+    try {
+      data = JSON.parse(text) ?? {};
+    } catch {
+      // Cortada a la mitad (el servidor se reinició, por ejemplo): es un error, no «nada».
+      if (res.ok) throw Object.assign(new Error("La respuesta llegó incompleta. Intenta de nuevo."), { status: 0 });
+    }
+  }
+  if (!res.ok) {
+    const detail = typeof data.detail === "string" ? data.detail : "";
+    const fallback = res.status === 404 ? "No lo encontré." : `Orbital no pudo hacerlo (error ${res.status}). Intenta de nuevo.`;
+    throw Object.assign(new Error(detail || fallback), { status: res.status });
+  }
   return data;
 }
 

@@ -60,7 +60,8 @@ export function bytes(n) {
 }
 
 /** Qué decir al volver a Orbital: un video no se "juega"; una app no cuenta tiempo jugado. */
-export function closedMessage({ id = "", title, seconds, finished = false }) {
+export function closedMessage({ id = "", title = "", seconds, finished = false }) {
+  if (!title) return id === "media:player" ? (finished ? "Terminaste el video" : "Guardé dónde ibas") : "De vuelta"; // nunca «undefined»
   if (id === "media:player") return finished ? `Terminaste ${title}` : `Guardé dónde ibas en ${title}`;
   if (id.startsWith("media:") || id.startsWith("app:")) return `De vuelta de ${title}`;
   const played = duration(seconds);

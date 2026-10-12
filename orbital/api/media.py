@@ -77,6 +77,8 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(400, "Tipo inválido")
         try:
             return catalog.watch.title_details(kind, meta_id)
+        except cinemeta.TitleNotFound:
+            raise HTTPException(404, "No encontré ese título.")
         except cinemeta.CinemetaError:
             raise HTTPException(502, "No pude cargar la ficha. Revisa tu conexión e inténtalo de nuevo.")
 
@@ -84,8 +86,10 @@ def router(d: Deps) -> APIRouter:
     def episodes(meta_id: str) -> dict:
         try:
             meta = catalog.cinemeta.meta("series", meta_id)
-        except cinemeta.CinemetaError as exc:
-            raise HTTPException(502, str(exc))
+        except cinemeta.TitleNotFound:
+            raise HTTPException(404, "No encontré esa serie.")
+        except cinemeta.CinemetaError:
+            raise HTTPException(502, "No pude cargar los episodios. Revisa tu conexión e inténtalo de nuevo.")
         return {"id": meta_id, "title": meta.get("name") or "", "seasons": cinemeta.seasons(meta),
                 "background": meta.get("background") or None, **cinemeta.describe_meta(meta)}
 

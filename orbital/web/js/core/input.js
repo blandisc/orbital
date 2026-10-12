@@ -136,10 +136,11 @@ export const isTextKey = (event) => event.key.length === 1 && !event.ctrlKey && 
  */
 export function createInput({ onAction, onModality, onText = null, typing = () => false }) {
   document.addEventListener("keydown", (event) => {
-    if (onText && typing() && (isTextKey(event) || event.key === "Backspace")) {
+    if (onText && typing() && (isTextKey(event) || event.key === "Backspace" || event.key === "Enter")) {
       event.preventDefault();
       onModality("keyboard");
-      onText(event.key === "Backspace" ? "\b" : event.key);
+      // Enter al escribir: «listo» (buscar / siguiente campo), no pulsar la tecla enfocada en pantalla.
+      onText(event.key === "Backspace" ? "\b" : event.key === "Enter" ? "\n" : event.key);
       return;
     }
     const action = keyToAction(event.key);

@@ -146,5 +146,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
 
   return { el, open, close, handle, get isOpen() { return !!menu; }, get depth() { return stack.length; },
     /** La opción enfocada se cambia con ◀ ▶ (un ajuste, el volumen…). */
-    get adjustable() { const o = menu?.options[index]; return !!o && (o.command?.type === "setting" || !!o.adjust); } };
+    get adjustable() { const o = menu?.options[index]; return !!o && (o.command?.type === "setting" || !!o.adjust); },
+    /** Lo enfocado solo se lee (ejemplos de Alexa, datos): A no hace nada, el pie no ofrece «Elegir». */
+    get informative() { return menu?.options[index]?.command?.type === "stay"; } };
 }

@@ -261,23 +261,31 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
     if (t) onSources(t);
   }
 
-  async function load() {
+  async function load({ quiet = false } = {}) {
     const mine = ++token;
-    details = null;
-    status.textContent = "Cargando…";
-    status.hidden = false;
-    render();
+    // Ponerse al día en silencio: lo que ves se queda (y sus botones funcionan) hasta que llega lo nuevo.
+    quiet = quiet && !!details && !details.error;
+    const keepEpisode = quiet && zone === "episodes" ? episode()?.id : null;
+    if (!quiet) {
+      details = null;
+      status.textContent = "Cargando…";
+      status.hidden = false;
+      render();
+    }
     const [kind, id] = [item.kind, item.meta_id];
     try {
       const data = await api.stremioTitle(kind, id);
       if (mine !== token) return;
+      if (!data || typeof data !== "object" || (!data.id && !data.title)) throw new Error("La ficha llegó incompleta. Intenta de nuevo.");
       details = data;
       fillInfo({ ...data, title: data.title || item.title, background: data.background || item.hero || item.image,
         ...(item.extra?.logo ? { logo: item.extra.logo } : {}) });
       states = episodeStates(data, Date.now());
       prefetch(mine);
       // Abre en el episodio en el que ibas (no en T1 E1).
-      const resumeId = data.resume?.video_id;
+      // Al ponerse al día, sigues en el episodio que tenías enfocado (si aún existe).
+      const resumeId = (keepEpisode && seasons().some((s) => s.episodes.some((e) => e.id === keepEpisode)))
+        ? keepEpisode : data.resume?.video_id;
       const at = Math.max(0, seasons().findIndex((s) => s.episodes.some((e) => e.id === resumeId)));
       season = resumeId ? at : Math.max(0, seasons().findIndex((s) => s.season !== 0));
       index = Math.max(0, seasons()[season]?.episodes.findIndex((e) => e.id === resumeId) ?? 0);
@@ -290,6 +298,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
       onChange?.(); // el pie dice lo que hay ahora («Continuar T3 E5», Episodios…), no lo de «Cargando…»
     } catch (err) {
       if (mine !== token) return;
+      if (quiet) return; // no se pudo poner al día: se queda la ficha que estaba bien (no un «Reintentar»)
       status.textContent = err.message;
       details = { error: true, kind };
       render();
@@ -311,7 +320,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
     try {
       const data = await api.stremioSources(t.kind, t.id, t.video_id);
       if (mine !== token) return;
-      const chips = availability(data.sources);
+      const chips = availability(Array.isArray(data?.sources) ? data.sources : []);
       mount(avail, chips.length ? chips.map((c) => Chip(c, { tone: c === "Al instante" ? "good" : null }))
         : h("span", { class: "title__avail-none" }, "Sin fuentes por ahora"));
     } catch (err) {
@@ -401,7 +410,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("title--leaving"); },
     get current() { return item; },
     /** Vuelve a pedir la ficha (al regresar de ver algo: «Continuar T3 E6», los ✓, el progreso). */
-    refresh() { if (!el.hidden && item) load(); } };
+    refresh() { if (!el.hidden && item) load({ quiet: true }); } };
 }
 
 /** Lo que hace falta para abrir la ficha a partir de una tarjeta, un resultado o un enlace. */

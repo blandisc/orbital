@@ -200,6 +200,10 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   function type(char) {
     if (el.hidden) return;
     if (char === "\b") press("delete");
+    else if (char === "\n") { // Enter: a los resultados; ya en ellos, abre el enfocado
+      if (zone === "results") open();
+      else { goToResults(); onMove?.(); }
+    }
     else if (char === " ") press("space");
     else press(char);
   }
