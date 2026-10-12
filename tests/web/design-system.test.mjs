@@ -1,6 +1,6 @@
 // Guardián del sistema de diseño (docs/sistema-de-diseno.md). Falla si alguien:
 //   · escribe a mano en el CSS de un componente un color, una duración, una capa, un tamaño de letra
-//     o mayúsculas espaciadas (todo eso vive en tokens.css / themes/*.css);
+//     mayúsculas espaciadas o la paleta cruda --palette-* (todo eso vive en tokens.css / themes/*.css);
 //   · usa un token que no existe;
 //   · crea un componente (JS o CSS) que no está en el catálogo del documento;
 //   · deja clases de CSS que ningún componente usa (CSS muerto);
@@ -37,6 +37,8 @@ const RULES = [
   ["capa", /z-index:\s*-?\d/],
   ["letra", /font-size:\s*(?!var\(|calc\(var|inherit|100%)[\d.]/],
   ["mayúsculas", /text-transform:\s*uppercase/],
+  // La paleta cruda es del tema: un componente usa el nombre semántico (--color-…, --gradient-…).
+  ["paleta", /var\(--palette-/],
 ];
 
 test("CSS de componentes: colores, tiempos, capas y letra siempre con tokens", () => {
