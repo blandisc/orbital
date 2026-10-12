@@ -43,6 +43,9 @@
 .foryou-mosaic__kind svg { width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 .foryou-mosaic__kind svg:not(.icon) { stroke-width: 3.2; width: 1.35rem; height: 1.35rem; }
 .foryou-mosaic__tile--on .foryou-mosaic__kind { background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; }
+/* Solo la enfocada lo lleva (y una sin imagen): en las demás tapaba el logo del póster (Hollow Knight). */
+.foryou-mosaic__kind { opacity: 0; transform: scale(.8); transition: opacity var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-spring), background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out); }
+.foryou-mosaic__tile--on .foryou-mosaic__kind, .foryou-mosaic__tile--bare .foryou-mosaic__kind { opacity: 1; transform: none; }
 
 /* Solo la enfocada habla: una etiqueta corta, el logo (o el nombre) y un dato. */
 .foryou-mosaic__info {

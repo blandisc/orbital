@@ -56,6 +56,17 @@
 .title__people { display: flex; flex-direction: column; gap: var(--space-1); color: var(--color-text-muted); font-size: var(--text-sm); }
 .title__people em { font-style: normal; color: var(--color-text-faint-strong); }
 .title__status { color: var(--color-text-muted); font-size: var(--text-md); }
+/* Error al cargar: una píldora con su ícono y la franja roja (como los avisos), legible sobre el arte. */
+.title__status--error {
+  display: inline-flex; align-items: center; gap: var(--space-4); align-self: flex-start; max-width: 40rem;
+  padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3); border-radius: var(--radius-lg); text-shadow: none;
+  background: var(--color-surface-raised); box-shadow: var(--shadow-overlay), inset 0 0 0 1px var(--color-hairline), inset .3rem 0 0 var(--color-danger);
+  animation: rise-in var(--duration-enter) var(--ease-out);
+}
+.title__status-icon { display: grid; place-items: center; flex: none; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--color-fill); color: var(--color-danger); }
+.title__status-icon .icon { width: 1.15rem; height: 1.15rem; stroke-width: 2.25; }
+.title__status-text { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
+.title__status-text strong { color: var(--color-text); font-weight: var(--weight-bold); }
 
 /* Dónde ibas: fuera de los botones (así caben en un renglón), con su barra. */
 .title__progress { display: flex; align-items: center; gap: var(--space-4); color: var(--color-text); font-size: var(--text-md); }

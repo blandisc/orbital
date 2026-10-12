@@ -22,3 +22,5 @@
 .button--primary:hover { background: var(--color-primary); filter: brightness(.94); }
 /* Un botón que sí recibe el foco del mando (cuando es lo único que hay que hacer: Conectar Trakt). */
 .button.is-focused { box-shadow: var(--ring-focus); transform: scale(var(--inverse-scale)); }
+/* El principal ya es blanco: con el anillo blanco se veía doble borde. Enfocado, solo crece y se eleva. */
+.button--primary.is-focused { box-shadow: var(--shadow-lifted); }

@@ -1,6 +1,6 @@
 import { h, svg } from "../core/dom.js";
 import { duration, lastPlayed, shortAgo } from "../core/format.js";
-import { kicker, systemColor } from "../core/home.js";
+import { kicker, SYSTEMS, systemColor, systemOf } from "../core/home.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { alternativeRunner, isSeries, isWatchable, primaryLabel } from "../core/library.js";
 import { Button } from "./button.js";
@@ -81,14 +81,20 @@ export function shortDetail(item, now = Date.now()) {
  */
 export function WideTile(item, { focusId, onPress }) {
   const watch = isWatchable(item);
-  return tile(focusId, ["tile--wide", item.extra?.placeholder_hero && "tile--placeholder", item.extra?.hero_lowres && "tile--lowres"], onPress, item.title,
+  // Sin arte propio: en vez de solo el fondo genérico, la foto de su consola con el brillo de su color.
+  const system = item.extra?.placeholder_hero ? SYSTEMS[systemOf(item)] : null;
+  const node = tile(focusId, ["tile--wide", item.extra?.placeholder_hero && "tile--placeholder", system && "tile--wide-console", item.extra?.hero_lowres && "tile--lowres"], onPress, item.title,
     art(item.hero || item.image),
+    system && h("span", { class: "tile--wide__glow" }),
+    system && art(`img/consoles/${system.photo}`, ["tile--wide__console", system.logo && "tile--wide__console--logo"]),
     h("span", { class: "tile__shade tile--wide__shade" }),
     h("div", { class: "tile--wide__body" },
       h("strong", { class: "tile--wide__title" }, item.title),
       h("span", { class: "tile--wide__detail" },
         watch ? Progress(item.progress, { className: "tile--wide__progress" }) : svg(ICONS[systemIconName(item)] || ICONS.apps),
         h("span", { class: "tile--wide__detail-text" }, [watch ? null : kicker(item), shortDetail(item)].filter(Boolean).join(" · ")))));
+  if (system) node.style.setProperty("--glow", systemColor(systemOf(item)));
+  return node;
 }
 
 /** Consola: su foto (o la portada de lo último, si no hay foto), cuántos juegos y lo último que jugaste. */

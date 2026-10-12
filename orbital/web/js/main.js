@@ -445,9 +445,19 @@ function goToSection(id, direction = 0) {
   if (inHome() || inGames() || inForYou()) state.focus = { r, c };
   else setFocus(r, c, { silent: true });
   ui.shelf.slide(direction || Math.sign(to - from));
+  slideView(direction || Math.sign(to - from));
   renderHints();
   sound.play("move");
   renderSections();
+}
+
+/** Inicio, Juegos y Para ti entran de lado, como las filas de Películas y Apps (la dirección de LB/RB). */
+function slideView(direction) {
+  const view = inForYou() ? ui.foryou.el : inHome() ? ui.home.el : inGames() ? ui.games.el : null;
+  if (!view || !direction) return;
+  view.classList.remove("view--from-left", "view--from-right");
+  void view.offsetWidth;
+  view.classList.add(direction > 0 ? "view--from-right" : "view--from-left");
 }
 
 function stepSection(delta) {
