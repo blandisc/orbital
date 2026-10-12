@@ -14,8 +14,11 @@ export const coverSrc = (url) => (typeof url === "string" && url.startsWith("/ap
   ? `${url}${url.includes("?") ? "&" : "?"}w=480` : url);
 
 /** El ícono de una app: el que trae (ES-DE) o el logotipo de su plataforma. */
-const APP_ICONS = { "steam:bigpicture": "img/consoles/steam.svg", "app:geforcenow": "img/consoles/geforcenow.svg" };
-export const appIcon = (item) => (item.category === "apps" ? item.extra?.icon || APP_ICONS[item.id] || null : null);
+const APP_ICONS = {
+  "steam:bigpicture": "img/consoles/steam.svg", "app:geforcenow": "img/consoles/geforcenow.svg",
+  "app:yt": "img/consoles/youtube.svg", "media:stremio": "img/consoles/stremio.svg", // los lanzadores de video, con su marca
+};
+export const appIcon = (item) => (item.category === "apps" ? item.extra?.icon || APP_ICONS[item.id] || null : APP_ICONS[item.id] ?? null);
 
 export function Card(item, { onPress, onRatio, showAgo = false, caption = false, pop = false } = {}) {
   const meta = h("span", { class: "card__meta" },

@@ -113,7 +113,7 @@ export function mainMenu({ running, hiddenCount, canExit = false }) {
     options.push({ icon: "show", label: "Mostrar juegos ocultos", hint: String(hiddenCount), command: { type: "unhide-all" } });
   }
   options.push({ icon: "gamepad", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });
-  options.push({ icon: "mark", label: "Ajustes", command: { type: "settings" } });
+  options.push({ icon: "settings", label: "Ajustes", command: { type: "settings" } });
   options.push({ icon: "power", label: "Apagar", hint: "Suspender, reiniciar o apagar", command: { type: "power-menu" } });
   if (canExit) {
     options.push({ icon: "exit", label: "Salir al escritorio", command: { type: "confirm-exit" } });

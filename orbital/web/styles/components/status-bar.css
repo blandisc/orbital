@@ -11,11 +11,27 @@
   transition: background var(--duration-fast) var(--ease-out);
 }
 .status-bar__brand:hover { background: var(--color-fill); }
-.status-bar__brand { gap: .55rem; }
-.status-bar__brand .mark { width: 1.75rem; height: 1.75rem; color: var(--color-text); }
+.status-bar__brand { gap: .6rem; }
+/* La marca (icons.js · mark): planeta, anillo que pasa por detrás y por delante, y su luna. */
+.status-bar__brand .mark { width: 2.05rem; height: 2.05rem; color: var(--color-text); overflow: visible; }
+.mark__ring--back { opacity: .45; }
+/* Al arrancar, el anillo se dibuja alrededor del planeta y la luna aparece al final. */
+.status-bar__brand .mark__ring { stroke-dasharray: 1; animation: mark-draw var(--duration-land) var(--ease-out) both; }
+.status-bar__brand .mark__ring--front { animation-delay: var(--delay-2); }
+.status-bar__brand .mark__planet { transform-origin: 16px 16px; animation: mark-planet var(--duration-enter) var(--ease-spring) both; }
+.status-bar__brand .mark__moon {
+  transform-box: fill-box; transform-origin: center; animation: mark-moon var(--duration-enter) var(--ease-spring) both;
+  animation-delay: calc(var(--duration-land) * .7); transition: translate var(--duration-slow) var(--ease-spring);
+}
+/* Al pasar por encima, la luna avanza un poco en su órbita. */
+.status-bar__brand:hover .mark__moon { translate: 1px -1.4px; }
+@keyframes mark-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes mark-planet { from { opacity: 0; transform: scale(.6); } }
+@keyframes mark-moon { from { opacity: 0; transform: scale(0); } }
 .status-bar__wordmark {
-  font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-medium);
-  letter-spacing: .01em; line-height: 1; padding-bottom: .08em; /* centro óptico con el planeta */
+  font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight); line-height: 1; padding-bottom: .08em; /* centro óptico con el planeta */
+  animation: fade-in var(--duration-enter) var(--ease-out) both; animation-delay: var(--delay-1);
 }
 
 .status-bar__playing { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; color: var(--color-text-muted); animation: fade-in var(--duration-base) var(--ease-out); }
