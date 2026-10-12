@@ -410,22 +410,28 @@ def hud_ass(hud: Hud) -> str:
 
 def paused_ass(hud: Hud) -> str:
     """En pausa: el video se oscurece y a la izquierda, lo esencial y los botones."""
-    lines = [rrect(0, 0, W, H, 0, SHADE, "88"), gradient(560, H, 255, 70), gradient(0, 200, 140, 255, 14)]
+    lines = [rrect(0, 0, W, H, 0, SHADE, "88"), gradient(420, H, 255, 70), gradient(0, 200, 140, 255, 14)]
     if hud.now:
         lines.append(text(W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
-    y = 290
+    # El bloque va abajo, apoyado sobre la barra (como en las TV), no a media pantalla: se mide primero
+    # y se coloca para que los botones queden justo encima de la barra de progreso.
+    width = min(1180, W - 2 * MARGIN)
+    title_lines = wrap(hud.title, 64, width, 2)
+    meta = " · ".join(p for p in (hud.detail, hud.facts) if p)
+    about = wrap(hud.description, 26, min(1000, width), 3)
+    height = 54 + 92 * len(title_lines) + (52 if meta else 0) + 40 * len(about) + 30 + 62
+    y = max(110, BAR_Y - 56 - height)
     # «‖ En pausa»: el ícono dibujado (dos barras) y la palabra, sin mayúsculas.
     lines += [rrect(MARGIN, y + 5, 6, 22, 2, TEXT), rrect(MARGIN + 12, y + 5, 6, 22, 2, TEXT),
               text(MARGIN + 30, y, "En pausa", 26, weight="semi")]
     y += 54
-    for line in wrap(hud.title, 64, 1180, 2):
+    for line in title_lines:
         lines.append(text(MARGIN, y, esc(line), 64, weight="bold"))
         y += 92
-    meta = " · ".join(p for p in (hud.detail, hud.facts) if p)
     if meta:
-        lines.append(text(MARGIN, y + 4, esc(fit(meta, 26, 1300)), 26, SOFT))
+        lines.append(text(MARGIN, y + 4, esc(fit(meta, 26, min(1300, width))), 26, SOFT))
         y += 52
-    for line in wrap(hud.description, 26, 1000, 3):
+    for line in about:
         lines.append(text(MARGIN, y + 4, esc(line), 26, SOFT))
         y += 40
     y += 30
