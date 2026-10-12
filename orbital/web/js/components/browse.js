@@ -60,8 +60,12 @@ export function keepInView(grid, viewport, focusId) {
   if (!node) return;
   const top = node.offsetTop;
   const shift = Number(grid.dataset.shift || 0);
+  // Lo que de verdad se ve: sin el relleno de arriba y abajo ni el fundido del borde (browse.css).
+  const style = getComputedStyle(viewport);
+  const fade = parseFloat(getComputedStyle(document.documentElement).fontSize) * 3;
+  const room = viewport.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) - fade;
   let next = shift;
-  if (top + node.offsetHeight - shift > viewport.clientHeight) next = top + node.offsetHeight - viewport.clientHeight;
+  if (top + node.offsetHeight - shift > room) next = top + node.offsetHeight - room;
   if (top - shift < 0) next = top;
   grid.dataset.shift = String(Math.max(0, next));
   grid.style.transform = `translateY(${-Math.max(0, next)}px)`;

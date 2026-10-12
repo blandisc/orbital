@@ -11,7 +11,7 @@
 @container (max-height: 20rem) { [data-text-size="xlarge"] .tile--feature .tile__platform { display: none; } }
 /* Un título largo sin logo (letra grande, 1280): no se encoge a media línea; con poco alto, un renglón con «…». */
 .tile--feature__title { flex-shrink: 0; }
-@container (max-height: 18rem) { .tile--feature__title { -webkit-line-clamp: 1; } }
+@container (max-height: 18rem) { .tile--feature .tile--feature__title { -webkit-line-clamp: 1; } } /* más específica: la general va después */
 .tile--feature.tile--focused { transform: none; }
 .tile--feature__shade {
   background:

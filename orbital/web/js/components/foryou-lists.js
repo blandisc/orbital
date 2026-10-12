@@ -1,6 +1,7 @@
 import { h, mount } from "../core/dom.js";
 import { iconName, kindLabel, listMeta, railEntries, SPLIT_KINDS } from "../core/foryou.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
+import { swipeArea, swipeSteps } from "../core/swipe.js";
 import { BrowseHead, fillFilters, keepInView, replay } from "./browse.js";
 import { Button } from "./button.js";
 import { Card } from "./card.js";
@@ -27,6 +28,19 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
     onAction: (id, d) => (id === "select" ? onPick?.({ kind: "item", item: d.item }, focusId) : onMore?.(d.item)),
   });
   const el = h("div", { class: "foryou-lists browse" }, rail.el, main, panel.el);
+  // Con el dedo, como en Juegos: deslizar las portadas las recorre; deslizar el riel pasa de lista.
+  swipeArea(viewport, ({ dx, dy }) => {
+    const card = grid.querySelector('[data-focus-id^="item:"]');
+    if (!card) return;
+    if (!focusId.startsWith("item:")) focusId = "item:0";
+    const vertical = Math.abs(dy) > Math.abs(dx);
+    const action = vertical ? (dy < 0 ? "down" : "up") : (dx < 0 ? "right" : "left");
+    for (let n = swipeSteps(vertical ? dy : dx, vertical ? card.offsetHeight : card.offsetWidth); n > 0; n--) {
+      if (handle(action) !== true || focusId.startsWith("rail:")) break;
+    }
+    paint();
+  });
+  swipeArea(rail.window, ({ dy }) => stepList(dy < 0 ? swipeSteps(dy, 80) : -swipeSteps(dy, 80)));
 
   let lists = [];
   let listId = null;
