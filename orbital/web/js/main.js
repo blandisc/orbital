@@ -192,6 +192,7 @@ function renderHints() {
   ui.hints.render(footerHints(glyphs(), {
     sheetOpen: ui.sheet.isOpen,
     adjustable: ui.sheet.adjustable,
+    inert: ui.sheet.inert,
     atHome: !r && !c,
     longRow: (state.rows[r]?.items.length ?? 0) >= LONG_ROW,
     running: state.running?.managed ? state.running : null,
