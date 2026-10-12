@@ -331,11 +331,26 @@ class Catalog:
         self.store.replace(found)
         self._save_snapshot(found)
         log.info("Catálogo: %d elementos", len(found))
+        self.warm_covers()
         self.scrape_art(background=True)
         self.watch.refresh_stremio(background=True)
         if not self.watch.cinemeta_items:
             self.watch.refresh_cinemeta(background=True)
         return len(found)
+
+    @staticmethod
+    def thumbs_dir() -> Path:
+        from .library import media
+
+        return media.default_root().parent / "thumbs"
+
+    def warm_covers(self) -> None:
+        """Las portadas reducidas de toda la biblioteca, en segundo plano (ver thumbs.py)."""
+        from . import thumbs
+
+        paths = [Path(i.art_path) for i in self.store.all() if i.art_path]
+        threading.Thread(target=thumbs.warm, args=(paths, thumbs.COVER_WIDTH, self.thumbs_dir()), daemon=True,
+                         name="thumbs").start()
 
     # --- arte de los juegos (scraper propio) -----------------------------------------------------
     def art_targets(self, force: bool = False) -> list[Target]:

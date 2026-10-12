@@ -2,6 +2,7 @@ import { h, mount, svg } from "../core/dom.js";
 import { shortAgo } from "../core/format.js";
 import { consoleGames, FILTERS, gameConsoles, pickConsole, stepConsole } from "../core/games.js";
 import { systemColor } from "../core/home.js";
+import { systemRatio } from "../core/library.js";
 import { ICONS } from "../core/icons.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { swipeArea, swipeSteps } from "../core/swipe.js";
@@ -137,6 +138,7 @@ export function createGames({ onFocus, onPick, onAction }) {
     const last = c?.last;
     const ago = last && shortAgo(last.last_played);
     heading.style.setProperty("--glow", systemColor(c?.system));
+    grid.style.setProperty("--grid-ratio", String(systemRatio(c?.system || c?.id)));
     mount(heading, c && [
       h("span", { class: "games__heading-media" }, consoleImage(c, "games__heading-img")),
       h("span", { class: "games__heading-text" },

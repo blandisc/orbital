@@ -9,6 +9,10 @@ import { clampRatio, coverRatio } from "../core/library.js";
  * (GBA cuadrada, Switch alta). Hasta que carga la imagen se usa la típica del sistema.
  * `onRatio` avisa si la real es distinta (la fila recalcula su desplazamiento).
  */
+/** La portada al tamaño de la tarjeta (el servidor la reduce una vez: thumbs.py), no la de 2 MB. */
+export const coverSrc = (url) => (typeof url === "string" && url.startsWith("/api/art/") && !/[?&](kind|w)=/.test(url)
+  ? `${url}${url.includes("?") ? "&" : "?"}w=480` : url);
+
 /** El ícono de una app: el que trae (ES-DE) o el logotipo de su plataforma. */
 const APP_ICONS = { "steam:bigpicture": "img/consoles/steam.svg", "app:geforcenow": "img/consoles/geforcenow.svg" };
 export const appIcon = (item) => (item.category === "apps" ? item.extra?.icon || APP_ICONS[item.id] || null : null);
@@ -50,7 +54,9 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   if (item.image) {
     // Sin loading="lazy": las filas de abajo están fuera de vista y cada portada aparecería
     // vacía un instante al cambiar de fila. Son archivos locales; se cargan de una vez.
-    const img = h("img", { class: "card__image", src: item.image, alt: "", decoding: "async" });
+    const img = h("img", { class: "card__image", src: coverSrc(item.image), alt: "", decoding: "async" });
+    // Ya cargada antes (volviste a esa consola o fila): se ve al instante, sin volver a fundirse.
+    if (img.complete && img.naturalWidth) img.classList.add("card__image--loaded", "card__image--instant");
     img.addEventListener("load", () => {
       img.classList.add("card__image--loaded");
       const real = clampRatio(img.naturalWidth / img.naturalHeight);

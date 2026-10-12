@@ -426,3 +426,21 @@ def test_a_frozen_mpv_does_not_freeze_orbital(monkeypatch):
     assert mpv.command("quit") is None  # la siguiente tampoco espera para siempre
     assert _t.monotonic() - start < 2
     stuck.set()
+
+
+# --- portadas reducidas --------------------------------------------------------------------------
+def test_big_covers_are_served_small_and_small_ones_as_they_are(tmp_path):
+    from PIL import Image
+
+    from orbital import thumbs
+
+    big, small = tmp_path / "grande.png", tmp_path / "chica.jpg"
+    Image.new("RGB", (1500, 2100), "red").save(big)
+    Image.new("RGB", (300, 420), "blue").save(small)
+    out = thumbs.thumbnail(big, 480, tmp_path / "thumbs")
+    assert out != big and Image.open(out).width == 480
+    assert thumbs.thumbnail(big, 480, tmp_path / "thumbs") == out  # la segunda vez, la misma copia
+    assert thumbs.thumbnail(small, 480, tmp_path / "thumbs") == small
+    broken = tmp_path / "rota.png"
+    broken.write_bytes(b"\x89PNG\r\n\x1a\nbasura")
+    assert thumbs.thumbnail(broken, 480, tmp_path / "thumbs") == broken  # ilegible: el original, sin tronar

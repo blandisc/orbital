@@ -91,7 +91,8 @@ body[data-view="games"] .backdrop__space { opacity: 1; }
 }
 .games__grid { display: flex; flex-wrap: wrap; align-content: flex-start; gap: var(--space-8) var(--space-6); transition: transform var(--duration-slow) var(--ease-out); }
 .games__grid .card--focused { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; z-index: var(--z-raised); }
-.games__grid .card { --ratio: .7 !important; }
+/* Todas las portadas de una consola con la forma de sus cajas (games.js pone --grid-ratio: GBA 1, PSP .57…). */
+.games__grid .card { --ratio: var(--grid-ratio, .7) !important; }
 .games__grid .card__image { object-fit: cover; }
 .games--empty .game-panel { visibility: hidden; }
 .games__empty { color: var(--color-text-muted); font-size: var(--text-md); padding: var(--space-4) 0; }

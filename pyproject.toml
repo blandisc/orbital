@@ -11,6 +11,8 @@ dependencies = [
     "fastapi>=0.110",
     "uvicorn>=0.29",
     "pyyaml>=6.0",
+    # Portadas del tamaño de la tarjeta (thumbs.py): las del scraper pesan hasta 2,5 MB
+    "pillow>=10",
     # Música: los controles de medios de Windows (Apple Music, Spotify…)
     "winrt-runtime>=2.0; sys_platform == 'win32'",
     "winrt-Windows.Media.Control>=2.0; sys_platform == 'win32'",

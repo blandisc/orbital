@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
+from .. import thumbs
 from .deps import Deps
 
 
@@ -76,13 +77,15 @@ def router(d: Deps) -> APIRouter:
         return {"ok": True, "found": found}
 
     @r.get("/api/art/{item_id:path}")
-    def art(item_id: str, kind: str = "cover") -> FileResponse:
+    def art(item_id: str, kind: str = "cover", w: int | None = None) -> FileResponse:
         # Solo se sirven imágenes que el escaneo asoció a un elemento: nunca rutas arbitrarias.
         item = catalog.get(item_id)
         paths = {"hero": "hero_path", "logo": "logo_path", "icon": "icon_path"}
         path = None if item is None else getattr(item, paths.get(kind, "art_path"))
         if not path or not Path(path).is_file():
             raise HTTPException(404)
+        if w is not None and kind == "cover":  # la tarjeta pide la portada a su tamaño (thumbs.py)
+            path = thumbs.thumbnail(Path(path), max(120, min(1200, w)), catalog.thumbs_dir())
         return FileResponse(path, headers={"Cache-Control": "max-age=86400"})
 
     return r
