@@ -116,7 +116,8 @@ class OrbitalPlayer(PlayerScreen):
         self._buffering = False
         self._loading_until = 0.0  # tras «Ver ahora», A no pausa lo que está cargando
         self._want: dict[str, tuple[object, float]] = {}
-        self._swap = threading.Lock()  # current y segment cambian juntos (play) o se leen juntos (finish)  # lo último pedido a mpv (pausa, volumen, posición)
+        self._swap = threading.Lock()
+        self._starting = threading.Lock()  # un play() a la vez  # current y segment cambian juntos (play) o se leen juntos (finish)  # lo último pedido a mpv (pausa, volumen, posición)
         self.sub_scale = 1.0
         self.on_finished = on_finished  # (meta, posición, duración, segundos vistos)
         self.on_progress = None  # igual que on_finished, cada minuto y al pausar
@@ -136,7 +137,13 @@ class OrbitalPlayer(PlayerScreen):
     # --- arrancar / cambiar de archivo -------------------------------------------------------
     def play(self, run, mpv_exe: str, url: str, title: str, meta: dict, *, subtitles: str = "en",
              fallback_subs=None, **options) -> subprocess.Popen:
-        """`run(argv)` lanza el proceso; `fallback_subs()` da URLs de subtítulos si el video no trae."""
+        """`run(argv)` lanza el proceso; `fallback_subs()` da URLs de subtítulos si el video no trae.
+        Uno a la vez: dos «pon…» seguidos (voz y mando) ya no dejan un mpv huérfano a pantalla completa."""
+        with self._starting:
+            return self._play(run, mpv_exe, url, title, meta, subtitles=subtitles, fallback_subs=fallback_subs, **options)
+
+    def _play(self, run, mpv_exe: str, url: str, title: str, meta: dict, *, subtitles: str = "en",
+              fallback_subs=None, **options) -> subprocess.Popen:
         self.stop()
         if self.segment is not None and self.segment.playing:
             self._close_segment(self.segment)  # lo visto del video anterior se guarda antes de soltarlo
@@ -185,8 +192,9 @@ class OrbitalPlayer(PlayerScreen):
             self.menu = None
             self._overlay(2, None)
         self._hide_card()
-        if fallback_subs is not None:
-            self._fallback_subs = fallback_subs
+        # Siempre los del archivo nuevo (None = «sin subtítulos» o «solo forzados»): antes se quedaban
+        # los del episodio anterior y al siguiente le ponían los subtítulos de otro.
+        self._fallback_subs = fallback_subs
         if subtitles is not None:
             self._subs_lang = subtitles
         self.mpv.command("set_property", "force-media-title", title)
@@ -209,6 +217,7 @@ class OrbitalPlayer(PlayerScreen):
                 continue
             try:
                 now = time.monotonic()
+                self._fit_canvas()
                 paused = bool(self.mpv.get("pause"))
                 if paused != was_paused and segment.playing:
                     self.show_hud()  # pausado con un toque en la pantalla (o por otro lado): que se vea la barra

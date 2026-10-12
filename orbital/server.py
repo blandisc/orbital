@@ -68,9 +68,15 @@ def is_local_request(request: Request) -> bool:
 
 def token_ok(request: Request, expected: str) -> bool:
     token = request.headers.get("authorization", "").removeprefix("Bearer ").strip()
-    # En bytes: compare_digest con texto no ASCII («Bearer é») lanzaba TypeError y daba 500.
-    return bool(token) and bool(expected) and hmac.compare_digest(token.encode("utf-8", "surrogatepass"),
-                                                                   expected.encode("utf-8", "surrogatepass"))
+    if not token or not expected:
+        return False
+    # En bytes: compare_digest con texto no ASCII lanzaba TypeError (500). Las cabeceras llegan como
+    # latin-1: así se recuperan los bytes UTF-8 que mandó el cliente.
+    try:
+        sent = token.encode("latin-1")
+    except UnicodeEncodeError:
+        sent = token.encode("utf-8", "surrogatepass")
+    return hmac.compare_digest(sent, expected.encode("utf-8", "surrogatepass"))
 
 
 def paused_path() -> Path:

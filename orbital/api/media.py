@@ -70,11 +70,11 @@ def router(d: Deps) -> APIRouter:
         """Fuentes ordenadas por tus preferencias; la primera es la recomendada. Sin URLs."""
         if kind not in ("movie", "series"):
             raise HTTPException(400, "Tipo inválido")
+        prefs, _ = catalog.watch.language_for(id)  # el idioma que recuerda este título, igual que al reproducir
         try:
-            found = catalog.watch.stream_sources(kind, video or id)
+            found = catalog.watch.stream_sources(kind, video or id, prefs)
         except stremio_api.StremioError as exc:
             raise HTTPException(409, str(exc))
-        prefs = catalog.stream_prefs
         try:  # título, póster y fondo para la pantalla (de caché casi siempre)
             meta = catalog.cinemeta.meta(kind, id)
             info = {"title": meta.get("name") or "", "poster": meta.get("poster"), "background": meta.get("background"),

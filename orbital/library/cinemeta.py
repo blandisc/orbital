@@ -64,15 +64,15 @@ class Cinemeta:
         return data
 
     def catalog(self, kind: str) -> list[dict]:
-        metas = self._get(f"/catalog/{kind}/top.json").get("metas") or []
-        return [m for m in metas if _usable(m)]
+        metas = self._get(f"/catalog/{kind}/top.json").get("metas")
+        return [m for m in metas if _usable(m)] if isinstance(metas, list) else []
 
     def search(self, kind: str, query: str) -> list[dict]:
         """Búsqueda tolerante a errores ("ofice" encuentra The Office); 2-3 letras suelen bastar."""
         from urllib.parse import quote
 
-        metas = self._get(f"/catalog/{kind}/top/search={quote(query.strip(), safe='')}.json").get("metas") or []
-        return [m for m in metas if _usable(m)]
+        metas = self._get(f"/catalog/{kind}/top/search={quote(query.strip(), safe='')}.json").get("metas")
+        return [m for m in metas if _usable(m)] if isinstance(metas, list) else []
 
     def meta(self, kind: str, meta_id: str) -> dict:
         meta = self._get(f"/meta/{quote(kind)}/{quote(str(meta_id), safe=':')}.json").get("meta")
@@ -95,7 +95,7 @@ def play_link(kind: str, meta_id: str, video_id: str | None = None, autoplay: bo
 
 def _medium(url: str | None) -> str | None:
     # Los pósters del catálogo vienen en tamaño "small": para una TV hace falta "medium".
-    return url.replace("/poster/small/", "/poster/medium/") if url else None
+    return url.replace("/poster/small/", "/poster/medium/") if isinstance(url, str) and url else None
 
 
 def describe_meta(meta: dict) -> dict:

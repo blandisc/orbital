@@ -150,6 +150,7 @@ class Watch:
         self.cinemeta_items: list[LibraryItem] = []
         self._stremio_fetched = 0.0
         self._stremio_busy = threading.Lock()
+        self._stremio_again = False
         self.streams = streams.StreamFinder(self.stremio_client)
         self.player = player.OrbitalPlayer(
             on_finished=self._player_finished, idle_seconds=config.sessions.video_idle_minutes * 60,
@@ -190,7 +191,11 @@ class Watch:
             threading.Thread(target=self.refresh_stremio, daemon=True).start()
             return True
         if not self._stremio_busy.acquire(blocking=False):
-            return False  # ya hay una descarga en curso
+            # Ya hay una descarga en curso; quizá empezó antes de lo que acabas de cambiar (Quitar de
+            # Seguir viendo, Mi lista): al terminar se descarga otra vez.
+            self._stremio_again = True
+            return False
+        self._stremio_again = False
         try:
             raw = self.stremio_client.library(self.credentials.get(STREMIO_KEY) or "")
             items = []
@@ -212,6 +217,8 @@ class Watch:
         finally:
             self._stremio_fetched = time.time()
             self._stremio_busy.release()
+            if self._stremio_again:
+                threading.Thread(target=self.refresh_stremio, daemon=True).start()
         self.store.replace_source("stremio", items)
         changed = [i.id for i in items] != [i.id for i in self.stremio_items] or any(
             a.progress != b.progress for a, b in zip(items, self.stremio_items, strict=False))
@@ -428,6 +435,9 @@ class Watch:
         prefs = prefs or saved_prefs
         subtitles = saved_subs if subtitles is None else subtitles
         source = self.streams.get(kind, video_id, prefs, index)
+        if source is None:  # la lista caducó o se pidió con otro idioma: se vuelve a buscar una vez
+            self.stream_sources(kind, video_id, prefs)
+            source = self.streams.get(kind, video_id, prefs, index)
         if source is None:
             raise ValueError("Esa fuente ya no está disponible; vuelve a cargar las fuentes")
         mpv_exe = player.find_mpv() if self.config.stremio.player == "orbital" else None
@@ -489,7 +499,7 @@ class Watch:
         meta = self._media_meta(kind, meta_id, video_id, title, source)
         meta["tried"] = sorted(set(tried or []) | {source.index})
         _, subtitles = self.language_for(meta_id)  # los subtítulos que esta serie recuerda
-        return self.player.load(url, title, meta, start=start, message=message,
+        return self.player.load(url, title, meta, start=start, message=message, subtitles=subtitles,
                                 fallback_subs=self._fallback_subs(kind, video_id, subtitles))
 
     def _source_failed(self, meta: dict, position: float, alive: bool) -> bool:
@@ -604,7 +614,8 @@ class Watch:
         if not self.native_player:
             self.sessions.play_stremio(kind, meta_id, video_id, title)
             return
-        prefs = streams.Preferences(audio=audio, quality=self.stream_prefs.quality) if audio else None
+        # Sin idioma pedido: el que recuerda ese título (el mismo con el que se listan sus fuentes).
+        prefs = streams.Preferences(audio=audio, quality=self.stream_prefs.quality) if audio else self.language_for(meta_id)[0]
 
         def run() -> None:
             try:

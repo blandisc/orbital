@@ -126,6 +126,7 @@ def _size_number(text: str) -> float:
 
 
 CACHE_MAX = 200
+RETRY_FAILED = 15  # s que se recuerda una lista incompleta por un error de red
 PARSE_ERRORS = (ValueError, TypeError, AttributeError, OverflowError, IndexError, KeyError)
 
 
@@ -273,13 +274,14 @@ class StreamFinder:
             data = read_json(res, timeout=self.timeout)
         return data if isinstance(data, dict) else {}
 
-    def _fetch(self, addon: dict, kind: str, video_id: str) -> list[dict]:
+    def _fetch(self, addon: dict, kind: str, video_id: str) -> list[dict] | None:
+        """Las fuentes de un complemento; None si la red falló (para no recordar «no hay» 10 minutos)."""
         try:
-            streams = self._get_json(addon, f"stream/{kind}/{quote(video_id)}.json").get("streams")
+            streams = self._get_json(addon, f"stream/{kind}/{quote(video_id, safe='')}.json").get("streams")
             streams = streams if isinstance(streams, list) else []
         except NET_ERRORS as exc:
             log.info("Sin fuentes de %s: %s", addon["name"], exc)
-            return []
+            return None
         return [s for s in streams if isinstance(s, dict) and (s.get("url") or s.get("infoHash"))]
 
     def subtitles(self, auth_key: str, kind: str, video_id: str, lang: str) -> list[str]:
@@ -290,7 +292,7 @@ class StreamFinder:
             if "subtitles" not in addon.get("resources", []):
                 continue
             try:
-                subs = self._get_json(addon, f"subtitles/{kind}/{quote(video_id)}.json").get("subtitles")
+                subs = self._get_json(addon, f"subtitles/{kind}/{quote(video_id, safe='')}.json").get("subtitles")
                 subs = subs if isinstance(subs, list) else []
             except NET_ERRORS as exc:
                 log.info("Sin subtítulos de %s: %s", addon["name"], exc)
@@ -310,8 +312,9 @@ class StreamFinder:
         with ThreadPoolExecutor(max_workers=max(1, len(addons))) as pool:
             results = list(pool.map(lambda a: (a, self._fetch(a, kind, video_id)), addons))
         sources, index = [], 0
+        failed = any(streams is None for _, streams in results)
         for addon, streams in results:
-            for stream in streams:
+            for stream in streams or []:
                 try:
                     sources.append(parse(stream, addon["name"], addon["url"], index))
                 except PARSE_ERRORS as exc:  # una fuente con datos raros se salta, no tumba la lista
@@ -319,11 +322,15 @@ class StreamFinder:
                     continue
                 index += 1
         ranked = rank(sources, prefs, kind)
+        if failed and not ranked:
+            return ranked  # la red falló y no hay nada: no se recuerda, la próxima vez se pregunta otra vez
         with self._lock:
             if len(self._cache) >= CACHE_MAX:  # una entrada por episodio visto: se van las más viejas
                 for old in sorted(self._cache, key=lambda k: self._cache[k][0])[:CACHE_MAX // 2]:
                     del self._cache[old]
-            self._cache[key] = (time.time(), ranked)
+            # Si algún complemento no respondió (Wi-Fi al despertar), la lista se recuerda solo unos segundos.
+            stamp = time.time() - (CACHE_SECONDS - RETRY_FAILED if failed else 0)
+            self._cache[key] = (stamp, ranked)
         return ranked
 
     def get(self, kind: str, video_id: str, prefs: Preferences, index: int) -> Source | None:

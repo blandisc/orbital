@@ -264,7 +264,7 @@ def test_non_ascii_token_is_rejected_not_an_error():
     ask = lambda value: SimpleNamespace(headers={"authorization": value})  # noqa: E731
     assert not token_ok(ask("Bearer éé"), "secreto")  # antes: TypeError → 500
     assert not token_ok(ask("Bearer secreto"), "sécreto")
-    assert token_ok(ask("Bearer sécreto"), "sécreto")
+    assert token_ok(ask("Bearer " + "sécreto".encode().decode("latin-1")), "sécreto")
 
 
 def test_more_sizes():
@@ -280,3 +280,62 @@ def test_library_json_gets_a_copy_of_extra():
     item = LibraryItem(id="a", title="A", category="games", source="x", extra={"year": "2020"})
     item.public()["extra"]["year"] = "otro"
     assert item.extra["year"] == "2020"
+
+
+# --- ronda 5 -------------------------------------------------------------------------------------
+def test_sources_listed_and_played_with_the_series_language(library, monkeypatch):
+    from orbital.library import streams
+
+    library.credentials.set("stremio_auth_key", "k")
+    library.state.set_pref("stremio:tt1", "audio", "es")  # esta serie, en español (Ajustes: inglés)
+    raw = [{"name": "A", "title": "Peli\n🇲🇽", "url": "https://cdn/0.mkv"}, {"name": "A", "title": "Peli", "url": "https://cdn/1.mkv"}]
+    monkeypatch.setattr(streams.StreamFinder, "addons", lambda self, key: [{"name": "A", "url": "https://a/manifest.json", "types": [], "resources": ["stream"]}])
+    monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, a, k, v: raw)
+    listed = library.watch.stream_sources("movie", "tt1", library.watch.language_for("tt1")[0])
+    played = []
+    monkeypatch.setattr(library.watch, "play_native", lambda *a, **k: played.append(a[1]))
+    monkeypatch.setattr("orbital.player.find_mpv", lambda: "mpv.exe")
+    library.watch.play_source("movie", "tt1", "tt1", listed[0].index, "Peli")
+    assert played == [listed[0].stream["url"]]
+
+
+def test_failed_network_is_not_remembered_as_no_sources(monkeypatch):
+    import urllib.error
+
+    from orbital.library import streams
+
+    calls = []
+
+    def get_json(self, addon, path):
+        calls.append(path)
+        if len(calls) == 1:
+            raise urllib.error.URLError("Wi-Fi al despertar")
+        return {"streams": [{"name": "A", "url": "https://cdn/x.mkv"}]}
+
+    monkeypatch.setattr(streams.StreamFinder, "addons", lambda self, key: [{"name": "A", "url": "https://a/manifest.json", "types": [], "resources": ["stream"]}])
+    monkeypatch.setattr(streams.StreamFinder, "_get_json", get_json)
+    finder = streams.StreamFinder(None)
+    assert finder.find("k", "movie", "tt1", streams.Preferences()) == []
+    assert len(finder.find("k", "movie", "tt1", streams.Preferences())) == 1
+
+
+def test_odd_settings_in_state_do_not_stop_orbital(tmp_path):
+    path = tmp_path / "state.json"
+    path.write_text(json.dumps({"settings": {"video_idle_minutes": "abc", "sub_scale": [1], "sounds": "yes", "audio": "es",
+                                             "game_idle_minutes": 1e308}}), encoding="utf-8")
+    assert State(path).settings() == {"audio": "es"}
+
+
+def test_dismiss_survives_odd_state():
+    for state in ("xyz", [1, 2], 5):
+        item = stremio_api.parse_item({"_id": "tt1", "name": "Serie", "type": "series", "state": state})
+        assert item is not None
+    assert stremio_api.parse_item({"_id": "tt1", "name": "Serie", "type": "series",
+                                   "state": {"timeOffset": "abc", "duration": [1], "video_id": 5}}) is not None
+
+
+def test_cinemeta_odd_metas_and_posters(monkeypatch):
+    for metas in (5, True, "x", None):
+        monkeypatch.setattr(cinemeta.Cinemeta, "_get", lambda self, path, m=metas: {"metas": m})
+        assert cinemeta.Cinemeta().search("movie", "x") == []
+    assert cinemeta._medium(5) is None and cinemeta._medium(["a"]) is None

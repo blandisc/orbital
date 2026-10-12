@@ -81,6 +81,15 @@ class PlayerScreen:
         elif card["kind"] == "next":
             card["segment"].upnext_dismissed = True  # se queda en los créditos; al final, sale
 
+    def _fit_canvas(self) -> None:
+        """El lienzo del ancho de la pantalla (TV 16:9 o la Legion Go 16:10); si cambió (conectaste o
+        desconectaste la TV) y la barra se ve, se vuelve a dibujar."""
+        w, h = self.mpv.get("osd-width"), self.mpv.get("osd-height")
+        if not (isinstance(w, (int, float)) and isinstance(h, (int, float)) and w > 0 and h > 0):
+            return
+        if player_ui.set_canvas(w, h) and self._hud_visible and self.menu is None:
+            self.show_hud()
+
     # --- lo pedido vs. lo confirmado ---------------------------------------------------------------
     WANT_SECONDS = 1.0
 
@@ -174,7 +183,7 @@ class PlayerScreen:
         self._open_panel(player_ui.tracks_panel(tracks, self.sub_scale, extra, focus))
 
     def open_more(self) -> None:
-        meta = self.current.meta if self.current else {}
+        meta = getattr(self.current, "meta", None) or {}
         episodes = self._safe(self.episodes_provider, meta) if self.episodes_provider and meta.get("kind") == "series" else None
         sources = self._safe(self.sources_provider, meta) if self.sources_provider and self.current else None
         self._open_panel(player_ui.more_panel(episodes=episodes or None, sources=sources or None))
@@ -214,7 +223,7 @@ class PlayerScreen:
             self._draw_panel()
             return
         self.close_menu()
-        meta = self.current.meta if self.current else {}
+        meta = getattr(self.current, "meta", None) or {}
         if prop == "fetch":
             self.toast("Buscando subtítulos…", 3)
             threading.Thread(target=self._fetch_subs, args=(value,), daemon=True).start()
@@ -282,6 +291,7 @@ class PlayerScreen:
         current = self.current
         if current is None:
             return
+        self._fit_canvas()  # por si la pantalla cambió en este segundo (TV ↔ Legion Go)
         if self.menu is not None:
             self._menu_press(button)
             return
@@ -319,7 +329,7 @@ class PlayerScreen:
                 self.mpv.command("seek", delta * CHAPTER_SEEK, "relative")
                 self.show_hud(seeking=player_ui.seek_label(delta * CHAPTER_SEEK), position=self._expected_position(delta * CHAPTER_SEEK))
         elif button in ("lt", "rt"):
-            meta = self.current.meta if self.current else {}
+            meta = getattr(self.current, "meta", None) or {}
             if meta.get("kind") == "series" and self.on_episode:
                 self.toast("Episodio siguiente…" if button == "rt" else "Episodio anterior…", 3)
                 self._in_background(self.on_episode, meta, -1 if button == "lt" else 1, failed="No pude cambiar de episodio")

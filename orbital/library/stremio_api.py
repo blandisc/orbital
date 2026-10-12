@@ -205,7 +205,7 @@ def library_toggled(raw: dict | None, *, meta_id: str, kind: str, name: str, pos
 def dismissed(raw: dict, now: float) -> dict:
     """El libraryItem fuera de "Seguir viendo" (como el "Quitar" de Stremio: sin avance pendiente)."""
     item = dict(raw)
-    state = dict(item.get("state") or {})
+    state = dict(state_of(item))
     state["timeOffset"] = 0
     item["state"] = state
     item["_mtime"] = _iso(now)
@@ -276,19 +276,19 @@ def parse_item(raw: dict) -> Watchable | None:
     if not isinstance(item_id, str) or not item_id or not isinstance(name, str) or not name.strip():
         return None
     state = state_of(raw)
-    kind = raw.get("type") or "other"
+    kind = raw.get("type") if isinstance(raw.get("type"), str) and raw.get("type") else "other"
     removed, temp = bool(raw.get("removed")), bool(raw.get("temp"))
-    offset = int(state.get("timeOffset") or 0)
+    offset = as_int(state.get("timeOffset"))
     if removed and not temp:
         return None
     return Watchable(
         id=item_id,
         type=kind,
         name=name,
-        poster=raw.get("poster") or None,
-        video_id=state.get("video_id") or None,
+        poster=raw.get("poster") if isinstance(raw.get("poster"), str) and raw.get("poster") else None,
+        video_id=state.get("video_id") if isinstance(state.get("video_id"), str) and state.get("video_id") else None,
         time_offset=offset,
-        duration=int(state.get("duration") or 0),
+        duration=as_int(state.get("duration")),
         last_watched=_epoch(state.get("lastWatched")),
         # Misma regla que stremio-core (LibraryItem::is_in_continue_watching).
         in_continue=kind != "other" and offset > 0,

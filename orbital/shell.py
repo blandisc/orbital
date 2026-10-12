@@ -245,6 +245,10 @@ class ConsoleShell:
         """Cierra el juego de golpe (ya se confirmó: menú de Orbital o Select+Start sostenidos)."""
         target, self.hold = self.hold, None
         self.unpause()  # un proceso congelado no se cierra limpio
+        running = self.catalog.launcher.status()
+        player = getattr(getattr(self.catalog, "watch", None), "player", None)
+        if running and running.get("id") == "media:player" and player is not None:
+            player._user_quit = True  # lo cerraste tú: no es «No pude reproducir»
         if self.catalog.launcher.stop(force=True):
             return True
         if target and target.get("pid") and sys.platform == "win32":

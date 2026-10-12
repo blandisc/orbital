@@ -12,6 +12,22 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 
+_NUMBER = "número"
+# Qué tipo lleva cada ajuste: un «abc» en video_idle_minutes impedía arrancar (int("abc")).
+SETTING_TYPES = {"audio": str, "subtitles": str, "quality": str, "text_size": str, "sub_scale": _NUMBER,
+                 "safe_area": _NUMBER, "game_idle_minutes": _NUMBER, "video_idle_minutes": _NUMBER,
+                 "reduce_motion": bool, "sounds": bool, "haptics": bool, "voice_tips": bool, "close_previous": bool}
+
+
+def _setting_ok(key, value) -> bool:
+    kind = SETTING_TYPES.get(key)
+    if kind == _NUMBER:
+        return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and 0 <= value <= 10_000
+    if kind is not None:
+        return type(value) is kind
+    return isinstance(value, (str, bool, int, float)) and not (isinstance(value, float) and not math.isfinite(value))
+
+
 class State:
     """Guarda en un JSON (junto a config.yaml) recientes, tiempo jugado, favoritos, ocultos
     y el emulador preferido de cada juego. Con path=None vive solo en memoria (pruebas)."""
@@ -69,6 +85,7 @@ class State:
         self._data["history"] = history
         self._data["prefs"] = {k: v for k, v in self._data["prefs"].items() if isinstance(v, dict)}
         self._data["seen"] = {k: number(v) for k, v in self._data["seen"].items()}
+        self._data["settings"] = {k: v for k, v in self._data["settings"].items() if _setting_ok(k, v)}
 
     def _save(self) -> None:
         """Escritura atómica (no se corrompe si se apaga la consola). Si Windows no deja escribir (un

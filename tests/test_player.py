@@ -1,4 +1,4 @@
-from orbital import player
+from orbital import player, player_ui
 from orbital.gamepad import A_BUTTON, DPAD_LEFT, GUIDE, X_BUTTON, Y_BUTTON
 from orbital.library import cinemeta, streams, stremio_api
 
@@ -383,3 +383,23 @@ def test_volume_over_100_is_respected():
     p.press("up")
     p.press("down")
     assert [a[2] for a in mpv.sent if a[:2] == ("set_property", "volume")] == [130, 125]
+
+
+def test_canvas_follows_the_screen_shape():
+    try:
+        assert player_ui.set_canvas(2560, 1600) and player_ui.W == 1728  # Legion Go (16:10): nada se estira
+        assert not player_ui.set_canvas(0, 0) and player_ui.W == 1728
+        p, mpv = make_player(**{"osd-width": 1920, "osd-height": 1080})
+        p.press("a")
+        assert player_ui.W == 1920
+    finally:
+        player_ui.set_canvas(1920, 1080)
+
+
+def test_next_file_uses_its_own_subtitles():
+    p, mpv = make_player()
+    p.current.process = type("Proc", (), {"poll": lambda self: None})()
+    p.segment = player.Segment({"video_id": "e1"}, "Serie", "u1")
+    p._fallback_subs = lambda: ["http://subs/e1.srt"]
+    p.load("u2", "Serie", {"video_id": "e2"}, fallback_subs=None, subtitles="")
+    assert p._fallback_subs is None and p._subs_lang == ""

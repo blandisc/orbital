@@ -24,8 +24,23 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-W, H = 1920, 1080  # coordenadas del lienzo (mpv escala a la pantalla)
+W, H = 1920, 1080  # coordenadas del lienzo: 1080 de alto y lo ancho que dé la pantalla (ver set_canvas)
 MARGIN = 96
+
+
+def set_canvas(width: float, height: float) -> bool:
+    """El lienzo con la forma de la pantalla: en la Legion Go (16:10) mide 1728 x 1080 y en la TV
+    1920 x 1080. Con un ancho fijo, mpv estiraba todo en una pantalla 16:10. True si cambió."""
+    global W
+    try:
+        aspect = float(width) / float(height)
+    except (TypeError, ValueError, ZeroDivisionError):
+        return False
+    if not math.isfinite(aspect) or aspect <= 0:
+        return False
+    new = int(round(H * max(4 / 3, min(aspect, 21 / 9))))
+    changed, W = new != W, new
+    return changed
 
 # Colores: la misma paleta que la interfaz (web/styles/palette.json), en formato ASS (&HBBGGRR&).
 PALETTE = json.loads((Path(__file__).parent / "web" / "styles" / "palette.json").read_text(encoding="utf-8"))
