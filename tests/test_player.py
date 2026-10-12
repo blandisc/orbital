@@ -417,3 +417,27 @@ def test_y_never_blocks_the_controller_while_sources_load():
     p.press("b")  # cambiaste de idea: el panel ya no aparece de golpe
     _t.sleep(1.8)
     assert p.menu is None
+
+
+def test_two_quick_rt_presses_go_two_episodes_ahead():
+    import time as _t
+
+    p, mpv = make_player()
+    p.current.meta = {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1"}
+    asked = []
+    p.on_episode = lambda meta, delta: asked.append(delta) or True
+    p.EPISODE_WAIT = .1
+    p.press("rt")
+    p.press("rt")
+    assert "2 episodios adelante" in mpv.overlays[3]
+    _t.sleep(.4)
+    assert asked == [2]
+
+
+def test_next_file_resets_the_tracks_to_the_series_language():
+    p, mpv = make_player()
+    p.current.process = type("Proc", (), {"poll": lambda self: None})()
+    p.segment = player.Segment({"video_id": "e1"}, "Serie", "u1")
+    p.load("u2", "Serie", {"video_id": "e2"}, subtitles="", audio="es")
+    sent = [a[1:] for a in mpv.sent if a[0] == "set_property"]
+    assert ("aid", "auto") in sent and ("sid", "no") in sent and ("alang", "es,spa,Spanish,es-419") in sent

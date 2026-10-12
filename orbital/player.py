@@ -78,6 +78,7 @@ from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las pi
     seek_step,
     stream_url,
     subtitle_options,
+    track_properties,
     wrong_audio,
 )
 from .player_screen import PlayerScreen
@@ -119,7 +120,8 @@ class OrbitalPlayer(PlayerScreen):
         self._swap = threading.Lock()
         self._starting = threading.Lock()  # un play() a la vez
         self._closing = threading.Lock()
-        self._more_token = None  # el panel Y que se está buscando (ver _open_more_soon)  # current y segment cambian juntos (play) o se leen juntos (finish)  # lo último pedido a mpv (pausa, volumen, posición)
+        self._more_token = None
+        self._episode_steps, self._episode_timer = 0, None  # LT/RT seguidos (ver _queue_episode)  # el panel Y que se está buscando (ver _open_more_soon)  # current y segment cambian juntos (play) o se leen juntos (finish)  # lo último pedido a mpv (pausa, volumen, posición)
         self.sub_scale = 1.0
         self.on_finished = on_finished  # (meta, posición, duración, segundos vistos)
         self.on_progress = None  # igual que on_finished, cada minuto y al pausar
@@ -174,7 +176,7 @@ class OrbitalPlayer(PlayerScreen):
         return process
 
     def load(self, url: str, title: str, meta: dict, *, start: float = 0, fallback_subs=None,
-             subtitles: str | None = None, message: str | None = None) -> bool:
+             subtitles: str | None = None, audio: str | None = None, message: str | None = None) -> bool:
         """Otro archivo en la misma ventana: el siguiente episodio, u otra fuente del mismo título.
         Lo que se vio del anterior se guarda. False si mpv ya no está abierto."""
         playback = self.current
@@ -203,10 +205,14 @@ class OrbitalPlayer(PlayerScreen):
         self._fallback_subs = fallback_subs
         if subtitles is not None:
             self._subs_lang = subtitles
+        if audio is not None:
+            self._audio_lang = audio
         self.mpv.command("set_property", "force-media-title", title)
         self.mpv.command("set_property", "start", f"{int(start)}" if start > 5 else "0")
         self._want.clear()  # lo pedido era del archivo anterior (p. ej. «en pausa»)
         self.mpv.command("set_property", "pause", False)
+        for prop, value in track_properties(self._audio_lang, self._subs_lang):
+            self.mpv.command("set_property", prop, value)  # el idioma de este título, no la pista del anterior
         self.mpv.command("loadfile", url, "replace")
         self.toast(message or f"Cargando {title}…", 4)
         log.info("Cargando en el mismo mpv: %s", title)

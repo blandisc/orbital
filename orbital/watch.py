@@ -510,8 +510,8 @@ class Watch:
             return False
         meta = self._media_meta(kind, meta_id, video_id, title, source)
         meta["tried"] = sorted(set(tried or []) | {source.index})
-        _, subtitles = self.language_for(meta_id)  # los subtítulos que esta serie recuerda
-        return self.player.load(url, title, meta, start=start, message=message, subtitles=subtitles,
+        prefs, subtitles = self.language_for(meta_id)  # el audio y los subtítulos que esta serie recuerda
+        return self.player.load(url, title, meta, start=start, message=message, subtitles=subtitles, audio=prefs.audio,
                                 fallback_subs=self._fallback_subs(kind, video_id, subtitles))
 
     def _source_failed(self, meta: dict, position: float, alive: bool) -> bool:
@@ -644,6 +644,12 @@ class Watch:
                         name = {"es": "español", "en": "inglés"}.get(audio, audio)
                         self.events.publish({"type": "toast", "message": f"No hay audio en {name} para {title}: va con subtítulos en {name}"})
                 self.play_source(kind, meta_id, video_id, source.index, title, prefs=prefs, subtitles=subtitles)
+                if audio:  # lo pediste en voz alta: el siguiente episodio y el respaldo siguen igual
+                    key = f"stremio:{meta_id}"
+                    if audio in source.languages:
+                        self.state.set_pref(key, "audio", audio)
+                    if subtitles is not None:
+                        self.state.set_pref(key, "subtitles", subtitles)
             except Exception as exc:  # noqa: BLE001 - se avisa en pantalla
                 log.exception("No pude poner %s", title)
                 self.events.publish({"type": "toast", "message": f"No pude poner {title}: {exc}", "ok": False})

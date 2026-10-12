@@ -397,3 +397,32 @@ def test_player_title_fits_on_a_4_3_screen():
         player_ui.hud_ass(hud)
     finally:
         player_ui.set_canvas(1920, 1080)
+
+
+def test_a_frozen_mpv_does_not_freeze_orbital(monkeypatch):
+    import threading as th
+    import time as _t
+
+    from orbital.mpv import Mpv
+
+    stuck = th.Event()
+
+    class Frozen:
+        def write(self, data):
+            return len(data)
+
+        def readline(self):
+            stuck.wait(5)  # mpv colgado: no contesta
+            return b""
+
+        def close(self):
+            pass
+
+    mpv = Mpv(pipe="no-existe")
+    mpv.TIMEOUT = .3
+    monkeypatch.setattr(mpv, "_connect", lambda: Frozen())
+    start = _t.monotonic()
+    assert mpv.command("quit") is None
+    assert mpv.command("quit") is None  # la siguiente tampoco espera para siempre
+    assert _t.monotonic() - start < 2
+    stuck.set()

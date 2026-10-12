@@ -356,8 +356,7 @@ class PlayerScreen:
         elif button in ("lt", "rt"):
             meta = getattr(self.current, "meta", None) or {}
             if meta.get("kind") == "series" and self.on_episode:
-                self.toast("Episodio siguiente…" if button == "rt" else "Episodio anterior…", 3)
-                self._in_background(self.on_episode, meta, -1 if button == "lt" else 1, failed="No pude cambiar de episodio")
+                self._queue_episode(meta, -1 if button == "lt" else 1)
         elif button in ("up", "down"):
             before = self._value("volume")
             if isinstance(before, (int, float)) and not isinstance(before, bool):
@@ -370,6 +369,30 @@ class PlayerScreen:
             else:
                 self.mpv.command("add", "volume", 5 if button == "up" else -5)
                 self.toast("Volumen")
+
+    EPISODE_WAIT = .7  # s: RT, RT seguidos suman (dos episodios adelante) antes de cargar
+
+    def _queue_episode(self, meta: dict, step: int) -> None:
+        """LT/RT: se cuentan las pulsaciones y, cuando paras, se carga ese episodio (antes dos RT
+        rápidos cargaban el mismo «siguiente» dos veces)."""
+        self._episode_steps += step
+        n = self._episode_steps
+        if n == 0:
+            self.toast("Sigues en este episodio", 2)
+        elif abs(n) == 1:
+            self.toast("Episodio siguiente…" if n > 0 else "Episodio anterior…", 3)
+        else:
+            self.toast(f"{abs(n)} episodios {'adelante' if n > 0 else 'atrás'}…", 3)
+        if self._episode_timer:
+            self._episode_timer.cancel()
+        self._episode_timer = threading.Timer(self.EPISODE_WAIT, self._step_episodes, args=(meta,))
+        self._episode_timer.daemon = True
+        self._episode_timer.start()
+
+    def _step_episodes(self, meta: dict) -> None:
+        delta, self._episode_steps = self._episode_steps, 0
+        if delta and self.current is not None:
+            self._in_background(self.on_episode, meta, delta, failed="No pude cambiar de episodio")
 
     def _expected_position(self, step: float) -> float | None:
         """Adónde va el seek que se acaba de pedir (mpv lo confirma un instante después)."""

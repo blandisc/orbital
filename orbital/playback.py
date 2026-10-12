@@ -141,6 +141,20 @@ def subtitle_options(subtitles: str, audio: str) -> list[str]:
     return [f"--slang={','.join(build_lang_list(subtitles))}"]
 
 
+def track_properties(audio: str, subtitles: str) -> list[tuple[str, str]]:
+    """Lo mismo que subtitle_options y --alang, para el mpv ya abierto (otro episodio u otra fuente).
+    aid/sid vuelven a «auto»: una pista elegida a mano en el panel (aid=2) se quedaba puesta y el
+    siguiente episodio salía con la pista 2, fuera del idioma que recuerda la serie."""
+    props = [("aid", "auto"), ("alang", ",".join(build_lang_list(audio)))]
+    if subtitles == "forced":
+        return props + [("sid", "auto"), ("slang", ",".join(build_lang_list(audio))), ("subs-with-matching-audio", "forced"),
+                        ("subs-fallback", "no"), ("subs-fallback-forced", "always")]
+    if not subtitles:
+        return props + [("sid", "no")]
+    return props + [("sid", "auto"), ("slang", ",".join(build_lang_list(subtitles))), ("subs-with-matching-audio", "yes"),
+                    ("subs-fallback", "default"), ("subs-fallback-forced", "yes")]
+
+
 def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: str = "en",
                   subtitles: str = "en", sub_files: list[str] | None = None, bindings: str | None = None,
                   sub_scale: float = 1.0) -> list[str]:

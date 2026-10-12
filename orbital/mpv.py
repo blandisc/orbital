@@ -46,26 +46,49 @@ class Mpv:
         fh.readline()
         return fh
 
+    TIMEOUT = 3.0  # s: si mpv no contesta (driver de video colgado), Orbital no se cuelga con él
+
     def _send(self, payload: dict, label) -> dict | None:
+        """Un comando y su respuesta, con plazo. La lectura de la tubería no tiene plazo propio: va en
+        un hilo y, si no termina a tiempo, esa conexión se abandona (la próxima abre otra)."""
         line = (json.dumps(payload) + "\n").encode()
-        with self._lock:
-            for attempt in (1, 2):  # si mpv se reinició, la conexión vieja ya no sirve: una nueva
-                try:
-                    if self._fh is None:
-                        self._fh = self._connect()
-                    self._fh.write(line)
-                    for _ in range(20):  # por si quedó algún evento antes de disable_event
-                        reply = self._fh.readline()
-                        if not reply:
-                            raise OSError("mpv cerró la conexión")
-                        data = json.loads(reply)
-                        if "error" in data:
-                            return data
-                    return None
-                except (OSError, ValueError) as exc:
+        if not self._lock.acquire(timeout=self.TIMEOUT):
+            log.debug("mpv ocupado: se omite %s", label)
+            return None
+        try:
+            box: dict = {}
+            worker = threading.Thread(target=lambda: box.update(reply=self._exchange(line, label)), daemon=True,
+                                      name="mpv-ipc")
+            worker.start()
+            worker.join(self.TIMEOUT)
+            if worker.is_alive():
+                log.warning("mpv no contestó a %s en %.0f s: dejo esa conexión", label, self.TIMEOUT)
+                self._fh = None
+                return None
+            return box.get("reply")
+        finally:
+            self._lock.release()
+
+    def _exchange(self, line: bytes, label) -> dict | None:
+        for attempt in (1, 2):  # si mpv se reinició, la conexión vieja ya no sirve: una nueva
+            fh = self._fh
+            try:
+                if fh is None:
+                    fh = self._fh = self._connect()
+                fh.write(line)
+                for _ in range(20):  # por si quedó algún evento antes de disable_event
+                    reply = fh.readline()
+                    if not reply:
+                        raise OSError("mpv cerró la conexión")
+                    data = json.loads(reply)
+                    if "error" in data:
+                        return data
+                return None
+            except (OSError, ValueError) as exc:
+                if self._fh is fh:  # una conexión abandonada por lenta no cierra la nueva
                     self._close_commands()
-                    if attempt == 2:
-                        log.debug("mpv no respondió a %s: %s", label, exc)
+                if attempt == 2:
+                    log.debug("mpv no respondió a %s: %s", label, exc)
         return None
 
     def _close_commands(self) -> None:
