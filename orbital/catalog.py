@@ -15,13 +15,14 @@ import difflib
 import json
 import logging
 import os
+import sys
 import threading
 import time
 from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import quote
 
-from . import player
+from . import music, player
 from .config import Config, expand
 from .credentials import Credentials
 from .events import EventBus
@@ -256,6 +257,12 @@ class Catalog:
                     argv=[] if is_uri else [app.target, *app.args],
                 )
             )
+        if sys.platform == "win32" and not any(a.id == "applemusic" for a in self.config.apps):
+            installed = music.apple_music_installed()
+            found.append(LibraryItem(
+                id="app:applemusic", title="Apple Music", category="apps", source="app",
+                subtitle="Música" if installed else "Instalar desde Microsoft Store",
+                uri=music.APPLE_MUSIC_URI if installed else music.APPLE_MUSIC_STORE))
         found += self.watch.stremio_items
         found += self.watch.cinemeta_items
         for item in found:

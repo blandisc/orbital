@@ -11,6 +11,12 @@ dependencies = [
     "fastapi>=0.110",
     "uvicorn>=0.29",
     "pyyaml>=6.0",
+    # Música: los controles de medios de Windows (Apple Music, Spotify…)
+    "winrt-runtime>=2.0; sys_platform == 'win32'",
+    "winrt-Windows.Media.Control>=2.0; sys_platform == 'win32'",
+    "winrt-Windows.Foundation>=2.0; sys_platform == 'win32'",
+    "winrt-Windows.Foundation.Collections>=2.0; sys_platform == 'win32'",
+    "winrt-Windows.Storage.Streams>=2.0; sys_platform == 'win32'",
 ]
 
 [project.optional-dependencies]

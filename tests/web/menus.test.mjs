@@ -250,3 +250,13 @@ test("liberar memoria: A cierra lo seguro; lo de Windows solo se muestra", () =>
   assert.equal(menu.options[0].value, "4,5 GB");
   assert.equal(menu.options[1].command.type, "stay");
 });
+
+test("panel rápido: la música que suena, A pausa y ◀/▶ cambian de canción", () => {
+  const menu = quickMenu({ volume: null, brightness: null, power_mode: null },
+    { music: { now: { title: "Pedro Navaja", artist: "Rubén Blades", app: "Apple Music", playing: true } } });
+  const song = menu.options[0];
+  assert.equal(song.label, "Pedro Navaja");
+  assert.equal(song.hint, "Rubén Blades · Apple Music");
+  assert.deepEqual(song.adjust.right, { type: "music", action: "next" });
+  assert.deepEqual(song.command, { type: "music", action: "toggle" });
+});

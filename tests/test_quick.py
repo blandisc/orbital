@@ -42,3 +42,30 @@ def test_gallery_only_serves_files_from_the_capture_folders(make_client, monkeyp
 def test_png_encoder_makes_a_valid_header():
     data = capture.png(2, 1, bytes([0, 0, 255, 0, 0, 255, 0, 0]))  # rojo, verde (BGRA)
     assert data.startswith(bytes([137, 80, 78, 71])) and b"IHDR" in data and data.endswith(b"IEND" + data[-4:])
+
+
+def test_music_api(make_client, monkeypatch):
+    from orbital import music
+
+    state = {"playing": True}
+    monkeypatch.setattr(music, "now_playing", lambda: {"app": "Apple Music", "title": "Pedro Navaja", "artist": "Rubén Blades",
+                                                       "album": "", "playing": state["playing"], "has_art": False})
+    monkeypatch.setattr(music, "command", lambda action: state.update(playing=not state["playing"]) or True)
+    monkeypatch.setattr(music, "apple_music_installed", lambda: True)
+    with make_client() as c:
+        assert c.get("/api/music").json()["now"]["title"] == "Pedro Navaja"
+        assert c.post("/api/music", json={"action": "toggle"}).json()["now"]["playing"] is False
+        assert c.post("/api/music", json={"action": "borrar"}).status_code == 422
+
+
+def test_voice_pause_goes_to_music_when_no_movie(library, monkeypatch):
+    from orbital import music
+    from orbital.voice import VoiceController
+
+    done = []
+    monkeypatch.setattr(music, "now_playing", lambda: {"title": "x", "playing": True})
+    monkeypatch.setattr(music, "command", lambda action: done.append(action) or True)
+    voice = VoiceController(library)
+    assert voice.handle_text("pausa la música").speech == "Música en pausa."
+    assert voice.handle_text("siguiente canción").speech == "Siguiente canción."
+    assert done == ["pause", "next"]

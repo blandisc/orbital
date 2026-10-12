@@ -35,6 +35,8 @@ export const api = {
   diagnostics: () => request("/api/diagnostics"),
   quick: () => request("/api/quick"),
   memory: () => request("/api/memory"),
+  music: () => request("/api/music"),
+  musicCommand: (action) => post("/api/music", { action }),
   closeApp: (exe) => post("/api/memory/close", { exe }),
   folders: () => request("/api/folders"),
   checkUpdate: (force = false) => request(`/api/update${force ? "?force=true" : ""}`),

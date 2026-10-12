@@ -108,6 +108,10 @@ _TEXT_RULES: list[tuple[re.Pattern, str, str | None]] = [
      "AudioLanguageIntent", None),
     (re.compile(r"^(?:(?:pon|ponga|pasa al|pase al)\s+)?(?:el\s+)?siguiente\s+(?:episodio|capitulo)$|^el que sigue$"),
      "NextEpisodeIntent", None),
+    (re.compile(r"^(?:pon|ponga|la)\s+siguiente\s+cancion$|^siguiente\s+cancion$|^cambia(?:\s+la)?\s+cancion$"),
+     "NextEpisodeIntent", None),
+    (re.compile(r"^(?:pausa|pon pausa a|deten)\s+la\s+musica$"), "PauseIntent", None),
+    (re.compile(r"^(?:quita la pausa a|sigue con|reanuda)\s+la\s+musica$"), "ResumeIntent", None),
     (re.compile(r"^(?:cuanto|cuanto tiempo)\s+(?:le\s+)?(?:falta|queda)(?:\s+(?:al video|a la pelicula|al episodio))?$"),
      "TimeLeftIntent", None),
     (re.compile(r"^(?:toma|tome|haz|haga)\s+(?:una\s+)?captura(?:\s+de\s+pantalla)?$|^captura\s+(?:la\s+)?pantalla$"),
@@ -370,13 +374,25 @@ class VoiceController:
             return None
         return VoiceResult("No hay nada reproduciéndose en Orbital.", ok=False)
 
+    def _music(self, action: str, speech: str) -> VoiceResult | None:
+        """Sin nada en el reproductor de Orbital, la orden va a la música de Windows (Apple Music…)."""
+        from . import music
+
+        if self.catalog.player.playing or not music.now_playing():
+            return None
+        return VoiceResult(speech) if music.command(action) else None
+
     def _pause_intent(self, slots: dict) -> VoiceResult:
+        if not self.catalog.player.playing and (done := self._music("pause", "Música en pausa.")):
+            return done
         if (idle := self._playing()) is not None:
             return idle
         self.catalog.player.set_pause(True)
         return VoiceResult("En pausa.", events=[NO_TOAST])
 
     def _resume_intent(self, slots: dict) -> VoiceResult:
+        if not self.catalog.player.playing and (done := self._music("play", "Listo.")):
+            return done
         if (idle := self._playing()) is not None:
             return idle
         self.catalog.player.set_pause(False)
@@ -466,6 +482,8 @@ class VoiceController:
         return VoiceResult(f"Este video no trae audio en {name}.", ok=False, events=[NO_TOAST])
 
     def _next_episode_intent(self, slots: dict) -> VoiceResult:
+        if not self.catalog.player.playing and (done := self._music("next", "Siguiente canción.")):
+            return done
         if (idle := self._playing()) is not None:
             return idle
         label = self.catalog.watch.play_next_episode()

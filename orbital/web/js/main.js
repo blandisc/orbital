@@ -448,7 +448,8 @@ async function pollStatus() {
 
 async function openQuick(context = null) {
   sound.play("menu");
-  return openMenu(quickMenu(await api.quick(), { running: state.running, wifi: state.wifi }), nested(context));
+  const [q, music] = await Promise.all([api.quick(), api.music().catch(() => null)]);
+  return openMenu(quickMenu(q, { running: state.running, music }), nested(context));
 }
 
 async function pollSystem() {
@@ -605,6 +606,14 @@ async function runCommand(command, context = null) {
         return openMenu(setupMenu(await api.setup()), nested(context));
       case "quick":
         return openQuick(context);
+      case "music": { // controlar la música y quedarse en el panel, en la misma opción
+        await api.musicCommand(command.action);
+        sound.play("move");
+        await new Promise((resolve) => setTimeout(resolve, 350)); // que la app cambie de canción
+        const [q, music] = await Promise.all([api.quick(), api.music().catch(() => null)]);
+        ui.sheet.open(quickMenu(q, { running: state.running, music }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
+        return renderHints();
+      }
       case "memory":
         return openMenu(memoryMenu(await api.memory()), nested(context));
       case "close-app": {
@@ -631,7 +640,8 @@ async function runCommand(command, context = null) {
       case "quick-set": { // cambia y se queda en el panel, en la misma opción
         const q = await api.setQuick(command.changes);
         sound.play("move");
-        ui.sheet.open(quickMenu(q, { running: state.running, wifi: state.wifi }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
+        const music = await api.music().catch(() => null);
+        ui.sheet.open(quickMenu(q, { running: state.running, music }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
       case "captures":

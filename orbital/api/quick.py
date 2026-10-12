@@ -7,9 +7,9 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 
-from .. import capture, health, memory, quick
+from .. import capture, health, memory, music, quick
 from .deps import Deps
 
 _LOCAL = re.compile(r"^[A-Za-z]:\\(?!\\)")
@@ -46,6 +46,26 @@ def router(d: Deps) -> APIRouter:
         if running and running.get("pid"):
             keep |= windows.process_tree(int(running["pid"]))
         return keep
+
+    @r.get("/api/music")
+    async def music_now() -> dict:
+        return {"now": await run_in_threadpool(music.now_playing), "apple_music": music.apple_music_installed()}
+
+    @r.post("/api/music")
+    async def music_command(body: dict) -> dict:
+        action = str(body.get("action") or "")
+        if action not in ("toggle", "play", "pause", "next", "previous"):
+            raise HTTPException(422, "Acción desconocida")
+        ok = await run_in_threadpool(music.command, action)
+        return {"ok": ok, "now": await run_in_threadpool(music.now_playing)}
+
+    @r.get("/api/music/art")
+    async def music_art() -> Response:
+        data = await run_in_threadpool(music.art)
+        if not data:
+            raise HTTPException(404)
+        return Response(data, media_type="image/png" if data[:4] == bytes([137, 80, 78, 71]) else "image/jpeg",
+                        headers={"Cache-Control": "no-cache"})
 
     @r.get("/api/memory")
     async def memory_usage() -> dict:

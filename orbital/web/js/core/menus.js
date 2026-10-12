@@ -168,8 +168,16 @@ const STEP = 10;
  * Panel rápido (Home + LB, o ☰ → Panel rápido): volumen, brillo y energía con ◀/▶ (A silencia), las
  * capturas y volver al juego. La batería y el Wi-Fi ya están arriba, en la barra.
  */
-export function quickMenu(q, { running = null } = {}) {
+export function quickMenu(q, { running = null, music = null } = {}) {
   const options = [];
+  // Lo que suena en Windows (Apple Music, Spotify…): A pausa, ◀/▶ canción anterior/siguiente.
+  if (music?.now) {
+    const { title, artist, app, playing } = music.now;
+    options.push({ icon: playing ? "play" : "sound", label: title || app, value: playing ? "Sonando" : "En pausa",
+      hint: [artist, app].filter(Boolean).join(" · "),
+      command: { type: "music", action: "toggle" },
+      adjust: { left: { type: "music", action: "previous" }, right: { type: "music", action: "next" } } });
+  }
   if (q.volume) {
     const { level, muted } = q.volume;
     options.push({ icon: "sound", label: "Volumen", value: muted ? "Silencio" : `${level} %`,
