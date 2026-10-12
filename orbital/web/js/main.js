@@ -155,7 +155,10 @@ function renderHints() {
     }));
   }
   const { r, c } = state.focus;
+  const item = itemAt(state.rows, r, c);
   ui.hints.render(footerHints(glyphs(), {
+    primary: item && primaryLabel(item, state.running?.id),
+    alt: item && altLabel(item),
     sheetOpen: ui.sheet.isOpen,
     adjustable: ui.sheet.adjustable,
     atHome: !r && !c,

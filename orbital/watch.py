@@ -743,6 +743,28 @@ class Watch:
                          daemon=True, name="next-episode").start()
         return label or "el siguiente episodio"
 
+    def play_episode_number(self, episode: int, season: int | None = None) -> str | None:
+        """«Pon el capítulo 5»: de la serie que se ve (en su temporada si no se dice otra). None: no se ve
+        una serie; "": no existe ese episodio."""
+        current = self.player.current if self.player.playing else None
+        if current is None or current.meta.get("kind") != "series":
+            return None
+        meta_id = current.meta["meta_id"]
+        info = self.cinemeta.meta("series", meta_id)
+        videos = [v for v in info.get("videos") or [] if isinstance(v, dict) and v.get("id")]
+        if season is None:
+            now = next((v for v in videos if v["id"] == current.meta.get("video_id")), None)
+            season = now.get("season") if now else 1
+        video = next((v for v in videos if v.get("season") == season and v.get("episode") == episode), None)
+        if video is None:
+            return ""
+        title, _ = self._episode_title(info, meta_id, video["id"])
+        label, _ = self._episode_label(info, video["id"])
+        threading.Thread(target=self._play_episode, args=(meta_id, video["id"], title, current.meta.get("binge")),
+                         kwargs={"start": self.resume_position(meta_id, video["id"])}, daemon=True,
+                         name="episode-number").start()
+        return label or f"el episodio {episode}"
+
     def play_previous_episode(self) -> str | None:
         """El episodio anterior al que se está viendo; None si no hay (o no es una serie)."""
         current = self.player.current if self.player.playing else None

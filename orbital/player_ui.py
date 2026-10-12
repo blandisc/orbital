@@ -404,12 +404,14 @@ def hud_ass(hud: Hud) -> str:
     if hud.detail:
         lines.append(text(MARGIN, 772, esc(fit(hud.detail, 24, min(1300, W - 2 * MARGIN), "semi")), 24, SOFT, weight="semi"))
     lines.append(text(MARGIN, 806, esc(fit(hud.title, 48, min(1500, W - 2 * MARGIN), "bold")), 48, weight="bold"))
-    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes"), ("B", "Mantén: salir")]
-    lines += [bar, _times(hud, BAR_Y + 28),
-              # A la derecha van los botones (~850): la línea de pistas cabe en lo que queda (4:3 incluido).
-              text(MARGIN, 1022, esc(fit(info_line(hud), 22, max(300, min(900, W - 2 * MARGIN - 900)), "semi")), 22, MUTED,
-                   weight="semi", align=4),
-              hints(items, 1022, right=W - MARGIN)]
+    # Audio, subtítulos y fuente van bajo el título; abajo, todos los botones (también ◀▶ y LT/RT, que antes
+    # solo se descubrían en pausa). Si no caben (4:3), se quitan primero los de menos uso.
+    lines.append(text(MARGIN, 878, esc(fit(info_line(hud), 22, min(1300, W - 2 * MARGIN), "semi")), 22, MUTED, weight="semi"))
+    items = [("◀ ▶", "Adelantar"), *([("LT RT", "Episodio")] if hud.series else []), ("A", "Pausa"),
+             ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes"), ("B", "Mantén: salir")]
+    while len(items) > 4 and hints_width(items) > W - 2 * MARGIN:
+        items.pop(1 if hud.series and items[1][0] == "LT RT" else 0)
+    lines += [bar, _times(hud, BAR_Y + 28), hints(items, 1022, right=W - MARGIN)]
     return "\n".join(lines)
 
 

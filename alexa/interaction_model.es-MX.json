@@ -301,7 +301,10 @@
             "cambia los subtítulos a {language}",
             "cambie los subtítulos a {language}",
             "pon los subtítulos en {language}",
-            "ponga los subtítulos en {language}"
+            "ponga los subtítulos en {language}",
+            "ponle subtítulos",
+            "ponle subtítulos en {language}",
+            "subtítulos"
           ]
         },
         {
@@ -332,7 +335,11 @@
             "cambia el idioma a {language}",
             "cambie el idioma a {language}",
             "ponlo en {language}",
-            "póngalo en {language}"
+            "póngalo en {language}",
+            "ponla en {language}",
+            "pónmelo en {language}",
+            "cámbialo a {language}",
+            "idioma en {language}"
           ]
         },
         {
@@ -346,7 +353,10 @@
             "ponga el siguiente capítulo",
             "el que sigue",
             "pasa al siguiente episodio",
-            "pase al siguiente episodio"
+            "pase al siguiente episodio",
+            "siguiente",
+            "pon el que sigue",
+            "ponga el que sigue"
           ]
         },
         {
@@ -481,6 +491,52 @@
             "regresa el sonido",
             "devuelve el sonido",
             "pon el sonido"
+          ]
+        },
+        {
+          "name": "SkipIntroIntent",
+          "slots": [],
+          "samples": [
+            "salta la intro",
+            "sáltate la intro",
+            "salte la intro",
+            "brinca la intro",
+            "bríncate la intro",
+            "omite la intro",
+            "quita la intro",
+            "salta la introducción",
+            "salta la entrada",
+            "salta el opening",
+            "salta el resumen",
+            "sáltate el resumen",
+            "saltar intro"
+          ]
+        },
+        {
+          "name": "PlayEpisodeIntent",
+          "slots": [
+            {
+              "name": "episode",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "season",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "pon el capítulo {episode}",
+            "pon el episodio {episode}",
+            "ponga el capítulo {episode}",
+            "ponga el episodio {episode}",
+            "ve al capítulo {episode}",
+            "ve al episodio {episode}",
+            "pasa al capítulo {episode}",
+            "pasa al episodio {episode}",
+            "quiero ver el capítulo {episode}",
+            "quiero ver el episodio {episode}",
+            "pon el capítulo {episode} de la temporada {season}",
+            "pon el episodio {episode} de la temporada {season}"
           ]
         },
         {
@@ -658,6 +714,56 @@
                   "español",
                   "castellano",
                   "latino"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "fr",
+                "synonyms": [
+                  "francés",
+                  "french"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "pt",
+                "synonyms": [
+                  "portugués",
+                  "brasileño"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "it",
+                "synonyms": [
+                  "italiano"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "de",
+                "synonyms": [
+                  "alemán"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "ja",
+                "synonyms": [
+                  "japonés"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "ko",
+                "synonyms": [
+                  "coreano"
                 ]
               }
             }
@@ -914,6 +1020,21 @@
             {
               "name": {
                 "value": "Silicon Valley"
+              }
+            },
+            {
+              "name": {
+                "value": "la telenovela"
+              }
+            },
+            {
+              "name": {
+                "value": "la novela"
+              }
+            },
+            {
+              "name": {
+                "value": "mi serie"
               }
             }
           ]

@@ -88,7 +88,10 @@ export const ALEXA_EXAMPLES = [
   { icon: "close", label: "«cierre el juego»", hint: "Cierra lo que está abierto" },
   { icon: "play", label: "«quiero ver Dune»", hint: "Busca la película o serie y la pone" },
   { icon: "play", label: "«siga viendo»", hint: "Lo que dejaste a medias" },
+  { icon: "play", label: "«ponga el capítulo 5»", hint: "De la serie que estás viendo; o «el siguiente episodio»" },
   { icon: "stop", label: "«pause»", hint: "Mientras ves algo; luego «reanude»" },
+  { icon: "chevron", label: "«salte la intro»", hint: "O «adelante 5 minutos», «regrese un minuto»" },
+  { icon: "swap", label: "«ponga subtítulos en español»", hint: "O «cambie el audio a inglés» (también francés, portugués…)" },
   { icon: "sound", label: "«suba el volumen»", hint: "O «ponga el volumen en 30»" },
 ];
 

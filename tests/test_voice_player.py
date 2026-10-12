@@ -258,3 +258,53 @@ def test_voice_says_when_there_is_nowhere_to_watch(library, monkeypatch):
     monkeypatch.setattr(library.watch, "best_source", lambda *a, **k: None)
     problem = library.watch.play_title("movie", "tt1", "tt1", "Peli", wait=2)
     assert problem and "No encontré" in problem or "complementos" in (problem or "")
+
+
+@pytest.mark.parametrize("text, expected", [
+    ("salta la intro", ("SkipIntroIntent", {})),
+    ("sáltate el resumen", ("SkipIntroIntent", {})),
+    ("pon el capítulo cinco", ("PlayEpisodeIntent", {"episode": "5"})),
+    ("pon el episodio 3 de la temporada 2", ("PlayEpisodeIntent", {"episode": "3", "season": "2"})),
+    ("pon el episodio 3 de la temporada 5 de los simpson",
+     ("WatchEpisodeIntent", {"episode": "3", "season": "5", "series": "los simpson"})),
+    ("siguiente", ("NextEpisodeIntent", {})),
+    ("subtítulos en español", ("SubtitlesIntent", {"language": "espanol"})),
+    ("ponlo en castellano", ("AudioLanguageIntent", {"language": "castellano"})),
+    ("cambia el idioma a portugués", ("AudioLanguageIntent", {"language": "portugues"})),
+])
+def test_persona_phrases(text, expected):
+    """Lo que la gente dice de verdad (auditoría con personas): antes, casi todo era «No entendí»."""
+    assert parse_text(text) == expected
+
+
+def test_more_languages(voice):
+    voice.catalog.player.tracks = ("es", "fr")
+    assert voice.handle_intent("AudioLanguageIntent", {"language": "castellano"}).speech == "Audio en español."
+    assert voice.handle_intent("SubtitlesIntent", {"language": "fr"}).speech == "Subtítulos en francés."
+    unknown = voice.handle_intent("SubtitlesIntent", {"language": "klingon"})
+    assert not unknown.ok and "klingon" in unknown.speech
+
+
+def test_skip_intro_by_voice(voice):
+    voice.catalog.player.skip_intro = lambda: "Saltar intro"
+    assert voice.handle_intent("SkipIntroIntent").speech == "Listo, me salté la intro."
+    voice.catalog.player.skip_intro = lambda: None  # sin capítulos: se dice qué decir en vez de adivinar
+    result = voice.handle_intent("SkipIntroIntent")
+    assert not result.ok and "adelanta" in result.speech
+
+
+def test_episode_number_of_what_is_playing(voice, monkeypatch):
+    asked = []
+    monkeypatch.setattr(voice.catalog.watch, "play_episode_number", lambda e, s=None: asked.append((e, s)) or "T2 E5")
+    assert voice.handle_text("pon el capítulo cinco").speech == "Poniendo T2 E5." and asked == [(5, None)]
+    monkeypatch.setattr(voice.catalog.watch, "play_episode_number", lambda e, s=None: "")
+    assert "No encontré el episodio 9" in voice.handle_text("pon el capitulo 9").speech
+    monkeypatch.setattr(voice.catalog.watch, "play_episode_number", lambda e, s=None: None)  # una película
+    assert not voice.handle_text("pon el capitulo 2").ok
+
+
+def test_the_usual_is_what_you_were_watching(library, monkeypatch):
+    voice = VoiceController(library)
+    monkeypatch.setattr(type(library), "stremio_linked", property(lambda self: False), raising=False)
+    result = voice.handle_text("pon la telenovela")
+    assert not result.ok and "Dime el nombre" in result.speech  # antes: «No encontré la telenovela en tu biblioteca»

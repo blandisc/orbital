@@ -111,7 +111,10 @@ def stream_url(stream: dict) -> str | None:
     return None
 
 
-LANGS = {"en": ["en", "eng", "English"], "es": ["es", "spa", "Spanish", "es-419"]}
+LANGS = {"en": ["en", "eng", "English"], "es": ["es", "spa", "Spanish", "es-419"],
+         "fr": ["fr", "fre", "fra", "French"], "pt": ["pt", "por", "pt-BR", "Portuguese"],
+         "it": ["it", "ita", "Italian"], "de": ["de", "ger", "deu", "German"], "ja": ["ja", "jpn", "Japanese"],
+         "ko": ["ko", "kor", "Korean"]}
 
 
 def build_lang_list(lang: str) -> list[str]:

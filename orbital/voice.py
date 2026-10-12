@@ -22,9 +22,20 @@ DIRECTIONS = {
 }
 
 
-LANGUAGES = {"ingles": "en", "espanol": "es", "english": "en", "spanish": "es", "en": "en", "es": "es"}
-VAGUE_MEDIA = {"una pelicula", "una serie", "algo", "peliculas", "series", "una peli", "pelis", "algo bueno"}
-LANGUAGE_NAMES = {"en": "inglés", "es": "español"}
+LANGUAGES = {
+    "ingles": "en", "english": "en", "en": "en",
+    "espanol": "es", "spanish": "es", "castellano": "es", "latino": "es", "es": "es",
+    "frances": "fr", "french": "fr", "fr": "fr", "portugues": "pt", "brasileno": "pt", "pt": "pt",
+    "italiano": "it", "it": "it", "aleman": "de", "de": "de", "japones": "ja", "ja": "ja", "coreano": "ko", "ko": "ko",
+}
+LANGUAGE_NAMES = {"en": "inglés", "es": "español", "fr": "francés", "pt": "portugués", "it": "italiano",
+                  "de": "alemán", "ja": "japonés", "ko": "coreano"}
+VAGUE_MEDIA = {"una pelicula", "una serie", "algo", "peliculas", "series", "una peli", "pelis", "algo bueno",
+               "una telenovela", "una novela", "telenovelas", "novelas", "una caricatura", "caricaturas",
+               "un documental", "documentales", "algo de ver", "algo para ver", "la tele"}
+# «Pon la novela», «pon mi serie»: lo que estabas viendo (antes: «No encontré la telenovela en tu biblioteca»).
+THE_USUAL = {"la telenovela", "la novela", "mi novela", "mi telenovela", "mi serie", "la serie", "lo que estaba viendo",
+             "lo que estabamos viendo", "lo de siempre", "mi pelicula", "la pelicula que estaba viendo"}
 NO_TOAST = {"type": "noop"}  # la interfaz ignora este evento
 VOLUME_DOWN = {"down", "baja", "baje", "bajale", "bajarle", "menos"}
 # Lo que la voz espera a saber si hay fuente antes de contestar (Alexa corta a los ~8 s; el túnel y
@@ -108,6 +119,10 @@ def episode_request(text: str) -> dict | None:
 
 
 _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
+    # «pon el capítulo 5» (de la serie que estás viendo), «ve al episodio 3 de la temporada 2»
+    (re.compile(r"^(?:pon|ponga|quiero ver|ve al|vaya al|pasa al|pase al|cambia al|cambie al)\s+(?:el\s+)?"
+                r"(?:episodio|capitulo|cap)\s+(?P<episode>\d+)(?:\s+de\s+la\s+temporada\s+(?P<season>\d+))?$"),
+     "PlayEpisodeIntent", None),
     # "quiero ver los simpson temporada 5 episodio 3 en español"
     (re.compile(rf"^(?:quiero ver|pon|ponga|ver|reproduce)\s+(?:el\s+)?(?P<series>.+?)\s*,?\s+{_EPISODE}"
                 r"(?:\s+en\s+(?P<language>\w+))?$"), "WatchEpisodeIntent", None),
@@ -121,13 +136,17 @@ _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
      "ResumeIntent", None),
     (re.compile(r"^(?P<seek>adelanta|adelante|avanza|avance|salta|salte|pasa|regresa|regrese|retrocede|retroceda|atrasa|atrase)"
                 r"(?:\s+el video)?\s+(?:(?P<amount>\d+|media|medio)|un|una)\s+(?P<unit>minutos?|segundos?|horas?)$"), "SeekIntent", None),
-    (re.compile(r"^(?:pon|ponga|activa|active)(?:\s+los)?\s+subtitulos(?:\s+en\s+(?P<language>\w+))?$"),
-     "SubtitlesIntent", None),
+    (re.compile(r"^(?:(?:pon|ponga|ponle|ponles|activa|active|cambia|cambie)(?:\s+los)?\s+)?subtitulos"
+                r"(?:\s+(?:en|a)\s+(?P<language>\w+))?$"), "SubtitlesIntent", None),
     (re.compile(r"^(?:quita|quite|apaga|apague)\s+los\s+subtitulos$|^sin subtitulos$"), "SubtitlesOffIntent", None),
-    (re.compile(r"^(?:pon|ponga|cambia|cambie)(?:\s+el)?\s+(?:audio|idioma)\s+(?:en|a)\s+(?P<language>\w+)$"),
+    (re.compile(r"^(?:(?:pon|ponga|cambia|cambie)(?:\s+el)?\s+)?(?:audio|idioma)\s+(?:en|a)\s+(?P<language>\w+)$"),
      "AudioLanguageIntent", None),
-    (re.compile(r"^(?:(?:pon|ponga|pasa al|pase al)\s+)?(?:el\s+)?siguiente\s+(?:episodio|capitulo)$|^el que sigue$"),
-     "NextEpisodeIntent", None),
+    (re.compile(r"^(?:ponlo|pongalo|ponla|pongala|ponmelo|cambialo|cambiala)\s+(?:en|a)\s+(?P<language>\w+)$"),
+     "AudioLanguageIntent", None),
+    (re.compile(r"^(?:salta|salte|saltate|saltar|brinca|brinque|brincate|omite|omita|quita|quite)(?:\s+(?:la|el))?\s+"
+                r"(?:intro|introduccion|entrada|presentacion|opening|resumen)$"), "SkipIntroIntent", None),
+    (re.compile(r"^(?:(?:pon|ponga|pasa al|pase al)\s+)?(?:el\s+)?siguiente(?:\s+(?:episodio|capitulo))?$"
+                r"|^(?:(?:pon|ponga)\s+)?el que sigue$"), "NextEpisodeIntent", None),
     (re.compile(r"^(?:pon|ponga|la)\s+siguiente\s+cancion$|^siguiente\s+cancion$|^cambia(?:\s+la)?\s+cancion$"),
      "NextEpisodeIntent", None),
     (re.compile(r"^(?:pausa|pon pausa a|deten)\s+la\s+musica$"), "PauseIntent", None),
@@ -173,7 +192,7 @@ _EPISODE_ONLY = [
 ]
 
 
-NUMERIC = {"VolumeIntent", "SeekIntent"}  # «pon el volumen a cincuenta»: el número en palabras
+NUMERIC = {"VolumeIntent", "SeekIntent", "PlayEpisodeIntent"}  # «pon el volumen a cincuenta»: el número en palabras
 
 
 def parse_text(text: str) -> tuple[str, dict[str, str]] | None:
@@ -231,6 +250,8 @@ class VoiceController:
             return VoiceResult("¿Qué juego quieres abrir?", ok=False)
         if (episode := episode_request(name)) is not None:  # "pon Los Simpson temporada 5 episodio 3"
             return self._watch_episode_intent(episode)
+        if (vague := self._vague(name)) is not None:  # «pon la telenovela», «pon una película»
+            return vague
         cloud = CLOUD.search(normalize(name))
         if cloud:  # "abre Fortnite en la nube / en GeForce NOW"
             name = normalize(name)[:cloud.start()]
@@ -284,8 +305,8 @@ class VoiceController:
             return VoiceResult("¿Qué quieres ver?", ok=False)
         if (episode := episode_request(query)) is not None:  # "quiero ver Los Simpson temporada 5…"
             return self._watch_episode_intent(episode)
-        if normalize(query) in VAGUE_MEDIA:  # "quiero ver una película": no es un título
-            return self._open_stremio_intent({})
+        if (vague := self._vague(query)) is not None:  # "quiero ver una película": no es un título
+            return vague
         # Si ya está en tu biblioteca de Stremio, se abre directo.
         item = self.catalog.find(query, source="stremio")
         if item is not None:
@@ -299,6 +320,17 @@ class VoiceController:
             return exact
         # Varias opciones: la búsqueda de Orbital ya escrita, para elegir con el mando.
         return VoiceResult(f"Buscando {query}. Elige con el control.", events=[self._show_view({"buscar": query}, f"Buscando «{query}»")])
+
+    def _vague(self, name: str) -> VoiceResult | None:
+        """No es un título: «la telenovela» es lo que estabas viendo; «una película», a elegir."""
+        said = normalize(name)
+        if said in THE_USUAL:
+            if self.catalog.stremio_linked and self.catalog.grouped_items("continue"):
+                return self._continue_watching_intent({})
+            return VoiceResult("¿Cuál? Dime el nombre, por ejemplo: quiero ver La Rosa de Guadalupe.", ok=False)
+        if said in VAGUE_MEDIA:
+            return self._open_stremio_intent({})
+        return None
 
     def _ask_which(self, query: str, options: list[dict]) -> VoiceResult:
         """Varias con el mismo nombre (Dune de 1984 y de 2021): se pregunta en pantalla, como una
@@ -528,7 +560,7 @@ class VoiceController:
             return idle
         asked = slots.get("language", "")
         if asked and self._language(slots) is None:
-            return VoiceResult(f"No tengo subtítulos en {asked}; puedo ponerlos en inglés o en español.", ok=False,
+            return VoiceResult(f"No conozco el idioma {asked}. Prueba con español, inglés, francés o portugués.", ok=False,
                                events=[NO_TOAST])
         lang = self._language(slots) or self.catalog.config.stremio.subtitles or "en"
         name = LANGUAGE_NAMES.get(lang, lang)
@@ -547,7 +579,7 @@ class VoiceController:
             return idle
         lang = self._language(slots)
         if lang is None:
-            return VoiceResult("¿En qué idioma? Inglés o español.", ok=False)
+            return VoiceResult("¿En qué idioma? Por ejemplo: pon el audio en español.", ok=False)
         name = LANGUAGE_NAMES.get(lang, lang)
         if self.catalog.player.select_language("audio", lang):
             return VoiceResult(f"Audio en {name}.", events=[NO_TOAST])
@@ -561,6 +593,35 @@ class VoiceController:
         label = self.catalog.watch.play_next_episode()
         if label is None:
             return VoiceResult("No hay un episodio siguiente.", ok=False, events=[NO_TOAST])
+        return VoiceResult(f"Poniendo {label}.")
+
+    def _skip_intro_intent(self, slots: dict) -> VoiceResult:
+        """«Salta la intro»: lo mismo que A en «Saltar intro» (si el video marca dónde termina)."""
+        if (idle := self._playing()) is not None:
+            return idle
+        label = self.catalog.player.skip_intro()
+        if label is None:
+            return VoiceResult("Este video no marca dónde termina la intro. Puedes decir: adelanta noventa segundos.",
+                               ok=False, events=[NO_TOAST])
+        return VoiceResult("Listo, me salté el resumen." if "resumen" in label else "Listo, me salté la intro.",
+                           events=[NO_TOAST])
+
+    def _play_episode_intent(self, slots: dict) -> VoiceResult:
+        """«Pon el capítulo 5»: de la serie que estás viendo (de la temporada en la que vas)."""
+        try:
+            episode = int(float(words_to_numbers(normalize(str(slots.get("episode", ""))))))
+            season = int(float(words_to_numbers(normalize(str(slots["season"]))))) if slots.get("season") else None
+        except ValueError:
+            return VoiceResult("¿Qué episodio?", ok=False)
+        if self._playing() is not None:
+            return VoiceResult("¿De qué serie? Por ejemplo: pon Los Simpson temporada 1 episodio 5.", ok=False)
+        label = self.catalog.watch.play_episode_number(episode, season)
+        if label is None:
+            return VoiceResult("Eso funciona con una serie. Di, por ejemplo: pon Los Simpson temporada 1 episodio 5.",
+                               ok=False, events=[NO_TOAST])
+        if not label:
+            where = f"la temporada {season}" if season else "esta temporada"
+            return VoiceResult(f"No encontré el episodio {episode} en {where}.", ok=False, events=[NO_TOAST])
         return VoiceResult(f"Poniendo {label}.")
 
     def _previous_episode_intent(self, slots: dict) -> VoiceResult:

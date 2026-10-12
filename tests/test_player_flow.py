@@ -152,6 +152,17 @@ def test_skip_intro_from_chapters():
     assert player.chapter_kind("End Credits") == "credits" and player.chapter_kind("Part B") is None
 
 
+def test_skip_intro_by_voice_without_the_card():
+    """«Alexa, salta la intro»: también cuando la tarjeta ya se fue; sin capítulos de intro, None."""
+    chapters = [{"time": 0, "title": "Opening"}, {"time": 90, "title": "Part A"}]
+    p, mpv = series_player(**{"time-pos": 20.0, "chapter-list": chapters, "chapter": 0})
+    p.tick(p.segment, 0, False)
+    p._hide_card()
+    assert p.skip_intro() == "Saltar intro" and ("seek", 90.0, "absolute") in mpv.sent
+    mpv.props["chapter"] = 1
+    assert p.skip_intro() is None
+
+
 def test_panels_subtitle_size_and_more():
     p, mpv = make_player()
     p.sources_provider = lambda meta: [{"id": 3, "label": "1080p · Al instante", "current": True},

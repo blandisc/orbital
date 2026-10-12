@@ -4,13 +4,17 @@
  * Jugar, "Con Eden" y Opciones ya están en los botones del héroe con su glifo, así que el
  * pie no los repite: solo enseña cómo moverse y cómo volver.
  */
-export function footerHints(glyphs, { sheetOpen = false, adjustable = false, atHome = true, longRow = false, running = null, rows = 2 } = {}) {
+export function footerHints(glyphs, { sheetOpen = false, adjustable = false, atHome = true, longRow = false, running = null, rows = 2,
+  primary = null, alt = null } = {}) {
   if (sheetOpen) {
     // En un ajuste (‹ Grande ›) lo que se hace es cambiarlo: ◀ ▶ (A también pasa al siguiente).
     return [adjustable ? { glyph: glyphs.rows === "↑↓" ? "← →" : "◀ ▶", label: "Cambiar" } : { glyph: glyphs.select, label: "Elegir" },
       { glyph: glyphs.back, label: "Atrás" }];
   }
   return [
+    // Lo que hace A con la tarjeta enfocada («Continuar», «Ver»…) y X (su ficha): como en Inicio y Juegos.
+    primary && { glyph: glyphs.select, label: primary },
+    alt && glyphs.alt && { glyph: glyphs.alt, label: alt, secondary: true },
     rows > 1 && { glyph: glyphs.rows, label: "Cambiar de fila" },
     glyphs.search && { glyph: glyphs.search, label: "Buscar", secondary: true },
     glyphs.section && { glyph: glyphs.section, label: "Sección", secondary: true },

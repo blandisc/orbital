@@ -68,7 +68,7 @@ LANG_NAMES = {"en": "Inglés", "es": "Español", "fr": "Francés", "it": "Italia
               "ro": "Rumano", "bg": "Búlgaro", "hr": "Croata", "sr": "Serbio", "he": "Hebreo", "ar": "Árabe",
               "th": "Tailandés", "vi": "Vietnamita", "id": "Indonesio", "lt": "Lituano", "lv": "Letón", "et": "Estonio"}
 # ISO 639-2, como etiquetan los addons de subtítulos (OpenSubtitles: "eng", "spa"…).
-LANG_CODES = {"en": "eng", "es": "spa", "fr": "fre", "it": "ita", "de": "ger", "pt": "por", "ja": "jpn"}
+LANG_CODES = {"en": "eng", "es": "spa", "fr": "fre", "it": "ita", "de": "ger", "pt": "por", "ja": "jpn", "ko": "kor"}
 SIZE = re.compile(r"💾\s*([\d.,]+)\s*(TB|GB|MB|KB)", re.I)
 SEEDERS = re.compile(r"👤\s*(\d+)")
 SITE = re.compile(r"⚙️\s*([^\n]+)")

@@ -9,6 +9,8 @@ import { switchMenu } from "../core/menus.js";
 import { sound } from "../core/sound.js";
 import { gameInTheWay, takeLaunchLock } from "../core/store.js";
 
+const SLOW = Symbol("lento"); // el servidor no contestó a tiempo (sigue abriendo)
+
 export function createLaunching({ state, ui, current, openMenu, openTitle, openSearch, pollStatus }) {
   /**
    * Ver algo. Sin `source`, Orbital elige la recomendada y arranca (sin lista de fuentes); con
@@ -35,11 +37,20 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     state.launchingTitle = title;
     ui.launch.keep(40_000);
     try {
-      // Si el servidor no contesta en 40 s, se avisa y se suelta (antes la pantalla se iba sola y A quedaba bloqueado).
-      const res = await Promise.race([
-        api.stremioPlay({ kind, id, video_id: videoId, title, source, keep, from_start: fromStart }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error(`${title} tarda demasiado en abrir. Revisa tu conexión e inténtalo de nuevo.`)), 40_000)),
-      ]);
+      // Si el servidor no contesta en 40 s, la pantalla se va y se dice la verdad: sigue abriéndose y saldrá
+      // solo (antes decía «inténtalo de nuevo» y, si lo hacías, se abrían dos). A sigue diciendo «Todavía
+      // estoy abriendo…» hasta que conteste (o 3 min, por si nunca lo hace).
+      const request = api.stremioPlay({ kind, id, video_id: videoId, title, source, keep, from_start: fromStart });
+      const res = await Promise.race([request, new Promise((resolve) => setTimeout(() => resolve(SLOW), 40_000))]);
+      if (res === SLOW) {
+        ui.launch.hide();
+        ui.toast.show(`${title} está tardando. Se abrirá solo en cuanto esté listo.`);
+        const release = () => { if (state.launchingTitle === title) { state.launchingTitle = null; state.launchLockedUntil = 0; } };
+        const giveUp = setTimeout(release, 180_000);
+        request.then(() => pollStatus(), (err) => { sound.play("error"); ui.toast.show(err.message, { error: true }); })
+          .finally(() => { clearTimeout(giveUp); release(); });
+        return;
+      }
       state.launchingTitle = null;
       state.launchLockedUntil = Date.now() + 3000;
       if (res.label) ui.launch.status("Conectando", res.label);

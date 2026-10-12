@@ -40,7 +40,8 @@ TIMEOUT = 6  # s en TOTAL para hablar con la consola: Alexa corta a los ~8 s
 MAX_SPEECH = 600  # Alexa acepta hasta 8000 caracteres; nadie quiere oír tanto
 
 HELP = ("Puedes decir: abre Hollow Knight, pon Interstellar, sigue viendo, pausa, "
-        "adelanta cinco minutos, pon subtítulos en español, siguiente episodio o cierra el juego.")
+        "adelanta cinco minutos, salta la intro, pon subtítulos en español, pon el capítulo cinco, "
+        "siguiente episodio o cierra el juego.")
 # Intents de Amazon que se pueden decir con la skill abierta ("pausa", "continúa", "siguiente").
 BUILT_IN = {"AMAZON.PauseIntent": "PauseIntent", "AMAZON.ResumeIntent": "ResumeIntent",
             "AMAZON.NextIntent": "NextEpisodeIntent", "AMAZON.PreviousIntent": "PreviousEpisodeIntent"}

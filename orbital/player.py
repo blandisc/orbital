@@ -427,6 +427,24 @@ class OrbitalPlayer(PlayerScreen):
                 label = "Saltar resumen" if RECAP.search(title) else "Saltar intro"
                 self._show_card({"kind": "skip", "to": target, "until": now + SKIP_VISIBLE, "label": label})
 
+    def skip_intro(self) -> str | None:
+        """«Salta la intro» por voz: la tarjeta si está a la vista, o la intro en la que vas. None si el
+        video no marca la intro (sin capítulos no se adivina)."""
+        card = self._card
+        if card and card["kind"] == "skip":
+            self._hide_card()
+            self.mpv.command("seek", card["to"], "absolute")
+            return card["label"]
+        segment = self.segment
+        if segment is None or not segment.chapters:
+            return None
+        index, chapter = self._chapter_now(segment)
+        if chapter is None or chapter_kind(chapter.get("title", "")) != "intro" or index + 1 >= len(segment.chapters):
+            return None
+        segment.skip_offered.add(index)
+        self.mpv.command("seek", float(segment.chapters[index + 1]["time"]), "absolute")
+        return "Saltar resumen" if RECAP.search(chapter.get("title", "")) else "Saltar intro"
+
     def _in_credits(self, segment: Segment) -> bool:
         _, chapter = self._chapter_now(segment)
         return bool(chapter and chapter_kind(chapter.get("title", "")) == "credits")

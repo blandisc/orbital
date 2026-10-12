@@ -235,9 +235,13 @@ los Echo de tu cuenta sin publicarla.
 | "Alexa, pídele a mi consola que siga viendo" / "…que continúe The Office" | Retoma donde te quedaste |
 | "Alexa, pídele a mi consola que pause" / "…que reanude el video" | Pausa / sigue |
 | "Alexa, pídele a mi consola que adelante 5 minutos" / "…que regrese un minuto" | Adelanta / regresa |
+| "Alexa, pídele a mi consola que salte la intro" / "…que salte el resumen" | Salta la intro (si el video marca dónde termina; si no, te dice que pidas «adelanta noventa segundos») |
 | "Alexa, pídele a mi consola que ponga subtítulos en español" / "…que quite los subtítulos" | Subtítulos (los del video o, si no trae, los de tu addon) |
-| "Alexa, pídele a mi consola que cambie el audio a inglés" | Audio en otro idioma, si el video lo trae |
-| "Alexa, pídele a mi consola que ponga el siguiente episodio" | Siguiente episodio |
+| "Alexa, pídele a mi consola que cambie el audio a inglés" / "…que cambie el idioma a castellano" | Audio en otro idioma, si el video lo trae (español, inglés, francés, portugués, italiano, alemán, japonés, coreano) |
+| "Alexa, pídele a mi consola que ponga el siguiente episodio" / "…el episodio anterior" | Siguiente / anterior episodio |
+| "Alexa, pídele a mi consola que ponga el capítulo 5" / "…el episodio 3 de la temporada 2" | Ese episodio de la serie que estás viendo |
+| "Alexa, pídele a mi consola que ponga la telenovela" / "…mi serie" | Lo que estabas viendo |
+| "Alexa, pídele a mi consola que silencie la tele" / "…que quite el silencio" | Sin sonido / con sonido |
 | "Alexa, pídele a mi consola que cierre el juego" | Cierra el emulador o el video en curso |
 | "Alexa, pídele a mi consola que salga al escritorio" / "…que muestre la consola" | Sale / vuelve |
 | "Alexa, dile a mi consola que se mueva a la derecha" | Mueve la selección |
