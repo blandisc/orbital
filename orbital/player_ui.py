@@ -404,7 +404,7 @@ def hud_ass(hud: Hud) -> str:
     if hud.detail:
         lines.append(text(MARGIN, 772, esc(fit(hud.detail, 24, min(1300, W - 2 * MARGIN), "semi")), 24, SOFT, weight="semi"))
     lines.append(text(MARGIN, 806, esc(fit(hud.title, 48, min(1500, W - 2 * MARGIN), "bold")), 48, weight="bold"))
-    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Fuentes"), ("B", "Mantén: salir")]
+    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes"), ("B", "Mantén: salir")]
     lines += [bar, _times(hud, BAR_Y + 28),
               # A la derecha van los botones (~850): la línea de pistas cabe en lo que queda (4:3 incluido).
               text(MARGIN, 1022, esc(fit(info_line(hud), 22, max(300, min(900, W - 2 * MARGIN - 900)), "semi")), 22, MUTED,
@@ -440,7 +440,7 @@ def paused_ass(hud: Hud) -> str:
         lines.append(text(MARGIN, y + 4, esc(line), 26, SOFT))
         y += 40
     y += 30
-    lines.append(buttons([("A", "Seguir"), ("X", "Audio y subtítulos"), ("Y", "Fuentes")], MARGIN, y))
+    lines.append(buttons([("A", "Seguir"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes")], MARGIN, y))
     bar, _ = progress_bar(hud)
     more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), *([("LT RT", "Episodio")] if hud.series else []),
             ("B", "Mantén: salir")]
@@ -512,8 +512,8 @@ def panel_ass(panel: Panel, *, playing: bool = True) -> str:
                   _shape(f"m {MARGIN + 24} 77 l {MARGIN + 38} 87 l {MARGIN + 24} 97", TEXT),
                   text(MARGIN + 50, 87, label, 22, weight="semi", align=4)]
     n = len(panel.columns)
-    # Fuentes más ancha (idioma y calidad a la izquierda, velocidad y tamaño a la derecha); el resto igual.
-    weights = [1.5 if column.key == "source" else 1.0 for column in panel.columns]
+    # Fuentes y Episodios más anchas (el detalle de cada fuente, el nombre de cada episodio); Reproducción, angosta.
+    weights = [{"source": 1.4, "episodes": 1.35, "playback": .75}.get(column.key, 1.0) for column in panel.columns]
     unit = min(520, (W - 2 * MARGIN - 64 * (n - 1)) / max(1.0, sum(weights)))
     x = MARGIN
     for c, column in enumerate(panel.columns):
@@ -597,16 +597,17 @@ def tracks_panel(tracks: list[dict], sub_scale: float, extra_subs: list[dict] | 
 
 def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None = None,
                back_to: float | None = None) -> Panel:
-    """Y: Fuentes (primero: para eso es Y) · Episodios (series) · Reproducción (Desde el principio)."""
+    """Y: Episodios (series) · Fuentes · Reproducción (Desde el principio / Volver a…)."""
     columns = []
-    if sources:
-        columns.append(_column("source", [{"label": s["label"], "hint": s.get("hint", ""), "action": ("source", s["id"]),
-                                           "current": bool(s.get("current"))} for s in sources]))
+    # Episodios primero (en una serie es lo que más se busca), luego Fuentes y Reproducción.
     if episodes:
         columns.append(_column("episodes", [
             {"label": e["label"], "action": ("episode", e["id"]), "current": bool(e.get("current")),
              "hint": "Viendo" if e.get("current") else e.get("hint", ""), "progress": e.get("progress")}
             for e in episodes]))
+    if sources:
+        columns.append(_column("source", [{"label": s["label"], "hint": s.get("hint", ""), "action": ("source", s["id"]),
+                                           "current": bool(s.get("current"))} for s in sources]))
     playback = [{"label": "Desde el principio", "action": ("restart", None), "current": False}]
     if back_to:  # empezaste desde el principio sin querer: volver a donde ibas
         playback.insert(0, {"label": f"Volver a {clock(back_to)}", "action": ("resume-at", back_to), "current": False})
