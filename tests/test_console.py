@@ -228,3 +228,18 @@ def test_emulator_that_dies_on_start_is_retried_once(library, monkeypatch):
     _time.sleep(2)
     assert len(library.launcher.ran) == 2
     assert [e for e in events if e["type"] == "closed"][-1]["crashed"]
+
+
+def test_kiosk_allows_the_microphone_only_for_orbital(tmp_path):
+    from orbital.kiosk import allow_microphone
+
+    prefs = tmp_path / "Default" / "Preferences"
+    assert allow_microphone(tmp_path, "http://127.0.0.1:8710/")  # sin perfil todavía: se crea
+    mic = json.loads(prefs.read_text())["profile"]["content_settings"]["exceptions"]["media_stream_mic"]
+    assert list(mic) == ["http://127.0.0.1:8710,*"] and mic["http://127.0.0.1:8710,*"]["setting"] == 1
+    data = json.loads(prefs.read_text())
+    data["profile"]["exit_type"] = "Crashed"  # lo demás del perfil se conserva
+    prefs.write_text(json.dumps(data))
+    assert allow_microphone(tmp_path, "http://127.0.0.1:8710/?seccion=foryou")
+    assert json.loads(prefs.read_text())["profile"]["exit_type"] == "Crashed"
+    assert not allow_microphone(tmp_path, "no-es-una-url")

@@ -278,8 +278,11 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     if (action === "alt") { press("delete"); return true; }
     if (action === "options") { press("space"); return true; }
     if (action === "menu") { dictate(); return true; }
-    if (action === "pageleft" || action === "pageright") { // LT/RT: saltar entre teclado y resultados
-      zone = action === "pageleft" && items.length ? "results" : "keys";
+    // Atajo para buscar: RT (AvPág) busca ya desde cualquier tecla y salta a los resultados; LT
+    // (RePág) regresa al teclado. Antes había que llegar con la cruceta hasta la tecla «Buscar».
+    if (action === "pageright") { onMove?.(); goToResults(); return true; }
+    if (action === "pageleft") {
+      zone = "keys";
       onMove?.();
       render();
       return true;
@@ -330,8 +333,10 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       dictateGlyph = g.menu || "";
       keyboard.setLayout(layout(shownCleared, dictateGlyph));
     }
+    const [, go] = String(pad?.page || "").split(" "); // RT con mando, AvPág con teclado
     return [
       { glyph: g.select, label: zone === "results" ? "Abrir" : "Escribir" },
+      zone === "keys" && go && { glyph: go, label: "Buscar" },
       g.menu && { glyph: g.menu, label: "Dictar" }, // otra vez: deja de escuchar
       { glyph: g.back, label: "Atrás", end: true },
     ].filter(Boolean);
