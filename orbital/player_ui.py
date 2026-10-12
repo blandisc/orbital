@@ -275,6 +275,11 @@ def glyph(x: float, cy: float, label: str, size: int = 34) -> tuple[str, float]:
     return "\n".join(parts), w
 
 
+def hints_width(items: list[tuple[str, str]], size: int = 22) -> float:
+    """Lo que mide una fila de pistas (para que el texto de al lado no se encime)."""
+    return sum(glyph(0, 0, k)[1] + 12 + text_width(v, size, "semi") for k, v in items) + 36 * max(0, len(items) - 1)
+
+
 def hints(items: list[tuple[str, str]], y: float, *, right: float | None = None, left: float | None = None,
           size: int = 22) -> str:
     """Pistas «A Pausa  X Audio y subtítulos…» en una fila, alineadas a la derecha o a la izquierda."""
@@ -376,7 +381,7 @@ def hud_ass(hud: Hud) -> str:
     """Lo que se ve al tocar un botón (reproduciendo), en pausa o adelantando."""
     if hud.paused and not hud.seeking:
         return paused_ass(hud)
-    lines = [gradient(560, H, 255, 40)]
+    lines = [gradient(470, H, 255, 34)]
     bar, knob = progress_bar(hud)
     if hud.seeking:  # adelantando: solo la barra y, sobre el punto, a dónde vas
         center = max(MARGIN + 220, min(W - MARGIN - 220, knob if knob is not None else W / 2))
@@ -393,11 +398,11 @@ def hud_ass(hud: Hud) -> str:
         lines += [bar, _times(hud, BAR_Y + 28),
                   hints([("◀ ▶", "Mantén: más rápido"), ("A", "Pausa")], 1022, right=W - MARGIN)]
         return "\n".join(lines)
-    lines.append(gradient(0, 200, 140, 255, 14))
+    lines.append(gradient(0, 200, 100, 255, 14))
     if hud.now:
         lines.append(text(W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
     if hud.detail:
-        lines.append(text(MARGIN, 772, esc(fit(hud.detail, 24, min(1300, W - 2 * MARGIN), "semi")), 24, MUTED, weight="semi"))
+        lines.append(text(MARGIN, 772, esc(fit(hud.detail, 24, min(1300, W - 2 * MARGIN), "semi")), 24, SOFT, weight="semi"))
     lines.append(text(MARGIN, 806, esc(fit(hud.title, 48, min(1500, W - 2 * MARGIN), "bold")), 48, weight="bold"))
     items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Fuentes"), ("B", "Mantén: salir")]
     lines += [bar, _times(hud, BAR_Y + 28),
@@ -437,8 +442,12 @@ def paused_ass(hud: Hud) -> str:
     y += 30
     lines.append(buttons([("A", "Seguir"), ("X", "Audio y subtítulos"), ("Y", "Fuentes")], MARGIN, y))
     bar, _ = progress_bar(hud)
+    more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), *([("LT RT", "Episodio")] if hud.series else []),
+            ("B", "Mantén: salir")]
+    room = max(260, W - 2 * MARGIN - hints_width(more) - 48)
     lines += [bar, _times(hud, BAR_Y + 28),
-              text(MARGIN, 1022, esc(fit(info_line(hud), 22, 1200, "semi")), 22, MUTED, weight="semi", align=4)]
+              text(MARGIN, 1022, esc(fit(info_line(hud), 22, min(1200, room), "semi")), 22, MUTED, weight="semi", align=4),
+              hints(more, 1022, right=W - MARGIN)]
     return "\n".join(lines)
 
 
@@ -503,9 +512,14 @@ def panel_ass(panel: Panel, *, playing: bool = True) -> str:
                   _shape(f"m {MARGIN + 24} 77 l {MARGIN + 38} 87 l {MARGIN + 24} 97", TEXT),
                   text(MARGIN + 50, 87, label, 22, weight="semi", align=4)]
     n = len(panel.columns)
-    col_w = min(520, (W - 2 * MARGIN - 64 * (n - 1)) / max(1, n))
+    # Fuentes más ancha (idioma y calidad a la izquierda, velocidad y tamaño a la derecha); el resto igual.
+    weights = [1.5 if column.key == "source" else 1.0 for column in panel.columns]
+    unit = min(520, (W - 2 * MARGIN - 64 * (n - 1)) / max(1.0, sum(weights)))
+    x = MARGIN
     for c, column in enumerate(panel.columns):
-        x = MARGIN + c * (col_w + 64)
+        col_w = unit * weights[c]
+        if c:
+            x += unit * weights[c - 1] + 64
         active = c == panel.col
         lines.append(text(x + 18, 600, esc(TAB_NAMES.get(column.key, column.key)), 22, TEXT if active else MUTED,
                           weight="semi"))
@@ -581,18 +595,22 @@ def tracks_panel(tracks: list[dict], sub_scale: float, extra_subs: list[dict] | 
     return Panel("tracks", columns, next((i for i, c in enumerate(columns) if c.key == focus), 0))
 
 
-def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None = None) -> Panel:
+def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None = None,
+               back_to: float | None = None) -> Panel:
     """Y: Fuentes (primero: para eso es Y) · Episodios (series) · Reproducción (Desde el principio)."""
     columns = []
     if sources:
-        columns.append(_column("source", [{"label": s["label"], "action": ("source", s["id"]), "current": bool(s.get("current"))}
-                                          for s in sources]))
+        columns.append(_column("source", [{"label": s["label"], "hint": s.get("hint", ""), "action": ("source", s["id"]),
+                                           "current": bool(s.get("current"))} for s in sources]))
     if episodes:
         columns.append(_column("episodes", [
             {"label": e["label"], "action": ("episode", e["id"]), "current": bool(e.get("current")),
              "hint": "Viendo" if e.get("current") else e.get("hint", ""), "progress": e.get("progress")}
             for e in episodes]))
-    columns.append(Column("playback", [{"label": "Desde el principio", "action": ("restart", None), "current": False}]))
+    playback = [{"label": "Desde el principio", "action": ("restart", None), "current": False}]
+    if back_to:  # empezaste desde el principio sin querer: volver a donde ibas
+        playback.insert(0, {"label": f"Volver a {clock(back_to)}", "action": ("resume-at", back_to), "current": False})
+    columns.append(Column("playback", playback))
     return Panel("more", columns, 0)
 
 
@@ -627,19 +645,24 @@ def upnext_ass(title: str, eyebrow: str = "", *, seconds: int | None = None, pro
     return "\n".join(lines)
 
 
-def toast_ass(message: str) -> str:
+# Los avisos van debajo de la hora (antes, a la misma altura, la tapaban: se leía «21:0» a través).
+NOTICE_Y = 124  # avisos, volumen y «Salir»
+BUFFER_Y = 196  # «Cargando… 40 %»: su propia altura, no borra el aviso que estaba
+
+
+def toast_ass(message: str, top: float = NOTICE_Y) -> str:
     """Aviso corto arriba a la derecha («Subtítulos: Español», «Cargando… 40 %»)."""
     message = fit(message, 24, W - 2 * MARGIN - 44, "semi")
     w = text_width(message, 24, "semi") + 44
     x = W - MARGIN - w
-    return "\n".join([rrect(x, 64, w, 54, 27, PANEL, "30"), text(x + 22, 91, esc(message), 24, weight="semi", align=4)])
+    return "\n".join([rrect(x, top, w, 54, 27, PANEL, "30"), text(x + 22, top + 27, esc(message), 24, weight="semi", align=4)])
 
 
 def quit_hold_ass(progress: float) -> str:
     """B mantenido: el botón B arriba a la derecha con un anillo fino que se llena (y «Salir» al lado).
     Sin caja: discreto sobre el video."""
     progress = max(0.0, min(1.0, progress)) if math.isfinite(progress) else 0.0
-    cx, cy, r = W - MARGIN - 30, 92, 30
+    cx, cy, r = W - MARGIN - 30, BUFFER_Y + 28, 30  # debajo del aviso, no encima
     shape, gw = glyph(cx - 20, cy, "B", 40)
     return "\n".join([circle(cx, cy, r + 6, PANEL, "70", blur=6),
                       ring(cx, cy, r, 3, 1.0, TEXT, "C8"), ring(cx, cy, r, 3, progress, TEXT), shape,
@@ -657,10 +680,12 @@ def volume_ass(volume: float) -> str:
     w = 360
     x = W - MARGIN - w
     bar_x, bar_w = x + 70, 210
-    speaker = _shape(f"m {x + 24} 84 l {x + 32} 84 l {x + 42} 75 l {x + 42} 107 l {x + 32} 98 l {x + 24} 98", TEXT)
-    return "\n".join([rrect(x, 64, w, 54, 27, PANEL, "30"), speaker,
-                      rrect(bar_x, 87, bar_w, 8, 4, TEXT, "C0"), rrect(bar_x, 87, max(8, bar_w * level / 100), 8, 4, TEXT),
-                      text(x + w - 22, 91, f"{int(level)}", 24, weight="semi", align=6)])
+    y = NOTICE_Y
+    speaker = _shape(f"m {x + 24} {y + 20} l {x + 32} {y + 20} l {x + 42} {y + 11} l {x + 42} {y + 43} "
+                     f"l {x + 32} {y + 34} l {x + 24} {y + 34}", TEXT)
+    return "\n".join([rrect(x, y, w, 54, 27, PANEL, "30"), speaker,
+                      rrect(bar_x, y + 23, bar_w, 8, 4, TEXT, "C0"), rrect(bar_x, y + 23, max(8, bar_w * level / 100), 8, 4, TEXT),
+                      text(x + w - 22, y + 27, f"{int(level)}", 24, weight="semi", align=6)])
 
 
 def ends_at(position: float | None, duration: float | None, now: float | None = None) -> str:

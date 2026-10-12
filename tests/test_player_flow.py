@@ -21,10 +21,14 @@ def test_b_hides_the_controls_and_holding_it_leaves():
     p, mpv = make_player()
     p.press("a")  # pausa: la barra se queda
     assert mpv.overlays[1]
-    p.press("b")  # oculta los controles y empieza el anillo de «Salir»
-    assert mpv.overlays[1] is None and "Salir" in mpv.overlays[3] and ("quit",) not in mpv.sent
+    p.press("b")  # en pausa el «En pausa» se queda (si no, parecía colgado); empieza el anillo de «Salir»
+    assert mpv.overlays[1] and "Salir" in mpv.overlays[6] and ("quit",) not in mpv.sent
     p.press("b-up")  # soltaste antes: no sale
-    assert mpv.overlays[3] is None and ("quit",) not in mpv.sent
+    assert mpv.overlays[6] is None and ("quit",) not in mpv.sent
+    p.press("a")  # reproduciendo, B sí oculta los controles
+    p.press("b")
+    assert mpv.overlays[1] is None
+    p.press("b-up")
     p.press("b")
     p.remote._repeats["b"] = 3  # sigue mantenido…
     p.press("b")

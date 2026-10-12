@@ -95,7 +95,7 @@ def test_seek_and_volume():
     p.press("left")
     p.press("up")
     assert ("seek", 60, "relative") in mpv.sent and ("seek", -10, "relative") in mpv.sent
-    assert ("set_property", "volume", 85) in mpv.sent and "}85" in mpv.overlays[3]  # el volumen que se pidió (80 + 5), con su barra
+    assert ("set_property", "volume", 85) in mpv.sent and "}85" in mpv.overlays[5]  # el volumen que se pidió (80 + 5), con su barra
     assert "−10 s" in mpv.overlays[1]  # adelantando: la burbuja dice cuánto
 
 

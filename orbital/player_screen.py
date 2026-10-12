@@ -171,13 +171,21 @@ class PlayerScreen:
     def toast(self, text: str, seconds: float = 1.6) -> None:
         self._show_notice(player_ui.toast_ass(text), seconds)
 
-    def _show_notice(self, ass: str, seconds: float) -> None:
-        self._overlay(3, ass)
-        if self._toast_timer:
-            self._toast_timer.cancel()
-        self._toast_timer = threading.Timer(seconds, lambda: self._overlay(3, None))
-        self._toast_timer.daemon = True
-        self._toast_timer.start()
+    # Cada aviso en su capa (antes compartían la 3 y se borraban entre sí: el volumen se comía «Salir», y el
+    # fin del «Cargando…» borraba un aviso útil al que aún le quedaban segundos).
+    TOAST, VOLUME, HOLD, BUFFER = 3, 5, 6, 7
+
+    def _show_notice(self, ass: str, seconds: float, layer: int = 3) -> None:
+        self._overlay(layer, ass)
+        timers = self.__dict__.setdefault("_notice_timers", {})
+        if timers.get(layer):
+            timers[layer].cancel()
+        timer = threading.Timer(seconds, lambda: self._overlay(layer, None))
+        timer.daemon = True
+        timer.start()
+        timers[layer] = timer
+        if layer == self.TOAST:
+            self._toast_timer = timer
 
     # --- paneles de columnas: X (Audio · Subtítulos · Tamaño) y Y (Más) ---------------------------
     def open_tracks(self, focus: str = "audio") -> None:
@@ -193,7 +201,8 @@ class PlayerScreen:
         episodes = self._safe(self.episodes_provider, meta) if self.episodes_provider and meta.get("kind") == "series" else None
         sources = self._safe(self.sources_provider, meta) if self.sources_provider and self.current else None
         if still_wanted() and self.current is not None:  # mientras buscaba pulsaste otra cosa: no aparece de golpe
-            self._open_panel(player_ui.more_panel(episodes=episodes or None, sources=sources or None))
+            self._open_panel(player_ui.more_panel(episodes=episodes or None, sources=sources or None,
+                                                  back_to=getattr(self, "_restart_from", None)))
 
     def _open_more_soon(self) -> None:
         """Y: las fuentes se buscan por internet (hasta segundos). Se buscan aparte: el mando (el mismo
@@ -251,8 +260,16 @@ class PlayerScreen:
             self.toast("Buscando subtítulos…", 3)
             threading.Thread(target=self._fetch_subs, args=(value,), daemon=True).start()
         elif prop == "restart":
+            position = self.mpv.get("time-pos")
+            if isinstance(position, (int, float)) and position > 30:
+                self._restart_from = float(position)  # Y › «Volver a 32:10», por si fue sin querer
+                self.toast(f"Desde el principio · Y › Volver a {player_ui.clock(position)}", 4)
             self.mpv.command("seek", 0, "absolute")
             self.show_hud()
+        elif prop == "resume-at":
+            self._restart_from = None
+            self.mpv.command("seek", float(value), "absolute")
+            self.show_hud(position=float(value))
         elif prop == "episode":
             if option.get("current") or not self.on_play_episode:
                 return
@@ -318,7 +335,7 @@ class PlayerScreen:
         if button == "b-up":
             if getattr(self, "_quit_hold", None) is not None:
                 self._quit_hold = None
-                self._overlay(3, None)  # soltaste antes de llenarse: no pasa nada
+                self._overlay(self.HOLD, None)  # soltaste antes de llenarse: no pasa nada
             return
         if button == "b" and self.remote.held("b"):
             self._hold_to_quit()
@@ -351,10 +368,11 @@ class PlayerScreen:
             self.show_hud(paused=paused)
         elif button == "b":
             # B oculta los controles; para salir se MANTIENE B (la barra se llena): sin salidas sin querer.
-            if self._hud_visible:
+            # En pausa no se oculta nada: sin el «En pausa», el cuadro congelado parecía un video colgado.
+            if self._hud_visible and not self._value("pause"):
                 self.hide_hud()
             self._quit_hold = time.monotonic()
-            self._overlay(3, player_ui.quit_hold_ass(0))
+            self._overlay(self.HOLD, player_ui.quit_hold_ass(0))
         elif button == "x":
             self.open_tracks()
         elif button == "y":
@@ -383,7 +401,7 @@ class PlayerScreen:
                 volume = max(0, min(top, before + (5 if button == "up" else -5)))
                 self.mpv.command("set_property", "volume", volume)
                 self._ask("volume", volume)
-                self._show_notice(player_ui.volume_ass(volume), 1.6)
+                self._show_notice(player_ui.volume_ass(volume), 1.6, layer=self.VOLUME)
             else:
                 self.mpv.command("add", "volume", 5 if button == "up" else -5)
                 self.toast("Volumen")
@@ -399,10 +417,10 @@ class PlayerScreen:
         progress = (time.monotonic() - started) / self.QUIT_HOLD
         if progress >= 1:
             self._quit_hold = None
-            self._overlay(3, None)
+            self._overlay(self.HOLD, None)
             self._quit()
         else:
-            self._overlay(3, player_ui.quit_hold_ass(progress))
+            self._overlay(self.HOLD, player_ui.quit_hold_ass(progress))
 
     EPISODE_WAIT = .7  # s: RT, RT seguidos suman (dos episodios adelante) antes de cargar
 

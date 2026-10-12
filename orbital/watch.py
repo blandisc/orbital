@@ -68,6 +68,17 @@ def player_source_label(source: streams.Source) -> str:
     return " · ".join(p for p in (langs, source_label(source), size) if p)
 
 
+def player_source_row(source: streams.Source) -> dict:
+    """Una fila de Y › Fuentes: «Español · 1080p WEB-DL» y, a la derecha, «Al instante · 1.2 GB». Antes iba
+    todo en una línea que se cortaba y varias filas se veían idénticas."""
+    langs = " + ".join(streams.LANG_NAMES.get(lang, lang) for lang in source.languages[:2])
+    quality = " ".join(p for p in (source.resolution or "SD", *source.hdr[:1]) if p)
+    kind = next((t for t in source.tags if t in ("REMUX", "BluRay", "WEB-DL", "x265", "AV1", "CAM")), "")
+    size = f"{source.size / 1e9:.1f} GB" if source.size else ""
+    return {"label": " · ".join(p for p in (langs, f"{quality} {kind}".strip()) if p),
+            "hint": " · ".join(p for p in ("Al instante" if source.cached else source.addon, size) if p)}
+
+
 def time_left(seconds: float) -> str:
     """"quedan 11 min" / "quedan 1 h 40 min" (vacío si falta menos de un minuto)."""
     minutes = int(seconds // 60)
@@ -576,7 +587,7 @@ class Watch:
         if meta.get("source") is None:
             return []
         found = self.stream_sources(meta["kind"], meta["video_id"], self.language_for(meta["meta_id"])[0])
-        return [{"id": s.index, "label": player_source_label(s), "current": s.index == meta["source"]} for s in found]
+        return [{"id": s.index, **player_source_row(s), "current": s.index == meta["source"]} for s in found]
 
     def _switch_source(self, meta: dict, index: int, position: float) -> bool:
         """False si no se pudo (el reproductor lo avisa). Una fuente de un solo idioma distinto (la de

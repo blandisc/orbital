@@ -167,6 +167,7 @@ class OrbitalPlayer(PlayerScreen):
         self._subs_lang, self._fallback_subs = subtitles, fallback_subs
         self._audio_lang = options.get("audio", "en")
         self._want.clear()
+        self._restart_from = None
         playback = Playback(title, process, time.time(), meta)
         with self._swap:  # el vigilante del video anterior ve los dos cambios juntos, nunca uno solo
             self.current = playback
@@ -212,6 +213,7 @@ class OrbitalPlayer(PlayerScreen):
         self.mpv.command("set_property", "force-media-title", title)
         self.mpv.command("set_property", "start", f"{int(start)}" if start > 5 else "0")
         self._want.clear()  # lo pedido era del archivo anterior (p. ej. «en pausa»)
+        self._restart_from = None  # «Volver a…» era del archivo anterior
         self.mpv.command("set_property", "pause", False)
         for prop, value in track_properties(self._audio_lang, self._subs_lang):
             self.mpv.command("set_property", prop, value)  # el idioma de este título, no la pista del anterior
@@ -396,10 +398,11 @@ class OrbitalPlayer(PlayerScreen):
             percent = self.mpv.get("cache-buffering-state")
             self._buffering = True
             known = isinstance(percent, (int, float)) and math.isfinite(percent)
-            self.toast(f"Cargando… {int(percent)} %" if known else "Cargando…", 2)
+            self._show_notice(player_ui.toast_ass(f"Cargando… {int(percent)} %" if known else "Cargando…",
+                                                  top=player_ui.BUFFER_Y), 2, layer=self.BUFFER)
         elif self._buffering:
             self._buffering = False
-            self._overlay(3, None)
+            self._overlay(self.BUFFER, None)  # solo el «Cargando…»: el aviso que estaba sigue
 
     # --- capítulos: saltar intro, créditos ---------------------------------------------------
     def _chapter_now(self, segment: Segment) -> tuple[int, dict | None]:
