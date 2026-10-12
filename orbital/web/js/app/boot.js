@@ -7,14 +7,19 @@ import { setupMenu } from "../core/menus.js";
 
 const BOOT_MIN_MS = 1100; // la animación de entrada (900 ms) se ve completa; antes 1700
 
-export function createBoot({ state, applySettings, openMenu, el = document.getElementById("boot") }) {
+const LANDING_BLOCK_MS = 600; // el planeta todavía tapa la interfaz los primeros instantes de la salida
+
+export function createBoot({ state, applySettings, openMenu, busy = () => false, el = document.getElementById("boot") }) {
+  let leavingAt = 0;
   /** La primera vez: "Tu consola" (qué encontró Orbital y qué falta), una sola vez. */
   async function welcome() {
     try {
       const settings = state.settings.welcomed === undefined ? await api.settings() : state.settings;
       if (settings.welcomed) return;
       const status = await api.setup();
-      setTimeout(() => openMenu(setupMenu(status)), 1200); // después de que aterrice la interfaz
+      // Después de que aterrice la interfaz, y no encima de algo que ya abriste (un juego cargando).
+      const show = () => (busy() ? setTimeout(show, 1500) : openMenu(setupMenu(status)));
+      setTimeout(show, 1200);
       applySettings(await api.setSettings({ welcomed: true }));
     } catch { /* sin servidor: ya saldrá la próxima vez */ }
   }
@@ -22,7 +27,9 @@ export function createBoot({ state, applySettings, openMenu, el = document.getEl
   return {
     get waiting() { return !!el?.isConnected; },
     /** El planeta tapa la interfaz: la entrada todavía no cuenta (ya aterrizando, sí). */
-    get blocking() { return !!el?.isConnected && !el.classList.contains("boot--leaving"); },
+    get blocking() {
+      return !!el?.isConnected && (!el.classList.contains("boot--leaving") || performance.now() - leavingAt < LANDING_BLOCK_MS);
+    },
 
     /** La biblioteca llegó: la cámara se zambulle en el planeta y aparece la interfaz. */
     finish() {
@@ -31,6 +38,7 @@ export function createBoot({ state, applySettings, openMenu, el = document.getEl
       setTimeout(() => {
         welcome();
         el.classList.add("boot--leaving");
+        leavingAt = performance.now();
         document.body.dataset.landing = "boot";
         setTimeout(() => { el.remove(); delete document.body.dataset.landing; }, 1100);
       }, wait);

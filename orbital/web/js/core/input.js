@@ -146,6 +146,8 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
   document.addEventListener("keydown", (event) => {
     if (onText && typing() && (isTextKey(event) || TYPING_KEYS[event.key])) {
       event.preventDefault();
+      // Escribiendo solo se repite borrar: un Enter sostenido saltaba a los resultados y abría el primero.
+      if (event.repeat && event.key !== "Backspace") return;
       onModality("keyboard");
       onText(TYPING_KEYS[event.key] || event.key);
       return;

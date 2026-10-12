@@ -71,8 +71,14 @@ const ui = {
     onCommand: (command, context) => {
       // Mientras una opción del menú espera al servidor (un ajuste, el volumen, un submenú), lo que
       // pulses no se cuela a la pantalla de atrás: un segundo A rápido abría el juego de Inicio.
-      const busy = menuBusy = { until: performance.now() + 3000 };
-      Promise.resolve(runCommand(command, context)).finally(() => { if (menuBusy === busy) menuBusy = null; });
+      const busy = menuBusy = { until: performance.now() + 3000, done: false, stale: false };
+      if (context) context.busy = busy; // si tardó tanto que ya hiciste otra cosa, su menú no se abre encima
+      // Al terminar (también si falló o era instantánea, como «Cancelar»), un instante más de guardia:
+      // un doble A rápido no debe caer en el juego de Inicio.
+      Promise.resolve(runCommand(command, context)).finally(() => {
+        busy.done = true;
+        busy.until = Math.min(busy.until, performance.now() + 350);
+      });
     },
     onMove: () => sound.play("move"),
     onClose: () => renderHints(),
@@ -454,7 +460,8 @@ function stepSection(delta) {
 let libraryRetry = 0;
 
 // ---------------------------------------------------------------- arranque y regreso
-const boot = createBoot({ state, applySettings: (settings) => applySettings(settings), openMenu: (menu) => openMenu(menu) });
+const boot = createBoot({ state, applySettings: (settings) => applySettings(settings), openMenu: (menu) => openMenu(menu),
+  busy: () => ui.launch.visible || ui.sheet.isOpen || !!topOverlay() });
 
 async function loadLibrary({ refresh = false, keepId = null } = {}) {
   const before = { ...state.focus };
@@ -603,7 +610,7 @@ function pick(r, c) {
 const findItem = (id) => state.allRows.flatMap((row) => row.items).find((i) => i.id === id);
 
 /** Submenú: B regresa al menú del que vienes. */
-const nested = (context) => (context ? { stack: [...context.stack, { menu: context.menu, index: context.index }] } : {});
+const nested = (context) => (context ? { stack: [...context.stack, { menu: context.menu, index: context.index }], busy: context.busy } : {});
 
 async function runCommand(command, context = null) {
   try {
@@ -679,7 +686,7 @@ async function runCommand(command, context = null) {
       case "setting": { // cambia y se queda en la misma página, en la misma opción
         applySettings(await api.setSettings({ [command.key]: command.value }));
         sound.play("select");
-        ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
+        if (!context?.busy?.stale) ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
       case "controls":
@@ -697,7 +704,7 @@ async function runCommand(command, context = null) {
         sound.play("move");
         await new Promise((resolve) => setTimeout(resolve, 350)); // que la app cambie de canción
         const [q, music] = await Promise.all([api.quick(), api.music().catch(() => null)]);
-        ui.sheet.open(quickMenu(q, { running: state.running, music }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
+        if (!context?.busy?.stale) ui.sheet.open(quickMenu(q, { running: state.running, music }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
       case "memory":
@@ -727,7 +734,7 @@ async function runCommand(command, context = null) {
         const q = await api.setQuick(command.changes);
         sound.play("move");
         const music = await api.music().catch(() => null);
-        ui.sheet.open(quickMenu(q, { running: state.running, music }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
+        if (!context?.busy?.stale) ui.sheet.open(quickMenu(q, { running: state.running, music }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
       case "captures":
@@ -766,7 +773,7 @@ async function runCommand(command, context = null) {
         sound.play("select");
         return ui.toast.show("Listo, no te lo vuelvo a sugerir");
       case "stay":
-        if (context) ui.sheet.open(context.menu, { index: context.index, stack: context.stack });
+        if (context && !context.busy?.stale) ui.sheet.open(context.menu, { index: context.index, stack: context.stack });
         return renderHints();
       case "close":
         return sound.play("back");
@@ -778,7 +785,7 @@ async function runCommand(command, context = null) {
 }
 
 function openMenu(menu, options = {}) {
-  if (!menu) return;
+  if (!menu || options.busy?.stale) return;
   sound.play("menu");
   ui.sheet.open(menu, options);
   renderHints();
@@ -798,7 +805,13 @@ function handleAction(action, { repeat = false } = {}) {
     if (action === "back") sound.play("back");
     return renderHints();
   }
-  if (menuBusy && performance.now() < menuBusy.until && !topOverlay()) return;
+  if (menuBusy) {
+    if (performance.now() < menuBusy.until) { if (!topOverlay()) return; }
+    else { // ya puedes moverte: si la opción sigue esperando, su menú ya no se abre encima de lo que hagas
+      if (!menuBusy.done) menuBusy.stale = true;
+      menuBusy = null;
+    }
+  }
   // Vistas a pantalla completa (OVERLAYS): la de más arriba se queda con el botón.
   if (OVERLAYS.some((view) => view.handle(action))) return renderHints();
   if (inForYou()) return handleForYou(action, { repeat });

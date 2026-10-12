@@ -66,7 +66,8 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
   }
 
   async function launch(item, runner = null, { confirmed = false, keep = false } = {}) {
-    if (!item || inFlight || Date.now() < state.launchLockedUntil) return; // evita dobles pulsaciones de A
+    if (!item || Date.now() < state.launchLockedUntil) return; // evita dobles pulsaciones de A
+    if (inFlight) return rumble("edge"); // ya se está abriendo algo: un «no» suave, no silencio
     if (item.source === "search") return openSearch();
     // Seguir viendo: A pone el episodio en el que ibas, directo (como Netflix). Y abre la ficha.
     const watchExtra = item.extra;
