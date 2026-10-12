@@ -15,9 +15,11 @@ def test_samples_go_to_csv_and_warning_is_rate_limited(tmp_path):
 
 
 def test_needs_warning():
-    assert health.needs_warning(1000, None)
+    assert health.needs_warning(400, None)  # RAM disponible casi en cero
+    assert not health.needs_warning(1200, None)  # poca RAM libre sola no: Windows pagina
+    assert health.needs_warning(5000, None, commit_room=1500)  # sin margen hasta el límite: sí
     assert health.needs_warning(5000, (9000, 0))
-    assert not health.needs_warning(5000, (500, 300))
+    assert not health.needs_warning(5000, (500, 300), commit_room=8000)
     assert not health.needs_warning(None, None)
 
 
@@ -28,4 +30,19 @@ def test_real_measurement_does_not_crash():
 
 def test_warning_message_explains_the_dwm_leak():
     assert "53 GB" in health.warning_message(900, (54000, 1300))  # 54000 MB
-    assert "900 MB" in health.warning_message(900, (300, 100))
+    full = health.warning_message(900, (300, 100), [("Eden", 6880), ("la app de Claude", 4700)])
+    assert "Eden 6,7 GB" in full and "Cierra" in full and "Reinicia" not in full
+
+
+def test_full_memory_from_open_programs_does_not_offer_restart(tmp_path, monkeypatch):
+    notes = []
+    mon = health.HealthMonitor(notes.append, lambda: "Mario Party", path=tmp_path / "m.csv",
+                               measure=lambda: (1200, (2000, 500), 900))
+
+    monkeypatch.setattr(health, "top_memory", lambda limit=3: [("Eden", 6700)])
+    assert mon.check(now=10)
+    assert notes[0]["restart"] is False and "Eden" in notes[0]["message"]
+
+def test_commit_room_reads():
+    room = health.commit_room_mb()
+    assert room is None or room >= 0

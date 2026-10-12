@@ -211,8 +211,15 @@ export function capturesMenu(items) {
   };
 }
 
-/** Memoria casi llena (o la fuga de Windows): explicarlo y ofrecer reiniciar ya. */
-export function healthMenu(message) {
+/**
+ * Memoria casi llena. Con la fuga de Windows (DWM) se ofrece reiniciar; si la llenan programas
+ * abiertos, reiniciar no ayuda: solo se dice cuáles son.
+ */
+export function healthMenu(message, { restart = true } = {}) {
+  if (!restart) {
+    return { title: "Memoria casi llena", subtitle: message,
+      options: [{ icon: "check", label: "Entendido", command: { type: "close" } }] };
+  }
   return {
     title: "La consola necesita reiniciarse",
     subtitle: message,

@@ -767,9 +767,11 @@ function handleEvent(event) {
   }
   if (event.type === "launch-ready") return ui.launch.reveal();
   if (event.type === "settings") return applySettings(event.settings);
-  if (event.type === "health") { // memoria casi llena: se pregunta, con Reiniciar a la mano
+  if (event.type === "health") { // memoria casi llena
     sound.play("error");
-    return openMenu(healthMenu(event.message)); // "Reiniciar ahora" pide confirmar (y avisa si hay un juego abierto)
+    // Con un juego abierto, un aviso que no estorba; si no, la pregunta (con Reiniciar solo si sirve).
+    if (state.running?.managed) return ui.toast.show(event.message, { error: true });
+    return openMenu(healthMenu(event.message, { restart: event.restart !== false }));
   }
   if (event.type === "open-quick") return openQuick();
   if (event.type === "update-done") {
@@ -796,7 +798,7 @@ function handleEvent(event) {
     if (event.crashed && event.low_memory) {
       // No abrió por falta de memoria (no por el juego): la causa real y Reiniciar a la mano.
       sound.play("error");
-      openMenu(healthMenu(`${event.title} no pudo abrir: ${event.low_memory}`));
+      openMenu(healthMenu(`${event.title} no pudo abrir: ${event.low_memory}`, { restart: !!event.low_memory_restart }));
     } else if (event.crashed) {
       // Se cerró solo a los pocos segundos: no es "de vuelta", es que no pudo abrir.
       sound.play("error");

@@ -20,7 +20,10 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 INTERVAL = 300  # s entre mediciones
-LOW_RAM_MB = 1500  # menos que esto libre: los juegos pueden no abrir
+LOW_RAM_MB = 500  # RAM disponible por debajo de esto: Windows ya no puede ni paginar a tiempo
+# Lo que de verdad hace tronar a los juegos: el margen de memoria comprometida (RAM + archivo de
+# paginación). Con poca RAM libre Windows pagina y sigue; sin margen, quien pide memoria truena.
+COMMIT_LOW_MB = 2000
 DWM_HIGH_MB = 8000  # DWM con más memoria compartida que esto: casi seguro, fuga
 WARN_EVERY = 3600  # s: no repetir el aviso más de una vez por hora
 MAX_CSV_BYTES = 1_000_000
@@ -42,6 +45,54 @@ def free_ram_mb() -> int | None:
     if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):  # type: ignore[attr-defined]
         return None
     return int(status.ullAvailPhys // (1024 * 1024))
+
+
+def commit_room_mb() -> int | None:
+    """Cuánta memoria más se puede comprometer (hasta el límite RAM + archivo de paginación)."""
+    if sys.platform != "win32":
+        return None
+    status = _MemoryStatus()
+    status.dwLength = ctypes.sizeof(status)
+    if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):  # type: ignore[attr-defined]
+        return None
+    return int(status.ullAvailPageFile // (1024 * 1024))
+
+
+NICE_NAMES = {"claude.exe": "la app de Claude", "eden.exe": "Eden", "discord.exe": "Discord",
+              "steamwebhelper.exe": "Steam", "steam.exe": "Steam", "msedge.exe": "Edge", "chrome.exe": "Chrome",
+              "xenia_canary_netplay.exe": "Xenia", "xemu.exe": "xemu", "dolphin.exe": "Dolphin", "mpv.exe": "el reproductor",
+              "msmpeng.exe": "el antivirus", "msedgewebview2.exe": "apps con WebView"}
+
+
+def top_memory(limit: int = 3) -> list[tuple[str, int]]:
+    """Los programas que más memoria tienen comprometida: [("Eden", 6720), …] en MB."""
+    if sys.platform != "win32":
+        return []
+    from ctypes import wintypes
+
+    from . import windows
+
+    class _Counters(ctypes.Structure):
+        _fields_ = [("cb", wintypes.DWORD), ("PageFaultCount", wintypes.DWORD),
+                    ("PeakWorkingSetSize", ctypes.c_size_t), ("WorkingSetSize", ctypes.c_size_t),
+                    ("a", ctypes.c_size_t), ("b", ctypes.c_size_t), ("c", ctypes.c_size_t), ("d", ctypes.c_size_t),
+                    ("PagefileUsage", ctypes.c_size_t), ("PeakPagefileUsage", ctypes.c_size_t),
+                    ("PrivateUsage", ctypes.c_size_t)]
+
+    kernel32, psapi = ctypes.windll.kernel32, ctypes.windll.psapi  # type: ignore[attr-defined]
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    totals: dict[str, int] = {}
+    for pid, (exe, _parent) in windows.processes().items():
+        handle = kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not handle:
+            continue
+        counters = _Counters()
+        counters.cb = ctypes.sizeof(counters)
+        if psapi.GetProcessMemoryInfo(handle, ctypes.byref(counters), counters.cb):
+            name = NICE_NAMES.get(exe, exe.removesuffix(".exe"))
+            totals[name] = totals.get(name, 0) + counters.PrivateUsage // (1024 * 1024)
+        kernel32.CloseHandle(handle)
+    return sorted(totals.items(), key=lambda kv: kv[1], reverse=True)[:limit]
 
 
 def _pdh_sum(counter_paths: list[str]) -> list[float] | None:
@@ -110,16 +161,28 @@ def dwm_gpu_mb() -> tuple[int, int] | None:
     return int(totals[0] // (1024 * 1024)), int(totals[1] // (1024 * 1024))
 
 
-def needs_warning(free_mb: int | None, dwm: tuple[int, int] | None) -> bool:
-    return (free_mb is not None and free_mb < LOW_RAM_MB) or (dwm is not None and dwm[0] > DWM_HIGH_MB)
+def dwm_leak(dwm: tuple[int, int] | None) -> bool:
+    return dwm is not None and dwm[0] > DWM_HIGH_MB
 
 
-def warning_message(free_mb: int | None, dwm: tuple[int, int] | None) -> str:
-    """El aviso en palabras: la fuga de DWM se explica (suspender no la arregla; reiniciar sí)."""
-    if dwm is not None and dwm[0] > DWM_HIGH_MB:
+def needs_warning(free_mb: int | None, dwm: tuple[int, int] | None, commit_room: int | None = None) -> bool:
+    return (dwm_leak(dwm) or (free_mb is not None and free_mb < LOW_RAM_MB)
+            or (commit_room is not None and commit_room < COMMIT_LOW_MB))
+
+
+def _gb(mb: int) -> str:
+    return f"{mb / 1024:.1f} GB".replace(".", ",")
+
+
+def warning_message(free_mb: int | None, dwm: tuple[int, int] | None, top: list[tuple[str, int]] | None = None) -> str:
+    """El aviso en palabras. La fuga de DWM se arregla reiniciando; la memoria llena por programas
+    abiertos, cerrándolos (reiniciar no sirve si se vuelven a abrir)."""
+    if dwm_leak(dwm):
         return (f"Windows está usando {dwm[0] / 1024:.0f} GB solo en dibujar las ventanas (una falla de Windows "
                 "que crece con los días). Reinicia la consola: suspender no lo arregla.")
-    return f"Quedan {free_mb or 0} MB de memoria libre: los juegos pueden no abrir. Reinicia la consola."
+    who = ", ".join(f"{name} {_gb(mb)}" for name, mb in (top or []))
+    return ("La memoria está casi llena" + (f" ({who})" if who else "") +
+            ". Cierra lo que no estés usando para que los juegos abran bien.")
 
 
 def csv_path() -> Path:
@@ -147,26 +210,30 @@ class HealthMonitor:
         self.notify = notify
         self.running = running
         self.path = path or csv_path()
-        self.measure = measure or (lambda: (free_ram_mb(), dwm_gpu_mb()))
+        self.measure = measure or (lambda: (free_ram_mb(), dwm_gpu_mb(), commit_room_mb()))
         self._last_warning = float("-inf")
         self._stop = threading.Event()
 
     def check(self, now: float | None = None) -> bool:
         """Una medición: la anota y avisa si hace falta. Devuelve si avisó."""
         now = time.time() if now is None else now
-        free_mb, dwm = self.measure()
+        free_mb, dwm, *rest = self.measure()
+        commit = rest[0] if rest else None
         try:
             append_sample(self.path, now, free_mb, dwm, self.running())
         except OSError as exc:
             log.debug("No pude anotar la memoria: %s", exc)
-        if not needs_warning(free_mb, dwm):
+        if not needs_warning(free_mb, dwm, commit):
             return False
-        log.warning("Memoria baja: %s MB libres, DWM %s MB", free_mb, dwm)
+        top = top_memory() if not dwm_leak(dwm) else []
+        log.warning("Memoria baja: %s MB libres, margen %s MB, DWM %s MB, %s", free_mb, commit, dwm, top)
         if now - self._last_warning < WARN_EVERY:
             return False
         self._last_warning = now
-        # La interfaz lo muestra como pregunta con "Reiniciar ahora" (no un aviso que se va solo).
-        self.notify({"type": "health", "ok": False, "message": warning_message(free_mb, dwm)})
+        # Con la fuga de DWM, pregunta con "Reiniciar ahora"; si son programas abiertos, solo avisa
+        # (reiniciar no ayuda). Con un juego abierto, la interfaz lo muestra como aviso, sin estorbar.
+        self.notify({"type": "health", "ok": False, "restart": dwm_leak(dwm),
+                     "message": warning_message(free_mb, dwm, top)})
         return True
 
     def start(self) -> None:

@@ -31,10 +31,12 @@ def memory_problem() -> str | None:
     from . import health
 
     try:
-        free_mb, dwm = health.free_ram_mb(), health.dwm_gpu_mb()
+        free_mb, dwm, commit = health.free_ram_mb(), health.dwm_gpu_mb(), health.commit_room_mb()
+        if not health.needs_warning(free_mb, dwm, commit):
+            return None
+        return health.warning_message(free_mb, dwm, [] if health.dwm_leak(dwm) else health.top_memory())
     except OSError:
         return None
-    return health.warning_message(free_mb, dwm) if health.needs_warning(free_mb, dwm) else None
 
 
 class Sessions:
@@ -221,6 +223,7 @@ class Sessions:
             low = memory_problem()
             if low:
                 event["low_memory"] = low
+                event["low_memory_restart"] = low.startswith("Windows está usando")  # la fuga de DWM
         end = self.last_end() if item_id == "media:player" else None
         if end:  # el reproductor anotó cómo terminó: "Terminaste Interstellar"
             event.update(title=end["title"], finished=end["finished"])
