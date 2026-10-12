@@ -132,7 +132,7 @@ test("cómo se usa: una hoja, con el mando que tienes", () => {
   const byLabel = (menu) => Object.fromEntries(menu.options.filter((o) => !o.heading).map((o) => [o.label, o.value]));
   assert.equal(byLabel(legion)["Cerrar el juego"], "Mantén Start + Select");
   assert.equal(byLabel(controlsMenu([]))["Cerrar el juego"], "Mantén Start + Select + Home");
-  assert.ok(legion.options.every((o) => o.heading || o.command.type === "stay"));
+  assert.ok(legion.options.every((o) => o.heading || ["stay", "tour"].includes(o.command.type)));
 });
 
 test("diagnóstico: avisa si Windows redirige la configuración y enseña los últimos avisos", () => {

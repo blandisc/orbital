@@ -5,10 +5,15 @@
   display: grid; grid-template-rows: auto auto 1fr; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); overflow: hidden;
   /* Portadas y teclas un poco más compactas que en el resto: resultados + teclado + pie caben siempre
      en la pantalla (antes el teclado bajaba hasta las pistas del pie). */
-  --card-height: min(10.6rem, 22vh); --key-height: min(2.85rem, 6vh);
+  --card-height: min(10.6rem, 19vh); --key-height: min(2.85rem, 6vh);
   padding: calc(var(--space-10) + var(--safe-y)) var(--page-gutter) calc(3.4rem + var(--space-4) + var(--safe-y)); /* libre el carril del pie */
   background: var(--color-tinted-bg);
   animation: fade-in var(--duration-slow) var(--ease-out);
+}
+/* Letra más grande = pies de resultado más altos: la portada cede para que el teclado no los tape. */
+[data-text-size="large"] .search, [data-text-size="xlarge"] .search {
+  --card-height: min(10.6rem, 17vh); --key-height: min(2.85rem, 5.2vh); gap: var(--space-3);
+  padding-top: calc(var(--space-6) + var(--safe-y));
 }
 .search--leaving { animation: fade-out var(--duration-exit) var(--ease-in) forwards; }
 

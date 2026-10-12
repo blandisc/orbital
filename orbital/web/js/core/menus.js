@@ -611,6 +611,8 @@ export function controlsMenu(controllers = []) {
   return {
     title: "Cómo se usa", crumb: "Cómo se usa",
     options: [...section("En un juego", gameRows(legion)), ...section("En Orbital", SHORTCUTS.orbital),
-      ...section("Viendo algo", SHORTCUTS.player)],
+      ...section("Viendo algo", SHORTCUTS.player),
+      // La guía de 5 pasos existía pero nada la abría.
+      { icon: "play", label: "Guía paso a paso", hint: "Lo esencial en 5 pantallas", command: { type: "tour", step: 0 } }],
   };
 }

@@ -1,4 +1,5 @@
 import { h, hideAfterExit } from "../core/dom.js";
+import { swipeArea } from "../core/swipe.js";
 
 /**
  * Visor de capturas a pantalla completa: ◀/▶ (o deslizar) pasan de una a otra, B cierra.
@@ -7,7 +8,13 @@ import { h, hideAfterExit } from "../core/dom.js";
 export function createViewer({ onClose, onOpenVideo } = {}) {
   const img = h("img", { class: "viewer__image", alt: "" });
   const caption = h("div", { class: "viewer__caption" });
-  const el = h("div", { class: "viewer", hidden: true, onClick: () => close() }, img, caption);
+  // Con el dedo: deslizar pasa de captura, tocar un clip lo abre y «Atrás» cierra (antes cualquier
+  // toque cerraba: un clip no se podía abrir). Con el ratón, un clic fuera de un clip sigue cerrando.
+  const el = h("div", { class: "viewer", hidden: true, onClick: (event) => {
+    if (items[index]?.kind === "video") onOpenVideo?.(items[index]);
+    else if (event.pointerType !== "touch") close();
+  } }, img, caption);
+  swipeArea(el, ({ dx, dy }) => { if (Math.abs(dx) > Math.abs(dy)) handle(dx < 0 ? "right" : "left"); });
   let items = [];
   let index = 0;
 
@@ -32,7 +39,7 @@ export function createViewer({ onClose, onOpenVideo } = {}) {
   function close() {
     if (el.hidden) return;
     hideAfterExit(el, "viewer--leaving");
-    onClose?.();
+    onClose?.(index);
   }
 
   function handle(action) {

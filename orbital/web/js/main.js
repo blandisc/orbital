@@ -75,7 +75,7 @@ const ui = {
       if (context) context.busy = busy; // si tardó tanto que ya hiciste otra cosa, su menú no se abre encima
       // Al terminar (también si falló o era instantánea, como «Cancelar»), un instante más de guardia:
       // un doble A rápido no debe caer en el juego de Inicio.
-      Promise.resolve(runCommand(command, context)).finally(() => {
+      return Promise.resolve(runCommand(command, context)).finally(() => {
         busy.done = true;
         busy.until = Math.min(busy.until, performance.now() + 350);
       });
@@ -134,7 +134,14 @@ const ui = {
   }),
   launch: createLaunchOverlay(),
   viewer: createViewer({
-    onClose: () => { sound.play("back"); renderHints(); },
+    // B regresa a la lista de Capturas, en la que estabas viendo (antes saltaba hasta Inicio).
+    onClose: (at) => {
+      sound.play("back");
+      renderHints();
+      const from = captureFrom;
+      captureFrom = null;
+      if (from) setTimeout(() => { if (!ui.sheet.isOpen && !topOverlay()) { ui.sheet.open(capturesMenu(state.captures || []), { ...from.options, index: from.first + at }); renderHints(); } }, 0);
+    },
     onOpenVideo: (item) => api.openCapture(item.path).catch((err) => ui.toast.show(err.message, { error: true })),
   }),
   toast: createToast(),
@@ -159,6 +166,7 @@ const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LT/RT
  */
 // Conectar Stremio o Trakt desde Ajustes › Cuentas: B regresa a Cuentas (antes caías en Inicio).
 let loginFrom = null;
+let captureFrom = null; // { options, first }: de qué lista de Capturas vienes
 let traktFrom = null;
 function returnToMenu(from) {
   if (!from?.context) return;
@@ -720,7 +728,8 @@ async function runCommand(command, context = null) {
           const pads = (await api.controllers().catch(() => ({ controllers: [] }))).controllers;
           state.legion = pads.some((c) => c.kind === "legion");
         }
-        return ui.sheet.open(tourMenu(command.step, { legion: state.legion }), { index: 0, stack: [] });
+        ui.sheet.open(tourMenu(command.step, { legion: state.legion }), { index: 0, stack: [] });
+        return renderHints();
       }
       case "update-check":
         ui.toast.show("Buscando una versión nueva…");
@@ -742,7 +751,9 @@ async function runCommand(command, context = null) {
         return openMenu(capturesMenu(state.captures), nested(context));
       case "view-capture":
         sound.play("open");
-        return ui.viewer.open(state.captures || [], command.index);
+        captureFrom = context ? { options: { stack: context.stack }, first: context.index - command.index } : null;
+        ui.viewer.open(state.captures || [], command.index);
+        return renderHints();
       case "diagnostics":
         return openMenu(diagnosticsMenu(await api.diagnostics()), nested(context));
       case "stremio-login":

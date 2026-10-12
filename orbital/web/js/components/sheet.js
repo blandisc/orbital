@@ -23,6 +23,15 @@ export function createSheet({ onCommand, onMove, onClose }) {
   let index = 0;
   let stack = []; // menús de los que vienes: [{ menu, index }]
   let cancelExit = () => {};
+  // Un toque recién abierta la hoja es el segundo toque del anterior: en «¿Reiniciar?» la opción
+  // «Reiniciar» quedaba bajo el dedo y un doble toque reiniciaba sin confirmar.
+  let openedAt = 0;
+  let busyUntil = 0; // cambiando un valor en su sitio (volumen, un ajuste): la hoja espera, sin cerrarse
+  const TAP_GUARD_MS = 400;
+  const tapReady = () => performance.now() - openedAt > TAP_GUARD_MS;
+  const busy = () => performance.now() < busyUntil;
+  // Lo que se cambia en su sitio: la hoja no se cierra y reabre (parpadeaba y, si fallaba, se cerraba).
+  const inPlace = (option, command) => !!option?.adjust || ["setting", "quick-set", "music", "stay"].includes(command?.type);
 
   /** La ayuda va debajo del nombre si es larga o si a la derecha ya está el valor (‹ 70 % ›). */
   /** Se cambia con A o ◀/▶ (un ajuste, o volumen y brillo del panel rápido): lleva ‹ ›. */
@@ -43,7 +52,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
         option.command?.type === "close" && "sheet__item--dismiss"],
       type: "button",
       role: "menuitem",
-      onClick: () => choose(i),
+      onClick: () => tapReady() && !busy() && choose(i),
     }, h("span", { class: "sheet__icon" }, ICONS[option.icon] ? svg(ICONS[option.icon]) : null),
     // Una descripción larga va debajo del nombre (en la misma línea lo aplastaba); un dato corto, a la derecha.
     h("span", { class: "sheet__text" }, h("span", { class: "sheet__label" }, option.label),
@@ -51,13 +60,25 @@ export function createSheet({ onCommand, onMove, onClose }) {
     // ‹ › solo en lo que se cambia con A o ◀/▶ (un estado, como "Conectada", no lleva flechas).
     option.value !== undefined && h("span", { class: ["sheet__value", choice(option) && "sheet__value--choice"] },
       choice(option)
-        ? [h("span", { class: "sheet__chev", "aria-hidden": "true" }, svg(ICONS.back)), option.value, h("span", { class: "sheet__chev sheet__chev--next", "aria-hidden": "true" }, svg(ICONS.chevron))]
+        // Con el dedo, ‹ y › se tocan por separado (antes el toque siempre hacía lo de A: subir o silenciar).
+        ? [h("span", { class: "sheet__chev", "aria-hidden": "true", onClick: (e) => tapChev(e, i, "left") }, svg(ICONS.back)), option.value,
+          h("span", { class: "sheet__chev sheet__chev--next", "aria-hidden": "true", onClick: (e) => tapChev(e, i, "right") }, svg(ICONS.chevron))]
         : option.value),
     option.hint && !below(option) && h("small", { class: "sheet__hint" }, option.hint))));
   }
 
+  function tapChev(event, i, side) {
+    event.stopPropagation();
+    const option = menu?.options[i];
+    if (!option || !tapReady() || busy()) return;
+    index = i;
+    choose(i, option.adjust?.[side] ?? option.command);
+  }
+
   /** `stack`: de dónde vienes (para que B regrese); `index`: opción enfocada (al reabrir el mismo menú). */
   function open(next, { index: at = 0, stack: from = [] } = {}) {
+    if (!menu || el.hidden || next.title !== menu.title) openedAt = performance.now();
+    busyUntil = 0;
     menu = next;
     stack = from;
     index = Math.max(0, Math.min(at, next.options.length - 1));
@@ -118,6 +139,13 @@ export function createSheet({ onCommand, onMove, onClose }) {
 
   function choose(i = index, command = menu?.options[i]?.command) {
     const context = { menu, index: i, stack: [...stack] };
+    if (command && inPlace(menu?.options[i], command)) {
+      // Se queda abierta mientras el servidor responde (como mucho 4 s); al reabrirse con el valor nuevo
+      // vuelve a responder. Si falla, sigue ahí con el valor de antes.
+      busyUntil = performance.now() + 4000;
+      Promise.resolve(onCommand(command, context)).finally(() => { busyUntil = 0; });
+      return;
+    }
     close();
     if (command) onCommand(command, context);
   }
@@ -125,6 +153,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
   /** Procesa una acción de entrada. Devuelve true si el menú la consumió. */
   function handle(action, { repeat = false } = {}) {
     if (!menu) return false;
+    if (busy()) return true; // cambiando un valor: un ▶ sostenido no se encima con el anterior
     if (action === "up" || action === "down") {
       const next = step(index, action === "up" ? -1 : 1);
       // Manteniendo ↑/↓ se detiene en el extremo; dar la vuelta solo con una pulsación nueva.
