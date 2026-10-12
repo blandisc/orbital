@@ -30,12 +30,17 @@ export function createGamePanel({ onAction }) {
     const runner = item.runners?.find((r) => r.id === item.runner)?.name;
     const alt = alternativeRunner(item);
     const fill = () => {
-      mount(art, (item.hero || item.image) && h("img", {
+      const picture = (item.hero || item.image) && h("img", {
         class: ["game-panel__img", extra.hero_lowres && "game-panel__img--pixel", !item.hero && "game-panel__img--poster"],
         src: item.hero || item.image, alt: "",
-      }));
+      });
+      picture?.addEventListener("error", () => picture.remove(), { once: true }); // queda el fondo, no el ícono roto
+      mount(art, picture);
+      const titleText = () => h("h2", { class: "game-panel__title" }, item.title);
+      const logo = extra.logo && h("img", { class: "game-panel__logo", src: extra.logo, alt: item.title });
+      logo?.addEventListener("error", () => logo.replaceWith(titleText()), { once: true });
       mount(body,
-        extra.logo ? h("img", { class: "game-panel__logo", src: extra.logo, alt: item.title }) : h("h2", { class: "game-panel__title" }, item.title),
+        logo || titleText(),
         h("span", { class: "game-panel__platform" }, svg(ICONS[systemIconName(item)] || ICONS.apps),
           [item.subtitle, runner].filter(Boolean).join(" · ")),
         h("div", { class: "game-panel__stats" },

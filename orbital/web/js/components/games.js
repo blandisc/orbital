@@ -179,6 +179,8 @@ export function createGames({ onFocus, onPick, onAction }) {
       else node.removeAttribute("aria-current");
     }
     const target = targets.get(focusId);
+    // En los filtros o en las consolas, A no juega: la ficha se atenúa y no enseña «A Jugar».
+    sheet.el.classList.toggle("game-panel--idle", target?.kind !== "game");
     if (target?.kind === "game") {
       memory[consoleId] = target.item.id;
       sheet.update(target.item, options);

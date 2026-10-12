@@ -308,3 +308,18 @@ def test_the_usual_is_what_you_were_watching(library, monkeypatch):
     monkeypatch.setattr(type(library), "stremio_linked", property(lambda self: False), raising=False)
     result = voice.handle_text("pon la telenovela")
     assert not result.ok and "Dime el nombre" in result.speech  # antes: «No encontré la telenovela en tu biblioteca»
+
+
+@pytest.mark.parametrize("text, expected", [
+    ("le suba al volumen", ("VolumeIntent", {"volume": "suba"})),
+    ("súbele tantito", ("VolumeIntent", {"volume": "sube"})),
+    ("ponme los simpson", ("LaunchGameIntent", {"game": "los simpson"})),
+    ("le ponga pausa", ("PauseIntent", {})),
+    ("quítale los subtítulos", ("SubtitlesOffIntent", {})),
+    ("se regrese diez segundos", ("SeekIntent", {"seek": "regrese", "amount": "10", "unit": "segundos"})),
+    ("ponle play", ("ResumeIntent", {})),
+    ("ciérralo", ("CloseGameIntent", {})),
+])
+def test_mexican_phrasing(text, expected):
+    """«Pídele a mi consola que LE SUBA AL volumen»: como se dice de verdad."""
+    assert parse_text(text) == expected

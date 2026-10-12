@@ -112,3 +112,4 @@
 
 /* Sin portada propia el nombre ya va sobre el arte: en el pie de Buscar no se repite. */
 .card--no-art .card__caption strong, .card--named .card__caption strong { display: none; }
+.card--no-art .card__caption span { display: none; }

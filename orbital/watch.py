@@ -658,7 +658,7 @@ class Watch:
                         for e in season["episodes"]]
         return []
 
-    def _jump_episode(self, meta: dict, video_id: str) -> bool:
+    def _jump_episode(self, meta: dict, video_id: str) -> bool | None:
         """Elegir un episodio desde el reproductor: lo pone donde ibas (o desde el principio)."""
         info = self.cinemeta.meta("series", meta["meta_id"])
         title, _ = self._episode_title(info, meta["meta_id"], video_id)

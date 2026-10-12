@@ -407,10 +407,11 @@ def hud_ass(hud: Hud) -> str:
     # Audio, subtítulos y fuente van bajo el título; abajo, todos los botones (también ◀▶ y LT/RT, que antes
     # solo se descubrían en pausa). Si no caben (4:3), se quitan primero los de menos uso.
     lines.append(text(MARGIN, 878, esc(fit(info_line(hud), 22, min(1300, W - 2 * MARGIN), "semi")), 22, MUTED, weight="semi"))
-    items = [("◀ ▶", "Adelantar"), *([("LT RT", "Episodio")] if hud.series else []), ("A", "Pausa"),
-             ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes"), ("B", "Mantén: salir")]
+    # A primero, como en todo Orbital; luego lo que se descubre (◀▶, LT/RT) y B al final.
+    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes"),
+             ("◀ ▶", "Adelantar"), *([("LT RT", "Episodio")] if hud.series else []), ("B", "Mantén: salir")]
     while len(items) > 4 and hints_width(items) > W - 2 * MARGIN:
-        items.pop(1 if hud.series and items[1][0] == "LT RT" else 0)
+        items.pop(-2)  # si no caben (4:3): primero LT/RT, luego ◀▶
     lines += [bar, _times(hud, BAR_Y + 28), hints(items, 1022, right=W - MARGIN)]
     return "\n".join(lines)
 
@@ -442,7 +443,7 @@ def paused_ass(hud: Hud) -> str:
         lines.append(text(MARGIN, y + 4, esc(line), 26, SOFT))
         y += 40
     y += 30
-    lines.append(buttons([("A", "Seguir"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes")], MARGIN, y))
+    lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes")], MARGIN, y))
     bar, _ = progress_bar(hud)
     more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), *([("LT RT", "Episodio")] if hud.series else []),
             ("B", "Mantén: salir")]

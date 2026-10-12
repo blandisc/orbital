@@ -1,5 +1,6 @@
 import { api } from "../core/api.js";
 import { Badge, Chip } from "./ui.js";
+import { Button } from "./button.js";
 import { bytes } from "../core/format.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
 
@@ -17,8 +18,10 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
   const subtitle = h("div", { class: "sources__subtitle" });
   const list = h("div", { class: "sources__list", role: "group" });
   const status = h("div", { class: "sources__status", role: "status" });
+  const retry = h("div", { class: "sources__retry", hidden: true },
+    Button({ label: "Reintentar", variant: "primary", onPress: () => request && open(request) }));
   const panel = h("div", { class: "sources__panel" },
-    h("div", { class: "sources__head" }, heading, title, subtitle), status, list);
+    h("div", { class: "sources__head" }, heading, title, subtitle), status, retry, list);
   const el = h("section", { class: "sources", hidden: true, "aria-label": "Fuentes",
     onClick: (e) => e.target === el && close() }, panel);
 
@@ -81,6 +84,8 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     mount(list);
     status.textContent = "Buscando dónde verlo…";
     status.hidden = false;
+    status.classList.remove("sources__status--problem");
+    retry.hidden = true;
     el.hidden = false;
     try {
       const data = await api.stremioSources(req.kind, req.id, req.video_id);
@@ -100,6 +105,8 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
       status.textContent = err.message;
       failed = true;
     }
+    status.classList.toggle("sources__status--problem", failed);
+    retry.hidden = !failed;
     onChange?.(); // el pie cambia: con la lista, «Ver con esta»; sin ella, «Reintentar»
   }
 
@@ -112,6 +119,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
 
   function handle(action) {
     if (el.hidden || el.classList.contains("sources--leaving")) return false;
+    if (action === "menu") return false; // ☰ abre el menú desde cualquier pantalla
     if (action === "back" || action === "options") close();
     else if (action === "up") setIndex(index - 1);
     else if (action === "down") setIndex(index + 1);

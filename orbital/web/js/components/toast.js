@@ -10,10 +10,14 @@ export function createToast({ duration = 3800, errorDuration = 6500 } = {}) {
   const queue = [];
   let timer;
   let showing = false;
+  let current = null;
+  // Con el dedo: tocar un aviso con acción («Deshacer») la hace.
+  el.addEventListener("click", () => { const press = current?.onPress; if (press) { current.onPress = null; press(); clearTimeout(timer); next(); } });
   let cancelExit = () => {};
 
   function next() {
     const toast = queue.shift();
+    current = toast || null;
     if (!toast) {
       showing = false;
       cancelExit = hideAfterExit(el, "toast--leaving");
@@ -27,6 +31,7 @@ export function createToast({ duration = 3800, errorDuration = 6500 } = {}) {
       toast.countdown > 0 ? h("span", { class: "toast__countdown", style: { animationDuration: `${toast.countdown}ms` } }) : null);
     el.classList.toggle("toast--error", toast.error);
     el.classList.toggle("toast--voice", toast.voice);
+    el.classList.toggle("toast--action", !!toast.onPress);
     el.setAttribute("role", toast.error ? "alert" : "status");
     el.hidden = false;
     // Reinicia la animación de entrada.
@@ -35,20 +40,25 @@ export function createToast({ duration = 3800, errorDuration = 6500 } = {}) {
     el.style.animation = "";
     clearTimeout(timer);
     // Con más avisos esperando, cada uno se queda un poco menos (pero se lee).
-    const base = toast.countdown ? toast.countdown + 300 : toast.error ? errorDuration : duration;
+    const base = toast.countdown ? toast.countdown + 300 : toast.error ? errorDuration : toast.duration || duration;
     timer = setTimeout(next, queue.length ? Math.max(2200, base * .6) : base);
   }
 
-  function show(message, { error = false, voice = false, countdown = 0 } = {}) {
+  function show(message, { error = false, voice = false, countdown = 0, duration: own = 0, onPress = null } = {}) {
     if (!message) return;
     const last = queue.at(-1);
     if (last?.message === message) return; // el mismo aviso dos veces seguidas no aporta
-    if (countdown || error) queue.length = 0; // lo urgente (un error, una cuenta atrás) va ya, no detrás de otros
-    queue.push({ message, error, voice, countdown });
-    if (queue.length > 4) queue.splice(0, queue.length - 4);
+    const toast = { message, error, voice, countdown, duration: own, onPress };
+    // Lo urgente (un error, una cuenta atrás) va ya, delante de los demás; los que esperaban siguen después.
+    if (countdown || error) queue.unshift(toast);
+    else queue.push(toast);
+    if (queue.length > 4) queue.splice(4);
     if (!showing) next();
     else if (error || countdown) { clearTimeout(timer); next(); }
   }
 
-  return { el, show };
+  /** Deja de ofrecer la acción del aviso a la vista (p. ej. ya se deshizo con el mando). */
+  function dismiss() { if (current?.onPress) { clearTimeout(timer); next(); } }
+
+  return { el, show, dismiss };
 }

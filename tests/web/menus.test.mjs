@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { stepSetting } from "../../orbital/web/js/core/menus.js";
 import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingLabel, settingsMenu, settingsPage, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
@@ -22,7 +23,8 @@ test("opciones de un juego: solo lo que no hace otro botón, emulador e imagen e
 test("opciones de un juego favorito y sin alternativas", () => {
   const menu = gameMenu({ id: "steam:1", title: "Hades", favorite: true, runners: [], source: "steam", category: "steam" });
   assert.deepEqual(menu.options.map((o) => o.label), ["Quitar de favoritos", "Ocultar"]);
-  assert.match(menu.options.at(-1).command.message, /Mostrar juegos ocultos/); // dice dónde recuperarlo
+  assert.deepEqual(menu.options.at(-1).command.prefs, { hidden: true }); // se deshace con Y unos segundos
+  assert.ok(menu.options.at(-1).command.title);
   assert.equal(gameMenu(null), null);
 });
 
@@ -249,7 +251,7 @@ test("liberar memoria: A cierra lo seguro; lo de Windows solo se muestra", () =>
     { exe: "claude.exe", name: "la app de Claude", mb: 4600, closable: true, warning: "Detiene a Claude" },
     { exe: "msedge.exe", name: "Edge", mb: 1700, closable: false, warning: "" }] });
   assert.match(menu.subtitle, /Poco margen: 1,5 GB/);
-  assert.deepEqual(menu.options[0].command, { type: "close-app", exe: "claude.exe", name: "la app de Claude" });
+  assert.deepEqual(menu.options[0].command, { type: "confirm-close-app", exe: "claude.exe", name: "la app de Claude" });
   assert.equal(menu.options[0].value, "4,5 GB");
   assert.equal(menu.options[1].command.type, "stay");
 });
@@ -262,4 +264,15 @@ test("panel rápido: la música que suena, A pausa y ◀/▶ cambian de canción
   assert.equal(song.hint, "Rubén Blades · Apple Music");
   assert.deepEqual(song.adjust.right, { type: "music", action: "next" });
   assert.deepEqual(song.command, { type: "music", action: "toggle" });
+});
+
+test("ajustes: ◀ baja y ▶ sube, de menos a más y sin dar la vuelta", () => {
+  assert.equal(stepSetting("sub_scale", 1, -1), .85);
+  assert.equal(stepSetting("sub_scale", 1.5, 1), 1.5);
+  assert.equal(stepSetting("safe_area", 4, 1), 6);
+  const page = settingsPage("display", { text_size: "large" });
+  const size = page.options.find((o) => o.label === "Tamaño del texto");
+  assert.equal(size.adjust.left.value, "normal");
+  assert.equal(size.adjust.right.value, "xlarge");
+  assert.ok(new Set(page.options.map((o) => o.icon)).size > 1); // no seis ojos iguales
 });

@@ -96,7 +96,10 @@
             "pon la película {query}",
             "pon la serie {query}",
             "quiero ver la película {query}",
-            "quiero ver la serie {query}"
+            "quiero ver la serie {query}",
+            "me ponga {query}",
+            "me pongas {query}",
+            "pónme {query}"
           ]
         },
         {
@@ -141,7 +144,10 @@
             "cierra la película",
             "cierra la serie",
             "cierra stremio",
-            "quita el video"
+            "quita el video",
+            "ciérralo",
+            "ciérrelo",
+            "lo cierre"
           ]
         },
         {
@@ -232,7 +238,10 @@
             "pausar el video",
             "detén el video",
             "detenga el video",
-            "para el video"
+            "para el video",
+            "le ponga pausa",
+            "pausa",
+            "le pause"
           ]
         },
         {
@@ -252,7 +261,10 @@
             "play",
             "dale",
             "sigue con la película",
-            "continúa el video"
+            "continúa el video",
+            "ponle play",
+            "le dé play",
+            "le quite la pausa"
           ]
         },
         {
@@ -279,7 +291,11 @@
             "{seek} un poco",
             "{seek} el video un poco",
             "{seek} {amount} {unit} por favor",
-            "{seek} media {unit}"
+            "{seek} media {unit}",
+            "se {seek} {amount} {unit}",
+            "le {seek} {amount} {unit}",
+            "le {seek} un {unit}",
+            "le {seek} un poco"
           ]
         },
         {
@@ -315,7 +331,10 @@
             "quitar los subtítulos",
             "apaga los subtítulos",
             "apague los subtítulos",
-            "sin subtítulos"
+            "sin subtítulos",
+            "le quite los subtítulos",
+            "quítale los subtítulos",
+            "quítele los subtítulos"
           ]
         },
         {
@@ -465,7 +484,13 @@
             "volumen al {level} por ciento",
             "volumen a {level}",
             "{volume} el volumen {amount} puntos",
-            "{volume} el volumen {amount}"
+            "{volume} el volumen {amount}",
+            "le {volume} al volumen",
+            "{volume} al volumen",
+            "le {volume} el volumen",
+            "le {volume}",
+            "le {volume} tantito",
+            "le {volume} al volumen a {level}"
           ]
         },
         {
@@ -642,7 +667,9 @@
                   "salte",
                   "pasa",
                   "pase",
-                  "brinca"
+                  "brinca",
+                  "adelántale",
+                  "adelántele"
                 ]
               }
             },
@@ -657,7 +684,9 @@
                   "atrasa",
                   "atrase",
                   "regresar",
-                  "retroceder"
+                  "retroceder",
+                  "regrésale",
+                  "regrésele"
                 ]
               }
             }
@@ -1052,7 +1081,10 @@
                   "más alto",
                   "aumenta",
                   "más fuerte",
-                  "sube más"
+                  "sube más",
+                  "súbale",
+                  "súbele tantito",
+                  "subirle"
                 ]
               }
             },
@@ -1066,7 +1098,10 @@
                   "más bajo",
                   "disminuye",
                   "más quedito",
-                  "bájale más"
+                  "bájale más",
+                  "bájele",
+                  "bájale tantito",
+                  "bajarle"
                 ]
               }
             }

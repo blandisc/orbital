@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints } from "./core/hints.js";
-import { alexaMenu, artMenu, capturesMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, healthMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, updateMenu, windowsMenu } from "./core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, healthMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, updateMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -31,8 +31,12 @@ import { createBoot } from "./app/boot.js";
 import { createLaunching } from "./app/launching.js";
 import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
+import { storage } from "./core/storage.js";
 
 const state = createState();
+// La Gamepad API no enseña el mando hasta la primera pulsación: se arranca con la última forma de
+// usarla (o con el mando, que es lo normal en la TV), no con teclas de teclado que nadie tiene.
+state.modality = (() => { const m = storage.get("orbital.modality", "gamepad"); return m in GLYPHS ? m : "gamepad"; })();
 // Avisos que esperan a que la ventana se vea (Edge la da por oculta cuando un juego la tapa).
 const deferred = createDeferred(() => document.hidden);
 
@@ -195,6 +199,7 @@ function setModality(modality) {
   if (state.modality === modality) return;
   state.modality = modality;
   document.body.dataset.input = modality;
+  storage.set("orbital.modality", modality);
   renderSections();
   if (inHome()) renderHome(); // los botones del destacado y de las consolas cambian de glifo
   if (inGames()) renderGames();
@@ -541,7 +546,8 @@ async function runCommand(command, context = null) {
         await api.setPrefs(command.id, command.prefs);
         if (command.prefs.favorite) state.popId = command.id;
         sound.play("select");
-        if (command.message) ui.toast.show(command.message);
+        if (command.prefs.hidden) offerUndoHide(command);
+        else if (command.message) ui.toast.show(command.message);
         return loadLibrary({ keepId: command.id });
       case "refresh":
         return loadLibrary({ refresh: true });
@@ -621,11 +627,14 @@ async function runCommand(command, context = null) {
       }
       case "memory":
         return openMenu(memoryMenu(await api.memory()), nested(context));
+      case "confirm-close-app":
+        return openMenu(closeAppConfirmMenu(command), nested(context));
       case "close-app": {
         const res = await api.closeApp(command.exe);
         sound.play("select");
         ui.toast.show(`Cerré ${command.name}: ${(res.freed_mb / 1024).toFixed(1).replace(".", ",")} GB libres de más`);
-        return openMenu(memoryMenu(await api.memory()), { stack: context?.stack ?? [] });
+        // De vuelta a la lista (sin la pregunta ni la lista vieja en el «Atrás»).
+        return openMenu(memoryMenu(await api.memory()), { stack: (context?.stack ?? []).slice(0, -1) });
       }
       case "tour": { // con el atajo del mando conectado
         if (state.legion === undefined) {
@@ -671,6 +680,12 @@ async function runCommand(command, context = null) {
       case "stay":
         if (context) ui.sheet.open(context.menu, { index: context.index, stack: context.stack });
         return renderHints();
+      case "back": { // «Cancelar» en una pregunta: al menú de antes, donde estabas
+        const previous = context?.stack?.at(-1);
+        if (previous) ui.sheet.open(previous.menu, { index: previous.index, stack: context.stack.slice(0, -1) });
+        sound.play("back");
+        return renderHints();
+      }
       case "close":
         return sound.play("back");
     }
@@ -687,7 +702,34 @@ function openMenu(menu, options = {}) {
   renderHints();
 }
 
+/** «Zelda oculto · Y Deshacer»: unos segundos para arrepentirse (Y o tocar el aviso). */
+const UNDO_MS = 8000;
+function offerUndoHide(command) {
+  const undo = { id: command.id, until: Date.now() + UNDO_MS };
+  state.undoHide = undo;
+  const title = command.title || findItem(command.id)?.title || "Listo";
+  ui.toast.show(`${title} oculto · Y Deshacer`, { duration: UNDO_MS, onPress: () => undoHide(undo) });
+}
+
+async function undoHide(undo = state.undoHide) {
+  if (!undo || state.undoHide !== undo) return;
+  state.undoHide = null;
+  ui.toast.dismiss();
+  try {
+    await api.setPrefs(undo.id, { hidden: false });
+    sound.play("select");
+    ui.toast.show("Listo: vuelve a estar en tu biblioteca");
+    await loadLibrary({ keepId: undo.id });
+  } catch (err) {
+    ui.toast.show(err.message, { error: true });
+  }
+}
+
 function handleAction(action, { repeat = false } = {}) {
+  // Y justo después de ocultar algo: deshacer (si no hay un menú u otra vista encima).
+  if (action === "options" && state.undoHide && Date.now() < state.undoHide.until && !ui.sheet.isOpen && !topOverlay()) {
+    return undoHide();
+  }
   if (ui.launch.visible) {
     if (action === "back") { // B: no esperar más (muestra ya el juego o lo que haya)
       if (ui.launch.holding) api.reveal().catch(() => {});

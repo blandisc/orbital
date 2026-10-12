@@ -85,7 +85,7 @@ def test_a_pauses_and_shows_the_bar_with_the_legend():
     p.press("a")
     assert ("set_property", "pause", True) in mpv.sent
     hud = mpv.overlays[1]
-    assert "Interstellar" in hud and "En pausa" in hud and "Seguir" in hud and "Audio y subtítulos" in hud
+    assert "Interstellar" in hud and "En pausa" in hud and "Continuar" in hud and "Audio y subtítulos" in hud
     assert "Subtítulos en inglés" in hud and "10:00" in hud and "EN PAUSA" not in hud
 
 
@@ -458,6 +458,23 @@ def test_two_quick_rt_presses_go_two_episodes_ahead():
     assert "2 episodios adelante" in mpv.overlays[3]
     _t.sleep(.4)
     assert asked == [2]
+
+
+def test_b_cancels_an_accidental_episode_change():
+    """Un gatillo rozado sin querer: B lo deshace antes de que cargue (antes, a los 0,7 s cambiaba)."""
+    import time as _t
+
+    p, mpv = make_player()
+    p.current.meta = {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1"}
+    asked = []
+    p.on_episode = lambda meta, delta: asked.append(delta) or True
+    p.EPISODE_WAIT = .2
+    p.press("rt")
+    assert "B cancela" in mpv.overlays[3]
+    p.press("b")
+    _t.sleep(.4)
+    assert asked == [] and "Sigues en este episodio" in mpv.overlays[3]
+    assert ("quit",) not in mpv.sent
 
 
 def test_next_file_resets_the_tracks_to_the_series_language():

@@ -87,7 +87,9 @@ export function gamesHints(glyphs, target) {
   else if (target?.kind === "rail") list.push({ glyph: glyphs.rows, label: "Otra consola" }, { glyph: glyphs.select, label: "Ver sus juegos" });
   // Un juego enfocado: la ficha de la derecha ya enseña Jugar, Con … y Opciones; el pie no los repite.
   if (glyphs.page && target?.kind !== "rail") list.push({ glyph: glyphs.page, label: "Otra consola" });
+  if (glyphs.search) list.push({ glyph: glyphs.search, label: "Buscar", secondary: true });
   if (glyphs.section) list.push({ glyph: glyphs.section, label: "Sección", secondary: true });
+  list.push({ glyph: glyphs.back, label: "Inicio", secondary: true }); // B vuelve a Inicio
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
   return list;
 }

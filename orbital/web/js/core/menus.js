@@ -48,7 +48,7 @@ export function gameMenu(item, { running = null } = {}) {
   if (item.system && !isOpen) options.push({ icon: "cover", label: "Cambiar imagen", command: { type: "art-menu", item } });
   if (!isOpen) {
     options.push({ icon: "hide", label: "Ocultar", danger: true,
-      command: { type: "prefs", id: item.id, prefs: { hidden: true }, message: `${item.title} oculto · ☰ → Mostrar juegos ocultos` } });
+      command: { type: "prefs", id: item.id, title: item.title, prefs: { hidden: true } } }); // se puede deshacer unos segundos
   }
   return { title: item.title, options };
 }
@@ -92,7 +92,7 @@ export const ALEXA_EXAMPLES = [
   { icon: "stop", label: "«pause»", hint: "Mientras ves algo; luego «reanude»" },
   { icon: "chevron", label: "«salte la intro»", hint: "O «adelante 5 minutos», «regrese un minuto»" },
   { icon: "swap", label: "«ponga subtítulos en español»", hint: "O «cambie el audio a inglés» (también francés, portugués…)" },
-  { icon: "sound", label: "«suba el volumen»", hint: "O «ponga el volumen en 30»" },
+  { icon: "sound", label: "«le suba al volumen»", hint: "O «le baje tantito», «ponga el volumen en 30»" },
 ];
 
 export function alexaMenu() {
@@ -222,7 +222,7 @@ const gb = (mb) => `${(mb / 1024).toFixed(1).replace(".", ",")} GB`;
 export function memoryMenu({ room_mb: room, apps = [] }) {
   const options = apps.map((app) => (app.closable
     ? { icon: "close", label: `Cerrar ${app.name}`, value: gb(app.mb), hint: app.warning || undefined,
-      command: { type: "close-app", exe: app.exe, name: app.name } }
+      command: { type: "confirm-close-app", exe: app.exe, name: app.name } }
     : { icon: "windows", label: app.name, value: gb(app.mb), hint: "De Windows u Orbital: no se cierra", command: { type: "stay" } }));
   options.push({ icon: "check", label: "Listo", command: { type: "close" } });
   const tight = room != null && room < 2048;
@@ -230,6 +230,18 @@ export function memoryMenu({ room_mb: room, apps = [] }) {
     title: "Liberar memoria", crumb: "Memoria",
     subtitle: room == null ? "" : `${tight ? "Poco margen" : "Margen"}: ${gb(room)} libres para abrir juegos.${tight ? " Cierra algo para que abran bien." : ""}`,
     options,
+  };
+}
+
+/** Cerrar una app para liberar memoria: puede perder lo no guardado, así que se pregunta (Cancelar primero). */
+export function closeAppConfirmMenu({ exe, name }) {
+  return {
+    title: `¿Cerrar ${name}?`,
+    subtitle: "Lo que no hayas guardado en ella se perderá.",
+    options: [
+      { icon: "close", label: "Cancelar", command: { type: "back" } },
+      { icon: "close", label: `Cerrar ${name}`, danger: true, command: { type: "close-app", exe, name } },
+    ],
   };
 }
 
@@ -307,19 +319,19 @@ export function powerConfirmMenu(action, running = null) {
 }
 
 // --- Ajustes ------------------------------------------------------------------------------
-// Cada ajuste: sus valores en orden (A o ◀/▶ pasan al siguiente) y cómo se llaman.
+// Cada ajuste: sus valores de menos a más (▶ sube, ◀ baja; A pasa al siguiente y da la vuelta) y cómo se llaman.
 export const SETTING_VALUES = {
   audio: [["en", "Inglés"], ["es", "Español"]],
   subtitles: [["en", "Inglés"], ["es", "Español"], ["forced", "Solo traducciones en pantalla"], ["", "Sin subtítulos"]],
-  quality: [["1080p", "1080p"], ["4K", "4K"], ["720p", "720p"]],
-  sub_scale: [[1, "Normal"], [1.25, "Grande"], [1.5, "Muy grande"], [.85, "Pequeño"]],
+  quality: [["720p", "720p"], ["1080p", "1080p"], ["4K", "4K"]],
+  sub_scale: [[.85, "Pequeño"], [1, "Normal"], [1.25, "Grande"], [1.5, "Muy grande"]],
   text_size: [["normal", "Normal"], ["large", "Grande"], ["xlarge", "Muy grande"]],
-  safe_area: [[4, "Normal"], [6, "Grande"], [2, "Pequeño"], [0, "Sin margen"]],
+  safe_area: [[0, "Sin margen"], [2, "Pequeño"], [4, "Normal"], [6, "Grande"]],
   reduce_motion: [[false, "No"], [true, "Sí"]],
   sounds: [[true, "Sí"], [false, "No"]],
   haptics: [[true, "Sí"], [false, "No"]],
   voice_tips: [[true, "Sí"], [false, "No"]],
-  game_idle_minutes: [[60, "1 hora"], [120, "2 horas"], [30, "30 min"], [0, "Nunca"]],
+  game_idle_minutes: [[30, "30 min"], [60, "1 hora"], [120, "2 horas"], [0, "Nunca"]],
   video_idle_minutes: [[15, "15 min"], [30, "30 min"], [60, "1 hora"], [0, "Nunca"]],
   close_previous: [[true, "Sí"], [false, "No"]],
 };
@@ -334,12 +346,28 @@ function otherValue(key, value) {
   return value == null ? "—" : String(value);
 }
 
-/** El valor que sigue al actual (da la vuelta). */
-export function nextSetting(key, value) {
+/** El valor que sigue al actual (da la vuelta); con step = -1, el anterior. */
+export function nextSetting(key, value, step = 1) {
   const values = (SETTING_VALUES[key] ?? [[value]]).map(([v]) => v);
   const i = values.indexOf(value);
-  return values[(i + 1) % values.length];
+  if (i < 0) return values[step > 0 ? 0 : values.length - 1];
+  return values[(i + step + values.length) % values.length];
 }
+
+/** ◀/▶: el de al lado, sin dar la vuelta (en «Muy grande», ▶ no salta a «Pequeño»). */
+export function stepSetting(key, value, step) {
+  const values = (SETTING_VALUES[key] ?? [[value]]).map(([v]) => v);
+  const i = values.indexOf(value);
+  if (i < 0) return values[0];
+  return values[Math.max(0, Math.min(values.length - 1, i + step))];
+}
+
+/** Un ícono por ajuste (antes, todos los de la página con el mismo). */
+const SETTING_ICONS = {
+  audio: "sound", subtitles: "info", quality: "star", sub_scale: "plus", text_size: "plus", safe_area: "wide",
+  reduce_motion: "moon", voice_tips: "assistant", sounds: "sound", haptics: "gamepad", game_idle_minutes: "gamepad",
+  video_idle_minutes: "play", close_previous: "close",
+};
 
 const SETTING_PAGES = {
   playback: { title: "Películas y series", icon: "play", options: [
@@ -490,8 +518,11 @@ export function settingsPage(page, settings) {
   return {
     title: def.title, crumb: def.title,
     options: def.options.map(([key, label, hint]) => ({
-      icon: def.icon, label, hint, value: settingLabel(key, settings[key]),
+      icon: SETTING_ICONS[key] || def.icon, label, hint, value: settingLabel(key, settings[key]),
       command: { type: "setting", key, value: nextSetting(key, settings[key]), page },
+      // ◀ baja y ▶ sube (antes las dos avanzaban)
+      adjust: { left: { type: "setting", key, value: stepSetting(key, settings[key], -1), page },
+        right: { type: "setting", key, value: stepSetting(key, settings[key], 1), page } },
     })),
   };
 }
@@ -574,7 +605,7 @@ export const SHORTCUTS = {
   orbital: [["Abrir", "A"], ["Atrás", "B"], ["Opciones", "Y"], ["Otro emulador o la ficha", "X"],
     ["Cambiar de sección", "LB / RB"], ["Buscar", "Vista ⧉"], ["Menú", "☰"]],
   player: [["Pausa", "A"], ["Adelantar", "◀ ▶"], ["Audio y subtítulos", "X"], ["Episodios y fuente", "Y"],
-    ["Capítulo · episodio", "LB/RB · LT/RT"], ["Volumen", "▲ ▼"], ["Salir", "B"]],
+    ["Capítulo · episodio", "LB/RB · LT/RT"], ["Volumen", "▲ ▼"], ["Salir", "Mantén B"]],
 };
 
 /** «Cómo se usa»: una sola hoja en tres partes, con los atajos del mando que tienes. */

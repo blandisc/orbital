@@ -195,8 +195,40 @@ _EPISODE_ONLY = [
 NUMERIC = {"VolumeIntent", "SeekIntent", "PlayEpisodeIntent"}  # «pon el volumen a cincuenta»: el número en palabras
 
 
+# Cómo se dice en México con «pídele a mi consola que…»: «le suba al volumen», «súbele tantito»,
+# «ponme Los Simpson», «quítale los subtítulos», «se regrese diez segundos». Se lleva a la forma
+# simple («sube el volumen») y se vuelve a probar.
+_CLITIC_VERBS = {
+    "subele": "sube", "subale": "suba", "subanle": "suba", "bajale": "baja", "bajele": "baje", "bajanle": "baje",
+    "ponme": "pon", "pongame": "ponga", "ponnos": "pon", "quitale": "quita", "quitele": "quite",
+    "regresale": "regresa", "regresele": "regrese", "adelantale": "adelanta", "adelantele": "adelante",
+    "cierralo": "cierra el juego", "cierrelo": "cierre el juego", "cierrala": "cierra el juego",
+    "pausalo": "pausa", "pausala": "pausa", "pausale": "pausa",
+}
+
+
+def _plain(clean: str) -> str:
+    words = clean.split()
+    while words and words[0] in ("le", "me", "se", "nos", "que"):
+        words = words[1:]
+    text = " ".join(_CLITIC_VERBS.get(w, w) for w in words)
+    text = re.sub(r"\b(?:tantito|un poquito|un poco|mas)$", "", text).strip()
+    text = re.sub(r"^(sube|suba|baja|baje)\s+al\s+volumen", r"\1 el volumen", text)
+    text = re.sub(r"^(sube|suba|baja|baje)(?:\s+al)?$", r"\1 el volumen", text)  # «súbele» a secas
+    text = re.sub(r"^(?:ponle|dale|dele)\s+play$", "dale play", text)
+    return text
+
+
 def parse_text(text: str) -> tuple[str, dict[str, str]] | None:
-    clean = normalize(text)
+    found = _parse(normalize(text))
+    if found is None:
+        plain = _plain(normalize(text))
+        if plain and plain != normalize(text):
+            found = _parse(plain)
+    return found
+
+
+def _parse(clean: str) -> tuple[str, dict[str, str]] | None:
     numeric = words_to_numbers(clean)
     for pattern, intent, slot, *fixed in _TEXT_RULES:
         m = pattern.match(numeric if intent in NUMERIC else clean)

@@ -17,6 +17,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
+  logo.addEventListener("error", () => { logo.hidden = true; name.hidden = false; }); // sin Internet o 404
   const facts = h("div", { class: "title__facts" });
   const description = h("p", { class: "title__description" });
   const people = h("div", { class: "title__people" });
@@ -83,6 +84,10 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
     }, svg(ICONS[b.icon] || ICONS.play), h("span", {}, b.label), b.hint && h("small", {}, b.hint))));
     const focused = zone === "actions" ? buttons[action] : null;
     caption.textContent = focused && !focused.primary ? focused.label : "";
+    const button = focused && !focused.primary ? actions.children[action] : null;
+    // Debajo del botón enfocado, sin salirse por la derecha.
+    caption.style.paddingInlineStart = button
+      ? `${Math.max(0, Math.min(button.offsetLeft - actions.offsetLeft, actions.clientWidth - caption.scrollWidth))}px` : "";
   }
 
   function renderTabs() {
@@ -333,6 +338,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
   /** Acción del mando o teclado. Devuelve true si la vista la consumió. */
   function handle(act) {
     if (el.hidden || el.classList.contains("title--leaving")) return false;
+    if (act === "menu") return false; // ☰ abre el menú desde cualquier pantalla (como en Xbox)
     if (act === "back") {
       if (zone === "episodes") { zone = "actions"; onMove?.(); render(); return true; }
       close();

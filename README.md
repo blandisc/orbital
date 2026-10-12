@@ -242,6 +242,8 @@ los Echo de tu cuenta sin publicarla.
 | "Alexa, pídele a mi consola que ponga el capítulo 5" / "…el episodio 3 de la temporada 2" | Ese episodio de la serie que estás viendo |
 | "Alexa, pídele a mi consola que ponga la telenovela" / "…mi serie" | Lo que estabas viendo |
 | "Alexa, pídele a mi consola que silencie la tele" / "…que quite el silencio" | Sin sonido / con sonido |
+| "Alexa, pídele a mi consola que le suba al volumen" / "…que le baje tantito" / "…que ponga el volumen en 30" | Volumen |
+| "Alexa, pídele a mi consola que me ponga Los Simpson" / "…que le quite los subtítulos" / "…que se regrese diez segundos" | También se entiende como se dice en México (con «le», «me», «se») |
 | "Alexa, pídele a mi consola que cierre el juego" | Cierra el emulador o el video en curso |
 | "Alexa, pídele a mi consola que salga al escritorio" / "…que muestre la consola" | Sale / vuelve |
 | "Alexa, dile a mi consola que se mueva a la derecha" | Mueve la selección |

@@ -9,7 +9,8 @@
 }
 .login--leaving { animation: fade-out var(--duration-exit) var(--ease-in) forwards; }
 /* El teclado es el componente común (keyboard.css): aquí solo dónde va y cómo espera al conectar. */
-.login .keyboard { align-self: end; }
+.login { --key-height: min(2.85rem, 6vh); } /* a 720 de alto el teclado cabe sobre el pie (como en Buscar) */
+.login .keyboard { align-self: end; min-height: 0; }
 .login--busy .keyboard { opacity: .5; pointer-events: none; }
 
 .login__head { display: grid; gap: var(--space-2); justify-items: center; text-align: center; max-width: 46rem; }
@@ -32,4 +33,4 @@
 /* Dos renglones fijos: un error largo ya no empuja el teclado debajo del pie de controles. */
 .login__message { min-height: 2.8em; max-height: 2.8em; overflow: hidden; color: var(--color-warning); font-size: var(--text-sm); text-align: center; text-wrap: balance; }
 
-@media (max-height: 640px) { .login { gap: var(--space-3); } .login__lead { display: none; } }
+@media (max-height: 760px) { .login { gap: var(--space-3); } .login__lead { display: none; } }

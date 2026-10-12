@@ -82,7 +82,8 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 .touch-back svg { width: 1.3rem; height: 1.3rem; }
 [data-input="touch"][data-overlay="true"] .touch-back { display: inline-flex; animation: fade-in var(--duration-base) var(--ease-out); }
 /* Dedos: objetivos de al menos ~44 px. */
-[data-input="touch"] .button, [data-input="touch"] .status-bar__tab, [data-input="touch"] .sheet__item { min-height: 2.9rem; }
+[data-input="touch"] .button, [data-input="touch"] .status-bar__tab, [data-input="touch"] .sheet__item,
+[data-input="touch"] .status-bar__search, [data-input="touch"] .title__tab { min-height: 2.9rem; } /* ~44 px: el dedo atina */
 
 /* Aterrizaje: al terminar el arranque o al volver de un juego, la interfaz entra desde un poco
    más cerca y se asienta (como al salir de un juego en PS5), en vez de aparecer de golpe. */

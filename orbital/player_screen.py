@@ -353,6 +353,11 @@ class PlayerScreen:
         if self.menu is not None:
             self._menu_press(button)
             return
+        if button == "b" and self._episode_steps and self._episode_timer is not None:
+            self._episode_timer.cancel()  # LT/RT sin querer: B lo deshace antes de que cargue
+            self._episode_timer, self._episode_steps = None, 0
+            self.toast("Sigues en este episodio", 2)
+            return
         if self._card is not None and button in ("a", "b"):
             if button == "a":
                 self._card_accept()
@@ -422,7 +427,9 @@ class PlayerScreen:
         else:
             self._overlay(self.HOLD, player_ui.quit_hold_ass(progress))
 
-    EPISODE_WAIT = .7  # s: RT, RT seguidos suman (dos episodios adelante) antes de cargar
+    # s: RT, RT seguidos suman (dos episodios adelante) antes de cargar; y da tiempo de arrepentirse con B
+    # (en la Legion Go en la mano, los gatillos se rozan sin querer).
+    EPISODE_WAIT = 2.0
 
     def _queue_episode(self, meta: dict, step: int) -> None:
         """LT/RT: se cuentan las pulsaciones y, cuando paras, se carga ese episodio (antes dos RT
@@ -432,9 +439,9 @@ class PlayerScreen:
         if n == 0:
             self.toast("Sigues en este episodio", 2)
         elif abs(n) == 1:
-            self.toast("Episodio siguiente…" if n > 0 else "Episodio anterior…", 3)
+            self.toast(("Episodio siguiente" if n > 0 else "Episodio anterior") + " · B cancela", 3)
         else:
-            self.toast(f"{abs(n)} episodios {'adelante' if n > 0 else 'atrás'}…", 3)
+            self.toast(f"{abs(n)} episodios {'adelante' if n > 0 else 'atrás'} · B cancela", 3)
         if self._episode_timer:
             self._episode_timer.cancel()
         self._episode_timer = threading.Timer(self.EPISODE_WAIT, self._step_episodes, args=(meta,))

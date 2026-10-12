@@ -16,6 +16,7 @@ export function createState() {
     launchLockedUntil: 0,
     launchingTitle: null, // lo que se está abriendo (para decirlo si pulsas otra cosa)
     launchingId: null,
+    undoHide: null, // { id, until }: lo recién ocultado, que Y todavía puede deshacer
     libraryLoaded: false,
     memory: {}, // id de fila -> último juego enfocado en esa fila
     allRows: [], // todas las filas; `rows` son las de la sección actual

@@ -457,10 +457,11 @@ class OrbitalPlayer(PlayerScreen):
         credits = self._in_credits(segment)
         if not segment.upnext_requested and (remaining <= UPNEXT_LOOKAHEAD or credits):
             segment.upnext_requested = True
+            provider = self.next_provider
 
             def ask() -> None:
                 try:
-                    segment.upnext = self.next_provider(segment.meta) or False
+                    segment.upnext = provider(segment.meta) or False
                 except Exception:  # noqa: BLE001 - Cinemeta no respondió: se pregunta otra vez (3 intentos)
                     log.exception("No pude saber el siguiente episodio")
                     segment.upnext_tries += 1

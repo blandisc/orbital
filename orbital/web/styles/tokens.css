@@ -48,7 +48,7 @@
   /* Legible a 3 m: a 1080p el texto secundario no baja de ~18 px ni el cuerpo de ~23 px.
      --text-scale lo sube Ajustes → Pantalla → Tamaño del texto (solo el texto, no el diseño). */
   --text-scale: 1;
-  --text-2xs: calc(.82rem * var(--text-scale));
+  --text-2xs: calc(.86rem * var(--text-scale)); /* ~18,5 px a 1080p: lo más chico (subtítulos de tarjeta, glifos) */
   --text-xs: calc(.9rem * var(--text-scale));
   --text-sm: calc(.98rem * var(--text-scale));
   --text-md: calc(1.07rem * var(--text-scale));
@@ -136,7 +136,7 @@
   --radius-2xl: 1.4rem;
   --tile-radius: var(--radius-xl);
   --tile-focus-scale: 1.03;
-  --tile-dim-opacity: .72;
+  --tile-dim-opacity: .8;
   --tile-gap: 1.1rem;
   --key-height: 3.2rem;
   --focus-outline: 3px; /* contorno de :focus-visible (teclado y ratón) */

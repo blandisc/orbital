@@ -136,6 +136,9 @@ body[data-view="games"] .backdrop__space { opacity: 1; }
   display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
 }
 .game-panel__actions { margin-top: auto; } /* .button-row: una fila, nunca se corta */
+/* Foco en filtros o consolas: A no juega; los botones se atenúan y sin glifo (el pie dice qué hace A). */
+.game-panel--idle .game-panel__actions { opacity: var(--tile-dim-opacity); }
+.game-panel--idle .game-panel__actions .glyph { display: none; }
 
 /* Cambio de consola: un fundido corto del contenido, sin nada que cruce la pantalla. */
 .games__main--switch .games__heading, .games__main--switch .games__viewport { animation: games-switch var(--duration-base) var(--ease-out); }

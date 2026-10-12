@@ -308,9 +308,15 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       dictateGlyph = g.menu || "";
       keyboard.setLayout(layout(shownCleared, dictateGlyph));
     }
+    const page = g.page?.split(" ") ?? [];
     return [
       { glyph: g.select, label: zone === "results" ? "Abrir" : "Escribir" },
       g.menu && { glyph: g.menu, label: "Dictar" }, // otra vez: deja de escuchar
+      // LT salta a los resultados (antes había que subir seis filas del teclado sin saberlo).
+      zone === "keys" && items.length && page[0] && { glyph: page[0], label: "Resultados" },
+      zone === "results" && page[1] && { glyph: page[1], label: "Teclado" },
+      zone === "keys" && { glyph: g.alt, label: "Borrar", secondary: true },
+      zone === "keys" && { glyph: g.options, label: "Espacio", secondary: true },
       { glyph: g.back, label: "Atrás", end: true },
     ].filter(Boolean);
   };
