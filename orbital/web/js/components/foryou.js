@@ -27,7 +27,7 @@ const SETUP = {
   info: "Para ver tendencias, lo más popular en Netflix, Disney+ y HBO Max y novedades de juegos, agrega las claves gratuitas de Trakt, TMDB y RAWG en config.yaml (sección para_ti). Mientras, aquí están tus juegos.",
 };
 
-export function createForYou({ onWatch, onLaunch, onMore, onConnect, onFocus, onEdge }) {
+export function createForYou({ onWatch, onLaunch, onMore, onConnect, onFocus, onEdge, onToggle }) {
   const notice = h("div", { class: "foryou__notice", role: "status" });
   const details = new Map(); // clave → { overview, facts, logo_dark }
   let detailTimer = 0;
@@ -36,7 +36,7 @@ export function createForYou({ onWatch, onLaunch, onMore, onConnect, onFocus, on
     clearTimeout(detailTimer);
     if (item?.key) detailTimer = setTimeout(() => fetchDetails(item), 250);
   };
-  const mosaic = createForYouMosaic({ onFocus: (item) => focused(item) });
+  const mosaic = createForYouMosaic({ onFocus: (item) => focused(item), onPick: (item) => activate(item) });
   const lists = createForYouLists({
     loadList: (id, kind) => api.forYouList(id, kind).then((res) => res.items),
     onFocus: (target) => focused(target?.kind === "item" ? target.item : null),
@@ -46,7 +46,9 @@ export function createForYou({ onWatch, onLaunch, onMore, onConnect, onFocus, on
   const stage = h("div", { class: "foryou__stage" }, mosaic.el, lists.el);
   const opts = MODES.map((m) => h("span", { class: "foryou__switch-opt" }, m.label));
   const glyph = h("span", { class: "foryou__switch-glyph" });
-  const switcher = h("div", { class: "foryou__switch", "aria-label": "Modo" }, glyph, ...opts);
+  // Con el dedo, un toque en el selector cambia de modo (sin mando no había cómo llegar a Listas).
+  const switcher = h("button", { class: "foryou__switch", type: "button", tabindex: "-1", "aria-label": "Cambiar entre Mosaico y Listas",
+    onClick: () => { setMode(mode === "mosaic" ? "lists" : "mosaic"); onToggle?.(); } }, glyph, ...opts);
   const el = h("section", { class: "foryou", hidden: true, "aria-label": "Para ti" }, stage, notice, switcher);
 
   let mode = MODES.some((m) => m.id === storage.get("orbital.foryou.mode", "mosaic")) ? storage.get("orbital.foryou.mode", "mosaic") : "mosaic";

@@ -127,6 +127,7 @@ const ui = {
     onConnect: () => runCommand({ type: "trakt-link" }),
     onFocus: (item) => forYouFocused(item),
     onEdge: () => { sound.play("error"); rumble("edge"); },
+    onToggle: () => { sound.play("open"); renderHints(); }, // el selector Mosaico | Listas, con el dedo
   }),
   traktLink: createTraktLink({
     onMove: () => sound.play("move"),
