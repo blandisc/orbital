@@ -27,4 +27,4 @@
 .toast__countdown { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--color-accent); transform-origin: left; animation: toast-countdown linear forwards; }
 @keyframes toast-countdown { to { transform: scaleX(0); } }
 /* Con un menú lateral abierto el aviso sale a su izquierda: nunca encima del título del menú. */
-body:has(.sheet:not(.sheet--leaving)) .toast { right: calc(min(var(--sheet-width), 100vw) + var(--space-5)); }
+body:has(.sheet:not([hidden]):not(.sheet--leaving)) .toast { right: calc(min(var(--sheet-width), 100vw) + var(--space-5)); }

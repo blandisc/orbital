@@ -199,11 +199,11 @@ export function quickMenu(q, { running = null, music = null } = {}) {
   if (q.power_mode) {
     const i = Math.max(0, POWER_MODES.findIndex(([id]) => id === q.power_mode));
     const step = (d) => ({ type: "quick-set", changes: { power_mode: POWER_MODES[(i + d + POWER_MODES.length) % POWER_MODES.length][0] } });
-    options.push({ icon: "power", label: "Energía", value: POWER_MODES[i][1],
+    options.push({ icon: "energy", label: "Energía", value: POWER_MODES[i][1],
       command: step(1), adjust: { left: step(-1), right: step(1) } });
   }
-  options.push({ icon: "bolt", label: "Liberar memoria", hint: "Cerrar lo que no estés usando", command: { type: "memory" } });
-  options.push({ icon: "show", label: "Capturas", hint: "Home + RB captura sin salir del juego", command: { type: "captures" } });
+  options.push({ icon: "memory", label: "Liberar memoria", hint: "Cerrar lo que no estés usando", command: { type: "memory" } });
+  options.push({ icon: "camera", label: "Capturas", hint: "Home + RB captura sin salir del juego", command: { type: "captures" } });
   if (running?.managed) options.push({ icon: "play", label: `Volver a ${running.title}`, command: { type: "resume" } });
   return { title: "Panel rápido", crumb: "Panel rápido", options };
 }
@@ -251,7 +251,7 @@ export function capturesMenu(items) {
 export function healthMenu(message, { restart = true } = {}) {
   if (!restart) {
     return { title: "Memoria casi llena", subtitle: message,
-      options: [{ icon: "bolt", label: "Liberar memoria", command: { type: "memory" } },
+      options: [{ icon: "memory", label: "Liberar memoria", command: { type: "memory" } },
         { icon: "check", label: "Más tarde", command: { type: "close" } }] };
   }
   return {
@@ -340,7 +340,7 @@ const SETTING_PAGES = {
   playback: { title: "Películas y series", icon: "play", options: [
     ["audio", "Idioma", "En qué idioma prefieres oírlas"], ["subtitles", "Subtítulos", null], ["quality", "Calidad", null],
     ["sub_scale", "Letra de los subtítulos", null]] },
-  display: { title: "Pantalla y sonido", icon: "show", options: [
+  display: { title: "Pantalla y sonido", icon: "display", options: [
     ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],
     ["reduce_motion", "Reducir movimiento", null], ["voice_tips", "Frases para Alexa", null],
     ["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null]] },
@@ -355,8 +355,8 @@ export function settingsMenu() {
     title: "Ajustes",
     options: [
       ...Object.entries(SETTING_PAGES).map(([page, def]) => ({ icon: def.icon, label: def.title, command: { type: "settings", page } })),
-      { icon: "trailer", label: "Cuentas", hint: "Stremio", command: { type: "settings", page: "accounts" } },
-      { icon: "folder", label: "Mantenimiento", hint: "Revisar, carpetas, actualizar", command: { type: "settings", page: "maintenance" } },
+      { icon: "account", label: "Cuentas", hint: "Stremio", command: { type: "settings", page: "accounts" } },
+      { icon: "wrench", label: "Mantenimiento", hint: "Revisar, carpetas, actualizar", command: { type: "settings", page: "maintenance" } },
     ],
   };
 }
@@ -370,7 +370,7 @@ export function maintenanceMenu() {
       { icon: "refresh", label: "Buscar juegos nuevos", command: { type: "refresh" } },
       { icon: "folder", label: "Carpetas de juegos", command: { type: "folders" } },
       { icon: "windows", label: "Ventanas abiertas", command: { type: "windows" } },
-      { icon: "windows", label: "Diagnóstico", command: { type: "diagnostics" } },
+      { icon: "pulse", label: "Diagnóstico", command: { type: "diagnostics" } },
       { icon: "refresh", label: "Actualizar Orbital", command: { type: "update-check" } },
     ],
   };

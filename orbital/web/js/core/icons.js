@@ -15,6 +15,14 @@ export const ICONS = {
   // La marca: un planeta con su anillo (pasa por detrás y por delante: la máscara abre el hueco) y una
   // luna sobre el anillo. Al arrancar, el anillo se dibuja (status-bar.css).
   mark: '<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><mask id="mark-gap" maskUnits="userSpaceOnUse"><rect width="32" height="32" fill="white"/><path d="M2 16a14 4.6 0 0 0 28 0" transform="rotate(-18 16 16)" fill="none" stroke="black" stroke-width="3.4"/></mask></defs><path class="mark__ring mark__ring--back" pathLength="1" d="M2 16a14 4.6 0 0 1 28 0" transform="rotate(-18 16 16)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle class="mark__planet" cx="16" cy="16" r="7.4" fill="currentColor" mask="url(#mark-gap)"/><path class="mark__ring mark__ring--front" pathLength="1" d="M2 16a14 4.6 0 0 0 28 0" transform="rotate(-18 16 16)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle class="mark__moon" cx="26.4" cy="6.6" r="1.9" fill="currentColor"/></svg>',
+  // Íconos propios de los menús: cada opción con el suyo (antes se repetían el rayo, el ojo y el play).
+  camera: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 8h3l1.6-2.5h5.8L16.5 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.3"/></svg>',
+  memory: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".8"/><path d="M9.5 3.5V6M14.5 3.5V6M9.5 18v2.5M14.5 18v2.5M3.5 9.5H6M3.5 14.5H6M18 9.5h2.5M18 14.5h2.5"/></svg>',
+  energy: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="16" height="10" rx="2.2"/><path d="M21 10.5v3"/><path d="M11.6 9 9 12.6h3.4L10.6 15"/></svg>',
+  display: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M9 20h6M12 16.5V20"/></svg>',
+  account: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1-3.6 4-5.5 7.5-5.5s6.5 1.9 7.5 5.5"/></svg>',
+  wrench: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.6 3.8a4.8 4.8 0 0 0-5.3 6.3L3.9 15.5a1.9 1.9 0 0 0 2.7 2.7l5.4-5.4a4.8 4.8 0 0 0 6.3-5.3l-2.9 2.9-2.4-.4-.4-2.4z"/></svg>',
+  pulse: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2.2-5 4 10 2.4-5H21"/></svg>',
   // Ajustes: un engrane (antes usaba la marca, que es el menú de Orbital).
   settings: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.5h3.4l.5 2.4 1.6.9 2.3-.8 1.7 2.9-1.8 1.6v1.9l1.8 1.6-1.7 2.9-2.3-.8-1.6.9-.5 2.4h-3.4l-.5-2.4-1.6-.9-2.3.8-1.7-2.9 1.8-1.6v-1.9L4.2 8.9l1.7-2.9 2.3.8 1.6-.9z"/><circle cx="12" cy="12" r="3"/></svg>',
   // Interfaz: trazo uniforme (1,75 en retícula de 24), puntas redondeadas. Clase "icon".
