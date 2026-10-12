@@ -36,6 +36,8 @@ export function createForYouMosaic({ onFocus }) {
 
   const reduced = () => document.documentElement.dataset.motion === "reduce";
   const gap = () => parseFloat(getComputedStyle(document.documentElement).fontSize) * .85;
+  // Aire para el anillo de foco (--ring-focus sobresale ~.34rem): sin esto se corta a la izquierda y arriba.
+  const ring = () => gap() * .5;
   const size = () => ({ W: el.clientWidth, H: el.clientHeight });
 
   // --- piezas -----------------------------------------------------------------------------------
@@ -85,8 +87,9 @@ export function createForYouMosaic({ onFocus }) {
     const { W } = size();
     const g = gap();
     const weights = columns.map((_, c) => (mode === "focus" && c === focus.col ? GROW : 1));
-    const unit = (W - g * (COLS - 1)) / weights.reduce((a, b) => a + b, 0);
-    let x = 0;
+    const r = ring();
+    const unit = (W - 2 * r - g * (COLS - 1)) / weights.reduce((a, b) => a + b, 0);
+    let x = r;
     columns.forEach((col, c) => {
       col.x = x;
       col.w = unit * weights[c];
@@ -146,7 +149,7 @@ export function createForYouMosaic({ onFocus }) {
     const { H } = size();
     const pad = H * .08;
     const before = col.offset;
-    if (focus.row === 0) col.offset = t.top; // la primera (tras podar, la primera que sigue viva): pegada arriba
+    if (focus.row === 0) col.offset = t.top - ring(); // la primera (tras podar, la primera que sigue viva): pegada arriba
     else if (t.top - col.offset < pad) col.offset = Math.max(0, t.top - pad);
     else if (t.top + t.h - col.offset > H - pad) col.offset = t.top + t.h - H + pad;
     if (together) {

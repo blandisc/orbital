@@ -56,15 +56,20 @@ export function createGames({ onFocus, onPick, onAction }) {
   const targets = new Map();
 
   const current = () => list.find((c) => c.id === consoleId) ?? null;
+  const activeFilter = () => `filter:${Math.max(0, FILTERS.findIndex((f) => f.id === (filterOf[consoleId] ?? "recent")))}`;
   const index = () => Math.max(0, list.findIndex((c) => c.id === consoleId));
   const media = (c) => (c.photo ? { photo: c.photo, logo: !!c.logo } : c.cover ? { cover: c.cover } : { icon: "gamepad" });
   const plural = (n) => `${n} juego${n === 1 ? "" : "s"}`;
 
   function render(nextRows, { glyphs = {}, runningId = null, consoleId: ask = null } = {}) {
+    // Se sigue al juego, no a la casilla: al volver de jugar, la lista se reordena (Jugados) y en la
+    // misma posición quedaría otro (A abriría el equivocado).
+    const kept = targets.get(focusId);
     rows = nextRows;
     options = { glyphs, runningId };
     list = gameConsoles(rows);
     consoleId = pickConsole(list, ask, consoleId);
+    if (kept?.kind === "game") { memory[consoleId] = kept.item.id; focusId = "game:keep"; }
     paintAll();
   }
 
@@ -74,7 +79,7 @@ export function createGames({ onFocus, onPick, onAction }) {
     rail.render(list.map((c) => ({ id: c.id, title: c.name, meta: plural(c.count), glow: systemColor(c.system), media: media(c) })),
       { currentId: consoleId, glyphs: options.glyphs });
     renderConsole();
-    if (!targets.has(focusId)) focusId = games.length ? "game:0" : "filter:0";
+    if (!targets.has(focusId)) focusId = games.length ? "game:0" : activeFilter();
     paint();
   }
 
@@ -96,7 +101,8 @@ export function createGames({ onFocus, onPick, onAction }) {
       title: c.name, glow: systemColor(c.system), media: media(c),
       meta: [plural(c.count), ago && `jugaste ${last.title} ${ago === "ahora" || ago === "ayer" ? ago : `hace ${ago}`}`].filter(Boolean).join(" · "),
     }));
-    fillFilters(filters, FILTERS, { current: filter, targets, onPick });
+    // Con el dedo, un toque basta: la píldora se enfoca y se aplica a la vez.
+    fillFilters(filters, FILTERS, { current: filter, targets, onPick: (t, id) => { focusId = id; onPick?.(t, id); } });
     fitBar(bar, filters);
     mount(grid, games.length ? games.map((item, i) => {
       targets.set(`game:${i}`, { kind: "game", item, console: c });
@@ -108,7 +114,7 @@ export function createGames({ onFocus, onPick, onAction }) {
       : "Nada por aquí."));
     if (!targets.has(focusId)) {
       const remembered = games.findIndex((g) => g.id === memory[consoleId]);
-      focusId = games.length ? `game:${Math.max(0, remembered)}` : "filter:0";
+      focusId = games.length ? `game:${Math.max(0, remembered)}` : activeFilter(); // sin juegos: el filtro que estás viendo
     }
   }
 
@@ -197,7 +203,7 @@ export function createGames({ onFocus, onPick, onAction }) {
         return switchTo(list[i].id, { keepRail: true }) || "edge";
       }
       if (onRail && action === "right") {
-        focusId = games.length ? `game:${Math.max(0, games.findIndex((g) => g.id === memory[consoleId]))}` : "filter:0";
+        focusId = games.length ? `game:${Math.max(0, games.findIndex((g) => g.id === memory[consoleId]))}` : activeFilter();
         paint();
         return true;
       }
@@ -210,7 +216,7 @@ export function createGames({ onFocus, onPick, onAction }) {
       return true;
     }
     if (action === "back") {
-      if (focusId.startsWith("rail:")) { focusId = games.length ? "game:0" : "filter:0"; paint(); return true; }
+      if (focusId.startsWith("rail:")) { focusId = games.length ? "game:0" : activeFilter(); paint(); return true; }
       if (focusId !== "game:0" && games.length) { focusId = "game:0"; paint(); return true; }
       return "exit";
     }
