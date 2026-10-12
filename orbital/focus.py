@@ -86,6 +86,7 @@ FULLSCREEN_GRACE = 4.0  # s: el juego ya cargó (su nombre en la ventana) pero a
 REVEAL_FADE = (210, 160, 110, 60, 20, 0)  # opacidad de Orbital al fundirse sobre el juego
 # Tras la transición, el juego se cuida unos segundos: si el emulador recrea su ventana (xemu, Eden al
 # pasar a pantalla completa) o mpv cambia de modo, Windows le regresaba el foco a Orbital.
+FOCUS_TRIES = 8  # x .25 s: dos segundos para que Windows dé el foco al juego o al video
 GUARD_SECONDS = 15.0
 
 
@@ -203,10 +204,18 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
     if not target:
         return False
     fg = win.foreground()
-    shown = fg == target or (is_orbital_window(win, fg) and win.focus(target))
-    if shown and user_returned is not None:
+    shown = fg == target
+    # Windows a veces niega el foco a la primera: el video se veía al frente, pero el mando y el teclado
+    # seguían hablándole a Orbital (detrás). Se reintenta unos segundos.
+    for _ in range(FOCUS_TRIES):
+        if shown or not is_orbital_window(win, win.foreground()):
+            break
+        shown = win.focus(target)
+        if not shown:
+            sleep(.25)
+    if user_returned is not None:  # aunque no se pudiera a la primera: el vigilante lo sigue intentando
         keep_game_in_front(launcher, item_id, win, user_returned, sleep=sleep)
-    return shown
+    return shown or win.foreground() == target
 
 
 def settle(win, hwnd: int, sleep, tries: int = 8) -> None:

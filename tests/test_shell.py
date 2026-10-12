@@ -329,3 +329,21 @@ def test_waking_up_pauses_the_video_and_tells_the_ui():
     shell.gamepad = type("G", (), {"redetect": lambda self: redetected.append(1)})()
     shell.on_resumed(1800)
     assert paused == [1] and redetected == [1] and notes == [{"type": "resumed", "minutes": 30}]
+
+
+def test_video_in_front_without_focus_gets_it_back():
+    """El video se ve, pero Windows dejó el foco en Orbital: el mando no le llegaba al video."""
+    import time as _t
+
+    shell, win, _ = make({"title": "Futurama", "managed": True, "runner": "Reproductor", "pid": 30})
+    win.windows[DESKTOP_APP] = ("Futurama", 30, "mpv.exe")
+    proc = type("Proc", (), {"pid": 30})()
+    shell.catalog.player = type("P", (), {"playing": True, "remote": FakePlayer(),
+                                          "current": type("C", (), {"process": proc, "started": _t.time() - 5})()})()
+    win.fg = ORBITAL
+    shell.on_buttons(0, 0x1000, 10.0)
+    assert win.fg == DESKTOP_APP  # el foco volvió al video
+    win.fg = ORBITAL
+    shell.catalog.sessions = type("S", (), {"returned_at": _t.monotonic()})()  # ahora sí volviste con Home
+    shell.on_buttons(0, 0x1000, 20.0)
+    assert win.fg == ORBITAL  # Orbital se queda: lo pediste tú

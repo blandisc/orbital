@@ -72,6 +72,7 @@ class ConsoleShell:
         self._remotes = [KeyRemote() for _ in range(4)]
         self._pads: dict[int, int] = {}  # botones de cada puerto, para el reproductor (los junta)
         self._fg_cache = (0.0, "")  # (cuándo, exe al frente): no preguntar a Windows 240 veces/s
+        self._refocus_at = 0.0  # la última vez que se le devolvió el foco al video (ver _video_lost_focus)
         self._legion_last = 0.0
         self._legion_left: dict | None = None  # el juego que dejaste con Legion L (para el 2.º toque)
         self._stop = threading.Event()
@@ -297,10 +298,35 @@ class ConsoleShell:
             self._fg_cache = (now, self.win.exe_name(self.win.pid_of(self.win.foreground())))
         return self._fg_cache[1]
 
+    def _video_lost_focus(self, now: float) -> bool:
+        """El video se ve al frente, pero Windows dejó el foco en Orbital (detrás): el mando y el teclado
+        le hablaban a Orbital y el video «solo funcionaba con teclado» tras hacer clic. Si no volviste a
+        Orbital desde que empezó el video, el foco regresa al video. True si lo intentó."""
+        player = self.player
+        current = getattr(player, "current", None) if getattr(player, "playing", False) else None
+        if current is None or now < self._refocus_at:
+            return False
+        fg = self.win.foreground()
+        if not self.is_orbital(fg):
+            return False
+        sessions = getattr(self.catalog, "sessions", None)
+        returned = getattr(sessions, "returned_at", 0.0) or 0.0
+        if returned and time.time() - (time.monotonic() - returned) > current.started:
+            return False  # tú volviste a Orbital (Home): ahí se queda
+        video = self.win.main_window(self.win.process_tree(current.process.pid))
+        if not video:
+            return False
+        self._refocus_at = now + 1.0
+        log.info("El video estaba al frente sin el foco: se lo devuelvo")
+        self.win.focus(video)
+        return True
+
     def on_buttons(self, slot: int, buttons: int, now: float, send=send_key) -> None:
         """Stremio no tiene soporte de mando: mientras está al frente, A pausa, la cruceta
         adelanta/regresa y sube/baja volumen, Y pantalla completa, B vuelve."""
         exe = self.foreground_exe(now)
+        if buttons and exe != PLAYER_EXE and self._video_lost_focus(now):
+            return  # el foco vuelve al video; la siguiente lectura del mando ya le llega a él
         if exe == PLAYER_EXE and self.player:
             # El reproductor tiene UN control remoto y esto llega por cada puerto (los 4, aun vacíos):
             # el puerto vacío "soltaba" la cruceta en cada lectura y una pulsación contaba varias
