@@ -45,7 +45,7 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 | Situación | Qué pasa | Estado |
 |---|---|---|
 | Abres un juego de un emulador | Orbital se queda ENCIMA desde antes de abrir el emulador (nunca se asoma). Pantalla de carga: la portada en órbita sobre estrellas que avanzan. Cuando el juego está listo **y en pantalla completa** (espera hasta 4 s a que deje de cambiar de tamaño), salto a velocidad luz y Orbital se funde sobre el juego: sin brincos. B la salta | ✅ (nuevo) |
-| Abres otra cosa con un juego abierto | Te pregunta "¿Cerrar X?": "Volver a X" (primero), "Cerrar y abrir" o "Abrir sin cerrar". Un video se cierra sin preguntar (su avance queda guardado) | ✅ (nuevo) |
+| Abres otra cosa con un juego abierto | Te pregunta "¿Cerrar X?": "Volver a X" (primero) o "Cerrar y abrir". Un video se cierra sin preguntar (su avance queda guardado) | ✅ (nuevo) |
 | Dejas un video en pausa | A los 15 min se cierra solo; sigues donde te quedaste (`sessions.video_idle_minutes`) | ✅ (nuevo) |
 | Dejas un juego congelado (saliste con Home) | A la hora se cierra solo y te avisa; lo no guardado se pierde (`sessions.game_idle_minutes`, 0 = nunca) | ✅ (nuevo) |
 | Abres un juego y su ventana aparece detrás de Orbital (Windows lo hace a veces) | Orbital se la pasa al frente en cuanto existe, solo si Orbital sigue al frente | ✅ (nuevo) |

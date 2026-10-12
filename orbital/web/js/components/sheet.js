@@ -1,5 +1,6 @@
 import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
+import { motion } from "../core/motion.js";
 
 /**
  * Menú lateral navegable con mando (entra desde la derecha). Recibe un menú como datos
@@ -79,7 +80,8 @@ export function createSheet({ onCommand, onMove, onClose }) {
   }
 
   /** Hojas más altas que la pantalla: la opción enfocada siempre a la vista (antes se salía por abajo). */
-  function reveal(behavior = "smooth") {
+  function reveal(smooth = "smooth") {
+    const behavior = motion(smooth);
     const node = list.children[index];
     if (!node) return;
     const top = node.offsetTop - panel.offsetTop;
@@ -119,10 +121,13 @@ export function createSheet({ onCommand, onMove, onClose }) {
   }
 
   /** Procesa una acción de entrada. Devuelve true si el menú la consumió. */
-  function handle(action) {
+  function handle(action, { repeat = false } = {}) {
     if (!menu) return false;
     if (action === "up" || action === "down") {
-      index = step(index, action === "up" ? -1 : 1);
+      const next = step(index, action === "up" ? -1 : 1);
+      // Manteniendo ↑/↓ se detiene en el extremo; dar la vuelta solo con una pulsación nueva.
+      if (repeat && (action === "down" ? next < index : next > index)) return true;
+      index = next;
       onMove?.();
       // Solo cambia la clase: así el foco se desliza con transición en vez de redibujarse.
       [...list.children].forEach((item, i) => item.classList.toggle("sheet__item--focused", i === index));
@@ -130,16 +135,17 @@ export function createSheet({ onCommand, onMove, onClose }) {
     } else if (action === "left" || action === "right") {
       // En un ajuste (‹ Grande ›), ◀/▶ cambian el valor; en lo demás, mueven como ↑/↓.
       const option = menu.options[index];
-      if (option?.adjust) choose(index, option.adjust[action]); // ◀/▶ con su propio paso (volumen, brillo)
-      else if (option?.value !== undefined && option.command) choose(index);
-      else return handle(action === "left" ? "up" : "down");
+      // Solo lo que lleva ‹ ›: ▶ sobre «Stremio · Conectar» abría el login entero.
+      if (option?.adjust) choose(index, option.adjust[action]); // ◀/▶ con su propio paso (volumen, brillo, ajustes)
+      else if (choice(option)) choose(index);
+      else return handle(action === "left" ? "up" : "down", { repeat });
     } else if (action === "select") {
       choose();
     } else if (action === "back") {
       cancel();
     } else if (action === "options" || action === "menu") {
-      stack = [];
-      cancel();
+      // Cierra todo sin ejecutar el `cancel` (ese es solo para B: en «¿Cerrar X?» te devolvía al juego).
+      close();
     }
     return true;
   }

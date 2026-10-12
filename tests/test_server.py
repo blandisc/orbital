@@ -49,6 +49,16 @@ def test_launch_and_status(make_client, library):
         assert c.post("/api/launch", json={"id": "nada"}).status_code == 404
 
 
+def test_launching_search_does_not_close_the_running_game(make_client, library):
+    """«Buscar» no se lanza: 422 con su mensaje (antes 500) y lo que estaba abierto sigue abierto."""
+    with make_client() as c:
+        c.post("/api/launch", json={"id": "steam:367520"})
+        r = c.post("/api/launch", json={"id": "media:search"})
+        assert r.status_code == 422 and "no tiene forma" in r.json()["detail"]
+        assert c.get("/api/status").json()["running"]["title"] == "Hollow Knight"
+        assert c.post("/api/art-replace", json={"id": "nada", "kind": "cover"}).status_code == 404
+
+
 def test_voice_endpoint(make_client, library):
     with make_client(REMOTE) as c:
         r = c.post("/api/voice", json={"intent": "LaunchGameIntent", "slots": {"game": "hollow"}},

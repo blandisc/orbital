@@ -3,6 +3,7 @@ import { Chip } from "./ui.js";
 import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { genres } from "../core/format.js";
 import { ICONS } from "../core/icons.js";
+import { motion } from "../core/motion.js";
 import { availability, episodeStates, titleActions, titleProgress } from "../core/watch.js";
 
 /**
@@ -13,7 +14,7 @@ import { availability, episodeStates, titleActions, titleProgress } from "../cor
  *     con su barra, los que no se han estrenado atenuados con su fecha;
  *   · A ve (Orbital elige la mejor fuente y arranca) · Y elige la fuente · B vuelve.
  */
-export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = () => false, onNotice = () => {} }) {
+export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () => {}, canPrefetch = () => false, onNotice = () => {} }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
@@ -45,6 +46,8 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
   let states = new Map(); // video_id -> { watched, progress, upcoming }
   let token = 0;
   let cancelExit = () => {};
+  // Sin logo (o si no carga: metahub da 404 a títulos sin logo), el nombre en texto: antes la ficha quedaba sin título.
+  logo.addEventListener("error", () => { logo.hidden = true; logo.removeAttribute("src"); name.hidden = false; });
 
   const kindOf = () => details?.kind || item?.kind;
   const seasons = () => details?.seasons ?? [];
@@ -94,7 +97,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
     if (!tab) return;
     const left = tab.offsetLeft - tabs.offsetLeft;
     if (left < tabs.scrollLeft || left + tab.offsetWidth > tabs.scrollLeft + tabs.clientWidth) {
-      tabs.scrollTo({ left: Math.max(0, left - tabs.clientWidth / 2 + tab.offsetWidth / 2), behavior });
+      tabs.scrollTo({ left: Math.max(0, left - tabs.clientWidth / 2 + tab.offsetWidth / 2), behavior: motion(behavior) });
     }
   }
 
@@ -155,7 +158,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
     else if (top < list.scrollTop + 24) next = top - 24;
     // Abajo, el enfocado queda por encima del fundido (el último 15 % de la lista): antes quedaba debajo, oscurecido.
     else if (bottom > list.scrollTop + list.clientHeight - room) next = bottom - list.clientHeight + room;
-    list.scrollTo({ top: Math.max(0, next), behavior: smooth ? "smooth" : "auto" });
+    list.scrollTo({ top: Math.max(0, next), behavior: motion(smooth ? "smooth" : "auto") });
   }
 
   function setIndex(i) {
@@ -185,7 +188,12 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
     const kind = kindOf();
     const id = details?.id || item.meta_id;
     if (kind !== "series") return { kind: "movie", id, video_id: id, title: details?.title || item.title, item };
-    const chosen = ep || episodeById(details?.resume?.video_id) || seasons().find((s) => s.season !== 0)?.episodes[0];
+    const resume = details?.resume;
+    // «Continuar T3 E1» con un episodio que Cinemeta aún no lista: se ve ESE, no T1 E1 desde el principio.
+    if (!ep && resume?.video_id && !episodeById(resume.video_id)) {
+      return { kind: "series", id, video_id: resume.video_id, title: `${details?.title || item.title} · ${resume.label || ""}`.replace(/ · $/, ""), item };
+    }
+    const chosen = ep || episodeById(resume?.video_id) || seasons().find((s) => s.season !== 0)?.episodes[0];
     if (!chosen) return null;
     const s = seasons().find((x) => x.episodes.includes(chosen));
     const label = s?.season === 0 ? `Especial E${chosen.episode}` : `T${s?.season} E${chosen.episode}`;
@@ -193,6 +201,9 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
   }
 
   const episodeById = (id) => seasons().flatMap((s) => s.episodes).find((e) => e.id === id) || null;
+
+  /** ¿Hay algo que ver? (una serie sin episodios no tiene fuente que elegir). */
+  const hasTarget = () => !!details && !details.error && !!target();
 
   function play(ep = null, { fromStart = false } = {}) {
     const t = target(ep);
@@ -209,12 +220,14 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
   }
 
   async function toggleList() {
-    const add = !details.in_library;
+    // Se recuerda de qué ficha era: si respondía lento y ya abriste otra, no se marcaba la otra.
+    const [mine, d, kind] = [token, details, kindOf()];
+    const add = !d.in_library;
     try {
-      await api.setInLibrary(kindOf(), details.id, add);
-      details.in_library = add;
-      renderActions();
-      onNotice(add ? `${details.title} está en Mi lista` : `Quité ${details.title} de Mi lista`);
+      await api.setInLibrary(kind, d.id, add);
+      d.in_library = add;
+      if (mine === token) { renderActions(); onChange(); }
+      onNotice(add ? `${d.title} está en Mi lista` : `Quité ${d.title} de Mi lista`);
     } catch (err) {
       onNotice(err.message, true);
     }
@@ -236,6 +249,8 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
   async function load() {
     const mine = ++token;
     details = null;
+    avail.hidden = true; // las de la ficha anterior no se quedan
+    mount(avail);
     status.textContent = "Cargando…";
     status.hidden = false;
     render();
@@ -250,8 +265,9 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
       prefetch(mine);
       // Abre en el episodio en el que ibas (no en T1 E1).
       const resumeId = data.resume?.video_id;
-      const at = Math.max(0, seasons().findIndex((s) => s.episodes.some((e) => e.id === resumeId)));
-      season = resumeId ? at : Math.max(0, seasons().findIndex((s) => s.season !== 0));
+      // Si el que ibas no está en la lista, la primera temporada normal (no Especiales).
+      const at = seasons().findIndex((s) => s.episodes.some((e) => e.id === resumeId));
+      season = at >= 0 ? at : Math.max(0, seasons().findIndex((s) => s.season !== 0));
       index = Math.max(0, seasons()[season]?.episodes.findIndex((e) => e.id === resumeId) ?? 0);
       status.hidden = true;
       if (kind === "series" && !seasons().length) {
@@ -259,11 +275,13 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
         status.hidden = false;
       }
       render();
+      onChange(); // la leyenda: «Continuar T8 E23», Episodios, Temporada
     } catch (err) {
       if (mine !== token) return;
       status.textContent = err.message;
       details = { error: true, kind };
       render();
+      onChange();
     }
   }
 
@@ -324,7 +342,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
       else if (act === "right" && action < buttons.length - 1) { action++; moved = true; }
       else if (act === "down" && series) { zone = "episodes"; onMove?.(); render(); return true; }
       else if (act === "select" && buttons[action]) run(buttons[action]);
-      else if (act === "options" && !details.error) sources();
+      else if (act === "options" && hasTarget()) sources();
       else if ((act === "prevsection" || act === "nextsection") && series) {
         // Cambiar de temporada desde los botones baja a los episodios: si no, el cambio no se ve.
         setSeason(season + (act === "prevsection" ? -1 : 1));
@@ -349,16 +367,19 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
   }
 
   /** Pistas del pie según dónde está el foco. */
-  const hints = (g) => (zone === "episodes"
+  const hints = (g) => (details?.error ? [{ glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }]
+    : zone === "episodes"
     ? [{ glyph: g.select, label: "Ver" }, { glyph: g.options, label: "Fuente" }, { glyph: g.section, label: "Temporada" },
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
-    : [{ glyph: g.select, label: buttons[action]?.label?.split(" · ")[0] || "Ver" }, { glyph: g.options, label: "Elegir fuente" },
+    : [{ glyph: g.select, label: buttons[action]?.label?.split(" · ")[0] || "Ver" }, hasTarget() && { glyph: g.options, label: "Elegir fuente" },
       kindOf() === "series" && seasons().length && { glyph: g.rows, label: "Episodios" },
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
 
-  return { el, open, close, handle, hints, get isOpen() { return !el.hidden; }, get current() { return item; } };
+  // Saliendo (300 ms) ya no cuenta como abierta: la leyenda de la ficha se quedaba en la fila.
+  return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("title--leaving"); },
+    get current() { return item; } };
 }
 
 /** Lo que hace falta para abrir la ficha a partir de una tarjeta, un resultado o un enlace. */

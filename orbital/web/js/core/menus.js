@@ -21,6 +21,10 @@ export function gameMenu(item, { running = null } = {}) {
         command: { type: "confirm-stop", title: item.title, runner: running.runner } },
     ]
     : [];
+  // La ficha (temporadas, Desde el principio, Elegir fuente): X también la abre, pero no se veía en ningún lado.
+  if (item.source === "stremio" && item.extra?.meta_id && item.extra?.kind) {
+    options.push({ icon: "info", label: "Ver la ficha", command: { type: "title-ref", ref: { ...item, kind: item.extra.kind, meta_id: item.extra.meta_id } } });
+  }
   if (item.source === "stremio" && item.category === "continue") {
     options.push({ icon: "minus", label: "Quitar de Seguir viendo", command: { type: "dismiss", id: item.id, title: item.title } });
   }
@@ -326,10 +330,10 @@ function otherValue(key, value) {
 }
 
 /** El valor que sigue al actual (da la vuelta). */
-export function nextSetting(key, value) {
+export function nextSetting(key, value, step = 1) {
   const values = (SETTING_VALUES[key] ?? [[value]]).map(([v]) => v);
   const i = values.indexOf(value);
-  return values[(i + 1) % values.length];
+  return values[((i < 0 ? 0 : i + step) % values.length + values.length) % values.length];
 }
 
 const SETTING_PAGES = {
@@ -486,6 +490,9 @@ export function settingsPage(page, settings) {
     options: def.options.map(([key, label, hint]) => ({
       icon: def.icon, label, hint, value: settingLabel(key, settings[key]),
       command: { type: "setting", key, value: nextSetting(key, settings[key]), page },
+      // ◀ va al valor anterior (antes ◀ y ▶ avanzaban igual).
+      adjust: { left: { type: "setting", key, value: nextSetting(key, settings[key], -1), page },
+        right: { type: "setting", key, value: nextSetting(key, settings[key]), page } },
     })),
   };
 }

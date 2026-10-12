@@ -160,7 +160,8 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8730)
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="orbital-demo-") as tmp:
-        uvicorn.run(build(Path(tmp)), host="127.0.0.1", port=args.port, log_level="warning")
+        uvicorn.run(build(Path(tmp)), host="127.0.0.1", port=args.port, log_level="warning",
+                    timeout_graceful_shutdown=2)  # con /api/events abierto no terminaba nunca
 
 
 if __name__ == "__main__":

@@ -7,6 +7,9 @@ import { Button } from "./button.js";
 import { appIcon } from "./card.js";
 
 /** Información grande del juego seleccionado: sistema, título, datos y acciones. */
+/** Sin subtítulo propio, el nombre de la categoría en palabras (no «media» en minúsculas). */
+const CATEGORY_NAMES = { media: "Películas y series", apps: "App", games: "Juego" };
+
 export function createHero({ onAction }) {
   const eyebrow = h("div", { class: "hero__eyebrow" });
   const title = h("h1", { class: "hero__title" });
@@ -59,7 +62,7 @@ export function createHero({ onAction }) {
     // Apps: su propio ícono (el de ES-DE, el de GeForce NOW…), no el genérico de cuadritos.
     const icon = appIcon(item);
     mount(eyebrow, icon ? h("img", { class: "hero__eyebrow-icon", src: icon, alt: "" }) : svg(ICONS[systemIconName(item)]),
-      h("span", {}, `${extra.eyebrow || item.subtitle || item.category}${runner}`));
+      h("span", {}, `${extra.eyebrow || item.subtitle || CATEGORY_NAMES[item.category] || item.category}${runner}`));
 
     title.textContent = item.title;
     title.classList.toggle("hero__title--long", item.title.length > 28);

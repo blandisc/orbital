@@ -162,6 +162,7 @@ class ForYou:
         self.cache = Cache()
         self._link: trakt_api.DeviceCode | None = None
         self._link_lock = threading.Lock()
+        self._link_gen = 0  # cada pedido o cancelación de código lo sube: solo cuenta el último
         self._dark: dict[str, bool | None] = {}
 
     def publish(self, event: dict) -> None:
@@ -465,14 +466,21 @@ class ForYou:
         """Pide un código a Trakt y espera (en segundo plano) a que lo confirmes en trakt.tv/activate."""
         if not self.trakt.configured:
             raise ValueError("Falta la aplicación de Trakt en config.yaml (para_ti.trakt_client_id y trakt_client_secret).")
+        # Dos pedidos seguidos (Y dos veces) o cancelar mientras llega: solo cuenta el último. Antes se
+        # quedaba el que terminara al final, y la pantalla podía mostrar un código que nadie esperaba.
+        with self._link_lock:
+            self._link_gen = gen = self._link_gen + 1
         code = self.trakt.device_code()
         with self._link_lock:
+            if self._link_gen != gen:
+                return code.public()
             self._link = code
         threading.Thread(target=self._wait_link, args=(code,), daemon=True, name="trakt-link").start()
         return code.public()
 
     def cancel_link(self) -> None:
         with self._link_lock:
+            self._link_gen = self._link_gen + 1
             self._link = None
 
     def _wait_link(self, code: trakt_api.DeviceCode, sleep: Callable[[float], None] = time.sleep) -> str:

@@ -1,4 +1,5 @@
 import { api } from "../core/api.js";
+import { motion } from "../core/motion.js";
 import { Badge, Chip } from "./ui.js";
 import { bytes } from "../core/format.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
@@ -57,7 +58,7 @@ export function createSources({ onPlay, onMove, onClose }) {
     list.children[index]?.classList.remove("source--focused");
     index = next;
     list.children[index]?.classList.add("source--focused");
-    list.children[index]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    list.children[index]?.scrollIntoView({ block: "nearest", behavior: motion() });
     onMove?.();
   }
 
@@ -117,5 +118,5 @@ export function createSources({ onPlay, onMove, onClose }) {
   const hints = (g) => [{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra fuente" },
     { glyph: g.back, label: "Atrás", end: true }];
 
-  return { el, open, close, handle, hints, get isOpen() { return !el.hidden; } };
+  return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("sources--leaving"); } };
 }

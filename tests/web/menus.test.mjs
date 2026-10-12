@@ -260,3 +260,10 @@ test("panel rápido: la música que suena, A pausa y ◀/▶ cambian de canción
   assert.deepEqual(song.adjust.right, { type: "music", action: "next" });
   assert.deepEqual(song.command, { type: "music", action: "toggle" });
 });
+
+test("ajustes: ◀ va al valor anterior y ▶ al siguiente", () => {
+  assert.equal(nextSetting("subtitles", nextSetting("subtitles", ""), -1), "");
+  const page = settingsPage("display", { text_size: "normal" });
+  const size = page.options.find((o) => o.command?.key === "text_size");
+  assert.notEqual(size.adjust.left.value, size.adjust.right.value);
+});

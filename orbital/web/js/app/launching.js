@@ -9,7 +9,11 @@ import { switchMenu } from "../core/menus.js";
 import { sound } from "../core/sound.js";
 import { gameInTheWay, takeLaunchLock } from "../core/store.js";
 
-export function createLaunching({ state, ui, current, openMenu, openTitle, openSearch, pollStatus }) {
+export function createLaunching({ state, ui, current, openMenu, openTitle, openSearch, pollStatus, focusedRect = () => ui.shelf.focused() }) {
+  // Un lanzamiento esperando al servidor (el primer arranque puede tardar más que el candado de 3 s
+  // y la pantalla de carga de 8 s): otro A no abre una segunda copia del emulador.
+  let inFlight = false;
+
   /**
    * Ver algo. Sin `source`, Orbital elige la recomendada y arranca (sin lista de fuentes); con
    * `source`, esa. Sin cuenta de Stremio vinculada, lo abre Stremio.
@@ -62,7 +66,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
   }
 
   async function launch(item, runner = null, { confirmed = false, keep = false } = {}) {
-    if (!item || Date.now() < state.launchLockedUntil) return; // evita dobles pulsaciones de A
+    if (!item || inFlight || Date.now() < state.launchLockedUntil) return; // evita dobles pulsaciones de A
     if (item.source === "search") return openSearch();
     // Seguir viendo: A pone el episodio en el que ibas, directo (como Netflix). Y abre la ficha.
     const watchExtra = item.extra;
@@ -82,8 +86,9 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     sound.play("open");
     rumble("launch");
     const name = runnerName(item, runner);
-    const from = item.id === current()?.id ? ui.shelf.focused() : null;
+    const from = item.id === current()?.id ? focusedRect() : null;
     ui.launch.show(item, name ? `${item.subtitle} · ${name}` : item.subtitle, { from });
+    inFlight = true;
     try {
       const res = await api.launch(item.id, runner, keep);
       if (res.reveal) ui.launch.hold(); // Orbital tapa las ventanas del emulador hasta que el juego está listo
@@ -92,8 +97,9 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       state.launchLockedUntil = 0;
       ui.launch.hide();
       sound.play("error");
-      // Si hay otro emulador, ofrecerlo en el mismo momento (en vez de un callejón sin salida).
-      const alt = alternativeRunner(item);
+      // Si hay otro emulador, ofrecerlo en el mismo momento (en vez de un callejón sin salida). Si el
+      // juego ya no está en la biblioteca (404), otro emulador tampoco lo abre.
+      const alt = err.status === 404 ? null : alternativeRunner(item);
       if (alt && alt.id !== runner) {
         return openMenu({ title: err.message, options: [
           { icon: "swap", label: `Abrir con ${alt.name}`, command: { type: "launch", id: item.id, runner: alt.id } },
@@ -102,6 +108,8 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
         ] });
       }
       ui.toast.show(err.message, { error: true });
+    } finally {
+      inFlight = false;
     }
   }
 

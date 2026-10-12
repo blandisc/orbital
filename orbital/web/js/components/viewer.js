@@ -54,5 +54,5 @@ export function createViewer({ onClose, onOpenVideo } = {}) {
     return [...(video ? [{ glyph: g.select, label: "Ver clip" }] : []), { glyph: g.back, label: "Cerrar", end: true }];
   }
 
-  return { el, open, close, handle, hints, get isOpen() { return !el.hidden; } };
+  return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("viewer--leaving"); } };
 }

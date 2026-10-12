@@ -68,7 +68,12 @@ const ui = {
   shelf: createShelf({ onPick: (r, c) => pick(r, c), onSwipe: (swipe) => onSwipe(swipe) }),
   hints: createHints(),
   sheet: createSheet({
-    onCommand: (command, context) => runCommand(command, context),
+    onCommand: (command, context) => {
+      // Mientras una opción del menú espera al servidor (un ajuste, el volumen, un submenú), lo que
+      // pulses no se cuela a la pantalla de atrás: un segundo A rápido abría el juego de Inicio.
+      const busy = menuBusy = { until: performance.now() + 3000 };
+      Promise.resolve(runCommand(command, context)).finally(() => { if (menuBusy === busy) menuBusy = null; });
+    },
     onMove: () => sound.play("move"),
     onClose: () => renderHints(),
   }),
@@ -90,6 +95,7 @@ const ui = {
     canPrefetch: () => state.stremioLinked,
     onNotice: (message, error = false) => { sound.play(error ? "error" : "select"); ui.toast.show(message, { error }); },
     onMove: () => { sound.play("move"); renderHints(); },
+    onChange: () => renderHints(),
     onClose: () => { sound.play("back"); renderHints(); },
   }),
   sources: createSources({
@@ -99,13 +105,14 @@ const ui = {
   }),
   login: createLogin({
     onDone: (res) => {
+      if (loginFrom) loginFrom.done = true;
       state.stremioLinked = true;
       sound.play("select");
       ui.toast.show(`Listo: Stremio conectado · ${res.count} títulos en tu biblioteca`);
       loadLibrary();
     },
     onMove: () => sound.play("move"),
-    onClose: () => { sound.play("back"); renderHints(); },
+    onClose: () => { sound.play("back"); renderHints(); returnToMenu(loginFrom); },
   }),
   foryou: createForYou({
     onWatch: (play) => watch(play),
@@ -117,7 +124,7 @@ const ui = {
   }),
   traktLink: createTraktLink({
     onMove: () => sound.play("move"),
-    onClose: () => { sound.play("back"); renderHints(); },
+    onClose: () => { sound.play("back"); renderHints(); returnToMenu(traktFrom); },
   }),
   launch: createLaunchOverlay(),
   viewer: createViewer({
@@ -144,6 +151,18 @@ const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LT/RT
  * (Conectar Stremio sobre todo; las fuentes sobre la ficha; la ficha sobre la búsqueda). Una vista
  * nueva se agrega aquí con { handle, hints, isOpen } y ya funciona con el mando.
  */
+// Conectar Stremio o Trakt desde Ajustes › Cuentas: B regresa a Cuentas (antes caías en Inicio).
+let loginFrom = null;
+let traktFrom = null;
+function returnToMenu(from) {
+  if (!from?.context) return;
+  setTimeout(() => { // onDone llega justo después de cerrar: si conectaste, no se reabre el menú viejo
+    if (from.done || ui.sheet.isOpen || topOverlay()) return;
+    ui.sheet.open(from.context.menu, { index: from.context.index, stack: from.context.stack });
+    renderHints();
+  }, 0);
+}
+let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
 const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.sources, ui.title, ui.search];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
@@ -350,7 +369,7 @@ function handleGames(action, { repeat = false } = {}) {
 }
 
 function renderHome() {
-  ui.home.render(state.allRows, { runningId: state.running?.id, glyphs: glyphs() });
+  ui.home.render(state.allRows, { runningId: state.running?.id, glyphs: glyphs(), hidden: state.hidden });
 }
 
 /** El fondo toma la luz de lo enfocado; una consola, la de su último juego. */
@@ -370,7 +389,10 @@ function homeFocused(target) {
 /** A (o un botón del destacado): abrir, entrar a la consola o ver la lista de lo que está a medias. */
 function homeActivate(target, action = "select") {
   if (!target) return;
-  if (target.kind === "empty") return target.setup ? runCommand({ type: "setup" }) : goToSection("games", 1);
+  if (target.kind === "empty") {
+    if (target.unhide) return runCommand({ type: "unhide-all" });
+    return target.setup ? runCommand({ type: "setup" }) : goToSection("games", 1);
+  }
   if (target.kind === "search") return action === "select" ? openSearch() : rumble("edge");
   if (target.kind === "alexa") return action === "select" ? openMenu(alexaMenu()) : rumble("edge");
   if (target.kind === "console") {
@@ -532,6 +554,14 @@ function openTitle(item) {
 const { watch, launch, resumeRunning } = createLaunching({
   state, ui, current: () => current(), openMenu: (...args) => openMenu(...args), openTitle: (item) => openTitle(item),
   openSearch: (query) => openSearch(query), pollStatus: () => pollStatus(),
+  // De dónde vuela la portada: la tarjeta enfocada de la vista en pantalla (no la fila oculta).
+  focusedRect: () => {
+    const view = inHome() ? ui.home.el : inGames() ? ui.games.el : null;
+    if (!view) return ui.shelf.focused();
+    const node = view.querySelector(".card--focused") || view.querySelector(".tile--focused"); // la portada antes que el riel
+    const rect = node?.getBoundingClientRect();
+    return rect?.width ? { rect, ratio: Number(node.dataset.ratio) || rect.width / rect.height } : null;
+  },
 });
 
 function openSources(play) {
@@ -629,7 +659,7 @@ async function runCommand(command, context = null) {
         return openMenu(windowsMenu((await api.windows()).windows), nested(context));
       case "focus-window":
         sound.play("select");
-        return api.focusWindow(command.id);
+        return await api.focusWindow(command.id); // await: si la ventana ya no está, el catch lo dice
       case "resume":
         return resumeRunning();
       case "confirm-exit":
@@ -660,7 +690,7 @@ async function runCommand(command, context = null) {
       case "setup":
         return openMenu(setupMenu(await api.setup()), nested(context));
       case "quick":
-        return openQuick(context);
+        return await openQuick(context);
       case "music": { // controlar la música y quedarse en el panel, en la misma opción
         await api.musicCommand(command.action);
         sound.play("move");
@@ -709,6 +739,7 @@ async function runCommand(command, context = null) {
         return openMenu(diagnosticsMenu(await api.diagnostics()), nested(context));
       case "stremio-login":
         sound.play("open");
+        loginFrom = { context };
         ui.login.open();
         return renderHints();
       case "stremio-account":
@@ -720,6 +751,7 @@ async function runCommand(command, context = null) {
         return loadLibrary();
       case "trakt-link": // un código para escribir en trakt.tv/activate (el aviso llega por SSE)
         sound.play("open");
+        traktFrom = { context };
         ui.traktLink.open();
         return renderHints();
       case "trakt-account":
@@ -752,6 +784,8 @@ function openMenu(menu, options = {}) {
 }
 
 function handleAction(action, { repeat = false } = {}) {
+  // Con el planeta en pantalla no se ve nada: un Enter abría un juego (o el menú) a ciegas.
+  if (boot.blocking) return;
   if (ui.launch.visible) {
     if (action === "back") { // B: no esperar más (muestra ya el juego o lo que haya)
       if (ui.launch.holding) api.reveal().catch(() => {});
@@ -759,10 +793,11 @@ function handleAction(action, { repeat = false } = {}) {
     }
     return;
   }
-  if (ui.sheet.handle(action)) {
+  if (ui.sheet.handle(action, { repeat })) {
     if (action === "back") sound.play("back");
     return renderHints();
   }
+  if (menuBusy && performance.now() < menuBusy.until && !topOverlay()) return;
   // Vistas a pantalla completa (OVERLAYS): la de más arriba se queda con el botón.
   if (OVERLAYS.some((view) => view.handle(action))) return renderHints();
   if (inForYou()) return handleForYou(action, { repeat });
@@ -803,7 +838,7 @@ function handleAction(action, { repeat = false } = {}) {
 function handleHome(action, { repeat = false } = {}) {
   const moved = ui.home.handle(action === "home" ? "back" : action);
   if (moved === true) { sound.play("move"); return renderHints(); }
-  if (moved === "edge") { if (!repeat) rumble("edge"); return; }
+  if (moved === "edge") { if (!repeat) { ui.home.bump(action); rumble("edge"); } return; }
   const target = ui.home.current;
   switch (action) {
     case "select": return homeActivate(target, "select");
@@ -864,7 +899,7 @@ function handleEvent(event) {
     if (state.running?.managed) return ui.toast.show(event.message, { error: true });
     return openMenu(healthMenu(event.message, { restart: event.restart !== false }));
   }
-  if (event.type === "open-quick") return openQuick();
+  if (event.type === "open-quick") return openQuick().catch((err) => ui.toast.show(err.message, { error: true }));
   if (event.type === "update-done") {
     sound.play(event.ok ? "select" : "error");
     return ui.toast.show(event.message, { error: !event.ok });
@@ -883,6 +918,7 @@ function handleEvent(event) {
     loadLibrary();
     return;
   } else if (event.type === "trakt-linked") {
+    if (traktFrom) traktFrom.done = true;
     ui.traktLink.close({ cancel: false });
     sound.play("select");
     ui.toast.show(event.name ? `Listo: Trakt conectado como ${event.name}` : "Listo: Trakt conectado");
@@ -894,9 +930,12 @@ function handleEvent(event) {
     return ui.foryou.load({ force: true });
   } else if (event.type === "closed") {
     // Al abrir otro juego se cierra el anterior: su "closed" no debe tapar la carga del nuevo.
-    if (!ui.launch.visible || event.id === state.launchingId) ui.launch.hide();
-    boot.land();
-    if (event.crashed && event.low_memory) {
+    // Tampoco su «De vuelta de X» encima de «Abriendo Y» (Cerrar y abrir).
+    const replaced = ui.launch.visible && event.id !== state.launchingId;
+    if (!replaced) { ui.launch.hide(); boot.land(); }
+    if (replaced && !event.crashed) {
+      // nada que decir: lo cerraste para abrir otra cosa
+    } else if (event.crashed && event.low_memory) {
       // No abrió por falta de memoria (no por el juego): la causa real y Reiniciar a la mano.
       sound.play("error");
       openMenu(healthMenu(`${event.title} no pudo abrir: ${event.low_memory}`, { restart: !!event.low_memory_restart }));

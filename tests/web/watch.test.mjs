@@ -69,3 +69,8 @@ test("tráiler y Mi lista en la ficha", async () => {
   const labels = titleActions({ kind: "movie", resume: null, trailer: "abc", in_library: true }).map((a) => a.label);
   assert.deepEqual(labels, ["Ver", "Tráiler", "En mi lista", "Elegir fuente"]);
 });
+
+test("serie sin episodios: sin «Elegir fuente» (no había nada que elegir)", () => {
+  assert.deepEqual(titleActions({ kind: "series", seasons: [], resume: null }).map((a) => a.id), ["mylist"]);
+  assert.ok(titleActions({ kind: "series", seasons, resume: null }).some((a) => a.id === "sources"));
+});

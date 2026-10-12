@@ -54,6 +54,18 @@
 /* Enfocado desde el Inicio (↑): el mismo foco invertido que las teclas y opciones. */
 .status-bar__search.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
 @media (max-width: 1100px) { .status-bar__search > span:not(.status-bar__search-glyph) { display: none; } }
+/* Letra grande en pantallas angostas (Legion Go): la barra no cabía y la hora se salía por la derecha.
+   Ceden la palabra «Buscar» (queda la lupa) y el nombre de lo abierto (queda el ▶). */
+@media (max-width: 1600px) {
+  [data-text-size="xlarge"] .status-bar__search > span:not(.status-bar__search-glyph),
+  [data-text-size="xlarge"] .status-bar__playing-title { display: none; }
+  [data-text-size="xlarge"] .status-bar { gap: var(--space-5); }
+}
+/* En la Legion Go (1280) el nombre de lo abierto quedaba en «▸ H», que no dice nada: solo el ▶. */
+@media (max-width: 1350px) {
+  [data-text-size="large"] .status-bar__search > span:not(.status-bar__search-glyph),
+  .status-bar__playing-title { display: none; }
+}
 .status-bar__right { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--space-5); color: var(--color-text-muted); font-size: var(--text-sm); }
 .status-bar__right > * { flex: none; }
 .status-bar__right > .status-bar__playing { flex: 0 1 auto; }

@@ -102,3 +102,11 @@
   margin-top: var(--space-1); color: var(--color-text-faint-strong); font-size: var(--text-xs);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+
+/* Al borde del Inicio: lo enfocado se empuja un poco hacia donde ya no hay nada (como las filas). */
+.tile--bump-left { animation: bump-left var(--duration-base) var(--ease-out); }
+.tile--bump-right { animation: bump-right var(--duration-base) var(--ease-out); }
+.tile--bump-up { animation: bump-up var(--duration-base) var(--ease-out); }
+.tile--bump-down { animation: bump-down var(--duration-base) var(--ease-out); }
+@keyframes bump-up { 40% { translate: 0 -.45rem; } }
+@keyframes bump-down { 40% { translate: 0 .45rem; } }

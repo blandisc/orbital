@@ -73,6 +73,8 @@ def router(d: Deps) -> APIRouter:
         """«No me gusta esta imagen»: la descarta para siempre y busca otra (o queda el respaldo)."""
         if req.kind not in ("cover", "hero", "logo"):
             raise HTTPException(422, "Tipo de imagen desconocido")
+        if catalog.get(req.id) is None:
+            raise HTTPException(404, "Ese juego ya no está en tu biblioteca")
         found = await run_in_threadpool(catalog.replace_art, req.id, req.kind)
         return {"ok": True, "found": found}
 

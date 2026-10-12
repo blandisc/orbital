@@ -21,6 +21,8 @@ export function createBoot({ state, applySettings, openMenu, el = document.getEl
 
   return {
     get waiting() { return !!el?.isConnected; },
+    /** El planeta tapa la interfaz: la entrada todavía no cuenta (ya aterrizando, sí). */
+    get blocking() { return !!el?.isConnected && !el.classList.contains("boot--leaving"); },
 
     /** La biblioteca llegó: la cámara se zambulle en el planeta y aparece la interfaz. */
     finish() {

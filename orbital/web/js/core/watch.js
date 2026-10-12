@@ -55,7 +55,9 @@ export function titleActions(details, { kind = "movie" } = {}) {
   out.push(details.in_library
     ? { id: "mylist", icon: "check", label: "En mi lista" }
     : { id: "mylist", icon: "star", label: "Mi lista" });
-  out.push({ id: "sources", icon: "swap", label: "Elegir fuente" });
+  // Una serie sin episodios (ni uno en el que ibas) no tiene fuente que elegir: el botón no hacía nada.
+  const playable = (details.kind || kind) !== "series" || resume?.video_id || (details.seasons || []).some((s) => s.episodes?.length);
+  if (playable) out.push({ id: "sources", icon: "swap", label: "Elegir fuente" });
   return out;
 }
 
