@@ -422,6 +422,8 @@ class Watch:
         """La fuente recomendada; en una serie, mejor la del mismo grupo que el episodio anterior
         (misma calidad e idioma: así lo hace Stremio con bingeGroup)."""
         found = [s for s in self.stream_sources(kind, video_id, prefs) if s.index not in (skip or set())]
+        if self.native_player:  # solo las que el reproductor de Orbital puede abrir (una ftp:// atoraba el respaldo)
+            found = [s for s in found if player.stream_url(s.stream)]
         if not found:
             return None
         if binge:
@@ -526,16 +528,26 @@ class Watch:
         title = meta.get("title") or "esto"
         if alive and meta.get("source") is not None:
             tried = set(meta.get("tried") or [meta["source"]])
+            prefs = self.language_for(meta["meta_id"])[0]
             try:
-                source = self.best_source(meta["kind"], meta["video_id"], meta.get("binge"), skip=tried,
-                                          prefs=self.language_for(meta["meta_id"])[0])
+                source = self.best_source(meta["kind"], meta["video_id"], meta.get("binge"), skip=tried, prefs=prefs)
+                # El respaldo no cae en una grabación de cine ni en un tráiler sin que lo elijas tú.
+                while source is not None and {"CAM", "Tráiler"} & set(source.tags):
+                    tried.add(source.index)
+                    source = self.best_source(meta["kind"], meta["video_id"], None, skip=tried, prefs=prefs)
             except stremio_api.StremioError:
                 source = None
             if source is not None and len(tried) < 4:
                 log.info("Probando otra fuente para %s (%s)", title, source_label(source))
-                return self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], title, source,
-                                            start=position, message=f"Probando otra fuente · {source_label(source)}",
-                                            tried=list(tried))
+                other = prefs.audio not in source.languages  # otro idioma: se dice cuál
+                label = player_source_label(source) if other else source_label(source)
+                ok = self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], title, source,
+                                          start=position, message=f"Probando otra fuente · {label}", tried=list(tried))
+                if ok:
+                    return True
+                tried.add(source.index)
+                meta = {**meta, "tried": sorted(tried)}
+                return self._source_failed(meta, position, alive)  # esa tampoco abrió: la siguiente
         self.events.publish({"type": "toast", "ok": False,
                       "message": f"No pude reproducir {title}. Prueba otra fuente desde la ficha (Y)."})
         return False

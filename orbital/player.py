@@ -84,6 +84,8 @@ from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las pi
 from .player_screen import PlayerScreen
 
 log = logging.getLogger(__name__)
+CUT_MARGIN = 90  # s: un «final» antes de esto es la conexión que se cortó, no el final de verdad
+NEXT_LOAD_WAIT = 25  # s que el final espera al siguiente episodio que se está cargando
 
 
 class OrbitalPlayer(PlayerScreen):
@@ -274,10 +276,14 @@ class OrbitalPlayer(PlayerScreen):
         """Un vistazo por segundo: arrancó, se cortó, capítulos, siguiente episodio, final."""
         pos, dur = self.mpv.get("time-pos"), self.mpv.get("duration")
         idle = bool(self.mpv.get("idle-active"))
+        known = isinstance(dur, (int, float)) and dur > 0
         if not segment.playing:
-            if isinstance(dur, (int, float)) and dur > 0 and isinstance(pos, (int, float)) and not idle:
+            # Arrancó: hay posición y, o se sabe cuánto dura, o la posición ya avanza (un torrent que aún
+            # descarga no dice su duración; antes se daba por fallido a los 45 s aunque se estuviera viendo).
+            moving = isinstance(pos, (int, float)) and pos > segment.start + 2
+            if isinstance(pos, (int, float)) and not idle and (known or moving):
                 segment.playing = True
-                segment.position, segment.duration = float(pos), float(dur)
+                segment.position, segment.duration = float(pos), float(dur) if known else 0.0
                 segment.last_tick = segment.last_save = now
                 self._started(segment)
             elif (idle and now - segment.loaded > 2.5) or now - segment.loaded > STARTUP_TIMEOUT:
@@ -286,10 +292,12 @@ class OrbitalPlayer(PlayerScreen):
         if idle:  # el archivo se cortó a media reproducción (stream caído): otra fuente, mismo punto
             self._fail(segment)
             return
-        if isinstance(pos, (int, float)) and isinstance(dur, (int, float)) and dur > 0:
+        if isinstance(pos, (int, float)):
             if not paused:
                 segment.watched += min(now - segment.last_tick, abs(pos - segment.position) + 1)
-            segment.position, segment.duration = float(pos), float(dur)
+            segment.position = float(pos)
+            if known:
+                segment.duration = float(dur)
         segment.last_tick = now
         self._buffering_state(paused)
         if now - segment.last_save >= SAVE_EVERY and not paused:
@@ -297,6 +305,11 @@ class OrbitalPlayer(PlayerScreen):
         self._chapters_tick(segment, now)
         self._upnext_tick(segment, now)
         if self.mpv.get("eof-reached"):
+            if segment.duration and segment.position < segment.duration - CUT_MARGIN:
+                # Llegó al «final» a media película: la conexión se cortó (con keep-open, mpv se queda en
+                # el último cuadro sin quedar inactivo). Antes se cerraba como si hubiera terminado.
+                self._fail(segment)
+                return
             self._at_end(segment)
 
     def _started(self, segment: Segment) -> None:
@@ -304,6 +317,15 @@ class OrbitalPlayer(PlayerScreen):
         tracks = self.mpv.get("track-list") or []
         chapters = self.mpv.get("chapter-list") or []
         segment.chapters = [c for c in chapters if isinstance(c, dict) and isinstance(c.get("time"), (int, float))]
+        if segment.duration and segment.start > 5 and segment.position >= segment.duration - 30:
+            # Donde ibas queda más allá del final de este archivo (otra fuente, otra edición): desde el
+            # principio, en vez de saltar al final y dar la película por vista.
+            self.mpv.command("seek", 0, "absolute")
+            segment.position, segment.start = 0.0, 0.0
+            self.toast("Esta versión es más corta · empieza desde el principio", 4)
+            self._ensure_subtitles(self._subs_lang, self._fallback_subs)
+            self.show_hud()
+            return
         if wrong_audio(tracks, self._audio_lang):
             # El archivo dice ser de otro idioma (un doblaje mal etiquetado): avisa en vez de callar.
             self.toast("Esta fuente no trae audio en tu idioma · Y › Fuente para elegir otra", 6)
@@ -342,7 +364,8 @@ class OrbitalPlayer(PlayerScreen):
             if segment.closed:
                 return
             segment.closed = True
-        if self.on_finished and segment.duration:
+        if self.on_finished and segment.duration and not (segment.watched < 20 and segment.position >= segment.duration * .9):
+            # (Casi nada visto y «al final»: un salto raro, no la película vista de principio a fin.)
             self._safe(self.on_finished, segment.meta, segment.position, segment.duration,
                        segment.watched - segment.saved_watched)
 
@@ -415,7 +438,15 @@ class OrbitalPlayer(PlayerScreen):
             segment.upnext_requested = True
 
             def ask() -> None:
-                segment.upnext = self._safe(self.next_provider, segment.meta) or False
+                try:
+                    segment.upnext = self.next_provider(segment.meta) or False
+                except Exception:  # noqa: BLE001 - Cinemeta no respondió: se pregunta otra vez (3 intentos)
+                    log.exception("No pude saber el siguiente episodio")
+                    segment.upnext_tries += 1
+                    if segment.upnext_tries < 3:
+                        segment.upnext_requested = False
+                    else:
+                        segment.upnext = False
 
             threading.Thread(target=ask, daemon=True, name="upnext").start()
         if not segment.upnext or segment.upnext_dismissed or self.menu is not None:
@@ -441,6 +472,8 @@ class OrbitalPlayer(PlayerScreen):
             return  # "¿Sigues viendo?": espera tu respuesta
         if segment.meta.get("kind") == "series" and segment.upnext is None and segment.upnext_requested:
             return  # aún buscando el siguiente: un segundo más
+        if segment.next_loading and time.monotonic() - segment.next_loading < NEXT_LOAD_WAIT:
+            return  # el siguiente episodio se está cargando: no cerrar mpv debajo de él
         self._user_quit = True
         self._quit()
 
@@ -451,6 +484,7 @@ class OrbitalPlayer(PlayerScreen):
         self._hide_card()
         self._quiet_episodes = self._quiet_episodes + 1 if auto else 0
         segment.upnext_dismissed = True  # que no se dispare dos veces
+        segment.next_loading = time.monotonic()
         self.toast(f"Cargando {info.get('label') or 'el siguiente episodio'}…", 6)
         self._in_background(info["play"], failed="No pude cargar el siguiente episodio")
         if not auto:  # tras «Ver ahora», un segundo A no pausa lo que está cargando

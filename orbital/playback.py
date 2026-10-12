@@ -233,6 +233,8 @@ class Segment:
     skip_offered: set[int] = field(default_factory=set)
     upnext: dict | bool | None = None  # {"label", "title", "play"}; False = no hay
     upnext_requested: bool = False
+    upnext_tries: int = 0  # Cinemeta falló al preguntar por el siguiente: se reintenta
+    next_loading: float = 0.0  # cuándo se pidió el siguiente episodio (mientras carga, el final no cierra)
     upnext_dismissed: bool = False
     upnext_deadline: float | None = None
 

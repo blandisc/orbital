@@ -21,7 +21,7 @@ import time
 import urllib.error
 import urllib.request
 import zlib
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from urllib.parse import quote
 
@@ -126,6 +126,8 @@ def _size_number(text: str) -> float:
         return 0.0
 
 
+FIND_DEADLINE = 8.0  # s para juntar fuentes: lo que llegó, se usa
+DOWN_SECONDS = 120.0  # s que se salta un complemento que no respondió
 CACHE_MAX = 200
 RETRY_FAILED = 15  # s que se recuerda una lista incompleta por un error de red
 def stable_index(addon_url: str, stream: dict) -> int:
@@ -254,6 +256,7 @@ class StreamFinder:
         self.timeout = timeout
         self._addons: tuple[float, list[dict]] = (0.0, [])
         self._cache: dict[str, tuple[float, list[Source]]] = {}
+        self._down: dict[str, float] = {}  # complemento -> hasta cuándo no se le pregunta (no respondió)
         self._lock = threading.Lock()
 
     def addons(self, auth_key: str) -> list[dict]:
@@ -276,7 +279,8 @@ class StreamFinder:
             name = name_raw if isinstance(name_raw, str) and name_raw.strip() else "Addon"
             if {"stream", "subtitles"} & set(resources) and addon["transportUrl"].startswith(("http://", "https://")):
                 addons.append({"name": name, "url": addon["transportUrl"], "types": types, "resources": resources})
-        self._addons = (time.time(), addons)
+        # Sin complementos de video: se recuerda solo un momento (si instalas uno, se nota ya).
+        self._addons = (time.time() - (CACHE_SECONDS - 30 if not any("stream" in a["resources"] for a in addons) else 0), addons)
         return addons
 
     def _get_json(self, addon: dict, path: str) -> dict:
@@ -321,10 +325,26 @@ class StreamFinder:
                 return hit[1]
         addons = [a for a in self.addons(auth_key)
                   if "stream" in a.get("resources", ["stream"]) and (not a["types"] or kind in a["types"])]
-        with ThreadPoolExecutor(max_workers=max(1, len(addons))) as pool:
-            results = list(pool.map(lambda a: (a, self._fetch(a, kind, video_id)), addons))
+        # Un complemento caído no se espera otra vez durante unos minutos (si todos lo están, se prueban).
+        now = time.time()
+        alive = [a for a in addons if self._down.get(a["url"], 0) <= now] or addons
+        skipped = len(alive) < len(addons)
+        pool = ThreadPoolExecutor(max_workers=max(1, len(alive)))
+        futures = {pool.submit(self._fetch, a, kind, video_id): a for a in alive}
+        # Plazo total: un complemento lento no deja al usuario mirando la pantalla de carga 45 s.
+        done, late = wait(futures, timeout=FIND_DEADLINE)
+        pool.shutdown(wait=False, cancel_futures=True)
+        results = []
+        for future, addon in futures.items():
+            streams = future.result() if future in done else None
+            if streams is None:
+                self._down[addon["url"]] = now + DOWN_SECONDS
+                log.info("%s no respondió a tiempo: se omite unos minutos", addon["name"])
+            else:
+                self._down.pop(addon["url"], None)
+            results.append((addon, streams))
         sources, seen = [], set()
-        failed = any(streams is None for _, streams in results)
+        failed = skipped or any(streams is None for _, streams in results)
         for addon, streams in results:
             for stream in streams or []:
                 index = stable_index(addon["url"], stream)
