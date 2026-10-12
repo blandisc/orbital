@@ -444,3 +444,15 @@ def test_big_covers_are_served_small_and_small_ones_as_they_are(tmp_path):
     broken = tmp_path / "rota.png"
     broken.write_bytes(b"\x89PNG\r\n\x1a\nbasura")
     assert thumbs.thumbnail(broken, 480, tmp_path / "thumbs") == broken  # ilegible: el original, sin tronar
+
+
+def test_card_covers_come_small_and_as_images(make_client, tmp_path):
+    from PIL import Image
+
+    with make_client() as c:
+        item = c.app.state.catalog.items()[0]
+        item.art_path = str(tmp_path / "portada.png")
+        Image.new("RGB", (1500, 2100), "red").save(item.art_path)
+        r = c.get(f"/api/art/{item.id}?w=480")
+        assert r.status_code == 200 and r.headers["content-type"] == "image/webp" and len(r.content) < 100_000
+        assert c.get(f"/api/art/{item.id}").headers["content-type"] == "image/png"  # sin w: el original

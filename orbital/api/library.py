@@ -86,6 +86,8 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(404)
         if w is not None and kind == "cover":  # la tarjeta pide la portada a su tamaño (thumbs.py)
             path = thumbs.thumbnail(Path(path), max(120, min(1200, w)), catalog.thumbs_dir())
-        return FileResponse(path, headers={"Cache-Control": "max-age=86400"})
+        # Windows no siempre conoce .webp: sin esto salía como «application/octet-stream».
+        media_type = "image/webp" if str(path).lower().endswith(".webp") else None
+        return FileResponse(path, media_type=media_type, headers={"Cache-Control": "max-age=86400"})
 
     return r
