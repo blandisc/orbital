@@ -4,9 +4,11 @@
 
 /* --- Destacado: lo último que jugaste o viste, con sus acciones como leyenda --------------- */
 .tile--feature { min-height: 0; background: var(--color-surface); container-type: size; }
-@container (max-height: 16rem) { .tile--feature__detail { display: none; } .tile--feature__logo { max-height: 3.4rem; } }
-/* Con letra «Muy grande» el detalle no cabía entero en la Legion Go: se va antes. */
-@container (max-height: 20rem) { [data-text-size="xlarge"] .tile--feature__detail { display: none; } }
+/* El detalle («T8 E23 · quedan 9 min») es lo que más importa: con poco alto se va primero «Serie» y
+   el logo se achica; el detalle no se encoge (antes quedaba cortado a la mitad en la Legion Go). */
+@container (max-height: 18rem) { .tile--feature .tile__platform { display: none; } .tile--feature__logo { max-height: 3.4rem; } }
+@container (max-height: 13rem) { .tile--feature__detail { display: none; } }
+@container (max-height: 20rem) { [data-text-size="xlarge"] .tile--feature .tile__platform { display: none; } }
 .tile--feature.tile--focused { transform: none; }
 .tile--feature__shade {
   background:
@@ -28,6 +30,7 @@
   max-width: 100%; color: var(--color-text); opacity: .86; font-size: var(--text-md); text-shadow: var(--shadow-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.35; padding-block: .1em; /* la j y la g enteras */
 }
+.tile--feature__detail, .tile--feature__progress, .tile--feature__actions { flex-shrink: 0; }
 .tile--feature__progress { --progress-width: 14rem; }
 .tile--feature__actions { margin-top: var(--space-2); } /* .button-row */
 .tile--empty { display: grid; background: var(--gradient-card); }

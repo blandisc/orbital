@@ -21,6 +21,16 @@ test("destacado, cuatro tarjetas y lo que queda a medias", () => {
   assert.equal(home.pending, 6);
 });
 
+test("el episodio a medias le gana el destacado al juego que abriste después", () => {
+  const now = 1_000_000_000_000;
+  const watched = { ...show, last_played: now / 1000 - 3600 };
+  const jump = [{ id: "jump", items: [game("halo", "steam", now / 1000), watched] }];
+  assert.equal(buildHome(jump, { now }).feature.id, "stremio:tt1");
+  assert.deepEqual(buildHome(jump, { now }).cards.map((c) => c.id), ["halo"]);
+  const old = [{ id: "jump", items: [game("halo", "steam", now / 1000), { ...show, last_played: now / 1000 - 5 * 86400 }] }];
+  assert.equal(buildHome(old, { now }).feature.id, "halo"); // dejado hace días: ya no
+});
+
 test("lo abierto ahora va al destacado", () => {
   assert.equal(buildHome(rows, { runningId: "pikmin" }).feature.id, "pikmin");
 });

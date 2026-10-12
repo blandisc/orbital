@@ -130,10 +130,21 @@ def test_b_closes_the_menu_before_closing_the_video():
     p.press("x")
     p.press("b")
     assert p.menu is None and ("quit",) not in mpv.sent
-    p.press("b")  # pregunta antes de salir
-    assert ("quit",) not in mpv.sent
-    p.press("b")
+    p.press("b")  # sin controles a la vista: sale
     assert ("quit",) in mpv.sent
+
+
+def test_panel_list_scrolls_only_at_the_edge():
+    """La cruceta mueve el foco; la lista solo se desplaza al llegar al borde (antes se recentraba y brincaba)."""
+    from orbital import player_ui
+    column = player_ui.Column("source", [{"label": str(i), "action": ("source", i)} for i in range(20)])
+    panel = player_ui.Panel("more", [column])
+    tops = []
+    for _ in range(8):
+        player_ui.panel_ass(panel)
+        tops.append(column.top)
+        column.index += 1
+    assert tops == [0, 0, 0, 0, 0, 0, 1, 2]
 
 
 def test_has_language():
@@ -319,11 +330,9 @@ def test_quick_presses_use_what_was_asked_not_the_stale_value():
     assert p._value("time-pos") == 620
 
 
-def test_paused_video_gets_its_bar_back_after_the_quit_card_or_a_panel():
-    p, mpv = make_player(pause=True)
-    p.press("b")
-    assert mpv.overlays.get(1) is None and mpv.overlays.get(4)
-    p.press("a")  # Seguir viendo
+def test_paused_video_gets_its_bar_back_after_a_panel():
+    p, mpv = make_player()
+    p.press("a")  # pausa
     assert mpv.overlays.get(1) and "En pausa" in mpv.overlays[1]
     p.press("x")
     assert mpv.overlays.get(1) is None

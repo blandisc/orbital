@@ -55,6 +55,17 @@ def source_label(source: streams.Source, long: bool = False) -> str:
     return " · ".join(p for p in parts if p)
 
 
+PLAYER_SOURCES = 12  # las mejores en la pestaña Fuentes (más la mejor de cada idioma)
+PLAYER_LANGUAGES = ("es", "en")
+
+
+def player_source_label(source: streams.Source) -> str:
+    """"Español · 1080p · Al instante · 1.2 GB": el idioma primero, que es lo que se busca al cambiar."""
+    langs = " + ".join(streams.LANG_NAMES.get(lang, lang) for lang in source.languages[:2])
+    size = f"{source.size / 1e9:.1f} GB" if source.size else ""
+    return " · ".join(p for p in (langs, source_label(source), size) if p)
+
+
 def time_left(seconds: float) -> str:
     """"quedan 11 min" / "quedan 1 h 40 min" (vacío si falta menos de un minuto)."""
     minutes = int(seconds // 60)
@@ -534,20 +545,31 @@ class Watch:
         return False
 
     def _player_sources(self, meta: dict) -> list[dict]:
-        """Pestaña Fuente del reproductor: las mejores del título, la actual marcada."""
+        """Pestaña Fuentes del reproductor: las mejores del título, la actual marcada, y siempre la mejor
+        de cada idioma (antes solo las 12 primeras: con la serie en inglés, las de español no salían)."""
         if meta.get("source") is None:
             return []
-        found = self.stream_sources(meta["kind"], meta["video_id"], self.language_for(meta["meta_id"])[0])[:12]
-        return [{"id": s.index, "label": source_label(s, long=True), "current": s.index == meta["source"]}
-                for s in found]
+        prefs = self.language_for(meta["meta_id"])[0]
+        found = self.stream_sources(meta["kind"], meta["video_id"], prefs)
+        shown = found[:PLAYER_SOURCES]
+        for lang in dict.fromkeys((prefs.audio, *PLAYER_LANGUAGES)):
+            if not any(s.languages == [lang] for s in shown):
+                shown += [s for s in found if s.languages == [lang]][:1]
+        shown += [s for s in found if s.index == meta["source"] and s not in shown]
+        return [{"id": s.index, "label": player_source_label(s), "current": s.index == meta["source"]} for s in shown]
 
     def _switch_source(self, meta: dict, index: int, position: float) -> bool:
-        """False si no se pudo (el reproductor lo avisa)."""
-        source = self.streams.get(meta["kind"], meta["video_id"], self.language_for(meta["meta_id"])[0], index)
+        """False si no se pudo (el reproductor lo avisa). Una fuente de un solo idioma distinto (la de
+        español en una serie que estaba en inglés): la serie lo recuerda para los siguientes episodios."""
+        prefs = self.language_for(meta["meta_id"])[0]
+        source = self.streams.get(meta["kind"], meta["video_id"], prefs, index)
         if source is None:
             return False
-        return self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], meta.get("title") or "",
-                                 source, start=position, message=f"Cambiando a {source_label(source)}…")
+        ok = self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], meta.get("title") or "",
+                                  source, start=position, message=f"Cambiando a {source_label(source)}…")
+        if ok and len(source.languages) == 1 and source.languages[0] != prefs.audio:
+            self._remember_language(meta, "audio", source.languages[0])
+        return ok
 
     def _episode_title(self, info: dict, meta_id: str, video_id: str) -> tuple[str, str]:
         label, name = self._episode_label(info, video_id)

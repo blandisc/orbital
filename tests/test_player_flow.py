@@ -16,16 +16,13 @@ def series_player(**props):
     return p, mpv
 
 
-def test_b_asks_before_leaving():
+def test_b_hides_the_controls_then_leaves():
     p, mpv = make_player()
     p.press("a")  # pausa: la barra se queda
     assert mpv.overlays[1]
-    p.press("b")  # pregunta: «¿Salir de …?» (A sigue viendo, B sale)
-    assert mpv.overlays[1] is None and "¿Salir de Interstellar?" in mpv.overlays[4] and ("quit",) not in mpv.sent
-    p.press("a")  # seguir viendo
-    assert mpv.overlays[4] is None and ("quit",) not in mpv.sent
-    p.press("b")
-    p.press("b")  # ahora sí, salir
+    p.press("b")  # primero oculta los controles
+    assert mpv.overlays[1] is None and ("quit",) not in mpv.sent
+    p.press("b")  # ya ocultos: sale
     assert ("quit",) in mpv.sent
 
 
@@ -160,9 +157,9 @@ def test_panels_subtitle_size_and_more():
     assert p.menu.column.key == "size"
     p.press("y")  # dentro de un panel, X y Y lo cierran (no saltan al otro)
     assert p.menu is None
-    p.press("y")  # Y: Más (Fuente · Reproducción)
+    p.press("y")  # Y: Fuentes (y Reproducción)
     assert p.menu.kind == "more" and [c.key for c in p.menu.columns] == ["source", "playback"]
-    assert "Fuente" in mpv.overlays[2] and "Desde el principio" in mpv.overlays[2]
+    assert "Fuentes" in mpv.overlays[2] and "Desde el principio" in mpv.overlays[2]
     p.press("down")
     p.press("a")
     import time
@@ -247,3 +244,23 @@ def test_player_ui_pieces():
     assert ui.ring(0, 0, 10, 2, 0, ui.TEXT) == "" and "m " in ui.ring(0, 0, 10, 2, .5, ui.TEXT)
     assert "EN PAUSA" not in ui.hud_ass(ui.Hud("X", paused=True)) and "En pausa" in ui.hud_ass(ui.Hud("X", paused=True))
 
+
+
+def test_player_sources_always_offer_spanish():
+    """La serie en inglés: las 12 mejores son en inglés, pero la mejor en español también sale."""
+    from types import SimpleNamespace
+
+    from orbital import watch
+
+    def src(i, langs):
+        s = streams.Source(index=i, addon="Torrentio", stream={}, transport_url="")
+        s.languages, s.resolution, s.cached = langs, "1080p", True
+        return s
+
+    found = [src(i, ["en"]) for i in range(15)] + [src(20, ["es"]), src(21, ["es"])]
+    fake = SimpleNamespace(language_for=lambda meta_id: (streams.Preferences(audio="en"), "es"),
+                           stream_sources=lambda kind, video, prefs: found)
+    options = watch.Watch._player_sources(fake, {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1", "source": 14})
+    ids = [o["id"] for o in options]
+    assert ids[:12] == list(range(12)) and 20 in ids and 21 not in ids and 14 in ids
+    assert next(o for o in options if o["id"] == 20)["label"].startswith("Español")

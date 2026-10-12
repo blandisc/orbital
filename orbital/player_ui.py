@@ -399,7 +399,7 @@ def hud_ass(hud: Hud) -> str:
     if hud.detail:
         lines.append(text(MARGIN, 772, esc(fit(hud.detail, 24, min(1300, W - 2 * MARGIN), "semi")), 24, MUTED, weight="semi"))
     lines.append(text(MARGIN, 806, esc(fit(hud.title, 48, min(1500, W - 2 * MARGIN), "bold")), 48, weight="bold"))
-    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Más")]
+    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Fuentes")]
     lines += [bar, _times(hud, BAR_Y + 28),
               # A la derecha van los botones (~850): la línea de pistas cabe en lo que queda (4:3 incluido).
               text(MARGIN, 1022, esc(fit(info_line(hud), 22, max(300, min(900, W - 2 * MARGIN - 900)), "semi")), 22, MUTED,
@@ -429,7 +429,7 @@ def paused_ass(hud: Hud) -> str:
         lines.append(text(MARGIN, y + 4, esc(line), 26, SOFT))
         y += 40
     y += 30
-    lines.append(buttons([("A", "Seguir"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Más")], MARGIN, y))
+    lines.append(buttons([("A", "Seguir"), ("X", "Audio y subtítulos"), ("Y", "Fuentes")], MARGIN, y))
     bar, _ = progress_bar(hud)
     lines += [bar, _times(hud, BAR_Y + 28),
               text(MARGIN, 1022, esc(fit(info_line(hud), 22, 1200, "semi")), 22, MUTED, weight="semi", align=4)]
@@ -450,12 +450,13 @@ def buttons(items: list[tuple[str, str]], x: float, y: float) -> str:
     return "\n".join(out)
 
 
-# --- panel de columnas (X: Audio · Subtítulos · Tamaño; Y: Más) ------------------------------------
+# --- panel de columnas (X: Audio · Subtítulos · Tamaño; Y: Fuentes · Episodios) ------------------------------------
 @dataclass
 class Column:
     key: str  # "audio" | "sub" | "size" | "episodes" | "source" | "playback"
     options: list[dict] = field(default_factory=list)  # {"label", "action", "current", "hint"?, "progress"?}
     index: int = 0
+    top: int = 0  # primera fila a la vista: la lista solo se desplaza cuando el foco llega al borde
 
 
 @dataclass
@@ -481,7 +482,7 @@ class Panel:
 
 
 TAB_NAMES = {"audio": "Audio", "sub": "Subtítulos", "size": "Tamaño de los subtítulos", "episodes": "Episodios",
-             "source": "Fuente", "playback": "Reproducción"}
+             "source": "Fuentes", "playback": "Reproducción"}
 PANEL_ROWS = 6  # filas visibles por columna; el resto se desplaza con el foco
 
 
@@ -502,7 +503,13 @@ def panel_ass(panel: Panel, *, playing: bool = True) -> str:
         active = c == panel.col
         lines.append(text(x + 18, 600, esc(TAB_NAMES.get(column.key, column.key)), 22, TEXT if active else MUTED,
                           weight="semi"))
-        first = max(0, min(column.index - PANEL_ROWS // 2, len(column.options) - PANEL_ROWS))
+        # Antes la lista se recentraba en cada paso de la cruceta (todo brincaba); ahora solo se
+        # desplaza cuando el foco sale de las filas a la vista.
+        if column.index < column.top:
+            column.top = column.index
+        elif column.index >= column.top + PANEL_ROWS:
+            column.top = column.index - PANEL_ROWS + 1
+        column.top = first = max(0, min(column.top, len(column.options) - PANEL_ROWS))
         y = 648
         if not column.options:
             lines.append(text(x + 18, y + 29, "Nada que elegir aquí", 24, MUTED, align=4))
@@ -566,16 +573,16 @@ def tracks_panel(tracks: list[dict], sub_scale: float, extra_subs: list[dict] | 
 
 
 def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None = None) -> Panel:
-    """Y: Más. Episodios (series) · Fuente · Reproducción (Desde el principio)."""
+    """Y: Fuentes (primero: para eso es Y) · Episodios (series) · Reproducción (Desde el principio)."""
     columns = []
+    if sources:
+        columns.append(_column("source", [{"label": s["label"], "action": ("source", s["id"]), "current": bool(s.get("current"))}
+                                          for s in sources]))
     if episodes:
         columns.append(_column("episodes", [
             {"label": e["label"], "action": ("episode", e["id"]), "current": bool(e.get("current")),
              "hint": "Viendo" if e.get("current") else e.get("hint", ""), "progress": e.get("progress")}
             for e in episodes]))
-    if sources:
-        columns.append(_column("source", [{"label": s["label"], "action": ("source", s["id"]), "current": bool(s.get("current"))}
-                                          for s in sources]))
     columns.append(Column("playback", [{"label": "Desde el principio", "action": ("restart", None), "current": False}]))
     return Panel("more", columns, 0)
 

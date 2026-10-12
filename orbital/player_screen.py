@@ -334,9 +334,11 @@ class PlayerScreen:
             self._ask("pause", paused)
             self.show_hud(paused=paused)
         elif button == "b":
-            # B siempre pregunta (antes ocultaba la barra y, ya oculta, salía sin avisar): A sigue, B sale.
-            self.hide_hud()
-            self._show_card({"kind": "quit", "title": current.title})
+            # B oculta los controles; con los controles ya ocultos, sale.
+            if self._hud_visible:
+                self.hide_hud()
+            else:
+                self._quit()
         elif button == "x":
             self.open_tracks()
         elif button == "y":

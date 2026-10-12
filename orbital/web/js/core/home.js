@@ -70,13 +70,20 @@ export function consoleList(rows) {
   return list.sort((a, b) => (b.last?.last_played ?? 0) - (a.last?.last_played ?? 0));
 }
 
-export function buildHome(rows, { runningId = null } = {}) {
+const HALFWAY_DAYS = 3; // un episodio que dejaste hace más ya no le gana al juego de hoy
+const recent = (item, now) => !item.last_played || now / 1000 - item.last_played < HALFWAY_DAYS * 86400;
+
+export function buildHome(rows, { runningId = null, now = Date.now() } = {}) {
   const jump = rows.find((r) => r.id === "jump")?.items ?? [];
   const favorites = rows.find((r) => r.id === "favorites")?.items ?? [];
   // Sin nada a medias (primera vez): tus favoritos ocupan su lugar.
   const pool = jump.length ? jump : favorites;
+  // El destacado: lo abierto; si no, el episodio o la película a medias (lo que más importa retomar:
+  // antes un juego abierto un segundo lo mandaba a las tarjetas); si no, lo último.
   const running = runningId ? pool.find((i) => i.id === runningId) : null;
-  const ordered = running ? [running, ...pool.filter((i) => i !== running)] : pool;
+  const halfway = pool.find((i) => isWatchable(i) && i.progress > 0 && i.progress < 1 && recent(i, now));
+  const first = running ?? halfway;
+  const ordered = first ? [first, ...pool.filter((i) => i !== first)] : pool;
   const list = consoleList(rows);
   return {
     pending: jump.length,
