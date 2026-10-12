@@ -87,8 +87,14 @@ class PlayerScreen:
         w, h = self.mpv.get("osd-width"), self.mpv.get("osd-height")
         if not (isinstance(w, (int, float)) and isinstance(h, (int, float)) and w > 0 and h > 0):
             return
-        if player_ui.set_canvas(w, h) and self._hud_visible and self.menu is None:
+        if not player_ui.set_canvas(w, h):
+            return
+        if self.menu is not None:  # lo que se ve, otra vez con el ancho nuevo
+            self._draw_panel()
+        elif self._hud_visible:
             self.show_hud()
+        if self._card is not None and self.menu is None:
+            self._draw_card()
 
     # --- lo pedido vs. lo confirmado ---------------------------------------------------------------
     WANT_SECONDS = 1.0
@@ -182,11 +188,28 @@ class PlayerScreen:
                           "action": ("fetch", self._subs_lang), "current": False})
         self._open_panel(player_ui.tracks_panel(tracks, self.sub_scale, extra, focus))
 
-    def open_more(self) -> None:
+    def open_more(self, still_wanted=lambda: True) -> None:
         meta = getattr(self.current, "meta", None) or {}
         episodes = self._safe(self.episodes_provider, meta) if self.episodes_provider and meta.get("kind") == "series" else None
         sources = self._safe(self.sources_provider, meta) if self.sources_provider and self.current else None
-        self._open_panel(player_ui.more_panel(episodes=episodes or None, sources=sources or None))
+        if still_wanted() and self.current is not None:  # mientras buscaba pulsaste otra cosa: no aparece de golpe
+            self._open_panel(player_ui.more_panel(episodes=episodes or None, sources=sources or None))
+
+    def _open_more_soon(self) -> None:
+        """Y: las fuentes se buscan por internet (hasta segundos). Se buscan aparte: el mando (el mismo
+        hilo que atiende Home y Select+Start) nunca se queda esperando. Si tarda, se avisa."""
+        done, token = threading.Event(), object()
+        self._more_token = token
+
+        def run() -> None:
+            try:
+                self.open_more(still_wanted=lambda: self._more_token is token)
+            finally:
+                done.set()
+
+        threading.Thread(target=run, daemon=True, name="player-more").start()
+        if not done.wait(.35):
+            self.toast("Buscando fuentes…", 3)
 
     def _open_panel(self, panel: player_ui.Panel) -> None:
         self.menu = panel
@@ -292,6 +315,8 @@ class PlayerScreen:
         if current is None:
             return
         self._fit_canvas()  # por si la pantalla cambió en este segundo (TV ↔ Legion Go)
+        if button != "y":
+            self._more_token = None  # el panel Y que se estaba buscando ya no se abre
         if self.menu is not None:
             self._menu_press(button)
             return
@@ -315,7 +340,7 @@ class PlayerScreen:
         elif button == "x":
             self.open_tracks()
         elif button == "y":
-            self.open_more()
+            self._open_more_soon()
         elif button in ("left", "right"):
             step = seek_step(self.remote.held(button)) * (1 if button == "right" else -1)
             self.mpv.command("seek", step, "relative")

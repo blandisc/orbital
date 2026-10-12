@@ -256,9 +256,12 @@ def test_chosen_source_plays_in_orbital_player_from_where_you_left(linked, monke
     played = []
 
     class FakePlayer:
-        def play(self, run, exe, url, title, meta, **options):
+        def play(self, run, exe, url, title, meta, started=None, **options):
             played.append((exe, url, title, meta, options))
-            return run([exe, url])
+            process = run([exe, url])
+            if started:
+                started(process)
+            return process
 
     linked.player = FakePlayer()
     src = linked.watch.stream_sources("movie", "tt0816692")[0]

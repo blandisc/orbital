@@ -339,3 +339,61 @@ def test_cinemeta_odd_metas_and_posters(monkeypatch):
         monkeypatch.setattr(cinemeta.Cinemeta, "_get", lambda self, path, m=metas: {"metas": m})
         assert cinemeta.Cinemeta().search("movie", "x") == []
     assert cinemeta._medium(5) is None and cinemeta._medium(["a"]) is None
+
+
+# --- ronda 6 -------------------------------------------------------------------------------------
+def test_a_source_keeps_its_number_when_addons_answer_in_another_order(monkeypatch):
+    from orbital.library import streams
+
+    a = {"name": "A", "url": "https://a/manifest.json", "types": [], "resources": ["stream"]}
+    b = {"name": "B", "url": "https://b/manifest.json", "types": [], "resources": ["stream"]}
+    raw = {"https://a/manifest.json": [{"name": "A", "url": "https://cdn/small.mkv"}],
+           "https://b/manifest.json": [{"name": "B", "url": "https://cdn/remux.mkv"}]}
+    order = [[a, b]]
+    monkeypatch.setattr(streams.StreamFinder, "addons", lambda self, key: order[0])
+    monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, addon, k, v: raw[addon["url"]])
+    first = {s.stream["url"]: s.index for s in streams.StreamFinder(None).find("k", "movie", "tt1", streams.Preferences())}
+    order[0] = [b, a]
+    again = {s.stream["url"]: s.index for s in streams.StreamFinder(None).find("k", "movie", "tt1", streams.Preferences())}
+    assert first == again
+
+
+def test_logging_out_mid_download_does_not_bring_the_list_back(library, monkeypatch):
+    import threading as th
+
+    library.credentials.set("stremio_auth_key", "k")
+    gate, started = th.Event(), th.Event()
+
+    def slow_library(key):
+        started.set()
+        gate.wait(5)
+        return [{"_id": "tt1", "name": "Serie", "type": "series", "state": {"timeOffset": 1000, "video_id": "tt1:1:1"}}]
+
+    monkeypatch.setattr(library.watch.stremio_client, "library", slow_library)
+    worker = th.Thread(target=library.watch.refresh_stremio)
+    worker.start()
+    started.wait(5)
+    library.watch.unlink_stremio()
+    gate.set()
+    worker.join(5)
+    assert library.watch.stremio_items == [] and not library.watch.stremio_linked
+
+
+def test_odd_language_prefs_do_not_block_a_title(library):
+    for value in (["x"], 5, {"a": 1}):
+        library.state.set_pref("stremio:tt1", "audio", value)
+        library.state.set_pref("stremio:tt1", "subtitles", value)
+        prefs, subtitles = library.watch.language_for("tt1")
+        assert isinstance(prefs.audio, str) and isinstance(subtitles, str)
+
+
+def test_player_title_fits_on_a_4_3_screen():
+    from orbital import player_ui
+
+    try:
+        player_ui.set_canvas(1440, 1080)
+        hud = player_ui.Hud(title="Un título larguísimo " * 6, detail="T1 E1 · " + "nombre " * 20, position=10, duration=100)
+        assert player_ui.fit(hud.title, 48, min(1500, player_ui.W - 2 * player_ui.MARGIN), "bold") != hud.title
+        player_ui.hud_ass(hud)
+    finally:
+        player_ui.set_canvas(1920, 1080)

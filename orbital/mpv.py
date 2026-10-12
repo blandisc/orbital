@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 PIPE = r"\\.\pipe\orbital-mpv"
 # Lo que Orbital consulta cada segundo: mpv avisa cuando cambian y no hay que preguntar.
 OBSERVED = ("pause", "time-pos", "duration", "idle-active", "eof-reached", "paused-for-cache",
-            "cache-buffering-state", "chapter", "volume")
+            "cache-buffering-state", "chapter", "volume", "osd-width", "osd-height")
 
 
 class Mpv:

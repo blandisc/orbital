@@ -403,3 +403,17 @@ def test_next_file_uses_its_own_subtitles():
     p._fallback_subs = lambda: ["http://subs/e1.srt"]
     p.load("u2", "Serie", {"video_id": "e2"}, fallback_subs=None, subtitles="")
     assert p._fallback_subs is None and p._subs_lang == ""
+
+
+def test_y_never_blocks_the_controller_while_sources_load():
+    import time as _t
+
+    p, mpv = make_player()
+    p.sources_provider = lambda meta: _t.sleep(1.5) or [{"id": 1, "label": "1080p", "current": True}]
+    p.current.meta = {"source": 1}
+    start = _t.monotonic()
+    p.press("y")
+    assert _t.monotonic() - start < 1  # antes: el mando esperaba a internet
+    p.press("b")  # cambiaste de idea: el panel ya no aparece de golpe
+    _t.sleep(1.8)
+    assert p.menu is None

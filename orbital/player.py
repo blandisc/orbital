@@ -117,7 +117,9 @@ class OrbitalPlayer(PlayerScreen):
         self._loading_until = 0.0  # tras «Ver ahora», A no pausa lo que está cargando
         self._want: dict[str, tuple[object, float]] = {}
         self._swap = threading.Lock()
-        self._starting = threading.Lock()  # un play() a la vez  # current y segment cambian juntos (play) o se leen juntos (finish)  # lo último pedido a mpv (pausa, volumen, posición)
+        self._starting = threading.Lock()  # un play() a la vez
+        self._closing = threading.Lock()
+        self._more_token = None  # el panel Y que se está buscando (ver _open_more_soon)  # current y segment cambian juntos (play) o se leen juntos (finish)  # lo último pedido a mpv (pausa, volumen, posición)
         self.sub_scale = 1.0
         self.on_finished = on_finished  # (meta, posición, duración, segundos vistos)
         self.on_progress = None  # igual que on_finished, cada minuto y al pausar
@@ -136,11 +138,15 @@ class OrbitalPlayer(PlayerScreen):
 
     # --- arrancar / cambiar de archivo -------------------------------------------------------
     def play(self, run, mpv_exe: str, url: str, title: str, meta: dict, *, subtitles: str = "en",
-             fallback_subs=None, **options) -> subprocess.Popen:
+             fallback_subs=None, started=None, **options) -> subprocess.Popen:
         """`run(argv)` lanza el proceso; `fallback_subs()` da URLs de subtítulos si el video no trae.
+        `started(proceso)`: lo que hay que hacer con él en el mismo paso (vigilarlo).
         Uno a la vez: dos «pon…» seguidos (voz y mando) ya no dejan un mpv huérfano a pantalla completa."""
         with self._starting:
-            return self._play(run, mpv_exe, url, title, meta, subtitles=subtitles, fallback_subs=fallback_subs, **options)
+            process = self._play(run, mpv_exe, url, title, meta, subtitles=subtitles, fallback_subs=fallback_subs, **options)
+            if started is not None:
+                started(process)
+            return process
 
     def _play(self, run, mpv_exe: str, url: str, title: str, meta: dict, *, subtitles: str = "en",
               fallback_subs=None, **options) -> subprocess.Popen:
@@ -326,9 +332,10 @@ class OrbitalPlayer(PlayerScreen):
 
     def _close_segment(self, segment: Segment) -> None:
         """Lo que se vio de este archivo, a Stremio (al salir o al pasar al siguiente)."""
-        if segment.closed:
-            return
-        segment.closed = True
+        with self._closing:  # el vigilante y play() a la vez: lo visto se guarda una sola vez
+            if segment.closed:
+                return
+            segment.closed = True
         if self.on_finished and segment.duration:
             self._safe(self.on_finished, segment.meta, segment.position, segment.duration,
                        segment.watched - segment.saved_watched)

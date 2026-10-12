@@ -23,9 +23,20 @@ class PlayRequest(BaseModel):
 
 def _title_ref(body: dict, missing: str) -> tuple[str, str]:
     kind, meta_id = body.get("kind"), body.get("id")
-    if kind not in ("movie", "series") or not isinstance(meta_id, str) or not meta_id.strip() or len(meta_id) > 200:
+    if kind not in ("movie", "series") or not _clean_id(meta_id):
         raise HTTPException(400, missing)
     return kind, meta_id
+
+
+def _clean_id(value) -> bool:
+    """Un id de Cinemeta/Stremio que se puede mandar por internet (un sustituto Unicode suelto daba 500)."""
+    if not isinstance(value, str) or not value.strip() or len(value) > 200:
+        return False
+    try:
+        value.encode("utf-8")
+    except UnicodeEncodeError:
+        return False
+    return True
 
 
 def router(d: Deps) -> APIRouter:
@@ -87,7 +98,7 @@ def router(d: Deps) -> APIRouter:
     def play(body: PlayRequest) -> dict:
         """Con `source`: esa fuente. Sin ella (y con el reproductor de Orbital): la recomendada, directo."""
         kind, meta_id = body.kind, body.id
-        if kind not in ("movie", "series") or not meta_id:
+        if kind not in ("movie", "series") or not _clean_id(meta_id) or (body.video_id is not None and not _clean_id(body.video_id)):
             raise HTTPException(400, "Falta qué reproducir")
         title = body.title or "Stremio"
         video_id = body.video_id or (meta_id if kind == "movie" else None)

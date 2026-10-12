@@ -151,6 +151,8 @@ class Watch:
         self._stremio_fetched = 0.0
         self._stremio_busy = threading.Lock()
         self._stremio_again = False
+        self._stremio_generation = 0
+        self._stremio_publish = threading.Lock()
         self.streams = streams.StreamFinder(self.stremio_client)
         self.player = player.OrbitalPlayer(
             on_finished=self._player_finished, idle_seconds=config.sessions.video_idle_minutes * 60,
@@ -196,6 +198,7 @@ class Watch:
             self._stremio_again = True
             return False
         self._stremio_again = False
+        generation = self._stremio_generation
         try:
             raw = self.stremio_client.library(self.credentials.get(STREMIO_KEY) or "")
             items = []
@@ -219,11 +222,14 @@ class Watch:
             self._stremio_busy.release()
             if self._stremio_again:
                 threading.Thread(target=self.refresh_stremio, daemon=True).start()
-        self.store.replace_source("stremio", items)
-        changed = [i.id for i in items] != [i.id for i in self.stremio_items] or any(
-            a.progress != b.progress for a, b in zip(items, self.stremio_items, strict=False))
-        self.stremio_items = items
-        self._save_stremio_cache(items)
+        with self._stremio_publish:
+            if generation != self._stremio_generation or not self.stremio_linked:
+                return False  # cerraste sesión mientras se descargaba: no se vuelve a poner esa lista
+            self.store.replace_source("stremio", items)
+            changed = [i.id for i in items] != [i.id for i in self.stremio_items] or any(
+                a.progress != b.progress for a, b in zip(items, self.stremio_items, strict=False))
+            self.stremio_items = items
+            self._save_stremio_cache(items)
         if changed:
             self.events.publish({"type": "library-changed"})
         # Mi lista también lleva sinopsis, calificación y logo (antes solo Seguir viendo): en
@@ -309,11 +315,13 @@ class Watch:
         return len(raw)
 
     def unlink_stremio(self) -> None:
-        self.credentials.set(STREMIO_KEY, None)
-        self.store.replace_source("stremio", [])
-        self.stremio_items = []
-        if self._stremio_cache:
-            self._stremio_cache.unlink(missing_ok=True)
+        with self._stremio_publish:
+            self._stremio_generation += 1  # una descarga que ya iba a medias no vuelve a poner la cuenta
+            self.credentials.set(STREMIO_KEY, None)
+            self.store.replace_source("stremio", [])
+            self.stremio_items = []
+            if self._stremio_cache:
+                self._stremio_cache.unlink(missing_ok=True)
 
     # --- películas y series en el reproductor de Orbital -----------------------------------------
     def setting(self, key: str, default=None):
@@ -334,9 +342,11 @@ class Watch:
         recuerda el suyo) o, si nunca cambiaste, el de Ajustes."""
         saved = self.state.prefs(f"stremio:{meta_id}")
         prefs = self.stream_prefs
-        if saved.get("audio"):
+        # Solo texto: un valor raro en state.json («audio»: ["x"]) impedía reproducir ese título.
+        if isinstance(saved.get("audio"), str) and saved["audio"]:
             prefs = streams.Preferences(audio=saved["audio"], quality=prefs.quality)
-        return prefs, saved.get("subtitles", self.subtitles_lang)
+        subtitles = saved.get("subtitles")
+        return prefs, subtitles if isinstance(subtitles, str) else self.subtitles_lang
 
     def _remember_language(self, meta: dict, kind: str, code: str) -> None:
         """Cambiaste el audio o los subtítulos en el reproductor: esa serie (o película) lo recuerda."""
@@ -478,15 +488,17 @@ class Watch:
         self._wire_player()
         pinned = self.sessions.pin()
         try:
-            process = self.player.play(
+            # Vigilar el proceso en el mismo paso que lo abre: con dos «pon…» a la vez, el vigilante
+            # del primero (ya cerrado) borraba al segundo.
+            self.player.play(
                 self.launcher.run, mpv_exe, url, title, meta,
                 start=start, audio=audio or self.stream_prefs.audio,
                 subtitles=self.subtitles_lang if subtitles is None else subtitles,
-                fallback_subs=self._fallback_subs(kind, video_id, subtitles))
+                fallback_subs=self._fallback_subs(kind, video_id, subtitles),
+                started=lambda process: self.launcher.track("media:player", title, process, runner="Reproductor"))
         except BaseException:
             self.sessions.unpin(pinned)  # mpv no abrió: Orbital no se queda «siempre encima»
             raise
-        self.launcher.track("media:player", title, process, runner="Reproductor")
         # Hasta la primera imagen del video (cargar un stream tarda): antes se veía la ventana negra de mpv.
         self.sessions.revealing = self.sessions.to_front("media:player", title, pinned=pinned, timeout=player.STARTUP_TIMEOUT + 5,
                                         ready=lambda: bool(self.player.segment and self.player.segment.playing))

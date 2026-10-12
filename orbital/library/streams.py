@@ -12,6 +12,7 @@ recibe un índice de fuente.
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import logging
 import re
@@ -127,6 +128,15 @@ def _size_number(text: str) -> float:
 
 CACHE_MAX = 200
 RETRY_FAILED = 15  # s que se recuerda una lista incompleta por un error de red
+def stable_index(addon_url: str, stream: dict) -> int:
+    """El número de una fuente: sale del complemento y de su enlace, no de su lugar en la lista. Así
+    «la fuente 3» sigue siendo la misma aunque otra búsqueda traiga los complementos en otro orden
+    (antes, al volver a buscar, «reintentar» podía poner otra fuente sin avisar)."""
+    what = stream.get("url") if isinstance(stream.get("url"), str) else f"{stream.get('infoHash')}/{stream.get('fileIdx')}"
+    digest = hashlib.sha1(f"{addon_url} {what}".encode("utf-8", "surrogatepass")).hexdigest()
+    return int(digest[:12], 16) % 2**31  # entero chico: viaja como número en JSON sin perder precisión
+
+
 PARSE_ERRORS = (ValueError, TypeError, AttributeError, OverflowError, IndexError, KeyError)
 
 
@@ -311,16 +321,19 @@ class StreamFinder:
                   if "stream" in a.get("resources", ["stream"]) and (not a["types"] or kind in a["types"])]
         with ThreadPoolExecutor(max_workers=max(1, len(addons))) as pool:
             results = list(pool.map(lambda a: (a, self._fetch(a, kind, video_id)), addons))
-        sources, index = [], 0
+        sources, seen = [], set()
         failed = any(streams is None for _, streams in results)
         for addon, streams in results:
             for stream in streams or []:
+                index = stable_index(addon["url"], stream)
+                while index in seen:  # el mismo enlace dos veces: la segunda, el número siguiente
+                    index = (index + 1) % 2**31
                 try:
                     sources.append(parse(stream, addon["name"], addon["url"], index))
                 except PARSE_ERRORS as exc:  # una fuente con datos raros se salta, no tumba la lista
                     log.info("Fuente rara de %s: %s", addon["name"], exc)
                     continue
-                index += 1
+                seen.add(index)
         ranked = rank(sources, prefs, kind)
         if failed and not ranked:
             return ranked  # la red falló y no hay nada: no se recuerda, la próxima vez se pregunta otra vez
@@ -335,4 +348,6 @@ class StreamFinder:
 
     def get(self, kind: str, video_id: str, prefs: Preferences, index: int) -> Source | None:
         hit = self._cache.get(f"{kind}:{video_id}:{prefs.audio}:{prefs.quality}")
-        return next((s for s in hit[1] if s.index == index), None) if hit else None
+        if not hit or time.time() - hit[0] >= CACHE_SECONDS:
+            return None  # caducó (los enlaces de Real-Debrid vencen): quien llama busca otra vez
+        return next((s for s in hit[1] if s.index == index), None)
