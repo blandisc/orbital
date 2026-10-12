@@ -50,7 +50,8 @@ def router(d: Deps) -> APIRouter:
 
     @r.get("/api/system")
     async def system_info() -> dict:
-        return {"wifi": await run_in_threadpool(system.wifi), "alexa_last": d.alexa_last}
+        return {"wifi": await run_in_threadpool(system.wifi), "online": await run_in_threadpool(system.online),
+                "alexa_last": d.alexa_last}
 
     @r.get("/api/controllers")
     async def controllers() -> dict:

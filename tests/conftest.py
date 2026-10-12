@@ -47,6 +47,7 @@ def _no_real_machine_actions(monkeypatch):
     from orbital import music, system
 
     monkeypatch.setattr(system, "power", lambda action: None)
+    monkeypatch.setattr(system, "online", lambda: True)  # sin salir a Internet a preguntar
     monkeypatch.setattr(music, "command", lambda action: False)
 
 

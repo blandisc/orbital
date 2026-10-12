@@ -24,6 +24,8 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
     h("span", { class: "assistant__ring", "aria-hidden": "true" }, svg(ICONS.assistant)), alexaLabel);
   let heardTimer = 0;
   const wifi = h("span", { hidden: true }, svg(ICONS.wifi));
+  // Sin Internet, se dice antes de que falle Películas, Fuentes o Buscar (que no haya ícono no dice nada).
+  const offline = h("span", { class: "status-bar__offline", role: "status", hidden: true }, "Sin Internet");
   const level = h("i", { class: "battery__level" });
   const batteryText = h("span");
   const bolt = svg(ICONS.bolt);
@@ -37,7 +39,7 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
       svg(ICONS.mark), h("span", { class: "status-bar__wordmark" }, "orbital")),
     search,
     tabs,
-    h("div", { class: "status-bar__right" }, playing, alexa, wifi, battery, time));
+    h("div", { class: "status-bar__right" }, playing, alexa, offline, wifi, battery, time));
 
   /** Pestañas de sección (Inicio, Juegos, Películas y series, Apps) con LB/RB a los lados. */
   function setSections(sections, active, glyphs) {
@@ -58,7 +60,8 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
     playingTitle.textContent = running ? running.title : "";
   }
 
-  function setSystem({ wifi: info, alexa_last: alexaLast }) {
+  function setSystem({ wifi: info, alexa_last: alexaLast, online = true }) {
+    offline.hidden = online !== false;
     wifi.hidden = !info;
     if (info) {
       const icon = wifi.firstElementChild;

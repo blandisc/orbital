@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+import socket
 import subprocess
 import sys
 import time
@@ -84,6 +85,28 @@ def wifi() -> dict | None:
     except (OSError, subprocess.TimeoutExpired):
         result = None
     _wifi_cache = (time.time(), result)
+    return result
+
+
+# ¿Hay Internet? Se pregunta abriendo una conexión a dos servidores públicos por IP (sin DNS, sin
+# mandar nada). Solo salida: no abre puertos ni dispara el aviso del firewall. Se recuerda 20 s.
+ONLINE_PROBES = (("1.1.1.1", 443), ("8.8.8.8", 53))
+_online_cache: tuple[float, bool] = (0.0, True)
+
+
+def online() -> bool:
+    global _online_cache
+    if time.time() - _online_cache[0] < 20:
+        return _online_cache[1]
+    result = False
+    for host in ONLINE_PROBES:
+        try:
+            socket.create_connection(host, timeout=1.5).close()
+            result = True
+            break
+        except OSError:
+            continue
+    _online_cache = (time.time(), result)
     return result
 
 
