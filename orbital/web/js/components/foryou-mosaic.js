@@ -94,7 +94,7 @@ export function createForYouMosaic({ onFocus }) {
       col.el.style.left = `${col.x}px`;
       col.el.style.width = `${col.w}px`;
       fill(col, c); // primero las piezas que falten; luego cada una en su lugar (y la enfocada, marcada)
-      let y = 0;
+      let y = col.tiles[0]?.top ?? 0; // desde donde empieza lo que sigue vivo (lo de arriba pudo podarse)
       col.tiles.forEach((t, r) => {
         const wideCol = mode === "focus" && c === focus.col;
         t.h = tileHeight(col, c, r, t.item);
@@ -146,7 +146,8 @@ export function createForYouMosaic({ onFocus }) {
     const { H } = size();
     const pad = H * .08;
     const before = col.offset;
-    if (t.top - col.offset < pad) col.offset = Math.max(0, t.top - pad);
+    if (focus.row === 0) col.offset = t.top; // la primera (tras podar, la primera que sigue viva): pegada arriba
+    else if (t.top - col.offset < pad) col.offset = Math.max(0, t.top - pad);
     else if (t.top + t.h - col.offset > H - pad) col.offset = t.top + t.h - H + pad;
     if (together) {
       const delta = col.offset - before;
@@ -302,6 +303,15 @@ export function createForYouMosaic({ onFocus }) {
       for (const t of col.tiles) if (t.item.key === key) t.logo.classList.toggle("foryou-mosaic__logo--dark", !!dark);
     }
   }
+
+  /** Cambió el tamaño (se mostró tras precargarse oculto, otra ventana, otra letra): se reacomoda en su lugar. */
+  function refit() {
+    if (!el.clientWidth || !pool.length) return;
+    layout();
+    if (mode === "focus") reveal(false);
+    else applyOffsets();
+  }
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => refit()).observe(el);
 
   function start() {
     if (running) return;
