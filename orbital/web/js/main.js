@@ -477,10 +477,7 @@ const { watch, launch, resumeRunning } = createLaunching({
 });
 
 function openSources(play) {
-  if (!state.stremioLinked) {
-    ui.toast.show("Conecta Stremio para elegir la fuente");
-    return runCommand({ type: "stremio-login" });
-  }
+  if (!state.stremioLinked) return runCommand({ type: "stremio-login" }); // la pantalla ya dice qué hacer (un aviso encima tapaba su título)
   sound.play("menu");
   ui.sources.open(play);
   renderHints();

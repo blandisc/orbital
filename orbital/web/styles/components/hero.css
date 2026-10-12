@@ -29,8 +29,9 @@
 .hero__eyebrow-icon { flex: none; width: 1.3rem; height: 1.3rem; object-fit: contain; }
 .hero__eyebrow svg { flex: none; width: 1.2rem; height: 1.2rem; stroke: currentColor; fill: none; stroke-width: 2; }
 .hero__title {
-  margin: var(--space-2) 0 calc(var(--space-3) - .14em); padding-bottom: .2em; /* que line-clamp no corte g, p, j, y */
-  font-family: var(--font-sans); font-size: var(--text-display); line-height: 1.02; text-wrap: balance;
+  /* Interlínea con sitio para g, p, j, y: con relleno extra, line-clamp dejaba asomar la tercera línea. */
+  margin: var(--space-2) 0 var(--space-3);
+  font-family: var(--font-sans); font-size: var(--text-display); line-height: 1.14; text-wrap: balance;
   font-weight: var(--weight-bold); letter-spacing: var(--tracking-display);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   text-shadow: var(--shadow-text);

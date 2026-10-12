@@ -71,6 +71,41 @@ class DryLauncher:
         return cur is not None
 
 
+def no_side_effects() -> None:
+    """Nada de lo que se pulse en el demo toca este equipo: ni volumen, brillo o energía, ni apagar,
+    ni ventanas, ni capturas, ni la música, ni cerrar programas, ni actualizar (git) la carpeta.
+    (Un agente cambió el modo de energía de verdad desde el Panel rápido del demo.)"""
+    from orbital import capture, memory, music, quick, system, updater
+    from orbital.shell import ConsoleShell
+
+    fake = {"level": 60, "muted": False, "brightness": 70, "mode": "balanced"}
+
+    def set_volume(level=None, muted=None):
+        if level is not None:
+            fake["level"] = max(0, min(100, int(level)))
+        if muted is not None:
+            fake["muted"] = bool(muted)
+        return {"level": fake["level"], "muted": fake["muted"]}
+
+    def set_brightness(level):
+        fake["brightness"] = max(0, min(100, int(level)))
+        return fake["brightness"]
+
+    quick.volume = lambda: {"level": fake["level"], "muted": fake["muted"]}
+    quick.set_volume = set_volume
+    quick.brightness = lambda: fake["brightness"]
+    quick.set_brightness = set_brightness
+    quick.power_mode = lambda: fake["mode"]
+    quick.set_power_mode = lambda mode: fake.update(mode=mode) or mode
+    system.power = lambda action: print(f"[demo] {action} (no se hizo)")
+    capture.take = lambda title="": None
+    music.command = lambda action: False
+    memory.close = lambda exe, protect_pids=None: 0
+    ConsoleShell.open_windows = lambda self: []
+    ConsoleShell.focus_window = lambda self, hwnd: False
+    updater.Updater.apply = lambda self, progress=lambda m: None: (False, "En el demo no se actualiza.")
+
+
 def build(tmp: Path):
     apps = tmp / "Steam" / "steamapps"
     apps.mkdir(parents=True)
@@ -98,6 +133,7 @@ def build(tmp: Path):
         "apps": [{"id": "yt", "name": "YouTube", "target": "https://youtube.com/tv", "category": "media"}],
     })
     # Sin internet ni programas de este equipo.
+    no_side_effects()
     cinemeta.Cinemeta._get = lambda self, path: {"metas": []}
     stremio.find_stremio = lambda cfg: None
     geforcenow.install_dir = lambda: None

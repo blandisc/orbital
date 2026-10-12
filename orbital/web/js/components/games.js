@@ -4,6 +4,7 @@ import { consoleGames, FILTERS, gameConsoles, pickConsole, stepConsole } from ".
 import { systemColor } from "../core/home.js";
 import { ICONS } from "../core/icons.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
+import { swipeArea, swipeSteps } from "../core/swipe.js";
 import { Card } from "./card.js";
 import { createGamePanel } from "./game-panel.js";
 import { Glyph } from "./glyph.js";
@@ -25,10 +26,35 @@ export function createGames({ onFocus, onPick, onAction }) {
   const count = h("span", { class: "games__count" });
   const grid = h("div", { class: "games__grid", role: "group" });
   const sheet = createGamePanel({ onAction: (action, item) => onAction?.(action, item) });
-  const main = h("div", { class: "games__main" },
-    h("div", { class: "games__head" }, heading),
-    h("div", { class: "games__bar" }, filters, count),
-    h("div", { class: "games__viewport" }, grid));
+  const viewport = h("div", { class: "games__viewport" }, grid);
+  const bar = h("div", { class: "games__bar" }, filters, count);
+  const main = h("div", { class: "games__main" }, h("div", { class: "games__head" }, heading), bar, viewport);
+  // Los filtros siempre en una fila: si no caben (pantalla de la Legion Go, letra grande), la barra se
+  // compacta y, si aún no, la letra baja un punto. Se mide, no se adivina por el ancho de la pantalla.
+  const fitBar = () => {
+    bar.classList.remove("games__bar--compact", "games__bar--tight");
+    const wraps = () => {
+      const pills = filters.children;
+      return pills.length > 1 && pills[pills.length - 1].offsetTop > pills[0].offsetTop + 2;
+    };
+    if (wraps()) bar.classList.add("games__bar--compact");
+    if (wraps()) bar.classList.add("games__bar--tight");
+  };
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(fitBar).observe(main);
+  // Con el dedo: deslizar las portadas las recorre (antes solo se veían las primeras filas); deslizar
+  // el riel pasa de consola. Subir el dedo = ver lo de abajo, como en cualquier lista.
+  swipeArea(viewport, ({ dx, dy }) => {
+    const card = grid.querySelector('[data-focus-id^="game:"]');
+    if (!card) return;
+    if (!focusId.startsWith("game:")) focusId = "game:0";
+    const vertical = Math.abs(dy) > Math.abs(dx);
+    const action = vertical ? (dy < 0 ? "down" : "up") : (dx < 0 ? "right" : "left");
+    for (let n = swipeSteps(vertical ? dy : dx, vertical ? card.offsetHeight : card.offsetWidth); n > 0; n--) {
+      if (handle(action) !== true || focusId.startsWith("rail:")) break;
+    }
+    paint();
+  });
+  swipeArea(railWindow, ({ dy }) => stepRail(dy < 0 ? swipeSteps(dy, 80) : -swipeSteps(dy, 80)));
   const el = h("section", { class: "games", hidden: true, "aria-label": "Juegos" }, rail, main, sheet.el);
 
   let rows = [];
@@ -74,10 +100,19 @@ export function createGames({ onFocus, onPick, onAction }) {
       style: { "--glow": systemColor(c.system) },
       onClick: () => switchTo(c.id),
     }, consoleImage(c, "games__rail-img"))));
+    // Las flechas del riel también se tocan (con el dedo, las primeras consolas quedaban fuera de alcance).
     mount(rail,
-      prev && h("span", { class: "games__rail-key" }, Glyph(prev, { small: true }), h("span", { class: "games__rail-arrow" }, svg(ICONS.chevron))),
+      prev && h("button", { class: "games__rail-key", type: "button", tabindex: "-1", "aria-label": "Consola anterior",
+        onClick: () => stepRail(-1) }, Glyph(prev, { small: true }), h("span", { class: "games__rail-arrow" }, svg(ICONS.chevron))),
       railWindow,
-      next && h("span", { class: "games__rail-key games__rail-key--next" }, h("span", { class: "games__rail-arrow" }, svg(ICONS.chevron)), Glyph(next, { small: true })));
+      next && h("button", { class: "games__rail-key games__rail-key--next", type: "button", tabindex: "-1", "aria-label": "Consola siguiente",
+        onClick: () => stepRail(1) }, h("span", { class: "games__rail-arrow" }, svg(ICONS.chevron)), Glyph(next, { small: true })));
+  }
+
+  /** Otra consola, `n` lugares arriba o abajo (flechas del riel o deslizar el riel con el dedo). */
+  function stepRail(n) {
+    const i = Math.max(0, Math.min(list.length - 1, index() + n));
+    if (list[i]) switchTo(list[i].id, { keepRail: focusId.startsWith("rail:") });
   }
 
   /** La consola actual (o la enfocada en el riel) siempre a la vista, centrada si se puede. */
@@ -117,6 +152,7 @@ export function createGames({ onFocus, onPick, onAction }) {
         onClick: () => onPick?.(targets.get(`filter:${i}`), `filter:${i}`),
       }, f.label);
     }));
+    fitBar();
     mount(grid, games.length ? games.map((item, i) => {
       targets.set(`game:${i}`, { kind: "game", item, console: c });
       const card = Card(item, { onPress: () => onPick?.(targets.get(`game:${i}`), `game:${i}`) });

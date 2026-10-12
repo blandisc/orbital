@@ -1,4 +1,5 @@
 import { h, mount } from "../core/dom.js";
+import { swipeArea, swipeSteps } from "../core/swipe.js";
 import { buildHome, greeting } from "../core/home.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { ConsoleTile, FeatureTile, WideTile } from "./tiles.js";
@@ -27,10 +28,20 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   const top = h("div", { class: "home__top" });
   const consolesHead = h("div", { class: "home__consoles-head" });
   const consolesTrack = h("div", { class: "home__consoles-track", role: "group" });
+  const consolesViewport = h("div", { class: "home__consoles-viewport" }, consolesTrack);
   const el = h("section", { class: "home", hidden: true, "aria-label": "Inicio" },
     h("div", { class: "home__greeting" }, hello),
     top,
-    h("div", { class: "home__consoles" }, consolesHead, h("div", { class: "home__consoles-viewport" }, consolesTrack)));
+    h("div", { class: "home__consoles" }, consolesHead, consolesViewport));
+  // Con el dedo: deslizar «Tus consolas» trae las que no caben (antes solo se llegaba con la cruceta).
+  swipeArea(consolesViewport, ({ dx }) => {
+    const total = model?.consoles.length ?? 0;
+    if (!total) return;
+    const from = Number((focusId.startsWith("console:") ? focusId : lastConsole).split(":")[1]) || 0;
+    const card = consolesTrack.firstElementChild;
+    const step = swipeSteps(dx, card ? card.offsetWidth : 160);
+    focus(`console:${Math.max(0, Math.min(total - 1, from + (dx < 0 ? step : -step)))}`);
+  });
 
   let model = null;
   let targets = new Map(); // focus id -> target

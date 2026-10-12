@@ -20,7 +20,7 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 
 /* Abajo: tus consolas en una fila que se desplaza si no caben (6 a la vista). */
 .home__consoles { flex: none; display: flex; flex-direction: column; gap: var(--space-3); }
-.home__consoles-viewport { overflow: hidden; padding: .6rem; margin: -.6rem; } /* espacio para el anillo y el crecer */
+.home__consoles-viewport { overflow: hidden; padding: .6rem 1rem; margin: -.6rem -1rem; } /* espacio para el anillo y el crecer (también la última) */
 .home__consoles-track { display: flex; gap: var(--tile-gap); transition: transform var(--duration-slow) var(--ease-out); }
 /* 6 enteras y la séptima asomando (así se nota que hay más); el borde se desvanece hacia ese lado. */
 .home__consoles-track > .tile--console { flex: 0 0 calc((100% - 6 * var(--tile-gap)) / 6.35); height: auto; min-height: 11rem; }

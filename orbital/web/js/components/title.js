@@ -150,9 +150,11 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
     const top = node.offsetTop; // la lista es position:relative: relativo a ella
     const bottom = top + node.offsetHeight;
     let next = list.scrollTop;
+    const room = Math.max(48, list.clientHeight * .17);
     if (center) next = top - (list.clientHeight - node.offsetHeight) / 2;
     else if (top < list.scrollTop + 24) next = top - 24;
-    else if (bottom > list.scrollTop + list.clientHeight - 48) next = bottom - list.clientHeight + 48;
+    // Abajo, el enfocado queda por encima del fundido (el último 15 % de la lista): antes quedaba debajo, oscurecido.
+    else if (bottom > list.scrollTop + list.clientHeight - room) next = bottom - list.clientHeight + room;
     list.scrollTo({ top: Math.max(0, next), behavior: smooth ? "smooth" : "auto" });
   }
 

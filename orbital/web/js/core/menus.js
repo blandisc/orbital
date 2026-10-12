@@ -417,6 +417,7 @@ const shortPath = (path, keep = 3) => {
   const parts = String(path || "").split(/[\\/]/).filter(Boolean);
   return parts.length > keep ? `…\\${parts.slice(-keep).join("\\")}` : String(path || "");
 };
+const breakable = (text) => String(text).replace(/\\/g, "\\​");
 const mb = (n) => (n == null ? "—" : n >= 1024 ? `${(n / 1024).toFixed(1)} GB` : `${n} MB`);
 const ago = (seconds, now) => {
   if (!seconds) return "Nunca";
@@ -441,7 +442,8 @@ export function diagnosticsMenu(d = {}, { now = Date.now() } = {}) {
     subtitle: `Orbital ${d.version} · abierto hace ${uptime}`,
     options: [
       info("folder", "Configuración", redirected ? "⚠ Redirigida" : "✓ En su lugar",
-        redirected ? `Windows guarda en ${shortPath(redirected)}: abre Orbital con su acceso directo` : shortPath(d.paths?.config) || "Valores por defecto"),
+        // ​ tras cada «\»: la ruta larga se parte en una carpeta, no a media palabra («Loca/lCache»).
+        breakable(redirected ? `Windows guarda en ${shortPath(redirected)}: abre Orbital con su acceso directo` : shortPath(d.paths?.config) || "Valores por defecto")),
       info("folder", "Registro", "orbital.log", shortPath(d.paths?.log) || "Sin archivo (consola)"),
       info("play", "Reproductor", found.mpv ? "✓ mpv" : "Falta mpv", shortPath(found.mpv) || "Corre scripts/install-windows.ps1"),
       info("gamepad", "Biblioteca", `${sources.reduce((n, [, c]) => n + c, 0)} elementos`,

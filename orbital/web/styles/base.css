@@ -4,6 +4,7 @@
 html {
   font-size: var(--root-size);
   background: var(--color-bg);
+  overscroll-behavior: none; /* deslizar con el dedo nunca «regresa» el navegador ni rebota la página */
   /* El color del juego ya no se anima aquí (animar una variable de la raíz recalculaba toda la página
      en cada cuadro): solo el fondo hace el fundido (backdrop.css), que es lo que se nota. */
 }
@@ -97,3 +98,6 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
    «búsqueda visual» (con su engrane) al pasar el cursor o el dedo; los botones que las contienen
    siguen respondiendo igual. */
 img { pointer-events: none; -webkit-user-drag: none; }
+
+/* Zonas que se recorren deslizando (core/swipe.js): el gesto es de Orbital, no del navegador. */
+.swipe-area { touch-action: none; }

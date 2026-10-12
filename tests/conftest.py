@@ -41,6 +41,16 @@ def _no_real_hardware(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_real_machine_actions(monkeypatch):
+    """Ninguna prueba apaga el equipo ni toca la música de verdad (cerrar programas y actualizar se
+    prueban con sus propios dobles: test_memory, test_updater)."""
+    from orbital import music, system
+
+    monkeypatch.setattr(system, "power", lambda action: None)
+    monkeypatch.setattr(music, "command", lambda action: False)
+
+
+@pytest.fixture(autouse=True)
 def _no_real_screenshots(monkeypatch):
     """Ninguna prueba toma capturas de tu pantalla de verdad («toma una captura» por voz lo hacía)."""
     from orbital import capture

@@ -30,10 +30,9 @@
 
 /* Secciones al centro: la activa en sólido; LB/RB a los lados. Van en el flujo (antes, centradas
    con position:absolute, se encimaban con Buscar y la hora en pantallas angostas). */
-.status-bar__tabs {
-  display: flex; align-items: center; gap: var(--space-1); min-width: 0; margin: 0 auto;
-  overflow-x: auto; scrollbar-width: none;
-}
+/* Las pestañas nunca se encogen (se recortaban: la «E» de junto a Apps desaparecía bajo lo que está
+   abierto); cuando falta sitio, cede el nombre de lo abierto, con «…». */
+.status-bar__tabs { flex: none; display: flex; align-items: center; gap: var(--space-1); margin: 0 auto; }
 .status-bar__tabs .glyph { margin: 0 var(--space-2); }
 .status-bar__tab {
   padding: .5rem 1.05rem; border-radius: var(--radius-pill);
@@ -55,7 +54,9 @@
 /* Enfocado desde el Inicio (↑): el mismo foco invertido que las teclas y opciones. */
 .status-bar__search.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
 @media (max-width: 1100px) { .status-bar__search > span:not(.status-bar__search-glyph) { display: none; } }
-.status-bar__right { flex: none; display: flex; align-items: center; gap: var(--space-5); color: var(--color-text-muted); font-size: var(--text-sm); }
+.status-bar__right { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--space-5); color: var(--color-text-muted); font-size: var(--text-sm); }
+.status-bar__right > * { flex: none; }
+.status-bar__right > .status-bar__playing { flex: 0 1 auto; }
 /* La hora cierra la barra: grande y separada del estado por una línea fina. */
 .status-bar__clock {
   padding-left: var(--space-5); border-left: 1px solid var(--color-hairline-strong);
@@ -106,7 +107,11 @@
 @media (max-width: 700px) { .status-bar .assistant, .status-bar__playing { display: none; } }
 
 /* Pantallas angostas: primero se van los textos de apoyo, nunca las pestañas ni la hora. */
-@media (max-width: 1300px) { .status-bar__playing-title { display: none; } }
+/* Legion Go (1280): el nombre de lo abierto se acorta (un ▶ suelto no decía qué); el % de batería cede su sitio. */
+@media (max-width: 1300px) {
+  .status-bar__playing-title { max-width: 6.5rem; }
+  .battery > span:not(.battery__body) { display: none; }
+}
 @media (max-width: 1000px) {
   .status-bar { gap: var(--space-4); }
   .status-bar__wordmark, .status-bar .assistant { display: none; }

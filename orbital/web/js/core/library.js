@@ -84,7 +84,10 @@ export const isGame = (item) => !!item && !isWatchable(item) && item.category !=
  * Un solo vocabulario: "Volver al juego" para algo abierto; "Continuar" solo para un video a medias.
  */
 export const primaryLabel = (item, runningId = null) => {
-  if (item && item.id === runningId) return item.id === "media:player" ? "Volver al video" : "Volver al juego";
+  if (item && item.id === runningId) {
+    if (item.id.startsWith("media:") || isWatchable(item)) return "Volver al video"; // Stremio o el reproductor
+    return item.category === "apps" || item.category === "media" ? "Volver a la app" : "Volver al juego";
+  }
   if (item?.source === "search") return "Buscar";
   if (item?.category === "apps") return "Abrir";
   if (isSeries(item)) return item.progress > 0 ? "Continuar" : "Ver serie";
