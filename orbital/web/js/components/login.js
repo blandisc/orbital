@@ -38,6 +38,7 @@ export function createLogin({ onDone, onMove, onClose }) {
   let symbols = false;
   let reveal = false;
   let busy = false;
+  let attempt = 0; // B mientras conecta: se cancela (la respuesta que llegue después se ignora)
   let cancelExit = () => {};
 
   const grid = () => [...(symbols ? SYMBOLS : LETTERS).map((r) => r.map((k) => ({ key: k, label: shift && !symbols ? k.toUpperCase() : k }))),
@@ -91,14 +92,17 @@ export function createLogin({ onDone, onMove, onClose }) {
       return;
     }
     busy = true;
-    message.textContent = "Conectando…";
+    const mine = ++attempt;
+    message.textContent = "Conectando… (B para cancelar)";
     el.classList.add("login--busy");
     try {
       const res = await api.stremioLogin(email, password);
+      if (mine !== attempt) return; // cancelaste con B: no se vuelve a abrir nada encima
       fields.password.value = "";
       close();
       onDone?.(res);
     } catch (err) {
+      if (mine !== attempt) return;
       message.textContent = err.message;
       fields.password.value = "";
       active = "password";
@@ -141,7 +145,10 @@ export function createLogin({ onDone, onMove, onClose }) {
 
   function handle(action) {
     if (el.hidden || el.classList.contains("login--leaving")) return false;
-    if (busy) return true;
+    if (busy) {
+      if (action === "back") { attempt++; busy = false; el.classList.remove("login--busy"); close(); }
+      return true;
+    }
     if (action === "back") { close(); return true; }
     if (action === "alt") { press("delete"); return true; }
     if (action === "options") { reveal = !reveal; renderFields(); return true; }

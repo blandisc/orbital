@@ -43,7 +43,9 @@ export function titleActions(details, { kind = "movie" } = {}) {
         label: `${started ? "Continuar" : "Ver"} ${resume.label || ""}`.trim() });
       if (started) out.push({ id: "restart", video_id: resume.video_id, icon: "refresh", label: "Desde el principio" });
     } else if (first) {
-      out.push({ id: "play", video_id: first.id, primary: true, icon: "play", label: "Ver T1 E1" });
+      // El primero de verdad (hay series que empiezan en la temporada 2 o en el episodio 0).
+      const firstSeason = (details.seasons || []).find((s) => s.season !== 0)?.season ?? 1;
+      out.push({ id: "play", video_id: first.id, primary: true, icon: "play", label: `Ver T${firstSeason} E${first.episode ?? 1}` });
     }
   } else if (resume?.position > 0) {
     out.push({ id: "play", primary: true, icon: "play", label: "Continuar" });

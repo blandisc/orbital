@@ -6,7 +6,7 @@ Orbital elige la fuente (library/streams.py) y la abre en mpv con un canal de co
 teclado y sin depender de los atajos de mpv.
 
   A pausa · ←/→ adelantar (mantener: cada vez más rápido) · LB/RB capítulo (o ±1 min)
-  LT/RT episodio anterior/siguiente · ↑/↓ volumen · X audio · Y subtítulos · B oculta la barra
+  LT/RT episodio anterior/siguiente · ↑/↓ volumen · X audio y subtítulos · Y fuentes y episodios · B oculta la barra (mantener: salir)
   y, con la barra oculta, sale (guarda dónde ibas)
 
 Además, como un servicio de streaming de verdad:

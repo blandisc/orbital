@@ -81,6 +81,14 @@ export function createLaunchOverlay({ timeout = 8000 } = {}) {
     timer = setTimeout(hide, HOLD_MS);
   }
 
+  /** Se queda a la vista `ms` más (mientras el servidor busca la fuente: antes se iba a los 8 s y
+   *  parecía que no pasaba nada, aunque seguía buscando). */
+  function keep(ms) {
+    if (el.hidden) return;
+    clearTimeout(timer);
+    timer = setTimeout(hide, ms);
+  }
+
   /** El juego está listo: salto a velocidad luz y a negro; Windows funde Orbital sobre el juego. */
   function reveal() {
     if (el.hidden) return;
@@ -109,7 +117,7 @@ export function createLaunchOverlay({ timeout = 8000 } = {}) {
   window.addEventListener("blur", () => { if (!el.hidden && !holding) setTimeout(() => !holding && hide(), 600); });
 
   return {
-    el, show, hold, reveal, hide, status,
+    el, show, hold, keep, reveal, hide, status,
     get holding() { return holding; },
     get visible() { return !el.hidden && !el.classList.contains("launch--leaving"); },
   };

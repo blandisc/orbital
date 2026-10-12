@@ -67,8 +67,11 @@ export function createSources({ onPlay, onMove, onClose }) {
     onPlay({ ...request, source: src.id });
   }
 
+  let failed = false; // sin fuentes o con error: A reintenta y el pie lo dice
+
   async function open(req) {
     request = req;
+    failed = false;
     const mine = ++token;
     cancelExit();
     found = [];
@@ -88,11 +91,16 @@ export function createSources({ onPlay, onMove, onClose }) {
         + "La recomendada es la que Orbital pone con «Ver». «Al instante»: Real-Debrid ya la tiene guardada "
         + "y arranca en segundos; «Tarda en empezar»: primero se descarga.";
       status.hidden = !!found.length;
-      status.textContent = found.length ? "" : "No encontré dónde ver esto. Revisa tus complementos en Stremio.";
+      status.textContent = found.length ? "" : "No encontré dónde ver esto: tus complementos de Stremio no lo tienen.";
+      failed = !found.length;
       render();
     } catch (err) {
-      if (mine === token) status.textContent = err.message;
+      if (mine !== token) return;
+      // El servidor ya explica por qué (sin Internet, sin complementos…) y qué hacer; A lo intenta otra vez.
+      status.textContent = `${err.message} Pulsa A para intentar otra vez.`;
+      failed = true;
     }
+    onMove?.(); // el pie cambia: con la lista, «Ver con esta»; sin ella, «Reintentar»
   }
 
   function close() {
@@ -109,13 +117,17 @@ export function createSources({ onPlay, onMove, onClose }) {
     else if (action === "down") setIndex(index + 1);
     else if (action === "pageleft") setIndex(index - 5);
     else if (action === "pageright") setIndex(index + 5);
-    else if (action === "select") play();
+    else if (action === "select") {
+      if (failed && request) open(request); // sin fuentes o con error: A reintenta
+      else play();
+    }
     return true;
   }
 
   /** Pistas del pie mientras la lista de fuentes está abierta. */
-  const hints = (g) => [{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra fuente" },
-    { glyph: g.back, label: "Atrás", end: true }];
+  const hints = (g) => (found.length
+    ? [{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra fuente" }, { glyph: g.back, label: "Atrás", end: true }]
+    : [failed && { glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden; } };
 }

@@ -29,12 +29,19 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     ui.launch.show({ ...(item || {}), title }, native ? "" : "Se abre en Stremio");
     // Fases honestas: primero se busca la fuente (hasta unos segundos), luego se conecta.
     if (native && source === null) ui.launch.status("Buscando dónde verlo");
+    // Mientras el servidor busca, la pantalla de carga se queda y no se puede abrir otra cosa encima
+    // (antes se iba a los 8 s y un segundo Enter lanzaba otra reproducción).
+    state.launchLockedUntil = Infinity;
+    ui.launch.keep(30_000);
     try {
       const res = await api.stremioPlay({ kind, id, video_id: videoId, title, source, keep, from_start: fromStart });
+      state.launchLockedUntil = Date.now() + 3000;
       if (res.label) ui.launch.status("Conectando", res.label);
       if (res.reveal) { // Orbital tapa hasta que se ve la primera imagen (no una ventana negra)
         ui.launch.hold();
         ui.launch.status("Cargando video");
+      } else {
+        ui.launch.keep(native ? 1500 : 8000); // se abre en Stremio: unos segundos, como antes
       }
       if (ui.sources.isOpen) ui.sources.close();
       pollStatus();

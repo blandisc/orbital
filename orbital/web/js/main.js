@@ -86,6 +86,7 @@ const ui = {
     canPrefetch: () => state.stremioLinked,
     onNotice: (message, error = false) => { sound.play(error ? "error" : "select"); ui.toast.show(message, { error }); },
     onMove: () => { sound.play("move"); renderHints(); },
+    onChange: () => renderHints(),
     onClose: () => { sound.play("back"); renderHints(); },
   }),
   sources: createSources({

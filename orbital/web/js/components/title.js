@@ -13,7 +13,7 @@ import { availability, episodeStates, titleActions, titleProgress } from "../cor
  *     con su barra, los que no se han estrenado atenuados con su fecha;
  *   · A ve (Orbital elige la mejor fuente y arranca) · Y elige la fuente · B vuelve.
  */
-export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = () => false, onNotice = () => {} }) {
+export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canPrefetch = () => false, onNotice = () => {} }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
@@ -259,11 +259,13 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
         status.hidden = false;
       }
       render();
+      onChange?.(); // el pie dice lo que hay ahora («Continuar T3 E5», Episodios…), no lo de «Cargando…»
     } catch (err) {
       if (mine !== token) return;
       status.textContent = err.message;
       details = { error: true, kind };
       render();
+      onChange?.();
     }
   }
 
@@ -275,14 +277,18 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
     avail.hidden = true;
     const t = canPrefetch() && target();
     if (!t) return;
+    // Mientras busca, el renglón ya ocupa su lugar (antes los chips llegaban tarde y el título brincaba).
+    mount(avail, h("span", { class: "title__avail-none" }, "Buscando fuentes…"));
+    avail.hidden = false;
     try {
       const data = await api.stremioSources(t.kind, t.id, t.video_id);
       if (mine !== token) return;
       const chips = availability(data.sources);
       mount(avail, chips.length ? chips.map((c) => Chip(c, { tone: c === "Al instante" ? "good" : null }))
         : h("span", { class: "title__avail-none" }, "Sin fuentes por ahora"));
-      avail.hidden = false;
-    } catch { /* sin conexión o sin cuenta: la ficha sigue igual */ }
+    } catch {
+      if (mine === token) mount(avail, h("span", { class: "title__avail-none" }, "No pude buscar fuentes ahora"));
+    }
   }
 
   /** `info`: { kind, meta_id, title, hero, image, extra } (lo que ya se sabe, para pintar al instante). */
@@ -353,7 +359,10 @@ export function createTitle({ onPlay, onSources, onMove, onClose, canPrefetch = 
     ? [{ glyph: g.select, label: "Ver" }, { glyph: g.options, label: "Fuente" }, { glyph: g.section, label: "Temporada" },
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
-    : [{ glyph: g.select, label: buttons[action]?.label?.split(" · ")[0] || "Ver" }, { glyph: g.options, label: "Elegir fuente" },
+    : !details ? [{ glyph: g.back, label: "Atrás", end: true }] // cargando: nada que pulsar todavía
+    : [buttons[action] && { glyph: g.select, label: buttons[action].label.split(" · ")[0] },
+      // «Elegir fuente» solo si hay algo que ver (sin episodios o con error, no hacía nada)
+      !details.error && (kindOf() !== "series" || seasons().length) && { glyph: g.options, label: "Elegir fuente" },
       kindOf() === "series" && seasons().length && { glyph: g.rows, label: "Episodios" },
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
