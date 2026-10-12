@@ -826,7 +826,11 @@ function handleAction(action, { repeat = false } = {}) {
     return;
   }
   if (ui.sheet.handle(action, { repeat })) {
-    if (action === "back") sound.play("back");
+    if (action === "back") {
+      sound.play("back");
+      // Saliste de una hoja que esperaba al servidor: lo de atrás responde ya (no 3 s después).
+      if (menuBusy && !menuBusy.done) { menuBusy.stale = true; menuBusy = null; }
+    }
     return renderHints();
   }
   if (menuBusy) {

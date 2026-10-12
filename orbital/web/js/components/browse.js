@@ -66,7 +66,7 @@ export function keepInView(grid, viewport, focusId) {
   const room = viewport.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) - fade;
   let next = shift;
   if (top + node.offsetHeight - shift > room) next = top + node.offsetHeight - room;
-  if (top - shift < 0) next = top;
+  if (top < next) next = top; // el borde de arriba de la enfocada siempre gana
   grid.dataset.shift = String(Math.max(0, next));
   grid.style.transform = `translateY(${-Math.max(0, next)}px)`;
 }

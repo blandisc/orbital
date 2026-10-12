@@ -159,7 +159,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
       busyUntil = performance.now() + 4000;
       const mine = generation;
       context.isCurrent = () => generation === mine && !!menu;
-      Promise.resolve(onCommand(command, context)).finally(() => { busyUntil = 0; });
+      Promise.resolve(onCommand(command, context)).finally(() => { if (generation === mine) busyUntil = 0; });
       return;
     }
     close();
