@@ -39,10 +39,16 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
     tabs,
     h("div", { class: "status-bar__right" }, playing, alexa, wifi, battery, time));
 
+  // La píldora de la sección activa es una sola: al cambiar de sección se desliza hasta la nueva.
+  const pill = h("span", { class: "status-bar__pill", "aria-hidden": "true" });
+  let shown = null;
+
   /** Pestañas de sección (Inicio, Juegos, Películas y series, Apps) con LB/RB a los lados. */
   function setSections(sections, active, glyphs) {
     const [prev, next] = (glyphs?.section || "").split(" ");
+    const before = shown && tabs.querySelector(".status-bar__tab--active")?.getBoundingClientRect();
     mount(tabs,
+      pill,
       prev && Glyph(prev, { small: true }),
       sections.map((section) => h("button", {
         class: ["status-bar__tab", section.id === active && "status-bar__tab--active"], type: "button",
@@ -50,7 +56,32 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
       }, section.title)),
       next && Glyph(next, { small: true }));
     mount(searchGlyph, glyphs?.search && Glyph(glyphs.search, { small: true }));
+    placePill(active !== shown && before ? before : null);
+    shown = active;
   }
+
+  /** La píldora bajo la pestaña activa; si venía de otra, parte de allá y se desliza. */
+  function placePill(from) {
+    const tab = tabs.querySelector(".status-bar__tab--active");
+    if (!tab) { pill.hidden = true; return; }
+    pill.hidden = false;
+    const base = tabs.getBoundingClientRect();
+    const to = tab.getBoundingClientRect();
+    const at = (r) => `translateX(${r.left - base.left}px)`;
+    pill.style.width = `${to.width}px`;
+    pill.style.height = `${to.height}px`;
+    pill.style.top = `${to.top - base.top}px`;
+    if (from && from.width) {
+      pill.classList.add("status-bar__pill--still");
+      pill.style.transform = at(from);
+      pill.style.width = `${from.width}px`;
+      void pill.offsetWidth;
+      pill.classList.remove("status-bar__pill--still");
+      pill.style.width = `${to.width}px`;
+    }
+    pill.style.transform = at(to);
+  }
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => placePill(null)).observe(tabs);
 
   function setRunning(running) {
     playing.hidden = !running;
