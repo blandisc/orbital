@@ -85,6 +85,8 @@
   [data-text-size="xlarge"] .status-bar__playing-title { display: none; }
   [data-text-size="xlarge"] .status-bar { gap: var(--space-5); }
 }
+/* Muy grande en cualquier ancho: el nombre quedaba en «▶ M»; solo el ▶. */
+[data-text-size="xlarge"] .status-bar__playing-title { display: none; }
 /* En la Legion Go (1280) el nombre de lo abierto quedaba en «▸ H», que no dice nada: solo el ▶. */
 @media (max-width: 1350px) {
   [data-text-size="large"] .status-bar__search > span:not(.status-bar__search-glyph),

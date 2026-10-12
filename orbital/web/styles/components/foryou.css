@@ -20,6 +20,12 @@ body[data-view="foryou"] .backdrop__space { opacity: 1; }
   display: inline-flex; align-items: center; gap: .25rem; padding: .3rem .35rem .3rem .55rem; border-radius: var(--radius-pill);
   background: var(--color-badge-bg); backdrop-filter: blur(var(--blur-glass)); box-shadow: inset 0 0 0 1px var(--color-hairline);
 }
+/* En Listas, el selector flota sobre las portadas: la última fila deja su sitio. */
+.foryou[data-mode="lists"] .browse__viewport { padding-bottom: 3.6rem; }
+/* Pantalla angosta con letra grande: el selector sube sobre el pie (tapaba «Otra lista»). */
+@media (max-width: 1400px) {
+  [data-text-size="large"] .foryou__switch, [data-text-size="xlarge"] .foryou__switch { bottom: calc(var(--space-5) + var(--safe-y) + 3.2rem); }
+}
 .foryou[hidden] .foryou__switch, body[data-overlay="true"] .foryou__switch { display: none; } /* con una vista o un menú encima, no */
 .foryou__switch-glyph { display: inline-flex; margin-right: .3rem; }
 .foryou__switch-opt { padding: .32rem .9rem; border-radius: var(--radius-pill); color: var(--color-text-muted); font-size: var(--text-sm); transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out); }

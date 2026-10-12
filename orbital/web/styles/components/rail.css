@@ -26,7 +26,7 @@
 .rail__track { display: flex; flex-direction: column; gap: var(--space-2); padding: .6rem 0; transition: transform var(--duration-slow) var(--ease-out); }
 
 /* RePág / AvPág: en la columna de las casillas. */
-.rail__key { display: flex; flex-direction: column; align-items: center; gap: .15rem; width: var(--rail-width); color: var(--color-text-muted); }
+.rail__key { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem; width: var(--rail-width); min-height: 2.75rem; color: var(--color-text-muted); } /* tocable con el dedo */
 .rail__key--next { flex-direction: column-reverse; }
 .rail__arrow { display: grid; place-items: center; }
 .rail__arrow .icon { width: .9rem; height: .9rem; transform: rotate(-90deg); }
