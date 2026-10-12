@@ -101,11 +101,18 @@ def keep_game_in_front(launcher: Launcher, item_id: str, win, user_returned=lamb
         if not status or status.get("id") != item_id or user_returned():
             break  # se cerró, se abrió otra cosa o tú volviste a Orbital: ya no es asunto del vigilante
         fg = win.foreground()
-        if not is_orbital_window(win, fg):
+        seen = win.window_at_center() if hasattr(win, "window_at_center") else fg
+        # Orbital tapa al juego si tiene el foco, o si se VE encima aunque el foco lo tenga el juego.
+        orbital = fg if is_orbital_window(win, fg) else seen if is_orbital_window(win, seen) else 0
+        if not orbital:
             continue
         pids = win.process_tree(status["pid"]) if status.get("pid") else set()
         game = win.main_window(pids) if pids else 0
-        if game and win.focus(game):
+        if not game:
+            continue
+        if hasattr(win, "place_below"):
+            win.place_below(orbital, game)
+        if win.focus(game):
             fixed += 1
             log.info("Orbital tapó a %s tras la transición: el juego vuelve al frente", status.get("title", item_id))
     return fixed
@@ -184,6 +191,10 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
     finally:
         if orbital:
             win.set_topmost(orbital, False)
+            if target and hasattr(win, "place_below"):
+                # Sin "siempre encima", Windows deja a Orbital arriba de las ventanas normales: encima
+                # del juego aunque el juego tenga el foco. Se manda detrás antes de volverla opaca.
+                win.place_below(orbital, target)
             fade = getattr(win, "set_alpha", None)
             if fade:
                 fade(orbital, None)  # vuelve a ser opaca (ya detrás del juego)

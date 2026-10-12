@@ -308,6 +308,29 @@ def set_topmost(hwnd: int, on: bool) -> bool:
     return bool(user32.SetWindowPos(hwnd, -1 if on else -2, 0, 0, 0, 0, 0x2 | 0x1 | 0x10))
 
 
+def place_below(hwnd: int, above: int) -> bool:
+    """Pone `hwnd` justo debajo de `above` sin activarla. Hace falta tras quitar el "siempre encima":
+    HWND_NOTOPMOST deja la ventana arriba de todas las normales (Orbital tapaba al juego que tenía el foco)."""
+    if not WIN or not hwnd or not above:
+        return False
+    user32.SetWindowPos.argtypes = [wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+                                    ctypes.c_int, wintypes.UINT]
+    return bool(user32.SetWindowPos(hwnd, above, 0, 0, 0, 0, 0x2 | 0x1 | 0x10))
+
+
+def window_at_center() -> int:
+    """La ventana que de verdad se ve en el centro de la pantalla (no siempre es la del foco)."""
+    if not WIN:
+        return 0
+    user32.WindowFromPoint.restype = wintypes.HWND
+    user32.WindowFromPoint.argtypes = [wintypes.POINT]
+    user32.GetAncestor.restype = wintypes.HWND
+    user32.GetAncestor.argtypes = [wintypes.HWND, wintypes.UINT]
+    point = wintypes.POINT(user32.GetSystemMetrics(0) // 2, user32.GetSystemMetrics(1) // 2)
+    child = user32.WindowFromPoint(point)
+    return (user32.GetAncestor(child, 2) or 0) if child else 0  # GA_ROOT
+
+
 GWL_EXSTYLE, WS_EX_LAYERED, LWA_ALPHA = -20, 0x80000, 0x2
 
 

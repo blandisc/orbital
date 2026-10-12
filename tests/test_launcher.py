@@ -313,6 +313,32 @@ def test_game_goes_back_in_front_if_orbital_covers_it():
     assert fixed == 1 and win.focused == [3]  # una vez: después el juego ya está al frente
 
 
+def test_guard_sends_orbital_behind_when_it_covers_the_focused_game():
+    """El juego tiene el foco pero Orbital se VE encima (Windows la dejó arriba al quitarle el
+    "siempre encima"): Orbital va detrás del juego."""
+    from orbital import focus as focus_mod
+
+    win, launcher = _Win(), _Launcher()
+    win.fg = 3
+    win.below = []
+    win.window_at_center = lambda: 3 if win.below else 1
+    win.place_below = lambda h, above: win.below.append((h, above)) or True
+    clock = iter(range(1000))
+    fixed = focus_mod.keep_game_in_front(launcher, "emu:xbox:1", win, lambda: False, seconds=3,
+                                         sleep=lambda s: None, clock=lambda: next(clock) * .3)
+    assert fixed == 1 and win.below == [(1, 3)] and win.focused == [3]
+
+
+def test_reveal_leaves_orbital_behind_the_game():
+    win = FocusWindows()
+    win.below = []
+    win.place_below = lambda h, above: win.below.append((h, above)) or True
+    win.open(3, "Eden | Zelda", fullscreen=True)
+    assert bring_game_to_front(StatusLauncher({"id": "x", "pid": 20}), "x", "Zelda", "Eden",
+                               timeout=5, win=win, sleep=lambda s: None, pinned=1)
+    assert win.below == [(1, 3)]  # sin "siempre encima", detrás del juego (no encima de él)
+
+
 def test_guard_respects_home_and_closed_games():
     from orbital import focus as focus_mod
 
