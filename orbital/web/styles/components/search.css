@@ -36,7 +36,8 @@
   /* La enfocada crece (scale) hacia arriba y a los lados: el relleno le deja ese lugar, si no se recortaba. */
   --focus-grow: calc(var(--card-height) * (var(--card-focus-scale) - 1));
   min-height: calc(var(--card-height) * var(--card-focus-scale) + var(--space-4));
-  padding: calc(var(--focus-grow) / 2 + var(--space-4)) calc(var(--focus-grow) / 2 + var(--space-2)) 4rem; /* abajo: el pie de cada resultado */
+  /* Arriba: lo que crece, lo que sube (translateY .35rem del foco) y el anillo. */
+  padding: calc(var(--focus-grow) + .7rem + var(--space-2)) calc(var(--focus-grow) / 2 + var(--space-2)) 4rem; /* abajo: el pie de cada resultado */
   margin: 0 calc(-1 * var(--space-2)); scroll-padding-inline: calc(var(--focus-grow) / 2 + var(--space-2));
   overflow-x: auto; scrollbar-width: none;
 }

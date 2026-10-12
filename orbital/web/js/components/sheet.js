@@ -84,6 +84,8 @@ export function createSheet({ onCommand, onMove, onClose }) {
     const behavior = motion(smooth);
     const node = list.children[index];
     if (!node) return;
+    // La primera opción: arriba del todo, con el título a la vista (al dar la vuelta quedaba cortado).
+    if (!menu.options.slice(0, index).some((o) => !o.heading)) return panel.scrollTo({ top: 0, behavior });
     const top = node.offsetTop - panel.offsetTop;
     const room = panel.clientHeight;
     const pad = 96;
@@ -152,5 +154,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
 
   return { el, open, close, handle, get isOpen() { return !!menu; }, get depth() { return stack.length; },
     /** La opción enfocada se cambia con ◀ ▶ (un ajuste, el volumen…). */
+    /** La opción enfocada solo informa (A no hace nada). */
+    get inert() { const o = menu?.options[index]; return !!o && (!o.command || o.command.type === "stay"); },
     get adjustable() { const o = menu?.options[index]; return !!o && (o.command?.type === "setting" || !!o.adjust); } };
 }

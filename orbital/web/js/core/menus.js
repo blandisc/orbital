@@ -355,7 +355,7 @@ export function settingsMenu() {
     title: "Ajustes",
     options: [
       ...Object.entries(SETTING_PAGES).map(([page, def]) => ({ icon: def.icon, label: def.title, command: { type: "settings", page } })),
-      { icon: "account", label: "Cuentas", hint: "Stremio", command: { type: "settings", page: "accounts" } },
+      { icon: "account", label: "Cuentas", hint: "Stremio y Trakt", command: { type: "settings", page: "accounts" } },
       { icon: "wrench", label: "Mantenimiento", hint: "Revisar, carpetas, actualizar", command: { type: "settings", page: "maintenance" } },
     ],
   };
@@ -366,7 +366,7 @@ export function maintenanceMenu() {
   return {
     title: "Mantenimiento", crumb: "Mantenimiento",
     options: [
-      { icon: "check", label: "Revisar mi consola", hint: "Qué encontré y qué falta", command: { type: "setup" } },
+      { icon: "check", label: "Tu consola", hint: "Qué encontré y qué falta", command: { type: "setup" } },
       { icon: "refresh", label: "Buscar juegos nuevos", command: { type: "refresh" } },
       { icon: "folder", label: "Carpetas de juegos", command: { type: "folders" } },
       { icon: "windows", label: "Ventanas abiertas", command: { type: "windows" } },

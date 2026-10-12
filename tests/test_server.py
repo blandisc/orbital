@@ -119,7 +119,7 @@ def test_diagnostics(make_client, tmp_path):
                        encoding="utf-8")
         c.app.state.deps.log_path = log
         data = c.get("/api/diagnostics").json()
-        assert data["library"]["steam"] >= 2 and data["running"] is None
+        assert data["library"]["Steam"] >= 2 and "Buscar" not in data["library"] and data["running"] is None
         assert data["problems"] == ["WARNING no pude abrir https://torrentio.example/…"]  # sin la clave
 
 
