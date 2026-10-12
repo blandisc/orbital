@@ -141,7 +141,9 @@ export function createForYou({ onWatch, onLaunch, onMore, onConnect, onFocus, on
     if (!data) return action === "back" ? "exit" : false;
     if (action === "alt") { setMode(mode === "mosaic" ? "lists" : "mosaic"); return true; }
     if (mode === "mosaic") {
-      if (mosaic.ambient) return mosaic.handle(action); // el primer botón solo despierta
+      // El primer botón solo despierta, salvo los que llevan a otro lado (sección, menú, buscar).
+      if (mosaic.ambient && !["prevsection", "nextsection", "menu", "search"].includes(action)) return mosaic.handle(action);
+      if (mosaic.ambient) { mosaic.wake(); return false; }
       mosaic.wake();
       if (action === "select") return activate(mosaic.current);
       if (action === "options") { if (mosaic.current) onMore?.(mosaic.current); return mosaic.current ? true : "edge"; }

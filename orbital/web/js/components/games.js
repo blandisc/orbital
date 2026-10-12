@@ -70,6 +70,7 @@ export function createGames({ onFocus, onPick, onAction }) {
     list = gameConsoles(rows);
     consoleId = pickConsole(list, ask, consoleId);
     if (kept?.kind === "game") { memory[consoleId] = kept.item.id; focusId = "game:keep"; }
+    if (focusId.startsWith("rail:")) focusId = `rail:${index()}`; // se reordenaron: el riel sigue en la misma consola
     paintAll();
   }
 

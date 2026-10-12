@@ -51,6 +51,7 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
     lists = Array.isArray(next) ? next : [];
     options = { glyphs };
     if (!lists.some((l) => l.id === listId)) listId = lists[0]?.id ?? null;
+    if (focusId.startsWith("rail:")) focusId = `rail:${index()}`; // si las listas cambian de orden, el riel no se queda en otra
     paintAll();
   }
 
@@ -76,7 +77,7 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
       (items) => {
         loaded.set(key, { state: "ready", items: Array.isArray(items) ? items : [] });
         if (key !== cacheKey()) return;
-        if (waiting && focusId === waiting) focusId = "item:0"; // el foco esperaba a las portadas: a la primera
+        if (waiting) focusId = "item:0"; // el foco esperaba a las portadas: a la primera
         waiting = null;
         paintAll();
       },
@@ -118,8 +119,13 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
         state === "loading" ? "Cargando…" : state === "error" ? message || "No pude cargar esta lista." : "Nada por aquí por ahora."));
     }
     const count = state === "ready" ? items.length : 0;
-    if (focusId.startsWith("item:") && Number(focusId.split(":")[1]) >= count) {
-      focusId = count ? `item:${Math.min(memory[l?.id] ?? 0, count - 1)}` : l?.split ? "filter:0" : focusId;
+    if (focusId.startsWith("item:") && !(Number(focusId.split(":")[1]) < count)) {
+      if (state === "loading") {
+        // Las portadas aún no llegan: el foco las espera (en el filtro si hay; si no, en ninguna parte,
+        // nunca en el riel) y cae en la primera en cuanto estén.
+        waiting = "items";
+        focusId = l?.split ? "filter:0" : "item:wait";
+      } else focusId = count ? `item:${Math.min(memory[l?.id] ?? 0, count - 1)}` : l?.split ? "filter:0" : focusId;
     }
   }
 
@@ -177,10 +183,9 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
       { currentId: listId, glyphs: options.glyphs });
     renderList();
     ensure();
-    if (!targets.has(focusId)) {
+    if (!targets.has(focusId) && focusId !== "item:wait") {
       focusId = targets.has("item:0") ? "item:0" : targets.has("filter:0") ? "filter:0" : targets.has("connect") ? "connect" : `rail:${index()}`;
-      // Las portadas aún no llegan: el foco espera en el filtro y pasa a la primera en cuanto estén.
-      waiting = entry().state === "loading" && focusId === "filter:0" ? focusId : null;
+      if (entry().state === "loading" && focusId === "filter:0") waiting = "items";
     }
     paint();
   }
@@ -198,8 +203,10 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
     return true;
   }
 
-  function stepList(n) {
-    const i = index() + n;
+  /** Otra lista. wrap: LT/RT dan la vuelta, como en Juegos; la cruceta del riel se detiene en los extremos. */
+  function stepList(n, { wrap = false } = {}) {
+    let i = index() + n;
+    if (wrap && lists.length) i = (i + lists.length) % lists.length;
     if (i < 0 || i >= lists.length) return "edge";
     return switchTo(lists[i].id, { keepRail: focusId.startsWith("rail:") }) || "edge";
   }
@@ -219,7 +226,8 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
 
   /** true = se movió · "edge" = nada hacia allá · "exit" = B sin a dónde volver · false = no es suyo. */
   function handle(action) {
-    if (action === "pageleft" || action === "pageright") return stepList(action === "pageleft" ? -1 : 1);
+    if (action !== "pageleft" && action !== "pageright") waiting = null; // te moviste: ya no se te lleva a las portadas
+    if (action === "pageleft" || action === "pageright") return stepList(action === "pageleft" ? -1 : 1, { wrap: true });
     if (["up", "down", "left", "right"].includes(action)) {
       if (focusId.startsWith("rail:")) {
         if (action === "up" || action === "down") return stepList(action === "up" ? -1 : 1);
