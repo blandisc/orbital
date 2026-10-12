@@ -20,6 +20,7 @@ from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Request
 from fastapi.concurrency import run_in_threadpool
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -120,6 +121,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         unsubscribe()
 
     app = FastAPI(title="Orbital", version=__version__, lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
+    app.add_exception_handler(RequestValidationError, invalid_request)
     app.state.deps = d
     app.state.catalog = catalog
     app.state.bus = d.hub
@@ -172,7 +174,8 @@ class FailedTokens:
 
     @staticmethod
     def key(request: Request) -> str:
-        forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+        # El último valor es el que puso el túnel (el de confianza); los anteriores los escribe quien llama.
+        forwarded = request.headers.get("x-forwarded-for", "").split(",")[-1].strip()
         return forwarded or (request.client.host if request.client else "?")
 
     def blocked(self, key: str) -> bool:
@@ -204,6 +207,14 @@ class FailedTokens:
         self._fails.pop(key, None)
 
 
+async def invalid_request(request: Request, exc: RequestValidationError) -> JSONResponse:
+    """422 sin repetir lo que llegó: un NaN o un sustituto Unicode suelto en el cuerpo no se puede volver a escribir
+    como JSON y el 422 de FastAPI terminaba en 500."""
+    errors = [{"loc": [str(p) for p in e.get("loc", ())], "msg": str(e.get("msg", "")), "type": str(e.get("type", ""))}
+              for e in exc.errors()]
+    return JSONResponse({"detail": errors}, status_code=422)
+
+
 def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | None = None) -> FastAPI:
     """App mínima para internet (Alexa a través del túnel): solo voz y ping, siempre con token.
 
@@ -211,19 +222,25 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     127.0.0.1, aquí no hay excepciones para "local": sin token no se hace nada.
     """
     public = FastAPI(title="Orbital · Alexa", docs_url=None, redoc_url=None, openapi_url=None)
+    public.add_exception_handler(RequestValidationError, invalid_request)
 
     guard = guard or FailedTokens()
+    one_at_a_time: list[asyncio.Lock] = []  # los intentos fallidos esperan en fila, no en paralelo
 
     @public.middleware("http")
     async def require_token(request: Request, call_next):
         key = FailedTokens.key(request)
+        # El token correcto pasa siempre: quien falsifica tu dirección no te deja fuera.
+        if token_ok(request, config.server.token):
+            guard.succeeded(key)
+            return await call_next(request)
         if guard.blocked(key):
             return JSONResponse({"detail": "Demasiados intentos"}, status_code=429)
-        if not token_ok(request, config.server.token):
+        if not one_at_a_time:
+            one_at_a_time.append(asyncio.Lock())
+        async with one_at_a_time[0]:  # 600 intentos a la vez ya no esperan 5 s en total, sino uno tras otro
             await asyncio.sleep(guard.failed(key))
-            return JSONResponse({"detail": "Token inválido"}, status_code=401)
-        guard.succeeded(key)
-        return await call_next(request)
+        return JSONResponse({"detail": "Token inválido"}, status_code=401)
 
     @public.get("/api/ping")
     def ping() -> dict:

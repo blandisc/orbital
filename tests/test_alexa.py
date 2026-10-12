@@ -260,8 +260,12 @@ def test_public_app_answers_429_when_blocked(library):
     guard._blocked["127.0.0.1"] = guard.clock() + 60
     main = create_app(library.config, library)
     with TestClient(create_public_app(library.config, main, guard), client=("127.0.0.1", 5000)) as c:
-        r = c.get("/api/ping", headers={"Authorization": f"Bearer {library.config.server.token}"})
-    assert r.status_code == 429
+        bad = c.get("/api/ping", headers={"Authorization": "Bearer otro"})
+        # Con tu token entras aunque alguien haya falsificado tu dirección hasta bloquearla.
+        good = c.get("/api/ping", headers={"Authorization": f"Bearer {library.config.server.token}"})
+        spoofed = c.get("/api/ping", headers={"Authorization": "Bearer otro", "X-Forwarded-For": "127.0.0.1, 9.9.9.9"})
+    assert bad.status_code == 429 and good.status_code == 200
+    assert spoofed.status_code == 401  # cuenta el último valor (el que puso el túnel), no el que escribe quien llama
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="DPAPI es de Windows")

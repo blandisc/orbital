@@ -245,9 +245,10 @@ class Scraper:
 
     def sources(self) -> dict[str, str]:
         try:
-            return json.loads(self._sources_file.read_text(encoding="utf-8"))
+            data = json.loads(self._sources_file.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             return {}
+        return {k: v for k, v in data.items() if isinstance(v, str)} if isinstance(data, dict) else {}
 
     def _remember(self, slot: str, url: str) -> None:
         data = self.sources()

@@ -156,9 +156,11 @@ class MediaStore:
 
     def rejected(self) -> dict[str, list[str]]:
         try:
-            return json.loads(self._rejected_file().read_text(encoding="utf-8"))
+            data = json.loads(self._rejected_file().read_text(encoding="utf-8"))
         except (OSError, ValueError):
             return {}
+        # Solo la forma esperada: un archivo con «[]» o «5» ya no tumba «Cambiar imagen».
+        return {k: v for k, v in data.items() if isinstance(v, list)} if isinstance(data, dict) else {}
 
     def reject(self, system: str, key: str, kind: str, url: str) -> None:
         data = self.rejected()

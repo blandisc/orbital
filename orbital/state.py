@@ -37,6 +37,8 @@ class State:
     def _load(self, path: Path) -> None:
         try:
             text = self._read(path)
+        except UnicodeDecodeError:
+            text = ""  # no es UTF-8 (PowerShell lo guardó en UTF-16, el Bloc de notas en ANSI): cuenta como dañado
         except OSError as exc:
             # Sigue ahí pero no se deja leer: guardar encima borraría favoritos y tiempo jugado.
             self._frozen = True

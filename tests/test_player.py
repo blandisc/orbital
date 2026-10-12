@@ -352,3 +352,34 @@ def test_background_task_returning_false_shows_the_failure():
             break
         _t.sleep(.02)
     assert "No pude cambiar de fuente" in mpv.overlays[3]
+
+
+def test_switching_source_then_quitting_before_it_loads_keeps_the_progress():
+    p, mpv = make_player()
+    saved = []
+    p.on_finished = lambda meta, pos, dur, watched: saved.append((pos, dur, watched))
+    p.current.process = type("Proc", (), {"poll": lambda self: None})()
+    old = player.Segment({"video_id": "tt1"}, "Peli", "u1")
+    old.playing, old.position, old.duration, old.watched, old.saved_watched = True, 3000.0, 6000.0, 400.0, 300.0
+    p.segment = old
+    assert p.load("u2", "Peli", {"video_id": "tt1"}, start=3000)
+    p.finish(p.current)  # sale antes de que la fuente nueva dé imagen
+    assert saved == [(3000.0, 6000.0, 100.0)]
+
+
+def test_load_forgets_what_was_asked_of_the_previous_file():
+    p, mpv = make_player()
+    p.current.process = type("Proc", (), {"poll": lambda self: None})()
+    p.segment = player.Segment({"video_id": "e1"}, "Serie", "u1")
+    p.mpv = mpv = SlowMpv()
+    p.press("a")  # pausa pedida
+    p.load("u2", "Serie", {"video_id": "e2"})
+    mpv.props["pause"] = False
+    assert p._value("pause") is False
+
+
+def test_volume_over_100_is_respected():
+    p, mpv = make_player(volume=130, **{"volume-max": 130})
+    p.press("up")
+    p.press("down")
+    assert [a[2] for a in mpv.sent if a[:2] == ("set_property", "volume")] == [130, 125]

@@ -108,6 +108,18 @@ class Source:
         return next((t for t in ("Atmos", "5.1") if t in self.tags), "")
 
 
+def _size_number(text: str) -> float:
+    """«1,5» y «1.5» son uno y medio; «1,234.5» y «1.234,5», mil doscientos y pico."""
+    if "," in text and "." in text:
+        decimal = "," if text.rfind(",") > text.rfind(".") else "."
+        text = text.replace("." if decimal == "," else ",", "").replace(",", ".")
+    elif "," in text:
+        text = text.replace(",", "") if re.fullmatch(r"\d{1,3}(,\d{3})+", text) else text.replace(",", ".")
+    elif text.count(".") > 1:
+        text = text.replace(".", "")
+    return float(text)
+
+
 PARSE_ERRORS = (ValueError, TypeError, AttributeError, OverflowError, IndexError, KeyError)
 
 
@@ -134,7 +146,7 @@ def parse(stream: dict, addon: str, transport_url: str, index: int) -> Source:
     if "HDR10+" in src.hdr and "HDR" in src.hdr:
         src.hdr.remove("HDR")
     if (m := SIZE.search(text)):
-        src.size = int(float(m.group(1).replace(",", "")) * UNITS[m.group(2).upper()])
+        src.size = int(_size_number(m.group(1)) * UNITS[m.group(2).upper()])
     if (m := SEEDERS.search(text)):
         src.seeders = int(m.group(1))
     if (m := SITE.search(text)):

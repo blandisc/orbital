@@ -325,7 +325,9 @@ class PlayerScreen:
         elif button in ("up", "down"):
             before = self._value("volume")
             if isinstance(before, (int, float)) and not isinstance(before, bool):
-                volume = max(0, min(100, before + (5 if button == "up" else -5)))
+                top = self.mpv.get("volume-max")  # mpv deja pasar de 100 (130 de fábrica)
+                top = top if isinstance(top, (int, float)) and not isinstance(top, bool) and top > 0 else 100
+                volume = max(0, min(top, before + (5 if button == "up" else -5)))
                 self.mpv.command("set_property", "volume", volume)
                 self._ask("volume", volume)
                 self._show_notice(player_ui.volume_ass(volume), 1.6)

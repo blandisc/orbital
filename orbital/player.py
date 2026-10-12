@@ -115,7 +115,8 @@ class OrbitalPlayer(PlayerScreen):
         self._quiet_episodes = 0  # episodios encadenados sin tocar el mando
         self._buffering = False
         self._loading_until = 0.0  # tras «Ver ahora», A no pausa lo que está cargando
-        self._want: dict[str, tuple[object, float]] = {}  # lo último pedido a mpv (pausa, volumen, posición)
+        self._want: dict[str, tuple[object, float]] = {}
+        self._swap = threading.Lock()  # current y segment cambian juntos (play) o se leen juntos (finish)  # lo último pedido a mpv (pausa, volumen, posición)
         self.sub_scale = 1.0
         self.on_finished = on_finished  # (meta, posición, duración, segundos vistos)
         self.on_progress = None  # igual que on_finished, cada minuto y al pausar
@@ -148,9 +149,11 @@ class OrbitalPlayer(PlayerScreen):
         self._quiet_episodes = 0
         self._subs_lang, self._fallback_subs = subtitles, fallback_subs
         self._audio_lang = options.get("audio", "en")
+        self._want.clear()
         playback = Playback(title, process, time.time(), meta)
-        self.current = playback
-        self.segment = Segment(meta, title, url, start=float(options.get("start") or 0))
+        with self._swap:  # el vigilante del video anterior ve los dos cambios juntos, nunca uno solo
+            self.current = playback
+            self.segment = Segment(meta, title, url, start=float(options.get("start") or 0))
         if hasattr(self.mpv, "start_observing"):
             self.mpv.start_observing()  # mpv avisa de pausa, posición… en vez de preguntarle cada segundo
         threading.Thread(target=self._watch, args=(playback,), daemon=True, name="mpv").start()
@@ -169,7 +172,7 @@ class OrbitalPlayer(PlayerScreen):
         if same:  # la misma película en otra fuente: lo visto sigue contando como una sola vez
             previous.closed = True
             segment.watched, segment.saved_watched = previous.watched, previous.saved_watched
-            segment.duration = previous.duration
+            segment.duration, segment.position = previous.duration, previous.position
         elif previous is not None:
             self._close_segment(previous)  # otro episodio: lo visto del anterior se guarda ya
         if self.menu is not None:  # el panel era del episodio anterior
@@ -185,6 +188,7 @@ class OrbitalPlayer(PlayerScreen):
             self.current.title, self.current.meta = title, meta
         self.mpv.command("set_property", "force-media-title", title)
         self.mpv.command("set_property", "start", f"{int(start)}" if start > 5 else "0")
+        self._want.clear()  # lo pedido era del archivo anterior (p. ej. «en pausa»)
         self.mpv.command("set_property", "pause", False)
         self.mpv.command("loadfile", url, "replace")
         self.toast(message or f"Cargando {title}…", 4)
@@ -225,16 +229,20 @@ class OrbitalPlayer(PlayerScreen):
 
     def finish(self, playback: Playback) -> None:
         """mpv se cerró: guarda lo visto o, si no llegó a verse nada y nadie lo cerró, avisa."""
-        if self.current is not playback:
-            return  # ya se abrió otro video: su segmento, su tarjeta y su «salí yo» no son de este
-        segment = self.segment
-        self.current = None
+        with self._swap:
+            if self.current is not playback:
+                return  # ya se abrió otro video: su segmento, su tarjeta y su «salí yo» no son de este
+            segment = self.segment
+            self.current = None
         self._card = None
         if segment is None or segment.closed:
             return
         if segment.playing:
             self._close_segment(segment)
-        elif not self._user_quit and not segment.failed and self.on_failed:
+            return
+        if segment.duration:  # solo lo tiene si heredó lo del archivo anterior
+            self._close_segment(segment)  # cambió de fuente y salió antes de que cargara: lo visto se guarda
+        if not self._user_quit and not segment.failed and self.on_failed:
             segment.failed = True  # mpv se cayó antes de mostrar nada: avisar, no quedarse callado
             self._safe(self.on_failed, segment.meta, 0.0, False)
 

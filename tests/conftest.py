@@ -13,6 +13,44 @@ def _no_network_art(monkeypatch, tmp_path):
     monkeypatch.setattr(Catalog, "scrape_art", lambda self, background=False: 0)
 
 
+@pytest.fixture(autouse=True)
+def _no_real_hardware(monkeypatch):
+    """Ninguna prueba cambia el volumen, el brillo o el modo de energía de la consola de verdad
+    (un comando de voz «pon el volumen en 9999» en una prueba lo hacía)."""
+    from orbital import quick
+
+    fake = {"level": 50, "muted": False, "brightness": 50, "mode": "balanced"}
+
+    def set_volume(level=None, muted=None):
+        if level is not None:
+            fake["level"] = max(0, min(100, int(level)))
+        if muted is not None:
+            fake["muted"] = bool(muted)
+        return {"level": fake["level"], "muted": fake["muted"]}
+
+    def set_brightness(level):
+        fake["brightness"] = max(0, min(100, int(level)))
+        return fake["brightness"]
+
+    monkeypatch.setattr(quick, "volume", lambda: {"level": fake["level"], "muted": fake["muted"]})
+    monkeypatch.setattr(quick, "set_volume", set_volume)
+    monkeypatch.setattr(quick, "brightness", lambda: fake["brightness"])
+    monkeypatch.setattr(quick, "set_brightness", set_brightness)
+    monkeypatch.setattr(quick, "power_mode", lambda: fake["mode"])
+    monkeypatch.setattr(quick, "set_power_mode", lambda mode: fake.update(mode=mode) or mode)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_stremio(monkeypatch):
+    """Ninguna prueba habla con Stremio de verdad (un login de prueba salía a internet)."""
+    from orbital.library import stremio_api
+
+    def offline(self, method, params):
+        raise stremio_api.StremioError("Sin conexión (pruebas)")
+
+    monkeypatch.setattr(stremio_api.StremioAPI, "request", offline)
+
+
 class FakeLauncher:
     def __init__(self):
         self.opened: list[str] = []

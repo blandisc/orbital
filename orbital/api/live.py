@@ -129,7 +129,11 @@ def router(d: Deps, is_local) -> APIRouter:
     async def events(request: Request) -> StreamingResponse:
         queue = d.hub.subscribe()
         # Quien se conecta (o reconecta) recibe ya el estado, sin esperar a que cambie.
-        queue.put_nowait({"type": "status", **await run_in_threadpool(d.status)})
+        try:
+            queue.put_nowait({"type": "status", **await run_in_threadpool(d.status)})
+        except BaseException:
+            d.hub.unsubscribe(queue)  # si falla aquí, la cola no se queda colgada para siempre
+            raise
 
         async def stream():
             try:

@@ -182,3 +182,40 @@ def test_odd_saved_library_items_are_rejected():
                 {"id": "a", "title": "x", "runners": "eden"}]:
         with pytest.raises(TypeError):
             LibraryItem.from_dict(bad)
+
+
+# --- ronda 3 -------------------------------------------------------------------------------------
+@pytest.mark.parametrize("data", ['{"history": {"a": {"playtime": 9}}}'.encode("utf-16"), "{\"á\": 1}".encode("cp1252"),
+                                  bytes(range(256))])
+def test_state_that_is_not_utf8_starts_clean_and_keeps_a_backup(tmp_path, data):
+    path = tmp_path / "state.json"
+    path.write_bytes(data)
+    state = State(path)  # antes: UnicodeDecodeError y Orbital no arrancaba
+    assert state.settings() == {} and list(tmp_path.glob("state-*.bak"))
+
+
+def test_no_500_with_nan_or_lone_surrogates(make_client):
+    lone = '"' + chr(92) + 'ud800"'
+    bodies = ['{"id": NaN}', '{"id": Infinity}', '{"id": ' + lone + '}', '{"text": ' + lone + ', "volume": NaN}',
+              '{"kind": "movie", "id": ' + lone + '}', '{"id": ' + lone + ', "kind": "cover"}']
+    with make_client() as c:
+        for route in ["/api/prefs", "/api/art-replace", "/api/launch", "/api/stremio/play"]:
+            for body in bodies:
+                r = c.post(route, content=body.encode(), headers={"content-type": "application/json"})
+                assert r.status_code < 500, (route, body, r.text)
+
+
+def test_stream_sizes_with_commas():
+    from orbital.library import streams
+
+    size = lambda text: streams.parse({"title": f"x\n💾 {text}", "url": "https://x"}, "A", "https://a", 0).size  # noqa: E731
+    assert size("1,5 GB") == 1_500_000_000 and size("1.5 GB") == 1_500_000_000
+    assert size("1,234.5 MB") == 1_234_500_000 and size("1.234,5 MB") == 1_234_500_000
+
+
+def test_odd_rejected_art_file_does_not_break_change_image(tmp_path):
+    lib = media.MediaStore(tmp_path)
+    lib._rejected_file().parent.mkdir(parents=True, exist_ok=True)
+    lib._rejected_file().write_text("[]", encoding="utf-8")
+    lib.reject("snes", "zelda", "cover", "https://x/a.png")
+    assert lib.is_rejected("snes", "zelda", "cover", "https://x/a.png")
