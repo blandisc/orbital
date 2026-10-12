@@ -38,6 +38,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
     return !(doubleTap && now - openedAt < TAP_GUARD_MS);
   };
   const busy = () => performance.now() < busyUntil;
+  let generation = 0; // sube al cambiar de hoja o de nivel: una respuesta tardía no reabre una que ya dejaste
   // Lo que se cambia en su sitio: la hoja no se cierra y reabre (parpadeaba y, si fallaba, se cerraba).
   const inPlace = (option, command) => !!option?.adjust || ["setting", "quick-set", "music", "stay"].includes(command?.type);
 
@@ -87,6 +88,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
   function open(next, { index: at = 0, stack: from = [] } = {}) {
     if (!menu || el.hidden || next.title !== menu.title) openedAt = performance.now();
     busyUntil = 0;
+    generation++;
     menu = next;
     stack = from;
     index = Math.max(0, Math.min(at, next.options.length - 1));
@@ -124,6 +126,8 @@ export function createSheet({ onCommand, onMove, onClose }) {
 
   function close() {
     if (!menu) return;
+    generation++;
+    busyUntil = 0;
     menu = null;
     stack = [];
     cancelExit = hideAfterExit(el, "sheet--leaving");
@@ -132,6 +136,8 @@ export function createSheet({ onCommand, onMove, onClose }) {
 
   /** B o clic fuera: regresa al menú anterior o, en el primero, cierra y ejecuta su `cancel`. */
   function cancel() {
+    generation++;
+    busyUntil = 0; // B durante la espera sí regresa (antes se ignoraba, y tocar fuera sí servía)
     if (stack.length) {
       const previous = stack.pop();
       menu = previous.menu;
@@ -151,6 +157,8 @@ export function createSheet({ onCommand, onMove, onClose }) {
       // Se queda abierta mientras el servidor responde (como mucho 4 s); al reabrirse con el valor nuevo
       // vuelve a responder. Si falla, sigue ahí con el valor de antes.
       busyUntil = performance.now() + 4000;
+      const mine = generation;
+      context.isCurrent = () => generation === mine && !!menu;
       Promise.resolve(onCommand(command, context)).finally(() => { busyUntil = 0; });
       return;
     }
@@ -161,7 +169,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
   /** Procesa una acción de entrada. Devuelve true si el menú la consumió. */
   function handle(action, { repeat = false } = {}) {
     if (!menu) return false;
-    if (busy()) return true; // cambiando un valor: un ▶ sostenido no se encima con el anterior
+    if (busy() && action !== "back") return true; // cambiando un valor: un ▶ sostenido no se encima con el anterior
     if (action === "up" || action === "down") {
       const next = step(index, action === "up" ? -1 : 1);
       // Manteniendo ↑/↓ se detiene en el extremo; dar la vuelta solo con una pulsación nueva.

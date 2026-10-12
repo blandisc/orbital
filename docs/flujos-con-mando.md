@@ -12,7 +12,7 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 | Encender la Legion Go y llegar a Orbital | Acceso directo de inicio (`pythonw -m orbital`) | ✅ |
 | Moverse entre juegos y filas | D-pad / stick; LT/RT saltan de 5 en 5 | ✅ |
 | Cambiar de sección (Inicio, Juegos, Películas y series, Apps) | LB / RB | ✅ |
-| Buscar juegos, películas y series desde cualquier lugar | Vista (⧉) o la píldora "Buscar". Teclado grande: A escribe, X borra, Y espacio, **B vuelve**; Borrar todo (se vuelve Deshacer), Atrás, Dictar y Buscar. Con la caja vacía, tus búsquedas recientes. Resultados por grupo: Tus juegos y apps, Películas, Series. Con un teclado físico se escribe directo | ✅ |
+| Buscar juegos, películas y series desde cualquier lugar | Vista (⧉) o la píldora "Buscar". Teclado grande: A escribe, X borra, Y espacio, **B vuelve**; Borrar todo (se vuelve Deshacer), Atrás, Dictar y Buscar. Con la caja vacía, tus búsquedas recientes. Resultados por grupo: En tu consola (juegos y apps), Películas, Series. Con un teclado físico se escribe directo | ✅ |
 | Películas y series | Abre en "Seguir viendo" ("T8 E23 · quedan 10 min"; A pone el episodio en el que ibas, directo; Y → Ver la ficha o Quitar de Seguir viendo); los catálogos debajo abren la ficha | ✅ |
 | Inicio | "Continuar": tus juegos y videos juntos, por fecha; lo que está abierto va primero con la píldora "Abierto" | ✅ (nuevo) |
 | Volver al inicio | B | ✅ |

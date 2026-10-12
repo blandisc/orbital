@@ -25,7 +25,7 @@ export function createViewer({ onClose, onOpenVideo } = {}) {
     img.hidden = item.kind !== "image";
     const when = Number.isFinite(item.time) ? new Date(item.time * 1000).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" }) : "";
     caption.textContent = `${item.name} · ${when} · ${index + 1} de ${items.length}`
-      + (item.kind === "video" ? " · A: ver el clip" : "");
+      + (item.kind === "video" ? " · Es un clip: ábrelo para verlo" : ""); // el botón (A, Enter o tocar) va en el pie
   }
 
   function open(list, start = 0) {

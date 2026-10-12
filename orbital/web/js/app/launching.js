@@ -100,7 +100,8 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       sound.play("error");
       // Si hay otro emulador, ofrecerlo en el mismo momento (en vez de un callejón sin salida). Si el
       // juego ya no está en la biblioteca (404), otro emulador tampoco lo abre.
-      const alt = err.status === 404 ? null : alternativeRunner(item);
+      // Sin conexión con Orbital tampoco: no es culpa del emulador.
+      const alt = err.status === 404 || err.network ? null : alternativeRunner(item);
       if (alt && alt.id !== runner) {
         return openMenu({ title: err.message, options: [
           { icon: "swap", label: `Abrir con ${alt.name}`, command: { type: "launch", id: item.id, runner: alt.id } },

@@ -33,7 +33,7 @@ const DEBOUNCE_MS = 260;
 const RECENT_KEY = "orbital.search.recent";
 const RECENT_MAX = 8;
 
-const GROUPS = { game: "Tus juegos y apps", movie: "Películas", series: "Series" };
+const GROUPS = { game: "En tu consola", movie: "Películas", series: "Series" };
 const groupOf = (item) => (item.kind === "movie" || item.kind === "series" ? item.kind : "game");
 
 /** Juegos primero, luego películas y luego series; cada grupo en el orden de relevancia que trae. */

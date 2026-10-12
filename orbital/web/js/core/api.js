@@ -82,11 +82,13 @@ export const api = {
   traktCancel: () => post("/api/foryou/trakt/cancel"),
   traktUnlink: () => post("/api/foryou/trakt/unlink"),
   /** Suscripción a eventos del servidor con reconexión automática. */
-  events(onEvent) {
+  events(onEvent, { onReconnect = () => {} } = {}) {
+    let lost = false;
     const connect = () => {
       const source = new EventSource("/api/events");
+      source.onopen = () => { if (lost) { lost = false; onReconnect(); } };
       source.onmessage = (msg) => onEvent(JSON.parse(msg.data));
-      source.onerror = () => { source.close(); setTimeout(connect, 3000); };
+      source.onerror = () => { lost = true; source.close(); setTimeout(connect, 3000); };
     };
     connect();
   },

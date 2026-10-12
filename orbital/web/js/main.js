@@ -527,7 +527,7 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     }
   } catch (err) {
     // Al arrancar el servidor puede no estar listo: se reintenta solo (y se avisa una vez).
-    if (libraryRetry === 0 && !boot.waiting) ui.toast.show(`No pude cargar la biblioteca: ${err.message}. Reintentando…`, { error: true });
+    if (libraryRetry === 0 && !boot.waiting) ui.toast.show(`No pude cargar la biblioteca: ${err.message.replace(/\.$/, "")}. Reintentando…`, { error: true });
     if (boot.waiting) boot.status("Conectando con Orbital…");
     libraryRetry++;
     setTimeout(() => loadLibrary({ refresh: false, keepId }), Math.min(15_000, 1000 * 2 ** libraryRetry));
@@ -629,6 +629,8 @@ function pick(r, c) {
 const findItem = (id) => state.allRows.flatMap((row) => row.items).find((i) => i.id === id);
 
 /** Submenú: B regresa al menú del que vienes. */
+/** ¿Sigue a la vista la hoja de la que salió un cambio en su sitio? (si ya la dejaste, no se reabre) */
+const stillThere = (context) => !context?.busy?.stale && (context?.isCurrent?.() ?? true);
 const nested = (context) => (context ? { stack: [...context.stack, { menu: context.menu, index: context.index }], busy: context.busy } : {});
 
 async function runCommand(command, context = null) {
@@ -705,7 +707,7 @@ async function runCommand(command, context = null) {
       case "setting": { // cambia y se queda en la misma página, en la misma opción
         applySettings(await api.setSettings({ [command.key]: command.value }));
         sound.play("select");
-        if (!context?.busy?.stale) ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
+        if (stillThere(context)) ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
       case "controls":
@@ -723,7 +725,7 @@ async function runCommand(command, context = null) {
         sound.play("move");
         await new Promise((resolve) => setTimeout(resolve, 350)); // que la app cambie de canción
         const [q, music] = await Promise.all([api.quick(), api.music().catch(() => null)]);
-        if (!context?.busy?.stale) ui.sheet.open(quickMenu(q, { running: state.running, music }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
+        if (stillThere(context)) ui.sheet.open(quickMenu(q, { running: state.running, music }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
       case "memory":
@@ -754,7 +756,7 @@ async function runCommand(command, context = null) {
         const q = await api.setQuick(command.changes);
         sound.play("move");
         const music = await api.music().catch(() => null);
-        if (!context?.busy?.stale) ui.sheet.open(quickMenu(q, { running: state.running, music }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
+        if (stillThere(context)) ui.sheet.open(quickMenu(q, { running: state.running, music }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
       case "captures":
@@ -795,7 +797,7 @@ async function runCommand(command, context = null) {
         sound.play("select");
         return ui.toast.show("Listo, no te lo vuelvo a sugerir");
       case "stay":
-        if (context && !context.busy?.stale) ui.sheet.open(context.menu, { index: context.index, stack: context.stack });
+        if (context && stillThere(context)) ui.sheet.open(context.menu, { index: context.index, stack: context.stack });
         return renderHints();
       case "close":
         return sound.play("back");
@@ -995,7 +997,8 @@ createInput({
   onText: (char) => (ui.login.isOpen ? ui.login.type(char) : ui.search.type(char)),
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
 });
-api.events(handleEvent);
+// Al volver la conexión (Orbital se reinició), la biblioteca y el estado se piden otra vez.
+api.events(handleEvent, { onReconnect: () => { loadLibrary(); pollStatus(); } });
 // Al volver a la ventana (p. ej. tras cerrar un juego) refresca recientes y tiempo jugado, y salen
 // los avisos que esperaban a que Orbital se viera (memoria).
 document.addEventListener("visibilitychange", () => {
