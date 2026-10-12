@@ -58,8 +58,9 @@ export function createHero({ onAction }) {
     // Seguir viendo: "Serie · T8 E23 · Homer's Enemy" (antes "Stremio · T8 E23").
     // Apps: su propio ícono (el de ES-DE, el de GeForce NOW…), no el genérico de cuadritos.
     const icon = appIcon(item);
+    const above = `${extra.eyebrow || item.subtitle || item.category}${runner}`;
     mount(eyebrow, icon ? h("img", { class: "hero__eyebrow-icon", src: icon, alt: "" }) : svg(ICONS[systemIconName(item)]),
-      h("span", {}, `${extra.eyebrow || item.subtitle || item.category}${runner}`));
+      h("span", {}, above));
 
     title.textContent = item.title;
     title.classList.toggle("hero__title--long", item.title.length > 28);
@@ -71,7 +72,8 @@ export function createHero({ onAction }) {
     description.hidden = !extra.description;
 
     const watchable = isWatchable(item);
-    const left = item.source === "stremio" ? (item.subtitle || "").split(" · ").find((p) => p.startsWith("quedan")) : null;
+    const said = item.source === "stremio" ? (item.subtitle || "").split(" · ").find((p) => p.startsWith("quedan")) : null;
+    const left = said && !above.includes(said) ? said : null;
     const list = item.source === "cinemeta" ? [
       extra.year, extra.rating && `★ ${extra.rating}`, genres(extra.genres).slice(0, 2).join(", "), extra.runtime,
     ].filter(Boolean).map((text) => h("span", {}, text)) : item.source === "stremio" ? [

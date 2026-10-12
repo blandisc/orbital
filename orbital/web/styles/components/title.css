@@ -71,7 +71,7 @@
    ensanchaba y todo el renglón brincaba. */
 .title__action:not(.title__action--primary) { padding-inline: var(--space-4); font-size: var(--text-md); }
 .title__action:not(.title__action--primary) span { display: none; }
-.title__action-caption { min-height: 1.5em; margin-top: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); white-space: nowrap; }
+.title__action-caption { width: max-content; max-width: 100%; min-height: 1.5em; margin-top: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); white-space: nowrap; }
 /* Con el dedo no hay foco que enseñe el nombre: los botones lo llevan escrito. */
 [data-input="touch"] .title__action:not(.title__action--primary) span { display: inline; }
 [data-input="touch"] .title__action-caption { display: none; }

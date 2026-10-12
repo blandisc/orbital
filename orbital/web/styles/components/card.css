@@ -68,7 +68,7 @@
 }
 .card__title {
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-  font-size: var(--text-sm); font-weight: var(--weight-medium); line-height: 1.2; overflow-wrap: anywhere;
+  font-size: var(--text-sm); font-weight: var(--weight-medium); line-height: 1.2; overflow-wrap: break-word; hyphens: auto;
 }
 .card__subtitle { color: var(--color-text-muted); font-size: var(--text-2xs); }
 /* Foco: el juego salta (resorte con rebote), se eleva un poco y proyecta un brillo de su propio

@@ -44,7 +44,7 @@ class PlayerScreen:
             info = segment.upnext or {}
             title = " · ".join(p for p in (info.get("label"), info.get("title")) if p)
             if card["kind"] == "still":
-                ass = player_ui.upnext_ass("¿Sigues viendo?", title, actions=[("A", "Seguir viendo"), ("B", "Salir")])
+                ass = player_ui.upnext_ass("¿Sigues viendo?", title, actions=[("A", "Seguir viendo"), ("B", "Mantén: salir")])
             else:
                 now = time.monotonic() if now is None else now
                 left = max(0.0, (segment.upnext_deadline or now) - now)
@@ -358,7 +358,9 @@ class PlayerScreen:
             self._episode_timer, self._episode_steps = None, 0
             self.toast("Sigues en este episodio", 2)
             return
-        if self._card is not None and button in ("a", "b"):
+        # «¿Sigues viendo?»: salir es «Mantén B», como en todo el reproductor (un toque no saca del video).
+        still = self._card is not None and self._card["kind"] == "still"
+        if self._card is not None and button in ("a", "b") and not (button == "b" and still):
             if button == "a":
                 self._card_accept()
             else:

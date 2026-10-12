@@ -205,9 +205,9 @@ test("carpetas de juegos: cada emulador con sus juegos y dónde los busca", () =
 test("actualizar: qué cambia, actualizar primero, y avisos claros si no se puede", () => {
   const menu = updateMenu({ available: 2, changes: ["Panel rápido", "Capturas"], error: "", busy: false });
   assert.equal(menu.title, "Hay 2 cambios nuevos");
-  assert.equal(menu.subtitle, "Tarda unos minutos.");
+  assert.equal(menu.subtitle, "• Panel rápido\n• Capturas\nTarda unos minutos."); // los cambios se leen, no se eligen
   assert.equal(menu.options[0].command.type, "update-apply");
-  assert.deepEqual(menu.options.slice(1, 3).map((o) => o.label), ["Panel rápido", "Capturas"]);
+  assert.deepEqual(menu.options.map((o) => o.label), ["Actualizar ahora", "Más tarde"]);
   assert.match(updateMenu({ available: 0, changes: [] }).subtitle, /más reciente/);
   assert.match(updateMenu({ available: 3, changes: [], error: "Hay cambios sin guardar" }).subtitle, /sin guardar/);
 });
@@ -238,7 +238,7 @@ test("ajustes y menús con datos incompletos no truenan", () => {
   assert.equal(settingLabel("game_idle_minutes", 180), "3 horas");
   for (const page of ["nope", undefined, "__proto__", "constructor"]) assert.ok(settingsPage(page, null).options);
   assert.equal(nextSetting("nope", 3), 3);
-  assert.ok(updateMenu({ available: 1 }).options.length === 1);
+  assert.ok(updateMenu({ available: 1 }).options.length === 2);
   assert.ok(foldersMenu({ emulators: [{ name: "Eden", rom_dirs: null }] }).options[0].hint);
   assert.ok(diagnosticsMenu({ problems: [5, null] }).options);
   assert.ok(controlsMenu(null).options.length && setupMenu().options.length);
@@ -250,9 +250,9 @@ test("liberar memoria: A cierra lo seguro; lo de Windows solo se muestra", () =>
   const menu = memoryMenu({ room_mb: 1500, apps: [
     { exe: "claude.exe", name: "la app de Claude", mb: 4600, closable: true, warning: "Detiene a Claude" },
     { exe: "msedge.exe", name: "Edge", mb: 1700, closable: false, warning: "" }] });
-  assert.match(menu.subtitle, /Poco margen: 1,5 GB/);
+  assert.match(menu.subtitle, /Poco margen: 1.5 GB/);
   assert.deepEqual(menu.options[0].command, { type: "confirm-close-app", exe: "claude.exe", name: "la app de Claude" });
-  assert.equal(menu.options[0].value, "4,5 GB");
+  assert.equal(menu.options[0].value, "4.5 GB");
   assert.equal(menu.options[1].command.type, "stay");
 });
 

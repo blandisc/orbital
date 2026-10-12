@@ -44,17 +44,18 @@ export function createToast({ duration = 3800, errorDuration = 6500 } = {}) {
     timer = setTimeout(next, queue.length ? Math.max(2200, base * .6) : base);
   }
 
-  function show(message, { error = false, voice = false, countdown = 0, duration: own = 0, onPress = null } = {}) {
+  function show(message, { error = false, voice = false, countdown = 0, duration: own = 0, onPress = null, urgent = false } = {}) {
     if (!message) return;
     const last = queue.at(-1);
     if (last?.message === message) return; // el mismo aviso dos veces seguidas no aporta
     const toast = { message, error, voice, countdown, duration: own, onPress };
     // Lo urgente (un error, una cuenta atrás) va ya, delante de los demás; los que esperaban siguen después.
-    if (countdown || error) queue.unshift(toast);
+    const now = countdown || error || urgent; // «Deshacer» con su tiempo: tampoco espera
+    if (now) queue.unshift(toast);
     else queue.push(toast);
     if (queue.length > 4) queue.splice(4);
     if (!showing) next();
-    else if (error || countdown) { clearTimeout(timer); next(); }
+    else if (now) { clearTimeout(timer); next(); }
   }
 
   /** Deja de ofrecer la acción del aviso a la vista (p. ej. ya se deshizo con el mando). */

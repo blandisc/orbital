@@ -36,7 +36,7 @@ export function createViewer({ onClose, onOpenVideo } = {}) {
   }
 
   function handle(action) {
-    if (el.hidden) return false;
+    if (el.hidden || el.classList.contains("viewer--leaving")) return false;
     if (action === "left" || action === "right") {
       index = (index + (action === "left" ? -1 : 1) + items.length) % items.length;
       show();
@@ -54,5 +54,5 @@ export function createViewer({ onClose, onOpenVideo } = {}) {
     return [...(video ? [{ glyph: g.select, label: "Ver clip" }] : []), { glyph: g.back, label: "Cerrar", end: true }];
   }
 
-  return { el, open, close, handle, hints, get isOpen() { return !el.hidden; } };
+  return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("viewer--leaving"); } };
 }

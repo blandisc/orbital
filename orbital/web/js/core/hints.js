@@ -89,7 +89,8 @@ export function gamesHints(glyphs, target) {
   if (glyphs.page && target?.kind !== "rail") list.push({ glyph: glyphs.page, label: "Otra consola" });
   if (glyphs.search) list.push({ glyph: glyphs.search, label: "Buscar", secondary: true });
   if (glyphs.section) list.push({ glyph: glyphs.section, label: "Sección", secondary: true });
-  list.push({ glyph: glyphs.back, label: "Inicio", secondary: true }); // B vuelve a Inicio
+  // B: primero al primer juego; desde ahí, a Inicio.
+  list.push({ glyph: glyphs.back, label: target?.focusId === "game:0" ? "Inicio" : "Al principio", secondary: true });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
   return list;
 }

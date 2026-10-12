@@ -241,6 +241,9 @@ los Echo de tu cuenta sin publicarla.
 | "Alexa, pídele a mi consola que ponga el siguiente episodio" / "…el episodio anterior" | Siguiente / anterior episodio |
 | "Alexa, pídele a mi consola que ponga el capítulo 5" / "…el episodio 3 de la temporada 2" | Ese episodio de la serie que estás viendo |
 | "Alexa, pídele a mi consola que ponga la telenovela" / "…mi serie" | Lo que estabas viendo |
+| "Alexa, pídele a mi consola que ponga la temporada 2" / "…que ponga Los Simpson temporada dos" | Desde el primer episodio de esa temporada |
+| "Alexa, pídele a mi consola que busque Dune" | Abre Buscar con lo que dijiste |
+| "Alexa, pídele a mi consola que vaya a juegos" / "…a películas y series" | Abre esa sección |
 | "Alexa, pídele a mi consola que silencie la tele" / "…que quite el silencio" | Sin sonido / con sonido |
 | "Alexa, pídele a mi consola que le suba al volumen" / "…que le baje tantito" / "…que ponga el volumen en 30" | Volumen |
 | "Alexa, pídele a mi consola que me ponga Los Simpson" / "…que le quite los subtítulos" / "…que se regrese diez segundos" | También se entiende como se dice en México (con «le», «me», «se») |

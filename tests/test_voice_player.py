@@ -323,3 +323,20 @@ def test_the_usual_is_what_you_were_watching(library, monkeypatch):
 def test_mexican_phrasing(text, expected):
     """«Pídele a mi consola que LE SUBA AL volumen»: como se dice de verdad."""
     assert parse_text(text) == expected
+
+
+@pytest.mark.parametrize("text, expected", [
+    ("busque dune", ("SearchMediaIntent", {"query": "dune"})),
+    ("ve a juegos", ("NavigateIntent", {"direction": "juegos"})),
+    ("ponme la temporada dos", ("PlayEpisodeIntent", {"season": "2", "episode": "1"})),
+    ("pon los simpson temporada dos", ("WatchEpisodeIntent", {"series": "los simpson", "season": "dos", "episode": "1"})),
+    ("me pones dune", ("LaunchGameIntent", {"game": "dune"})),
+    ("pásale al siguiente", ("NextEpisodeIntent", {})),
+])
+def test_round_two_phrases(text, expected):
+    assert parse_text(text) == expected
+
+
+def test_go_to_a_section_by_voice(library):
+    result = VoiceController(library).handle_text("ve a películas y series")
+    assert result.ok and result.events[0] == {"type": "open-view", "view": {"seccion": "media"}, "message": "Películas y series"}

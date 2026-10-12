@@ -28,8 +28,7 @@ export function createLogin({ onDone, onMove, onClose }) {
     h("div", { class: "login__head" },
       h("div", { class: "login__eyebrow" }, "Cuentas"),
       h("h1", { class: "login__title" }, "Conectar Stremio"),
-      h("p", { class: "login__lead" }, "Para Seguir viendo, tus fuentes y el progreso en todos tus dispositivos. "
-        + "Tu contraseña solo se envía a Stremio; Orbital no la guarda.")),
+      h("p", { class: "login__lead" }, "Tu contraseña va directo a Stremio; Orbital no la guarda.")),
     h("div", { class: "login__form" }, fields.email.node, fields.password.node, message),
     keys);
 

@@ -43,7 +43,9 @@
             "ponga el juego {game}",
             "abrir {game}",
             "jugar {game}",
-            "iniciar {game}"
+            "iniciar {game}",
+            "me abres {game}",
+            "ábreme {game}"
           ]
         },
         {
@@ -99,7 +101,12 @@
             "quiero ver la serie {query}",
             "me ponga {query}",
             "me pongas {query}",
-            "pónme {query}"
+            "pónme {query}",
+            "busca {query}",
+            "busque {query}",
+            "buscar {query}",
+            "búscame {query}",
+            "me pones {query}"
           ]
         },
         {
@@ -208,7 +215,13 @@
             "se mueva a la {direction}",
             "vaya a la {direction}",
             "vaya {direction}",
-            "{direction}"
+            "{direction}",
+            "ve a {direction}",
+            "vaya a {direction}",
+            "abre {direction}",
+            "abra {direction}",
+            "muestra {direction}",
+            "ve a la sección de {direction}"
           ]
         },
         {
@@ -375,7 +388,9 @@
             "pase al siguiente episodio",
             "siguiente",
             "pon el que sigue",
-            "ponga el que sigue"
+            "ponga el que sigue",
+            "pásale al siguiente",
+            "pásale al que sigue"
           ]
         },
         {
@@ -561,7 +576,10 @@
             "quiero ver el capítulo {episode}",
             "quiero ver el episodio {episode}",
             "pon el capítulo {episode} de la temporada {season}",
-            "pon el episodio {episode} de la temporada {season}"
+            "pon el episodio {episode} de la temporada {season}",
+            "pon la temporada {season}",
+            "ponga la temporada {season}",
+            "ve a la temporada {season}"
           ]
         },
         {
@@ -645,6 +663,34 @@
                 "synonyms": [
                   "inicio",
                   "al inicio"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "games",
+                "synonyms": [
+                  "juegos",
+                  "mis juegos"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "media",
+                "synonyms": [
+                  "películas",
+                  "series",
+                  "películas y series"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "apps",
+                "synonyms": [
+                  "aplicaciones",
+                  "apps"
                 ]
               }
             }

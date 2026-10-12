@@ -33,4 +33,5 @@
 /* Dos renglones fijos: un error largo ya no empuja el teclado debajo del pie de controles. */
 .login__message { min-height: 2.8em; max-height: 2.8em; overflow: hidden; color: var(--color-warning); font-size: var(--text-sm); text-align: center; text-wrap: balance; }
 
-@media (max-height: 760px) { .login { gap: var(--space-3); } .login__lead { display: none; } }
+@media (max-height: 760px) { .login { gap: var(--space-3); } }
+@media (max-height: 640px) { .login__lead { display: none; } }

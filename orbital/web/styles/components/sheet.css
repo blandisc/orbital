@@ -29,7 +29,7 @@
 }
 /* Pregunta ("¿Cerrar Mario Party?"): el título es el protagonista. */
 .sheet__title--question { padding-bottom: var(--space-2); font-size: var(--text-2xl); font-weight: var(--weight-bold); }
-.sheet__subtitle { padding: 0 var(--space-2) var(--space-6); color: var(--color-text-muted); font-size: var(--text-md); line-height: 1.45; }
+.sheet__subtitle { padding: 0 var(--space-2) var(--space-6); color: var(--color-text-muted); font-size: var(--text-md); line-height: 1.45; white-space: pre-line; }
 .sheet__back { padding: 0 var(--space-2) var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
 
 .sheet__items { display: flex; flex-direction: column; gap: var(--space-1); }

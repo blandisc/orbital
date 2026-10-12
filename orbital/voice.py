@@ -22,6 +22,9 @@ DIRECTIONS = {
 }
 
 
+SECTIONS = {"juegos": "games", "peliculas": "media", "series": "media", "peliculas y series": "media",
+            "apps": "apps", "aplicaciones": "apps", "games": "games", "media": "media"}
+
 LANGUAGES = {
     "ingles": "en", "english": "en", "en": "en",
     "espanol": "es", "spanish": "es", "castellano": "es", "latino": "es", "es": "es",
@@ -119,6 +122,9 @@ def episode_request(text: str) -> dict | None:
 
 
 _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
+    # «pon la temporada 2» (de la serie que ves): su primer episodio
+    (re.compile(r"^(?:pon|ponga|ve a|vaya a|pasa a|pase a)\s+(?:la\s+)?temporada\s+(?P<season>\d+)$"),
+     "PlayEpisodeIntent", None, {"episode": "1"}),
     # «pon el capítulo 5» (de la serie que estás viendo), «ve al episodio 3 de la temporada 2»
     (re.compile(r"^(?:pon|ponga|quiero ver|ve al|vaya al|pasa al|pase al|cambia al|cambie al)\s+(?:el\s+)?"
                 r"(?:episodio|capitulo|cap)\s+(?P<episode>\d+)(?:\s+de\s+la\s+temporada\s+(?P<season>\d+))?$"),
@@ -126,6 +132,9 @@ _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
     # "quiero ver los simpson temporada 5 episodio 3 en español"
     (re.compile(rf"^(?:quiero ver|pon|ponga|ver|reproduce)\s+(?:el\s+)?(?P<series>.+?)\s*,?\s+{_EPISODE}"
                 r"(?:\s+en\s+(?P<language>\w+))?$"), "WatchEpisodeIntent", None),
+    # «pon Los Simpson temporada dos»: desde su primer episodio
+    (re.compile(r"^(?:quiero ver|pon|ponga|ver|reproduce)\s+(?:el\s+)?(?P<series>.+?)\s*,?\s+temporada\s+(?P<season>\d+|[a-z]+)$"),
+     "WatchEpisodeIntent", None, {"episode": "1"}),
     (re.compile(rf"^(?:quiero ver|pon|ponga|ver)\s+(?:el\s+)?{_EPISODE}\s+de\s+(?P<series>.+?)"
                 r"(?:\s+en\s+(?P<language>\w+))?$"), "WatchEpisodeIntent", None),
     # Reproductor de Orbital (van primero: "pon subtítulos" no es abrir un juego llamado así).
@@ -172,6 +181,9 @@ _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
      "CloseGameIntent", None),
     (re.compile(r"^que\s+(?:estoy viendo|pelicula es esta|serie es esta|se esta reproduciendo)$"), "WhatsPlayingIntent", None),
     (re.compile(rf"^{_V['search']}\s+(?P<v>.+?)\s+en\s+stremio$"), "SearchMediaIntent", "query"),
+    (re.compile(r"^(?:busca|busque|buscar)\s+(?P<v>.+)$"), "SearchMediaIntent", "query"),
+    (re.compile(rf"^(?:{_V['go']}|{_V['move']}|{_V['open']})\s+(?:a\s+)?(?:la\s+seccion\s+de\s+|los\s+|las\s+|mis\s+)?"
+                r"(?P<direction>juegos|peliculas y series|peliculas|series|apps|aplicaciones)$"), "NavigateIntent", None),
     (re.compile(rf"^{_V['continue']}(?:\s+viendo)?(?:\s+(?P<v>.+))?$"), "ContinueWatchingIntent", "show"),
     # "quiero ver dune", "reproduce the office": como en Alexa.
     (re.compile(r"^(?:quiero ver|reproduce|reproduzca|reproducir)\s+(?P<v>.+)$"), "SearchMediaIntent", "query"),
@@ -204,6 +216,9 @@ _CLITIC_VERBS = {
     "regresale": "regresa", "regresele": "regrese", "adelantale": "adelanta", "adelantele": "adelante",
     "cierralo": "cierra el juego", "cierrelo": "cierre el juego", "cierrala": "cierra el juego",
     "pausalo": "pausa", "pausala": "pausa", "pausale": "pausa",
+    # de tú: «me pones…», «me abres…», «pásale al siguiente», «búscame…»
+    "pones": "pon", "abres": "abre", "pasale": "pasa", "pasas": "pasa", "subes": "sube", "bajas": "baja",
+    "quitas": "quita", "buscas": "busca", "buscame": "busca", "busqueme": "busque", "abreme": "abre", "abrame": "abra",
 }
 
 
@@ -234,7 +249,7 @@ def _parse(clean: str) -> tuple[str, dict[str, str]] | None:
         m = pattern.match(numeric if intent in NUMERIC else clean)
         if m:
             if fixed:
-                return intent, dict(fixed[0])
+                return intent, {**{k: v for k, v in m.groupdict().items() if v}, **fixed[0]}
             if slot:
                 return intent, ({slot: m.group("v")} if m.group("v") else {})
             found = {k.rstrip("2"): v for k, v in m.groupdict().items() if v}
@@ -473,7 +488,12 @@ class VoiceController:
         return VoiceResult("Abriendo la consola.")
 
     def _navigate_intent(self, slots: dict) -> VoiceResult:
-        direction = DIRECTIONS.get(normalize(slots.get("direction", "")))
+        said = normalize(slots.get("direction", ""))
+        if said in SECTIONS:  # «ve a juegos»: la sección (antes: «No entendí hacia dónde moverme»)
+            names = {"games": "Juegos", "media": "Películas y series", "apps": "Apps"}
+            name = names[SECTIONS[said]]
+            return VoiceResult(f"Abriendo {name}.", events=[self._show_view({"seccion": SECTIONS[said]}, name)])
+        direction = DIRECTIONS.get(said)
         if not direction:
             return VoiceResult("No entendí hacia dónde moverme.", ok=False)
         return VoiceResult("Listo.", events=[{"type": "navigate", "direction": direction}])

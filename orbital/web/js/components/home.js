@@ -51,8 +51,14 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   let introduced = false;
   let options = { runningId: null, glyphs: {} };
 
+  /** Qué es lo enfocado (no dónde está): un juego o una consola. */
+  const identity = (t) => (t?.item?.id ?? (t?.console ? `console:${t.console.id ?? t.console.system ?? t.console.name}` : null));
+
   function render(rows, { runningId = null, glyphs = {} } = {}) {
     options = { runningId, glyphs };
+    // Al recargar (volver de un juego, deshacer), lo enfocado puede cambiar de lugar: el foco lo sigue
+    // a él, no a la posición (antes quedaba sobre otro juego y Y abría el menú equivocado).
+    const keep = identity(targets.get(focusId));
     model = buildHome(rows, { runningId });
     targets = new Map();
     hello.textContent = greeting();
@@ -79,6 +85,10 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     renderConsoles();
     requestAnimationFrame(keepConsoleVisible); // ya medido: decide si asoman más consolas
 
+    if (keep && identity(targets.get(focusId)) !== keep) {
+      const same = [...targets].find(([, t]) => identity(t) === keep);
+      if (same) focusId = same[0];
+    }
     if (!targets.has(focusId)) focusId = "feature";
     if (!introduced) { // entrada: saludo, destacado, tarjetas y las consolas una tras otra
       introduced = true;

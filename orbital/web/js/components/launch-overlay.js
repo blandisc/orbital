@@ -1,4 +1,5 @@
-import { cssUrl, h, hideAfterExit } from "../core/dom.js";
+import { cssUrl, h, hideAfterExit, mount } from "../core/dom.js";
+import { KeyHint } from "./ui.js";
 
 const HOLD_MS = 26_000; // con pantalla de carga: el servidor avisa antes (25 s como máximo)
 
@@ -15,7 +16,7 @@ const HOLD_MS = 26_000; // con pantalla de carga: el servidor avisa antes (25 s 
  * pantalla completa: la portada "salta" hacia adelante, las estrellas se estiran (velocidad luz)
  * y todo se va a negro; entonces Windows funde la ventana de Orbital sobre el juego.
  */
-export function createLaunchOverlay({ timeout = 8000 } = {}) {
+export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = {}) {
   const backdrop = h("div", { class: "launch__backdrop" });
   const stars = h("div", { class: "launch__stars", "aria-hidden": "true" },
     h("span", { class: "launch__starfield launch__starfield--far" }), h("span", { class: "launch__starfield launch__starfield--near" }));
@@ -27,12 +28,14 @@ export function createLaunchOverlay({ timeout = 8000 } = {}) {
   const label = h("div", { class: "launch__label" }, "Abriendo");
   const title = h("div", { class: "launch__title" });
   const subtitle = h("div", { class: "launch__subtitle" });
+  // Cómo salir de aquí (el pie queda tapado): B oculta esta pantalla; lo que abre sigue abriéndose.
+  const leave = h("div", { class: "launch__leave" });
   const el = h("div", { class: "launch", hidden: true, role: "status", "aria-live": "assertive" },
     backdrop, stars,
     h("div", { class: "launch__content" },
       h("div", { class: "launch__stage" }, orbit, cover, front),
       h("div", { class: "launch__text" }, label, title, subtitle,
-        h("div", { class: "launch__progress", "aria-hidden": "true" }))),
+        h("div", { class: "launch__progress", "aria-hidden": "true" }), leave)),
     h("div", { class: "launch__flash", "aria-hidden": "true" }));
   let timer;
   let holding = false;
@@ -52,6 +55,7 @@ export function createLaunchOverlay({ timeout = 8000 } = {}) {
     orbit.style.setProperty("--ratio", String(ratio));
     front.style.setProperty("--ratio", String(ratio));
     label.textContent = "Abriendo";
+    mount(leave, KeyHint(backGlyph(), "Ocultar"));
     title.textContent = item.title;
     subtitle.textContent = detail || "";
     holding = false;

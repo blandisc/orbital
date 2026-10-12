@@ -46,7 +46,7 @@ export function gameMenu(item, { running = null } = {}) {
   const others = isOpen || !isGame(item) ? [] : (item.runners || []).filter((r) => r.id !== item.runner);
   if (others.length) options.push({ icon: "swap", label: "Cambiar emulador", hint: runnerName(item), command: { type: "runner-menu", item } });
   if (item.system && !isOpen) options.push({ icon: "cover", label: "Cambiar imagen", command: { type: "art-menu", item } });
-  if (!isOpen) {
+  if (!isOpen && item.source !== "stremio") {
     options.push({ icon: "hide", label: "Ocultar", danger: true,
       command: { type: "prefs", id: item.id, title: item.title, prefs: { hidden: true } } }); // se puede deshacer unos segundos
   }
@@ -88,6 +88,7 @@ export const ALEXA_EXAMPLES = [
   { icon: "close", label: "«cierre el juego»", hint: "Cierra lo que está abierto" },
   { icon: "play", label: "«quiero ver Dune»", hint: "Busca la película o serie y la pone" },
   { icon: "play", label: "«siga viendo»", hint: "Lo que dejaste a medias" },
+  { icon: "search", label: "«busque Dune»", hint: "O «vaya a juegos», «vaya a películas y series»" },
   { icon: "play", label: "«ponga el capítulo 5»", hint: "De la serie que estás viendo; o «el siguiente episodio»" },
   { icon: "stop", label: "«pause»", hint: "Mientras ves algo; luego «reanude»" },
   { icon: "chevron", label: "«salte la intro»", hint: "O «adelante 5 minutos», «regrese un minuto»" },
@@ -106,7 +107,7 @@ export function alexaMenu() {
 /**
  * Menú (☰): solo lo de todos los días. Lo técnico vive en Ajustes → Mantenimiento.
  */
-export function mainMenu({ running, hiddenCount, canExit = false }) {
+export function mainMenu({ running, hiddenCount, canExit = false, alexa = false }) {
   const options = [
     { icon: "bolt", label: "Panel rápido", hint: "Volumen, brillo y energía", command: { type: "quick" } },
   ];
@@ -118,6 +119,7 @@ export function mainMenu({ running, hiddenCount, canExit = false }) {
     options.push({ icon: "show", label: "Mostrar juegos ocultos", hint: String(hiddenCount), command: { type: "unhide-all" } });
   }
   options.push({ icon: "gamepad", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });
+  if (alexa) options.push({ icon: "assistant", label: "Pídeselo a Alexa", hint: "Frases que entiende", command: { type: "alexa-menu" } });
   options.push({ icon: "mark", label: "Ajustes", command: { type: "settings" } });
   options.push({ icon: "power", label: "Apagar", hint: "Suspender, reiniciar o apagar", command: { type: "power-menu" } });
   if (canExit) {
@@ -177,7 +179,7 @@ const STEP = 10;
  * Panel rápido (Home + LB, o ☰ → Panel rápido): volumen, brillo y energía con ◀/▶ (A silencia), las
  * capturas y volver al juego. La batería y el Wi-Fi ya están arriba, en la barra.
  */
-export function quickMenu(q, { running = null, music = null } = {}) {
+export function quickMenu(q, { running = null, music = null, legion = false } = {}) {
   const options = [];
   // Lo que suena en Windows (Apple Music, Spotify…): A pausa, ◀/▶ canción anterior/siguiente.
   if (music?.now) {
@@ -208,12 +210,13 @@ export function quickMenu(q, { running = null, music = null } = {}) {
       command: step(1), adjust: { left: step(-1), right: step(1) } });
   }
   options.push({ icon: "bolt", label: "Liberar memoria", hint: "Cerrar lo que no estés usando", command: { type: "memory" } });
-  options.push({ icon: "show", label: "Capturas", hint: "Home + RB captura sin salir del juego", command: { type: "captures" } });
+  options.push({ icon: "show", label: "Capturas", hint: legion ? "Las que has tomado" : "Home + RB captura sin salir del juego",
+    command: { type: "captures" } });
   if (running?.managed) options.push({ icon: "play", label: `Volver a ${running.title}`, command: { type: "resume" } });
   return { title: "Panel rápido", crumb: "Panel rápido", options };
 }
 
-const gb = (mb) => `${(mb / 1024).toFixed(1).replace(".", ",")} GB`;
+const gb = (mb) => `${(mb / 1024).toFixed(1)} GB`; // punto decimal, como en México (y en Diagnóstico)
 
 /**
  * Liberar memoria: lo que más ocupa, y A cierra lo que es seguro cerrar (lo demás solo se muestra).
@@ -362,6 +365,12 @@ export function stepSetting(key, value, step) {
   return values[Math.max(0, Math.min(values.length - 1, i + step))];
 }
 
+/** El comando de ◀/▶: en el tope lleva `edge` (no se cambia nada; suena el tope). */
+function edgeAware(key, value, step, page) {
+  const next = stepSetting(key, value, step);
+  return { type: "setting", key, value: next, page, ...(next === value ? { edge: true } : {}) };
+}
+
 /** Un ícono por ajuste (antes, todos los de la página con el mismo). */
 const SETTING_ICONS = {
   audio: "sound", subtitles: "info", quality: "star", sub_scale: "plus", text_size: "plus", safe_area: "wide",
@@ -424,10 +433,10 @@ export function updateMenu(info = {}) {
   }
   return {
     title: `Hay ${info.available} cambio${info.available === 1 ? "" : "s"} nuevo${info.available === 1 ? "" : "s"}`,
-    subtitle: "Tarda unos minutos.",
+    subtitle: [...(Array.isArray(info.changes) ? info.changes : []).slice(0, 6).map((text) => `• ${text}`), "Tarda unos minutos."].join("\n"),
     options: [
       { icon: "refresh", label: "Actualizar ahora", command: { type: "update-apply" } },
-      ...(Array.isArray(info.changes) ? info.changes : []).slice(0, 8).map((text) => ({ icon: "check", label: text, command: { type: "stay" } })),
+      { icon: "close", label: "Más tarde", command: { type: "close" } },
     ],
   };
 }
@@ -521,8 +530,7 @@ export function settingsPage(page, settings) {
       icon: SETTING_ICONS[key] || def.icon, label, hint, value: settingLabel(key, settings[key]),
       command: { type: "setting", key, value: nextSetting(key, settings[key]), page },
       // ◀ baja y ▶ sube (antes las dos avanzaban)
-      adjust: { left: { type: "setting", key, value: stepSetting(key, settings[key], -1), page },
-        right: { type: "setting", key, value: stepSetting(key, settings[key], 1), page } },
+      adjust: { left: edgeAware(key, settings[key], -1, page), right: edgeAware(key, settings[key], 1, page) },
     })),
   };
 }
@@ -550,7 +558,7 @@ export function setupMenu(status = {}) {
     subtitle: games ? `Encontré ${games} juego${games === 1 ? "" : "s"}.` : "Aún no encontré juegos.",
     options: [
       games
-        ? { icon: "gamepad", label: "Ver mis juegos", value: `${games}`, command: { type: "close" } }
+        ? { icon: "gamepad", label: "Ver mis juegos", value: `${games}`, command: { type: "section", id: "games" } }
         : { icon: "folder", label: "Dónde poner los juegos", hint: "Steam se encuentra solo. Emuladores: en Descargas, el Escritorio o C:\\Emuladores, con sus ROMs junto a ellos", command: { type: "stay" } },
       status.stremio
         ? { icon: "trailer", label: "Películas y series", value: "✓ Stremio", command: { type: "stay" } }

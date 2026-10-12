@@ -136,6 +136,11 @@ def test_after_three_episodes_without_touching_anything_it_asks():
     segment.upnext, segment.upnext_requested = p.next_provider(segment.meta), True
     p.tick(segment, 1, False)
     assert "¿Sigues viendo?" in mpv.overlays[4]
+    p.press("b")  # un toque: empieza el anillo, no sale (como en todo el reproductor)
+    assert ("quit",) not in mpv.sent and "¿Sigues viendo?" in mpv.overlays[4]
+    import time
+    p._quit_hold = time.monotonic() - 2  # mantenido hasta llenarse
+    p.remote._repeats["b"] = 3
     p.press("b")
     assert ("quit",) in mpv.sent
 

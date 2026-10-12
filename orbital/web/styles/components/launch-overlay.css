@@ -87,6 +87,7 @@
 .launch__label { color: var(--color-accent); font-size: var(--text-md); font-weight: var(--weight-medium); }
 .launch__title { max-width: 40rem; margin: var(--space-2) 0; font-family: var(--font-sans); font-size: var(--text-2xl); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); line-height: 1.05; text-wrap: balance; }
 .launch__subtitle { color: var(--color-text-muted); font-size: var(--text-md); }
+.launch__leave { margin-top: var(--space-6); color: var(--color-text-muted); font-size: var(--text-sm); }
 /* Barra de carga: pista fina y un barrido de luz (no sabemos cuánto falta: no fingimos un porcentaje). */
 .launch__progress { position: relative; width: 13rem; height: 3px; margin-top: var(--space-6); border-radius: var(--radius-pill); background: var(--color-progress-track); overflow: hidden; }
 .launch__progress::after {

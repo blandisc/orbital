@@ -101,17 +101,18 @@ const ui = {
   }),
   login: createLogin({
     onDone: (res) => {
+      state.backTo = null; // conectado: la página de Cuentas que había ya no dice la verdad
       state.stremioLinked = true;
       sound.play("select");
       ui.toast.show(`Listo: Stremio conectado · ${res.count} títulos en tu biblioteca`);
       loadLibrary();
     },
     onMove: () => { sound.play("move"); renderHints(); },
-    onClose: () => { sound.play("back"); renderHints(); },
+    onClose: () => { sound.play("back"); backToMenu(); renderHints(); },
   }),
-  launch: createLaunchOverlay(),
+  launch: createLaunchOverlay({ backGlyph: () => glyphs().back }),
   viewer: createViewer({
-    onClose: () => { sound.play("back"); renderHints(); },
+    onClose: () => { sound.play("back"); backToMenu(); renderHints(); },
     onOpenVideo: (item) => api.openCapture(item.path).catch((err) => ui.toast.show(err.message, { error: true })),
   }),
   toast: createToast(),
@@ -145,7 +146,7 @@ function renderHints() {
   if (inGames() && !ui.sheet.isOpen) {
     const target = ui.games.current;
     const item = target?.item;
-    return ui.hints.render(gamesHints(g, target));
+    return ui.hints.render(gamesHints(g, target && { ...target, focusId: ui.games.focusId }));
   }
   if (inHome() && !ui.sheet.isOpen) {
     const target = ui.home.current;
@@ -302,7 +303,7 @@ function handleGames(action, { repeat = false } = {}) {
     case "prevsection": return stepSection(-1);
     case "nextsection": return stepSection(1);
     case "search": return openSearch();
-    case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit }));
+    case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));
     case "refresh": return loadLibrary({ refresh: true });
   }
 }
@@ -462,7 +463,7 @@ async function pollStatus() {
 async function openQuick(context = null) {
   sound.play("menu");
   const [q, music] = await Promise.all([api.quick(), api.music().catch(() => null)]);
-  return openMenu(quickMenu(q, { running: state.running, music }), nested(context));
+  return openMenu(quickMenu(q, { running: state.running, music, legion: state.legion === true }), nested(context));
 }
 
 async function pollSystem() {
@@ -546,9 +547,12 @@ async function runCommand(command, context = null) {
         await api.setPrefs(command.id, command.prefs);
         if (command.prefs.favorite) state.popId = command.id;
         sound.play("select");
-        if (command.prefs.hidden) offerUndoHide(command);
-        else if (command.message) ui.toast.show(command.message);
-        return loadLibrary({ keepId: command.id });
+        if (!command.prefs.hidden) {
+          if (command.message) ui.toast.show(command.message);
+          return loadLibrary({ keepId: command.id });
+        }
+        await loadLibrary({ keepId: command.id });
+        return offerUndoHide(command); // ya con la biblioteca nueva: se anota dónde quedó el foco
       case "refresh":
         return loadLibrary({ refresh: true });
       case "art": {
@@ -602,8 +606,13 @@ async function runCommand(command, context = null) {
         applySettings(await api.settings());
         return openMenu(settingsPage(command.page, state.settings), nested(context));
       case "setting": { // cambia y se queda en la misma página, en la misma opción
-        applySettings(await api.setSettings({ [command.key]: command.value }));
-        sound.play("select");
+        if (command.edge) { // ◀/▶ en el tope: no cambia nada, y se nota
+          sound.play("error");
+          rumble("edge");
+        } else {
+          applySettings(await api.setSettings({ [command.key]: command.value }));
+          sound.play("select");
+        }
         ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
@@ -622,7 +631,7 @@ async function runCommand(command, context = null) {
         sound.play("move");
         await new Promise((resolve) => setTimeout(resolve, 350)); // que la app cambie de canción
         const [q, music] = await Promise.all([api.quick(), api.music().catch(() => null)]);
-        ui.sheet.open(quickMenu(q, { running: state.running, music }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
+        ui.sheet.open(quickMenu(q, { running: state.running, music, legion: state.legion === true }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
       case "memory":
@@ -632,7 +641,7 @@ async function runCommand(command, context = null) {
       case "close-app": {
         const res = await api.closeApp(command.exe);
         sound.play("select");
-        ui.toast.show(`Cerré ${command.name}: ${(res.freed_mb / 1024).toFixed(1).replace(".", ",")} GB libres de más`);
+        ui.toast.show(`Cerré ${command.name}: ${(res.freed_mb / 1024).toFixed(1)} GB libres de más`);
         // De vuelta a la lista (sin la pregunta ni la lista vieja en el «Atrás»).
         return openMenu(memoryMenu(await api.memory()), { stack: (context?.stack ?? []).slice(0, -1) });
       }
@@ -655,19 +664,26 @@ async function runCommand(command, context = null) {
         const q = await api.setQuick(command.changes);
         sound.play("move");
         const music = await api.music().catch(() => null);
-        ui.sheet.open(quickMenu(q, { running: state.running, music }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
+        ui.sheet.open(quickMenu(q, { running: state.running, music, legion: state.legion === true }), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
       case "captures":
         state.captures = (await api.captures()).items;
         return openMenu(capturesMenu(state.captures), nested(context));
+      case "section":
+        sound.play("select");
+        return goToSection(command.id);
+      case "alexa-menu":
+        return openMenu(alexaMenu(), nested(context));
       case "view-capture":
         sound.play("open");
+        state.backTo = context;
         return ui.viewer.open(state.captures || [], command.index);
       case "diagnostics":
         return openMenu(diagnosticsMenu(await api.diagnostics()), nested(context));
       case "stremio-login":
         sound.play("open");
+        state.backTo = context;
         ui.login.open();
         return renderHints();
       case "stremio-account":
@@ -702,14 +718,30 @@ function openMenu(menu, options = {}) {
   renderHints();
 }
 
+/** Una vista abierta desde un menú (visor, Conectar Stremio): B regresa a ese menú, donde estabas. */
+function backToMenu() {
+  const back = state.backTo;
+  state.backTo = null;
+  if (back?.menu && !ui.sheet.isOpen) ui.sheet.open(back.menu, { index: back.index, stack: back.stack });
+}
+
 /** «Zelda oculto · Y Deshacer»: unos segundos para arrepentirse (Y o tocar el aviso). */
 const UNDO_MS = 8000;
 function offerUndoHide(command) {
-  const undo = { id: command.id, until: Date.now() + UNDO_MS };
+  const undo = { id: command.id, until: Date.now() + UNDO_MS, where: focusKey() };
   state.undoHide = undo;
-  const title = command.title || findItem(command.id)?.title || "Listo";
-  ui.toast.show(`${title} oculto · Y Deshacer`, { duration: UNDO_MS, onPress: () => undoHide(undo) });
+  const title = command.title || "Listo";
+  const how = state.modality === "touch" ? "Toca para deshacer" : "Y Deshacer";
+  ui.toast.show(`${title} oculto · ${how}`, { duration: UNDO_MS, urgent: true, onPress: () => undoHide(undo) });
 }
+
+/** Dónde está el foco ahora (sección y lugar): Y deshace solo si no te has movido. */
+function focusKey() {
+  const spot = inHome() ? ui.home.focusId : inGames() ? ui.games.focusId : `${state.focus.r}:${state.focus.c}`;
+  return `${state.section}|${spot}`;
+}
+
+const canUndoHide = () => state.undoHide && Date.now() < state.undoHide.until && state.undoHide.where === focusKey();
 
 async function undoHide(undo = state.undoHide) {
   if (!undo || state.undoHide !== undo) return;
@@ -727,14 +759,21 @@ async function undoHide(undo = state.undoHide) {
 
 function handleAction(action, { repeat = false } = {}) {
   // Y justo después de ocultar algo: deshacer (si no hay un menú u otra vista encima).
-  if (action === "options" && state.undoHide && Date.now() < state.undoHide.until && !ui.sheet.isOpen && !topOverlay()) {
+  if (action === "options" && canUndoHide() && !ui.sheet.isOpen && !topOverlay()) {
     return undoHide();
+  }
+  // 1: ☰ en la ficha o en Fuentes abre el menú (antes pasaba a la búsqueda de abajo, que dictaba).
+  if (action === "menu" && !ui.sheet.isOpen && (ui.title.isOpen || ui.sources.isOpen) && !ui.launch.visible) {
+    return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));
   }
   if (ui.launch.visible) {
     if (action === "back") { // B: no esperar más (muestra ya el juego o lo que haya)
       if (ui.launch.holding) api.reveal().catch(() => {});
       else if (state.launchingTitle) ui.toast.show(`Sigo buscando ${state.launchingTitle}: se abrirá solo`);
       ui.launch.hide();
+    } else if (action === "select") {
+      sound.play("error"); // A no hace nada aquí: que se note (la pantalla dice «B Ocultar»)
+      rumble("edge");
     }
     return;
   }
@@ -767,7 +806,7 @@ function handleAction(action, { repeat = false } = {}) {
       return rumble("edge");
     }
     case "options": return openMenu(gameMenu(item, { running: state.running }));
-    case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit }));
+    case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));
     case "back":
     case "home": // B: al principio de la sección; si ya estás ahí, a la sección Inicio
       if (r || c) { sound.play("back"); setFocus(0, 0, { silent: true }); }
@@ -793,7 +832,7 @@ function handleHome(action, { repeat = false } = {}) {
     case "prevsection": return stepSection(-1);
     case "nextsection": return stepSection(1);
     case "search": return openSearch();
-    case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit }));
+    case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));
     case "refresh": return loadLibrary({ refresh: true });
   }
 }
@@ -909,6 +948,7 @@ loadLibrary();
 api.settings().then(applySettings).catch(() => {});
 api.ui().then(({ can_exit: canExit, stremio_linked: linked, player, alexa }) => {
   state.canExit = canExit;
+  state.alexa = !!alexa;
   ui.hero.alexa = alexa;
   ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   state.stremioLinked = !!linked;

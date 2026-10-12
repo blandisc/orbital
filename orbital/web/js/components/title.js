@@ -86,8 +86,11 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
     caption.textContent = focused && !focused.primary ? focused.label : "";
     const button = focused && !focused.primary ? actions.children[action] : null;
     // Debajo del botón enfocado, sin salirse por la derecha.
-    caption.style.paddingInlineStart = button
-      ? `${Math.max(0, Math.min(button.offsetLeft - actions.offsetLeft, actions.clientWidth - caption.scrollWidth))}px` : "";
+    caption.style.transform = "";
+    if (button) {
+      const room = actions.clientWidth - caption.offsetWidth; // la línea mide lo que su texto (max-content)
+      caption.style.transform = `translateX(${Math.max(0, Math.min(button.offsetLeft - actions.offsetLeft, room))}px)`;
+    }
   }
 
   function renderTabs() {
@@ -124,7 +127,13 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
         class: ["episode", zone === "episodes" && i === index && "episode--focused", st.watched && "episode--watched",
           st.upcoming && "episode--upcoming"],
         type: "button", role: "listitem",
-        onClick: () => { zone = "episodes"; if (i === index) play(ep); else setIndex(i); },
+        onClick: () => {
+          if (zone === "episodes" && i === index) return play(ep);
+          zone = "episodes";
+          setIndex(i);
+          render();
+          onMove?.();
+        },
       },
       h("span", { class: "episode__thumb", style: { backgroundImage: cssUrl(ep.thumbnail) } },
         h("span", { class: "episode__number" }, String(ep.episode)),
