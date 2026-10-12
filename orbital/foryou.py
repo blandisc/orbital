@@ -147,6 +147,7 @@ def game_item(described: dict, why: str) -> dict:
         "image": described.get("image"), "hero": described.get("hero") or described.get("image"),
         "logo": extra.get("logo"), "overview": "", "action": "Jugar",
         "steam_appid": extra.get("steam_appid") or None,
+        "placeholder": bool(extra.get("placeholder_cover")),  # sin portada propia: la genérica de Orbital
     }
 
 
@@ -350,7 +351,7 @@ class ForYou:
         with ThreadPoolExecutor(max_workers=4) as pool:
             batches = list(pool.map(fetch, sources))
         videos = self._interleave(batches)
-        games = self.local_games()
+        games = [g for g in self.local_games() if not g["placeholder"]]  # el mosaico es de imágenes: sin arte, no entra
         mixed, seen = [], set()
         # Tres videos por cada dos juegos, más o menos (lo que haya de cada uno).
         vi = gi = 0

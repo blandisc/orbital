@@ -299,3 +299,11 @@ def test_para_ti_config_checks_the_country():
     assert parse_config({"para_ti": {"tmdb_key": " k "}}).para_ti.tmdb_key == "k"
     with pytest.raises(ValueError, match="dos letras"):
         parse_config({"para_ti": {"region": "Mexico"}})
+
+
+def test_the_mosaic_leaves_out_games_without_their_own_art(make_foryou, net):
+    fy = make_foryou(trakt_keys=False)
+    games = fy.local_games(seed=1)
+    assert any(g["placeholder"] for g in games) and any(not g["placeholder"] for g in games)  # en Listas, todos
+    in_mosaic = [m for m in fy.mosaic() if m["kind"] == "game"]
+    assert in_mosaic and not any(m["placeholder"] for m in in_mosaic)  # el mosaico es de imágenes

@@ -99,8 +99,11 @@ class DemoTmdb:
                  "disney": ["andor", "shogun", "bear", "mando", "loki", "inside2", "poor"],
                  "hbo": ["tlou", "hotd", "penguin", "lotus", "succession", "dune2", "batman", "dune1"]}
 
-    def platforms(self, region):
-        return {brand: {"id": i, "logo": None} for i, brand in enumerate(self.PLATFORMS, start=1)}
+    LOGOS = {"netflix": "pbpMk2JmcoNnQwx5JGpXngfoWtp", "disney": "97yvRBw1GzX7fXprcF80er19ot", "hbo": "jbe4gVSfRlbPTdESXhEKpornsfu"}
+
+    def platforms(self, region):  # los logos sí son los de TMDB (se ven al cargar, como en Orbital de verdad)
+        return {brand: {"id": i, "logo": f"https://image.tmdb.org/t/p/w154/{self.LOGOS[brand]}.jpg"}
+                for i, brand in enumerate(self.PLATFORMS, start=1)}
 
     def discover(self, kind, provider_id, region):
         brand = list(self.PLATFORMS)[provider_id - 1]
@@ -109,8 +112,24 @@ class DemoTmdb:
     def details(self, kind, tmdb_id):
         raise LookupError  # no se usa: el demo responde en _platform
 
+    OVERVIEWS = {  # unas cuantas sinopsis, para ver la ficha completa (las demás quedan sin texto)
+        "andor": "Cassian Andor, un ladrón sin causa, descubre en qué puede convertirse cuando la rebelión contra el Imperio empieza a tomar forma.",
+        "tlou": "Veinte años después de que una pandemia acabara con la civilización, Joel acepta sacar a Ellie, de 14 años, de una zona de cuarentena.",
+        "stranger": "En un pueblo de Indiana, la desaparición de un niño destapa experimentos secretos, fuerzas sobrenaturales y a una niña muy extraña.",
+        "severance": "Mark dirige un equipo cuyos recuerdos del trabajo y de la vida personal fueron separados con una cirugía. Hasta que algo no cuadra.",
+        "shogun": "Japón, 1600. Un navegante inglés naufraga en las costas de un país al borde de la guerra civil y queda en medio de la lucha por el poder.",
+        "dune2": "Paul Atreides se une a Chani y a los Fremen mientras busca venganza contra quienes destruyeron a su familia.",
+        "oppen": "La historia del físico J. Robert Oppenheimer y su papel en el desarrollo de la bomba atómica.",
+    }
+    BY_IMDB = {e["imdb"]: k for k, e in {**M, **S}.items()}
+
     def find(self, imdb, kind):
-        return None
+        key = self.BY_IMDB.get(imdb)
+        if key not in self.OVERVIEWS:
+            return None
+        e = {**M, **S}[key]
+        return {"overview": self.OVERVIEWS[key], "runtime": e["runtime"], "year": e["year"],
+                "seasons": None, "episodes": e["episodes"]}
 
 
 class DemoRawg:

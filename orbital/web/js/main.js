@@ -117,7 +117,7 @@ const ui = {
   }),
   traktLink: createTraktLink({
     onMove: () => sound.play("move"),
-    onClose: () => { sound.play("back"); backToMenu(); renderHints(); },
+    onClose: () => { sound.play("back"); renderHints(); },
   }),
   launch: createLaunchOverlay(),
   viewer: createViewer({
@@ -720,7 +720,6 @@ async function runCommand(command, context = null) {
         return loadLibrary();
       case "trakt-link": // un código para escribir en trakt.tv/activate (el aviso llega por SSE)
         sound.play("open");
-        state.backTo = context;
         ui.traktLink.open();
         return renderHints();
       case "trakt-account":

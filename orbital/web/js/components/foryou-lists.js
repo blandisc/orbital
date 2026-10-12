@@ -143,7 +143,8 @@ export function createForYouLists({ loadList, onFocus, onPick }) {
     } else if (state === "ready" && items.length) {
       mount(grid, items.map((item, n) => {
         targets.set(`item:${n}`, { kind: "item", item });
-        const card = Card({ ...item, id: item.key, source: item.kind === "game" ? "steam" : "cinemeta" },
+        // extra: un juego sin portada propia lleva la genérica con su nombre encima, como en Juegos.
+        const card = Card({ ...item, id: item.key, source: item.kind === "game" ? "steam" : "cinemeta", extra: item.item?.extra },
           { onPress: () => onPick?.(targets.get(`item:${n}`), `item:${n}`) });
         card.dataset.focusId = `item:${n}`;
         if (item.kind === "game" && item.owned && l?.source === "RAWG") {
@@ -204,6 +205,9 @@ export function createForYouLists({ loadList, onFocus, onPick }) {
         v.items[i] = { ...old, overview: details.overview || old.overview, facts: details.facts || old.facts, logo_dark: details.logo_dark ?? old.logo_dark };
         loaded.set(k, v);
       }
+    }
+    for (const t of targets.values()) { // la ficha se pinta desde aquí: que vea lo que acaba de llegar
+      if (t.kind === "item" && t.item.key === key) t.item = { ...t.item, overview: details.overview || t.item.overview, facts: details.facts || t.item.facts, logo_dark: details.logo_dark ?? t.item.logo_dark };
     }
     if (shownKey === key) {
       shownKey = null;
