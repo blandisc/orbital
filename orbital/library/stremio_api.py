@@ -276,7 +276,8 @@ def parse_item(raw: dict) -> Watchable | None:
     if not isinstance(item_id, str) or not item_id or not isinstance(name, str) or not name.strip():
         return None
     state = state_of(raw)
-    kind = raw.get("type") if isinstance(raw.get("type"), str) and raw.get("type") else "other"
+    raw_type = raw.get("type")
+    kind = raw_type if isinstance(raw_type, str) and raw_type else "other"
     removed, temp = bool(raw.get("removed")), bool(raw.get("temp"))
     offset = as_int(state.get("timeOffset"))
     if removed and not temp:

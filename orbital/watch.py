@@ -609,8 +609,8 @@ class Watch:
         """Elegir un episodio desde el reproductor: lo pone donde ibas (o desde el principio)."""
         info = self.cinemeta.meta("series", meta["meta_id"])
         title, _ = self._episode_title(info, meta["meta_id"], video_id)
-        return self._play_episode(meta["meta_id"], video_id, title, meta.get("binge"),
-                           start=self.resume_position(meta["meta_id"], video_id))
+        return bool(self._play_episode(meta["meta_id"], video_id, title, meta.get("binge"),
+                                       start=self.resume_position(meta["meta_id"], video_id)))
 
     @property
     def native_player(self) -> bool:

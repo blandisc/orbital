@@ -129,7 +129,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         unsubscribe()
 
     app = FastAPI(title="Orbital", version=__version__, lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
-    app.add_exception_handler(RequestValidationError, invalid_request)
+    app.add_exception_handler(RequestValidationError, invalid_request)  # type: ignore[arg-type]
     app.state.deps = d
     app.state.catalog = catalog
     app.state.bus = d.hub
@@ -230,7 +230,7 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     127.0.0.1, aquí no hay excepciones para "local": sin token no se hace nada.
     """
     public = FastAPI(title="Orbital · Alexa", docs_url=None, redoc_url=None, openapi_url=None)
-    public.add_exception_handler(RequestValidationError, invalid_request)
+    public.add_exception_handler(RequestValidationError, invalid_request)  # type: ignore[arg-type]
 
     guard = guard or FailedTokens()
     one_at_a_time: list[asyncio.Lock] = []  # los intentos fallidos esperan en fila, no en paralelo

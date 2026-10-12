@@ -638,7 +638,9 @@ def volume_ass(volume: float) -> str:
 
 def ends_at(position: float | None, duration: float | None, now: float | None = None) -> str:
     """"23:40": la hora a la que termina si sigues viendo de corrido."""
-    if not all(isinstance(v, (int, float)) and math.isfinite(v) for v in (duration, position)):
+    if not isinstance(duration, (int, float)) or not isinstance(position, (int, float)):
+        return ""
+    if not (math.isfinite(duration) and math.isfinite(position)):
         return ""
     if not duration or duration - position < 60 or duration - position > 86400 * 2:
         return ""
