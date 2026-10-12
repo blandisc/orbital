@@ -110,11 +110,13 @@ def keep_game_in_front(launcher: Launcher, item_id: str, win, user_returned=lamb
         game = win.main_window(pids) if pids else 0
         if not game:
             continue
+        if orbital != fg and not getattr(win, "covers_center", lambda h: True)(game):
+            continue  # el juego (o el video) en ventana: Orbital se ve alrededor, no encima
         if hasattr(win, "place_below"):
             win.place_below(orbital, game)
-        if win.focus(game):
-            fixed += 1
+        if (fg == game or win.focus(game)) and not fixed:
             log.info("Orbital tapó a %s tras la transición: el juego vuelve al frente", status.get("title", item_id))
+        fixed += 1
     return fixed
 
 

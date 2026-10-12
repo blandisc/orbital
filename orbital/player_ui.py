@@ -399,7 +399,7 @@ def hud_ass(hud: Hud) -> str:
     if hud.detail:
         lines.append(text(MARGIN, 772, esc(fit(hud.detail, 24, min(1300, W - 2 * MARGIN), "semi")), 24, MUTED, weight="semi"))
     lines.append(text(MARGIN, 806, esc(fit(hud.title, 48, min(1500, W - 2 * MARGIN), "bold")), 48, weight="bold"))
-    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Fuentes")]
+    items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Fuentes"), ("B", "Mantén: salir")]
     lines += [bar, _times(hud, BAR_Y + 28),
               # A la derecha van los botones (~850): la línea de pistas cabe en lo que queda (4:3 incluido).
               text(MARGIN, 1022, esc(fit(info_line(hud), 22, max(300, min(900, W - 2 * MARGIN - 900)), "semi")), 22, MUTED,
@@ -624,6 +624,20 @@ def toast_ass(message: str) -> str:
     w = text_width(message, 24, "semi") + 44
     x = W - MARGIN - w
     return "\n".join([rrect(x, 64, w, 54, 27, PANEL, "30"), text(x + 22, 91, esc(message), 24, weight="semi", align=4)])
+
+
+def quit_hold_ass(progress: float) -> str:
+    """«Mantén B para salir», con su barra que se llena mientras lo mantienes (arriba a la derecha)."""
+    progress = max(0.0, min(1.0, progress)) if math.isfinite(progress) else 0.0
+    label = "Mantén para salir"
+    shape, gw = glyph(0, 0, "B")
+    w = 22 + gw + 12 + text_width(label, 24, "semi") + 22
+    x = W - MARGIN - w
+    shape, _ = glyph(x + 22, 88, "B")
+    bar_x, bar_w = x + 22, w - 44
+    return "\n".join([rrect(x, 64, w, 70, 20, PANEL, "30"), shape,
+                      text(x + 22 + gw + 12, 88, label, 24, weight="semi", align=4),
+                      rrect(bar_x, 114, bar_w, 6, 3, TEXT, "C0"), rrect(bar_x, 114, max(6, bar_w * progress), 6, 3, TEXT)])
 
 
 def volume_ass(volume: float) -> str:

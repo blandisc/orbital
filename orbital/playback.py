@@ -24,6 +24,10 @@ from .gamepad import (
     LT,
     RT,
     START,
+    STICK_DOWN,
+    STICK_LEFT,
+    STICK_RIGHT,
+    STICK_UP,
     X_BUTTON,
     Y_BUTTON,
 )
@@ -238,8 +242,11 @@ class PlayerRemote:
     cruceta y LB/RB. Qué hace cada uno lo decide el reproductor (depende de si hay un menú abierto)."""
 
     BUTTONS = {A_BUTTON: "a", B_BUTTON: "b", X_BUTTON: "x", Y_BUTTON: "y", DPAD_LEFT: "left", DPAD_RIGHT: "right",
-               DPAD_UP: "up", DPAD_DOWN: "down", LB: "lb", RB: "rb", LT: "lt", RT: "rt"}
-    REPEAT = {DPAD_LEFT, DPAD_RIGHT, DPAD_UP, DPAD_DOWN, LB, RB}
+               DPAD_UP: "up", DPAD_DOWN: "down", LB: "lb", RB: "rb", LT: "lt", RT: "rt",
+               STICK_UP: "stick-up", STICK_DOWN: "stick-down", STICK_LEFT: "stick-left", STICK_RIGHT: "stick-right"}
+    REPEAT = {DPAD_LEFT, DPAD_RIGHT, DPAD_UP, DPAD_DOWN, LB, RB, STICK_UP, STICK_DOWN, STICK_LEFT, STICK_RIGHT,
+              B_BUTTON}  # B mantenido: la barra de "Mantén para salir" se va llenando
+    RELEASE = {B_BUTTON}  # al soltar B llega "b-up" (la barra se va si soltaste antes)
 
     def __init__(self, on_press, delay: float = .35, rate: float = .15) -> None:
         self.on_press = on_press
@@ -261,7 +268,8 @@ class PlayerRemote:
         out = []
         for bit, name in self.BUTTONS.items():
             if not buttons & bit:
-                self._next.pop(bit, None)
+                if self._next.pop(bit, None) is not None and bit in self.RELEASE:
+                    out.append(f"{name}-up")
                 self._repeats.pop(name, None)
                 continue
             if bit not in self._next:

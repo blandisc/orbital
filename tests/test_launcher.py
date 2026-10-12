@@ -326,7 +326,7 @@ def test_guard_sends_orbital_behind_when_it_covers_the_focused_game():
     clock = iter(range(1000))
     fixed = focus_mod.keep_game_in_front(launcher, "emu:xbox:1", win, lambda: False, seconds=3,
                                          sleep=lambda s: None, clock=lambda: next(clock) * .3)
-    assert fixed == 1 and win.below == [(1, 3)] and win.focused == [3]
+    assert fixed == 1 and win.below == [(1, 3)] and win.focused == []  # ya tenía el foco
 
 
 def test_reveal_leaves_orbital_behind_the_game():

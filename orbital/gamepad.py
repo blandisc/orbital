@@ -130,6 +130,25 @@ TRIGGER_PRESSED = 100  # de 255
 def with_triggers(left: int, right: int) -> int:
     return (LT if left > TRIGGER_PRESSED else 0) | (RT if right > TRIGGER_PRESSED else 0)
 
+
+# Los sticks (cualquiera de los dos) como dirección, en bits aparte de la cruceta: en el reproductor
+# despiertan los controles y mueven el foco de los paneles, pero no adelantan ni suben el volumen.
+STICK_UP, STICK_DOWN, STICK_LEFT, STICK_RIGHT = 0x40000, 0x80000, 0x100000, 0x200000
+STICK_PUSHED = 20000  # de 32767: más de la mitad (un stick con deriva no cuenta)
+
+
+def with_sticks(*axes: int) -> int:
+    """(lx, ly, rx, ry) -> la dirección de cada stick empujado, por su eje dominante."""
+    bits = 0
+    for x, y in zip(axes[::2], axes[1::2], strict=False):
+        if max(abs(x), abs(y)) < STICK_PUSHED:
+            continue
+        if abs(x) >= abs(y):
+            bits |= STICK_RIGHT if x > 0 else STICK_LEFT
+        else:
+            bits |= STICK_UP if y > 0 else STICK_DOWN  # en XInput, arriba es positivo
+    return bits
+
 VK_SPACE, VK_ESCAPE, VK_LEFT, VK_UP, VK_RIGHT, VK_DOWN, VK_F11 = 0x20, 0x1B, 0x25, 0x26, 0x27, 0x28, 0x7A
 PLAYER_KEYS = {
     A_BUTTON: VK_SPACE,  # pausa / reanuda
@@ -317,7 +336,9 @@ class GamepadWatcher:
                         log.exception("Error atendiendo %s", event)
                 if self.on_buttons:
                     if connected:
-                        buttons |= with_triggers(state.Gamepad.bLeftTrigger, state.Gamepad.bRightTrigger)
+                        pad = state.Gamepad
+                        buttons |= with_triggers(pad.bLeftTrigger, pad.bRightTrigger)
+                        buttons |= with_sticks(pad.sThumbLX, pad.sThumbLY, pad.sThumbRX, pad.sThumbRY)
                     try:
                         self.on_buttons(slot, buttons, now)
                     except Exception:  # noqa: BLE001

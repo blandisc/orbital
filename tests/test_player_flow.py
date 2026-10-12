@@ -16,13 +16,21 @@ def series_player(**props):
     return p, mpv
 
 
-def test_b_hides_the_controls_then_leaves():
+def test_b_hides_the_controls_and_holding_it_leaves():
+    import time
     p, mpv = make_player()
     p.press("a")  # pausa: la barra se queda
     assert mpv.overlays[1]
-    p.press("b")  # primero oculta los controles
-    assert mpv.overlays[1] is None and ("quit",) not in mpv.sent
-    p.press("b")  # ya ocultos: sale
+    p.press("b")  # oculta los controles y empieza la barra de "Mantén para salir"
+    assert mpv.overlays[1] is None and "Mantén para salir" in mpv.overlays[3] and ("quit",) not in mpv.sent
+    p.press("b-up")  # soltaste antes: no sale
+    assert mpv.overlays[3] is None and ("quit",) not in mpv.sent
+    p.press("b")
+    p.remote._repeats["b"] = 3  # sigue mantenido…
+    p.press("b")
+    assert ("quit",) not in mpv.sent  # …pero aún no se llena
+    p._quit_hold = time.monotonic() - 2
+    p.press("b")
     assert ("quit",) in mpv.sent
 
 
@@ -206,7 +214,8 @@ def test_knows_how_it_ended_before_closing():
     p.tick(p.segment, 0, False)
     p.hide_hud()
     p.press("b")
-    p.press("b")  # sale en los créditos (tras confirmar)
+    p._quit_hold, p.remote._repeats["b"] = 0.0, 9  # B mantenido hasta llenarse
+    p.press("b")  # sale en los créditos
     assert ("quit",) in mpv.sent and p.last_end == {"title": "Interstellar", "finished": True, "kind": "series"}
 
 
@@ -246,8 +255,8 @@ def test_player_ui_pieces():
 
 
 
-def test_player_sources_always_offer_spanish():
-    """La serie en inglés: las 12 mejores son en inglés, pero la mejor en español también sale."""
+def test_player_sources_show_all_with_language_first():
+    """Todas las fuentes (antes 12: con la serie en inglés, las de español no salían), el idioma primero."""
     from types import SimpleNamespace
 
     from orbital import watch
@@ -262,5 +271,5 @@ def test_player_sources_always_offer_spanish():
                            stream_sources=lambda kind, video, prefs: found)
     options = watch.Watch._player_sources(fake, {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1", "source": 14})
     ids = [o["id"] for o in options]
-    assert ids[:12] == list(range(12)) and 20 in ids and 21 not in ids and 14 in ids
+    assert ids == [*range(15), 20, 21] and [o["id"] for o in options if o["current"]] == [14]
     assert next(o for o in options if o["id"] == 20)["label"].startswith("Español")

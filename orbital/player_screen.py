@@ -315,6 +315,22 @@ class PlayerScreen:
         if current is None:
             return
         self._fit_canvas()  # por si la pantalla cambió en este segundo (TV ↔ Legion Go)
+        if button == "b-up":
+            if getattr(self, "_quit_hold", None) is not None:
+                self._quit_hold = None
+                self._overlay(3, None)  # soltaste antes de llenarse: no pasa nada
+            return
+        if button == "b" and self.remote.held("b"):
+            self._hold_to_quit()
+            return
+        if button.startswith("stick-"):
+            # Un stick: en un panel mueve el foco como la cruceta; si no, solo enciende los controles
+            # (no adelanta ni sube el volumen: un empujón sin querer no cambia nada).
+            if self.menu is not None:
+                self._menu_press(button.removeprefix("stick-"))
+            elif self._card is None:
+                self.show_hud()
+            return
         if button != "y":
             self._more_token = None  # el panel Y que se estaba buscando ya no se abre
         if self.menu is not None:
@@ -334,11 +350,11 @@ class PlayerScreen:
             self._ask("pause", paused)
             self.show_hud(paused=paused)
         elif button == "b":
-            # B oculta los controles; con los controles ya ocultos, sale.
+            # B oculta los controles; para salir se MANTIENE B (la barra se llena): sin salidas sin querer.
             if self._hud_visible:
                 self.hide_hud()
-            else:
-                self._quit()
+            self._quit_hold = time.monotonic()
+            self._overlay(3, player_ui.quit_hold_ass(0))
         elif button == "x":
             self.open_tracks()
         elif button == "y":
@@ -371,6 +387,22 @@ class PlayerScreen:
             else:
                 self.mpv.command("add", "volume", 5 if button == "up" else -5)
                 self.toast("Volumen")
+
+    QUIT_HOLD = 1.5  # s con B mantenido para salir
+
+    def _hold_to_quit(self) -> None:
+        """B sigue mantenido: la barra avanza y, llena, sale. Solo si la pulsación empezó aquí (no la
+        que cerró un panel o una tarjeta)."""
+        started = getattr(self, "_quit_hold", None)
+        if started is None:
+            return
+        progress = (time.monotonic() - started) / self.QUIT_HOLD
+        if progress >= 1:
+            self._quit_hold = None
+            self._overlay(3, None)
+            self._quit()
+        else:
+            self._overlay(3, player_ui.quit_hold_ass(progress))
 
     EPISODE_WAIT = .7  # s: RT, RT seguidos suman (dos episodios adelante) antes de cargar
 
