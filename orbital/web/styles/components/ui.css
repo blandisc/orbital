@@ -53,3 +53,19 @@
 /* De dónde es (Steam, Switch, Película): ícono + nombre, en gris y sin mayúsculas; acompaña, no grita. */
 .tile__platform { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
 .tile__platform svg { flex: none; width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
+
+/* Badge grande: sobre arte a sangre (el mosaico de Para ti). */
+.badge--lg { padding: .22rem .75rem; font-size: var(--text-sm); }
+
+/* Pantalla completa encima de todo (Conectar Stremio, Conectar Trakt): el mismo fondo, margen y entrada. */
+.screen {
+  position: fixed; inset: 0; z-index: var(--z-overlay);
+  padding: calc(var(--space-10) + var(--safe-y)) var(--page-gutter) calc(3.4rem + var(--space-4) + var(--safe-y));
+  background: var(--color-tinted-bg);
+  animation: fade-in var(--duration-slow) var(--ease-out);
+}
+.screen--leaving { animation: fade-out var(--duration-exit) var(--ease-in) forwards; }
+.screen-head { display: grid; gap: var(--space-2); justify-items: center; text-align: center; max-width: 46rem; }
+.screen-head__eyebrow { color: var(--color-accent); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.screen-head__title { font-family: var(--font-sans); font-size: var(--text-2xl); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); }
+.screen-head__lead { color: var(--color-text-muted); font-size: var(--text-md); line-height: 1.5; }

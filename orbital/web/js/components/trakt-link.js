@@ -1,5 +1,6 @@
 import { api } from "../core/api.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
+import { ScreenHead } from "./ui.js";
 
 /**
  * Conectar Trakt sin teclear nada con el mando: un código grande que escribes en trakt.tv/activate
@@ -10,10 +11,9 @@ export function createTraktLink({ onMove, onClose }) {
   const code = h("div", { class: "trakt-link__code", "aria-live": "polite" });
   const where = h("p", { class: "trakt-link__step" });
   const status = h("div", { class: "trakt-link__status", role: "status" });
-  const el = h("section", { class: "trakt-link", hidden: true, "aria-label": "Conectar Trakt" },
+  const el = h("section", { class: "trakt-link screen", hidden: true, "aria-label": "Conectar Trakt" },
     h("div", { class: "trakt-link__box" },
-      h("div", { class: "trakt-link__eyebrow" }, "Cuentas"),
-      h("h1", { class: "trakt-link__title" }, "Conectar Trakt"),
+      ScreenHead({ eyebrow: "Cuentas", title: "Conectar Trakt" }),
       where, code, status,
       h("ul", { class: "trakt-link__list" },
         h("li", {}, "Orbital podrá leer tus listas y lo que tienes pendiente"),
@@ -21,6 +21,7 @@ export function createTraktLink({ onMove, onClose }) {
         h("li", {}, "Stremio ya marca en Trakt lo que ves: Orbital no escribe nada"))));
   let attempt = 0;
   let waiting = false;
+  let pending = false; // el código ya se pidió y aún no llega (B en ese momento también cancela)
   let cancelExit = () => {};
 
   function show(state, text) {
@@ -32,18 +33,21 @@ export function createTraktLink({ onMove, onClose }) {
   async function request() {
     const mine = ++attempt;
     waiting = false;
+    pending = true;
     mount(code, h("span", { class: "trakt-link__placeholder" }, "······"));
     mount(where, "Pidiendo un código a Trakt…");
     show("", "");
     try {
       const res = await api.traktLink();
-      if (mine !== attempt || el.hidden) return;
+      if (mine !== attempt) return; // otro código más nuevo (Y), o ya se cerró: este no se muestra
+      pending = false;
       waiting = true;
       mount(where, "En tu celular entra a ", h("strong", {}, res.url || "trakt.tv/activate"), " y escribe este código:");
       mount(code, ...[...String(res.code || "")].map((ch) => h("span", { class: "trakt-link__char" }, ch)));
       show("waiting", "Esperando a que lo confirmes…");
     } catch (err) {
       if (mine !== attempt) return;
+      pending = false;
       mount(where, "No pude pedir el código.");
       mount(code);
       show("error", err.message);
@@ -59,9 +63,10 @@ export function createTraktLink({ onMove, onClose }) {
   function close({ cancel = true } = {}) {
     if (el.hidden) return;
     attempt++;
-    if (cancel && waiting) api.traktCancel().catch(() => {});
+    if (cancel && (waiting || pending)) api.traktCancel().catch(() => {});
     waiting = false;
-    cancelExit = hideAfterExit(el, "trakt-link--leaving", 300);
+    pending = false;
+    cancelExit = hideAfterExit(el, "screen--leaving", 300);
     onClose?.();
   }
 
@@ -73,7 +78,7 @@ export function createTraktLink({ onMove, onClose }) {
   }
 
   function handle(action) {
-    if (el.hidden || el.classList.contains("trakt-link--leaving")) return false;
+    if (el.hidden || el.classList.contains("screen--leaving")) return false;
     if (action === "back") { close(); return true; }
     if (action === "options") { onMove?.(); request(); return true; }
     return true; // nada más que hacer aquí: el resto de botones no se escapan a lo de atrás
@@ -81,5 +86,5 @@ export function createTraktLink({ onMove, onClose }) {
 
   const hints = (g) => [{ glyph: g.options, label: "Otro código" }, { glyph: g.back, label: "Cancelar", end: true }];
 
-  return { el, open, close, failed, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("trakt-link--leaving"); } };
+  return { el, open, close, failed, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

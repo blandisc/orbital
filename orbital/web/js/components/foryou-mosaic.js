@@ -1,6 +1,7 @@
 import { h, svg } from "../core/dom.js";
 import { factLine, iconName, nearestTile, nextUnseen, shapeOf } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
+import { Badge } from "./ui.js";
 
 /**
  * «Para ti» · mosaico: columnas de imágenes (portadas altas y arte ancho) con lo tuyo mezclado.
@@ -39,10 +40,15 @@ export function createForYouMosaic({ onFocus }) {
 
   // --- piezas -----------------------------------------------------------------------------------
   function makeTile(item) {
-    const swap = (img, other) => img.addEventListener("error", () => {
-      if (other && img.src !== other) img.src = other;
-      else img.remove();
-    }, { once: true });
+    // Si falla, prueba la otra imagen; si también falla, se quita (y la pieza enseña su nombre).
+    const swap = (img, other) => {
+      let tried = false;
+      img.addEventListener("error", () => {
+        if (other && !tried) { tried = true; img.src = other; return; }
+        img.remove();
+        if (!node.querySelector(".foryou-mosaic__art")) node.classList.add("foryou-mosaic__tile--bare");
+      });
+    };
     const poster = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--poster", src: item.image || item.hero || "", alt: "", decoding: "async" });
     const wide = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--wide", src: item.hero || item.image || "", alt: "", decoding: "async" });
     swap(poster, item.image_fallback || item.hero);
@@ -54,7 +60,7 @@ export function createForYouMosaic({ onFocus }) {
       poster, wide,
       h("span", { class: "foryou-mosaic__kind", "aria-hidden": "true" }, svg(ICONS[iconName(item)] || ICONS.apps)),
       h("div", { class: "foryou-mosaic__info" },
-        item.why && h("span", { class: "foryou-mosaic__why" }, item.why), logo,
+        item.why && Badge(item.why, { large: true }), logo,
         h("span", { class: "foryou-mosaic__fact" }, factLine(item))));
     return { item, node, logo, top: 0, h: 0 };
   }
@@ -122,6 +128,14 @@ export function createForYouMosaic({ onFocus }) {
     }
   }
 
+  /** Bajando mucho, lo que quedó una pantalla arriba se quita (si no, el mosaico crece sin fin). */
+  function prune(col, c) {
+    const { H } = size();
+    let gone = 0;
+    while (col.tiles.length > 1 && col.tiles[0].top + col.tiles[0].h < col.offset - H) { col.tiles.shift().node.remove(); gone++; }
+    if (c === focus.col) focus.row = Math.max(0, focus.row - gone);
+  }
+
   const applyOffsets = () => columns.forEach((col) => { col.track.style.transform = `translateY(${-col.offset}px)`; });
 
   /** La enfocada, entera a la vista. Bajando, las demás columnas suben lo mismo (la cascada). */
@@ -142,6 +156,7 @@ export function createForYouMosaic({ onFocus }) {
         fill(other, c);
       });
     }
+    columns.forEach(prune);
     applyOffsets();
   }
 
@@ -224,7 +239,7 @@ export function createForYouMosaic({ onFocus }) {
 
   /** true = se movió · "edge" = nada hacia allá · "exit" = B sin a dónde volver · false = no es suyo. */
   function handle(action) {
-    if (!pool.length) return false;
+    if (!pool.length) return action === "back" ? "exit" : false;
     if (wake()) return true; // el primer botón solo despierta
     if (action === "left") return move(-1, 0);
     if (action === "right") return move(1, 0);
@@ -233,7 +248,7 @@ export function createForYouMosaic({ onFocus }) {
     if (action === "back") {
       if (focus.col === 0 && focus.row === 0) return "exit";
       focus = { col: 0, row: 0 };
-      columns.forEach((col) => { col.offset = 0; });
+      columns.forEach((col) => { col.offset = col.tiles[0]?.top ?? 0; }); // lo de más arriba que sigue vivo
       paint();
       return true;
     }

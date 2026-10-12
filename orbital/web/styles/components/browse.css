@@ -1,0 +1,74 @@
+/* Vista con secciones (js/components/browse.js): Juegos y las Listas de Para ti.
+   Riel (rail.css) | encabezado, filtros y portadas | ficha (detail-panel.css). */
+.browse {
+  --browse-inset: 0px; --browse-rail: 6.2rem; --browse-sheet: min(33rem, 36vw);
+  --card-height: 10rem; --card-focus-scale: 1.06;
+  position: relative; min-height: 0;
+}
+.browse__main {
+  position: absolute; top: 0; bottom: 0; left: calc(var(--browse-inset) + var(--browse-rail) + var(--space-8));
+  right: calc(var(--browse-sheet) + var(--browse-inset) + var(--space-8));
+  display: flex; flex-direction: column; gap: var(--space-5); min-height: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+/* Con la pestaña del riel abierta, lo de atrás se aparta (sigue a la vista: es lo que vas a abrir). */
+.browse--rail-open .browse__main, .browse--rail-open .detail-panel { opacity: .3; }
+
+/* --- Encabezado --------------------------------------------------------------------------------- */
+.browse__head { display: flex; align-items: center; padding-top: var(--space-2); min-width: 0; }
+.browse__heading { display: flex; align-items: center; gap: var(--space-5); min-width: 0; }
+.browse__media {
+  position: relative; flex: none; display: grid; place-items: center; width: 4.6rem; height: 4.6rem; padding: .55rem; box-sizing: border-box; overflow: hidden;
+  border-radius: var(--radius-xl); color: var(--color-text);
+  background: radial-gradient(circle at 50% 30%, color-mix(in oklab, var(--glow, var(--color-text)) 34%, transparent), var(--color-surface) 78%);
+  box-shadow: inset 0 0 0 1.5px color-mix(in oklab, var(--glow, var(--color-text)) 45%, var(--color-hairline-strong)),
+    0 .8rem 2rem color-mix(in oklab, var(--glow, var(--color-text)) 18%, transparent);
+}
+.browse__media--icon { background: var(--color-surface-raised); box-shadow: inset 0 0 0 1.5px var(--color-hairline-strong); }
+.browse__media-icon { display: grid; place-items: center; }
+.browse__media-icon .icon { width: 2.3rem; height: 2.3rem; stroke-width: 1.9; }
+.browse__media-img { display: block; width: 100%; height: 100%; object-fit: contain; filter: var(--shadow-drop-sm); }
+.browse__media-img--logo { width: 64%; height: 64%; }
+.browse__media-img--cover { border-radius: var(--radius-xs); object-fit: cover; }
+.browse__media--brand { padding: 0; background: none; box-shadow: 0 .8rem 2rem var(--color-scrim); }
+.browse__media-img--brand { object-fit: cover; filter: none; }
+.browse__heading-text { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
+.browse__title {
+  font-family: var(--font-sans); font-size: var(--text-3xl); font-weight: var(--weight-bold); line-height: 1.05;
+  letter-spacing: var(--tracking-display); padding-bottom: .2em; margin-bottom: -.14em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.browse__meta { color: var(--color-text-muted); font-size: var(--text-md); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- Filtros ------------------------------------------------------------------------------------ */
+.browse__bar { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.browse__bar[hidden] { display: none; }
+.browse__filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); min-width: 0; }
+.browse__filter {
+  min-height: 2.5rem; padding: 0 var(--space-5); border-radius: var(--radius-pill); white-space: nowrap;
+  box-shadow: inset 0 0 0 1px var(--color-hairline-strong); color: var(--color-text-muted); font-size: var(--text-sm);
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-spring);
+}
+.browse__filter--on { color: var(--color-text); box-shadow: inset 0 0 0 1.5px var(--color-text); font-weight: var(--weight-medium); }
+.browse__filter.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; transform: scale(var(--inverse-scale)); }
+.browse__count { flex: none; white-space: nowrap; margin-left: auto; color: var(--color-text-muted); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+.browse__bar--compact .browse__filter { padding: 0 var(--space-4); }
+.browse__bar--compact .browse__count { display: none; }
+.browse__bar--tight .browse__filters { gap: var(--space-2); }
+.browse__bar--tight .browse__filter { padding: 0 var(--space-3); font-size: var(--text-xs); }
+
+/* --- Portadas: aire generoso con los filtros y entre ellas; la enfocada crece sin cortarse arriba. --- */
+.browse__viewport {
+  flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 1.6rem 1rem 1rem; margin: 0 -1rem;
+  -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%); mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%);
+}
+.browse__grid { display: flex; flex-wrap: wrap; align-content: flex-start; gap: var(--space-8) var(--space-6); transition: transform var(--duration-slow) var(--ease-out); }
+/* Todas las portadas con la misma forma (Juegos pone la de las cajas de su consola: GBA 1, PSP .57…). */
+.browse__grid .card { --ratio: var(--grid-ratio, .667) !important; }
+.browse__grid .card__image { object-fit: cover; }
+.browse__grid .card--focused { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; z-index: var(--z-raised); }
+.browse__empty { max-width: 34rem; color: var(--color-text-muted); font-size: var(--text-md); line-height: 1.5; padding: var(--space-4) 0; }
+
+/* Cambio de sección: un fundido corto del contenido, sin nada que cruce la pantalla. */
+.browse__main--switch .browse__heading, .browse__main--switch .browse__viewport { animation: fade-in var(--duration-base) var(--ease-out); }
+
+@media (max-width: 1100px) { .browse { --browse-sheet: 24rem; } }

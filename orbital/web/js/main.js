@@ -311,7 +311,7 @@ function gamesFocused(target) {
 
 function gamesActivate(target, action = "select") {
   if (!target) return;
-  if (target.kind === "filter") { sound.play("select"); return ui.games.setFilter(target.filter); }
+  if (target.kind === "filter") { sound.play("select"); return ui.games.setFilter(target.value); }
   if (target.kind === "rail") return handleGames("right"); // A en el riel: a las portadas de esa consola
   const item = target.item;
   if (action === "options") return openMenu(gameMenu(item, { running: state.running }));

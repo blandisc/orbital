@@ -207,7 +207,7 @@ class ForYou:
             if brand in found:
                 video.append({"id": brand, "title": name, "brand": brand, "logo": found[brand]["logo"], "icon": "trailer", "source": "TMDB",
                               "meta": f"Lo más popular en {self._country()}", "split": True})
-        games: list[dict] = [{"id": "mygames", "title": "Tus juegos", "icon": "game", "source": "",
+        games: list[dict] = [{"id": "mygames", "title": "Tus juegos", "icon": "gamepad", "source": "",
                               "meta": "Favoritos, los más jugados y los que no has abierto"}]
         if self.rawg.configured:
             games += [

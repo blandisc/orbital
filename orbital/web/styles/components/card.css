@@ -31,6 +31,8 @@
 }
 .card__badge .icon { width: .85rem; height: .85rem;
 }
+.card__badge--owned { color: var(--color-text); }
+.card__badge--owned .icon { stroke-width: 2.5; }
 .card__badge--pop { animation: badge-pop var(--duration-enter) var(--ease-spring); }
 @keyframes badge-pop { from { transform: scale(0) rotate(-40deg); } 60% { transform: scale(1.35); } }
 /* "Jugado recientemente": hace cuánto, como pie debajo de la portada (encima taparía la

@@ -58,6 +58,8 @@
   --shadow-text: 0 2px 30px rgba(0, 0, 0, .45);
   --shadow-text-strong: 0 1px 14px rgba(0, 0, 0, .75);
   --shadow-logo: drop-shadow(0 .3rem 1.2rem rgba(0, 0, 0, .55));
+  /* Un logo negro sobre transparente (el de Severance), pintado claro para el fondo oscuro. */
+  --filter-logo-light: brightness(0) invert(1) var(--shadow-logo);
   /* Sombras para fotos y logotipos recortados (filter: drop-shadow sigue la silueta). */
   --shadow-drop-sm: drop-shadow(0 .3rem .5rem rgba(0, 0, 0, .45));
   --shadow-drop: drop-shadow(0 .5rem 1rem rgba(0, 0, 0, .5));
