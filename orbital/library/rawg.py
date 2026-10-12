@@ -20,6 +20,11 @@ from ..net import NET_ERRORS, http_json
 
 log = logging.getLogger(__name__)
 
+def _positive(value) -> int | None:
+    """Un entero mayor que cero (lo demás de la API: None)."""
+    return value if isinstance(value, int) and value > 0 else None
+
+
 API = "https://api.rawg.io/api"
 STEAM_STORE = 1  # id de la tienda de Steam en RAWG
 STEAM_APP = re.compile(r"store\.steampowered\.com/app/(\d+)")
@@ -38,7 +43,7 @@ def _year(text) -> int | None:
 def game(raw: dict) -> dict | None:
     if not isinstance(raw, dict) or not isinstance(raw.get("id"), int) or not str(raw.get("name") or "").strip():
         return None
-    metacritic = raw.get("metacritic") if isinstance(raw.get("metacritic"), int) and raw.get("metacritic") > 0 else None
+    metacritic = _positive(raw.get("metacritic"))
     return {"rawg_id": raw["id"], "title": str(raw["name"]).strip(), "year": _year(raw.get("released")),
             "released": raw.get("released") if isinstance(raw.get("released"), str) else None,
             "image": raw.get("background_image") if isinstance(raw.get("background_image"), str) else None,

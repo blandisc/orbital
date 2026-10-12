@@ -27,6 +27,11 @@ from ..net import NET_ERRORS, http_json
 
 log = logging.getLogger(__name__)
 
+def _positive(value) -> int | None:
+    """Un entero mayor que cero (lo demás de la API: None)."""
+    return value if isinstance(value, int) and value > 0 else None
+
+
 API = "https://api.trakt.tv"
 TOKENS_KEY = "trakt_tokens"
 REDIRECT = "urn:ietf:wg:oauth:2.0:oob"
@@ -64,8 +69,8 @@ def entry(raw: dict | None, kind: str) -> dict | None:
     if not isinstance(imdb, str) or not imdb.startswith("tt") or not isinstance(title, str) or not title.strip():
         return None
     year = raw.get("year") if isinstance(raw.get("year"), int) else None
-    runtime = raw.get("runtime") if isinstance(raw.get("runtime"), int) and raw.get("runtime") > 0 else None
-    episodes = raw.get("aired_episodes") if isinstance(raw.get("aired_episodes"), int) and raw.get("aired_episodes") > 0 else None
+    runtime = _positive(raw.get("runtime"))
+    episodes = _positive(raw.get("aired_episodes"))
     return {"kind": kind, "imdb": imdb, "title": title.strip(), "year": year, "runtime": runtime,
             "episodes": episodes, "overview": str(raw.get("overview") or "").strip(),
             "trakt_id": ids.get("trakt") if isinstance(ids.get("trakt"), int) else None}
@@ -77,8 +82,9 @@ def _typed(rows) -> list[dict]:
     for row in rows if isinstance(rows, list) else []:
         if not isinstance(row, dict):
             continue
-        kind = {"movie": "movie", "show": "series"}.get(row.get("type"))
-        item = entry(row.get(row.get("type")), kind) if kind else None
+        kind_name = row.get("type")
+        kind = {"movie": "movie", "show": "series"}.get(kind_name) if isinstance(kind_name, str) else None
+        item = entry(row.get(kind_name), kind) if kind and isinstance(kind_name, str) else None
         if item and item["imdb"] not in seen:
             seen.add(item["imdb"])
             found.append(item)
@@ -205,9 +211,12 @@ class Trakt:
         rows = self._get("/users/me/lists")
         found = []
         for row in rows if isinstance(rows, list) else []:
-            ids = row.get("ids") if isinstance(row, dict) and isinstance(row.get("ids"), dict) else {}
-            if isinstance(row.get("name"), str) and row["name"].strip() and ids.get("trakt"):
-                found.append({"id": str(ids["trakt"]), "name": row["name"].strip()})
+            if not isinstance(row, dict):
+                continue
+            ids = row.get("ids") if isinstance(row.get("ids"), dict) else {}
+            name, trakt_id = row.get("name"), ids.get("trakt")
+            if isinstance(name, str) and name.strip() and trakt_id:
+                found.append({"id": str(trakt_id), "name": name.strip()})
         return found
 
     def list_items(self, list_id: str) -> list[dict]:

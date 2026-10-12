@@ -18,6 +18,11 @@ from ..net import NET_ERRORS, http_json
 
 log = logging.getLogger(__name__)
 
+def _positive(value) -> int | None:
+    """Un entero mayor que cero (lo demás de la API: None)."""
+    return value if isinstance(value, int) and value > 0 else None
+
+
 API = "https://api.themoviedb.org/3"
 IMAGES = "https://image.tmdb.org/t/p"
 KINDS = {"movie": "movie", "series": "tv"}
@@ -103,7 +108,7 @@ class Tmdb:
             "title": str(raw.get("title") or raw.get("name") or "").strip(),
             "year": _year(raw.get("release_date") or raw.get("first_air_date")),
             "overview": str(raw.get("overview") or "").strip(),
-            "runtime": raw.get("runtime") if isinstance(raw.get("runtime"), int) and raw.get("runtime") > 0 else None,
+            "runtime": _positive(raw.get("runtime")),
             "seasons": raw.get("number_of_seasons") if isinstance(raw.get("number_of_seasons"), int) else None,
             "episodes": raw.get("number_of_episodes") if isinstance(raw.get("number_of_episodes"), int) else None,
             "poster": image(raw.get("poster_path")), "backdrop": image(raw.get("backdrop_path"), "w1280"),

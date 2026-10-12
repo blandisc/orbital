@@ -444,7 +444,7 @@ class ForYou:
                 raw = read_body(res, timeout=6, limit=4 * 1024 * 1024)
             image = Image.open(io.BytesIO(raw)).convert("RGBA")
             image.thumbnail((96, 96))
-            visible = [(r, g, b) for r, g, b, a in image.getdata() if a > 128]
+            visible = [px[:3] for px in image.getdata() if isinstance(px, tuple) and len(px) == 4 and px[3] > 128]
             if visible:
                 lum = sum(.2126 * r + .7152 * g + .0722 * b for r, g, b in visible) / len(visible)
                 verdict = lum < 64
