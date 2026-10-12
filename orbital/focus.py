@@ -84,11 +84,37 @@ def pin_orbital(win=None) -> int:
 
 FULLSCREEN_GRACE = 4.0  # s: el juego ya cargó (su nombre en la ventana) pero aún no ocupa la pantalla
 REVEAL_FADE = (210, 160, 110, 60, 20, 0)  # opacidad de Orbital al fundirse sobre el juego
+# Tras la transición, el juego se cuida unos segundos: si el emulador recrea su ventana (xemu, Eden al
+# pasar a pantalla completa) o mpv cambia de modo, Windows le regresaba el foco a Orbital.
+GUARD_SECONDS = 15.0
+
+
+def keep_game_in_front(launcher: Launcher, item_id: str, win, user_returned=lambda: False,
+                       seconds: float = GUARD_SECONDS, sleep=time.sleep, clock=time.monotonic) -> int:
+    """Durante `seconds` tras mostrar el juego, si Orbital vuelve al frente sin que lo pidieras
+    (Home, Legion L), el juego regresa al frente. Devuelve cuántas veces lo regresó."""
+    fixed = 0
+    end = clock() + seconds
+    while clock() < end:
+        sleep(.3)
+        status = launcher.status()
+        if not status or status.get("id") != item_id or user_returned():
+            break  # se cerró, se abrió otra cosa o tú volviste a Orbital: ya no es asunto del vigilante
+        fg = win.foreground()
+        if not is_orbital_window(win, fg):
+            continue
+        pids = win.process_tree(status["pid"]) if status.get("pid") else set()
+        game = win.main_window(pids) if pids else 0
+        if game and win.focus(game):
+            fixed += 1
+            log.info("Orbital tapó a %s tras la transición: el juego vuelve al frente", status.get("title", item_id))
+    return fixed
 
 
 def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runner: str | None = None,
                         notify=None, skip: threading.Event | None = None, timeout: float = READY_TIMEOUT,
-                        win=None, sleep=time.sleep, pinned: int | None = None, ready_check=None) -> bool:
+                        win=None, sleep=time.sleep, pinned: int | None = None, ready_check=None,
+                        user_returned=None) -> bool:
     """Pantalla de carga hasta que el juego esté listo, y luego un fundido de Orbital al juego.
 
     Mientras el emulador abre se ven sus ventanas feas (la lista de juegos de Eden, una consola…).
@@ -164,9 +190,10 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
     if not target:
         return False
     fg = win.foreground()
-    if fg == target:
-        return True
-    return is_orbital_window(win, fg) and win.focus(target)
+    shown = fg == target or (is_orbital_window(win, fg) and win.focus(target))
+    if shown and user_returned is not None:
+        keep_game_in_front(launcher, item_id, win, user_returned, sleep=sleep)
+    return shown
 
 
 def settle(win, hwnd: int, sleep, tries: int = 8) -> None:

@@ -263,3 +263,64 @@ def test_xenia_waits_for_the_game_not_for_fullscreen():
     assert not game_ready([(empty, True)], "Call of Duty - Black Ops II", "Xenia")
     assert game_ready([(empty + " | COD: Black Ops II <415608C3> v1.0", True)], "Call of Duty - Black Ops II", "Xenia")
     assert game_ready([("xemu", True)], "Star Wars: Battlefront II", "xemu")  # los demás: pantalla completa basta
+
+
+class _Win:
+    """Ventanas falsas: Orbital (1) y el juego (2, luego 3 cuando el emulador recrea su ventana)."""
+
+    def __init__(self):
+        self.fg, self.game, self.focused = 1, 3, []
+
+    def foreground(self):
+        return self.fg
+
+    def title(self, hwnd):
+        return "Orbital - Edge" if hwnd == 1 else "xemu"
+
+    def exe_name(self, pid):
+        return "msedge.exe" if pid == 1 else "xemu.exe"
+
+    def pid_of(self, hwnd):
+        return hwnd
+
+    def process_tree(self, pid):
+        return {pid}
+
+    def main_window(self, pids):
+        return self.game
+
+    def focus(self, hwnd):
+        self.focused.append(hwnd)
+        self.fg = hwnd
+        return True
+
+
+class _Launcher:
+    def __init__(self):
+        self.current = {"id": "emu:xbox:1", "title": "Battlefront II", "pid": 50}
+
+    def status(self):
+        return self.current
+
+
+def test_game_goes_back_in_front_if_orbital_covers_it():
+    from orbital import focus as focus_mod
+
+    win, launcher = _Win(), _Launcher()
+    clock = iter(range(1000))
+    fixed = focus_mod.keep_game_in_front(launcher, "emu:xbox:1", win, lambda: False, seconds=3,
+                                         sleep=lambda s: None, clock=lambda: next(clock) * .3)
+    assert fixed == 1 and win.focused == [3]  # una vez: después el juego ya está al frente
+
+
+def test_guard_respects_home_and_closed_games():
+    from orbital import focus as focus_mod
+
+    win, launcher = _Win(), _Launcher()
+    clock = iter(range(1000))
+    assert focus_mod.keep_game_in_front(launcher, "emu:xbox:1", win, lambda: True, seconds=3,
+                                        sleep=lambda s: None, clock=lambda: next(clock) * .3) == 0  # pediste Orbital
+    launcher.current = None
+    clock = iter(range(1000))
+    assert focus_mod.keep_game_in_front(launcher, "emu:xbox:1", win, lambda: False, seconds=3,
+                                        sleep=lambda s: None, clock=lambda: next(clock) * .3) == 0  # se cerró

@@ -90,6 +90,7 @@ class ConsoleShell:
         return "Orbital" in self.win.title(hwnd) and self.win.exe_name(self.win.pid_of(hwnd)) in BROWSERS
 
     def show_orbital(self) -> None:
+        self.mark_returned()  # siempre es porque tú lo pediste (Home, Legion L, cerrar el juego)
         if self.kiosk is not None:
             self.kiosk.open()  # al frente, o la reabre si alguien la cerró
         else:
@@ -111,7 +112,14 @@ class ConsoleShell:
             self.return_to = hwnd
 
     # --------------------------------------------------------------- acciones
+    def mark_returned(self) -> None:
+        """Pediste ir a Orbital: que nadie te regrese al juego por su cuenta."""
+        sessions = getattr(self.catalog, "sessions", None)
+        if sessions is not None:
+            sessions.returned_at = time.monotonic()
+
     def home(self) -> None:
+        self.mark_returned()  # también Home estando en Orbital (vuelve al juego, no hay que regresarte)
         fg = self.win.foreground()
         if self.is_orbital(fg):
             if not self.resume():

@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import sys
 import threading
+import time
 from collections.abc import Callable
 from pathlib import Path
 
@@ -59,6 +60,8 @@ class Sessions:
         # El último emulador abierto: si truena al arrancar se reintenta UNA vez (Eden a veces se
         # cierra en el primer intento, sobre todo al volver de suspender, y al segundo abre bien).
         self._last_launch: dict | None = None
+        # Cuándo pediste ir a Orbital (Home, Legion L): el vigilante del foco deja de regresar el juego.
+        self.returned_at = 0.0
         launcher.on_exit = self.session_ended
         launcher.on_playtime = self.state.record_session
         launcher.on_timeout = lambda item_id, title: self.events.publish({
@@ -136,10 +139,12 @@ class Sessions:
         if sys.platform != "win32":
             return False
         self._reveal_skip = threading.Event()
+        launched = time.monotonic()
         threading.Thread(target=focus.bring_game_to_front, args=(self.launcher, item_id, title, runner),
                          kwargs={"notify": self.events.publish, "skip": self._reveal_skip, "pinned": pinned,
-                                 "ready_check": ready, "timeout": timeout}, daemon=True,
-                         name="to-front").start()
+                                 "ready_check": ready, "timeout": timeout,
+                                 "user_returned": lambda: self.returned_at > launched},
+                         daemon=True, name="to-front").start()
         return True
 
     def reveal_now(self) -> None:
