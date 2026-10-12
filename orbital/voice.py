@@ -27,6 +27,9 @@ VAGUE_MEDIA = {"una pelicula", "una serie", "algo", "peliculas", "series", "una 
 LANGUAGE_NAMES = {"en": "inglés", "es": "español"}
 NO_TOAST = {"type": "noop"}  # la interfaz ignora este evento
 VOLUME_DOWN = {"down", "baja", "baje", "bajale", "bajarle", "menos"}
+# Lo que la voz espera a saber si hay fuente antes de contestar (Alexa corta a los ~8 s; el túnel y
+# Alexa se llevan el resto): así dice «No encontré dónde ver…» en vez de «Poniendo…» y luego nada.
+VOICE_WAIT = 4.5
 MAX_SEEK = 6 * 3600  # s: nadie adelanta más de una película entera de golpe
 
 
@@ -328,8 +331,8 @@ class VoiceController:
         if match is None:
             return None
         if match["kind"] == "movie":
-            self.catalog.watch.play_title("movie", match["meta_id"], match["meta_id"], match["title"])
-            return VoiceResult(f"Poniendo {match['title']}.")
+            problem = self.catalog.watch.play_title("movie", match["meta_id"], match["meta_id"], match["title"], wait=VOICE_WAIT)
+            return VoiceResult(problem, ok=False) if problem else VoiceResult(f"Poniendo {match['title']}.")
         return VoiceResult(f"Abriendo {match['title']}. Elige el episodio.", events=[self._show_view({"serie": match["meta_id"]}, f"Abriendo {match['title']}")])
 
     def _continue_watching_intent(self, slots: dict) -> VoiceResult:
@@ -361,8 +364,8 @@ class VoiceController:
         extra = item.extra or {}
         kind, meta_id, video_id = extra.get("kind"), extra.get("meta_id"), extra.get("video_id")
         if kind in ("movie", "series") and meta_id and video_id:
-            self.catalog.watch.play_title(kind, meta_id, video_id, item.title)
-            return VoiceResult(f"Poniendo {item.title}.")
+            problem = self.catalog.watch.play_title(kind, meta_id, video_id, item.title, wait=VOICE_WAIT)
+            return VoiceResult(problem, ok=False) if problem else VoiceResult(f"Poniendo {item.title}.")
         if kind == "series" and meta_id:
             return VoiceResult(f"Abriendo {item.title}. Elige el episodio.", events=[self._show_view({"serie": meta_id}, f"Abriendo {item.title}")])
         self.catalog.sessions.launch(item.id)
@@ -592,6 +595,9 @@ class VoiceController:
             return VoiceResult(f"{name} no tiene temporada {season} episodio {episode}.", ok=False)
         lang = self._language(slots)
         label = f"{name} · T{season} E{episode}"
-        self.catalog.watch.play_title("series", match["id"], video["id"], label, audio=lang)
+        # Aquí ya se buscó la serie en Cinemeta (unos segundos): se espera menos a la fuente.
+        problem = self.catalog.watch.play_title("series", match["id"], video["id"], label, audio=lang, wait=VOICE_WAIT - 2)
+        if problem:
+            return VoiceResult(problem, ok=False)
         in_lang = f" en {LANGUAGE_NAMES.get(lang, lang)}" if lang else ""
         return VoiceResult(f"Poniendo {name}, temporada {season}, episodio {episode}{in_lang}.")

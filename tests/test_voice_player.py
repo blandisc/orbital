@@ -9,7 +9,7 @@ import pytest
 
 from orbital import alexa_setup
 from orbital.library.models import LibraryItem
-from orbital.voice import VoiceController, parse_text
+from orbital.voice import VOICE_WAIT, VoiceController, parse_text
 
 ROOT = Path(__file__).parent.parent
 
@@ -136,7 +136,7 @@ def test_play_next_episode_loads_the_following_in_the_same_player(library, monke
 
 def test_voice_plays_movies_in_orbital_player(library, monkeypatch):
     played = []
-    monkeypatch.setattr(library.watch, "play_title", lambda *args: played.append(args))
+    monkeypatch.setattr(library.watch, "play_title", lambda *args, **kw: played.append(args))
     library.cinemeta.search = lambda kind, q: [{"id": "tt0816692", "name": "Interstellar"}] if kind == "movie" else []
     assert VoiceController(library).handle_text("quiero ver interstellar").speech == "Poniendo Interstellar."
     assert played == [("movie", "tt0816692", "tt0816692", "Interstellar")]
@@ -226,7 +226,7 @@ def test_watch_a_specific_episode_in_a_language(library, monkeypatch):
     voice = VoiceController(library)
     r = voice.handle_intent("WatchEpisodeIntent", {"series": "los simpson", "season": "5", "episode": "3", "language": "es"})
     assert r.speech == "Poniendo The Simpsons, temporada 5, episodio 3 en español."
-    assert played == [(("series", "tt0096697", "tt0096697:5:3", "The Simpsons · T5 E3"), {"audio": "es"})]
+    assert played == [(("series", "tt0096697", "tt0096697:5:3", "The Simpsons · T5 E3"), {"audio": "es", "wait": VOICE_WAIT - 2})]
     missing = voice.handle_intent("WatchEpisodeIntent", {"series": "los simpson", "season": "40", "episode": "2"})
     assert not missing.ok and "no tiene temporada 40" in missing.speech
 
@@ -250,3 +250,11 @@ def test_episode_hidden_inside_a_search_or_launch_still_plays(library, monkeypat
     assert voice.handle_intent("SearchMediaIntent", {"query": "los simpson temporada cinco episodio tres en español"}).ok
     assert voice.handle_intent("LaunchGameIntent", {"game": "los simpson temporada 5 episodio 3"}).ok
     assert played == ["tt0096697:5:3", "tt0096697:5:3"]
+
+
+def test_voice_says_when_there_is_nowhere_to_watch(library, monkeypatch):
+    """Alexa dice el problema (antes: «Poniendo…» y luego un aviso que solo se veía en la pantalla)."""
+    monkeypatch.setattr(type(library.watch), "native_player", property(lambda self: True))
+    monkeypatch.setattr(library.watch, "best_source", lambda *a, **k: None)
+    problem = library.watch.play_title("movie", "tt1", "tt1", "Peli", wait=2)
+    assert problem and "No encontré" in problem or "complementos" in (problem or "")

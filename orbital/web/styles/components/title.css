@@ -66,12 +66,12 @@
 .title__action--primary { flex-shrink: 1; }
 .title__action small { color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-regular); }
 .title__action--primary { padding-inline: var(--space-6) var(--space-8); }
-/* Los secundarios (Desde el principio, Tráiler, Mi lista, Elegir fuente) son solo ícono hasta que
-   tienen el foco, como en Netflix: así todo cabe en un renglón, también junto a los episodios. */
-.title__action:not(.title__action--primary):not(.title__action--focused) { padding-inline: var(--space-4); }
-.title__action:not(.title__action--primary):not(.title__action--focused) span { display: none; }
-/* Los secundarios, más compactos: los tres caben en un renglón también junto a los episodios. */
-.title__action:not(.title__action--primary) { padding-inline: var(--space-4) var(--space-5); font-size: var(--text-md); }
+/* Los secundarios (Desde el principio, Tráiler, Mi lista, Elegir fuente) son siempre solo ícono, del
+   mismo tamaño enfocados o no: su nombre sale debajo (.title__action-caption). Antes el enfocado se
+   ensanchaba y todo el renglón brincaba. */
+.title__action:not(.title__action--primary) { padding-inline: var(--space-4); font-size: var(--text-md); }
+.title__action:not(.title__action--primary) span { display: none; }
+.title__action-caption { min-height: 1.5em; margin-top: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
 /* Foco invertido (como el menú): se ve desde el sofá. */
 .title__action--focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
 .title__action--focused small { color: inherit; opacity: .7; }
@@ -81,6 +81,10 @@
 .title__browser { display: none; flex-direction: column; min-height: 0; overflow: hidden; animation: rise-in var(--duration-enter) var(--ease-out) var(--delay-1) backwards; }
 .title--series .title__browser { display: flex; }
 .title__tabs { flex: none; display: flex; gap: var(--space-2); padding-bottom: var(--space-5); overflow-x: auto; scrollbar-width: none; }
+/* Más temporadas fuera de la vista: el borde de ese lado se desvanece (se nota que hay más). */
+.title__tabs--more-right { -webkit-mask-image: linear-gradient(90deg, var(--mask-solid) calc(100% - 4rem), transparent); mask-image: linear-gradient(90deg, var(--mask-solid) calc(100% - 4rem), transparent); }
+.title__tabs--more-left { -webkit-mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem); mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem); }
+.title__tabs--more-left.title__tabs--more-right { -webkit-mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem, var(--mask-solid) calc(100% - 4rem), transparent); mask-image: linear-gradient(90deg, transparent, var(--mask-solid) 4rem, var(--mask-solid) calc(100% - 4rem), transparent); }
 .title__tab {
   flex: none; padding: .55rem 1.1rem; border-radius: var(--radius-pill);
   color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium);

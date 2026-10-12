@@ -26,13 +26,17 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
   const progress = h("div", { class: "title__progress", hidden: true },
     h("span", { class: "title__progress-bar" }, progressFill), progressLabel);
   const actions = h("div", { class: "title__actions", role: "toolbar" });
+  // El nombre del botón secundario enfocado, en su propia línea: los botones no cambian de tamaño
+  // (antes el enfocado se ensanchaba y todo el renglón brincaba, y el principal se cortaba).
+  const caption = h("div", { class: "title__action-caption", "aria-hidden": "true" });
   const status = h("div", { class: "title__status", role: "status" });
   const tabs = h("div", { class: "title__tabs", role: "tablist" });
+  tabs.addEventListener("scroll", () => markTabEdges(), { passive: true });
   const list = h("div", { class: "title__episodes", role: "group" });
   const browser = h("div", { class: "title__browser" }, tabs, list);
   const el = h("section", { class: "title", hidden: true, "aria-label": "Ficha" },
     backdrop,
-    h("div", { class: "title__info" }, logo, name, facts, avail, description, people, progress, actions, status),
+    h("div", { class: "title__info" }, logo, name, facts, avail, description, people, progress, actions, caption, status),
     browser);
 
   let item = null;
@@ -77,6 +81,8 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
       type: "button", "data-id": b.id, "aria-label": b.label, title: b.label,
       onClick: () => { zone = "actions"; action = i; run(b); },
     }, svg(ICONS[b.icon] || ICONS.play), h("span", {}, b.label), b.hint && h("small", {}, b.hint))));
+    const focused = zone === "actions" ? buttons[action] : null;
+    caption.textContent = focused && !focused.primary ? focused.label : "";
   }
 
   function renderTabs() {
@@ -96,6 +102,13 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
     if (left < tabs.scrollLeft || left + tab.offsetWidth > tabs.scrollLeft + tabs.clientWidth) {
       tabs.scrollTo({ left: Math.max(0, left - tabs.clientWidth / 2 + tab.offsetWidth / 2), behavior });
     }
+    requestAnimationFrame(markTabEdges);
+  }
+
+  /** Si hay temporadas fuera de la vista, ese borde se desvanece (antes se cortaba «Temporad…» en seco). */
+  function markTabEdges() {
+    tabs.classList.toggle("title__tabs--more-left", tabs.scrollLeft > 2);
+    tabs.classList.toggle("title__tabs--more-right", tabs.scrollLeft + tabs.clientWidth < tabs.scrollWidth - 2);
   }
 
   function renderList() {

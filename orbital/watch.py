@@ -671,15 +671,22 @@ class Watch:
         """¿Se puede reproducir en el reproductor de Orbital (elegido, instalado y con cuenta)?"""
         return self.config.stremio.player == "orbital" and self.stremio_linked and player.find_mpv() is not None
 
-    def play_title(self, kind: str, meta_id: str, video_id: str, title: str, audio: str | None = None) -> None:
+    def play_title(self, kind: str, meta_id: str, video_id: str, title: str, audio: str | None = None,
+                   wait: float = 0.0) -> str | None:
         """Para la voz: pone algo sin preguntar, con la fuente recomendada. Buscar fuentes tarda
         unos segundos (Alexa corta a los ~8 s), así que se hace en segundo plano.
+
+        `wait`: segundos que se espera a saber si hay fuente, para que Alexa diga lo que pasó («No
+        encontré dónde ver…») en vez de «Poniendo…» y luego un aviso que solo se ve en la pantalla.
+        Devuelve el problema (texto) si ya se sabe, o None (se está poniendo, o sigue buscando).
 
         `audio`: idioma pedido ("…en español"). Si ninguna fuente lo trae, se pone la mejor en tu
         idioma de siempre con subtítulos en el pedido, y se avisa."""
         if not self.native_player:
             self.sessions.play_stremio(kind, meta_id, video_id, title)
-            return
+            return None
+        searched = threading.Event()
+        problem: list[str] = []
         # Sin idioma pedido: el que recuerda ese título (el mismo con el que se listan sus fuentes).
         prefs = streams.Preferences(audio=audio, quality=self.stream_prefs.quality) if audio else self.language_for(meta_id)[0]
 
@@ -687,8 +694,12 @@ class Watch:
             try:
                 source = self.best_source(kind, video_id, prefs=prefs)
                 if source is None:
-                    self.events.publish({"type": "toast", "message": f"No encontré dónde ver {title}", "ok": False})
+                    message = self.no_sources_message(kind, video_id)
+                    problem.append(message)
+                    searched.set()
+                    self.events.publish({"type": "toast", "message": message, "ok": False})
                     return
+                searched.set()
                 subtitles = None
                 if audio and audio != self.stream_prefs.audio:
                     if audio in source.languages:
@@ -706,9 +717,15 @@ class Watch:
                         self.state.set_pref(key, "subtitles", subtitles)
             except Exception as exc:  # noqa: BLE001 - se avisa en pantalla
                 log.exception("No pude poner %s", title)
-                self.events.publish({"type": "toast", "message": f"No pude poner {title}: {exc}", "ok": False})
+                message = f"No pude poner {title}: {exc}"
+                problem.append(message)
+                searched.set()
+                self.events.publish({"type": "toast", "message": message, "ok": False})
 
         threading.Thread(target=run, daemon=True, name="play-title").start()
+        if wait > 0:
+            searched.wait(wait)
+        return problem[0] if problem else None
 
     def play_next_episode(self) -> str | None:
         """El episodio que sigue al que se está viendo en el reproductor; None si no hay."""
