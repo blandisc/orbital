@@ -93,11 +93,14 @@ export function createLogin({ onDone, onMove, onClose }) {
     }
     busy = true;
     const mine = ++attempt;
-    message.textContent = "Conectando… (B para cancelar)";
+    message.textContent = "Conectando…";
     el.classList.add("login--busy");
     try {
       const res = await api.stremioLogin(email, password);
-      if (mine !== attempt) return; // cancelaste con B: no se vuelve a abrir nada encima
+      if (mine !== attempt) { // cancelaste con B, pero Stremio sí conectó: que la consola se entere
+        onDone?.(res);
+        return;
+      }
       fields.password.value = "";
       close();
       onDone?.(res);
@@ -107,9 +110,11 @@ export function createLogin({ onDone, onMove, onClose }) {
       fields.password.value = "";
       active = "password";
     } finally {
-      busy = false;
-      el.classList.remove("login--busy");
-      if (!el.hidden) render();
+      if (mine === attempt) { // una petición vieja (cancelada) no suelta el «conectando» de una nueva
+        busy = false;
+        el.classList.remove("login--busy");
+        if (!el.hidden) render();
+      }
     }
   }
 
@@ -165,6 +170,6 @@ export function createLogin({ onDone, onMove, onClose }) {
     { glyph: g.page, label: "Cambiar de campo", secondary: true }, { glyph: g.back, label: "Atrás", end: true },
   ];
 
-  return { el, open, close, handle, hints, type, get isOpen() { return !el.hidden; },
+  return { el, open, close, handle, hints, type, get isOpen() { return !el.hidden && !el.classList.contains("login--leaving"); },
     get typing() { return !el.hidden && !busy; } };
 }

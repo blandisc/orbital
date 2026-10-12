@@ -14,6 +14,7 @@ export function createState() {
     running: null,
     canExit: false,
     launchLockedUntil: 0,
+    launchingTitle: null, // lo que se está abriendo (para decirlo si pulsas otra cosa)
     launchingId: null,
     libraryLoaded: false,
     memory: {}, // id de fila -> último juego enfocado en esa fila

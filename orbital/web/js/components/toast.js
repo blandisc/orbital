@@ -43,10 +43,11 @@ export function createToast({ duration = 3800, errorDuration = 6500 } = {}) {
     if (!message) return;
     const last = queue.at(-1);
     if (last?.message === message) return; // el mismo aviso dos veces seguidas no aporta
-    if (countdown) queue.length = 0; // lo que tiene tiempo límite va ya, no detrás de otros avisos
+    if (countdown || error) queue.length = 0; // lo urgente (un error, una cuenta atrás) va ya, no detrás de otros
     queue.push({ message, error, voice, countdown });
     if (queue.length > 4) queue.splice(0, queue.length - 4);
     if (!showing) next();
+    else if (error || countdown) { clearTimeout(timer); next(); }
   }
 
   return { el, show };

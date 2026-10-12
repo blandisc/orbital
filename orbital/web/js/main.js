@@ -91,7 +91,8 @@ const ui = {
   }),
   sources: createSources({
     onPlay: (play) => watch(play),
-    onMove: () => sound.play("move"),
+    onMove: () => { sound.play("move"); renderHints(); },
+    onChange: () => renderHints(),
     onClose: () => { sound.play("back"); renderHints(); },
   }),
   login: createLogin({
@@ -101,7 +102,7 @@ const ui = {
       ui.toast.show(`Listo: Stremio conectado · ${res.count} títulos en tu biblioteca`);
       loadLibrary();
     },
-    onMove: () => sound.play("move"),
+    onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
   launch: createLaunchOverlay(),
@@ -687,6 +688,7 @@ function handleAction(action, { repeat = false } = {}) {
   if (ui.launch.visible) {
     if (action === "back") { // B: no esperar más (muestra ya el juego o lo que haya)
       if (ui.launch.holding) api.reveal().catch(() => {});
+      else if (state.launchingTitle) ui.toast.show(`Sigo buscando ${state.launchingTitle}: se abrirá solo`);
       ui.launch.hide();
     }
     return;
@@ -812,8 +814,10 @@ function handleEvent(event) {
     handleAction(event.direction);
   } else if (event.type === "library-changed") {
     loadLibrary();
+    ui.title.refresh();
     return;
   } else if (event.type === "closed") {
+    ui.title.refresh(); // «Continuar» ya apunta al siguiente episodio (antes repetía el que acabas de ver)
     // Al abrir otro juego se cierra el anterior: su "closed" no debe tapar la carga del nuevo.
     if (!ui.launch.visible || event.id === state.launchingId) ui.launch.hide();
     boot.land();

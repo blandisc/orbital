@@ -1,7 +1,7 @@
 import { h, mount, svg } from "../core/dom.js";
 import { bytes, duration, genres, lastPlayed, percent } from "../core/format.js";
 import { ICONS, systemIconName } from "../core/icons.js";
-import { alternativeRunner, isGame, isWatchable, primaryLabel, runnerName } from "../core/library.js";
+import { alternativeRunner, isGame, isSeries, isWatchable, primaryLabel, runnerName } from "../core/library.js";
 import { alexaTip } from "../core/hints.js";
 import { Button } from "./button.js";
 import { appIcon } from "./card.js";
@@ -89,9 +89,14 @@ export function createHero({ onAction }) {
     mount(facts, list.flatMap((node, i) => (i ? [h("span", { class: "hero__fact-sep", "aria-hidden": "true" }, "·"), node] : [node])));
 
     const alt = alternativeRunner(item);
+    // Películas y series: X abre la ficha (episodios, desde el principio, elegir fuente). Antes no se
+    // enseñaba aquí y con el dedo no había forma de llegar a ella.
+    const sheet = isWatchable(item) && item.id !== runningId
+      ? (isSeries(item) || item.extra?.kind === "series" ? "Episodios" : "Ficha") : null;
     mount(actions,
       Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", onPress: () => onAction("select") }),
-      alt && item.id !== runningId && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, yields: true, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
+      sheet && Button({ label: sheet, glyph: glyphs.alt, onPress: () => onAction("alt") }),
+      !sheet && alt && item.id !== runningId && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, yields: true, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
       // Antes era "☰", el mismo glifo del botón Menú del mando: se confundían.
       Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction("options") }));
     voice.hidden = !alexa || !tips;

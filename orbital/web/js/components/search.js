@@ -159,7 +159,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       } catch (err) {
         if (mine !== token) return;
         // Sin internet: tus juegos siguen funcionando; se dice claro y sin jerga.
-        setHint(local.length ? `${count(local.length)} · sin conexión para películas y series` : err.message);
+        setHint(local.length ? `${count(local.length)} · sin conexión para películas y series` : "Sin conexión para películas y series");
       }
     }, DEBOUNCE_MS);
   }

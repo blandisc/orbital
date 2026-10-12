@@ -100,10 +100,13 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   assert.deepEqual(accounts.options[0].command, { type: "stremio-login" });
 });
 
-test("las opciones de una película no repiten A ni X; la búsqueda solo busca", () => {
+test("las opciones de una película no repiten A; la ficha va primero (con el dedo no hay X); la búsqueda solo busca", () => {
   const movie = gameMenu({ id: "cinemeta:movie:tt1", title: "Dune", source: "cinemeta", category: "movies",
     runners: [{ id: "a", name: "Eden" }, { id: "b", name: "Ryujinx" }], runner: "a" });
-  assert.ok(!movie.options.some((o) => ["launch", "title", "runner-menu"].includes(o.command.type)));
+  assert.ok(!movie.options.some((o) => ["launch", "runner-menu"].includes(o.command.type)));
+  assert.equal(movie.options[0].command.type, "title");
+  const watching = gameMenu({ id: "stremio:tt2", title: "Serie", source: "stremio", category: "continue", extra: { kind: "series", meta_id: "tt2" } });
+  assert.equal(watching.options[0].command.type, "title"); // lo enfocado al abrir es lo seguro, no «Quitar»
   assert.deepEqual(gameMenu({ id: "media:search", title: "Buscar", source: "search" }).options.map((o) => o.label), ["Buscar"]);
 });
 

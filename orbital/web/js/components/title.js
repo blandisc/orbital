@@ -234,6 +234,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
   }
 
   async function trailer() {
+    onNotice("Abriendo el tráiler…");
     try {
       await api.trailer(kindOf(), details.id);
     } catch (err) {
@@ -299,8 +300,10 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
       const chips = availability(data.sources);
       mount(avail, chips.length ? chips.map((c) => Chip(c, { tone: c === "Al instante" ? "good" : null }))
         : h("span", { class: "title__avail-none" }, "Sin fuentes por ahora"));
-    } catch {
-      if (mine === token) mount(avail, h("span", { class: "title__avail-none" }, "No pude buscar fuentes ahora"));
+    } catch (err) {
+      if (mine === token) {
+        mount(avail, h("span", { class: "title__avail-none" }, err?.status === 404 ? "Sin fuentes por ahora" : "No pude buscar fuentes ahora"));
+      }
     }
   }
 
@@ -380,7 +383,10 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
 
-  return { el, open, close, handle, hints, get isOpen() { return !el.hidden; }, get current() { return item; } };
+  return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("title--leaving"); },
+    get current() { return item; },
+    /** Vuelve a pedir la ficha (al regresar de ver algo: «Continuar T3 E6», los ✓, el progreso). */
+    refresh() { if (!el.hidden && item) load(); } };
 }
 
 /** Lo que hace falta para abrir la ficha a partir de una tarjeta, un resultado o un enlace. */

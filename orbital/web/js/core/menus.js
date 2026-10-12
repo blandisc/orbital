@@ -21,8 +21,11 @@ export function gameMenu(item, { running = null } = {}) {
         command: { type: "confirm-stop", title: item.title, runner: running.runner } },
     ]
     : [];
-  if (item.source === "stremio" && item.category === "continue") {
-    options.push({ icon: "minus", label: "Quitar de Seguir viendo", command: { type: "dismiss", id: item.id, title: item.title } });
+  // Una película o serie: lo primero (y lo enfocado) es lo seguro, su ficha; quitar va al final.
+  // Con el dedo era la única forma de llegar a la ficha (X no existe en la pantalla).
+  if (isWatchable(item) && !isOpen) {
+    const series = item.extra?.kind === "series" || String(item.id || "").startsWith("cinemeta:series:");
+    options.push({ icon: "info", label: series ? "Ver episodios" : "Ver ficha", command: { type: "title", id: item.id } });
   }
   // Mi lista (tu biblioteca de Stremio): + para añadir, ✓ si ya está (como en los servicios de streaming).
   const watch = item.source === "stremio" && item.extra?.meta_id ? item.extra : null;
@@ -30,6 +33,9 @@ export function gameMenu(item, { running = null } = {}) {
     options.push(watch.in_library
       ? { icon: "check", label: "Quitar de Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: false, title: item.title } }
       : { icon: "plus", label: "Añadir a Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: true, title: item.title } });
+  }
+  if (item.source === "stremio" && item.category === "continue") {
+    options.push({ icon: "minus", label: "Quitar de Seguir viendo", command: { type: "dismiss", id: item.id, title: item.title } });
   }
   if (isGame(item) || item.category === "apps") {
     options.push(item.favorite

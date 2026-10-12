@@ -29,6 +29,7 @@
 .login__field--secret .login__value { letter-spacing: .12em; }
 /* El cursor de escribir: el único parpadeo permitido (es lo que dice «aquí se escribe»). */
 .login__caret { display: inline-block; width: 2px; height: 1.05em; margin-left: 2px; vertical-align: text-bottom; background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
-.login__message { min-height: 1.4em; color: var(--color-warning); font-size: var(--text-sm); text-align: center; }
+/* Dos renglones fijos: un error largo ya no empuja el teclado debajo del pie de controles. */
+.login__message { min-height: 2.8em; max-height: 2.8em; overflow: hidden; color: var(--color-warning); font-size: var(--text-sm); text-align: center; text-wrap: balance; }
 
 @media (max-height: 640px) { .login { gap: var(--space-3); } .login__lead { display: none; } }

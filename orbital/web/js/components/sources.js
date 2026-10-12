@@ -11,7 +11,7 @@ import { h, hideAfterExit, mount } from "../core/dom.js";
  */
 const AUDIO_NAMES = { en: "inglés", es: "español" };
 
-export function createSources({ onPlay, onMove, onClose }) {
+export function createSources({ onPlay, onMove, onClose, onChange }) {
   const heading = h("div", { class: "sources__heading" }, "Elegir fuente");
   const title = h("h2", { class: "sources__title" });
   const subtitle = h("div", { class: "sources__subtitle" });
@@ -47,7 +47,7 @@ export function createSources({ onPlay, onMove, onClose }) {
     h("span", { class: ["source__res", src.resolution === "4K" && "source__res--4k"] }, src.resolution || "SD"),
     h("span", { class: "source__main" },
       h("span", { class: "source__chips" }, chips(src)),
-      h("span", { class: "source__release" }, [src.release, bytes(src.size), src.addon].filter(Boolean).join(" · "))),
+      h("span", { class: "source__release" }, [bytes(src.size), src.addon, src.release].filter(Boolean).join(" · "))),
     i === 0 && Badge("Recomendada", { className: "source__badge" }))));
   }
 
@@ -97,10 +97,10 @@ export function createSources({ onPlay, onMove, onClose }) {
     } catch (err) {
       if (mine !== token) return;
       // El servidor ya explica por qué (sin Internet, sin complementos…) y qué hacer; A lo intenta otra vez.
-      status.textContent = `${err.message} Pulsa A para intentar otra vez.`;
+      status.textContent = err.message;
       failed = true;
     }
-    onMove?.(); // el pie cambia: con la lista, «Ver con esta»; sin ella, «Reintentar»
+    onChange?.(); // el pie cambia: con la lista, «Ver con esta»; sin ella, «Reintentar»
   }
 
   function close() {
@@ -126,8 +126,9 @@ export function createSources({ onPlay, onMove, onClose }) {
 
   /** Pistas del pie mientras la lista de fuentes está abierta. */
   const hints = (g) => (found.length
-    ? [{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra fuente" }, { glyph: g.back, label: "Atrás", end: true }]
+    ? [{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra fuente" },
+      found.length > 7 && { glyph: g.page, label: "Saltar 5", secondary: true }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : [failed && { glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
 
-  return { el, open, close, handle, hints, get isOpen() { return !el.hidden; } };
+  return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("sources--leaving"); } };
 }

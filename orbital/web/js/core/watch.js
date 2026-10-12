@@ -57,7 +57,8 @@ export function titleActions(details, { kind = "movie" } = {}) {
   out.push(details.in_library
     ? { id: "mylist", icon: "check", label: "En mi lista" }
     : { id: "mylist", icon: "star", label: "Mi lista" });
-  out.push({ id: "sources", icon: "swap", label: "Elegir fuente" });
+  const nothing = (details.kind || kind) === "series" && !(details.seasons || []).some((s) => s.episodes?.length);
+  if (!nothing) out.push({ id: "sources", icon: "swap", label: "Elegir fuente" }); // sin episodios no hay qué elegir
   return out;
 }
 

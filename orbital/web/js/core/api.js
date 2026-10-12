@@ -5,7 +5,7 @@ async function request(path, options = {}) {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.detail || res.statusText);
+  if (!res.ok) throw Object.assign(new Error(data.detail || res.statusText), { status: res.status });
   return data;
 }
 

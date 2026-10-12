@@ -32,9 +32,15 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     // Mientras el servidor busca, la pantalla de carga se queda y no se puede abrir otra cosa encima
     // (antes se iba a los 8 s y un segundo Enter lanzaba otra reproducción).
     state.launchLockedUntil = Infinity;
-    ui.launch.keep(30_000);
+    state.launchingTitle = title;
+    ui.launch.keep(40_000);
     try {
-      const res = await api.stremioPlay({ kind, id, video_id: videoId, title, source, keep, from_start: fromStart });
+      // Si el servidor no contesta en 40 s, se avisa y se suelta (antes la pantalla se iba sola y A quedaba bloqueado).
+      const res = await Promise.race([
+        api.stremioPlay({ kind, id, video_id: videoId, title, source, keep, from_start: fromStart }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error(`${title} tarda demasiado en abrir. Revisa tu conexión e inténtalo de nuevo.`)), 40_000)),
+      ]);
+      state.launchingTitle = null;
       state.launchLockedUntil = Date.now() + 3000;
       if (res.label) ui.launch.status("Conectando", res.label);
       if (res.reveal) { // Orbital tapa hasta que se ve la primera imagen (no una ventana negra)
@@ -47,6 +53,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       pollStatus();
     } catch (err) {
       state.launchLockedUntil = 0;
+      state.launchingTitle = null;
       ui.launch.hide();
       sound.play("error");
       ui.toast.show(err.message, { error: true });
@@ -69,7 +76,14 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
   }
 
   async function launch(item, runner = null, { confirmed = false, keep = false } = {}) {
-    if (!item || Date.now() < state.launchLockedUntil) return; // evita dobles pulsaciones de A
+    if (!item) return;
+    if (Date.now() < state.launchLockedUntil) { // evita dobles pulsaciones de A; si aún se está abriendo algo, se dice
+      if (state.launchingTitle && !ui.launch.visible) {
+        sound.play("error");
+        ui.toast.show(`Todavía estoy abriendo ${state.launchingTitle}…`);
+      }
+      return;
+    }
     if (item.source === "search") return openSearch();
     // Seguir viendo: A pone el episodio en el que ibas, directo (como Netflix). Y abre la ficha.
     const watchExtra = item.extra;

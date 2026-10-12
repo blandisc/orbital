@@ -143,7 +143,7 @@ def test_connect_stremio_from_the_console(make_client, library, monkeypatch):
     with make_client() as c:
         assert c.post("/api/stremio/login", json={"email": "", "password": ""}).status_code == 422
         bad = c.post("/api/stremio/login", json={"email": "yo@x.com", "password": "mal"})
-        assert bad.status_code == 401 and "no aceptó" in bad.json()["detail"]
+        assert bad.status_code == 401 and "no son correctos" in bad.json()["detail"]
         assert c.post("/api/stremio/login", json={"email": "yo@x.com", "password": "bien"}).json() == {"ok": True, "count": 42}
     assert seen == ["yo@x.com", "yo@x.com", "clave-sesion"]  # se guarda la clave de sesión, nunca la contraseña
 
