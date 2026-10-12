@@ -21,7 +21,9 @@ export function createLaunchOverlay({ timeout = 8000 } = {}) {
     h("span", { class: "launch__starfield launch__starfield--far" }), h("span", { class: "launch__starfield launch__starfield--near" }));
   const cover = h("div", { class: "launch__cover" });
   const orbit = h("div", { class: "launch__orbit", "aria-hidden": "true" }, h("span", { class: "launch__satellite" }));
-  const front = h("div", { class: "launch__orbit launch__orbit--front", "aria-hidden": "true" });
+  // El arco de enfrente lleva su propio satélite, al compás del de atrás: así el punto también cruza
+  // por delante de la portada (antes siempre pasaba por detrás).
+  const front = h("div", { class: "launch__orbit launch__orbit--front", "aria-hidden": "true" }, h("span", { class: "launch__satellite" }));
   const label = h("div", { class: "launch__label" }, "Abriendo");
   const title = h("div", { class: "launch__title" });
   const subtitle = h("div", { class: "launch__subtitle" });
