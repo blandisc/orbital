@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, HTTPException
@@ -9,6 +10,8 @@ from pydantic import BaseModel
 
 from ..library import cinemeta, stremio_api
 from .deps import Deps
+
+log = logging.getLogger(__name__)
 
 
 class PlayRequest(BaseModel):
@@ -19,6 +22,16 @@ class PlayRequest(BaseModel):
     source: int | None = None  # None: Orbital elige la recomendada y arranca
     keep: bool = False
     from_start: bool = False  # "Desde el principio"
+
+
+def stremio_message(exc: Exception) -> str:
+    """El error de Stremio en palabras de la consola (no «Session not found»)."""
+    from ..watch import expired_session
+
+    if expired_session(exc):
+        return "Tu sesión de Stremio caducó: vuelve a conectarla en Ajustes › Cuentas."
+    text = str(exc)
+    return text if any(c in text for c in "áéíóúñ¿") else f"Stremio no respondió bien ({text}). Inténtalo de nuevo."
 
 
 def _title_ref(body: dict, missing: str) -> tuple[str, str]:
@@ -85,7 +98,12 @@ def router(d: Deps) -> APIRouter:
         try:
             found = catalog.watch.stream_sources(kind, video or id, prefs)
         except stremio_api.StremioError as exc:
-            raise HTTPException(409, str(exc))
+            raise HTTPException(409, stremio_message(exc))
+        except Exception as exc:  # noqa: BLE001 - nunca «Internal Server Error» en la pantalla de fuentes
+            log.exception("No pude buscar fuentes")
+            raise HTTPException(502, "No pude conectar con tus complementos de Stremio. Revisa Internet e inténtalo de nuevo.") from exc
+        if not found:
+            raise HTTPException(404, catalog.watch.no_sources_message(kind, video or id))
         try:  # título, póster y fondo para la pantalla (de caché casi siempre)
             meta = catalog.cinemeta.meta(kind, id)
             info = {"title": meta.get("name") or "", "poster": meta.get("poster"), "background": meta.get("background"),
@@ -111,11 +129,11 @@ def router(d: Deps) -> APIRouter:
                 chosen = catalog.watch.play_best(kind, meta_id, video_id, title, keep=body.keep, from_start=body.from_start)
                 return {"ok": True, "reveal": catalog.revealing, **chosen}
         except stremio_api.StremioError as exc:
-            raise HTTPException(409, str(exc))
+            raise HTTPException(409, stremio_message(exc))
         except LookupError as exc:
             raise HTTPException(404, str(exc))
         except ValueError as exc:
-            raise HTTPException(409, str(exc))
+            raise HTTPException(409, stremio_message(exc))
         except OSError as exc:  # el reproductor no abrió (falta, sin permiso…)
             raise HTTPException(500, f"No pude abrir el reproductor: {exc.strerror or exc}")
         catalog.sessions.play_stremio(kind, meta_id, body.video_id, title)
@@ -149,7 +167,7 @@ def router(d: Deps) -> APIRouter:
         try:
             catalog.watch.set_in_library(kind, meta_id, body["add"])
         except stremio_api.StremioError as exc:
-            raise HTTPException(409, str(exc))
+            raise HTTPException(409, stremio_message(exc))
         return {"ok": True, "in_library": body["add"]}
 
     @r.post("/trailer")
@@ -172,7 +190,7 @@ def router(d: Deps) -> APIRouter:
         try:
             catalog.watch.dismiss_continue(meta_id)
         except stremio_api.StremioError as exc:
-            raise HTTPException(409, str(exc))
+            raise HTTPException(409, stremio_message(exc))
         return {"ok": True}
 
     return r

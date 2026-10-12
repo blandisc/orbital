@@ -14,6 +14,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from datetime import UTC, datetime
 from urllib.parse import quote
 
 from ..net import NET_ERRORS, read_json
@@ -184,12 +185,28 @@ def seasons(meta: dict) -> list[dict]:
              "episodes": sorted(by_season[s], key=lambda e: e["episode"])} for s in order]
 
 
-def next_episode(meta: dict, video_id: str) -> str | None:
-    """El episodio que sigue a `video_id` (pasa de temporada; los especiales no cuentan)."""
-    episodes = [e["id"] for s in seasons(meta) if s["season"] != 0 for e in s["episodes"]]
-    if video_id in episodes:
-        i = episodes.index(video_id)
-        return episodes[i + 1] if i + 1 < len(episodes) else None
+def aired(released, now: float | None = None) -> bool:
+    """¿Ya salió? Sin fecha (o con una rara) se da por emitido."""
+    if not isinstance(released, str) or not released:
+        return True
+    try:
+        when = datetime.fromisoformat(released.replace("Z", "+00:00"))
+    except ValueError:
+        return True
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=UTC)
+    return when.timestamp() <= (time.time() if now is None else now) + 12 * 3600
+
+
+def next_episode(meta: dict, video_id: str, now: float | None = None) -> str | None:
+    """El episodio que sigue a `video_id` (pasa de temporada; los especiales no cuentan). Uno que aún no
+    se emite no cuenta: en una serie al día, la tarjeta «Siguiente episodio» ofrecía uno que no existe."""
+    episodes = [e for s in seasons(meta) if s["season"] != 0 for e in s["episodes"]]
+    ids = [e["id"] for e in episodes]
+    if video_id in ids:
+        i = ids.index(video_id)
+        if i + 1 < len(episodes) and aired(episodes[i + 1]["released"], now):
+            return ids[i + 1]
     return None
 
 

@@ -123,6 +123,12 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         if problems:
             logging.getLogger("orbital").addHandler(problems)
         yield
+        # Orbital se cierra con un video abierto: se cierra bien (lo visto se guarda) y no queda un mpv
+        # huérfano con la tubería ocupada para el siguiente.
+        player = getattr(catalog, "player", None)
+        if player is not None and getattr(player, "playing", False):
+            with contextlib.suppress(Exception):
+                await run_in_threadpool(player.stop)
         if problems:
             logging.getLogger("orbital").removeHandler(problems)
         status.cancel()

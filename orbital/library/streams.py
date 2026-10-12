@@ -41,7 +41,9 @@ FLAG_LANG = {
     "🇸🇦": "ar", "🇹🇭": "th", "🇻🇳": "vi", "🇮🇩": "id", "🇱🇹": "lt", "🇱🇻": "lv", "🇪🇪": "et",
 }
 WORD_LANG = [
-    (re.compile(r"\b(lat|latino|castellano|spanish|español|espanol|esp|cast)\b", re.I), "es"),
+    (re.compile(r"\b(latino|castellano|spanish|español|espanol)\b", re.I), "es"),
+    # «LAT», «CAST», «ESP» solo en mayúsculas: en minúsculas son palabras del título («Cast.Away»).
+    (re.compile(r"\b(LAT|CAST|ESP)\b"), "es"),
     (re.compile(r"\b(french|vff|vf|vfq|truefrench)\b", re.I), "fr"),
     (re.compile(r"\b(ita|italian)\b", re.I), "it"),
     (re.compile(r"\b(german|deutsch|ger)\b", re.I), "de"),
@@ -256,7 +258,8 @@ class StreamFinder:
         self.timeout = timeout
         self._addons: tuple[float, list[dict]] = (0.0, [])
         self._cache: dict[str, tuple[float, list[Source]]] = {}
-        self._down: dict[str, float] = {}  # complemento -> hasta cuándo no se le pregunta (no respondió)
+        self._down: dict[str, float] = {}
+        self.outcome: dict[str, str] = {}  # kind:video -> "ok" | "offline" | "no-addons" (para decir por qué no hay)  # complemento -> hasta cuándo no se le pregunta (no respondió)
         self._lock = threading.Lock()
 
     def addons(self, auth_key: str) -> list[dict]:
@@ -357,6 +360,7 @@ class StreamFinder:
                     continue
                 seen.add(index)
         ranked = rank(sources, prefs, kind)
+        self.outcome[f"{kind}:{video_id}"] = "no-addons" if not addons else "offline" if failed and not ranked else "ok"
         if failed and not ranked:
             return ranked  # la red falló y no hay nada: no se recuerda, la próxima vez se pregunta otra vez
         with self._lock:

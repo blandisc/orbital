@@ -31,13 +31,19 @@ STREMIO_KEY = "stremio_auth_key"
 STREMIO_STALE_SECONDS = 180
 
 
+def expired_session(exc: Exception) -> bool:
+    """¿Stremio dice que la sesión ya no vale? (tienes que volver a conectar la cuenta)"""
+    text = str(exc).lower()
+    return any(w in text for w in ("session not found", "not authorized", "unauthorized", "invalid auth", "authkey"))
+
+
 def language_code(code: str | None) -> str | None:
     """Código de pista de mpv ("spa", "es-MX", "eng") -> el de Ajustes ("es", "en"); "" = sin
     subtítulos; None si es otro idioma (no se recuerda)."""
     if code == "":
         return ""
     code = (code or "").lower()
-    if code.startswith(("es", "spa")):
+    if code in ("es", "spa", "esl", "esp") or code.startswith(("es-", "es_")):  # «est» es estonio, no español
         return "es"
     if code.startswith("en"):
         return "en"
@@ -160,6 +166,7 @@ class Watch:
         self._stremio_again = False
         self._stremio_generation = 0
         self._stremio_publish = threading.Lock()
+        self._saving = threading.Lock()
         self.streams = streams.StreamFinder(self.stremio_client)
         self.player = player.OrbitalPlayer(
             on_finished=self._player_finished, idle_seconds=config.sessions.video_idle_minutes * 60,
@@ -432,13 +439,22 @@ class Watch:
                 return same
         return found[0]
 
+    def no_sources_message(self, kind: str, video_id: str) -> str:
+        """Por qué no hay dónde verlo, con qué hacer: sin Internet, sin complementos o de verdad no hay."""
+        why = self.streams.outcome.get(f"{kind}:{video_id}")
+        if why == "offline":
+            return "No pude conectar con tus complementos de Stremio. Revisa Internet e inténtalo de nuevo."
+        if why == "no-addons":
+            return "Tu cuenta de Stremio no tiene complementos de video (como Torrentio). Instálalos en Stremio."
+        return "No encontré dónde ver esto: tus complementos de Stremio no lo tienen."
+
     def play_best(self, kind: str, meta_id: str, video_id: str, title: str, keep: bool = False,
                   from_start: bool = False) -> dict:
         """"Ver": sin lista de fuentes. Orbital elige la recomendada y arranca (la lista queda en Y)."""
         prefs, subtitles = self.language_for(meta_id)
         source = self.best_source(kind, video_id, prefs=prefs)
         if source is None:
-            raise LookupError("No encontré dónde ver esto. Revisa tus complementos de Stremio.")
+            raise LookupError(self.no_sources_message(kind, video_id))
         self.play_source(kind, meta_id, video_id, source.index, title, keep=keep, from_start=from_start,
                          prefs=prefs, subtitles=subtitles)
         return {"source": source.public(), "label": source_label(source)}
@@ -490,10 +506,12 @@ class Watch:
                     audio: str | None = None, subtitles: str | None = None) -> None:
         """mpv a pantalla completa, desde donde te quedaste (según Stremio)."""
         start = 0.0 if from_start else self.resume_position(meta_id, video_id)
-        if self.sessions.before_launch and not keep:
-            self.sessions.before_launch("media:player")
         meta = self._media_meta(kind, meta_id, video_id, title, source) if source else \
             {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title}
+        # Lo que estaba abierto se cierra justo antes de abrir el video, no antes de buscar sus datos por
+        # internet (si algo fallaba, tu juego ya se había cerrado para nada).
+        if self.sessions.before_launch and not keep:
+            self.sessions.before_launch("media:player")
         self._wire_player()
         pinned = self.sessions.pin()
         try:
@@ -633,8 +651,9 @@ class Watch:
         """Elegir un episodio desde el reproductor: lo pone donde ibas (o desde el principio)."""
         info = self.cinemeta.meta("series", meta["meta_id"])
         title, _ = self._episode_title(info, meta["meta_id"], video_id)
-        return bool(self._play_episode(meta["meta_id"], video_id, title, meta.get("binge"),
-                                       start=self.resume_position(meta["meta_id"], video_id)))
+        # None: _play_episode ya avisó (no hay fuente); False sí es «no pude» y lo avisa el reproductor.
+        return self._play_episode(meta["meta_id"], video_id, title, meta.get("binge"),
+                                  start=self.resume_position(meta["meta_id"], video_id))
 
     @property
     def native_player(self) -> bool:
@@ -796,6 +815,12 @@ class Watch:
         auth = self.credentials.get(STREMIO_KEY)
         if not auth or (refresh and watched < 20 and position < 60):
             return  # se abrió y cerró sin ver nada: no se toca tu biblioteca
+        # Uno a la vez: un guardado de cada minuto que tarda no pisa al final con una posición vieja.
+        with self._saving:
+            self._save_progress_now(auth, meta, position, duration, watched, refresh)
+
+    def _save_progress_now(self, auth: str, meta: dict, position: float, duration: float, watched: float,
+                           refresh: bool) -> None:
         kind, meta_id, video_id = meta["kind"], meta["meta_id"], meta["video_id"]
         try:
             info = self.cinemeta.meta(kind, meta_id)
@@ -813,5 +838,8 @@ class Watch:
             log.info("Progreso guardado en Stremio: %s %d/%d s", video_id, position, duration)
         except stremio_api.StremioError as exc:
             log.warning("No pude guardar el progreso en Stremio: %s", exc)
+            if expired_session(exc):
+                self.events.publish({"type": "toast", "ok": False,
+                                     "message": "Tu sesión de Stremio caducó: vuelve a conectarla en Ajustes › Cuentas"})
         if refresh:
             self.refresh_stremio(background=True)
