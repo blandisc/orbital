@@ -55,10 +55,6 @@ def source_label(source: streams.Source, long: bool = False) -> str:
     return " · ".join(p for p in parts if p)
 
 
-PLAYER_SOURCES = 12  # las mejores en la pestaña Fuentes (más la mejor de cada idioma)
-PLAYER_LANGUAGES = ("es", "en")
-
-
 def player_source_label(source: streams.Source) -> str:
     """"Español · 1080p · Al instante · 1.2 GB": el idioma primero, que es lo que se busca al cambiar."""
     langs = " + ".join(streams.LANG_NAMES.get(lang, lang) for lang in source.languages[:2])
@@ -545,18 +541,12 @@ class Watch:
         return False
 
     def _player_sources(self, meta: dict) -> list[dict]:
-        """Pestaña Fuentes del reproductor: las mejores del título, la actual marcada, y siempre la mejor
-        de cada idioma (antes solo las 12 primeras: con la serie en inglés, las de español no salían)."""
+        """Pestaña Fuentes del reproductor: TODAS las del título, las mejores primero y la actual marcada
+        (antes solo las 12 primeras: con la serie en inglés, las de español no salían)."""
         if meta.get("source") is None:
             return []
-        prefs = self.language_for(meta["meta_id"])[0]
-        found = self.stream_sources(meta["kind"], meta["video_id"], prefs)
-        shown = found[:PLAYER_SOURCES]
-        for lang in dict.fromkeys((prefs.audio, *PLAYER_LANGUAGES)):
-            if not any(s.languages == [lang] for s in shown):
-                shown += [s for s in found if s.languages == [lang]][:1]
-        shown += [s for s in found if s.index == meta["source"] and s not in shown]
-        return [{"id": s.index, "label": player_source_label(s), "current": s.index == meta["source"]} for s in shown]
+        found = self.stream_sources(meta["kind"], meta["video_id"], self.language_for(meta["meta_id"])[0])
+        return [{"id": s.index, "label": player_source_label(s), "current": s.index == meta["source"]} for s in found]
 
     def _switch_source(self, meta: dict, index: int, position: float) -> bool:
         """False si no se pudo (el reproductor lo avisa). Una fuente de un solo idioma distinto (la de

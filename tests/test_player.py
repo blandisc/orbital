@@ -130,8 +130,25 @@ def test_b_closes_the_menu_before_closing_the_video():
     p.press("x")
     p.press("b")
     assert p.menu is None and ("quit",) not in mpv.sent
-    p.press("b")  # sin controles a la vista: sale
-    assert ("quit",) in mpv.sent
+    p.remote._repeats["b"] = 5  # la misma B, mantenida: no cuenta para salir (empezó cerrando el panel)
+    p._quit_hold = None
+    p.press("b")
+    assert ("quit",) not in mpv.sent
+
+
+def test_one_press_counts_once_with_empty_controller_ports():
+    """El mando llega por cada puerto (los vacíos con 0): antes el vacío "soltaba" la cruceta en
+    cada lectura y una pulsación contaba varias veces."""
+    from orbital import gamepad, shell
+    presses = []
+    remote = player.PlayerRemote(presses.append)
+    s = shell.ConsoleShell.__new__(shell.ConsoleShell)
+    s._pads, s._fg_cache = {}, (1e9, shell.PLAYER_EXE)
+    s.catalog = type("C", (), {"player": type("P", (), {"remote": remote})()})()
+    for t in (0.0, .016, .032, .048):
+        s.on_buttons(0, gamepad.DPAD_DOWN, t)
+        s.on_buttons(1, 0, t)
+    assert presses == ["down"]
 
 
 def test_panel_list_scrolls_only_at_the_edge():
@@ -450,3 +467,17 @@ def test_next_file_resets_the_tracks_to_the_series_language():
     p.load("u2", "Serie", {"video_id": "e2"}, subtitles="", audio="es")
     sent = [a[1:] for a in mpv.sent if a[0] == "set_property"]
     assert ("aid", "auto") in sent and ("sid", "no") in sent and ("alang", "es,spa,Spanish,es-419") in sent
+
+
+def test_sticks_wake_the_controls_and_move_in_panels():
+    from orbital import gamepad
+    assert gamepad.with_sticks(0, 0, 0, 0) == 0
+    assert gamepad.with_sticks(5000, -3000, 0, 0) == 0  # deriva: no cuenta
+    assert gamepad.with_sticks(0, 30000, 0, 0) == gamepad.STICK_UP
+    assert gamepad.with_sticks(0, 0, -25000, 8000) == gamepad.STICK_LEFT  # el derecho también
+    p, mpv = make_player()
+    p.press("stick-right")  # sin panel: solo enciende los controles, no adelanta
+    assert mpv.overlays.get(1) and not any(c[0] == "seek" for c in mpv.sent)
+    p.press("x")
+    p.press("stick-right")  # en un panel: mueve el foco como la cruceta
+    assert p.menu.column.key == "sub"

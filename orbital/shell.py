@@ -70,6 +70,7 @@ class ConsoleShell:
         self.return_to = 0  # ventana del juego a la que volver
         self.hold: dict | None = None  # juego que se está por cerrar (Select+Start)
         self._remotes = [KeyRemote() for _ in range(4)]
+        self._pads: dict[int, int] = {}  # botones de cada puerto, para el reproductor (los junta)
         self._fg_cache = (0.0, "")  # (cuándo, exe al frente): no preguntar a Windows 240 veces/s
         self._legion_last = 0.0
         self._legion_left: dict | None = None  # el juego que dejaste con Legion L (para el 2.º toque)
@@ -98,13 +99,19 @@ class ConsoleShell:
             system.bring_to_front()
 
     def game_window(self) -> int:
-        """Ventana del juego: la que estaba al frente al venir a Orbital, o la del proceso lanzado."""
-        if self.win.is_window(self.return_to) and not self.is_orbital(self.return_to):
-            return self.return_to
+        """Ventana del juego: la del juego que lanzó Orbital (si sigue abierto) o, si no, la que estaba
+        al frente al venir a Orbital. Antes mandaba la recordada: si llegabas a Orbital sin pasar por
+        el juego (te tapó al abrir), "Volver al juego" iba a una ventana vieja (GeForce NOW…)."""
+        remembered = self.return_to if self.win.is_window(self.return_to) and not self.is_orbital(self.return_to) else 0
         running = self.catalog.launcher.status()
         if running and running.get("pid"):
-            return self.win.main_window(self.win.process_tree(running["pid"]))
-        return 0
+            pids = self.win.process_tree(running["pid"])
+            if remembered and self.win.pid_of(remembered) in pids:
+                return remembered
+            game = self.win.main_window(pids)
+            if game:
+                return game
+        return remembered
 
     def remember(self, hwnd: int) -> None:
         """Recuerda a qué volver con Home: un juego o una app, nunca el escritorio ni Orbital."""
@@ -126,6 +133,7 @@ class ConsoleShell:
                 log.debug("Home en Orbital sin juego al que volver")
             return
         self.remember(fg)
+        log.info("Home: de %s a Orbital", self.win.title(fg) or self.win.exe_name(self.win.pid_of(fg)))
         self.pause(fg)
         self.show_orbital()
 
@@ -136,6 +144,7 @@ class ConsoleShell:
         if not target:
             return False
         focused = self.win.focus(target)
+        log.info("Volver al juego: %s%s", self.win.title(target), "" if focused else " (Windows no lo dejó al frente)")
         if focused and self.player and self.win.exe_name(self.win.pid_of(target)) == PLAYER_EXE:
             self.player.show_progress()  # en pausa, con la barra: A para seguir
         return focused
@@ -293,7 +302,14 @@ class ConsoleShell:
         adelanta/regresa y sube/baja volumen, Y pantalla completa, B vuelve."""
         exe = self.foreground_exe(now)
         if exe == PLAYER_EXE and self.player:
-            self.player.remote.update(buttons, now)
+            # El reproductor tiene UN control remoto y esto llega por cada puerto (los 4, aun vacíos):
+            # el puerto vacío "soltaba" la cruceta en cada lectura y una pulsación contaba varias
+            # veces (el foco saltaba). Se juntan los botones de todos los puertos.
+            self._pads[slot] = buttons
+            combined = 0
+            for pressed in self._pads.values():
+                combined |= pressed
+            self.player.remote.update(combined, now)
             return
         remote = self._remotes[slot]
         if exe not in REMOTE_APPS:

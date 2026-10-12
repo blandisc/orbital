@@ -331,6 +331,16 @@ def window_at_center() -> int:
     return (user32.GetAncestor(child, 2) or 0) if child else 0  # GA_ROOT
 
 
+def covers_center(hwnd: int) -> bool:
+    """¿La ventana ocupa el centro de la pantalla? (Si no, que ahí se vea Orbital no es que lo tape.)"""
+    rect = window_rect(hwnd)
+    if not rect:
+        return False
+    left, top, right, bottom = rect
+    x, y = user32.GetSystemMetrics(0) // 2, user32.GetSystemMetrics(1) // 2
+    return left <= x < right and top <= y < bottom
+
+
 GWL_EXSTYLE, WS_EX_LAYERED, LWA_ALPHA = -20, 0x80000, 0x2
 
 
