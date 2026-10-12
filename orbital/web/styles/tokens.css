@@ -84,6 +84,7 @@
   --duration-pulse: 1.1s; /* cursor de escribir, «te escuché» de Alexa */
   --duration-breathe: 1.4s; /* algo que espera: dictando */
   --duration-drift: 1.5s; /* el fondo sigue al foco (parallax) */
+  --duration-alive: 9s; /* «cobra vida»: quieto en una pieza, su arte se acerca despacio */
   --duration-glow: 38s; /* la luz de ambiente respira */
   --duration-stars: 140s; /* estrellas cercanas */
   --duration-stars-far: 240s; /* estrellas lejanas */

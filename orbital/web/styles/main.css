@@ -12,6 +12,9 @@
 @import url("components/tiles.css");
 @import url("components/home.css");
 @import url("components/games.css");
+@import url("components/foryou.css");
+@import url("components/foryou-mosaic.css");
+@import url("components/foryou-lists.css");
 @import url("components/shelf.css");
 @import url("components/hints.css");
 @import url("components/keyboard.css");
@@ -22,4 +25,5 @@
 @import url("components/search.css");
 @import url("components/sources.css");
 @import url("components/login.css");
+@import url("components/trakt-link.css");
 @import url("components/viewer.css");

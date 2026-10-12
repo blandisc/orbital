@@ -473,7 +473,10 @@ export function settingsPage(page, settings) {
         { icon: "trailer", label: "Stremio", value: settings.stremio_linked ? "Conectada" : "Conectar",
           command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
           hint: settings.stremio_linked ? "Seguir viendo y fuentes" : "Para películas y series" },
-      ],
+        settings.trakt?.configured && { icon: "spark", label: "Trakt", value: settings.trakt.linked ? "Conectada" : "Conectar",
+          command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
+          hint: settings.trakt.linked ? "Tus listas en Para ti" : "Tus listas y recomendaciones en Para ti" },
+      ].filter(Boolean),
     };
   }
   const def = Object.hasOwn(SETTING_PAGES, page) ? SETTING_PAGES[page] : null;
@@ -496,6 +499,31 @@ export function stremioAccountMenu() {
       { icon: "close", label: "Cancelar", command: { type: "close" } },
       { icon: "exit", label: "Desconectar", danger: true, command: { type: "stremio-logout" } },
     ],
+  };
+}
+
+/** Trakt conectado: desconectar pide confirmar (y "Cancelar" va primero). */
+export function traktAccountMenu() {
+  return {
+    title: "Cuenta de Trakt",
+    subtitle: "Para ti dejará de enseñar tus listas y recomendaciones.",
+    options: [
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "exit", label: "Desconectar", danger: true, command: { type: "trakt-unlink" } },
+    ],
+  };
+}
+
+/** Y en «Para ti»: ver la ficha (películas y series) o «No me interesa» (no vuelve a salir). */
+export function forYouMenu(item) {
+  const video = item?.kind === "movie" || item?.kind === "series";
+  return {
+    title: item?.title || "Para ti",
+    subtitle: item?.why || "",
+    options: [
+      video && { icon: "info", label: "Ver ficha", command: { type: "title-ref", ref: { ...item, kind: item.kind, meta_id: item.meta_id } } },
+      { icon: "hide", label: "No me interesa", hint: "No te lo vuelvo a sugerir", command: { type: "foryou-dismiss", item } },
+    ].filter(Boolean),
   };
 }
 

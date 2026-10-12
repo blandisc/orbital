@@ -25,7 +25,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import __version__
-from .api import diagnostics, library, live, media, play, quick, ui, update
+from .api import diagnostics, foryou, library, live, media, play, quick, ui, update
 from .api.deps import Deps
 from .api.live import SseHub, VoiceRequest
 from .api.play import humane_error  # noqa: F401 - se importa desde aquí
@@ -149,7 +149,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
 
     for part in (library.router(d), play.router(d), media.router(d), ui.router(d),
                  live.router(d, is_local_request), diagnostics.router(d), quick.router(d),
-                 update.router(d, updater)):
+                 update.router(d, updater), foryou.router(d)):
         app.include_router(part)
     app.state.run_voice = d.extra["run_voice"]
     app.mount("/", WebFiles(directory=WEB_DIR, html=True), name="web")

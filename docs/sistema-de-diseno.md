@@ -41,6 +41,7 @@ primero se nombra aquí: qué *es* (`--duration-enter`, «algo que aparece»), n
 | `--duration-enter` · `--duration-enter-long` · `--duration-land` | Algo que aparece · la primera entrada de una pantalla · el arranque. |
 | `--duration-exit` | Salidas (más cortas que las entradas y acelerando: `--ease-in`). |
 | `--duration-tint` · `--duration-drift` | El color del fondo cambia · el fondo sigue al foco. |
+| `--duration-alive` | «Cobra vida»: quieto en una pieza de Para ti, su arte se acerca despacio. |
 | `--duration-pulse` · `--duration-breathe` | Cursor de escribir, «te escuché» · algo que espera (dictando). |
 | `--duration-glow` · `--duration-stars` · `--duration-stars-far` | Ambiente: la luz respira, las estrellas derivan. |
 | `--duration-launch-*` | Pantalla de carga (cinemática, más lenta a propósito). |
@@ -89,6 +90,10 @@ letras que bajan: g, p, j, y).
 |---|---|
 | `status-bar` | Barra de arriba: marca, Buscar, pestañas (LB/RB), Alexa (navegable: muestra ejemplos de órdenes), batería y hora. |
 | `hints` | Pie de controles del momento (piezas `KeyHint`). |
+| `foryou` | Para ti (a la izquierda del Inicio): recomendaciones en dos modos, Mosaico y Listas; X cambia de uno a otro con el selector del centro del pie. A ve o juega, Y abre Más (ficha, «No me interesa»). |
+| `foryou-mosaic` | Mosaico de Para ti: columnas de imágenes; la enfocada crece y enseña etiqueta, logo y un dato; bajar sube todo (cascada) y quieto ~30 s entra en ambiente. Ícono de esquina: la consola del juego, o serie / película. |
+| `foryou-lists` | Listas de Para ti, como Juegos: riel de listas (Trakt, plataformas con su logo de TMDB, juegos de RAWG), Series · Películas en las grandes, portadas y la ficha de lo enfocado. |
+| `trakt-link` | Conectar Trakt: un código grande para escribir en trakt.tv/activate desde el celular. |
 | `home` | Inicio: saludo, destacado, tarjetas anchas y Tus consolas. |
 | `games` | Juegos: riel de consolas (cruceta o LT/RT), encabezado de consola, filtros y cuadrícula. Su ficha lateral es `game-panel` (comparte `games.css`: ver Excepciones). |
 | `game-panel` | Ficha del juego enfocado, a la derecha de Juegos. |
@@ -101,7 +106,7 @@ letras que bajan: g, p, j, y).
 | `toast` | Aviso corto arriba a la derecha (nunca encima de una hoja). |
 | `launch-overlay` | Pantalla de carga al abrir algo. |
 | `viewer` | Visor de capturas. |
-| `backdrop` | Fondo: arte del foco, o el espacio vivo (estrellas y luz) del Inicio y Juegos. |
+| `backdrop` | Fondo: arte del foco, o el espacio vivo (estrellas y luz) del Inicio, Juegos y Para ti. |
 
 ## 5. Comportamiento con el mando
 

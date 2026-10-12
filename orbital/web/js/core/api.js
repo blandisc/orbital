@@ -54,6 +54,14 @@ export const api = {
   stremioSources: (kind, id, video) =>
     request(`/api/stremio/sources?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`),
   focusWindow: (id) => post("/api/windows/focus", { id }),
+  // «Para ti»
+  forYou: () => request("/api/foryou"),
+  forYouList: (id, kind = null) => request(`/api/foryou/list?id=${encodeURIComponent(id)}${kind ? `&kind=${kind}` : ""}`),
+  forYouDetails: (key, kind = null) => request(`/api/foryou/details?key=${encodeURIComponent(key)}${kind ? `&kind=${kind}` : ""}`),
+  forYouDismiss: (key) => post("/api/foryou/dismiss", { key }),
+  traktLink: () => post("/api/foryou/trakt/link"),
+  traktCancel: () => post("/api/foryou/trakt/cancel"),
+  traktUnlink: () => post("/api/foryou/trakt/unlink"),
   /** Suscripción a eventos del servidor con reconexión automática. */
   events(onEvent) {
     const connect = () => {

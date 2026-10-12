@@ -4,6 +4,7 @@ Se divide en piezas que no se llaman entre sí, se comunican por eventos (events
   * Catalog (aquí): escanear fuentes, filas de la interfaz, preferencias y búsqueda por nombre.
   * Sessions (sessions.py): abrir algo, la pantalla de carga y saber cuándo termina.
   * Watch (watch.py): cuenta de Stremio, fuentes y el reproductor de Orbital.
+  * ForYou (foryou.py): «Para ti», recomendaciones de Trakt, TMDB, RAWG y tus juegos.
   * focus.py: ventanas y foco (pantalla de carga encima del emulador).
 Catalog expone también los métodos de Sessions y Watch que usan el servidor y la voz, para que
 ellos solo conozcan una cosa.
@@ -27,6 +28,7 @@ from .config import Config, expand
 from .credentials import Credentials
 from .events import EventBus
 from .focus import READY_TIMEOUT, bring_app_to_front, bring_game_to_front, game_ready, is_orbital_window, pin_orbital  # noqa: F401 - compatibilidad
+from .foryou import ForYou
 from .launcher import Launcher
 from .library import cinemeta, detect, emulators, esde, geforcenow, steam, stremio, stremio_api
 from .library.media import KINDS, MediaStore, low_res, placeholder
@@ -148,6 +150,7 @@ class Catalog:
         self.watch = Watch(config, self.state, self.credentials, stremio_client or stremio_api.StremioAPI(),
                            cinemeta_client or cinemeta.Cinemeta(), self.store, self.events, self.sessions,
                            self.launcher)
+        self.foryou = ForYou(config, self)  # «Para ti»: recomendaciones (no sale a internet hasta que se pide)
         self.events.subscribe(self._on_event)
 
     # --- piezas y compatibilidad ----------------------------------------------------------------

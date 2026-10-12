@@ -37,6 +37,20 @@ esde:
   # path: 'C:\ES-DE\ES-DE'                 # versión portable
   # executable: 'C:\ES-DE\ES-DE.exe'
 
+# --- Para ti (recomendaciones) -----------------------------------------------
+# Cada servicio es opcional y gratuito; sin su clave, sus listas no aparecen.
+#   Trakt: crea una aplicación en https://trakt.tv/oauth/applications (Redirect URI:
+#          urn:ietf:wg:oauth:2.0:oob) y copia Client ID y Client Secret. Tu cuenta se conecta
+#          desde la consola: Ajustes › Cuentas › Trakt (un código para escribir en el celular).
+#   TMDB:  https://www.themoviedb.org/settings/api (API Key o Read Access Token).
+#   RAWG:  https://rawg.io/apidocs
+para_ti:
+  trakt_client_id: ""
+  trakt_client_secret: ""
+  tmdb_key: ""
+  rawg_key: ""
+  region: MX                          # país para «lo más popular en Netflix…»
+
 # --- Emuladores --------------------------------------------------------------
 # Orbital los DETECTA SOLO: busca Ryujinx, Eden, Citron, Dolphin, mGBA, xemu, Xenia,
 # DuckStation, PCSX2, PPSSPP, melonDS y Cemu en Descargas, Escritorio, C:\Emuladores,

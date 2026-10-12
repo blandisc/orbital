@@ -15,7 +15,9 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import demo_foryou  # noqa: E402
 import uvicorn  # noqa: E402
 
 from orbital.catalog import Catalog  # noqa: E402
@@ -145,6 +147,11 @@ def build(tmp: Path):
         minutes = PLAYED.get(item.id, PLAYED.get(item.title))
         if minutes:
             catalog.state.record_launch(item.id, now=now - minutes * 60)
+    # «Para ti»: horas y un favorito (para «Tu más jugado» y «Tu favorito») y servicios de mentiras.
+    catalog.state.record_session("steam:1145360", 48 * 3600)
+    catalog.state.record_session("steam:1086940", 62 * 3600)
+    catalog.set_prefs("steam:367520", favorite=True)
+    demo_foryou.install(catalog)
     return create_app(config, catalog)
 
 

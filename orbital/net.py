@@ -36,3 +36,32 @@ def read_body(res, *, timeout: float, limit: int = MAX_BYTES) -> bytes:
 
 def read_json(res, *, timeout: float, limit: int = MAX_BYTES):
     return json.loads(read_body(res, timeout=timeout, limit=limit).decode("utf-8"))
+
+
+def http_json(url: str, *, method: str = "GET", headers: dict | None = None, body: dict | None = None,
+              timeout: float = 10) -> tuple[int, object]:
+    """Una petición JSON que devuelve (código HTTP, cuerpo) también cuando el código es de error: Trakt
+    dice «todavía no» con un 400 y «más despacio» con un 429. Los fallos de red sí se lanzan (NET_ERRORS)."""
+    import urllib.error
+    import urllib.request
+
+    data = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(url, data=data, method=method,
+                                 headers={"User-Agent": "Orbital", "Accept": "application/json",
+                                          **({"Content-Type": "application/json"} if data is not None else {}),
+                                          **(headers or {})})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as res:
+            raw = read_body(res, timeout=timeout)
+            status = res.status
+    except urllib.error.HTTPError as exc:
+        try:
+            raw = exc.read(64 * 1024)
+        except NET_ERRORS:
+            raw = b""
+        status = exc.code
+    text = raw.decode("utf-8", "replace").strip()
+    try:
+        return status, json.loads(text) if text else None
+    except ValueError:
+        return status, None

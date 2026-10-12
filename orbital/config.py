@@ -121,6 +121,23 @@ class SessionsConfig:
 
 
 @dataclass
+class ParaTiConfig:
+    """«Para ti»: recomendaciones. Cada servicio es opcional; sin su clave, sus listas no aparecen.
+
+    - Trakt (trakt.tv/oauth/applications): tus listas, tendencias y recomendaciones. Tu cuenta se
+      conecta desde la consola con un código (no aquí).
+    - TMDB (themoviedb.org/settings/api): lo más popular en Netflix, Disney+ y HBO Max, y sinopsis en español.
+    - RAWG (rawg.io/apidocs): novedades, lo más popular y lo mejor calificado en juegos.
+    Las claves pueden ir cifradas con tu usuario de Windows («dpapi:…»), como el token de Alexa.
+    """
+    trakt_client_id: str = ""
+    trakt_client_secret: str = ""
+    tmdb_key: str = ""
+    rawg_key: str = ""
+    region: str = "MX"  # país para «lo más popular en…» (código de dos letras)
+
+
+@dataclass
 class Config:
     server: ServerConfig = field(default_factory=ServerConfig)
     ui: UiConfig = field(default_factory=UiConfig)
@@ -130,6 +147,7 @@ class Config:
     detect: DetectConfig = field(default_factory=DetectConfig)
     sessions: SessionsConfig = field(default_factory=SessionsConfig)
     art: ArtConfig = field(default_factory=ArtConfig)
+    para_ti: ParaTiConfig = field(default_factory=ParaTiConfig)
     emulators: list[EmulatorConfig] = field(default_factory=list)
     apps: list[AppConfig] = field(default_factory=list)
     source: Path | None = None
@@ -170,6 +188,7 @@ def parse_config(raw: dict[str, Any] | None, source: Path | None = None) -> Conf
         detect=_section(DetectConfig, raw.get("detect")),
         sessions=_section(SessionsConfig, raw.get("sessions")),
         art=_section(ArtConfig, raw.get("art")),
+        para_ti=_section(ParaTiConfig, raw.get("para_ti")),
         emulators=[_section(EmulatorConfig, e) for e in raw.get("emulators") or []],
         apps=[_section(AppConfig, a) for a in raw.get("apps") or []],
         source=source,
@@ -185,6 +204,12 @@ def parse_config(raw: dict[str, Any] | None, source: Path | None = None) -> Conf
         emu.extensions = [e.lower() if e.startswith(".") else f".{e.lower()}" for e in emu.extensions]
     if cfg.ui.mode not in {"browser", "window", "none"}:
         raise ValueError("ui.mode debe ser 'browser', 'window' o 'none'")
+    region = str(cfg.para_ti.region or "").strip().upper()
+    if len(region) != 2 or not region.isalpha():
+        raise ValueError("para_ti.region debe ser un país de dos letras (por ejemplo MX)")
+    cfg.para_ti.region = region
+    for key in ("trakt_client_id", "trakt_client_secret", "tmdb_key", "rawg_key"):
+        setattr(cfg.para_ti, key, str(getattr(cfg.para_ti, key) or "").strip())
     return cfg
 
 
@@ -203,6 +228,16 @@ def load_config(path: Path | None = None) -> Config:
         except ValueError as exc:
             logging.getLogger(__name__).warning("%s: Alexa queda desconectada hasta `orbital alexa setup`", exc)
             cfg.server.token = ""
+    for key in ("trakt_client_id", "trakt_client_secret", "tmdb_key", "rawg_key"):
+        value = getattr(cfg.para_ti, key)
+        if value.startswith("dpapi:"):
+            from .dpapi import reveal
+
+            try:
+                setattr(cfg.para_ti, key, reveal(value))
+            except ValueError as exc:
+                logging.getLogger(__name__).warning("para_ti.%s: %s", key, exc)
+                setattr(cfg.para_ti, key, "")
     if cfg.server.token in ("", "CAMBIA-ESTE-TOKEN"):
         # Sin token propio generamos uno efímero: Alexa queda desconectada hasta fijar uno
         # (orbital alexa setup lo hace por ti).

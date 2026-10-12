@@ -10,9 +10,10 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints } from "./core/hints.js";
-import { alexaMenu, artMenu, capturesMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, healthMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, updateMenu, windowsMenu } from "./core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
+import { createForYou } from "./components/foryou.js";
 import { createHero } from "./components/hero.js";
 import { createHome } from "./components/home.js";
 import { createGames } from "./components/games.js";
@@ -26,6 +27,7 @@ import { createStatusBar } from "./components/status-bar.js";
 import { createLogin } from "./components/login.js";
 import { createTitle, titleRef } from "./components/title.js";
 import { createToast } from "./components/toast.js";
+import { createTraktLink } from "./components/trakt-link.js";
 import { createViewer } from "./components/viewer.js";
 import { createBoot } from "./app/boot.js";
 import { createLaunching } from "./app/launching.js";
@@ -40,7 +42,9 @@ const deferred = createDeferred(() => document.hidden);
 const inHome = () => state.section === "home" && state.libraryLoaded;
 // Juegos tiene su propia vista (consolas + portadas); lo enfocado puede ser un filtro o una consola.
 const inGames = () => state.section === "games" && state.libraryLoaded;
-const current = () => (inHome() ? ui.home.current?.item ?? null
+// Para ti tiene su propia vista (mosaico o listas): lo enfocado es una sugerencia, no algo de la biblioteca.
+const inForYou = () => state.section === "foryou" && state.libraryLoaded;
+const current = () => (inForYou() ? null : inHome() ? ui.home.current?.item ?? null
   : inGames() ? ui.games.current?.item ?? null
     : itemAt(state.rows, state.focus.r, state.focus.c));
 const glyphs = () => GLYPHS[state.modality];
@@ -103,6 +107,18 @@ const ui = {
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); },
   }),
+  foryou: createForYou({
+    onWatch: (play) => watch(play),
+    onLaunch: (item) => launch(item),
+    onMore: (item) => openMenu(forYouMenu(item)),
+    onConnect: () => runCommand({ type: "trakt-link" }),
+    onFocus: (item) => forYouFocused(item),
+    onEdge: () => { sound.play("error"); rumble("edge"); },
+  }),
+  traktLink: createTraktLink({
+    onMove: () => sound.play("move"),
+    onClose: () => { sound.play("back"); backToMenu(); renderHints(); },
+  }),
   launch: createLaunchOverlay(),
   viewer: createViewer({
     onClose: () => { sound.play("back"); renderHints(); },
@@ -117,7 +133,7 @@ const touchBack = h("button", { class: "touch-back", type: "button", "aria-label
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -128,7 +144,7 @@ const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LT/RT
  * (Conectar Stremio sobre todo; las fuentes sobre la ficha; la ficha sobre la búsqueda). Una vista
  * nueva se agrega aquí con { handle, hints, isOpen } y ya funciona con el mando.
  */
-const OVERLAYS = [ui.viewer, ui.login, ui.sources, ui.title, ui.search];
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.sources, ui.title, ui.search];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 function renderHints() {
@@ -136,6 +152,7 @@ function renderHints() {
   const overlay = topOverlay();
   document.body.dataset.overlay = ui.sheet.isOpen || overlay ? "true" : "false";
   if (!ui.sheet.isOpen && overlay) return ui.hints.render(overlay.hints(g));
+  if (inForYou() && !ui.sheet.isOpen) return ui.hints.render(ui.foryou.hints(g));
   if (inGames() && !ui.sheet.isOpen) {
     const target = ui.games.current;
     const item = target?.item;
@@ -193,6 +210,7 @@ function setModality(modality) {
   renderSections();
   if (inHome()) renderHome(); // los botones del destacado y de las consolas cambian de glifo
   if (inGames()) renderGames();
+  ui.foryou.setGlyphs(glyphs()); // el selector X · Mosaico | Listas y los botones de la ficha
   ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   renderHints();
 }
@@ -219,9 +237,11 @@ function altLabel(item) {
   return alt ? `Con ${alt.name}` : null;
 }
 
-/** Inicio y Juegos tienen su propia vista; las demás secciones, héroe + filas. */
+/** Para ti, Inicio y Juegos tienen su propia vista; las demás secciones, héroe + filas. */
 function renderView() {
-  document.body.dataset.view = inHome() ? "home" : inGames() ? "games" : "rows";
+  document.body.dataset.view = inForYou() ? "foryou" : inHome() ? "home" : inGames() ? "games" : "rows";
+  if (inForYou()) ui.foryou.show();
+  else ui.foryou.hide();
   if (inHome()) {
     ui.home.show();
     renderHome();
@@ -233,6 +253,38 @@ function renderView() {
     renderGames();
   } else {
     ui.games.hide();
+  }
+}
+
+// ---------------------------------------------------------------- Para ti
+/** El fondo toma el color de la sugerencia enfocada y su luz se acerca a ella (como en el Inicio). */
+function forYouFocused(item) {
+  if (!inForYou()) return;
+  if (item) ui.backdrop.show(item.hero || item.image || null);
+  const node = document.querySelector(".foryou-mosaic__tile--on, .foryou-lists .card--focused");
+  if (node) {
+    const r = node.getBoundingClientRect();
+    ui.backdrop.light((r.left + r.width / 2) / innerWidth, (r.top + r.height / 2) / innerHeight);
+  }
+  renderHints();
+}
+
+/** Botones en Para ti: la vista se queda con lo suyo (moverse, A, X, Y); lo demás, como en todas. */
+function handleForYou(action, { repeat = false } = {}) {
+  const handled = ui.foryou.handle(action === "home" ? "back" : action);
+  if (handled === true) {
+    if (["up", "down", "left", "right"].includes(action)) sound.play("move");
+    else if (action === "pageleft" || action === "pageright" || action === "alt") sound.play("open");
+    return renderHints();
+  }
+  if (handled === "edge") { if (!repeat) rumble("edge"); return; }
+  if (handled === "exit") return goToSection("home", 1);
+  switch (action) {
+    case "prevsection": return stepSection(-1);
+    case "nextsection": return stepSection(1);
+    case "search": return openSearch();
+    case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));
+    case "refresh": return ui.foryou.load({ force: true });
   }
 }
 
@@ -360,7 +412,7 @@ function goToSection(id, direction = 0) {
   const saved = state.sectionFocus[id] || {};
   const { r, c } = restoreFocus(state.rows, { rowId: saved.rowId, itemId: saved.itemId, r: 0, c: 0 });
   state.focus = { r: -1, c: -1 }; // fuerza a redibujar héroe y fondo
-  if (inHome() || inGames()) state.focus = { r, c };
+  if (inHome() || inGames() || inForYou()) state.focus = { r, c };
   else setFocus(r, c, { silent: true });
   ui.shelf.slide(direction || Math.sign(to - from));
   renderHints();
@@ -407,13 +459,16 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
       popId: state.popId,
     });
     state.popId = null;
-    if (!state.libraryLoaded) ui.search.refresh(); // abierta antes de que cargara: que salgan tus juegos
+    if (!state.libraryLoaded) {
+      ui.search.refresh(); // abierta antes de que cargara: que salgan tus juegos
+      ui.foryou.load(); // en segundo plano: Para ti ya está listo cuando llegas (LB desde el Inicio)
+    }
     state.libraryLoaded = true;
     libraryRetry = 0;
     const { r, c } = restoreFocus(state.rows, { rowId, itemId, ...state.focus });
     state.focus = { r, c };
     renderView();
-    if (inHome() || inGames()) renderHints();
+    if (inHome() || inGames() || inForYou()) renderHints();
     else setFocus(r, c, { silent: true });
     boot.finish();
     if (refresh) {
@@ -663,6 +718,21 @@ async function runCommand(command, context = null) {
         state.stremioLinked = false;
         ui.toast.show("Stremio desconectado");
         return loadLibrary();
+      case "trakt-link": // un código para escribir en trakt.tv/activate (el aviso llega por SSE)
+        sound.play("open");
+        state.backTo = context;
+        ui.traktLink.open();
+        return renderHints();
+      case "trakt-account":
+        return openMenu(traktAccountMenu(), nested(context));
+      case "trakt-unlink":
+        await api.traktUnlink();
+        ui.toast.show("Trakt desconectado");
+        return ui.foryou.load({ force: true });
+      case "foryou-dismiss":
+        await ui.foryou.dismiss(command.item);
+        sound.play("select");
+        return ui.toast.show("Listo, no te lo vuelvo a sugerir");
       case "stay":
         if (context) ui.sheet.open(context.menu, { index: context.index, stack: context.stack });
         return renderHints();
@@ -696,6 +766,7 @@ function handleAction(action, { repeat = false } = {}) {
   }
   // Vistas a pantalla completa (OVERLAYS): la de más arriba se queda con el botón.
   if (OVERLAYS.some((view) => view.handle(action))) return renderHints();
+  if (inForYou()) return handleForYou(action, { repeat });
   if (inHome()) return handleHome(action, { repeat });
   if (inGames()) return handleGames(action, { repeat });
   const { r, c } = state.focus;
@@ -812,6 +883,16 @@ function handleEvent(event) {
   } else if (event.type === "library-changed") {
     loadLibrary();
     return;
+  } else if (event.type === "trakt-linked") {
+    ui.traktLink.close({ cancel: false });
+    sound.play("select");
+    ui.toast.show(event.name ? `Listo: Trakt conectado como ${event.name}` : "Listo: Trakt conectado");
+    return;
+  } else if (event.type === "trakt-link-failed") {
+    sound.play("error");
+    return ui.traktLink.failed(event.message);
+  } else if (event.type === "foryou-changed") {
+    return ui.foryou.load({ force: true });
   } else if (event.type === "closed") {
     // Al abrir otro juego se cierra el anterior: su "closed" no debe tapar la carga del nuevo.
     if (!ui.launch.visible || event.id === state.launchingId) ui.launch.hide();
@@ -851,6 +932,7 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 document.body.dataset.input = state.modality;
+ui.foryou.setGlyphs(glyphs());
 setInterval(pollStatus, 60_000); // red de seguridad: el estado llega por SSE al cambiar
 setInterval(pollSystem, 30_000);
 pollStatus();
