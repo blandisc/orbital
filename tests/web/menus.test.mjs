@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { alexaMenu, artMenu, capturesMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingLabel, settingsMenu, settingsPage, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingLabel, settingsMenu, settingsPage, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch", system: "switch",
@@ -239,4 +239,14 @@ test("ajustes y menús con datos incompletos no truenan", () => {
   assert.ok(controlsMenu(null).options.length && setupMenu().options.length);
   const runners = runnerMenu({ id: "a", title: "Zelda", runner: "eden", runners: [{ id: "eden", name: "Eden" }, { id: "ryu" }, { id: "ryu" }] });
   assert.deepEqual(runners.options.map((o) => o.label), ["Abrir con ryu", "Usar siempre ryu"]);
+});
+
+test("liberar memoria: A cierra lo seguro; lo de Windows solo se muestra", () => {
+  const menu = memoryMenu({ room_mb: 1500, apps: [
+    { exe: "claude.exe", name: "la app de Claude", mb: 4600, closable: true, warning: "Detiene a Claude" },
+    { exe: "msedge.exe", name: "Edge", mb: 1700, closable: false, warning: "" }] });
+  assert.match(menu.subtitle, /Poco margen: 1,5 GB/);
+  assert.deepEqual(menu.options[0].command, { type: "close-app", exe: "claude.exe", name: "la app de Claude" });
+  assert.equal(menu.options[0].value, "4,5 GB");
+  assert.equal(menu.options[1].command.type, "stay");
 });

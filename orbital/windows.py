@@ -51,6 +51,11 @@ def pid_of(hwnd: int) -> int:
 
 def exe_name(pid: int) -> str:
     """Nombre del ejecutable en minúsculas ("eden.exe"), o "" si no se puede leer."""
+    return os.path.basename(exe_path(pid)).lower()
+
+
+def exe_path(pid: int) -> str:
+    """Ruta completa del ejecutable de un proceso, o "" si no se puede leer."""
     if not WIN or not pid:
         return ""
     handle = kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
@@ -60,7 +65,7 @@ def exe_name(pid: int) -> str:
         size = wintypes.DWORD(1024)
         buf = ctypes.create_unicode_buffer(size.value)
         if kernel32.QueryFullProcessImageNameW(handle, 0, buf, ctypes.byref(size)):
-            return os.path.basename(buf.value).lower()
+            return buf.value
         return ""
     finally:
         kernel32.CloseHandle(handle)

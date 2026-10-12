@@ -190,9 +190,30 @@ export function quickMenu(q, { running = null } = {}) {
     options.push({ icon: "power", label: "Energía", value: POWER_MODES[i][1],
       command: step(1), adjust: { left: step(-1), right: step(1) } });
   }
+  options.push({ icon: "bolt", label: "Liberar memoria", hint: "Cerrar lo que no estés usando", command: { type: "memory" } });
   options.push({ icon: "show", label: "Capturas", hint: "Home + RB captura sin salir del juego", command: { type: "captures" } });
   if (running?.managed) options.push({ icon: "play", label: `Volver a ${running.title}`, command: { type: "resume" } });
   return { title: "Panel rápido", crumb: "Panel rápido", options };
+}
+
+const gb = (mb) => `${(mb / 1024).toFixed(1).replace(".", ",")} GB`;
+
+/**
+ * Liberar memoria: lo que más ocupa, y A cierra lo que es seguro cerrar (lo demás solo se muestra).
+ * Arriba, el margen que queda: con menos de 2 GB los juegos pueden no abrir.
+ */
+export function memoryMenu({ room_mb: room, apps = [] }) {
+  const options = apps.map((app) => (app.closable
+    ? { icon: "close", label: `Cerrar ${app.name}`, value: gb(app.mb), hint: app.warning || undefined,
+      command: { type: "close-app", exe: app.exe, name: app.name } }
+    : { icon: "windows", label: app.name, value: gb(app.mb), hint: "De Windows u Orbital: no se cierra", command: { type: "stay" } }));
+  options.push({ icon: "check", label: "Listo", command: { type: "close" } });
+  const tight = room != null && room < 2048;
+  return {
+    title: "Liberar memoria", crumb: "Memoria",
+    subtitle: room == null ? "" : `${tight ? "Poco margen" : "Margen"}: ${gb(room)} libres para abrir juegos.${tight ? " Cierra algo para que abran bien." : ""}`,
+    options,
+  };
 }
 
 /** Capturas y clips, lo más reciente primero. */
@@ -218,7 +239,8 @@ export function capturesMenu(items) {
 export function healthMenu(message, { restart = true } = {}) {
   if (!restart) {
     return { title: "Memoria casi llena", subtitle: message,
-      options: [{ icon: "check", label: "Entendido", command: { type: "close" } }] };
+      options: [{ icon: "bolt", label: "Liberar memoria", command: { type: "memory" } },
+        { icon: "check", label: "Más tarde", command: { type: "close" } }] };
   }
   return {
     title: "La consola necesita reiniciarse",

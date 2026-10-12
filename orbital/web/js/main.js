@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints } from "./core/hints.js";
-import { alexaMenu, artMenu, capturesMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, healthMenu, mainMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, updateMenu, windowsMenu } from "./core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, healthMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, updateMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createHero } from "./components/hero.js";
@@ -605,6 +605,14 @@ async function runCommand(command, context = null) {
         return openMenu(setupMenu(await api.setup()), nested(context));
       case "quick":
         return openQuick(context);
+      case "memory":
+        return openMenu(memoryMenu(await api.memory()), nested(context));
+      case "close-app": {
+        const res = await api.closeApp(command.exe);
+        sound.play("select");
+        ui.toast.show(`Cerré ${command.name}: ${(res.freed_mb / 1024).toFixed(1).replace(".", ",")} GB libres de más`);
+        return openMenu(memoryMenu(await api.memory()), { stack: context?.stack ?? [] });
+      }
       case "tour": { // con el atajo del mando conectado
         if (state.legion === undefined) {
           const pads = (await api.controllers().catch(() => ({ controllers: [] }))).controllers;

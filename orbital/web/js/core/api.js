@@ -34,6 +34,8 @@ export const api = {
   setup: () => request("/api/setup"),
   diagnostics: () => request("/api/diagnostics"),
   quick: () => request("/api/quick"),
+  memory: () => request("/api/memory"),
+  closeApp: (exe) => post("/api/memory/close", { exe }),
   folders: () => request("/api/folders"),
   checkUpdate: (force = false) => request(`/api/update${force ? "?force=true" : ""}`),
   applyUpdate: () => post("/api/update"),

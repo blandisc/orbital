@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 
-from .. import capture, quick
+from .. import capture, health, memory, quick
 from .deps import Deps
 
 _LOCAL = re.compile(r"^[A-Za-z]:\\(?!\\)")
@@ -34,6 +34,35 @@ def _inside_gallery(path: str) -> Path:
 
 def router(d: Deps) -> APIRouter:
     r = APIRouter()
+
+    def protected() -> set[int]:
+        """Lo que nunca se ofrece cerrar: Orbital, su ventana y el juego abierto (ese se cierra aparte)."""
+        import os
+
+        from .. import windows
+
+        keep = {os.getpid(), os.getppid()}
+        running = d.catalog.launcher.status()
+        if running and running.get("pid"):
+            keep |= windows.process_tree(int(running["pid"]))
+        return keep
+
+    @r.get("/api/memory")
+    async def memory_usage() -> dict:
+        def read() -> dict:
+            return {"room_mb": health.commit_room_mb(), "free_mb": health.free_ram_mb(),
+                    "apps": [a.public() for a in memory.usage(protect_pids=protected())]}
+        return await run_in_threadpool(read)
+
+    @r.post("/api/memory/close")
+    def memory_close(body: dict) -> dict:
+        try:
+            freed = memory.close(str(body.get("exe") or ""), protect_pids=protected())
+        except LookupError as exc:
+            raise HTTPException(404, str(exc))
+        except PermissionError as exc:
+            raise HTTPException(409, str(exc))
+        return {"ok": True, "freed_mb": freed}
 
     @r.get("/api/quick")
     async def get_quick() -> dict:
