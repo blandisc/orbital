@@ -25,10 +25,18 @@ export function createSheet({ onCommand, onMove, onClose }) {
   let cancelExit = () => {};
   // Un toque recién abierta la hoja es el segundo toque del anterior: en «¿Reiniciar?» la opción
   // «Reiniciar» quedaba bajo el dedo y un doble toque reiniciaba sin confirmar.
+  // Por eso se ignora un toque en el mismo punto que el anterior si llega justo después de abrirse.
   let openedAt = 0;
+  let lastTap = null; // { x, y, t }
   let busyUntil = 0; // cambiando un valor en su sitio (volumen, un ajuste): la hoja espera, sin cerrarse
   const TAP_GUARD_MS = 400;
-  const tapReady = () => performance.now() - openedAt > TAP_GUARD_MS;
+  const tapReady = (event) => {
+    const now = performance.now();
+    const previous = lastTap;
+    lastTap = { x: event.clientX, y: event.clientY, t: now };
+    const doubleTap = previous && now - previous.t < TAP_GUARD_MS && Math.hypot(event.clientX - previous.x, event.clientY - previous.y) < 40;
+    return !(doubleTap && now - openedAt < TAP_GUARD_MS);
+  };
   const busy = () => performance.now() < busyUntil;
   // Lo que se cambia en su sitio: la hoja no se cierra y reabre (parpadeaba y, si fallaba, se cerraba).
   const inPlace = (option, command) => !!option?.adjust || ["setting", "quick-set", "music", "stay"].includes(command?.type);
@@ -52,7 +60,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
         option.command?.type === "close" && "sheet__item--dismiss"],
       type: "button",
       role: "menuitem",
-      onClick: () => tapReady() && !busy() && choose(i),
+      onClick: (event) => tapReady(event) && !busy() && choose(i),
     }, h("span", { class: "sheet__icon" }, ICONS[option.icon] ? svg(ICONS[option.icon]) : null),
     // Una descripción larga va debajo del nombre (en la misma línea lo aplastaba); un dato corto, a la derecha.
     h("span", { class: "sheet__text" }, h("span", { class: "sheet__label" }, option.label),
@@ -70,7 +78,7 @@ export function createSheet({ onCommand, onMove, onClose }) {
   function tapChev(event, i, side) {
     event.stopPropagation();
     const option = menu?.options[i];
-    if (!option || !tapReady() || busy()) return;
+    if (!option || !tapReady(event) || busy()) return;
     index = i;
     choose(i, option.adjust?.[side] ?? option.command);
   }
