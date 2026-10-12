@@ -2,6 +2,7 @@ import { h, svg } from "../core/dom.js";
 import { factLine, iconName, nearestTile, nextUnseen, shapeOf } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { Badge } from "./ui.js";
+import { swipeArea, swipeSteps } from "../core/swipe.js";
 
 /**
  * «Para ti» · mosaico: columnas de imágenes (portadas altas y arte ancho) con lo tuyo mezclado.
@@ -21,8 +22,19 @@ const IDLE_MS = 30_000;
 const ALIVE_MS = 2200;
 const BUFFER = 600; // px de piezas de sobra debajo de lo visible
 
-export function createForYouMosaic({ onFocus }) {
+export function createForYouMosaic({ onFocus, onPick }) {
   const el = h("div", { class: "foryou-mosaic" });
+  // Deslizar con el dedo recorre el mosaico (subir el dedo = ver lo de abajo, como en cualquier lista).
+  swipeArea(el, ({ dx, dy }) => {
+    if (!pool.length) return;
+    if (wake()) return; // en ambiente, el primer gesto solo despierta
+    const vertical = Math.abs(dy) > Math.abs(dx);
+    const action = vertical ? (dy < 0 ? "down" : "up") : (dx < 0 ? "right" : "left");
+    const t = columns[focus.col]?.tiles[focus.row];
+    for (let n = swipeSteps(vertical ? dy : dx, vertical ? (t?.h || 200) : (columns[focus.col]?.w || 200)); n > 0; n--) {
+      if (handle(action) !== true) break;
+    }
+  });
   let pool = [];
   let cursor = 0;
   let columns = [];
@@ -58,7 +70,7 @@ export function createForYouMosaic({ onFocus }) {
     const name = () => h("strong", { class: "foryou-mosaic__name" }, item.title);
     const logo = item.logo ? h("img", { class: "foryou-mosaic__logo", src: item.logo, alt: item.title }) : name();
     if (item.logo) logo.addEventListener("error", () => logo.replaceWith(name()), { once: true });
-    const node = h("div", { class: "foryou-mosaic__tile", role: "button", tabindex: "-1", "aria-label": item.title },
+    const node = h("div", { class: "foryou-mosaic__tile", role: "button", tabindex: "-1", "aria-label": item.title, onClick: () => tap(node) },
       poster, wide,
       h("span", { class: "foryou-mosaic__kind", "aria-hidden": "true" }, svg(ICONS[iconName(item)] || ICONS.apps)),
       h("div", { class: "foryou-mosaic__info" },
@@ -220,6 +232,21 @@ export function createForYouMosaic({ onFocus }) {
   }
 
   // --- botones ----------------------------------------------------------------------------------
+  /** Con el dedo: el primer toque enfoca la pieza; el segundo la abre (como en Inicio y Juegos). */
+  function tap(node) {
+    if (mode === "ambient") { wake(); return; }
+    for (const [c, col] of columns.entries()) {
+      const r = col.tiles.findIndex((t) => t.node === node);
+      if (r < 0) continue;
+      if (c === focus.col && r === focus.row) return onPick?.(col.tiles[r].item);
+      clearTimeout(idleTimer);
+      if (running) idleTimer = setTimeout(goAmbient, IDLE_MS);
+      focus = { col: c, row: r };
+      paint();
+      return;
+    }
+  }
+
   function move(dc, dr) {
     if (dc) {
       const c = focus.col + dc;
