@@ -15,7 +15,7 @@ import { createKeyboard } from "./keyboard.js";
  *   · con un teclado físico se escribe directo;
  *   · dictado: decirlo en voz alta (reconocimiento de voz de Edge, español de México).
  */
-const layout = (cleared) => [
+const layout = (cleared, dictateGlyph = "") => [
   [..."ABCDEFGHIJ"],
   [..."KLMNÑOPQRS"],
   [..."TUVWXYZ123"],
@@ -23,7 +23,7 @@ const layout = (cleared) => [
   [{ key: "space", label: "Espacio", span: 4 }, { key: "delete", label: "Borrar", span: 3 },
     { key: "clear", label: cleared ? "Deshacer" : "Borrar todo", span: 3, tone: "action" }],
   // Acciones claras con dedo o con mando: salir, dictar y ver los resultados.
-  [{ key: "back", label: "Atrás", span: 2, tone: "action" }, { key: "dictate", label: "Dictar", span: 3, icon: "mic" },
+  [{ key: "back", label: "Atrás", span: 2, tone: "action" }, { key: "dictate", label: "Dictar", span: 3, icon: "mic", glyph: dictateGlyph },
     { key: "go", label: "Buscar", span: 5, tone: "go" }],
 ];
 const MIN_CHARS = 2;
@@ -71,13 +71,14 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   let cancelExit = () => {};
 
   let shownCleared = false; // la tecla «Borrar todo» dice «Deshacer» justo después de usarla
+  let dictateGlyph = ""; // el botón del mando que dicta (☰, o M con teclado): se ve en la tecla
   keyboard.setLayout(layout(false));
 
   function render() {
     query.textContent = text;
     placeholder.hidden = !!text;
     const undo = !text && !!cleared;
-    if (undo !== shownCleared) { shownCleared = undo; keyboard.setLayout(layout(undo)); }
+    if (undo !== shownCleared) { shownCleared = undo; keyboard.setLayout(layout(undo, dictateGlyph)); }
     keyboard.active = zone === "keys";
     focusables.forEach((node, i) => node.classList.toggle(node.classList.contains("card") ? "card--focused" : "search__recent--focused",
       zone === "results" && i === resultIndex));
@@ -300,12 +301,19 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   }
 
   /** Pistas del pie mientras la búsqueda está abierta. */
-  // Solo lo que hace falta saber: el teclado ya enseña Espacio, Borrar y Dictar (X, Y y ☰ siguen
-  // funcionando como atajos, pero no llenan el pie).
-  const hints = (g) => [
-    { glyph: g.select, label: zone === "results" ? "Abrir" : "Escribir" },
-    { glyph: g.back, label: "Atrás", end: true },
-  ];
+  // Lo que hace falta saber: escribir, dictar (con un botón, sin ir hasta la tecla) y volver. X y Y
+  // (borrar, espacio) siguen como atajos sin llenar el pie.
+  const hints = (g) => {
+    if (g.menu !== dictateGlyph) { // el mando cambió (Legion, Xbox, teclado): la tecla Dictar enseña su botón
+      dictateGlyph = g.menu || "";
+      keyboard.setLayout(layout(shownCleared, dictateGlyph));
+    }
+    return [
+      { glyph: g.select, label: zone === "results" ? "Abrir" : "Escribir" },
+      g.menu && { glyph: g.menu, label: "Dictar" }, // otra vez: deja de escuchar
+      { glyph: g.back, label: "Atrás", end: true },
+    ].filter(Boolean);
+  };
 
   /** La biblioteca cambió (o terminó de cargar después de abrir la búsqueda): rehace los resultados. */
   function refresh() {
