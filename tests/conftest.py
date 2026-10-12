@@ -41,6 +41,15 @@ def _no_real_hardware(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_real_screenshots(monkeypatch):
+    """Ninguna prueba toma capturas de tu pantalla de verdad («toma una captura» por voz lo hacía)."""
+    from orbital import capture
+
+    monkeypatch.setattr(capture, "_game_bar_screenshot", lambda: None)
+    monkeypatch.setattr(capture, "_gdi_screenshot", lambda folder, name: None)
+
+
+@pytest.fixture(autouse=True)
 def _no_real_stremio(monkeypatch):
     """Ninguna prueba habla con Stremio de verdad (un login de prueba salía a internet)."""
     from orbital.library import stremio_api

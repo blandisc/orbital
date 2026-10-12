@@ -65,7 +65,7 @@ def test_natural_watch_phrases():
     ("toma una captura", ("CaptureIntent", {})),
     ("sube el volumen", ("VolumeIntent", {"volume": "sube"})),
     ("bájale volumen", ("VolumeIntent", {"volume": "bajale"})),
-    ("pon el volumen en 40", ("VolumeIntent", {"amount": "40"})),
+    ("pon el volumen en 40", ("VolumeIntent", {"level": "40"})),
 ])
 def test_new_phrases(text, expected):
     assert parse_text(text) == expected

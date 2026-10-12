@@ -672,6 +672,23 @@ class Watch:
                          daemon=True, name="next-episode").start()
         return label or "el siguiente episodio"
 
+    def play_previous_episode(self) -> str | None:
+        """El episodio anterior al que se está viendo; None si no hay (o no es una serie)."""
+        current = self.player.current if self.player.playing else None
+        if current is None or current.meta.get("kind") != "series":
+            return None
+        meta_id = current.meta["meta_id"]
+        info = self.cinemeta.meta("series", meta_id)
+        episodes = [e["id"] for s in cinemeta.seasons(info) if s["season"] != 0 for e in s["episodes"]]
+        if current.meta.get("video_id") not in episodes:
+            return None
+        i = episodes.index(current.meta["video_id"])
+        if i == 0:
+            return None
+        label, _ = self._episode_label(info, episodes[i - 1])
+        threading.Thread(target=self._step_episode, args=(current.meta, -1), daemon=True, name="prev-episode").start()
+        return label or "el episodio anterior"
+
     def player_subtitles(self, lang: str) -> bool:
         """Subtítulos en ese idioma: los del video o, si no trae, los de tus addons."""
         if self.player.select_language("sub", lang):

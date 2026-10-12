@@ -90,7 +90,13 @@
             "reproduzca {query}",
             "buscar {query} en stremio",
             "ver {query}",
-            "reproducir {query}"
+            "reproducir {query}",
+            "pon {query}",
+            "ponme {query}",
+            "pon la película {query}",
+            "pon la serie {query}",
+            "quiero ver la película {query}",
+            "quiero ver la serie {query}"
           ]
         },
         {
@@ -129,7 +135,13 @@
             "termina el juego",
             "termine el juego",
             "cierra la aplicación",
-            "cierre la aplicación"
+            "cierre la aplicación",
+            "cierra el video",
+            "cierre el video",
+            "cierra la película",
+            "cierra la serie",
+            "cierra stremio",
+            "quita el video"
           ]
         },
         {
@@ -139,7 +151,11 @@
             "qué está abierto",
             "qué estoy jugando",
             "qué se está jugando",
-            "qué hay abierto"
+            "qué hay abierto",
+            "qué estoy viendo",
+            "qué película es esta",
+            "qué serie es esta",
+            "qué se está reproduciendo"
           ]
         },
         {
@@ -215,7 +231,8 @@
             "ponga pausa",
             "pausar el video",
             "detén el video",
-            "detenga el video"
+            "detenga el video",
+            "para el video"
           ]
         },
         {
@@ -231,7 +248,11 @@
             "dale play",
             "dele play",
             "sigue con el video",
-            "siga con el video"
+            "siga con el video",
+            "play",
+            "dale",
+            "sigue con la película",
+            "continúa el video"
           ]
         },
         {
@@ -256,7 +277,9 @@
             "{seek} un {unit}",
             "{seek} el video un {unit}",
             "{seek} un poco",
-            "{seek} el video un poco"
+            "{seek} el video un poco",
+            "{seek} {amount} {unit} por favor",
+            "{seek} media {unit}"
           ]
         },
         {
@@ -416,16 +439,65 @@
             {
               "name": "amount",
               "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "level",
+              "type": "AMAZON.NUMBER"
             }
           ],
           "samples": [
             "{volume} el volumen",
             "{volume} volumen",
-            "{volume} el volumen a {amount}",
-            "pon el volumen en {amount}",
-            "pon el volumen a {amount}",
-            "volumen al {amount} por ciento"
+            "{volume} el volumen a {level}",
+            "pon el volumen en {level}",
+            "pon el volumen a {level}",
+            "pon el volumen al {level}",
+            "volumen al {level} por ciento",
+            "volumen a {level}",
+            "{volume} el volumen {amount} puntos",
+            "{volume} el volumen {amount}"
           ]
+        },
+        {
+          "name": "MuteIntent",
+          "slots": [],
+          "samples": [
+            "silencia",
+            "silencie",
+            "silencio",
+            "silencia la tele",
+            "quita el sonido",
+            "quite el sonido",
+            "mute",
+            "sin sonido"
+          ]
+        },
+        {
+          "name": "UnmuteIntent",
+          "slots": [],
+          "samples": [
+            "quita el silencio",
+            "quite el silencio",
+            "regresa el sonido",
+            "devuelve el sonido",
+            "pon el sonido"
+          ]
+        },
+        {
+          "name": "PreviousEpisodeIntent",
+          "slots": [],
+          "samples": [
+            "episodio anterior",
+            "el episodio anterior",
+            "pon el episodio anterior",
+            "capítulo anterior",
+            "regresa al episodio anterior",
+            "el capítulo anterior"
+          ]
+        },
+        {
+          "name": "AMAZON.PreviousIntent",
+          "samples": []
         }
       ],
       "types": [
@@ -471,8 +543,7 @@
                   "selecciona",
                   "seleccione",
                   "seleccionar",
-                  "aceptar",
-                  "ok"
+                  "aceptar"
                 ]
               }
             },
@@ -510,7 +581,12 @@
                   "avanza",
                   "avance",
                   "adelantar",
-                  "avanzar"
+                  "avanzar",
+                  "salta",
+                  "salte",
+                  "pasa",
+                  "pase",
+                  "brinca"
                 ]
               }
             },
@@ -549,6 +625,15 @@
                 "synonyms": [
                   "segundo",
                   "segundos"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "hours",
+                "synonyms": [
+                  "hora",
+                  "horas"
                 ]
               }
             }
@@ -844,7 +929,9 @@
                   "súbele",
                   "suba",
                   "más alto",
-                  "aumenta"
+                  "aumenta",
+                  "más fuerte",
+                  "sube más"
                 ]
               }
             },
@@ -856,7 +943,9 @@
                   "bájale",
                   "baje",
                   "más bajo",
-                  "disminuye"
+                  "disminuye",
+                  "más quedito",
+                  "bájale más"
                 ]
               }
             }

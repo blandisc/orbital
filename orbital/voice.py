@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 import re
 import time
 from dataclasses import dataclass, field
@@ -22,9 +23,25 @@ DIRECTIONS = {
 
 
 LANGUAGES = {"ingles": "en", "espanol": "es", "english": "en", "spanish": "es", "en": "en", "es": "es"}
+VAGUE_MEDIA = {"una pelicula", "una serie", "algo", "peliculas", "series", "una peli", "pelis", "algo bueno"}
 LANGUAGE_NAMES = {"en": "inglés", "es": "español"}
 NO_TOAST = {"type": "noop"}  # la interfaz ignora este evento
 VOLUME_DOWN = {"down", "baja", "baje", "bajale", "bajarle", "menos"}
+MAX_SEEK = 6 * 3600  # s: nadie adelanta más de una película entera de golpe
+
+
+def spoken_number(value) -> float | None:
+    """Un número dicho o escrito: "30", "treinta", "media" (0.5). None si no lo es o es absurdo (1e999)."""
+    text = normalize(str(value or ""))
+    if text in ("medio", "media"):
+        return .5
+    try:
+        number = float(words_to_numbers(text))
+    except (ValueError, OverflowError):
+        return None
+    return number if math.isfinite(number) else None
+
+
 SEEK_BACK = {"back", "regresa", "regrese", "retrocede", "retroceda", "atrasa", "atrase", "atras"}
 CLOUD = re.compile(r"\s+(?:en|desde)\s+(?:la\s+nube|geforce(?:\s+now)?|gfn)$")
 
@@ -87,7 +104,7 @@ def episode_request(text: str) -> dict | None:
     return None
 
 
-_TEXT_RULES: list[tuple[re.Pattern, str, str | None]] = [
+_TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
     # "quiero ver los simpson temporada 5 episodio 3 en español"
     (re.compile(rf"^(?:quiero ver|pon|ponga|ver|reproduce)\s+(?:el\s+)?(?P<series>.+?)\s*,?\s+{_EPISODE}"
                 r"(?:\s+en\s+(?P<language>\w+))?$"), "WatchEpisodeIntent", None),
@@ -95,12 +112,12 @@ _TEXT_RULES: list[tuple[re.Pattern, str, str | None]] = [
                 r"(?:\s+en\s+(?P<language>\w+))?$"), "WatchEpisodeIntent", None),
     # Reproductor de Orbital (van primero: "pon subtítulos" no es abrir un juego llamado así).
     # Sin slot fijo: los grupos con nombre son los slots.
-    (re.compile(r"^(?:pausa|pause|pon pausa|ponle pausa|ponga pausa)(?:\s+(?:el video|la pelicula|la serie))?$"),
+    (re.compile(r"^(?:pausa|pause|pon pausa|ponle pausa|ponga pausa|para|deten)(?:\s+(?:el video|la pelicula|la serie))?$"),
      "PauseIntent", None),
     (re.compile(r"^(?:reanuda|reanude|quita la pausa|quite la pausa|dale play|dele play)(?:\s+el video)?$"),
      "ResumeIntent", None),
-    (re.compile(r"^(?P<seek>adelanta|adelante|avanza|avance|regresa|regrese|retrocede|retroceda|atrasa|atrase)"
-                r"(?:\s+el video)?\s+(?:(?P<amount>\d+)|un|una)\s+(?P<unit>minutos?|segundos?)$"), "SeekIntent", None),
+    (re.compile(r"^(?P<seek>adelanta|adelante|avanza|avance|salta|salte|pasa|regresa|regrese|retrocede|retroceda|atrasa|atrase)"
+                r"(?:\s+el video)?\s+(?:(?P<amount>\d+|media|medio)|un|una)\s+(?P<unit>minutos?|segundos?|horas?)$"), "SeekIntent", None),
     (re.compile(r"^(?:pon|ponga|activa|active)(?:\s+los)?\s+subtitulos(?:\s+en\s+(?P<language>\w+))?$"),
      "SubtitlesIntent", None),
     (re.compile(r"^(?:quita|quite|apaga|apague)\s+los\s+subtitulos$|^sin subtitulos$"), "SubtitlesOffIntent", None),
@@ -116,10 +133,22 @@ _TEXT_RULES: list[tuple[re.Pattern, str, str | None]] = [
      "TimeLeftIntent", None),
     (re.compile(r"^(?:toma|tome|haz|haga)\s+(?:una\s+)?captura(?:\s+de\s+pantalla)?$|^captura\s+(?:la\s+)?pantalla$"),
      "CaptureIntent", None),
-    (re.compile(r"^(?P<volume>sube|suba|subele|baja|baje|bajale)(?:\s+el)?\s+volumen(?:\s+a\s+(?P<amount>\d+))?$"),
+    (re.compile(r"^(?P<volume>sube|suba|subele|baja|baje|bajale)(?:\s+el)?\s+volumen(?:\s+a\s+(?P<level>\d+))?$"),
      "VolumeIntent", None),
-    (re.compile(r"^(?:pon|ponga)\s+el\s+volumen\s+(?:en|a|al)\s+(?P<amount>\d+)(?:\s+por\s*ciento)?$"),
+    (re.compile(r"^(?P<volume>sube|suba|subele|baja|baje|bajale)(?:\s+el)?\s+volumen\s+(?P<amount>\d+)(?:\s+puntos)?$"),
      "VolumeIntent", None),
+    (re.compile(r"^(?:pon|ponga)\s+el\s+volumen\s+(?:en|a|al)\s+(?P<level>\d+)(?:\s+por\s*ciento)?$"),
+     "VolumeIntent", None),
+    (re.compile(r"^(?:pon|ponga|sube|suba)\s+el\s+volumen\s+al\s+maximo$"), "VolumeIntent", None, {"level": "100"}),
+    (re.compile(r"^(?:pon|ponga|baja|baje)\s+el\s+volumen\s+al\s+minimo$"), "VolumeIntent", None, {"level": "5"}),
+    (re.compile(r"^(?:silencia|silencie|silencio|mute|quita el sonido|quite el sonido)(?:\s+la\s+(?:tele|tv|consola))?$"),
+     "MuteIntent", None),
+    (re.compile(r"^(?:quita|quite)\s+el\s+silencio$|^(?:regresa|devuelve|pon)\s+el\s+sonido$"), "UnmuteIntent", None),
+    (re.compile(r"^(?:(?:pon|ponga|regresa al|regrese al)\s+)?(?:el\s+)?(?:episodio|capitulo)\s+anterior$"),
+     "PreviousEpisodeIntent", None),
+    (re.compile(r"^(?:cierra|cierre|quita|quite)\s+(?:el\s+video|la\s+pelicula|la\s+serie|stremio)$"),
+     "CloseGameIntent", None),
+    (re.compile(r"^que\s+(?:estoy viendo|pelicula es esta|serie es esta|se esta reproduciendo)$"), "WhatsPlayingIntent", None),
     (re.compile(rf"^{_V['search']}\s+(?P<v>.+?)\s+en\s+stremio$"), "SearchMediaIntent", "query"),
     (re.compile(rf"^{_V['continue']}(?:\s+viendo)?(?:\s+(?P<v>.+))?$"), "ContinueWatchingIntent", "show"),
     # "quiero ver dune", "reproduce the office": como en Alexa.
@@ -141,11 +170,17 @@ _EPISODE_ONLY = [
 ]
 
 
+NUMERIC = {"VolumeIntent", "SeekIntent"}  # «pon el volumen a cincuenta»: el número en palabras
+
+
 def parse_text(text: str) -> tuple[str, dict[str, str]] | None:
     clean = normalize(text)
-    for pattern, intent, slot in _TEXT_RULES:
-        m = pattern.match(clean)
+    numeric = words_to_numbers(clean)
+    for pattern, intent, slot, *fixed in _TEXT_RULES:
+        m = pattern.match(numeric if intent in NUMERIC else clean)
         if m:
+            if fixed:
+                return intent, dict(fixed[0])
             if slot:
                 return intent, ({slot: m.group("v")} if m.group("v") else {})
             found = {k.rstrip("2"): v for k, v in m.groupdict().items() if v}
@@ -165,7 +200,7 @@ class VoiceController:
         return self.handle_intent(*parsed)
 
     def handle_intent(self, intent: str, slots: dict[str, str] | None = None) -> VoiceResult:
-        slots = {k: v for k, v in (slots or {}).items() if v}
+        slots = {k: v for k, v in (slots.items() if isinstance(slots, dict) else ()) if v}
         log.info("Voz: %s %s", intent, slots)
         # Solo los manejadores de intents (`_algo_intent`): el nombre viene de fuera (Alexa, el túnel).
         name = "_" + re.sub(r"(?<!^)(?=[A-Z])", "_", str(intent or "")).lower()
@@ -246,6 +281,8 @@ class VoiceController:
             return VoiceResult("¿Qué quieres ver?", ok=False)
         if (episode := episode_request(query)) is not None:  # "quiero ver Los Simpson temporada 5…"
             return self._watch_episode_intent(episode)
+        if normalize(query) in VAGUE_MEDIA:  # "quiero ver una película": no es un título
+            return self._open_stremio_intent({})
         # Si ya está en tu biblioteca de Stremio, se abre directo.
         item = self.catalog.find(query, source="stremio")
         if item is not None:
@@ -297,6 +334,8 @@ class VoiceController:
 
     def _continue_watching_intent(self, slots: dict) -> VoiceResult:
         show = slots.get("show", "")
+        if not show and self.catalog.player.playing:  # «continúa» con un video abierto: quitarle la pausa
+            return self._resume_intent({})
         if show and (episode := episode_request(show)) is not None:
             return self._watch_episode_intent(episode)
         if not self.catalog.stremio_linked:
@@ -337,6 +376,10 @@ class VoiceController:
 
     def _close_game_intent(self, slots: dict) -> VoiceResult:
         status = self.catalog.launcher.status()
+        if self.catalog.player.playing:  # «cierra el video»: se cierra bien (lo visto se guarda)
+            title = getattr(self.catalog.player.current, "title", "") or "el video"
+            self.catalog.player.stop()
+            return VoiceResult(f"Cerré {title}. Guardé dónde ibas.")
         if self.catalog.launcher.stop():
             return VoiceResult(f"Cerré {status['title']}." if status else "Listo, lo cerré.")
         if status:
@@ -345,6 +388,8 @@ class VoiceController:
         return VoiceResult("No hay nada abierto.", ok=False)
 
     def _whats_playing_intent(self, slots: dict) -> VoiceResult:
+        if self.catalog.player.playing and (current := self.catalog.player.current) is not None:
+            return VoiceResult(f"Estás viendo {current.title}.")
         status = self.catalog.launcher.status()
         return VoiceResult(f"Está abierto {status['title']}." if status else "No hay nada abierto.")
 
@@ -402,15 +447,22 @@ class VoiceController:
         if (idle := self._playing()) is not None:
             return idle
         unit = normalize(slots.get("unit", ""))
-        minutes = unit.startswith("min")
-        try:
-            amount = abs(int(float(slots.get("amount", ""))))
-        except ValueError:
+        size, word = (3600, "hora") if unit.startswith(("hour", "hora")) else (60, "minuto") if unit.startswith("min") else (1, "segundo")
+        amount = spoken_number(slots.get("amount")) if slots.get("amount") else None
+        if amount is None:
             amount = 1 if unit else 30  # "adelanta un minuto" / "adelanta un poco"
-        seconds = amount * (60 if minutes else 1)
+            size, word = (size, word) if unit else (1, "segundo")
+        amount = abs(amount)
+        seconds = min(MAX_SEEK, round(amount * size))
+        if seconds < 1:
+            return VoiceResult("¿Cuánto? Por ejemplo: adelanta cinco minutos.", ok=False, events=[NO_TOAST])
         back = normalize(slots.get("seek") or slots.get("direction", "")) in SEEK_BACK
         self.catalog.player.seek(-seconds if back else seconds)
-        what = f"{amount} minuto{'s' if amount != 1 else ''}" if minutes else f"{amount} segundos"
+        if amount == .5 and size > 1:
+            what = f"media {word}" if word == "hora" else f"medio {word}"
+        else:
+            shown = round(seconds / size) if seconds < MAX_SEEK else MAX_SEEK // size
+            what = f"{shown} {word}{'s' if shown != 1 else ''}"
         return VoiceResult(f"{'Regresando' if back else 'Adelantando'} {what}.", events=[NO_TOAST])
 
     def _time_left_intent(self, slots: dict) -> VoiceResult:
@@ -439,18 +491,31 @@ class VoiceController:
         current = quick.volume()
         if current is None:
             return VoiceResult("No encuentro el control de volumen.", ok=False)
-        try:
-            amount = int(float(slots.get("amount", "")))
-        except ValueError:
-            amount = None
+        level = spoken_number(slots.get("level")) if slots.get("level") else None
+        amount = spoken_number(slots.get("amount")) if slots.get("amount") else None
         word = normalize(slots.get("volume", ""))
-        if amount is not None and not word:
+        if level is None and amount is not None and not word:
             level = amount  # "pon el volumen en 40"
-        else:
-            step = 10 if amount is None else amount
+        if level is None:  # «sube el volumen» (10) o «súbele 20 puntos»
+            step = 10 if amount is None else min(100, abs(amount))
             level = current["level"] + (-step if word in VOLUME_DOWN else step)
-        after = quick.set_volume(level=max(0, min(100, level)), muted=False) or current
+        after = quick.set_volume(level=int(max(0, min(100, level))), muted=False) or current
         return VoiceResult(f"Volumen en {after['level']} por ciento.")
+
+    def _mute_intent(self, slots: dict) -> VoiceResult:
+        from . import quick
+
+        if quick.set_volume(muted=True) is None:
+            return VoiceResult("No encuentro el control de volumen.", ok=False)
+        return VoiceResult("Sin sonido. Di quita el silencio para volver.")
+
+    def _unmute_intent(self, slots: dict) -> VoiceResult:
+        from . import quick
+
+        after = quick.set_volume(muted=False)
+        if after is None:
+            return VoiceResult("No encuentro el control de volumen.", ok=False)
+        return VoiceResult(f"Sonido de vuelta, en {after['level']} por ciento.")
 
     def _language(self, slots: dict) -> str | None:
         return LANGUAGES.get(normalize(slots.get("language", "")))
@@ -458,6 +523,10 @@ class VoiceController:
     def _subtitles_intent(self, slots: dict) -> VoiceResult:
         if (idle := self._playing()) is not None:
             return idle
+        asked = slots.get("language", "")
+        if asked and self._language(slots) is None:
+            return VoiceResult(f"No tengo subtítulos en {asked}; puedo ponerlos en inglés o en español.", ok=False,
+                               events=[NO_TOAST])
         lang = self._language(slots) or self.catalog.config.stremio.subtitles or "en"
         name = LANGUAGE_NAMES.get(lang, lang)
         if self.catalog.watch.player_subtitles(lang):
@@ -489,6 +558,14 @@ class VoiceController:
         label = self.catalog.watch.play_next_episode()
         if label is None:
             return VoiceResult("No hay un episodio siguiente.", ok=False, events=[NO_TOAST])
+        return VoiceResult(f"Poniendo {label}.")
+
+    def _previous_episode_intent(self, slots: dict) -> VoiceResult:
+        if (idle := self._playing()) is not None:
+            return idle
+        label = self.catalog.watch.play_previous_episode()
+        if label is None:
+            return VoiceResult("No hay un episodio anterior.", ok=False, events=[NO_TOAST])
         return VoiceResult(f"Poniendo {label}.")
 
     # --- un episodio concreto ------------------------------------------------------------------

@@ -67,7 +67,9 @@ def is_local_request(request: Request) -> bool:
 
 
 def token_ok(request: Request, expected: str) -> bool:
-    token = request.headers.get("authorization", "").removeprefix("Bearer ").strip()
+    header = request.headers.get("authorization", "").strip()
+    # «Bearer», «bearer» o «BEARER» (RFC 6750 no distingue mayúsculas).
+    token = header[7:].strip() if header[:7].lower() == "bearer " else header
     if not token or not expected:
         return False
     # En bytes: compare_digest con texto no ASCII lanzaba TypeError (500). Las cabeceras llegan como
@@ -223,6 +225,9 @@ async def invalid_request(request: Request, exc: RequestValidationError) -> JSON
     return JSONResponse({"detail": errors}, status_code=422)
 
 
+MAX_PUBLIC_BODY = 16 * 1024
+
+
 def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | None = None) -> FastAPI:
     """App mínima para internet (Alexa a través del túnel): solo voz y ping, siempre con token.
 
@@ -239,6 +244,13 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
 
     @public.middleware("http")
     async def require_token(request: Request, call_next):
+        # Un comando de voz cabe en unos cientos de bytes: 5 MB de texto ocupaban el servidor segundos.
+        try:
+            size = int(request.headers.get("content-length") or 0)
+        except ValueError:
+            size = MAX_PUBLIC_BODY + 1
+        if size > MAX_PUBLIC_BODY:
+            return JSONResponse({"detail": "Petición demasiado grande"}, status_code=413)
         key = FailedTokens.key(request)
         # El token correcto pasa siempre: quien falsifica tu dirección no te deja fuera.
         if token_ok(request, config.server.token):
@@ -261,7 +273,7 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
             waiting[0] -= 1
         return JSONResponse({"detail": "Token inválido"}, status_code=401)
 
-    @public.get("/api/ping")
+    @public.api_route("/api/ping", methods=["GET", "HEAD"])  # HEAD: los monitores de disponibilidad
     def ping() -> dict:
         return {"ok": True, "service": "orbital", "version": __version__}
 
