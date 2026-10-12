@@ -63,12 +63,13 @@ Globales: `--z-overlay`, `--z-hints`, `--z-launch`, `--z-toast`. Dentro de un co
 | Pieza | Archivo | Para qué |
 |---|---|---|
 | `Chip(text, { tone })` | `ui` | Un dato corto: «4K», «Inglés», «Al instante» (`good`/`warn`). Una línea, nunca se parte. |
-| `Badge(text)` | `ui` | Etiqueta que llama la atención: «3 nuevos», «Recomendada» (sin mayúsculas). |
+| `Badge(text, { large })` | `ui` | Etiqueta que llama la atención: «3 nuevos», «Recomendada» (sin mayúsculas). `large` sobre arte a sangre (el mosaico de Para ti). |
 | `Progress(fraction)` | `ui` | Cuánto llevas de un video. |
 | `SectionHead(title, { meta, end })` | `ui` | Título de una zona con su dato y algo a la derecha. |
+| `ScreenHead({ eyebrow, title, lead })` + `.screen` | `ui` | Pantalla completa encima de todo (Conectar Stremio, Conectar Trakt): `.screen` es el marco (fondo, margen, entrada y salida con `screen--leaving`) y `ScreenHead` su encabezado («Cuentas» · título · una línea). |
 | `KeyHint(glyph, label, { small })` | `ui` | Botón del mando + qué hace («A Continuar»). **El pie de controles se arma con esta pieza.** |
 | `.tile` | `ui` | Superficie enfocable de las pantallas nuevas: mismo radio, anillo de foco y atenuado. |
-| `Button({ label, glyph, variant, yields })` | `button` | Acción con su glifo. En una fila van dentro de `.button-row`: **nunca se parte ni se corta**; si no cabe, solo el botón `yields` (la alternativa, «Con Ryujinx») se encoge con «…». |
+| `Button({ label, glyph, variant, yields })` | `button` | Acción con su glifo. En una fila van dentro de `.button-row`: **nunca se parte ni se corta**; si no cabe, solo el botón `yields` (la alternativa, «Con Ryujinx») se encoge con «…». Casi siempre es leyenda (no se enfoca); cuando es lo único que hay que hacer (Conectar Trakt), lleva `data-focus-id` y el anillo de foco. |
 | `Glyph(text, { small })` | `glyph` | El botón del mando en su color (A verde, B rojo, X azul, Y amarillo); cambia con el modo de entrada (`data-input`: mando o teclado). |
 | `createKeyboard()` | `keyboard` | Teclado en pantalla (Buscar, Conectar Stremio). |
 
@@ -76,7 +77,7 @@ Globales: `--z-overlay`, `--z-hints`, `--z-launch`, `--z-toast`. Dentro de un co
 
 | Pieza | Para qué |
 |---|---|
-| `Card(item, { caption, showAgo, pop })` (`card`) | Portada de un juego o video en filas y cuadrículas. Sin arte: el respaldo con su nombre; apps: su ícono (`appIcon`). |
+| `Card(item, { caption, showAgo, pop })` (`card`) | Portada de un juego o video en filas y cuadrículas. Sin arte: el respaldo con su nombre; apps: su ícono (`appIcon`). Esquina: estrella si es favorito (`item.favorite`), palomita si ya lo tienes en una lista de afuera (`item.owned`). |
 | `FeatureTile` (`tiles`) | El destacado del Inicio: arte a sangre, logo o título, dato y botones (`.button-row`). |
 | `WideTile` (`tiles`) | Arte horizontal: solo el título; al enfocar aparece el detalle. |
 | `ConsoleTile` (`tiles`) | Foto real de la consola (o logo) con brillo de su color, juegos, nuevos y lo último. |
@@ -92,11 +93,13 @@ letras que bajan: g, p, j, y).
 | `hints` | Pie de controles del momento (piezas `KeyHint`). |
 | `foryou` | Para ti (a la izquierda del Inicio): recomendaciones en dos modos, Mosaico y Listas; X cambia de uno a otro con el selector del centro del pie. A ve o juega, Y abre Más (ficha, «No me interesa»). |
 | `foryou-mosaic` | Mosaico de Para ti: columnas de imágenes; la enfocada crece y enseña etiqueta, logo y un dato; bajar sube todo (cascada) y quieto ~30 s entra en ambiente. Ícono de esquina: la consola del juego, o serie / película. |
-| `foryou-lists` | Listas de Para ti, como Juegos: riel de listas (Trakt, plataformas con su logo de TMDB, juegos de RAWG), Series · Películas en las grandes, portadas y la ficha de lo enfocado. |
+| `foryou-lists` | Listas de Para ti, con las mismas piezas que Juegos (`rail`, `browse`, `detail-panel`): tus listas en el riel (Trakt, plataformas con su logo de TMDB, juegos de RAWG), Series · Películas en las grandes, portadas y la ficha de lo enfocado. Una lista que explica algo (Conectar Trakt) lleva su botón, enfocable. |
 | `trakt-link` | Conectar Trakt: un código grande para escribir en trakt.tv/activate desde el celular. |
 | `home` | Inicio: saludo, destacado, tarjetas anchas y Tus consolas. |
-| `games` | Juegos: riel de consolas (cruceta o LT/RT), encabezado de consola, filtros y cuadrícula. Su ficha lateral es `game-panel` (comparte `games.css`: ver Excepciones). |
-| `game-panel` | Ficha del juego enfocado, a la derecha de Juegos. |
+| `games` | Juegos: tus consolas en el riel (cruceta o LT/RT), encabezado de consola, filtros y cuadrícula; la ficha del juego enfocado. Armado con `rail`, `browse` y `detail-panel`. |
+| `rail` | Riel lateral de una vista con secciones (consolas, listas): casillas con foto, logo de marca o ícono; RePág/AvPág arriba y abajo; grupos con su nombre. **Al enfocarlo se abre como pestaña** y enseña el nombre y un dato de cada sección; lo de atrás se aparta. |
+| `browse` | El centro de una vista con secciones: encabezado (`BrowseHead`: la sección en su casilla, nombre grande y lo esencial), filtros en píldora (`fillFilters`, se compactan si no caben en una fila) y la cuadrícula de portadas (`keepInView`). Juegos y las Listas de Para ti son la misma vista con otros datos. |
+| `detail-panel` | Ficha lateral de lo enfocado (un juego, una película, una serie): arte que se funde con la ficha (máscara, sin bordes), logo o nombre, de dónde es, hasta cuatro datos, la descripción y sus acciones (o una nota: «No lo tienes»). |
 | `hero` + `shelf` | Películas y series / Apps: el destacado arriba y las filas de portadas. El destacado cede la descripción antes que cortar los botones. |
 | `title` | Ficha de una película o serie: datos, botones, temporadas (LB/RB) y episodios. |
 | `sources` | Elegir fuente de un video. |
@@ -136,9 +139,9 @@ Cada una se marca en el código con `ds-exception: <motivo>` usando exactamente 
 
 | Motivo | Dónde | Por qué |
 |---|---|---|
-| `game-panel` comparte `games.css` | `js/components/game-panel.js` | La ficha solo existe dentro de Juegos; separar su CSS duplicaría el acomodo. |
+| — | — | Ninguna hoy. |
 
-(Nada más hoy. Antes de agregar una, intenta un token o una pieza nueva.)
+(Antes de agregar una, intenta un token o una pieza nueva.)
 
 ## 8. El reproductor (`orbital/player_ui.py`)
 

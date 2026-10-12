@@ -2,6 +2,7 @@ import { api } from "../core/api.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
 import { typingGlyphs } from "../core/input.js";
 import { createKeyboard } from "./keyboard.js";
+import { ScreenHead } from "./ui.js";
 
 /**
  * Conectar Stremio con el mando (antes solo desde la PC: `orbital stremio login`).
@@ -28,12 +29,9 @@ export function createLogin({ onDone, onMove, onClose }) {
   const message = h("div", { class: "login__message", role: "status" });
   const keyboard = createKeyboard({ label: "Teclado", onPress: (key) => press(key) });
   const keys = keyboard.el;
-  const el = h("section", { class: "login", hidden: true, "aria-label": "Conectar Stremio" },
-    h("div", { class: "login__head" },
-      h("div", { class: "login__eyebrow" }, "Cuentas"),
-      h("h1", { class: "login__title" }, "Conectar Stremio"),
-      h("p", { class: "login__lead" }, "Para Seguir viendo, tus fuentes y el progreso en todos tus dispositivos. "
-        + "Tu contraseña solo se envía a Stremio; Orbital no la guarda.")),
+  const el = h("section", { class: "login screen", hidden: true, "aria-label": "Conectar Stremio" },
+    ScreenHead({ eyebrow: "Cuentas", title: "Conectar Stremio", className: "login__head",
+      lead: "Para Seguir viendo, tus fuentes y el progreso en todos tus dispositivos. Tu contraseña solo se envía a Stremio; Orbital no la guarda." }),
     h("div", { class: "login__form" }, fields.email.node, fields.password.node, message),
     keys);
 
@@ -148,12 +146,12 @@ export function createLogin({ onDone, onMove, onClose }) {
     if (el.hidden) return;
     abort?.abort();
     fields.password.value = "";
-    cancelExit = hideAfterExit(el, "login--leaving", 300);
+    cancelExit = hideAfterExit(el, "screen--leaving", 300);
     onClose?.();
   }
 
   function handle(action) {
-    if (el.hidden || el.classList.contains("login--leaving")) return false;
+    if (el.hidden || el.classList.contains("screen--leaving")) return false;
     if (action === "back") { close(); return true; } // también mientras conecta: lo cancela
     if (busy) return true;
     if (action === "alt") { press("delete"); return true; }
@@ -172,7 +170,7 @@ export function createLogin({ onDone, onMove, onClose }) {
   ];
 
   // Saliendo ya no cuenta como abierta (la leyenda del login se quedaba en Inicio).
-  const shown = () => !el.hidden && !el.matches('[class*="--leaving"]');
+  const shown = () => !el.hidden && !el.classList.contains("screen--leaving");
   return { el, open, close, handle, hints, type, get isOpen() { return shown(); },
     get typing() { return shown() && !busy; } };
 }

@@ -11,8 +11,15 @@ import { Glyph } from "./glyph.js";
 export const Chip = (text, { tone = null, className = null } = {}) =>
   h("span", { class: ["chip", tone && `chip--${tone}`, className] }, text);
 
-/** Etiqueta que llama la atención: «+2 nuevos», «Recomendada». */
-export const Badge = (text, { className = null } = {}) => h("span", { class: ["badge", className] }, text);
+/** Etiqueta que llama la atención: «+2 nuevos», «Recomendada» (large: sobre arte grande, el mosaico). */
+export const Badge = (text, { className = null, large = false } = {}) => h("span", { class: ["badge", large && "badge--lg", className] }, text);
+
+/** Encabezado de una pantalla completa (Conectar Stremio, Conectar Trakt): de dónde es, el título y una línea. */
+export const ScreenHead = ({ eyebrow, title, lead = null, className = null }) =>
+  h("div", { class: ["screen-head", className] },
+    eyebrow && h("div", { class: "screen-head__eyebrow" }, eyebrow),
+    h("h1", { class: "screen-head__title" }, title),
+    lead && h("p", { class: "screen-head__lead" }, lead));
 
 /** Cuánto llevas (0..1). Sin avance no se dibuja nada. */
 export function Progress(fraction, { className = null, label = "Avance" } = {}) {

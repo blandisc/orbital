@@ -41,6 +41,7 @@ export function createForYou({ onWatch, onLaunch, onMore, onConnect, onFocus, on
     loadList: (id, kind) => api.forYouList(id, kind).then((res) => res.items),
     onFocus: (target) => focused(target?.kind === "item" ? target.item : null),
     onPick: (target, id) => (lists.focusId === id || target?.kind !== "item" ? activate(target) : lists.focus(id)),
+    onMore: (item) => onMore?.(item),
   });
   const stage = h("div", { class: "foryou__stage" }, mosaic.el, lists.el);
   const opts = MODES.map((m) => h("span", { class: "foryou__switch-opt" }, m.label));
@@ -51,6 +52,7 @@ export function createForYou({ onWatch, onLaunch, onMore, onConnect, onFocus, on
   let mode = MODES.some((m) => m.id === storage.get("orbital.foryou.mode", "mosaic")) ? storage.get("orbital.foryou.mode", "mosaic") : "mosaic";
   let data = null;
   let loading = null;
+  let loads = 0;
   let glyphs = {};
 
   function paintMode() {
@@ -85,15 +87,18 @@ export function createForYou({ onWatch, onLaunch, onMore, onConnect, onFocus, on
   function load({ force = false } = {}) {
     if (loading && !force) return loading;
     if (!data) mount(notice, h("p", { class: "foryou__message foryou__message--waiting" }, "Buscando qué recomendarte…"));
-    loading = api.forYou().then((res) => {
+    const mine = ++loads; // una carga vieja y lenta no pisa a una más nueva (F5, «foryou-changed»)
+    const request = api.forYou().then((res) => {
+      if (mine !== loads) return;
       data = res;
       if (force) lists.forget();
       mount(notice);
       render();
     }, (err) => {
-      if (!data) mount(notice, h("p", { class: "foryou__message" }, `No pude cargar Para ti (${err.message.replace(/\.$/, "")}). Vuelve a entrar para reintentar.`));
-    }).finally(() => { loading = null; });
-    return loading;
+      if (mine === loads && !data) mount(notice, h("p", { class: "foryou__message" }, `No pude cargar Para ti (${err.message.replace(/\.$/, "")}). Vuelve a entrar para reintentar.`));
+    }).finally(() => { if (mine === loads) loading = null; });
+    loading = request;
+    return request;
   }
 
   async function fetchDetails(item) {

@@ -52,12 +52,10 @@
   transition: opacity var(--duration-slow) var(--ease-out) var(--delay-1), transform var(--duration-slow) var(--ease-out) var(--delay-1);
 }
 .foryou-mosaic__tile--on .foryou-mosaic__info { opacity: 1; transform: none; }
-.foryou-mosaic__why {
-  padding: .22rem .75rem; border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: var(--weight-bold);
-  background: var(--inverse-bg); color: var(--inverse-fg); white-space: nowrap;
-}
+/* Sin ninguna imagen que cargue: su nombre siempre a la vista (si no, sería un cuadro vacío). */
+.foryou-mosaic__tile--bare .foryou-mosaic__info { opacity: 1; transform: none; }
 .foryou-mosaic__logo { max-width: min(100%, 16rem); max-height: 4.4rem; object-fit: contain; object-position: left bottom; filter: var(--shadow-logo); }
-.foryou-mosaic__logo--dark { filter: brightness(0) invert(1) var(--shadow-logo); }
+.foryou-mosaic__logo--dark { filter: var(--filter-logo-light); }
 .foryou-mosaic__name {
   max-width: 100%; font-family: var(--font-sans); font-size: var(--text-xl); font-weight: var(--weight-bold); line-height: 1.12; text-shadow: var(--shadow-text);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding-bottom: .12em;

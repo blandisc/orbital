@@ -21,7 +21,9 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   const meta = h("span", { class: "card__meta" },
     h("strong", { class: "card__title" }, item.title),
     h("small", { class: "card__subtitle" }, item.subtitle));
-  const badge = item.favorite ? h("span", { class: ["card__badge", pop && "card__badge--pop"], "aria-label": "Favorito" }, svg(ICONS.star)) : null;
+  // Una esquina: tu favorito (estrella) o, en una lista de afuera (Para ti), que ya lo tienes (palomita).
+  const badge = item.favorite ? h("span", { class: ["card__badge", pop && "card__badge--pop"], "aria-label": "Favorito" }, svg(ICONS.star))
+    : item.owned ? h("span", { class: "card__badge card__badge--owned", "aria-label": "Lo tienes" }, svg(ICONS.check)) : null;
   // Lo que está abierto ahora (como las actividades de PS5): se ve desde la fila.
   const live = item.live ? h("span", { class: "card__live" }, h("span", { class: "card__live-dot" }), "Abierto") : null;
   const ago = showAgo ? shortAgo(item.last_played) : null;
