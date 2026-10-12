@@ -267,11 +267,13 @@ class StreamFinder:
             manifest = addon.get("manifest") if isinstance(addon, dict) else None
             if not isinstance(manifest, dict) or not isinstance(addon.get("transportUrl"), str):
                 continue
-            listed = manifest.get("resources") if isinstance(manifest.get("resources"), list) else []
+            resources_raw = manifest.get("resources")
+            listed: list = resources_raw if isinstance(resources_raw, list) else []
             resources = [n for n in (r if isinstance(r, str) else r.get("name") if isinstance(r, dict) else None
                                      for r in listed) if isinstance(n, str)]
-            types = [t for t in manifest.get("types") or [] if isinstance(t, str)] if isinstance(manifest.get("types"), list) else []
-            name = manifest.get("name") if isinstance(manifest.get("name"), str) and manifest.get("name").strip() else "Addon"
+            types_raw, name_raw = manifest.get("types"), manifest.get("name")
+            types = [t for t in types_raw if isinstance(t, str)] if isinstance(types_raw, list) else []
+            name = name_raw if isinstance(name_raw, str) and name_raw.strip() else "Addon"
             if {"stream", "subtitles"} & set(resources) and addon["transportUrl"].startswith(("http://", "https://")):
                 addons.append({"name": name, "url": addon["transportUrl"], "types": types, "resources": resources})
         self._addons = (time.time(), addons)

@@ -177,7 +177,7 @@ def _gb(mb: int) -> str:
 def warning_message(free_mb: int | None, dwm: tuple[int, int] | None, top: list[tuple[str, int]] | None = None) -> str:
     """El aviso en palabras. La fuga de DWM se arregla reiniciando; la memoria llena por programas
     abiertos, cerrándolos (reiniciar no sirve si se vuelven a abrir)."""
-    if dwm_leak(dwm):
+    if dwm is not None and dwm_leak(dwm):
         return (f"Windows está usando {dwm[0] / 1024:.0f} GB solo en dibujar las ventanas (una falla de Windows "
                 "que crece con los días). Reinicia la consola: suspender no lo arregla.")
     who = ", ".join(f"{name} {_gb(mb)}" for name, mb in (top or []))

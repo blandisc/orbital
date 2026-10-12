@@ -23,7 +23,7 @@ class PlayRequest(BaseModel):
 
 def _title_ref(body: dict, missing: str) -> tuple[str, str]:
     kind, meta_id = body.get("kind"), body.get("id")
-    if kind not in ("movie", "series") or not _clean_id(meta_id):
+    if kind not in ("movie", "series") or not isinstance(meta_id, str) or not _clean_id(meta_id):
         raise HTTPException(400, missing)
     return kind, meta_id
 
