@@ -535,6 +535,9 @@ def panel_ass(panel: Panel, *, playing: bool = True) -> str:
             y += 64
         if len(column.options) > PANEL_ROWS:
             lines.append(text(x + 18, y + 8, f"{column.index + 1} de {len(column.options)}", 20, MUTED))
+    if panel.column.key == "source":  # qué quiere decir «Al instante», donde se elige
+        lines.append(text(MARGIN, 1022, "Al instante: Real-Debrid ya la tiene guardada y arranca en segundos. "
+                                        "Las demás primero se descargan y pueden tardar.", 20, MUTED, align=4))
     lines.append(hints([("◀ ▶", "Columna"), ("A", "Elegir"), ("B", "Cerrar")], 1022, right=W - MARGIN))
     return "\n".join(lines)
 
@@ -627,17 +630,14 @@ def toast_ass(message: str) -> str:
 
 
 def quit_hold_ass(progress: float) -> str:
-    """«Mantén B para salir», con su barra que se llena mientras lo mantienes (arriba a la derecha)."""
+    """B mantenido: el botón B arriba a la derecha con un anillo fino que se llena (y «Salir» al lado).
+    Sin caja: discreto sobre el video."""
     progress = max(0.0, min(1.0, progress)) if math.isfinite(progress) else 0.0
-    label = "Mantén para salir"
-    shape, gw = glyph(0, 0, "B")
-    w = 22 + gw + 12 + text_width(label, 24, "semi") + 22
-    x = W - MARGIN - w
-    shape, _ = glyph(x + 22, 88, "B")
-    bar_x, bar_w = x + 22, w - 44
-    return "\n".join([rrect(x, 64, w, 70, 20, PANEL, "30"), shape,
-                      text(x + 22 + gw + 12, 88, label, 24, weight="semi", align=4),
-                      rrect(bar_x, 114, bar_w, 6, 3, TEXT, "C0"), rrect(bar_x, 114, max(6, bar_w * progress), 6, 3, TEXT)])
+    cx, cy, r = W - MARGIN - 30, 92, 30
+    shape, gw = glyph(cx - 20, cy, "B", 40)
+    return "\n".join([circle(cx, cy, r + 6, PANEL, "70", blur=6),
+                      ring(cx, cy, r, 3, 1.0, TEXT, "C8"), ring(cx, cy, r, 3, progress, TEXT), shape,
+                      text(cx - r - 16, cy, "Salir", 24, SOFT, weight="semi", align=6)])
 
 
 def volume_ass(volume: float) -> str:

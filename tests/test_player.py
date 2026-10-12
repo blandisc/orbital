@@ -481,3 +481,9 @@ def test_sticks_wake_the_controls_and_move_in_panels():
     p.press("x")
     p.press("stick-right")  # en un panel: mueve el foco como la cruceta
     assert p.menu.column.key == "sub"
+
+
+def test_sources_panel_explains_instant():
+    panel = player_ui.more_panel(sources=[{"id": 1, "label": "Español · 1080p · Al instante", "current": True}])
+    assert "Al instante: Real-Debrid" in player_ui.panel_ass(panel)
+    assert player_ui.quit_hold_ass(.5) and player_ui.quit_hold_ass(float("nan"))

@@ -21,8 +21,8 @@ def test_b_hides_the_controls_and_holding_it_leaves():
     p, mpv = make_player()
     p.press("a")  # pausa: la barra se queda
     assert mpv.overlays[1]
-    p.press("b")  # oculta los controles y empieza la barra de "Mantén para salir"
-    assert mpv.overlays[1] is None and "Mantén para salir" in mpv.overlays[3] and ("quit",) not in mpv.sent
+    p.press("b")  # oculta los controles y empieza el anillo de «Salir»
+    assert mpv.overlays[1] is None and "Salir" in mpv.overlays[3] and ("quit",) not in mpv.sent
     p.press("b-up")  # soltaste antes: no sale
     assert mpv.overlays[3] is None and ("quit",) not in mpv.sent
     p.press("b")
