@@ -16,6 +16,7 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 
+LIGHT_BYTES = 200 * 1024  # una portada que ya pesa menos que esto se deja como está
 COVER_WIDTH = 480  # px: una tarjeta en la TV 4K al 300 % o en la Legion Go al 200 %, con margen
 _lock = threading.Lock()
 
@@ -33,8 +34,9 @@ def thumbnail(path: Path, width: int, cache_dir: Path) -> Path:
         if out.is_file():
             return out
         with Image.open(path) as image:
-            if image.width <= width * 1.15:
-                return path  # ya es chica (Steam): no vale la pena
+            if image.width <= width * 1.15 and stat.st_size <= LIGHT_BYTES:
+                return path  # ya es chica y ligera (Steam): no vale la pena
+            # Del ancho justo pero pesada (PNG de 512 px y 800 KB, casi todo GameCube y PSP): también se aligera.
             image.draft("RGB", (width, width * 4))  # los JPEG se decodifican ya reducidos: más rápido
             image.thumbnail((width, width * 4))
             converted = image.convert("RGBA" if image.mode in ("RGBA", "LA", "P") else "RGB")
