@@ -329,3 +329,38 @@ def test_waking_up_pauses_the_video_and_tells_the_ui():
     shell.gamepad = type("G", (), {"redetect": lambda self: redetected.append(1)})()
     shell.on_resumed(1800)
     assert paused == [1] and redetected == [1] and notes == [{"type": "resumed", "minutes": 30}]
+
+
+class FakeHealth:
+    def __init__(self):
+        self.flushed = 0
+
+    def flush(self):
+        self.flushed += 1
+        return True
+
+
+def test_memory_warning_never_pops_over_a_game_and_waits_for_orbital():
+    """El aviso de memoria no se entrega con un juego o un video al frente; al volver a Orbital
+    (Home, Legion L, se cerró el juego) el vigilante del foco lo suelta."""
+    shell, win, _ = make(MANAGED)
+    assert shell.away_from_orbital()  # el juego al frente: el monitor guarda el aviso
+    win.fg = DESKTOP_APP
+    assert shell.away_from_orbital()  # otra app también
+    win.fg = ORBITAL
+    assert not shell.away_from_orbital()
+    # El vigilante del foco: en cuanto Orbital vuelve al frente, suelta lo que esperaba.
+    from types import SimpleNamespace
+    shell.health = FakeHealth()
+    win.fg = GAME
+    turns = {"n": 0}
+
+    def wait(seconds):
+        turns["n"] += 1
+        if turns["n"] == 2:
+            win.fg = ORBITAL  # volviste a Orbital
+        return turns["n"] > 3  # cuatro vueltas y se detiene
+
+    shell._stop = SimpleNamespace(wait=wait)
+    shell._watch_foreground()
+    assert shell.health.flushed == 1  # una sola vez, al cambiar al frente (no en cada vuelta)

@@ -74,6 +74,7 @@ class ConsoleShell:
         self._fg_cache = (0.0, "")  # (cuándo, exe al frente): no preguntar a Windows 240 veces/s
         self._legion_last = 0.0
         self._legion_left: dict | None = None  # el juego que dejaste con Legion L (para el 2.º toque)
+        self.health = None  # HealthMonitor (memoria); se crea en start()
         self._stop = threading.Event()
 
     def notify(self, event: dict) -> None:
@@ -387,13 +388,19 @@ class ConsoleShell:
             self.overlay = overlay if overlay.start() else None
         self.gamepad = GamepadWatcher(self.on_gamepad, self.on_buttons)
         self.gamepad.start()  # sin XInput, Legion L sigue funcionando
-        threading.Thread(target=self._watch_foreground, daemon=True, name="legion-l").start()
-        threading.Thread(target=self._watch_sleep, daemon=True, name="sleep").start()
-        # Memoria (RAM y la de video que usa DWM): se anota cada 5 min y avisa si los juegos no van a poder abrir.
+        # Memoria (RAM y la de video que usa DWM): se anota cada 5 min y avisa si los juegos no van a poder
+        # abrir. Nunca en pleno juego o video: el aviso espera a que Orbital vuelva al frente.
         from .health import HealthMonitor
         running = lambda: (self.catalog.launcher.status() or {}).get("title", "")  # noqa: E731
-        HealthMonitor(self.notify, running).start()
+        self.health = HealthMonitor(self.notify, running, busy=self.away_from_orbital)
+        threading.Thread(target=self._watch_foreground, daemon=True, name="legion-l").start()
+        threading.Thread(target=self._watch_sleep, daemon=True, name="sleep").start()
+        self.health.start()
         return True
+
+    def away_from_orbital(self) -> bool:
+        """¿Estás en otra cosa (un juego, un video, otra app)? Orbital no debe asomarse ni avisar."""
+        return not self.is_orbital(self.win.foreground())
 
     # --------------------------------------------------------------- que nada quede abierto
     @property
@@ -489,5 +496,7 @@ class ConsoleShell:
                 if self.paused and self.win.pid_of(fg) in self.paused:
                     self.unpause()  # volvió al juego por su cuenta (Alt+Tab, clic): que siga
                 self.check_legion(fg, previous)
+                if self.health is not None and self.is_orbital(self.win.foreground()):
+                    self.health.flush()  # ya estás en Orbital: el aviso de memoria que esperaba
             except Exception:  # noqa: BLE001
                 log.exception("Error vigilando la ventana al frente")
