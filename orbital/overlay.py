@@ -87,9 +87,13 @@ class GameOverlay:
 
         hwnd = _hwnd(root)
         _style_window(hwnd)
-        # Siempre "visible" pero con opacidad 0 y sin recibir clics: mostrarla es solo subir la
-        # opacidad, sin ShowWindow (que activaría la ventana y le quitaría el foco al juego).
+        # Para Tk queda "mostrada" (así no la vuelve a activar), pero Windows la esconde de verdad
+        # mientras no se usa (_hide): antes se quedaba siempre visible con opacidad 0 encima del
+        # juego, y una ventana por capas encima de un juego a pantalla completa obliga a DWM a
+        # componer cada cuadro (más memoria de DWM y más batería) en vez de dejar pasar el juego
+        # directo. Mostrarla es SW_SHOWNOACTIVATE: nunca le quita el foco al juego.
         root.deiconify()
+        _hide(hwnd)
         state = {"start": 0.0, "duration": 1.0, "filling": False, "alpha": 0.0, "target": 0.0, "hide_at": None}
 
         def set_progress(fraction: float) -> None:
@@ -130,6 +134,8 @@ class GameOverlay:
                 alpha = min(state["target"], alpha + step) if state["target"] > alpha else max(state["target"], alpha - step)
                 state["alpha"] = alpha
                 root.attributes("-alpha", alpha)
+                if alpha == 0.0:
+                    _hide(hwnd)  # terminó de desvanecerse: fuera de la pantalla hasta la próxima
             root.after(16, tick)
 
         self._ready.set()
@@ -146,6 +152,7 @@ WS_EX_TRANSPARENT = 0x00000020  # los clics la atraviesan
 WS_EX_LAYERED = 0x00080000
 HWND_TOPMOST = -1
 SWP_NOSIZE, SWP_NOMOVE, SWP_NOACTIVATE = 0x1, 0x2, 0x10
+SW_HIDE, SW_SHOWNOACTIVATE = 0, 4
 
 
 def _hwnd(root) -> int:
@@ -166,5 +173,11 @@ def _style_window(hwnd: int) -> None:
 
 
 def _raise_no_activate(hwnd: int) -> None:
-    """Encima de todo (también del juego en pantalla completa sin bordes), sin activarla."""
+    """Visible y encima de todo (también del juego en pantalla completa sin bordes), sin activarla."""
+    ctypes.windll.user32.ShowWindow(hwnd, SW_SHOWNOACTIVATE)
     ctypes.windll.user32.SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE)
+
+
+def _hide(hwnd: int) -> None:
+    """La quita de la pantalla (ya con opacidad 0) para que no estorbe a DWM ni al juego."""
+    ctypes.windll.user32.ShowWindow(hwnd, SW_HIDE)

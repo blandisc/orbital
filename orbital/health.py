@@ -203,19 +203,27 @@ def append_sample(path: Path, when: float, free_mb: int | None, dwm: tuple[int, 
 
 
 class HealthMonitor:
-    """Hilo que mide cada INTERVAL segundos y avisa (una vez por hora como mucho) si falta memoria."""
+    """Hilo que mide cada INTERVAL segundos y avisa (una vez por hora como mucho) si falta memoria.
+
+    `busy()`: True mientras estás en un juego o un video (Orbital no está al frente). Entonces el
+    aviso NO se manda a la interfaz: se guarda y se entrega con `flush()` cuando vuelves a Orbital
+    (Home, Legion L, al cerrarse el juego). Un aviso en pleno juego solo estorba y, con la ventana
+    de Orbital tapada, cualquier cosa que la haga repintarse es un riesgo de que se asome encima.
+    """
 
     def __init__(self, notify: Callable[[dict], None], running: Callable[[], str], path: Path | None = None,
-                 measure=None) -> None:
+                 measure=None, busy: Callable[[], bool] | None = None) -> None:
         self.notify = notify
         self.running = running
+        self.busy = busy or (lambda: False)
         self.path = path or csv_path()
         self.measure = measure or (lambda: (free_ram_mb(), dwm_gpu_mb(), commit_room_mb()))
+        self.pending: dict | None = None  # el aviso que espera a que vuelvas a Orbital
         self._last_warning = float("-inf")
         self._stop = threading.Event()
 
     def check(self, now: float | None = None) -> bool:
-        """Una medición: la anota y avisa si hace falta. Devuelve si avisó."""
+        """Una medición: la anota y avisa si hace falta. Devuelve si avisó (o dejó el aviso esperando)."""
         now = time.time() if now is None else now
         free_mb, dwm, *rest = self.measure()
         commit = rest[0] if rest else None
@@ -224,17 +232,34 @@ class HealthMonitor:
         except OSError as exc:
             log.debug("No pude anotar la memoria: %s", exc)
         if not needs_warning(free_mb, dwm, commit):
+            self.pending = None  # ya hay memoria: el aviso que esperaba ya no aplica
             return False
         top = top_memory() if not dwm_leak(dwm) else []
         log.warning("Memoria baja: %s MB libres, margen %s MB, DWM %s MB, %s", free_mb, commit, dwm, top)
         if now - self._last_warning < WARN_EVERY:
             return False
-        self._last_warning = now
         # Con la fuga de DWM, pregunta con "Reiniciar ahora"; si son programas abiertos, solo avisa
-        # (reiniciar no ayuda). Con un juego abierto, la interfaz lo muestra como aviso, sin estorbar.
-        self.notify({"type": "health", "ok": False, "restart": dwm_leak(dwm),
-                     "message": warning_message(free_mb, dwm, top)})
+        # (reiniciar no ayuda).
+        event = {"type": "health", "ok": False, "restart": dwm_leak(dwm), "message": warning_message(free_mb, dwm, top)}
+        if self.busy():
+            self.pending = event  # el más reciente manda; se entrega al volver a Orbital
+            log.info("Aviso de memoria en espera: estás en un juego o un video")
+            return True
+        self._deliver(event, now)
         return True
+
+    def flush(self, now: float | None = None) -> bool:
+        """Entrega el aviso que esperaba, si lo hay y ya no estorba. Devuelve si lo entregó."""
+        event = self.pending
+        if event is None or self.busy():
+            return False
+        self._deliver(event, time.time() if now is None else now)
+        return True
+
+    def _deliver(self, event: dict, now: float) -> None:
+        self.pending = None
+        self._last_warning = now  # la hora sin repetir cuenta desde que lo viste, no desde que se midió
+        self.notify(event)
 
     def start(self) -> None:
         if sys.platform != "win32":

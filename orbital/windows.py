@@ -346,7 +346,10 @@ GWL_EXSTYLE, WS_EX_LAYERED, LWA_ALPHA = -20, 0x80000, 0x2
 
 def set_alpha(hwnd: int, alpha: int | None) -> bool:
     """Transparencia de toda la ventana (0-255), para fundir Orbital sobre el juego en vez de cortar.
-    `None` la deja como estaba (opaca, sin el estilo de capa)."""
+    `None` la deja como estaba (opaca, sin el estilo de capa).
+
+    Poner y quitar el estilo de capa no es lo que hace crecer a DWM (medido 2026-10-11 en la Legion
+    Go: 10 altas/bajas seguidas, +13 MB; DWM crece cientos de MB cada 5 min sin que Orbital abra nada)."""
     if not WIN or not hwnd:
         return False
     user32.GetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int]

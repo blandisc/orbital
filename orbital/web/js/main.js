@@ -30,8 +30,11 @@ import { createViewer } from "./components/viewer.js";
 import { createBoot } from "./app/boot.js";
 import { createLaunching } from "./app/launching.js";
 import { createState } from "./core/store.js";
+import { createDeferred } from "./core/deferred.js";
 
 const state = createState();
+// Avisos que esperan a que la ventana se vea (Edge la da por oculta cuando un juego la tapa).
+const deferred = createDeferred(() => document.hidden);
 
 // En Inicio lo enfocado es una pieza del Inicio (puede ser una consola: entonces no hay juego).
 const inHome = () => state.section === "home" && state.libraryLoaded;
@@ -783,6 +786,9 @@ function handleEvent(event) {
   if (event.type === "launch-ready") return ui.launch.reveal();
   if (event.type === "settings") return applySettings(event.settings);
   if (event.type === "health") { // memoria casi llena
+    // Con la ventana tapada (un juego o un video encima) no sale nada: ni sonido ni repintado, que
+    // Orbital no se asome sobre el juego. Sale al volver a verse (visibilitychange).
+    if (!deferred.offer(event)) return;
     sound.play("error");
     // Con un juego abierto, un aviso que no estorba; si no, la pregunta (con Reiniciar solo si sirve).
     if (state.running?.managed) return ui.toast.show(event.message, { error: true });
@@ -835,9 +841,14 @@ createInput({
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
 });
 api.events(handleEvent);
-// Al volver a la ventana (p. ej. tras cerrar un juego) refresca recientes y tiempo jugado.
+// Al volver a la ventana (p. ej. tras cerrar un juego) refresca recientes y tiempo jugado, y salen
+// los avisos que esperaban a que Orbital se viera (memoria).
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) { pollStatus(); loadLibrary(); }
+  if (!document.hidden) {
+    pollStatus();
+    loadLibrary();
+    for (const event of deferred.take()) handleEvent(event);
+  }
 });
 document.body.dataset.input = state.modality;
 setInterval(pollStatus, 60_000); // red de seguridad: el estado llega por SSE al cambiar

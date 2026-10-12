@@ -347,3 +347,38 @@ def test_video_in_front_without_focus_gets_it_back():
     shell.catalog.sessions = type("S", (), {"returned_at": _t.monotonic()})()  # ahora sí volviste con Home
     shell.on_buttons(0, 0x1000, 20.0)
     assert win.fg == ORBITAL  # Orbital se queda: lo pediste tú
+
+
+class FakeHealth:
+    def __init__(self):
+        self.flushed = 0
+
+    def flush(self):
+        self.flushed += 1
+        return True
+
+
+def test_memory_warning_never_pops_over_a_game_and_waits_for_orbital():
+    """El aviso de memoria no se entrega con un juego o un video al frente; al volver a Orbital
+    (Home, Legion L, se cerró el juego) el vigilante del foco lo suelta."""
+    shell, win, _ = make(MANAGED)
+    assert shell.away_from_orbital()  # el juego al frente: el monitor guarda el aviso
+    win.fg = DESKTOP_APP
+    assert shell.away_from_orbital()  # otra app también
+    win.fg = ORBITAL
+    assert not shell.away_from_orbital()
+    # El vigilante del foco: en cuanto Orbital vuelve al frente, suelta lo que esperaba.
+    from types import SimpleNamespace
+    shell.health = FakeHealth()
+    win.fg = GAME
+    turns = {"n": 0}
+
+    def wait(seconds):
+        turns["n"] += 1
+        if turns["n"] == 2:
+            win.fg = ORBITAL  # volviste a Orbital
+        return turns["n"] > 3  # cuatro vueltas y se detiene
+
+    shell._stop = SimpleNamespace(wait=wait)
+    shell._watch_foreground()
+    assert shell.health.flushed == 1  # una sola vez, al cambiar al frente (no en cada vuelta)
