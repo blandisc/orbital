@@ -103,5 +103,6 @@ def test_diagnostics_screen(page):
     ready(page)
     page.locator(".status-bar__brand").click()  # el logo abre el menú
     page.get_by_text("Ajustes", exact=True).first.click()
+    page.get_by_text("Mantenimiento", exact=True).first.click()  # lo técnico vive en Ajustes → Mantenimiento
     page.get_by_text("Diagnóstico", exact=True).first.click()
     page.get_by_text("Memoria libre").wait_for(timeout=15_000)

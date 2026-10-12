@@ -177,8 +177,10 @@ class ConsoleShell:
         if self.pause_file is None or not self.pause_file.exists():
             return
         try:
-            pids = set(json.loads(self.pause_file.read_text(encoding="utf-8")))
-        except (OSError, ValueError):
+            loaded = json.loads(self.pause_file.read_text(encoding="utf-8"))
+            # Solo una lista de números de proceso; cualquier otra cosa se ignora (y el archivo se borra).
+            pids = {p for p in loaded if isinstance(p, int) and not isinstance(p, bool) and p > 0} if isinstance(loaded, list) else set()
+        except (OSError, ValueError, TypeError):
             pids = set()
         if pids:
             log.info("Descongelando lo que quedó en pausa: %s", sorted(pids))

@@ -19,15 +19,28 @@ PLACEHOLDER_TOKENS = {"", "CAMBIA-ESTE-TOKEN"}
 
 
 # ----------------------------------------------------------------------------- token
+def _server(text: str) -> dict:
+    """La sección server de config.yaml; un archivo que no es un diccionario o no se puede leer dice qué pasa."""
+    import yaml
+
+    try:
+        root = yaml.safe_load(text) or {}
+    except yaml.YAMLError as exc:
+        raise ValueError(f"config.yaml tiene un error de formato: {exc}") from exc
+    server = root.get("server") if isinstance(root, dict) else None
+    if root and not isinstance(root, dict):
+        raise ValueError("config.yaml no tiene la forma esperada (clave: valor)")
+    return server if isinstance(server, dict) else {}
+
+
 def ensure_token(config_path: Path) -> tuple[str, bool]:
     """Garantiza un token fijo en config.yaml (Alexa necesita siempre el mismo).
 
     Devuelve (token, creado). Edita el texto para no perder los comentarios del archivo.
     """
-    import yaml
 
     text = config_path.read_text(encoding="utf-8-sig") if config_path.exists() else ""
-    server = (yaml.safe_load(text) or {}).get("server") or {}
+    server = _server(text)
     current = str(server.get("token") or "").strip()
     if current not in PLACEHOLDER_TOKENS:
         return reveal(current), False
@@ -39,10 +52,9 @@ def ensure_token(config_path: Path) -> tuple[str, bool]:
 
 def rotate_token(config_path: Path) -> str:
     """Un token nuevo (el anterior deja de servir). Devuelve el nuevo; hay que actualizar la skill."""
-    import yaml
 
     text = config_path.read_text(encoding="utf-8-sig") if config_path.exists() else ""
-    server = (yaml.safe_load(text) or {}).get("server") or {}
+    server = _server(text)
     token = secrets.token_urlsafe(32)
     _write_token(config_path, text, server, seal(token), token)
     return token
@@ -50,10 +62,9 @@ def rotate_token(config_path: Path) -> str:
 
 def protect_token(config_path: Path) -> bool:
     """Cifra con DPAPI el token que ya está en config.yaml en texto plano. True si lo cambió."""
-    import yaml
 
     text = config_path.read_text(encoding="utf-8-sig")
-    server = (yaml.safe_load(text) or {}).get("server") or {}
+    server = _server(text)
     current = str(server.get("token") or "").strip()
     if current in PLACEHOLDER_TOKENS or current.startswith(PREFIX):
         return False
@@ -66,7 +77,6 @@ def protect_token(config_path: Path) -> bool:
 
 def _write_token(config_path: Path, text: str, server: dict, stored: str, token: str) -> None:
     """Pone `token: "<stored>"` en la sección server sin perder los comentarios del archivo."""
-    import yaml
 
     line = re.search(r'^(?P<indent>[ \t]+)token:.*$', text, re.MULTILINE)
     if line:
@@ -77,7 +87,7 @@ def _write_token(config_path: Path, text: str, server: dict, stored: str, token:
         text = f'server:\n  token: "{stored}"\n' + (("\n" + text) if text else "")
     else:
         raise ValueError(f'No sé editar la sección server de {config_path}: añade  token: "{token}"  a mano.')
-    if (yaml.safe_load(text) or {}).get("server", {}).get("token") != stored:
+    if _server(text).get("token") != stored:
         raise ValueError(f"No pude guardar el token en {config_path}")
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config_path.write_text(text, encoding="utf-8")
@@ -85,11 +95,10 @@ def _write_token(config_path: Path, text: str, server: dict, stored: str, token:
 
 def read_token(config_path: Path) -> str | None:
     """El token de config.yaml, sin crear nada (para comprobar o probar)."""
-    import yaml
 
     if not config_path.exists():
         return None
-    server = (yaml.safe_load(config_path.read_text(encoding="utf-8-sig")) or {}).get("server") or {}
+    server = _server(config_path.read_text(encoding="utf-8-sig"))
     token = str(server.get("token") or "").strip()
     return None if token in PLACEHOLDER_TOKENS else reveal(token)
 

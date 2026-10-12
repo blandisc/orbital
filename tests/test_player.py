@@ -7,14 +7,19 @@ RD_URL = "https://real-debrid.example/d/abc/movie.mkv"
 
 def test_stream_url_direct_or_via_stremio_server():
     assert player.stream_url({"url": RD_URL}) == RD_URL
-    assert player.stream_url({"infoHash": "abc", "fileIdx": 2}) == "http://127.0.0.1:11470/abc/2"
-    assert player.stream_url({"infoHash": "abc"}) == "http://127.0.0.1:11470/abc/-1"
+    assert player.stream_url({"infoHash": "abababababababababababababababababababab", "fileIdx": 2}) == "http://127.0.0.1:11470/abababababababababababababababababababab/2"
+    assert player.stream_url({"infoHash": "abababababababababababababababababababab"}) == "http://127.0.0.1:11470/abababababababababababababababababababab/-1"
+    # Lo que un complemento no debe poder colar: archivos locales, opciones de mpv, hashes raros.
+    assert player.stream_url({"url": "C:/Windows/win.ini"}) is None
+    assert player.stream_url({"url": "--script=x.lua"}) is None
+    assert player.stream_url({"infoHash": "../../x"}) is None
+    assert player.stream_url({"infoHash": "abababababababababababababababababababab", "fileIdx": "1/../x"}) == "http://127.0.0.1:11470/abababababababababababababababababababab/-1"
     assert player.stream_url({"ytId": "x"}) is None
 
 
 def test_command_full_screen_languages_and_resume():
     cmd = player.build_command("mpv.exe", RD_URL, "Interstellar", start=2530.4, audio="en", subtitles="en")
-    assert cmd[:2] == ["mpv.exe", RD_URL]
+    assert cmd[0] == "mpv.exe" and cmd[-2:] == ["--", RD_URL]
     assert f"--input-ipc-server={player.PIPE}" in cmd and "--fullscreen" in cmd
     assert "--alang=en,eng,English" in cmd and "--slang=en,eng,English" in cmd
     assert "--start=2530" in cmd
@@ -78,7 +83,7 @@ def test_remote_turns_buttons_into_names_with_repeat():
 def test_a_pauses_and_shows_the_bar_with_the_legend():
     p, mpv = make_player()
     p.press("a")
-    assert ("cycle", "pause") in mpv.sent
+    assert ("set_property", "pause", True) in mpv.sent
     hud = mpv.overlays[1]
     assert "Interstellar" in hud and "En pausa" in hud and "Seguir" in hud and "Audio y subtítulos" in hud
     assert "Subtítulos en inglés" in hud and "10:00" in hud and "EN PAUSA" not in hud
@@ -90,7 +95,7 @@ def test_seek_and_volume():
     p.press("left")
     p.press("up")
     assert ("seek", 60, "relative") in mpv.sent and ("seek", -10, "relative") in mpv.sent
-    assert ("add", "volume", 5) in mpv.sent and "}85" in mpv.overlays[3]  # el volumen que se pidió (80 + 5), con su barra
+    assert ("set_property", "volume", 85) in mpv.sent and "}85" in mpv.overlays[3]  # el volumen que se pidió (80 + 5), con su barra
     assert "−10 s" in mpv.overlays[1]  # adelantando: la burbuja dice cuánto
 
 
@@ -290,3 +295,60 @@ def test_background_option_matches_the_installed_mpv(monkeypatch):
     monkeypatch.setattr(playback.subprocess, "run", fake("--background  Color\n"))
     assert playback.background_args("mpv-viejo.exe") == ("--background=#08080A",)
     playback.background_args.cache_clear()
+
+
+class SlowMpv(FakeMpv):
+    """mpv que confirma tarde: lo que se pide no se ve en get() hasta el siguiente vistazo."""
+
+    def command(self, *args):
+        self.sent.append(args)
+
+
+def test_quick_presses_use_what_was_asked_not_the_stale_value():
+    p, mpv = make_player()
+    p.mpv = mpv = SlowMpv()
+    p.press("a")
+    p.press("a")
+    assert [a for a in mpv.sent if a[:2] == ("set_property", "pause")] == [("set_property", "pause", True),
+                                                                          ("set_property", "pause", False)]
+    for _ in range(3):
+        p.press("up")
+    assert [a[2] for a in mpv.sent if a[:2] == ("set_property", "volume")] == [85, 90, 95]
+    p.press("right")
+    p.press("right")
+    assert p._value("time-pos") == 620
+
+
+def test_paused_video_gets_its_bar_back_after_the_quit_card_or_a_panel():
+    p, mpv = make_player(pause=True)
+    p.press("b")
+    assert mpv.overlays.get(1) is None and mpv.overlays.get(4)
+    p.press("a")  # Seguir viendo
+    assert mpv.overlays.get(1) and "En pausa" in mpv.overlays[1]
+    p.press("x")
+    assert mpv.overlays.get(1) is None
+    p.press("b")
+    assert mpv.overlays.get(1) and "En pausa" in mpv.overlays[1]
+
+
+def test_old_watcher_does_not_touch_the_new_video():
+    p, mpv = make_player()
+    failed = []
+    p.on_failed = lambda *a: failed.append(a)
+    old = p.current
+    p.segment = player.Segment({"id": 1}, "Viejo", "u")
+    new = player.Playback("Nuevo", None, 0, {"id": 2})
+    p.current, p.segment = new, player.Segment({"id": 2}, "Nuevo", "u2")
+    p.finish(old)  # el vigilante del viejo despierta tarde
+    assert p.current is new and not p.segment.failed and failed == []
+
+
+def test_background_task_returning_false_shows_the_failure():
+    import time as _t
+    p, mpv = make_player()
+    p._in_background(lambda: False, failed="No pude cambiar de fuente")
+    for _ in range(50):
+        if mpv.overlays.get(3) and "No pude" in mpv.overlays[3]:
+            break
+        _t.sleep(.02)
+    assert "No pude cambiar de fuente" in mpv.overlays[3]

@@ -24,7 +24,8 @@ def read_body(res, *, timeout: float, limit: int = MAX_BYTES) -> bytes:
     while True:
         if time.monotonic() > deadline:
             raise TimeoutError("La respuesta tardó demasiado")
-        chunk = res.read(64 * 1024)
+        # read1 devuelve lo que ya llegó (no espera a juntar 64 KB): el plazo se revisa en cada pedazo.
+        chunk = getattr(res, "read1", res.read)(64 * 1024)
         if not chunk:
             return b"".join(chunks)
         size += len(chunk)

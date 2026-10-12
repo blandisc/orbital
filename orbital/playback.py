@@ -96,11 +96,14 @@ def find_mpv() -> str | None:
 
 def stream_url(stream: dict) -> str | None:
     """URL que mpv puede abrir: directa (Real-Debrid, http) o un torrent vía el servidor de Stremio."""
-    if stream.get("url"):
-        return stream["url"]
-    if stream.get("infoHash"):
-        idx = stream.get("fileIdx")
-        return f"{STREMIO_SERVER}/{stream['infoHash']}/{idx if idx is not None else -1}"
+    url = stream.get("url")
+    if isinstance(url, str) and url.strip():
+        # Solo http(s) o magnet: un complemento no puede mandar a mpv a abrir un archivo local ni una opción.
+        return url if re.match(r"^(https?://|magnet:)", url, re.I) else None
+    info, idx = stream.get("infoHash"), stream.get("fileIdx")
+    if isinstance(info, str) and re.fullmatch(r"[0-9a-fA-F]{40}|[A-Za-z2-7]{32}", info):
+        idx = idx if isinstance(idx, int) and not isinstance(idx, bool) and idx >= -1 else -1
+        return f"{STREMIO_SERVER}/{info}/{idx}"
     return None
 
 
@@ -142,7 +145,7 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
                   subtitles: str = "en", sub_files: list[str] | None = None, bindings: str | None = None,
                   sub_scale: float = 1.0) -> list[str]:
     cmd = [
-        mpv, url, f"--input-ipc-server={PIPE}", "--fullscreen", "--force-window=immediate",
+        mpv, f"--input-ipc-server={PIPE}", "--fullscreen", "--force-window=immediate",
         # keep-open: al terminar se queda en el último cuadro (Orbital decide: siguiente episodio o
         # salir). idle: si una fuente falla, mpv no se cierra; Orbital carga otra en la misma ventana.
         "--keep-open=yes", "--idle=yes", "--osc=no", "--input-default-bindings=yes",
@@ -158,7 +161,8 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
         cmd.append(f"--start={int(start)}")
     for sub in sub_files or []:
         cmd.append(f"--sub-file={sub}")
-    return cmd
+    # La URL va al final, después de «--»: aunque empiece con «-», mpv nunca la lee como una opción.
+    return [*cmd, "--", url]
 
 
 def seek_step(repeats: int) -> int:

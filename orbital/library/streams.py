@@ -108,14 +108,19 @@ class Source:
         return next((t for t in ("Atmos", "5.1") if t in self.tags), "")
 
 
+PARSE_ERRORS = (ValueError, TypeError, AttributeError, OverflowError, IndexError, KeyError)
+
+
 def parse(stream: dict, addon: str, transport_url: str, index: int) -> Source:
     name = str(stream.get("name") or "")
     text = str(stream.get("title") or stream.get("description") or "")
     blob = f"{name}\n{text}"
     first = text.split("\n", 1)[0].strip()
-    filename = (stream.get("behaviorHints") or {}).get("filename") or ""
-    src = Source(index=index, addon=addon.split()[0] if addon else "", stream=stream, transport_url=transport_url)
-    src.binge = (stream.get("behaviorHints") or {}).get("bingeGroup") or None
+    hints = stream.get("behaviorHints") if isinstance(stream.get("behaviorHints"), dict) else {}
+    filename = str(hints.get("filename") or "")
+    src = Source(index=index, addon=addon.split()[0] if addon.split() else "", stream=stream, transport_url=transport_url)
+    binge = hints.get("bingeGroup")
+    src.binge = binge if isinstance(binge, str) and binge else None
     src.cached = "[RD+]" in name or "+]" in name.split("\n")[0]
     src.debrid = bool(re.search(r"\[(RD|AD|PM|DL|TB|OC)[ +\]]", name))
     # La resolución que declara el addon manda; el nombre del archivo solo si el addon no dice nada
@@ -227,12 +232,19 @@ class StreamFinder:
             return self._addons[1]
         result = self.client.request("addonCollectionGet", {"authKey": auth_key, "update": True})
         addons = []
-        for addon in (result.get("addons") or []) if isinstance(result, dict) else []:
-            manifest = addon.get("manifest") or {}
-            resources = [r if isinstance(r, str) else (r or {}).get("name") for r in manifest.get("resources", [])]
-            if {"stream", "subtitles"} & set(resources) and addon.get("transportUrl"):
-                addons.append({"name": manifest.get("name") or "Addon", "url": addon["transportUrl"],
-                               "types": manifest.get("types") or [], "resources": resources})
+        raw = result.get("addons") if isinstance(result, dict) else None
+        for addon in raw if isinstance(raw, list) else []:
+            # Un complemento con el manifiesto raro se salta; no deja sin fuentes a los demás.
+            manifest = addon.get("manifest") if isinstance(addon, dict) else None
+            if not isinstance(manifest, dict) or not isinstance(addon.get("transportUrl"), str):
+                continue
+            listed = manifest.get("resources") if isinstance(manifest.get("resources"), list) else []
+            resources = [n for n in (r if isinstance(r, str) else r.get("name") if isinstance(r, dict) else None
+                                     for r in listed) if isinstance(n, str)]
+            types = [t for t in manifest.get("types") or [] if isinstance(t, str)] if isinstance(manifest.get("types"), list) else []
+            name = manifest.get("name") if isinstance(manifest.get("name"), str) and manifest.get("name").strip() else "Addon"
+            if {"stream", "subtitles"} & set(resources) and addon["transportUrl"].startswith(("http://", "https://")):
+                addons.append({"name": name, "url": addon["transportUrl"], "types": types, "resources": resources})
         self._addons = (time.time(), addons)
         return addons
 
@@ -245,7 +257,8 @@ class StreamFinder:
 
     def _fetch(self, addon: dict, kind: str, video_id: str) -> list[dict]:
         try:
-            streams = self._get_json(addon, f"stream/{kind}/{quote(video_id)}.json").get("streams") or []
+            streams = self._get_json(addon, f"stream/{kind}/{quote(video_id)}.json").get("streams")
+            streams = streams if isinstance(streams, list) else []
         except NET_ERRORS as exc:
             log.info("Sin fuentes de %s: %s", addon["name"], exc)
             return []
@@ -259,11 +272,13 @@ class StreamFinder:
             if "subtitles" not in addon.get("resources", []):
                 continue
             try:
-                subs = self._get_json(addon, f"subtitles/{kind}/{quote(video_id)}.json").get("subtitles") or []
+                subs = self._get_json(addon, f"subtitles/{kind}/{quote(video_id)}.json").get("subtitles")
+                subs = subs if isinstance(subs, list) else []
             except NET_ERRORS as exc:
                 log.info("Sin subtítulos de %s: %s", addon["name"], exc)
                 continue
-            urls += [s["url"] for s in subs if isinstance(s, dict) and s.get("url") and s.get("lang") in codes]
+            urls += [s["url"] for s in subs if isinstance(s, dict) and isinstance(s.get("url"), str)
+                     and s["url"].startswith(("http://", "https://")) and s.get("lang") in codes]
         return urls
 
     def find(self, auth_key: str, kind: str, video_id: str, prefs: Preferences) -> list[Source]:
@@ -279,7 +294,11 @@ class StreamFinder:
         sources, index = [], 0
         for addon, streams in results:
             for stream in streams:
-                sources.append(parse(stream, addon["name"], addon["url"], index))
+                try:
+                    sources.append(parse(stream, addon["name"], addon["url"], index))
+                except PARSE_ERRORS as exc:  # una fuente con datos raros se salta, no tumba la lista
+                    log.info("Fuente rara de %s: %s", addon["name"], exc)
+                    continue
                 index += 1
         ranked = rank(sources, prefs, kind)
         with self._lock:

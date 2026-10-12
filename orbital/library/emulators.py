@@ -34,11 +34,11 @@ def resolve_executable(emu: EmulatorConfig) -> Path | None:
     Si hay varias coincidencias (p. ej. dos versiones descargadas) usa la más reciente.
     """
     pattern = emu.executable
+    if Path(pattern).is_file():  # «C:\Juegos [2024]\emu.exe» existe tal cual: no es un comodín
+        return Path(pattern)
     if any(c in pattern for c in "*?["):
         matches = [Path(p) for p in glob.glob(pattern, recursive=True) if os.path.isfile(p)]
         return max(matches, key=lambda p: p.stat().st_mtime) if matches else None
-    if Path(pattern).is_file():
-        return Path(pattern)
     found = shutil.which(pattern)
     return Path(found) if found else None
 
@@ -48,8 +48,15 @@ def executable_found(emu: EmulatorConfig) -> bool:
 
 
 def build_argv(emu: EmulatorConfig, exe: Path | None, rom: Path) -> list[str]:
-    values = {"rom": str(rom), "rom_dir": str(rom.parent), "rom_name": rom.stem}
-    return [str(exe or emu.executable)] + [arg.format_map(values) for arg in emu.args]
+    # Reemplazo literal: una llave suelta en un argumento («{"x":1}») ya no tumba el lanzamiento.
+    values = {"{rom}": str(rom), "{rom_dir}": str(rom.parent), "{rom_name}": rom.stem}
+    return [str(exe or emu.executable)] + [_fill(arg, values) for arg in emu.args]
+
+
+def _fill(arg: str, values: dict[str, str]) -> str:
+    for key, value in values.items():
+        arg = arg.replace(key, value)
+    return arg
 
 
 def _item_id(emu_id: str, rom: Path) -> str:

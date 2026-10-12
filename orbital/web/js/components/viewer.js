@@ -16,7 +16,7 @@ export function createViewer({ onClose, onOpenVideo } = {}) {
     if (!item) return;
     img.src = item.kind === "image" ? `/api/captures/file?path=${encodeURIComponent(item.path)}` : "";
     img.hidden = item.kind !== "image";
-    const when = new Date(item.time * 1000).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" });
+    const when = Number.isFinite(item.time) ? new Date(item.time * 1000).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" }) : "";
     caption.textContent = `${item.name} · ${when} · ${index + 1} de ${items.length}`
       + (item.kind === "video" ? " · A: ver el clip" : "");
   }

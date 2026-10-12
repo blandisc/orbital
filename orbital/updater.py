@@ -115,15 +115,18 @@ class Updater:
             progress("Probando la versión nueva…")
             if self._tests_pass():
                 log.info("Orbital actualizado: %s -> %s", before[:7], self.git("rev-parse", "--short", "HEAD"))
+                self._checked = None  # «hay N cambios» ya no es cierto
                 return True, "Listo: Orbital se reabre con la versión nueva."
             reason = "La versión nueva no pasó sus pruebas"
         except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
             reason = f"No se pudo actualizar ({exc})"
         progress("Volviendo a tu versión…")
-        self.git("reset", "--hard", before)
         try:
+            self.git("reset", "--hard", before)
             self._pip()
-        except (OSError, subprocess.SubprocessError):
-            log.warning("No pude reinstalar las dependencias de la versión anterior")
+        except (OSError, RuntimeError, subprocess.SubprocessError):
+            log.warning("No pude volver del todo a la versión anterior")
+            self._checked = None
+            return False, f"{reason}. No pude volver del todo a tu versión: reinicia Orbital."
         self._checked = None
         return False, f"{reason}: sigues con la versión que tenías."

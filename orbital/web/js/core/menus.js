@@ -16,8 +16,8 @@ export function gameMenu(item, { running = null } = {}) {
   }
   const options = isOpen
     ? [
-      { icon: "play", label: "Volver al juego", hint: running.runner, command: { type: "resume" } },
-      { icon: "stop", label: `Cerrar ${running.runner || "el juego"}`, danger: true,
+      { icon: "play", label: primaryLabel(item, running.id), hint: running.runner, command: { type: "resume" } },
+      { icon: "stop", label: item.id === "media:player" ? "Cerrar el video" : `Cerrar ${running.runner || "el juego"}`, danger: true,
         command: { type: "confirm-stop", title: item.title, runner: running.runner } },
     ]
     : [];
@@ -49,10 +49,11 @@ export function gameMenu(item, { running = null } = {}) {
 
 /** Cambiar emulador: solo esta vez, o siempre. */
 export function runnerMenu(item) {
-  const others = (item.runners || []).filter((r) => r.id !== item.runner);
+  const seen = new Set([item.runner]);
+  const others = (item.runners || []).filter((r) => r?.id && !seen.has(r.id) && seen.add(r.id)); // sin repetidos
   return {
     title: "Cambiar emulador", crumb: "Emulador", subtitle: `Ahora: ${runnerName(item)}`,
-    options: others.flatMap((runner) => [
+    options: others.map((r) => ({ ...r, name: r.name || r.id })).flatMap((runner) => [
       { icon: "play", label: `Abrir con ${runner.name}`, hint: "Solo esta vez", command: { type: "launch", id: item.id, runner: runner.id } },
       { icon: "check", label: `Usar siempre ${runner.name}`,
         command: { type: "prefs", id: item.id, prefs: { runner: runner.id }, message: `${item.title} se abrirá con ${runner.name}` } },
@@ -204,7 +205,7 @@ export function capturesMenu(items) {
     title: "Capturas", crumb: "Capturas",
     options: items.map((item, i) => ({
       icon: item.kind === "video" ? "play" : "windows", label: item.name,
-      hint: new Date(item.time * 1000).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" }),
+      hint: Number.isFinite(item.time) ? new Date(item.time * 1000).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" }) : "",
       command: { type: "view-capture", index: i },
     })),
   };
@@ -277,11 +278,19 @@ export const SETTING_VALUES = {
   close_previous: [[true, "Sí"], [false, "No"]],
 };
 
-export const settingLabel = (key, value) => (SETTING_VALUES[key]?.find(([v]) => v === value) ?? [null, String(value)])[1];
+export const settingLabel = (key, value) => SETTING_VALUES[key]?.find(([v]) => v === value)?.[1] ?? otherValue(key, value);
+
+/** Un valor que no está en la lista (puesto a mano en config.yaml): «90 min», no «90». */
+function otherValue(key, value) {
+  if (key.endsWith("_minutes") && Number.isFinite(value)) {
+    return value % 60 === 0 && value ? `${value / 60} hora${value === 60 ? "" : "s"}` : `${value} min`;
+  }
+  return value == null ? "—" : String(value);
+}
 
 /** El valor que sigue al actual (da la vuelta). */
 export function nextSetting(key, value) {
-  const values = SETTING_VALUES[key].map(([v]) => v);
+  const values = (SETTING_VALUES[key] ?? [[value]]).map(([v]) => v);
   const i = values.indexOf(value);
   return values[(i + 1) % values.length];
 }
@@ -327,7 +336,7 @@ export function maintenanceMenu() {
 }
 
 /** Actualizar Orbital: qué cambia y "Actualizar ahora" (prueba la versión nueva; si falla, vuelve). */
-export function updateMenu(info) {
+export function updateMenu(info = {}) {
   if (info.busy) {
     return { title: "Actualizando Orbital…", subtitle: "Te aviso cuando termine.", options: [{ icon: "check", label: "Entendido", command: { type: "close" } }] };
   }
@@ -344,7 +353,7 @@ export function updateMenu(info) {
     subtitle: "Tarda unos minutos.",
     options: [
       { icon: "refresh", label: "Actualizar ahora", command: { type: "update-apply" } },
-      ...info.changes.slice(0, 8).map((text) => ({ icon: "check", label: text, command: { type: "stay" } })),
+      ...(Array.isArray(info.changes) ? info.changes : []).slice(0, 8).map((text) => ({ icon: "check", label: text, command: { type: "stay" } })),
     ],
   };
 }
@@ -354,8 +363,8 @@ export function updateMenu(info) {
  * una carpeta, Actualizar biblioteca la encuentra sola si está en Descargas, el Escritorio o
  * C:\Emuladores; si no, va en config.yaml (lo dice el pie).
  */
-export function foldersMenu({ emulators = [], config = null }) {
-  const options = emulators.map((e) => ({
+export function foldersMenu({ emulators = [], config = null } = {}) {
+  const options = (emulators || []).map((e) => ({ ...e, rom_dirs: e.rom_dirs || [], games: e.games || 0 })).map((e) => ({
     icon: "folder", label: e.name, value: `${e.games} juego${e.games === 1 ? "" : "s"}`,
     hint: e.rom_dirs.length ? e.rom_dirs.map((d) => shortPath(d, 2)).join(" · ") : "Sin carpeta de juegos",
     command: { type: "stay" },
@@ -382,7 +391,7 @@ const ago = (seconds, now) => {
  * Diagnóstico: lo que ve Orbital de su equipo. Para cuando algo "no sale": en qué carpeta guarda,
  * si Windows le cambia AppData, qué encontró, memoria y los últimos avisos del registro.
  */
-export function diagnosticsMenu(d, { now = Date.now() } = {}) {
+export function diagnosticsMenu(d = {}, { now = Date.now() } = {}) {
   const info = (icon, label, value, hint) => ({ icon, label, value, hint, command: { type: "stay" } });
   const found = d.found || {};
   const memory = d.memory || {};
@@ -408,7 +417,7 @@ export function diagnosticsMenu(d, { now = Date.now() } = {}) {
       info("gamepad", "Mandos", `${(d.controllers || []).length}`,
         (d.controllers || []).map((c) => `${c.name || c.kind} (cerrar: ${c.close})`).join(" · ") || "Ninguno conectado"),
       ...(d.problems?.length
-        ? d.problems.slice(-8).reverse().map((line) => info("mark", line.includes("ERROR") ? "Error" : "Aviso", "", line))
+        ? d.problems.slice(-8).reverse().map(String).map((line) => info("mark", line.includes("ERROR") ? "Error" : "Aviso", "", line))
         : [info("check", "Sin avisos recientes", "")]),
     ],
   };
@@ -416,6 +425,7 @@ export function diagnosticsMenu(d, { now = Date.now() } = {}) {
 
 /** Una página de Ajustes con los valores actuales. */
 export function settingsPage(page, settings) {
+  settings ??= {};
   if (page === "maintenance") return maintenanceMenu();
   if (page === "accounts") {
     return {
@@ -427,7 +437,8 @@ export function settingsPage(page, settings) {
       ],
     };
   }
-  const def = SETTING_PAGES[page];
+  const def = Object.hasOwn(SETTING_PAGES, page) ? SETTING_PAGES[page] : null;
+  if (!def) return settingsMenu(); // una página que no existe: los Ajustes, no una excepción
   return {
     title: def.title, crumb: def.title,
     options: def.options.map(([key, label, hint]) => ({
@@ -453,7 +464,7 @@ export function stremioAccountMenu() {
  * "Tu consola" (primer uso, y en Mantenimiento): lo esencial en dos renglones. Lo técnico (ES-DE,
  * el reproductor, Alexa) está en Diagnóstico.
  */
-export function setupMenu(status) {
+export function setupMenu(status = {}) {
   const games = status.games || 0;
   return {
     title: "Tu consola",
@@ -520,6 +531,7 @@ export const SHORTCUTS = {
 
 /** «Cómo se usa»: una sola hoja en tres partes, con los atajos del mando que tienes. */
 export function controlsMenu(controllers = []) {
+  controllers = Array.isArray(controllers) ? controllers : [];
   const legion = controllers.some((c) => c.kind === "legion") && !controllers.some((c) => c.kind !== "legion");
   const section = (title, rows) => [{ heading: true, label: title }, ...rows.map(([label, value]) => row(label, value))];
   return {

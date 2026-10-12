@@ -84,6 +84,7 @@ class ComboDetector:
     def update(self, buttons: int, now: float) -> list[str]:
         events: list[str] = []
         guide = bool(buttons & GUIDE)
+        self._chord_seen &= buttons  # lo que se soltó cuenta otra vez (Home + X, X: dos capturas)
         if guide and buttons & ~GUIDE:
             self._guide_chord = True
             new = buttons & ~GUIDE & ~self._chord_seen
@@ -304,6 +305,9 @@ class GamepadWatcher:
                     detector.combo = close_combo_for(vid)
                     log.info("Mando %d (marca %s): cerrar juego con %s", slot + 1, f"{vid:04X}" if vid else "?",
                              "Start+Select" if detector.combo == LEGION_CLOSE_COMBO else "Start+Select+Home")
+                if was_connected[slot] and not connected:
+                    # Se desconectó con botones apretados: eso no es «soltar Home» (no abre Orbital).
+                    self._detectors[slot] = detector = ComboDetector(combo=detector.combo)
                 was_connected[slot] = connected
                 buttons = state.Gamepad.wButtons if connected else 0
                 for event in detector.update(buttons, now):

@@ -58,6 +58,7 @@ class Sessions:
         # cierra en el primer intento, sobre todo al volver de suspender, y al segundo abre bien).
         self._last_launch: dict | None = None
         launcher.on_exit = self.session_ended
+        launcher.on_playtime = self.state.record_session
         launcher.on_timeout = lambda item_id, title: self.events.publish({
             "type": "toast", "ok": False,
             "message": f"{title} no arrancó. Revisa Steam (puede estar actualizando o pidiendo algo en su ventana)."})

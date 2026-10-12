@@ -168,6 +168,7 @@ class FailedTokens:
         self.clock = clock
         self._fails: dict[str, list[float]] = {}
         self._blocked: dict[str, float] = {}
+        self._all: list[float] = []  # todos los fallos: quien inventa una X-Forwarded-For por intento igual se frena
 
     @staticmethod
     def key(request: Request) -> str:
@@ -186,12 +187,18 @@ class FailedTokens:
         now = self.clock()
         if len(self._fails) > 500:  # quien rota cabeceras no hace crecer esto sin tope
             self._fails = {k: v for k, v in self._fails.items() if v and now - v[-1] < self.WINDOW}
+            if len(self._fails) > 500:  # aún muchos recientes: se quedan los 250 más nuevos
+                self._fails = dict(sorted(self._fails.items(), key=lambda kv: kv[1][-1])[-250:])
+        self._all = [t for t in self._all[-999:] if now - t < self.WINDOW] + [now]
         recent = [t for t in self._fails.get(key, []) if now - t < self.WINDOW] + [now]
         self._fails[key] = recent
         if len(recent) >= self.BLOCK_AFTER:
             self._blocked[key] = now + self.BLOCK_FOR
             log.warning("Demasiados tokens inválidos desde %s: bloqueado %d min", key, self.BLOCK_FOR // 60)
-        return min(self.MAX_DELAY, max(0, len(recent) - self.SLOW_AFTER) * 0.5)
+        # La espera crece por origen y también por el total (sin bloquear a todos: Alexa sigue respondiendo).
+        mine = max(0, len(recent) - self.SLOW_AFTER) * 0.5
+        overall = max(0, len(self._all) - self.SLOW_AFTER * 4) * 0.1
+        return min(self.MAX_DELAY, max(mine, overall))
 
     def succeeded(self, key: str) -> None:
         self._fails.pop(key, None)

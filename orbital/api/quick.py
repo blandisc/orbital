@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
@@ -11,11 +12,15 @@ from fastapi.responses import FileResponse
 from .. import capture, quick
 from .deps import Deps
 
+_LOCAL = re.compile(r"^[A-Za-z]:\\(?!\\)")
+
 
 def _inside_gallery(path: str) -> Path:
     """Solo imágenes y videos de las carpetas de capturas: nunca rutas arbitrarias. Las rutas de red
     (servidor compartido) se rechazan ANTES de tocarlas: resolverlas colgaba un hilo y abría una conexión SMB."""
-    if not path or chr(0) in path or path.startswith(("\\", "//")) or len(path) > 1024:
+    # Solo rutas locales absolutas «C:\…»: «/\servidor», «\\?\UNC», «C:relativa» y similares, fuera.
+    path = path.replace("/", "\\") if isinstance(path, str) else ""
+    if not path or chr(0) in path or not _LOCAL.match(path) or len(path) > 1024:
         raise HTTPException(404, "Esa captura ya no está")
     try:
         target = Path(path).resolve()

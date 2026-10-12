@@ -73,7 +73,7 @@ export const runnerName = (item, runnerId) =>
 export const isWatchable = (item) => item?.source === "stremio" || item?.source === "cinemeta";
 
 /** Serie del catálogo de Stremio (su ficha muestra los episodios). */
-export const isSeries = (item) => item?.source === "cinemeta" && item?.id?.startsWith("cinemeta:series:")
+export const isSeries = (item) => item?.source === "cinemeta" && String(item?.id ?? "").startsWith("cinemeta:series:")
   || item?.kind === "series";
 
 /** Las apps y la multimedia no muestran "Sin jugar todavía". */

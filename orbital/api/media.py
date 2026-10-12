@@ -22,8 +22,8 @@ class PlayRequest(BaseModel):
 
 
 def _title_ref(body: dict, missing: str) -> tuple[str, str]:
-    kind, meta_id = body.get("kind"), str(body.get("id") or "")
-    if kind not in ("movie", "series") or not meta_id:
+    kind, meta_id = body.get("kind"), body.get("id")
+    if kind not in ("movie", "series") or not isinstance(meta_id, str) or not meta_id.strip() or len(meta_id) > 200:
         raise HTTPException(400, missing)
     return kind, meta_id
 
@@ -131,11 +131,13 @@ def router(d: Deps) -> APIRouter:
     def my_list(body: dict) -> dict:
         """Mi lista: añadir o quitar."""
         kind, meta_id = _title_ref(body, "Falta qué añadir")
+        if not isinstance(body.get("add"), bool):  # "false" (texto) no es «quitar»: se rechaza
+            raise HTTPException(422, "Falta si añadir o quitar")
         try:
-            catalog.watch.set_in_library(kind, meta_id, bool(body.get("add")))
+            catalog.watch.set_in_library(kind, meta_id, body["add"])
         except stremio_api.StremioError as exc:
             raise HTTPException(409, str(exc))
-        return {"ok": True, "in_library": bool(body.get("add"))}
+        return {"ok": True, "in_library": body["add"]}
 
     @r.post("/trailer")
     def trailer(body: dict) -> dict:
@@ -151,7 +153,7 @@ def router(d: Deps) -> APIRouter:
     @r.post("/dismiss")
     def dismiss(body: dict) -> dict:
         """Quitar de Seguir viendo."""
-        meta_id = str(body.get("id") or "").removeprefix("stremio:")
+        meta_id = body.get("id").removeprefix("stremio:") if isinstance(body.get("id"), str) else ""
         if not meta_id:
             raise HTTPException(400, "Falta qué quitar")
         try:

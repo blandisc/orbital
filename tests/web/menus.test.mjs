@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { alexaMenu, artMenu, capturesMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingLabel, settingsMenu, settingsPage, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch", system: "switch",
@@ -221,4 +221,22 @@ test("Alexa: ejemplos que no hacen nada al elegirlos", () => {
   assert.match(menu.subtitle, /pídele a mi consola/);
   assert.ok(menu.options.length >= 5);
   assert.ok(menu.options.every((o) => o.command.type === "stay" && o.label.startsWith("«")));
+});
+
+test("un video abierto dice «Volver al video» y «Cerrar el video»", () => {
+  const menu = gameMenu({ id: "media:player", title: "Paprika", category: "media" }, { running: { id: "media:player", runner: "mpv" } });
+  assert.deepEqual(menu.options.slice(0, 2).map((o) => o.label), ["Volver al video", "Cerrar el video"]);
+});
+
+test("ajustes y menús con datos incompletos no truenan", () => {
+  assert.equal(settingLabel("game_idle_minutes", 90), "90 min");
+  assert.equal(settingLabel("game_idle_minutes", 180), "3 horas");
+  for (const page of ["nope", undefined, "__proto__", "constructor"]) assert.ok(settingsPage(page, null).options);
+  assert.equal(nextSetting("nope", 3), 3);
+  assert.ok(updateMenu({ available: 1 }).options.length === 1);
+  assert.ok(foldersMenu({ emulators: [{ name: "Eden", rom_dirs: null }] }).options[0].hint);
+  assert.ok(diagnosticsMenu({ problems: [5, null] }).options);
+  assert.ok(controlsMenu(null).options.length && setupMenu().options.length);
+  const runners = runnerMenu({ id: "a", title: "Zelda", runner: "eden", runners: [{ id: "eden", name: "Eden" }, { id: "ryu" }, { id: "ryu" }] });
+  assert.deepEqual(runners.options.map((o) => o.label), ["Abrir con ryu", "Usar siempre ryu"]);
 });

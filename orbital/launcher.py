@@ -70,6 +70,7 @@ class Launcher:
         self.current: Running | None = None
         self.on_exit = on_exit
         self.on_timeout = None  # (id, título): lo lanzado nunca arrancó (Steam no lo abrió)
+        self.on_playtime = None  # (id, segundos): lo que se jugó de algo que otra cosa reemplazó
         self.last_stopped_by_user = False
         self.last_was_already_open = False
 
@@ -137,7 +138,7 @@ class Launcher:
             time.sleep(self.POLL / 2)
         while windows.pids_by_exe(exe):
             if self.current is not running:
-                return  # se abrió otra cosa: ya no es lo que estamos midiendo
+                return self._replaced(running)  # se abrió otra cosa: ya no es lo que estamos midiendo
             time.sleep(self.POLL)
         self._finished(running)
 
@@ -167,7 +168,7 @@ class Launcher:
         deadline = time.monotonic() + self.HANDOFF_GRACE
         while True:
             if self.current is not running:
-                return  # se abrió otra cosa: ya no es lo que estamos midiendo
+                return self._replaced(running)  # se abrió otra cosa: ya no es lo que estamos midiendo
             snapshot = self.process_list()
             alive = {p for p, name in family.items() if snapshot.get(p, ("",))[0] == name}
             relaunched = {p for p, (name, _) in snapshot.items() if exe and name == exe and p != pid and p not in before}
@@ -203,8 +204,18 @@ class Launcher:
             time.sleep(self.POLL)
         running.started = time.time()
         while steam_running_appid() == appid:
+            if self.current is not running:
+                return self._replaced(running)
             time.sleep(self.POLL)
         self._finished(running)
+
+    def _replaced(self, running: Running) -> None:
+        """Se lanzó otra cosa encima: no hay regreso a Orbital, pero lo que se jugó sí cuenta."""
+        if self.on_playtime:
+            try:
+                self.on_playtime(running.item_id, time.time() - running.started)
+            except Exception:  # noqa: BLE001 - el hilo vigilante no se cae por esto
+                log.exception("Error en on_playtime")
 
     def _finished(self, running: Running) -> None:
         with self._lock:

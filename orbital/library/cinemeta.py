@@ -71,7 +71,7 @@ class Cinemeta:
         """Búsqueda tolerante a errores ("ofice" encuentra The Office); 2-3 letras suelen bastar."""
         from urllib.parse import quote
 
-        metas = self._get(f"/catalog/{kind}/top/search={quote(query.strip())}.json").get("metas") or []
+        metas = self._get(f"/catalog/{kind}/top/search={quote(query.strip(), safe='')}.json").get("metas") or []
         return [m for m in metas if isinstance(m, dict) and m.get("id") and m.get("name")]
 
     def meta(self, kind: str, meta_id: str) -> dict:

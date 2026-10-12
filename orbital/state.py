@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import threading
 import time
 from pathlib import Path
@@ -19,33 +20,59 @@ class State:
         self.path = path
         self._lock = threading.Lock()
         self._data: dict = {"history": {}, "prefs": {}, "settings": {}, "seen": {}}
+        self._frozen = False  # no se pudo leer el archivo: se vive en memoria y NO se pisa
         if path and path.exists():
+            self._load(path)
+
+    def _read(self, path: Path) -> str:
+        for attempt in range(3):  # un antivirus o el indexador pueden tenerlo abierto un momento
             try:
-                # utf-8-sig: si alguien lo abrió en el Bloc de notas, el BOM no lo invalida.
-                loaded = json.loads(path.read_text(encoding="utf-8-sig"))
-                if not isinstance(loaded, dict):
-                    raise ValueError("no es un objeto")
-                for key in self._data:
-                    value = loaded.get(key, {})
-                    self._data[key] = dict(value) if isinstance(value, dict) else {}
-                # Cada entrada del historial y de preferencias, con la forma esperada.
-                self._data["history"] = {k: v for k, v in self._data["history"].items() if isinstance(v, dict)}
-                self._data["prefs"] = {k: v for k, v in self._data["prefs"].items() if isinstance(v, dict)}
-            except (OSError, ValueError) as exc:
-                # Antes se empezaba de cero y el primer guardado borraba favoritos y tiempo jugado:
-                # ahora el archivo que no se pudo leer queda a salvo como .bak.
-                backup = path.with_suffix(".bak")
-                try:
-                    path.replace(backup)
-                except OSError:
-                    backup = path
-                log.warning("No se pudo leer %s (queda en %s); empiezo de cero: %s", path, backup, exc)
+                return path.read_text(encoding="utf-8-sig")  # utf-8-sig: el BOM del Bloc de notas no lo invalida
+            except OSError:
+                if attempt == 2:
+                    raise
+                time.sleep(.2)
+        return ""
+
+    def _load(self, path: Path) -> None:
+        try:
+            text = self._read(path)
+        except OSError as exc:
+            # Sigue ahí pero no se deja leer: guardar encima borraría favoritos y tiempo jugado.
+            self._frozen = True
+            log.warning("No pude leer %s; esta sesión no lo modifica: %s", path, exc)
+            return
+        try:
+            loaded = json.loads(text)
+            if not isinstance(loaded, dict):
+                raise ValueError("no es un objeto")
+        except ValueError as exc:
+            # Dañado: queda a salvo con fecha (otro daño después no pisa este respaldo) y se empieza de cero.
+            backup = path.with_name(f"{path.stem}-{time.strftime('%Y%m%d-%H%M%S')}.bak")
+            try:
+                path.replace(backup)
+            except OSError:
+                self._frozen, backup = True, path
+            log.warning("No se pudo leer %s (queda en %s); empiezo de cero: %s", path, backup, exc)
+            return
+        for key in self._data:
+            value = loaded.get(key, {})
+            self._data[key] = dict(value) if isinstance(value, dict) else {}
+        # Cada entrada con la forma esperada: números donde van números (un "abc" no tumba el orden).
+        number = lambda v: v if isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) and v >= 0 else 0  # noqa: E731
+        history = {}
+        for k, v in self._data["history"].items():
+            if isinstance(v, dict):
+                history[k] = {**v, **{f: number(v.get(f)) for f in ("playtime", "launches", "last_played") if f in v}}
+        self._data["history"] = history
+        self._data["prefs"] = {k: v for k, v in self._data["prefs"].items() if isinstance(v, dict)}
+        self._data["seen"] = {k: number(v) for k, v in self._data["seen"].items()}
 
     def _save(self) -> None:
         """Escritura atómica (no se corrompe si se apaga la consola). Si Windows no deja escribir (un
         antivirus o el indexador tienen el archivo), se reintenta y, si no, se avisa en el registro: nunca
         tumba lo que se estaba haciendo (abrir un juego, cerrarlo)."""
-        if not self.path:
+        if not self.path or self._frozen:
             return
         for attempt in range(3):
             try:

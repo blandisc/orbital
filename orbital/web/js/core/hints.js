@@ -42,8 +42,9 @@ export function alexaTip(item, { runningId = null } = {}) {
 
 /** "The Legend of Zelda: Tears of the Kingdom" -> "The Legend of Zelda" (más fácil de decir). */
 export function shortTitle(title = "") {
-  const clean = String(title).replace(/[™®©]/g, "").split(/\s*[:–—(]\s*/)[0].trim();
-  return clean || String(title);
+  title = title == null ? "" : String(title);
+  const clean = title.replace(/[™®©]/g, "").split(/\s*[:–—(]\s*/)[0].trim();
+  return clean || title;
 }
 
 

@@ -52,6 +52,11 @@ class LibraryItem:
     @classmethod
     def from_dict(cls, data: dict) -> LibraryItem:
         known = {k: v for k, v in data.items() if k in cls.__dataclass_fields__}
+        # Una copia guardada con otra forma se rechaza aquí (y se vuelve a escanear), no a media interfaz.
+        if not isinstance(known.get("id"), str) or not isinstance(known.get("title"), str):
+            raise TypeError("elemento sin id o título")
+        if not isinstance(known.get("extra", {}), dict) or not isinstance(known.get("runners") or [], list):
+            raise TypeError("elemento con datos extra o emuladores inválidos")
         known["runners"] = [Runner(**r) for r in known.get("runners") or []]
         return cls(**known)
 

@@ -115,6 +115,7 @@ class OrbitalPlayer(PlayerScreen):
         self._quiet_episodes = 0  # episodios encadenados sin tocar el mando
         self._buffering = False
         self._loading_until = 0.0  # tras «Ver ahora», A no pausa lo que está cargando
+        self._want: dict[str, tuple[object, float]] = {}  # lo último pedido a mpv (pausa, volumen, posición)
         self.sub_scale = 1.0
         self.on_finished = on_finished  # (meta, posición, duración, segundos vistos)
         self.on_progress = None  # igual que on_finished, cada minuto y al pausar
@@ -136,6 +137,8 @@ class OrbitalPlayer(PlayerScreen):
              fallback_subs=None, **options) -> subprocess.Popen:
         """`run(argv)` lanza el proceso; `fallback_subs()` da URLs de subtítulos si el video no trae."""
         self.stop()
+        if self.segment is not None and self.segment.playing:
+            self._close_segment(self.segment)  # lo visto del video anterior se guarda antes de soltarlo
         process = run(build_command(mpv_exe, url, title, subtitles=subtitles, bindings=input_conf(),
                                     sub_scale=self.sub_scale, **options))
         self.menu = None
@@ -222,9 +225,10 @@ class OrbitalPlayer(PlayerScreen):
 
     def finish(self, playback: Playback) -> None:
         """mpv se cerró: guarda lo visto o, si no llegó a verse nada y nadie lo cerró, avisa."""
+        if self.current is not playback:
+            return  # ya se abrió otro video: su segmento, su tarjeta y su «salí yo» no son de este
         segment = self.segment
-        if self.current is playback:
-            self.current = None
+        self.current = None
         self._card = None
         if segment is None or segment.closed:
             return
@@ -416,7 +420,8 @@ class OrbitalPlayer(PlayerScreen):
         segment.upnext_dismissed = True  # que no se dispare dos veces
         self.toast(f"Cargando {info.get('label') or 'el siguiente episodio'}…", 6)
         self._in_background(info["play"], failed="No pude cargar el siguiente episodio")
-        self._loading_until = time.monotonic() + 3  # un segundo A no pausa lo que está cargando
+        if not auto:  # tras «Ver ahora», un segundo A no pausa lo que está cargando
+            self._loading_until = time.monotonic() + 3
 
     # --- subtítulos ------------------------------------------------------------------------------
     def _ensure_subtitles(self, lang: str, fallback_subs) -> None:

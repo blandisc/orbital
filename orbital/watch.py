@@ -513,10 +513,12 @@ class Watch:
         return [{"id": s.index, "label": source_label(s, long=True), "current": s.index == meta["source"]}
                 for s in found]
 
-    def _switch_source(self, meta: dict, index: int, position: float) -> None:
+    def _switch_source(self, meta: dict, index: int, position: float) -> bool:
+        """False si no se pudo (el reproductor lo avisa)."""
         source = self.streams.get(meta["kind"], meta["video_id"], self.stream_prefs, index)
-        if source is not None:
-            self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], meta.get("title") or "",
+        if source is None:
+            return False
+        return self._load_in_player(meta["kind"], meta["meta_id"], meta["video_id"], meta.get("title") or "",
                                  source, start=position, message=f"Cambiando a {source_label(source)}…")
 
     def _episode_title(self, info: dict, meta_id: str, video_id: str) -> tuple[str, str]:
@@ -540,15 +542,15 @@ class Watch:
                 "play": lambda: self._play_episode(meta["meta_id"], next_id, title, meta.get("binge"))}
 
     def _play_episode(self, meta_id: str, video_id: str, title: str, binge: str | None = None,
-                      start: float = 0) -> bool:
-        """Otro episodio en el mismo reproductor (sin volver a Orbital)."""
+                      start: float = 0) -> bool | None:
+        """Otro episodio en el mismo reproductor (sin volver a Orbital). False: no cargó; None: ya se avisó."""
         source = self.best_source("series", video_id, binge)
         if source is None:
             self.player.toast("No encontré dónde ver ese episodio", 4)
-            return False
+            return None
         return self._load_in_player("series", meta_id, video_id, title, source, start=start)
 
-    def _step_episode(self, meta: dict, delta: int) -> None:
+    def _step_episode(self, meta: dict, delta: int) -> bool | None:
         """LT/RT en el reproductor: episodio anterior o siguiente."""
         info = self.cinemeta.meta("series", meta["meta_id"])
         episodes = [e["id"] for s in cinemeta.seasons(info) if s["season"] != 0 for e in s["episodes"]]
@@ -559,8 +561,8 @@ class Watch:
             self.player.toast("No hay episodio " + ("anterior" if delta < 0 else "siguiente"), 2.5)
             return
         title, _ = self._episode_title(info, meta["meta_id"], episodes[i])
-        self._play_episode(meta["meta_id"], episodes[i], title, meta.get("binge"),
-                           start=self.resume_position(meta["meta_id"], episodes[i]))
+        return self._play_episode(meta["meta_id"], episodes[i], title, meta.get("binge"),
+                                  start=self.resume_position(meta["meta_id"], episodes[i]))
 
     def _season_episodes(self, meta: dict) -> list[dict]:
         """Y › Episodios en el reproductor: los de la temporada que estás viendo."""

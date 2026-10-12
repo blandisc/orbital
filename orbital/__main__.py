@@ -276,7 +276,11 @@ def main(argv: list[str] | None = None) -> None:
     if args.command == "stremio":
         raise SystemExit(stremio_command(args, config))
     if args.command == "alexa":
-        raise SystemExit(alexa_command(args, config))
+        try:
+            raise SystemExit(alexa_command(args, config))
+        except (ValueError, OSError) as exc:  # config.yaml dañado o sin permiso: un mensaje, no un traceback
+            print(f"!! {exc}")
+            raise SystemExit(1) from exc
     if config.server.token_is_ephemeral:
         log.warning("No hay token en config.yaml: Alexa no podrá conectarse. Ejecuta: orbital alexa setup")
 

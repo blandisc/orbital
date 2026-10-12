@@ -65,6 +65,8 @@ class PlayerScreen:
             self.mpv.command("seek", card["to"], "absolute")
         elif card["kind"] == "quit":
             self._hide_card()  # A: seguir viendo
+            if self._value("pause"):
+                self.show_hud()
         else:
             self._play_next(card["segment"], auto=False)
 
@@ -79,6 +81,20 @@ class PlayerScreen:
         elif card["kind"] == "next":
             card["segment"].upnext_dismissed = True  # se queda en los créditos; al final, sale
 
+    # --- lo pedido vs. lo confirmado ---------------------------------------------------------------
+    WANT_SECONDS = 1.0
+
+    def _value(self, prop: str):
+        """El valor de `prop` contando lo que se acaba de pedir: mpv lo confirma un instante después y,
+        con pulsaciones seguidas, la barra repetía el valor viejo (85, 85, 85 en vez de 85, 90, 95)."""
+        want = self._want.get(prop)
+        if want is not None and time.monotonic() < want[1]:
+            return want[0]
+        return self.mpv.get(prop)
+
+    def _ask(self, prop: str, value) -> None:
+        self._want[prop] = (value, time.monotonic() + self.WANT_SECONDS)
+
     # --- interfaz encima del video (player_ui) -------------------------------------------------
     def _overlay(self, overlay_id: int, ass: str | None) -> None:
         self.mpv.command_named(name="osd-overlay", id=overlay_id, format="ass-events" if ass else "none",
@@ -91,10 +107,10 @@ class PlayerScreen:
         chapters = segment.chapters if segment else []
         duration = self.mpv.get("duration")
         if position is None:
-            position = self.mpv.get("time-pos")
+            position = self._value("time-pos")
         return player_ui.Hud(
             title=current.title, detail=meta.get("detail") or ("Película" if meta.get("kind") == "movie" else ""),
-            position=position, duration=duration, paused=bool(self.mpv.get("pause")) if paused is None else paused,
+            position=position, duration=duration, paused=bool(self._value("pause")) if paused is None else paused,
             audio=player_ui.current_label(tracks, "audio"), subtitles=player_ui.current_label(tracks, "sub"),
             source=meta.get("source_label", ""), series=meta.get("kind") == "series" and self.on_episode is not None,
             ends=player_ui.ends_at(position, duration), now=time.strftime("%H:%M"),
@@ -124,7 +140,7 @@ class PlayerScreen:
         self._hud_timer.start()
 
     def _refresh_paused(self) -> None:
-        if self.mpv.get("pause") and self._hud_visible and self.menu is None:
+        if self._value("pause") and self._hud_visible and self.menu is None:
             self.show_hud()
 
     def hide_hud(self) -> None:
@@ -134,7 +150,7 @@ class PlayerScreen:
         self._overlay(1, None)
 
     def _hide_hud_if_playing(self) -> None:
-        if not self.mpv.get("pause"):
+        if not self._value("pause"):
             self.hide_hud()
 
     def toast(self, text: str, seconds: float = 1.6) -> None:
@@ -174,7 +190,7 @@ class PlayerScreen:
 
     def _draw_panel(self) -> None:
         if self.menu is not None:
-            self._overlay(2, player_ui.panel_ass(self.menu, playing=not self.mpv.get("pause")))
+            self._overlay(2, player_ui.panel_ass(self.menu, playing=not self._value("pause")))
 
     def close_menu(self) -> None:
         self.menu = None
@@ -183,6 +199,8 @@ class PlayerScreen:
         if card and card.get("kind") == "next" and card["segment"].upnext_deadline is not None:
             card["segment"].upnext_deadline = time.monotonic() + UPNEXT_COUNTDOWN  # no arranca de golpe
         self._draw_card()
+        if self._value("pause"):
+            self.show_hud()  # en pausa, sin barra no se sabe que está en pausa
 
     def _choose(self, option: dict) -> None:
         prop, value = option["action"]
@@ -275,9 +293,10 @@ class PlayerScreen:
         if button == "a":
             if time.monotonic() < self._loading_until:
                 return  # acaba de pedir otro episodio: A no pausa lo que está cargando
-            was_paused = bool(self.mpv.get("pause"))
-            self.mpv.command("cycle", "pause")
-            self.show_hud(paused=not was_paused)
+            paused = not self._value("pause")
+            self.mpv.command("set_property", "pause", paused)  # el valor exacto: dos A seguidas no se cruzan
+            self._ask("pause", paused)
+            self.show_hud(paused=paused)
         elif button == "b":
             # B siempre pregunta (antes ocultaba la barra y, ya oculta, salía sin avisar): A sigue, B sale.
             self.hide_hud()
@@ -304,20 +323,25 @@ class PlayerScreen:
                 self.toast("Episodio siguiente…" if button == "rt" else "Episodio anterior…", 3)
                 self._in_background(self.on_episode, meta, -1 if button == "lt" else 1, failed="No pude cambiar de episodio")
         elif button in ("up", "down"):
-            before = self.mpv.get("volume")
-            self.mpv.command("add", "volume", 5 if button == "up" else -5)
+            before = self._value("volume")
             if isinstance(before, (int, float)) and not isinstance(before, bool):
-                self._show_notice(player_ui.volume_ass(max(0, min(100, before + (5 if button == "up" else -5)))), 1.6)
+                volume = max(0, min(100, before + (5 if button == "up" else -5)))
+                self.mpv.command("set_property", "volume", volume)
+                self._ask("volume", volume)
+                self._show_notice(player_ui.volume_ass(volume), 1.6)
             else:
+                self.mpv.command("add", "volume", 5 if button == "up" else -5)
                 self.toast("Volumen")
 
     def _expected_position(self, step: float) -> float | None:
         """Adónde va el seek que se acaba de pedir (mpv lo confirma un instante después)."""
-        pos, dur = self.mpv.get("time-pos"), self.mpv.get("duration")
-        if not isinstance(pos, (int, float)):
+        pos, dur = self._value("time-pos"), self.mpv.get("duration")
+        if not isinstance(pos, (int, float)) or isinstance(pos, bool):
             return None
         end = dur if isinstance(dur, (int, float)) and dur > 0 else pos + abs(step)
-        return max(0.0, min(float(end), pos + step))
+        target = max(0.0, min(float(end), pos + step))
+        self._ask("time-pos", target)
+        return target
 
     def _quit(self) -> None:
         """Cierra mpv anotando ANTES cómo terminó (el catálogo lo lee al volver a Orbital: "Terminaste…"
