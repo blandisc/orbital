@@ -85,7 +85,8 @@ export function createSources({ onPlay, onMove, onClose }) {
       found = data.sources;
       if (!title.textContent && data.meta?.title) title.textContent = data.meta.title;
       subtitle.textContent = `Primero las de audio en ${AUDIO_NAMES[data.audio] || data.audio} y ${data.quality}. `
-        + "La recomendada es la que Orbital pone con «Ver».";
+        + "La recomendada es la que Orbital pone con «Ver». «Al instante»: Real-Debrid ya la tiene guardada "
+        + "y arranca en segundos; «Tarda en empezar»: primero se descarga.";
       status.hidden = !!found.length;
       status.textContent = found.length ? "" : "No encontré dónde ver esto. Revisa tus complementos en Stremio.";
       render();
