@@ -47,12 +47,15 @@ public final class KeychainSecrets: SecretsStore, @unchecked Sendable {
     }
 
     public func set(_ key: String, _ value: String?) {
-        SecItemDelete(query(key) as CFDictionary)
-        guard let value, let data = value.data(using: .utf8) else { return }
-        var q = query(key)
-        q[kSecValueData as String] = data
-        q[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        SecItemAdd(q as CFDictionary, nil)
+        guard let value, let data = value.data(using: .utf8) else { SecItemDelete(query(key) as CFDictionary); return }
+        // Se actualiza en su sitio: si falla el guardado, el valor anterior (p. ej. el token de Trakt, de un solo uso) no se pierde.
+        let update = SecItemUpdate(query(key) as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        if update == errSecItemNotFound {
+            var q = query(key)
+            q[kSecValueData as String] = data
+            q[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            SecItemAdd(q as CFDictionary, nil)
+        }
     }
 }
 #endif

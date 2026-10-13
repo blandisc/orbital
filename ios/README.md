@@ -50,7 +50,7 @@ Las pruebas de Swift leen `tests/fixtures/` (los mismos datos de ejemplo que usa
 
 | | Estado |
 |---|---|
-| `OrbitalCore` y `OrbitalModels` | Compilados y probados (Swift 6.2, Linux): ver `swift test`. |
+| `OrbitalCore` y `OrbitalModels` | Compilados y probados (Swift 6.2, Linux): `swift test` (193 pruebas). Pasaron además dos revisiones independientes (compilación y lógica/seguridad); sus hallazgos están corregidos y con prueba. |
 | Los modelos de vista y su lógica de reproducción | Probados con un motor y una red falsos. |
 | Sistema de diseño (colores = `palette.json`, sin valores sueltos en pantallas) | Verificado con pruebas. |
 | **SwiftUI, descargas en segundo plano, AVPlayer, Keychain** | **Escritos, solo revisados de sintaxis. No se han compilado ni ejecutado**: no había Xcode ni iPhone. Al compilar por primera vez pueden salir errores de tipos. |
@@ -82,6 +82,9 @@ Las pruebas de Swift leen `tests/fixtures/` (los mismos datos de ejemplo que usa
 | `Design/Components.swift` (`averageColor`) | el color sale de los píxeles del póster, no es un valor de diseño |
 
 ## Límites conocidos
+
+- Los enlaces de Real-Debrid pueden quedar en la memoria de la app mientras corre; no se guardan en disco (sesión efímera, Keychain para lo guardado).
+- Infuse recibe la URL del video y devuelve `orbital-ios://…` a quien la abra: es inherente a la API de Infuse.
 
 - Infuse solo avisa **al cerrar** y no da la duración: el avance de lo visto en Infuse es de «mejor esfuerzo».
 - El mosaico de «Para ti» no tiene aún el «modo ambiente» ni el acercamiento lento de la TV.

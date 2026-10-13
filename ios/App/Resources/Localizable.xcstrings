@@ -782,6 +782,17 @@
         }
       }
     },
+    "Guardar secreto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save secret"
+          }
+        }
+      }
+    },
     "Guion": {
       "extractionState": "manual",
       "localizations": {

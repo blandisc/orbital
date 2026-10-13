@@ -35,6 +35,7 @@ public struct NetworkError: Error, Sendable, CustomStringConvertible {
 
 public struct URLSessionHTTPClient: HTTPClient {
     private let session: URLSession
+    static let maxBody = 16 * 1024 * 1024      // como Orbital: 16 MB
     /// Sesión efímera: no guarda en disco las respuestas (las direcciones de los complementos llevan tu clave de Real-Debrid).
     public init(session: URLSession = URLSession(configuration: .ephemeral)) { self.session = session }
 
@@ -45,8 +46,30 @@ public struct URLSessionHTTPClient: HTTPClient {
         urlRequest.setValue("Orbital", forHTTPHeaderField: "User-Agent")
         for (key, value) in request.headers { urlRequest.setValue(value, forHTTPHeaderField: key) }
         do {
-            let (data, response) = try await session.data(for: urlRequest)
-            return HTTPResponse(status: (response as? HTTPURLResponse)?.statusCode ?? 0, data: data)
+            // Plazo total (no solo de inactividad) y tope de tamaño: un complemento que gotea bytes o manda gigas no cuelga la app.
+            let deadline = request.timeout * 2
+            let session = self.session, urlRequest = urlRequest
+            return try await withThrowingTaskGroup(of: HTTPResponse.self) { group in
+                group.addTask {
+                    #if canImport(FoundationNetworking)
+                    let (data, response) = try await session.data(for: urlRequest)     // Linux (pruebas): sin lectura por trozos
+                    #else
+                    let (bytes, response) = try await session.bytes(for: urlRequest)
+                    var data = Data()
+                    for try await byte in bytes {
+                        data.append(byte)
+                        if data.count > URLSessionHTTPClient.maxBody { throw NetworkError("La respuesta es demasiado grande") }
+                    }
+                    #endif
+                    guard data.count <= URLSessionHTTPClient.maxBody else { throw NetworkError("La respuesta es demasiado grande") }
+                    return HTTPResponse(status: (response as? HTTPURLResponse)?.statusCode ?? 0, data: data)
+                }
+                group.addTask { try await Task.sleep(nanoseconds: UInt64(deadline * 1e9)); throw NetworkError("Tiempo agotado") }
+                defer { group.cancelAll() }
+                return try await group.next()!
+            }
+        } catch let error as NetworkError {
+            throw error
         } catch {
             throw NetworkError("\(error.localizedDescription)")
         }
