@@ -6,24 +6,23 @@ visual con la paleta real de Orbital (`orbital/web/styles/palette.json`); los p�
 ## 1. Idea
 
 La app es **Orbital en el bolsillo**: mismo grafito oscuro, el color lo pone el título enfocado, sin
-mayúsculas espaciadas, español primero. Hace dos cosas que Orbital en la TV no hace: **ver en el
-teléfono** (reproductor propio, descargas) y **consultar tu Orbital** (juegos y «Para ti»).
+mayúsculas espaciadas, español primero. **Primera versión: solo películas y series** (sin juegos), que funciona por
+sí sola; lo que ves aparece en Orbital y al revés porque **la cuenta de Stremio es el eje**. Hace algo que la TV no
+hace: **ver en el teléfono** (reproductor propio, descargas sin conexión).
 
 ## 2. Navegación
 
-Cinco pestañas abajo, las mismas secciones que la TV:
+Cuatro pestañas abajo, las secciones multimedia de la TV:
 
 | Pestaña | Contenido | De dónde sale |
 |---|---|---|
-| Inicio | Seguir viendo (destacado), Mi lista, avance de Para ti | Stremio + Orbital |
-| Para ti | Mosaico de sugerencias con etiquetas; filtros Todo/Series/Películas/Juegos | Tu Orbital (`foryou`) |
-| Ver | Películas y series: buscar, catálogos, ficha | Stremio, Cinemeta, TMDB |
-| Juegos | Biblioteca (Steam y emuladores), solo consulta | Tu Orbital |
-| Descargas | Cola, espacio, lo disponible sin red | Local |
+| Inicio | Seguir viendo (destacado), Mi lista, pendientes de Trakt | Stremio y Trakt |
+| Para ti | Mosaico (solo series y películas), listas de plataformas y Trakt | TMDB y Trakt |
+| Ver | Buscar y lo más popular de Stremio, ficha | Stremio, Cinemeta, TMDB |
+| Descargas | Cola, espacio, lo disponible sin conexión | Local |
 
-Buscar vive arriba de «Ver»; Ajustes en el avatar de Inicio (cuenta de Stremio, idioma, audio,
-subtítulos, Wi‑Fi/móvil, emparejar con Orbital con QR). Un indicador junto al nombre dice si tu Orbital
-responde («en casa» / «Tu PC» / «sin conexión»: entonces Juegos y Para ti muestran la última copia con un aviso).
+Ajustes en el icono de la esquina de Inicio (cuenta de Stremio, complementos, Trakt, idiomas, calidad, descargas, reproductor).
+Un estado discreto dice «Stremio al día» o «N cambios por subir» (si no hubo internet).
 
 ## 3. Pantallas (ver la maqueta)
 
@@ -36,7 +35,6 @@ responde («en casa» / «Tu PC» / «sin conexión»: entonces Juegos y Para ti
 4. **Fuentes**: hoja inferior con «Ver / Descargar». Solo fuentes `url` de Real-Debrid. La recomendada
    arranca sola al tocar Continuar; esta hoja es para elegir otra.
 5. **Descargas**: espacio usado, cola, listas para ver sin conexión, «reponer el siguiente».
-6. **Juegos**: consolas como filtros y cuadrícula; solo lectura en la primera etapa.
 7. **Reproductor** (horizontal): toque muestra controles, doble toque ±10 s, arrastre busca, panel único de
    audio y subtítulos (se recuerda por serie), menú ⋯ con «Otra fuente» y **«Abrir en Infuse»**,
    «Siguiente episodio» con cuenta atrás en los créditos.
