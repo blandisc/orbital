@@ -280,8 +280,8 @@ public actor Trakt {
     }
 
     // MARK: escritura
-    public func setWatchlist(_ target: TraktTarget, add: Bool) async throws {
-        let body: JSON = target.isEpisode ? ["shows": [["ids": ["imdb": .string(target.imdb)]]]] : ["movies": [["ids": ["imdb": .string(target.imdb)]]]]
+    public func setWatchlist(imdb: String, series: Bool, add: Bool) async throws {
+        let body: JSON = series ? ["shows": [["ids": ["imdb": .string(imdb)]]]] : ["movies": [["ids": ["imdb": .string(imdb)]]]]
         let (status, _) = try await write(add ? "/sync/watchlist" : "/sync/watchlist/remove", body)
         guard status == 200 || status == 201 else { throw TraktError.http(status) }
     }

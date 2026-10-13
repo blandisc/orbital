@@ -186,6 +186,12 @@ public enum StremioLibrary {
         return .object(item)
     }
 
+    /// ¿Está en tu biblioteca de Stremio («Mi lista»)? Ni quitado ni temporal.
+    public static func isInLibrary(_ raw: JSON?) -> Bool {
+        guard let raw else { return false }
+        return !(raw["removed"].map(truthy) ?? false) && !(raw["temp"].map(truthy) ?? false)
+    }
+
     /// El libraryItem fuera de «Seguir viendo» (como el «Quitar» de Stremio).
     public static func dismissed(_ raw: JSON, now: Double) -> JSON {
         var item = raw.object ?? [:]
@@ -196,7 +202,7 @@ public enum StremioLibrary {
         return .object(item)
     }
 
-    static func truthy(_ value: JSON) -> Bool {
+    public static func truthy(_ value: JSON) -> Bool {
         switch value {
         case .null: return false
         case .bool(let b): return b

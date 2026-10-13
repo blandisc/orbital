@@ -25,6 +25,13 @@ public struct DownloadItem: Sendable, Codable, Equatable, Identifiable {
     public var createdAt: Double
     public var finishedAt: Double?
 
+    public init(id: String, kind: String, metaID: String, videoID: String, title: String, originalTitle: String, subtitle: String, poster: String?,
+                addonURL: String, sourceIndex: Int, expectedBytes: Int64?, relativePath: String, createdAt: Double) {
+        self.id = id; self.kind = kind; self.metaID = metaID; self.videoID = videoID; self.title = title; self.originalTitle = originalTitle
+        self.subtitle = subtitle; self.poster = poster; self.addonURL = addonURL; self.sourceIndex = sourceIndex; self.expectedBytes = expectedBytes
+        self.relativePath = relativePath; self.createdAt = createdAt
+    }
+
     public static func makeID(metaID: String, videoID: String) -> String { "\(metaID)|\(videoID)" }
     public var progress: Double? { expectedBytes.flatMap { $0 > 0 ? min(1, Double(writtenBytes) / Double($0)) : nil } }
 }
@@ -79,6 +86,9 @@ public actor Downloads {
     private let onChange: @Sendable ([DownloadItem]) -> Void
     private var items: [String: DownloadItem] = [:]
     private var listening: Task<Void, Never>?
+    /// Cada cambio de la cola (para la pantalla de Descargas).
+    public nonisolated let updates: AsyncStream<[DownloadItem]>
+    private let updatesContinuation: AsyncStream<[DownloadItem]>.Continuation
 
     /// - refresh: pide un enlace nuevo de ese título (mismo complemento y fuente); nil si no hay.
     /// - subtitles: descarga los subtítulos de ese título (nombre de archivo y contenido).
@@ -90,6 +100,7 @@ public actor Downloads {
                 onChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in }) {
         self.transport = transport; self.secrets = secrets; self.root = root; self.freeSpace = freeSpace; self.refresh = refresh
         self.subtitles = subtitles; self.clock = clock; self.backoff = backoff; self.onChange = onChange
+        (updates, updatesContinuation) = AsyncStream.makeStream(bufferingPolicy: .bufferingNewest(1))
         for var item in saved {
             // Tras cerrar la app lo que bajaba queda en cola: se retoma al arrancar.
             if item.state == .downloading { item.state = .queued }
@@ -109,7 +120,7 @@ public actor Downloads {
     public func fileURL(_ item: DownloadItem) -> URL { root.appendingPathComponent(item.relativePath) }
     public var usedBytes: Int64 { items.values.reduce(0) { $0 + $1.writtenBytes } }
 
-    private func changed() { onChange(all) }
+    private func changed() { let snapshot = all; onChange(snapshot); updatesContinuation.yield(snapshot) }
 
     /// Añade a la cola. `url` es el enlace de la fuente (se guarda en el Keychain, no en el archivo de la cola).
     public func enqueue(_ item: DownloadItem, url: URL) throws {

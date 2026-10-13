@@ -89,6 +89,7 @@ public final class Services: ObservableModel {
         }
     }
 
+    public func now() -> Date { clock() }
     public var authKey: String? { secrets.get(SecretKey.stremioAuth) }
     public var isSignedIn: Bool { authKey != nil }
     public var appSettings: AppSettings { settings.value }

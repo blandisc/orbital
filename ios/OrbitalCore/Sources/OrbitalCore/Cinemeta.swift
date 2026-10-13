@@ -36,11 +36,17 @@ public struct MetaInfo: Sendable, Equatable {
     public var description: String
     public var logo: String?
     public var runtime: String
+    public init(year: String, rating: String, genres: [String], description: String, logo: String?, runtime: String) {
+        self.year = year; self.rating = rating; self.genres = genres; self.description = description; self.logo = logo; self.runtime = runtime
+    }
 }
 
 public struct Credits: Sendable, Equatable {
     public var cast: [String], directors: [String], writers: [String]
     public var released: String, awards: String, country: String
+    public init(cast: [String], directors: [String], writers: [String], released: String, awards: String, country: String) {
+        self.cast = cast; self.directors = directors; self.writers = writers; self.released = released; self.awards = awards; self.country = country
+    }
 }
 
 public struct SearchResult: Sendable, Equatable, Identifiable {

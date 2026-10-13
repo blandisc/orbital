@@ -106,3 +106,40 @@ final class Rig {
         EngineSnapshot(state: state, position: position, duration: duration, audioTracks: audio, subtitleTracks: subs, selectedAudio: selectedAudio, selectedSubtitle: selectedSubtitle, chapters: chapters)
     }
 }
+
+/// Los servicios completos con red falsa (para probar los modelos de pantalla).
+@MainActor
+final class ServicesRig {
+    let http = FakeHTTP(), clock = Clock(), kv = InMemoryKeyValueStore(), secrets = InMemorySecrets(), pending = InMemoryPendingStore()
+    let transport = FakeDownloadTransport()
+    let services: Services
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent("orbital-svc-\(UUID().uuidString)")
+
+    init(signedIn: Bool = true, traktLinked: Bool = false, traktClientID: String = "", tmdbKey: String = "") throws {
+        if signedIn { secrets.set(SecretKey.stremioAuth, "KEY") }
+        if !tmdbKey.isEmpty { secrets.set(SecretKey.tmdbKey, tmdbKey) }
+        if !traktClientID.isEmpty {
+            let s = SettingsStore(kv); s.update { $0.traktClientID = traktClientID }
+        }
+        if traktLinked { secrets.set(SecretKey.traktTokens, #"{"access_token":"AT","refresh_token":"RT","expires_at":\#(1_760_000_000 + 86400)}"#) }
+        let clock = self.clock
+        services = Services(http: http, secrets: secrets, kv: kv, pending: pending, downloadTransport: transport, downloadsRoot: root,
+                            freeSpace: { 50_000_000_000 }, clock: { clock.now })
+        let series = try Fixtures.json("cinemeta/meta_series_tt0386676.json")
+        http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
+        http.json["https://a.example/manifest.json"] = ["name": "Torrentio", "resources": ["stream", "subtitles"], "types": ["movie", "series"], "idPrefixes": ["tt"]]
+        secrets.set(SecretKey.ownAddons, "https://a.example/manifest.json")
+    }
+}
+
+final class FakeDownloadTransport: DownloadTransport, @unchecked Sendable {
+    let events: AsyncStream<DownloadEvent>
+    private let continuation: AsyncStream<DownloadEvent>.Continuation
+    private let lock = NSLock()
+    private var _starts: [String] = []
+    init() { (events, continuation) = AsyncStream.makeStream() }
+    var starts: [String] { lock.withLock { _starts } }
+    func start(id: String, url: URL, resumeFrom: Int64, file: URL) async { lock.withLock { _starts.append(url.absoluteString) } }
+    func cancel(id: String) async {}
+    func emit(_ e: DownloadEvent) { continuation.yield(e) }
+}
