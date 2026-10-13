@@ -61,7 +61,6 @@ lleva el título original. Audio y subtítulos tienen su propio idioma, separado
 ## 5. Decisiones que quedan abiertas
 
 - Si «Ver» y «Para ti» deben fundirse en una sola pestaña (hoy son dos para igualar la TV).
-- Si Juegos permite en el futuro lanzar desde el teléfono (hoy solo consulta, por seguridad).
 - Estilo del destacado: póster fijo (maqueta) o carrusel.
 
 ## 6. Trakt
