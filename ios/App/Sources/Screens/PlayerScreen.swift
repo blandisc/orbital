@@ -15,7 +15,13 @@ final class PlayerHolder: ObservableObject {
         let engine = PlayerEngines.make()
         self.engine = engine
         model = PlayerModel(engine: engine, finder: services.finder, watch: services.watch, titlePrefs: services.titlePrefs, settings: services.settings,
-                            onCellular: { Connectivity.shared.isCellular }, episodeLabel: services.episodeLabel)
+                            onCellular: { Connectivity.shared.isCellular }, episodeLabel: services.episodeLabel,
+                            localEpisode: { metaID, videoID in
+                                // El siguiente episodio ya descargado (para seguir viendo sin conexión).
+                                guard let item = await services.downloads.item(DownloadItem.makeID(metaID: metaID, videoID: videoID)), item.state == .done else { return nil }
+                                let file = await services.downloads.fileURL(item)
+                                return LocalEpisode(file: file, subtitles: item.subtitleFiles.map { file.deletingLastPathComponent().appendingPathComponent($0) })
+                            })
         subscription = model.onChange { [weak self] in self?.objectWillChange.send() }
     }
 }

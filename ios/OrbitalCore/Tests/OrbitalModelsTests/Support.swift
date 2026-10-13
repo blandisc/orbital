@@ -17,11 +17,15 @@ final class FakeHTTP: HTTPClient, @unchecked Sendable {
     private var _json: [String: JSON] = [:], _calls: [String] = [], _bodies: [String: [Data]] = [:], _statuses: [String: Int] = [:]
     var json: [String: JSON] { get { lock.withLock { _json } } set { lock.withLock { _json = newValue } } }
     var statuses: [String: Int] { get { lock.withLock { _statuses } } set { lock.withLock { _statuses = newValue } } }
+    private var _delays: [String: Int] = [:]
+    /// Milisegundos de demora por URL (para que dos peticiones se crucen).
+    var delays: [String: Int] { get { lock.withLock { _delays } } set { lock.withLock { _delays = newValue } } }
     var calls: [String] { lock.withLock { _calls } }
     func bodies(_ url: String) -> [Data] { lock.withLock { _bodies[url] ?? [] } }
     func send(_ request: HTTPRequest) async throws -> HTTPResponse {
         let key = request.url.absoluteString
         lock.withLock { _calls.append(key); if let b = request.body { _bodies[key, default: []].append(b) } }
+        if let ms = lock.withLock({ _delays[key] }) { try? await Task.sleep(nanoseconds: UInt64(ms) * 1_000_000) }
         let forced = lock.withLock { _statuses[key] }
         guard let body = lock.withLock({ _json[key] }) else { return HTTPResponse(status: forced ?? 404, data: Data()) }
         return HTTPResponse(status: forced ?? 200, data: body.serialized())

@@ -37,7 +37,7 @@ public enum TrackChooser {
     }
 
     public static func matches(_ track: MediaTrack, _ language: String) -> Bool {
-        let lang = (track.language ?? "").lowercased()
+        let lang = (track.language ?? "").lowercased().replacingOccurrences(of: "_", with: "-")   // AVPlayer entrega «es_MX»
         guard !lang.isEmpty else { return false }
         return codes(language).contains { lang == $0 || lang.hasPrefix($0 + "-") }
     }

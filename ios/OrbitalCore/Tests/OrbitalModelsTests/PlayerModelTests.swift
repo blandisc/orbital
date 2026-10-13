@@ -42,21 +42,51 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.begin(rig.request())
         rig.clock.advance(PlaybackRules.startupTimeout + 1)
         await rig.model.tick()
+        await rig.model.waitForTransition()
         XCTAssertEqual(rig.engine.loads.map(\.url.absoluteString), ["https://rd.example/best.mkv", "https://rd.example/second.mkv"])
         XCTAssertEqual(rig.model.notice, .triedAnotherSource(attempt: 1))
         XCTAssertTrue(rig.engine.calls.contains("stop"))
     }
 
-    func testAFailureBeforePlayingTriesAnotherSourceButAfterPlayingItStops() async throws {
+    func testAFailureBeforeOrAfterPlayingTriesAnotherSourceAtTheSamePoint() async throws {
         let rig = try twoSources()
         await rig.model.begin(rig.request())
         await rig.model.handle(rig.playing(0, state: .failed("403")))
+        await rig.model.waitForTransition()
         XCTAssertEqual(rig.engine.loads.count, 2)
         await rig.model.handle(rig.playing(0))
         XCTAssertEqual(rig.model.phase, .playing)
+        // Se corta a mitad: como en Orbital, se cambia de fuente y se sigue donde ibas.
+        rig.clock.advance(5)
+        await rig.model.handle(rig.playing(100))
         await rig.model.handle(rig.playing(100, state: .failed("se cortó")))
-        XCTAssertEqual(rig.model.phase, .failed("se cortó"))
-        XCTAssertEqual(rig.engine.loads.count, 2, "ya estaba reproduciendo: no se cambia de fuente solo")
+        await rig.model.waitForTransition()
+        XCTAssertEqual(rig.model.phase, .failed("Ninguna fuente funcionó."), "ya no quedan más fuentes")
+        XCTAssertEqual(rig.engine.loads.count, 2)
+    }
+
+    func testARepeatedFailureNotificationDoesNotBurnTheNextSource() async throws {
+        let rig = try Rig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": .array((1...4).map { rig.stream("s\($0)", size: "💾 \($0) GB") })]
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(0, state: .failed("a")))
+        await rig.model.waitForTransition()
+        await rig.model.handle(rig.playing(0, state: .failed("a")))      // el motor avisa dos veces del mismo fallo
+        XCTAssertEqual(rig.engine.loads.count, 2, "el segundo aviso es del video que ya se descartó")
+    }
+
+    func testSnapshotsFromThePreviousVideoAreIgnoredWhileTheNextOneLoads() async throws {
+        let rig = try nextEpisodeRig()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(10))
+        rig.clock.advance(1); await rig.model.handle(rig.playing(1295))
+        rig.clock.advance(PlaybackRules.upNextCountdown + 1)
+        await rig.model.handle(rig.playing(1304)); await rig.model.tick()
+        await rig.model.waitForTransition()
+        XCTAssertEqual(rig.model.request?.videoID, "tt0386676:1:2")
+        XCTAssertFalse(rig.model.snapshot.state == .playing && rig.model.phase == .playing, "el nuevo episodio todavía no empezó: lo del anterior no cuenta")
+        await rig.model.handle(rig.playing(1320, state: .ended))   // el motor aún entrega el final del episodio viejo… ya con el nuevo cargando
+        XCTAssertEqual(rig.engine.loads.count, 2)
     }
 
     func testGivesUpAfterFourRetries() async throws {
@@ -287,5 +317,186 @@ final class PlayerModelTests: XCTestCase {
         await rig.model.begin(request)
         XCTAssertEqual(rig.engine.loads.map(\.url.path), ["/tmp/video.mkv"])
         XCTAssertFalse(rig.http.calls.contains { $0.contains("/stream/") })
+    }
+}
+
+@MainActor
+final class PlayerModelRobustnessTests: XCTestCase {
+    func nextEpisodeRig() throws -> Rig {
+        let rig = try Rig()
+        for n in 1...5 { rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A\(n).json"] = ["streams": [rig.stream("e\(n)", binge: "grp")]] }
+        return rig
+    }
+
+    func testClosingTwiceSavesOnce() async throws {
+        let rig = try nextEpisodeRig()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(10))
+        for sec in 1...30 { rig.clock.advance(1); await rig.model.handle(rig.playing(10 + Double(sec))) }
+        async let a: Void = rig.model.close(), b: Void = rig.model.close()
+        _ = await (a, b)
+        XCTAssertEqual(try rig.saved().count, 1)
+    }
+
+    func testClosingWhileMovingToTheNextEpisodeDoesNotReopenThePlayer() async throws {
+        let rig = try nextEpisodeRig()
+        rig.http.delays[stremioPut] = 80                           // guardar el episodio terminado tarda
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(10))
+        rig.clock.advance(1); await rig.model.handle(rig.playing(1295))
+        await rig.model.playNextNow()                              // «Ver ahora»… y a media transición…
+        let moving = Task { await rig.model.playNextNow() }
+        try await Task.sleep(nanoseconds: 20_000_000)
+        await rig.model.close()                                    // …el usuario cierra
+        await moving.value
+        await rig.model.waitForTransition()
+        XCTAssertEqual(rig.model.phase, .closed)
+        XCTAssertLessThanOrEqual(rig.engine.loads.count, 2)
+        let loadsAfterClose = rig.engine.loads.count
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(rig.engine.loads.count, loadsAfterClose, "tras cerrar no se vuelve a cargar nada")
+    }
+
+    func testWatchNowAndTheCountdownDoNotMoveTwice() async throws {
+        let rig = try nextEpisodeRig()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(10))
+        rig.clock.advance(1); await rig.model.handle(rig.playing(1295))
+        rig.clock.advance(PlaybackRules.upNextCountdown + 1)
+        async let a: Void = rig.model.playNextNow(), b: Void = rig.model.tick()
+        _ = await (a, b)
+        await rig.model.waitForTransition()
+        XCTAssertEqual(rig.engine.loads.map(\.url.absoluteString), ["https://rd.example/e1.mkv", "https://rd.example/e2.mkv"])
+    }
+
+    func testEndedMovesToTheNextEpisodeWithoutBeingCancelledByItself() async throws {
+        let rig = try nextEpisodeRig()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(10))
+        rig.clock.advance(1); await rig.model.handle(rig.playing(1320, state: .ended))
+        await rig.model.waitForTransition()
+        XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://rd.example/e2.mkv")
+        XCTAssertEqual(rig.model.request?.videoID, "tt0386676:1:2")
+    }
+
+    func testWatchedSecondsDuringASlowSaveAreNotLost() async throws {
+        let rig = try nextEpisodeRig()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(10))
+        for sec in 1...59 { rig.clock.advance(1); await rig.model.handle(rig.playing(10 + Double(sec))) }
+        rig.clock.advance(1); await rig.model.handle(rig.playing(70))
+        rig.http.delays[stremioPut] = 80
+        async let saving: Void = rig.model.tick()                  // el guardado de las 60 s tarda…
+        try await Task.sleep(nanoseconds: 20_000_000)
+        for sec in 1...20 { rig.clock.advance(1); await rig.model.handle(rig.playing(70 + Double(sec))) }   // …y se sigue viendo
+        await saving
+        rig.http.delays[stremioPut] = nil
+        await rig.model.close()
+        let total = try rig.saved().compactMap { $0["state"]?["timeWatched"]?.intValue }.reduce(0, +)
+        XCTAssertTrue((78_000...82_000).contains(total), "los ~80 s vistos se reparten entre los guardados, sin perder ni repetir: \(total)")
+    }
+
+    func testTheExternalSubtitleIsActivatedEvenForAMovie() async throws {
+        let rig = try Rig()
+        rig.http.json["https://a.example/stream/movie/tt1.json"] = ["streams": [rig.stream("m")]]
+        rig.http.json["https://a.example/subtitles/movie/tt1.json"] = ["subtitles": [["url": "https://s.example/es.srt", "lang": "spa"]]]
+        rig.settings.update { $0.audio = "en"; $0.subtitles = "es" }
+        let eng = MediaTrack(id: 1, kind: .audio, language: "eng"), subEn = MediaTrack(id: 10, kind: .subtitle, language: "eng")
+        await rig.model.begin(PlayRequest(kind: "movie", metaID: "tt1", videoID: "tt1", originalTitle: "Peli", displayTitle: "Peli"))
+        await rig.model.handle(rig.playing(0, audio: [eng], subs: [subEn], selectedAudio: 1))
+        await rig.model.handle(rig.playing(1, audio: [eng], subs: [subEn, MediaTrack(id: 11, kind: .subtitle, language: "spa")], selectedAudio: 1))
+        XCTAssertTrue(rig.engine.calls.contains("sub 11"), "en una película (sin siguiente episodio) el subtítulo también se activa")
+    }
+
+    func testTracksLabelledWithUnderscoresMatchYourLanguage() async throws {
+        XCTAssertTrue(TrackChooser.matches(MediaTrack(id: 1, kind: .audio, language: "es_MX"), "es"))
+        XCTAssertTrue(TrackChooser.matches(MediaTrack(id: 1, kind: .audio, language: "es_419"), "es"))
+        XCTAssertFalse(TrackChooser.matches(MediaTrack(id: 1, kind: .audio, language: "esperanto"), "es"))
+    }
+
+    func testPickingASubtitleTrackWithoutALanguageDoesNotSwitchSubtitlesOffForTheShow() async throws {
+        let rig = try Rig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [rig.stream("a")]]
+        await rig.model.begin(rig.request())
+        let unlabeled = MediaTrack(id: 7, kind: .subtitle, language: nil)
+        await rig.model.handle(rig.playing(0, subs: [unlabeled]))
+        await rig.model.selectSubtitle(7)
+        XCTAssertEqual(rig.titlePrefs.languages(for: "tt0386676", settings: rig.settings.value).subtitles, "es", "sigue como estaba en Ajustes")
+    }
+
+    func testOpeningCreditsAtTheStartDoNotTriggerNextEpisode() async throws {
+        let rig = try nextEpisodeRig()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(10, chapters: [Chapter(title: "Opening Credits", time: 0), Chapter(title: "Capítulo 1", time: 60)]))
+        XCTAssertNil(rig.model.upNext)
+    }
+
+    func testTheNextEpisodeCardGoesAwayIfYouSeekBackFarFromTheEnd() async throws {
+        let rig = try nextEpisodeRig()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(10))
+        rig.clock.advance(1); await rig.model.handle(rig.playing(1295))
+        XCTAssertNotNil(rig.model.upNext)
+        rig.clock.advance(1); await rig.model.handle(rig.playing(600))
+        XCTAssertNil(rig.model.upNext)
+    }
+
+    func testEngineErrorsDoNotLeakTheVideoURL() async throws {
+        let rig = try Rig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [rig.stream("only", url: "https://rd.example/realdebrid=SECRET/a.mkv")]]
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(0, state: .failed("Failed to open https://rd.example/realdebrid=SECRET/a.mkv: 403")))
+        await rig.model.waitForTransition()
+        if case .failed(let message) = rig.model.phase { XCTAssertFalse(message.contains("SECRET")) } else { XCTFail("debía fallar") }
+    }
+
+    func testNonFiniteEngineValuesDoNotBreakSaving() async throws {
+        let rig = try Rig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [rig.stream("a")]]
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(.nan, duration: .infinity))
+        rig.clock.advance(30); await rig.model.handle(rig.playing(.infinity, duration: .infinity))
+        await rig.model.close()
+        XCTAssertEqual(rig.model.phase, .closed)
+    }
+
+    func testOfflineEpisodePlaysTheNextDownloadedOneNotTheSameFileAgain() async throws {
+        let rig = try Rig()
+        let next = LocalEpisode(file: URL(fileURLWithPath: "/tmp/ep2.mkv"), subtitles: [])
+        let model = PlayerModel(engine: rig.engine, finder: rig.finder, watch: rig.watch, titlePrefs: rig.titlePrefs, settings: rig.settings, clock: { rig.clock.now },
+                                localEpisode: { _, video in video == "tt0386676:1:2" ? next : nil })
+        var request = rig.request()
+        request.localFile = URL(fileURLWithPath: "/tmp/ep1.mkv")
+        await model.begin(request)
+        await model.handle(rig.playing(10))
+        rig.clock.advance(1); await model.handle(rig.playing(1295))
+        XCTAssertEqual(model.upNext?.videoID, "tt0386676:1:2")
+        rig.clock.advance(PlaybackRules.upNextCountdown + 1)
+        await model.handle(rig.playing(1304)); await model.tick()
+        await model.waitForTransition()
+        XCTAssertEqual(rig.engine.loads.map(\.url.path), ["/tmp/ep1.mkv", "/tmp/ep2.mkv"], "el siguiente episodio descargado, no el mismo archivo con otro id")
+    }
+
+    func testOfflineWithoutTheNextEpisodeDownloadedShowsNoNextCard() async throws {
+        let rig = try Rig()
+        var request = rig.request()
+        request.localFile = URL(fileURLWithPath: "/tmp/ep1.mkv")
+        await rig.model.begin(request)
+        await rig.model.handle(rig.playing(10))
+        rig.clock.advance(1); await rig.model.handle(rig.playing(1295))
+        XCTAssertNil(rig.model.upNext)
+    }
+
+    func testStaleSourceListIsRefreshedBeforeSwitching() async throws {
+        let rig = try Rig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [rig.stream("old1"), rig.stream("old2", size: "💾 3 GB", name: "T\n1080p")]]
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(500))
+        let old2 = try XCTUnwrap(rig.model.sourceChoices.first { $0.playbackURL?.absoluteString.contains("old2") == true })
+        rig.clock.advance(StreamFinder.cacheSeconds + 60)                // pasó más de lo que dura un enlace de Real-Debrid
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [rig.stream("old1"), rig.stream("old2", size: "💾 3 GB", name: "T\n1080p")]]
+        await rig.model.switchSource(to: old2.index)
+        XCTAssertEqual(rig.http.calls.filter { $0.contains("/stream/series/") }.count, 2, "se volvió a pedir la lista antes de cambiar")
+        XCTAssertEqual(rig.engine.loads.last?.start, 500)
     }
 }

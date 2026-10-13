@@ -75,7 +75,7 @@ final class AppEnvironment: ObservableObject {
         guard let session = external else { return }
         switch result {
         case .failed(_, let message, _):
-            banner = message.map { "Infuse no pudo reproducirlo: \($0)" } ?? "Infuse no pudo reproducirlo."
+            banner = message.map { "Infuse no pudo reproducirlo: \(stripURLs($0))" } ?? "Infuse no pudo reproducirlo."
         case .closed:
             guard let seconds = Infuse.seconds(from: result, knownDuration: session.duration) else { return }
             let r = session.request
