@@ -284,7 +284,7 @@ final class ScreenModelsTests: XCTestCase {
     func testDownloadsModelListsAndBuildsAnOfflinePlayRequest() async throws {
         let rig = try ServicesRig()
         let item = DownloadItem(id: "tt0386676|tt0386676:1:1", kind: "series", metaID: "tt0386676", videoID: "tt0386676:1:1", title: "La Oficina", originalTitle: "The Office",
-                                subtitle: "T1 · E1", poster: nil, addonURL: "https://a.example/manifest.json", sourceIndex: 1, expectedBytes: 1000, relativePath: "tt0386676/tt0386676_1_1/video.mkv", createdAt: 1)
+                                subtitle: "T1 · E1", poster: nil, addon: "Torrentio", sourceIndex: 1, expectedBytes: 1000, relativePath: "tt0386676/tt0386676_1_1/video.mkv", createdAt: 1)
         var done = item; done.state = .done; done.writtenBytes = 1000; done.subtitleFiles = ["subs/es.srt"]
         let model = DownloadsModel(rig.services, freeSpace: { 12_345 })
         let run = Task { await model.run() }

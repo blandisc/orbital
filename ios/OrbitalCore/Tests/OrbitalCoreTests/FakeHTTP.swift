@@ -8,6 +8,12 @@ final class FakeHTTP: HTTPClient, @unchecked Sendable {
     private var _calls: [String] = []
     private var _bodies: [String: [Data]] = [:]
     var fail = false
+    private var _delays: [String: Int] = [:]
+    /// Milisegundos de demora por URL (para que dos peticiones se crucen).
+    var delays: [String: Int] {
+        get { lock.withLock { _delays } }
+        set { lock.withLock { _delays = newValue } }
+    }
     private var _failing: Set<String> = []
     /// URLs que fallan como si no hubiera red (solo esas).
     var failing: Set<String> {
@@ -34,6 +40,7 @@ final class FakeHTTP: HTTPClient, @unchecked Sendable {
             _calls.append(key)
             if let body = request.body { _bodies[key, default: []].append(body) }
         }
+        if let ms = lock.withLock({ _delays[key] }) { try? await Task.sleep(nanoseconds: UInt64(ms) * 1_000_000) }
         if fail || lock.withLock({ _failing.contains(key) }) { throw NetworkError("sin conexión") }
         let forced = lock.withLock { _statuses[key] }
         guard let body = lock.withLock({ _json[key] }) else { return HTTPResponse(status: forced ?? 404, data: Data()) }

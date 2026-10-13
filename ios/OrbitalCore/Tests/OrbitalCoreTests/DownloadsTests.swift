@@ -27,9 +27,9 @@ final class DownloadsTests: XCTestCase {
     }
     override func tearDown() { try? FileManager.default.removeItem(at: root) }
 
-    func item(_ video: String, size: Int64? = 1_000_000_000, meta: String = "tt1") -> DownloadItem {
+    func item(_ video: String, size: Int64? = 10, meta: String = "tt1") -> DownloadItem {
         DownloadItem(id: DownloadItem.makeID(metaID: meta, videoID: video), kind: "series", metaID: meta, videoID: video, title: "Serie", originalTitle: "Series",
-                     subtitle: "T1 · E1", poster: nil, addonURL: "https://a.example/manifest.json", sourceIndex: 7, expectedBytes: size,
+                     subtitle: "T1 · E1", poster: nil, addon: "Torrentio", sourceIndex: 7, expectedBytes: size,
                      relativePath: DownloadFiles.relativePath(metaID: meta, videoID: video, ext: "mkv"), createdAt: 1)
     }
 
@@ -79,7 +79,7 @@ final class DownloadsTests: XCTestCase {
         let d = makeDownloads(transport, secrets: secrets, subs: { _ in [(name: "es.srt", data: Data("1\n".utf8))] })
         try await d.enqueue(item("tt1:1:1"), url: URL(string: "https://rd.example/a.mkv")!)
         await settle("start") { transport.starts.count == 1 }
-        try Data(count: 5).write(to: transport.starts[0].file)
+        try Data(count: 10).write(to: transport.starts[0].file)
         transport.emit(.finished(id: "tt1|tt1:1:1"))
         await settle("hecha") { await d.item("tt1|tt1:1:1")?.state == .done }
         XCTAssertNil(secrets.get(SecretKey.download("tt1|tt1:1:1")))
@@ -190,4 +190,151 @@ final class DownloadsTests: XCTestCase {
         XCTAssertEqual(DownloadFiles.relativePath(metaID: "tt1", videoID: "tt1:1:2", ext: "mkv"), "tt1/tt1_1_2/video.mkv")
         XCTAssertFalse(DownloadFiles.relativePath(metaID: "../x", videoID: "a/b", ext: "mkv").contains("/../"))
     }
+
+    // MARK: revisión de seguridad y robustez
+
+    func testQueueFileNeverContainsTheAddonOrSourceURLKeys() async throws {
+        let transport = FakeTransport()
+        var collected = Data()
+        let sink = Sink()
+        let d = Downloads(transport: transport, secrets: InMemorySecrets(), root: root, freeSpace: { 50_000_000_000 }, refresh: { _ in nil },
+                          backoff: { _ in }, onChange: { items in sink.set((try? JSONEncoder().encode(items)) ?? Data()) })
+        Task { await d.start() }
+        var it = item("tt1:1:1"); it.addon = "Torrentio"; it.release = "Peli.2024.1080p"
+        try await d.enqueue(it, url: URL(string: "https://rd.example/realdebrid=SECRETKEY/a.mkv")!)
+        await settle("start") { transport.starts.count == 1 }
+        collected = sink.get()
+        XCTAssertFalse(String(data: collected, encoding: .utf8)!.contains("SECRETKEY"))
+        // Un índice viejo con `addonURL` (y la clave dentro) se lee sin perder la lista y la clave no vuelve a escribirse.
+        let legacy = #"[{"id":"tt1|v","kind":"movie","metaID":"tt1","videoID":"v","title":"x","originalTitle":"x","subtitle":"","addonURL":"https://t.example/realdebrid=SECRETKEY/manifest.json","sourceIndex":3,"relativePath":"tt1/v/video.mkv","createdAt":1}]"#
+        let decoded = try JSONDecoder().decode([DownloadItem].self, from: Data(legacy.utf8))
+        XCTAssertEqual(decoded.count, 1)
+        XCTAssertFalse(String(data: try JSONEncoder().encode(decoded), encoding: .utf8)!.contains("SECRETKEY"))
+    }
+
+    func testDotDotIdsCannotEscapeTheDownloadsFolder() async throws {
+        XCTAssertEqual(DownloadFiles.relativePath(metaID: "..", videoID: "..", ext: "mkv"), "_/_/video.mkv")
+        XCTAssertEqual(DownloadFiles.relativePath(metaID: ".", videoID: "", ext: "mkv"), "_/_/video.mkv")
+        XCTAssertEqual(DownloadFiles.relativePath(metaID: "../x", videoID: "a/b", ext: "mkv"), ".._x/a_b/video.mkv")
+        // Un índice dañado o malicioso con una ruta que se sale de la carpeta: se usa una segura.
+        let transport = FakeTransport()
+        var evil = item("v"); evil.relativePath = "../../escape/video.mkv"
+        let d = makeDownloads(transport, saved: [evil])
+        let url = await d.fileURL(evil)
+        XCTAssertTrue(url.standardizedFileURL.path.hasPrefix(root.standardizedFileURL.path + "/"))
+        // Y borrar nunca toca la carpeta de descargas completa.
+        let keep = root.appendingPathComponent("otra/video.mkv")
+        try FileManager.default.createDirectory(at: keep.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data(count: 3).write(to: keep)
+        var dots = item("..", meta: ".."); dots.relativePath = DownloadFiles.relativePath(metaID: "..", videoID: "..", ext: "mkv")
+        let d2 = makeDownloads(FakeTransport(), saved: [dots])
+        await d2.remove(dots.id)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: keep.path), "borrar un id raro no se lleva el resto")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: root.path))
+    }
+
+    func testAnExpiredLinkThatNeverGetsFixedStopsInsteadOfLoopingForever() async throws {
+        let transport = FakeTransport()
+        let counter = Counter()
+        let d = makeDownloads(transport, refresh: { _ in counter.bump(); return URL(string: "https://rd.example/FRESH\(counter.value).mkv")! })
+        try await d.enqueue(item("tt1:1:1"), url: URL(string: "https://rd.example/a.mkv")!)
+        for round in 1...12 {
+            let before = transport.starts.count
+            await settle("arranque \(round)", timeout: 1) {
+                if transport.starts.count > before { return true }
+                return await d.item("tt1|tt1:1:1")?.state == .failed
+            }
+            if await d.item("tt1|tt1:1:1")?.state == .failed { break }
+            transport.emit(.failed(id: "tt1|tt1:1:1", status: 403, message: "HTTP 403"))
+        }
+        await settle("falló", timeout: 1) { await d.item("tt1|tt1:1:1")?.state == .failed }
+        XCTAssertLessThanOrEqual(counter.value, Downloads.maxRefreshes, "como mucho dos enlaces nuevos")
+        XCTAssertLessThanOrEqual(transport.starts.count, Downloads.maxAttempts + 1)
+    }
+
+    func testTheSameDeadLinkIsNotTreatedAsFresh() async throws {
+        let transport = FakeTransport()
+        let d = makeDownloads(transport, refresh: { _ in URL(string: "https://rd.example/a.mkv") })   // devuelve el mismo enlace muerto
+        try await d.enqueue(item("tt1:1:1"), url: URL(string: "https://rd.example/a.mkv")!)
+        await settle("start") { transport.starts.count == 1 }
+        transport.emit(.failed(id: "tt1|tt1:1:1", status: 410, message: "HTTP 410"))
+        await settle("cuenta como fallo normal") { await d.item("tt1|tt1:1:1")?.attempts == 1 }
+    }
+
+    func testRemovingWhileTheLinkIsBeingRefreshedDoesNotResurrectTheItem() async throws {
+        let transport = FakeTransport()
+        let gate = Gate()
+        let d = makeDownloads(transport, refresh: { _ in await gate.wait(); return URL(string: "https://rd.example/new.mkv") })
+        try await d.enqueue(item("tt1:1:1"), url: URL(string: "https://rd.example/a.mkv")!)
+        await settle("start") { transport.starts.count == 1 }
+        transport.emit(.failed(id: "tt1|tt1:1:1", status: 403, message: "HTTP 403"))
+        try await Task.sleep(nanoseconds: 30_000_000)
+        await d.remove("tt1|tt1:1:1")
+        await gate.open()
+        try await Task.sleep(nanoseconds: 50_000_000)
+        let all = await d.all
+        XCTAssertTrue(all.isEmpty, "una descarga borrada no vuelve")
+        XCTAssertEqual(transport.starts.count, 1)
+    }
+
+    func testARetryWaitDoesNotFreezeOtherDownloadsEvents() async throws {
+        let transport = FakeTransport()
+        let gate = Gate()
+        let d = Downloads(transport: transport, secrets: InMemorySecrets(), root: root, freeSpace: { 50_000_000_000 }, refresh: { _ in nil }, backoff: { _ in await gate.wait() })
+        Task { await d.start() }
+        try await d.enqueue(item("tt1:1:1"), url: URL(string: "https://rd.example/1.mkv")!)
+        try await d.enqueue(item("tt1:1:2"), url: URL(string: "https://rd.example/2.mkv")!)
+        await settle("dos") { transport.starts.count == 2 }
+        transport.emit(.failed(id: "tt1|tt1:1:1", status: nil, message: "sin red"))      // la primera espera su reintento…
+        try Data(count: 10).write(to: transport.starts[1].file)
+        transport.emit(.finished(id: "tt1|tt1:1:2"))                                      // …y la segunda termina sin esperarla
+        await settle("la segunda terminó") { await d.item("tt1|tt1:1:2")?.state == .done }
+        await gate.open()
+    }
+
+    func testSpaceCheckCountsWhatOtherDownloadsStillNeed() async throws {
+        let transport = FakeTransport()
+        let d = makeDownloads(transport, free: 25_000_000_000)
+        try await d.enqueue(item("tt1:1:1", size: 20_000_000_000), url: URL(string: "https://rd.example/1.mkv")!)
+        do { try await d.enqueue(item("tt1:1:2", size: 20_000_000_000), url: URL(string: "https://rd.example/2.mkv")!); XCTFail("no cabe") }
+        catch let error as DownloadError { if case .notEnoughSpace = error {} else { XCTFail("\(error)") } }
+    }
+
+    func testATinyFileIsNotAcceptedAsTheFinishedVideo() async throws {
+        let transport = FakeTransport()
+        let d = makeDownloads(transport)
+        try await d.enqueue(item("tt1:1:1", size: 2_000_000_000), url: URL(string: "https://rd.example/a.mkv")!)
+        await settle("start") { transport.starts.count == 1 }
+        try Data(count: 2_000).write(to: transport.starts[0].file)    // «failed access»: un video de aviso diminuto
+        transport.emit(.finished(id: "tt1|tt1:1:1"))
+        await settle("se reintenta") { transport.starts.count == 2 }
+        let state = await d.item("tt1|tt1:1:1")?.state
+        XCTAssertNotEqual(state, .done)
+    }
+
+    func testEnqueueingAnActiveDownloadAgainDoesNothing() async throws {
+        let transport = FakeTransport()
+        let d = makeDownloads(transport)
+        try await d.enqueue(item("tt1:1:1"), url: URL(string: "https://rd.example/a.mkv")!)
+        await settle("start") { transport.starts.count == 1 }
+        try await d.enqueue(item("tt1:1:1"), url: URL(string: "https://rd.example/a.mkv")!)
+        try await Task.sleep(nanoseconds: 30_000_000)
+        XCTAssertEqual(transport.starts.count, 1)
+    }
+}
+
+final class Sink: @unchecked Sendable {
+    private let lock = NSLock(); private var data = Data()
+    func set(_ d: Data) { lock.withLock { data = d } }
+    func get() -> Data { lock.withLock { data } }
+}
+final class Counter: @unchecked Sendable {
+    private let lock = NSLock(); private var n = 0
+    func bump() { lock.withLock { n += 1 } }
+    var value: Int { lock.withLock { n } }
+}
+actor Gate {
+    private var opened = false; private var waiters: [CheckedContinuation<Void, Never>] = []
+    func wait() async { if opened { return }; await withCheckedContinuation { waiters.append($0) } }
+    func open() { opened = true; waiters.forEach { $0.resume() }; waiters = [] }
 }

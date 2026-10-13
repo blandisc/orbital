@@ -2,8 +2,8 @@ import Foundation
 
 public enum DownloadState: String, Sendable, Codable { case queued, downloading, paused, failed, done }
 
-/// Una descarga para ver sin conexión. NO guarda la URL de la fuente (lleva tu clave de Real-Debrid): esa
-/// vive en el Keychain bajo `SecretKey.download(id)`.
+/// Una descarga para ver sin conexión. NO guarda la URL de la fuente ni la del complemento (llevan tu clave de
+/// Real-Debrid): la URL de la fuente vive en el Keychain bajo `SecretKey.download(id)`.
 public struct DownloadItem: Sendable, Codable, Equatable, Identifiable {
     public var id: String                 // «metaID|videoID»
     public var kind: String
@@ -13,23 +13,68 @@ public struct DownloadItem: Sendable, Codable, Equatable, Identifiable {
     public var originalTitle: String      // el de Cinemeta: lo que se guarda en Stremio
     public var subtitle: String           // «T2 · E5 · Trojan's Horse»
     public var poster: String?
-    public var addonURL: String           // para pedir un enlace nuevo
-    public var sourceIndex: Int           // qué fuente era (índice estable)
+    public var addon: String              // solo el nombre («Torrentio»): para mostrar y emparejar
+    public var release: String            // nombre del archivo de la fuente: para encontrarla de nuevo si el enlace caduca
+    public var sourceIndex: Int
     public var expectedBytes: Int64?
     public var writtenBytes: Int64 = 0
     public var state: DownloadState = .queued
     public var relativePath: String       // dentro de la carpeta de descargas
     public var subtitleFiles: [String] = []
     public var attempts = 0
+    public var refreshes = 0              // cuántas veces se pidió un enlace nuevo (tope: `Downloads.maxRefreshes`)
     public var lastError: String?
     public var createdAt: Double
     public var finishedAt: Double?
 
     public init(id: String, kind: String, metaID: String, videoID: String, title: String, originalTitle: String, subtitle: String, poster: String?,
-                addonURL: String, sourceIndex: Int, expectedBytes: Int64?, relativePath: String, createdAt: Double) {
+                addon: String, release: String = "", sourceIndex: Int, expectedBytes: Int64?, relativePath: String, createdAt: Double) {
         self.id = id; self.kind = kind; self.metaID = metaID; self.videoID = videoID; self.title = title; self.originalTitle = originalTitle
-        self.subtitle = subtitle; self.poster = poster; self.addonURL = addonURL; self.sourceIndex = sourceIndex; self.expectedBytes = expectedBytes
-        self.relativePath = relativePath; self.createdAt = createdAt
+        self.subtitle = subtitle; self.poster = poster; self.addon = addon; self.release = release; self.sourceIndex = sourceIndex
+        self.expectedBytes = expectedBytes; self.relativePath = relativePath; self.createdAt = createdAt
+    }
+
+    /// Tolerante: un campo nuevo o ausente en un índice viejo no hace perder toda la lista (y un `addonURL` viejo, que llevaba la
+    /// clave de Real-Debrid, simplemente se ignora y desaparece al volver a guardar).
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: Keys.self)
+        id = try c.decode(String.self, forKey: .id)
+        kind = try c.decodeIfPresent(String.self, forKey: .kind) ?? "movie"
+        metaID = try c.decode(String.self, forKey: .metaID)
+        videoID = try c.decode(String.self, forKey: .videoID)
+        title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
+        originalTitle = try c.decodeIfPresent(String.self, forKey: .originalTitle) ?? ""
+        subtitle = try c.decodeIfPresent(String.self, forKey: .subtitle) ?? ""
+        poster = try c.decodeIfPresent(String.self, forKey: .poster)
+        addon = try c.decodeIfPresent(String.self, forKey: .addon) ?? ""
+        release = try c.decodeIfPresent(String.self, forKey: .release) ?? ""
+        sourceIndex = try c.decodeIfPresent(Int.self, forKey: .sourceIndex) ?? 0
+        expectedBytes = try c.decodeIfPresent(Int64.self, forKey: .expectedBytes)
+        writtenBytes = try c.decodeIfPresent(Int64.self, forKey: .writtenBytes) ?? 0
+        state = try c.decodeIfPresent(DownloadState.self, forKey: .state) ?? .queued
+        relativePath = try c.decode(String.self, forKey: .relativePath)
+        subtitleFiles = try c.decodeIfPresent([String].self, forKey: .subtitleFiles) ?? []
+        attempts = try c.decodeIfPresent(Int.self, forKey: .attempts) ?? 0
+        refreshes = try c.decodeIfPresent(Int.self, forKey: .refreshes) ?? 0
+        lastError = try c.decodeIfPresent(String.self, forKey: .lastError)
+        createdAt = try c.decodeIfPresent(Double.self, forKey: .createdAt) ?? 0
+        finishedAt = try c.decodeIfPresent(Double.self, forKey: .finishedAt)
+    }
+
+    enum Keys: String, CodingKey {
+        case id, kind, metaID, videoID, title, originalTitle, subtitle, poster, addon, release, sourceIndex, expectedBytes, writtenBytes, state
+        case relativePath, subtitleFiles, attempts, refreshes, lastError, createdAt, finishedAt
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: Keys.self)
+        try c.encode(id, forKey: .id); try c.encode(kind, forKey: .kind); try c.encode(metaID, forKey: .metaID); try c.encode(videoID, forKey: .videoID)
+        try c.encode(title, forKey: .title); try c.encode(originalTitle, forKey: .originalTitle); try c.encode(subtitle, forKey: .subtitle)
+        try c.encodeIfPresent(poster, forKey: .poster); try c.encode(addon, forKey: .addon); try c.encode(release, forKey: .release)
+        try c.encode(sourceIndex, forKey: .sourceIndex); try c.encodeIfPresent(expectedBytes, forKey: .expectedBytes); try c.encode(writtenBytes, forKey: .writtenBytes)
+        try c.encode(state, forKey: .state); try c.encode(relativePath, forKey: .relativePath); try c.encode(subtitleFiles, forKey: .subtitleFiles)
+        try c.encode(attempts, forKey: .attempts); try c.encode(refreshes, forKey: .refreshes); try c.encodeIfPresent(lastError, forKey: .lastError)
+        try c.encode(createdAt, forKey: .createdAt); try c.encodeIfPresent(finishedAt, forKey: .finishedAt)
     }
 
     public static func makeID(metaID: String, videoID: String) -> String { "\(metaID)|\(videoID)" }
@@ -65,20 +110,23 @@ public enum DownloadError: Error, Sendable, Equatable, CustomStringConvertible {
     case notEnoughSpace(needed: Int64, free: Int64)
     case alreadyDownloaded
     case noURL
+    case unsafePath
     public var description: String {
         switch self {
         case .notEnoughSpace(let needed, let free): return "No hay espacio: hacen falta \(needed / 1_000_000) MB y hay \(free / 1_000_000) MB libres."
         case .alreadyDownloaded: return "Ya está descargado."
         case .noURL: return "Esta fuente no tiene un enlace para descargar."
+        case .unsafePath: return "El nombre de este título no sirve para guardarlo."
         }
     }
 }
 
-/// La cola de descargas: dos a la vez, reanuda con `Range`, pide un enlace nuevo si el de Real-Debrid caducó,
-/// y reintenta con espera creciente. Cada cambio se guarda en `store` (sobrevive a cerrar la app).
+/// La cola de descargas: dos a la vez, reanuda, pide un enlace nuevo si el de Real-Debrid caducó (como mucho dos veces) y
+/// reintenta con espera creciente sin frenar a las demás. Cada cambio se avisa a `onChange` (la app lo guarda en disco).
 public actor Downloads {
     public static let maxActive = 2
     public static let maxAttempts = 5
+    public static let maxRefreshes = 2
     public static let spaceMargin: Int64 = 500_000_000   // deja al menos 500 MB libres
     static let expiredStatuses: Set<Int> = [401, 403, 404, 410]
 
@@ -92,6 +140,7 @@ public actor Downloads {
     private let backoff: @Sendable (Int) async -> Void
     private let onChange: @Sendable ([DownloadItem]) -> Void
     private var items: [String: DownloadItem] = [:]
+    private var waiting = Set<String>()      // esperando su reintento (no se arrancan hasta que pase la espera)
     private var listening: Task<Void, Never>?
     private nonisolated let updatesHub = UpdatesHub()
 
@@ -121,7 +170,8 @@ public actor Downloads {
 
     public var all: [DownloadItem] { items.values.sorted { $0.createdAt < $1.createdAt } }
     public func item(_ id: String) -> DownloadItem? { items[id] }
-    public func fileURL(_ item: DownloadItem) -> URL { root.appendingPathComponent(item.relativePath) }
+    /// El archivo de una descarga, siempre DENTRO de la carpeta de descargas (un id raro no puede escapar de ella).
+    public func fileURL(_ item: DownloadItem) -> URL { DownloadFiles.contained(root: root, relativePath: item.relativePath, id: item.id) }
     public var usedBytes: Int64 { items.values.reduce(0) { $0 + $1.writtenBytes } }
 
     /// Un flujo nuevo con cada cambio de la cola (cada pantalla pide el suyo: al cerrar una, las demás siguen).
@@ -129,16 +179,25 @@ public actor Downloads {
 
     private func changed() { let snapshot = all; onChange(snapshot); updatesHub.send(snapshot) }
 
+    /// Lo que falta por bajar de las que ya están en marcha o en cola (para no prometer un espacio dos veces).
+    private func pendingBytes(excluding id: String) -> Int64 {
+        items.values.filter { $0.id != id && ($0.state == .downloading || $0.state == .queued) }
+            .reduce(0) { $0 + max(0, ($1.expectedBytes ?? 0) - $1.writtenBytes) }
+    }
+
     /// Añade a la cola. `url` es el enlace de la fuente (se guarda en el Keychain, no en el archivo de la cola).
     public func enqueue(_ item: DownloadItem, url: URL) throws {
-        if let existing = items[item.id], existing.state == .done { throw DownloadError.alreadyDownloaded }
+        if let existing = items[item.id] {
+            if existing.state == .done { throw DownloadError.alreadyDownloaded }
+            if existing.state == .downloading || existing.state == .queued { return }   // ya está en marcha
+        }
         if let size = item.expectedBytes {
-            let free = freeSpace(), needed = Int64(Double(size) * 1.05) + Self.spaceMargin
+            let free = freeSpace(), needed = Int64(Double(size) * 1.05) + Self.spaceMargin + pendingBytes(excluding: item.id)
             if needed > free { throw DownloadError.notEnoughSpace(needed: needed, free: free) }
         }
         secrets.set(SecretKey.download(item.id), url.absoluteString)
         var new = item
-        new.state = .queued; new.attempts = 0; new.lastError = nil
+        new.state = .queued; new.attempts = 0; new.refreshes = 0; new.lastError = nil
         items[item.id] = new
         changed()
         Task { await pump() }
@@ -146,7 +205,9 @@ public actor Downloads {
 
     public func pause(_ id: String) async {
         guard var item = items[id], item.state == .downloading || item.state == .queued else { return }
+        waiting.remove(id)
         await transport.cancel(id: id)
+        guard items[id] != nil else { return }            // lo borraron mientras se pausaba
         item.state = .paused
         items[id] = item
         changed()
@@ -155,7 +216,7 @@ public actor Downloads {
 
     public func resume(_ id: String) {
         guard var item = items[id], item.state == .paused || item.state == .failed else { return }
-        item.state = .queued; item.attempts = 0; item.lastError = nil
+        item.state = .queued; item.attempts = 0; item.refreshes = 0; item.lastError = nil
         items[id] = item
         changed()
         Task { await pump() }
@@ -164,8 +225,11 @@ public actor Downloads {
     /// Borra la descarga y su archivo.
     public func remove(_ id: String) async {
         guard let item = items.removeValue(forKey: id) else { return }
+        waiting.remove(id)
         await transport.discard(id: id)
-        try? FileManager.default.removeItem(at: fileURL(item).deletingLastPathComponent())
+        let folder = fileURL(item).deletingLastPathComponent()
+        // Nunca se borra la carpeta de descargas entera ni nada fuera de ella.
+        if DownloadFiles.isStrictlyInside(folder, root: root) { try? FileManager.default.removeItem(at: folder) }
         secrets.set(SecretKey.download(id), nil)
         changed()
         await pump()
@@ -174,7 +238,7 @@ public actor Downloads {
     // MARK: cola
     private func pump() async {
         var active = items.values.filter { $0.state == .downloading }.count
-        for var item in all where item.state == .queued && active < Self.maxActive {
+        for var item in all where item.state == .queued && !waiting.contains(item.id) && active < Self.maxActive {
             guard let url = secrets.get(SecretKey.download(item.id)).flatMap(URL.init(string:)) else {
                 item.state = .failed; item.lastError = DownloadError.noURL.description
                 items[item.id] = item; continue
@@ -192,6 +256,16 @@ public actor Downloads {
         changed()
     }
 
+    /// Reintento con espera creciente SIN detener la cola (los eventos de las demás descargas siguen llegando).
+    private func scheduleRetry(_ id: String, attempt: Int) {
+        waiting.insert(id)
+        Task {
+            await backoff(attempt)
+            waiting.remove(id)
+            await pump()
+        }
+    }
+
     private func handle(_ event: DownloadEvent) async {
         switch event {
         case .progress(let id, let written, let total):
@@ -202,48 +276,76 @@ public actor Downloads {
             changed()
         case .finished(let id):
             guard var item = items[id] else { return }
-            item.state = .done; item.finishedAt = clock().timeIntervalSince1970; item.attempts = 0; item.lastError = nil
-            if let size = (try? FileManager.default.attributesOfItem(atPath: fileURL(item).path)[.size] as? Int64) { item.writtenBytes = size; item.expectedBytes = size }
+            let file = fileURL(item)
+            let size = (try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? Int64) ?? 0
+            // Un «200» con una página de error o un video de aviso es muy menor de lo esperado: no es el archivo.
+            if let expected = item.expectedBytes, expected > 10_000_000, size * 2 < expected {
+                try? FileManager.default.removeItem(at: file)
+                await fail(id, status: nil, message: "El archivo bajado está incompleto o no es el video")
+                return
+            }
+            item.state = .done; item.finishedAt = clock().timeIntervalSince1970; item.attempts = 0; item.refreshes = 0; item.lastError = nil
+            if size > 0 { item.writtenBytes = size; item.expectedBytes = size }
             secrets.set(SecretKey.download(id), nil)  // el enlace ya no hace falta
             items[id] = item
+            changed()
             await saveSubtitles(for: id)
             changed()
             await pump()
         case .failed(let id, let status, let message):
-            guard var item = items[id], item.state == .downloading else { return }
-            item.attempts += 1
-            item.lastError = message
-            if let status, Self.expiredStatuses.contains(status), let fresh = await refresh(item) {
-                // El enlace de Real-Debrid caducó: enlace nuevo y se continúa con Range desde lo que ya hay.
-                secrets.set(SecretKey.download(id), fresh.absoluteString)
-                item.state = .queued
-                items[id] = item
-                changed()
-                await pump()
-                return
-            }
-            if item.attempts >= Self.maxAttempts {
-                item.state = .failed
-                items[id] = item
-                changed()
-                await pump()
-                return
-            }
-            item.state = .queued
-            items[id] = item
-            changed()
-            await backoff(item.attempts)
-            await pump()
+            guard let item = items[id], item.state == .downloading else { return }
+            if status == 416, let file = Optional(fileURL(item)) { try? FileManager.default.removeItem(at: file) }   // el parcial no cuadra: de nuevo desde cero
+            await fail(id, status: status, message: message)
         }
     }
 
-    private func saveSubtitles(for id: String) async {
+    /// Un fallo: enlace nuevo si caducó (con tope), reintento con espera, o «falló» al agotar los intentos.
+    private func fail(_ id: String, status: Int?, message: String) async {
         guard var item = items[id] else { return }
-        let found = await subtitles(item)
+        item.attempts += 1
+        item.lastError = message
+        if item.attempts >= Self.maxAttempts {
+            item.state = .failed
+            items[id] = item
+            changed()
+            await pump()
+            return
+        }
+        if let status, Self.expiredStatuses.contains(status), item.refreshes < Self.maxRefreshes {
+            item.refreshes += 1
+            items[id] = item
+            let current = secrets.get(SecretKey.download(id))
+            let fresh = await refresh(item)
+            // Mientras se pedía el enlace nuevo pudieron pausar o borrar la descarga: se revisa.
+            guard let now = items[id], now.state == .downloading else { return }
+            if let fresh, fresh.absoluteString != current {
+                secrets.set(SecretKey.download(id), fresh.absoluteString)
+                item = now
+                item.state = .queued
+                items[id] = item
+                changed()
+                scheduleRetry(id, attempt: item.attempts)
+                await pump()
+                return
+            }
+            item = now        // el mismo enlace muerto (o ninguno): cuenta como fallo normal
+        }
+        item.state = .queued
+        items[id] = item
+        changed()
+        scheduleRetry(id, attempt: item.attempts)
+        await pump()
+    }
+
+    private func saveSubtitles(for id: String) async {
+        guard let snapshot = items[id] else { return }
+        let found = await subtitles(snapshot)
+        guard var item = items[id] else { return }          // lo borraron mientras se bajaban los subtítulos
         let folder = fileURL(item).deletingLastPathComponent().appendingPathComponent("subs")
+        guard DownloadFiles.isStrictlyInside(folder, root: root) else { return }
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         for sub in found {
-            let name = sub.name.replacingOccurrences(of: "/", with: "_")
+            let name = DownloadFiles.component(sub.name)
             guard (try? sub.data.write(to: folder.appendingPathComponent(name))) != nil else { continue }
             item.subtitleFiles.append("subs/\(name)")
         }
@@ -271,10 +373,28 @@ public enum DownloadFiles {
         return ["mkv", "mp4", "m4v", "mov", "avi", "webm", "ts"].contains(ext) ? ext : "mkv"
     }
 
-    /// Carpeta del título: sin caracteres que molesten en un nombre de archivo.
+    /// Un nombre de carpeta o archivo seguro: sin caracteres raros, nunca vacío, nunca «.» ni «..», con largo acotado.
+    public static func component(_ text: String) -> String {
+        let cleaned = String(text.map { $0.isLetter || $0.isNumber || "-_.".contains($0) ? $0 : "_" }.prefix(80))
+        return cleaned.allSatisfy({ $0 == "." }) ? "_" : cleaned
+    }
+
+    /// Carpeta del título: ids de complementos o de Stremio (que no controlamos) no pueden salirse de la carpeta de descargas.
     public static func relativePath(metaID: String, videoID: String, ext: String) -> String {
-        func clean(_ s: String) -> String { String(s.map { $0.isLetter || $0.isNumber || "-_.".contains($0) ? $0 : "_" }) }
-        return "\(clean(metaID))/\(clean(videoID))/video.\(ext)"
+        "\(component(metaID))/\(component(videoID))/video.\(component(ext))"
+    }
+
+    static func isStrictlyInside(_ url: URL, root: URL) -> Bool {
+        let base = root.standardizedFileURL.path, path = url.standardizedFileURL.path
+        return path.hasPrefix(base + "/") && path.count > base.count + 1
+    }
+
+    /// La ruta bajo la carpeta de descargas; si una ruta guardada (de un índice viejo o dañado) se saldría de ella, se usa una segura.
+    static func contained(root: URL, relativePath: String, id: String) -> URL {
+        let candidate = root.appendingPathComponent(relativePath)
+        if isStrictlyInside(candidate, root: root) { return candidate }
+        let safe = String(SHA1.hex(Array(id.utf8)).prefix(16))
+        return root.appendingPathComponent("_invalid").appendingPathComponent(safe).appendingPathComponent("video.mkv")
     }
 }
 

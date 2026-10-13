@@ -70,8 +70,13 @@ public final class Services: ObservableModel {
     static func refresher(finder: StreamFinder, settings: SettingsStore, titlePrefs: TitlePreferences) -> @Sendable (DownloadItem) async -> URL? {
         { item in
             let prefs = titlePrefs.languages(for: item.metaID, settings: settings.value).prefs
-            guard let sources = try? await finder.find(kind: item.kind, videoID: item.videoID, prefs: prefs, purpose: .download) else { return nil }
-            return sources.first { $0.index == item.sourceIndex }?.playbackURL
+            guard let sources = try? await finder.find(kind: item.kind, videoID: item.videoID, prefs: prefs, purpose: .download, fresh: true) else { return nil }
+            // El número de fuente sale del enlace: si el enlace cambió, el número también. Se busca la misma fuente por su nombre de
+            // archivo y tamaño (y del mismo complemento); si no está, la mejor disponible.
+            let same = sources.first { $0.index == item.sourceIndex }
+                ?? sources.first { !item.release.isEmpty && $0.release == item.release && (item.expectedBytes == nil || Int64($0.size) == item.expectedBytes) && ($0.addon == item.addon || item.addon.isEmpty) }
+                ?? sources.first { !item.release.isEmpty && $0.release == item.release }
+            return (same ?? sources.first)?.playbackURL
         }
     }
 

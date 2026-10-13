@@ -45,7 +45,7 @@ public final class DownloadsModel: ObservableModel {
                 let langs = services.titlePrefs.languages(for: item.metaID, settings: settings)
                 guard let source = try? await services.finder.best(kind: item.kind, videoID: next, prefs: langs.prefs, purpose: .download), let url = source.playbackURL else { continue }
                 let download = DownloadItem(id: DownloadItem.makeID(metaID: item.metaID, videoID: next), kind: item.kind, metaID: item.metaID, videoID: next, title: item.title,
-                                            originalTitle: item.originalTitle, subtitle: "", poster: item.poster, addonURL: source.transportURL, sourceIndex: source.index,
+                                            originalTitle: item.originalTitle, subtitle: "", poster: item.poster, addon: source.addon, release: source.release, sourceIndex: source.index,
                                             expectedBytes: source.size > 0 ? Int64(source.size) : nil,
                                             relativePath: DownloadFiles.relativePath(metaID: item.metaID, videoID: next, ext: DownloadFiles.fileExtension(for: url)),
                                             createdAt: Date().timeIntervalSince1970)

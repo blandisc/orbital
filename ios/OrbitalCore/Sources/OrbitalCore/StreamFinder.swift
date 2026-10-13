@@ -26,9 +26,10 @@ public actor StreamFinder {
     }
 
     /// Todas las fuentes ordenadas. `onlyPlayable`: en iOS solo sirven las de URL http(s) (Real-Debrid).
-    public func find(kind: String, videoID: String, prefs: Preferences, purpose: Purpose = .watch, onlyPlayable: Bool = true) async throws -> [Source] {
+    /// `fresh`: se salta la caché (para pedir un enlace nuevo cuando el que se tenía caducó).
+    public func find(kind: String, videoID: String, prefs: Preferences, purpose: Purpose = .watch, onlyPlayable: Bool = true, fresh: Bool = false) async throws -> [Source] {
         let key = "\(kind):\(videoID):\(prefs.audio):\(prefs.quality):\(purpose):\(onlyPlayable)"
-        if let hit = cache[key], clock() < hit.expires { return hit.sources }
+        if !fresh, let hit = cache[key], clock() < hit.expires { return hit.sources }
         let serving = try await registry.serving("stream", kind: kind, itemID: videoID)
         let results = await withTaskGroup(of: (Int, [JSON]?).self) { group in
             for (i, addon) in serving.enumerated() { group.addTask { (i, await self.fetch(addon, kind: kind, videoID: videoID)) } }

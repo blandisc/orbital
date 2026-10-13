@@ -181,7 +181,7 @@ public final class TitleModel: ObservableModel {
                 var label = ""
                 if let found = episode(video) { label = services.episodeLabel(found.0, found.1.episode) + (found.1.hasTitle ? " · \(found.1.title)" : "") }
                 let item = DownloadItem(id: DownloadItem.makeID(metaID: metaID, videoID: video), kind: kind, metaID: metaID, videoID: video, title: title, originalTitle: originalTitle,
-                                        subtitle: label, poster: poster, addonURL: source.transportURL, sourceIndex: source.index, expectedBytes: source.size > 0 ? Int64(source.size) : nil,
+                                        subtitle: label, poster: poster, addon: source.addon, release: source.release, sourceIndex: source.index, expectedBytes: source.size > 0 ? Int64(source.size) : nil,
                                         relativePath: DownloadFiles.relativePath(metaID: metaID, videoID: video, ext: DownloadFiles.fileExtension(for: url)),
                                         createdAt: Date().timeIntervalSince1970)
                 try await services.downloads.enqueue(item, url: url)

@@ -153,6 +153,71 @@ final class TraktTests: XCTestCase {
         let trakt = makeTrakt(http, secrets: secrets)
         do { _ = try await trakt.lists(); XCTFail() } catch { XCTAssertFalse(trakt.linked) }
     }
+
+    // MARK: revisión de robustez
+
+    func testTwoCallsWithAnExpiredTokenRefreshOnlyOnce() async throws {
+        let http = FakeHTTP(), secrets = InMemorySecrets(), clock = Clock()
+        secrets.set(SecretKey.traktTokens, #"{"access_token":"OLD","refresh_token":"R1","expires_at":\#(clock.now.timeIntervalSince1970 - 10)}"#)
+        http.json["\(api)/oauth/token"] = ["access_token": "NEW", "refresh_token": "R2", "created_at": .double(clock.now.timeIntervalSince1970), "expires_in": 604800]
+        http.delays["\(api)/oauth/token"] = 60
+        http.json["\(api)/users/settings"] = ["user": ["username": "fer"]]
+        http.json["\(api)/users/me/lists"] = []
+        let trakt = makeTrakt(http, secrets: secrets, clock: clock, linked: false)
+        async let a = trakt.username(), b = trakt.lists()
+        _ = try await (a, b)
+        XCTAssertEqual(http.calls.filter { $0.hasSuffix("/oauth/token") }.count, 1, "un solo refresh: el refresh token es de un solo uso")
+        XCTAssertTrue(trakt.linked)
+    }
+
+    func testAServerErrorOnRefreshDoesNotDisconnectTheAccount() async {
+        let http = FakeHTTP(), secrets = InMemorySecrets(), clock = Clock()
+        secrets.set(SecretKey.traktTokens, #"{"access_token":"OLD","refresh_token":"R1","expires_at":\#(clock.now.timeIntervalSince1970 - 10)}"#)
+        http.statuses["\(api)/oauth/token"] = 503
+        http.json["\(api)/oauth/token"] = [:]
+        let trakt = makeTrakt(http, secrets: secrets, clock: clock, linked: false)
+        do { _ = try await trakt.username(); XCTFail() } catch {}
+        XCTAssertTrue(trakt.linked, "un 503 es pasajero: la sesión sigue")
+    }
+
+    func testEpisodeHistoryCheckUsesTheShowEndpointAndFindsAnAlreadyWatchedEpisode() async throws {
+        let http = FakeHTTP(), clock = Clock()
+        let trakt = makeTrakt(http, clock: clock)
+        let when = clock.now
+        let target = TraktTarget(imdb: "tt0386676", season: 1, episode: 2)
+        http.json["\(api)/search/imdb/tt0386676?type=show"] = [["show": ["ids": ["trakt": 1388]]]]
+        let start = StremioLibrary.iso(when.addingTimeInterval(-12 * 3600).timeIntervalSince1970), end = StremioLibrary.iso(when.addingTimeInterval(12 * 3600).timeIntervalSince1970)
+        http.json["\(api)/sync/history/shows/1388?start_at=\(start)&end_at=\(end)&limit=100"] = [["episode": ["season": 1, "number": 2]], ["episode": ["season": 1, "number": 3]]]
+        http.json["\(api)/sync/history"] = [:]
+        let already = try await trakt.addToHistory(target, watchedAt: when)
+        XCTAssertFalse(already, "ese episodio ya está en el historial: no se repite")
+        XCTAssertFalse(http.calls.contains { $0.contains("/sync/history/episodes/") })
+        let other = try await trakt.addToHistory(TraktTarget(imdb: "tt0386676", season: 1, episode: 9), watchedAt: when)
+        XCTAssertTrue(other)
+    }
+
+    func testTwoSimultaneousWritesAreSpacedAndOrdered() async throws {
+        let http = FakeHTTP(), clock = Clock(), secrets = InMemorySecrets()
+        secrets.set(SecretKey.traktTokens, #"{"access_token":"AT","refresh_token":"RT","expires_at":\#(clock.now.timeIntervalSince1970 + 86400)}"#)
+        let sleeps = Sleeps()
+        let trakt = Trakt(http: http, secrets: secrets, clientID: "CID", clock: { clock.now }, pause: { await sleeps.add($0) })
+        http.json["\(api)/scrobble/pause"] = [:]; http.json["\(api)/scrobble/stop"] = [:]
+        async let a = trakt.scrobble(.pause, TraktTarget(imdb: "tt1"), progress: 50)
+        async let b = trakt.scrobble(.stop, TraktTarget(imdb: "tt1"), progress: 95)
+        _ = try await (a, b)
+        let total = await sleeps.total
+        XCTAssertGreaterThanOrEqual(total, 1.0, "la segunda escritura espera su turno aunque la primera siga en vuelo")
+    }
+
+    func testInvalidIMDbIdsNeverReachThePath() async throws {
+        let http = FakeHTTP()
+        let trakt = makeTrakt(http)
+        do { try await trakt.setWatchlist(imdb: "../users/me", series: false, add: true); XCTFail() } catch {}
+        XCTAssertTrue(http.calls.isEmpty)
+        do { _ = try await trakt.addToHistory(TraktTarget(imdb: "tt1/../x"), watchedAt: Date()); XCTFail() } catch {}
+        do { _ = try await trakt.scrobble(.start, TraktTarget(imdb: "x"), progress: 1); XCTFail() } catch {}
+        XCTAssertTrue(http.calls.isEmpty)
+    }
 }
 
 actor Sleeps { var total = 0.0; func add(_ v: TimeInterval) { total += v } }

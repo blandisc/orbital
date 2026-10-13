@@ -119,6 +119,8 @@ public actor Trakt {
         self.http = http; self.secrets = secrets; self.clientID = clientID; self.clientSecret = clientSecret; self.clock = clock; self.pause = pause
     }
 
+    static func isIMDb(_ id: String) -> Bool { id.range(of: #"^tt[0-9]{1,12}$"#, options: .regularExpression) != nil }
+
     // MARK: cuenta
     public nonisolated var configured: Bool { !clientID.isEmpty }
     public nonisolated var linked: Bool { tokens() != nil }
@@ -168,16 +170,30 @@ public actor Trakt {
         return [400: .pending, 429: .slow, 404: .invalid, 409: .invalid, 410: .expired, 418: .denied][status] ?? .pending
     }
 
+    private var refreshing: Task<Tokens, Error>?
+
+    /// Renueva la sesión UNA sola vez aunque varias peticiones la pidan a la vez (el refresh token es de un solo uso:
+    /// una segunda petición con el mismo recibiría un error y desconectaría la cuenta).
     private func refresh(_ tokens: Tokens) async throws -> Tokens {
-        let body = obj(["refresh_token": .string(tokens.refresh_token ?? ""), "client_id": .string(clientID), "redirect_uri": .string(Trakt.redirect),
-                        "grant_type": "refresh_token"], secretField())
-        let (status, data) = try await call("POST", "/oauth/token", body: body, auth: false)
-        guard status == 200, let data else {
-            secrets.set(SecretKey.traktTokens, nil)
-            throw TraktError.auth("Tu sesión de Trakt caducó: vuelve a conectarla en Ajustes.")
+        if let refreshing { return try await refreshing.value }
+        let task = Task<Tokens, Error> {
+            let body = obj(["refresh_token": .string(tokens.refresh_token ?? ""), "client_id": .string(clientID), "redirect_uri": .string(Trakt.redirect),
+                            "grant_type": "refresh_token"], secretField())
+            let (status, data) = try await call("POST", "/oauth/token", body: body, auth: false)
+            guard status == 200, let data else {
+                // Solo un rechazo del refresh token (400/401/403) desconecta; un error del servidor o un 429 son pasajeros.
+                if [400, 401, 403].contains(status) {
+                    secrets.set(SecretKey.traktTokens, nil)
+                    throw TraktError.auth("Tu sesión de Trakt caducó: vuelve a conectarla en Ajustes.")
+                }
+                throw TraktError.http(status)
+            }
+            try save(data)  // siempre se guarda el refresh token nuevo
+            return self.tokens() ?? tokens
         }
-        try save(data)  // el refresh token podría ser de un solo uso: siempre se guarda el nuevo
-        return self.tokens()!
+        refreshing = task
+        defer { refreshing = nil }
+        return try await task.value
     }
 
     private func access() async throws -> String {
@@ -210,9 +226,12 @@ public actor Trakt {
 
     /// Una escritura a la vez y como máximo una por segundo (límite de Trakt).
     private func write(_ path: String, _ body: JSON) async throws -> (Int, JSON?) {
-        let wait = 1.0 - clock().timeIntervalSince(lastWrite)
+        // El turno se reserva ANTES de esperar: dos escrituras a la vez salen con un segundo de diferencia, en orden.
+        let now = clock()
+        let slot = max(now, lastWrite.addingTimeInterval(1))
+        lastWrite = slot
+        let wait = slot.timeIntervalSince(now)
         if wait > 0 { await pause(wait) }
-        defer { lastWrite = clock() }
         let result = try await call("POST", path, body: body)
         if result.0 == 401 { secrets.set(SecretKey.traktTokens, nil); throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.") }
         return result
@@ -281,6 +300,7 @@ public actor Trakt {
 
     // MARK: escritura
     public func setWatchlist(imdb: String, series: Bool, add: Bool) async throws {
+        guard Self.isIMDb(imdb) else { throw TraktError.invalid("Título inválido") }
         let body: JSON = series ? ["shows": [["ids": ["imdb": .string(imdb)]]]] : ["movies": [["ids": ["imdb": .string(imdb)]]]]
         let (status, _) = try await write(add ? "/sync/watchlist" : "/sync/watchlist/remove", body)
         guard status == 200 || status == 201 else { throw TraktError.http(status) }
@@ -289,6 +309,7 @@ public actor Trakt {
     /// Avisa a Trakt de lo que reproduces. `progress` va de 0 a 100; por encima de ~80 % al parar, Trakt lo marca visto.
     @discardableResult
     public func scrobble(_ action: ScrobbleAction, _ target: TraktTarget, progress: Double) async throws -> ScrobbleResult {
+        guard Self.isIMDb(target.imdb) else { throw TraktError.invalid("Título inválido") }
         var body = target.body.object ?? [:]
         body["progress"] = .double(min(100, max(0, progress)))
         let (status, _) = try await write("/scrobble/\(action.rawValue)", .object(body))
@@ -303,6 +324,7 @@ public actor Trakt {
     /// Sube lo visto sin conexión con su fecha real, sin repetir lo que ya está en el historial de Trakt.
     @discardableResult
     public func addToHistory(_ target: TraktTarget, watchedAt: Date) async throws -> Bool {
+        guard Self.isIMDb(target.imdb) else { throw TraktError.invalid("Título inválido") }
         if try await alreadyWatched(target, near: watchedAt) { return false }
         let stamp = StremioLibrary.iso(watchedAt.timeIntervalSince1970)
         let body: JSON = target.isEpisode
@@ -316,11 +338,13 @@ public actor Trakt {
     /// ¿Ya hay un visionado de este título cerca de esa hora? (Trakt no comprueba duplicados en `/sync/history`.)
     func alreadyWatched(_ target: TraktTarget, near date: Date, window: TimeInterval = 12 * 3600) async throws -> Bool {
         let kind = target.isEpisode ? "series" : "movie"
+        guard Self.isIMDb(target.imdb) else { return false }
         guard let found = try await get("/search/imdb/\(target.imdb)", [("type", kind == "movie" ? "movie" : "show")])?.array?.first,
               let id = found[kind == "movie" ? "movie" : "show"]?["ids"]?["trakt"]?.intValue else { return false }
         let params = [("start_at", StremioLibrary.iso(date.addingTimeInterval(-window).timeIntervalSince1970)),
                       ("end_at", StremioLibrary.iso(date.addingTimeInterval(window).timeIntervalSince1970)), ("limit", "100")]
-        let rows = try await get("/sync/history/\(kind == "movie" ? "movies" : "episodes")/\(id)", params)?.array ?? []
+        // En Trakt `episodes/{id}` espera el id de un EPISODIO; el de una serie va en `shows/{id}`.
+        let rows = try await get("/sync/history/\(kind == "movie" ? "movies" : "shows")/\(id)", params)?.array ?? []
         if !target.isEpisode { return !rows.isEmpty }
         return rows.contains { $0["episode"]?["season"]?.intValue == target.season && $0["episode"]?["number"]?.intValue == target.episode }
     }

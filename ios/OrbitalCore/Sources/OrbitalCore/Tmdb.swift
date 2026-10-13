@@ -109,6 +109,7 @@ public struct Tmdb: Sendable {
 
     /// El id de TMDB de un título de IMDb (nil si TMDB no lo tiene).
     public func findID(imdb: String, kind: String) async throws -> Int? {
+        guard imdb.range(of: #"^tt[0-9]{1,12}$"#, options: .regularExpression) != nil else { return nil }
         let data = try await get("/find/\(imdb)", [("external_source", "imdb_id")])
         let rows = data[kind == "movie" ? "movie_results" : "tv_results"]?.array ?? []
         return rows.first?["id"]?.intValue.flatMap { $0 > 0 ? $0 : nil }
