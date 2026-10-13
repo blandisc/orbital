@@ -12,6 +12,7 @@ public struct EpisodeRow: Equatable, Identifiable {
     public var watched: Bool
     public var progress: Double?           // a medias
     public var timeLeft: String
+    public var leftMinutes: Int
     public var download: DownloadState?
 }
 
@@ -95,7 +96,8 @@ public final class TitleModel: ObservableModel {
             let seasonNumber = selectedSeason
             return EpisodeRow(id: ep.id, season: seasonNumber, number: ep.episode, title: ep.title, hasTitle: ep.hasTitle, overview: ep.overview, thumbnail: ep.thumbnail,
                               watched: watched.contains(ep.id), progress: ongoing ? min(1, Double(offset) / Double(duration)) : nil,
-                              timeLeft: ongoing ? PlaybackRules.timeLeft(Double(duration - offset) / 1000) : "", download: downloadStates[ep.id])
+                              timeLeft: ongoing ? PlaybackRules.timeLeft(Double(duration - offset) / 1000) : "",
+                              leftMinutes: ongoing ? PlaybackRules.minutesLeft(Double(duration - offset) / 1000) : 0, download: downloadStates[ep.id])
         }
     }
 
@@ -121,7 +123,7 @@ public final class TitleModel: ObservableModel {
     public func playRequest(videoID: String? = nil, fromStart: Bool = false) -> PlayRequest? {
         guard let video = videoID ?? continueVideoID else { return nil }
         var label = ""
-        if kind == "series", let found = episode(video) { label = "T\(found.0) · E\(found.1.episode)" + (found.1.hasTitle ? " · \(found.1.title)" : "") }
+        if kind == "series", let found = episode(video) { label = services.episodeLabel(found.0, found.1.episode) + (found.1.hasTitle ? " · \(found.1.title)" : "") }
         return PlayRequest(kind: kind, metaID: metaID, videoID: video, originalTitle: originalTitle, displayTitle: title, episodeLabel: label,
                            poster: poster, year: info.year, meta: meta, fromStart: fromStart)
     }
@@ -177,7 +179,7 @@ public final class TitleModel: ObservableModel {
                     if queued == 0 { return .noSources } else { continue }
                 }
                 var label = ""
-                if let found = episode(video) { label = "T\(found.0) · E\(found.1.episode)" + (found.1.hasTitle ? " · \(found.1.title)" : "") }
+                if let found = episode(video) { label = services.episodeLabel(found.0, found.1.episode) + (found.1.hasTitle ? " · \(found.1.title)" : "") }
                 let item = DownloadItem(id: DownloadItem.makeID(metaID: metaID, videoID: video), kind: kind, metaID: metaID, videoID: video, title: title, originalTitle: originalTitle,
                                         subtitle: label, poster: poster, addonURL: source.transportURL, sourceIndex: source.index, expectedBytes: source.size > 0 ? Int64(source.size) : nil,
                                         relativePath: DownloadFiles.relativePath(metaID: metaID, videoID: video, ext: DownloadFiles.fileExtension(for: url)),

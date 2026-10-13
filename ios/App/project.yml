@@ -1,0 +1,71 @@
+# Proyecto de Xcode de Orbital para iPhone (XcodeGen: https://github.com/yonaskolb/XcodeGen).
+#
+#   brew install xcodegen
+#   cd ios/App && xcodegen        # crea Orbital.xcodeproj (no se sube al repo)
+#   open Orbital.xcodeproj        # pon tu equipo en Signing & Capabilities y ejecuta en tu iPhone
+#
+# Cambia en UN solo lugar: el identificador de la app (PRODUCT_BUNDLE_IDENTIFIER) y el equipo (DEVELOPMENT_TEAM).
+name: Orbital
+options:
+  bundleIdPrefix: com.example.orbital
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+  developmentLanguage: es
+
+packages:
+  OrbitalCore:
+    path: ../OrbitalCore
+  # Motor de video principal. Fija la versión exacta (es un proyecto joven que publica a menudo).
+  # Si no compila con tu Xcode, quita este paquete y la bandera AETHER_ENGINE de abajo: la app usa AVPlayer.
+  AetherEngine:
+    url: https://github.com/superuser404notfound/AetherEngine
+    exactVersion: 7.35.1
+
+targets:
+  Orbital:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Resources
+    dependencies:
+      - package: OrbitalCore
+        product: OrbitalCore
+      - package: OrbitalCore
+        product: OrbitalModels
+      - package: AetherEngine
+        product: AetherEngine
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.orbital.ios
+        DEVELOPMENT_TEAM: XXXXXXXXXX
+        TARGETED_DEVICE_FAMILY: "1"           # solo iPhone
+        SWIFT_VERSION: "5.0"                  # la app en modo Swift 5; los paquetes ya van en Swift 6
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) AETHER_ENGINE"
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_EMIT_LOC_STRINGS: YES
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    info:
+      path: Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Orbital
+        CFBundleDevelopmentRegion: es
+        CFBundleLocalizations: [es, en]
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UIBackgroundModes: [audio]            # sigue sonando con la pantalla apagada y en PiP
+        ITSAppUsesNonExemptEncryption: false
+        # Para volver desde Infuse: orbital-ios://infuse-done?lastPlayedUrl=…&position=…
+        CFBundleURLTypes:
+          - CFBundleURLName: com.example.orbital.ios.infuse-callback
+            CFBundleURLSchemes: [orbital-ios]
+        # Para poder preguntar si Infuse está instalado.
+        LSApplicationQueriesSchemes: [infuse]
+        # Los complementos de Stremio pueden dar enlaces http (no solo https) para el video.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoadsForMedia: true
+    scheme:
+      testTargets: []

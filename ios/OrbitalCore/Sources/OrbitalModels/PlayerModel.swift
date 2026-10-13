@@ -64,6 +64,7 @@ public final class PlayerModel: ObservableModel {
     private let settings: SettingsStore
     private let clock: @Sendable () -> Date
     private let onCellular: @Sendable () -> Bool
+    private let episodeLabel: @Sendable (Int, Int) -> String
 
     private var consuming: Task<Void, Never>?
     private var failedSources = Set<Int>()
@@ -83,9 +84,10 @@ public final class PlayerModel: ObservableModel {
     private var generation = 0
 
     public init(engine: PlayerEngine, finder: StreamFinder, watch: WatchService, titlePrefs: TitlePreferences, settings: SettingsStore,
-                clock: @escaping @Sendable () -> Date = { Date() }, onCellular: @escaping @Sendable () -> Bool = { false }) {
+                clock: @escaping @Sendable () -> Date = { Date() }, onCellular: @escaping @Sendable () -> Bool = { false },
+                episodeLabel: @escaping @Sendable (Int, Int) -> String = { "T\($0) · E\($1)" }) {
         self.engine = engine; self.finder = finder; self.watch = watch; self.titlePrefs = titlePrefs; self.settings = settings
-        self.clock = clock; self.onCellular = onCellular; self.lastSave = clock()
+        self.clock = clock; self.onCellular = onCellular; self.episodeLabel = episodeLabel; self.lastSave = clock()
         super.init()
     }
 
@@ -321,7 +323,7 @@ public final class PlayerModel: ObservableModel {
     private func episodeText(_ videoID: String) -> (String, String) {
         guard let meta = request?.meta else { return ("", "") }
         for season in CinemetaParsing.seasons(meta) {
-            if let ep = season.episodes.first(where: { $0.id == videoID }) { return ("T\(season.season) · E\(ep.episode)", ep.title) }
+            if let ep = season.episodes.first(where: { $0.id == videoID }) { return (episodeLabel(season.season, ep.episode), ep.title) }
         }
         return ("", "")
     }

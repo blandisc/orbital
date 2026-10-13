@@ -34,6 +34,9 @@ public enum PlaybackRules {
         return inCredits || duration - position <= upNextAt
     }
 
+    /// Minutos que faltan (0 si falta menos de uno): la interfaz arma «quedan 1 h 40 min» en su idioma.
+    public static func minutesLeft(_ seconds: Double) -> Int { max(0, Int(seconds / 60)) }
+
     /// «quedan 11 min» / «quedan 1 h 40 min» (vacío si falta menos de un minuto).
     public static func timeLeft(_ seconds: Double) -> String {
         let minutes = Int(seconds / 60)

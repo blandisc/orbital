@@ -21,6 +21,8 @@ public final class Services: ObservableModel {
     public private(set) var forYou: ForYou { didSet { changed() } }
     public private(set) var watch: WatchService { didSet { changed() } }
     public private(set) var downloads: Downloads { didSet { changed() } }
+    /// Cómo se escribe «T2 · E5» en el idioma de la app (la interfaz lo cambia; por omisión, en español).
+    public var episodeLabel: @Sendable (Int, Int) -> String = { "T\($0) · E\($1)" }
     /// Cambia cuando se reconfiguran claves (para que las pantallas se actualicen).
     public private(set) var generation = 0 { didSet { changed() } }
 

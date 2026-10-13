@@ -15,6 +15,7 @@ public struct HomeItem: Sendable, Codable, Equatable, Identifiable {
     public var season: Int?
     public var episode: Int?
     public var timeLeft: String
+    public var leftMinutes: Int
     public var nextUp: Bool            // terminaste el anterior: «Sigue: T8 E24»
 }
 
@@ -85,7 +86,7 @@ public final class HomeModel: ObservableModel {
                             poster: w.id.hasPrefix("tt") ? "https://images.metahub.space/poster/medium/\(w.id)/img" : w.poster,
                             background: w.id.hasPrefix("tt") ? "https://images.metahub.space/background/medium/\(w.id)/img" : nil,
                             videoID: w.videoID ?? (w.type == "movie" ? w.id : nil), progress: nextUp ? nil : w.progress, season: season, episode: episode,
-                            timeLeft: PlaybackRules.timeLeft(left), nextUp: nextUp)
+                            timeLeft: PlaybackRules.timeLeft(left), leftMinutes: PlaybackRules.minutesLeft(left), nextUp: nextUp)
         }
     }
 
