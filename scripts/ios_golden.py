@@ -13,7 +13,7 @@ import json
 import zlib
 from pathlib import Path
 
-from orbital.library import streams, stremio_api
+from orbital.library import cinemeta, localize, streams, stremio_api, tmdb
 
 OUT = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "ios"
 NOW = 1_760_000_000.0  # 2025-10-09T08:53:20Z: fijo, para que el resultado no dependa del reloj
@@ -130,6 +130,40 @@ def streams_cases() -> dict:
     return {"parsed": parsed, "ranked": ranked, "hashes": hashes, "sizes": sizes}
 
 
+def cinemeta_cases() -> dict:
+    fx = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "cinemeta"
+    meta = json.loads((fx / "meta_series_tt0386676.json").read_text(encoding="utf-8"))
+    movie = json.loads((fx / "meta_movie_tt0816692.json").read_text(encoding="utf-8"))
+    movies = json.loads((fx / "search_movie_dune.json").read_text(encoding="utf-8"))
+    series = json.loads((fx / "search_series_dune.json").read_text(encoding="utf-8"))
+    seasons = cinemeta.seasons(meta)
+    ids = [e["id"] for s in seasons if s["season"] != 0 for e in s["episodes"]]
+    nexts = {i: cinemeta.next_episode(meta, i) for i in ids[:3] + ids[-2:] + ["no-existe"]}
+    results = {q: [{"kind": r["kind"], "meta_id": r["meta_id"], "title": r["title"]} for r in cinemeta.search_results(q, movies, series)]
+               for q in ("dune", "Dune", "du")}
+    return {"seasons": seasons, "next": nexts, "describe_series": cinemeta.describe_meta(meta),
+            "describe_movie": cinemeta.describe_meta(movie), "credits": cinemeta.credits(meta), "search": results,
+            "catalog_usable": [cinemeta._usable(m) for m in movies[:5]]}
+
+
+def localize_cases() -> dict:
+    fx = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "cinemeta"
+    meta = json.loads((fx / "meta_series_tt0386676.json").read_text(encoding="utf-8"))
+    found = {"title": "La Oficina", "overview": "Un falso documental.", "genres": ["Comedia"],
+             "episodes": {(1, 1): {"name": "Piloto", "overview": "Michael presenta."},
+                          (1, 2): {"name": "Episodio 2", "overview": ""},
+                          (1, 3): {"name": "", "overview": "Solo sinopsis."}}}
+    partial = {"title": "", "overview": "", "genres": [], "episodes": {}}
+    rows = [{"provider_id": 8, "provider_name": "Netflix", "logo_path": "/n.jpg"}, {"provider_id": 337, "provider_name": "Disney Plus", "logo_path": "/d.jpg"},
+            {"provider_id": 1899, "provider_name": "Max", "logo_path": "/m.jpg"}, {"provider_id": 9, "provider_name": "Otro"}, "raro", {"provider_name": "Netflix"}]
+    return {"apply": {"found": [{"season": k[0], "episode": k[1], **v} for k, v in found["episodes"].items()],
+                      "title": found["title"], "overview": found["overview"], "genres": found["genres"],
+                      "result": localize.apply(meta, found), "partial": localize.apply(meta, partial)},
+            "languages": {str(x): localize.tmdb_language(x) for x in ("es", "en", "en-US", "pt", "fr", "", None, "ES")},
+            "platforms": tmdb.match_platforms(rows),
+            "generic": {t: bool(localize.GENERIC_EPISODE.match(t)) for t in ("Episodio 3", "Episode 12", "Folge 1", "Piloto", "Episodio 3 y 4")}}
+
+
 def main() -> None:
     write("zlib", zlib_cases())
     write("watched", watched_cases())
@@ -138,6 +172,8 @@ def main() -> None:
     write("toggle", toggle_cases())
     write("parse_item", parse_item_cases())
     write("streams", streams_cases())
+    write("cinemeta", cinemeta_cases())
+    write("localize", localize_cases())
     print(f"Escritos en {OUT}")
 
 
