@@ -53,8 +53,8 @@ public enum Infuse {
         func value(_ name: String) -> String? { items.first { $0.name == name }?.value }
         switch host {
         case "infuse-done":
-            return .closed(lastPlayed: value("lastPlayedUrl").flatMap(URL.init(string:)), position: value("position").flatMap(Double.init),
-                           progress: value("progress").flatMap(Double.init))
+            func number(_ name: String) -> Double? { value(name).flatMap(Double.init).flatMap { $0.isFinite && $0 >= 0 ? $0 : nil } }   // «nan», «inf» o negativos no valen
+            return .closed(lastPlayed: value("lastPlayedUrl").flatMap(URL.init(string:)), position: number("position"), progress: number("progress"))
         case "infuse-error":
             return .failed(code: value("errorCode"), message: value("errorMessage"), url: value("failedUrl").flatMap(URL.init(string:)))
         default: return nil

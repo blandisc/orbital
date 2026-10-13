@@ -35,10 +35,18 @@ public final class SettingsModel: ObservableModel {
         let before = settings
         services.settings.update(change)
         settings = services.appSettings
-        if before.traktClientID != settings.traktClientID || before.traktClientSecret != settings.traktClientSecret || before.uiLanguage != settings.uiLanguage || before.region != settings.region {
+        if before.traktClientID != settings.traktClientID || before.uiLanguage != settings.uiLanguage || before.region != settings.region {
             services.reconfigure()
             trakt = computeTraktState()
         }
+    }
+
+    /// El secreto de la aplicación de Trakt va al Keychain (no a los ajustes).
+    public func setTraktSecret(_ secret: String) {
+        let trimmed = secret.trimmingCharacters(in: .whitespacesAndNewlines)
+        services.secrets.set(SecretKey.traktClientSecret, trimmed.isEmpty ? nil : trimmed)
+        services.reconfigure()
+        trakt = computeTraktState()
     }
 
     public func setTMDBKey(_ key: String) {

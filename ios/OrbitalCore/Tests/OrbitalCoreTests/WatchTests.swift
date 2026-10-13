@@ -177,3 +177,179 @@ final class WatchTests: XCTestCase {
     }
 }
 
+
+// MARK: - revisión de robustez
+
+final class WatchRobustnessTests: XCTestCase {
+    let series = try! Fixtures.json("cinemeta/meta_series_tt0386676.json")
+    let get = "https://api.strem.io/api/datastoreGet", put = "https://api.strem.io/api/datastorePut"
+
+    func make(trakt: Trakt? = nil, remote: JSON? = nil, gate: FlushGate = FlushGate()) -> (WatchService, FakeHTTP, InMemoryPendingStore, Clock) {
+        let http = FakeHTTP(), pending = InMemoryPendingStore(), clock = Clock()
+        http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
+        http.json[get] = ["result": remote.map { [$0] } ?? []]
+        http.json[put] = ["result": ["success": true]]
+        return (WatchService(stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: Cinemeta(http: http), trakt: trakt, pending: pending, clock: { clock.now }, gate: gate), http, pending, clock)
+    }
+
+    func event(_ clock: Clock, video: String = "tt0386676:1:1", position: Double = 600, duration: Double = 1320, watched: Double = 120, title: String = "The Office", finished: Bool = false) -> ProgressEvent {
+        ProgressEvent(kind: "series", metaID: "tt0386676", videoID: video, originalTitle: title, position: position, duration: duration, watched: watched, at: clock.now.timeIntervalSince1970, finished: finished)
+    }
+
+    func testAnEventQueuedDuringAFlushIsNotLost() async throws {
+        let (service, http, pending, clock) = make()
+        var work = PendingWork(); work.progress = [event(clock, video: "tt0386676:1:1")]
+        pending.save(work)
+        http.delays[put] = 80                                   // la subida tarda: da tiempo a que llegue otro evento
+        let flush = Task { await service.flushPending() }
+        try await Task.sleep(nanoseconds: 30_000_000)
+        // Este evento llega durante el vaciado y no se puede guardar (sin título original y sin Cinemeta): se encola.
+        let late = ProgressEvent(kind: "movie", metaID: "tt999", videoID: "tt999", originalTitle: "", position: 900, duration: 6000, watched: 100, at: clock.now.timeIntervalSince1970)
+        await service.report(late, phase: .paused)
+        _ = await flush.value
+        XCTAssertEqual(pending.load().progress.map(\.videoID), ["tt999"], "el evento nuevo sobrevive al vaciado y el viejo ya se subió")
+        XCTAssertEqual(http.bodies(for: put).count, 1)
+    }
+
+    func testTwoFlushesAtOnceUploadOnlyOnce() async throws {
+        let (service, http, pending, clock) = make()
+        var work = PendingWork(); work.progress = [event(clock)]
+        pending.save(work)
+        http.delays[put] = 60
+        async let a = service.flushPending(), b = service.flushPending()
+        _ = await (a, b)
+        XCTAssertEqual(http.bodies(for: put).count, 1)
+        XCTAssertTrue(pending.load().isEmpty)
+    }
+
+    func testUserSaysTheyFinishedSoItIsMarkedWatchedEvenWithoutAKnownDuration() async throws {
+        let (service, http, _, clock) = make()
+        let outcome = await service.report(event(clock, position: 1, duration: 1, watched: 0, finished: false), phase: .stopped(finished: true))
+        XCTAssertTrue(outcome.savedToStremio, "«Sí, lo terminé» no se descarta por el umbral de segundos vistos")
+        let item = try XCTUnwrap(http.bodies(for: put).last.flatMap(JSON.parse)?["changes"]?.array?.first)
+        XCTAssertEqual(item["state"]?["video_id"]?.string, "tt0386676:1:2")
+        let ids = CinemetaParsing.seasonVideoIDs(series)
+        XCTAssertEqual(StremioLibrary.parseWatched(item["state"]?["watched"]?.string, videoIDs: ids), ["tt0386676:1:1"])
+    }
+
+    func testMovingToTheNextEpisodeBeforeNinetyPercentStillMarksThePreviousWatched() async throws {
+        let (service, http, _, clock) = make()
+        await service.report(event(clock, position: 1120, duration: 1320, watched: 1100), phase: .stopped(finished: true))   // créditos al 85 %
+        let item = try XCTUnwrap(http.bodies(for: put).last.flatMap(JSON.parse)?["changes"]?.array?.first)
+        XCTAssertEqual(item["state"]?["video_id"]?.string, "tt0386676:1:2")
+    }
+
+    func testNoTitleNoNewItem() async throws {
+        let (service, http, pending, clock) = make()
+        http.statuses["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = 500      // Cinemeta caído
+        http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = nil
+        let outcome = await service.report(event(clock, title: ""), phase: .paused)
+        XCTAssertTrue(outcome.queued, "sin el nombre original no se crea el item: se reintenta cuando haya Cinemeta")
+        XCTAssertTrue(http.bodies(for: put).isEmpty)
+        XCTAssertEqual(pending.load().progress.count, 1)
+    }
+
+    func testMyListWithoutCinemetaDoesNotWriteATranslatedTitle() async throws {
+        let (service, http, _, _) = make()
+        http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = nil
+        http.statuses["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = 500
+        do { try await service.setInLibrary(kind: "series", metaID: "tt0386676", title: "La Oficina", poster: nil, add: true); XCTFail() } catch {}
+        XCTAssertTrue(http.bodies(for: put).isEmpty)
+        // Con Cinemeta, el nombre es el original aunque el que se muestre sea otro.
+        http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
+        http.statuses["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = nil
+        try await service.setInLibrary(kind: "series", metaID: "tt0386676", title: "La Oficina", poster: nil, add: true)
+        let item = try XCTUnwrap(http.bodies(for: put).last.flatMap(JSON.parse)?["changes"]?.array?.first)
+        XCTAssertEqual(item["name"]?.string, series["name"]?.string)
+    }
+
+    func testTraktWatchedIsQueuedAgainOnServerErrorsNotJustOnNetworkErrors() async throws {
+        let secrets = InMemorySecrets(), clock = Clock(), http = FakeHTTP(), pending = InMemoryPendingStore()
+        secrets.set(SecretKey.traktTokens, #"{"access_token":"AT","refresh_token":"RT","expires_at":\#(clock.now.timeIntervalSince1970 + 86400)}"#)
+        let trakt = Trakt(http: http, secrets: secrets, clientID: "CID", clock: { clock.now }, pause: { _ in })
+        http.json["https://v3-cinemeta.strem.io/meta/series/tt0386676.json"] = ["meta": series]
+        http.json[get] = ["result": []]; http.json[put] = ["result": ["success": true]]
+        http.json["https://api.trakt.tv/scrobble/stop"] = [:]; http.statuses["https://api.trakt.tv/scrobble/stop"] = 503
+        let service = WatchService(stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: Cinemeta(http: http), trakt: trakt, pending: pending, clock: { clock.now })
+        await service.report(event(clock, position: 1300, watched: 1300), phase: .stopped(finished: true))
+        XCTAssertEqual(pending.load().traktWatched.count, 1, "un 503 de Trakt no pierde lo visto")
+    }
+}
+
+final class StremioRobustnessTests: XCTestCase {
+    func testMarkWatchedOnlyTouchesTheBitfieldWhenItIsNotTheCurrentVideo() throws {
+        let ids = ["tt1:1:1", "tt1:1:2", "tt1:1:3", "tt1:1:8"]
+        let raw: JSON = ["_id": "tt1", "name": "S", "type": "series", "state": ["video_id": "tt1:1:8", "timeOffset": 300_000, "duration": 1_000_000, "timeWatched": 300_000]]
+        let item = StremioLibrary.markWatched(raw, metaID: "tt1", kind: "series", name: "S", poster: nil, videoID: "tt1:1:3", videoIDs: ids, nextVideo: "tt1:1:8", now: 1_760_000_000)
+        let state = try XCTUnwrap(item["state"])
+        XCTAssertEqual(state["video_id"]?.string, "tt1:1:8", "tu punto de Seguir viendo no se mueve")
+        XCTAssertEqual(state["timeOffset"]?.intValue, 300_000)
+        XCTAssertEqual(StremioLibrary.parseWatched(state["watched"]?.string, videoIDs: ids), ["tt1:1:3"])
+    }
+
+    func testMarkWatchedOnTheCurrentVideoMovesToTheNext() throws {
+        let ids = ["tt1:1:1", "tt1:1:2"]
+        let raw: JSON = ["_id": "tt1", "name": "S", "type": "series", "state": ["video_id": "tt1:1:1", "timeOffset": 100_000, "duration": 1_000_000]]
+        let state = try XCTUnwrap(StremioLibrary.markWatched(raw, metaID: "tt1", kind: "series", name: "S", poster: nil, videoID: "tt1:1:1", videoIDs: ids, nextVideo: "tt1:1:2", now: 1_760_000_000)["state"])
+        XCTAssertEqual(state["video_id"]?.string, "tt1:1:2"); XCTAssertEqual(state["timeOffset"]?.intValue, 1)
+    }
+
+    func testKitsuEpisodeNumbers() {
+        XCTAssertEqual(StremioLibrary.episodeNumbers(videoID: "kitsu:7442:3", metaID: "kitsu:7442").episode, 3)
+        XCTAssertNil(StremioLibrary.episodeNumbers(videoID: "kitsu:7442:3", metaID: "kitsu:7442").season)
+        let s = StremioLibrary.episodeNumbers(videoID: "tt0944947:1:5", metaID: "tt0944947")
+        XCTAssertEqual(s.season, 1); XCTAssertEqual(s.episode, 5)
+    }
+
+    func testAbsurdNumbersDoNotCrash() throws {
+        let weird: Double = .infinity
+        let item = StremioLibrary.withProgress(nil, metaID: "tt1", kind: "movie", name: "x", poster: nil, videoID: "tt1", position: .nan, duration: weird, watched: -5, nextVideo: nil, now: 1_760_000_000)
+        XCTAssertEqual(item["state"]?["timeOffset"]?.intValue, 0)
+        _ = StremioLibrary.withProgress(nil, metaID: "tt1", kind: "movie", name: "x", poster: nil, videoID: "tt1", position: 1e300, duration: 1e300, watched: 1e300, nextVideo: nil, now: 1_760_000_000)
+        XCTAssertNotNil(StremioLibrary.parseItem(["_id": "tt1", "name": .double(1e300), "type": "movie"]))
+        XCTAssertEqual(StremioLibrary.parseWatched("tt1:\(Int.max):AAAA", videoIDs: ["tt1"]), [])
+    }
+
+    func testOneOutOfRangeNumberDoesNotDiscardTheWholeResponse() throws {
+        let parsed = try XCTUnwrap(JSON.parse(Data(#"{"result":[{"_id":"tt1","name":"x","state":{"timeOffset":1e999}}]}"#.utf8)))
+        XCTAssertEqual(parsed["result"]?.array?.first?["_id"]?.string, "tt1")
+    }
+
+    func testHugeSourceSizeDoesNotCrashAndCRLFTextsParse() {
+        let big = Streams.parse(["name": "T\n1080p", "title": "Peli 1080p\n💾 99999999 TB", "url": "https://x/a"], addon: "T", transportURL: "u", index: 1)
+        XCTAssertEqual(big.size, 0)
+        let giant = Streams.parse(["name": "T", "title": .string("Peli\n💾 \(String(repeating: "9", count: 400)) GB"), "url": "https://x/a"], addon: "T", transportURL: "u", index: 2)
+        XCTAssertEqual(giant.size, 0)
+        let crlf = Streams.parse(["name": "T\r\n1080p [RD+]", "title": "Peli.2024.1080p\r\n👤 10 💾 2 GB ⚙️ YTS\r\n🇲🇽", "url": "https://x/a"], addon: "T", transportURL: "u", index: 3)
+        XCTAssertEqual(crlf.release, "Peli.2024.1080p")
+        XCTAssertEqual(crlf.site, "YTS")
+        XCTAssertEqual(crlf.size, 2_000_000_000)
+    }
+
+    func testInfuseIgnoresNonFiniteAndNegativePositions() throws {
+        let nan = try XCTUnwrap(Infuse.parseCallback(URL(string: "orbital-ios://infuse-done?position=nan")!))
+        XCTAssertEqual(nan, .closed(lastPlayed: nil, position: nil, progress: nil))
+        let inf = try XCTUnwrap(Infuse.parseCallback(URL(string: "orbital-ios://infuse-done?position=inf&progress=-1")!))
+        XCTAssertEqual(inf, .closed(lastPlayed: nil, position: nil, progress: nil))
+    }
+
+    func testRedactCutsAtQueryAndUserInfo() {
+        XCTAssertEqual(redact("https://host?apikey=SECRET"), "host")
+        XCTAssertEqual(redact("https://user:pass@host/KEY/x"), "host")
+        XCTAssertEqual(redact("https://host/KEY/a://b/c"), "host")
+        XCTAssertEqual(redact("host#frag"), "host")
+        XCTAssertEqual(redact(""), "?")
+    }
+
+    func testLegacySettingsAndPendingFilesStillLoad() throws {
+        let kv = InMemoryKeyValueStore()
+        kv.set("settings", data: Data(#"{"uiLanguage":"en","audio":"en"}"#.utf8))      // un archivo viejo sin los demás campos
+        let store = SettingsStore(kv)
+        XCTAssertEqual(store.value.uiLanguage, "en")
+        XCTAssertEqual(store.value.quality, "1080p", "lo que falta toma su valor por omisión; no se pierde todo")
+        let old = Data(#"{"progress":[{"kind":"movie","metaID":"tt1","videoID":"tt1","position":5,"duration":10,"watched":5,"at":1}]}"#.utf8)
+        let work = try JSONDecoder().decode(PendingWork.self, from: old)
+        XCTAssertEqual(work.progress.count, 1)
+        XCTAssertFalse(work.progress[0].finished)
+    }
+}

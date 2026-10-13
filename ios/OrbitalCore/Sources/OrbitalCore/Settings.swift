@@ -36,10 +36,33 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var warnCellularOverGB = 5.0
     public var region = "MX"                   // para «lo más popular en Netflix» (TMDB)
     public var preferInfuse = false            // reproducir en Infuse en vez del reproductor propio
-    public var traktClientID = ""
-    public var traktClientSecret = ""
+    public var traktClientID = ""            // el identificador no es secreto; el secreto de la aplicación va en el Keychain
 
     public init() {}
+
+    /// Tolerante: un ajuste nuevo (o uno que falte en lo guardado antes) toma su valor por omisión; no se pierde todo.
+    public init(from decoder: Decoder) throws {
+        self.init()
+        let c = try decoder.container(keyedBy: Keys.self)
+        uiLanguage = try c.decodeIfPresent(String.self, forKey: .uiLanguage) ?? uiLanguage
+        audio = try c.decodeIfPresent(String.self, forKey: .audio) ?? audio
+        subtitles = try c.decodeIfPresent(String.self, forKey: .subtitles) ?? subtitles
+        onlyForcedSubtitles = try c.decodeIfPresent(Bool.self, forKey: .onlyForcedSubtitles) ?? onlyForcedSubtitles
+        quality = try c.decodeIfPresent(String.self, forKey: .quality) ?? quality
+        cellularQuality = try c.decodeIfPresent(String.self, forKey: .cellularQuality) ?? cellularQuality
+        wifiOnlyDownloads = try c.decodeIfPresent(Bool.self, forKey: .wifiOnlyDownloads) ?? wifiOnlyDownloads
+        autoNextDownload = try c.decodeIfPresent(Bool.self, forKey: .autoNextDownload) ?? autoNextDownload
+        deleteWhenWatched = try c.decodeIfPresent(Bool.self, forKey: .deleteWhenWatched) ?? deleteWhenWatched
+        warnCellularOverGB = try c.decodeIfPresent(Double.self, forKey: .warnCellularOverGB) ?? warnCellularOverGB
+        region = try c.decodeIfPresent(String.self, forKey: .region) ?? region
+        preferInfuse = try c.decodeIfPresent(Bool.self, forKey: .preferInfuse) ?? preferInfuse
+        traktClientID = try c.decodeIfPresent(String.self, forKey: .traktClientID) ?? traktClientID
+    }
+
+    enum Keys: String, CodingKey {
+        case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
+        case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID
+    }
     public var traktEnabled: Bool { !traktClientID.isEmpty }
 
     /// Preferencias de fuentes para ver (en datos móviles se limita la calidad).

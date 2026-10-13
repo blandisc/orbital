@@ -93,6 +93,12 @@ public enum StremioLibrary {
 
     public static func state(of raw: JSON?) -> [String: JSON] { raw?["state"]?.object ?? [:] }
 
+    /// Un número finito y no negativo (un NaN o infinito de un motor o de una URL no tumba nada).
+    public static func finite(_ value: Double) -> Double { value.isFinite ? max(0, value) : 0 }
+
+    /// Segundos → milisegundos enteros, acotados (un valor absurdo no desborda el entero).
+    static func ms(_ seconds: Double) -> Int { Int(min(finite(seconds), 1e9) * 1000) }
+
     /// Dónde ibas en ese episodio o película según Stremio (0 = desde el principio).
     public static func resumeSeconds(_ raw: JSON?, videoID: String) -> Double {
         let state = state(of: raw)
@@ -118,7 +124,7 @@ public enum StremioLibrary {
         ]
         var state = state(of: .object(item))
         if state["video_id"]?.string != videoID { state["timeWatched"] = 0 }
-        let posMs = Int(position * 1000), durMs = Int(duration * 1000), watchedMs = Int(watched * 1000)
+        let posMs = ms(position), durMs = ms(duration), watchedMs = ms(watched)
         state["lastWatched"] = .string(iso(now))
         state["video_id"] = .string(videoID)
         state["duration"] = .int(durMs)
@@ -151,7 +157,7 @@ public enum StremioLibrary {
     public static func parseWatched(_ watched: String?, videoIDs: [String]) -> Set<String> {
         guard let watched, !watched.isEmpty, !videoIDs.isEmpty else { return [] }
         let parts = watched.split(separator: ":", omittingEmptySubsequences: false)
-        guard parts.count >= 3, let length = Int(parts[parts.count - 2]),
+        guard parts.count >= 3, let length = Int(parts[parts.count - 2]), (1...1_000_000).contains(length),
               let data = Data(base64Encoded: String(parts[parts.count - 1])),
               let bits = try? Zlib.decompress([UInt8](data)) else { return [] }
         let anchor = parts[0..<(parts.count - 2)].joined(separator: ":")
@@ -190,6 +196,45 @@ public enum StremioLibrary {
     public static func isInLibrary(_ raw: JSON?) -> Bool {
         guard let raw else { return false }
         return !(raw["removed"].map(truthy) ?? false) && !(raw["temp"].map(truthy) ?? false)
+    }
+
+    /// Marca un video como visto sin tocar el resto: solo el bitfield de `state.watched`. Si ese video es justo el que Stremio
+    /// tenía como actual (o no había ninguno), el puntero pasa al siguiente, como al terminarlo.
+    public static func markWatched(_ raw: JSON?, metaID: String, kind: String, name: String, poster: String?, videoID: String,
+                                   videoIDs: [String], nextVideo: String?, now: Double) -> JSON {
+        var item: [String: JSON] = raw?.object ?? [
+            "_id": .string(metaID), "name": .string(name), "type": .string(kind), "poster": poster.map(JSON.string) ?? .null,
+            "posterShape": "poster", "removed": true, "temp": true, "_ctime": .string(iso(now)), "behaviorHints": defaultHints,
+        ]
+        var state = state(of: .object(item))
+        if videoIDs.contains(videoID) {
+            var seen = parseWatched(state["watched"]?.string, videoIDs: videoIDs)
+            seen.insert(videoID)
+            if let encoded = encodeWatched(seen, videoIDs: videoIDs) { state["watched"] = .string(encoded) }
+        }
+        let current = state["video_id"]?.nonEmptyString
+        if current == nil || current == videoID {
+            state["timesWatched"] = .int(asInt(state["timesWatched"]) + 1)
+            state["flaggedWatched"] = 1
+            if let next = nextVideo { state["video_id"] = .string(next); state["timeOffset"] = 1; state["timeWatched"] = 0; state["duration"] = 0 }
+            else { state["video_id"] = .string(videoID); state["timeOffset"] = 0 }
+        }
+        if state["timesWatched"] == nil { state["timesWatched"] = 0 }
+        if state["flaggedWatched"] == nil { state["flaggedWatched"] = 0 }
+        if state["noNotif"] == nil { state["noNotif"] = false }
+        item["state"] = .object(state)
+        item["_mtime"] = .string(iso(now))
+        return .object(item)
+    }
+
+    /// «tt0944947:1:5» → (1, 5); «kitsu:123:7» → (nil, 7): el id del título puede tener «:» propios (kitsu:1).
+    public static func episodeNumbers(videoID: String, metaID: String) -> (season: Int?, episode: Int?) {
+        let rest = videoID.hasPrefix(metaID + ":") ? String(videoID.dropFirst(metaID.count + 1))
+            : videoID.split(separator: ":", omittingEmptySubsequences: false).dropFirst().joined(separator: ":")
+        let numbers = rest.split(separator: ":").filter { !$0.isEmpty && $0.allSatisfy(\.isASCII) && $0.allSatisfy(\.isNumber) }.compactMap { Int($0) }
+        if numbers.count >= 2 { return (numbers[numbers.count - 2], numbers[numbers.count - 1]) }
+        if numbers.count == 1 { return (nil, numbers[0]) }
+        return (nil, nil)
     }
 
     /// El libraryItem fuera de «Seguir viendo» (como el «Quitar» de Stremio).
@@ -236,12 +281,7 @@ public struct Watchable: Sendable, Equatable, Identifiable {
     /// «tt0944947:1:5» → (1, 5); «kitsu:123:7» → (nil, 7).
     public var episode: (season: Int?, episode: Int?) {
         guard let videoID, type != "movie" else { return (nil, nil) }
-        let rest = videoID.hasPrefix(id + ":") ? String(videoID.dropFirst(id.count + 1))
-            : videoID.split(separator: ":", omittingEmptySubsequences: false).dropFirst().joined(separator: ":")
-        let numbers = rest.split(separator: ":").filter { !$0.isEmpty && $0.allSatisfy(\.isASCII) && $0.allSatisfy(\.isNumber) }.compactMap { Int($0) }
-        if numbers.count >= 2 { return (numbers[numbers.count - 2], numbers[numbers.count - 1]) }
-        if numbers.count == 1 { return (nil, numbers[0]) }
-        return (nil, nil)
+        return StremioLibrary.episodeNumbers(videoID: videoID, metaID: id)
     }
 
     public static func == (a: Watchable, b: Watchable) -> Bool {
@@ -258,7 +298,7 @@ extension StremioLibrary {
         switch raw["name"] {
         case .string(let s)?: name = s
         case .int(let i)?: name = String(i)  // «1917»: el título es un número
-        case .double(let d)?: name = d == d.rounded() ? String(Int(d)) : String(d)
+        case .double(let d)?: name = d == d.rounded() && abs(d) < 9e15 ? String(Int(d)) : String(d)
         default: name = nil
         }
         guard let name, !name.trimmingCharacters(in: .whitespaces).isEmpty else { return nil }

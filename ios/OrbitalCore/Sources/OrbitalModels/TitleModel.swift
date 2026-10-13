@@ -48,7 +48,8 @@ public final class TitleModel: ObservableModel {
     public init(_ services: Services, kind: String, metaID: String, hint: (title: String, poster: String?)? = nil) {
         self.services = services; self.kind = kind; self.metaID = metaID
         super.init()
-        if let hint { title = hint.title; originalTitle = hint.title; poster = hint.poster }
+        // El título que se muestra puede venir traducido: el ORIGINAL (lo que se guarda en Stremio) solo sale de Cinemeta, al cargar.
+        if let hint { title = hint.title; poster = hint.poster }
     }
 
     public func load() async {
@@ -115,8 +116,10 @@ public final class TitleModel: ObservableModel {
         guard let video = continueVideoID else { return (false, nil, nil) }
         let state = StremioLibrary.state(of: raw)
         let resume = state["video_id"]?.string == video && asInt(state["timeOffset"]) > 1
-        let parts = video.split(separator: ":")
-        if kind == "series", parts.count >= 3, let s = Int(parts[parts.count - 2]), let e = Int(parts[parts.count - 1]) { return (resume, s, e) }
+        if kind == "series" {
+            let numbers = StremioLibrary.episodeNumbers(videoID: video, metaID: metaID)
+            if let s = numbers.season, let e = numbers.episode { return (resume, s, e) }
+        }
         return (resume, nil, nil)
     }
 
@@ -151,15 +154,10 @@ public final class TitleModel: ObservableModel {
         } catch { inWatchlist = !want; message = "No pude cambiar tu watchlist de Trakt: \(error)" }
     }
 
-    /// Marca un episodio (o la película) como visto en Stremio y en Trakt.
+    /// Marca un episodio (o la película) como visto en Stremio y en Trakt. Se relee el item antes de escribir: lo que
+    /// hayas hecho en otro dispositivo no se pisa, y marcar un episodio anterior no mueve tu punto de «Seguir viendo».
     public func markWatched(_ videoID: String) async {
-        guard let key = services.authKey, let meta else { return }
-        let ids = CinemetaParsing.seasonVideoIDs(meta)
-        let now = Date().timeIntervalSince1970
-        var item = StremioLibrary.withProgress(raw, metaID: metaID, kind: kind, name: originalTitle, poster: poster, videoID: videoID, position: 1, duration: 1, watched: 0,
-                                               nextVideo: kind == "series" ? CinemetaParsing.nextEpisode(meta, after: videoID) : nil, now: now, videoIDs: ids.isEmpty ? nil : ids)
-        item = StremioLibrary.libraryToggled(item, metaID: metaID, kind: kind, name: originalTitle, poster: poster, add: inLibrary, now: now)
-        do { try await services.stremio.saveLibraryItem(authKey: key, item: item) } catch { message = "No pude marcarlo: \(error)"; return }
+        do { try await services.watch.markWatched(kind: kind, metaID: metaID, videoID: videoID) } catch { message = "No pude marcarlo: \(error)"; return }
         if let trakt = services.trakt, trakt.linked, let target = TraktTarget(videoID: videoID, kind: kind) { _ = try? await trakt.addToHistory(target, watchedAt: Date()) }
         await refreshState()
     }

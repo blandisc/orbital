@@ -106,7 +106,7 @@ struct SettingsView: View {
                 TextField("Identificador de la aplicación (client id)", text: Binding(get: { model.settings.traktClientID }, set: { v in model.update { $0.traktClientID = v.trimmingCharacters(in: .whitespaces) } }))
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 SecureField("Secreto (si tu aplicación lo tiene)", text: $secret).textInputAutocapitalization(.never)
-                    .onChange(of: secret) { _, v in model.update { $0.traktClientSecret = v.trimmingCharacters(in: .whitespaces) } }
+                if !secret.isEmpty { Button("Guardar secreto") { model.setTraktSecret(secret); secret = "" } }
             case .unlinked:
                 Button("Conectar Trakt") { Task { await model.linkTrakt() } }
                 Text("Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.").font(DS.font(.xs)).foregroundStyle(DS.textFaint)

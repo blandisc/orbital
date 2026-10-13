@@ -74,7 +74,7 @@ public enum Addons {
             rules[name] = AddonRule(types: ownTypes.isEmpty ? types : ownTypes, idPrefixes: ownPrefixes.isEmpty ? prefixes : ownPrefixes)
         }
         guard !rules.isEmpty else { return nil }
-        let name = manifest["name"]?.string.flatMap { $0.trimmingCharacters(in: .whitespaces).isEmpty ? nil : $0 } ?? "Addon"
+        let name = manifest["name"]?.string.flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 } ?? "Addon"
         let catalogs = (manifest["catalogs"]?.array ?? []).filter { $0.object != nil }
         return Addon(name: name, url: url, rules: rules, catalogs: catalogs)
     }

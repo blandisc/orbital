@@ -33,6 +33,7 @@ public final class SessionModel: ObservableModel {
 
     public func signOut() async {
         services.secrets.set(SecretKey.stremioAuth, nil)
+        services.clearAccountData()
         await services.resetAccountCaches()
         addons = []
         state = .signedOut

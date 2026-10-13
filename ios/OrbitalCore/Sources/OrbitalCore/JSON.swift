@@ -36,7 +36,14 @@ public enum JSON: Sendable, Equatable, Codable {
         }
     }
 
-    public static func parse(_ data: Data) -> JSON? { try? JSONDecoder().decode(JSON.self, from: data) }
+    public static func parse(_ data: Data) -> JSON? {
+        if let json = try? JSONDecoder().decode(JSON.self, from: data) { return json }
+        // Un solo número fuera de rango («1e999») no debe tumbar toda la respuesta: se vuelve `null` y se lee lo demás.
+        guard let text = String(data: data, encoding: .utf8),
+              let regex = try? NSRegularExpression(pattern: #"(?<![\w"\\])-?\d+(?:\.\d+)?[eE][+-]?\d{3,}"#) else { return nil }
+        let cleaned = regex.stringByReplacingMatches(in: text, range: NSRange(text.startIndex..., in: text), withTemplate: "null")
+        return cleaned == text ? nil : try? JSONDecoder().decode(JSON.self, from: Data(cleaned.utf8))
+    }
 
     public func serialized(sortedKeys: Bool = false) -> Data {
         let encoder = JSONEncoder()

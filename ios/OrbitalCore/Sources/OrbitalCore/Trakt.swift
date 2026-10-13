@@ -78,7 +78,7 @@ public enum TraktParsing {
 
     public static func entry(_ raw: JSON?, kind: String) -> TraktEntry? {
         guard let raw, raw.object != nil, let ids = raw["ids"], let imdb = ids["imdb"]?.string, imdb.hasPrefix("tt"),
-              let title = raw["title"]?.string?.trimmingCharacters(in: .whitespaces), !title.isEmpty else { return nil }
+              let title = raw["title"]?.string?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
         func positive(_ j: JSON?) -> Int? { j?.intValue.flatMap { $0 > 0 ? $0 : nil } }
         func isInt(_ j: JSON?) -> Int? { if case .int(let i)? = j { return i }; return nil }
         return TraktEntry(kind: kind, imdb: imdb, title: title, year: isInt(raw["year"]), runtime: positive(raw["runtime"]),

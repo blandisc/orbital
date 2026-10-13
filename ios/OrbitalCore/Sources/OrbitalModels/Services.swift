@@ -11,6 +11,7 @@ public final class Services: ObservableModel {
     public let settings: SettingsStore
     public let titlePrefs: TitlePreferences
     public let pending: PendingStore
+    private let flushGate = FlushGate()
     public let stremio: StremioAPI
 
     public private(set) var registry: AddonRegistry { didSet { changed() } }
@@ -51,7 +52,7 @@ public final class Services: ObservableModel {
         let trakt = Services.makeTrakt(http: http, secrets: secrets, settings: settings.value, clock: clock)
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, region: { settings.value.region }, kv: kv, clock: clock)
-        self.watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock)
+        self.watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate)
         self.downloads = Downloads(transport: downloadTransport, secrets: secrets, root: downloadsRoot, saved: savedDownloads, freeSpace: freeSpace,
                                    refresh: Services.refresher(finder: finder, settings: settings, titlePrefs: titlePrefs),
                                    subtitles: Services.subtitleFetcher(http: http, finder: finder, settings: settings, titlePrefs: titlePrefs),
@@ -62,7 +63,7 @@ public final class Services: ObservableModel {
     static func makeTrakt(http: HTTPClient, secrets: SecretsStore, settings: AppSettings, clock: @escaping @Sendable () -> Date) -> Trakt? {
         let id = settings.traktClientID.isEmpty ? (secrets.get(SecretKey.traktClientID) ?? "") : settings.traktClientID
         guard !id.isEmpty else { return nil }
-        let secret = settings.traktClientSecret.isEmpty ? (secrets.get(SecretKey.traktClientSecret) ?? "") : settings.traktClientSecret
+        let secret = secrets.get(SecretKey.traktClientSecret) ?? ""     // el secreto nunca va en los ajustes normales
         return Trakt(http: http, secrets: secrets, clientID: id, clientSecret: secret, clock: clock)
     }
 
@@ -109,8 +110,14 @@ public final class Services: ObservableModel {
         localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock)
         trakt = Services.makeTrakt(http: http, secrets: secrets, settings: s, clock: clock)
         forYou = ForYou(trakt: trakt, tmdb: tmdb, region: { settings.value.region }, kv: kv, clock: clock)
-        watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock)
+        watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate)
         generation += 1
+    }
+
+    /// Al cerrar sesión: lo pendiente y lo guardado de la cuenta anterior no se sube ni se muestra con la siguiente.
+    public func clearAccountData() {
+        pending.save(PendingWork())
+        kv.set("home-cache", data: nil)
     }
 
     /// Los complementos o la cuenta cambiaron: se vuelve a preguntar todo.

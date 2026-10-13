@@ -35,7 +35,8 @@ public struct NetworkError: Error, Sendable, CustomStringConvertible {
 
 public struct URLSessionHTTPClient: HTTPClient {
     private let session: URLSession
-    public init(session: URLSession = .shared) { self.session = session }
+    /// Sesión efímera: no guarda en disco las respuestas (las direcciones de los complementos llevan tu clave de Real-Debrid).
+    public init(session: URLSession = URLSession(configuration: .ephemeral)) { self.session = session }
 
     public func send(_ request: HTTPRequest) async throws -> HTTPResponse {
         var urlRequest = URLRequest(url: request.url, timeoutInterval: request.timeout)
@@ -63,9 +64,17 @@ extension HTTPClient {
 
 /// Para los registros: solo el servidor. La ruta de un complemento lleva tus claves (Real-Debrid en Torrentio).
 public func redact(_ url: String) -> String {
-    let rest = url.components(separatedBy: "://").last ?? url
-    let host = rest.split(separator: "/", maxSplits: 1, omittingEmptySubsequences: false).first.map(String.init) ?? ""
-    return host.isEmpty ? "?" : host
+    var rest = url
+    if let scheme = rest.range(of: "://") { rest = String(rest[scheme.upperBound...]) }       // solo después del PRIMER «://»
+    rest = String(rest.prefix { !"/?#".contains($0) })                                          // sin ruta, consulta ni fragmento
+    if let at = rest.lastIndex(of: "@") { rest = String(rest[rest.index(after: at)...]) }       // sin usuario:clave@
+    return rest.isEmpty ? "?" : rest
+}
+
+/// Quita las direcciones (con sus claves) de un mensaje de error antes de mostrarlo.
+public func stripURLs(_ message: String) -> String {
+    guard let regex = try? NSRegularExpression(pattern: #"[A-Za-z][A-Za-z0-9+.\-]*://\S+"#) else { return message }
+    return regex.stringByReplacingMatches(in: message, range: NSRange(message.startIndex..., in: message), withTemplate: "(enlace oculto)")
 }
 
 /// `encodeURIComponent` de JavaScript: lo que acepta un segmento de ruta sin escapar.

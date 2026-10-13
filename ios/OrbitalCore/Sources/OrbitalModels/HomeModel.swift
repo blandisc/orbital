@@ -47,10 +47,8 @@ public final class HomeModel: ObservableModel {
         isLoading = true
         defer { isLoading = false }
         do {
-            async let library = services.watch.library()
-            async let pending = services.watch.flushPending()
-            let all = try await library
-            _ = await pending
+            _ = await services.watch.flushPending()          // primero se sube lo pendiente; así la lista ya lo trae
+            let all = try await services.watch.library()
             let continueItems = all.filter { w in
                 guard w.inContinue else { return false }
                 let nextUp = w.type == "series" && w.timeOffset <= 1 && w.duration == 0 && w.episode.episode != nil

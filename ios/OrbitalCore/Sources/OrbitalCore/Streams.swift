@@ -81,7 +81,7 @@ public enum Streams {
 
     static let sizePattern = r(#"💾\s*([\d.,]+)\s*(TB|GB|MB|KB)"#)
     static let seedersPattern = r(#"👤\s*(\d+)"#, caseInsensitive: false)
-    static let sitePattern = r("\u{2699}\u{FE0F}?\\s*([^\\n]+)", caseInsensitive: false)
+    static let sitePattern = r("\u{2699}\u{FE0F}?\\s*([^\\r\\n]+)", caseInsensitive: false)
     static let resolutions: [(String, NSRegularExpression)] = [
         ("4K", r(#"\b(2160p|4k|uhd)\b"#)), ("1080p", r(#"\b1080p\b"#)), ("720p", r(#"\b720p\b"#)), ("480p", r(#"\b(480p|sd)\b"#)),
     ]
@@ -146,13 +146,13 @@ public enum Streams {
         let name = stream["name"].map(text) ?? ""
         let description = (stream["title"]?.nonEmptyString ?? stream["description"]?.nonEmptyString) ?? ""
         let blob = "\(name)\n\(description)"
-        let first = (description.components(separatedBy: "\n").first ?? "").trimmingCharacters(in: .whitespaces)
+        let first = (description.components(separatedBy: .newlines).first ?? "").trimmingCharacters(in: .whitespacesAndNewlines)   // «\r\n» es un solo carácter
         let hints = stream["behaviorHints"]
         let filename = hints?["filename"]?.string ?? ""
         let firstWord = addon.split(whereSeparator: \.isWhitespace).first.map(String.init) ?? ""
         var src = Source(index: index, addon: firstWord, stream: stream, transportURL: transportURL)
         src.binge = hints?["bingeGroup"]?.nonEmptyString
-        src.cached = name.contains("[RD+]") || (name.components(separatedBy: "\n").first ?? "").contains("+]")
+        src.cached = name.contains("[RD+]") || (name.components(separatedBy: .newlines).first ?? "").contains("+]")
         src.debrid = matches(debridPattern, name)
         // La resolución que declara el complemento manda; el nombre del archivo solo si no dice nada
         // («1080p.UHD.BluRay» no es 4K: «UHD» ahí es el origen del disco).
@@ -163,10 +163,11 @@ public enum Streams {
         src.hdr = hdrPatterns.filter { matches($0.1, blob) }.map(\.0)
         if src.hdr.contains("HDR10+") { src.hdr.removeAll { $0 == "HDR" } }
         if let amount = capture(sizePattern, description), let unit = capture(sizePattern, description, 2) {
-            src.size = Int(sizeNumber(amount) * units[unit.uppercased(), default: 1])
+            let bytes = sizeNumber(amount) * units[unit.uppercased(), default: 1]
+            src.size = bytes.isFinite && bytes >= 0 && bytes < 9e15 ? Int(bytes) : 0   // un tamaño absurdo se ignora (no tumba la app)
         }
         if let n = capture(seedersPattern, description) { src.seeders = Int(n) ?? 0 }
-        if let site = capture(sitePattern, description) { src.site = site.trimmingCharacters(in: .whitespaces) }
+        if let site = capture(sitePattern, description) { src.site = site.trimmingCharacters(in: .whitespacesAndNewlines) }
         var langs = flagLanguages.filter { description.contains($0.0) }.map(\.1)
         for (pattern, lang) in wordLanguages where matches(pattern, first) || matches(pattern, filename) { langs.append(lang) }
         if matches(dualPattern, blob) && !langs.contains("en") { langs.append("en") }  // «dual»: el original en inglés + el doblaje
