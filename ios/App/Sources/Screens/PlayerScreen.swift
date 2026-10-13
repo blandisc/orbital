@@ -67,8 +67,8 @@ struct PlayerScreen: View {
             Button("Seguir") { Task { await model.confirmStillWatching() } }
             Button("Salir", role: .cancel) { Task { await close() } }
         } message: { Text("Llevas tres episodios seguidos.") }
-        .sheet(isPresented: $panel) { TrackPanel(model: model, openSources: { panel = false; Task { try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 8); sources = true } }, openInInfuse: { Task { await openInInfuse() } }).presentationDetents([.medium, .large]).presentationBackground(DS.sheetTop) }
-        .sheet(isPresented: $sources) { PlayerSources(model: model) { sources = false }.presentationDetents([.large]).presentationBackground(DS.sheetTop) }
+        .sheet(isPresented: $panel) { TrackPanel(model: model, openSources: { panel = false; Task { try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 8); sources = true } }, openInInfuse: { Task { await openInInfuse() } }).presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
+        .sheet(isPresented: $sources) { PlayerSources(model: model) { sources = false }.presentationDetents([.large]).presentationDragIndicator(.visible) }
         .onDisappear { UIApplication.shared.isIdleTimerDisabled = false; unlockPortrait() }
     }
 
@@ -100,7 +100,7 @@ struct PlayerScreen: View {
         case .failed(let message):
             VStack(spacing: DS.Space.s4) {
                 DSNotice(text: LocalizedStringKey(message), tone: .error)
-                HStack { Button("Cerrar") { Task { await close() } }.buttonStyle(.dsSecondary); Button("Abrir en Infuse") { Task { await openInInfuse() } }.buttonStyle(.dsPrimary) }
+                HStack { Button("Cerrar") { Task { await close() } }.buttonStyle(.glass); Button("Abrir en Infuse") { Task { await openInInfuse() } }.buttonStyle(.glassProminent) }
             }.padding(DS.Space.s6)
         default: if model.snapshot.state == .buffering { ProgressView().tint(DS.text) }
         }
@@ -123,7 +123,7 @@ struct PlayerScreen: View {
                         if !request.episodeLabel.isEmpty { Text(request.episodeLabel).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1) }
                     }
                     Spacer()
-                    if model.skipIntroTo != nil { Button("Saltar intro") { Task { await model.skipIntro() } }.buttonStyle(.dsSecondary) }
+                    if model.skipIntroTo != nil { Button("Saltar intro") { Task { await model.skipIntro() } }.buttonStyle(.glass) }
                     DSIconButton(symbol: "text.bubble", label: "Audio y subtítulos") { panel = true }
                 }
                 Spacer()
@@ -212,12 +212,12 @@ struct UpNextCard: View {
                 Text("\(card.label) · \(card.title)").font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(2)
                 if card.secondsLeft > 0 { Text("Empieza en \(card.secondsLeft) s").font(DS.font(.xs)).foregroundStyle(DS.textMuted) }
                 HStack(spacing: DS.Space.s2) {
-                    Button("Ver ahora", action: watchNow).buttonStyle(.dsPrimary)
-                    Button("Cancelar", action: cancel).buttonStyle(.dsSecondary)
+                    Button("Ver ahora", action: watchNow).buttonStyle(.glassProminent)
+                    Button("Cancelar", action: cancel).buttonStyle(.glass)
                 }
             }
             .padding(DS.Space.s4).frame(maxWidth: DS.Size.cardMax, alignment: .leading)
-            .background(DS.sheetTop, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
             .padding(DS.Space.s6)
         } }
     }
@@ -261,7 +261,6 @@ struct TrackPanel: View {
             }
             .listRowBackground(DS.fill)
         }
-        .scrollContentBackground(.hidden).background(DS.sheetTop)
             }
 
     private func row(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {

@@ -10,6 +10,26 @@ Uso personal: no va a la App Store (la regla 5.2.3 lo impide); se instala con tu
 - Español e inglés (interfaz y fichas).
 - Solo fuentes con enlace http(s) (Real-Debrid): las de torrent sin Real-Debrid (`infoHash`) no se ofrecen.
 
+## Componentes nativos y Human Interface Guidelines
+
+La app usa los controles de Apple y no inventa los suyos (se compila con **Xcode 26 / iOS 26**, así que el aspecto *Liquid Glass* llega solo):
+
+| Qué | Cómo |
+|---|---|
+| Barra de pestañas de abajo | `TabView` con `Tab` (vidrio nativo; se encoge al deslizar con `.tabBarMinimizeBehavior`) |
+| Navegación, títulos grandes, buscar | `NavigationStack`, `.navigationTitle`, `.searchable` |
+| Selectores (Mosaico · Listas, Ver · Descargar, Series · Películas) | `Picker` con `.segmented` |
+| Botones | `.glassProminent`, `.glass`, `.bordered(Prominent)` con `.buttonBorderShape` y `.controlSize` |
+| Hojas (fuentes, audio y subtítulos) | `.sheet` con `presentationDetents` y vidrio por omisión |
+| Ajustes, descargas | `Form` y `List` con `swipeActions`, `Toggle`, `Picker` |
+| Menús, avisos | `contextMenu`, `confirmationDialog`, `alert` |
+| Texto | estilos de texto del sistema (Dynamic Type), SF Symbols, `accessibilityLabel` en cada botón de ícono |
+| Respuesta táctil | `sensoryFeedback` al cambiar un selector o la watchlist |
+
+Una prueba (`DesignTests`) impide definir estilos de botón o de selector propios y poner fondos de hoja propios.
+**Excepción:** la app es siempre oscura (`.preferredColorScheme(.dark)`), como las apps de video (Infuse, Netflix): la paleta de Orbital es de grafito.
+Pendiente de revisar en un iPhone con iOS 26: el reproductor (controles sobre el video) y el mosaico, que son diseño propio por necesidad.
+
 ## Estructura
 
 ```
@@ -42,7 +62,7 @@ Las pruebas de Swift leen `tests/fixtures/` (los mismos datos de ejemplo que usa
 
 1. `brew install xcodegen`, luego `cd ios/App && xcodegen` y abre `Orbital.xcodeproj`.
 2. En `project.yml` pon tu **equipo** (`DEVELOPMENT_TEAM`) y tu **identificador** (`PRODUCT_BUNDLE_IDENTIFIER`).
-3. Ejecuta en tu iPhone (iOS 18+). Con cuenta de desarrollador de pago el perfil dura un año.
+3. Ejecuta en tu iPhone (iOS 26+, Xcode 26). Con cuenta de desarrollador de pago el perfil dura un año.
 4. Al abrir: entra con tu cuenta de **Stremio**. En Ajustes agrega (opcional) la clave de **TMDB** (fichas en español y
    plataformas) y el *client id* de tu aplicación de **Trakt**.
 

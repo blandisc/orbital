@@ -9,7 +9,7 @@ name: Orbital
 options:
   bundleIdPrefix: com.example.orbital
   deploymentTarget:
-    iOS: "18.0"
+    iOS: "26.0"
   createIntermediateGroups: true
   developmentLanguage: es
 

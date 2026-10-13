@@ -75,7 +75,7 @@ struct HomeView: View {
         return NavigationLink(value: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)) {
             HeroCard(title: item.title, detail: detail, background: item.background ?? item.poster, badge: item.nextUp ? "Sigue" : "Seguir viendo", progress: item.progress) {
                 HStack(spacing: DS.Space.s2) {
-                    Button { Task { await env.play(item) } } label: { Label("Continuar", systemImage: "play.fill") }.buttonStyle(.dsPrimary)
+                    Button { Task { await env.play(item) } } label: { Label("Continuar", systemImage: "play.fill") }.buttonStyle(.glassProminent)
                     if item.leftMinutes > 0 { Text(timeLeftText(minutes: item.leftMinutes)).font(DS.font(.sm)).foregroundStyle(DS.textMuted) }
                 }
             }

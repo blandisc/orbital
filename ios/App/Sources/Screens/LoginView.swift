@@ -36,7 +36,7 @@ struct LoginView: View {
                 Button(action: signIn) {
                     HStack { if observer.model.state == .signingIn { ProgressView() }; Text("Entrar") }.frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.dsPrimary).disabled(observer.model.state == .signingIn)
+                .buttonStyle(.glassProminent).controlSize(.large).disabled(observer.model.state == .signingIn)
                 Text("Tu contraseña no se guarda: solo la clave de sesión, en el Keychain de tu iPhone.")
                     .font(DS.font(.xs)).foregroundStyle(DS.textFaint)
             }

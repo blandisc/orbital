@@ -17,7 +17,6 @@ enum DS {
     static let backdropDeep = Palette.color("ink-1000")
     static let surface = Palette.color("ink-900")
     static let surfaceRaised = Palette.color("ink-800")
-    static let sheetTop = Palette.color("ink-850")
     static let ink500 = Palette.color("ink-500")
     static let text = Palette.color("paper")
     static let textMuted = Palette.color("ink-300")

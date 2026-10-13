@@ -152,37 +152,10 @@ struct HeroCard<Actions: View>: View {
     }
 }
 
-/// Botones: principal (claro) y secundario (relleno tenue). En una fila no se parten ni se cortan.
-struct DSButtonStyle: ButtonStyle {
-    enum Kind { case primary, secondary, danger }
-    var kind: Kind = .primary
-    @Environment(\.isEnabled) private var enabled
+// Botones: los nativos de iOS 26 (Liquid Glass). Principal: `.buttonStyle(.glassProminent)`; secundario: `.buttonStyle(.glass)`;
+// sobre fondos lisos, `.borderedProminent` / `.bordered`. No hay estilos de botón propios (`DesignTests` lo vigila).
 
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(DS.font(.md, weight: .semibold)).lineLimit(1).minimumScaleFactor(DesignTokens.Opacity.shrink)
-            .foregroundStyle(kind == .primary ? DS.onPrimary : kind == .danger ? DS.danger : DS.text)
-            .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s3)
-            .frame(minHeight: DS.Size.touchTarget)
-            .background(background(configuration.isPressed), in: RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .opacity(enabled ? 1 : DesignTokens.Opacity.disabled)
-    }
-
-    private func background(_ pressed: Bool) -> Color {
-        switch kind {
-        case .primary: pressed ? DS.primary.opacity(DesignTokens.Opacity.pressed) : DS.primary
-        case .secondary, .danger: pressed ? DS.fillStrong : DS.fill
-        }
-    }
-}
-
-extension ButtonStyle where Self == DSButtonStyle {
-    static var dsPrimary: DSButtonStyle { DSButtonStyle(kind: .primary) }
-    static var dsSecondary: DSButtonStyle { DSButtonStyle(kind: .secondary) }
-    static var dsDanger: DSButtonStyle { DSButtonStyle(kind: .danger) }
-}
-
-/// Un botón redondo con un ícono (más, descargar, cerrar).
+/// Un botón redondo con un ícono (más, descargar, cerrar): el botón nativo con vidrio de iOS 26, ya con su tamaño táctil de 44 pt.
 struct DSIconButton: View {
     let symbol: String
     let label: LocalizedStringKey
@@ -190,12 +163,11 @@ struct DSIconButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Image(systemName: symbol).font(DS.font(.md, weight: .semibold))
-                .foregroundStyle(prominent ? DS.onPrimary : DS.text)
-                .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
-                .background(prominent ? DS.primary : DS.fill, in: Circle())
+        Group {
+            if prominent { Button(action: action) { Image(systemName: symbol) }.buttonStyle(.glassProminent) }
+            else { Button(action: action) { Image(systemName: symbol) }.buttonStyle(.glass) }
         }
+        .buttonBorderShape(.circle).controlSize(.large)
         .accessibilityLabel(Text(label))
     }
 }
@@ -218,30 +190,21 @@ struct DSNotice: View {
     }
 }
 
-/// Selector en píldoras (Mosaico | Listas, Ver | Descargar, Series | Películas).
+/// Selector segmentado: el control nativo de iOS (`Picker` con `.segmented`), que en iOS 26 ya es de vidrio.
 struct DSSegmented<Value: Hashable>: View {
     let options: [(Value, LocalizedStringKey)]
     @Binding var selection: Value
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: DS.Space.s1) {
-            ForEach(options.indices, id: \.self) { index in
-                let option = options[index]
-                Button { withAnimation(DS.Motion.base(reduceMotion)) { selection = option.0 } } label: {
-                    Text(option.1).font(DS.font(.sm, weight: .semibold)).lineLimit(1)
-                        .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
-                        .foregroundStyle(selection == option.0 ? DS.onPrimary : DS.text)
-                        .background(selection == option.0 ? DS.primary : Color.clear, in: Capsule())
-                }
-                .accessibilityAddTraits(selection == option.0 ? .isSelected : [])
-            }
-        }
-        .padding(DS.Space.s1).background(DS.fill, in: Capsule())
+        Picker(selection: $selection) {
+            ForEach(options.indices, id: \.self) { Text(options[$0].1).tag(options[$0].0) }
+        } label: { EmptyView() }
+        .pickerStyle(.segmented)
+        .sensoryFeedback(.selection, trigger: selection)
     }
 }
 
-/// Chips de fuente deslizables (Todo · Trakt · Netflix…).
+/// Filtros deslizables (Todo · Trakt · Netflix…): botones nativos en cápsula; el elegido va resaltado.
 struct DSChipRow<Item: Hashable & Identifiable>: View {
     let items: [Item]
     let label: (Item) -> Text
@@ -251,17 +214,17 @@ struct DSChipRow<Item: Hashable & Identifiable>: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Space.s2) {
                 ForEach(items) { item in
-                    Button { selection = item } label: {
-                        label(item).font(DS.font(.sm, weight: .semibold)).lineLimit(1)
-                            .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
-                            .foregroundStyle(selection == item ? DS.onPrimary : DS.text)
-                            .background(selection == item ? DS.primary : DS.fill, in: Capsule())
+                    Group {
+                        if selection == item { Button { selection = item } label: { label(item).lineLimit(1) }.buttonStyle(.borderedProminent) }
+                        else { Button { selection = item } label: { label(item).lineLimit(1) }.buttonStyle(.bordered) }
                     }
+                    .buttonBorderShape(.capsule).controlSize(.small)
                     .accessibilityAddTraits(selection == item ? .isSelected : [])
                 }
             }
             .padding(.horizontal, DS.Space.gutter)
         }
+        .sensoryFeedback(.selection, trigger: selection)
     }
 }
 

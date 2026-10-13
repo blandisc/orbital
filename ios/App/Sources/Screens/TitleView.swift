@@ -41,7 +41,7 @@ struct TitleView: View {
                 sourcesFor = nil
                 handle(source: source, videoID: target.videoID, purpose: target.purpose, model: model)
             }
-            .presentationDetents([.large]).presentationDragIndicator(.visible).presentationBackground(DS.sheetTop)
+            .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
         .confirmationDialog("Descargar", isPresented: $downloadMenu, titleVisibility: .visible) {
             if model.kind == "series" {
@@ -76,7 +76,7 @@ struct TitleView: View {
             Button { start(model, videoID: nil) } label: {
                 Label { primaryLabel(label, model) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
             }
-            .buttonStyle(.dsPrimary).disabled(model.continueVideoID == nil)
+            .buttonStyle(.glassProminent).controlSize(.large).disabled(model.continueVideoID == nil)
             DSIconButton(symbol: model.inLibrary ? "checkmark" : "plus", label: model.inLibrary ? "Quitar de Mi lista" : "Añadir a Mi lista") { Task { await model.toggleLibrary() } }
             DSIconButton(symbol: "arrow.down.circle", label: "Descargar") { downloadMenu = true }
             DSIconButton(symbol: "list.bullet", label: "Elegir fuente") { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) } }
@@ -94,6 +94,7 @@ struct TitleView: View {
         }
         .font(DS.font(.md)).foregroundStyle(DS.text)
         .padding(DS.Space.s3).background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .sensoryFeedback(.success, trigger: model.inWatchlist)
     }
 
     @ViewBuilder private func episodes(_ model: TitleModel) -> some View {

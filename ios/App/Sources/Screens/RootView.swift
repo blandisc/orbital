@@ -45,14 +45,16 @@ struct RootView: View {
 
 extension PlayRequest: @retroactive Identifiable { public var id: String { "\(metaID)|\(videoID)" } }
 
+/// La barra de pestañas nativa: en iOS 26 es de vidrio (Liquid Glass) y se encoge al deslizar.
 struct MainTabs: View {
     var body: some View {
         TabView {
-            NavigationStack { HomeView() }.tabItem { Label("Inicio", systemImage: "house") }
-            NavigationStack { ParaTiView() }.tabItem { Label("Para ti", systemImage: "sparkles") }
-            NavigationStack { BrowseView() }.tabItem { Label("Ver", systemImage: "play.rectangle") }
-            NavigationStack { DownloadsView() }.tabItem { Label("Descargas", systemImage: "arrow.down.circle") }
+            Tab("Inicio", systemImage: "house") { NavigationStack { HomeView() } }
+            Tab("Para ti", systemImage: "sparkles") { NavigationStack { ParaTiView() } }
+            Tab("Ver", systemImage: "play.rectangle") { NavigationStack { BrowseView() } }
+            Tab("Descargas", systemImage: "arrow.down.circle") { NavigationStack { DownloadsView() } }
         }
+        .tabBarMinimizeBehavior(.onScrollDown)
     }
 }
 
