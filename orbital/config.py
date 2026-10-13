@@ -87,8 +87,6 @@ class StremioConfig:
     subtitles: str = "en"  # "" = sin subtítulos
     # "orbital": reproductor propio (mpv) manejado con el mando; "stremio": el de Stremio.
     player: str = "orbital"
-    # Complementos además de los de tu cuenta (URL del manifiesto). Sin cuenta, son los únicos.
-    addons: list[str] = field(default_factory=list)
 
 
 @dataclass

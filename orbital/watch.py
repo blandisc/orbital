@@ -19,7 +19,8 @@ from .config import Config
 from .credentials import Credentials
 from .events import EventBus
 from .launcher import Launcher
-from .library import addons, cinemeta, streams, stremio_api
+from .library import addons, cinemeta, localize, streams, stremio_api
+from .library import tmdb as tmdb_api
 from .library.models import LibraryItem
 from .sessions import Sessions
 from .state import State
@@ -28,6 +29,7 @@ from .store import ItemStore
 log = logging.getLogger(__name__)
 
 STREMIO_KEY = "stremio_auth_key"
+ADDONS_KEY = "stremio_addons"  # tus complementos: cifrados como la clave de sesión (sus URLs llevan claves)
 STREMIO_STALE_SECONDS = 180
 
 
@@ -160,10 +162,14 @@ class Watch:
         self._stremio_again = False
         self._stremio_generation = 0
         self._stremio_publish = threading.Lock()
-        # Tus complementos (los de la cuenta y los de config.yaml): fuentes, subtítulos y fichas.
+        # Tus complementos (los de la cuenta y los tuyos): fuentes, subtítulos y fichas.
         self.addons = addons.AddonRegistry(self.stremio_client, auth=lambda: self.credentials.get(STREMIO_KEY),
-                                           local=config.stremio.addons)
+                                           own=self.own_addons)
         self.cinemeta.registry = self.addons
+        # Las fichas en el idioma de Orbital (TMDB traduce lo que Cinemeta da en inglés).
+        self.localizer = localize.Localizer(tmdb_api.Tmdb(config.para_ti.tmdb_key, timeout=5),
+                                            lambda: self.setting("language", config.ui.language))
+        self.cinemeta.localize = self.localizer.meta
         self.streams = streams.StreamFinder(self.addons)
         self.player = player.OrbitalPlayer(
             on_finished=self._player_finished, idle_seconds=config.sessions.video_idle_minutes * 60,
@@ -178,8 +184,34 @@ class Watch:
 
     @property
     def has_addons(self) -> bool:
-        """Hay a quién pedirle fuentes: tu cuenta de Stremio o complementos en config.yaml."""
+        """Hay a quién pedirle fuentes: tu cuenta de Stremio o complementos tuyos."""
         return self.stremio_linked or bool(self.addons.local)
+
+    def own_addons(self) -> list[str]:
+        return addons.clean_urls(self.credentials.get(ADDONS_KEY))
+
+    def add_addon(self, url: str) -> addons.Addon:
+        """Agrega un complemento tuyo (comprueba antes que responde y que da algo que Orbital usa)."""
+        clean = addons.manifest_url(url)
+        if not clean:
+            raise ValueError("Eso no es la dirección de un complemento (https://…/manifest.json o stremio://…)")
+        try:
+            found = addons.parse_manifest(addons.fetch_json(clean), clean)
+        except addons.NET_ERRORS as exc:
+            raise ValueError(f"El complemento no respondió ({addons.redact(clean)}): {exc}") from exc
+        if not found:
+            raise ValueError("Ese complemento no da fuentes, subtítulos, fichas ni catálogos")
+        self.credentials.set(ADDONS_KEY, [*self.own_addons(), clean])
+        return found
+
+    def remove_addon(self, number: int) -> str:
+        """Quita el complemento número `number` (1 = el primero de `orbital stremio addons`)."""
+        own = self.own_addons()
+        if not 1 <= number <= len(own):
+            raise ValueError(f"No hay complemento {number}: tienes {len(own)}")
+        gone = own.pop(number - 1)
+        self.credentials.set(ADDONS_KEY, own or None)
+        return addons.redact(gone)
 
     def _load_stremio_cache(self) -> list[LibraryItem]:
         if not self._stremio_cache or not self.stremio_linked:
@@ -309,8 +341,8 @@ class Watch:
             threading.Thread(target=self.refresh_cinemeta, daemon=True).start()
             return True
         try:
-            items = [*cinemeta.catalog_items("movie", self.cinemeta.catalog("movie")),
-                     *cinemeta.catalog_items("series", self.cinemeta.catalog("series"))]
+            items = [*cinemeta.catalog_items("movie", self.localizer.catalog("movie", self.cinemeta.catalog("movie"))),
+                     *cinemeta.catalog_items("series", self.localizer.catalog("series", self.cinemeta.catalog("series")))]
         except cinemeta.CinemetaError as exc:
             log.warning("Populares de Stremio: %s", exc)
             return False

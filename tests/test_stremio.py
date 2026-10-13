@@ -363,3 +363,16 @@ def test_continue_is_ready_at_startup_from_the_last_download(tmp_path, monkeypat
     assert [i.title for i in again.grouped_items("continue")] == ["Game of Thrones", "Interstellar", "Anime temporal"]
     again.watch.unlink_stremio()
     assert not (tmp_path / "orbital" / "cache" / "stremio-library.json").exists()
+
+
+def test_own_addons_are_saved_encrypted_and_never_shown_whole(library, monkeypatch):
+    from orbital.library import addons as addons_mod
+
+    url = "https://torrentio.strem.fun/realdebrid=SECRETO/manifest.json"
+    monkeypatch.setattr(addons_mod, "fetch_json", lambda u, timeout=0: {"name": "Torrentio RD", "resources": ["stream"]})
+    assert library.watch.add_addon("stremio://torrentio.strem.fun/realdebrid=SECRETO/manifest.json").name == "Torrentio RD"
+    assert library.credentials.get("stremio_addons") == [url]  # en secrets.json (cifrado en Windows), no en config.yaml
+    assert library.watch.has_addons and [a.name for a in library.watch.addons.addons()] == ["Torrentio RD"]
+    with pytest.raises(ValueError):
+        library.watch.add_addon("C:/addon")
+    assert library.watch.remove_addon(1) == "torrentio.strem.fun" and not library.watch.has_addons

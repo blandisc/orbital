@@ -29,9 +29,9 @@ def test_manifest_url_accepts_what_you_would_paste():
 
 def test_without_account_only_your_own_addons(monkeypatch):
     monkeypatch.setattr(addons, "fetch_json", lambda url, timeout=0: {"name": "Mío", "resources": ["stream"]})
-    registry = AddonRegistry(None, local=["https://mio.com"])
+    registry = AddonRegistry(None, own=lambda: ["https://mio.com"])
     assert [a.name for a in registry.addons()] == ["Mío"]
-    assert AddonRegistry(None, local="https://mio.com").local == ["https://mio.com/manifest.json"]  # sin guion en YAML
+    assert addons.clean_urls(["https://a", "https://a/manifest.json", 5, "ftp://x"]) == ["https://a/manifest.json"]
 
 
 def test_account_first_then_local_without_repeats(monkeypatch):
@@ -43,14 +43,16 @@ def test_account_first_then_local_without_repeats(monkeypatch):
             return {"addons": [{"transportUrl": "https://a/manifest.json", "manifest": {"name": "A", "resources": ["stream"]}}]}
 
     monkeypatch.setattr(addons, "fetch_json", lambda url, timeout=0: {"name": url, "resources": ["subtitles"]})
-    key = ["k"]
-    registry = AddonRegistry(Account(), auth=lambda: key[0], local=["https://a", "https://b"])
+    key, own = ["k"], ["https://a", "https://b"]
+    registry = AddonRegistry(Account(), auth=lambda: key[0], own=lambda: own)
     assert [a.url for a in registry.addons()] == ["https://a/manifest.json", "https://b/manifest.json"]
     registry.addons()
     assert Account.calls == 1  # en caché
     key[0] = None  # desconectaste la cuenta: se vuelve a armar, ya sin sus complementos
     assert [a.name for a in registry.addons()] == ["https://a/manifest.json", "https://b/manifest.json"]
     assert registry.serving("stream", "movie", "tt1") == []
+    own.pop()  # quitaste uno: no se espera a que caduque la lista
+    assert [a.name for a in registry.addons()] == ["https://a/manifest.json"]
 
 
 def test_account_down_still_uses_local_but_alone_raises(monkeypatch):
@@ -61,7 +63,7 @@ def test_account_down_still_uses_local_but_alone_raises(monkeypatch):
             raise StremioUnreachable("sin internet")
 
     monkeypatch.setattr(addons, "fetch_json", lambda url, timeout=0: {"name": "Mío", "resources": ["stream"]})
-    assert [a.name for a in AddonRegistry(Down(), auth=lambda: "k", local=["https://mio"]).addons()] == ["Mío"]
+    assert [a.name for a in AddonRegistry(Down(), auth=lambda: "k", own=lambda: ["https://mio"]).addons()] == ["Mío"]
     try:
         AddonRegistry(Down(), auth=lambda: "k").addons()
     except StremioUnreachable:
@@ -80,32 +82,17 @@ def test_sources_only_asked_to_addons_that_know_the_id(monkeypatch):
     assert asked == ["Anime"]
 
 
-def test_meta_from_your_first_addon_then_cinemeta(monkeypatch):
-    spanish = parse_manifest({"name": "TMDB", "resources": ["meta"], "types": ["movie"], "idPrefixes": ["tt"]},
-                             "https://tmdb/manifest.json")
-    own = parse_manifest({"name": "Cinemeta", "resources": ["meta"]}, cinemeta.MANIFEST)
-
-    class Registry:
-        def __init__(self, found):
-            self.found = found
-
-        def known(self):
-            return self.found
-
-    asked = []
-
-    def get(self, path, base=None):
-        asked.append(base)
-        if base == "https://tmdb":
-            return {"meta": {"id": "tt1", "name": "Interestelar"}}
-        return {"meta": {"id": "tt1", "name": "Interstellar"}}
-
-    monkeypatch.setattr(cinemeta.Cinemeta, "_get", get)
-    client = cinemeta.Cinemeta(registry=Registry([spanish, own]))
-    assert client.meta("movie", "tt1")["name"] == "Interestelar"
-    assert client.meta_sources("series", "tt1") == [None]  # TMDB aquí solo sabe de películas
-    client.registry = Registry([own, spanish])  # en tu cuenta Cinemeta va primero: manda Cinemeta
-    assert client.meta("movie", "tt1")["name"] == "Interstellar"
+def test_imdb_metas_come_from_cinemeta_others_from_your_addons(monkeypatch):
+    """El orden de tu cuenta no cambia las fichas de IMDb (su idioma lo pone Orbital); el anime sí
+    va al complemento que lo conoce."""
+    spanish = parse_manifest({"name": "TMDB", "resources": ["meta"], "idPrefixes": ["tt"]}, "https://tmdb/manifest.json")
+    kitsu = parse_manifest({"name": "Kitsu", "resources": ["meta"], "idPrefixes": ["kitsu:"]}, "https://kitsu/manifest.json")
+    registry = type("R", (), {"known": lambda self: [spanish, kitsu]})()
+    monkeypatch.setattr(cinemeta.Cinemeta, "_get", lambda self, path, base=None: {"meta": {"id": "x", "name": base or "Cinemeta"}})
+    client = cinemeta.Cinemeta(registry=registry)
+    assert client.meta("movie", "tt1")["name"] == "Cinemeta"
+    assert client.meta_sources("movie", "tt1") == [None, "https://tmdb"]  # TMDB, solo si Cinemeta falla
+    assert client.meta("anime", "kitsu:1")["name"] == "https://kitsu"
 
 
 def test_meta_falls_back_when_your_addon_fails(monkeypatch):
@@ -119,3 +106,7 @@ def test_meta_falls_back_when_your_addon_fails(monkeypatch):
     monkeypatch.setattr(cinemeta.Cinemeta, "_get", get)
     client = cinemeta.Cinemeta(registry=type("R", (), {"known": lambda self: [other]})())
     assert client.meta("movie", "tt1")["name"] == "Interstellar"
+
+
+def test_log_lines_never_carry_addon_keys():
+    assert addons.redact("https://torrentio.strem.fun/realdebrid=SECRETO/manifest.json") == "torrentio.strem.fun"

@@ -8,8 +8,8 @@ Un complemento es un servidor HTTP que responde JSON en rutas fijas; su manifies
   GET {base}/stream/{tipo}/{video}.json        -> {"streams": [...]}
   GET {base}/subtitles/{tipo}/{video}.json     -> {"subtitles": [...]}
 
-Orbital junta los de tu cuenta de Stremio (en su orden, como Stremio) y los de config.yaml
-(`stremio.addons`), y a cada pregunta le contesta el complemento que la sabe responder: por recurso,
+Orbital junta los de tu cuenta de Stremio (en su orden, como Stremio) y los tuyos (`orbital stremio
+addon add <url>`: se guardan cifrados, porque su URL suele llevar claves), y a cada pregunta le contesta el complemento que la sabe responder: por recurso,
 tipo y prefijo de id (un id `kitsu:` no se le pregunta a quien solo sabe de IMDb).
 """
 
@@ -38,6 +38,13 @@ def fetch_json(url: str, timeout: float = REQUEST_TIMEOUT) -> dict:
     with urllib.request.urlopen(req, timeout=timeout) as res:
         data = read_json(res, timeout=timeout)
     return data if isinstance(data, dict) else {}
+
+
+def redact(url: str) -> str:
+    """Para los registros: solo el servidor. La ruta de un complemento configurado lleva tus claves
+    (Real-Debrid en Torrentio, p. ej.)."""
+    rest = url.split("://", 1)[-1]
+    return rest.split("/", 1)[0] or "?"
 
 
 def manifest_url(url: str) -> str | None:
@@ -112,26 +119,39 @@ def parse_manifest(manifest, url) -> Addon | None:
                  catalogs=catalogs)
 
 
+def clean_urls(value) -> list[str]:
+    """Las URLs de tus complementos, normalizadas y sin repetir (lo que no es una URL se ignora)."""
+    listed = [value] if isinstance(value, str) else value if isinstance(value, list) else []
+    return list(dict.fromkeys(u for u in (manifest_url(x) for x in listed if isinstance(x, str)) if u))
+
+
 class AddonRegistry:
-    """Tus complementos, en orden: primero los de tu cuenta de Stremio, luego los de config.yaml.
+    """Tus complementos, en orden: primero los de tu cuenta de Stremio, luego los tuyos.
 
     `account` es el cliente de api.strem.io y `auth` da la clave de sesión (None = sin cuenta: solo
-    los de config.yaml). La lista se recuerda unos minutos y se vuelve a pedir si cambia la cuenta."""
+    los tuyos); `own` da las URLs de los tuyos. La lista se recuerda unos minutos y se vuelve a armar
+    si cambia la cuenta o agregas o quitas uno."""
 
-    def __init__(self, account=None, auth: Callable[[], str | None] = lambda: None, local: Iterable[str] = (),
-                 timeout: float = REQUEST_TIMEOUT) -> None:
+    def __init__(self, account=None, auth: Callable[[], str | None] = lambda: None,
+                 own: Callable[[], Iterable[str]] = lambda: (), timeout: float = REQUEST_TIMEOUT) -> None:
         self.account = account
         self.auth = auth
-        listed = [local] if isinstance(local, str) else local  # «addons: https://…» sin guion en config.yaml
-        self.local = [u for u in (manifest_url(x) for x in listed if isinstance(x, str)) if u]
+        self.own = own
         self.timeout = timeout
-        self._cache: tuple[float, str | None, list[Addon]] = (0.0, None, [])
+        self._cache: tuple[float, tuple, list[Addon]] = (0.0, (), [])
         self._lock = threading.Lock()
         self._loading = threading.Lock()
 
+    @property
+    def local(self) -> list[str]:
+        return clean_urls(list(self.own()))
+
+    def _key(self) -> tuple:
+        return (self.auth(), tuple(self.local))
+
     def _fresh(self) -> list[Addon] | None:
         stamp, key, found = self._cache
-        return found if key == self.auth() and time.time() - stamp < CACHE_SECONDS else None
+        return found if key == self._key() and time.time() - stamp < CACHE_SECONDS else None
 
     def addons(self) -> list[Addon]:
         """Pide la lista si hace falta (bloquea). Sin cuenta que responda y sin complementos propios,
@@ -139,21 +159,21 @@ class AddonRegistry:
         with self._lock:
             if (hit := self._fresh()) is not None:
                 return hit
-            key = self.auth()
-            found, failed, error = self._from_account(key)
-            for url in self.local:
+            key = self._key()
+            found, failed, error = self._from_account(key[0])
+            for url in key[1]:
                 if any(a.url == url for a in found):
                     continue
                 try:
                     addon = parse_manifest(fetch_json(url, self.timeout), url)
                 except NET_ERRORS as exc:
-                    log.info("No pude leer el complemento %s: %s", url, exc)
+                    log.info("No pude leer el complemento de %s: %s", redact(url), exc)
                     failed = True
                     continue
                 if addon:
                     found.append(addon)
                 else:
-                    log.warning("Complemento sin nada que Orbital use: %s", url)
+                    log.warning("Complemento sin nada que Orbital use (%s)", redact(url))
             if error and not found:
                 raise error
             # Si algo no respondió (Wi-Fi al despertar), la lista se recuerda solo unos segundos.
@@ -190,7 +210,7 @@ class AddonRegistry:
                     self._loading.release()
 
             threading.Thread(target=load, daemon=True, name="addons").start()
-        return found if key == self.auth() else []
+        return found if key == self._key() else []
 
     def serving(self, resource: str, kind: str, item_id: str | None = None) -> list[Addon]:
         return [a for a in self.addons() if a.handles(resource, kind, item_id)]

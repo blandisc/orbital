@@ -11,6 +11,7 @@ server:
 
 ui:
   mode: browser        # browser = Edge en pantalla completa | window | none
+  language: es         # idioma de las fichas de películas y series (es, en…); en español necesita para_ti.tmdb_key
 
 steam:
   enabled: true        # la ruta se detecta sola
@@ -21,9 +22,8 @@ stremio:
   quality: 1080p       # 1080p o 4K (en una TV 4K)
   subtitles: en        # idioma de subtítulos ("" = sin subtítulos)
   player: orbital      # orbital = reproductor propio con el mando (mpv); stremio = el de Stremio
-  # Complementos además de los de tu cuenta de Stremio (la URL de su manifiesto o su enlace stremio://).
-  # Sin cuenta, son los únicos: Orbital les pide fuentes, subtítulos y fichas igual que Stremio.
-  addons: []
+  # ¿Complementos además de los de tu cuenta, o sin cuenta? No van aquí (su URL suele llevar claves):
+  #   orbital stremio addon add <url>   (se guardan cifrados; list y remove para verlos y quitarlos)
 
 # Que nada se quede abierto para siempre.
 sessions:
