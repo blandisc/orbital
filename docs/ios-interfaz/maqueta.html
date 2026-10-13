@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="es"><meta charset="utf-8">
+<title>Orbital para iPhone: maqueta</title>
+<style>
+:root{
+  --ink-1000:#070708;--ink-950:#0c0c0e;--ink-900:#131316;--ink-850:#18181c;--ink-800:#1e1e23;--ink-700:#2a2a30;--ink-500:#55555d;--ink-300:#a3a3ab;--ink-200:#cdcdd3;--paper:#f5f4f0;
+  --red:#f0574d;--amber:#f4c24d;--teal:#5fd6c6;--green:#5cbf6d;--blue:#4a8ae8;
+  --hair:rgba(255,255,255,.09);--fill:rgba(255,255,255,.1);--muted:var(--ink-300);--faint:rgba(255,255,255,.5);
+}
+*{box-sizing:border-box;margin:0}
+body{background:#2b2b31;font-family:-apple-system,"SF Pro Text","Segoe UI",system-ui,sans-serif;color:var(--paper);padding:28px;display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start;width:1760px}
+figure{display:flex;flex-direction:column;gap:10px}
+figcaption{font-size:15px;color:var(--ink-200);width:390px;line-height:1.35}
+figcaption b{color:var(--paper);display:block;font-size:17px;margin-bottom:2px}
+.phone{width:390px;height:844px;border-radius:46px;background:var(--ink-950);position:relative;overflow:hidden;border:7px solid #0a0a0b;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.phone.land{width:844px;height:390px}
+.tint{position:absolute;inset:0;background:linear-gradient(180deg,var(--tint,#2a3550) 0%,var(--ink-950) 62%)}
+.status{position:absolute;top:0;left:0;right:0;height:50px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 30px 6px;font-size:15px;font-weight:600;z-index:5}
+.scroll{position:absolute;top:50px;left:0;right:0;bottom:84px;overflow:hidden;padding:6px 18px}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:84px;background:color-mix(in oklab,var(--ink-1000) 82%,transparent);backdrop-filter:blur(18px);border-top:1px solid var(--hair);display:flex;justify-content:space-around;padding-top:9px;z-index:6}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--faint);width:64px}
+.tab i{font-style:normal;font-size:21px;line-height:24px}
+.tab.on{color:var(--paper)}
+.top{display:flex;justify-content:space-between;align-items:center;margin:2px 0 14px}
+.brand{font-size:23px;font-weight:700;letter-spacing:-.01em}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;background:var(--fill);padding:5px 11px;font-size:12.5px;color:var(--ink-200)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--teal)}.dot.off{background:var(--ink-500)}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--ink-700);display:grid;place-items:center;font-size:14px}
+h2{font-size:19px;font-weight:650;margin:20px 0 10px;display:flex;justify-content:space-between;align-items:baseline}
+h2 small{font-size:13px;font-weight:400;color:var(--muted)}
+.poster{border-radius:11px;background:linear-gradient(160deg,var(--c1,#3a4a6b),var(--c2,#14141a));position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:9px;font-size:13px;font-weight:650;line-height:1.15;box-shadow:0 8px 22px rgba(0,0,0,.35)}
+.row{display:flex;gap:11px}
+.row .poster{width:112px;height:168px;flex:none}
+.bar{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.2)}.bar b{display:block;height:100%;background:var(--paper)}
+.hero{height:310px;border-radius:20px;--c1:#6b4a3a;--c2:#17120f;position:relative;padding:0;align-items:stretch}
+.hero .in{margin-top:auto;padding:16px;width:100%;background:linear-gradient(0deg,rgba(7,7,8,.92),transparent)}
+.hero h1{font-size:27px;font-weight:700;letter-spacing:-.01em}
+.meta{font-size:13.5px;color:var(--ink-200);margin:3px 0 12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:13px;padding:12px 18px;font-weight:650;font-size:16px;background:var(--paper);color:var(--ink-1000)}
+.btn.sec{background:var(--fill);color:var(--paper)}
+.btns{display:flex;gap:9px}.btns .btn{flex:1}.btns .btn.sq{flex:none;width:48px;padding:12px 0}
+.chip{display:inline-block;border-radius:7px;background:rgba(255,255,255,.1);padding:3px 8px;font-size:12px;color:var(--ink-200);white-space:nowrap}
+.chip.good{color:var(--teal)}.chip.warn{color:var(--amber)}
+.badge{position:absolute;top:8px;left:8px;background:rgba(7,7,8,.8);border-radius:7px;padding:3px 8px;font-size:11.5px;font-weight:600;color:var(--paper)}
+.seg{display:flex;gap:8px;overflow:hidden;margin:6px 0 12px}
+.seg span{padding:7px 14px;border-radius:99px;background:var(--fill);font-size:14px;white-space:nowrap}.seg .on{background:var(--paper);color:var(--ink-1000);font-weight:650}
+.ep{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--hair);align-items:center}
+.ep .poster{width:122px;height:70px;flex:none;border-radius:8px;padding:0}
+.ep .t{flex:1;min-width:0}.ep .t b{display:block;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ep .t span{font-size:12.5px;color:var(--muted)}
+.ic{width:34px;height:34px;border-radius:50%;background:var(--fill);display:grid;place-items:center;font-size:15px;flex:none}
+.ic.done{background:var(--teal);color:var(--ink-1000)}
+.sheet{position:absolute;left:0;right:0;bottom:0;height:610px;border-radius:26px 26px 0 0;background:linear-gradient(180deg,var(--ink-850),var(--ink-900) 40%);padding:10px 18px;z-index:8;box-shadow:0 -20px 50px rgba(0,0,0,.6)}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--ink-500);margin:0 auto 14px}
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:7}
+.src{display:flex;gap:11px;padding:11px 12px;border-radius:14px;background:var(--fill);margin-bottom:9px;align-items:center}
+.src.best{background:rgba(255,255,255,.17);outline:1.5px solid var(--paper)}
+.src .t{flex:1;min-width:0}.src .t b{font-size:15px;font-weight:600;display:block;margin-bottom:5px}.src .chips{display:flex;gap:5px;flex-wrap:wrap}
+.dl{padding:12px 0;border-bottom:1px solid var(--hair);display:flex;gap:12px;align-items:center}
+.dl .poster{width:62px;height:92px;flex:none;border-radius:8px}
+.prog{height:5px;border-radius:3px;background:rgba(255,255,255,.2);margin:7px 0 4px;overflow:hidden}.prog b{display:block;height:100%;background:var(--paper)}
+.card{border-radius:16px;background:var(--ink-850);border:1px solid var(--hair);padding:13px 14px;margin-bottom:10px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.grid .poster{height:150px}
+.land .vid{position:absolute;inset:0;background:linear-gradient(120deg,#1c2433,#0a0a0c 60%,#2a1c14)}
+.ctl{position:absolute;left:0;right:0;padding:0 34px;z-index:3}
+.scrub{height:5px;border-radius:3px;background:rgba(255,255,255,.25);position:relative;margin:8px 0}.scrub b{position:absolute;left:0;top:0;bottom:0;width:38%;background:var(--paper);border-radius:3px}.scrub i{position:absolute;left:38%;top:-6px;width:17px;height:17px;border-radius:50%;background:var(--paper);margin-left:-8px}
+.round{width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.45);display:grid;place-items:center;font-size:19px}
+.panel{position:absolute;top:0;right:0;bottom:0;width:290px;background:linear-gradient(180deg,var(--ink-850),var(--ink-900));padding:12px 14px;z-index:5;border-radius:20px 0 0 20px}
+.panel h3{font-size:12.5px;color:var(--muted);font-weight:500;margin:7px 0 3px}
+.opt{padding:5px 9px;border-radius:8px;font-size:13px;display:flex;justify-content:space-between}.opt.on{background:var(--paper);color:var(--ink-1000);font-weight:600}
+.banner{border-radius:12px;background:rgba(244,194,77,.12);color:var(--amber);padding:9px 12px;font-size:13px;margin-bottom:10px}
+.mosaic{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mosaic .poster{height:210px}.mosaic .poster:nth-child(2n){margin-top:30px}
+.sys{display:flex;gap:8px;overflow:hidden;margin-bottom:12px}.sys span{padding:7px 13px;border-radius:99px;background:var(--fill);font-size:14px;white-space:nowrap}.sys .on{background:var(--paper);color:var(--ink-1000);font-weight:650}
+</style>
+
+<!-- 1 INICIO -->
+<figure><div class="phone"><div class="tint" style="--tint:#4a3a30"></div>
+<div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
+<div class="scroll">
+ <div class="top"><span class="brand">Orbital</span><span class="pill"><span class="dot"></span>Tu Orbital · en casa</span><span class="avatar">F</span></div>
+ <div class="poster hero"><span class="badge">Seguir viendo</span><div class="in"><h1>Severance</h1><div class="meta">Temporada 2 · Episodio 5 · te quedan 31 min</div><div class="btns"><span class="btn">▶ Continuar</span><span class="btn sec sq">⤓</span><span class="btn sec sq">⋯</span></div></div><div class="bar"><b style="width:46%"></b></div></div>
+ <h2>Mi lista <small>Ver todo</small></h2>
+ <div class="row"><div class="poster" style="--c1:#2d5a6b">Dune: Parte dos</div><div class="poster" style="--c1:#6b2d4a">The Bear</div><div class="poster" style="--c1:#4a6b2d">Andor</div></div>
+ <h2>Para ti <small>Orbital te sugiere</small></h2>
+ <div class="row"><div class="poster" style="--c1:#6b5a2d"><span class="badge">Recomendada</span>Shōgun</div><div class="poster" style="--c1:#3a3a6b"><span class="badge">Sin estrenar</span>Hades II</div></div>
+</div>
+<div class="tabs"><div class="tab on"><i>⌂</i>Inicio</div><div class="tab"><i>✦</i>Para ti</div><div class="tab"><i>▦</i>Ver</div><div class="tab"><i>◐</i>Juegos</div><div class="tab"><i>⤓</i>Descargas</div></div>
+</div><figcaption><b>1 · Inicio</b>«Seguir viendo» manda: un toque y sigues donde lo dejaste (en la TV o aquí). Arriba, el estado de tu Orbital. Es la misma pantalla de Inicio que en la TV, en vertical.</figcaption></figure>
+
+<!-- 2 PARA TI -->
+<figure><div class="phone"><div class="tint" style="--tint:#2d3a55"></div>
+<div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
+<div class="scroll">
+ <div class="top"><span class="brand">Para ti</span><span class="pill"><span class="dot"></span>Orbital</span></div>
+ <div class="seg"><span class="on">Todo</span><span>Series</span><span>Películas</span><span>Juegos</span></div>
+ <div class="mosaic">
+  <div class="poster" style="--c1:#6b5a2d"><span class="badge">Recomendada</span>Shōgun</div>
+  <div class="poster" style="--c1:#3a3a6b"><span class="badge">Sin estrenar</span>Hades II</div>
+  <div class="poster" style="--c1:#2d6b4a"><span class="badge">En Netflix</span>Adolescence</div>
+  <div class="poster" style="--c1:#6b2d3a"><span class="badge">Lo más jugado</span>Hollow Knight</div>
+ </div>
+</div>
+<div class="tabs"><div class="tab"><i>⌂</i>Inicio</div><div class="tab on"><i>✦</i>Para ti</div><div class="tab"><i>▦</i>Ver</div><div class="tab"><i>◐</i>Juegos</div><div class="tab"><i>⤓</i>Descargas</div></div>
+</div><figcaption><b>2 · Para ti</b>Las mismas sugerencias de Orbital (series, películas y juegos), con sus etiquetas. Un toque abre la ficha; en un juego, la ficha dice si lo tienes en tu PC.</figcaption></figure>
+
+<!-- 3 FICHA -->
+<figure><div class="phone"><div class="tint" style="--tint:#6b4a3a"></div>
+<div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
+<div class="scroll">
+ <div style="height:150px"></div>
+ <div style="font-size:34px;font-weight:750;letter-spacing:-.02em">Severance</div>
+ <div class="meta">2022 · Ciencia ficción · 2 temporadas · <span class="chip">8,7</span></div>
+ <div class="btns" style="margin-bottom:10px"><span class="btn">▶ Continuar T2 E5</span><span class="btn sec sq">+</span><span class="btn sec sq">⤓</span></div>
+ <div style="font-size:14px;line-height:1.4;color:var(--ink-200);margin-bottom:10px">Mark lidera a un equipo cuyos recuerdos del trabajo se separaron de su vida personal…</div>
+ <div class="seg"><span>Temporada 1</span><span class="on">Temporada 2</span></div>
+ <div class="ep"><div class="poster"><div class="bar"><b style="width:100%"></b></div></div><div class="t"><b>4 · Alguien está vivo</b><span>52 min</span></div><span class="ic done">✓</span></div>
+ <div class="ep"><div class="poster"><div class="bar"><b style="width:46%"></b></div></div><div class="t"><b>5 · Trojan's Horse</b><span>Te quedan 31 min</span></div><span class="ic">⤓</span></div>
+ <div class="ep"><div class="poster"></div><div class="t"><b>6 · Attila</b><span>49 min · Descargado</span></div><span class="ic" style="background:var(--green);color:var(--ink-1000)">▮</span></div>
+</div>
+<div class="tabs"><div class="tab"><i>⌂</i>Inicio</div><div class="tab"><i>✦</i>Para ti</div><div class="tab on"><i>▦</i>Ver</div><div class="tab"><i>◐</i>Juegos</div><div class="tab"><i>⤓</i>Descargas</div></div>
+</div><figcaption><b>3 · Ficha</b>Todo en la misma pantalla: continuar, añadir a Mi lista, descargar la serie o un episodio. Cada episodio muestra visto (✓), a medias (barra) o descargado. La ficha sale en tu idioma, pero lo que se guarda en Stremio lleva el título original.</figcaption></figure>
+
+<!-- 4 FUENTES -->
+<figure><div class="phone"><div class="tint" style="--tint:#6b4a3a"></div>
+<div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
+<div class="dim"></div>
+<div class="sheet"><div class="grab"></div>
+ <div style="font-size:20px;font-weight:700">Severance · T2 E5</div>
+ <div class="meta" style="margin-bottom:12px">Fuentes de Real-Debrid · recomendada arriba</div>
+ <div class="seg"><span class="on">Ver</span><span>Descargar</span></div>
+ <div class="src best"><div class="t"><b>1080p · Español latino · x265</b><div class="chips"><span class="chip good">Recomendada</span><span class="chip">2,1 GB</span><span class="chip">HDR</span><span class="chip good">Al instante</span></div></div><span class="ic">▶</span></div>
+ <div class="src"><div class="t"><b>2160p · Inglés + subtítulos · REMUX</b><div class="chips"><span class="chip warn">34 GB</span><span class="chip">Dolby Vision</span><span class="chip">Atmos</span></div></div><span class="ic">▶</span></div>
+ <div class="src"><div class="t"><b>1080p · Inglés · WEB-DL</b><div class="chips"><span class="chip">3,4 GB</span><span class="chip">Subtítulos es</span></div></div><span class="ic">▶</span></div>
+ <div class="src"><div class="t"><b>720p · Español · WEB</b><div class="chips"><span class="chip">0,9 GB</span></div></div><span class="ic">▶</span></div>
+ <div style="font-size:12.5px;color:var(--muted);margin-top:8px">En datos móviles te avisamos antes de usar fuentes de más de 5 GB.</div>
+</div></div>
+<figcaption><b>4 · Elegir fuente</b>«Ver» y «Descargar» ordenan distinto: para ver, la mejor calidad que cabe; para descargar, 1080p x265 de tamaño moderado. Solo salen fuentes de Real-Debrid.</figcaption></figure>
+
+<!-- 5 DESCARGAS -->
+<figure><div class="phone"><div class="tint" style="--tint:#2d4a3a"></div>
+<div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
+<div class="scroll">
+ <div class="top"><span class="brand">Descargas</span><span class="pill">Solo con Wi‑Fi</span></div>
+ <div class="card"><div style="display:flex;justify-content:space-between;font-size:14px"><span>Ocupan 14,8 GB</span><span style="color:var(--muted)">52 GB libres</span></div><div class="prog"><b style="width:22%"></b></div></div>
+ <h2>Descargando <small>1 de 2</small></h2>
+ <div class="dl"><div class="poster" style="--c1:#6b4a3a"></div><div style="flex:1"><b style="font-size:15px">Severance · T2 E5</b><div class="prog"><b style="width:64%"></b></div><span style="font-size:12.5px;color:var(--muted)">1,3 de 2,1 GB · 12 min</span></div><span class="ic">❚❚</span></div>
+ <div class="dl"><div class="poster" style="--c1:#2d5a6b"></div><div style="flex:1"><b style="font-size:15px">Dune: Parte dos</b><span style="display:block;font-size:12.5px;color:var(--muted);margin-top:6px">En cola · 3,2 GB</span></div><span class="ic">✕</span></div>
+ <h2>Listas para ver <small>Sin conexión</small></h2>
+ <div class="dl"><div class="poster" style="--c1:#4a6b2d"></div><div style="flex:1"><b style="font-size:15px">Andor · T1 E1–E3</b><span style="display:block;font-size:12.5px;color:var(--muted);margin-top:4px">3 episodios · 4,5 GB</span><span class="chip good" style="margin-top:6px">Siguiente se descarga al terminar</span></div></div>
+</div>
+<div class="tabs"><div class="tab"><i>⌂</i>Inicio</div><div class="tab"><i>✦</i>Para ti</div><div class="tab"><i>▦</i>Ver</div><div class="tab"><i>◐</i>Juegos</div><div class="tab on"><i>⤓</i>Descargas</div></div>
+</div><figcaption><b>5 · Descargas</b>La cola, el espacio y lo que ya puedes ver sin red. Lo que ves sin conexión sube a Stremio cuando vuelve internet. Una serie puede reponer el siguiente episodio sola.</figcaption></figure>
+
+<!-- 6 JUEGOS -->
+<figure><div class="phone"><div class="tint" style="--tint:#2a2a55"></div>
+<div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
+<div class="scroll">
+ <div class="top"><span class="brand">Juegos</span><span class="pill"><span class="dot"></span>Tu PC</span></div>
+ <div class="sys"><span class="on">Todos</span><span>Steam</span><span>Switch</span><span>PSP</span><span>GBA</span></div>
+ <div class="seg" style="margin-top:0"><span class="on">Recientes</span><span>Favoritos</span><span>Sin jugar</span></div>
+ <div class="grid">
+  <div class="poster" style="--c1:#3a3a6b">Hades II</div><div class="poster" style="--c1:#6b2d3a">Hollow Knight</div><div class="poster" style="--c1:#2d6b4a">Celeste</div>
+  <div class="poster" style="--c1:#6b5a2d">Zelda TOTK</div><div class="poster" style="--c1:#2d5a6b">Portal 2</div><div class="poster" style="--c1:#5a2d6b">Metroid Dread</div>
+  <div class="poster" style="--c1:#4a6b2d">Stardew</div><div class="poster" style="--c1:#6b4a3a">Hi-Fi Rush</div><div class="poster" style="--c1:#3a5a6b">Inscryption</div>
+ </div>
+</div>
+<div class="tabs"><div class="tab"><i>⌂</i>Inicio</div><div class="tab"><i>✦</i>Para ti</div><div class="tab"><i>▦</i>Ver</div><div class="tab on"><i>◐</i>Juegos</div><div class="tab"><i>⤓</i>Descargas</div></div>
+</div><figcaption><b>6 · Juegos</b>Tu biblioteca de Orbital (Steam y emuladores), solo para consultar: horas jugadas, favoritos, lo que nunca abriste. Si la PC está apagada, se ve la última copia con un aviso.</figcaption></figure>
+
+<!-- 7 REPRODUCTOR -->
+<figure><div class="phone land"><div class="vid"></div>
+ <div class="ctl" style="top:20px;display:flex;justify-content:space-between;align-items:center"><span class="round">‹</span><div style="text-align:center"><b style="font-size:16px">Severance</b><div style="font-size:12.5px;color:var(--ink-200)">T2 · E5 · Trojan's Horse</div></div><span style="display:flex;gap:10px"><span class="round">⧉</span><span class="round">⋯</span></span></div>
+ <div class="ctl" style="top:150px;display:flex;justify-content:center;gap:56px;align-items:center"><span class="round" style="font-size:15px">−10</span><span class="round" style="width:68px;height:68px;font-size:28px">❚❚</span><span class="round" style="font-size:15px">+10</span></div>
+ <div class="ctl" style="bottom:22px"><div class="scrub"><b></b><i></i></div><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink-200)"><span>24:12</span><span style="display:flex;gap:12px"><span class="chip">Español · AC3 5.1</span><span class="chip">Subt. es</span><span class="chip">1×</span></span><span>−27:48</span></div></div>
+ <div class="panel">
+  <div style="font-size:17px;font-weight:700">Audio y subtítulos</div>
+  <h3>Audio</h3><div class="opt on"><span>Español latino · AC3 5.1</span><span>✓</span></div><div class="opt"><span>Inglés · EAC3 Atmos</span></div>
+  <h3>Subtítulos</h3><div class="opt on"><span>Español (forzados + completos)</span><span>✓</span></div><div class="opt"><span>Inglés</span></div>
+  <div class="opt"><span>Retraso de subtítulos</span><span style="color:var(--muted)">0,0 s</span></div>
+  <h3>Más</h3><div class="opt"><span>Otra fuente…</span></div><div class="opt"><span>Abrir en Infuse</span><span style="color:var(--muted)">↗</span></div>
+ </div>
+</div><figcaption style="width:844px"><b>7 · Reproductor (horizontal)</b>Un toque muestra los controles; doble toque a los lados, ±10 s; arrastrar busca; un solo panel para audio y subtítulos (recuerda tu elección por serie). «Abrir en Infuse» vive en el menú ⋯ para los archivos difíciles. Al llegar a los créditos aparece «Siguiente episodio» con cuenta atrás.</figcaption></figure>
+</html>
