@@ -12,6 +12,12 @@ todavía no hay código de la app.
 
 ---
 
+> **Actualización (2026-10-12, investigación web terminada):** dos conclusiones de este documento
+> cambian; ver §14. (1) **Infuse sí devuelve la posición** (`x-success` con `position`), así que sirve
+> como primera versión. (2) **MPVKit no es para producción** según su propio autor; **AetherEngine** es
+> la opción a probar primero (PiP nativo, Dolby Vision 5/8, SwiftUI). El resto del texto se dejó como
+> estaba para no perder el razonamiento.
+
 ## 1. Resumen y recomendación
 
 - **App nativa en SwiftUI** (no React Native). Es una sola plataforma, tienes Mac y Xcode, y lo
@@ -418,3 +424,54 @@ de terceros sin autorización. Tampoco tiene sentido para algo personal.
 6. Trakt: límites de la cuenta gratuita y requisitos de la API en 2026.
 7. Apple: límites del Apple ID gratuito y de TestFlight interno en 2026.
 8. Nuvio: motor de reproducción en iOS y licencia; si Stremio oficial ya sincroniza con Trakt.
+
+
+## 14. Datos verificados en la web (2026-10-12) y lo que cambia
+
+Fuentes al lado de cada punto. Lo marcado «sin confirmar» no se pudo comprobar.
+
+### Lo que cambia del plan
+
+1. **Infuse como primera versión: sí.** Su API (`infuse://x-callback-url/play?url=…&position=…&sub=…
+   &x-success=…&x-error=…`, Infuse 8.4.7+) llama a `x-success` al cerrar el reproductor con
+   `lastPlayedUrl` y `position` en segundos (una vez, no por episodio). Con eso la app compañera puede
+   guardar el avance en Stremio. Se puede pasar la posición inicial y un subtítulo, y una lista
+   (repitiendo `url`). Sin confirmar: si exige Infuse Pro.
+   <https://support.firecore.com/hc/en-us/articles/215090997-API-for-Third-Party-Apps>
+   → **Nueva etapa 1 posible:** la app hace todo (cuenta, fichas, fuentes, descargas) y reproduce en
+   Infuse; el reproductor propio llega después. Ahorra la parte más difícil.
+2. **Motor propio: probar primero AetherEngine, no MPVKit.**
+   - *MPVKit* 1.0.0 (jul 2026, mpv 0.41, LGPL-3.0): su README dice que es «solo para aprender libmpv» y
+     recomienda AetherEngine para producción; no documenta PiP, HDR ni AirPlay.
+     <https://github.com/mpvkit/MPVKit>
+   - *AetherEngine* 7.35 (oct 2026, LGPL-3.0 con excepción para App Store): FFmpeg + VideoToolbox, MKV,
+     HDR10/HDR10+/HLG, Dolby Vision 5/7/8, Atmos, PGS/ASS, **PiP nativo**, vista SwiftUI. iOS 18+. Lo
+     usan NuvioTVOS (con MPVKit de respaldo) y Moonfin. Ojo: proyecto de un autor, escrito con IA según
+     su README, pruebas de rendimiento propias. <https://github.com/superuser404notfound/AetherEngine>
+   - *KSPlayer*: GPL-3.0 gratis; Dolby Vision y Atmos solo en la versión de pago (mínimo 15 USD/mes).
+     <https://github.com/kingslay/KSPlayer/issues/731>
+   - *VLCKit 4* sigue en alfa (4.0.0a25); 3.7.x estable. HDR/DV sin confirmar.
+   - *AirPlay de video* de verdad solo con AVPlayer; con motores FFmpeg/mpv es audio o duplicar pantalla
+     (deducción, sin confirmar).
+3. **Real-Debrid ya no dice qué está «en caché».** Quitó `instantAvailability` en nov 2024; los
+   complementos lo deducen (Torrentio sigue marcando `[RD+]`). El plan de descargas sigue igual pero no
+   debe depender de una API de caché. API: 250 peticiones/min. Sus términos registran las conexiones
+   para detectar cuentas compartidas, sin un límite numérico; «una IP a la vez» es conocimiento de la
+   comunidad, no regla oficial. El riesgo de §10 se mantiene. <https://real-debrid.com/terms>
+4. **Trakt, menos atractivo:** cuentas gratis con 1 app conectada (desde jul 2026), listas de 100;
+   tokens de 7 días; sus términos prohíben apps que «promuevan la piratería»; hay reportes (sin
+   confirmar) de que crear apps de API pasó a ser solo VIP. Refuerza «Stremio manda, Trakt después».
+
+### Confirmado sin cambios
+
+- API de Stremio (código de stremio-core actual): `addonCollectionGet`, `datastoreGet/Put` con la
+  colección `libraryItem`, como usa Orbital. Stremio sacó un IPA oficial para instalar por fuera
+  (feb 2026) tras retirar Stremio Lite de la App Store.
+- Nuvio se reescribió en Kotlin Multiplatform (GPL-3.0) con MPVKit; se instala por AltStore/SideStore
+  y TestFlight. <https://github.com/NuvioMedia/NuvioMobile>
+- Instalación: Apple ID gratis = 7 días y 3 apps; cuenta de pago = 1 año; TestFlight interno hasta 100
+  personas, 90 días por versión. La regla 5.2.3 de la App Store se confirma.
+- Descargas: `URLSession` en segundo plano sobrevive a la suspensión (no a cerrar la app a la fuerza);
+  iOS 26 añade `BGContinuedProcessingTask` con Live Activity para descargas iniciadas por ti.
+- Infuse 8.5.6: descargas nativas en segundo plano (8.5.1), Live Activity de descargas, saltar intro y
+  créditos por separado, Trakt gratis, sincronía por iCloud en Pro. Buenas ideas para §7.
