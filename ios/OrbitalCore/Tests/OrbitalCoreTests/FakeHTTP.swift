@@ -9,6 +9,11 @@ final class FakeHTTP: HTTPClient, @unchecked Sendable {
     private var _bodies: [String: [Data]] = [:]
     var fail = false
     var status = 200
+    private var _statuses: [String: Int] = [:]
+    var statuses: [String: Int] {
+        get { lock.withLock { _statuses } }
+        set { lock.withLock { _statuses = newValue } }
+    }
 
     var json: [String: JSON] {
         get { lock.withLock { _json } }
@@ -24,8 +29,9 @@ final class FakeHTTP: HTTPClient, @unchecked Sendable {
             if let body = request.body { _bodies[key, default: []].append(body) }
         }
         if fail { throw NetworkError("sin conexión") }
-        guard let body = lock.withLock({ _json[key] }) else { return HTTPResponse(status: 404, data: Data()) }
-        return HTTPResponse(status: status, data: body.serialized())
+        let forced = lock.withLock { _statuses[key] }
+        guard let body = lock.withLock({ _json[key] }) else { return HTTPResponse(status: forced ?? 404, data: Data()) }
+        return HTTPResponse(status: forced ?? status, data: body.serialized())
     }
 }
 

@@ -13,7 +13,7 @@ import json
 import zlib
 from pathlib import Path
 
-from orbital.library import cinemeta, localize, streams, stremio_api, tmdb
+from orbital.library import cinemeta, localize, streams, stremio_api, tmdb, trakt
 
 OUT = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "ios"
 NOW = 1_760_000_000.0  # 2025-10-09T08:53:20Z: fijo, para que el resultado no dependa del reloj
@@ -164,6 +164,20 @@ def localize_cases() -> dict:
             "generic": {t: bool(localize.GENERIC_EPISODE.match(t)) for t in ("Episodio 3", "Episode 12", "Folge 1", "Piloto", "Episodio 3 y 4")}}
 
 
+def trakt_cases() -> dict:
+    raws = [
+        ({"title": " Severance ", "year": 2022, "runtime": 50, "aired_episodes": 19, "overview": " Sinopsis ", "ids": {"imdb": "tt11280740", "trakt": 1234}}, "series"),
+        ({"title": "Sin imdb", "ids": {"trakt": 1}}, "movie"),
+        ({"title": "", "ids": {"imdb": "tt1"}}, "movie"),
+        ({"title": "Dune", "year": "2021", "runtime": -5, "ids": {"imdb": "tt1160419", "trakt": "x"}}, "movie"),
+        ("raro", "movie"),
+    ]
+    rows = [{"type": "movie", "movie": raws[3][0]}, {"type": "show", "show": raws[0][0]}, {"type": "show", "show": raws[0][0]},
+            {"type": "episode", "episode": {}}, {"type": "movie", "movie": raws[1][0]}, "raro"]
+    return {"entry": [{"raw": r, "kind": k, "result": trakt.entry(r, k)} for r, k in raws],
+            "typed": {"rows": rows, "result": trakt._typed(rows)}}
+
+
 def main() -> None:
     write("zlib", zlib_cases())
     write("watched", watched_cases())
@@ -174,6 +188,7 @@ def main() -> None:
     write("streams", streams_cases())
     write("cinemeta", cinemeta_cases())
     write("localize", localize_cases())
+    write("trakt", trakt_cases())
     print(f"Escritos en {OUT}")
 
 
