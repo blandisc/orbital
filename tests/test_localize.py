@@ -90,3 +90,22 @@ def test_cinemeta_meta_goes_through_the_localizer(monkeypatch):
     client.localize = Localizer(FakeTmdb(), lambda: "es").meta
     assert client.meta("series", "tt0386676")["name"] == "La oficina"
     assert cinemeta.seasons(client.meta("series", "tt0386676"))[0]["episodes"][0]["title"] == "Piloto"
+
+
+def test_your_stremio_account_keeps_the_original_title(library, monkeypatch):
+    """Lo que Orbital crea en tu cuenta de Stremio (avance, Mi lista) va con el título de Cinemeta:
+    Stremio y la app del celular no deben ver «La oficina» por haber visto la ficha en español."""
+    from orbital.library import stremio_api
+
+    monkeypatch.setattr(cinemeta.Cinemeta, "_get", lambda self, path, base=None: {"meta": dict(SERIES)})
+    library.watch.cinemeta.localize = Localizer(FakeTmdb(), lambda: "es").meta
+    library.credentials.set("stremio_auth_key", "k")
+    saved = []
+    monkeypatch.setattr(stremio_api.StremioAPI, "library_item", lambda self, auth, mid: None)
+    monkeypatch.setattr(stremio_api.StremioAPI, "save_library_item", lambda self, auth, item: saved.append(item["name"]))
+    monkeypatch.setattr(library.watch, "refresh_stremio", lambda background=False: None)
+    library.watch.set_in_library("series", "tt0386676", True)
+    library.watch._save_progress({"kind": "series", "meta_id": "tt0386676", "video_id": "tt0386676:1:1"},
+                                 position=600, duration=1300, watched=600, refresh=False)
+    assert saved == ["The Office", "The Office"]
+    assert library.watch.cinemeta.meta("series", "tt0386676")["name"] == "La oficina"  # la ficha, en español

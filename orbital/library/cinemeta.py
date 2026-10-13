@@ -90,7 +90,9 @@ class Cinemeta:
         others = [a.base for a in known if a.handles("meta", kind, meta_id) and a.base != self.base]
         return [None, *others] if str(meta_id).startswith("tt") else [*others, None]
 
-    def meta(self, kind: str, meta_id: str) -> dict:
+    def meta(self, kind: str, meta_id: str, localized: bool = True) -> dict:
+        """La ficha; `localized=False`, tal cual la da Cinemeta (lo que se guarda en tu cuenta de
+        Stremio va con el título original, no con el traducido)."""
         path = f"/meta/{quote(kind)}/{quote(str(meta_id), safe=':')}.json"
         error = CinemetaError("Título no encontrado")
         for base in self.meta_sources(kind, meta_id):
@@ -101,7 +103,7 @@ class Cinemeta:
                 error = exc
                 continue
             if isinstance(meta, dict):
-                return self.localize(kind, meta) if self.localize and base is None else meta
+                return self.localize(kind, meta) if self.localize and localized and base is None else meta
         raise error
 
 

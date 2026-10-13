@@ -795,7 +795,7 @@ class Watch:
         if not auth:
             raise stremio_api.StremioError("Conecta tu cuenta de Stremio en Ajustes")
         try:
-            info = self.cinemeta.meta(kind, meta_id)
+            info = self.cinemeta.meta(kind, meta_id, localized=False)  # Stremio guarda el título original
         except cinemeta.CinemetaError:
             info = {}
         raw = self.stremio_client.library_item(auth, meta_id)
@@ -825,7 +825,7 @@ class Watch:
             return  # se abrió y cerró sin ver nada: no se toca tu biblioteca
         kind, meta_id, video_id = meta["kind"], meta["meta_id"], meta["video_id"]
         try:
-            info = self.cinemeta.meta(kind, meta_id)
+            info = self.cinemeta.meta(kind, meta_id, localized=False)  # Stremio guarda el título original
         except cinemeta.CinemetaError:
             info = {}
         next_video = cinemeta.next_episode(info, video_id) if kind == "series" and info else None
