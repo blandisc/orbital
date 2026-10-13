@@ -149,10 +149,11 @@ public actor WatchService {
         return StremioLibrary.resumeSeconds(item, videoID: videoID)
     }
 
+    /// `scrobbleToTrakt: false` para Infuse, que ya avisa a Trakt con su propia conexión (así no se duplica).
     @discardableResult
-    public func report(_ event: ProgressEvent, phase: PlaybackPhase) async -> ReportOutcome {
+    public func report(_ event: ProgressEvent, phase: PlaybackPhase, scrobbleToTrakt: Bool = true) async -> ReportOutcome {
         var outcome = ReportOutcome()
-        await scrobble(event, phase)
+        if scrobbleToTrakt { await scrobble(event, phase) }
         switch phase {
         case .started: return outcome
         case .tick, .paused:

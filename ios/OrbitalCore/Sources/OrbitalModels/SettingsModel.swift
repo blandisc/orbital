@@ -62,15 +62,15 @@ public final class SettingsModel: ObservableModel {
             trakt = .linking(code: code.userCode, url: code.verificationURL.replacingOccurrences(of: "https://", with: ""))
             let task = Task { [weak self] in
                 var interval = max(code.interval, 1)
-                while !Task.isCancelled, await self?.services.now() ?? .distantFuture < code.expiresAt {
+                while !Task.isCancelled, (self?.services.now() ?? .distantFuture) < code.expiresAt {
                     try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
                     guard let self, !Task.isCancelled else { return }
                     switch (try? await t.pollDevice(code)) ?? .pending {
                     case .linked: await self.finishLinking(); return
                     case .slow: interval += 5
-                    case .expired: await self.setTrakt(.failed("El código caducó. Vuelve a intentarlo.")); return
-                    case .denied: await self.setTrakt(.failed("Rechazaste la conexión en Trakt.")); return
-                    case .invalid: await self.setTrakt(.failed("Trakt no aceptó el código.")); return
+                    case .expired: self.setTrakt(.failed("El código caducó. Vuelve a intentarlo.")); return
+                    case .denied: self.setTrakt(.failed("Rechazaste la conexión en Trakt.")); return
+                    case .invalid: self.setTrakt(.failed("Trakt no aceptó el código.")); return
                     case .pending: break
                     }
                 }

@@ -17,12 +17,13 @@ public struct PlayRequest: Sendable {
     public var localFile: URL?             // una descarga: se reproduce sin red
     public var localSubtitles: [URL] = []
     public var binge: String?              // el grupo de la fuente anterior (misma calidad e idioma)
+    public var sourceIndex: Int?           // una fuente elegida en la lista
 
     public init(kind: String, metaID: String, videoID: String, originalTitle: String, displayTitle: String, episodeLabel: String = "", poster: String? = nil,
-                year: String? = nil, meta: JSON? = nil, fromStart: Bool = false, localFile: URL? = nil, localSubtitles: [URL] = [], binge: String? = nil) {
+                year: String? = nil, meta: JSON? = nil, fromStart: Bool = false, localFile: URL? = nil, localSubtitles: [URL] = [], binge: String? = nil, sourceIndex: Int? = nil) {
         self.kind = kind; self.metaID = metaID; self.videoID = videoID; self.originalTitle = originalTitle; self.displayTitle = displayTitle
         self.episodeLabel = episodeLabel; self.poster = poster; self.year = year; self.meta = meta; self.fromStart = fromStart
-        self.localFile = localFile; self.localSubtitles = localSubtitles; self.binge = binge
+        self.localFile = localFile; self.localSubtitles = localSubtitles; self.binge = binge; self.sourceIndex = sourceIndex
     }
 }
 
@@ -124,7 +125,8 @@ public final class PlayerModel: ObservableModel {
             let found: Source?
             do {
                 sourceChoices = try await finder.find(kind: request.kind, videoID: request.videoID, prefs: langs.prefs)
-                found = try await finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs, binge: request.binge, skip: failedSources)
+                if let chosen = request.sourceIndex, failedSources.isEmpty, let pick = sourceChoices.first(where: { $0.index == chosen }) { found = pick }
+                else { found = try await finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs, binge: request.binge, skip: failedSources) }
             } catch { return fail("No pude pedir las fuentes: \(error)") }
             guard myGeneration == generation else { return }
             guard let found else { return fail(failedSources.isEmpty ? "No hay fuentes de Real-Debrid para este título." : "Ninguna fuente funcionó.") }

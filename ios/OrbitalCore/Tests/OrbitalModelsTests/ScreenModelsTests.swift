@@ -298,3 +298,51 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertNotNil(request.meta)
     }
 }
+
+@MainActor
+final class CatalogAndSourcesTests: XCTestCase {
+    func testCatalogShowsMoviesAndSeriesAndHandlesAFailedHalf() async throws {
+        let rig = try ServicesRig()
+        let movies = try Fixtures.json("cinemeta/search_movie_dune.json")
+        rig.http.json["https://v3-cinemeta.strem.io/catalog/movie/top.json"] = ["metas": movies]
+        let model = CatalogModel(rig.services)
+        await model.load()
+        XCTAssertFalse(model.movies.isEmpty)
+        XCTAssertTrue(model.series.isEmpty)
+        XCTAssertNil(model.error, "una mitad que falla no tumba la otra")
+        XCTAssertTrue(model.movies.allSatisfy { $0.kind == "movie" && !$0.title.isEmpty })
+        let none = CatalogModel(try ServicesRig().services)
+        await none.load()
+        XCTAssertNotNil(none.error)
+    }
+
+    func testSourcesAreOrderedDifferentlyForWatchingAndDownloading() async throws {
+        let rig = try ServicesRig()
+        rig.http.json["https://a.example/stream/movie/tt1.json"] = ["streams": [
+            ["name": "T\n2160p [RD+]", "title": "Peli 2160p REMUX HDR\n👤 200 💾 40 GB 🇬🇧", "url": "https://rd.example/big"],
+            ["name": "T\n1080p [RD+]", "title": "Peli 1080p WEB-DL x265\n👤 100 💾 2 GB 🇬🇧", "url": "https://rd.example/small"]]]
+        rig.services.settings.update { $0.audio = "en"; $0.quality = "4K" }
+        let model = SourcesModel(rig.services, kind: "movie", metaID: "tt1", videoID: "tt1")
+        await model.load(.watch)
+        XCTAssertTrue(model.rows[0].recommended)
+        XCTAssertEqual(model.rows[0].sizeGB ?? 0, 40, accuracy: 0.01)
+        XCTAssertEqual(model.source(model.rows[0].id)?.playbackURL?.absoluteString, "https://rd.example/big")
+        await model.load(.download)
+        XCTAssertEqual(model.source(model.rows[0].id)?.playbackURL?.absoluteString, "https://rd.example/small", "para guardar: 1080p moderado primero")
+        XCTAssertTrue(model.rows.first { $0.sizeGB == 40 }?.heavy == true, "más de 5 GB: aviso con datos móviles")
+        XCTAssertFalse(model.rows.contains { $0.headline.isEmpty })
+    }
+
+    func testChoosingASourceFromTheListPlaysThatOne() async throws {
+        let rig = try Rig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [rig.stream("best"), rig.stream("other", size: "💾 3 GB", name: "T\n1080p")]]
+        await rig.model.begin(rig.request())   // la recomendada: de ahí salen los números de fuente
+        XCTAssertEqual(rig.engine.loads.first?.url.absoluteString, "https://rd.example/best.mkv")
+        let other = try XCTUnwrap(rig.model.sourceChoices.first { $0.playbackURL?.absoluteString.contains("other") == true })
+        let second = try Rig()
+        second.http.json = rig.http.json
+        var chosen = second.request(); chosen.sourceIndex = other.index
+        await second.model.begin(chosen)
+        XCTAssertEqual(second.engine.loads.first?.url.absoluteString, "https://rd.example/other.mkv")
+    }
+}
