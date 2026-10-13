@@ -28,7 +28,9 @@ responde («en casa» / «Tu PC» / «sin conexión»: entonces Juegos y Para ti
 ## 3. Pantallas (ver la maqueta)
 
 1. **Inicio**: destacado «Continuar T2 E5» con barra de avance y botones Continuar · Descargar · Más.
-2. **Para ti**: mosaico con etiquetas («Recomendada», «Sin estrenar»…).
+2. **Para ti**, con selector Mosaico · Listas:
+   - **Mosaico**: igual al de Orbital (columnas de imágenes, la enfocada crece y enseña etiqueta, título y dato; ícono de serie, película o juego en la esquina).
+   - **Listas**: lo más popular en Netflix, Disney+ y HBO Max en tu país (TMDB), y la **zona de Trakt** (watchlist, tus listas, viendo, recomendadas, tendencia, popular), leída a través de tu Orbital.
 3. **Ficha**: Continuar, Mi lista, Descargar (serie o episodio), temporadas, episodios con estado
    (visto ✓ del bitfield de Stremio, a medias, descargado).
 4. **Fuentes**: hoja inferior con «Ver / Descargar». Solo fuentes `url` de Real-Debrid. La recomendada
@@ -63,3 +65,9 @@ lleva el título original. Audio y subtítulos tienen su propio idioma, separado
 - Si «Ver» y «Para ti» deben fundirse en una sola pestaña (hoy son dos para igualar la TV).
 - Si Juegos permite en el futuro lanzar desde el teléfono (hoy solo consulta, por seguridad).
 - Estilo del destacado: póster fijo (maqueta) o carrusel.
+
+## 6. Trakt
+
+Se lee a través de Orbital (una sola app conectada en cuentas gratuitas). Nivel 1, leer: primera etapa.
+Niveles 2 (escribir en watchlist, marcar visto) y 3 (scrobble): después, y requieren trabajo nuevo en
+`orbital/library/trakt.py`, que hoy solo lee. El avance sigue siendo de Stremio.

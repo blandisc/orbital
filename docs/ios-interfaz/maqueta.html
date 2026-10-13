@@ -8,7 +8,7 @@
   --hair:rgba(255,255,255,.09);--fill:rgba(255,255,255,.1);--muted:var(--ink-300);--faint:rgba(255,255,255,.5);
 }
 *{box-sizing:border-box;margin:0}
-body{background:#2b2b31;font-family:-apple-system,"SF Pro Text","Segoe UI",system-ui,sans-serif;color:var(--paper);padding:28px;display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start;width:1760px}
+body{background:#2b2b31;font-family:-apple-system,"SF Pro Text","Segoe UI",system-ui,sans-serif;color:var(--paper);padding:28px;display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start;width:2150px}
 figure{display:flex;flex-direction:column;gap:10px}
 figcaption{font-size:15px;color:var(--ink-200);width:390px;line-height:1.35}
 figcaption b{color:var(--paper);display:block;font-size:17px;margin-bottom:2px}
@@ -70,6 +70,15 @@ h2 small{font-size:13px;font-weight:400;color:var(--muted)}
 .banner{border-radius:12px;background:rgba(244,194,77,.12);color:var(--amber);padding:9px 12px;font-size:13px;margin-bottom:10px}
 .mosaic{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mosaic .poster{height:210px}.mosaic .poster:nth-child(2n){margin-top:30px}
 .sys{display:flex;gap:8px;overflow:hidden;margin-bottom:12px}.sys span{padding:7px 13px;border-radius:99px;background:var(--fill);font-size:14px;white-space:nowrap}.sys .on{background:var(--paper);color:var(--ink-1000);font-weight:650}
+.mos{display:flex;gap:8px;align-items:flex-start;justify-content:center}
+.col{display:flex;flex-direction:column;gap:8px}.col .poster{border-radius:12px;width:100%;padding:0}
+.poster.foc{outline:2px solid var(--paper);outline-offset:2px;position:relative;box-shadow:0 14px 30px rgba(0,0,0,.55)}
+.poster.foc .inf{margin-top:auto;padding:10px;width:100%;background:linear-gradient(0deg,rgba(7,7,8,.92),transparent);display:flex;flex-direction:column;gap:2px}
+.poster.foc .inf b{font-size:23px;font-weight:750;letter-spacing:-.01em}.poster.foc .inf span{font-size:12px;font-weight:500;color:var(--ink-200)}
+.corner{position:absolute;top:9px;right:9px;width:24px;height:24px;border-radius:7px;background:rgba(7,7,8,.8);display:grid;place-items:center;font-size:12px}
+.plat{display:flex;align-items:center;gap:9px;margin:12px 0 7px}.plat b{font-size:16px}.plat small{color:var(--muted);font-size:12.5px;margin-left:auto}
+.lg{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:11px;font-weight:800}
+.row.sm .poster{width:112px;height:150px;flex:none;font-size:12px}
 </style>
 
 <!-- 1 INICIO -->
@@ -86,21 +95,64 @@ h2 small{font-size:13px;font-weight:400;color:var(--muted)}
 <div class="tabs"><div class="tab on"><i>⌂</i>Inicio</div><div class="tab"><i>✦</i>Para ti</div><div class="tab"><i>▦</i>Ver</div><div class="tab"><i>◐</i>Juegos</div><div class="tab"><i>⤓</i>Descargas</div></div>
 </div><figcaption><b>1 · Inicio</b>«Seguir viendo» manda: un toque y sigues donde lo dejaste (en la TV o aquí). Arriba, el estado de tu Orbital. Es la misma pantalla de Inicio que en la TV, en vertical.</figcaption></figure>
 
-<!-- 2 PARA TI -->
+<!-- 2 PARA TI · MOSAICO -->
+<figure><div class="phone"><div class="tint" style="--tint:#3a3050"></div>
+<div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
+<div class="scroll" style="padding:6px 10px">
+ <div class="top" style="padding:0 8px"><span class="brand">Para ti</span><span class="pill"><span class="dot"></span>Orbital</span></div>
+ <div class="seg" style="padding:0 8px;margin-top:0"><span class="on">Mosaico</span><span>Listas</span></div>
+ <div class="mos">
+  <div class="col" style="width:84px;margin-top:0">
+   <div class="poster" style="--c1:#2d5a6b;height:150px"></div><div class="poster" style="--c1:#6b2d4a;height:96px"></div><div class="poster" style="--c1:#4a6b2d;height:160px"></div><div class="poster" style="--c1:#5a2d6b;height:110px"></div>
+  </div>
+  <div class="col" style="width:176px">
+   <div class="poster" style="--c1:#3a3a6b;height:110px"></div>
+   <div class="poster foc" style="--c1:#6b5a2d;height:300px"><span class="corner">▭</span><span class="badge" style="top:9px;left:9px">Recomendada</span><div class="inf"><b>Shōgun</b><span>2024 · 8,7 · 1 temporada</span></div></div>
+   <div class="poster" style="--c1:#2d6b4a;height:140px"></div><div class="poster" style="--c1:#6b2d3a;height:120px"></div>
+  </div>
+  <div class="col" style="width:84px;margin-top:34px">
+   <div class="poster" style="--c1:#6b4a3a;height:120px"></div><div class="poster" style="--c1:#3a5a6b;height:170px"></div><div class="poster" style="--c1:#6b6b2d;height:100px"></div><div class="poster" style="--c1:#2d3a6b;height:150px"></div>
+  </div>
+ </div>
+</div>
+<div class="tabs"><div class="tab"><i>⌂</i>Inicio</div><div class="tab on"><i>✦</i>Para ti</div><div class="tab"><i>▦</i>Ver</div><div class="tab"><i>◐</i>Juegos</div><div class="tab"><i>⤓</i>Descargas</div></div>
+</div><figcaption><b>2 · Para ti · Mosaico</b>El mismo mosaico de Orbital: columnas de imágenes con series, películas y juegos mezclados. La pieza enfocada crece (su columna se ensancha) y enseña etiqueta, título y un dato; el ícono de la esquina dice si es serie, película o juego. Deslizar sube todo; quieto un rato, entra en ambiente y se mueve solo.</figcaption></figure>
+
+<!-- 2b PARA TI · LISTAS -->
 <figure><div class="phone"><div class="tint" style="--tint:#2d3a55"></div>
 <div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
 <div class="scroll">
  <div class="top"><span class="brand">Para ti</span><span class="pill"><span class="dot"></span>Orbital</span></div>
- <div class="seg"><span class="on">Todo</span><span>Series</span><span>Películas</span><span>Juegos</span></div>
- <div class="mosaic">
-  <div class="poster" style="--c1:#6b5a2d"><span class="badge">Recomendada</span>Shōgun</div>
-  <div class="poster" style="--c1:#3a3a6b"><span class="badge">Sin estrenar</span>Hades II</div>
-  <div class="poster" style="--c1:#2d6b4a"><span class="badge">En Netflix</span>Adolescence</div>
-  <div class="poster" style="--c1:#6b2d3a"><span class="badge">Lo más jugado</span>Hollow Knight</div>
- </div>
+ <div class="seg" style="margin-top:0"><span>Mosaico</span><span class="on">Listas</span></div>
+ <div class="seg" style="margin:0 0 4px"><span class="on">Series</span><span>Películas</span></div>
+ <h2 style="margin-top:12px">Popular en tus plataformas <small>México</small></h2>
+ <div class="plat"><span class="lg" style="background:#e50914">N</span><b>Netflix</b><small>Lo más popular</small></div>
+ <div class="row sm"><div class="poster" style="--c1:#6b2d3a">Adolescence</div><div class="poster" style="--c1:#2d3a6b">Stranger Things</div><div class="poster" style="--c1:#3a6b4a">Wednesday</div></div>
+ <div class="plat"><span class="lg" style="background:#113ccf">D+</span><b>Disney+</b><small>Lo más popular</small></div>
+ <div class="row sm"><div class="poster" style="--c1:#4a6b2d">Andor</div><div class="poster" style="--c1:#6b4a2d">Ahsoka</div><div class="poster" style="--c1:#2d5a6b">Daredevil</div></div>
+ <div class="plat"><span class="lg" style="background:#5c2de6">Max</span><b>HBO Max</b><small>Lo más popular</small></div>
+ <div class="row sm"><div class="poster" style="--c1:#5a2d6b">The Last of Us</div><div class="poster" style="--c1:#6b2d4a">Succession</div><div class="poster" style="--c1:#2d6b6b">Hacks</div></div>
 </div>
 <div class="tabs"><div class="tab"><i>⌂</i>Inicio</div><div class="tab on"><i>✦</i>Para ti</div><div class="tab"><i>▦</i>Ver</div><div class="tab"><i>◐</i>Juegos</div><div class="tab"><i>⤓</i>Descargas</div></div>
-</div><figcaption><b>2 · Para ti</b>Las mismas sugerencias de Orbital (series, películas y juegos), con sus etiquetas. Un toque abre la ficha; en un juego, la ficha dice si lo tienes en tu PC.</figcaption></figure>
+</div><figcaption><b>2b · Para ti · Listas</b>El otro modo de Orbital: un riel por lista. Aquí, lo más popular en Netflix, Disney+ y HBO Max en tu país (de TMDB), con Series · Películas. Más abajo, Trakt (siguiente pantalla) y los juegos de RAWG.</figcaption></figure>
+
+<!-- 2c TRAKT -->
+<figure><div class="phone"><div class="tint" style="--tint:#6b2d2d"></div>
+<div class="status"><span>9:41</span><span>●●● 5G ▮</span></div>
+<div class="scroll">
+ <div class="top"><span class="brand">Trakt</span><span class="pill"><span class="dot"></span>@fernando</span></div>
+ <div class="seg"><span class="on">Watchlist</span><span>Tus listas</span><span>Viendo</span><span>Para ti</span></div>
+ <div class="banner" style="background:rgba(95,214,198,.12);color:var(--teal)">24 pendientes en tu watchlist de Trakt</div>
+ <div class="grid">
+  <div class="poster" style="--c1:#6b2d3a"><span class="badge">En tu lista</span>Severance</div><div class="poster" style="--c1:#2d5a6b"><span class="badge">En tu lista</span>Dune: Parte dos</div><div class="poster" style="--c1:#4a6b2d"><span class="badge">En tu lista</span>Andor</div>
+  <div class="poster" style="--c1:#6b5a2d">Shōgun</div><div class="poster" style="--c1:#3a3a6b">Oppenheimer</div><div class="poster" style="--c1:#5a2d6b">Past Lives</div>
+ </div>
+ <h2>Tus listas <small>Trakt</small></h2>
+ <div class="card" style="display:flex;justify-content:space-between"><span>Maratón de terror</span><span style="color:var(--muted)">18</span></div>
+ <div class="card" style="display:flex;justify-content:space-between"><span>Para ver en pareja</span><span style="color:var(--muted)">32</span></div>
+</div>
+<div class="tabs"><div class="tab"><i>⌂</i>Inicio</div><div class="tab on"><i>✦</i>Para ti</div><div class="tab"><i>▦</i>Ver</div><div class="tab"><i>◐</i>Juegos</div><div class="tab"><i>⤓</i>Descargas</div></div>
+</div><figcaption><b>2c · Trakt</b>Tu Trakt dentro de la app: tu watchlist, tus listas, lo que estás viendo y las recomendadas (más En tendencia y Lo más popular). Cada título lleva su etiqueta y, con un toque, abre la ficha con las fuentes de Real-Debrid listas para ver o descargar.</figcaption></figure>
 
 <!-- 3 FICHA -->
 <figure><div class="phone"><div class="tint" style="--tint:#6b4a3a"></div>
