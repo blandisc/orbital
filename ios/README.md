@@ -65,6 +65,22 @@ Las pruebas de Swift leen `tests/fixtures/` (los mismos datos de ejemplo que usa
 4. Trakt: que la app pueda conectarse a tu cuenta (las cuentas gratuitas permiten una sola «app comunitaria»; Stremio ya la ocupa).
 5. Que lo guardado en Stremio aparezca en Orbital (con el título original, no el traducido) y al revés.
 
+## Descargas: cómo se reanudan
+
+- **Pausa o corte de red**: se conserva lo bajado con los datos de reanudación de `URLSession` y se continúa mientras el enlace valga.
+- **Enlace de Real-Debrid caducado** (403/404/410): se pide un enlace nuevo al mismo complemento y la descarga empieza de nuevo desde cero
+  (los datos de reanudación están atados al enlace viejo).
+- **Relanzar la app**: una descarga que el sistema siguió en segundo plano se adopta, no se reinicia.
+- iOS cancela las descargas si cierras la app deslizándola en el selector de apps.
+
+## Excepciones al sistema de diseño
+
+`DesignTests` revisa que las pantallas no escriban colores, medidas, opacidades ni esperas a mano. Una línea se exime con `ds-exception: motivo`:
+
+| Dónde | Motivo |
+|---|---|
+| `Design/Components.swift` (`averageColor`) | el color sale de los píxeles del póster, no es un valor de diseño |
+
 ## Límites conocidos
 
 - Infuse solo avisa **al cerrar** y no da la duración: el avance de lo visto en Infuse es de «mejor esfuerzo».
