@@ -29,7 +29,8 @@ enum DS {
     static let fillStrong = Color.white.opacity(DesignTokens.Opacity.fillStrong)
     static let track = Color.white.opacity(DesignTokens.Opacity.track)
     static let scrim = Palette.color("ink-1000").opacity(DesignTokens.Opacity.scrim)
-    static let badgeBackground = Palette.color("ink-1000").opacity(0.8)
+    static let badgeBackground = Palette.color("ink-1000").opacity(DesignTokens.Opacity.badge)
+    static let scrimStrong = Palette.color("ink-1000").opacity(DesignTokens.Opacity.scrimStrong)
     static let good = Palette.color("teal-300")
     static let warning = Palette.color("amber-300")
     static let danger = Palette.color("red-400")
@@ -68,9 +69,22 @@ enum DS {
         static func spring(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.slow, bounce: 0.2) }
     }
 
+    /// Medidas fijas.
+    enum Size {
+        static let touchTarget = CGFloat(DesignTokens.Size.touchTarget), thumbSmall = CGFloat(DesignTokens.Size.thumbSmall)
+        static let cardMax = CGFloat(DesignTokens.Size.cardMax), grabber = CGFloat(DesignTokens.Size.grabber), grabberHeight = CGFloat(DesignTokens.Size.grabberHeight)
+    }
+
+    /// Esperas de la interfaz (nanosegundos para `Task.sleep`).
+    enum Timing {
+        static let controlsHide = UInt64(DesignTokens.Timing.controlsHide * 1e9), banner = UInt64(DesignTokens.Timing.banner * 1e9)
+        static let searchDebounce = UInt64(DesignTokens.Timing.searchDebounce * 1e9), tick = UInt64(DesignTokens.Timing.tick * 1e9)
+    }
+
     /// Tamaño de los pósters (relación 2:3, como en la TV).
     enum Poster {
-        static let aspect = 2.0 / 3.0
+        static let aspect = DesignTokens.Aspect.poster
+        static let heroAspect = DesignTokens.Aspect.hero, stillAspect = DesignTokens.Aspect.still
         static let railWidth: CGFloat = 112
         static let gridMinimum: CGFloat = 100
         static let episodeThumbWidth: CGFloat = 122

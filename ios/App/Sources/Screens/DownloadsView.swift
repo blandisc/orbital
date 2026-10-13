@@ -15,8 +15,10 @@ struct DownloadsView: View {
         let model = observer.model
         List {
             Section { storage(model) }
+            .listRowBackground(DS.fill)
             if !model.active.isEmpty {
                 Section("Descargando") { ForEach(model.active) { row($0, model) } }
+                .listRowBackground(DS.fill)
             }
             Section("Listas para ver sin conexión") {
                 if model.ready.isEmpty { Text("Cuando descargues algo, aparece aquí.").foregroundStyle(DS.textMuted).font(DS.font(.sm)) }
@@ -25,9 +27,9 @@ struct DownloadsView: View {
                         .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } } }
                 }
             }
+            .listRowBackground(DS.fill)
         }
         .scrollContentBackground(.hidden).background(TintedBackground())
-        .listRowBackground(DS.fill)
         .navigationTitle("Descargas").navigationBarTitleDisplayMode(.large)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { if env.services.appSettings.wifiOnlyDownloads { DSChip(text: "Solo con Wi‑Fi") } } }
         .task { await model.run() }
@@ -47,7 +49,7 @@ struct DownloadsView: View {
 
     private func row(_ item: DownloadItem, _ model: DownloadsModel) -> some View {
         HStack(spacing: DS.Space.s3) {
-            PosterView(url: item.poster, title: item.title).frame(width: 48)
+            PosterView(url: item.poster, title: item.title).frame(width: DS.Size.thumbSmall)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(item.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
                 if !item.subtitle.isEmpty { Text(item.subtitle).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1) }
@@ -76,7 +78,7 @@ struct DownloadsView: View {
 
     private func readyRow(_ item: DownloadItem) -> some View {
         HStack(spacing: DS.Space.s3) {
-            PosterView(url: item.poster, title: item.title).frame(width: 48)
+            PosterView(url: item.poster, title: item.title).frame(width: DS.Size.thumbSmall)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(item.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
                 if !item.subtitle.isEmpty { Text(item.subtitle).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1) }

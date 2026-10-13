@@ -15,7 +15,7 @@ struct SettingsView: View {
     init() {
         let services = AppEnvironment.shared.services
         _settings = StateObject(wrappedValue: ModelObserver(SettingsModel(services)))
-        _session = StateObject(wrappedValue: ModelObserver(SessionModel(services)))
+        _session = StateObject(wrappedValue: ModelObserver(AppEnvironment.shared.session))
     }
 
     var body: some View {
@@ -26,6 +26,7 @@ struct SettingsView: View {
                 Label("Stremio conectado", systemImage: "person.crop.circle.badge.checkmark")
                 Button("Cerrar sesión", role: .destructive) { confirmSignOut = true }
             }
+            .listRowBackground(DS.fill)
             addons
             traktSection(model)
             Section("Idioma") {
@@ -36,27 +37,32 @@ struct SettingsView: View {
                 Picker("Subtítulos", selection: Binding(get: { s.subtitles }, set: { v in model.update { $0.subtitles = v } })) { languageOptions; Text("Sin subtítulos").tag("") }
                 Toggle("Solo subtítulos forzados", isOn: Binding(get: { s.onlyForcedSubtitles }, set: { v in model.update { $0.onlyForcedSubtitles = v } }))
             }
+            .listRowBackground(DS.fill)
             Section("Calidad") {
                 Picker("Con Wi‑Fi", selection: Binding(get: { s.quality }, set: { v in model.update { $0.quality = v } })) { qualityOptions }
                 Picker("Con datos móviles", selection: Binding(get: { s.cellularQuality }, set: { v in model.update { $0.cellularQuality = v } })) { qualityOptions }
             }
+            .listRowBackground(DS.fill)
             Section("Descargas") {
                 Toggle("Descargar solo con Wi‑Fi", isOn: Binding(get: { s.wifiOnlyDownloads }, set: { v in model.update { $0.wifiOnlyDownloads = v } }))
                 Toggle("Bajar el siguiente episodio al terminar uno", isOn: Binding(get: { s.autoNextDownload }, set: { v in model.update { $0.autoNextDownload = v } }))
                 Toggle("Borrar al terminar de verlo", isOn: Binding(get: { s.deleteWhenWatched }, set: { v in model.update { $0.deleteWhenWatched = v } }))
             }
+            .listRowBackground(DS.fill)
             Section("Reproductor") {
                 LabeledContent("Motor", value: PlayerEngines.aetherAvailable ? "AetherEngine" : "AVPlayer")
                 Toggle("Abrir siempre en Infuse", isOn: Binding(get: { s.preferInfuse }, set: { v in model.update { $0.preferInfuse = v } }))
             }
+            .listRowBackground(DS.fill)
             Section("Sugerencias") {
                 Picker("País (para lo popular en plataformas)", selection: Binding(get: { s.region }, set: { v in model.update { $0.region = v } })) {
                     ForEach(["MX", "US", "ES", "AR", "CO", "CL", "PE"], id: \.self) { Text($0).tag($0) }
                 }
-                SecureField(model.hasTMDBKey ? "Clave de TMDB guardada" : "Clave de TMDB", text: $tmdbKey).textInputAutocapitalization(.never).autocorrectionDisabled()
+                SecureField(LocalizedStringKey(model.hasTMDBKey ? "Clave de TMDB guardada" : "Clave de TMDB"), text: $tmdbKey).textInputAutocapitalization(.never).autocorrectionDisabled()
                 if !tmdbKey.isEmpty { Button("Guardar clave de TMDB") { model.setTMDBKey(tmdbKey); tmdbKey = "" } }
                 Text("TMDB pone las fichas en español y busca lo popular en Netflix, Disney+ y HBO Max.").font(DS.font(.xs)).foregroundStyle(DS.textFaint)
             }
+            .listRowBackground(DS.fill)
         }
         .scrollContentBackground(.hidden).background(TintedBackground())
         .navigationTitle("Ajustes").navigationBarTitleDisplayMode(.inline)
@@ -88,6 +94,7 @@ struct SettingsView: View {
             TextField("Pegar la dirección de un complemento", text: $newAddon).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
             if !newAddon.isEmpty { Button("Agregar complemento") { Task { await session.model.addAddon(newAddon); if session.model.addonError == nil { newAddon = "" } } } }
         }
+        .listRowBackground(DS.fill)
     }
 
     // MARK: Trakt
@@ -111,12 +118,13 @@ struct SettingsView: View {
                 }
                 Button("Cancelar", role: .cancel) { model.cancelLinking() }
             case .linked(let name):
-                Label(name.isEmpty ? "Trakt conectado" : "Trakt: \(name)", systemImage: "checkmark.seal")
+                (name.isEmpty ? Label("Trakt conectado", systemImage: "checkmark.seal") : Label("Trakt: \(name)", systemImage: "checkmark.seal"))
                 Button("Desconectar Trakt", role: .destructive) { Task { await model.unlinkTrakt() } }
             case .failed(let message):
                 DSNotice(text: LocalizedStringKey(message), tone: .error)
                 Button("Volver a intentar") { Task { await model.linkTrakt() } }
             }
         }
+        .listRowBackground(DS.fill)
     }
 }

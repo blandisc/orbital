@@ -18,7 +18,6 @@ struct SourcesSheet: View {
     var body: some View {
         let model = observer.model
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            Capsule().fill(DS.ink500).frame(width: 40, height: 5).frame(maxWidth: .infinity)
             Text("Fuentes de Real-Debrid").font(DS.font(.xl, weight: .bold)).foregroundStyle(DS.text)
             Text("La recomendada está arriba.").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
             DSSegmented(options: [(Purpose.watch, "Ver"), (.download, "Descargar")], selection: $purpose)

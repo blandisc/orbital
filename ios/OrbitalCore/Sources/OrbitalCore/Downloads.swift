@@ -50,8 +50,15 @@ public enum DownloadEvent: Sendable, Equatable {
 /// Quien baja de verdad (en la app, `URLSession` en segundo plano). En las pruebas, uno falso.
 public protocol DownloadTransport: Sendable {
     func start(id: String, url: URL, resumeFrom: Int64, file: URL) async
+    /// Pausa: detiene la descarga pero conserva lo bajado (si el transporte puede) para reanudar.
     func cancel(id: String) async
+    /// Borrar: detiene la descarga y olvida todo lo bajado.
+    func discard(id: String) async
     var events: AsyncStream<DownloadEvent> { get }
+}
+
+public extension DownloadTransport {
+    func discard(id: String) async { await cancel(id: id) }
 }
 
 public enum DownloadError: Error, Sendable, Equatable, CustomStringConvertible {
@@ -86,9 +93,7 @@ public actor Downloads {
     private let onChange: @Sendable ([DownloadItem]) -> Void
     private var items: [String: DownloadItem] = [:]
     private var listening: Task<Void, Never>?
-    /// Cada cambio de la cola (para la pantalla de Descargas).
-    public nonisolated let updates: AsyncStream<[DownloadItem]>
-    private let updatesContinuation: AsyncStream<[DownloadItem]>.Continuation
+    private nonisolated let updatesHub = UpdatesHub()
 
     /// - refresh: pide un enlace nuevo de ese título (mismo complemento y fuente); nil si no hay.
     /// - subtitles: descarga los subtítulos de ese título (nombre de archivo y contenido).
@@ -100,7 +105,6 @@ public actor Downloads {
                 onChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in }) {
         self.transport = transport; self.secrets = secrets; self.root = root; self.freeSpace = freeSpace; self.refresh = refresh
         self.subtitles = subtitles; self.clock = clock; self.backoff = backoff; self.onChange = onChange
-        (updates, updatesContinuation) = AsyncStream.makeStream(bufferingPolicy: .bufferingNewest(1))
         for var item in saved {
             // Tras cerrar la app lo que bajaba queda en cola: se retoma al arrancar.
             if item.state == .downloading { item.state = .queued }
@@ -120,7 +124,10 @@ public actor Downloads {
     public func fileURL(_ item: DownloadItem) -> URL { root.appendingPathComponent(item.relativePath) }
     public var usedBytes: Int64 { items.values.reduce(0) { $0 + $1.writtenBytes } }
 
-    private func changed() { let snapshot = all; onChange(snapshot); updatesContinuation.yield(snapshot) }
+    /// Un flujo nuevo con cada cambio de la cola (cada pantalla pide el suyo: al cerrar una, las demás siguen).
+    public nonisolated func makeUpdates() -> AsyncStream<[DownloadItem]> { updatesHub.makeStream() }
+
+    private func changed() { let snapshot = all; onChange(snapshot); updatesHub.send(snapshot) }
 
     /// Añade a la cola. `url` es el enlace de la fuente (se guarda en el Keychain, no en el archivo de la cola).
     public func enqueue(_ item: DownloadItem, url: URL) throws {
@@ -157,7 +164,7 @@ public actor Downloads {
     /// Borra la descarga y su archivo.
     public func remove(_ id: String) async {
         guard let item = items.removeValue(forKey: id) else { return }
-        await transport.cancel(id: id)
+        await transport.discard(id: id)
         try? FileManager.default.removeItem(at: fileURL(item).deletingLastPathComponent())
         secrets.set(SecretKey.download(id), nil)
         changed()
@@ -268,5 +275,28 @@ public enum DownloadFiles {
     public static func relativePath(metaID: String, videoID: String, ext: String) -> String {
         func clean(_ s: String) -> String { String(s.map { $0.isLetter || $0.isNumber || "-_.".contains($0) ? $0 : "_" }) }
         return "\(clean(metaID))/\(clean(videoID))/video.\(ext)"
+    }
+}
+
+/// Reparte la cola a cada suscriptor (el último valor al suscribirse y cada cambio después).
+final class UpdatesHub: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuations: [UUID: AsyncStream<[DownloadItem]>.Continuation] = [:]
+    private var last: [DownloadItem]?
+
+    func makeStream() -> AsyncStream<[DownloadItem]> {
+        AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
+            let id = UUID()
+            lock.withLock {
+                continuations[id] = continuation
+                if let last { continuation.yield(last) }
+            }
+            continuation.onTermination = { [weak self] _ in self?.lock.withLock { self?.continuations[id] = nil } }
+        }
+    }
+
+    func send(_ items: [DownloadItem]) {
+        let targets = lock.withLock { last = items; return Array(continuations.values) }
+        for continuation in targets { continuation.yield(items) }
     }
 }

@@ -8,6 +8,9 @@ import OrbitalModels
 final class AppEnvironment: ObservableObject {
     let services: Services
     let transport: BackgroundDownloadTransport
+    /// Una sola sesión para toda la app (la pantalla de Ajustes y la raíz ven el mismo estado al cerrar sesión).
+    private(set) var session: SessionModel!
+    private var servicesSubscription: ObservableModel.Subscription?
     let connectivity = Connectivity.shared
 
     /// Lo que se está reproduciendo con el reproductor propio (la vista del reproductor cubre toda la pantalla).
@@ -32,8 +35,12 @@ final class AppEnvironment: ObservableObject {
             downloadsRoot: AppFiles.downloadsRoot, savedDownloads: DownloadIndex.load(), freeSpace: { DiskSpace.freeBytes() },
             onDownloadsChange: { DownloadIndex.save($0) })
         self.services = services
-        transport.allowsCellular = { !services.settings.value.wifiOnlyDownloads }
-        services.episodeLabel = { Strings.episode(season: $0, episode: $1, language: services.appSettings.uiLanguage) }
+        let store = services.settings   // el almacén es seguro entre hilos: los cierres no tocan nada aislado al hilo principal
+        transport.allowsCellular = { !store.value.wifiOnlyDownloads }
+        services.episodeLabel = { Strings.episode(season: $0, episode: $1, language: store.value.uiLanguage) }
+        // Cambiar el idioma (o una clave) vuelve a pintar toda la app.
+        servicesSubscription = services.onChange { [weak self] in self?.objectWillChange.send() }
+        session = SessionModel(services)
         Task { await services.downloads.start() }
     }
 
@@ -102,11 +109,11 @@ final class AppEnvironment: ObservableObject {
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
     static var orientations: UIInterfaceOrientationMask = .portrait
-    static var downloads: BackgroundDownloadTransport?
 
     func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask { Self.orientations }
 
     func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
-        Self.downloads?.backgroundCompletion = completionHandler
+        // Puede llegar antes de que exista ninguna vista: se arma el entorno (que reconecta la sesión de descargas) y se guarda aquí.
+        AppEnvironment.shared.transport.backgroundCompletion = completionHandler
     }
 }

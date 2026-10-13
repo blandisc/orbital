@@ -41,7 +41,7 @@ struct TitleView: View {
                 sourcesFor = nil
                 handle(source: source, videoID: target.videoID, purpose: target.purpose, model: model)
             }
-            .presentationDetents([.large]).presentationBackground(DS.sheetTop)
+            .presentationDetents([.large]).presentationDragIndicator(.visible).presentationBackground(DS.sheetTop)
         }
         .confirmationDialog("Descargar", isPresented: $downloadMenu, titleVisibility: .visible) {
             if model.kind == "series" {
@@ -55,7 +55,7 @@ struct TitleView: View {
     // MARK: partes
     private func hero(_ model: TitleModel) -> some View {
         ZStack(alignment: .bottomLeading) {
-            PosterView(url: model.background ?? model.poster, title: model.title).aspectRatio(16.0 / 11.0, contentMode: .fill)
+            PosterView(url: model.background ?? model.poster, title: model.title).aspectRatio(DS.Poster.heroAspect, contentMode: .fill)
             LinearGradient(colors: [.clear, DS.bg], startPoint: .center, endPoint: .bottom)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(model.title).font(DS.font(.display, weight: .bold)).foregroundStyle(DS.text).lineLimit(3)
@@ -174,10 +174,10 @@ struct EpisodeRowView: View {
         Button(action: play) {
             HStack(alignment: .top, spacing: DS.Space.s3) {
                 ZStack(alignment: .bottom) {
-                    PosterView(url: row.thumbnail, title: "\(row.number)").aspectRatio(16.0 / 9.0, contentMode: .fill)
+                    PosterView(url: row.thumbnail, title: "\(row.number)").aspectRatio(DS.Poster.stillAspect, contentMode: .fill)
                     if let progress = row.progress { DSProgress(fraction: progress) }
                 }
-                .frame(width: DS.Poster.episodeThumbWidth, height: DS.Poster.episodeThumbWidth * 9 / 16).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+                .frame(width: DS.Poster.episodeThumbWidth, height: DS.Poster.episodeThumbWidth / DS.Poster.stillAspect).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     (row.hasTitle ? Text("\(row.number) · \(row.title)") : Text("Episodio \(row.number)")).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(2)
                     status.font(DS.font(.xs)).foregroundStyle(DS.textMuted)

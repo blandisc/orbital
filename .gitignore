@@ -11,3 +11,4 @@ config.yaml
 ios/**/.build/
 ios/**/.swiftpm/
 ios/**/*.xcodeproj
+ios/App/Build/

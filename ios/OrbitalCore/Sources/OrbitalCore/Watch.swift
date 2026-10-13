@@ -9,6 +9,7 @@ public enum PlaybackRules {
     public static let upNextCountdown: TimeInterval = 8
     public static let stillWatchingAfter = 3                 // episodios seguidos sin tocar la pantalla → «¿Sigues viendo?»
     public static let maxSourceRetries = 4                   // «otra fuente si falla»
+    public static let skipSeconds: Double = 10               // los botones y el doble toque de ±10 s
     /// Menos de 1 % (lo abriste un momento): no ensucia «Seguir viendo».
     public static let continueMinProgress = 0.01
     /// Se abrió y cerró sin ver nada: no se toca tu biblioteca.

@@ -13,15 +13,15 @@ struct ParaTiView: View {
         let m = model.model
         VStack(spacing: DS.Space.s3) {
             HStack {
-                DSSegmented(options: [(ParaTiModel.Mode.mosaic, "Mosaico"), (.lists, "Listas")], selection: Binding(get: { m.mode }, set: { m.mode = $0 }))
+                DSSegmented<ParaTiModel.Mode>(options: [(.mosaic, "Mosaico"), (.lists, "Listas")], selection: Binding(get: { m.mode }, set: { m.mode = $0 }))
                 Spacer()
                 if m.traktLinked { DSChip(text: "Trakt al día", tone: .good) }
             }
             .padding(.horizontal, DS.Space.gutter)
             if let error = m.error, m.mosaic.isEmpty, m.lists.isEmpty { DSNotice(text: LocalizedStringKey(error)).padding(.horizontal, DS.Space.gutter) }
             switch m.mode {
-            case .mosaic: MosaicView(model: m)
-            case .lists: ListsView(model: m)
+            case .mosaic: MosaicView(observer: model)
+            case .lists: ListsView(observer: model)
             }
         }
         .padding(.top, DS.Space.s2)
@@ -37,8 +37,9 @@ struct ParaTiView: View {
 /// El mosaico: columnas de imágenes a distintas alturas; la del centro es más ancha y enseña etiqueta, título y un dato
 /// (como la columna enfocada en la TV). Pulsar abre la ficha; mantener pulsado, «No me interesa».
 struct MosaicView: View {
-    let model: ParaTiModel
+    @ObservedObject var observer: ModelObserver<ParaTiModel>
     private let columns = 3
+    private var model: ParaTiModel { observer.model }
 
     var body: some View {
         GeometryReader { geo in
@@ -77,7 +78,7 @@ struct MosaicTile: View {
             ZStack(alignment: .bottomLeading) {
                 PosterView(url: expanded ? suggestion.wide : suggestion.poster, title: suggestion.title).aspectRatio(DS.Poster.aspect, contentMode: .fill)
                 if expanded {
-                    LinearGradient(colors: [.clear, DS.backdropDeep.opacity(0.92)], startPoint: .center, endPoint: .bottom)
+                    LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom)
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         Text(suggestion.title).font(DS.font(.lg, weight: .bold)).foregroundStyle(DS.text).lineLimit(2)
                         Text(facts).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
@@ -103,7 +104,8 @@ struct MosaicTile: View {
 }
 
 struct ListsView: View {
-    let model: ParaTiModel
+    @ObservedObject var observer: ModelObserver<ParaTiModel>
+    private var model: ParaTiModel { observer.model }
 
     var body: some View {
         ScrollView {
@@ -134,7 +136,7 @@ struct ListsView: View {
             ForEach([ForYouGroup.mine, .discover], id: \.self) { group in
                 let lists = model.traktLists.filter { $0.group == group }
                 if !lists.isEmpty {
-                    Text(group == .mine ? "Tuyo" : "Descubrir").font(DS.font(.sm)).foregroundStyle(DS.textMuted).padding(.horizontal, DS.Space.gutter)
+                    (group == .mine ? Text("Tuyo") : Text("Descubrir")).font(DS.font(.sm)).foregroundStyle(DS.textMuted).padding(.horizontal, DS.Space.gutter)
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: DS.Space.s2) {
                             ForEach(lists) { list in

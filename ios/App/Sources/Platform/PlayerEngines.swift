@@ -26,7 +26,13 @@ final class SnapshotHub: @unchecked Sendable {
     }
 
     func send(_ snapshot: EngineSnapshot) {
-        let targets = lock.withLock { last = snapshot; return Array(continuations.values) }
+        let targets: [AsyncStream<EngineSnapshot>.Continuation]? = lock.withLock {
+            // Un video que falla avisa varias veces (cada KVO): el modelo cambiaría de fuente por cada aviso repetido.
+            if case .failed = snapshot.state, case .failed = last.state { last = snapshot; return nil }
+            last = snapshot
+            return Array(continuations.values)
+        }
+        guard let targets else { return }
         for continuation in targets { continuation.yield(snapshot) }
     }
 }
@@ -62,6 +68,7 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
 
     func load(url: URL, startAt: Double) async throws {
         ended = false; chapters = []
+        hub.send(EngineSnapshot(state: .loading))   // un video nuevo empieza sin el «falló» del anterior
         let asset = AVURLAsset(url: url)
         let item = AVPlayerItem(asset: asset)
         await MainActor.run {
@@ -148,7 +155,7 @@ struct AVPlayerSurface: UIViewRepresentable {
 final class PlayerLayerView: UIView {
     override static var layerClass: AnyClass { AVPlayerLayer.self }
     var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
-    override init(frame: CGRect) { super.init(frame: frame); backgroundColor = .black; playerLayer.videoGravity = .resizeAspect }
+    override init(frame: CGRect) { super.init(frame: frame); backgroundColor = UIColor(DS.video); playerLayer.videoGravity = .resizeAspect }
     required init?(coder: NSCoder) { fatalError("init(coder:) no se usa") }
 }
 

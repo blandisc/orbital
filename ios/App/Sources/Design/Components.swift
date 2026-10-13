@@ -1,4 +1,6 @@
 import SwiftUI
+import UIKit
+import CoreImage
 import OrbitalCore
 
 // Las piezas del catálogo de Orbital para iPhone. Una pantalla se arma con estas; si falta una, se agrega aquí.
@@ -7,11 +9,15 @@ import OrbitalCore
 /// Un dato corto: «2,1 GB», «HDR», «Al instante» (`good`) o «34 GB» (`warn`). Una línea, nunca se parte.
 struct DSChip: View {
     enum Tone { case normal, good, warn }
-    let text: LocalizedStringKey
+    let label: Text
     var tone: Tone = .normal
 
+    init(text: LocalizedStringKey, tone: Tone = .normal) { label = Text(text); self.tone = tone }
+    /// Texto ya armado (nombres, tamaños): no se traduce.
+    init(verbatim: String, tone: Tone = .normal) { label = Text(verbatim: verbatim); self.tone = tone }
+
     var body: some View {
-        Text(text).font(DS.font(.xs)).lineLimit(1).fixedSize()
+        label.font(DS.font(.xs)).lineLimit(1).fixedSize()
             .foregroundStyle(color)
             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
             .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
@@ -20,11 +26,11 @@ struct DSChip: View {
     private var color: Color { switch tone { case .normal: DS.textMuted; case .good: DS.good; case .warn: DS.warning } }
 }
 
-/// Texto ya armado (nombres, tamaños): no se traduce.
+/// Un dato ya armado (nombres, tamaños): no se traduce.
 struct DSChipText: View {
     let text: String
     var tone: DSChip.Tone = .normal
-    var body: some View { DSChip(text: LocalizedStringKey(text), tone: tone) }
+    var body: some View { DSChip(verbatim: text, tone: tone) }
 }
 
 /// Etiqueta que llama la atención sobre el arte: «Recomendada», «En tu lista» (sin mayúsculas).
@@ -130,7 +136,7 @@ struct HeroCard<Actions: View>: View {
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             PosterView(url: background, title: title).aspectRatio(nil, contentMode: .fill)
-            LinearGradient(colors: [.clear, DS.backdropDeep.opacity(0.92)], startPoint: .center, endPoint: .bottom)
+            LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom)
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 if let badge { DSBadge(text: badge) }
                 Text(title).font(DS.font(.xl, weight: .bold)).foregroundStyle(DS.text).lineLimit(2)
@@ -154,17 +160,17 @@ struct DSButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(DS.font(.md, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.85)
+            .font(DS.font(.md, weight: .semibold)).lineLimit(1).minimumScaleFactor(DesignTokens.Opacity.shrink)
             .foregroundStyle(kind == .primary ? DS.onPrimary : kind == .danger ? DS.danger : DS.text)
             .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s3)
-            .frame(minHeight: 44)
+            .frame(minHeight: DS.Size.touchTarget)
             .background(background(configuration.isPressed), in: RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .opacity(enabled ? 1 : 0.4)
+            .opacity(enabled ? 1 : DesignTokens.Opacity.disabled)
     }
 
     private func background(_ pressed: Bool) -> Color {
         switch kind {
-        case .primary: pressed ? DS.primary.opacity(0.8) : DS.primary
+        case .primary: pressed ? DS.primary.opacity(DesignTokens.Opacity.pressed) : DS.primary
         case .secondary, .danger: pressed ? DS.fillStrong : DS.fill
         }
     }
@@ -187,7 +193,7 @@ struct DSIconButton: View {
         Button(action: action) {
             Image(systemName: symbol).font(DS.font(.md, weight: .semibold))
                 .foregroundStyle(prominent ? DS.onPrimary : DS.text)
-                .frame(width: 44, height: 44)
+                .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
                 .background(prominent ? DS.primary : DS.fill, in: Circle())
         }
         .accessibilityLabel(Text(label))
@@ -277,13 +283,16 @@ struct TintedBackground: View {
 final class ArtTint: ObservableObject {
     @Published private(set) var color: Color = DS.bg
     private static var cache: [String: Color] = [:]
+    private static let cacheLimit = 64
 
     func load(_ url: String?) async {
         guard let url, let u = URL(string: url) else { return }
         if let hit = Self.cache[url] { color = hit; return }
-        guard let (data, _) = try? await URLSession.shared.data(from: u), let image = UIImage(data: data), let average = image.averageColor else { return }
+        guard let (data, _) = try? await URLSession.shared.data(from: u),
+              let average = await Task.detached(priority: .utility, operation: { UIImage(data: data)?.averageColor }).value else { return }
         // Muy oscurecido: mezcla con el grafito más profundo.
         let mixed = Color(uiColor: average).mix(with: DS.backdropDeep, by: 0.55)
+        if Self.cache.count >= Self.cacheLimit { Self.cache.removeAll() }
         Self.cache[url] = mixed
         color = mixed
     }
@@ -297,6 +306,6 @@ private extension UIImage {
         guard let output = filter?.outputImage else { return nil }
         var pixel = [UInt8](repeating: 0, count: 4)
         CIContext().render(output, toBitmap: &pixel, rowBytes: 4, bounds: CGRect(x: 0, y: 0, width: 1, height: 1), format: .RGBA8, colorSpace: nil)
-        return UIColor(red: CGFloat(pixel[0]) / 255, green: CGFloat(pixel[1]) / 255, blue: CGFloat(pixel[2]) / 255, alpha: 1)
+        return UIColor(red: CGFloat(pixel[0]) / 255, green: CGFloat(pixel[1]) / 255, blue: CGFloat(pixel[2]) / 255, alpha: 1)  // ds-exception: el color sale de los píxeles del póster, no es un valor de diseño
     }
 }

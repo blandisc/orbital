@@ -26,7 +26,7 @@ struct BrowseView: View {
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Buscar películas y series"))
         .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
         .task(id: query) {
-            try? await Task.sleep(nanoseconds: 300_000_000)    // espera a que termines de escribir
+            try? await Task.sleep(nanoseconds: DS.Timing.searchDebounce)    // espera a que termines de escribir
             guard !Task.isCancelled else { return }
             await search.model.search(query)
         }

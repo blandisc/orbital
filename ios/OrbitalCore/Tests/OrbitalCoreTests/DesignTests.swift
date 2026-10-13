@@ -32,17 +32,20 @@ final class DesignTests: XCTestCase {
         let sources = repo.appendingPathComponent("ios/App/Sources")
         guard let files = FileManager.default.enumerator(at: sources, includingPropertiesForKeys: nil) else { return XCTFail("falta ios/App/Sources") }
         let forbidden: [(String, String)] = [
-            (#"Color\(\s*(red|white|hue|\.sRGB)"#, "color escrito a mano"), (#"Color\("#, "color por nombre (usa un token)"),
-            (#"UIColor\("#, "UIColor a mano"), (#"#colorLiteral"#, "color literal"), (#"\.foregroundColor\(\.(red|blue|green|white|black|gray|yellow|orange|pink|purple)"#, "color del sistema"),
+            (#"Color\(\s*(red|white|hue|\.sRGB)"#, "color escrito a mano"), (#"Color\(\s*""#, "color por nombre (usa un token)"),
+            (#"UIColor\(\s*(red|white|hue|named)"#, "UIColor a mano"), (#"#colorLiteral"#, "color literal"), (#"\.foregroundColor\(\.(red|blue|green|white|black|gray|yellow|orange|pink|purple)"#, "color del sistema"),
             (#"\.(red|blue|green|yellow|orange|pink|purple)\b(?!\w)"#, "color del sistema"),
             (#"\.font\(\.system\(size:"#, "tamaño de letra a mano"), (#"\.animation\(\.[a-zA-Z]+\(duration:\s*[0-9.]+"#, "duración a mano"),
             (#"withAnimation\(\.[a-zA-Z]+\(duration:\s*[0-9.]+"#, "duración a mano"), (#"\.cornerRadius\(\s*[0-9]"#, "radio a mano"),
             (#"\.padding\(\s*[0-9]"#, "espacio a mano"), (#"\.zIndex\(\s*[0-9]"#, "capa a mano"),
+            (#"\.frame\([^)]*\b(width|height|minHeight|maxWidth|minWidth|maxHeight):\s*[0-9]"#, "medida a mano"),
+            (#"\.opacity\(\s*[0-9]"#, "opacidad a mano"), (#"sleep\(nanoseconds:\s*[0-9]"#, "espera a mano"),
+            (#"\.aspectRatio\(\s*[0-9]"#, "relación de aspecto a mano"), (#"\.minimumScaleFactor\(\s*[0-9]"#, "escala a mano"),
         ]
         var problems: [String] = []
         for case let file as URL in files where file.pathExtension == "swift" {
             let relative = file.path.replacingOccurrences(of: sources.path + "/", with: "")
-            if relative.hasPrefix("Design/") { continue }   // el sistema de diseño es quien define los valores
+            if relative == "Design/Tokens.swift" { continue }   // aquí se convierten los tokens a SwiftUI; el resto, también del diseño, los usa
             let text = try String(contentsOf: file, encoding: .utf8)
             for (index, line) in text.components(separatedBy: "\n").enumerated() where !line.contains("ds-exception:") && !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") {
                 for (pattern, what) in forbidden where line.range(of: pattern, options: .regularExpression) != nil {

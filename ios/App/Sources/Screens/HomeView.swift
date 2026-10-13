@@ -6,6 +6,7 @@ struct HomeView: View {
     @EnvironmentObject private var env: AppEnvironment
     @StateObject private var home: ModelObserver<HomeModel>
     @StateObject private var tint = ArtTint()
+    @State private var pendingCount = 0
 
     init() { _home = StateObject(wrappedValue: ModelObserver(HomeModel(AppEnvironment.shared.services))) }
 
@@ -47,7 +48,12 @@ struct HomeView: View {
         .navigationTitle("").navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { NavigationLink { SettingsView() } label: { Image(systemName: "person.crop.circle") }.accessibilityLabel(Text("Ajustes")) } }
         .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
-        .task { await model.refresh(); await tint.load(model.continueWatching.first?.poster) }
+        .task {
+            await model.refresh()
+            let work = env.services.pending.load()      // una sola lectura por actualización, no una por cada pintado
+            pendingCount = work.progress.count + work.traktWatched.count
+            await tint.load(model.continueWatching.first?.poster)
+        }
         .refreshable { await model.refresh() }
     }
 
@@ -61,8 +67,7 @@ struct HomeView: View {
     }
 
     @ViewBuilder private var syncStatus: some View {
-        let count = env.services.pending.load().progress.count + env.services.pending.load().traktWatched.count
-        if count > 0 { DSChip(text: "\(count) cambios por subir", tone: .warn) } else { DSChip(text: "Stremio al día", tone: .good) }
+        if pendingCount > 0 { DSChip(text: "\(pendingCount) cambios por subir", tone: .warn) } else { DSChip(text: "Stremio al día", tone: .good) }
     }
 
     private func hero(_ item: HomeItem) -> some View {

@@ -33,6 +33,7 @@ struct PlayerScreen: View {
     @State private var panel = false
     @State private var sources = false
     @State private var scrubbing: Double?
+    @State private var finished = false
 
     var body: some View {
         let model = holder.model
@@ -50,9 +51,9 @@ struct PlayerScreen: View {
         .task {
             lockLandscape()
             UIApplication.shared.isIdleTimerDisabled = true
-            await model.begin(request)
-            scheduleHide()
-            while !Task.isCancelled { try? await Task.sleep(nanoseconds: 1_000_000_000); await model.tick() }
+            // `begin` va aparte: el plazo de arranque (45 s) tiene que seguir corriendo mientras carga.
+            Task { await model.begin(request); scheduleHide() }
+            while !Task.isCancelled { try? await Task.sleep(nanoseconds: DS.Timing.tick); await model.tick() }
         }
         .onChange(of: scenePhase) { _, phase in if phase != .active { Task { await model.appDidEnterBackground() } } }
         .onChange(of: model.phase) { _, phase in if phase == .closed { finish() } }
@@ -60,7 +61,7 @@ struct PlayerScreen: View {
             Button("Seguir") { Task { await model.confirmStillWatching() } }
             Button("Salir", role: .cancel) { Task { await close() } }
         } message: { Text("Llevas tres episodios seguidos.") }
-        .sheet(isPresented: $panel) { TrackPanel(model: model, openSources: { panel = false; sources = true }, openInInfuse: { Task { await openInInfuse() } }).presentationDetents([.medium, .large]).presentationBackground(DS.sheetTop) }
+        .sheet(isPresented: $panel) { TrackPanel(model: model, openSources: { panel = false; Task { try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 8); sources = true } }, openInInfuse: { Task { await openInInfuse() } }).presentationDetents([.medium, .large]).presentationBackground(DS.sheetTop) }
         .sheet(isPresented: $sources) { PlayerSources(model: model) { sources = false }.presentationDetents([.large]).presentationBackground(DS.sheetTop) }
         .onDisappear { UIApplication.shared.isIdleTimerDisabled = false; unlockPortrait() }
     }
@@ -68,8 +69,8 @@ struct PlayerScreen: View {
     // MARK: gestos
     private func gestureLayer(_ model: PlayerModel) -> some View {
         HStack(spacing: 0) {
-            Color.clear.contentShape(Rectangle()).onTapGesture(count: 2) { Task { await model.skip(-10) }; pulse() }
-            Color.clear.contentShape(Rectangle()).onTapGesture(count: 2) { Task { await model.skip(10) }; pulse() }
+            Color.clear.contentShape(Rectangle()).onTapGesture(count: 2) { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
+            Color.clear.contentShape(Rectangle()).onTapGesture(count: 2) { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }
         }
         .contentShape(Rectangle())
         .onTapGesture { controlsVisible.toggle(); if controlsVisible { scheduleHide() } }
@@ -81,7 +82,7 @@ struct PlayerScreen: View {
     private func scheduleHide() {
         hideTask?.cancel()
         hideTask = Task {
-            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
             if !Task.isCancelled, holder.model.snapshot.state == .playing { controlsVisible = false }
         }
     }
@@ -121,9 +122,9 @@ struct PlayerScreen: View {
                 }
                 Spacer()
                 HStack(spacing: DS.Space.s10) {
-                    DSIconButton(symbol: "gobackward.10", label: "Retroceder 10 segundos") { Task { await model.skip(-10) }; pulse() }
+                    DSIconButton(symbol: "gobackward.10", label: "Retroceder 10 segundos") { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
                     DSIconButton(symbol: model.snapshot.state == .playing ? "pause.fill" : "play.fill", label: model.snapshot.state == .playing ? "Pausa" : "Reproducir", prominent: true) { Task { await model.togglePlay() }; pulse() }
-                    DSIconButton(symbol: "goforward.10", label: "Adelantar 10 segundos") { Task { await model.skip(10) }; pulse() }
+                    DSIconButton(symbol: "goforward.10", label: "Adelantar 10 segundos") { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }
                 }
                 Spacer()
                 scrubber(model)
@@ -161,6 +162,8 @@ struct PlayerScreen: View {
     }
 
     private func finish() {
+        guard !finished else { return }
+        finished = true
         if request.localFile != nil {
             let id = DownloadItem.makeID(metaID: request.metaID, videoID: request.videoID)
             let snapshot = holder.model.snapshot
@@ -207,7 +210,7 @@ struct UpNextCard: View {
                     Button("Cancelar", action: cancel).buttonStyle(.dsSecondary)
                 }
             }
-            .padding(DS.Space.s4).frame(maxWidth: 320, alignment: .leading)
+            .padding(DS.Space.s4).frame(maxWidth: DS.Size.cardMax, alignment: .leading)
             .background(DS.sheetTop, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
             .padding(DS.Space.s6)
         } }
@@ -238,20 +241,22 @@ struct TrackPanel: View {
                 }
                 if snapshot.audioTracks.isEmpty { Text("Sin pistas de audio").foregroundStyle(DS.textMuted) }
             }
+            .listRowBackground(DS.fill)
             Section("Subtítulos") {
                 row(Strings.tr("Sin subtítulos", language: env.services.appSettings.uiLanguage), selected: snapshot.selectedSubtitle == nil) { Task { await model.selectSubtitle(nil) } }
                 ForEach(snapshot.subtitleTracks) { track in
                     row(TrackChooser.label(track, locale: locale), selected: snapshot.selectedSubtitle == track.id) { Task { await model.selectSubtitle(track.id) } }
                 }
             }
+            .listRowBackground(DS.fill)
             Section("Más") {
                 Button("Otra fuente…", action: openSources)
                 Button { openInInfuse() } label: { Label("Abrir en Infuse", systemImage: "arrow.up.forward.app") }
             }
+            .listRowBackground(DS.fill)
         }
         .scrollContentBackground(.hidden).background(DS.sheetTop)
-        .listRowBackground(DS.fill)
-    }
+            }
 
     private func row(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {

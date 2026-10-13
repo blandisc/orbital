@@ -17,7 +17,7 @@ public final class DownloadsModel: ObservableModel {
     public func run() async {
         items = await services.downloads.all
         freeBytes = freeSpace()
-        for await snapshot in services.downloads.updates { items = snapshot; freeBytes = freeSpace() }
+        for await snapshot in services.downloads.makeUpdates() { items = snapshot; freeBytes = freeSpace() }
     }
 
     public var active: [DownloadItem] { items.filter { $0.state != .done } }

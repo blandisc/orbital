@@ -48,8 +48,9 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_EMIT_LOC_STRINGS: YES
         LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+        STRING_CATALOG_GENERATE_SYMBOLS: NO
     info:
-      path: Resources/Info.plist
+      path: Build/Info.plist
       properties:
         CFBundleDisplayName: Orbital
         CFBundleDevelopmentRegion: es
@@ -65,7 +66,8 @@ targets:
         # Para poder preguntar si Infuse está instalado.
         LSApplicationQueriesSchemes: [infuse]
         # Los complementos de Stremio pueden dar enlaces http (no solo https) para el video.
+        # App personal: los complementos (y a veces sus archivos) pueden usar http, no solo https.
         NSAppTransportSecurity:
-          NSAllowsArbitraryLoadsForMedia: true
+          NSAllowsArbitraryLoads: true
     scheme:
       testTargets: []

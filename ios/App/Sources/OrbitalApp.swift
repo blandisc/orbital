@@ -18,7 +18,6 @@ struct OrbitalApp: App {
                 .environment(\.locale, env.uiLocale)
                 .preferredColorScheme(.dark)
                 .tint(DS.primary)
-                .onAppear { AppDelegate.downloads = env.transport }
                 .onOpenURL { url in Task { await env.handle(url: url) } }
         }
     }

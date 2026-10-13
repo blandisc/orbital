@@ -11,7 +11,7 @@ func timeLeftText(minutes: Int) -> LocalizedStringKey {
 }
 
 /// «T2 · E5» / «S2 · E5» (o nada si es una película), en el idioma de la app.
-func episodeText(season: Int?, episode: Int?) -> String {
+@MainActor func episodeText(season: Int?, episode: Int?) -> String {
     guard let episode else { return "" }
     return Strings.episode(season: season, episode: episode, language: AppEnvironment.shared.services.appSettings.uiLanguage)
 }

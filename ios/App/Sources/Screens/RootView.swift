@@ -18,7 +18,7 @@ struct RootView: View {
 
     init() {
         let env = AppEnvironment.shared
-        _session = StateObject(wrappedValue: ModelObserver(SessionModel(env.services)))
+        _session = StateObject(wrappedValue: ModelObserver(env.session))
         _services = StateObject(wrappedValue: ModelObserver(env.services))
     }
 
@@ -43,7 +43,7 @@ struct RootView: View {
     }
 }
 
-extension PlayRequest: Identifiable { public var id: String { "\(metaID)|\(videoID)" } }
+extension PlayRequest: @retroactive Identifiable { public var id: String { "\(metaID)|\(videoID)" } }
 
 struct MainTabs: View {
     var body: some View {
@@ -65,7 +65,7 @@ struct BannerView: View {
             DSNotice(text: LocalizedStringKey(text), tone: .warn)
                 .padding(DS.Space.s4)
                 .transition(.move(edge: .top).combined(with: .opacity))
-                .task(id: text) { try? await Task.sleep(nanoseconds: 4_000_000_000); env.banner = nil }
+                .task(id: text) { try? await Task.sleep(nanoseconds: DS.Timing.banner); env.banner = nil }
                 .onTapGesture { env.banner = nil }
         }
     }

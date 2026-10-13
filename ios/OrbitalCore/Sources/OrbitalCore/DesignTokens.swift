@@ -18,7 +18,16 @@ public enum DesignTokens {
     public enum TextSize { public static let xs = 11.0, sm = 12.5, md = 15.0, lg = 17.0, xl = 22.0, xxl = 28.0, display = 34.0 }
     /// Duraciones en segundos; con «Reducir movimiento» valen 0.
     public enum Motion { public static let fast = 0.12, base = 0.2, slow = 0.35, enter = 0.45, tint = 0.6 }
-    public enum Opacity { public static let hairline = 0.09, fill = 0.10, fillStrong = 0.16, faint = 0.5, track = 0.2, scrim = 0.62 }
+    public enum Opacity {
+        public static let hairline = 0.09, fill = 0.10, fillStrong = 0.16, faint = 0.5, track = 0.2, scrim = 0.62
+        public static let scrimStrong = 0.92, badge = 0.8, pressed = 0.8, disabled = 0.4, shrink = 0.85
+    }
+    /// Medidas fijas (puntos): el mínimo táctil de iOS, miniaturas, tarjetas.
+    public enum Size { public static let touchTarget = 44.0, thumbSmall = 48.0, cardMax = 320.0, grabber = 40.0, grabberHeight = 5.0 }
+    /// Relaciones de aspecto de las imágenes.
+    public enum Aspect { public static let poster = 2.0 / 3.0, hero = 16.0 / 11.0, still = 16.0 / 9.0 }
+    /// Esperas de la interfaz (segundos).
+    public enum Timing { public static let controlsHide = 4.0, banner = 4.0, searchDebounce = 0.3, tick = 1.0, longPressDelay = 0.4 }
 }
 
 /// Convierte «#rrggbb» en sus componentes 0…1.

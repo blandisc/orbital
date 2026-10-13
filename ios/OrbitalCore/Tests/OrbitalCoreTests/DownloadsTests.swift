@@ -4,13 +4,15 @@ import XCTest
 final class FakeTransport: DownloadTransport, @unchecked Sendable {
     struct Start: Equatable { var id: String; var url: URL; var resumeFrom: Int64; var file: URL }
     private let lock = NSLock()
-    private var _starts: [Start] = [], _cancels: [String] = []
+    private var _starts: [Start] = [], _cancels: [String] = [], _discards: [String] = []
     let events: AsyncStream<DownloadEvent>
     private let continuation: AsyncStream<DownloadEvent>.Continuation
 
     init() { (events, continuation) = AsyncStream.makeStream() }
     var starts: [Start] { lock.withLock { _starts } }
     var cancels: [String] { lock.withLock { _cancels } }
+    var discards: [String] { lock.withLock { _discards } }
+    func discard(id: String) async { lock.withLock { _discards.append(id) } }
     func start(id: String, url: URL, resumeFrom: Int64, file: URL) async { lock.withLock { _starts.append(.init(id: id, url: url, resumeFrom: resumeFrom, file: file)) } }
     func cancel(id: String) async { lock.withLock { _cancels.append(id) } }
     func emit(_ event: DownloadEvent) { continuation.yield(event) }
@@ -131,6 +133,21 @@ final class DownloadsTests: XCTestCase {
         await settle("la tercera ocupa el lugar") { transport.starts.count == 3 }
     }
 
+    func testEachScreenGetsItsOwnUpdatesAndOneClosingDoesNotKillTheOthers() async throws {
+        let transport = FakeTransport()
+        let d = makeDownloads(transport)
+        let first = Task { () -> Int in var n = 0; for await _ in d.makeUpdates() { n += 1; if n == 2 { break } }; return n }
+        let second = d.makeUpdates()
+        try await d.enqueue(item("tt1:1:1"), url: URL(string: "https://rd.example/a.mkv")!)
+        _ = await first.value                                  // la primera pantalla se cierra
+        try await d.enqueue(item("tt1:1:2"), url: URL(string: "https://rd.example/b.mkv")!)
+        var seen = 0
+        for await items in second { seen = items.count; if seen == 2 { break } }
+        XCTAssertEqual(seen, 2, "la segunda pantalla sigue viendo los cambios")
+        let late = d.makeUpdates()                             // una pantalla que entra después ve lo último al instante
+        for await items in late { XCTAssertEqual(items.count, 2); break }
+    }
+
     func testRemoveDeletesFileAndLink() async throws {
         let transport = FakeTransport(), secrets = InMemorySecrets()
         let d = makeDownloads(transport, secrets: secrets)
@@ -138,6 +155,7 @@ final class DownloadsTests: XCTestCase {
         await settle("start") { transport.starts.count == 1 }
         try Data(count: 5).write(to: transport.starts[0].file)
         await d.remove("tt1|tt1:1:1")
+        XCTAssertEqual(transport.discards, ["tt1|tt1:1:1"], "borrar olvida también lo bajado, no solo pausa")
         XCTAssertFalse(FileManager.default.fileExists(atPath: transport.starts[0].file.path))
         XCTAssertNil(secrets.get(SecretKey.download("tt1|tt1:1:1")))
         let remaining = await d.all

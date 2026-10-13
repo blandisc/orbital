@@ -2,14 +2,22 @@ import Foundation
 import OrbitalCore
 
 /// Descargas con `URLSession` en segundo plano: el sistema sigue bajando con la app suspendida y la relanza al
-/// terminar (no sobreviven a cerrar la app a la fuerza: iOS las cancela). Se reanuda con `Range` desde lo que ya hay.
+/// terminar (no sobreviven a cerrar la app a la fuerza: iOS las cancela).
 ///
-/// Un `URLSessionDownloadTask` escribe en un archivo temporal: al terminar, si el servidor respondió 206 se agrega al
-/// parcial; si respondió 200 (ignoró el Range) lo reemplaza.
+/// - **Pausa o corte**: se conserva lo bajado con los *datos de reanudación* de `URLSession` y se continúa con ellos
+///   mientras el enlace siga valiendo.
+/// - **Enlace caducado** (Real-Debrid): el enlace nuevo no puede usar esos datos (están atados al enlace viejo), así que
+///   se baja de nuevo desde cero con el enlace nuevo.
+/// - **Relanzar la app**: una descarga que el sistema siguió en segundo plano se *adopta*, no se reinicia.
 final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSessionDownloadDelegate, @unchecked Sendable {
     static let identifier = "com.example.orbital.ios.downloads"
 
-    private struct Context: Codable { var file: String; var resumeFrom: Int64 }
+    private struct Context: Codable {
+        var file: String            // relativo a `root`: la ruta del contenedor cambia al actualizar la app
+        var url: String
+        var usedResumeData = false
+    }
+
     private let lock = NSLock()
     private var contexts: [String: Context] = [:]
     private var lastProgress: [String: Date] = [:]
@@ -17,12 +25,17 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
     private let continuation: AsyncStream<DownloadEvent>.Continuation
     let events: AsyncStream<DownloadEvent>
     private let defaults: UserDefaults
+    private let root: URL
+    private let resumeFolder: URL
     var allowsCellular: @Sendable () -> Bool = { false }
     /// Lo guarda `AppDelegate.application(_:handleEventsForBackgroundURLSession:)`.
     var backgroundCompletion: (() -> Void)?
 
-    init(defaults: UserDefaults = .standard) {
+    init(root: URL = AppFiles.downloadsRoot, defaults: UserDefaults = .standard) {
+        self.root = root
         self.defaults = defaults
+        resumeFolder = AppFiles.support.appendingPathComponent("Resume", isDirectory: true)
+        try? FileManager.default.createDirectory(at: resumeFolder, withIntermediateDirectories: true)
         (events, continuation) = AsyncStream.makeStream(bufferingPolicy: .unbounded)
         super.init()
         contexts = (defaults.data(forKey: "orbital.download-contexts").flatMap { try? JSONDecoder().decode([String: Context].self, from: $0) }) ?? [:]
@@ -34,41 +47,77 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
     }
 
+    // MARK: archivos
+    private func relative(_ file: URL) -> String { file.path.hasPrefix(root.path + "/") ? String(file.path.dropFirst(root.path.count + 1)) : file.path }
+    private func absolute(_ path: String) -> URL { path.hasPrefix("/") ? URL(fileURLWithPath: path) : root.appendingPathComponent(path) }
+    private func resumeFile(_ id: String) -> URL { resumeFolder.appendingPathComponent(Data(id.utf8).base64EncodedString().replacingOccurrences(of: "/", with: "_")) }
     private func saveContexts() { defaults.set(try? JSONEncoder().encode(contexts), forKey: "orbital.download-contexts") }
 
+    // MARK: DownloadTransport
     func start(id: String, url: URL, resumeFrom: Int64, file: URL) async {
-        // Si ya había una tarea para ese id (la app se relanzó), se cancela: se empieza de nuevo desde lo que hay en disco.
-        await cancel(id: id)
-        var request = URLRequest(url: url)
-        request.allowsCellularAccess = allowsCellular()
-        request.setValue("Orbital", forHTTPHeaderField: "User-Agent")
-        if resumeFrom > 0 { request.setValue("bytes=\(resumeFrom)-", forHTTPHeaderField: "Range") }
-        let task = session.downloadTask(with: request)
+        // Si el sistema siguió bajando mientras la app estaba cerrada, esa tarea sigue viva: se adopta (no se reinicia).
+        let tasks = await session.allTasks
+        if tasks.contains(where: { $0.taskDescription == id && $0.state != .completed }) {
+            lock.withLock { if contexts[id] == nil { contexts[id] = Context(file: relative(file), url: url.absoluteString); saveContexts() } }
+            return
+        }
+        let resumeURL = resumeFile(id)
+        let sameLink = lock.withLock { contexts[id]?.url == url.absoluteString }
+        let task: URLSessionDownloadTask
+        var usedResume = false
+        if sameLink, let data = try? Data(contentsOf: resumeURL), !data.isEmpty {
+            task = session.downloadTask(withResumeData: data)
+            usedResume = true
+        } else {
+            try? FileManager.default.removeItem(at: resumeURL)     // enlace nuevo: lo bajado con el viejo no sirve
+            var request = URLRequest(url: url)
+            request.allowsCellularAccess = allowsCellular()
+            request.setValue("Orbital", forHTTPHeaderField: "User-Agent")
+            if resumeFrom > 0 { request.setValue("bytes=\(resumeFrom)-", forHTTPHeaderField: "Range") }
+            task = session.downloadTask(with: request)
+        }
         task.taskDescription = id
-        lock.withLock { contexts[id] = Context(file: file.path, resumeFrom: resumeFrom); saveContexts() }
+        lock.withLock { contexts[id] = Context(file: relative(file), url: url.absoluteString, usedResumeData: usedResume); saveContexts() }
+        try? FileManager.default.removeItem(at: resumeURL)
         task.resume()
     }
 
+    /// Pausa: se detiene y se guardan los datos de reanudación.
     func cancel(id: String) async {
         let tasks = await session.allTasks
+        for task in tasks where task.taskDescription == id {
+            await withCheckedContinuation { (done: CheckedContinuation<Void, Never>) in
+                guard let download = task as? URLSessionDownloadTask else { task.cancel(); return done.resume() }
+                download.cancel(byProducingResumeData: { [weak self] data in
+                    if let self, let data { try? data.write(to: self.resumeFile(id), options: .atomic) }
+                    done.resume()
+                })
+            }
+        }
+    }
+
+    /// Borrar: se detiene y se olvida todo.
+    func discard(id: String) async {
+        let tasks = await session.allTasks
         for task in tasks where task.taskDescription == id { task.cancel() }
-        lock.withLock { contexts[id] = nil; saveContexts() }
+        try? FileManager.default.removeItem(at: resumeFile(id))
+        lock.withLock { contexts[id] = nil; lastProgress[id] = nil; saveContexts() }
     }
 
     // MARK: URLSessionDownloadDelegate
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
         guard let id = downloadTask.taskDescription, let context = lock.withLock({ contexts[id] }) else { return }
         let response = downloadTask.response as? HTTPURLResponse
-        let partial = response?.statusCode == 206
-        let base = partial ? context.resumeFrom : 0
-        var total: Int64?
-        if partial, let range = response?.value(forHTTPHeaderField: "Content-Range"), let last = range.split(separator: "/").last, let n = Int64(last) { total = n }
-        else if totalBytesExpectedToWrite > 0 { total = base + totalBytesExpectedToWrite }
+        var base: Int64 = 0
+        var total: Int64? = totalBytesExpectedToWrite > 0 ? totalBytesExpectedToWrite : nil
+        if !context.usedResumeData, response?.statusCode == 206, let range = response?.value(forHTTPHeaderField: "Content-Range"),
+           let parts = range.split(separator: "/").last, let full = Int64(parts) { total = full; base = full - max(totalBytesExpectedToWrite, 0) }
         let now = Date()
         let due = lock.withLock { () -> Bool in
             if let last = lastProgress[id], now.timeIntervalSince(last) < 0.5 { return false }
             lastProgress[id] = now; return true
         }
+        // Con datos de reanudación `totalBytesWritten` ya incluye lo que se había bajado.
         if due { continuation.yield(.progress(id: id, written: base + totalBytesWritten, total: total)) }
     }
 
@@ -78,16 +127,19 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         guard (200..<300).contains(status) else {
             // Un 403/404/410 no es un archivo: Real-Debrid dice que el enlace caducó.
             continuation.yield(.failed(id: id, status: status, message: "HTTP \(status)"))
-            lock.withLock { contexts[id] = nil; saveContexts() }
             return
         }
-        let destination = URL(fileURLWithPath: context.file)
+        let destination = absolute(context.file)
         do {
             try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
-            if status == 206, context.resumeFrom > 0, FileManager.default.fileExists(atPath: destination.path) {
+            if status == 206, !context.usedResumeData {
+                // Un trozo (se pidió con Range): solo sirve si el parcial está ahí; si no, se pide completo otra vez.
+                guard FileManager.default.fileExists(atPath: destination.path) else {
+                    continuation.yield(.failed(id: id, status: nil, message: "Falta el archivo parcial"))
+                    return
+                }
                 let handle = try FileHandle(forWritingTo: destination)
                 defer { try? handle.close() }
-                try handle.truncate(atOffset: UInt64(context.resumeFrom))   // por si quedó algo de más al cortarse
                 try handle.seekToEnd()
                 let reader = try FileHandle(forReadingFrom: location)
                 defer { try? reader.close() }
@@ -98,16 +150,20 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
             }
             var excluded = URLResourceValues(); excluded.isExcludedFromBackup = true
             var mutable = destination; try? mutable.setResourceValues(excluded)
+            try? FileManager.default.removeItem(at: resumeFile(id))
             continuation.yield(.finished(id: id))
         } catch {
             continuation.yield(.failed(id: id, status: nil, message: "No pude guardar el archivo: \(error.localizedDescription)"))
         }
-        lock.withLock { contexts[id] = nil; saveContexts() }
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        guard let error, let id = task.taskDescription else { return }
-        if (error as NSError).code == NSURLErrorCancelled { return }   // lo cancelamos nosotros (pausa o borrar)
+        guard let id = task.taskDescription else { return }
+        guard let error else { lock.withLock { contexts[id] = nil; saveContexts() }; return }
+        let nsError = error as NSError
+        // Un corte (sin red, tiempo agotado) trae datos para continuar: se guardan.
+        if let data = nsError.userInfo[NSURLSessionDownloadTaskResumeData] as? Data { try? data.write(to: resumeFile(id), options: .atomic) }
+        if nsError.code == NSURLErrorCancelled { return }   // lo cancelamos nosotros (pausa o borrar)
         continuation.yield(.failed(id: id, status: (task.response as? HTTPURLResponse)?.statusCode, message: error.localizedDescription))
     }
 
