@@ -19,7 +19,7 @@ from .config import Config
 from .credentials import Credentials
 from .events import EventBus
 from .launcher import Launcher
-from .library import cinemeta, streams, stremio_api
+from .library import addons, cinemeta, streams, stremio_api
 from .library.models import LibraryItem
 from .sessions import Sessions
 from .state import State
@@ -160,7 +160,11 @@ class Watch:
         self._stremio_again = False
         self._stremio_generation = 0
         self._stremio_publish = threading.Lock()
-        self.streams = streams.StreamFinder(self.stremio_client)
+        # Tus complementos (los de la cuenta y los de config.yaml): fuentes, subtítulos y fichas.
+        self.addons = addons.AddonRegistry(self.stremio_client, auth=lambda: self.credentials.get(STREMIO_KEY),
+                                           local=config.stremio.addons)
+        self.cinemeta.registry = self.addons
+        self.streams = streams.StreamFinder(self.addons)
         self.player = player.OrbitalPlayer(
             on_finished=self._player_finished, idle_seconds=config.sessions.video_idle_minutes * 60,
             on_idle=lambda title, minutes: self.events.publish({
@@ -171,6 +175,11 @@ class Watch:
     @property
     def stremio_linked(self) -> bool:
         return bool(self.credentials.get(STREMIO_KEY))
+
+    @property
+    def has_addons(self) -> bool:
+        """Hay a quién pedirle fuentes: tu cuenta de Stremio o complementos en config.yaml."""
+        return self.stremio_linked or bool(self.addons.local)
 
     def _load_stremio_cache(self) -> list[LibraryItem]:
         if not self._stremio_cache or not self.stremio_linked:
@@ -364,9 +373,9 @@ class Watch:
 
     def stream_sources(self, kind: str, video_id: str, prefs: streams.Preferences | None = None) -> list[streams.Source]:
         """Fuentes de tus addons, ordenadas por tus preferencias (la primera es la recomendada)."""
-        if not self.stremio_linked:
+        if not self.has_addons:
             raise stremio_api.StremioError("Conecta tu cuenta de Stremio en Ajustes")
-        return self.streams.find(self.credentials.get(STREMIO_KEY) or "", kind, video_id, prefs or self.stream_prefs)
+        return self.streams.find(kind, video_id, prefs or self.stream_prefs)
 
     def _wire_player(self) -> None:
         """Lo que el reproductor le pregunta al catálogo (siguiente episodio, otras fuentes…)."""
@@ -480,8 +489,7 @@ class Watch:
         subs = self.subtitles_lang if subs is None else subs
         if subs == "forced":
             return None  # solo los forzados que trae el video: no se buscan subtítulos completos
-        auth = self.credentials.get(STREMIO_KEY) or ""
-        return (lambda: self.streams.subtitles(auth, kind, video_id, subs)) if subs else None
+        return (lambda: self.streams.subtitles(kind, video_id, subs)) if subs else None
 
     def play_native(self, mpv_exe: str, url: str, kind: str, meta_id: str, video_id: str, title: str,
                     keep: bool = False, source: streams.Source | None = None, from_start: bool = False,
@@ -627,7 +635,7 @@ class Watch:
     @property
     def native_player(self) -> bool:
         """¿Se puede reproducir en el reproductor de Orbital (elegido, instalado y con cuenta)?"""
-        return self.config.stremio.player == "orbital" and self.stremio_linked and player.find_mpv() is not None
+        return self.config.stremio.player == "orbital" and self.has_addons and player.find_mpv() is not None
 
     def play_title(self, kind: str, meta_id: str, video_id: str, title: str, audio: str | None = None) -> None:
         """Para la voz: pone algo sin preguntar, con la fuente recomendada. Buscar fuentes tarda
@@ -706,10 +714,9 @@ class Watch:
         if self.player.select_language("sub", lang):
             return True
         current = self.player.current
-        auth = self.credentials.get(STREMIO_KEY)
-        if current is None or not auth:
+        if current is None or not self.has_addons:
             return False
-        urls = self.streams.subtitles(auth, current.meta["kind"], current.meta["video_id"], lang)
+        urls = self.streams.subtitles(current.meta["kind"], current.meta["video_id"], lang)
         if urls:
             self.player.add_subtitles(urls[0], lang)
         return bool(urls)

@@ -3,6 +3,9 @@
 No necesita cuenta. Orbital lo usa para explorar con el mando dentro de su propia interfaz; Stremio
 solo pone la pantalla de reproducción (enlace stremio:// con autoPlay).
 
+Las fichas (meta) se piden como Stremio: al primer complemento de tu lista que sabe de ese título
+(p. ej. uno con sinopsis en español puesto antes que Cinemeta); Cinemeta es el respaldo.
+
   GET https://v3-cinemeta.strem.io/catalog/{movie|series}/top.json -> {"metas": [...]}
   GET https://v3-cinemeta.strem.io/meta/series/{id}.json           -> {"meta": {..., "videos": [...]}}
 """
@@ -17,6 +20,7 @@ import urllib.request
 from urllib.parse import quote
 
 from ..net import NET_ERRORS, read_json
+from . import addons as addons_mod
 from .models import LibraryItem
 
 log = logging.getLogger(__name__)
@@ -35,18 +39,20 @@ class CinemetaError(Exception):
 
 
 class Cinemeta:
-    def __init__(self, base: str = BASE, timeout: float = 10) -> None:
+    def __init__(self, base: str = BASE, timeout: float = 10, registry: addons_mod.AddonRegistry | None = None) -> None:
         self.base = base.rstrip("/")
         self.timeout = timeout
+        self.registry = registry  # tus complementos: quién más sabe dar fichas
         self._cache: dict[str, tuple[float, dict]] = {}
         self._lock = threading.Lock()
 
-    def _get(self, path: str) -> dict:
+    def _get(self, path: str, base: str | None = None) -> dict:
+        url = f"{base or self.base}{path}"
         with self._lock:
-            hit = self._cache.get(path)
+            hit = self._cache.get(url)
             if hit and time.time() - hit[0] < CACHE_SECONDS:
                 return hit[1]
-        req = urllib.request.Request(f"{self.base}{path}", headers={"User-Agent": "Orbital"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Orbital"})
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as res:
                 data = read_json(res, timeout=self.timeout)
@@ -60,7 +66,7 @@ class Cinemeta:
                 for key in [k for k, (at, _) in self._cache.items() if now - at >= CACHE_SECONDS] or \
                         sorted(self._cache, key=lambda k: self._cache[k][0])[:CACHE_MAX // 4]:
                     self._cache.pop(key, None)
-            self._cache[path] = (time.time(), data)
+            self._cache[url] = (time.time(), data)
         return data
 
     def catalog(self, kind: str) -> list[dict]:
@@ -74,11 +80,26 @@ class Cinemeta:
         metas = self._get(f"/catalog/{kind}/top/search={quote(query.strip(), safe='')}.json").get("metas")
         return [m for m in metas if _usable(m)] if isinstance(metas, list) else []
 
+    def meta_sources(self, kind: str, meta_id: str) -> list[str | None]:
+        """De dónde pedir la ficha, en orden: los complementos que saben de ese título (sin esperar a
+        la cuenta: si aún no se conocen, solo Cinemeta) y al final Cinemeta (None)."""
+        known = self.registry.known() if self.registry else []
+        bases = [a.base for a in known if a.handles("meta", kind, meta_id)]
+        return [b if b != self.base else None for b in bases] + ([None] if self.base not in bases else [])
+
     def meta(self, kind: str, meta_id: str) -> dict:
-        meta = self._get(f"/meta/{quote(kind)}/{quote(str(meta_id), safe=':')}.json").get("meta")
-        if not isinstance(meta, dict):
-            raise CinemetaError("Título no encontrado")
-        return meta
+        path = f"/meta/{quote(kind)}/{quote(str(meta_id), safe=':')}.json"
+        error = CinemetaError("Título no encontrado")
+        for base in self.meta_sources(kind, meta_id):
+            try:
+                meta = (self._get(path, base) if base else self._get(path)).get("meta")
+            except CinemetaError as exc:
+                log.info("Sin ficha de %s en %s: %s", meta_id, base or "Cinemeta", exc)
+                error = exc
+                continue
+            if isinstance(meta, dict):
+                return meta
+        raise error
 
 
 def play_link(kind: str, meta_id: str, video_id: str | None = None, autoplay: bool = True) -> str:

@@ -97,7 +97,7 @@ def test_subtitles_fall_back_to_addons(voice, monkeypatch):
     player = voice.catalog.player
     player.current = type("P", (), {"meta": {"kind": "movie", "video_id": "tt1"}})()
     monkeypatch.setattr(voice.catalog.credentials, "get", lambda key: "clave")
-    monkeypatch.setattr(voice.catalog.streams, "subtitles", lambda auth, kind, vid, lang: [f"https://subs/{vid}.{lang}.srt"])
+    monkeypatch.setattr(voice.catalog.streams, "subtitles", lambda kind, vid, lang: [f"https://subs/{vid}.{lang}.srt"])
     assert voice.handle_intent("SubtitlesIntent", {"language": "es"}).speech == "Subtítulos en español."
     assert player.calls == [("add-subs", "https://subs/tt1.es.srt", "es")]
 

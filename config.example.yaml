@@ -21,6 +21,9 @@ stremio:
   quality: 1080p       # 1080p o 4K (en una TV 4K)
   subtitles: en        # idioma de subtítulos ("" = sin subtítulos)
   player: orbital      # orbital = reproductor propio con el mando (mpv); stremio = el de Stremio
+  # Complementos además de los de tu cuenta de Stremio (la URL de su manifiesto o su enlace stremio://).
+  # Sin cuenta, son los únicos: Orbital les pide fuentes, subtítulos y fichas igual que Stremio.
+  addons: []
 
 # Que nada se quede abierto para siempre.
 sessions:
