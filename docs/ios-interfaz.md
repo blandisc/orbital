@@ -29,7 +29,7 @@ responde («en casa» / «Tu PC» / «sin conexión»: entonces Juegos y Para ti
 
 1. **Inicio**: destacado «Continuar T2 E5» con barra de avance y botones Continuar · Descargar · Más.
 2. **Para ti**, con selector Mosaico · Listas:
-   - **Mosaico**: igual al de Orbital (columnas de imágenes, la enfocada crece y enseña etiqueta, título y dato; ícono de serie, película o juego en la esquina).
+   - **Mosaico**: igual al de Orbital (columnas de imágenes, la enfocada crece y enseña etiqueta, título y dato; ícono de serie o película en la esquina). **Sin juegos.**
    - **Listas**: lo más popular en Netflix, Disney+ y HBO Max en tu país (TMDB), y la **zona de Trakt** (watchlist, tus listas, viendo, recomendadas, tendencia, popular), leída a través de tu Orbital.
 3. **Ficha**: Continuar, Mi lista, Descargar (serie o episodio), temporadas, episodios con estado
    (visto ✓ del bitfield de Stremio, a medias, descargado).
@@ -68,6 +68,18 @@ lleva el título original. Audio y subtítulos tienen su propio idioma, separado
 
 ## 6. Trakt
 
-Se lee a través de Orbital (una sola app conectada en cuentas gratuitas). Nivel 1, leer: primera etapa.
-Niveles 2 (escribir en watchlist, marcar visto) y 3 (scrobble): después, y requieren trabajo nuevo en
-`orbital/library/trakt.py`, que hoy solo lee. El avance sigue siendo de Stremio.
+**Propuesta de ubicación:** Trakt es una fuente más de Para ti → Listas (selector Todo · Trakt · Netflix · Disney+ · HBO Max;
+dentro de Trakt: Watchlist · Tus listas · Viendo · …, con «Tuyo» antes que «Descubrir»), y la watchlist se asoma en Inicio.
+
+**Scrobble: obligatorio.** La app lo hace por sí sola; Orbital también (hoy `trakt.py` solo lee). Stremio sigue siendo la fuente
+de verdad de qué viste y cuánto. Cada reproductor avisa de lo que reproduce él mismo (en línea: `/scrobble/stop`, que responde
+409 si ya está registrado; sin conexión: `/sync/history` con la fecha real, comprobando antes que no exista).
+
+**Obstáculo a resolver antes de escribir código** (investigación del 2026-10-12, ver el artefacto de la propuesta):
+- Cuentas gratuitas: una sola «app comunitaria» conectada (anuncio del 22-jul-2026); Stremio casi seguro ya la ocupa.
+- Crear una app de API exige VIP desde agosto de 2026; la aplicación de Trakt de Orbital puede haber desaparecido.
+- Sin confirmar: si una app propia cuenta como conectada y si un mismo `client_id` en dos dispositivos cuenta como una sola.
+- Sin confirmar: si lo que se escribe en Stremio llega a Trakt (no hay evidencia): la app no depende de eso.
+- Los términos de Trakt no se pudieron leer.
+
+**Lo que debe comprobar el usuario:** en trakt.tv → Ajustes → Apps, cuántas apps hay conectadas y si la de Orbital sigue existiendo.
