@@ -139,7 +139,7 @@ export function createForYou({ onWatch, onLaunch, onMore, onConnect, onFocus, on
   }
 
   /** true = lo atendió (se movió o hizo algo) · "edge" · "exit" (B en el principio) · false = no es suyo. */
-  function handle(action) {
+  function handle(action, { repeat = false } = {}) {
     if (!data) return action === "back" ? "exit" : false;
     if (action === "alt") { setMode(mode === "mosaic" ? "lists" : "mosaic"); return true; }
     if (mode === "mosaic") {
@@ -157,7 +157,7 @@ export function createForYou({ onWatch, onLaunch, onMore, onConnect, onFocus, on
       if (item) onMore?.(item);
       return item ? true : "edge";
     }
-    return lists.handle(action);
+    return lists.handle(action, { repeat });
   }
 
   function setMode(next) {

@@ -130,7 +130,7 @@ export function createGames({ onFocus, onPick, onAction }) {
       art: item.hero || item.image, artKind: extra.hero_lowres ? "pixel" : !item.hero ? "poster" : null,
       platform: { icon: systemIconName(item), text: [item.subtitle, runner].filter(Boolean).join(" · ") },
       stats: [
-        ["Última vez", item.last_played ? lastPlayed(item.last_played).replace(/^Jugado /, "") : "Sin jugar"],
+        ["Última vez", item.last_played ? lastPlayed(item.last_played).replace(/^Jugado /, "") : item.playtime >= 60 ? null : "Sin jugar"],
         ["Jugado", item.playtime >= 60 ? duration(item.playtime) : null],
         ["Jugadores", extra.players ? (Number(extra.players) > 1 ? `1 a ${extra.players}` : "1") : null],
         ["Año", extra.year],
@@ -191,8 +191,11 @@ export function createGames({ onFocus, onPick, onAction }) {
    * Botones. true = se movió · "edge" = nada hacia allá · "exit" = B sin a dónde volver aquí (al
    * Inicio) · false = no es suyo.
    */
-  function handle(action) {
+  function handle(action, { repeat = false } = {}) {
     if (action === "pageleft" || action === "pageright") {
+      // LT/RT sostenidos se detienen en la última consola; dar la vuelta, con una pulsación nueva.
+      const at = list.findIndex((c) => c.id === consoleId);
+      if (repeat && (action === "pageleft" ? at <= 0 : at >= list.length - 1)) return "edge";
       return switchTo(stepConsole(list, consoleId, action === "pageleft" ? -1 : 1), { keepRail: focusId.startsWith("rail:") }) || "edge";
     }
     if (["up", "down", "left", "right"].includes(action)) {

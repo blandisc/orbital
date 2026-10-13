@@ -195,8 +195,8 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
     railEntries(lists).filter((e) => !e.heading).forEach((e, n) => targets.set(`rail:${n}`, { kind: "rail", list: e }));
     rail.render(railEntries(lists).map((e) => (e.heading ? e : { id: e.id, title: e.title, meta: e.meta, media: media(e) })),
       { currentId: listId, glyphs: options.glyphs });
+    ensure(); // primero: una lista que falló pasa a «cargando» antes de pintarse (antes se abría el riel)
     renderList();
-    ensure();
     if (!targets.has(focusId) && focusId !== "item:wait") {
       focusId = targets.has("item:0") ? "item:0" : targets.has("filter:0") ? "filter:0" : targets.has("connect") ? "connect" : `rail:${index()}`;
       if (entry().state === "loading" && focusId === "filter:0") waiting = "items";
@@ -239,9 +239,10 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
   const measure = () => measureFocusables(main).filter((r) => r.w > 0);
 
   /** true = se movió · "edge" = nada hacia allá · "exit" = B sin a dónde volver · false = no es suyo. */
-  function handle(action) {
+  function handle(action, { repeat = false } = {}) {
     if (action !== "pageleft" && action !== "pageright") waiting = null; // te moviste: ya no se te lleva a las portadas
-    if (action === "pageleft" || action === "pageright") return stepList(action === "pageleft" ? -1 : 1, { wrap: true });
+    // Sostenido se detiene en la última lista; dar la vuelta, con una pulsación nueva (como en los menús).
+    if (action === "pageleft" || action === "pageright") return stepList(action === "pageleft" ? -1 : 1, { wrap: !repeat });
     if (["up", "down", "left", "right"].includes(action)) {
       if (focusId.startsWith("rail:")) {
         if (action === "up" || action === "down") return stepList(action === "up" ? -1 : 1);

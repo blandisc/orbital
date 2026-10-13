@@ -306,7 +306,7 @@ function forYouFocused(item) {
 
 /** Botones en Para ti: la vista se queda con lo suyo (moverse, A, X, Y); lo demás, como en todas. */
 function handleForYou(action, { repeat = false } = {}) {
-  const handled = ui.foryou.handle(action === "home" ? "back" : action);
+  const handled = ui.foryou.handle(action === "home" ? "back" : action, { repeat });
   if (handled === true) {
     if (["up", "down", "left", "right"].includes(action)) sound.play("move");
     else if (action === "pageleft" || action === "pageright" || action === "alt") sound.play("open");
@@ -361,7 +361,7 @@ function gamesActivate(target, action = "select") {
 
 /** Botones en Juegos: moverse (spatial), LT/RT cambian de consola, A/X/Y sobre lo enfocado. */
 function handleGames(action, { repeat = false } = {}) {
-  const moved = ui.games.handle(action === "home" ? "back" : action);
+  const moved = ui.games.handle(action === "home" ? "back" : action, { repeat });
   if (moved === true) {
     sound.play(action === "pageleft" || action === "pageright" ? "open" : "move");
     return renderHints();
@@ -834,6 +834,12 @@ function handleAction(action, { repeat = false } = {}) {
     return renderHints();
   }
   if (menuBusy) {
+    if (action === "back" && !menuBusy.done) { // B mientras un submenú carga: se cancela (antes aparecía después)
+      menuBusy.stale = true;
+      menuBusy = null;
+      sound.play("back");
+      return renderHints();
+    }
     if (performance.now() < menuBusy.until) { if (!topOverlay()) return; }
     else { // ya puedes moverte: si la opción sigue esperando, su menú ya no se abre encima de lo que hagas
       if (!menuBusy.done) menuBusy.stale = true;
@@ -998,7 +1004,7 @@ createInput({
   onAction: handleAction,
   onModality: setModality,
   // Con un teclado físico, en Buscar se escribe directo (las letras no son atajos ahí).
-  onText: (char) => (ui.login.isOpen ? ui.login.type(char) : ui.search.type(char)),
+  onText: (char) => { (ui.login.isOpen ? ui.login.type(char) : ui.search.type(char)); renderHints(); }, // Enter salta a resultados: «Abrir»
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
 });
 // Al volver la conexión (Orbital se reinició), la biblioteca y el estado se piden otra vez.
