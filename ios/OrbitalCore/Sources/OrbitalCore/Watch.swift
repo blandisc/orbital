@@ -140,6 +140,9 @@ public actor WatchService {
         self.stremio = stremio; self.authKey = authKey; self.cinemeta = cinemeta; self.trakt = trakt; self.pending = pending; self.clock = clock
     }
 
+    func authKeyValue() -> String? { authKey() }
+    func stremioClient() -> StremioAPI { stremio }
+
     /// Dónde ibas según Stremio (0 si no se sabe).
     public func resumePosition(metaID: String, videoID: String) async -> Double {
         guard let key = authKey(), let item = try? await stremio.libraryItem(authKey: key, id: metaID) else { return 0 }
@@ -267,5 +270,13 @@ extension CinemetaParsing {
     /// Los ids de todos los videos en el orden del catálogo (para el bitfield de «visto»).
     public static func seasonVideoIDs(_ meta: JSON) -> [String] {
         (meta["videos"]?.array ?? []).compactMap { $0["id"]?.nonEmptyString }
+    }
+}
+
+extension WatchService {
+    /// El libraryItem tal cual lo guarda Stremio (para leer el bitfield de «visto» y dónde ibas).
+    public func rawItem(metaID: String) async -> JSON? {
+        guard let key = authKeyValue(), let item = try? await stremioClient().libraryItem(authKey: key, id: metaID) else { return nil }
+        return item
     }
 }
