@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from orbital.server import create_app
+from orbital.server import create_app, create_public_app
 
 LOCAL = ("127.0.0.1", 5000)
 REMOTE = ("203.0.113.9", 5000)
@@ -12,6 +12,15 @@ def make_client(library):
     def make(client=LOCAL):
         return TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=client)
     return make
+
+
+@pytest.fixture
+def public_foryou(library):
+    """«Para ti» por el puerto público (el que usa el iPhone a través del túnel): siempre con token."""
+    main = create_app(library.config, library)
+    with TestClient(main, base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)):
+        yield TestClient(create_public_app(library.config, main), base_url="https://legion.ts.net",
+                          client=("127.0.0.1", 2))
 
 
 def test_local_access_without_token(make_client):
@@ -199,3 +208,34 @@ def test_folders_lists_each_emulator(make_client):
     with make_client() as c:
         snes = next(e for e in c.get("/api/folders").json()["emulators"] if e["name"] == "Super Nintendo")
     assert snes["games"] == 2 and len(snes["rom_dirs"]) == 1
+
+
+# --------------------------------------------------------------------- «Para ti» por el puerto público (CEN-18)
+def test_foryou_overview_by_tunnel_needs_a_token_and_has_no_games(public_foryou):
+    assert public_foryou.get("/api/foryou").status_code == 401
+    auth = {"Authorization": "Bearer secreto"}
+    data = public_foryou.get("/api/foryou", headers=auth).json()
+    assert "mygames" not in [row["id"] for row in data["lists"]]  # el fixture tiene Steam: sin token, ya se vería
+    assert not any(row["id"].startswith("rawg:") for row in data["lists"])
+    assert not any(item["kind"] == "game" for item in data["mosaic"])
+
+
+def test_foryou_list_by_tunnel_needs_a_token_and_hides_game_lists(public_foryou):
+    auth = {"Authorization": "Bearer secreto"}
+    assert public_foryou.get("/api/foryou/list", params={"id": "mygames"}).status_code == 401
+    assert public_foryou.get("/api/foryou/list", params={"id": "mygames"}, headers=auth).status_code == 404
+    assert public_foryou.get("/api/foryou/list", params={"id": "rawg:new"}, headers=auth).status_code == 404
+    ok = public_foryou.get("/api/foryou/list", params={"id": "cinemeta", "kind": "series"}, headers=auth)
+    assert ok.status_code == 200 and "items" in ok.json()
+
+
+def test_foryou_details_and_dismiss_by_tunnel_need_a_token_and_hide_games(public_foryou):
+    auth = {"Authorization": "Bearer secreto"}
+    assert public_foryou.get("/api/foryou/details", params={"key": "video:tt0386676"}).status_code == 401
+    details = public_foryou.get("/api/foryou/details", params={"key": "video:tt0386676"}, headers=auth)
+    assert details.status_code == 200
+    assert public_foryou.get("/api/foryou/details", params={"key": "rawg:1"}, headers=auth).status_code == 404
+    assert public_foryou.get("/api/foryou/details", params={"key": "game:367520"}, headers=auth).status_code == 404
+    assert public_foryou.post("/api/foryou/dismiss", json={"key": "video:tt0386676"}).status_code == 401
+    assert public_foryou.post("/api/foryou/dismiss", json={"key": "video:tt0386676"}, headers=auth).json() == {"ok": True}
+    assert public_foryou.post("/api/foryou/dismiss", json={"key": "nope"}, headers=auth).status_code == 422
