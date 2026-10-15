@@ -1,0 +1,155 @@
+{
+ "entry": [
+  {
+   "kind": "series",
+   "raw": {
+    "aired_episodes": 19,
+    "ids": {
+     "imdb": "tt11280740",
+     "trakt": 1234
+    },
+    "overview": " Sinopsis ",
+    "runtime": 50,
+    "title": " Severance ",
+    "year": 2022
+   },
+   "result": {
+    "episodes": 19,
+    "imdb": "tt11280740",
+    "kind": "series",
+    "overview": "Sinopsis",
+    "runtime": 50,
+    "title": "Severance",
+    "trakt_id": 1234,
+    "year": 2022
+   }
+  },
+  {
+   "kind": "movie",
+   "raw": {
+    "ids": {
+     "trakt": 1
+    },
+    "title": "Sin imdb"
+   },
+   "result": null
+  },
+  {
+   "kind": "movie",
+   "raw": {
+    "ids": {
+     "imdb": "tt1"
+    },
+    "title": ""
+   },
+   "result": null
+  },
+  {
+   "kind": "movie",
+   "raw": {
+    "ids": {
+     "imdb": "tt1160419",
+     "trakt": "x"
+    },
+    "runtime": -5,
+    "title": "Dune",
+    "year": "2021"
+   },
+   "result": {
+    "episodes": null,
+    "imdb": "tt1160419",
+    "kind": "movie",
+    "overview": "",
+    "runtime": null,
+    "title": "Dune",
+    "trakt_id": null,
+    "year": null
+   }
+  },
+  {
+   "kind": "movie",
+   "raw": "raro",
+   "result": null
+  }
+ ],
+ "typed": {
+  "result": [
+   {
+    "episodes": null,
+    "imdb": "tt1160419",
+    "kind": "movie",
+    "overview": "",
+    "runtime": null,
+    "title": "Dune",
+    "trakt_id": null,
+    "year": null
+   },
+   {
+    "episodes": 19,
+    "imdb": "tt11280740",
+    "kind": "series",
+    "overview": "Sinopsis",
+    "runtime": 50,
+    "title": "Severance",
+    "trakt_id": 1234,
+    "year": 2022
+   }
+  ],
+  "rows": [
+   {
+    "movie": {
+     "ids": {
+      "imdb": "tt1160419",
+      "trakt": "x"
+     },
+     "runtime": -5,
+     "title": "Dune",
+     "year": "2021"
+    },
+    "type": "movie"
+   },
+   {
+    "show": {
+     "aired_episodes": 19,
+     "ids": {
+      "imdb": "tt11280740",
+      "trakt": 1234
+     },
+     "overview": " Sinopsis ",
+     "runtime": 50,
+     "title": " Severance ",
+     "year": 2022
+    },
+    "type": "show"
+   },
+   {
+    "show": {
+     "aired_episodes": 19,
+     "ids": {
+      "imdb": "tt11280740",
+      "trakt": 1234
+     },
+     "overview": " Sinopsis ",
+     "runtime": 50,
+     "title": " Severance ",
+     "year": 2022
+    },
+    "type": "show"
+   },
+   {
+    "episode": {},
+    "type": "episode"
+   },
+   {
+    "movie": {
+     "ids": {
+      "trakt": 1
+     },
+     "title": "Sin imdb"
+    },
+    "type": "movie"
+   },
+   "raro"
+  ]
+ }
+}

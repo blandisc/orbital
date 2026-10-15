@@ -3,6 +3,10 @@
 No necesita cuenta. Orbital lo usa para explorar con el mando dentro de su propia interfaz; Stremio
 solo pone la pantalla de reproducción (enlace stremio:// con autoPlay).
 
+Las fichas de IMDb (tt…) salen de Cinemeta, en el idioma de Orbital (localize.py): así no cambian
+según el orden de los complementos de tu cuenta. Lo que Cinemeta no conoce (anime de Kitsu, etc.)
+se pide al primer complemento de tu lista que sabe de ese título.
+
   GET https://v3-cinemeta.strem.io/catalog/{movie|series}/top.json -> {"metas": [...]}
   GET https://v3-cinemeta.strem.io/meta/series/{id}.json           -> {"meta": {..., "videos": [...]}}
 """
@@ -14,10 +18,12 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from datetime import UTC, datetime
 from urllib.parse import quote
 
 from ..net import NET_ERRORS, read_json
+from . import addons as addons_mod
 from .models import LibraryItem
 
 log = logging.getLogger(__name__)
@@ -40,18 +46,21 @@ class TitleNotFound(CinemetaError):
 
 
 class Cinemeta:
-    def __init__(self, base: str = BASE, timeout: float = 10) -> None:
+    def __init__(self, base: str = BASE, timeout: float = 10, registry: addons_mod.AddonRegistry | None = None) -> None:
         self.base = base.rstrip("/")
         self.timeout = timeout
+        self.registry = registry  # tus complementos: quién más sabe dar fichas
+        self.localize: Callable[[str, dict], dict] | None = None  # la ficha en el idioma de Orbital
         self._cache: dict[str, tuple[float, dict]] = {}
         self._lock = threading.Lock()
 
-    def _get(self, path: str) -> dict:
+    def _get(self, path: str, base: str | None = None) -> dict:
+        url = f"{base or self.base}{path}"
         with self._lock:
-            hit = self._cache.get(path)
+            hit = self._cache.get(url)
             if hit and time.time() - hit[0] < CACHE_SECONDS:
                 return hit[1]
-        req = urllib.request.Request(f"{self.base}{path}", headers={"User-Agent": "Orbital"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Orbital"})
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as res:
                 data = read_json(res, timeout=self.timeout)
@@ -65,7 +74,7 @@ class Cinemeta:
                 for key in [k for k, (at, _) in self._cache.items() if now - at >= CACHE_SECONDS] or \
                         sorted(self._cache, key=lambda k: self._cache[k][0])[:CACHE_MAX // 4]:
                     self._cache.pop(key, None)
-            self._cache[path] = (time.time(), data)
+            self._cache[url] = (time.time(), data)
         return data
 
     def catalog(self, kind: str) -> list[dict]:
@@ -79,11 +88,28 @@ class Cinemeta:
         metas = self._get(f"/catalog/{kind}/top/search={quote(query.strip(), safe='')}.json").get("metas")
         return [m for m in metas if _usable(m)] if isinstance(metas, list) else []
 
-    def meta(self, kind: str, meta_id: str) -> dict:
-        meta = self._get(f"/meta/{quote(kind)}/{quote(str(meta_id), safe=':')}.json").get("meta")
-        if not isinstance(meta, dict):
-            raise TitleNotFound("Título no encontrado")
-        return meta
+    def meta_sources(self, kind: str, meta_id: str) -> list[str | None]:
+        """De dónde pedir la ficha, en orden (None = Cinemeta). Un id de IMDb, primero Cinemeta; otro
+        (kitsu:…), primero los complementos que saben de él, sin esperar a la cuenta."""
+        known = self.registry.known() if self.registry else []
+        others = [a.base for a in known if a.handles("meta", kind, meta_id) and a.base != self.base]
+        return [None, *others] if str(meta_id).startswith("tt") else [*others, None]
+
+    def meta(self, kind: str, meta_id: str, localized: bool = True) -> dict:
+        """La ficha; `localized=False`, tal cual la da Cinemeta (lo que se guarda en tu cuenta de
+        Stremio va con el título original, no con el traducido)."""
+        path = f"/meta/{quote(kind)}/{quote(str(meta_id), safe=':')}.json"
+        error = CinemetaError("Título no encontrado")
+        for base in self.meta_sources(kind, meta_id):
+            try:
+                meta = (self._get(path, base) if base else self._get(path)).get("meta")
+            except CinemetaError as exc:
+                log.info("Sin ficha de %s en %s: %s", meta_id, addons_mod.redact(base) if base else "Cinemeta", exc)
+                error = exc
+                continue
+            if isinstance(meta, dict):
+                return self.localize(kind, meta) if self.localize and localized and base is None else meta
+        raise error
 
 
 def play_link(kind: str, meta_id: str, video_id: str | None = None, autoplay: bool = True) -> str:

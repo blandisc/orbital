@@ -183,6 +183,13 @@ class Trakt:
                 tokens = self._refresh(tokens)
             return str(tokens.get("access_token") or "")
 
+    def access_token(self) -> str:
+        """La sesión vigente (renovada si estaba por caducar): la toma prestada la app del iPhone."""
+        return self._access()
+
+    def session_expiry(self) -> float:
+        return float((self._tokens() or {}).get("expires_at") or 0)
+
     # --- peticiones --------------------------------------------------------------------------
     def _call(self, method: str, path: str, *, body: dict | None = None, auth: bool = True, params: dict | None = None):
         headers = {"trakt-api-version": "2", "trakt-api-key": self.client_id}
