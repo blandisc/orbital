@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from ..net import NET_ERRORS, read_body
-from .media import IMAGE_EXTS, MediaStore, good, image_size
+from .media import IMAGE_EXTS, MediaStore, good, image_look, image_size
 
 log = logging.getLogger(__name__)
 
@@ -296,6 +296,9 @@ class Scraper:
         if not good(cand.kind, image_size(tmp), target.system):
             tmp.unlink()
             return None
+        if self.store.looks_rejected(target.system, target.key, cand.kind, tmp):  # la misma, con otra dirección
+            tmp.unlink()
+            return None
         for other in IMAGE_EXTS:  # una sola imagen por tipo
             old = path.with_suffix(other)
             if old.exists() and old != path:
@@ -305,9 +308,13 @@ class Scraper:
         log.info("%s: %s de %s", target.title, cand.kind, cand.source)
         return path
 
-    def replace(self, target: Target, kind: str) -> Path | None:
-        """«No me gusta»: rechaza la imagen actual (o la de ES-DE) y busca otra."""
+    def replace(self, target: Target, kind: str, current: Path | str | None = None) -> Path | None:
+        """«No me gusta»: rechaza la imagen actual (o la de ES-DE) y busca otra que no se vea igual."""
         slot = f"{target.system}/{target.key}/{kind}"
+        current = current or self.store.path(target.system, target.key, kind)
+        look = image_look(current) if current else None
+        if look:
+            self.store.reject(target.system, target.key, kind, f"look:{look}")
         self.store.reject(target.system, target.key, kind, self.sources().get(slot, "esde"))
         self.store.remove(target.system, target.key, kind)
         return self.fetch(Target(target.system, target.key, target.title, [kind])).get(kind)

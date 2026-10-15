@@ -172,3 +172,33 @@ class MediaStore:
 
     def is_rejected(self, system: str, key: str, kind: str, url: str) -> bool:
         return url in self.rejected().get(f"{system}/{key}/{kind}", [])
+
+    def looks_rejected(self, system: str, key: str, kind: str, path: Path) -> bool:
+        """¿Se ve igual que una imagen que rechazaste? La misma imagen llega con otra dirección (Hit & Run
+        está dos veces en TheGamesDB, con el mismo dibujo): por dirección no se notaba y «Cambiar
+        imagen» ponía otra vez la misma."""
+        seen = [v.removeprefix("look:") for v in self.rejected().get(f"{system}/{key}/{kind}", []) if v.startswith("look:")]
+        mine = image_look(path) if seen else None
+        return bool(mine) and any(similar(mine, other) for other in seen)
+
+
+def image_look(path: Path | str) -> str | None:
+    """Cómo se ve una imagen, en 64 bits (gris, 8×8, cada punto más claro u oscuro que el promedio):
+    la misma imagen con otra calidad o tamaño da casi lo mismo. Sin Pillow o sin imagen: None."""
+    try:
+        from PIL import Image
+
+        with Image.open(path) as image:
+            small = image.convert("L").resize((8, 8))
+            pixels = list(small.getdata())
+    except Exception:  # noqa: BLE001 - una imagen rota no es «parecida» a nada
+        return None
+    mean = sum(pixels) / len(pixels)
+    return f"{sum(1 << i for i, p in enumerate(pixels) if p > mean):016x}"
+
+
+def similar(a: str, b: str, bits: int = 6) -> bool:
+    try:
+        return bin(int(a, 16) ^ int(b, 16)).count("1") <= bits
+    except ValueError:
+        return False

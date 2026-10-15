@@ -22,7 +22,7 @@ export function BrowseHead({ title, meta, glow = null, media = {} }) {
   else if (media.cover) box.append(h("img", { class: "browse__media-img browse__media-img--cover", src: media.cover, alt: "" }));
   else box.append(icon());
   return h("div", { class: "browse__heading" }, box,
-    h("span", { class: "browse__heading-text" }, h("h2", { class: "browse__title" }, title), meta && h("span", { class: "browse__meta" }, meta)));
+    h("span", { class: "browse__heading-text" }, h("h2", { class: ["browse__title", String(title).length > 24 && "browse__title--long"] }, title), meta && h("span", { class: "browse__meta" }, meta)));
 }
 
 /**

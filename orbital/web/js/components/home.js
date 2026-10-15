@@ -1,5 +1,5 @@
 import { h, mount } from "../core/dom.js";
-import { swipeArea, swipeSteps } from "../core/swipe.js";
+import { dragArea, dragScroll } from "../core/swipe.js";
 import { buildHome, greeting } from "../core/home.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { ConsoleTile, FeatureTile, RowTile } from "./tiles.js";
@@ -42,14 +42,14 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   // Lo de arriba llena la pantalla y de Tus consolas solo asoma su título: el alto se mide aquí
   // (cambia con la ventana y con el tamaño del texto).
   new ResizeObserver(() => fit()).observe(el);
-  // Con el dedo: deslizar «Tus consolas» trae las que no caben (antes solo se llegaba con la cruceta).
-  swipeArea(consolesViewport, ({ dx }) => {
-    const total = model?.consoles.length ?? 0;
-    if (!total) return;
-    const from = Number((focusId.startsWith("console:") ? focusId : lastConsole).split(":")[1]) || 0;
-    const card = consolesTrack.firstElementChild;
-    const step = swipeSteps(dx, card ? card.offsetWidth : 160);
-    focus(`console:${Math.max(0, Math.min(total - 1, from + (dx < 0 ? step : -step)))}`);
+  // Con el dedo, como en el celular: «Tus consolas» se desliza de lado bajo el dedo, y arrastrar hacia
+  // arriba sube el Inicio para verlas (antes solo se llegaba con la cruceta).
+  dragScroll(consolesViewport, consolesTrack, { axis: "x", onScroll: (s) => consoleEdges(s) });
+  let pageFrom = 0;
+  dragArea(el, {
+    onStart: () => { pageFrom = Number(scroller.dataset.shift || 0); scroller.style.transition = "none"; },
+    onMove: (d) => setPage(pageFrom - d),
+    onEnd: () => { scroller.style.transition = ""; },
   });
 
   let model = null;
@@ -144,10 +144,17 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   }
 
   /** En Tus consolas el Inicio se desliza lo justo para enseñarlas enteras; arriba, vuelve. */
+  const pageMax = () => Math.max(0, consoles.offsetTop + consoles.offsetHeight - room());
   function scrollToFocus() {
-    const shift = focusId.startsWith("console:") ? Math.max(0, consoles.offsetTop + consoles.offsetHeight - room()) : 0;
-    scroller.style.transform = shift ? `translateY(${-shift}px)` : "";
-    el.classList.toggle("home--scrolled", shift > 0);
+    setPage(focusId.startsWith("console:") ? pageMax() : 0);
+  }
+
+  /** Cuánto ha subido el Inicio (0 = arriba; pageMax = Tus consolas enteras). */
+  function setPage(shift) {
+    const s = Math.max(0, Math.min(pageMax(), shift));
+    scroller.dataset.shift = String(s);
+    scroller.style.transform = s ? `translateY(${-s}px)` : "";
+    el.classList.toggle("home--scrolled", s > 0);
   }
 
   function renderConsoles() {
@@ -178,7 +185,6 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
 
   function keepConsoleVisible() {
     const node = consolesTrack.querySelector(`[data-focus-id="${focusId}"]`);
-    const viewport = consolesTrack.parentElement;
     if (!node) return;
     // El ancho útil es el de la pista (el visor tiene relleno) y la enfocada crece al escalar:
     // la última consola quedaba recortada por la derecha.
@@ -192,10 +198,14 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     if (left - shift < 0) next = Math.max(0, left);
     consolesTrack.dataset.shift = String(next);
     consolesTrack.style.transform = `translateX(${-next}px)`;
-    // ¿Hay consolas fuera de la vista? El borde se desvanece y asoma la siguiente (si no, no se sabe).
-    const more = consolesTrack.scrollWidth - next - room > 4;
-    viewport.classList.toggle("home__consoles-viewport--more", more);
-    viewport.classList.toggle("home__consoles-viewport--before", next > 4);
+    consoleEdges(next);
+  }
+
+  /** ¿Hay consolas fuera de la vista? El borde se desvanece y asoma la siguiente (si no, no se sabe). */
+  function consoleEdges(shift) {
+    const room = consolesTrack.clientWidth;
+    consolesViewport.classList.toggle("home__consoles-viewport--more", consolesTrack.scrollWidth - shift - room > 4);
+    consolesViewport.classList.toggle("home__consoles-viewport--before", shift > 4);
   }
 
   function focus(id) {

@@ -4,7 +4,7 @@ import {
   factLine, hashOf, iconName, kindLabel, listMeta, nearestTile, nextUnseen, playOf, posterRatio, primaryAction, railEntries, shapeOf,
 } from "../../orbital/web/js/core/foryou.js";
 
-const series = { key: "video:tt1", kind: "series", title: "Severance", detail: "Sigue T2 E6", meta_id: "tt1", video_id: "tt1:2:6" };
+const series = { key: "video:tt1", kind: "series", title: "Severance", detail: "Sigue T2 E6", meta_id: "tt1", video_id: "tt1:2:6", episode: "T2 E6" };
 const movie = { key: "video:tt2", kind: "movie", title: "Dune", detail: "2 h 46 min", meta_id: "tt2", video_id: "tt2" };
 const mine = { key: "game:steam:1", kind: "game", title: "Hades", detail: "48 h jugadas", owned: true,
   item: { id: "steam:1", title: "Hades", source: "steam", category: "steam" } };
@@ -21,6 +21,7 @@ test("cada sugerencia dice qué es y un dato, y lleva el ícono de su consola o 
 
 test("A: ver con su episodio, jugar lo tuyo, y nada con un juego que no tienes", () => {
   assert.equal(primaryAction(series), "watch");
+  assert.equal(primaryAction({ ...series, episode: null }), "title"); // una serie nueva: su ficha, no T1 E1
   assert.equal(primaryAction(mine), "play");
   assert.equal(primaryAction(rawg), null);
   assert.deepEqual(playOf(series), { kind: "series", id: "tt1", video_id: "tt1:2:6", title: "Severance", item: series });

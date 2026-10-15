@@ -1,5 +1,9 @@
 """Pantalla y mando del reproductor de Orbital (ver player.py). El dibujo vive en player_ui.py.
 
+Con el dedo (o el ratón): tocar enseña los botones (−10 s, Pausa, +10 s, Audio y subtítulos, Episodios,
+Salir); tocar la barra salta ahí; en un panel, tocar una opción la elige; tocar el video los esconde.
+Cualquier botón del mando vuelve a los glifos del mando.
+
 El mando, viendo algo:
   A pausa/seguir · ◀ ▶ adelantar/regresar (mantén: más rápido) · LB/RB capítulo (o 1 min) ·
   LT/RT episodio · ▲ ▼ volumen · X Audio y subtítulos · Y Más (episodios, fuente, desde el principio) ·
@@ -342,10 +346,90 @@ class PlayerScreen:
         elif button in ("x", "y"):
             self.close_menu()  # X y Y cierran el panel (como B); no saltan de uno a otro
 
+    # --- el dedo ----------------------------------------------------------------------------------
+    def _on_mpv_message(self, args: list[str]) -> None:
+        """«orbital-tap x y ancho alto» (px de la ventana): al lienzo de player_ui y a tap()."""
+        if not args or args[0] != "orbital-tap" or len(args) < 5:
+            return
+        try:
+            x, y, w, h = (float(a) for a in args[1:5])
+        except ValueError:
+            return
+        if w > 0 and h > 0:
+            self.tap(x / w * player_ui.W, y / h * player_ui.H)
+
+    def tap(self, x: float, y: float) -> None:
+        """Un toque en (x, y) del lienzo: lo que hay ahí (un botón, la barra, una opción del panel), o
+        enseñar / esconder los botones. La primera vez cambia los glifos del mando por botones."""
+        if self.current is None:
+            return
+        self._quiet_episodes = 0
+        if player_ui.set_touch(True):
+            self._redraw_for_input()
+        if self._card is not None:
+            action = player_ui.hit("card", x, y)
+            if action == "a":
+                self._card_accept()
+            elif action == "b":
+                self._card_dismiss()
+            elif self.menu is None and self._card.get("kind") in ("skip", "next"):
+                self._tap_video(x, y)  # «Saltar intro» no tapa el video: tocar fuera sigue siendo el video
+            return
+        if self.menu is not None:
+            action = player_ui.hit("panel", x, y)
+            if isinstance(action, tuple) and action[0] == "option":
+                _, col, index = action
+                self.menu.col = col
+                self.menu.columns[col].index = index
+                self._menu_press("a")
+            elif isinstance(action, tuple) and action[0] == "column":
+                self.menu.col = action[1]
+                self._draw_panel()
+            elif action == "close" or y < 560:  # tocar el video, arriba del panel, también lo cierra
+                self.close_menu()
+            return
+        self._tap_video(x, y)
+
+    def _tap_video(self, x: float, y: float) -> None:
+        action = player_ui.hit("hud", x, y) if self._hud_visible else None
+        if isinstance(action, tuple) and action[0] == "seek":
+            _, x0, width = action
+            duration = self.mpv.get("duration")
+            if isinstance(duration, (int, float)) and duration > 0:
+                target = max(0.0, min(1.0, (x - x0) / width)) * duration
+                self.mpv.command("seek", target, "absolute")
+                self._ask("time-pos", target)
+                self.show_hud(position=target)
+            return
+        if action == "quit":
+            self._user_quit = True
+            self._quit()
+        elif action in ("a", "x", "y", "left", "right", "up", "down"):
+            self._touching = True
+            try:
+                self.press(action)
+            finally:
+                self._touching = False
+        elif self._hud_visible and not self._value("pause"):
+            self.hide_hud()  # tocar el video (no un botón) esconde los botones
+        else:
+            self.show_hud()
+
+    def _redraw_for_input(self) -> None:
+        """Del dedo al mando (o al revés): lo que está a la vista, otra vez con sus botones o sus glifos."""
+        if self.menu is not None:
+            self._draw_panel()
+        elif self._hud_visible:
+            self.show_hud()
+        if self._card is not None:
+            self._draw_card()
+
     # --- el mando ---------------------------------------------------------------------------------
     def press(self, button: str) -> None:
         """Un botón del mando con el reproductor al frente."""
         self._quiet_episodes = 0  # alguien está ahí
+        if not getattr(self, "_touching", False) and player_ui.set_touch(False):
+            self._redraw_for_input()  # volviste al mando: otra vez sus glifos
         current = self.current
         if current is None:
             return

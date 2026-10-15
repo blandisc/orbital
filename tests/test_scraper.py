@@ -199,3 +199,34 @@ def test_without_fanart_a_screenshot_is_better_than_nothing(tmp_path):
     s.providers = [s.providers[0]]  # solo libretro
     saved = s.fetch(Target("gba", "Pokemon Pinball - Ruby & Sapphire (USA, Europe)", "Pokemon Pinball", ["hero"]))
     assert "hero" in saved and "Named_Snaps" in s.sources()["gba/Pokemon Pinball - Ruby & Sapphire (USA, Europe)/hero"]
+
+
+def picture(w, h, flip=False, quality=90):
+    """Una imagen JPEG de verdad (la misma escena con otra calidad o tamaño se «ve igual»)."""
+    import io
+
+    from PIL import Image, ImageDraw
+
+    image = Image.new("RGB", (w, h), (30, 60, 120))
+    draw = ImageDraw.Draw(image)
+    box = (w * .55, h * .2, w * .95, h * .8) if not flip else (w * .05, h * .2, w * .45, h * .8)
+    draw.rectangle(box, fill=(240, 200, 40))
+    out = io.BytesIO()
+    image.save(out, "JPEG", quality=quality)
+    return out.getvalue()
+
+
+def test_dislike_skips_the_same_picture_at_another_address(tmp_path):
+    # Hit & Run está dos veces en TheGamesDB con el mismo dibujo: «Cambiar imagen» volvía a poner el mismo.
+    s = scraper(tmp_path, {
+        "search.php": SEARCH.encode(), "game.php?id=12": GAME.encode(),
+        "fanart/12-1.jpg": picture(1920, 1080), "fanart/12-2.jpg": picture(1280, 720, quality=60),
+    })
+    target = Target("psp", "Renegade", "Star Wars Battlefront: Renegade Squadron", ["hero"])
+    s.fetch(target)
+    assert s.sources()["psp/Renegade/hero"].endswith("12-1.jpg")
+    # 12-2 se ve igual que la rechazada: no se pone (queda el respaldo hasta que haya otra distinta).
+    assert s.replace(target, "hero") is None and s.store.path("psp", "Renegade", "hero") is None
+    # Una de verdad distinta sí entra.
+    s.http.pages["fanart/12-2.jpg"] = picture(1920, 1080, flip=True)
+    assert s.replace(target, "hero") is not None

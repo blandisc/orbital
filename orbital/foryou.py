@@ -7,6 +7,8 @@ Junta tres servicios (todos opcionales) con lo que Orbital ya sabe de tus juegos
   * TMDB   — lo más popular en Netflix, Disney+ y HBO Max en tu país, y sinopsis en español (library/tmdb.py)
   * RAWG   — novedades, lo más popular y lo mejor calificado en juegos de PC (library/rawg.py)
   * Tus juegos — favoritos, los más jugados, los que nunca has abierto y uno al azar (lógica local)
+  * Tus complementos de Stremio — sus catálogos que agregan algo (Prime Video, Apple TV+, Rotten
+             Tomatoes…) y, sin Trakt conectado, las listas de «Trakt Integration» (library/stremio_api.py)
 
 Dos formas de verlo en la interfaz: el mosaico (lo tuyo, mezclado) y las listas (un riel como el de
 Juegos). Cada sugerencia sale con una etiqueta corta («Recomendada», «Sin estrenar»…) y un dato.
@@ -20,22 +22,25 @@ import random
 import re
 import threading
 import time
+import urllib.parse
+import urllib.request
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from typing import Any
 
 from .library import rawg as rawg_api
+from .library import stremio_api
 from .library import tmdb as tmdb_api
 from .library import trakt as trakt_api
-from .net import NET_ERRORS
+from .net import NET_ERRORS, read_json
 
 log = logging.getLogger(__name__)
 
 METAHUB = "https://images.metahub.space/{kind}/medium/{imdb}/img"
 STEAM_ART = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{file}"
 GAME_CATEGORIES = ("steam", "emulators")
-SERVICE_ERRORS = (trakt_api.TraktError, tmdb_api.TmdbError, rawg_api.RawgError) + NET_ERRORS
+SERVICE_ERRORS = (trakt_api.TraktError, tmdb_api.TmdbError, rawg_api.RawgError, stremio_api.StremioError) + NET_ERRORS
 
 # Cuánto vale lo que se trajo (s): lo tuyo cambia seguido; lo popular, no tanto.
 MINE_TTL = 15 * 60
@@ -45,6 +50,13 @@ SLOW_TTL = 24 * 3600
 
 MOSAIC_SIZE = 96  # el mosaico tiene ~40 piezas a la vista: con menos, se repetían
 PER_SOURCE = 16  # de cada lista, a lo más (así se mezclan)
+
+# Catálogos de tus complementos de Stremio que no se enseñan: los genéricos (ya hay «Lo más popular»),
+# los de torrents y los que no son de películas o series.
+GENERIC_CATALOGS = {"popular", "year", "language", "search", "new", "featured", "top seeded", "trending",
+                    "last videos", "calendar videos", "realdebrid", "anime"}
+SKIP_ADDONS = ("cinemeta", "torrent", "opensubtitles", "local files")
+TRAKT_ADDON = "trakt integration"
 
 # Las claves de cada servicio. Las que escribes en Ajustes › Cuentas se guardan cifradas con las
 # credenciales (como la sesión de Stremio) y mandan sobre las de config.yaml.
@@ -129,7 +141,8 @@ def video_item(e: dict, why: str, *, title: str | None = None, poster: str | Non
         facts = [["Sigue", episode] if episode else ["Temporadas", seasons] if seasons else ["Episodios", e.get("episodes")],
                  ["Año", e.get("year")]]
         video_id = f"{imdb}:{nxt['season']}:{nxt['episode']}" if nxt else f"{imdb}:1:1"
-        action = f"Continuar {episode}" if episode else "Ver T1 E1"
+        # Una serie que no estás viendo abre su ficha (temporadas, sinopsis), no el primer episodio.
+        action = f"Continuar {episode}" if episode else "Ver la serie"
     return {
         "key": f"video:{imdb}", "id": f"cinemeta:{kind}:{imdb}", "source": "cinemeta", "kind": kind, "meta_id": imdb,
         "title": title or e["title"], "year": e.get("year"), "why": why, "detail": detail,
@@ -245,6 +258,72 @@ class ForYou:
             log.warning("Para ti: no pude leer las plataformas de TMDB: %s", exc)
             return {}
 
+    # --- tus complementos de Stremio -----------------------------------------------------------
+    def addon_catalogs(self) -> list[dict]:
+        """Los catálogos de tus complementos de Stremio que agregan algo: uno por nombre, con sus tipos
+        (series y películas) y de qué complemento salen. Sin Stremio conectado o sin red: ninguno."""
+        auth = self.catalog.credentials.get("stremio_auth_key")
+        if not auth:
+            return []
+        try:
+            addons = self.cache.get("stremio:addons", SLOW_TTL, lambda: self._addons(auth))
+        except SERVICE_ERRORS as exc:
+            log.warning("Para ti: no pude leer tus complementos de Stremio: %s", exc)
+            return []
+        covered = {fold(name) for name, _ in tmdb_api.PLATFORMS.values()} if self.platforms() else set()
+        found: dict[str, dict] = {}
+        for addon in addons:
+            name = addon["name"]
+            if any(word in name.lower() for word in SKIP_ADDONS):
+                continue
+            if name.lower() == TRAKT_ADDON and self.trakt.linked:
+                continue  # Trakt conectado: esas listas ya llegan de Trakt
+            for cat in addon["catalogs"]:
+                title = cat["name"].removeprefix("Trakt ").strip() if name.lower() == TRAKT_ADDON else cat["name"]
+                if cat["type"] not in ("movie", "series") or cat["name"].lower() in GENERIC_CATALOGS or fold(title) in covered:
+                    continue
+                key = f"addon:{fold(name)}:{cat['id']}"
+                entry = found.setdefault(key, {"id": key, "title": title, "addon": name, "base": addon["base"],
+                                               "catalog": cat["id"], "kinds": []})
+                entry["kinds"].append(cat["type"])
+        return list(found.values())
+
+    def _addons(self, auth: str) -> list[dict]:
+        raw = self.catalog.stremio_client.request("addonCollectionGet", {"authKey": auth, "update": True})
+        rows = raw.get("addons") if isinstance(raw, dict) else raw
+        addons = []
+        for row in rows if isinstance(rows, list) else []:
+            manifest = row.get("manifest") if isinstance(row, dict) else None
+            url = str(row.get("transportUrl") or "") if isinstance(row, dict) else ""
+            if not isinstance(manifest, dict) or not url.startswith("https://") or not url.endswith("/manifest.json"):
+                continue
+            catalogs = [c for c in manifest.get("catalogs") or [] if isinstance(c, dict) and c.get("id") and c.get("name")
+                        and not any(isinstance(e, dict) and e.get("isRequired") for e in c.get("extra") or [])]
+            if catalogs:
+                addons.append({"name": str(manifest.get("name") or ""), "base": url.removesuffix("/manifest.json"),
+                               "catalogs": [{"id": str(c["id"]), "name": str(c["name"]), "type": c.get("type")} for c in catalogs]})
+        return addons
+
+    def _addon_list(self, entry: dict, kind: str) -> list[dict]:
+        kind = kind if kind in entry["kinds"] else entry["kinds"][0]
+        url = f"{entry['base']}/catalog/{kind}/{urllib.parse.quote(entry['catalog'], safe='')}.json"
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "Orbital"}), timeout=12) as res:
+                data = read_json(res, timeout=12)
+        except (*NET_ERRORS, ValueError) as exc:  # sin red, o algo que no es JSON
+            raise stremio_api.StremioError(f"{entry['addon']} no respondió: {exc}") from exc
+        metas = data.get("metas") if isinstance(data, dict) else None
+        why = {"Watchlist": "En tu watchlist", "Recommendations": "Recomendada"}.get(entry["title"], f"En {entry['title']}")
+        items = []
+        for m in metas if isinstance(metas, list) else []:
+            if not isinstance(m, dict) or not re.fullmatch(r"tt\d+", str(m.get("id") or "")) or not isinstance(m.get("name"), str):
+                continue
+            year = re.match(r"\d{4}", str(m.get("releaseInfo") or m.get("year") or ""))
+            e = {"imdb": m["id"], "kind": kind, "title": m["name"], "year": int(year.group()) if year else None}
+            items.append(video_item(e, why, wide=m.get("background") if isinstance(m.get("background"), str) else None,
+                                    overview=str(m.get("description") or "")[:600]))
+        return items[:60]
+
     def lists(self) -> list[dict]:
         """El riel: una entrada por lista (solo las de los servicios que tienes)."""
         video: list[dict] = []
@@ -274,6 +353,9 @@ class ForYou:
         elif self._stremio("cinemeta"):
             video.append({"id": "cinemeta", "title": "Lo más popular", "icon": "flame", "source": "Stremio",
                           "meta": "En el catálogo de Stremio", "split": True})
+        for entry in self.addon_catalogs():
+            video.append({"id": entry["id"], "title": entry["title"], "icon": "list", "source": "Stremio",
+                          "meta": f"De {entry['addon']}", "split": len(entry["kinds"]) > 1})
         found = self.platforms()
         for brand, (name, _) in tmdb_api.PLATFORMS.items():
             if brand in found:
@@ -318,6 +400,11 @@ class ForYou:
             why = {"continue": "Seguir viendo", "mylist": "En tu lista", "cinemeta": "Popular"}[list_id]
             return [video_item(e, why, overview=i.extra.get("description"))
                     for i, e in self._stremio(list_id, kind if list_id == "cinemeta" else None)]
+        if list_id.startswith("addon:"):
+            entry = next((a for a in self.addon_catalogs() if a["id"] == list_id), None)
+            if not entry:
+                raise KeyError(list_id)
+            return self.cache.get(f"{list_id}:{kind}", POPULAR_TTL, lambda: self._addon_list(entry, kind))
         if list_id == "recs":
             return [video_item(e, "Recomendada") for e in self.cache.get(f"trakt:recs:{kind}", RECS_TTL, lambda: t.recommendations(kind))]
         if list_id == "mine":
@@ -327,7 +414,9 @@ class ForYou:
         if list_id.startswith("list:"):
             lid = list_id.removeprefix("list:")
             name = next((r["name"] for r in self.cache.get("trakt:lists", MINE_TTL, t.lists) if r["id"] == lid), "tu lista")
-            return [video_item(e, f"En «{name}»") for e in self.cache.get(f"trakt:list:{lid}", MINE_TTL, lambda: t.list_items(lid))]
+            # La etiqueta es de un renglón: un nombre largo se cortaba («En «The 25 Best Sci-Fi…»»).
+            why = f"En «{name}»" if len(name) <= 22 else "En una de tus listas"
+            return [video_item(e, why) for e in self.cache.get(f"trakt:list:{lid}", MINE_TTL, lambda: t.list_items(lid))]
         if list_id == "trend":
             return [video_item(e, "En tendencia") for e in self.cache.get(f"trakt:trend:{kind}", RECS_TTL, lambda: t.trending(kind))]
         if list_id == "popular":
@@ -428,6 +517,8 @@ class ForYou:
                 pass
         else:
             sources = [("continue", None), ("mylist", None)]
+            sources += [(a["id"], kind) for a in self.addon_catalogs() if a["addon"].lower() == TRAKT_ADDON
+                        and a["title"] in ("Watchlist", "Recommendations") for kind in a["kinds"]]
             if self.trakt.configured:
                 sources += [("trend", "series"), ("trend", "movie")]
             elif self.platforms():
