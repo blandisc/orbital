@@ -51,14 +51,27 @@ export const weakHero = (item) => !item?.hero || !!(item.extra?.placeholder_hero
 /** Con portada propia (no la genérica de Orbital). */
 export const realCover = (item) => !!item?.image && !item.extra?.placeholder_cover;
 
+/** El número de Steam de un juego: el de su id («steam:440») o, en GeForce NOW, el que trae la dirección
+ *  de su arte (Orbital se lo pone de la tienda de Steam). */
+export function steamAppOf(item) {
+  const own = /^steam:(\d+)$/.exec(item?.id || "");
+  if (own) return own[1];
+  for (const url of [item?.image, item?.hero, item?.extra?.logo]) {
+    const found = /steamstatic\.com\/steam\/apps\/(\d+)\//.exec(url || "");
+    if (found) return found[1];
+  }
+  return null;
+}
+
 /**
- * La miniatura de un renglón. Un juego de Steam: la cápsula de la tienda (su «hero» es un fondo sin
- * el nombre del juego); con fondo ancho, ese; si solo hay caja (GBA), la caja recortada para llenar el
- * marco; sin nada, la foto de su consola. `fallback`: lo que se prueba si la primera no carga.
+ * La miniatura de un renglón. Un juego de Steam (o de GeForce NOW con arte de Steam): la cápsula de la
+ * tienda (su «hero» es un fondo sin el nombre del juego: Halo era un cielo oscuro); con fondo ancho,
+ * ese; si solo hay caja (GBA), la caja recortada para llenar el marco; sin nada, la foto de su consola.
+ * `fallback`: lo que se prueba si la primera no carga.
  */
 export function thumbOf(item) {
-  const steam = /^steam:(\d+)$/.exec(item?.id || "");
-  if (steam) return { kind: "art", src: `${STEAM_CDN}${steam[1]}/capsule_616x353.jpg`, fallback: item.hero || item.image || null };
+  const steam = steamAppOf(item);
+  if (steam) return { kind: "art", src: `${STEAM_CDN}${steam}/capsule_616x353.jpg`, fallback: item.hero || item.image || null };
   if (!weakHero(item)) return { kind: "art", src: item.hero, fallback: realCover(item) ? item.image : null };
   if (realCover(item)) return { kind: "crop", src: item.image, fallback: null };
   return { kind: "console", src: null, fallback: null };
