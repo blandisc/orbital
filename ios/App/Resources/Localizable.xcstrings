@@ -265,6 +265,28 @@
         }
       }
     },
+    "Canal anterior": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous channel"
+          }
+        }
+      }
+    },
+    "Canal siguiente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next channel"
+          }
+        }
+      }
+    },
     "Cancelar": {
       "extractionState": "manual",
       "localizations": {
@@ -877,6 +899,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "In your Trakt watchlist"
+          }
+        }
+      }
+    },
+    "En vivo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live"
           }
         }
       }
@@ -1849,6 +1882,17 @@
         }
       }
     },
+    "Salir del video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave the video"
+          }
+        }
+      }
+    },
     "Saltar intro": {
       "extractionState": "manual",
       "localizations": {
@@ -1878,6 +1922,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Continue"
+          }
+        }
+      }
+    },
+    "Seguir aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue here"
           }
         }
       }
@@ -1977,6 +2032,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No audio tracks"
+          }
+        }
+      }
+    },
+    "Sin sonido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mute"
           }
         }
       }

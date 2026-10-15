@@ -9,6 +9,8 @@ import OrbitalCore
 @MainActor
 public final class TVNowModel: ObservableModel {
     public private(set) var now: OrbitalRemote.NowPlaying? { didSet { if oldValue != now { changed() } } }
+    /// Cuándo llegó `now` (para interpolar el avance entre sondeos, sin saltar cada pocos segundos).
+    public private(set) var fetchedAt = Date()
     /// El token de tu Orbital ya no sirve: Ajustes lo enseña (la tarjeta, mientras tanto, se oculta).
     public private(set) var tokenProblem = false { didSet { changed() } }
     /// Un botón está en vuelo: el siguiente toque se ignora (sin doble acción) y el botón se atenúa.
@@ -40,6 +42,7 @@ public final class TVNowModel: ObservableModel {
     private func tick() async {
         do {
             now = try await services.orbital.now()
+            fetchedAt = Date()
             tokenProblem = false
         } catch OrbitalRemote.Failure.badToken {
             tokenProblem = true
@@ -57,6 +60,7 @@ public final class TVNowModel: ObservableModel {
         defer { busy = false }
         do {
             now = try await services.orbital.control(action: action, delta: delta)
+            fetchedAt = Date()
             tokenProblem = false
         } catch OrbitalRemote.Failure.badToken {
             tokenProblem = true
