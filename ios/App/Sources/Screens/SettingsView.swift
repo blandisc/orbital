@@ -103,13 +103,17 @@ struct SettingsView: View {
     }
 
     // MARK: tu Orbital (la TV)
+    private func imported(_ model: SettingsModel) -> String {
+        model.importedFromOrbital.joined(separator: env.services.appSettings.uiLanguage == "en" ? " and " : " y ")
+    }
+
     @ViewBuilder private func orbitalSection(_ model: SettingsModel) -> some View {
         Section {
             TextField("Dirección (orbital.tudominio.com)", text: Binding(get: { model.settings.orbitalAddress }, set: { v in model.update { $0.orbitalAddress = v.trimmingCharacters(in: .whitespaces) } }))
                 .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL).textContentType(.URL)
             SecureField(LocalizedStringKey(model.hasOrbitalToken ? "Token guardado" : "Token (el mismo de Alexa)"), text: $orbitalToken)
                 .textInputAutocapitalization(.never).autocorrectionDisabled()
-            if !orbitalToken.isEmpty { Button("Guardar token") { model.setOrbitalToken(orbitalToken); orbitalToken = "" } }
+            if !orbitalToken.isEmpty { Button("Guardar token") { model.setOrbitalToken(orbitalToken); orbitalToken = ""; Task { await model.checkOrbital() } } }
             if !model.settings.orbitalAddress.isEmpty && model.hasOrbitalToken {
                 Button { Task { await model.checkOrbital() } } label: {
                     HStack {
@@ -120,9 +124,13 @@ struct SettingsView: View {
                     }
                 }
                 if let problem = model.orbitalCheck, !problem.isEmpty { Text(LocalizedStringKey(problem)).font(DS.font(.sm)).foregroundStyle(DS.danger) }
+                if !model.importedFromOrbital.isEmpty {
+                    Label("Traje de tu Orbital: \(imported(model)). No hay que escribirlo aquí.", systemImage: "arrow.down.doc")
+                        .font(DS.font(.sm)).foregroundStyle(DS.good)
+                }
             }
         } header: { Text("Tu Orbital (la TV)") } footer: {
-            Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas. Usa la dirección del túnel de Alexa y su token.")
+            Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y las claves de TMDB y Trakt se toman de ella. Usa la dirección del túnel de Alexa y su token.")
         }
         .listRowBackground(DS.fill)
     }

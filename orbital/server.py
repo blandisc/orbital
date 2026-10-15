@@ -230,7 +230,7 @@ MAX_PUBLIC_BODY = 16 * 1024
 
 
 def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | None = None) -> FastAPI:
-    """App mínima para internet (Alexa y el iPhone a través del túnel): voz, ping y «Ver en la TV», siempre con token.
+    """App mínima para internet (Alexa y el iPhone a través del túnel): voz, ping, «Ver en la TV» y las claves de «Para ti» para la app del iPhone, siempre con token.
 
     Corre en otro puerto (server.public_port). Aunque el túnel entregue las peticiones desde
     127.0.0.1, aquí no hay excepciones para "local": sin token no se hace nada.
@@ -281,6 +281,13 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     @public.post("/api/voice")
     async def voice_command(body: VoiceRequest) -> dict:
         return await main_app.state.run_voice(body, remote=True)
+
+    @public.get("/api/companion")
+    def companion() -> dict:
+        """La app del iPhone toma de aquí lo de «Para ti» para no escribirlo dos veces: la clave de TMDB, la aplicación
+        de Trakt (su Client ID, que no es secreto; el secreto no sale de aquí) y el país."""
+        p = config.para_ti
+        return {"tmdb_key": p.tmdb_key, "trakt_client_id": p.trakt_client_id, "region": p.region}
 
     @public.post("/api/stremio/play")
     def play_on_tv(body: media.PlayRequest) -> dict:

@@ -65,8 +65,27 @@ public final class SettingsModel: ObservableModel {
     public func checkOrbital() async {
         checkingOrbital = true
         defer { checkingOrbital = false }
-        do { try await services.orbital.check(); orbitalCheck = "" }
+        do { try await services.orbital.check(); orbitalCheck = ""; await importFromOrbital() }
         catch { orbitalCheck = (error as? OrbitalRemote.Failure)?.description ?? "\(error)" }
+    }
+
+    /// Lo que se trajo de tu Orbital la última vez («TMDB y Trakt»), para decirlo en Ajustes.
+    public private(set) var importedFromOrbital: [String] = [] { didSet { changed() } }
+
+    /// Trae de tu Orbital la clave de TMDB, la aplicación de Trakt y el país, sin pisar lo que ya escribiste aquí.
+    public func importFromOrbital() async {
+        guard let keys = try? await services.orbital.keys() else { return }
+        var got: [String] = []
+        if !keys.tmdbKey.isEmpty, (services.secrets.get(SecretKey.tmdbKey) ?? "").isEmpty {
+            services.secrets.set(SecretKey.tmdbKey, keys.tmdbKey); hasTMDBKey = true; got.append("TMDB")
+        }
+        if !keys.traktClientID.isEmpty, settings.traktClientID.isEmpty {
+            update { $0.traktClientID = keys.traktClientID }; got.append("Trakt")
+        }
+        if keys.region.count == 2, settings.region != keys.region { update { $0.region = keys.region } }
+        importedFromOrbital = got
+        services.reconfigure()
+        trakt = computeTraktState()
     }
 
     public func setTMDBKey(_ key: String) {

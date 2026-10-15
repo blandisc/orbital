@@ -41,6 +41,17 @@ public struct OrbitalRemote: Sendable {
         _ = try await send("api/ping", method: "GET", body: nil)
     }
 
+    /// Lo de «Para ti» que ya está en tu Orbital (para no escribirlo otra vez en el iPhone).
+    public struct Keys: Sendable, Equatable {
+        public var tmdbKey: String, traktClientID: String, region: String
+    }
+
+    public func keys() async throws -> Keys {
+        let json = try await send("api/companion", method: "GET", body: nil)
+        func text(_ key: String) -> String { json?[key]?.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
+        return Keys(tmdbKey: text("tmdb_key"), traktClientID: text("trakt_client_id"), region: text("region"))
+    }
+
     /// Pone en la TV un título de Stremio (película o el episodio `videoID`), desde donde ibas.
     public func play(kind: String, metaID: String, videoID: String?, title: String) async throws {
         var body: [String: JSON] = ["kind": .string(kind), "id": .string(metaID), "title": .string(title)]
@@ -59,7 +70,7 @@ public struct OrbitalRemote: Sendable {
         case 200..<300: return JSON.parse(response.data)
         case 401, 403: throw Failure.badToken
         case 429: throw Failure.refused("Tu Orbital pidió esperar un poco: demasiados intentos.")
-        case 404 where path.hasPrefix("api/stremio"): throw Failure.refused("Tu Orbital es de una versión anterior: actualízala para «Ver en la TV».")
+        case 404 where path.hasPrefix("api/stremio") || path.hasPrefix("api/companion"): throw Failure.refused("Tu Orbital es de una versión anterior: actualízala para «Ver en la TV».")
         default:
             let detail = JSON.parse(response.data)?["detail"]?.string
             throw Failure.refused(detail ?? "Tu Orbital contestó con un error (\(response.status)).")

@@ -294,6 +294,25 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(next?.subtitle, "T1 · E2 · Diversity Day")
     }
 
+    func testYourOrbitalFillsInTMDBAndTraktWithoutOverwritingWhatYouTyped() async throws {
+        let rig = try ServicesRig()
+        let model = SettingsModel(rig.services)
+        model.update { $0.orbitalAddress = "tv.example" }
+        model.setOrbitalToken("secreto")
+        rig.http.json["https://tv.example/api/ping"] = ["ok": true]
+        rig.http.json["https://tv.example/api/companion"] = ["tmdb_key": "tmdb123", "trakt_client_id": "cid456", "region": "US"]
+        await model.checkOrbital()
+        XCTAssertEqual(rig.secrets.get(SecretKey.tmdbKey), "tmdb123", "la clave va al Keychain")
+        XCTAssertEqual(model.settings.traktClientID, "cid456")
+        XCTAssertEqual(model.settings.region, "US")
+        XCTAssertEqual(model.importedFromOrbital, ["TMDB", "Trakt"])
+        XCTAssertEqual(model.trakt, .unlinked, "ya se puede conectar Trakt con un toque")
+        rig.http.json["https://tv.example/api/companion"] = ["tmdb_key": "otra", "trakt_client_id": "otro", "region": "US"]
+        await model.checkOrbital()
+        XCTAssertEqual(rig.secrets.get(SecretKey.tmdbKey), "tmdb123", "lo que ya tenías no se pisa")
+        XCTAssertEqual(model.importedFromOrbital, [])
+    }
+
     // MARK: ajustes y Trakt
     func testSettingsPersistAndTMDBKeyGoesToTheKeychain() async throws {
         let rig = try ServicesRig()

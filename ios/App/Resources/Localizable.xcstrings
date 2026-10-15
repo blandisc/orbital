@@ -364,13 +364,13 @@
         }
       }
     },
-    "Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas. Usa la dirección del túnel de Alexa y su token.": {
+    "Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y las claves de TMDB y Trakt se toman de ella. Usa la dirección del túnel de Alexa y su token.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "With your Orbital connected, “Watch on TV” plays what you're watching here on the console, right where you were. Use the Alexa tunnel address and its token."
+            "value": "With your Orbital connected, “Watch on TV” plays what you're watching here on the console, right where you were, and the TMDB and Trakt keys come from it. Use the Alexa tunnel address and its token."
           }
         }
       }
@@ -2043,6 +2043,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Token saved"
+          }
+        }
+      }
+    },
+    "Traje de tu Orbital: %@. No hay que escribirlo aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brought from your Orbital: %@. No need to type it here."
           }
         }
       }

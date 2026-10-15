@@ -245,6 +245,16 @@ def test_public_app_plays_a_stremio_title_on_the_tv_only_with_token(public):
     assert client.post("/api/stremio/login", json={}, headers=auth).status_code == 404
 
 
+def test_public_app_shares_para_ti_keys_with_the_iphone_but_never_the_secret(public):
+    client, main = public
+    cfg = main.state.deps.config
+    cfg.para_ti.tmdb_key, cfg.para_ti.trakt_client_id, cfg.para_ti.trakt_client_secret = "tmdb123", "cid456", "secreto-de-trakt"
+    assert client.get("/api/companion").status_code == 401
+    got = client.get("/api/companion", headers={"Authorization": "Bearer secreto"}).json()
+    assert got == {"tmdb_key": "tmdb123", "trakt_client_id": "cid456", "region": cfg.para_ti.region}
+    assert "secreto-de-trakt" not in str(got)
+
+
 def test_main_app_rejects_tunnel_host_without_token(library):
     # Un túnel que apunte por error al puerto principal llega desde 127.0.0.1 con Host público.
     with TestClient(create_app(library.config, library), base_url="https://legion.ts.net", client=("127.0.0.1", 1)) as c:
