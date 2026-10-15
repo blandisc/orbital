@@ -60,6 +60,11 @@ test("el dato bajo el título dice cuántos hay y qué pasa", () => {
   assert.equal(headMeta({ channels: [ch("a", 1, "A", [])] }), "1 canal");
   assert.equal(headMeta({ ...DATA, checking: true }), "4 canales · revisando cuáles abren");
   assert.equal(headMeta({ ...DATA, offline: true }), "4 canales · sin Internet: lista guardada");
+  // Los que ya fallaron una vez se cuentan (se ven al final, atenuados); mientras se revisa, no: aún no se sabe.
+  const shaky = { ...DATA, channels: [...DATA.channels, ch("e", 5, "Caído", ["Otros"], { verified: false }), ch("f", 6, "Caído 2", ["Otros"], { verified: false })] };
+  assert.equal(headMeta(shaky), "6 canales · 2 sin señal reciente");
+  assert.equal(headMeta({ ...shaky, offline: true }), "6 canales · 2 sin señal reciente · sin Internet: lista guardada");
+  assert.equal(headMeta({ ...shaky, checking: true }), "6 canales · revisando cuáles abren");
   assert.equal(headMeta(null), ""); // sin canales, el mensaje de abajo ya dice qué pasa
   assert.equal(headMeta({ channels: [], offline: true }), "");
 });
@@ -94,6 +99,9 @@ test("las columnas de la cuadrícula salen de la primera fila", () => {
   const rect = (x, y) => ({ id: "x", x, y, w: 100, h: 60 });
   assert.equal(columnsOf([rect(0, 0), rect(110, 0), rect(220, 1), rect(0, 70)]), 3);
   assert.equal(columnsOf([]), 1);
+  // La casilla enfocada crece (su borde de arriba sube unos px y es más alta): sigue siendo de la primera fila.
+  const grown = { id: "x", x: -6, y: -8, w: 112, h: 76 };
+  assert.equal(columnsOf([grown, rect(110, 0), rect(220, 0), rect(330, 0), rect(0, 70), rect(110, 70)]), 4);
 });
 
 test("TV en vivo es una sección más de la barra, siempre a la vista y sin filas de biblioteca", () => {
@@ -117,6 +125,12 @@ test("el pie de TV en vivo dice qué hace cada botón ahí", () => {
   // Con una sola categoría no se enseña «Categoría» (pistas que no aplican, no).
   assert.ok(!labels(tvHints(g, { kind: "channel" }, { categories: 1 })).includes("Categoría"));
   assert.deepEqual(labels(tvHints(g, { kind: "filter" }, { categories: 3 })).slice(0, 1), ["Elegir"]);
+  // El canal que ya está al aire: A vuelve a él; con uno al aire, Home lo recuerda en el pie.
+  const air = tvHints(g, { kind: "channel" }, { categories: 3, onAir: true, running: { title: "Azteca 7" } });
+  assert.equal(air[0].label, "Volver al canal");
+  assert.deepEqual(air.find((x) => x.glyph === "Home"), { glyph: "Home", label: "Volver a Azteca 7" });
+  assert.ok(!tvHints(g, { kind: "channel" }, { categories: 3 }).some((x) => x.glyph === "Home")); // sin canal al aire, sin Home
+  assert.ok(!tvHints(GLYPHS.keyboard, { kind: "channel" }, { categories: 3, running: { title: "X" } }).some((x) => x.label === "Volver a X")); // sin mando no hay Home
   // Sin canales no hay nada que ver: solo actualizar y volver.
   const empty = labels(tvHints(g, null, { empty: true, categories: 1 }));
   assert.ok(!empty.includes("Ver") && empty.includes("Actualizar"));

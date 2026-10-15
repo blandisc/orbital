@@ -149,7 +149,8 @@ class OrbitalPlayer(PlayerScreen):
         self.on_channel_ok = None  # (meta): el canal dio imagen
         self._zap_view, self._zap_timer = None, None  # ▲▼ seguidos (ver _queue_channel)
         self._panel_category = None  # la categoría que enseña la guía de canales (Y)
-        self._home_muted = False  # Home dejó el canal sin sonido mientras estás en Orbital
+        self._away = False  # Home: estás en Orbital y el canal sigue al aire sin sonido
+        self._restore_sound = False  # …y al volver se le devuelve el sonido (salvo que ya lo hubieras silenciado tú)
         # Un video olvidado en pausa (saliste con Home y te fuiste) se cierra solo; el avance se guarda.
         self.idle_seconds = idle_seconds
         self.on_idle = on_idle  # (título, minutos[, live=True]): para avisar en Orbital
@@ -182,7 +183,7 @@ class OrbitalPlayer(PlayerScreen):
         self._audio_lang = options.get("audio", "en")
         self._want.clear()
         self._restart_from = None
-        self._zap_view, self._home_muted = None, False
+        self._zap_view, self._away = None, False
         if self._zap_timer:
             self._zap_timer.cancel()
         playback = Playback(title, process, time.time(), meta)
@@ -262,10 +263,11 @@ class OrbitalPlayer(PlayerScreen):
         self._hide_card()
         self._zap_view = None
         self._want.clear()
-        self._home_muted = False
+        self._away = False
         self.mpv.command("set_property", "force-media-title", title)
         self.mpv.command("set_property", "pause", False)
         self.mpv.command("set_property", "mute", False)
+        self._overlay(self.MUTE, None)  # un canal nuevo suena (y la píldora de «Sin sonido» se va)
         # Siempre las dos opciones, aunque vayan vacías: el Referer del canal anterior no se hereda.
         self.mpv.command("loadfile", url, "replace", -1, {"user-agent": user_agent or LIVE_USER_AGENT, "referrer": referrer or ""})
         self.show_hud()  # la barra del canal nuevo, «Sintonizando…» hasta que haya imagen
@@ -292,7 +294,7 @@ class OrbitalPlayer(PlayerScreen):
                     if paused:
                         self._save_progress(segment)  # pausar = buen momento para guardar
                 was_paused = paused
-                paused = paused or (segment.live and self._home_muted)  # un canal que dejaste con Home es un video olvidado
+                paused = paused or (segment.live and self._away)  # un canal que dejaste con Home es un video olvidado
                 paused_since = (paused_since or now) if paused else None
                 if paused_since is not None and idle_expired(paused_since, now, self.idle_seconds):
                     log.info("%s llevaba %d min en pausa: se cierra (el avance queda guardado)",
@@ -627,16 +629,19 @@ class OrbitalPlayer(PlayerScreen):
     def pause(self) -> None:
         if self._is_live():
             # Home: un canal en vivo no se pausa (al volver estaría atrasado): se deja sin sonido y sigue al aire.
-            self._home_muted = True
+            self._away = True
+            self._restore_sound = not bool(self._value("mute"))  # si ya lo habías silenciado tú, se queda como lo dejaste
             self.mpv.command("set_property", "mute", True)
             return
         self.mpv.command("set_property", "pause", True)
 
     def show_progress(self) -> None:
-        if self._home_muted:  # volviste al canal
-            self._home_muted = False
-            self.mpv.command("set_property", "mute", False)
-            self._want.pop("mute", None)
+        if self._away:  # volviste al canal
+            self._away = False
+            if self._restore_sound:
+                self.mpv.command("set_property", "mute", False)
+                self._want.pop("mute", None)
+            self._restore_sound = False
         self.show_hud()
 
     # --- para la voz -----------------------------------------------------------------------

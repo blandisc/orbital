@@ -95,7 +95,7 @@ letras que bajan: g, p, j, y).
 | `foryou-mosaic` | Mosaico de Para ti: columnas de imágenes; la enfocada crece y enseña etiqueta, logo y un dato; bajar sube todo (cascada) y quieto ~30 s entra en ambiente. Ícono de esquina: la consola del juego, o serie / película. |
 | `foryou-lists` | Listas de Para ti, con las mismas piezas que Juegos (`rail`, `browse`, `detail-panel`): tus listas en el riel (Trakt, plataformas con su logo de TMDB, juegos de RAWG), Series · Películas en las grandes, portadas y la ficha de lo enfocado. Una lista que explica algo (Conectar Trakt) lleva su botón, enfocable. |
 | `trakt-link` | Conectar Trakt: un código grande para escribir en trakt.tv/activate desde el celular. |
-| `tv` | TV en vivo (entre Películas y series y Apps): los canales de México. Arriba, el encabezado (`BrowseHead`) y las categorías en píldora (`fillFilters`; **LB/RB pasan de una a otra** y, en la primera o la última, siguen a la sección de al lado); abajo, una cuadrícula de `.tile` con el logo del canal (o las letras de su nombre), su número (`Chip`) y su nombre. A sintoniza, X vuelve a buscar y revisar los canales, B vuelve (primero al primer canal, luego a Inicio). Un canal que ya falló una vez se ve atenuado; sin canales dice qué pasa (buscando, sin Internet). |
+| `tv` | TV en vivo (entre Películas y series y Apps): los canales de México. Arriba, el encabezado (`BrowseHead`) y las categorías en píldora (`fillFilters`; **LB/RB pasan de una a otra** y, en la primera o la última, siguen a la sección de al lado); abajo, una cuadrícula de `.tile` con el logo del canal (o las letras de su nombre), su número (`Chip`) y su nombre. El logo siempre va **dentro de su caja** y ya viene parejo de Orbital (recortado, y sobre placa clara si es oscuro). Arriba a la derecha: `Badge` «Al aire» (el que ves en el reproductor) o `Chip` «Sin señal reciente» (el que ya falló una vez, que además va al final de su lista y atenuado); el número y el aviso llevan placa oscura para leerse sobre cualquier logo. A sintoniza (o vuelve al que ya está al aire), X vuelve a buscar y revisar los canales, B vuelve (primero al primer canal, luego a Inicio). Las píldoras van en **una sola fila** que se recorre (su desvanecido solo aparece del lado donde hay más). Sin canales dice qué pasa (buscando, sin Internet). |
 | `home` | Inicio: saludo, destacado, tarjetas anchas y Tus consolas. |
 | `games` | Juegos: tus consolas en el riel (cruceta o LT/RT), encabezado de consola, filtros y cuadrícula; la ficha del juego enfocado. Armado con `rail`, `browse` y `detail-panel`. |
 | `rail` | Riel lateral de una vista con secciones (consolas, listas): casillas con foto, logo de marca o ícono; RePág/AvPág arriba y abajo; grupos con su nombre. **Al enfocarlo se abre como pestaña** y enseña el nombre y un dato de cada sección; lo de atrás se aparta. |
@@ -171,9 +171,10 @@ no se guarda avance, no hay «Seguir viendo» ni episodios, y los botones cambia
 | Estado | Qué se ve | Botones |
 |---|---|---|
 | Al sintonizar o tocar un botón | La barra del canal: su número en un bloque claro, el nombre, el estado (● En vivo · Sintonizando… · Sin señal), la categoría, la calidad, la hora y las pistas | ↑ ↓ o LT/RT cambian de canal (la barra enseña a dónde vas al instante y se sintoniza al parar) · ◀ ▶ volumen · A sin sonido · X audio · Y guía de canales · B (mantener) Salir |
-| Y | Panel «Categoría \| Canales» (el video sigue); el canal que ves, marcado | ◀ ▶ columna · A elegir · B cerrar |
+| Y | Panel «Categoría \| Canales» (el video sigue); el canal que ves, marcado; los que fallaron, «Sin señal reciente» | ◀ ▶ columna · LT/RT página · A elegir · B cerrar |
 | Un canal que no abre | «Sin señal en este canal · ↑ ↓ para cambiar»; se marca y se pasa al siguiente (máximo 3 seguidos) | ↑ ↓ |
-| Home (volver a Orbital) | El canal sigue al aire **sin sonido** (no se pausa: al volver estaría atrasado) | — |
+| Sin sonido (A) | Una píldora fija «Sin sonido» arriba a la izquierda mientras dure (la barra del canal se va sola) | A otra vez |
+| Home (volver a Orbital) | El canal sigue al aire **sin sonido** (no se pausa: al volver estaría atrasado); al volver suena, salvo que ya lo hubieras silenciado | — |
 
 ## 9. Arte
 

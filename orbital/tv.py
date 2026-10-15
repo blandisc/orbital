@@ -21,9 +21,10 @@ from collections import Counter
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
+from urllib.parse import quote
 
 from . import player, system
-from .library import iptv, iptv_health
+from .library import iptv, iptv_health, iptv_logos
 from .library.iptv import OTHER, Channel
 
 if TYPE_CHECKING:
@@ -52,6 +53,7 @@ class LiveTV:
         directory = directory if directory is not None else cache_dir(config)
         self._copy = directory / "tv-mx.m3u" if directory else None
         self.store = iptv_health.HealthStore(directory / "tv-health.json" if directory else None)
+        self.logos = iptv_logos.LogoCache(directory / "tv-logos" if directory else None)
         # Se buscan al llamar (no al definir): las pruebas cambian iptv.download, iptv_health.fetch y system.online
         # por funciones que no salen a Internet.
         self._download_fn = download_fn or (lambda: iptv.download())
@@ -93,8 +95,23 @@ class LiveTV:
         return out
 
     def describe(self, channel: Channel, categories: list[str]) -> dict:
-        return {**channel.public(), "categories": categories, "number": self.store.number(channel.id),
+        # El logo lo sirve Orbital (parejo y guardado en disco), no la dirección de internet de la lista.
+        logo = f"/api/tv/logo?id={quote(channel.id, safe='')}" if channel.logo else None
+        return {**channel.public(), "logo": logo, "categories": categories, "number": self.store.number(channel.id),
                 "verified": self.store.verified(channel.id)}
+
+    def logo_path(self, channel_id: str) -> Path | None:
+        """El archivo del logo de un canal (se baja la primera vez). None si no tiene o no se pudo."""
+        channel = next((c for c in self._channels if c.id == channel_id), None)
+        return self.logos.get(channel.logo) if channel is not None else None
+
+    def playing(self) -> str | None:
+        """El canal que está al aire ahora (en el reproductor), si lo hay."""
+        player_ = getattr(self.catalog.watch, "player", None) if self.catalog is not None else None
+        segment = getattr(player_, "segment", None)
+        if player_ is None or not getattr(player_, "playing", False) or segment is None or not segment.live:
+            return None
+        return segment.meta.get("channel_id")
 
     def overview(self) -> dict:
         """Lo que pinta la interfaz: pestañas de categoría y los canales, con su número."""
@@ -107,8 +124,10 @@ class LiveTV:
         if not self._channels and self._thread is not None and not self.checking and time.monotonic() - self._asked > 60:
             self._asked = time.monotonic()
             self.refresh(background=True)  # sin copia en disco: no esperar a los 20 s del arranque
-        return {"categories": categories, "channels": [self.describe(c, mapped[c.id]) for c in visible],
-                "checking": self.checking, "offline": self.offline, "updated": self.updated,
+        # Los que ya fallaron una vez, al final de su lista: lo primero que se ve son canales que abren.
+        shown = sorted(visible, key=lambda c: self.store.verified(c.id) is False)
+        return {"categories": categories, "channels": [self.describe(c, mapped[c.id]) for c in shown],
+                "checking": self.checking, "offline": self.offline, "updated": self.updated, "playing": self.playing(),
                 "total": len(self._channels), "hidden": len(self._channels) - len(visible)}
 
     def zap_list(self, category: str | None) -> tuple[str, list[Channel]]:
@@ -148,6 +167,14 @@ class LiveTV:
             self._refreshing.release()
             if self.catalog is not None:
                 self.catalog.notify({"type": "tv-changed"})  # la sección, si está abierta, se pone al día
+            self._warm_logos()
+
+    def _warm_logos(self) -> None:
+        """Los logos de los canales que se ven, de antemano: cuando abres la sección ya están. Nunca tumba la revisión."""
+        try:
+            self.logos.warm([c.logo for c in self.visible() if c.logo])
+        except Exception:  # noqa: BLE001 - un logo raro no se lleva a Orbital
+            log.exception("No pude preparar los logos de los canales")
 
     def start(self) -> None:
         """Revisa al arrancar (con calma) y cada ~6 h. Solo lo llama el arranque de verdad."""
@@ -196,6 +223,11 @@ class LiveTV:
             raise LookupError("La TV en vivo no está lista todavía.")
         category, _ = self.zap_list(category)
         sessions, watch = catalog.sessions, catalog.watch
+        on_air = watch.player.segment if self.playing() else None
+        if on_air is not None:
+            # Ya hay un canal al aire: se sintoniza en el mismo mpv (sin cerrar ni abrir nada) y quien llama solo trae la ventana.
+            if on_air.meta.get("channel_id") == channel.id or self.tune(on_air.meta, channel.id, category):
+                return {"ok": True, "reveal": False, "tuned": True}
         sessions.revealing = False
         self.wire(watch.player)
         # Lo que estaba abierto se cierra justo antes de abrir el canal, no antes (si algo fallaba, tu juego ya se había cerrado).

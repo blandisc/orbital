@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import threading
 from pathlib import Path
 
@@ -56,6 +57,19 @@ def test_pestanas_de_categoria_con_todos_primero_y_las_chicas_en_otros():
     assert azteca["categories"] == ["General"]
     deportes = next(c for c in overview["channels"] if c["id"] == "ConReferer.mx@SD")
     assert deportes["categories"] == ["Otros"]
+
+
+def test_los_que_ya_fallaron_van_al_final_y_el_logo_lo_sirve_orbital():
+    live = make_tv()
+    live.store.record("Azteca7.mx@SD", False, "HTTP 404")  # el primero del orden, ya falló una vez
+    channels = live.overview()["channels"]
+    assert channels[-1]["id"] == "Azteca7.mx@SD" and channels[-1]["verified"] is False
+    numbers = [c["number"] for c in channels[:-1]]
+    assert numbers == sorted(numbers)  # el resto sigue en el orden de su número
+    azteca = channels[-1]
+    assert azteca["logo"] == "/api/tv/logo?id=Azteca7.mx%40SD"  # la dirección de Orbital, no la de imgur
+    assert "logos.example.mx" not in str(live.overview())
+    assert next(c for c in channels if c["id"] == "Cine.mx@SD")["logo"] is None  # sin logo en la lista, sin dirección
 
 
 def test_los_canales_traen_numero_y_nunca_su_direccion():
@@ -172,6 +186,7 @@ class FakePlayer:
     def __init__(self) -> None:
         self.played, self.tuned, self.toasts = [], [], []
         self.segment = None
+        self.playing = False
 
     def play(self, run, mpv_exe, url, title, meta, **options):
         self.played.append((mpv_exe, url, title, meta, options))
@@ -209,6 +224,41 @@ def test_play_abre_mpv_en_vivo_con_las_cabeceras_del_canal(live, library):
     assert library.launcher.current["id"] == "media:player" and library.launcher.current["title"] == "Deportes con Referer"
     # El reproductor queda conectado a la TV: la lista de ▲▼, qué hacer si un canal falla…
     assert library.watch.player.channels_provider == service.guide and library.watch.player.on_channel_failed == service.failed
+
+
+def on_air(fake, channel_id="Azteca7.mx@SD"):
+    """Un canal al aire en el reproductor (ya con imagen)."""
+    fake.playing = True
+    fake.segment = type("Segment", (), {"live": True, "meta": {"channel_id": channel_id, "list": "todos"}})()
+
+
+def test_con_un_canal_al_aire_otro_se_sintoniza_en_el_mismo_mpv_sin_abrir_nada(live, library):
+    service, fake = live
+    on_air(fake)
+    library.before_launch = lambda *a: pytest.fail("no se cierra nada: es el mismo reproductor")
+    result = service.play("Cine.mx@SD", "todos")
+    assert result == {"ok": True, "reveal": False, "tuned": True}
+    assert fake.played == [] and fake.tuned[0][1] == "Cine de Barrio, el canal"
+
+
+def test_pedir_el_canal_que_ya_esta_al_aire_no_lo_vuelve_a_sintonizar(live):
+    service, fake = live
+    on_air(fake, "Cine.mx@SD")
+    assert service.play("Cine.mx@SD")["tuned"] is True
+    assert fake.tuned == [] and fake.played == []
+
+
+def test_el_canal_al_aire_se_dice_en_el_listado_y_en_el_estado(live, library):
+    service, fake = live
+    assert service.overview()["playing"] is None
+    on_air(fake)
+    assert service.overview()["playing"] == "Azteca7.mx@SD" and service.playing() == "Azteca7.mx@SD"
+    library.launcher.current = {"id": "media:player", "title": "Azteca 7", "managed": True}
+    from orbital.api.deps import Deps
+    deps = Deps(config=library.config, catalog=library, shell=type("Shell", (), {"is_paused": False})(), voice=None, hub=None)
+    assert deps.status()["running"]["live"] == "Azteca7.mx@SD"  # la interfaz marca la casilla y A vuelve a ella
+    library.launcher.current = {"id": "app:otra", "title": "Otra", "managed": True}
+    assert "live" not in deps.status()["running"]
 
 
 def test_play_dice_por_que_no_se_puede(live, monkeypatch):
@@ -414,6 +464,32 @@ def test_api_play_si_mpv_no_abre_es_un_error_claro(client, library):
     library.player.play = broken
     res = c.post("/api/tv/play", json={"id": "Azteca7.mx@SD"})
     assert res.status_code == 500 and "No pude abrir el reproductor" in res.json()["detail"]
+
+
+def test_api_logo_se_sirve_desde_orbital_y_da_404_si_no_hay(client, tmp_path):
+    from PIL import Image
+
+    c, service = client
+    service.logos.directory = tmp_path
+    out = io.BytesIO()
+    Image.new("RGBA", (300, 120), (255, 255, 255, 255)).save(out, "PNG")
+    assert service.logos.put("https://logos.example.mx/azteca7.png", out.getvalue()) is not None
+    res = c.get("/api/tv/logo", params={"id": "Azteca7.mx@SD"})
+    assert res.status_code == 200 and res.headers["content-type"] == "image/png" and "max-age" in res.headers["cache-control"]
+    assert res.content[1:4] == b"PNG"
+    assert c.get("/api/tv/logo", params={"id": "Cine.mx@SD"}).status_code == 404  # sin logo en la lista
+    assert c.get("/api/tv/logo", params={"id": "no-existe"}).status_code == 404
+    assert c.get("/api/tv/logo").status_code == 422 and c.get("/api/tv/logo", params={"id": "x" * 500}).status_code == 422
+
+
+def test_api_play_con_un_canal_al_aire_trae_su_ventana_al_frente(client, library, monkeypatch):
+    c, service = client
+    on_air(library.player)
+    resumed = []
+    monkeypatch.setattr(c.app.state.shell, "resume", lambda: resumed.append(True) or True)
+    res = c.post("/api/tv/play", json={"id": "Cine.mx@SD"})
+    assert res.json()["tuned"] is True and resumed == [True]
+    on_air(library.player, "Cine.mx@SD")
 
 
 def test_api_refresh_arranca_la_revision_en_segundo_plano(client, monkeypatch):

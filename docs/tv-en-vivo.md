@@ -22,7 +22,8 @@ Orbital, con el mando. Qué se decidió, cómo está armado y lo que se midió a
 | `orbital/library/iptv.py` | Lee el M3U (`#EXTINF`: nombre, calidad, etiquetas, logo, categorías separadas por «;»; `#EXTVLCOPT`: Referer y User-Agent), traduce las categorías al español («Undefined» → «Otros»), solo acepta `http(s)` y nunca muestra adultos. |
 | `orbital/library/iptv_health.py` | ¿Abre de verdad? Manifiesto → variante → un segmento real. Guarda el resultado en disco (`tv-health.json`) y **oculta un canal solo tras 2 fallos seguidos**. Sin Internet durante la revisión, ningún fallo cuenta. Cada canal conserva su número. |
 | `orbital/tv.py` (`LiveTV`) | Junta lo anterior con el reproductor: pestañas (las categorías de menos de 3 canales pasan a «Otros»), la lista por la que se salta con ↑↓ (sin los canales que ya fallaron una vez), la revisión en segundo plano (al arrancar, 20 s después, y cada ~6 h), qué hacer cuando un canal falla: se marca y se pasa al siguiente que no haya fallado (máximo 3 seguidos; con el segundo fallo seguido se oculta, y el siguiente se busca *antes* de ocultarlo). |
-| `orbital/api/tv.py` | `GET /api/tv` · `POST /api/tv/play` · `POST /api/tv/refresh`. Nunca expone direcciones ni cabeceras. |
+| `orbital/library/iptv_logos.py` | Los logos: se bajan una vez, se recortan y se ponen parejos (si son oscuros, sobre una placa clara de la paleta; si traen fondo propio, con las esquinas redondeadas) y se guardan en disco. Un fallo pasajero (429, sin red) se reintenta a los 15 min; uno definitivo, al día siguiente. Solo direcciones de internet (nunca la red local). Se sirven desde Orbital. |
+| `orbital/api/tv.py` | `GET /api/tv` · `GET /api/tv/logo?id=` · `POST /api/tv/play` · `POST /api/tv/refresh`. Nunca expone direcciones ni cabeceras. Con un canal ya al aire, `play` lo sintoniza en el mismo mpv (`tuned`) y trae su ventana al frente. |
 | `orbital/player.py`, `playback.py`, `player_screen.py`, `player_ui.py`, `mpv.py` | El **modo en vivo**: caché corta y reconexión, Referer/User-Agent por canal, cambio de canal con `loadfile … replace` en el mismo mpv, sin progreso ni episodios, y la barra del canal. |
 | `orbital/web/js/components/tv.js` (+ `core/tv.js`, `styles/components/tv.css`) | La sección en la interfaz (catálogo del sistema de diseño). |
 
@@ -68,11 +69,20 @@ canales vivos × 2 vueltas × 4 configuraciones (80 muestras):
 Prueba de integración con mpv real (sin ventana ni audio): el `OrbitalPlayer` sintonizó un canal vivo, saltó solo de un canal
 caído al siguiente (detectado a ~1 s), ▲▲ seguidos cargaron solo el último, y silencio y volumen llegaron a mpv.
 
+## Revisión de UX/UI (con la lista real)
+
+Con logos y salud reales (el demo no tiene logos y escondía casi todo) se encontró y corrigió:
+
+- **La sección se ensanchaba más que la pantalla** (las 14 categorías sin `min-width:0`): se cortaba la 6.ª columna (faltaban los canales 6, 12, 18…), el contador y la tecla RB.
+- **Los logos reales rompían el diseño**: los altos o cuadrados se salían de la casilla y tapaban el nombre, unos traían fondo blanco y los oscuros casi no se veían. Ahora `iptv_logos.py` los parejea (hoja de contacto de los 143 logos reales revisada a ojo) y la casilla los contiene.
+- **Un tercio de la lista falló la primera revisión** (51 de 174) y se mezclaba con el resto: ahora van al final de su categoría, con su aviso, y ↑↓ se los salta.
+- **A en el canal que ya veías lo relanzaba**: ahora dice «Al aire» y vuelve a él; en otro canal sintoniza en el mismo reproductor.
+- El salto de página (LT/RT) contaba una columna de menos; el silencio no dejaba rastro cuando la barra se iba; Home deshacía un silencio puesto por la persona; en 16:10 la 6.ª fila de la guía se encimaba con los botones.
+
 ## Pendiente
 
 - Probar todo con el mando en la TV (ver `docs/pruebas-y-configuracion.md` → «TV en vivo»).
 - Listas M3U propias en Ajustes (mejora aparte).
-- Logos: se cargan directo de internet (imgur y otros); sin Internet salen las letras del nombre. Un caché local los haría
-  funcionar sin conexión.
+- Logos en SVG (Disney Jr. y Disney Channel): Pillow no los lee y salen las letras del nombre; rasterizarlos requeriría otra dependencia.
 - Voz (Alexa): «pon el canal 5» / «pon Azteca 7».
 - Guía de programación (EPG) y Xtream Codes: fuera de la v1.

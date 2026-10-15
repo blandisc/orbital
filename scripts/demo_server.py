@@ -153,7 +153,7 @@ def build(tmp: Path):
     catalog.state.record_session("steam:1086940", 62 * 3600)
     catalog.set_prefs("steam:367520", favorite=True)
     demo_foryou.install(catalog)
-    demo_tv.install(catalog)  # «TV en vivo»: canales de mentiras, sin Internet ni mpv
+    demo_tv.install(catalog, tmp)  # «TV en vivo»: canales y logos de mentiras, sin Internet ni mpv
     return create_app(config, catalog)
 
 

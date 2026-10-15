@@ -178,7 +178,7 @@ class PlayerScreen:
 
     # Cada aviso en su capa (antes compartían la 3 y se borraban entre sí: el volumen se comía «Salir», y el
     # fin del «Cargando…» borraba un aviso útil al que aún le quedaban segundos).
-    TOAST, VOLUME, HOLD, BUFFER = 3, 5, 6, 7
+    TOAST, VOLUME, HOLD, BUFFER, MUTE = 3, 5, 6, 7, 8
 
     def _show_notice(self, ass: str, seconds: float, layer: int = 3) -> None:
         self._overlay(layer, ass)
@@ -324,6 +324,11 @@ class PlayerScreen:
         if button in ("up", "down"):
             if column.options:
                 column.index = max(0, min(len(column.options) - 1, column.index + (-1 if button == "up" else 1)))
+                self._draw_panel()
+        elif button in ("lt", "rt"):  # una página de opciones (una lista de 170 canales no se recorre de a una)
+            if column.options:
+                jump = player_ui.PANEL_ROWS * (-1 if button == "lt" else 1)
+                column.index = max(0, min(len(column.options) - 1, column.index + jump))
                 self._draw_panel()
         elif button in ("left", "right"):
             step = -1 if button == "left" else 1
@@ -534,6 +539,7 @@ class PlayerScreen:
             muted = not bool(self._value("mute"))
             self.mpv.command("set_property", "mute", muted)
             self._ask("mute", muted)
+            self._overlay(self.MUTE, player_ui.muted_ass() if muted else None)  # se queda a la vista mientras no haya sonido
             self.show_hud()
         elif button in ("left", "right"):
             self._change_volume(1 if button == "right" else -1)

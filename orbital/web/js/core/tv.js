@@ -47,11 +47,15 @@ const plural = (n) => `${n} canal${n === 1 ? "" : "es"}`;
 
 /** Lo que va bajo el título: cuántos hay y, si aplica, qué está pasando. */
 export function headMeta(data) {
-  const total = Array.isArray(data?.channels) ? data.channels.length : 0;
-  if (!total) return ""; // sin canales, el aviso de abajo ya dice qué pasa
-  const parts = [plural(total)];
+  const channels = Array.isArray(data?.channels) ? data.channels : [];
+  if (!channels.length) return ""; // sin canales, el aviso de abajo ya dice qué pasa
+  const parts = [plural(channels.length)];
   if (data?.checking) parts.push("revisando cuáles abren");
-  else if (data?.offline) parts.push("sin Internet: lista guardada");
+  else {
+    const shaky = channels.filter(isShaky).length;
+    if (shaky) parts.push(`${shaky} sin señal reciente`); // se enseñan al final de cada categoría, atenuados
+    if (data?.offline) parts.push("sin Internet: lista guardada");
+  }
   return parts.join(" · ");
 }
 
@@ -77,9 +81,14 @@ export function startIndex(channels, lastId) {
   return at >= 0 ? at : 0;
 }
 
-/** Cuántas columnas tiene la cuadrícula (las piezas de la primera fila comparten su altura). */
+/**
+ * Cuántas columnas tiene la cuadrícula: las piezas de la primera fila. La enfocada crece un poco y su borde de arriba
+ * sube unos píxeles: la tolerancia es media pieza, no un píxel (antes no se contaba y el salto de página era de una
+ * columna menos).
+ */
 export function columnsOf(rects) {
   if (!rects.length) return 1;
   const top = Math.min(...rects.map((r) => r.y));
-  return Math.max(1, rects.filter((r) => Math.abs(r.y - top) < 2).length);
+  const tolerance = Math.min(...rects.map((r) => r.h)) / 2;
+  return Math.max(1, rects.filter((r) => r.y - top < tolerance).length);
 }

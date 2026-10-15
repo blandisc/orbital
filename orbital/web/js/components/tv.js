@@ -6,7 +6,7 @@ import { swipeArea, swipeSteps } from "../core/swipe.js";
 import { ALL, categoriesOf, channelLabel, channelsIn, columnsOf, emptyState, headMeta, initials, isShaky, pickCategory, startIndex, stepCategory } from "../core/tv.js";
 import { BrowseHead, fillFilters, keepInView, replay } from "./browse.js";
 import { Glyph } from "./glyph.js";
-import { Chip } from "./ui.js";
+import { Badge, Chip } from "./ui.js";
 
 const FRESH_MS = 4000; // lo que llegó hace menos que esto no se vuelve a pedir al volver a la sección
 
@@ -30,9 +30,12 @@ export function createTv({ onFocus, onPick }) {
   const notice = h("div", { class: "tv__notice", role: "status" });
   const el = h("section", { class: "tv", hidden: true, "aria-label": "TV en vivo" }, head, bar, viewport, notice);
 
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => showPill()).observe(filters);
+
   let data = null; // lo último que contestó /api/tv
   let error = "";
   let loading = false;
+  let playing = null; // el canal que está al aire en el reproductor (viene del estado de Orbital)
   let fetchedAt = 0;
   let category = storage.get("orbital.tv.category", ALL);
   let channels = [];
@@ -57,12 +60,16 @@ export function createTv({ onFocus, onPick }) {
     const id = `channel:${i}`;
     targets.set(id, { kind: "channel", channel });
     const fallback = h("span", { class: "tv__initials" }, initials(channel.name));
-    const logo = channel.logo && h("img", { class: "tv__logo", src: channel.logo, alt: "", loading: "lazy", decoding: "async", referrerpolicy: "no-referrer" });
+    // El logo lo sirve Orbital ya parejo (recortado, y sobre una placa clara si es oscuro); sin él, las letras del nombre.
+    const logo = channel.logo && h("img", { class: "tv__logo", src: channel.logo, alt: "", loading: "lazy", decoding: "async" });
     logo?.addEventListener("error", () => logo.replaceWith(fallback), { once: true });
     return h("button", {
       class: ["tile", "tv__tile", isShaky(channel) && "tile--dimmed"], type: "button", tabindex: "-1", "data-focus-id": id,
       "aria-label": channelLabel(channel), onClick: () => onPick?.(targets.get(id), id),
     }, channel.number && Chip(String(channel.number), { className: "tv__number" }),
+    // Arriba a la derecha: «Al aire» (el que estás viendo) o, si ya falló una vez, el aviso de que puede no abrir.
+    channel.id === playing ? Badge("Al aire", { className: "tv__flag" })
+      : isShaky(channel) && Chip("Sin señal reciente", { tone: "warn", className: "tv__flag" }),
     h("span", { class: "tv__media" }, logo || fallback),
     h("span", { class: "tv__name" }, channel.name));
   }
@@ -111,6 +118,10 @@ export function createTv({ onFocus, onPick }) {
   function showPill() {
     const pill = filters.querySelector(".is-focused") || filters.querySelector(".browse__filter--on");
     if (pill) filters.scrollLeft = pill.offsetLeft - (filters.clientWidth - pill.offsetWidth) / 2;
+    // El desvanecido solo del lado donde quedan píldoras escondidas.
+    const hidden = filters.scrollWidth - filters.clientWidth;
+    filters.classList.toggle("tv__filters--left", filters.scrollLeft > 2);
+    filters.classList.toggle("tv__filters--right", hidden > 2 && filters.scrollLeft < hidden - 2);
   }
 
   /** Otra categoría: el contenido nuevo aparece con un fundido corto y el foco cae en el último canal visto de ahí. */
@@ -134,6 +145,7 @@ export function createTv({ onFocus, onPick }) {
       data = await api.tv();
       error = "";
       fetchedAt = Date.now();
+      if (data.playing !== undefined && playing === null) playing = data.playing ?? null; // por si llegó antes que el estado
     } catch (err) {
       error = err.message;
     }
@@ -174,6 +186,13 @@ export function createTv({ onFocus, onPick }) {
     return false;
   }
 
+  /** El canal que está al aire (o null): su casilla lo dice y A vuelve a él en lugar de sintonizarlo otra vez. */
+  function setPlaying(id) {
+    if ((id ?? null) === playing) return;
+    playing = id ?? null;
+    if (data) render();
+  }
+
   /** Recordar el canal que sintonizaste: al volver a la sección, el foco cae ahí. */
   function remember(channel) {
     last = channel.id;
@@ -187,7 +206,7 @@ export function createTv({ onFocus, onPick }) {
   }
 
   return {
-    el, load, render, handle, setCategory, setGlyphs, remember,
+    el, load, render, handle, setCategory, setGlyphs, remember, setPlaying,
     focus: (id) => { if (targets.has(id)) { focusId = id; paint(); } },
     show: () => { el.hidden = false; showPill(); load(); },
     hide: () => { el.hidden = true; },
@@ -196,6 +215,8 @@ export function createTv({ onFocus, onPick }) {
     get category() { return category; },
     get categories() { return categoriesOf(data).length; },
     get empty() { return channels.length === 0; },
+    get playing() { return playing; },
+    get onAir() { return playing !== null && targets.get(focusId)?.channel?.id === playing; },
     get atStart() { return focusId === "channel:0" || !channels.length; },
   };
 }

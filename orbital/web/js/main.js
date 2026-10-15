@@ -202,7 +202,10 @@ function renderHints() {
   if (!ui.sheet.isOpen && overlay) return ui.hints.render(overlay.hints(g));
   if (inForYou() && !ui.sheet.isOpen) return ui.hints.render(ui.foryou.hints(g));
   if (inTv() && !ui.sheet.isOpen) {
-    return ui.hints.render(tvHints(g, ui.tv.current, { empty: ui.tv.empty, categories: ui.tv.categories, atStart: ui.tv.atStart }));
+    return ui.hints.render(tvHints(g, ui.tv.current, {
+      empty: ui.tv.empty, categories: ui.tv.categories, atStart: ui.tv.atStart, onAir: ui.tv.onAir,
+      running: state.running?.managed && state.running.live ? state.running : null,
+    }));
   }
   if (inGames() && !ui.sheet.isOpen) {
     const target = ui.games.current;
@@ -361,6 +364,7 @@ function tvActivate(target) {
   if (!target) return;
   if (target.kind === "filter") { sound.play("select"); return ui.tv.setCategory(target.value); }
   ui.tv.remember(target.channel);
+  if (target.channel.id === ui.tv.playing) return resumeRunning(); // ya está al aire: se vuelve a él (no se sintoniza otra vez)
   return playChannel(target.channel, ui.tv.category);
 }
 
@@ -617,6 +621,8 @@ function applyStatus(running) {
   const changed = running?.id !== state.running?.id;
   state.running = running;
   ui.status.setRunning(running);
+  ui.tv.setPlaying(running?.live ?? null); // qué canal de TV está al aire (o ninguno)
+  if (inTv()) renderHints();
   if (changed) { // "Jugar" <-> "Volver al juego" y el pie, sin esperar a moverse
     if (!inHome()) ui.hero.update(current(), glyphs(), { immediate: true, runningId: running?.id });
     if (inGames()) renderHints();

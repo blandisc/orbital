@@ -97,11 +97,14 @@ y qué se midió).
 |---|---|---|
 | Llegar a la sección | LB / RB hasta «TV en vivo» (entre Películas y series y Apps). Muestra los canales, con su logo y su número, por categorías | ✅ (nuevo) |
 | Cambiar de categoría | **LB / RB** pasan de una categoría a otra (Todos · General · Noticias · Deportes…). En la primera o la última siguen a la sección de al lado, así nunca te quedas atrapado. Las categorías con menos de 3 canales se juntan en «Otros» | ✅ (nuevo) |
-| Moverse por los canales | D-pad / stick; LT/RT saltan una pantalla (3 filas). La barra de arriba dice en qué canal vas («5 de 40») | ✅ (nuevo) |
+| Moverse por los canales | D-pad / stick; LT/RT saltan una pantalla (3 filas). La barra de arriba dice en qué canal vas («5 de 40»). ↑ desde la primera fila llega a las categorías | ✅ (nuevo) |
+| Logos | Cada canal con su logo, **parejo**: Orbital lo baja una vez, lo recorta y, si es oscuro, lo pone sobre una placa clara para que se lea sobre el fondo oscuro; queda guardado (funciona sin Internet y la TV no le pide imágenes a internet). Sin logo, las letras del nombre | ✅ (nuevo) |
+| Canales que fallaron una vez | Salen **al final** de su categoría, atenuados y con «Sin señal reciente»; el encabezado los cuenta («174 canales · 51 sin señal reciente»). Con un segundo fallo se ocultan | ✅ (nuevo) |
 | Ver un canal | **A**. Pantalla de carga («Sintonizando») y, con la primera imagen, el canal a pantalla completa (~2 s). Si había un juego abierto, antes pregunta «¿Cerrar X?» | ✅ (nuevo) |
+| Volver al canal que ya ves | Su casilla dice **«Al aire»**; **A** (o Home) vuelve a él, sin sintonizarlo otra vez. El pie lo dice («A Volver al canal», «Home Volver a …»). **A en otro canal** lo sintoniza en el mismo reproductor y trae su ventana: sin pantalla de carga ni cerrar nada | ✅ (nuevo) |
 | Cambiar de canal viendo la tele | **↑ ↓ o LT/RT**: ↑ y RT, el siguiente; ↓ y LT, el anterior (la lista da la vuelta). La barra enseña a dónde vas al instante («Sintonizando…») y solo se sintoniza el último si pulsas varias veces. Los canales que ya fallaron una vez se saltan al cambiar (siguen en la guía, atenuados). Cambiar es `loadfile … replace` en el mismo mpv: no se cierra nada | ✅ (nuevo) |
-| Elegir de una lista | **Y**: guía «Categoría \| Canales» encima del video (que sigue). ◀ ▶ cambian de columna, A elige, B cierra. Elegir otra categoría también cambia la lista por la que saltan ↑ ↓ | ✅ (nuevo) |
-| Volumen y silencio | ◀ ▶ volumen · **A** sin sonido (no pausa: una tele en vivo pausada vuelve atrasada). La barra dice «Sin sonido» | ✅ (nuevo) |
+| Elegir de una lista | **Y**: guía «Categoría \| Canales» encima del video (que sigue). ◀ ▶ cambian de columna, **LT/RT saltan una página**, A elige, B cierra. Los canales que fallaron dicen «Sin señal reciente». Elegir otra categoría también cambia la lista por la que saltan ↑ ↓ | ✅ (nuevo) |
+| Volumen y silencio | ◀ ▶ volumen · **A** sin sonido (no pausa: una tele en vivo pausada vuelve atrasada). Una **píldora fija «Sin sonido»** arriba a la izquierda se queda mientras dure (la barra del canal se va sola). Home no deshace un silencio que pusiste tú | ✅ (nuevo) |
 | Audio | X (si el canal trae más de una pista) | ✅ |
 | Barra del canal | Número, nombre, estado (● En vivo · Sintonizando… · Sin señal), categoría, calidad y hora. Sale al sintonizar y al tocar un botón; se va sola | ✅ (nuevo) |
 | Salir | **B (mantener)**, como en todo el reproductor. Orbital avisa «De vuelta de la TV en vivo» (no «Guardé dónde ibas») | ✅ |

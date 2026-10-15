@@ -88,13 +88,18 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     rumble("launch");
     state.launchingId = "media:player";
     state.launchingTitle = channel.name;
-    ui.launch.show({ title: channel.name }, "TV en vivo");
-    ui.launch.status("Sintonizando");
+    // Con un canal ya al aire se sintoniza en su mismo reproductor y solo se trae su ventana: sin pantalla de carga.
+    const onAir = !!state.running?.live;
+    if (!onAir) {
+      ui.launch.show({ title: channel.name }, "TV en vivo");
+      ui.launch.status("Sintonizando");
+    }
     try {
       const res = await api.tvPlay(channel.id, category, keep);
       state.launchingTitle = null;
       state.launchLockedUntil = Date.now() + 3000;
-      if (res.reveal) ui.launch.hold(); // Orbital tapa hasta que se ve la primera imagen (no una ventana negra)
+      if (res.tuned) ui.launch.hide();
+      else if (res.reveal) ui.launch.hold(); // Orbital tapa hasta que se ve la primera imagen (no una ventana negra)
       else ui.launch.keep(1500);
       pollStatus();
     } catch (err) {

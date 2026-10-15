@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .deps import Deps
@@ -30,12 +31,23 @@ def router(d: Deps) -> APIRouter:
     @r.post("/play")
     def play(body: PlayRequest) -> dict:
         try:
-            return tv.play(body.id, body.category, keep=body.keep)
+            result = tv.play(body.id, body.category, keep=body.keep)
+            if result.get("tuned"):
+                d.shell.resume()  # ya había un canal al aire: se sintonizó ahí mismo y solo falta traer su ventana al frente
+            return result
         except LookupError as exc:
             raise HTTPException(404, str(exc))
         except OSError as exc:  # mpv no abrió (falta, sin permiso…)
             log.warning("No pude abrir el canal %s: %s", body.id, exc)
             raise HTTPException(500, f"No pude abrir el reproductor: {exc.strerror or exc}")
+
+    @r.get("/logo")
+    def logo(id: str = Query(max_length=200)) -> FileResponse:
+        """El logo del canal, parejo y guardado en disco (se baja la primera vez). La TV no pide imágenes a internet."""
+        path = tv.logo_path(id)
+        if path is None:
+            raise HTTPException(404, "Ese canal no tiene logo.")
+        return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
     @r.post("/refresh")
     def refresh() -> dict:

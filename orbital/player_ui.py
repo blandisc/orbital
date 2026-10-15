@@ -534,29 +534,29 @@ def panel_ass(panel: Panel, *, playing: bool = True) -> str:
         elif column.index >= column.top + PANEL_ROWS:
             column.top = column.index - PANEL_ROWS + 1
         column.top = first = max(0, min(column.top, len(column.options) - PANEL_ROWS))
-        y = 648
+        y = 644  # filas de 54 cada 60: la sexta termina antes de la fila de botones (en 16:10 se encimaban)
         if not column.options:
-            lines.append(text(x + 18, y + 29, "Nada que elegir aquí", 24, MUTED, align=4))
+            lines.append(text(x + 18, y + 27, "Nada que elegir aquí", 24, MUTED, align=4))
         for i, option in enumerate(column.options[first:first + PANEL_ROWS], start=first):
             focused = active and i == column.index
             current = bool(option.get("current"))
             if focused:
-                lines.append(rrect(x, y, col_w, 58, 12, TEXT))
+                lines.append(rrect(x, y, col_w, 54, 12, TEXT))
             color = ON_LIGHT if focused else (TEXT if current else SOFT)
             if current:
-                lines.append(text(x + 18, y + 29, "✓", 24, color, weight="bold", align=4))
+                lines.append(text(x + 18, y + 27, "✓", 24, color, weight="bold", align=4))
             hint = option.get("hint") or ""
             room = col_w - 70 - (text_width(hint, 20) + 20 if hint else 0)
             weight = "semi" if focused or current else "regular"
-            lines.append(text(x + 52, y + 29, esc(fit(option["label"], 24, room, weight)), 24, color, weight=weight, align=4))
+            lines.append(text(x + 52, y + 27, esc(fit(option["label"], 24, room, weight)), 24, color, weight=weight, align=4))
             if hint:
-                lines.append(text(x + col_w - 18, y + 29, esc(hint), 20, ON_LIGHT if focused else MUTED, align=6))
+                lines.append(text(x + col_w - 18, y + 27, esc(hint), 20, ON_LIGHT if focused else MUTED, align=6))
             if option.get("progress"):
                 bar_w = col_w - 70
                 tint = ON_LIGHT if focused else TEXT
-                lines += [rrect(x + 52, y + 49, bar_w, 4, 2, tint, "A0"),
-                          rrect(x + 52, y + 49, max(4, bar_w * min(1, option["progress"])), 4, 2, tint)]
-            y += 64
+                lines += [rrect(x + 52, y + 47, bar_w, 4, 2, tint, "A0"),
+                          rrect(x + 52, y + 47, max(4, bar_w * min(1, option["progress"])), 4, 2, tint)]
+            y += 60
         if len(column.options) > PANEL_ROWS:
             lines.append(text(x + 18, y + 8, f"{column.index + 1} de {len(column.options)}", 20, MUTED))
     if panel.column.key == "source":  # qué quiere decir «Al instante», donde se elige
@@ -636,8 +636,8 @@ LIVE_STATUS = {"live": ("En vivo", GLYPH["A"]), "tuning": ("Sintonizando…", MU
 
 
 def live_info_line(hud: LiveHud) -> str:
-    """«Noticias · 1080p · Sin sonido»."""
-    return "  ·  ".join(p for p in (hud.category, hud.quality, "Sin sonido" if hud.muted else "") if p)
+    """«Noticias · 1080p» (el silencio no va aquí: lo dice la píldora fija de muted_ass)."""
+    return "  ·  ".join(p for p in (hud.category, hud.quality) if p)
 
 
 def live_hud_ass(hud: LiveHud) -> str:
@@ -666,12 +666,26 @@ def live_hud_ass(hud: LiveHud) -> str:
     return "\n".join(lines)
 
 
+def muted_ass() -> str:
+    """«Sin sonido»: una píldora arriba a la izquierda que se queda mientras el canal está en silencio. La barra del canal
+    se va sola a los pocos segundos y, sin esto, nadie se acuerda de que silenció."""
+    label = "Sin sonido"
+    x, y = MARGIN, 52
+    w = text_width(label, 24, "semi") + 98
+    speaker = _shape(f"m {x + 24} {y + 20} l {x + 32} {y + 20} l {x + 42} {y + 11} l {x + 42} {y + 43} "
+                     f"l {x + 32} {y + 34} l {x + 24} {y + 34}", TEXT)
+    slash = _shape(f"m {x + 20} {y + 40} l {x + 23} {y + 43} l {x + 49} {y + 14} l {x + 46} {y + 11}", TEXT)
+    return "\n".join([rrect(x, y, w, 54, 27, PANEL, "30"), speaker, slash, text(x + 62, y + 27, esc(label), 24, weight="semi", align=4)])
+
+
 def channels_panel(categories: list[dict], channels: list[dict], *, focus: str = "channels") -> Panel:
     """Y en la TV: Categoría | Canales. `categories`: {"id", "label", "current"}; `channels`: {"id", "name", "number",
     "category", "current"}. El canal que ves, marcado; elegir una categoría cambia la lista de al lado."""
     rows = [{"label": c["label"], "hint": c.get("hint", ""), "action": ("category", c["id"]), "current": bool(c.get("current"))}
             for c in categories]
-    picks = [{"label": " · ".join(str(p) for p in (c.get("number"), c["name"]) if p), "hint": c.get("category", ""),
+    # Un canal que ya falló una vez lo dice donde se elige (en vez de su categoría): así no sorprende que no abra.
+    picks = [{"label": " · ".join(str(p) for p in (c.get("number"), c["name"]) if p),
+              "hint": "Sin señal reciente" if c.get("shaky") else c.get("category", ""),
               "action": ("channel", c["id"]), "current": bool(c.get("current"))} for c in channels]
     columns = [_column("category", rows), _column("channels", picks)]
     return Panel("channels", columns, next((i for i, c in enumerate(columns) if c.key == focus), 1))

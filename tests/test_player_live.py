@@ -1,5 +1,6 @@
 """El reproductor en modo TV en vivo: caché corta, cambio de canal en el mismo mpv, sin progreso, sin episodios."""
 
+import re
 import threading
 
 from test_player import make_player
@@ -153,7 +154,7 @@ def test_izquierda_derecha_son_volumen_y_a_es_silencio():
     assert not any(c[0] == "seek" for c in mpv.sent)  # en vivo no hay a dónde adelantar
     p.press("a")
     assert ("set_property", "mute", True) in mpv.sent and not any(c == ("set_property", "pause", True) for c in mpv.sent)
-    assert "Sin sonido" in mpv.overlays[1]
+    assert "Sin sonido" in mpv.overlays[8]
 
 
 # --- la guía de canales (Y) ------------------------------------------------------------------
@@ -265,9 +266,52 @@ def test_home_deja_el_canal_sin_sonido_en_vez_de_pausarlo_y_al_volver_suena():
     p, mpv = live_player()
     p.pause()
     assert ("set_property", "mute", True) in mpv.sent and ("set_property", "pause", True) not in mpv.sent
-    assert p._home_muted
+    assert p._away
     p.show_progress()
-    assert ("set_property", "mute", False) in mpv.sent and not p._home_muted
+    assert ("set_property", "mute", False) in mpv.sent and not p._away
+
+
+def test_si_ya_lo_habias_silenciado_home_no_te_devuelve_el_sonido():
+    p, mpv = live_player()
+    p.press("a")  # silencio tuyo
+    mpv.sent.clear()
+    p.pause()
+    p.show_progress()
+    assert ("set_property", "mute", False) not in mpv.sent  # sigue como lo dejaste
+
+
+def test_sin_sonido_deja_una_pildora_fija_que_se_va_al_volver_a_oir_o_cambiar_de_canal():
+    p, mpv = live_player()
+    p.press("a")
+    assert "Sin sonido" in mpv.overlays[8]  # fuera de la barra del canal, que se esconde sola
+    p.press("a")
+    assert mpv.overlays[8] is None
+    p.press("a")
+    p.tune("https://tv.example.mx/c3.m3u8", "Canal 3", {**META, "channel_id": "c3"})
+    assert mpv.overlays[8] is None and ("set_property", "mute", False) in mpv.sent
+
+
+def test_lt_rt_saltan_una_pagina_en_la_guia_de_canales():
+    p, mpv = live_player()
+    many = [{"id": f"c{i}", "name": f"Canal {i}", "number": i, "category": "General", "current": i == 1} for i in range(1, 41)]
+    p.channels_provider = lambda meta, category=None: {"category": "todos", "categories": [], "channels": many}
+    p.press("y")
+    assert p.menu.column.index == 0
+    p.press("rt")
+    assert p.menu.column.index == player_ui.PANEL_ROWS
+    p.press("rt")
+    p.press("lt")
+    assert p.menu.column.index == player_ui.PANEL_ROWS
+    for _ in range(10):
+        p.press("rt")
+    assert p.menu.column.index == 39  # el último, sin pasarse
+
+
+def test_la_guia_dice_que_canales_ya_fallaron():
+    ass = player_ui.panel_ass(player_ui.channels_panel(
+        [], [{"id": "a", "name": "Uno", "number": 1, "category": "General", "shaky": True, "current": True},
+             {"id": "b", "name": "Dos", "number": 2, "category": "General", "current": False}]))
+    assert "Sin señal reciente" in ass and "General" in ass
 
 
 def test_un_canal_olvidado_tras_home_se_cierra_solo_y_el_aviso_no_promete_seguir_donde_ibas():
@@ -293,11 +337,26 @@ def test_salir_anota_que_era_la_tele_en_vivo():
     assert p.last_end == {"title": "Canal 2", "finished": False, "kind": "tv", "live": True}
 
 
+def test_la_sexta_fila_de_un_panel_no_se_enciman_con_los_botones_ni_en_16_10():
+    """En la Legion Go (1728 de ancho) la sexta fila quedaba debajo de «Columna · Elegir · Cerrar»."""
+    ys = []
+    panel = player_ui.channels_panel([], [{"id": f"c{n}", "name": f"Canal {n}", "number": n, "category": "General", "current": n == 1}
+                                          for n in range(1, 10)])
+    for width in (1920, 1728, 1440):
+        player_ui.set_canvas(width, 1080)
+        ass = player_ui.panel_ass(panel)
+        rows = [int(y) for y in re.findall(r"pos\(\d+,(\d+)\)[^}]*\}\d · Canal", ass)]
+        assert len(rows) == 6  # las seis filas a la vista
+        ys.append(max(rows))
+    player_ui.set_canvas(1920, 1080)
+    assert all(y + 27 < 1022 - 17 for y in ys)  # el centro de la fila + media fila (27) queda sobre los botones (centro 1022, alto 34)
+
+
 def test_la_barra_en_vivo_dice_numero_nombre_categoria_y_calidad():
     ass = player_ui.live_hud_ass(player_ui.LiveHud("Azteca 7", 12, "Noticias", "720p", "live", now="21:05"))
     for text in ("12", "Azteca 7", "En vivo", "Noticias", "720p", "21:05", "Canal", "Canales", "Volumen", "Silencio", "Mantén: salir"):
         assert text in ass
     assert "Sin señal" in player_ui.live_hud_ass(player_ui.LiveHud("X", None, status="nosignal"))
-    assert "Sin sonido" in player_ui.live_hud_ass(player_ui.LiveHud("X", 1, muted=True))
+    assert "Sin sonido" not in player_ui.live_hud_ass(player_ui.LiveHud("X", 1, muted=True))  # lo dice la píldora fija
     ass = player_ui.live_hud_ass(player_ui.LiveHud("Canal {raro}"))  # las llaves abren etiquetas ASS: se cambian
     assert "Canal (raro)" in ass and "{raro}" not in ass
