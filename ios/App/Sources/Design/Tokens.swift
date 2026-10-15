@@ -53,6 +53,11 @@ enum DS {
         static let axisThreshold = CGFloat(DesignTokens.Gesture.axisThreshold)
         static let indicatorBarHeight: CGFloat = 120
         static let indicatorBarWidth: CGFloat = 5
+        /// La burbuja de buscar no se acerca más que esto a los bordes de la pantalla.
+        static let seekBubbleSideMargin: CGFloat = 64
+        /// De la burbuja (su centro) al borde inferior: justo encima de la barra de avance (que vive dentro del
+        /// `padding(DS.Space.s6)` de `controls`, con el slider y la hilera de tiempos debajo).
+        static let seekBubbleBottomInset: CGFloat = 108
     }
 
     // MARK: Espacio y forma

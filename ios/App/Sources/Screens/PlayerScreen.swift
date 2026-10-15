@@ -70,9 +70,12 @@ struct PlayerScreen: View {
         ZStack {
             DS.video.ignoresSafeArea()
             holder.engine.surface
-            holder.engine.subtitleOverlay(lifted: controlsVisible, heightFraction: env.services.appSettings.subtitleHeightFraction)
-                .ignoresSafeArea()
-                .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
+            if dragAxis != .horizontal {
+                // Mientras buscas arrastrando, el subtítulo se quita: la burbuja ya dice el tiempo y no hay con qué encimarlo.
+                holder.engine.subtitleOverlay(lifted: controlsVisible, heightFraction: env.services.appSettings.subtitleHeightFraction)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+            }
             gestureLayer(model)
             SystemVolumeControl(volume: $requestedVolume)
                 .frame(width: DS.Gesture.indicatorBarWidth, height: DS.Gesture.indicatorBarWidth)
@@ -85,6 +88,7 @@ struct PlayerScreen: View {
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
+        .animation(DS.Motion.base(reduceMotion), value: dragAxis)
         .task {
             lockLandscape()
             UIApplication.shared.isIdleTimerDisabled = true
@@ -168,7 +172,9 @@ struct PlayerScreen: View {
                         verticalKind = kind
                         if kind == .brightness { brightnessAtDragStart = Double(UIScreen.main.brightness) }
                         else { volumeAtDragStart = Double(AVAudioSession.sharedInstance().outputVolume) }
-                    case .horizontal: seekPositionAtDragStart = model.snapshot.position
+                    case .horizontal:
+                        seekPositionAtDragStart = model.snapshot.position
+                        controlsVisible = true   // se ve la barra: el pulgar sigue el tiempo destino mientras arrastras
                     case .undecided: break
                     }
                 }
@@ -205,13 +211,25 @@ struct PlayerScreen: View {
             .allowsHitTesting(false)
         }
         if dragAxis == .horizontal, let target = seekPreview, let start = seekPositionAtDragStart {
-            let delta = target - start
-            VStack { Spacer(); DSSeekBubble(time: clock(target), delta: "\(delta >= 0 ? "+" : "−")\(clock(abs(delta)))").padding(.bottom, DS.Space.s14) }
-                .transition(.opacity).allowsHitTesting(false)
+            seekBubble(target: target, start: start)
         }
         if isFastForwarding {
             VStack { DSSpeedPill(); Spacer() }.padding(.top, DS.Space.s14).transition(.opacity).allowsHitTesting(false)
         }
+    }
+
+    /// La burbuja de buscar, justo encima de la barra de avance, en la x del tiempo destino (sin salirse de los bordes).
+    private func seekBubble(target: Double, start: Double) -> some View {
+        let delta = target - start
+        let duration = max(holder.model.snapshot.duration, 1)
+        return GeometryReader { geo in
+            let fraction = CGFloat(max(0, min(1, target / duration)))
+            let rawX = DS.Space.gutter + (geo.size.width - DS.Space.gutter * 2) * fraction
+            let x = min(max(rawX, DS.Gesture.seekBubbleSideMargin), geo.size.width - DS.Gesture.seekBubbleSideMargin)
+            DSSeekBubble(time: clock(target), delta: "\(delta >= 0 ? "+" : "−")\(clock(abs(delta)))")
+                .position(x: x, y: geo.size.height - DS.Gesture.seekBubbleBottomInset)
+        }
+        .transition(.opacity).allowsHitTesting(false)
     }
 
     private func scheduleIndicatorHide() {
@@ -320,7 +338,8 @@ struct PlayerScreen: View {
 
     private func scrubber(_ model: PlayerModel) -> some View {
         let duration = max(model.snapshot.duration, 1)
-        let shown = scrubbing ?? model.snapshot.position
+        // Buscar arrastrando (gesto de pantalla completa) mueve el pulgar igual que arrastrar el slider a mano.
+        let shown = scrubbing ?? (dragAxis == .horizontal ? seekPreview : nil) ?? model.snapshot.position
         return VStack(spacing: DS.Space.s1) {
             Slider(value: Binding(get: { shown }, set: { scrubbing = $0 }), in: 0...duration) { editing in
                 if !editing, let target = scrubbing { Task { await model.seek(to: target); scrubbing = nil } }
