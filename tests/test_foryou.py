@@ -401,3 +401,56 @@ def test_a_new_trakt_app_without_secret_links_and_renews(make_foryou, net):
     assert fy.trakt.watchlist() == []  # la sesión dura 60 s: se renueva antes de pedir
     assert [b.get("client_id") for b in bodies] == ["cid-nuevo", "cid-nuevo"]
     assert not any("client_secret" in b for b in bodies)
+
+
+# ---------------------------------------------------------------- tus complementos de Stremio
+class FakeAddons:
+    """addonCollectionGet de mentiras (como el de una cuenta real) y los catálogos que sirven."""
+
+    def __init__(self):
+        self.calls = []
+
+    def request(self, method, params):
+        self.calls.append(method)
+        cat = lambda t, i, n, extra=None: {"type": t, "id": i, "name": n, "extra": extra or []}  # noqa: E731
+        return {"addons": [
+            {"transportUrl": "https://v3-cinemeta.strem.io/manifest.json", "manifest": {"name": "Cinemeta", "catalogs": [cat("movie", "top", "Popular")]}},
+            {"transportUrl": "https://torrent-catalogs.strem.fun/manifest.json", "manifest": {"name": "Torrent Catalogs", "catalogs": [cat("movie", "top-movies", "Top seeded")]}},
+            {"transportUrl": "https://www.strem.io/trakt/tok/manifest.json", "manifest": {"name": "Trakt Integration", "catalogs": [
+                cat("movie", "watchlist", "Trakt Watchlist"), cat("series", "watchlist", "Trakt Watchlist"), cat("series", "recommendations", "Trakt Recommendations")]}},
+            {"transportUrl": "https://x.baby-beamup.club/manifest.json", "manifest": {"name": "Streaming Catalogs", "catalogs": [
+                cat("movie", "nfx", "Netflix"), cat("movie", "amp", "Prime Video"), cat("series", "amp", "Prime Video")]}},
+            {"transportUrl": "https://tmdb.baby-beamup.club/manifest.json", "manifest": {"name": "The Movie Database Addon", "catalogs": [
+                cat("movie", "tmdb.top", "Popular"), cat("movie", "tmdb.search", "Search", [{"name": "search", "isRequired": True}])]}},
+        ]}
+
+
+def test_stremio_addon_catalogs_join_para_ti(library, make_foryou, monkeypatch):
+    import io
+
+    fy = make_foryou(trakt_keys=False)
+    library.credentials.set("stremio_auth_key", "auth")
+    library.watch.stremio_client = FakeAddons()
+    served = []
+
+    def urlopen(req, timeout=10):
+        served.append(req.full_url)
+        metas = [{"id": "tt0903747", "type": "series", "name": "Breaking Bad", "releaseInfo": "2008–2013", "background": "https://b/bb.jpg"},
+                 {"id": "kitsu:1", "name": "Sin IMDb"}]
+        return io.BytesIO(json.dumps({"metas": metas}).encode())
+
+    monkeypatch.setattr(foryou_mod.urllib.request, "urlopen", urlopen)
+    titles = {a["title"]: a for a in fy.addon_catalogs()}
+    # Lo genérico, los torrents y Cinemeta no; Netflix sí (sin TMDB no hay otra lista de Netflix).
+    assert set(titles) == {"Watchlist", "Recommendations", "Netflix", "Prime Video"}
+    assert titles["Prime Video"]["kinds"] == ["movie", "series"] and titles["Watchlist"]["addon"] == "Trakt Integration"
+    rail = [row for row in fy.lists() if row["id"].startswith("addon:")]
+    assert {row["title"] for row in rail} == set(titles) and next(r for r in rail if r["title"] == "Prime Video")["split"]
+    items = fy.list_items(titles["Prime Video"]["id"], "series")
+    assert [i["title"] for i in items] == ["Breaking Bad"] and items[0]["year"] == 2008 and items[0]["why"] == "En Prime Video"
+    assert served[-1] == "https://x.baby-beamup.club/catalog/series/amp.json"
+    # Sin Trakt conectado, el mosaico toma la watchlist y las recomendaciones del complemento.
+    assert any(m["why"] in ("En tu watchlist", "Recomendada") for m in fy.mosaic())
+    # Con Trakt conectado, las de «Trakt Integration» ya llegan de Trakt: no se repiten.
+    fy2 = make_foryou(linked=True)
+    assert {a["title"] for a in fy2.addon_catalogs()} == {"Netflix", "Prime Video"}
