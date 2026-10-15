@@ -188,19 +188,27 @@ struct DSIconButton: View {
 
 /// Un aviso corto con su color (sin conexión, error).
 struct DSNotice: View {
-    enum Tone { case info, warn, error }
+    enum Tone { case info, success, warn, error }
     let text: LocalizedStringKey
     var tone: Tone = .info
 
     var body: some View {
         HStack(spacing: DS.Space.s2) {
-            Image(systemName: tone == .error ? "exclamationmark.triangle.fill" : tone == .warn ? "wifi.slash" : "info.circle")
+            Image(systemName: symbol)
             Text(text).font(DS.font(.sm)).multilineTextAlignment(.leading)
             Spacer(minLength: 0)
         }
-        .foregroundStyle(tone == .error ? DS.danger : tone == .warn ? DS.warning : DS.textMuted)
+        .foregroundStyle(color)
         .padding(DS.Space.s3)
         .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+    }
+
+    private var symbol: String {
+        switch tone { case .info: "info.circle"; case .success: "checkmark.circle.fill"; case .warn: "wifi.slash"; case .error: "exclamationmark.triangle.fill" }
+    }
+
+    private var color: Color {
+        switch tone { case .info: DS.textMuted; case .success: DS.good; case .warn: DS.warning; case .error: DS.danger }
     }
 }
 

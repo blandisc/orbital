@@ -45,6 +45,8 @@ public actor StreamFinder {
                 while seen.contains(index) { index = (index + 1) % (1 << 31) }  // el mismo enlace dos veces: la segunda, el número siguiente
                 let source = Streams.parse(stream, addon: addon.name, transportURL: addon.url, index: index)
                 if onlyPlayable && source.playbackURL == nil { continue }
+                // Una lista HLS o DASH no es un archivo: se ve, pero no se puede guardar en el teléfono.
+                if purpose == .download, let ext = source.playbackURL?.pathExtension.lowercased(), ["m3u8", "mpd"].contains(ext) { continue }
                 sources.append(source); seen.insert(index)
             }
         }

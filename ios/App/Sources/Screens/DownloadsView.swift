@@ -31,6 +31,7 @@ struct DownloadsView: View {
         }
         .scrollContentBackground(.hidden).background(TintedBackground())
         .navigationTitle("Descargas").navigationBarTitleDisplayMode(.large)
+        .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
         .toolbar { ToolbarItem(placement: .topBarTrailing) { if env.services.appSettings.wifiOnlyDownloads { DSChip(text: "Solo con Wi‑Fi") } } }
         .task { await model.run() }
     }

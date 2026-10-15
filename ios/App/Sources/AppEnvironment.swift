@@ -21,7 +21,11 @@ final class AppEnvironment: ObservableObject {
     @Published private var external: ExternalSession?
     /// Infuse volvió sin duración y no se sabe si terminaste: se pregunta.
     @Published var askFinished: PlayRequest?
-    @Published var banner: String?
+    /// Un aviso corto abajo: lo que pasó («Descargando…») o lo que salió mal.
+    @Published var banner: Banner?
+    struct Banner: Equatable { var text: String; var tone: DSNotice.Tone }
+
+    func notify(_ text: String, tone: DSNotice.Tone = .error) { banner = Banner(text: text, tone: tone) }
 
     /// Un solo entorno para toda la app (las vistas lo comparten sin armar otro).
     static let shared = AppEnvironment()
@@ -69,7 +73,7 @@ final class AppEnvironment: ObservableObject {
         let langs = services.titlePrefs.languages(for: request.metaID, settings: services.appSettings)
         var chosen = source
         if chosen == nil { chosen = try? await services.finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs) }
-        guard let url = chosen?.playbackURL else { return banner = "No hay fuentes de Real-Debrid para este título." }
+        guard let url = chosen?.playbackURL else { return notify("No hay fuentes de Real-Debrid para este título.") }
         let subtitle = await services.finder.subtitles(kind: request.kind, videoID: request.videoID, language: langs.subtitles.isEmpty ? services.appSettings.subtitles : langs.subtitles).first
         var season: Int?, episode: Int?
         let parts = request.videoID.split(separator: ":")
@@ -79,7 +83,7 @@ final class AppEnvironment: ObservableObject {
         let runtime = request.meta.map { CinemetaParsing.runtimeSeconds(CinemetaParsing.describe($0).runtime) } ?? 0
         external = ExternalSession(request: request, startedAt: Date(), startPosition: position, duration: runtime)
         let opened = await UIApplication.shared.open(infuseURL)
-        if !opened { external = nil; banner = "No pude abrir Infuse. ¿Está instalado?" }
+        if !opened { external = nil; notify("No pude abrir Infuse. ¿Está instalado?") }
     }
 
     /// Infuse volvió (`orbital-ios://infuse-done?...`): se guarda dónde te quedaste. Infuse ya avisa a Trakt por su cuenta.
@@ -89,7 +93,7 @@ final class AppEnvironment: ObservableObject {
         guard let session = external else { return }
         switch result {
         case .failed(_, let message, _):
-            banner = message.map { "Infuse no pudo reproducirlo: \(stripURLs($0))" } ?? "Infuse no pudo reproducirlo."
+            notify(message.map { "Infuse no pudo reproducirlo: \(stripURLs($0))" } ?? "Infuse no pudo reproducirlo.")
         case .closed:
             guard let seconds = Infuse.seconds(from: result, knownDuration: session.duration) else { return }
             let r = session.request
@@ -112,7 +116,7 @@ final class AppEnvironment: ObservableObject {
 
     /// Un título desde Inicio: reproduce directo donde ibas.
     func play(_ item: HomeItem) async {
-        guard let videoID = item.videoID, let meta = try? await services.cinemeta.meta(kind: item.kind, id: item.metaID) else { return banner = "No pude abrir ese título." }
+        guard let videoID = item.videoID, let meta = try? await services.cinemeta.meta(kind: item.kind, id: item.metaID) else { return notify("No pude abrir ese título.") }
         var label = ""
         if let episode = item.episode { label = Strings.episode(season: item.season, episode: episode, language: services.appSettings.uiLanguage) }
         let request = PlayRequest(kind: item.kind, metaID: item.metaID, videoID: videoID, originalTitle: item.originalTitle, displayTitle: item.title,

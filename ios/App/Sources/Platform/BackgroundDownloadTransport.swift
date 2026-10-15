@@ -126,7 +126,7 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         let status = (downloadTask.response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(status) else {
             // Un 403/404/410 no es un archivo: Real-Debrid dice que el enlace caducó.
-            continuation.yield(.failed(id: id, status: status, message: "HTTP \(status)"))
+            continuation.yield(.failed(id: id, status: status, message: DownloadMessages.forStatus(status)))
             return
         }
         let destination = absolute(context.file)

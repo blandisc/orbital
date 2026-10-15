@@ -98,10 +98,10 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             ["name": "[RD+] Demo\n1080p", "title": "Apple.BipBop.HLS.1080p.WEB-DL.Multi\n💾 2.1 GB 🇬🇧 🇪🇸",
              "url": "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8",
              "behaviorHints": ["bingeGroup": "demo-1080p"]],
-            ["name": "[RD+] Demo\n720p", "title": "Big.Buck.Bunny.720p.BluRay.x264\n💾 158 MB 🇬🇧",
-             "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"],
-            ["name": "[RD+] Demo\n4K", "title": "Tears.of.Steel.2160p.HDR.WEB-DL\n💾 14.8 GB 🇬🇧",
-             "url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4"],
+            ["name": "[RD+] Demo\n1080p", "title": "Big.Buck.Bunny.1080p.BluRay.x264\n💾 30.7 MB 🇬🇧",
+             "url": "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_30MB.mp4"],
+            ["name": "[RD+] Demo\n4K", "title": "Jellyfish.2160p.HDR.WEB-DL\n💾 14.8 GB 🇬🇧",
+             "url": "https://test-videos.co.uk/vids/jellyfish/mp4/h264/1080/Jellyfish_1080_10s_20MB.mp4"],
         ]
         return HTTPResponse(status: 200, data: JSON.object(["streams": .array(streams)]).serialized())
     }

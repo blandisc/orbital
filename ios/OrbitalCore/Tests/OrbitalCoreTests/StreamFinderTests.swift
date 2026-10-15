@@ -24,6 +24,18 @@ final class StreamFinderTests: XCTestCase {
         XCTAssertEqual(all.count, 4)
     }
 
+    func testAStreamingPlaylistCanBeWatchedButNotDownloaded() async throws {
+        let http = FakeHTTP()
+        let finder = makeFinder(http)
+        http.json["https://a.example/stream/movie/tt1.json"] = ["streams": [
+            ["name": "T\n1080p [RD+]", "title": "Peli 1080p\n💾 2.1 GB", "url": "https://cdn.example/master.m3u8"],
+            ["name": "T\n720p [RD+]", "title": "Peli 720p\n💾 900 MB", "url": "https://rd.example/peli.mkv"]]]
+        let watch = try await finder.find(kind: "movie", videoID: "tt1", prefs: Preferences())
+        XCTAssertEqual(watch.count, 2)
+        let download = try await finder.find(kind: "movie", videoID: "tt1", prefs: Preferences(), purpose: .download)
+        XCTAssertEqual(download.map { $0.playbackURL?.lastPathComponent }, ["peli.mkv"], "una lista HLS no es un archivo que se pueda guardar")
+    }
+
     func testResultsAreCachedAndExpire() async throws {
         let http = FakeHTTP(), clock = Clock()
         let finder = makeFinder(http, clock: clock)

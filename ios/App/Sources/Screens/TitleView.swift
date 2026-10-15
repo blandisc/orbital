@@ -6,6 +6,7 @@ import OrbitalModels
 struct TitleView: View {
     let route: TitleRoute
     @EnvironmentObject private var env: AppEnvironment
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var observer: ModelObserver<TitleModel>
     @StateObject private var tint = ArtTint()
     @State private var sourcesFor: SourcesTarget?
@@ -40,6 +41,7 @@ struct TitleView: View {
             #if DEBUG
             if Demo.isOn, Demo.open == "play" { start(model, videoID: nil) }
             if Demo.isOn, Demo.open == "sources", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
+            if Demo.isOn, Demo.open == "download" { await report(model.download([model.continueVideoID ?? model.metaID]), model); dismiss() }
             #endif
             await tint.load(model.poster)
         }
@@ -87,10 +89,19 @@ struct TitleView: View {
             HStack(spacing: DS.Space.s2) {
                 secondary(model.inLibrary ? "En Mi lista" : "Mi lista", symbol: model.inLibrary ? "checkmark" : "plus") { Task { await model.toggleLibrary() } }
                     .sensoryFeedback(.success, trigger: model.inLibrary)
-                secondary("Descargar", symbol: "arrow.down.circle") { downloadMenu = true }
+                downloadButton(model)
                 secondary("Fuentes", symbol: "list.bullet") { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) } }
                     .disabled(model.continueVideoID == nil)
             }
+        }
+    }
+
+    /// En una película dice cómo va su descarga; en una serie abre el menú (siguientes episodios, elegir fuente).
+    @ViewBuilder private func downloadButton(_ model: TitleModel) -> some View {
+        switch model.kind == "movie" ? model.downloadState(model.metaID) : nil {
+        case .done?: secondary("Descargado", symbol: "checkmark.circle.fill") { env.notify("Ya está descargado. Lo encuentras en Descargas.", tone: .info) }
+        case .downloading?, .queued?: secondary("Descargando", symbol: "arrow.down.circle.dotted") { env.notify("Descargando. Lo verás en Descargas.", tone: .info) }
+        default: secondary("Descargar", symbol: "arrow.down.circle") { downloadMenu = true }
         }
     }
 
@@ -165,11 +176,11 @@ struct TitleView: View {
 
     private func report(_ outcome: TitleModel.DownloadOutcome, _ model: TitleModel) async {
         switch outcome {
-        case .queued(let n): env.banner = n == 1 ? "Descargando. Lo verás en Descargas." : "Descargando \(n) episodios. Los verás en Descargas."
-        case .noSources: env.banner = "No hay fuentes de Real-Debrid para descargar."
-        case .notEnoughSpace(let text): env.banner = text
-        case .already: env.banner = "Ya está descargado."
-        case .failed(let text): env.banner = text
+        case .queued(let n): env.notify(n == 1 ? "Descargando. Lo verás en Descargas." : "Descargando \(n) episodios. Los verás en Descargas.", tone: .success)
+        case .noSources: env.notify("No hay fuentes de Real-Debrid para descargar.")
+        case .notEnoughSpace(let text): env.notify(text)
+        case .already: env.notify("Ya está descargado.", tone: .info)
+        case .failed(let text): env.notify(text)
         }
         await model.refreshState()
     }

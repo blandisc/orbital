@@ -312,6 +312,26 @@ final class DownloadsTests: XCTestCase {
         XCTAssertNotEqual(state, .done)
     }
 
+    func testAServerThatSendsSomethingFarSmallerThanTheSourceSaidIsNotTheVideo() async throws {
+        let transport = FakeTransport()
+        let d = makeDownloads(transport)
+        try await d.enqueue(item("tt1:1:1", size: 2_000_000_000), url: URL(string: "https://rd.example/a.mkv")!)
+        await settle("start") { transport.starts.count == 1 }
+        transport.emit(.progress(id: "tt1|tt1:1:1", written: 6_000, total: 6_000))     // una lista HLS de 6 kB
+        try Data(count: 6_000).write(to: transport.starts[0].file)
+        transport.emit(.finished(id: "tt1|tt1:1:1"))
+        await settle("se reintenta") { transport.starts.count == 2 }
+        let state = await d.item("tt1|tt1:1:1")?.state
+        XCTAssertNotEqual(state, .done)
+    }
+
+    func testServerErrorsAreExplainedInWords() {
+        XCTAssertTrue(DownloadMessages.forStatus(403).contains("caducó"))
+        XCTAssertTrue(DownloadMessages.forStatus(503).contains("servidor"))
+        XCTAssertFalse(DownloadMessages.forStatus(403).contains("HTTP"))
+        XCTAssertTrue(DownloadMessages.forStatus(418).contains("418"))
+    }
+
     func testEnqueueingAnActiveDownloadAgainDoesNothing() async throws {
         let transport = FakeTransport()
         let d = makeDownloads(transport)

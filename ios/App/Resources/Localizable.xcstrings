@@ -2014,6 +2014,17 @@
         }
       }
     },
+    "Ya está descargado. Lo encuentras en Descargas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already downloaded. You'll find it in Downloads."
+          }
+        }
+      }
+    },
     "quedan %lld h": {
       "extractionState": "manual",
       "localizations": {

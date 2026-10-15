@@ -92,6 +92,19 @@ public enum DownloadEvent: Sendable, Equatable {
     case failed(id: String, status: Int?, message: String)
 }
 
+public enum DownloadMessages {
+    /// Lo que se le dice a la persona cuando el servidor contesta con un error (nunca «HTTP 403» a secas).
+    public static func forStatus(_ status: Int) -> String {
+        switch status {
+        case 401, 403, 404, 410: "El enlace de la fuente caducó o ya no existe. Toca ▶ para buscar otro."
+        case 416: "Lo bajado no cuadra con el archivo: se empieza de nuevo."
+        case 429: "La fuente pidió esperar un poco. Se vuelve a intentar."
+        case 500...599: "El servidor de la fuente falló. Se vuelve a intentar."
+        default: "La descarga falló (código \(status))."
+        }
+    }
+}
+
 /// Quien baja de verdad (en la app, `URLSession` en segundo plano). En las pruebas, uno falso.
 public protocol DownloadTransport: Sendable {
     func start(id: String, url: URL, resumeFrom: Int64, file: URL) async
@@ -271,7 +284,9 @@ public actor Downloads {
         case .progress(let id, let written, let total):
             guard var item = items[id], item.state == .downloading else { return }
             item.writtenBytes = written
-            if let total { item.expectedBytes = total }
+            // El tamaño del servidor manda, salvo que sea mucho menor que el que anunció la fuente: entonces no es el video
+            // (una lista HLS de 6 kB, una página de error) y la revisión al terminar lo tiene que poder ver.
+            if let total, item.expectedBytes.map({ total * 2 >= $0 }) ?? true { item.expectedBytes = total }
             items[id] = item
             changed()
         case .finished(let id):

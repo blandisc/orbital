@@ -44,6 +44,8 @@ public final class TitleModel: ObservableModel {
     private var raw: JSON?
     private var watched = Set<String>()
     private var downloadStates: [String: DownloadState] = [:]
+    /// Cómo va la descarga de un video de este título (nil: no se ha pedido).
+    public func downloadState(_ videoID: String?) -> DownloadState? { videoID.flatMap { downloadStates[$0] } }
 
     public init(_ services: Services, kind: String, metaID: String, hint: (title: String, poster: String?)? = nil) {
         self.services = services; self.kind = kind; self.metaID = metaID

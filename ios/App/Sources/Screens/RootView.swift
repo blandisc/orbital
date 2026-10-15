@@ -38,7 +38,7 @@ struct RootView: View {
             Button("Sí, marcar como visto") { if let r = env.askFinished { Task { await env.confirmFinished(r) } } }
             Button("No", role: .cancel) { env.askFinished = nil }
         } message: { Text("Infuse no dice cuánto dura, así que no sé si llegaste al final.") }
-        .overlay(alignment: .top) { BannerView() }
+        .overlay(alignment: .bottom) { BannerView() }
         .task { _ = await env.services.watch.flushPending() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { _ = await env.services.watch.flushPending() } }
@@ -74,17 +74,18 @@ struct MainTabs: View {
     }
 }
 
-/// Un aviso corto arriba (sin Infuse, sin fuentes…): desaparece solo.
+/// Un aviso corto abajo, sobre las pestañas (sin Infuse, sin fuentes, descargando…): desaparece solo; tocarlo lo cierra.
 struct BannerView: View {
     @EnvironmentObject private var env: AppEnvironment
 
     var body: some View {
-        if let text = env.banner {
-            DSNotice(text: LocalizedStringKey(text), tone: .warn)
-                .padding(DS.Space.s4)
-                .transition(.move(edge: .top).combined(with: .opacity))
-                .task(id: text) { try? await Task.sleep(nanoseconds: DS.Timing.banner); env.banner = nil }
+        if let banner = env.banner {
+            DSNotice(text: LocalizedStringKey(banner.text), tone: banner.tone)
+                .padding(.horizontal, DS.Space.s4).padding(.bottom, DS.Space.s14 + DS.Space.s2)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .task(id: banner) { try? await Task.sleep(nanoseconds: DS.Timing.banner); env.banner = nil }
                 .onTapGesture { env.banner = nil }
+                .sensoryFeedback(banner.tone == .error ? .error : .success, trigger: banner)
         }
     }
 }
