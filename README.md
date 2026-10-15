@@ -32,6 +32,7 @@ se controla con la voz a través de **Alexa**.
 | **Stremio** | Abre Stremio 4/5 y, si vinculas tu cuenta, muestra la fila **Seguir viendo** con pósters, progreso y episodio (T2 E4); con A abre directo la ficha de ese episodio. Por voz: "sigue viendo", "continúa The Office", "busca Dune en Stremio". |
 | **Apps** | Cualquier ejecutable o URL (ES-DE, YouTube TV, Playnite…). |
 | **Voz** | `/api/voice` acepta intents de Alexa o texto libre en español ("abre hollow knight", "busca dune en stremio", "cierra el juego", "ve a la derecha"). |
+| **Para ti** | Qué ver o qué jugar, sin clave: el Top 10 oficial de Netflix de tu país (TSV público de `netflix.com/tudum`) y lo más visto de Disney+, HBO Max, Prime Video, Apple TV+ y Paramount+ (JustWatch); con Trakt, TMDB o RAWG conectados, suma tus recomendaciones, lo más popular en más plataformas y novedades de PC. |
 
 ### Controles
 
