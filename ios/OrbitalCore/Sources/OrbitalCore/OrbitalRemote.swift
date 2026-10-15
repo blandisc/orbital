@@ -95,8 +95,6 @@ public struct OrbitalRemote: Sendable {
         _ = try await send("api/foryou/dismiss", method: "POST", body: JSON.object(["key": .string(key)]).serialized())
     }
 
-    private func send(_ path: String, method: String, query: [URLQueryItem] = [], body: Data?) async throws -> JSON? {
-
     /// Lo que se ve ahora en la TV, para la tarjeta «Viendo en la TV». nil si no hay nada abierto.
     public struct NowPlaying: Sendable, Equatable {
         public var kind: String, live: Bool
@@ -146,7 +144,7 @@ public struct OrbitalRemote: Sendable {
         return NowPlaying.parse(playing)
     }
 
-    private func send(_ path: String, method: String, body: Data?) async throws -> JSON? {
+    private func send(_ path: String, method: String, query: [URLQueryItem] = [], body: Data?) async throws -> JSON? {
         guard let base, !token.isEmpty else { throw Failure.notConfigured }
         var headers = ["Authorization": "Bearer \(token)"]
         if body != nil { headers["Content-Type"] = "application/json" }
