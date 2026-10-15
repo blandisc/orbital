@@ -22,7 +22,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 from ..net import NET_ERRORS, read_body
-from .iptv import Channel
+from .iptv import HTTP, Channel
 
 log = logging.getLogger(__name__)
 
@@ -65,7 +65,10 @@ def _context() -> ssl.SSLContext:
 
 
 def fetch(url: str, headers: dict, *, limit: int = MANIFEST_BYTES, timeout: float = TIMEOUT) -> bytes:
-    """Los primeros `limit` bytes de `url`. Lanza Unreachable con el motivo."""
+    """Los primeros `limit` bytes de `url`. Lanza Unreachable con el motivo. Solo http(s): la lista de un canal
+    (que viene de internet) podía mandar a leer un archivo del equipo con una calidad «file:///…»."""
+    if not HTTP.match(url or ""):
+        raise Unreachable("dirección que no es de internet")
     req = urllib.request.Request(url, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=timeout, context=_context()) as res:
@@ -166,11 +169,16 @@ class HealthStore:
             return
         if not isinstance(data, dict):
             return
-        for key, record in (data.get("channels") or {}).items():
+        # Lo que no tenga la forma esperada se ignora: este archivo se lee al arrancar y, con una lista donde iba un
+        # diccionario o una fecha escrita como texto, Orbital no abría.
+        channels, numbers = data.get("channels"), data.get("numbers")
+        for key, record in (channels.items() if isinstance(channels, dict) else ()):
             if isinstance(record, dict) and isinstance(record.get("fails"), int) and record["fails"] >= 0:
-                self._records[str(key)] = {"fails": record["fails"], "checked": float(record.get("checked") or 0),
+                checked = record.get("checked")
+                self._records[str(key)] = {"fails": record["fails"],
+                                           "checked": float(checked) if isinstance(checked, (int, float)) and not isinstance(checked, bool) else 0.0,
                                            "ok": bool(record.get("ok")), "reason": str(record.get("reason") or "")[:80]}
-        for key, number in (data.get("numbers") or {}).items():
+        for key, number in (numbers.items() if isinstance(numbers, dict) else ()):
             if isinstance(number, int) and not isinstance(number, bool) and number > 0:
                 self._numbers[str(key)] = number
 

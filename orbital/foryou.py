@@ -141,8 +141,8 @@ def video_item(e: dict, why: str, *, title: str | None = None, poster: str | Non
         facts = [["Sigue", episode] if episode else ["Temporadas", seasons] if seasons else ["Episodios", e.get("episodes")],
                  ["Año", e.get("year")]]
         video_id = f"{imdb}:{nxt['season']}:{nxt['episode']}" if nxt else f"{imdb}:1:1"
-        # Una serie que no estás viendo abre su ficha (temporadas, sinopsis), no el primer episodio.
-        action = f"Continuar {episode}" if episode else "Ver la serie"
+        # Una serie abre su ficha (temporadas, sinopsis, en qué episodio vas), nunca un episodio directo.
+        action = "Ver la serie"
     return {
         "key": f"video:{imdb}", "id": f"cinemeta:{kind}:{imdb}", "source": "cinemeta", "kind": kind, "meta_id": imdb,
         "title": title or e["title"], "year": e.get("year"), "why": why, "detail": detail,

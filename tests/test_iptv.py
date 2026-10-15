@@ -137,3 +137,17 @@ def test_copia_dañada_no_truena(tmp_path):
     copy = tmp_path / "tv-mx.m3u"
     copy.write_bytes(b"\xff\xfe\x00 no es utf-8")
     assert iptv.read_copy(copy) == []
+
+
+def test_a_huge_line_does_not_freeze_the_list():
+    """La lista viene de internet: una línea enorme (rota o a propósito) no puede congelar la lectura."""
+    import time
+
+    from orbital.library import iptv
+
+    text = "#EXTM3U\n#EXTINF:-1," + "x" * 200_000 + "\nhttp://a.example/b.m3u8\n" \
+        + '#EXTINF:-1 tvg-id="ok" group-title="News",Canal Bueno\nhttp://a.example/ok.m3u8\n'
+    started = time.perf_counter()
+    channels = iptv.parse_m3u(text)
+    assert time.perf_counter() - started < 1
+    assert any(c.id == "ok" and c.categories == ["Noticias"] for c in channels)

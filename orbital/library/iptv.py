@@ -45,7 +45,10 @@ CATEGORY_ORDER = ["General", "Noticias", "Entretenimiento", "Deportes", "Pelícu
 
 QUALITY = re.compile(r"\s*\((\d{3,4}[pi])\)", re.I)
 TAG = re.compile(r"\s*\[([^\]]+)\]")
-ATTRIBUTE = re.compile(r'([\w.-]+)="([^"]*)"')
+# Solo desde el principio de una palabra: sin el (?<!…), una línea de 20 000 letras sin «=» tardaba 4 s (se
+# probaba cada letra como inicio de un atributo), y la lista viene de internet.
+ATTRIBUTE = re.compile(r'(?<![\w.-])([\w.-]+)="([^"]*)"')
+MAX_LINE = 8192  # una línea más larga no es de un canal de verdad: se corta
 HTTP = re.compile(r"^https?://\S+$", re.I)
 CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 
@@ -132,7 +135,7 @@ def parse_m3u(text: str) -> list[Channel]:
     taken: set[str] = set()
     pending: dict | None = None
     for raw in text.lstrip("﻿").splitlines():
-        line = raw.strip()
+        line = raw[:MAX_LINE].strip()
         if line.startswith("#EXTINF"):
             attrs, title = _title(line)
             pending = {"attrs": attrs, "title": title, "referrer": None, "user_agent": None}

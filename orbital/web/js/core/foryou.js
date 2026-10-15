@@ -93,8 +93,9 @@ export function primaryAction(item) {
   if (!item) return null;
   if (item.kind === "game") return item.owned && item.item ? "play" : null;
   if (!item.meta_id) return null;
-  // Una serie sugerida que no estás viendo: su ficha (temporadas, de qué trata), no el T1 E1 de golpe.
-  return item.kind === "series" && !item.episode ? "title" : "watch";
+  // Una serie, siempre su ficha (temporadas, de qué trata, en qué episodio vas), aunque la estés siguiendo:
+  // recomendar un episodio en concreto se equivoca seguido. Una película sí se ve directo.
+  return item.kind === "series" ? "title" : "watch";
 }
 
 /** Para el reproductor (launching.watch): qué, cuál episodio y el título. */
