@@ -231,8 +231,8 @@ class LiveTV:
             "categories": [{"id": c["id"], "label": c["title"], "hint": str(c["count"]), "current": c["id"] == picked}
                            for c in overview["categories"]],
             "channels": [{"id": c.id, "name": c.name, "number": self.store.number(c.id), "quality": c.quality,
-                          "category": self._label(c, picked),
-                          "current": c.id == meta.get("channel_id")} for c in channels]}
+                          "category": self._label(c, picked), "current": c.id == meta.get("channel_id"),
+                          "shaky": self.store.verified(c.id) is False} for c in channels]}
 
     def tune(self, meta: dict, channel_id: str, category: str | None = None, *, tried: set[str] | None = None,
              retried: bool = False) -> bool:
@@ -261,6 +261,9 @@ class LiveTV:
         if was_playing and not meta.get("retried"):
             log.info("El canal %s se cortó: lo reintento una vez", meta.get("title"))
             return self.tune(meta, channel_id, category, tried=set(meta.get("tried") or ()), retried=True)
+        # El orden se toma ANTES de marcar el fallo: con el segundo seguido el canal se oculta y ya no está en su
+        # lista, y el siguiente se buscaría desde el principio.
+        ids = [c.id for c in self.zap_list(category)[1]]
         if self._online():
             self.store.record(channel_id, False, "se cortó" if was_playing else "no abre")
             self.store.save()
@@ -269,10 +272,11 @@ class LiveTV:
         tried = set(meta.get("tried") or ()) | {channel_id}
         if len(tried) > MAX_SKIPS:
             return False  # varios seguidos sin señal: se queda en «Sin señal» para que decidas tú
-        _, channels = self.zap_list(category)
-        ids = [c.id for c in channels]
         order = ids[ids.index(channel_id) + 1:] + ids[:ids.index(channel_id)] if channel_id in ids else ids
-        following = next((cid for cid in order if cid not in tried), None)
+        # Primero los que no han fallado (un canal dudoso no cuenta como «el siguiente» mientras haya otro); si todos
+        # lo son, el más cercano.
+        untried = [cid for cid in order if cid not in tried]
+        following = next((cid for cid in untried if self.store.verified(cid) is not False), None) or next(iter(untried), None)
         if following is None:
             return False
         target = self.channel(following)

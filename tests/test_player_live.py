@@ -100,6 +100,21 @@ def test_arriba_abajo_y_lt_rt_cambian_de_canal_y_la_barra_enseña_a_donde_vas():
     assert not any(c[0] == "set_property" and c[1] == "volume" for c in mpv.sent)  # ▲▼ no son volumen aquí
 
 
+def test_la_rueda_de_canales_se_salta_los_dudosos_pero_la_guia_los_enseña():
+    p, mpv = live_player()
+    shaky = [{**c, "shaky": c["id"] == "c3"} for c in CHANNELS]  # c3 ya falló una vez
+    p.channels_provider = lambda meta, category=None: {"category": "todos", "channels": [{**c, "current": c["id"] == meta["channel_id"]} for c in shaky],
+                                                       "categories": []}
+    got = []
+    done = threading.Event()
+    p.on_play_channel = lambda meta, cid, category: (got.append(cid), done.set())
+    p.ZAP_WAIT = 0.05
+    p.press("up")  # de c2: el siguiente sería c3, pero es dudoso → c4
+    assert done.wait(2) and got == ["c4"]
+    p.press("y")
+    assert "Canal 3" in mpv.overlays[2]  # en la guía sí está
+
+
 def test_lt_y_abajo_van_al_anterior_y_la_lista_da_la_vuelta():
     p, mpv = live_player()
     got = []

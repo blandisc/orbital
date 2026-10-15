@@ -99,7 +99,7 @@ y qué se midió).
 | Cambiar de categoría | **LB / RB** pasan de una categoría a otra (Todos · General · Noticias · Deportes…). En la primera o la última siguen a la sección de al lado, así nunca te quedas atrapado. Las categorías con menos de 3 canales se juntan en «Otros» | ✅ (nuevo) |
 | Moverse por los canales | D-pad / stick; LT/RT saltan una pantalla (3 filas). La barra de arriba dice en qué canal vas («5 de 40») | ✅ (nuevo) |
 | Ver un canal | **A**. Pantalla de carga («Sintonizando») y, con la primera imagen, el canal a pantalla completa (~2 s). Si había un juego abierto, antes pregunta «¿Cerrar X?» | ✅ (nuevo) |
-| Cambiar de canal viendo la tele | **↑ ↓ o LT/RT**: ↑ y RT, el siguiente; ↓ y LT, el anterior (la lista da la vuelta). La barra enseña a dónde vas al instante («Sintonizando…») y solo se sintoniza el último si pulsas varias veces. Cambiar es `loadfile … replace` en el mismo mpv: no se cierra nada | ✅ (nuevo) |
+| Cambiar de canal viendo la tele | **↑ ↓ o LT/RT**: ↑ y RT, el siguiente; ↓ y LT, el anterior (la lista da la vuelta). La barra enseña a dónde vas al instante («Sintonizando…») y solo se sintoniza el último si pulsas varias veces. Los canales que ya fallaron una vez se saltan al cambiar (siguen en la guía, atenuados). Cambiar es `loadfile … replace` en el mismo mpv: no se cierra nada | ✅ (nuevo) |
 | Elegir de una lista | **Y**: guía «Categoría \| Canales» encima del video (que sigue). ◀ ▶ cambian de columna, A elige, B cierra. Elegir otra categoría también cambia la lista por la que saltan ↑ ↓ | ✅ (nuevo) |
 | Volumen y silencio | ◀ ▶ volumen · **A** sin sonido (no pausa: una tele en vivo pausada vuelve atrasada). La barra dice «Sin sonido» | ✅ (nuevo) |
 | Audio | X (si el canal trae más de una pista) | ✅ |

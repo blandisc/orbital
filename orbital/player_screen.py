@@ -557,8 +557,13 @@ class PlayerScreen:
             return
         if self._zap_view is None:
             info = self._safe(self.channels_provider, segment.meta, None) or {}
-            channels = info.get("channels") or []
-            here = next((i for i, c in enumerate(channels) if c["id"] == segment.meta.get("channel_id")), -1)
+            # Los que ya fallaron una vez no entran en la rueda de ▲▼ (siguen en la guía, atenuados): saltar de uno en
+            # uno por canales caídos era esperar 12 s por cada uno.
+            now = segment.meta.get("channel_id")
+            channels = [c for c in info.get("channels") or [] if not c.get("shaky") or c["id"] == now]
+            if len(channels) < 2:
+                channels = info.get("channels") or []
+            here = next((i for i, c in enumerate(channels) if c["id"] == now), -1)
             self._zap_view = {"channels": channels, "here": here, "meta": segment.meta, "steps": 0}
         view = self._zap_view
         channels = view["channels"]

@@ -285,6 +285,33 @@ def test_un_canal_que_no_abre_se_marca_y_se_pasa_al_siguiente_de_la_lista(live):
     assert "no abre · pasando a" in fake.toasts[0]
 
 
+def test_el_siguiente_se_busca_antes_de_ocultar_el_canal_que_falla(live):
+    """Con el segundo fallo el canal se oculta y sale de su lista: el siguiente sigue siendo el de al lado (antes volvía al principio)."""
+    service, fake = live
+    visible = service.visible()
+    failing = visible[5]
+    service.store.record(failing.id, False)  # ya había fallado una vez: este es el segundo
+    assert service.failed(meta_of(service, failing.id), False) is True
+    assert service.store.hidden(failing.id)
+    assert fake.tuned[0][1] == visible[6].name
+
+
+def test_al_saltar_prefiere_un_canal_que_no_haya_fallado(live):
+    service, fake = live
+    visible = service.visible()
+    service.store.record(visible[3].id, False)  # el que sigue ya falló una vez
+    service.failed(meta_of(service, visible[2].id), False)
+    assert fake.tuned[0][1] == visible[4].name  # se salta el dudoso
+
+
+def test_la_guia_marca_los_canales_dudosos(live):
+    service, _ = live
+    first = service.visible()[0]
+    service.store.record(first.id, False)
+    shaky = {c["id"]: c["shaky"] for c in service.guide(service.meta_for(service.visible()[1], "todos"))["channels"]}
+    assert shaky[first.id] is True and not any(v for k, v in shaky.items() if k != first.id)
+
+
 def test_dos_fallos_seguidos_lo_ocultan(live):
     service, _ = live
     first = service.visible()[0]
