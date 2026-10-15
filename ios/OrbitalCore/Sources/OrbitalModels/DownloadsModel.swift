@@ -37,6 +37,16 @@ public final class DownloadsModel: ObservableModel {
                            localFile: file, localSubtitles: subs)
     }
 
+    /// «T2 · E6 · Halloween» para una descarga (sin esto, varios episodios de la misma serie se ven iguales en la lista).
+    static func episodeLabel(_ videoID: String, meta: JSON, services: Services) -> String {
+        for season in CinemetaParsing.seasons(meta) {
+            if let episode = season.episodes.first(where: { $0.id == videoID }) {
+                return services.episodeLabel(season.season, episode.episode) + (episode.hasTitle ? " · \(episode.title)" : "")
+            }
+        }
+        return ""
+    }
+
     /// Al terminar de ver un episodio descargado: se baja el siguiente si lo pediste, y se borra lo visto si lo pediste.
     public func afterWatching(_ item: DownloadItem) async {
         let settings = services.appSettings
@@ -45,7 +55,7 @@ public final class DownloadsModel: ObservableModel {
                 let langs = services.titlePrefs.languages(for: item.metaID, settings: settings)
                 guard let source = try? await services.finder.best(kind: item.kind, videoID: next, prefs: langs.prefs, purpose: .download), let url = source.playbackURL else { continue }
                 let download = DownloadItem(id: DownloadItem.makeID(metaID: item.metaID, videoID: next), kind: item.kind, metaID: item.metaID, videoID: next, title: item.title,
-                                            originalTitle: item.originalTitle, subtitle: "", poster: item.poster, addon: source.addon, release: source.release, sourceIndex: source.index,
+                                            originalTitle: item.originalTitle, subtitle: Self.episodeLabel(next, meta: meta, services: services), poster: item.poster, addon: source.addon, release: source.release, sourceIndex: source.index,
                                             expectedBytes: source.size > 0 ? Int64(source.size) : nil,
                                             relativePath: DownloadFiles.relativePath(metaID: item.metaID, videoID: next, ext: DownloadFiles.fileExtension(for: url)),
                                             createdAt: Date().timeIntervalSince1970)

@@ -26,7 +26,7 @@ struct SourcesSheet: View {
                     if model.isLoading { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s6) }
                     if let error = model.error { DSNotice(text: LocalizedStringKey(error), tone: .warn) }
                     ForEach(model.rows) { row in
-                        Button { if let source = model.source(row.id) { choose(source) } } label: { SourceRowView(row: row) }.buttonStyle(.plain)
+                        Button { if let source = model.source(row.id) { choose(source) } } label: { SourceRowView(row: row, purpose: purpose) }.buttonStyle(.plain)
                     }
                 }
             }
@@ -39,6 +39,7 @@ struct SourcesSheet: View {
 
 struct SourceRowView: View {
     let row: SourceRow
+    var purpose: Purpose = .watch
 
     var body: some View {
         HStack(alignment: .top, spacing: DS.Space.s3) {
@@ -55,7 +56,7 @@ struct SourceRowView: View {
                 }
             }
             Spacer(minLength: 0)
-            Image(systemName: "play.fill").foregroundStyle(DS.textMuted).padding(.top, DS.Space.s1)
+            Image(systemName: purpose == .download ? "arrow.down.circle" : "play.fill").foregroundStyle(DS.textMuted).padding(.top, DS.Space.s1)
         }
         .padding(DS.Space.s3)
         .background(row.recommended ? DS.fillStrong : DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))

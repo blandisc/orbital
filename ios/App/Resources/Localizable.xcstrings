@@ -375,6 +375,17 @@
         }
       }
     },
+    "Conecta Trakt (tu watchlist y tus listas) o agrega una clave de TMDB (lo popular en Netflix, Disney+ y HBO Max) en Ajustes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Trakt (your watchlist and lists) or add a TMDB key (what is popular on Netflix, Disney+ and HBO Max) in Settings."
+          }
+        }
+      }
+    },
     "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias.": {
       "extractionState": "manual",
       "localizations": {
@@ -2164,6 +2175,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Watch on TV"
+          }
+        }
+      }
+    },
+    "Ver ficha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View details"
           }
         }
       }

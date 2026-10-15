@@ -7,6 +7,7 @@ struct HomeView: View {
     @StateObject private var home: ModelObserver<HomeModel>
     @StateObject private var tint = ArtTint()
     @State private var pendingCount = 0
+    @State private var openTitle: TitleRoute?
 
     init() { _home = StateObject(wrappedValue: ModelObserver(HomeModel(AppEnvironment.shared.services))) }
 
@@ -49,6 +50,7 @@ struct HomeView: View {
         .toolbar { ToolbarItem(placement: .topBarTrailing) { NavigationLink(value: SettingsRoute()) { Image(systemName: "person.crop.circle") }.accessibilityLabel(Text("Ajustes")) } }
         .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
+        .navigationDestination(item: $openTitle) { TitleView(route: $0) }
         .task { await reload() }
         .refreshable { await reload() }
         .onChange(of: env.watchedSomething) { Task { await reload() } }
@@ -69,16 +71,18 @@ struct HomeView: View {
 
     private func hero(_ item: HomeItem) -> some View {
         let detail = [episodeText(season: item.season, episode: item.episode)].filter { !$0.isEmpty }.joined(separator: " · ")
-        return NavigationLink(value: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)) {
-            HeroCard(title: item.title, detail: detail, background: item.background ?? item.poster, badge: item.nextUp ? "Sigue" : "Seguir viendo", progress: item.progress) {
-                // Botón y tiempo en un renglón; si la letra no cabe, uno debajo del otro (nunca «Conti-nuar»).
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: DS.Space.s2) { continueButton(item); timeLeft(item) }
-                    VStack(alignment: .leading, spacing: DS.Space.s2) { continueButton(item); timeLeft(item) }
-                }
+        // La tarjeta abre la ficha con su propio toque; «Continuar» va aparte (un botón dentro de un NavigationLink puede
+        // abrir la ficha en vez de reproducir).
+        return HeroCard(title: item.title, detail: detail, background: item.background ?? item.poster, badge: item.nextUp ? "Sigue" : "Seguir viendo", progress: item.progress) {
+            // Botón y tiempo en un renglón; si la letra no cabe, uno debajo del otro (nunca «Conti-nuar»).
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Space.s2) { continueButton(item); timeLeft(item) }
+                VStack(alignment: .leading, spacing: DS.Space.s2) { continueButton(item); timeLeft(item) }
             }
         }
-        .buttonStyle(.plain)
+        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xxl))
+        .onTapGesture { openTitle = TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster) }
+        .accessibilityAction(named: Text("Ver ficha")) { openTitle = TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster) }
     }
 
     private func continueButton(_ item: HomeItem) -> some View {

@@ -222,24 +222,28 @@ struct EpisodeRowView: View {
     var playOnTV: (() -> Void)?
 
     var body: some View {
-        Button(action: play) {
-            HStack(alignment: .top, spacing: DS.Space.s3) {
-                ZStack(alignment: .bottom) {
-                    PosterView(url: row.thumbnail, title: "\(row.number)", aspect: DS.Poster.stillAspect)
-                    if let progress = row.progress { DSProgress(fraction: progress) }
+        // El botón de descargar va junto, no dentro, del que reproduce: anidados, tocar la flecha ponía el episodio.
+        HStack(alignment: .top, spacing: DS.Space.s3) {
+            Button(action: play) {
+                HStack(alignment: .top, spacing: DS.Space.s3) {
+                    ZStack(alignment: .bottom) {
+                        PosterView(url: row.thumbnail, title: "\(row.number)", aspect: DS.Poster.stillAspect)
+                        if let progress = row.progress { DSProgress(fraction: progress) }
+                    }
+                    .frame(width: DS.Poster.episodeThumbWidth, height: DS.Poster.episodeThumbWidth / DS.Poster.stillAspect).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+                    VStack(alignment: .leading, spacing: DS.Space.s1) {
+                        (row.hasTitle ? Text("\(row.number) · \(row.title)") : Text("Episodio \(row.number)")).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(2)
+                        status.font(DS.font(.xs)).foregroundStyle(DS.textMuted)
+                        if !row.overview.isEmpty { Text(row.overview).font(DS.font(.xs)).foregroundStyle(DS.textFaint).lineLimit(2) }
+                    }
+                    Spacer(minLength: 0)
                 }
-                .frame(width: DS.Poster.episodeThumbWidth, height: DS.Poster.episodeThumbWidth / DS.Poster.stillAspect).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    (row.hasTitle ? Text("\(row.number) · \(row.title)") : Text("Episodio \(row.number)")).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(2)
-                    status.font(DS.font(.xs)).foregroundStyle(DS.textMuted)
-                    if !row.overview.isEmpty { Text(row.overview).font(DS.font(.xs)).foregroundStyle(DS.textFaint).lineLimit(2) }
-                }
-                Spacer(minLength: 0)
-                stateIcon
+                .contentShape(Rectangle())
             }
-            .padding(.vertical, DS.Space.s3)
+            .buttonStyle(.plain)
+            stateIcon
         }
-        .buttonStyle(.plain)
+        .padding(.vertical, DS.Space.s3)
         .contextMenu {
             Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched)
             Button("Descargar", systemImage: "arrow.down.circle", action: download)
@@ -262,6 +266,6 @@ struct EpisodeRowView: View {
             if let downloadFraction { Gauge(value: downloadFraction) { EmptyView() }.gaugeStyle(.accessoryCircularCapacity).tint(DS.primary).scaleEffect(DS.Gauge.episodeScale) }
             else { ProgressView() }
         }
-        else { Button(action: download) { Image(systemName: "arrow.down.circle").foregroundStyle(DS.textMuted) }.accessibilityLabel(Text("Descargar")) }
+        else { Button(action: download) { Image(systemName: "arrow.down.circle").foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget) }.buttonStyle(.plain).accessibilityLabel(Text("Descargar")) }
     }
 }

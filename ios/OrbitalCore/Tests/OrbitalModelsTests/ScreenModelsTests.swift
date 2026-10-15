@@ -282,6 +282,18 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(model.orbitalCheck, OrbitalRemote.Failure.badToken.description)
     }
 
+    func testTheNextEpisodeDownloadedOnItsOwnSaysWhichEpisodeItIs() async throws {
+        let rig = try ServicesRig()
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A2.json"] = ["streams": [["name": "T\n1080p [RD+]", "title": "Ep 1080p\n💾 900 MB 🇲🇽", "url": "https://rd.example/e2.mkv"]]]
+        let watched = DownloadItem(id: DownloadItem.makeID(metaID: "tt0386676", videoID: "tt0386676:1:1"), kind: "series", metaID: "tt0386676", videoID: "tt0386676:1:1",
+                                   title: "La Oficina", originalTitle: "The Office", subtitle: "T1 · E1 · Pilot", poster: nil, addon: "Torrentio", sourceIndex: 1,
+                                   expectedBytes: nil, relativePath: "a/b.mkv", createdAt: 0)
+        try await rig.services.downloads.enqueue(watched, url: URL(string: "https://rd.example/e1.mkv")!)
+        await DownloadsModel(rig.services, freeSpace: { 50_000_000_000 }).afterWatching(watched)
+        let next = await rig.services.downloads.all.first { $0.videoID == "tt0386676:1:2" }
+        XCTAssertEqual(next?.subtitle, "T1 · E2 · Diversity Day")
+    }
+
     // MARK: ajustes y Trakt
     func testSettingsPersistAndTMDBKeyGoesToTheKeychain() async throws {
         let rig = try ServicesRig()

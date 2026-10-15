@@ -31,7 +31,12 @@ struct ParaTiView: View {
         .background(TintedBackground())
         .navigationTitle("Para ti").navigationBarTitleDisplayMode(.large)
         .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
-        .task { await m.load() }
+        .task {
+            #if DEBUG
+            if Demo.isOn, Demo.open == "lists" { m.mode = .lists }
+            #endif
+            await m.load()
+        }
         .refreshable { await m.refresh() }
         .animation(DS.Motion.base(reduceMotion), value: m.mode)
     }
@@ -115,7 +120,10 @@ struct ListsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s5) {
-                DSChipRow(items: model.chips, label: label, selection: Binding(get: { model.chip }, set: { new in Task { await model.select(new) } }))
+                if model.lists.isEmpty { popularFallback }
+                if model.chips.count > 1 {   // un solo filtro («Todo») no filtra nada
+                    DSChipRow(items: model.chips, label: label, selection: Binding(get: { model.chip }, set: { new in Task { await model.select(new) } }))
+                }
                 if model.lists.contains(where: \.splitsKinds) {
                     DSSegmented(options: [("series", "Series"), ("movie", "Películas")], selection: Binding(get: { model.kind }, set: { new in Task { await model.setKind(new) } }))
                         .padding(.horizontal, DS.Space.gutter)
@@ -125,6 +133,15 @@ struct ListsView: View {
             }
             .padding(.bottom, DS.Space.s8)
         }
+    }
+
+    /// Sin Trakt ni TMDB no hay listas: lo popular de Stremio, en filas, y cómo tener las tuyas.
+    @ViewBuilder private var popularFallback: some View {
+        DSNotice(text: "Conecta Trakt (tu watchlist y tus listas) o agrega una clave de TMDB (lo popular en Netflix, Disney+ y HBO Max) en Ajustes.")
+            .padding(.horizontal, DS.Space.gutter)
+        let series = model.mosaic.filter { $0.kind == "series" }, movies = model.mosaic.filter { $0.kind == "movie" }
+        if !series.isEmpty { Rail(title: "Series populares") { ForEach(series) { TitleLink(route: $0.route) } } }
+        if !movies.isEmpty { Rail(title: "Películas populares") { ForEach(movies) { TitleLink(route: $0.route) } } }
     }
 
     private func label(_ chip: ParaTiModel.Chip) -> Text {
