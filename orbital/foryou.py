@@ -29,6 +29,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from typing import Any
 
+from .library import charts as charts_api
 from .library import rawg as rawg_api
 from .library import stremio_api
 from .library import tmdb as tmdb_api
@@ -40,7 +41,10 @@ log = logging.getLogger(__name__)
 METAHUB = "https://images.metahub.space/{kind}/medium/{imdb}/img"
 STEAM_ART = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{file}"
 GAME_CATEGORIES = ("steam", "emulators")
-SERVICE_ERRORS = (trakt_api.TraktError, tmdb_api.TmdbError, rawg_api.RawgError, stremio_api.StremioError) + NET_ERRORS
+SERVICE_ERRORS = (trakt_api.TraktError, tmdb_api.TmdbError, rawg_api.RawgError, stremio_api.StremioError,
+                  charts_api.ChartsError) + NET_ERRORS
+# JustWatch, con su propio riel «Lo más visto en…» (Netflix ya tiene el Top 10 oficial: chart:netflix).
+JW_LIST_BRANDS = ("disney", "hbo", "prime", "appletv", "paramount")
 
 # Cuánto vale lo que se trajo (s): lo tuyo cambia seguido; lo popular, no tanto.
 MINE_TTL = 15 * 60
@@ -356,9 +360,20 @@ class ForYou:
         for entry in self.addon_catalogs():
             video.append({"id": entry["id"], "title": entry["title"], "icon": "list", "source": "Stremio",
                           "meta": f"De {entry['addon']}", "split": len(entry["kinds"]) > 1})
+        # Netflix (Top 10 oficial) y JustWatch (lo más visto por plataforma): ninguna pide clave.
+        video.append({"id": "chart:netflix", "title": "Top 10 en Netflix", "icon": "trailer", "source": "Netflix",
+                      "meta": f"Esta semana en {self._country()}", "split": True, "brand": "netflix",
+                      "logo": self.platforms().get("netflix", {}).get("logo")})
+        for brand in JW_LIST_BRANDS:
+            name = charts_api.JUSTWATCH_PACKAGES[brand][1]
+            video.append({"id": f"jw:{brand}", "title": f"Lo más visto en {name}", "icon": "trailer", "source": "JustWatch",
+                          "meta": f"Popular en {self._country()}", "split": True, "brand": brand,
+                          "logo": charts_api.justwatch_logo(brand)})
         found = self.platforms()
         for brand, (name, _) in tmdb_api.PLATFORMS.items():
-            if brand in found:
+            # Respaldo: solo si su lista de JustWatch (o el Top 10 de Netflix) no trajo nada, para no
+            # enseñar dos veces la misma plataforma.
+            if brand in found and not self._jw_covers(brand):
                 video.append({"id": brand, "title": name, "brand": brand, "logo": found[brand]["logo"], "icon": "trailer", "source": "TMDB",
                               "meta": f"Lo más popular en {self._country()}", "split": True})
         games: list[dict] = [{"id": "mygames", "title": "Tus juegos", "icon": "gamepad", "source": "",
@@ -423,6 +438,18 @@ class ForYou:
             return [video_item(e, "Popular") for e in self.cache.get(f"trakt:popular:{kind}", POPULAR_TTL, lambda: t.popular(kind))]
         if list_id in tmdb_api.PLATFORMS:
             return self.cache.get(f"tmdb:{list_id}:{kind}", POPULAR_TTL, lambda: self._platform(list_id, kind))
+        if list_id == "chart:netflix":
+            entries = self.cache.get(f"charts:netflix:{kind}", SLOW_TTL, lambda: charts_api.netflix_entries(
+                self.region, kind, tmdb=self.tmdb if self.tmdb.configured else None, cinemeta=self.catalog.cinemeta))
+            return [self._chart_item(e, kind, "Netflix") for e in entries]
+        if list_id.startswith("jw:"):
+            brand = list_id.removeprefix("jw:")
+            if brand not in charts_api.JUSTWATCH_PACKAGES:
+                raise KeyError(list_id)
+            entries = self.cache.get(f"charts:jw:{brand}:{kind}", POPULAR_TTL,
+                                     lambda: charts_api.fetch_justwatch_popular(brand, self.region, kind))
+            name = charts_api.JUSTWATCH_PACKAGES[brand][1]
+            return [self._chart_item(e, kind, name) for e in entries]
         if list_id == "mygames":
             return self.local_games()
         if list_id.startswith("rawg:"):
@@ -440,6 +467,35 @@ class ForYou:
         return [video_item(d, f"En {name}", title=d["title"], poster=d["poster"], wide=d["backdrop"],
                            overview=d["overview"], seasons=d.get("seasons"))
                 for d in details if d and d.get("imdb") and d.get("title")]
+
+    def _chart_item(self, entry: dict, kind: str, platform_name: str) -> dict:
+        """Un título de Netflix (Top 10) o JustWatch (lo más visto) en forma de video_item, con su
+        puesto («N.º 3 esta semana · 4 semanas en el Top 10», o «N.º 3 en Disney+»)."""
+        e = {"imdb": entry["imdb"], "kind": kind, "title": entry["title"], "year": entry.get("year")}
+        weeks = entry.get("weeks")
+        if platform_name == "Netflix":
+            why = f"N.º {entry['rank']} esta semana"
+            if weeks:
+                why += f" · {weeks} semana{'s' if weeks != 1 else ''} en el Top 10"
+        else:
+            why = f"N.º {entry['rank']} en {platform_name}"
+        item = video_item(e, why, title=entry["title"])
+        item["rank"] = entry["rank"]
+        return item
+
+    def _jw_covers(self, brand: str) -> bool:
+        """¿Ya hay algo que enseñe esta plataforma (JustWatch, o el Top 10 de Netflix)? Evita que el
+        riel enseñe la misma marca dos veces (una de JustWatch y otra, de respaldo, de TMDB)."""
+        list_id = "chart:netflix" if brand == "netflix" else f"jw:{brand}" if brand in JW_LIST_BRANDS else None
+        if not list_id:
+            return False
+        for kind in ("movie", "series"):
+            try:
+                if self._list(list_id, kind):
+                    return True
+            except (KeyError, *SERVICE_ERRORS):
+                continue
+        return False
 
     @staticmethod
     def _safe(call):
@@ -525,6 +581,9 @@ class ForYou:
                 sources += [(brand, kind) for brand in self.platforms() for kind in ("series", "movie")]
             else:
                 sources += [("cinemeta", "series"), ("cinemeta", "movie")]
+        # El Top 10 de Netflix y lo más visto por plataforma: no dependen de Trakt ni de ninguna clave.
+        sources += [("chart:netflix", "movie"), ("chart:netflix", "series")]
+        sources += [(f"jw:{brand}", kind) for brand in JW_LIST_BRANDS for kind in ("movie", "series")]
 
         def fetch(source):
             try:

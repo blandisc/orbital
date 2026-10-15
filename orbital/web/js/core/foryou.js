@@ -24,6 +24,10 @@ export function kindLabel(item) {
 /** La línea de abajo: «Serie · Sigue T2 E6», «Steam · 48 h jugadas». */
 export const factLine = (item) => [kindLabel(item), item?.detail].filter(Boolean).join(" · ");
 
+/** El puesto del Top 10 (Netflix, lo más visto de una plataforma): 1..10, o null si no trae. Se
+ *  pinta en la esquina de la portada (card.js) con la misma pieza de insignia que el resto. */
+export const rankOf = (item) => (Number.isInteger(item?.rank) && item.rank > 0 ? item.rank : null);
+
 /** El ícono de su esquina: la consola de un juego, o serie / película. */
 export function iconName(item) {
   if (!item) return "apps";

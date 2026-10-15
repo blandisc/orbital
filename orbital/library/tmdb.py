@@ -146,6 +146,16 @@ class Tmdb:
                             "name": str(ep.get("name") or "").strip(), "overview": str(ep.get("overview") or "").strip()}
         return found
 
+    def search(self, kind: str, title: str, year: int | None = None) -> dict | None:
+        """Busca un título por nombre (y año, si se tiene) y devuelve su ficha completa, con su id de
+        IMDb. Para charts.py: ahí solo hay título, no id de TMDB."""
+        params: dict[str, object] = {"query": title}
+        if year:
+            params["year" if kind == "movie" else "first_air_date_year"] = year
+        data = self._get(f"/search/{KINDS[kind]}", **params)
+        results = [r for r in data.get("results") or [] if isinstance(r, dict) and isinstance(r.get("id"), int)]
+        return self.details(kind, results[0]["id"]) if results else None
+
     def find(self, imdb: str, kind: str) -> dict | None:
         """La ficha en español de un título de IMDb (lo de Trakt llega con sinopsis en inglés)."""
         data = self._get(f"/find/{imdb}", external_source="imdb_id")

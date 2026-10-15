@@ -1,7 +1,9 @@
 import { h, svg } from "../core/dom.js";
 import { shortAgo } from "../core/format.js";
+import { rankOf } from "../core/foryou.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { clampRatio, coverRatio } from "../core/library.js";
+import { Badge } from "./ui.js";
 
 /** Portada de un juego/app. Si no hay imagen (o falla), muestra el ícono de su tipo y el título. */
 /**
@@ -27,6 +29,10 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   // Una esquina: tu favorito (estrella) o, en una lista de afuera (Para ti), que ya lo tienes (palomita).
   const badge = item.favorite ? h("span", { class: ["card__badge", pop && "card__badge--pop"], "aria-label": "Favorito" }, svg(ICONS.star))
     : item.owned ? h("span", { class: "card__badge card__badge--owned", "aria-label": "Lo tienes" }, svg(ICONS.check)) : null;
+  // El puesto del Top 10 (Netflix oficial, lo más visto de una plataforma): la otra esquina, siempre
+  // legible sobre cualquier póster (la misma receta de insignia que el resto de la app).
+  const place = rankOf(item);
+  const rank = place != null ? Badge(String(place), { className: "card__rank", large: true }) : null;
   // Lo que está abierto ahora (como las actividades de PS5): se ve desde la fila.
   const live = item.live ? h("span", { class: "card__live" }, h("span", { class: "card__live-dot" }), "Abierto") : null;
   const ago = showAgo ? shortAgo(item.last_played) : null;
@@ -78,6 +84,6 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   } else {
     card.append(fallback());
   }
-  card.append(...[badge, live, chip, meta, progress].filter(Boolean));
+  card.append(...[badge, rank, live, chip, meta, progress].filter(Boolean));
   return card;
 }
