@@ -136,7 +136,7 @@ class Trakt:
     def device_code(self) -> DeviceCode:
         status, data = self._call("POST", "/oauth/device/code", body={"client_id": self.client_id}, auth=False)
         if status != 200 or not isinstance(data, dict) or not data.get("device_code") or not data.get("user_code"):
-            raise TraktError("Trakt no dio un código. Revisa la clave de la aplicación en config.yaml.")
+            raise TraktError("Trakt no dio un código. Revisa la clave de la aplicación en Ajustes › Cuentas.")
         return DeviceCode(str(data["device_code"]), str(data["user_code"]),
                           str(data.get("verification_url") or "https://trakt.tv/activate"),
                           float(data.get("interval") or 5), time.time() + float(data.get("expires_in") or 600))

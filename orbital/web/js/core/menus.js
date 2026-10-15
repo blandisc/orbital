@@ -396,7 +396,7 @@ export function settingsMenu() {
     title: "Ajustes",
     options: [
       ...Object.entries(SETTING_PAGES).map(([page, def]) => ({ icon: def.icon, label: def.title, command: { type: "settings", page } })),
-      { icon: "account", label: "Cuentas", hint: "Stremio y Trakt", command: { type: "settings", page: "accounts" } },
+      { icon: "account", label: "Cuentas", hint: "Stremio, Trakt y claves de Para ti", command: { type: "settings", page: "accounts" } },
       { icon: "wrench", label: "Mantenimiento", hint: "Revisar, carpetas, actualizar", command: { type: "settings", page: "maintenance" } },
     ],
   };
@@ -521,6 +521,8 @@ export function settingsPage(page, settings) {
         settings.trakt?.configured && { icon: "spark", label: "Trakt", value: settings.trakt.linked ? "Conectada" : "Conectar",
           command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
           hint: settings.trakt.linked ? "Tus listas en Para ti" : "Tus listas y recomendaciones en Para ti" },
+        settings.para_ti && { heading: true, label: "Claves de Para ti" },
+        ...(settings.para_ti ? Object.keys(KEY_FORMS).map((service) => keyRow(service, settings.para_ti)) : []),
       ].filter(Boolean),
     };
   }
@@ -534,6 +536,55 @@ export function settingsPage(page, settings) {
       // ◀ baja y ▶ sube (antes las dos avanzaban)
       adjust: { left: edgeAware(key, settings[key], -1, page), right: edgeAware(key, settings[key], 1, page) },
     })),
+  };
+}
+
+/**
+ * Las claves gratuitas de «Para ti», con cómo sacarlas (se escriben con el teclado en pantalla de
+ * login.js, o se pegan con Ctrl+V). Sin ellas, Para ti enseña lo de tu Stremio y tus juegos.
+ */
+export const KEY_FORMS = {
+  tmdb: {
+    service: "tmdb", label: "TMDB", icon: "trailer", hint: "Netflix, Disney+ y HBO Max, y sinopsis en español",
+    title: "Clave de TMDB", submitLabel: "Guardar",
+    lead: "En themoviedb.org crea una cuenta, entra a Ajustes › API, pide una clave (uso personal) y copia la «Clave de la API».",
+    fields: [{ name: "key", label: "Clave de la API de TMDB", secret: true }],
+  },
+  rawg: {
+    service: "rawg", label: "RAWG", icon: "gamepad", hint: "Novedades y lo mejor calificado en juegos",
+    title: "Clave de RAWG", submitLabel: "Guardar",
+    lead: "En rawg.io/apidocs crea una cuenta y pulsa «Get API key»: copia la clave que aparece.",
+    fields: [{ name: "key", label: "Clave de RAWG", secret: true }],
+  },
+  trakt: {
+    service: "trakt", label: "Aplicación de Trakt", icon: "spark", hint: "Tendencias, tus listas y recomendaciones",
+    title: "Aplicación de Trakt", submitLabel: "Guardar",
+    lead: "En trakt.tv/oauth/applications crea una aplicación (en Redirect uri escribe urn:ietf:wg:oauth:2.0:oob) y copia su Client ID y su Client Secret.",
+    fields: [{ name: "id", label: "Client ID", secret: false }, { name: "secret", label: "Client Secret", secret: true }],
+  },
+};
+
+/** Un renglón de Cuentas: «Agregar», «Lista» (la escribiste aquí: cambiar o quitar) o «En config.yaml». */
+function keyRow(service, status) {
+  const form = KEY_FORMS[service];
+  const ready = service === "trakt" ? !!status.trakt?.configured : !!status[service];
+  const saved = (status.saved || []).includes(service);
+  return { icon: form.icon, label: form.label, hint: form.hint,
+    value: saved ? "Lista" : ready ? "En config.yaml" : "Agregar",
+    command: saved ? { type: "keys-menu", service } : { type: "keys", service } };
+}
+
+/** Una clave que ya escribiste: cambiarla o quitarla (y «Cancelar» va primero). */
+export function keysMenu(service) {
+  const form = KEY_FORMS[service];
+  return {
+    title: form?.title || "Clave",
+    subtitle: "Está guardada cifrada en esta consola.",
+    options: [
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "refresh", label: "Cambiar", command: { type: "keys", service } },
+      { icon: "minus", label: "Quitar", danger: true, command: { type: "keys-remove", service } },
+    ],
   };
 }
 

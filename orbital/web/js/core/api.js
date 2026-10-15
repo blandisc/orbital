@@ -89,6 +89,7 @@ export const api = {
   forYouList: (id, kind = null) => request(`/api/foryou/list?id=${encodeURIComponent(id)}${kind ? `&kind=${kind}` : ""}`),
   forYouDetails: (key, kind = null) => request(`/api/foryou/details?key=${encodeURIComponent(key)}${kind ? `&kind=${kind}` : ""}`),
   forYouDismiss: (key) => post("/api/foryou/dismiss", { key }),
+  forYouKeys: (service, values, signal) => post("/api/foryou/keys", { service, values }, { signal, timeout: 20000 }),
   traktLink: () => post("/api/foryou/trakt/link"),
   traktCancel: () => post("/api/foryou/trakt/cancel"),
   traktUnlink: () => post("/api/foryou/trakt/unlink"),

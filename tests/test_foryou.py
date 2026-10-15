@@ -150,7 +150,7 @@ def test_an_expired_or_cancelled_code_stops_waiting(make_foryou, net):
 
 def test_linking_without_the_app_keys_says_what_is_missing(make_foryou):
     fy = make_foryou(trakt_keys=False)
-    with pytest.raises(ValueError, match="config.yaml"):
+    with pytest.raises(ValueError, match="Ajustes › Cuentas"):
         fy.start_link()
 
 
@@ -307,3 +307,57 @@ def test_the_mosaic_leaves_out_games_without_their_own_art(make_foryou, net):
     assert any(g["placeholder"] for g in games) and any(not g["placeholder"] for g in games)  # en Listas, todos
     in_mosaic = [m for m in fy.mosaic() if m["kind"] == "game"]
     assert in_mosaic and not any(m["placeholder"] for m in in_mosaic)  # el mosaico es de imágenes
+
+
+# ---------------------------------------------------------------- sin claves: lo de tu Stremio
+def stremio_title(meta_id, title, kind="series", continue_=False, in_library=True, video_id=None, last=0, source="stremio"):
+    from orbital.library.models import LibraryItem
+
+    prefix = "stremio" if source == "stremio" else f"cinemeta:{kind}"
+    return LibraryItem(id=f"{prefix}:{meta_id}", title=title, source=source,
+                       category="continue" if continue_ else ("stremio" if source == "stremio" else "series" if kind == "series" else "movies"),
+                       last_watched=last, extra={"kind": kind, "meta_id": meta_id, "video_id": video_id, "in_library": in_library,
+                                                 "year": "2019–", "runtime": "148 min", "description": "Sinopsis"})
+
+
+def test_without_any_key_para_ti_still_has_movies_and_series(library, make_foryou):
+    fy = make_foryou(trakt_keys=False)
+    library.store.replace_source("stremio", [
+        stremio_title("tt0903747", "Breaking Bad", continue_=True, video_id="tt0903747:2:6", last=5),
+        stremio_title("tt1375666", "Inception", kind="movie", last=9),
+        stremio_title("bad-id", "Sin IMDb", continue_=True)])
+    library.store.replace_source("cinemeta", [stremio_title(f"tt{900 + i}", f"Popular {i}", kind=("movie", "series")[i % 2],
+                                                            source="cinemeta") for i in range(6)])
+    lists = [row["id"] for row in fy.lists()]
+    assert lists[:3] == ["continue", "mylist", "cinemeta"] and lists[-1] == "mygames"
+    bb = fy.list_items("continue")[0]
+    assert (bb["title"], bb["action"], bb["video_id"], bb["why"]) == ("Breaking Bad", "Continuar T2 E6", "tt0903747:2:6", "Seguir viendo")
+    assert fy.list_items("mylist")[0]["detail"] == "2 h 28 min"
+    assert {i["kind"] for i in fy.list_items("cinemeta", "movie")} == {"movie"}
+    mosaic = fy.mosaic()
+    assert {"series", "movie", "game"} <= {m["kind"] for m in mosaic}
+    assert "video:tt0903747" in [m["key"] for m in mosaic[:3]]
+
+
+def test_keys_written_in_settings_are_checked_saved_and_removed(library, make_foryou, net):
+    fy = make_foryou(trakt_keys=False)
+    net.on("GET", r"api_key=mala", (401, None))
+    net.on("GET", r"/watch/providers/", (200, {"results": [{"provider_id": 8, "provider_name": "Netflix", "logo_path": "/n.png"}]}))
+    with pytest.raises(tmdb.TmdbKeyError):
+        fy.set_keys("tmdb", ["mala"])
+    assert not fy.tmdb.configured and library.credentials.get("para_ti.tmdb_key") is None
+    fy.set_keys("tmdb", [" buena "])
+    assert fy.tmdb.key == "buena" and fy.status()["saved"] == ["tmdb"]
+    with pytest.raises(ValueError, match="dos"):
+        fy.set_keys("trakt", ["solo-id", ""])
+    with pytest.raises(ValueError):
+        fy.set_keys("trakt", ["con espacio", "x"])
+    fy.set_keys("trakt", ["cid", "secret"])
+    assert fy.trakt.configured
+    fy.set_keys("tmdb", [""])
+    assert not fy.tmdb.configured and fy.status()["saved"] == ["trakt"]
+    with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 5000)) as c:
+        assert c.post("/api/foryou/keys", json={"service": "rawg", "values": []}).status_code == 422
+        net.on("GET", r"rawg.io/api/games\?key=mala", (401, None))
+        assert c.post("/api/foryou/keys", json={"service": "rawg", "values": ["mala"]}).status_code == 422
+        assert c.get("/api/settings").json()["para_ti"]["saved"] == ["trakt"]
