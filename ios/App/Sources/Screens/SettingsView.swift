@@ -36,6 +36,9 @@ struct SettingsView: View {
                 Picker("Audio", selection: Binding(get: { s.audio }, set: { v in model.update { $0.audio = v } })) { languageOptions }
                 Picker("Subtítulos", selection: Binding(get: { s.subtitles }, set: { v in model.update { $0.subtitles = v } })) { languageOptions; Text("Sin subtítulos").tag("") }
                 Toggle("Solo subtítulos forzados", isOn: Binding(get: { s.onlyForcedSubtitles }, set: { v in model.update { $0.onlyForcedSubtitles = v } }))
+                Picker("Tamaño de subtítulos", selection: Binding(get: { s.subtitleSize }, set: { v in model.update { $0.subtitleSize = v } })) {
+                    Text("Chico").tag("small"); Text("Mediano").tag("medium"); Text("Grande").tag("large")
+                }
             }
             .listRowBackground(DS.fill)
             Section("Calidad") {

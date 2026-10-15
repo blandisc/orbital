@@ -20,8 +20,11 @@ public enum DesignTokens {
     public enum Motion { public static let fast = 0.12, base = 0.2, slow = 0.35, enter = 0.45, tint = 0.6 }
     public enum Opacity {
         public static let hairline = 0.09, fill = 0.10, fillStrong = 0.16, faint = 0.5, track = 0.2, scrim = 0.62
-        public static let scrimStrong = 0.92, badge = 0.8, pressed = 0.8, disabled = 0.4, shrink = 0.85
+        public static let scrimStrong = 0.92, badge = 0.8, pressed = 0.8, disabled = 0.4, shrink = 0.85, subtitleShadow = 0.9
     }
+    /// Subtítulos sobre el video: letra mínima, cuánto suben con los controles a la vista, espacio entre líneas
+    /// (fracción de la letra), margen con el borde del video (fracción de su alto) y sombra (fracción de la letra).
+    public enum Subtitle { public static let minFont = 15.0, liftWithControls = 72.0, lineGap = 0.15, edgeMargin = 0.05, shadowRadius = 0.08 }
     /// Medidas fijas (puntos): el mínimo táctil de iOS, miniaturas, tarjetas.
     public enum Size { public static let touchTarget = 44.0, thumbSmall = 48.0, cardMax = 320.0, grabber = 40.0, grabberHeight = 5.0, logo = 80.0 }
     /// Relaciones de aspecto de las imágenes.

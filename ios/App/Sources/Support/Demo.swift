@@ -23,6 +23,8 @@ enum Demo {
         guard let parts = value(after: "-demo-title")?.split(separator: ":"), parts.count == 2 else { return nil }
         return (String(parts[0]), String(parts[1]))
     }
+    /// `-demo-player panel|sources`: ya reproduciendo, abre el panel de audio y subtítulos o el de otra fuente.
+    static var player: String? { value(after: "-demo-player") }
     /// `-demo-lang en`: idioma de la app.
     static var language: String? { value(after: "-demo-lang") }
     /// `-demo-search dune`: escribe eso en Buscar (pestaña Ver).
@@ -97,6 +99,9 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         guard path.hasPrefix("/stream/") else { return HTTPResponse(status: 404, data: Data()) }
         // Como Torrentio con Real-Debrid: título con resolución, tamaño e idioma. Videos públicos de prueba.
         let streams: [JSON] = [
+            // MKV con varias pistas de subtítulos SRT (archivo de prueba oficial de Matroska): lo abre AetherEngine por su vía propia.
+            ["name": "[RD+] Demo\n1080p", "title": "Elephants.Dream.1080p.WEB-DL.MKV.Multi.Subs\n💾 2.4 GB 🇬🇧 🇪🇸 🇫🇷",
+             "url": "https://raw.githubusercontent.com/ietf-wg-cellar/matroska-test-files/master/test_files/test5.mkv"],
             ["name": "[RD+] Demo\n1080p", "title": "Apple.BipBop.HLS.1080p.WEB-DL.Multi\n💾 2.1 GB 🇬🇧 🇪🇸",
              "url": "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8",
              "behaviorHints": ["bingeGroup": "demo-1080p"]],

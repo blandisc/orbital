@@ -65,6 +65,9 @@ public final class PlayerModel: ObservableModel {
     public private(set) var skipIntroTo: Double? { didSet { changed() } }
     public private(set) var stillWatchingPrompt = false { didSet { changed() } }
     public private(set) var notice: PlayerNotice? { didSet { changed() } }
+    /// Velocidad de reproducción elegida (sigue igual en el siguiente episodio y al cambiar de fuente).
+    public private(set) var rate: Float = 1 { didSet { changed() } }
+    public static let rates: [Float] = [0.75, 1, 1.25, 1.5, 2]
     public private(set) var attempts = 0 { didSet { changed() } }
 
     private let engine: PlayerEngine
@@ -156,7 +159,7 @@ public final class PlayerModel: ObservableModel {
             if startAt == nil && !request.fromStart { start = await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) }
             guard mine == generation, !closing else { return }
             startLoading()
-            do { try await engine.load(url: file, startAt: start) } catch { fail("No pude abrir el archivo descargado.") }
+            do { try await loadVideo(file, at: start) } catch { fail("No pude abrir el archivo descargado.") }
             return
         }
         let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
@@ -177,7 +180,7 @@ public final class PlayerModel: ObservableModel {
             guard mine == generation, !closing else { return }
             guard let url = found.playbackURL else { failedSources.insert(found.index); continue }
             startLoading()
-            do { try await engine.load(url: url, startAt: start); return }
+            do { try await loadVideo(url, at: start); return }
             catch {
                 guard mine == generation else { return }
                 failedSources.insert(found.index)
@@ -344,6 +347,14 @@ public final class PlayerModel: ObservableModel {
     // MARK: controles
     private func userTouched() { autoAdvances = 0 }
 
+    public func setRate(_ value: Float) async { rate = value; await engine.setRate(value) }
+
+    /// Abre un video y le pone la velocidad elegida (el motor empieza cada video en 1).
+    private func loadVideo(_ url: URL, at start: Double) async throws {
+        try await engine.load(url: url, startAt: start)
+        if rate != 1 { await engine.setRate(rate) }
+    }
+
     public func togglePlay() async { userTouched(); snapshot.state == .playing ? await engine.pause() : await engine.play() }
     public func play() async { userTouched(); await engine.play() }
     public func pause() async { userTouched(); await engine.pause() }
@@ -366,7 +377,7 @@ public final class PlayerModel: ObservableModel {
               let url = choice.playbackURL else { acceptingSnapshots = true; return }
         source = choice; phase = .preparing
         startLoading()
-        do { try await engine.load(url: url, startAt: position) } catch { guard mine == generation else { return }; failedSources.insert(index); await retryWithAnotherSource()?.value }
+        do { try await loadVideo(url, at: position) } catch { guard mine == generation else { return }; failedSources.insert(index); await retryWithAnotherSource()?.value }
     }
 
     // MARK: intro y siguiente episodio

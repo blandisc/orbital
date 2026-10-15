@@ -310,6 +310,18 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.engine.loads.last?.start, 600)
     }
 
+    func testTheChosenSpeedSurvivesAnotherSource() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        XCTAssertFalse(rig.engine.calls.contains { $0.hasPrefix("rate") }, "a velocidad normal no se toca el motor")
+        await rig.model.setRate(1.5)
+        XCTAssertEqual(rig.engine.calls.last, "rate 1.5")
+        let other = try XCTUnwrap(rig.model.sourceChoices.first { $0.playbackURL?.absoluteString.contains("second") == true })
+        await rig.model.switchSource(to: other.index)
+        XCTAssertEqual(rig.engine.calls.filter { $0 == "rate 1.5" }.count, 2, "el video nuevo empieza en 1x: se vuelve a poner")
+        XCTAssertEqual(rig.model.rate, 1.5)
+    }
+
     func testOfflinePlaybackUsesTheLocalFileWithoutAskingForSources() async throws {
         let rig = try Rig()
         var request = rig.request()

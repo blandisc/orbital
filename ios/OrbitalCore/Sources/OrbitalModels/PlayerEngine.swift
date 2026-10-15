@@ -35,5 +35,11 @@ public protocol PlayerEngine: AnyObject, Sendable {
     func selectAudio(_ id: Int?) async
     func selectSubtitle(_ id: Int?) async
     func addSubtitle(url: URL, language: String?) async
+    /// Velocidad (1 = normal). El motor la regresa a 1 con cada video nuevo; el modelo la vuelve a poner.
+    func setRate(_ rate: Float) async
     var snapshots: AsyncStream<EngineSnapshot> { get }
+}
+
+public extension PlayerEngine {
+    func setRate(_ rate: Float) async {}
 }

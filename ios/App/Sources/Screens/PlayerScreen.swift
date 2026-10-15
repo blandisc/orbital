@@ -50,6 +50,9 @@ struct PlayerScreen: View {
         ZStack {
             DS.video.ignoresSafeArea()
             holder.engine.surface
+            holder.engine.subtitleOverlay(lifted: controlsVisible, heightFraction: env.services.appSettings.subtitleHeightFraction)
+                .ignoresSafeArea()
+                .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
             gestureLayer(model)
             statusOverlays(model)
             if controlsVisible { controls(model).transition(.opacity) }
@@ -65,7 +68,15 @@ struct PlayerScreen: View {
             let engine = holder.engine
             pip.onActiveChange = { engine.setPictureInPictureActive($0) }
             nowPlaying.start(model: model)
-            Task { await model.begin(request); scheduleHide() }
+            Task {
+                await model.begin(request); scheduleHide()
+                #if DEBUG
+                if Demo.isOn, let open = Demo.player {
+                    try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
+                    if open == "panel" { panel = true } else if open == "sources" { sources = true }
+                }
+                #endif
+            }
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: DS.Timing.tick)
                 await model.tick()
@@ -270,12 +281,14 @@ struct UpNextCard: View {
     }
 }
 
-/// Un solo panel para audio y subtítulos (recuerda lo que eliges por serie).
+/// Un solo panel para audio, subtítulos y velocidad (recuerda lo que eliges por serie). En horizontal, audio y subtítulos
+/// van en dos columnas (como el panel de la TV) para no tener que desplazarse.
 struct TrackPanel: View {
     let model: PlayerModel
     let openSources: () -> Void
     let openInInfuse: () -> Void
     @EnvironmentObject private var env: AppEnvironment
+    @Environment(\.verticalSizeClass) private var verticalSize
     @StateObject private var observer: ModelObserver<PlayerModel>
 
     init(model: PlayerModel, openSources: @escaping () -> Void, openInInfuse: @escaping () -> Void) {
@@ -286,34 +299,71 @@ struct TrackPanel: View {
     private var locale: Locale { Locale(identifier: env.services.appSettings.uiLanguage) }
 
     var body: some View {
-        let snapshot = model.snapshot
-        List {
-            Section("Audio") {
-                ForEach(snapshot.audioTracks) { track in
-                    row(TrackChooser.label(track, locale: locale), selected: snapshot.selectedAudio == track.id) { Task { await model.selectAudio(track.id) } }
+        if verticalSize == .compact {
+            VStack(spacing: 0) {
+                speed.padding(.horizontal, DS.Space.s4).padding(.top, DS.Space.s4)
+                HStack(spacing: 0) {
+                    List { audioSection }.listStyle(.insetGrouped)
+                    List { subtitleSection }.listStyle(.insetGrouped)
                 }
-                if snapshot.audioTracks.isEmpty { Text("Sin pistas de audio").foregroundStyle(DS.textMuted) }
-            }
-            .listRowBackground(DS.fill)
-            Section("Subtítulos") {
-                row(Strings.tr("Sin subtítulos", language: env.services.appSettings.uiLanguage), selected: snapshot.selectedSubtitle == nil) { Task { await model.selectSubtitle(nil) } }
-                ForEach(snapshot.subtitleTracks) { track in
-                    row(TrackChooser.label(track, locale: locale), selected: snapshot.selectedSubtitle == track.id) { Task { await model.selectSubtitle(track.id) } }
+                .scrollContentBackground(.hidden)
+                HStack(spacing: DS.Space.s3) {
+                    Button("Otra fuente…", systemImage: "list.bullet", action: openSources).buttonStyle(.glass)
+                    Button("Abrir en Infuse", systemImage: "arrow.up.forward.app", action: openInInfuse).buttonStyle(.glass)
                 }
+                .padding(.bottom, DS.Space.s4)
             }
-            .listRowBackground(DS.fill)
-            Section("Más") {
-                Button("Otra fuente…", action: openSources)
-                Button { openInInfuse() } label: { Label("Abrir en Infuse", systemImage: "arrow.up.forward.app") }
+        } else {
+            List {
+                Section { speed }.listRowBackground(DS.fill)
+                audioSection
+                subtitleSection
+                Section("Más") {
+                    Button("Otra fuente…", action: openSources)
+                    Button { openInInfuse() } label: { Label("Abrir en Infuse", systemImage: "arrow.up.forward.app") }
+                }
+                .listRowBackground(DS.fill)
             }
-            .listRowBackground(DS.fill)
         }
+    }
+
+    private var speed: some View {
+        HStack(spacing: DS.Space.s3) {
+            Label("Velocidad", systemImage: "gauge.with.dots.needle.67percent").foregroundStyle(DS.text).labelStyle(.titleAndIcon).fixedSize()
+            DSSegmented(options: PlayerModel.rates.map { ($0, LocalizedStringKey(Self.rateText($0))) },
+                        selection: Binding(get: { model.rate }, set: { (v: Float) in Task { @MainActor in await model.setRate(v) } }))
+        }
+    }
+
+    static func rateText(_ rate: Float) -> String { rate == 1 ? "1×" : String(format: "%g×", rate) }
+
+    private var audioSection: some View {
+        let snapshot = model.snapshot
+        return Section("Audio") {
+            ForEach(snapshot.audioTracks) { track in
+                row(TrackChooser.label(track, locale: locale), selected: snapshot.selectedAudio == track.id) { Task { await model.selectAudio(track.id) } }
             }
+            if snapshot.audioTracks.isEmpty { Text("Sin pistas de audio").foregroundStyle(DS.textMuted) }
+        }
+        .listRowBackground(DS.fill)
+    }
+
+    private var subtitleSection: some View {
+        let snapshot = model.snapshot
+        return Section("Subtítulos") {
+            row(Strings.tr("Sin subtítulos", language: env.services.appSettings.uiLanguage), selected: snapshot.selectedSubtitle == nil) { Task { await model.selectSubtitle(nil) } }
+            ForEach(snapshot.subtitleTracks) { track in
+                row(TrackChooser.label(track, locale: locale), selected: snapshot.selectedSubtitle == track.id) { Task { await model.selectSubtitle(track.id) } }
+            }
+        }
+        .listRowBackground(DS.fill)
+    }
 
     private func row(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack { Text(title).foregroundStyle(DS.text); Spacer(); if selected { Image(systemName: "checkmark").foregroundStyle(DS.good) } }
         }
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 

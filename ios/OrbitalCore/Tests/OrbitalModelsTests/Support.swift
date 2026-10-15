@@ -59,6 +59,7 @@ final class FakeEngine: PlayerEngine, @unchecked Sendable {
     func selectAudio(_ id: Int?) async { note("audio \(id.map(String.init) ?? "none")") }
     func selectSubtitle(_ id: Int?) async { note("sub \(id.map(String.init) ?? "none")") }
     func addSubtitle(url: URL, language: String?) async { lock.withLock { _subs.append(url) }; note("addsub \(language ?? "")") }
+    func setRate(_ rate: Float) async { note("rate \(rate)") }
 }
 
 let stremioGet = "https://api.strem.io/api/datastoreGet", stremioPut = "https://api.strem.io/api/datastorePut"

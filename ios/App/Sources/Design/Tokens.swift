@@ -34,6 +34,15 @@ enum DS {
     static let warning = Palette.color("amber-300")
     static let danger = Palette.color("red-400")
     static let video = Color.black   // detrás de un video: negro de verdad
+    static let subtitleText = Color.white       // subtítulos: blanco puro sobre el video, como cualquier reproductor
+    static let subtitleShadow = Color.black.opacity(DesignTokens.Opacity.subtitleShadow)
+
+    /// Subtítulos: medidas relativas a la letra o al video (la letra misma sale de Ajustes › Tamaño de subtítulos).
+    enum Subtitle {
+        static let minFont = CGFloat(DesignTokens.Subtitle.minFont), liftWithControls = CGFloat(DesignTokens.Subtitle.liftWithControls)
+        static let lineGap = CGFloat(DesignTokens.Subtitle.lineGap), edgeMargin = CGFloat(DesignTokens.Subtitle.edgeMargin)
+        static let shadowRadius = CGFloat(DesignTokens.Subtitle.shadowRadius)
+    }
 
     // MARK: Espacio y forma
     enum Space {

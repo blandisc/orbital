@@ -52,8 +52,16 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         if let source = engine.softwarePiPSource { return .sampleBuffer(source.layer, AetherSampleBufferPiP(source: source)) }
         return nil
     }
-    func setFillsScreen(_ fill: Bool) { engine.videoGravity = fill ? .resizeAspectFill : .resizeAspect }
+    func setFillsScreen(_ fill: Bool) { engine.videoGravity = fill ? .resizeAspectFill : .resizeAspect; fills = fill }
+    private var fills = false
+
+    /// AetherEngine no pinta subtítulos: entrega las líneas y la app las dibuja encima del video (su README: «your UI paints them»).
+    func subtitleOverlay(lifted: Bool, heightFraction: Double) -> AnyView {
+        AnyView(AetherSubtitleOverlay(engine: engine, clock: engine.clock, lifted: lifted, heightFraction: heightFraction, fills: fills))
+    }
     func setPictureInPictureActive(_ active: Bool) { engine.pictureInPictureActive = active }
+
+    func setRate(_ rate: Float) async { engine.setRate(rate) }
 
     func play() async { engine.play() }
     func pause() async { engine.pause() }
@@ -86,6 +94,110 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
             chapters: engine.mediaChapters.map { Chapter(title: $0.name, time: $0.startSeconds) }))
     }
 }
+/// Los subtítulos de AetherEngine dibujados sobre el video: las líneas que tocan según el reloj del cuadro que se ve
+/// (`clock.sourceTime`), en texto (con color, negrita y cursiva del archivo) o como imagen (PGS de Blu-ray), colocados
+/// sobre el rectángulo real del video (no sobre las franjas negras). Suben cuando están los controles para no taparse.
+struct AetherSubtitleOverlay: View {
+    @ObservedObject var engine: AetherEngine
+    @ObservedObject var clock: PlaybackClock
+    let lifted: Bool
+    let heightFraction: Double
+    let fills: Bool
+
+    var body: some View {
+        GeometryReader { geo in
+            let video = videoRect(in: geo.size)
+            let now = clock.sourceTime
+            let active = engine.subtitleCues.filter { $0.startTime <= now && now < $0.endTime }
+            ZStack(alignment: .topLeading) {
+                ForEach(active.filter { if case .image = $0.body { true } else { false } }) { cue in
+                    if case .image(let image) = cue.body { bitmap(image, in: video) }
+                }
+                let texts = active.filter { if case .image = $0.body { false } else { true } }
+                if !texts.isEmpty { textBlock(texts, video: video, screen: geo.size) }
+            }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+            .animation(nil, value: now)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    /// Dónde está el video en pantalla: lo mide la capa de AVPlayer (vía nativa) o se calcula con el tamaño del cuadro (software).
+    private func videoRect(in size: CGSize) -> CGRect {
+        if let layer = engine.nativePlayerLayer, !layer.videoRect.isEmpty { return layer.videoRect }
+        guard let picture = engine.softwareDisplaySize, picture.width > 0, picture.height > 0, size.width > 0, size.height > 0 else {
+            return CGRect(origin: .zero, size: size)
+        }
+        let scale = fills ? max(size.width / picture.width, size.height / picture.height) : min(size.width / picture.width, size.height / picture.height)
+        let w = picture.width * scale, h = picture.height * scale
+        return CGRect(x: (size.width - w) / 2, y: (size.height - h) / 2, width: w, height: h)
+    }
+
+    private func textBlock(_ cues: [SubtitleCue], video: CGRect, screen: CGSize) -> some View {
+        // La parte del video que se ve (con «llenar pantalla» el video se sale por los lados).
+        let visible = video.intersection(CGRect(origin: .zero, size: screen))
+        let fontSize = max(DS.Subtitle.minFont, visible.height * heightFraction)
+        let lift = lifted ? DS.Subtitle.liftWithControls : 0
+        let placement = cues.compactMap(\.placement).first
+        let top = placement?.alignment.map { (7...9).contains($0) } ?? false
+        return VStack(spacing: fontSize * DS.Subtitle.lineGap) {
+            ForEach(cues) { cue in line(cue, size: fontSize) }
+        }
+        .multilineTextAlignment(.center)
+        .padding(.horizontal, fontSize)
+        // El margen va por dentro del rectángulo del video (si no, en un video que llena el alto la línea se sale por abajo).
+        .padding(top ? .top : .bottom, visible.height * DS.Subtitle.edgeMargin + lift)
+        .frame(width: visible.width, height: visible.height, alignment: top ? .top : .bottom)
+        .offset(x: visible.minX, y: visible.minY)
+    }
+
+    private func line(_ cue: SubtitleCue, size: CGFloat) -> some View {
+        styled(cue.body, size: size)
+            .shadow(color: DS.subtitleShadow, radius: size * DS.Subtitle.shadowRadius)   // borde oscuro: se lee sobre cualquier imagen
+            .shadow(color: DS.subtitleShadow, radius: size * DS.Subtitle.shadowRadius)
+    }
+
+    private func styled(_ body: SubtitleCue.Body, size: CGFloat) -> Text {
+        let base = Font.system(size: size, weight: .semibold)   // ds-exception: la letra se mide con el video, no con Dynamic Type
+        switch body {
+        case .text(let text):
+            return Text(clean(text)).font(base).foregroundStyle(DS.subtitleText)
+        case .richText(let runs):
+            return runs.reduce(Text("")) { result, run in
+                var piece = Text(clean(run.text)).font(base)
+                if run.isBold { piece = piece.bold() }
+                if run.isItalic { piece = piece.italic() }
+                if run.isUnderlined { piece = piece.underline() }
+                if run.isStruckThrough { piece = piece.strikethrough() }
+                let color = run.color.map { Color(red: Double($0.r) / 255, green: Double($0.g) / 255, blue: Double($0.b) / 255) } ?? DS.subtitleText   // ds-exception: el color lo trae el archivo de subtítulos
+                return result + piece.foregroundStyle(color)
+            }
+        case .image:
+            return Text("")
+        }
+    }
+
+    /// Saltos de línea de ASS (`\N`, `\n`) y espacios sobrantes.
+    private func clean(_ text: String) -> String {
+        text.replacingOccurrences(of: "\\N", with: "\n").replacingOccurrences(of: "\\n", with: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Una imagen PGS/DVB: su lienzo se acomoda a lo ancho del video, centrado (como lo pide AetherEngine).
+    private func bitmap(_ image: SubtitleImage, in video: CGRect) -> some View {
+        var canvas = video
+        if image.canvasSize.width > 0, image.canvasSize.height > 0 {
+            let h = video.width * image.canvasSize.height / image.canvasSize.width
+            canvas = CGRect(x: video.minX, y: video.midY - h / 2, width: video.width, height: h)
+        }
+        let frame = CGRect(x: canvas.minX + image.position.minX * canvas.width, y: canvas.minY + image.position.minY * canvas.height,
+                           width: image.position.width * canvas.width, height: image.position.height * canvas.height)
+        return Image(decorative: image.cgImage, scale: 1).resizable()
+            .frame(width: frame.width, height: frame.height)
+            .offset(x: frame.minX, y: frame.minY - (lifted ? DS.Subtitle.liftWithControls : 0))
+    }
+}
+
 /// Los botones de la ventana de PiP en la vía por software (pausa, ±10 s y la barra), contestados por AetherEngine.
 final class AetherSampleBufferPiP: NSObject, AVPictureInPictureSampleBufferPlaybackDelegate {
     private let source: SoftwarePiPSource

@@ -276,6 +276,17 @@
         }
       }
     },
+    "Chico": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Small"
+          }
+        }
+      }
+    },
     "Clave de TMDB": {
       "extractionState": "manual",
       "localizations": {
@@ -826,6 +837,17 @@
         }
       }
     },
+    "Grande": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Large"
+          }
+        }
+      }
+    },
     "Guardar clave de TMDB": {
       "extractionState": "manual",
       "localizations": {
@@ -1042,6 +1064,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mark as watched"
+          }
+        }
+      }
+    },
+    "Mediano": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medium"
           }
         }
       }
@@ -1849,6 +1882,17 @@
         }
       }
     },
+    "Tamaño de subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitle size"
+          }
+        }
+      }
+    },
     "Temporada %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -1944,6 +1988,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Yours"
+          }
+        }
+      }
+    },
+    "Velocidad": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speed"
           }
         }
       }

@@ -46,5 +46,10 @@ final class TracksTests: XCTestCase {
         XCTAssertEqual(TrackChooser.label(tracks[2]), "Español latino · AAC 2.0")
         XCTAssertEqual(TrackChooser.label(tracks[4]), "Español · forzados")
         XCTAssertEqual(TrackChooser.label(tracks[0], locale: Locale(identifier: "en")), "English · EAC3 5.1")
+        XCTAssertEqual(TrackChooser.label(MediaTrack(id: 0, kind: .audio, language: nil, title: "Track 1 (aac)", codec: "aac")), "Pista 1 · AAC", "el nombre genérico del motor no ayuda")
+        XCTAssertEqual(TrackChooser.label(MediaTrack(id: 3, kind: .audio, language: "eng", title: "Director's Commentary", codec: "ac3")), "Inglés · Director's Commentary · AC3")
+        XCTAssertEqual(TrackChooser.label(MediaTrack(id: 2, kind: .subtitle, language: "eng", title: "English")), "Inglés", "el título que repite el idioma sobra")
+        XCTAssertEqual(TrackChooser.label(MediaTrack(id: 4, kind: .subtitle, language: "eng", title: "English SDH")), "Inglés · English SDH")
+        XCTAssertEqual(TrackChooser.label(MediaTrack(id: 5, kind: .subtitle, language: "ger", title: "GER (srt)")), "Alemán", "«GER (srt)» lo inventa el motor")
     }
 }

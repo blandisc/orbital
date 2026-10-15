@@ -37,6 +37,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var region = "MX"                   // para «lo más popular en Netflix» (TMDB)
     public var preferInfuse = false            // reproducir en Infuse en vez del reproductor propio
     public var traktClientID = ""            // el identificador no es secreto; el secreto de la aplicación va en el Keychain
+    public var subtitleSize = "medium"         // «small» | «medium» | «large»: el tamaño de la letra de los subtítulos
 
     public init() {}
 
@@ -57,13 +58,17 @@ public struct AppSettings: Codable, Equatable, Sendable {
         region = try c.decodeIfPresent(String.self, forKey: .region) ?? region
         preferInfuse = try c.decodeIfPresent(Bool.self, forKey: .preferInfuse) ?? preferInfuse
         traktClientID = try c.decodeIfPresent(String.self, forKey: .traktClientID) ?? traktClientID
+        subtitleSize = try c.decodeIfPresent(String.self, forKey: .subtitleSize) ?? subtitleSize
     }
 
     enum Keys: String, CodingKey {
         case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
-        case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID
+        case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize
     }
     public var traktEnabled: Bool { !traktClientID.isEmpty }
+
+    /// Alto de la letra de los subtítulos como fracción del alto del video (lo que usan los reproductores de TV).
+    public var subtitleHeightFraction: Double { ["small": 0.042, "large": 0.068][subtitleSize] ?? 0.054 }
 
     /// Preferencias de fuentes para ver (en datos móviles se limita la calidad).
     public func preferences(onCellular: Bool = false) -> Preferences {

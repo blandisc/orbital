@@ -14,6 +14,8 @@ protocol VideoPlayerEngine: PlayerEngine {
     @MainActor func setFillsScreen(_ fill: Bool)
     /// La ventana de PiP se abrió o se cerró (el motor sigue decodificando video en segundo plano mientras tanto).
     @MainActor func setPictureInPictureActive(_ active: Bool)
+    /// Los subtítulos encima del video, si el motor no los pinta solo (AVPlayer sí; AetherEngine no).
+    @MainActor func subtitleOverlay(lifted: Bool, heightFraction: Double) -> AnyView
 }
 
 /// Reparte cada «foto» del motor a quien la pida (`snapshots` entrega un flujo nuevo en cada acceso).
@@ -71,6 +73,7 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
     @MainActor var pictureInPicture: PictureInPictureContent? { player.currentItem == nil ? nil : .playerLayer(layerView.playerLayer) }
     @MainActor func setFillsScreen(_ fill: Bool) { layerView.playerLayer.videoGravity = fill ? .resizeAspectFill : .resizeAspect }
     @MainActor func setPictureInPictureActive(_ active: Bool) {}
+    @MainActor func subtitleOverlay(lifted: Bool, heightFraction: Double) -> AnyView { AnyView(EmptyView()) }   // AVPlayerLayer pinta los suyos
 
     init() {
         player.automaticallyWaitsToMinimizeStalling = true
@@ -109,6 +112,12 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
     }
 
     func play() async { await MainActor.run { player.play() } }
+    func setRate(_ rate: Float) async {
+        await MainActor.run {
+            player.defaultRate = rate                       // la que usa `play()` desde ahora
+            if player.timeControlStatus != .paused { player.rate = rate }
+        }
+    }
     func pause() async { await MainActor.run { player.pause() } }
     func seek(to seconds: Double) async {
         await player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)

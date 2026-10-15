@@ -71,15 +71,27 @@ public enum TrackChooser {
     /// «Español · AC3 5.1»: nombre legible de una pista (los idiomas, con el nombre del idioma de la app).
     public static func label(_ track: MediaTrack, locale: Locale = Locale(identifier: "es")) -> String {
         var parts: [String] = []
+        let english = locale.identifier.hasPrefix("en")
+        // Los motores ponen «Track 1 (aac)» cuando el archivo no dice nada: eso no ayuda a elegir.
+        let title = track.title.flatMap { t -> String? in
+            let trimmed = t.trimmingCharacters(in: .whitespaces)
+            let generic = [#"^(track|pista|stream)\s*\d+"#, #"^[a-z]{2,3}(\s*\(\w+\))?$"#]   // «Track 1 (aac)», «ENG (srt)»
+            return trimmed.isEmpty || generic.contains(where: { trimmed.range(of: $0, options: [.regularExpression, .caseInsensitive]) != nil }) ? nil : trimmed
+        }
         if let lang = track.language, !lang.isEmpty, lang.lowercased() != "und" {
             let short = lang.split(separator: "-").first.map(String.init) ?? lang
             let iso = ["spa": "es", "eng": "en", "fre": "fr", "fra": "fr", "ger": "de", "deu": "de", "ita": "it", "por": "pt", "jpn": "ja", "kor": "ko", "rus": "ru", "zho": "zh", "chi": "zh"][short.lowercased()] ?? short
             let name = locale.localizedString(forLanguageCode: iso)?.capitalizedFirst ?? lang
             parts.append(lang.lowercased().hasPrefix("es-419") ? "\(name) latino" : name)
-        } else if let title = track.title, !title.isEmpty { parts.append(title) }
-        let tech = [track.codec, track.channels].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
+            // El título del archivo distingue dos pistas del mismo idioma («Comentarios», «SDH»), si dice algo más que el idioma.
+            let names = [name, Locale(identifier: "en").localizedString(forLanguageCode: iso), Locale(identifier: iso).localizedString(forLanguageCode: iso), short]
+                .compactMap { $0?.lowercased() }
+            if let title, !names.contains(title.lowercased()) { parts.append(title) }
+        } else if let title { parts.append(title) }
+        else { parts.append(english ? "Track \(track.id + 1)" : "Pista \(track.id + 1)") }
+        let tech = [track.codec?.uppercased(), track.channels].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
         if !tech.isEmpty { parts.append(tech) }
-        if track.isForced { parts.append(locale.identifier.hasPrefix("en") ? "forced" : "forzados") }
+        if track.isForced { parts.append(english ? "forced" : "forzados") }
         return parts.joined(separator: " · ")
     }
 }
