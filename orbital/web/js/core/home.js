@@ -1,8 +1,9 @@
 /**
  * Qué muestra el Inicio (lógica pura, con pruebas en tests/web), a partir de las filas que manda
  * el servidor:
- *   · destacado: lo último que jugaste o viste (lo abierto, primero);
- *   · 4 tarjetas: lo que sigue de esa lista;
+ *   · destacado: lo último que jugaste o viste (lo abierto, primero); al bajar por la lista de la
+ *     derecha, el destacado enseña lo enfocado;
+ *   · «También tenías»: lo que sigue de esa lista, en renglones;
  *   · tus consolas: cada sistema con su foto, cuántos juegos, el último que jugaste y los nuevos.
  */
 import { isWatchable } from "./library.js";
@@ -41,6 +42,31 @@ export function kicker(item) {
   const system = systemOf(item);
   return SYSTEMS[system]?.name ?? (system === "steam" ? "Steam" : item?.subtitle || "");
 }
+
+const STEAM_CDN = "https://cdn.cloudflare.steamstatic.com/steam/apps/";
+
+/** Sin un fondo ancho de verdad: el respaldo de Orbital o una captura chiquita (títulos de GBA). */
+export const weakHero = (item) => !item?.hero || !!(item.extra?.placeholder_hero || item.extra?.hero_lowres);
+
+/** Con portada propia (no la genérica de Orbital). */
+export const realCover = (item) => !!item?.image && !item.extra?.placeholder_cover;
+
+/**
+ * La miniatura de un renglón. Un juego de Steam: la cápsula de la tienda (su «hero» es un fondo sin
+ * el nombre del juego); con fondo ancho, ese; si solo hay caja (GBA), la caja recortada para llenar el
+ * marco; sin nada, la foto de su consola. `fallback`: lo que se prueba si la primera no carga.
+ */
+export function thumbOf(item) {
+  const steam = /^steam:(\d+)$/.exec(item?.id || "");
+  if (steam) return { kind: "art", src: `${STEAM_CDN}${steam[1]}/capsule_616x353.jpg`, fallback: item.hero || item.image || null };
+  if (!weakHero(item)) return { kind: "art", src: item.hero, fallback: realCover(item) ? item.image : null };
+  if (realCover(item)) return { kind: "crop", src: item.image, fallback: null };
+  return { kind: "console", src: null, fallback: null };
+}
+
+/** El destacado: su fondo ancho, o el «estuche» (la portada desenfocada de fondo y la caja encima)
+ *  cuando solo hay caja; así una caja cuadrada de GBA llena el marco sin verse rota. */
+export const stageKind = (item) => (weakHero(item) && realCover(item) ? "case" : "art");
 
 /** Variable CSS del color de su consola (el punto y el brillo de la tarjeta). */
 export const systemColor = (system) => `var(--system-${system && /^[\w-]+$/.test(system) ? system : "default"}, var(--system-default))`;

@@ -234,7 +234,8 @@ function renderHints() {
       primary: item && primaryLabel(item, state.running?.id),
       alt: item && altLabel(item),
       sections: visibleSections(state.allRows).length,
-      onScreen: ui.home.focusId === "feature",
+      // El destacado enseña sus botones (A, X, Y) también con un renglón enfocado: enseña ese renglón.
+      onScreen: ui.home.focusId === "feature" || ui.home.focusId.startsWith("card:"),
     }));
   }
   const { r, c } = state.focus;

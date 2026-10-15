@@ -2,11 +2,13 @@ import { h, mount } from "../core/dom.js";
 import { swipeArea, swipeSteps } from "../core/swipe.js";
 import { buildHome, greeting } from "../core/home.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
-import { ConsoleTile, FeatureTile, WideTile } from "./tiles.js";
+import { ConsoleTile, FeatureTile, RowTile } from "./tiles.js";
 import { SectionHead } from "./ui.js";
 
 /**
- * Inicio: saludo, lo último que jugaste o viste a lo grande, cuatro tarjetas y tus consolas.
+ * Inicio: saludo, lo último que jugaste o viste a lo grande y, a la derecha, «También tenías» en
+ * renglones (miniatura, nombre grande y su dato). Al bajar por los renglones, el destacado enseña lo
+ * enfocado con sus botones. Tus consolas quedan abajo: al bajar a ellas, el Inicio se desliza.
  * El foco se mueve por posición en pantalla (core/spatial.js), no por filas: así funciona con
  * piezas de distinto tamaño. LT/RT saltan entre lo de arriba y las consolas. B vuelve al destacado.
  *
@@ -27,14 +29,19 @@ function emptyFeature(hasGames, hidden = 0) {
 
 export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   const hello = h("h1", { class: "home__hello" });
-  const top = h("div", { class: "home__top" });
+  const greetingRow = h("div", { class: "home__greeting" }, hello);
+  const stage = h("div", { class: "home__stage" });
+  const queue = h("div", { class: "home__queue" });
+  const top = h("div", { class: "home__top" }, stage, queue);
   const consolesHead = h("div", { class: "home__consoles-head" });
   const consolesTrack = h("div", { class: "home__consoles-track", role: "group" });
   const consolesViewport = h("div", { class: "home__consoles-viewport" }, consolesTrack);
-  const el = h("section", { class: "home", hidden: true, "aria-label": "Inicio" },
-    h("div", { class: "home__greeting" }, hello),
-    top,
-    h("div", { class: "home__consoles" }, consolesHead, consolesViewport));
+  const consoles = h("div", { class: "home__consoles" }, consolesHead, consolesViewport);
+  const scroller = h("div", { class: "home__scroll" }, greetingRow, top, consoles);
+  const el = h("section", { class: "home", hidden: true, "aria-label": "Inicio" }, scroller);
+  // Lo de arriba llena la pantalla y de Tus consolas solo asoma su título: el alto se mide aquí
+  // (cambia con la ventana y con el tamaño del texto).
+  new ResizeObserver(() => fit()).observe(el);
   // Con el dedo: deslizar «Tus consolas» trae las que no caben (antes solo se llegaba con la cruceta).
   swipeArea(consolesViewport, ({ dx }) => {
     const total = model?.consoles.length ?? 0;
@@ -52,12 +59,16 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   let lastConsole = "console:0";
   let introduced = false;
   let options = { runningId: null, glyphs: {} };
+  let staged; // lo que enseña el destacado ahora (cambia al bajar por los renglones)
+  let hiddenCount = 0;
 
   /** Qué es lo enfocado (no dónde está): un juego o una consola. */
   const identity = (t) => (t?.item?.id ?? (t?.console ? `console:${t.console.id ?? t.console.system ?? t.console.name}` : null));
 
   function render(rows, { runningId = null, glyphs = {}, hidden = 0 } = {}) {
     options = { runningId, glyphs };
+    hiddenCount = hidden;
+    staged = undefined; // se vuelve a pintar con los datos nuevos
     // Al recargar (volver de un juego, deshacer), lo enfocado puede cambiar de lugar: el foco lo sigue
     // a él, no a la posición (antes quedaba sobre otro juego y Y abría el menú equivocado).
     const keep = identity(targets.get(focusId));
@@ -70,16 +81,15 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     targets.set("search", { kind: "search" });
     targets.set("alexa", { kind: "alexa" });
 
-    const feature = model.feature
-      ? FeatureTile(model.feature, { runningId, glyphs, onPress: pick("feature"), onAction: (action) => onAction?.(action, targets.get("feature")) })
-      : emptyFeature(model.consoles.length > 0, hidden);
     targets.set("feature", model.feature ? { kind: "item", item: model.feature }
       : { kind: "empty", setup: !model.consoles.length && !hidden, unhide: !model.consoles.length && hidden > 0 });
-    const cards = model.cards.map((item, i) => {
+    const queued = model.cards.map((item, i) => {
       targets.set(`card:${i}`, { kind: "item", item });
-      return WideTile(item, { focusId: `card:${i}`, onPress: pick(`card:${i}`) });
+      return RowTile(item, { focusId: `card:${i}`, onPress: pick(`card:${i}`) });
     });
-    mount(top, feature, cards.length > 0 && h("div", { class: ["home__cards", `home__cards--${cards.length}`] }, cards));
+    top.classList.toggle("home__top--alone", !queued.length);
+    mount(queue, queued.length > 0 && SectionHead("También tenías", { meta: String(queued.length), className: "home__queue-head" }),
+      queued.length > 0 && h("div", { class: "home__rows" }, queued));
 
     mount(consolesHead, model.consoles.length > 0 && SectionHead("Tus consolas", {
       meta: `${model.consoles.length} sistema${model.consoles.length === 1 ? "" : "s"} · ${model.games} juegos`,
@@ -99,6 +109,45 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
       setTimeout(() => el.classList.remove("home--intro"), 1400);
     }
     paint();
+    fit();
+  }
+
+  /** El destacado enseña lo enfocado: el renglón en el que estás o, si no, lo último que tenías. */
+  function renderStage() {
+    const item = (focusId.startsWith("card:") ? targets.get(focusId)?.item : model?.feature) ?? null;
+    if (staged === item) return;
+    staged = item;
+    // Sus botones actúan sobre lo que enseña (con el dedo: tocarlo mientras estás en un renglón lo abre).
+    const owner = () => (focusId.startsWith("card:") ? focusId : "feature");
+    mount(stage, item
+      ? FeatureTile(item, { runningId: options.runningId, glyphs: options.glyphs,
+        onPress: () => onPick?.(targets.get(owner()), owner()),
+        onAction: (action) => onAction?.(action, targets.get(owner())) })
+      : emptyFeature(model.consoles.length > 0, hiddenCount));
+    stage.classList.remove("home__stage--swap");
+    void stage.offsetWidth;
+    stage.classList.add("home__stage--swap"); // el arte nuevo entra con un fundido
+  }
+
+  const room = () => {
+    const css = getComputedStyle(el);
+    return el.clientHeight - parseFloat(css.paddingTop) - parseFloat(css.paddingBottom);
+  };
+
+  /** Alto de lo de arriba: la pantalla menos el saludo y el título de Tus consolas (que asoma abajo). */
+  function fit() {
+    if (el.hidden || !el.clientHeight) return;
+    const gap = parseFloat(getComputedStyle(scroller).rowGap) || 0;
+    const peek = model?.consoles.length ? consolesHead.offsetHeight + gap : 0;
+    top.style.height = `${Math.max(0, room() - greetingRow.offsetHeight - gap - peek)}px`;
+    scrollToFocus();
+  }
+
+  /** En Tus consolas el Inicio se desliza lo justo para enseñarlas enteras; arriba, vuelve. */
+  function scrollToFocus() {
+    const shift = focusId.startsWith("console:") ? Math.max(0, consoles.offsetTop + consoles.offsetHeight - room()) : 0;
+    scroller.style.transform = shift ? `translateY(${-shift}px)` : "";
+    el.classList.toggle("home--scrolled", shift > 0);
   }
 
   function renderConsoles() {
@@ -111,15 +160,19 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   /** Marca el foco, atenúa lo demás y mantiene la consola enfocada a la vista. */
   function paint() {
     const inConsoles = focusId.startsWith("console:");
+    renderStage();
+    const previewing = focusId.startsWith("card:"); // el destacado enseña el renglón enfocado: no se apaga
     for (const node of [...el.querySelectorAll("[data-focus-id]"), ...outside()]) {
       const focused = node.dataset.focusId === focusId;
       node.classList.toggle(node.classList.contains("tile") ? "tile--focused" : "is-focused", focused);
-      if (node.classList.contains("tile")) node.classList.toggle("tile--dimmed", !focused && focusId !== "search" && focusId !== "alexa");
+      const preview = previewing && node.dataset.focusId === "feature";
+      if (node.classList.contains("tile")) node.classList.toggle("tile--dimmed", !focused && !preview && focusId !== "search" && focusId !== "alexa");
       if (focused) node.setAttribute("aria-current", "true");
       else node.removeAttribute("aria-current");
     }
     el.dataset.zone = inConsoles ? "consoles" : "top";
     keepConsoleVisible();
+    scrollToFocus();
     onFocus?.(targets.get(focusId));
   }
 
@@ -191,6 +244,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     el, render, handle, focus, bump,
     show: () => {
       el.hidden = false;
+      requestAnimationFrame(fit);
       for (const node of outside()) node.classList.toggle("is-focused", node.dataset.focusId === focusId);
     },
     hide: () => { // Buscar y Alexa viven en la barra de arriba: fuera del Inicio no quedan marcados

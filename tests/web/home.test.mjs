@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildHome, greeting, kicker, systemColor } from "../../orbital/web/js/core/home.js";
+import { buildHome, greeting, kicker, stageKind, systemColor, thumbOf } from "../../orbital/web/js/core/home.js";
 
 const game = (id, system, last = 0, extra = {}) => ({ id, title: id, source: system, system, category: "emulators", last_played: last, ...extra });
 const show = { id: "stremio:tt1", title: "The Simpsons", source: "stremio", category: "continue", progress: .5, extra: { kind: "series" } };
@@ -63,4 +63,18 @@ test("textos: saludo según la hora, tipo de cada tile y color de su consola", (
   assert.equal(kicker(game("x", "gba")), "GBA");
   assert.equal(systemColor("switch"), "var(--system-switch, var(--system-default))");
   assert.equal(systemColor("x;}"), "var(--system-default, var(--system-default))");
+});
+
+test("Inicio: la miniatura de cada renglón y el estuche del destacado", () => {
+  const steam = { id: "steam:1313140", title: "Cult of the Lamb", hero: "/h.jpg", image: "/c.jpg" };
+  assert.deepEqual(thumbOf(steam), { kind: "art", src: "https://cdn.cloudflare.steamstatic.com/steam/apps/1313140/capsule_616x353.jpg", fallback: "/h.jpg" });
+  const gba = { id: "emu:gba:1", title: "Pokémon", hero: "/t.png", image: "/box.png", extra: { hero_lowres: true } };
+  assert.equal(thumbOf(gba).kind, "crop");
+  assert.equal(stageKind(gba), "case"); // solo hay caja: estuche
+  const fanart = { ...gba, extra: {} };
+  assert.equal(stageKind(fanart), "art");
+  assert.equal(thumbOf(fanart).src, "/t.png");
+  const bare = { id: "emu:gba:2", title: "Sin arte", hero: "/p.jpg", image: "/p2.jpg", extra: { placeholder_hero: true, placeholder_cover: true } };
+  assert.equal(thumbOf(bare).kind, "console");
+  assert.equal(stageKind(bare), "art");
 });

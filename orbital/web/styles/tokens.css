@@ -64,6 +64,7 @@
   --tracking-tight: -.015em;
   --tracking-label: .025em; /* letras chicas y en negrita: glifos, «Abierto» */
   --tracking-secret: .12em; /* los puntos de una contraseña */
+  --blur-case: 32px; /* el fondo del estuche: la portada de una caja, tan desenfocada que solo queda su color */
   --blur-glass: 14px; /* vidrio: lo que flota sobre el arte (íconos del mosaico, el selector, Atrás táctil) */
 
   /* Movimiento: entradas desaceleran, salidas aceleran y son más cortas */
@@ -143,6 +144,7 @@
   --tile-focus-scale: 1.03;
   --tile-dim-opacity: .8;
   --tile-gap: 1.1rem;
+  --home-queue-width: 34rem; /* Inicio: la columna de «También tenías» */
   --key-height: 3.2rem;
   --focus-outline: 3px; /* contorno de :focus-visible (teclado y ratón) */
   --inverse-scale: 1.06; /* teclas, chips y opciones enfocadas crecen un poco */
