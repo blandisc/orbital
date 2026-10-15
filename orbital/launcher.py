@@ -45,6 +45,20 @@ def redact(arg: str) -> str:
     return f"{match.group(1)}/…" if match else text
 
 
+BATCH_SPECIAL = re.compile(r'[\s&|<>^()%!,;=]')
+
+
+def batch_cmdline(argv: list[str]) -> str:
+    """La línea de comandos de un .cmd la lee cmd.exe: «Mario & Luigi.xci» sin comillas cortaba el
+    comando en el «&» (list2cmdline solo entrecomilla si hay espacios). Entre comillas &, ^, | y los
+    paréntesis son texto."""
+    def quote(arg: str) -> str:
+        if arg and not BATCH_SPECIAL.search(arg):
+            return arg
+        return '"' + re.sub(r'(\\+)$', r'\1\1', arg) + '"'  # «C:\x\"» escaparía la comilla
+    return " ".join(quote(a) for a in argv)
+
+
 def steam_running_appid() -> int | None:
     """AppID del juego de Steam en ejecución (0 = ninguno). None si no se puede saber."""
     if sys.platform != "win32":
@@ -95,6 +109,7 @@ class Launcher:
             if argv and argv[0].lower().endswith((".cmd", ".bat")):
                 # Un .cmd (launch-eden.cmd) abriría una consola negra encima de Orbital.
                 kwargs["creationflags"] |= subprocess.CREATE_NO_WINDOW  # type: ignore[attr-defined]
+                return subprocess.Popen(batch_cmdline(argv), **kwargs)
         else:
             kwargs["start_new_session"] = True
         return subprocess.Popen(argv, **kwargs)

@@ -1,4 +1,4 @@
-/* Tiles (js/components/tiles.js): destacado, tarjeta ancha, consola y el aviso en píldora.
+/* Tiles (js/components/tiles.js): destacado (con su estuche), renglón y consola.
    Comparten la base .tile de ui.css (radio, anillo de foco, atenuado). Reutilizables en
    cualquier pantalla; el acomodo de cada pantalla vive en su propio CSS (home.css…). */
 
@@ -38,45 +38,42 @@
 .tile--feature__actions { margin-top: var(--space-2); } /* .button-row */
 .tile--empty { display: grid; background: var(--gradient-card); }
 
-/* --- Ancha: arte horizontal a sangre; encima qué es, el título y lo que queda ---------------- */
-.tile--wide { min-height: 0; background: var(--color-surface); }
-/* Sin arte propio: la foto de su consola a la derecha, sobre el brillo de su color (como Tus consolas). */
-.tile--wide-console .tile__art { opacity: .55; }
-.tile--wide__glow {
-  position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(55% 90% at 78% 45%, color-mix(in oklab, var(--glow) 32%, transparent) 0%, transparent 70%);
-  transition: opacity var(--duration-base) var(--ease-out);
+/* Estuche: solo hay caja (GBA cuadrada, Switch alta). Su portada desenfocada llena el fondo y la caja
+   va encima, con su forma, del lado derecho; el texto queda a la izquierda, sin pisarla. */
+.tile__case { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.tile__case-blur { position: absolute; inset: -2rem; width: calc(100% + 4rem); height: calc(100% + 4rem); object-fit: cover; filter: blur(var(--blur-case)) saturate(1.25) brightness(.7); }
+.tile__case-box {
+  position: absolute; top: 7%; right: 6%; height: 58%; aspect-ratio: var(--case-ratio, .7); object-fit: cover;
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-card), 0 0 0 1px var(--color-hairline-strong); rotate: -2deg;
 }
-.tile--wide__console {
-  position: absolute; right: 6%; top: 14%; height: 56%; max-width: 38%; object-fit: contain; object-position: right center; pointer-events: none;
-  filter: var(--shadow-drop); transition: transform var(--duration-slow) var(--ease-spring);
+.tile--feature-case .tile--feature__title { max-width: 55%; }
+
+/* --- Renglón: miniatura ancha y, al lado, el nombre grande y su dato (siempre a la vista) ---- */
+.tile--row {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-5);
+  min-height: 0; padding: var(--space-3); background: var(--color-fill);
 }
-.tile--wide__console--logo { height: 40%; top: 18%; }
-.tile--wide-console.tile--focused .tile--wide__console { transform: scale(1.04); }
-/* El nombre tiene su lado: no pasa por encima de la consola. */
-.tile--wide-console .tile--wide__title { max-width: 60%; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; padding-bottom: .12em; text-wrap: balance; }
-.tile--wide__body {
-  position: absolute; inset: auto 0 0 0; z-index: var(--z-raised); display: flex; flex-direction: column; gap: var(--space-1);
-  padding: var(--space-5) var(--space-6); text-shadow: var(--shadow-text);
+.tile--row.tile--focused { background: var(--color-fill-hover); transform: none; }
+.tile--row__thumb {
+  position: relative; height: 100%; max-height: 8rem; aspect-ratio: 16 / 9; overflow: hidden;
+  border-radius: var(--radius-md); background: var(--color-surface);
 }
-/* Degradado más profundo abajo: el texto no compite con el arte (ni con su logo). */
-.tile--wide__shade { background: linear-gradient(0deg, color-mix(in oklab, var(--color-art-shade) 92%, transparent) 0%, color-mix(in oklab, var(--color-art-shade) 35%, transparent) 42%, transparent 62%); }
-.tile--wide__title {
-  font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold); line-height: 1.15;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .12em; margin-bottom: -.12em;
+.tile--row__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* Solo hay caja (GBA): recortada llena el marco y se ve su nombre (la parte de arriba). */
+.tile--row__art--crop { object-position: center 38%; }
+/* Sin arte: la foto de su consola sobre el brillo de su color (como Tus consolas). */
+.tile--row__thumb--console { background: radial-gradient(70% 90% at 50% 50%, color-mix(in oklab, var(--glow) 34%, transparent) 0%, var(--color-surface) 75%); }
+.tile--row__console { position: absolute; inset: 12%; width: 76%; height: 76%; object-fit: contain; filter: var(--shadow-drop); }
+.tile--row__console--logo { inset: 24%; width: 52%; height: 52%; }
+.tile--row__text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.tile--row__title {
+  font-family: var(--font-sans); font-size: var(--text-xl); font-weight: var(--weight-bold); line-height: 1.15; letter-spacing: var(--tracking-tight);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .12em; margin-bottom: -.08em;
 }
-.tile--wide__detail svg { width: 1.05rem; height: 1.05rem; flex: none; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linejoin: round; }
-.tile--wide__detail { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text); opacity: .82; font-size: var(--text-sm); white-space: nowrap; }
-.tile--wide__progress { --progress-width: 4.5rem; flex: none; }
-/* El detalle nunca se sale de la tarjeta: si no cabe, termina en «…». */
-.tile--wide__title, .tile--wide__detail { min-width: 0; max-width: 100%; }
-.tile--wide__detail-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-/* Solo el título; el detalle (consola y hace cuánto, o lo que queda) aparece al enfocar la tarjeta. */
-.tile--wide__detail {
-  max-height: 0; opacity: 0; transform: translateY(.3rem);
-  transition: max-height var(--duration-base) var(--ease-out), opacity var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-out);
-}
-.tile--wide.tile--focused .tile--wide__detail { max-height: 2rem; opacity: .86; transform: none; }
+.tile--row__detail { display: flex; align-items: center; gap: var(--space-2); min-width: 0; color: var(--color-text-muted); font-size: var(--text-md); white-space: nowrap; }
+.tile--row__detail svg { width: 1.1rem; height: 1.1rem; flex: none; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linejoin: round; }
+.tile--row__detail-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
+.tile--row__progress { --progress-width: 70%; margin-top: var(--space-2); }
 
 /* Captura chica de un juego retro: nítida, como en la consola (no un borrón estirado). */
 .tile--lowres .tile__art { image-rendering: pixelated; }

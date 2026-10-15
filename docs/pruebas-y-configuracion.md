@@ -37,7 +37,7 @@
 - [ ] Dictar en Buscar (botón ☰ o la tecla Dictar).
 - [ ] Una serie abre sus episodios; LB/RB cambia de temporada.
 - [ ] En el reproductor de Stremio: A pausa, ←/→ adelanta/regresa, ↑/↓ volumen, Y pantalla completa (F11), B vuelve. Verificado: Stremio acepta las teclas que manda Orbital.
-- [ ] Al elegir un episodio o película aparece "Elige la fuente" con la recomendada enfocada; arranca sola en 5 s o con A; ↑/↓ para otra.
+- [ ] A en un episodio o película arranca con la fuente recomendada; Y abre "Elegir fuente" para escoger otra (↑/↓ y A; B cierra).
 - [ ] La fuente elegida abre el reproductor de Orbital a pantalla completa (verificado: Interstellar arrancó en 1,5 s con audio y subtítulos en inglés).
 - [ ] En el reproductor: A pausa, ←/→ 10 s, LB/RB 1 min, ↑/↓ volumen, X audio, Y subtítulos, B sale y vuelve a Orbital.
 - [ ] Home en el reproductor pausa y va a Orbital; Home otra vez regresa con la barra de progreso.

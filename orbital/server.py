@@ -257,6 +257,8 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
             size = int(request.headers.get("content-length") or 0)
         except ValueError:
             size = MAX_PUBLIC_BODY + 1
+        if not request.headers.get("content-length") and "chunked" in request.headers.get("transfer-encoding", "").lower():
+            size = MAX_PUBLIC_BODY + 1  # sin tamaño declarado no se puede medir antes de leerlo todo
         if size > MAX_PUBLIC_BODY:
             return JSONResponse({"detail": "Petición demasiado grande"}, status_code=413)
         key = FailedTokens.key(request)

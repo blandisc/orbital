@@ -12,6 +12,7 @@ from pathlib import Path
 log = logging.getLogger(__name__)
 
 
+MAX_DISMISSED = 2000  # «No me interesa» guardados (los más viejos se olvidan)
 _NUMBER = "número"
 # Qué tipo lleva cada ajuste: un «abc» en video_idle_minutes impedía arrancar (int("abc")).
 SETTING_TYPES = {"audio": str, "subtitles": str, "quality": str, "text_size": str, "sub_scale": _NUMBER,
@@ -182,7 +183,11 @@ class State:
     # --- «Para ti»: lo que no te interesa ----------------------------------------
     def dismiss(self, key: str, now: float | None = None) -> None:
         with self._lock:
-            self._data["dismissed"][key] = now or time.time()
+            dismissed = self._data["dismissed"]
+            dismissed[key] = now or time.time()
+            if len(dismissed) > MAX_DISMISSED:  # cada «No me interesa» reescribe state.json entero
+                for old in sorted(dismissed, key=dismissed.get)[:len(dismissed) - MAX_DISMISSED]:
+                    del dismissed[old]
             self._save()
 
     def dismissed(self) -> set[str]:

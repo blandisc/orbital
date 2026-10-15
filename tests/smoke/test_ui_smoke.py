@@ -82,7 +82,7 @@ def test_boots_and_shows_the_library(page):
     # Inicio: lo último que jugaste a lo grande y tus consolas (con foto; sin arte, el respaldo).
     page.locator(".tile--feature").wait_for(timeout=5000)
     assert page.locator(".tile--console").count() >= 4
-    assert page.locator(".tile--wide").count() == 4
+    assert page.locator(".tile--row").count() == 4  # «También tenías», en renglones
     page.keyboard.press("e")  # RB: a Juegos, con sus filas de portadas
     page.locator('button.card[aria-label="Hollow Knight"]').first.wait_for(timeout=5000)
     assert page.locator("button.card").count() >= 6
@@ -152,3 +152,13 @@ def test_live_tv_categories_and_tuning_a_channel(page, server):
     page.keyboard.press("Escape")
     page.wait_for_timeout(500)
     assert page.locator(".status-bar__tab--active").inner_text() == "Inicio"
+
+
+def test_search_with_results(page):
+    """Escribir en Buscar con resultados a la vista: la leyenda ofrece saltar a ellos (antes, un
+    ReferenceError en cada tecla dejaba la leyenda congelada)."""
+    ready(page)
+    page.keyboard.press("s")
+    page.keyboard.type("hol")
+    page.locator(".search button.card").first.wait_for(timeout=5000)
+    page.locator(".hints", has_text="Resultados").wait_for(timeout=5000)

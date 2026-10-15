@@ -350,3 +350,36 @@ def test_guard_respects_home_and_closed_games():
     clock = iter(range(1000))
     assert focus_mod.keep_game_in_front(launcher, "emu:xbox:1", win, lambda: False, seconds=3,
                                         sleep=lambda s: None, clock=lambda: next(clock) * .3) == 0  # se cerró
+
+
+def test_batch_launcher_quotes_cmd_specials():
+    """Eden/Xenia van por un .cmd: «A&B.xci» sin comillas partía el comando en el «&»."""
+    from orbital.launcher import batch_cmdline
+
+    sep = "\\"
+    line = batch_cmdline([f"C:{sep}e{sep}launch-eden.cmd", "-f", "-g", f"C:{sep}r{sep}A&B.xci", f"C:{sep}x y{sep}a^b.xci"])
+    assert line == f'C:{sep}e{sep}launch-eden.cmd -f -g "C:{sep}r{sep}A&B.xci" "C:{sep}x y{sep}a^b.xci"'
+    assert batch_cmdline([f"C:{sep}d d{sep}"]) == f'"C:{sep}d d{sep}{sep}"'
+
+
+def test_double_launch_does_not_open_a_second_copy(library):
+    """A dos veces mientras el emulador carga (aún sin ventana): una sola copia."""
+    rom = next(i for i in library.items() if i.runners)
+    library.sessions.launch(rom.id)
+    library.launcher.current["pid"] = 1234
+    library.sessions.launch(rom.id)
+    assert len(library.launcher.ran) == 1
+
+
+def test_missing_emulator_keeps_the_running_game(library, tmp_path):
+    """Si el emulador ya no está, lo que estaba abierto no se cierra antes de avisar."""
+    import pytest
+
+    rom = next(i for i in library.items() if i.runners)
+    rom.runners[0].argv[0] = str(tmp_path / "borrado" / "retroarch.exe")
+    library.sessions.launch("steam:367520")
+    closed = []
+    library.sessions.before_launch = closed.append
+    with pytest.raises(FileNotFoundError):
+        library.sessions.launch(rom.id)
+    assert closed == [] and library.launcher.current["id"] == "steam:367520"

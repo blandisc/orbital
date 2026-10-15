@@ -26,6 +26,9 @@
 .foryou-mosaic__tile--land .foryou-mosaic__art--poster { opacity: 0; }
 .foryou-mosaic__tile--land .foryou-mosaic__art--wide { opacity: 1; }
 .foryou-mosaic__tile--alive .foryou-mosaic__art--wide { transform: scale(1.09); }
+/* La cápsula de la tienda (Steam) va encima del hero en lo ancho sin foco; enfocada, el hero y su logo. */
+.foryou-mosaic__art--capsule { opacity: 0; }
+.foryou-mosaic__tile--land:not(.foryou-mosaic__tile--on) .foryou-mosaic__art--capsule { opacity: 1; }
 .foryou-mosaic__tile--gone { opacity: 0 !important; transform: scale(.96); transition: opacity var(--duration-enter) var(--ease-in), transform var(--duration-enter) var(--ease-in); }
 
 /* Con foco: lo demás se apaga un poco; la enfocada lleva el anillo. */

@@ -2,21 +2,34 @@
    Ocupa el carril del héroe y de las filas; las demás secciones siguen con héroe + filas. */
 .home {
   grid-row: 2 / 4; min-height: 0; overflow: hidden;
-  display: flex; flex-direction: column; gap: var(--space-5);
   padding: var(--space-5) var(--page-gutter) var(--space-5);
 }
+/* Todo el Inicio se desliza junto: arriba llena la pantalla; al bajar a Tus consolas, sube lo justo.
+   Lo que sale por arriba se desvanece (no queda cortado en seco). */
+.home__scroll { position: relative; display: flex; flex-direction: column; gap: var(--space-5); transition: transform var(--duration-slow) var(--ease-out); }
+.home--scrolled { -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 12%); mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 12%); }
 body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 
 .home__greeting { flex: none; display: flex; align-items: center; gap: var(--space-5); min-height: 3rem; }
 .home__hello { font-family: var(--font-sans); font-size: var(--text-3xl); font-weight: var(--weight-medium); letter-spacing: var(--tracking-display); }
 
-/* Arriba: destacado a la izquierda y 2×2 a la derecha, misma altura. */
+/* Arriba: el destacado (enseña lo enfocado) y «También tenías» en renglones a la derecha. El alto lo
+   pone home.js (la pantalla menos el saludo y el título de Tus consolas, que asoma abajo). */
 .home__top {
-  flex: 1 1 auto; min-height: 13rem; max-height: 21rem;
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--tile-gap);
+  flex: none; min-height: 13rem;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, var(--home-queue-width)); gap: var(--tile-gap);
 }
-.home__top > .tile--feature:only-child { grid-column: 1 / -1; }
-.home__cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: var(--tile-gap); min-height: 0; }
+.home__top--alone { grid-template-columns: minmax(0, 1fr); }
+.home__top--alone .home__queue { display: none; }
+.home__stage { display: grid; min-height: 0; }
+.home__stage > .tile { min-height: 0; }
+.home__stage--swap .tile__art, .home__stage--swap .tile__case { animation: home-swap var(--duration-enter) var(--ease-out); }
+@keyframes home-swap { from { opacity: .35; } }
+.home__queue { display: flex; flex-direction: column; gap: var(--space-3); min-height: 0; }
+.home__queue-head { flex: none; padding: 0 var(--space-2); justify-content: space-between; }
+/* Los renglones se reparten el alto de la columna: así no queda hueco abajo con letra normal ni se
+   salen con letra grande. */
+.home__rows { flex: 1; min-height: 0; display: grid; grid-auto-rows: minmax(0, 1fr); gap: var(--space-3); }
 
 /* Abajo: tus consolas en una fila que se desplaza si no caben (6 a la vista). */
 .home__consoles { flex: none; display: flex; flex-direction: column; gap: var(--space-3); }
@@ -35,7 +48,7 @@ body[data-view="home"] .backdrop { transition: --art-tint var(--duration-tint) v
 /* Entrada (al abrir Orbital): saludo, destacado, tarjetas y las consolas una tras otra. */
 .home--intro .home__greeting { animation: home-in var(--duration-enter) var(--ease-out) both; }
 .home--intro .tile--feature { animation: home-in var(--duration-enter-long) var(--ease-out) var(--delay-1) both; }
-.home--intro .home__cards .tile { animation: home-in var(--duration-enter-long) var(--ease-out) var(--delay-2) both; }
+.home--intro .home__queue { animation: home-in var(--duration-enter-long) var(--ease-out) var(--delay-2) both; }
 .home--intro .home__consoles-head { animation: home-in var(--duration-enter) var(--ease-out) var(--delay-3) both; }
 .home--intro .tile--console { animation: home-in var(--duration-enter-long) var(--ease-out) calc(var(--delay-3) + (var(--i, 0) + 1) * var(--stagger)) both; }
 @keyframes home-in { from { opacity: 0; transform: translateY(1.2rem) scale(.985); } }
@@ -45,17 +58,16 @@ body[data-view="home"] .backdrop { transition: --art-tint var(--duration-tint) v
    y no hace falta compactar. Solo por debajo de 600 px, donde la letra ya no puede bajar de 12 px
    (antes 760 px: la TV al 300 % —720 px— se compactaba y quedaba un hueco abajo). */
 @media (max-height: 600px) {
-  .home { gap: var(--space-3); }
-  .home__top { max-height: 17rem; }
+  .home__scroll { gap: var(--space-3); }
   .home__consoles-track > .tile--console { min-height: 9.2rem; }
   .tile--console__text { padding-bottom: var(--space-3); }
 }
-/* Angostas: 4 consolas a la vista y el destacado arriba de las tarjetas. */
+/* Angostas: 4 consolas a la vista; muy angostas, solo el destacado. */
 @media (max-width: 1000px) {
   .home__consoles-track > .tile--console { flex-basis: calc((100% - 4 * var(--tile-gap)) / 4.35); }
 }
 @media (max-width: 760px) {
-  .home__top { grid-template-columns: 1fr; max-height: none; }
-  .home__cards { display: none; }
+  .home__top { grid-template-columns: 1fr; }
+  .home__queue { display: none; }
   .home__consoles-track > .tile--console { flex-basis: calc((100% - 2 * var(--tile-gap)) / 2.35); }
 }

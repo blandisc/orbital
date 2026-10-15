@@ -20,7 +20,8 @@ export function titleProgress(details) {
   const fraction = started && resume.duration > 0 ? Math.min(1, resume.position / resume.duration) : null;
   if ((details.kind || "movie") === "series") {
     const episode = [resume.label, resume.episode_title].filter(Boolean).join(" · ");
-    return started ? { label: [episode, left(resume)].filter(Boolean).join(" · "), fraction }
+    // Lo que queda va antes del nombre del episodio: con un nombre largo, lo que se recorta es el nombre.
+    return started ? { label: [resume.label, left(resume), resume.episode_title].filter(Boolean).join(" · "), fraction }
       : { label: `Sigue: ${episode}`, fraction: null };
   }
   return started ? { label: left(resume) ? left(resume).replace(/^q/, "Q") : "Casi terminada", fraction } : null;

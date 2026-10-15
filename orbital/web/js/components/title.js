@@ -229,7 +229,9 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     if (!ep && resume?.video_id && !episodeById(resume.video_id)) {
       return { kind: "series", id, video_id: resume.video_id, title: `${details?.title || item.title} · ${resume.label || ""}`.replace(/ · $/, ""), item };
     }
-    const chosen = ep || episodeById(resume?.video_id) || seasons().find((s) => s.season !== 0)?.episodes[0];
+    // Sin temporadas normales (solo «Especiales») o con la primera vacía: el primer episodio que haya.
+    const chosen = ep || episodeById(resume?.video_id) || seasons().find((s) => s.season !== 0 && s.episodes.length)?.episodes[0]
+      || seasons().find((s) => s.episodes.length)?.episodes[0];
     if (!chosen) return null;
     const s = seasons().find((x) => x.episodes.includes(chosen));
     const label = s?.season === 0 ? `Especial E${chosen.episode}` : `T${s?.season} E${chosen.episode}`;
@@ -417,8 +419,9 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
       // Series largas (Los Simpson tiene 35 temporadas): LT/RT saltan de 5 en 5, como en las filas largas.
       else if (act === "pageleft") moved = setSeason(season - 5);
       else if (act === "pageright") moved = setSeason(season + 5);
-      else if (act === "select") play(episode());
-      else if (act === "options") sources(episode());
+      // Temporada vacía: nada que ver (antes A ponía otro episodio, el de «Continuar» o T1 E1).
+      else if (act === "select") { if (episode()) play(episode()); }
+      else if (act === "options") { if (episode()) sources(episode()); }
     }
     el.dataset.zone = zone;
     if (moved) onMove?.();
@@ -428,7 +431,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   /** Pistas del pie según dónde está el foco. */
   const hints = (g) => (details?.error ? [{ glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }]
     : zone === "episodes"
-    ? [{ glyph: g.select, label: "Ver" }, { glyph: g.options, label: "Fuente" }, { glyph: g.section, label: "Temporada" },
+    ? [episode() && { glyph: g.select, label: "Ver" }, episode() && { glyph: g.options, label: "Fuente" }, { glyph: g.section, label: "Temporada" },
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : !details ? [{ glyph: g.back, label: "Atrás", end: true }] // cargando: nada que pulsar todavía

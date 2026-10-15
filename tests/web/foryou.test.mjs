@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  factLine, hashOf, iconName, kindLabel, listMeta, nearestTile, nextUnseen, playOf, primaryAction, railEntries, shapeOf,
+  factLine, hashOf, iconName, kindLabel, listMeta, nearestTile, nextUnseen, playOf, posterRatio, primaryAction, railEntries, shapeOf,
 } from "../../orbital/web/js/core/foryou.js";
 
 const series = { key: "video:tt1", kind: "series", title: "Severance", detail: "Sigue T2 E6", meta_id: "tt1", video_id: "tt1:2:6" };
@@ -37,6 +37,8 @@ test("el mosaico no repite lo que ya está a la vista", () => {
   const pool = [{ key: "a" }, { key: "b" }, { key: "c" }];
   assert.deepEqual(nextUnseen(pool, 0, new Set(["a"])), { item: pool[1], cursor: 2 });
   assert.deepEqual(nextUnseen(pool, 2, new Set(["c", "a"])), { item: pool[1], cursor: 5 });
+  // Todas a la vista: se repite una que espera abajo, no una que ya está en pantalla.
+  assert.deepEqual(nextUnseen(pool, 0, new Set(["a", "b", "c"]), new Set(["a", "b"])), { item: pool[2], cursor: 3 });
   assert.equal(nextUnseen(pool, 0, new Set(["a", "b", "c"])).item, pool[0]); // todo a la vista: se repite
   assert.equal(nextUnseen([], 3, new Set()).item, null);
 });
@@ -58,4 +60,13 @@ test("el encabezado de una lista dice cuántos y de dónde", () => {
     "12 series · Trakt · Lo más visto esta semana");
   assert.equal(listMeta({ group: "games", source: "", meta: "Favoritos" }, 1), "1 juego · Favoritos");
   assert.equal(listMeta({ group: "video", source: "TMDB" }, 3, "movie"), "3 películas · TMDB");
+});
+
+test("mosaico: las cajas de GBA casi cuadradas, y un juego sin fondo ancho de verdad siempre en vertical", () => {
+  const gba = { key: "game:emu:gba:1", kind: "game", item: { source: "gba" } };
+  assert.equal(posterRatio(gba), 1);
+  assert.equal(posterRatio({ key: "video:tt1", kind: "movie" }), 2 / 3);
+  const keys = Array.from({ length: 40 }, (_, i) => `game:${i}`);
+  assert.ok(keys.some((key) => shapeOf({ key }) === "wide"));
+  assert.ok(keys.every((key) => shapeOf({ key, hero_weak: true }) === "poster"));
 });

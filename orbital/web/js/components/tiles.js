@@ -1,8 +1,8 @@
 import { h, svg } from "../core/dom.js";
 import { duration, lastPlayed, shortAgo } from "../core/format.js";
-import { kicker, SYSTEMS, systemColor, systemOf } from "../core/home.js";
+import { kicker, stageKind, SYSTEMS, systemColor, systemOf, thumbOf } from "../core/home.js";
 import { ICONS, systemIconName } from "../core/icons.js";
-import { alternativeRunner, isSeries, isWatchable, primaryLabel } from "../core/library.js";
+import { alternativeRunner, clampRatio, coverRatio, isSeries, isWatchable, primaryLabel } from "../core/library.js";
 import { Button } from "./button.js";
 import { Badge, Progress } from "./ui.js";
 
@@ -23,6 +23,26 @@ const art = (src, className = "tile__art") => {
   img.addEventListener("error", () => img.remove(), { once: true });
   return img;
 };
+
+/** Imagen con un respaldo: si la primera no carga se prueba la otra, y si tampoco, desaparece. */
+function artOr(src, fallback, className) {
+  if (!src) return null;
+  let tried = !fallback;
+  const img = h("img", { class: className, src, alt: "", decoding: "async" });
+  img.addEventListener("error", () => {
+    if (tried) return img.remove();
+    tried = true;
+    img.src = fallback;
+  });
+  return img;
+}
+
+/** Estuche: una caja que no es ancha (GBA cuadrada, Switch alta) llena un marco ancho con su propia
+ *  portada desenfocada de fondo y la caja encima, con su forma, del lado derecho. */
+function caseArt(item) {
+  return h("span", { class: "tile__case", style: { "--case-ratio": String(clampRatio(coverRatio(item))) } },
+    art(item.image, "tile__case-blur"), art(item.image, "tile__case-box"));
+}
 
 /** Logotipo del destacado; si no carga, su lugar lo toma el título en texto. */
 function featureLogo(src, title) {
@@ -54,8 +74,10 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
   const alt = isWatchable(item) ? (isSeries(item) || item.extra?.kind === "series" ? "Episodios" : "Ficha")
     : alternativeRunner(item) && `Con ${alternativeRunner(item).name}`;
   const press = (action) => (event) => { event.stopPropagation(); onAction?.(action); };
-  return tile(focusId, ["tile--feature", item.extra?.placeholder_hero && "tile--placeholder", item.extra?.hero_lowres && "tile--lowres"], onPress, item.title,
-    art(item.hero || item.image),
+  const boxed = stageKind(item) === "case";
+  return tile(focusId, ["tile--feature", boxed && "tile--feature-case", !boxed && item.extra?.placeholder_hero && "tile--placeholder",
+    !boxed && item.extra?.hero_lowres && "tile--lowres"], onPress, item.title,
+    boxed ? caseArt(item) : art(item.hero || item.image),
     h("span", { class: "tile__shade tile--feature__shade" }),
     h("div", { class: "tile--feature__body" },
       platform(item),
@@ -76,23 +98,24 @@ export function shortDetail(item, now = Date.now()) {
 }
 
 /**
- * Tarjeta ancha: el arte a sangre y solo dos renglones encima (el arte ya dice mucho; a veces
- * trae su propio logo): el título, y «● Switch · hace 11 h» o el avance del video.
+ * Renglón (Inicio · «También tenías»): una miniatura ancha y, al lado, el nombre grande y su dato
+ * siempre a la vista («Steam · hace 4 h · 31 h», o «Serie · T2 E6 · quedan 32 min» con su avance).
+ * El texto ya no va encima del arte: se lee desde el sillón.
  */
-export function WideTile(item, { focusId, onPress }) {
+export function RowTile(item, { focusId, onPress }) {
   const watch = isWatchable(item);
-  // Sin arte propio: en vez de solo el fondo genérico, la foto de su consola con el brillo de su color.
-  const system = item.extra?.placeholder_hero ? SYSTEMS[systemOf(item)] : null;
-  const node = tile(focusId, ["tile--wide", item.extra?.placeholder_hero && "tile--placeholder", system && "tile--wide-console", item.extra?.hero_lowres && "tile--lowres"], onPress, item.title,
-    art(item.hero || item.image),
-    system && h("span", { class: "tile--wide__glow" }),
-    system && art(`img/consoles/${system.photo}`, ["tile--wide__console", system.logo && "tile--wide__console--logo"]),
-    h("span", { class: "tile__shade tile--wide__shade" }),
-    h("div", { class: "tile--wide__body" },
-      h("strong", { class: "tile--wide__title" }, item.title),
-      h("span", { class: "tile--wide__detail" },
-        watch ? Progress(item.progress, { className: "tile--wide__progress" }) : svg(ICONS[systemIconName(item)] || ICONS.apps),
-        h("span", { class: "tile--wide__detail-text" }, [watch ? null : kicker(item), shortDetail(item)].filter(Boolean).join(" · ")))));
+  const thumb = thumbOf(item);
+  const system = thumb.kind === "console" ? SYSTEMS[systemOf(item)] : null;
+  const total = !watch && item.playtime >= 600 ? duration(item.playtime) : null;
+  const node = tile(focusId, "tile--row", onPress, item.title,
+    h("span", { class: ["tile--row__thumb", system && "tile--row__thumb--console"] },
+      thumb.src && artOr(thumb.src, thumb.fallback, ["tile--row__art", thumb.kind === "crop" && "tile--row__art--crop"]),
+      system && art(`img/consoles/${system.photo}`, ["tile--row__console", system.logo && "tile--row__console--logo"])),
+    h("span", { class: "tile--row__text" },
+      h("strong", { class: "tile--row__title" }, item.title),
+      h("span", { class: "tile--row__detail" }, svg(ICONS[systemIconName(item)] || ICONS.apps),
+        h("span", { class: "tile--row__detail-text" }, [kicker(item), shortDetail(item), total].filter(Boolean).join(" · "))),
+      watch && Progress(item.progress, { className: "tile--row__progress" })));
   if (system) node.style.setProperty("--glow", systemColor(systemOf(item)));
   return node;
 }

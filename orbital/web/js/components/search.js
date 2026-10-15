@@ -29,6 +29,7 @@ const layout = (cleared, dictateGlyph = "") => [
     { key: "go", label: "Buscar", span: 5, tone: "go" }],
 ];
 const MIN_CHARS = 2;
+const MAX_CHARS = 120; // lo mismo que corta el servidor
 const DEBOUNCE_MS = 260;
 const RECENT_KEY = "orbital.search.recent";
 const RECENT_MAX = 8;
@@ -188,7 +189,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       // Por caracteres completos: un emoji a medias rompía la búsqueda («URI malformed»).
       if (key === "delete") text = Array.from(text).slice(0, -1).join("");
       else if (key === "space") text = text && !text.endsWith(" ") ? `${text} ` : text;
-      else text += key.toLowerCase();
+      else if (Array.from(text).length < MAX_CHARS) text += key.toLowerCase();
     }
     render();
     schedule();
@@ -237,16 +238,20 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     rec.interimResults = true;
     rec.maxAlternatives = 1;
     rec.onresult = (event) => {
-      text = [...event.results].map((r) => r[0].transcript).join("").trim();
+      text = [...event.results].map((r) => r[0].transcript).join("").trim().slice(0, MAX_CHARS);
       render();
       schedule();
     };
     rec.onerror = (event) => setHint(event.error === "not-allowed" ? "Orbital no tiene permiso para usar el micrófono." : "No te escuché. Intenta de nuevo.");
     rec.onend = () => { listening = null; render(); };
+    try {
+      rec.start();
+    } catch {
+      return setHint("No te escuché. Intenta de nuevo."); // el micrófono no arrancó: sin «Te escucho…» para siempre
+    }
     listening = rec;
     setHint("Te escucho…");
     render();
-    rec.start();
   }
 
   function open() {
@@ -337,7 +342,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       dictateGlyph = g.menu || "";
       keyboard.setLayout(layout(shownCleared, dictateGlyph));
     }
-    const [, go] = String(pad?.page || "").split(" "); // RT con mando, AvPág con teclado
+    const page = String(pad?.page || "").split(" "); // LT RT con mando, RePág AvPág con teclado
+    const go = page[1];
     return [
       { glyph: g.select, label: zone === "results" ? "Abrir" : "Escribir" },
       zone === "keys" && go && { glyph: go, label: "Buscar" },
