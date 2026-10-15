@@ -1,6 +1,6 @@
 from orbital import player, player_ui
 from orbital.gamepad import A_BUTTON, DPAD_LEFT, GUIDE, X_BUTTON, Y_BUTTON
-from orbital.library import cinemeta, streams, stremio_api
+from orbital.library import addons, cinemeta, streams, stremio_api
 
 RD_URL = "https://real-debrid.example/d/abc/movie.mkv"
 
@@ -247,16 +247,16 @@ def test_subtitles_from_subtitle_addons_in_your_language(monkeypatch):
     asked = []
 
     def fake_get(self, addon, path):
-        asked.append((addon["name"], path))
+        asked.append((addon.name, path))
         return {"subtitles": [{"url": "https://subs/en.srt", "lang": "eng"}, {"url": "https://subs/es.srt", "lang": "spa"}]}
 
     monkeypatch.setattr(streams.StreamFinder, "_get_json", fake_get)
-    finder = streams.StreamFinder(Client())
-    assert finder.subtitles("key", "movie", "tt0816692", "en") == ["https://subs/en.srt"]
+    finder = streams.StreamFinder(addons.AddonRegistry(Client(), auth=lambda: "key"))
+    assert finder.subtitles("movie", "tt0816692", "en") == ["https://subs/en.srt"]
     assert asked == [("OpenSubtitles", "subtitles/movie/tt0816692.json")]
     # Un addon solo de subtítulos no se usa para buscar fuentes.
-    monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, addon, kind, vid: asked.append(addon["name"]) or [])
-    finder.find("key", "movie", "tt0816692", streams.Preferences())
+    monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, addon, kind, vid: asked.append(addon.name) or [])
+    finder.find("movie", "tt0816692", streams.Preferences())
     assert asked[-1] == "Torrentio"
 
 

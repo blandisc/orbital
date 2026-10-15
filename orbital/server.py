@@ -24,7 +24,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import __version__
+from . import __version__, companion
 from .api import diagnostics, foryou, library, live, media, play, quick, tv, ui, update
 from .api.deps import Deps
 from .api.live import SseHub, VoiceRequest
@@ -159,7 +159,9 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
                  live.router(d, is_local_request), diagnostics.router(d), quick.router(d),
                  update.router(d, updater), foryou.router(d), tv.router(d)):
         app.include_router(part)
+    _companion_routes(app, config)
     app.state.run_voice = d.extra["run_voice"]
+    app.state.play_stremio = d.extra["play_stremio"]
     app.mount("/", WebFiles(directory=WEB_DIR, html=True), name="web")
     return app
 
@@ -233,11 +235,29 @@ async def invalid_request(request: Request, exc: RequestValidationError) -> JSON
     return JSONResponse({"detail": errors}, status_code=422)
 
 
+def _companion_routes(app: FastAPI, config: Config) -> None:
+    """«Conectar iPhone» en la TV: el QR (solo en el puerto local, el de la consola)."""
+    from fastapi.responses import Response
+
+    @app.get("/api/companion/pair")
+    def pair() -> dict:
+        info = companion.pair_info(config)
+        info.pop("link", None)  # el token no viaja en el JSON: solo dentro del QR
+        return info
+
+    @app.get("/api/companion/pair.svg")
+    def pair_svg() -> Response:
+        info = companion.pair_info(config)
+        if not info["ready"]:
+            return Response(status_code=409)
+        return Response(companion.qr_svg(info["link"]), media_type="image/svg+xml", headers={"Cache-Control": "no-store"})
+
+
 MAX_PUBLIC_BODY = 16 * 1024
 
 
 def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | None = None) -> FastAPI:
-    """App mínima para internet (Alexa a través del túnel): solo voz y ping, siempre con token.
+    """App mínima para internet (Alexa y el iPhone a través del túnel): voz, ping, «Ver en la TV» y las claves de «Para ti» para la app del iPhone, siempre con token.
 
     Corre en otro puerto (server.public_port). Aunque el túnel entregue las peticiones desde
     127.0.0.1, aquí no hay excepciones para "local": sin token no se hace nada.
@@ -290,5 +310,20 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     @public.post("/api/voice")
     async def voice_command(body: VoiceRequest) -> dict:
         return await main_app.state.run_voice(body, remote=True)
+
+    @public.get("/api/companion")
+    def companion_keys() -> dict:
+        """La app del iPhone toma de aquí lo de «Para ti» para no escribirlo dos veces: la clave de TMDB, la aplicación
+        de Trakt (su Client ID, que no es secreto; el secreto no sale de aquí) y el país."""
+        p = config.para_ti
+        trakt = getattr(getattr(main_app.state.catalog, "foryou", None), "trakt", None)
+        return {"tmdb_key": p.tmdb_key, "trakt_client_id": p.trakt_client_id, "region": p.region,
+                "trakt_session": companion.trakt_session(trakt)}
+
+    @public.post("/api/stremio/play")
+    def play_on_tv(body: media.PlayRequest) -> dict:
+        """«Ver en la TV» desde el iPhone: lo mismo que la tarjeta de la TV (la fuente recomendada, donde ibas).
+        No da más de lo que ya da la voz («pon The Office»): solo poner un título de Stremio."""
+        return main_app.state.play_stremio(body)
 
     return public

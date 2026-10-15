@@ -97,6 +97,8 @@ export const api = {
   tv: () => request("/api/tv"),
   tvPlay: (id, category = "todos", keep = false) => post("/api/tv/play", { id, category, keep }),
   tvRefresh: () => post("/api/tv/refresh"),
+  // La app del iPhone
+  companionPair: () => request("/api/companion/pair"),
   /** Suscripción a eventos del servidor con reconexión automática. */
   events(onEvent, { onReconnect = () => {} } = {}) {
     let lost = false;

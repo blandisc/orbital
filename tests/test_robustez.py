@@ -6,7 +6,7 @@ import json
 import pytest
 
 from orbital import capture, net, quick
-from orbital.library import cinemeta, media, stremio_api
+from orbital.library import addons, cinemeta, media, stremio_api
 from orbital.state import State
 from orbital.voice import VoiceController
 
@@ -118,8 +118,8 @@ def test_odd_streams_and_addons_are_skipped():
                                 "transportUrl": "https://a/manifest.json"},
                                {"manifest": {"resources": ["stream"]}, "transportUrl": "file:///C:/x"}]}
 
-    found = streams.StreamFinder(Client()).addons("k")
-    assert [a["name"] for a in found] == ["Bueno"] and found[0]["types"] == ["movie"]
+    found = streams.StreamFinder(addons.AddonRegistry(Client(), auth=lambda: "k")).addons()
+    assert [a.name for a in found] == ["Bueno"] and found[0].rules["stream"].types == ["movie"]
 
 
 def test_failed_tokens_slow_down_rotating_forwarded_headers():
@@ -289,7 +289,7 @@ def test_sources_listed_and_played_with_the_series_language(library, monkeypatch
     library.credentials.set("stremio_auth_key", "k")
     library.state.set_pref("stremio:tt1", "audio", "es")  # esta serie, en español (Ajustes: inglés)
     raw = [{"name": "A", "title": "Peli\n🇲🇽", "url": "https://cdn/0.mkv"}, {"name": "A", "title": "Peli", "url": "https://cdn/1.mkv"}]
-    monkeypatch.setattr(streams.StreamFinder, "addons", lambda self, key: [{"name": "A", "url": "https://a/manifest.json", "types": [], "resources": ["stream"]}])
+    monkeypatch.setattr(streams.StreamFinder, "addons", lambda self: [addons.parse_manifest({"name": "A", "resources": ["stream"]}, "https://a/manifest.json")])
     monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, a, k, v: raw)
     listed = library.watch.stream_sources("movie", "tt1", library.watch.language_for("tt1")[0])
     played = []
@@ -312,11 +312,11 @@ def test_failed_network_is_not_remembered_as_no_sources(monkeypatch):
             raise urllib.error.URLError("Wi-Fi al despertar")
         return {"streams": [{"name": "A", "url": "https://cdn/x.mkv"}]}
 
-    monkeypatch.setattr(streams.StreamFinder, "addons", lambda self, key: [{"name": "A", "url": "https://a/manifest.json", "types": [], "resources": ["stream"]}])
+    monkeypatch.setattr(streams.StreamFinder, "addons", lambda self: [addons.parse_manifest({"name": "A", "resources": ["stream"]}, "https://a/manifest.json")])
     monkeypatch.setattr(streams.StreamFinder, "_get_json", get_json)
     finder = streams.StreamFinder(None)
-    assert finder.find("k", "movie", "tt1", streams.Preferences()) == []
-    assert len(finder.find("k", "movie", "tt1", streams.Preferences())) == 1
+    assert finder.find("movie", "tt1", streams.Preferences()) == []
+    assert len(finder.find("movie", "tt1", streams.Preferences())) == 1
 
 
 def test_odd_settings_in_state_do_not_stop_orbital(tmp_path):
@@ -345,16 +345,16 @@ def test_cinemeta_odd_metas_and_posters(monkeypatch):
 def test_a_source_keeps_its_number_when_addons_answer_in_another_order(monkeypatch):
     from orbital.library import streams
 
-    a = {"name": "A", "url": "https://a/manifest.json", "types": [], "resources": ["stream"]}
-    b = {"name": "B", "url": "https://b/manifest.json", "types": [], "resources": ["stream"]}
+    a = addons.parse_manifest({"name": "A", "resources": ["stream"]}, "https://a/manifest.json")
+    b = addons.parse_manifest({"name": "B", "resources": ["stream"]}, "https://b/manifest.json")
     raw = {"https://a/manifest.json": [{"name": "A", "url": "https://cdn/small.mkv"}],
            "https://b/manifest.json": [{"name": "B", "url": "https://cdn/remux.mkv"}]}
     order = [[a, b]]
-    monkeypatch.setattr(streams.StreamFinder, "addons", lambda self, key: order[0])
-    monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, addon, k, v: raw[addon["url"]])
-    first = {s.stream["url"]: s.index for s in streams.StreamFinder(None).find("k", "movie", "tt1", streams.Preferences())}
+    monkeypatch.setattr(streams.StreamFinder, "addons", lambda self: order[0])
+    monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, addon, k, v: raw[addon.url])
+    first = {s.stream["url"]: s.index for s in streams.StreamFinder(None).find("movie", "tt1", streams.Preferences())}
     order[0] = [b, a]
-    again = {s.stream["url"]: s.index for s in streams.StreamFinder(None).find("k", "movie", "tt1", streams.Preferences())}
+    again = {s.stream["url"]: s.index for s in streams.StreamFinder(None).find("movie", "tt1", streams.Preferences())}
     assert first == again
 
 

@@ -18,14 +18,13 @@ import logging
 import re
 import threading
 import time
-import urllib.error
-import urllib.request
 import zlib
 from concurrent.futures import ThreadPoolExecutor, wait
 from dataclasses import dataclass, field
 from urllib.parse import quote
 
-from ..net import NET_ERRORS, read_json
+from ..net import NET_ERRORS
+from . import addons
 
 log = logging.getLogger(__name__)
 
@@ -251,87 +250,60 @@ def player_link(src: Source, meta_transport: str, kind: str, meta_id: str, video
 
 
 class StreamFinder:
-    """Pide fuentes a los addons de la cuenta (en paralelo) y las guarda unos minutos."""
+    """Pide fuentes a los complementos que las dan (en paralelo) y las guarda unos minutos."""
 
-    def __init__(self, stremio_client, timeout: float = REQUEST_TIMEOUT) -> None:
-        self.client = stremio_client
+    def __init__(self, registry: addons.AddonRegistry, timeout: float = REQUEST_TIMEOUT) -> None:
+        self.registry = registry
         self.timeout = timeout
-        self._addons: tuple[float, list[dict]] = (0.0, [])
         self._cache: dict[str, tuple[float, list[Source]]] = {}
         self._down: dict[str, float] = {}
         self.outcome: dict[str, str] = {}  # kind:video -> "ok" | "offline" | "no-addons" (para decir por qué no hay)  # complemento -> hasta cuándo no se le pregunta (no respondió)
         self._lock = threading.Lock()
 
-    def addons(self, auth_key: str) -> list[dict]:
-        if time.time() - self._addons[0] < CACHE_SECONDS:
-            return self._addons[1]
-        result = self.client.request("addonCollectionGet", {"authKey": auth_key, "update": True})
-        addons = []
-        raw = result.get("addons") if isinstance(result, dict) else None
-        for addon in raw if isinstance(raw, list) else []:
-            # Un complemento con el manifiesto raro se salta; no deja sin fuentes a los demás.
-            manifest = addon.get("manifest") if isinstance(addon, dict) else None
-            if not isinstance(manifest, dict) or not isinstance(addon.get("transportUrl"), str):
-                continue
-            resources_raw = manifest.get("resources")
-            listed: list = resources_raw if isinstance(resources_raw, list) else []
-            resources = [n for n in (r if isinstance(r, str) else r.get("name") if isinstance(r, dict) else None
-                                     for r in listed) if isinstance(n, str)]
-            types_raw, name_raw = manifest.get("types"), manifest.get("name")
-            types = [t for t in types_raw if isinstance(t, str)] if isinstance(types_raw, list) else []
-            name = name_raw if isinstance(name_raw, str) and name_raw.strip() else "Addon"
-            if {"stream", "subtitles"} & set(resources) and addon["transportUrl"].startswith(("http://", "https://")):
-                addons.append({"name": name, "url": addon["transportUrl"], "types": types, "resources": resources})
-        # Sin complementos de video: se recuerda solo un momento (si instalas uno, se nota ya).
-        self._addons = (time.time() - (CACHE_SECONDS - 30 if not any("stream" in a["resources"] for a in addons) else 0), addons)
-        return addons
+    def addons(self) -> list[addons.Addon]:
+        return self.registry.addons()
 
-    def _get_json(self, addon: dict, path: str) -> dict:
-        base = addon["url"].rsplit("/manifest.json", 1)[0]
-        req = urllib.request.Request(f"{base}/{path}", headers={"User-Agent": "Orbital"})
-        with urllib.request.urlopen(req, timeout=self.timeout) as res:
-            data = read_json(res, timeout=self.timeout)
-        return data if isinstance(data, dict) else {}
+    def _get_json(self, addon: addons.Addon, path: str) -> dict:
+        return addons.fetch_json(f"{addon.base}/{path}", self.timeout)
 
-    def _fetch(self, addon: dict, kind: str, video_id: str) -> list[dict] | None:
+    def _fetch(self, addon: addons.Addon, kind: str, video_id: str) -> list[dict] | None:
         """Las fuentes de un complemento; None si la red falló (para no recordar «no hay» 10 minutos)."""
         try:
             streams = self._get_json(addon, f"stream/{kind}/{quote(video_id, safe='')}.json").get("streams")
             streams = streams if isinstance(streams, list) else []
         except NET_ERRORS as exc:
-            log.info("Sin fuentes de %s: %s", addon["name"], exc)
+            log.info("Sin fuentes de %s: %s", addon.name, exc)
             return None
         return [s for s in streams if isinstance(s, dict) and (s.get("url") or s.get("infoHash"))]
 
-    def subtitles(self, auth_key: str, kind: str, video_id: str, lang: str) -> list[str]:
+    def subtitles(self, kind: str, video_id: str, lang: str) -> list[str]:
         """URLs de subtítulos en tu idioma de tus addons (OpenSubtitles…), por si el video no trae."""
         codes = {lang, LANG_CODES.get(lang, lang)}
         urls = []
-        for addon in self.addons(auth_key):
-            if "subtitles" not in addon.get("resources", []):
+        for addon in self.addons():
+            if not addon.handles("subtitles", kind, video_id):
                 continue
             try:
                 subs = self._get_json(addon, f"subtitles/{kind}/{quote(video_id, safe='')}.json").get("subtitles")
                 subs = subs if isinstance(subs, list) else []
             except NET_ERRORS as exc:
-                log.info("Sin subtítulos de %s: %s", addon["name"], exc)
+                log.info("Sin subtítulos de %s: %s", addon.name, exc)
                 continue
             urls += [s["url"] for s in subs if isinstance(s, dict) and isinstance(s.get("url"), str)
                      and s["url"].startswith(("http://", "https://")) and s.get("lang") in codes]
         return urls
 
-    def find(self, auth_key: str, kind: str, video_id: str, prefs: Preferences) -> list[Source]:
+    def find(self, kind: str, video_id: str, prefs: Preferences) -> list[Source]:
         key = f"{kind}:{video_id}:{prefs.audio}:{prefs.quality}"
         with self._lock:
             hit = self._cache.get(key)
             if hit and time.time() - hit[0] < CACHE_SECONDS:
                 return hit[1]
-        addons = [a for a in self.addons(auth_key)
-                  if "stream" in a.get("resources", ["stream"]) and (not a["types"] or kind in a["types"])]
+        serving = [a for a in self.addons() if a.handles("stream", kind, video_id)]
         # Un complemento caído no se espera otra vez durante unos minutos (si todos lo están, se prueban).
         now = time.time()
-        alive = [a for a in addons if self._down.get(a["url"], 0) <= now] or addons
-        skipped = len(alive) < len(addons)
+        alive = [a for a in serving if self._down.get(a.url, 0) <= now] or serving
+        skipped = len(alive) < len(serving)
         pool = ThreadPoolExecutor(max_workers=max(1, len(alive)))
         futures = {pool.submit(self._fetch, a, kind, video_id): a for a in alive}
         # Plazo total: un complemento lento no deja al usuario mirando la pantalla de carga 45 s.
@@ -341,22 +313,22 @@ class StreamFinder:
         for future, addon in futures.items():
             streams = future.result() if future in done else None
             if streams is None:
-                self._down[addon["url"]] = now + DOWN_SECONDS
-                log.info("%s no respondió a tiempo: se omite unos minutos", addon["name"])
+                self._down[addon.url] = now + DOWN_SECONDS
+                log.info("%s no respondió a tiempo: se omite unos minutos", addon.name)
             else:
-                self._down.pop(addon["url"], None)
+                self._down.pop(addon.url, None)
             results.append((addon, streams))
         sources, seen = [], set()
         failed = skipped or any(streams is None for _, streams in results)
         for addon, streams in results:
             for stream in streams or []:
-                index = stable_index(addon["url"], stream)
+                index = stable_index(addon.url, stream)
                 while index in seen:  # el mismo enlace dos veces: la segunda, el número siguiente
                     index = (index + 1) % 2**31
                 try:
-                    sources.append(parse(stream, addon["name"], addon["url"], index))
+                    sources.append(parse(stream, addon.name, addon.url, index))
                 except PARSE_ERRORS as exc:  # una fuente con datos raros se salta, no tumba la lista
-                    log.info("Fuente rara de %s: %s", addon["name"], exc)
+                    log.info("Fuente rara de %s: %s", addon.name, exc)
                     continue
                 seen.add(index)
         ranked = rank(sources, prefs, kind)

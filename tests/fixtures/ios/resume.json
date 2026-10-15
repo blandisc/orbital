@@ -1,0 +1,47 @@
+[
+ {
+  "raw": {
+   "state": {
+    "duration": 3000000,
+    "timeOffset": 600000,
+    "video_id": "tt1:1:2"
+   }
+  },
+  "seconds": 600.0,
+  "video_id": "tt1:1:2"
+ },
+ {
+  "raw": {
+   "state": {
+    "duration": 3000000,
+    "timeOffset": 600000,
+    "video_id": "tt1:1:2"
+   }
+  },
+  "seconds": 0.0,
+  "video_id": "tt1:1:3"
+ },
+ {
+  "raw": {
+   "state": {
+    "duration": 3000000,
+    "timeOffset": 2800000,
+    "video_id": "tt1:1:2"
+   }
+  },
+  "seconds": 0.0,
+  "video_id": "tt1:1:2"
+ },
+ {
+  "raw": null,
+  "seconds": 0.0,
+  "video_id": "x"
+ },
+ {
+  "raw": {
+   "state": "raro"
+  },
+  "seconds": 0.0,
+  "video_id": "x"
+ }
+]

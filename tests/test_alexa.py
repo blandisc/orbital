@@ -224,10 +224,36 @@ def test_public_app_always_requires_token(public):
     assert client.get("/api/ping", headers=auth).json()["service"] == "orbital"
     assert client.post("/api/voice", json={"text": "abre hades"}, headers=auth).json()["speech"] == "Abriendo Hades."
     assert main.state.deps.alexa_last is not None
-    # Solo existen voz y ping: ni la interfaz, ni la biblioteca, ni lanzar cosas.
+    # Solo existen voz, ping y «Ver en la TV»: ni la interfaz, ni la biblioteca, ni lanzar juegos.
     for path in ("/", "/api/library", "/docs", "/openapi.json"):
         assert client.get(path, headers=auth).status_code == 404
     assert client.post("/api/launch", json={"id": "steam:367520"}, headers=auth).status_code == 404
+
+
+def test_public_app_plays_a_stremio_title_on_the_tv_only_with_token(public):
+    """«Ver en la TV» desde el iPhone: mismo token que Alexa, y lo mismo que pide la tarjeta de la TV."""
+    client, main = public
+    asked = []
+    main.state.play_stremio = lambda body: asked.append(body.model_dump()) or {"ok": True}
+    body = {"kind": "series", "id": "tt0386676", "video_id": "tt0386676:2:5", "title": "The Office"}
+    assert client.post("/api/stremio/play", json=body).status_code == 401
+    assert asked == []
+    auth = {"Authorization": "Bearer secreto"}
+    assert client.post("/api/stremio/play", json=body, headers=auth).json() == {"ok": True}
+    assert asked[0]["video_id"] == "tt0386676:2:5" and asked[0]["source"] is None
+    # El resto de la API de Stremio sigue cerrada por el túnel.
+    assert client.post("/api/stremio/login", json={}, headers=auth).status_code == 404
+
+
+def test_public_app_shares_para_ti_keys_with_the_iphone_but_never_the_secret(public):
+    client, main = public
+    cfg = main.state.deps.config
+    cfg.para_ti.tmdb_key, cfg.para_ti.trakt_client_id, cfg.para_ti.trakt_client_secret = "tmdb123", "cid456", "secreto-de-trakt"
+    assert client.get("/api/companion").status_code == 401
+    got = client.get("/api/companion", headers={"Authorization": "Bearer secreto"}).json()
+    assert {k: got[k] for k in ("tmdb_key", "trakt_client_id", "region")} == {"tmdb_key": "tmdb123", "trakt_client_id": "cid456", "region": cfg.para_ti.region}
+    assert got["trakt_session"] is None  # Trakt sin conectar en la consola: no hay sesión que prestar
+    assert "secreto-de-trakt" not in str(got)
 
 
 def test_main_app_rejects_tunnel_host_without_token(library):

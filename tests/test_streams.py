@@ -4,6 +4,7 @@ import zlib
 from urllib.parse import unquote
 
 from orbital.library import streams
+from orbital.library.addons import AddonRegistry
 from orbital.library.streams import Preferences, parse, player_link, rank
 
 TORRENTIO = "https://torrentio.strem.fun/manifest.json"
@@ -82,10 +83,10 @@ def test_finder_asks_stream_addons_in_parallel_and_caches(monkeypatch):
 
     fetched = []
     monkeypatch.setattr(streams.StreamFinder, "_fetch",
-                        lambda self, addon, kind, vid: fetched.append(addon["name"]) or INTERSTELLAR)
-    finder = streams.StreamFinder(Client())
-    found = finder.find("key", "movie", "tt0816692", Preferences())
+                        lambda self, addon, kind, vid: fetched.append(addon.name) or INTERSTELLAR)
+    finder = streams.StreamFinder(AddonRegistry(Client(), auth=lambda: "key"))
+    found = finder.find("movie", "tt0816692", Preferences())
     assert fetched == ["Torrentio RD"] and len(found) == len(INTERSTELLAR)  # Cinemeta no da fuentes
-    finder.find("key", "movie", "tt0816692", Preferences())
+    finder.find("movie", "tt0816692", Preferences())
     assert fetched == ["Torrentio RD"] and Client.calls == 1  # en caché
     assert finder.get("movie", "tt0816692", Preferences(), found[0].index) is found[0]

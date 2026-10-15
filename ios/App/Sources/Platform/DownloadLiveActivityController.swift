@@ -1,0 +1,43 @@
+import ActivityKit
+import Foundation
+import OrbitalCore
+
+/// Arranca, actualiza y termina la actividad en vivo de las descargas según la cola. iOS limita cuántas
+/// actualizaciones acepta: se manda una cuando cambia el título, el estado o avanza al menos un punto.
+@MainActor
+final class DownloadLiveActivityController {
+    private var activity: Activity<DownloadActivityAttributes>?
+    private var last: DownloadActivityAttributes.ContentState?
+
+    func follow(_ downloads: Downloads) async {
+        for await items in downloads.makeUpdates() { await update(items) }
+    }
+
+    func update(_ items: [DownloadItem]) async {
+        let pending = items.filter { $0.state == .downloading || $0.state == .queued || $0.state == .paused }
+        guard !pending.isEmpty else { return await finish(items) }
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        let current = pending.first { $0.state == .downloading } ?? pending[0]
+        let written = pending.reduce(Int64(0)) { $0 + $1.writtenBytes }
+        let expected = pending.reduce(Int64(0)) { $0 + max($1.expectedBytes ?? 0, $1.writtenBytes) }
+        let state = DownloadActivityAttributes.ContentState(
+            title: current.subtitle.isEmpty ? current.title : "\(current.title) · \(current.subtitle)",
+            fraction: expected > 0 ? min(1, Double(written) / Double(expected)) : 0,
+            remaining: pending.count, waiting: !pending.contains { $0.state == .downloading })
+        if let last, last.title == state.title, last.remaining == state.remaining, last.waiting == state.waiting,
+           abs(last.fraction - state.fraction) < 0.01 { return }
+        last = state
+        let content = ActivityContent(state: state, staleDate: nil)
+        if let activity { await activity.update(content) }
+        else { activity = try? Activity.request(attributes: DownloadActivityAttributes(), content: content) }
+    }
+
+    /// Ya no hay nada bajando: la actividad dice «Listo» un momento y se va.
+    private func finish(_ items: [DownloadItem]) async {
+        guard let activity else { return }
+        let done = items.filter { $0.state == .done }.max { ($0.finishedAt ?? 0) < ($1.finishedAt ?? 0) }
+        let final = DownloadActivityAttributes.ContentState(title: done?.title ?? last?.title ?? "", fraction: 1, remaining: 0, waiting: false)
+        await activity.end(ActivityContent(state: final, staleDate: nil), dismissalPolicy: .default)
+        self.activity = nil; last = nil
+    }
+}
