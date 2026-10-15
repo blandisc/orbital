@@ -56,6 +56,7 @@ known-first-party = ["orbital"]
 
 [tool.pyright]
 include = ["orbital"]
+exclude = ["orbital/qrcodegen.py"]  # copia sin cambios de qrcodegen (Project Nayuki, MIT): sus tipos son suyos
 pythonVersion = "3.11"
 typeCheckingMode = "basic"
 reportAttributeAccessIssue = "warning"

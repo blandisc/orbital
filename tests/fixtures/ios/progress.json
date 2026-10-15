@@ -1,0 +1,291 @@
+[
+ {
+  "args": {
+   "duration": 3000,
+   "kind": "series",
+   "meta_id": "tt1",
+   "name": "Serie Original",
+   "next_video": "tt1:1:2",
+   "now": 1760000000.0,
+   "position": 600.5,
+   "poster": "https://p/x.jpg",
+   "video_id": "tt1:1:1",
+   "video_ids": [
+    "tt1:1:1",
+    "tt1:1:2",
+    "tt1:1:3"
+   ],
+   "watched": 120
+  },
+  "raw": null,
+  "result": {
+   "_ctime": "2025-10-09T08:53:20.000Z",
+   "_id": "tt1",
+   "_mtime": "2025-10-09T08:53:20.000Z",
+   "behaviorHints": {
+    "defaultVideoId": null,
+    "featuredVideoId": null,
+    "hasScheduledVideos": false
+   },
+   "name": "Serie Original",
+   "poster": "https://p/x.jpg",
+   "posterShape": "poster",
+   "removed": true,
+   "state": {
+    "duration": 3000000,
+    "flaggedWatched": 0,
+    "lastWatched": "2025-10-09T08:53:20.000Z",
+    "noNotif": false,
+    "overallTimeWatched": 120000,
+    "timeOffset": 600500,
+    "timeWatched": 120000,
+    "timesWatched": 0,
+    "video_id": "tt1:1:1"
+   },
+   "temp": true,
+   "type": "series"
+  }
+ },
+ {
+  "args": {
+   "duration": 3000,
+   "kind": "series",
+   "meta_id": "tt1",
+   "name": "Serie Original",
+   "next_video": "tt1:1:2",
+   "now": 1760000000.0,
+   "position": 2750,
+   "poster": "https://p/x.jpg",
+   "video_id": "tt1:1:1",
+   "video_ids": [
+    "tt1:1:1",
+    "tt1:1:2",
+    "tt1:1:3"
+   ],
+   "watched": 2700
+  },
+  "raw": null,
+  "result": {
+   "_ctime": "2025-10-09T08:53:20.000Z",
+   "_id": "tt1",
+   "_mtime": "2025-10-09T08:53:20.000Z",
+   "behaviorHints": {
+    "defaultVideoId": null,
+    "featuredVideoId": null,
+    "hasScheduledVideos": false
+   },
+   "name": "Serie Original",
+   "poster": "https://p/x.jpg",
+   "posterShape": "poster",
+   "removed": true,
+   "state": {
+    "duration": 0,
+    "flaggedWatched": 1,
+    "lastWatched": "2025-10-09T08:53:20.000Z",
+    "noNotif": false,
+    "overallTimeWatched": 2700000,
+    "timeOffset": 1,
+    "timeWatched": 0,
+    "timesWatched": 1,
+    "video_id": "tt1:1:2",
+    "watched": "tt1:1:1:1:eJxjBAAAAgAC"
+   },
+   "temp": true,
+   "type": "series"
+  }
+ },
+ {
+  "args": {
+   "duration": 3000,
+   "kind": "series",
+   "meta_id": "tt1",
+   "name": "Serie Original",
+   "next_video": null,
+   "now": 1760000000.0,
+   "position": 2800,
+   "poster": "https://p/x.jpg",
+   "video_id": "tt1:1:3",
+   "video_ids": [
+    "tt1:1:1",
+    "tt1:1:2",
+    "tt1:1:3"
+   ],
+   "watched": 2800
+  },
+  "raw": null,
+  "result": {
+   "_ctime": "2025-10-09T08:53:20.000Z",
+   "_id": "tt1",
+   "_mtime": "2025-10-09T08:53:20.000Z",
+   "behaviorHints": {
+    "defaultVideoId": null,
+    "featuredVideoId": null,
+    "hasScheduledVideos": false
+   },
+   "name": "Serie Original",
+   "poster": "https://p/x.jpg",
+   "posterShape": "poster",
+   "removed": true,
+   "state": {
+    "duration": 3000000,
+    "flaggedWatched": 1,
+    "lastWatched": "2025-10-09T08:53:20.000Z",
+    "noNotif": false,
+    "overallTimeWatched": 2800000,
+    "timeOffset": 0,
+    "timeWatched": 2800000,
+    "timesWatched": 1,
+    "video_id": "tt1:1:3",
+    "watched": "tt1:1:3:3:eJxjAQAABQAF"
+   },
+   "temp": true,
+   "type": "series"
+  }
+ },
+ {
+  "args": {
+   "duration": 3000,
+   "kind": "series",
+   "meta_id": "tt1",
+   "name": "Serie Original",
+   "next_video": "tt1:1:2",
+   "now": 1760000000.0,
+   "position": 900,
+   "poster": "https://p/x.jpg",
+   "video_id": "tt1:1:1",
+   "video_ids": [
+    "tt1:1:1",
+    "tt1:1:2",
+    "tt1:1:3"
+   ],
+   "watched": 30
+  },
+  "raw": {
+   "_ctime": "2025-10-09T08:53:20.000Z",
+   "_id": "tt1",
+   "_mtime": "2025-10-09T08:53:20.000Z",
+   "behaviorHints": {
+    "defaultVideoId": null,
+    "featuredVideoId": null,
+    "hasScheduledVideos": false
+   },
+   "name": "Serie Original",
+   "poster": "https://p/x.jpg",
+   "posterShape": "poster",
+   "removed": true,
+   "state": {
+    "duration": 3000000,
+    "flaggedWatched": 0,
+    "lastWatched": "2025-10-09T08:53:20.000Z",
+    "noNotif": false,
+    "overallTimeWatched": 60000,
+    "timeOffset": 60000,
+    "timeWatched": 60000,
+    "timesWatched": 0,
+    "video_id": "tt1:1:1"
+   },
+   "temp": true,
+   "type": "series"
+  },
+  "result": {
+   "_ctime": "2025-10-09T08:53:20.000Z",
+   "_id": "tt1",
+   "_mtime": "2025-10-09T08:53:20.000Z",
+   "behaviorHints": {
+    "defaultVideoId": null,
+    "featuredVideoId": null,
+    "hasScheduledVideos": false
+   },
+   "name": "Serie Original",
+   "poster": "https://p/x.jpg",
+   "posterShape": "poster",
+   "removed": true,
+   "state": {
+    "duration": 3000000,
+    "flaggedWatched": 0,
+    "lastWatched": "2025-10-09T08:53:20.000Z",
+    "noNotif": false,
+    "overallTimeWatched": 90000,
+    "timeOffset": 900000,
+    "timeWatched": 90000,
+    "timesWatched": 0,
+    "video_id": "tt1:1:1"
+   },
+   "temp": true,
+   "type": "series"
+  }
+ },
+ {
+  "args": {
+   "duration": 3000,
+   "kind": "series",
+   "meta_id": "tt1",
+   "name": "Serie Original",
+   "next_video": "tt1:1:3",
+   "now": 1760000000.0,
+   "position": 10,
+   "poster": "https://p/x.jpg",
+   "video_id": "tt1:1:2",
+   "video_ids": [
+    "tt1:1:1",
+    "tt1:1:2",
+    "tt1:1:3"
+   ],
+   "watched": 10
+  },
+  "raw": {
+   "_ctime": "2025-10-09T08:53:20.000Z",
+   "_id": "tt1",
+   "_mtime": "2025-10-09T08:53:20.000Z",
+   "behaviorHints": {
+    "defaultVideoId": null,
+    "featuredVideoId": null,
+    "hasScheduledVideos": false
+   },
+   "name": "Serie Original",
+   "poster": "https://p/x.jpg",
+   "posterShape": "poster",
+   "removed": true,
+   "state": {
+    "duration": 3000000,
+    "flaggedWatched": 0,
+    "lastWatched": "2025-10-09T08:53:20.000Z",
+    "noNotif": false,
+    "overallTimeWatched": 60000,
+    "timeOffset": 60000,
+    "timeWatched": 60000,
+    "timesWatched": 0,
+    "video_id": "tt1:1:1"
+   },
+   "temp": true,
+   "type": "series"
+  },
+  "result": {
+   "_ctime": "2025-10-09T08:53:20.000Z",
+   "_id": "tt1",
+   "_mtime": "2025-10-09T08:53:20.000Z",
+   "behaviorHints": {
+    "defaultVideoId": null,
+    "featuredVideoId": null,
+    "hasScheduledVideos": false
+   },
+   "name": "Serie Original",
+   "poster": "https://p/x.jpg",
+   "posterShape": "poster",
+   "removed": true,
+   "state": {
+    "duration": 3000000,
+    "flaggedWatched": 0,
+    "lastWatched": "2025-10-09T08:53:20.000Z",
+    "noNotif": false,
+    "overallTimeWatched": 70000,
+    "timeOffset": 10000,
+    "timeWatched": 10000,
+    "timesWatched": 0,
+    "video_id": "tt1:1:2"
+   },
+   "temp": true,
+   "type": "series"
+  }
+ }
+]

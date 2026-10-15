@@ -1,0 +1,349 @@
+{
+ "hashes": [
+  {
+   "addon_url": "https://t.example/manifest.json",
+   "index": 1380215506,
+   "stream": {
+    "name": "Torrentio\n4k DV | HDR",
+    "title": "Dune.Part.Two.2024.2160p.UHD.BluRay.REMUX.DV.HDR10.HEVC.TrueHD.Atmos-FraMeSToR\n👤 120 💾 58.4 GB ⚙️ ThePirateBay\nMulti Audio / 🇬🇧 / 🇪🇸",
+    "url": "https://rd.example/resolve/realdebrid/KEY/a"
+   }
+  },
+  {
+   "addon_url": "https://t.example/manifest.json",
+   "index": 268694603,
+   "stream": {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Dune Part Two 2024 1080p WEB-DL x265 Latino\n👤 300 💾 2,1 GB ⚙️ YTS\n🇲🇽",
+    "url": "https://rd.example/resolve/realdebrid/KEY/b"
+   }
+  },
+  {
+   "addon_url": "https://t.example/manifest.json",
+   "index": 1617175475,
+   "stream": {
+    "name": "Torrentio\n720p [RD download]",
+    "title": "Dune.Part.Two.2024.720p.HDCAM\n👤 12 💾 900 MB",
+    "url": "https://rd.example/resolve/realdebrid/KEY/c"
+   }
+  },
+  {
+   "addon_url": "https://t.example/manifest.json",
+   "index": 665418943,
+   "stream": {
+    "fileIdx": 2,
+    "infoHash": "abcdef0123456789abcdef0123456789abcdef01",
+    "name": "Torrentio\n1080p",
+    "title": "Dune 2024 1080p BluRay x264 DTS 5.1\n👤 5 💾 1.234,5 MB"
+   }
+  },
+  {
+   "addon_url": "https://t.example/manifest.json",
+   "index": 2034615559,
+   "stream": {
+    "behaviorHints": {
+     "bingeGroup": "otro-4k",
+     "filename": "Show.S01E01.2160p.mkv"
+    },
+    "description": "Show S01E01 2160p WEB-DL HDR10+ DDP5.1 Atmos\n💾 3.4 GB",
+    "name": "Otro\n4K",
+    "url": "https://x.example/v.mkv"
+   }
+  }
+ ],
+ "parsed": [
+  {
+   "result": {
+    "addon": "Torrentio",
+    "binge": null,
+    "cached": false,
+    "debrid": false,
+    "hdr": [
+     "DV",
+     "HDR"
+    ],
+    "languages": [
+     "en",
+     "es"
+    ],
+    "release": "Dune.Part.Two.2024.2160p.UHD.BluRay.REMUX.DV.HDR10.HEVC.TrueHD.Atmos-FraMeSToR",
+    "resolution": "4K",
+    "seeders": 120,
+    "site": "ThePirateBay",
+    "size": 58400000000,
+    "tags": [
+     "REMUX",
+     "BluRay",
+     "x265",
+     "Atmos"
+    ]
+   },
+   "stream": {
+    "name": "Torrentio\n4k DV | HDR",
+    "title": "Dune.Part.Two.2024.2160p.UHD.BluRay.REMUX.DV.HDR10.HEVC.TrueHD.Atmos-FraMeSToR\n👤 120 💾 58.4 GB ⚙️ ThePirateBay\nMulti Audio / 🇬🇧 / 🇪🇸",
+    "url": "https://rd.example/resolve/realdebrid/KEY/a"
+   }
+  },
+  {
+   "result": {
+    "addon": "Torrentio",
+    "binge": null,
+    "cached": true,
+    "debrid": true,
+    "hdr": [],
+    "languages": [
+     "es"
+    ],
+    "release": "Dune Part Two 2024 1080p WEB-DL x265 Latino",
+    "resolution": "1080p",
+    "seeders": 300,
+    "site": "YTS",
+    "size": 2100000000,
+    "tags": [
+     "WEB-DL",
+     "x265"
+    ]
+   },
+   "stream": {
+    "name": "Torrentio\n1080p [RD+]",
+    "title": "Dune Part Two 2024 1080p WEB-DL x265 Latino\n👤 300 💾 2,1 GB ⚙️ YTS\n🇲🇽",
+    "url": "https://rd.example/resolve/realdebrid/KEY/b"
+   }
+  },
+  {
+   "result": {
+    "addon": "Torrentio",
+    "binge": null,
+    "cached": false,
+    "debrid": true,
+    "hdr": [],
+    "languages": [
+     "en"
+    ],
+    "release": "Dune.Part.Two.2024.720p.HDCAM",
+    "resolution": "720p",
+    "seeders": 12,
+    "site": "",
+    "size": 900000000,
+    "tags": [
+     "CAM"
+    ]
+   },
+   "stream": {
+    "name": "Torrentio\n720p [RD download]",
+    "title": "Dune.Part.Two.2024.720p.HDCAM\n👤 12 💾 900 MB",
+    "url": "https://rd.example/resolve/realdebrid/KEY/c"
+   }
+  },
+  {
+   "result": {
+    "addon": "Torrentio",
+    "binge": null,
+    "cached": false,
+    "debrid": false,
+    "hdr": [],
+    "languages": [
+     "en"
+    ],
+    "release": "Dune 2024 1080p BluRay x264 DTS 5.1",
+    "resolution": "1080p",
+    "seeders": 5,
+    "site": "",
+    "size": 1234500000,
+    "tags": [
+     "BluRay",
+     "5.1"
+    ]
+   },
+   "stream": {
+    "fileIdx": 2,
+    "infoHash": "abcdef0123456789abcdef0123456789abcdef01",
+    "name": "Torrentio\n1080p",
+    "title": "Dune 2024 1080p BluRay x264 DTS 5.1\n👤 5 💾 1.234,5 MB"
+   }
+  },
+  {
+   "result": {
+    "addon": "Torrentio",
+    "binge": "otro-4k",
+    "cached": false,
+    "debrid": false,
+    "hdr": [
+     "HDR10+"
+    ],
+    "languages": [
+     "en"
+    ],
+    "release": "Show S01E01 2160p WEB-DL HDR10+ DDP5.1 Atmos",
+    "resolution": "4K",
+    "seeders": 0,
+    "site": "",
+    "size": 3400000000,
+    "tags": [
+     "WEB-DL",
+     "Atmos",
+     "5.1"
+    ]
+   },
+   "stream": {
+    "behaviorHints": {
+     "bingeGroup": "otro-4k",
+     "filename": "Show.S01E01.2160p.mkv"
+    },
+    "description": "Show S01E01 2160p WEB-DL HDR10+ DDP5.1 Atmos\n💾 3.4 GB",
+    "name": "Otro\n4K",
+    "url": "https://x.example/v.mkv"
+   }
+  }
+ ],
+ "ranked": [
+  {
+   "audio": "es",
+   "kind": "movie",
+   "order": [
+    1,
+    0,
+    3,
+    4,
+    2
+   ],
+   "quality": "1080p",
+   "scores": {
+    "0": 272.0,
+    "1": 1530.0,
+    "2": -2898.8,
+    "3": -399.5,
+    "4": -460.0
+   }
+  },
+  {
+   "audio": "es",
+   "kind": "series",
+   "order": [
+    1,
+    0,
+    3,
+    4,
+    2
+   ],
+   "quality": "1080p",
+   "scores": {
+    "0": 122.0,
+    "1": 1530.0,
+    "2": -2898.8,
+    "3": -399.5,
+    "4": -460.0
+   }
+  },
+  {
+   "audio": "en",
+   "kind": "movie",
+   "order": [
+    1,
+    4,
+    3,
+    0,
+    2
+   ],
+   "quality": "4K",
+   "scores": {
+    "0": 332.0,
+    "1": 530.0,
+    "2": -2058.8,
+    "3": 400.5,
+    "4": 500.0
+   }
+  },
+  {
+   "audio": "en",
+   "kind": "series",
+   "order": [
+    1,
+    4,
+    3,
+    0,
+    2
+   ],
+   "quality": "4K",
+   "scores": {
+    "0": 182.0,
+    "1": 530.0,
+    "2": -2058.8,
+    "3": 400.5,
+    "4": 500.0
+   }
+  },
+  {
+   "audio": "en",
+   "kind": "movie",
+   "order": [
+    1,
+    3,
+    4,
+    0,
+    2
+   ],
+   "quality": "1080p",
+   "scores": {
+    "0": 272.0,
+    "1": 630.0,
+    "2": -1998.8,
+    "3": 500.5,
+    "4": 440.0
+   }
+  },
+  {
+   "audio": "en",
+   "kind": "series",
+   "order": [
+    1,
+    3,
+    4,
+    0,
+    2
+   ],
+   "quality": "1080p",
+   "scores": {
+    "0": 122.0,
+    "1": 630.0,
+    "2": -1998.8,
+    "3": 500.5,
+    "4": 440.0
+   }
+  }
+ ],
+ "sizes": [
+  {
+   "text": "1,5",
+   "value": 1.5
+  },
+  {
+   "text": "1.5",
+   "value": 1.5
+  },
+  {
+   "text": "1,234.5",
+   "value": 1234.5
+  },
+  {
+   "text": "1.234,5",
+   "value": 1234.5
+  },
+  {
+   "text": "0,750",
+   "value": 0.75
+  },
+  {
+   "text": "1.234.567",
+   "value": 1234567.0
+  },
+  {
+   "text": "abc",
+   "value": 0.0
+  },
+  {
+   "text": "2,5",
+   "value": 2.5
+  }
+ ]
+}
