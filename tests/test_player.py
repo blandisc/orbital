@@ -578,3 +578,22 @@ def test_the_player_with_a_keyboard_shows_keys_and_esc_asks_first():
     assert ("quit",) in mpv.sent
     p.press("a")  # el mando: otra vez sus glifos
     assert not player_ui.KEYBOARD
+
+
+def test_keyboard_glyphs_never_overlap_their_label():
+    """«Espacio» es más ancho que el círculo del mando: el botón crece y el texto empieza después del glifo."""
+    import re as _re
+
+    from orbital import player_ui
+
+    player_ui.set_input("keyboard")
+    try:
+        key_w = player_ui.glyph(0, 0, "A", 30)[1]
+        for ass, label in ((player_ui.buttons([("A", "Continuar")], 96, 800), "Continuar"), (player_ui.skip_ass("Saltar intro"), "Saltar intro")):
+            def x_of(word, ass=ass):
+                line = next(ln for ln in ass.splitlines() if ln.endswith(word))
+                return float(_re.search(r"pos\(([\d.]+),", line).group(1))
+            # «Espacio» va centrado en su tecla; el texto empieza después del borde derecho de la tecla.
+            assert x_of(label) >= x_of("Espacio") + key_w / 2
+    finally:
+        player_ui.set_input("gamepad")
