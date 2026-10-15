@@ -6,3 +6,9 @@ build/
 dist/
 .pytest_cache/
 config.yaml
+
+# Swift
+ios/**/.build/
+ios/**/.swiftpm/
+ios/**/*.xcodeproj
+ios/App/Build/

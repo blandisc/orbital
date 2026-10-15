@@ -210,6 +210,10 @@ class ForYou:
     def _key(self, name: str) -> str:
         return (self.catalog.credentials.get(KEY_PREFIX + name) or "") or getattr(self.settings, name)
 
+    def key(self, name: str) -> str:
+        """La clave vigente (la escrita en la TV o la de config.yaml): también se la lleva la app del iPhone."""
+        return self._key(name)
+
     def _build(self) -> None:
         self.trakt = trakt_api.Trakt(self._key("trakt_client_id"), self._key("trakt_client_secret"), self.catalog.credentials)
         self.tmdb = tmdb_api.Tmdb(self._key("tmdb_key"))

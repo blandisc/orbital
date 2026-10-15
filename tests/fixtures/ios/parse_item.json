@@ -1,0 +1,151 @@
+[
+ {
+  "raw": {
+   "_id": "tt1",
+   "name": "Uno",
+   "poster": "http://p",
+   "state": {
+    "duration": 4000,
+    "lastWatched": "2025-01-02T03:04:05.000Z",
+    "timeOffset": 1000,
+    "video_id": "tt1:2:5"
+   },
+   "type": "series"
+  },
+  "result": {
+   "duration": 4000,
+   "episode": 5,
+   "id": "tt1",
+   "in_continue": true,
+   "in_library": true,
+   "last_watched": 1735787045.0,
+   "name": "Uno",
+   "poster": "http://p",
+   "progress": 0.25,
+   "season": 2,
+   "time_offset": 1000,
+   "type": "series",
+   "video_id": "tt1:2:5"
+  }
+ },
+ {
+  "raw": {
+   "_id": "tt2",
+   "name": 1917,
+   "state": {},
+   "type": "movie"
+  },
+  "result": {
+   "duration": 0,
+   "episode": null,
+   "id": "tt2",
+   "in_continue": false,
+   "in_library": true,
+   "last_watched": null,
+   "name": "1917",
+   "poster": null,
+   "progress": null,
+   "season": null,
+   "time_offset": 0,
+   "type": "movie",
+   "video_id": null
+  }
+ },
+ {
+  "raw": {
+   "_id": "tt3",
+   "name": "Quitada",
+   "removed": true,
+   "temp": false,
+   "type": "movie"
+  },
+  "result": null
+ },
+ {
+  "raw": {
+   "_id": "tt4",
+   "name": "Temp",
+   "removed": true,
+   "state": {
+    "timeOffset": 5,
+    "video_id": "tt4"
+   },
+   "temp": true,
+   "type": "movie"
+  },
+  "result": {
+   "duration": 0,
+   "episode": null,
+   "id": "tt4",
+   "in_continue": true,
+   "in_library": false,
+   "last_watched": null,
+   "name": "Temp",
+   "poster": null,
+   "progress": null,
+   "season": null,
+   "time_offset": 5,
+   "type": "movie",
+   "video_id": "tt4"
+  }
+ },
+ {
+  "raw": {
+   "_id": "kitsu:1",
+   "name": "Anime",
+   "state": {
+    "duration": 0,
+    "timeOffset": 1,
+    "video_id": "kitsu:1:7"
+   },
+   "type": "series"
+  },
+  "result": {
+   "duration": 0,
+   "episode": 7,
+   "id": "kitsu:1",
+   "in_continue": true,
+   "in_library": true,
+   "last_watched": null,
+   "name": "Anime",
+   "poster": null,
+   "progress": null,
+   "season": null,
+   "time_offset": 1,
+   "type": "series",
+   "video_id": "kitsu:1:7"
+  }
+ },
+ {
+  "raw": {
+   "_id": "",
+   "name": "sin id"
+  },
+  "result": null
+ },
+ {
+  "raw": {
+   "_id": "other",
+   "name": "Otro",
+   "state": {
+    "timeOffset": 10
+   },
+   "type": "other"
+  },
+  "result": {
+   "duration": 0,
+   "episode": null,
+   "id": "other",
+   "in_continue": false,
+   "in_library": true,
+   "last_watched": null,
+   "name": "Otro",
+   "poster": null,
+   "progress": null,
+   "season": null,
+   "time_offset": 10,
+   "type": "other",
+   "video_id": null
+  }
+ }
+]

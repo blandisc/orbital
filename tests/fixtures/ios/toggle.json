@@ -1,0 +1,132 @@
+[
+ {
+  "add": true,
+  "args": {
+   "kind": "movie",
+   "meta_id": "tt9",
+   "name": "Peli",
+   "now": 1760000000.0,
+   "poster": null
+  },
+  "raw": null,
+  "result": {
+   "_ctime": "2025-10-09T08:53:20.000Z",
+   "_id": "tt9",
+   "_mtime": "2025-10-09T08:53:20.000Z",
+   "behaviorHints": {
+    "defaultVideoId": null,
+    "featuredVideoId": null,
+    "hasScheduledVideos": false
+   },
+   "name": "Peli",
+   "poster": null,
+   "posterShape": "poster",
+   "removed": false,
+   "state": {},
+   "temp": false,
+   "type": "movie"
+  }
+ },
+ {
+  "add": false,
+  "args": {
+   "kind": "movie",
+   "meta_id": "tt9",
+   "name": "Peli",
+   "now": 1760000000.0,
+   "poster": null
+  },
+  "raw": {
+   "_ctime": "2025-10-09T08:53:20.000Z",
+   "_id": "tt9",
+   "_mtime": "2025-10-09T08:53:20.000Z",
+   "behaviorHints": {
+    "defaultVideoId": null,
+    "featuredVideoId": null,
+    "hasScheduledVideos": false
+   },
+   "name": "Peli",
+   "poster": null,
+   "posterShape": "poster",
+   "removed": false,
+   "state": {},
+   "temp": false,
+   "type": "movie"
+  },
+  "result": {
+   "_ctime": "2025-10-09T08:53:20.000Z",
+   "_id": "tt9",
+   "_mtime": "2025-10-09T08:53:20.000Z",
+   "behaviorHints": {
+    "defaultVideoId": null,
+    "featuredVideoId": null,
+    "hasScheduledVideos": false
+   },
+   "name": "Peli",
+   "poster": null,
+   "posterShape": "poster",
+   "removed": true,
+   "state": {},
+   "temp": false,
+   "type": "movie"
+  }
+ },
+ {
+  "dismiss_input": {
+   "_ctime": "2025-10-09T08:53:20.000Z",
+   "_id": "tt9",
+   "_mtime": "2025-10-09T08:53:20.000Z",
+   "behaviorHints": {
+    "defaultVideoId": null,
+    "featuredVideoId": null,
+    "hasScheduledVideos": false
+   },
+   "name": "Peli",
+   "poster": null,
+   "posterShape": "poster",
+   "removed": false,
+   "state": {
+    "timeOffset": 5000
+   },
+   "temp": false,
+   "type": "movie"
+  },
+  "now": 1760000000.0,
+  "raw": {
+   "_ctime": "2025-10-09T08:53:20.000Z",
+   "_id": "tt9",
+   "_mtime": "2025-10-09T08:53:20.000Z",
+   "behaviorHints": {
+    "defaultVideoId": null,
+    "featuredVideoId": null,
+    "hasScheduledVideos": false
+   },
+   "name": "Peli",
+   "poster": null,
+   "posterShape": "poster",
+   "removed": false,
+   "state": {},
+   "temp": false,
+   "type": "movie"
+  },
+  "result": {
+   "_ctime": "2025-10-09T08:53:20.000Z",
+   "_id": "tt9",
+   "_mtime": "2025-10-09T08:53:20.000Z",
+   "behaviorHints": {
+    "defaultVideoId": null,
+    "featuredVideoId": null,
+    "hasScheduledVideos": false
+   },
+   "name": "Peli",
+   "poster": null,
+   "posterShape": "poster",
+   "removed": false,
+   "state": {
+    "timeOffset": 0
+   },
+   "temp": false,
+   "type": "movie"
+  }
+ }
+]
