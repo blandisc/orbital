@@ -95,6 +95,7 @@ letras que bajan: g, p, j, y).
 | `foryou-mosaic` | Mosaico de Para ti: columnas de imágenes; la enfocada crece y enseña etiqueta, logo y un dato; bajar sube todo (cascada) y quieto ~30 s entra en ambiente. Ícono de esquina: la consola del juego, o serie / película. |
 | `foryou-lists` | Listas de Para ti, con las mismas piezas que Juegos (`rail`, `browse`, `detail-panel`): tus listas en el riel (Trakt, plataformas con su logo de TMDB, juegos de RAWG), Series · Películas en las grandes, portadas y la ficha de lo enfocado. Una lista que explica algo (Conectar Trakt) lleva su botón, enfocable. |
 | `trakt-link` | Conectar Trakt: un código grande para escribir en trakt.tv/activate desde el celular. |
+| `phone-link` | Conectar iPhone: un QR para la cámara del iPhone (la dirección del túnel y el token van dentro de la imagen, nunca en texto). |
 | `home` | Inicio: saludo, destacado, tarjetas anchas y Tus consolas. |
 | `games` | Juegos: tus consolas en el riel (cruceta o LT/RT), encabezado de consola, filtros y cuadrícula; la ficha del juego enfocado. Armado con `rail`, `browse` y `detail-panel`. |
 | `rail` | Riel lateral de una vista con secciones (consolas, listas): casillas con foto, logo de marca o ícono; RePág/AvPág arriba y abajo; grupos con su nombre. **Al enfocarlo se abre como pestaña** y enseña el nombre y un dato de cada sección; lo de atrás se aparta. |

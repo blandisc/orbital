@@ -28,6 +28,7 @@ struct SettingsView: View {
                 Button("Cerrar sesión", role: .destructive) { confirmSignOut = true }
             }
             .listRowBackground(DS.fill)
+            orbitalSection(model)
             addons
             traktSection(model)
             Section("Idioma") {
@@ -58,7 +59,6 @@ struct SettingsView: View {
                 Toggle("Abrir siempre en Infuse", isOn: Binding(get: { s.preferInfuse }, set: { v in model.update { $0.preferInfuse = v } }))
             }
             .listRowBackground(DS.fill)
-            orbitalSection(model)
             Section("Sugerencias") {
                 Picker("País (para lo popular en plataformas)", selection: Binding(get: { s.region }, set: { v in model.update { $0.region = v } })) {
                     ForEach(["MX", "US", "ES", "AR", "CO", "CL", "PE"], id: \.self) { Text(verbatim: env.uiLocale.localizedString(forRegionCode: $0) ?? $0).tag($0) }
@@ -108,29 +108,39 @@ struct SettingsView: View {
     }
 
     @ViewBuilder private func orbitalSection(_ model: SettingsModel) -> some View {
+        let connected = env.services.orbital.isConfigured
         Section {
-            TextField("Dirección (orbital.tudominio.com)", text: Binding(get: { model.settings.orbitalAddress }, set: { v in model.update { $0.orbitalAddress = v.trimmingCharacters(in: .whitespaces) } }))
-                .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL).textContentType(.URL)
-            SecureField(LocalizedStringKey(model.hasOrbitalToken ? "Token guardado" : "Token (el mismo de Alexa)"), text: $orbitalToken)
-                .textInputAutocapitalization(.never).autocorrectionDisabled()
-            if !orbitalToken.isEmpty { Button("Guardar token") { model.setOrbitalToken(orbitalToken); orbitalToken = ""; Task { await model.checkOrbital() } } }
-            if !model.settings.orbitalAddress.isEmpty && model.hasOrbitalToken {
+            if connected {
+                Label {
+                    Text("Conectada a \(env.services.orbital.base?.host ?? "")")
+                } icon: { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good) }
                 Button { Task { await model.checkOrbital() } } label: {
-                    HStack {
-                        Text("Probar conexión")
-                        Spacer()
-                        if model.checkingOrbital { ProgressView() }
-                        else if model.orbitalCheck == "" { Label("Conectada", systemImage: "checkmark.circle.fill").foregroundStyle(DS.good) }
-                    }
+                    HStack { Text("Probar conexión"); Spacer(); if model.checkingOrbital { ProgressView() } }
                 }
                 if let problem = model.orbitalCheck, !problem.isEmpty { Text(LocalizedStringKey(problem)).font(DS.font(.sm)).foregroundStyle(DS.danger) }
                 if !model.importedFromOrbital.isEmpty {
                     Label("Traje de tu Orbital: \(imported(model)). No hay que escribirlo aquí.", systemImage: "arrow.down.doc")
                         .font(DS.font(.sm)).foregroundStyle(DS.good)
                 }
+            } else {
+                // Lo fácil primero: un código en la TV, la cámara del iPhone y listo.
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
+                    Label("En la TV: Ajustes › Cuentas › iPhone", systemImage: "qrcode").font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text)
+                    Text("Aparece un código. Apúntale con la cámara del iPhone y toca «Abrir en Orbital»: queda conectada, sin escribir nada.")
+                        .font(DS.font(.sm)).foregroundStyle(DS.textMuted)
+                }
+                .padding(.vertical, DS.Space.s1)
             }
+            DisclosureGroup(connected ? "Cambiar a mano" : "Conectar a mano") {
+                TextField("Dirección (orbital.tudominio.com)", text: Binding(get: { model.settings.orbitalAddress }, set: { v in model.update { $0.orbitalAddress = v.trimmingCharacters(in: .whitespaces) } }))
+                    .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL).textContentType(.URL)
+                SecureField(LocalizedStringKey(model.hasOrbitalToken ? "Token guardado" : "Token (el mismo de Alexa)"), text: $orbitalToken)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                if !orbitalToken.isEmpty { Button("Guardar token") { model.setOrbitalToken(orbitalToken); orbitalToken = ""; Task { await model.checkOrbital() } } }
+            }
+            .font(DS.font(.sm)).foregroundStyle(DS.textMuted)
         } header: { Text("Tu Orbital (la TV)") } footer: {
-            Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y las claves de TMDB y Trakt se toman de ella. Usa la dirección del túnel de Alexa y su token.")
+            Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y tu Trakt y las claves de Para ti salen de ella.")
         }
         .listRowBackground(DS.fill)
     }
@@ -140,7 +150,7 @@ struct SettingsView: View {
         Section("Trakt") {
             switch model.trakt {
             case .off:
-                Text("Crea una aplicación en developer.trakt.tv y pega aquí su Client ID (las nuevas ya no dan secreto).").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
+                Text("Conecta tu Orbital (arriba) y Trakt se configura solo. Si no, crea una aplicación en developer.trakt.tv y pega aquí su Client ID.").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
                 TextField("Client ID de tu aplicación de Trakt", text: Binding(get: { model.settings.traktClientID }, set: { v in model.update { $0.traktClientID = v.trimmingCharacters(in: .whitespaces) } }))
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 DisclosureGroup("Aplicación anterior (con secreto)") {
@@ -160,7 +170,12 @@ struct SettingsView: View {
                 Button("Cancelar", role: .cancel) { model.cancelLinking() }
             case .linked(let name):
                 (name.isEmpty ? Label("Trakt conectado", systemImage: "checkmark.seal") : Label("Trakt: \(name)", systemImage: "checkmark.seal"))
-                Button("Desconectar Trakt", role: .destructive) { Task { await model.unlinkTrakt() } }
+                if env.services.trakt?.borrowed == true {
+                    Text("Con la sesión de tu Orbital: no hay nada que conectar aquí.").font(DS.font(.xs)).foregroundStyle(DS.textFaint)
+                    Button("Dejar de usar Trakt en el iPhone", role: .destructive) { Task { await model.unlinkTrakt() } }
+                } else {
+                    Button("Desconectar Trakt", role: .destructive) { Task { await model.unlinkTrakt() } }
+                }
             case .failed(let message):
                 DSNotice(text: LocalizedStringKey(message), tone: .error)
                 Button("Volver a intentar") { Task { await model.linkTrakt() } }

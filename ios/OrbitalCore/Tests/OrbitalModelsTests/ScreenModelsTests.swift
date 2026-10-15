@@ -313,6 +313,17 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(model.importedFromOrbital, [])
     }
 
+    func testConnectingTheTVBringsItsTraktSessionSoThereIsNothingToLink() async throws {
+        let rig = try ServicesRig()
+        rig.http.json["https://legion.example/api/ping"] = ["ok": true]
+        rig.http.json["https://legion.example/api/companion"] = ["tmdb_key": "k", "trakt_client_id": "cid", "region": "MX",
+                                                                 "trakt_session": ["access_token": "AT", "expires_at": 1_760_100_000]]
+        let got = try await rig.services.connectOrbital(address: "https://legion.example", token: "secreto")
+        XCTAssertEqual(got, ["TMDB", "Trakt"])
+        XCTAssertEqual(rig.services.trakt?.linked, true, "Trakt queda conectado con la sesión de la consola")
+        XCTAssertEqual(rig.services.trakt?.borrowed, true)
+    }
+
     // MARK: ajustes y Trakt
     func testSettingsPersistAndTMDBKeyGoesToTheKeychain() async throws {
         let rig = try ServicesRig()

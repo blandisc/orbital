@@ -355,7 +355,7 @@ export function settingsMenu() {
     title: "Ajustes",
     options: [
       ...Object.entries(SETTING_PAGES).map(([page, def]) => ({ icon: def.icon, label: def.title, command: { type: "settings", page } })),
-      { icon: "account", label: "Cuentas", hint: "Stremio y Trakt", command: { type: "settings", page: "accounts" } },
+      { icon: "account", label: "Cuentas", hint: "Stremio, Trakt y tu iPhone", command: { type: "settings", page: "accounts" } },
       { icon: "wrench", label: "Mantenimiento", hint: "Revisar, carpetas, actualizar", command: { type: "settings", page: "maintenance" } },
     ],
   };
@@ -480,6 +480,8 @@ export function settingsPage(page, settings) {
         settings.trakt?.configured && { icon: "spark", label: "Trakt", value: settings.trakt.linked ? "Conectada" : "Conectar",
           command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
           hint: settings.trakt.linked ? "Tus listas en Para ti" : "Tus listas y recomendaciones en Para ti" },
+        { icon: "phone", label: "iPhone", value: "Conectar", command: { type: "phone-link" },
+          hint: "Escanea un código con la cámara: la app queda conectada" },
       ].filter(Boolean),
     };
   }

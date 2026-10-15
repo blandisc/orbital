@@ -251,7 +251,8 @@ def test_public_app_shares_para_ti_keys_with_the_iphone_but_never_the_secret(pub
     cfg.para_ti.tmdb_key, cfg.para_ti.trakt_client_id, cfg.para_ti.trakt_client_secret = "tmdb123", "cid456", "secreto-de-trakt"
     assert client.get("/api/companion").status_code == 401
     got = client.get("/api/companion", headers={"Authorization": "Bearer secreto"}).json()
-    assert got == {"tmdb_key": "tmdb123", "trakt_client_id": "cid456", "region": cfg.para_ti.region}
+    assert {k: got[k] for k in ("tmdb_key", "trakt_client_id", "region")} == {"tmdb_key": "tmdb123", "trakt_client_id": "cid456", "region": cfg.para_ti.region}
+    assert got["trakt_session"] is None  # Trakt sin conectar en la consola: no hay sesión que prestar
     assert "secreto-de-trakt" not in str(got)
 
 

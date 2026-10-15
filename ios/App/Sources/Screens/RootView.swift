@@ -39,7 +39,11 @@ struct RootView: View {
             Button("No", role: .cancel) { env.askFinished = nil }
         } message: { Text("Infuse no dice cuánto dura, así que no sé si llegaste al final.") }
         .overlay(alignment: .bottom) { BannerView() }
-        .task { _ = await env.services.watch.flushPending() }
+        .task {
+            _ = await env.services.watch.flushPending()
+            // Con tu Orbital conectada: lo nuevo de la consola (otra clave, Trakt recién conectado allá) llega solo.
+            if env.services.orbital.isConfigured { _ = try? await env.services.connectOrbital() }
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { _ = await env.services.watch.flushPending() } }
         }

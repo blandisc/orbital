@@ -38,6 +38,12 @@ public struct DeviceCode: Sendable, Equatable {
     public var interval: TimeInterval, expiresAt: Date
 }
 
+/// Una sesión de Trakt que presta tu Orbital (sin refresh token).
+public struct BorrowedSession: Sendable, Equatable {
+    public var accessToken: String, expiresAt: Double
+    public init(accessToken: String, expiresAt: Double) { self.accessToken = accessToken; self.expiresAt = expiresAt }
+}
+
 public enum DeviceStatus: Sendable, Equatable { case linked, pending, slow, expired, denied, invalid }
 
 /// Lo que se avisa a Trakt de lo que reproduces.
@@ -112,11 +118,15 @@ public actor Trakt {
     private let clock: @Sendable () -> Date
     private let pause: @Sendable (TimeInterval) async -> Void
     private var lastWrite = Date.distantPast
+    /// La sesión prestada por tu Orbital: cuando caduca se le pide otra (la renueva la consola, no el iPhone).
+    private let borrow: (@Sendable () async -> BorrowedSession?)?
 
     public init(http: HTTPClient, secrets: SecretsStore, clientID: String, clientSecret: String = "",
                 clock: @escaping @Sendable () -> Date = { Date() },
-                pause: @escaping @Sendable (TimeInterval) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }) {
+                pause: @escaping @Sendable (TimeInterval) async -> Void = { try? await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) },
+                borrow: (@Sendable () async -> BorrowedSession?)? = nil) {
         self.http = http; self.secrets = secrets; self.clientID = clientID; self.clientSecret = clientSecret; self.clock = clock; self.pause = pause
+        self.borrow = borrow
     }
 
     static func isIMDb(_ id: String) -> Bool { id.range(of: #"^tt[0-9]{1,12}$"#, options: .regularExpression) != nil }
@@ -126,6 +136,15 @@ public actor Trakt {
     public nonisolated var linked: Bool { tokens() != nil }
 
     private struct Tokens: Codable { var access_token: String; var refresh_token: String?; var expires_at: Double }
+
+    /// La sesión es la de tu Orbital (sin la parte que la renueva): desconectar aquí no la toca en la consola.
+    public nonisolated var borrowed: Bool { tokens().map { ($0.refresh_token ?? "").isEmpty } ?? false }
+
+    /// Usa la sesión de Trakt de tu Orbital (sin conectar nada en el iPhone).
+    public nonisolated func adopt(_ session: BorrowedSession) {
+        let tokens = Tokens(access_token: session.accessToken, refresh_token: nil, expires_at: session.expiresAt)
+        secrets.set(SecretKey.traktTokens, (try? JSONEncoder().encode(tokens)).flatMap { String(data: $0, encoding: .utf8) })
+    }
 
     private nonisolated func tokens() -> Tokens? {
         guard let raw = secrets.get(SecretKey.traktTokens), let data = raw.data(using: .utf8),
@@ -147,6 +166,8 @@ public actor Trakt {
     public func unlink() async {
         guard let tokens = tokens() else { return }
         secrets.set(SecretKey.traktTokens, nil)
+        // Prestada por tu Orbital: solo se olvida aquí (revocarla desconectaría también la consola).
+        if (tokens.refresh_token ?? "").isEmpty { return }
         // Que la sesión deje de servir también en Trakt (si no hay internet, da igual).
         _ = try? await call("POST", "/oauth/revoke", body: obj(["token": .string(tokens.access_token), "client_id": .string(clientID)], secretField()), auth: false)
     }
@@ -198,7 +219,11 @@ public actor Trakt {
 
     private func access() async throws -> String {
         guard var tokens = tokens() else { throw TraktError.auth("Conecta tu cuenta de Trakt en Ajustes.") }
-        if tokens.refresh_token != nil, clock().timeIntervalSince1970 > tokens.expires_at - 3600 { tokens = try await refresh(tokens) }
+        let expiring = clock().timeIntervalSince1970 > tokens.expires_at - 3600
+        if !(tokens.refresh_token ?? "").isEmpty, expiring { tokens = try await refresh(tokens) }
+        else if expiring, let borrow, let fresh = await borrow(), fresh.expiresAt > tokens.expires_at || fresh.accessToken != tokens.access_token {
+            adopt(fresh); tokens = self.tokens() ?? tokens   // tu Orbital ya la renovó
+        }
         return tokens.access_token
     }
 

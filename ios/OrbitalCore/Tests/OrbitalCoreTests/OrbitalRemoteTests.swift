@@ -31,4 +31,20 @@ final class OrbitalRemoteTests: XCTestCase {
         XCTAssertFalse(empty.isConfigured)
         do { try await empty.play(kind: "movie", metaID: "tt1", videoID: nil, title: "x"); XCTFail() } catch { XCTAssertEqual(error as? OrbitalRemote.Failure, .notConfigured) }
     }
+
+    func testTheTVsQRCodeConnectsWithoutTyping() {
+        let pair = OrbitalRemote.pairing(URL(string: "orbital-ios://pair?u=https%3A%2F%2Flegion.tail1.ts.net&t=abc%2B1")!)
+        XCTAssertEqual(pair?.address, "https://legion.tail1.ts.net")
+        XCTAssertEqual(pair?.token, "abc+1")
+        XCTAssertNil(OrbitalRemote.pairing(URL(string: "orbital-ios://infuse-done?x=1")!))
+        XCTAssertNil(OrbitalRemote.pairing(URL(string: "orbital-ios://pair?u=&t=x")!))
+    }
+
+    func testKeysCarryTheConsolesTraktSession() async throws {
+        let http = FakeHTTP()
+        http.json["https://tv.example/api/companion"] = ["tmdb_key": "k", "trakt_client_id": "c", "region": "MX",
+                                                         "trakt_session": ["access_token": "AT", "expires_at": 1_760_100_000]]
+        let keys = try await OrbitalRemote(http: http, address: "tv.example", token: "x").keys()
+        XCTAssertEqual(keys.traktSession, BorrowedSession(accessToken: "AT", expiresAt: 1_760_100_000))
+    }
 }

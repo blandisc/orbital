@@ -72,19 +72,12 @@ public final class SettingsModel: ObservableModel {
     /// Lo que se trajo de tu Orbital la última vez («TMDB y Trakt»), para decirlo en Ajustes.
     public private(set) var importedFromOrbital: [String] = [] { didSet { changed() } }
 
-    /// Trae de tu Orbital la clave de TMDB, la aplicación de Trakt y el país, sin pisar lo que ya escribiste aquí.
+    /// Trae de tu Orbital la clave de TMDB, la aplicación y la sesión de Trakt y el país, sin pisar lo que ya escribiste aquí.
     public func importFromOrbital() async {
-        guard let keys = try? await services.orbital.keys() else { return }
-        var got: [String] = []
-        if !keys.tmdbKey.isEmpty, (services.secrets.get(SecretKey.tmdbKey) ?? "").isEmpty {
-            services.secrets.set(SecretKey.tmdbKey, keys.tmdbKey); hasTMDBKey = true; got.append("TMDB")
-        }
-        if !keys.traktClientID.isEmpty, settings.traktClientID.isEmpty {
-            update { $0.traktClientID = keys.traktClientID }; got.append("Trakt")
-        }
-        if keys.region.count == 2, settings.region != keys.region { update { $0.region = keys.region } }
+        guard let got = try? await services.connectOrbital() else { return }
         importedFromOrbital = got
-        services.reconfigure()
+        settings = services.appSettings
+        hasTMDBKey = !(services.secrets.get(SecretKey.tmdbKey) ?? "").isEmpty
         trakt = computeTraktState()
     }
 

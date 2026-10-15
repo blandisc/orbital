@@ -60,7 +60,7 @@ final class AppEnvironment: ObservableObject {
         // Modo demostración: nada toca tu Keychain, tus ajustes ni tus descargas.
         if Demo.isOn {
             let kv = InMemoryKeyValueStore()
-            SettingsStore(kv).update { if let language = Demo.language { $0.uiLanguage = language }; $0.orbitalAddress = "tv.demo.invalid" }
+            SettingsStore(kv).update { if let language = Demo.language { $0.uiLanguage = language }; if !Demo.noTV { $0.orbitalAddress = "tv.demo.invalid" } }
             return Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),
                             downloadTransport: transport, downloadsRoot: FileManager.default.temporaryDirectory.appendingPathComponent("demo-downloads"),
                             freeSpace: { DiskSpace.freeBytes() })
@@ -99,6 +99,8 @@ final class AppEnvironment: ObservableObject {
 
     /// Infuse volvió (`orbital-ios://infuse-done?...`): se guarda dónde te quedaste. Infuse ya avisa a Trakt por su cuenta.
     func handle(url: URL) async {
+        // El QR de «Conectar iPhone» en la TV: queda conectada sin escribir nada.
+        if let pair = OrbitalRemote.pairing(url) { return await pairWithOrbital(address: pair.address, token: pair.token) }
         guard let result = Infuse.parseCallback(url) else { return }
         defer { external = nil; watchedSomething += 1 }
         guard let session = external else { return }
@@ -123,6 +125,14 @@ final class AppEnvironment: ObservableObject {
                                   position: 1, duration: 1, watched: 0, at: Date().timeIntervalSince1970)
         await services.watch.report(event, phase: .stopped(finished: true), scrobbleToTrakt: false)
         askFinished = nil
+    }
+
+    func pairWithOrbital(address: String, token: String) async {
+        do {
+            let got = try await services.connectOrbital(address: address, token: token)
+            let brought = got.joined(separator: services.appSettings.uiLanguage == "en" ? " and " : " y ")
+            notify(got.isEmpty ? "Conectado con tu Orbital." : "Conectado con tu Orbital: \(brought) ya están aquí.", tone: .success)
+        } catch { notify((error as? OrbitalRemote.Failure)?.description ?? "\(error)") }
     }
 
     /// «Ver en la TV»: tu Orbital pone el título (la fuente recomendada, donde ibas; el avance vive en Stremio).

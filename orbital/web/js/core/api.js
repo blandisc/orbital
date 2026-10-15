@@ -81,6 +81,8 @@ export const api = {
   traktLink: () => post("/api/foryou/trakt/link"),
   traktCancel: () => post("/api/foryou/trakt/cancel"),
   traktUnlink: () => post("/api/foryou/trakt/unlink"),
+  // La app del iPhone
+  companionPair: () => request("/api/companion/pair"),
   /** Suscripción a eventos del servidor con reconexión automática. */
   events(onEvent, { onReconnect = () => {} } = {}) {
     let lost = false;

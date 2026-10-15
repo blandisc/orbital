@@ -100,6 +100,17 @@
         }
       }
     },
+    "Aparece un código. Apúntale con la cámara del iPhone y toca «Abrir en Orbital»: queda conectada, sin escribir nada.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A code appears. Point the iPhone camera at it and tap “Open in Orbital”: it connects, no typing."
+          }
+        }
+      }
+    },
     "Aplicación anterior (con secreto)": {
       "extractionState": "manual",
       "localizations": {
@@ -243,6 +254,17 @@
         }
       }
     },
+    "Cambiar a mano": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change manually"
+          }
+        }
+      }
+    },
     "Cancelar": {
       "extractionState": "manual",
       "localizations": {
@@ -364,13 +386,24 @@
         }
       }
     },
-    "Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y las claves de TMDB y Trakt se toman de ella. Usa la dirección del túnel de Alexa y su token.": {
+    "Con la sesión de tu Orbital: no hay nada que conectar aquí.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "With your Orbital connected, “Watch on TV” plays what you're watching here on the console, right where you were, and the TMDB and Trakt keys come from it. Use the Alexa tunnel address and its token."
+            "value": "Using your Orbital's session: nothing to connect here."
+          }
+        }
+      }
+    },
+    "Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y tu Trakt y las claves de Para ti salen de ella.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With your Orbital connected, “Watch on TV” plays what you're watching here on the console, right where you were, and your Trakt and For You keys come from it."
           }
         }
       }
@@ -397,6 +430,17 @@
         }
       }
     },
+    "Conecta tu Orbital (arriba) y Trakt se configura solo. Si no, crea una aplicación en developer.trakt.tv y pega aquí su Client ID.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect your Orbital (above) and Trakt sets itself up. Otherwise, create an app at developer.trakt.tv and paste its Client ID here."
+          }
+        }
+      }
+    },
     "Conectada": {
       "extractionState": "manual",
       "localizations": {
@@ -408,6 +452,39 @@
         }
       }
     },
+    "Conectada a %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected to %@"
+          }
+        }
+      }
+    },
+    "Conectado con tu Orbital.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected to your Orbital."
+          }
+        }
+      }
+    },
+    "Conectado con tu Orbital: %@ ya están aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected to your Orbital: %@ are here now."
+          }
+        }
+      }
+    },
     "Conectar Trakt": {
       "extractionState": "manual",
       "localizations": {
@@ -415,6 +492,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Connect Trakt"
+          }
+        }
+      }
+    },
+    "Conectar a mano": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect manually"
           }
         }
       }
@@ -492,6 +580,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Account"
+          }
+        }
+      }
+    },
+    "Dejar de usar Trakt en el iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop using Trakt on iPhone"
           }
         }
       }
@@ -723,6 +822,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "On TV"
+          }
+        }
+      }
+    },
+    "En la TV: Ajustes › Cuentas › iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the TV: Settings › Accounts › iPhone"
           }
         }
       }

@@ -19,6 +19,14 @@ public struct OrbitalRemote: Sendable {
     public let base: URL?
     private let token: String
 
+    /// `orbital-ios://pair?u=<dirección>&t=<token>` (el QR de «Conectar iPhone» en la TV).
+    public static func pairing(_ url: URL) -> (address: String, token: String)? {
+        guard url.scheme == "orbital-ios", url.host == "pair", let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems,
+              let address = items.first(where: { $0.name == "u" })?.value, normalize(address) != nil,
+              let token = items.first(where: { $0.name == "t" })?.value, !token.isEmpty else { return nil }
+        return (address, token)
+    }
+
     public init(http: HTTPClient, address: String, token: String) {
         self.http = http; self.token = token.trimmingCharacters(in: .whitespacesAndNewlines)
         self.base = Self.normalize(address)
@@ -44,12 +52,19 @@ public struct OrbitalRemote: Sendable {
     /// Lo de «Para ti» que ya está en tu Orbital (para no escribirlo otra vez en el iPhone).
     public struct Keys: Sendable, Equatable {
         public var tmdbKey: String, traktClientID: String, region: String
+        /// La sesión de Trakt de la consola (nil si allá no está conectado).
+        public var traktSession: BorrowedSession?
     }
 
     public func keys() async throws -> Keys {
         let json = try await send("api/companion", method: "GET", body: nil)
         func text(_ key: String) -> String { json?[key]?.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
-        return Keys(tmdbKey: text("tmdb_key"), traktClientID: text("trakt_client_id"), region: text("region"))
+        var session: BorrowedSession?
+        if let raw = json?["trakt_session"], let access = raw["access_token"]?.nonEmptyString {
+            let expires: Double = { switch raw["expires_at"] { case .int(let i)?: Double(i); case .double(let d)?: d; default: 0 } }()
+            session = BorrowedSession(accessToken: access, expiresAt: expires)
+        }
+        return Keys(tmdbKey: text("tmdb_key"), traktClientID: text("trakt_client_id"), region: text("region"), traktSession: session)
     }
 
     /// Pone en la TV un título de Stremio (película o el episodio `videoID`), desde donde ibas.

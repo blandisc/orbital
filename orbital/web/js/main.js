@@ -27,6 +27,7 @@ import { createStatusBar } from "./components/status-bar.js";
 import { createLogin } from "./components/login.js";
 import { createTitle, titleRef } from "./components/title.js";
 import { createToast } from "./components/toast.js";
+import { createPhoneLink } from "./components/phone-link.js";
 import { createTraktLink } from "./components/trakt-link.js";
 import { createViewer } from "./components/viewer.js";
 import { createBoot } from "./app/boot.js";
@@ -133,6 +134,10 @@ const ui = {
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); returnToMenu(traktFrom); },
   }),
+  phoneLink: createPhoneLink({
+    onMove: () => sound.play("move"),
+    onClose: () => { sound.play("back"); renderHints(); returnToMenu(phoneFrom); },
+  }),
   launch: createLaunchOverlay(),
   viewer: createViewer({
     // B regresa a la lista de Capturas, en la que estabas viendo (antes saltaba hasta Inicio).
@@ -154,7 +159,7 @@ const touchBack = h("button", { class: "touch-back", type: "button", "aria-label
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -169,6 +174,7 @@ const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LT/RT
 let loginFrom = null;
 let captureFrom = null; // { options, first }: de qué lista de Capturas vienes
 let traktFrom = null;
+let phoneFrom = null;
 function returnToMenu(from) {
   if (!from?.context) return;
   setTimeout(() => { // onDone llega justo después de cerrar: si conectaste, no se reabre el menú viejo
@@ -178,7 +184,7 @@ function returnToMenu(from) {
   }, 0);
 }
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
-const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.sources, ui.title, ui.search];
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.sources, ui.title, ui.search];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 function renderHints() {
@@ -785,6 +791,11 @@ async function runCommand(command, context = null) {
         sound.play("open");
         traktFrom = { context };
         ui.traktLink.open();
+        return renderHints();
+      case "phone-link": // un QR para la cámara del iPhone: la app queda conectada sin escribir nada
+        sound.play("open");
+        phoneFrom = { context };
+        ui.phoneLink.open();
         return renderHints();
       case "trakt-account":
         return openMenu(traktAccountMenu(), nested(context));

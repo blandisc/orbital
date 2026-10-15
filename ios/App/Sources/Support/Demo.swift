@@ -9,6 +9,8 @@ enum Demo {
     static var isOn: Bool { ProcessInfo.processInfo.arguments.contains("-demo") }
 
     static let addonURL = "https://demo.orbital.invalid/manifest.json"
+    /// `-demo-no-tv`: sin Orbital conectada (para probar el QR: `xcrun simctl openurl booted "orbital-ios://pair?u=https%3A%2F%2Ftv.demo.invalid&t=demo"`).
+    static var noTV: Bool { ProcessInfo.processInfo.arguments.contains("-demo-no-tv") }
 
     private static func value(after flag: String) -> String? {
         let args = ProcessInfo.processInfo.arguments
@@ -36,7 +38,7 @@ enum Demo {
     static func secrets() -> InMemorySecrets {
         let secrets = InMemorySecrets()
         if !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") { secrets.set(SecretKey.stremioAuth, "DEMO") }
-        secrets.set(SecretKey.orbitalToken, "demo")      // una Orbital de mentira ya conectada («Ver en la TV»)
+        if !noTV { secrets.set(SecretKey.orbitalToken, "demo") }      // una Orbital de mentira ya conectada («Ver en la TV»)
         return secrets
     }
 }

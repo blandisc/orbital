@@ -218,6 +218,25 @@ final class TraktTests: XCTestCase {
         do { _ = try await trakt.scrobble(.start, TraktTarget(imdb: "x"), progress: 1); XCTFail() } catch {}
         XCTAssertTrue(http.calls.isEmpty)
     }
+
+    func testABorrowedSessionIsRenewedByTheConsoleAndNeverRevoked() async throws {
+        let http = FakeHTTP(), clock = Clock(), secrets = InMemorySecrets()
+        let asked = AskCounter()
+        let trakt = Trakt(http: http, secrets: secrets, clientID: "CID", clock: { clock.now }, pause: { _ in },
+                          borrow: { await asked.add(); return BorrowedSession(accessToken: "NEW", expiresAt: clock.now.timeIntervalSince1970 + 86400) })
+        trakt.adopt(BorrowedSession(accessToken: "OLD", expiresAt: clock.now.timeIntervalSince1970 + 600))   // caduca en 10 min
+        XCTAssertTrue(trakt.linked); XCTAssertTrue(trakt.borrowed)
+        http.json["\(api)/sync/watchlist?extended=full&sort_by=added&sort_how=desc"] = []
+        _ = try await trakt.watchlist()
+        let renewed = await asked.value
+        XCTAssertEqual(renewed, 1, "por caducar: se le pide otra a la consola (no a Trakt)")
+        XCTAssertFalse(http.calls.contains { $0.hasSuffix("/oauth/token") }, "el iPhone no renueva: no tiene con qué")
+        await trakt.unlink()
+        XCTAssertFalse(trakt.linked)
+        XCTAssertFalse(http.calls.contains { $0.hasSuffix("/oauth/revoke") }, "revocarla desconectaría también la consola")
+    }
 }
 
 actor Sleeps { var total = 0.0; func add(_ v: TimeInterval) { total += v } }
+
+actor AskCounter { private(set) var value = 0; func add() { value += 1 } }

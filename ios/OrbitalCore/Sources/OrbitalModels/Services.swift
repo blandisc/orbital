@@ -64,7 +64,12 @@ public final class Services: ObservableModel {
         let id = settings.traktClientID.isEmpty ? (secrets.get(SecretKey.traktClientID) ?? "") : settings.traktClientID
         guard !id.isEmpty else { return nil }
         let secret = secrets.get(SecretKey.traktClientSecret) ?? ""     // el secreto nunca va en los ajustes normales
-        return Trakt(http: http, secrets: secrets, clientID: id, clientSecret: secret, clock: clock)
+        // Si la sesión es la de tu Orbital, al caducar se le pide otra a la consola.
+        let borrow: @Sendable () async -> BorrowedSession? = {
+            let remote = OrbitalRemote(http: http, address: settings.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "")
+            return try? await remote.keys().traktSession
+        }
+        return Trakt(http: http, secrets: secrets, clientID: id, clientSecret: secret, clock: clock, borrow: borrow)
     }
 
     /// Un enlace nuevo de Real-Debrid para una descarga cuyo enlace caducó: el mismo complemento y la misma fuente.
@@ -95,6 +100,29 @@ public final class Services: ObservableModel {
             }
             return out
         }
+    }
+
+    /// Conecta tu Orbital (el QR de la TV o Ajustes) y trae de ella lo que falte aquí: la clave de TMDB, la aplicación
+    /// de Trakt, el país y la sesión de Trakt. Devuelve qué se trajo («TMDB», «Trakt»); lanza si no contesta.
+    @discardableResult
+    public func connectOrbital(address: String? = nil, token: String? = nil) async throws -> [String] {
+        if let address { settings.update { $0.orbitalAddress = address } }
+        if let token { secrets.set(SecretKey.orbitalToken, token) }
+        let remote = orbital
+        try await remote.check()
+        let keys = try await remote.keys()
+        var got: [String] = []
+        if !keys.tmdbKey.isEmpty, (secrets.get(SecretKey.tmdbKey) ?? "").isEmpty { secrets.set(SecretKey.tmdbKey, keys.tmdbKey); got.append("TMDB") }
+        if !keys.traktClientID.isEmpty, settings.value.traktClientID.isEmpty { settings.update { $0.traktClientID = keys.traktClientID }; got.append("Trakt") }
+        if keys.region.count == 2 { settings.update { $0.region = keys.region } }
+        reconfigure()
+        // Trakt sin conectar en el iPhone (o con la sesión prestada de antes): la de la consola.
+        if let session = keys.traktSession, let trakt, !trakt.linked || trakt.borrowed {
+            trakt.adopt(session)
+            if !got.contains("Trakt") { got.append("Trakt") }
+            reconfigure()
+        }
+        return got
     }
 
     /// Tu Orbital de la TV («Ver en la TV»), con la dirección y el token de Ajustes.

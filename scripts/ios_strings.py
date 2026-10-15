@@ -24,10 +24,17 @@ TRANSLATIONS = {
     "Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.":
         "A code appears to enter at trakt.tv/activate. With Trakt connected, what you watch is reported and your watchlist and lists show up.",
     "Aquí aparece lo que vas viendo, en el iPhone y en Orbital.": "What you're watching shows up here, on iPhone and on Orbital.",
-    "Añadir a Mi lista": "Add to My List", "En Mi lista": "In My List", "Ver ficha": "View details", "Conecta Trakt (tu watchlist y tus listas) o agrega una clave de TMDB (lo popular en Netflix, Disney+ y HBO Max) en Ajustes.": "Connect Trakt (your watchlist and lists) or add a TMDB key (what is popular on Netflix, Disney+ and HBO Max) in Settings.", "En pausa": "Paused", "Orbital · faltan %lld": "Orbital · %lld left", "Orbital · descargando": "Orbital · downloading", "En la TV": "On TV", "Ver en la TV": "Watch on TV", "Poniéndolo en la TV.": "Playing it on the TV.",
+    "Añadir a Mi lista": "Add to My List", "En Mi lista": "In My List", "Ver ficha": "View details", "Conecta Trakt (tu watchlist y tus listas) o agrega una clave de TMDB (lo popular en Netflix, Disney+ y HBO Max) en Ajustes.": "Connect Trakt (your watchlist and lists) or add a TMDB key (what is popular on Netflix, Disney+ and HBO Max) in Settings.", "Orbital · faltan %lld": "Orbital · %lld left", "Orbital · descargando": "Orbital · downloading", "En la TV": "On TV", "Ver en la TV": "Watch on TV", "Poniéndolo en la TV.": "Playing it on the TV.",
     "Dirección (orbital.tudominio.com)": "Address (orbital.yourdomain.com)", "Token guardado": "Token saved", "Token (el mismo de Alexa)": "Token (the same as Alexa's)",
     "Guardar token": "Save token", "Probar conexión": "Test connection", "Conectada": "Connected", "Tu Orbital (la TV)": "Your Orbital (the TV)",
-    "Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y las claves de TMDB y Trakt se toman de ella. Usa la dirección del túnel de Alexa y su token.": "With your Orbital connected, “Watch on TV” plays what you're watching here on the console, right where you were, and the TMDB and Trakt keys come from it. Use the Alexa tunnel address and its token.",
+    "Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y tu Trakt y las claves de Para ti salen de ella.": "With your Orbital connected, “Watch on TV” plays what you're watching here on the console, right where you were, and your Trakt and For You keys come from it.",
+    "Conectada a %@": "Connected to %@", "En la TV: Ajustes › Cuentas › iPhone": "On the TV: Settings › Accounts › iPhone",
+    "Aparece un código. Apúntale con la cámara del iPhone y toca «Abrir en Orbital»: queda conectada, sin escribir nada.": "A code appears. Point the iPhone camera at it and tap “Open in Orbital”: it connects, no typing.",
+    "Cambiar a mano": "Change manually", "Conectar a mano": "Connect manually",
+    "Con la sesión de tu Orbital: no hay nada que conectar aquí.": "Using your Orbital's session: nothing to connect here.",
+    "Dejar de usar Trakt en el iPhone": "Stop using Trakt on iPhone",
+    "Conecta tu Orbital (arriba) y Trakt se configura solo. Si no, crea una aplicación en developer.trakt.tv y pega aquí su Client ID.": "Connect your Orbital (above) and Trakt sets itself up. Otherwise, create an app at developer.trakt.tv and paste its Client ID here.",
+    "Conectado con tu Orbital.": "Connected to your Orbital.", "Conectado con tu Orbital: %@ ya están aquí.": "Connected to your Orbital: %@ are here now.",
     "Traje de tu Orbital: %@. No hay que escribirlo aquí.": "Brought from your Orbital: %@. No need to type it here.", "Velocidad": "Speed", "Tamaño de subtítulos": "Subtitle size", "Chico": "Small", "Mediano": "Medium", "Grande": "Large", "Fuentes": "Sources", "Descargado": "Downloaded", "Ya está descargado. Lo encuentras en Descargas.": "Already downloaded. You'll find it in Downloads.", "Película": "Movie", "Serie": "Series",
     "Crea una aplicación en developer.trakt.tv y pega aquí su Client ID (las nuevas ya no dan secreto).": "Create an app at developer.trakt.tv and paste its Client ID here (new ones no longer have a secret).",
     "Client ID de tu aplicación de Trakt": "Your Trakt app's Client ID", "Aplicación anterior (con secreto)": "Older app (with a secret)", "Imagen dentro de imagen": "Picture in Picture",
@@ -41,7 +48,7 @@ TRANSLATIONS = {
     "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias.": "Connect Trakt or add a TMDB key in Settings to see suggestions.",
     "Conectar Trakt": "Connect Trakt", "Continuar": "Continue", "Continuar T%lld E%lld": "Continue S%lld E%lld", "Contraseña": "Password",
     "Correo de Stremio": "Stremio email", "Cuando descargues algo, aparece aquí.": "When you download something, it shows up here.", "Cuenta": "Account",
-    "Descargado": "Downloaded", "Descargando": "Downloading", "Descargar": "Download", "Descargar con la fuente recomendada": "Download with the recommended source",
+     "Descargando": "Downloading", "Descargar": "Download", "Descargar con la fuente recomendada": "Download with the recommended source",
     "Descargar solo con Wi‑Fi": "Download only on Wi‑Fi", "Descargas": "Downloads", "Desconectar Trakt": "Disconnect Trakt", "Descubrir": "Discover",
     "Descargando. Lo verás en Descargas.": "Downloading. You'll see it in Downloads.", "Dirección": "Directed by",
     "El código caducó. Vuelve a intentarlo.": "The code expired. Try again.", "Elegir fuente": "Choose source",
@@ -87,7 +94,7 @@ TRANSLATIONS = {
     "Descargando %lld episodios. Los verás en Descargas.": "Downloading %lld episodes. You'll see them in Downloads.",
     "No pude cambiar tu lista de Stremio: %@": "I couldn't change your Stremio list: %@", "No pude cambiar tu watchlist de Trakt: %@": "I couldn't change your Trakt watchlist: %@",
     "No pude marcarlo: %@": "I couldn't mark it: %@", "No pude pedir las fuentes: %@": "I couldn't get the sources: %@",
-    "Descargar": "Download", "Cuenta": "Account", "%@ de %@": "%@ of %@", "Cerrar": "Close", "Sí": "Yes",
+      "%@ de %@": "%@ of %@",  "Sí": "Yes",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
@@ -136,7 +143,7 @@ def used_literals() -> dict[str, str]:
                 if re.fullmatch(r"[A-Z0-9_ ]+", text) and len(text) < 6:
                     continue
                 key = to_format(text)
-                if re.fullmatch(r"(%lld|%@|[ ·:|\-−/])+", key) or "|" in key or key.startswith("%@:") or key.startswith("%@-"):
+                if re.fullmatch(r"(%lld|%@|[ ·:|\-−/])+", key) or "|" in key or key.startswith(("%@:", "%@-")):
                     continue
                 found.setdefault(key, f"{Path(f).name}:{number}")
     return found

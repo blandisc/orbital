@@ -96,8 +96,9 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   assert.deepEqual(page.options[0].command, { type: "setting", key: "audio", value: "es", page: "playback" });
   assert.equal(nextSetting("subtitles", ""), "en"); // da la vuelta
   const accounts = settingsPage("accounts", { stremio_linked: false });
-  assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Stremio", "Conectar"]]);
+  assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Stremio", "Conectar"], ["iPhone", "Conectar"]]);
   assert.deepEqual(accounts.options[0].command, { type: "stremio-login" });
+  assert.deepEqual(accounts.options[1].command, { type: "phone-link" }); // un QR para la cámara del iPhone
 });
 
 test("las opciones de una película no repiten A ni X; la búsqueda solo busca", () => {
