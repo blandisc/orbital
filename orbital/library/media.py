@@ -173,12 +173,12 @@ class MediaStore:
     def is_rejected(self, system: str, key: str, kind: str, url: str) -> bool:
         return url in self.rejected().get(f"{system}/{key}/{kind}", [])
 
-    def looks_rejected(self, system: str, key: str, kind: str, path: Path) -> bool:
+    def looks_rejected(self, system: str, key: str, kind: str, path: Path | str | None) -> bool:
         """¿Se ve igual que una imagen que rechazaste? La misma imagen llega con otra dirección (Hit & Run
         está dos veces en TheGamesDB, con el mismo dibujo): por dirección no se notaba y «Cambiar
         imagen» ponía otra vez la misma."""
         seen = [v.removeprefix("look:") for v in self.rejected().get(f"{system}/{key}/{kind}", []) if v.startswith("look:")]
-        mine = image_look(path) if seen else None
+        mine = image_look(path) if seen and path else None
         return bool(mine) and any(similar(mine, other) for other in seen)
 
 
@@ -189,8 +189,7 @@ def image_look(path: Path | str) -> str | None:
         from PIL import Image
 
         with Image.open(path) as image:
-            small = image.convert("L").resize((8, 8))
-            pixels = list(small.getdata())
+            pixels = list(image.convert("L").resize((8, 8)).tobytes())  # 64 grises, de 0 a 255
     except Exception:  # noqa: BLE001 - una imagen rota no es «parecida» a nada
         return None
     mean = sum(pixels) / len(pixels)
