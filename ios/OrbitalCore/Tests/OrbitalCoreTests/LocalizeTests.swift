@@ -1,6 +1,9 @@
 import XCTest
 @testable import OrbitalCore
 
+// En macOS, ApplicationServices también exporta un `Translation` (Linux no lo tiene).
+private typealias Translation = OrbitalCore.Translation
+
 final class LocalizeTests: XCTestCase {
     let golden = try! Fixtures.json("ios/localize.json")
     let series = try! Fixtures.json("cinemeta/meta_series_tt0386676.json")
