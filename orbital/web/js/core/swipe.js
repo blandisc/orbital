@@ -34,3 +34,22 @@ export function swipeArea(el, onSwipe, { min = 40 } = {}) {
 
 /** Cuántos pasos es un deslizamiento: uno por cada `size` px (al menos uno). */
 export const swipeSteps = (distance, size) => Math.max(1, Math.round(Math.abs(distance) / Math.max(1, size)));
+
+/**
+ * Con el ratón o el touchpad: lo que queda bajo el puntero se enfoca (y A, o un clic, lo abre). Solo
+ * cuenta un movimiento de verdad: al enfocar, el acomodo cambia (el mosaico ensancha la columna, la
+ * cuadrícula se desplaza) y el navegador avisa de un «movimiento» sin que muevas nada; eso no debe
+ * enfocar lo que quedó debajo, o el foco saltaría solo. `quiet(ms)` ignora el puntero un momento.
+ *
+ * `onHover(node)` recibe el elemento de `selector` bajo el puntero.
+ */
+export function hoverArea(el, selector, onHover) {
+  let quietUntil = 0;
+  el.addEventListener("pointermove", (event) => {
+    if (event.pointerType !== "mouse" || !(event.movementX || event.movementY)) return;
+    if (performance.now() < quietUntil) return;
+    const node = event.target instanceof Element ? event.target.closest(selector) : null;
+    if (node && el.contains(node)) onHover(node);
+  });
+  return { quiet: (ms) => { quietUntil = performance.now() + ms; } };
+}

@@ -1,6 +1,6 @@
 import { api } from "../core/api.js";
 import { h, mount } from "../core/dom.js";
-import { playOf, primaryAction } from "../core/foryou.js";
+import { playOf, primaryAction, titleOf } from "../core/foryou.js";
 import { storage } from "../core/storage.js";
 import { createForYouLists } from "./foryou-lists.js";
 import { createForYouMosaic } from "./foryou-mosaic.js";
@@ -13,7 +13,7 @@ import { Glyph } from "./glyph.js";
  * A ve (con su episodio) o juega lo tuyo; Y abre «Más» (ficha, «No me interesa»). La sinopsis en
  * español y si el logo es oscuro llegan al enfocar (de caché casi siempre).
  *
- * onWatch(play) · onLaunch(item) · onMore(sugerencia) · onConnect() · onFocus(sugerencia | null) · onEdge()
+ * onWatch(play) · onTitle(ref) · onLaunch(item) · onMore(sugerencia) · onConnect() · onFocus(sugerencia | null) · onEdge()
  */
 const MODES = [{ id: "mosaic", label: "Mosaico" }, { id: "lists", label: "Listas" }];
 
@@ -27,7 +27,7 @@ const SETUP = {
   info: "Para ver tendencias, lo más popular en Netflix, Disney+ y HBO Max y novedades de juegos, agrega las claves gratuitas de Trakt, TMDB y RAWG en config.yaml (sección para_ti). Mientras, aquí están tus juegos.",
 };
 
-export function createForYou({ onWatch, onLaunch, onMore, onConnect, onFocus, onEdge, onToggle }) {
+export function createForYou({ onWatch, onTitle, onLaunch, onMore, onConnect, onFocus, onEdge, onToggle }) {
   const notice = h("div", { class: "foryou__notice", role: "status" });
   const details = new Map(); // clave → { overview, facts, logo_dark }
   let detailTimer = 0;
@@ -133,6 +133,7 @@ export function createForYou({ onWatch, onLaunch, onMore, onConnect, onFocus, on
     const item = target.kind === "item" ? target.item : target;
     const what = primaryAction(item);
     if (what === "watch") onWatch?.(playOf(item));
+    else if (what === "title") onTitle?.(titleOf(item));
     else if (what === "play") onLaunch?.(item.item);
     else { onEdge?.(); return "edge"; } // un juego que no tienes: aquí solo se ve su descripción
     return true;

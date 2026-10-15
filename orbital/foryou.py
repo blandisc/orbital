@@ -141,7 +141,8 @@ def video_item(e: dict, why: str, *, title: str | None = None, poster: str | Non
         facts = [["Sigue", episode] if episode else ["Temporadas", seasons] if seasons else ["Episodios", e.get("episodes")],
                  ["Año", e.get("year")]]
         video_id = f"{imdb}:{nxt['season']}:{nxt['episode']}" if nxt else f"{imdb}:1:1"
-        action = f"Continuar {episode}" if episode else "Ver T1 E1"
+        # Una serie que no estás viendo abre su ficha (temporadas, sinopsis), no el primer episodio.
+        action = f"Continuar {episode}" if episode else "Ver la serie"
     return {
         "key": f"video:{imdb}", "id": f"cinemeta:{kind}:{imdb}", "source": "cinemeta", "kind": kind, "meta_id": imdb,
         "title": title or e["title"], "year": e.get("year"), "why": why, "detail": detail,
@@ -413,7 +414,9 @@ class ForYou:
         if list_id.startswith("list:"):
             lid = list_id.removeprefix("list:")
             name = next((r["name"] for r in self.cache.get("trakt:lists", MINE_TTL, t.lists) if r["id"] == lid), "tu lista")
-            return [video_item(e, f"En «{name}»") for e in self.cache.get(f"trakt:list:{lid}", MINE_TTL, lambda: t.list_items(lid))]
+            # La etiqueta es de un renglón: un nombre largo se cortaba («En «The 25 Best Sci-Fi…»»).
+            why = f"En «{name}»" if len(name) <= 22 else "En una de tus listas"
+            return [video_item(e, why) for e in self.cache.get(f"trakt:list:{lid}", MINE_TTL, lambda: t.list_items(lid))]
         if list_id == "trend":
             return [video_item(e, "En tendencia") for e in self.cache.get(f"trakt:trend:{kind}", RECS_TTL, lambda: t.trending(kind))]
         if list_id == "popular":

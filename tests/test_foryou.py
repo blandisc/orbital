@@ -81,7 +81,7 @@ def test_series_you_are_watching_continue_where_you_left():
     assert item["action"] == "Continuar T2 E6" and item["video_id"] == "tt11280740:2:6"
     assert item["detail"] == "Sigue T2 E6" and item["id"] == "cinemeta:series:tt11280740"
     fresh = video_item(trakt.entry(show("Andor", "tt9253284", episodes=24), "series"), "Recomendada")
-    assert fresh["action"] == "Ver T1 E1" and fresh["video_id"] == "tt9253284:1:1" and fresh["detail"] == "24 episodios"
+    assert fresh["action"] == "Ver la serie" and fresh["video_id"] == "tt9253284:1:1" and fresh["detail"] == "24 episodios"
     film = video_item(trakt.entry(movie("Blade Runner 2049", "tt1856101", runtime=164), "movie"), "Recomendada")
     assert film["action"] == "Ver" and film["video_id"] == "tt1856101" and film["detail"] == "2 h 44 min"
     assert film["image"].endswith("/poster/medium/tt1856101/img")

@@ -75,10 +75,11 @@ class DemoTrakt:
         return [M["dune2"], M["oppen"], M["past"], S["tlou"], M["batman"], M["parasite"], M["prestige"], S["breaking"]]
 
     def lists(self):
-        return [{"id": "1", "name": "Ciencia ficción"}]
+        # Un nombre largo de verdad (como las listas que la gente copia en Trakt): no debe cortarse feo.
+        return [{"id": "1", "name": "The 25 Best Sci-Fi Movies of the 21st Century (So Far)"}]
 
     def list_items(self, list_id):
-        return [M["arrival"], M["inter"], M["inception"], M["dune1"], M["br"], S["dark"]]
+        return [_m("tt1136608", "District 9", 2009, 112), M["arrival"], M["inter"], M["inception"], M["dune1"], M["br"], S["dark"]]
 
     def trending(self, kind, limit=30):
         # Todo el catálogo de mentiras, como Trakt de verdad (decenas): con 14, el mosaico se repetía.

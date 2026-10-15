@@ -128,6 +128,7 @@ const ui = {
   }),
   foryou: createForYou({
     onWatch: (play) => watch(play),
+    onTitle: (ref) => openTitle(ref), // una serie nueva: su ficha
     onLaunch: (item) => launch(item),
     onMore: (item) => openMenu(forYouMenu(item)),
     onConnect: () => runCommand({ type: "trakt-link" }),

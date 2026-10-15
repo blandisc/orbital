@@ -83,11 +83,13 @@ export function railEntries(lists) {
   return out;
 }
 
-/** Lo que hace A: ver (con su episodio), jugar, o nada (un juego que no tienes). */
+/** Lo que hace A: seguir (con su episodio), abrir la ficha de una serie nueva, jugar, o nada (un juego que no tienes). */
 export function primaryAction(item) {
   if (!item) return null;
   if (item.kind === "game") return item.owned && item.item ? "play" : null;
-  return item.meta_id ? "watch" : null;
+  if (!item.meta_id) return null;
+  // Una serie sugerida que no estás viendo: su ficha (temporadas, de qué trata), no el T1 E1 de golpe.
+  return item.kind === "series" && !item.episode ? "title" : "watch";
 }
 
 /** Para el reproductor (launching.watch): qué, cuál episodio y el título. */

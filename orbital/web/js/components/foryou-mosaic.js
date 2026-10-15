@@ -2,7 +2,7 @@ import { h, svg } from "../core/dom.js";
 import { factLine, iconName, nearestTile, nextUnseen, posterRatio, shapeOf } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { Badge } from "./ui.js";
-import { swipeArea, swipeSteps } from "../core/swipe.js";
+import { hoverArea, swipeArea, swipeSteps } from "../core/swipe.js";
 
 /**
  * «Para ti» · mosaico: columnas de imágenes (portadas altas y arte ancho) con lo tuyo mezclado.
@@ -35,6 +35,8 @@ export function createForYouMosaic({ onFocus, onPick }) {
       if (handle(action) !== true) break;
     }
   });
+  // Con el ratón: la pieza bajo el puntero se enfoca (mientras el mosaico se reacomoda, no se cuenta).
+  const hover = hoverArea(el, ".foryou-mosaic__tile", (node) => tap(node, { open: false }));
   let pool = [];
   let cursor = 0;
   let columns = [];
@@ -238,13 +240,15 @@ export function createForYouMosaic({ onFocus, onPick }) {
   }
 
   // --- botones ----------------------------------------------------------------------------------
-  /** Con el dedo: el primer toque enfoca la pieza; el segundo la abre (como en Inicio y Juegos). */
-  function tap(node) {
-    if (mode === "ambient") { wake(); return; }
+  /** Con el dedo: el primer toque enfoca la pieza; el segundo la abre (como en Inicio y Juegos).
+   *  El ratón solo enfoca al pasar (`open: false`); el clic abre. */
+  function tap(node, { open = true } = {}) {
+    if (mode === "ambient") { wake(); hover.quiet(600); return; }
     for (const [c, col] of columns.entries()) {
       const r = col.tiles.findIndex((t) => t.node === node);
       if (r < 0) continue;
-      if (c === focus.col && r === focus.row) return onPick?.(col.tiles[r].item);
+      if (c === focus.col && r === focus.row) return open ? onPick?.(col.tiles[r].item) : undefined;
+      hover.quiet(600); // la columna se ensancha y las piezas se mueven bajo el puntero
       clearTimeout(idleTimer);
       if (running) idleTimer = setTimeout(goAmbient, IDLE_MS);
       focus = { col: c, row: r };

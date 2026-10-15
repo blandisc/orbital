@@ -1,7 +1,7 @@
 import { h, mount } from "../core/dom.js";
 import { iconName, kindLabel, listMeta, railEntries, SPLIT_KINDS } from "../core/foryou.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
-import { swipeArea, swipeSteps } from "../core/swipe.js";
+import { hoverArea, swipeArea, swipeSteps } from "../core/swipe.js";
 import { BrowseHead, fillFilters, keepInView, replay } from "./browse.js";
 import { Button } from "./button.js";
 import { Card } from "./card.js";
@@ -41,6 +41,14 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
     paint();
   });
   swipeArea(rail.window, ({ dy }) => stepList(dy < 0 ? swipeSteps(dy, 80) : -swipeSteps(dy, 80)));
+  // Con el ratón o el touchpad: la portada bajo el puntero se enfoca y su ficha aparece a la derecha
+  // (la cuadrícula se desplaza para enseñarla: mientras tanto el puntero no cuenta).
+  const hover = hoverArea(grid, '[data-focus-id^="item:"]', (node) => {
+    if (node.dataset.focusId === focusId) return;
+    focusId = node.dataset.focusId;
+    hover.quiet(350);
+    paint();
+  });
 
   let lists = [];
   let listId = null;
