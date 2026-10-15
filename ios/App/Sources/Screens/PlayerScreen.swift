@@ -45,6 +45,9 @@ struct PlayerScreen: View {
     /// Pellizcar para llenar la pantalla (recorta los bordes) o ver el cuadro completo.
     @State private var fillsScreen = false
 
+    /// Lo que suena ahora: cambia al pasar solo al siguiente episodio (el `request` es solo con el que se abrió).
+    private var current: PlayRequest { holder.model.request ?? request }
+
     var body: some View {
         let model = holder.model
         ZStack {
@@ -81,7 +84,7 @@ struct PlayerScreen: View {
                 try? await Task.sleep(nanoseconds: DS.Timing.tick)
                 await model.tick()
                 pip.update(engine.pictureInPicture)
-                nowPlaying.update(title: request.displayTitle, subtitle: request.episodeLabel, poster: request.poster, snapshot: model.snapshot)
+                nowPlaying.update(title: current.displayTitle, subtitle: current.episodeLabel, poster: current.poster, snapshot: model.snapshot)
             }
         }
         .onChange(of: scenePhase) { _, phase in if phase != .active { Task { await model.appDidEnterBackground() } } }
@@ -150,8 +153,8 @@ struct PlayerScreen: View {
                 HStack(spacing: DS.Space.s3) {
                     DSIconButton(symbol: "chevron.down", label: "Cerrar") { Task { await close() } }
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(request.displayTitle).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
-                        if !request.episodeLabel.isEmpty { Text(request.episodeLabel).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1) }
+                        Text(current.displayTitle).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
+                        if !current.episodeLabel.isEmpty { Text(current.episodeLabel).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1) }
                     }
                     Spacer()
                     if model.skipIntroTo != nil { Button("Saltar intro") { Task { await model.skipIntro() } }.buttonStyle(.glass) }
@@ -214,8 +217,9 @@ struct PlayerScreen: View {
     private func finish() {
         guard !finished else { return }
         finished = true
-        if request.localFile != nil {
-            let id = DownloadItem.makeID(metaID: request.metaID, videoID: request.videoID)
+        let current = current
+        if current.localFile != nil {
+            let id = DownloadItem.makeID(metaID: current.metaID, videoID: current.videoID)
             let snapshot = holder.model.snapshot
             if snapshot.duration > 0, snapshot.position >= snapshot.duration * StremioLibrary.watchedAt {
                 Task { if let item = await env.services.downloads.item(id) { await DownloadsModel(env.services, freeSpace: { DiskSpace.freeBytes() }).afterWatching(item) } }
@@ -228,13 +232,14 @@ struct PlayerScreen: View {
     private func continueOnTV() async {
         await holder.model.close()
         finish()
-        await env.playOnTV(kind: request.kind, metaID: request.metaID, videoID: request.videoID, title: request.displayTitle)
+        let current = current
+        await env.playOnTV(kind: current.kind, metaID: current.metaID, videoID: current.videoID, title: current.displayTitle)
     }
 
     private func openInInfuse() async {
         await holder.model.close()
         dismiss()
-        await env.playExternal(request, source: holder.model.source)
+        await env.playExternal(current, source: holder.model.source)
     }
 
     private func lockLandscape() { rotate(allowed: .allButUpsideDown, to: .landscape) }

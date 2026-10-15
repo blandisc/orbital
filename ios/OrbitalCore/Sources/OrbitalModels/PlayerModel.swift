@@ -468,6 +468,7 @@ public final class PlayerModel: ObservableModel {
             guard !closing, phase != .closed else { advancing = false; return }
             var next = request
             next.videoID = card.videoID; next.fromStart = true; next.binge = source?.binge
+            next.episodeLabel = card.title.isEmpty ? card.label : "\(card.label) · \(card.title)"   // si no, se queda el del episodio anterior
             if request.localFile != nil, let local = nextLocal { next.localFile = local.file; next.localSubtitles = local.subtitles }
             if auto { autoAdvances += 1 }
             advancing = false

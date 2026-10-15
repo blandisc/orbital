@@ -89,6 +89,19 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.engine.loads.count, 2)
     }
 
+    func testTheNextEpisodeShowsItsOwnName() async throws {
+        let rig = try nextEpisodeRig()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(10))
+        rig.clock.advance(1); await rig.model.handle(rig.playing(1295))
+        rig.clock.advance(PlaybackRules.upNextCountdown + 1)
+        await rig.model.handle(rig.playing(1304)); await rig.model.tick()
+        await rig.model.waitForTransition()
+        XCTAssertEqual(rig.model.request?.videoID, "tt0386676:1:2")
+        XCTAssertTrue(rig.model.request?.episodeLabel.contains("E2") == true, "no el «T1 · E1» del anterior: \(rig.model.request?.episodeLabel ?? "")")
+        XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://rd.example/e2.mkv")
+    }
+
     func testGivesUpAfterFourRetries() async throws {
         let rig = try Rig()
         rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": .array((1...8).map { rig.stream("s\($0)", size: "💾 \($0) GB") })]
