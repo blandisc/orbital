@@ -267,6 +267,54 @@ struct DSChipRow<Item: Hashable & Identifiable>: View {
     }
 }
 
+/// El indicador de brillo o volumen sobre el video, como en Infuse: un ícono y una barra fina que sube o baja
+/// con el valor, sobre vidrio nativo. Una sola pieza para los dos gestos (cambia el ícono y el valor).
+struct DSGestureIndicator: View {
+    let symbol: String
+    let value: Double   // 0…1
+
+    var body: some View {
+        VStack(spacing: DS.Space.s2) {
+            Image(systemName: symbol).font(DS.font(.md)).foregroundStyle(DS.text)
+            ZStack(alignment: .bottom) {
+                Capsule().fill(DS.track)
+                Capsule().fill(DS.primary).frame(height: DS.Gesture.indicatorBarHeight * min(1, max(0, value)))
+            }
+            .frame(width: DS.Gesture.indicatorBarWidth, height: DS.Gesture.indicatorBarHeight)
+            Text("\(Int((value * 100).rounded())) %").font(DS.font(.xs)).foregroundStyle(DS.textMuted).monospacedDigit()
+        }
+        .padding(.vertical, DS.Space.s4).padding(.horizontal, DS.Space.s3)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
+        .accessibilityHidden(true)
+    }
+}
+
+/// La burbuja de «buscar arrastrando»: el tiempo destino grande y la diferencia pequeña («+1:20»).
+struct DSSeekBubble: View {
+    let time: String
+    let delta: String
+
+    var body: some View {
+        VStack(spacing: DS.Space.s1) {
+            Text(time).font(DS.font(.xl, weight: .bold)).foregroundStyle(DS.text).monospacedDigit()
+            Text(delta).font(DS.font(.sm)).foregroundStyle(DS.textMuted).monospacedDigit()
+        }
+        .padding(.horizontal, DS.Space.s5).padding(.vertical, DS.Space.s3)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .accessibilityHidden(true)
+    }
+}
+
+/// La píldora «2×» mientras mantienes el dedo (como YouTube/Infuse): sobre vidrio, arriba al centro.
+struct DSSpeedPill: View {
+    var body: some View {
+        Text(verbatim: "2×").font(DS.font(.md, weight: .bold)).foregroundStyle(DS.text)
+            .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
+            .glassEffect(.regular, in: Capsule())
+            .accessibilityHidden(true)
+    }
+}
+
 /// Fondo de pantalla: el tono del título que ves, muy oscurecido (como `--art-tint` en la TV).
 struct TintedBackground: View {
     var tint: Color = DS.bg

@@ -136,13 +136,22 @@ def build_lang_list(lang: str) -> list[str]:
 TOUCH_BINDINGS = ("MBTN_LEFT script-message orbital-tap ${mouse-pos/x} ${mouse-pos/y} ${osd-dimensions/w} ${osd-dimensions/h}\n"
                   "MBTN_LEFT_DBL ignore\nMBTN_RIGHT ignore\n")
 
+# Con teclado: cada tecla se la pasa a Orbital con el nombre del botón del mando que hace lo mismo (y la barra
+# enseña las teclas). Esc pregunta antes de salir; q también (antes cerraba sin guardar cómo terminó).
+KEY_BINDINGS = "".join(f"{key} {'repeatable ' if repeat else ''}script-message orbital-key {name}\n" for key, name, repeat in (
+    ("SPACE", "a", False), ("ENTER", "a", False), ("KP_ENTER", "a", False),
+    ("LEFT", "left", True), ("RIGHT", "right", True), ("UP", "up", True), ("DOWN", "down", True),
+    ("ESC", "esc", False), ("BS", "esc", False), ("q", "esc", False),
+    ("x", "x", False), ("y", "y", False), ("PGUP", "lb", False), ("PGDWN", "rb", False),
+    ("[", "lt", False), ("]", "rt", False)))
+
 
 def input_conf() -> str | None:
     """Archivo de atajos de mpv de Orbital (se reescribe cada vez; vive junto a los datos de Orbital)."""
     path = Path(os.environ.get("LOCALAPPDATA", "")) / "orbital" / "mpv-input.conf"
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(TOUCH_BINDINGS, encoding="utf-8")
+        path.write_text(TOUCH_BINDINGS + KEY_BINDINGS, encoding="utf-8")
         return str(path)
     except OSError:
         return None

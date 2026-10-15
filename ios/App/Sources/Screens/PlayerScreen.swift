@@ -45,6 +45,23 @@ struct PlayerScreen: View {
     /// Pellizcar para llenar la pantalla (recorta los bordes) o ver el cuadro completo.
     @State private var fillsScreen = false
 
+    // MARK: gestos como Infuse (brillo, volumen, buscar arrastrando, 2×)
+    @State private var dragAxis: GestureAxis = .undecided
+    @State private var verticalKind: VerticalGesture?
+    @State private var brightnessAtDragStart: Double = 1
+    @State private var volumeAtDragStart: Double = 0
+    @State private var originalBrightness: Double = 1
+    @State private var requestedVolume: Float?
+    @State private var indicator: (kind: VerticalGesture, symbol: String, value: Double)?
+    /// Aparte de `indicator` (que se actualiza en cada punto del arrastre, sin animar) para que solo la entrada
+    /// y la salida se animen; moverlo de golpe en cada cuadro se vería tembloroso.
+    @State private var indicatorVisible = false
+    @State private var indicatorHideTask: Task<Void, Never>?
+    @State private var seekPositionAtDragStart: Double?
+    @State private var seekPreview: Double?
+    @State private var isFastForwarding = false
+    @State private var rateBeforeFastForward: Float = 1
+
     /// Lo que suena ahora: cambia al pasar solo al siguiente episodio (el `request` es solo con el que se abrió).
     private var current: PlayRequest { holder.model.request ?? request }
 
@@ -53,20 +70,29 @@ struct PlayerScreen: View {
         ZStack {
             DS.video.ignoresSafeArea()
             holder.engine.surface
-            holder.engine.subtitleOverlay(lifted: controlsVisible, heightFraction: env.services.appSettings.subtitleHeightFraction)
-                .ignoresSafeArea()
-                .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
+            if dragAxis != .horizontal {
+                // Mientras buscas arrastrando, el subtítulo se quita: la burbuja ya dice el tiempo y no hay con qué encimarlo.
+                holder.engine.subtitleOverlay(lifted: controlsVisible, heightFraction: env.services.appSettings.subtitleHeightFraction)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+            }
             gestureLayer(model)
+            SystemVolumeControl(volume: $requestedVolume)
+                .frame(width: DS.Gesture.indicatorBarWidth, height: DS.Gesture.indicatorBarWidth)
+                .allowsHitTesting(false).accessibilityHidden(true)
             statusOverlays(model)
+            gestureOverlays
             if controlsVisible { controls(model).transition(.opacity) }
             if let up = model.upNext { UpNextCard(card: up, watchNow: { Task { await model.playNextNow() } }, cancel: { model.cancelUpNext() }) }
         }
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
+        .animation(DS.Motion.base(reduceMotion), value: dragAxis)
         .task {
             lockLandscape()
             UIApplication.shared.isIdleTimerDisabled = true
+            originalBrightness = Double(UIScreen.main.brightness)
             // `begin` va aparte: el plazo de arranque (45 s) tiene que seguir corriendo mientras carga.
             let engine = holder.engine
             pip.onActiveChange = { engine.setPictureInPictureActive($0) }
@@ -77,6 +103,10 @@ struct PlayerScreen: View {
                 if Demo.isOn, let open = Demo.player {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
                     if open == "panel" { panel = true } else if open == "sources" { sources = true } else if open == "close" { await close() }
+                }
+                if Demo.isOn, let gesture = Demo.gesture {
+                    try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 4)
+                    simulateGesture(gesture, model: model)
                 }
                 #endif
             }
@@ -95,27 +125,147 @@ struct PlayerScreen: View {
         } message: { Text("Llevas tres episodios seguidos.") }
         .sheet(isPresented: $panel) { TrackPanel(model: model, openSources: { panel = false; Task { try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 8); sources = true } }, openInInfuse: { Task { await openInInfuse() } }).presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
         .sheet(isPresented: $sources) { PlayerSources(model: model) { sources = false }.presentationDetents([.large]).presentationDragIndicator(.visible) }
-        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false; pip.stop(); nowPlaying.stop(); unlockPortrait() }
+        .onDisappear {
+            UIApplication.shared.isIdleTimerDisabled = false; pip.stop(); nowPlaying.stop(); unlockPortrait()
+            UIScreen.main.brightness = CGFloat(originalBrightness)   // el brillo es del sistema: no se queda en lo que dejó el gesto
+        }
     }
 
     // MARK: gestos
     private func gestureLayer(_ model: PlayerModel) -> some View {
-        HStack(spacing: 0) {
-            Color.clear.contentShape(Rectangle()).onTapGesture(count: 2) { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
-            Color.clear.contentShape(Rectangle()).onTapGesture(count: 2) { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }
+        GeometryReader { geo in
+            HStack(spacing: 0) {
+                Color.clear.contentShape(Rectangle()).onTapGesture(count: 2) { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
+                Color.clear.contentShape(Rectangle()).onTapGesture(count: 2) { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture { controlsVisible.toggle(); if controlsVisible { scheduleHide() } }
+            .gesture(MagnifyGesture().onEnded { value in
+                // Abrir los dedos llena la pantalla; cerrarlos vuelve al cuadro completo (como la app TV de Apple).
+                let fill = value.magnification > 1
+                guard fill != fillsScreen else { return }
+                fillsScreen = fill
+                holder.engine.setFillsScreen(fill)
+            })
+            .sensoryFeedback(.impact, trigger: fillsScreen)
+            .simultaneousGesture(dragGesture(model, size: geo.size))
+            .onLongPressGesture(minimumDuration: DS.Timing.longPressDelay, maximumDistance: DS.Gesture.axisThreshold,
+                                 perform: { startFastForward(model) }, onPressingChanged: { pressing in if !pressing { endFastForward(model) } })
+            .sensoryFeedback(.impact, trigger: isFastForwarding)
         }
-        .contentShape(Rectangle())
-        .onTapGesture { controlsVisible.toggle(); if controlsVisible { scheduleHide() } }
-        .gesture(MagnifyGesture().onEnded { value in
-            // Abrir los dedos llena la pantalla; cerrarlos vuelve al cuadro completo (como la app TV de Apple).
-            let fill = value.magnification > 1
-            guard fill != fillsScreen else { return }
-            fillsScreen = fill
-            holder.engine.setFillsScreen(fill)
-        })
-        .sensoryFeedback(.impact, trigger: fillsScreen)
         .accessibilityHidden(true)
     }
+
+    /// Brillo (mitad izquierda), volumen (mitad derecha) o buscar (cualquier zona), según el eje que gane los
+    /// primeros puntos del arrastre. Mientras tanto no se toca si se muestran o se esconden los controles (ni a
+    /// medias ni de golpe): el reloj que los esconde solo se reanuda al soltar.
+    private func dragGesture(_ model: PlayerModel, size: CGSize) -> some Gesture {
+        DragGesture(minimumDistance: DS.Gesture.axisThreshold)
+            .onChanged { value in
+                let dx = Double(value.translation.width), dy = Double(value.translation.height)
+                if dragAxis == .undecided {
+                    hideTask?.cancel()
+                    dragAxis = PlayerGestures.dominantAxis(dx: dx, dy: dy)
+                    switch dragAxis {
+                    case .vertical:
+                        let kind = PlayerGestures.verticalGesture(startX: Double(value.startLocation.x), screenWidth: Double(size.width))
+                        verticalKind = kind
+                        if kind == .brightness { brightnessAtDragStart = Double(UIScreen.main.brightness) }
+                        else { volumeAtDragStart = Double(AVAudioSession.sharedInstance().outputVolume) }
+                    case .horizontal:
+                        seekPositionAtDragStart = model.snapshot.position
+                        controlsVisible = true   // se ve la barra: el pulgar sigue el tiempo destino mientras arrastras
+                    case .undecided: break
+                    }
+                }
+                switch dragAxis {
+                case .vertical:
+                    guard let kind = verticalKind else { return }
+                    let start = kind == .brightness ? brightnessAtDragStart : volumeAtDragStart
+                    let value2 = PlayerGestures.verticalValue(start: start, dragHeight: dy, screenHeight: Double(size.height))
+                    if kind == .brightness { UIScreen.main.brightness = CGFloat(value2) } else { requestedVolume = Float(value2) }
+                    indicator = (kind, kind == .brightness ? "sun.max.fill" : "speaker.wave.2.fill", value2)
+                    if !indicatorVisible { indicatorHideTask?.cancel(); withAnimation(DS.Motion.base(reduceMotion)) { indicatorVisible = true } }
+                case .horizontal:
+                    guard let start = seekPositionAtDragStart else { return }
+                    seekPreview = PlayerGestures.seekTarget(startPosition: start, duration: model.snapshot.duration, dragWidth: dx, screenWidth: Double(size.width))
+                case .undecided: break
+                }
+            }
+            .onEnded { _ in
+                if dragAxis == .horizontal, let target = seekPreview { Task { await model.seek(to: target) } }
+                dragAxis = .undecided; verticalKind = nil; seekPositionAtDragStart = nil; seekPreview = nil
+                scheduleIndicatorHide()
+                if controlsVisible { scheduleHide() }
+            }
+    }
+
+    @ViewBuilder private var gestureOverlays: some View {
+        if indicatorVisible, let indicator {
+            HStack {
+                if indicator.kind == .brightness { DSGestureIndicator(symbol: indicator.symbol, value: indicator.value); Spacer() }
+                else { Spacer(); DSGestureIndicator(symbol: indicator.symbol, value: indicator.value) }
+            }
+            .padding(DS.Space.s8)
+            .transition(.opacity)
+            .allowsHitTesting(false)
+        }
+        if dragAxis == .horizontal, let target = seekPreview, let start = seekPositionAtDragStart {
+            seekBubble(target: target, start: start)
+        }
+        if isFastForwarding {
+            VStack { DSSpeedPill(); Spacer() }.padding(.top, DS.Space.s14).transition(.opacity).allowsHitTesting(false)
+        }
+    }
+
+    /// La burbuja de buscar, justo encima de la barra de avance, en la x del tiempo destino (sin salirse de los bordes).
+    private func seekBubble(target: Double, start: Double) -> some View {
+        let delta = target - start
+        let duration = max(holder.model.snapshot.duration, 1)
+        return GeometryReader { geo in
+            let fraction = CGFloat(max(0, min(1, target / duration)))
+            let rawX = DS.Space.gutter + (geo.size.width - DS.Space.gutter * 2) * fraction
+            let x = min(max(rawX, DS.Gesture.seekBubbleSideMargin), geo.size.width - DS.Gesture.seekBubbleSideMargin)
+            DSSeekBubble(time: clock(target), delta: "\(delta >= 0 ? "+" : "−")\(clock(abs(delta)))")
+                .position(x: x, y: geo.size.height - DS.Gesture.seekBubbleBottomInset)
+        }
+        .transition(.opacity).allowsHitTesting(false)
+    }
+
+    private func scheduleIndicatorHide() {
+        indicatorHideTask?.cancel()
+        indicatorHideTask = Task {
+            try? await Task.sleep(nanoseconds: DS.Timing.gestureIndicatorHold)
+            guard !Task.isCancelled else { return }
+            withAnimation(DS.Motion.base(reduceMotion)) { indicatorVisible = false }
+        }
+    }
+
+    private func startFastForward(_ model: PlayerModel) {
+        guard !isFastForwarding, dragAxis == .undecided else { return }
+        rateBeforeFastForward = model.rate
+        withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = true }
+        Task { await model.setRate(PlaybackRules.fastForwardRate) }
+    }
+
+    private func endFastForward(_ model: PlayerModel) {
+        guard isFastForwarding else { return }
+        withAnimation(DS.Motion.base(reduceMotion)) { isFastForwarding = false }
+        Task { await model.setRate(rateBeforeFastForward) }
+    }
+
+    #if DEBUG
+    /// Para `-demo-gesture`: pone el indicador a medio camino sin tocar la pantalla, para capturarlo en el simulador.
+    private func simulateGesture(_ kind: String, model: PlayerModel) {
+        switch kind {
+        case "brightness": verticalKind = .brightness; indicator = (.brightness, "sun.max.fill", 0.65); indicatorVisible = true
+        case "volume": verticalKind = .volume; indicator = (.volume, "speaker.wave.2.fill", 0.4); indicatorVisible = true
+        case "seek": dragAxis = .horizontal; seekPositionAtDragStart = model.snapshot.position; seekPreview = model.snapshot.position + 80
+        case "fastforward": startFastForward(model)
+        default: break
+        }
+    }
+    #endif
 
     private func pulse() { controlsVisible = true; scheduleHide() }
 
@@ -188,7 +338,8 @@ struct PlayerScreen: View {
 
     private func scrubber(_ model: PlayerModel) -> some View {
         let duration = max(model.snapshot.duration, 1)
-        let shown = scrubbing ?? model.snapshot.position
+        // Buscar arrastrando (gesto de pantalla completa) mueve el pulgar igual que arrastrar el slider a mano.
+        let shown = scrubbing ?? (dragAxis == .horizontal ? seekPreview : nil) ?? model.snapshot.position
         return VStack(spacing: DS.Space.s1) {
             Slider(value: Binding(get: { shown }, set: { scrubbing = $0 }), in: 0...duration) { editing in
                 if !editing, let target = scrubbing { Task { await model.seek(to: target); scrubbing = nil } }
