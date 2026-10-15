@@ -81,10 +81,12 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
         legibleGroup = try? await asset.loadMediaSelectionGroup(for: .legible)
         if let groups = try? await asset.load(.availableChapterLocales), let locale = groups.first,
            let metadata = try? await asset.loadChapterMetadataGroups(withTitleLocale: locale, containingItemsWithCommonKeys: []) {
-            chapters = metadata.compactMap { group in
-                guard let title = group.items.first?.stringValue else { return nil }
-                return Chapter(title: title, time: group.timeRange.start.seconds)
+            var found: [Chapter] = []
+            for group in metadata {
+                guard let title = try? await group.items.first?.load(.stringValue) else { continue }
+                found.append(Chapter(title: title, time: group.timeRange.start.seconds))
             }
+            chapters = found
         }
         if startAt > 1 { await player.seek(to: CMTime(seconds: startAt, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) }
         await MainActor.run { player.play() }
