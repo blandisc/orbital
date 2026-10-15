@@ -98,6 +98,7 @@ def print_diagnostics(catalog) -> None:
 
 def stremio_command(args, config) -> int:
     from .catalog import STREMIO_KEY, Catalog
+    from .library.addons import redact
     from .library.stremio_api import StremioError
 
     catalog = Catalog(config)
@@ -116,6 +117,18 @@ def stremio_command(args, config) -> int:
         elif args.action == "logout":
             catalog.watch.unlink_stremio()
             print("Cuenta de Stremio desvinculada de Orbital.")
+        elif args.action == "add-addon":
+            addon = catalog.watch.add_addon(args.value)
+            print(f"Listo: {addon.name} ({', '.join(addon.resources)}). Su dirección se guardó cifrada.")
+        elif args.action == "remove-addon":
+            print(f"Quitado: {catalog.watch.remove_addon(int(args.value))}")
+        elif args.action == "addons":
+            own = catalog.watch.own_addons()
+            if not own:
+                print("No tienes complementos propios. Agrega uno con: orbital stremio add-addon <url>")
+            # Solo el servidor: el resto de la dirección suele llevar tus claves.
+            for number, url in enumerate(own, 1):
+                print(f"  {number}. {redact(url)}")
         else:  # status
             if not catalog.credentials.get(STREMIO_KEY):
                 print("Stremio no está vinculado. Usa: orbital stremio login")
@@ -129,7 +142,7 @@ def stremio_command(args, config) -> int:
             for item in sorted(watching, key=lambda i: i.last_watched or 0, reverse=True)[:10]:
                 pct = f"{item.progress:.0%}" if item.progress else ""
                 print(f"   {item.title:<40} {item.subtitle:<22} {pct}")
-    except StremioError as exc:
+    except (StremioError, ValueError) as exc:
         print(f"!! {exc}")
         return 1
     return 0
@@ -251,9 +264,10 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("-v", "--verbose", action="store_true")
     sub = parser.add_subparsers(dest="command")
     st = sub.add_parser("stremio", help="Vincular tu cuenta de Stremio (fila Seguir viendo)")
-    st.add_argument("action", choices=["login", "key", "status", "logout"],
-                    help="login: correo y contraseña · key: pegar la clave de sesión · status · logout")
-    st.add_argument("value", nargs="?", help="la clave de sesión (para 'key')")
+    st.add_argument("action", choices=["login", "key", "status", "logout", "addons", "add-addon", "remove-addon"],
+                    help="login: correo y contraseña · key: pegar la clave de sesión · status · logout · "
+                         "addons: tus complementos · add-addon <url> · remove-addon <número>")
+    st.add_argument("value", nargs="?", help="la clave de sesión (key), la URL (add-addon) o el número (remove-addon)")
     al = sub.add_parser("alexa", help="Configurar y comprobar Alexa")
     al.add_argument("action", choices=["setup", "check", "say", "protect-token", "rotate"],
                     help="setup: token y pasos · check: prueba el túnel · say: envía un comando de prueba · "
@@ -265,6 +279,10 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
     if args.command == "stremio" and args.action == "key" and not args.value:
         parser.error("falta la clave: orbital stremio key <clave>")
+    if args.command == "stremio" and args.action == "add-addon" and not args.value:
+        parser.error("falta la URL: orbital stremio add-addon https://…/manifest.json")
+    if args.command == "stremio" and args.action == "remove-addon" and not str(args.value or "").isdigit():
+        parser.error("falta el número: orbital stremio remove-addon <número> (míralo con: orbital stremio addons)")
 
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")

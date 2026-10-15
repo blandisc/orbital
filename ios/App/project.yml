@@ -1,0 +1,102 @@
+# Proyecto de Xcode de Orbital para iPhone (XcodeGen: https://github.com/yonaskolb/XcodeGen).
+#
+#   brew install xcodegen
+#   cd ios/App && xcodegen        # crea Orbital.xcodeproj (no se sube al repo)
+#   open Orbital.xcodeproj        # pon tu equipo en Signing & Capabilities y ejecuta en tu iPhone
+#
+# Cambia en UN solo lugar: el identificador de la app (PRODUCT_BUNDLE_IDENTIFIER) y el equipo (DEVELOPMENT_TEAM).
+name: Orbital
+options:
+  bundleIdPrefix: com.example.orbital
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+  developmentLanguage: es
+
+packages:
+  OrbitalCore:
+    path: ../OrbitalCore
+  # Motor de video principal. Fija la versión exacta (es un proyecto joven que publica a menudo).
+  # Si no compila con tu Xcode, quita este paquete y la bandera AETHER_ENGINE de abajo: la app usa AVPlayer.
+  AetherEngine:
+    url: https://github.com/superuser404notfound/AetherEngine
+    exactVersion: 7.35.1
+
+targets:
+  Orbital:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Resources
+      - path: Shared
+    dependencies:
+      - target: OrbitalWidgets               # la actividad en vivo de las descargas
+      - package: OrbitalCore
+        product: OrbitalCore
+      - package: OrbitalCore
+        product: OrbitalModels
+      - package: AetherEngine
+        product: AetherEngine
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mx.iracheta.orbital
+        DEVELOPMENT_TEAM: B7KRCF776Z
+        TARGETED_DEVICE_FAMILY: "1"           # solo iPhone
+        SWIFT_VERSION: "5.0"                  # la app en modo Swift 5; los paquetes ya van en Swift 6
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) AETHER_ENGINE"
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_EMIT_LOC_STRINGS: YES
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+        STRING_CATALOG_GENERATE_SYMBOLS: NO
+    info:
+      path: Build/Info.plist
+      properties:
+        CFBundleDisplayName: Orbital
+        CFBundleDevelopmentRegion: es
+        CFBundleLocalizations: [es, en]
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UIBackgroundModes: [audio]            # sigue sonando con la pantalla apagada y en PiP
+        ITSAppUsesNonExemptEncryption: false
+        NSSupportsLiveActivities: true          # descargas en la pantalla bloqueada y la Dynamic Island
+        # Para volver desde Infuse: orbital-ios://infuse-done?lastPlayedUrl=…&position=…
+        CFBundleURLTypes:
+          - CFBundleURLName: com.example.orbital.ios.infuse-callback
+            CFBundleURLSchemes: [orbital-ios]
+        # Para poder preguntar si Infuse está instalado.
+        LSApplicationQueriesSchemes: [infuse]
+        # Los complementos de Stremio pueden dar enlaces http (no solo https) para el video.
+        # App personal: los complementos (y a veces sus archivos) pueden usar http, no solo https.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+    scheme:
+      testTargets: []
+
+  # Extensión de widgets: solo la actividad en vivo de las descargas.
+  OrbitalWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Widgets
+      - path: Shared
+      - path: Resources/Localizable.xcstrings
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mx.iracheta.orbital.widgets
+        DEVELOPMENT_TEAM: B7KRCF776Z
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.0"
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+        SWIFT_EMIT_LOC_STRINGS: YES
+    info:
+      path: Build/Widgets-Info.plist
+      properties:
+        CFBundleDisplayName: Orbital
+        CFBundleDevelopmentRegion: es
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
