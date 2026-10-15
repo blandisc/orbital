@@ -23,6 +23,8 @@ enum Demo {
         guard let parts = value(after: "-demo-title")?.split(separator: ":"), parts.count == 2 else { return nil }
         return (String(parts[0]), String(parts[1]))
     }
+    /// `-demo-search dune`: escribe eso en Buscar (pestaña Ver).
+    static var search: String? { value(after: "-demo-search") }
     /// `-demo-open settings|sources|play`: lo que se abre encima de la ficha o de Inicio.
     static var open: String? { value(after: "-demo-open") }
 

@@ -30,7 +30,12 @@ struct BrowseView: View {
             guard !Task.isCancelled else { return }
             await search.model.search(query)
         }
-        .task { await catalog.model.load() }
+        .task {
+            #if DEBUG
+            if Demo.isOn, let text = Demo.search { query = text }
+            #endif
+            await catalog.model.load()
+        }
         .refreshable { await catalog.model.load() }
     }
 
@@ -40,7 +45,8 @@ struct BrowseView: View {
         else if model.results.isEmpty && !model.isSearching { DSNotice(text: "No encontré nada con ese nombre.").padding(.horizontal, DS.Space.gutter) }
         LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
             ForEach(model.results) { r in
-                TitleLink(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster), width: DS.Poster.gridMinimum)
+                TitleLink(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster), width: DS.Poster.gridMinimum,
+                          detail: yearAndKind(year: r.year, kind: r.kind))
                     .simultaneousGesture(TapGesture().onEnded { model.remember(query) })
             }
         }

@@ -50,16 +50,25 @@ struct TitleLink: View {
     var badge: LocalizedStringKey?
     var progress: Double?
     var width: CGFloat = DS.Poster.railWidth
+    /// Un renglón más debajo del nombre («2021 · Película»): distingue títulos que se llaman igual.
+    var detail: Text?
 
     var body: some View {
         NavigationLink(value: route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterCard(title: route.title, poster: route.poster, badge: badge, progress: progress, width: width)
                 Text(route.title).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1).frame(width: width, alignment: .leading)
+                if let detail { detail.font(DS.font(.xs)).foregroundStyle(DS.textFaint).lineLimit(1).frame(width: width, alignment: .leading) }
             }
         }
         .buttonStyle(.plain)
     }
+}
+
+/// «2021 · Película» / «2005–2013 · Serie».
+func yearAndKind(year: String, kind: String) -> Text {
+    let k = kind == "movie" ? Text("Película") : Text("Serie")
+    return year.isEmpty ? k : Text("\(year) · ") + k
 }
 
 extension Suggestion {
