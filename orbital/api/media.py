@@ -121,6 +121,8 @@ def router(d: Deps) -> APIRouter:
         catalog.sessions.play_stremio(kind, meta_id, body.video_id, title)
         return {"ok": True}
 
+    d.extra["play_stremio"] = play  # «Ver en la TV» del iPhone entra por el puerto público (server.create_public_app)
+
     @r.post("/login")
     def login(body: dict) -> dict:
         """Conectar Stremio desde la consola. La contraseña solo viaja a Stremio: no se guarda ni se

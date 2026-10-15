@@ -364,6 +364,17 @@
         }
       }
     },
+    "Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas. Usa la dirección del túnel de Alexa y su token.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With your Orbital connected, “Watch on TV” plays what you're watching here on the console, right where you were. Use the Alexa tunnel address and its token."
+          }
+        }
+      }
+    },
     "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias.": {
       "extractionState": "manual",
       "localizations": {
@@ -371,6 +382,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Connect Trakt or add a TMDB key in Settings to see suggestions."
+          }
+        }
+      }
+    },
+    "Conectada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected"
           }
         }
       }
@@ -584,6 +606,17 @@
         }
       }
     },
+    "Dirección (orbital.tudominio.com)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Address (orbital.yourdomain.com)"
+          }
+        }
+      }
+    },
     "E%lld": {
       "extractionState": "manual",
       "localizations": {
@@ -668,6 +701,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Queued"
+          }
+        }
+      }
+    },
+    "En la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On TV"
           }
         }
       }
@@ -866,6 +910,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Save secret"
+          }
+        }
+      }
+    },
+    "Guardar token": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save token"
           }
         }
       }
@@ -1464,6 +1519,17 @@
         }
       }
     },
+    "Poniéndolo en la TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playing it on the TV."
+          }
+        }
+      }
+    },
     "Popular": {
       "extractionState": "manual",
       "localizations": {
@@ -1482,6 +1548,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trying another source (%lld)…"
+          }
+        }
+      }
+    },
+    "Probar conexión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test connection"
           }
         }
       }
@@ -1915,6 +1992,28 @@
         }
       }
     },
+    "Token (el mismo de Alexa)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token (the same as Alexa's)"
+          }
+        }
+      }
+    },
+    "Token guardado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token saved"
+          }
+        }
+      }
+    },
     "Trakt al día": {
       "extractionState": "manual",
       "localizations": {
@@ -1955,6 +2054,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trakt: %@"
+          }
+        }
+      }
+    },
+    "Tu Orbital (la TV)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Orbital (the TV)"
           }
         }
       }
@@ -2021,6 +2131,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Watch now"
+          }
+        }
+      }
+    },
+    "Ver en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch on TV"
           }
         }
       }

@@ -14,6 +14,10 @@ public final class SettingsModel: ObservableModel {
     public private(set) var settings: AppSettings { didSet { changed() } }
     public private(set) var trakt: TraktState { didSet { changed() } }
     public private(set) var hasTMDBKey: Bool { didSet { changed() } }
+    public private(set) var hasOrbitalToken: Bool { didSet { changed() } }
+    /// Resultado de «Probar conexión» con tu Orbital: nil sin probar, "" bien, o el problema.
+    public private(set) var orbitalCheck: String? { didSet { changed() } }
+    public private(set) var checkingOrbital = false { didSet { changed() } }
     private let services: Services
     private var linking: Task<Void, Never>?
 
@@ -21,6 +25,7 @@ public final class SettingsModel: ObservableModel {
         self.services = services
         settings = services.appSettings
         hasTMDBKey = !(services.secrets.get(SecretKey.tmdbKey) ?? "").isEmpty
+        hasOrbitalToken = !(services.secrets.get(SecretKey.orbitalToken) ?? "").isEmpty
         trakt = .off
         super.init()
         trakt = computeTraktState()
@@ -47,6 +52,21 @@ public final class SettingsModel: ObservableModel {
         services.secrets.set(SecretKey.traktClientSecret, trimmed.isEmpty ? nil : trimmed)
         services.reconfigure()
         trakt = computeTraktState()
+    }
+
+    public func setOrbitalToken(_ token: String) {
+        let trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        services.secrets.set(SecretKey.orbitalToken, trimmed.isEmpty ? nil : trimmed)
+        hasOrbitalToken = !trimmed.isEmpty
+        orbitalCheck = nil
+    }
+
+    /// «Probar conexión»: ¿contesta tu Orbital y acepta el token?
+    public func checkOrbital() async {
+        checkingOrbital = true
+        defer { checkingOrbital = false }
+        do { try await services.orbital.check(); orbitalCheck = "" }
+        catch { orbitalCheck = (error as? OrbitalRemote.Failure)?.description ?? "\(error)" }
     }
 
     public func setTMDBKey(_ key: String) {

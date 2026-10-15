@@ -310,6 +310,29 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.engine.loads.last?.start, 600)
     }
 
+    func testTraktHearsAboutABigJumpSoWatchingNowStaysRight() async throws {
+        let api = "https://api.trakt.tv"
+        let secrets = InMemorySecrets()
+        secrets.set(SecretKey.traktTokens, #"{"access_token":"AT","refresh_token":"RT","expires_at":\#(1_760_000_000 + 86400)}"#)
+        let probe = FakeHTTP()
+        let trakt = Trakt(http: probe, secrets: secrets, clientID: "CID", clock: { Date(timeIntervalSince1970: 1_760_000_000) }, pause: { _ in })
+        let rig = try Rig(trakt: trakt)
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [rig.stream("a")]]
+        probe.json["\(api)/scrobble/start"] = [:]
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(100))
+        XCTAssertEqual(probe.calls.filter { $0.hasSuffix("/scrobble/start") }.count, 1)
+        await rig.model.seek(to: 105)                                    // un saltito no se avisa
+        await rig.model.handle(rig.playing(105))
+        XCTAssertEqual(probe.calls.filter { $0.hasSuffix("/scrobble/start") }.count, 1)
+        await rig.model.seek(to: 700)
+        await rig.model.handle(rig.playing(700))
+        let starts = probe.bodies("\(api)/scrobble/start")
+        XCTAssertEqual(starts.count, 2, "Trakt recibe el avance nuevo")
+        guard case .double(let progress)? = JSON.parse(starts[1])?["progress"] else { return XCTFail("sin progreso") }
+        XCTAssertEqual(progress, 700.0 / 1320 * 100, accuracy: 0.5)
+    }
+
     func testTheChosenSpeedSurvivesAnotherSource() async throws {
         let rig = try twoSources()
         await rig.model.begin(rig.request())

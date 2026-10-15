@@ -152,6 +152,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
                  update.router(d, updater), foryou.router(d)):
         app.include_router(part)
     app.state.run_voice = d.extra["run_voice"]
+    app.state.play_stremio = d.extra["play_stremio"]
     app.mount("/", WebFiles(directory=WEB_DIR, html=True), name="web")
     return app
 
@@ -229,7 +230,7 @@ MAX_PUBLIC_BODY = 16 * 1024
 
 
 def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | None = None) -> FastAPI:
-    """App mínima para internet (Alexa a través del túnel): solo voz y ping, siempre con token.
+    """App mínima para internet (Alexa y el iPhone a través del túnel): voz, ping y «Ver en la TV», siempre con token.
 
     Corre en otro puerto (server.public_port). Aunque el túnel entregue las peticiones desde
     127.0.0.1, aquí no hay excepciones para "local": sin token no se hace nada.
@@ -280,5 +281,11 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     @public.post("/api/voice")
     async def voice_command(body: VoiceRequest) -> dict:
         return await main_app.state.run_voice(body, remote=True)
+
+    @public.post("/api/stremio/play")
+    def play_on_tv(body: media.PlayRequest) -> dict:
+        """«Ver en la TV» desde el iPhone: lo mismo que la tarjeta de la TV (la fuente recomendada, donde ibas).
+        No da más de lo que ya da la voz («pon The Office»): solo poner un título de Stremio."""
+        return main_app.state.play_stremio(body)
 
     return public

@@ -58,7 +58,7 @@ final class AppEnvironment: ObservableObject {
         // Modo demostración: nada toca tu Keychain, tus ajustes ni tus descargas.
         if Demo.isOn {
             let kv = InMemoryKeyValueStore()
-            if let language = Demo.language { SettingsStore(kv).update { $0.uiLanguage = language } }
+            SettingsStore(kv).update { if let language = Demo.language { $0.uiLanguage = language }; $0.orbitalAddress = "tv.demo.invalid" }
             return Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),
                             downloadTransport: transport, downloadsRoot: FileManager.default.temporaryDirectory.appendingPathComponent("demo-downloads"),
                             freeSpace: { DiskSpace.freeBytes() })
@@ -121,6 +121,14 @@ final class AppEnvironment: ObservableObject {
                                   position: 1, duration: 1, watched: 0, at: Date().timeIntervalSince1970)
         await services.watch.report(event, phase: .stopped(finished: true), scrobbleToTrakt: false)
         askFinished = nil
+    }
+
+    /// «Ver en la TV»: tu Orbital pone el título (la fuente recomendada, donde ibas; el avance vive en Stremio).
+    func playOnTV(kind: String, metaID: String, videoID: String?, title: String) async {
+        do {
+            try await services.orbital.play(kind: kind, metaID: metaID, videoID: videoID, title: title)
+            notify("Poniéndolo en la TV.", tone: .success)
+        } catch { notify((error as? OrbitalRemote.Failure)?.description ?? "\(error)") }
     }
 
     /// Un título desde Inicio: reproduce directo donde ibas.

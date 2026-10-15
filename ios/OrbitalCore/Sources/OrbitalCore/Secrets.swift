@@ -17,6 +17,7 @@ public enum SecretKey {
     public static let tmdbKey = "tmdb_key"
     public static let traktClientID = "trakt_client_id"
     public static let traktClientSecret = "trakt_client_secret"
+    public static let orbitalToken = "orbital_token"     // el token de tu Orbital (el mismo de Alexa): «Ver en la TV»
 }
 
 public final class InMemorySecrets: SecretsStore, @unchecked Sendable {

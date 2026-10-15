@@ -267,6 +267,21 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(model.mosaic.map(\.imdb), ["tt1160419"], "«No me interesa» también vale aquí")
     }
 
+    func testConnectingYourOrbitalKeepsTheTokenInTheKeychainAndChecksIt() async throws {
+        let rig = try ServicesRig()
+        let model = SettingsModel(rig.services)
+        model.update { $0.orbitalAddress = "tv.example" }
+        model.setOrbitalToken("  secreto ")
+        XCTAssertEqual(rig.secrets.get(SecretKey.orbitalToken), "secreto")
+        XCTAssertTrue(model.hasOrbitalToken)
+        rig.http.json["https://tv.example/api/ping"] = ["ok": true]
+        await model.checkOrbital()
+        XCTAssertEqual(model.orbitalCheck, "")
+        rig.http.statuses["https://tv.example/api/ping"] = 401
+        await model.checkOrbital()
+        XCTAssertEqual(model.orbitalCheck, OrbitalRemote.Failure.badToken.description)
+    }
+
     // MARK: ajustes y Trakt
     func testSettingsPersistAndTMDBKeyGoesToTheKeychain() async throws {
         let rig = try ServicesRig()

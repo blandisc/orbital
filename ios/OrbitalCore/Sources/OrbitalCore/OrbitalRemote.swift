@@ -1,0 +1,68 @@
+import Foundation
+
+/// Tu Orbital (la consola de la TV) desde el iPhone: «Ver en la TV». Entra por el puerto público de Orbital (el del túnel
+/// de Alexa), siempre con su token. Orbital pone la fuente recomendada y retoma donde ibas: el avance vive en Stremio.
+public struct OrbitalRemote: Sendable {
+    public enum Failure: Error, Equatable, CustomStringConvertible {
+        case notConfigured, badToken, unreachable, refused(String)
+        public var description: String {
+            switch self {
+            case .notConfigured: "Conecta tu Orbital en Ajustes (la dirección y el token)."
+            case .badToken: "Tu Orbital no aceptó el token. Revísalo en Ajustes."
+            case .unreachable: "No encontré tu Orbital. ¿Está prendida la consola y el túnel?"
+            case .refused(let message): message
+            }
+        }
+    }
+
+    private let http: HTTPClient
+    public let base: URL?
+    private let token: String
+
+    public init(http: HTTPClient, address: String, token: String) {
+        self.http = http; self.token = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.base = Self.normalize(address)
+    }
+
+    public var isConfigured: Bool { base != nil && !token.isEmpty }
+
+    /// «orbital.midominio.com», «https://orbital.midominio.com/» o con ruta: siempre https y sin la barra final.
+    public static func normalize(_ address: String) -> URL? {
+        var text = address.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return nil }
+        if !text.contains("://") { text = "https://" + text }
+        while text.hasSuffix("/") { text.removeLast() }
+        guard let url = URL(string: text), let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http", url.host != nil else { return nil }
+        return url
+    }
+
+    /// ¿Contesta y acepta el token?
+    public func check() async throws {
+        _ = try await send("api/ping", method: "GET", body: nil)
+    }
+
+    /// Pone en la TV un título de Stremio (película o el episodio `videoID`), desde donde ibas.
+    public func play(kind: String, metaID: String, videoID: String?, title: String) async throws {
+        var body: [String: JSON] = ["kind": .string(kind), "id": .string(metaID), "title": .string(title)]
+        if let videoID { body["video_id"] = .string(videoID) }
+        _ = try await send("api/stremio/play", method: "POST", body: JSON.object(body).serialized())
+    }
+
+    private func send(_ path: String, method: String, body: Data?) async throws -> JSON? {
+        guard let base, !token.isEmpty else { throw Failure.notConfigured }
+        var headers = ["Authorization": "Bearer \(token)"]
+        if body != nil { headers["Content-Type"] = "application/json" }
+        let response: HTTPResponse
+        do { response = try await http.send(HTTPRequest(url: base.appendingPathComponent(path), method: method, headers: headers, body: body, timeout: 12)) }
+        catch { throw Failure.unreachable }
+        switch response.status {
+        case 200..<300: return JSON.parse(response.data)
+        case 401, 403: throw Failure.badToken
+        case 429: throw Failure.refused("Tu Orbital pidió esperar un poco: demasiados intentos.")
+        case 404 where path.hasPrefix("api/stremio"): throw Failure.refused("Tu Orbital es de una versión anterior: actualízala para «Ver en la TV».")
+        default:
+            let detail = JSON.parse(response.data)?["detail"]?.string
+            throw Failure.refused(detail ?? "Tu Orbital contestó con un error (\(response.status)).")
+        }
+    }
+}

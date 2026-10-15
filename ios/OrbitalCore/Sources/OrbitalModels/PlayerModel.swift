@@ -90,6 +90,7 @@ public final class PlayerModel: ObservableModel {
     private var watchedUnsaved = 0.0
     private var tracksApplied = false
     private var addedExternalSubtitle = false
+    private var rescrobbleAfterSeek = false
     private var knownSubtitleIDs = Set<Int>()
     private var preloadedNext = false
     private var upNextDeadline: Date?
@@ -226,7 +227,9 @@ public final class PlayerModel: ObservableModel {
         if firstPlay { await report(.started) }
         else if hasPlayed {
             if previous.state == .playing && s.state == .paused { await report(.paused) }
-            else if previous.state == .paused && s.state == .playing { await report(.started) }
+            else if previous.state == .paused && s.state == .playing { rescrobbleAfterSeek = false; await report(.started) }
+            // Adelantaste o regresaste: Trakt recibe el avance nuevo en cuanto vuelve a sonar («Viendo ahora» al día).
+            if rescrobbleAfterSeek && s.state == .playing { rescrobbleAfterSeek = false; await report(.started) }
         }
         if s.state == .ended && !reachedEnd { reachedEnd = true; await finishAndAdvance() }
     }
@@ -358,7 +361,12 @@ public final class PlayerModel: ObservableModel {
     public func togglePlay() async { userTouched(); snapshot.state == .playing ? await engine.pause() : await engine.play() }
     public func play() async { userTouched(); await engine.play() }
     public func pause() async { userTouched(); await engine.pause() }
-    public func seek(to seconds: Double) async { userTouched(); await engine.seek(to: max(0, min(seconds, snapshot.duration > 0 ? snapshot.duration : seconds))) }
+    public func seek(to seconds: Double) async {
+        userTouched()
+        let target = max(0, min(seconds, snapshot.duration > 0 ? snapshot.duration : seconds))
+        if hasPlayed, abs(target - snapshot.position) >= PlaybackRules.rescrobbleJump { rescrobbleAfterSeek = true }
+        await engine.seek(to: target)
+    }
     public func skip(_ delta: Double) async { await seek(to: snapshot.position + delta) }
 
     /// Cambia de fuente en el mismo punto. Si la lista de fuentes es vieja (los enlaces de Real-Debrid caducan) se pide de nuevo.

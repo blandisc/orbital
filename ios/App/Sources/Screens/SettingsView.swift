@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var newAddon = ""
     @State private var secret = ""
     @State private var confirmSignOut = false
+    @State private var orbitalToken = ""
 
     init() {
         let services = AppEnvironment.shared.services
@@ -57,6 +58,7 @@ struct SettingsView: View {
                 Toggle("Abrir siempre en Infuse", isOn: Binding(get: { s.preferInfuse }, set: { v in model.update { $0.preferInfuse = v } }))
             }
             .listRowBackground(DS.fill)
+            orbitalSection(model)
             Section("Sugerencias") {
                 Picker("País (para lo popular en plataformas)", selection: Binding(get: { s.region }, set: { v in model.update { $0.region = v } })) {
                     ForEach(["MX", "US", "ES", "AR", "CO", "CL", "PE"], id: \.self) { Text(verbatim: env.uiLocale.localizedString(forRegionCode: $0) ?? $0).tag($0) }
@@ -96,6 +98,31 @@ struct SettingsView: View {
             if let error = session.model.addonError { Text(LocalizedStringKey(error)).foregroundStyle(DS.danger).font(DS.font(.sm)) }
             TextField("Pegar la dirección de un complemento", text: $newAddon).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
             if !newAddon.isEmpty { Button("Agregar complemento") { Task { await session.model.addAddon(newAddon); if session.model.addonError == nil { newAddon = "" } } } }
+        }
+        .listRowBackground(DS.fill)
+    }
+
+    // MARK: tu Orbital (la TV)
+    @ViewBuilder private func orbitalSection(_ model: SettingsModel) -> some View {
+        Section {
+            TextField("Dirección (orbital.tudominio.com)", text: Binding(get: { model.settings.orbitalAddress }, set: { v in model.update { $0.orbitalAddress = v.trimmingCharacters(in: .whitespaces) } }))
+                .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL).textContentType(.URL)
+            SecureField(LocalizedStringKey(model.hasOrbitalToken ? "Token guardado" : "Token (el mismo de Alexa)"), text: $orbitalToken)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
+            if !orbitalToken.isEmpty { Button("Guardar token") { model.setOrbitalToken(orbitalToken); orbitalToken = "" } }
+            if !model.settings.orbitalAddress.isEmpty && model.hasOrbitalToken {
+                Button { Task { await model.checkOrbital() } } label: {
+                    HStack {
+                        Text("Probar conexión")
+                        Spacer()
+                        if model.checkingOrbital { ProgressView() }
+                        else if model.orbitalCheck == "" { Label("Conectada", systemImage: "checkmark.circle.fill").foregroundStyle(DS.good) }
+                    }
+                }
+                if let problem = model.orbitalCheck, !problem.isEmpty { Text(LocalizedStringKey(problem)).font(DS.font(.sm)).foregroundStyle(DS.danger) }
+            }
+        } header: { Text("Tu Orbital (la TV)") } footer: {
+            Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas. Usa la dirección del túnel de Alexa y su token.")
         }
         .listRowBackground(DS.fill)
     }

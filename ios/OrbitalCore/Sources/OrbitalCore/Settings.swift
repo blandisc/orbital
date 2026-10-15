@@ -38,6 +38,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var preferInfuse = false            // reproducir en Infuse en vez del reproductor propio
     public var traktClientID = ""            // el identificador no es secreto; el secreto de la aplicación va en el Keychain
     public var subtitleSize = "medium"         // «small» | «medium» | «large»: el tamaño de la letra de los subtítulos
+    public var orbitalAddress = ""             // tu Orbital por el túnel («orbital.midominio.com»); el token va en el Keychain
 
     public init() {}
 
@@ -59,11 +60,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
         preferInfuse = try c.decodeIfPresent(Bool.self, forKey: .preferInfuse) ?? preferInfuse
         traktClientID = try c.decodeIfPresent(String.self, forKey: .traktClientID) ?? traktClientID
         subtitleSize = try c.decodeIfPresent(String.self, forKey: .subtitleSize) ?? subtitleSize
+        orbitalAddress = try c.decodeIfPresent(String.self, forKey: .orbitalAddress) ?? orbitalAddress
     }
 
     enum Keys: String, CodingKey {
         case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
-        case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize
+        case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize, orbitalAddress
     }
     public var traktEnabled: Bool { !traktClientID.isEmpty }
 

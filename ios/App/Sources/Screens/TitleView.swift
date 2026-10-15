@@ -91,11 +91,15 @@ struct TitleView: View {
             // Con letra de accesibilidad no caben tres en fila: van una debajo de otra, con su nombre completo.
             let row = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: DS.Space.s2)) : AnyLayout(HStackLayout(spacing: DS.Space.s2))
             row {
-                secondary(model.inLibrary ? "En Mi lista" : "Mi lista", symbol: model.inLibrary ? "checkmark" : "plus") { Task { await model.toggleLibrary() } }
+                secondary("Mi lista", symbol: model.inLibrary ? "checkmark" : "plus", value: model.inLibrary ? "En Mi lista" : nil) { Task { await model.toggleLibrary() } }
                     .sensoryFeedback(.success, trigger: model.inLibrary)
                 downloadButton(model)
                 secondary("Fuentes", symbol: "list.bullet") { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) } }
                     .disabled(model.continueVideoID == nil)
+                if env.services.orbital.isConfigured {
+                    secondary("En la TV", symbol: "tv") { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: model.continueVideoID, title: model.title) } }
+                        .disabled(model.continueVideoID == nil)
+                }
             }
         }
     }
@@ -110,7 +114,7 @@ struct TitleView: View {
     }
 
     /// Una acción secundaria con su nombre (no solo el ícono): Mi lista, Descargar, Fuentes.
-    private func secondary(_ title: LocalizedStringKey, symbol: String, action: @escaping () -> Void) -> some View {
+    private func secondary(_ title: LocalizedStringKey, symbol: String, value: LocalizedStringKey? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Group {
                 if typeSize.isAccessibilitySize { Label(title, systemImage: symbol).font(DS.font(.md)) }
@@ -118,7 +122,9 @@ struct TitleView: View {
             }
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.glass).buttonBorderShape(.roundedRectangle(radius: DS.Radius.lg)).controlSize(.large)
+        .buttonStyle(.glass).buttonBorderShape(.roundedRectangle(radius: DS.Radius.lg))
+        .controlSize(env.services.orbital.isConfigured ? .regular : .large)   // con «En la TV» son cuatro: menos relleno para que quepan los nombres
+        .accessibilityValue(value.map { Text($0) } ?? Text(verbatim: ""))
     }
 
     private func primaryLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> Text {
@@ -145,7 +151,8 @@ struct TitleView: View {
         VStack(spacing: 0) {
             ForEach(model.rows) { row in
                 EpisodeRowView(row: row, play: { start(model, videoID: row.id) }, download: { Task { await report(model.download([row.id]), model) } },
-                               markWatched: { Task { await model.markWatched(row.id) } }, chooseSource: { sourcesFor = SourcesTarget(videoID: row.id, purpose: .watch) })
+                               markWatched: { Task { await model.markWatched(row.id) } }, chooseSource: { sourcesFor = SourcesTarget(videoID: row.id, purpose: .watch) },
+                               playOnTV: env.services.orbital.isConfigured ? { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: row.id, title: model.title) } } : nil)
                 Divider().overlay(DS.hairline)
             }
         }
@@ -207,6 +214,7 @@ struct EpisodeRowView: View {
     let download: () -> Void
     let markWatched: () -> Void
     let chooseSource: () -> Void
+    var playOnTV: (() -> Void)?
 
     var body: some View {
         Button(action: play) {
@@ -231,6 +239,7 @@ struct EpisodeRowView: View {
             Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched)
             Button("Descargar", systemImage: "arrow.down.circle", action: download)
             Button("Elegir fuente", systemImage: "list.bullet", action: chooseSource)
+            if let playOnTV { Button("Ver en la TV", systemImage: "tv", action: playOnTV) }
         }
     }
 

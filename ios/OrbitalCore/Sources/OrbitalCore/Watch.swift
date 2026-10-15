@@ -10,6 +10,9 @@ public enum PlaybackRules {
     public static let stillWatchingAfter = 3                 // episodios seguidos sin tocar la pantalla → «¿Sigues viendo?»
     public static let maxSourceRetries = 4                   // «otra fuente si falla»
     public static let skipSeconds: Double = 10               // los botones y el doble toque de ±10 s
+    /// Un salto de más de esto (adelantar, regresar, otra fuente) se le vuelve a avisar a Trakt: su «Viendo ahora»
+    /// calcula a qué hora terminas con el avance del último aviso (como lo hace Infuse).
+    public static let rescrobbleJump: Double = 30
     /// Menos de 1 % (lo abriste un momento): no ensucia «Seguir viendo».
     public static let continueMinProgress = 0.01
     /// Se abrió y cerró sin ver nada: no se toca tu biblioteca.

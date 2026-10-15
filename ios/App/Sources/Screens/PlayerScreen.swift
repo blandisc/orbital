@@ -156,6 +156,7 @@ struct PlayerScreen: View {
                     Spacer()
                     if model.skipIntroTo != nil { Button("Saltar intro") { Task { await model.skipIntro() } }.buttonStyle(.glass) }
                     if pip.isPossible { DSIconButton(symbol: "pip.enter", label: "Imagen dentro de imagen") { pip.toggle() } }
+                    if env.services.orbital.isConfigured { DSIconButton(symbol: "tv", label: "Ver en la TV") { Task { await continueOnTV() } } }
                     AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
                         .accessibilityLabel(Text("AirPlay"))
                     DSIconButton(symbol: "text.bubble", label: "Audio y subtítulos") { panel = true }
@@ -221,6 +222,13 @@ struct PlayerScreen: View {
             }
         }
         dismiss()
+    }
+
+    /// Sigue en la TV: se guarda dónde ibas (Stremio) y tu Orbital retoma desde ahí.
+    private func continueOnTV() async {
+        await holder.model.close()
+        finish()
+        await env.playOnTV(kind: request.kind, metaID: request.metaID, videoID: request.videoID, title: request.displayTitle)
     }
 
     private func openInInfuse() async {

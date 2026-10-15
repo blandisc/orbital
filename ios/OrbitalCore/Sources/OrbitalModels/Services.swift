@@ -97,6 +97,11 @@ public final class Services: ObservableModel {
         }
     }
 
+    /// Tu Orbital de la TV («Ver en la TV»), con la dirección y el token de Ajustes.
+    public var orbital: OrbitalRemote {
+        OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "")
+    }
+
     public func now() -> Date { clock() }
     public var authKey: String? { secrets.get(SecretKey.stremioAuth) }
     public var isSignedIn: Bool { authKey != nil }

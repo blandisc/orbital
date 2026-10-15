@@ -36,6 +36,7 @@ enum Demo {
     static func secrets() -> InMemorySecrets {
         let secrets = InMemorySecrets()
         if !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") { secrets.set(SecretKey.stremioAuth, "DEMO") }
+        secrets.set(SecretKey.orbitalToken, "demo")      // una Orbital de mentira ya conectada («Ver en la TV»)
         return secrets
     }
 }
@@ -68,6 +69,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         let url = request.url
         if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
         if url.host == "demo.orbital.invalid" { return addon(url.path) }
+        if url.host == "tv.demo.invalid" { return HTTPResponse(status: 200, data: JSON.object(["ok": true]).serialized()) }
         return try await real.send(request)
     }
 
