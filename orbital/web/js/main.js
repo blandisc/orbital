@@ -855,13 +855,6 @@ function openMenu(menu, options = {}) {
   renderHints();
 }
 
-/** Una vista abierta desde un menú (visor, Conectar Stremio): B regresa a ese menú, donde estabas. */
-function backToMenu() {
-  const back = state.backTo;
-  state.backTo = null;
-  if (back?.menu && !ui.sheet.isOpen) ui.sheet.open(back.menu, { index: back.index, stack: back.stack });
-}
-
 /** «Zelda oculto · Y Deshacer»: unos segundos para arrepentirse (Y o tocar el aviso). */
 const UNDO_MS = 8000;
 function offerUndoHide(command) {
