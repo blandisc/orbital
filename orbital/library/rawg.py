@@ -36,6 +36,10 @@ class RawgError(Exception):
     pass
 
 
+class RawgKeyError(RawgError):
+    """RAWG no aceptó la clave (no es la red)."""
+
+
 def _year(text) -> int | None:
     return int(text[:4]) if isinstance(text, str) and text[:4].isdigit() else None
 
@@ -79,7 +83,7 @@ class Rawg:
         except NET_ERRORS as exc:
             raise RawgError(f"No pude conectar con RAWG: {exc}") from exc
         if status in (401, 403):
-            raise RawgError("RAWG no aceptó la clave de config.yaml (para_ti.rawg_key).")
+            raise RawgKeyError("RAWG no aceptó la clave. Revísala en Ajustes › Cuentas.")
         if status != 200 or not isinstance(data, dict):
             raise RawgError(f"RAWG respondió HTTP {status}")
         return data

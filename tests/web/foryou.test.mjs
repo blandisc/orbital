@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  factLine, hashOf, iconName, kindLabel, listMeta, nearestTile, nextUnseen, playOf, primaryAction, railEntries, shapeOf,
+  factLine, hashOf, iconName, kindLabel, listMeta, nearestTile, nextUnseen, playOf, posterRatio, primaryAction, railEntries, shapeOf,
 } from "../../orbital/web/js/core/foryou.js";
 
 const series = { key: "video:tt1", kind: "series", title: "Severance", detail: "Sigue T2 E6", meta_id: "tt1", video_id: "tt1:2:6" };
@@ -58,4 +58,13 @@ test("el encabezado de una lista dice cuántos y de dónde", () => {
     "12 series · Trakt · Lo más visto esta semana");
   assert.equal(listMeta({ group: "games", source: "", meta: "Favoritos" }, 1), "1 juego · Favoritos");
   assert.equal(listMeta({ group: "video", source: "TMDB" }, 3, "movie"), "3 películas · TMDB");
+});
+
+test("mosaico: las cajas de GBA casi cuadradas, y un juego sin fondo ancho de verdad siempre en vertical", () => {
+  const gba = { key: "game:emu:gba:1", kind: "game", item: { source: "gba" } };
+  assert.equal(posterRatio(gba), 1);
+  assert.equal(posterRatio({ key: "video:tt1", kind: "movie" }), 2 / 3);
+  const keys = Array.from({ length: 40 }, (_, i) => `game:${i}`);
+  assert.ok(keys.some((key) => shapeOf({ key }) === "wide"));
+  assert.ok(keys.every((key) => shapeOf({ key, hero_weak: true }) === "poster"));
 });

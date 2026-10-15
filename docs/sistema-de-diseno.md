@@ -78,8 +78,8 @@ Globales: `--z-overlay`, `--z-hints`, `--z-launch`, `--z-toast`. Dentro de un co
 | Pieza | Para qué |
 |---|---|
 | `Card(item, { caption, showAgo, pop })` (`card`) | Portada de un juego o video en filas y cuadrículas. Sin arte: el respaldo con su nombre; apps: su ícono (`appIcon`). Esquina: estrella si es favorito (`item.favorite`), palomita si ya lo tienes en una lista de afuera (`item.owned`). |
-| `FeatureTile` (`tiles`) | El destacado del Inicio: arte a sangre, logo o título, dato y botones (`.button-row`). |
-| `WideTile` (`tiles`) | Arte horizontal: solo el título; al enfocar aparece el detalle. |
+| `FeatureTile` (`tiles`) | El destacado del Inicio: arte a sangre, logo o título, dato y botones (`.button-row`). Si solo hay caja (GBA cuadrada, Switch alta), **estuche**: la portada desenfocada de fondo y la caja encima, a la derecha. |
+| `RowTile` (`tiles`) | Renglón: miniatura ancha (cápsula de Steam, fondo, o la caja recortada) y al lado el nombre grande y su dato siempre a la vista, con avance si es video. El texto nunca va encima del arte. |
 | `ConsoleTile` (`tiles`) | Foto real de la consola (o logo) con brillo de su color, juegos, nuevos y lo último. |
 
 **Ningún texto de tarjeta o botón se sale**: una línea con «…» (o `line-clamp` con espacio para las
@@ -95,7 +95,7 @@ letras que bajan: g, p, j, y).
 | `foryou-mosaic` | Mosaico de Para ti: columnas de imágenes; la enfocada crece y enseña etiqueta, logo y un dato; bajar sube todo (cascada) y quieto ~30 s entra en ambiente. Ícono de esquina: la consola del juego, o serie / película. |
 | `foryou-lists` | Listas de Para ti, con las mismas piezas que Juegos (`rail`, `browse`, `detail-panel`): tus listas en el riel (Trakt, plataformas con su logo de TMDB, juegos de RAWG), Series · Películas en las grandes, portadas y la ficha de lo enfocado. Una lista que explica algo (Conectar Trakt) lleva su botón, enfocable. |
 | `trakt-link` | Conectar Trakt: un código grande para escribir en trakt.tv/activate desde el celular. |
-| `home` | Inicio: saludo, destacado, tarjetas anchas y Tus consolas. |
+| `home` | Inicio: saludo, el destacado (enseña lo enfocado) y «También tenías» en renglones a la derecha; Tus consolas asoman abajo y al bajar a ellas el Inicio se desliza. |
 | `games` | Juegos: tus consolas en el riel (cruceta o LT/RT), encabezado de consola, filtros y cuadrícula; la ficha del juego enfocado. Armado con `rail`, `browse` y `detail-panel`. |
 | `rail` | Riel lateral de una vista con secciones (consolas, listas): casillas con foto, logo de marca o ícono; RePág/AvPág arriba y abajo; grupos con su nombre. **Al enfocarlo se abre como pestaña** y enseña el nombre y un dato de cada sección; lo de atrás se aparta. |
 | `browse` | El centro de una vista con secciones: encabezado (`BrowseHead`: la sección en su casilla, nombre grande y lo esencial), filtros en píldora (`fillFilters`, se compactan si no caben en una fila) y la cuadrícula de portadas (`keepInView`). Juegos y las Listas de Para ti son la misma vista con otros datos. |

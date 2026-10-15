@@ -150,7 +150,7 @@ def test_an_expired_or_cancelled_code_stops_waiting(make_foryou, net):
 
 def test_linking_without_the_app_keys_says_what_is_missing(make_foryou):
     fy = make_foryou(trakt_keys=False)
-    with pytest.raises(ValueError, match="config.yaml"):
+    with pytest.raises(ValueError, match="Ajustes › Cuentas"):
         fy.start_link()
 
 
@@ -307,3 +307,97 @@ def test_the_mosaic_leaves_out_games_without_their_own_art(make_foryou, net):
     assert any(g["placeholder"] for g in games) and any(not g["placeholder"] for g in games)  # en Listas, todos
     in_mosaic = [m for m in fy.mosaic() if m["kind"] == "game"]
     assert in_mosaic and not any(m["placeholder"] for m in in_mosaic)  # el mosaico es de imágenes
+
+
+# ---------------------------------------------------------------- sin claves: lo de tu Stremio
+def stremio_title(meta_id, title, kind="series", continue_=False, in_library=True, video_id=None, last=0, source="stremio"):
+    from orbital.library.models import LibraryItem
+
+    prefix = "stremio" if source == "stremio" else f"cinemeta:{kind}"
+    return LibraryItem(id=f"{prefix}:{meta_id}", title=title, source=source,
+                       category="continue" if continue_ else ("stremio" if source == "stremio" else "series" if kind == "series" else "movies"),
+                       last_watched=last, extra={"kind": kind, "meta_id": meta_id, "video_id": video_id, "in_library": in_library,
+                                                 "year": "2019–", "runtime": "148 min", "description": "Sinopsis"})
+
+
+def test_without_any_key_para_ti_still_has_movies_and_series(library, make_foryou):
+    fy = make_foryou(trakt_keys=False)
+    library.store.replace_source("stremio", [
+        stremio_title("tt0903747", "Breaking Bad", continue_=True, video_id="tt0903747:2:6", last=5),
+        stremio_title("tt1375666", "Inception", kind="movie", last=9),
+        stremio_title("bad-id", "Sin IMDb", continue_=True)])
+    library.store.replace_source("cinemeta", [stremio_title(f"tt{900 + i}", f"Popular {i}", kind=("movie", "series")[i % 2],
+                                                            source="cinemeta") for i in range(6)])
+    lists = [row["id"] for row in fy.lists()]
+    assert lists[:3] == ["continue", "mylist", "cinemeta"] and lists[-1] == "mygames"
+    bb = fy.list_items("continue")[0]
+    assert (bb["title"], bb["action"], bb["video_id"], bb["why"]) == ("Breaking Bad", "Continuar T2 E6", "tt0903747:2:6", "Seguir viendo")
+    assert fy.list_items("mylist")[0]["detail"] == "2 h 28 min"
+    assert {i["kind"] for i in fy.list_items("cinemeta", "movie")} == {"movie"}
+    mosaic = fy.mosaic()
+    assert {"series", "movie", "game"} <= {m["kind"] for m in mosaic}
+    assert "video:tt0903747" in [m["key"] for m in mosaic[:3]]
+
+
+def test_keys_written_in_settings_are_checked_saved_and_removed(library, make_foryou, net):
+    fy = make_foryou(trakt_keys=False)
+    net.on("GET", r"api_key=mala", (401, None))
+    net.on("GET", r"/watch/providers/", (200, {"results": [{"provider_id": 8, "provider_name": "Netflix", "logo_path": "/n.png"}]}))
+    with pytest.raises(tmdb.TmdbKeyError):
+        fy.set_keys("tmdb", ["mala"])
+    assert not fy.tmdb.configured and library.credentials.get("para_ti.tmdb_key") is None
+    fy.set_keys("tmdb", [" buena "])
+    assert fy.tmdb.key == "buena" and fy.status()["saved"] == ["tmdb"]
+    with pytest.raises(ValueError, match="Client ID"):
+        fy.set_keys("trakt", ["", "solo-secreto"])
+    with pytest.raises(ValueError):
+        fy.set_keys("trakt", ["con espacio", "x"])
+    fy.set_keys("trakt", ["cid", "secret"])
+    assert fy.trakt.configured
+    fy.set_keys("tmdb", [""])
+    assert not fy.tmdb.configured and fy.status()["saved"] == ["trakt"]
+    with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 5000)) as c:
+        assert c.post("/api/foryou/keys", json={"service": "rawg", "values": []}).status_code == 422
+        net.on("GET", r"rawg.io/api/games\?key=mala", (401, None))
+        assert c.post("/api/foryou/keys", json={"service": "rawg", "values": ["mala"]}).status_code == 422
+        assert c.get("/api/settings").json()["para_ti"]["saved"] == ["trakt"]
+
+
+def test_steam_games_carry_their_store_capsule_for_the_mosaic():
+    item = game_item({"id": "steam:1313140", "title": "Cult of the Lamb", "playtime": 0, "extra": {}}, "Sin estrenar")
+    assert item["steam_appid"] == 1313140 and item["wide"].endswith("/1313140/capsule_616x353.jpg")
+    gba = game_item({"id": "emu:gba:1", "title": "Kirby", "playtime": 0, "extra": {"hero_lowres": True}}, "Al azar")
+    assert gba["wide"] is None and gba["hero_weak"]
+
+
+def test_renewing_tries_the_https_redirect_and_then_the_old_one(make_foryou, net):
+    fy = make_foryou(linked=True)
+    fy.catalog.credentials.set(trakt.TOKENS_KEY, json.dumps({"access_token": "old", "refresh_token": "ref", "expires_at": time.time() + 60}))
+    sent = []
+
+    def token(url, body):
+        sent.append(body["redirect_uri"])
+        ok = body["redirect_uri"] == "urn:ietf:wg:oauth:2.0:oob"  # una aplicación vieja
+        return (200, {"access_token": "new", "refresh_token": "r", "expires_in": 86400, "created_at": time.time()}) if ok else (401, None)
+
+    net.on("POST", r"/oauth/token$", token)
+    net.on("GET", r"/sync/watchlist", (200, []))
+    assert fy.trakt.watchlist() == []
+    assert sent == ["https://localhost/", "https://localhost", "urn:ietf:wg:oauth:2.0:oob"]
+
+
+def test_a_new_trakt_app_without_secret_links_and_renews(make_foryou, net):
+    """developer.trakt.tv ya no da Client Secret (PKCE): con el Client ID basta y no se manda secreto."""
+    fy = make_foryou(trakt_keys=False)
+    fy.set_keys("trakt", ["cid-nuevo", ""])
+    assert fy.trakt.configured and fy.status()["saved"] == ["trakt"]
+    bodies = []
+    net.on("POST", r"/oauth/device/token$", lambda url, body: bodies.append(body) or (200, {
+        "access_token": "tok", "refresh_token": "ref", "expires_in": 60, "created_at": time.time()}))
+    net.on("POST", r"/oauth/token$", lambda url, body: bodies.append(body) or (200, {
+        "access_token": "new", "refresh_token": "r2", "expires_in": 86400, "created_at": time.time()}))
+    net.on("GET", r"/sync/watchlist", (200, []))
+    assert fy.trakt.poll_device(trakt.DeviceCode("dev", "ABC", "https://trakt.tv/activate", 1, time.time() + 60)) == "linked"
+    assert fy.trakt.watchlist() == []  # la sesión dura 60 s: se renueva antes de pedir
+    assert [b.get("client_id") for b in bodies] == ["cid-nuevo", "cid-nuevo"]
+    assert not any("client_secret" in b for b in bodies)

@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from ..foryou import SERVICE_ERRORS
-from ..library import trakt
+from ..library import rawg, tmdb, trakt
 from .deps import Deps
 
 log = logging.getLogger(__name__)
@@ -16,6 +16,11 @@ log = logging.getLogger(__name__)
 
 class DismissRequest(BaseModel):
     key: str
+
+
+class KeysRequest(BaseModel):
+    service: str
+    values: list[str]
 
 
 def router(d: Deps) -> APIRouter:
@@ -60,6 +65,17 @@ def router(d: Deps) -> APIRouter:
     def status() -> dict:
         return foryou.status()
 
+    @r.post("/keys")
+    def keys(body: KeysRequest) -> dict:
+        """Las claves de Trakt, TMDB o RAWG escritas en Ajustes › Cuentas (vacías: se quitan)."""
+        try:
+            foryou.set_keys(body.service, body.values[:2])
+        except (ValueError, tmdb.TmdbKeyError, rawg.RawgKeyError) as exc:
+            raise HTTPException(422, str(exc))
+        except SERVICE_ERRORS:
+            raise HTTPException(502, "No pude comprobar la clave. Revisa Internet e inténtalo de nuevo.")
+        return foryou.status()
+
     @r.post("/trakt/link")
     def link() -> dict:
         """Un código para escribir en trakt.tv/activate; Orbital avisa por SSE cuando quedó conectado."""
@@ -68,7 +84,7 @@ def router(d: Deps) -> APIRouter:
         except ValueError as exc:
             raise HTTPException(409, str(exc))
         except trakt.TraktError as exc:
-            raise HTTPException(502, str(exc) if "config.yaml" in str(exc) else "No pude conectar con Trakt. Revisa Internet e inténtalo de nuevo.")
+            raise HTTPException(502, str(exc) if "Revisa la clave" in str(exc) else "No pude conectar con Trakt. Revisa Internet e inténtalo de nuevo.")
 
     @r.post("/trakt/cancel")
     def cancel() -> dict:

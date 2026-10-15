@@ -6,7 +6,7 @@ la aplicación (client id y secret) van en config.yaml (`para_ti`); la sesión d
 secrets.json (credentials.py).
 
   POST /oauth/device/code   {client_id}                          -> {device_code, user_code, verification_url, interval, expires_in}
-  POST /oauth/device/token  {code, client_id, client_secret}     -> 200 sesión · 400 aún no · 404/409/410/418 se acabó · 429 más despacio
+  POST /oauth/device/token  {code, client_id[, client_secret]}     -> 200 sesión · 400 aún no · 404/409/410/418 se acabó · 429 más despacio
   POST /oauth/token         {refresh_token, … grant_type}         -> sesión nueva (la de Trakt dura poco)
   GET  /recommendations/{movies|shows} · /sync/watchlist · /users/me/lists(/{id}/items)
   GET  /{movies|shows}/trending · /{movies|shows}/popular · /sync/history/episodes · /shows/{id}/progress/watched
@@ -34,7 +34,10 @@ def _positive(value) -> int | None:
 
 API = "https://api.trakt.tv"
 TOKENS_KEY = "trakt_tokens"
-REDIRECT = "urn:ietf:wg:oauth:2.0:oob"
+# Lo que se escribe en «Redirect URIs» al crear la aplicación. Orbital entra con un código (no usa
+# redirección), pero renovar la sesión lo pide y tiene que coincidir: developer.trakt.tv ya solo acepta
+# https://, así que va https://localhost; las aplicaciones viejas tienen el valor de antes.
+REDIRECTS = ("https://localhost/", "https://localhost", "urn:ietf:wg:oauth:2.0:oob")  # Trakt le agrega la «/»
 KINDS = {"movie": "movies", "series": "shows"}
 
 
@@ -102,7 +105,12 @@ class Trakt:
     # --- cuenta -----------------------------------------------------------------------------
     @property
     def configured(self) -> bool:
-        return bool(self.client_id and self.client_secret)
+        # Las aplicaciones nuevas de developer.trakt.tv (PKCE) no dan Client Secret: basta el Client ID.
+        return bool(self.client_id)
+
+    def _client(self, **body) -> dict:
+        """client_id y, si la aplicación tiene uno (las viejas), client_secret."""
+        return {**body, "client_id": self.client_id, **({"client_secret": self.client_secret} if self.client_secret else {})}
 
     @property
     def linked(self) -> bool:
@@ -129,14 +137,14 @@ class Trakt:
         if tokens:  # que la sesión deje de servir también en Trakt (si no hay internet, da igual)
             try:
                 http_json(f"{API}/oauth/revoke", method="POST", timeout=self.timeout,
-                          body={"token": tokens["access_token"], "client_id": self.client_id, "client_secret": self.client_secret})
+                          body=self._client(token=tokens["access_token"]))
             except NET_ERRORS:
                 pass
 
     def device_code(self) -> DeviceCode:
         status, data = self._call("POST", "/oauth/device/code", body={"client_id": self.client_id}, auth=False)
         if status != 200 or not isinstance(data, dict) or not data.get("device_code") or not data.get("user_code"):
-            raise TraktError("Trakt no dio un código. Revisa la clave de la aplicación en config.yaml.")
+            raise TraktError("Trakt no dio un código. Revisa la clave de la aplicación en Ajustes › Cuentas.")
         return DeviceCode(str(data["device_code"]), str(data["user_code"]),
                           str(data.get("verification_url") or "https://trakt.tv/activate"),
                           float(data.get("interval") or 5), time.time() + float(data.get("expires_in") or 600))
@@ -144,16 +152,18 @@ class Trakt:
     def poll_device(self, code: DeviceCode) -> str:
         """Una consulta: "linked", "pending", "slow" (más despacio) o "expired"/"denied"/"invalid"."""
         status, data = self._call("POST", "/oauth/device/token", auth=False,
-                                  body={"code": code.device_code, "client_id": self.client_id, "client_secret": self.client_secret})
+                                  body=self._client(code=code.device_code))
         if status == 200 and isinstance(data, dict):
             self._save(data)
             return "linked"
         return {400: "pending", 429: "slow", 404: "invalid", 409: "invalid", 410: "expired", 418: "denied"}.get(status, "pending")
 
     def _refresh(self, tokens: dict) -> dict:
-        status, data = self._call("POST", "/oauth/token", auth=False, body={
-            "refresh_token": tokens.get("refresh_token"), "client_id": self.client_id, "client_secret": self.client_secret,
-            "redirect_uri": REDIRECT, "grant_type": "refresh_token"})
+        for redirect in REDIRECTS:  # el de la aplicación nueva y, si no, el de las viejas
+            status, data = self._call("POST", "/oauth/token", auth=False, body=self._client(
+                refresh_token=tokens.get("refresh_token"), redirect_uri=redirect, grant_type="refresh_token"))
+            if status == 200 and isinstance(data, dict):
+                break
         if status != 200 or not isinstance(data, dict):
             self.credentials.set(TOKENS_KEY, None)
             raise TraktAuthError("Tu sesión de Trakt caducó: vuelve a conectarla en Ajustes › Cuentas.")

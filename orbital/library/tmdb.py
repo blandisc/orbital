@@ -38,6 +38,10 @@ class TmdbError(Exception):
     pass
 
 
+class TmdbKeyError(TmdbError):
+    """TMDB no aceptó la clave (no es la red)."""
+
+
 def image(path, size: str = "w500") -> str | None:
     return f"{IMAGES}/{size}{path}" if isinstance(path, str) and path.startswith("/") else None
 
@@ -81,7 +85,7 @@ class Tmdb:
         except NET_ERRORS as exc:
             raise TmdbError(f"No pude conectar con TMDB: {exc}") from exc
         if status == 401:
-            raise TmdbError("TMDB no aceptó la clave de config.yaml (para_ti.tmdb_key).")
+            raise TmdbKeyError("TMDB no aceptó la clave. Revísala en Ajustes › Cuentas.")
         if status != 200 or not isinstance(data, dict):
             raise TmdbError(f"TMDB respondió HTTP {status}")
         return data

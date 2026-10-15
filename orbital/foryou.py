@@ -43,7 +43,13 @@ RECS_TTL = 60 * 60
 POPULAR_TTL = 6 * 3600
 SLOW_TTL = 24 * 3600
 
-MOSAIC_SIZE = 48
+MOSAIC_SIZE = 96  # el mosaico tiene ~40 piezas a la vista: con menos, se repetían
+PER_SOURCE = 16  # de cada lista, a lo más (así se mezclan)
+
+# Las claves de cada servicio. Las que escribes en Ajustes › Cuentas se guardan cifradas con las
+# credenciales (como la sesión de Stremio) y mandan sobre las de config.yaml.
+KEYS = {"trakt": ("trakt_client_id", "trakt_client_secret"), "tmdb": ("tmdb_key",), "rawg": ("rawg_key",)}
+KEY_PREFIX = "para_ti."
 
 
 # ---------------------------------------------------------------- textos
@@ -135,35 +141,90 @@ def video_item(e: dict, why: str, *, title: str | None = None, poster: str | Non
     }
 
 
+def library_entry(item) -> dict | None:
+    """Un título que Orbital ya tiene (tu Stremio o lo popular de Cinemeta), en la forma de video_item."""
+    extra = item.extra or {}
+    imdb, kind = str(extra.get("meta_id") or ""), extra.get("kind")
+    if not re.fullmatch(r"tt\d+", imdb) or kind not in ("movie", "series"):
+        return None
+    year = re.match(r"\d{4}", str(extra.get("year") or ""))
+    minutes = re.match(r"\d+", str(extra.get("runtime") or ""))
+    e: dict[str, Any] = {"imdb": imdb, "kind": kind, "title": item.title, "year": int(year.group()) if year else None}
+    if kind == "movie" and minutes:
+        e["runtime"] = int(minutes.group())
+    parts = str(extra.get("video_id") or "").split(":")
+    if kind == "series" and len(parts) == 3 and parts[1].isdigit() and parts[2].isdigit():
+        e["next"] = {"season": int(parts[1]), "episode": int(parts[2])}  # el episodio en que vas
+    return e
+
+
 def game_item(described: dict, why: str) -> dict:
     """Un juego tuyo (de la biblioteca): A lo abre como en Juegos."""
     played = float(described.get("playtime") or 0)
     detail = f"{hours_text(played)} jugadas" if played >= 60 else "Nunca lo has abierto"
     extra = described.get("extra") or {}
+    steam_id = str(described["id"]).removeprefix("steam:")
+    appid = extra.get("steam_appid") or described.get("steam_appid") or (
+        int(steam_id) if str(described["id"]).startswith("steam:") and steam_id.isdigit() else None)
     return {
         "key": f"game:{described['id']}", "id": described["id"], "kind": "game", "item": described, "owned": True,
         "title": described["title"], "why": why, "detail": detail,
         "facts": [["Jugadas", hours_text(played) if played >= 60 else "0 h"]],
         "image": described.get("image"), "hero": described.get("hero") or described.get("image"),
         "logo": extra.get("logo"), "overview": "", "action": "Jugar",
-        "steam_appid": extra.get("steam_appid") or None,
+        "steam_appid": appid or None,
+        # El «hero» de Steam es un fondo hecho para llevar el logo encima (el de Cult of the Lamb es un
+        # patrón de corderitos): sin foco, la pieza ancha usa la cápsula de la tienda, que sí lleva el juego.
+        "wide": STEAM_ART.format(appid=appid, file="capsule_616x353.jpg") if appid else None,
+        # Sin un fondo ancho de verdad (el respaldo de Orbital o una captura chiquita): siempre en vertical.
+        "hero_weak": bool(extra.get("placeholder_hero") or extra.get("hero_lowres")),
         "placeholder": bool(extra.get("placeholder_cover")),  # sin portada propia: la genérica de Orbital
     }
 
 
 class ForYou:
     def __init__(self, config, catalog) -> None:
-        p = config.para_ti
+        self.settings = config.para_ti
         self.catalog = catalog
-        self.region = p.region
-        self.trakt = trakt_api.Trakt(p.trakt_client_id, p.trakt_client_secret, catalog.credentials)
-        self.tmdb = tmdb_api.Tmdb(p.tmdb_key)
-        self.rawg = rawg_api.Rawg(p.rawg_key)
+        self.region = self.settings.region
         self.cache = Cache()
+        self._build()
         self._link: trakt_api.DeviceCode | None = None
         self._link_lock = threading.Lock()
         self._link_gen = 0  # cada pedido o cancelación de código lo sube: solo cuenta el último
         self._dark: dict[str, bool | None] = {}
+
+    def _key(self, name: str) -> str:
+        return (self.catalog.credentials.get(KEY_PREFIX + name) or "") or getattr(self.settings, name)
+
+    def _build(self) -> None:
+        self.trakt = trakt_api.Trakt(self._key("trakt_client_id"), self._key("trakt_client_secret"), self.catalog.credentials)
+        self.tmdb = tmdb_api.Tmdb(self._key("tmdb_key"))
+        self.rawg = rawg_api.Rawg(self._key("rawg_key"))
+
+    def set_keys(self, service: str, values: list[str]) -> None:
+        """Guarda (o, vacías, quita) las claves de un servicio escritas en Ajustes › Cuentas. TMDB y
+        RAWG se prueban antes de guardar: una clave mal copiada se dice aquí, no en una lista vacía."""
+        names = KEYS.get(service)
+        if not names or len(values) != len(names):
+            raise ValueError("Servicio inválido")
+        values = [str(v or "").strip() for v in values]
+        if any(len(v) > 400 or not re.fullmatch(r"[!-~]*", v) for v in values):
+            raise ValueError("Esa clave tiene espacios o caracteres raros: cópiala otra vez.")
+        if any(values[1:]) and not values[0]:  # Trakt: el Client Secret es opcional (las aplicaciones nuevas no tienen)
+            raise ValueError("Falta el Client ID.")
+        if service == "tmdb" and values[0]:
+            tmdb_api.Tmdb(values[0]).platforms(self.region)
+        elif service == "rawg" and values[0]:
+            rawg_api.Rawg(values[0]).games("best", size=1)
+        changed = any(self.catalog.credentials.get(KEY_PREFIX + n) != (v or None) for n, v in zip(names, values, strict=True))
+        if service == "trakt" and changed and self.trakt.linked:
+            self.trakt.unlink()  # la sesión era de la otra aplicación de Trakt: ya no sirve
+        for name, value in zip(names, values, strict=True):
+            self.catalog.credentials.set(KEY_PREFIX + name, value or None)
+        self._build()
+        self.cache.clear()
+        self.publish({"type": "foryou-changed"})
 
     def publish(self, event: dict) -> None:
         self.catalog.events.publish(event)
@@ -171,7 +232,9 @@ class ForYou:
     # --- qué hay -----------------------------------------------------------------------------
     def status(self) -> dict:
         return {"trakt": {"configured": self.trakt.configured, "linked": self.trakt.linked},
-                "tmdb": self.tmdb.configured, "rawg": self.rawg.configured}
+                "tmdb": self.tmdb.configured, "rawg": self.rawg.configured,
+                # Cuáles escribiste en Ajustes (esas se pueden quitar desde ahí; las de config.yaml, no).
+                "saved": [s for s, names in KEYS.items() if self.catalog.credentials.get(KEY_PREFIX + names[0])]}
 
     def platforms(self) -> dict[str, dict]:
         if not self.tmdb.configured:
@@ -185,6 +248,11 @@ class ForYou:
     def lists(self) -> list[dict]:
         """El riel: una entrada por lista (solo las de los servicios que tienes)."""
         video: list[dict] = []
+        # Lo de tu Stremio no necesita ninguna clave: sin Trakt, «Para ti» no se queda solo con juegos.
+        if self._stremio("continue"):
+            video.append({"id": "continue", "title": "Seguir viendo", "icon": "watching", "source": "Stremio", "meta": "Donde te quedaste"})
+        if self._stremio("mylist"):
+            video.append({"id": "mylist", "title": "Mi lista", "icon": "bookmark", "source": "Stremio", "meta": "Tu biblioteca"})
         if self.trakt.linked:
             video += [
                 {"id": "recs", "title": "Recomendadas", "icon": "spark", "source": "Trakt", "meta": "Por lo que has visto", "split": True},
@@ -203,6 +271,9 @@ class ForYou:
                 {"id": "trend", "title": "En tendencia", "icon": "trend", "source": "Trakt", "meta": "Lo más visto esta semana", "split": True},
                 {"id": "popular", "title": "Lo más popular", "icon": "flame", "source": "Trakt", "meta": "De todos los tiempos", "split": True},
             ]
+        elif self._stremio("cinemeta"):
+            video.append({"id": "cinemeta", "title": "Lo más popular", "icon": "flame", "source": "Stremio",
+                          "meta": "En el catálogo de Stremio", "split": True})
         found = self.platforms()
         for brand, (name, _) in tmdb_api.PLATFORMS.items():
             if brand in found:
@@ -229,8 +300,24 @@ class ForYou:
         items = self._list(list_id, kind)
         return [i for i in items if i["key"] not in hidden]
 
+    def _stremio(self, which: str, kind: str | None = None) -> list:
+        """Lo que Orbital ya trajo de Stremio: «continue» (Seguir viendo), «mylist» (Mi lista) o
+        «cinemeta» (lo popular de su catálogo público). Solo títulos con id de IMDb."""
+        if which == "cinemeta":
+            found = [i for i in self.catalog.items() if i.source == "cinemeta"]
+        else:
+            mine = sorted((i for i in self.catalog.items() if i.source == "stremio"),
+                          key=lambda i: i.last_watched or 0, reverse=True)
+            found = [i for i in mine if (i.category == "continue") == (which == "continue")
+                     and (which == "continue" or i.extra.get("in_library"))]
+        return [(i, e) for i in found if (e := library_entry(i)) and (kind is None or e["kind"] == kind)]
+
     def _list(self, list_id: str, kind: str) -> list[dict]:
         t = self.trakt
+        if list_id in ("continue", "mylist", "cinemeta"):
+            why = {"continue": "Seguir viendo", "mylist": "En tu lista", "cinemeta": "Popular"}[list_id]
+            return [video_item(e, why, overview=i.extra.get("description"))
+                    for i, e in self._stremio(list_id, kind if list_id == "cinemeta" else None)]
         if list_id == "recs":
             return [video_item(e, "Recomendada") for e in self.cache.get(f"trakt:recs:{kind}", RECS_TTL, lambda: t.recommendations(kind))]
         if list_id == "mine":
@@ -287,7 +374,8 @@ class ForYou:
                 "facts": [[k, str(v)] for k, v in (["Salió", g["year"]], ["Metacritic", g["metacritic"]]) if v],
                 "image": art("library_600x900.jpg") if art else g["image"], "image_fallback": g["image"],
                 "hero": g["image"] or (art("library_hero.jpg") if art else None),
-                "logo": art("logo.png") if art else None, "overview": "", "owned": False, "action": None,
+                "logo": art("logo.png") if art else None, "wide": art("capsule_616x353.jpg") if art else None,
+                "overview": "", "owned": False, "action": None,
             })
         return found
 
@@ -305,7 +393,7 @@ class ForYou:
         return marked
 
     # --- tus juegos ----------------------------------------------------------------------------
-    def local_games(self, seed: int | None = None) -> list[dict]:
+    def local_games(self, seed: int | None = None, lucky: int = 3) -> list[dict]:
         """Favoritos, los más jugados, los que nunca has abierto y uno al azar (cambia cada día)."""
         rng = random.Random(seed if seed is not None else date.today().toordinal())
         described = [self.catalog.describe(i) for i in self.catalog.items() if i.category in GAME_CATEGORIES]
@@ -320,16 +408,17 @@ class ForYou:
         fresh = fresh[:8]
         taken |= {d["id"] for d in fresh}
         rest = [d for d in described if d["id"] not in taken]
-        lucky = rng.sample(rest, min(3, len(rest)))
+        lucky_picks = rng.sample(rest, min(lucky, len(rest)))
         picks = ([game_item(d, "Tu favorito") for d in favorites] + [game_item(d, "Tu más jugado") for d in most]
-                 + [game_item(d, "Sin estrenar") for d in fresh] + [game_item(d, "Al azar") for d in lucky])
+                 + [game_item(d, "Sin estrenar") for d in fresh] + [game_item(d, "Al azar") for d in lucky_picks])
         hidden = self.catalog.state.dismissed()
         return [p for p in picks if p["key"] not in hidden]
 
     # --- el mosaico ----------------------------------------------------------------------------
     def mosaic(self) -> list[dict]:
         """Lo tuyo, mezclado: tus recomendaciones, tu watchlist, tus listas, tus series y tus juegos.
-        Sin Trakt conectado: lo que está en tendencia (o lo popular en tus plataformas)."""
+        Sin Trakt conectado: lo que dejaste a medias y tu lista de Stremio, más lo que está en
+        tendencia (o lo popular en tus plataformas, o en el catálogo de Stremio si no hay claves)."""
         sources: list[tuple[str, str | None]] = []
         if self.trakt.linked:
             sources = [("recs", "series"), ("recs", "movie"), ("watchlist", None), ("mine", None)]
@@ -337,14 +426,18 @@ class ForYou:
                 sources += [(f"list:{r['id']}", None) for r in self.cache.get("trakt:lists", MINE_TTL, self.trakt.lists)[:3]]
             except SERVICE_ERRORS:
                 pass
-        elif self.trakt.configured:
-            sources = [("trend", "series"), ("trend", "movie")]
         else:
-            sources = [(brand, kind) for brand in self.platforms() for kind in ("series", "movie")]
+            sources = [("continue", None), ("mylist", None)]
+            if self.trakt.configured:
+                sources += [("trend", "series"), ("trend", "movie")]
+            elif self.platforms():
+                sources += [(brand, kind) for brand in self.platforms() for kind in ("series", "movie")]
+            else:
+                sources += [("cinemeta", "series"), ("cinemeta", "movie")]
 
         def fetch(source):
             try:
-                return self.list_items(*source)[:10]
+                return self.list_items(*source)[:PER_SOURCE]
             except (KeyError, *SERVICE_ERRORS) as exc:
                 log.warning("Para ti: %s no respondió: %s", source[0], exc)
                 return []
@@ -352,7 +445,8 @@ class ForYou:
         with ThreadPoolExecutor(max_workers=4) as pool:
             batches = list(pool.map(fetch, sources))
         videos = self._interleave(batches)
-        games = [g for g in self.local_games() if not g["placeholder"]]  # el mosaico es de imágenes: sin arte, no entra
+        # El mosaico es de imágenes: sin arte, no entra. Y lleva más «Al azar» que la lista (hay lugar).
+        games = [g for g in self.local_games(lucky=24) if not g["placeholder"]]
         mixed, seen = [], set()
         # Tres videos por cada dos juegos, más o menos (lo que haya de cada uno).
         vi = gi = 0
@@ -465,7 +559,7 @@ class ForYou:
     def start_link(self) -> dict:
         """Pide un código a Trakt y espera (en segundo plano) a que lo confirmes en trakt.tv/activate."""
         if not self.trakt.configured:
-            raise ValueError("Falta la aplicación de Trakt en config.yaml (para_ti.trakt_client_id y trakt_client_secret).")
+            raise ValueError("Falta la aplicación de Trakt: agrega su Client ID en Ajustes › Cuentas.")
         # Dos pedidos seguidos (Y dos veces) o cancelar mientras llega: solo cuenta el último. Antes se
         # quedaba el que terminara al final, y la pantalla podía mostrar un código que nadie esperaba.
         with self._link_lock:

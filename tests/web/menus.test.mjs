@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { stepSetting } from "../../orbital/web/js/core/menus.js";
-import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingLabel, settingsMenu, settingsPage, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingLabel, settingsMenu, settingsPage, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch", system: "switch",
@@ -100,6 +100,13 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   const accounts = settingsPage("accounts", { stremio_linked: false });
   assert.deepEqual(accounts.options.map((o) => [o.label, o.value]), [["Stremio", "Conectar"]]);
   assert.deepEqual(accounts.options[0].command, { type: "stremio-login" });
+  const keys = settingsPage("accounts", { stremio_linked: true, trakt: { configured: false },
+    para_ti: { trakt: { configured: false }, tmdb: true, rawg: false, saved: ["tmdb"] } });
+  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Stremio", "Conectada"], ["Claves de Para ti", undefined],
+    ["TMDB", "Lista"], ["RAWG", "Agregar"], ["Aplicación de Trakt", "Agregar"]]);
+  assert.deepEqual(keys.options[2].command, { type: "keys-menu", service: "tmdb" });
+  assert.deepEqual(keys.options[3].command, { type: "keys", service: "rawg" });
+  assert.deepEqual(keysMenu("tmdb").options.map((o) => o.command.type), ["close", "keys", "keys-remove"]);
 });
 
 test("las opciones de una película no repiten A; la ficha va primero (con el dedo no hay X); la búsqueda solo busca", () => {

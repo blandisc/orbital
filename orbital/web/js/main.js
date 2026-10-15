@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints } from "./core/hints.js";
-import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu } from "./core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createForYou } from "./components/foryou.js";
@@ -115,8 +115,9 @@ const ui = {
     onClose: () => { sound.play("back"); renderHints(); },
   }),
   login: createLogin({
-    onDone: (res) => {
+    onDone: (res, form) => {
       if (loginFrom) loginFrom.done = true;
+      if (form.service) return keysSaved(form, res);
       state.stremioLinked = true;
       sound.play("select");
       ui.toast.show(`Listo: Stremio conectado · ${res.count} títulos en tu biblioteca`);
@@ -174,6 +175,32 @@ const LONG_ROW = 7; // a partir de aquí vale la pena enseñar LT/RT
 let loginFrom = null;
 let captureFrom = null; // { options, first }: de qué lista de Capturas vienes
 let traktFrom = null;
+/** La hoja de Cuentas en la que estabas (abriste la clave desde ahí, o desde «Cambiar»). */
+function accountsAt(context) {
+  if (!context) return null;
+  if (context.menu?.title === "Cuentas") return { index: context.index, stack: context.stack };
+  const parent = context.stack.at(-1);
+  return parent?.menu?.title === "Cuentas" ? { index: parent.index, stack: context.stack.slice(0, -1) } : null;
+}
+
+/** Una clave de Para ti guardada (o quitada): Cuentas al día y Para ti se vuelve a pedir. */
+async function keysSaved(form, status, { removed = false } = {}) {
+  sound.play("select");
+  ui.toast.show(removed ? `Quité la clave de ${form.label}` : `Listo: ${form.label} guardada · Para ti se actualiza`);
+  const at = accountsAt(loginFrom?.context);
+  applySettings({ ...state.settings, trakt: status.trakt, para_ti: status });
+  ui.foryou.load({ force: true });
+  if (at && !ui.sheet.isOpen && !topOverlay()) ui.sheet.open(settingsPage("accounts", state.settings), at);
+  renderHints();
+}
+
+/** Escribir una clave con el teclado en pantalla (o pegarla con Ctrl+V). */
+function keysForm(service) {
+  const form = KEY_FORMS[service];
+  return { ...form, id: service, missing: service === "trakt" ? "Escribe el Client ID." : "Escribe la clave.",
+    submit: (values, signal) => api.forYouKeys(service, form.fields.map((f) => values[f.name].trim()), signal) };
+}
+
 function returnToMenu(from) {
   if (!from?.context) return;
   setTimeout(() => { // onDone llega justo después de cerrar: si conectaste, no se reabre el menú viejo
@@ -207,7 +234,8 @@ function renderHints() {
       primary: item && primaryLabel(item, state.running?.id),
       alt: item && altLabel(item),
       sections: visibleSections(state.allRows).length,
-      onScreen: ui.home.focusId === "feature",
+      // El destacado enseña sus botones (A, X, Y) también con un renglón enfocado: enseña ese renglón.
+      onScreen: ui.home.focusId === "feature" || ui.home.focusId.startsWith("card:"),
     }));
   }
   const { r, c } = state.focus;
@@ -820,6 +848,19 @@ async function runCommand(command, context = null) {
         traktFrom = { context };
         ui.traktLink.open();
         return renderHints();
+      case "keys":
+        if (!KEY_FORMS[command.service]) return;
+        sound.play("open");
+        loginFrom = { context };
+        ui.login.open(keysForm(command.service));
+        return renderHints();
+      case "keys-menu":
+        return openMenu(keysMenu(command.service), nested(context));
+      case "keys-remove": {
+        const status = await api.forYouKeys(command.service, KEY_FORMS[command.service].fields.map(() => ""));
+        loginFrom = { context };
+        return keysSaved(KEY_FORMS[command.service], status, { removed: true });
+      }
       case "trakt-account":
         return openMenu(traktAccountMenu(), nested(context));
       case "trakt-unlink":

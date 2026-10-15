@@ -1,5 +1,5 @@
 import { h, svg } from "../core/dom.js";
-import { factLine, iconName, nearestTile, nextUnseen, shapeOf } from "../core/foryou.js";
+import { factLine, iconName, nearestTile, nextUnseen, posterRatio, shapeOf } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { Badge } from "./ui.js";
 import { swipeArea, swipeSteps } from "../core/swipe.js";
@@ -20,7 +20,7 @@ const GROW = 2.3; // cuánto más ancha es la columna enfocada
 const DRIFT = [16, 12, 19, 14, 17, 13]; // px/s de cada columna en el ambiente (cada una a su ritmo)
 const IDLE_MS = 30_000;
 const ALIVE_MS = 2200;
-const BUFFER = 600; // px de piezas de sobra debajo de lo visible
+const BUFFER = 360; // px de piezas de sobra debajo de lo visible (más, y se gastaban sugerencias que aún no se ven)
 
 export function createForYouMosaic({ onFocus, onPick }) {
   const el = h("div", { class: "foryou-mosaic" });
@@ -67,11 +67,15 @@ export function createForYouMosaic({ onFocus, onPick }) {
     const wide = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--wide", src: item.hero || item.image || "", alt: "", decoding: "async" });
     swap(poster, item.image_fallback || item.hero);
     swap(wide, item.image);
+    // Sin foco, un juego de Steam enseña su cápsula (lleva el juego y su nombre); el «hero» es un fondo
+    // pensado para el logo encima, así que solo sale enfocado, con el logo.
+    const capsule = item.wide && h("img", { class: "foryou-mosaic__art foryou-mosaic__art--capsule", src: item.wide, alt: "", decoding: "async" });
+    if (capsule) capsule.addEventListener("error", () => capsule.remove(), { once: true });
     const name = () => h("strong", { class: "foryou-mosaic__name" }, item.title);
     const logo = item.logo ? h("img", { class: "foryou-mosaic__logo", src: item.logo, alt: item.title }) : name();
     if (item.logo) logo.addEventListener("error", () => logo.replaceWith(name()), { once: true });
     const node = h("div", { class: "foryou-mosaic__tile", role: "button", tabindex: "-1", "aria-label": item.title, onClick: () => tap(node) },
-      poster, wide,
+      poster, wide, capsule,
       h("span", { class: "foryou-mosaic__kind", "aria-hidden": "true" }, svg(ICONS[iconName(item)] || ICONS.apps)),
       h("div", { class: "foryou-mosaic__info" },
         item.why && Badge(item.why, { large: true }), logo,
@@ -79,7 +83,9 @@ export function createForYouMosaic({ onFocus, onPick }) {
     return { item, node, logo, top: 0, h: 0 };
   }
 
-  const visibleKeys = () => new Set(columns.flatMap((c) => c.tiles.map((t) => t.item.key)));
+  // Lo que se ve y lo que viene abajo (entra junto al bajar). Lo que ya subió no cuenta: antes también,
+  // y con pocas sugerencias se acababan y la misma portada salía dos veces en la misma pantalla.
+  const visibleKeys = () => new Set(columns.flatMap((c) => c.tiles.filter((t) => t.top + t.h > c.offset - 40).map((t) => t.item.key)));
 
   function take() {
     const next = nextUnseen(pool, cursor, visibleKeys());
@@ -91,7 +97,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
   function tileHeight(col, c, r, item) {
     const wideCol = mode === "focus" && c === focus.col;
     if (wideCol) return Math.round(col.w * (r === focus.row ? .64 : .5));
-    return Math.round(col.w * (shapeOf(item) === "wide" ? .58 : 1.5));
+    return Math.round(col.w * (shapeOf(item) === "wide" ? .58 : 1 / posterRatio(item)));
   }
 
   /** Anchos de columna, alto y lugar de cada pieza; siempre con piezas de sobra abajo. */
