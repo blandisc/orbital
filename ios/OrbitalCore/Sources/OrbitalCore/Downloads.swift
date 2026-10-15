@@ -279,14 +279,21 @@ public actor Downloads {
         }
     }
 
+    /// Menos de 2 MB cuando se esperaban más de 50: una lista de reproducción o una página de error, nunca un video.
+    static func notTheVideo(size: Int64, advertised: Int64?) -> Bool {
+        guard let advertised else { return false }
+        return advertised > 50_000_000 && size < 2_000_000
+    }
+
     private func handle(_ event: DownloadEvent) async {
         switch event {
         case .progress(let id, let written, let total):
             guard var item = items[id], item.state == .downloading else { return }
             item.writtenBytes = written
-            // El tamaño del servidor manda, salvo que sea mucho menor que el que anunció la fuente: entonces no es el video
-            // (una lista HLS de 6 kB, una página de error) y la revisión al terminar lo tiene que poder ver.
-            if let total, item.expectedBytes.map({ total * 2 >= $0 }) ?? true { item.expectedBytes = total }
+            // El tamaño del servidor manda (la fuente puede anunciar el de todo un paquete de temporada), salvo que sea
+            // diminuto frente a lo anunciado: una lista HLS de 6 kB o una página de error no son el video, y la revisión
+            // al terminar lo tiene que poder ver.
+            if let total, !Self.notTheVideo(size: total, advertised: item.expectedBytes) { item.expectedBytes = total }
             items[id] = item
             changed()
         case .finished(let id):
@@ -294,7 +301,7 @@ public actor Downloads {
             let file = fileURL(item)
             let size = (try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? Int64) ?? 0
             // Un «200» con una página de error o un video de aviso es muy menor de lo esperado: no es el archivo.
-            if let expected = item.expectedBytes, expected > 10_000_000, size * 2 < expected {
+            if let expected = item.expectedBytes, expected > 10_000_000, size * 2 < expected || Self.notTheVideo(size: size, advertised: expected) {
                 try? FileManager.default.removeItem(at: file)
                 await fail(id, status: nil, message: "El archivo bajado está incompleto o no es el video")
                 return

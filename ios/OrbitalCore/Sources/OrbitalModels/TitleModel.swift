@@ -44,8 +44,26 @@ public final class TitleModel: ObservableModel {
     private var raw: JSON?
     private var watched = Set<String>()
     private var downloadStates: [String: DownloadState] = [:]
+    private var downloadProgress: [String: Double] = [:]
     /// Cómo va la descarga de un video de este título (nil: no se ha pedido).
     public func downloadState(_ videoID: String?) -> DownloadState? { videoID.flatMap { downloadStates[$0] } }
+    /// Cuánto lleva (0…1) una descarga en curso de este título.
+    public func downloadFraction(_ videoID: String?) -> Double? { videoID.flatMap { downloadProgress[$0] } }
+
+    /// Mientras la ficha está abierta: cada cambio de las descargas (avance, terminó, falló) se ve al momento.
+    public func followDownloads() async {
+        for await items in services.downloads.makeUpdates() { applyDownloads(items) }
+    }
+
+    private func applyDownloads(_ items: [DownloadItem]) {
+        let mine = items.filter { $0.metaID == metaID }
+        let states = Dictionary(uniqueKeysWithValues: mine.map { ($0.videoID, $0.state) })
+        let progress = Dictionary(uniqueKeysWithValues: mine.compactMap { item in item.progress.map { (item.videoID, $0) } })
+        guard states != downloadStates || progress != downloadProgress else { return }
+        let stateChanged = states != downloadStates
+        downloadStates = states; downloadProgress = progress
+        if stateChanged { buildRows() } else { changed() }
+    }
 
     public init(_ services: Services, kind: String, metaID: String, hint: (title: String, poster: String?)? = nil) {
         self.services = services; self.kind = kind; self.metaID = metaID
@@ -82,7 +100,7 @@ public final class TitleModel: ObservableModel {
         inLibrary = StremioLibrary.isInLibrary(raw)
         traktAvailable = await services.forYou.traktLinked
         inWatchlist = await services.forYou.watchlistKeys().contains(metaID)
-        downloadStates = Dictionary(uniqueKeysWithValues: await services.downloads.all.filter { $0.metaID == metaID }.map { ($0.videoID, $0.state) })
+        applyDownloads(await services.downloads.all)
         if let state = StremioLibrary.state(of: raw)["video_id"]?.string, kind == "series", let season = seasons.first(where: { $0.episodes.contains { $0.id == state } }) { selectedSeason = season.season }
         else if !seasons.contains(where: { $0.season == selectedSeason }) { selectedSeason = seasons.first { !$0.isSpecials }?.season ?? seasons.first?.season ?? 1 }
         buildRows()

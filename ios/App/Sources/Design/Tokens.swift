@@ -37,6 +37,9 @@ enum DS {
     static let subtitleText = Color.white       // subtítulos: blanco puro sobre el video, como cualquier reproductor
     static let subtitleShadow = Color.black.opacity(DesignTokens.Opacity.subtitleShadow)
 
+    /// El círculo de avance de una descarga junto a un episodio (el del sistema mide 58 pt: se encoge al tamaño de un ícono).
+    enum Gauge { static let episodeScale = CGFloat(DesignTokens.Size.gaugeScale) }
+
     /// Subtítulos: medidas relativas a la letra o al video (la letra misma sale de Ajustes › Tamaño de subtítulos).
     enum Subtitle {
         static let minFont = CGFloat(DesignTokens.Subtitle.minFont), liftWithControls = CGFloat(DesignTokens.Subtitle.liftWithControls)

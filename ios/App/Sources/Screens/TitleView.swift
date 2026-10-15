@@ -37,13 +37,14 @@ struct TitleView: View {
         }
         .background(TintedBackground(tint: tint.color))
         .navigationBarTitleDisplayMode(.inline)
+        .task { await model.followDownloads() }
         .onChange(of: env.watchedSomething) { Task { await model.refreshState() } }   // vuelves de ver: avance, visto y «Continuar» al día
         .task {
             await model.load()
             #if DEBUG
             if Demo.isOn, Demo.open == "play" { start(model, videoID: nil) }
             if Demo.isOn, Demo.open == "sources", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
-            if Demo.isOn, Demo.open == "download" { await report(model.download([model.continueVideoID ?? model.metaID]), model); dismiss() }
+            if Demo.isOn, Demo.open == "download" || Demo.open == "download-here" { await report(model.download([model.continueVideoID ?? model.metaID]), model); if Demo.open == "download" { dismiss() } }
             #endif
             await tint.load(model.poster)
         }
@@ -108,7 +109,9 @@ struct TitleView: View {
     @ViewBuilder private func downloadButton(_ model: TitleModel) -> some View {
         switch model.kind == "movie" ? model.downloadState(model.metaID) : nil {
         case .done?: secondary("Descargado", symbol: "checkmark.circle.fill") { env.notify("Ya está descargado. Lo encuentras en Descargas.", tone: .info) }
-        case .downloading?, .queued?: secondary("Descargando", symbol: "arrow.down.circle.dotted") { env.notify("Descargando. Lo verás en Descargas.", tone: .info) }
+        case .downloading?, .queued?:
+            let percent = model.downloadFraction(model.metaID).map { Int($0 * 100) }
+            secondary(percent.map { LocalizedStringKey("\($0) %") } ?? "Descargando", symbol: "arrow.down.circle.dotted") { env.notify("Descargando. Lo verás en Descargas.", tone: .info) }
         default: secondary("Descargar", symbol: "arrow.down.circle") { downloadMenu = true }
         }
     }
@@ -152,6 +155,7 @@ struct TitleView: View {
             ForEach(model.rows) { row in
                 EpisodeRowView(row: row, play: { start(model, videoID: row.id) }, download: { Task { await report(model.download([row.id]), model) } },
                                markWatched: { Task { await model.markWatched(row.id) } }, chooseSource: { sourcesFor = SourcesTarget(videoID: row.id, purpose: .watch) },
+                               downloadFraction: model.downloadFraction(row.id),
                                playOnTV: env.services.orbital.isConfigured ? { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: row.id, title: model.title) } } : nil)
                 Divider().overlay(DS.hairline)
             }
@@ -214,6 +218,7 @@ struct EpisodeRowView: View {
     let download: () -> Void
     let markWatched: () -> Void
     let chooseSource: () -> Void
+    var downloadFraction: Double?
     var playOnTV: (() -> Void)?
 
     var body: some View {
@@ -253,7 +258,10 @@ struct EpisodeRowView: View {
     @ViewBuilder private var stateIcon: some View {
         if row.watched { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good) }
         else if row.download == .done { Image(systemName: "arrow.down.circle.fill").foregroundStyle(DS.good) }
-        else if row.download == .downloading || row.download == .queued { ProgressView() }
+        else if row.download == .downloading || row.download == .queued {
+            if let downloadFraction { Gauge(value: downloadFraction) { EmptyView() }.gaugeStyle(.accessoryCircularCapacity).tint(DS.primary).scaleEffect(DS.Gauge.episodeScale) }
+            else { ProgressView() }
+        }
         else { Button(action: download) { Image(systemName: "arrow.down.circle").foregroundStyle(DS.textMuted) }.accessibilityLabel(Text("Descargar")) }
     }
 }

@@ -325,6 +325,17 @@ final class DownloadsTests: XCTestCase {
         XCTAssertNotEqual(state, .done)
     }
 
+    func testASeasonPackSizeDoesNotRejectTheEpisodeFile() async throws {
+        let transport = FakeTransport()
+        let d = makeDownloads(transport)
+        try await d.enqueue(item("tt1:1:2", size: 45_000_000_000), url: URL(string: "https://rd.example/e2.mkv")!)   // «💾 45 GB»: todo el paquete
+        await settle("start") { transport.starts.count == 1 }
+        transport.emit(.progress(id: "tt1|tt1:1:2", written: 1_000, total: 15_000_000))
+        try Data(count: 15_000_000).write(to: transport.starts[0].file)
+        transport.emit(.finished(id: "tt1|tt1:1:2"))
+        await settle("terminó") { await d.item("tt1|tt1:1:2")?.state == .done }
+    }
+
     func testServerErrorsAreExplainedInWords() {
         XCTAssertTrue(DownloadMessages.forStatus(403).contains("caducó"))
         XCTAssertTrue(DownloadMessages.forStatus(503).contains("servidor"))
