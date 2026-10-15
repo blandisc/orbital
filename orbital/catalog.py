@@ -119,6 +119,15 @@ def title_match(target: str, by_name: dict):
     return by_name[close[0]] if close else None
 
 
+def art_version(path: str | Path, sep: str = "&") -> str:
+    """«&v=…» con la fecha del archivo: al cambiar la imagen («Cambiar imagen»), cambia la dirección y la
+    pantalla deja de enseñar la vieja que tenía guardada (las imágenes se guardan un día)."""
+    try:
+        return f"{sep}v={int(Path(path).stat().st_mtime)}"
+    except OSError:
+        return ""
+
+
 class Catalog:
     def __init__(self, config: Config, launcher: Launcher | None = None, state: State | None = None,
                  credentials: Credentials | None = None, stremio_client: stremio_api.StremioAPI | None = None,
@@ -314,13 +323,13 @@ class Catalog:
         for item in found:
             url = f"/api/art/{quote(item.id, safe=':')}"
             if item.art_path:
-                item.image = url
+                item.image = url + art_version(item.art_path, "?")
             if item.hero_path:
-                item.hero = url + "?kind=hero"
+                item.hero = url + "?kind=hero" + art_version(item.hero_path)
                 if low_res(item.hero_path):
                     item.extra["hero_lowres"] = True
             if item.logo_path:
-                item.extra["logo"] = url + "?kind=logo"
+                item.extra["logo"] = url + "?kind=logo" + art_version(item.logo_path)
             if item.icon_path and Path(item.icon_path).is_file():
                 item.extra["icon"] = url + "?kind=icon"
             # Regla: todo lleva imagen. Sin portada o sin fondo, el respaldo de su sistema.
@@ -409,7 +418,8 @@ class Catalog:
         if item is None or not item.system or not item.media_key or kind not in KINDS:
             return False
         self._scraper = self._scraper or Scraper(self.media)
-        found = self._scraper.replace(Target(item.system, item.media_key, item.title, [kind]), kind)
+        current = {"cover": item.art_path, "hero": item.hero_path, "logo": item.logo_path}.get(kind)
+        found = self._scraper.replace(Target(item.system, item.media_key, item.title, [kind]), kind, current)
         self.refresh()
         return found is not None
 

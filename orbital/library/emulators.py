@@ -117,8 +117,9 @@ def pick_art(media: MediaStore | None, esde: EsdeLibrary | None, system: str | N
             continue
         theirs = getattr(esde, method)(esde_system, entry) if esde and esde_system else None
         usable = theirs is not None and good(kind, image_size(theirs), system)
-        if usable and media and system and media.is_rejected(system, key, kind, "esde"):
-            usable = False
+        if usable and media and system and (media.is_rejected(system, key, kind, "esde")
+                                             or media.looks_rejected(system, key, kind, theirs)):
+            usable = False  # la rechazaste (o se ve igual que una que rechazaste)
         found[kind] = str(theirs) if usable else None
     return found
 

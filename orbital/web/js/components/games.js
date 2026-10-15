@@ -5,7 +5,7 @@ import { systemColor } from "../core/home.js";
 import { systemIconName } from "../core/icons.js";
 import { alternativeRunner, primaryLabel, systemRatio } from "../core/library.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
-import { swipeArea, swipeSteps } from "../core/swipe.js";
+import { dragScroll } from "../core/swipe.js";
 import { BrowseHead, fillFilters, fitBar, keepInView, replay } from "./browse.js";
 import { Card } from "./card.js";
 import { createDetailPanel } from "./detail-panel.js";
@@ -30,19 +30,10 @@ export function createGames({ onFocus, onPick, onAction }) {
   const bar = h("div", { class: "browse__bar" }, filters, count);
   const main = h("div", { class: "browse__main" }, head, bar, viewport);
   if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => fitBar(bar, filters)).observe(main);
-  // Con el dedo: deslizar las portadas las recorre; deslizar el riel pasa de consola.
-  swipeArea(viewport, ({ dx, dy }) => {
-    const card = grid.querySelector('[data-focus-id^="game:"]');
-    if (!card) return;
-    if (!focusId.startsWith("game:")) focusId = "game:0";
-    const vertical = Math.abs(dy) > Math.abs(dx);
-    const action = vertical ? (dy < 0 ? "down" : "up") : (dx < 0 ? "right" : "left");
-    for (let n = swipeSteps(vertical ? dy : dx, vertical ? card.offsetHeight : card.offsetWidth); n > 0; n--) {
-      if (handle(action) !== true || focusId.startsWith("rail:")) break;
-    }
-    paint();
-  });
-  swipeArea(rail.window, ({ dy }) => stepRail(dy < 0 ? swipeSteps(dy, 80) : -swipeSteps(dy, 80)));
+  // Con el dedo, como en el celular: las portadas y el riel se desplazan bajo el dedo; tocar enfoca y
+  // volver a tocar abre (antes deslizar movía el foco de una en una, como el mando).
+  dragScroll(viewport, grid, { extra: 48 });
+  dragScroll(rail.window, rail.track, { onScroll: (s) => rail.edges(s) });
   const el = h("section", { class: "games browse", hidden: true, "aria-label": "Juegos" }, rail.el, main, sheet.el);
 
   let rows = [];

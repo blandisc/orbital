@@ -67,10 +67,18 @@ export function createRail({ label, onPick, onStep }) {
     const room = windowEl.clientHeight;
     const full = track.scrollHeight;
     const shift = Math.max(0, Math.min(full - room, node.offsetTop + node.offsetHeight / 2 - room / 2));
+    track.dataset.shift = String(shift); // el dedo sigue desde aquí (dragScroll)
     track.style.transform = `translateY(${-shift}px)`;
+    edges(shift);
+  }
+
+  /** ¿Hay casillas arriba o abajo fuera de la vista? El borde se desvanece hacia ese lado. */
+  function edges(shift) {
+    const room = windowEl.clientHeight;
+    const full = track.scrollHeight;
     windowEl.classList.toggle("rail__window--more-up", shift > 1);
     windowEl.classList.toggle("rail__window--more-down", shift < full - room - 1);
   }
 
-  return { el, window: windowEl, render, show, get count() { return entries.filter((e) => !e.heading).length; } };
+  return { el, window: windowEl, track, edges, render, show, get count() { return entries.filter((e) => !e.heading).length; } };
 }

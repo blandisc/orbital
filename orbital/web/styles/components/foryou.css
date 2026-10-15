@@ -28,5 +28,8 @@ body[data-view="foryou"] .backdrop__space { opacity: 1; }
 }
 .foryou[hidden] .foryou__switch, body[data-overlay="true"] .foryou__switch { display: none; } /* con una vista o un menú encima, no */
 .foryou__switch-glyph { display: inline-flex; margin-right: .3rem; }
+/* Con el dedo no hay botón X que enseñar: sin su hueco, las dos opciones quedan centradas. */
+[data-input="touch"] .foryou__switch { padding-left: .35rem; }
+[data-input="touch"] .foryou__switch-glyph { display: none; }
 .foryou__switch-opt { padding: .32rem .9rem; border-radius: var(--radius-pill); color: var(--color-text-muted); font-size: var(--text-sm); transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out); }
 .foryou__switch-opt--on { background: var(--inverse-bg); color: var(--inverse-fg); font-weight: var(--weight-medium); }

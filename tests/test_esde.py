@@ -120,7 +120,7 @@ def test_gamelist_names_hidden_exclude(catalog):
 def test_covers_and_favorites(catalog):
     zelda = catalog.find("zelda")
     assert zelda.favorite and zelda.art_path.endswith(".png")
-    assert zelda.image == f"/api/art/{zelda.id}"
+    assert re.fullmatch(rf"/api/art/{re.escape(zelda.id)}\?v=\d+", zelda.image)  # con versión: al cambiar, se renueva
     assert catalog.find("mario kart").art_path.endswith("Mario Kart 8 Deluxe.jpg")
     # Sin portada nunca queda vacío: el respaldo de su sistema (y la tarjeta pone el título encima).
     metroid = catalog.find("metroid dread")
@@ -235,7 +235,7 @@ def test_hero_prefers_fanart(esde_home, catalog):
     (fanart / "Metroid Dread.jpg").write_bytes(FANART)
     catalog.refresh()
     metroid = catalog.find("metroid dread")
-    assert Path(metroid.hero_path) == fanart / "Metroid Dread.jpg" and metroid.hero.endswith("?kind=hero")
+    assert Path(metroid.hero_path) == fanart / "Metroid Dread.jpg" and re.search(r"\?kind=hero&v=\d+$", metroid.hero)
     with TestClient(create_app(catalog.config, catalog), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
         assert c.get(metroid.hero).content == FANART
 
@@ -268,6 +268,6 @@ def test_logo_is_served_as_logo(esde_home, catalog):
     (marquees / "Metroid Dread.png").write_bytes(png(800, 300))
     catalog.refresh()
     metroid = catalog.find("metroid dread")
-    assert metroid.extra["logo"].endswith("?kind=logo")
+    assert re.search(r"\?kind=logo&v=\d+$", metroid.extra["logo"])
     with TestClient(create_app(catalog.config, catalog), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
         assert c.get(metroid.extra["logo"]).content == png(800, 300)

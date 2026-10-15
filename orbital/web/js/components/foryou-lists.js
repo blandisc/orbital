@@ -1,7 +1,7 @@
 import { h, mount } from "../core/dom.js";
 import { iconName, kindLabel, listMeta, railEntries, SPLIT_KINDS } from "../core/foryou.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
-import { hoverArea, swipeArea, swipeSteps } from "../core/swipe.js";
+import { dragScroll, hoverArea } from "../core/swipe.js";
 import { BrowseHead, fillFilters, keepInView, replay } from "./browse.js";
 import { Button } from "./button.js";
 import { Card } from "./card.js";
@@ -28,19 +28,10 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
     onAction: (id, d) => (id === "select" ? onPick?.({ kind: "item", item: d.item }, focusId) : onMore?.(d.item)),
   });
   const el = h("div", { class: "foryou-lists browse" }, rail.el, main, panel.el);
-  // Con el dedo, como en Juegos: deslizar las portadas las recorre; deslizar el riel pasa de lista.
-  swipeArea(viewport, ({ dx, dy }) => {
-    const card = grid.querySelector('[data-focus-id^="item:"]');
-    if (!card) return;
-    if (!focusId.startsWith("item:")) focusId = "item:0";
-    const vertical = Math.abs(dy) > Math.abs(dx);
-    const action = vertical ? (dy < 0 ? "down" : "up") : (dx < 0 ? "right" : "left");
-    for (let n = swipeSteps(vertical ? dy : dx, vertical ? card.offsetHeight : card.offsetWidth); n > 0; n--) {
-      if (handle(action) !== true || focusId.startsWith("rail:")) break;
-    }
-    paint();
-  });
-  swipeArea(rail.window, ({ dy }) => stepList(dy < 0 ? swipeSteps(dy, 80) : -swipeSteps(dy, 80)));
+  // Con el dedo, como en el celular: las portadas y el riel se desplazan bajo el dedo; tocar enfoca y
+  // volver a tocar abre (antes deslizar movía el foco de una en una, como el mando).
+  dragScroll(viewport, grid, { extra: 48 });
+  dragScroll(rail.window, rail.track, { onScroll: (s) => rail.edges(s) });
   // Con el ratón o el touchpad: la portada bajo el puntero se enfoca y su ficha aparece a la derecha
   // (la cuadrícula se desplaza para enseñarla: mientras tanto el puntero no cuenta).
   const hover = hoverArea(grid, '[data-focus-id^="item:"]', (node) => {

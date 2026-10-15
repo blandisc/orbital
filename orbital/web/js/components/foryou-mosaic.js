@@ -2,7 +2,7 @@ import { h, svg } from "../core/dom.js";
 import { factLine, iconName, nearestTile, nextUnseen, posterRatio, shapeOf } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { Badge } from "./ui.js";
-import { hoverArea, swipeArea, swipeSteps } from "../core/swipe.js";
+import { dragArea, hoverArea } from "../core/swipe.js";
 
 /**
  * «Para ti» · mosaico: columnas de imágenes (portadas altas y arte ancho) con lo tuyo mezclado.
@@ -24,16 +24,28 @@ const BUFFER = 360; // px de piezas de sobra debajo de lo visible (más, y se ga
 
 export function createForYouMosaic({ onFocus, onPick }) {
   const el = h("div", { class: "foryou-mosaic" });
-  // Deslizar con el dedo recorre el mosaico (subir el dedo = ver lo de abajo, como en cualquier lista).
-  swipeArea(el, ({ dx, dy }) => {
-    if (!pool.length) return;
-    if (wake()) return; // en ambiente, el primer gesto solo despierta
-    const vertical = Math.abs(dy) > Math.abs(dx);
-    const action = vertical ? (dy < 0 ? "down" : "up") : (dx < 0 ? "right" : "left");
-    const t = columns[focus.col]?.tiles[focus.row];
-    for (let n = swipeSteps(vertical ? dy : dx, vertical ? (t?.h || 200) : (columns[focus.col]?.w || 200)); n > 0; n--) {
-      if (handle(action) !== true) break;
-    }
+  // Con el dedo, como en el celular: todo el mosaico sube o baja bajo el dedo (y sigue de largo al
+  // soltar); abajo llegan piezas nuevas. Tocar una la enfoca y volver a tocar la abre.
+  let dragFrom = [];
+  dragArea(el, {
+    onStart: () => {
+      clearTimeout(idleTimer);
+      el.classList.add("foryou-mosaic--drifting"); // sin transición: las columnas siguen al dedo al instante
+      dragFrom = columns.map((col) => col.offset);
+    },
+    onMove: (d) => {
+      columns.forEach((col, c) => {
+        const top = (col.tiles[0]?.top ?? 0) - ring(); // no se pasa de la primera pieza que sigue viva
+        col.offset = Math.max(top, dragFrom[c] - d);
+        fill(col, c);
+      });
+      applyOffsets();
+    },
+    onEnd: () => {
+      columns.forEach(prune);
+      if (mode !== "ambient") el.classList.remove("foryou-mosaic--drifting");
+      if (running) idleTimer = setTimeout(goAmbient, IDLE_MS);
+    },
   });
   // Con el ratón: la pieza bajo el puntero se enfoca (mientras el mosaico se reacomoda, no se cuenta).
   const hover = hoverArea(el, ".foryou-mosaic__tile", (node) => tap(node, { open: false }));
