@@ -164,15 +164,19 @@ struct AetherSubtitleOverlay: View {
         case .text(let text):
             return Text(clean(text)).font(base).foregroundStyle(DS.subtitleText)
         case .richText(let runs):
-            return runs.reduce(Text("")) { result, run in
-                var piece = Text(clean(run.text)).font(base)
-                if run.isBold { piece = piece.bold() }
-                if run.isItalic { piece = piece.italic() }
-                if run.isUnderlined { piece = piece.underline() }
-                if run.isStruckThrough { piece = piece.strikethrough() }
-                let color = run.color.map { Color(red: Double($0.r) / 255, green: Double($0.g) / 255, blue: Double($0.b) / 255) } ?? DS.subtitleText   // ds-exception: el color lo trae el archivo de subtítulos
-                return result + piece.foregroundStyle(color)
+            var text = AttributedString()
+            for run in runs {
+                var piece = AttributedString(clean(run.text))
+                var font = base
+                if run.isBold { font = font.bold() }
+                if run.isItalic { font = font.italic() }
+                piece.font = font
+                if run.isUnderlined { piece.underlineStyle = .single }
+                if run.isStruckThrough { piece.strikethroughStyle = .single }
+                piece.foregroundColor = run.color.map { Color(red: Double($0.r) / 255, green: Double($0.g) / 255, blue: Double($0.b) / 255) } ?? DS.subtitleText   // ds-exception: el color lo trae el archivo de subtítulos
+                text += piece
             }
+            return Text(text)
         case .image:
             return Text("")
         }

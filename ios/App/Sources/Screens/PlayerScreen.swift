@@ -73,7 +73,7 @@ struct PlayerScreen: View {
                 #if DEBUG
                 if Demo.isOn, let open = Demo.player {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
-                    if open == "panel" { panel = true } else if open == "sources" { sources = true }
+                    if open == "panel" { panel = true } else if open == "sources" { sources = true } else if open == "close" { await close() }
                 }
                 #endif
             }

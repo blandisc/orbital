@@ -68,7 +68,7 @@ struct TitleLink: View {
 /// «2021 · Película» / «2005–2013 · Serie».
 func yearAndKind(year: String, kind: String) -> Text {
     let k = kind == "movie" ? Text("Película") : Text("Serie")
-    return year.isEmpty ? k : Text("\(year) · ") + k
+    return year.isEmpty ? k : Text("\(year) · \(k)")
 }
 
 extension Suggestion {

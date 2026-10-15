@@ -49,13 +49,17 @@ struct HomeView: View {
         .toolbar { ToolbarItem(placement: .topBarTrailing) { NavigationLink(value: SettingsRoute()) { Image(systemName: "person.crop.circle") }.accessibilityLabel(Text("Ajustes")) } }
         .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
-        .task {
-            await model.refresh()
-            let work = env.services.pending.load()      // una sola lectura por actualización, no una por cada pintado
-            pendingCount = work.progress.count + work.traktWatched.count
-            await tint.load(model.continueWatching.first?.poster)
-        }
-        .refreshable { await model.refresh() }
+        .task { await reload() }
+        .refreshable { await reload() }
+        .onChange(of: env.watchedSomething) { Task { await reload() } }
+    }
+
+    /// Lo de Stremio, lo pendiente por subir y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo).
+    private func reload() async {
+        await home.model.refresh()
+        let work = env.services.pending.load()      // una sola lectura por actualización, no una por cada pintado
+        pendingCount = work.progress.count + work.traktWatched.count
+        await tint.load(home.model.continueWatching.first?.poster)
     }
 
     /// «Stremio al día» o «N cambios por subir» (si no hubo internet).

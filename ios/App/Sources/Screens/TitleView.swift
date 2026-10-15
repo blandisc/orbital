@@ -26,7 +26,7 @@ struct TitleView: View {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
                 hero(model)
                 actions(model)
-                if let message = model.message { DSNotice(text: LocalizedStringKey(message), tone: .warn) }
+                if let message = model.message { DSNotice(text: LocalizedStringKey(message), tone: .error) }
                 if model.traktAvailable { watchlistToggle(model) }
                 if let error = model.error, model.info.description.isEmpty { DSNotice(text: LocalizedStringKey(error), tone: .warn) }
                 if !model.info.description.isEmpty { Text(model.info.description).font(DS.font(.md)).foregroundStyle(DS.textMuted) }
@@ -37,6 +37,7 @@ struct TitleView: View {
         }
         .background(TintedBackground(tint: tint.color))
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: env.watchedSomething) { Task { await model.refreshState() } }   // vuelves de ver: avance, visto y «Continuar» al día
         .task {
             await model.load()
             #if DEBUG

@@ -16,7 +16,14 @@ final class AppEnvironment: ObservableObject {
     /// Lo que se está reproduciendo con el reproductor propio (la vista del reproductor cubre toda la pantalla).
     /// El reproductor puede girar; el resto de la app es vertical. Se permite antes de presentarlo: la pantalla
     /// presentada toma las orientaciones permitidas al aparecer y no las vuelve a leer.
-    @Published var playing: PlayRequest? { didSet { AppDelegate.orientations = playing == nil ? .portrait : .allButUpsideDown } }
+    @Published var playing: PlayRequest? {
+        didSet {
+            AppDelegate.orientations = playing == nil ? .portrait : .allButUpsideDown
+            if playing == nil, oldValue != nil { watchedSomething += 1 }
+        }
+    }
+    /// Cambia cada vez que termina una reproducción (aquí o en Infuse): Inicio y la ficha se ponen al día.
+    @Published private(set) var watchedSomething = 0
     /// Lo que se abrió en Infuse y está esperando a que vuelva.
     @Published private var external: ExternalSession?
     /// Infuse volvió sin duración y no se sabe si terminaste: se pregunta.
@@ -91,7 +98,7 @@ final class AppEnvironment: ObservableObject {
     /// Infuse volvió (`orbital-ios://infuse-done?...`): se guarda dónde te quedaste. Infuse ya avisa a Trakt por su cuenta.
     func handle(url: URL) async {
         guard let result = Infuse.parseCallback(url) else { return }
-        defer { external = nil }
+        defer { external = nil; watchedSomething += 1 }
         guard let session = external else { return }
         switch result {
         case .failed(_, let message, _):
