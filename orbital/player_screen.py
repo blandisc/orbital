@@ -8,6 +8,9 @@ El mando, viendo algo:
   A pausa/seguir · ◀ ▶ adelantar/regresar (mantén: más rápido) · LB/RB capítulo (o 1 min) ·
   LT/RT episodio · ▲ ▼ volumen · X Audio y subtítulos · Y Más (episodios, fuente, desde el principio) ·
   B pregunta «¿Salir de …?» (A sigue viendo, B sale).
+
+La TV en vivo usa los mismos botones con otro sentido (no hay a dónde adelantar ni una película que pausar):
+  ▲ ▼ o LT/RT cambian de canal · ◀ ▶ volumen · A sin sonido · Y guía de canales · X audio · B (mantener) salir.
 """
 
 from __future__ import annotations
@@ -143,6 +146,8 @@ class PlayerScreen:
         current = self.current
         if current is None or self.menu is not None:
             return
+        if self._is_live():
+            return self._show_live_hud()
         hud = self._hud(current, seeking, position=position, paused=paused)
         self._overlay(1, player_ui.hud_ass(hud))
         self._hud_visible = True
@@ -177,7 +182,7 @@ class PlayerScreen:
 
     # Cada aviso en su capa (antes compartían la 3 y se borraban entre sí: el volumen se comía «Salir», y el
     # fin del «Cargando…» borraba un aviso útil al que aún le quedaban segundos).
-    TOAST, VOLUME, HOLD, BUFFER = 3, 5, 6, 7
+    TOAST, VOLUME, HOLD, BUFFER, MUTE = 3, 5, 6, 7, 8
 
     def _show_notice(self, ass: str, seconds: float, layer: int = 3) -> None:
         self._overlay(layer, ass)
@@ -249,6 +254,9 @@ class PlayerScreen:
 
     def _choose(self, option: dict) -> None:
         prop, value = option["action"]
+        if prop == "category":  # la guía de canales: otra categoría, y se pasa a su lista de canales
+            self._show_category(value)
+            return
         if prop == "subscale":  # se queda en el panel: ves el cambio y sigues ajustando
             self.sub_scale = value
             self.mpv.command("set_property", "sub-scale", value)
@@ -263,6 +271,11 @@ class PlayerScreen:
         if prop == "fetch":
             self.toast("Buscando subtítulos…", 3)
             threading.Thread(target=self._fetch_subs, args=(value,), daemon=True).start()
+        elif prop == "channel":
+            if option.get("current") or not self.on_play_channel:
+                return
+            self.toast(f"Sintonizando {option['label'].split(' · ', 1)[-1]}…", 4)
+            self._in_background(self.on_play_channel, meta, value, self._panel_category, failed="No pude cambiar de canal")
         elif prop == "restart":
             position = self.mpv.get("time-pos")
             if isinstance(position, (int, float)) and position > 30:
@@ -315,6 +328,11 @@ class PlayerScreen:
         if button in ("up", "down"):
             if column.options:
                 column.index = max(0, min(len(column.options) - 1, column.index + (-1 if button == "up" else 1)))
+                self._draw_panel()
+        elif button in ("lt", "rt"):  # una página de opciones (una lista de 170 canales no se recorre de a una)
+            if column.options:
+                jump = player_ui.PANEL_ROWS * (-1 if button == "lt" else 1)
+                column.index = max(0, min(len(column.options) - 1, column.index + jump))
                 self._draw_panel()
         elif button in ("left", "right"):
             step = -1 if button == "left" else 1
@@ -386,7 +404,7 @@ class PlayerScreen:
         if action == "quit":
             self._user_quit = True
             self._quit()
-        elif action in ("a", "x", "y", "left", "right"):
+        elif action in ("a", "x", "y", "left", "right", "up", "down"):
             self._touching = True
             try:
                 self.press(action)
@@ -450,6 +468,8 @@ class PlayerScreen:
             else:
                 self._card_dismiss()
             return
+        if self._is_live() and self._live_press(button):
+            return
         if button == "a":
             if time.monotonic() < self._loading_until:
                 return  # acaba de pedir otro episodio: A no pausa lo que está cargando
@@ -485,17 +505,20 @@ class PlayerScreen:
             if meta.get("kind") == "series" and self.on_episode:
                 self._queue_episode(meta, -1 if button == "lt" else 1)
         elif button in ("up", "down"):
-            before = self._value("volume")
-            if isinstance(before, (int, float)) and not isinstance(before, bool):
-                top = self.mpv.get("volume-max")  # mpv deja pasar de 100 (130 de fábrica)
-                top = top if isinstance(top, (int, float)) and not isinstance(top, bool) and top > 0 else 100
-                volume = max(0, min(top, before + (5 if button == "up" else -5)))
-                self.mpv.command("set_property", "volume", volume)
-                self._ask("volume", volume)
-                self._show_notice(player_ui.volume_ass(volume), 1.6, layer=self.VOLUME)
-            else:
-                self.mpv.command("add", "volume", 5 if button == "up" else -5)
-                self.toast("Volumen")
+            self._change_volume(1 if button == "up" else -1)
+
+    def _change_volume(self, direction: int) -> None:
+        before = self._value("volume")
+        if isinstance(before, (int, float)) and not isinstance(before, bool):
+            top = self.mpv.get("volume-max")  # mpv deja pasar de 100 (130 de fábrica)
+            top = top if isinstance(top, (int, float)) and not isinstance(top, bool) and top > 0 else 100
+            volume = max(0, min(top, before + 5 * direction))
+            self.mpv.command("set_property", "volume", volume)
+            self._ask("volume", volume)
+            self._show_notice(player_ui.volume_ass(volume), 1.6, layer=self.VOLUME)
+        else:
+            self.mpv.command("add", "volume", 5 * direction)
+            self.toast("Volumen")
 
     QUIT_HOLD = 1.5  # s con B mantenido para salir
 
@@ -556,5 +579,133 @@ class PlayerScreen:
         segment, current = self.segment, self.current
         if segment is not None and current is not None:
             finished = bool(segment.duration) and segment.position >= segment.duration * .9
-            self.last_end = {"title": current.title, "finished": finished, "kind": segment.meta.get("kind")}
+            self.last_end = {"title": current.title, "finished": finished, "kind": segment.meta.get("kind"),
+                             **({"live": True} if segment.live else {})}
         self.mpv.command("quit")
+
+    # --- TV en vivo ---------------------------------------------------------------------------------
+    ZAP_WAIT = 0.45  # s sin tocar ▲▼ antes de sintonizar: pasar por 5 canales carga solo el último
+
+    def _is_live(self) -> bool:
+        segment = self.segment
+        return segment is not None and segment.live
+
+    def _live_hud(self, meta: dict | None = None, status: str | None = None) -> player_ui.LiveHud:
+        segment = self.segment
+        meta = meta or (segment.meta if segment is not None else {})
+        if status is None:
+            status = "tuning"
+            if segment is not None and segment.failed:
+                status = "nosignal"
+            elif segment is not None and segment.playing:
+                status = "live"
+        return player_ui.LiveHud(name=meta.get("title") or "", number=meta.get("number"), category=meta.get("category") or "",
+                                 quality=meta.get("quality") or "", status=status, muted=bool(self._value("mute")),
+                                 now=time.strftime("%H:%M"))
+
+    def _show_live_hud(self, meta: dict | None = None, status: str | None = None) -> None:
+        """La barra del canal; se va sola a los pocos segundos (salvo «Sin señal», que se queda hasta que hagas algo)."""
+        hud = self._live_hud(meta, status)
+        self._overlay(1, player_ui.live_hud_ass(hud))
+        self._hud_visible = True
+        if self._hud_timer:
+            self._hud_timer.cancel()
+        if hud.status == "nosignal":
+            self._hud_timer = None
+            return
+        self._hud_timer = threading.Timer(self.HUD_SECONDS, self.hide_hud)
+        self._hud_timer.daemon = True
+        self._hud_timer.start()
+
+    def _live_press(self, button: str) -> bool:
+        """Los botones de la TV en vivo. False: ese botón hace lo de siempre (B salir, X audio)."""
+        if button == "a":
+            muted = not bool(self._value("mute"))
+            self.mpv.command("set_property", "mute", muted)
+            self._ask("mute", muted)
+            self._overlay(self.MUTE, player_ui.muted_ass() if muted else None)  # se queda a la vista mientras no haya sonido
+            self.show_hud()
+        elif button in ("left", "right"):
+            self._change_volume(1 if button == "right" else -1)
+        elif button in ("up", "rt"):
+            self._queue_channel(1)
+        elif button in ("down", "lt"):
+            self._queue_channel(-1)
+        elif button == "y":
+            self.open_channels()
+        elif button in ("lb", "rb"):
+            self.show_hud()
+        else:
+            return False
+        return True
+
+    def _queue_channel(self, step: int) -> None:
+        """▲▼ o LT/RT: la barra enseña el canal al que vas al instante y, cuando paras, se sintoniza (antes cada
+        pulsación abría una conexión que la siguiente tiraba)."""
+        segment = self.segment
+        if segment is None or not self.channels_provider:
+            return
+        if self._zap_view is None:
+            info = self._safe(self.channels_provider, segment.meta, None) or {}
+            # Los que ya fallaron una vez no entran en la rueda de ▲▼ (siguen en la guía, atenuados): saltar de uno en
+            # uno por canales caídos era esperar 12 s por cada uno.
+            now = segment.meta.get("channel_id")
+            channels = [c for c in info.get("channels") or [] if not c.get("shaky") or c["id"] == now]
+            if len(channels) < 2:
+                channels = info.get("channels") or []
+            here = next((i for i, c in enumerate(channels) if c["id"] == now), -1)
+            self._zap_view = {"channels": channels, "here": here, "meta": segment.meta, "steps": 0}
+        view = self._zap_view
+        channels = view["channels"]
+        if len(channels) < 2:
+            self.toast("No hay otro canal en esta lista", 2.5)
+            self._zap_view = None
+            return
+        view["steps"] += step
+        if view["here"] >= 0:
+            target = channels[(view["here"] + view["steps"]) % len(channels)]
+        else:  # el canal que ves ya no está en la lista (se ocultó): se empieza por un extremo
+            target = channels[0 if view["steps"] > 0 else -1]
+        if target["id"] == view["meta"].get("channel_id"):  # diste la vuelta completa: sigues en el mismo
+            self._zap_view = None
+            if self._zap_timer:
+                self._zap_timer.cancel()
+            return self.show_hud()
+        self._show_live_hud({"title": target["name"], "number": target.get("number"), "category": target.get("category", ""),
+                             "quality": target.get("quality") or ""}, "tuning")
+        if self._zap_timer:
+            self._zap_timer.cancel()
+        self._zap_timer = threading.Timer(self.ZAP_WAIT, self._commit_zap, args=(target["id"],))
+        self._zap_timer.daemon = True
+        self._zap_timer.start()
+
+    def _commit_zap(self, channel_id: str) -> None:
+        view, self._zap_view, self._zap_timer = self._zap_view, None, None
+        if view is None or self.segment is None or not self.on_play_channel:
+            return
+        self._in_background(self.on_play_channel, view["meta"], channel_id, None, failed="No pude cambiar de canal")
+
+    def open_channels(self, category: str | None = None) -> None:
+        """Y: la guía de canales (categoría | canales) sobre el video, que sigue."""
+        segment = self.segment
+        if segment is None or not self.channels_provider:
+            return
+        info = self._safe(self.channels_provider, segment.meta, category) or {}
+        if not info.get("channels"):
+            self.toast("No hay canales para elegir", 2.5)
+            return
+        self._panel_category = info.get("category")
+        self._open_panel(player_ui.channels_panel(info.get("categories") or [], info["channels"]))
+
+    def _show_category(self, category: str) -> None:
+        """Elegiste una categoría en la guía: su lista de canales, y el foco pasa a ella."""
+        segment, panel = self.segment, self.menu
+        if segment is None or panel is None or panel.kind != "channels":
+            return
+        info = self._safe(self.channels_provider, segment.meta, category) or {}
+        self._panel_category = info.get("category", category)
+        fresh = player_ui.channels_panel(info.get("categories") or [], info.get("channels") or [])
+        for column, new in zip(panel.columns, fresh.columns, strict=True):
+            column.options, column.index, column.top = new.options, new.index, 0
+        panel.col = 1
+        self._draw_panel()

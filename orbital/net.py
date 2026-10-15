@@ -17,8 +17,10 @@ NET_ERRORS = (OSError, http.client.HTTPException, ValueError)
 MAX_BYTES = 16 * 1024 * 1024  # una respuesta de catálogo nunca pesa tanto
 
 
-def read_body(res, *, timeout: float, limit: int = MAX_BYTES) -> bytes:
-    """Lee la respuesta completa en pedazos con un plazo total; corta si se pasa de `limit`."""
+def read_body(res, *, timeout: float, limit: int = MAX_BYTES, truncate: bool = False) -> bytes:
+    """Lee la respuesta completa en pedazos con un plazo total; corta si se pasa de `limit`.
+    `truncate`: en vez de fallar, se queda con los primeros `limit` bytes (para probar que un video abre
+    sin bajarse el segmento entero)."""
     deadline = time.monotonic() + max(1.0, timeout * 2)
     chunks, size = [], 0
     while True:
@@ -30,6 +32,8 @@ def read_body(res, *, timeout: float, limit: int = MAX_BYTES) -> bytes:
             return b"".join(chunks)
         size += len(chunk)
         if size > limit:
+            if truncate:
+                return b"".join(chunks + [chunk])[:limit]
             raise ValueError("Respuesta demasiado grande")
         chunks.append(chunk)
 

@@ -112,6 +112,9 @@ export const SECTIONS = [
   // que la fila de apps (Buscar, YouTube…) va al final.
   { id: "media", title: "Películas y series", rows: (id) => ["continue", "mylist", "media", "movies", "series"].includes(id),
     order: ["continue", "mylist", "movies", "series", "media"] },
+  // TV en vivo: los canales de México (su propia vista, sin filas de biblioteca). Siempre a la vista: aunque
+  // la lista aún no llegue, la sección dice qué está pasando en vez de desaparecer de la barra.
+  { id: "tv", title: "TV en vivo", rows: () => false, always: true },
   { id: "apps", title: "Apps", rows: (id) => id === "apps" },
 ];
 

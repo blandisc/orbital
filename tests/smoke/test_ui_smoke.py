@@ -108,6 +108,52 @@ def test_diagnostics_screen(page):
     page.get_by_text("Memoria libre").wait_for(timeout=15_000)
 
 
+def test_live_tv_categories_and_tuning_a_channel(page, server):
+    """TV en vivo: LB/RB pasan de categoría, A sintoniza y B vuelve (con canales de mentiras, sin mpv)."""
+    ready(page)
+    for _ in range(3):  # Inicio → Juegos → Películas y series → TV en vivo
+        page.keyboard.press("e")
+        page.wait_for_timeout(350)
+    page.locator(".tv__tile").first.wait_for(timeout=5000)
+    assert page.locator(".status-bar__tab--active").inner_text() == "TV en vivo"
+    assert page.locator(".tv__tile").count() == 40 and page.locator(".tv__tile.tile--focused").count() == 1
+    # Un canal que ya falló una vez sale al final, atenuado y con su aviso; los que nadie ha revisado, normales.
+    assert page.locator(".tv__tile.tile--dimmed").count() == 1
+    assert page.locator(".tv__tile").last.locator(".tv__flag", has_text="Sin señal reciente").count() == 1
+    assert "1 sin señal reciente" in page.locator(".tv .browse__meta").inner_text()
+    # Los logos los sirve Orbital (parejos) y cargan; el que no trae logo muestra las letras de su nombre.
+    page.wait_for_function("document.querySelectorAll('.tv__logo').length > 5 && [...document.querySelectorAll('.tv__logo')].some((i) => i.complete && i.naturalWidth > 0)")
+    assert page.locator(".tv__initials").count() >= 1
+    # La sección cabe en la pantalla (antes las píldoras la ensanchaban y se cortaba la última columna).
+    assert page.evaluate("document.querySelector('.tv').scrollWidth <= document.documentElement.clientWidth")
+    page.keyboard.press("e")  # categoría siguiente: General
+    page.wait_for_timeout(400)
+    assert page.locator(".tv .browse__filter--on").inner_text() == "General"
+    assert 1 < page.locator(".tv__tile").count() < 40
+    page.keyboard.press("Enter")  # sintoniza el canal enfocado (el lanzador de prueba no abre nada de verdad)
+    deadline = time.monotonic() + 10
+    while not status(server)["running"] and time.monotonic() < deadline:
+        time.sleep(.2)
+    assert status(server)["running"]["id"] == "media:player"
+    # Al aire: su casilla lo dice, A vuelve a él, y con uno al aire otro canal se sintoniza sin pantalla de carga.
+    page.locator(".tv__flag", has_text="Al aire").wait_for(timeout=5000)
+    assert status(server)["running"]["live"]
+    assert "Volver al canal" in page.locator(".hints").inner_text()
+    page.wait_for_timeout(2000)  # que se vaya la pantalla de carga del primer canal
+    page.keyboard.press("ArrowRight")
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(500)
+    assert not page.locator(".launch").is_visible()
+    assert page.locator(".tv__flag", has_text="Al aire").count() == 1
+    urllib.request.urlopen(urllib.request.Request(f"{server}/api/stop", method="POST"), timeout=5)
+    page.locator(".toast", has_text="De vuelta de la TV en vivo").wait_for(timeout=10_000)  # no «dónde ibas»: la tele no lo guarda
+    page.keyboard.press("Escape")  # B: primero al primer canal; otra vez, a Inicio
+    page.wait_for_timeout(300)
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(500)
+    assert page.locator(".status-bar__tab--active").inner_text() == "Inicio"
+
+
 def test_search_with_results(page):
     """Escribir en Buscar con resultados a la vista: la leyenda ofrece saltar a ellos (antes, un
     ReferenceError en cada tecla dejaba la leyenda congelada)."""

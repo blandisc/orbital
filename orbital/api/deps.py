@@ -37,4 +37,7 @@ class Deps:
         running = self.catalog.launcher.status()
         if running is not None:
             running["paused"] = self.shell.is_paused
+            live = self.catalog.tv.playing() if running.get("id") == "media:player" else None
+            if live:
+                running["live"] = live  # qué canal de TV está al aire (la sección lo marca y A vuelve a él)
         return {"running": running}

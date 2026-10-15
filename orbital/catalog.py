@@ -5,6 +5,7 @@ Se divide en piezas que no se llaman entre sí, se comunican por eventos (events
   * Sessions (sessions.py): abrir algo, la pantalla de carga y saber cuándo termina.
   * Watch (watch.py): cuenta de Stremio, fuentes y el reproductor de Orbital.
   * ForYou (foryou.py): «Para ti», recomendaciones de Trakt, TMDB, RAWG y tus juegos.
+  * LiveTV (tv.py): «TV en vivo», los canales de México, su salud y ponerlos en el reproductor.
   * focus.py: ventanas y foco (pantalla de carga encima del emulador).
 Catalog expone también los métodos de Sessions y Watch que usan el servidor y la voz, para que
 ellos solo conozcan una cosa.
@@ -38,6 +39,7 @@ from .sessions import QUICK_EXIT, Sessions  # noqa: F401
 from .state import State
 from .store import ItemStore
 from .text import normalize
+from .tv import LiveTV
 from .watch import STREMIO_KEY, STREMIO_STALE_SECONDS, Watch, enrich_watch_item, source_label, stremio_item, time_left, trailer_id  # noqa: F401
 
 CONTINUE_LIMIT = 20  # "Seguir viendo": los más recientes
@@ -160,6 +162,7 @@ class Catalog:
                            cinemeta_client or cinemeta.Cinemeta(), self.store, self.events, self.sessions,
                            self.launcher)
         self.foryou = ForYou(config, self)  # «Para ti»: recomendaciones (no sale a internet hasta que se pide)
+        self.tv = LiveTV(config, self)  # «TV en vivo»: canales y su salud (no sale a internet hasta que arranca)
         self.events.subscribe(self._on_event)
 
     # --- piezas y compatibilidad ----------------------------------------------------------------

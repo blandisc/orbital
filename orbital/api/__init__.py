@@ -5,6 +5,7 @@
   * media     — películas y series (Stremio, Cinemeta, reproductor)
   * ui        — la interfaz: ajustes, recargar, mostrar, salir
   * live      — eventos en vivo (SSE) y voz
+  * tv        — TV en vivo: canales por categoría y abrir uno
   * diagnostics — qué ve Orbital de su equipo (para "Diagnóstico")
 
 Cada módulo expone `router(deps)`: las dependencias llegan explícitas en `Deps`, no por globales.

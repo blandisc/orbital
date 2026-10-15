@@ -263,6 +263,6 @@ class Sessions:
                 event["low_memory_restart"] = low.startswith("Windows está usando")  # la fuga de DWM
         end = self.last_end() if item_id == "media:player" else None
         if end:  # el reproductor anotó cómo terminó: "Terminaste Interstellar"
-            event.update(title=end["title"], finished=end["finished"])
+            event.update(title=end["title"], finished=end["finished"], **({"live": True} if end.get("live") else {}))
         self.events.publish(event)
 

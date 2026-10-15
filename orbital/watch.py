@@ -181,8 +181,9 @@ class Watch:
         self.streams = streams.StreamFinder(self.stremio_client)
         self.player = player.OrbitalPlayer(
             on_finished=self._player_finished, idle_seconds=config.sessions.video_idle_minutes * 60,
-            on_idle=lambda title, minutes: self.events.publish({
-                "type": "toast", "message": f"Cerré {title}: llevaba {minutes} min en pausa. Sigues donde te quedaste."}))
+            on_idle=lambda title, minutes, live=False: self.events.publish({
+                "type": "toast", "message": f"Cerré {title}: llevaba {minutes} min sin que lo vieras." if live
+                else f"Cerré {title}: llevaba {minutes} min en pausa. Sigues donde te quedaste."}))
         self._wire_player()
 
     # --- Stremio -------------------------------------------------------------

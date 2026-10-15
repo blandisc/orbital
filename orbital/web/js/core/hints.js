@@ -96,3 +96,22 @@ export function gamesHints(glyphs, target) {
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
   return list;
 }
+
+/**
+ * Pie de TV en vivo (lógica pura): A sintoniza el canal enfocado; LB/RB cambian de categoría (en la
+ * primera o la última pasan a la sección de al lado); X vuelve a buscar y revisar los canales.
+ */
+export function tvHints(glyphs, target, { empty = false, categories = 1, atStart = true, onAir = false, running = null } = {}) {
+  const list = [];
+  // El canal que ya está al aire: A vuelve a él (no lo sintoniza otra vez).
+  if (!empty && target?.kind === "channel") list.push({ glyph: glyphs.select, label: onAir ? "Volver al canal" : "Ver" });
+  else if (!empty && target?.kind === "filter") list.push({ glyph: glyphs.select, label: "Elegir" });
+  if (!empty && categories > 1 && glyphs.section) list.push({ glyph: glyphs.section, label: "Categoría" });
+  list.push({ glyph: glyphs.alt, label: "Actualizar", secondary: true });
+  if (glyphs.search) list.push({ glyph: glyphs.search, label: "Buscar", secondary: true });
+  list.push({ glyph: glyphs.back, label: atStart ? "Inicio" : "Al principio", secondary: true });
+  // Con un canal al aire, recuerda cómo volver a él (Home solo existe en el mando).
+  if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${running.title}` });
+  list.push({ glyph: glyphs.menu, label: "Menú", end: true });
+  return list;
+}

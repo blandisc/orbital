@@ -1,0 +1,27 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="Azteca7.mx@SD" tvg-logo="https://logos.example.mx/azteca7.png" group-title="General",Azteca 7 (720p)
+https://tv.example.mx/azteca7/playlist.m3u8
+#EXTINF:-1 tvg-id="NoticiasMX.mx@SD" tvg-logo="https://logos.example.mx/noticias.png" group-title="News;General",Noticias MX (1080p) [Not 24/7]
+https://tv.example.mx/noticias/index.m3u8
+#EXTINF:-1 tvg-id="Cine.mx@SD" tvg-logo="" group-title="Undefined",Cine de Barrio, el canal
+https://tv.example.mx/cine.m3u8
+#EXTINF:-1 tvg-id="Peques.mx@SD" tvg-logo="http://logos.example.mx/peques.png" group-title="Animation;Kids",Peques TV (Mexico) (480p) [Geo-blocked]
+https://tv.example.mx/peques/live.m3u8
+#EXTINF:-1 tvg-id="ConReferer.mx@SD" group-title="Sports",Deportes con Referer
+#EXTVLCOPT:http-referrer=https://sitio.example.mx/en,vivo
+#EXTVLCOPT:http-user-agent=Mozilla/5.0 (OrbitalTest)
+https://tv.example.mx/deportes/playlist.m3u8
+#EXTINF:-1 tvg-id="Adulto.mx@SD" group-title="XXX",No debe salir
+https://tv.example.mx/adulto.m3u8
+#EXTINF:-1 tvg-id="ArchivoLocal.mx@SD" group-title="General",Archivo local
+file:///C:/Windows/System32/config/SAM
+#EXTINF:-1 tvg-id="Rtmp.mx@SD" group-title="General",Por rtmp
+rtmp://tv.example.mx/live/stream
+#EXTINF:-1 tvg-id="Azteca7.mx@SD" group-title="General",Azteca 7 (otra señal)
+https://tv.example.mx/azteca7-b/playlist.m3u8
+#EXTINF:-1 group-title="Music",Sin id ni logo
+https://tv.example.mx/musica/playlist.m3u8
+#EXTINF:-1 tvg-id="UAMala.mx@SD" group-title="Culture",Cabeceras malas
+#EXTVLCOPT:http-referrer=javascript:alert(1)
+#EXTVLCOPT:http-user-agent=
+https://tv.example.mx/cultura.m3u8

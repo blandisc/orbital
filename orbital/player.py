@@ -16,6 +16,9 @@ Además, como un servicio de streaming de verdad:
     pregunta "¿Sigues viendo?".
   * "Saltar intro" cuando el archivo marca la intro con capítulos (Intro, Opening, Recap…).
   * El avance se guarda cada minuto y al pausar, no solo al salir.
+  * TV en vivo (tv.py): el mismo mpv y la misma pantalla, pero sin avance que guardar, sin episodios, con
+    caché corta y reconexión; ▲▼ o LT/RT cambian de canal con `loadfile … replace` (ver `tune`) y un canal
+    que no abre se marca y se pasa al siguiente.
 
 Piezas: mpv.py (la tubería con mpv), playback.py (comando, idiomas, capítulos, datos de lo que se
 ve), player_screen.py (barra, tarjetas, menús y botones) y aquí el reproductor que lo junta: arrancar,
@@ -53,6 +56,9 @@ from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las pi
     INTRO,
     LANGS,
     LB,
+    LIVE_SETTLE,
+    LIVE_STARTUP_TIMEOUT,
+    LIVE_USER_AGENT,
     OSD_STYLE,
     RB,
     RECAP,
@@ -137,9 +143,18 @@ class OrbitalPlayer(PlayerScreen):
         self.on_play_episode = None  # (meta, id_del_episodio): ver ese episodio
         self.on_sub_scale = None  # (escala): para recordarla
         self.on_language = None  # (meta, "audio" | "subtitles", código): el idioma que elegiste
+        # TV en vivo (ver tv.py): el reproductor solo pregunta y avisa, no sabe de listas ni de salud.
+        self.channels_provider = None  # (meta, categoría | None) -> {"category", "categories", "channels"}
+        self.on_play_channel = None  # (meta, id_del_canal, categoría | None): sintonizar ese canal
+        self.on_channel_failed = None  # (meta, estaba_al_aire) -> True si se pasó a otro canal
+        self.on_channel_ok = None  # (meta): el canal dio imagen
+        self._zap_view, self._zap_timer = None, None  # ▲▼ seguidos (ver _queue_channel)
+        self._panel_category = None  # la categoría que enseña la guía de canales (Y)
+        self._away = False  # Home: estás en Orbital y el canal sigue al aire sin sonido
+        self._restore_sound = False  # …y al volver se le devuelve el sonido (salvo que ya lo hubieras silenciado tú)
         # Un video olvidado en pausa (saliste con Home y te fuiste) se cierra solo; el avance se guarda.
         self.idle_seconds = idle_seconds
-        self.on_idle = on_idle  # (título, minutos): para avisar en Orbital
+        self.on_idle = on_idle  # (título, minutos[, live=True]): para avisar en Orbital
 
     # --- arrancar / cambiar de archivo -------------------------------------------------------
     def play(self, run, mpv_exe: str, url: str, title: str, meta: dict, *, subtitles: str = "en",
@@ -169,10 +184,13 @@ class OrbitalPlayer(PlayerScreen):
         self._audio_lang = options.get("audio", "en")
         self._want.clear()
         self._restart_from = None
+        self._zap_view, self._away = None, False
+        if self._zap_timer:
+            self._zap_timer.cancel()
         playback = Playback(title, process, time.time(), meta)
         with self._swap:  # el vigilante del video anterior ve los dos cambios juntos, nunca uno solo
             self.current = playback
-            self.segment = Segment(meta, title, url, start=float(options.get("start") or 0))
+            self.segment = Segment(meta, title, url, start=float(options.get("start") or 0), live=bool(options.get("live")))
         if hasattr(self.mpv, "start_observing"):
             self.mpv.start_observing()  # mpv avisa de pausa, posición… en vez de preguntarle cada segundo
         threading.Thread(target=self._watch, args=(playback,), daemon=True, name="mpv").start()
@@ -223,6 +241,42 @@ class OrbitalPlayer(PlayerScreen):
         log.info("Cargando en el mismo mpv: %s", title)
         return True
 
+    def tune(self, url: str, title: str, meta: dict, *, user_agent: str | None = None, referrer: str | None = None,
+             message: str | None = None) -> bool:
+        """Otro canal en la misma ventana (`loadfile … replace`: sin cerrar mpv, ~1,7 s). Un canal en vivo no
+        guarda ni avance ni «Seguir viendo». Cada canal lleva su Referer y User-Agent (o los de siempre).
+        False si mpv ya no está abierto."""
+        playback = self.current
+        if playback is None or playback.process.poll() is not None:
+            return False
+        segment = Segment(meta, title, url, live=True)
+        with self._swap:  # mientras se buscaba el canal pudo abrirse otra cosa: entonces este ya no va
+            if self.current is not playback:
+                return False
+            previous = self.segment
+            self.segment = segment
+            playback.title, playback.meta = title, meta
+        if previous is not None:
+            previous.closed = True  # nada que guardar de un canal
+        if self.menu is not None:  # la guía era de la lista anterior
+            self.menu = None
+            self._overlay(2, None)
+        self._hide_card()
+        self._zap_view = None
+        self._want.clear()
+        self._away = False
+        self.mpv.command("set_property", "force-media-title", title)
+        self.mpv.command("set_property", "pause", False)
+        self.mpv.command("set_property", "mute", False)
+        self._overlay(self.MUTE, None)  # un canal nuevo suena (y la píldora de «Sin sonido» se va)
+        # Siempre las dos opciones, aunque vayan vacías: el Referer del canal anterior no se hereda.
+        self.mpv.command("loadfile", url, "replace", -1, {"user-agent": user_agent or LIVE_USER_AGENT, "referrer": referrer or ""})
+        self.show_hud()  # la barra del canal nuevo, «Sintonizando…» hasta que haya imagen
+        if message:
+            self.toast(message, 3)
+        log.info("Sintonizando en el mismo mpv: %s", title)
+        return True
+
     # --- vigilancia ---------------------------------------------------------------------------
     def _watch(self, playback: Playback) -> None:
         was_paused = False
@@ -241,6 +295,7 @@ class OrbitalPlayer(PlayerScreen):
                     if paused:
                         self._save_progress(segment)  # pausar = buen momento para guardar
                 was_paused = paused
+                paused = paused or (segment.live and self._away)  # un canal que dejaste con Home es un video olvidado
                 paused_since = (paused_since or now) if paused else None
                 if paused_since is not None and idle_expired(paused_since, now, self.idle_seconds):
                     log.info("%s llevaba %d min en pausa: se cierra (el avance queda guardado)",
@@ -248,7 +303,11 @@ class OrbitalPlayer(PlayerScreen):
                     self._user_quit = True
                     self._quit()
                     if self.on_idle:
-                        self.on_idle(playback.title, int(self.idle_seconds // 60))
+                        minutes = int(self.idle_seconds // 60)
+                        if segment.live:
+                            self.on_idle(playback.title, minutes, live=True)
+                        else:
+                            self.on_idle(playback.title, minutes)
                     paused_since = None
                     continue
                 self.tick(segment, now, paused)
@@ -269,6 +328,8 @@ class OrbitalPlayer(PlayerScreen):
         if segment.playing:
             self._close_segment(segment)
             return
+        if segment.live:
+            return  # mpv se cerró: no hay otro canal que probar ni nada que guardar
         if segment.duration:  # solo lo tiene si heredó lo del archivo anterior
             self._close_segment(segment)  # cambió de fuente y salió antes de que cargara: lo visto se guarda
         if not self._user_quit and not segment.failed and self.on_failed:
@@ -279,6 +340,8 @@ class OrbitalPlayer(PlayerScreen):
         """Un vistazo por segundo: arrancó, se cortó, capítulos, siguiente episodio, final."""
         pos, dur = self.mpv.get("time-pos"), self.mpv.get("duration")
         idle = bool(self.mpv.get("idle-active"))
+        if segment.live:
+            return self._live_tick(segment, now, paused, pos, idle)
         known = isinstance(dur, (int, float)) and dur > 0
         if not segment.playing:
             # Arrancó: hay posición y, o se sabe cuánto dura, o la posición ya avanza (un torrent que aún
@@ -315,6 +378,28 @@ class OrbitalPlayer(PlayerScreen):
                 return
             self._at_end(segment)
 
+    def _live_tick(self, segment: Segment, now: float, paused: bool, pos, idle: bool) -> None:
+        """Un vistazo por segundo a un canal: ¿ya hay imagen?, ¿se cortó? Sin duración, capítulos ni final."""
+        if not segment.playing:
+            # Hay imagen cuando mpv ya reporta la posición DE ESTE canal: justo tras sintonizar, las propiedades
+            # aún pueden ser las del anterior (sin esto, un canal caído se daba por bueno y se marcaba como sano).
+            settled = now - segment.loaded >= LIVE_SETTLE and self.mpv.get("path") == segment.url
+            if settled and isinstance(pos, (int, float)) and not idle:
+                segment.playing = True
+                segment.position = float(pos)
+                segment.last_tick = segment.last_save = now
+                self.show_hud()  # «En vivo»
+                if self.on_channel_ok:
+                    self._safe(self.on_channel_ok, segment.meta)
+            elif (idle and now - segment.loaded > 1.0) or now - segment.loaded > LIVE_STARTUP_TIMEOUT:
+                self._fail(segment)
+            return
+        if idle or self.mpv.get("eof-reached"):  # la señal se cortó y mpv no pudo reconectar
+            self._fail(segment)
+            return
+        segment.last_tick = now
+        self._buffering_state(paused)
+
     def _started(self, segment: Segment) -> None:
         """Primera imagen de este archivo: avisos, subtítulos, capítulos y la barra."""
         tracks = self.mpv.get("track-list") or []
@@ -337,10 +422,21 @@ class OrbitalPlayer(PlayerScreen):
         self._ensure_subtitles(self._subs_lang, self._fallback_subs)
         self.show_hud()  # al empezar: qué estás viendo y qué hace cada botón
 
+    def _fail_channel(self, segment: Segment) -> None:
+        """Un canal no abrió o se cortó: se marca y, si hay otro, se pasa a él (tv.py decide cuál)."""
+        was_playing = segment.playing
+        log.info("El canal %s %s", segment.title, "se cortó" if was_playing else "no abrió")
+        retrying = bool(self.on_channel_failed and self._safe(self.on_channel_failed, segment.meta, was_playing))
+        if not retrying and self.segment is segment:
+            self.toast("Sin señal en este canal · ▲▼ para cambiar", 5)
+            self.show_hud()  # «Sin señal», a la vista hasta que hagas algo
+
     def _fail(self, segment: Segment) -> None:
         if segment.failed or segment.closed:
             return
         segment.failed = True
+        if segment.live:
+            return self._fail_channel(segment)
         log.info("La fuente de %s %s", segment.title, "se cortó" if segment.playing else "no arrancó")
         retrying = False
         if self.on_failed:
@@ -355,7 +451,7 @@ class OrbitalPlayer(PlayerScreen):
     def _save_progress(self, segment: Segment) -> None:
         segment.last_save = time.monotonic()
         delta = segment.watched - segment.saved_watched
-        if not self.on_progress or not segment.duration or delta <= 0:
+        if segment.live or not self.on_progress or not segment.duration or delta <= 0:
             return
         segment.saved_watched = segment.watched
         threading.Thread(target=self._safe, args=(self.on_progress, segment.meta, segment.position,
@@ -367,6 +463,8 @@ class OrbitalPlayer(PlayerScreen):
             if segment.closed:
                 return
             segment.closed = True
+        if segment.live:
+            return  # la tele en vivo no guarda dónde ibas ni entra en «Seguir viendo»
         if self.on_finished and segment.duration and not (segment.watched < 20 and segment.position >= segment.duration * .9):
             # (Casi nada visto y «al final»: un salto raro, no la película vista de principio a fin.)
             self._safe(self.on_finished, segment.meta, segment.position, segment.duration,
@@ -530,9 +628,21 @@ class OrbitalPlayer(PlayerScreen):
             log.info("Subtítulos de un addon (%d disponibles)", len(urls))
 
     def pause(self) -> None:
+        if self._is_live():
+            # Home: un canal en vivo no se pausa (al volver estaría atrasado): se deja sin sonido y sigue al aire.
+            self._away = True
+            self._restore_sound = not bool(self._value("mute"))  # si ya lo habías silenciado tú, se queda como lo dejaste
+            self.mpv.command("set_property", "mute", True)
+            return
         self.mpv.command("set_property", "pause", True)
 
     def show_progress(self) -> None:
+        if self._away:  # volviste al canal
+            self._away = False
+            if self._restore_sound:
+                self.mpv.command("set_property", "mute", False)
+                self._want.pop("mute", None)
+            self._restore_sound = False
         self.show_hud()
 
     # --- para la voz -----------------------------------------------------------------------

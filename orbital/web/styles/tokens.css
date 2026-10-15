@@ -146,6 +146,7 @@
   --tile-gap: 1.1rem;
   --home-queue-width: 34rem; /* Inicio: la columna de «También tenías» */
   --key-height: 3.2rem;
+  --tile-channel-width: 14.5rem; /* un canal de TV en vivo: ancho mínimo; las columnas se reparten el resto */
   --focus-outline: 3px; /* contorno de :focus-visible (teclado y ratón) */
   --inverse-scale: 1.06; /* teclas, chips y opciones enfocadas crecen un poco */
 }

@@ -76,6 +76,42 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     }
   }
 
+  /**
+   * TV en vivo: sintoniza un canal en el reproductor de Orbital. Sin buscar fuentes (la dirección ya la tiene
+   * el servidor), así que la pantalla de carga solo espera la primera imagen.
+   */
+  async function playChannel(channel, category = "todos", { confirmed = false, keep = false } = {}) {
+    if (!channel) return;
+    const running = !confirmed && gameInTheWay(state.running, "media:player");
+    if (running) return openMenu(switchMenu({ running, title: channel.name, command: { type: "tv", channel, category } }));
+    if (!takeLaunchLock(state)) return;
+    sound.play("open");
+    rumble("launch");
+    state.launchingId = "media:player";
+    state.launchingTitle = channel.name;
+    // Con un canal ya al aire se sintoniza en su mismo reproductor y solo se trae su ventana: sin pantalla de carga.
+    const onAir = !!state.running?.live;
+    if (!onAir) {
+      ui.launch.show({ title: channel.name }, "TV en vivo");
+      ui.launch.status("Sintonizando");
+    }
+    try {
+      const res = await api.tvPlay(channel.id, category, keep);
+      state.launchingTitle = null;
+      state.launchLockedUntil = Date.now() + 3000;
+      if (res.tuned) ui.launch.hide();
+      else if (res.reveal) ui.launch.hold(); // Orbital tapa hasta que se ve la primera imagen (no una ventana negra)
+      else ui.launch.keep(1500);
+      pollStatus();
+    } catch (err) {
+      state.launchLockedUntil = 0;
+      state.launchingTitle = null;
+      ui.launch.hide();
+      sound.play("error");
+      ui.toast.show(err.message, { error: true });
+    }
+  }
+
   // ---------------------------------------------------------------- juegos y apps
   async function resumeRunning() {
     sound.play("select");
@@ -148,5 +184,5 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     }
   }
 
-  return { watch, playStremio, resumeRunning, launch };
+  return { watch, playStremio, playChannel, resumeRunning, launch };
 }

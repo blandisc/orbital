@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import demo_foryou  # noqa: E402
+import demo_tv  # noqa: E402
 import uvicorn  # noqa: E402
 
 from orbital.catalog import Catalog  # noqa: E402
@@ -171,6 +172,7 @@ def build(tmp: Path):
     catalog.state.record_session("steam:1086940", 62 * 3600)
     catalog.set_prefs("steam:367520", favorite=True)
     demo_foryou.install(catalog)
+    demo_tv.install(catalog, tmp)  # «TV en vivo»: canales y logos de mentiras, sin Internet ni mpv
     return create_app(config, catalog)
 
 
