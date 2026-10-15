@@ -29,7 +29,9 @@ targets:
     sources:
       - path: Sources
       - path: Resources
+      - path: Shared
     dependencies:
+      - target: OrbitalWidgets               # la actividad en vivo de las descargas
       - package: OrbitalCore
         product: OrbitalCore
       - package: OrbitalCore
@@ -59,6 +61,7 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UIBackgroundModes: [audio]            # sigue sonando con la pantalla apagada y en PiP
         ITSAppUsesNonExemptEncryption: false
+        NSSupportsLiveActivities: true          # descargas en la pantalla bloqueada y la Dynamic Island
         # Para volver desde Infuse: orbital-ios://infuse-done?lastPlayedUrl=…&position=…
         CFBundleURLTypes:
           - CFBundleURLName: com.example.orbital.ios.infuse-callback
@@ -71,3 +74,29 @@ targets:
           NSAllowsArbitraryLoads: true
     scheme:
       testTargets: []
+
+  # Extensión de widgets: solo la actividad en vivo de las descargas.
+  OrbitalWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Widgets
+      - path: Shared
+      - path: Resources/Localizable.xcstrings
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mx.iracheta.orbital.widgets
+        DEVELOPMENT_TEAM: B7KRCF776Z
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.0"
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+        SWIFT_EMIT_LOC_STRINGS: YES
+    info:
+      path: Build/Widgets-Info.plist
+      properties:
+        CFBundleDisplayName: Orbital
+        CFBundleDevelopmentRegion: es
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension

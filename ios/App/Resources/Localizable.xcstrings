@@ -1376,6 +1376,28 @@
         }
       }
     },
+    "Orbital · descargando": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital · downloading"
+          }
+        }
+      }
+    },
+    "Orbital · faltan %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital · %lld left"
+          }
+        }
+      }
+    },
     "Otra fuente": {
       "extractionState": "manual",
       "localizations": {

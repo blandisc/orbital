@@ -12,6 +12,7 @@ final class AppEnvironment: ObservableObject {
     private(set) var session: SessionModel!
     private var servicesSubscription: ObservableModel.Subscription?
     let connectivity = Connectivity.shared
+    private let liveActivity = DownloadLiveActivityController()
 
     /// Lo que se está reproduciendo con el reproductor propio (la vista del reproductor cubre toda la pantalla).
     /// El reproductor puede girar; el resto de la app es vertical. Se permite antes de presentarlo: la pantalla
@@ -51,6 +52,7 @@ final class AppEnvironment: ObservableObject {
         servicesSubscription = services.onChange { [weak self] in self?.objectWillChange.send() }
         session = SessionModel(services)
         Task { await services.downloads.start() }
+        Task { await liveActivity.follow(services.downloads) }
     }
 
     private static func makeServices(_ transport: BackgroundDownloadTransport) -> Services {

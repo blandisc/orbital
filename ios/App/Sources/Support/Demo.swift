@@ -100,6 +100,11 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         if path.hasSuffix("manifest.json") { return HTTPResponse(status: 200, data: Self.manifest.serialized()) }
         guard path.hasPrefix("/stream/") else { return HTTPResponse(status: 404, data: Data()) }
         // Como Torrentio con Real-Debrid: título con resolución, tamaño e idioma. Videos públicos de prueba.
+        // `-demo-slow`: una «película» de 1 GB (un archivo de prueba de velocidad) para ver la descarga y su actividad en vivo.
+        if ProcessInfo.processInfo.arguments.contains("-demo-slow") {
+            return HTTPResponse(status: 200, data: JSON.object(["streams": [["name": "[RD+] Demo\n1080p", "title": "Archivo.Grande.1080p.WEB-DL.mkv\n💾 125 MB 🇪🇸",
+                                                                             "url": "https://proof.ovh.net/files/1Gb.dat"]]]).serialized())
+        }
         let streams: [JSON] = [
             // MKV con varias pistas de subtítulos SRT (archivo de prueba oficial de Matroska): lo abre AetherEngine por su vía propia.
             ["name": "[RD+] Demo\n1080p", "title": "Elephants.Dream.1080p.WEB-DL.MKV.Multi.Subs\n💾 2.4 GB 🇬🇧 🇪🇸 🇫🇷",
