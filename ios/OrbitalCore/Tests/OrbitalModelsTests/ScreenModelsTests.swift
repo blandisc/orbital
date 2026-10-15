@@ -267,6 +267,49 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(model.mosaic.map(\.imdb), ["tt1160419"], "«No me interesa» también vale aquí")
     }
 
+    /// CEN-18: con tu Orbital conectada, «Para ti» viene de allá (misma curaduría, con el puesto de un chart si lo trae).
+    func testParaTiUsesTheConsolesForYouWhenConnected() async throws {
+        let rig = try ServicesRig()
+        rig.services.settings.update { $0.orbitalAddress = "tv.example" }
+        rig.secrets.set(SecretKey.orbitalToken, "tok")
+        rig.http.json["https://tv.example/api/foryou"] = [
+            "lists": [["id": "netflix", "title": "Netflix", "icon": "trailer", "source": "TMDB", "meta": "x", "split": true,
+                       "brand": "netflix", "logo": "https://logo/netflix.png"]],
+            "mosaic": [["key": "video:tt1160419", "kind": "movie", "meta_id": "tt1160419", "title": "Dune", "year": 2021,
+                        "why": "En Netflix", "rank": 1, "image": "https://p.jpg", "hero": "https://h.jpg", "overview": "", "video_id": "tt1160419"]],
+        ]
+        rig.http.json["https://tv.example/api/foryou/list?id=netflix&kind=series"] = ["items": [
+            ["key": "video:tt1160419", "kind": "movie", "meta_id": "tt1160419", "title": "Dune", "year": 2021,
+             "why": "En Netflix", "rank": 1, "image": "https://p.jpg", "hero": "https://h.jpg", "overview": "", "video_id": "tt1160419"],
+        ]]
+        let model = ParaTiModel(rig.services)
+        await model.load()
+        XCTAssertEqual(model.source, .console)
+        XCTAssertEqual(model.mosaic.map(\.imdb), ["tt1160419"])
+        XCTAssertEqual(model.mosaic.first?.rank, 1)
+        XCTAssertEqual(model.platformLists.map(\.id), ["netflix"])
+        XCTAssertTrue(model.chips.contains(.platform("netflix")))
+    }
+
+    /// Si tu Orbital está conectada pero no contesta «Para ti» (versión anterior, o no responde), se cae a la lógica
+    /// local de siempre, sin aviso de error visible.
+    func testParaTiFallsBackToLocalWhenTheConsoleDoesNotAnswerForYou() async throws {
+        let rig = try ServicesRig()
+        rig.services.settings.update { $0.orbitalAddress = "tv.example" }
+        rig.secrets.set(SecretKey.orbitalToken, "tok")
+        // /api/foryou no se registra: la consola de mentira contesta 404, como una versión anterior sin esta ruta.
+        rig.http.json["https://v3-cinemeta.strem.io/catalog/series/top.json"] = ["metas": [
+            ["id": "tt0386676", "type": "series", "name": "The Office", "poster": "https://p/poster/small/1.jpg", "background": "https://b/1.jpg", "releaseInfo": "2005–2013"]]]
+        rig.http.json["https://v3-cinemeta.strem.io/catalog/movie/top.json"] = ["metas": [
+            ["id": "tt1160419", "type": "movie", "name": "Dune", "poster": "https://p/3.jpg", "releaseInfo": "2021", "runtime": "155 min"]]]
+        let model = ParaTiModel(rig.services)
+        await model.load()
+        XCTAssertEqual(model.source, .phone)
+        XCTAssertTrue(model.isGeneric)
+        XCTAssertEqual(model.mosaic.map(\.imdb), ["tt0386676", "tt1160419"])
+        XCTAssertNil(model.error)
+    }
+
     func testConnectingYourOrbitalKeepsTheTokenInTheKeychainAndChecksIt() async throws {
         let rig = try ServicesRig()
         let model = SettingsModel(rig.services)

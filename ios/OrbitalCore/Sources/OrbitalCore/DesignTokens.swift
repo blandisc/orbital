@@ -27,7 +27,12 @@ public enum DesignTokens {
     /// de la letra, para leerse sobre fondos claros).
     public enum Subtitle { public static let minFont = 15.0, liftWithControls = 72.0, lineGap = 0.15, edgeMargin = 0.05, shadowRadius = 0.08, outlineWidth = 0.06 }
     /// Medidas fijas (puntos): el mínimo táctil de iOS, miniaturas, tarjetas.
-    public enum Size { public static let touchTarget = 44.0, thumbSmall = 48.0, cardMax = 320.0, grabber = 40.0, grabberHeight = 5.0, logo = 80.0, gaugeScale = 0.45 }
+    public enum Size {
+        public static let touchTarget = 44.0, thumbSmall = 48.0, cardMax = 320.0, grabber = 40.0, grabberHeight = 5.0, logo = 80.0, gaugeScale = 0.45
+        /// El logo de una plataforma (Netflix, Disney+…) en un chip o un encabezado: siempre la misma altura, venga el logo
+        /// cuadrado o apaisado.
+        public static let platformLogo = 18.0
+    }
     /// Relaciones de aspecto de las imágenes.
     public enum Aspect { public static let poster = 2.0 / 3.0, hero = 16.0 / 11.0, still = 16.0 / 9.0 }
     /// Esperas de la interfaz (segundos).

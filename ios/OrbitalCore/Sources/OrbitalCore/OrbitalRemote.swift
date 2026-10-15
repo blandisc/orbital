@@ -74,18 +74,43 @@ public struct OrbitalRemote: Sendable {
         _ = try await send("api/stremio/play", method: "POST", body: JSON.object(body).serialized())
     }
 
-    private func send(_ path: String, method: String, body: Data?) async throws -> JSON? {
+    // MARK: «Para ti» (RemoteForYou la usa cuando el iPhone está conectado a la consola)
+    public func foryouOverview() async throws -> JSON? {
+        try await send("api/foryou", method: "GET", body: nil)
+    }
+
+    public func foryouList(id: String, kind: String?) async throws -> JSON? {
+        var query = [URLQueryItem(name: "id", value: id)]
+        if let kind { query.append(URLQueryItem(name: "kind", value: kind)) }
+        return try await send("api/foryou/list", method: "GET", query: query, body: nil)
+    }
+
+    public func foryouDetails(key: String, kind: String?) async throws -> JSON? {
+        var query = [URLQueryItem(name: "key", value: key)]
+        if let kind { query.append(URLQueryItem(name: "kind", value: kind)) }
+        return try await send("api/foryou/details", method: "GET", query: query, body: nil)
+    }
+
+    public func foryouDismiss(key: String) async throws {
+        _ = try await send("api/foryou/dismiss", method: "POST", body: JSON.object(["key": .string(key)]).serialized())
+    }
+
+    private func send(_ path: String, method: String, query: [URLQueryItem] = [], body: Data?) async throws -> JSON? {
         guard let base, !token.isEmpty else { throw Failure.notConfigured }
         var headers = ["Authorization": "Bearer \(token)"]
         if body != nil { headers["Content-Type"] = "application/json" }
+        var components = URLComponents(url: base.appendingPathComponent(path), resolvingAgainstBaseURL: false)
+        if !query.isEmpty { components?.queryItems = query }
+        guard let url = components?.url else { throw Failure.unreachable }
         let response: HTTPResponse
-        do { response = try await http.send(HTTPRequest(url: base.appendingPathComponent(path), method: method, headers: headers, body: body, timeout: 12)) }
+        do { response = try await http.send(HTTPRequest(url: url, method: method, headers: headers, body: body, timeout: 12)) }
         catch { throw Failure.unreachable }
         switch response.status {
         case 200..<300: return JSON.parse(response.data)
         case 401, 403: throw Failure.badToken
         case 429: throw Failure.refused("Tu Orbital pidió esperar un poco: demasiados intentos.")
-        case 404 where path.hasPrefix("api/stremio") || path.hasPrefix("api/companion"): throw Failure.refused("Tu Orbital es de una versión anterior: actualízala para «Ver en la TV».")
+        case 404 where path.hasPrefix("api/stremio") || path.hasPrefix("api/companion"):
+            throw Failure.refused("Tu Orbital es de una versión anterior: actualízala para «Ver en la TV».")
         default:
             let detail = JSON.parse(response.data)?["detail"]?.string
             throw Failure.refused(detail ?? "Tu Orbital contestó con un error (\(response.status)).")

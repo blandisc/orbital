@@ -70,6 +70,8 @@ TRANSLATIONS = {
     "No pude abrir el archivo descargado.": "I couldn't open the downloaded file.", "No pude abrir ese título.": "I couldn't open that title.",
     "No pude leer el catálogo de Stremio. Revisa tu conexión.": "I couldn't read the Stremio catalog. Check your connection.", "No se pudo descargar": "Download failed",
     "Ocupan %@": "%@ used", "Otra fuente": "Another source", "Otra fuente…": "Another source…",
+    "Actualizar": "Refresh", "Para ti de tu Orbital": "For You, from your Orbital", "Calculado en el iPhone": "Calculated on the iPhone",
+    "Tu Orbital no tiene sugerencias todavía.": "Your Orbital doesn't have suggestions yet.",
     "Para conectar Trakt hace falta una aplicación de la API de Trakt (trakt.tv/oauth/applications). Pega aquí su identificador.":
         "To connect Trakt you need a Trakt API application (trakt.tv/oauth/applications). Paste its identifier here.",
     "Para ti": "For You", "Pausa": "Pause", "Pausar": "Pause", "País (para lo popular en plataformas)": "Country (for what's popular on platforms)",

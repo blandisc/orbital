@@ -17,12 +17,14 @@ public struct Suggestion: Sendable, Equatable, Identifiable {
     public var wide: String
     public var reason: SuggestionReason
     public var next: (season: Int, episode: Int)?
+    /// El puesto en un Top 10 (chart de Netflix, JustWatch…), si la lista lo trae. Nil: no se pinta número.
+    public var rank: Int?
     public var id: String { imdb }
 
     public init(kind: String, imdb: String, title: String, year: Int? = nil, runtime: Int? = nil, overview: String = "", poster: String, wide: String,
-                reason: SuggestionReason, next: (season: Int, episode: Int)? = nil) {
+                reason: SuggestionReason, next: (season: Int, episode: Int)? = nil, rank: Int? = nil) {
         self.kind = kind; self.imdb = imdb; self.title = title; self.year = year; self.runtime = runtime; self.overview = overview
-        self.poster = poster; self.wide = wide; self.reason = reason; self.next = next
+        self.poster = poster; self.wide = wide; self.reason = reason; self.next = next; self.rank = rank
     }
 
     public static func == (a: Suggestion, b: Suggestion) -> Bool {
