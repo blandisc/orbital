@@ -56,7 +56,7 @@ class Credentials:
         with self._lock:
             return self._data.get(key)
 
-    def set(self, key: str, value: str | None) -> None:
+    def set(self, key: str, value: str | list[str] | None) -> None:
         with self._lock:
             if value is None:
                 self._data.pop(key, None)

@@ -1,0 +1,125 @@
+#if DEBUG
+import Foundation
+import OrbitalCore
+
+/// Modo demostración (solo en Debug, con el argumento `-demo`): una cuenta de Stremio falsa con biblioteca y un complemento
+/// que da videos de prueba públicos. Cinemeta y los pósteres son los de verdad. Nada se guarda en el Keychain ni en disco:
+/// sirve para recorrer la app en el simulador sin tu cuenta.
+enum Demo {
+    static var isOn: Bool { ProcessInfo.processInfo.arguments.contains("-demo") }
+
+    static let addonURL = "https://demo.orbital.invalid/manifest.json"
+    /// `-demo-no-tv`: sin Orbital conectada (para probar el QR: `xcrun simctl openurl booted "orbital-ios://pair?u=https%3A%2F%2Ftv.demo.invalid&t=demo"`).
+    static var noTV: Bool { ProcessInfo.processInfo.arguments.contains("-demo-no-tv") }
+
+    private static func value(after flag: String) -> String? {
+        let args = ProcessInfo.processInfo.arguments
+        guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
+        return args[i + 1]
+    }
+
+    /// `-demo-tab 2`: la pestaña con la que arranca (0 Inicio, 1 Para ti, 2 Ver, 3 Descargas).
+    static var tab: Int { value(after: "-demo-tab").flatMap(Int.init) ?? 0 }
+    /// `-demo-title series:tt0386676`: abre esa ficha en la pestaña de arranque.
+    static var title: (kind: String, id: String)? {
+        guard let parts = value(after: "-demo-title")?.split(separator: ":"), parts.count == 2 else { return nil }
+        return (String(parts[0]), String(parts[1]))
+    }
+    /// `-demo-player panel|sources`: ya reproduciendo, abre el panel de audio y subtítulos o el de otra fuente.
+    static var player: String? { value(after: "-demo-player") }
+    /// `-demo-lang en`: idioma de la app.
+    static var language: String? { value(after: "-demo-lang") }
+    /// `-demo-search dune`: escribe eso en Buscar (pestaña Ver).
+    static var search: String? { value(after: "-demo-search") }
+    /// `-demo-open settings|sources|play`: lo que se abre encima de la ficha o de Inicio.
+    static var open: String? { value(after: "-demo-open") }
+
+    /// Secretos de arranque: sesión iniciada y el complemento de demostración.
+    static func secrets() -> InMemorySecrets {
+        let secrets = InMemorySecrets()
+        if !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") { secrets.set(SecretKey.stremioAuth, "DEMO") }
+        if !noTV { secrets.set(SecretKey.orbitalToken, "demo") }      // una Orbital de mentira ya conectada («Ver en la TV»)
+        return secrets
+    }
+}
+
+/// Responde como Stremio y como un complemento; lo demás (Cinemeta, imágenes, TMDB) va a la red de verdad.
+final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
+    private let real = URLSessionHTTPClient()
+    private let lock = NSLock()
+    private var library: [String: JSON]
+
+    init() {
+        let now = Date().timeIntervalSince1970
+        func iso(_ hoursAgo: Double) -> JSON { .string(StremioLibrary.iso(now - hoursAgo * 3600)) }
+        func poster(_ id: String) -> JSON { .string("https://images.metahub.space/poster/medium/\(id)/img") }
+        let items: [JSON] = [
+            ["_id": "tt0386676", "name": "The Office", "type": "series", "poster": poster("tt0386676"), "removed": false, "temp": false,
+             "state": ["video_id": "tt0386676:2:5", "timeOffset": 120_000, "duration": 1_320_000, "lastWatched": iso(2)]],
+            ["_id": "tt0903747", "name": "Breaking Bad", "type": "series", "poster": poster("tt0903747"), "removed": false, "temp": false,
+             "state": ["video_id": "tt0903747:1:3", "timeOffset": 1_200_000, "duration": 2_820_000, "lastWatched": iso(30)]],
+            ["_id": "tt0816692", "name": "Interstellar", "type": "movie", "poster": poster("tt0816692"), "removed": true, "temp": true,
+             "state": ["video_id": "tt0816692", "timeOffset": 3_000_000, "duration": 10_140_000, "lastWatched": iso(50)]],
+            ["_id": "tt1160419", "name": "Dune", "type": "movie", "poster": poster("tt1160419"), "removed": false, "temp": false, "state": [:]],
+            ["_id": "tt11280740", "name": "Severance", "type": "series", "poster": poster("tt11280740"), "removed": false, "temp": false, "state": [:]],
+            ["_id": "tt15239678", "name": "Dune: Part Two", "type": "movie", "poster": poster("tt15239678"), "removed": false, "temp": false, "state": [:]],
+        ]
+        library = Dictionary(uniqueKeysWithValues: items.map { ($0["_id"]!.string!, $0) })
+    }
+
+    func send(_ request: HTTPRequest) async throws -> HTTPResponse {
+        let url = request.url
+        if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
+        if url.host == "demo.orbital.invalid" { return addon(url.path) }
+        if url.host == "tv.demo.invalid" { return HTTPResponse(status: 200, data: JSON.object(["ok": true]).serialized()) }
+        return try await real.send(request)
+    }
+
+    private func ok(_ result: JSON) -> HTTPResponse { HTTPResponse(status: 200, data: JSON.object(["result": result]).serialized()) }
+
+    private func stremio(_ method: String, body: JSON?) async throws -> HTTPResponse {
+        try? await Task.sleep(nanoseconds: 300_000_000)     // ds-exception: demora de red simulada (solo modo demo), no es una espera de la interfaz
+        switch method {
+        case "login":
+            if body?["password"]?.string == "error" { return HTTPResponse(status: 200, data: JSON.object(["error": ["message": "Contraseña incorrecta"]]).serialized()) }
+            return ok(["authKey": "DEMO", "user": ["email": body?["email"] ?? "demo@orbital"]])
+        case "datastoreGet":
+            let ids = (body?["ids"]?.array ?? []).compactMap(\.string)
+            return ok(.array(lock.withLock { ids.isEmpty ? Array(library.values) : ids.compactMap { library[$0] } }))
+        case "datastorePut":
+            lock.withLock { for change in body?["changes"]?.array ?? [] { if let id = change["_id"]?.string { library[id] = change } } }
+            return ok(["success": true])
+        case "addonCollectionGet":
+            return ok(["addons": [["transportUrl": .string(Demo.addonURL), "manifest": Self.manifest]]])
+        default:
+            return ok(.null)
+        }
+    }
+
+    static let manifest: JSON = ["id": "orbital.demo", "name": "Demo (videos de prueba)", "resources": ["stream"], "types": ["movie", "series"], "idPrefixes": ["tt"]]
+
+    private func addon(_ path: String) -> HTTPResponse {
+        if path.hasSuffix("manifest.json") { return HTTPResponse(status: 200, data: Self.manifest.serialized()) }
+        guard path.hasPrefix("/stream/") else { return HTTPResponse(status: 404, data: Data()) }
+        // Como Torrentio con Real-Debrid: título con resolución, tamaño e idioma. Videos públicos de prueba.
+        // `-demo-slow`: una «película» de 1 GB (un archivo de prueba de velocidad) para ver la descarga y su actividad en vivo.
+        if ProcessInfo.processInfo.arguments.contains("-demo-slow") {
+            return HTTPResponse(status: 200, data: JSON.object(["streams": [["name": "[RD+] Demo\n1080p", "title": "Archivo.Grande.1080p.WEB-DL.mkv\n💾 125 MB 🇪🇸",
+                                                                             "url": "https://proof.ovh.net/files/1Gb.dat"]]]).serialized())
+        }
+        let streams: [JSON] = [
+            // MKV con varias pistas de subtítulos SRT (archivo de prueba oficial de Matroska): lo abre AetherEngine por su vía propia.
+            ["name": "[RD+] Demo\n1080p", "title": "Elephants.Dream.1080p.WEB-DL.MKV.Multi.Subs\n💾 2.4 GB 🇬🇧 🇪🇸 🇫🇷",
+             "url": "https://raw.githubusercontent.com/ietf-wg-cellar/matroska-test-files/master/test_files/test5.mkv"],
+            ["name": "[RD+] Demo\n1080p", "title": "Apple.BipBop.HLS.1080p.WEB-DL.Multi\n💾 2.1 GB 🇬🇧 🇪🇸",
+             "url": "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8",
+             "behaviorHints": ["bingeGroup": "demo-1080p"]],
+            ["name": "[RD+] Demo\n1080p", "title": "Big.Buck.Bunny.1080p.BluRay.x264\n💾 30.7 MB 🇬🇧",
+             "url": "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_30MB.mp4"],
+            ["name": "[RD+] Demo\n4K", "title": "Jellyfish.2160p.HDR.WEB-DL\n💾 14.8 GB 🇬🇧",
+             "url": "https://test-videos.co.uk/vids/jellyfish/mp4/h264/1080/Jellyfish_1080_10s_20MB.mp4"],
+        ]
+        return HTTPResponse(status: 200, data: JSON.object(["streams": .array(streams)]).serialized())
+    }
+}
+#endif
