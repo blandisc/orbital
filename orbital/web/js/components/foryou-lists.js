@@ -133,7 +133,12 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
         state === "loading" ? "Cargando…" : state === "error" ? message || "No pude cargar esta lista." : "Nada por aquí por ahora."));
     }
     const count = state === "ready" ? items.length : 0;
-    if (focusId.startsWith("item:") && !(Number(focusId.split(":")[1]) < count)) {
+    if (l?.info && focusId.startsWith("item:")) {
+      // «Conectar Trakt» / «Agrega tus claves» no cargan portadas: el foco va al botón (antes se
+      // quedaba esperando unas que nunca llegan y A no hacía nada).
+      waiting = null;
+      focusId = targets.has("connect") ? "connect" : `rail:${index()}`;
+    } else if (focusId.startsWith("item:") && !(Number(focusId.split(":")[1]) < count)) {
       if (state === "loading") {
         // Las portadas aún no llegan: el foco las espera (en el filtro si hay; si no, en ninguna parte,
         // nunca en el riel) y cae en la primera en cuanto estén.

@@ -37,6 +37,8 @@ test("el mosaico no repite lo que ya está a la vista", () => {
   const pool = [{ key: "a" }, { key: "b" }, { key: "c" }];
   assert.deepEqual(nextUnseen(pool, 0, new Set(["a"])), { item: pool[1], cursor: 2 });
   assert.deepEqual(nextUnseen(pool, 2, new Set(["c", "a"])), { item: pool[1], cursor: 5 });
+  // Todas a la vista: se repite una que espera abajo, no una que ya está en pantalla.
+  assert.deepEqual(nextUnseen(pool, 0, new Set(["a", "b", "c"]), new Set(["a", "b"])), { item: pool[2], cursor: 3 });
   assert.equal(nextUnseen(pool, 0, new Set(["a", "b", "c"])).item, pool[0]); // todo a la vista: se repite
   assert.equal(nextUnseen([], 3, new Set()).item, null);
 });

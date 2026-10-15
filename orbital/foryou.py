@@ -551,7 +551,7 @@ class ForYou:
 
     # --- «No me interesa» ----------------------------------------------------------------------
     def dismiss(self, key: str) -> None:
-        if not re.fullmatch(r"(video:tt\d+|rawg:\d+|game:.{1,300})", key or ""):
+        if not re.fullmatch(r"(video:tt[0-9]+|rawg:[0-9]+|game:.{1,300})", key or ""):
             raise ValueError("Sugerencia inválida")
         self.catalog.state.dismiss(key)
 
@@ -586,8 +586,8 @@ class ForYou:
                     return "cancelled"
             try:
                 result = self.trakt.poll_device(code)
-            except trakt_api.TraktError:
-                continue  # la red parpadeó: se sigue esperando
+            except (trakt_api.TraktError, ValueError, TypeError, KeyError):
+                continue  # la red parpadeó (o Trakt respondió algo raro): se sigue esperando
             if result == "slow":
                 interval += 5
             elif result == "linked":

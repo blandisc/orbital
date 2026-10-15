@@ -14,7 +14,7 @@ import time
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .deps import Deps
 
@@ -26,7 +26,7 @@ KEEPALIVE = 15.0
 class VoiceRequest(BaseModel):
     intent: str | None = None
     slots: dict[str, str] | None = None
-    text: str | None = None
+    text: str | None = Field(None, max_length=500)  # una frase; Alexa repite lo que no entendió
 
 
 class SseHub:

@@ -87,8 +87,13 @@ export function createForYouMosaic({ onFocus, onPick }) {
   // y con pocas sugerencias se acababan y la misma portada salía dos veces en la misma pantalla.
   const visibleKeys = () => new Set(columns.flatMap((c) => c.tiles.filter((t) => t.top + t.h > c.offset - 40).map((t) => t.item.key)));
 
+  const onScreenKeys = () => {
+    const { H } = size();
+    return new Set(columns.flatMap((c) => c.tiles.filter((t) => t.top + t.h > c.offset - 40 && t.top < c.offset + H).map((t) => t.item.key)));
+  };
+
   function take() {
-    const next = nextUnseen(pool, cursor, visibleKeys());
+    const next = nextUnseen(pool, cursor, visibleKeys(), onScreenKeys());
     cursor = next.cursor;
     return next.item;
   }

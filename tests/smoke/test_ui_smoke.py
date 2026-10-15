@@ -106,3 +106,13 @@ def test_diagnostics_screen(page):
     page.get_by_text("Mantenimiento", exact=True).first.click()  # lo técnico vive en Ajustes → Mantenimiento
     page.get_by_text("Diagnóstico", exact=True).first.click()
     page.get_by_text("Memoria libre").wait_for(timeout=15_000)
+
+
+def test_search_with_results(page):
+    """Escribir en Buscar con resultados a la vista: la leyenda ofrece saltar a ellos (antes, un
+    ReferenceError en cada tecla dejaba la leyenda congelada)."""
+    ready(page)
+    page.keyboard.press("s")
+    page.keyboard.type("hol")
+    page.locator(".search button.card").first.wait_for(timeout=5000)
+    page.locator(".hints", has_text="Resultados").wait_for(timeout=5000)
