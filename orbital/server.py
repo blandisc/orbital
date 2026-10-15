@@ -18,11 +18,12 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from . import __version__, companion
 from .api import diagnostics, foryou, library, live, media, play, quick, tv, ui, update
@@ -235,6 +236,11 @@ async def invalid_request(request: Request, exc: RequestValidationError) -> JSON
     return JSONResponse({"detail": errors}, status_code=422)
 
 
+class CompanionPlayerAction(BaseModel):
+    action: str
+    delta: float | None = None  # "skip": segundos (±10, ±30)
+
+
 def _companion_routes(app: FastAPI, config: Config) -> None:
     """«Conectar iPhone» en la TV: el QR (solo en el puerto local, el de la consola)."""
     from fastapi.responses import Response
@@ -325,5 +331,21 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         """«Ver en la TV» desde el iPhone: lo mismo que la tarjeta de la TV (la fuente recomendada, donde ibas).
         No da más de lo que ya da la voz («pon The Office»): solo poner un título de Stremio."""
         return main_app.state.play_stremio(body)
+
+    @public.get("/api/companion/now")
+    def companion_now() -> dict:
+        """«Viendo en la TV» del iPhone: qué se ve ahora (o `null` si no hay nada abierto)."""
+        return {"playing": companion.now_playing(main_app.state.catalog)}
+
+    @public.post("/api/companion/player")
+    def companion_player(body: CompanionPlayerAction) -> dict:
+        """Un botón de la tarjeta «Viendo en la TV»: pausa, adelantar, siguiente episodio o canal…"""
+        try:
+            now = companion.control_player(main_app.state.catalog, body.action, body.delta)
+        except companion.NothingPlaying as exc:
+            raise HTTPException(409, str(exc))
+        except ValueError as exc:
+            raise HTTPException(409, str(exc))
+        return {"playing": now}
 
     return public

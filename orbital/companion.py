@@ -49,3 +49,73 @@ def trakt_session(trakt) -> dict | None:
     except Exception:  # sin internet o la sesión se cayó: el iPhone lo intenta luego
         return None
     return {"access_token": access, "expires_at": trakt.session_expiry()} if access else None
+
+
+class NothingPlaying(Exception):
+    """Nada se está viendo ahora mismo: no hay «Viendo en la TV» que enseñar ni que controlar."""
+
+
+PLAYER_ACTIONS = {"toggle", "pause", "play", "skip", "next", "previous", "stop", "mute"}
+
+
+def now_playing(catalog) -> dict | None:
+    """Lo que se ve ahora en la TV, para la tarjeta «Viendo en la TV» del iPhone. None si no hay nada abierto."""
+    running = catalog.launcher.status()
+    if running is None or running.get("id") != "media:player":
+        return None
+    return catalog.watch.player.now_playing()
+
+
+def control_player(catalog, action: str, delta: float | None = None) -> dict | None:
+    """Un botón de la tarjeta del iPhone. Devuelve lo que quedó viendo (None si se detuvo).
+
+    Lanza `NothingPlaying` si no hay nada abierto, y `ValueError` (en palabras) si la acción no
+    aplica a lo que se ve (adelantar la TV en vivo, episodio de una película…)."""
+    if action not in PLAYER_ACTIONS:
+        raise ValueError("Esa acción no existe")
+    if now_playing(catalog) is None:
+        raise NothingPlaying("No hay nada en la TV ahora mismo")
+    player, segment = catalog.watch.player, catalog.watch.player.segment
+    live = bool(segment and segment.live)
+    if action == "stop":
+        player.stop()
+        return None
+    if action == "mute":
+        muted = not bool(player.mpv.get("mute"))
+        player.mpv.command("set_property", "mute", muted)
+        return now_playing(catalog)
+    if action in ("toggle", "pause", "play"):
+        if live:
+            raise ValueError("La TV en vivo no se pausa")
+        paused = (not bool(player.mpv.get("pause"))) if action == "toggle" else action == "pause"
+        player.set_pause(paused)
+        return now_playing(catalog)
+    if action == "skip":
+        if live:
+            raise ValueError("La TV en vivo no se adelanta")
+        if not isinstance(delta, (int, float)):
+            raise ValueError("Falta cuánto adelantar")
+        player.seek(float(delta))
+        return now_playing(catalog)
+    # next / previous
+    step = 1 if action == "next" else -1
+    meta = segment.meta if segment else {}
+    if live:
+        _zap_channel(catalog, meta, step)
+    elif meta.get("kind") == "series" and player.on_episode:
+        player.on_episode(meta, step)
+    else:
+        raise ValueError("Esto no tiene episodios")
+    return now_playing(catalog)
+
+
+def _zap_channel(catalog, meta: dict, step: int) -> None:
+    """Cambia de canal (TV en vivo): el siguiente o el anterior en la misma lista."""
+    tv = catalog.tv
+    guide = tv.guide(meta, meta.get("list"))
+    channels = guide.get("channels") or []
+    if len(channels) < 2:
+        return
+    here = next((i for i, c in enumerate(channels) if c.get("current")), -1)
+    target = channels[(here + step) % len(channels)] if here >= 0 else channels[0 if step > 0 else -1]
+    tv.tune(meta, target["id"], guide.get("category"))

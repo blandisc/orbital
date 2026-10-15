@@ -457,12 +457,13 @@ class Watch:
     def _media_meta(self, kind: str, meta_id: str, video_id: str, title: str, source: streams.Source) -> dict:
         """Lo que el reproductor necesita saber del video (y lo que se guarda en Stremio). En pausa
         muestra también los datos y la sinopsis (del episodio, si la hay; si no, de la serie)."""
-        detail, facts, description = "", "", ""
+        detail, facts, description, poster = "", "", "", None
         try:
             info = self.cinemeta.meta(kind, meta_id)
         except cinemeta.CinemetaError:
             info = None
         if info:
+            poster = info.get("poster")
             about = cinemeta.describe_meta(info)
             facts = " · ".join(p for p in (about.get("year"), about.get("rating") and f"★ {about['rating']}",
                                            ", ".join((about.get("genres") or [])[:2])) if p)
@@ -473,7 +474,7 @@ class Watch:
                 episode = next((e for s in cinemeta.seasons(info) for e in s["episodes"] if e["id"] == video_id), None)
                 description = (episode or {}).get("overview") or description
         return {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title, "detail": detail,
-                "facts": facts, "description": description,
+                "facts": facts, "description": description, "poster": poster,
                 "source": source.index, "source_label": source_label(source), "binge": source.binge,
                 "tried": [source.index]}
 
