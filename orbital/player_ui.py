@@ -25,6 +25,7 @@ from __future__ import annotations
 import json
 import math
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -504,7 +505,7 @@ def buttons(items: list[tuple[str, str]], x: float, y: float, *, layer: str = "h
     return "\n".join(out)
 
 
-def pills(items: list[tuple[str, object]], y: float, *, right: float | None = None, left: float | None = None,
+def pills(items: Sequence[tuple[str, object]], y: float, *, right: float | None = None, left: float | None = None,
           center: float | None = None, layer: str = "hud", h: float = 72) -> str:
     """Con el dedo: una fila de botones tocables («−10 s», «+10 s», «Salir»…), anotados en `layer`."""
     if not items:
