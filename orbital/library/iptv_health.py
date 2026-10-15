@@ -56,8 +56,8 @@ class Check:
 
 
 def _context() -> ssl.SSLContext:
-    # mpv no valida certificados de fábrica (tls-verify=no) y varios canales de México los traen vencidos:
-    # una prueba más estricta que el reproductor ocultaría canales que sí se ven.
+    # mpv no valida certificados de fábrica (tls-verify=no) y hay canales de México con el suyo vencido que sí se ven
+    # (Unison TV): una prueba más estricta que el reproductor los ocultaría sin motivo.
     context = ssl.create_default_context()
     context.check_hostname = False
     context.verify_mode = ssl.CERT_NONE

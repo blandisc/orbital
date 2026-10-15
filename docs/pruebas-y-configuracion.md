@@ -49,6 +49,17 @@
 - [ ] En Juegos aparece la fila "GeForce NOW" con los juegos de tu "Mi biblioteca" que se pueden jugar (se lee de la app de GFN; ábrela de vez en cuando para que se actualice).
 - [ ] A en un juego de GFN lo abre directo en la nube (no lo pude probar: abre una sesión de tu cuenta).
 
+### TV en vivo
+- [ ] La sección «TV en vivo» (LB/RB desde Películas y series): categorías arriba, canales con su número; LB/RB cambian de categoría y, en la primera/última, de sección.
+- [ ] A en un canal: pantalla de carga y, ~2 s después, el canal a pantalla completa con la barra (número, nombre, «En vivo»).
+- [ ] ↑ ↓ y LT/RT cambian de canal; pulsar varias veces seguidas carga solo el último. Ver que ↑ es el siguiente (número mayor).
+- [ ] Y abre la guía; elegir otra categoría y un canal; B la cierra.
+- [ ] ◀ ▶ volumen y A silencio (la barra dice «Sin sonido»); X abre Audio.
+- [ ] Un canal que no abre (apagar el Wi-Fi no sirve: elegir uno de los atenuados): «pasando a…» y salta solo.
+- [ ] Home en un canal: sin sonido; Home otra vez: vuelve con sonido. B mantenido sale y avisa «De vuelta de la TV en vivo».
+- [ ] Con un juego abierto, A en un canal pregunta «¿Cerrar…?».
+- [ ] Sin Internet: la sección muestra la lista guardada y ningún canal desaparece.
+
 ### Pantalla de carga y sesiones
 - [ ] Al abrir un juego de Eden no se ven la lista de juegos ni ventanas de Eden: la pantalla de Orbital se queda hasta que el juego arranca, se funde a negro y aparece el juego.
 - [ ] B en la pantalla de carga la salta.

@@ -255,6 +255,17 @@ def test_home_deja_el_canal_sin_sonido_en_vez_de_pausarlo_y_al_volver_suena():
     assert ("set_property", "mute", False) in mpv.sent and not p._home_muted
 
 
+def test_un_canal_olvidado_tras_home_se_cierra_solo_y_el_aviso_no_promete_seguir_donde_ibas():
+    p, mpv = live_player()
+    p.current.process = type("Proc", (), {"poll": lambda self: 0 if ("quit",) in mpv.sent else None})()
+    p.POLL, p.idle_seconds = 0.01, 0.05
+    told = []
+    p.on_idle = lambda title, minutes, live=False: told.append((title, live))
+    p.pause()  # Home: sin sonido, y desde aquí cuenta como olvidado
+    p._watch(p.current)
+    assert ("quit",) in mpv.sent and told == [("Canal 2", True)]
+
+
 def test_un_video_normal_sigue_pausandose_con_home():
     p, mpv = make_player()
     p.pause()

@@ -11,7 +11,7 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 |---|---|---|
 | Encender la Legion Go y llegar a Orbital | Acceso directo de inicio (`pythonw -m orbital`) | ✅ |
 | Moverse entre juegos y filas | D-pad / stick; LT/RT saltan de 5 en 5 | ✅ |
-| Cambiar de sección (Inicio, Juegos, Películas y series, Apps) | LB / RB | ✅ |
+| Cambiar de sección (Para ti, Inicio, Juegos, Películas y series, TV en vivo, Apps) | LB / RB (en TV en vivo, primero pasan de categoría: ver más abajo) | ✅ |
 | Buscar juegos, películas y series desde cualquier lugar | Vista (⧉) o la píldora "Buscar". Teclado grande: A escribe, X borra, Y espacio, **B vuelve**; Borrar todo (se vuelve Deshacer), Atrás, Dictar y Buscar. Con la caja vacía, tus búsquedas recientes. Resultados por grupo: En tu consola (juegos y apps), Películas, Series. Con un teclado físico se escribe directo | ✅ |
 | Películas y series | Abre en "Seguir viendo" ("T8 E23 · quedan 10 min"; A pone el episodio en el que ibas, directo; Y → Ver la ficha o Quitar de Seguir viendo); los catálogos debajo abren la ficha | ✅ |
 | Inicio | "Continuar": tus juegos y videos juntos, por fecha; lo que está abierto va primero con la píldora "Abierto" | ✅ (nuevo) |
@@ -87,13 +87,39 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 | Volver a Orbital desde una app | Home o un toque de Legion L | ✅ |
 | Cambiar entre apps abiertas | ☰ → Ventanas abiertas | ✅ |
 
+## TV en vivo
+
+Los canales de México (lista pública de iptv-org), en el mismo mpv que las películas pero **sin película**: no
+hay a dónde adelantar, no se guarda avance y no entra en «Seguir viendo». Ver `docs/tv-en-vivo.md` (cómo funciona
+y qué se midió).
+
+| Flujo | Cómo | Estado |
+|---|---|---|
+| Llegar a la sección | LB / RB hasta «TV en vivo» (entre Películas y series y Apps). Muestra los canales, con su logo y su número, por categorías | ✅ (nuevo) |
+| Cambiar de categoría | **LB / RB** pasan de una categoría a otra (Todos · General · Noticias · Deportes…). En la primera o la última siguen a la sección de al lado, así nunca te quedas atrapado. Las categorías con menos de 3 canales se juntan en «Otros» | ✅ (nuevo) |
+| Moverse por los canales | D-pad / stick; LT/RT saltan una pantalla (3 filas). La barra de arriba dice en qué canal vas («5 de 40») | ✅ (nuevo) |
+| Ver un canal | **A**. Pantalla de carga («Sintonizando») y, con la primera imagen, el canal a pantalla completa (~2 s). Si había un juego abierto, antes pregunta «¿Cerrar X?» | ✅ (nuevo) |
+| Cambiar de canal viendo la tele | **↑ ↓ o LT/RT**: ↑ y RT, el siguiente; ↓ y LT, el anterior (la lista da la vuelta). La barra enseña a dónde vas al instante («Sintonizando…») y solo se sintoniza el último si pulsas varias veces. Cambiar es `loadfile … replace` en el mismo mpv: no se cierra nada | ✅ (nuevo) |
+| Elegir de una lista | **Y**: guía «Categoría \| Canales» encima del video (que sigue). ◀ ▶ cambian de columna, A elige, B cierra. Elegir otra categoría también cambia la lista por la que saltan ↑ ↓ | ✅ (nuevo) |
+| Volumen y silencio | ◀ ▶ volumen · **A** sin sonido (no pausa: una tele en vivo pausada vuelve atrasada). La barra dice «Sin sonido» | ✅ (nuevo) |
+| Audio | X (si el canal trae más de una pista) | ✅ |
+| Barra del canal | Número, nombre, estado (● En vivo · Sintonizando… · Sin señal), categoría, calidad y hora. Sale al sintonizar y al tocar un botón; se va sola | ✅ (nuevo) |
+| Salir | **B (mantener)**, como en todo el reproductor. Orbital avisa «De vuelta de la TV en vivo» (no «Guardé dónde ibas») | ✅ |
+| Home en un canal | Orbital al frente y el canal **sigue al aire sin sonido** (no se pausa). Home otra vez vuelve con sonido y la barra. Olvidado en Orbital más de 15 min (`sessions.video_idle_minutes`), se cierra solo | ✅ (nuevo) |
+| Un canal no abre | Se marca y salta solo al siguiente de la lista («X no abre · pasando a Y»), hasta 3 seguidos. Si siguen sin abrir, se queda en «Sin señal» para que decidas (↑ ↓) | ✅ (nuevo) |
+| Un canal se corta a media vista | mpv reconecta solo; si no puede, primero se reintenta el mismo canal una vez y luego se marca y se salta | ✅ (nuevo) |
+| Canales que ya no sirven | Se revisan al arrancar y cada ~6 h (manifiesto, calidad y un trozo de video real). Un canal se oculta tras **dos** fallos seguidos y vuelve solo cuando abre otra vez. Los que nunca se han revisado se muestran; los que ya fallaron una vez, atenuados | ✅ (nuevo) |
+| Sin Internet | Se usa la última lista guardada; ningún canal se oculta por una caída del Wi-Fi. Sin lista guardada, la sección lo dice («Aún no hay canales») | ✅ (nuevo) |
+| Volver a buscar canales | **X**: baja la lista otra vez y revisa cuáles abren (avisa al terminar) | ✅ (nuevo) |
+| Volver al Inicio | **B**: primero al primer canal; otra vez, a Inicio | ✅ |
+
 ## Con el dedo (Legion Go sin dock)
 
 Todo funciona igual con toques o con el control; Orbital cambia solo según lo que uses.
 
 | Flujo | Cómo | Estado |
 |---|---|---|
-| Recorrer una fila / cambiar de fila | Deslizar de lado / de arriba abajo | ✅ |
+| Recorrer una fila / cambiar de fila | Deslizar de lado / de arriba abajo (en TV en vivo: de lado cambia de categoría) | ✅ |
 | Ver un juego / abrirlo | Tocar la portada / tocarla otra vez | ✅ |
 | Cambiar de sección, buscar, menú | Tocar las pestañas, la píldora "Buscar" o la marca "orbital" | ✅ |
 | Volver (buscar, ficha, fuentes, menú) | Botón "Atrás" abajo a la izquierda (solo aparece al usar el dedo) | ✅ |

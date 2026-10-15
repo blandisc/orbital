@@ -152,7 +152,7 @@ class OrbitalPlayer(PlayerScreen):
         self._home_muted = False  # Home dejó el canal sin sonido mientras estás en Orbital
         # Un video olvidado en pausa (saliste con Home y te fuiste) se cierra solo; el avance se guarda.
         self.idle_seconds = idle_seconds
-        self.on_idle = on_idle  # (título, minutos): para avisar en Orbital
+        self.on_idle = on_idle  # (título, minutos[, live=True]): para avisar en Orbital
 
     # --- arrancar / cambiar de archivo -------------------------------------------------------
     def play(self, run, mpv_exe: str, url: str, title: str, meta: dict, *, subtitles: str = "en",
@@ -300,7 +300,11 @@ class OrbitalPlayer(PlayerScreen):
                     self._user_quit = True
                     self._quit()
                     if self.on_idle:
-                        self.on_idle(playback.title, int(self.idle_seconds // 60))
+                        minutes = int(self.idle_seconds // 60)
+                        if segment.live:
+                            self.on_idle(playback.title, minutes, live=True)
+                        else:
+                            self.on_idle(playback.title, minutes)
                     paused_since = None
                     continue
                 self.tick(segment, now, paused)
