@@ -14,7 +14,9 @@ final class AppEnvironment: ObservableObject {
     let connectivity = Connectivity.shared
 
     /// Lo que se está reproduciendo con el reproductor propio (la vista del reproductor cubre toda la pantalla).
-    @Published var playing: PlayRequest?
+    /// El reproductor puede girar; el resto de la app es vertical. Se permite antes de presentarlo: la pantalla
+    /// presentada toma las orientaciones permitidas al aparecer y no las vuelve a leer.
+    @Published var playing: PlayRequest? { didSet { AppDelegate.orientations = playing == nil ? .portrait : .allButUpsideDown } }
     /// Lo que se abrió en Infuse y está esperando a que vuelva.
     @Published private var external: ExternalSession?
     /// Infuse volvió sin duración y no se sabe si terminaste: se pregunta.

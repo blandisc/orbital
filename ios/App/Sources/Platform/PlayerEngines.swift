@@ -7,8 +7,13 @@ import OrbitalModels
 /// Dolby Vision, PGS, PiP); el de respaldo, AVPlayer de Apple (MP4/HLS, sin MKV).
 protocol VideoPlayerEngine: PlayerEngine {
     @MainActor var surface: AnyView { get }
-    /// Para PiP y AirPlay si el motor los da.
     var name: String { get }
+    /// Lo que se puede llevar a una ventana de PiP ahora (cambia con cada fuente; nil antes de cargar).
+    @MainActor var pictureInPicture: PictureInPictureContent? { get }
+    /// Pellizcar: el video llena la pantalla (recorta los bordes) o se ve completo con franjas.
+    @MainActor func setFillsScreen(_ fill: Bool)
+    /// La ventana de PiP se abrió o se cerró (el motor sigue decodificando video en segundo plano mientras tanto).
+    @MainActor func setPictureInPictureActive(_ active: Bool)
 }
 
 /// Reparte cada «foto» del motor a quien la pida (`snapshots` entrega un flujo nuevo en cada acceso).
@@ -55,7 +60,17 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
 
     var snapshots: AsyncStream<EngineSnapshot> { hub.makeStream() }
 
-    @MainActor var surface: AnyView { AnyView(AVPlayerSurface(player: player).ignoresSafeArea()) }
+    /// La vista con la capa del video: se arma una vez y la usan la pantalla y PiP.
+    @MainActor private lazy var layerView: PlayerLayerView = {
+        let view = PlayerLayerView()
+        view.playerLayer.player = player
+        return view
+    }()
+
+    @MainActor var surface: AnyView { AnyView(AVPlayerSurface(view: layerView).ignoresSafeArea()) }
+    @MainActor var pictureInPicture: PictureInPictureContent? { player.currentItem == nil ? nil : .playerLayer(layerView.playerLayer) }
+    @MainActor func setFillsScreen(_ fill: Bool) { layerView.playerLayer.videoGravity = fill ? .resizeAspectFill : .resizeAspect }
+    @MainActor func setPictureInPictureActive(_ active: Bool) {}
 
     init() {
         player.automaticallyWaitsToMinimizeStalling = true
@@ -149,9 +164,9 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
 }
 
 struct AVPlayerSurface: UIViewRepresentable {
-    let player: AVPlayer
-    func makeUIView(context: Context) -> PlayerLayerView { let view = PlayerLayerView(); view.playerLayer.player = player; return view }
-    func updateUIView(_ view: PlayerLayerView, context: Context) { view.playerLayer.player = player }
+    let view: PlayerLayerView
+    func makeUIView(context: Context) -> PlayerLayerView { view }
+    func updateUIView(_ view: PlayerLayerView, context: Context) {}
 }
 
 final class PlayerLayerView: UIView {

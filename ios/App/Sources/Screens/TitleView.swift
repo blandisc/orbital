@@ -35,7 +35,14 @@ struct TitleView: View {
         }
         .background(TintedBackground(tint: tint.color))
         .navigationBarTitleDisplayMode(.inline)
-        .task { await model.load(); await tint.load(model.poster) }
+        .task {
+            await model.load()
+            #if DEBUG
+            if Demo.isOn, Demo.open == "play" { start(model, videoID: nil) }
+            if Demo.isOn, Demo.open == "sources", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
+            #endif
+            await tint.load(model.poster)
+        }
         .sheet(item: $sourcesFor) { target in
             SourcesSheet(model: model, videoID: target.videoID, purpose: target.purpose) { source in
                 sourcesFor = nil

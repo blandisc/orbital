@@ -40,6 +40,10 @@ struct PlayerScreen: View {
     @State private var sources = false
     @State private var scrubbing: Double?
     @State private var finished = false
+    @StateObject private var pip = PictureInPicture()
+    @State private var nowPlaying = NowPlaying()
+    /// Pellizcar para llenar la pantalla (recorta los bordes) o ver el cuadro completo.
+    @State private var fillsScreen = false
 
     var body: some View {
         let model = holder.model
@@ -58,8 +62,16 @@ struct PlayerScreen: View {
             lockLandscape()
             UIApplication.shared.isIdleTimerDisabled = true
             // `begin` va aparte: el plazo de arranque (45 s) tiene que seguir corriendo mientras carga.
+            let engine = holder.engine
+            pip.onActiveChange = { engine.setPictureInPictureActive($0) }
+            nowPlaying.start(model: model)
             Task { await model.begin(request); scheduleHide() }
-            while !Task.isCancelled { try? await Task.sleep(nanoseconds: DS.Timing.tick); await model.tick() }
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: DS.Timing.tick)
+                await model.tick()
+                pip.update(engine.pictureInPicture)
+                nowPlaying.update(title: request.displayTitle, subtitle: request.episodeLabel, poster: request.poster, snapshot: model.snapshot)
+            }
         }
         .onChange(of: scenePhase) { _, phase in if phase != .active { Task { await model.appDidEnterBackground() } } }
         .onChange(of: model.phase) { _, phase in if phase == .closed { finish() } }
@@ -69,7 +81,7 @@ struct PlayerScreen: View {
         } message: { Text("Llevas tres episodios seguidos.") }
         .sheet(isPresented: $panel) { TrackPanel(model: model, openSources: { panel = false; Task { try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 8); sources = true } }, openInInfuse: { Task { await openInInfuse() } }).presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
         .sheet(isPresented: $sources) { PlayerSources(model: model) { sources = false }.presentationDetents([.large]).presentationDragIndicator(.visible) }
-        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false; unlockPortrait() }
+        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false; pip.stop(); nowPlaying.stop(); unlockPortrait() }
     }
 
     // MARK: gestos
@@ -80,6 +92,14 @@ struct PlayerScreen: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { controlsVisible.toggle(); if controlsVisible { scheduleHide() } }
+        .gesture(MagnifyGesture().onEnded { value in
+            // Abrir los dedos llena la pantalla; cerrarlos vuelve al cuadro completo (como la app TV de Apple).
+            let fill = value.magnification > 1
+            guard fill != fillsScreen else { return }
+            fillsScreen = fill
+            holder.engine.setFillsScreen(fill)
+        })
+        .sensoryFeedback(.impact, trigger: fillsScreen)
         .accessibilityHidden(true)
     }
 
@@ -102,7 +122,7 @@ struct PlayerScreen: View {
                 DSNotice(text: LocalizedStringKey(message), tone: .error)
                 HStack { Button("Cerrar") { Task { await close() } }.buttonStyle(.glass); Button("Abrir en Infuse") { Task { await openInInfuse() } }.dsPrimaryButton() }
             }.padding(DS.Space.s6)
-        default: if model.snapshot.state == .buffering { ProgressView().tint(DS.text) }
+        default: if !controlsVisible, model.snapshot.state == .buffering || model.snapshot.state == .loading { ProgressView().tint(DS.text) }   // con controles, va en el centro
         }
     }
 
@@ -124,18 +144,30 @@ struct PlayerScreen: View {
                     }
                     Spacer()
                     if model.skipIntroTo != nil { Button("Saltar intro") { Task { await model.skipIntro() } }.buttonStyle(.glass) }
+                    if pip.isPossible { DSIconButton(symbol: "pip.enter", label: "Imagen dentro de imagen") { pip.toggle() } }
+                    AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
+                        .accessibilityLabel(Text("AirPlay"))
                     DSIconButton(symbol: "text.bubble", label: "Audio y subtítulos") { panel = true }
                 }
                 Spacer()
-                HStack(spacing: DS.Space.s10) {
-                    DSIconButton(symbol: "gobackward.10", label: "Retroceder 10 segundos") { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
-                    DSIconButton(symbol: model.snapshot.state == .playing ? "pause.fill" : "play.fill", label: model.snapshot.state == .playing ? "Pausa" : "Reproducir", prominent: true) { Task { await model.togglePlay() }; pulse() }
-                    DSIconButton(symbol: "goforward.10", label: "Adelantar 10 segundos") { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }
-                }
+                if model.phase != .preparing { transport(model) }
                 Spacer()
-                scrubber(model)
+                if model.snapshot.duration > 0 { scrubber(model) }
             }
             .padding(DS.Space.s6)
+        }
+    }
+
+    /// Retroceder, pausa y adelantar (solo cuando ya hay video: mientras busca fuente no hacen nada).
+    private func transport(_ model: PlayerModel) -> some View {
+        HStack(spacing: DS.Space.s10) {
+            DSIconButton(symbol: "gobackward.10", label: "Retroceder 10 segundos") { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
+            if model.snapshot.state == .loading || model.snapshot.state == .buffering {
+                ProgressView().tint(DS.text).controlSize(.large).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+            } else {
+                DSIconButton(symbol: model.snapshot.state == .playing ? "pause.fill" : "play.fill", label: model.snapshot.state == .playing ? "Pausa" : "Reproducir", prominent: true) { Task { await model.togglePlay() }; pulse() }
+            }
+            DSIconButton(symbol: "goforward.10", label: "Adelantar 10 segundos") { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }
         }
     }
 
@@ -186,16 +218,31 @@ struct PlayerScreen: View {
         await env.playExternal(request, source: holder.model.source)
     }
 
-    private func lockLandscape() {
-        AppDelegate.orientations = .allButUpsideDown
-        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
-        scene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscape)) { _ in }
+    private func lockLandscape() { rotate(allowed: .allButUpsideDown, to: .landscape) }
+    private func unlockPortrait() { rotate(allowed: .portrait, to: .portrait) }
+
+    /// Desde iOS 16 hay que avisar a la vista raíz de que cambiaron las orientaciones permitidas antes de pedir el giro;
+    /// si no, la petición se ignora y el video se queda en vertical.
+    private func rotate(allowed: UIInterfaceOrientationMask, to target: UIInterfaceOrientationMask) {
+        AppDelegate.orientations = allowed
+        guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first else { return }
+        for window in scene.windows {
+            // La raíz y todo lo que presenta encima (el reproductor es una pantalla completa presentada).
+            var controller = window.rootViewController
+            while let current = controller { current.setNeedsUpdateOfSupportedInterfaceOrientations(); controller = current.presentedViewController }
+        }
+        Self.requestGeometry(scene, target, attemptsLeft: 10)
     }
 
-    private func unlockPortrait() {
-        AppDelegate.orientations = .portrait
-        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
-        scene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait)) { _ in }
+    /// Mientras la pantalla completa se está presentando, iOS rechaza el giro («Supported: portrait»): se reintenta
+    /// en cuanto termina la animación (unas décimas). Cada intento va en otra vuelta, cuando iOS ya leyó las orientaciones nuevas.
+    private static func requestGeometry(_ scene: UIWindowScene, _ target: UIInterfaceOrientationMask, attemptsLeft: Int) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            scene.requestGeometryUpdate(.iOS(interfaceOrientations: target)) { _ in
+                guard attemptsLeft > 1 else { return }
+                DispatchQueue.main.async { requestGeometry(scene, target, attemptsLeft: attemptsLeft - 1) }
+            }
+        }
     }
 }
 

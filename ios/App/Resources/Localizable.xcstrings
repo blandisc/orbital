@@ -848,6 +848,17 @@
         }
       }
     },
+    "Imagen dentro de imagen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Picture in Picture"
+          }
+        }
+      }
+    },
     "Infuse no dice cuánto dura, así que no sé si llegaste al final.": {
       "extractionState": "manual",
       "localizations": {

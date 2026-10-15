@@ -6,6 +6,7 @@
 // AETHER_ENGINE (en project.yml); sin ella la app usa AVPlayer y compila igual.
 #if AETHER_ENGINE
 import AetherEngine
+import AVKit
 import Combine
 import SwiftUI
 import OrbitalCore
@@ -45,6 +46,15 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
         engine.play()
     }
 
+    var pictureInPicture: PictureInPictureContent? {
+        // Vía nativa (MP4, HLS, MKV que AVPlayer abre): su capa. Vía por software (lo demás): la capa de muestras.
+        if let layer = engine.nativePlayerLayer { return .playerLayer(layer) }
+        if let source = engine.softwarePiPSource { return .sampleBuffer(source.layer, AetherSampleBufferPiP(source: source)) }
+        return nil
+    }
+    func setFillsScreen(_ fill: Bool) { engine.videoGravity = fill ? .resizeAspectFill : .resizeAspect }
+    func setPictureInPictureActive(_ active: Bool) { engine.pictureInPictureActive = active }
+
     func play() async { engine.play() }
     func pause() async { engine.pause() }
     func seek(to seconds: Double) async { await engine.seek(to: seconds) }
@@ -74,6 +84,26 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
             subtitleTracks: engine.subtitleTracks.map { MediaTrack(id: $0.id, kind: .subtitle, language: $0.language, title: $0.name, isDefault: $0.isDefault, isForced: $0.isForced) },
             selectedAudio: engine.activeAudioTrackIndex, selectedSubtitle: engine.activeSubtitleTrackIndex,
             chapters: engine.mediaChapters.map { Chapter(title: $0.name, time: $0.startSeconds) }))
+    }
+}
+/// Los botones de la ventana de PiP en la vía por software (pausa, ±10 s y la barra), contestados por AetherEngine.
+final class AetherSampleBufferPiP: NSObject, AVPictureInPictureSampleBufferPlaybackDelegate {
+    private let source: SoftwarePiPSource
+    init(source: SoftwarePiPSource) { self.source = source }
+
+    func pictureInPictureController(_ controller: AVPictureInPictureController, setPlaying playing: Bool) {
+        MainActor.assumeIsolated { source.setPlaying(playing) }
+    }
+    func pictureInPictureControllerTimeRangeForPlayback(_ controller: AVPictureInPictureController) -> CMTimeRange {
+        MainActor.assumeIsolated { source.timeRange() }
+    }
+    func pictureInPictureControllerIsPlaybackPaused(_ controller: AVPictureInPictureController) -> Bool {
+        MainActor.assumeIsolated { source.isPaused }
+    }
+    func pictureInPictureController(_ controller: AVPictureInPictureController, didTransitionToRenderSize newRenderSize: CMVideoDimensions) {}
+    func pictureInPictureController(_ controller: AVPictureInPictureController, skipByInterval skipInterval: CMTime, completion completionHandler: @escaping () -> Void) {
+        MainActor.assumeIsolated { source.skip(by: skipInterval.seconds) }
+        completionHandler()
     }
 }
 #endif
