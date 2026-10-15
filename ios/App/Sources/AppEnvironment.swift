@@ -50,7 +50,9 @@ final class AppEnvironment: ObservableObject {
         #if DEBUG
         // Modo demostración: nada toca tu Keychain, tus ajustes ni tus descargas.
         if Demo.isOn {
-            return Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: InMemoryKeyValueStore(), pending: InMemoryPendingStore(),
+            let kv = InMemoryKeyValueStore()
+            if let language = Demo.language { SettingsStore(kv).update { $0.uiLanguage = language } }
+            return Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),
                             downloadTransport: transport, downloadsRoot: FileManager.default.temporaryDirectory.appendingPathComponent("demo-downloads"),
                             freeSpace: { DiskSpace.freeBytes() })
         }

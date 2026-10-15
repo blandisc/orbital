@@ -804,6 +804,17 @@
         }
       }
     },
+    "Fuentes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sources"
+          }
+        }
+      }
+    },
     "Fuentes de Real-Debrid": {
       "extractionState": "manual",
       "localizations": {

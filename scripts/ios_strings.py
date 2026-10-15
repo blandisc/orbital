@@ -24,7 +24,7 @@ TRANSLATIONS = {
     "Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.":
         "A code appears to enter at trakt.tv/activate. With Trakt connected, what you watch is reported and your watchlist and lists show up.",
     "Aquí aparece lo que vas viendo, en el iPhone y en Orbital.": "What you're watching shows up here, on iPhone and on Orbital.",
-    "Añadir a Mi lista": "Add to My List", "En Mi lista": "In My List", "Descargado": "Downloaded", "Ya está descargado. Lo encuentras en Descargas.": "Already downloaded. You'll find it in Downloads.", "Película": "Movie", "Serie": "Series",
+    "Añadir a Mi lista": "Add to My List", "En Mi lista": "In My List", "Fuentes": "Sources", "Descargado": "Downloaded", "Ya está descargado. Lo encuentras en Descargas.": "Already downloaded. You'll find it in Downloads.", "Película": "Movie", "Serie": "Series",
     "Crea una aplicación en developer.trakt.tv y pega aquí su Client ID (las nuevas ya no dan secreto).": "Create an app at developer.trakt.tv and paste its Client ID here (new ones no longer have a secret).",
     "Client ID de tu aplicación de Trakt": "Your Trakt app's Client ID", "Aplicación anterior (con secreto)": "Older app (with a secret)", "Imagen dentro de imagen": "Picture in Picture",
     "Lo más popular en Stremio. Conecta Trakt en Ajustes y el mosaico se arma con lo tuyo.": "What's popular on Stremio. Connect Trakt in Settings and the mosaic is built from your stuff.", "Nada descargado": "Nothing downloaded", "Avance": "Progress",
@@ -138,6 +138,16 @@ def used_literals() -> dict[str, str]:
     return found
 
 
+UI_CALL = r'(Text|Button|Label|Section|Toggle|Picker|TextField|SecureField|Tab|navigationTitle|secondary|DSChip|DSBadge|DSNotice|DSSectionHead|DSIconButton|LabeledContent|DisclosureGroup)\(\s*(text:\s*|title:\s*)?"{}"'
+
+
+def ui_word(word: str) -> bool:
+    """¿La palabra aparece como el texto de un control en alguna pantalla?"""
+    pattern = re.compile(UI_CALL.format(re.escape(word)))
+    files = glob.glob(str(ROOT / "ios/App/Sources/Screens/*.swift")) + glob.glob(str(ROOT / "ios/App/Sources/Design/Components.swift"))
+    return any(pattern.search(Path(f).read_text(encoding="utf-8")) for f in files)
+
+
 def build() -> dict:
     strings = {}
     for key, english in sorted(TRANSLATIONS.items()):
@@ -148,7 +158,8 @@ def build() -> dict:
 def main() -> int:
     missing = {k: where for k, where in used_literals().items() if k not in TRANSLATIONS}
     # Algunos literales son nombres de símbolos, ids o formatos de código (no son textos de pantalla).
-    ignorable = {k for k in missing if re.fullmatch(r"[A-Za-z0-9_.]+", k) and " " not in k}
+    # …salvo que sean el texto de un control («Fuentes» en un botón sí es un texto de pantalla).
+    ignorable = {k for k in missing if re.fullmatch(r"[A-Za-z0-9_.]+", k) and " " not in k and not ui_word(k)}
     for k in ignorable:
         missing.pop(k)
     if missing:
