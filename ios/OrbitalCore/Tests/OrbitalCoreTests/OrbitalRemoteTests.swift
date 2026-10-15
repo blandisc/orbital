@@ -47,4 +47,44 @@ final class OrbitalRemoteTests: XCTestCase {
         let keys = try await OrbitalRemote(http: http, address: "tv.example", token: "x").keys()
         XCTAssertEqual(keys.traktSession, BorrowedSession(accessToken: "AT", expiresAt: 1_760_100_000))
     }
+
+    func testNowParsesAMovieOrNilWhenNothingPlays() async throws {
+        let http = FakeHTTP()
+        let playing: JSON = .object(["kind": .string("movie"), "live": .bool(false), "meta_id": .string("tt1"),
+                                     "video_id": .string("tt1"), "title": .string("Interstellar"), "episode_label": .string(""),
+                                     "poster": .string("https://p"), "position": .int(100), "duration": .double(6000.5),
+                                     "paused": .bool(false)])
+        http.json["https://tv.example/api/companion/now"] = .object(["playing": playing])
+        let remote = OrbitalRemote(http: http, address: "tv.example", token: "x")
+        let now = try await remote.now()
+        XCTAssertEqual(now?.title, "Interstellar")
+        XCTAssertEqual(now?.duration, 6000.5)
+        XCTAssertEqual(now?.poster, "https://p")
+
+        http.json["https://tv.example/api/companion/now"] = .object(["playing": .null])
+        let empty = try await remote.now()
+        XCTAssertNil(empty)
+    }
+
+    func testControlSendsTheActionAndDelta() async throws {
+        let http = FakeHTTP()
+        let playing: JSON = .object(["kind": .string("movie"), "live": .bool(false), "title": .string("x"),
+                                     "position": .int(40), "duration": .int(100), "paused": .bool(true)])
+        http.json["https://tv.example/api/companion/player"] = .object(["playing": playing])
+        let remote = OrbitalRemote(http: http, address: "tv.example", token: "x")
+        let now = try await remote.control(action: "skip", delta: 30)
+        let sent = try XCTUnwrap(JSON.parse(try XCTUnwrap(http.bodies(for: "https://tv.example/api/companion/player").first)))
+        XCTAssertEqual(sent["action"]?.string, "skip")
+        XCTAssertEqual(sent["delta"]?.intValue, 30)
+        XCTAssertEqual(now?.paused, true)
+    }
+
+    func testControlWithNothingPlayingSaysSoInWords() async {
+        let http = FakeHTTP()
+        http.statuses["https://tv.example/api/companion/player"] = 409
+        http.json["https://tv.example/api/companion/player"] = ["detail": "No hay nada en la TV ahora mismo"]
+        let remote = OrbitalRemote(http: http, address: "tv.example", token: "x")
+        do { _ = try await remote.control(action: "toggle"); XCTFail() }
+        catch { XCTAssertEqual((error as? OrbitalRemote.Failure)?.description, "No hay nada en la TV ahora mismo") }
+    }
 }
