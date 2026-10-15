@@ -92,6 +92,10 @@ export const api = {
   traktLink: () => post("/api/foryou/trakt/link"),
   traktCancel: () => post("/api/foryou/trakt/cancel"),
   traktUnlink: () => post("/api/foryou/trakt/unlink"),
+  // «TV en vivo»
+  tv: () => request("/api/tv"),
+  tvPlay: (id, category = "todos", keep = false) => post("/api/tv/play", { id, category, keep }),
+  tvRefresh: () => post("/api/tv/refresh"),
   /** Suscripción a eventos del servidor con reconexión automática. */
   events(onEvent, { onReconnect = () => {} } = {}) {
     let lost = false;

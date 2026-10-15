@@ -106,3 +106,32 @@ def test_diagnostics_screen(page):
     page.get_by_text("Mantenimiento", exact=True).first.click()  # lo técnico vive en Ajustes → Mantenimiento
     page.get_by_text("Diagnóstico", exact=True).first.click()
     page.get_by_text("Memoria libre").wait_for(timeout=15_000)
+
+
+def test_live_tv_categories_and_tuning_a_channel(page, server):
+    """TV en vivo: LB/RB pasan de categoría, A sintoniza y B vuelve (con canales de mentiras, sin mpv)."""
+    ready(page)
+    for _ in range(3):  # Inicio → Juegos → Películas y series → TV en vivo
+        page.keyboard.press("e")
+        page.wait_for_timeout(350)
+    page.locator(".tv__tile").first.wait_for(timeout=5000)
+    assert page.locator(".status-bar__tab--active").inner_text() == "TV en vivo"
+    assert page.locator(".tv__tile").count() == 40 and page.locator(".tv__tile.tile--focused").count() == 1
+    # Un canal que ya falló una vez se ve atenuado; los que nadie ha revisado, no.
+    assert page.locator(".tv__tile.tile--dimmed").count() == 1
+    page.keyboard.press("e")  # categoría siguiente: General
+    page.wait_for_timeout(400)
+    assert page.locator(".tv .browse__filter--on").inner_text() == "General"
+    assert 1 < page.locator(".tv__tile").count() < 40
+    page.keyboard.press("Enter")  # sintoniza el canal enfocado (el lanzador de prueba no abre nada de verdad)
+    deadline = time.monotonic() + 10
+    while not status(server)["running"] and time.monotonic() < deadline:
+        time.sleep(.2)
+    assert status(server)["running"]["id"] == "media:player"
+    urllib.request.urlopen(urllib.request.Request(f"{server}/api/stop", method="POST"), timeout=5)
+    page.locator(".toast", has_text="De vuelta de la TV en vivo").wait_for(timeout=10_000)  # no «dónde ibas»: la tele no lo guarda
+    page.keyboard.press("Escape")  # B: primero al primer canal; otra vez, a Inicio
+    page.wait_for_timeout(300)
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(500)
+    assert page.locator(".status-bar__tab--active").inner_text() == "Inicio"

@@ -91,9 +91,10 @@ test("secciones: cada fila en su lugar; Inicio vacío cae en Juegos; secciones v
   assert.deepEqual(ids("apps"), ["apps"]);
   const fresh = rows.filter((r) => !["jump", "recent", "continue", "favorites"].includes(r.id));
   assert.deepEqual(sectionRows(fresh, "home").map((r) => r.id), ["steam", "geforcenow", "emulators:switch"]);
-  // «Para ti» siempre está, a la izquierda del Inicio (no tiene filas: es su propia vista).
-  assert.deepEqual(visibleSections([{ id: "steam" }]).map((s) => s.id), ["foryou", "home", "games"]);
+  // «Para ti» siempre está, a la izquierda del Inicio, y «TV en vivo» también (sin filas: son su propia vista).
+  assert.deepEqual(visibleSections([{ id: "steam" }]).map((s) => s.id), ["foryou", "home", "games", "tv"]);
   assert.deepEqual(ids("foryou"), []);
+  assert.deepEqual(ids("tv"), []);
   assert.deepEqual(ids("no-existe"), ["jump", "favorites"]); // una sección que no existe: la del Inicio
 });
 

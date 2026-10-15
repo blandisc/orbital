@@ -1,0 +1,43 @@
+/* TV en vivo (js/components/tv.js): categorías en píldora y una cuadrícula de canales. Las piezas son las de una
+   vista con secciones (browse.css: encabezado, píldoras, ventana con desvanecido) y la base .tile (ui.css).
+   El fondo es el espacio vivo del Inicio: aquí no hay arte que enseñar, los logos están en cada canal. */
+body[data-view="tv"] .hero, body[data-view="tv"] .shelf { display: none; }
+body[data-view="tv"] .backdrop__layer, body[data-view="tv"] .backdrop__scrim { opacity: 0; }
+body[data-view="tv"] .backdrop { transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--color-backdrop-deep); }
+body[data-view="tv"] .backdrop__space { opacity: 1; }
+
+.tv { grid-row: 2 / 4; position: relative; min-height: 0; display: flex; flex-direction: column; gap: var(--space-5); padding: var(--space-4) var(--page-gutter) var(--space-2); }
+.tv .browse__viewport { padding-bottom: 3.6rem; } /* la última fila no queda bajo el desvanecido ni el pie */
+
+/* LB y RB a los lados de las píldoras, como en la barra de arriba. Las píldoras, en una sola fila: si no caben (letra grande,
+   muchas categorías), la fila se recorre y siempre queda a la vista la categoría activa (tv.js, showPill). */
+.tv__bar { gap: var(--space-4); }
+.tv__key { display: inline-flex; flex: none; }
+.tv__key:empty { display: none; }
+.tv__bar .browse__filters {
+  position: relative; flex: 0 1 auto; flex-wrap: nowrap; overflow: hidden; padding: .35rem 1rem; margin: -.35rem -1rem;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, var(--mask-solid) 1rem, var(--mask-solid) calc(100% - 1rem), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, var(--mask-solid) 1rem, var(--mask-solid) calc(100% - 1rem), transparent 100%);
+}
+
+/* Una casilla: el logo al centro, el nombre abajo y su número en la esquina. */
+.tv__grid {
+  position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--tile-channel-width), 1fr));
+  gap: var(--space-6) var(--space-5); transition: transform var(--duration-slow) var(--ease-out);
+}
+.tv__tile { aspect-ratio: 16 / 9; display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center; gap: var(--space-2); padding: var(--space-5) var(--space-4) var(--space-3); }
+.tv__number { position: absolute; top: var(--space-2); left: var(--space-2); }
+.tv__media { display: grid; place-items: center; width: 100%; height: 100%; min-height: 0; min-width: 0; }
+.tv__logo { max-width: 74%; max-height: 100%; object-fit: contain; filter: var(--shadow-drop-sm); }
+.tv__initials { font-family: var(--font-sans); font-size: var(--text-2xl); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); color: var(--color-text-muted); }
+.tv__name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .12em; font-size: var(--text-sm); color: var(--color-text-muted); }
+.tv__tile.tile--focused .tv__name { color: var(--color-text); }
+
+/* Sin canales (buscando, sin Internet…): el mensaje al centro, sin tapar las píldoras. */
+.tv__notice { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.tv__notice:empty { display: none; }
+.tv__message {
+  display: grid; justify-items: center; gap: var(--space-2); max-width: 34rem; padding: 0 var(--space-6); text-align: center;
+  color: var(--color-text-muted); font-size: var(--text-md); line-height: 1.5; animation: fade-in var(--duration-enter) var(--ease-out);
+}
+.tv__message-title { color: var(--color-text); font-family: var(--font-sans); font-size: var(--text-xl); font-weight: var(--weight-medium); }

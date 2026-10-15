@@ -9,7 +9,7 @@ import { closedMessage, crashMessage } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
-import { footerHints, gamesHints, homeHints } from "./core/hints.js";
+import { footerHints, gamesHints, homeHints, tvHints } from "./core/hints.js";
 import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
@@ -27,6 +27,7 @@ import { createStatusBar } from "./components/status-bar.js";
 import { createLogin } from "./components/login.js";
 import { createTitle, titleRef } from "./components/title.js";
 import { createToast } from "./components/toast.js";
+import { createTv } from "./components/tv.js";
 import { createTraktLink } from "./components/trakt-link.js";
 import { createViewer } from "./components/viewer.js";
 import { createBoot } from "./app/boot.js";
@@ -48,7 +49,9 @@ const inHome = () => state.section === "home" && state.libraryLoaded;
 const inGames = () => state.section === "games" && state.libraryLoaded;
 // Para ti tiene su propia vista (mosaico o listas): lo enfocado es una sugerencia, no algo de la biblioteca.
 const inForYou = () => state.section === "foryou" && state.libraryLoaded;
-const current = () => (inForYou() ? null : inHome() ? ui.home.current?.item ?? null
+// TV en vivo tiene su propia vista (categorías + canales): lo enfocado es un canal, no algo de la biblioteca.
+const inTv = () => state.section === "tv" && state.libraryLoaded;
+const current = () => (inForYou() || inTv() ? null : inHome() ? ui.home.current?.item ?? null
   : inGames() ? ui.games.current?.item ?? null
     : itemAt(state.rows, state.focus.r, state.focus.c));
 const glyphs = () => GLYPHS[state.modality];
@@ -134,6 +137,10 @@ const ui = {
     onEdge: () => { sound.play("error"); rumble("edge"); },
     onToggle: () => { sound.play("open"); renderHints(); }, // el selector Mosaico | Listas, con el dedo
   }),
+  tv: createTv({
+    onFocus: () => tvFocused(),
+    onPick: (target, id) => (ui.tv.focusId === id ? tvActivate(target) : ui.tv.focus(id)),
+  }),
   traktLink: createTraktLink({
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); returnToMenu(traktFrom); },
@@ -159,7 +166,7 @@ const touchBack = h("button", { class: "touch-back", type: "button", "aria-label
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -194,6 +201,9 @@ function renderHints() {
   document.body.dataset.overlay = ui.sheet.isOpen || overlay ? "true" : "false";
   if (!ui.sheet.isOpen && overlay) return ui.hints.render(overlay.hints(g));
   if (inForYou() && !ui.sheet.isOpen) return ui.hints.render(ui.foryou.hints(g));
+  if (inTv() && !ui.sheet.isOpen) {
+    return ui.hints.render(tvHints(g, ui.tv.current, { empty: ui.tv.empty, categories: ui.tv.categories, atStart: ui.tv.atStart }));
+  }
   if (inGames() && !ui.sheet.isOpen) {
     const target = ui.games.current;
     const item = target?.item;
@@ -257,6 +267,7 @@ function setModality(modality) {
   if (inHome()) renderHome(); // los botones del destacado y de las consolas cambian de glifo
   if (inGames()) renderGames();
   ui.foryou.setGlyphs(glyphs()); // el selector X · Mosaico | Listas y los botones de la ficha
+  ui.tv.setGlyphs(glyphs()); // LB RB a los lados de las categorías
   ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   renderHints();
 }
@@ -288,9 +299,11 @@ function altLabel(item) {
 
 /** Para ti, Inicio y Juegos tienen su propia vista; las demás secciones, héroe + filas. */
 function renderView() {
-  document.body.dataset.view = inForYou() ? "foryou" : inHome() ? "home" : inGames() ? "games" : "rows";
+  document.body.dataset.view = inForYou() ? "foryou" : inTv() ? "tv" : inHome() ? "home" : inGames() ? "games" : "rows";
   if (inForYou()) ui.foryou.show();
   else ui.foryou.hide();
+  if (inTv()) ui.tv.show();
+  else ui.tv.hide();
   if (inHome()) {
     ui.home.show();
     renderHome();
@@ -334,6 +347,54 @@ function handleForYou(action, { repeat = false } = {}) {
     case "search": return openSearch();
     case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));
     case "refresh": return ui.foryou.load({ force: true });
+  }
+}
+
+// ---------------------------------------------------------------- TV en vivo
+/** El fondo es el espacio del Inicio; lo único que cambia al enfocar es el pie (Ver / Elegir). */
+function tvFocused() {
+  if (inTv()) renderHints();
+}
+
+/** A: sintoniza el canal enfocado, o aplica la categoría de la píldora enfocada. */
+function tvActivate(target) {
+  if (!target) return;
+  if (target.kind === "filter") { sound.play("select"); return ui.tv.setCategory(target.value); }
+  ui.tv.remember(target.channel);
+  return playChannel(target.channel, ui.tv.category);
+}
+
+/** X: volver a buscar la lista y revisar cuáles canales abren (el aviso de que terminó llega por SSE). */
+async function tvRefresh() {
+  sound.play("select");
+  ui.toast.show("Buscando canales…");
+  try {
+    await api.tvRefresh();
+    setTimeout(() => ui.tv.load({ force: true }), 600); // ya dice «revisando cuáles abren»
+  } catch (err) {
+    sound.play("error");
+    ui.toast.show(err.message, { error: true });
+  }
+}
+
+/** Botones en TV en vivo: moverse por los canales, LB/RB categorías, A sintonizar, X actualizar, B volver. */
+function handleTv(action, { repeat = false } = {}) {
+  const moved = ui.tv.handle(action === "home" ? "back" : action, { repeat });
+  if (moved === true) {
+    sound.play(action === "pageleft" || action === "pageright" ? "open" : "move");
+    return renderHints();
+  }
+  if (moved === "edge") { if (!repeat) rumble("edge"); return; }
+  if (moved === "exit") return goToSection("home", -1);
+  switch (action) {
+    case "select": return tvActivate(ui.tv.current);
+    case "alt": return tvRefresh();
+    case "options": sound.play("error"); return rumble("edge");
+    case "prevsection": return stepSection(-1); // en la primera categoría: la sección de la izquierda
+    case "nextsection": return stepSection(1);
+    case "search": return openSearch();
+    case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));
+    case "refresh": return tvRefresh();
   }
 }
 
@@ -464,7 +525,7 @@ function goToSection(id, direction = 0) {
   const saved = state.sectionFocus[id] || {};
   const { r, c } = restoreFocus(state.rows, { rowId: saved.rowId, itemId: saved.itemId, r: 0, c: 0 });
   state.focus = { r: -1, c: -1 }; // fuerza a redibujar héroe y fondo
-  if (inHome() || inGames() || inForYou()) state.focus = { r, c };
+  if (inHome() || inGames() || inForYou() || inTv()) state.focus = { r, c };
   else setFocus(r, c, { silent: true });
   ui.shelf.slide(direction || Math.sign(to - from));
   slideView(direction || Math.sign(to - from));
@@ -473,9 +534,9 @@ function goToSection(id, direction = 0) {
   renderSections();
 }
 
-/** Inicio, Juegos y Para ti entran de lado, como las filas de Películas y Apps (la dirección de LB/RB). */
+/** Inicio, Juegos, Para ti y TV en vivo entran de lado, como las filas de Películas y Apps (la dirección de LB/RB). */
 function slideView(direction) {
-  const view = inForYou() ? ui.foryou.el : inHome() ? ui.home.el : inGames() ? ui.games.el : null;
+  const view = inForYou() ? ui.foryou.el : inTv() ? ui.tv.el : inHome() ? ui.home.el : inGames() ? ui.games.el : null;
   if (!view || !direction) return;
   view.classList.remove("view--from-left", "view--from-right");
   void view.offsetWidth;
@@ -527,13 +588,14 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     if (!state.libraryLoaded) {
       ui.search.refresh(); // abierta antes de que cargara: que salgan tus juegos
       ui.foryou.load(); // en segundo plano: Para ti ya está listo cuando llegas (LB desde el Inicio)
+      ui.tv.load(); // y la TV en vivo, para que los canales ya estén cuando llegas
     }
     state.libraryLoaded = true;
     libraryRetry = 0;
     const { r, c } = restoreFocus(state.rows, { rowId, itemId, ...state.focus });
     state.focus = { r, c };
     renderView();
-    if (inHome() || inGames() || inForYou()) renderHints();
+    if (inHome() || inGames() || inForYou() || inTv()) renderHints();
     else setFocus(r, c, { silent: true });
     boot.finish();
     if (refresh) {
@@ -594,7 +656,7 @@ function openTitle(item) {
   renderHints();
 }
 
-const { watch, launch, resumeRunning } = createLaunching({
+const { watch, launch, resumeRunning, playChannel } = createLaunching({
   state, ui, current: () => current(), openMenu: (...args) => openMenu(...args), openTitle: (item) => openTitle(item),
   openSearch: (query) => openSearch(query), pollStatus: () => pollStatus(),
   // De dónde vuela la portada: la tarjeta enfocada de la vista en pantalla (no la fila oculta).
@@ -656,6 +718,8 @@ async function runCommand(command, context = null) {
         return launch(findItem(command.id), command.runner || null, { confirmed: !!command.confirmed, keep: !!command.keep });
       case "watch":
         return watch({ ...command.play, keep: !!command.keep }, { confirmed: true });
+      case "tv": // «Cerrar y abrir» el canal, tras la pregunta de un juego que estaba abierto
+        return playChannel(command.channel, command.category, { confirmed: true, keep: !!command.keep });
       case "title":
         return openTitle(findItem(command.id));
       case "title-ref":
@@ -867,7 +931,7 @@ function offerUndoHide(command) {
 
 /** Dónde está el foco ahora (sección y lugar): Y deshace solo si no te has movido. */
 function focusKey() {
-  const spot = inHome() ? ui.home.focusId : inGames() ? ui.games.focusId : `${state.focus.r}:${state.focus.c}`;
+  const spot = inHome() ? ui.home.focusId : inGames() ? ui.games.focusId : inTv() ? ui.tv.focusId : `${state.focus.r}:${state.focus.c}`;
   return `${state.section}|${spot}`;
 }
 
@@ -933,6 +997,7 @@ function handleAction(action, { repeat = false } = {}) {
   // Vistas a pantalla completa (OVERLAYS): la de más arriba se queda con el botón.
   if (OVERLAYS.some((view) => view.handle(action))) return renderHints();
   if (inForYou()) return handleForYou(action, { repeat });
+  if (inTv()) return handleTv(action, { repeat });
   if (inHome()) return handleHome(action, { repeat });
   if (inGames()) return handleGames(action, { repeat });
   const { r, c } = state.focus;
@@ -1061,6 +1126,8 @@ function handleEvent(event) {
     return ui.traktLink.failed(event.message);
   } else if (event.type === "foryou-changed") {
     return ui.foryou.load({ force: true });
+  } else if (event.type === "tv-changed") { // terminó de revisar los canales
+    return ui.tv.load({ force: true });
   } else if (event.type === "closed") {
     ui.title.refresh(); // «Continuar» ya apunta al siguiente episodio (antes repetía el que acabas de ver)
     // Al abrir otro juego se cierra el anterior: su "closed" no debe tapar la carga del nuevo.
@@ -1106,6 +1173,7 @@ document.addEventListener("visibilitychange", () => {
 });
 document.body.dataset.input = state.modality;
 ui.foryou.setGlyphs(glyphs());
+ui.tv.setGlyphs(glyphs());
 setInterval(pollStatus, 60_000); // red de seguridad: el estado llega por SSE al cambiar
 setInterval(pollSystem, 30_000);
 pollStatus();
