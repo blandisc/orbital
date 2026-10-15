@@ -688,3 +688,24 @@ class OrbitalPlayer(PlayerScreen):
     def playing(self) -> bool:
         current = self.current
         return current is not None and current.process.poll() is None
+
+    # --- «Viendo en la TV» (el iPhone) ----------------------------------------------------------
+    def now_playing(self) -> dict | None:
+        """Lo que se está viendo ahora, para la tarjeta del iPhone. None si no hay nada abierto."""
+        current, segment = self.current, self.segment
+        if current is None or segment is None:
+            return None
+        meta = segment.meta
+        if segment.live:
+            return {"kind": "tv", "live": True, "channel": meta.get("title") or current.title,
+                    "title": meta.get("title") or current.title, "number": meta.get("number"),
+                    "category": meta.get("category") or "", "paused": False,
+                    "muted": bool(self.mpv.get("mute"))}
+        label = (meta.get("detail") or "").split(" · ", 1)[0]
+        parts = label.split()
+        episode_label = f"{parts[0]} · {parts[1]}" if len(parts) == 2 else ""
+        return {"kind": meta.get("kind") or "movie", "live": False, "meta_id": meta.get("meta_id"),
+                "video_id": meta.get("video_id"), "title": meta.get("title") or current.title,
+                "episode_label": episode_label, "poster": meta.get("poster"),
+                "position": segment.position, "duration": segment.duration,
+                "paused": bool(self.mpv.get("pause"))}

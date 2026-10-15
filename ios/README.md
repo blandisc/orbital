@@ -128,6 +128,26 @@ Las pruebas de Swift leen `tests/fixtures/` (los mismos datos de ejemplo que usa
    gestos (brillo, volumen, buscar) a la vez que el doble toque y el pellizcar, con el dedo de verdad (el
    simulador no tiene multitáctil con el mismo tacto).
 
+## Viendo en la TV
+
+En Inicio, arriba del destacado: una tarjeta con lo que se ve ahora en tu Orbital (con la dirección y el token de
+«Tu Orbital» en Ajustes). Mientras la app está activa, `TVNowModel` consulta `GET /api/companion/now` cada 5 s; si
+tu Orbital no contesta (apagada, sin túnel, una versión vieja) la tarjeta se oculta sin avisar, y si el token ya
+no sirve se oculta y queda un aviso para revisarlo en Ajustes.
+
+- **Película o episodio**: póster, título, episodio y «quedan N min», con una barra de avance que se interpola
+  entre sondeos (no salta de 5 en 5 s). Botones −10 s · Pausa/Reanudar (un poco más grande) · +10 s · Siguiente
+  episodio, y un menú ⋯ con «Salir del video» (para la consola) y «Seguir aquí» (abre la ficha en el iPhone; el
+  avance ya vive en Stremio).
+- **TV en vivo**: el nombre del canal, «● En vivo» (con el tono de aviso del sistema de diseño), ▲▼ para cambiar
+  de canal y «Sin sonido».
+- Cada botón manda `POST /api/companion/player` con `{action, delta?}` y pinta la respuesta al instante (sin
+  esperar al siguiente sondeo); mientras una acción está en vuelo los botones se atenúan y un segundo toque no
+  duplica la petición. Con «Reducir movimiento» la tarjeta no anima; con letra de accesibilidad grande los botones
+  se apilan con su nombre.
+- Modo demo: `-demo-tv-now` enseña la tarjeta con una serie de mentira que avanza sola (y obedece los botones),
+  para verla en el simulador sin tu Orbital.
+
 ## Descargas: cómo se reanudan
 
 - **Pausa o corte de red**: se conserva lo bajado con los datos de reanudación de `URLSession` y se continúa mientras el enlace valga.

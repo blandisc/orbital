@@ -77,3 +77,123 @@ func yearAndKind(year: String, kind: String) -> Text {
 extension Suggestion {
     var route: TitleRoute { TitleRoute(kind: kind, metaID: imdb, title: title, poster: poster) }
 }
+
+/// «Viendo en la TV»: la tarjeta de Inicio sobre lo que se ve ahora en tu Orbital (ola 1: control remoto).
+/// Película o episodio: póster, título, avance (interpolado entre sondeos, sin saltar) y −10 · Pausa · +10 · Siguiente.
+/// TV en vivo: el canal, «● En vivo» y ▲▼ · Sin sonido. Con letra de accesibilidad grande los botones se apilan con su nombre.
+struct NowPlayingCard: View {
+    let now: OrbitalRemote.NowPlaying
+    let fetchedAt: Date
+    let busy: Bool
+    let onAction: (String, Double?) -> Void
+    let onContinueHere: () -> Void
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @State private var tap = 0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            HStack(alignment: .center, spacing: DS.Space.s3) {
+                PosterView(url: now.poster, title: now.title, aspect: DS.Poster.aspect).frame(width: DS.Poster.nowPlayingWidth)
+                info
+                Spacer(minLength: 0)
+            }
+            controls
+        }
+        .padding(DS.Space.s3)
+        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .accessibilityElement(children: .contain)
+    }
+
+    @ViewBuilder private var info: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s1) {
+            if now.live {
+                HStack(spacing: DS.Space.s1) {
+                    Text("●").font(DS.font(.xs)).foregroundStyle(DS.warning)
+                    Text("En vivo").font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.warning)
+                }
+            }
+            Text(now.live ? (now.channel ?? now.title) : now.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
+            if now.live {
+                if let category = now.category, !category.isEmpty {
+                    Text(category).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1)
+                }
+            } else {
+                if !now.episodeLabel.isEmpty {
+                    Text(now.episodeLabel).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1)
+                }
+                TimelineView(.periodic(from: fetchedAt, by: DS.NowPlaying.progressTick)) { context in
+                    let left = Int(max(0, now.duration - interpolatedPosition(at: context.date)) / 60)
+                    Text(timeLeftText(minutes: left)).font(DS.font(.xs)).foregroundStyle(DS.textFaint).lineLimit(1)
+                }
+                TimelineView(.periodic(from: fetchedAt, by: DS.NowPlaying.progressTick)) { context in
+                    DSProgress(fraction: now.duration > 0 ? interpolatedPosition(at: context.date) / now.duration : 0)
+                }
+            }
+        }
+    }
+
+    /// Mientras no está en pausa, el avance se calcula a partir del último sondeo (no salta cada 5 s).
+    private func interpolatedPosition(at date: Date) -> Double {
+        guard !now.paused, !now.live else { return now.position }
+        return min(now.duration, now.position + max(0, date.timeIntervalSince(fetchedAt)))
+    }
+
+    @ViewBuilder private var controls: some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: DS.Space.s2) { buttons(labeled: true) }
+            } else {
+                HStack(spacing: DS.Space.s2) { buttons(labeled: false) }
+            }
+        }
+        .disabled(busy)
+        .opacity(busy ? DS.NowPlaying.busyOpacity : 1)
+        .sensoryFeedback(.impact, trigger: tap)
+    }
+
+    @ViewBuilder private func buttons(labeled: Bool) -> some View {
+        if now.live {
+            actionButton(symbol: "chevron.up", text: "Canal anterior", labeled: labeled) { act("previous") }
+            actionButton(symbol: "chevron.down", text: "Canal siguiente", labeled: labeled) { act("next") }
+            actionButton(symbol: now.muted ? "speaker.slash.fill" : "speaker.wave.2.fill", text: "Sin sonido", labeled: labeled) { act("mute") }
+        } else {
+            actionButton(symbol: "gobackward.10", text: "Retroceder 10 segundos", labeled: labeled) { act("skip", -10) }
+            actionButton(symbol: now.paused ? "play.fill" : "pause.fill", text: now.paused ? "Reanudar" : "Pausa", prominent: true, labeled: labeled) { act("toggle") }
+            actionButton(symbol: "goforward.10", text: "Adelantar 10 segundos", labeled: labeled) { act("skip", 10) }
+            actionButton(symbol: "forward.end.fill", text: "Siguiente episodio", labeled: labeled) { act("next") }
+        }
+        moreMenu
+    }
+
+    private var moreMenu: some View {
+        Menu {
+            Button("Salir del video", systemImage: "xmark.circle") { act("stop") }
+            if !now.live { Button("Seguir aquí", systemImage: "iphone") { onContinueHere() } }
+        } label: { Image(systemName: "ellipsis.circle") }
+        .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
+        .accessibilityLabel(Text("Más"))
+    }
+
+    @ViewBuilder private func actionButton(symbol: String, text: LocalizedStringKey, prominent: Bool = false, labeled: Bool, action: @escaping () -> Void) -> some View {
+        Group {
+            if labeled, prominent {
+                Button { tapAndRun(action) } label: { Label(text, systemImage: symbol) }.dsPrimaryButton()
+            } else if labeled {
+                Button { tapAndRun(action) } label: { Label(text, systemImage: symbol) }.buttonStyle(.glass)
+            } else {
+                DSIconButton(symbol: symbol, label: text, prominent: prominent) { tapAndRun(action) }
+            }
+        }
+        .controlSize(prominent ? .extraLarge : .large)
+    }
+
+    private func tapAndRun(_ action: @escaping () -> Void) {
+        tap += 1
+        action()
+    }
+
+    private func act(_ action: String, _ delta: Double? = nil) {
+        guard !busy else { return }
+        onAction(action, delta)
+    }
+}

@@ -96,6 +96,57 @@ public struct OrbitalRemote: Sendable {
     }
 
     private func send(_ path: String, method: String, query: [URLQueryItem] = [], body: Data?) async throws -> JSON? {
+
+    /// Lo que se ve ahora en la TV, para la tarjeta «Viendo en la TV». nil si no hay nada abierto.
+    public struct NowPlaying: Sendable, Equatable {
+        public var kind: String, live: Bool
+        public var metaID: String?, videoID: String?
+        public var title: String, episodeLabel: String
+        public var poster: String?
+        public var position: Double, duration: Double, paused: Bool
+        public var channel: String?, number: Int?, category: String?, muted: Bool
+
+        public init(kind: String, live: Bool, metaID: String? = nil, videoID: String? = nil, title: String,
+                    episodeLabel: String = "", poster: String? = nil, position: Double = 0, duration: Double = 0,
+                    paused: Bool = false, channel: String? = nil, number: Int? = nil, category: String? = nil, muted: Bool = false) {
+            self.kind = kind; self.live = live; self.metaID = metaID; self.videoID = videoID; self.title = title
+            self.episodeLabel = episodeLabel; self.poster = poster; self.position = position; self.duration = duration
+            self.paused = paused; self.channel = channel; self.number = number; self.category = category; self.muted = muted
+        }
+
+        static func parse(_ json: JSON) -> NowPlaying? {
+            guard let title = json["title"]?.string else { return nil }
+            func number(_ key: String) -> Double {
+                switch json[key] { case .int(let i)?: Double(i); case .double(let d)?: d; default: 0 }
+            }
+            return NowPlaying(kind: json["kind"]?.string ?? "movie", live: json["live"]?.bool ?? false,
+                              metaID: json["meta_id"]?.string, videoID: json["video_id"]?.string, title: title,
+                              episodeLabel: json["episode_label"]?.string ?? "", poster: json["poster"]?.string,
+                              position: number("position"), duration: number("duration"), paused: json["paused"]?.bool ?? false,
+                              channel: json["channel"]?.string, number: json["number"]?.intValue, category: json["category"]?.string,
+                              muted: json["muted"]?.bool ?? false)
+        }
+    }
+
+    /// Qué se ve ahora en la TV (para la tarjeta del iPhone). nil si no hay nada abierto.
+    public func now() async throws -> NowPlaying? {
+        let json = try await send("api/companion/now", method: "GET", body: nil)
+        guard let playing = json?["playing"], !playing.isNull else { return nil }
+        return NowPlaying.parse(playing)
+    }
+
+    /// Un botón de la tarjeta: `toggle · pause · play · skip (con delta en segundos) · next · previous · stop · mute`.
+    /// Devuelve lo que quedó viendo (nil si se detuvo).
+    @discardableResult
+    public func control(action: String, delta: Double? = nil) async throws -> NowPlaying? {
+        var body: [String: JSON] = ["action": .string(action)]
+        if let delta { body["delta"] = .double(delta) }
+        let json = try await send("api/companion/player", method: "POST", body: JSON.object(body).serialized())
+        guard let playing = json?["playing"], !playing.isNull else { return nil }
+        return NowPlaying.parse(playing)
+    }
+
+    private func send(_ path: String, method: String, body: Data?) async throws -> JSON? {
         guard let base, !token.isEmpty else { throw Failure.notConfigured }
         var headers = ["Authorization": "Bearer \(token)"]
         if body != nil { headers["Content-Type"] = "application/json" }

@@ -118,5 +118,14 @@ enum DS {
         static let gridMinimum: CGFloat = 100
         static let episodeThumbWidth: CGFloat = 122
         static let heroHeight: CGFloat = 300
+        /// El póster pequeño de «Viendo en la TV» (misma relación 2:3, más chico que el de la tira).
+        static let nowPlayingWidth: CGFloat = 56
+    }
+
+    /// «Viendo en la TV»: cada cuánto se vuelve a dibujar la barra de avance mientras se interpola entre sondeos.
+    enum NowPlaying {
+        static let progressTick = DesignTokens.Timing.tick
+        /// Opacidad de un botón mientras su acción sigue en vuelo (sin duplicar el toque).
+        static let busyOpacity = CGFloat(DesignTokens.Opacity.faint)
     }
 }

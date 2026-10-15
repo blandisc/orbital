@@ -39,6 +39,8 @@ class FakeMpv:
         self.sent.append(args)
         if args[:2] == ("set_property", "pause"):
             self.props["pause"] = args[2]
+        if args[:2] == ("set_property", "mute"):
+            self.props["mute"] = args[2]
         if args == ("cycle", "pause"):
             self.props["pause"] = not self.props["pause"]
 

@@ -11,6 +11,8 @@ enum Demo {
     static let addonURL = "https://demo.orbital.invalid/manifest.json"
     /// `-demo-no-tv`: sin Orbital conectada (para probar el QR: `xcrun simctl openurl booted "orbital-ios://pair?u=https%3A%2F%2Ftv.demo.invalid&t=demo"`).
     static var noTV: Bool { ProcessInfo.processInfo.arguments.contains("-demo-no-tv") }
+    /// `-demo-tv-now`: la tarjeta «Viendo en la TV» con datos de mentira (para verla en el simulador).
+    static var tvNow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tv-now") }
 
     private static func value(after flag: String) -> String? {
         let args = ProcessInfo.processInfo.arguments
@@ -73,10 +75,18 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         library = Dictionary(uniqueKeysWithValues: items.map { ($0["_id"]!.string!, $0) })
     }
 
+    /// Avance de mentira de «Viendo en la TV», que sigue corriendo mientras no esté en pausa (como la consola de verdad).
+    private var nowPlayingPosition = 420.0
+    private var nowPlayingTicked = Date()
+    private var nowPlayingPaused = false
+
     func send(_ request: HTTPRequest) async throws -> HTTPResponse {
         let url = request.url
         if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
         if url.host == "demo.orbital.invalid" { return addon(url.path) }
+        if url.host == "tv.demo.invalid", Demo.tvNow, url.path.hasPrefix("/api/companion/") {
+            return lock.withLock { nowPlaying(path: url.path, body: request.body.flatMap(JSON.parse)) }
+        }
         if url.host == "tv.demo.invalid" {
             // «Para ti» por el puerto público: sin `-demo-console`, tu Orbital de mentira no la contesta (404, como una
             // consola de una versión anterior) y el modelo cae solo a su lógica local — sin aviso, como siempre.
@@ -112,6 +122,30 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         "image": "https://images.metahub.space/poster/medium/tt1160419/img", "hero": "https://images.metahub.space/background/medium/tt1160419/img",
         "logo": "https://images.metahub.space/logo/medium/tt1160419/img", "overview": "", "video_id": "tt1160419", "action": "Ver",
     ]
+
+
+    private static let nowPlayingDuration = 1_320.0
+
+    /// `/api/companion/now` y `/api/companion/player`: una serie de mentira, viendo su episodio 5 de la temporada 2.
+    private func nowPlaying(path: String, body: JSON?) -> HTTPResponse {
+        let now = Date()
+        if !nowPlayingPaused { nowPlayingPosition = min(Self.nowPlayingDuration, nowPlayingPosition + now.timeIntervalSince(nowPlayingTicked)) }
+        nowPlayingTicked = now
+        if path == "/api/companion/player", let action = body?["action"]?.string {
+            switch action {
+            case "pause": nowPlayingPaused = true
+            case "play": nowPlayingPaused = false
+            case "toggle": nowPlayingPaused.toggle()
+            case "skip": nowPlayingPosition = min(Self.nowPlayingDuration, max(0, nowPlayingPosition + Double(body?["delta"]?.intValue ?? 0)))
+            default: break
+            }
+        }
+        let playing: JSON = .object(["kind": .string("series"), "live": .bool(false), "meta_id": .string("tt0386676"),
+                                     "video_id": .string("tt0386676:2:5"), "title": .string("The Office"),
+                                     "episode_label": .string("T2 · E5"), "poster": .string("https://images.metahub.space/poster/medium/tt0386676/img"),
+                                     "position": .double(nowPlayingPosition), "duration": .double(Self.nowPlayingDuration), "paused": .bool(nowPlayingPaused)])
+        return HTTPResponse(status: 200, data: JSON.object(["playing": playing]).serialized())
+    }
 
     private func ok(_ result: JSON) -> HTTPResponse { HTTPResponse(status: 200, data: JSON.object(["result": result]).serialized()) }
 
