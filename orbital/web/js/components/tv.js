@@ -2,7 +2,7 @@ import { api } from "../core/api.js";
 import { h, mount } from "../core/dom.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { storage } from "../core/storage.js";
-import { swipeArea, swipeSteps } from "../core/swipe.js";
+import { dragScroll, swipeArea } from "../core/swipe.js";
 import { ALL, categoriesOf, channelLabel, channelsIn, columnsOf, emptyState, headMeta, initials, isShaky, pickCategory, startIndex, stepCategory } from "../core/tv.js";
 import { BrowseHead, fillFilters, keepInView, replay } from "./browse.js";
 import { Glyph } from "./glyph.js";
@@ -46,13 +46,11 @@ export function createTv({ onFocus, onPick }) {
 
   const columns = () => columnsOf(measureFocusables(grid));
 
-  // Con el dedo: de lado cambia de categoría; de arriba abajo recorre los canales.
+  // Con el dedo, como en el celular: los canales se desplazan bajo el dedo (tocar enfoca y volver a tocar
+  // sintoniza); deslizar de lado cambia de categoría. Antes deslizar movía el foco de fila en fila, como el mando.
+  dragScroll(viewport, grid, { extra: 48 });
   swipeArea(viewport, ({ dx, dy }) => {
-    if (Math.abs(dx) > Math.abs(dy)) return handle(dx < 0 ? "nextsection" : "prevsection");
-    const first = grid.querySelector('[data-focus-id^="channel:"]');
-    if (!first) return;
-    if (!focusId.startsWith("channel:")) focusId = "channel:0";
-    for (let n = swipeSteps(dy, first.offsetHeight); n > 0; n--) if (handle(dy < 0 ? "down" : "up") !== true) break;
+    if (Math.abs(dx) > Math.abs(dy) * 1.5) handle(dx < 0 ? "nextsection" : "prevsection");
   });
 
   /** Una casilla: su número, el logo (o las letras del nombre si no hay o no carga) y el nombre. */

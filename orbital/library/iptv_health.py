@@ -22,7 +22,7 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 from ..net import NET_ERRORS, read_body
-from .iptv import Channel
+from .iptv import HTTP, Channel
 
 log = logging.getLogger(__name__)
 
@@ -65,7 +65,10 @@ def _context() -> ssl.SSLContext:
 
 
 def fetch(url: str, headers: dict, *, limit: int = MANIFEST_BYTES, timeout: float = TIMEOUT) -> bytes:
-    """Los primeros `limit` bytes de `url`. Lanza Unreachable con el motivo."""
+    """Los primeros `limit` bytes de `url`. Lanza Unreachable con el motivo. Solo http(s): la lista de un canal
+    (que viene de internet) podía mandar a leer un archivo del equipo con una calidad «file:///…»."""
+    if not HTTP.match(url or ""):
+        raise Unreachable("dirección que no es de internet")
     req = urllib.request.Request(url, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=timeout, context=_context()) as res:

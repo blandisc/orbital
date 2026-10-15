@@ -210,3 +210,25 @@ def test_fetch_corta_en_el_limite_sin_fallar(monkeypatch):
 
     monkeypatch.setattr(iptv_health.urllib.request, "urlopen", lambda *a, **k: Response())
     assert len(REAL_FETCH("https://x", {}, limit=64 * 1024)) == 64 * 1024
+
+
+from orbital.library import iptv_health as _health  # noqa: E402
+
+_REAL_FETCH = _health.fetch  # la de verdad (las pruebas la cambian por una sin red al empezar cada una)
+
+
+def test_a_channel_cannot_make_the_check_read_a_local_file():
+    """Una lista maestra con una «calidad» file:///… (o cualquier cosa que no sea http) no se sigue."""
+    from orbital.library import iptv_health
+    from orbital.library.iptv import Channel
+
+    for url in ("file:///C:/Windows/win.ini", "ftp://x/y", "C:/Windows/win.ini", ""):
+        with pytest.raises(iptv_health.Unreachable, match="internet"):
+            _REAL_FETCH(url, {})
+    pages = {"https://x.example/live.m3u8": b"#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1\nfile:///C:/Windows/win.ini\n"}
+
+    def fetch(url, headers, limit=0):
+        return pages[url] if url in pages else _REAL_FETCH(url, headers, limit=limit)
+
+    check = iptv_health.check_channel(Channel("a", "A", "https://x.example/live.m3u8"), fetch)
+    assert not check.ok and "internet" in check.reason
