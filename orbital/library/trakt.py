@@ -145,9 +145,13 @@ class Trakt:
         status, data = self._call("POST", "/oauth/device/code", body={"client_id": self.client_id}, auth=False)
         if status != 200 or not isinstance(data, dict) or not data.get("device_code") or not data.get("user_code"):
             raise TraktError("Trakt no dio un código. Revisa la clave de la aplicación en Ajustes › Cuentas.")
+        try:
+            interval, expires = float(data.get("interval") or 5), float(data.get("expires_in") or 600)
+        except (TypeError, ValueError):
+            raise TraktError("Trakt respondió algo que no entiendo. Inténtalo de nuevo.") from None
         return DeviceCode(str(data["device_code"]), str(data["user_code"]),
                           str(data.get("verification_url") or "https://trakt.tv/activate"),
-                          float(data.get("interval") or 5), time.time() + float(data.get("expires_in") or 600))
+                          min(max(interval, 1.0), 60.0), time.time() + min(max(expires, 1.0), 3600.0))
 
     def poll_device(self, code: DeviceCode) -> str:
         """Una consulta: "linked", "pending", "slow" (más despacio) o "expired"/"denied"/"invalid"."""

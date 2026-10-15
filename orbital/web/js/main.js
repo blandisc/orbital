@@ -573,7 +573,8 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
   } catch (err) {
     // Al arrancar el servidor puede no estar listo: se reintenta solo (y se avisa una vez).
     if (libraryRetry === 0 && !boot.waiting) ui.toast.show(`No pude cargar la biblioteca: ${err.message.replace(/\.$/, "")}. Reintentando…`, { error: true });
-    if (boot.waiting) boot.status("Conectando con Orbital…");
+    // Tras varios intentos se dice qué pasa (antes «Conectando…» para siempre, sin pista de nada).
+    if (boot.waiting) boot.status(libraryRetry < 3 ? "Conectando con Orbital…" : `No pude cargar tu biblioteca: ${err.message.replace(/\.$/, "")}. Sigo intentando…`);
     libraryRetry++;
     setTimeout(() => loadLibrary({ refresh: false, keepId }), Math.min(15_000, 1000 * 2 ** libraryRetry));
   }

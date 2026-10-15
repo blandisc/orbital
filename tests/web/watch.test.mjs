@@ -46,7 +46,7 @@ test("episodios: vistos, a medias y por estrenar", () => {
 test("avance fuera de los botones: con barra y lo que queda", async () => {
   const { titleProgress } = await import("../../orbital/web/js/core/watch.js");
   assert.deepEqual(titleProgress({ kind: "series", resume: { label: "T8 E23", episode_title: "Homer's Enemy", position: 732, duration: 1368 } }),
-    { label: "T8 E23 · Homer's Enemy · quedan 11 min", fraction: 732 / 1368 });
+    { label: "T8 E23 · quedan 11 min · Homer's Enemy", fraction: 732 / 1368 });
   assert.deepEqual(titleProgress({ kind: "series", resume: { label: "T8 E24", episode_title: "Las Supermamás", position: 0 } }),
     { label: "Sigue: T8 E24 · Las Supermamás", fraction: null });
   assert.equal(titleProgress({ kind: "movie", resume: { position: 600, duration: 6600 } }).label, "Quedan 1 h 40 min");

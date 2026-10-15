@@ -6,6 +6,7 @@ jugado, trae Orbital al frente y publica el evento "closed" (lo escuchan la inte
 
 from __future__ import annotations
 
+import errno
 import logging
 import sys
 import threading
@@ -64,6 +65,8 @@ class Sessions:
         # El último emulador abierto: si truena al arrancar se reintenta UNA vez (Eden a veces se
         # cierra en el primer intento, sobre todo al volver de suspender, y al segundo abre bien).
         self._last_launch: dict | None = None
+        # Un lanzamiento a la vez: A dos veces seguidas (o mando + Alexa) abría dos emuladores.
+        self._launch_lock = threading.RLock()
         # Cuándo pediste ir a Orbital (Home, Legion L): el vigilante del foco deja de regresar el juego.
         self.returned_at = 0.0
         launcher.on_exit = self.session_ended
@@ -85,13 +88,31 @@ class Sessions:
                retry: bool = False) -> LibraryItem:
         """`keep`: abrir sin cerrar lo que estaba abierto (lo pediste en "¿Cerrar…?"). `retry`: es
         el reintento automático tras tronar al arrancar (no se vuelve a reintentar)."""
+        with self._launch_lock:
+            return self._launch(item_id, runner_id, keep, retry)
+
+    def _launch(self, item_id: str, runner_id: str | None, keep: bool, retry: bool) -> LibraryItem:
         self.revealing = False
         item = self.store.get(item_id)
         if item is None:
             raise KeyError(item_id)
         # Antes de cerrar lo que estaba abierto: si esto no se puede abrir, no se pierde el juego en curso.
+        if runner_id and item.runners and not any(r.id == runner_id for r in item.runners):
+            raise NotLaunchable(f"{item.title} no se abre con ese emulador")
         if not self._launchable(item, runner_id):
             raise NotLaunchable(f"{item.title} no tiene forma de lanzarse")
+        runner = self.runner_for(item, runner_id)
+        running = self.launcher.status()
+        if (running and running["id"] == item.id and running.get("pid") and not retry and (runner or item.argv)
+                and item.source not in ("stremio", "cinemeta", "geforcenow")
+                and (runner is None or running.get("runner") in (None, runner.name))):
+            # Ya se está abriendo (aún sin ventana a la cual volver): otra copia quedaría huérfana.
+            log.info("%s ya está abierto: no abro otra copia", item.title)
+            return item
+        argv = runner.argv if runner else item.argv
+        if argv and Path(argv[0]).is_absolute() and not Path(argv[0]).exists():
+            # El emulador ya no está: se avisa SIN cerrar antes lo que estaba abierto.
+            raise FileNotFoundError(errno.ENOENT, "No existe", argv[0])
         if self.before_launch and not keep:
             self.before_launch(item.id)
         if item.source in ("stremio", "cinemeta") or item.id == "media:stremio":
@@ -106,7 +127,6 @@ class Sessions:
             threading.Thread(target=focus.bring_app_to_front, args=(exe,), daemon=True).start()
             self.state.record_launch(item.id)
             return item
-        runner = self.runner_for(item, runner_id)
         if runner or item.argv:
             # Orbital encima ANTES de lanzar: la ventana del emulador nunca se asoma.
             pinned = self.pin()

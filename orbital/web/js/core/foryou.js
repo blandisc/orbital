@@ -49,11 +49,16 @@ export const shapeOf = (item) => (!item?.hero_weak && hashOf(item?.key) % 5 < 2 
 export const posterRatio = (item) => (item?.kind === "game" && item.item ? clampRatio(coverRatio(item.item)) : 2 / 3);
 
 /** El siguiente de la lista que no esté a la vista (el mosaico no repite lo que ya enseña). */
-export function nextUnseen(pool, cursor, visible) {
+export function nextUnseen(pool, cursor, visible, onScreen = new Set()) {
   if (!pool.length) return { item: null, cursor };
   for (let i = 0; i < pool.length; i++) {
     const item = pool[(cursor + i) % pool.length];
     if (!visible.has(item.key)) return { item, cursor: cursor + i + 1 };
+  }
+  // Ya están todas (pocas sugerencias): se repite una de las que esperan abajo, no una que ya se ve.
+  for (let i = 0; i < pool.length; i++) {
+    const item = pool[(cursor + i) % pool.length];
+    if (!onScreen.has(item.key)) return { item, cursor: cursor + i + 1 };
   }
   return { item: pool[cursor % pool.length], cursor: cursor + 1 };
 }
