@@ -50,6 +50,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
     cover.style.backgroundImage = cssUrl(item.image);
     cover.hidden = !item.image; // sin portada, la órbita gira sola alrededor de la marca
     el.classList.toggle("launch--no-cover", !item.image);
+    if (!from?.rect?.width) from = null; // una tarjeta oculta (0×0) hacía crecer la portada desde la esquina
     const ratio = from?.ratio ?? (item.image ? .667 : 1);
     cover.style.setProperty("--ratio", String(ratio));
     orbit.style.setProperty("--ratio", String(ratio));

@@ -21,11 +21,12 @@ export function gameMenu(item, { running = null } = {}) {
         command: { type: "confirm-stop", title: item.title, runner: running.runner } },
     ]
     : [];
-  // Una película o serie: lo primero (y lo enfocado) es lo seguro, su ficha; quitar va al final.
-  // Con el dedo era la única forma de llegar a la ficha (X no existe en la pantalla).
-  if (isWatchable(item) && !isOpen) {
-    const series = item.extra?.kind === "series" || String(item.id || "").startsWith("cinemeta:series:");
-    options.push({ icon: "info", label: series ? "Ver episodios" : "Ver ficha", command: { type: "title", id: item.id } });
+  // La ficha (temporadas, Desde el principio, Elegir fuente): X también la abre, pero no se veía en ningún lado.
+  if (item.source === "stremio" && item.extra?.meta_id && item.extra?.kind) {
+    options.push({ icon: "info", label: "Ver la ficha", command: { type: "title-ref", ref: { ...item, kind: item.extra.kind, meta_id: item.extra.meta_id } } });
+  }
+  if (item.source === "stremio" && item.category === "continue") {
+    options.push({ icon: "minus", label: "Quitar de Seguir viendo", command: { type: "dismiss", id: item.id, title: item.title } });
   }
   // Mi lista (tu biblioteca de Stremio): + para añadir, ✓ si ya está (como en los servicios de streaming).
   const watch = item.source === "stremio" && item.extra?.meta_id ? item.extra : null;
@@ -120,7 +121,7 @@ export function mainMenu({ running, hiddenCount, canExit = false, alexa = false 
   }
   options.push({ icon: "gamepad", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });
   if (alexa) options.push({ icon: "assistant", label: "Pídeselo a Alexa", hint: "Frases que entiende", command: { type: "alexa-menu" } });
-  options.push({ icon: "mark", label: "Ajustes", command: { type: "settings" } });
+  options.push({ icon: "settings", label: "Ajustes", command: { type: "settings" } });
   options.push({ icon: "power", label: "Apagar", hint: "Suspender, reiniciar o apagar", command: { type: "power-menu" } });
   if (canExit) {
     options.push({ icon: "exit", label: "Salir al escritorio", command: { type: "confirm-exit" } });
@@ -206,12 +207,11 @@ export function quickMenu(q, { running = null, music = null, legion = false } = 
   if (q.power_mode) {
     const i = Math.max(0, POWER_MODES.findIndex(([id]) => id === q.power_mode));
     const step = (d) => ({ type: "quick-set", changes: { power_mode: POWER_MODES[(i + d + POWER_MODES.length) % POWER_MODES.length][0] } });
-    options.push({ icon: "power", label: "Energía", value: POWER_MODES[i][1],
+    options.push({ icon: "energy", label: "Energía", value: POWER_MODES[i][1],
       command: step(1), adjust: { left: step(-1), right: step(1) } });
   }
-  options.push({ icon: "bolt", label: "Liberar memoria", hint: "Cerrar lo que no estés usando", command: { type: "memory" } });
-  options.push({ icon: "show", label: "Capturas", hint: legion ? "Las que has tomado" : "Home + RB captura sin salir del juego",
-    command: { type: "captures" } });
+  options.push({ icon: "memory", label: "Liberar memoria", hint: "Cerrar lo que no estés usando", command: { type: "memory" } });
+  options.push({ icon: "camera", label: "Capturas", hint: legion ? "Las que has tomado" : "Home + RB captura sin salir del juego", command: { type: "captures" } });
   if (running?.managed) options.push({ icon: "play", label: `Volver a ${running.title}`, command: { type: "resume" } });
   return { title: "Panel rápido", crumb: "Panel rápido", options };
 }
@@ -271,7 +271,7 @@ export function capturesMenu(items) {
 export function healthMenu(message, { restart = true } = {}) {
   if (!restart) {
     return { title: "Memoria casi llena", subtitle: message,
-      options: [{ icon: "bolt", label: "Liberar memoria", command: { type: "memory" } },
+      options: [{ icon: "memory", label: "Liberar memoria", command: { type: "memory" } },
         { icon: "check", label: "Más tarde", command: { type: "close" } }] };
   }
   return {
@@ -382,7 +382,7 @@ const SETTING_PAGES = {
   playback: { title: "Películas y series", icon: "play", options: [
     ["audio", "Idioma", "En qué idioma prefieres oírlas"], ["subtitles", "Subtítulos", null], ["quality", "Calidad", null],
     ["sub_scale", "Letra de los subtítulos", null]] },
-  display: { title: "Pantalla y sonido", icon: "show", options: [
+  display: { title: "Pantalla y sonido", icon: "display", options: [
     ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],
     ["reduce_motion", "Reducir movimiento", null], ["voice_tips", "Frases para Alexa", null],
     ["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null]] },
@@ -397,8 +397,8 @@ export function settingsMenu() {
     title: "Ajustes",
     options: [
       ...Object.entries(SETTING_PAGES).map(([page, def]) => ({ icon: def.icon, label: def.title, command: { type: "settings", page } })),
-      { icon: "trailer", label: "Cuentas", hint: "Stremio", command: { type: "settings", page: "accounts" } },
-      { icon: "folder", label: "Mantenimiento", hint: "Revisar, carpetas, actualizar", command: { type: "settings", page: "maintenance" } },
+      { icon: "account", label: "Cuentas", hint: "Stremio y Trakt", command: { type: "settings", page: "accounts" } },
+      { icon: "wrench", label: "Mantenimiento", hint: "Revisar, carpetas, actualizar", command: { type: "settings", page: "maintenance" } },
     ],
   };
 }
@@ -408,11 +408,11 @@ export function maintenanceMenu() {
   return {
     title: "Mantenimiento", crumb: "Mantenimiento",
     options: [
-      { icon: "check", label: "Revisar mi consola", hint: "Qué encontré y qué falta", command: { type: "setup" } },
+      { icon: "check", label: "Tu consola", hint: "Qué encontré y qué falta", command: { type: "setup" } },
       { icon: "refresh", label: "Buscar juegos nuevos", command: { type: "refresh" } },
       { icon: "folder", label: "Carpetas de juegos", command: { type: "folders" } },
       { icon: "windows", label: "Ventanas abiertas", command: { type: "windows" } },
-      { icon: "windows", label: "Diagnóstico", command: { type: "diagnostics" } },
+      { icon: "pulse", label: "Diagnóstico", command: { type: "diagnostics" } },
       { icon: "refresh", label: "Actualizar Orbital", command: { type: "update-check" } },
     ],
   };
@@ -519,7 +519,10 @@ export function settingsPage(page, settings) {
         { icon: "trailer", label: "Stremio", value: settings.stremio_linked ? "Conectada" : "Conectar",
           command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
           hint: settings.stremio_linked ? "Seguir viendo y fuentes" : "Para películas y series" },
-      ],
+        settings.trakt?.configured && { icon: "spark", label: "Trakt", value: settings.trakt.linked ? "Conectada" : "Conectar",
+          command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
+          hint: settings.trakt.linked ? "Tus listas en Para ti" : "Tus listas y recomendaciones en Para ti" },
+      ].filter(Boolean),
     };
   }
   const def = Object.hasOwn(SETTING_PAGES, page) ? SETTING_PAGES[page] : null;
@@ -544,6 +547,31 @@ export function stremioAccountMenu() {
       { icon: "close", label: "Cancelar", command: { type: "close" } },
       { icon: "exit", label: "Desconectar", danger: true, command: { type: "stremio-logout" } },
     ],
+  };
+}
+
+/** Trakt conectado: desconectar pide confirmar (y "Cancelar" va primero). */
+export function traktAccountMenu() {
+  return {
+    title: "Cuenta de Trakt",
+    subtitle: "Para ti dejará de enseñar tus listas y recomendaciones.",
+    options: [
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "exit", label: "Desconectar", danger: true, command: { type: "trakt-unlink" } },
+    ],
+  };
+}
+
+/** Y en «Para ti»: ver la ficha (películas y series) o «No me interesa» (no vuelve a salir). */
+export function forYouMenu(item) {
+  const video = item?.kind === "movie" || item?.kind === "series";
+  return {
+    title: item?.title || "Para ti",
+    subtitle: item?.why || "",
+    options: [
+      video && { icon: "info", label: "Ver ficha", command: { type: "title-ref", ref: { ...item, kind: item.kind, meta_id: item.meta_id } } },
+      { icon: "hide", label: "No me interesa", hint: "No te lo vuelvo a sugerir", command: { type: "foryou-dismiss", item } },
+    ].filter(Boolean),
   };
 }
 
@@ -624,6 +652,8 @@ export function controlsMenu(controllers = []) {
   return {
     title: "Cómo se usa", crumb: "Cómo se usa",
     options: [...section("En un juego", gameRows(legion)), ...section("En Orbital", SHORTCUTS.orbital),
-      ...section("Viendo algo", SHORTCUTS.player)],
+      ...section("Viendo algo", SHORTCUTS.player),
+      // La guía de 5 pasos existía pero nada la abría.
+      { icon: "play", label: "Guía paso a paso", hint: "Lo esencial en 5 pantallas", command: { type: "tour", step: 0 } }],
   };
 }

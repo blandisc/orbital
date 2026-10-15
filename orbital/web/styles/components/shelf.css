@@ -32,4 +32,7 @@
 .shelf--from-left .shelf__rows { animation: section-in-left var(--duration-snap) var(--ease-out); }
 @keyframes section-in-right { from { opacity: 0; translate: 3rem 0; } }
 @keyframes section-in-left { from { opacity: 0; translate: -3rem 0; } }
+/* Inicio, Juegos y Para ti (main.js · slideView): la misma entrada de lado que las filas. */
+.view--from-right { animation: section-in-right var(--duration-snap) var(--ease-out); }
+.view--from-left { animation: section-in-left var(--duration-snap) var(--ease-out); }
 .shelf__empty { max-width: 32rem; padding-top: var(--space-2); color: var(--color-text-muted); line-height: 1.5; }

@@ -14,14 +14,19 @@ export const coverSrc = (url) => (typeof url === "string" && url.startsWith("/ap
   ? `${url}${url.includes("?") ? "&" : "?"}w=480` : url);
 
 /** El ícono de una app: el que trae (ES-DE) o el logotipo de su plataforma. */
-const APP_ICONS = { "steam:bigpicture": "img/consoles/steam.svg", "app:geforcenow": "img/consoles/geforcenow.svg" };
-export const appIcon = (item) => (item.category === "apps" ? item.extra?.icon || APP_ICONS[item.id] || null : null);
+const APP_ICONS = {
+  "steam:bigpicture": "img/consoles/steam.svg", "app:geforcenow": "img/consoles/geforcenow.svg",
+  "app:yt": "img/consoles/youtube.svg", "media:stremio": "img/consoles/stremio.svg", // los lanzadores de video, con su marca
+};
+export const appIcon = (item) => (item.category === "apps" ? item.extra?.icon || APP_ICONS[item.id] || null : APP_ICONS[item.id] ?? null);
 
 export function Card(item, { onPress, onRatio, showAgo = false, caption = false, pop = false } = {}) {
   const meta = h("span", { class: "card__meta" },
     h("strong", { class: "card__title" }, item.title),
     h("small", { class: "card__subtitle" }, item.subtitle));
-  const badge = item.favorite ? h("span", { class: ["card__badge", pop && "card__badge--pop"], "aria-label": "Favorito" }, svg(ICONS.star)) : null;
+  // Una esquina: tu favorito (estrella) o, en una lista de afuera (Para ti), que ya lo tienes (palomita).
+  const badge = item.favorite ? h("span", { class: ["card__badge", pop && "card__badge--pop"], "aria-label": "Favorito" }, svg(ICONS.star))
+    : item.owned ? h("span", { class: "card__badge card__badge--owned", "aria-label": "Lo tienes" }, svg(ICONS.check)) : null;
   // Lo que está abierto ahora (como las actividades de PS5): se ve desde la fila.
   const live = item.live ? h("span", { class: "card__live" }, h("span", { class: "card__live-dot" }), "Abierto") : null;
   const ago = showAgo ? shortAgo(item.last_played) : null;

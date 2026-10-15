@@ -93,7 +93,7 @@ export const primaryLabel = (item, runningId = null) => {
     return item.category === "apps" || item.category === "media" ? "Volver a la app" : "Volver al juego";
   }
   if (item?.source === "search") return "Buscar";
-  if (item?.category === "apps") return "Abrir";
+  if (item?.category === "apps" || item?.category === "media") return "Abrir"; // YouTube, Stremio: no se «juegan»
   if (isSeries(item)) return item.progress > 0 ? "Continuar" : "Ver serie";
   return isWatchable(item) ? (item.progress > 0 ? "Continuar" : "Ver") : "Jugar";
 };
@@ -103,8 +103,10 @@ export const primaryLabel = (item, runningId = null) => {
  * Inicio mezcla lo tuyo; cada fila puede estar en más de una sección.
  */
 export const SECTIONS = [
+  // Para ti: recomendaciones (su propia vista, sin filas). A la izquierda del Inicio: LB desde el Inicio.
+  { id: "foryou", title: "Para ti", rows: () => false, always: true },
   // Inicio: una sola fila para retomar (juegos y videos juntos) y tus favoritos.
-  { id: "home", title: "Inicio", rows: (id) => ["jump", "favorites"].includes(id) },
+  { id: "home", title: "Inicio", rows: (id) => ["jump", "favorites"].includes(id), always: true },
   { id: "games", title: "Juegos", rows: (id) => ["recent", "steam", "geforcenow"].includes(id) || id.startsWith("emulators:") },
   // Lo tuyo primero (Seguir viendo). Buscar es un atajo (botón Vista o la píldora de arriba), así
   // que la fila de apps (Buscar, YouTube…) va al final.
@@ -115,7 +117,7 @@ export const SECTIONS = [
 
 /** Filas de una sección. Una sección vacía (p. ej. Inicio sin nada jugado) cae en Juegos. */
 export function sectionRows(rows, sectionId) {
-  const section = SECTIONS.find((s) => s.id === sectionId) ?? SECTIONS[0];
+  const section = SECTIONS.find((s) => s.id === sectionId) ?? SECTIONS.find((s) => s.id === "home");
   const picked = rows.filter((row) => section.rows(row.id));
   if (section.order) picked.sort((a, b) => section.order.indexOf(a.id) - section.order.indexOf(b.id));
   return picked.length || section.id !== "home" ? picked : sectionRows(rows, "games");
@@ -142,5 +144,5 @@ export function searchLibrary(rows, query, limit = 8) {
   return found.slice(0, limit).map((f) => f.item);
 }
 
-/** Secciones con contenido (las vacías no se muestran en la barra). */
-export const visibleSections = (rows) => SECTIONS.filter((s) => s.id === "home" || rows.some((r) => s.rows(r.id)));
+/** Secciones con contenido (las vacías no se muestran en la barra; Para ti e Inicio, siempre). */
+export const visibleSections = (rows) => SECTIONS.filter((s) => s.always || rows.some((r) => s.rows(r.id)));

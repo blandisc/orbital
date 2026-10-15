@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from .. import system
+from ..sessions import NotLaunchable
 from .deps import Deps
 
 log = logging.getLogger(__name__)
@@ -48,6 +49,8 @@ def router(d: Deps) -> APIRouter:
             item = catalog.sessions.launch(body.id, body.runner, keep=body.keep)
         except KeyError:
             raise HTTPException(404, "Ese juego ya no está en tu biblioteca")
+        except NotLaunchable as exc:
+            raise HTTPException(422, str(exc))
         except (OSError, RuntimeError, ValueError) as exc:
             log.warning("No se pudo abrir %s: %s", body.id, exc)
             found = catalog.get(body.id)

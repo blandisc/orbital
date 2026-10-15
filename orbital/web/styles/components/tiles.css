@@ -9,10 +9,13 @@
 @container (max-height: 18rem) { .tile--feature .tile__platform { display: none; } .tile--feature__logo { max-height: 3.4rem; } }
 @container (max-height: 13rem) { .tile--feature__detail { display: none; } }
 @container (max-height: 20rem) { [data-text-size="xlarge"] .tile--feature .tile__platform { display: none; } }
+/* Un título largo sin logo (letra grande, 1280): no se encoge a media línea; con poco alto, un renglón con «…». */
+.tile--feature__title { flex-shrink: 0; }
+@container (max-height: 18rem) { .tile--feature .tile--feature__title { -webkit-line-clamp: 1; } } /* más específica: la general va después */
 .tile--feature.tile--focused { transform: none; }
 .tile--feature__shade {
   background:
-    linear-gradient(90deg, color-mix(in oklab, var(--palette-ink-1000) 88%, transparent) 0%, color-mix(in oklab, var(--palette-ink-1000) 55%, transparent) 42%, transparent 78%),
+    linear-gradient(90deg, color-mix(in oklab, var(--color-art-shade) 88%, transparent) 0%, color-mix(in oklab, var(--color-art-shade) 55%, transparent) 42%, transparent 78%),
     var(--gradient-tile-shade);
 }
 .tile--feature__body {
@@ -37,12 +40,27 @@
 
 /* --- Ancha: arte horizontal a sangre; encima qué es, el título y lo que queda ---------------- */
 .tile--wide { min-height: 0; background: var(--color-surface); }
+/* Sin arte propio: la foto de su consola a la derecha, sobre el brillo de su color (como Tus consolas). */
+.tile--wide-console .tile__art { opacity: .55; }
+.tile--wide__glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(55% 90% at 78% 45%, color-mix(in oklab, var(--glow) 32%, transparent) 0%, transparent 70%);
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+.tile--wide__console {
+  position: absolute; right: 6%; top: 14%; height: 56%; max-width: 38%; object-fit: contain; object-position: right center; pointer-events: none;
+  filter: var(--shadow-drop); transition: transform var(--duration-slow) var(--ease-spring);
+}
+.tile--wide__console--logo { height: 40%; top: 18%; }
+.tile--wide-console.tile--focused .tile--wide__console { transform: scale(1.04); }
+/* El nombre tiene su lado: no pasa por encima de la consola. */
+.tile--wide-console .tile--wide__title { max-width: 60%; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; padding-bottom: .12em; text-wrap: balance; }
 .tile--wide__body {
   position: absolute; inset: auto 0 0 0; z-index: var(--z-raised); display: flex; flex-direction: column; gap: var(--space-1);
   padding: var(--space-5) var(--space-6); text-shadow: var(--shadow-text);
 }
 /* Degradado más profundo abajo: el texto no compite con el arte (ni con su logo). */
-.tile--wide__shade { background: linear-gradient(0deg, color-mix(in oklab, var(--palette-ink-1000) 92%, transparent) 0%, color-mix(in oklab, var(--palette-ink-1000) 35%, transparent) 42%, transparent 62%); }
+.tile--wide__shade { background: linear-gradient(0deg, color-mix(in oklab, var(--color-art-shade) 92%, transparent) 0%, color-mix(in oklab, var(--color-art-shade) 35%, transparent) 42%, transparent 62%); }
 .tile--wide__title {
   font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold); line-height: 1.15;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .12em; margin-bottom: -.12em;
@@ -69,7 +87,7 @@
 /* --- Consola: su foto (o logotipo) sobre un brillo de su color; nombre, juegos y lo último ---- */
 .tile--console {
   display: flex; flex-direction: column; padding: 0;
-  background: linear-gradient(180deg, var(--palette-ink-850) 0%, var(--palette-ink-900) 100%);
+  background: var(--gradient-console-tile);
 }
 .tile--console__glow {
   position: absolute; inset: 0; pointer-events: none;
@@ -102,3 +120,11 @@
   margin-top: var(--space-1); color: var(--color-text-faint-strong); font-size: var(--text-xs);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+
+/* Al borde del Inicio: lo enfocado se empuja un poco hacia donde ya no hay nada (como las filas). */
+.tile--bump-left { animation: bump-left var(--duration-base) var(--ease-out); }
+.tile--bump-right { animation: bump-right var(--duration-base) var(--ease-out); }
+.tile--bump-up { animation: bump-up var(--duration-base) var(--ease-out); }
+.tile--bump-down { animation: bump-down var(--duration-base) var(--ease-out); }
+@keyframes bump-up { 40% { translate: 0 -.45rem; } }
+@keyframes bump-down { 40% { translate: 0 .45rem; } }

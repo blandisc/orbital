@@ -1,0 +1,309 @@
+"""«Para ti»: Trakt, TMDB, RAWG y tus juegos, con dobles de red (nunca sale a internet)."""
+
+from __future__ import annotations
+
+import json
+import re
+import time
+
+import pytest
+from fastapi.testclient import TestClient
+
+from orbital import foryou as foryou_mod
+from orbital.config import parse_config
+from orbital.foryou import Cache, ForYou, game_item, hours_text, runtime_text, video_item
+from orbital.library import rawg, tmdb, trakt
+from orbital.server import create_app
+
+
+class FakeNet:
+    """Responde por URL (expresión regular) y anota lo que se pidió."""
+
+    def __init__(self) -> None:
+        self.routes: list[tuple[str, str, object]] = []
+        self.calls: list[tuple[str, str, dict | None]] = []
+
+    def on(self, method: str, pattern: str, reply) -> FakeNet:
+        self.routes.append((method, pattern, reply))
+        return self
+
+    def __call__(self, url, *, method="GET", headers=None, body=None, timeout=10):
+        self.calls.append((method, url, body))
+        for m, pattern, reply in self.routes:
+            if m == method and re.search(pattern, url):
+                return reply(url, body) if callable(reply) else reply
+        return 404, None
+
+
+def show(title, imdb, trakt_id=1, year=2022, episodes=None):
+    return {"title": title, "year": year, "aired_episodes": episodes, "ids": {"imdb": imdb, "trakt": trakt_id}}
+
+
+def movie(title, imdb, runtime=120, year=2020):
+    return {"title": title, "year": year, "runtime": runtime, "ids": {"imdb": imdb, "trakt": 9}}
+
+
+@pytest.fixture
+def net(monkeypatch):
+    fake = FakeNet()
+    for module in (trakt, tmdb, rawg):
+        monkeypatch.setattr(module, "http_json", fake)
+    return fake
+
+
+@pytest.fixture
+def make_foryou(library):
+    def make(trakt_keys=True, tmdb_key="", rawg_key="", linked=False):
+        p = library.config.para_ti
+        p.trakt_client_id, p.trakt_client_secret = ("cid", "secret") if trakt_keys else ("", "")
+        p.tmdb_key, p.rawg_key = tmdb_key, rawg_key
+        fy = ForYou(library.config, library)
+        library.foryou = fy
+        if linked:
+            library.credentials.set(trakt.TOKENS_KEY, json.dumps({"access_token": "tok", "refresh_token": "ref",
+                                                                  "expires_at": time.time() + 86400}))
+        else:
+            library.credentials.set(trakt.TOKENS_KEY, None)
+        return fy
+    return make
+
+
+# ---------------------------------------------------------------- textos y piezas
+def test_runtime_and_hours_read_like_a_console():
+    assert runtime_text(164) == "2 h 44 min" and runtime_text(60) == "1 h" and runtime_text(45) == "45 min"
+    assert runtime_text(None) is None
+    assert hours_text(48 * 3600) == "48 h" and hours_text(5400) == "1 h 30 min" and hours_text(35 * 60) == "35 min"
+
+
+def test_series_you_are_watching_continue_where_you_left():
+    e = {**trakt.entry(show("Severance", "tt11280740"), "series"), "next": {"season": 2, "episode": 6}}
+    item = video_item(e, "Sigues viéndola")
+    assert item["action"] == "Continuar T2 E6" and item["video_id"] == "tt11280740:2:6"
+    assert item["detail"] == "Sigue T2 E6" and item["id"] == "cinemeta:series:tt11280740"
+    fresh = video_item(trakt.entry(show("Andor", "tt9253284", episodes=24), "series"), "Recomendada")
+    assert fresh["action"] == "Ver T1 E1" and fresh["video_id"] == "tt9253284:1:1" and fresh["detail"] == "24 episodios"
+    film = video_item(trakt.entry(movie("Blade Runner 2049", "tt1856101", runtime=164), "movie"), "Recomendada")
+    assert film["action"] == "Ver" and film["video_id"] == "tt1856101" and film["detail"] == "2 h 44 min"
+    assert film["image"].endswith("/poster/medium/tt1856101/img")
+
+
+def test_titles_without_imdb_are_skipped():
+    assert trakt.entry({"title": "Sin IMDb", "ids": {"trakt": 3}}, "movie") is None
+    assert trakt.entry({"title": "", "ids": {"imdb": "tt1"}}, "movie") is None
+    mixed = trakt._typed([{"type": "movie", "movie": movie("A", "tt1")}, {"type": "show", "show": show("B", "tt2")},
+                          {"type": "episode", "episode": {}}, {"type": "movie", "movie": movie("A", "tt1")}])
+    assert [(m["kind"], m["imdb"]) for m in mixed] == [("movie", "tt1"), ("series", "tt2")]
+
+
+def test_a_library_game_plays_from_here():
+    item = game_item({"id": "steam:1145360", "title": "Hades", "playtime": 48 * 3600, "extra": {"logo": "/l.png"}}, "Tu más jugado")
+    assert item["detail"] == "48 h jugadas" and item["action"] == "Jugar" and item["logo"] == "/l.png"
+    assert game_item({"id": "x", "title": "Celeste", "playtime": 0}, "Sin estrenar")["detail"] == "Nunca lo has abierto"
+
+
+# ---------------------------------------------------------------- caché
+def test_cache_keeps_the_last_answer_when_the_network_fails():
+    now = [0.0]
+    cache = Cache(clock=lambda: now[0])
+    assert cache.get("k", 10, lambda: [1]) == [1]
+    now[0] = 100
+
+    def broken():
+        raise trakt.TraktError("sin red")
+
+    assert cache.get("k", 10, broken) == [1]  # sin internet: lo de la última vez
+    with pytest.raises(trakt.TraktError):
+        cache.get("nuevo", 10, broken)
+
+
+# ---------------------------------------------------------------- Trakt: conectar
+def test_link_with_a_code_and_save_the_session(make_foryou, net, monkeypatch):
+    fy = make_foryou()
+    replies = iter([(400, None), (429, None), (200, {"access_token": "tok", "refresh_token": "ref", "expires_in": 86400, "created_at": time.time()})])
+    net.on("POST", r"/oauth/device/code$", (200, {"device_code": "dev", "user_code": "4F7K2Q", "verification_url": "https://trakt.tv/activate", "interval": 5, "expires_in": 600}))
+    net.on("POST", r"/oauth/device/token$", lambda url, body: next(replies))
+    net.on("GET", r"/users/settings$", (200, {"user": {"username": "fer", "name": "Fernando"}}))
+    events = []
+    fy.catalog.events.subscribe(events.append)
+    monkeypatch.setattr(foryou_mod.threading, "Thread", lambda **kw: type("T", (), {"start": lambda self: None})())
+    code = fy.start_link()
+    assert code["code"] == "4F7K2Q" and code["url"] == "trakt.tv/activate"
+    waits = []
+    assert fy._wait_link(fy._link, sleep=waits.append) == "linked"
+    assert waits == [5, 5, 10]  # «más despacio» (429) espera más
+    assert fy.trakt.linked and {"type": "trakt-linked", "name": "Fernando"} in events
+    assert {"type": "foryou-changed"} in events
+
+
+def test_an_expired_or_cancelled_code_stops_waiting(make_foryou, net):
+    fy = make_foryou()
+    code = trakt.DeviceCode("dev", "ABC", "https://trakt.tv/activate", 1, time.time() + 60)
+    net.on("POST", r"/oauth/device/token$", (410, None))
+    events = []
+    fy.catalog.events.subscribe(events.append)
+    fy._link = code
+    assert fy._wait_link(code, sleep=lambda s: None) == "expired"
+    assert events[-1]["type"] == "trakt-link-failed" and not fy.trakt.linked
+    fy._link = None  # cancelado (B): deja de preguntar sin avisar de nada
+    assert fy._wait_link(code, sleep=lambda s: None) == "cancelled"
+
+
+def test_linking_without_the_app_keys_says_what_is_missing(make_foryou):
+    fy = make_foryou(trakt_keys=False)
+    with pytest.raises(ValueError, match="config.yaml"):
+        fy.start_link()
+
+
+def test_an_old_session_is_renewed_and_a_rejected_one_is_forgotten(make_foryou, net):
+    fy = make_foryou(linked=True)
+    fy.catalog.credentials.set(trakt.TOKENS_KEY, json.dumps({"access_token": "old", "refresh_token": "ref", "expires_at": time.time() + 60}))
+    net.on("POST", r"/oauth/token$", (200, {"access_token": "new", "refresh_token": "ref2", "expires_in": 86400, "created_at": time.time()}))
+    net.on("GET", r"/sync/watchlist", (200, []))
+    assert fy.trakt.watchlist() == []
+    assert any(c[1].endswith("/oauth/token") for c in net.calls)
+    assert json.loads(fy.catalog.credentials.get(trakt.TOKENS_KEY))["access_token"] == "new"
+    net.routes.insert(0, ("GET", r"/sync/watchlist", (401, None)))
+    with pytest.raises(trakt.TraktAuthError):
+        fy.trakt.watchlist()
+    assert not fy.trakt.linked  # Trakt cerró la sesión: hay que volver a conectar
+
+
+def test_your_series_bring_the_next_episode_and_skip_finished_ones(make_foryou, net):
+    fy = make_foryou(linked=True)
+    net.on("GET", r"/sync/history/episodes", (200, [
+        {"show": show("Severance", "tt11280740", trakt_id=11)}, {"show": show("Severance", "tt11280740", trakt_id=11)},
+        {"show": show("Breaking Bad", "tt0903747", trakt_id=22)}]))
+    net.on("GET", r"/shows/11/progress/watched", (200, {"next_episode": {"season": 2, "number": 6}}))
+    net.on("GET", r"/shows/22/progress/watched", (200, {"next_episode": None, "completed": 62}))
+    items = fy.list_items("mine")
+    assert [(i["title"], i["action"]) for i in items] == [("Severance", "Continuar T2 E6")]
+
+
+# ---------------------------------------------------------------- listas y servicios
+def test_only_the_services_you_have_show_up(make_foryou, net):
+    assert [row["id"] for row in make_foryou(trakt_keys=False).lists()] == ["mygames"]
+    ids = [row["id"] for row in make_foryou().lists()]
+    assert ids == ["trend", "popular", "mygames"]  # Trakt sin cuenta: tendencias y popular sí
+    net.on("GET", r"/users/me/lists$", (200, [{"name": "Ciencia ficción", "ids": {"trakt": 77}}]))
+    linked = [row["id"] for row in make_foryou(linked=True, rawg_key="r").lists()]
+    assert linked[:4] == ["recs", "mine", "watchlist", "list:77"]
+    assert linked[-4:] == ["mygames", "rawg:new", "rawg:popular", "rawg:best"]
+
+
+def test_streaming_platforms_come_from_tmdb_with_their_logo(make_foryou, net):
+    fy = make_foryou(trakt_keys=False, tmdb_key="k")
+    net.on("GET", r"/watch/providers/movie", (200, {"results": [
+        {"provider_id": 8, "provider_name": "Netflix", "logo_path": "/n.png"},
+        {"provider_id": 337, "provider_name": "Disney Plus", "logo_path": "/d.png"},
+        {"provider_id": 1796, "provider_name": "Netflix basic with Ads", "logo_path": "/x.png"}]}))
+    net.on("GET", r"/watch/providers/tv", (200, {"results": [{"provider_id": 1899, "provider_name": "HBO Max", "logo_path": "/h.png"}]}))
+    net.on("GET", r"/discover/tv\?.*with_watch_providers=8", (200, {"results": [{"id": 1}, {"id": 2}]}))
+    net.on("GET", r"/tv/1\?", (200, {"id": 1, "name": "Merlina", "first_air_date": "2022-11-23", "overview": "Merlina investiga…",
+                                     "number_of_seasons": 2, "number_of_episodes": 16, "poster_path": "/p.jpg",
+                                     "external_ids": {"imdb_id": "tt13443470"}}))
+    net.on("GET", r"/tv/2\?", (200, {"id": 2, "name": "Sin IMDb", "external_ids": {}}))
+    rows = {row["id"]: row for row in fy.lists()}
+    assert list(rows) == ["netflix", "disney", "hbo", "mygames"]
+    assert rows["netflix"]["logo"] == "https://image.tmdb.org/t/p/w154/n.png" and rows["netflix"]["split"]
+    items = fy.list_items("netflix", "series")
+    assert [(i["title"], i["detail"], i["why"]) for i in items] == [("Merlina", "2 temporadas", "En Netflix")]
+    assert items[0]["image"] == "https://image.tmdb.org/t/p/w500/p.jpg" and items[0]["overview"].startswith("Merlina")
+    assert "watch_region=MX" in next(c[1] for c in net.calls if "/discover/" in c[1])
+
+
+def test_rawg_games_you_own_are_marked_and_play(make_foryou, net):
+    fy = make_foryou(trakt_keys=False, rawg_key="r")
+    net.on("GET", r"/api/games\?", (200, {"results": [
+        {"id": 1, "name": "Hades", "released": "2020-09-17", "metacritic": 93, "background_image": "https://r/h.jpg"},
+        {"id": 2, "name": "Hollow Knight", "released": "2017-02-24", "metacritic": 87},
+        {"id": 3, "name": "Clair Obscur: Expedition 33", "released": "2025-04-24", "metacritic": 92, "background_image": "https://r/c.jpg"}]}))
+    net.on("GET", r"/api/games/1/stores", (200, {"results": [{"store_id": 1, "url": "https://store.steampowered.com/app/1145360/Hades/"}]}))
+    net.on("GET", r"/api/games/2/stores", (200, {"results": []}))
+    net.on("GET", r"/api/games/3/stores", (200, {"results": [{"store_id": 1, "url": "https://store.steampowered.com/app/1903340/x/"}]}))
+    items = {i["title"]: i for i in fy.list_items("rawg:best")}
+    assert items["Hades"]["owned"] and items["Hades"]["id"] == "steam:1145360" and items["Hades"]["action"] == "Jugar"
+    assert items["Hollow Knight"]["owned"]  # sin id de Steam en RAWG: por el nombre
+    clair = items["Clair Obscur: Expedition 33"]
+    assert not clair["owned"] and clair["action"] is None and clair["detail"] == "Metacritic 92"
+    assert clair["image"].endswith("/1903340/library_600x900.jpg") and clair["image_fallback"] == "https://r/c.jpg"
+    assert "ordering=-metacritic" in next(c[1] for c in net.calls if "/api/games?" in c[1])
+
+
+def test_your_games_favorites_most_played_unopened_and_one_at_random(library, make_foryou):
+    hades, hollow = library.get("steam:1145360"), library.get("steam:367520")
+    library.set_prefs(hollow.id, favorite=True)
+    library.state.record_launch(hades.id)
+    library.state.record_session(hades.id, 3 * 3600)
+    picks = make_foryou(trakt_keys=False).local_games(seed=1)
+    by = {p["title"]: p["why"] for p in picks}
+    assert by["Hollow Knight"] == "Tu favorito" and by["Hades"] == "Tu más jugado"
+    assert "Sin estrenar" in by.values()  # las ROMs que nunca abriste
+    assert all(p["kind"] == "game" and p["item"]["id"] == p["id"] for p in picks)
+
+
+def test_not_interested_is_remembered(library, make_foryou):
+    fy = make_foryou(trakt_keys=False)
+    key = fy.local_games(seed=1)[0]["key"]
+    fy.dismiss(key)
+    assert key not in [p["key"] for p in fy.local_games(seed=1)]
+    with pytest.raises(ValueError):
+        fy.dismiss("cualquier cosa")
+
+
+def test_the_mosaic_mixes_videos_and_games_and_survives_a_broken_service(make_foryou, net):
+    fy = make_foryou()
+    net.on("GET", r"/shows/trending", (200, [{"show": show(f"Serie {i}", f"tt{100 + i}")} for i in range(6)]))
+    net.on("GET", r"/movies/trending", (500, None))  # Trakt falla en películas: el mosaico sigue
+    mosaic = fy.mosaic()
+    kinds = [m["kind"] for m in mosaic]
+    assert kinds[:5] == ["series", "series", "series", "game", "game"]
+    assert len({m["key"] for m in mosaic}) == len(mosaic)
+    assert {m["why"] for m in mosaic if m["kind"] == "series"} == {"En tendencia"}
+
+
+# ---------------------------------------------------------------- ficha
+def test_details_bring_the_spanish_overview(make_foryou, net):
+    fy = make_foryou(trakt_keys=False, tmdb_key="k")
+    net.on("GET", r"/find/tt9253284", (200, {"tv_results": [{"id": 83867}]}))
+    net.on("GET", r"/tv/83867\?", (200, {"id": 83867, "name": "Andor", "overview": "La historia de Cassian Andor.",
+                                         "number_of_seasons": 2, "number_of_episodes": 24, "external_ids": {"imdb_id": "tt9253284"}}))
+    info = fy.details("video:tt9253284", "series")
+    assert info["overview"] == "La historia de Cassian Andor." and info["facts"] == [["Temporadas", "2"], ["Episodios", "24"]]
+
+
+def test_rawg_details_prefer_the_spanish_steam_text(make_foryou, net, monkeypatch):
+    fy = make_foryou(trakt_keys=False, rawg_key="r")
+    net.on("GET", r"/api/games/3/stores", (200, {"results": [{"store_id": 1, "url": "https://store.steampowered.com/app/1903340/x/"}]}))
+    monkeypatch.setattr(rawg, "steam_description", lambda appid: "Un juego de rol por turnos." if appid == 1903340 else "")
+    assert fy.details("rawg:3") == {"overview": "Un juego de rol por turnos."}
+    assert rawg.plain("<p>Hola&nbsp;<b>mundo</b></p>") == "Hola mundo"
+
+
+# ---------------------------------------------------------------- API y config
+def test_api_lists_details_dismiss_and_trakt(library, make_foryou):
+    make_foryou(trakt_keys=False)
+    with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 5000)) as c:
+        data = c.get("/api/foryou").json()
+        assert data["status"]["trakt"] == {"configured": False, "linked": False}
+        assert [row["id"] for row in data["lists"]] == ["mygames"] and data["mosaic"]
+        assert c.get("/api/foryou/list", params={"id": "mygames"}).json()["items"]
+        assert c.get("/api/foryou/list", params={"id": "nada"}).status_code == 404
+        assert c.post("/api/foryou/dismiss", json={"key": "lo que sea"}).status_code == 422
+        assert c.post("/api/foryou/dismiss", json={"key": data["mosaic"][0]["key"]}).json() == {"ok": True}
+        assert c.post("/api/foryou/trakt/link").status_code == 409  # sin la aplicación de Trakt en config.yaml
+        assert c.get("/api/foryou/details", params={"key": "nada"}).status_code == 404
+
+
+def test_para_ti_config_checks_the_country():
+    assert parse_config({"para_ti": {"region": "mx", "tmdb_key": " k "}}).para_ti.region == "MX"
+    assert parse_config({"para_ti": {"tmdb_key": " k "}}).para_ti.tmdb_key == "k"
+    with pytest.raises(ValueError, match="dos letras"):
+        parse_config({"para_ti": {"region": "Mexico"}})
+
+
+def test_the_mosaic_leaves_out_games_without_their_own_art(make_foryou, net):
+    fy = make_foryou(trakt_keys=False)
+    games = fy.local_games(seed=1)
+    assert any(g["placeholder"] for g in games) and any(not g["placeholder"] for g in games)  # en Listas, todos
+    in_mosaic = [m for m in fy.mosaic() if m["kind"] == "game"]
+    assert in_mosaic and not any(m["placeholder"] for m in in_mosaic)  # el mosaico es de imágenes

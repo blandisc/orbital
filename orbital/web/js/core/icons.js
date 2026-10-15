@@ -12,7 +12,19 @@ export const ICONS = {
   wifi: '<svg class="wifi" viewBox="0 0 24 20" aria-hidden="true"><path class="wifi__arc wifi__arc--3" d="M2 7a15 15 0 0 1 20 0"/><path class="wifi__arc wifi__arc--2" d="M5.5 10.5a10 10 0 0 1 13 0"/><path class="wifi__arc wifi__arc--1" d="M9 14a5 5 0 0 1 6 0"/><circle class="wifi__dot" cx="12" cy="17.5" r="1.2"/></svg>',
   // Marca: un planeta con su órbita inclinada.
   // La marca (la misma del ícono): un planeta, dos órbitas que se cruzan y un satélite.
-  mark: '<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="6.2" fill="currentColor"/><g fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="16" cy="16" rx="14" ry="5.4" transform="rotate(-20 16 16)"/><ellipse cx="16" cy="16" rx="14" ry="5.4" transform="rotate(20 16 16)"/></g><circle cx="24.6" cy="21.3" r="1.9" fill="currentColor"/></svg>',
+  // La marca: un planeta con su anillo (pasa por detrás y por delante: la máscara abre el hueco) y una
+  // luna sobre el anillo. Al arrancar, el anillo se dibuja (status-bar.css).
+  mark: '<svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><defs><mask id="mark-gap" maskUnits="userSpaceOnUse"><rect width="32" height="32" fill="white"/><path d="M2 16a14 4.6 0 0 0 28 0" transform="rotate(-18 16 16)" fill="none" stroke="black" stroke-width="3.4"/></mask></defs><path class="mark__ring mark__ring--back" pathLength="1" d="M2 16a14 4.6 0 0 1 28 0" transform="rotate(-18 16 16)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle class="mark__planet" cx="16" cy="16" r="7.4" fill="currentColor" mask="url(#mark-gap)"/><path class="mark__ring mark__ring--front" pathLength="1" d="M2 16a14 4.6 0 0 0 28 0" transform="rotate(-18 16 16)" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle class="mark__moon" cx="26.4" cy="6.6" r="1.9" fill="currentColor"/></svg>',
+  // Íconos propios de los menús: cada opción con el suyo (antes se repetían el rayo, el ojo y el play).
+  camera: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 8h3l1.6-2.5h5.8L16.5 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.3"/></svg>',
+  memory: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".8"/><path d="M9.5 3.5V6M14.5 3.5V6M9.5 18v2.5M14.5 18v2.5M3.5 9.5H6M3.5 14.5H6M18 9.5h2.5M18 14.5h2.5"/></svg>',
+  energy: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="16" height="10" rx="2.2"/><path d="M21 10.5v3"/><path d="M11.6 9 9 12.6h3.4L10.6 15"/></svg>',
+  display: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M9 20h6M12 16.5V20"/></svg>',
+  account: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1-3.6 4-5.5 7.5-5.5s6.5 1.9 7.5 5.5"/></svg>',
+  wrench: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.6 3.8a4.8 4.8 0 0 0-5.3 6.3L3.9 15.5a1.9 1.9 0 0 0 2.7 2.7l5.4-5.4a4.8 4.8 0 0 0 6.3-5.3l-2.9 2.9-2.4-.4-.4-2.4z"/></svg>',
+  pulse: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2.2-5 4 10 2.4-5H21"/></svg>',
+  // Ajustes: un engrane (antes usaba la marca, que es el menú de Orbital).
+  settings: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.5h3.4l.5 2.4 1.6.9 2.3-.8 1.7 2.9-1.8 1.6v1.9l1.8 1.6-1.7 2.9-2.3-.8-1.6.9-.5 2.4h-3.4l-.5-2.4-1.6-.9-2.3.8-1.7-2.9 1.8-1.6v-1.9L4.2 8.9l1.7-2.9 2.3.8 1.6-.9z"/><circle cx="12" cy="12" r="3"/></svg>',
   // Interfaz: trazo uniforme (1,75 en retícula de 24), puntas redondeadas. Clase "icon".
   bolt: '<svg class="icon icon--fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2.5 5 13.5h6l-1 8 8-11h-6z"/></svg>',
   play: '<svg class="icon icon--fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6a.8.8 0 0 0 1.2.7l10.6-6.8a.8.8 0 0 0 0-1.4L9.2 4.5A.8.8 0 0 0 8 5.2z"/></svg>',
@@ -44,6 +56,17 @@ export const ICONS = {
   assistant: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5a8 8 0 1 1-4.3 14.75L4 19.5l1.25-3.7A8 8 0 0 1 12 3.5z"/></svg>',
   mic: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5"/></svg>',
   exit: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4.5h4.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H14M10 16l4-4-4-4M14 12H4"/></svg>',
+  // «Para ti»: qué es (serie: pantallas apiladas, muchos episodios; película: claqueta) y cada lista.
+  series: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 3.8h9"/><path d="M5.5 6.4h13"/><rect x="3.5" y="9" width="17" height="11.2" rx="2.4"/><path d="M10.6 12.2v4.8l4.1-2.4z"/></svg>',
+  movie: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="10" width="17" height="10.2" rx="2"/><path d="M3.9 9.2 18.6 5.4a1 1 0 0 1 1.2.7l.5 1.9-16 4.1-.5-1.8a1 1 0 0 1 .1-1.1z"/><path d="m8.4 8 2.3 2.2M12.9 6.9l2.3 2.2"/></svg>',
+  spark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/><path d="M18.5 15.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></svg>',
+  watching: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M10.2 8.8v6.4l5.2-3.2z"/></svg>',
+  bookmark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V4.5a1 1 0 0 1 1-1z"/></svg>',
+  list: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5h10M9.5 12h10M9.5 17.5h10M4.5 6.5h.1M4.5 12h.1M4.5 17.5h.1"/></svg>',
+  trend: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 16.5l5.5-5.5 4 4 7.5-7.5"/><path d="M15 7.5h5.5V13"/></svg>',
+  fresh: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4M12 12.5v5M9.5 15h5"/></svg>',
+  flame: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21c-3.7 0-6.5-2.5-6.5-6.1 0-3.4 2.3-5.4 3.7-7.2.4 1.9 1.4 3 2.5 3.4-.3-3.4 1.2-6.3 3.5-8.1.3 3 1.7 4.8 3 6.5 1.1 1.5 2.3 3.2 2.3 5.4 0 3.6-2.8 6.1-8.5 6.1z"/></svg>',
+  trophy: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5.2a3 3 0 0 0 3 4M16 6h2.8a3 3 0 0 1-3 4M12 13v4M8.5 20.5h7M10 17h4"/></svg>',
 };
 
 /** Ícono del sistema de un elemento de la biblioteca. */

@@ -33,6 +33,10 @@ class StremioError(Exception):
     pass
 
 
+class StremioUnreachable(StremioError):
+    """No se llegó a Stremio (sin internet, caído): no es que tus datos estén mal."""
+
+
 class StremioAPI:
     def __init__(self, base: str = API_URL, timeout: float = 8) -> None:
         self.base = base.rstrip("/")
@@ -49,9 +53,9 @@ class StremioAPI:
             with urllib.request.urlopen(req, timeout=self.timeout) as res:
                 body = read_json(res, timeout=self.timeout)
         except urllib.error.HTTPError as exc:
-            raise StremioError(f"Stremio respondió HTTP {exc.code}") from exc
+            raise StremioUnreachable(f"Stremio respondió HTTP {exc.code}") from exc
         except NET_ERRORS as exc:
-            raise StremioError(f"No pude conectar con Stremio: {exc}") from exc
+            raise StremioUnreachable(f"No pude conectar con Stremio: {exc}") from exc
         if isinstance(body, dict) and body.get("error"):
             error = body["error"]
             message = error.get("message") if isinstance(error, dict) else str(error)

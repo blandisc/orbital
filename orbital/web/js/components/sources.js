@@ -1,4 +1,5 @@
 import { api } from "../core/api.js";
+import { motion } from "../core/motion.js";
 import { Badge, Chip } from "./ui.js";
 import { Button } from "./button.js";
 import { bytes } from "../core/format.js";
@@ -60,7 +61,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     list.children[index]?.classList.remove("source--focused");
     index = next;
     list.children[index]?.classList.add("source--focused");
-    list.children[index]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    list.children[index]?.scrollIntoView({ block: "nearest", behavior: motion() });
     onMove?.();
   }
 

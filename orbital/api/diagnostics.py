@@ -61,7 +61,8 @@ def collect(d: Deps) -> dict:
             "alexa": d.alexa_ready,
             "alexa_last": d.alexa_last,
         },
-        "library": dict(Counter(i.source for i in items)),
+        # Por consola y en palabras («Nintendo GameCube 2»), sin las entradas fijas (Buscar, apps).
+        "library": dict(Counter((i.subtitle or i.source) for i in items if i.category not in ("media", "apps"))),
         "running": d.status()["running"],
         "memory": {"free_mb": health.free_ram_mb(), "dwm_shared_mb": dwm[0] if dwm else None,
                    "dwm_dedicated_mb": dwm[1] if dwm else None},

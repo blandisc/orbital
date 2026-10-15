@@ -1,0 +1,518 @@
+"""«Para ti»: qué ver o qué jugar, sin tener que pensarlo.
+
+Junta tres servicios (todos opcionales) con lo que Orbital ya sabe de tus juegos:
+
+  * Trakt  — tus recomendaciones, tu watchlist, tus listas, las series que estás viendo, tendencias
+             y lo más popular (library/trakt.py)
+  * TMDB   — lo más popular en Netflix, Disney+ y HBO Max en tu país, y sinopsis en español (library/tmdb.py)
+  * RAWG   — novedades, lo más popular y lo mejor calificado en juegos de PC (library/rawg.py)
+  * Tus juegos — favoritos, los más jugados, los que nunca has abierto y uno al azar (lógica local)
+
+Dos formas de verlo en la interfaz: el mosaico (lo tuyo, mezclado) y las listas (un riel como el de
+Juegos). Cada sugerencia sale con una etiqueta corta («Recomendada», «Sin estrenar»…) y un dato.
+Un servicio que falla no tumba los demás: su lista queda vacía y se reintenta más tarde.
+"""
+
+from __future__ import annotations
+
+import logging
+import random
+import re
+import threading
+import time
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
+from datetime import date
+from typing import Any
+
+from .library import rawg as rawg_api
+from .library import tmdb as tmdb_api
+from .library import trakt as trakt_api
+from .net import NET_ERRORS
+
+log = logging.getLogger(__name__)
+
+METAHUB = "https://images.metahub.space/{kind}/medium/{imdb}/img"
+STEAM_ART = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{file}"
+GAME_CATEGORIES = ("steam", "emulators")
+SERVICE_ERRORS = (trakt_api.TraktError, tmdb_api.TmdbError, rawg_api.RawgError) + NET_ERRORS
+
+# Cuánto vale lo que se trajo (s): lo tuyo cambia seguido; lo popular, no tanto.
+MINE_TTL = 15 * 60
+RECS_TTL = 60 * 60
+POPULAR_TTL = 6 * 3600
+SLOW_TTL = 24 * 3600
+
+MOSAIC_SIZE = 48
+
+
+# ---------------------------------------------------------------- textos
+def runtime_text(minutes: int | None) -> str | None:
+    if not minutes:
+        return None
+    hours, rest = divmod(int(minutes), 60)
+    return f"{hours} h {rest} min" if hours and rest else f"{hours} h" if hours else f"{rest} min"
+
+
+def hours_text(seconds: float) -> str:
+    """«48 h», «1 h 30 min», «35 min»: lo jugado."""
+    minutes = int(seconds // 60)
+    if minutes < 60:
+        return f"{minutes} min"
+    return f"{minutes // 60} h" if minutes >= 600 or minutes % 60 == 0 else f"{minutes // 60} h {minutes % 60} min"
+
+
+def fold(text: str) -> str:
+    """Para comparar títulos: «Baldur's Gate 3» y «Baldurs Gate III» no, pero «HADES» y «Hades» sí."""
+    return re.sub(r"[^a-z0-9]+", "", str(text or "").lower())
+
+
+# ---------------------------------------------------------------- caché
+class Cache:
+    """Lo que se trajo de internet, con fecha. Si al renovar falla la red se queda lo de antes; dos
+    peticiones a la vez por lo mismo esperan a una sola descarga."""
+
+    def __init__(self, clock: Callable[[], float] = time.time) -> None:
+        self.clock = clock
+        self._data: dict[str, tuple[float, Any]] = {}
+        self._locks: dict[str, threading.Lock] = {}
+        self._lock = threading.Lock()
+
+    def get(self, key: str, ttl: float, load: Callable[[], Any]) -> Any:
+        with self._lock:
+            hit = self._data.get(key)
+            lock = self._locks.setdefault(key, threading.Lock())
+        if hit and self.clock() - hit[0] < ttl:
+            return hit[1]
+        with lock:
+            with self._lock:
+                hit = self._data.get(key)
+            if hit and self.clock() - hit[0] < ttl:
+                return hit[1]
+            try:
+                value = load()
+            except SERVICE_ERRORS:
+                if hit:  # sin internet: lo de la última vez
+                    return hit[1]
+                raise
+            with self._lock:
+                self._data[key] = (self.clock(), value)
+            return value
+
+    def clear(self, prefix: str = "") -> None:
+        with self._lock:
+            for key in [k for k in self._data if k.startswith(prefix)]:
+                del self._data[key]
+
+
+# ---------------------------------------------------------------- piezas
+def video_item(e: dict, why: str, *, title: str | None = None, poster: str | None = None,
+               wide: str | None = None, overview: str | None = None, seasons: int | None = None) -> dict:
+    """Una película o serie: lo que necesita el mosaico, las listas, la ficha y el reproductor."""
+    imdb, kind = e["imdb"], e["kind"]
+    nxt = e.get("next")
+    episode = f"T{nxt['season']} E{nxt['episode']}" if nxt else None
+    if kind == "movie":
+        detail = runtime_text(e.get("runtime")) or (str(e["year"]) if e.get("year") else "")
+        facts = [["Duración", runtime_text(e.get("runtime"))], ["Año", e.get("year")]]
+        video_id, action = imdb, "Ver"
+    else:
+        count = f"{seasons} temporada{'s' if seasons != 1 else ''}" if seasons else (
+            f"{e['episodes']} episodios" if e.get("episodes") else None)
+        detail = f"Sigue {episode}" if episode else count or (str(e["year"]) if e.get("year") else "")
+        facts = [["Sigue", episode] if episode else ["Temporadas", seasons] if seasons else ["Episodios", e.get("episodes")],
+                 ["Año", e.get("year")]]
+        video_id = f"{imdb}:{nxt['season']}:{nxt['episode']}" if nxt else f"{imdb}:1:1"
+        action = f"Continuar {episode}" if episode else "Ver T1 E1"
+    return {
+        "key": f"video:{imdb}", "id": f"cinemeta:{kind}:{imdb}", "source": "cinemeta", "kind": kind, "meta_id": imdb,
+        "title": title or e["title"], "year": e.get("year"), "why": why, "detail": detail,
+        "facts": [[k, str(v)] for k, v in facts if v],
+        "image": poster or METAHUB.format(kind="poster", imdb=imdb),
+        "hero": wide or METAHUB.format(kind="background", imdb=imdb),
+        "logo": METAHUB.format(kind="logo", imdb=imdb),
+        "overview": overview or "", "video_id": video_id, "episode": episode, "action": action,
+    }
+
+
+def game_item(described: dict, why: str) -> dict:
+    """Un juego tuyo (de la biblioteca): A lo abre como en Juegos."""
+    played = float(described.get("playtime") or 0)
+    detail = f"{hours_text(played)} jugadas" if played >= 60 else "Nunca lo has abierto"
+    extra = described.get("extra") or {}
+    return {
+        "key": f"game:{described['id']}", "id": described["id"], "kind": "game", "item": described, "owned": True,
+        "title": described["title"], "why": why, "detail": detail,
+        "facts": [["Jugadas", hours_text(played) if played >= 60 else "0 h"]],
+        "image": described.get("image"), "hero": described.get("hero") or described.get("image"),
+        "logo": extra.get("logo"), "overview": "", "action": "Jugar",
+        "steam_appid": extra.get("steam_appid") or None,
+        "placeholder": bool(extra.get("placeholder_cover")),  # sin portada propia: la genérica de Orbital
+    }
+
+
+class ForYou:
+    def __init__(self, config, catalog) -> None:
+        p = config.para_ti
+        self.catalog = catalog
+        self.region = p.region
+        self.trakt = trakt_api.Trakt(p.trakt_client_id, p.trakt_client_secret, catalog.credentials)
+        self.tmdb = tmdb_api.Tmdb(p.tmdb_key)
+        self.rawg = rawg_api.Rawg(p.rawg_key)
+        self.cache = Cache()
+        self._link: trakt_api.DeviceCode | None = None
+        self._link_lock = threading.Lock()
+        self._link_gen = 0  # cada pedido o cancelación de código lo sube: solo cuenta el último
+        self._dark: dict[str, bool | None] = {}
+
+    def publish(self, event: dict) -> None:
+        self.catalog.events.publish(event)
+
+    # --- qué hay -----------------------------------------------------------------------------
+    def status(self) -> dict:
+        return {"trakt": {"configured": self.trakt.configured, "linked": self.trakt.linked},
+                "tmdb": self.tmdb.configured, "rawg": self.rawg.configured}
+
+    def platforms(self) -> dict[str, dict]:
+        if not self.tmdb.configured:
+            return {}
+        try:
+            return self.cache.get("tmdb:platforms", SLOW_TTL, lambda: self.tmdb.platforms(self.region))
+        except SERVICE_ERRORS as exc:
+            log.warning("Para ti: no pude leer las plataformas de TMDB: %s", exc)
+            return {}
+
+    def lists(self) -> list[dict]:
+        """El riel: una entrada por lista (solo las de los servicios que tienes)."""
+        video: list[dict] = []
+        if self.trakt.linked:
+            video += [
+                {"id": "recs", "title": "Recomendadas", "icon": "spark", "source": "Trakt", "meta": "Por lo que has visto", "split": True},
+                {"id": "mine", "title": "Tus series", "icon": "watching", "source": "Trakt", "meta": "Las que estás viendo"},
+                {"id": "watchlist", "title": "Tu watchlist", "icon": "bookmark", "source": "Trakt", "meta": "Lo que dejaste pendiente"},
+            ]
+            try:
+                own = self.cache.get("trakt:lists", MINE_TTL, self.trakt.lists)
+            except SERVICE_ERRORS as exc:
+                log.warning("Para ti: no pude leer tus listas de Trakt: %s", exc)
+                own = []
+            video += [{"id": f"list:{row['id']}", "title": row["name"], "icon": "list", "source": "Trakt", "meta": "Tu lista"}
+                      for row in own[:8]]
+        if self.trakt.configured:
+            video += [
+                {"id": "trend", "title": "En tendencia", "icon": "trend", "source": "Trakt", "meta": "Lo más visto esta semana", "split": True},
+                {"id": "popular", "title": "Lo más popular", "icon": "flame", "source": "Trakt", "meta": "De todos los tiempos", "split": True},
+            ]
+        found = self.platforms()
+        for brand, (name, _) in tmdb_api.PLATFORMS.items():
+            if brand in found:
+                video.append({"id": brand, "title": name, "brand": brand, "logo": found[brand]["logo"], "icon": "trailer", "source": "TMDB",
+                              "meta": f"Lo más popular en {self._country()}", "split": True})
+        games: list[dict] = [{"id": "mygames", "title": "Tus juegos", "icon": "gamepad", "source": "",
+                              "meta": "Favoritos, los más jugados y los que no has abierto"}]
+        if self.rawg.configured:
+            games += [
+                {"id": "rawg:new", "title": "Novedades", "icon": "fresh", "source": "RAWG", "meta": "Lo que acaba de salir"},
+                {"id": "rawg:popular", "title": "Lo más popular", "icon": "flame", "source": "RAWG", "meta": "Lo que más se juega este año"},
+                {"id": "rawg:best", "title": "Mejor calificados", "icon": "trophy", "source": "RAWG", "meta": "Por Metacritic"},
+            ]
+        return [{**row, "group": "video"} for row in video] + [{**row, "group": "games"} for row in games]
+
+    def _country(self) -> str:
+        return {"MX": "México", "US": "Estados Unidos", "ES": "España", "AR": "Argentina", "CO": "Colombia",
+                "CL": "Chile", "PE": "Perú"}.get(self.region, self.region)
+
+    # --- el contenido de cada lista ----------------------------------------------------------
+    def list_items(self, list_id: str, kind: str | None = None) -> list[dict]:
+        kind = kind if kind in ("movie", "series") else "series"
+        hidden = self.catalog.state.dismissed()
+        items = self._list(list_id, kind)
+        return [i for i in items if i["key"] not in hidden]
+
+    def _list(self, list_id: str, kind: str) -> list[dict]:
+        t = self.trakt
+        if list_id == "recs":
+            return [video_item(e, "Recomendada") for e in self.cache.get(f"trakt:recs:{kind}", RECS_TTL, lambda: t.recommendations(kind))]
+        if list_id == "mine":
+            return [video_item(e, "Sigues viéndola") for e in self.cache.get("trakt:watching", MINE_TTL, t.watching)]
+        if list_id == "watchlist":
+            return [video_item(e, "En tu lista") for e in self.cache.get("trakt:watchlist", MINE_TTL, t.watchlist)]
+        if list_id.startswith("list:"):
+            lid = list_id.removeprefix("list:")
+            name = next((r["name"] for r in self.cache.get("trakt:lists", MINE_TTL, t.lists) if r["id"] == lid), "tu lista")
+            return [video_item(e, f"En «{name}»") for e in self.cache.get(f"trakt:list:{lid}", MINE_TTL, lambda: t.list_items(lid))]
+        if list_id == "trend":
+            return [video_item(e, "En tendencia") for e in self.cache.get(f"trakt:trend:{kind}", RECS_TTL, lambda: t.trending(kind))]
+        if list_id == "popular":
+            return [video_item(e, "Popular") for e in self.cache.get(f"trakt:popular:{kind}", POPULAR_TTL, lambda: t.popular(kind))]
+        if list_id in tmdb_api.PLATFORMS:
+            return self.cache.get(f"tmdb:{list_id}:{kind}", POPULAR_TTL, lambda: self._platform(list_id, kind))
+        if list_id == "mygames":
+            return self.local_games()
+        if list_id.startswith("rawg:"):
+            return self._mark_owned(self.cache.get(list_id, SLOW_TTL, lambda: self._rawg(list_id.removeprefix("rawg:"))))
+        raise KeyError(list_id)
+
+    def _platform(self, brand: str, kind: str) -> list[dict]:
+        platform = self.platforms().get(brand)
+        if not platform:
+            return []
+        rows = self.tmdb.discover(kind, platform["id"], self.region)[:20]
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            details = list(pool.map(lambda r: self._safe(lambda: self.tmdb.details(kind, r["id"])), rows))
+        name = tmdb_api.PLATFORMS[brand][0]
+        return [video_item(d, f"En {name}", title=d["title"], poster=d["poster"], wide=d["backdrop"],
+                           overview=d["overview"], seasons=d.get("seasons"))
+                for d in details if d and d.get("imdb") and d.get("title")]
+
+    @staticmethod
+    def _safe(call):
+        try:
+            return call()
+        except SERVICE_ERRORS:
+            return None
+
+    def _rawg(self, which: str) -> list[dict]:
+        games = self.rawg.games(which)
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            appids = list(pool.map(lambda g: self._safe(lambda: self.rawg.steam_appid(g["rawg_id"])), games))
+        why = {"new": "Novedad", "popular": "Popular", "best": "Mejor calificado"}[which]
+        found = []
+        for g, appid in zip(games, appids, strict=True):
+            art = (lambda f, a=appid: STEAM_ART.format(appid=a, file=f)) if appid else None
+            found.append({
+                "key": f"rawg:{g['rawg_id']}", "kind": "game", "rawg_id": g["rawg_id"], "steam_appid": appid,
+                "title": g["title"], "year": g["year"], "why": why, "system": "steam" if appid else "pc",
+                "detail": f"Metacritic {g['metacritic']}" if g["metacritic"] else (str(g["year"]) if g["year"] else ""),
+                "facts": [[k, str(v)] for k, v in (["Salió", g["year"]], ["Metacritic", g["metacritic"]]) if v],
+                "image": art("library_600x900.jpg") if art else g["image"], "image_fallback": g["image"],
+                "hero": g["image"] or (art("library_hero.jpg") if art else None),
+                "logo": art("logo.png") if art else None, "overview": "", "owned": False, "action": None,
+            })
+        return found
+
+    def _mark_owned(self, games: list[dict]) -> list[dict]:
+        """Lo que ya tienes (por id de Steam o por nombre) se juega desde aquí: palomita y A = Jugar."""
+        library = [i for i in self.catalog.items() if i.category in GAME_CATEGORIES]
+        by_appid = {i.steam_appid: i for i in library if i.steam_appid}
+        by_title = {fold(i.title): i for i in library}
+        marked = []
+        for g in games:
+            mine = by_appid.get(g.get("steam_appid")) or by_title.get(fold(g["title"]))
+            if mine:
+                g = {**g, "owned": True, "id": mine.id, "item": self.catalog.describe(mine), "action": "Jugar"}
+            marked.append(g)
+        return marked
+
+    # --- tus juegos ----------------------------------------------------------------------------
+    def local_games(self, seed: int | None = None) -> list[dict]:
+        """Favoritos, los más jugados, los que nunca has abierto y uno al azar (cambia cada día)."""
+        rng = random.Random(seed if seed is not None else date.today().toordinal())
+        described = [self.catalog.describe(i) for i in self.catalog.items() if i.category in GAME_CATEGORIES]
+        last = lambda d: d.get("last_played") or 0  # noqa: E731
+        played = lambda d: float(d.get("playtime") or 0)  # noqa: E731
+        favorites = sorted((d for d in described if d.get("favorite")), key=last, reverse=True)[:8]
+        taken = {d["id"] for d in favorites}
+        most = sorted((d for d in described if d["id"] not in taken and played(d) >= 3600), key=played, reverse=True)[:6]
+        taken |= {d["id"] for d in most}
+        fresh = [d for d in described if d["id"] not in taken and not played(d) and not last(d)]
+        rng.shuffle(fresh)
+        fresh = fresh[:8]
+        taken |= {d["id"] for d in fresh}
+        rest = [d for d in described if d["id"] not in taken]
+        lucky = rng.sample(rest, min(3, len(rest)))
+        picks = ([game_item(d, "Tu favorito") for d in favorites] + [game_item(d, "Tu más jugado") for d in most]
+                 + [game_item(d, "Sin estrenar") for d in fresh] + [game_item(d, "Al azar") for d in lucky])
+        hidden = self.catalog.state.dismissed()
+        return [p for p in picks if p["key"] not in hidden]
+
+    # --- el mosaico ----------------------------------------------------------------------------
+    def mosaic(self) -> list[dict]:
+        """Lo tuyo, mezclado: tus recomendaciones, tu watchlist, tus listas, tus series y tus juegos.
+        Sin Trakt conectado: lo que está en tendencia (o lo popular en tus plataformas)."""
+        sources: list[tuple[str, str | None]] = []
+        if self.trakt.linked:
+            sources = [("recs", "series"), ("recs", "movie"), ("watchlist", None), ("mine", None)]
+            try:
+                sources += [(f"list:{r['id']}", None) for r in self.cache.get("trakt:lists", MINE_TTL, self.trakt.lists)[:3]]
+            except SERVICE_ERRORS:
+                pass
+        elif self.trakt.configured:
+            sources = [("trend", "series"), ("trend", "movie")]
+        else:
+            sources = [(brand, kind) for brand in self.platforms() for kind in ("series", "movie")]
+
+        def fetch(source):
+            try:
+                return self.list_items(*source)[:10]
+            except (KeyError, *SERVICE_ERRORS) as exc:
+                log.warning("Para ti: %s no respondió: %s", source[0], exc)
+                return []
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            batches = list(pool.map(fetch, sources))
+        videos = self._interleave(batches)
+        games = [g for g in self.local_games() if not g["placeholder"]]  # el mosaico es de imágenes: sin arte, no entra
+        mixed, seen = [], set()
+        # Tres videos por cada dos juegos, más o menos (lo que haya de cada uno).
+        vi = gi = 0
+        while len(mixed) < MOSAIC_SIZE and (vi < len(videos) or gi < len(games)):
+            for _ in range(3):
+                if vi < len(videos):
+                    mixed.append(videos[vi])
+                    vi += 1
+            for _ in range(2):
+                if gi < len(games):
+                    mixed.append(games[gi])
+                    gi += 1
+        out = []
+        for item in mixed:
+            if item["key"] not in seen:
+                seen.add(item["key"])
+                out.append(item)
+        return out[:MOSAIC_SIZE]
+
+    @staticmethod
+    def _interleave(batches: list[list[dict]]) -> list[dict]:
+        """Una de cada fuente por turno: así el mosaico no es solo recomendaciones."""
+        out, i = [], 0
+        while any(i < len(b) for b in batches):
+            out += [b[i] for b in batches if i < len(b)]
+            i += 1
+        return out
+
+    def overview(self) -> dict:
+        return {"status": self.status(), "lists": self.lists(), "mosaic": self.mosaic()}
+
+    # --- la ficha de una sugerencia ------------------------------------------------------------
+    def details(self, key: str, kind: str | None = None) -> dict:
+        """Sinopsis en español (si se puede) y si su logo es oscuro (se pinta blanco)."""
+        if key.startswith("video:"):
+            imdb = key.removeprefix("video:")
+            kind = kind if kind in ("movie", "series") else "movie"
+            return self.cache.get(f"details:{key}", SLOW_TTL, lambda: self._video_details(imdb, kind))
+        if key.startswith("rawg:"):
+            rawg_id = int(key.removeprefix("rawg:")) if key.removeprefix("rawg:").isdigit() else 0
+            return self.cache.get(f"details:{key}", SLOW_TTL, lambda: self._rawg_details(rawg_id))
+        if key.startswith("game:"):
+            item = self.catalog.get(key.removeprefix("game:"))
+            appid = item.steam_appid if item else None
+            text = self.cache.get(f"steam:{appid}", SLOW_TTL, lambda: rawg_api.steam_description(appid)) if appid else ""
+            return {"overview": text}
+        raise KeyError(key)
+
+    def _video_details(self, imdb: str, kind: str) -> dict:
+        overview, facts = "", None
+        if self.tmdb.configured:
+            found = self._safe(lambda: self.tmdb.find(imdb, kind))
+            if found:
+                overview = found["overview"]
+                if kind == "movie" and found.get("runtime"):
+                    facts = [["Duración", runtime_text(found["runtime"])], ["Año", str(found["year"] or "")]]
+                elif kind == "series" and found.get("seasons"):
+                    facts = [["Temporadas", str(found["seasons"])], ["Episodios", str(found.get("episodes") or "")]]
+        if not overview:
+            try:  # Cinemeta (en inglés): mejor eso que nada
+                overview = str(self.catalog.cinemeta.meta(kind, imdb).get("description") or "").strip()
+            except Exception:  # noqa: BLE001 - sin sinopsis no pasa nada
+                overview = ""
+        return {"overview": overview, "facts": [f for f in facts or [] if f[1]] or None,
+                "logo_dark": self.logo_dark(METAHUB.format(kind="logo", imdb=imdb))}
+
+    def _rawg_details(self, rawg_id: int) -> dict:
+        appid = self._safe(lambda: self.rawg.steam_appid(rawg_id)) if rawg_id else None
+        text = rawg_api.steam_description(appid) if appid else ""
+        if not text and rawg_id:
+            text = self._safe(lambda: self.rawg.description(rawg_id)) or ""
+            text = text[:600].rsplit(" ", 1)[0] + "…" if len(text) > 600 else text
+        return {"overview": text}
+
+    def logo_dark(self, url: str) -> bool | None:
+        """¿El logo es oscuro (negro sobre transparente)? Sobre el fondo oscuro no se vería: se pinta blanco."""
+        if url in self._dark:
+            return self._dark[url]
+        verdict = None
+        try:
+            import io
+            import urllib.request
+
+            from PIL import Image
+
+            from .net import read_body
+
+            with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "Orbital"}), timeout=6) as res:
+                raw = read_body(res, timeout=6, limit=4 * 1024 * 1024)
+            image = Image.open(io.BytesIO(raw)).convert("RGBA")
+            image.thumbnail((96, 96))
+            visible = [px[:3] for px in image.getdata() if isinstance(px, tuple) and len(px) == 4 and px[3] > 128]
+            if visible:
+                lum = sum(.2126 * r + .7152 * g + .0722 * b for r, g, b in visible) / len(visible)
+                verdict = lum < 64
+        except Exception:  # noqa: BLE001 - sin Pillow, sin logo o sin internet: se deja como venga
+            verdict = None
+        if len(self._dark) > 2000:
+            self._dark.clear()
+        self._dark[url] = verdict
+        return verdict
+
+    # --- «No me interesa» ----------------------------------------------------------------------
+    def dismiss(self, key: str) -> None:
+        if not re.fullmatch(r"(video:tt\d+|rawg:\d+|game:.{1,300})", key or ""):
+            raise ValueError("Sugerencia inválida")
+        self.catalog.state.dismiss(key)
+
+    # --- conectar Trakt ------------------------------------------------------------------------
+    def start_link(self) -> dict:
+        """Pide un código a Trakt y espera (en segundo plano) a que lo confirmes en trakt.tv/activate."""
+        if not self.trakt.configured:
+            raise ValueError("Falta la aplicación de Trakt en config.yaml (para_ti.trakt_client_id y trakt_client_secret).")
+        # Dos pedidos seguidos (Y dos veces) o cancelar mientras llega: solo cuenta el último. Antes se
+        # quedaba el que terminara al final, y la pantalla podía mostrar un código que nadie esperaba.
+        with self._link_lock:
+            self._link_gen = gen = self._link_gen + 1
+        code = self.trakt.device_code()
+        with self._link_lock:
+            if self._link_gen != gen:
+                return code.public()
+            self._link = code
+        threading.Thread(target=self._wait_link, args=(code,), daemon=True, name="trakt-link").start()
+        return code.public()
+
+    def cancel_link(self) -> None:
+        with self._link_lock:
+            self._link_gen = self._link_gen + 1
+            self._link = None
+
+    def _wait_link(self, code: trakt_api.DeviceCode, sleep: Callable[[float], None] = time.sleep) -> str:
+        interval = max(1.0, code.interval)
+        while time.time() < code.expires_at:
+            sleep(interval)
+            with self._link_lock:
+                if self._link is not code:  # cancelaste (B) o pediste otro código
+                    return "cancelled"
+            try:
+                result = self.trakt.poll_device(code)
+            except trakt_api.TraktError:
+                continue  # la red parpadeó: se sigue esperando
+            if result == "slow":
+                interval += 5
+            elif result == "linked":
+                with self._link_lock:
+                    self._link = None
+                self.cache.clear()
+                name = self._safe(self.trakt.username) or ""
+                self.publish({"type": "trakt-linked", "name": name})
+                self.publish({"type": "foryou-changed"})
+                return result
+            elif result != "pending":
+                break
+        with self._link_lock:
+            if self._link is code:
+                self._link = None
+        self.publish({"type": "trakt-link-failed", "message": "El código caducó. Pide otro para conectar Trakt."})
+        return "expired"
+
+    def unlink(self) -> None:
+        self.trakt.unlink()
+        self.cache.clear("trakt:")
+        self.publish({"type": "foryou-changed"})

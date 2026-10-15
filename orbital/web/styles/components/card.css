@@ -31,6 +31,8 @@
 }
 .card__badge .icon { width: .85rem; height: .85rem;
 }
+.card__badge--owned { color: var(--color-text); }
+.card__badge--owned .icon { stroke-width: 2.5; }
 .card__badge--pop { animation: badge-pop var(--duration-enter) var(--ease-spring); }
 @keyframes badge-pop { from { transform: scale(0) rotate(-40deg); } 60% { transform: scale(1.35); } }
 /* "Jugado recientemente": hace cuánto, como pie debajo de la portada (encima taparía la
@@ -70,7 +72,7 @@
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   font-size: var(--text-sm); font-weight: var(--weight-medium); line-height: 1.2; overflow-wrap: break-word; hyphens: auto;
 }
-.card__subtitle { color: var(--color-text-muted); font-size: var(--text-2xs); }
+.card__subtitle { color: var(--color-text-muted); font-size: var(--text-2xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* una línea: el nombre es lo que importa */
 /* Foco: el juego salta (resorte con rebote), se eleva un poco y proyecta un brillo de su propio
    color sobre el fondo. Al perder el foco vuelve sin rebote (la transición base de .card). */
 .card--focused {
@@ -102,14 +104,14 @@
   position: absolute; left: var(--space-2); top: var(--space-2); z-index: var(--z-above);
   display: inline-flex; align-items: center; gap: .35rem; padding: .15rem .55rem .15rem .45rem;
   border-radius: var(--radius-pill); background: var(--color-badge-bg); color: var(--color-text);
-  font-size: var(--text-2xs); font-weight: var(--weight-bold); letter-spacing: .03em;
+  font-size: var(--text-2xs); font-weight: var(--weight-bold); letter-spacing: var(--tracking-label);
 }
 .card__live-dot { width: .45rem; height: .45rem; border-radius: 50%; background: var(--color-live); }
 
 /* Apps: su ícono real, centrado y con aire (no el dibujo genérico de cuadritos). */
-.card__placeholder--app { padding: 22%; }
+/* El ícono en la parte de arriba: abajo va el nombre (dos líneas) y el dato, sin encimarse. */
+.card__placeholder--app { inset: 0 0 40% 0; padding: 16% 22% 6%; }
 .card__app-icon { display: block; width: 100%; height: 100%; object-fit: contain; filter: var(--shadow-drop); }
 
-/* Sin portada propia el nombre ya va sobre el arte: en el pie de Buscar no se repite. */
-.card--no-art .card__caption strong, .card--named .card__caption strong { display: none; }
-.card--no-art .card__caption span { display: none; }
+/* Sin portada propia, el nombre y la consola ya van sobre el arte: en el pie de Buscar no se repiten. */
+.card--no-art .card__caption, .card--named .card__caption { display: none; }

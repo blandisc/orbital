@@ -1,9 +1,24 @@
 /** Cliente de la API local de Orbital. */
-async function request(path, options = {}) {
-  const res = await fetch(path, {
-    ...options,
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-  });
+// Errores en palabras de persona: ni «Failed to fetch» ni «Internal Server Error» en la TV.
+export const OFFLINE = "Sin conexión con Orbital. Revisa que siga abierto e inténtalo de nuevo.";
+const TIMED_OUT = "No hubo respuesta a tiempo. Inténtalo de nuevo.";
+
+/** `timeout` (ms) corta una espera que nunca termina; `signal` deja cancelarla (B mientras conecta). */
+async function request(path, { timeout = 0, signal, ...options } = {}) {
+  const signals = [signal, timeout && AbortSignal.timeout?.(timeout)].filter(Boolean);
+  let res;
+  try {
+    res = await fetch(path, {
+      ...options,
+      signal: signals.length > 1 ? AbortSignal.any(signals) : signals[0],
+      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    });
+  } catch (err) {
+    if (signal?.aborted) throw err; // lo canceló quien llamó: no es un error que mostrar
+    const error = new Error(err?.name === "TimeoutError" ? TIMED_OUT : OFFLINE);
+    error.network = true;
+    throw error;
+  }
   const text = await res.text().catch(() => "");
   let data = {};
   if (text) {
@@ -17,12 +32,14 @@ async function request(path, options = {}) {
   if (!res.ok) {
     const detail = typeof data.detail === "string" ? data.detail : "";
     const fallback = res.status === 404 ? "No lo encontré." : `Orbital no pudo hacerlo (error ${res.status}). Intenta de nuevo.`;
-    throw Object.assign(new Error(detail || fallback), { status: res.status });
+    const error = new Error(detail || fallback);
+    error.status = res.status;
+    throw error;
   }
   return data;
 }
 
-const post = (path, body) => request(path, { method: "POST", body: JSON.stringify(body || {}) });
+const post = (path, body, options = {}) => request(path, { method: "POST", body: JSON.stringify(body || {}), ...options });
 
 export const api = {
   library: () => request("/api/library"),
@@ -61,18 +78,28 @@ export const api = {
   dismiss: (id) => post("/api/stremio/dismiss", { id }),
   setInLibrary: (kind, id, add) => post("/api/stremio/library", { kind, id, add }),
   trailer: (kind, id) => post("/api/stremio/trailer", { kind, id }),
-  stremioLogin: (email, password) => post("/api/stremio/login", { email, password }),
+  stremioLogin: (email, password, signal) => post("/api/stremio/login", { email, password }, { signal, timeout: 20000 }),
   stremioLogout: () => post("/api/stremio/logout"),
   setSettings: (changes) => post("/api/settings", changes),
   stremioSources: (kind, id, video) =>
     request(`/api/stremio/sources?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`),
   focusWindow: (id) => post("/api/windows/focus", { id }),
+  // «Para ti»
+  forYou: () => request("/api/foryou"),
+  forYouList: (id, kind = null) => request(`/api/foryou/list?id=${encodeURIComponent(id)}${kind ? `&kind=${kind}` : ""}`),
+  forYouDetails: (key, kind = null) => request(`/api/foryou/details?key=${encodeURIComponent(key)}${kind ? `&kind=${kind}` : ""}`),
+  forYouDismiss: (key) => post("/api/foryou/dismiss", { key }),
+  traktLink: () => post("/api/foryou/trakt/link"),
+  traktCancel: () => post("/api/foryou/trakt/cancel"),
+  traktUnlink: () => post("/api/foryou/trakt/unlink"),
   /** Suscripción a eventos del servidor con reconexión automática. */
-  events(onEvent) {
+  events(onEvent, { onReconnect = () => {} } = {}) {
+    let lost = false;
     const connect = () => {
       const source = new EventSource("/api/events");
+      source.onopen = () => { if (lost) { lost = false; onReconnect(); } };
       source.onmessage = (msg) => onEvent(JSON.parse(msg.data));
-      source.onerror = () => { source.close(); setTimeout(connect, 3000); };
+      source.onerror = () => { lost = true; source.close(); setTimeout(connect, 3000); };
     };
     connect();
   },

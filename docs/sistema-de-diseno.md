@@ -25,10 +25,10 @@ La única salida es una **excepción documentada**: la línea lleva `/* ds-excep
 | Capa | Archivo | Qué hay |
 |---|---|---|
 | Paleta | `palette.json` + `tokens.css` (`--palette-*`) | Los colores crudos. **Una sola paleta** para la interfaz y el reproductor (`player_ui.py` la lee del JSON). Una prueba verifica que coinciden. |
-| Primitivos | `tokens.css` | Espacio (`--space-*`), radios (`--radius-*`), letra (`--text-*`, `--weight-*`, `--tracking-*`), movimiento (`--duration-*`, `--ease-*`, `--delay-*`, `--stagger`), capas (`--z-*`), medidas de consola (`--card-*`, `--tile-*`, `--key-height`, `--sheet-width`…). |
-| Semánticos | `themes/orbital.css` | Lo que usan los componentes: `--color-*`, `--shadow-*` (cajas) y `--shadow-drop*` (siluetas), `--ring-focus`, foco invertido (`--inverse-bg/fg/scale`), sobre el arte (`--color-badge-bg`, `--gradient-tile-shade`), dentro de algo claro (`--on-light-*`) o de color (`--on-color-fill`), máscaras (`--mask-solid`), `--color-star`, `--color-video-bg`, `--assistant-accent`, el grafito neutro del arte (`--art-*-neutral`) y el color de cada consola (`--system-*`). |
+| Primitivos | `tokens.css` | Espacio (`--space-*`), radios (`--radius-*`), letra (`--text-*`, `--weight-*`, `--tracking-*`), vidrio (`--blur-glass`), movimiento (`--duration-*`, `--ease-*`, `--delay-*`, `--stagger`), capas (`--z-*`), medidas de consola (`--card-*`, `--tile-*`, `--key-height`, `--sheet-width`…). |
+| Semánticos | `themes/orbital.css` | Lo que usan los componentes: `--color-*`, `--shadow-*` (cajas) y `--shadow-drop*` (siluetas), `--ring-focus`, foco invertido (`--inverse-bg/fg/scale`), sobre el arte (`--color-badge-bg`, `--gradient-tile-shade`), dentro de algo claro (`--on-light-*`) o de color (`--on-color-fill`), máscaras (`--mask-solid`), fondo de ambiente (`--color-backdrop-deep`), sombra sobre el arte (`--color-art-shade`), relieves (`--gradient-sheet`, `--gradient-console-tile`, `--gradient-launch-planet`), `--color-star`, `--color-video-bg`, `--assistant-accent`, el grafito neutro del arte (`--art-*-neutral`) y el color de cada consola (`--system-*`). |
 
-**Los componentes solo usan tokens semánticos** (o primitivos de medida y movimiento). Un valor nuevo
+**Los componentes solo usan tokens semánticos** (o primitivos de medida y movimiento): nunca `--palette-*` directo. Un valor nuevo
 primero se nombra aquí: qué *es* (`--duration-enter`, «algo que aparece»), no cuánto vale.
 
 ### Movimiento
@@ -41,6 +41,7 @@ primero se nombra aquí: qué *es* (`--duration-enter`, «algo que aparece»), n
 | `--duration-enter` · `--duration-enter-long` · `--duration-land` | Algo que aparece · la primera entrada de una pantalla · el arranque. |
 | `--duration-exit` | Salidas (más cortas que las entradas y acelerando: `--ease-in`). |
 | `--duration-tint` · `--duration-drift` | El color del fondo cambia · el fondo sigue al foco. |
+| `--duration-alive` | «Cobra vida»: quieto en una pieza de Para ti, su arte se acerca despacio. |
 | `--duration-pulse` · `--duration-breathe` | Cursor de escribir, «te escuché» · algo que espera (dictando). |
 | `--duration-glow` · `--duration-stars` · `--duration-stars-far` | Ambiente: la luz respira, las estrellas derivan. |
 | `--duration-launch-*` | Pantalla de carga (cinemática, más lenta a propósito). |
@@ -62,12 +63,13 @@ Globales: `--z-overlay`, `--z-hints`, `--z-launch`, `--z-toast`. Dentro de un co
 | Pieza | Archivo | Para qué |
 |---|---|---|
 | `Chip(text, { tone })` | `ui` | Un dato corto: «4K», «Inglés», «Al instante» (`good`/`warn`). Una línea, nunca se parte. |
-| `Badge(text)` | `ui` | Etiqueta que llama la atención: «3 nuevos», «Recomendada» (sin mayúsculas). |
+| `Badge(text, { large })` | `ui` | Etiqueta que llama la atención: «3 nuevos», «Recomendada» (sin mayúsculas). `large` sobre arte a sangre (el mosaico de Para ti). |
 | `Progress(fraction)` | `ui` | Cuánto llevas de un video. |
 | `SectionHead(title, { meta, end })` | `ui` | Título de una zona con su dato y algo a la derecha. |
+| `ScreenHead({ eyebrow, title, lead })` + `.screen` | `ui` | Pantalla completa encima de todo (Conectar Stremio, Conectar Trakt): `.screen` es el marco (fondo, margen, entrada y salida con `screen--leaving`) y `ScreenHead` su encabezado («Cuentas» · título · una línea). |
 | `KeyHint(glyph, label, { small })` | `ui` | Botón del mando + qué hace («A Continuar»). **El pie de controles se arma con esta pieza.** |
 | `.tile` | `ui` | Superficie enfocable de las pantallas nuevas: mismo radio, anillo de foco y atenuado. |
-| `Button({ label, glyph, variant, yields })` | `button` | Acción con su glifo. En una fila van dentro de `.button-row`: **nunca se parte ni se corta**; si no cabe, solo el botón `yields` (la alternativa, «Con Ryujinx») se encoge con «…». |
+| `Button({ label, glyph, variant, yields })` | `button` | Acción con su glifo. En una fila van dentro de `.button-row`: **nunca se parte ni se corta**; si no cabe, solo el botón `yields` (la alternativa, «Con Ryujinx») se encoge con «…». Casi siempre es leyenda (no se enfoca); cuando es lo único que hay que hacer (Conectar Trakt), lleva `data-focus-id` y el anillo de foco. |
 | `Glyph(text, { small })` | `glyph` | El botón del mando en su color (A verde, B rojo, X azul, Y amarillo); cambia con el modo de entrada (`data-input`: mando o teclado). |
 | `createKeyboard()` | `keyboard` | Teclado en pantalla (Buscar, Conectar Stremio). |
 
@@ -75,7 +77,7 @@ Globales: `--z-overlay`, `--z-hints`, `--z-launch`, `--z-toast`. Dentro de un co
 
 | Pieza | Para qué |
 |---|---|
-| `Card(item, { caption, showAgo, pop })` (`card`) | Portada de un juego o video en filas y cuadrículas. Sin arte: el respaldo con su nombre; apps: su ícono (`appIcon`). |
+| `Card(item, { caption, showAgo, pop })` (`card`) | Portada de un juego o video en filas y cuadrículas. Sin arte: el respaldo con su nombre; apps: su ícono (`appIcon`). Esquina: estrella si es favorito (`item.favorite`), palomita si ya lo tienes en una lista de afuera (`item.owned`). |
 | `FeatureTile` (`tiles`) | El destacado del Inicio: arte a sangre, logo o título, dato y botones (`.button-row`). |
 | `WideTile` (`tiles`) | Arte horizontal: solo el título; al enfocar aparece el detalle. |
 | `ConsoleTile` (`tiles`) | Foto real de la consola (o logo) con brillo de su color, juegos, nuevos y lo último. |
@@ -89,9 +91,15 @@ letras que bajan: g, p, j, y).
 |---|---|
 | `status-bar` | Barra de arriba: marca, Buscar, pestañas (LB/RB), Alexa (navegable: muestra ejemplos de órdenes), batería y hora. |
 | `hints` | Pie de controles del momento (piezas `KeyHint`). |
+| `foryou` | Para ti (a la izquierda del Inicio): recomendaciones en dos modos, Mosaico y Listas; X cambia de uno a otro con el selector del centro del pie. A ve o juega, Y abre Más (ficha, «No me interesa»). |
+| `foryou-mosaic` | Mosaico de Para ti: columnas de imágenes; la enfocada crece y enseña etiqueta, logo y un dato; bajar sube todo (cascada) y quieto ~30 s entra en ambiente. Ícono de esquina: la consola del juego, o serie / película. |
+| `foryou-lists` | Listas de Para ti, con las mismas piezas que Juegos (`rail`, `browse`, `detail-panel`): tus listas en el riel (Trakt, plataformas con su logo de TMDB, juegos de RAWG), Series · Películas en las grandes, portadas y la ficha de lo enfocado. Una lista que explica algo (Conectar Trakt) lleva su botón, enfocable. |
+| `trakt-link` | Conectar Trakt: un código grande para escribir en trakt.tv/activate desde el celular. |
 | `home` | Inicio: saludo, destacado, tarjetas anchas y Tus consolas. |
-| `games` | Juegos: riel de consolas (cruceta o LT/RT), encabezado de consola, filtros y cuadrícula. Su ficha lateral es `game-panel` (comparte `games.css`: ver Excepciones). |
-| `game-panel` | Ficha del juego enfocado, a la derecha de Juegos. |
+| `games` | Juegos: tus consolas en el riel (cruceta o LT/RT), encabezado de consola, filtros y cuadrícula; la ficha del juego enfocado. Armado con `rail`, `browse` y `detail-panel`. |
+| `rail` | Riel lateral de una vista con secciones (consolas, listas): casillas con foto, logo de marca o ícono; RePág/AvPág arriba y abajo; grupos con su nombre. **Al enfocarlo se abre como pestaña** y enseña el nombre y un dato de cada sección; lo de atrás se aparta. |
+| `browse` | El centro de una vista con secciones: encabezado (`BrowseHead`: la sección en su casilla, nombre grande y lo esencial), filtros en píldora (`fillFilters`, se compactan si no caben en una fila) y la cuadrícula de portadas (`keepInView`). Juegos y las Listas de Para ti son la misma vista con otros datos. |
+| `detail-panel` | Ficha lateral de lo enfocado (un juego, una película, una serie): arte que se funde con la ficha (máscara, sin bordes), logo o nombre, de dónde es, hasta cuatro datos, la descripción y sus acciones (o una nota: «No lo tienes»). |
 | `hero` + `shelf` | Películas y series / Apps: el destacado arriba y las filas de portadas. El destacado cede la descripción antes que cortar los botones. |
 | `title` | Ficha de una película o serie: datos, botones, temporadas (LB/RB) y episodios. |
 | `sources` | Elegir fuente de un video. |
@@ -101,7 +109,7 @@ letras que bajan: g, p, j, y).
 | `toast` | Aviso corto arriba a la derecha (nunca encima de una hoja). |
 | `launch-overlay` | Pantalla de carga al abrir algo. |
 | `viewer` | Visor de capturas. |
-| `backdrop` | Fondo: arte del foco, o el espacio vivo (estrellas y luz) del Inicio y Juegos. |
+| `backdrop` | Fondo: arte del foco, o el espacio vivo (estrellas y luz) del Inicio, Juegos y Para ti. |
 
 ## 5. Comportamiento con el mando
 
@@ -131,9 +139,9 @@ Cada una se marca en el código con `ds-exception: <motivo>` usando exactamente 
 
 | Motivo | Dónde | Por qué |
 |---|---|---|
-| `game-panel` comparte `games.css` | `js/components/game-panel.js` | La ficha solo existe dentro de Juegos; separar su CSS duplicaría el acomodo. |
+| — | — | Ninguna hoy. |
 
-(Nada más hoy. Antes de agregar una, intenta un token o una pieza nueva.)
+(Antes de agregar una, intenta un token o una pieza nueva.)
 
 ## 8. El reproductor (`orbital/player_ui.py`)
 

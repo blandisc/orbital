@@ -1,6 +1,8 @@
 import { api } from "../core/api.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
+import { typingGlyphs } from "../core/input.js";
 import { createKeyboard } from "./keyboard.js";
+import { ScreenHead } from "./ui.js";
 
 /**
  * Conectar Stremio con el mando (antes solo desde la PC: `orbital stremio login`).
@@ -16,6 +18,9 @@ const ACTIONS = [
   { key: ".com", label: ".com", span: 2 }, { key: "delete", label: "Borrar", span: 2 }, { key: "next", label: "Siguiente", span: 2, tone: "go" },
 ];
 
+/** Borra el último carácter completo (un emoji no se parte a la mitad). */
+const dropLast = (text) => Array.from(text).slice(0, -1).join("");
+
 export function createLogin({ onDone, onMove, onClose }) {
   const fields = {
     email: { value: "", label: "Correo de Stremio", node: h("div", { class: "login__field" }) },
@@ -24,11 +29,9 @@ export function createLogin({ onDone, onMove, onClose }) {
   const message = h("div", { class: "login__message", role: "status" });
   const keyboard = createKeyboard({ label: "Teclado", onPress: (key) => press(key) });
   const keys = keyboard.el;
-  const el = h("section", { class: "login", hidden: true, "aria-label": "Conectar Stremio" },
-    h("div", { class: "login__head" },
-      h("div", { class: "login__eyebrow" }, "Cuentas"),
-      h("h1", { class: "login__title" }, "Conectar Stremio"),
-      h("p", { class: "login__lead" }, "Tu contraseña va directo a Stremio; Orbital no la guarda.")),
+  const el = h("section", { class: "login screen", hidden: true, "aria-label": "Conectar Stremio" },
+    ScreenHead({ eyebrow: "Cuentas", title: "Conectar Stremio", className: "login__head",
+      lead: "Para «Seguir viendo», tus fuentes y el progreso en todos tus dispositivos. Tu contraseña solo se envía a Stremio; Orbital no la guarda." }),
     h("div", { class: "login__form" }, fields.email.node, fields.password.node, message),
     keys);
 
@@ -37,7 +40,7 @@ export function createLogin({ onDone, onMove, onClose }) {
   let symbols = false;
   let reveal = false;
   let busy = false;
-  let attempt = 0; // B mientras conecta: se cancela (la respuesta que llegue después se ignora)
+  let abort = null; // B mientras conecta: se cancela (antes «Conectando…» podía quedarse para siempre)
   let cancelExit = () => {};
 
   const grid = () => [...(symbols ? SYMBOLS : LETTERS).map((r) => r.map((k) => ({ key: k, label: shift && !symbols ? k.toUpperCase() : k }))),
@@ -69,7 +72,7 @@ export function createLogin({ onDone, onMove, onClose }) {
     message.textContent = "";
     if (key === "shift") shift = !shift;
     else if (key === "symbols") symbols = !symbols;
-    else if (key === "delete") field.value = field.value.slice(0, -1);
+    else if (key === "delete") field.value = dropLast(field.value);
     else if (key === "next") return active === "email" ? switchField("password") : submit();
     else {
       field.value += shift && !symbols ? key.toUpperCase() : key;
@@ -94,35 +97,34 @@ export function createLogin({ onDone, onMove, onClose }) {
     const mine = ++attempt;
     message.textContent = "Conectando…";
     el.classList.add("login--busy");
+    abort = new AbortController();
+    const { signal } = abort;
     try {
-      const res = await api.stremioLogin(email, password);
-      if (mine !== attempt) { // cancelaste con B, pero Stremio sí conectó: que la consola se entere
-        onDone?.(res);
-        return;
-      }
+      const res = await api.stremioLogin(email, password, signal);
       fields.password.value = "";
       close();
       onDone?.(res);
     } catch (err) {
-      if (mine !== attempt) return;
+      if (signal.aborted) return;
       message.textContent = err.message;
-      fields.password.value = "";
+      // Una falla de red no es culpa de la contraseña: no hay que volver a escribirla.
+      if (!err.network && err.status !== 502) fields.password.value = "";
       active = "password";
     } finally {
-      if (mine === attempt) { // una petición vieja (cancelada) no suelta el «conectando» de una nueva
-        busy = false;
-        el.classList.remove("login--busy");
-        if (!el.hidden) render();
-      }
+      abort = null;
+      busy = false;
+      el.classList.remove("login--busy");
+      if (!el.hidden) render();
     }
   }
 
-  /** Teclado físico: una letra, o "\b" para borrar; Enter avanza o conecta. */
+  /** Teclado físico: una letra, o "\b" para borrar; Enter avanza o conecta; Tab cambia de campo. */
   function type(char) {
     if (el.hidden || busy) return;
-    if (char === "\n") return press("next"); // Enter: siguiente campo, o conectar
+    if (char === "\n") return press("next");
+    if (char === "\t") return switchField(active === "email" ? "password" : "email");
     const field = fields[active];
-    if (char === "\b") field.value = field.value.slice(0, -1);
+    if (char === "\b") field.value = dropLast(field.value);
     else field.value += char;
     message.textContent = "";
     renderFields();
@@ -143,18 +145,16 @@ export function createLogin({ onDone, onMove, onClose }) {
 
   function close() {
     if (el.hidden) return;
+    abort?.abort();
     fields.password.value = "";
-    cancelExit = hideAfterExit(el, "login--leaving", 300);
+    cancelExit = hideAfterExit(el, "screen--leaving", 300);
     onClose?.();
   }
 
   function handle(action) {
-    if (el.hidden || el.classList.contains("login--leaving")) return false;
-    if (busy) {
-      if (action === "back") { attempt++; busy = false; el.classList.remove("login--busy"); close(); }
-      return true;
-    }
-    if (action === "back") { close(); return true; }
+    if (el.hidden || el.classList.contains("screen--leaving")) return false;
+    if (action === "back") { close(); return true; } // también mientras conecta: lo cancela
+    if (busy) return true;
     if (action === "alt") { press("delete"); return true; }
     if (action === "options") { reveal = !reveal; renderFields(); return true; }
     if (action === "pageleft" || action === "pageright") { switchField(action === "pageleft" ? "email" : "password"); onMove?.(); return true; }
@@ -164,12 +164,14 @@ export function createLogin({ onDone, onMove, onClose }) {
     return true;
   }
 
-  const hints = (g) => [
+  const hints = (pad, g = typingGlyphs(pad)) => [
     { glyph: g.select, label: "Escribir" }, { glyph: g.alt, label: "Borrar" },
     { glyph: g.options, label: reveal ? "Ocultar contraseña" : "Ver contraseña" },
     { glyph: g.page, label: "Cambiar de campo", secondary: true }, { glyph: g.back, label: "Atrás", end: true },
   ];
 
-  return { el, open, close, handle, hints, type, get isOpen() { return !el.hidden && !el.classList.contains("login--leaving"); },
-    get typing() { return !el.hidden && !busy; } };
+  // Saliendo ya no cuenta como abierta (la leyenda del login se quedaba en Inicio).
+  const shown = () => !el.hidden && !el.classList.contains("screen--leaving");
+  return { el, open, close, handle, hints, type, get isOpen() { return shown(); },
+    get typing() { return shown() && !busy; } };
 }

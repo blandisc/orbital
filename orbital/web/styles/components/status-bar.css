@@ -11,11 +11,27 @@
   transition: background var(--duration-fast) var(--ease-out);
 }
 .status-bar__brand:hover { background: var(--color-fill); }
-.status-bar__brand { gap: .55rem; }
-.status-bar__brand .mark { width: 1.75rem; height: 1.75rem; color: var(--color-text); }
+.status-bar__brand { gap: .6rem; }
+/* La marca (icons.js · mark): planeta, anillo que pasa por detrás y por delante, y su luna. */
+.status-bar__brand .mark { width: 2.05rem; height: 2.05rem; color: var(--color-text); overflow: visible; }
+.mark__ring--back { opacity: .45; }
+/* Al arrancar, el anillo se dibuja alrededor del planeta y la luna aparece al final. */
+.status-bar__brand .mark__ring { stroke-dasharray: 1; animation: mark-draw var(--duration-land) var(--ease-out) both; }
+.status-bar__brand .mark__ring--front { animation-delay: var(--delay-2); }
+.status-bar__brand .mark__planet { transform-origin: 16px 16px; animation: mark-planet var(--duration-enter) var(--ease-spring) both; }
+.status-bar__brand .mark__moon {
+  transform-box: fill-box; transform-origin: center; animation: mark-moon var(--duration-enter) var(--ease-spring) both;
+  animation-delay: calc(var(--duration-land) * .7); transition: translate var(--duration-slow) var(--ease-spring);
+}
+/* Al pasar por encima, la luna avanza un poco en su órbita. */
+.status-bar__brand:hover .mark__moon { translate: 1px -1.4px; }
+@keyframes mark-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes mark-planet { from { opacity: 0; transform: scale(.6); } }
+@keyframes mark-moon { from { opacity: 0; transform: scale(0); } }
 .status-bar__wordmark {
-  font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-medium);
-  letter-spacing: .01em; line-height: 1; padding-bottom: .08em; /* centro óptico con el planeta */
+  font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight); line-height: 1; padding-bottom: .08em; /* centro óptico con el planeta */
+  animation: fade-in var(--duration-enter) var(--ease-out) both; animation-delay: var(--delay-1);
 }
 
 .status-bar__playing { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; color: var(--color-text-muted); animation: fade-in var(--duration-base) var(--ease-out); }
@@ -32,7 +48,15 @@
    con position:absolute, se encimaban con Buscar y la hora en pantallas angostas). */
 /* Las pestañas nunca se encogen (se recortaban: la «E» de junto a Apps desaparecía bajo lo que está
    abierto); cuando falta sitio, cede el nombre de lo abierto, con «…». */
-.status-bar__tabs { flex: none; display: flex; align-items: center; gap: var(--space-1); margin: 0 auto; }
+.status-bar__tabs { position: relative; flex: none; display: flex; align-items: center; gap: var(--space-1); margin: 0 auto; }
+/* La píldora de la sección activa: una sola, que se desliza de una pestaña a otra (status-bar.js). */
+.status-bar__pill {
+  position: absolute; left: 0; top: 0; border-radius: var(--radius-pill);
+  background: var(--color-primary); pointer-events: none;
+  transition: transform var(--duration-slow) var(--ease-spring), width var(--duration-slow) var(--ease-spring);
+}
+.status-bar__pill--still { transition: none; }
+.status-bar__tab { position: relative; } /* encima de la píldora */
 .status-bar__tabs .glyph { margin: 0 var(--space-2); }
 .status-bar__tab {
   padding: .5rem 1.05rem; border-radius: var(--radius-pill);
@@ -40,7 +64,7 @@
   transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
 }
 .status-bar__tab:hover { color: var(--color-text); }
-.status-bar__tab--active { background: var(--color-primary); color: var(--color-on-primary); }
+.status-bar__tab--active { color: var(--color-on-primary); transition: color var(--duration-base) var(--ease-out) var(--delay-1); }
 /* Buscar: atajo global junto a la marca (botón Vista ⧉). Discreto hasta que lo señalas. */
 .status-bar__search {
   display: inline-flex; align-items: center; gap: var(--space-2); margin-left: calc(-1 * var(--space-3));
@@ -54,6 +78,20 @@
 /* Enfocado desde el Inicio (↑): el mismo foco invertido que las teclas y opciones. */
 .status-bar__search.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
 @media (max-width: 1100px) { .status-bar__search > span:not(.status-bar__search-glyph) { display: none; } }
+/* Letra grande en pantallas angostas (Legion Go): la barra no cabía y la hora se salía por la derecha.
+   Ceden la palabra «Buscar» (queda la lupa) y el nombre de lo abierto (queda el ▶). */
+@media (max-width: 1600px) {
+  [data-text-size="xlarge"] .status-bar__search > span:not(.status-bar__search-glyph),
+  [data-text-size="xlarge"] .status-bar__playing-title { display: none; }
+  [data-text-size="xlarge"] .status-bar { gap: var(--space-5); }
+}
+/* Muy grande en cualquier ancho: el nombre quedaba en «▶ M»; solo el ▶. */
+[data-text-size="xlarge"] .status-bar__playing-title { display: none; }
+/* En la Legion Go (1280) el nombre de lo abierto quedaba en «▸ H», que no dice nada: solo el ▶. */
+@media (max-width: 1350px) {
+  [data-text-size="large"] .status-bar__search > span:not(.status-bar__search-glyph),
+  .status-bar__playing-title { display: none; }
+}
 .status-bar__right { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--space-5); color: var(--color-text-muted); font-size: var(--text-sm); }
 .status-bar__right > * { flex: none; }
 .status-bar__right > .status-bar__playing { flex: 0 1 auto; }
@@ -99,7 +137,7 @@
 }
 .battery__body::after { content: ""; position: absolute; right: -4.5px; top: 30%; width: 2.5px; height: 40%; background: var(--color-text-muted); border-radius: 0 2px 2px 0; }
 .battery__level { position: absolute; inset: 1.5px auto 1.5px 1.5px; background: var(--color-text-muted); border-radius: 2px; transition: width var(--duration-slow) var(--ease-out); }
-.battery__body .icon--fill { position: relative; width: .8rem; height: .8rem; color: var(--color-text); filter: drop-shadow(0 0 2px var(--palette-ink-1000)); }
+.battery__body .icon--fill { position: relative; width: .8rem; height: .8rem; color: var(--color-text); filter: drop-shadow(0 0 2px var(--color-art-shade)); }
 .battery--low { color: var(--color-danger); }
 .battery--low .battery__body { border-color: var(--color-danger); }
 .battery--low .battery__level { background: var(--color-danger); }
@@ -113,6 +151,8 @@
   .status-bar__playing-title { max-width: 6.5rem; }
   .battery > span:not(.battery__body) { display: none; }
 }
+/* Letra Muy grande: el % de batería también cede su sitio (con márgenes Grande la hora se salía). */
+@media (max-width: 1920px) { [data-text-size="xlarge"] .battery > span:not(.battery__body) { display: none; } }
 @media (max-width: 1000px) {
   .status-bar { gap: var(--space-4); }
   .status-bar__wordmark, .status-bar .assistant { display: none; }

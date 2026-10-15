@@ -153,6 +153,8 @@ def router(d: Deps) -> APIRouter:
         try:
             key = catalog.stremio_client.login(email, password)
             count = catalog.watch.link_stremio(key)
+        except stremio_api.StremioUnreachable:
+            raise HTTPException(502, "No pude conectar con Stremio. Revisa tu conexión a internet e inténtalo de nuevo.")
         except stremio_api.StremioError as exc:
             text = str(exc)
             if text.startswith(("No pude conectar", "Stremio respondió HTTP")):

@@ -12,7 +12,7 @@ export const haptics = { enabled: true };
 
 export function rumble(name) {
   const effect = EFFECTS[name];
-  if (!haptics.enabled || !effect || !navigator.getGamepads) return;
+  if (!haptics.enabled || !effect || !globalThis.navigator?.getGamepads) return;
   for (const pad of navigator.getGamepads()) {
     pad?.vibrationActuator?.playEffect?.("dual-rumble", effect).catch(() => {});
   }

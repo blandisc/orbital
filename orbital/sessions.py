@@ -40,6 +40,10 @@ def memory_problem() -> str | None:
         return None
 
 
+
+class NotLaunchable(ValueError):
+    """Algo de la biblioteca que no se abre así (la entrada «Buscar», por ejemplo): es un 422, no un 500."""
+
 class Sessions:
     def __init__(self, config: Config, state: State, launcher: Launcher, store: ItemStore, events: EventBus,
                  runner_for: Callable, last_end: Callable[[], dict | None] = lambda: None) -> None:
@@ -85,6 +89,9 @@ class Sessions:
         item = self.store.get(item_id)
         if item is None:
             raise KeyError(item_id)
+        # Antes de cerrar lo que estaba abierto: si esto no se puede abrir, no se pierde el juego en curso.
+        if not self._launchable(item, runner_id):
+            raise NotLaunchable(f"{item.title} no tiene forma de lanzarse")
         if self.before_launch and not keep:
             self.before_launch(item.id)
         if item.source in ("stremio", "cinemeta") or item.id == "media:stremio":
@@ -117,9 +124,14 @@ class Sessions:
             self.launcher.open_uri(item.uri)
             self.launcher.track(item.id, item.title, None, steam_appid=item.steam_appid)
         else:
-            raise ValueError(f"{item.title} no tiene forma de lanzarse")
+            raise NotLaunchable(f"{item.title} no tiene forma de lanzarse")
         self.state.record_launch(item.id)
         return item
+
+    def _launchable(self, item: LibraryItem, runner_id: str | None) -> bool:
+        if item.source in ("stremio", "cinemeta", "geforcenow") or item.id == "media:stremio":
+            return True
+        return bool(item.argv or item.uri or self.runner_for(item, runner_id))
 
     @staticmethod
     def pin() -> int | None:

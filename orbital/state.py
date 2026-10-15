@@ -35,7 +35,8 @@ class State:
     def __init__(self, path: Path | None = None) -> None:
         self.path = path
         self._lock = threading.Lock()
-        self._data: dict = {"history": {}, "prefs": {}, "settings": {}, "seen": {}}
+        # "dismissed": sugerencias de «Para ti» que dijiste «No me interesa» (clave → cuándo).
+        self._data: dict = {"history": {}, "prefs": {}, "settings": {}, "seen": {}, "dismissed": {}}
         self._frozen = False  # no se pudo leer el archivo: se vive en memoria y NO se pisa
         if path and path.exists():
             self._load(path)
@@ -85,6 +86,7 @@ class State:
         self._data["history"] = history
         self._data["prefs"] = {k: v for k, v in self._data["prefs"].items() if isinstance(v, dict)}
         self._data["seen"] = {k: number(v) for k, v in self._data["seen"].items()}
+        self._data["dismissed"] = {k: number(v) for k, v in self._data["dismissed"].items()}
         self._data["settings"] = {k: v for k, v in self._data["settings"].items() if _setting_ok(k, v)}
 
     def _save(self) -> None:
@@ -176,6 +178,16 @@ class State:
                     del self._data["prefs"][item_id]
             self._save()
             return count
+
+    # --- «Para ti»: lo que no te interesa ----------------------------------------
+    def dismiss(self, key: str, now: float | None = None) -> None:
+        with self._lock:
+            self._data["dismissed"][key] = now or time.time()
+            self._save()
+
+    def dismissed(self) -> set[str]:
+        with self._lock:
+            return set(self._data["dismissed"])
 
     # --- ajustes (pantalla de Ajustes de Orbital) ------------------------------
     def settings(self) -> dict:

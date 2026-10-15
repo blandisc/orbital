@@ -3,6 +3,7 @@ import { Chip } from "./ui.js";
 import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { genres } from "../core/format.js";
 import { ICONS } from "../core/icons.js";
+import { motion } from "../core/motion.js";
 import { availability, episodeStates, titleActions, titleProgress } from "../core/watch.js";
 
 /**
@@ -13,7 +14,7 @@ import { availability, episodeStates, titleActions, titleProgress } from "../cor
  *     con su barra, los que no se han estrenado atenuados con su fecha;
  *   · A ve (Orbital elige la mejor fuente y arranca) · Y elige la fuente · B vuelve.
  */
-export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canPrefetch = () => false, onNotice = () => {} }) {
+export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () => {}, canPrefetch = () => false, onNotice = () => {} }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
@@ -50,6 +51,8 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
   let states = new Map(); // video_id -> { watched, progress, upcoming }
   let token = 0;
   let cancelExit = () => {};
+  // Sin logo (o si no carga: metahub da 404 a títulos sin logo), el nombre en texto: antes la ficha quedaba sin título.
+  logo.addEventListener("error", () => { logo.hidden = true; logo.removeAttribute("src"); name.hidden = false; });
 
   const kindOf = () => details?.kind || item?.kind;
   const seasons = () => details?.seasons ?? [];
@@ -63,8 +66,17 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
     else logo.removeAttribute("src");
     name.hidden = !!info.logo;
     const runtime = info.runtime || "";
+    // Cada dato con su «·» delante, en un solo bloque: el punto nunca queda colgando al final del
+    // renglón; si un dato empieza renglón, su punto se oculta (title--fact-start).
     mount(facts, [info.year, info.rating && `★ ${info.rating}`, runtime, genres(info.genres || []).join(", ")]
-      .filter(Boolean).flatMap((t, i) => (i ? [h("span", { class: "title__sep", "aria-hidden": "true" }, "·"), t] : [t])));
+      .filter(Boolean).map((t, i) => h("span", { class: "title__fact" }, i > 0 && h("span", { class: "title__sep", "aria-hidden": "true" }, "·"), t)));
+    requestAnimationFrame(() => {
+      let top = null;
+      for (const fact of facts.children) {
+        fact.classList.toggle("title__fact--start", top !== null && fact.offsetTop > top + 2);
+        top = fact.offsetTop;
+      }
+    });
     description.textContent = info.description || "";
     const lines = [
       info.cast?.length > 0 && h("span", {}, h("em", {}, "Con "), info.cast.slice(0, 4).join(", ")),
@@ -108,7 +120,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
     if (!tab) return;
     const left = tab.offsetLeft - tabs.offsetLeft;
     if (left < tabs.scrollLeft || left + tab.offsetWidth > tabs.scrollLeft + tabs.clientWidth) {
-      tabs.scrollTo({ left: Math.max(0, left - tabs.clientWidth / 2 + tab.offsetWidth / 2), behavior });
+      tabs.scrollTo({ left: Math.max(0, left - tabs.clientWidth / 2 + tab.offsetWidth / 2), behavior: motion(behavior) });
     }
     requestAnimationFrame(markTabEdges);
   }
@@ -182,7 +194,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
     else if (top < list.scrollTop + 24) next = top - 24;
     // Abajo, el enfocado queda por encima del fundido (el último 15 % de la lista): antes quedaba debajo, oscurecido.
     else if (bottom > list.scrollTop + list.clientHeight - room) next = bottom - list.clientHeight + room;
-    list.scrollTo({ top: Math.max(0, next), behavior: smooth ? "smooth" : "auto" });
+    list.scrollTo({ top: Math.max(0, next), behavior: motion(smooth ? "smooth" : "auto") });
   }
 
   function setIndex(i) {
@@ -212,7 +224,12 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
     const kind = kindOf();
     const id = details?.id || item.meta_id;
     if (kind !== "series") return { kind: "movie", id, video_id: id, title: details?.title || item.title, item };
-    const chosen = ep || episodeById(details?.resume?.video_id) || seasons().find((s) => s.season !== 0)?.episodes[0];
+    const resume = details?.resume;
+    // «Continuar T3 E1» con un episodio que Cinemeta aún no lista: se ve ESE, no T1 E1 desde el principio.
+    if (!ep && resume?.video_id && !episodeById(resume.video_id)) {
+      return { kind: "series", id, video_id: resume.video_id, title: `${details?.title || item.title} · ${resume.label || ""}`.replace(/ · $/, ""), item };
+    }
+    const chosen = ep || episodeById(resume?.video_id) || seasons().find((s) => s.season !== 0)?.episodes[0];
     if (!chosen) return null;
     const s = seasons().find((x) => x.episodes.includes(chosen));
     const label = s?.season === 0 ? `Especial E${chosen.episode}` : `T${s?.season} E${chosen.episode}`;
@@ -220,6 +237,9 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
   }
 
   const episodeById = (id) => seasons().flatMap((s) => s.episodes).find((e) => e.id === id) || null;
+
+  /** ¿Hay algo que ver? (una serie sin episodios no tiene fuente que elegir). */
+  const hasTarget = () => !!details && !details.error && !!target();
 
   function play(ep = null, { fromStart = false } = {}) {
     const t = target(ep);
@@ -236,12 +256,14 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
   }
 
   async function toggleList() {
-    const add = !details.in_library;
+    // Se recuerda de qué ficha era: si respondía lento y ya abriste otra, no se marcaba la otra.
+    const [mine, d, kind] = [token, details, kindOf()];
+    const add = !d.in_library;
     try {
-      await api.setInLibrary(kindOf(), details.id, add);
-      details.in_library = add;
-      renderActions();
-      onNotice(add ? `${details.title} está en Mi lista` : `Quité ${details.title} de Mi lista`);
+      await api.setInLibrary(kind, d.id, add);
+      d.in_library = add;
+      if (mine === token) { renderActions(); onChange(); }
+      onNotice(add ? `${d.title} está en Mi lista` : `Quité ${d.title} de Mi lista`);
     } catch (err) {
       onNotice(err.message, true);
     }
@@ -268,7 +290,10 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
     const keepEpisode = quiet && zone === "episodes" ? episode()?.id : null;
     if (!quiet) {
       details = null;
+      avail.hidden = true; // las de la ficha anterior no se quedan
+      mount(avail);
       status.textContent = "Cargando…";
+      status.classList.remove("title__status--error");
       status.hidden = false;
       render();
     }
@@ -286,8 +311,9 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
       // Al ponerse al día, sigues en el episodio que tenías enfocado (si aún existe).
       const resumeId = (keepEpisode && seasons().some((s) => s.episodes.some((e) => e.id === keepEpisode)))
         ? keepEpisode : data.resume?.video_id;
-      const at = Math.max(0, seasons().findIndex((s) => s.episodes.some((e) => e.id === resumeId)));
-      season = resumeId ? at : Math.max(0, seasons().findIndex((s) => s.season !== 0));
+      // Si el que ibas no está en la lista, la primera temporada normal (no Especiales).
+      const at = seasons().findIndex((s) => s.episodes.some((e) => e.id === resumeId));
+      season = at >= 0 ? at : Math.max(0, seasons().findIndex((s) => s.season !== 0));
       index = Math.max(0, seasons()[season]?.episodes.findIndex((e) => e.id === resumeId) ?? 0);
       status.hidden = true;
       if (kind === "series" && !seasons().length) {
@@ -295,14 +321,19 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
         status.hidden = false;
       }
       render();
-      onChange?.(); // el pie dice lo que hay ahora («Continuar T3 E5», Episodios…), no lo de «Cargando…»
+      onChange(); // la leyenda: «Continuar T8 E23», Episodios, Temporada
     } catch (err) {
       if (mine !== token) return;
       if (quiet) return; // no se pudo poner al día: se queda la ficha que estaba bien (no un «Reintentar»)
-      status.textContent = err.message;
+      // Sin conexión o Stremio caído: un aviso claro (ícono, qué pasó y qué hacer), no una línea gris.
+      // El servidor suele decir lo mismo («No pude cargar la ficha. Revisa tu conexión…»): sin repetirlo.
+      const detail = String(err.message || "").replace(/^No pude cargar la ficha\.?\s*/i, "") || "Revisa tu conexión e inténtalo de nuevo.";
+      mount(status, h("span", { class: "title__status-icon", "aria-hidden": "true" }, svg(ICONS.info)),
+        h("span", { class: "title__status-text" }, h("strong", {}, "No pude cargar la ficha"), h("span", {}, detail)));
+      status.classList.add("title__status--error");
       details = { error: true, kind };
       render();
-      onChange?.();
+      onChange();
     }
   }
 
@@ -370,7 +401,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
       else if (act === "right" && action < buttons.length - 1) { action++; moved = true; }
       else if (act === "down" && series) { zone = "episodes"; onMove?.(); render(); return true; }
       else if (act === "select" && buttons[action]) run(buttons[action]);
-      else if (act === "options" && !details.error) sources();
+      else if (act === "options" && hasTarget()) sources();
       else if ((act === "prevsection" || act === "nextsection") && series) {
         // Cambiar de temporada desde los botones baja a los episodios: si no, el cambio no se ve.
         setSeason(season + (act === "prevsection" ? -1 : 1));
@@ -395,14 +426,13 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange, canP
   }
 
   /** Pistas del pie según dónde está el foco. */
-  const hints = (g) => (zone === "episodes"
+  const hints = (g) => (details?.error ? [{ glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }]
+    : zone === "episodes"
     ? [{ glyph: g.select, label: "Ver" }, { glyph: g.options, label: "Fuente" }, { glyph: g.section, label: "Temporada" },
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : !details ? [{ glyph: g.back, label: "Atrás", end: true }] // cargando: nada que pulsar todavía
-    : [buttons[action] && { glyph: g.select, label: buttons[action].label.split(" · ")[0] },
-      // «Elegir fuente» solo si hay algo que ver (sin episodios o con error, no hacía nada)
-      !details.error && (kindOf() !== "series" || seasons().length) && { glyph: g.options, label: "Elegir fuente" },
+    : [{ glyph: g.select, label: buttons[action]?.label?.split(" · ")[0] || "Ver" }, hasTarget() && { glyph: g.options, label: "Elegir fuente" },
       kindOf() === "series" && seasons().length && { glyph: g.rows, label: "Episodios" },
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));

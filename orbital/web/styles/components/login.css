@@ -1,22 +1,18 @@
 /* Login: conectar Stremio con el mando. Los campos arriba, el teclado grande abajo (se acierta
    desde el sofá); el campo activo con anillo, la contraseña con puntos (Y la muestra). */
-.login {
-  position: fixed; inset: 0; z-index: var(--z-overlay);
-  display: grid; grid-template-rows: auto auto 1fr; gap: var(--space-6); justify-items: center;
-  padding: calc(var(--space-10) + var(--safe-y)) var(--page-gutter) calc(3.4rem + var(--space-4) + var(--safe-y));
-  background: var(--color-tinted-bg);
-  animation: fade-in var(--duration-slow) var(--ease-out);
+/* El marco (fondo, margen, entrada y salida) es .screen y el encabezado ScreenHead (ui.css). */
+/* Las teclas, a la medida de la pantalla (como Buscar): con letra grande la última fila quedaba bajo el pie. */
+.login { display: grid; grid-template-rows: auto auto 1fr; gap: var(--space-6); justify-items: center; --key-height: min(3.2rem, 6vh); }
+/* Poca altura con letra Grande o Muy grande: fuera la explicación y menos aire, para que quepa el teclado. */
+@media (max-height: 820px) {
+  [data-text-size="large"] .login, [data-text-size="xlarge"] .login { gap: var(--space-3); }
+  [data-text-size="large"] .login__head .screen-head__lead, [data-text-size="xlarge"] .login__head .screen-head__lead { display: none; }
 }
-.login--leaving { animation: fade-out var(--duration-exit) var(--ease-in) forwards; }
 /* El teclado es el componente común (keyboard.css): aquí solo dónde va y cómo espera al conectar. */
 .login { --key-height: min(2.85rem, 6vh); } /* a 720 de alto el teclado cabe sobre el pie (como en Buscar) */
 .login .keyboard { align-self: end; min-height: 0; }
 .login--busy .keyboard { opacity: .5; pointer-events: none; }
 
-.login__head { display: grid; gap: var(--space-2); justify-items: center; text-align: center; max-width: 46rem; }
-.login__eyebrow { color: var(--color-accent); font-size: var(--text-sm); font-weight: var(--weight-medium); }
-.login__title { font-family: var(--font-sans); font-size: var(--text-2xl); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display); }
-.login__lead { color: var(--color-text-muted); font-size: var(--text-md); line-height: 1.5; }
 
 .login__form { display: grid; gap: var(--space-3); width: min(40rem, 100%); }
 .login__field {
@@ -27,11 +23,10 @@
 .login__field--active { background: var(--color-fill-hover); box-shadow: inset 0 0 0 2px var(--color-focus); }
 .login__label { color: var(--color-text-muted); font-size: var(--text-xs); font-weight: var(--weight-medium); }
 .login__value { min-height: 1.6em; font-size: var(--text-lg); font-weight: var(--weight-medium); white-space: pre; overflow: hidden; text-overflow: ellipsis; }
-.login__field--secret .login__value { letter-spacing: .12em; }
+.login__field--secret .login__value { letter-spacing: var(--tracking-secret); }
 /* El cursor de escribir: el único parpadeo permitido (es lo que dice «aquí se escribe»). */
 .login__caret { display: inline-block; width: 2px; height: 1.05em; margin-left: 2px; vertical-align: text-bottom; background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
 /* Dos renglones fijos: un error largo ya no empuja el teclado debajo del pie de controles. */
 .login__message { min-height: 2.8em; max-height: 2.8em; overflow: hidden; color: var(--color-warning); font-size: var(--text-sm); text-align: center; text-wrap: balance; }
 
-@media (max-height: 760px) { .login { gap: var(--space-3); } }
-@media (max-height: 640px) { .login__lead { display: none; } }
+@media (max-height: 640px) { .login { gap: var(--space-3); } .login__head .screen-head__lead { display: none; } }

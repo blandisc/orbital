@@ -16,6 +16,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from . import system
 
@@ -88,6 +89,31 @@ def mark_clean_exit(profile_dir: Path) -> None:
         log.debug("No se pudo ajustar %s: %s", prefs, exc)
 
 
+def allow_microphone(profile_dir: Path, url: str) -> bool:
+    """Deja el micrófono permitido para la página de Orbital (y solo para ella) en su perfil: dictar
+    en Buscar ya no muestra el aviso «¿Permitir el micrófono?» (con el mando no hay cómo contestarlo).
+    Es la misma preferencia que guarda Edge al elegir «Permitir»; si el perfil aún no existe, se crea."""
+    parts = urlsplit(url)
+    if not parts.scheme or not parts.netloc:
+        return False
+    origin = f"{parts.scheme}://{parts.netloc}"
+    prefs = profile_dir / "Default" / "Preferences"
+    try:
+        data = json.loads(prefs.read_text(encoding="utf-8")) if prefs.exists() else {}
+        exceptions = data.setdefault("profile", {}).setdefault("content_settings", {}).setdefault("exceptions", {})
+        mic = exceptions.setdefault("media_stream_mic", {})
+        key = f"{origin},*"
+        if mic.get(key, {}).get("setting") == 1:
+            return True
+        mic[key] = {"last_modified": str(int(time.time() * 1_000_000)), "setting": 1}  # 1 = Permitir
+        prefs.parent.mkdir(parents=True, exist_ok=True)
+        prefs.write_text(json.dumps(data), encoding="utf-8")
+        return True
+    except (OSError, ValueError) as exc:
+        log.debug("No se pudo permitir el micrófono en %s: %s", prefs, exc)
+        return False
+
+
 def build_command(browser: str, url: str, profile_dir: Path) -> list[str]:
     return [browser, f"--user-data-dir={profile_dir}", "--kiosk", url, *FLAGS]
 
@@ -151,6 +177,7 @@ class KioskWindow:
             self.profile_dir.mkdir(parents=True, exist_ok=True)
             close_orphans(self.profile_dir)
             mark_clean_exit(self.profile_dir)
+            allow_microphone(self.profile_dir, self.url)
             self._process = subprocess.Popen(build_command(exe, self.url, self.profile_dir),
                                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             log.info("Interfaz abierta (pid %s)", self._process.pid)

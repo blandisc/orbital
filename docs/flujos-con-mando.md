@@ -12,7 +12,7 @@ Auditoría de todo lo que una persona puede hacer, y si se puede hacer **solo co
 | Encender la Legion Go y llegar a Orbital | Acceso directo de inicio (`pythonw -m orbital`) | ✅ |
 | Moverse entre juegos y filas | D-pad / stick; LT/RT saltan de 5 en 5 | ✅ |
 | Cambiar de sección (Inicio, Juegos, Películas y series, Apps) | LB / RB | ✅ |
-| Buscar juegos, películas y series desde cualquier lugar | Vista (⧉) o la píldora "Buscar". Teclado grande: A escribe, X borra, Y espacio, **B vuelve**; Borrar todo (se vuelve Deshacer), Atrás, Dictar y Buscar. Con la caja vacía, tus búsquedas recientes. Resultados por grupo: Tus juegos y apps, Películas, Series. Con un teclado físico se escribe directo | ✅ |
+| Buscar juegos, películas y series desde cualquier lugar | Vista (⧉) o la píldora "Buscar". Teclado grande: A escribe, X borra, Y espacio, **B vuelve**; Borrar todo (se vuelve Deshacer), Atrás, Dictar y Buscar. Con la caja vacía, tus búsquedas recientes. Resultados por grupo: En tu consola (juegos y apps), Películas, Series. Con un teclado físico se escribe directo | ✅ |
 | Películas y series | Abre en "Seguir viendo" ("T8 E23 · quedan 10 min"; A pone el episodio en el que ibas, directo; Y → Ver la ficha o Quitar de Seguir viendo); los catálogos debajo abren la ficha | ✅ |
 | Inicio | "Continuar": tus juegos y videos juntos, por fecha; lo que está abierto va primero con la píldora "Abierto" | ✅ (nuevo) |
 | Volver al inicio | B | ✅ |
@@ -45,7 +45,7 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 | Situación | Qué pasa | Estado |
 |---|---|---|
 | Abres un juego de un emulador | Orbital se queda ENCIMA desde antes de abrir el emulador (nunca se asoma). Pantalla de carga: la portada en órbita sobre estrellas que avanzan. Cuando el juego está listo **y en pantalla completa** (espera hasta 4 s a que deje de cambiar de tamaño), salto a velocidad luz y Orbital se funde sobre el juego: sin brincos. B la salta | ✅ (nuevo) |
-| Abres otra cosa con un juego abierto | Te pregunta "¿Cerrar X?": "Volver a X" (primero), "Cerrar y abrir" o "Abrir sin cerrar". Un video se cierra sin preguntar (su avance queda guardado) | ✅ (nuevo) |
+| Abres otra cosa con un juego abierto | Te pregunta "¿Cerrar X?": "Volver a X" (primero) o "Cerrar y abrir". Un video se cierra sin preguntar (su avance queda guardado) | ✅ (nuevo) |
 | Dejas un video en pausa | A los 15 min se cierra solo; sigues donde te quedaste (`sessions.video_idle_minutes`) | ✅ (nuevo) |
 | Dejas un juego congelado (saliste con Home) | A la hora se cierra solo y te avisa; lo no guardado se pierde (`sessions.game_idle_minutes`, 0 = nunca) | ✅ (nuevo) |
 | Abres un juego y su ventana aparece detrás de Orbital (Windows lo hace a veces) | Orbital se la pasa al frente en cuanto existe, solo si Orbital sigue al frente | ✅ (nuevo) |
@@ -108,7 +108,7 @@ Todo funciona igual con toques o con el control; Orbital cambia solo según lo q
 | Actualizar biblioteca, sonidos, mostrar ocultos | ☰ | ✅ |
 | Salir al escritorio y volver | ☰ → Salir al escritorio; Home para volver | ✅ |
 | Suspender, reiniciar, apagar | ☰ → Apagado. Reiniciar y Apagar piden confirmar (Cancelar primero) y avisan si hay un juego abierto | ✅ |
-| Tu consola | La primera vez (y en ☰ → Ajustes → Revisar mi consola): qué encontró Orbital (Steam, emuladores, ES-DE, Stremio, reproductor, Alexa) y cómo resolver lo que falta | ✅ (nuevo) |
+| Tu consola | La primera vez (y en ☰ → Ajustes → Mantenimiento → Tu consola): qué encontró Orbital (Steam, emuladores, ES-DE, Stremio, reproductor, Alexa) y cómo resolver lo que falta | ✅ (nuevo) |
 | Conectar Stremio | ☰ → Ajustes → Cuentas → Stremio: correo y contraseña con el teclado en pantalla (Y muestra la contraseña, LT/RT cambian de campo). Ya no hace falta la PC | ✅ (nuevo) |
 | Ajustes | ☰ → Ajustes: Reproducción (idioma del audio, subtítulos, calidad, tamaño de subtítulos), Pantalla (tamaño del texto, márgenes de la TV, reducir movimiento), Sonido y vibración, Cuentas. A o ◀/▶ cambian el valor sin cerrar el menú | ✅ (nuevo) |
 | Encender Orbital | Animación de arranque (planeta y órbitas) mientras se prepara la biblioteca; al volver de un juego, la interfaz "aterriza" | ✅ (nuevo) |

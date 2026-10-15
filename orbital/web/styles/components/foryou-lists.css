@@ -1,0 +1,5 @@
+/* «Para ti» · listas (js/components/foryou-lists.js): las piezas de una vista con secciones
+   (rail.css, browse.css, detail-panel.css), como Juegos. Aquí solo lo propio. */
+.foryou-lists { height: 100%; }
+/* Una lista que explica algo (Conectar Trakt, agregar claves): el texto y su botón. */
+.foryou-lists__info { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-5); }

@@ -77,13 +77,16 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
   display: none; align-items: center; gap: var(--space-2); min-height: 3.2rem; padding: 0 var(--space-5) 0 var(--space-4);
   border-radius: var(--radius-pill); background: var(--color-fill-hover); color: var(--color-text);
   font-size: var(--text-md); font-weight: var(--weight-medium);
-  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(var(--blur-glass)); backdrop-filter: blur(var(--blur-glass));
 }
 .touch-back svg { width: 1.3rem; height: 1.3rem; }
 [data-input="touch"][data-overlay="true"] .touch-back { display: inline-flex; animation: fade-in var(--duration-base) var(--ease-out); }
 /* Dedos: objetivos de al menos ~44 px. */
 [data-input="touch"] .button, [data-input="touch"] .status-bar__tab, [data-input="touch"] .sheet__item,
-[data-input="touch"] .status-bar__search, [data-input="touch"] .title__tab { min-height: 2.9rem; } /* ~44 px: el dedo atina */
+[data-input="touch"] .status-bar__search, [data-input="touch"] .assistant, [data-input="touch"] .title__tab { min-height: 2.9rem; }
+[data-input="touch"] .status-bar__search, [data-input="touch"] .assistant { min-width: 2.9rem; justify-content: center; }
+/* ‹ › de un ajuste: cada flecha se toca por separado. */
+[data-input="touch"] .sheet__chev { min-width: 2.9rem; min-height: 2.9rem; opacity: .8; }
 
 /* Aterrizaje: al terminar el arranque o al volver de un juego, la interfaz entra desde un poco
    más cerca y se asienta (como al salir de un juego en PS5), en vez de aparecer de golpe. */

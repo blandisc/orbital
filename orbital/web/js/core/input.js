@@ -7,7 +7,7 @@ export const KEYMAP = {
   ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
   Enter: "select", " ": "select", Escape: "back", Backspace: "back",
   x: "alt", y: "options", o: "options", m: "menu", ContextMenu: "options",
-  PageUp: "pageleft", PageDown: "pageright", F5: "refresh",
+  PageUp: "pageleft", PageDown: "pageright", F5: "refresh", F2: "menu", F3: "options",
   q: "prevsection", e: "nextsection", s: "search", "/": "search",
 };
 
@@ -26,6 +26,11 @@ export const GLYPHS = {
   gamepad: { select: "A", back: "B", alt: "X", options: "Y", menu: "☰", search: "⧉", rows: "↕", page: "LT RT", section: "LB RB", home: "Home" },
   keyboard: { select: "Enter", back: "Esc", alt: "X", options: "Y", menu: "M", search: "S", rows: "↑↓", page: "RePág AvPág", section: "Q E" },
 };
+// Escribiendo con un teclado físico las letras son texto: M, X y Y no pueden ser atajos ahí. Enter
+// busca o avanza, Tab cambia de campo y las acciones van a teclas que no escriben.
+GLYPHS.typing = { ...GLYPHS.keyboard, alt: "Retroceso", options: "F3", menu: "F2", page: "Tab" };
+/** Los glifos de la leyenda mientras se escribe (con mando no cambian). */
+export const typingGlyphs = (g) => (g === GLYPHS.keyboard ? GLYPHS.typing : g);
 // Con el dedo no hay botones que enseñar: los glifos se ocultan con CSS ([data-input="touch"]).
 GLYPHS.touch = GLYPHS.keyboard;
 
@@ -126,6 +131,9 @@ export class Repeater {
   }
 }
 
+// Escribiendo: Retroceso borra, Enter busca o avanza de campo, Tab cambia de campo.
+const TYPING_KEYS = { Backspace: "\b", Enter: "\n", Tab: "\t" };
+
 /** ¿Es una tecla de texto? (para escribir en Buscar con un teclado físico) */
 export const isTextKey = (event) => event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey;
 
@@ -136,16 +144,20 @@ export const isTextKey = (event) => event.key.length === 1 && !event.ctrlKey && 
  */
 export function createInput({ onAction, onModality, onText = null, typing = () => false }) {
   document.addEventListener("keydown", (event) => {
-    if (onText && typing() && (isTextKey(event) || event.key === "Backspace" || event.key === "Enter")) {
+    if (onText && typing() && (isTextKey(event) || TYPING_KEYS[event.key])) {
       event.preventDefault();
+      // Escribiendo solo se repite borrar: un Enter sostenido saltaba a los resultados y abría el primero.
+      if (event.repeat && event.key !== "Backspace") return;
       onModality("keyboard");
-      // Enter al escribir: «listo» (buscar / siguiente campo), no pulsar la tecla enfocada en pantalla.
-      onText(event.key === "Backspace" ? "\b" : event.key === "Enter" ? "\n" : event.key);
+      onText(TYPING_KEYS[event.key] || event.key);
       return;
     }
     const action = keyToAction(event.key);
     if (!action) return;
     event.preventDefault();
+    // Mantener Enter o Esc no repite: como en el mando, solo se repite moverse (antes un Enter sostenido
+    // en ☰ → Apagar mandaba suspender y luego abría un juego).
+    if (event.repeat && !REPEATABLE.has(action)) return;
     onModality("keyboard");
     onAction(action, { repeat: event.repeat });
   });

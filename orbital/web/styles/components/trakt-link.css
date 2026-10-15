@@ -1,0 +1,31 @@
+/* Conectar Trakt (js/components/trakt-link.js): una caja al centro con el código grande. */
+/* El marco (fondo, margen, entrada y salida) es .screen y el encabezado ScreenHead (ui.css). */
+.trakt-link { display: grid; place-items: center; }
+.trakt-link__box {
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-5); width: min(46rem, 100%);
+  padding: var(--space-8); border-radius: var(--radius-2xl); text-align: center;
+  background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-hairline), var(--shadow-overlay);
+  animation: rise-in var(--duration-enter) var(--ease-out);
+}
+.trakt-link__step { color: var(--color-text-muted); font-size: var(--text-md); line-height: 1.5; }
+.trakt-link__step strong { color: var(--color-text); font-weight: var(--weight-bold); }
+.trakt-link__code {
+  display: flex; gap: var(--space-3); min-height: 5.6rem; padding: var(--space-4) var(--space-6); border-radius: var(--radius-lg);
+  background: var(--color-bg); font-family: var(--font-sans); font-size: var(--text-display); font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+.trakt-link__char { min-width: .8em; animation: rise-in var(--duration-enter) var(--ease-out) both; }
+.trakt-link__char:nth-child(2) { animation-delay: var(--stagger); } .trakt-link__char:nth-child(3) { animation-delay: calc(var(--stagger) * 2); }
+.trakt-link__char:nth-child(4) { animation-delay: calc(var(--stagger) * 3); } .trakt-link__char:nth-child(5) { animation-delay: calc(var(--stagger) * 4); }
+.trakt-link__char:nth-child(n+6) { animation-delay: calc(var(--stagger) * 5); }
+.trakt-link__placeholder { color: var(--color-text-faint); }
+.trakt-link__status { display: inline-flex; align-items: center; gap: var(--space-3); min-height: 1.6em; color: var(--color-text-muted); font-size: var(--text-md); }
+/* Esperando: un punto que respira (como «te escuché»), sin girar nada. */
+.trakt-link__status--waiting::before {
+  content: ""; width: .7rem; height: .7rem; border-radius: 50%; background: var(--color-text-muted);
+  animation: trakt-breathe var(--duration-breathe) var(--ease-out) infinite alternate;
+}
+@keyframes trakt-breathe { from { opacity: .25; transform: scale(.8); } }
+.trakt-link__status--error { color: var(--color-danger); }
+.trakt-link__list { list-style: none; padding: 0; display: grid; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); text-align: left; }
+.trakt-link__list li::before { content: "✓"; margin-right: var(--space-3); color: var(--color-text); }

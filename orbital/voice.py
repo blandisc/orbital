@@ -326,6 +326,8 @@ class VoiceController:
             runner_id = match.id
         if item.source == "stremio":
             return self._watch_item(item)
+        if item.source == "search":  # «abre buscar»: la búsqueda de Orbital (no se «lanza»; cerraba el juego)
+            return VoiceResult("Abriendo la búsqueda.", events=[self._show_view({"buscar": ""}, "Buscar")])
         self.catalog.sessions.launch(item.id, runner_id)
         return VoiceResult(f"Abriendo {item.title} con {runner}." if runner else f"Abriendo {item.title}.")
 

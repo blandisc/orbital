@@ -23,7 +23,8 @@ export function consoleGames(rows, consoleId, filter = "recent") {
   if (filter === "favorites") return items.filter((i) => i.favorite).sort(byTitle);
   if (filter === "az") return [...items].sort(byTitle);
   if (filter === "added") return [...items].sort((a, b) => (b.added || 0) - (a.added || 0) || byTitle(a, b));
-  if (filter === "unplayed") return items.filter((i) => !i.last_played).sort(byTitle);
+  // Con horas jugadas (Steam a veces no da la fecha) no es «sin jugar».
+  if (filter === "unplayed") return items.filter((i) => !i.last_played && !(i.playtime > 0)).sort(byTitle);
   const played = items.filter((i) => i.last_played).sort((a, b) => b.last_played - a.last_played);
   return [...played, ...items.filter((i) => !i.last_played).sort(byTitle)];
 }

@@ -61,6 +61,20 @@ def _no_real_screenshots(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_real_para_ti(monkeypatch):
+    """Ninguna prueba habla con Trakt, TMDB, RAWG o la tienda de Steam de verdad (test_foryou pone sus dobles)."""
+    from orbital import foryou
+    from orbital.library import rawg, tmdb, trakt
+
+    def offline(url, **kwargs):
+        raise OSError(f"Sin conexión (pruebas): {url}")
+
+    for module in (trakt, tmdb, rawg):
+        monkeypatch.setattr(module, "http_json", offline)
+    monkeypatch.setattr(foryou.ForYou, "logo_dark", lambda self, url: None)
+
+
+@pytest.fixture(autouse=True)
 def _no_real_stremio(monkeypatch):
     """Ninguna prueba habla con Stremio de verdad (un login de prueba salía a internet)."""
     from orbital.library import stremio_api

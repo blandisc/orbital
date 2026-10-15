@@ -13,14 +13,16 @@ import { SectionHead } from "./ui.js";
  * Callbacks: onFocus(target) al cambiar de pieza; onPick(target) al tocarla con el dedo o el ratón;
  * onAction(action, target) para los botones del destacado. target = { kind, item?, console? }.
  */
-/** Sin nada jugado todavía: con juegos, invita a Juegos; sin ningún juego, a revisar qué falta. */
-function emptyFeature(hasGames) {
+/** Sin nada jugado todavía: con juegos, invita a Juegos; si los ocultaste todos, a mostrarlos; sin
+ * ningún juego, a revisar qué falta (antes decía «Aún no encontré juegos» con 18 ocultos). */
+function emptyFeature(hasGames, hidden = 0) {
+  const [title, detail] = hasGames ? ["Empieza a jugar", "Lo que abras aparecerá aquí para seguir donde te quedaste."]
+    : hidden > 0 ? [`Tienes ${hidden} juego${hidden === 1 ? "" : "s"} oculto${hidden === 1 ? "" : "s"}`, "Pulsa para mostrarlos otra vez."]
+      : ["Aún no encontré juegos", "Te digo qué revisar: carpetas de juegos, Steam y emuladores."];
   return h("div", { class: ["tile", "tile--feature", "tile--empty"], "data-focus-id": "feature" },
     h("div", { class: "tile--feature__body" },
-      h("h2", { class: "tile--feature__title" }, hasGames ? "Empieza a jugar" : "Aún no encontré juegos"),
-      h("span", { class: "tile--feature__detail" }, hasGames
-        ? "Lo que abras aparecerá aquí para seguir donde te quedaste."
-        : "Te digo qué revisar: carpetas de juegos, Steam y emuladores.")));
+      h("h2", { class: "tile--feature__title" }, title),
+      h("span", { class: "tile--feature__detail" }, detail)));
 }
 
 export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
@@ -54,7 +56,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   /** Qué es lo enfocado (no dónde está): un juego o una consola. */
   const identity = (t) => (t?.item?.id ?? (t?.console ? `console:${t.console.id ?? t.console.system ?? t.console.name}` : null));
 
-  function render(rows, { runningId = null, glyphs = {} } = {}) {
+  function render(rows, { runningId = null, glyphs = {}, hidden = 0 } = {}) {
     options = { runningId, glyphs };
     // Al recargar (volver de un juego, deshacer), lo enfocado puede cambiar de lugar: el foco lo sigue
     // a él, no a la posición (antes quedaba sobre otro juego y Y abría el menú equivocado).
@@ -70,8 +72,9 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
 
     const feature = model.feature
       ? FeatureTile(model.feature, { runningId, glyphs, onPress: pick("feature"), onAction: (action) => onAction?.(action, targets.get("feature")) })
-      : emptyFeature(model.consoles.length > 0);
-    targets.set("feature", model.feature ? { kind: "item", item: model.feature } : { kind: "empty", setup: !model.consoles.length });
+      : emptyFeature(model.consoles.length > 0, hidden);
+    targets.set("feature", model.feature ? { kind: "item", item: model.feature }
+      : { kind: "empty", setup: !model.consoles.length && !hidden, unhide: !model.consoles.length && hidden > 0 });
     const cards = model.cards.map((item, i) => {
       targets.set(`card:${i}`, { kind: "item", item });
       return WideTile(item, { focusId: `card:${i}`, onPress: pick(`card:${i}`) });
@@ -124,16 +127,20 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     const node = consolesTrack.querySelector(`[data-focus-id="${focusId}"]`);
     const viewport = consolesTrack.parentElement;
     if (!node) return;
-    const left = node.offsetLeft;
-    const right = left + node.offsetWidth;
+    // El ancho útil es el de la pista (el visor tiene relleno) y la enfocada crece al escalar:
+    // la última consola quedaba recortada por la derecha.
+    const room = consolesTrack.clientWidth;
+    const grow = node.offsetWidth * .1;
+    const left = node.offsetLeft - grow;
+    const right = node.offsetLeft + node.offsetWidth + grow;
     const shift = Number(consolesTrack.dataset.shift || 0);
     let next = shift;
-    if (right - shift > viewport.clientWidth) next = right - viewport.clientWidth;
-    if (left - shift < 0) next = left;
+    if (right - shift > room) next = right - room;
+    if (left - shift < 0) next = Math.max(0, left);
     consolesTrack.dataset.shift = String(next);
     consolesTrack.style.transform = `translateX(${-next}px)`;
     // ¿Hay consolas fuera de la vista? El borde se desvanece y asoma la siguiente (si no, no se sabe).
-    const more = consolesTrack.scrollWidth - next - viewport.clientWidth > 4;
+    const more = consolesTrack.scrollWidth - next - room > 4;
     viewport.classList.toggle("home__consoles-viewport--more", more);
     viewport.classList.toggle("home__consoles-viewport--before", next > 4);
   }
@@ -169,8 +176,19 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     return false;
   }
 
+  /** Ya no hay más hacia allá: lo enfocado se empuja un poco (con teclado o sin vibración no se notaba nada). */
+  function bump(direction) {
+    const node = el.querySelector(`[data-focus-id="${focusId}"]`);
+    if (!node || !["left", "right", "up", "down"].includes(direction)) return;
+    const cls = `tile--bump-${direction}`;
+    node.classList.remove("tile--bump-left", "tile--bump-right", "tile--bump-up", "tile--bump-down");
+    void node.offsetWidth;
+    node.classList.add(cls);
+    node.addEventListener("animationend", () => node.classList.remove(cls), { once: true });
+  }
+
   return {
-    el, render, handle, focus,
+    el, render, handle, focus, bump,
     show: () => {
       el.hidden = false;
       for (const node of outside()) node.classList.toggle("is-focused", node.dataset.focusId === focusId);

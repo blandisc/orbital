@@ -1,6 +1,8 @@
 import { api } from "../core/api.js";
 import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
+import { motion } from "../core/motion.js";
+import { typingGlyphs } from "../core/input.js";
 import { storage } from "../core/storage.js";
 import { Card } from "./card.js";
 import { createKeyboard } from "./keyboard.js";
@@ -31,7 +33,7 @@ const DEBOUNCE_MS = 260;
 const RECENT_KEY = "orbital.search.recent";
 const RECENT_MAX = 8;
 
-const GROUPS = { game: "Tus juegos y apps", movie: "Películas", series: "Series" };
+const GROUPS = { game: "En tu consola", movie: "Películas", series: "Series" };
 const groupOf = (item) => (item.kind === "movie" || item.kind === "series" ? item.kind : "game");
 
 /** Juegos primero, luego películas y luego series; cada grupo en el orden de relevancia que trae. */
@@ -67,6 +69,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   let resultIndex = 0;
   let timer;
   let token = 0;
+  let pending = ""; // la búsqueda que ya va en camino (no se repite al pulsar Buscar otra vez)
+  let typedPhysically = false; // con teclado físico, Enter busca en vez de pulsar la tecla en pantalla
   let listening = null;
   let cancelExit = () => {};
 
@@ -76,6 +80,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
 
   function render() {
     query.textContent = text;
+    query.scrollLeft = query.scrollWidth; // larga: se ve lo último que escribiste
     placeholder.hidden = !!text;
     const undo = !text && !!cleared;
     if (undo !== shownCleared) { shownCleared = undo; keyboard.setLayout(layout(undo, dictateGlyph)); }
@@ -135,10 +140,11 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
 
   const count = (n) => `${n} resultado${n === 1 ? "" : "s"} · ↑ para elegir`;
 
-  function schedule() {
+  function schedule(delay = DEBOUNCE_MS) {
     clearTimeout(timer);
     const q = text.trim();
     token++;
+    pending = "";
     if (q.length < MIN_CHARS) {
       if (q) showResults([]);
       else showRecent();
@@ -151,17 +157,20 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     setHint(local.length ? `${count(local.length)} · buscando películas y series…` : "Buscando…");
     timer = setTimeout(async () => {
       const mine = ++token;
+      pending = q;
       try {
         const data = await api.stremioSearch(q);
         if (mine !== token) return;
+        pending = "";
         showResults([...local, ...data.results]);
         setHint(items.length ? count(items.length) : `Nada con «${q}». Prueba con otra palabra o menos letras.`);
       } catch (err) {
         if (mine !== token) return;
+        pending = "";
         // Sin internet: tus juegos siguen funcionando; se dice claro y sin jerga.
         setHint(local.length ? `${count(local.length)} · sin conexión para películas y series` : "Sin conexión para películas y series");
       }
-    }, DEBOUNCE_MS);
+    }, delay);
   }
 
   let cleared = ""; // lo que había antes de "Borrar todo" (para "Deshacer")
@@ -176,7 +185,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       else if (text) [cleared, text] = [text, ""];
     } else {
       cleared = "";
-      if (key === "delete") text = text.slice(0, -1);
+      // Por caracteres completos: un emoji a medias rompía la búsqueda («URI malformed»).
+      if (key === "delete") text = Array.from(text).slice(0, -1).join("");
       else if (key === "space") text = text && !text.endsWith(" ") ? `${text} ` : text;
       else text += key.toLowerCase();
     }
@@ -192,13 +202,23 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       render();
       return;
     }
-    if (text.trim().length >= MIN_CHARS) schedule();
-    else setHint("Escribe al menos 2 letras.");
+    // Si ya va en camino, se espera (antes cada pulsación la tiraba y volvía a empezar); si no, ya.
+    const q = text.trim();
+    if (q.length < MIN_CHARS) setHint("Escribe al menos 2 letras.");
+    else if (pending !== q) schedule(0);
   }
 
-  /** Teclado físico: una letra, o "\b" para borrar. */
+  /** Teclado físico: una letra, "\b" para borrar, "\n" (Enter) para ver los resultados. */
   function type(char) {
-    if (el.hidden) return;
+    if (el.hidden || el.classList.contains("search--leaving")) return;
+    if (char === "\t") return;
+    if (char === "\n") {
+      if (zone === "results") open();
+      else if (typedPhysically) goToResults();
+      else keyboard.press(); // navegando el teclado en pantalla con las flechas: Enter pulsa la tecla
+      return;
+    }
+    typedPhysically = true;
     if (char === "\b") press("delete");
     else if (char === "\n") { // Enter: a los resultados; ya en ellos, abre el enfocado
       if (zone === "results") open();
@@ -244,6 +264,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   }
 
   function moveKeys(dr, dc) {
+    typedPhysically = false;
     // Por arriba del teclado están los resultados.
     if (keyboard.move(dr, dc) === "up" && items.length) zone = "results";
     render();
@@ -261,8 +282,11 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     if (action === "alt") { press("delete"); return true; }
     if (action === "options") { press("space"); return true; }
     if (action === "menu") { dictate(); return true; }
-    if (action === "pageleft" || action === "pageright") { // LT/RT: saltar entre teclado y resultados
-      zone = action === "pageleft" && items.length ? "results" : "keys";
+    // Atajo para buscar: RT (AvPág) busca ya desde cualquier tecla y salta a los resultados; LT
+    // (RePág) regresa al teclado. Antes había que llegar con la cruceta hasta la tecla «Buscar».
+    if (action === "pageright") { onMove?.(); goToResults(); return true; }
+    if (action === "pageleft") {
+      zone = "keys";
       onMove?.();
       render();
       return true;
@@ -275,7 +299,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
         open();
         return true;
       } else return true; // LB/RB: nada que hacer aquí (ni sonido)
-      focusables[resultIndex]?.scrollIntoView({ inline: "nearest", behavior: "smooth", block: "nearest" });
+      focusables[resultIndex]?.scrollIntoView({ inline: "nearest", behavior: motion(), block: "nearest" });
     } else if (action === "up") moveKeys(-1, 0);
     else if (action === "down") moveKeys(1, 0);
     else if (action === "left") moveKeys(0, -1);
@@ -307,14 +331,16 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   /** Pistas del pie mientras la búsqueda está abierta. */
   // Lo que hace falta saber: escribir, dictar (con un botón, sin ir hasta la tecla) y volver. X y Y
   // (borrar, espacio) siguen como atajos sin llenar el pie.
-  const hints = (g) => {
+  const hints = (pad) => {
+    const g = typingGlyphs(pad);
     if (g.menu !== dictateGlyph) { // el mando cambió (Legion, Xbox, teclado): la tecla Dictar enseña su botón
       dictateGlyph = g.menu || "";
       keyboard.setLayout(layout(shownCleared, dictateGlyph));
     }
-    const page = g.page?.split(" ") ?? [];
+    const [, go] = String(pad?.page || "").split(" "); // RT con mando, AvPág con teclado
     return [
       { glyph: g.select, label: zone === "results" ? "Abrir" : "Escribir" },
+      zone === "keys" && go && { glyph: go, label: "Buscar" },
       g.menu && { glyph: g.menu, label: "Dictar" }, // otra vez: deja de escuchar
       // LT salta a los resultados (antes había que subir seis filas del teclado sin saberlo).
       zone === "keys" && items.length && page[0] && { glyph: page[0], label: "Resultados" },

@@ -1,49 +1,36 @@
-import { h, mount, svg } from "../core/dom.js";
-import { shortAgo } from "../core/format.js";
+import { h, mount } from "../core/dom.js";
+import { duration, lastPlayed, shortAgo } from "../core/format.js";
 import { consoleGames, FILTERS, gameConsoles, pickConsole, stepConsole } from "../core/games.js";
 import { systemColor } from "../core/home.js";
-import { systemRatio } from "../core/library.js";
-import { ICONS } from "../core/icons.js";
+import { systemIconName } from "../core/icons.js";
+import { alternativeRunner, primaryLabel, systemRatio } from "../core/library.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { swipeArea, swipeSteps } from "../core/swipe.js";
+import { BrowseHead, fillFilters, fitBar, keepInView, replay } from "./browse.js";
 import { Card } from "./card.js";
-import { createGamePanel } from "./game-panel.js";
-import { Glyph } from "./glyph.js";
+import { createDetailPanel } from "./detail-panel.js";
+import { createRail } from "./rail.js";
 
 /**
  * Juegos: el riel de tus consolas a la izquierda (← desde las portadas, o LT/RT), el encabezado de
- * la consola, filtros y portadas; la ficha del juego enfocado, a la derecha.
+ * la consola, filtros y portadas; la ficha del juego enfocado, a la derecha. Todo con las piezas de
+ * una vista con secciones (rail, browse, detail-panel), igual que las Listas de Para ti.
  *
  * Callbacks: onFocus(target) · onPick(target, id) (dedo o ratón) · onAction(action, item) (botones
  * de la ficha) · target = { kind: "game" | "filter" | "rail", … }
  */
 export function createGames({ onFocus, onPick, onAction }) {
-  // El riel es una ventana: si no caben todas tus consolas, se recorre y la actual queda a la vista.
-  const railTrack = h("div", { class: "games__rail-track" });
-  const railWindow = h("div", { class: "games__rail-window" }, railTrack);
-  const rail = h("nav", { class: "games__rail", "aria-label": "Consolas" });
-  const heading = h("div", { class: "games__heading" });
-  const filters = h("div", { class: "games__filters", role: "tablist" });
-  const count = h("span", { class: "games__count" });
-  const grid = h("div", { class: "games__grid", role: "group" });
-  const sheet = createGamePanel({ onAction: (action, item) => onAction?.(action, item) });
-  const viewport = h("div", { class: "games__viewport" }, grid);
-  const bar = h("div", { class: "games__bar" }, filters, count);
-  const main = h("div", { class: "games__main" }, h("div", { class: "games__head" }, heading), bar, viewport);
-  // Los filtros siempre en una fila: si no caben (pantalla de la Legion Go, letra grande), la barra se
-  // compacta y, si aún no, la letra baja un punto. Se mide, no se adivina por el ancho de la pantalla.
-  const fitBar = () => {
-    bar.classList.remove("games__bar--compact", "games__bar--tight");
-    const wraps = () => {
-      const pills = filters.children;
-      return pills.length > 1 && pills[pills.length - 1].offsetTop > pills[0].offsetTop + 2;
-    };
-    if (wraps()) bar.classList.add("games__bar--compact");
-    if (wraps()) bar.classList.add("games__bar--tight");
-  };
-  if (typeof ResizeObserver !== "undefined") new ResizeObserver(fitBar).observe(main);
-  // Con el dedo: deslizar las portadas las recorre (antes solo se veían las primeras filas); deslizar
-  // el riel pasa de consola. Subir el dedo = ver lo de abajo, como en cualquier lista.
+  const rail = createRail({ label: "Consolas", onPick: (e) => switchTo(e.id), onStep: (n) => stepRail(n) });
+  const head = h("div", { class: "browse__head" });
+  const filters = h("div", { class: "browse__filters", role: "tablist" });
+  const count = h("span", { class: "browse__count" });
+  const grid = h("div", { class: "browse__grid", role: "group" });
+  const sheet = createDetailPanel({ onAction: (id, d) => onAction?.(id, d.item) });
+  const viewport = h("div", { class: "browse__viewport" }, grid);
+  const bar = h("div", { class: "browse__bar" }, filters, count);
+  const main = h("div", { class: "browse__main" }, head, bar, viewport);
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => fitBar(bar, filters)).observe(main);
+  // Con el dedo: deslizar las portadas las recorre; deslizar el riel pasa de consola.
   swipeArea(viewport, ({ dx, dy }) => {
     const card = grid.querySelector('[data-focus-id^="game:"]');
     if (!card) return;
@@ -55,8 +42,8 @@ export function createGames({ onFocus, onPick, onAction }) {
     }
     paint();
   });
-  swipeArea(railWindow, ({ dy }) => stepRail(dy < 0 ? swipeSteps(dy, 80) : -swipeSteps(dy, 80)));
-  const el = h("section", { class: "games", hidden: true, "aria-label": "Juegos" }, rail, main, sheet.el);
+  swipeArea(rail.window, ({ dy }) => stepRail(dy < 0 ? swipeSteps(dy, 80) : -swipeSteps(dy, 80)));
+  const el = h("section", { class: "games browse", hidden: true, "aria-label": "Juegos" }, rail.el, main, sheet.el);
 
   let rows = [];
   let list = [];
@@ -69,45 +56,32 @@ export function createGames({ onFocus, onPick, onAction }) {
   const targets = new Map();
 
   const current = () => list.find((c) => c.id === consoleId) ?? null;
+  const activeFilter = () => `filter:${Math.max(0, FILTERS.findIndex((f) => f.id === (filterOf[consoleId] ?? "recent")))}`;
   const index = () => Math.max(0, list.findIndex((c) => c.id === consoleId));
+  const media = (c) => (c.photo ? { photo: c.photo, logo: !!c.logo } : c.cover ? { cover: c.cover } : { icon: "gamepad" });
+  const plural = (n) => `${n} juego${n === 1 ? "" : "s"}`;
 
   function render(nextRows, { glyphs = {}, runningId = null, consoleId: ask = null } = {}) {
+    // Se sigue al juego, no a la casilla: al volver de jugar, la lista se reordena (Jugados) y en la
+    // misma posición quedaría otro (A abriría el equivocado).
+    const kept = targets.get(focusId);
     rows = nextRows;
     options = { glyphs, runningId };
     list = gameConsoles(rows);
     consoleId = pickConsole(list, ask, consoleId);
+    if (kept?.kind === "game") { memory[consoleId] = kept.item.id; focusId = "game:keep"; }
+    if (focusId.startsWith("rail:")) focusId = `rail:${index()}`; // se reordenaron: el riel sigue en la misma consola
     paintAll();
   }
 
   function paintAll() {
     targets.clear();
-    renderRail();
-    renderConsole();
-    if (!targets.has(focusId)) focusId = games.length ? "game:0" : "filter:0";
-    paint();
-  }
-
-  // --- riel: se recorre con la cruceta o con LT/RT --------------------------------------------
-  const consoleImage = (c, className) => (c.photo
-    ? h("img", { class: [className, c.logo && `${className}--logo`], src: c.photo, alt: "" })
-    : c.cover && h("img", { class: [className, `${className}--cover`], src: c.cover, alt: "" }));
-
-  function renderRail() {
-    const [prev, next] = (options.glyphs.page || "").split(" ");
     list.forEach((c, i) => targets.set(`rail:${i}`, { kind: "rail", console: c }));
-    mount(railTrack, list.map((c, i) => h("button", {
-      class: ["games__rail-item", c.id === consoleId && "games__rail-item--current"], type: "button", tabindex: "-1",
-      "data-focus-id": `rail:${i}`, "aria-label": c.name, "aria-current": c.id === consoleId ? "true" : null,
-      style: { "--glow": systemColor(c.system) },
-      onClick: () => switchTo(c.id),
-    }, consoleImage(c, "games__rail-img"))));
-    // Las flechas del riel también se tocan (con el dedo, las primeras consolas quedaban fuera de alcance).
-    mount(rail,
-      prev && h("button", { class: "games__rail-key", type: "button", tabindex: "-1", "aria-label": "Consola anterior",
-        onClick: () => stepRail(-1) }, Glyph(prev, { small: true }), h("span", { class: "games__rail-arrow" }, svg(ICONS.chevron))),
-      railWindow,
-      next && h("button", { class: "games__rail-key games__rail-key--next", type: "button", tabindex: "-1", "aria-label": "Consola siguiente",
-        onClick: () => stepRail(1) }, h("span", { class: "games__rail-arrow" }, svg(ICONS.chevron)), Glyph(next, { small: true })));
+    rail.render(list.map((c) => ({ id: c.id, title: c.name, meta: plural(c.count), glow: systemColor(c.system), media: media(c) })),
+      { currentId: consoleId, glyphs: options.glyphs });
+    renderConsole();
+    if (!targets.has(focusId)) focusId = games.length ? "game:0" : activeFilter();
+    paint();
   }
 
   /** Otra consola, `n` lugares arriba o abajo (flechas del riel o deslizar el riel con el dedo). */
@@ -116,51 +90,27 @@ export function createGames({ onFocus, onPick, onAction }) {
     if (list[i]) switchTo(list[i].id, { keepRail: focusId.startsWith("rail:") });
   }
 
-  /** La consola actual (o la enfocada en el riel) siempre a la vista, centrada si se puede. */
-  function keepRailVisible() {
-    const i = focusId.startsWith("rail:") ? Number(focusId.split(":")[1]) : index();
-    const node = railTrack.children[i];
-    if (!node) return;
-    const room = railWindow.clientHeight;
-    const full = railTrack.scrollHeight;
-    const shift = Math.max(0, Math.min(full - room, node.offsetTop + node.offsetHeight / 2 - room / 2));
-    railTrack.style.transform = `translateY(${-shift}px)`;
-    railWindow.classList.toggle("games__rail-window--more-up", shift > 1);
-    railWindow.classList.toggle("games__rail-window--more-down", shift < full - room - 1);
-  }
-
   // --- la consola: encabezado, filtros, portadas ----------------------------------------------
   function renderConsole() {
     const c = current();
     const filter = filterOf[consoleId] ?? "recent";
     games = c ? consoleGames(rows, consoleId, filter) : [];
-    // Encabezado: la consola en su casilla con su color, el nombre grande y, debajo, lo esencial.
     const last = c?.last;
     const ago = last && shortAgo(last.last_played);
-    heading.style.setProperty("--glow", systemColor(c?.system));
     grid.style.setProperty("--grid-ratio", String(systemRatio(c?.system || c?.id)));
-    mount(heading, c && [
-      h("span", { class: "games__heading-media" }, consoleImage(c, "games__heading-img")),
-      h("span", { class: "games__heading-text" },
-        h("h2", { class: "games__heading-title" }, c.name),
-        h("span", { class: "games__heading-meta" }, [`${c.count} juego${c.count === 1 ? "" : "s"}`,
-          ago && `jugaste ${last.title} ${ago === "ahora" || ago === "ayer" ? ago : `hace ${ago}`}`].filter(Boolean).join(" · "))),
-    ]);
-    mount(filters, FILTERS.map((f, i) => {
-      targets.set(`filter:${i}`, { kind: "filter", filter: f.id });
-      return h("button", {
-        class: ["games__filter", f.id === filter && "games__filter--on"], type: "button", tabindex: "-1", role: "tab",
-        "aria-selected": f.id === filter ? "true" : "false", "data-focus-id": `filter:${i}`,
-        onClick: () => onPick?.(targets.get(`filter:${i}`), `filter:${i}`),
-      }, f.label);
+    mount(head, c && BrowseHead({
+      title: c.name, glow: systemColor(c.system), media: media(c),
+      meta: [plural(c.count), ago && `jugaste ${last.title} ${ago === "ahora" || ago === "ayer" ? ago : `hace ${ago}`}`].filter(Boolean).join(" · "),
     }));
-    fitBar();
+    // Con el dedo, un toque basta: la píldora se enfoca y se aplica a la vez.
+    fillFilters(filters, FILTERS, { current: filter, targets, onPick: (t, id) => { focusId = id; onPick?.(t, id); } });
+    fitBar(bar, filters);
     mount(grid, games.length ? games.map((item, i) => {
       targets.set(`game:${i}`, { kind: "game", item, console: c });
       const card = Card(item, { onPress: () => onPick?.(targets.get(`game:${i}`), `game:${i}`) });
       card.dataset.focusId = `game:${i}`;
       return card;
-    }) : h("p", { class: "games__empty" }, filter === "favorites"
+    }) : h("p", { class: "browse__empty" }, filter === "favorites"
       ? "Aún no tienes favoritos aquí. Para marcar uno, enfoca un juego y pulsa Y → Añadir a favoritos."
       : "Nada por aquí."));
     el.classList.toggle("games--empty", games.length === 0);
@@ -168,8 +118,33 @@ export function createGames({ onFocus, onPick, onAction }) {
     if (focusId.startsWith("game:") && remembered >= 0) {
       focusId = `game:${remembered}`; // el foco sigue al juego, no a la posición (la lista se reordena al jugar)
     } else if (!targets.has(focusId)) {
-      focusId = games.length ? `game:${Math.max(0, remembered)}` : "filter:0";
+      focusId = games.length ? `game:${Math.max(0, remembered)}` : activeFilter(); // sin juegos: el filtro que estás viendo
     }
+  }
+
+  /** La ficha de un juego: arte, logo, de dónde es, sus datos y A / X / Y. */
+  function detail(item) {
+    const extra = item.extra || {};
+    const runner = item.runners?.find((r) => r.id === item.runner)?.name;
+    const alt = alternativeRunner(item);
+    const g = options.glyphs;
+    return {
+      key: item.id, item, title: item.title, logo: extra.logo,
+      art: item.hero || item.image, artKind: extra.hero_lowres ? "pixel" : !item.hero ? "poster" : null,
+      platform: { icon: systemIconName(item), text: [item.subtitle, runner].filter(Boolean).join(" · ") },
+      stats: [
+        ["Última vez", item.last_played ? lastPlayed(item.last_played).replace(/^Jugado /, "") : item.playtime >= 60 ? null : "Sin jugar"],
+        ["Jugado", item.playtime >= 60 ? duration(item.playtime) : null],
+        ["Jugadores", extra.players ? (Number(extra.players) > 1 ? `1 a ${extra.players}` : "1") : null],
+        ["Año", extra.year],
+      ],
+      description: extra.description,
+      actions: [
+        { id: "select", label: primaryLabel(item, options.runningId), glyph: g.select, primary: true },
+        alt && item.id !== options.runningId && { id: "alt", label: alt.name, ariaLabel: `Abrir con ${alt.name}`, glyph: g.alt, yields: true },
+        { id: "options", label: "Opciones", glyph: g.options },
+      ].filter(Boolean),
+    };
   }
 
   /** Marca el foco y avisa; la ficha muestra el juego enfocado. */
@@ -178,36 +153,21 @@ export function createGames({ onFocus, onPick, onAction }) {
       const focused = node.dataset.focusId === focusId;
       node.classList.toggle(node.classList.contains("card") ? "card--focused" : "is-focused", focused);
       if (focused) node.setAttribute("aria-current", "true");
-      else node.removeAttribute("aria-current");
+      else if (!node.classList.contains("rail__item--current")) node.removeAttribute("aria-current");
     }
     const target = targets.get(focusId);
-    // En los filtros o en las consolas, A no juega: la ficha se atenúa y no enseña «A Jugar».
-    sheet.el.classList.toggle("game-panel--idle", target?.kind !== "game");
-    if (target?.kind === "game") {
-      memory[consoleId] = target.item.id;
-      sheet.update(target.item, options);
-    } else if (games[0] && !sheet.shown) {
-      sheet.update(games[0], options); // aún sin juego enfocado: la ficha del primero, nunca vacía
-    }
+    if (target?.kind === "game") memory[consoleId] = target.item.id;
+    // Aún sin juego enfocado (filtros, riel): la ficha del primero, nunca vacía.
+    const shown = target?.kind === "game" ? target.item : games[0] ?? null;
+    sheet.update(shown && detail(shown));
     const n = games.length;
     const i = Number(focusId.split(":")[1]);
-    count.textContent = n ? (focusId.startsWith("game:") ? `${i + 1} de ${n}` : `${n} juego${n === 1 ? "" : "s"}`) : "";
-    keepVisible();
-    keepRailVisible();
+    count.textContent = n ? (focusId.startsWith("game:") ? `${i + 1} de ${n}` : plural(n)) : "";
+    keepInView(grid, viewport, focusId);
+    const onRail = focusId.startsWith("rail:");
+    rail.show(onRail ? i : index(), { open: onRail });
+    el.classList.toggle("browse--rail-open", onRail);
     onFocus?.(target ?? null);
-  }
-
-  function keepVisible() {
-    const node = grid.querySelector(`[data-focus-id="${focusId}"]`);
-    if (!node) return;
-    const viewport = grid.parentElement;
-    const top = node.offsetTop;
-    const shift = Number(grid.dataset.shift || 0);
-    let next = shift;
-    if (top + node.offsetHeight - shift > viewport.clientHeight) next = top + node.offsetHeight - viewport.clientHeight;
-    if (top - shift < 0) next = top;
-    grid.dataset.shift = String(Math.max(0, next));
-    grid.style.transform = `translateY(${-Math.max(0, next)}px)`;
   }
 
   /** Cambia de consola: el contenido nuevo aparece con un fundido corto (nada cruza la pantalla). */
@@ -217,9 +177,7 @@ export function createGames({ onFocus, onPick, onAction }) {
     focusId = keepRail ? `rail:${list.findIndex((c) => c.id === id)}` : "game:0";
     grid.dataset.shift = "0";
     sheet.reset();
-    main.classList.remove("games__main--switch");
-    void main.offsetWidth;
-    main.classList.add("games__main--switch");
+    replay(main);
     paintAll();
     return true;
   }
@@ -230,15 +188,18 @@ export function createGames({ onFocus, onPick, onAction }) {
     paint();
   }
 
-  const measure = () => measureFocusables(el).filter((r) => r.w > 0 && !r.id.startsWith("rail:"));
+  const measure = () => measureFocusables(main).filter((r) => r.w > 0);
 
   /**
    * Botones. true = se movió · "edge" = nada hacia allá · "exit" = B sin a dónde volver aquí (al
    * Inicio) · false = no es suyo.
    */
-  function handle(action) {
+  function handle(action, { repeat = false } = {}) {
     if (action === "pageleft" || action === "pageright") {
-      return switchTo(stepConsole(list, consoleId, action === "pageleft" ? -1 : 1)) || "edge";
+      // LT/RT sostenidos se detienen en la última consola; dar la vuelta, con una pulsación nueva.
+      const at = list.findIndex((c) => c.id === consoleId);
+      if (repeat && (action === "pageleft" ? at <= 0 : at >= list.length - 1)) return "edge";
+      return switchTo(stepConsole(list, consoleId, action === "pageleft" ? -1 : 1), { keepRail: focusId.startsWith("rail:") }) || "edge";
     }
     if (["up", "down", "left", "right"].includes(action)) {
       const onRail = focusId.startsWith("rail:");
@@ -249,7 +210,7 @@ export function createGames({ onFocus, onPick, onAction }) {
         return switchTo(list[i].id, { keepRail: true }) || "edge";
       }
       if (onRail && action === "right") {
-        focusId = games.length ? `game:${Math.max(0, games.findIndex((g) => g.id === memory[consoleId]))}` : "filter:0";
+        focusId = games.length ? `game:${Math.max(0, games.findIndex((g) => g.id === memory[consoleId]))}` : activeFilter();
         paint();
         return true;
       }
@@ -262,7 +223,7 @@ export function createGames({ onFocus, onPick, onAction }) {
       return true;
     }
     if (action === "back") {
-      if (focusId.startsWith("rail:")) { focusId = "game:0"; paint(); return true; }
+      if (focusId.startsWith("rail:")) { focusId = games.length ? "game:0" : activeFilter(); paint(); return true; }
       if (focusId !== "game:0" && games.length) { focusId = "game:0"; paint(); return true; }
       return "exit";
     }

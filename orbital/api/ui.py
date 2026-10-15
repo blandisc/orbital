@@ -74,7 +74,9 @@ def router(d: Deps) -> APIRouter:
                 "game_idle_minutes": d.config.sessions.game_idle_minutes,
                 "video_idle_minutes": d.config.sessions.video_idle_minutes,
                 "close_previous": d.config.sessions.close_previous, **catalog.state.settings(),
-                "stremio_linked": catalog.stremio_linked, "alexa": d.alexa_ready, "alexa_last": d.alexa_last}
+                "stremio_linked": catalog.stremio_linked, "alexa": d.alexa_ready, "alexa_last": d.alexa_last,
+                # «Para ti»: Ajustes › Cuentas enseña Trakt solo si su aplicación está en config.yaml.
+                "trakt": catalog.foryou.status()["trakt"]}
 
     @r.post("/api/settings")
     def set_settings(body: dict) -> dict:
