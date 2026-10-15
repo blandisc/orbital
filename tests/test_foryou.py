@@ -383,4 +383,4 @@ def test_renewing_tries_the_https_redirect_and_then_the_old_one(make_foryou, net
     net.on("POST", r"/oauth/token$", token)
     net.on("GET", r"/sync/watchlist", (200, []))
     assert fy.trakt.watchlist() == []
-    assert sent == ["https://localhost", "urn:ietf:wg:oauth:2.0:oob"]
+    assert sent == ["https://localhost/", "https://localhost", "urn:ietf:wg:oauth:2.0:oob"]

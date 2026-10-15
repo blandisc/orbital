@@ -37,7 +37,7 @@ TOKENS_KEY = "trakt_tokens"
 # Lo que se escribe en «Redirect URIs» al crear la aplicación. Orbital entra con un código (no usa
 # redirección), pero renovar la sesión lo pide y tiene que coincidir: developer.trakt.tv ya solo acepta
 # https://, así que va https://localhost; las aplicaciones viejas tienen el valor de antes.
-REDIRECTS = ("https://localhost", "urn:ietf:wg:oauth:2.0:oob")
+REDIRECTS = ("https://localhost/", "https://localhost", "urn:ietf:wg:oauth:2.0:oob")  # Trakt le agrega la «/»
 KINDS = {"movie": "movies", "series": "shows"}
 
 
