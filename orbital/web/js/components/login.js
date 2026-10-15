@@ -11,7 +11,7 @@ import { ScreenHead } from "./ui.js";
  * escribe directo, y una clave larga se pega con Ctrl+V. La contraseña va solo a Stremio: Orbital
  * guarda la clave de sesión que devuelve.
  *
- * open(form) recibe { title, lead, fields: [{ name, label, secret }], submitLabel, missing, submit(values, signal) };
+ * open(form) recibe { title, lead, fields: [{ name, label, secret, optional }], submitLabel, missing, submit(values, signal) };
  * sin form, Conectar Stremio. onDone(respuesta, form) al terminar bien.
  */
 const LETTERS = [[..."1234567890"], [..."qwertyuiop"], [..."asdfghjklñ"], [..."zxcvbnm@._"]];
@@ -98,7 +98,7 @@ export function createLogin({ onDone, onMove, onClose }) {
 
   async function submit() {
     const values = Object.fromEntries(fields.map((f) => [f.name, f.value]));
-    if (fields.some((f) => !f.value.trim())) {
+    if (fields.some((f) => !f.optional && !f.value.trim())) {
       message.textContent = form.missing || "Escribe la clave.";
       return;
     }

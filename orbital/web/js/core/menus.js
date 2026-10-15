@@ -559,8 +559,8 @@ export const KEY_FORMS = {
   trakt: {
     service: "trakt", label: "Aplicación de Trakt", icon: "spark", hint: "Tendencias, tus listas y recomendaciones",
     title: "Aplicación de Trakt", submitLabel: "Guardar",
-    lead: "En trakt.tv/oauth/applications crea una aplicación (en «Redirect URIs» escribe https://localhost; lo demás puede quedar vacío) y copia su Client ID y su Client Secret.",
-    fields: [{ name: "id", label: "Client ID", secret: false }, { name: "secret", label: "Client Secret", secret: true }],
+    lead: "En developer.trakt.tv crea una aplicación (en «Redirect URIs» escribe https://localhost; lo demás puede quedar vacío) y copia su Client ID. Las aplicaciones nuevas no tienen Client Secret: déjalo vacío.",
+    fields: [{ name: "id", label: "Client ID", secret: false }, { name: "secret", label: "Client Secret (si tu aplicación tiene)", secret: true, optional: true }],
   },
 };
 

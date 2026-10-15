@@ -348,8 +348,8 @@ def test_keys_written_in_settings_are_checked_saved_and_removed(library, make_fo
     assert not fy.tmdb.configured and library.credentials.get("para_ti.tmdb_key") is None
     fy.set_keys("tmdb", [" buena "])
     assert fy.tmdb.key == "buena" and fy.status()["saved"] == ["tmdb"]
-    with pytest.raises(ValueError, match="dos"):
-        fy.set_keys("trakt", ["solo-id", ""])
+    with pytest.raises(ValueError, match="Client ID"):
+        fy.set_keys("trakt", ["", "solo-secreto"])
     with pytest.raises(ValueError):
         fy.set_keys("trakt", ["con espacio", "x"])
     fy.set_keys("trakt", ["cid", "secret"])
@@ -384,3 +384,20 @@ def test_renewing_tries_the_https_redirect_and_then_the_old_one(make_foryou, net
     net.on("GET", r"/sync/watchlist", (200, []))
     assert fy.trakt.watchlist() == []
     assert sent == ["https://localhost/", "https://localhost", "urn:ietf:wg:oauth:2.0:oob"]
+
+
+def test_a_new_trakt_app_without_secret_links_and_renews(make_foryou, net):
+    """developer.trakt.tv ya no da Client Secret (PKCE): con el Client ID basta y no se manda secreto."""
+    fy = make_foryou(trakt_keys=False)
+    fy.set_keys("trakt", ["cid-nuevo", ""])
+    assert fy.trakt.configured and fy.status()["saved"] == ["trakt"]
+    bodies = []
+    net.on("POST", r"/oauth/device/token$", lambda url, body: bodies.append(body) or (200, {
+        "access_token": "tok", "refresh_token": "ref", "expires_in": 60, "created_at": time.time()}))
+    net.on("POST", r"/oauth/token$", lambda url, body: bodies.append(body) or (200, {
+        "access_token": "new", "refresh_token": "r2", "expires_in": 86400, "created_at": time.time()}))
+    net.on("GET", r"/sync/watchlist", (200, []))
+    assert fy.trakt.poll_device(trakt.DeviceCode("dev", "ABC", "https://trakt.tv/activate", 1, time.time() + 60)) == "linked"
+    assert fy.trakt.watchlist() == []  # la sesión dura 60 s: se renueva antes de pedir
+    assert [b.get("client_id") for b in bodies] == ["cid-nuevo", "cid-nuevo"]
+    assert not any("client_secret" in b for b in bodies)

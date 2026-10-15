@@ -211,8 +211,8 @@ class ForYou:
         values = [str(v or "").strip() for v in values]
         if any(len(v) > 400 or not re.fullmatch(r"[!-~]*", v) for v in values):
             raise ValueError("Esa clave tiene espacios o caracteres raros: cópiala otra vez.")
-        if any(values) and not all(values):
-            raise ValueError("Faltan datos: escribe los dos.")
+        if any(values[1:]) and not values[0]:  # Trakt: el Client Secret es opcional (las aplicaciones nuevas no tienen)
+            raise ValueError("Falta el Client ID.")
         if service == "tmdb" and values[0]:
             tmdb_api.Tmdb(values[0]).platforms(self.region)
         elif service == "rawg" and values[0]:
@@ -559,7 +559,7 @@ class ForYou:
     def start_link(self) -> dict:
         """Pide un código a Trakt y espera (en segundo plano) a que lo confirmes en trakt.tv/activate."""
         if not self.trakt.configured:
-            raise ValueError("Falta la aplicación de Trakt: agrégala en Ajustes › Cuentas.")
+            raise ValueError("Falta la aplicación de Trakt: agrega su Client ID en Ajustes › Cuentas.")
         # Dos pedidos seguidos (Y dos veces) o cancelar mientras llega: solo cuenta el último. Antes se
         # quedaba el que terminara al final, y la pantalla podía mostrar un código que nadie esperaba.
         with self._link_lock:

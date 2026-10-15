@@ -197,7 +197,7 @@ async function keysSaved(form, status, { removed = false } = {}) {
 /** Escribir una clave con el teclado en pantalla (o pegarla con Ctrl+V). */
 function keysForm(service) {
   const form = KEY_FORMS[service];
-  return { ...form, id: service, missing: form.fields.length > 1 ? "Escribe los dos datos." : "Escribe la clave.",
+  return { ...form, id: service, missing: service === "trakt" ? "Escribe el Client ID." : "Escribe la clave.",
     submit: (values, signal) => api.forYouKeys(service, form.fields.map((f) => values[f.name].trim()), signal) };
 }
 
