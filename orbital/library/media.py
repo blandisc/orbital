@@ -177,7 +177,8 @@ class MediaStore:
         """¿Se ve igual que una imagen que rechazaste? La misma imagen llega con otra dirección (Hit & Run
         está dos veces en TheGamesDB, con el mismo dibujo): por dirección no se notaba y «Cambiar
         imagen» ponía otra vez la misma."""
-        seen = [v.removeprefix("look:") for v in self.rejected().get(f"{system}/{key}/{kind}", []) if v.startswith("look:")]
+        seen = [v.removeprefix("look:") for v in self.rejected().get(f"{system}/{key}/{kind}", [])
+                if isinstance(v, str) and v.startswith("look:")]
         mine = image_look(path) if seen and path else None
         return bool(mine) and any(similar(mine, other) for other in seen)
 

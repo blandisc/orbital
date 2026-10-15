@@ -232,3 +232,18 @@ def test_a_channel_cannot_make_the_check_read_a_local_file():
 
     check = iptv_health.check_channel(Channel("a", "A", "https://x.example/live.m3u8"), fetch)
     assert not check.ok and "internet" in check.reason
+
+
+def test_a_damaged_health_file_does_not_stop_orbital(tmp_path):
+    """Se lee al arrancar: con una forma rara se ignora lo que no se entiende (antes Orbital no abría)."""
+    import json
+
+    from orbital.library import iptv_health
+
+    path = tmp_path / "tv-health.json"
+    for data in ({"channels": [1, 2]}, {"channels": {"a": {"fails": 1, "checked": "ayer"}}}, {"numbers": ["a"]},
+                 {"channels": {"b": {"fails": 2, "checked": True}}, "numbers": {"b": 7, "c": "8", "d": True}}):
+        path.write_text(json.dumps(data), encoding="utf-8")
+        store = iptv_health.HealthStore(path)
+        assert store.number("c") is None and store.number("d") is None
+    assert store.hidden("b") and store.number("b") == 7
