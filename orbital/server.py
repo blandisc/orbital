@@ -25,7 +25,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import __version__
-from .api import diagnostics, foryou, library, live, media, play, quick, ui, update
+from .api import diagnostics, foryou, library, live, media, play, quick, tv, ui, update
 from .api.deps import Deps
 from .api.live import SseHub, VoiceRequest
 from .api.play import humane_error  # noqa: F401 - se importa desde aquí
@@ -115,6 +115,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
 
             # Con la biblioteca del último arranque, la interfaz entra ya; si no, espera el escaneo.
             catalog.scanning = not catalog.load_snapshot()  # antes de que la interfaz pregunte
+            catalog.tv.start()  # revisa los canales de TV con calma (y cada ~6 h)
             threading.Thread(target=scan, daemon=True, name="first-scan").start()
         else:
             await run_in_threadpool(catalog.refresh)
@@ -129,6 +130,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
         if player is not None and getattr(player, "playing", False):
             with contextlib.suppress(Exception):
                 await run_in_threadpool(player.stop)
+        catalog.tv.stop()
         if problems:
             logging.getLogger("orbital").removeHandler(problems)
         status.cancel()
@@ -155,7 +157,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
 
     for part in (library.router(d), play.router(d), media.router(d), ui.router(d),
                  live.router(d, is_local_request), diagnostics.router(d), quick.router(d),
-                 update.router(d, updater), foryou.router(d)):
+                 update.router(d, updater), foryou.router(d), tv.router(d)):
         app.include_router(part)
     app.state.run_voice = d.extra["run_voice"]
     app.mount("/", WebFiles(directory=WEB_DIR, html=True), name="web")

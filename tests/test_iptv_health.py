@@ -13,6 +13,7 @@ from orbital.library.iptv_health import HealthStore, Unreachable, check_all, che
 MASTER = "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=800000\nhd/index.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=300000\nsd/index.m3u8\n"
 MEDIA = "#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6,\nseg1.ts\n#EXTINF:6,\nseg2.ts\n#EXTINF:6,\nseg3.ts\n#EXTINF:6,\nseg4.ts\n"
 VIDEO = b"\x47" * 4096
+REAL_FETCH = iptv_health.fetch  # conftest cambia iptv_health.fetch por uno que no sale a Internet; aquí se prueba el de verdad
 
 
 def channel(url="https://tv.example.mx/a/playlist.m3u8", **extra) -> iptv.Channel:
@@ -181,13 +182,13 @@ def test_fetch_traduce_los_errores_de_red(monkeypatch):
     monkeypatch.setattr(iptv_health.urllib.request, "urlopen", fail_with(
         urllib.error.HTTPError("https://x", 403, "Forbidden", {}, io.BytesIO(b""))))
     with pytest.raises(Unreachable, match="HTTP 403"):
-        iptv_health.fetch("https://x", {})
+        REAL_FETCH("https://x", {})
     monkeypatch.setattr(iptv_health.urllib.request, "urlopen", fail_with(TimeoutError()))
     with pytest.raises(Unreachable, match="no responde"):
-        iptv_health.fetch("https://x", {})
+        REAL_FETCH("https://x", {})
     monkeypatch.setattr(iptv_health.urllib.request, "urlopen", fail_with(urllib.error.URLError("dns")))
     with pytest.raises(Unreachable, match="sin conexión"):
-        iptv_health.fetch("https://x", {})
+        REAL_FETCH("https://x", {})
 
 
 def test_fetch_corta_en_el_limite_sin_fallar(monkeypatch):
@@ -208,4 +209,4 @@ def test_fetch_corta_en_el_limite_sin_fallar(monkeypatch):
         read1 = read
 
     monkeypatch.setattr(iptv_health.urllib.request, "urlopen", lambda *a, **k: Response())
-    assert len(iptv_health.fetch("https://x", {}, limit=64 * 1024)) == 64 * 1024
+    assert len(REAL_FETCH("https://x", {}, limit=64 * 1024)) == 64 * 1024
