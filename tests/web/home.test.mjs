@@ -78,3 +78,10 @@ test("Inicio: la miniatura de cada renglón y el estuche del destacado", () => {
   assert.equal(thumbOf(bare).kind, "console");
   assert.equal(stageKind(bare), "art");
 });
+
+test("GeForce NOW con arte de Steam también usa la cápsula de la tienda", () => {
+  const halo = { id: "gfn:18114511", title: "Halo", hero: "https://cdn.cloudflare.steamstatic.com/steam/apps/976730/library_hero.jpg",
+    image: "https://cdn.cloudflare.steamstatic.com/steam/apps/976730/library_600x900.jpg" };
+  assert.equal(thumbOf(halo).src, "https://cdn.cloudflare.steamstatic.com/steam/apps/976730/capsule_616x353.jpg");
+  assert.equal(thumbOf({ id: "gfn:1", title: "Sin Steam", hero: "/h.jpg" }).src, "/h.jpg");
+});
