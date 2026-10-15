@@ -266,10 +266,63 @@ def test_idle_rule():
     assert not player.idle_expired(0, 10_000, 0)  # 0 = nunca
 
 
-def test_touch_tap_pauses_and_double_tap_does_not_leave_fullscreen():
-    assert "MBTN_LEFT cycle pause" in player.TOUCH_BINDINGS and "MBTN_LEFT_DBL ignore" in player.TOUCH_BINDINGS
+def test_touch_tap_tells_orbital_where_and_double_tap_does_not_leave_fullscreen():
+    assert "MBTN_LEFT script-message orbital-tap ${mouse-pos/x} ${mouse-pos/y}" in player.TOUCH_BINDINGS
+    assert "MBTN_LEFT_DBL ignore" in player.TOUCH_BINDINGS
     cmd = player.build_command("mpv.exe", "u", "t", bindings="C:/x/mpv-input.conf")
     assert "--input-conf=C:/x/mpv-input.conf" in cmd
+
+
+def test_the_player_works_with_a_finger():
+    """Con el dedo: tocar enseña botones (sin glifos del mando), cada uno hace lo suyo, la barra salta y el
+    panel se elige tocando. Un botón del mando vuelve a los glifos."""
+    from orbital import player_ui
+
+    player_ui.set_touch(False)
+    p, mpv = make_player()
+    w, h = player_ui.W, player_ui.H
+    p._on_mpv_message(["orbital-tap", "960", "300", "1920", "1080"])  # tocar el video: los botones
+    hud = mpv.overlays[1]
+    assert player_ui.TOUCH and "Pausa" in hud and "Salir" in hud and "Mantén" not in hud
+    pause = next(t for t in player_ui.targets["hud"] if t[4] == "a")
+    p.tap(pause[0] + 5, pause[1] + 5)
+    assert mpv.props["pause"] is True
+    rewind = next(t for t in player_ui.targets["hud"] if t[4] == "left")
+    p.tap(rewind[0] + 5, rewind[1] + 5)
+    assert any(c[0] == "seek" and c[2] == "relative" and c[1] < 0 for c in mpv.sent)
+    bar = next(t for t in player_ui.targets["hud"] if isinstance(t[4], tuple) and t[4][0] == "seek")
+    p.tap(bar[0] + bar[2] / 2, bar[1] + bar[3] / 2)  # a la mitad de la barra: a la mitad del video
+    assert ("seek", 3000.0, "absolute") in mpv.sent
+    tracks = next(t for t in player_ui.targets["hud"] if t[4] == "x")
+    p.tap(tracks[0] + 5, tracks[1] + 5)
+    assert p.menu is not None
+    spanish = next(t for t in player_ui.targets["panel"] if t[4] == ("option", 0, 1))
+    p.tap(spanish[0] + 5, spanish[1] + 5)  # Audio · Latino
+    assert ("set_property", "aid", 2) in mpv.sent
+    if p.menu is not None:
+        p.tap(w / 2, 200)  # tocar el video, arriba del panel: se cierra
+    assert p.menu is None
+    p.press("a")  # el mando: otra vez los glifos
+    assert not player_ui.TOUCH
+    assert h == 1080
+
+
+def test_a_finger_answers_still_watching():
+    from orbital import player_ui
+
+    p, mpv = make_player()
+    player_ui.set_touch(True)
+    p._card = {"kind": "still", "segment": player.Segment({"id": 1}, "Interstellar", "u")}
+    p._draw_card()
+    assert "Mantén" not in (mpv.overlays[4] or "")  # con el dedo: «Salir», no «Mantén: salir»
+    answered = []
+    p._card_accept, p._card_dismiss = (lambda: answered.append("seguir")), (lambda: answered.append("salir"))
+    keep = next(t for t in player_ui.targets["card"] if t[4] == "a")
+    leave = next(t for t in player_ui.targets["card"] if t[4] == "b")
+    p.tap(keep[0] + 5, keep[1] + 5)
+    p.tap(leave[0] + 5, leave[1] + 5)
+    assert answered == ["seguir", "salir"]  # lo mismo que A y que B en el mando
+    player_ui.set_touch(False)
 
 
 def test_choosing_audio_or_subtitles_is_remembered_for_that_series():

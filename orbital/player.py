@@ -102,6 +102,7 @@ class OrbitalPlayer(PlayerScreen):
 
     def __init__(self, on_finished=None, mpv: Mpv | None = None, idle_seconds: float = 0, on_idle=None) -> None:
         self.mpv = mpv or Mpv()
+        self.mpv.on_message = self._on_mpv_message  # los toques en la pantalla (ver PlayerScreen.tap)
         self.remote = PlayerRemote(self.press)
         self.current: Playback | None = None
         self.segment: Segment | None = None

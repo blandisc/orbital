@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from .. import player_ui
 from ..library import cinemeta, stremio_api
 from .deps import Deps
 
@@ -22,6 +23,7 @@ class PlayRequest(BaseModel):
     source: int | None = None  # None: Orbital elige la recomendada y arranca
     keep: bool = False
     from_start: bool = False  # "Desde el principio"
+    touch: bool = False  # lo abriste con el dedo: el reproductor empieza con botones táctiles, no glifos del mando
 
 
 def stremio_message(exc: Exception) -> str:
@@ -124,6 +126,7 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(400, "Falta qué reproducir")
         title = body.title or "Stremio"
         video_id = body.video_id or (meta_id if kind == "movie" else None)
+        player_ui.set_touch(body.touch)
         try:
             if body.source is not None and video_id:
                 catalog.watch.play_source(kind, meta_id, video_id, body.source, title, keep=body.keep,

@@ -13,7 +13,11 @@ tableros «Reproductor» del lienzo (docs/sistema-de-diseno.md § 8):
   * Tarjetas: «Saltar intro» (un botón claro), «Siguiente episodio» (con cuenta atrás en anillo) y
     «¿Sigues viendo?». Avisos breves arriba a la derecha (el volumen, con su barra).
 
-Piezas reutilizables (todas aquí): rrect, circle, ring, gradient, glyph, hints, text, wrap.
+Piezas reutilizables (todas aquí): rrect, circle, ring, gradient, glyph, hints, pills, text, wrap.
+
+Con el dedo (la pantalla de la Legion Go): `TOUCH` cambia los glifos del mando por botones que se
+tocan (sin «A», «X», «Y») y cada botón anota dónde quedó en `targets` (por capa: «hud», «panel»,
+«card»), para que player_screen sepa qué tocaste.
 """
 
 from __future__ import annotations
@@ -26,6 +30,25 @@ from pathlib import Path
 
 W, H = 1920, 1080  # coordenadas del lienzo: 1080 de alto y lo ancho que dé la pantalla (ver set_canvas)
 MARGIN = 96
+
+TOUCH = False  # con el dedo: botones que se tocan en vez de glifos del mando
+# Dónde quedó cada cosa tocable, por capa: (x, y, ancho, alto, acción). Se rehace al dibujar la capa.
+targets: dict[str, list[tuple[float, float, float, float, object]]] = {"hud": [], "panel": [], "card": []}
+
+
+def set_touch(on: bool) -> bool:
+    """Con el dedo o con el mando. True si cambió (hay que volver a dibujar)."""
+    global TOUCH
+    changed, TOUCH = bool(on) != TOUCH, bool(on)
+    return changed
+
+
+def hit(layer: str, x: float, y: float, pad: float = 14):
+    """La acción de lo tocado en `layer` (con un margen: el dedo no es preciso), o None."""
+    for tx, ty, tw, th, action in reversed(targets.get(layer, [])):
+        if tx - pad <= x <= tx + tw + pad and ty - pad <= y <= ty + th + pad:
+            return action
+    return None
 
 
 def set_canvas(width: float, height: float) -> bool:
@@ -283,7 +306,7 @@ def hints_width(items: list[tuple[str, str]], size: int = 22) -> float:
 def hints(items: list[tuple[str, str]], y: float, *, right: float | None = None, left: float | None = None,
           size: int = 22) -> str:
     """Pistas «A Pausa  X Audio y subtítulos…» en una fila, alineadas a la derecha o a la izquierda."""
-    if not items:
+    if not items or TOUCH:  # con el dedo no hay botones del mando que enseñar
         return ""
     gap, inner = 36, 12
     widths = [(glyph(0, 0, k)[1], text_width(v, size, "semi")) for k, v in items]
@@ -353,6 +376,8 @@ def progress_bar(hud: Hud, y: float = BAR_Y) -> tuple[str, float | None]:
         knob = x0 + w * done
         out.append(circle(knob, y + h / 2, 22, TEXT, "D0"))  # halo
         out.append(circle(knob, y + h / 2, 13, TEXT))
+    if TOUCH:  # tocar la barra salta a ese punto (una franja alta: el dedo no atina a 8 px)
+        targets["hud"].append((x0, y - 28, w, h + 56, ("seek", x0, w)))
     return "\n".join(out), knob
 
 
@@ -379,6 +404,7 @@ def chapter_at(hud: Hud) -> str:
 
 def hud_ass(hud: Hud) -> str:
     """Lo que se ve al tocar un botón (reproduciendo), en pausa o adelantando."""
+    targets["hud"] = []
     if hud.paused and not hud.seeking:
         return paused_ass(hud)
     lines = [gradient(470, H, 255, 34)]
@@ -412,12 +438,14 @@ def hud_ass(hud: Hud) -> str:
              ("◀ ▶", "Adelantar"), *([("LT RT", "Episodio")] if hud.series else []), ("B", "Mantén: salir")]
     while len(items) > 4 and hints_width(items) > W - 2 * MARGIN:
         items.pop(-2)  # si no caben (4:3): primero LT/RT, luego ◀▶
-    lines += [bar, _times(hud, BAR_Y + 28), hints(items, 1022, right=W - MARGIN)]
+    lines += [bar, _times(hud, BAR_Y + 28),
+              _touch_bar(hud, 1000, paused=False) if TOUCH else hints(items, 1022, right=W - MARGIN)]
     return "\n".join(lines)
 
 
 def paused_ass(hud: Hud) -> str:
     """En pausa: el video se oscurece y a la izquierda, lo esencial y los botones."""
+    targets["hud"] = []
     lines = [rrect(0, 0, W, H, 0, SHADE, "88"), gradient(420, H, 255, 70), gradient(0, 200, 140, 255, 14)]
     if hud.now:
         lines.append(text(W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
@@ -448,24 +476,59 @@ def paused_ass(hud: Hud) -> str:
     more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), *([("LT RT", "Episodio")] if hud.series else []),
             ("B", "Mantén: salir")]
     room = max(260, W - 2 * MARGIN - hints_width(more) - 48)
+    if TOUCH:
+        room = max(260, W - 2 * MARGIN - 560)
     lines += [bar, _times(hud, BAR_Y + 28),
               text(MARGIN, 1022, esc(fit(info_line(hud), 22, min(1200, room), "semi")), 22, MUTED, weight="semi", align=4),
-              hints(more, 1022, right=W - MARGIN)]
+              _touch_bar(hud, 1000, paused=True) if TOUCH else hints(more, 1022, right=W - MARGIN)]
     return "\n".join(lines)
 
 
-def buttons(items: list[tuple[str, str]], x: float, y: float) -> str:
-    """Botones como los de Orbital: el primero claro (lo que hace A), los demás tenues."""
+def buttons(items: list[tuple[str, str]], x: float, y: float, *, layer: str = "hud") -> str:
+    """Botones como los de Orbital: el primero claro (lo que hace A), los demás tenues. Con el dedo, sin
+    el glifo del mando y más altos; cada uno anota su lugar (su acción: la tecla, «a», «x», «y»)."""
     out = []
     for i, (key, label) in enumerate(items):
         primary = i == 0
-        w = 16 + 30 + 12 + text_width(label, 24, "semi") + 26
-        out.append(rrect(x, y, w, 62, 14, TEXT, "00" if primary else "D4"))
-        shape, gw = glyph(x + 16, y + 31, key, 30)
-        out.append(shape)
-        out.append(text(x + 16 + gw + 12, y + 31, esc(label), 24, ON_LIGHT if primary else TEXT, weight="semi", align=4))
+        h = 76 if TOUCH else 62
+        lead = 26 if TOUCH else 16 + 30 + 12
+        w = lead + text_width(label, 24, "semi") + 26
+        out.append(rrect(x, y, w, h, 14, TEXT, "00" if primary else "D4"))
+        if not TOUCH:
+            shape, _ = glyph(x + 16, y + 31, key, 30)
+            out.append(shape)
+        out.append(text(x + lead, y + h / 2, esc(label), 24, ON_LIGHT if primary else TEXT, weight="semi", align=4))
+        if TOUCH:
+            targets[layer].append((x, y, w, h, key.lower()))
         x += w + 16
     return "\n".join(out)
+
+
+def pills(items: list[tuple[str, object]], y: float, *, right: float | None = None, left: float | None = None,
+          center: float | None = None, layer: str = "hud", h: float = 72) -> str:
+    """Con el dedo: una fila de botones tocables («−10 s», «+10 s», «Salir»…), anotados en `layer`."""
+    if not items:
+        return ""
+    gap, size = 16, 24
+    widths = [text_width(label, size, "semi") + 56 for label, _ in items]
+    total = sum(widths) + gap * (len(items) - 1)
+    x = (right - total) if right is not None else (center - total / 2) if center is not None else (left if left is not None else MARGIN)
+    out = []
+    for (label, action), w in zip(items, widths, strict=True):
+        out.append(rrect(x, y, w, h, h / 2, PANEL, "30", outline=TEXT, width=1.5))
+        out.append(text(x + w / 2, y + h / 2, esc(label), size, weight="semi", align=5))
+        targets[layer].append((x, y, w, h, action))
+        x += w + gap
+    return "\n".join(out)
+
+
+def _touch_bar(hud: Hud, y: float, *, paused: bool) -> str:
+    """Abajo, con el dedo: regresar, pausa, adelantar, audio y subtítulos, más, y salir (sin mantener B)."""
+    items = [("−10 s", "left"), ("Seguir" if paused else "Pausa", "a"), ("+10 s", "right")]
+    if not paused:  # en pausa, Audio y Episodios ya son botones grandes del bloque
+        items += [("Audio y subtítulos", "x"), ("Episodios" if hud.series else "Fuentes", "y")]
+    items.append(("Salir", "quit"))
+    return pills(items, y, center=W / 2, h=66)
 
 
 # --- panel de columnas (X: Audio · Subtítulos · Tamaño; Y: Fuentes · Episodios) ------------------------------------
@@ -508,6 +571,7 @@ def panel_ass(panel: Panel, *, playing: bool = True) -> str:
     """Panel abajo, sobre un velo: el video sigue arriba. La opción enfocada, clara; la puesta, con ✓."""
     # Una superficie sólida (como las hojas de Orbital) para leer sobre cualquier escena, con una
     # transición corta arriba; el video sigue visible encima.
+    targets["panel"] = []
     lines = [gradient(440, 560, 255, 40, 16), rrect(0, 560, W, H - 560, 0, PANEL, "28")]
     if playing:
         label = "Sigue reproduciendo"
@@ -526,6 +590,8 @@ def panel_ass(panel: Panel, *, playing: bool = True) -> str:
         active = c == panel.col
         lines.append(text(x + 18, 600, esc(TAB_NAMES.get(column.key, column.key)), 22, TEXT if active else MUTED,
                           weight="semi"))
+        if TOUCH:
+            targets["panel"].append((x, 580, col_w, 44, ("column", c)))
         # Antes la lista se recentraba en cada paso de la cruceta (todo brincaba); ahora solo se
         # desplaza cuando el foco sale de las filas a la vista.
         if column.index < column.top:
@@ -541,6 +607,8 @@ def panel_ass(panel: Panel, *, playing: bool = True) -> str:
             current = bool(option.get("current"))
             if focused:
                 lines.append(rrect(x, y, col_w, 58, 12, TEXT))
+            if TOUCH:
+                targets["panel"].append((x, y, col_w, 58, ("option", c, i)))
             color = ON_LIGHT if focused else (TEXT if current else SOFT)
             if current:
                 lines.append(text(x + 18, y + 29, "✓", 24, color, weight="bold", align=4))
@@ -561,7 +629,10 @@ def panel_ass(panel: Panel, *, playing: bool = True) -> str:
     if panel.column.key == "source":  # qué quiere decir «Al instante», donde se elige
         lines.append(text(MARGIN, 1022, "Al instante: Real-Debrid ya la tiene guardada y arranca en segundos. "
                                         "Las demás primero se descargan y pueden tardar.", 20, MUTED, align=4))
-    lines.append(hints([("◀ ▶", "Columna"), ("A", "Elegir"), ("B", "Cerrar")], 1022, right=W - MARGIN))
+    if TOUCH:
+        lines.append(pills([("Cerrar", "close")], 986, right=W - MARGIN, layer="panel"))
+    else:
+        lines.append(hints([("◀ ▶", "Columna"), ("A", "Elegir"), ("B", "Cerrar")], 1022, right=W - MARGIN))
     return "\n".join(lines)
 
 
@@ -621,6 +692,12 @@ def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None
 # --- tarjetas y avisos -------------------------------------------------------------------------------
 def skip_ass(label: str) -> str:
     """«Saltar intro»: un botón claro abajo a la derecha (A); se va solo."""
+    targets["card"] = []
+    if TOUCH:
+        w = text_width(label, 24, "bold") + 56
+        x, y = W - MARGIN - w, 780
+        targets["card"].append((x, y, w, 76, "a"))
+        return "\n".join([rrect(x, y, w, 76, 14, TEXT), text(x + w / 2, y + 38, esc(label), 24, ON_LIGHT, weight="bold", align=5)])
     w = 16 + 30 + 12 + text_width(label, 24, "bold") + 28
     x, y = W - MARGIN - w, 790
     shape, gw = glyph(x + 16, y + 32, "A", 30)
@@ -631,7 +708,8 @@ def skip_ass(label: str) -> str:
 def upnext_ass(title: str, eyebrow: str = "", *, seconds: int | None = None, progress: float | None = None,
                actions: list[tuple[str, str]] | None = None) -> str:
     """Tarjeta abajo a la derecha: «Siguiente episodio» con la cuenta atrás en un anillo, o «¿Sigues viendo?»."""
-    w, h = 660, 176
+    targets["card"] = []
+    w, h = 660, (206 if TOUCH else 176)
     x, y = W - MARGIN - w, 870 - h
     lines = [rrect(x, y, w, h, 20, PANEL, "18")]
     tx = x + 32
@@ -645,7 +723,11 @@ def upnext_ass(title: str, eyebrow: str = "", *, seconds: int | None = None, pro
     if eyebrow:
         lines.append(text(tx, y + 30, esc(fit(eyebrow, 22, room, "semi")), 22, MUTED, weight="semi"))
     lines.append(text(tx, y + 62, esc(fit(title, 30, room, "bold")), 30, weight="bold"))
-    lines.append(hints(actions or [], y + h - 40, left=tx))
+    if TOUCH:  # botones que se tocan: «Seguir viendo», «Salir»… (la acción: la tecla que harían)
+        touch = [(label.removeprefix("Mantén: ").capitalize(), key.lower()) for key, label in actions or []]
+        lines.append(pills(touch, y + h - 84, left=tx, layer="card", h=64))
+    else:
+        lines.append(hints(actions or [], y + h - 40, left=tx))
     return "\n".join(lines)
 
 

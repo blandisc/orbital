@@ -44,7 +44,8 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       // Si el servidor no contesta en 40 s, la pantalla se va y se dice la verdad: sigue abriéndose y saldrá
       // solo (antes decía «inténtalo de nuevo» y, si lo hacías, se abrían dos). A sigue diciendo «Todavía
       // estoy abriendo…» hasta que conteste (o 3 min, por si nunca lo hace).
-      const request = api.stremioPlay({ kind, id, video_id: videoId, title, source, keep, from_start: fromStart });
+      // Abierto con el dedo: el reproductor empieza con botones que se tocan (no glifos del mando).
+      const request = api.stremioPlay({ kind, id, video_id: videoId, title, source, keep, from_start: fromStart, touch: state.modality === "touch" });
       const res = await Promise.race([request, new Promise((resolve) => setTimeout(() => resolve(SLOW), 40_000))]);
       if (res === SLOW) {
         ui.launch.hide();

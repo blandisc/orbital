@@ -121,9 +121,10 @@ def build_lang_list(lang: str) -> list[str]:
     return LANGS.get(lang, [lang])
 
 
-# Pantalla táctil: tocar el video pausa/reanuda (y Orbital muestra su barra); el doble toque ya no
-# saca de pantalla completa por accidente.
-TOUCH_BINDINGS = "MBTN_LEFT cycle pause\nMBTN_LEFT_DBL ignore\nMBTN_RIGHT ignore\n"
+# Pantalla táctil (y ratón): mpv le dice a Orbital dónde tocaste y Orbital decide (enseñar los botones,
+# pausar, adelantar, elegir en un panel…); el doble toque ya no saca de pantalla completa por accidente.
+TOUCH_BINDINGS = ("MBTN_LEFT script-message orbital-tap ${mouse-pos/x} ${mouse-pos/y} ${osd-dimensions/w} ${osd-dimensions/h}\n"
+                  "MBTN_LEFT_DBL ignore\nMBTN_RIGHT ignore\n")
 
 
 def input_conf() -> str | None:

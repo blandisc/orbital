@@ -162,6 +162,13 @@ y el panel de columnas (`Panel`/`Column`). Los tamaños se escriben «como en CS
 
 El reproductor no usa ☰ (Start es de Orbital: con Home, salir del juego).
 
+**Con el dedo (o el ratón)** no hay glifos del mando: `TOUCH` cambia `hints` por `pills` (botones que se
+tocan) y cada pieza tocable anota su lugar en `targets` (`hit()` dice qué tocaste). Reproduciendo: «−10 s ·
+Pausa · +10 s · Audio y subtítulos · Episodios · Salir» abajo, al centro; tocar la barra salta ahí; tocar el
+video enseña o esconde los botones. En los paneles se toca la opción (o la columna) y «Cerrar»; en las
+tarjetas, sus botones («Seguir viendo», «Salir»). mpv avisa dónde tocaste (`script-message orbital-tap`) y
+cualquier botón del mando vuelve a los glifos. Si el video se abrió con el dedo, empieza ya así.
+
 ## 9. Arte
 
 Todo tiene imagen. Orden: arte propio de Orbital (scraper) → el de ES-DE si sirve → respaldo de

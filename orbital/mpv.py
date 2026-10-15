@@ -38,6 +38,7 @@ class Mpv:
         self._cache_lock = threading.Lock()
         self._observer: threading.Thread | None = None
         self._observing = False
+        self.on_message = None  # (args) de «script-message» (los toques: orbital-tap x y ancho alto)
 
     # --- comandos ------------------------------------------------------------------------------
     def _connect(self):
@@ -152,6 +153,13 @@ class Mpv:
                 if data.get("event") == "property-change" and data.get("name") in self.observe:
                     with self._cache_lock:
                         self._cache[data["name"]] = data.get("data")
+                elif data.get("event") == "client-message" and self.on_message is not None:
+                    args = data.get("args")
+                    if isinstance(args, list):
+                        try:
+                            self.on_message([str(a) for a in args])
+                        except Exception:  # noqa: BLE001 - un toque que falla no corta el observador
+                            log.exception("mpv: no pude atender %s", args[:1])
         except OSError:
             pass
         finally:
