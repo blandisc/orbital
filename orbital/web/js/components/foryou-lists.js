@@ -119,10 +119,12 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
       mount(grid, h("div", { class: "foryou-lists__info" }, h("p", { class: "browse__empty" }, l.info), action));
     } else if (state === "ready" && items.length) {
       const external = l?.source === "RAWG"; // de afuera: los que ya tienes llevan palomita
+      grid.classList.toggle("browse__grid--mixed", l?.group === "games"); // cada caja con su forma
       mount(grid, items.map((item, n) => {
         targets.set(`item:${n}`, { kind: "item", item });
         // extra: un juego sin portada propia lleva la genérica con su nombre encima, como en Juegos.
-        const card = Card({ ...item, id: item.key, source: item.kind === "game" ? "steam" : "cinemeta", extra: item.item?.extra, owned: external && item.owned },
+        const card = Card({ ...item, id: item.key, source: item.kind === "game" ? item.item?.source || "steam" : "cinemeta",
+          system: item.item?.system, extra: item.item?.extra, owned: external && item.owned },
           { onPress: () => onPick?.(targets.get(`item:${n}`), `item:${n}`) });
         card.dataset.focusId = `item:${n}`;
         return card;

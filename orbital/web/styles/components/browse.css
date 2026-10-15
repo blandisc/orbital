@@ -71,7 +71,9 @@
    pintada, desde .browse__main: sumaba el encabezado y la primera fila salía cortada). */
 .browse__grid { position: relative; display: flex; flex-wrap: wrap; align-content: flex-start; gap: var(--space-8) var(--space-6); transition: transform var(--duration-slow) var(--ease-out); }
 /* Todas las portadas con la misma forma (Juegos pone la de las cajas de su consola: GBA 1, PSP .57…). */
-.browse__grid .card { --ratio: var(--grid-ratio, .667) !important; }
+.browse__grid:not(.browse__grid--mixed) .card { --ratio: var(--grid-ratio, .667) !important; }
+/* Una lista con juegos de varias consolas (Para ti · Tus juegos): cada caja con su forma (GBA casi
+   cuadrada), a la misma altura; antes todas en 2:3 y las de GBA salían cortadas. */
 .browse__grid .card__image { object-fit: cover; }
 .browse__grid .card--focused { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; z-index: var(--z-raised); }
 .browse__empty { max-width: 34rem; color: var(--color-text-muted); font-size: var(--text-md); line-height: 1.5; padding: var(--space-4) 0; }
