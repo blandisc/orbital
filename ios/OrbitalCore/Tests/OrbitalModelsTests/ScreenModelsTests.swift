@@ -246,6 +246,27 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertNotNil(model.error)
     }
 
+    func testParaTiWithoutTraktOrTMDBShowsWhatIsPopularOnStremio() async throws {
+        let rig = try ServicesRig()
+        rig.http.json["https://v3-cinemeta.strem.io/catalog/series/top.json"] = ["metas": [
+            ["id": "tt0386676", "type": "series", "name": "The Office", "poster": "https://p/poster/small/1.jpg", "background": "https://b/1.jpg", "releaseInfo": "2005–2013"],
+            ["id": "kitsu:1", "type": "series", "name": "Sin IMDb", "poster": "https://p/2.jpg"]]]
+        rig.http.json["https://v3-cinemeta.strem.io/catalog/movie/top.json"] = ["metas": [
+            ["id": "tt1160419", "type": "movie", "name": "Dune", "poster": "https://p/3.jpg", "releaseInfo": "2021", "runtime": "155 min"]]]
+        let model = ParaTiModel(rig.services)
+        await model.load()
+        XCTAssertTrue(model.isGeneric)
+        XCTAssertNil(model.error)
+        XCTAssertEqual(model.mosaic.map(\.imdb), ["tt0386676", "tt1160419"], "series y películas alternadas; sin IMDb no se puede ver")
+        XCTAssertEqual(model.mosaic.first?.poster, "https://p/poster/medium/1.jpg")
+        XCTAssertEqual(model.mosaic.first?.wide, "https://b/1.jpg")
+        XCTAssertEqual(model.mosaic.last?.year, 2021); XCTAssertEqual(model.mosaic.last?.runtime, 155)
+        XCTAssertEqual(model.mosaic.allSatisfy { $0.reason == .popular }, true)
+        await model.dismiss(model.mosaic[0])
+        await model.refresh()
+        XCTAssertEqual(model.mosaic.map(\.imdb), ["tt1160419"], "«No me interesa» también vale aquí")
+    }
+
     // MARK: ajustes y Trakt
     func testSettingsPersistAndTMDBKeyGoesToTheKeychain() async throws {
         let rig = try ServicesRig()

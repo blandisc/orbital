@@ -22,6 +22,8 @@ public final class ParaTiModel: ObservableModel {
     public private(set) var traktLinked = false { didSet { changed() } }
     public private(set) var isLoading = false { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }
+    /// El mosaico es lo popular de Stremio (sin Trakt ni TMDB todavía): la pantalla invita a conectarlos.
+    public private(set) var isGeneric = false { didSet { changed() } }
     private let services: Services
 
     public init(_ services: Services) { self.services = services; super.init() }
@@ -38,6 +40,9 @@ public final class ParaTiModel: ObservableModel {
         if !chips.contains(chip) { chip = .all }
         watchlistKeys = await services.forYou.watchlistKeys()
         mosaic = await services.forYou.mosaic()
+        // Sin Trakt ni TMDB el mosaico no quedaría vacío: lo más popular de Stremio (Cinemeta no pide claves).
+        isGeneric = mosaic.isEmpty
+        if isGeneric { mosaic = await popular() }
         if mosaic.isEmpty && lists.isEmpty { error = services.appSettings.traktEnabled ? nil : "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias." }
         else { error = nil }
         await loadVisible()
@@ -66,6 +71,28 @@ public final class ParaTiModel: ObservableModel {
     }
 
     public func items(for list: ForYouList) -> [Suggestion] { railItems[key(list)] ?? [] }
+
+    /// Lo más popular de Cinemeta, series y películas alternadas, en tu idioma.
+    private func popular() async -> [Suggestion] {
+        async let series = popular("series"), movies = popular("movie")
+        let dismissed = await services.forYou.dismissedIDs()
+        return ForYou.interleave([await series, await movies], limit: ForYou.mosaicSize).filter { !dismissed.contains($0.imdb) }
+    }
+
+    private func popular(_ kind: String) async -> [Suggestion] {
+        guard let metas = try? await services.cinemeta.catalog(kind) else { return [] }
+        let top = Array(metas.prefix(ForYou.mosaicSize / 2))
+        let localized = await services.localizer.catalog(kind: kind, metas: top)
+        return zip(top, localized).compactMap { original, translated in
+            guard let id = original["id"]?.string, id.hasPrefix("tt"), let name = original["name"]?.string,
+                  let poster = CinemetaParsing.medium(original["poster"]?.string) else { return nil }
+            let info = CinemetaParsing.describe(translated)
+            let minutes = Int(CinemetaParsing.runtimeSeconds(info.runtime) / 60)
+            return Suggestion(kind: kind, imdb: id, title: translated["name"]?.string ?? name, year: Int(info.year.prefix(4)),
+                              runtime: minutes > 0 ? minutes : nil,
+                              overview: info.description, poster: poster, wide: original["background"]?.string ?? poster, reason: .popular)
+        }
+    }
 
     /// «No me interesa».
     public func dismiss(_ s: Suggestion) async {

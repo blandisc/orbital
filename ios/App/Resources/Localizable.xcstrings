@@ -958,6 +958,17 @@
         }
       }
     },
+    "Lo más popular en Stremio. Conecta Trakt en Ajustes y el mosaico se arma con lo tuyo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's popular on Stremio. Connect Trakt in Settings and the mosaic is built from your stuff."
+          }
+        }
+      }
+    },
     "Los siguientes 3 episodios": {
       "extractionState": "manual",
       "localizations": {

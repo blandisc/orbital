@@ -19,6 +19,12 @@ public struct Suggestion: Sendable, Equatable, Identifiable {
     public var next: (season: Int, episode: Int)?
     public var id: String { imdb }
 
+    public init(kind: String, imdb: String, title: String, year: Int? = nil, runtime: Int? = nil, overview: String = "", poster: String, wide: String,
+                reason: SuggestionReason, next: (season: Int, episode: Int)? = nil) {
+        self.kind = kind; self.imdb = imdb; self.title = title; self.year = year; self.runtime = runtime; self.overview = overview
+        self.poster = poster; self.wide = wide; self.reason = reason; self.next = next
+    }
+
     public static func == (a: Suggestion, b: Suggestion) -> Bool {
         a.kind == b.kind && a.imdb == b.imdb && a.title == b.title && a.year == b.year && a.reason == b.reason
             && a.poster == b.poster && a.next?.season == b.next?.season && a.next?.episode == b.next?.episode
@@ -74,6 +80,9 @@ public actor ForYou {
     public func clearCache() { cache.removeAll() }
 
     /// «No me interesa»: esa sugerencia no vuelve a salir.
+    /// Lo que marcaste «No me interesa» (también vale para el mosaico de lo popular).
+    public func dismissedIDs() -> Set<String> { dismissed }
+
     public func dismiss(_ imdb: String) {
         dismissed.insert(imdb)
         kv.set("foryou-dismissed", data: try? JSONEncoder().encode(Array(dismissed)))

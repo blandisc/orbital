@@ -19,6 +19,9 @@ struct ParaTiView: View {
             }
             .padding(.horizontal, DS.Space.gutter)
             if let error = m.error, m.mosaic.isEmpty, m.lists.isEmpty { DSNotice(text: LocalizedStringKey(error)).padding(.horizontal, DS.Space.gutter) }
+            if m.isGeneric, m.mode == .mosaic, !m.mosaic.isEmpty {
+                DSNotice(text: "Lo más popular en Stremio. Conecta Trakt en Ajustes y el mosaico se arma con lo tuyo.").padding(.horizontal, DS.Space.gutter)
+            }
             switch m.mode {
             case .mosaic: MosaicView(observer: model)
             case .lists: ListsView(observer: model)
@@ -55,6 +58,7 @@ struct MosaicView: View {
                                     .contextMenu { Button("No me interesa", systemImage: "hand.thumbsdown") { Task { await model.dismiss(suggestion) } } }
                             }
                         }
+                        .frame(width: column == 1 ? center : side)        // una LazyVStack se estira: sin esto las tres se reparten el ancho igual
                         .padding(.top, column == 1 ? 0 : DS.Space.s6)   // las laterales empiezan más abajo: cascada
                     }
                 }
@@ -85,7 +89,8 @@ struct MosaicTile: View {
                     }
                     .padding(DS.Space.s2)
                 }
-                VStack { HStack(alignment: .top) { DSBadge(text: inWatchlist ? "En tu lista" : badgeKey(suggestion.reason)); Spacer(); kindIcon }; Spacer() }.padding(DS.Space.s2)
+                // Las columnas de los lados solo enseñan la imagen y si es serie o película (como en la TV): la etiqueta no cabe.
+                VStack { HStack(alignment: .top) { if expanded { DSBadge(text: inWatchlist ? "En tu lista" : badgeKey(suggestion.reason)) }; Spacer(minLength: 0); kindIcon }; Spacer() }.padding(DS.Space.s2)
             }
             .frame(width: width).clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         }
