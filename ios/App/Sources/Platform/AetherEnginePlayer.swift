@@ -152,9 +152,15 @@ struct AetherSubtitleOverlay: View {
         .offset(x: visible.minX, y: visible.minY)
     }
 
+    /// Contorno oscuro (cuatro copias desplazadas, sin desenfoque) más una sombra suave detrás: se lee tanto sobre
+    /// nieve como sobre un fondo negro, que es donde fallaba un solo `shadow` difuminado.
     private func line(_ cue: SubtitleCue, size: CGFloat) -> some View {
-        styled(cue.body, size: size)
-            .shadow(color: DS.subtitleShadow, radius: size * DS.Subtitle.shadowRadius)   // borde oscuro: se lee sobre cualquier imagen
+        let outline = size * DS.Subtitle.outlineWidth
+        return styled(cue.body, size: size)
+            .shadow(color: DS.subtitleShadow, radius: 0, x: -outline, y: 0)
+            .shadow(color: DS.subtitleShadow, radius: 0, x: outline, y: 0)
+            .shadow(color: DS.subtitleShadow, radius: 0, x: 0, y: -outline)
+            .shadow(color: DS.subtitleShadow, radius: 0, x: 0, y: outline)
             .shadow(color: DS.subtitleShadow, radius: size * DS.Subtitle.shadowRadius)
     }
 

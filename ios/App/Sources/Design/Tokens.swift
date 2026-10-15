@@ -44,7 +44,15 @@ enum DS {
     enum Subtitle {
         static let minFont = CGFloat(DesignTokens.Subtitle.minFont), liftWithControls = CGFloat(DesignTokens.Subtitle.liftWithControls)
         static let lineGap = CGFloat(DesignTokens.Subtitle.lineGap), edgeMargin = CGFloat(DesignTokens.Subtitle.edgeMargin)
-        static let shadowRadius = CGFloat(DesignTokens.Subtitle.shadowRadius)
+        static let shadowRadius = CGFloat(DesignTokens.Subtitle.shadowRadius), outlineWidth = CGFloat(DesignTokens.Subtitle.outlineWidth)
+    }
+
+    /// Brillo, volumen y buscar arrastrando (como Infuse): el umbral que decide el eje (el mismo número que usa
+    /// `PlayerGestures`, la aritmética pura) y el tamaño del indicador.
+    enum Gesture {
+        static let axisThreshold = CGFloat(DesignTokens.Gesture.axisThreshold)
+        static let indicatorBarHeight: CGFloat = 120
+        static let indicatorBarWidth: CGFloat = 5
     }
 
     // MARK: Espacio y forma
@@ -91,6 +99,9 @@ enum DS {
     enum Timing {
         static let controlsHide = UInt64(DesignTokens.Timing.controlsHide * 1e9), banner = UInt64(DesignTokens.Timing.banner * 1e9)
         static let searchDebounce = UInt64(DesignTokens.Timing.searchDebounce * 1e9), tick = UInt64(DesignTokens.Timing.tick * 1e9)
+        static let longPressDelay = DesignTokens.Timing.longPressDelay
+        /// Cuánto se queda a la vista el indicador de brillo o volumen tras soltar, antes de desvanecerse.
+        static let gestureIndicatorHold = UInt64(DesignTokens.Timing.gestureIndicatorHold * 1e9)
     }
 
     /// Tamaño de los pósters (relación 2:3, como en la TV).
