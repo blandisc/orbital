@@ -38,8 +38,8 @@ targets:
         product: AetherEngine
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.orbital.ios
-        DEVELOPMENT_TEAM: XXXXXXXXXX
+        PRODUCT_BUNDLE_IDENTIFIER: mx.iracheta.orbital
+        DEVELOPMENT_TEAM: B7KRCF776Z
         TARGETED_DEVICE_FAMILY: "1"           # solo iPhone
         SWIFT_VERSION: "5.0"                  # la app en modo Swift 5; los paquetes ya van en Swift 6
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) AETHER_ENGINE"
