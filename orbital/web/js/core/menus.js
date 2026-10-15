@@ -559,7 +559,7 @@ export const KEY_FORMS = {
   trakt: {
     service: "trakt", label: "Aplicación de Trakt", icon: "spark", hint: "Tendencias, tus listas y recomendaciones",
     title: "Aplicación de Trakt", submitLabel: "Guardar",
-    lead: "En trakt.tv/oauth/applications crea una aplicación (en Redirect uri escribe urn:ietf:wg:oauth:2.0:oob) y copia su Client ID y su Client Secret.",
+    lead: "En trakt.tv/oauth/applications crea una aplicación (en «Redirect URIs» escribe https://localhost; lo demás puede quedar vacío) y copia su Client ID y su Client Secret.",
     fields: [{ name: "id", label: "Client ID", secret: false }, { name: "secret", label: "Client Secret", secret: true }],
   },
 };

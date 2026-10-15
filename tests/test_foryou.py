@@ -368,3 +368,19 @@ def test_steam_games_carry_their_store_capsule_for_the_mosaic():
     assert item["steam_appid"] == 1313140 and item["wide"].endswith("/1313140/capsule_616x353.jpg")
     gba = game_item({"id": "emu:gba:1", "title": "Kirby", "playtime": 0, "extra": {"hero_lowres": True}}, "Al azar")
     assert gba["wide"] is None and gba["hero_weak"]
+
+
+def test_renewing_tries_the_https_redirect_and_then_the_old_one(make_foryou, net):
+    fy = make_foryou(linked=True)
+    fy.catalog.credentials.set(trakt.TOKENS_KEY, json.dumps({"access_token": "old", "refresh_token": "ref", "expires_at": time.time() + 60}))
+    sent = []
+
+    def token(url, body):
+        sent.append(body["redirect_uri"])
+        ok = body["redirect_uri"] == "urn:ietf:wg:oauth:2.0:oob"  # una aplicación vieja
+        return (200, {"access_token": "new", "refresh_token": "r", "expires_in": 86400, "created_at": time.time()}) if ok else (401, None)
+
+    net.on("POST", r"/oauth/token$", token)
+    net.on("GET", r"/sync/watchlist", (200, []))
+    assert fy.trakt.watchlist() == []
+    assert sent == ["https://localhost", "urn:ietf:wg:oauth:2.0:oob"]

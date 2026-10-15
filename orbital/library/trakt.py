@@ -34,7 +34,10 @@ def _positive(value) -> int | None:
 
 API = "https://api.trakt.tv"
 TOKENS_KEY = "trakt_tokens"
-REDIRECT = "urn:ietf:wg:oauth:2.0:oob"
+# Lo que se escribe en «Redirect URIs» al crear la aplicación. Orbital entra con un código (no usa
+# redirección), pero renovar la sesión lo pide y tiene que coincidir: developer.trakt.tv ya solo acepta
+# https://, así que va https://localhost; las aplicaciones viejas tienen el valor de antes.
+REDIRECTS = ("https://localhost", "urn:ietf:wg:oauth:2.0:oob")
 KINDS = {"movie": "movies", "series": "shows"}
 
 
@@ -151,9 +154,12 @@ class Trakt:
         return {400: "pending", 429: "slow", 404: "invalid", 409: "invalid", 410: "expired", 418: "denied"}.get(status, "pending")
 
     def _refresh(self, tokens: dict) -> dict:
-        status, data = self._call("POST", "/oauth/token", auth=False, body={
-            "refresh_token": tokens.get("refresh_token"), "client_id": self.client_id, "client_secret": self.client_secret,
-            "redirect_uri": REDIRECT, "grant_type": "refresh_token"})
+        for redirect in REDIRECTS:  # el de la aplicación nueva y, si no, el de las viejas
+            status, data = self._call("POST", "/oauth/token", auth=False, body={
+                "refresh_token": tokens.get("refresh_token"), "client_id": self.client_id, "client_secret": self.client_secret,
+                "redirect_uri": redirect, "grant_type": "refresh_token"})
+            if status == 200 and isinstance(data, dict):
+                break
         if status != 200 or not isinstance(data, dict):
             self.credentials.set(TOKENS_KEY, None)
             raise TraktAuthError("Tu sesión de Trakt caducó: vuelve a conectarla en Ajustes › Cuentas.")
