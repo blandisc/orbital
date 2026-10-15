@@ -33,15 +33,24 @@ W, H = 1920, 1080  # coordenadas del lienzo: 1080 de alto y lo ancho que dé la 
 MARGIN = 96
 
 TOUCH = False  # con el dedo: botones que se tocan en vez de glifos del mando
+KEYBOARD = False  # con teclado: los glifos dicen la tecla, no el botón del mando
+# El botón del mando -> su tecla (las pistas son las mismas; solo cambia lo que dice cada glifo).
+KEY_NAMES = {"A": "Espacio", "B": "Esc", "◀ ▶": "← →", "LT RT": "[ ]", "LB RB": "RePág AvPág"}
 # Dónde quedó cada cosa tocable, por capa: (x, y, ancho, alto, acción). Se rehace al dibujar la capa.
 targets: dict[str, list[tuple[float, float, float, float, object]]] = {"hud": [], "panel": [], "card": []}
 
 
+def set_input(mode: str) -> bool:
+    """«gamepad», «keyboard» o «touch»: qué enseñan los botones. True si cambió (hay que volver a dibujar)."""
+    global TOUCH, KEYBOARD
+    before = (TOUCH, KEYBOARD)
+    TOUCH, KEYBOARD = mode == "touch", mode == "keyboard"
+    return (TOUCH, KEYBOARD) != before
+
+
 def set_touch(on: bool) -> bool:
     """Con el dedo o con el mando. True si cambió (hay que volver a dibujar)."""
-    global TOUCH
-    changed, TOUCH = bool(on) != TOUCH, bool(on)
-    return changed
+    return set_input("touch" if on else "gamepad")
 
 
 def hit(layer: str, x: float, y: float, pad: float = 14):
@@ -291,8 +300,16 @@ def fit(value: str, size: int, width: float, weight: str = "regular") -> str:
 
 
 def glyph(x: float, cy: float, label: str, size: int = 34) -> tuple[str, float]:
-    """Botón del mando dibujado (círculo, o píldora si son dos) en su color. Devuelve (ass, ancho)."""
+    """Botón del mando dibujado (círculo, o píldora si son dos) en su color. Devuelve (ass, ancho). Con teclado,
+    la tecla que hace lo mismo («Espacio», «Esc»), en el mismo color."""
     color = GLYPH.get(label, TEXT)
+    if KEYBOARD:  # una tecla: rectángulo redondeado (como las del teclado) y la letra más grande que en el círculo
+        label = KEY_NAMES.get(label, label)
+        font = int(size * .56)
+        w = max(size, text_width(label, font, "bold") + size * .6)
+        parts = [rrect(x, cy - size / 2, w, size, size * .24, PANEL, "40", outline=color, width=2),
+                 text(x + w / 2, cy, esc(label), font, color, weight="bold", align=5)]
+        return "\n".join(parts), w
     w = size if len(label) == 1 else max(size, text_width(label, int(size * .44), "bold") + size * .6)
     parts = [rrect(x, cy - size / 2, w, size, size / 2, PANEL, "40", outline=color, width=2),
              text(x + w / 2, cy, esc(label), int(size * .44), color, weight="bold", align=5)]
@@ -310,6 +327,8 @@ def hints(items: list[tuple[str, str]], y: float, *, right: float | None = None,
     if not items or TOUCH:  # con el dedo no hay botones del mando que enseñar
         return ""
     gap, inner = 36, 12
+    if KEYBOARD:  # con teclado no se mantiene nada: Esc pregunta y sale
+        items = [(k, v.replace("Mantén: salir", "Salir")) for k, v in items]
     widths = [(glyph(0, 0, k)[1], text_width(v, size, "semi")) for k, v in items]
     total = sum(g + inner + t for g, t in widths) + gap * (len(items) - 1)
     x = (right - total) if right is not None else (left if left is not None else MARGIN)
