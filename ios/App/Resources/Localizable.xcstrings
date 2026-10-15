@@ -45,6 +45,17 @@
         }
       }
     },
+    "Actualizar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
+          }
+        }
+      }
+    },
     "Adelantar 10 segundos": {
       "extractionState": "manual",
       "localizations": {
@@ -239,6 +250,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recent searches"
+          }
+        }
+      }
+    },
+    "Calculado en el iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calculated on the iPhone"
           }
         }
       }
@@ -1563,6 +1585,17 @@
         }
       }
     },
+    "Para ti de tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For You, from your Orbital"
+          }
+        }
+      }
+    },
     "Pausa": {
       "extractionState": "manual",
       "localizations": {
@@ -2219,6 +2252,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your Orbital (the TV)"
+          }
+        }
+      }
+    },
+    "Tu Orbital no tiene sugerencias todavía.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Orbital doesn't have suggestions yet."
           }
         }
       }

@@ -43,6 +43,35 @@ struct DSBadge: View {
     }
 }
 
+/// El puesto en un Top 10 (chart de Netflix, JustWatch…): una sola pieza, número grande sobre una placa oscura,
+/// con el mismo radio que la portada que acompaña (esquina superior izquierda).
+struct DSRankBadge: View {
+    let rank: Int
+    var body: some View {
+        Text(verbatim: "\(rank)").font(DS.font(.xl, weight: .bold)).foregroundStyle(DS.text).lineLimit(1)
+            .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
+            .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+            .accessibilityLabel(Text("Puesto \(rank)"))
+    }
+}
+
+/// El logo de una plataforma (Netflix, Disney+…) en un chip o un encabezado: siempre la misma altura, venga el
+/// logo cuadrado o apaisado, para que la tira no «baile».
+struct DSPlatformLogo: View {
+    let url: String?
+
+    var body: some View {
+        Group {
+            if let url, let u = URL(string: url) {
+                AsyncImage(url: u) { phase in
+                    if case .success(let image) = phase { image.resizable().scaledToFit() } else { Color.clear }
+                }
+            } else { Color.clear }
+        }
+        .frame(height: DS.Size.platformLogo)
+    }
+}
+
 /// Cuánto llevas de un video.
 struct DSProgress: View {
     let fraction: Double
@@ -62,10 +91,13 @@ struct DSProgress: View {
 struct DSSectionHead: View {
     let title: LocalizedStringKey
     var trailing: LocalizedStringKey?
+    /// El logo de la plataforma (Netflix, Disney+…), si la lista es de una: siempre a la misma altura que en los chips.
+    var logo: String?
     var action: (() -> Void)?
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
+            if let logo { DSPlatformLogo(url: logo) }
             Text(title).font(DS.font(.lg, weight: .semibold)).foregroundStyle(DS.text)
             Spacer()
             if let trailing {
@@ -118,13 +150,16 @@ struct PosterCard: View {
     let title: String
     let poster: String?
     var badge: LocalizedStringKey?
+    /// El puesto en un Top 10: sustituye a `badge` en la esquina (una sola pieza, no dos encimadas).
+    var rank: Int?
     var progress: Double?
     var width: CGFloat = DS.Poster.railWidth
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             PosterView(url: poster, title: title)
-            if let badge { DSBadge(text: badge).padding(DS.Space.s2) }
+            if let rank { DSRankBadge(rank: rank).padding(DS.Space.s2) }
+            else if let badge { DSBadge(text: badge).padding(DS.Space.s2) }
             if let progress { VStack { Spacer(); DSProgress(fraction: progress) } }
         }
         .frame(width: width)
@@ -233,16 +268,16 @@ struct DSSegmented<Value: Hashable>: View {
 }
 
 /// Filtros deslizables (Todo · Trakt · Netflix…): botones nativos en cápsula; el elegido va resaltado.
-struct DSChipRow<Item: Hashable & Identifiable>: View {
+struct DSChipRow<Item: Hashable & Identifiable, Label: View>: View {
     let items: [Item]
-    let label: (Item) -> Text
+    let label: (Item) -> Label
     @Binding var selection: Item
     /// El valor actual como dato de la vista (ver `DSSegmented`).
     private let current: Item
     /// Hasta dónde está deslizada la tira: el elegido queda a la vista (la temporada 7 de 9 no se esconde a la derecha).
     @State private var scrolled: Item.ID?
 
-    init(items: [Item], label: @escaping (Item) -> Text, selection: Binding<Item>) {
+    init(items: [Item], @ViewBuilder label: @escaping (Item) -> Label, selection: Binding<Item>) {
         self.items = items; self.label = label; _selection = selection; current = selection.wrappedValue
     }
 

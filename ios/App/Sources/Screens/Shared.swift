@@ -32,11 +32,12 @@ func badgeKey(_ reason: SuggestionReason) -> LocalizedStringKey {
 struct Rail<Content: View>: View {
     let title: LocalizedStringKey
     var trailing: LocalizedStringKey?
+    var logo: String?
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: title, trailing: trailing).padding(.horizontal, DS.Space.gutter)
+            DSSectionHead(title: title, trailing: trailing, logo: logo).padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.padding(.horizontal, DS.Space.gutter)
             }
@@ -48,6 +49,8 @@ struct Rail<Content: View>: View {
 struct TitleLink: View {
     let route: TitleRoute
     var badge: LocalizedStringKey?
+    /// El puesto en un Top 10 (chart de Netflix, JustWatch…), si la lista lo trae.
+    var rank: Int?
     var progress: Double?
     var width: CGFloat = DS.Poster.railWidth
     /// Un renglón más debajo del nombre («2021 · Película»): distingue títulos que se llaman igual.
@@ -56,7 +59,7 @@ struct TitleLink: View {
     var body: some View {
         NavigationLink(value: route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                PosterCard(title: route.title, poster: route.poster, badge: badge, progress: progress, width: width)
+                PosterCard(title: route.title, poster: route.poster, badge: badge, rank: rank, progress: progress, width: width)
                 Text(route.title).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1).frame(width: width, alignment: .leading)
                 if let detail { detail.font(DS.font(.xs)).foregroundStyle(DS.textFaint).lineLimit(1).frame(width: width, alignment: .leading) }
             }

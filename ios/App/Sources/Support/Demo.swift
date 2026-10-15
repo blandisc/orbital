@@ -33,6 +33,9 @@ enum Demo {
     static var search: String? { value(after: "-demo-search") }
     /// `-demo-open settings|sources|play`: lo que se abre encima de la ficha o de Inicio.
     static var open: String? { value(after: "-demo-open") }
+    /// `-demo-console`: simula que tu Orbital de mentira sí contesta «Para ti» (con una lista de ejemplo con puesto),
+    /// para ver el pie «Para ti de tu Orbital» y el número del Top 10 sin tener una consola real.
+    static var console: Bool { ProcessInfo.processInfo.arguments.contains("-demo-console") }
 
     /// Secretos de arranque: sesión iniciada y el complemento de demostración.
     static func secrets() -> InMemorySecrets {
@@ -71,9 +74,41 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         let url = request.url
         if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
         if url.host == "demo.orbital.invalid" { return addon(url.path) }
-        if url.host == "tv.demo.invalid" { return HTTPResponse(status: 200, data: JSON.object(["ok": true]).serialized()) }
+        if url.host == "tv.demo.invalid" {
+            // «Para ti» por el puerto público: sin `-demo-console`, tu Orbital de mentira no la contesta (404, como una
+            // consola de una versión anterior) y el modelo cae solo a su lógica local — sin aviso, como siempre.
+            if url.path.hasPrefix("/api/foryou") { return Demo.console ? foryouDemo(url) : HTTPResponse(status: 404, data: Data()) }
+            return HTTPResponse(status: 200, data: JSON.object(["ok": true]).serialized())
+        }
         return try await real.send(request)
     }
+
+    /// Un overview de «Para ti» de mentira, con una lista de un chart (puesto incluido), para ver el pie «Para ti de tu
+    /// Orbital» y el número del Top 10 sin tener una consola real (`-demo-console`).
+    private func foryouDemo(_ url: URL) -> HTTPResponse {
+        switch url.path {
+        case "/api/foryou":
+            let overview: JSON = [
+                "lists": [["id": "chart:netflix", "title": "Top 10 Netflix", "icon": "trailer", "source": "TMDB",
+                           "meta": "Lo más visto", "split": false, "brand": "netflix",
+                           "logo": "https://images.metahub.space/logo/medium/tt1160419/img"]],
+                "mosaic": [Self.chartItem],
+            ]
+            return HTTPResponse(status: 200, data: overview.serialized())
+        case "/api/foryou/list": return HTTPResponse(status: 200, data: JSON.object(["items": [Self.chartItem]]).serialized())
+        case "/api/foryou/details": return HTTPResponse(status: 200, data: JSON.object(["overview": "Sinopsis de prueba (modo demostración)."]).serialized())
+        case "/api/foryou/dismiss": return HTTPResponse(status: 200, data: JSON.object(["ok": true]).serialized())
+        default: return HTTPResponse(status: 404, data: Data())
+        }
+    }
+
+    /// «Dune», puesto 1 de un chart de mentira: lo que manda `orbital/foryou.py` para un `video_item`, con `rank`.
+    private static let chartItem: JSON = [
+        "key": "video:tt1160419", "id": "cinemeta:movie:tt1160419", "source": "cinemeta", "kind": "movie", "meta_id": "tt1160419",
+        "title": "Dune", "year": 2021, "why": "En Netflix", "detail": "N.º 1 esta semana", "rank": 1,
+        "image": "https://images.metahub.space/poster/medium/tt1160419/img", "hero": "https://images.metahub.space/background/medium/tt1160419/img",
+        "logo": "https://images.metahub.space/logo/medium/tt1160419/img", "overview": "", "video_id": "tt1160419", "action": "Ver",
+    ]
 
     private func ok(_ result: JSON) -> HTTPResponse { HTTPResponse(status: 200, data: JSON.object(["result": result]).serialized()) }
 
