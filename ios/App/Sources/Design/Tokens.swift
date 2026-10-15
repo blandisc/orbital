@@ -72,6 +72,7 @@ enum DS {
     enum Size {
         static let touchTarget = CGFloat(DesignTokens.Size.touchTarget), thumbSmall = CGFloat(DesignTokens.Size.thumbSmall)
         static let cardMax = CGFloat(DesignTokens.Size.cardMax), grabber = CGFloat(DesignTokens.Size.grabber), grabberHeight = CGFloat(DesignTokens.Size.grabberHeight)
+        static let logo = CGFloat(DesignTokens.Size.logo)
     }
 
     /// Esperas de la interfaz (nanosegundos para `Task.sleep`).

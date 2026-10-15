@@ -100,6 +100,17 @@
         }
       }
     },
+    "Aplicación anterior (con secreto)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Older app (with a secret)"
+          }
+        }
+      }
+    },
     "Aquí aparece lo que vas viendo, en el iPhone y en Orbital.": {
       "extractionState": "manual",
       "localizations": {
@@ -287,6 +298,17 @@
         }
       }
     },
+    "Client ID de tu aplicación de Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Trakt app's Client ID"
+          }
+        }
+      }
+    },
     "Complementos": {
       "extractionState": "manual",
       "localizations": {
@@ -393,6 +415,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stremio email"
+          }
+        }
+      }
+    },
+    "Crea una aplicación en developer.trakt.tv y pega aquí su Client ID (las nuevas ya no dan secreto).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create an app at developer.trakt.tv and paste its Client ID here (new ones no longer have a secret)."
           }
         }
       }

@@ -56,7 +56,7 @@ struct SettingsView: View {
             .listRowBackground(DS.fill)
             Section("Sugerencias") {
                 Picker("País (para lo popular en plataformas)", selection: Binding(get: { s.region }, set: { v in model.update { $0.region = v } })) {
-                    ForEach(["MX", "US", "ES", "AR", "CO", "CL", "PE"], id: \.self) { Text($0).tag($0) }
+                    ForEach(["MX", "US", "ES", "AR", "CO", "CL", "PE"], id: \.self) { Text(verbatim: env.uiLocale.localizedString(forRegionCode: $0) ?? $0).tag($0) }
                 }
                 SecureField(LocalizedStringKey(model.hasTMDBKey ? "Clave de TMDB guardada" : "Clave de TMDB"), text: $tmdbKey).textInputAutocapitalization(.never).autocorrectionDisabled()
                 if !tmdbKey.isEmpty { Button("Guardar clave de TMDB") { model.setTMDBKey(tmdbKey); tmdbKey = "" } }
@@ -102,11 +102,14 @@ struct SettingsView: View {
         Section("Trakt") {
             switch model.trakt {
             case .off:
-                Text("Para conectar Trakt hace falta una aplicación de la API de Trakt (trakt.tv/oauth/applications). Pega aquí su identificador.").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
-                TextField("Identificador de la aplicación (client id)", text: Binding(get: { model.settings.traktClientID }, set: { v in model.update { $0.traktClientID = v.trimmingCharacters(in: .whitespaces) } }))
+                Text("Crea una aplicación en developer.trakt.tv y pega aquí su Client ID (las nuevas ya no dan secreto).").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
+                TextField("Client ID de tu aplicación de Trakt", text: Binding(get: { model.settings.traktClientID }, set: { v in model.update { $0.traktClientID = v.trimmingCharacters(in: .whitespaces) } }))
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
-                SecureField("Secreto (si tu aplicación lo tiene)", text: $secret).textInputAutocapitalization(.never)
-                if !secret.isEmpty { Button("Guardar secreto") { model.setTraktSecret(secret); secret = "" } }
+                DisclosureGroup("Aplicación anterior (con secreto)") {
+                    SecureField("Client Secret", text: $secret).textInputAutocapitalization(.never)
+                    if !secret.isEmpty { Button("Guardar secreto") { model.setTraktSecret(secret); secret = "" } }
+                }
+                .font(DS.font(.sm)).foregroundStyle(DS.textMuted)
             case .unlinked:
                 Button("Conectar Trakt") { Task { await model.linkTrakt() } }
                 Text("Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.").font(DS.font(.xs)).foregroundStyle(DS.textFaint)

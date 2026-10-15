@@ -24,7 +24,9 @@ TRANSLATIONS = {
     "Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.":
         "A code appears to enter at trakt.tv/activate. With Trakt connected, what you watch is reported and your watchlist and lists show up.",
     "Aquí aparece lo que vas viendo, en el iPhone y en Orbital.": "What you're watching shows up here, on iPhone and on Orbital.",
-    "Añadir a Mi lista": "Add to My List", "En Mi lista": "In My List", "Imagen dentro de imagen": "Picture in Picture",
+    "Añadir a Mi lista": "Add to My List", "En Mi lista": "In My List",
+    "Crea una aplicación en developer.trakt.tv y pega aquí su Client ID (las nuevas ya no dan secreto).": "Create an app at developer.trakt.tv and paste its Client ID here (new ones no longer have a secret).",
+    "Client ID de tu aplicación de Trakt": "Your Trakt app's Client ID", "Aplicación anterior (con secreto)": "Older app (with a secret)", "Imagen dentro de imagen": "Picture in Picture",
     "Lo más popular en Stremio. Conecta Trakt en Ajustes y el mosaico se arma con lo tuyo.": "What's popular on Stremio. Connect Trakt in Settings and the mosaic is built from your stuff.", "Nada descargado": "Nothing downloaded", "Avance": "Progress",
     "Bajar el siguiente episodio al terminar uno": "Download the next episode when one finishes", "Borrar": "Delete",
     "Borrar al terminar de verlo": "Delete when watched", "Buscando la mejor fuente…": "Finding the best source…",
@@ -84,7 +86,7 @@ TRANSLATIONS = {
     "Descargar": "Download", "Cuenta": "Account", "%@ de %@": "%@ of %@", "Cerrar": "Close", "Sí": "Yes",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
-IGNORE = {"T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
+IGNORE = {"T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
           "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max"}
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.
 CODE_KEYS = {k for k in TRANSLATIONS}

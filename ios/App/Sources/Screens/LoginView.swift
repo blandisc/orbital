@@ -19,6 +19,9 @@ struct LoginView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s6) {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
+                    Image("Logo").resizable().frame(width: DS.Size.logo, height: DS.Size.logo)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)).accessibilityHidden(true)
+                        .padding(.bottom, DS.Space.s2)
                     Text("Orbital").font(DS.font(.display, weight: .bold)).foregroundStyle(DS.text)
                     Text("Entra con tu cuenta de Stremio. Lo que veas aquí aparece en Orbital y al revés.")
                         .font(DS.font(.md)).foregroundStyle(DS.textMuted)
@@ -36,7 +39,8 @@ struct LoginView: View {
                 Button(action: signIn) {
                     HStack { if observer.model.state == .signingIn { ProgressView() }; Text("Entrar") }.frame(maxWidth: .infinity)
                 }
-                .dsPrimaryButton().controlSize(.large).disabled(observer.model.state == .signingIn)
+                .dsPrimaryButton().controlSize(.large)
+                .disabled(observer.model.state == .signingIn || email.trimmingCharacters(in: .whitespaces).isEmpty || password.isEmpty)
                 Text("Tu contraseña no se guarda: solo la clave de sesión, en el Keychain de tu iPhone.")
                     .font(DS.font(.xs)).foregroundStyle(DS.textFaint)
             }

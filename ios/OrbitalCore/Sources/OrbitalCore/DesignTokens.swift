@@ -23,7 +23,7 @@ public enum DesignTokens {
         public static let scrimStrong = 0.92, badge = 0.8, pressed = 0.8, disabled = 0.4, shrink = 0.85
     }
     /// Medidas fijas (puntos): el mínimo táctil de iOS, miniaturas, tarjetas.
-    public enum Size { public static let touchTarget = 44.0, thumbSmall = 48.0, cardMax = 320.0, grabber = 40.0, grabberHeight = 5.0 }
+    public enum Size { public static let touchTarget = 44.0, thumbSmall = 48.0, cardMax = 320.0, grabber = 40.0, grabberHeight = 5.0, logo = 80.0 }
     /// Relaciones de aspecto de las imágenes.
     public enum Aspect { public static let poster = 2.0 / 3.0, hero = 16.0 / 11.0, still = 16.0 / 9.0 }
     /// Esperas de la interfaz (segundos).
