@@ -348,7 +348,11 @@ class PlayerScreen:
 
     # --- el dedo ----------------------------------------------------------------------------------
     def _on_mpv_message(self, args: list[str]) -> None:
-        """«orbital-tap x y ancho alto» (px de la ventana): al lienzo de player_ui y a tap()."""
+        """«orbital-tap x y ancho alto» (px de la ventana): al lienzo de player_ui y a tap(). «orbital-key
+        botón»: una tecla, como el botón del mando que hace lo mismo (key())."""
+        if len(args) >= 2 and args[0] == "orbital-key":
+            self.key(args[1])
+            return
         if not args or args[0] != "orbital-tap" or len(args) < 5:
             return
         try:
@@ -415,6 +419,25 @@ class PlayerScreen:
         else:
             self.show_hud()
 
+    def key(self, button: str) -> None:
+        """Una tecla (ya con el nombre del botón del mando que hace lo mismo). La barra enseña las teclas. Esc:
+        cierra lo abierto o pregunta «¿Salir de …?» (otro Esc sale; Espacio sigue viendo)."""
+        if self.current is None:
+            return
+        if player_ui.set_input("keyboard"):
+            self._redraw_for_input()
+        if button == "esc":
+            if self.menu is None and self._card is None:
+                self._quiet_episodes = 0
+                self._show_card({"kind": "quit", "title": self.current.title})
+                return
+            button = "b"  # con un panel o una tarjeta: B (cerrar, o salir en «¿Salir de …?»)
+        self._keys = True
+        try:
+            self.press(button)
+        finally:
+            self._keys = False
+
     def _redraw_for_input(self) -> None:
         """Del dedo al mando (o al revés): lo que está a la vista, otra vez con sus botones o sus glifos."""
         if self.menu is not None:
@@ -428,7 +451,7 @@ class PlayerScreen:
     def press(self, button: str) -> None:
         """Un botón del mando con el reproductor al frente."""
         self._quiet_episodes = 0  # alguien está ahí
-        if not getattr(self, "_touching", False) and player_ui.set_touch(False):
+        if not getattr(self, "_touching", False) and not getattr(self, "_keys", False) and player_ui.set_input("gamepad"):
             self._redraw_for_input()  # volviste al mando: otra vez sus glifos
         current = self.current
         if current is None:

@@ -557,3 +557,24 @@ def test_sources_panel_explains_instant():
     panel = player_ui.more_panel(sources=[{"id": 1, "label": "Español · 1080p · Al instante", "current": True}])
     assert "Al instante: Real-Debrid" in player_ui.panel_ass(panel)
     assert player_ui.quit_hold_ass(.5) and player_ui.quit_hold_ass(float("nan"))
+
+
+def test_the_player_with_a_keyboard_shows_keys_and_esc_asks_first():
+    """Con teclado: las teclas hacen lo del mando, la barra dice «Espacio»/«Esc» y Esc pregunta antes de salir."""
+    from orbital import player_ui
+    from orbital.playback import KEY_BINDINGS
+
+    assert "SPACE script-message orbital-key a" in KEY_BINDINGS
+    assert "LEFT repeatable script-message orbital-key left" in KEY_BINDINGS
+    p, mpv = make_player()
+    p._on_mpv_message(["orbital-key", "a"])  # Espacio: pausa, como A
+    assert mpv.props["pause"] is True and player_ui.KEYBOARD
+    hud = mpv.overlays[1]
+    assert "Espacio" in hud and "Esc" in hud and "Mantén" not in hud
+    p._on_mpv_message(["orbital-key", "esc"])  # Esc: «¿Salir de …?», todavía no sale
+    assert p._card and p._card["kind"] == "quit" and ("quit",) not in mpv.sent
+    assert "Esc" in (mpv.overlays[4] or "")
+    p._on_mpv_message(["orbital-key", "esc"])  # otro Esc: sale
+    assert ("quit",) in mpv.sent
+    p.press("a")  # el mando: otra vez sus glifos
+    assert not player_ui.KEYBOARD

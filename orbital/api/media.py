@@ -24,6 +24,7 @@ class PlayRequest(BaseModel):
     keep: bool = False
     from_start: bool = False  # "Desde el principio"
     touch: bool = False  # lo abriste con el dedo: el reproductor empieza con botones táctiles, no glifos del mando
+    keyboard: bool = False  # lo abriste con el teclado: la barra enseña las teclas
 
 
 def stremio_message(exc: Exception) -> str:
@@ -126,7 +127,7 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(400, "Falta qué reproducir")
         title = body.title or "Stremio"
         video_id = body.video_id or (meta_id if kind == "movie" else None)
-        player_ui.set_touch(body.touch)
+        player_ui.set_input("touch" if body.touch else "keyboard" if body.keyboard else "gamepad")
         try:
             if body.source is not None and video_id:
                 catalog.watch.play_source(kind, meta_id, video_id, body.source, title, keep=body.keep,
