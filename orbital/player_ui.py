@@ -500,7 +500,7 @@ class Panel:
 
 
 TAB_NAMES = {"audio": "Audio", "sub": "Subtítulos", "size": "Tamaño de los subtítulos", "episodes": "Episodios",
-             "source": "Fuentes", "playback": "Reproducción"}
+             "source": "Fuentes", "playback": "Reproducción", "category": "Categoría", "channels": "Canales"}
 PANEL_ROWS = 6  # filas visibles por columna; el resto se desplaza con el foco
 
 
@@ -516,7 +516,8 @@ def panel_ass(panel: Panel, *, playing: bool = True) -> str:
                   text(MARGIN + 50, 87, label, 22, weight="semi", align=4)]
     n = len(panel.columns)
     # Fuentes y Episodios más anchas (el detalle de cada fuente, el nombre de cada episodio); Reproducción, angosta.
-    weights = [{"source": 1.4, "episodes": 1.35, "playback": .75}.get(column.key, 1.0) for column in panel.columns]
+    weights = [{"source": 1.4, "episodes": 1.35, "playback": .75, "channels": 1.5, "category": .7}.get(column.key, 1.0)
+               for column in panel.columns]
     unit = min(520, (W - 2 * MARGIN - 64 * (n - 1)) / max(1.0, sum(weights)))
     x = MARGIN
     for c, column in enumerate(panel.columns):
@@ -616,6 +617,64 @@ def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None
         playback.insert(0, {"label": f"Volver a {clock(back_to)}", "action": ("resume-at", back_to), "current": False})
     columns.append(Column("playback", playback))
     return Panel("more", columns, 0)
+
+
+# --- TV en vivo: la barra del canal y la guía de canales (Y) --------------------------------------------
+@dataclass
+class LiveHud:
+    name: str
+    number: int | None = None  # el «12» del canal (no cambia aunque otro canal se oculte)
+    category: str = ""
+    quality: str = ""  # «1080p»
+    status: str = "live"  # live | tuning | nosignal
+    muted: bool = False
+    now: str = ""
+
+
+# Qué dice y de qué color es cada estado del canal.
+LIVE_STATUS = {"live": ("En vivo", GLYPH["A"]), "tuning": ("Sintonizando…", MUTED), "nosignal": ("Sin señal", GLYPH["B"])}
+
+
+def live_info_line(hud: LiveHud) -> str:
+    """«Noticias · 1080p · Sin sonido»."""
+    return "  ·  ".join(p for p in (hud.category, hud.quality, "Sin sonido" if hud.muted else "") if p)
+
+
+def live_hud_ass(hud: LiveHud) -> str:
+    """La barra del canal, abajo a la izquierda: su número en un bloque claro, el nombre y, debajo, el estado,
+    la categoría y la calidad. Sin barra de avance (en vivo no hay a dónde adelantar) y con los botones de la TV."""
+    lines = [gradient(560, H, 255, 34), gradient(0, 200, 100, 255, 14)]
+    if hud.now:
+        lines.append(text(W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
+    number = str(hud.number) if hud.number else "—"
+    block = max(112, text_width(number, 56, "bold") + 52)
+    top = 786
+    x = MARGIN + block + 28
+    room = W - x - MARGIN
+    label, color = LIVE_STATUS.get(hud.status, LIVE_STATUS["live"])
+    lines += [rrect(MARGIN, top, block, 100, 22, TEXT), text(MARGIN + block / 2, top + 50, esc(number), 56, ON_LIGHT, weight="bold", align=5),
+              text(x, top - 2, esc(fit(hud.name, 52, min(room, 1300), "bold")), 52, weight="bold"),
+              circle(x + 9, top + 78, 7, color), text(x + 28, top + 78, esc(label), 24, color, weight="semi", align=4)]
+    info = live_info_line(hud)
+    if info:
+        lines.append(text(x + 28 + text_width(label, 24, "semi") + 22, top + 78, esc(fit(info, 24, max(200, room - 280), "semi")), 24, MUTED,
+                          weight="semi", align=4))
+    items = [("↑ ↓", "Canal"), ("Y", "Canales"), ("X", "Audio"), ("◀ ▶", "Volumen"), ("A", "Silencio"), ("B", "Mantén: salir")]
+    while len(items) > 3 and hints_width(items) > W - 2 * MARGIN:
+        items.pop(-2)  # si no caben (4:3): primero A, luego ◀▶
+    lines.append(hints(items, 1022, right=W - MARGIN))
+    return "\n".join(lines)
+
+
+def channels_panel(categories: list[dict], channels: list[dict], *, focus: str = "channels") -> Panel:
+    """Y en la TV: Categoría | Canales. `categories`: {"id", "label", "current"}; `channels`: {"id", "name", "number",
+    "category", "current"}. El canal que ves, marcado; elegir una categoría cambia la lista de al lado."""
+    rows = [{"label": c["label"], "hint": c.get("hint", ""), "action": ("category", c["id"]), "current": bool(c.get("current"))}
+            for c in categories]
+    picks = [{"label": " · ".join(str(p) for p in (c.get("number"), c["name"]) if p), "hint": c.get("category", ""),
+              "action": ("channel", c["id"]), "current": bool(c.get("current"))} for c in channels]
+    columns = [_column("category", rows), _column("channels", picks)]
+    return Panel("channels", columns, next((i for i, c in enumerate(columns) if c.key == focus), 1))
 
 
 # --- tarjetas y avisos -------------------------------------------------------------------------------

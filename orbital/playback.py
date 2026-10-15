@@ -31,6 +31,7 @@ from .gamepad import (
     X_BUTTON,
     Y_BUTTON,
 )
+from .library.iptv_health import DEFAULT_USER_AGENT as LIVE_USER_AGENT  # el mismo con el que se verifica cada canal
 from .mpv import PIPE
 
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)  # sin consola negra al preguntarle a mpv
@@ -43,6 +44,15 @@ LB, RB = 0x0100, 0x0200
 STREMIO_SERVER = "http://127.0.0.1:11470"
 
 STARTUP_TIMEOUT = 45.0  # s sin imagen: esa fuente no sirve, se prueba otra
+LIVE_STARTUP_TIMEOUT = 12.0  # s sin imagen en un canal de TV: sin señal, se pasa al siguiente (medido: abre en ~1,7 s)
+LIVE_SETTLE = 0.5  # s tras sintonizar en que las propiedades de mpv aún pueden ser las del canal anterior
+# TV en vivo: nada de 400 MiB de caché (un video grabado se adelanta; la tele en vivo no). Pocos segundos por
+# delante y, si la conexión se corta, mpv la reabre solo; sin respuesta en 10 s el canal se da por caído.
+LIVE_ARGS = [
+    "--cache=yes", "--cache-secs=8", "--demuxer-readahead-secs=8", "--demuxer-max-bytes=48MiB",
+    "--demuxer-max-back-bytes=8MiB", "--network-timeout=10", "--tls-verify=no",
+    "--stream-lavf-o=reconnect=1,reconnect_streamed=1,reconnect_at_eof=1,reconnect_delay_max=4",
+]
 SAVE_EVERY = 60.0  # s entre guardados del avance en Stremio
 UPNEXT_LOOKAHEAD = 180.0  # s antes del final: se busca ya el siguiente episodio (y su fuente)
 UPNEXT_AT = 30.0  # s antes del final (o al empezar los créditos): tarjeta "Siguiente episodio"
@@ -164,7 +174,11 @@ def track_properties(audio: str, subtitles: str) -> list[tuple[str, str]]:
 
 def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: str = "en",
                   subtitles: str = "en", sub_files: list[str] | None = None, bindings: str | None = None,
-                  sub_scale: float = 1.0) -> list[str]:
+                  sub_scale: float = 1.0, live: bool = False, user_agent: str | None = None,
+                  referrer: str | None = None) -> list[str]:
+    """`live`: un canal de TV (caché corta, reconexión, sin posición que recordar). `user_agent` y `referrer`
+    son los del canal; los canales siguientes los llevan en su propio `loadfile` (ver OrbitalPlayer.tune)."""
+    cache = LIVE_ARGS if live else ["--cache=yes", "--demuxer-max-bytes=400MiB"]
     cmd = [
         mpv, f"--input-ipc-server={PIPE}", "--fullscreen", "--force-window=immediate",
         # keep-open: al terminar se queda en el último cuadro (Orbital decide: siguiente episodio o
@@ -173,12 +187,16 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
         *([f"--input-conf={bindings}"] if bindings else []),
         f"--title={title}", f"--force-media-title={title}",
         f"--alang={','.join(build_lang_list(audio))}", *subtitle_options(subtitles, audio),
-        "--sub-auto=fuzzy", "--cache=yes", "--demuxer-max-bytes=400MiB", "--hwdec=auto-safe",
+        "--sub-auto=fuzzy", *cache, "--hwdec=auto-safe",
         "--save-position-on-quit=no", "--msg-level=all=warn", *mpv_background(mpv), *OSD_STYLE,
     ]
+    if live:
+        cmd.append(f"--user-agent={user_agent or LIVE_USER_AGENT}")
+        if referrer:
+            cmd.append(f"--referrer={referrer}")
     if abs(sub_scale - 1.0) > .01:
         cmd.append(f"--sub-scale={sub_scale:g}")
-    if start > 5:
+    if start > 5 and not live:
         cmd.append(f"--start={int(start)}")
     for sub in sub_files or []:
         cmd.append(f"--sub-file={sub}")
@@ -228,6 +246,7 @@ class Segment:
     watched: float = 0.0
     saved_watched: float = 0.0
     playing: bool = False  # ya hubo imagen (mpv sabe la duración)
+    live: bool = False  # un canal de TV: sin duración, sin progreso que guardar, sin episodios
     failed: bool = False
     closed: bool = False
     last_save: float = field(default_factory=time.monotonic)
