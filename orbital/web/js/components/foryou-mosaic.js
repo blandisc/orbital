@@ -337,20 +337,25 @@ export function createForYouMosaic({ onFocus, onPick }) {
   /** «No me interesa»: la pieza se desvanece y otra toma su lugar. */
   function removeItem(key) {
     pool = pool.filter((i) => i.key !== key);
+    // Todas sus copias (con pocas sugerencias el mosaico repite piezas) y buscadas por la pieza, no por su lugar:
+    // mientras se desvanece, la columna puede podarse o crecer. Antes solo se iba la primera de cada columna.
     columns.forEach((col, c) => {
-      const r = col.tiles.findIndex((t) => t.item.key === key);
-      if (r < 0) return;
-      const t = col.tiles[r];
-      t.node.classList.add("foryou-mosaic__tile--gone");
-      setTimeout(() => {
-        const item = take();
-        if (!item) { t.node.remove(); col.tiles.splice(r, 1); return paint(); }
-        const fresh = makeTile(item);
-        t.node.replaceWith(fresh.node);
-        col.tiles[r] = fresh;
-        if (focus.col === c && focus.row >= col.tiles.length) focus.row = col.tiles.length - 1;
-        paint();
-      }, 460);
+      col.tiles.filter((t) => t.item.key === key).forEach((t) => {
+        t.node.classList.add("foryou-mosaic__tile--gone");
+        setTimeout(() => {
+          const r = col.tiles.indexOf(t);
+          if (r < 0) return; // ya se podó
+          const item = take();
+          if (!item || item.key === key) { t.node.remove(); col.tiles.splice(r, 1); }
+          else {
+            const fresh = makeTile(item);
+            t.node.replaceWith(fresh.node);
+            col.tiles[r] = fresh;
+          }
+          if (focus.col === c && focus.row >= col.tiles.length) focus.row = Math.max(0, col.tiles.length - 1);
+          paint();
+        }, 460);
+      });
     });
   }
 
