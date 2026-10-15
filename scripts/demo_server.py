@@ -26,7 +26,8 @@ from orbital.library import cinemeta, geforcenow, stremio  # noqa: E402
 from orbital.server import create_app  # noqa: E402
 
 GAMES = {"367520": "Hollow Knight", "1145360": "Hades", "504230": "Celeste", "632360": "Risk of Rain 2",
-         "1086940": "Baldur's Gate 3", "413150": "Stardew Valley"}
+         "1086940": "Baldur's Gate 3", "413150": "Stardew Valley", "1313140": "Cult of the Lamb", "440": "Team Fortress 2",
+         "2499520": "Be My Horde"}
 # Consolas inventadas (sin arte: así se ven los respaldos) para probar el Inicio y Tus consolas.
 CONSOLES = {
     "switch": ("Nintendo Switch", ".nsp", ["Mario Party Superstars", "Super Mario Bros Wonder", "Zelda Tears of the Kingdom"]),
@@ -36,6 +37,11 @@ CONSOLES = {
     "xbox360": ("Xbox 360", ".iso", ["Halo 3", "Gears of War"]),
     "wii": ("Nintendo Wii", ".iso", ["Wii Sports"]),
 }
+# Portadas de GBA de verdad (el navegador las trae de libretro): son cajas casi cuadradas, no pósters.
+LIBRETRO = "https://thumbnails.libretro.com/Nintendo%20-%20Game%20Boy%20Advance/Named_Boxarts/"
+GBA_ART = {"Pokemon Emerald": "Pokemon%20-%20Emerald%20Version%20(USA%2C%20Europe).png",
+           "Kirby Amazing Mirror": "Kirby%20%26%20The%20Amazing%20Mirror%20(USA).png",
+           "Metroid Fusion": "Metroid%20Fusion%20(USA).png"}
 # Lo último que "jugaste" (minutos atrás): llena Continuar y el destacado.
 PLAYED = {"steam:1145360": 30, "Mario Party Superstars": 240, "Pikmin 2": 1500, "steam:367520": 2900, "Pokemon Emerald": 4000}
 
@@ -148,7 +154,20 @@ def build(tmp: Path):
         if minutes:
             catalog.state.record_launch(item.id, now=now - minutes * 60)
     # «Para ti»: horas y un favorito (para «Tu más jugado» y «Tu favorito») y servicios de mentiras.
+    refresh = catalog.refresh
+
+    def refresh_with_gba_art(*args, **kwargs):  # cada vez que se vuelve a leer la biblioteca
+        found = refresh(*args, **kwargs)
+        for item in catalog.store.all():
+            if item.system == "gba" and item.title in GBA_ART:
+                item.image = LIBRETRO + GBA_ART[item.title]
+                item.extra.pop("placeholder_cover", None)
+        return found
+
+    catalog.refresh = refresh_with_gba_art
+    catalog.refresh()
     catalog.state.record_session("steam:1145360", 48 * 3600)
+    catalog.state.record_session("steam:2499520", 5 * 3600)
     catalog.state.record_session("steam:1086940", 62 * 3600)
     catalog.set_prefs("steam:367520", favorite=True)
     demo_foryou.install(catalog)

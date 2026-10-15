@@ -43,7 +43,8 @@ RECS_TTL = 60 * 60
 POPULAR_TTL = 6 * 3600
 SLOW_TTL = 24 * 3600
 
-MOSAIC_SIZE = 48
+MOSAIC_SIZE = 96  # el mosaico tiene ~40 piezas a la vista: con menos, se repetían
+PER_SOURCE = 16  # de cada lista, a lo más (así se mezclan)
 
 # Las claves de cada servicio. Las que escribes en Ajustes › Cuentas se guardan cifradas con las
 # credenciales (como la sesión de Stremio) y mandan sobre las de config.yaml.
@@ -162,13 +163,21 @@ def game_item(described: dict, why: str) -> dict:
     played = float(described.get("playtime") or 0)
     detail = f"{hours_text(played)} jugadas" if played >= 60 else "Nunca lo has abierto"
     extra = described.get("extra") or {}
+    steam_id = str(described["id"]).removeprefix("steam:")
+    appid = extra.get("steam_appid") or described.get("steam_appid") or (
+        int(steam_id) if str(described["id"]).startswith("steam:") and steam_id.isdigit() else None)
     return {
         "key": f"game:{described['id']}", "id": described["id"], "kind": "game", "item": described, "owned": True,
         "title": described["title"], "why": why, "detail": detail,
         "facts": [["Jugadas", hours_text(played) if played >= 60 else "0 h"]],
         "image": described.get("image"), "hero": described.get("hero") or described.get("image"),
         "logo": extra.get("logo"), "overview": "", "action": "Jugar",
-        "steam_appid": extra.get("steam_appid") or None,
+        "steam_appid": appid or None,
+        # El «hero» de Steam es un fondo hecho para llevar el logo encima (el de Cult of the Lamb es un
+        # patrón de corderitos): sin foco, la pieza ancha usa la cápsula de la tienda, que sí lleva el juego.
+        "wide": STEAM_ART.format(appid=appid, file="capsule_616x353.jpg") if appid else None,
+        # Sin un fondo ancho de verdad (el respaldo de Orbital o una captura chiquita): siempre en vertical.
+        "hero_weak": bool(extra.get("placeholder_hero") or extra.get("hero_lowres")),
         "placeholder": bool(extra.get("placeholder_cover")),  # sin portada propia: la genérica de Orbital
     }
 
@@ -365,7 +374,8 @@ class ForYou:
                 "facts": [[k, str(v)] for k, v in (["Salió", g["year"]], ["Metacritic", g["metacritic"]]) if v],
                 "image": art("library_600x900.jpg") if art else g["image"], "image_fallback": g["image"],
                 "hero": g["image"] or (art("library_hero.jpg") if art else None),
-                "logo": art("logo.png") if art else None, "overview": "", "owned": False, "action": None,
+                "logo": art("logo.png") if art else None, "wide": art("capsule_616x353.jpg") if art else None,
+                "overview": "", "owned": False, "action": None,
             })
         return found
 
@@ -383,7 +393,7 @@ class ForYou:
         return marked
 
     # --- tus juegos ----------------------------------------------------------------------------
-    def local_games(self, seed: int | None = None) -> list[dict]:
+    def local_games(self, seed: int | None = None, lucky: int = 3) -> list[dict]:
         """Favoritos, los más jugados, los que nunca has abierto y uno al azar (cambia cada día)."""
         rng = random.Random(seed if seed is not None else date.today().toordinal())
         described = [self.catalog.describe(i) for i in self.catalog.items() if i.category in GAME_CATEGORIES]
@@ -398,9 +408,9 @@ class ForYou:
         fresh = fresh[:8]
         taken |= {d["id"] for d in fresh}
         rest = [d for d in described if d["id"] not in taken]
-        lucky = rng.sample(rest, min(3, len(rest)))
+        lucky_picks = rng.sample(rest, min(lucky, len(rest)))
         picks = ([game_item(d, "Tu favorito") for d in favorites] + [game_item(d, "Tu más jugado") for d in most]
-                 + [game_item(d, "Sin estrenar") for d in fresh] + [game_item(d, "Al azar") for d in lucky])
+                 + [game_item(d, "Sin estrenar") for d in fresh] + [game_item(d, "Al azar") for d in lucky_picks])
         hidden = self.catalog.state.dismissed()
         return [p for p in picks if p["key"] not in hidden]
 
@@ -427,7 +437,7 @@ class ForYou:
 
         def fetch(source):
             try:
-                return self.list_items(*source)[:10]
+                return self.list_items(*source)[:PER_SOURCE]
             except (KeyError, *SERVICE_ERRORS) as exc:
                 log.warning("Para ti: %s no respondió: %s", source[0], exc)
                 return []
@@ -435,7 +445,8 @@ class ForYou:
         with ThreadPoolExecutor(max_workers=4) as pool:
             batches = list(pool.map(fetch, sources))
         videos = self._interleave(batches)
-        games = [g for g in self.local_games() if not g["placeholder"]]  # el mosaico es de imágenes: sin arte, no entra
+        # El mosaico es de imágenes: sin arte, no entra. Y lleva más «Al azar» que la lista (hay lugar).
+        games = [g for g in self.local_games(lucky=24) if not g["placeholder"]]
         mixed, seen = [], set()
         # Tres videos por cada dos juegos, más o menos (lo que haya de cada uno).
         vi = gi = 0

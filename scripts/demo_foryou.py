@@ -81,8 +81,11 @@ class DemoTrakt:
         return [M["arrival"], M["inter"], M["inception"], M["dune1"], M["br"], S["dark"]]
 
     def trending(self, kind, limit=30):
-        return [S[k] for k in ("tlou", "severance", "stranger", "blackmirror", "bear", "shogun", "penguin", "lotus")] if kind == "series" \
-            else [M[k] for k in ("dune2", "oppen", "inside2", "batman", "glass", "poor")]
+        # Todo el catálogo de mentiras, como Trakt de verdad (decenas): con 14, el mosaico se repetía.
+        first = ("tlou", "severance", "stranger", "blackmirror", "bear", "shogun", "penguin", "lotus") if kind == "series" \
+            else ("dune2", "oppen", "inside2", "batman", "glass", "poor")
+        pool = S if kind == "series" else M
+        return [pool[k] for k in first] + [v for k, v in pool.items() if k not in first]
 
     def popular(self, kind, limit=30):
         return [S[k] for k in ("breaking", "stranger", "tlou", "bear", "succession", "blackmirror", "dark", "saul")] if kind == "series" \

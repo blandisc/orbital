@@ -129,14 +129,13 @@ export function createLogin({ onDone, onMove, onClose }) {
     }
   }
 
-  /** Teclado físico: una letra, o "" para borrar; Enter avanza o conecta; Tab cambia de campo. */
+  /** Teclado físico: una letra, o "\b" para borrar; Enter avanza o conecta; Tab cambia de campo. */
   function type(char) {
     if (el.hidden || busy) return;
-    if (char === "
-") return press("next");
-    if (char === "	") return switchField(active + 1);
+    if (char === "\n") return press("next");
+    if (char === "\t") return switchField(active + 1);
     const field = fields[active];
-    if (char === "") field.value = dropLast(field.value);
+    if (char === "\b") field.value = dropLast(field.value);
     else field.value += char;
     message.textContent = "";
     renderFields();
@@ -145,9 +144,7 @@ export function createLogin({ onDone, onMove, onClose }) {
   // Ctrl+V: una clave de 32 letras no se teclea con el mando (se copia en el navegador y se pega aquí).
   document.addEventListener("paste", (event) => {
     if (!shown() || busy) return;
-    const text = (event.clipboardData?.getData("text") || "").replace(/[
-
-]+/g, " ").trim();
+    const text = (event.clipboardData?.getData("text") || "").replace(/\s+/g, "").trim(); // una clave no lleva espacios
     if (!text) return;
     event.preventDefault();
     fields[active].value += text;

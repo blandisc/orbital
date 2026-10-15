@@ -8,6 +8,7 @@
  */
 import { systemIconName } from "./icons.js";
 import { kicker } from "./home.js";
+import { clampRatio, coverRatio } from "./library.js";
 
 export const KIND_NAME = { movie: "Película", series: "Serie" };
 export const SPLIT_KINDS = [{ id: "series", label: "Series" }, { id: "movie", label: "Películas" }];
@@ -40,8 +41,12 @@ export function hashOf(text) {
   return h >>> 0;
 }
 
-/** Portada alta o arte ancho en el mosaico: más o menos dos de cada cinco, anchas. */
-export const shapeOf = (item) => (hashOf(item?.key) % 5 < 2 ? "wide" : "poster");
+/** Portada alta o arte ancho en el mosaico: más o menos dos de cada cinco, anchas. Un juego sin un
+ *  fondo ancho de verdad (el respaldo de Orbital, una captura chiquita de GBA) va siempre en vertical. */
+export const shapeOf = (item) => (!item?.hero_weak && hashOf(item?.key) % 5 < 2 ? "wide" : "poster");
+
+/** Ancho / alto de su portada: las cajas de GBA son casi cuadradas, las de Switch altas, un póster 2:3. */
+export const posterRatio = (item) => (item?.kind === "game" && item.item ? clampRatio(coverRatio(item.item)) : 2 / 3);
 
 /** El siguiente de la lista que no esté a la vista (el mosaico no repite lo que ya enseña). */
 export function nextUnseen(pool, cursor, visible) {

@@ -361,3 +361,10 @@ def test_keys_written_in_settings_are_checked_saved_and_removed(library, make_fo
         net.on("GET", r"rawg.io/api/games\?key=mala", (401, None))
         assert c.post("/api/foryou/keys", json={"service": "rawg", "values": ["mala"]}).status_code == 422
         assert c.get("/api/settings").json()["para_ti"]["saved"] == ["trakt"]
+
+
+def test_steam_games_carry_their_store_capsule_for_the_mosaic():
+    item = game_item({"id": "steam:1313140", "title": "Cult of the Lamb", "playtime": 0, "extra": {}}, "Sin estrenar")
+    assert item["steam_appid"] == 1313140 and item["wide"].endswith("/1313140/capsule_616x353.jpg")
+    gba = game_item({"id": "emu:gba:1", "title": "Kirby", "playtime": 0, "extra": {"hero_lowres": True}}, "Al azar")
+    assert gba["wide"] is None and gba["hero_weak"]
