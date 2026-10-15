@@ -49,6 +49,26 @@ scripts/ios_strings.py    genera y comprueba el catálogo de textos
 
 ## Probar
 
+### Modo demostración (simulador, sin tu cuenta)
+
+Solo en Debug. Arranca la app con `-demo`: una cuenta de Stremio falsa con biblioteca, un complemento con videos de prueba
+públicos y Cinemeta de verdad. Nada toca tu Keychain ni tus ajustes. Para abrir una pantalla directo:
+
+| Argumento | Qué abre |
+|---|---|
+| `-demo-tab 1` | la pestaña (0 Inicio, 1 Para ti, 2 Ver, 3 Descargas) |
+| `-demo-title series:tt0386676` | una ficha |
+| `-demo-open settings` · `sources` · `play` · `download` | Ajustes, la hoja de fuentes, el reproductor o una descarga (sobre la ficha) |
+| `-demo-search dune` | una búsqueda en Ver |
+| `-demo-lang en` | la app en inglés |
+| `-demo-signed-out` | la pantalla de entrada |
+
+```bash
+xcrun simctl launch booted mx.iracheta.orbital -demo -demo-title series:tt0386676 -demo-open play
+```
+
+### Pruebas
+
 ```bash
 cd ios/OrbitalCore && swift test         # lógica y modelos (con los mismos casos que las pruebas de Python)
 python scripts/ios_golden.py             # regenera los valores de referencia si cambia la lógica de Python
@@ -73,8 +93,8 @@ Las pruebas de Swift leen `tests/fixtures/` (los mismos datos de ejemplo que usa
 | `OrbitalCore` y `OrbitalModels` | Compilados y probados (Swift 6.2, Linux): `swift test` (193 pruebas). Pasaron además dos revisiones independientes (compilación y lógica/seguridad); sus hallazgos están corregidos y con prueba. |
 | Los modelos de vista y su lógica de reproducción | Probados con un motor y una red falsos. |
 | Sistema de diseño (colores = `palette.json`, sin valores sueltos en pantallas) | Verificado con pruebas. |
-| **SwiftUI, descargas en segundo plano, AVPlayer, Keychain** | **Escritos, solo revisados de sintaxis. No se han compilado ni ejecutado**: no había Xcode ni iPhone. Al compilar por primera vez pueden salir errores de tipos. |
-| **AetherEngine** (`Platform/AetherEnginePlayer.swift`) | Escrito contra el README de la versión 7.35, sin compilar. Activo con la bandera `AETHER_ENGINE`; sin ella la app usa AVPlayer (MP4/HLS, sin MKV). |
+| **SwiftUI, descargas en segundo plano, AVPlayer, Keychain** | Compilado con Xcode 27 (SDK iOS 26) e instalado en un iPhone. Recorrido en el simulador con el modo demostración: Inicio, Para ti, Ver, Buscar, ficha, fuentes, Descargas (una descarga real de punta a punta), Ajustes, entrada, en español e inglés y con letra de accesibilidad. |
+| **AetherEngine** (`Platform/AetherEnginePlayer.swift`) | Compila con la 7.35.1 y reproduce en el simulador (HLS por su vía nativa). PiP no se puede probar en el simulador: falta verlo en el iPhone. |
 | Infuse, Real-Debrid, Trakt reales | Sin probar contra los servicios reales. Ver «Pruebas pendientes en el iPhone». |
 
 ## Pruebas pendientes en el iPhone

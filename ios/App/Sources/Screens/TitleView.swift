@@ -7,6 +7,7 @@ struct TitleView: View {
     let route: TitleRoute
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
     @StateObject private var observer: ModelObserver<TitleModel>
     @StateObject private var tint = ArtTint()
     @State private var sourcesFor: SourcesTarget?
@@ -86,7 +87,9 @@ struct TitleView: View {
                 Label { primaryLabel(label, model).lineLimit(1) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
             }
             .dsPrimaryButton().controlSize(.large).disabled(model.continueVideoID == nil)
-            HStack(spacing: DS.Space.s2) {
+            // Con letra de accesibilidad no caben tres en fila: van una debajo de otra, con su nombre completo.
+            let row = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: DS.Space.s2)) : AnyLayout(HStackLayout(spacing: DS.Space.s2))
+            row {
                 secondary(model.inLibrary ? "En Mi lista" : "Mi lista", symbol: model.inLibrary ? "checkmark" : "plus") { Task { await model.toggleLibrary() } }
                     .sensoryFeedback(.success, trigger: model.inLibrary)
                 downloadButton(model)
@@ -108,7 +111,11 @@ struct TitleView: View {
     /// Una acción secundaria con su nombre (no solo el ícono): Mi lista, Descargar, Fuentes.
     private func secondary(_ title: LocalizedStringKey, symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: DS.Space.s1) { Image(systemName: symbol); Text(title).font(DS.font(.xs)).lineLimit(1) }.frame(maxWidth: .infinity)
+            Group {
+                if typeSize.isAccessibilitySize { Label(title, systemImage: symbol).font(DS.font(.md)) }
+                else { VStack(spacing: DS.Space.s1) { Image(systemName: symbol); Text(title).font(DS.font(.xs)).lineLimit(1) } }
+            }
+            .frame(maxWidth: .infinity)
         }
         .buttonStyle(.glass).buttonBorderShape(.roundedRectangle(radius: DS.Radius.lg)).controlSize(.large)
     }

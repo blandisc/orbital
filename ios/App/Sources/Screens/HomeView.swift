@@ -67,12 +67,21 @@ struct HomeView: View {
         let detail = [episodeText(season: item.season, episode: item.episode)].filter { !$0.isEmpty }.joined(separator: " · ")
         return NavigationLink(value: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)) {
             HeroCard(title: item.title, detail: detail, background: item.background ?? item.poster, badge: item.nextUp ? "Sigue" : "Seguir viendo", progress: item.progress) {
-                HStack(spacing: DS.Space.s2) {
-                    Button { Task { await env.play(item) } } label: { Label("Continuar", systemImage: "play.fill") }.dsPrimaryButton()
-                    if item.leftMinutes > 0 { Text(timeLeftText(minutes: item.leftMinutes)).font(DS.font(.sm)).foregroundStyle(DS.textMuted) }
+                // Botón y tiempo en un renglón; si la letra no cabe, uno debajo del otro (nunca «Conti-nuar»).
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: DS.Space.s2) { continueButton(item); timeLeft(item) }
+                    VStack(alignment: .leading, spacing: DS.Space.s2) { continueButton(item); timeLeft(item) }
                 }
             }
         }
         .buttonStyle(.plain)
+    }
+
+    private func continueButton(_ item: HomeItem) -> some View {
+        Button { Task { await env.play(item) } } label: { Label("Continuar", systemImage: "play.fill").lineLimit(1) }.dsPrimaryButton()
+    }
+
+    @ViewBuilder private func timeLeft(_ item: HomeItem) -> some View {
+        if item.leftMinutes > 0 { Text(timeLeftText(minutes: item.leftMinutes)).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1) }
     }
 }

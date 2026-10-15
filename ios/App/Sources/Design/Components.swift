@@ -154,7 +154,7 @@ struct HeroCard<Actions: View>: View {
             }
             .padding(DS.Space.s4)
         }
-        .frame(height: DS.Poster.heroHeight)
+        .frame(minHeight: DS.Poster.heroHeight)      // con letra grande crece en vez de encimar el texto
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl))
         .accessibilityElement(children: .contain)
     }
