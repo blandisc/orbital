@@ -100,7 +100,7 @@ struct PlayerScreen: View {
         case .failed(let message):
             VStack(spacing: DS.Space.s4) {
                 DSNotice(text: LocalizedStringKey(message), tone: .error)
-                HStack { Button("Cerrar") { Task { await close() } }.buttonStyle(.glass); Button("Abrir en Infuse") { Task { await openInInfuse() } }.buttonStyle(.glassProminent) }
+                HStack { Button("Cerrar") { Task { await close() } }.buttonStyle(.glass); Button("Abrir en Infuse") { Task { await openInInfuse() } }.dsPrimaryButton() }
             }.padding(DS.Space.s6)
         default: if model.snapshot.state == .buffering { ProgressView().tint(DS.text) }
         }
@@ -212,7 +212,7 @@ struct UpNextCard: View {
                 Text("\(card.label) · \(card.title)").font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(2)
                 if card.secondsLeft > 0 { Text("Empieza en \(card.secondsLeft) s").font(DS.font(.xs)).foregroundStyle(DS.textMuted) }
                 HStack(spacing: DS.Space.s2) {
-                    Button("Ver ahora", action: watchNow).buttonStyle(.glassProminent)
+                    Button("Ver ahora", action: watchNow).dsPrimaryButton()
                     Button("Cancelar", action: cancel).buttonStyle(.glass)
                 }
             }

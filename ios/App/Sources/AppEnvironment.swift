@@ -29,11 +29,7 @@ final class AppEnvironment: ObservableObject {
     private init() {
         let transport = BackgroundDownloadTransport()
         self.transport = transport
-        let services = Services(
-            http: URLSessionHTTPClient(), secrets: KeychainSecrets(service: Bundle.main.bundleIdentifier ?? "com.example.orbital.ios"),
-            kv: UserDefaultsKeyValueStore(), pending: FilePendingStore(url: AppFiles.pendingWork), downloadTransport: transport,
-            downloadsRoot: AppFiles.downloadsRoot, savedDownloads: DownloadIndex.load(), freeSpace: { DiskSpace.freeBytes() },
-            onDownloadsChange: { DownloadIndex.save($0) })
+        let services = Self.makeServices(transport)
         self.services = services
         let store = services.settings   // el almacén es seguro entre hilos: los cierres no tocan nada aislado al hilo principal
         transport.allowsCellular = { !store.value.wifiOnlyDownloads }
@@ -42,6 +38,22 @@ final class AppEnvironment: ObservableObject {
         servicesSubscription = services.onChange { [weak self] in self?.objectWillChange.send() }
         session = SessionModel(services)
         Task { await services.downloads.start() }
+    }
+
+    private static func makeServices(_ transport: BackgroundDownloadTransport) -> Services {
+        #if DEBUG
+        // Modo demostración: nada toca tu Keychain, tus ajustes ni tus descargas.
+        if Demo.isOn {
+            return Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: InMemoryKeyValueStore(), pending: InMemoryPendingStore(),
+                            downloadTransport: transport, downloadsRoot: FileManager.default.temporaryDirectory.appendingPathComponent("demo-downloads"),
+                            freeSpace: { DiskSpace.freeBytes() })
+        }
+        #endif
+        return Services(
+            http: URLSessionHTTPClient(), secrets: KeychainSecrets(service: Bundle.main.bundleIdentifier ?? "com.example.orbital.ios"),
+            kv: UserDefaultsKeyValueStore(), pending: FilePendingStore(url: AppFiles.pendingWork), downloadTransport: transport,
+            downloadsRoot: AppFiles.downloadsRoot, savedDownloads: DownloadIndex.load(), freeSpace: { DiskSpace.freeBytes() },
+            onDownloadsChange: { DownloadIndex.save($0) })
     }
 
     var uiLocale: Locale { Locale(identifier: services.appSettings.uiLanguage) }

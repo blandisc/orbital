@@ -77,31 +77,39 @@ struct DSSectionHead: View {
     }
 }
 
-/// El póster de un título: la imagen, o su nombre sobre un fondo si no carga.
+/// El póster de un título: la imagen, o su nombre sobre un fondo si no carga. La imagen llena su marco y se recorta:
+/// nunca agranda la vista (con `aspect: nil` ocupa el espacio que le den, como el destacado).
 struct PosterView: View {
     let url: String?
     let title: String
+    var aspect: CGFloat? = DS.Poster.aspect
 
     var body: some View {
-        ZStack {
-            LinearGradient(colors: [DS.surfaceRaised, DS.surface], startPoint: .topLeading, endPoint: .bottomTrailing)
-            if let url, let u = URL(string: url) {
-                AsyncImage(url: u) { phase in
-                    switch phase {
-                    case .success(let image): image.resizable().scaledToFill()
-                    default: Text(title).font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.textMuted).multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading).padding(DS.Space.s2)
+        frame
+            .overlay {
+                if let url, let u = URL(string: url) {
+                    AsyncImage(url: u) { phase in
+                        switch phase {
+                        case .success(let image): image.resizable().scaledToFill()
+                        default: placeholder
+                        }
                     }
-                }
-            } else {
-                Text(title).font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.textMuted)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading).padding(DS.Space.s2)
+                } else { placeholder }
             }
-        }
-        .aspectRatio(DS.Poster.aspect, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-        .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).stroke(DS.hairline))
-        .accessibilityLabel(Text(title))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).stroke(DS.hairline))
+            .accessibilityLabel(Text(title))
+    }
+
+    /// El fondo marca el tamaño: con proporción, la del póster; sin ella, todo lo que le den.
+    @ViewBuilder private var frame: some View {
+        let fill = LinearGradient(colors: [DS.surfaceRaised, DS.surface], startPoint: .topLeading, endPoint: .bottomTrailing)
+        if let aspect { fill.aspectRatio(aspect, contentMode: .fit) } else { fill }
+    }
+
+    private var placeholder: some View {
+        Text(title).font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.textMuted).multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading).padding(DS.Space.s2)
     }
 }
 
@@ -135,7 +143,7 @@ struct HeroCard<Actions: View>: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            PosterView(url: background, title: title).aspectRatio(nil, contentMode: .fill)
+            PosterView(url: background, title: title, aspect: nil)
             LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom)
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 if let badge { DSBadge(text: badge) }
@@ -152,8 +160,14 @@ struct HeroCard<Actions: View>: View {
     }
 }
 
-// Botones: los nativos de iOS 26 (Liquid Glass). Principal: `.buttonStyle(.glassProminent)`; secundario: `.buttonStyle(.glass)`;
+// Botones: los nativos de iOS 26 (Liquid Glass). Principal: `.dsPrimaryButton()` (vidrio con letra oscura); secundario: `.buttonStyle(.glass)`;
 // sobre fondos lisos, `.borderedProminent` / `.bordered`. No hay estilos de botón propios (`DesignTests` lo vigila).
+
+extension View {
+    /// El botón principal: vidrio nativo con el tinte de Orbital (papel) y la letra oscura encima. Sin esto, iOS pone letra
+    /// blanca sobre el tinte claro y no se lee.
+    func dsPrimaryButton() -> some View { buttonStyle(.glassProminent).foregroundStyle(DS.onPrimary) }
+}
 
 /// Un botón redondo con un ícono (más, descargar, cerrar): el botón nativo con vidrio de iOS 26, ya con su tamaño táctil de 44 pt.
 struct DSIconButton: View {
@@ -164,7 +178,7 @@ struct DSIconButton: View {
 
     var body: some View {
         Group {
-            if prominent { Button(action: action) { Image(systemName: symbol) }.buttonStyle(.glassProminent) }
+            if prominent { Button(action: action) { Image(systemName: symbol) }.dsPrimaryButton() }
             else { Button(action: action) { Image(systemName: symbol) }.buttonStyle(.glass) }
         }
         .buttonBorderShape(.circle).controlSize(.large)
@@ -194,13 +208,19 @@ struct DSNotice: View {
 struct DSSegmented<Value: Hashable>: View {
     let options: [(Value, LocalizedStringKey)]
     @Binding var selection: Value
+    /// El valor actual como dato de la vista: con un `Binding(get:set:)` SwiftUI no ve el cambio y no la vuelve a pintar.
+    private let current: Value
+
+    init(options: [(Value, LocalizedStringKey)], selection: Binding<Value>) {
+        self.options = options; _selection = selection; current = selection.wrappedValue
+    }
 
     var body: some View {
         Picker(selection: $selection) {
             ForEach(options.indices, id: \.self) { Text(options[$0].1).tag(options[$0].0) }
         } label: { EmptyView() }
         .pickerStyle(.segmented)
-        .sensoryFeedback(.selection, trigger: selection)
+        .sensoryFeedback(.selection, trigger: current)
     }
 }
 
@@ -209,22 +229,33 @@ struct DSChipRow<Item: Hashable & Identifiable>: View {
     let items: [Item]
     let label: (Item) -> Text
     @Binding var selection: Item
+    /// El valor actual como dato de la vista (ver `DSSegmented`).
+    private let current: Item
+    /// Hasta dónde está deslizada la tira: el elegido queda a la vista (la temporada 7 de 9 no se esconde a la derecha).
+    @State private var scrolled: Item.ID?
+
+    init(items: [Item], label: @escaping (Item) -> Text, selection: Binding<Item>) {
+        self.items = items; self.label = label; _selection = selection; current = selection.wrappedValue
+    }
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Space.s2) {
                 ForEach(items) { item in
                     Group {
-                        if selection == item { Button { selection = item } label: { label(item).lineLimit(1) }.buttonStyle(.borderedProminent) }
+                        if current == item { Button { selection = item } label: { label(item).lineLimit(1) }.buttonStyle(.borderedProminent).foregroundStyle(DS.onPrimary) }
                         else { Button { selection = item } label: { label(item).lineLimit(1) }.buttonStyle(.bordered) }
                     }
                     .buttonBorderShape(.capsule).controlSize(.small)
-                    .accessibilityAddTraits(selection == item ? .isSelected : [])
+                    .accessibilityAddTraits(current == item ? .isSelected : [])
                 }
             }
+            .scrollTargetLayout()
             .padding(.horizontal, DS.Space.gutter)
         }
-        .sensoryFeedback(.selection, trigger: selection)
+        .scrollPosition(id: $scrolled, anchor: .center)
+        .onChange(of: current.id, initial: true) { _, id in scrolled = id }
+        .sensoryFeedback(.selection, trigger: current)
     }
 }
 

@@ -39,7 +39,7 @@ struct DownloadsView: View {
         let used = Double(model.usedBytes), free = Double(model.freeBytes)
         return VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack {
-                Text("Ocupan \(bytes(model.usedBytes))").font(DS.font(.md)).foregroundStyle(DS.text)
+                (model.usedBytes > 0 ? Text("Ocupan \(bytes(model.usedBytes))") : Text("Nada descargado")).font(DS.font(.md)).foregroundStyle(DS.text)
                 Spacer()
                 Text("Libres \(bytes(model.freeBytes))").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
             }
@@ -89,5 +89,6 @@ struct DownloadsView: View {
         }
     }
 
-    private func bytes(_ n: Int64) -> String { ByteCountFormatter.string(fromByteCount: n, countStyle: .file) }
+    /// «1,2 GB» en el idioma de la app (no en el del sistema).
+    private func bytes(_ n: Int64) -> String { n.formatted(.byteCount(style: .file).locale(env.uiLocale)) }
 }

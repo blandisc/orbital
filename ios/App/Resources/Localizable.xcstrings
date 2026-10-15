@@ -606,6 +606,17 @@
         }
       }
     },
+    "En Mi lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In My List"
+          }
+        }
+      }
+    },
     "En cola": {
       "extractionState": "manual",
       "localizations": {
@@ -1009,6 +1020,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "More"
+          }
+        }
+      }
+    },
+    "Nada descargado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing downloaded"
           }
         }
       }

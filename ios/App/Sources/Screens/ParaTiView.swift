@@ -76,7 +76,7 @@ struct MosaicTile: View {
     var body: some View {
         NavigationLink(value: suggestion.route) {
             ZStack(alignment: .bottomLeading) {
-                PosterView(url: expanded ? suggestion.wide : suggestion.poster, title: suggestion.title).aspectRatio(DS.Poster.aspect, contentMode: .fill)
+                PosterView(url: expanded ? suggestion.wide : suggestion.poster, title: suggestion.title)
                 if expanded {
                     LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom)
                     VStack(alignment: .leading, spacing: DS.Space.s1) {

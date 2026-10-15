@@ -14,7 +14,6 @@ struct HomeView: View {
         let model = home.model
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s6) {
-                header
                 if model.offline { DSNotice(text: "Sin conexión: se ve lo último que guardé.", tone: .warn).padding(.horizontal, DS.Space.gutter) }
                 if let first = model.continueWatching.first {
                     hero(first).padding(.horizontal, DS.Space.gutter)
@@ -45,9 +44,11 @@ struct HomeView: View {
             .padding(.bottom, DS.Space.s8)
         }
         .background(TintedBackground(tint: tint.color))
-        .navigationTitle("").navigationBarTitleDisplayMode(.inline)
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { NavigationLink { SettingsView() } label: { Image(systemName: "person.crop.circle") }.accessibilityLabel(Text("Ajustes")) } }
+        .navigationTitle("Orbital").navigationBarTitleDisplayMode(.large)
+        .navigationSubtitle(syncText)
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { NavigationLink(value: SettingsRoute()) { Image(systemName: "person.crop.circle") }.accessibilityLabel(Text("Ajustes")) } }
         .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
+        .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .task {
             await model.refresh()
             let work = env.services.pending.load()      // una sola lectura por actualización, no una por cada pintado
@@ -57,17 +58,9 @@ struct HomeView: View {
         .refreshable { await model.refresh() }
     }
 
-    private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text("Orbital").font(DS.font(.xxl, weight: .bold)).foregroundStyle(DS.text)
-            Spacer()
-            syncStatus
-        }
-        .padding(.horizontal, DS.Space.gutter)
-    }
-
-    @ViewBuilder private var syncStatus: some View {
-        if pendingCount > 0 { DSChip(text: "\(pendingCount) cambios por subir", tone: .warn) } else { DSChip(text: "Stremio al día", tone: .good) }
+    /// «Stremio al día» o «N cambios por subir» (si no hubo internet).
+    private var syncText: Text {
+        pendingCount > 0 ? Text("\(pendingCount) cambios por subir") : Text("Stremio al día")
     }
 
     private func hero(_ item: HomeItem) -> some View {
@@ -75,7 +68,7 @@ struct HomeView: View {
         return NavigationLink(value: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)) {
             HeroCard(title: item.title, detail: detail, background: item.background ?? item.poster, badge: item.nextUp ? "Sigue" : "Seguir viendo", progress: item.progress) {
                 HStack(spacing: DS.Space.s2) {
-                    Button { Task { await env.play(item) } } label: { Label("Continuar", systemImage: "play.fill") }.buttonStyle(.glassProminent)
+                    Button { Task { await env.play(item) } } label: { Label("Continuar", systemImage: "play.fill") }.dsPrimaryButton()
                     if item.leftMinutes > 0 { Text(timeLeftText(minutes: item.leftMinutes)).font(DS.font(.sm)).foregroundStyle(DS.textMuted) }
                 }
             }

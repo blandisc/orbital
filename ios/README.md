@@ -100,6 +100,7 @@ Las pruebas de Swift leen `tests/fixtures/` (los mismos datos de ejemplo que usa
 | Dónde | Motivo |
 |---|---|
 | `Design/Components.swift` (`averageColor`) | el color sale de los píxeles del póster, no es un valor de diseño |
+| `Support/Demo.swift` | demora de red simulada del modo demostración (solo Debug), no es una espera de la interfaz |
 
 ## Límites conocidos
 

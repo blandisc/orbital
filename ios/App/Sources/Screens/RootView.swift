@@ -2,6 +2,9 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
+/// Ajustes (desde el ícono de la esquina de Inicio).
+struct SettingsRoute: Hashable {}
+
 /// Un título al que se navega.
 struct TitleRoute: Hashable {
     var kind: String
@@ -47,14 +50,27 @@ extension PlayRequest: @retroactive Identifiable { public var id: String { "\(me
 
 /// La barra de pestañas nativa: en iOS 26 es de vidrio (Liquid Glass) y se encoge al deslizar.
 struct MainTabs: View {
+    @State private var tab = 0
+    @State private var paths: [NavigationPath] = Array(repeating: NavigationPath(), count: 4)
+
     var body: some View {
-        TabView {
-            Tab("Inicio", systemImage: "house") { NavigationStack { HomeView() } }
-            Tab("Para ti", systemImage: "sparkles") { NavigationStack { ParaTiView() } }
-            Tab("Ver", systemImage: "play.rectangle") { NavigationStack { BrowseView() } }
-            Tab("Descargas", systemImage: "arrow.down.circle") { NavigationStack { DownloadsView() } }
+        TabView(selection: $tab) {
+            Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() } }
+            Tab("Para ti", systemImage: "sparkles", value: 1) { NavigationStack(path: $paths[1]) { ParaTiView() } }
+            Tab("Ver", systemImage: "play.rectangle", value: 2) { NavigationStack(path: $paths[2]) { BrowseView() } }
+            Tab("Descargas", systemImage: "arrow.down.circle", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() } }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
+        .onAppear(perform: openDemoScreen)
+    }
+
+    private func openDemoScreen() {
+        #if DEBUG
+        guard Demo.isOn else { return }
+        tab = Demo.tab
+        if Demo.open == "settings" { paths[tab].append(SettingsRoute()) }
+        if let title = Demo.title { paths[tab].append(TitleRoute(kind: title.kind, metaID: title.id, title: "", poster: nil)) }
+        #endif
     }
 }
 

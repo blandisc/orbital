@@ -55,7 +55,7 @@ struct TitleView: View {
     // MARK: partes
     private func hero(_ model: TitleModel) -> some View {
         ZStack(alignment: .bottomLeading) {
-            PosterView(url: model.background ?? model.poster, title: model.title).aspectRatio(DS.Poster.heroAspect, contentMode: .fill)
+            PosterView(url: model.background ?? model.poster, title: model.title, aspect: DS.Poster.heroAspect)
             LinearGradient(colors: [.clear, DS.bg], startPoint: .center, endPoint: .bottom)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(model.title).font(DS.font(.display, weight: .bold)).foregroundStyle(DS.text).lineLimit(3)
@@ -72,15 +72,27 @@ struct TitleView: View {
 
     private func actions(_ model: TitleModel) -> some View {
         let label = model.continueLabel
-        return HStack(spacing: DS.Space.s2) {
+        return VStack(spacing: DS.Space.s3) {
             Button { start(model, videoID: nil) } label: {
-                Label { primaryLabel(label, model) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
+                Label { primaryLabel(label, model).lineLimit(1) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
             }
-            .buttonStyle(.glassProminent).controlSize(.large).disabled(model.continueVideoID == nil)
-            DSIconButton(symbol: model.inLibrary ? "checkmark" : "plus", label: model.inLibrary ? "Quitar de Mi lista" : "Añadir a Mi lista") { Task { await model.toggleLibrary() } }
-            DSIconButton(symbol: "arrow.down.circle", label: "Descargar") { downloadMenu = true }
-            DSIconButton(symbol: "list.bullet", label: "Elegir fuente") { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) } }
+            .dsPrimaryButton().controlSize(.large).disabled(model.continueVideoID == nil)
+            HStack(spacing: DS.Space.s2) {
+                secondary(model.inLibrary ? "En Mi lista" : "Mi lista", symbol: model.inLibrary ? "checkmark" : "plus") { Task { await model.toggleLibrary() } }
+                    .sensoryFeedback(.success, trigger: model.inLibrary)
+                secondary("Descargar", symbol: "arrow.down.circle") { downloadMenu = true }
+                secondary("Fuentes", symbol: "list.bullet") { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) } }
+                    .disabled(model.continueVideoID == nil)
+            }
         }
+    }
+
+    /// Una acción secundaria con su nombre (no solo el ícono): Mi lista, Descargar, Fuentes.
+    private func secondary(_ title: LocalizedStringKey, symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: DS.Space.s1) { Image(systemName: symbol); Text(title).font(DS.font(.xs)).lineLimit(1) }.frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.glass).buttonBorderShape(.roundedRectangle(radius: DS.Radius.lg)).controlSize(.large)
     }
 
     private func primaryLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> Text {
@@ -99,18 +111,10 @@ struct TitleView: View {
 
     @ViewBuilder private func episodes(_ model: TitleModel) -> some View {
         if model.seasons.count > 1 {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: DS.Space.s2) {
-                    ForEach(model.seasons) { season in
-                        Button { model.select(season: season.season) } label: {
-                            (season.isSpecials ? Text("Especiales") : Text("Temporada \(season.season)")).font(DS.font(.sm, weight: .semibold))
-                                .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
-                                .foregroundStyle(model.selectedSeason == season.season ? DS.onPrimary : DS.text)
-                                .background(model.selectedSeason == season.season ? DS.primary : DS.fill, in: Capsule())
-                        }
-                    }
-                }
-            }
+            DSChipRow(items: model.seasons.map { SeasonChip(season: $0.season, isSpecials: $0.isSpecials) },
+                      label: { season in season.isSpecials ? Text("Especiales") : Text("Temporada \(season.season)") },
+                      selection: Binding(get: { SeasonChip(season: model.selectedSeason, isSpecials: model.selectedSeason == 0) }, set: { model.select(season: $0.season) }))
+                .padding(.horizontal, -DS.Space.gutter)
         }
         VStack(spacing: 0) {
             ForEach(model.rows) { row in
@@ -164,6 +168,13 @@ struct TitleView: View {
     }
 }
 
+/// Una temporada en la tira de filtros.
+struct SeasonChip: Hashable, Identifiable {
+    var season: Int
+    var isSpecials: Bool
+    var id: Int { season }
+}
+
 struct EpisodeRowView: View {
     let row: EpisodeRow
     let play: () -> Void
@@ -175,7 +186,7 @@ struct EpisodeRowView: View {
         Button(action: play) {
             HStack(alignment: .top, spacing: DS.Space.s3) {
                 ZStack(alignment: .bottom) {
-                    PosterView(url: row.thumbnail, title: "\(row.number)").aspectRatio(DS.Poster.stillAspect, contentMode: .fill)
+                    PosterView(url: row.thumbnail, title: "\(row.number)", aspect: DS.Poster.stillAspect)
                     if let progress = row.progress { DSProgress(fraction: progress) }
                 }
                 .frame(width: DS.Poster.episodeThumbWidth, height: DS.Poster.episodeThumbWidth / DS.Poster.stillAspect).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
