@@ -28,6 +28,8 @@ function emptyFeature(hasGames, hidden = 0) {
       h("span", { class: "tile--feature__detail" }, detail)));
 }
 
+const TOP_MIN = .52; // lo de arriba (lo último y «También tenías») nunca menos que esto del alto disponible
+
 export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   const hello = h("h1", { class: "home__hello" });
   const greetingRow = h("div", { class: "home__greeting" }, hello);
@@ -42,7 +44,8 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   const el = h("section", { class: "home", hidden: true, "aria-label": "Inicio" }, scroller);
   // Lo de arriba llena la pantalla y de Tus consolas solo asoma su título: el alto se mide aquí
   // (cambia con la ventana y con el tamaño del texto).
-  new ResizeObserver(() => fit()).observe(el);
+  // También lo de adentro: al cambiar el tamaño del texto el Inicio mide lo mismo, pero el saludo y las consolas no.
+  { const watch = new ResizeObserver(() => fit()); [el, greetingRow, consoles].forEach((node) => watch.observe(node)); }
   // Con el dedo, como en el celular: «Tus consolas» se desliza de lado bajo el dedo, y arrastrar hacia
   // arriba sube el Inicio para verlas (antes solo se llegaba con la cruceta).
   dragScroll(consolesViewport, consolesTrack, { axis: "x", onScroll: (s) => consoleEdges(s) });
@@ -150,9 +153,30 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   function fit() {
     if (el.hidden || !el.clientHeight) return;
     const gap = parseFloat(getComputedStyle(scroller).rowGap) || 0;
-    const peek = model?.consoles.length ? consolesHead.offsetHeight + gap : 0;
-    top.style.height = `${Math.max(0, room() - greetingRow.offsetHeight - gap - peek)}px`;
+    const avail = room() - greetingRow.offsetHeight - gap;
+    // Tus consolas, enteras a la vista (antes solo asomaba su título y lo de arriba ocupaba toda la pantalla). Si no
+    // caben junto a lo de arriba, primero se compactan; si ni así (letra muy grande en pantalla baja), como antes: asoma
+    // su título y al bajar el Inicio se desliza. Nunca quedan a medias debajo del pie.
+    const has = model?.consoles.length > 0;
+    el.classList.remove("home--compact");
+    let full = has ? consoles.offsetHeight + gap : 0;
+    if (has && avail - full < avail * TOP_MIN) {
+      el.classList.add("home--compact");
+      full = consoles.offsetHeight + gap;
+    }
+    const peek = has ? consolesHead.offsetHeight + gap : 0;
+    top.style.height = `${Math.max(0, avail - full >= avail * TOP_MIN ? avail - full : avail - peek)}px`;
+    fitRows();
     scrollToFocus();
+  }
+
+  /** «También tenías»: los renglones que quepan legibles (con su dato y su miniatura), no todos aplastados. */
+  function fitRows() {
+    const list = queue.querySelector(".home__rows");
+    if (!list) return;
+    const rows = [...list.children];
+    rows.forEach((row) => { row.hidden = false; });
+    for (let n = rows.length - 1; n > 0 && list.scrollHeight > list.clientHeight + 1; n--) rows[n].hidden = true;
   }
 
   /** En Tus consolas el Inicio se desliza lo justo para enseñarlas enteras; arriba, vuelve. */
