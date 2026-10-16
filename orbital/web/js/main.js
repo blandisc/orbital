@@ -29,7 +29,6 @@ import { createTitle, titleRef } from "./components/title.js";
 import { createToast } from "./components/toast.js";
 import { createPhoneLink } from "./components/phone-link.js";
 import { createTv } from "./components/tv.js";
-import { createPhoneLink } from "./components/phone-link.js";
 import { createTraktLink } from "./components/trakt-link.js";
 import { createViewer } from "./components/viewer.js";
 import { createBoot } from "./app/boot.js";
