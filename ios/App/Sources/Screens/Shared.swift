@@ -92,6 +92,8 @@ struct NowPlayingCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
+            Label(now.live ? "En la TV · En vivo" : "Viendo en la TV", systemImage: "tv")
+                .font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.textMuted)
             HStack(alignment: .center, spacing: DS.Space.s3) {
                 PosterView(url: now.poster, title: now.title, aspect: DS.Poster.aspect).frame(width: DS.Poster.nowPlayingWidth)
                 info

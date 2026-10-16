@@ -99,6 +99,7 @@ TRANSLATIONS = {
       "%@ de %@": "%@ of %@",  "Sí": "Yes",
     "En vivo": "Live", "Sin sonido": "Mute", "Canal anterior": "Previous channel", "Canal siguiente": "Next channel",
     "Salir del video": "Leave the video", "Seguir aquí": "Continue here",
+    "Viendo en la TV": "Watching on TV", "En la TV · En vivo": "On TV · Live",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
