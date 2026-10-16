@@ -65,7 +65,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   /** Qué es lo enfocado (no dónde está): un juego o una consola. */
   const identity = (t) => (t?.item?.id ?? (t?.console ? `console:${t.console.id ?? t.console.system ?? t.console.name}` : null));
 
-  function render(rows, { runningId = null, glyphs = {}, hidden = 0 } = {}) {
+  function render(rows, { runningId = null, glyphs = {}, hidden = 0, airing = {} } = {}) {
     options = { runningId, glyphs };
     hiddenCount = hidden;
     staged = undefined; // se vuelve a pintar con los datos nuevos
@@ -85,7 +85,8 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
       : { kind: "empty", setup: !model.consoles.length && !hidden, unhide: !model.consoles.length && hidden > 0 });
     const queued = model.cards.map((item, i) => {
       targets.set(`card:${i}`, { kind: "item", item });
-      return RowTile(item, { focusId: `card:${i}`, onPress: pick(`card:${i}`) });
+      const imdb = item.extra?.meta_id;
+      return RowTile(item, { focusId: `card:${i}`, onPress: pick(`card:${i}`), airing: imdb && airing?.[imdb] });
     });
     top.classList.toggle("home__top--alone", !queued.length);
     mount(queue, queued.length > 0 && SectionHead("También tenías", { meta: String(queued.length), className: "home__queue-head" }),

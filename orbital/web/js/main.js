@@ -500,7 +500,20 @@ function handleGames(action, { repeat = false } = {}) {
 }
 
 function renderHome() {
-  ui.home.render(state.allRows, { runningId: state.running?.id, glyphs: glyphs(), hidden: state.hidden });
+  ui.home.render(state.allRows, { runningId: state.running?.id, glyphs: glyphs(), hidden: state.hidden, airing: state.airing });
+}
+
+/** Lo que sale hoy de tus series (Trakt): el Inicio lo marca «Sale hoy · 19:00». Cada media hora; sin Trakt, nada. */
+let airingAt = 0;
+function loadAiring() {
+  if (Date.now() - airingAt < 30 * 60_000) return;
+  airingAt = Date.now();
+  api.forYouToday().then((res) => {
+    const airing = res?.airing && typeof res.airing === "object" ? res.airing : {};
+    if (JSON.stringify(airing) === JSON.stringify(state.airing || {})) return;
+    state.airing = airing;
+    if (inHome()) renderHome();
+  }, () => { airingAt = 0; });
 }
 
 /** El fondo toma la luz de lo enfocado; una consola, la de su último juego. */
@@ -615,6 +628,7 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     const rowId = state.rows[state.focus.r]?.id;
     const countBefore = (state.allRows || []).reduce((n, row) => n + (row.items?.length ?? 0), 0);
     state.allRows = data.rows;
+    loadAiring();
     if (!visibleSections(state.allRows).some((s) => s.id === state.section)) state.section = "home";
     state.rows = sectionRows(state.allRows, state.section);
     renderSections();

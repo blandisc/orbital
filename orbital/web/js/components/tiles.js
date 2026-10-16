@@ -102,7 +102,7 @@ export function shortDetail(item, now = Date.now()) {
  * siempre a la vista («Steam · hace 4 h · 31 h», o «Serie · T2 E6 · quedan 32 min» con su avance).
  * El texto ya no va encima del arte: se lee desde el sillón.
  */
-export function RowTile(item, { focusId, onPress }) {
+export function RowTile(item, { focusId, onPress, airing = null }) {
   const watch = isWatchable(item);
   const thumb = thumbOf(item);
   const system = thumb.kind === "console" ? SYSTEMS[systemOf(item)] : null;
@@ -110,7 +110,9 @@ export function RowTile(item, { focusId, onPress }) {
   const node = tile(focusId, "tile--row", onPress, item.title,
     h("span", { class: ["tile--row__thumb", system && "tile--row__thumb--console"] },
       thumb.src && artOr(thumb.src, thumb.fallback, ["tile--row__art", thumb.kind === "crop" && "tile--row__art--crop"]),
-      system && art(`img/consoles/${system.photo}`, ["tile--row__console", system.logo && "tile--row__console--logo"])),
+      system && art(`img/consoles/${system.photo}`, ["tile--row__console", system.logo && "tile--row__console--logo"]),
+      // Sale un episodio nuevo hoy (Próximos estrenos, de Trakt): «Sale hoy · 19:00».
+      airing && Badge(airing === "Desde la madrugada" ? "Nuevo hoy" : `Sale hoy · ${airing}`, { className: "tile--row__airing" })),
     h("span", { class: "tile--row__text" },
       h("strong", { class: "tile--row__title" }, item.title),
       h("span", { class: "tile--row__detail" }, svg(ICONS[systemIconName(item)] || ICONS.apps),

@@ -92,6 +92,19 @@ class DemoTrakt:
         return [S[k] for k in ("breaking", "stranger", "tlou", "bear", "succession", "blackmirror", "dark", "saul")] if kind == "series" \
             else [M[k] for k in ("oppen", "dune2", "inter", "inception", "spider", "batman", "parasite", "madmax")]
 
+    def calendar(self, start, days=15):
+        """Estrenos de mentiras alrededor de hoy: uno esta noche, tres juntos de madrugada mañana (como Paramount+)…"""
+        import datetime as dt
+
+        base = dt.datetime.now().astimezone().replace(minute=0, second=0, microsecond=0)
+        at = lambda days_, hour: (base.replace(hour=hour) + dt.timedelta(days=days_)).timestamp()  # noqa: E731
+        rows = [(S["severance"], 2, 7, "Chikhai Bardo", at(0, 20), "Apple TV"), (S["silo"], 2, 4, "", at(1, 1), "Apple TV"),
+                (S["andor"], 2, 4, "", at(1, 1), "Disney+"), (S["andor"], 2, 5, "", at(1, 1), "Disney+"), (S["andor"], 2, 6, "", at(1, 1), "Disney+"),
+                (S["futurama"], 13, 1, "The One Amigo", at(3, 19), "Hulu"), (S["bear"], 4, 1, "Next", at(3, 21), "FX"),
+                (S["severance"], 2, 8, "Sweet Vitriol", at(7, 20), "Apple TV"), (S["tlou"], 2, 3, "", at(5, 20), "HBO")]
+        return [{**show, "season": s, "episode": e, "episode_title": t, "aired": when, "network": net, "runtime": 50}
+                for show, s, e, t, when, net in rows]
+
     def watching(self, limit=12):
         return [{**S["severance"], "next": {"season": 2, "episode": 6}}, {**S["silo"], "next": {"season": 2, "episode": 3}},
                 {**S["tlou"], "next": {"season": 2, "episode": 1}}, {**S["futurama"], "next": {"season": 8, "episode": 4}}]

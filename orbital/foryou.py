@@ -26,7 +26,7 @@ import urllib.parse
 import urllib.request
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from .library import rawg as rawg_api
@@ -47,6 +47,10 @@ MINE_TTL = 15 * 60
 RECS_TTL = 60 * 60
 POPULAR_TTL = 6 * 3600
 SLOW_TTL = 24 * 3600
+
+CALENDAR_DAYS = 14  # lo que enseña «Próximos estrenos»: dos semanas
+DAWN_HOUR = 6  # lo que sale antes de las 6:00 (streaming) se lee «desde la madrugada»
+WEEKDAYS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 
 MOSAIC_SIZE = 96  # el mosaico tiene ~40 piezas a la vista: con menos, se repetían
 PER_SOURCE = 16  # de cada lista, a lo más (así se mezclan)
@@ -169,6 +173,39 @@ def library_entry(item) -> dict | None:
     if kind == "series" and len(parts) == 3 and parts[1].isdigit() and parts[2].isdigit():
         e["next"] = {"season": int(parts[1]), "episode": int(parts[2])}  # el episodio en que vas
     return e
+
+
+def day_label(day: date, today: date) -> tuple[str, str]:
+    """(«Hoy», «jueves 15») · («Mañana», «viernes 16») · («Domingo 18», «octubre»)."""
+    name = f"{WEEKDAYS[day.weekday()]} {day.day}"
+    delta = (day - today).days
+    if delta == 0:
+        return "Hoy", name
+    if delta == 1:
+        return "Mañana", name
+    months = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+    return name[:1].upper() + name[1:], months[day.month - 1]
+
+
+def calendar_item(g: dict, today: date) -> dict:
+    """Un estreno («Próximos estrenos»): la serie (A abre su ficha) con su día, hora, episodio y dónde sale."""
+    when: datetime = g["when"]
+    time_text = "Desde la madrugada" if when.hour < DAWN_HOUR else when.strftime("%H:%M")
+    if g["count"] > 1:
+        episode = f"T{g['season']} E{g['first']}–E{g['last']}"
+        episode_long = f"{episode} · {g['count']} episodios"
+    else:
+        episode = f"T{g['season']} E{g['episode']}"
+        episode_long = f"{episode} · {g['episode_title']}" if g.get("episode_title") else episode
+    day, sub = day_label(when.date(), today)
+    when_text = f"{day} · madrugada" if when.hour < DAWN_HOUR else f"{day} · {time_text}"
+    item = video_item({**g, "kind": "series", "next": None}, "Sale hoy" if day == "Hoy" else day)
+    return {**item, "key": f"video:{g['imdb']}", "day": when.date().isoformat(), "day_label": day, "day_sub": sub,
+            "time": time_text, "today": day == "Hoy", "episode": None, "episode_label": episode, "network": g.get("network") or "",
+            "detail": " · ".join(p for p in (time_text, g.get("network")) if p),
+            # Datos cortos (la ficha los pinta en una fila); el nombre del episodio va en la descripción.
+            "facts": [[k, v] for k, v in (("Cuándo", when_text), ("Episodio", episode), ("Dónde", g.get("network") or "")) if v],
+            "overview": " · ".join(p for p in (episode_long if (g["count"] > 1 or g.get("episode_title")) else "", item.get("overview")) if p)}
 
 
 def game_item(described: dict, why: str) -> dict:
@@ -341,6 +378,9 @@ class ForYou:
                 {"id": "recs", "title": "Recomendadas", "icon": "spark", "source": "Trakt", "meta": "Por lo que has visto", "split": True},
                 {"id": "mine", "title": "Tus series", "icon": "watching", "source": "Trakt", "meta": "Las que estás viendo"},
                 {"id": "watchlist", "title": "Tu watchlist", "icon": "bookmark", "source": "Trakt", "meta": "Lo que dejaste pendiente"},
+                # Dos formas de verlo (las píldoras de arriba): por día, o la semana como una guía de TV.
+                {"id": "estrenos", "title": "Próximos estrenos", "icon": "calendar", "source": "Trakt", "meta": "Las series que sigues",
+                 "views": [{"id": "day", "label": "Por día"}, {"id": "week", "label": "Semana"}]},
             ]
             try:
                 own = self.cache.get("trakt:lists", MINE_TTL, self.trakt.lists)
@@ -409,6 +449,8 @@ class ForYou:
             if not entry:
                 raise KeyError(list_id)
             return self.cache.get(f"{list_id}:{kind}", POPULAR_TTL, lambda: self._addon_list(entry, kind))
+        if list_id == "estrenos":
+            return self.calendar()
         if list_id == "recs":
             return [video_item(e, "Recomendada") for e in self.cache.get(f"trakt:recs:{kind}", RECS_TTL, lambda: t.recommendations(kind))]
         if list_id == "mine":
@@ -484,6 +526,41 @@ class ForYou:
                 g = {**g, "owned": True, "id": mine.id, "item": self.catalog.describe(mine), "action": "Jugar"}
             marked.append(g)
         return marked
+
+    # --- próximos estrenos -----------------------------------------------------------------------
+    def calendar(self, now: datetime | None = None) -> list[dict]:
+        """Los episodios que salen (hoy y los próximos días) de las series que sigues en Trakt, con la hora de aquí. Varios
+        de la misma serie el mismo día (las plataformas sueltan tres juntos) van en una sola sugerencia: «E4–E6»."""
+        now = now or datetime.now().astimezone()
+        start = (now - timedelta(days=1)).date().isoformat()  # Trakt va en hora universal: un día antes, para no perder lo de hoy
+        rows = self.cache.get(f"trakt:calendar:{start}", RECS_TTL, lambda: self.trakt.calendar(start, CALENDAR_DAYS + 2))
+        today = now.date()
+        last = today + timedelta(days=CALENDAR_DAYS)
+        groups: dict[tuple, dict] = {}
+        for row in rows:
+            when = datetime.fromtimestamp(row["aired"]).astimezone()
+            day = when.date()
+            if not today <= day < last:
+                continue
+            key = (day, row["imdb"])
+            group = groups.get(key)
+            if group:
+                group["last"] = max(group["last"], row["episode"])
+                group["first"] = min(group["first"], row["episode"])
+                group["count"] += 1
+                continue
+            groups[key] = {**row, "when": when, "first": row["episode"], "last": row["episode"], "count": 1}
+        return [calendar_item(g, today) for g in sorted(groups.values(), key=lambda g: (g["when"], g["title"]))]
+
+    def airing_today(self) -> dict[str, str]:
+        """{IMDb: «19:00»} de lo que sale hoy, para marcarlo en el Inicio («Sale hoy»). Sin Trakt o sin red: nada."""
+        if not self.trakt.linked:
+            return {}
+        try:
+            items = self.calendar()
+        except SERVICE_ERRORS:
+            return {}
+        return {i["meta_id"]: i["time"] for i in items if i["today"]}
 
     # --- tus juegos ----------------------------------------------------------------------------
     def local_games(self, seed: int | None = None, lucky: int = 3) -> list[dict]:

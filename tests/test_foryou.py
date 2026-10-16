@@ -186,7 +186,7 @@ def test_only_the_services_you_have_show_up(make_foryou, net):
     assert ids == ["trend", "popular", "mygames"]  # Trakt sin cuenta: tendencias y popular sí
     net.on("GET", r"/users/me/lists$", (200, [{"name": "Ciencia ficción", "ids": {"trakt": 77}}]))
     linked = [row["id"] for row in make_foryou(linked=True, rawg_key="r").lists()]
-    assert linked[:4] == ["recs", "mine", "watchlist", "list:77"]
+    assert linked[:5] == ["recs", "mine", "watchlist", "estrenos", "list:77"]
     assert linked[-4:] == ["mygames", "rawg:new", "rawg:popular", "rawg:best"]
 
 
@@ -454,3 +454,36 @@ def test_stremio_addon_catalogs_join_para_ti(library, make_foryou, monkeypatch):
     # Con Trakt conectado, las de «Trakt Integration» ya llegan de Trakt: no se repiten.
     fy2 = make_foryou(linked=True)
     assert {a["title"] for a in fy2.addon_catalogs()} == {"Netflix", "Prime Video"}
+
+
+# ---------------------------------------------------------------- próximos estrenos
+def test_upcoming_episodes_by_day_with_local_time(make_foryou, net):
+    from datetime import datetime, timedelta
+
+    fy = make_foryou(linked=True)
+    now = datetime(2026, 10, 15, 12, 0).astimezone()
+    at = lambda days, hour: (now.replace(hour=hour) + timedelta(days=days)).astimezone(tz=None).isoformat()  # noqa: E731
+    utc = lambda local: datetime.fromisoformat(local).astimezone(tz=__import__("datetime").timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")  # noqa: E731
+    row = lambda title, imdb, s, e, when, net_="NBC", ep_title="": {  # noqa: E731
+        "first_aired": utc(when), "episode": {"season": s, "number": e, "title": ep_title},
+        "show": {**show(title, imdb), "network": net_}}
+    net.on("GET", r"/calendars/my/shows/", (200, [
+        row("Ayer", "tt9", 1, 1, at(-1, 20)), row("SVU", "tt1", 28, 2, at(0, 19), ep_title="Midway"),
+        row("Avatar", "tt2", 1, 4, at(1, 1), "Paramount+"), row("Avatar", "tt2", 1, 5, at(1, 1), "Paramount+"),
+        row("Avatar", "tt2", 1, 6, at(1, 1), "Paramount+"), {"first_aired": "basura", "episode": {}, "show": None}, None,
+        row("Lejos", "tt3", 1, 1, at(20, 20))]))
+    items = fy.calendar(now=now)
+    assert [(i["title"], i["day_label"], i["time"], i["episode_label"]) for i in items] == [
+        ("SVU", "Hoy", "19:00", "T28 E2"), ("Avatar", "Mañana", "Desde la madrugada", "T1 E4–E6")]
+    assert items[0]["today"] and items[0]["why"] == "Sale hoy" and items[0]["action"] == "Ver la serie"
+    assert ["Episodio", "T1 E4–E6"] in items[1]["facts"] and items[1]["overview"].startswith("T1 E4–E6 · 3 episodios")
+    lists = {row["id"]: row for row in fy.lists()}
+    assert lists["estrenos"]["views"][1]["label"] == "Semana"
+
+
+def test_airing_today_is_empty_without_trakt_or_network(make_foryou, net):
+    fy = make_foryou(trakt_keys=False)
+    assert fy.airing_today() == {}
+    fy = make_foryou(linked=True)
+    net.on("GET", r"/calendars/my/shows/", (500, None))
+    assert fy.airing_today() == {}
