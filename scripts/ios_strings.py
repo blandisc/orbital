@@ -19,6 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Lo siguiente para ti": "Up next for you", "Sigue viendo donde ibas.": "Keep watching where you left off.", "Nada pendiente": "Nothing pending",
+    "Abrir Orbital": "Open Orbital", "Próximo estreno": "Next premiere", "Sigue: %@": "Next up: %@",
     "Buenos días": "Good morning", "Buenas tardes": "Good afternoon", "Buenas noches": "Good evening", "También tenías": "You also had",
     "Último scrobble": "Last scrobble", "Cerrado": "Closed",
     "Todavía nada: aparece cuando veas algo en el iPhone.": "Nothing yet: it shows up once you watch something on the iPhone.",
@@ -110,7 +112,7 @@ IGNORE = {"T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherE
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.
 CODE_KEYS = {k for k in TRANSLATIONS}
 
-INT_HINT = re.compile(r"^(Int\(|count\b|card\.secondsLeft|row\.number|season\.season|\bs\b|\be\b|\bh\b|\bm\b|\bn\b|episode\b|fraction)")
+INT_HINT = re.compile(r"^(Int\(|count\b|card\.secondsLeft|row\.number|season\.season|\bs\b|\be\b|\bh\b|\bm\b|\bn\b|episode\b|fraction|state\.remaining)")
 
 
 def to_format(literal: str) -> str:
@@ -136,9 +138,9 @@ def to_format(literal: str) -> str:
 def used_literals() -> dict[str, str]:
     lit = re.compile(r'"((?:[^"\\]|\\.)*)"')
     found: dict[str, str] = {}
-    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift"))
+    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift"))
     for f in files:
-        if "/Design/" in f or "/Platform/" in f or f.endswith("/Support/Demo.swift"):   # el modo demo (solo Debug) no se traduce
+        if "/Design/" in f or "/Platform/" in f or f.endswith(("/Support/Demo.swift", "Previews.swift")):   # el modo demo (solo Debug) no se traduce
             continue
         for number, line in enumerate(Path(f).read_text(encoding="utf-8").splitlines(), 1):
             stripped = line.strip()

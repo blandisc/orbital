@@ -23,6 +23,17 @@
         }
       }
     },
+    "Abrir Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Orbital"
+          }
+        }
+      }
+    },
     "Abrir en Infuse": {
       "extractionState": "manual",
       "localizations": {
@@ -1376,6 +1387,17 @@
         }
       }
     },
+    "Lo siguiente para ti": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up next for you"
+          }
+        }
+      }
+    },
     "Los siguientes 3 episodios": {
       "extractionState": "manual",
       "localizations": {
@@ -1460,6 +1482,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing downloaded"
+          }
+        }
+      }
+    },
+    "Nada pendiente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing pending"
           }
         }
       }
@@ -1904,6 +1937,17 @@
         }
       }
     },
+    "Próximo estreno": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next premiere"
+          }
+        }
+      }
+    },
     "Quitar": {
       "extractionState": "manual",
       "localizations": {
@@ -2153,6 +2197,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Next up"
+          }
+        }
+      }
+    },
+    "Sigue viendo donde ibas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep watching where you left off."
+          }
+        }
+      }
+    },
+    "Sigue: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next up: %@"
           }
         }
       }

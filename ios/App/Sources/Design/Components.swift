@@ -496,7 +496,7 @@ final class ArtTint: ObservableObject {
     }
 }
 
-private extension UIImage {
+extension UIImage {
     /// El color promedio, con un filtro de Core Image (1 píxel).
     var averageColor: UIColor? {
         guard let input = CIImage(image: self) else { return nil }

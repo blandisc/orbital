@@ -29,8 +29,11 @@ final class DesignTests: XCTestCase {
 
     /// Los archivos de pantalla (todo lo que no es el sistema de diseño) no pintan nada «suelto».
     func testScreensUseOnlyDesignSystemTokens() throws {
-        let sources = repo.appendingPathComponent("ios/App/Sources")
-        guard let files = FileManager.default.enumerator(at: sources, includingPropertiesForKeys: nil) else { return XCTFail("falta ios/App/Sources") }
+        // Las pantallas y la extensión de widgets (que usa los mismos tokens: `Sources/Design/Tokens.swift`).
+        let sources = repo.appendingPathComponent("ios/App")
+        let roots = ["ios/App/Sources", "ios/App/Widgets"].map { repo.appendingPathComponent($0) }
+        let files = roots.compactMap { FileManager.default.enumerator(at: $0, includingPropertiesForKeys: nil) }.flatMap { $0.allObjects }
+        XCTAssertEqual(files.isEmpty, false, "faltan ios/App/Sources y ios/App/Widgets")
         let forbidden: [(String, String)] = [
             (#"Color\(\s*(red|white|hue|\.sRGB)"#, "color escrito a mano"), (#"Color\(\s*""#, "color por nombre (usa un token)"),
             (#"UIColor\(\s*(red|white|hue|named)"#, "UIColor a mano"), (#"#colorLiteral"#, "color literal"), (#"\.foregroundColor\(\.(red|blue|green|white|black|gray|yellow|orange|pink|purple)"#, "color del sistema"),
@@ -47,7 +50,7 @@ final class DesignTests: XCTestCase {
         var problems: [String] = []
         for case let file as URL in files where file.pathExtension == "swift" {
             let relative = file.path.replacingOccurrences(of: sources.path + "/", with: "")
-            if relative == "Design/Tokens.swift" { continue }   // aquí se convierten los tokens a SwiftUI; el resto, también del diseño, los usa
+            if relative == "Sources/Design/Tokens.swift" { continue }   // aquí se convierten los tokens a SwiftUI; el resto, también del diseño, los usa
             let text = try String(contentsOf: file, encoding: .utf8)
             for (index, line) in text.components(separatedBy: "\n").enumerated() where !line.contains("ds-exception:") && !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") {
                 for (pattern, what) in forbidden where line.range(of: pattern, options: .regularExpression) != nil {

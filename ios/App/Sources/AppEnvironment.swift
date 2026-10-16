@@ -29,6 +29,8 @@ final class AppEnvironment: ObservableObject {
     }
     /// Cambia cada vez que termina una reproducción (aquí o en Infuse): Inicio y la ficha se ponen al día.
     @Published private(set) var watchedSomething = 0
+    /// Una ficha que pidió abrir un enlace (el widget): `MainTabs` la empuja en Inicio y la vacía.
+    @Published var pendingTitle: TitleRoute?
     /// Lo que se abrió en Infuse y está esperando a que vuelva.
     @Published private var external: ExternalSession?
     /// Infuse volvió sin duración y no se sabe si terminaste: se pregunta.
@@ -52,6 +54,19 @@ final class AppEnvironment: ObservableObject {
         let store = services.settings   // el almacén es seguro entre hilos: los cierres no tocan nada aislado al hilo principal
         transport.allowsCellular = { !store.value.wifiOnlyDownloads }
         services.episodeLabel = { Strings.episode(season: $0, episode: $1, language: store.value.uiLanguage) }
+        // El widget «Lo siguiente para ti»: sus textos en el idioma de la app y quién escribe su snapshot (al actualizar Inicio).
+        services.widgetLabels = WidgetLabels(
+            episode: { Strings.episode(season: $0, episode: $1, language: store.value.uiLanguage) },
+            timeLeft: { Strings.timeLeft(minutes: $0, language: store.value.uiLanguage) },
+            nextUp: { String(format: Strings.tr("Sigue: %@", language: store.value.uiLanguage), $0) })
+        services.onWidgetSnapshot = { WidgetPublisher.publish($0) }
+        #if DEBUG
+        // Demostración: el widget enseña un snapshot de ejemplo (o vacío con `-demo-widget empty`); con `-demo-widget live`, el de verdad.
+        if Demo.isOn, Demo.widget != "live" {
+            services.onWidgetSnapshot = nil
+            WidgetPublisher.publish(Demo.widget == "empty" ? .empty : Demo.widgetSnapshot)
+        }
+        #endif
         // Cambiar el idioma (o una clave) vuelve a pintar toda la app.
         servicesSubscription = services.onChange { [weak self] in self?.objectWillChange.send() }
         session = SessionModel(services)
@@ -137,6 +152,8 @@ final class AppEnvironment: ObservableObject {
     func handle(url: URL) async {
         // El QR de «Conectar iPhone» en la TV: queda conectada sin escribir nada.
         if let pair = OrbitalRemote.pairing(url) { return await pairWithOrbital(address: pair.address, token: pair.token) }
+        // El widget «Lo siguiente para ti»: reproducir donde ibas o abrir la ficha.
+        if let link = WidgetLink.parse(url) { return await open(link) }
         guard let result = Infuse.parseCallback(url) else { return }
         defer { external = nil; watchedSomething += 1 }
         guard let session = external else { return }
@@ -152,6 +169,27 @@ final class AppEnvironment: ObservableObject {
             await services.watch.report(event, phase: .stopped(finished: session.duration > 0 && seconds >= session.duration * StremioLibrary.watchedAt), scrobbleToTrakt: false)
             // Infuse no dice la duración: si tampoco la sabemos, se pregunta si terminaste.
             if session.duration == 0, seconds > 60 { askFinished = r }
+        }
+    }
+
+    /// `orbital-ios://play?kind=&id=&video=` abre el reproductor en ese episodio (donde ibas); `orbital-ios://title?kind=&id=` abre la ficha.
+    /// Sin episodio conocido, o si la ficha no carga, se cae a la ficha.
+    private func open(_ link: WidgetLink) async {
+        switch link {
+        case .title(let kind, let id):
+            pendingTitle = TitleRoute(kind: kind, metaID: id, title: "", poster: nil)
+        case .play(let kind, let id, let video):
+            guard let video, let meta = try? await services.cinemeta.meta(kind: kind, id: id) else {
+                pendingTitle = TitleRoute(kind: kind, metaID: id, title: "", poster: nil)
+                return
+            }
+            let name = meta["name"]?.string ?? ""
+            var label = ""
+            let parts = video.split(separator: ":")
+            if kind == "series", parts.count >= 3, let episode = Int(parts[parts.count - 1]) {
+                label = Strings.episode(season: Int(parts[parts.count - 2]), episode: episode, language: services.appSettings.uiLanguage)
+            }
+            await play(kind: kind, metaID: id, videoID: video, title: name, originalTitle: name, episodeLabel: label, poster: meta["poster"]?.string)
         }
     }
 

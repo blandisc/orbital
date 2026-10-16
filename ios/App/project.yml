@@ -51,6 +51,10 @@ targets:
         SWIFT_EMIT_LOC_STRINGS: YES
         LOCALIZATION_PREFERS_STRING_CATALOGS: YES
         STRING_CATALOG_GENERATE_SYMBOLS: NO
+    entitlements:
+      path: Build/Orbital.entitlements
+      properties:
+        com.apple.security.application-groups: [group.mx.iracheta.orbital]   # el snapshot del widget «Lo siguiente para ti»
     info:
       path: Build/Info.plist
       properties:
@@ -76,7 +80,7 @@ targets:
     scheme:
       testTargets: []
 
-  # Extensión de widgets: solo la actividad en vivo de las descargas.
+  # Extensión de widgets: «Lo siguiente para ti» (Seguir viendo) y la actividad en vivo de las descargas.
   OrbitalWidgets:
     type: app-extension
     platform: iOS
@@ -84,6 +88,15 @@ targets:
       - path: Widgets
       - path: Shared
       - path: Resources/Localizable.xcstrings
+      - path: Resources/Assets.xcassets        # el ícono de Orbital del estado vacío
+      - path: Sources/Design/Tokens.swift     # los mismos tokens que la app (`DS`)
+    dependencies:
+      - package: OrbitalCore
+        product: OrbitalCore
+    entitlements:
+      path: Build/Widgets.entitlements
+      properties:
+        com.apple.security.application-groups: [group.mx.iracheta.orbital]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: mx.iracheta.orbital.widgets

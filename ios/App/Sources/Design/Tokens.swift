@@ -11,6 +11,12 @@ enum DS {
             guard let hex = DesignTokens.palette[name], let c = rgb(hex: hex) else { return .clear }
             return Color(red: c.r, green: c.g, blue: c.b)
         }
+
+        /// Un color calculado a partir del arte («#rrggbb», p. ej. el tono del póster en el snapshot del widget).
+        static func color(hex: String?) -> Color? {
+            guard let hex, let c = rgb(hex: hex) else { return nil }
+            return Color(red: c.r, green: c.g, blue: c.b)
+        }
     }
 
     static let bg = Palette.color("ink-950")
@@ -100,6 +106,14 @@ enum DS {
         static let logo = CGFloat(DesignTokens.Size.logo)
         static let platformLogo = CGFloat(DesignTokens.Size.platformLogo)
         static let logoHero = CGFloat(DesignTokens.Size.logoHero)
+    }
+
+    /// El widget «Lo siguiente para ti» (también lo compila la extensión de widgets): barra de avance, miniatura de los renglones,
+    /// dónde empieza el velo inferior del póster y cada cuánto se pide recarga si la app no avisa.
+    enum Widget {
+        static let progressHeight = CGFloat(DesignTokens.Widget.progressHeight), thumbWidth = CGFloat(DesignTokens.Widget.thumbWidth)
+        static let scrimStart = DesignTokens.Widget.scrimStart
+        static let fallbackRefresh = DesignTokens.Widget.fallbackRefreshHours * 3600
     }
 
     /// El fondo de pantalla: tono del arte, estrellas del espacio vivo y el fundido del arte a sangre.

@@ -28,6 +28,11 @@ public final class Services: ObservableModel {
     public private(set) var downloads: Downloads { didSet { changed() } }
     /// Cómo se escribe «T2 · E5» en el idioma de la app (la interfaz lo cambia; por omisión, en español).
     public var episodeLabel: @Sendable (Int, Int) -> String = { "T\($0) · E\($1)" }
+    /// Los textos del widget «Lo siguiente para ti» en el idioma de la app (la interfaz los cambia; por omisión, español).
+    public var widgetLabels: WidgetLabels = .spanish
+    /// Quién publica el snapshot del widget (la app: baja y reduce las imágenes, lo escribe en el App Group y recarga el widget).
+    /// `HomeModel` lo llama al terminar de actualizar Inicio.
+    public var onWidgetSnapshot: (@MainActor (WidgetSnapshot) -> Void)?
     /// Cambia cuando se reconfiguran claves (para que las pantallas se actualicen).
     public private(set) var generation = 0 { didSet { changed() } }
 

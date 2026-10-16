@@ -4,7 +4,10 @@ import WidgetKit
 
 @main
 struct OrbitalWidgets: WidgetBundle {
-    var body: some Widget { DownloadLiveActivity() }
+    var body: some Widget {
+        NextUpWidget()
+        DownloadLiveActivity()
+    }
 }
 
 /// Las descargas en la pantalla bloqueada y en la Dynamic Island: qué baja, cuánto lleva y cuántas faltan.
@@ -24,7 +27,7 @@ struct DownloadLiveActivity: Widget {
                 }
             }
             .padding()
-            .activityBackgroundTint(Color.black.opacity(0.75))
+            .activityBackgroundTint(DS.scrim)
             .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             DynamicIsland {

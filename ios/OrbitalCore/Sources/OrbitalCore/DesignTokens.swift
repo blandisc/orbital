@@ -59,6 +59,15 @@ public enum DesignTokens {
         /// …o este tope en segundos, lo que sea menor.
         public static let seekMaxSeconds = 180.0
     }
+    /// El widget «Lo siguiente para ti»: imágenes reducidas (el widget no va a la red y su memoria es corta), cuánto se oscurece el
+    /// tono del arte (como `ArtTint`), la calidad del JPEG, cada cuánto se pide recarga si la app no avisa, el alto de la barra de
+    /// avance y el ancho de la miniatura de los renglones del widget mediano (puntos).
+    public enum Widget {
+        public static let maxImagePixels = 300.0, jpegQuality = 0.7, tintMix = 0.55, fallbackRefreshHours = 6.0
+        public static let progressHeight = 3.0, thumbWidth = 44.0
+        /// Dónde empieza el velo inferior del póster (fracción de su alto) para que el título se lea.
+        public static let scrimStart = 0.4
+    }
     /// El mosaico de «Para ti» (como `foryou-mosaic.js` en la TV): cuánto se ensancha la columna enfocada,
     /// cuánto se espera quieto antes del ambiente o de «cobrar vida», y a qué ritmo sube sola cada columna.
     public enum Mosaic {

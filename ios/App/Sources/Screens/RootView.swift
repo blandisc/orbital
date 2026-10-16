@@ -59,6 +59,7 @@ extension PlayRequest: @retroactive Identifiable { public var id: String { "\(me
 
 /// La barra de pestañas nativa: en iOS 26 es de vidrio (Liquid Glass) y se encoge al deslizar.
 struct MainTabs: View {
+    @EnvironmentObject private var env: AppEnvironment
     @State private var tab: Int
     @State private var paths: [NavigationPath] = Array(repeating: NavigationPath(), count: 4)
 
@@ -82,12 +83,22 @@ struct MainTabs: View {
         }
         .tabBarMinimizeBehavior(.onScrollDown)
         .onAppear(perform: openDemoScreen)
+        .onAppear(perform: openPendingTitle)
+        .onChange(of: env.pendingTitle) { openPendingTitle() }
         .task { forceDemoTab() }   // una segunda vez: gana aunque la restauración de escena llegue después de aparecer
         #if DEBUG
         // iOS restaura la pestaña que viste la última vez (independiente de nuestro @State) y lo hace después de
         // aparecer y del `.task` de arriba: si en modo demo algo la cambia por detrás, se vuelve a pedir la tuya.
         .onChange(of: tab) { _, new in if Demo.isOn, new != Demo.tab { tab = Demo.tab } }
         #endif
+    }
+
+    /// Una ficha pedida por un enlace (`orbital-ios://title`): se abre en Inicio, encima de lo que hubiera.
+    private func openPendingTitle() {
+        guard let route = env.pendingTitle else { return }
+        env.pendingTitle = nil
+        tab = 0
+        paths[0].append(route)
     }
 
     /// Solo la pestaña (repetible: no abre nada encima dos veces).
