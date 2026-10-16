@@ -50,6 +50,8 @@ struct Rail<Content: View>: View {
 struct TitleLink: View {
     let route: TitleRoute
     var badge: LocalizedStringKey?
+    /// Está en tu watchlist: un marcador en la esquina (sin texto que se corte en un póster angosto).
+    var bookmarked = false
     /// El puesto en un Top 10 (chart de Netflix, JustWatch…), si la lista lo trae.
     var rank: Int?
     var progress: Double?
@@ -60,7 +62,7 @@ struct TitleLink: View {
     var body: some View {
         NavigationLink(value: route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                PosterCard(title: route.title, poster: route.poster, badge: badge, rank: rank, progress: progress, width: width)
+                PosterCard(title: route.title, poster: route.poster, badge: badge, bookmarked: bookmarked, rank: rank, progress: progress, width: width)
                     .titleZoomSource(route)
                 Text(route.title).recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading)
                 if let detail { detail.recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading) }

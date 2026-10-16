@@ -86,7 +86,8 @@ public final class TitleModel: ObservableModel {
             meta = original
             // Arte y póster en cuanto llega Cinemeta; el texto traducido llega después.
             poster = CinemetaParsing.medium(original["poster"]?.string) ?? poster
-            if let art = original["background"]?.string, !art.isEmpty { background = art }
+            // Si Cinemeta no trae fondo, tampoco hay en metahub: se cae al póster (no a un hueco).
+            if let art = original["background"]?.string, !art.isEmpty { background = art } else { background = nil }
             let local = await services.localizer.meta(kind: kind, meta: original)
             localized = local
             title = local["name"]?.string ?? original["name"]?.string ?? title

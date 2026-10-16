@@ -129,7 +129,7 @@ struct HomeView: View {
             .scrollPosition(id: $heroID)
             PageDots(count: items.count, index: items.firstIndex { $0.id == (heroID ?? items.first?.id) } ?? 0)
         }
-        .onChange(of: heroID) { Task { await tint.load(currentHero.flatMap { $0.background ?? $0.poster }) } }
+        .task(id: heroID) { await tint.load(currentHero.flatMap { $0.background ?? $0.poster }) }   // se cancela si pasas a otro
         .sensoryFeedback(.selection, trigger: heroID)
     }
 

@@ -122,7 +122,7 @@ struct ShelfPoster: View {
             if style == .top10, let rank = suggestion.rank {
                 NavigationLink(value: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster, movement: suggestion.movement, isNew: suggestion.isNew).titleZoomSource(suggestion.route) }.buttonStyle(.plain)
             } else {
-                TitleLink(route: suggestion.route, badge: inList ? "En tu watchlist" : nil, rank: style == .platform ? suggestion.rank : nil,
+                TitleLink(route: suggestion.route, bookmarked: inList, rank: style == .platform ? suggestion.rank : nil,
                           detail: yearAndKind(year: suggestion.year.map(String.init) ?? "", kind: suggestion.kind))
             }
         }
@@ -134,20 +134,37 @@ struct ShelfPoster: View {
 
 /// Los nombres de los estantes: los de la consola vienen ya con su texto; los de este iPhone se nombran por su id.
 @MainActor func shelfTitle(_ plan: ShelfPlan) -> Text {
+    // En español se usa el texto de la TV tal cual; en inglés, las listas conocidas con su nombre traducido (la TV manda español).
+    let english = AppEnvironment.shared.services.appSettings.uiLanguage == "en"
+    if english, let known = knownShelfTitle(plan) { return known }
     if !plan.title.isEmpty { return Text(verbatim: plan.title) }
+    if let known = knownShelfTitle(plan) { return known }
+    return Text(verbatim: plan.list.brand.flatMap { brand in Tmdb.platforms.first { $0.brand == brand }?.name } ?? plan.id)
+}
+
+/// El nombre de una lista que el iPhone conoce (para nombrarla en su idioma); nil si es un catálogo de complemento.
+@MainActor private func knownShelfTitle(_ plan: ShelfPlan) -> Text? {
+    let brand = plan.list.brand.flatMap { brand in Tmdb.platforms.first { $0.brand == brand }?.name } ?? plan.list.brand ?? ""
+    if plan.id.hasPrefix("chart:") { return Text("Top 10 en \(brand)") }
+    if plan.id.hasPrefix("jw:") { return Text("Tendencias en \(brand)") }
     switch plan.id {
     case "mine": return Text("Tus series")
     case "watchlist": return Text("Tu watchlist")
     case "recs": return Text("Recomendadas")
     case "trend": return Text("En tendencia")
     case "popular": return Text("Lo más popular")
-    default: return Text(verbatim: plan.list.brand.flatMap { brand in Tmdb.platforms.first { $0.brand == brand }?.name } ?? plan.id)
+    default: return nil
     }
 }
 
 @MainActor func shelfMeta(_ plan: ShelfPlan) -> Text? {
-    if !plan.list.meta.isEmpty { return Text(verbatim: plan.list.meta) }
+    let english = AppEnvironment.shared.services.appSettings.uiLanguage == "en"
+    if !plan.list.meta.isEmpty, !english { return Text(verbatim: plan.list.meta) }
+    if plan.id.hasPrefix("chart:") { return Text("Esta semana en México") }
+    if plan.id.hasPrefix("jw:") { return Text("Tendencia en JustWatch · México") }
     switch plan.id {
+    case "mine": return Text("Las que estás viendo")
+    case "watchlist": return Text("Lo que dejaste pendiente")
     case "recs": return Text("Por lo que has visto")
     case "trend": return Text("Lo más visto esta semana")
     case "popular": return Text("De todos los tiempos")

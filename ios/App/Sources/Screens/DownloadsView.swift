@@ -51,7 +51,10 @@ struct DownloadsView: View {
         .navigationSubtitle(Text("Ocupan \(bytes(model.usedBytes)) · libres \(bytes(model.freeBytes))"))
         .titleDestinations()
         .task { await model.run() }
-        .task(id: model.active.first?.metaID) { await tint.load(model.active.first.map { String(format: ForYou.metahubBackground, $0.metaID) }) }
+        .task(id: model.active.first?.metaID) {
+            // El arte de metahub solo existe para ids de IMDb; con otro id, fondo liso.
+            await tint.load(model.active.first.flatMap { $0.metaID.hasPrefix("tt") ? String(format: ForYou.metahubBackground, $0.metaID) : nil })
+        }
     }
 
     /// Un ajuste de Descargas como interruptor (se guarda al momento, igual que en Ajustes).
