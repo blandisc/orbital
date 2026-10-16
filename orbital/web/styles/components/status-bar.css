@@ -92,6 +92,16 @@
   [data-text-size="large"] .status-bar__search > span:not(.status-bar__search-glyph),
   .status-bar__playing-title { display: none; }
 }
+/* Cuando no cabe (status-bar.js · fit), cede en pasos; la hora nunca se sale de la pantalla. */
+.status-bar--tight-1 .status-bar__search > span:not(.status-bar__search-glyph), .status-bar--tight-1 .status-bar__playing-title { display: none; }
+.status-bar--tight-2 { gap: var(--space-4); }
+.status-bar--tight-2 .status-bar__tab { padding-inline: var(--space-3); }
+.status-bar--tight-2 .status-bar__right { gap: var(--space-3); }
+.status-bar--tight-3 .battery > span { display: none; }
+.status-bar--tight-4 .status-bar__wordmark { display: none; }
+.status-bar--tight-5 .status-bar__tabs .glyph { display: none; }
+.status-bar--tight-6 .status-bar__tab { font-size: var(--text-sm); }
+.status-bar--tight-6 .status-bar__clock { font-size: var(--text-lg); }
 .status-bar__right { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--space-5); color: var(--color-text-muted); font-size: var(--text-sm); }
 .status-bar__right > * { flex: none; }
 .status-bar__right > .status-bar__playing { flex: 0 1 auto; }
