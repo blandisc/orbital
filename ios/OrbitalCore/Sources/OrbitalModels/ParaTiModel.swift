@@ -125,6 +125,7 @@ public final class ParaTiModel: ObservableModel {
         isGeneric = false
         error = mosaic.isEmpty && lists.isEmpty ? "Tu Orbital no tiene sugerencias todavía." : nil
         await loadShelves()
+        await topUpMosaic()
         return true
     }
 
@@ -143,6 +144,17 @@ public final class ParaTiModel: ObservableModel {
         if mosaic.isEmpty && lists.isEmpty { error = services.appSettings.traktEnabled ? nil : "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias." }
         else { error = nil }
         await loadShelves()
+        await topUpMosaic()
+    }
+
+    /// Con pocas sugerencias el mosaico repetía la misma portada en toda la pantalla: se completa con lo que ya
+    /// trajeron los estantes (alternados, sin repetir) y, si aún faltan, con lo popular de Stremio.
+    private func topUpMosaic() async {
+        guard mosaic.count < MosaicPool.minimumVariety else { return }
+        let fromShelves = visibleShelves.map { items(for: $0) }
+        var filled = MosaicPool.toppedUp(mosaic, with: fromShelves)
+        if filled.count < MosaicPool.minimumVariety { filled = MosaicPool.toppedUp(filled, with: [await popular()]) }
+        mosaic = filled
     }
 
     /// «Series · Películas»: solo cambia los estantes con `split`; el resto sigue igual.

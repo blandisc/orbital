@@ -47,6 +47,22 @@ public enum Vocabulary {
         return [year, genre, runtime, rating.isEmpty ? "" : "★ \(rating)"].filter { !$0.isEmpty }
     }
 
+    /// Géneros de Cinemeta (en inglés) en español, con la misma tabla que `genres` de `core/format.js` en la TV; los
+    /// desconocidos se dejan igual. Con la clave de TMDB los géneros ya llegan traducidos y pasan sin cambio.
+    public static func genres(_ list: [String], language: String) -> [String] {
+        guard language.hasPrefix("es") else { return list }
+        return list.map { spanishGenres[$0] ?? $0 }
+    }
+
+    private static let spanishGenres: [String: String] = [
+        "Action": "Acción", "Adventure": "Aventura", "Animation": "Animación", "Biography": "Biografía", "Comedy": "Comedia",
+        "Crime": "Crimen", "Documentary": "Documental", "Drama": "Drama", "Family": "Familiar", "Fantasy": "Fantasía",
+        "History": "Historia", "Horror": "Terror", "Music": "Música", "Musical": "Musical", "Mystery": "Misterio", "Romance": "Romance",
+        "Sci-Fi": "Ciencia ficción", "Science Fiction": "Ciencia ficción", "Sport": "Deportes", "Thriller": "Suspenso",
+        "War": "Bélica", "Western": "Western", "Reality-TV": "Reality", "Talk-Show": "Talk show", "Game-Show": "Concurso",
+        "News": "Noticias", "Short": "Corto",
+    ]
+
     /// «Buenos días / Buenas tardes / Buenas noches» (`greeting` de `core/home.js`): de 5 a 12 h, de 12 a 20 h y el resto.
     public enum Greeting: Sendable, Equatable { case morning, afternoon, evening }
     public static func greeting(hour: Int) -> Greeting { hour >= 5 && hour < 12 ? .morning : hour >= 12 && hour < 20 ? .afternoon : .evening }

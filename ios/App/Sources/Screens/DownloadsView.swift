@@ -14,25 +14,37 @@ struct DownloadsView: View {
     var body: some View {
         let model = observer.model
         List {
-            Section { storage(model) }
+            Section {
+                storage(model)
+            } footer: {
+                if env.services.appSettings.wifiOnlyDownloads { Label("Solo con Wi‑Fi", systemImage: "wifi").font(DS.font(.xs)).foregroundStyle(DS.textMuted) }
+            }
             .listRowBackground(DS.fill)
             if !model.active.isEmpty {
                 Section("Descargando") { ForEach(model.active) { row($0, model) } }
                 .listRowBackground(DS.fill)
             }
-            Section("Listas para ver sin conexión") {
-                if model.ready.isEmpty { Text("Cuando descargues algo, aparece aquí.").foregroundStyle(DS.textMuted).font(DS.font(.sm)) }
+            if !model.ready.isEmpty { Section("Listas para ver sin conexión") {
                 ForEach(model.ready) { item in
                     Button { Task { env.play(await model.playRequest(item)) } } label: { readyRow(item) }
                         .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } } }
                 }
             }
-            .listRowBackground(DS.fill)
+            .listRowBackground(DS.fill) }
+        }
+        .overlay {
+            // Sin nada en cola ni listo: el vacío nativo, con qué hacer (no una tarjeta gris con una línea).
+            if model.active.isEmpty && model.ready.isEmpty {
+                ContentUnavailableView {
+                    Label("Nada descargado", systemImage: "arrow.down.circle")
+                } description: {
+                    Text("En una ficha, toca Descargar y lo ves aquí sin conexión.")
+                }
+            }
         }
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle("Descargas").navigationBarTitleDisplayMode(.large)
         .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { if env.services.appSettings.wifiOnlyDownloads { DSChip(text: "Solo con Wi‑Fi") } } }
         .task { await model.run() }
     }
 
@@ -40,7 +52,7 @@ struct DownloadsView: View {
         let used = Double(model.usedBytes), free = Double(model.freeBytes)
         return VStack(alignment: .leading, spacing: DS.Space.s2) {
             HStack {
-                (model.usedBytes > 0 ? Text("Ocupan \(bytes(model.usedBytes))") : Text("Nada descargado")).font(DS.font(.md)).foregroundStyle(DS.text)
+                (model.usedBytes > 0 ? Text("Ocupan \(bytes(model.usedBytes))") : Text("Espacio")).font(DS.font(.md)).foregroundStyle(DS.text)
                 Spacer()
                 Text("Libres \(bytes(model.freeBytes))").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
             }

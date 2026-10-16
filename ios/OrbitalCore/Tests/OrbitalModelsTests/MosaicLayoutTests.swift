@@ -163,4 +163,14 @@ final class MosaicLayoutTests: XCTestCase {
         }
         XCTAssertLessThan(peak, 160, "las piezas vivas no crecen sin tope al desplazar")
     }
+
+    func testSparseMosaicIsToppedUpFromShelvesWithoutRepeats() {
+        let base = [item("tt1")]
+        let shelves = [[item("tt1"), item("tt2"), item("tt3")], [item("tt4"), item("tt2")]]
+        let filled = MosaicPool.toppedUp(base, with: shelves)
+        XCTAssertEqual(filled.map(\.imdb), ["tt1", "tt4", "tt2", "tt3"], "alterna estantes y no repite")
+        var ranked = item("tt9"); ranked.rank = 3
+        XCTAssertNil(MosaicPool.toppedUp([], with: [[ranked]]).first?.rank, "el puesto de una lista no viaja al mosaico")
+        XCTAssertEqual(MosaicPool.toppedUp(base, with: [(0..<100).map { item("tt\($0 + 10)") }]).count, ForYou.mosaicSize)
+    }
 }

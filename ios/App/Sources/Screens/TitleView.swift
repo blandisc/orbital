@@ -78,7 +78,7 @@ struct TitleView: View {
                 TitleLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title, size: .hero, dark: model.logoIsDark)
                 Label(model.kind == "movie" ? "Película" : "Serie", systemImage: model.kind == "movie" ? "film" : "tv")
                     .font(DS.font(.sm)).foregroundStyle(DS.textMuted)
-                let facts = Vocabulary.titleFacts(year: model.info.year, genres: model.info.genres, runtime: model.info.runtime, rating: model.info.rating)
+                let facts = Vocabulary.titleFacts(year: model.info.year, genres: Vocabulary.genres(model.info.genres, language: env.services.appSettings.uiLanguage), runtime: model.info.runtime, rating: model.info.rating)
                 if !facts.isEmpty { Text(verbatim: Vocabulary.factLine(facts)).font(DS.font(.sm)).foregroundStyle(DS.textMuted) }
             }
         }

@@ -37,7 +37,10 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
             engine.$activeSubtitleTrackIndex.map { _ in () }.eraseToAnyPublisher(),
             engine.$mediaChapters.map { _ in () }.eraseToAnyPublisher(),
         ]
-        Publishers.MergeMany(changes).sink { [weak self] in self?.publish() }.store(in: &cancellables)
+        // `@Published` avisa ANTES de cambiar el valor: leer `engine.state` en el mismo instante daba el estado viejo
+        // (al pausar, la foto seguía diciendo «reproduciendo» y, con el reloj ya quieto, el botón se quedaba en pausa).
+        // Se lee en la siguiente vuelta del hilo principal, cuando el valor ya cambió.
+        Publishers.MergeMany(changes).receive(on: DispatchQueue.main).sink { [weak self] in self?.publish() }.store(in: &cancellables)
     }
 
     func load(url: URL, startAt: Double) async throws {

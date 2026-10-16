@@ -59,4 +59,9 @@ final class VocabularyTests: XCTestCase {
         XCTAssertEqual(Artwork.logoURL(metaID: "tt0386676"), "https://images.metahub.space/logo/medium/tt0386676/img")
         XCTAssertNil(Artwork.logoURL(metaID: "kitsu:1"))
     }
+
+    func testCinemetaGenresInSpanishLikeTheConsole() {
+        XCTAssertEqual(Vocabulary.genres(["Action", "Sci-Fi", "Anime"], language: "es"), ["Acción", "Ciencia ficción", "Anime"])
+        XCTAssertEqual(Vocabulary.genres(["Action"], language: "en"), ["Action"])
+    }
 }

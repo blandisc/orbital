@@ -16,20 +16,13 @@ struct ParaTiView: View {
     var body: some View {
         let m = model.model
         VStack(spacing: DS.Space.s2) {
-            HStack {
-                DSSegmented<ParaTiModel.Mode>(options: [(.mosaic, "Mosaico"), (.lists, "Listas")], selection: Binding(get: { m.mode }, set: { m.mode = $0 }))
-                Spacer()
-                if m.traktLinked { DSChip(text: "Trakt al día", tone: .good) }
+            DSSegmented<ParaTiModel.Mode>(options: [(.mosaic, "Mosaico"), (.lists, "Listas")], selection: Binding(get: { m.mode }, set: { m.mode = $0 }))
+                .padding(.horizontal, DS.Space.gutter)
+            if m.isGeneric, m.mode == .mosaic, !m.mosaic.isEmpty {
+                Text("Lo más popular en Stremio. Conecta Trakt en Ajustes y el mosaico se arma con lo tuyo.")
+                    .font(DS.font(.xs)).foregroundStyle(DS.textMuted).frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, DS.Space.gutter)
             }
-            .padding(.horizontal, DS.Space.gutter)
-            // Con letra de accesibilidad el botón baja debajo del texto en vez de apretarse a su lado.
-            (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s2)) : AnyLayout(HStackLayout())) {
-                Text(footer(m)).font(DS.font(.xs)).foregroundStyle(DS.textMuted)
-                if !typeSize.isAccessibilitySize { Spacer() }
-                Button { Task { await m.refresh() } } label: { Text("Actualizar") }
-                    .buttonStyle(.plain).font(DS.font(.xs)).foregroundStyle(DS.textMuted)
-            }
-            .padding(.horizontal, DS.Space.gutter)
             if let error = m.error, m.mosaic.isEmpty, m.lists.isEmpty { DSNotice(text: LocalizedStringKey(error)).padding(.horizontal, DS.Space.gutter) }
             switch m.mode {
             case .mosaic: Mosaic(items: m.mosaic, watchlistKeys: m.watchlistKeys, demoFocus: demoFocusImdb, onDismiss: { s in Task { await m.dismiss(s) } },
@@ -41,6 +34,14 @@ struct ParaTiView: View {
         .background(Backdrop(tint: m.mode == .mosaic ? tint.color : nil, space: true))
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
         .navigationTitle("Para ti").navigationBarTitleDisplayMode(.large)
+        // De dónde salió lo que ves, en el mismo lugar que «Stremio al día» en Inicio (no un chip y un pie sueltos).
+        .navigationSubtitle(subtitle(m))
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { Task { await m.refresh() } } label: { Image(systemName: "arrow.clockwise") }
+                    .disabled(m.isLoading).accessibilityLabel(Text("Actualizar"))
+            }
+        }
         .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .task {
@@ -53,12 +54,10 @@ struct ParaTiView: View {
         .animation(DS.Motion.base(reduceMotion), value: m.mode)
     }
 
-    /// El pie discreto bajo el selector: de dónde salió lo que ves, o (si aplica) la invitación a conectar Trakt.
-    private func footer(_ m: ParaTiModel) -> LocalizedStringKey {
-        if m.isGeneric, m.mode == .mosaic, !m.mosaic.isEmpty {
-            return "Lo más popular en Stremio. Conecta Trakt en Ajustes y el mosaico se arma con lo tuyo."
-        }
-        return m.source == .console ? "Para ti de tu Orbital" : "Calculado en el iPhone"
+    /// «De tu Orbital · Trakt al día» o «Calculado en el iPhone»: el subtítulo de la barra, como en Inicio.
+    private func subtitle(_ m: ParaTiModel) -> Text {
+        let source = m.source == .console ? Text("De tu Orbital") : Text("Calculado en el iPhone")
+        return m.traktLinked ? Text("\(source) · \(Text("Trakt al día"))") : source
     }
 
     /// Modo demostración (`-demo-mosaic-focus N`): qué sugerencia enfocar al abrir, para las capturas de CEN-36.

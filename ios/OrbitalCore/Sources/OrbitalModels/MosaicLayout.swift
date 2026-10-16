@@ -64,6 +64,23 @@ public struct MosaicPool: Sendable {
 
     public init(items: [Suggestion]) { self.items = items }
 
+    /// Por debajo de esto el mosaico se ve repetido (una pantalla de iPhone enseña ~16 piezas).
+    public static let minimumVariety = 24
+
+    /// Agrega a `base` lo de `extra` (alternando listas, sin repetir títulos) hasta `minimumVariety` o más.
+    public static func toppedUp(_ base: [Suggestion], with extra: [[Suggestion]], limit: Int = ForYou.mosaicSize) -> [Suggestion] {
+        var seen = Set(base.map(\.imdb))
+        var out = base
+        let longest = extra.map(\.count).max() ?? 0
+        for i in 0..<longest {
+            for list in extra where i < list.count && out.count < limit {
+                // El puesto es de su lista: fuera de ella («3» junto a otro «3» de otra lista) confunde.
+                if seen.insert(list[i].imdb).inserted { var item = list[i]; item.rank = nil; out.append(item) }
+            }
+        }
+        return out
+    }
+
     /// «No me interesa»: ya no vuelve a salir.
     public mutating func remove(imdb: String) { items.removeAll { $0.imdb == imdb } }
 
