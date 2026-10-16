@@ -74,7 +74,7 @@ const ui = {
     onPick: (target, id) => (ui.games.focusId === id ? gamesActivate(target) : ui.games.focus(id)),
   }),
   shelf: createShelf({ onPick: (r, c) => pick(r, c), onSwipe: (swipe) => onSwipe(swipe) }),
-  hints: createHints(),
+  hints: createHints({ onAction: (action) => handleAction(action) }),
   sheet: createSheet({
     onCommand: (command, context) => {
       // Mientras una opción del menú espera al servidor (un ajuste, el volumen, un submenú), lo que
