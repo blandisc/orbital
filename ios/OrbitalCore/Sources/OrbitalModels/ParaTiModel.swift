@@ -9,6 +9,8 @@ import OrbitalCore
 @MainActor
 public final class ParaTiModel: ObservableModel {
     public enum Mode: Equatable { case mosaic, lists }
+    /// «Próximos estrenos»: por día (lista) o la semana (una tira de días).
+    public enum CalendarLayout: Equatable { case byDay, week }
     public enum Chip: Hashable, Identifiable {
         case all, trakt, platform(String)
         public var id: String { switch self { case .all: "all"; case .trakt: "trakt"; case .platform(let b): b } }
@@ -27,6 +29,9 @@ public final class ParaTiModel: ObservableModel {
     public private(set) var watchlistKeys = Set<String>() { didSet { changed() } }
     public private(set) var traktLinked = false { didSet { changed() } }
     public private(set) var isLoading = false { didSet { changed() } }
+    /// Los episodios que salen de las series que sigues (Trakt), hoy y los próximos 14 días.
+    public private(set) var airings: [Airing] = [] { didSet { changed() } }
+    public var calendarLayout: CalendarLayout = .byDay { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }
     /// El mosaico es lo popular de Stremio (sin Trakt ni TMDB todavía): la pantalla invita a conectarlos.
     public private(set) var isGeneric = false { didSet { changed() } }
@@ -71,6 +76,7 @@ public final class ParaTiModel: ObservableModel {
         chips = [.all] + (traktLists.isEmpty ? [] : [.trakt]) + platformLists.compactMap { $0.brand.map(Chip.platform) }
         if !chips.contains(chip) { chip = .all }
         watchlistKeys = await services.forYou.watchlistKeys()
+        airings = (try? await services.forYou.calendar()) ?? []
         mosaic = await services.forYou.mosaic()
         // Sin Trakt ni TMDB el mosaico no quedaría vacío: lo más popular de Stremio (Cinemeta no pide claves).
         isGeneric = mosaic.isEmpty
@@ -97,7 +103,7 @@ public final class ParaTiModel: ObservableModel {
 
     private func loadVisible() async {
         let wanted = visibleLists
-        for list in wanted where railItems[key(list)] == nil {
+        for list in wanted where list.id != "estrenos" && railItems[key(list)] == nil {   // los estrenos ya están en `airings`
             railItems[key(list)] = await itemsFromCurrentSource(listID: list.id)
         }
     }
@@ -142,6 +148,7 @@ public final class ParaTiModel: ObservableModel {
         }
         mosaic.removeAll { $0.imdb == s.imdb }
         railItems = railItems.mapValues { $0.filter { $0.imdb != s.imdb } }
+        airings.removeAll { $0.series.imdb == s.imdb }
     }
 
     /// El botón «Actualizar»: limpia la caché (de la consola o local, según de dónde viniera) y vuelve a cargar.

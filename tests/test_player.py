@@ -599,3 +599,39 @@ def test_keyboard_glyphs_never_overlap_their_label():
             assert x_of(label) >= x_of("Espacio") + key_w / 2
     finally:
         player_ui.set_input("gamepad")
+
+
+def test_the_memory_watchdog_reopens_a_channel_and_only_warns_in_a_video():
+    """Con una versión de desarrollo de mpv, la tele llegó a 8 GB: un canal se vuelve a abrir en un mpv nuevo (una vez);
+    un video solo avisa, no se corta."""
+    import types
+
+    p, mpv = make_player()
+    p.memory_of = lambda pid: 3500
+    reopened = []
+    p.on_memory_full = reopened.append
+    p.current = player.Playback("ADN 40", types.SimpleNamespace(pid=42), 0, {})
+    live = player.Segment({"channel_id": "adn40", "title": "ADN 40", "list": "todos"}, "ADN 40", "u", live=True)
+    live.playing = True
+    p._check_memory(p.current, live)
+    p._check_memory(p.current, live)  # una sola vez por mpv
+    import time as _t
+    for _ in range(50):
+        if reopened:
+            break
+        _t.sleep(.02)
+    assert reopened == [{"channel_id": "adn40", "title": "ADN 40", "list": "todos"}]
+    p.current = player.Playback("Interstellar", types.SimpleNamespace(pid=43), 0, {})
+    movie = player.Segment({"kind": "movie"}, "Interstellar", "u")
+    movie.playing = True
+    p._check_memory(p.current, movie)
+    assert len(reopened) == 1 and "mucha memoria" in (mpv.overlays.get(3) or "") + "".join(str(v) for v in mpv.overlays.values())
+    p.memory_of = lambda pid: 900  # por debajo del tope: nada
+    p.current = player.Playback("Otro", types.SimpleNamespace(pid=44), 0, {})
+    p._check_memory(p.current, live)
+    assert len(reopened) == 1
+
+
+def test_the_video_buffer_has_a_cap_both_ways():
+    cmd = player.build_command("mpv.exe", "u", "t")
+    assert "--demuxer-max-bytes=400MiB" in cmd and "--demuxer-max-back-bytes=50MiB" in cmd

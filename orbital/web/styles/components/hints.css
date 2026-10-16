@@ -10,6 +10,10 @@
 .hints__item .glyph + .glyph { margin-left: -.25rem; } /* «LB RB»: un par, juntos */
 .hints__item .key-hint__label { padding-top: .05em; } /* alineado al centro óptico del ícono */
 .hints__item--end { margin-left: auto; }
+/* Respaldo táctil: cada glifo (o el letrero entero, si es uno solo) se toca y hace lo mismo que la tecla. */
+.hints__press { cursor: pointer; border-radius: var(--radius-sm); transition: color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out); }
+.hints__press:hover { color: var(--color-text); }
+.hints__press:active { transform: scale(.94); }
 @media (max-width: 1000px) {
   .hints { gap: var(--space-5); overflow: hidden; }
   .hints__item--secondary { display: none; }

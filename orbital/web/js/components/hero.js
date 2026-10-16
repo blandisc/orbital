@@ -99,7 +99,7 @@ export function createHero({ onAction }) {
     const sheet = isWatchable(item) && item.id !== runningId
       ? (isSeries(item) || item.extra?.kind === "series" ? "Episodios" : "Ficha") : null;
     mount(actions,
-      Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", onPress: () => onAction("select") }),
+      Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", art: true, onPress: () => onAction("select") }),
       sheet && Button({ label: sheet, glyph: glyphs.alt, onPress: () => onAction("alt") }),
       !sheet && alt && item.id !== runningId && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, yields: true, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
       // Antes era "☰", el mismo glifo del botón Menú del mando: se confundían.

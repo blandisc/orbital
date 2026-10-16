@@ -61,6 +61,11 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(422, str(exc))
         return {"ok": True}
 
+    @r.get("/today")
+    def today() -> dict:
+        """{IMDb: «19:00»} de lo que sale hoy de tus series (el Inicio lo marca «Sale hoy»)."""
+        return {"airing": foryou.airing_today()}
+
     @r.get("/status")
     def status() -> dict:
         return foryou.status()

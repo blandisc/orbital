@@ -34,6 +34,14 @@ export const typingGlyphs = (g) => (g === GLYPHS.keyboard ? GLYPHS.typing : g);
 // Con el dedo no hay botones que enseñar: los glifos se ocultan con CSS ([data-input="touch"]).
 GLYPHS.touch = GLYPHS.keyboard;
 
+/** Qué hace cada glifo de la leyenda («Esc» → atrás, «Q» → la anterior): tocarlo en el pie hace lo mismo que la tecla. */
+const GLYPH_ACTIONS = {
+  Enter: "select", Esc: "back", X: "alt", Y: "options", M: "menu", S: "search", RePág: "pageleft", AvPág: "pageright",
+  Q: "prevsection", E: "nextsection", F2: "menu", F3: "options",
+  A: "select", B: "back", "☰": "menu", "⧉": "search", LT: "pageleft", RT: "pageright", LB: "prevsection", RB: "nextsection",
+};
+export const glyphAction = (glyph) => GLYPH_ACTIONS[glyph] ?? null;
+
 export const keyToAction = (key) => KEYMAP[key] ?? KEYMAP[key?.toLowerCase?.()] ?? null;
 
 // Stick: se activa al 55 % y se suelta por debajo del 35 % (histéresis: un stick que tiembla en el

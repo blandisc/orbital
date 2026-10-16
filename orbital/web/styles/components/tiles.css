@@ -6,9 +6,9 @@
 .tile--feature { min-height: 0; background: var(--color-surface); container-type: size; }
 /* El detalle («T8 E23 · quedan 9 min») es lo que más importa: con poco alto se va primero «Serie» y
    el logo se achica; el detalle no se encoge (antes quedaba cortado a la mitad en la Legion Go). */
-@container (max-height: 18rem) { .tile--feature .tile__platform { display: none; } .tile--feature__logo { max-height: 3.4rem; } }
+.tile--feature__store { position: absolute; z-index: var(--z-raised); left: var(--space-5); top: var(--space-5); }
+@container (max-height: 18rem) { .tile--feature__logo { max-height: 3.4rem; } }
 @container (max-height: 13rem) { .tile--feature__detail { display: none; } }
-@container (max-height: 20rem) { [data-text-size="xlarge"] .tile--feature .tile__platform { display: none; } }
 /* Un título largo sin logo (letra grande, 1280): no se encoge a media línea; con poco alto, un renglón con «…». */
 .tile--feature__title { flex-shrink: 0; }
 @container (max-height: 18rem) { .tile--feature .tile--feature__title { -webkit-line-clamp: 1; } } /* más específica: la general va después */
@@ -65,6 +65,7 @@
 .tile--row__thumb--console { background: radial-gradient(70% 90% at 50% 50%, color-mix(in oklab, var(--glow) 34%, transparent) 0%, var(--color-surface) 75%); }
 .tile--row__console { position: absolute; inset: 12%; width: 76%; height: 76%; object-fit: contain; filter: var(--shadow-drop); }
 .tile--row__console--logo { inset: 24%; width: 52%; height: 52%; }
+.tile--row__airing { position: absolute; left: var(--space-2); top: var(--space-2); z-index: var(--z-raised); }
 .tile--row__text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
 .tile--row__title {
   font-family: var(--font-sans); font-size: var(--text-xl); font-weight: var(--weight-bold); line-height: 1.15; letter-spacing: var(--tracking-tight);

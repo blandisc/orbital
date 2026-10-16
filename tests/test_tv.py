@@ -503,3 +503,12 @@ def test_api_no_se_abre_desde_fuera_sin_token(library):
     with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("203.0.113.9", 5000)) as c:
         assert c.get("/api/tv").status_code == 401
         assert c.post("/api/tv/play", json={"id": "x"}).status_code == 401
+
+
+def test_un_canal_que_ocupa_demasiada_memoria_se_abre_en_un_mpv_nuevo(live, library):
+    """El vigilante de memoria: el mismo canal, sin sintonizar en el mpv inflado (fresh: uno nuevo)."""
+    service, fake = live
+    on_air(fake)
+    library.before_launch = None
+    service.reopen({"channel_id": "Cine.mx@SD", "title": "Cine", "list": "todos"})
+    assert fake.tuned == [] and len(fake.played) == 1
