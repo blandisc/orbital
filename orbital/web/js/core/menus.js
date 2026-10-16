@@ -2,6 +2,7 @@
  * Definición de menús como datos (puros y probables). Cada opción lleva un `command`
  * que ejecuta el controlador de la app; así la vista no conoce la lógica.
  */
+import { lastPlayed } from "./format.js";
 import { isGame, isWatchable, primaryLabel, runnerName } from "./library.js";
 
 /**
@@ -515,6 +516,17 @@ export function diagnosticsMenu(d = {}, { now = Date.now() } = {}) {
   };
 }
 
+const SCROBBLE_ACTIONS = { start: "viendo", pause: "en pausa", stop: "cerrado" };
+
+/** Lo último que la consola le contó a Trakt («Último scrobble: …») o, si falló, por qué, en palabras. */
+export function scrobbleHint(scrobble, now = Date.now()) {
+  if (scrobble?.error) return `Trakt no recibe lo que ves: ${scrobble.error}`;
+  const last = scrobble?.last;
+  if (!last?.title) return "Tus listas en Para ti · Último scrobble: aún nada";
+  const ago = lastPlayed(last.at, now, "").trim();
+  return `Último scrobble: ${last.title} · ${SCROBBLE_ACTIONS[last.action] || last.action}${ago ? ` · ${ago}` : ""}`;
+}
+
 /** Una página de Ajustes con los valores actuales. */
 export function settingsPage(page, settings) {
   settings ??= {};
@@ -528,7 +540,7 @@ export function settingsPage(page, settings) {
           hint: settings.stremio_linked ? "Seguir viendo y fuentes" : "Para películas y series" },
         settings.trakt?.configured && { icon: "spark", label: "Trakt", value: settings.trakt.linked ? "Conectada" : "Conectar",
           command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
-          hint: settings.trakt.linked ? "Tus listas en Para ti" : "Tus listas y recomendaciones en Para ti" },
+          hint: settings.trakt.linked ? scrobbleHint(settings.trakt.scrobble) : "Tus listas y recomendaciones en Para ti" },
         { icon: "phone", label: "iPhone", value: "Conectar", command: { type: "phone-link" },
           hint: "Escanea un código con la cámara: la app queda conectada" },
         settings.para_ti && { heading: true, label: "Claves de Para ti" },

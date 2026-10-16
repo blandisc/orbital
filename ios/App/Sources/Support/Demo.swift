@@ -18,6 +18,14 @@ enum Demo {
     /// con `download` se ve la descarga de prueba y el aviso; con `open`, la tarjeta «Desde la TV» en Inicio.
     static var inbox: String? { value(after: "-demo-inbox") }
 
+    /// `-demo-scrobble`: Trakt «conectado» con un último scrobble de mentira (para ver la fila de Ajustes › Trakt en el simulador).
+    static var scrobble: Bool { ProcessInfo.processInfo.arguments.contains("-demo-scrobble") }
+
+    /// Lo último que «se le contó a Trakt», para ver la fila de Ajustes sin ver nada antes.
+    static func prefillScrobble(_ kv: KeyValueStore) {
+        if scrobble { ScrobbleLog(kv: kv).recordSent(title: "The Office T2 · E5", action: .pause, at: Date().addingTimeInterval(-180)) }
+    }
+
     private static func value(after flag: String) -> String? {
         let args = ProcessInfo.processInfo.arguments
         guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
@@ -52,6 +60,7 @@ enum Demo {
     static func secrets() -> InMemorySecrets {
         let secrets = InMemorySecrets()
         if !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") { secrets.set(SecretKey.stremioAuth, "DEMO") }
+        if scrobble { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa: nada sale a Trakt
         if !noTV { secrets.set(SecretKey.orbitalToken, "demo") }      // una Orbital de mentira ya conectada («Ver en la TV»)
         return secrets
     }
@@ -91,6 +100,10 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         let url = request.url
         if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
         if url.host == "demo.orbital.invalid" { return addon(url.path) }
+        if url.host == "api.trakt.tv" {   // con `-demo-scrobble` Trakt es de mentira: ni una petición sale a internet
+            let user: JSON = url.path == "/users/settings" ? ["user": ["username": "demo"]] : [:]
+            return HTTPResponse(status: url.path == "/users/settings" ? 200 : 404, data: user.serialized())
+        }
         if url.host == "tv.demo.invalid", Demo.tvNow || Demo.inbox != nil, url.path.hasPrefix("/api/companion/") {
             return lock.withLock { nowPlaying(path: url.path, body: request.body.flatMap(JSON.parse)) }
         }

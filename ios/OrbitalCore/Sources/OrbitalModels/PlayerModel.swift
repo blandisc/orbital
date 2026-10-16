@@ -91,6 +91,10 @@ public final class PlayerModel: ObservableModel {
     private var tracksApplied = false
     private var addedExternalSubtitle = false
     private var rescrobbleAfterSeek = false
+    /// Trakt ya sabe que empezó este video (el `start` sale cuando el motor suena Y se sabe la duración).
+    private var scrobbleStarted = false
+    /// Lo último que Trakt sabe: ¿está sonando (`start`) o en pausa (`pause`)?
+    private var scrobblePlaying = false
     private var knownSubtitleIDs = Set<Int>()
     private var preloadedNext = false
     private var upNextDeadline: Date?
@@ -140,6 +144,7 @@ public final class PlayerModel: ObservableModel {
 
     private func resetForNewVideo() {
         failedSources = []; hasPlayed = false; startupDeadline = nil; lastSnapshotAt = nil; watchedUnsaved = 0
+        scrobbleStarted = false; scrobblePlaying = false; rescrobbleAfterSeek = false
         tracksApplied = false; addedExternalSubtitle = false; knownSubtitleIDs = []; preloadedNext = false
         upNext = nil; upNextDeadline = nil; upNextDismissed = false; skipIntroTo = nil; reachedEnd = false; finalReported = false
         notice = nil; attempts = 0; lastSave = clock(); snapshot = EngineSnapshot(state: .loading); source = nil; sourceChoices = []
@@ -149,6 +154,7 @@ public final class PlayerModel: ObservableModel {
     /// Justo antes de cargar: de aquí en adelante lo que diga el motor es del video nuevo.
     private func startLoading() {
         acceptingSnapshots = true; retrying = false; hasPlayed = false; tracksApplied = false
+        scrobbleStarted = false   // otra carga (otra fuente, otro episodio): cuando suene, Trakt recibe el avance donde va
         startupDeadline = clock().addingTimeInterval(PlaybackRules.startupTimeout)
     }
 
@@ -215,8 +221,7 @@ public final class PlayerModel: ObservableModel {
             retryWithAnotherSource()
             return
         }
-        var firstPlay = false
-        if s.state == .playing && !hasPlayed { hasPlayed = true; startupDeadline = nil; phase = .playing; firstPlay = true }
+        if s.state == .playing && !hasPlayed { hasPlayed = true; startupDeadline = nil; phase = .playing }
         if hasPlayed {
             await applyTracksOnce(s)                 // primero el audio y los subtítulos; el aviso a Trakt no los retrasa
             await selectNewSubtitleIfAny(s)
@@ -224,14 +229,27 @@ public final class PlayerModel: ObservableModel {
             await evaluateUpNext(s, now: now)
         }
         guard phase != .closed, acceptingSnapshots else { return }
-        if firstPlay { await report(.started) }
-        else if hasPlayed {
-            if previous.state == .playing && s.state == .paused { await report(.paused) }
-            else if previous.state == .paused && s.state == .playing { rescrobbleAfterSeek = false; await report(.started) }
-            // Adelantaste o regresaste: Trakt recibe el avance nuevo en cuanto vuelve a sonar («Viendo ahora» al día).
-            if rescrobbleAfterSeek && s.state == .playing { rescrobbleAfterSeek = false; await report(.started) }
-        }
+        if hasPlayed { await scrobbleIfNeeded(s) }
         if s.state == .ended && !reachedEnd { reachedEnd = true; await finishAndAdvance() }
+    }
+
+    /// Lo que Trakt debe saber ahora. El `start` sale cuando el motor de verdad suena (no al pedir el video) y ya se sabe la duración
+    /// (sin ella no hay porcentaje: se manda en cuanto aparece). Después se sigue lo que Trakt sabe, no la transición del motor:
+    /// pausar → `pause`; volver a sonar, aunque sea tras pasar por «cargando» (pausa, salto y seguir), → `start`; y un salto grande → `start`
+    /// con el avance nuevo (su «Viendo ahora» calcula cuándo terminas con el último aviso).
+    private func scrobbleIfNeeded(_ s: EngineSnapshot) async {
+        guard let known = event()?.duration, known > 0 else { return }
+        if !scrobbleStarted {
+            guard s.state == .playing else { return }
+            scrobbleStarted = true; scrobblePlaying = true; rescrobbleAfterSeek = false
+            await report(.started)
+        } else if s.state == .paused && scrobblePlaying {
+            scrobblePlaying = false
+            await report(.paused)
+        } else if s.state == .playing && (!scrobblePlaying || rescrobbleAfterSeek) {
+            scrobblePlaying = true; rescrobbleAfterSeek = false
+            await report(.started)
+        }
     }
 
     /// Cada segundo desde la vista: guardado cada minuto, plazo de arranque y cuenta atrás.

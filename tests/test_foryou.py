@@ -78,7 +78,7 @@ def test_runtime_and_hours_read_like_a_console():
 def test_series_you_are_watching_continue_where_you_left():
     e = {**trakt.entry(show("Severance", "tt11280740"), "series"), "next": {"season": 2, "episode": 6}}
     item = video_item(e, "Sigues viéndola")
-    assert item["action"] == "Continuar T2 E6" and item["video_id"] == "tt11280740:2:6"
+    assert item["action"] == "Ver la serie" and item["video_id"] == "tt11280740:2:6"
     assert item["detail"] == "Sigue T2 E6" and item["id"] == "cinemeta:series:tt11280740"
     fresh = video_item(trakt.entry(show("Andor", "tt9253284", episodes=24), "series"), "Recomendada")
     assert fresh["action"] == "Ver la serie" and fresh["video_id"] == "tt9253284:1:1" and fresh["detail"] == "24 episodios"
@@ -176,7 +176,7 @@ def test_your_series_bring_the_next_episode_and_skip_finished_ones(make_foryou, 
     net.on("GET", r"/shows/11/progress/watched", (200, {"next_episode": {"season": 2, "number": 6}}))
     net.on("GET", r"/shows/22/progress/watched", (200, {"next_episode": None, "completed": 62}))
     items = fy.list_items("mine")
-    assert [(i["title"], i["action"]) for i in items] == [("Severance", "Continuar T2 E6")]
+    assert [(i["title"], i["action"]) for i in items] == [("Severance", "Ver la serie")]
 
 
 # ---------------------------------------------------------------- listas y servicios
@@ -319,7 +319,7 @@ def test_api_lists_details_dismiss_and_trakt(library, make_foryou):
     make_foryou(trakt_keys=False)
     with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 5000)) as c:
         data = c.get("/api/foryou").json()
-        assert data["status"]["trakt"] == {"configured": False, "linked": False}
+        assert data["status"]["trakt"] == {"configured": False, "linked": False, "scrobble": {"last": None, "error": None}}
         assert [row["id"] for row in data["lists"]] == [*CHART_LIST_IDS, "mygames"] and data["mosaic"]
         assert c.get("/api/foryou/list", params={"id": "mygames"}).json()["items"]
         assert c.get("/api/foryou/list", params={"id": "nada"}).status_code == 404
@@ -366,7 +366,7 @@ def test_without_any_key_para_ti_still_has_movies_and_series(library, make_foryo
     lists = [row["id"] for row in fy.lists()]
     assert lists[:3] == ["continue", "mylist", "cinemeta"] and lists[-1] == "mygames"
     bb = fy.list_items("continue")[0]
-    assert (bb["title"], bb["action"], bb["video_id"], bb["why"]) == ("Breaking Bad", "Continuar T2 E6", "tt0903747:2:6", "Seguir viendo")
+    assert (bb["title"], bb["action"], bb["video_id"], bb["why"]) == ("Breaking Bad", "Ver la serie", "tt0903747:2:6", "Seguir viendo")
     assert fy.list_items("mylist")[0]["detail"] == "2 h 28 min"
     assert {i["kind"] for i in fy.list_items("cinemeta", "movie")} == {"movie"}
     mosaic = fy.mosaic()

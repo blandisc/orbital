@@ -320,6 +320,17 @@
         }
       }
     },
+    "Cerrado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closed"
+          }
+        }
+      }
+    },
     "Cerrar": {
       "extractionState": "manual",
       "localizations": {
@@ -2311,6 +2322,17 @@
         }
       }
     },
+    "Todavía nada: aparece cuando veas algo en el iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing yet: it shows up once you watch something on the iPhone."
+          }
+        }
+      }
+    },
     "Todo": {
       "extractionState": "manual",
       "localizations": {
@@ -2648,6 +2670,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Did you finish it?"
+          }
+        }
+      }
+    },
+    "Último scrobble": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last scrobble"
           }
         }
       }

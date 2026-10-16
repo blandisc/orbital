@@ -145,8 +145,8 @@ def video_item(e: dict, why: str, *, title: str | None = None, poster: str | Non
         facts = [["Sigue", episode] if episode else ["Temporadas", seasons] if seasons else ["Episodios", e.get("episodes")],
                  ["Año", e.get("year")]]
         video_id = f"{imdb}:{nxt['season']}:{nxt['episode']}" if nxt else f"{imdb}:1:1"
-        # Una serie que no estás viendo abre su ficha (temporadas, sinopsis), no el primer episodio.
-        action = f"Continuar {episode}" if episode else "Ver la serie"
+        # Una serie abre su ficha (temporadas, sinopsis, en qué episodio vas), nunca un episodio directo.
+        action = "Ver la serie"
     return {
         "key": f"video:{imdb}", "id": f"cinemeta:{kind}:{imdb}", "source": "cinemeta", "kind": kind, "meta_id": imdb,
         "title": title or e["title"], "year": e.get("year"), "why": why, "detail": detail,
@@ -214,6 +214,10 @@ class ForYou:
     def _key(self, name: str) -> str:
         return (self.catalog.credentials.get(KEY_PREFIX + name) or "") or getattr(self.settings, name)
 
+    def key(self, name: str) -> str:
+        """La clave vigente (la escrita en la TV o la de config.yaml): también se la lleva la app del iPhone."""
+        return self._key(name)
+
     def _build(self) -> None:
         self.trakt = trakt_api.Trakt(self._key("trakt_client_id"), self._key("trakt_client_secret"), self.catalog.credentials)
         self.tmdb = tmdb_api.Tmdb(self._key("tmdb_key"))
@@ -248,7 +252,9 @@ class ForYou:
 
     # --- qué hay -----------------------------------------------------------------------------
     def status(self) -> dict:
-        return {"trakt": {"configured": self.trakt.configured, "linked": self.trakt.linked},
+        return {"trakt": {"configured": self.trakt.configured, "linked": self.trakt.linked,
+                          # Lo último que el reproductor le contó a Trakt (o por qué no pudo): Ajustes › Cuentas.
+                          "scrobble": self.catalog.watch.scrobbler.snapshot()},
                 "tmdb": self.tmdb.configured, "rawg": self.rawg.configured,
                 # Cuáles escribiste en Ajustes (esas se pueden quitar desde ahí; las de config.yaml, no).
                 "saved": [s for s, names in KEYS.items() if self.catalog.credentials.get(KEY_PREFIX + names[0])]}

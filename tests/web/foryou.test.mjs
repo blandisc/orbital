@@ -30,8 +30,9 @@ test("rankOf: el puesto del Top 10 (Netflix, JustWatch) pinta el badge; lo demá
 });
 
 test("A: ver con su episodio, jugar lo tuyo, y nada con un juego que no tienes", () => {
-  assert.equal(primaryAction(series), "watch");
-  assert.equal(primaryAction({ ...series, episode: null }), "title"); // una serie nueva: su ficha, no T1 E1
+  assert.equal(primaryAction(series), "title"); // una serie, siempre su ficha (aunque la estés siguiendo)
+  assert.equal(primaryAction({ ...series, episode: null }), "title");
+  assert.equal(primaryAction(movie), "watch");
   assert.equal(primaryAction(mine), "play");
   assert.equal(primaryAction(rawg), null);
   assert.deepEqual(playOf(series), { kind: "series", id: "tt1", video_id: "tt1:2:6", title: "Severance", item: series });

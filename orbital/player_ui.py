@@ -511,11 +511,13 @@ def buttons(items: list[tuple[str, str]], x: float, y: float, *, layer: str = "h
     for i, (key, label) in enumerate(items):
         primary = i == 0
         h = 76 if TOUCH else 62
-        lead = 26 if TOUCH else 16 + 30 + 12
+        # El glifo se mide de verdad: con teclado «Espacio» es mucho más ancho que el círculo del mando y se
+        # encimaba sobre «Continuar».
+        shape, gw = ("", 0.0) if TOUCH else glyph(x + 16, y + 31, key, 30)
+        lead = 26 if TOUCH else 16 + gw + 12
         w = lead + text_width(label, 24, "semi") + 26
         out.append(rrect(x, y, w, h, 14, TEXT, "00" if primary else "D4"))
-        if not TOUCH:
-            shape, _ = glyph(x + 16, y + 31, key, 30)
+        if shape:
             out.append(shape)
         out.append(text(x + lead, y + h / 2, esc(label), 24, ON_LIGHT if primary else TEXT, weight="semi", align=4))
         if TOUCH:
@@ -799,7 +801,8 @@ def skip_ass(label: str) -> str:
         x, y = W - MARGIN - w, 780
         targets["card"].append((x, y, w, 76, "a"))
         return "\n".join([rrect(x, y, w, 76, 14, TEXT), text(x + w / 2, y + 38, esc(label), 24, ON_LIGHT, weight="bold", align=5)])
-    w = 16 + 30 + 12 + text_width(label, 24, "bold") + 28
+    gw = glyph(0, 0, "A", 30)[1]  # con teclado, «Espacio»: el botón crece con su glifo
+    w = 16 + gw + 12 + text_width(label, 24, "bold") + 28
     x, y = W - MARGIN - w, 790
     shape, gw = glyph(x + 16, y + 32, "A", 30)
     return "\n".join([rrect(x, y, w, 64, 14, TEXT), shape,

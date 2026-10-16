@@ -54,6 +54,7 @@ LIVE_ARGS = [
     "--stream-lavf-o=reconnect=1,reconnect_streamed=1,reconnect_at_eof=1,reconnect_delay_max=4",
 ]
 SAVE_EVERY = 60.0  # s entre guardados del avance en Stremio
+SCROBBLE_SEEK = 60.0  # s de salto en la posición (adelante o atrás) para volver a avisarle a Trakt del avance
 UPNEXT_LOOKAHEAD = 180.0  # s antes del final: se busca ya el siguiente episodio (y su fuente)
 UPNEXT_AT = 30.0  # s antes del final (o al empezar los créditos): tarjeta "Siguiente episodio"
 UPNEXT_COUNTDOWN = 8.0
@@ -256,6 +257,7 @@ class Segment:
     watched: float = 0.0
     saved_watched: float = 0.0
     playing: bool = False  # ya hubo imagen (mpv sabe la duración)
+    scrobbling: bool = False  # ya se le avisó a Trakt que empezó (y aún no que paró)
     live: bool = False  # un canal de TV: sin duración, sin progreso que guardar, sin episodios
     failed: bool = False
     closed: bool = False

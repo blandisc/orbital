@@ -175,6 +175,25 @@ dentro de la respuesta de `GET /api/companion/now` (`inbox: [...]`): el iPhone n
 - Lo que solo se prueba con la consola y el iPhone reales: el botón en el panel del reproductor (mpv), que el iPhone esté
   «conectado» de verdad (Tailscale) y que iOS despierte la tarea en segundo plano.
 
+## Scrobble a Trakt
+
+Qué le manda cada reproductor a Trakt (solo con Trakt conectado; en el iPhone, con la sesión que presta tu Orbital):
+
+| Momento | Aviso | Porcentaje |
+|---|---|---|
+| El motor suena de verdad y ya se sabe la duración | `start` | el avance real |
+| Pausar | `pause` | el avance real |
+| Reanudar (aunque pase por «cargando») o un salto de 30 s o más (iPhone) / 60 s o más (consola) | `start` | el avance nuevo |
+| Cerrar, terminar o pasar al siguiente episodio | `stop` | el avance real (Trakt lo marca visto desde 80 %) |
+
+- Un 409 (ya registrado) no es un error; un 401 pide una sesión nueva (la consola renueva; el iPhone se la pide a la consola) UNA vez y reintenta.
+- Sin conexión, lo visto (≥ 80 %) espera en la cola y se sube con su fecha real, sin duplicar (se revisa el historial antes).
+- Ir a segundo plano solo guarda el avance en Stremio: el audio sigue sonando, así que no es un `stop`.
+- Infuse avisa a Trakt con su propia conexión (aquí no se duplica). La TV en vivo nunca se manda.
+- Ajustes › Trakt › «Último scrobble» (iPhone) y Ajustes › Cuentas › Trakt (TV) dicen qué se mandó y hace cuánto, o el error en palabras. Con `-demo -demo-scrobble` la fila sale llena.
+
+**Verificarlo con tu cuenta:** ve algo unos minutos y, sin cerrarlo, abre trakt.tv › tu perfil › «Viendo ahora»; al cerrarlo (pasando del 80 %) aparece en trakt.tv › Historial.
+
 ## Descargas: cómo se reanudan
 
 - **Pausa o corte de red**: se conserva lo bajado con los datos de reanudación de `URLSession` y se continúa mientras el enlace valga.

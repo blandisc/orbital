@@ -27,6 +27,7 @@ import { createStatusBar } from "./components/status-bar.js";
 import { createLogin } from "./components/login.js";
 import { createTitle, titleRef } from "./components/title.js";
 import { createToast } from "./components/toast.js";
+import { createPhoneLink } from "./components/phone-link.js";
 import { createTv } from "./components/tv.js";
 import { createPhoneLink } from "./components/phone-link.js";
 import { createTraktLink } from "./components/trakt-link.js";
@@ -951,6 +952,11 @@ async function runCommand(command, context = null) {
         sound.play("open");
         traktFrom = { context };
         ui.traktLink.open();
+        return renderHints();
+      case "phone-link": // un QR para la cámara del iPhone: la app queda conectada sin escribir nada
+        sound.play("open");
+        phoneFrom = { context };
+        ui.phoneLink.open();
         return renderHints();
       case "keys":
         if (!KEY_FORMS[command.service]) return;
