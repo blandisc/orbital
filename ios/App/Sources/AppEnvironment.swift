@@ -61,7 +61,7 @@ final class AppEnvironment: ObservableObject {
         let store = services.settings   // el almacén es seguro entre hilos: los cierres no tocan nada aislado al hilo principal
         transport.allowsCellular = { !store.value.wifiOnlyDownloads }
         services.episodeLabel = { Strings.episode(season: $0, episode: $1, language: store.value.uiLanguage) }
-        services.tvEpisodeLabel = { Strings.tvEpisode($0, language: store.value.uiLanguage) }
+        services.tvEpisodeLabel = { Strings.tvEpisode(season: $0, episode: $1, label: $2, language: store.value.uiLanguage) }
         // El widget «Lo siguiente para ti»: sus textos en el idioma de la app y quién escribe su snapshot (al actualizar Inicio).
         services.widgetLabels = WidgetLabels(
             episode: { Strings.episode(season: $0, episode: $1, language: store.value.uiLanguage) },
@@ -272,7 +272,7 @@ final class AppEnvironment: ObservableObject {
 
     /// «Ver» en la tarjeta «Desde la TV»: lo mismo, con lo que mandó la consola.
     func play(_ item: OrbitalRemote.InboxItem) async {
-        await play(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title, originalTitle: item.title, episodeLabel: services.tvEpisodeLabel(item.episodeLabel), poster: item.poster)
+        await play(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title, originalTitle: item.title, episodeLabel: services.tvEpisodeLabel(item.season, item.episode, item.episodeLabel), poster: item.poster)
     }
 
     private func play(kind: String, metaID: String, videoID: String?, title: String, originalTitle: String, episodeLabel: String, poster: String?) async {

@@ -144,7 +144,7 @@ struct NowPlayingCard: View {
                 }
             } else {
                 if !now.episodeLabel.isEmpty {
-                    Text(verbatim: Strings.tvEpisode(now.episodeLabel, language: AppEnvironment.shared.services.appSettings.uiLanguage)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(1)
+                    Text(verbatim: Strings.tvEpisode(season: now.season, episode: now.episode, label: now.episodeLabel, language: AppEnvironment.shared.services.appSettings.uiLanguage)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(1)
                 }
                 TimelineView(.periodic(from: fetchedAt, by: DS.NowPlaying.progressTick)) { context in
                     let left = Int(max(0, now.duration - interpolatedPosition(at: context.date)) / 60)
@@ -241,7 +241,7 @@ struct FromTVCard: View {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text(item.title).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1)
                     if !item.episodeLabel.isEmpty {
-                        Text(verbatim: Strings.tvEpisode(item.episodeLabel, language: AppEnvironment.shared.services.appSettings.uiLanguage)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(1)
+                        Text(verbatim: Strings.tvEpisode(season: item.season, episode: item.episode, label: item.episodeLabel, language: AppEnvironment.shared.services.appSettings.uiLanguage)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(1)
                     }
                 }
                 Spacer(minLength: 0)
