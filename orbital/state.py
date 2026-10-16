@@ -37,7 +37,8 @@ class State:
         self.path = path
         self._lock = threading.Lock()
         # "dismissed": sugerencias de «Para ti» que dijiste «No me interesa» (clave → cuándo).
-        self._data: dict = {"history": {}, "prefs": {}, "settings": {}, "seen": {}, "dismissed": {}}
+        # "inbox": lo que la TV le manda al iPhone y él aún no recoge (id → pendiente; ver companion.py).
+        self._data: dict = {"history": {}, "prefs": {}, "settings": {}, "seen": {}, "dismissed": {}, "inbox": {}}
         self._frozen = False  # no se pudo leer el archivo: se vive en memoria y NO se pisa
         if path and path.exists():
             self._load(path)
@@ -89,6 +90,7 @@ class State:
         self._data["seen"] = {k: number(v) for k, v in self._data["seen"].items()}
         self._data["dismissed"] = {k: number(v) for k, v in self._data["dismissed"].items()}
         self._data["settings"] = {k: v for k, v in self._data["settings"].items() if _setting_ok(k, v)}
+        self._data["inbox"] = {k: v for k, v in self._data["inbox"].items() if isinstance(v, dict) and v.get("action") in ("open", "download")}
 
     def _save(self) -> None:
         """Escritura atómica (no se corrompe si se apaga la consola). Si Windows no deja escribir (un
@@ -207,3 +209,29 @@ class State:
             else:
                 self._data["settings"][key] = value
             self._save()
+
+    # --- bandeja para el iPhone (lo que la TV le manda: «Enviar» y «Descargar en el iPhone») ----------
+    def inbox(self) -> list[dict]:
+        """Los pendientes, del más viejo al más nuevo."""
+        with self._lock:
+            return [dict(v) for v in self._data["inbox"].values()]
+
+    def inbox_add(self, item: dict, limit: int) -> dict:
+        """Anota un pendiente. El mismo título con la misma acción, aún pendiente, no se repite (se devuelve el que ya estaba).
+        Pasado el tope se van los más viejos."""
+        with self._lock:
+            for old in self._data["inbox"].values():
+                if (old.get("meta_id"), old.get("video_id"), old.get("action")) == (item.get("meta_id"), item.get("video_id"), item.get("action")):
+                    return dict(old)
+            self._data["inbox"][item["id"]] = dict(item)
+            while len(self._data["inbox"]) > limit:
+                del self._data["inbox"][next(iter(self._data["inbox"]))]
+            self._save()
+            return dict(item)
+
+    def inbox_ack(self, ids: list[str]) -> int:
+        with self._lock:
+            gone = [i for i in ids if self._data["inbox"].pop(i, None) is not None]
+            if gone:
+                self._save()
+            return len(gone)

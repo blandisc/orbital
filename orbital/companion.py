@@ -8,6 +8,9 @@ consola: el iPhone nunca guarda la parte que la renueva, así que las dos no se 
 
 from __future__ import annotations
 
+import threading
+import time
+import uuid
 from urllib.parse import quote, urlencode
 
 from . import alexa_setup
@@ -29,6 +32,29 @@ def pair_info(config, tailscale_url=None) -> dict:
     if not url:
         return {"ready": False, "reason": "No encontré Tailscale. El iPhone entra por el mismo túnel que Alexa: enciéndelo y vuelve a intentar."}
     return {"ready": True, "host": url.removeprefix("https://"), "link": pair_link(url, token)}
+
+
+# La TV pregunta seguido si hay iPhone (cada vez que abre un menú); `tailscale status` tarda: se recuerda un rato.
+_phone_cache: dict = {"at": 0.0, "ready": False}
+_phone_lock = threading.Lock()
+
+
+def phone_ready(config, tailscale_url=None, now=time.monotonic) -> bool:
+    """¿Hay un iPhone al que mandarle cosas? (hay token y Tailscale: lo mismo que pide el QR). Se recuerda un minuto
+    si sí y 15 s si no, para que al encender Tailscale la opción aparezca pronto."""
+    with _phone_lock:
+        age = now() - _phone_cache["at"]
+        if _phone_cache["at"] and age < (60 if _phone_cache["ready"] else 15):
+            return bool(_phone_cache["ready"])
+    ready = bool(pair_info(config, tailscale_url)["ready"])
+    with _phone_lock:
+        _phone_cache.update(at=now(), ready=ready)
+    return ready
+
+
+def forget_phone() -> None:
+    with _phone_lock:
+        _phone_cache.update(at=0.0, ready=False)
 
 
 def qr_svg(text: str, *, border: int = 2) -> str:
@@ -119,3 +145,65 @@ def _zap_channel(catalog, meta: dict, step: int) -> None:
     here = next((i for i, c in enumerate(channels) if c.get("current")), -1)
     target = channels[(here + step) % len(channels)] if here >= 0 else channels[0 if step > 0 else -1]
     tv.tune(meta, target["id"], guide.get("category"))
+
+
+# --- bandeja: lo que la TV le manda al iPhone ------------------------------------------------------
+INBOX_LIMIT = 20
+INBOX_ACTIONS = {"open", "download"}
+# Lo que dice la TV tras mandarlo (honesto: el iPhone lo hace cuando abres Orbital ahí, o antes si iOS lo permite).
+SENT_TOAST = {"open": "Enviado al iPhone: se abre cuando tengas Orbital a la mano",
+              "download": "Se descargará en el iPhone en cuanto abras Orbital ahí (o en segundo plano si iOS lo permite)"}
+NOT_CONNECTED = "Conecta tu iPhone en Ajustes › Cuentas"
+
+
+class PhoneNotConnected(ValueError):
+    """No hay iPhone conectado (sin token o sin Tailscale): no hay a dónde mandar nada."""
+
+
+def send_to_phone(watch, config, action: str, kind: str, meta_id: str, video_id: str | None = None, *, connected=None) -> dict:
+    """Deja un pendiente para el iPhone («Enviar al iPhone» abre el título allá; «Descargar en el iPhone» lo baja).
+
+    El iPhone lo recoge en su próximo sondeo de `/api/companion/now` (o en segundo plano, si iOS lo deja) y lo quita
+    con `inbox/ack` cuando actúa. Lanza `PhoneNotConnected` sin iPhone y `ValueError` (en palabras) si no hay qué mandar."""
+    if action not in INBOX_ACTIONS:
+        raise ValueError("Esa acción no existe")
+    if kind not in ("movie", "series") or not meta_id:
+        raise ValueError("Solo se mandan películas y series")
+    if not (connected or phone_ready)(config):
+        raise PhoneNotConnected(NOT_CONNECTED)
+    try:
+        details = watch.title_details(kind, meta_id)
+    except Exception as exc:  # noqa: BLE001 - sin internet o Cinemeta caído: se dice en palabras
+        raise ValueError("No pude leer ese título; intenta en un momento") from exc
+    label = ""
+    if kind == "series":
+        video_id = video_id or (details.get("resume") or {}).get("video_id") or _first_episode(details)
+        label = _episode_label(details, video_id)
+    else:
+        video_id = video_id or meta_id
+    item = {"id": uuid.uuid4().hex[:12], "kind": kind, "meta_id": meta_id, "video_id": video_id,
+            "title": details.get("title") or "", "episode_label": label, "poster": details.get("poster"),
+            "action": action, "at": int(time.time())}
+    return watch.state.inbox_add(item, INBOX_LIMIT)
+
+
+def _first_episode(details: dict) -> str | None:
+    season = next((s for s in details.get("seasons") or [] if s.get("season") != 0 and s.get("episodes")), None)
+    return season["episodes"][0]["id"] if season else None
+
+
+def _episode_label(details: dict, video_id: str | None) -> str:
+    """«T2 · E5» (como la tarjeta «Viendo en la TV»)."""
+    for season in details.get("seasons") or []:
+        for episode in season.get("episodes") or []:
+            if episode.get("id") == video_id:
+                return f"{'Especial' if season['season'] == 0 else 'T' + str(season['season'])} · E{episode.get('episode')}"
+    return ""
+
+
+def inbox_pending(state) -> list[dict]:
+    return state.inbox()
+
+
+def inbox_ack(state, ids: list[str]) -> int:
+    return state.inbox_ack([i for i in ids if isinstance(i, str)][:INBOX_LIMIT * 2])

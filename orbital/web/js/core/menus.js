@@ -8,7 +8,7 @@ import { isGame, isWatchable, primaryLabel, runnerName } from "./library.js";
  * Opciones de lo enfocado (Y). Solo lo que no hace otro botón: A abre, X es la alternativa (otro
  * emulador o la ficha). Sin «Cancelar»: B cierra cualquier hoja.
  */
-export function gameMenu(item, { running = null } = {}) {
+export function gameMenu(item, { running = null, phone = false } = {}) {
   if (!item) return null;
   const isOpen = running?.id === item.id;
   if (item.source === "search") {
@@ -36,6 +36,14 @@ export function gameMenu(item, { running = null } = {}) {
     options.push(watch.in_library
       ? { icon: "check", label: "Quitar de Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: false, title: item.title } }
       : { icon: "plus", label: "Añadir a Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: true, title: item.title } });
+  }
+  // Un video de Seguir viendo se puede llevar al iPhone (el episodio que sigue): solo si hay uno conectado.
+  if (phone && !isOpen && watch) {
+    const metaId = watch.meta_id;
+    options.push({ icon: "phone", label: "Enviar al iPhone",
+        command: { type: "phone-send", action: "open", kind: watch.kind, metaId, videoId: watch.video_id, title: item.title } },
+      { icon: "download", label: "Descargar en el iPhone",
+        command: { type: "phone-send", action: "download", kind: watch.kind, metaId, videoId: watch.video_id, title: item.title } });
   }
   if (isGame(item) || item.category === "apps") {
     options.push(item.favorite

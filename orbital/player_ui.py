@@ -554,7 +554,7 @@ def _touch_bar(hud: Hud, y: float, *, paused: bool) -> str:
 # --- panel de columnas (X: Audio · Subtítulos · Tamaño; Y: Fuentes · Episodios) ------------------------------------
 @dataclass
 class Column:
-    key: str  # "audio" | "sub" | "size" | "episodes" | "source" | "playback"
+    key: str  # "audio" | "sub" | "size" | "episodes" | "source" | "playback" | "iphone"
     options: list[dict] = field(default_factory=list)  # {"label", "action", "current", "hint"?, "progress"?}
     index: int = 0
     top: int = 0  # primera fila a la vista: la lista solo se desplaza cuando el foco llega al borde
@@ -583,7 +583,7 @@ class Panel:
 
 
 TAB_NAMES = {"audio": "Audio", "sub": "Subtítulos", "size": "Tamaño de los subtítulos", "episodes": "Episodios",
-             "source": "Fuentes", "playback": "Reproducción", "category": "Categoría", "channels": "Canales"}
+             "source": "Fuentes", "playback": "Reproducción", "iphone": "iPhone", "category": "Categoría", "channels": "Canales"}
 PANEL_ROWS = 6  # filas visibles por columna; el resto se desplaza con el foco
 
 
@@ -600,7 +600,7 @@ def panel_ass(panel: Panel, *, playing: bool = True) -> str:
                   text(MARGIN + 50, 87, label, 22, weight="semi", align=4)]
     n = len(panel.columns)
     # Fuentes y Episodios más anchas (el detalle de cada fuente, el nombre de cada episodio); Reproducción, angosta.
-    weights = [{"source": 1.4, "episodes": 1.35, "playback": .75, "channels": 1.5, "category": .7}.get(column.key, 1.0)
+    weights = [{"source": 1.4, "episodes": 1.35, "playback": .75, "iphone": .95, "channels": 1.5, "category": .7}.get(column.key, 1.0)
                for column in panel.columns]
     unit = min(520, (W - 2 * MARGIN - 64 * (n - 1)) / max(1.0, sum(weights)))
     x = MARGIN
@@ -691,8 +691,8 @@ def tracks_panel(tracks: list[dict], sub_scale: float, extra_subs: list[dict] | 
 
 
 def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None = None,
-               back_to: float | None = None) -> Panel:
-    """Y: Episodios (series) · Fuentes · Reproducción (Desde el principio / Volver a…)."""
+               back_to: float | None = None, iphone: bool = False) -> Panel:
+    """Y: Episodios (series) · Fuentes · Reproducción (Desde el principio / Volver a…) · iPhone (solo si hay uno conectado)."""
     columns = []
     # Episodios primero (en una serie es lo que más se busca), luego Fuentes y Reproducción.
     if episodes:
@@ -707,6 +707,9 @@ def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None
     if back_to:  # empezaste desde el principio sin querer: volver a donde ibas
         playback.insert(0, {"label": f"Volver a {clock(back_to)}", "action": ("resume-at", back_to), "current": False})
     columns.append(Column("playback", playback))
+    if iphone:  # lo que ves (el episodio en curso) se manda al iPhone o se descarga allá
+        columns.append(Column("iphone", [{"label": "Enviar al iPhone", "action": ("iphone", "open"), "current": False},
+                                         {"label": "Descargar en el iPhone", "action": ("iphone", "download"), "current": False}]))
     return Panel("more", columns, 0)
 
 

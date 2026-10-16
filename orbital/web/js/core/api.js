@@ -99,6 +99,9 @@ export const api = {
   tvRefresh: () => post("/api/tv/refresh"),
   // La app del iPhone
   companionPair: () => request("/api/companion/pair"),
+  companionPhone: () => request("/api/companion/phone"),
+  /** «Enviar al iPhone» (`open`) o «Descargar en el iPhone» (`download`): la consola lo deja en su bandeja. */
+  companionSend: (action, kind, metaId, videoId = null) => post("/api/companion/send", { action, kind, meta_id: metaId, video_id: videoId }),
   /** Suscripción a eventos del servidor con reconexión automática. */
   events(onEvent, { onReconnect = () => {} } = {}) {
     let lost = false;

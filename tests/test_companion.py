@@ -220,7 +220,7 @@ def test_companion_now_is_null_without_anything_open(library):
     main = create_app(library.config, library)
     with TestClient(create_public_app(library.config, main)) as c:
         r = c.get("/api/companion/now", headers={"Authorization": "Bearer secreto"})
-        assert r.status_code == 200 and r.json() == {"playing": None}
+        assert r.status_code == 200 and r.json() == {"playing": None, "inbox": []}
 
 
 def test_companion_now_reports_whats_playing(library):
@@ -252,3 +252,131 @@ def test_companion_player_requires_a_token(library):
     with TestClient(create_public_app(library.config, main)) as c:
         assert c.post("/api/companion/player", json={"action": "toggle"}).status_code == 401
 
+
+
+# --- la bandeja: lo que la TV le manda al iPhone ---------------------------------------------
+
+class FakeWatch:
+    """Lo mínimo que `send_to_phone` le pide al catálogo: la ficha y dónde guardar."""
+
+    def __init__(self, state, details=None):
+        self.state = state
+        self.details = details or {}
+
+    def title_details(self, kind, meta_id):
+        return {"kind": kind, "title": "The Office", "poster": "http://p", **self.details}
+
+
+OFFICE = {"seasons": [{"season": 1, "episodes": [{"id": "tt:1:1", "episode": 1}]},
+                      {"season": 2, "episodes": [{"id": "tt:2:5", "episode": 5}, {"id": "tt:2:6", "episode": 6}]}],
+          "resume": {"video_id": "tt:2:5"}}
+
+
+@pytest.fixture(autouse=True)
+def _forget_phone():
+    companion.forget_phone()
+    yield
+    companion.forget_phone()
+
+
+def _send(watch, action="download", kind="series", meta_id="tt", video_id=None, connected=lambda c: True):
+    return companion.send_to_phone(watch, config(), action, kind, meta_id, video_id, connected=connected)
+
+
+def test_send_queues_the_episode_that_follows_with_its_label():
+    from orbital.state import State
+    watch = FakeWatch(State(), OFFICE)
+    item = _send(watch)
+    assert (item["title"], item["episode_label"], item["video_id"], item["action"]) == ("The Office", "T2 · E5", "tt:2:5", "download")
+    assert item["poster"] == "http://p" and item["id"] and item["at"]
+    assert _send(watch, "open", video_id="tt:1:1")["episode_label"] == "T1 · E1"
+    assert [i["action"] for i in watch.state.inbox()] == ["download", "open"]
+
+
+def test_a_movie_uses_its_own_id_and_has_no_episode():
+    from orbital.state import State
+    item = _send(FakeWatch(State()), "open", kind="movie", meta_id="tt9")
+    assert (item["video_id"], item["episode_label"]) == ("tt9", "")
+
+
+def test_the_same_title_and_action_pending_is_not_repeated_but_another_action_is():
+    from orbital.state import State
+    watch = FakeWatch(State(), OFFICE)
+    first, again = _send(watch), _send(watch)
+    assert first["id"] == again["id"] and len(watch.state.inbox()) == 1
+    _send(watch, "open")
+    assert len(watch.state.inbox()) == 2
+
+
+def test_ack_removes_only_what_was_acted_on():
+    from orbital.state import State
+    watch = FakeWatch(State(), OFFICE)
+    a, b = _send(watch), _send(watch, "open")
+    assert companion.inbox_ack(watch.state, [a["id"], "no-existe"]) == 1
+    assert [i["id"] for i in companion.inbox_pending(watch.state)] == [b["id"]]
+
+
+def test_the_inbox_keeps_the_20_newest():
+    from orbital.state import State
+    watch = FakeWatch(State())
+    for n in range(25):
+        _send(watch, "open", kind="movie", meta_id=f"tt{n}")
+    pending = watch.state.inbox()
+    assert len(pending) == companion.INBOX_LIMIT == 20
+    assert pending[0]["meta_id"] == "tt5" and pending[-1]["meta_id"] == "tt24"
+
+
+def test_without_an_iphone_it_is_a_409_in_words_and_nothing_is_queued(library):
+    library.config.server.token = ""
+    main = create_app(library.config, library)
+    with TestClient(main, base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
+        r = c.post("/api/companion/send", json={"action": "open", "kind": "movie", "meta_id": "tt1"})
+        assert r.status_code == 409 and "Ajustes › Cuentas" in r.json()["detail"]
+    assert library.state.inbox() == []
+
+
+def test_the_phone_check_is_remembered_so_the_menus_do_not_wait_on_tailscale():
+    calls = []
+
+    def tailscale():
+        calls.append(1)
+        return "https://legion.tail1.ts.net"
+
+    clock = [100.0]
+    assert companion.phone_ready(config(), tailscale, now=lambda: clock[0]) is True
+    clock[0] += 30
+    assert companion.phone_ready(config(), tailscale, now=lambda: clock[0]) is True and len(calls) == 1
+    clock[0] += 40  # pasó el minuto: se vuelve a preguntar
+    companion.phone_ready(config(), tailscale, now=lambda: clock[0])
+    assert len(calls) == 2
+
+
+def test_the_route_queues_and_the_iphone_gets_it_with_now_and_acks_it(library, monkeypatch):
+    library.config.server.token, library.config.server.token_is_ephemeral = "secreto", False
+    monkeypatch.setattr(companion.alexa_setup, "tailscale_url", lambda: "https://legion.tail1.ts.net")
+    monkeypatch.setattr(type(library.watch), "title_details", lambda self, kind, meta_id: {
+        "kind": kind, "title": "Dune", "poster": None, **({} if kind == "movie" else OFFICE)})
+    main = create_app(library.config, library)
+    auth = {"Authorization": "Bearer secreto"}
+    with TestClient(main, base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
+        assert c.get("/api/companion/phone").json() == {"ready": True}
+        r = c.post("/api/companion/send", json={"action": "download", "kind": "movie", "meta_id": "tt1"})
+        assert r.status_code == 200 and r.json()["item"]["title"] == "Dune"
+        assert c.post("/api/companion/send", json={"action": "bailar", "kind": "movie", "meta_id": "tt1"}).status_code == 409
+    with TestClient(create_public_app(library.config, main), client=("127.0.0.1", 2)) as c:
+        pending = c.get("/api/companion/now", headers=auth).json()["inbox"]
+        assert [i["title"] for i in pending] == ["Dune"]
+        assert c.post("/api/companion/inbox/ack", json={"ids": [pending[0]["id"]]}).status_code == 401
+        assert c.post("/api/companion/inbox/ack", json={"ids": [pending[0]["id"]]}, headers=auth).json() == {"removed": 1}
+        assert c.get("/api/companion/now", headers=auth).json()["inbox"] == []
+
+
+def test_the_inbox_survives_a_restart(tmp_path):
+    from orbital.state import State
+    path = tmp_path / "state.json"
+    watch = FakeWatch(State(path), OFFICE)
+    kept = _send(watch)
+    again = State(path)
+    assert [i["id"] for i in again.inbox()] == [kept["id"]]
+    again.inbox_ack([kept["id"]])
+    assert State(path).inbox() == []

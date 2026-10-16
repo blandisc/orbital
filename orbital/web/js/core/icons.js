@@ -20,6 +20,7 @@ export const ICONS = {
   memory: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".8"/><path d="M9.5 3.5V6M14.5 3.5V6M9.5 18v2.5M14.5 18v2.5M3.5 9.5H6M3.5 14.5H6M18 9.5h2.5M18 14.5h2.5"/></svg>',
   energy: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="16" height="10" rx="2.2"/><path d="M21 10.5v3"/><path d="M11.6 9 9 12.6h3.4L10.6 15"/></svg>',
   display: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M9 20h6M12 16.5V20"/></svg>',
+  download: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10.5M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></svg>',
   phone: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>',
   account: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1-3.6 4-5.5 7.5-5.5s6.5 1.9 7.5 5.5"/></svg>',
   wrench: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.6 3.8a4.8 4.8 0 0 0-5.3 6.3L3.9 15.5a1.9 1.9 0 0 0 2.7 2.7l5.4-5.4a4.8 4.8 0 0 0 6.3-5.3l-2.9 2.9-2.4-.4-.4-2.4z"/></svg>',
