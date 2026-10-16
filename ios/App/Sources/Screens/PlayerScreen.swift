@@ -23,6 +23,13 @@ final class PlayerHolder: ObservableObject {
                                 return LocalEpisode(file: file, subtitles: item.subtitleFiles.map { file.deletingLastPathComponent().appendingPathComponent($0) })
                             })
         subscription = model.onChange { [weak self] in self?.objectWillChange.send() }
+        // Episodios descargados que se encadenan solos: cada uno visto se atiende al pasar al siguiente (borrar / bajar el que sigue).
+        model.onFinishedLocal = { finished in
+            Task {
+                guard let item = await services.downloads.item(DownloadItem.makeID(metaID: finished.metaID, videoID: finished.videoID)) else { return }
+                await DownloadsModel(services, freeSpace: { DiskSpace.freeBytes() }).afterWatching(item)
+            }
+        }
     }
 }
 

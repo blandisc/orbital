@@ -58,6 +58,9 @@ public final class PlayerModel: ObservableModel {
 
     public private(set) var phase: Phase = .idle { didSet { changed() } }
     public private(set) var snapshot = EngineSnapshot() { didSet { changed() } }
+    /// Un episodio descargado que viste hasta el final y del que el reproductor pasó solo al siguiente (para «Borrar al
+    /// terminar de verlo»: el último lo atiende quien cierra el reproductor).
+    public var onFinishedLocal: (@MainActor (PlayRequest) -> Void)?
     public private(set) var request: PlayRequest? { didSet { changed() } }
     public private(set) var source: Source? { didSet { changed() } }
     public private(set) var sourceChoices: [Source] = [] { didSet { changed() } }
@@ -484,6 +487,7 @@ public final class PlayerModel: ObservableModel {
             guard let self else { return }
             if !finalReported { await report(.stopped(finished: true)) }
             guard !closing, phase != .closed else { advancing = false; return }
+            if request.localFile != nil, snapshot.duration > 0, snapshot.position >= snapshot.duration * StremioLibrary.watchedAt { onFinishedLocal?(request) }
             var next = request
             next.videoID = card.videoID; next.fromStart = true; next.binge = source?.binge
             next.episodeLabel = card.title.isEmpty ? card.label : "\(card.label) · \(card.title)"   // si no, se queda el del episodio anterior
