@@ -23,6 +23,7 @@ public final class SourcesModel: ObservableModel {
     public private(set) var error: String? { didSet { changed() } }
     private var sources: [Source] = []
     private let services: Services
+    private var loadCount = 0
     private let kind: String, videoID: String, metaID: String
 
     public init(_ services: Services, kind: String, metaID: String, videoID: String) {
@@ -35,7 +36,10 @@ public final class SourcesModel: ObservableModel {
         if purpose != self.purpose { sources = []; rows = []; error = nil }
         self.purpose = purpose
         isLoading = true
-        defer { isLoading = false }
+        // Solo la última carga apaga el indicador: la vieja que se cancela al cambiar de pestaña no lo quita a media espera.
+        loadCount += 1
+        let ticket = loadCount
+        defer { if ticket == loadCount { isLoading = false } }
         let settings = services.appSettings
         let prefs = services.titlePrefs.languages(for: metaID, settings: settings, onCellular: onCellular).prefs
         let found: [Source]
