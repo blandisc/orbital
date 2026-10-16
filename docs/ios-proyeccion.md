@@ -127,7 +127,9 @@ Con «Reducir movimiento»: sin ambiente, sin acercamiento, sin fundidos.
 
 Todo texto de pantalla es su clave en español (`LocalizedStringKey`) y su traducción vive en `scripts/ios_strings.py`
 (`python scripts/ios_strings.py --check` falla si falta una). Los textos armados (`Strings.endsAt`, `Strings.timeLeft`,
-`Strings.episode`) usan el idioma de Ajustes, no el del sistema. Los géneros de Cinemeta se traducen con
+`Strings.episode`) usan el idioma de Ajustes, no el del sistema. Los errores y avisos que arma un modelo en español («No pude marcarlo: …»,
+«La descarga falló (código 418).») se muestran con `env.message(…)` / `Strings.message`: reconoce la forma de su clave en el
+catálogo y la vuelve a armar traducida, nunca `LocalizedStringKey(texto)` (un texto ya armado no encuentra su clave). Los géneros de Cinemeta se traducen con
 `Vocabulary.genres` (la misma tabla que `format.js` de la TV).
 
 ## 7. Modo claro y oscuro

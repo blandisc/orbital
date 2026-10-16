@@ -28,7 +28,7 @@ struct ParaTiView: View {
                     .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, DS.Space.gutter)
             }
-            if let error = m.error, m.mosaic.isEmpty, m.lists.isEmpty { DSNotice(text: LocalizedStringKey(error)).padding(.horizontal, DS.Space.gutter) }
+            if let error = m.error, m.mosaic.isEmpty, m.lists.isEmpty { DSNotice(text: env.message(error)).padding(.horizontal, DS.Space.gutter) }
             switch m.mode {
             case .mosaic:
                 Mosaic(items: m.mosaic, watchlistKeys: m.watchlistKeys, demoFocus: demoFocusImdb, onDismiss: { s in Task { await m.dismiss(s) } },

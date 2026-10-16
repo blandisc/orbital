@@ -35,6 +35,8 @@ public final class TVNowModel: ObservableModel {
         pollTask = nil
         failures = 0
         guard active else { return }
+        // Al volver de segundo plano, lo último que se supo puede ser viejo: la tarjeta no se queda esperando el primer sondeo.
+        if now != nil, Date().timeIntervalSince(fetchedAt) > 2 * Double(intervalNanoseconds) / 1_000_000_000 { now = nil }
         guard services.orbital.isConfigured else { now = nil; return }
         pollTask = Task { [weak self] in
             while let self, !Task.isCancelled {
@@ -57,10 +59,9 @@ public final class TVNowModel: ObservableModel {
             now = nil
         } catch {
             // Sin red, la consola apagada o una versión vieja: la tarjeta se va sin ruido (se reintenta solo), pero no por un
-            // solo tropiezo… si lo último que se supo es reciente (al volver de segundo plano, la tarjeta vieja no se queda).
+            // solo tropiezo (un sondeo lento que vence a los 12 s tampoco cuenta doble).
             failures += 1
-            let stale = Date().timeIntervalSince(fetchedAt) > 2 * Double(intervalNanoseconds) / 1_000_000_000
-            if failures >= 2 || stale { now = nil }
+            if failures >= 2 { now = nil }
         }
     }
 

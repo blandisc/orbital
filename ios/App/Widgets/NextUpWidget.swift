@@ -246,8 +246,8 @@ private struct LockView: View {
     var body: some View {
         if let item = snapshot.items.first {
             VStack(alignment: .leading) {
-                Text(item.title).font(.headline).lineLimit(1)
-                if !item.detail.isEmpty { Text(item.detail).font(.caption).lineLimit(1) }
+                Text(item.title).font(DS.font(.lg)).lineLimit(1)
+                if !item.detail.isEmpty { Text(item.detail).font(DS.font(.sm)).lineLimit(1) }
                 if let progress = item.progress { ProgressView(value: progress) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -255,8 +255,8 @@ private struct LockView: View {
             .containerBackground(for: .widget) { AccessoryWidgetBackground() }
         } else {
             VStack(alignment: .leading) {
-                Text("Nada pendiente").font(.headline).lineLimit(1)
-                Text("Abrir Orbital").font(.caption).lineLimit(1)
+                Text("Nada pendiente").font(DS.font(.lg)).lineLimit(1)
+                Text("Abrir Orbital").font(DS.font(.sm)).lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .widgetURL(URL(string: "\(WidgetLink.scheme)://"))

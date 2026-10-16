@@ -54,7 +54,7 @@ struct BrowseView: View {
     // MARK: resultados
     @ViewBuilder private var results: some View {
         let model = search.model
-        if let error = model.error { DSNotice(text: LocalizedStringKey(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
+        if let error = model.error { DSNotice(text: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
         else if model.results.isEmpty && !model.isSearching { ContentUnavailableView.search(text: query) }
         LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
             ForEach(model.results) { r in
@@ -71,7 +71,7 @@ struct BrowseView: View {
     @ViewBuilder private var suggestions: some View {
         let model = catalog.model
         if !search.model.recent.isEmpty { recent }
-        if let error = model.error { DSNotice(text: LocalizedStringKey(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
+        if let error = model.error { DSNotice(text: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
         if !model.popular.isEmpty { popular(model) }
         else if model.isLoading { ProgressView().frame(maxWidth: .infinity) }
         explore

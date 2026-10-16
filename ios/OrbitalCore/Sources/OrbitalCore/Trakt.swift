@@ -6,7 +6,7 @@ public enum TraktError: Error, Sendable, CustomStringConvertible {
     case auth(String)
     public var description: String {
         switch self {
-        case .network(let m): return "No pude conectar con Trakt: \(m)"
+        case .network(let reason): return "No pude conectar con Trakt: \(reason)"
         case .http(let s): return "Trakt respondió HTTP \(s)"
         case .invalid(let m), .auth(let m): return m
         }

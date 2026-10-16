@@ -14,32 +14,33 @@ struct OrbitalWidgets: WidgetBundle {
 struct DownloadLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DownloadActivityAttributes.self) { context in
-            HStack(spacing: 12) {
-                Image(systemName: "arrow.down.circle.fill").font(.title2).foregroundStyle(.white)
-                VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: DS.Space.s3) {
+                Image(systemName: "arrow.down.circle.fill").font(DS.font(.xl)).foregroundStyle(DS.paper)
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
                     HStack {
-                        Text(context.state.title).font(.subheadline.weight(.semibold)).lineLimit(1)
+                        Text(context.state.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.paper).lineLimit(1)
                         Spacer()
-                        Text(context.state.fraction, format: .percent.precision(.fractionLength(0))).font(.subheadline).monospacedDigit()
+                        Text(context.state.fraction, format: .percent.precision(.fractionLength(0))).font(DS.font(.md)).monospacedDigit().foregroundStyle(DS.paper)
                     }
-                    ProgressView(value: context.state.fraction).tint(.white)
-                    Text(subtitle(context.state)).font(.caption).foregroundStyle(.secondary)
+                    ProgressView(value: context.state.fraction).tint(DS.paper)
+                    Text(subtitle(context.state)).font(DS.font(.sm)).foregroundStyle(DS.onArtSecondary)
                 }
             }
             .padding()
+            .environment(\.colorScheme, .dark)   // el fondo es el velo oscuro en los dos modos: letra clara siempre
             .activityBackgroundTint(DS.scrim)
-            .activitySystemActionForegroundColor(.white)
+            .activitySystemActionForegroundColor(DS.paper)
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) { Image(systemName: "arrow.down.circle.fill").font(.title2) }
+                DynamicIslandExpandedRegion(.leading) { Image(systemName: "arrow.down.circle.fill").font(DS.font(.xl)) }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(context.state.fraction, format: .percent.precision(.fractionLength(0))).font(.title3).monospacedDigit()
+                    Text(context.state.fraction, format: .percent.precision(.fractionLength(0))).font(DS.font(.xl)).monospacedDigit()
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(context.state.title).font(.subheadline.weight(.semibold)).lineLimit(1)
+                    VStack(alignment: .leading, spacing: DS.Space.s1) {
+                        Text(context.state.title).font(DS.font(.md, weight: .semibold)).lineLimit(1)
                         ProgressView(value: context.state.fraction)
-                        Text(subtitle(context.state)).font(.caption).foregroundStyle(.secondary)
+                        Text(subtitle(context.state)).font(DS.font(.sm)).foregroundStyle(.secondary)
                     }
                 }
             } compactLeading: {

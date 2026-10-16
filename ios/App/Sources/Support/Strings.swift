@@ -9,19 +9,50 @@ enum Strings {
         return bundle.localizedString(forKey: key, value: key, table: nil)
     }
 
-    /// Un error de descarga guardado en español, en el idioma de la app. Los fijos son su clave; los que llevan datos (el
-    /// código, los MB, la causa) se reconocen por su forma y se vuelven a armar con la traducción.
-    static func downloadError(_ message: String, language: String) -> String {
-        let forms = [#"^La descarga falló \(código (.+)\)\.$"#: "La descarga falló (código %@).",
-                     #"^No hay espacio: hacen falta (.+) MB y hay (.+) MB libres\.$"#: "No hay espacio: hacen falta %@ MB y hay %@ MB libres.",
-                     #"^No pude guardar el archivo: (.+)$"#: "No pude guardar el archivo: %@"]
-        for (pattern, key) in forms {
-            guard let regex = try? NSRegularExpression(pattern: pattern),
-                  let match = regex.firstMatch(in: message, range: NSRange(message.startIndex..., in: message)) else { continue }
-            let values: [CVarArg] = (1..<match.numberOfRanges).compactMap { Range(match.range(at: $0), in: message).map { String(message[$0]) } }
-            return String(format: tr(key, language: language), arguments: values)
+    /// Un texto que el modelo arma en español (un error, un aviso) en el idioma de la app. Los fijos son su clave; los que
+    /// llevan datos («No pude marcarlo: %@», «La descarga falló (código %@).») se reconocen por la forma de su clave en el
+    /// catálogo y se vuelven a armar con la traducción (y lo de adentro, también traducido si es otro de estos textos).
+    static func message(_ text: String, language: String) -> String {
+        guard !language.hasPrefix("es") else { return text }
+        let direct = tr(text, language: language)
+        if direct != text { return direct }
+        let range = NSRange(text.startIndex..., in: text)
+        for form in forms(language) {
+            guard let match = form.regex.firstMatch(in: text, range: range) else { continue }
+            let parts = (1..<match.numberOfRanges).compactMap { Range(match.range(at: $0), in: text).map { String(text[$0]) } }
+            let values: [CVarArg] = zip(form.numbers, parts).map { number, part in number ? (Int(part) ?? 0) as CVarArg : message(part, language: language) }
+            return String(format: tr(form.key, language: language), arguments: values)
         }
-        return tr(message, language: language)
+        return text
+    }
+
+    private struct Form { let key: String; let regex: NSRegularExpression; let numbers: [Bool] }
+    nonisolated(unsafe) private static var formCache: [String: [Form]] = [:]
+    private static let formLock = NSLock()
+
+    /// Las claves con datos del catálogo, de la más larga a la más corta (la más específica gana).
+    private static func forms(_ language: String) -> [Form] {
+        formLock.lock(); defer { formLock.unlock() }
+        if let cached = formCache[language] { return cached }
+        var forms: [Form] = []
+        if let url = Bundle.main.url(forResource: "Localizable", withExtension: "strings", subdirectory: nil, localization: language),
+           let table = NSDictionary(contentsOf: url) as? [String: String] {
+            for key in table.keys where key.contains("%@") || key.contains("%lld") {
+                var pattern = "^", numbers: [Bool] = [], rest = Substring(key)
+                while let hole = rest.range(of: #"%@|%lld"#, options: .regularExpression) {
+                    pattern += NSRegularExpression.escapedPattern(for: String(rest[..<hole.lowerBound]))
+                    let number = rest[hole] == "%lld"
+                    pattern += number ? #"(-?\d+)"# : "(.+?)"
+                    numbers.append(number)
+                    rest = rest[hole.upperBound...]
+                }
+                pattern += NSRegularExpression.escapedPattern(for: String(rest)) + "$"
+                if let regex = try? NSRegularExpression(pattern: pattern, options: .dotMatchesLineSeparators) { forms.append(Form(key: key, regex: regex, numbers: numbers)) }
+            }
+        }
+        forms.sort { $0.key.count > $1.key.count }
+        formCache[language] = forms
+        return forms
     }
 
     /// «T2 E5» en español, «S2 E5» en inglés (como la TV: el « · » separa datos, no la temporada del episodio).

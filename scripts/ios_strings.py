@@ -101,6 +101,33 @@ TRANSLATIONS = {
     "No hay nada aquí todavía.": "Nothing here yet.", "No me interesa": "Not interested", "No pude abrir Infuse. ¿Está instalado?": "I couldn't open Infuse. Is it installed?",
     "No pude abrir el archivo descargado.": "I couldn't open the downloaded file.", "No pude abrir ese título.": "I couldn't open that title.",
     "No pude leer el catálogo de Stremio. Revisa tu conexión.": "I couldn't read the Stremio catalog. Check your connection.", "No se pudo descargar": "Download failed",
+    # Los errores de las cuentas y de tu Orbital (OrbitalCore): llegan a avisos y a Ajustes.
+    "Conecta tu Orbital en Ajustes (la dirección y el token).": "Connect your Orbital in Settings (the address and the token).",
+    "Conecta tu cuenta de Stremio en Ajustes": "Connect your Stremio account in Settings",
+    "Conecta tu cuenta de Trakt en Ajustes.": "Connect your Trakt account in Settings.",
+    "Error de Stremio": "Stremio error",
+    "Fecha inválida": "Invalid date",
+    "Lista inválida": "Invalid list",
+    "No encontré tu Orbital. ¿Está prendida la consola y el túnel?": "I couldn't find your Orbital. Are the console and the tunnel on?",
+    "No pude conectar con Stremio: %@": "I couldn't connect to Stremio: %@",
+    "No pude conectar con Trakt: %@": "I couldn't connect to Trakt: %@",
+    "No pude leer el catálogo de Stremio: %@": "I couldn't read the Stremio catalog: %@",
+    "Respuesta de Stremio sin resultado": "Stremio's response had no result",
+    "Respuesta inesperada de Cinemeta": "Unexpected response from Cinemeta",
+    "Stremio no devolvió la clave de sesión": "Stremio didn't return the session key",
+    "Stremio respondió HTTP %@": "Stremio answered HTTP %@",
+    "Trakt cerró tu sesión: vuelve a conectarla en Ajustes.": "Trakt signed you out: connect it again in Settings.",
+    "Trakt no acepta la sesión de tu Orbital: reconecta Trakt en la TV (Ajustes › Cuentas).": "Trakt doesn't accept your Orbital's session: reconnect Trakt on the TV (Settings › Accounts).",
+    "Trakt no devolvió una sesión": "Trakt didn't return a session",
+    "Trakt no dio un código. Revisa la aplicación de Trakt.": "Trakt didn't give a code. Check the Trakt app.",
+    "Trakt respondió HTTP %lld": "Trakt answered HTTP %lld",
+    "Tu Orbital contestó con un error (%@).": "Your Orbital answered with an error (%@).",
+    "Tu Orbital es de una versión anterior: actualízala para «Ver en la TV».": "Your Orbital is an older version: update it to use “Watch on TV”.",
+    "Tu Orbital no aceptó el token. Revísalo en Ajustes.": "Your Orbital didn't accept the token. Check it in Settings.",
+    "Tu Orbital pidió esperar un poco: demasiados intentos.": "Your Orbital asked to wait a bit: too many attempts.",
+    "Tu sesión de Trakt caducó: vuelve a conectarla en Ajustes.": "Your Trakt session expired: connect it again in Settings.",
+    "Título inválido": "Invalid title",
+    "Título no encontrado": "Title not found",
     # Los errores de la descarga (OrbitalCore/Downloads.swift y el transporte en segundo plano).
     "El archivo bajado está incompleto o no es el video": "The downloaded file is incomplete or isn't the video",
     "El enlace de la fuente caducó o ya no existe. Toca ▶ para buscar otro.": "The source link expired or no longer exists. Tap ▶ to find another.",
@@ -144,7 +171,7 @@ TRANSLATIONS = {
     "Viendo en la TV": "Watching on TV",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
-IGNORE = {"T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
+IGNORE = {"Content-Type", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
           "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max"}
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.
 CODE_KEYS = {k for k in TRANSLATIONS}
@@ -175,7 +202,7 @@ def to_format(literal: str) -> str:
 def used_literals() -> dict[str, str]:
     lit = re.compile(r'"((?:[^"\\]|\\.)*)"')
     found: dict[str, str] = {}
-    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift")) + [str(ROOT / "ios/OrbitalCore/Sources/OrbitalCore/Downloads.swift")]  # sus errores llegan a la pantalla
+    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift")) + [str(ROOT / f"ios/OrbitalCore/Sources/OrbitalCore/{n}.swift") for n in ("Downloads", "OrbitalRemote", "Trakt", "Watch", "StremioAPI", "Cinemeta")]  # sus errores llegan a la pantalla
     for f in files:
         f = Path(f).as_posix()  # en Windows glob da «\»: sin esto el modo demo y Platform/ se colaban
         # El modo demo (solo Debug) no se traduce; de Design/ solo se saltan los tokens y el banco de pruebas (las piezas sí llevan texto).
@@ -192,7 +219,7 @@ def used_literals() -> dict[str, str]:
                 if re.fullmatch(r"[A-Z0-9_ ]+", text) and len(text) < 6:
                     continue
                 key = to_format(text)
-                if re.fullmatch(r"(%lld|%@|[ ·:|\-−/])+", key) or "|" in key or key.startswith(("%@:", "%@-")):
+                if re.fullmatch(r"(%lld|%@|[ ·:|\-−/])+", key) or "|" in key or key.startswith(("%@:", "%@-", "Bearer ")):
                     continue
                 found.setdefault(key, f"{Path(f).name}:{number}")
     return found
