@@ -72,7 +72,7 @@ final class MosaicRuntime: ObservableObject {
     /// Lo nuevo del servidor (o la primera carga): se vuelve a armar desde cero.
     func configure(items: [Suggestion], columnCount: Int, gap: Double, ring: Double, growRatio: Double, focusedRowRatio: Double) {
         self.columnCount = max(1, columnCount)
-        geometry = MosaicGeometry(columnCount: self.columnCount, gap: gap, ring: ring, growRatio: growRatio, focusedRowRatio: focusedRowRatio)
+        geometry = MosaicGeometry(columnCount: self.columnCount, gap: gap, ring: ring, growRatio: growRatio, focusedRowRatio: focusedRowRatio, uniform: DS.Mosaic.uniform)
         pool = MosaicPool(items: items)
         serial = 0
         // Cada columna empieza un poco más abajo según su turno: una entrada escalonada, como en la TV.
@@ -93,7 +93,7 @@ final class MosaicRuntime: ObservableObject {
     func updateColumnCount(_ count: Int) {
         guard count != columnCount, count > 0 else { return }
         columnCount = count
-        geometry = MosaicGeometry(columnCount: count, gap: geometry.gap, ring: geometry.ring, growRatio: geometry.growRatio, focusedRowRatio: geometry.focusedRowRatio)
+        geometry = MosaicGeometry(columnCount: count, gap: geometry.gap, ring: geometry.ring, growRatio: geometry.growRatio, focusedRowRatio: geometry.focusedRowRatio, uniform: geometry.uniform)
         let existing = columns.flatMap(\.tiles)
         columns = (0..<count).map { _ in MosaicColumn() }
         for (i, tile) in existing.enumerated() { columns[i % count].tiles.append(tile) }
@@ -334,7 +334,8 @@ struct Mosaic: View {
 
     private static func columnCount(width: CGFloat, horizontalSizeClass: UserInterfaceSizeClass?) -> Int {
         let landscape = width > DS.Poster.heroHeight * 2 || horizontalSizeClass == .regular
-        return landscape ? DS.Mosaic.columnsLandscape : DS.Mosaic.columnsPortrait
+        if landscape { return DS.Mosaic.columnsLandscape }
+        return width < DS.Mosaic.compactWidth ? DS.Mosaic.columnsCompact : DS.Mosaic.columnsPortrait
     }
 
     /// Arriba y abajo se desvanece (como la máscara de `foryou-mosaic` en la TV).
@@ -423,6 +424,27 @@ private struct MosaicTileCell: View {
     }
 
     private var content: some View {
+        Group {
+            if DS.Mosaic.uniform { poster } else { framed }
+        }
+        .opacity(dimmed ? DesignTokens.Opacity.shrink : 1)
+        .scaleEffect(alive ? 1 + DesignTokens.Opacity.hairline : 1)
+        .animation(alive ? .linear(duration: DesignTokens.Mosaic.aliveZoomSeconds) : .default, value: alive)   // se acerca despacio, no de golpe
+    }
+
+    /// iPhone: todas las piezas son su póster, del mismo tamaño; la enfocada solo lleva su anillo (su información va bajo
+    /// el mosaico, en `MosaicCaption`).
+    private var poster: some View {
+        PosterView(url: tile.item.poster, title: tile.item.title, aspect: nil, bleed: true, maxPoints: DS.Image.mosaic)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                    .strokeBorder(focused ? DS.text : DS.hairline, lineWidth: focused ? DS.Size.focusRing : DS.Size.hairline)
+            }
+    }
+
+    /// La TV (y el iPad si se vuelve a pedir): la enfocada crece y lleva su etiqueta, logo y dato encima.
+    private var framed: some View {
         ZStack(alignment: .bottomLeading) {
             PosterView(url: focused || tile.shape == .wide ? tile.item.wide : tile.item.poster, title: tile.item.title, aspect: nil, maxPoints: DS.Image.mosaic)
             if focused { LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom) }
@@ -441,12 +463,9 @@ private struct MosaicTileCell: View {
                 .padding(DS.Space.s5)
             }
         }
-        .onArt()   // la pieza es arte: su texto, como en la sala oscura, en los dos modos
-        .opacity(dimmed ? DesignTokens.Opacity.shrink : 1)
-        .scaleEffect(alive ? 1 + DesignTokens.Opacity.hairline : 1)
-        .animation(alive ? .linear(duration: DesignTokens.Mosaic.aliveZoomSeconds) : .default, value: alive)   // se acerca despacio, no de golpe
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         .overlay { if focused { RoundedRectangle(cornerRadius: DS.Radius.md).stroke(DS.hairline) } }
+        .onArt()   // la pieza es arte: su texto, como en la sala oscura, en los dos modos
     }
 
     private var kindIcon: some View {

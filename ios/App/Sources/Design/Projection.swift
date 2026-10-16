@@ -291,3 +291,31 @@ extension View {
     /// Este póster es el origen del zoom al abrir su ficha.
     func titleZoomSource(_ route: TitleRoute) -> some View { modifier(TitleZoomSource(route: route)) }
 }
+
+/// La pieza enfocada del mosaico, contada bajo él (el mosaico solo enseña pósters del mismo tamaño): por qué te la sugiere
+/// (en el acento), su nombre, sus datos en SF Mono y Ver / Más. Aparece y se va con el foco (en ambiente no hay).
+struct MosaicCaption<More: View>: View {
+    let reason: Text
+    let title: String
+    let data: [String]
+    let watch: () -> Void
+    @ViewBuilder var more: () -> More
+
+    var body: some View {
+        HStack(alignment: .center, spacing: DS.Space.s3) {
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                Eyebrow(text: reason, accent: true)
+                Text(title).recipe(.cardTitle).lineLimit(1)
+                if !data.isEmpty { DataLine(parts: data) }
+            }
+            Spacer(minLength: DS.Space.s2)
+            Menu { more() } label: { Image(systemName: "ellipsis") }
+                .buttonStyle(.bordered).buttonBorderShape(.circle).controlSize(.large).tint(DS.text)
+                .accessibilityLabel(Text("Más"))
+            Button(action: watch) { Image(systemName: "play.fill") }
+                .dsPrimaryButton().buttonBorderShape(.circle).controlSize(.large)
+                .accessibilityLabel(Text("Ver"))
+        }
+        .accessibilityElement(children: .contain)
+    }
+}

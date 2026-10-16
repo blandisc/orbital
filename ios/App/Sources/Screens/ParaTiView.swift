@@ -4,10 +4,13 @@ import OrbitalModels
 
 /// «Para ti»: el mosaico (como en la TV, solo películas y series) y las listas (Trakt y plataformas).
 struct ParaTiView: View {
+    @EnvironmentObject private var env: AppEnvironment
     @StateObject private var model: ModelObserver<ParaTiModel>
     @StateObject private var tint = ArtTint()
     /// El arte de la pieza enfocada del mosaico: el fondo de toda la pantalla toma su tono (nil en el ambiente o en Listas).
     @State private var focusedArt: String?
+    /// La sugerencia enfocada del mosaico (su información va bajo él).
+    @State private var focused: Suggestion?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -25,8 +28,19 @@ struct ParaTiView: View {
             }
             if let error = m.error, m.mosaic.isEmpty, m.lists.isEmpty { DSNotice(text: LocalizedStringKey(error)).padding(.horizontal, DS.Space.gutter) }
             switch m.mode {
-            case .mosaic: Mosaic(items: m.mosaic, watchlistKeys: m.watchlistKeys, demoFocus: demoFocusImdb, onDismiss: { s in Task { await m.dismiss(s) } },
-                            onFocusChange: { focusedArt = $0?.wide })
+            case .mosaic:
+                Mosaic(items: m.mosaic, watchlistKeys: m.watchlistKeys, demoFocus: demoFocusImdb, onDismiss: { s in Task { await m.dismiss(s) } },
+                       onFocusChange: { focused = $0; focusedArt = $0?.wide })
+                // La pieza enfocada, contada bajo el mosaico (todas las piezas son del mismo tamaño: su información va aquí).
+                if DS.Mosaic.uniform, let item = focused {
+                    MosaicCaption(reason: m.watchlistKeys.contains(item.imdb) ? Text("En tu lista") : Text(badgeKey(item.reason)), title: item.title,
+                                  data: factStrings(item).first.map { [$0] } ?? [], watch: { Task { await env.play(item) } }) {
+                        SuggestionActions(suggestion: item, includeWatch: false) { s in Task { await m.dismiss(s) } }
+                    }
+                    .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .id(item.imdb)
+                }
             case .lists: ListsView(observer: model)
             }
         }
@@ -52,6 +66,7 @@ struct ParaTiView: View {
         }
         .refreshable { await m.refresh() }
         .animation(DS.Motion.base(reduceMotion), value: m.mode)
+        .animation(DS.Motion.base(reduceMotion), value: focused?.imdb)
     }
 
     /// «De tu Orbital · Trakt al día» o «Calculado en el iPhone»: el subtítulo de la barra, como en Inicio.

@@ -157,6 +157,8 @@ enum DS {
         /// La cifra de un Top 10: enorme y pesada; no crece con Dynamic Type (es un adorno, el puesto ya se dice en la etiqueta).
         static var rankFont: Font { .system(size: rankNumber, weight: .black, design: .rounded) }
         static let logoHero = CGFloat(DesignTokens.Size.logoHero)
+        /// El anillo de la pieza enfocada del mosaico y la línea fina de las demás.
+        static let focusRing: CGFloat = 2.5, hairline: CGFloat = 0.5
         /// El arte redondo del accesorio «En la TV».
         static let accessoryArt: CGFloat = 32
         /// El alto de un mosaico con arte (géneros de Explora).
@@ -236,6 +238,8 @@ enum DS {
     /// y las esperas de su ambiente y «cobra vida».
     enum Mosaic {
         static let columnsPortrait = DesignTokens.Mosaic.columnsPortrait, columnsLandscape = DesignTokens.Mosaic.columnsLandscape
+        static let columnsCompact = DesignTokens.Mosaic.columnsCompact, compactWidth = CGFloat(DesignTokens.Mosaic.compactWidth)
+        static let uniform = DesignTokens.Mosaic.uniform
         static let growRatio = CGFloat(DesignTokens.Mosaic.growRatio)
         static let idle = DesignTokens.Mosaic.idleSeconds, alive = DesignTokens.Mosaic.aliveSeconds
         static let driftTick = DesignTokens.Mosaic.driftTick

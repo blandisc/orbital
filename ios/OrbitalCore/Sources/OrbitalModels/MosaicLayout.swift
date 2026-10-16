@@ -111,15 +111,19 @@ public struct MosaicGeometry: Sendable {
     /// de verdad, 0,64 sobra; en el iPhone, con columnas angostas, hace falta más para que quepan la
     /// etiqueta, el logo y el dato sin encimarse (el valor lo da `DesignTokens.Mosaic.focusedRowRatio`).
     public let focusedRowRatio: Double
+    /// Parejo (el iPhone): todas las piezas son pósters del mismo tamaño y enfocar no ensancha la columna ni alarga la
+    /// fila (con 3 carriles las piezas se ven bien; la información de la enfocada va fuera del mosaico).
+    public let uniform: Bool
 
-    public init(columnCount: Int, gap: Double, ring: Double, growRatio: Double, focusedRowRatio: Double = 0.64) {
+    public init(columnCount: Int, gap: Double, ring: Double, growRatio: Double, focusedRowRatio: Double = 0.64, uniform: Bool = false) {
         self.columnCount = columnCount; self.gap = gap; self.ring = ring; self.growRatio = growRatio; self.focusedRowRatio = focusedRowRatio
+        self.uniform = uniform
     }
 
     /// Ancho y lugar de cada columna: todas iguales, salvo la enfocada (`growRatio` veces más ancha).
     public func columnFrames(totalWidth: Double, focusedColumn: Int?) -> [MosaicColumnFrame] {
         guard columnCount > 0 else { return [] }
-        let weights = (0..<columnCount).map { $0 == focusedColumn ? growRatio : 1 }
+        let weights = (0..<columnCount).map { !uniform && $0 == focusedColumn ? growRatio : 1 }
         let totalWeight = weights.reduce(0, +)
         guard totalWeight > 0, totalWidth > 0 else { return (0..<columnCount).map { _ in MosaicColumnFrame() } }
         let unit = (totalWidth - 2 * ring - gap * Double(columnCount - 1)) / totalWeight
@@ -137,6 +141,7 @@ public struct MosaicGeometry: Sendable {
     /// columna enfocada (que solo se ensancha); la fila enfocada, además, se alarga para que quepan etiqueta,
     /// logo y dato.
     public func tileHeight(columnWidth: Double, shape: MosaicShape, isFocusedColumn: Bool, isFocusedRow: Bool) -> Double {
+        if uniform { return (columnWidth * 1.5).rounded() }
         if isFocusedColumn, isFocusedRow { return (columnWidth * focusedRowRatio).rounded() }
         return (columnWidth * (shape == .wide ? 0.58 : 1.5)).rounded()
     }
@@ -185,7 +190,7 @@ public struct MosaicGeometry: Sendable {
         while bottom() - column.offset < viewportHeight + buffer, guardCount < 400 {
             guard let item = pool.next(excluding: visible, onScreen: onScreen) else { return }
             serial += 1
-            let shape = mosaicShape(key: item.imdb, heroWeak: item.wide.isEmpty)
+            let shape = uniform ? .poster : mosaicShape(key: item.imdb, heroWeak: item.wide.isEmpty)
             var tile = MosaicTile(id: "\(item.imdb)-\(serial)", item: item, shape: shape)
             let prev = column.tiles.last
             tile.top = prev.map { $0.top + $0.height + gap } ?? 0

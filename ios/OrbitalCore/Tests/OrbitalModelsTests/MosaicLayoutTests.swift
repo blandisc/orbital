@@ -173,4 +173,22 @@ final class MosaicLayoutTests: XCTestCase {
         XCTAssertNil(MosaicPool.toppedUp([], with: [[ranked]]).first?.rank, "el puesto de una lista no viaja al mosaico")
         XCTAssertEqual(MosaicPool.toppedUp(base, with: [(0..<100).map { item("tt\($0 + 10)") }]).count, ForYou.mosaicSize)
     }
+
+    func testUniformMosaicKeepsEveryTileTheSameSizeWhenFocusing() {
+        let geometry = MosaicGeometry(columnCount: 3, gap: 12, ring: 8, growRatio: 1.8, focusedRowRatio: 1.6, uniform: true)
+        let frames = geometry.columnFrames(totalWidth: 390, focusedColumn: 1)
+        XCTAssertEqual(Set(frames.map(\.width)).count, 1, "enfocar no ensancha la columna")
+        var columns = (0..<3).map { _ in MosaicColumn() }
+        var pool = MosaicPool(items: (0..<30).map { item("tt\($0)") })
+        var serial = 0
+        geometry.layout(&columns, totalWidth: 390, focus: (col: 1, row: 0))
+        for c in columns.indices {
+            geometry.fill(&columns[c], viewportHeight: 700, buffer: 200, isFocusedColumn: c == 1, focusedRow: c == 1 ? 0 : nil,
+                          pool: &pool, visible: [], onScreen: [], serial: &serial)
+        }
+        geometry.layout(&columns, totalWidth: 390, focus: (col: 1, row: 0))
+        let heights = Set(columns.flatMap { $0.tiles.map(\.height) })
+        XCTAssertEqual(heights.count, 1, "todas las piezas miden lo mismo, también la enfocada")
+        XCTAssertTrue(columns.allSatisfy { $0.tiles.allSatisfy { $0.shape == .poster } })
+    }
 }
