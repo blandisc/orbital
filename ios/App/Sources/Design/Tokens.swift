@@ -108,6 +108,9 @@ enum DS {
         static let longPressDelay = DesignTokens.Timing.longPressDelay
         /// Cuánto se queda a la vista el indicador de brillo o volumen tras soltar, antes de desvanecerse.
         static let gestureIndicatorHold = UInt64(DesignTokens.Timing.gestureIndicatorHold * 1e9)
+        /// Quieto en el mosaico: a los 30 s el ambiente despierta solo; sobre una pieza, a los 2,2 s cobra vida.
+        static let mosaicIdle = UInt64(DesignTokens.Mosaic.idleSeconds * 1e9), mosaicAlive = UInt64(DesignTokens.Mosaic.aliveSeconds * 1e9)
+        static let mosaicDrift = UInt64(DesignTokens.Mosaic.driftTick * 1e9)
     }
 
     /// Tamaño de los pósters (relación 2:3, como en la TV).
@@ -127,5 +130,17 @@ enum DS {
         static let progressTick = DesignTokens.Timing.tick
         /// Opacidad de un botón mientras su acción sigue en vuelo (sin duplicar el toque).
         static let busyOpacity = CGFloat(DesignTokens.Opacity.faint)
+    }
+
+    /// El mosaico de «Para ti» (equivalente a `foryou-mosaic` en la TV): columnas, cuánto crece la enfocada
+    /// y las esperas de su ambiente y «cobra vida».
+    enum Mosaic {
+        static let columnsPortrait = DesignTokens.Mosaic.columnsPortrait, columnsLandscape = DesignTokens.Mosaic.columnsLandscape
+        static let growRatio = CGFloat(DesignTokens.Mosaic.growRatio)
+        static let idle = DesignTokens.Mosaic.idleSeconds, alive = DesignTokens.Mosaic.aliveSeconds
+        static let driftTick = DesignTokens.Mosaic.driftTick
+        static let driftPerSecond = CGFloat(DesignTokens.Mosaic.driftPerSecond)
+        static let buffer = CGFloat(DesignTokens.Mosaic.bufferHeight)
+        static let focusedRowRatio = DesignTokens.Mosaic.focusedRowRatio
     }
 }

@@ -74,6 +74,17 @@ func yearAndKind(year: String, kind: String) -> Text {
     return year.isEmpty ? k : Text("\(year) · \(k)")
 }
 
+/// El dato de una línea de una sugerencia, como `factLine` en la TV: «Serie · T2 · E5»,
+/// «Película · 2026 · 145 min». Usa lo que haya (el episodio que sigue, o año y duración).
+@MainActor func factLine(_ s: Suggestion) -> Text {
+    let kind = s.kind == "movie" ? Text("Película") : Text("Serie")
+    if let next = s.next { return Text("\(kind) · \(episodeText(season: next.season, episode: next.episode))") }
+    if let year = s.year, let runtime = s.runtime { return Text("\(kind) · \(String(year)) · \(runtime) min") }
+    if let runtime = s.runtime { return Text("\(kind) · \(runtime) min") }
+    if let year = s.year { return Text("\(kind) · \(String(year))") }
+    return kind
+}
+
 extension Suggestion {
     var route: TitleRoute { TitleRoute(kind: kind, metaID: imdb, title: title, poster: poster) }
 }

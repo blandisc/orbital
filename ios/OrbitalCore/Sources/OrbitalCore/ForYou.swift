@@ -15,6 +15,8 @@ public struct Suggestion: Sendable, Equatable, Identifiable {
     public var overview: String
     public var poster: String
     public var wide: String
+    /// Logo del título (metahub), como en la TV; si no carga o no hay, la interfaz cae al nombre en texto.
+    public var logo: String?
     public var reason: SuggestionReason
     public var next: (season: Int, episode: Int)?
     /// El puesto en un Top 10 (chart de Netflix, JustWatch…), si la lista lo trae. Nil: no se pinta número.
@@ -22,9 +24,9 @@ public struct Suggestion: Sendable, Equatable, Identifiable {
     public var id: String { imdb }
 
     public init(kind: String, imdb: String, title: String, year: Int? = nil, runtime: Int? = nil, overview: String = "", poster: String, wide: String,
-                reason: SuggestionReason, next: (season: Int, episode: Int)? = nil, rank: Int? = nil) {
+                logo: String? = nil, reason: SuggestionReason, next: (season: Int, episode: Int)? = nil, rank: Int? = nil) {
         self.kind = kind; self.imdb = imdb; self.title = title; self.year = year; self.runtime = runtime; self.overview = overview
-        self.poster = poster; self.wide = wide; self.reason = reason; self.next = next; self.rank = rank
+        self.poster = poster; self.wide = wide; self.logo = logo; self.reason = reason; self.next = next; self.rank = rank
     }
 
     public static func == (a: Suggestion, b: Suggestion) -> Bool {
@@ -54,6 +56,7 @@ public actor ForYou {
     public static let mosaicSize = 48
     static let metahubPoster = "https://images.metahub.space/poster/medium/%@/img"
     static let metahubBackground = "https://images.metahub.space/background/medium/%@/img"
+    static let metahubLogo = "https://images.metahub.space/logo/medium/%@/img"
 
     private let trakt: Trakt?
     private let tmdb: Tmdb?
@@ -124,7 +127,8 @@ public actor ForYou {
 
     private func suggestion(_ e: TraktEntry, _ reason: SuggestionReason) -> Suggestion {
         Suggestion(kind: e.kind, imdb: e.imdb, title: e.title, year: e.year, runtime: e.runtime, overview: e.overview,
-                   poster: String(format: Self.metahubPoster, e.imdb), wide: String(format: Self.metahubBackground, e.imdb), reason: reason, next: e.next)
+                   poster: String(format: Self.metahubPoster, e.imdb), wide: String(format: Self.metahubBackground, e.imdb),
+                   logo: String(format: Self.metahubLogo, e.imdb), reason: reason, next: e.next)
     }
 
     private func raw(listID: String, kind: String) async throws -> [Suggestion] {
@@ -161,7 +165,7 @@ public actor ForYou {
                 guard let d, let imdb = d.imdb, !d.title.isEmpty else { return nil }
                 return Suggestion(kind: kind, imdb: imdb, title: d.title, year: d.year, runtime: d.runtime, overview: d.overview,
                                   poster: d.poster ?? String(format: Self.metahubPoster, imdb), wide: d.backdrop ?? String(format: Self.metahubBackground, imdb),
-                                  reason: .onPlatform(platform.name), next: nil)
+                                  logo: String(format: Self.metahubLogo, imdb), reason: .onPlatform(platform.name), next: nil)
             }
         }
     }

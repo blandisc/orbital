@@ -129,7 +129,8 @@ public final class ParaTiModel: ObservableModel {
             let minutes = Int(CinemetaParsing.runtimeSeconds(info.runtime) / 60)
             return Suggestion(kind: kind, imdb: id, title: translated["name"]?.string ?? name, year: Int(info.year.prefix(4)),
                               runtime: minutes > 0 ? minutes : nil,
-                              overview: info.description, poster: poster, wide: original["background"]?.string ?? poster, reason: .popular)
+                              overview: info.description, poster: poster, wide: original["background"]?.string ?? poster,
+                              logo: "https://images.metahub.space/logo/medium/\(id)/img", reason: .popular)
         }
     }
 
