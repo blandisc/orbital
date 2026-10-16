@@ -34,7 +34,7 @@
 .browse__media-img--brand { object-fit: cover; filter: none; }
 .browse__heading-text { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
 .browse__title {
-  font-family: var(--font-sans); font-size: var(--text-3xl); font-weight: var(--weight-bold); line-height: 1.05;
+  font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--weight-bold); line-height: 1.05;
   letter-spacing: var(--tracking-display); padding-bottom: .2em; margin-bottom: -.14em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* Un nombre largo (las listas que la gente copia en Trakt: «The 25 Best Sci-Fi Movies of the 21st
@@ -76,7 +76,7 @@
    cuadrada), a la misma altura; antes todas en 2:3 y las de GBA salían cortadas. */
 .browse__grid .card__image { object-fit: cover; }
 .browse__grid .card--focused { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; z-index: var(--z-raised); }
-.browse__empty { max-width: 34rem; color: var(--color-text-muted); font-size: var(--text-md); line-height: 1.5; padding: var(--space-4) 0; }
+.browse__empty { max-width: 34rem; color: var(--color-text-muted); font-size: var(--type-body); line-height: 1.5; padding: var(--space-4) 0; }
 
 /* Cambio de sección: un fundido corto del contenido, sin nada que cruce la pantalla. */
 .browse__main--switch .browse__heading, .browse__main--switch .browse__viewport { animation: fade-in var(--duration-base) var(--ease-out); }

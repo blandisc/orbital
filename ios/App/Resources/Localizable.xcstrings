@@ -1200,17 +1200,6 @@
         }
       }
     },
-    "En mi lista": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In My List"
-          }
-        }
-      }
-    },
     "En pausa": {
       "extractionState": "manual",
       "localizations": {

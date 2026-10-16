@@ -28,6 +28,19 @@ La única salida es una **excepción documentada**: la línea lleva `/* ds-excep
 | Primitivos | `tokens.css` | Espacio (`--space-*`), radios (`--radius-*`), letra (`--text-*`, `--weight-*`, `--tracking-*`), vidrio (`--blur-glass`), movimiento (`--duration-*`, `--ease-*`, `--delay-*`, `--stagger`), capas (`--z-*`), medidas de consola (`--card-*`, `--tile-*` —también `--tile-channel-width`, el canal de TV en vivo—, `--key-height`, `--sheet-width`…). |
 | Semánticos | `themes/orbital.css` | Lo que usan los componentes: `--color-*`, `--shadow-*` (cajas) y `--shadow-drop*` (siluetas), `--ring-focus`, foco invertido (`--inverse-bg/fg/scale`), sobre el arte (`--color-badge-bg`, `--gradient-tile-shade`), dentro de algo claro (`--on-light-*`) o de color (`--on-color-fill`), máscaras (`--mask-solid`), fondo de ambiente (`--color-backdrop-deep`), sombra sobre el arte (`--color-art-shade`), relieves (`--gradient-sheet`, `--gradient-console-tile`, `--gradient-launch-planet`), `--color-star`, `--color-video-bg`, `--assistant-accent`, el grafito neutro del arte (`--art-*-neutral`) y el color de cada consola (`--system-*`). |
 
+**Compartido con el iPhone: `design/tokens.json`** (paleta, papeles, espacios, radios, duraciones, opacidades, recetas de
+texto) y **`design/vocabulario.json`** (lo que las dos apps dicen igual: «Mi lista», «Ver la serie», «Seguir viendo»…).
+`tests/web/design-parity.test.mjs` compara `tokens.css`, `themes/orbital.css` y el código Swift del iPhone contra esos dos
+archivos: cambiar un valor o un texto en un solo lado falla CI. Las diferencias a propósito (la superficie, ink-900 aquí
+e ink-850 en el iPhone) van en el JSON con su `porque`.
+
+**Recetas de texto** (`--type-*`, los nombres del iPhone): `display` (3xl, negrita), `title` (2xl, negrita), `section`
+(lg, negrita), `card-title` (md, medium), `body` (md), `secondary` (sm), `footnote` (xs), `caption` (2xs), `eyebrow` (sm,
+medium) y `data` (xs, números tabulares). Una pieza nueva usa la receta, no el tamaño de la escala.
+
+**Texto tenue vs. adorno:** `--color-text-faint` (blanco al 50 %, ≥ 4,5:1) es texto que se lee; `--color-decorative`
+(ink-500) solo adornos que no se leen, como la cifra grande del Top 10.
+
 **Los componentes solo usan tokens semánticos** (o primitivos de medida y movimiento): nunca `--palette-*` directo. Un valor nuevo
 primero se nombra aquí: qué *es* (`--duration-enter`, «algo que aparece»), no cuánto vale.
 
@@ -78,7 +91,8 @@ Globales: `--z-overlay`, `--z-hints`, `--z-launch`, `--z-toast`. Dentro de un co
 | Pieza | Para qué |
 |---|---|
 | `Card(item, { caption, showAgo, pop })` (`card`) | Portada de un juego o video en filas y cuadrículas. Sin arte: el respaldo con su nombre; apps: su ícono (`appIcon`). Esquina: estrella si es favorito (`item.favorite`), palomita si ya lo tienes en una lista de afuera (`item.owned`); la otra esquina, el puesto del Top 10 (`item.rank`, Netflix o lo más visto de una plataforma) con la misma placa oscura. |
-| `FeatureTile` (`tiles`) | El destacado del Inicio: arte a sangre, logo o título, dato y botones (`.button-row`). Si solo hay caja (GBA cuadrada, Switch alta), **estuche**: la portada desenfocada de fondo y la caja encima, a la derecha. De dónde es va en una píldora de vidrio sobre el arte (`.tile__platform--pill`), igual que en la ficha lateral. |
+| `RankedCard(item, options)` (`card`) | Un puesto en una lista Top 10 (todas sus portadas traen `rank`), como `RankedPosterCard` del iPhone: la cifra enorme en `--color-decorative` detrás del póster, que va encima a la derecha; el ▲ ▼ / «Nuevo» sube a la esquina. Devuelve `{ card, el }`: `card` es el botón enfocable y `el` lo que se monta. |
+| `FeatureTile` (`tiles`) | El destacado del Inicio: arte a sangre, logo o título, dato y botones (`.button-row`). Si solo hay caja (GBA cuadrada, Switch alta), **estuche**: la portada desenfocada de fondo y la caja encima, a la derecha. De dónde es va en una píldora de vidrio sobre el arte (`.tile__platform--pill`), igual que en la ficha lateral. Sobre el título, el rótulo (`eyebrowOf`, el `Eyebrow` del iPhone): «Seguir viendo», «Sigue» o «Seguir jugando». |
 | `RowTile` (`tiles`) | Renglón: miniatura ancha (cápsula de Steam, fondo, o la caja recortada) y al lado el nombre grande y su dato siempre a la vista, con avance si es video. El texto nunca va encima del arte. |
 | `ConsoleTile` (`tiles`) | Foto real de la consola (o logo) con brillo de su color, juegos, nuevos y lo último. |
 
@@ -133,7 +147,7 @@ letras que bajan: g, p, j, y).
 
 - Español, frases normales. **Sin mayúsculas espaciadas** (se ven «de IA»): ni en etiquetas, ni pestañas,
   ni insignias.
-- Tamaños solo con `--text-*` (escalan con Ajustes → Tamaño del texto).
+- Tamaños solo con `--text-*` o, mejor, una receta `--type-*` (escalan con Ajustes → Tamaño del texto).
 - Títulos con `line-clamp`: `padding-bottom` de ~.2em para que no se corten las letras que bajan.
 
 ## 7. Excepciones

@@ -198,3 +198,15 @@ def install(catalog) -> None:
         return [foryou.video_item((S if kind == "series" else M)[k], f"En {name}") for k in picks]
 
     fy._platform = platform
+
+    # El Top 10 de Netflix y lo más visto por plataforma (JustWatch), sin internet: puestos, sube y baja y «Nuevo».
+    def chart(keys, kind):
+        pool = S if kind == "series" else M
+        moves = [None, 2, -1, 0, 3, -2, None, 1, 0, -4]
+        return [{**pool[k], "rank": n + 1, "movement": moves[n] if moves[n] is not None else None, "new": moves[n] is None}
+                for n, k in enumerate(keys) if k in pool][:10]
+
+    top = {"series": ["stranger", "wednesday", "squid", "blackmirror", "dark", "andor", "shogun", "bear", "silo", "tlou"],
+           "movie": ["glass", "dune2", "oppen", "inside2", "batman", "past", "spider", "poor", "br", "inter"]}
+    charts_api.netflix_entries = lambda region, kind, **_: chart(top[kind], kind)
+    charts_api.fetch_justwatch_chart = lambda brand, region, kind, **_: chart(list(reversed(top[kind])), kind)

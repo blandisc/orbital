@@ -22,7 +22,7 @@ const APP_ICONS = {
 };
 export const appIcon = (item) => (item.category === "apps" ? item.extra?.icon || APP_ICONS[item.id] || null : APP_ICONS[item.id] ?? null);
 
-export function Card(item, { onPress, onRatio, showAgo = false, caption = false, pop = false } = {}) {
+export function Card(item, { onPress, onRatio, showAgo = false, caption = false, pop = false, ranked = false } = {}) {
   const meta = h("span", { class: "card__meta" },
     h("strong", { class: "card__title" }, item.title),
     h("small", { class: "card__subtitle" }, item.subtitle));
@@ -32,7 +32,7 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   // El puesto del Top 10 (Netflix oficial, lo más visto de una plataforma): la otra esquina, siempre
   // legible sobre cualquier póster (la misma receta de insignia que el resto de la app).
   const place = rankOf(item);
-  const rank = place != null ? Badge(String(place), { className: "card__rank", large: true }) : null;
+  const rank = place != null && !ranked ? Badge(String(place), { className: "card__rank", large: true }) : null; // `ranked`: la cifra grande ya lo dice
   const move = trendOf(item); // ▲2 / ▼1 / Nuevo, debajo del puesto
   const trend = move ? Badge(move.text, { className: `card__trend card__trend--${move.dir}` }) : null;
   // Lo que está abierto ahora (como las actividades de PS5): se ve desde la fila.
@@ -88,4 +88,14 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   }
   card.append(...[badge, rank, trend, live, chip, meta, progress].filter(Boolean));
   return card;
+}
+
+/**
+ * Un puesto del Top 10 al estilo Netflix (como `RankedPosterCard` del iPhone): la cifra enorme en gris, detrás del
+ * póster, que va encima a su derecha. La cifra es adorno: el puesto se dice en la etiqueta de la tarjeta.
+ */
+export function RankedCard(item, options = {}) {
+  const card = Card(item, { ...options, ranked: true });
+  card.setAttribute("aria-label", `Puesto ${rankOf(item)}: ${item.title}`);
+  return { card, el: h("div", { class: "card-ranked" }, h("span", { class: "card-ranked__number", "aria-hidden": "true" }, String(rankOf(item))), card) };
 }

@@ -75,8 +75,22 @@ Hoy solo la paleta tiene una prueba que compara los dos lados. El resto depende 
 3. **TV:** recetas de texto como alias (5) y el rótulo en el destacado y la ficha (7).
 4. **Si dices que sí:** la cifra grande del Top 10 en la TV (8).
 
-## 5. Lo que necesito decidir contigo
+## 5. Decisiones (16 oct 2026)
 
-- ¿Va el punto 8 (cifra grande del Top 10 en la TV)?
-- ¿Te parece bien que en 2, 3 y 4 la TV mande, aunque el iPhone cambie un poco?
-- ¿Arrancamos el mecanismo de la sección 3?
+Tú decidiste el Top 10; el resto lo decidí yo con este criterio: **igual donde la persona lo nota de una app a la otra
+(nombres, color del arte, tiempos, jerarquía), distinto solo donde el aparato lo pide** (distancia, luz, gestos).
+
+| # | Decisión | Por qué |
+|---|---|---|
+| 1 | «Mi lista» / «En Mi lista» siempre con M, en las dos (la TV también decía «En mi lista» en la ficha) | Es un nombre propio: escribirlo de dos formas hace pensar que son dos cosas. |
+| 2 | **Superficie distinta a propósito**: ink-900 en la TV, ink-850 en el iPhone | El teléfono se usa con luz y sus renglones agrupados no llevan borde: necesitan un escalón más contra el fondo (como `secondarySystemBackground`). En la sala oscura de la TV, ink-900 ya separa y las tarjetas son puro arte. De lejos, en las dos se ve «grafito»: nadie compara 5 niveles de gris entre dos pantallas. |
+| 3 | Texto tenue que **se lee** en las dos (≥ 4,5:1): blanco al 50 % (#868687 en el iPhone); el gris ink-500 queda como `decorative`, solo para adornos (la cifra del Top 10) | El iPhone usaba un gris que no pasaba contraste para textos que sí se leen. Accesibilidad no es negociable de un lado. |
+| 4 | Duraciones de la TV en las dos (140 · 220 · 320 · 520 · 700 ms) | Diferencias de 20–100 ms no se ven en la mano, pero el fundido del color del arte se reconoce como «el gesto de Orbital»: que dure lo mismo cuesta nada. Las transiciones nativas de iOS (hojas, navegación) siguen siendo del sistema. |
+| 5 | La TV usa los nombres de receta del iPhone (`--type-section`, `--type-eyebrow`…), sin cambio visual | Un mismo idioma para hablar de diseño; los tamaños siguen siendo los de 3 m. |
+| 6 | `DataLine`: números tabulares, sin SF Mono (se corrigió la guía) | Ya era lo que hacía el código. |
+| 7 | Rótulo sobre el título del destacado de Inicio en la TV («Seguir viendo», «Sigue», «Seguir jugando»); en la ficha no, porque el iPhone tampoco lo usa ahí | Dice por qué está ahí, como en el iPhone. Se esconde antes que el dato cuando falta alto. |
+| 8 | **Top 10 con cifra grande en la TV** (tu decisión): la cifra gris detrás del póster, el ▲ ▼ en la esquina | Es lo que la gente reconoce de Netflix y ya era así en el iPhone. |
+| 9 | Vidrio distinto a propósito (documentado en las dos guías) | La TV no tiene barra de navegación de vidrio; en el iPhone es la regla de Apple. |
+
+**El mecanismo ya está:** `design/tokens.json` y `design/vocabulario.json`, con `tests/web/design-parity.test.mjs` (CI, lee
+también el código Swift) y `DesignTests.testTokensMatchSharedJSON` en el iPhone.

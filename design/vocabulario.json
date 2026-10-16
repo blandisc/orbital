@@ -1,0 +1,24 @@
+{
+  "_": "Lo que las dos apps dicen igual. `texto` tiene que salir tal cual en el código de los lados que marca `en` (tv, ios); nada de `evitar` puede salir en ninguno. tests/web/design-parity.test.mjs lo revisa en los textos entre comillas de orbital/ (JS y Python) y de ios/ (Swift y Localizable.xcstrings).",
+  "verbos": [
+    { "texto": "Ver", "en": ["tv", "ios"] },
+    { "texto": "Continuar", "en": ["tv", "ios"], "nota": "Solo un video a medias. Un juego abierto: «Volver al juego»." },
+    { "texto": "Ver la serie", "en": ["tv", "ios"], "evitar": ["Ver serie"] },
+    { "texto": "Elegir fuente", "en": ["tv", "ios"], "evitar": ["Elegir Fuente", "Escoger fuente"] },
+    { "texto": "Ver en la TV", "en": ["ios"], "evitar": ["Ver en TV", "Ver en la tele", "Mandar a la TV"] }
+  ],
+  "nombres": [
+    { "texto": "Mi lista", "en": ["tv", "ios"], "evitar": ["mi lista", "Mi Lista"], "nota": "Nombre propio de tu biblioteca de Stremio: siempre con M." },
+    { "texto": "En Mi lista", "en": ["tv", "ios"] },
+    { "texto": "Tu watchlist", "en": ["tv", "ios"], "evitar": ["Tu Watchlist", "tu Watchlist"] },
+    { "texto": "Seguir viendo", "en": ["tv", "ios"], "evitar": ["Continuar viendo", "Seguir mirando"] },
+    { "texto": "Para ti", "en": ["tv", "ios"], "evitar": ["Para Ti", "Para tí"] },
+    { "texto": "Top 10 en", "en": ["tv", "ios"] },
+    { "texto": "En vivo", "en": ["tv", "ios"], "evitar": ["En Vivo", "EN VIVO"] },
+    { "texto": "Nuevo", "en": ["tv", "ios"] }
+  ],
+  "formatos": [
+    { "texto": "termina a las", "en": ["tv", "ios"], "evitar": ["acaba a las", "Termina a las"] },
+    { "texto": "quedan ", "en": ["tv", "ios"], "nota": "Lo que falta de un video: «quedan 20 min»." }
+  ]
+}

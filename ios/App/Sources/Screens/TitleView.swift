@@ -114,7 +114,7 @@ struct TitleView: View {
                 DataLine(parts: [Strings.endsAt(minutesLeft: minutes, now: env.services.now(), language: env.services.appSettings.uiLanguage)])
             }
             ActionGrid(actions: [
-                ProjectionAction(id: "list", title: model.inLibrary ? "En mi lista" : "Mi lista", symbol: model.inLibrary ? "checkmark" : "plus", active: model.inLibrary) { Task { await model.toggleLibrary() } },
+                ProjectionAction(id: "list", title: model.inLibrary ? "En Mi lista" : "Mi lista", symbol: model.inLibrary ? "checkmark" : "plus", active: model.inLibrary) { Task { await model.toggleLibrary() } },
                 downloadAction(model),
                 ProjectionAction(id: "sources", title: "Elegir fuente", symbol: "list.bullet", disabled: model.continueVideoID == nil) {
                     if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }

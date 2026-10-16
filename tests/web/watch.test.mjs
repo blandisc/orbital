@@ -67,7 +67,7 @@ test("qué hay disponible, antes de elegir", async () => {
 test("tráiler y Mi lista en la ficha", async () => {
   const { titleActions } = await import("../../orbital/web/js/core/watch.js");
   const labels = titleActions({ kind: "movie", resume: null, trailer: "abc", in_library: true }).map((a) => a.label);
-  assert.deepEqual(labels, ["Ver", "Tráiler", "En mi lista", "Elegir fuente"]);
+  assert.deepEqual(labels, ["Ver", "Tráiler", "En Mi lista", "Elegir fuente"]);
 });
 
 test("serie sin episodios: sin «Elegir fuente» (no había nada que elegir)", () => {

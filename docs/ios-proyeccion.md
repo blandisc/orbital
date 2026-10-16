@@ -26,9 +26,10 @@ WCAG AA en los dos.
 | Papel | `DS.` | Oscuro | Claro | Para |
 |---|---|---|---|---|
 | background | `bg` | ink-950 | #f6f5f1 | Fondo de pantalla |
-| surface | `surface` | ink-850 | #ffffff | Renglones de listas y formularios |
+| surface | `surface` | ink-850 | #ffffff | Renglones de listas y formularios (la TV usa ink-900: distinto a propósito, ver `design/tokens.json`) |
 | surfaceRaised | `surfaceRaised` | ink-800 | #ebe9e3 | Placeholders |
-| label / secondaryLabel / tertiaryLabel | `text` / `textMuted` / `textFaint` | paper / ink-300 / ink-500 | #111113 / #5c5c64 / #9a9aa1 | Texto (el terciario solo adornos) |
+| label / secondaryLabel / tertiaryLabel | `text` / `textMuted` / `textFaint` | paper / ink-300 / #868687 | #111113 / #5c5c64 / #6b6b72 | Texto; el terciario también se lee (≥ 4.5:1, el blanco al 50 % de la TV) |
+| decorative | `ink500` | ink-500 | #9a9aa1 | Solo adornos que no se leen: la cifra del Top 10 (`--color-decorative` en la TV) |
 | primary / onPrimary | `primary` / `onPrimary` | paper / ink-1000 | #111113 / paper | **La** acción principal (una por pantalla) |
 | accent | `accent` | paper | #111113 | Avance, selección y foco (como `--color-focus` y las barras de la TV) |
 | live | `live` | teal-300 | #0b7a6e | **Solo «En vivo»** (como `--color-live` en la TV) |
@@ -44,7 +45,7 @@ miniatura de 48 px con `ArtPalette` — la misma cuenta que la TV — en dos col
 - `tint` (L 0.20): tiñe el fondo en modo oscuro (`--art-tint`), fundido al fondo a `DesignTokens.Projection.fadeTo` (62 %).
 - `accent` (L 0.76): **el botón principal** (`.dsArtButton(colors)`, texto oscuro encima, como `--color-primary-art`) y, en modo
   claro, un velo suave sobre el papel (`lightMix` 0.84). Sin tono (arte gris): los neutros de la TV (rgb 205 205 211).
-- Cambia en `DS.Motion.tint` (0.6 s); con «Reducir movimiento», sin animación.
+- Cambia en `DS.Motion.tint` (0.7 s, como la TV); con «Reducir movimiento», sin animación.
 
 Dónde: Inicio (el destacado del carrusel), Para ti › Mosaico (la pieza enfocada), la ficha (su fondo), Descargas (lo que
 se baja). Un solo color por pantalla.
@@ -79,7 +80,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 |---|---|---|
 | `Backdrop(tint:)` | Fondo con el color del arte | Todas las pantallas |
 | `BleedArt` / `HeroCard` | Arte a sangre con rótulo, logo, `DataLine`, acciones y avance | Inicio (carrusel), Para ti › Listas, ficha |
-| `DataLine` | Datos en SF Mono; quita del final lo que no cabe | Destacados, ficha, descargas |
+| `DataLine` | Datos con números tabulares (no una monoespaciada); quita del final lo que no cabe | Destacados, ficha, descargas |
 | `Eyebrow` | Rótulo pequeño (acento o sobre el arte) | Destacados |
 | `ActionGrid` + `ProjectionAction` | Acciones secundarias iguales con ícono y nombre (se apilan con letra grande) | Ficha (Mi lista, Descargar, Fuentes) |
 | `StillCard` | Pieza 16:9 con avance, nombre y datos | «También tenías» |
@@ -105,7 +106,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 |---|---|
 | Mosaico | Sube solo tras 30 s quieto, cada columna a su ritmo (`DesignTokens.Mosaic.driftPattern`, el mismo de la TV); las columnas se igualan en ambiente; «cobra vida» acerca la pieza en 9 s |
 | Póster → ficha | `navigationTransition(.zoom)` |
-| Color del arte | Fundido de 0.6 s al cambiar lo que está al frente |
+| Color del arte | Fundido de 0.7 s al cambiar lo que está al frente (las duraciones son las de la TV: 140 · 220 · 320 · 520 · 700 ms) |
 | Empezar a ver | Toque háptico suave |
 | Selección (carrusel, temporadas, Mi lista) | `sensoryFeedback(.selection)` |
 
@@ -119,9 +120,12 @@ Con «Reducir movimiento»: sin ambiente, sin acercamiento, sin fundidos.
 | Botón principal | Con arte: el color claro del arte con texto oscuro. Sin arte: papel |
 | Avance y foco | Papel (tinta en modo claro); teal solo «En vivo» |
 | Episodio | «T2 E5» (el « · » separa datos) |
-| Nombres | «Ver», «Continuar», «Ver T3 E6», «Ver la serie» (una serie sugerida abre su ficha), «Elegir fuente», «Mi lista» / «En mi lista», «Ver en la TV», «termina a las 23:21» |
+| Valores | `design/tokens.json`: paleta, papeles, espacios, radios, duraciones, opacidades y recetas. `tests/web/design-parity.test.mjs` (CI) lee `DesignTokens.swift` y falla si algo se separa; `DesignTests.testTokensMatchSharedJSON` hace lo mismo aquí |
+| Nombres | `design/vocabulario.json`: «Ver», «Continuar», «Ver T3 E6», «Ver la serie», «Elegir fuente», «Mi lista» / «En Mi lista» (siempre con M), «Seguir viendo», «Ver en la TV», «termina a las 23:21». La misma prueba falla si una app dice otra cosa |
+| Top 10 | La cifra grande detrás del póster en las dos (`RankedPosterCard` aquí, `RankedCard` en la TV) |
+| Rótulo | `Eyebrow` sobre el título del destacado de Inicio en las dos («Seguir viendo», «Sigue») |
 | Motivos | Los de `foryou.py` (campo `why`) tal cual (`SuggestionReason.console`) |
-| A propósito distinto | El mosaico del teléfono (3 carriles parejos e información abajo; la TV: 6 columnas y la enfocada crece). Los estantes con Top 10 de Listas |
+| A propósito distinto | El mosaico del teléfono (3 carriles parejos e información abajo; la TV: 6 columnas y la enfocada crece). Los estantes de Listas. La superficie (ink-850 aquí, ink-900 en la sala oscura). El vidrio: aquí solo en navegación (HIG); en la TV, píldoras sobre el arte. El modo claro (solo aquí) |
 
 ## 6. Textos en español e inglés
 
@@ -141,4 +145,6 @@ arte siguen siendo sala oscura. Para capturas: `-demo-appearance light|dark`.
 - `DesignTests.testScreensUseOnlyDesignSystemTokens`: sin colores, tamaños, duraciones, radios, espacios ni opacidades a
   mano; sin estilos de control propios; **sin `DS.font(…)`** (solo recetas) y **sin `Color.white/black`** en pantallas.
 - `DesignTests.testPaletteMatchesOrbitalsPaletteJSON`: la paleta es la de la consola.
+- `DesignTests.testTokensMatchSharedJSON` y, en CI, `tests/web/design-parity.test.mjs`: espacios, radios, duraciones,
+  opacidades, papeles y recetas iguales a `design/tokens.json`; los textos de `design/vocabulario.json`.
 - `scripts/ios_strings.py --check`: ningún texto sin traducir.

@@ -20,6 +20,46 @@ final class DesignTests: XCTestCase {
         for key in json.keys where key != "_" { XCTAssertTrue(known.contains(key), "Orbital tiene un color nuevo («\(key)») que falta en DesignTokens") }
     }
 
+    /// Una sola experiencia: espacios, radios, duraciones, opacidades y papeles iguales a `design/tokens.json`, el archivo que
+    /// también vigila la TV (`tests/web/design-parity.test.mjs`, que además lee este código en CI).
+    func testTokensMatchSharedJSON() throws {
+        let data = try Data(contentsOf: repo.appendingPathComponent("design/tokens.json"))
+        let json = try XCTUnwrap(JSON.parse(data)?.object)
+        func num(_ value: JSON?) -> Double? {
+            switch value { case .int(let i)?: Double(i); case .double(let d)?: d; default: nil }
+        }
+        func group(_ name: String) throws -> [String: JSON] { try XCTUnwrap(json[name]?.object, "falta «\(name)» en tokens.json") }
+
+        let space = try group("space")
+        let spaces: [String: Double] = ["1": DesignTokens.Space.s1, "2": DesignTokens.Space.s2, "3": DesignTokens.Space.s3, "4": DesignTokens.Space.s4,
+                                        "5": DesignTokens.Space.s5, "6": DesignTokens.Space.s6, "8": DesignTokens.Space.s8, "10": DesignTokens.Space.s10, "14": DesignTokens.Space.s14]
+        for (key, value) in spaces { XCTAssertEqual(num(space[key]), value, "Space.s\(key)") }
+
+        let radius = try group("radius")
+        let radii: [String: Double] = ["xs": DesignTokens.Radius.xs, "sm": DesignTokens.Radius.sm, "md": DesignTokens.Radius.md,
+                                       "lg": DesignTokens.Radius.lg, "xl": DesignTokens.Radius.xl, "xxl": DesignTokens.Radius.xxl]
+        for (key, value) in radii { XCTAssertEqual(num(radius[key]?.object?["value"]), value, "Radius.\(key)") }
+
+        let duration = try group("duration")
+        let motion: [String: Double] = ["fast": DesignTokens.Motion.fast, "base": DesignTokens.Motion.base, "slow": DesignTokens.Motion.slow,
+                                        "enter": DesignTokens.Motion.enter, "tint": DesignTokens.Motion.tint]
+        for (key, seconds) in motion { XCTAssertEqual(num(duration[key]), (seconds * 1000).rounded(), "Motion.\(key) (la TV manda)") }
+
+        let opacity = try group("opacity")
+        let opacities: [String: Double] = ["hairline": DesignTokens.Opacity.hairline, "fill": DesignTokens.Opacity.fill, "fillStrong": DesignTokens.Opacity.fillStrong,
+                                           "faint": DesignTokens.Opacity.faint, "track": DesignTokens.Opacity.track, "scrim": DesignTokens.Opacity.scrim,
+                                           "badge": DesignTokens.Opacity.badge, "onArtSecondary": DesignTokens.Opacity.onArtSecondary]
+        for (key, value) in opacities { XCTAssertEqual(num(opacity[key]?.object?["value"]), value, "Opacity.\(key)") }
+
+        // Los papeles en oscuro: el color de la paleta (o el del iPhone, si la diferencia está explicada).
+        let roles = try group("roles")
+        for role in DesignTokens.Role.allCases {
+            let spec = try XCTUnwrap(roles[role.rawValue]?.object, "tokens.json no tiene el papel «\(role.rawValue)»")
+            guard let name = spec["ios"]?.string ?? spec["color"]?.string else { continue }   // `overlay`: lo revisa la prueba de la TV
+            XCTAssertEqual(role.hex.dark.lowercased(), DesignTokens.palette[name], "Role.\(role.rawValue) (oscuro)")
+        }
+    }
+
     /// Modo claro y oscuro: el texto se lee en los dos (WCAG AA), y el acento y la acción principal se distinguen del fondo.
     func testBothAppearancesHaveReadableContrast() {
         typealias R = DesignTokens.Role

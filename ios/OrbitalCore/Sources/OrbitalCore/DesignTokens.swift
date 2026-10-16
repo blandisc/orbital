@@ -1,6 +1,7 @@
 import Foundation
 
-/// Los valores de diseño de Orbital, sin SwiftUI (se prueban aquí contra `palette.json`; la app los convierte a `Color`).
+/// Los valores de diseño de Orbital, sin SwiftUI (se prueban contra `design/tokens.json`, el mismo archivo que usa la TV;
+/// la app los convierte a `Color`).
 /// «Nada se crea suelto»: las pantallas usan estos tokens, no colores ni medidas a mano.
 public enum DesignTokens {
     /// Paleta única: los mismos valores que `orbital/web/styles/palette.json`.
@@ -17,8 +18,11 @@ public enum DesignTokens {
     public enum Role: String, CaseIterable, Sendable {
         /// Fondo de pantalla y superficies (tarjetas, renglones agrupados) y la superficie elevada (placeholders, hojas).
         case background, surface, surfaceRaised
-        /// Texto principal, secundario y terciario (solo adornos y textos grandes: no pasa 4.5:1).
+        /// Texto principal, secundario y terciario (el terciario también se lee: ≥ 4.5:1, como `--color-text-faint` de la TV,
+        /// el blanco al 50 % sobre el fondo).
         case label, secondaryLabel, tertiaryLabel
+        /// Solo adornos que no son texto que leer (la cifra grande del Top 10): `--color-decorative` en la TV.
+        case decorative
         /// La acción principal (una por pantalla) y el texto sobre ella.
         case primary, onPrimary
         /// Avance, selección y foco: el papel, como la TV (`--color-focus`, las barras de avance). El color lo pone el arte
@@ -37,7 +41,8 @@ public enum DesignTokens {
             case .surfaceRaised: (palette["ink-800"]!, "#ebe9e3")
             case .label: (palette["paper"]!, "#111113")
             case .secondaryLabel: (palette["ink-300"]!, "#5c5c64")
-            case .tertiaryLabel: (palette["ink-500"]!, "#9a9aa1")
+            case .tertiaryLabel: ("#868687", "#6b6b72")
+            case .decorative: (palette["ink-500"]!, "#9a9aa1")
             case .primary: (palette["paper"]!, "#111113")
             case .onPrimary: (palette["ink-1000"]!, palette["paper"]!)
             case .accent: (palette["paper"]!, "#111113")
@@ -72,8 +77,8 @@ public enum DesignTokens {
     public enum Radius { public static let xs = 5.0, sm = 7.0, md = 10.0, lg = 13.0, xl = 18.0, xxl = 22.0, pill = 999.0 }
     /// Tamaños de letra (se escalan con Dynamic Type, que hace de «Tamaño del texto»).
     public enum TextSize { public static let xs = 11.0, sm = 12.5, md = 15.0, lg = 17.0, xl = 22.0, xxl = 28.0, display = 34.0 }
-    /// Duraciones en segundos; con «Reducir movimiento» valen 0.
-    public enum Motion { public static let fast = 0.12, base = 0.2, slow = 0.35, enter = 0.45, tint = 0.6 }
+    /// Duraciones en segundos (las de la TV: `design/tokens.json`); con «Reducir movimiento» valen 0.
+    public enum Motion { public static let fast = 0.14, base = 0.22, slow = 0.32, enter = 0.52, tint = 0.7 }
     public enum Opacity {
         public static let hairline = 0.09, fill = 0.10, fillStrong = 0.16, faint = 0.5, track = 0.2, scrim = 0.62
         public static let scrimStrong = 0.92, badge = 0.8, pressed = 0.8, disabled = 0.4, shrink = 0.85, subtitleShadow = 0.9
