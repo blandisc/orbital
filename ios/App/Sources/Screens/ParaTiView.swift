@@ -129,7 +129,12 @@ struct ListsView: View {
                         .padding(.horizontal, DS.Space.gutter)
                 }
                 if model.chip == .trakt { traktTabs }
-                ForEach(model.visibleLists) { list in listSection(list) }
+                // En «Todo», lo que sale pronto de lo que sigues va primero (como la marca «Sale hoy» del Inicio en la TV).
+                if model.chip == .all, !model.airings.isEmpty {
+                    Rail(title: "Próximos estrenos") { ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) } }
+                }
+                if model.chip == .trakt, model.traktList == "estrenos" { UpcomingView(observer: observer) }
+                else { ForEach(model.visibleLists) { list in listSection(list) } }
             }
             .padding(.bottom, DS.Space.s8)
         }
@@ -181,6 +186,7 @@ struct ListsView: View {
         switch list.id {
         case "watchlist": return Text("Watchlist")
         case "mine": return Text("Viendo")
+        case "estrenos": return Text("Próximos estrenos")
         case "recs": return Text("Recomendadas")
         case "trend": return Text("En tendencia")
         case "popular": return Text("Popular")

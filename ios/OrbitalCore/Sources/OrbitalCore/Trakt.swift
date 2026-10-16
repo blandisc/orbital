@@ -33,6 +33,20 @@ public struct TraktEntry: Sendable, Equatable, Identifiable {
     }
 }
 
+/// Un episodio que sale de una serie que sigues («Próximos estrenos»): la serie, cuál episodio, cuándo (la hora
+/// exacta; la interfaz la pone en la de aquí) y dónde sale.
+public struct TraktAiring: Sendable, Equatable {
+    public var show: TraktEntry
+    public var season: Int
+    public var episode: Int
+    public var episodeTitle: String
+    public var aired: Date
+    public var network: String
+    public init(show: TraktEntry, season: Int, episode: Int, episodeTitle: String = "", aired: Date, network: String = "") {
+        self.show = show; self.season = season; self.episode = episode; self.episodeTitle = episodeTitle; self.aired = aired; self.network = network
+    }
+}
+
 public struct DeviceCode: Sendable, Equatable {
     public var deviceCode: String, userCode: String, verificationURL: String
     public var interval: TimeInterval, expiresAt: Date
@@ -90,6 +104,24 @@ public enum TraktParsing {
         return TraktEntry(kind: kind, imdb: imdb, title: title, year: isInt(raw["year"]), runtime: positive(raw["runtime"]),
                           episodes: positive(raw["aired_episodes"]), overview: (raw["overview"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
                           traktID: isInt(ids["trakt"]))
+    }
+
+    /// Una fila del calendario de Trakt («first_aired» en hora universal). Sin IMDb, fecha o número de episodio: nada.
+    public static func airing(_ row: JSON) -> TraktAiring? {
+        guard var show = entry(row["show"], kind: "series"), let ep = row["episode"], ep.object != nil,
+              let season = ep["season"]?.intValue, let number = ep["number"]?.intValue,
+              let stamp = row["first_aired"]?.string, let aired = date(stamp) else { return nil }
+        if let minutes = ep["runtime"]?.intValue, minutes > 0 { show.runtime = minutes }
+        return TraktAiring(show: show, season: season, episode: number,
+                           episodeTitle: (ep["title"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines), aired: aired,
+                           network: (row["show"]?["network"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    /// «2025-10-16T01:00:00.000Z» (con o sin milésimas).
+    static func date(_ text: String) -> Date? {
+        let precise = ISO8601DateFormatter()
+        precise.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return precise.date(from: text) ?? ISO8601DateFormatter().date(from: text)
     }
 
     /// Filas mezcladas («type»: movie/show) → solo películas y series con IMDb, sin repetir.
@@ -301,6 +333,13 @@ public actor Trakt {
     public func popular(kind: String, limit: Int = 30) async throws -> [TraktEntry] {
         let rows = try await get("/\(TraktParsing.kinds[kind]!)/popular", auth: false, [("limit", String(limit)), ("extended", "full")])
         return (rows?.array ?? []).compactMap { TraktParsing.entry($0, kind: kind) }
+    }
+
+    /// Los episodios que salen de las series que sigues desde `start` (AAAA-MM-DD, en hora universal) y `days` días, en orden.
+    public func calendar(start: String, days: Int = 16) async throws -> [TraktAiring] {
+        guard start.range(of: #"^[0-9]{4}-[0-9]{2}-[0-9]{2}$"#, options: .regularExpression) != nil else { throw TraktError.invalid("Fecha inválida") }
+        let rows = try await get("/calendars/my/shows/\(start)/\(max(1, min(days, 31)))", [("extended", "full")])
+        return (rows?.array ?? []).compactMap(TraktParsing.airing).sorted { $0.aired < $1.aired }
     }
 
     /// Las series que estás viendo (lo más reciente primero) con el episodio que sigue; las terminadas no.
