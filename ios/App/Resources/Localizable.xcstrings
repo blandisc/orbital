@@ -34,6 +34,17 @@
         }
       }
     },
+    "%lld de %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld of %lld"
+          }
+        }
+      }
+    },
     "Abrir Ajustes": {
       "extractionState": "manual",
       "localizations": {
@@ -320,6 +331,17 @@
         }
       }
     },
+    "Buscar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search"
+          }
+        }
+      }
+    },
     "Buscar películas y series": {
       "extractionState": "manual",
       "localizations": {
@@ -503,6 +525,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Match iPhone"
+          }
+        }
+      }
+    },
+    "Compartir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share"
           }
         }
       }
@@ -1277,6 +1310,17 @@
         }
       }
     },
+    "Explora": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore"
+          }
+        }
+      }
+    },
     "Fuentes": {
       "extractionState": "manual",
       "localizations": {
@@ -1537,6 +1581,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What's popular on Stremio. Connect Trakt in Settings and the mosaic is built from your stuff."
+          }
+        }
+      }
+    },
+    "Lo más popular hoy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most popular today"
           }
         }
       }
@@ -1959,6 +2014,17 @@
         }
       }
     },
+    "Nuevo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New"
+          }
+        }
+      }
+    },
     "Ocupan %@": {
       "extractionState": "manual",
       "localizations": {
@@ -2142,6 +2208,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Popular movies"
+          }
+        }
+      }
+    },
+    "Películas y series": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies and series"
           }
         }
       }
@@ -2428,6 +2505,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skip intro"
+          }
+        }
+      }
+    },
+    "Sci-Fi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sci-Fi"
           }
         }
       }
@@ -3099,6 +3187,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld min left"
+          }
+        }
+      }
+    },
+    "terminas a las %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ends at %@"
           }
         }
       }

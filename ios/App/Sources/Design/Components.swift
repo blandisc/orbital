@@ -79,7 +79,7 @@ struct DSProgress: View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 Rectangle().fill(DS.track)
-                Rectangle().fill(DS.primary).frame(width: geo.size.width * min(1, max(0, fraction)))
+                Rectangle().fill(DS.accent).frame(width: geo.size.width * min(1, max(0, fraction)))   // el acento es avance
             }
         }
         .frame(height: DS.Space.s1).clipShape(Capsule())
@@ -98,7 +98,7 @@ struct DSSectionHead: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             if let logo { DSPlatformLogo(url: logo) }
-            Text(title).font(DS.font(.lg, weight: .semibold)).foregroundStyle(DS.text)
+            Text(title).recipe(.section)
             Spacer()
             if let trailing {
                 if let action { Button(action: action) { Text(trailing) }.font(DS.font(.sm)).foregroundStyle(DS.textMuted) }
@@ -247,7 +247,9 @@ struct BleedArt<Content: View>: View {
 
     private var art: some View {
         PosterView(url: url, title: title, aspect: aspect, bleed: true, maxPoints: DS.Image.bleed)
-            .overlay(LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: UnitPoint(x: 0.5, y: DS.Backdrop.artFadeStart / 2), endPoint: .bottom))
+            // El velo sube hasta donde empieza el texto: rótulo, logo y datos se leen aunque el arte sea claro.
+            .overlay(LinearGradient(stops: [.init(color: .clear, location: DS.Backdrop.scrimStart), .init(color: DS.scrim, location: DS.Backdrop.scrimMid),
+                                            .init(color: DS.scrimStrong, location: 1)], startPoint: .top, endPoint: .bottom))
     }
 }
 
@@ -286,26 +288,25 @@ struct TitleLogo: View {
     }
 }
 
-/// El destacado de Inicio (`FeatureTile` en la TV): arte a sangre con velo inferior, el logo del título, el dato en el mismo
-/// vocabulario que la consola («T2 · E5 · quedan 20 min») y las acciones.
+/// El destacado (Inicio y Para ti › Listas, `FeatureTile` en la TV): arte a sangre con velo, un rótulo («Seguir viendo»,
+/// «N.º 2 en Netflix»), el logo del título, una línea de datos en SF Mono, las acciones y el avance. Todo encima va como en
+/// la sala oscura (también en modo claro).
 struct HeroCard<Actions: View>: View {
     let title: String
-    let detail: String
     let background: String?
     var logo: String?
-    var badge: LocalizedStringKey?
+    var eyebrow: Text?
+    var accentEyebrow = false
+    var data: [String] = []
     var progress: Double?
-    /// El dato de una línea ya traducido (con `detail` vacío): «Película · 2021 · 2 h 35 min».
-    var detailText: Text?
     @ViewBuilder var actions: () -> Actions
 
     var body: some View {
         BleedArt(url: background, title: title, minHeight: DS.Poster.heroHeight) {
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
-                if let badge { DSBadge(text: badge) }
+            VStack(alignment: .leading, spacing: DS.Space.s3) {
+                if let eyebrow { Eyebrow(text: eyebrow, accent: accentEyebrow, onArt: true) }
                 TitleLogo(url: logo, title: title, size: .hero)
-                if let detailText { detailText.font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(2) }
-                else if !detail.isEmpty { Text(detail).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1) }
+                if !data.isEmpty { DataLine(parts: data, color: DS.onArtSecondary) }
                 actions().padding(.top, DS.Space.s1)
                 if let progress { DSProgress(fraction: progress) }
             }

@@ -65,6 +65,13 @@ final class CinemetaTests: XCTestCase {
         XCTAssertEqual(http.calls.count, 1)
     }
 
+    func testGenreCatalogAsksCinemetaForThatGenre() async throws {
+        let http = FakeHTTP()
+        http.json["https://v3-cinemeta.strem.io/catalog/movie/top/genre=Sci-Fi.json"] = ["metas": [["id": "tt1", "name": "Dune", "type": "movie"]]]
+        let found = try await Cinemeta(http: http).catalog("movie", genre: "Sci-Fi")
+        XCTAssertEqual(found.compactMap { $0["name"]?.string }, ["Dune"])
+    }
+
     func testKitsuTitlesAskAddonsThatKnowThem() async throws {
         let http = FakeHTTP()
         http.json["https://anime.example/manifest.json"] = ["name": "Anime", "resources": ["meta"], "types": ["series"], "idPrefixes": ["kitsu:"]]

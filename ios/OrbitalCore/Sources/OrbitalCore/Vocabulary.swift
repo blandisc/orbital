@@ -25,6 +25,13 @@ public enum Vocabulary {
         return h > 0 && m > 0 ? "quedan \(h) h \(m) min" : h > 0 ? "quedan \(h) h" : "quedan \(m) min"
     }
 
+    /// A qué hora acabarías si empiezas ahora (redondeado al minuto siguiente: nunca promete terminar antes).
+    public static func endTime(minutesLeft: Int, now: Date) -> Date {
+        let end = now.addingTimeInterval(Double(max(0, minutesLeft)) * 60)
+        let seconds = end.timeIntervalSinceReferenceDate
+        return Date(timeIntervalSinceReferenceDate: (seconds / 60).rounded(.up) * 60)
+    }
+
     /// Los datos que hay, unidos con « · » (nunca un punto colgando): `factLine` de la TV.
     public static func factLine(_ parts: [String?]) -> String { parts.compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ") }
 

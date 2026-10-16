@@ -61,6 +61,8 @@ enum DS {
     /// El papel: la base del tono del arte en modo claro.
     static let paper = Palette.color("paper")
     static let scrim = Palette.color("ink-1000").opacity(DesignTokens.Opacity.scrim)
+    /// El texto secundario sobre el velo del arte (más claro que `textMuted`: el arte de fondo le quita contraste).
+    static let onArtSecondary = Palette.color("paper").opacity(DesignTokens.Opacity.onArtSecondary)
     static let badgeBackground = Palette.color("ink-1000").opacity(DesignTokens.Opacity.badge)
     static let scrimStrong = Palette.color("ink-1000").opacity(DesignTokens.Opacity.scrimStrong)
     static let video = Color.black   // detrás de un video: negro de verdad
@@ -152,6 +154,12 @@ enum DS {
         /// La cifra de un Top 10: enorme y pesada; no crece con Dynamic Type (es un adorno, el puesto ya se dice en la etiqueta).
         static var rankFont: Font { .system(size: rankNumber, weight: .black, design: .rounded) }
         static let logoHero = CGFloat(DesignTokens.Size.logoHero)
+        /// El alto de un mosaico con arte (géneros de Explora).
+        static let artTileHeight: CGFloat = 96
+        /// Hasta cuántas temporadas se enseñan como filtros; con más, un menú.
+        static let seasonChipsMax = 4
+        /// Los puntos de un carrusel.
+        static let pageDot = CGFloat(DesignTokens.Size.pageDot)
     }
 
     /// El widget «Lo siguiente para ti» (también lo compila la extensión de widgets): barra de avance, miniatura de los renglones,
@@ -168,6 +176,8 @@ enum DS {
         /// Cuánto se mezcla el color del arte con el fondo de cada modo, y hasta dónde llega antes de fundirse con el fondo.
         static let darkMix = DesignTokens.Projection.darkMix, lightMix = DesignTokens.Projection.lightMix, fadeTo = DesignTokens.Projection.fadeTo
         static let tintFloor = DesignTokens.Backdrop.tintFloor
+        /// Dónde empieza el velo sobre el arte, dónde llega a medio y (al pie) a fondo.
+        static let scrimStart = DesignTokens.Backdrop.scrimStart, scrimMid = DesignTokens.Backdrop.scrimMid
         static let starCount = DesignTokens.Backdrop.starCount, starSeed = DesignTokens.Backdrop.starSeed
         static let starRadius = CGFloat(DesignTokens.Backdrop.starRadius), starOpacity = DesignTokens.Backdrop.starOpacity
         static let artFadeStart = DesignTokens.Backdrop.artFadeStart
@@ -201,6 +211,10 @@ enum DS {
         static let railWidth: CGFloat = 112
         static let gridMinimum: CGFloat = 100
         static let episodeThumbWidth: CGFloat = 122
+        /// El póster chico de un renglón (listas con puesto, descargas).
+        static let rowWidth: CGFloat = 36
+        /// Una pieza ancha (16:9) de un riel: «También tenías», episodios nuevos.
+        static let stillWidth: CGFloat = 220
         static let heroHeight: CGFloat = 300
         /// El póster pequeño de «Viendo en la TV» (misma relación 2:3, más chico que el de la tira).
         static let nowPlayingWidth: CGFloat = 56

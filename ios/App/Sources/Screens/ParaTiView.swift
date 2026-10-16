@@ -227,7 +227,8 @@ struct ListsView: View {
     private func featuredTile(_ featured: ParaTiModel.Featured) -> some View {
         let s = featured.item
         let route = s.route
-        return HeroCard(title: s.title, detail: "", background: s.wide, logo: s.logo, badge: reasonKey(featured.reason), detailText: factVariants(s).first) {
+        return HeroCard(title: s.title, background: s.wide, logo: s.logo, eyebrow: Text(reasonKey(featured.reason)), accentEyebrow: true,
+                        data: factStrings(s).first.map { [$0] } ?? []) {
             // «Ver» y «Más» en un renglón; con letra grande, uno debajo del otro.
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: DS.Space.s2) { watchButton(s); moreMenu(s) }

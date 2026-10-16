@@ -73,6 +73,8 @@ public enum DesignTokens {
     public enum Opacity {
         public static let hairline = 0.09, fill = 0.10, fillStrong = 0.16, faint = 0.5, track = 0.2, scrim = 0.62
         public static let scrimStrong = 0.92, badge = 0.8, pressed = 0.8, disabled = 0.4, shrink = 0.85, subtitleShadow = 0.9
+        /// El texto secundario sobre el velo del arte.
+        public static let onArtSecondary = 0.82
     }
     /// Subtítulos sobre el video: letra mínima, cuánto suben con los controles a la vista, espacio entre líneas
     /// (fracción de la letra), margen con el borde del video (fracción de su alto), sombra y contorno (fracción
@@ -89,11 +91,14 @@ public enum DesignTokens {
         /// El logo del título en el destacado de Inicio y en la ficha (en una pieza del mosaico va `logo`): tope de alto; de ancho,
         /// `cardMax`. Es el mismo tope relativo que `.title__logo` en la TV (más grande que el de la ficha lateral).
         public static let logoHero = 96.0
+        /// Los puntos de un carrusel (como el control de páginas de iOS).
+        public static let pageDot = 7.0
     }
     /// El fondo de pantalla (`Backdrop`, como `--art-tint` y `.backdrop__space` en la TV): hasta dónde se aclara el tono del arte
     /// hacia abajo (mezcla con el grafito), las estrellas del espacio vivo (cuántas, cuánto miden, qué tan tenues) y desde dónde se
     /// funde el arte a sangre con el fondo (fracción de su alto).
     public enum Backdrop {
+        public static let scrimStart = 0.0, scrimMid = 0.42
         public static let tintFloor = 0.5, starCount = 56, starRadius = 1.1, starOpacity = 0.35, starSeed = 7.0, artFadeStart = 0.6
     }
     /// Relaciones de aspecto de las imágenes.

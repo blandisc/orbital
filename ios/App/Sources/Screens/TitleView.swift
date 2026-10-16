@@ -51,7 +51,7 @@ struct TitleView: View {
             if Demo.isOn, Demo.open == "sources", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
             if Demo.isOn, Demo.open == "download" || Demo.open == "download-here" { await report(model.download([model.continueVideoID ?? model.metaID]), model); if Demo.open == "download" { dismiss() } }
             #endif
-            await tint.load(model.poster)
+            await tint.load(model.background ?? model.poster)
         }
         .sheet(item: $sourcesFor) { target in
             SourcesSheet(model: model, videoID: target.videoID, purpose: target.purpose) { source in
@@ -76,10 +76,10 @@ struct TitleView: View {
         BleedArt(url: model.background ?? model.poster, title: model.title, aspect: DS.Poster.heroAspect) {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 TitleLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title, size: .hero, dark: model.logoIsDark)
-                Label(model.kind == "movie" ? "Película" : "Serie", systemImage: model.kind == "movie" ? "film" : "tv")
-                    .font(DS.font(.sm)).foregroundStyle(DS.textMuted)
-                let facts = Vocabulary.titleFacts(year: model.info.year, genres: Vocabulary.genres(model.info.genres, language: env.services.appSettings.uiLanguage), runtime: model.info.runtime, rating: model.info.rating)
-                if !facts.isEmpty { Text(verbatim: Vocabulary.factLine(facts)).font(DS.font(.sm)).foregroundStyle(DS.textMuted) }
+                let language = env.services.appSettings.uiLanguage
+                let facts = [Strings.kind(model.kind, language: language)]
+                    + Vocabulary.titleFacts(year: model.info.year, genres: Vocabulary.genres(model.info.genres, language: language), runtime: model.info.runtime, rating: model.info.rating)
+                Text(verbatim: Vocabulary.factLine(facts)).recipe(.secondary, color: DS.onArtSecondary).lineLimit(2)
             }
         }
         .ignoresSafeArea(edges: .top)
@@ -93,13 +93,16 @@ struct TitleView: View {
                     .disabled(model.continueVideoID == nil)
                     .accessibilityLabel(Text("En la TV"))
             }
-            Button { Task { await model.toggleLibrary() } } label: { Image(systemName: model.inLibrary ? "checkmark" : "plus") }
-                .sensoryFeedback(.success, trigger: model.inLibrary)
-                .accessibilityLabel(Text("Mi lista")).accessibilityValue(model.inLibrary ? Text("En Mi lista") : Text(verbatim: ""))
+            // Mi lista vive en la rejilla de acciones; arriba, compartir (la ficha de IMDb, que abre en cualquier app).
+            if model.metaID.hasPrefix("tt"), let url = URL(string: "https://www.imdb.com/title/\(model.metaID)/") {
+                ShareLink(item: url, subject: Text(verbatim: model.title)) { Image(systemName: "square.and.arrow.up") }
+                    .accessibilityLabel(Text("Compartir"))
+            }
         }
     }
 
-    /// El botón principal (blanco) y, debajo, Descargar y Fuentes. Mi lista y En la TV están arriba, en la barra.
+    /// El botón principal (papel), a qué hora terminas y, debajo, las acciones secundarias en una rejilla (Mi lista,
+    /// Descargar, Fuentes). En la TV está arriba, en la barra.
     private func actions(_ model: TitleModel) -> some View {
         let label = model.continueLabel
         return VStack(spacing: DS.Space.s3) {
@@ -107,31 +110,32 @@ struct TitleView: View {
                 Label { primaryLabel(label, model).lineLimit(1) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
             }
             .dsPrimaryButton().controlSize(.large).disabled(model.continueVideoID == nil)
-            // Con letra de accesibilidad no caben dos en fila: van una debajo de otra, con su nombre completo.
-            let row = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: DS.Space.s2)) : AnyLayout(HStackLayout(spacing: DS.Space.s2))
-            row {
-                downloadButton(model)
-                secondary("Fuentes", symbol: "list.bullet") { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) } }
-                    .disabled(model.continueVideoID == nil)
+            if let minutes = model.minutesToFinish {
+                DataLine(parts: [Strings.endsAt(minutesLeft: minutes, now: env.services.now(), language: env.services.appSettings.uiLanguage)])
             }
+            ActionGrid(actions: [
+                ProjectionAction(id: "list", title: "Mi lista", symbol: model.inLibrary ? "checkmark" : "plus", active: model.inLibrary) { Task { await model.toggleLibrary() } },
+                downloadAction(model),
+                ProjectionAction(id: "sources", title: "Fuentes", symbol: "list.bullet", disabled: model.continueVideoID == nil) {
+                    if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
+                },
+            ])
         }
     }
 
     /// En una película dice cómo va su descarga; en una serie abre el menú (siguientes episodios, elegir fuente).
-    @ViewBuilder private func downloadButton(_ model: TitleModel) -> some View {
+    private func downloadAction(_ model: TitleModel) -> ProjectionAction {
         switch model.kind == "movie" ? model.downloadState(model.metaID) : nil {
-        case .done?: secondary("Descargado", symbol: "checkmark.circle.fill") { env.notify("Ya está descargado. Lo encuentras en Descargas.", tone: .info) }
+        case .done?:
+            return ProjectionAction(id: "download", title: "Descargado", symbol: "checkmark.circle", active: true) { env.notify("Ya está descargado. Lo encuentras en Descargas.", tone: .info) }
         case .downloading?, .queued?:
             let percent = model.downloadFraction(model.metaID).map { Int($0 * 100) }
-            secondary(percent.map { LocalizedStringKey("\($0) %") } ?? "Descargando", symbol: "arrow.down.circle.dotted") { env.notify("Descargando. Lo verás en Descargas.", tone: .info) }
-        default: secondary("Descargar", symbol: "arrow.down.circle") { downloadMenu = true }
+            return ProjectionAction(id: "download", title: percent.map { LocalizedStringKey("\($0) %") } ?? "Descargando", symbol: "arrow.down.circle.dotted", active: true) {
+                env.notify("Descargando. Lo verás en Descargas.", tone: .info)
+            }
+        default:
+            return ProjectionAction(id: "download", title: "Descargar", symbol: "arrow.down.circle") { downloadMenu = true }
         }
-    }
-
-    /// Una acción secundaria con su nombre (no solo el ícono): Descargar, Fuentes.
-    private func secondary(_ title: LocalizedStringKey, symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) { Label(title, systemImage: symbol).font(DS.font(.md)).lineLimit(1).frame(maxWidth: .infinity) }
-            .buttonStyle(.glass).buttonBorderShape(.roundedRectangle(radius: DS.Radius.lg)).controlSize(.large)
     }
 
     private func primaryLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> Text {
@@ -150,10 +154,15 @@ struct TitleView: View {
 
     @ViewBuilder private func episodes(_ model: TitleModel) -> some View {
         if model.seasons.count > 1 {
-            DSChipRow(items: model.seasons.map { SeasonChip(season: $0.season, isSpecials: $0.isSpecials) },
-                      label: { season in season.isSpecials ? Text("Especiales") : Text("Temporada \(season.season)") },
-                      selection: Binding(get: { SeasonChip(season: model.selectedSeason, isSpecials: model.selectedSeason == 0) }, set: { model.select(season: $0.season) }))
-                .padding(.horizontal, -DS.Space.gutter)
+            let chips = model.seasons.map { SeasonChip(season: $0.season, isSpecials: $0.isSpecials) }
+            let selection = Binding(get: { SeasonChip(season: model.selectedSeason, isSpecials: model.selectedSeason == 0) }, set: { model.select(season: $0.season) })
+            let label = { (season: SeasonChip) in season.isSpecials ? Text("Especiales") : Text("Temporada \(season.season)") }
+            // Hasta 4 temporadas caben como filtros a la vista; con más, un menú (como Apple TV y Netflix).
+            if chips.count <= DS.Size.seasonChipsMax {
+                DSChipRow(items: chips, label: label, selection: selection).padding(.horizontal, -DS.Space.gutter)
+            } else {
+                DSOptionMenu(items: chips, label: label, selection: selection)
+            }
         }
         VStack(spacing: 0) {
             ForEach(model.rows) { row in

@@ -162,6 +162,17 @@ public final class TitleModel: ObservableModel {
         return (resume, nil, nil)
     }
 
+    /// Minutos para acabar lo que pone el botón principal: lo que falta si vas a medias, si no la duración (de la película o
+    /// del episodio típico de la serie). nil si no se sabe. Con esto la ficha dice «terminas a las 23:21».
+    public var minutesToFinish: Int? {
+        guard continueVideoID != nil else { return nil }
+        let state = StremioLibrary.state(of: raw)
+        let duration = asInt(state["duration"]), offset = asInt(state["timeOffset"])
+        if continueLabel.isResume, duration > offset, offset > 0 { return max(1, PlaybackRules.minutesLeft(Double(duration - offset) / 1000)) }
+        let runtime = Int(CinemetaParsing.runtimeSeconds(info.runtime) / 60)
+        return runtime > 0 ? runtime : nil
+    }
+
     public func playRequest(videoID: String? = nil, fromStart: Bool = false) -> PlayRequest? {
         guard let video = videoID ?? continueVideoID else { return nil }
         var label = ""

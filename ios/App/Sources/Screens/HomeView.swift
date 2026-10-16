@@ -10,6 +10,7 @@ struct HomeView: View {
     @StateObject private var tint = ArtTint()
     @State private var pendingCount = 0
     @State private var openTitle: TitleRoute?
+    @State private var heroID: String?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init() {
@@ -40,12 +41,12 @@ struct HomeView: View {
                         .padding(.horizontal, DS.Space.gutter)
                         .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
                 }
-                if let first = model.continueWatching.first {
-                    hero(first)
+                if !model.continueWatching.isEmpty {
+                    heroCarousel(model)
                 } else if !model.isLoading {
                     DSNotice(text: "Aquí aparece lo que vas viendo, en el iPhone y en Orbital.").padding(.horizontal, DS.Space.gutter)
                 }
-                if model.continueWatching.count > 1 { alsoHad(model) }
+                if model.continueWatching.count > Self.heroCount { alsoHad(model) }
                 if !model.myList.isEmpty {
                     Rail(title: "Mi lista") {
                         ForEach(model.myList) { item in
@@ -80,7 +81,7 @@ struct HomeView: View {
         await home.model.refresh()
         let work = env.services.pending.load()      // una sola lectura por actualización, no una por cada pintado
         pendingCount = work.progress.count + work.traktWatched.count
-        await tint.load(home.model.continueWatching.first.flatMap { $0.background ?? $0.poster })
+        await tint.load(currentHero.flatMap { $0.background ?? $0.poster })
     }
 
     /// «Buenos días / Buenas tardes / Buenas noches», como en la consola: lo primero que se lee en Inicio.
@@ -99,33 +100,77 @@ struct HomeView: View {
 
     private func route(_ item: HomeItem) -> TitleRoute { TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster) }
 
+    /// Cuántos de «Seguir viendo» van en el carrusel del destacado; el resto, en «También tenías».
+    private static let heroCount = 3
+
+    /// El que está al frente del carrusel (el fondo toma su color).
+    private var currentHero: HomeItem? {
+        let items = home.model.continueWatching.prefix(Self.heroCount)
+        return items.first { $0.id == heroID } ?? items.first
+    }
+
+    /// «Seguir viendo»: un carrusel de destacados a sangre que se detiene en cada uno, con sus puntos; el fondo de la
+    /// pantalla toma el color del que está al frente.
+    private func heroCarousel(_ model: HomeModel) -> some View {
+        let items = Array(model.continueWatching.prefix(Self.heroCount))
+        return VStack(spacing: DS.Space.s3) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 0) {
+                    ForEach(items) { item in hero(item).containerRelativeFrame(.horizontal) }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollTargetBehavior(.paging)
+            .scrollPosition(id: $heroID)
+            PageDots(count: items.count, index: items.firstIndex { $0.id == (heroID ?? items.first?.id) } ?? 0)
+        }
+        .onChange(of: heroID) { Task { await tint.load(currentHero.flatMap { $0.background ?? $0.poster }) } }
+        .sensoryFeedback(.selection, trigger: heroID)
+    }
+
     private func hero(_ item: HomeItem) -> some View {
-        let detail = progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes)
         // La tarjeta abre la ficha con su propio toque; «Continuar» va aparte (un botón dentro de un NavigationLink puede
         // abrir la ficha en vez de reproducir).
-        return HeroCard(title: item.title, detail: detail, background: item.background ?? item.poster, logo: Artwork.logoURL(metaID: item.metaID),
-                        badge: item.nextUp ? "Sigue" : "Seguir viendo", progress: item.progress) {
-            continueButton(item)
+        HeroCard(title: item.title, background: item.background ?? item.poster, logo: Artwork.logoURL(metaID: item.metaID),
+                 eyebrow: item.nextUp ? Text("Sigue") : Text("Seguir viendo"), data: heroData(item), progress: item.progress) {
+            HStack(spacing: DS.Space.s3) {
+                continueButton(item)
+                if env.services.orbital.isConfigured {
+                    DSIconButton(symbol: "tv", label: "Ver en la TV") {
+                        Task { await env.playOnTV(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title) }
+                    }
+                }
+            }
         }
         .contentShape(Rectangle())
         .onTapGesture { openTitle = route(item) }
         .accessibilityAction(named: Text("Ver ficha")) { openTitle = route(item) }
     }
 
-    /// «También tenías»: lo demás de «Seguir viendo», en renglones (miniatura ancha, nombre y dato) como en la consola.
+    /// «T2 · E5 · quedan 20 min · terminas a las 23:21».
+    private func heroData(_ item: HomeItem) -> [String] {
+        let language = env.services.appSettings.uiLanguage
+        var parts: [String] = []
+        if let episode = item.episode { parts.append(Strings.episode(season: item.season, episode: episode, language: language)) }
+        if item.leftMinutes > 0 {
+            parts.append(Strings.timeLeft(minutes: item.leftMinutes, language: language))
+            parts.append(Strings.endsAt(minutesLeft: item.leftMinutes, now: env.services.now(), language: language))
+        }
+        return parts
+    }
+
+    /// «También tenías»: lo demás de «Seguir viendo», en piezas anchas con su avance.
     private func alsoHad(_ model: HomeModel) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "También tenías")
-            ForEach(model.continueWatching.dropFirst()) { item in
+        Rail(title: "También tenías") {
+            ForEach(model.continueWatching.dropFirst(Self.heroCount)) { item in
                 NavigationLink(value: route(item)) {
-                    RowTile(title: item.title, thumb: item.background ?? item.poster,
-                            detail: progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes), progress: item.progress)
+                    StillCard(title: item.title, art: item.background ?? item.poster,
+                              data: [progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes)], progress: item.progress)
                 }
                 .buttonStyle(.plain)
                 .contextMenu { Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { Task { await model.dismiss(item) } } }
             }
         }
-        .padding(.horizontal, DS.Space.gutter)
     }
 
     private func continueButton(_ item: HomeItem) -> some View {

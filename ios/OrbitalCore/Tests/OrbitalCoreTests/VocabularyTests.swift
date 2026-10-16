@@ -73,4 +73,10 @@ final class VocabularyTests: XCTestCase {
         let poster = "https://images.metahub.space/poster/medium/tt1/img"
         XCTAssertEqual(Artwork.variant(poster, pixels: 200), poster, "los pósters small se ven borrosos en un estante")
     }
+
+    func testEndTimeRoundsUpToTheNextMinute() {
+        let now = Date(timeIntervalSinceReferenceDate: 600 + 30)   // :10:30
+        XCTAssertEqual(Vocabulary.endTime(minutesLeft: 20, now: now).timeIntervalSinceReferenceDate, 600 + 20 * 60 + 60)
+        XCTAssertEqual(Vocabulary.endTime(minutesLeft: -5, now: now).timeIntervalSinceReferenceDate, 660)
+    }
 }

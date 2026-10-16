@@ -26,8 +26,33 @@ public final class CatalogModel: ObservableModel {
         error = (movies.failed && series.failed) ? "No pude leer el catálogo de Stremio. Revisa tu conexión." : nil
     }
 
-    private func rail(_ kind: String) async -> (items: [CatalogItem], failed: Bool) {
-        guard let metas = try? await services.cinemeta.catalog(kind) else { return ([], true) }
+    /// Los géneros de «Explora» (nombres de Cinemeta, en inglés: la pantalla los traduce con `Vocabulary.genres`).
+    public static let exploreGenres = ["Action", "Comedy", "Drama", "Sci-Fi", "Horror", "Thriller", "Animation", "Romance", "Crime", "Documentary"]
+
+    /// Lo más popular hoy, películas y series alternadas (la lista con puesto de Buscar).
+    public var popular: [CatalogItem] {
+        var out: [CatalogItem] = []
+        for i in 0..<max(movies.count, series.count) {
+            if i < movies.count { out.append(movies[i]) }
+            if i < series.count { out.append(series[i]) }
+        }
+        return out
+    }
+
+    /// Lo más popular de un género, películas y series alternadas.
+    public func genre(_ name: String) async -> [CatalogItem] {
+        async let m = rail("movie", genre: name), s = rail("series", genre: name)
+        let (movies, series) = await (m.items, s.items)
+        var out: [CatalogItem] = []
+        for i in 0..<max(movies.count, series.count) {
+            if i < movies.count { out.append(movies[i]) }
+            if i < series.count { out.append(series[i]) }
+        }
+        return out
+    }
+
+    private func rail(_ kind: String, genre: String? = nil) async -> (items: [CatalogItem], failed: Bool) {
+        guard let metas = try? await services.cinemeta.catalog(kind, genre: genre) else { return ([], true) }
         let top = Array(metas.prefix(30))
         let localized = await services.localizer.catalog(kind: kind, metas: top)
         return (zip(top, localized).compactMap { original, translated in

@@ -23,6 +23,13 @@ enum Strings {
         return String(format: tr("quedan %lld min", language: language), m)
     }
 
+    /// «terminas a las 23:21» / «ends at 11:21 PM»: la hora (en el formato del idioma de la app) en que acabarías si empiezas ahora.
+    static func endsAt(minutesLeft: Int, now: Date = Date(), language: String) -> String {
+        let end = Vocabulary.endTime(minutesLeft: minutesLeft, now: now)
+        let time = end.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(Locale(identifier: language)))
+        return String(format: tr("terminas a las %@", language: language), time)
+    }
+
     /// «Película» / «Serie» en el idioma de la app.
     static func kind(_ kind: String, language: String) -> String { tr(kind == "movie" ? "Película" : "Serie", language: language) }
 }

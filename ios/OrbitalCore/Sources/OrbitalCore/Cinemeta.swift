@@ -93,8 +93,10 @@ public actor Cinemeta {
 
     private func url(_ path: String, base: String? = nil) -> URL? { URL(string: (base ?? root.absoluteString) + path) }
 
-    public func catalog(_ kind: String) async throws -> [JSON] {
-        guard let url = url("/catalog/\(kind)/top.json") else { throw CinemetaError.unexpected }
+    /// Lo más popular (`top`), o lo más popular de un género de Cinemeta («Action», «Sci-Fi»: los nombres en inglés).
+    public func catalog(_ kind: String, genre: String? = nil) async throws -> [JSON] {
+        let path = genre.map { "/catalog/\(kind)/top/genre=\(uriComponent($0)).json" } ?? "/catalog/\(kind)/top.json"
+        guard let url = url(path) else { throw CinemetaError.unexpected }
         return CinemetaParsing.usable(try await get(url)["metas"]?.array)
     }
 

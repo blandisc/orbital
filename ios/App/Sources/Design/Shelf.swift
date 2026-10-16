@@ -43,11 +43,11 @@ struct Shelf<Content: View>: View {
             if let logo, !logo.isEmpty { DSPlatformLogo(url: logo) }
             else if let symbol { Image(systemName: symbol).font(DS.font(.md)).foregroundStyle(DS.textMuted).frame(width: DS.Space.s6).accessibilityHidden(true) }
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                title.font(DS.font(.lg, weight: .semibold)).foregroundStyle(DS.text).lineLimit(2).multilineTextAlignment(.leading)
-                if let meta { meta.font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(2).multilineTextAlignment(.leading) }
+                title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
+                if let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }
             }
             Spacer(minLength: DS.Space.s2)
-            if chevron { Image(systemName: "chevron.right").font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.textFaint).accessibilityHidden(true) }
+            if chevron { Image(systemName: "chevron.right").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.textMuted).accessibilityHidden(true) }
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)

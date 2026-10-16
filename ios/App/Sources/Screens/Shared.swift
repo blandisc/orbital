@@ -71,15 +71,20 @@ struct TitleLink: View {
 /// «2021 · Película» / «2005–2013 · Serie».
 func yearAndKind(year: String, kind: String) -> Text {
     let k = kind == "movie" ? Text("Película") : Text("Serie")
-    return year.isEmpty ? k : Text("\(year) · \(k)")
+    // «2026–» (una serie que sigue al aire) se queda en «2026»: el guion colgante parece un error.
+    let shown = year.trimmingCharacters(in: CharacterSet(charactersIn: "–- "))
+    return shown.isEmpty ? k : Text("\(shown) · \(k)")
 }
 
 /// El dato de una línea de una sugerencia, como `factLine` en la TV: «Serie · T2 · E5», «Película · 2026 · 1 h 45 min».
 /// Del más completo al más corto (`ViewThatFits` elige el que cabe); las reglas viven en `Vocabulary.factVariants`.
-@MainActor func factVariants(_ s: Suggestion) -> [Text] {
+@MainActor func factVariants(_ s: Suggestion) -> [Text] { factStrings(s).map { Text(verbatim: $0) } }
+
+/// Lo mismo, como texto (para `DataLine`).
+@MainActor func factStrings(_ s: Suggestion) -> [String] {
     let language = AppEnvironment.shared.services.appSettings.uiLanguage
     let next = s.next.map { episodeText(season: $0.season, episode: $0.episode) }
-    return Vocabulary.factVariants(kind: Strings.kind(s.kind, language: language), year: s.year, runtime: s.runtime, next: next).map { Text(verbatim: $0) }
+    return Vocabulary.factVariants(kind: Strings.kind(s.kind, language: language), year: s.year, runtime: s.runtime, next: next)
 }
 
 /// El dato de «Seguir viendo» con el mismo vocabulario que la consola: «T2 · E5 · quedan 20 min» (película: solo lo que queda).
