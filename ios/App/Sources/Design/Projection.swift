@@ -1,4 +1,5 @@
 import SwiftUI
+import OrbitalCore
 
 // Piezas de Proyección (el sistema visual del iPhone; ver docs/ios-interfaz.md y el canvas de diseño).
 // Todas se arman con tokens (`DS.*`) y recetas de texto (`DS.TextRecipe`); las pantallas solo las componen.
@@ -207,5 +208,42 @@ struct ArtTile: View {
         .frame(height: DS.Size.artTileHeight)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// Lo que suena en tu Orbital, en el accesorio de la barra de pestañas (como el MiniPlayer de Música): el póster, el nombre,
+/// «En la TV · T1 E5» y pausa / reanudar. Vive en toda la app mientras la TV reproduce algo.
+struct TVAccessory: View {
+    let now: OrbitalRemote.NowPlaying
+    var busy = false
+    let toggle: () -> Void
+    @Environment(\.tabViewBottomAccessoryPlacement) private var placement
+
+    var body: some View {
+        HStack(spacing: DS.Space.s3) {
+            PosterView(url: now.poster, title: now.title, aspect: 1).frame(width: DS.Size.accessoryArt).clipShape(Circle())
+            VStack(alignment: .leading, spacing: 0) {
+                Text(now.live ? (now.channel ?? now.title) : now.title).recipe(.cardTitle).lineLimit(1)
+                if placement != .inline {
+                    Text(now.live ? "En la TV · En vivo" : "En la TV").recipe(.footnote, color: DS.accent).lineLimit(1)
+                }
+            }
+            Spacer(minLength: DS.Space.s2)
+            if !now.live {
+                Button(action: toggle) { Image(systemName: now.paused ? "play.fill" : "pause.fill") }
+                    .buttonStyle(.plain).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+                    .disabled(busy)
+                    .accessibilityLabel(now.paused ? Text("Reanudar") : Text("Pausa"))
+            }
+        }
+        .padding(.horizontal, DS.Space.s3)
+        .accessibilityElement(children: .contain)
+    }
+}
+
+extension View {
+    /// El accesorio de la barra de pestañas solo mientras hay algo que enseñar (`isEnabled` es de iOS 26.1; en 26.0 no se pone).
+    @ViewBuilder func bottomAccessory<Content: View>(isEnabled: Bool, @ViewBuilder content: @escaping () -> Content) -> some View {
+        if #available(iOS 26.1, *) { tabViewBottomAccessory(isEnabled: isEnabled, content: content) } else { self }
     }
 }

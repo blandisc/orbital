@@ -1,6 +1,27 @@
 import Foundation
 import OrbitalCore
 
+/// Lo descargado de un mismo título (una película, o los episodios de una serie): un renglón en Descargas.
+public struct DownloadGroup: Identifiable, Equatable, Sendable {
+    public var id: String { metaID }
+    public var metaID: String, kind: String, title: String, poster: String?
+    public var items: [DownloadItem]
+    public var bytes: Int64 { items.reduce(0) { $0 + $1.writtenBytes } }
+
+    /// Agrupa por título en el orden en que llegaron (lo más reciente primero dentro de cada grupo se respeta tal cual).
+    public static func group(_ items: [DownloadItem]) -> [DownloadGroup] {
+        var order: [String] = [], groups: [String: DownloadGroup] = [:]
+        for item in items {
+            if groups[item.metaID] == nil {
+                order.append(item.metaID)
+                groups[item.metaID] = DownloadGroup(metaID: item.metaID, kind: item.kind, title: item.title, poster: item.poster, items: [])
+            }
+            groups[item.metaID]?.items.append(item)
+        }
+        return order.compactMap { groups[$0] }
+    }
+}
+
 @MainActor
 public final class DownloadsModel: ObservableModel {
     public private(set) var items: [DownloadItem] = [] { didSet { changed() } }
@@ -22,6 +43,8 @@ public final class DownloadsModel: ObservableModel {
 
     public var active: [DownloadItem] { items.filter { $0.state != .done } }
     public var ready: [DownloadItem] { items.filter { $0.state == .done } }
+    /// Lo listo para ver, agrupado por título (los episodios de una serie en un solo renglón).
+    public var readyGroups: [DownloadGroup] { DownloadGroup.group(ready) }
     public var usedBytes: Int64 { items.reduce(0) { $0 + $1.writtenBytes } }
 
     public func pause(_ id: String) async { await services.downloads.pause(id) }

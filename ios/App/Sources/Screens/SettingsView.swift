@@ -27,7 +27,7 @@ struct SettingsView: View {
                 Label("Stremio conectado", systemImage: "person.crop.circle.badge.checkmark")
                 Button("Cerrar sesión", role: .destructive) { confirmSignOut = true }
             }
-            .listRowBackground(DS.fill)
+            .listRowBackground(DS.surface)
             orbitalSection(model)
             addons
             traktSection(model)
@@ -37,7 +37,7 @@ struct SettingsView: View {
                 }
                 .pickerStyle(.segmented)
             }
-            .listRowBackground(DS.fill)
+            .listRowBackground(DS.surface)
             Section("Idioma") {
                 Picker("Idioma de la app y de las fichas", selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } })) {
                     Text("Español").tag("es"); Text("English").tag("en")
@@ -49,23 +49,23 @@ struct SettingsView: View {
                     Text("Chico").tag("small"); Text("Mediano").tag("medium"); Text("Grande").tag("large")
                 }
             }
-            .listRowBackground(DS.fill)
+            .listRowBackground(DS.surface)
             Section("Calidad") {
                 Picker("Con Wi‑Fi", selection: Binding(get: { s.quality }, set: { v in model.update { $0.quality = v } })) { qualityOptions }
                 Picker("Con datos móviles", selection: Binding(get: { s.cellularQuality }, set: { v in model.update { $0.cellularQuality = v } })) { qualityOptions }
             }
-            .listRowBackground(DS.fill)
+            .listRowBackground(DS.surface)
             Section("Descargas") {
                 Toggle("Descargar solo con Wi‑Fi", isOn: Binding(get: { s.wifiOnlyDownloads }, set: { v in model.update { $0.wifiOnlyDownloads = v } }))
                 Toggle("Bajar el siguiente episodio al terminar uno", isOn: Binding(get: { s.autoNextDownload }, set: { v in model.update { $0.autoNextDownload = v } }))
                 Toggle("Borrar al terminar de verlo", isOn: Binding(get: { s.deleteWhenWatched }, set: { v in model.update { $0.deleteWhenWatched = v } }))
             }
-            .listRowBackground(DS.fill)
+            .listRowBackground(DS.surface)
             Section("Reproductor") {
                 LabeledContent("Motor", value: PlayerEngines.aetherAvailable ? "AetherEngine" : "AVPlayer")
                 Toggle("Abrir siempre en Infuse", isOn: Binding(get: { s.preferInfuse }, set: { v in model.update { $0.preferInfuse = v } }))
             }
-            .listRowBackground(DS.fill)
+            .listRowBackground(DS.surface)
             Section("Sugerencias") {
                 Picker("País (para lo popular en plataformas)", selection: Binding(get: { s.region }, set: { v in model.update { $0.region = v } })) {
                     ForEach(["MX", "US", "ES", "AR", "CO", "CL", "PE"], id: \.self) { Text(verbatim: env.uiLocale.localizedString(forRegionCode: $0) ?? $0).tag($0) }
@@ -74,8 +74,9 @@ struct SettingsView: View {
                 if !tmdbKey.isEmpty { Button("Guardar clave de TMDB") { model.setTMDBKey(tmdbKey); tmdbKey = "" } }
                 Text("TMDB pone las fichas en español y busca lo popular en Netflix, Disney+ y HBO Max.").font(DS.font(.xs)).foregroundStyle(DS.textFaint)
             }
-            .listRowBackground(DS.fill)
+            .listRowBackground(DS.surface)
         }
+        .tint(DS.accent)   // interruptores, selectores y botones del formulario: el acento (lo interactivo)
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle("Ajustes").navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("¿Cerrar sesión de Stremio?", isPresented: $confirmSignOut, titleVisibility: .visible) {
@@ -106,7 +107,7 @@ struct SettingsView: View {
             TextField("Pegar la dirección de un complemento", text: $newAddon).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
             if !newAddon.isEmpty { Button("Agregar complemento") { Task { await session.model.addAddon(newAddon); if session.model.addonError == nil { newAddon = "" } } } }
         }
-        .listRowBackground(DS.fill)
+        .listRowBackground(DS.surface)
     }
 
     // MARK: tu Orbital (la TV)
@@ -148,7 +149,7 @@ struct SettingsView: View {
         } header: { Text("Tu Orbital (la TV)") } footer: {
             Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y tu Trakt y las claves de Para ti salen de ella.")
         }
-        .listRowBackground(DS.fill)
+        .listRowBackground(DS.surface)
     }
 
     // MARK: Trakt
@@ -187,7 +188,7 @@ struct SettingsView: View {
                 Button("Volver a intentar") { Task { await model.linkTrakt() } }
             }
         }
-        .listRowBackground(DS.fill)
+        .listRowBackground(DS.surface)
         .onAppear { model.refreshScrobble() }
     }
 

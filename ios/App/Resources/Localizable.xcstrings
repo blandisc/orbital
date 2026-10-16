@@ -45,6 +45,17 @@
         }
       }
     },
+    "%lld episodios": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld episodes"
+          }
+        }
+      }
+    },
     "Abrir Ajustes": {
       "extractionState": "manual",
       "localizations": {
@@ -826,6 +837,17 @@
         }
       }
     },
+    "Descarga inteligente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smart downloads"
+          }
+        }
+      }
+    },
     "Descargado": {
       "extractionState": "manual",
       "localizations": {
@@ -1530,6 +1552,17 @@
         }
       }
     },
+    "Listas para ver": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready to watch"
+          }
+        }
+      }
+    },
     "Listas para ver sin conexión": {
       "extractionState": "manual",
       "localizations": {
@@ -2032,6 +2065,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ used"
+          }
+        }
+      }
+    },
+    "Ocupan %@ · libres %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ used · %@ free"
           }
         }
       }

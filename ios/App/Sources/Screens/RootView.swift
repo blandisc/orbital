@@ -60,6 +60,7 @@ extension PlayRequest: @retroactive Identifiable { public var id: String { "\(me
 /// La barra de pestañas nativa: en iOS 26 es de vidrio (Liquid Glass) y se encoge al deslizar.
 struct MainTabs: View {
     @EnvironmentObject private var env: AppEnvironment
+    @StateObject private var tvNow = ModelObserver(AppEnvironment.shared.tvNow)
     @State private var tab: Int
     @State private var paths: [NavigationPath] = Array(repeating: NavigationPath(), count: 4)
 
@@ -83,6 +84,13 @@ struct MainTabs: View {
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
+        .bottomAccessory(isEnabled: tvNow.model.now != nil) {
+            if let now = tvNow.model.now {
+                TVAccessory(now: now, busy: tvNow.model.busy) { Task { await tvNow.model.control("toggle") } }
+                    .contentShape(Rectangle())
+                    .onTapGesture { openNowPlaying(now) }
+            }
+        }
         .tint(DS.accent)   // la pestaña elegida lleva el acento; dentro, los botones vuelven al papel
         .onAppear(perform: openDemoScreen)
         .onAppear(perform: openPendingTitle)
@@ -93,6 +101,13 @@ struct MainTabs: View {
         // aparecer y del `.task` de arriba: si en modo demo algo la cambia por detrás, se vuelve a pedir la tuya.
         .onChange(of: tab) { _, new in if Demo.isOn, new != Demo.tab { tab = Demo.tab } }
         #endif
+    }
+
+    /// Tocar el accesorio «En la TV» abre la ficha de lo que suena (en Inicio).
+    private func openNowPlaying(_ now: OrbitalRemote.NowPlaying) {
+        guard let metaID = now.metaID else { return }
+        tab = 0
+        paths[0].append(TitleRoute(kind: now.kind, metaID: metaID, title: now.title, poster: now.poster))
     }
 
     /// Una ficha pedida por un enlace (`orbital-ios://title`): se abre en Inicio, encima de lo que hubiera.

@@ -490,4 +490,17 @@ final class CatalogAndSourcesTests: XCTestCase {
         await second.model.begin(chosen)
         XCTAssertEqual(second.engine.loads.first?.url.absoluteString, "https://rd.example/other.mkv")
     }
+
+    func testReadyDownloadsAreGroupedByTitleInArrivalOrder() {
+        func item(_ meta: String, _ video: String, bytes: Int64) -> DownloadItem {
+            var d = DownloadItem(id: "\(meta)|\(video)", kind: "series", metaID: meta, videoID: video, title: meta, originalTitle: meta, subtitle: "", poster: nil,
+                                 addon: "", sourceIndex: 0, expectedBytes: nil, relativePath: "", createdAt: 0)
+            d.writtenBytes = bytes
+            return d
+        }
+        let groups = DownloadGroup.group([item("tt2", "a", bytes: 1), item("tt1", "b", bytes: 2), item("tt2", "c", bytes: 3)])
+        XCTAssertEqual(groups.map(\.metaID), ["tt2", "tt1"])
+        XCTAssertEqual(groups.first?.items.map(\.videoID), ["a", "c"])
+        XCTAssertEqual(groups.first?.bytes, 4)
+    }
 }

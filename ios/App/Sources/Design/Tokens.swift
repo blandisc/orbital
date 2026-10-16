@@ -154,6 +154,8 @@ enum DS {
         /// La cifra de un Top 10: enorme y pesada; no crece con Dynamic Type (es un adorno, el puesto ya se dice en la etiqueta).
         static var rankFont: Font { .system(size: rankNumber, weight: .black, design: .rounded) }
         static let logoHero = CGFloat(DesignTokens.Size.logoHero)
+        /// El arte redondo del accesorio «En la TV».
+        static let accessoryArt: CGFloat = 32
         /// El alto de un mosaico con arte (géneros de Explora).
         static let artTileHeight: CGFloat = 96
         /// Hasta cuántas temporadas se enseñan como filtros; con más, un menú.

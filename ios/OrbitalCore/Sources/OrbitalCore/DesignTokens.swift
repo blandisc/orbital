@@ -30,7 +30,7 @@ public enum DesignTokens {
         public var hex: (dark: String, light: String) {
             switch self {
             case .background: (palette["ink-950"]!, "#f6f5f1")
-            case .surface: (palette["ink-900"]!, "#ffffff")
+            case .surface: (palette["ink-850"]!, "#ffffff")
             case .surfaceRaised: (palette["ink-800"]!, "#ebe9e3")
             case .label: (palette["paper"]!, "#111113")
             case .secondaryLabel: (palette["ink-300"]!, "#5c5c64")

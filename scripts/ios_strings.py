@@ -20,6 +20,8 @@ OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
     # Proyección: modo claro y oscuro
+    "Descarga inteligente": "Smart downloads", "Listas para ver": "Ready to watch", "Ocupan %@ · libres %@": "%@ used · %@ free",
+    "%lld episodios": "%lld episodes", "En la TV": "On TV", "En la TV · En vivo": "On TV · Live", "Reanudar": "Resume", "Pausa": "Pause",
     "Buscar": "Search", "Compartir": "Share", "Explora": "Explore", "Lo más popular hoy": "Most popular today", "Películas y series": "Movies and series",
     "Sci-Fi": "Sci-Fi", "terminas a las %@": "ends at %@", "Nuevo": "New", "%lld de %lld": "%lld of %lld",
     "Apariencia": "Appearance", "Modo": "Mode", "Como el iPhone": "Match iPhone", "Claro": "Light", "Oscuro": "Dark",

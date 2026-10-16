@@ -480,14 +480,14 @@ struct TrackPanel: View {
             }
         } else {
             List {
-                Section { speed }.listRowBackground(DS.fill)
+                Section { speed }.listRowBackground(DS.surface)
                 audioSection
                 subtitleSection
                 Section("Más") {
                     Button("Otra fuente…", action: openSources)
                     Button { openInInfuse() } label: { Label("Abrir en Infuse", systemImage: "arrow.up.forward.app") }
                 }
-                .listRowBackground(DS.fill)
+                .listRowBackground(DS.surface)
             }
         }
     }
@@ -510,7 +510,7 @@ struct TrackPanel: View {
             }
             if snapshot.audioTracks.isEmpty { Text("Sin pistas de audio").foregroundStyle(DS.textMuted) }
         }
-        .listRowBackground(DS.fill)
+        .listRowBackground(DS.surface)
     }
 
     private var subtitleSection: some View {
@@ -521,7 +521,7 @@ struct TrackPanel: View {
                 row(TrackChooser.label(track, locale: locale), selected: snapshot.selectedSubtitle == track.id) { Task { await model.selectSubtitle(track.id) } }
             }
         }
-        .listRowBackground(DS.fill)
+        .listRowBackground(DS.surface)
     }
 
     private func row(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
