@@ -191,6 +191,9 @@ struct Mosaic: View {
     @State private var configuredIDs: Set<String> = []
 
     var body: some View {
+        #if DEBUG
+        let _ = MosaicBench.tick("Mosaic")
+        #endif
         GeometryReader { geo in
             let columnCount = Self.columnCount(width: geo.size.width, horizontalSizeClass: horizontalSizeClass)
             ZStack(alignment: .topLeading) {
@@ -242,6 +245,9 @@ struct Mosaic: View {
             }
         }
         .overlay { if runtime.isEmpty { ProgressView() } }
+        #if DEBUG
+        .task { await MosaicBench.runIfRequested(runtime) { c, r in withAnimation(DS.Motion.spring(reduceMotion)) { runtime.focusTile(col: c, row: r) } } }
+        #endif
         .onChange(of: runtime.current?.imdb, initial: true) { _, _ in onFocusChange?(runtime.current) }
         .task(id: idleToken) {
             guard runtime.mode == .focus, !reduceMotion else { return }
@@ -304,6 +310,9 @@ private struct MosaicTileCell: View {
     let onFocus: () -> Void
 
     var body: some View {
+        #if DEBUG
+        let _ = MosaicBench.tick("Tile")
+        #endif
         Group {
             if focused { NavigationLink(value: tile.item.route) { content } }
             else { Button(action: onFocus) { content } }

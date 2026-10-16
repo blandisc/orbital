@@ -56,6 +56,9 @@ enum Demo {
     /// `-demo-mosaic-focus 3`: en «Para ti» › Mosaico, enfoca esa sugerencia (su índice en `model.mosaic`) al abrir.
     static var mosaicFocus: Int? { value(after: "-demo-mosaic-focus").flatMap(Int.init) }
 
+    /// `-demo-mosaic-bench`: el mosaico se desplaza y cambia de foco solo (ver `MosaicBench`) e imprime los fotogramas.
+    static var mosaicBench: Bool { ProcessInfo.processInfo.arguments.contains("-demo-mosaic-bench") }
+
     /// Secretos de arranque: sesión iniciada y el complemento de demostración.
     static func secrets() -> InMemorySecrets {
         let secrets = InMemorySecrets()
