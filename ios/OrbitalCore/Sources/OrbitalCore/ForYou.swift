@@ -82,7 +82,11 @@ public struct Airing: Sendable, Equatable, Identifiable {
     /// Sale antes de las 6 de la mañana (lo de streaming): «Desde la madrugada» en vez de la hora.
     public var atDawn: Bool
     public var id: String { "\(series.imdb):\(Int(day.timeIntervalSince1970))" }
-    public var episodeLabel: String { count > 1 ? "T\(season) E\(first)–E\(last)" : "T\(season) E\(first)" }
+    /// Un episodio como lo escribe la TV en español («T2 E5»): lo que se usa si la interfaz no da otro.
+    public static let spanishEpisode: @Sendable (Int, Int) -> String = { "T\($0) E\($1)" }
+    public var episodeLabel: String { episodeLabel(Self.spanishEpisode) }
+    /// «T2 E4–E6» / «S2 E4–E6»: con cómo se escribe un episodio en el idioma de la app (`Services.episodeLabel`).
+    public func episodeLabel(_ episode: (Int, Int) -> String) -> String { count > 1 ? "\(episode(season, first))–E\(last)" : episode(season, first) }
 }
 
 public struct ForYouList: Sendable, Equatable, Identifiable {

@@ -8,6 +8,7 @@ struct TitleView: View {
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.colorScheme) private var scheme
     @StateObject private var observer: ModelObserver<TitleModel>
     @StateObject private var tint = ArtTint()
     @State private var sourcesFor: SourcesTarget?
@@ -27,14 +28,15 @@ struct TitleView: View {
                 hero(model)
                 VStack(alignment: .leading, spacing: DS.Space.s4) {
                     actions(model)
-                    if let message = model.message { DSNotice(text: env.message(message), tone: .error) }
+                    if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
                     if model.traktAvailable { watchlistToggle(model) }
-                    if let error = model.error, model.overview.isEmpty { DSNotice(text: env.message(error), tone: .warn) }
+                    if let error = model.error, model.overview.isEmpty { DSNotice(verbatim: env.message(error), tone: .warn) }
                     if !model.overview.isEmpty { Text(model.overview).font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted) }
                     if model.kind == "series" { episodes(model) }
                     credits(model)
                 }
                 .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s10)
+                .padding(.top, scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: las acciones no se le pegan
             }
         }
         .background(Backdrop(tint: tint.colors))

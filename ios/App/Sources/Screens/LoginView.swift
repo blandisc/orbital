@@ -35,7 +35,7 @@ struct LoginView: View {
                         .textContentType(.password).focused($focus, equals: .password).submitLabel(.go).onSubmit(signIn)
                         .padding(DS.Space.s3).background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
                 }
-                if case .failed(let message) = observer.model.state { DSNotice(text: AppEnvironment.shared.message(message), tone: .error) }
+                if case .failed(let message) = observer.model.state { DSNotice(verbatim: AppEnvironment.shared.message(message), tone: .error) }
                 Button(action: signIn) {
                     HStack { if observer.model.state == .signingIn { ProgressView() }; Text("Entrar") }.frame(maxWidth: .infinity)
                 }

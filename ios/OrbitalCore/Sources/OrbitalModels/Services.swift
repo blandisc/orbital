@@ -28,6 +28,8 @@ public final class Services: ObservableModel {
     public private(set) var downloads: Downloads { didSet { changed() } }
     /// Cómo se escribe «T2 · E5» en el idioma de la app (la interfaz lo cambia; por omisión, en español).
     public var episodeLabel: @Sendable (Int, Int) -> String = { "T\($0) · E\($1)" }
+    /// La etiqueta de episodio que manda la TV («T2 · E5», «Especial · E1», en español) en el idioma de la app.
+    public var tvEpisodeLabel: @Sendable (String) -> String = { $0 }
     /// Los textos del widget «Lo siguiente para ti» en el idioma de la app (la interfaz los cambia; por omisión, español).
     public var widgetLabels: WidgetLabels = .spanish
     /// Quién publica el snapshot del widget (la app: baja y reduce las imágenes, lo escribe en el App Group y recarga el widget).
@@ -41,7 +43,7 @@ public final class Services: ObservableModel {
         if let continueWatching { widgetContinue = continueWatching }
         if let airings { widgetAirings = airings }
         guard let publish = onWidgetSnapshot else { return }
-        let upcoming = WidgetSnapshot.upcoming(from: widgetAirings)
+        let upcoming = WidgetSnapshot.upcoming(from: widgetAirings, episode: episodeLabel)
         publish(WidgetSnapshot.make(continueWatching: widgetContinue, labels: widgetLabels, language: appSettings.uiLanguage,
                                     upcoming: upcoming.isEmpty ? nil : upcoming))
     }

@@ -399,13 +399,17 @@ struct DSIconButton: View {
 /// Un aviso corto con su color (sin conexión, error).
 struct DSNotice: View {
     enum Tone { case info, success, warn, error }
-    let text: LocalizedStringKey
+    let text: Text
     var tone: Tone = .info
+
+    init(text: LocalizedStringKey, tone: Tone = .info) { self.text = Text(text); self.tone = tone }
+    /// Un texto ya en el idioma de la app (un error o aviso traducido con `Strings.message`): tal cual, sin buscarlo otra vez.
+    init(verbatim: String, tone: Tone = .info) { self.text = Text(verbatim: verbatim); self.tone = tone }
 
     var body: some View {
         HStack(spacing: DS.Space.s2) {
             Image(systemName: symbol)
-            Text(text).font(DS.TextRecipe.footnote.font).multilineTextAlignment(.leading)
+            text.font(DS.TextRecipe.footnote.font).multilineTextAlignment(.leading)
             Spacer(minLength: 0)
         }
         .foregroundStyle(color)

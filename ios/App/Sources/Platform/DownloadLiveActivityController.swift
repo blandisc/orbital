@@ -8,6 +8,8 @@ import OrbitalCore
 final class DownloadLiveActivityController {
     private var activity: Activity<DownloadActivityAttributes>?
     private var last: DownloadActivityAttributes.ContentState?
+    /// El idioma de la app (Ajustes), para los textos de la actividad.
+    var language: () -> String = { "es" }
 
     func follow(_ downloads: Downloads) async {
         for await items in downloads.makeUpdates() { await update(items) }
@@ -23,8 +25,8 @@ final class DownloadLiveActivityController {
         let state = DownloadActivityAttributes.ContentState(
             title: current.subtitle.isEmpty ? current.title : "\(current.title) · \(current.subtitle)",
             fraction: expected > 0 ? min(1, Double(written) / Double(expected)) : 0,
-            remaining: pending.count, waiting: !pending.contains { $0.state == .downloading })
-        if let last, last.title == state.title, last.remaining == state.remaining, last.waiting == state.waiting,
+            remaining: pending.count, waiting: !pending.contains { $0.state == .downloading }, language: language())
+        if let last, last.title == state.title, last.remaining == state.remaining, last.waiting == state.waiting, last.language == state.language,
            abs(last.fraction - state.fraction) < 0.01 { return }
         last = state
         let content = ActivityContent(state: state, staleDate: nil)
@@ -36,7 +38,7 @@ final class DownloadLiveActivityController {
     private func finish(_ items: [DownloadItem]) async {
         guard let activity else { return }
         let done = items.filter { $0.state == .done }.max { ($0.finishedAt ?? 0) < ($1.finishedAt ?? 0) }
-        let final = DownloadActivityAttributes.ContentState(title: done?.title ?? last?.title ?? "", fraction: 1, remaining: 0, waiting: false)
+        let final = DownloadActivityAttributes.ContentState(title: done?.title ?? last?.title ?? "", fraction: 1, remaining: 0, waiting: false, language: language())
         await activity.end(ActivityContent(state: final, staleDate: nil), dismissalPolicy: .default)
         self.activity = nil; last = nil
     }

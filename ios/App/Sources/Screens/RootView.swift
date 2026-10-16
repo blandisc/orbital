@@ -154,7 +154,7 @@ struct BannerView: View {
 
     var body: some View {
         if let banner = env.banner {
-            DSNotice(text: env.message(banner.text), tone: banner.tone)
+            DSNotice(verbatim: banner.text, tone: banner.tone)
                 // Flota sobre la pantalla: vidrio de verdad, o el texto se mezcla con lo de abajo.
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
                 .padding(.horizontal, DS.Space.s4).padding(.bottom, DS.Space.s14 + DS.Space.s2)

@@ -290,7 +290,7 @@ struct PlayerScreen: View {
         case .preparing: VStack(spacing: DS.Space.s3) { ProgressView().tint(DS.text); Text(preparingText(model)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
         case .failed(let message):
             VStack(spacing: DS.Space.s4) {
-                DSNotice(text: env.message(message), tone: .error)
+                DSNotice(verbatim: env.message(message), tone: .error)
                 HStack { Button("Cerrar") { Task { await close() } }.buttonStyle(.glass); Button("Abrir en Infuse") { Task { await openInInfuse() } }.dsPrimaryButton() }
             }.padding(DS.Space.s6)
         default: if !controlsVisible, model.snapshot.state == .buffering || model.snapshot.state == .loading { ProgressView().tint(DS.text) }   // con controles, va en el centro
