@@ -87,4 +87,37 @@ final class OrbitalRemoteTests: XCTestCase {
         do { _ = try await remote.control(action: "toggle"); XCTFail() }
         catch { XCTAssertEqual((error as? OrbitalRemote.Failure)?.description, "No hay nada en la TV ahora mismo") }
     }
+
+    func testNowBringsTheInboxTheTVLeftForTheIPhone() async throws {
+        let http = FakeHTTP()
+        http.json["https://tv.example/api/companion/now"] = .object(["playing": .null, "inbox": .array([
+            .object(["id": "a1", "kind": "series", "meta_id": "tt1", "video_id": "tt1:2:5", "title": "The Office", "episode_label": "T2 · E5",
+                     "poster": "https://p", "action": "download", "at": .int(1_760_000_000)]),
+            .object(["id": "b2", "kind": "movie", "meta_id": "tt9", "video_id": "tt9", "title": "Dune", "episode_label": "", "poster": .null,
+                     "action": "open", "at": .double(1_760_000_001.5)]),
+            .object(["id": "x", "kind": "movie", "meta_id": "tt3", "action": "bailar"]),  // una acción que esta versión no conoce: se ignora
+        ])])
+        let snapshot = try await OrbitalRemote(http: http, address: "tv.example", token: "x").snapshot()
+        XCTAssertNil(snapshot.playing)
+        XCTAssertEqual(snapshot.inbox.map(\.id), ["a1", "b2"])
+        XCTAssertEqual(snapshot.inbox[0].action, .download)
+        XCTAssertEqual(snapshot.inbox[0].displayName, "The Office T2 · E5")
+        XCTAssertEqual(snapshot.inbox[1].displayName, "Dune")
+        XCTAssertEqual(snapshot.inbox[1].poster, nil)
+        // Una consola de una versión anterior no manda `inbox`: bandeja vacía, sin error.
+        http.json["https://tv.example/api/companion/now"] = .object(["playing": .null])
+        let old = try await OrbitalRemote(http: http, address: "tv.example", token: "x").snapshot()
+        XCTAssertTrue(old.inbox.isEmpty)
+    }
+
+    func testAckSendsTheIDs() async throws {
+        let http = FakeHTTP()
+        http.json["https://tv.example/api/companion/inbox/ack"] = .object(["removed": .int(2)])
+        let remote = OrbitalRemote(http: http, address: "tv.example", token: "x")
+        try await remote.ack(ids: ["a1", "b2"])
+        let sent = try XCTUnwrap(JSON.parse(try XCTUnwrap(http.bodies(for: "https://tv.example/api/companion/inbox/ack").first)))
+        XCTAssertEqual((sent["ids"]?.array ?? []).compactMap(\.string), ["a1", "b2"])
+        try await remote.ack(ids: [])  // nada que avisar: ni una petición
+        XCTAssertEqual(http.bodies(for: "https://tv.example/api/companion/inbox/ack").count, 1)
+    }
 }

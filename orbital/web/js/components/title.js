@@ -14,7 +14,7 @@ import { availability, episodeStates, titleActions, titleProgress } from "../cor
  *     con su barra, los que no se han estrenado atenuados con su fecha;
  *   · A ve (Orbital elige la mejor fuente y arranca) · Y elige la fuente · B vuelve.
  */
-export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () => {}, canPrefetch = () => false, onNotice = () => {} }) {
+export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {} }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
@@ -87,7 +87,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   }
 
   function renderActions() {
-    buttons = titleActions(details, { kind: kindOf(), title: item?.title });
+    buttons = titleActions(details, { kind: kindOf(), title: item?.title, phone: canSendPhone() });
     action = Math.min(action, Math.max(0, buttons.length - 1));
     mount(actions, buttons.map((b, i) => h("button", {
       class: ["title__action", b.primary && "title__action--primary", zone === "actions" && i === action && "title__action--focused"],
@@ -253,8 +253,15 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     else if (button.id === "restart") play(episodeById(button.video_id), { fromStart: true });
     else if (button.id === "sources") sources();
     else if (button.id === "mylist") toggleList();
+    else if (button.id.startsWith("phone-")) sendPhone(button.id.slice(6), episodeById(button.video_id));
     else if (button.id === "trailer") trailer();
     else if (button.id === "retry") load();
+  }
+
+  /** Al iPhone: la película, o el episodio enfocado en la lista (si no, el que sigue). */
+  function sendPhone(action, ep = null) {
+    const t = target(zone === "episodes" ? episode() : ep);
+    if (t) onSendPhone({ action, kind: t.kind, metaId: t.id, videoId: t.video_id, title: details?.title || item.title });
   }
 
   async function toggleList() {

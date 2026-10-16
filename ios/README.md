@@ -148,6 +148,33 @@ no sirve se oculta y queda un aviso para revisarlo en Ajustes.
 - Modo demo: `-demo-tv-now` enseña la tarjeta con una serie de mentira que avanza sola (y obedece los botones),
   para verla en el simulador sin tu Orbital.
 
+## Desde la TV
+
+Desde la TV (el panel Y «Más» del reproductor, la ficha y el menú Y de un video en «Seguir viendo») puedes mandarle algo
+al iPhone: **Enviar al iPhone** o **Descargar en el iPhone**. Solo aparece con un iPhone conectado (token y Tailscale).
+La consola lo deja en una bandeja (`state.json`, máximo 20, sin repetir el mismo título con la misma acción) y la manda
+dentro de la respuesta de `GET /api/companion/now` (`inbox: [...]`): el iPhone no hace una petición extra.
+
+- `InboxModel` (en `OrbitalModels`, con pruebas) atiende lo pendiente que trae `TVNowModel`:
+  - `download`: busca la fuente recomendada y la encola en `DownloadsModel`/`Downloads` por el mismo camino que el botón
+    Descargar de la ficha (`Services.queueDownload`). «Solo con Wi‑Fi» lo respeta la cola: si no hay Wi‑Fi espera. Aviso:
+    «Descargando The Office T2 · E5 (desde la TV)», con háptica.
+  - `open`: guarda un «Desde la TV» (sobrevive a cerrar la app) que Inicio enseña como tarjeta pequeña bajo «Viendo en
+    la TV», con Ver · Descargar · Descartar.
+- A la consola se le avisa (`POST /api/companion/inbox/ack {ids}`) **solo de lo que ya se atendió**. Si no se pudo (sin
+  red, los complementos no contestan) se queda en su bandeja y se reintenta en el siguiente sondeo; tras 3 intentos
+  se avisa en palabras. Si el aviso se pierde y la consola repite algo, no se descarga dos veces.
+- El sondeo es de toda la app (arranca en `RootView`), no de Inicio: una descarga mandada desde la TV arranca aunque
+  estés en otra pestaña.
+- **Segundo plano, mejor esfuerzo**: `InboxBackgroundTask` registra un `BGAppRefreshTask`
+  (`mx.iracheta.orbital.inbox`; `UIBackgroundModes` fetch y processing) que consulta la bandeja y encola descargas en la
+  sesión de fondo. **iOS decide si y cuándo corre** (puede tardar horas o no correr nunca, sobre todo con poca batería o si
+  casi no abres la app): lo seguro es abrir Orbital en el iPhone, donde se atiende al momento.
+- Modo demo: `-demo -demo-inbox download` (la descarga de prueba y el aviso) y `-demo -demo-inbox open` (la tarjeta
+  «Desde la TV» en Inicio).
+- Lo que solo se prueba con la consola y el iPhone reales: el botón en el panel del reproductor (mpv), que el iPhone esté
+  «conectado» de verdad (Tailscale) y que iOS despierte la tarea en segundo plano.
+
 ## Descargas: cómo se reanudan
 
 - **Pausa o corte de red**: se conserva lo bajado con los datos de reanudación de `URLSession` y se continúa mientras el enlace valga.

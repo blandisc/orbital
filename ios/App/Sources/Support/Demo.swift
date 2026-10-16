@@ -14,6 +14,10 @@ enum Demo {
     /// `-demo-tv-now`: la tarjeta «Viendo en la TV» con datos de mentira (para verla en el simulador).
     static var tvNow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tv-now") }
 
+    /// `-demo-inbox download|open`: tu Orbital de mentira dejó algo para el iPhone («Descargar en el iPhone» o «Enviar al iPhone»):
+    /// con `download` se ve la descarga de prueba y el aviso; con `open`, la tarjeta «Desde la TV» en Inicio.
+    static var inbox: String? { value(after: "-demo-inbox") }
+
     private static func value(after flag: String) -> String? {
         let args = ProcessInfo.processInfo.arguments
         guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
@@ -81,12 +85,13 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     private var nowPlayingPosition = 420.0
     private var nowPlayingTicked = Date()
     private var nowPlayingPaused = false
+    private var inboxAcked = false
 
     func send(_ request: HTTPRequest) async throws -> HTTPResponse {
         let url = request.url
         if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
         if url.host == "demo.orbital.invalid" { return addon(url.path) }
-        if url.host == "tv.demo.invalid", Demo.tvNow, url.path.hasPrefix("/api/companion/") {
+        if url.host == "tv.demo.invalid", Demo.tvNow || Demo.inbox != nil, url.path.hasPrefix("/api/companion/") {
             return lock.withLock { nowPlaying(path: url.path, body: request.body.flatMap(JSON.parse)) }
         }
         if url.host == "tv.demo.invalid" {
@@ -142,11 +147,28 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             default: break
             }
         }
+        if path == "/api/companion/inbox/ack" {
+            inboxAcked = true
+            return HTTPResponse(status: 200, data: JSON.object(["removed": .int(1)]).serialized())
+        }
+        // La bandeja de mentira: lo que «dejó» la TV, hasta que la app avisa que ya lo atendió.
+        var inbox: [JSON] = []
+        if let action = Demo.inbox, !inboxAcked {
+            let open = action == "open"
+            inbox = [.object(["id": "demo-inbox", "kind": .string(open ? "movie" : "series"), "meta_id": .string(open ? "tt1160419" : "tt0386676"),
+                              "video_id": .string(open ? "tt1160419" : "tt0386676:2:5"), "title": .string(open ? "Dune" : "The Office"),
+                              "episode_label": .string(open ? "" : "T2 · E5"),
+                              "poster": .string("https://images.metahub.space/poster/medium/\(open ? "tt1160419" : "tt0386676")/img"),
+                              "action": .string(open ? "open" : "download"), "at": .double(Date().timeIntervalSince1970)])]
+        }
+        guard Demo.tvNow else {
+            return HTTPResponse(status: 200, data: JSON.object(["playing": .null, "inbox": .array(inbox)]).serialized())
+        }
         let playing: JSON = .object(["kind": .string("series"), "live": .bool(false), "meta_id": .string("tt0386676"),
                                      "video_id": .string("tt0386676:2:5"), "title": .string("The Office"),
                                      "episode_label": .string("T2 · E5"), "poster": .string("https://images.metahub.space/poster/medium/tt0386676/img"),
                                      "position": .double(nowPlayingPosition), "duration": .double(Self.nowPlayingDuration), "paused": .bool(nowPlayingPaused)])
-        return HTTPResponse(status: 200, data: JSON.object(["playing": playing]).serialized())
+        return HTTPResponse(status: 200, data: JSON.object(["playing": playing, "inbox": .array(inbox)]).serialized())
     }
 
     private func ok(_ result: JSON) -> HTTPResponse { HTTPResponse(status: 200, data: JSON.object(["result": result]).serialized()) }

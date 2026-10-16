@@ -10,6 +10,10 @@ final class AppEnvironment: ObservableObject {
     let transport: BackgroundDownloadTransport
     /// Una sola sesión para toda la app (la pantalla de Ajustes y la raíz ven el mismo estado al cerrar sesión).
     private(set) var session: SessionModel!
+    /// «Viendo en la TV» y lo que la TV le deja al iPhone («Enviar» / «Descargar en el iPhone»): un solo sondeo para toda la app,
+    /// no uno por pantalla (así una descarga mandada desde la TV arranca aunque estés en otra pestaña).
+    private(set) var tvNow: TVNowModel!
+    private(set) var inbox: InboxModel!
     private var servicesSubscription: ObservableModel.Subscription?
     let connectivity = Connectivity.shared
     private let liveActivity = DownloadLiveActivityController()
@@ -51,6 +55,10 @@ final class AppEnvironment: ObservableObject {
         // Cambiar el idioma (o una clave) vuelve a pintar toda la app.
         servicesSubscription = services.onChange { [weak self] in self?.objectWillChange.send() }
         session = SessionModel(services)
+        inbox = InboxModel(services)
+        tvNow = TVNowModel(services)
+        tvNow.inbox = inbox
+        inbox.onEvent = { [weak self] event in self?.announce(event) }
         Task { await services.downloads.start() }
         Task { await liveActivity.follow(services.downloads) }
     }
@@ -71,6 +79,29 @@ final class AppEnvironment: ObservableObject {
             kv: UserDefaultsKeyValueStore(), pending: FilePendingStore(url: AppFiles.pendingWork), downloadTransport: transport,
             downloadsRoot: AppFiles.downloadsRoot, savedDownloads: DownloadIndex.load(), freeSpace: { DiskSpace.freeBytes() },
             onDownloadsChange: { DownloadIndex.save($0) })
+    }
+
+    /// El aviso (con háptica, por el tono del aviso) de lo que pasó con lo que mandó la TV.
+    private func announce(_ event: InboxModel.Event) {
+        let language = services.appSettings.uiLanguage
+        func line(_ key: String, _ name: String) -> String { String(format: Strings.tr(key, language: language), name) }
+        switch event {
+        case .downloading(let name): notify(line("Descargando %@ (desde la TV)", name), tone: .success)
+        case .received(let name): notify(line("Desde la TV: %@", name), tone: .info)
+        case .downloadFailed(let name, let reason):
+            switch reason {
+            case .noSources: notify(line("No encontré una fuente para descargar %@ (desde la TV)", name))
+            case .notEnoughSpace: notify(line("No hay espacio para descargar %@ (desde la TV)", name))
+            case .other: notify(line("No pude descargar %@ (desde la TV)", name))
+            }
+        }
+    }
+
+    /// En segundo plano (iOS lo permite cuando quiere): se mira lo que dejó la TV y se encolan las descargas, que siguen en la
+    /// sesión de fondo. Lo seguro es abrir la app; esto es de mejor esfuerzo.
+    func checkTVInbox() async {
+        guard services.orbital.isConfigured, let snapshot = try? await services.orbital.snapshot() else { return }
+        await inbox.process(snapshot.inbox)
     }
 
     var uiLocale: Locale { Locale(identifier: services.appSettings.uiLanguage) }
@@ -145,17 +176,32 @@ final class AppEnvironment: ObservableObject {
 
     /// Un título desde Inicio: reproduce directo donde ibas.
     func play(_ item: HomeItem) async {
-        guard let videoID = item.videoID, let meta = try? await services.cinemeta.meta(kind: item.kind, id: item.metaID) else { return notify("No pude abrir ese título.") }
         var label = ""
         if let episode = item.episode { label = Strings.episode(season: item.season, episode: episode, language: services.appSettings.uiLanguage) }
-        let request = PlayRequest(kind: item.kind, metaID: item.metaID, videoID: videoID, originalTitle: item.originalTitle, displayTitle: item.title,
-                                  episodeLabel: label, poster: item.poster, meta: meta)
+        await play(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title, originalTitle: item.originalTitle, episodeLabel: label, poster: item.poster)
+    }
+
+    /// «Ver» en la tarjeta «Desde la TV»: lo mismo, con lo que mandó la consola.
+    func play(_ item: OrbitalRemote.InboxItem) async {
+        await play(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title, originalTitle: item.title, episodeLabel: item.episodeLabel, poster: item.poster)
+    }
+
+    private func play(kind: String, metaID: String, videoID: String?, title: String, originalTitle: String, episodeLabel: String, poster: String?) async {
+        guard let videoID, let meta = try? await services.cinemeta.meta(kind: kind, id: metaID) else { return notify("No pude abrir ese título.") }
+        let request = PlayRequest(kind: kind, metaID: metaID, videoID: videoID, originalTitle: originalTitle, displayTitle: title,
+                                  episodeLabel: episodeLabel, poster: poster, meta: meta)
         if services.appSettings.preferInfuse { await playExternal(request) } else { play(request) }
     }
 }
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
     static var orientations: UIInterfaceOrientationMask = .portrait
+
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // Se registra antes de que termine de arrancar la app (lo exige iOS).
+        InboxBackgroundTask.register()
+        return true
+    }
 
     func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask { Self.orientations }
 

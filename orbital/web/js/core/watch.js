@@ -31,7 +31,7 @@ export function titleProgress(details) {
  * Botones de la ficha. El primero es lo más probable y lleva el foco:
  * "Continuar T3 E5" si ibas a medias, "Ver T3 E6" si terminaste el anterior, "Ver" si es nueva.
  */
-export function titleActions(details, { kind = "movie" } = {}) {
+export function titleActions(details, { kind = "movie", phone = false } = {}) {
   if (!details) return [];
   if (details.error) return [{ id: "retry", label: "Reintentar", icon: "refresh", primary: true }];
   const resume = details.resume;
@@ -61,6 +61,11 @@ export function titleActions(details, { kind = "movie" } = {}) {
   // Una serie sin episodios (ni uno en el que ibas) no tiene fuente que elegir: el botón no hacía nada.
   const playable = (details.kind || kind) !== "series" || resume?.video_id || (details.seasons || []).some((s) => s.episodes?.length);
   if (playable) out.push({ id: "sources", icon: "swap", label: "Elegir fuente" });
+  // Solo con un iPhone conectado (si no, ni aparecen): el episodio que sigue o el enfocado.
+  if (playable && phone) {
+    out.push({ id: "phone-open", icon: "phone", label: "Enviar al iPhone" },
+      { id: "phone-download", icon: "download", label: "Descargar en el iPhone" });
+  }
   return out;
 }
 

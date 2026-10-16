@@ -142,6 +142,8 @@ class OrbitalPlayer(PlayerScreen):
         self.episodes_provider = None  # (meta) -> [{"id", "label", "current", "progress"?}] de la temporada
         self.on_play_episode = None  # (meta, id_del_episodio): ver ese episodio
         self.on_sub_scale = None  # (escala): para recordarla
+        self.iphone_provider = None  # () -> bool: ¿hay iPhone conectado? (Y › «Enviar al iPhone»)
+        self.on_send_iphone = None  # (meta, "open" | "download") -> aviso en palabras (o lanza ValueError con el motivo)
         self.on_language = None  # (meta, "audio" | "subtitles", código): el idioma que elegiste
         # TV en vivo (ver tv.py): el reproductor solo pregunta y avisa, no sabe de listas ni de salud.
         self.channels_provider = None  # (meta, categoría | None) -> {"category", "categories", "channels"}

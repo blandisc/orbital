@@ -210,8 +210,11 @@ class PlayerScreen:
         episodes = self._safe(self.episodes_provider, meta) if self.episodes_provider and meta.get("kind") == "series" else None
         sources = self._safe(self.sources_provider, meta) if self.sources_provider and self.current else None
         if still_wanted() and self.current is not None:  # mientras buscaba pulsaste otra cosa: no aparece de golpe
+            # «Enviar al iPhone» solo con iPhone conectado y con una película o serie (no con la TV en vivo).
+            iphone = bool(self.on_send_iphone and self.iphone_provider and meta.get("meta_id") and not meta.get("live")
+                          and self._safe(self.iphone_provider))
             self._open_panel(player_ui.more_panel(episodes=episodes or None, sources=sources or None,
-                                                  back_to=getattr(self, "_restart_from", None)))
+                                                  back_to=getattr(self, "_restart_from", None), iphone=iphone))
 
     def _open_more_soon(self) -> None:
         """Y: las fuentes se buscan por internet (hasta segundos). Se buscan aparte: el mando (el mismo
@@ -283,6 +286,9 @@ class PlayerScreen:
                 self.toast(f"Desde el principio · Y › Volver a {player_ui.clock(position)}", 4)
             self.mpv.command("seek", 0, "absolute")
             self.show_hud()
+        elif prop == "iphone":
+            if self.on_send_iphone and meta.get("meta_id"):
+                self._in_background(self._send_iphone, meta, value, failed="No pude mandarlo al iPhone")
         elif prop == "resume-at":
             self._restart_from = None
             self.mpv.command("seek", float(value), "absolute")
@@ -307,6 +313,12 @@ class PlayerScreen:
                 lang = "" if value == "no" else option.get("lang")
                 if lang is not None:
                     self._safe(self.on_language, meta, "audio" if prop == "aid" else "subtitles", lang)
+
+    def _send_iphone(self, meta: dict, action: str) -> None:
+        try:
+            self.toast(self.on_send_iphone(meta, action) or "Listo", 5)
+        except ValueError as exc:  # sin iPhone o sin internet: en palabras, nunca un error crudo
+            self.toast(str(exc), 4)
 
     def _fetch_subs(self, lang: str) -> None:
         try:

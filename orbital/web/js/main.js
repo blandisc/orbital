@@ -107,6 +107,8 @@ const ui = {
     onPlay: (play) => watch(play),
     onSources: (play) => openSources(play),
     canPrefetch: () => state.stremioLinked,
+    canSendPhone: () => state.phone,
+    onSendPhone: (send) => sendToPhone(send),
     onNotice: (message, error = false) => { sound.play(error ? "error" : "select"); ui.toast.show(message, { error }); },
     onMove: () => { sound.play("move"); renderHints(); },
     onChange: () => renderHints(),
@@ -189,6 +191,28 @@ let loginFrom = null;
 let captureFrom = null; // { options, first }: de qué lista de Capturas vienes
 let traktFrom = null;
 let phoneFrom = null;
+
+/** ¿Hay un iPhone conectado? Solo entonces la ficha y el menú Y ofrecen «Enviar» y «Descargar en el iPhone». */
+async function refreshPhone() {
+  try {
+    state.phone = !!(await api.companionPhone()).ready;
+  } catch {
+    state.phone = false;
+  }
+}
+
+/** «Enviar al iPhone» / «Descargar en el iPhone»: la consola lo deja en su bandeja y dice, en palabras, qué pasará. */
+async function sendToPhone({ action, kind, metaId, videoId }) {
+  try {
+    const res = await api.companionSend(action, kind, metaId, videoId);
+    sound.play("select");
+    ui.toast.show(res.message);
+  } catch (err) {
+    sound.play("error");
+    ui.toast.show(err.message, { error: true });
+    refreshPhone(); // si ya no hay iPhone, las opciones se van
+  }
+}
 /** La hoja de Cuentas en la que estabas (abriste la clave desde ahí, o desde «Cambiar»). */
 function accountsAt(context) {
   if (!context) return null;
@@ -463,7 +487,7 @@ function gamesActivate(target, action = "select") {
   if (target.kind === "filter") { sound.play("select"); return ui.games.setFilter(target.value); }
   if (target.kind === "rail") return handleGames("right"); // A en el riel: a las portadas de esa consola
   const item = target.item;
-  if (action === "options") return openMenu(gameMenu(item, { running: state.running }));
+  if (action === "options") return openMenu(gameMenu(item, { running: state.running, phone: state.phone }));
   if (action === "alt") {
     const alt = alternativeRunner(item);
     if (alt) return launch(item, alt.id);
@@ -533,7 +557,7 @@ function homeActivate(target, action = "select") {
     return goToSection("games", 1);
   }
   const item = target.item;
-  if (action === "options") return openMenu(gameMenu(item, { running: state.running }));
+  if (action === "options") return openMenu(gameMenu(item, { running: state.running, phone: state.phone }));
   if (action === "alt") {
     if (isWatchable(item)) return openTitle(item);
     const alt = alternativeRunner(item);
@@ -788,6 +812,8 @@ async function runCommand(command, context = null) {
         ui.toast.show(res.found ? "Listo: imagen nueva" : "No encontré otra; queda una de respaldo");
         return loadLibrary({ keepId: command.id });
       }
+      case "phone-send":
+        return sendToPhone(command);
       case "mylist":
         await api.setInLibrary(command.kind, command.metaId, command.add);
         sound.play("select");
@@ -1080,7 +1106,7 @@ function handleAction(action, { repeat = false } = {}) {
       sound.play("error"); // X sin nada que hacer: un "no" suave en vez de silencio
       return rumble("edge");
     }
-    case "options": return openMenu(gameMenu(item, { running: state.running }));
+    case "options": return openMenu(gameMenu(item, { running: state.running, phone: state.phone }));
     case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));
     case "back":
     case "home": // B: al principio de la sección; si ya estás ahí, a la sección Inicio
@@ -1238,6 +1264,8 @@ setInterval(pollStatus, 60_000); // red de seguridad: el estado llega por SSE al
 setInterval(pollSystem, 30_000);
 pollStatus();
 pollSystem();
+refreshPhone();
+setInterval(refreshPhone, 60_000); // si enciendes Tailscale o conectas el iPhone, las opciones aparecen solas
 loadLibrary();
 api.settings().then(applySettings).catch(() => {});
 api.ui().then(({ can_exit: canExit, stremio_linked: linked, player, alexa }) => {

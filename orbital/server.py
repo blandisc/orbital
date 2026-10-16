@@ -244,9 +244,36 @@ class CompanionPlayerAction(BaseModel):
     delta: float | None = None  # "skip": segundos (±10, ±30)
 
 
+class CompanionSend(BaseModel):
+    action: str  # "open" (abrirlo en el iPhone) | "download" (descargarlo en el iPhone)
+    kind: str  # "movie" | "series"
+    meta_id: str
+    video_id: str | None = None  # el episodio (si falta, el que sigue)
+
+
+class CompanionAck(BaseModel):
+    ids: list[str] = []
+
+
 def _companion_routes(app: FastAPI, config: Config) -> None:
-    """«Conectar iPhone» en la TV: el QR (solo en el puerto local, el de la consola)."""
+    """«Conectar iPhone» en la TV: el QR y «Enviar/Descargar en el iPhone» (solo en el puerto local, el de la consola)."""
     from fastapi.responses import Response
+
+    @app.get("/api/companion/phone")
+    def phone() -> dict:
+        """¿Hay iPhone conectado? (la TV solo ofrece «Enviar al iPhone» si sí)."""
+        return {"ready": companion.phone_ready(config)}
+
+    @app.post("/api/companion/send")
+    def send_to_phone(body: CompanionSend) -> dict:
+        try:
+            item = companion.send_to_phone(app.state.catalog.watch, config, body.action[:20], body.kind[:20], body.meta_id[:80],
+                                           body.video_id[:120] if body.video_id else None)
+        except companion.PhoneNotConnected as exc:
+            raise HTTPException(409, str(exc))
+        except ValueError as exc:
+            raise HTTPException(409, str(exc))
+        return {"item": item, "message": companion.SENT_TOAST[item["action"]]}
 
     @app.get("/api/companion/pair")
     def pair() -> dict:
@@ -340,7 +367,14 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     @public.get("/api/companion/now")
     def companion_now() -> dict:
         """«Viendo en la TV» del iPhone: qué se ve ahora (o `null` si no hay nada abierto)."""
-        return {"playing": companion.now_playing(main_app.state.catalog)}
+        # Lo que la TV le dejó al iPhone («Enviar» / «Descargar en el iPhone») viaja aquí: ni una petición de más.
+        catalog = main_app.state.catalog
+        return {"playing": companion.now_playing(catalog), "inbox": companion.inbox_pending(catalog.state)}
+
+    @public.post("/api/companion/inbox/ack")
+    def companion_inbox_ack(body: CompanionAck) -> dict:
+        """El iPhone ya actuó sobre estos pendientes: se quitan de la bandeja."""
+        return {"removed": companion.inbox_ack(main_app.state.catalog.state, body.ids)}
 
     @public.post("/api/companion/player")
     def companion_player(body: CompanionPlayerAction) -> dict:

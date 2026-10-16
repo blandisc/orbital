@@ -74,3 +74,14 @@ test("serie sin episodios: sin «Elegir fuente» (no había nada que elegir)", (
   assert.deepEqual(titleActions({ kind: "series", seasons: [], resume: null }).map((a) => a.id), ["mylist"]);
   assert.ok(titleActions({ kind: "series", seasons, resume: null }).some((a) => a.id === "sources"));
 });
+
+test("ficha: «Enviar al iPhone» y «Descargar en el iPhone» solo con un iPhone conectado", () => {
+  const movie = { kind: "movie", resume: null };
+  assert.ok(!titleActions(movie).some((a) => a.id.startsWith("phone-")));
+  assert.deepEqual(titleActions(movie, { phone: true }).map((a) => a.label),
+    ["Ver", "Mi lista", "Elegir fuente", "Enviar al iPhone", "Descargar en el iPhone"]);
+  assert.deepEqual(titleActions(movie, { phone: true }).slice(-2).map((a) => a.id), ["phone-open", "phone-download"]);
+  // Una serie sin episodios no tiene qué mandar; con error, solo Reintentar.
+  assert.ok(!titleActions({ kind: "series", seasons: [], resume: null }, { phone: true }).some((a) => a.id.startsWith("phone-")));
+  assert.deepEqual(titleActions({ error: true }, { phone: true }).map((a) => a.id), ["retry"]);
+});

@@ -219,3 +219,50 @@ struct NowPlayingCard: View {
         onAction(action, delta)
     }
 }
+
+/// «Desde la TV»: lo que mandaste con «Enviar al iPhone», en una tarjeta pequeña bajo «Viendo en la TV».
+/// Ver abre el video donde ibas, Descargar lo guarda en el iPhone y Descartar la quita. Con letra de accesibilidad grande los botones se apilan.
+struct FromTVCard: View {
+    let item: OrbitalRemote.InboxItem
+    let onWatch: () -> Void
+    let onDownload: () -> Void
+    let onDismiss: () -> Void
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            Label("Desde la TV", systemImage: "tv")
+                .font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.textMuted)
+            HStack(alignment: .center, spacing: DS.Space.s3) {
+                PosterView(url: item.poster, title: item.title, aspect: DS.Poster.aspect).frame(width: DS.Poster.nowPlayingWidth)
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    Text(item.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
+                    if !item.episodeLabel.isEmpty {
+                        Text(item.episodeLabel).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: DS.Space.s2) { buttons }
+            } else {
+                HStack(spacing: DS.Space.s2) { buttons }
+            }
+        }
+        .padding(DS.Space.s3)
+        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .accessibilityElement(children: .contain)
+    }
+
+    @ViewBuilder private var buttons: some View {
+        Button(action: onWatch) { Label("Ver", systemImage: "play.fill").lineLimit(1) }.dsPrimaryButton().controlSize(.large)
+        if dynamicTypeSize.isAccessibilitySize {
+            Button(action: onDownload) { Label("Descargar", systemImage: "arrow.down.circle") }.buttonStyle(.glass).controlSize(.large)
+            Button(action: onDismiss) { Label("Descartar", systemImage: "xmark") }.buttonStyle(.glass).controlSize(.large)
+        } else {
+            // Dos íconos con su nombre para VoiceOver: con el texto no caben en un renglón (se cortaban en «Desc…»).
+            DSIconButton(symbol: "arrow.down.circle", label: "Descargar", prominent: false, action: onDownload).controlSize(.large)
+            DSIconButton(symbol: "xmark", label: "Descartar", prominent: false, action: onDismiss).controlSize(.large)
+        }
+    }
+}

@@ -188,27 +188,17 @@ public final class TitleModel: ObservableModel {
     /// Descarga uno o varios episodios con la fuente que mejor sirve para guardar (1080p, moderada).
     @discardableResult
     public func download(_ videoIDs: [String]) async -> DownloadOutcome {
-        let settings = services.appSettings
-        let langs = services.titlePrefs.languages(for: metaID, settings: settings)
         var queued = 0
         for video in videoIDs {
-            do {
-                guard let source = try await services.finder.best(kind: kind, videoID: video, prefs: langs.prefs, purpose: .download), let url = source.playbackURL else {
-                    if queued == 0 { return .noSources } else { continue }
-                }
-                var label = ""
-                if let found = episode(video) { label = services.episodeLabel(found.0, found.1.episode) + (found.1.hasTitle ? " · \(found.1.title)" : "") }
-                let item = DownloadItem(id: DownloadItem.makeID(metaID: metaID, videoID: video), kind: kind, metaID: metaID, videoID: video, title: title, originalTitle: originalTitle,
-                                        subtitle: label, poster: poster, addon: source.addon, release: source.release, sourceIndex: source.index, expectedBytes: source.size > 0 ? Int64(source.size) : nil,
-                                        relativePath: DownloadFiles.relativePath(metaID: metaID, videoID: video, ext: DownloadFiles.fileExtension(for: url)),
-                                        createdAt: Date().timeIntervalSince1970)
-                try await services.downloads.enqueue(item, url: url)
-                queued += 1
-            } catch let error as DownloadError {
-                if case .alreadyDownloaded = error { if videoIDs.count == 1 { return .already } else { continue } }
-                if case .notEnoughSpace = error { return .notEnoughSpace(error.description) }
-                return .failed(error.description)
-            } catch { return .failed("\(error)") }
+            var label = ""
+            if let found = episode(video) { label = services.episodeLabel(found.0, found.1.episode) + (found.1.hasTitle ? " · \(found.1.title)" : "") }
+            switch await services.queueDownload(kind: kind, metaID: metaID, videoID: video, title: title, originalTitle: originalTitle, subtitle: label, poster: poster) {
+            case .queued: queued += 1
+            case .noSources: if queued == 0 { return .noSources } else { continue }
+            case .already: if videoIDs.count == 1 { return .already } else { continue }
+            case .notEnoughSpace(let message): return .notEnoughSpace(message)
+            case .failed(let message): return .failed(message)
+            }
         }
         await refreshState()
         return queued > 0 ? .queued(queued) : .noSources

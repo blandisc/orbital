@@ -285,3 +285,20 @@ test("ajustes: ◀ baja y ▶ sube, de menos a más y sin dar la vuelta", () => 
   assert.equal(size.adjust.right.value, "xlarge");
   assert.ok(new Set(page.options.map((o) => o.icon)).size > 1); // no seis ojos iguales
 });
+
+test("Seguir viendo: «Enviar al iPhone» y «Descargar en el iPhone» solo aparecen con un iPhone conectado", () => {
+  const item = { id: "stremio:tt2", title: "The Office", source: "stremio", category: "continue",
+    extra: { kind: "series", meta_id: "tt2", video_id: "tt2:2:5" } };
+  const labels = (menu) => menu.options.map((o) => o.label);
+  assert.ok(!labels(gameMenu(item)).some((l) => l.includes("iPhone")));
+  assert.ok(!labels(gameMenu(item, { phone: false })).some((l) => l.includes("iPhone")));
+  const withPhone = gameMenu(item, { phone: true });
+  assert.ok(labels(withPhone).includes("Enviar al iPhone") && labels(withPhone).includes("Descargar en el iPhone"));
+  assert.deepEqual(withPhone.options.find((o) => o.label === "Enviar al iPhone").command,
+    { type: "phone-send", action: "open", kind: "series", metaId: "tt2", videoId: "tt2:2:5", title: "The Office" });
+  assert.deepEqual(withPhone.options.find((o) => o.label === "Descargar en el iPhone").command,
+    { type: "phone-send", action: "download", kind: "series", metaId: "tt2", videoId: "tt2:2:5", title: "The Office" });
+  assert.equal(withPhone.options[0].command.type, "title"); // la ficha sigue siendo lo primero y lo enfocado
+  // Lo que está abierto en la TV no se manda al iPhone desde aquí (ahí está el panel Y del reproductor).
+  assert.ok(!labels(gameMenu(item, { phone: true, running: { id: "stremio:tt2", runner: "Orbital" } })).some((l) => l.includes("iPhone")));
+});

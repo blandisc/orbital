@@ -14,7 +14,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import player
+from . import companion, player
 from .config import Config
 from .credentials import Credentials
 from .events import EventBus
@@ -440,9 +440,16 @@ class Watch:
         p.episodes_provider = self._season_episodes
         p.on_play_episode = self._jump_episode
         p.on_sub_scale = lambda scale: self.state.set_setting("sub_scale", scale)
+        p.iphone_provider = lambda: companion.phone_ready(self.config)
+        p.on_send_iphone = self._send_to_phone
         p.idle_seconds = int(self.setting("video_idle_minutes", self.config.sessions.video_idle_minutes)) * 60
         p.on_language = self._remember_language
         p.sub_scale = float(self.setting("sub_scale", 1.0) or 1.0)
+
+    def _send_to_phone(self, meta: dict, action: str) -> str:
+        """Y › «Enviar al iPhone» / «Descargar en el iPhone» con lo que se está viendo (el episodio en curso)."""
+        companion.send_to_phone(self, self.config, action, meta.get("kind") or "movie", meta.get("meta_id") or "", meta.get("video_id"))
+        return companion.SENT_TOAST[action]
 
     @staticmethod
     def _episode_label(info: dict, video_id: str) -> tuple[str, str]:

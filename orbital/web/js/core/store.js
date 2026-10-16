@@ -22,6 +22,7 @@ export function createState() {
     allRows: [], // todas las filas; `rows` son las de la sección actual
     section: "home", // Inicio, Juegos, Películas y series, Apps (LB/RB)
     sectionFocus: {}, // sección -> { rowId, itemId } donde te quedaste
+    phone: false, // hay un iPhone conectado: se le puede enviar o hacer descargar (Y y la ficha)
     stremioLinked: false, // con cuenta: Orbital elige la fuente (si no, Stremio)
     player: "stremio", // "orbital": se ve en el reproductor de Orbital (mpv)
     popId: null, // juego recién marcado como favorito (su estrella se anima)
