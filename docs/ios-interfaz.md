@@ -1,5 +1,8 @@
 # Interfaz de la app compañera de iPhone (propuesta)
 
+> **Hoy:** el sistema visual vigente es **Proyección** — ver [`ios-proyeccion.md`](ios-proyeccion.md) (papeles con modo claro
+> y oscuro, recetas de texto, catálogo de piezas y lo que vigilan las pruebas). Lo de abajo es la propuesta original.
+
 Maqueta: `docs/ios-interfaz/maqueta.html` (se abre en el navegador) y `maqueta.png`. Es una propuesta
 visual con la paleta real de Orbital (`orbital/web/styles/palette.json`); los pósteres son marcadores.
 

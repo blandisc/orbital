@@ -10,6 +10,12 @@ Uso personal: no va a la App Store (la regla 5.2.3 lo impide); se instala con tu
 - Español e inglés (interfaz y fichas).
 - Solo fuentes con enlace http(s) (Real-Debrid): las de torrent sin Real-Debrid (`infoHash`) no se ofrecen.
 
+## Sistema visual: Proyección
+
+El arte es la luz: la interfaz es iOS 26 nativo y la pantalla toma el color de lo que estás viendo. Modo claro y oscuro
+(Ajustes › Apariencia), recetas de texto y catálogo de piezas en [`docs/ios-proyeccion.md`](../docs/ios-proyeccion.md).
+Para capturas: `-demo-appearance light|dark`.
+
 ## Componentes nativos y Human Interface Guidelines
 
 La app usa los controles de Apple y no inventa los suyos (se compila con **Xcode 26 / iOS 26**, así que el aspecto *Liquid Glass* llega solo):
@@ -27,7 +33,7 @@ La app usa los controles de Apple y no inventa los suyos (se compila con **Xcode
 | Respuesta táctil | `sensoryFeedback` al cambiar un selector o la watchlist |
 
 Una prueba (`DesignTests`) impide definir estilos de botón o de selector propios y poner fondos de hoja propios.
-**Excepción:** la app es siempre oscura (`.preferredColorScheme(.dark)`), como las apps de video (Infuse, Netflix): la paleta de Orbital es de grafito.
+La app sigue el modo del iPhone (o el que elijas en Ajustes › Apariencia); el reproductor y lo que va sobre el arte son siempre oscuros.
 Pendiente de revisar en un iPhone con iOS 26: el reproductor (controles sobre el video) y el mosaico, que son diseño propio por necesidad.
 
 ### Para ti › Listas: un feed de estantes (CEN-50)
@@ -117,7 +123,9 @@ públicos y Cinemeta de verdad. Nada toca tu Keychain ni tus ajustes. Para abrir
 
 | Argumento | Qué abre |
 |---|---|
-| `-demo-tab 1` | la pestaña (0 Inicio, 1 Para ti, 2 Ver, 3 Descargas) |
+| `-demo-tab 1` | la pestaña (0 Inicio, 1 Para ti, 2 Buscar, 3 Descargas) |
+| `-demo-appearance light` · `dark` | fuerza el modo claro u oscuro |
+| `-demo-tv-now` | algo sonando en la TV (el accesorio «En la TV») |
 | `-demo-title series:tt0386676` | una ficha |
 | `-demo-open settings` · `sources` · `play` · `download` | Ajustes, la hoja de fuentes, el reproductor o una descarga (sobre la ficha) |
 | `-demo-search dune` | una búsqueda en Ver |

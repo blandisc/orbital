@@ -79,7 +79,7 @@ struct TitleView: View {
                 let language = env.services.appSettings.uiLanguage
                 let facts = [Strings.kind(model.kind, language: language)]
                     + Vocabulary.titleFacts(year: model.info.year, genres: Vocabulary.genres(model.info.genres, language: language), runtime: model.info.runtime, rating: model.info.rating)
-                Text(verbatim: Vocabulary.factLine(facts)).recipe(.secondary, color: DS.onArtSecondary).lineLimit(2)
+                Text(verbatim: Vocabulary.factLine(facts)).recipe(.secondary, color: DS.onArtSecondary).lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
             }
         }
         .ignoresSafeArea(edges: .top)

@@ -25,7 +25,9 @@ struct HomeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s6) {
                 if model.offline { DSNotice(text: "Sin conexión: se ve lo último que guardé.", tone: .warn).padding(.horizontal, DS.Space.gutter) }
-                if let now = tvNow.model.now {
+                // Con iOS 26.1 lo que suena en la TV vive en el accesorio de la barra de pestañas (y su control remoto en una hoja);
+                // antes, en esta tarjeta.
+                if !Self.hasTabAccessory, let now = tvNow.model.now {
                     NowPlayingCard(now: now, fetchedAt: tvNow.model.fetchedAt, busy: tvNow.model.busy,
                                   onAction: { action, delta in Task { await tvNow.model.control(action, delta: delta) } },
                                   onContinueHere: { openTitle = now.metaID.map { TitleRoute(kind: now.kind, metaID: $0, title: now.title, poster: now.poster) } })
@@ -99,6 +101,8 @@ struct HomeView: View {
     }
 
     private func route(_ item: HomeItem) -> TitleRoute { TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster) }
+
+    private static var hasTabAccessory: Bool { if #available(iOS 26.1, *) { true } else { false } }
 
     /// Cuántos de «Seguir viendo» van en el carrusel del destacado; el resto, en «También tenías».
     private static let heroCount = 3

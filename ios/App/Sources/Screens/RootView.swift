@@ -62,6 +62,7 @@ extension PlayRequest: @retroactive Identifiable { public var id: String { "\(me
 struct MainTabs: View {
     @EnvironmentObject private var env: AppEnvironment
     @StateObject private var tvNow = ModelObserver(AppEnvironment.shared.tvNow)
+    @State private var showRemote = false
     @State private var tab: Int
     @State private var paths: [NavigationPath] = Array(repeating: NavigationPath(), count: 4)
 
@@ -89,7 +90,18 @@ struct MainTabs: View {
             if let now = tvNow.model.now {
                 TVAccessory(now: now, busy: tvNow.model.busy) { Task { await tvNow.model.control("toggle") } }
                     .contentShape(Rectangle())
-                    .onTapGesture { openNowPlaying(now) }
+                    .onTapGesture { showRemote = true }
+            }
+        }
+        // Tocar el accesorio abre el control remoto completo (−10 · pausa · +10 · siguiente, salir, seguir aquí).
+        .sheet(isPresented: $showRemote) {
+            if let now = tvNow.model.now {
+                NowPlayingCard(now: now, fetchedAt: tvNow.model.fetchedAt, busy: tvNow.model.busy,
+                               onAction: { action, delta in Task { await tvNow.model.control(action, delta: delta) } },
+                               onContinueHere: { showRemote = false; openNowPlaying(now) })
+                    .padding(DS.Space.gutter)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
             }
         }
         .tint(DS.accent)   // la pestaña elegida lleva el acento; dentro, los botones vuelven al papel
