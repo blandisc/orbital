@@ -23,7 +23,8 @@ const ACTIONS = [
 
 const STREMIO = {
   id: "stremio", title: "Conectar Stremio", submitLabel: "Conectar", missing: "Escribe tu correo y tu contraseña.",
-  lead: "Para «Seguir viendo», tus fuentes y el progreso en todos tus dispositivos. Tu contraseña solo se envía a Stremio; Orbital no la guarda.",
+  lead: "Para «Seguir viendo», tus fuentes y el progreso en todos tus dispositivos. Tu contraseña solo se envía a Stremio; Orbital no la guarda. "
+    + "¿Entras a Stremio con Google o Facebook? Ponle una contraseña en stremio.com › Ajustes. ¿No tienes cuenta? Es gratis en stremio.com.",
   fields: [{ name: "email", label: "Correo de Stremio" }, { name: "password", label: "Contraseña", secret: true, forget: true }],
   submit: (v, signal) => api.stremioLogin(v.email.trim(), v.password, signal),
 };

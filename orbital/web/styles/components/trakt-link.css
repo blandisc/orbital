@@ -9,6 +9,9 @@
 }
 .trakt-link__step { color: var(--color-text-muted); font-size: var(--text-md); line-height: 1.5; }
 .trakt-link__step strong { color: var(--color-text); font-weight: var(--weight-bold); }
+.trakt-link__row { display: flex; align-items: center; justify-content: center; gap: var(--space-8); }
+.trakt-link__qr { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+.trakt-link__qr-image { display: block; width: 7.5rem; height: 7.5rem; border-radius: var(--radius-md); }
 .trakt-link__code {
   display: flex; gap: var(--space-3); min-height: 5.6rem; padding: var(--space-4) var(--space-6); border-radius: var(--radius-lg);
   background: var(--color-bg); font-family: var(--font-sans); font-size: var(--text-display); font-weight: var(--weight-bold);

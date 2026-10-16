@@ -588,6 +588,7 @@ class Catalog:
             "emulators": systems,
             "esde": self.esde is not None,
             "stremio": self.stremio_linked,
+            "trakt": self.foryou.status()["trakt"],
             "player": player.find_mpv() is not None,
             "alexa": bool(self.config.server.token) and not self.config.server.token_is_ephemeral,
         }

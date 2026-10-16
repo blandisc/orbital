@@ -518,9 +518,11 @@ export function settingsPage(page, settings) {
         { icon: "trailer", label: "Stremio", value: settings.stremio_linked ? "Conectada" : "Conectar",
           command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
           hint: settings.stremio_linked ? "Seguir viendo y fuentes" : "Para películas y series" },
-        settings.trakt?.configured && { icon: "spark", label: "Trakt", value: settings.trakt.linked ? "Conectada" : "Conectar",
+        settings.trakt?.configured ? { icon: "spark", label: "Trakt", value: settings.trakt.linked ? "Conectada" : "Conectar",
           command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
-          hint: settings.trakt.linked ? "Tus listas en Para ti" : "Listas y recomendaciones" },
+          hint: settings.trakt.linked ? "Tus listas en Para ti" : "Listas y recomendaciones" }
+          : settings.trakt && { icon: "spark", label: "Trakt", value: "Configurar", hint: "Primero, la aplicación de Trakt",
+            command: { type: "keys", service: "trakt" } },
         { icon: "phone", label: "iPhone", value: "Conectar", command: { type: "phone-link" },
           hint: "Con un código QR" },
         settings.para_ti && { heading: true, label: "Claves de Para ti" },
@@ -632,6 +634,15 @@ export function forYouMenu(item) {
  * "Tu consola" (primer uso, y en Mantenimiento): lo esencial en dos renglones. Lo técnico (ES-DE,
  * el reproductor, Alexa) está en Diagnóstico.
  */
+/** Para ti en «Tu consola» y en Cuentas: conectado; o conectar (si ya está la aplicación de Trakt); o, sin ella, el primer
+ *  paso. Antes el renglón de Trakt no aparecía hasta escribir la aplicación, y nadie sabía que existía. */
+function paraTiRow(trakt) {
+  if (!trakt) return null;
+  if (trakt.linked) return { icon: "spark", label: "Para ti", value: "✓ Trakt", command: { type: "section", id: "foryou" } };
+  if (trakt.configured) return { icon: "spark", label: "Para ti", value: "Conectar Trakt", command: { type: "trakt-link" } };
+  return { icon: "spark", label: "Para ti", hint: "Con Trakt", value: "Configurar", command: { type: "keys", service: "trakt" } };
+}
+
 export function setupMenu(status = {}) {
   const games = status.games || 0;
   return {
@@ -644,8 +655,9 @@ export function setupMenu(status = {}) {
       status.stremio
         ? { icon: "trailer", label: "Películas y series", value: "✓ Stremio", command: { type: "stay" } }
         : { icon: "trailer", label: "Películas y series", value: "Conectar Stremio", command: { type: "stremio-login" } },
+      paraTiRow(status.trakt),
       { icon: "check", label: "Listo", command: { type: "close" } },
-    ],
+    ].filter(Boolean),
   };
 }
 

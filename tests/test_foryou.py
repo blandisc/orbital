@@ -487,3 +487,11 @@ def test_airing_today_is_empty_without_trakt_or_network(make_foryou, net):
     fy = make_foryou(linked=True)
     net.on("GET", r"/calendars/my/shows/", (500, None))
     assert fy.airing_today() == {}
+
+
+def test_trakt_qr_opens_the_activation_page_and_setup_knows_about_para_ti(library):
+    """Conectar Trakt: un QR con trakt.tv/activate (sin teclear la dirección). «Tu consola» también dice si falta Trakt."""
+    with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 5000)) as c:
+        res = c.get("/api/foryou/trakt/qr.svg")
+        assert res.status_code == 200 and res.headers["content-type"].startswith("image/svg+xml") and "<svg" in res.text
+        assert c.get("/api/setup").json()["trakt"] == library.foryou.status()["trakt"]
