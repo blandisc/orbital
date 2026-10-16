@@ -27,7 +27,8 @@ struct SourcesSheet: View {
                     if model.isLoading { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s6) }
                     if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn) }
                     ForEach(model.rows) { row in
-                        Button { if let source = model.source(row.id) { choose(source, purpose) } } label: { SourceRowView(row: row, purpose: purpose) }.buttonStyle(.plain)
+                        // `model.purpose`: para lo que se cargó la lista (no la pestaña recién tocada, que aún carga).
+                        Button { if let source = model.source(row.id) { choose(source, model.purpose) } } label: { SourceRowView(row: row, purpose: purpose) }.buttonStyle(.plain)
                     }
                 }
             }

@@ -31,15 +31,21 @@ public final class SourcesModel: ObservableModel {
     }
 
     public func load(_ purpose: Purpose, onCellular: Bool = false) async {
+        // Al cambiar Ver ↔ Descargar, la lista vieja se quita: no se puede tocar una fuente de «Ver» para descargarla.
+        if purpose != self.purpose { sources = []; rows = []; error = nil }
         self.purpose = purpose
         isLoading = true
         defer { isLoading = false }
         let settings = services.appSettings
         let prefs = services.titlePrefs.languages(for: metaID, settings: settings, onCellular: onCellular).prefs
-        do {
-            sources = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: purpose)
-            error = sources.isEmpty ? "No hay fuentes de Real-Debrid para este título." : nil
-        } catch { sources = []; self.error = "\(error)" }
+        let found: [Source]
+        do { found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: purpose) }
+        catch where !Task.isCancelled { sources = []; rows = []; self.error = "\(error)"; return }
+        catch { return }
+        // Cancelada (cambiaste de pestaña antes de que llegara): no pisa la lista nueva.
+        guard !Task.isCancelled, purpose == self.purpose else { return }
+        sources = found
+        error = sources.isEmpty ? "No hay fuentes de Real-Debrid para este título." : nil
         let limit = Int64(settings.warnCellularOverGB * 1e9)
         rows = sources.enumerated().map { i, s in
             let langs = s.languages.prefix(2).map { Streams.languageName($0, in: services.appSettings.uiLanguage) }.joined(separator: " + ")
