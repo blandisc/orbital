@@ -1101,6 +1101,17 @@
         }
       }
     },
+    "El archivo bajado está incompleto o no es el video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The downloaded file is incomplete or isn't the video"
+          }
+        }
+      }
+    },
     "El código caducó. Vuelve a intentarlo.": {
       "extractionState": "manual",
       "localizations": {
@@ -1108,6 +1119,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "The code expired. Try again."
+          }
+        }
+      }
+    },
+    "El enlace de la fuente caducó o ya no existe. Toca ▶ para buscar otro.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The source link expired or no longer exists. Tap ▶ to find another."
+          }
+        }
+      }
+    },
+    "El nombre de este título no sirve para guardarlo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This title's name can't be used to save it."
+          }
+        }
+      }
+    },
+    "El servidor de la fuente falló. Se vuelve a intentar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The source's server failed. Trying again."
           }
         }
       }
@@ -1420,6 +1464,17 @@
         }
       }
     },
+    "Esta fuente no tiene un enlace para descargar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This source has no download link."
+          }
+        }
+      }
+    },
     "Esta semana en México": {
       "extractionState": "manual",
       "localizations": {
@@ -1629,6 +1684,28 @@
         }
       }
     },
+    "La descarga falló (código %@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The download failed (code %@)."
+          }
+        }
+      }
+    },
+    "La fuente pidió esperar un poco. Se vuelve a intentar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The source asked to wait a bit. Trying again."
+          }
+        }
+      }
+    },
     "La recomendada está arriba.": {
       "extractionState": "manual",
       "localizations": {
@@ -1702,6 +1779,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "You've watched three episodes in a row."
+          }
+        }
+      }
+    },
+    "Lo bajado no cuadra con el archivo: se empieza de nuevo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What was downloaded doesn't match the file: starting over."
           }
         }
       }
@@ -2014,6 +2102,17 @@
         }
       }
     },
+    "No hay espacio: hacen falta %@ MB y hay %@ MB libres.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not enough space: %@ MB needed and %@ MB free."
+          }
+        }
+      }
+    },
     "No hay fuentes de Real-Debrid para descargar.": {
       "extractionState": "manual",
       "localizations": {
@@ -2120,6 +2219,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I could not download %@ (from the TV)"
+          }
+        }
+      }
+    },
+    "No pude guardar el archivo: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't save the file: %@"
           }
         }
       }

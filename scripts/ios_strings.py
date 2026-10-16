@@ -101,6 +101,17 @@ TRANSLATIONS = {
     "No hay nada aquí todavía.": "Nothing here yet.", "No me interesa": "Not interested", "No pude abrir Infuse. ¿Está instalado?": "I couldn't open Infuse. Is it installed?",
     "No pude abrir el archivo descargado.": "I couldn't open the downloaded file.", "No pude abrir ese título.": "I couldn't open that title.",
     "No pude leer el catálogo de Stremio. Revisa tu conexión.": "I couldn't read the Stremio catalog. Check your connection.", "No se pudo descargar": "Download failed",
+    # Los errores de la descarga (OrbitalCore/Downloads.swift y el transporte en segundo plano).
+    "El archivo bajado está incompleto o no es el video": "The downloaded file is incomplete or isn't the video",
+    "El enlace de la fuente caducó o ya no existe. Toca ▶ para buscar otro.": "The source link expired or no longer exists. Tap ▶ to find another.",
+    "El nombre de este título no sirve para guardarlo.": "This title's name can't be used to save it.",
+    "El servidor de la fuente falló. Se vuelve a intentar.": "The source's server failed. Trying again.",
+    "Esta fuente no tiene un enlace para descargar.": "This source has no download link.",
+    "La descarga falló (código %@).": "The download failed (code %@).",
+    "La fuente pidió esperar un poco. Se vuelve a intentar.": "The source asked to wait a bit. Trying again.",
+    "Lo bajado no cuadra con el archivo: se empieza de nuevo.": "What was downloaded doesn't match the file: starting over.",
+    "No hay espacio: hacen falta %@ MB y hay %@ MB libres.": "Not enough space: %@ MB needed and %@ MB free.",
+    "No pude guardar el archivo: %@": "I couldn't save the file: %@",
     "Ocupan %@": "%@ used", "Otra fuente": "Another source", "Otra fuente…": "Another source…",
     "Actualizar": "Refresh", "Para ti de tu Orbital": "For You, from your Orbital", "Calculado en el iPhone": "Calculated on the iPhone",
     "Tu Orbital no tiene sugerencias todavía.": "Your Orbital doesn't have suggestions yet.",
@@ -164,7 +175,7 @@ def to_format(literal: str) -> str:
 def used_literals() -> dict[str, str]:
     lit = re.compile(r'"((?:[^"\\]|\\.)*)"')
     found: dict[str, str] = {}
-    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift"))
+    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift")) + [str(ROOT / "ios/OrbitalCore/Sources/OrbitalCore/Downloads.swift")]  # sus errores llegan a la pantalla
     for f in files:
         f = Path(f).as_posix()  # en Windows glob da «\»: sin esto el modo demo y Platform/ se colaban
         # El modo demo (solo Debug) no se traduce; de Design/ solo se saltan los tokens y el banco de pruebas (las piezas sí llevan texto).

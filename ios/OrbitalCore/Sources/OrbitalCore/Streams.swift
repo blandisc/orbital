@@ -78,6 +78,8 @@ public enum Streams {
     ]
     /// El nombre de un idioma en el idioma de la app («Inglés» / «English»): el de iOS; si no lo conoce, la tabla de arriba.
     public static func languageName(_ code: String, in uiLanguage: String) -> String {
+        // `sv` junta a todos los nórdicos (`wordLanguages`): ni «Sueco» ni «Swedish».
+        if code == "sv" { return uiLanguage.hasPrefix("en") ? "Nordic" : languageNames["sv"] ?? code }
         if let name = Locale(identifier: uiLanguage).localizedString(forLanguageCode: code) {
             return name.prefix(1).uppercased() + name.dropFirst()
         }

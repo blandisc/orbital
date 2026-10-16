@@ -125,6 +125,7 @@ struct PlayerScreen: View {
         }
         .onChange(of: scenePhase) { _, phase in if phase != .active { Task { await model.appDidEnterBackground() } } }
         .onChange(of: model.phase) { _, phase in if phase == .closed { finish() } }
+        .onChange(of: voiceOver) { _, on in if on { controlsVisible = true } }   // con VoiceOver, los controles no se esconden
         .alert("¿Sigues viendo?", isPresented: Binding(get: { model.stillWatchingPrompt }, set: { _ in })) {
             Button("Seguir") { Task { await model.confirmStillWatching() } }
             Button("Salir", role: .cancel) { Task { await close() } }
@@ -353,13 +354,17 @@ struct PlayerScreen: View {
             }
             .tint(DS.accent)   // el avance, en el acento (como en toda la app)
             .accessibilityLabel(Text("Avance")).accessibilityValue(Text(verbatim: "\(clock(shown)) / \(clock(duration))"))
+            // Con VoiceOver, deslizar arriba/abajo no llama a `onEditingChanged`: salta 10 s como los botones.
+            .accessibilityAdjustableAction { d in
+                Task { await model.skip(d == .increment ? PlaybackRules.skipSeconds : -PlaybackRules.skipSeconds) }
+            }
             HStack {
                 Text(verbatim: clock(shown)).recipe(.data)
                 Spacer()
                 // Lo que falta y a qué hora terminas (la misma cuenta que la ficha), con números tabulares como todos los datos.
-                // A 1.5× o 2× se acaba antes: el tiempo que falta se divide entre la velocidad.
-                let left = max(0, duration - shown) / Double(max(model.rate, 0.25))
-                Text(verbatim: "−\(clock(left)) · \(Strings.endsAt(minutesLeft: Int((left / 60).rounded(.up)), now: env.services.now(), language: env.services.appSettings.uiLanguage))").recipe(.data)
+                // El «−» es lo que falta del video (como el slider); la hora de fin sí cuenta la velocidad (a 2× acabas antes).
+                let left = max(0, duration - shown), real = left / Double(max(model.rate, 0.25))
+                Text(verbatim: "−\(clock(left)) · \(Strings.endsAt(minutesLeft: Int((real / 60).rounded(.up)), now: env.services.now(), language: env.services.appSettings.uiLanguage))").recipe(.data)
             }
         }
     }
