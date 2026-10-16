@@ -64,4 +64,13 @@ final class VocabularyTests: XCTestCase {
         XCTAssertEqual(Vocabulary.genres(["Action", "Sci-Fi", "Anime"], language: "es"), ["Acción", "Ciencia ficción", "Anime"])
         XCTAssertEqual(Vocabulary.genres(["Action"], language: "en"), ["Action"])
     }
+
+    func testArtworkPicksTheLightestVariantThatStillLooksSharp() {
+        let medium = "https://images.metahub.space/background/medium/tt1/img"
+        XCTAssertEqual(Artwork.variant(medium, pixels: 576), "https://images.metahub.space/background/small/tt1/img")
+        XCTAssertEqual(Artwork.variant(medium, pixels: 1440), medium, "el arte a sangre sigue en medium")
+        XCTAssertEqual(Artwork.variant("https://image.tmdb.org/t/p/w1280/a.jpg", pixels: 640), "https://image.tmdb.org/t/p/w780/a.jpg")
+        let poster = "https://images.metahub.space/poster/medium/tt1/img"
+        XCTAssertEqual(Artwork.variant(poster, pixels: 200), poster, "los pósters small se ven borrosos en un estante")
+    }
 }

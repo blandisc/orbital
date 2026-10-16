@@ -73,6 +73,9 @@ public final class TitleModel: ObservableModel {
         super.init()
         // El título que se muestra puede venir traducido: el ORIGINAL (lo que se guarda en Stremio) solo sale de Cinemeta, al cargar.
         if let hint { title = hint.title; poster = hint.poster }
+        // El fondo de metahub se conoce por el id: el arte empieza a bajar al abrir, no después de Cinemeta y la traducción
+        // (3 a 5 viajes de red en una serie). Si Cinemeta trae otro, se cambia al llegar.
+        if metaID.hasPrefix("tt") { background = String(format: ForYou.metahubBackground, metaID) }
     }
 
     public func load() async {
@@ -81,14 +84,15 @@ public final class TitleModel: ObservableModel {
         do {
             let original = try await services.cinemeta.meta(kind: kind, id: metaID)
             meta = original
+            // Arte y póster en cuanto llega Cinemeta; el texto traducido llega después.
+            poster = CinemetaParsing.medium(original["poster"]?.string) ?? poster
+            if let art = original["background"]?.string, !art.isEmpty { background = art }
             let local = await services.localizer.meta(kind: kind, meta: original)
             localized = local
             title = local["name"]?.string ?? original["name"]?.string ?? title
             originalTitle = original["name"]?.string ?? title
             info = CinemetaParsing.describe(local)
             credits = CinemetaParsing.credits(local)
-            poster = CinemetaParsing.medium(original["poster"]?.string) ?? poster
-            background = original["background"]?.string
             seasons = CinemetaParsing.seasons(local)
             error = nil
         } catch { self.error = "\(error)" }

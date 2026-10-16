@@ -13,7 +13,11 @@ enum WidgetPublisher {
 
     static func publish(_ snapshot: WidgetSnapshot) {
         running?.cancel()
-        running = Task {
+        running = Task(priority: .utility) {
+            // Espera a que la pantalla termine de pintar: al abrir la app el widget ya no compite con el destacado y los estantes,
+            // y varias publicaciones seguidas (Inicio, luego Para ti) se juntan en una sola.
+            try? await Task.sleep(for: .seconds(DesignTokens.Widget.publishDelay))
+            guard !Task.isCancelled else { return }
             let previous = WidgetStore.load()
             var result = snapshot
             for index in result.items.indices {
@@ -39,8 +43,9 @@ enum WidgetPublisher {
     /// Una imagen reducida en el App Group (se reutiliza la de antes si la URL no cambió); nil si no hay o no cargó.
     private static func image(_ remote: String?, as kind: WidgetSnapshot.ImageKind, id: String, reuse: (String?, String?)?) async -> (file: String?, tint: String?) {
         if let (file, tint) = reuse, let file, let url = WidgetStore.imageURL(file), FileManager.default.fileExists(atPath: url.path) { return (file, tint) }
-        guard let remote, let url = URL(string: remote), let directory = WidgetStore.directory,
-              let (data, response) = try? await URLSession.shared.data(from: url), (response as? HTTPURLResponse)?.statusCode ?? 200 < 400 else { return (nil, nil) }
+        // Por el mismo caché y la misma fila que las pantallas, y en la variante ligera (el widget usa 300 px como mucho).
+        guard let remote, let url = URL(string: Artwork.variant(remote, pixels: Int(DesignTokens.Widget.maxImagePixels))), let directory = WidgetStore.directory,
+              let data = await ImagePipeline.shared.bytes(url) else { return (nil, nil) }
         let name = WidgetSnapshot.imageFileName(for: id, kind: kind)
         let processed = await Task.detached(priority: .utility) { Self.reduce(data, png: kind == .logo) }.value
         guard let (bytes, tint) = processed, (try? bytes.write(to: directory.appendingPathComponent(name), options: .atomic)) != nil else { return (nil, nil) }

@@ -70,6 +70,23 @@ public enum Vocabulary {
 
 /// Dónde están las imágenes de un título (metahub, igual que la TV).
 public enum Artwork {
+    /// La variante más ligera que aún se ve nítida a `pixels` (lado más largo): un fondo de metahub «medium» pesa
+    /// ~770 KB (1920×1080) y el «small» ~19 KB (480×270); en TMDB, w780 pesa ~140 KB contra ~225 KB de w1280.
+    /// Las piezas del mosaico, los estrenos y el tono del fondo se ven a menos de 600 px: con esto un Para ti pasa
+    /// de ~16 MB a menos de 1 MB.
+    public static func variant(_ url: String, pixels: Int) -> String {
+        if pixels <= smallBackgroundPixels, url.contains("images.metahub.space/background/medium/") {
+            return url.replacingOccurrences(of: "/background/medium/", with: "/background/small/")
+        }
+        if pixels <= 780, url.contains("image.tmdb.org/t/p/w1280/") {
+            return url.replacingOccurrences(of: "/t/p/w1280/", with: "/t/p/w780/")
+        }
+        return url
+    }
+
+    /// Hasta aquí alcanza el fondo «small» de metahub (480 px de ancho) sin verse borroso en una pieza.
+    public static let smallBackgroundPixels = 600
+
     /// El logo del título; solo hay con un id de IMDb («tt…»).
     public static func logoURL(metaID: String) -> String? {
         metaID.hasPrefix("tt") ? "https://images.metahub.space/logo/medium/\(metaID)/img" : nil

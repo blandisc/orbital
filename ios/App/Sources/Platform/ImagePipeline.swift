@@ -1,5 +1,6 @@
 import UIKit
 import ImageIO
+import OrbitalCore
 
 /// Todas las imágenes remotas de la app (pósters, fondos y logos de metahub): se bajan con `URLSession`, se reducen
 /// con ImageIO al tamaño en que se van a ver (`maxPixel`, el lado más largo) y se guardan reducidas en memoria
@@ -8,13 +9,21 @@ import ImageIO
 ///
 /// Antes, `AsyncImage` bajaba y decodificaba cada imagen a tamaño completo (un fondo de metahub son varios
 /// megapíxeles) y sin caché propio: con ~96 piezas del mosaico eso bloqueaba la interfaz (CEN-49).
+///
+/// Qué hace rápido el primer arranque (medido en el simulador, caché vacío):
+/// - La descarga se comparte por URL, no por tamaño: el tono del fondo (48 px) y el arte (1440 px) de la misma imagen
+///   ya no la bajan dos veces a la vez.
+/// - Lo que ya está en disco no hace fila detrás de las descargas.
+/// - Hasta 12 descargas a la vez (metahub va por HTTP/2: una sola conexión) y 4 decodificaciones; la fila atiende primero
+///   lo más reciente, que es lo que está en pantalla.
+/// - Si todas las piezas que esperaban una imagen se fueron (el mosaico subió, el estante se deslizó), la descarga se cancela.
 final class ImagePipeline: @unchecked Sendable {
     static let shared = ImagePipeline()
 
     /// Lo que cabe en memoria ya reducido y en disco tal como llegó de la red.
-    private static let memoryBytes = 96 * 1024 * 1024, diskBytes = 256 * 1024 * 1024, urlMemoryBytes = 8 * 1024 * 1024
-    /// Descargas y decodificaciones a la vez: más que esto solo compite por CPU y red con el desplazamiento.
-    private static let maxConcurrent = 4
+    private static let memoryBytes = 96 * 1024 * 1024, diskBytes = 384 * 1024 * 1024, urlMemoryBytes = 8 * 1024 * 1024
+    /// Descargas a la vez (HTTP/2 las lleva por una sola conexión) y decodificaciones a la vez (más compite por CPU con el desplazamiento).
+    private static let maxDownloads = 12, maxDecodes = 4
     /// Los tamaños se redondean hacia arriba a este paso de píxeles: dos piezas casi iguales comparten imagen.
     private static let pixelStep = 64
 
@@ -28,18 +37,23 @@ final class ImagePipeline: @unchecked Sendable {
     private let session: URLSession
     private let cache: URLCache
     private let lock = NSLock()
-    private var inflight: [String: Task<UIImage?, Never>] = [:]
+    /// Lo que está en camino: los bytes por URL y cada imagen reducida por URL + tamaño.
+    private var downloads: [URL: Shared<Data?>] = [:]
+    private var decodes: [String: Shared<UIImage?>] = [:]
     private var failed: [String: Date] = [:]
-    private let limiter = Limiter(limit: ImagePipeline.maxConcurrent)
+    private let network = Limiter(limit: ImagePipeline.maxDownloads)
+    private let decoder = Limiter(limit: ImagePipeline.maxDecodes)
     private static let retryAfter: TimeInterval = 60
 
     init() {
         memory.totalCostLimit = Self.memoryBytes
-        cache = URLCache(memoryCapacity: Self.urlMemoryBytes, diskCapacity: Self.diskBytes, directory: nil)
+        // Carpeta propia: antes compartía el `Cache.db` de la app (y su límite) con las respuestas de Cinemeta y TMDB.
+        let folder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent("Imagenes", isDirectory: true)
+        cache = URLCache(memoryCapacity: Self.urlMemoryBytes, diskCapacity: Self.diskBytes, directory: folder)
         let configuration = URLSessionConfiguration.default
         configuration.urlCache = cache
         configuration.requestCachePolicy = .returnCacheDataElseLoad
-        configuration.httpMaximumConnectionsPerHost = Self.maxConcurrent
+        configuration.httpMaximumConnectionsPerHost = Self.maxDownloads
         configuration.timeoutIntervalForRequest = 20
         session = URLSession(configuration: configuration)
         NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: nil) { [memory] _ in memory.removeAllObjects() }
@@ -47,57 +61,92 @@ final class ImagePipeline: @unchecked Sendable {
 
     private func key(_ url: URL, _ maxPixel: CGFloat) -> String { "\(url.absoluteString)#\(Self.bucket(maxPixel))" }
 
+    /// La misma imagen en la variante más ligera que alcanza para `maxPixel` (`Artwork.variant`).
+    private static func resolve(_ url: URL, _ maxPixel: CGFloat) -> URL {
+        URL(string: Artwork.variant(url.absoluteString, pixels: bucket(maxPixel))) ?? url
+    }
+
     private static func bucket(_ maxPixel: CGFloat) -> Int {
         let steps = Int((max(1, maxPixel) / CGFloat(pixelStep)).rounded(.up))
         return steps * pixelStep
     }
 
     /// La imagen si ya está reducida en memoria (síncrono, barato).
-    func cached(_ url: URL, maxPixel: CGFloat) -> UIImage? { memory.object(forKey: key(url, maxPixel) as NSString) }
+    func cached(_ url: URL, maxPixel: CGFloat) -> UIImage? { memory.object(forKey: key(Self.resolve(url, maxPixel), maxPixel) as NSString) }
 
     /// ¿Falló hace poco? (no se vuelve a pedir en cada pieza que reaparece).
     func recentlyFailed(_ url: URL, maxPixel: CGFloat) -> Bool {
-        lock.lock(); defer { lock.unlock() }
-        guard let date = failed[key(url, maxPixel)] else { return false }
-        return Date().timeIntervalSince(date) < Self.retryAfter
+        let k = key(Self.resolve(url, maxPixel), maxPixel)
+        return lock.withLock { failed[k].map { Date().timeIntervalSince($0) < Self.retryAfter } ?? false }
     }
 
-    /// La imagen reducida a `maxPixel`: de memoria, de disco o de la red. Varias peticiones de la misma imagen
-    /// comparten una sola descarga; cancelar quien espera no cancela la descarga (la siguiente pieza la aprovecha).
-    func image(_ url: URL, maxPixel: CGFloat) async -> UIImage? {
+    /// La imagen reducida a `maxPixel`: de memoria, de disco o de la red. Varias peticiones comparten el trabajo; si
+    /// todas las que esperaban se cancelan, el trabajo también.
+    func image(_ requested: URL, maxPixel: CGFloat) async -> UIImage? {
+        let url = Self.resolve(requested, maxPixel)
         let k = key(url, maxPixel)
         if let hit = memory.object(forKey: k as NSString) { return hit }
-        let task: Task<UIImage?, Never>
-        lock.lock()
-        if let existing = inflight[k] { task = existing }
-        else {
-            let pixels = Self.bucket(maxPixel)
-            task = Task.detached(priority: .userInitiated) { [self] in
-                let result = await load(url, pixels: pixels)
-                lock.lock(); inflight[k] = nil; if result == nil { failed[k] = Date() } else { failed[k] = nil }; lock.unlock()
-                if let result { memory.setObject(result, forKey: k as NSString, cost: Self.cost(of: result)) }
-                return result
+        let pixels = Self.bucket(maxPixel)
+        let job: Shared<UIImage?> = lock.withLock {
+            if let existing = decodes[k] { existing.waiters += 1; return existing }
+            let fresh = Shared<UIImage?>()
+            fresh.task = Task.detached(priority: .userInitiated) { [self] in
+                let image = await decode(url, pixels: pixels)
+                lock.withLock {
+                    decodes[k] = nil
+                    if image == nil, !Task.isCancelled { failed[k] = Date() } else { failed[k] = nil }
+                }
+                if let image { memory.setObject(image, forKey: k as NSString, cost: Self.cost(of: image)) }
+                return image
             }
-            inflight[k] = task
+            decodes[k] = fresh
+            return fresh
         }
-        lock.unlock()
-        return await task.value
+        return await wait(job) { [self] in lock.withLock { if decodes[k] === job { decodes[k] = nil } } }
     }
 
-    private func load(_ url: URL, pixels: Int) async -> UIImage? {
-        await limiter.acquire()
-        defer { Task { await limiter.release() } }
-        var request = URLRequest(url: url)
-        request.cachePolicy = .returnCacheDataElseLoad
-        let data: Data
-        if let stored = cache.cachedResponse(for: request) { data = stored.data }
-        else {
-            guard let (fresh, response) = try? await session.data(for: request), (response as? HTTPURLResponse)?.statusCode ?? 200 < 400 else { return nil }
-            // metahub no siempre manda cabeceras de caché: se guarda a la fuerza para no volver a bajarlo.
-            cache.storeCachedResponse(CachedURLResponse(response: response, data: fresh, userInfo: nil, storagePolicy: .allowed), for: request)
-            data = fresh
-        }
+    /// Los bytes (del disco o de la red) y luego la reducción, con su propio límite.
+    private func decode(_ url: URL, pixels: Int) async -> UIImage? {
+        guard let data = await data(url), !Task.isCancelled else { return nil }
+        guard await decoder.acquire() else { return nil }
+        defer { Task { await decoder.release() } }
         return Self.downsample(data, maxPixel: pixels)
+    }
+
+    /// Los bytes de una URL: del disco sin hacer fila; de la red con una sola descarga por URL.
+    private func data(_ url: URL) async -> Data? {
+        let request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad)
+        if let stored = cache.cachedResponse(for: request) { return stored.data }
+        let job: Shared<Data?> = lock.withLock {
+            if let existing = downloads[url] { existing.waiters += 1; return existing }
+            let fresh = Shared<Data?>()
+            fresh.task = Task.detached(priority: .userInitiated) { [self] in
+                defer { lock.withLock { downloads[url] = nil } }
+                guard await network.acquire() else { return nil }
+                defer { Task { await network.release() } }
+                guard let (fresh, response) = try? await session.data(for: request),
+                      let http = response as? HTTPURLResponse, http.statusCode < 400 else { return nil }
+                // `URLSession` ya guarda lo que trae cabeceras de caché (metahub manda 60 días); solo se fuerza si no las trae.
+                if http.value(forHTTPHeaderField: "Cache-Control") == nil {
+                    cache.storeCachedResponse(CachedURLResponse(response: response, data: fresh, userInfo: nil, storagePolicy: .allowed), for: request)
+                }
+                return fresh
+            }
+            downloads[url] = fresh
+            return fresh
+        }
+        return await wait(job) { [self] in lock.withLock { if downloads[url] === job { downloads[url] = nil } } }
+    }
+
+    /// Espera un trabajo compartido. Si quien espera se cancela y era el último, el trabajo se cancela y deja de estar
+    /// en camino (la próxima petición empieza de nuevo en vez de heredar uno cancelado).
+    private func wait<T>(_ job: Shared<T>, forget: @escaping @Sendable () -> Void) async -> T {
+        await withTaskCancellationHandler {
+            await job.task.value
+        } onCancel: { [lock] in
+            let last = lock.withLock { job.waiters -= 1; return job.waiters == 0 }
+            if last { forget(); job.task.cancel() }
+        }
     }
 
     /// Reduce con ImageIO sin decodificar la imagen completa, y deja los píxeles ya decodificados (el hilo
@@ -115,22 +164,51 @@ final class ImagePipeline: @unchecked Sendable {
         return UIImage(cgImage: cg, scale: 1, orientation: .up)
     }
 
+    /// Los bytes de una imagen para otro uso (el widget): mismo caché y misma fila que las pantallas.
+    func bytes(_ url: URL) async -> Data? { await data(url) }
+
     private static func cost(of image: UIImage) -> Int {
         guard let cg = image.cgImage else { return 1 }
         return cg.bytesPerRow * cg.height
     }
 
-    /// Un semáforo asíncrono.
+    /// Un trabajo que varias vistas esperan a la vez.
+    private final class Shared<T: Sendable>: @unchecked Sendable {
+        var task: Task<T, Never>!
+        var waiters = 1
+    }
+
+    /// Un semáforo asíncrono que atiende primero al último en llegar (lo que acaba de aparecer en pantalla) y suelta
+    /// a quien se cancela mientras espera.
     private actor Limiter {
         private var available: Int
-        private var waiters: [CheckedContinuation<Void, Never>] = []
+        private var waiters: [(id: UUID, resume: CheckedContinuation<Bool, Never>)] = []
+        private var cancelled = Set<UUID>()
         init(limit: Int) { available = limit }
-        func acquire() async {
-            if available > 0 { available -= 1; return }
-            await withCheckedContinuation { waiters.append($0) }
+
+        /// `false` si la tarea se canceló antes de tener lugar.
+        func acquire() async -> Bool {
+            let id = UUID()
+            return await withTaskCancellationHandler {
+                await enqueue(id)
+            } onCancel: {
+                Task { await self.cancel(id) }
+            }
         }
+
+        private func enqueue(_ id: UUID) async -> Bool {
+            if cancelled.remove(id) != nil || Task.isCancelled { return false }
+            if available > 0 { available -= 1; return true }
+            return await withCheckedContinuation { waiters.append((id, $0)) }
+        }
+
+        private func cancel(_ id: UUID) {
+            if let i = waiters.firstIndex(where: { $0.id == id }) { waiters.remove(at: i).resume.resume(returning: false) }
+            else { cancelled.insert(id) }
+        }
+
         func release() {
-            if waiters.isEmpty { available += 1 } else { waiters.removeFirst().resume() }
+            if let next = waiters.popLast() { next.resume.resume(returning: true) } else { available += 1 }
         }
     }
 }

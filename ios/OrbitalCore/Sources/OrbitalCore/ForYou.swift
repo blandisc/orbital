@@ -107,8 +107,8 @@ public actor ForYou {
     public static let mosaicSize = 48
     public static let calendarDays = 14
     public static let dawnHour = 6
-    static let metahubPoster = "https://images.metahub.space/poster/medium/%@/img"
-    static let metahubBackground = "https://images.metahub.space/background/medium/%@/img"
+    public static let metahubPoster = "https://images.metahub.space/poster/medium/%@/img"
+    public static let metahubBackground = "https://images.metahub.space/background/medium/%@/img"
     static let metahubLogo = "https://images.metahub.space/logo/medium/%@/img"
 
     private let trakt: Trakt?

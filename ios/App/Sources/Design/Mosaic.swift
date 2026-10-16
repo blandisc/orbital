@@ -103,7 +103,8 @@ final class MosaicRuntime: ObservableObject {
 
     private func visibleKeys() -> Set<String> { Set(columns.flatMap { $0.tiles.map(\.item.imdb) }) }
 
-    private func layoutAll() { geometry.layout(&columns, totalWidth: size.width, focus: focus.map { (col: $0.col, row: $0.row) }) }
+    /// En ambiente no hay foco: las columnas se igualan y cada pieza vuelve a su forma (como `goAmbient` en la TV).
+    private func layoutAll() { geometry.layout(&columns, totalWidth: size.width, focus: mode == .ambient ? nil : focus.map { (col: $0.col, row: $0.row) }) }
 
     private func fillAll() {
         // Casi siempre las columnas ya están llenas: no se arma el conjunto de llaves si no hace falta.
@@ -170,6 +171,7 @@ final class MosaicRuntime: ObservableObject {
         guard mode == .focus, !isEmpty else { return }
         mode = .ambient
         aliveTileID = nil
+        relayoutAndFill()
     }
 
     /// Ambiente: cada columna sube sola, cada una a su ritmo (como `DRIFT` en la TV).
@@ -328,7 +330,7 @@ struct Mosaic: View {
 
     private var idleToken: String { "\(runtime.mode)-\(runtime.focus?.col ?? -1)-\(runtime.focus?.row ?? -1)-\(activity)" }
     private var aliveToken: String { "\(runtime.mode)-\(runtime.focus?.col ?? -1)-\(runtime.focus?.row ?? -1)" }
-    private var driftSpeeds: [Double] { (0..<max(1, runtime.columns.count)).map { c in Double(DS.Mosaic.driftPerSecond) * (1 + Double(c % 3) * 0.1) } }
+    private var driftSpeeds: [Double] { (0..<max(1, runtime.columns.count)).map { c in DesignTokens.Mosaic.driftPattern[c % DesignTokens.Mosaic.driftPattern.count] } }
 
     private static func columnCount(width: CGFloat, horizontalSizeClass: UserInterfaceSizeClass?) -> Int {
         let landscape = width > DS.Poster.heroHeight * 2 || horizontalSizeClass == .regular
@@ -424,8 +426,9 @@ private struct MosaicTileCell: View {
         ZStack(alignment: .bottomLeading) {
             PosterView(url: focused || tile.shape == .wide ? tile.item.wide : tile.item.poster, title: tile.item.title, aspect: nil, maxPoints: DS.Image.mosaic)
             if focused { LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom) }
-            // El puesto en un Top 10 manda sobre el ícono de serie / película (una sola pieza en la esquina, como en Listas).
-            VStack { HStack(alignment: .top) { if let rank = tile.item.rank { DSRankBadge(rank: rank) }; Spacer(); if tile.item.rank == nil { kindIcon } }; Spacer() }.padding(DS.Space.s3)
+            // Como en la TV: el ícono de serie / película solo en la pieza enfocada (en todas tapaba los logos de las portadas)
+            // y sin puesto (el puesto es de su lista, en Listas).
+            if focused { VStack { HStack { kindIcon; Spacer() }; Spacer() }.padding(DS.Space.s3) }
             if focused {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     DSBadge(text: inWatchlist ? "En tu lista" : badgeKey(tile.item.reason))
@@ -440,6 +443,7 @@ private struct MosaicTileCell: View {
         }
         .opacity(dimmed ? DesignTokens.Opacity.shrink : 1)
         .scaleEffect(alive ? 1 + DesignTokens.Opacity.hairline : 1)
+        .animation(alive ? .linear(duration: DesignTokens.Mosaic.aliveZoomSeconds) : .default, value: alive)   // se acerca despacio, no de golpe
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         .overlay { if focused { RoundedRectangle(cornerRadius: DS.Radius.md).stroke(DS.hairline) } }
     }

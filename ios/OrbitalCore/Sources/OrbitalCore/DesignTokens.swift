@@ -66,6 +66,8 @@ public enum DesignTokens {
     /// avance y el ancho de la miniatura de los renglones del widget mediano (puntos).
     public enum Widget {
         public static let maxImagePixels = 300.0, jpegQuality = 0.7, tintMix = 0.55, fallbackRefreshHours = 6.0
+        /// Segundos que el app espera antes de preparar el widget (no compite con la pantalla que se está abriendo).
+        public static let publishDelay = 2.0
         public static let progressHeight = 3.0, thumbWidth = 44.0
         /// Dónde empieza el velo inferior del póster (fracción de su alto) para que el título se lea.
         public static let scrimStart = 0.25, scrimStartWide = 0.05
@@ -79,6 +81,10 @@ public enum DesignTokens {
         public static let growRatio = 1.8
         public static let idleSeconds = 30.0, aliveSeconds = 2.2, driftTick = 1.0
         public static let driftPerSecond = 16.0
+        /// Puntos por segundo de cada columna en el ambiente, en el mismo orden que `DRIFT` de la TV (se repite si hay más columnas).
+        public static let driftPattern: [Double] = [16, 12, 19, 14, 17, 13]
+        /// Cuánto tarda la pieza quieta en acercarse («cobra vida», `--duration-alive` de la TV).
+        public static let aliveZoomSeconds = 9.0
         public static let bufferHeight = 360.0
         /// Piezas fuera de pantalla que aún se pintan, × el alto del mosaico (arriba y abajo); el resto no se renderiza.
         public static let cullMargin = 0.5

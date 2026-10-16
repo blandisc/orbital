@@ -138,7 +138,6 @@ struct SettingsView: View {
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 if !orbitalToken.isEmpty { Button("Guardar token") { model.setOrbitalToken(orbitalToken); orbitalToken = ""; Task { await model.checkOrbital() } } }
             }
-            .font(DS.font(.sm)).foregroundStyle(DS.textMuted)
         } header: { Text("Tu Orbital (la TV)") } footer: {
             Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y tu Trakt y las claves de Para ti salen de ella.")
         }
@@ -157,7 +156,6 @@ struct SettingsView: View {
                     SecureField("Client Secret", text: $secret).textInputAutocapitalization(.never)
                     if !secret.isEmpty { Button("Guardar secreto") { model.setTraktSecret(secret); secret = "" } }
                 }
-                .font(DS.font(.sm)).foregroundStyle(DS.textMuted)
             case .unlinked:
                 Button("Conectar Trakt") { Task { await model.linkTrakt() } }
                 Text("Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.").font(DS.font(.xs)).foregroundStyle(DS.textFaint)

@@ -106,44 +106,59 @@ public final class ParaTiModel: ObservableModel {
     public func load() async {
         isLoading = true
         defer { isLoading = false }
-        railItems = [:]
+        // Lo que ya se ve se queda mientras se refresca (antes los estantes se vaciaban cada vez que volvías a la pestaña);
+        // `loadShelves` solo pide lo que falta y «Actualizar» sí limpia.
         if services.orbital.isConfigured, await loadFromConsole() { return }
         await loadFromPhone()
     }
 
     /// Intenta traer «Para ti» de tu Orbital. `false` sin tocar nada: quien llama cae a la lógica local.
+    /// Todo se pide a la vez: el mosaico y los estantes aparecen en cuanto llegan, sin esperar al calendario.
     private func loadFromConsole() async -> Bool {
-        let remote = services.forYouRemote
-        guard let fetchedLists = try? await remote.lists(), let fetchedMosaic = try? await remote.mosaic() else { return false }
+        let remote = services.forYouRemote, forYou = services.forYou
+        async let fetchedLists = try? remote.lists()
+        async let fetchedMosaic = try? remote.mosaic()
+        async let fetchedKeys = try? remote.watchlistKeys()
+        async let fetchedAirings = try? forYou.calendar()   // el calendario sale de tu Trakt (la consola trae la lista «estrenos», que aquí no se pinta como estante)
+        guard let newLists = await fetchedLists, let newMosaic = await fetchedMosaic else { return false }
         source = .console
-        traktLinked = fetchedLists.contains { $0.id == "watchlist" || $0.id == "mine" }
-        lists = fetchedLists
-        shelves = ShelfPlanner.plan(lists)
-        watchlistKeys = (try? await remote.watchlistKeys()) ?? []
-        mosaic = fetchedMosaic
-        airings = (try? await services.forYou.calendar()) ?? []   // el calendario sale de tu Trakt (la consola trae la lista «estrenos», que aquí no se pinta como estante)
+        traktLinked = newLists.contains { $0.id == "watchlist" || $0.id == "mine" }
+        lists = newLists
+        shelves = ShelfPlanner.plan(newLists)
+        mosaic = newMosaic
         isGeneric = false
         error = mosaic.isEmpty && lists.isEmpty ? "Tu Orbital no tiene sugerencias todavía." : nil
-        await loadShelves()
+        async let shelvesLoaded: Void = loadShelves()
+        watchlistKeys = await fetchedKeys ?? []
+        airings = await fetchedAirings ?? []
+        await shelvesLoaded
         await topUpMosaic()
         return true
     }
 
     private func loadFromPhone() async {
         source = .phone
-        traktLinked = await services.forYou.traktLinked
-        lists = await services.forYou.lists()
-        shelves = ShelfPlanner.plan(lists)
-        watchlistKeys = await services.forYou.watchlistKeys()
-        airings = (try? await services.forYou.calendar()) ?? []
-        services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno»
-        mosaic = await services.forYou.mosaic()
+        let forYou = services.forYou
+        async let linked = forYou.traktLinked
+        async let newLists = forYou.lists()
+        async let keys = forYou.watchlistKeys()
+        async let newAirings = try? forYou.calendar()
+        async let newMosaic = forYou.mosaic()
+        // El mosaico es lo primero que se ve: en cuanto llega se pinta.
+        mosaic = await newMosaic
         // Sin Trakt ni TMDB el mosaico no quedaría vacío: lo más popular de Stremio (Cinemeta no pide claves).
         isGeneric = mosaic.isEmpty
         if isGeneric { mosaic = await popular() }
+        lists = await newLists
+        shelves = ShelfPlanner.plan(lists)
+        async let shelvesLoaded: Void = loadShelves()
+        traktLinked = await linked
+        watchlistKeys = await keys
+        airings = await newAirings ?? []
+        services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno»
         if mosaic.isEmpty && lists.isEmpty { error = services.appSettings.traktEnabled ? nil : "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias." }
         else { error = nil }
-        await loadShelves()
+        await shelvesLoaded
         await topUpMosaic()
     }
 

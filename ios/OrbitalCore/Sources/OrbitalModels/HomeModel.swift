@@ -55,35 +55,38 @@ public final class HomeModel: ObservableModel {
                 return nextUp || (w.progress ?? 1) >= PlaybackRules.continueMinProgress
             }
             let mine = all.filter(\.inLibrary)
-            continueWatching = await items(continueItems)
-            myList = await items(mine)
+            async let continued = items(continueItems), listed = items(mine)   // las dos traducciones a la vez
+            continueWatching = await continued
+            myList = await listed
             offline = false; error = nil
             services.kv.set(Self.cacheKey, data: try? JSONEncoder().encode(Cache(continueWatching: continueWatching, myList: myList)))
         } catch {
             offline = true
             self.error = "\(error)"
         }
-        publishWidget(airings: (try? await services.forYou.calendar()) ?? [])   // los estrenos también van al widget mediano
-        traktPending = Array(((try? await services.forYou.items(listID: "watchlist")) ?? []).prefix(12))
+        let forYou = services.forYou
+        async let airings = try? forYou.calendar(), pending = try? forYou.items(listID: "watchlist")
+        traktPending = Array(((await pending) ?? []).prefix(12))
+        publishWidget(airings: (await airings) ?? [])   // los estrenos también van al widget mediano
     }
 
     /// Los títulos en tu idioma (Stremio guarda el original) y con lo que hace falta para seguir viendo.
     private func items(_ watchables: [Watchable]) async -> [HomeItem] {
         let usable = watchables.filter { ["movie", "series"].contains($0.type) }
+        let localizer = services.localizer
+        func metas(_ kind: String) -> [JSON] { usable.filter { $0.type == kind }.map { JSON.object(["id": .string($0.id), "name": .string($0.name)]) } }
+        async let movies = localizer.catalog(kind: "movie", metas: metas("movie")), series = localizer.catalog(kind: "series", metas: metas("series"))
         var localized: [String: String] = [:]
-        for kind in ["movie", "series"] {
-            let metas = usable.filter { $0.type == kind }.map { JSON.object(["id": .string($0.id), "name": .string($0.name)]) }
-            for meta in await services.localizer.catalog(kind: kind, metas: metas) {
-                if let id = meta["id"]?.string, let name = meta["name"]?.string { localized[id] = name }
-            }
+        for meta in await movies + series {
+            if let id = meta["id"]?.string, let name = meta["name"]?.string { localized[id] = name }
         }
         return usable.map { w in
             let (season, episode) = w.episode
             let nextUp = w.type == "series" && w.timeOffset <= 1 && w.duration == 0 && episode != nil
             let left = w.duration > 0 && w.timeOffset > 0 ? Double(w.duration - w.timeOffset) / 1000 : 0
             return HomeItem(metaID: w.id, kind: w.type, title: localized[w.id] ?? w.name, originalTitle: w.name,
-                            poster: w.id.hasPrefix("tt") ? "https://images.metahub.space/poster/medium/\(w.id)/img" : w.poster,
-                            background: w.id.hasPrefix("tt") ? "https://images.metahub.space/background/medium/\(w.id)/img" : nil,
+                            poster: w.id.hasPrefix("tt") ? String(format: ForYou.metahubPoster, w.id) : w.poster,
+                            background: w.id.hasPrefix("tt") ? String(format: ForYou.metahubBackground, w.id) : nil,
                             videoID: w.videoID ?? (w.type == "movie" ? w.id : nil), progress: nextUp ? nil : w.progress, season: season, episode: episode,
                             timeLeft: PlaybackRules.timeLeft(left), leftMinutes: PlaybackRules.minutesLeft(left), nextUp: nextUp)
         }
