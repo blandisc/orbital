@@ -93,6 +93,10 @@ export const api = {
   forYouKeys: (service, values, signal) => post("/api/foryou/keys", { service, values }, { signal, timeout: 20000 }),
   traktLink: () => post("/api/foryou/trakt/link"),
   traktCancel: () => post("/api/foryou/trakt/cancel"),
+  // Escribir desde el celular: un código de un solo uso por formulario (remote_input.py).
+  remoteInputStart: (title, fields) => post("/api/remote-input", { title, fields }),
+  remoteInputTake: (code) => request(`/api/remote-input/take?code=${encodeURIComponent(code)}`),
+  remoteInputCancel: (code) => post("/api/remote-input/cancel", { code }),
   traktUnlink: () => post("/api/foryou/trakt/unlink"),
   // «TV en vivo»
   tv: () => request("/api/tv"),

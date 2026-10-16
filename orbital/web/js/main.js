@@ -1190,6 +1190,9 @@ function handleEvent(event) {
     loadLibrary();
     ui.title.refresh();
     return;
+  } else if (event.type === "remote-input") { // escribiste en el celular: el formulario se llena y se envía solo
+    ui.login.remoteArrived(event.code);
+    return;
   } else if (event.type === "trakt-linked") {
     if (traktFrom) traktFrom.done = true;
     ui.traktLink.close({ cancel: false });

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex">
+<title>Orbital · Escribir</title>
+<style>
+  /* Página del celular para escribir en la tele (orbital/remote_input.py). Sin nada externo: se abre por el túnel. */
+  :root { --bg: #0e0e11; --surface: #1a1a1f; --line: rgba(255,255,255,.12); --text: #f5f4f0; --muted: #a3a3ab; --primary: #f5f4f0; --on-primary: #0e0e11; --warn: #f2b25c; --ok: #6fd6b8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100dvh; background: var(--bg); color: var(--text); font: 17px/1.45 -apple-system, "Segoe UI", system-ui, sans-serif;
+    display: grid; place-items: start center; padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); }
+  main { width: min(28rem, 100%); display: grid; gap: 18px; }
+  .brand { color: var(--muted); font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+  h1 { margin: 0; font-size: 28px; line-height: 1.15; letter-spacing: -.02em; }
+  p { margin: 0; color: var(--muted); }
+  form { display: grid; gap: 14px; }
+  label { display: grid; gap: 6px; font-size: 14px; color: var(--muted); font-weight: 600; }
+  input { width: 100%; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 18px; }
+  input:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+  button { margin-top: 6px; padding: 16px; border: 0; border-radius: 14px; background: var(--primary); color: var(--on-primary); font: inherit; font-weight: 700; font-size: 18px; }
+  button:disabled { opacity: .5; }
+  .msg { min-height: 1.4em; color: var(--warn); font-size: 15px; }
+  .done { display: grid; gap: 10px; padding: 22px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); }
+  .done strong { color: var(--ok); font-size: 20px; }
+  .note { font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">Orbital</div>
+  <h1 id="title">Escribir en la tele</h1>
+  <p id="lead">Lo que escribas aquí aparece en la tele y se usa una sola vez.</p>
+  <form id="form" autocomplete="on"></form>
+  <div class="msg" id="msg" role="status"></div>
+  <p class="note">Esta página caduca en 10 minutos y sirve para un solo envío. No guarda nada.</p>
+</main>
+<script>
+  const FORM = /*FORM*/null;
+  const form = document.getElementById("form"), msg = document.getElementById("msg");
+  // Para que el llavero del iPhone (o tu gestor de contraseñas) pueda llenarlo solo.
+  const autocomplete = (f) => f.secret ? "current-password" : /mail|correo/i.test(f.name + f.label) ? "username" : "off";
+  if (!FORM) {
+    document.getElementById("title").textContent = "Este código ya no sirve";
+    document.getElementById("lead").textContent = "Vuelve a abrir el formulario en la tele y escanea el código nuevo.";
+  } else {
+    document.getElementById("title").textContent = FORM.title || "Escribir en la tele";
+    for (const f of FORM.fields) {
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.name = f.name; input.type = f.secret ? "password" : /mail|correo/i.test(f.name + f.label) ? "email" : "text";
+      input.autocomplete = autocomplete(f); input.autocapitalize = "off"; input.spellcheck = false; input.required = !f.optional;
+      label.append(f.label, input); form.append(label);
+    }
+    const send = document.createElement("button");
+    send.type = "submit"; send.textContent = "Enviar a la tele"; form.append(send);
+    form.querySelector("input")?.focus();
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      send.disabled = true; msg.textContent = "";
+      const values = Object.fromEntries(new FormData(form).entries());
+      try {
+        const res = await fetch(location.pathname, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ values }) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || "No se pudo enviar.");
+        const done = document.createElement("div");
+        done.className = "done";
+        done.innerHTML = "<strong>Listo</strong><span>Ya está en la tele. Puedes cerrar esta página.</span>";
+        form.replaceWith(done);
+      } catch (err) {
+        msg.textContent = err.message;
+        send.disabled = false;
+      }
+    });
+  }
+</script>
+</body>
+</html>
