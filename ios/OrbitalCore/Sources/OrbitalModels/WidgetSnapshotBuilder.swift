@@ -16,4 +16,9 @@ extension WidgetSnapshot {
         }
         return WidgetSnapshot(generatedAt: now, language: language, items: Array(mapped), upcoming: upcoming)
     }
+
+    /// Los 2 estrenos más cercanos de «Próximos estrenos» (ya vienen en orden de día y hora).
+    public static func upcoming(from airings: [Airing], limit: Int = 2) -> [UpcomingEpisode] {
+        airings.prefix(limit).map { UpcomingEpisode(title: $0.series.title, episodeLabel: $0.episodeLabel, date: $0.day) }
+    }
 }

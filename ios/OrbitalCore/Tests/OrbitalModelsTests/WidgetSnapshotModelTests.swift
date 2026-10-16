@@ -35,4 +35,25 @@ final class WidgetSnapshotModelTests: XCTestCase {
         await home.dismiss(try XCTUnwrap(home.continueWatching.first))
         XCTAssertEqual(published.last?.items.count, 0)
     }
+
+    func testUpcomingTakesTheTwoNearestAiringsAndPublishKeepsBothHalves() throws {
+        func airing(_ id: String, _ title: String, day: Double) -> Airing {
+            let date = Date(timeIntervalSince1970: day)
+            return Airing(series: Suggestion(kind: "series", imdb: id, title: title, poster: "", wide: "", reason: .popular), season: 3, first: 4, last: 4, count: 1,
+                          episodeTitle: "", aired: date, day: date, network: "", atDawn: false)
+        }
+        let airings = [airing("a", "Severance", day: 1_760_000_000), airing("b", "Andor", day: 1_760_086_400), airing("c", "Fallout", day: 1_760_172_800)]
+        let upcoming = WidgetSnapshot.upcoming(from: airings)
+        XCTAssertEqual(upcoming.map(\.title), ["Severance", "Andor"])
+        XCTAssertEqual(upcoming.first?.episodeLabel, "T3 E4")
+
+        let rig = try ServicesRig()
+        var published: [WidgetSnapshot] = []
+        rig.services.onWidgetSnapshot = { published.append($0) }
+        rig.services.publishWidget(continueWatching: [item("x")])
+        XCTAssertNil(published.last?.upcoming)
+        rig.services.publishWidget(airings: airings)
+        XCTAssertEqual(published.last?.items.map(\.metaID), ["x"], "se conserva «Seguir viendo»")
+        XCTAssertEqual(published.last?.upcoming?.count, 2)
+    }
 }

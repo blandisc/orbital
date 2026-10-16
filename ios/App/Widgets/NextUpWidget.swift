@@ -89,7 +89,8 @@ private struct Art: View {
         ZStack {
             tintedBackground(artTone(item))
             if let image = poster(item) {
-                Image(uiImage: image).resizable().scaledToFill().frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top).clipped()
+                // La imagen solo rellena el espacio que le toca (no lo agranda): si no, empuja el texto fuera del widget.
+                Color.clear.overlay(alignment: .top) { Image(uiImage: image).resizable().scaledToFill() }.clipped()
             }
         }
     }
@@ -116,7 +117,7 @@ private struct Caption: View {
 private struct EmptyState: View {
     var body: some View {
         VStack(spacing: DS.Space.s2) {
-            Image("Logo").resizable().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+            Image("Logo").resizable().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             Text("Nada pendiente").font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text)
             Text("Abrir Orbital").font(DS.font(.xs)).foregroundStyle(DS.textMuted)
         }
@@ -206,12 +207,20 @@ private struct Row: View {
 private struct UpcomingRow: View {
     var episode: WidgetSnapshot.UpcomingEpisode
     var language: String
+
+    /// «Hoy», «Mañana» o «Viernes 17» (en el idioma del snapshot).
+    private var dayText: Text {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(episode.date) { return Text("Hoy") }
+        if calendar.isDateInTomorrow(episode.date) { return Text("Mañana") }
+        return Text(episode.date.formatted(.dateTime.weekday(.wide).day().locale(Locale(identifier: language))).localizedCapitalized)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             Text("Próximo estreno").font(DS.font(.xs)).foregroundStyle(DS.textMuted)
             Text(episode.title).font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
-            Text(Vocabulary.factLine([episode.episodeLabel, episode.date.formatted(.relative(presentation: .named))]))
-                .font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
+            Text("\(episode.episodeLabel) · \(dayText)").font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

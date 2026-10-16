@@ -33,6 +33,18 @@ public final class Services: ObservableModel {
     /// Quién publica el snapshot del widget (la app: baja y reduce las imágenes, lo escribe en el App Group y recarga el widget).
     /// `HomeModel` lo llama al terminar de actualizar Inicio.
     public var onWidgetSnapshot: (@MainActor (WidgetSnapshot) -> Void)?
+    private var widgetContinue: [HomeItem] = []
+    private var widgetAirings: [Airing] = []
+    /// Arma y publica el snapshot del widget con lo último que se sabe de «Seguir viendo» (Inicio) y de «Próximos estrenos»
+    /// (Inicio o Para ti): cada quien pasa solo lo suyo y se conserva lo otro.
+    public func publishWidget(continueWatching: [HomeItem]? = nil, airings: [Airing]? = nil) {
+        if let continueWatching { widgetContinue = continueWatching }
+        if let airings { widgetAirings = airings }
+        guard let publish = onWidgetSnapshot else { return }
+        let upcoming = WidgetSnapshot.upcoming(from: widgetAirings)
+        publish(WidgetSnapshot.make(continueWatching: widgetContinue, labels: widgetLabels, language: appSettings.uiLanguage,
+                                    upcoming: upcoming.isEmpty ? nil : upcoming))
+    }
     /// Cambia cuando se reconfiguran claves (para que las pantallas se actualicen).
     public private(set) var generation = 0 { didSet { changed() } }
 

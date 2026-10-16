@@ -77,6 +77,7 @@ public final class ParaTiModel: ObservableModel {
         if !chips.contains(chip) { chip = .all }
         watchlistKeys = await services.forYou.watchlistKeys()
         airings = (try? await services.forYou.calendar()) ?? []
+        services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno»
         mosaic = await services.forYou.mosaic()
         // Sin Trakt ni TMDB el mosaico no quedaría vacío: lo más popular de Stremio (Cinemeta no pide claves).
         isGeneric = mosaic.isEmpty

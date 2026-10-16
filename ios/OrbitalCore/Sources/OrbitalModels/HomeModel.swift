@@ -63,7 +63,7 @@ public final class HomeModel: ObservableModel {
             offline = true
             self.error = "\(error)"
         }
-        publishWidget()
+        publishWidget(airings: (try? await services.forYou.calendar()) ?? [])   // los estrenos también van al widget mediano
         traktPending = Array(((try? await services.forYou.items(listID: "watchlist")) ?? []).prefix(12))
     }
 
@@ -90,9 +90,8 @@ public final class HomeModel: ObservableModel {
     }
 
     /// Lo que verá el widget «Lo siguiente para ti»: «Seguir viendo» tal como quedó (también la copia de la última vez, sin red).
-    private func publishWidget() {
-        guard let publish = services.onWidgetSnapshot else { return }
-        publish(WidgetSnapshot.make(continueWatching: continueWatching, labels: services.widgetLabels, language: services.appSettings.uiLanguage))
+    private func publishWidget(airings: [Airing]? = nil) {
+        services.publishWidget(continueWatching: continueWatching, airings: airings)
     }
 
     /// «Quitar de Seguir viendo».

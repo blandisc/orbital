@@ -48,6 +48,29 @@ La aritmética (eje dominante, segundos por punto, brillo/volumen 0…1) vive en
 `-demo-gesture brightness|volume|seek|fastforward` simula el gesto a medio camino sin tocar la pantalla, para
 capturarlo en el simulador.
 
+## Widgets
+
+Dos cosas viven en la extensión `OrbitalWidgets` (`ios/App/Widgets`):
+
+- **Actividad en vivo de las descargas** (pantalla bloqueada y Dynamic Island).
+- **«Lo siguiente para ti»** (`NextUpWidget`): pequeño, mediano y de bloqueo (rectangular). Enseña hasta 3 títulos de «Seguir viendo».
+  Tocar uno abre `orbital-ios://play?kind=&id=&video=` (el reproductor, donde ibas) o, sin episodio conocido, `orbital-ios://title?kind=&id=` (la ficha).
+
+**Datos.** El widget nunca llama a la red. La app escribe un `WidgetSnapshot` (`OrbitalCore`, `Codable`) en el App Group
+`group.mx.iracheta.orbital` (carpeta `Widget/`: `snapshot.json` y un JPEG de máx. 300 px por título) cada vez que `HomeModel.refresh()` termina,
+al quitar algo de «Seguir viendo» y al cargar «Para ti» (`Services.publishWidget`), y llama a `WidgetCenter.reloadTimelines`. `WidgetPublisher`
+baja y reduce los pósters (no repite los que no cambiaron) y calcula el tono del arte (mismo recipe que el fondo de las pantallas).
+La línea de tiempo es una sola entrada con `.after(6 h)` de respaldo. Los textos van ya en el idioma de la app dentro del snapshot.
+Una compilación sin firmar no tiene App Group: el widget se ve vacío (en el simulador hay que compilar con firma ad hoc, no `CODE_SIGNING_ALLOWED=NO`).
+
+**Próximo estreno.** `WidgetSnapshot.upcoming` (opcional) lleva los 2 estrenos más cercanos de «Próximos estrenos» (Trakt, `ForYou.calendar()`);
+se llena desde Inicio y desde Para ti (fuente iPhone; con la consola como fuente no hay estrenos en el teléfono). Cuando hay,
+el widget mediano los enseña como «Próximo estreno» («T3 E4 · Mañana») en el segundo renglón.
+
+**Verlo.** `-demo` escribe un snapshot de ejemplo con pósters reales (`-demo-widget empty` lo deja vacío, `-demo-widget live` usa el de Inicio).
+Agrega el widget desde la pantalla de inicio del simulador; también hay `#Preview` (`NextUpPreviews.swift`).
+Los tokens del widget salen de `DesignTokens` (`DesignTokens.Widget`) y `DesignTests` también revisa `ios/App/Widgets`.
+
 ## Estructura
 
 ```
