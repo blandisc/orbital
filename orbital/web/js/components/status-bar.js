@@ -60,6 +60,7 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
     mount(searchGlyph, glyphs?.search && Glyph(glyphs.search, { small: true }));
     placePill(active !== shown && before ? before : null);
     shown = active;
+    fit();
   }
 
   /** La píldora bajo la pestaña activa; si venía de otra, parte de allá y se desliza. */
@@ -85,10 +86,32 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
   }
   if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => placePill(null)).observe(tabs);
 
+  // Si la barra no cabe (letra grande en la Legion Go: la letra crece con el alto de la pantalla y la hora se salía por la
+  // derecha), cede en pasos, midiendo de verdad: 1) «Buscar» queda en la lupa y lo abierto en su ▶; 2) menos aire;
+  // 3) sin el número de la batería; 4) sin la palabra «orbital» (queda el planeta); 5) sin los glifos Q/E junto a las
+  // pestañas (el pie ya dice «Q E Sección»); 6) pestañas y hora un poco más chicas. La hora nunca se va.
+  const TIGHT = 6;
+  const overflows = () => time.getBoundingClientRect().right > el.getBoundingClientRect().right + 1;
+  let fitting = 0;
+  function fit() {
+    cancelAnimationFrame(fitting);
+    fitting = requestAnimationFrame(() => {
+      for (let i = 1; i <= TIGHT; i++) el.classList.remove(`status-bar--tight-${i}`);
+      for (let i = 1; i <= TIGHT && overflows(); i++) el.classList.add(`status-bar--tight-${i}`);
+      placePill(null);
+    });
+  }
+  // La barra mide lo mismo aunque cambie la letra (Ajustes → Tamaño del texto): se observa también lo de adentro.
+  if (typeof ResizeObserver !== "undefined") {
+    const watch = new ResizeObserver(fit);
+    [el, tabs, search, time, time.parentElement].forEach((node) => watch.observe(node));
+  }
+
   function setRunning(running) {
     playing.hidden = !running;
     playing.classList.toggle("status-bar__playing--paused", !!running?.paused);
     playingTitle.textContent = running ? running.title : "";
+    fit();
   }
 
   function setSystem({ wifi: info, alexa_last: alexaLast, online = true }) {

@@ -1,3 +1,5 @@
+import pytest
+
 from orbital import player, player_ui
 from orbital.gamepad import A_BUTTON, DPAD_LEFT, GUIDE, X_BUTTON, Y_BUTTON
 from orbital.library import addons, cinemeta, streams, stremio_api
@@ -635,3 +637,40 @@ def test_the_memory_watchdog_reopens_a_channel_and_only_warns_in_a_video():
 def test_the_video_buffer_has_a_cap_both_ways():
     cmd = player.build_command("mpv.exe", "u", "t")
     assert "--demuxer-max-bytes=400MiB" in cmd and "--demuxer-max-back-bytes=50MiB" in cmd
+
+
+def test_paused_with_the_finger_has_one_play_button_and_the_bar_does_not_cover_the_info():
+    """En pausa con el dedo: «Continuar» es el único botón de reproducir (antes también «Seguir» abajo) y la fila de abajo va
+    a la derecha, sin tapar «Inglés · Subtítulos en … · 2160p» (antes iba al centro, encima)."""
+    player_ui.set_touch(True)
+    try:
+        hud = player_ui.Hud(title="Futurama", detail="T1 E1", position=60, duration=1200, paused=True, series=True,
+                            audio="Inglés 5.1", subtitles="Español (Latinoamérica)", source="2160p · HDR · Torrentio · 18.4 GB")
+        ass = player_ui.hud_ass(hud)
+        plays = [t for t in player_ui.targets["hud"] if t[4] == "a"]
+        assert len(plays) == 1 and "Seguir" not in ass
+        bottom = [t for t in player_ui.targets["hud"] if t[1] >= 990]
+        assert bottom and max(t[0] + t[2] for t in bottom) == pytest.approx(player_ui.W - player_ui.MARGIN)
+        info = player_ui.info_line(hud)
+        assert player_ui.MARGIN + player_ui.text_width(info, 22, "semi") < min(t[0] for t in bottom)
+    finally:
+        player_ui.set_touch(False)
+
+
+def test_overlays_that_can_be_together_do_not_overlap():
+    """El volumen (barra vertical a la derecha) ya no cae sobre los avisos ni sobre «Cargando…»; con la guía abierta y la
+    tele en silencio, el panel lo dice en su etiqueta (la píldora «Sin sonido» se encimaba)."""
+    import re
+    ass = player_ui.volume_ass(50)
+    # Lo dibujado va en coordenadas de la figura («m x y l x y…»); el texto, en \pos(x,y).
+    ys = [float(y) for y in re.findall(r"(?:^|[ }])[ml] [\d.]+ ([\d.]+)", ass)]
+    ys += [float(y) for x, y in re.findall(r"\\pos\(([\d.]+),([\d.]+)\)", ass) if float(x) or float(y)]
+    assert min(ys) > player_ui.BUFFER_Y + 54  # debajo del aviso (NOTICE_Y) y de «Cargando…» (BUFFER_Y)
+    panel = player_ui.channels_panel([{"id": "todos", "label": "Todos"}], [{"id": "a", "name": "ADN 40", "number": 1}])
+    assert "Sigue reproduciendo · sin sonido" in player_ui.panel_ass(panel, muted=True)
+    assert "sin sonido" not in player_ui.panel_ass(panel)
+
+
+def test_info_line_keeps_the_region_capitalized():
+    hud = player_ui.Hud(title="X", audio="Inglés", subtitles="Español (Latinoamérica)")
+    assert "Subtítulos en español (Latinoamérica)" in player_ui.info_line(hud)

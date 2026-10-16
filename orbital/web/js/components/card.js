@@ -1,6 +1,6 @@
 import { h, svg } from "../core/dom.js";
 import { shortAgo } from "../core/format.js";
-import { rankOf } from "../core/foryou.js";
+import { rankOf, trendOf } from "../core/foryou.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { clampRatio, coverRatio } from "../core/library.js";
 import { Badge } from "./ui.js";
@@ -33,6 +33,8 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   // legible sobre cualquier póster (la misma receta de insignia que el resto de la app).
   const place = rankOf(item);
   const rank = place != null ? Badge(String(place), { className: "card__rank", large: true }) : null;
+  const move = trendOf(item); // ▲2 / ▼1 / Nuevo, debajo del puesto
+  const trend = move ? Badge(move.text, { className: `card__trend card__trend--${move.dir}` }) : null;
   // Lo que está abierto ahora (como las actividades de PS5): se ve desde la fila.
   const live = item.live ? h("span", { class: "card__live" }, h("span", { class: "card__live-dot" }), "Abierto") : null;
   const ago = showAgo ? shortAgo(item.last_played) : null;
@@ -84,6 +86,6 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   } else {
     card.append(fallback());
   }
-  card.append(...[badge, rank, live, chip, meta, progress].filter(Boolean));
+  card.append(...[badge, rank, trend, live, chip, meta, progress].filter(Boolean));
   return card;
 }

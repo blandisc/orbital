@@ -28,6 +28,16 @@ export const factLine = (item) => [kindLabel(item), item?.detail].filter(Boolean
  *  pinta en la esquina de la portada (card.js) con la misma pieza de insignia que el resto. */
 export const rankOf = (item) => (Number.isInteger(item?.rank) && item.rank > 0 ? item.rank : null);
 
+/** El sube y baja del Top 10, debajo del puesto: «▲2», «▼1» o «Nuevo». Nada si se quedó igual o si no hay con qué
+ *  comparar (`movement` null: no se inventan flechas). `dir` para el color: arriba y nuevo claros, abajo tenue. */
+export function trendOf(item) {
+  if (rankOf(item) == null) return null;
+  if (item.new === true) return { text: "Nuevo", dir: "new" };
+  const m = item.movement;
+  if (!Number.isInteger(m) || m === 0) return null;
+  return m > 0 ? { text: `▲ ${m}`, dir: "up" } : { text: `▼ ${-m}`, dir: "down" };
+}
+
 /** El ícono de su esquina: la consola de un juego, o serie / película. */
 export function iconName(item) {
   if (!item) return "apps";

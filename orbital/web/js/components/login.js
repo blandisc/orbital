@@ -11,6 +11,10 @@ import { ScreenHead } from "./ui.js";
  * escribe directo, y una clave larga se pega con Ctrl+V. La contraseña va solo a Stremio: Orbital
  * guarda la clave de sesión que devuelve.
  *
+ * O desde el celular: junto a los campos, un QR abre una página de Orbital con los mismos campos (remote_input.py);
+ * lo que mandas de allá llena el formulario y se envía solo. Así un correo, una contraseña o una clave de 32 letras
+ * no se teclean con el mando (y el llavero del iPhone puede llenarlos).
+ *
  * open(form) recibe { title, lead, fields: [{ name, label, secret, optional }], submitLabel, missing, submit(values, signal) };
  * sin form, Conectar Stremio. onDone(respuesta, form) al terminar bien.
  */
@@ -23,7 +27,8 @@ const ACTIONS = [
 
 const STREMIO = {
   id: "stremio", title: "Conectar Stremio", submitLabel: "Conectar", missing: "Escribe tu correo y tu contraseña.",
-  lead: "Para «Seguir viendo», tus fuentes y el progreso en todos tus dispositivos. Tu contraseña solo se envía a Stremio; Orbital no la guarda.",
+  lead: "Para «Seguir viendo», tus fuentes y el progreso en todos tus dispositivos. Tu contraseña solo se envía a Stremio; Orbital no la guarda. "
+    + "¿Entras a Stremio con Google o Facebook? Ponle una contraseña en stremio.com › Ajustes. ¿No tienes cuenta? Es gratis en stremio.com.",
   fields: [{ name: "email", label: "Correo de Stremio" }, { name: "password", label: "Contraseña", secret: true, forget: true }],
   submit: (v, signal) => api.stremioLogin(v.email.trim(), v.password, signal),
 };
@@ -35,11 +40,16 @@ export function createLogin({ onDone, onMove, onClose }) {
   let form = STREMIO;
   let fields = [];
   const box = h("div", { class: "login__form" });
+  const phoneImage = h("img", { class: "login__phone-qr", alt: "Código QR para escribir desde el celular" });
+  const phone = h("figure", { class: "login__phone", hidden: true }, phoneImage,
+    h("figcaption", {}, h("strong", {}, "O desde el celular")));
+  let remoteCode = null;
   let head = h("div");
   const message = h("div", { class: "login__message", role: "status" });
   const keyboard = createKeyboard({ label: "Teclado", onPress: (key) => press(key) });
   const keys = keyboard.el;
-  const el = h("section", { class: "login screen", hidden: true, "aria-label": STREMIO.title }, head, box, keys);
+  const el = h("section", { class: "login screen", hidden: true, "aria-label": STREMIO.title }, head,
+    h("div", { class: "login__body" }, box, phone), keys);
   const saved = new Map(); // lo que no es secreto se recuerda entre aperturas (tu correo)
 
   let active = 0;
@@ -118,6 +128,7 @@ export function createLogin({ onDone, onMove, onClose }) {
     } catch (err) {
       if (signal.aborted) return;
       message.textContent = err.message;
+      startRemote(); // otro código: desde el celular se puede volver a mandar
       // Una falla de red no es culpa de la contraseña: no hay que volver a escribirla.
       if (!err.network && err.status !== 502) forget();
       active = Math.max(0, fields.findIndex((f) => f.secret));
@@ -152,6 +163,48 @@ export function createLogin({ onDone, onMove, onClose }) {
     renderFields();
   });
 
+  /** Pide un código para escribir desde el celular y enseña su QR (sin túnel, no hay QR: solo el teclado). */
+  function startRemote() {
+    stopRemote();
+    const mine = attempt;
+    const wanted = form;
+    api.remoteInputStart(form.title, form.fields.map(({ name, label, secret, optional }) => ({ name, label, secret, optional })))
+      .then((res) => {
+        if (!res?.ready || el.hidden || form !== wanted || mine !== attempt) {
+          if (res?.code) api.remoteInputCancel(res.code).catch(() => {});
+          return;
+        }
+        remoteCode = res.code;
+        phoneImage.src = `/api/remote-input/qr.svg?code=${encodeURIComponent(res.code)}`;
+        phone.hidden = false;
+      }, () => {});
+  }
+
+  function stopRemote() {
+    if (remoteCode) api.remoteInputCancel(remoteCode).catch(() => {});
+    remoteCode = null;
+    phone.hidden = true;
+    phoneImage.removeAttribute("src");
+  }
+
+  /** Llegó lo escrito en el celular (aviso «remote-input»): se recoge una vez, llena los campos y se envía. */
+  async function remoteArrived(code) {
+    if (!code || code !== remoteCode || el.hidden || busy) return;
+    remoteCode = null;
+    phone.hidden = true;
+    let res;
+    try {
+      res = await api.remoteInputTake(code);
+    } catch {
+      return;
+    }
+    if (!res?.values || el.hidden) return;
+    fields.forEach((f) => { if (typeof res.values[f.name] === "string") f.value = res.values[f.name]; });
+    message.textContent = "";
+    render();
+    submit();
+  }
+
   function open(next = STREMIO) {
     cancelExit();
     fields.forEach((f) => { if (!f.secret) saved.set(`${form.id}:${f.name}`, f.value); });
@@ -170,11 +223,13 @@ export function createLogin({ onDone, onMove, onClose }) {
     message.textContent = "";
     el.hidden = false;
     render();
+    startRemote();
   }
 
   function close() {
     if (el.hidden) return;
     attempt++;
+    stopRemote();
     abort?.abort();
     fields.forEach((f) => { if (f.secret) f.value = ""; }); // nada secreto se queda en la pantalla
     cancelExit = hideAfterExit(el, "screen--leaving", 300);
@@ -202,6 +257,6 @@ export function createLogin({ onDone, onMove, onClose }) {
 
   // Saliendo ya no cuenta como abierta (la leyenda del login se quedaba en Inicio).
   const shown = () => !el.hidden && !el.classList.contains("screen--leaving");
-  return { el, open, close, handle, hints, type, get isOpen() { return shown(); },
+  return { el, open, close, handle, hints, type, remoteArrived, get isOpen() { return shown(); },
     get typing() { return shown() && !busy; } };
 }

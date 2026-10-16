@@ -53,7 +53,7 @@ TRANSLATIONS = {
     "Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.":
         "A code appears to enter at trakt.tv/activate. With Trakt connected, what you watch is reported and your watchlist and lists show up.",
     "Aquí aparece lo que vas viendo, en el iPhone y en Orbital.": "What you're watching shows up here, on iPhone and on Orbital.",
-    "Añadir a Mi lista": "Add to My List", "En Mi lista": "In My List", "Ver ficha": "View details", "Conecta Trakt (tu watchlist y tus listas) o agrega una clave de TMDB (lo popular en Netflix, Disney+ y HBO Max) en Ajustes.": "Connect Trakt (your watchlist and lists) or add a TMDB key (what is popular on Netflix, Disney+ and HBO Max) in Settings.", "Orbital · faltan %lld": "Orbital · %lld left", "Orbital · descargando": "Orbital · downloading", "En la TV": "On TV", "Ver en la TV": "Watch on TV", "Poniéndolo en la TV.": "Playing it on the TV.", "Desde la TV": "From the TV", "Descartar": "Dismiss", "Desde la TV: %@": "From the TV: %@", "Descargando %@ (desde la TV)": "Downloading %@ (from the TV)", "No encontré una fuente para descargar %@ (desde la TV)": "I did not find a source to download %@ (from the TV)", "No hay espacio para descargar %@ (desde la TV)": "Not enough space to download %@ (from the TV)", "No pude descargar %@ (desde la TV)": "I could not download %@ (from the TV)",
+    "Añadir a Mi lista": "Add to My List", "En Mi lista": "In My List", "Ver ficha": "View details", "Conecta Trakt (tu watchlist y tus listas) o agrega una clave de TMDB (lo popular en Netflix, Disney+ y HBO Max) en Ajustes.": "Connect Trakt (your watchlist and lists) or add a TMDB key (what is popular on Netflix, Disney+ and HBO Max) in Settings.", "Orbital · faltan %lld": "Orbital · %lld left", "Orbital · descargando": "Orbital · downloading", "Poniéndolo en la TV.": "Playing it on the TV.", "Desde la TV": "From the TV", "Descartar": "Dismiss", "Desde la TV: %@": "From the TV: %@", "Descargando %@ (desde la TV)": "Downloading %@ (from the TV)", "No encontré una fuente para descargar %@ (desde la TV)": "I did not find a source to download %@ (from the TV)", "No hay espacio para descargar %@ (desde la TV)": "Not enough space to download %@ (from the TV)", "No pude descargar %@ (desde la TV)": "I could not download %@ (from the TV)",
     "Dirección (orbital.tudominio.com)": "Address (orbital.yourdomain.com)", "Token guardado": "Token saved", "Token (el mismo de Alexa)": "Token (the same as Alexa's)",
     "Guardar token": "Save token", "Probar conexión": "Test connection", "Conectada": "Connected", "Tu Orbital (la TV)": "Your Orbital (the TV)",
     "Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y tu Trakt y las claves de Para ti salen de ella.": "With your Orbital connected, “Watch on TV” plays what you're watching here on the console, right where you were, and your Trakt and For You keys come from it.",
@@ -80,7 +80,7 @@ TRANSLATIONS = {
      "Descargando": "Downloading", "Descargar": "Download", "Descargar con la fuente recomendada": "Download with the recommended source",
     "Descargar solo con Wi‑Fi": "Download only on Wi‑Fi", "Descargas": "Downloads", "Desconectar Trakt": "Disconnect Trakt", "Descubrir": "Discover",
     "Descargando. Lo verás en Descargas.": "Downloading. You'll see it in Downloads.", "Dirección": "Directed by",
-    "El código caducó. Vuelve a intentarlo.": "The code expired. Try again.", "Elegir fuente": "Choose source",
+    "El código caducó. Vuelve a intentarlo.": "The code expired. Try again.",
     "Elegir la fuente de este episodio": "Choose this episode's source", "Empieza en %lld s": "Starts in %lld s", "En cola": "Queued", "En pausa": "Paused",
     "En tendencia": "Trending", "En tu lista": "In your list", "En tu watchlist de Trakt": "In your Trakt watchlist", "En %@": "On %@", "En «%@»": "In “%@”",
     "Entra con tu cuenta de Stremio. Lo que veas aquí aparece en Orbital y al revés.": "Sign in with your Stremio account. What you watch here shows up on Orbital and vice versa.",
@@ -103,11 +103,10 @@ TRANSLATIONS = {
     "Tu Orbital no tiene sugerencias todavía.": "Your Orbital doesn't have suggestions yet.",
     "Para conectar Trakt hace falta una aplicación de la API de Trakt (trakt.tv/oauth/applications). Pega aquí su identificador.":
         "To connect Trakt you need a Trakt API application (trakt.tv/oauth/applications). Paste its identifier here.",
-    "Para ti": "For You", "Pausa": "Pause", "Pausar": "Pause", "País (para lo popular en plataformas)": "Country (for what's popular on platforms)",
+    "Para ti": "For You", "Pausar": "Pause", "País (para lo popular en plataformas)": "Country (for what's popular on platforms)",
     "Pega la dirección completa del complemento (https://…).": "Paste the add-on's full address (https://…).", "Pegar la dirección de un complemento": "Paste an add-on address",
     "Películas": "Movies", "Películas populares": "Popular movies", "Pendientes en Trakt": "Pending on Trakt", "Popular": "Popular",
-    "Probando otra fuente (%lld)…": "Trying another source (%lld)…", "Quitar": "Remove", "Quitar de Mi lista": "Remove from My List", "Quitar de Seguir viendo": "Remove from Continue Watching",
-    "Reanudar": "Resume", "Rechazaste la conexión en Trakt.": "You declined the connection on Trakt.", "Recomendada": "Recommended", "Recomendadas": "Recommended",
+    "Probando otra fuente (%lld)…": "Trying another source (%lld)…", "Quitar": "Remove", "Quitar de Mi lista": "Remove from My List", "Quitar de Seguir viendo": "Remove from Continue Watching", "Rechazaste la conexión en Trakt.": "You declined the connection on Trakt.", "Recomendada": "Recommended", "Recomendadas": "Recommended",
     "Reparto": "Cast", "Reproducir": "Play", "Reproducir T%lld E%lld": "Play S%lld E%lld", "Reproductor": "Player", "Retroceder 10 segundos": "Back 10 seconds",
     "Salir": "Leave", "Saltar intro": "Skip intro", "Secreto (si tu aplicación lo tiene)": "Secret (if your application has one)", "Seguir": "Continue",
     "Seguir viendo": "Continue Watching", "Series": "Series", "Series populares": "Popular series", "Sigue": "Next up", "Sigues viéndola": "You're watching",
@@ -128,7 +127,7 @@ TRANSLATIONS = {
       "%@ de %@": "%@ of %@",  "Sí": "Yes",
     "En vivo": "Live", "Sin sonido": "Mute", "Canal anterior": "Previous channel", "Canal siguiente": "Next channel",
     "Salir del video": "Leave the video", "Seguir aquí": "Continue here",
-    "Viendo en la TV": "Watching on TV", "En la TV · En vivo": "On TV · Live",
+    "Viendo en la TV": "Watching on TV",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",

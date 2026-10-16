@@ -103,11 +103,11 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   assert.deepEqual(accounts.options[1].command, { type: "phone-link" }); // un QR para la cámara del iPhone
   const keys = settingsPage("accounts", { stremio_linked: true, trakt: { configured: false },
     para_ti: { trakt: { configured: false }, tmdb: true, rawg: false, saved: ["tmdb"] } });
-  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Stremio", "Conectada"], ["iPhone", "Conectar"],
-    ["Claves de Para ti", undefined], ["TMDB", "Lista"], ["RAWG", "Agregar"], ["Aplicación de Trakt", "Agregar"]]);
-  assert.deepEqual(keys.options[1].command, { type: "phone-link" });
-  assert.deepEqual(keys.options[3].command, { type: "keys-menu", service: "tmdb" });
-  assert.deepEqual(keys.options[4].command, { type: "keys", service: "rawg" });
+  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Stremio", "Conectada"], ["Trakt", "Configurar"], ["iPhone", "Conectar"], ["Claves de Para ti", undefined],
+    ["TMDB", "Lista"], ["RAWG", "Agregar"], ["Aplicación de Trakt", "Agregar"]]);
+  assert.deepEqual(keys.options[4].command, { type: "keys-menu", service: "tmdb" });
+  assert.deepEqual(keys.options[1].command, { type: "keys", service: "trakt" }); // sin la aplicación, Trakt lleva a escribirla
+  assert.deepEqual(keys.options[5].command, { type: "keys", service: "rawg" });
   assert.deepEqual(keysMenu("tmdb").options.map((o) => o.command.type), ["close", "keys", "keys-remove"]);
 });
 
@@ -313,4 +313,15 @@ test("Seguir viendo: «Enviar al iPhone» y «Descargar en el iPhone» solo apar
   assert.equal(withPhone.options[0].command.type, "title"); // la ficha sigue siendo lo primero y lo enfocado
   // Lo que está abierto en la TV no se manda al iPhone desde aquí (ahí está el panel Y del reproductor).
   assert.ok(!labels(gameMenu(item, { phone: true, running: { id: "stremio:tt2", runner: "Orbital" } })).some((l) => l.includes("iPhone")));
+});
+
+test("cuentas: el iPhone dice si ya está conectado (antes siempre «Conectar»)", async () => {
+  const { phoneRow } = await import("../../orbital/web/js/core/menus.js");
+  const now = Date.UTC(2026, 9, 16, 12);
+  assert.equal(phoneRow(undefined, now).value, "Conectar");
+  const recent = phoneRow(now / 1000 - 2 * 3600, now);
+  assert.equal(recent.value, "Conectado");
+  assert.equal(recent.hint, "Lo usaste hace 2 h");
+  assert.equal(recent.command.type, "phone-link"); // sigue abriendo el QR (otro iPhone, o volver a conectarlo)
+  assert.equal(phoneRow(now / 1000 - 90 * 86400, now).value, "Conectar"); // hace meses: como si no
 });

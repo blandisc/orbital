@@ -5,8 +5,10 @@ from __future__ import annotations
 import logging
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel
 
+from .. import companion
 from ..foryou import SERVICE_ERRORS
 from ..library import rawg, tmdb, trakt
 from .deps import Deps
@@ -90,6 +92,12 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(409, str(exc))
         except trakt.TraktError as exc:
             raise HTTPException(502, str(exc) if "Revisa la clave" in str(exc) else "No pude conectar con Trakt. Revisa Internet e inténtalo de nuevo.")
+
+    @r.get("/trakt/qr.svg")
+    def trakt_qr() -> Response:
+        """El QR de la página de Trakt donde se escribe el código (no lleva el código: ese se ve grande en la pantalla)."""
+        return Response(companion.qr_svg("https://trakt.tv/activate"), media_type="image/svg+xml",
+                        headers={"Cache-Control": "max-age=86400"})
 
     @r.post("/trakt/cancel")
     def cancel() -> dict:
