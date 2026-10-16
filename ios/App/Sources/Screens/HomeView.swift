@@ -5,17 +5,30 @@ import OrbitalModels
 struct HomeView: View {
     @EnvironmentObject private var env: AppEnvironment
     @StateObject private var home: ModelObserver<HomeModel>
+    @StateObject private var tvNow: ModelObserver<TVNowModel>
     @StateObject private var tint = ArtTint()
     @State private var pendingCount = 0
     @State private var openTitle: TitleRoute?
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init() { _home = StateObject(wrappedValue: ModelObserver(HomeModel(AppEnvironment.shared.services))) }
+    init() {
+        _home = StateObject(wrappedValue: ModelObserver(HomeModel(AppEnvironment.shared.services)))
+        _tvNow = StateObject(wrappedValue: ModelObserver(TVNowModel(AppEnvironment.shared.services)))
+    }
 
     var body: some View {
         let model = home.model
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s6) {
                 if model.offline { DSNotice(text: "Sin conexión: se ve lo último que guardé.", tone: .warn).padding(.horizontal, DS.Space.gutter) }
+                if let now = tvNow.model.now {
+                    NowPlayingCard(now: now, fetchedAt: tvNow.model.fetchedAt, busy: tvNow.model.busy,
+                                  onAction: { action, delta in Task { await tvNow.model.control(action, delta: delta) } },
+                                  onContinueHere: { openTitle = now.metaID.map { TitleRoute(kind: now.kind, metaID: $0, title: now.title, poster: now.poster) } })
+                        .padding(.horizontal, DS.Space.gutter)
+                        .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
+                }
                 if let first = model.continueWatching.first {
                     hero(first).padding(.horizontal, DS.Space.gutter)
                 } else if !model.isLoading {
@@ -43,6 +56,7 @@ struct HomeView: View {
                 }
             }
             .padding(.bottom, DS.Space.s8)
+            .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
         }
         .background(TintedBackground(tint: tint.color))
         .navigationTitle("Orbital").navigationBarTitleDisplayMode(.large)
@@ -52,8 +66,10 @@ struct HomeView: View {
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
         .task { await reload() }
+        .task { tvNow.model.setActive(true) }
         .refreshable { await reload() }
         .onChange(of: env.watchedSomething) { Task { await reload() } }
+        .onChange(of: scenePhase) { _, phase in tvNow.model.setActive(phase == .active) }
     }
 
     /// Lo de Stremio, lo pendiente por subir y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo).

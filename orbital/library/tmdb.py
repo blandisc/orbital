@@ -118,6 +118,44 @@ class Tmdb:
             "poster": image(raw.get("poster_path")), "backdrop": image(raw.get("backdrop_path"), "w1280"),
         }
 
+    def find_id(self, imdb: str, kind: str) -> int | None:
+        """El id de TMDB de un título de IMDb (None si TMDB no lo tiene)."""
+        data = self._get(f"/find/{imdb}", external_source="imdb_id")
+        rows = data.get("movie_results" if kind == "movie" else "tv_results") or []
+        first = rows[0] if isinstance(rows, list) and rows and isinstance(rows[0], dict) else None
+        return _positive(first.get("id")) if first else None
+
+    def translation(self, kind: str, tmdb_id: int, language: str, episodes: bool = False) -> dict:
+        """Título, sinopsis, géneros y (en series) los episodios en ese idioma: {(temporada, episodio): {…}}."""
+        raw = self._get(f"/{KINDS[kind]}/{int(tmdb_id)}", language=language)
+        found = {"title": str(raw.get("title") or raw.get("name") or "").strip(),
+                 "overview": str(raw.get("overview") or "").strip(),
+                 "genres": [g["name"] for g in raw.get("genres") or [] if isinstance(g, dict) and isinstance(g.get("name"), str)][:3],
+                 "episodes": {}}
+        numbers = [s.get("season_number") for s in raw.get("seasons") or [] if isinstance(s, dict)]
+        numbers = [n for n in numbers if isinstance(n, int) and n >= 0]
+        for start in range(0, len(numbers) if episodes and kind == "series" else 0, 20):  # TMDB: 20 por consulta
+            batch = numbers[start:start + 20]
+            data = self._get(f"/tv/{int(tmdb_id)}", language=language,
+                             append_to_response=",".join(f"season/{n}" for n in batch))
+            for n in batch:
+                season = data.get(f"season/{n}") if isinstance(data.get(f"season/{n}"), dict) else {}
+                for ep in season.get("episodes") or []:
+                    if isinstance(ep, dict) and isinstance(ep.get("episode_number"), int):
+                        found["episodes"][(n, ep["episode_number"])] = {
+                            "name": str(ep.get("name") or "").strip(), "overview": str(ep.get("overview") or "").strip()}
+        return found
+
+    def search(self, kind: str, title: str, year: int | None = None) -> dict | None:
+        """Busca un título por nombre (y año, si se tiene) y devuelve su ficha completa, con su id de
+        IMDb. Para charts.py: ahí solo hay título, no id de TMDB."""
+        params: dict[str, object] = {"query": title}
+        if year:
+            params["year" if kind == "movie" else "first_air_date_year"] = year
+        data = self._get(f"/search/{KINDS[kind]}", **params)
+        results = [r for r in data.get("results") or [] if isinstance(r, dict) and isinstance(r.get("id"), int)]
+        return self.details(kind, results[0]["id"]) if results else None
+
     def find(self, imdb: str, kind: str) -> dict | None:
         """La ficha en español de un título de IMDb (lo de Trakt llega con sinopsis en inglés)."""
         data = self._get(f"/find/{imdb}", external_source="imdb_id")

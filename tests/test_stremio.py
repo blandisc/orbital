@@ -7,7 +7,7 @@ from conftest import FakeLauncher
 from orbital.catalog import STREMIO_KEY, Catalog
 from orbital.config import parse_config
 from orbital.credentials import Credentials
-from orbital.library import stremio_api
+from orbital.library import addons, stremio_api
 from orbital.voice import VoiceController
 
 # Formato real de LibraryItem (stremio-core/src/types/library/library_item.rs)
@@ -233,7 +233,7 @@ def test_sources_and_play_chosen_source_opens_player(linked, monkeypatch):
     raw = [{"name": "[RD+] Torrentio\n1080p", "title": "Show.S01E01.1080p.WEB\n👤 50 💾 1.2 GB ⚙️ X",
             "url": "https://torrentio/resolve/realdebrid/SECRETKEY/abc"}]
     monkeypatch.setattr(streams.StreamFinder, "addons",
-                        lambda self, key: [{"name": "Torrentio RD", "url": "https://torrentio/manifest.json", "types": ["series"]}])
+                        lambda self: [addons.parse_manifest({"name": "Torrentio RD", "resources": ["stream"], "types": ["series"]}, "https://torrentio/manifest.json")])
     monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, addon, kind, vid: raw)
     with TestClient(create_app(linked.config, linked), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
         data = c.get("/api/stremio/sources", params={"kind": "series", "id": "tt1", "video": "tt1:1:1"}).json()
@@ -250,7 +250,7 @@ def test_chosen_source_plays_in_orbital_player_from_where_you_left(linked, monke
     raw = [{"name": "[RD+] Torrentio\n1080p", "title": "Interstellar.2014.1080p\n👤 50 💾 9 GB",
             "url": "https://torrentio/resolve/realdebrid/SECRETKEY/abc"}]
     monkeypatch.setattr(streams.StreamFinder, "addons",
-                        lambda self, key: [{"name": "Torrentio RD", "url": "https://torrentio/manifest.json", "types": []}])
+                        lambda self: [addons.parse_manifest({"name": "Torrentio RD", "resources": ["stream"]}, "https://torrentio/manifest.json")])
     monkeypatch.setattr(streams.StreamFinder, "_fetch", lambda self, addon, kind, vid: raw)
     monkeypatch.setattr(player, "find_mpv", lambda: "C:/mpv/mpv.exe")
     played = []
@@ -384,3 +384,16 @@ def test_missing_title_is_404_not_a_network_error(make_client, library, monkeypa
     with make_client() as c:
         answer = c.get("/api/stremio/episodes/tt0")
         assert answer.status_code == 502 and "conexión" in answer.json()["detail"]
+
+
+def test_own_addons_are_saved_encrypted_and_never_shown_whole(library, monkeypatch):
+    from orbital.library import addons as addons_mod
+
+    url = "https://torrentio.strem.fun/realdebrid=SECRETO/manifest.json"
+    monkeypatch.setattr(addons_mod, "fetch_json", lambda u, timeout=0: {"name": "Torrentio RD", "resources": ["stream"]})
+    assert library.watch.add_addon("stremio://torrentio.strem.fun/realdebrid=SECRETO/manifest.json").name == "Torrentio RD"
+    assert library.credentials.get("stremio_addons") == [url]  # en secrets.json (cifrado en Windows), no en config.yaml
+    assert library.watch.has_addons and [a.name for a in library.watch.addons.addons()] == ["Torrentio RD"]
+    with pytest.raises(ValueError):
+        library.watch.add_addon("C:/addon")
+    assert library.watch.remove_addon(1) == "torrentio.strem.fun" and not library.watch.has_addons

@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import time
 
+from orbital.library import charts as charts_api
+from orbital.library import cinemeta as cinemeta_api
 from orbital.library import trakt as trakt_api
 
 
@@ -115,6 +117,14 @@ class DemoTmdb:
 
     def details(self, kind, tmdb_id):
         raise LookupError  # no se usa: el demo responde en _platform
+
+    _cinemeta = cinemeta_api.Cinemeta()
+
+    def search(self, kind, title, year=None):
+        """El demo no tiene su propio buscador: resuelve título → IMDb con Cinemeta (real), como
+        Orbital de verdad sin clave de TMDB. Así el Top 10 de Netflix se ve con arte real."""
+        imdb = charts_api.resolve_imdb(title, kind, tmdb=None, cinemeta=self._cinemeta)
+        return {"imdb": imdb} if imdb else None
 
     OVERVIEWS = {  # unas cuantas sinopsis, para ver la ficha completa (las demás quedan sin texto)
         "andor": "Cassian Andor, un ladrón sin causa, descubre en qué puede convertirse cuando la rebelión contra el Imperio empieza a tomar forma.",

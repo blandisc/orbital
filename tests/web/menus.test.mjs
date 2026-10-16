@@ -103,8 +103,9 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   assert.deepEqual(accounts.options[1].command, { type: "phone-link" }); // un QR para la cámara del iPhone
   const keys = settingsPage("accounts", { stremio_linked: true, trakt: { configured: false },
     para_ti: { trakt: { configured: false }, tmdb: true, rawg: false, saved: ["tmdb"] } });
-  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Stremio", "Conectada"], ["iPhone", "Conectar"], ["Claves de Para ti", undefined],
-    ["TMDB", "Lista"], ["RAWG", "Agregar"], ["Aplicación de Trakt", "Agregar"]]);
+  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Stremio", "Conectada"], ["iPhone", "Conectar"],
+    ["Claves de Para ti", undefined], ["TMDB", "Lista"], ["RAWG", "Agregar"], ["Aplicación de Trakt", "Agregar"]]);
+  assert.deepEqual(keys.options[1].command, { type: "phone-link" });
   assert.deepEqual(keys.options[3].command, { type: "keys-menu", service: "tmdb" });
   assert.deepEqual(keys.options[4].command, { type: "keys", service: "rawg" });
   assert.deepEqual(keysMenu("tmdb").options.map((o) => o.command.type), ["close", "keys", "keys-remove"]);

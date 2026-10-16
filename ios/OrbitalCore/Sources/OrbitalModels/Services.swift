@@ -20,6 +20,8 @@ public final class Services: ObservableModel {
     public private(set) var localizer: Localizer { didSet { changed() } }
     public private(set) var trakt: Trakt? { didSet { changed() } }
     public private(set) var forYou: ForYou { didSet { changed() } }
+    /// «Para ti» de tu Orbital (la consola), cuando está conectada; `ParaTiModel` decide si la usa.
+    public private(set) var forYouRemote: RemoteForYou { didSet { changed() } }
     public private(set) var watch: WatchService { didSet { changed() } }
     public private(set) var downloads: Downloads { didSet { changed() } }
     /// Cómo se escribe «T2 · E5» en el idioma de la app (la interfaz lo cambia; por omisión, en español).
@@ -52,6 +54,7 @@ public final class Services: ObservableModel {
         let trakt = Services.makeTrakt(http: http, secrets: secrets, settings: settings.value, clock: clock)
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, region: { settings.value.region }, kv: kv, clock: clock)
+        self.forYouRemote = RemoteForYou(remote: { OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "") }, clock: clock)
         self.watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate)
         self.downloads = Downloads(transport: downloadTransport, secrets: secrets, root: downloadsRoot, saved: savedDownloads, freeSpace: freeSpace,
                                    refresh: Services.refresher(finder: finder, settings: settings, titlePrefs: titlePrefs),
@@ -157,6 +160,7 @@ public final class Services: ObservableModel {
     public func resetAccountCaches() async {
         await registry.invalidate()
         await forYou.clearCache()
+        await forYouRemote.clearCache()
         generation += 1
     }
 }

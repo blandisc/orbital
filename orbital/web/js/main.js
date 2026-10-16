@@ -29,6 +29,7 @@ import { createTitle, titleRef } from "./components/title.js";
 import { createToast } from "./components/toast.js";
 import { createPhoneLink } from "./components/phone-link.js";
 import { createTv } from "./components/tv.js";
+import { createPhoneLink } from "./components/phone-link.js";
 import { createTraktLink } from "./components/trakt-link.js";
 import { createViewer } from "./components/viewer.js";
 import { createBoot } from "./app/boot.js";
@@ -189,7 +190,6 @@ let loginFrom = null;
 let captureFrom = null; // { options, first }: de qué lista de Capturas vienes
 let traktFrom = null;
 let phoneFrom = null;
-
 /** La hoja de Cuentas en la que estabas (abriste la clave desde ahí, o desde «Cambiar»). */
 function accountsAt(context) {
   if (!context) return null;
@@ -945,6 +945,11 @@ async function runCommand(command, context = null) {
         loginFrom = { context };
         return keysSaved(KEY_FORMS[command.service], status, { removed: true });
       }
+      case "phone-link": // un QR para la cámara del iPhone: la app queda conectada sin escribir nada
+        sound.play("open");
+        phoneFrom = { context };
+        ui.phoneLink.open();
+        return renderHints();
       case "trakt-account":
         return openMenu(traktAccountMenu(), nested(context));
       case "trakt-unlink":

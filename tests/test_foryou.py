@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from orbital import foryou as foryou_mod
 from orbital.config import parse_config
 from orbital.foryou import Cache, ForYou, game_item, hours_text, runtime_text, video_item
-from orbital.library import rawg, tmdb, trakt
+from orbital.library import charts, rawg, tmdb, trakt
 from orbital.server import create_app
 
 
@@ -180,10 +180,14 @@ def test_your_series_bring_the_next_episode_and_skip_finished_ones(make_foryou, 
 
 
 # ---------------------------------------------------------------- listas y servicios
+CHART_LIST_IDS = ["chart:netflix", "jw:disney", "jw:hbo", "jw:prime", "jw:appletv", "jw:paramount"]
+
+
 def test_only_the_services_you_have_show_up(make_foryou, net):
-    assert [row["id"] for row in make_foryou(trakt_keys=False).lists()] == ["mygames"]
+    # Netflix (Top 10 oficial) y JustWatch no piden clave: siempre están, aunque vengan vacíos sin red.
+    assert [row["id"] for row in make_foryou(trakt_keys=False).lists()] == [*CHART_LIST_IDS, "mygames"]
     ids = [row["id"] for row in make_foryou().lists()]
-    assert ids == ["trend", "popular", "mygames"]  # Trakt sin cuenta: tendencias y popular sí
+    assert ids == ["trend", "popular", *CHART_LIST_IDS, "mygames"]  # Trakt sin cuenta: tendencias y popular sí
     net.on("GET", r"/users/me/lists$", (200, [{"name": "Ciencia ficción", "ids": {"trakt": 77}}]))
     linked = [row["id"] for row in make_foryou(linked=True, rawg_key="r").lists()]
     assert linked[:4] == ["recs", "mine", "watchlist", "list:77"]
@@ -203,12 +207,43 @@ def test_streaming_platforms_come_from_tmdb_with_their_logo(make_foryou, net):
                                      "external_ids": {"imdb_id": "tt13443470"}}))
     net.on("GET", r"/tv/2\?", (200, {"id": 2, "name": "Sin IMDb", "external_ids": {}}))
     rows = {row["id"]: row for row in fy.lists()}
-    assert list(rows) == ["netflix", "disney", "hbo", "mygames"]
+    assert list(rows) == [*CHART_LIST_IDS, "netflix", "disney", "hbo", "mygames"]
     assert rows["netflix"]["logo"] == "https://image.tmdb.org/t/p/w154/n.png" and rows["netflix"]["split"]
     items = fy.list_items("netflix", "series")
     assert [(i["title"], i["detail"], i["why"]) for i in items] == [("Merlina", "2 temporadas", "En Netflix")]
     assert items[0]["image"] == "https://image.tmdb.org/t/p/w500/p.jpg" and items[0]["overview"].startswith("Merlina")
     assert "watch_region=MX" in next(c[1] for c in net.calls if "/discover/" in c[1])
+
+
+def test_netflix_top10_and_justwatch_lists_bring_rank_and_why(make_foryou, monkeypatch):
+    fy = make_foryou(trakt_keys=False)
+    monkeypatch.setattr(charts, "netflix_entries", lambda region, kind, **kw:
+                        [{"imdb": "tt6933238", "title": "UNABOMBER", "rank": 1, "weeks": 2}] if kind == "movie" else [])
+    monkeypatch.setattr(charts, "fetch_justwatch_popular", lambda brand, region, kind:
+                        [{"imdb": "tt29355505", "title": "Toy Story 5", "year": 2026, "rank": 1}]
+                        if brand == "disney" and kind == "movie" else [])
+    items = fy.list_items("chart:netflix", "movie")
+    assert [(i["title"], i["why"], i["rank"]) for i in items] == [("UNABOMBER", "N.º 1 esta semana · 2 semanas en el Top 10", 1)]
+    jw_items = fy.list_items("jw:disney", "movie")
+    assert [(i["title"], i["why"], i["rank"]) for i in jw_items] == [("Toy Story 5", "N.º 1 en Disney+", 1)]
+    assert fy.list_items("jw:disney", "series") == []  # esa plataforma no trajo series: queda vacía, no tumba nada
+
+
+def test_tmdb_platform_is_backup_only_when_justwatch_is_empty(make_foryou, net, monkeypatch):
+    fy = make_foryou(trakt_keys=False, tmdb_key="k")
+    net.on("GET", r"/watch/providers/movie", (200, {"results": [{"provider_id": 8, "provider_name": "Netflix", "logo_path": "/n.png"}]}))
+    net.on("GET", r"/watch/providers/tv", (200, {"results": []}))
+    # JustWatch (y el Top 10 de Netflix) sin nada: el riel enseña el respaldo de TMDB.
+    monkeypatch.setattr(charts, "netflix_entries", lambda region, kind, **kw: [])
+    monkeypatch.setattr(charts, "fetch_justwatch_popular", lambda brand, region, kind: [])
+    ids = [row["id"] for row in fy.lists()]
+    assert "netflix" in ids and "chart:netflix" in ids
+    # Ahora JustWatch sí trae algo para Netflix (el Top 10 de verdad): el respaldo de TMDB desaparece.
+    monkeypatch.setattr(charts, "netflix_entries", lambda region, kind, **kw:
+                        [{"imdb": "tt1", "title": "X", "rank": 1, "weeks": 1}] if kind == "movie" else [])
+    fy.cache.clear("charts:")  # la primera vuelta ya guardó «vacío»: se olvida para probar la de verdad
+    ids2 = [row["id"] for row in fy.lists()]
+    assert "chart:netflix" in ids2 and "netflix" not in ids2
 
 
 def test_rawg_games_you_own_are_marked_and_play(make_foryou, net):
@@ -285,7 +320,7 @@ def test_api_lists_details_dismiss_and_trakt(library, make_foryou):
     with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 5000)) as c:
         data = c.get("/api/foryou").json()
         assert data["status"]["trakt"] == {"configured": False, "linked": False}
-        assert [row["id"] for row in data["lists"]] == ["mygames"] and data["mosaic"]
+        assert [row["id"] for row in data["lists"]] == [*CHART_LIST_IDS, "mygames"] and data["mosaic"]
         assert c.get("/api/foryou/list", params={"id": "mygames"}).json()["items"]
         assert c.get("/api/foryou/list", params={"id": "nada"}).status_code == 404
         assert c.post("/api/foryou/dismiss", json={"key": "lo que sea"}).status_code == 422

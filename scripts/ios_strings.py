@@ -70,6 +70,8 @@ TRANSLATIONS = {
     "No pude abrir el archivo descargado.": "I couldn't open the downloaded file.", "No pude abrir ese título.": "I couldn't open that title.",
     "No pude leer el catálogo de Stremio. Revisa tu conexión.": "I couldn't read the Stremio catalog. Check your connection.", "No se pudo descargar": "Download failed",
     "Ocupan %@": "%@ used", "Otra fuente": "Another source", "Otra fuente…": "Another source…",
+    "Actualizar": "Refresh", "Para ti de tu Orbital": "For You, from your Orbital", "Calculado en el iPhone": "Calculated on the iPhone",
+    "Tu Orbital no tiene sugerencias todavía.": "Your Orbital doesn't have suggestions yet.",
     "Para conectar Trakt hace falta una aplicación de la API de Trakt (trakt.tv/oauth/applications). Pega aquí su identificador.":
         "To connect Trakt you need a Trakt API application (trakt.tv/oauth/applications). Paste its identifier here.",
     "Para ti": "For You", "Pausa": "Pause", "Pausar": "Pause", "País (para lo popular en plataformas)": "Country (for what's popular on platforms)",
@@ -95,6 +97,9 @@ TRANSLATIONS = {
     "No pude cambiar tu lista de Stremio: %@": "I couldn't change your Stremio list: %@", "No pude cambiar tu watchlist de Trakt: %@": "I couldn't change your Trakt watchlist: %@",
     "No pude marcarlo: %@": "I couldn't mark it: %@", "No pude pedir las fuentes: %@": "I couldn't get the sources: %@",
       "%@ de %@": "%@ of %@",  "Sí": "Yes",
+    "En vivo": "Live", "Sin sonido": "Mute", "Canal anterior": "Previous channel", "Canal siguiente": "Next channel",
+    "Salir del video": "Leave the video", "Seguir aquí": "Continue here",
+    "Viendo en la TV": "Watching on TV", "En la TV · En vivo": "On TV · Live",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",

@@ -16,13 +16,15 @@ import threading
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlsplit
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from . import __version__, companion
 from .api import diagnostics, foryou, library, live, media, play, quick, tv, ui, update
@@ -32,6 +34,8 @@ from .api.play import humane_error  # noqa: F401 - se importa desde aquí
 from .api.ui import SETTINGS  # noqa: F401
 from .catalog import Catalog
 from .config import Config
+from .foryou import SERVICE_ERRORS
+from .library import trakt
 from .shell import ConsoleShell
 from .voice import VoiceController
 
@@ -235,6 +239,11 @@ async def invalid_request(request: Request, exc: RequestValidationError) -> JSON
     return JSONResponse({"detail": errors}, status_code=422)
 
 
+class CompanionPlayerAction(BaseModel):
+    action: str
+    delta: float | None = None  # "skip": segundos (±10, ±30)
+
+
 def _companion_routes(app: FastAPI, config: Config) -> None:
     """«Conectar iPhone» en la TV: el QR (solo en el puerto local, el de la consola)."""
     from fastapi.responses import Response
@@ -316,10 +325,9 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         """La app del iPhone toma de aquí lo de «Para ti» para no escribirlo dos veces: la clave de TMDB, la aplicación
         de Trakt (su Client ID, que no es secreto; el secreto no sale de aquí) y el país."""
         p = config.para_ti
-        foryou = getattr(main_app.state.catalog, "foryou", None)
-        key = foryou.key if foryou else (lambda name: getattr(p, name))  # las escritas en la TV, o las de config.yaml
-        return {"tmdb_key": key("tmdb_key"), "trakt_client_id": key("trakt_client_id"), "region": p.region,
-                "trakt_session": companion.trakt_session(getattr(foryou, "trakt", None))}
+        trakt = getattr(getattr(main_app.state.catalog, "foryou", None), "trakt", None)
+        return {"tmdb_key": p.tmdb_key, "trakt_client_id": p.trakt_client_id, "region": p.region,
+                "trakt_session": companion.trakt_session(trakt)}
 
     @public.post("/api/stremio/play")
     def play_on_tv(body: media.PlayRequest) -> dict:
@@ -327,4 +335,75 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         No da más de lo que ya da la voz («pon The Office»): solo poner un título de Stremio."""
         return main_app.state.play_stremio(body)
 
+    _foryou_public_routes(public, main_app)
+
+    @public.get("/api/companion/now")
+    def companion_now() -> dict:
+        """«Viendo en la TV» del iPhone: qué se ve ahora (o `null` si no hay nada abierto)."""
+        return {"playing": companion.now_playing(main_app.state.catalog)}
+
+    @public.post("/api/companion/player")
+    def companion_player(body: CompanionPlayerAction) -> dict:
+        """Un botón de la tarjeta «Viendo en la TV»: pausa, adelantar, siguiente episodio o canal…"""
+        try:
+            now = companion.control_player(main_app.state.catalog, body.action, body.delta)
+        except companion.NothingPlaying as exc:
+            raise HTTPException(409, str(exc))
+        except ValueError as exc:
+            raise HTTPException(409, str(exc))
+        return {"playing": now}
+
     return public
+
+
+def _is_game_list(list_id: str) -> bool:
+    return list_id == "mygames" or list_id.startswith("rawg:")
+
+
+def _foryou_public_routes(public: FastAPI, main_app: FastAPI) -> None:
+    """«Para ti» para el iPhone por el túnel: la misma curaduría de la consola (misma caché), sin juegos
+    (el iPhone solo enseña películas y series)."""
+
+    def foryou_of() -> Any:
+        return main_app.state.catalog.foryou
+
+    @public.get("/api/foryou")
+    def overview() -> dict:
+        data = foryou_of().overview()
+        data["lists"] = [row for row in data["lists"] if not _is_game_list(row["id"])]
+        data["mosaic"] = [item for item in data["mosaic"] if item.get("kind") != "game"]
+        return data
+
+    @public.get("/api/foryou/list")
+    def items(id: str, kind: str | None = None) -> dict:
+        list_id = id[:120]
+        if _is_game_list(list_id):
+            raise HTTPException(404, "Esa lista ya no existe.")
+        try:
+            return {"items": foryou_of().list_items(list_id, kind)}
+        except KeyError:
+            raise HTTPException(404, "Esa lista ya no existe.")
+        except trakt.TraktAuthError as exc:
+            raise HTTPException(409, str(exc))
+        except SERVICE_ERRORS:
+            raise HTTPException(502, "No pude cargar esta lista. Revisa tu conexión e inténtalo de nuevo.")
+
+    @public.get("/api/foryou/details")
+    def details(key: str, kind: str | None = None) -> dict:
+        value = key[:320]
+        if value.startswith(("rawg:", "game:")):
+            raise HTTPException(404, "No encontré esa sugerencia.")
+        try:
+            return foryou_of().details(value, kind)
+        except KeyError:
+            raise HTTPException(404, "No encontré esa sugerencia.")
+        except SERVICE_ERRORS:
+            return {"overview": ""}  # sin sinopsis no pasa nada
+
+    @public.post("/api/foryou/dismiss")
+    def dismiss(body: foryou.DismissRequest) -> dict:
+        try:
+            foryou_of().dismiss(body.key)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc))
+        return {"ok": True}

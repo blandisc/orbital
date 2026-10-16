@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  factLine, hashOf, iconName, kindLabel, listMeta, nearestTile, nextUnseen, playOf, posterRatio, primaryAction, railEntries, shapeOf,
+  factLine, hashOf, iconName, kindLabel, listMeta, nearestTile, nextUnseen, playOf, posterRatio, primaryAction, railEntries, rankOf, shapeOf,
 } from "../../orbital/web/js/core/foryou.js";
 
 const series = { key: "video:tt1", kind: "series", title: "Severance", detail: "Sigue T2 E6", meta_id: "tt1", video_id: "tt1:2:6", episode: "T2 E6" };
@@ -17,6 +17,16 @@ test("cada sugerencia dice qué es y un dato, y lleva el ícono de su consola o 
   assert.equal(kindLabel({ ...rawg, system: "pc" }), "PC");
   assert.deepEqual([iconName(series), iconName(movie), iconName(mine), iconName(rawg), iconName({ kind: "game" })],
     ["series", "movie", "steam", "steam", "gamepad"]);
+});
+
+test("rankOf: el puesto del Top 10 (Netflix, JustWatch) pinta el badge; lo demás, no", () => {
+  assert.equal(rankOf({ rank: 1 }), 1);
+  assert.equal(rankOf({ rank: 10 }), 10);
+  assert.equal(rankOf({ rank: 0 }), null); // 0 no es un puesto
+  assert.equal(rankOf({ rank: -1 }), null);
+  assert.equal(rankOf({ rank: "3" }), null); // de texto, no: vendría de un bug en el servidor
+  assert.equal(rankOf(series), null); // una sugerencia sin Top 10 no lleva número
+  assert.equal(rankOf(null), null);
 });
 
 test("A: ver con su episodio, jugar lo tuyo, y nada con un juego que no tienes", () => {

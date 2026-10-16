@@ -23,14 +23,33 @@ public enum DesignTokens {
         public static let scrimStrong = 0.92, badge = 0.8, pressed = 0.8, disabled = 0.4, shrink = 0.85, subtitleShadow = 0.9
     }
     /// Subtítulos sobre el video: letra mínima, cuánto suben con los controles a la vista, espacio entre líneas
-    /// (fracción de la letra), margen con el borde del video (fracción de su alto) y sombra (fracción de la letra).
-    public enum Subtitle { public static let minFont = 15.0, liftWithControls = 72.0, lineGap = 0.15, edgeMargin = 0.05, shadowRadius = 0.08 }
+    /// (fracción de la letra), margen con el borde del video (fracción de su alto), sombra y contorno (fracción
+    /// de la letra, para leerse sobre fondos claros).
+    public enum Subtitle { public static let minFont = 15.0, liftWithControls = 72.0, lineGap = 0.15, edgeMargin = 0.05, shadowRadius = 0.08, outlineWidth = 0.06 }
     /// Medidas fijas (puntos): el mínimo táctil de iOS, miniaturas, tarjetas.
-    public enum Size { public static let touchTarget = 44.0, thumbSmall = 48.0, cardMax = 320.0, grabber = 40.0, grabberHeight = 5.0, logo = 80.0, gaugeScale = 0.45 }
+    public enum Size {
+        public static let touchTarget = 44.0, thumbSmall = 48.0, cardMax = 320.0, grabber = 40.0, grabberHeight = 5.0, logo = 80.0, gaugeScale = 0.45
+        /// El logo de una plataforma (Netflix, Disney+…) en un chip o un encabezado: siempre la misma altura, venga el logo
+        /// cuadrado o apaisado.
+        public static let platformLogo = 18.0
+    }
     /// Relaciones de aspecto de las imágenes.
     public enum Aspect { public static let poster = 2.0 / 3.0, hero = 16.0 / 11.0, still = 16.0 / 9.0 }
     /// Esperas de la interfaz (segundos).
-    public enum Timing { public static let controlsHide = 4.0, banner = 4.0, searchDebounce = 0.3, tick = 1.0, longPressDelay = 0.4 }
+    public enum Timing {
+        public static let controlsHide = 4.0, banner = 4.0, searchDebounce = 0.3, tick = 1.0, longPressDelay = 0.4
+        /// Cuánto se queda a la vista el indicador de brillo o volumen después de soltar, antes de desvanecerse.
+        public static let gestureIndicatorHold = 1.0
+    }
+    /// Gestos del reproductor (brillo, volumen, buscar arrastrando, 2× manteniendo el dedo), como en Infuse.
+    public enum Gesture {
+        /// Puntos de arrastre antes de decidir si el gesto es horizontal o vertical (y de que el toque deje de ser toque).
+        public static let axisThreshold = 12.0
+        /// Arrastrar horizontalmente toda la pantalla vale esta fracción de la duración…
+        public static let seekMaxFraction = 0.10
+        /// …o este tope en segundos, lo que sea menor.
+        public static let seekMaxSeconds = 180.0
+    }
 }
 
 /// Convierte «#rrggbb» en sus componentes 0…1.

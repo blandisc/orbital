@@ -11,17 +11,21 @@ struct ParaTiView: View {
 
     var body: some View {
         let m = model.model
-        VStack(spacing: DS.Space.s3) {
+        VStack(spacing: DS.Space.s2) {
             HStack {
                 DSSegmented<ParaTiModel.Mode>(options: [(.mosaic, "Mosaico"), (.lists, "Listas")], selection: Binding(get: { m.mode }, set: { m.mode = $0 }))
                 Spacer()
                 if m.traktLinked { DSChip(text: "Trakt al día", tone: .good) }
             }
             .padding(.horizontal, DS.Space.gutter)
-            if let error = m.error, m.mosaic.isEmpty, m.lists.isEmpty { DSNotice(text: LocalizedStringKey(error)).padding(.horizontal, DS.Space.gutter) }
-            if m.isGeneric, m.mode == .mosaic, !m.mosaic.isEmpty {
-                DSNotice(text: "Lo más popular en Stremio. Conecta Trakt en Ajustes y el mosaico se arma con lo tuyo.").padding(.horizontal, DS.Space.gutter)
+            HStack {
+                Text(footer(m)).font(DS.font(.xs)).foregroundStyle(DS.textMuted)
+                Spacer()
+                Button { Task { await m.refresh() } } label: { Text("Actualizar") }
+                    .buttonStyle(.plain).font(DS.font(.xs)).foregroundStyle(DS.textMuted)
             }
+            .padding(.horizontal, DS.Space.gutter)
+            if let error = m.error, m.mosaic.isEmpty, m.lists.isEmpty { DSNotice(text: LocalizedStringKey(error)).padding(.horizontal, DS.Space.gutter) }
             switch m.mode {
             case .mosaic: MosaicView(observer: model)
             case .lists: ListsView(observer: model)
@@ -39,6 +43,14 @@ struct ParaTiView: View {
         }
         .refreshable { await m.refresh() }
         .animation(DS.Motion.base(reduceMotion), value: m.mode)
+    }
+
+    /// El pie discreto bajo el selector: de dónde salió lo que ves, o (si aplica) la invitación a conectar Trakt.
+    private func footer(_ m: ParaTiModel) -> LocalizedStringKey {
+        if m.isGeneric, m.mode == .mosaic, !m.mosaic.isEmpty {
+            return "Lo más popular en Stremio. Conecta Trakt en Ajustes y el mosaico se arma con lo tuyo."
+        }
+        return m.source == .console ? "Para ti de tu Orbital" : "Calculado en el iPhone"
     }
 }
 
@@ -67,7 +79,7 @@ struct MosaicView: View {
                         .padding(.top, column == 1 ? 0 : DS.Space.s6)   // las laterales empiezan más abajo: cascada
                     }
                 }
-                .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s8)
+                .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)   // aire bajo la última fila: la barra de pestañas no la tapa
             }
         }
         .overlay { if model.mosaic.isEmpty && model.isLoading { ProgressView() } }
@@ -95,7 +107,17 @@ struct MosaicTile: View {
                     .padding(DS.Space.s2)
                 }
                 // Las columnas de los lados solo enseñan la imagen y si es serie o película (como en la TV): la etiqueta no cabe.
-                VStack { HStack(alignment: .top) { if expanded { DSBadge(text: inWatchlist ? "En tu lista" : badgeKey(suggestion.reason)) }; Spacer(minLength: 0); kindIcon }; Spacer() }.padding(DS.Space.s2)
+                // El puesto en un Top 10 sí se enseña en cualquier columna (una sola pieza: con letra de accesibilidad
+                // grande no cabrían las dos, y el puesto ya dice que es un título de un chart).
+                VStack {
+                    HStack(alignment: .top) {
+                        if let rank = suggestion.rank { DSRankBadge(rank: rank) }
+                        else if expanded { DSBadge(text: inWatchlist ? "En tu lista" : badgeKey(suggestion.reason)) }
+                        Spacer(minLength: 0)
+                        if suggestion.rank == nil { kindIcon }
+                    }
+                    Spacer()
+                }.padding(DS.Space.s2)
             }
             .frame(width: width).clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         }
@@ -131,7 +153,7 @@ struct ListsView: View {
                 if model.chip == .trakt { traktTabs }
                 ForEach(model.visibleLists) { list in listSection(list) }
             }
-            .padding(.bottom, DS.Space.s8)
+            .padding(.bottom, DS.Space.s14)   // aire bajo la última fila: la barra de pestañas no la tapa
         }
     }
 
@@ -144,11 +166,16 @@ struct ListsView: View {
         if !movies.isEmpty { Rail(title: "Películas populares") { ForEach(movies) { TitleLink(route: $0.route) } } }
     }
 
-    private func label(_ chip: ParaTiModel.Chip) -> Text {
+    @ViewBuilder private func label(_ chip: ParaTiModel.Chip) -> some View {
         switch chip {
         case .all: Text("Todo")
         case .trakt: Text("Trakt")
-        case .platform(let brand): Text(Tmdb.platforms.first { $0.brand == brand }?.name ?? brand)
+        case .platform(let brand):
+            let logo = model.platformLists.first { $0.brand == brand }?.logo
+            HStack(spacing: DS.Space.s1) {
+                if let logo { DSPlatformLogo(url: logo) }
+                Text(Tmdb.platforms.first { $0.brand == brand }?.name ?? brand)
+            }
         }
     }
 
@@ -192,15 +219,16 @@ struct ListsView: View {
         let items = model.items(for: list)
         if model.chip == .all {
             if !items.isEmpty {
-                Rail(title: LocalizedStringKey(list.title.isEmpty ? "Tu watchlist" : list.title), trailing: list.group == .platforms ? "Lo más popular" : nil) {
-                    ForEach(items) { s in TitleLink(route: s.route, badge: model.watchlistKeys.contains(s.imdb) ? "En tu lista" : nil) }
+                Rail(title: LocalizedStringKey(list.title.isEmpty ? "Tu watchlist" : list.title), trailing: list.group == .platforms ? "Lo más popular" : nil,
+                     logo: list.group == .platforms ? list.logo : nil) {
+                    ForEach(items) { s in TitleLink(route: s.route, badge: model.watchlistKeys.contains(s.imdb) ? "En tu lista" : nil, rank: s.rank) }
                 }
             }
         } else if items.isEmpty {
             DSNotice(text: "No hay nada aquí todavía.").padding(.horizontal, DS.Space.gutter)
         } else {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
-                ForEach(items) { s in TitleLink(route: s.route, badge: badgeKey(s.reason), width: DS.Poster.gridMinimum) }
+                ForEach(items) { s in TitleLink(route: s.route, badge: badgeKey(s.reason), rank: s.rank, width: DS.Poster.gridMinimum) }
             }
             .padding(.horizontal, DS.Space.gutter)
         }

@@ -54,8 +54,19 @@ extension PlayRequest: @retroactive Identifiable { public var id: String { "\(me
 
 /// La barra de pestañas nativa: en iOS 26 es de vidrio (Liquid Glass) y se encoge al deslizar.
 struct MainTabs: View {
-    @State private var tab = 0
+    @State private var tab: Int
     @State private var paths: [NavigationPath] = Array(repeating: NavigationPath(), count: 4)
+
+    init() {
+        // En modo demo la pestaña pedida (`-demo-tab`) manda siempre, aunque iOS restaure la última que viste
+        // (la restauración de escena no es nuestra ni se puede desactivar por vista: se vuelve a pedir en `.task`,
+        // después de que la restauración ya aplicó lo suyo). Fuera de demo, la pestaña que recuerdes sigue igual.
+        var initial = 0
+        #if DEBUG
+        if Demo.isOn { initial = Demo.tab }
+        #endif
+        _tab = State(initialValue: initial)
+    }
 
     var body: some View {
         TabView(selection: $tab) {
@@ -66,6 +77,19 @@ struct MainTabs: View {
         }
         .tabBarMinimizeBehavior(.onScrollDown)
         .onAppear(perform: openDemoScreen)
+        .task { forceDemoTab() }   // una segunda vez: gana aunque la restauración de escena llegue después de aparecer
+        #if DEBUG
+        // iOS restaura la pestaña que viste la última vez (independiente de nuestro @State) y lo hace después de
+        // aparecer y del `.task` de arriba: si en modo demo algo la cambia por detrás, se vuelve a pedir la tuya.
+        .onChange(of: tab) { _, new in if Demo.isOn, new != Demo.tab { tab = Demo.tab } }
+        #endif
+    }
+
+    /// Solo la pestaña (repetible: no abre nada encima dos veces).
+    private func forceDemoTab() {
+        #if DEBUG
+        if Demo.isOn { tab = Demo.tab }
+        #endif
     }
 
     private func openDemoScreen() {
