@@ -32,6 +32,15 @@ public enum DesignTokens {
         /// El logo de una plataforma (Netflix, Disney+…) en un chip o un encabezado: siempre la misma altura, venga el logo
         /// cuadrado o apaisado.
         public static let platformLogo = 18.0
+        /// El logo del título en el destacado de Inicio y en la ficha (en una pieza del mosaico va `logo`): tope de alto; de ancho,
+        /// `cardMax`. Es el mismo tope relativo que `.title__logo` en la TV (más grande que el de la ficha lateral).
+        public static let logoHero = 96.0
+    }
+    /// El fondo de pantalla (`Backdrop`, como `--art-tint` y `.backdrop__space` en la TV): hasta dónde se aclara el tono del arte
+    /// hacia abajo (mezcla con el grafito), las estrellas del espacio vivo (cuántas, cuánto miden, qué tan tenues) y desde dónde se
+    /// funde el arte a sangre con el fondo (fracción de su alto).
+    public enum Backdrop {
+        public static let tintFloor = 0.5, starCount = 56, starRadius = 1.1, starOpacity = 0.35, starSeed = 7.0, artFadeStart = 0.6
     }
     /// Relaciones de aspecto de las imágenes.
     public enum Aspect { public static let poster = 2.0 / 3.0, hero = 16.0 / 11.0, still = 16.0 / 9.0 }

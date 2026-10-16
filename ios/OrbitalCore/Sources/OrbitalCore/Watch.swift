@@ -40,15 +40,10 @@ public enum PlaybackRules {
     }
 
     /// Minutos que faltan (0 si falta menos de uno): la interfaz arma «quedan 1 h 40 min» en su idioma.
-    public static func minutesLeft(_ seconds: Double) -> Int { max(0, Int(seconds / 60)) }
+    public static func minutesLeft(_ seconds: Double) -> Int { Vocabulary.minutesLeft(seconds: seconds) }
 
-    /// «quedan 11 min» / «quedan 1 h 40 min» (vacío si falta menos de un minuto).
-    public static func timeLeft(_ seconds: Double) -> String {
-        let minutes = Int(seconds / 60)
-        guard minutes >= 1 else { return "" }
-        let (h, m) = (minutes / 60, minutes % 60)
-        return h > 0 && m > 0 ? "quedan \(h) h \(m) min" : h > 0 ? "quedan \(h) h" : "quedan \(m) min"
-    }
+    /// «quedan 11 min» / «quedan 1 h 40 min» (vacío si falta menos de un minuto): ver `Vocabulary.timeLeft`.
+    public static func timeLeft(_ seconds: Double) -> String { Vocabulary.timeLeft(seconds: seconds) }
 
     /// Código de pista («spa», «es-MX», «eng») → el de Ajustes («es», «en»); «» = sin subtítulos; nil si es otro idioma.
     public static func languageCode(_ code: String?) -> String? {

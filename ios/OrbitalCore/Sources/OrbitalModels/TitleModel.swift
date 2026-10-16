@@ -37,6 +37,9 @@ public final class TitleModel: ObservableModel {
     public private(set) var isLoading = false { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }
     public private(set) var message: String? { didSet { changed() } }
+    /// La sinopsis que dio tu Orbital (en español cuando puede) y si su logo es oscuro (se pinta blanco); nil si no hay consola.
+    public private(set) var consoleOverview: String? { didSet { changed() } }
+    public private(set) var logoIsDark = false { didSet { changed() } }
 
     private let services: Services
     private var meta: JSON?                // la ficha ORIGINAL
@@ -90,6 +93,18 @@ public final class TitleModel: ObservableModel {
             error = nil
         } catch { self.error = "\(error)" }
         await refreshState()
+    }
+
+    /// La sinopsis de la ficha: la de tu Orbital si contestó (viene en español), si no la de Cinemeta de siempre.
+    public var overview: String { consoleOverview ?? info.description }
+
+    /// Pide a tu Orbital la sinopsis y el tipo de logo (`/api/foryou/details`). Sin consola o sin respuesta no cambia nada.
+    public func loadConsoleDetails() async {
+        let remote = services.orbital
+        guard remote.isConfigured, metaID.hasPrefix("tt") else { return }
+        guard let json = try? await remote.foryouDetails(key: "video:\(metaID)", kind: kind) else { return }
+        if let text = json["overview"]?.nonEmptyString?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty { consoleOverview = text }
+        logoIsDark = json["logo_dark"]?.bool ?? false
     }
 
     /// Lo que cambia viendo, descargando o marcando: lo tuyo en Stremio, Trakt y las descargas.

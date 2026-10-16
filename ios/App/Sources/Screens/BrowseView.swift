@@ -21,7 +21,7 @@ struct BrowseView: View {
             }
             .padding(.bottom, DS.Space.s8)
         }
-        .background(TintedBackground())
+        .background(Backdrop())
         .navigationTitle("Ver").navigationBarTitleDisplayMode(.large)
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: Text("Buscar películas y series"))
         .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }

@@ -210,6 +210,20 @@ Tocar enfoca (resorte + háptica), volver a tocar abre la ficha, mantener pulsad
 Tokens: `DesignTokens.Mosaic`. Modo demostración: `-demo-mosaic-focus N` enfoca la sugerencia N al abrir.
 Ojo al probar en el simulador: instala siempre un build propio (`-derivedDataPath`); otro worktree puede dejar su `.app` con el mismo identificador.
 
+## La firma de la consola en Inicio y en la ficha (CEN-37)
+
+Un solo sistema de diseño con dos implementaciones espejo: cada pieza lleva el mismo nombre que en la TV y usa los mismos tokens (`DesignTokens.Backdrop`, `Size.logoHero`).
+
+| Pieza (iPhone) | Equivale en la TV | Qué hace |
+|---|---|---|
+| `Backdrop` (`Components.swift`) | `backdrop.js` / `--art-tint` / `.backdrop__space` | El tono del arte enfocado o abierto tiñe toda la pantalla (fundido `DS.Motion.tint`, sin movimiento con Reducir movimiento). Sin arte y con `space`: estrellas muy tenues (Inicio, Para ti). Inicio: el destacado; ficha: el póster; Para ti: la pieza enfocada (`Mosaic.onFocusChange`) |
+| `BleedArt` | arte de `FeatureTile` y `.title__backdrop` | Arte a sangre que se funde con el fondo (máscara de gradiente, sin esquinas) |
+| `TitleLogo` | `.title__logo` / `--logo` | Logo de metahub; si no carga, el nombre en texto. `.tile` (mosaico) y `.hero` (destacado y ficha) |
+| `HeroCard` | `FeatureTile` | Destacado de Inicio: arte a sangre, logo, «T2 · E5 · quedan 20 min», Continuar |
+| `RowTile` | `RowTile` (`tiles.js`) | Renglón con miniatura ancha, nombre y dato: «También tenías» |
+
+Vocabulario único en `OrbitalCore/Vocabulary.swift` (`runtimeText`, `timeLeft`, `factLine`, `factVariants`, `titleFacts`, `greeting`): `runtimeText` y `timeLeft` se comparan con `orbital/foryou.py` y `orbital/watch.py` (`scripts/ios_golden.py` → `tests/fixtures/ios/vocabulary.json`). Inicio saluda como `core/home.js`; la ficha pone Mi lista y En la TV como íconos en la barra, Descargar y Fuentes bajo el botón principal, y pide la sinopsis en español a `/api/foryou/details` si la consola está conectada.
+
 ## Excepciones al sistema de diseño
 
 `DesignTests` revisa que las pantallas no escriban colores, medidas, opacidades ni esperas a mano. Una línea se exime con `ds-exception: motivo`:
