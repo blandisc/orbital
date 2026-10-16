@@ -37,7 +37,7 @@ struct DSChipText: View {
 struct DSBadge: View {
     let text: LocalizedStringKey
     var body: some View {
-        Text(text).font(DS.TextRecipe.caption.font.weight(.semibold)).lineLimit(1).foregroundStyle(DS.text)
+        Text(text).font(DS.TextRecipe.caption.font.weight(.semibold)).lineLimit(1).foregroundStyle(DS.paper)   // sobre la placa oscura del arte, en los dos modos
             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
             .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
     }
@@ -60,7 +60,7 @@ struct DSIconBadge: View {
 struct DSRankBadge: View {
     let rank: Int
     var body: some View {
-        Text(verbatim: "\(rank)").font(DS.TextRecipe.section.font.weight(.bold)).foregroundStyle(DS.text).lineLimit(1)
+        Text(verbatim: "\(rank)").font(DS.TextRecipe.section.font.weight(.bold)).foregroundStyle(DS.paper).lineLimit(1)   // sobre la placa oscura, en los dos modos
             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
             .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.md))
             .accessibilityLabel(Text("Puesto \(rank)"))
@@ -318,14 +318,20 @@ struct HeroCard<Actions: View>: View {
     var accentEyebrow = false
     var data: [String] = []
     var progress: Double?
+    /// Abrir la ficha: la tarjeta lo hace con su toque y VoiceOver con la acción «Ver ficha» sobre el nombre.
+    var open: (() -> Void)?
     @ViewBuilder var actions: () -> Actions
 
     var body: some View {
         BleedArt(url: background, title: title, minHeight: DS.Poster.heroHeight) {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
-                if let eyebrow { Eyebrow(text: eyebrow, accent: accentEyebrow, onArt: true) }
-                TitleLogo(url: logo, title: title, size: .hero)
-                if !data.isEmpty { DataLine(parts: data, color: DS.onArtSecondary) }
+                VStack(alignment: .leading, spacing: DS.Space.s3) {
+                    if let eyebrow { Eyebrow(text: eyebrow, accent: accentEyebrow, onArt: true) }
+                    TitleLogo(url: logo, title: title, size: .hero)
+                    if !data.isEmpty { DataLine(parts: data, color: DS.onArtSecondary) }
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityAction(named: Text("Ver ficha")) { open?() }
                 actions().padding(.top, DS.Space.s1)
                 if let progress { DSProgress(fraction: progress) }
             }

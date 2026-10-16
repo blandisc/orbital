@@ -20,7 +20,8 @@ OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
     # Proyección: modo claro y oscuro
-    "Control remoto": "Remote control", "Esta semana en México": "This week in Mexico", "Las que estás viendo": "Shows you're watching", "Tendencia en JustWatch · México": "JustWatch trend · Mexico",
+    "Falta el archivo parcial": "The partial file is missing", "No se pudo reproducir": "Could not play",
+    "Puesto %lld": "No. %lld", "Puesto %@": "No. %@", "Control remoto": "Remote control", "Esta semana en México": "This week in Mexico", "Las que estás viendo": "Shows you're watching", "Tendencia en JustWatch · México": "JustWatch trend · Mexico",
     "Tendencias en %@": "Trending on %@", "Top 10 en %@": "Top 10 on %@",
     "En tu watchlist": "In your watchlist", "En una de tus listas": "In one of your lists", "Tus series": "Your shows",
     "Nada por aquí por ahora.": "Nothing here for now.", "Ver %@": "Watch %@", "Ver T%lld E%lld": "Watch S%lld E%lld",
@@ -166,7 +167,8 @@ def used_literals() -> dict[str, str]:
     files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift"))
     for f in files:
         f = Path(f).as_posix()  # en Windows glob da «\»: sin esto el modo demo y Platform/ se colaban
-        if "/Design/" in f or "/Platform/" in f or f.endswith(("/Support/Demo.swift", "Previews.swift")):   # el modo demo (solo Debug) no se traduce
+        # El modo demo (solo Debug) no se traduce; de Design/ solo se saltan los tokens y el banco de pruebas (las piezas sí llevan texto).
+        if "/Platform/" in f or f.endswith(("/Support/Demo.swift", "Previews.swift", "/Design/Tokens.swift", "/Design/MosaicBench.swift", "/Design/ModelObserver.swift")):
             continue
         for number, line in enumerate(Path(f).read_text(encoding="utf-8").splitlines(), 1):
             stripped = line.strip()
@@ -191,7 +193,7 @@ UI_CALL = r'(Text|Button|Label|Section|Toggle|Picker|TextField|SecureField|Tab|n
 def ui_word(word: str) -> bool:
     """¿La palabra aparece como el texto de un control en alguna pantalla?"""
     pattern = re.compile(UI_CALL.format(re.escape(word)))
-    files = glob.glob(str(ROOT / "ios/App/Sources/Screens/*.swift")) + glob.glob(str(ROOT / "ios/App/Sources/Design/Components.swift"))
+    files = glob.glob(str(ROOT / "ios/App/Sources/Screens/*.swift")) + glob.glob(str(ROOT / "ios/App/Sources/Design/Components.swift")) + [str(ROOT / f"ios/App/Sources/Design/{n}.swift") for n in ("Projection", "Shelf", "Mosaic")]
     return any(pattern.search(Path(f).read_text(encoding="utf-8")) for f in files)
 
 

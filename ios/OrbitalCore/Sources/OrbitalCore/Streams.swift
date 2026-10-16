@@ -76,6 +76,13 @@ public enum Streams {
         "ro": "Rumano", "bg": "Búlgaro", "hr": "Croata", "sr": "Serbio", "he": "Hebreo", "ar": "Árabe",
         "th": "Tailandés", "vi": "Vietnamita", "id": "Indonesio", "lt": "Lituano", "lv": "Letón", "et": "Estonio",
     ]
+    /// El nombre de un idioma en el idioma de la app («Inglés» / «English»): el de iOS; si no lo conoce, la tabla de arriba.
+    public static func languageName(_ code: String, in uiLanguage: String) -> String {
+        if let name = Locale(identifier: uiLanguage).localizedString(forLanguageCode: code) {
+            return name.prefix(1).uppercased() + name.dropFirst()
+        }
+        return languageNames[code] ?? code
+    }
     /// ISO 639-2, como etiquetan los complementos de subtítulos (OpenSubtitles: «eng», «spa»…).
     public static let languageCodes: [String: String] = ["en": "eng", "es": "spa", "fr": "fre", "it": "ita", "de": "ger", "pt": "por", "ja": "jpn"]
 

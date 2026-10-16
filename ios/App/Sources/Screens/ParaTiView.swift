@@ -144,9 +144,10 @@ struct ShelfPoster: View {
 
 /// El nombre de una lista que el iPhone conoce (para nombrarla en su idioma); nil si es un catálogo de complemento.
 @MainActor private func knownShelfTitle(_ plan: ShelfPlan) -> Text? {
-    let brand = plan.list.brand.flatMap { brand in Tmdb.platforms.first { $0.brand == brand }?.name } ?? plan.list.brand ?? ""
-    if plan.id.hasPrefix("chart:") { return Text("Top 10 en \(brand)") }
-    if plan.id.hasPrefix("jw:") { return Text("Tendencias en \(brand)") }
+    let brand = plan.list.brand.flatMap { brand in Tmdb.platforms.first { $0.brand == brand }?.name } ?? plan.list.brand
+    // Sin marca no se puede nombrar («Top 10 en »): se deja el título de la TV.
+    if plan.id.hasPrefix("chart:") { return brand.map { Text("Top 10 en \($0)") } }
+    if plan.id.hasPrefix("jw:") { return brand.map { Text("Tendencias en \($0)") } }
     switch plan.id {
     case "mine": return Text("Tus series")
     case "watchlist": return Text("Tu watchlist")
@@ -242,7 +243,7 @@ struct ListsView: View {
         return Shelf(title: shelfTitle(plan), meta: shelfMeta(plan), logo: plan.style == .plain ? nil : plan.list.logo, symbol: shelfSymbol(plan),
                      route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty) {
             ForEach(items) { s in
-                ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb)) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Lo tuyo» todo está en tu lista: la etiqueta sobra
+                ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb)) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Tu watchlist» todo está ahí: el marcador sobra
             }
         }
     }
@@ -270,7 +271,7 @@ struct ListsView: View {
         let s = featured.item
         let route = s.route
         return HeroCard(title: s.title, background: s.wide, logo: s.logo, eyebrow: Text(reasonKey(featured.reason)), accentEyebrow: true,
-                        data: factStrings(s).first.map { [$0] } ?? []) {
+                        data: factStrings(s).first.map { [$0] } ?? [], open: { openTitle = route }) {
             // «Ver» y «Más» en un renglón; con letra grande, uno debajo del otro.
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: DS.Space.s2) { watchButton(s); moreMenu(s) }
@@ -279,7 +280,6 @@ struct ListsView: View {
         }
         .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xxl))
         .onTapGesture { openTitle = route }
-        .accessibilityAction(named: Text("Ver ficha")) { openTitle = route }
     }
 
     /// «Ver» (película) o «Ver la serie» (abre su ficha: sugerir un episodio suelto casi siempre es el equivocado), como la TV.
@@ -335,7 +335,7 @@ struct ListGridView: View {
                     } else {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
                             ForEach(items) { s in
-                                ShelfPoster(suggestion: s, style: plan.style == .top10 ? .platform : plan.style, inList: model.watchlistKeys.contains(s.imdb)) { dismissed in Task { await model.dismiss(dismissed) } }
+                                ShelfPoster(suggestion: s, style: plan.style == .top10 ? .platform : plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb)) { dismissed in Task { await model.dismiss(dismissed) } }
                             }
                         }
                         .padding(.horizontal, DS.Space.gutter)

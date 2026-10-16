@@ -87,7 +87,7 @@ struct DownloadsView: View {
         case .queued: return Strings.tr("En cola", language: language)
         case .downloading: return "\(bytes(item.writtenBytes)) / \(item.expectedBytes.map(bytes) ?? "—")"
         case .paused: return Strings.tr("En pausa", language: language)
-        case .failed: return item.lastError ?? Strings.tr("No se pudo descargar", language: language)
+        case .failed: return item.lastError.map { Strings.tr($0, language: language) } ?? Strings.tr("No se pudo descargar", language: language)   // los errores fijos de la descarga, también traducidos
         case .done: return nil
         }
     }

@@ -122,6 +122,7 @@ private struct Caption: View {
             if let progress = item.progress { ProgressLine(fraction: progress) }
         }
         .shadow(color: DS.scrimStrong, radius: DS.Widget.textShadowRadius)
+        .environment(\.colorScheme, .dark)   // va sobre el velo del arte: letra clara también con la pantalla de inicio en claro
     }
 }
 
@@ -177,6 +178,7 @@ private struct MediumView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
+            .environment(\.colorScheme, .dark)   // el fondo es el tono oscuro del arte: letra clara en los dos modos
             .containerBackground(for: .widget) { tintedBackground(artTone(first)) }
         } else {
             EmptyState()

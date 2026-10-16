@@ -32,7 +32,7 @@ struct SettingsView: View {
             Section("Alexa") {
                 NavigationLink { AlexaCommandsView() } label: { Label("Qué le puedes decir a Alexa", systemImage: "waveform") }
             }
-            .listRowBackground(DS.fill)
+            .listRowBackground(DS.surface)
             addons
             traktSection(model)
             Section("Apariencia") {

@@ -101,6 +101,7 @@ final class DesignTests: XCTestCase {
             (#"\.opacity\(\s*[0-9]"#, "opacidad a mano"), (#"sleep\(nanoseconds:\s*[0-9]"#, "espera a mano"),
             (#"(struct|class)\s+\w+\s*:\s*[^{]*\b(ButtonStyle|PrimitiveButtonStyle|ToggleStyle|PickerStyle|TabViewStyle)\b"#, "estilo de control propio: usa el nativo de Apple (HIG)"),
             (#"\.presentationBackground\("#, "fondo de hoja propio: deja el vidrio nativo (Liquid Glass)"),
+            (#"\.listRowBackground\(DS\.fill\)"#, "renglón con relleno translúcido: los renglones van en DS.surface (blancos en claro)"),
             (#"\.aspectRatio\(\s*[0-9]"#, "relación de aspecto a mano"), (#"\.minimumScaleFactor\(\s*[0-9]"#, "escala a mano"),
         ]
         var problems: [String] = []

@@ -223,9 +223,12 @@ struct TVAccessory: View {
     let now: OrbitalRemote.NowPlaying
     var busy = false
     let toggle: () -> Void
+    /// Abre el control remoto completo (también con VoiceOver: es un botón).
+    let openRemote: () -> Void
     @Environment(\.tabViewBottomAccessoryPlacement) private var placement
 
-    var body: some View {
+    /// El arte y el nombre (lo que se toca para abrir el control remoto).
+    private var info: some View {
         HStack(spacing: DS.Space.s3) {
             PosterView(url: now.poster, title: now.title, aspect: 1).frame(width: DS.Size.accessoryArt).clipShape(Circle())
             VStack(alignment: .leading, spacing: 0) {
@@ -234,6 +237,13 @@ struct TVAccessory: View {
                     Text(now.live ? "En la TV · En vivo" : "En la TV").recipe(.footnote, color: now.live ? DS.live : DS.textMuted).lineLimit(1)
                 }
             }
+        }
+        .contentShape(Rectangle())
+    }
+
+    var body: some View {
+        HStack(spacing: DS.Space.s3) {
+            Button(action: openRemote) { info }.buttonStyle(.plain).accessibilityHint(Text("Control remoto"))
             Spacer(minLength: DS.Space.s2)
             if !now.live {
                 Button(action: toggle) { Image(systemName: now.paused ? "play.fill" : "pause.fill") }
@@ -308,13 +318,15 @@ struct MosaicCaption<More: View>: View {
     /// Una serie abre su ficha («Ver la serie»).
     var isSeries = false
     let watch: () -> Void
+    @Environment(\.colorScheme) private var scheme
     @ViewBuilder var more: () -> More
 
     var body: some View {
         HStack(alignment: .center, spacing: DS.Space.s3) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Eyebrow(text: reason, accent: true)
-                TitleLogo(url: logo, title: title).frame(maxHeight: DS.Size.captionLogo, alignment: .leading)
+                // Los logos de metahub son claros: sobre el papel del modo claro, el nombre en texto.
+                TitleLogo(url: scheme == .dark ? logo : nil, title: title).frame(maxHeight: DS.Size.captionLogo, alignment: .leading)
                 if !data.isEmpty { DataLine(parts: data) }
             }
             Spacer(minLength: DS.Space.s2)
@@ -327,4 +339,14 @@ struct MosaicCaption<More: View>: View {
         }
         .accessibilityElement(children: .contain)
     }
+}
+
+/// Da a su contenido los colores del arte de una URL (`ArtPalette`, con caché): para que cada botón tome el color de su propio
+/// título, no el del que está al frente.
+struct WithArtColors<Content: View>: View {
+    let url: String?
+    @ViewBuilder let content: (ArtColors?) -> Content
+    @StateObject private var tint = ArtTint()
+
+    var body: some View { content(tint.colors).task(id: url) { await tint.load(url) } }
 }

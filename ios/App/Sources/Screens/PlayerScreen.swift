@@ -33,6 +33,8 @@ struct PlayerScreen: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Con VoiceOver los controles no se esconden solos (si no, no queda nada que tocar).
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @StateObject private var holder = PlayerHolder()
     @State private var controlsVisible = true
     @State private var hideTask: Task<Void, Never>?
@@ -86,6 +88,9 @@ struct PlayerScreen: View {
             if let up = model.upNext { UpNextCard(card: up, watchNow: { Task { await model.playNextNow() } }, cancel: { model.cancelUpNext() }) }
         }
         .onArt()   // sobre el video siempre se ve como en la sala oscura, aunque la app esté en modo claro
+        // VoiceOver: frotar con dos dedos cierra; el doble toque con dos dedos pausa o sigue (los gestos de siempre de iOS).
+        .accessibilityAction(.escape) { Task { await close() } }
+        .accessibilityAction(.magicTap) { Task { await holder.model.togglePlay() } }
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
@@ -274,7 +279,7 @@ struct PlayerScreen: View {
         hideTask?.cancel()
         hideTask = Task {
             try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
-            if !Task.isCancelled, holder.model.snapshot.state == .playing { controlsVisible = false }
+            if !Task.isCancelled, !voiceOver, holder.model.snapshot.state == .playing { controlsVisible = false }
         }
     }
 
@@ -347,11 +352,13 @@ struct PlayerScreen: View {
                 pulse()
             }
             .tint(DS.accent)   // el avance, en el acento (como en toda la app)
+            .accessibilityLabel(Text("Avance")).accessibilityValue(Text(verbatim: "\(clock(shown)) / \(clock(duration))"))
             HStack {
                 Text(verbatim: clock(shown)).recipe(.data)
                 Spacer()
                 // Lo que falta y a qué hora terminas (la misma cuenta que la ficha), con números tabulares como todos los datos.
-                let left = max(0, duration - shown)
+                // A 1.5× o 2× se acaba antes: el tiempo que falta se divide entre la velocidad.
+                let left = max(0, duration - shown) / Double(max(model.rate, 0.25))
                 Text(verbatim: "−\(clock(left)) · \(Strings.endsAt(minutesLeft: Int((left / 60).rounded(.up)), now: env.services.now(), language: env.services.appSettings.uiLanguage))").recipe(.data)
             }
         }
@@ -554,7 +561,7 @@ struct PlayerSources: View {
                         Button { Task { await model.switchSource(to: source.index); done() } } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                                    Text([source.resolution, source.languages.prefix(2).map { Streams.languageNames[$0] ?? $0 }.joined(separator: " + ")].filter { !$0.isEmpty }.joined(separator: " · "))
+                                    Text([source.resolution, source.languages.prefix(2).map { Streams.languageName($0, in: AppEnvironment.shared.services.appSettings.uiLanguage) }.joined(separator: " + ")].filter { !$0.isEmpty }.joined(separator: " · "))
                                         .font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
                                     Text(source.release).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1)
                                 }

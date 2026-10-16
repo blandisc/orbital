@@ -6,10 +6,11 @@ import OrbitalModels
 struct SourcesSheet: View {
     @StateObject private var observer: ModelObserver<SourcesModel>
     @State private var purpose: Purpose
-    let choose: (Source) -> Void
+    /// La fuente elegida y para qué (Ver o Descargar, como quedó el selector de la hoja).
+    let choose: (Source, Purpose) -> Void
     @EnvironmentObject private var env: AppEnvironment
 
-    init(model: TitleModel, videoID: String, purpose: Purpose, choose: @escaping (Source) -> Void) {
+    init(model: TitleModel, videoID: String, purpose: Purpose, choose: @escaping (Source, Purpose) -> Void) {
         _observer = StateObject(wrappedValue: ModelObserver(SourcesModel(AppEnvironment.shared.services, kind: model.kind, metaID: model.metaID, videoID: videoID)))
         _purpose = State(initialValue: purpose)
         self.choose = choose
@@ -26,7 +27,7 @@ struct SourcesSheet: View {
                     if model.isLoading { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s6) }
                     if let error = model.error { DSNotice(text: LocalizedStringKey(error), tone: .warn) }
                     ForEach(model.rows) { row in
-                        Button { if let source = model.source(row.id) { choose(source) } } label: { SourceRowView(row: row, purpose: purpose) }.buttonStyle(.plain)
+                        Button { if let source = model.source(row.id) { choose(source, purpose) } } label: { SourceRowView(row: row, purpose: purpose) }.buttonStyle(.plain)
                     }
                 }
             }

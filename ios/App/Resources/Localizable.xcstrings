@@ -1431,6 +1431,17 @@
         }
       }
     },
+    "Falta el archivo parcial": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The partial file is missing"
+          }
+        }
+      }
+    },
     "Fuentes": {
       "extractionState": "manual",
       "localizations": {
@@ -2157,6 +2168,17 @@
         }
       }
     },
+    "No se pudo reproducir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not play"
+          }
+        }
+      }
+    },
     "Nuevo": {
       "extractionState": "manual",
       "localizations": {
@@ -2472,6 +2494,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Upcoming episodes"
+          }
+        }
+      }
+    },
+    "Puesto %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No. %@"
+          }
+        }
+      }
+    },
+    "Puesto %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No. %lld"
           }
         }
       }

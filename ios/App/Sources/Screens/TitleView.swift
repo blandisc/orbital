@@ -54,9 +54,9 @@ struct TitleView: View {
             await tint.load(model.background ?? model.poster)
         }
         .sheet(item: $sourcesFor) { target in
-            SourcesSheet(model: model, videoID: target.videoID, purpose: target.purpose) { source in
+            SourcesSheet(model: model, videoID: target.videoID, purpose: target.purpose) { source, purpose in
                 sourcesFor = nil
-                handle(source: source, videoID: target.videoID, purpose: target.purpose, model: model)
+                handle(source: source, videoID: target.videoID, purpose: purpose, model: model)   // lo que quedó en el selector de la hoja
             }
             .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
