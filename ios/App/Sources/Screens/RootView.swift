@@ -88,10 +88,7 @@ struct MainTabs: View {
         .tabBarMinimizeBehavior(.onScrollDown)
         .bottomAccessory(isEnabled: tvNow.model.now != nil) {
             if let now = tvNow.model.now {
-                TVAccessory(now: now, busy: tvNow.model.busy) { Task { await tvNow.model.control("toggle") } }
-                    .contentShape(Rectangle())
-                    .onTapGesture { showRemote = true }
-                    .accessibilityAction(named: Text("Control remoto")) { showRemote = true }   // VoiceOver también llega al control completo
+                TVAccessory(now: now, busy: tvNow.model.busy, toggle: { Task { await tvNow.model.control("toggle") } }, openRemote: { showRemote = true })
             }
         }
         // Si la TV deja de reproducir con la hoja abierta, la hoja se cierra (no se queda vacía).

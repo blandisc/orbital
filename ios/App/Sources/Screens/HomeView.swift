@@ -137,7 +137,8 @@ struct HomeView: View {
         // La tarjeta abre la ficha con su propio toque; «Continuar» va aparte (un botón dentro de un NavigationLink puede
         // abrir la ficha en vez de reproducir).
         HeroCard(title: item.title, background: item.background ?? item.poster, logo: Artwork.logoURL(metaID: item.metaID),
-                 eyebrow: item.nextUp ? Text("Sigue") : Text("Seguir viendo"), data: heroData(item), progress: item.progress) {
+                 eyebrow: item.nextUp ? Text("Sigue") : Text("Seguir viendo"), data: heroData(item), progress: item.progress,
+                 open: { openTitle = route(item) }) {
             HStack(spacing: DS.Space.s3) {
                 continueButton(item)
                 if env.services.orbital.isConfigured {
@@ -149,7 +150,6 @@ struct HomeView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { openTitle = route(item) }
-        .accessibilityAction(named: Text("Ver ficha")) { openTitle = route(item) }
     }
 
     /// «T2 · E5 · quedan 20 min · termina a las 23:21».
@@ -179,11 +179,13 @@ struct HomeView: View {
     }
 
     private func continueButton(_ item: HomeItem) -> some View {
-        // Como la TV: «Continuar» si ibas a medias; si toca el siguiente episodio, «Ver T3 E6».
-        Button { Task { await env.play(item) } } label: {
-            Label { item.nextUp && item.episode != nil ? Text("Ver \(Strings.episode(season: item.season, episode: item.episode ?? 0, language: env.services.appSettings.uiLanguage))") : Text("Continuar") } icon: { Image(systemName: "play.fill") }
-                .lineLimit(1)
+        // Como la TV: «Continuar» si ibas a medias; si toca el siguiente episodio, «Ver T3 E6». Con el color de su propio arte.
+        WithArtColors(url: item.background ?? item.poster) { colors in
+            Button { Task { await env.play(item) } } label: {
+                Label { item.nextUp && item.episode != nil ? Text("Ver \(Strings.episode(season: item.season, episode: item.episode ?? 0, language: env.services.appSettings.uiLanguage))") : Text("Continuar") } icon: { Image(systemName: "play.fill") }
+                    .lineLimit(1)
+            }
+            .dsArtButton(colors)
         }
-        .dsArtButton(tint.colors)
     }
 }

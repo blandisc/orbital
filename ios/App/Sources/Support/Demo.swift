@@ -161,7 +161,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                 "lists": [list("watchlist", "Tu watchlist", "Trakt", "Lo que dejaste pendiente", split: false),
                           list("mine", "Tus series", "Trakt", "Las que estás viendo", split: false),
                           list("chart:netflix", "Top 10 en Netflix", "Netflix", "Esta semana en México", split: true, brand: "netflix", logo: logo("tt1160419")),
-                          list("jw:disney", "Lo más visto en Disney+", "JustWatch", "Popular en México", split: true, brand: "disney", logo: logo("tt4154796")),
+                          list("jw:disney", "Tendencias en Disney+", "JustWatch", "Tendencia en JustWatch · México", split: true, brand: "disney", logo: logo("tt4154796")),
                           list("trend", "En tendencia", "Trakt", "Lo más visto esta semana", split: true),
                           list("addon:cat", "Clásicos", "Stremio", "De Cinemeta", split: false),
                           list("addon:empty", "Un catálogo vacío", "Stremio", "De nadie", split: false)],

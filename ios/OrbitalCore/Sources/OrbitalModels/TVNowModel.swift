@@ -20,6 +20,8 @@ public final class TVNowModel: ObservableModel {
     private let services: Services
     private let intervalNanoseconds: UInt64
     private var pollTask: Task<Void, Never>?
+    /// Sondeos fallidos seguidos: uno solo (un tropiezo del Wi‑Fi) no esconde la tarjeta ni cierra el control remoto.
+    private var failures = 0
 
     public init(_ services: Services, intervalSeconds: Double = 5) {
         self.services = services
@@ -45,6 +47,7 @@ public final class TVNowModel: ObservableModel {
         do {
             let snapshot = try await services.orbital.snapshot()
             now = snapshot.playing
+            failures = 0
             fetchedAt = Date()
             tokenProblem = false
             if !snapshot.inbox.isEmpty { await inbox?.process(snapshot.inbox) }
@@ -52,8 +55,10 @@ public final class TVNowModel: ObservableModel {
             tokenProblem = true
             now = nil
         } catch {
-            // Sin red, la consola apagada o una versión vieja: la tarjeta se va sin ruido (se reintenta solo).
-            now = nil
+            // Sin red, la consola apagada o una versión vieja: la tarjeta se va sin ruido (se reintenta solo), pero no por un
+            // solo tropiezo.
+            failures += 1
+            if failures >= 2 { now = nil }
         }
     }
 

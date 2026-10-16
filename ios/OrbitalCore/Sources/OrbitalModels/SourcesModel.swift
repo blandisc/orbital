@@ -42,7 +42,7 @@ public final class SourcesModel: ObservableModel {
         } catch { sources = []; self.error = "\(error)" }
         let limit = Int64(settings.warnCellularOverGB * 1e9)
         rows = sources.enumerated().map { i, s in
-            let langs = s.languages.prefix(2).map { Streams.languageNames[$0] ?? $0 }.joined(separator: " + ")
+            let langs = s.languages.prefix(2).map { Streams.languageName($0, in: services.appSettings.uiLanguage) }.joined(separator: " + ")
             let headline = [s.resolution.isEmpty ? "SD" : s.resolution, langs, s.tags.first(where: { ["REMUX", "WEB-DL", "BluRay"].contains($0) }), s.tags.contains("x265") ? "x265" : nil]
                 .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
             return SourceRow(id: s.index, headline: headline, recommended: i == 0, cached: s.cached, sizeGB: s.size > 0 ? Double(s.size) / 1e9 : nil,
