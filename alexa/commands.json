@@ -1,0 +1,63 @@
+{
+  "how": [
+    {"say": "Alexa, pídele a mi consola que ponga Interstellar", "note": "Todo de una vez: «pídele a mi consola que…» y lo que quieras."},
+    {"say": "Alexa, abre mi consola", "note": "Y luego lo dices sin repetir «mi consola» (Alexa se queda escuchando)."},
+    {"say": "Alexa, dile a mi consola que pause", "note": "«dile a mi consola», «pide a mi consola»: también sirven."}
+  ],
+  "groups": [
+    {"title": "Juegos", "icon": "gamecontroller", "commands": [
+      {"say": "abre Hollow Knight", "note": "Cualquier juego de tu biblioteca."},
+      {"say": "abre Zelda con Ryujinx", "note": "Con un emulador en particular."},
+      {"say": "abre Fortnite en la nube", "note": "En GeForce NOW."},
+      {"say": "cierra el juego", "note": "Cierra lo que esté abierto."},
+      {"say": "qué estoy jugando", "note": "Te dice qué está abierto."}
+    ]},
+    {"title": "Películas y series", "icon": "film", "commands": [
+      {"say": "quiero ver Interstellar", "note": "Una película se pone sola; una serie abre sus episodios."},
+      {"say": "pon Los Simpson temporada 5 episodio 3", "note": "Un episodio exacto."},
+      {"say": "pon Los Simpson temporada 5 episodio 3 en inglés", "note": "Y en qué idioma."},
+      {"say": "sigue viendo", "note": "Lo último que dejaste a medias."},
+      {"say": "sigue viendo The Office", "note": "Una serie en particular, donde ibas."},
+      {"say": "pon la novela", "note": "Lo que estabas viendo."},
+      {"say": "busca Dune", "note": "Abre la búsqueda con el texto."}
+    ]},
+    {"title": "Mientras ves algo", "icon": "play.rectangle", "commands": [
+      {"say": "pausa", "note": "También: ponle pausa."},
+      {"say": "dale play", "note": "También: reanuda, quita la pausa."},
+      {"say": "adelanta cinco minutos", "note": "O regresa treinta segundos."},
+      {"say": "regresa treinta segundos", "note": "Para atrás."},
+      {"say": "salta la intro", "note": "También el resumen."},
+      {"say": "siguiente episodio", "note": "O el episodio anterior."},
+      {"say": "pon el capítulo 5", "note": "De la serie que estás viendo."},
+      {"say": "pon la temporada 2", "note": "Desde su primer episodio."},
+      {"say": "pon subtítulos en español", "note": "O en inglés, francés…"},
+      {"say": "quita los subtítulos", "note": "Sin subtítulos."},
+      {"say": "pon el audio en inglés", "note": "Cambia el idioma."},
+      {"say": "cuánto le falta", "note": "Lo que queda del video."},
+      {"say": "cierra el video", "note": "Guarda dónde ibas."}
+    ]},
+    {"title": "TV en vivo", "icon": "antenna.radiowaves.left.and.right", "commands": [
+      {"say": "pon la tele", "note": "La lista de canales."},
+      {"say": "pon el canal ADN 40", "note": "Un canal por su nombre."},
+      {"say": "pon Azteca Uno en vivo", "note": "También así."},
+      {"say": "siguiente canal", "note": "O canal anterior."},
+      {"say": "canal anterior", "note": "El de antes en la lista."}
+    ]},
+    {"title": "Para ti", "icon": "sparkles", "commands": [
+      {"say": "qué sale hoy", "note": "Los episodios nuevos de las series que sigues (Trakt)."},
+      {"say": "qué me recomiendas", "note": "Tres sugerencias, y Para ti en pantalla."},
+      {"say": "ve a Para ti", "note": "Abre la sección."}
+    ]},
+    {"title": "Consola", "icon": "tv", "commands": [
+      {"say": "sube el volumen", "note": "O bájale, súbele tantito."},
+      {"say": "pon el volumen al 30", "note": "A un nivel exacto."},
+      {"say": "silencio", "note": "Y quita el silencio para volver."},
+      {"say": "sube el brillo", "note": "O baja el brillo."},
+      {"say": "ve a juegos", "note": "Juegos, películas y series, apps, la tele."},
+      {"say": "ve atrás", "note": "Como el botón Atrás."},
+      {"say": "toma una captura", "note": "Una foto de la pantalla."},
+      {"say": "abre Steam", "note": "Steam en modo tele."},
+      {"say": "sal al escritorio", "note": "Y abre la consola para volver."}
+    ]}
+  ]
+}

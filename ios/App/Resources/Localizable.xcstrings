@@ -23,6 +23,17 @@
         }
       }
     },
+    "Abrir Ajustes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        }
+      }
+    },
     "Abrir Orbital": {
       "extractionState": "manual",
       "localizations": {
@@ -78,6 +89,17 @@
         }
       }
     },
+    "Agregada a tu lista.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added to your list."
+          }
+        }
+      }
+    },
     "Agregar complemento": {
       "extractionState": "manual",
       "localizations": {
@@ -107,6 +129,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Instant"
+          }
+        }
+      }
+    },
+    "Alexa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alexa"
           }
         }
       }
@@ -283,6 +316,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search movies and series"
+          }
+        }
+      }
+    },
+    "Buscar una frase": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search a phrase"
           }
         }
       }
@@ -529,6 +573,17 @@
         }
       }
     },
+    "Conecta Trakt o tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Trakt or your Orbital"
+          }
+        }
+      }
+    },
     "Conecta tu Orbital (arriba) y Trakt se configura solo. Si no, crea una aplicación en developer.trakt.tv y pega aquí su Client ID.": {
       "extractionState": "manual",
       "localizations": {
@@ -639,6 +694,17 @@
         }
       }
     },
+    "Copiar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        }
+      }
+    },
     "Correo de Stremio": {
       "extractionState": "manual",
       "localizations": {
@@ -679,6 +745,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Account"
+          }
+        }
+      }
+    },
+    "Cómo pedírselo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to ask"
+          }
+        }
+      }
+    },
+    "De todos los tiempos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All time"
           }
         }
       }
@@ -1398,6 +1486,17 @@
         }
       }
     },
+    "Lo más popular en Stremio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most popular on Stremio"
+          }
+        }
+      }
+    },
     "Lo más popular en Stremio. Conecta Trakt en Ajustes y el mosaico se arma con lo tuyo.": {
       "extractionState": "manual",
       "localizations": {
@@ -1409,6 +1508,39 @@
         }
       }
     },
+    "Lo más visto esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most watched this week"
+          }
+        }
+      }
+    },
+    "Lo que dejaste pendiente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you left for later"
+          }
+        }
+      }
+    },
+    "Lo que sale de las series que sigues": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What is coming out from the shows you follow"
+          }
+        }
+      }
+    },
     "Lo siguiente para ti": {
       "extractionState": "manual",
       "localizations": {
@@ -1416,6 +1548,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Up next for you"
+          }
+        }
+      }
+    },
+    "Lo tuyo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yours"
           }
         }
       }
@@ -1504,6 +1647,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "More"
+          }
+        }
+      }
+    },
+    "N.º %lld en %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No. %lld on %@"
           }
         }
       }
@@ -1981,6 +2135,17 @@
         }
       }
     },
+    "Por lo que has visto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Based on what you've watched"
+          }
+        }
+      }
+    },
     "Probando otra fuente (%lld)…": {
       "extractionState": "manual",
       "localizations": {
@@ -2058,6 +2223,17 @@
         }
       }
     },
+    "Qué le puedes decir a Alexa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you can say to Alexa"
+          }
+        }
+      }
+    },
     "Reanudar": {
       "extractionState": "manual",
       "localizations": {
@@ -2087,6 +2263,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recommended"
+          }
+        }
+      }
+    },
+    "Recomendada por Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommended by Trakt"
           }
         }
       }
@@ -2289,6 +2476,17 @@
         }
       }
     },
+    "Si Alexa dice que no puede, empieza con «pídele a mi consola que…»: sin eso, Alexa intenta hacerlo ella sola.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If Alexa says she can't, start with “pídele a mi consola que…” (ask my console to…): without it, Alexa tries to do it herself."
+          }
+        }
+      }
+    },
     "Sigue": {
       "extractionState": "manual",
       "localizations": {
@@ -2340,6 +2538,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Next episode"
+          }
+        }
+      }
+    },
+    "Sin Trakt ni Orbital, esto es lo que ve todo el mundo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without Trakt or Orbital, this is what everyone is watching"
           }
         }
       }
@@ -2674,6 +2883,17 @@
         }
       }
     },
+    "Tu watchlist, tus recomendaciones y el Top 10 de tus plataformas aparecen aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your watchlist, your recommendations and your platforms' Top 10 show up here."
+          }
+        }
+      }
+    },
     "Tuyo": {
       "extractionState": "manual",
       "localizations": {
@@ -2890,160 +3110,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Last scrobble"
-          }
-        }
-      }
-    },
-    "Abrir Ajustes": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open Settings"
-          }
-        }
-      }
-    },
-    "Agregada a tu lista.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Added to your list."
-          }
-        }
-      }
-    },
-    "Conecta Trakt o tu Orbital": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connect Trakt or your Orbital"
-          }
-        }
-      }
-    },
-    "De todos los tiempos": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "All time"
-          }
-        }
-      }
-    },
-    "Lo más popular en Stremio": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Most popular on Stremio"
-          }
-        }
-      }
-    },
-    "Lo más visto esta semana": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Most watched this week"
-          }
-        }
-      }
-    },
-    "Lo que dejaste pendiente": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What you left for later"
-          }
-        }
-      }
-    },
-    "Lo que sale de las series que sigues": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What is coming out from the shows you follow"
-          }
-        }
-      }
-    },
-    "Lo tuyo": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Yours"
-          }
-        }
-      }
-    },
-    "N.º %lld en %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No. %lld on %@"
-          }
-        }
-      }
-    },
-    "Por lo que has visto": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Based on what you've watched"
-          }
-        }
-      }
-    },
-    "Recomendada por Trakt": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recommended by Trakt"
-          }
-        }
-      }
-    },
-    "Sin Trakt ni Orbital, esto es lo que ve todo el mundo": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Without Trakt or Orbital, this is what everyone is watching"
-          }
-        }
-      }
-    },
-    "Tu watchlist, tus recomendaciones y el Top 10 de tus plataformas aparecen aquí.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your watchlist, your recommendations and your platforms' Top 10 show up here."
           }
         }
       }
