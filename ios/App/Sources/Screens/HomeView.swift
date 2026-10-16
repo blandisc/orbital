@@ -139,7 +139,7 @@ struct HomeView: View {
         HeroCard(title: item.title, background: item.background ?? item.poster, logo: Artwork.logoURL(metaID: item.metaID),
                  eyebrow: item.nextUp ? Text("Sigue") : Text("Seguir viendo"), data: heroData(item), progress: item.progress,
                  open: { openTitle = route(item) }) {
-            HStack(spacing: DS.Space.s3) {
+            HeroActions {
                 continueButton(item)
                 if env.services.orbital.isConfigured {
                     DSIconButton(symbol: "tv", label: "Ver en la TV") {

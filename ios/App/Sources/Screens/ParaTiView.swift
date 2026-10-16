@@ -272,11 +272,7 @@ struct ListsView: View {
         let route = s.route
         return HeroCard(title: s.title, background: s.wide, logo: s.logo, eyebrow: Text(reasonKey(featured.reason)), accentEyebrow: true,
                         data: (factStrings(s).first ?? "").components(separatedBy: " · "), open: { openTitle = route }) {
-            // «Ver» y «Más» en un renglón; con letra grande, uno debajo del otro.
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: DS.Space.s2) { watchButton(s); moreMenu(s) }
-                VStack(alignment: .leading, spacing: DS.Space.s2) { watchButton(s); moreMenu(s) }
-            }
+            HeroActions { watchButton(s); moreMenu(s) }   // con letra grande, uno debajo del otro
         }
         .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xxl))
         .onTapGesture { openTitle = route }

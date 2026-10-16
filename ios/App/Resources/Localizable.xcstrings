@@ -2135,6 +2135,17 @@
         }
       }
     },
+    "No encontré ese título.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find that title."
+          }
+        }
+      }
+    },
     "No encontré nada con ese nombre.": {
       "extractionState": "manual",
       "localizations": {

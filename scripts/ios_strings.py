@@ -127,6 +127,7 @@ TRANSLATIONS = {
     "Tu Orbital pidió esperar un poco: demasiados intentos.": "Your Orbital asked to wait a bit: too many attempts.",
     "Tu sesión de Trakt caducó: vuelve a conectarla en Ajustes.": "Your Trakt session expired: connect it again in Settings.",
     "Título inválido": "Invalid title",
+    "No encontré ese título.": "I couldn't find that title.",
     "Título no encontrado": "Title not found",
     # Los errores de la descarga (OrbitalCore/Downloads.swift y el transporte en segundo plano).
     "El archivo bajado está incompleto o no es el video": "The downloaded file is incomplete or isn't the video",

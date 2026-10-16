@@ -350,3 +350,16 @@ struct WithArtColors<Content: View>: View {
 
     var body: some View { content(tint.colors).task(id: url) { await tint.load(url) } }
 }
+
+/// Las acciones de un destacado (el botón principal y los secundarios): en un renglón; si no caben (letra grande, iPhone
+/// chico), una debajo de la otra, sin cortar «Continuar» a media palabra.
+struct HeroActions<Content: View>: View {
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: DS.Space.s3) { content() }
+            VStack(alignment: .leading, spacing: DS.Space.s2) { content() }
+        }
+    }
+}
