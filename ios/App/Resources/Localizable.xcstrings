@@ -23,6 +23,17 @@
         }
       }
     },
+    "Abrir Ajustes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        }
+      }
+    },
     "Abrir en Infuse": {
       "extractionState": "manual",
       "localizations": {
@@ -63,6 +74,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Forward 10 seconds"
+          }
+        }
+      }
+    },
+    "Agregada a tu lista.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added to your list."
           }
         }
       }
@@ -485,6 +507,17 @@
         }
       }
     },
+    "Conecta Trakt o tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Trakt or your Orbital"
+          }
+        }
+      }
+    },
     "Conecta tu Orbital (arriba) y Trakt se configura solo. Si no, crea una aplicación en developer.trakt.tv y pega aquí su Client ID.": {
       "extractionState": "manual",
       "localizations": {
@@ -635,6 +668,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Account"
+          }
+        }
+      }
+    },
+    "De todos los tiempos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All time"
           }
         }
       }
@@ -1332,6 +1376,17 @@
         }
       }
     },
+    "Lo más popular en Stremio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most popular on Stremio"
+          }
+        }
+      }
+    },
     "Lo más popular en Stremio. Conecta Trakt en Ajustes y el mosaico se arma con lo tuyo.": {
       "extractionState": "manual",
       "localizations": {
@@ -1339,6 +1394,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "What's popular on Stremio. Connect Trakt in Settings and the mosaic is built from your stuff."
+          }
+        }
+      }
+    },
+    "Lo más visto esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most watched this week"
+          }
+        }
+      }
+    },
+    "Lo que dejaste pendiente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you left for later"
+          }
+        }
+      }
+    },
+    "Lo tuyo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yours"
           }
         }
       }
@@ -1416,6 +1504,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "More"
+          }
+        }
+      }
+    },
+    "N.º %lld en %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No. %lld on %@"
           }
         }
       }
@@ -1849,6 +1948,17 @@
         }
       }
     },
+    "Por lo que has visto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Based on what you've watched"
+          }
+        }
+      }
+    },
     "Probando otra fuente (%lld)…": {
       "extractionState": "manual",
       "localizations": {
@@ -1933,6 +2043,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recommended"
+          }
+        }
+      }
+    },
+    "Recomendada por Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommended by Trakt"
           }
         }
       }
@@ -2142,6 +2263,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Next episode"
+          }
+        }
+      }
+    },
+    "Sin Trakt ni Orbital, esto es lo que ve todo el mundo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without Trakt or Orbital, this is what everyone is watching"
           }
         }
       }
@@ -2461,6 +2593,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your watchlist"
+          }
+        }
+      }
+    },
+    "Tu watchlist, tus recomendaciones y el Top 10 de tus plataformas aparecen aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your watchlist, your recommendations and your platforms' Top 10 show up here."
           }
         }
       }

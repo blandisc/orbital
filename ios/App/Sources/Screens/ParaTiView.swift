@@ -37,9 +37,10 @@ struct ParaTiView: View {
         .background(TintedBackground())
         .navigationTitle("Para ti").navigationBarTitleDisplayMode(.large)
         .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
+        .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .task {
             #if DEBUG
-            if Demo.isOn, Demo.open == "lists" { m.mode = .lists }
+            if Demo.isOn, Demo.open == "lists" || Demo.mode == "lists" { m.mode = .lists }
             #endif
             await m.load()
         }
@@ -66,102 +67,212 @@ struct ParaTiView: View {
     }
 }
 
+/// Las acciones de una sugerencia (mantener el dedo sobre un póster, o «Más» en el destacado): ver, Mi lista, descargar, la TV y «No me interesa».
+struct SuggestionActions: View {
+    @EnvironmentObject private var env: AppEnvironment
+    let suggestion: Suggestion
+    var includeWatch = true
+    let onDismiss: (Suggestion) -> Void
+
+    var body: some View {
+        if includeWatch { Button("Ver", systemImage: "play.fill") { Task { await env.play(suggestion) } } }
+        Button("Mi lista", systemImage: "plus") { Task { await env.addToLibrary(suggestion) } }
+        Button("Descargar", systemImage: "arrow.down.circle") { Task { await env.download(suggestion) } }
+        if env.services.orbital.isConfigured {
+            Button("En la TV", systemImage: "tv") { Task { await env.playOnTV(kind: suggestion.kind, metaID: suggestion.imdb, videoID: env.videoID(for: suggestion), title: suggestion.title) } }
+        }
+        Button("No me interesa", systemImage: "hand.thumbsdown", role: .destructive) { onDismiss(suggestion) }
+    }
+}
+
+/// Un póster de un estante: toca para abrir la ficha (con una háptica suave), mantén para el menú.
+struct ShelfPoster: View {
+    let suggestion: Suggestion
+    let style: ShelfPlan.Style
+    let inList: Bool
+    let onDismiss: (Suggestion) -> Void
+    @State private var taps = 0
+
+    var body: some View {
+        Group {
+            if style == .top10, let rank = suggestion.rank {
+                NavigationLink(value: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster) }.buttonStyle(.plain)
+            } else {
+                TitleLink(route: suggestion.route, badge: inList ? "En tu lista" : nil, rank: style == .platform ? suggestion.rank : nil,
+                          detail: yearAndKind(year: suggestion.year.map(String.init) ?? "", kind: suggestion.kind))
+            }
+        }
+        .simultaneousGesture(TapGesture().onEnded { taps += 1 })
+        .sensoryFeedback(.impact(flexibility: .soft), trigger: taps)
+        .contextMenu { SuggestionActions(suggestion: suggestion, onDismiss: onDismiss) }
+    }
+}
+
+/// Los nombres de los estantes: los de la consola vienen ya con su texto; los de este iPhone se nombran por su id.
+@MainActor func shelfTitle(_ plan: ShelfPlan) -> Text {
+    if plan.id == "mine" { return Text("Lo tuyo") }
+    if !plan.title.isEmpty { return Text(verbatim: plan.title) }
+    switch plan.id {
+    case "recs": return Text("Recomendadas")
+    case "trend": return Text("En tendencia")
+    case "popular": return Text("Lo más popular")
+    default: return Text(verbatim: plan.list.brand.flatMap { brand in Tmdb.platforms.first { $0.brand == brand }?.name } ?? plan.id)
+    }
+}
+
+@MainActor func shelfMeta(_ plan: ShelfPlan) -> Text? {
+    if plan.id == "mine" { return Text("Lo que dejaste pendiente") }
+    if !plan.list.meta.isEmpty { return Text(verbatim: plan.list.meta) }
+    switch plan.id {
+    case "recs": return Text("Por lo que has visto")
+    case "trend": return Text("Lo más visto esta semana")
+    case "popular": return Text("De todos los tiempos")
+    default: return plan.style == .platform ? Text("Lo más popular") : nil
+    }
+}
+
+func shelfSymbol(_ plan: ShelfPlan) -> String {
+    switch plan.id {
+    case "mine", "watchlist": "bookmark"
+    case "recs": "sparkles"
+    case "trend": "chart.line.uptrend.xyaxis"
+    case "popular": "flame"
+    default: plan.style == .plain ? "square.stack" : "play.rectangle"
+    }
+}
+
+/// «Para ti › Listas»: un destacado, el selector Series · Películas y los estantes (cada uno dice de dónde viene).
 struct ListsView: View {
     @ObservedObject var observer: ModelObserver<ParaTiModel>
+    @EnvironmentObject private var env: AppEnvironment
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var openTitle: TitleRoute?
     private var model: ParaTiModel { observer.model }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s5) {
-                if model.lists.isEmpty { popularFallback }
-                if model.chips.count > 1 {   // un solo filtro («Todo») no filtra nada
-                    DSChipRow(items: model.chips, label: label, selection: Binding(get: { model.chip }, set: { new in Task { await model.select(new) } }))
-                }
-                if model.lists.contains(where: \.splitsKinds) {
-                    DSSegmented(options: [("series", "Series"), ("movie", "Películas")], selection: Binding(get: { model.kind }, set: { new in Task { await model.setKind(new) } }))
-                        .padding(.horizontal, DS.Space.gutter)
-                }
-                if model.chip == .trakt { traktTabs }
-                ForEach(model.visibleLists) { list in listSection(list) }
-            }
-            .padding(.bottom, DS.Space.s14)   // aire bajo la última fila: la barra de pestañas no la tapa
-        }
-    }
-
-    /// Sin Trakt ni TMDB no hay listas: lo popular de Stremio, en filas, y cómo tener las tuyas.
-    @ViewBuilder private var popularFallback: some View {
-        DSNotice(text: "Conecta Trakt (tu watchlist y tus listas) o agrega una clave de TMDB (lo popular en Netflix, Disney+ y HBO Max) en Ajustes.")
-            .padding(.horizontal, DS.Space.gutter)
-        let series = model.mosaic.filter { $0.kind == "series" }, movies = model.mosaic.filter { $0.kind == "movie" }
-        if !series.isEmpty { Rail(title: "Series populares") { ForEach(series) { TitleLink(route: $0.route) } } }
-        if !movies.isEmpty { Rail(title: "Películas populares") { ForEach(movies) { TitleLink(route: $0.route) } } }
-    }
-
-    @ViewBuilder private func label(_ chip: ParaTiModel.Chip) -> some View {
-        switch chip {
-        case .all: Text("Todo")
-        case .trakt: Text("Trakt")
-        case .platform(let brand):
-            let logo = model.platformLists.first { $0.brand == brand }?.logo
-            HStack(spacing: DS.Space.s1) {
-                if let logo { DSPlatformLogo(url: logo) }
-                Text(Tmdb.platforms.first { $0.brand == brand }?.name ?? brand)
-            }
-        }
-    }
-
-    /// Lo tuyo primero («Tuyo») y lo de todos después («Descubrir»).
-    private var traktTabs: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
-            ForEach([ForYouGroup.mine, .discover], id: \.self) { group in
-                let lists = model.traktLists.filter { $0.group == group }
-                if !lists.isEmpty {
-                    (group == .mine ? Text("Tuyo") : Text("Descubrir")).font(DS.font(.sm)).foregroundStyle(DS.textMuted).padding(.horizontal, DS.Space.gutter)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: DS.Space.s2) {
-                            ForEach(lists) { list in
-                                Button { Task { await model.select(traktList: list.id) } } label: {
-                                    listName(list).font(DS.font(.sm, weight: .semibold)).lineLimit(1)
-                                        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
-                                        .foregroundStyle(model.traktList == list.id ? DS.onPrimary : DS.text)
-                                        .background(model.traktList == list.id ? DS.primary : DS.fill, in: Capsule())
-                                }
-                            }
-                        }.padding(.horizontal, DS.Space.gutter)
+            LazyVStack(alignment: .leading, spacing: DS.Space.s6, pinnedViews: [.sectionHeaders]) {
+                if let featured = model.featured { featuredTile(featured).padding(.horizontal, DS.Space.gutter) }
+                Section {
+                    ForEach(model.visibleShelves) { plan in shelf(plan) }
+                    if model.needsSources { sourcesFallback }
+                } header: {
+                    if model.hasKindSplit {
+                        DSSegmented(options: [("series", "Series"), ("movie", "Películas")], selection: Binding(get: { model.kind }, set: { new in Task { await model.setKind(new) } }))
+                            .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s2)
+                            .background(.bar)
                     }
                 }
             }
+            .padding(.bottom, DS.Space.s14)   // aire bajo la última fila: la barra de pestañas no la tapa
+        }
+        .navigationDestination(item: $openTitle) { TitleView(route: $0) }
+        .navigationDestination(for: ShelfRoute.self) { ListGridView(observer: observer, shelfID: $0.id) }
+    }
+
+    // MARK: estantes
+    private func shelf(_ plan: ShelfPlan) -> some View {
+        let items = model.items(for: plan)
+        return Shelf(title: shelfTitle(plan), meta: shelfMeta(plan), logo: plan.style == .plain ? nil : plan.list.logo, symbol: shelfSymbol(plan),
+                     route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty) {
+            ForEach(items) { s in
+                ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "mine" && model.watchlistKeys.contains(s.imdb)) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Lo tuyo» todo está en tu lista: la etiqueta sobra
+            }
         }
     }
 
-    private func listName(_ list: ForYouList) -> Text {
-        if !list.title.isEmpty { return Text(list.title) }
-        switch list.id {
-        case "watchlist": return Text("Watchlist")
-        case "mine": return Text("Viendo")
-        case "recs": return Text("Recomendadas")
-        case "trend": return Text("En tendencia")
-        case "popular": return Text("Popular")
-        default: return Text(list.id)
-        }
-    }
-
-    @ViewBuilder private func listSection(_ list: ForYouList) -> some View {
-        let items = model.items(for: list)
-        if model.chip == .all {
-            if !items.isEmpty {
-                Rail(title: LocalizedStringKey(list.title.isEmpty ? "Tu watchlist" : list.title), trailing: list.group == .platforms ? "Lo más popular" : nil,
-                     logo: list.group == .platforms ? list.logo : nil) {
-                    ForEach(items) { s in TitleLink(route: s.route, badge: model.watchlistKeys.contains(s.imdb) ? "En tu lista" : nil, rank: s.rank) }
+    /// Sin ninguna fuente tuya: lo más popular de Stremio y una invitación (un botón, no una tarjeta gris).
+    @ViewBuilder private var sourcesFallback: some View {
+        if !model.mosaic.isEmpty {
+            Shelf(title: Text("Lo más popular en Stremio"), meta: Text("Sin Trakt ni Orbital, esto es lo que ve todo el mundo"), symbol: "flame") {
+                ForEach(model.mosaic) { s in
+                    ShelfPoster(suggestion: s, style: .plain, inList: false) { dismissed in Task { await model.dismiss(dismissed) } }
                 }
             }
-        } else if items.isEmpty {
-            DSNotice(text: "No hay nada aquí todavía.").padding(.horizontal, DS.Space.gutter)
-        } else {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
-                ForEach(items) { s in TitleLink(route: s.route, badge: badgeKey(s.reason), rank: s.rank, width: DS.Poster.gridMinimum) }
-            }
-            .padding(.horizontal, DS.Space.gutter)
         }
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            Label { Text("Conecta Trakt o tu Orbital").font(DS.font(.lg, weight: .semibold)).foregroundStyle(DS.text) } icon: { Image(systemName: "link").foregroundStyle(DS.textMuted) }
+            Text("Tu watchlist, tus recomendaciones y el Top 10 de tus plataformas aparecen aquí.").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
+            NavigationLink(value: SettingsRoute()) { Label("Abrir Ajustes", systemImage: "gearshape") }
+                .buttonStyle(.glass).controlSize(.large)
+        }
+        .padding(.horizontal, DS.Space.gutter)
+    }
+
+    // MARK: destacado
+    private func featuredTile(_ featured: ParaTiModel.Featured) -> some View {
+        let s = featured.item
+        let route = s.route
+        return HeroCard(title: s.title, detail: "", background: s.wide, badge: reasonKey(featured.reason), logo: s.logo, detailText: factVariants(s).first) {
+            // «Ver» y «Más» en un renglón; con letra grande, uno debajo del otro.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Space.s2) { watchButton(s); moreMenu(s) }
+                VStack(alignment: .leading, spacing: DS.Space.s2) { watchButton(s); moreMenu(s) }
+            }
+        }
+        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xxl))
+        .onTapGesture { openTitle = route }
+        .accessibilityAction(named: Text("Ver ficha")) { openTitle = route }
+    }
+
+    private func watchButton(_ s: Suggestion) -> some View {
+        Button { Task { await env.play(s) } } label: { Label("Ver", systemImage: "play.fill").lineLimit(1) }.dsPrimaryButton()
+    }
+
+    private func moreMenu(_ s: Suggestion) -> some View {
+        Menu { SuggestionActions(suggestion: s, includeWatch: false) { dismissed in Task { await model.dismiss(dismissed) } } } label: {
+            Label("Más", systemImage: "ellipsis").lineLimit(1)
+        }
+        .buttonStyle(.glass)
+    }
+
+    private func reasonKey(_ reason: ParaTiModel.FeaturedReason) -> LocalizedStringKey {
+        switch reason {
+        case .recommendedByTrakt: "Recomendada por Trakt"
+        case .rank(let n, let platform): "N.º \(n) en \(platform)"
+        case .trending: "En tendencia"
+        case .other(let r): badgeKey(r)
+        }
+    }
+}
+
+/// La lista completa de un estante, en cuadrícula (el mismo título y logo del encabezado que se tocó).
+struct ListGridView: View {
+    @ObservedObject var observer: ModelObserver<ParaTiModel>
+    let shelfID: String
+    private var model: ParaTiModel { observer.model }
+
+    var body: some View {
+        ScrollView {
+            if let plan = model.shelves.first(where: { $0.id == shelfID }) {
+                VStack(alignment: .leading, spacing: DS.Space.s4) {
+                    HStack(spacing: DS.Space.s3) {
+                        if plan.style != .plain, let logo = plan.list.logo { DSPlatformLogo(url: logo) }
+                        if let meta = shelfMeta(plan) { meta.font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(2) }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, DS.Space.gutter)
+                    if plan.splitsKinds {
+                        DSSegmented(options: [("series", "Series"), ("movie", "Películas")], selection: Binding(get: { model.kind }, set: { new in Task { await model.setKind(new) } }))
+                            .padding(.horizontal, DS.Space.gutter)
+                    }
+                    let items = model.items(for: plan)
+                    if items.isEmpty && !model.isLoading(shelf: plan) {
+                        DSNotice(text: "No hay nada aquí todavía.").padding(.horizontal, DS.Space.gutter)
+                    } else {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
+                            ForEach(items) { s in
+                                ShelfPoster(suggestion: s, style: plan.style == .top10 ? .platform : plan.style, inList: model.watchlistKeys.contains(s.imdb)) { dismissed in Task { await model.dismiss(dismissed) } }
+                            }
+                        }
+                        .padding(.horizontal, DS.Space.gutter)
+                    }
+                }
+                .padding(.bottom, DS.Space.s14)
+                .navigationTitle(shelfTitle(plan))
+            }
+        }
+        .background(TintedBackground())
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

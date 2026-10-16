@@ -30,6 +30,26 @@ Una prueba (`DesignTests`) impide definir estilos de botón o de selector propio
 **Excepción:** la app es siempre oscura (`.preferredColorScheme(.dark)`), como las apps de video (Infuse, Netflix): la paleta de Orbital es de grafito.
 Pendiente de revisar en un iPhone con iOS 26: el reproductor (controles sobre el video) y el mosaico, que son diseño propio por necesidad.
 
+### Para ti › Listas: un feed de estantes (CEN-50)
+
+Listas se arma con las mismas listas que la consola (`/api/foryou`), sin calcular nada nuevo en el iPhone:
+un destacado «Para ti hoy», el selector Series · Películas (pegado arriba al desplazar; solo cambia los estantes con `split`)
+y un estante por lista. El orden y la fusión de «Lo tuyo» viven en `OrbitalModels/ShelfPlan.swift` (`ShelfPlanner`, con pruebas).
+
+| Pieza del iPhone (`Design/`) | Equivalente en la consola | Qué es |
+|---|---|---|
+| `Shelf` (`Shelf.swift`) | `shelf` | Encabezado tocable (logo de plataforma con `DSPlatformLogo` o ícono de la fuente, título, dato secundario, chevron → `ListGridView`) y tira horizontal con `scrollTargetBehavior(.viewAligned)`; esqueletos (`ShelfSkeleton`) mientras carga |
+| `RankedPosterCard` (`Shelf.swift`) | `card__rank` | Top 10 estilo Netflix (solo `chart:*`): cifra enorme en gris (`DS.ink500`, tamaño `DS.Size.rankNumber`) detrás del póster. En `jw:*` el puesto discreto es `DSRankBadge` |
+| `FeatureTile` = `HeroCard` (`Components.swift`) | `tiles` / destacado | Arte a sangre, logo del título (con caída al nombre), etiqueta de razón, «Ver» y «Más». Es la misma pieza que el destacado de Inicio; `logo` y `detailText` son opcionales |
+
+Orden de estantes: Lo tuyo (watchlist + «Tus series» fusionados) → Recomendadas y listas propias de Trakt → Top 10 en Netflix →
+plataformas `jw:*` (el respaldo de TMDB solo si no hay `jw:` ni Top 10 de esa marca) → En tendencia / Lo más popular → catálogos de
+complementos. «Seguir viendo» y «Mi lista» de Stremio viven en Inicio. Un estante vacío o que falla no se pinta; sin ninguna fuente:
+destacado + «Lo más popular en Stremio» + un botón «Conecta Trakt o tu Orbital».
+
+Cada póster: tocar abre la ficha (háptica suave); mantener abre el menú (Ver, Mi lista, Descargar, En la TV, No me interesa).
+En modo demostración, `-demo-console` simula un overview con varios estantes y `-demo-mode lists` abre en Listas.
+
 ### Gestos del reproductor (como Infuse)
 
 Además de tocar (controles), doble tocar por mitades (±10 s) y pellizcar (llenar pantalla), `PlayerScreen` decide
@@ -78,6 +98,7 @@ públicos y Cinemeta de verdad. Nada toca tu Keychain ni tus ajustes. Para abrir
 | `-demo-title series:tt0386676` | una ficha |
 | `-demo-open settings` · `sources` · `play` · `download` | Ajustes, la hoja de fuentes, el reproductor o una descarga (sobre la ficha) |
 | `-demo-search dune` | una búsqueda en Ver |
+| `-demo-mode lists` | en Para ti, abre en Listas (con `-demo-console`, el feed completo de estantes) |
 | `-demo-lang en` | la app en inglés |
 | `-demo-signed-out` | la pantalla de entrada |
 | `-demo-gesture brightness` · `volume` · `seek` · `fastforward` | con el reproductor abierto, simula ese gesto a medio camino (ver «Gestos del reproductor») |

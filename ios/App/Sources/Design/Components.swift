@@ -174,6 +174,10 @@ struct HeroCard<Actions: View>: View {
     let background: String?
     var badge: LocalizedStringKey?
     var progress: Double?
+    /// El logo del título (metahub): si carga, sustituye al nombre; si no hay o falla, cae al nombre en texto.
+    var logo: String?
+    /// El dato de una línea ya traducido (con `detail` vacío): «Película · 2021 · 2 h 35 min».
+    var detailText: Text?
     @ViewBuilder var actions: () -> Actions
 
     var body: some View {
@@ -182,8 +186,8 @@ struct HeroCard<Actions: View>: View {
             LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom)
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 if let badge { DSBadge(text: badge) }
-                Text(title).font(DS.font(.xl, weight: .bold)).foregroundStyle(DS.text).lineLimit(2)
-                Text(detail).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1)
+                titleOrLogo
+                (detailText ?? Text(detail)).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(detailText == nil ? 1 : 2)
                 actions().padding(.top, DS.Space.s1)
                 if let progress { DSProgress(fraction: progress) }
             }
@@ -192,6 +196,20 @@ struct HeroCard<Actions: View>: View {
         .frame(minHeight: DS.Poster.heroHeight)      // con letra grande crece en vez de encimar el texto
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl))
         .accessibilityElement(children: .contain)
+    }
+
+    private var nameText: some View { Text(title).font(DS.font(.xl, weight: .bold)).foregroundStyle(DS.text).lineLimit(2) }
+
+    @ViewBuilder private var titleOrLogo: some View {
+        if let logo, let url = URL(string: logo) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image): image.resizable().scaledToFit().frame(maxWidth: .infinity, maxHeight: DS.Size.logo, alignment: .leading).accessibilityLabel(Text(title))
+                case .failure: nameText
+                default: Color.clear.frame(height: DS.Size.logo)   // mientras llega, el mismo alto: nada salta
+                }
+            }
+        } else { nameText }
     }
 }
 

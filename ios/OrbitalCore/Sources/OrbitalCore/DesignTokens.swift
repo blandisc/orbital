@@ -32,6 +32,8 @@ public enum DesignTokens {
         /// El logo de una plataforma (Netflix, Disney+…) en un chip o un encabezado: siempre la misma altura, venga el logo
         /// cuadrado o apaisado.
         public static let platformLogo = 18.0
+        /// La cifra enorme de un Top 10 (estilo Netflix), detrás del póster.
+        public static let rankNumber = 132.0
     }
     /// Relaciones de aspecto de las imágenes.
     public enum Aspect { public static let poster = 2.0 / 3.0, hero = 16.0 / 11.0, still = 16.0 / 9.0 }

@@ -226,14 +226,15 @@ final class ScreenModelsTests: XCTestCase {
         await model.load()
         XCTAssertTrue(model.traktLinked)
         XCTAssertEqual(Set(model.mosaic.map(\.imdb)), ["tt11280740", "tt2788316", "tt13238346"])
-        XCTAssertTrue(model.chips.contains(.trakt))
         XCTAssertEqual(model.watchlistKeys, ["tt11280740"])
-        await model.select(.trakt)
-        XCTAssertEqual(model.visibleLists.map(\.id), ["watchlist"])
-        XCTAssertEqual(model.items(for: model.visibleLists[0]).map(\.imdb), ["tt11280740"])
-        await model.select(traktList: "recs")
+        XCTAssertEqual(model.visibleShelves.map(\.id), ["mine", "recs"], "Lo tuyo (watchlist + Tus series) y las recomendadas; tendencias sin contenido no se pinta")
+        let mine = try XCTUnwrap(model.visibleShelves.first)
+        XCTAssertEqual(model.items(for: mine).map(\.imdb), ["tt11280740"])
+        let recs = try XCTUnwrap(model.visibleShelves.last)
+        XCTAssertEqual(model.items(for: recs).map(\.imdb), ["tt2788316"])
         await model.setKind("movie")
-        XCTAssertEqual(model.items(for: try XCTUnwrap(model.visibleLists.first)).map(\.imdb), ["tt13238346"])
+        XCTAssertEqual(model.items(for: recs).map(\.imdb), ["tt13238346"])
+        XCTAssertEqual(model.items(for: mine).map(\.imdb), ["tt11280740"], "Lo tuyo no tiene split: Series · Películas no lo toca")
         await model.dismiss(model.mosaic[0])
         XCTAssertEqual(model.mosaic.count, 2)
     }
@@ -288,7 +289,7 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(model.mosaic.map(\.imdb), ["tt1160419"])
         XCTAssertEqual(model.mosaic.first?.rank, 1)
         XCTAssertEqual(model.platformLists.map(\.id), ["netflix"])
-        XCTAssertTrue(model.chips.contains(.platform("netflix")))
+        XCTAssertEqual(model.shelves.map(\.id), ["netflix"], "sin chart ni jw, el respaldo de TMDB sí se pinta")
     }
 
     /// Si tu Orbital está conectada pero no contesta «Para ti» (versión anterior, o no responde), se cae a la lógica

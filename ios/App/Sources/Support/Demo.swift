@@ -41,6 +41,8 @@ enum Demo {
     }
     /// `-demo-player panel|sources`: ya reproduciendo, abre el panel de audio y subtítulos o el de otra fuente.
     static var player: String? { value(after: "-demo-player") }
+    /// `-demo-mode lists`: en Para ti, abre en Listas (en vez de Mosaico).
+    static var mode: String? { value(after: "-demo-mode") }
     /// `-demo-lang en`: idioma de la app.
     static var language: String? { value(after: "-demo-lang") }
     /// `-demo-search dune`: escribe eso en Buscar (pestaña Ver).
@@ -116,33 +118,71 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         return try await real.send(request)
     }
 
-    /// Un overview de «Para ti» de mentira, con una lista de un chart (puesto incluido), para ver el pie «Para ti de tu
-    /// Orbital» y el número del Top 10 sin tener una consola real (`-demo-console`).
+    /// Un overview de «Para ti» de mentira con varios estantes (Lo tuyo, Top 10 de Netflix con puesto, una plataforma, tendencias y el
+    /// catálogo de un complemento), para ver el feed de Listas completo sin una consola real (`-demo-console`).
     private func foryouDemo(_ url: URL) -> HTTPResponse {
         switch url.path {
         case "/api/foryou":
+            func list(_ id: String, _ title: String, _ source: String, _ meta: String, split: Bool, brand: String? = nil, logo: String? = nil) -> JSON {
+                var row: [String: JSON] = ["id": .string(id), "title": .string(title), "icon": "list", "source": .string(source), "meta": .string(meta), "split": .bool(split)]
+                if let brand { row["brand"] = .string(brand) }
+                if let logo { row["logo"] = .string(logo) }
+                return .object(row)
+            }
+            let logo = { (id: String) in "https://images.metahub.space/logo/medium/\(id)/img" }
             let overview: JSON = [
-                "lists": [["id": "chart:netflix", "title": "Top 10 Netflix", "icon": "trailer", "source": "TMDB",
-                           "meta": "Lo más visto", "split": false, "brand": "netflix",
-                           "logo": "https://images.metahub.space/logo/medium/tt1160419/img"]],
-                "mosaic": [Self.chartItem],
+                "lists": [list("watchlist", "Tu watchlist", "Trakt", "Lo que dejaste pendiente", split: false),
+                          list("mine", "Tus series", "Trakt", "Las que estás viendo", split: false),
+                          list("chart:netflix", "Top 10 en Netflix", "Netflix", "Esta semana en México", split: true, brand: "netflix", logo: logo("tt1160419")),
+                          list("jw:disney", "Lo más visto en Disney+", "JustWatch", "Popular en México", split: true, brand: "disney", logo: logo("tt4154796")),
+                          list("trend", "En tendencia", "Trakt", "Lo más visto esta semana", split: true),
+                          list("addon:cat", "Clásicos", "Stremio", "De Cinemeta", split: false),
+                          list("addon:empty", "Un catálogo vacío", "Stremio", "De nadie", split: false)],
+                "mosaic": [Self.demoRow("tt1160419", "Dune", 2021, "movie", rank: 1, why: "En Netflix")],
             ]
             return HTTPResponse(status: 200, data: overview.serialized())
-        case "/api/foryou/list": return HTTPResponse(status: 200, data: JSON.object(["items": [Self.chartItem]]).serialized())
+        case "/api/foryou/list":
+            let id = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "id" }?.value ?? ""
+            return HTTPResponse(status: 200, data: JSON.object(["items": .array(Self.demoItems(id))]).serialized())
         case "/api/foryou/details": return HTTPResponse(status: 200, data: JSON.object(["overview": "Sinopsis de prueba (modo demostración)."]).serialized())
         case "/api/foryou/dismiss": return HTTPResponse(status: 200, data: JSON.object(["ok": true]).serialized())
         default: return HTTPResponse(status: 404, data: Data())
         }
     }
 
-    /// «Dune», puesto 1 de un chart de mentira: lo que manda `orbital/foryou.py` para un `video_item`, con `rank`.
-    private static let chartItem: JSON = [
-        "key": "video:tt1160419", "id": "cinemeta:movie:tt1160419", "source": "cinemeta", "kind": "movie", "meta_id": "tt1160419",
-        "title": "Dune", "year": 2021, "why": "En Netflix", "detail": "N.º 1 esta semana", "rank": 1,
-        "image": "https://images.metahub.space/poster/medium/tt1160419/img", "hero": "https://images.metahub.space/background/medium/tt1160419/img",
-        "logo": "https://images.metahub.space/logo/medium/tt1160419/img", "overview": "", "video_id": "tt1160419", "action": "Ver",
-    ]
+    /// Lo que manda `orbital/foryou.py` para un `video_item`, con `rank` si es de un chart.
+    private static func demoRow(_ imdb: String, _ title: String, _ year: Int, _ kind: String, rank: Int? = nil, why: String) -> JSON {
+        var row: [String: JSON] = [
+            "key": .string("video:\(imdb)"), "id": .string("cinemeta:\(kind):\(imdb)"), "source": "cinemeta", "kind": .string(kind), "meta_id": .string(imdb),
+            "title": .string(title), "year": .int(year), "why": .string(why),
+            "image": .string("https://images.metahub.space/poster/medium/\(imdb)/img"), "hero": .string("https://images.metahub.space/background/medium/\(imdb)/img"),
+            "logo": .string("https://images.metahub.space/logo/medium/\(imdb)/img"), "overview": "", "video_id": .string(imdb), "action": "Ver",
+        ]
+        if let rank { row["rank"] = .int(rank) }
+        return .object(row)
+    }
 
+    private static func demoItems(_ list: String) -> [JSON] {
+        let top: [(String, String, Int, String)] = [("tt1160419", "Dune", 2021, "movie"), ("tt11280740", "Severance", 2022, "series"), ("tt0903747", "Breaking Bad", 2008, "series"),
+                                                    ("tt0816692", "Interstellar", 2014, "movie"), ("tt15239678", "Dune: Part Two", 2024, "movie"), ("tt0386676", "The Office", 2005, "series"),
+                                                    ("tt0944947", "Game of Thrones", 2011, "series"), ("tt7366338", "Chernobyl", 2019, "series"), ("tt0108778", "Friends", 1994, "series"),
+                                                    ("tt1375666", "Inception", 2010, "movie")]
+        switch list {
+        case "chart:netflix": return top.enumerated().map { demoRow($1.0, $1.1, $1.2, $1.3, rank: $0 + 1, why: "En Netflix") }
+        case "watchlist", "mine": return [top[1], top[0], top[4], top[2]].map { demoRow($0.0, $0.1, $0.2, $0.3, why: "En tu lista") }
+        case "jw:disney":
+            return [("tt4154796", "Avengers: Endgame", 2019, "movie"), ("tt2250912", "Spider-Man: Homecoming", 2017, "movie"), ("tt3896198", "Guardianes de la Galaxia 2", 2017, "movie"),
+                    ("tt2527338", "Star Wars: El ascenso de Skywalker", 2019, "movie"), ("tt0076759", "Star Wars", 1977, "movie"), ("tt1630029", "Avatar: El camino del agua", 2022, "movie")]
+                .enumerated().map { demoRow($1.0, $1.1, $1.2, $1.3, rank: $0 + 1, why: "En Disney+") }
+        case "trend":
+            return [("tt0137523", "El club de la pelea", 1999, "movie"), ("tt0111161", "Cadena perpetua", 1994, "movie"), ("tt0133093", "Matrix", 1999, "movie"),
+                    ("tt0110912", "Tiempos violentos", 1994, "movie"), ("tt0068646", "El padrino", 1972, "movie")].map { demoRow($0.0, $0.1, $0.2, $0.3, why: "En tendencia") }
+        case "addon:cat":
+            return [("tt0099685", "Buenos muchachos", 1990, "movie"), ("tt0114369", "Seven", 1995, "movie"), ("tt0109830", "Forrest Gump", 1994, "movie"),
+                    ("tt0120737", "El señor de los anillos", 2001, "movie")].map { demoRow($0.0, $0.1, $0.2, $0.3, why: "Popular") }
+        default: return []
+        }
+    }
 
     private static let nowPlayingDuration = 1_320.0
 

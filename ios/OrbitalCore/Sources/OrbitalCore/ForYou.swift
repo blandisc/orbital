@@ -44,6 +44,15 @@ public struct ForYouList: Sendable, Equatable, Identifiable {
     public var brand: String?          // netflix | disney | hbo
     public var logo: String?
     public var splitsKinds: Bool       // tiene «Series | Películas»
+    /// De dónde sale («Trakt», «Stremio», «Netflix», «JustWatch»…) y el dato secundario del estante («Esta semana en
+    /// México»). Solo los trae la consola; local, la interfaz los pone según el id.
+    public var source = ""
+    public var meta = ""
+
+    public init(id: String, title: String, group: ForYouGroup, brand: String? = nil, logo: String? = nil, splitsKinds: Bool, source: String = "", meta: String = "") {
+        self.id = id; self.title = title; self.group = group; self.brand = brand; self.logo = logo; self.splitsKinds = splitsKinds
+        self.source = source; self.meta = meta
+    }
 }
 
 /// «Para ti»: lo tuyo (Trakt) y lo popular en tus plataformas (TMDB), siempre de películas y series. Cada fuente
