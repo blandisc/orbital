@@ -128,6 +128,37 @@ Las pruebas de Swift leen `tests/fixtures/` (los mismos datos de ejemplo que usa
    gestos (brillo, volumen, buscar) a la vez que el doble toque y el pellizcar, con el dedo de verdad (el
    simulador no tiene multitáctil con el mismo tacto).
 
+## Mosaico fluido (CEN-49)
+
+El mosaico de «Para ti» se trababa (en el iPhone, con congelamientos de hasta ~3 s). Qué se cambió, sin tocar el aspecto:
+
+- **Imágenes** (`Platform/ImagePipeline.swift`, `RemoteImage` en el catálogo): reemplaza a `AsyncImage` en todo el app. `URLSession` +
+  ImageIO (`kCGImageSourceThumbnailMaxPixelSize`) reducen cada imagen al tamaño en que se ve (`DS.Image`), fuera del hilo principal,
+  máx. 4 a la vez, con caché en memoria (`NSCache`, tope 96 MB, se vacía con avisos de memoria) y en disco (`URLCache` de 256 MB, compartido).
+  Una imagen ya cargada aparece en el primer fotograma. `ArtTint` ya no decodifica el fondo completo (usa una miniatura de 48 px).
+- **Layout**: las columnas ya no son `@Published`: el arrastre y el ambiente mueven solo un `offset` (`MosaicColumnScroll`, uno por columna);
+  las piezas viven en `MosaicColumnLayer` (`Equatable`), que no se reevalúa si no cambió su contenido. Solo se pintan las piezas a la vista más
+  medio alto de colchón (`DesignTokens.Mosaic.cullMargin`). El temporizador del ambiente solo corre en ambiente. `fill` no arma conjuntos si no hace falta.
+- **Reducir movimiento** ya apagaba el ambiente y el acercamiento (se verificó: ni el temporizador ni `alive` corren).
+
+### Cómo se midió
+
+`-demo -demo-tab 1 -demo-mosaic-bench` (solo Debug, `MosaicBench`): el mosaico se desplaza solo 8 s (700 pt/s) y luego cambia de foco 6 s, y
+la consola imprime fotogramas por segundo, percentiles, saltos (> 1,5 fotogramas), memoria (`phys_footprint`), el peor bloqueo del hilo
+principal (vigilante) y cuántas veces se evaluó cada `body`. Imágenes reales de metahub, ~94 piezas vivas.
+
+| Simulador (iPhone 17 Pro), 3 corridas | Antes | Después |
+|---|---|---|
+| Desplazar: fps | 46–54 | 53–59 |
+| Desplazar: p95 del fotograma | 33–40 ms | 16,7 ms |
+| Saltos al desplazar (de ~430 fotogramas) | 31–67 | 5–16 |
+| Cambiar foco: p95 | 45–55 ms | 16,7–28 ms |
+| Memoria | 365–383 MB | 48–66 MB |
+| `body` de piezas al desplazar | 31 700–37 700 | 3 800–4 700 |
+
+iPhone real («iPhone de Fer», antes, Debug): al desplazar 14–55 fps (varía entre corridas), p95 38–108 ms y **un bloqueo del hilo
+principal de 2,95 s** en una corrida. Los números «después» en el iPhone **no se midieron** (sin instalar la versión nueva a petición del usuario).
+
 ## Viendo en la TV
 
 En Inicio, arriba del destacado: una tarjeta con lo que se ve ahora en tu Orbital (con la dirección y el token de
