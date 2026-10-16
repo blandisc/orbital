@@ -14,9 +14,10 @@ final class DownloadLiveActivityController {
     func follow(_ downloads: Downloads) async {
         // Si iOS cerró la app con una actividad viva (las descargas siguen en segundo plano), se retoma esa en vez de
         // pedir otra; las de más se terminan. Sin esto, la vieja se quedaba en la pantalla bloqueada con el avance congelado.
-        let running = Activity<DownloadActivityAttributes>.activities
-        activity = running.first
-        for extra in running.dropFirst() { await extra.end(nil, dismissalPolicy: .immediate) }
+        // Solo las vivas: una terminada («Listo», que sigue a la vista un rato) ya no acepta cambios y se deja como está.
+        let live = Activity<DownloadActivityAttributes>.activities.filter { $0.activityState == .active || $0.activityState == .stale }
+        activity = live.first
+        for extra in live.dropFirst() { await extra.end(nil, dismissalPolicy: .immediate) }
         for await items in downloads.makeUpdates() { await update(items) }
     }
 
@@ -35,6 +36,7 @@ final class DownloadLiveActivityController {
            abs(last.fraction - state.fraction) < 0.01 { return }
         last = state
         let content = ActivityContent(state: state, staleDate: nil)
+        if let current = activity, current.activityState == .ended || current.activityState == .dismissed { activity = nil }   // la terminó iOS (8 h): otra
         if let activity { await activity.update(content) }
         else { activity = try? Activity.request(attributes: DownloadActivityAttributes(), content: content) }
     }
