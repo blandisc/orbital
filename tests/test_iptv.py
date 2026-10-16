@@ -30,7 +30,7 @@ def test_lee_nombre_calidad_etiquetas_y_logo(channels):
     noticias = channels["NoticiasMX.mx@SD"]
     assert (noticias.name, noticias.quality, noticias.tags) == ("Noticias MX", "1080p", ["Not 24/7"])
     peques = channels["Peques.mx@SD"]  # la calidad entre paréntesis sale aunque haya otros paréntesis
-    assert (peques.name, peques.quality, peques.tags) == ("Peques TV (Mexico)", "480p", ["Geo-blocked"])
+    assert (peques.name, peques.quality, peques.tags) == ("Peques TV", "480p", ["Geo-blocked"])
 
 
 def test_categorias_separadas_por_punto_y_coma_en_espanol(channels):
@@ -151,3 +151,20 @@ def test_a_huge_line_does_not_freeze_the_list():
     channels = iptv.parse_m3u(text)
     assert time.perf_counter() - started < 1
     assert any(c.id == "ok" and c.categories == ["Noticias"] for c in channels)
+
+
+def test_channel_names_lose_the_list_noise_but_stay_distinct_and_keep_their_id():
+    """«Canal 5 (Mexico)» → «Canal 5», «AXN Latin America Mexico» → «AXN»; si dos quedarían iguales, se distinguen. El id
+    sigue siendo el de antes (el número del canal y su salud no se pierden)."""
+    from orbital.library.iptv import display_name, parse_m3u
+    assert display_name("AXN Latin America Mexico") == "AXN"
+    assert display_name("Disney Jr. Latin America North HD") == "Disney Jr."
+    assert display_name("Telemax (Mexico) XEWH-TDT") == "Telemax"
+    assert display_name("Presumiendo Mexico") == "Presumiendo Mexico"  # ahí «Mexico» es el nombre
+    assert display_name("Canal 13 Puebla") == "Canal 13 Puebla"
+    text = ("#EXTM3U\n#EXTINF:-1,Canal 5 (Mexico) (1080p)\nhttps://a/1.m3u8\n"
+            "#EXTINF:-1,Canal 5 (Mexico) XET-TDT (1080p)\nhttps://a/2.m3u8\n"
+            "#EXTINF:-1,AXN Latin America Mexico [Not 24/7]\nhttps://a/3.m3u8\n")
+    chs = parse_m3u(text)
+    assert [c.name for c in chs] == ["Canal 5", "Canal 5 XET-TDT", "AXN"]
+    assert chs[2].id == "axn-latin-america-mexico"  # el id sale del nombre original
