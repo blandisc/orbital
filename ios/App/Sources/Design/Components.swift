@@ -349,6 +349,12 @@ extension View {
     /// El botón principal: vidrio nativo con el tinte de Orbital (papel) y la letra oscura encima. Sin esto, iOS pone letra
     /// blanca sobre el tinte claro y no se lee.
     func dsPrimaryButton() -> some View { buttonStyle(.glassProminent).foregroundStyle(DS.onPrimary) }
+
+    /// El botón principal de un título con arte (Ver, Continuar): toma el color claro del arte, con texto oscuro, como
+    /// `--color-primary-art` en la TV. Sin colores, el neutro casi papel de la TV.
+    func dsArtButton(_ colors: ArtColors?) -> some View {
+        buttonStyle(.glassProminent).tint((colors ?? .neutral).accent).foregroundStyle(DS.backdropDeep)
+    }
 }
 
 /// Un botón redondo con un ícono (más, descargar, cerrar): el botón nativo con vidrio de iOS 26, ya con su tamaño táctil de 44 pt.
@@ -497,12 +503,26 @@ struct DSSpeedPill: View {
     }
 }
 
+/// Los dos colores de lo que está al frente (`ArtPalette`, la misma cuenta que la TV): el oscuro tiñe el fondo y el claro es el
+/// botón principal y los acentos (`--art-tint` / `--art-accent`).
+struct ArtColors: Equatable {
+    var tint: Color
+    var accent: Color
+
+    init(_ palette: (tint: ArtPalette.RGB, accent: ArtPalette.RGB)) {
+        func color(_ c: ArtPalette.RGB) -> Color { Color(.sRGB, red: Double(c.r) / 255, green: Double(c.g) / 255, blue: Double(c.b) / 255) }  // ds-exception: el color sale del arte (ArtPalette), no es un valor de diseño
+        tint = color(palette.tint); accent = color(palette.accent)
+    }
+
+    /// Sin arte: los neutros de la TV (grafito y casi papel).
+    static let neutral = ArtColors(ArtPalette.palette(for: nil))
+}
+
 /// Fondo de pantalla de Proyección: el color del arte que está al frente ilumina la pantalla desde arriba y se funde con el
-/// fondo a media altura. En oscuro el tono se hunde hacia el grafito (como `--art-tint` en la TV); en claro es un velo de
-/// color muy suave sobre el papel. Sin arte, el fondo liso del modo.
+/// fondo a media altura. En oscuro, el tono oscuro de la TV (`--art-tint`); en claro, el tono claro (`--art-accent`) como un velo
+/// suave sobre el papel. Sin arte, el fondo liso del modo.
 struct Backdrop: View {
-    /// El color medio del arte (sin mezclar: la mezcla depende del modo).
-    var tint: Color?
+    var tint: ArtColors?
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -510,7 +530,7 @@ struct Backdrop: View {
         ZStack {
             DS.bg
             if let tint {
-                let tone = scheme == .dark ? tint.mix(with: DS.backdropDeep, by: DS.Backdrop.darkMix) : tint.mix(with: DS.paper, by: DS.Backdrop.lightMix)
+                let tone = scheme == .dark ? tint.tint : tint.accent.mix(with: DS.paper, by: DS.Backdrop.lightMix)
                 LinearGradient(stops: [.init(color: tone, location: 0), .init(color: DS.bg, location: DS.Backdrop.fadeTo)], startPoint: .top, endPoint: .bottom)
             }
         }
@@ -525,24 +545,25 @@ extension View {
     func onArt() -> some View { environment(\.colorScheme, .dark) }
 }
 
-/// Tono medio de una imagen (para el fondo): se calcula una vez y se recuerda.
+/// Los colores del arte de lo que está al frente (`ArtPalette`, como la TV): se calculan de una miniatura y se recuerdan.
 @MainActor
 final class ArtTint: ObservableObject {
-    /// El color medio del arte; nil: no hay arte (el fondo es el liso del modo).
-    @Published private(set) var color: Color?
-    private static var cache: [String: Color] = [:]
+    /// nil: no hay arte (el fondo es el liso del modo y el botón principal, el de siempre).
+    @Published private(set) var colors: ArtColors?
+    private static var cache: [String: ArtColors] = [:]
     private static let cacheLimit = 64
 
     func load(_ url: String?) async {
-        guard let url, let u = URL(string: url) else { color = nil; return }
-        if let hit = Self.cache[url] { color = hit; return }
-        // Basta una miniatura para sacar el color medio: nunca se decodifica el fondo completo.
+        guard let url, let u = URL(string: url) else { colors = nil; return }
+        if let hit = Self.cache[url] { colors = hit; return }
+        // Basta una miniatura para sacar el tono dominante: nunca se decodifica el fondo completo.
         guard let thumb = await ImagePipeline.shared.image(u, maxPixel: DS.Image.tintPixels),
-              let average = await Task.detached(priority: .utility, operation: { thumb.averageColor }).value else { return }
-        let tone = Color(uiColor: average)
+              let palette = await Task.detached(priority: .utility, operation: { thumb.rgbaPixels.map { ArtPalette.palette(for: ArtPalette.dominantHue(rgba: $0)) } }).value
+        else { return }
+        let found = ArtColors(palette)
         if Self.cache.count >= Self.cacheLimit { Self.cache.removeAll() }
-        Self.cache[url] = tone
-        color = tone
+        Self.cache[url] = found
+        colors = found
     }
 }
 
@@ -564,6 +585,17 @@ enum LogoTone {
 }
 
 extension UIImage {
+    /// Los píxeles en RGBA de 8 bits (para `ArtPalette`).
+    var rgbaPixels: [UInt8]? {
+        guard let cg = cgImage else { return nil }
+        let w = cg.width, h = cg.height
+        var pixels = [UInt8](repeating: 0, count: w * h * 4)
+        guard let context = CGContext(data: &pixels, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+        return pixels
+    }
+
     /// La luminancia media de los píxeles visibles (0…1, sin contar los transparentes) y qué parte de ellos tiene color;
     /// nil si no hay nada visible.
     var opaqueTone: (luminance: Double, colorful: Double)? {

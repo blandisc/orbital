@@ -11,6 +11,8 @@ struct ParaTiView: View {
     @State private var focusedArt: String?
     /// La sugerencia enfocada del mosaico (su información va bajo él).
     @State private var focused: Suggestion?
+    /// Una ficha abierta desde la franja del mosaico («Ver la serie»).
+    @State private var openTitle: TitleRoute?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -33,8 +35,10 @@ struct ParaTiView: View {
                        onFocusChange: { focused = $0; focusedArt = $0?.wide })
                 // La pieza enfocada, contada bajo el mosaico (todas las piezas son del mismo tamaño: su información va aquí).
                 if DS.Mosaic.uniform, let item = focused {
-                    MosaicCaption(reason: m.watchlistKeys.contains(item.imdb) ? Text("En tu lista") : Text(badgeKey(item.reason)), title: item.title,
-                                  data: factStrings(item).first.map { [$0] } ?? [], watch: { Task { await env.play(item) } }) {
+                    // Como la TV: el motivo tal cual, y una serie sugerida abre su ficha («Ver la serie»), no un episodio al azar.
+                    MosaicCaption(reason: Text(badgeKey(item.reason)), title: item.title, logo: item.logo,
+                                  data: factStrings(item).first.map { [$0] } ?? [], accent: tint.colors, isSeries: item.kind == "series",
+                                  watch: { if item.kind == "series" { openTitle = item.route } else { Task { await env.play(item) } } }) {
                         SuggestionActions(suggestion: item, includeWatch: false) { s in Task { await m.dismiss(s) } }
                     }
                     .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2)
@@ -45,7 +49,7 @@ struct ParaTiView: View {
             }
         }
         .padding(.top, DS.Space.s2)
-        .background(Backdrop(tint: m.mode == .mosaic ? tint.color : nil))
+        .background(Backdrop(tint: m.mode == .mosaic ? tint.colors : nil))
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
         .navigationTitle("Para ti").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         // De dónde salió lo que ves, en el mismo lugar que «Stremio al día» en Inicio (no un chip y un pie sueltos).
@@ -58,6 +62,7 @@ struct ParaTiView: View {
         }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
+        .navigationDestination(item: $openTitle) { TitleView(route: $0) }
         .task {
             #if DEBUG
             if Demo.isOn, Demo.open == "lists" || Demo.mode == "lists" { m.mode = .lists }
@@ -98,7 +103,7 @@ struct SuggestionActions: View {
         Button("Mi lista", systemImage: "plus") { Task { await env.addToLibrary(suggestion) } }
         Button("Descargar", systemImage: "arrow.down.circle") { Task { await env.download(suggestion) } }
         if env.services.orbital.isConfigured {
-            Button("En la TV", systemImage: "tv") { Task { await env.playOnTV(kind: suggestion.kind, metaID: suggestion.imdb, videoID: env.videoID(for: suggestion), title: suggestion.title) } }
+            Button("Ver en la TV", systemImage: "tv") { Task { await env.playOnTV(kind: suggestion.kind, metaID: suggestion.imdb, videoID: env.videoID(for: suggestion), title: suggestion.title) } }
         }
         Button("No me interesa", systemImage: "hand.thumbsdown", role: .destructive) { onDismiss(suggestion) }
     }
@@ -166,6 +171,8 @@ struct ListsView: View {
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var openTitle: TitleRoute?
+    /// Los colores del arte del destacado: su «Ver» toma el color claro, como en la TV.
+    @StateObject private var featuredTint = ArtTint()
     private var model: ParaTiModel { observer.model }
 
     var body: some View {
@@ -184,7 +191,10 @@ struct ListsView: View {
     private var scroller: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: DS.Space.s6, pinnedViews: [.sectionHeaders]) {
-                if let featured = model.featured { featuredTile(featured).padding(.horizontal, DS.Space.gutter) }
+                // El arte a sangre ya pone su margen (en claro es tarjeta; en oscuro va de borde a borde).
+                if let featured = model.featured {
+                    featuredTile(featured).task(id: featured.item.wide) { await featuredTint.load(featured.item.wide) }
+                }
                 if !model.airings.isEmpty {   // justo después del destacado; vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
                     Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), symbol: "calendar", route: ShelfRoute(id: "estrenos")) {
                         ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
@@ -255,8 +265,14 @@ struct ListsView: View {
         .accessibilityAction(named: Text("Ver ficha")) { openTitle = route }
     }
 
+    /// «Ver» (película) o «Ver la serie» (abre su ficha: sugerir un episodio suelto casi siempre es el equivocado), como la TV.
     private func watchButton(_ s: Suggestion) -> some View {
-        Button { Task { await env.play(s) } } label: { Label("Ver", systemImage: "play.fill").lineLimit(1) }.dsPrimaryButton()
+        Button {
+            if s.kind == "series" { openTitle = s.route } else { Task { await env.play(s) } }
+        } label: {
+            Label(s.kind == "series" ? "Ver la serie" : "Ver", systemImage: "play.fill").lineLimit(1)
+        }
+        .dsArtButton(featuredTint.colors)
     }
 
     private func moreMenu(_ s: Suggestion) -> some View {
@@ -298,7 +314,7 @@ struct ListGridView: View {
                     }
                     let items = model.items(for: plan)
                     if items.isEmpty && !model.isLoading(shelf: plan) {
-                        DSNotice(text: "No hay nada aquí todavía.").padding(.horizontal, DS.Space.gutter)
+                        DSNotice(text: "Nada por aquí por ahora.").padding(.horizontal, DS.Space.gutter)
                     } else {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
                             ForEach(items) { s in

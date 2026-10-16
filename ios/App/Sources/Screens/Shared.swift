@@ -25,6 +25,7 @@ func badgeKey(_ reason: SuggestionReason) -> LocalizedStringKey {
     case .trending: "En tendencia"
     case .popular: "Popular"
     case .onPlatform(let name): "En \(name)"
+    case .console(let text): LocalizedStringKey(text)   // tal cual lo dice tu Orbital
     }
 }
 
@@ -130,8 +131,8 @@ struct NowPlayingCard: View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             if now.live {
                 HStack(spacing: DS.Space.s1) {
-                    Text("●").font(DS.TextRecipe.caption.font).foregroundStyle(DS.warning)
-                    Text("En vivo").font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.warning)
+                    Text("●").font(DS.TextRecipe.caption.font).foregroundStyle(DS.live)
+                    Text("En vivo").font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.live)
                 }
             }
             Text(now.live ? (now.channel ?? now.title) : now.title).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1)

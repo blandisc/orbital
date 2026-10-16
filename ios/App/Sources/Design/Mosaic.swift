@@ -427,7 +427,10 @@ private struct MosaicTileCell: View {
         Group {
             if DS.Mosaic.uniform { poster } else { framed }
         }
-        .opacity(dimmed ? DesignTokens.Opacity.shrink : 1)
+        // Como la TV: la enfocada crece un poco y las demás se apagan (más tenues y menos saturadas).
+        .opacity(dimmed ? DesignTokens.Mosaic.dimmedOpacity : 1)
+        .saturation(dimmed ? DesignTokens.Mosaic.dimmedSaturation : 1)
+        .scaleEffect(DS.Mosaic.uniform && focused ? DesignTokens.Mosaic.focusScale : 1)
         .scaleEffect(alive ? 1 + DesignTokens.Opacity.hairline : 1)
         .animation(alive ? .linear(duration: DesignTokens.Mosaic.aliveZoomSeconds) : .default, value: alive)   // se acerca despacio, no de golpe
     }

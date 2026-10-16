@@ -46,7 +46,7 @@ struct DownloadsView: View {
             }
         }
         .tint(DS.accent)   // interruptores y botones de la lista: el acento (lo interactivo)
-        .scrollContentBackground(.hidden).background(Backdrop(tint: tint.color))
+        .scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
         .navigationTitle("Descargas").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .navigationSubtitle(Text("Ocupan \(bytes(model.usedBytes)) · libres \(bytes(model.freeBytes))"))
         .titleDestinations()

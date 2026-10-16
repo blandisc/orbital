@@ -29,6 +29,7 @@ final class DesignTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.label), hex(background)), 7, "\(mode): texto sobre \(background)")
                 XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.secondaryLabel), hex(background)), 4.5, "\(mode): texto secundario sobre \(background)")
                 XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.accent), hex(background)), 4.5, "\(mode): el acento se lee sobre \(background)")
+                XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.live), hex(background)), 4.5, "\(mode): «En vivo» se lee sobre \(background)")
                 XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.danger), hex(background)), 4.5, "\(mode): el error se lee sobre \(background)")
             }
             XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.onPrimary), hex(.primary)), 7, "\(mode): texto del botón principal")

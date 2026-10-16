@@ -47,6 +47,9 @@ enum DS {
     static let primary = role(.primary)
     static let onPrimary = role(.onPrimary)
     static let accent = role(.accent)
+    /// «En vivo» (el único teal, como en la TV).
+    static let live = role(.live)
+    /// Lo que salió bien o ya está (visto, descargado, conectado): el papel, como la TV.
     static let good = role(.accent)
     static let warning = role(.warning)
     static let danger = role(.danger)
@@ -134,7 +137,7 @@ enum DS {
             case .footnote: .system(.footnote, design: .default)
             case .caption: .system(.caption, design: .default)
             case .eyebrow: .system(.footnote, design: .default).weight(.semibold)
-            case .data: .system(.footnote, design: .monospaced)
+            case .data: .system(.footnote, design: .default).monospacedDigit()   // números tabulares, como `tabular-nums` en la TV
             }
         }
     }
@@ -159,6 +162,8 @@ enum DS {
         static let logoHero = CGFloat(DesignTokens.Size.logoHero)
         /// El anillo de la pieza enfocada del mosaico y la línea fina de las demás.
         static let focusRing: CGFloat = 2.5, hairline: CGFloat = 0.5
+        /// El alto del logo en la franja del mosaico.
+        static let captionLogo: CGFloat = 34
         /// El arte redondo del accesorio «En la TV».
         static let accessoryArt: CGFloat = 32
         /// El alto de un mosaico con arte (géneros de Explora).

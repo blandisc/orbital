@@ -20,7 +20,7 @@ extension DS.TextRecipe {
     }
 }
 
-/// Una línea de datos en SF Mono (la marca tipográfica de la app): «T2 · E5 · quedan 20 min · terminas a las 23:21».
+/// Una línea de datos con números tabulares (como `tabular-nums` en la TV): «T2 · E5 · quedan 20 min · termina a las 23:21».
 /// Si no cabe completa, quita partes del final antes de cortar un número.
 struct DataLine: View {
     let parts: [String]
@@ -228,7 +228,7 @@ struct TVAccessory: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(now.live ? (now.channel ?? now.title) : now.title).recipe(.cardTitle).lineLimit(1)
                 if placement != .inline {
-                    Text(now.live ? "En la TV · En vivo" : "En la TV").recipe(.footnote, color: DS.accent).lineLimit(1)
+                    Text(now.live ? "En la TV · En vivo" : "En la TV").recipe(.footnote, color: now.live ? DS.live : DS.textMuted).lineLimit(1)
                 }
             }
             Spacer(minLength: DS.Space.s2)
@@ -297,7 +297,13 @@ extension View {
 struct MosaicCaption<More: View>: View {
     let reason: Text
     let title: String
+    /// El logo del título (como en la pieza enfocada de la TV); si no carga, su nombre.
+    var logo: String?
     let data: [String]
+    /// Los colores del arte de la pieza: «Ver» toma su color claro, como en la TV.
+    var accent: ArtColors?
+    /// Una serie abre su ficha («Ver la serie»).
+    var isSeries = false
     let watch: () -> Void
     @ViewBuilder var more: () -> More
 
@@ -305,16 +311,16 @@ struct MosaicCaption<More: View>: View {
         HStack(alignment: .center, spacing: DS.Space.s3) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Eyebrow(text: reason, accent: true)
-                Text(title).recipe(.cardTitle).lineLimit(1)
+                TitleLogo(url: logo, title: title).frame(maxHeight: DS.Size.captionLogo, alignment: .leading)
                 if !data.isEmpty { DataLine(parts: data) }
             }
             Spacer(minLength: DS.Space.s2)
             Menu { more() } label: { Image(systemName: "ellipsis") }
                 .buttonStyle(.bordered).buttonBorderShape(.circle).controlSize(.large).tint(DS.text)
                 .accessibilityLabel(Text("Más"))
-            Button(action: watch) { Image(systemName: "play.fill") }
-                .dsPrimaryButton().buttonBorderShape(.circle).controlSize(.large)
-                .accessibilityLabel(Text("Ver"))
+            Button(action: watch) { Image(systemName: isSeries ? "info" : "play.fill") }
+                .dsArtButton(accent).buttonBorderShape(.circle).controlSize(.large)
+                .accessibilityLabel(isSeries ? Text("Ver la serie") : Text("Ver"))
         }
         .accessibilityElement(children: .contain)
     }

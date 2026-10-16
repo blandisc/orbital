@@ -350,7 +350,7 @@ struct PlayerScreen: View {
             HStack {
                 Text(verbatim: clock(shown)).recipe(.data)
                 Spacer()
-                // Lo que falta y a qué hora terminas (la misma cuenta que la ficha), en SF Mono como todos los datos.
+                // Lo que falta y a qué hora terminas (la misma cuenta que la ficha), con números tabulares como todos los datos.
                 let left = max(0, duration - shown)
                 Text(verbatim: "−\(clock(left)) · \(Strings.endsAt(minutesLeft: Int((left / 60).rounded(.up)), now: env.services.now(), language: env.services.appSettings.uiLanguage))").recipe(.data)
             }

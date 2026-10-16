@@ -30,7 +30,8 @@ public actor RemoteForYou {
         let rows = overview["lists"]?.array ?? []
         var out: [ForYouList] = []
         for row in rows {
-            guard let id = row["id"]?.string else { continue }
+            // Las listas de juegos (tus juegos, RAWG) son de la consola: en el iPhone no se piden.
+            guard let id = row["id"]?.string, row["group"]?.string != "games" else { continue }
             let title = row["title"]?.string ?? ""
             let brand = row["brand"]?.string
             listInfo[id] = (title, brand)
@@ -80,7 +81,7 @@ public actor RemoteForYou {
     /// vuelta al `SuggestionReason` que usa la pantalla, para que se vea igual venga de donde venga.
     private func reason(listID: String, why: String?) -> SuggestionReason {
         switch why {
-        case "Seguir viendo", "Sigues viéndola": return .watching
+        case "Sigues viéndola": return .watching
         case "En tu lista": return .inWatchlist
         case "Recomendada": return .recommended
         case "En tendencia": return .trending
@@ -91,6 +92,7 @@ public actor RemoteForYou {
             if why.hasPrefix("En «"), why.hasSuffix("»") { return .inList(String(why.dropFirst(4).dropLast())) }
             if why == "En una de tus listas" { return .inList(listInfo[listID]?.title ?? "") }
             if why.hasPrefix("En ") { return .onPlatform(String(why.dropFirst(3))) }
+            return .console(why)   // «Seguir viendo», «Sale hoy», «En tu watchlist»…: tal cual, como en la TV
         }
         return .popular
     }

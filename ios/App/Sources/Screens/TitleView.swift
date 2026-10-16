@@ -37,7 +37,7 @@ struct TitleView: View {
                 .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s10)
             }
         }
-        .background(Backdrop(tint: tint.color))
+        .background(Backdrop(tint: tint.colors))
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)     // el arte llega hasta arriba y la barra flota encima
         .toolbar { topBar(model) }
@@ -109,14 +109,14 @@ struct TitleView: View {
             Button { start(model, videoID: nil) } label: {
                 Label { primaryLabel(label, model).lineLimit(1) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
             }
-            .dsPrimaryButton().controlSize(.large).disabled(model.continueVideoID == nil)
+            .dsArtButton(tint.colors).controlSize(.large).disabled(model.continueVideoID == nil)   // el color del arte, como en la TV
             if let minutes = model.minutesToFinish {
                 DataLine(parts: [Strings.endsAt(minutesLeft: minutes, now: env.services.now(), language: env.services.appSettings.uiLanguage)])
             }
             ActionGrid(actions: [
-                ProjectionAction(id: "list", title: "Mi lista", symbol: model.inLibrary ? "checkmark" : "plus", active: model.inLibrary) { Task { await model.toggleLibrary() } },
+                ProjectionAction(id: "list", title: model.inLibrary ? "En mi lista" : "Mi lista", symbol: model.inLibrary ? "checkmark" : "plus", active: model.inLibrary) { Task { await model.toggleLibrary() } },
                 downloadAction(model),
-                ProjectionAction(id: "sources", title: "Fuentes", symbol: "list.bullet", disabled: model.continueVideoID == nil) {
+                ProjectionAction(id: "sources", title: "Elegir fuente", symbol: "list.bullet", disabled: model.continueVideoID == nil) {
                     if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
                 },
             ])
@@ -139,8 +139,8 @@ struct TitleView: View {
     }
 
     private func primaryLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> Text {
-        if let s = label.season, let e = label.episode { return label.isResume ? Text("Continuar T\(s) E\(e)") : Text("Reproducir T\(s) E\(e)") }
-        return label.isResume ? Text("Continuar") : Text("Reproducir")
+        if let s = label.season, let e = label.episode { return label.isResume ? Text("Continuar T\(s) E\(e)") : Text("Ver T\(s) E\(e)") }
+        return label.isResume ? Text("Continuar") : Text("Ver")   // los nombres de la TV (`core/watch.js`)
     }
 
     private func watchlistToggle(_ model: TitleModel) -> some View {

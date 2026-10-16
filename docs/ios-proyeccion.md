@@ -1,6 +1,7 @@
 # Proyección: el sistema visual de Orbital para iPhone
 
-> **Nativo en todo. Propio en una sola cosa: el arte es la luz.**
+> **Nativo en todo. Propio en una sola cosa: el arte es la luz.** Y es la misma luz que la TV: el iPhone usa la cuenta de
+> `orbital/web/js/core/color.js` (`ArtPalette`, con sus mismas pruebas), los mismos nombres y la TV es la fuente de verdad.
 > La interfaz es iOS 26 tal cual (Liquid Glass, barra de pestañas con búsqueda, hojas, menús, SF Pro). Lo único propio es
 > cómo se enciende la pantalla: con el color de lo que estás viendo, como una sala a oscuras cuando empieza la película.
 
@@ -29,18 +30,20 @@ WCAG AA en los dos.
 | surfaceRaised | `surfaceRaised` | ink-800 | #ebe9e3 | Placeholders |
 | label / secondaryLabel / tertiaryLabel | `text` / `textMuted` / `textFaint` | paper / ink-300 / ink-500 | #111113 / #5c5c64 / #9a9aa1 | Texto (el terciario solo adornos) |
 | primary / onPrimary | `primary` / `onPrimary` | paper / ink-1000 | #111113 / paper | **La** acción principal (una por pantalla) |
-| accent | `accent` | teal-300 | #0b7a6e | **Un significado:** avance y selección (pestaña elegida, interruptores, «Nuevo», ▲) |
+| accent | `accent` | paper | #111113 | Avance, selección y foco (como `--color-focus` y las barras de la TV) |
+| live | `live` | teal-300 | #0b7a6e | **Solo «En vivo»** (como `--color-live` en la TV) |
 | warning / danger | `warning` / `danger` | amber-300 / red-400 | #9a6200 / #c4362c | Avisos |
 
 Capas translúcidas (`hairline`, `fill`, `fillStrong`, `track`): blanco en oscuro, negro en claro, con `DesignTokens.Opacity`.
 
 ### El color del arte (la firma)
 
-`Backdrop(tint:)` + `ArtTint`: el color medio del arte que está al frente (de una miniatura de 48 px) ilumina la pantalla
-desde arriba y se funde con el fondo a `DesignTokens.Projection.fadeTo` (62 %).
+`Backdrop(tint:)` + `ArtTint` → `ArtColors`: el **tono dominante** del arte (no el promedio, que se vuelve café) sale de una
+miniatura de 48 px con `ArtPalette` — la misma cuenta que la TV — en dos colores:
 
-- Oscuro: el tono se hunde hacia el grafito (`darkMix` 0.55).
-- Claro: un velo de color muy suave sobre el papel (`lightMix` 0.84).
+- `tint` (L 0.20): tiñe el fondo en modo oscuro (`--art-tint`), fundido al fondo a `DesignTokens.Projection.fadeTo` (62 %).
+- `accent` (L 0.76): **el botón principal** (`.dsArtButton(colors)`, texto oscuro encima, como `--color-primary-art`) y, en modo
+  claro, un velo suave sobre el papel (`lightMix` 0.84). Sin tono (arte gris): los neutros de la TV (rgb 205 205 211).
 - Cambia en `DS.Motion.tint` (0.6 s); con «Reducir movimiento», sin animación.
 
 Dónde: Inicio (el destacado del carrusel), Para ti › Mosaico (la pieza enfocada), la ficha (su fondo), Descargas (lo que
@@ -54,8 +57,8 @@ esquinas continuas (la sala oscura no se funde con el papel). El texto encima, c
 
 ## 3. Texto: recetas
 
-`DS.TextRecipe` + `Text.recipe(_:)`. SF Pro con Dynamic Type; **SF Mono solo para datos** (tiempos, temporadas, tamaños):
-es la única marca tipográfica. `DesignTests` prohíbe `DS.font(…)` en la app: todo pasa por una receta.
+`DS.TextRecipe` + `Text.recipe(_:)`. SF Pro con Dynamic Type; los datos (tiempos, temporadas, tamaños) con **números
+tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)` en la app: todo pasa por una receta.
 
 | Receta | Estilo | Uso |
 |---|---|---|
@@ -66,7 +69,7 @@ es la única marca tipográfica. `DesignTests` prohíbe `DS.font(…)` en la app
 | `secondary` | subheadline | Datos de una ficha |
 | `footnote` / `caption` | footnote / caption | Pies, nombres bajo un póster |
 | `eyebrow` | footnote semibold | Rótulo sobre un título («Seguir viendo») |
-| `data` | footnote, SF Mono | `DataLine`: «T2 · E5 · quedan 20 min · terminas a las 23:21» |
+| `data` | footnote, números tabulares | `DataLine`: «T2 E5 · quedan 20 min · termina a las 23:21» |
 
 ## 4. Piezas (catálogo)
 
@@ -107,6 +110,18 @@ es la única marca tipográfica. `DesignTests` prohíbe `DS.font(…)` en la app
 | Selección (carrusel, temporadas, Mi lista) | `sensoryFeedback(.selection)` |
 
 Con «Reducir movimiento»: sin ambiente, sin acercamiento, sin fundidos.
+
+## 5b. Una sola experiencia con la TV
+
+| Qué | Regla (la TV manda) |
+|---|---|
+| Color del arte | `ArtPalette` = `core/color.js` (tono dominante; tint L .20, accent L .76) |
+| Botón principal | Con arte: el color claro del arte con texto oscuro. Sin arte: papel |
+| Avance y foco | Papel (tinta en modo claro); teal solo «En vivo» |
+| Episodio | «T2 E5» (el « · » separa datos) |
+| Nombres | «Ver», «Continuar», «Ver T3 E6», «Ver la serie» (una serie sugerida abre su ficha), «Elegir fuente», «Mi lista» / «En mi lista», «Ver en la TV», «termina a las 23:21» |
+| Motivos | Los de `foryou.py` (campo `why`) tal cual (`SuggestionReason.console`) |
+| A propósito distinto | El mosaico del teléfono (3 carriles parejos e información abajo; la TV: 6 columnas y la enfocada crece). Los estantes con Top 10 de Listas |
 
 ## 6. Textos en español e inglés
 

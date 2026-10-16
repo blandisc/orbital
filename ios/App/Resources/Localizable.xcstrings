@@ -1200,6 +1200,17 @@
         }
       }
     },
+    "En mi lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In My List"
+          }
+        }
+      }
+    },
     "En pausa": {
       "extractionState": "manual",
       "localizations": {
@@ -1867,6 +1878,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing pending"
+          }
+        }
+      }
+    },
+    "Nada por aquí por ahora.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing here for now."
           }
         }
       }
@@ -2916,13 +2938,13 @@
         }
       }
     },
-    "T%lld · E%lld": {
+    "T%lld E%lld": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "S%lld · E%lld"
+            "value": "S%lld E%lld"
           }
         }
       }
@@ -3158,6 +3180,28 @@
         }
       }
     },
+    "Ver %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch %@"
+          }
+        }
+      }
+    },
+    "Ver T%lld E%lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch S%lld E%lld"
+          }
+        }
+      }
+    },
     "Ver ahora": {
       "extractionState": "manual",
       "localizations": {
@@ -3187,6 +3231,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "View details"
+          }
+        }
+      }
+    },
+    "Ver la serie": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View series"
           }
         }
       }
@@ -3301,7 +3356,7 @@
         }
       }
     },
-    "terminas a las %@": {
+    "termina a las %@": {
       "extractionState": "manual",
       "localizations": {
         "en": {

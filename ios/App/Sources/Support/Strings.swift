@@ -9,10 +9,10 @@ enum Strings {
         return bundle.localizedString(forKey: key, value: key, table: nil)
     }
 
-    /// «T2 · E5» en español, «S2 · E5» en inglés.
+    /// «T2 E5» en español, «S2 E5» en inglés (como la TV: el « · » separa datos, no la temporada del episodio).
     static func episode(season: Int?, episode: Int, language: String) -> String {
         guard let season else { return String(format: tr("E%lld", language: language), episode) }
-        return String(format: tr("T%lld · E%lld", language: language), season, episode)
+        return String(format: tr("T%lld E%lld", language: language), season, episode)
     }
 
     /// «quedan 1 h 40 min» / «1 h 40 min left» (los minutos que faltan, con las horas y minutos de `Vocabulary`).
@@ -23,11 +23,11 @@ enum Strings {
         return String(format: tr("quedan %lld min", language: language), m)
     }
 
-    /// «terminas a las 23:21» / «ends at 11:21 PM»: la hora (en el formato del idioma de la app) en que acabarías si empiezas ahora.
+    /// «termina a las 23:21» / «ends at 11:21 PM» (como la TV): la hora (en el formato del idioma de la app) en que acabarías si empiezas ahora.
     static func endsAt(minutesLeft: Int, now: Date = Date(), language: String) -> String {
         let end = Vocabulary.endTime(minutesLeft: minutesLeft, now: now)
         let time = end.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(Locale(identifier: language)))
-        return String(format: tr("terminas a las %@", language: language), time)
+        return String(format: tr("termina a las %@", language: language), time)
     }
 
     /// «Película» / «Serie» en el idioma de la app.

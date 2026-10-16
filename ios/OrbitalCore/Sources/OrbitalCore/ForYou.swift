@@ -3,6 +3,8 @@ import Foundation
 /// Por qué se te sugiere algo (la interfaz lo pone en tu idioma: «Recomendada», «En tu lista»…).
 public enum SuggestionReason: Sendable, Equatable, Hashable {
     case recommended, watching, inWatchlist, inList(String), trending, popular, onPlatform(String)
+    /// El motivo tal como lo dice tu Orbital (uno que el iPhone no calcula por sí mismo): se enseña igual que en la TV.
+    case console(String)
 }
 
 /// Una sugerencia: una película o serie (siempre con IMDb: sin él no se podrían pedir fuentes).

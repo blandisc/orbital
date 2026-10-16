@@ -21,8 +21,11 @@ public enum DesignTokens {
         case label, secondaryLabel, tertiaryLabel
         /// La acción principal (una por pantalla) y el texto sobre ella.
         case primary, onPrimary
-        /// El único acento: avance y selección.
+        /// Avance, selección y foco: el papel, como la TV (`--color-focus`, las barras de avance). El color lo pone el arte
+        /// (`ArtPalette`), no un acento fijo.
         case accent
+        /// «En vivo» (TV en vivo): el único uso del teal, como `--color-live` en la TV.
+        case live
         /// Avisos.
         case warning, danger
 
@@ -37,7 +40,8 @@ public enum DesignTokens {
             case .tertiaryLabel: (palette["ink-500"]!, "#9a9aa1")
             case .primary: (palette["paper"]!, "#111113")
             case .onPrimary: (palette["ink-1000"]!, palette["paper"]!)
-            case .accent: (palette["teal-300"]!, "#0b7a6e")
+            case .accent: (palette["paper"]!, "#111113")
+            case .live: (palette["teal-300"]!, "#0b7a6e")
             case .warning: (palette["amber-300"]!, "#9a6200")
             case .danger: (palette["red-400"]!, "#c4362c")
             }
@@ -142,6 +146,9 @@ public enum DesignTokens {
         /// las piezas del mismo tamaño (`uniform`), para que ninguna quede tan chica que no se vea.
         public static let columnsPortrait = 3, columnsCompact = 2, columnsLandscape = 5, compactWidth = 360.0
         public static let uniform = true
+        /// La enfocada crece un poco y las demás se apagan (como `.foryou-mosaic` en la TV: opacidad .5 y `saturate(.6)`; en el
+        /// teléfono un poco menos apagadas, porque se ven a la vez más cerca).
+        public static let focusScale = 1.04, dimmedOpacity = 0.6, dimmedSaturation = 0.6
         public static let growRatio = 1.8
         public static let idleSeconds = 30.0, aliveSeconds = 2.2, driftTick = 1.0
         public static let driftPerSecond = 16.0

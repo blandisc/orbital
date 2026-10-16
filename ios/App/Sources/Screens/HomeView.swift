@@ -66,7 +66,7 @@ struct HomeView: View {
             .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
             .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
         }
-        .background(Backdrop(tint: tint.color))
+        .background(Backdrop(tint: tint.colors))
         .navigationTitle(greeting).toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .navigationSubtitle(syncText)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { NavigationLink(value: SettingsRoute()) { Image(systemName: "person.crop.circle") }.accessibilityLabel(Text("Ajustes")) } }
@@ -151,7 +151,7 @@ struct HomeView: View {
         .accessibilityAction(named: Text("Ver ficha")) { openTitle = route(item) }
     }
 
-    /// «T2 · E5 · quedan 20 min · terminas a las 23:21».
+    /// «T2 · E5 · quedan 20 min · termina a las 23:21».
     private func heroData(_ item: HomeItem) -> [String] {
         let language = env.services.appSettings.uiLanguage
         var parts: [String] = []
@@ -178,6 +178,11 @@ struct HomeView: View {
     }
 
     private func continueButton(_ item: HomeItem) -> some View {
-        Button { Task { await env.play(item) } } label: { Label("Continuar", systemImage: "play.fill").lineLimit(1) }.dsPrimaryButton()
+        // Como la TV: «Continuar» si ibas a medias; si toca el siguiente episodio, «Ver T3 E6».
+        Button { Task { await env.play(item) } } label: {
+            Label { item.nextUp && item.episode != nil ? Text("Ver \(Strings.episode(season: item.season, episode: item.episode ?? 0, language: env.services.appSettings.uiLanguage))") : Text("Continuar") } icon: { Image(systemName: "play.fill") }
+                .lineLimit(1)
+        }
+        .dsArtButton(tint.colors)
     }
 }
