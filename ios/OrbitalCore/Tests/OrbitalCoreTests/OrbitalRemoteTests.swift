@@ -92,7 +92,7 @@ final class OrbitalRemoteTests: XCTestCase {
         let http = FakeHTTP()
         http.json["https://tv.example/api/companion/now"] = .object(["playing": .null, "inbox": .array([
             .object(["id": "a1", "kind": "series", "meta_id": "tt1", "video_id": "tt1:2:5", "title": "The Office", "episode_label": "T2 · E5",
-                     "poster": "https://p", "action": "download", "at": .int(1_760_000_000)]),
+                     "season": 2, "episode": 5, "poster": "https://p", "action": "download", "at": .int(1_760_000_000)]),
             .object(["id": "b2", "kind": "movie", "meta_id": "tt9", "video_id": "tt9", "title": "Dune", "episode_label": "", "poster": .null,
                      "action": "open", "at": .double(1_760_000_001.5)]),
             .object(["id": "x", "kind": "movie", "meta_id": "tt3", "action": "bailar"]),  // una acción que esta versión no conoce: se ignora
@@ -103,6 +103,9 @@ final class OrbitalRemoteTests: XCTestCase {
         XCTAssertEqual(snapshot.inbox[0].action, .download)
         XCTAssertEqual(snapshot.inbox[0].displayName, "The Office T2 · E5")
         XCTAssertEqual(snapshot.inbox[1].displayName, "Dune")
+        XCTAssertEqual(snapshot.inbox[0].season, 2, "los números, para armar el episodio en el idioma de la app")
+        XCTAssertEqual(snapshot.inbox[0].episode, 5)
+        XCTAssertNil(snapshot.inbox[1].season, "película: sin números")
         XCTAssertEqual(snapshot.inbox[1].poster, nil)
         // Una consola de una versión anterior no manda `inbox`: bandeja vacía, sin error.
         http.json["https://tv.example/api/companion/now"] = .object(["playing": .null])

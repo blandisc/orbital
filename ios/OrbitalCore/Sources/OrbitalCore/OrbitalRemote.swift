@@ -100,14 +100,18 @@ public struct OrbitalRemote: Sendable {
         public var kind: String, live: Bool
         public var metaID: String?, videoID: String?
         public var title: String, episodeLabel: String
+        /// Temporada y episodio en números (0 = especiales); nil en películas, TV en vivo o consolas viejas (queda `episodeLabel`).
+        public var season: Int?, episode: Int?
         public var poster: String?
         public var position: Double, duration: Double, paused: Bool
         public var channel: String?, number: Int?, category: String?, muted: Bool
 
         public init(kind: String, live: Bool, metaID: String? = nil, videoID: String? = nil, title: String,
                     episodeLabel: String = "", poster: String? = nil, position: Double = 0, duration: Double = 0,
-                    paused: Bool = false, channel: String? = nil, number: Int? = nil, category: String? = nil, muted: Bool = false) {
+                    paused: Bool = false, channel: String? = nil, number: Int? = nil, category: String? = nil, muted: Bool = false,
+                    season: Int? = nil, episode: Int? = nil) {
             self.kind = kind; self.live = live; self.metaID = metaID; self.videoID = videoID; self.title = title
+            self.season = season; self.episode = episode
             self.episodeLabel = episodeLabel; self.poster = poster; self.position = position; self.duration = duration
             self.paused = paused; self.channel = channel; self.number = number; self.category = category; self.muted = muted
         }
@@ -122,7 +126,7 @@ public struct OrbitalRemote: Sendable {
                               episodeLabel: json["episode_label"]?.string ?? "", poster: json["poster"]?.string,
                               position: number("position"), duration: number("duration"), paused: json["paused"]?.bool ?? false,
                               channel: json["channel"]?.string, number: json["number"]?.intValue, category: json["category"]?.string,
-                              muted: json["muted"]?.bool ?? false)
+                              muted: json["muted"]?.bool ?? false, season: json["season"]?.intValue, episode: json["episode"]?.intValue)
         }
     }
 
@@ -135,13 +139,16 @@ public struct OrbitalRemote: Sendable {
         public var videoID: String?
         public var title: String
         public var episodeLabel: String
+        /// Temporada y episodio en números (0 = especiales); nil si es película o la consola es de antes (queda `episodeLabel`).
+        public var season: Int?, episode: Int?
         public var poster: String?
         public var action: Action
         public var at: Double
 
         public init(id: String, kind: String, metaID: String, videoID: String? = nil, title: String, episodeLabel: String = "",
-                    poster: String? = nil, action: Action, at: Double = 0) {
+                    poster: String? = nil, action: Action, at: Double = 0, season: Int? = nil, episode: Int? = nil) {
             self.id = id; self.kind = kind; self.metaID = metaID; self.videoID = videoID; self.title = title
+            self.season = season; self.episode = episode
             self.episodeLabel = episodeLabel; self.poster = poster; self.action = action; self.at = at
         }
 
@@ -151,7 +158,8 @@ public struct OrbitalRemote: Sendable {
             let at: Double = { switch json["at"] { case .int(let i)?: Double(i); case .double(let d)?: d; default: 0 } }()
             return InboxItem(id: id, kind: json["kind"]?.string ?? "movie", metaID: metaID, videoID: json["video_id"]?.nonEmptyString,
                              title: json["title"]?.string ?? "", episodeLabel: json["episode_label"]?.string ?? "",
-                             poster: json["poster"]?.nonEmptyString, action: action, at: at)
+                             poster: json["poster"]?.nonEmptyString, action: action, at: at,
+                             season: json["season"]?.intValue, episode: json["episode"]?.intValue)
         }
 
         /// «The Office T2 · E5» (o solo el título, si es una película).

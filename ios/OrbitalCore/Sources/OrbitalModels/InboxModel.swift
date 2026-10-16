@@ -82,7 +82,7 @@ public final class InboxModel: ObservableModel {
 
     private func queue(_ item: OrbitalRemote.InboxItem) async -> TitleModel.DownloadOutcome {
         await services.queueDownload(kind: item.kind, metaID: item.metaID, videoID: item.videoID ?? item.metaID, title: item.title,
-                                     originalTitle: item.title, subtitle: services.tvEpisodeLabel(item.episodeLabel), poster: item.poster)
+                                     originalTitle: item.title, subtitle: services.tvEpisodeLabel(item.season, item.episode, item.episodeLabel), poster: item.poster)
     }
 
     private func receive(_ item: OrbitalRemote.InboxItem) {
@@ -120,6 +120,7 @@ public final class InboxModel: ObservableModel {
 
     /// «The Office T2 E5» con la etiqueta de la TV en el idioma de la app.
     private func name(_ item: OrbitalRemote.InboxItem) -> String {
-        item.episodeLabel.isEmpty ? item.title : "\(item.title) \(services.tvEpisodeLabel(item.episodeLabel))"
+        let episode = services.tvEpisodeLabel(item.season, item.episode, item.episodeLabel)
+        return episode.isEmpty ? item.title : "\(item.title) \(episode)"
     }
 }

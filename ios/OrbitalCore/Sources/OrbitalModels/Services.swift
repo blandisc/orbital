@@ -28,8 +28,9 @@ public final class Services: ObservableModel {
     public private(set) var downloads: Downloads { didSet { changed() } }
     /// Cómo se escribe «T2 · E5» en el idioma de la app (la interfaz lo cambia; por omisión, en español).
     public var episodeLabel: @Sendable (Int, Int) -> String = { "T\($0) · E\($1)" }
-    /// La etiqueta de episodio que manda la TV («T2 · E5», «Especial · E1», en español) en el idioma de la app.
-    public var tvEpisodeLabel: @Sendable (String) -> String = { $0 }
+    /// El episodio de lo que manda la TV en el idioma de la app: con los números (temporada, episodio; 0 = especiales) si la
+    /// consola los manda; si no (versión anterior), a partir de su etiqueta en español («T2 · E5»).
+    public var tvEpisodeLabel: @Sendable (_ season: Int?, _ episode: Int?, _ label: String) -> String = { _, _, label in label }
     /// Los textos del widget «Lo siguiente para ti» en el idioma de la app (la interfaz los cambia; por omisión, español).
     public var widgetLabels: WidgetLabels = .spanish
     /// Quién publica el snapshot del widget (la app: baja y reduce las imágenes, lo escribe en el App Group y recarga el widget).

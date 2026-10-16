@@ -60,7 +60,15 @@ enum Strings {
         return forms
     }
 
-    /// La etiqueta que manda la TV («T2 · E5», «T2 E5», «Especial · E1»; siempre en español) en el idioma de la app.
+    /// El episodio de lo que manda la TV en el idioma de la app («T2 E5» / «S2 E5», «Especial · E1» / «Special · E1»). Con los
+    /// números de la consola; si no los manda (versión anterior), a partir de su etiqueta en español.
+    static func tvEpisode(season: Int?, episode number: Int?, label: String, language: String) -> String {
+        guard let number else { return tvEpisode(label, language: language) }
+        if season == 0 { return tr("Especial", language: language) + " · " + episode(season: nil, episode: number, language: language) }
+        return episode(season: season, episode: number, language: language)
+    }
+
+    /// La etiqueta que manda una consola de antes («T2 · E5», «T2 E5», «Especial · E1»; siempre en español) en el idioma de la app.
     static func tvEpisode(_ label: String, language: String) -> String {
         let text = label as NSString
         let range = NSRange(location: 0, length: text.length)
