@@ -43,7 +43,10 @@ struct Eyebrow: View {
     /// Sobre el arte: más claro que el secundario de siempre.
     var onArt = false
 
-    var body: some View { text.recipe(.eyebrow, color: accent ? DS.accent : onArt ? DS.onArtSecondary : nil).lineLimit(1) }
+    var body: some View {
+        text.recipe(.eyebrow, color: accent ? DS.accent : onArt ? DS.onArtSecondary : nil).lineLimit(1)
+            .shadow(color: onArt ? DS.scrim : .clear, radius: DS.Space.s1)   // sobre la parte clara del arte, como el logo
+    }
 }
 
 /// Una acción de la rejilla de acciones de la ficha.
