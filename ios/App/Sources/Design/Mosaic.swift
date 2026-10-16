@@ -308,6 +308,7 @@ private struct MosaicTileCell: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text(tile.item.title))
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)   // las piezas son arte: con letra de accesibilidad el texto de la pieza no crece más
     }
 
     private var content: some View {
@@ -320,7 +321,10 @@ private struct MosaicTileCell: View {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
                     DSBadge(text: inWatchlist ? "En tu lista" : badgeKey(tile.item.reason))
                     TitleLogo(url: tile.item.logo, title: tile.item.title)
-                    factLine(tile.item).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1)
+                    ViewThatFits(in: .horizontal) {   // si no cabe, se quitan partes del medio antes de cortar
+                        ForEach(Array(factVariants(tile.item).enumerated()), id: \.offset) { _, text in text.lineLimit(1).fixedSize(horizontal: true, vertical: false) }
+                    }
+                    .font(DS.font(.sm)).foregroundStyle(DS.textMuted)
                 }
                 .padding(DS.Space.s5)
             }
@@ -335,7 +339,9 @@ private struct MosaicTileCell: View {
         Image(systemName: tile.item.kind == "movie" ? "film" : "tv").font(DS.font(.xs, weight: .semibold))
             .foregroundStyle(focused ? DS.onPrimary : DS.text)
             .padding(DS.Space.s1)
-            .background(focused ? DS.primary : DS.badgeBackground, in: Circle())
+            // Sin enfoque, solo el glifo con una sombra suave (con 20 piezas a la vista una caja en cada una domina).
+            .background { if focused { Circle().fill(DS.primary) } }
+            .shadow(color: focused ? .clear : DS.scrim, radius: DS.Space.s1)
     }
 }
 

@@ -116,10 +116,11 @@ public struct MosaicGeometry: Sendable {
         return frames
     }
 
-    /// Alto de una pieza: la columna enfocada reparte el alto entre su fila enfocada y las demás; las otras
-    /// columnas, según la forma (ancha o póster).
+    /// Alto de una pieza: cada una conserva su proporción según la forma (ancha o póster), también en la
+    /// columna enfocada (que solo se ensancha); la fila enfocada, además, se alarga para que quepan etiqueta,
+    /// logo y dato.
     public func tileHeight(columnWidth: Double, shape: MosaicShape, isFocusedColumn: Bool, isFocusedRow: Bool) -> Double {
-        if isFocusedColumn { return (columnWidth * (isFocusedRow ? focusedRowRatio : 0.5)).rounded() }
+        if isFocusedColumn, isFocusedRow { return (columnWidth * focusedRowRatio).rounded() }
         return (columnWidth * (shape == .wide ? 0.58 : 1.5)).rounded()
     }
 

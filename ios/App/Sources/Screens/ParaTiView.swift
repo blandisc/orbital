@@ -6,6 +6,7 @@ import OrbitalModels
 struct ParaTiView: View {
     @StateObject private var model: ModelObserver<ParaTiModel>
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     init() { _model = StateObject(wrappedValue: ModelObserver(ParaTiModel(AppEnvironment.shared.services))) }
 
@@ -18,9 +19,10 @@ struct ParaTiView: View {
                 if m.traktLinked { DSChip(text: "Trakt al día", tone: .good) }
             }
             .padding(.horizontal, DS.Space.gutter)
-            HStack {
+            // Con letra de accesibilidad el botón baja debajo del texto en vez de apretarse a su lado.
+            (typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: DS.Space.s2)) : AnyLayout(HStackLayout())) {
                 Text(footer(m)).font(DS.font(.xs)).foregroundStyle(DS.textMuted)
-                Spacer()
+                if !typeSize.isAccessibilitySize { Spacer() }
                 Button { Task { await m.refresh() } } label: { Text("Actualizar") }
                     .buttonStyle(.plain).font(DS.font(.xs)).foregroundStyle(DS.textMuted)
             }

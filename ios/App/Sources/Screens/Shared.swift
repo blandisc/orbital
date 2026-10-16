@@ -74,15 +74,24 @@ func yearAndKind(year: String, kind: String) -> Text {
     return year.isEmpty ? k : Text("\(year) · \(k)")
 }
 
-/// El dato de una línea de una sugerencia, como `factLine` en la TV: «Serie · T2 · E5»,
-/// «Película · 2026 · 145 min». Usa lo que haya (el episodio que sigue, o año y duración).
-@MainActor func factLine(_ s: Suggestion) -> Text {
+/// El dato de una línea de una sugerencia, como `factLine` en la TV: «Serie · T2 · E5», «Película · 2026 · 1 h 45 min».
+/// Del más completo al más corto: si no cabe, se quita el año y luego la duración, nunca se corta un número a medias.
+@MainActor func factVariants(_ s: Suggestion) -> [Text] {
     let kind = s.kind == "movie" ? Text("Película") : Text("Serie")
-    if let next = s.next { return Text("\(kind) · \(episodeText(season: next.season, episode: next.episode))") }
-    if let year = s.year, let runtime = s.runtime { return Text("\(kind) · \(String(year)) · \(runtime) min") }
-    if let runtime = s.runtime { return Text("\(kind) · \(runtime) min") }
-    if let year = s.year { return Text("\(kind) · \(String(year))") }
-    return kind
+    if let next = s.next { return [Text("\(kind) · \(episodeText(season: next.season, episode: next.episode))"), kind] }
+    var out: [Text] = []
+    let time = s.runtime.map(runtimeText)
+    if let year = s.year, let time { out.append(Text("\(kind) · \(String(year)) · \(time)")) }
+    if let time { out.append(Text("\(kind) · \(time)")) }
+    else if let year = s.year { out.append(Text("\(kind) · \(String(year))")) }
+    return out + [kind]
+}
+
+/// «45 min», «1 h 45 min», «2 h».
+private func runtimeText(_ minutes: Int) -> String {
+    let h = minutes / 60, m = minutes % 60
+    if h == 0 { return "\(m) min" }
+    return m == 0 ? "\(h) h" : "\(h) h \(m) min"
 }
 
 extension Suggestion {
