@@ -170,7 +170,7 @@ struct HomeView: View {
             ForEach(model.continueWatching.dropFirst(Self.heroCount)) { item in
                 NavigationLink(value: route(item)) {
                     StillCard(title: item.title, art: item.background ?? item.poster,
-                              data: [progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes)], progress: item.progress)
+                              data: progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes).components(separatedBy: " · "), progress: item.progress)
                 }
                 .buttonStyle(.plain)
                 .contextMenu { Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { Task { await model.dismiss(item) } } }

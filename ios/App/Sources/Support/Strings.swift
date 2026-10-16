@@ -9,6 +9,21 @@ enum Strings {
         return bundle.localizedString(forKey: key, value: key, table: nil)
     }
 
+    /// Un error de descarga guardado en español, en el idioma de la app. Los fijos son su clave; los que llevan datos (el
+    /// código, los MB, la causa) se reconocen por su forma y se vuelven a armar con la traducción.
+    static func downloadError(_ message: String, language: String) -> String {
+        let forms = [#"^La descarga falló \(código (.+)\)\.$"#: "La descarga falló (código %@).",
+                     #"^No hay espacio: hacen falta (.+) MB y hay (.+) MB libres\.$"#: "No hay espacio: hacen falta %@ MB y hay %@ MB libres.",
+                     #"^No pude guardar el archivo: (.+)$"#: "No pude guardar el archivo: %@"]
+        for (pattern, key) in forms {
+            guard let regex = try? NSRegularExpression(pattern: pattern),
+                  let match = regex.firstMatch(in: message, range: NSRange(message.startIndex..., in: message)) else { continue }
+            let values: [CVarArg] = (1..<match.numberOfRanges).compactMap { Range(match.range(at: $0), in: message).map { String(message[$0]) } }
+            return String(format: tr(key, language: language), arguments: values)
+        }
+        return tr(message, language: language)
+    }
+
     /// «T2 E5» en español, «S2 E5» en inglés (como la TV: el « · » separa datos, no la temporada del episodio).
     static func episode(season: Int?, episode: Int, language: String) -> String {
         guard let season else { return String(format: tr("E%lld", language: language), episode) }

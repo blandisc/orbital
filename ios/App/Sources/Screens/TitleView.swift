@@ -208,11 +208,11 @@ struct TitleView: View {
 
     private func report(_ outcome: TitleModel.DownloadOutcome, _ model: TitleModel) async {
         switch outcome {
-        case .queued(let n): env.notify(n == 1 ? "Descargando. Lo verás en Descargas." : "Descargando \(n) episodios. Los verás en Descargas.", tone: .success)
+        case .queued(let n): if n == 1 { env.notify("Descargando. Lo verás en Descargas.", tone: .success) } else { env.notify(format: "Descargando %lld episodios. Los verás en Descargas.", n, tone: .success) }
         case .noSources: env.notify("No hay fuentes de Real-Debrid para descargar.")
-        case .notEnoughSpace(let text): env.notify(text)
+        case .notEnoughSpace(let text): env.notify(Strings.downloadError(text, language: env.services.appSettings.uiLanguage))
         case .already: env.notify("Ya está descargado.", tone: .info)
-        case .failed(let text): env.notify(text)
+        case .failed(let text): env.notify(Strings.downloadError(text, language: env.services.appSettings.uiLanguage))
         }
         await model.refreshState()
     }

@@ -33,6 +33,7 @@ public final class TVNowModel: ObservableModel {
     public func setActive(_ active: Bool) {
         pollTask?.cancel()
         pollTask = nil
+        failures = 0
         guard active else { return }
         guard services.orbital.isConfigured else { now = nil; return }
         pollTask = Task { [weak self] in
@@ -56,9 +57,10 @@ public final class TVNowModel: ObservableModel {
             now = nil
         } catch {
             // Sin red, la consola apagada o una versión vieja: la tarjeta se va sin ruido (se reintenta solo), pero no por un
-            // solo tropiezo.
+            // solo tropiezo… si lo último que se supo es reciente (al volver de segundo plano, la tarjeta vieja no se queda).
             failures += 1
-            if failures >= 2 { now = nil }
+            let stale = Date().timeIntervalSince(fetchedAt) > 2 * Double(intervalNanoseconds) / 1_000_000_000
+            if failures >= 2 || stale { now = nil }
         }
     }
 

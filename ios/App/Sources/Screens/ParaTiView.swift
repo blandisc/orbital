@@ -37,7 +37,7 @@ struct ParaTiView: View {
                 if DS.Mosaic.uniform, let item = focused {
                     // Como la TV: el motivo tal cual, y una serie sugerida abre su ficha («Ver la serie»), no un episodio al azar.
                     MosaicCaption(reason: Text(badgeKey(item.reason)), title: item.title, logo: item.logo,
-                                  data: factStrings(item).first.map { [$0] } ?? [], accent: tint.colors, isSeries: item.kind == "series",
+                                  data: (factStrings(item).first ?? "").components(separatedBy: " · "), accent: tint.colors, isSeries: item.kind == "series",
                                   watch: { if item.kind == "series" { openTitle = item.route } else { Task { await env.play(item) } } }) {
                         SuggestionActions(suggestion: item, includeWatch: false) { s in Task { await m.dismiss(s) } }
                     }
@@ -271,7 +271,7 @@ struct ListsView: View {
         let s = featured.item
         let route = s.route
         return HeroCard(title: s.title, background: s.wide, logo: s.logo, eyebrow: Text(reasonKey(featured.reason)), accentEyebrow: true,
-                        data: factStrings(s).first.map { [$0] } ?? [], open: { openTitle = route }) {
+                        data: (factStrings(s).first ?? "").components(separatedBy: " · "), open: { openTitle = route }) {
             // «Ver» y «Más» en un renglón; con letra grande, uno debajo del otro.
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: DS.Space.s2) { watchButton(s); moreMenu(s) }

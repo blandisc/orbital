@@ -179,7 +179,7 @@ private struct MediumView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
             .environment(\.colorScheme, .dark)   // el fondo es el tono oscuro del arte: letra clara en los dos modos
-            .containerBackground(for: .widget) { tintedBackground(artTone(first)) }
+            .containerBackground(for: .widget) { tintedBackground(artTone(first)).environment(\.colorScheme, .dark) }   // el fondo también: sala oscura
         } else {
             EmptyState()
         }
