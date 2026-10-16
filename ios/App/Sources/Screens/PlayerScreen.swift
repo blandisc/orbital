@@ -346,11 +346,13 @@ struct PlayerScreen: View {
                 if !editing, let target = scrubbing { Task { await model.seek(to: target); scrubbing = nil } }
                 pulse()
             }
-            .tint(DS.primary)
+            .tint(DS.accent)   // el avance, en el acento (como en toda la app)
             HStack {
-                Text(clock(shown)).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).monospacedDigit()
+                Text(verbatim: clock(shown)).recipe(.data)
                 Spacer()
-                Text("−\(clock(max(0, duration - shown)))").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).monospacedDigit()
+                // Lo que falta y a qué hora terminas (la misma cuenta que la ficha), en SF Mono como todos los datos.
+                let left = max(0, duration - shown)
+                Text(verbatim: "−\(clock(left)) · \(Strings.endsAt(minutesLeft: Int((left / 60).rounded(.up)), now: env.services.now(), language: env.services.appSettings.uiLanguage))").recipe(.data)
             }
         }
     }
