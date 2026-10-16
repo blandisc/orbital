@@ -156,6 +156,14 @@ no sirve se oculta y queda un aviso para revisarlo en Ajustes.
 - **Relanzar la app**: una descarga que el sistema siguió en segundo plano se adopta, no se reinicia.
 - iOS cancela las descargas si cierras la app deslizándola en el selector de apps.
 
+## Mosaico de «Para ti» (pieza `Mosaic`, espejo de `foryou-mosaic` en la TV)
+
+`Design/Mosaic.swift` (vista y motor) sobre `OrbitalModels/MosaicLayout.swift` (geometría pura, probada en `MosaicLayoutTests`): 4 columnas en vertical (6 en horizontal/iPad),
+la columna enfocada ×1,8, ninguna pieza partida, cascada con relleno/poda, ambiente a los 30 s, «cobra vida» a los 2,2 s; con Reducir movimiento no hay ambiente ni acercamiento ni resorte.
+Tocar enfoca (resorte + háptica), volver a tocar abre la ficha, mantener pulsado «No me interesa». La enfocada enseña etiqueta + logo (metahub, cae al nombre) + dato.
+Tokens: `DesignTokens.Mosaic`. Modo demostración: `-demo-mosaic-focus N` enfoca la sugerencia N al abrir.
+Ojo al probar en el simulador: instala siempre un build propio (`-derivedDataPath`); otro worktree puede dejar su `.app` con el mismo identificador.
+
 ## Excepciones al sistema de diseño
 
 `DesignTests` revisa que las pantallas no escriban colores, medidas, opacidades ni esperas a mano. Una línea se exime con `ds-exception: motivo`:
@@ -171,7 +179,6 @@ no sirve se oculta y queda un aviso para revisarlo en Ajustes.
 - Infuse recibe la URL del video y devuelve `orbital-ios://…` a quien la abra: es inherente a la API de Infuse.
 
 - Infuse solo avisa **al cerrar** y no da la duración: el avance de lo visto en Infuse es de «mejor esfuerzo».
-- El mosaico de «Para ti» no tiene aún el «modo ambiente» ni el acercamiento lento de la TV.
 - PiP y AirPlay dependen del motor; el reproductor propio todavía no los expone en la interfaz.
 - Los mensajes de error que arman los modelos en español no se traducen todos al inglés.
 - La API de Stremio no es oficial: si cambia, falla aquí y en Orbital a la vez.
