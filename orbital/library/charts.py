@@ -144,7 +144,7 @@ def _country_rows(url: str, iso2: str | None, *, open_url: Callable[[str], Any] 
 
 
 def _latest_week(rows: list[dict[str, str]]) -> list[dict[str, str]]:
-    weeks = {r.get("week") for r in rows if r.get("week")}
+    weeks = {week for r in rows if (week := r.get("week"))}
     if not weeks:
         return []
     latest = max(weeks)
