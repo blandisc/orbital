@@ -10,7 +10,8 @@ extension Services {
         let langs = titlePrefs.languages(for: metaID, settings: appSettings)
         do {
             // La que elegiste en «Elegir la fuente» (si tiene enlace); si no, la que mejor sirve para guardar.
-            var picked = chosen?.playbackURL == nil ? nil : chosen
+            // Una lista de reproducción (HLS/DASH) no es un archivo: esa no se baja aunque la elijas.
+            var picked = chosen.flatMap { c in c.playbackURL.map { ["m3u8", "mpd"].contains($0.pathExtension.lowercased()) } == false ? c : nil }
             if picked == nil { picked = try await finder.best(kind: kind, videoID: videoID, prefs: langs.prefs, purpose: .download) }
             guard let source = picked, let url = source.playbackURL else {
                 return .noSources

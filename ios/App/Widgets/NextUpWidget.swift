@@ -58,7 +58,7 @@ struct NextUpView: View {
 
     var body: some View {
         switch family {
-        case .systemMedium: MediumView(snapshot: entry.snapshot)
+        case .systemMedium: MediumView(snapshot: entry.snapshot, date: entry.date)
         case .accessoryRectangular: LockView(snapshot: entry.snapshot)
         default: SmallView(snapshot: entry.snapshot)
         }
@@ -173,6 +173,8 @@ private struct SmallView: View {
 
 private struct MediumView: View {
     var snapshot: WidgetSnapshot
+    /// El momento de la entrada (no el de pintarla): la de medianoche dice «Hoy» del día nuevo.
+    var date: Date
 
     var body: some View {
         if let first = snapshot.items.first {
@@ -201,7 +203,7 @@ private struct MediumView: View {
     @ViewBuilder private func rows(_ rest: [WidgetSnapshot.Item]) -> some View {
         if let next = snapshot.upcoming?.first {
             if let one = rest.first { Row(item: one) }
-            UpcomingRow(episode: next, language: snapshot.language)
+            UpcomingRow(episode: next, language: snapshot.language, date: date)
         } else {
             ForEach(rest.prefix(2)) { Row(item: $0) }
         }
@@ -233,12 +235,13 @@ private struct Row: View {
 private struct UpcomingRow: View {
     var episode: WidgetSnapshot.UpcomingEpisode
     var language: String
+    var date: Date
 
     /// «Hoy», «Mañana» o «Viernes 17» (en el idioma del snapshot).
     private var dayText: Text {
         let calendar = Calendar.current
-        if calendar.isDateInToday(episode.date) { return Text("Hoy") }
-        if calendar.isDateInTomorrow(episode.date) { return Text("Mañana") }
+        if calendar.isDate(episode.date, inSameDayAs: date) { return Text("Hoy") }
+        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: date), calendar.isDate(episode.date, inSameDayAs: tomorrow) { return Text("Mañana") }
         return Text(episode.date.formatted(.dateTime.weekday(.wide).day().locale(Locale(identifier: language))).localizedCapitalized)
     }
 
