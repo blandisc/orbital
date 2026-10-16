@@ -37,6 +37,13 @@
 @keyframes badge-pop { from { transform: scale(0) rotate(-40deg); } 60% { transform: scale(1.35); } }
 /* Puesto del Top 10 (Netflix, lo más visto de una plataforma): la esquina opuesta a card__badge, con
    la misma placa oscura (legible sobre cualquier póster, claro u oscuro). */
+/* El sube y baja del Top 10, debajo del puesto. Sin verde: el teal es solo «En vivo»; abajo, tenue. */
+.card__trend.badge {
+  position: absolute; top: calc(var(--space-2) + 2.4rem); left: var(--space-2); z-index: var(--z-raised);
+  background: var(--color-badge-bg); color: var(--color-text); box-shadow: var(--shadow-badge); font-variant-numeric: tabular-nums;
+}
+.card__trend--down.badge { color: var(--color-text-muted); }
+.card__trend--new.badge { font-weight: var(--weight-bold); }
 .card__rank.badge {
   position: absolute; top: var(--space-2); left: var(--space-2); z-index: var(--z-raised);
   background: var(--color-badge-bg); color: var(--color-text); box-shadow: var(--shadow-badge);

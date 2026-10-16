@@ -219,11 +219,11 @@ def test_netflix_top10_and_justwatch_lists_bring_rank_and_why(make_foryou, monke
     fy = make_foryou(trakt_keys=False)
     monkeypatch.setattr(charts, "netflix_entries", lambda region, kind, **kw:
                         [{"imdb": "tt6933238", "title": "UNABOMBER", "rank": 1, "weeks": 2}] if kind == "movie" else [])
-    monkeypatch.setattr(charts, "fetch_justwatch_popular", lambda brand, region, kind:
+    monkeypatch.setattr(charts, "fetch_justwatch_chart", lambda brand, region, kind:
                         [{"imdb": "tt29355505", "title": "Toy Story 5", "year": 2026, "rank": 1}]
                         if brand == "disney" and kind == "movie" else [])
     items = fy.list_items("chart:netflix", "movie")
-    assert [(i["title"], i["why"], i["rank"]) for i in items] == [("UNABOMBER", "N.º 1 esta semana · 2 semanas en el Top 10", 1)]
+    assert [(i["title"], i["why"], i["rank"]) for i in items] == [("UNABOMBER", "N.º 1 en Netflix", 1)]
     jw_items = fy.list_items("jw:disney", "movie")
     assert [(i["title"], i["why"], i["rank"]) for i in jw_items] == [("Toy Story 5", "N.º 1 en Disney+", 1)]
     assert fy.list_items("jw:disney", "series") == []  # esa plataforma no trajo series: queda vacía, no tumba nada
@@ -235,7 +235,7 @@ def test_tmdb_platform_is_backup_only_when_justwatch_is_empty(make_foryou, net, 
     net.on("GET", r"/watch/providers/tv", (200, {"results": []}))
     # JustWatch (y el Top 10 de Netflix) sin nada: el riel enseña el respaldo de TMDB.
     monkeypatch.setattr(charts, "netflix_entries", lambda region, kind, **kw: [])
-    monkeypatch.setattr(charts, "fetch_justwatch_popular", lambda brand, region, kind: [])
+    monkeypatch.setattr(charts, "fetch_justwatch_chart", lambda brand, region, kind: [])
     ids = [row["id"] for row in fy.lists()]
     assert "netflix" in ids and "chart:netflix" in ids
     # Ahora JustWatch sí trae algo para Netflix (el Top 10 de verdad): el respaldo de TMDB desaparece.
@@ -522,3 +522,32 @@ def test_airing_today_is_empty_without_trakt_or_network(make_foryou, net):
     fy = make_foryou(linked=True)
     net.on("GET", r"/calendars/my/shows/", (500, None))
     assert fy.airing_today() == {}
+
+
+def test_chart_lists_say_what_they_measure_and_carry_movement(make_foryou, monkeypatch):
+    """Netflix: «Top 10» con la semana; JustWatch: «Tendencias» (mide interés, no vistas). Cada título lleva rank,
+    movement y new; el motivo es «N.º 3 en …»."""
+    fy = make_foryou(trakt_keys=False)
+    monkeypatch.setattr(charts, "netflix_entries", lambda region, kind, **kw: [
+        {"imdb": "tt1", "title": "A", "rank": 1, "weeks": 3, "movement": 2, "new": False, "week": "2026-10-11"},
+        {"imdb": "tt2", "title": "B", "rank": 2, "weeks": 1, "movement": None, "new": True, "week": "2026-10-11"}]
+        if kind == "series" else [])
+    monkeypatch.setattr(charts, "fetch_justwatch_chart", lambda brand, region, kind:
+                        [{"imdb": "tt9", "title": "Z", "year": 2026, "rank": 1}] if brand == "disney" else [])
+    items = fy.list_items("chart:netflix", "series")
+    assert [(i["why"], i["rank"], i["movement"], i["new"]) for i in items] == [("N.º 1 en Netflix", 1, 2, False), ("N.º 2 en Netflix", 2, None, True)]
+    rows = {r["id"]: r for r in fy.lists()}
+    assert rows["chart:netflix"]["title"] == "Top 10 en Netflix"
+    assert rows["chart:netflix"]["meta"].endswith("semana del 5 de oct")  # la semana termina el domingo 11
+    assert rows["jw:disney"]["title"] == "Tendencias en Disney+" and rows["jw:disney"]["meta"].startswith("Tendencia en JustWatch")
+    jw = fy.list_items("jw:disney", "movie")
+    assert jw[0]["rank"] == 1 and jw[0]["movement"] is None and jw[0]["new"] is False  # primera foto: sin flechas
+
+
+def test_my_list_is_stremio_and_watchlist_is_trakt():
+    """Mismo glosario que el iPhone: «En Mi lista» (biblioteca de Stremio) y «En tu watchlist» (Trakt)."""
+    import inspect
+
+    from orbital import foryou
+    src = inspect.getsource(foryou.ForYou._list)
+    assert '"mylist": "En Mi lista"' in src and 'video_item(e, "En tu watchlist")' in src

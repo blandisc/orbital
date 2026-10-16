@@ -1,0 +1,53 @@
+{
+ "data": {
+  "streamingCharts": {
+   "edges": [
+    {
+     "streamingChartInfo": {
+      "rank": 14
+     },
+     "node": {
+      "objectType": "MOVIE",
+      "content": {
+       "title": "Unabomber",
+       "originalReleaseYear": 2026,
+       "externalIds": {
+        "imdbId": "tt6933238"
+       }
+      }
+     }
+    },
+    {
+     "streamingChartInfo": {
+      "rank": 41
+     },
+     "node": {
+      "objectType": "MOVIE",
+      "content": {
+       "title": "Sin IMDb",
+       "originalReleaseYear": 2025,
+       "externalIds": {
+        "imdbId": null
+       }
+      }
+     }
+    },
+    {
+     "streamingChartInfo": {
+      "rank": 47
+     },
+     "node": {
+      "objectType": "MOVIE",
+      "content": {
+       "title": "What a Father!",
+       "originalReleaseYear": 2026,
+       "externalIds": {
+        "imdbId": "tt1234567"
+       }
+      }
+     }
+    }
+   ]
+  }
+ }
+}

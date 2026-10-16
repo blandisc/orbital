@@ -18,6 +18,7 @@ Un servicio que falla no tumba los demás: su lista queda vacía y se reintenta 
 from __future__ import annotations
 
 import logging
+import os
 import random
 import re
 import threading
@@ -27,6 +28,7 @@ import urllib.request
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from .library import charts as charts_api
@@ -129,6 +131,12 @@ class Cache:
         with self._lock:
             for key in [k for k in self._data if k.startswith(prefix)]:
                 del self._data[key]
+
+    def peek(self, key: str) -> Any:
+        """Lo último que se trajo para `key` (aunque ya venció), sin salir a internet; None si nunca."""
+        with self._lock:
+            hit = self._data.get(key)
+        return hit[1] if hit else None
 
 
 # ---------------------------------------------------------------- piezas
@@ -242,6 +250,8 @@ class ForYou:
         self.catalog = catalog
         self.region = self.settings.region
         self.cache = Cache()
+        folder = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" if getattr(config, "source", None) else None
+        self.snapshots = charts_api.ChartSnapshots(folder / "charts.sqlite" if folder else None)
         self._build()
         self._link: trakt_api.DeviceCode | None = None
         self._link_lock = threading.Lock()
@@ -408,12 +418,13 @@ class ForYou:
                           "meta": f"De {entry['addon']}", "split": len(entry["kinds"]) > 1})
         # Netflix (Top 10 oficial) y JustWatch (lo más visto por plataforma): ninguna pide clave.
         video.append({"id": "chart:netflix", "title": "Top 10 en Netflix", "icon": "trailer", "source": "Netflix",
-                      "meta": f"Esta semana en {self._country()}", "split": True, "brand": "netflix",
+                      "meta": self._netflix_meta(), "split": True, "brand": "netflix",
                       "logo": self.platforms().get("netflix", {}).get("logo")})
         for brand in JW_LIST_BRANDS:
             name = charts_api.JUSTWATCH_PACKAGES[brand][1]
-            video.append({"id": f"jw:{brand}", "title": f"Lo más visto en {name}", "icon": "trailer", "source": "JustWatch",
-                          "meta": f"Popular en {self._country()}", "split": True, "brand": brand,
+            # «Lo más visto» solo en Netflix (cuenta vistas); JustWatch mide interés: «Tendencias».
+            video.append({"id": f"jw:{brand}", "title": f"Tendencias en {name}", "icon": "trailer", "source": "JustWatch",
+                          "meta": f"Tendencia en JustWatch · {self._country()}", "split": True, "brand": brand,
                           "logo": charts_api.justwatch_logo(brand)})
         found = self.platforms()
         for brand, (name, _) in tmdb_api.PLATFORMS.items():
@@ -458,7 +469,7 @@ class ForYou:
     def _list(self, list_id: str, kind: str) -> list[dict]:
         t = self.trakt
         if list_id in ("continue", "mylist", "cinemeta"):
-            why = {"continue": "Seguir viendo", "mylist": "En tu lista", "cinemeta": "Popular"}[list_id]
+            why = {"continue": "Seguir viendo", "mylist": "En Mi lista", "cinemeta": "Popular"}[list_id]
             return [video_item(e, why, overview=i.extra.get("description"))
                     for i, e in self._stremio(list_id, kind if list_id == "cinemeta" else None)]
         if list_id.startswith("addon:"):
@@ -473,7 +484,7 @@ class ForYou:
         if list_id == "mine":
             return [video_item(e, "Sigues viéndola") for e in self.cache.get("trakt:watching", MINE_TTL, t.watching)]
         if list_id == "watchlist":
-            return [video_item(e, "En tu lista") for e in self.cache.get("trakt:watchlist", MINE_TTL, t.watchlist)]
+            return [video_item(e, "En tu watchlist") for e in self.cache.get("trakt:watchlist", MINE_TTL, t.watchlist)]
         if list_id.startswith("list:"):
             lid = list_id.removeprefix("list:")
             name = next((r["name"] for r in self.cache.get("trakt:lists", MINE_TTL, t.lists) if r["id"] == lid), "tu lista")
@@ -494,8 +505,8 @@ class ForYou:
             brand = list_id.removeprefix("jw:")
             if brand not in charts_api.JUSTWATCH_PACKAGES:
                 raise KeyError(list_id)
-            entries = self.cache.get(f"charts:jw:{brand}:{kind}", POPULAR_TTL,
-                                     lambda: charts_api.fetch_justwatch_popular(brand, self.region, kind))
+            entries = self.cache.get(f"charts:jw:{brand}:{kind}", POPULAR_TTL, lambda: self.snapshots.annotate(
+                f"jw:{brand}", kind, charts_api.fetch_justwatch_chart(brand, self.region, kind)))
             name = charts_api.JUSTWATCH_PACKAGES[brand][1]
             return [self._chart_item(e, kind, name) for e in entries]
         if list_id == "mygames":
@@ -517,19 +528,30 @@ class ForYou:
                 for d in details if d and d.get("imdb") and d.get("title")]
 
     def _chart_item(self, entry: dict, kind: str, platform_name: str) -> dict:
-        """Un título de Netflix (Top 10) o JustWatch (lo más visto) en forma de video_item, con su
-        puesto («N.º 3 esta semana · 4 semanas en el Top 10», o «N.º 3 en Disney+»)."""
+        """Un título de Netflix (Top 10) o JustWatch (tendencia) en forma de video_item: «N.º 3 en Netflix», con `rank`,
+        `movement` (+2 subió dos, −1 bajó uno, 0 igual, None sin con qué comparar) y `new` (entró esta semana / hoy)."""
         e = {"imdb": entry["imdb"], "kind": kind, "title": entry["title"], "year": entry.get("year")}
-        weeks = entry.get("weeks")
-        if platform_name == "Netflix":
-            why = f"N.º {entry['rank']} esta semana"
-            if weeks:
-                why += f" · {weeks} semana{'s' if weeks != 1 else ''} en el Top 10"
-        else:
-            why = f"N.º {entry['rank']} en {platform_name}"
-        item = video_item(e, why, title=entry["title"])
+        item = video_item(e, f"N.º {entry['rank']} en {platform_name}", title=entry["title"])
         item["rank"] = entry["rank"]
+        item["movement"] = entry.get("movement")
+        item["new"] = bool(entry.get("new"))
+        if entry.get("weeks"):
+            item["weeks"] = entry["weeks"]  # semanas en el Top 10 de Netflix (para la ficha)
         return item
+
+    def _netflix_meta(self) -> str:
+        """«México · semana del 28 de sep» si el Top 10 ya se trajo (el archivo es grande: no se pide solo para esto)."""
+        for kind in ("series", "movie"):
+            cached = self.cache.peek(f"charts:netflix:{kind}") or []
+            week = next((e.get("week") for e in cached if e.get("week")), None)
+            if week:
+                try:
+                    start = date.fromisoformat(week) - timedelta(days=6)  # la semana de Netflix termina en domingo
+                except ValueError:
+                    break
+                months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+                return f"{self._country()} · semana del {start.day} de {months[start.month - 1]}"
+        return f"Esta semana en {self._country()}"
 
     def _jw_covers(self, brand: str) -> bool:
         """¿Ya hay algo que enseñe esta plataforma (JustWatch, o el Top 10 de Netflix)? Evita que el

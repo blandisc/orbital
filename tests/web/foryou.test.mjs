@@ -96,3 +96,13 @@ test("próximos estrenos: por día en el orden que llegan y la semana con sus si
   assert.equal(calendarWeek([], "2026-12-30")[2].day, "2027-01-01"); // cambia de año
   assert.equal(localDay(new Date(2026, 0, 5)), "2026-01-05");
 });
+
+test("Top 10: el sube y baja debajo del puesto, sin inventar flechas", async () => {
+  const { trendOf } = await import("../../orbital/web/js/core/foryou.js");
+  assert.deepEqual(trendOf({ rank: 3, movement: 2, new: false }), { text: "▲ 2", dir: "up" });
+  assert.deepEqual(trendOf({ rank: 3, movement: -1, new: false }), { text: "▼ 1", dir: "down" });
+  assert.deepEqual(trendOf({ rank: 9, movement: null, new: true }), { text: "Nuevo", dir: "new" });
+  assert.equal(trendOf({ rank: 3, movement: 0, new: false }), null); // igual que antes: nada
+  assert.equal(trendOf({ rank: 3, movement: null, new: false }), null); // sin con qué comparar: nada
+  assert.equal(trendOf({ movement: 4 }), null); // sin puesto no es Top 10
+});
