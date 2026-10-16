@@ -126,11 +126,61 @@ public struct OrbitalRemote: Sendable {
         }
     }
 
+    /// Algo que la TV le dejó al iPhone («Enviar al iPhone» o «Descargar en el iPhone»), a la espera de que la app actúe.
+    public struct InboxItem: Sendable, Equatable, Codable, Identifiable {
+        public enum Action: String, Sendable, Codable { case open, download }
+        public var id: String
+        public var kind: String
+        public var metaID: String
+        public var videoID: String?
+        public var title: String
+        public var episodeLabel: String
+        public var poster: String?
+        public var action: Action
+        public var at: Double
+
+        public init(id: String, kind: String, metaID: String, videoID: String? = nil, title: String, episodeLabel: String = "",
+                    poster: String? = nil, action: Action, at: Double = 0) {
+            self.id = id; self.kind = kind; self.metaID = metaID; self.videoID = videoID; self.title = title
+            self.episodeLabel = episodeLabel; self.poster = poster; self.action = action; self.at = at
+        }
+
+        static func parse(_ json: JSON) -> InboxItem? {
+            guard let id = json["id"]?.nonEmptyString, let metaID = json["meta_id"]?.nonEmptyString,
+                  let raw = json["action"]?.string, let action = Action(rawValue: raw) else { return nil }
+            let at: Double = { switch json["at"] { case .int(let i)?: Double(i); case .double(let d)?: d; default: 0 } }()
+            return InboxItem(id: id, kind: json["kind"]?.string ?? "movie", metaID: metaID, videoID: json["video_id"]?.nonEmptyString,
+                             title: json["title"]?.string ?? "", episodeLabel: json["episode_label"]?.string ?? "",
+                             poster: json["poster"]?.nonEmptyString, action: action, at: at)
+        }
+
+        /// «The Office T2 · E5» (o solo el título, si es una película).
+        public var displayName: String { episodeLabel.isEmpty ? title : "\(title) \(episodeLabel)" }
+    }
+
+    /// Lo que contesta la consola en cada sondeo: lo que se ve ahora y lo que la TV le dejó al iPhone.
+    public struct Snapshot: Sendable, Equatable {
+        public var playing: NowPlaying?
+        public var inbox: [InboxItem]
+    }
+
+    /// Qué se ve ahora en la TV y qué le dejó la TV al iPhone, en una sola petición.
+    public func snapshot() async throws -> Snapshot {
+        let json = try await send("api/companion/now", method: "GET", body: nil)
+        var playing: NowPlaying?
+        if let raw = json?["playing"], !raw.isNull { playing = NowPlaying.parse(raw) }
+        return Snapshot(playing: playing, inbox: (json?["inbox"]?.array ?? []).compactMap(InboxItem.parse))
+    }
+
     /// Qué se ve ahora en la TV (para la tarjeta del iPhone). nil si no hay nada abierto.
     public func now() async throws -> NowPlaying? {
-        let json = try await send("api/companion/now", method: "GET", body: nil)
-        guard let playing = json?["playing"], !playing.isNull else { return nil }
-        return NowPlaying.parse(playing)
+        try await snapshot().playing
+    }
+
+    /// El iPhone ya actuó sobre esos pendientes: la consola los quita de la bandeja.
+    public func ack(ids: [String]) async throws {
+        guard !ids.isEmpty else { return }
+        _ = try await send("api/companion/inbox/ack", method: "POST", body: JSON.object(["ids": .array(ids.map { .string($0) })]).serialized())
     }
 
     /// Un botón de la tarjeta: `toggle · pause · play · skip (con delta en segundos) · next · previous · stop · mute`.

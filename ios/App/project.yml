@@ -59,7 +59,8 @@ targets:
         CFBundleLocalizations: [es, en]
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
-        UIBackgroundModes: [audio]            # sigue sonando con la pantalla apagada y en PiP
+        UIBackgroundModes: [audio, fetch, processing]   # audio: sigue sonando con la pantalla apagada y en PiP · fetch y processing: mirar lo que dejó la TV (mejor esfuerzo)
+        BGTaskSchedulerPermittedIdentifiers: [mx.iracheta.orbital.inbox]
         ITSAppUsesNonExemptEncryption: false
         NSSupportsLiveActivities: true          # descargas en la pantalla bloqueada y la Dynamic Island
         # Para volver desde Infuse: orbital-ios://infuse-done?lastPlayedUrl=…&position=…

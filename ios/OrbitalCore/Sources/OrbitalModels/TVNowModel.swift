@@ -15,6 +15,8 @@ public final class TVNowModel: ObservableModel {
     public private(set) var tokenProblem = false { didSet { changed() } }
     /// Un botón está en vuelo: el siguiente toque se ignora (sin doble acción) y el botón se atenúa.
     public private(set) var busy = false { didSet { changed() } }
+    /// Lo que la TV le dejó al iPhone viaja en el mismo sondeo; aquí se le pasa a quien lo atiende (ver `InboxModel`).
+    public var inbox: InboxModel?
     private let services: Services
     private let intervalNanoseconds: UInt64
     private var pollTask: Task<Void, Never>?
@@ -41,9 +43,11 @@ public final class TVNowModel: ObservableModel {
 
     private func tick() async {
         do {
-            now = try await services.orbital.now()
+            let snapshot = try await services.orbital.snapshot()
+            now = snapshot.playing
             fetchedAt = Date()
             tokenProblem = false
+            if !snapshot.inbox.isEmpty { await inbox?.process(snapshot.inbox) }
         } catch OrbitalRemote.Failure.badToken {
             tokenProblem = true
             now = nil

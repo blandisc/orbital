@@ -6,15 +6,17 @@ struct HomeView: View {
     @EnvironmentObject private var env: AppEnvironment
     @StateObject private var home: ModelObserver<HomeModel>
     @StateObject private var tvNow: ModelObserver<TVNowModel>
+    @StateObject private var inbox: ModelObserver<InboxModel>
     @StateObject private var tint = ArtTint()
     @State private var pendingCount = 0
     @State private var openTitle: TitleRoute?
-    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init() {
         _home = StateObject(wrappedValue: ModelObserver(HomeModel(AppEnvironment.shared.services)))
-        _tvNow = StateObject(wrappedValue: ModelObserver(TVNowModel(AppEnvironment.shared.services)))
+        // El sondeo es de toda la app (arranca en RootView): aquí solo se ve.
+        _tvNow = StateObject(wrappedValue: ModelObserver(AppEnvironment.shared.tvNow))
+        _inbox = StateObject(wrappedValue: ModelObserver(AppEnvironment.shared.inbox))
     }
 
     var body: some View {
@@ -26,6 +28,15 @@ struct HomeView: View {
                     NowPlayingCard(now: now, fetchedAt: tvNow.model.fetchedAt, busy: tvNow.model.busy,
                                   onAction: { action, delta in Task { await tvNow.model.control(action, delta: delta) } },
                                   onContinueHere: { openTitle = now.metaID.map { TitleRoute(kind: now.kind, metaID: $0, title: now.title, poster: now.poster) } })
+                        .padding(.horizontal, DS.Space.gutter)
+                        .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
+                }
+                // Lo que la TV mandó con «Enviar al iPhone»: una tarjeta pequeña, bajo «Viendo en la TV».
+                ForEach(inbox.model.fromTV) { item in
+                    FromTVCard(item: item,
+                               onWatch: { inbox.model.watched(item); Task { await env.play(item) } },
+                               onDownload: { Task { await inbox.model.downloadFromCard(item) } },
+                               onDismiss: { inbox.model.dismiss(item) })
                         .padding(.horizontal, DS.Space.gutter)
                         .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
                 }
@@ -57,6 +68,7 @@ struct HomeView: View {
             }
             .padding(.bottom, DS.Space.s8)
             .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
+            .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
         }
         .background(TintedBackground(tint: tint.color))
         .navigationTitle("Orbital").navigationBarTitleDisplayMode(.large)
@@ -66,10 +78,8 @@ struct HomeView: View {
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
         .task { await reload() }
-        .task { tvNow.model.setActive(true) }
         .refreshable { await reload() }
         .onChange(of: env.watchedSomething) { Task { await reload() } }
-        .onChange(of: scenePhase) { _, phase in tvNow.model.setActive(phase == .active) }
     }
 
     /// Lo de Stremio, lo pendiente por subir y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo).

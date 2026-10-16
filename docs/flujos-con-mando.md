@@ -74,6 +74,8 @@ de verdad terminó**, y nunca le quita el foco a otra cosa que estés usando.
 | Episodios vistos | Los ✓ salen de tu cuenta de Stremio; terminar un episodio en Orbital lo marca también allá | ✅ (nuevo) |
 | Cambiar de temporada | En la ficha: LB/RB (desde los botones baja a los episodios para que se vea el cambio); LT/RT saltan de 5 en 5 en series largas | ✅ (nuevo) |
 | Mi lista y tráiler | En la ficha, o desde la tarjeta con Y → Añadir/Quitar de Mi lista: ★ añade o quita de Mi lista (tu biblioteca de Stremio, fila propia en Películas y series); el tráiler se abre en YouTube para TV (Home vuelve). Los botones secundarios son ícono hasta que los enfocas | ✅ (nuevo) |
+| Enviar al iPhone | Y en el reproductor (Más › iPhone), en la ficha (botón con el ícono del teléfono) o con Y sobre un video de Seguir viendo: «Enviar al iPhone» lo deja para abrir allá (tarjeta «Desde la TV» en Inicio). Solo aparece con un iPhone conectado; avisa «Enviado al iPhone: se abre cuando tengas Orbital a la mano» | ✅ (nuevo) |
+| Descargar en el iPhone | Mismo lugar: «Descargar en el iPhone» baja el episodio en curso (o el que sigue) en el iPhone: «Se descargará en el iPhone en cuanto abras Orbital ahí (o en segundo plano si iOS lo permite)» | ✅ (nuevo) |
 | Al terminar un video | "Terminaste Interstellar" (si lo viste casi completo); si no, "Guardé dónde ibas en…" | ✅ (nuevo) |
 | Elegir la fuente a mano | Y en la ficha: panel lateral con cada fuente en palabras de persona (Al instante / Tarda en empezar, idioma, HDR, sonido); A ve con esa, B vuelve a la ficha | ✅ |
 | Una fuente no arranca o se corta | Prueba sola la siguiente en el mismo punto ("Esa fuente falló · probando otra"); si ninguna sirve, lo dice y vuelve a Orbital | ✅ (nuevo) |

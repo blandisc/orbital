@@ -106,6 +106,8 @@ enum DS {
         static let controlsHide = UInt64(DesignTokens.Timing.controlsHide * 1e9), banner = UInt64(DesignTokens.Timing.banner * 1e9)
         static let searchDebounce = UInt64(DesignTokens.Timing.searchDebounce * 1e9), tick = UInt64(DesignTokens.Timing.tick * 1e9)
         static let longPressDelay = DesignTokens.Timing.longPressDelay
+        /// Cada cuánto, como pronto, le pide iOS a la app mirar en segundo plano lo que dejó la TV (iOS decide si y cuándo corre).
+        static let inboxRefresh: TimeInterval = 15 * 60
         /// Cuánto se queda a la vista el indicador de brillo o volumen tras soltar, antes de desvanecerse.
         static let gestureIndicatorHold = UInt64(DesignTokens.Timing.gestureIndicatorHold * 1e9)
     }
