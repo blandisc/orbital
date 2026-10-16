@@ -94,7 +94,10 @@ export function episodeStates(details, now = Date.now()) {
   for (const ep of seasons.flatMap((s) => s.episodes)) {
     const when = ep.released ? Date.parse(ep.released) : NaN;
     if (!Number.isNaN(when) && when > now) {
-      states.set(ep.id, { upcoming: `Se estrena el ${new Date(when).toLocaleDateString("es", RELEASE_FORMAT)}` });
+      // Otro año: con el año («Se estrena el 31 dic 2029»; sin él parecía este diciembre).
+      const date = new Date(when);
+      const format = date.getFullYear() === new Date(now).getFullYear() ? RELEASE_FORMAT : { ...RELEASE_FORMAT, year: "numeric" };
+      states.set(ep.id, { upcoming: `Se estrena el ${date.toLocaleDateString("es", format)}` });
     }
   }
   return states;

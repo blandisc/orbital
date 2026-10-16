@@ -85,3 +85,13 @@ test("ficha: «Enviar al iPhone» y «Descargar en el iPhone» solo con un iPhon
   assert.ok(!titleActions({ kind: "series", seasons: [], resume: null }, { phone: true }).some((a) => a.id.startsWith("phone-")));
   assert.deepEqual(titleActions({ error: true }, { phone: true }).map((a) => a.id), ["retry"]);
 });
+
+test("un estreno de otro año dice el año (si no, parecía de este año)", async () => {
+  const { episodeStates } = await import("../../orbital/web/js/core/watch.js");
+  const now = Date.UTC(2026, 9, 16, 12);
+  const details = { seasons: [{ season: 1, episodes: [
+    { id: "s:1:1", released: "2026-11-20T12:00:00Z" }, { id: "s:1:2", released: "2027-02-03T12:00:00Z" }] }] };
+  const states = episodeStates(details, now);
+  assert.doesNotMatch(states.get("s:1:1").upcoming, /2026/);
+  assert.match(states.get("s:1:2").upcoming, /2027/);
+});
