@@ -95,6 +95,18 @@ CUT_MARGIN = 90  # s: un «final» antes de esto es la conexión que se cortó, 
 NEXT_LOAD_WAIT = 25  # s que el final espera al siguiente episodio que se está cargando
 
 
+def process_memory_mb(pid: int) -> int:
+    """Memoria comprometida de un proceso (MB), como la mide el aviso de memoria. 0 si no se puede (o fuera de Windows)."""
+    if not pid:
+        return 0
+    try:
+        from .memory import _private_mb
+
+        return _private_mb(pid)
+    except Exception:  # noqa: BLE001 - sin el dato no se hace nada
+        return 0
+
+
 class OrbitalPlayer(PlayerScreen):
     """Arranca mpv, lo vigila y avisa cuánto se vio (para Seguir viendo).
 
@@ -105,6 +117,10 @@ class OrbitalPlayer(PlayerScreen):
     """
 
     POLL = 1.0
+    # El vigilante de memoria: cada tanto se mira cuánto ocupa mpv. Con una versión de desarrollo llegó a 8 GB viendo la
+    # tele (crece al dibujar, no el búfer). Un canal se vuelve a abrir en un mpv nuevo; un video solo avisa.
+    MEMORY_EVERY = 30.0
+    MEMORY_LIMIT_MB = 3000
     HUD_SECONDS = 4.0
 
     def __init__(self, on_finished=None, mpv: Mpv | None = None, idle_seconds: float = 0, on_idle=None) -> None:
@@ -152,6 +168,8 @@ class OrbitalPlayer(PlayerScreen):
         self.on_play_channel = None  # (meta, id_del_canal, categoría | None): sintonizar ese canal
         self.on_channel_failed = None  # (meta, estaba_al_aire) -> True si se pasó a otro canal
         self.on_channel_ok = None  # (meta): el canal dio imagen
+        self.on_memory_full = None  # (meta): un canal ocupa demasiada memoria; ábrelo de nuevo en un mpv nuevo
+        self.memory_of = process_memory_mb  # (pid) -> MB (las pruebas lo cambian)
         self._zap_view, self._zap_timer = None, None  # ▲▼ seguidos (ver _queue_channel)
         self._panel_category = None  # la categoría que enseña la guía de canales (Y)
         self._away = False  # Home: estás en Orbital y el canal sigue al aire sin sonido
@@ -285,6 +303,7 @@ class OrbitalPlayer(PlayerScreen):
     def _watch(self, playback: Playback) -> None:
         was_paused = False
         paused_since: float | None = None
+        memory_at = time.monotonic()
         while playback.process.poll() is None:
             time.sleep(self.POLL)
             segment = self.segment
@@ -292,6 +311,9 @@ class OrbitalPlayer(PlayerScreen):
                 continue
             try:
                 now = time.monotonic()
+                if now - memory_at >= self.MEMORY_EVERY:
+                    memory_at = now
+                    self._check_memory(playback, segment)
                 self._fit_canvas()
                 paused = bool(self.mpv.get("pause"))
                 if paused != was_paused and segment.playing:
@@ -319,6 +341,22 @@ class OrbitalPlayer(PlayerScreen):
             except Exception:  # noqa: BLE001 - el vigilante no se puede morir a media película
                 log.exception("Error vigilando mpv")
         self.finish(playback)
+
+    def _check_memory(self, playback: Playback, segment: Segment) -> None:
+        """mpv ocupa demasiado: un canal se vuelve a abrir en un mpv nuevo (un parpadeo de 2 s, nada se pierde); un video
+        avisa una vez (cortarlo a media película sería peor que lo lento)."""
+        if playback.memory_handled or not segment.playing:
+            return
+        mb = self.memory_of(getattr(playback.process, "pid", 0) or 0)
+        if mb < self.MEMORY_LIMIT_MB:
+            return
+        playback.memory_handled = True
+        log.warning("mpv ocupa %d MB viendo %s", mb, playback.title)
+        if segment.live and self.on_memory_full:
+            threading.Thread(target=self._safe, args=(self.on_memory_full, dict(segment.meta)), daemon=True,
+                             name="mpv-memory").start()
+        elif not segment.live:
+            self.toast(f"El reproductor ocupa mucha memoria ({mb / 1024:.1f} GB). Si se pone lento, sal y vuelve: sigues donde ibas.", 8)
 
     def finish(self, playback: Playback) -> None:
         """mpv se cerró: guarda lo visto o, si no llegó a verse nada y nadie lo cerró, avisa."""

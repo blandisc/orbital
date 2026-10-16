@@ -210,8 +210,9 @@ class LiveTV:
                 "quality": channel.quality or "", "list": category, "tried": sorted((tried or set()) | {channel.id})}
         return {**meta, "retried": True} if retried else meta
 
-    def play(self, channel_id: str, category: str = ALL, *, keep: bool = False) -> dict:
-        """Abre mpv en ese canal (o lo sintoniza si ya había uno en vivo). LookupError si no se puede."""
+    def play(self, channel_id: str, category: str = ALL, *, keep: bool = False, fresh: bool = False) -> dict:
+        """Abre mpv en ese canal (o lo sintoniza si ya había uno en vivo). LookupError si no se puede. `fresh`: en un mpv
+        nuevo aunque haya uno al aire (el vigilante de memoria: el viejo se cierra y su memoria se suelta)."""
         channel = self.channel(channel_id)
         if channel is None:
             raise LookupError("Ese canal ya no está disponible. Elige otro.")
@@ -223,7 +224,7 @@ class LiveTV:
             raise LookupError("La TV en vivo no está lista todavía.")
         category, _ = self.zap_list(category)
         sessions, watch = catalog.sessions, catalog.watch
-        on_air = watch.player.segment if self.playing() else None
+        on_air = watch.player.segment if self.playing() and not fresh else None
         if on_air is not None:
             # Ya hay un canal al aire: se sintoniza en el mismo mpv (sin cerrar ni abrir nada) y quien llama solo trae la ventana.
             if on_air.meta.get("channel_id") == channel.id or self.tune(on_air.meta, channel.id, category):
@@ -253,6 +254,7 @@ class LiveTV:
         p.on_play_channel = self.tune
         p.on_channel_failed = self.failed
         p.on_channel_ok = self.opened
+        p.on_memory_full = self.reopen
 
     def guide(self, meta: dict, category: str | None = None) -> dict:
         """La guía (Y) y la lista de ▲▼: categorías y canales de la lista elegida, con el que ves marcado."""
@@ -279,6 +281,14 @@ class LiveTV:
         if ok and running is not None and getattr(running, "item_id", "") == "media:player":
             running.title = channel.name  # la barra de arriba dice el canal que ves, no el primero que abriste
         return ok
+
+    def reopen(self, meta: dict) -> None:
+        """El canal ocupa demasiada memoria: el mismo canal, en un mpv nuevo (se ve un parpadeo; nada se pierde)."""
+        log.info("Vuelvo a abrir %s en un mpv nuevo (ocupaba demasiada memoria)", meta.get("title"))
+        try:
+            self.play(meta["channel_id"], meta.get("list") or ALL, keep=True, fresh=True)
+        except (LookupError, OSError) as exc:
+            log.warning("No pude volver a abrir %s: %s", meta.get("title"), exc)
 
     def opened(self, meta: dict) -> None:
         """El canal dio imagen: abrió de verdad (sus fallos seguidos se borran)."""

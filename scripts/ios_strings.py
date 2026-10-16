@@ -25,6 +25,9 @@ TRANSLATIONS = {
     "Último scrobble": "Last scrobble", "Cerrado": "Closed",
     "Todavía nada: aparece cuando veas algo en el iPhone.": "Nothing yet: it shows up once you watch something on the iPhone.",
     "Abrir en Infuse": "Open in Infuse", "Abrir siempre en Infuse": "Always open in Infuse", "Adelantar 10 segundos": "Forward 10 seconds",
+    "Próximos estrenos": "Upcoming episodes", "Por día": "By day", "Semana": "Week", "Hoy": "Today", "Mañana": "Tomorrow",
+    "Sale hoy": "Out today", "Desde la madrugada": "Overnight", "Nada este día": "Nothing this day",
+    "No sale nada en los próximos 14 días de las series que sigues.": "Nothing comes out in the next 14 days from the shows you follow.",
     "Agregar complemento": "Add add-on", "Ajustes": "Settings", "Al instante": "Instant", "Audio": "Audio", "Audio y subtítulos": "Audio and subtitles",
     "Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.":
         "A code appears to enter at trakt.tv/activate. With Trakt connected, what you watch is reported and your watchlist and lists show up.",

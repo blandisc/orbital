@@ -43,8 +43,8 @@ final class ForYouTests: XCTestCase {
         http.json["https://api.themoviedb.org/3/watch/providers/movie?watch_region=MX&api_key=K&language=es-MX"] = ["results": [["provider_id": 8, "provider_name": "Netflix", "logo_path": "/n.jpg"]]]
         http.json["https://api.themoviedb.org/3/watch/providers/tv?watch_region=MX&api_key=K&language=es-MX"] = ["results": []]
         let lists = await makeForYou(http, tmdbKey: "K").lists()
-        XCTAssertEqual(lists.map(\.id), ["watchlist", "mine", "list:77", "recs", "trend", "popular", "netflix"])
-        XCTAssertEqual(lists.map(\.group), [.mine, .mine, .mine, .discover, .discover, .discover, .platforms])
+        XCTAssertEqual(lists.map(\.id), ["watchlist", "mine", "estrenos", "list:77", "recs", "trend", "popular", "netflix"])
+        XCTAssertEqual(lists.map(\.group), [.mine, .mine, .mine, .mine, .discover, .discover, .discover, .platforms])
         XCTAssertEqual(lists.first { $0.id == "list:77" }?.title, "Terror")
         XCTAssertEqual(lists.last?.brand, "netflix")
     }
@@ -111,5 +111,45 @@ final class ForYouTests: XCTestCase {
         let out = ForYou.interleave([[s("a1"), s("a2"), s("a3")], [s("b1"), s("a1")], [s("c1")]], limit: 10)
         XCTAssertEqual(out.map(\.imdb), ["a1", "b1", "c1", "a2", "a3"])
         XCTAssertEqual(ForYou.interleave([[s("a1"), s("a2")]], limit: 1).count, 1)
+    }
+
+    func testUpcomingEpisodesByDayInLocalTimeGroupingDropsAndSkippingThePast() async throws {
+        let http = FakeHTTP()
+        // 1_760_000_000 = 9 oct 2025 08:53 UTC = 02:53 en la Ciudad de México (UTC−6): hoy es el 9.
+        var mexico = Calendar(identifier: .gregorian)
+        mexico.timeZone = TimeZone(secondsFromGMT: -6 * 3600)!
+        func row(_ imdb: String, _ title: String, _ episode: Int, _ aired: String, network: String = "") -> JSON {
+            ["first_aired": .string(aired), "episode": ["season": 2, "number": .int(episode), "title": .string("Episodio \(episode)")],
+             "show": ["title": .string(title), "network": .string(network), "ids": ["imdb": .string(imdb), "trakt": 1]]]
+        }
+        http.json["\(api)/calendars/my/shows/2025-10-08/16?extended=full"] = [
+            row("tt0000001", "Ya salió", 1, "2025-10-08T20:00:00.000Z"),                      // ayer, aquí
+            row("tt11280740", "Severance", 7, "2025-10-10T02:00:00.000Z", network: "Apple TV"), // hoy 20:00
+            row("tt9253284", "Andor", 4, "2025-10-10T07:00:00.000Z"),                          // mañana 01:00 (madrugada)
+            row("tt9253284", "Andor", 6, "2025-10-10T07:00:00.000Z"),
+            row("tt9253284", "Andor", 5, "2025-10-10T07:00:00.000Z"),
+            row("tt0000002", "Muy lejos", 1, "2025-10-30T20:00:00.000Z"),                     // más de 14 días
+            ["first_aired": "2025-10-10T02:00:00.000Z", "episode": ["season": 1, "number": 1], "show": ["title": "Sin IMDb", "ids": ["trakt": 9]]]]
+        let airings = try await makeForYou(http).calendar(calendar: mexico)
+        XCTAssertEqual(airings.map(\.series.title), ["Severance", "Andor"])
+        let severance = airings[0], andor = airings[1]
+        XCTAssertEqual(severance.episodeLabel, "T2 E7")
+        XCTAssertEqual(severance.episodeTitle, "Episodio 7")
+        XCTAssertEqual(severance.network, "Apple TV")
+        XCTAssertFalse(severance.atDawn)
+        XCTAssertEqual(severance.day, mexico.startOfDay(for: Clock().now), "sale hoy, en la hora de aquí")
+        XCTAssertEqual(andor.episodeLabel, "T2 E4–E6", "tres episodios el mismo día: una sola tarjeta")
+        XCTAssertEqual(andor.count, 3)
+        XCTAssertTrue(andor.atDawn, "a la 1:00: «Desde la madrugada»")
+        XCTAssertEqual(andor.series.kind, "series", "pulsar abre la ficha de la serie")
+        XCTAssertEqual(AiringDay.byDay(airings).map { $0.airings.count }, [1, 1], "hoy y mañana")
+        let week = AiringDay.week(airings, from: Clock().now, calendar: mexico)
+        XCTAssertEqual(week.count, 7)
+        XCTAssertEqual(week.map { $0.airings.count }, [1, 1, 0, 0, 0, 0, 0], "los días sin nada también están")
+    }
+
+    func testNoUpcomingEpisodesWithoutTrakt() async throws {
+        let airings = try await makeForYou(FakeHTTP(), linked: false).calendar()
+        XCTAssertTrue(airings.isEmpty)
     }
 }

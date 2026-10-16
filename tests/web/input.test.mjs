@@ -70,3 +70,18 @@ test("los controles genéricos de la Legion Go (sin mapeo, ejes en -1) no mueven
   assert.deepEqual([...padActions([legionHid, legionHid])], []);
   assert.deepEqual([...padActions([legionHid, pad([0])])], ["select"]); // el mando XInput sí
 });
+
+test("los glifos de la leyenda dicen qué acción hacen (tocarlos en el pie = la tecla)", async () => {
+  const { glyphAction, GLYPHS } = await import("../../orbital/web/js/core/input.js");
+  assert.equal(glyphAction("Esc"), "back");
+  assert.equal(glyphAction("Q"), "prevsection");
+  assert.equal(glyphAction("E"), "nextsection");
+  assert.equal(glyphAction("B"), "back");
+  assert.equal(glyphAction("↑↓"), null); // moverse no es un botón
+  // Todo glifo de una acción de un botón (teclado y mando) tiene su acción.
+  for (const set of [GLYPHS.keyboard, GLYPHS.gamepad]) {
+    for (const key of ["select", "back", "alt", "options", "menu", "search", "page", "section"]) {
+      for (const g of set[key].split(" ")) assert.ok(glyphAction(g), `${key}: ${g}`);
+    }
+  }
+});

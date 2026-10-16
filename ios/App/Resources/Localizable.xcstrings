@@ -848,6 +848,17 @@
         }
       }
     },
+    "Desde la madrugada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overnight"
+          }
+        }
+      }
+    },
     "Dirección": {
       "extractionState": "manual",
       "localizations": {
@@ -1222,6 +1233,17 @@
         }
       }
     },
+    "Hoy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        }
+      }
+    },
     "Identificador de la aplicación (client id)": {
       "extractionState": "manual",
       "localizations": {
@@ -1420,6 +1442,17 @@
         }
       }
     },
+    "Mañana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tomorrow"
+          }
+        }
+      }
+    },
     "Mediano": {
       "extractionState": "manual",
       "localizations": {
@@ -1482,6 +1515,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing downloaded"
+          }
+        }
+      }
+    },
+    "Nada este día": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing this day"
           }
         }
       }
@@ -1691,6 +1735,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't get the sources: %@"
+          }
+        }
+      }
+    },
+    "No sale nada en los próximos 14 días de las series que sigues.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing comes out in the next 14 days from the shows you follow."
           }
         }
       }
@@ -1915,6 +1970,17 @@
         }
       }
     },
+    "Por día": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By day"
+          }
+        }
+      }
+    },
     "Probando otra fuente (%lld)…": {
       "extractionState": "manual",
       "localizations": {
@@ -1944,6 +2010,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Next premiere"
+          }
+        }
+      }
+    },
+    "Próximos estrenos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upcoming episodes"
           }
         }
       }
@@ -2080,6 +2157,17 @@
         }
       }
     },
+    "Sale hoy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Out today"
+          }
+        }
+      }
+    },
     "Salir": {
       "extractionState": "manual",
       "localizations": {
@@ -2153,6 +2241,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Continue Watching"
+          }
+        }
+      }
+    },
+    "Semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Week"
           }
         }
       }

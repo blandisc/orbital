@@ -62,7 +62,7 @@ export function detailOf(item, now = Date.now()) {
 }
 
 /** De dónde es: el ícono de su plataforma y su nombre («Steam», «Switch», «Película»). */
-const platform = (item) => h("span", { class: "tile__platform" }, svg(ICONS[systemIconName(item)] || ICONS.apps), kicker(item));
+const platform = (item, className) => h("span", { class: ["tile__platform", className] }, svg(ICONS[systemIconName(item)] || ICONS.apps), kicker(item));
 
 /**
  * Destacado: lo último que jugaste o viste, a lo grande, con sus acciones (A, X, Y) como leyenda.
@@ -79,13 +79,13 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
     !boxed && item.extra?.hero_lowres && "tile--lowres"], onPress, item.title,
     boxed ? caseArt(item) : art(item.hero || item.image),
     h("span", { class: "tile__shade tile--feature__shade" }),
+    platform(item, ["tile__platform--pill", "tile--feature__store"]),
     h("div", { class: "tile--feature__body" },
-      platform(item),
       logo ? featureLogo(logo, item.title) : h("h2", { class: "tile--feature__title" }, item.title),
       detailOf(item) && h("span", { class: "tile--feature__detail" }, detailOf(item)),
       Progress(item.progress, { className: "tile--feature__progress" }),
       h("span", { class: "button-row tile--feature__actions" },
-        Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", onPress: press("select") }),
+        Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", art: true, onPress: press("select") }),
         alt && !open && Button({ label: alt, glyph: glyphs.alt, yields: true, onPress: press("alt") }),
         Button({ label: "Opciones", glyph: glyphs.options, onPress: press("options") }))));
 }
@@ -102,7 +102,7 @@ export function shortDetail(item, now = Date.now()) {
  * siempre a la vista («Steam · hace 4 h · 31 h», o «Serie · T2 E6 · quedan 32 min» con su avance).
  * El texto ya no va encima del arte: se lee desde el sillón.
  */
-export function RowTile(item, { focusId, onPress }) {
+export function RowTile(item, { focusId, onPress, airing = null }) {
   const watch = isWatchable(item);
   const thumb = thumbOf(item);
   const system = thumb.kind === "console" ? SYSTEMS[systemOf(item)] : null;
@@ -110,7 +110,9 @@ export function RowTile(item, { focusId, onPress }) {
   const node = tile(focusId, "tile--row", onPress, item.title,
     h("span", { class: ["tile--row__thumb", system && "tile--row__thumb--console"] },
       thumb.src && artOr(thumb.src, thumb.fallback, ["tile--row__art", thumb.kind === "crop" && "tile--row__art--crop"]),
-      system && art(`img/consoles/${system.photo}`, ["tile--row__console", system.logo && "tile--row__console--logo"])),
+      system && art(`img/consoles/${system.photo}`, ["tile--row__console", system.logo && "tile--row__console--logo"]),
+      // Sale un episodio nuevo hoy (Próximos estrenos, de Trakt): «Sale hoy · 19:00».
+      airing && Badge(airing === "Desde la madrugada" ? "Nuevo hoy" : `Sale hoy · ${airing}`, { className: "tile--row__airing" })),
     h("span", { class: "tile--row__text" },
       h("strong", { class: "tile--row__title" }, item.title),
       h("span", { class: "tile--row__detail" }, svg(ICONS[systemIconName(item)] || ICONS.apps),
