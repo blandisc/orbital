@@ -2,6 +2,7 @@
  * Definición de menús como datos (puros y probables). Cada opción lleva un `command`
  * que ejecuta el controlador de la app; así la vista no conoce la lógica.
  */
+import { shortAgo } from "./format.js";
 import { isGame, isWatchable, primaryLabel, runnerName } from "./library.js";
 
 /**
@@ -523,8 +524,7 @@ export function settingsPage(page, settings) {
           hint: settings.trakt.linked ? "Tus listas en Para ti" : "Listas y recomendaciones" }
           : settings.trakt && { icon: "spark", label: "Trakt", value: "Configurar", hint: "Primero, la aplicación de Trakt",
             command: { type: "keys", service: "trakt" } },
-        { icon: "phone", label: "iPhone", value: "Conectar", command: { type: "phone-link" },
-          hint: "Con un código QR" },
+        phoneRow(settings.companion_seen),
         settings.para_ti && { heading: true, label: "Claves de Para ti" },
         ...(settings.para_ti ? Object.keys(KEY_FORMS).map((service) => keyRow(service, settings.para_ti)) : []),
       ].filter(Boolean),
@@ -567,6 +567,16 @@ export const KEY_FORMS = {
     fields: [{ name: "id", label: "Client ID", secret: false }, { name: "secret", label: "Client Secret (si tu aplicación tiene)", secret: true, optional: true }],
   },
 };
+
+/** El iPhone en Cuentas: conectado si la app habló con Orbital en los últimos 60 días (sigue abriendo el QR, para
+ *  conectar otro o volver a conectarlo). Antes decía siempre «Conectar», aunque ya estuviera. */
+export function phoneRow(seen, now = Date.now()) {
+  const fresh = Number(seen) > 0 && now / 1000 - Number(seen) < 60 * 86400;
+  if (!fresh) return { icon: "phone", label: "iPhone", value: "Conectar", hint: "Con un código QR", command: { type: "phone-link" } };
+  const ago = shortAgo(seen, now);
+  return { icon: "phone", label: "iPhone", value: "Conectado", command: { type: "phone-link" },
+    hint: ago === "ahora" ? "Lo usaste ahora" : ago === "ayer" ? "Lo usaste ayer" : `Lo usaste hace ${ago}` };
+}
 
 /** Un renglón de Cuentas: «Agregar» o «Lista» (escrita aquí: cambiar o quitar; o en config.yaml: se puede escribir otra).
  *  Antes decía «En config.yaml», que no le dice nada a quien no lo armó. */

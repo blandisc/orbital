@@ -285,3 +285,14 @@ test("ajustes: ◀ baja y ▶ sube, de menos a más y sin dar la vuelta", () => 
   assert.equal(size.adjust.right.value, "xlarge");
   assert.ok(new Set(page.options.map((o) => o.icon)).size > 1); // no seis ojos iguales
 });
+
+test("cuentas: el iPhone dice si ya está conectado (antes siempre «Conectar»)", async () => {
+  const { phoneRow } = await import("../../orbital/web/js/core/menus.js");
+  const now = Date.UTC(2026, 9, 16, 12);
+  assert.equal(phoneRow(undefined, now).value, "Conectar");
+  const recent = phoneRow(now / 1000 - 2 * 3600, now);
+  assert.equal(recent.value, "Conectado");
+  assert.equal(recent.hint, "Lo usaste hace 2 h");
+  assert.equal(recent.command.type, "phone-link"); // sigue abriendo el QR (otro iPhone, o volver a conectarlo)
+  assert.equal(phoneRow(now / 1000 - 90 * 86400, now).value, "Conectar"); // hace meses: como si no
+});

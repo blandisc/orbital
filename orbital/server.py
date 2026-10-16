@@ -383,6 +383,10 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         """La app del iPhone toma de aquí lo de «Para ti» para no escribirlo dos veces: la clave de TMDB, la aplicación
         de Trakt (su Client ID, que no es secreto; el secreto no sale de aquí) y el país."""
         p = config.para_ti
+        # Para Ajustes › Cuentas: el iPhone está conectado (antes decía siempre «Conectar»). Una escritura cada 10 min.
+        state = getattr(main_app.state.catalog, "state", None)
+        if state is not None and time.time() - float(state.settings().get("companion_seen") or 0) > 600:
+            state.set_setting("companion_seen", time.time())
         foryou = getattr(main_app.state.catalog, "foryou", None)
         key = foryou.key if foryou else (lambda name: getattr(p, name))  # las escritas en la TV, o las de config.yaml
         return {"tmdb_key": key("tmdb_key"), "trakt_client_id": key("trakt_client_id"), "region": p.region,
