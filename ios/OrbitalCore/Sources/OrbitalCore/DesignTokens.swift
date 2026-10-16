@@ -50,6 +50,18 @@ public enum DesignTokens {
         /// …o este tope en segundos, lo que sea menor.
         public static let seekMaxSeconds = 180.0
     }
+    /// El mosaico de «Para ti» (como `foryou-mosaic.js` en la TV): cuánto se ensancha la columna enfocada,
+    /// cuánto se espera quieto antes del ambiente o de «cobrar vida», y a qué ritmo sube sola cada columna.
+    public enum Mosaic {
+        public static let columnsPortrait = 4, columnsLandscape = 6
+        public static let growRatio = 1.8
+        public static let idleSeconds = 30.0, aliveSeconds = 2.2, driftTick = 1.0
+        public static let driftPerSecond = 16.0
+        public static let bufferHeight = 360.0
+        /// La fila enfocada, en alto, × el ancho de su columna: con las columnas angostas del iPhone
+        /// hace falta más que en la TV (0,64) para que quepan etiqueta + logo + dato sin encimarse.
+        public static let focusedRowRatio = 1.6
+    }
 }
 
 /// Convierte «#rrggbb» en sus componentes 0…1.

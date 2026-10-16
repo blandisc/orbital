@@ -27,7 +27,7 @@ struct ParaTiView: View {
             .padding(.horizontal, DS.Space.gutter)
             if let error = m.error, m.mosaic.isEmpty, m.lists.isEmpty { DSNotice(text: LocalizedStringKey(error)).padding(.horizontal, DS.Space.gutter) }
             switch m.mode {
-            case .mosaic: MosaicView(observer: model)
+            case .mosaic: Mosaic(items: m.mosaic, watchlistKeys: m.watchlistKeys, demoFocus: demoFocusImdb, onDismiss: { s in Task { await m.dismiss(s) } })
             case .lists: ListsView(observer: model)
             }
         }
@@ -52,86 +52,15 @@ struct ParaTiView: View {
         }
         return m.source == .console ? "Para ti de tu Orbital" : "Calculado en el iPhone"
     }
-}
 
-/// El mosaico: columnas de imágenes a distintas alturas; la del centro es más ancha y enseña etiqueta, título y un dato
-/// (como la columna enfocada en la TV). Pulsar abre la ficha; mantener pulsado, «No me interesa».
-struct MosaicView: View {
-    @ObservedObject var observer: ModelObserver<ParaTiModel>
-    private let columns = 3
-    private var model: ParaTiModel { observer.model }
-
-    var body: some View {
-        GeometryReader { geo in
-            let gap = DS.Space.s2
-            let usable = geo.size.width - DS.Space.gutter * 2 - gap * CGFloat(columns - 1)
-            let side = usable / 4, center = usable / 2          // la columna del centro es el doble de ancha
-            ScrollView {
-                HStack(alignment: .top, spacing: gap) {
-                    ForEach(0..<columns, id: \.self) { column in
-                        LazyVStack(spacing: gap) {
-                            ForEach(items(in: column)) { suggestion in
-                                MosaicTile(suggestion: suggestion, width: column == 1 ? center : side, expanded: column == 1, inWatchlist: model.watchlistKeys.contains(suggestion.imdb))
-                                    .contextMenu { Button("No me interesa", systemImage: "hand.thumbsdown") { Task { await model.dismiss(suggestion) } } }
-                            }
-                        }
-                        .frame(width: column == 1 ? center : side)        // una LazyVStack se estira: sin esto las tres se reparten el ancho igual
-                        .padding(.top, column == 1 ? 0 : DS.Space.s6)   // las laterales empiezan más abajo: cascada
-                    }
-                }
-                .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)   // aire bajo la última fila: la barra de pestañas no la tapa
-            }
-        }
-        .overlay { if model.mosaic.isEmpty && model.isLoading { ProgressView() } }
-    }
-
-    private func items(in column: Int) -> [Suggestion] { model.mosaic.enumerated().filter { $0.offset % columns == column }.map(\.element) }
-}
-
-struct MosaicTile: View {
-    let suggestion: Suggestion
-    let width: CGFloat
-    let expanded: Bool
-    let inWatchlist: Bool
-
-    var body: some View {
-        NavigationLink(value: suggestion.route) {
-            ZStack(alignment: .bottomLeading) {
-                PosterView(url: expanded ? suggestion.wide : suggestion.poster, title: suggestion.title)
-                if expanded {
-                    LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom)
-                    VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        Text(suggestion.title).font(DS.font(.lg, weight: .bold)).foregroundStyle(DS.text).lineLimit(2)
-                        Text(facts).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
-                    }
-                    .padding(DS.Space.s2)
-                }
-                // Las columnas de los lados solo enseñan la imagen y si es serie o película (como en la TV): la etiqueta no cabe.
-                // El puesto en un Top 10 sí se enseña en cualquier columna (una sola pieza: con letra de accesibilidad
-                // grande no cabrían las dos, y el puesto ya dice que es un título de un chart).
-                VStack {
-                    HStack(alignment: .top) {
-                        if let rank = suggestion.rank { DSRankBadge(rank: rank) }
-                        else if expanded { DSBadge(text: inWatchlist ? "En tu lista" : badgeKey(suggestion.reason)) }
-                        Spacer(minLength: 0)
-                        if suggestion.rank == nil { kindIcon }
-                    }
-                    Spacer()
-                }.padding(DS.Space.s2)
-            }
-            .frame(width: width).clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-    }
-
-    private var kindIcon: some View {
-        Image(systemName: suggestion.kind == "movie" ? "film" : "tv").font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.text)
-            .padding(DS.Space.s1).background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.xs))
-    }
-
-    private var facts: String {
-        [suggestion.year.map(String.init), suggestion.runtime.map { "\($0) min" }].compactMap { $0 }.joined(separator: " · ")
+    /// Modo demostración (`-demo-mosaic-focus N`): qué sugerencia enfocar al abrir, para las capturas de CEN-36.
+    private var demoFocusImdb: String? {
+        #if DEBUG
+        guard Demo.isOn, let index = Demo.mosaicFocus, model.model.mosaic.indices.contains(index) else { return nil }
+        return model.model.mosaic[index].imdb
+        #else
+        return nil
+        #endif
     }
 }
 
