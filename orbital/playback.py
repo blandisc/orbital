@@ -188,7 +188,9 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
                   referrer: str | None = None) -> list[str]:
     """`live`: un canal de TV (caché corta, reconexión, sin posición que recordar). `user_agent` y `referrer`
     son los del canal; los canales siguientes los llevan en su propio `loadfile` (ver OrbitalPlayer.tune)."""
-    cache = LIVE_ARGS if live else ["--cache=yes", "--demuxer-max-bytes=400MiB"]
+    # Por delante 400 MiB (adelantar sin esperar) y hacia atrás 50 MiB, escrito aquí para que una versión nueva de
+    # mpv no cambie el valor de fábrica sin que se note: el búfer no puede pasar de ~450 MiB.
+    cache = LIVE_ARGS if live else ["--cache=yes", "--demuxer-max-bytes=400MiB", "--demuxer-max-back-bytes=50MiB"]
     cmd = [
         mpv, f"--input-ipc-server={PIPE}", "--fullscreen", "--force-window=immediate",
         # keep-open: al terminar se queda en el último cuadro (Orbital decide: siguiente episodio o
@@ -240,6 +242,7 @@ class Playback:
     process: subprocess.Popen
     started: float
     meta: dict  # kind, meta_id, video_id: para guardar el progreso en Stremio
+    memory_handled: bool = False  # el vigilante de memoria ya actuó con este mpv (una vez basta)
 
 
 @dataclass
