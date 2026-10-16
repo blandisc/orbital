@@ -18,7 +18,21 @@ public struct DownloadGroup: Identifiable, Equatable, Sendable {
             }
             groups[item.metaID]?.items.append(item)
         }
-        return order.compactMap { groups[$0] }
+        // Los episodios de una serie en orden (T1 E1, T1 E2…), no en el orden en que se bajaron.
+        return order.compactMap { id in
+            groups[id].map { g in
+                var sorted = g
+                sorted.items.sort { episodeKey($0.videoID) < episodeKey($1.videoID) }
+                return sorted
+            }
+        }
+    }
+
+    /// «tt0386676:2:5» → (2, 5); una película o un id sin temporada va primero.
+    static func episodeKey(_ videoID: String) -> (Int, Int) {
+        let parts = videoID.split(separator: ":")
+        guard parts.count >= 3, let s = Int(parts[parts.count - 2]), let e = Int(parts[parts.count - 1]) else { return (0, 0) }
+        return (s, e)
     }
 }
 

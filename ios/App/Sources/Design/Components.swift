@@ -43,6 +43,18 @@ struct DSBadge: View {
     }
 }
 
+/// Una marca de una sola idea en la esquina de un póster (en tu watchlist): el ícono sobre la placa oscura, con su nombre para VoiceOver.
+struct DSIconBadge: View {
+    let symbol: String
+    let label: LocalizedStringKey
+    var body: some View {
+        Image(systemName: symbol).font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.paper)
+            .padding(DS.Space.s1 + DS.Space.s1 / 2)
+            .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+            .accessibilityLabel(Text(label))
+    }
+}
+
 /// El puesto en un Top 10 (chart de Netflix, JustWatch…): una sola pieza, número grande sobre una placa oscura,
 /// con el mismo radio que la portada que acompaña (esquina superior izquierda).
 struct DSRankBadge: View {
@@ -138,6 +150,7 @@ struct RemoteImage<Content: View>: View {
     private func load() async {
         let pixels = maxPoints * ImagePipeline.screenScale
         if let hit = ImagePipeline.shared.cached(url, maxPixel: pixels) { loaded = hit; return }
+        loaded = nil   // otra URL en la misma vista: no se queda la imagen de antes mientras llega (o si falla) la nueva
         if ImagePipeline.shared.recentlyFailed(url, maxPixel: pixels) { didFail = true; return }
         didFail = false
         let image = await ImagePipeline.shared.image(url, maxPixel: pixels)
@@ -198,6 +211,8 @@ struct PosterCard: View {
     let title: String
     let poster: String?
     var badge: LocalizedStringKey?
+    /// En tu watchlist: un marcador (ícono) en la esquina.
+    var bookmarked = false
     /// El puesto en un Top 10: sustituye a `badge` en la esquina (una sola pieza, no dos encimadas).
     var rank: Int?
     var progress: Double?
@@ -208,6 +223,7 @@ struct PosterCard: View {
             PosterView(url: poster, title: title)
             if let rank { DSRankBadge(rank: rank).padding(DS.Space.s2) }
             else if let badge { DSBadge(text: badge).padding(DS.Space.s2) }
+            else if bookmarked { DSIconBadge(symbol: "bookmark.fill", label: "En tu watchlist").padding(DS.Space.s2) }
             if let progress { VStack { Spacer(); DSProgress(fraction: progress) } }
         }
         .frame(width: width)
@@ -553,13 +569,20 @@ final class ArtTint: ObservableObject {
     private static var cache: [String: ArtColors] = [:]
     private static let cacheLimit = 64
 
+    /// Lo último que se pidió: gana siempre (un arte anterior que llega tarde no pinta encima del de ahora).
+    private var requested: String?
+
     func load(_ url: String?) async {
+        requested = url
         guard let url, let u = URL(string: url) else { colors = nil; return }
         if let hit = Self.cache[url] { colors = hit; return }
         // Basta una miniatura para sacar el tono dominante: nunca se decodifica el fondo completo.
-        guard let thumb = await ImagePipeline.shared.image(u, maxPixel: DS.Image.tintPixels),
-              let palette = await Task.detached(priority: .utility, operation: { thumb.rgbaPixels.map { ArtPalette.palette(for: ArtPalette.dominantHue(rgba: $0)) } }).value
-        else { return }
+        let palette: (tint: ArtPalette.RGB, accent: ArtPalette.RGB)?
+        if let thumb = await ImagePipeline.shared.image(u, maxPixel: DS.Image.tintPixels) {
+            palette = await Task.detached(priority: .utility, operation: { thumb.rgbaPixels.map { ArtPalette.palette(for: ArtPalette.dominantHue(rgba: $0)) } }).value
+        } else { palette = nil }
+        guard requested == url, !Task.isCancelled else { return }
+        guard let palette else { colors = nil; return }   // sin arte: fondo liso, no el color del título anterior
         let found = ArtColors(palette)
         if Self.cache.count >= Self.cacheLimit { Self.cache.removeAll() }
         Self.cache[url] = found

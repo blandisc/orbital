@@ -250,14 +250,14 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertTrue(model.traktLinked)
         XCTAssertEqual(Set(model.mosaic.map(\.imdb)), ["tt11280740", "tt2788316", "tt13238346"])
         XCTAssertEqual(model.watchlistKeys, ["tt11280740"])
-        XCTAssertEqual(model.visibleShelves.map(\.id), ["mine", "recs"], "Lo tuyo (watchlist + Tus series) y las recomendadas; tendencias sin contenido no se pinta")
-        let mine = try XCTUnwrap(model.visibleShelves.first)
-        XCTAssertEqual(model.items(for: mine).map(\.imdb), ["tt11280740"])
-        let recs = try XCTUnwrap(model.visibleShelves.last)
+        XCTAssertEqual(model.visibleShelves.map(\.id), ["recs", "watchlist"], "el orden de la TV: Recomendadas y luego Tu watchlist; lo vacío no se pinta")
+        let recs = try XCTUnwrap(model.visibleShelves.first)
         XCTAssertEqual(model.items(for: recs).map(\.imdb), ["tt2788316"])
+        let watchlist = try XCTUnwrap(model.visibleShelves.last)
+        XCTAssertEqual(model.items(for: watchlist).map(\.imdb), ["tt11280740"])
         await model.setKind("movie")
         XCTAssertEqual(model.items(for: recs).map(\.imdb), ["tt13238346"])
-        XCTAssertEqual(model.items(for: mine).map(\.imdb), ["tt11280740"], "Lo tuyo no tiene split: Series · Películas no lo toca")
+        XCTAssertEqual(model.items(for: watchlist).map(\.imdb), ["tt11280740"], "Tu watchlist no tiene split: Series · Películas no la toca")
         await model.dismiss(model.mosaic[0])
         XCTAssertEqual(model.mosaic.count, 2)
     }
@@ -501,6 +501,8 @@ final class CatalogAndSourcesTests: XCTestCase {
         let groups = DownloadGroup.group([item("tt2", "a", bytes: 1), item("tt1", "b", bytes: 2), item("tt2", "c", bytes: 3)])
         XCTAssertEqual(groups.map(\.metaID), ["tt2", "tt1"])
         XCTAssertEqual(groups.first?.items.map(\.videoID), ["a", "c"])
+        let episodes = DownloadGroup.group([item("tt9", "tt9:2:1", bytes: 1), item("tt9", "tt9:1:3", bytes: 1), item("tt9", "tt9:1:1", bytes: 1)])
+        XCTAssertEqual(episodes.first?.items.map(\.videoID), ["tt9:1:1", "tt9:1:3", "tt9:2:1"], "en orden de temporada y episodio")
         XCTAssertEqual(groups.first?.bytes, 4)
     }
 }

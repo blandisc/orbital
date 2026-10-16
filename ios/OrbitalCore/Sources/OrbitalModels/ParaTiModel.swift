@@ -118,9 +118,11 @@ public final class ParaTiModel: ObservableModel {
         let remote = services.forYouRemote, forYou = services.forYou
         async let fetchedLists = try? remote.lists()
         async let fetchedMosaic = try? remote.mosaic()
+        // Si la consola no contesta, se cae a la lógica local sin esperar el calendario: este se pide solo si contestó.
+        guard let newLists = await fetchedLists, let newMosaic = await fetchedMosaic else { return false }
         async let fetchedKeys = try? remote.watchlistKeys()
         async let fetchedAirings = try? forYou.calendar()   // el calendario sale de tu Trakt (la consola trae la lista «estrenos», que aquí no se pinta como estante)
-        guard let newLists = await fetchedLists, let newMosaic = await fetchedMosaic else { return false }
+        if source != .console { railItems = [:] }   // venía del iPhone: los estantes de la otra fuente no se mezclan
         source = .console
         traktLinked = newLists.contains { $0.id == "watchlist" || $0.id == "mine" }
         lists = newLists
@@ -131,12 +133,14 @@ public final class ParaTiModel: ObservableModel {
         async let shelvesLoaded: Void = loadShelves()
         watchlistKeys = await fetchedKeys ?? []
         airings = await fetchedAirings ?? []
+        services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno» también con la consola
         await shelvesLoaded
         await topUpMosaic()
         return true
     }
 
     private func loadFromPhone() async {
+        if source != .phone { railItems = [:] }
         source = .phone
         let forYou = services.forYou
         async let linked = forYou.traktLinked

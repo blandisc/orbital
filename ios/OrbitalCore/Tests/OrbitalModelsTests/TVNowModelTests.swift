@@ -30,6 +30,8 @@ final class TVNowModelTests: XCTestCase {
         try await Task.sleep(nanoseconds: 30_000_000)
         XCTAssertEqual(model.now?.title, "Interstellar")
         model.setActive(false)
+        // La petición que ya iba en camino al parar puede llegar un instante después: se deja aterrizar antes de contar.
+        try await Task.sleep(nanoseconds: 10_000_000)
         let callsAtStop = rig.http.calls.count
         try await Task.sleep(nanoseconds: 30_000_000)
         XCTAssertEqual(rig.http.calls.count, callsAtStop)  // ya no sondea

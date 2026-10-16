@@ -93,8 +93,8 @@ final class ImagePipeline: @unchecked Sendable {
             fresh.task = Task.detached(priority: .userInitiated) { [self] in
                 let image = await decode(url, pixels: pixels)
                 lock.withLock {
-                    decodes[k] = nil
-                    if image == nil, !Task.isCancelled { failed[k] = Date() } else { failed[k] = nil }
+                    if decodes[k] === fresh { decodes[k] = nil }   // solo si sigue siendo este trabajo (no su reemplazo)
+                    if image == nil, !Task.isCancelled { markFailed(k) } else { failed[k] = nil }
                 }
                 if let image { memory.setObject(image, forKey: k as NSString, cost: Self.cost(of: image)) }
                 return image
@@ -102,7 +102,14 @@ final class ImagePipeline: @unchecked Sendable {
             decodes[k] = fresh
             return fresh
         }
-        return await wait(job) { [self] in lock.withLock { if decodes[k] === job { decodes[k] = nil } } }
+        return await wait(job) { [self] in if decodes[k] === job { decodes[k] = nil } }
+    }
+
+    /// Anota un fallo (y de paso olvida los que ya caducaron: la tabla no crece toda la sesión). Se llama con el candado puesto.
+    private func markFailed(_ key: String) {
+        let now = Date()
+        if failed.count > 256 { failed = failed.filter { now.timeIntervalSince($0.value) < Self.retryAfter } }
+        failed[key] = now
     }
 
     /// Los bytes (del disco o de la red) y luego la reducción, con su propio límite.
@@ -124,7 +131,7 @@ final class ImagePipeline: @unchecked Sendable {
             if let existing = downloads[url] { existing.waiters += 1; return existing }
             let fresh = Shared<Data?>()
             fresh.task = Task.detached(priority: .userInitiated) { [self] in
-                defer { lock.withLock { downloads[url] = nil } }
+                defer { lock.withLock { if downloads[url] === fresh { downloads[url] = nil } } }
                 guard await network.acquire() else { return nil }
                 defer { Task { await network.release() } }
                 guard let (fresh, response) = try? await session.data(for: request),
@@ -138,17 +145,23 @@ final class ImagePipeline: @unchecked Sendable {
             downloads[url] = fresh
             return fresh
         }
-        return await wait(job) { [self] in lock.withLock { if downloads[url] === job { downloads[url] = nil } } }
+        return await wait(job) { [self] in if downloads[url] === job { downloads[url] = nil } }
     }
 
     /// Espera un trabajo compartido. Si quien espera se cancela y era el último, el trabajo se cancela y deja de estar
-    /// en camino (la próxima petición empieza de nuevo en vez de heredar uno cancelado).
+    /// en camino (la próxima petición empieza de nuevo en vez de heredar uno cancelado). Contar y olvidar van bajo el mismo
+    /// candado: nadie puede unirse a un trabajo justo cuando se está cancelando. `forget` corre con el candado puesto.
     private func wait<T>(_ job: Shared<T>, forget: @escaping @Sendable () -> Void) async -> T {
         await withTaskCancellationHandler {
             await job.task.value
         } onCancel: { [lock] in
-            let last = lock.withLock { job.waiters -= 1; return job.waiters == 0 }
-            if last { forget(); job.task.cancel() }
+            let last = lock.withLock { () -> Bool in
+                job.waiters -= 1
+                guard job.waiters == 0 else { return false }
+                forget()
+                return true
+            }
+            if last { job.task.cancel() }
         }
     }
 
@@ -207,7 +220,12 @@ final class ImagePipeline: @unchecked Sendable {
 
         private func cancel(_ id: UUID) {
             if let i = waiters.firstIndex(where: { $0.id == id }) { waiters.remove(at: i).resume.resume(returning: false) }
-            else { cancelled.insert(id) }
+            else {
+                // Casi siempre llega después de que ya tuvo lugar (o se rindió): no se guarda para siempre. Perder una marca
+                // vieja solo deja pasar un trabajo ya cancelado, que suelta su lugar enseguida.
+                if cancelled.count > 256 { cancelled.removeAll() }
+                cancelled.insert(id)
+            }
         }
 
         func release() {

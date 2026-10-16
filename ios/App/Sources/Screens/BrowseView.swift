@@ -92,12 +92,13 @@ struct BrowseView: View {
     private func popular(_ model: CatalogModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSectionHead(title: "Lo más popular hoy")
-            ForEach(Array(model.popular.prefix(Self.popularCount).enumerated()), id: \.element.id) { index, item in
+            let shown = Array(model.popular.prefix(Self.popularCount))
+            ForEach(Array(shown.enumerated()), id: \.element.id) { index, item in
                 NavigationLink(value: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)) {
                     RankedRow(rank: index + 1, title: item.title, poster: item.poster, detail: yearAndKind(year: item.year, kind: item.kind))
                 }
                 .buttonStyle(.plain)
-                if index < Self.popularCount - 1 { Divider().overlay(DS.hairline) }
+                if index < shown.count - 1 { Divider().overlay(DS.hairline) }
             }
         }
         .padding(.horizontal, DS.Space.gutter)

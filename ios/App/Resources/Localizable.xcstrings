@@ -782,6 +782,17 @@
         }
       }
     },
+    "Control remoto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remote control"
+          }
+        }
+      }
+    },
     "Copiar": {
       "extractionState": "manual",
       "localizations": {
@@ -1398,6 +1409,17 @@
         }
       }
     },
+    "Esta semana en México": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week in Mexico"
+          }
+        }
+      }
+    },
     "Explora": {
       "extractionState": "manual",
       "localizations": {
@@ -1592,6 +1614,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The recommended one is at the top."
+          }
+        }
+      }
+    },
+    "Las que estás viendo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows you're watching"
           }
         }
       }
@@ -3004,6 +3037,28 @@
         }
       }
     },
+    "Tendencia en JustWatch · México": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JustWatch trend · Mexico"
+          }
+        }
+      }
+    },
+    "Tendencias en %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trending on %@"
+          }
+        }
+      }
+    },
     "Todavía nada: aparece cuando veas algo en el iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -3044,6 +3099,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Token saved"
+          }
+        }
+      }
+    },
+    "Top 10 en %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top 10 on %@"
           }
         }
       }

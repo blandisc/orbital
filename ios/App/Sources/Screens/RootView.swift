@@ -91,8 +91,11 @@ struct MainTabs: View {
                 TVAccessory(now: now, busy: tvNow.model.busy) { Task { await tvNow.model.control("toggle") } }
                     .contentShape(Rectangle())
                     .onTapGesture { showRemote = true }
+                    .accessibilityAction(named: Text("Control remoto")) { showRemote = true }   // VoiceOver también llega al control completo
             }
         }
+        // Si la TV deja de reproducir con la hoja abierta, la hoja se cierra (no se queda vacía).
+        .onChange(of: tvNow.model.now == nil) { _, stopped in if stopped { showRemote = false } }
         // Tocar el accesorio abre el control remoto completo (−10 · pausa · +10 · siguiente, salir, seguir aquí).
         .sheet(isPresented: $showRemote) {
             if let now = tvNow.model.now {

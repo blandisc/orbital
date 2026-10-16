@@ -321,7 +321,7 @@ struct MosaicCaption<More: View>: View {
             Menu { more() } label: { Image(systemName: "ellipsis") }
                 .buttonStyle(.bordered).buttonBorderShape(.circle).controlSize(.large).tint(DS.text)
                 .accessibilityLabel(Text("Más"))
-            Button(action: watch) { Image(systemName: isSeries ? "info" : "play.fill") }
+            Button(action: watch) { Image(systemName: isSeries ? "chevron.right" : "play.fill") }
                 .dsArtButton(accent).buttonBorderShape(.circle).controlSize(.large)
                 .accessibilityLabel(isSeries ? Text("Ver la serie") : Text("Ver"))
         }
