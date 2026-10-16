@@ -136,6 +136,7 @@ def used_literals() -> dict[str, str]:
     found: dict[str, str] = {}
     files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift"))
     for f in files:
+        f = Path(f).as_posix()  # en Windows glob da «\»: sin esto el modo demo y Platform/ se colaban
         if "/Design/" in f or "/Platform/" in f or f.endswith("/Support/Demo.swift"):   # el modo demo (solo Debug) no se traduce
             continue
         for number, line in enumerate(Path(f).read_text(encoding="utf-8").splitlines(), 1):
