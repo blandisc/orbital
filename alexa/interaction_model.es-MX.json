@@ -45,7 +45,11 @@
             "jugar {game}",
             "iniciar {game}",
             "me abres {game}",
-            "ábreme {game}"
+            "ábreme {game}",
+            "que abra {game}",
+            "pon a jugar {game}",
+            "quiero jugar a {game}",
+            "juega a {game}"
           ]
         },
         {
@@ -106,7 +110,11 @@
             "busque {query}",
             "buscar {query}",
             "búscame {query}",
-            "me pones {query}"
+            "me pones {query}",
+            "ponga {query}",
+            "que ponga {query}",
+            "pon algo de {query}",
+            "quiero ver algo de {query}"
           ]
         },
         {
@@ -221,7 +229,13 @@
             "abre {direction}",
             "abra {direction}",
             "muestra {direction}",
-            "ve a la sección de {direction}"
+            "ve a la sección de {direction}",
+            "ve a la sección {direction}",
+            "abre la sección de {direction}",
+            "abra la sección de {direction}",
+            "llévame a {direction}",
+            "regresa a {direction}",
+            "vuelve a {direction}"
           ]
         },
         {
@@ -597,6 +611,133 @@
         {
           "name": "AMAZON.PreviousIntent",
           "samples": []
+        },
+        {
+          "name": "LiveTvIntent",
+          "slots": [
+            {
+              "name": "channel",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "pon el canal {channel}",
+            "ponga el canal {channel}",
+            "cambia al canal {channel}",
+            "cambie al canal {channel}",
+            "sintoniza {channel}",
+            "sintonice {channel}",
+            "sintoniza el canal {channel}",
+            "sintonice el canal {channel}",
+            "pon {channel} en vivo",
+            "ponga {channel} en vivo",
+            "quiero ver el canal {channel}",
+            "pon la tele",
+            "ponga la tele",
+            "pon la televisión",
+            "ponga la televisión",
+            "pon la tele en vivo",
+            "prende la tele",
+            "prenda la tele",
+            "quiero ver la tele",
+            "tele en vivo",
+            "televisión en vivo",
+            "pon los canales",
+            "abre la tele",
+            "abra la tele"
+          ]
+        },
+        {
+          "name": "ChannelStepIntent",
+          "slots": [
+            {
+              "name": "step",
+              "type": "CHANNEL_STEP"
+            }
+          ],
+          "samples": [
+            "{step} canal",
+            "el {step} canal",
+            "canal {step}",
+            "el canal {step}",
+            "pon el canal {step}",
+            "ponga el canal {step}",
+            "pon el {step} canal",
+            "ponga el {step} canal",
+            "cambia de canal",
+            "cambie de canal",
+            "otro canal",
+            "{step} de canal",
+            "cámbiale de canal",
+            "pásale de canal",
+            "regresa al canal anterior",
+            "regrese al canal anterior"
+          ]
+        },
+        {
+          "name": "UpcomingIntent",
+          "samples": [
+            "qué sale hoy",
+            "qué estrenos hay",
+            "qué episodios salen hoy",
+            "qué episodios salen esta semana",
+            "qué sale esta semana",
+            "qué sale mañana",
+            "próximos estrenos",
+            "cuáles son los próximos estrenos",
+            "qué capítulos salen hoy",
+            "qué hay de nuevo",
+            "qué series salen hoy",
+            "hay capítulo nuevo hoy",
+            "hay episodio nuevo hoy"
+          ]
+        },
+        {
+          "name": "RecommendIntent",
+          "samples": [
+            "qué me recomiendas",
+            "qué me recomiendas ver",
+            "recomiéndame algo",
+            "recomiéndame algo de ver",
+            "qué me sugieres",
+            "sugiéreme algo",
+            "qué veo",
+            "qué puedo ver",
+            "no sé qué ver",
+            "qué hay para ver",
+            "dame una recomendación"
+          ]
+        },
+        {
+          "name": "BrightnessIntent",
+          "slots": [
+            {
+              "name": "brightness",
+              "type": "VOLUME_DIRECTION"
+            },
+            {
+              "name": "level",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "amount",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "{brightness} el brillo",
+            "{brightness} brillo",
+            "le {brightness} al brillo",
+            "{brightness} el brillo a {level}",
+            "pon el brillo en {level}",
+            "pon el brillo a {level}",
+            "pon el brillo al {level}",
+            "brillo al {level} por ciento",
+            "brillo a {level}",
+            "{brightness} el brillo {amount} puntos",
+            "ponga el brillo en {level}",
+            "ponga el brillo al {level}"
+          ]
         }
       ],
       "types": [
@@ -691,6 +832,28 @@
                 "synonyms": [
                   "aplicaciones",
                   "apps"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "foryou",
+                "synonyms": [
+                  "para ti",
+                  "recomendaciones",
+                  "sugerencias"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "tv",
+                "synonyms": [
+                  "tv en vivo",
+                  "tele en vivo",
+                  "televisión en vivo",
+                  "canales",
+                  "la tele"
                 ]
               }
             }
@@ -1148,6 +1311,32 @@
                   "bájele",
                   "bájale tantito",
                   "bajarle"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CHANNEL_STEP",
+          "values": [
+            {
+              "name": {
+                "value": "next",
+                "synonyms": [
+                  "siguiente",
+                  "próximo",
+                  "que sigue",
+                  "otro"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "previous",
+                "synonyms": [
+                  "anterior",
+                  "de antes",
+                  "pasado"
                 ]
               }
             }

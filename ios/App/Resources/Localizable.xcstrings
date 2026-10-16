@@ -166,6 +166,17 @@
         }
       }
     },
+    "Alexa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alexa"
+          }
+        }
+      }
+    },
     "Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.": {
       "extractionState": "manual",
       "localizations": {
@@ -360,6 +371,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search movies and series"
+          }
+        }
+      }
+    },
+    "Buscar una frase": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search a phrase"
           }
         }
       }
@@ -760,6 +782,17 @@
         }
       }
     },
+    "Copiar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        }
+      }
+    },
     "Correo de Stremio": {
       "extractionState": "manual",
       "localizations": {
@@ -800,6 +833,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Account"
+          }
+        }
+      }
+    },
+    "Cómo pedírselo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to ask"
           }
         }
       }
@@ -2399,6 +2443,17 @@
         }
       }
     },
+    "Qué le puedes decir a Alexa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you can say to Alexa"
+          }
+        }
+      }
+    },
     "Reanudar": {
       "extractionState": "manual",
       "localizations": {
@@ -2648,6 +2703,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Popular series"
+          }
+        }
+      }
+    },
+    "Si Alexa dice que no puede, empieza con «pídele a mi consola que…»: sin eso, Alexa intenta hacerlo ella sola.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If Alexa says she can't, start with “pídele a mi consola que…” (ask my console to…): without it, Alexa tries to do it herself."
           }
         }
       }
