@@ -85,6 +85,7 @@ struct PlayerScreen: View {
             if controlsVisible { controls(model).transition(.opacity) }
             if let up = model.upNext { UpNextCard(card: up, watchNow: { Task { await model.playNextNow() } }, cancel: { model.cancelUpNext() }) }
         }
+        .onArt()   // sobre el video siempre se ve como en la sala oscura, aunque la app esté en modo claro
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)

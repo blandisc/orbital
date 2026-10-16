@@ -19,26 +19,50 @@ enum DS {
         }
     }
 
-    static let bg = Palette.color("ink-950")
+    /// Un color que cambia con el modo claro u oscuro (`DesignTokens.Role`).
+    static func role(_ role: DesignTokens.Role) -> Color { adaptive(dark: role.hex.dark, light: role.hex.light) }
+
+    /// Una capa translúcida sobre el color de texto de cada modo (blanco en oscuro, negro en claro).
+    static func overlay(_ opacity: Double) -> Color {
+        adaptive(dark: DesignTokens.Ink.darkOverlay, light: DesignTokens.Ink.lightOverlay, opacity: opacity)
+    }
+
+    private static func adaptive(dark: String, light: String, opacity: Double = 1) -> Color {
+        func ui(_ hex: String) -> UIColor {
+            let c = rgb(hex: hex) ?? (0, 0, 0)
+            return UIColor(red: c.r, green: c.g, blue: c.b, alpha: opacity)
+        }
+        let (d, l) = (ui(dark), ui(light))
+        return Color(uiColor: UIColor { $0.userInterfaceStyle == .light ? l : d })
+    }
+
+    // MARK: Papeles (cambian solos con el modo)
+    static let bg = role(.background)
+    static let surface = role(.surface)
+    static let surfaceRaised = role(.surfaceRaised)
+    static let text = role(.label)
+    static let textMuted = role(.secondaryLabel)
+    static let textFaint = role(.tertiaryLabel)
+    static let ink500 = role(.tertiaryLabel)
+    static let primary = role(.primary)
+    static let onPrimary = role(.onPrimary)
+    static let accent = role(.accent)
+    static let good = role(.accent)
+    static let warning = role(.warning)
+    static let danger = role(.danger)
+    static let hairline = overlay(DesignTokens.Opacity.hairline)
+    static let fill = overlay(DesignTokens.Opacity.fill)
+    static let fillStrong = overlay(DesignTokens.Opacity.fillStrong)
+    static let track = overlay(DesignTokens.Opacity.track)
+
+    // MARK: Sobre el arte (siempre la sala oscura, en los dos modos)
+    /// El grafito más profundo: el fondo del tono del arte en modo oscuro y la base de los velos.
     static let backdropDeep = Palette.color("ink-1000")
-    static let surface = Palette.color("ink-900")
-    static let surfaceRaised = Palette.color("ink-800")
-    static let ink500 = Palette.color("ink-500")
-    static let text = Palette.color("paper")
-    static let textMuted = Palette.color("ink-300")
-    static let textFaint = Color.white.opacity(DesignTokens.Opacity.faint)
-    static let primary = Palette.color("paper")
-    static let onPrimary = Palette.color("ink-1000")
-    static let hairline = Color.white.opacity(DesignTokens.Opacity.hairline)
-    static let fill = Color.white.opacity(DesignTokens.Opacity.fill)
-    static let fillStrong = Color.white.opacity(DesignTokens.Opacity.fillStrong)
-    static let track = Color.white.opacity(DesignTokens.Opacity.track)
+    /// El papel: la base del tono del arte en modo claro.
+    static let paper = Palette.color("paper")
     static let scrim = Palette.color("ink-1000").opacity(DesignTokens.Opacity.scrim)
     static let badgeBackground = Palette.color("ink-1000").opacity(DesignTokens.Opacity.badge)
     static let scrimStrong = Palette.color("ink-1000").opacity(DesignTokens.Opacity.scrimStrong)
-    static let good = Palette.color("teal-300")
-    static let warning = Palette.color("amber-300")
-    static let danger = Palette.color("red-400")
     static let video = Color.black   // detrás de un video: negro de verdad
     static let subtitleText = Color.white       // subtítulos: blanco puro sobre el video, como cualquier reproductor
     static let subtitleShadow = Color.black.opacity(DesignTokens.Opacity.subtitleShadow)
@@ -91,6 +115,25 @@ enum DS {
 
     static func font(_ face: Typeface, weight: Font.Weight = .regular) -> Font { .system(face.style, design: .default).weight(weight) }
 
+    /// Recetas de texto de Proyección: cada pantalla usa estas, no tamaños sueltos. SF Pro con Dynamic Type; los datos
+    /// (tiempos, temporadas, tamaños) en SF Mono, la única marca tipográfica de la app.
+    enum TextRecipe {
+        /// Título grande de pantalla (lo pinta la barra de navegación nativa), título de sección, título de pieza, cuerpo,
+        /// secundario, pie y dato.
+        case section, cardTitle, body, secondary, footnote, eyebrow, data
+        var font: Font {
+            switch self {
+            case .section: .system(.title2, design: .default).weight(.bold)
+            case .cardTitle: .system(.headline, design: .default)
+            case .body: .system(.body, design: .default)
+            case .secondary: .system(.subheadline, design: .default)
+            case .footnote: .system(.footnote, design: .default)
+            case .eyebrow: .system(.footnote, design: .default).weight(.semibold)
+            case .data: .system(.footnote, design: .monospaced)
+            }
+        }
+    }
+
     // MARK: Movimiento (sin movimiento con «Reducir movimiento»)
     enum Motion {
         static func base(_ reduce: Bool) -> Animation? { reduce ? nil : .easeOut(duration: DesignTokens.Motion.base) }
@@ -122,6 +165,8 @@ enum DS {
 
     /// El fondo de pantalla: tono del arte, estrellas del espacio vivo y el fundido del arte a sangre.
     enum Backdrop {
+        /// Cuánto se mezcla el color del arte con el fondo de cada modo, y hasta dónde llega antes de fundirse con el fondo.
+        static let darkMix = DesignTokens.Projection.darkMix, lightMix = DesignTokens.Projection.lightMix, fadeTo = DesignTokens.Projection.fadeTo
         static let tintFloor = DesignTokens.Backdrop.tintFloor
         static let starCount = DesignTokens.Backdrop.starCount, starSeed = DesignTokens.Backdrop.starSeed
         static let starRadius = CGFloat(DesignTokens.Backdrop.starRadius), starOpacity = DesignTokens.Backdrop.starOpacity

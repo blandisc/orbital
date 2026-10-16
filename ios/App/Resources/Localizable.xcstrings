@@ -166,6 +166,17 @@
         }
       }
     },
+    "Apariencia": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
+          }
+        }
+      }
+    },
     "Aplicación anterior (con secreto)": {
       "extractionState": "manual",
       "localizations": {
@@ -441,6 +452,17 @@
         }
       }
     },
+    "Claro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
+          }
+        }
+      }
+    },
     "Clave de TMDB": {
       "extractionState": "manual",
       "localizations": {
@@ -470,6 +492,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your Trakt app's Client ID"
+          }
+        }
+      }
+    },
+    "Como el iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Match iPhone"
           }
         }
       }
@@ -1618,6 +1651,17 @@
         }
       }
     },
+    "Modo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mode"
+          }
+        }
+      }
+    },
     "Mosaico": {
       "extractionState": "manual",
       "localizations": {
@@ -1944,6 +1988,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Orbital · %lld left"
+          }
+        }
+      }
+    },
+    "Oscuro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark"
           }
         }
       }

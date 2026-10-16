@@ -125,6 +125,13 @@ final class AppEnvironment: ObservableObject {
     }
 
     var uiLocale: Locale { Locale(identifier: services.appSettings.uiLanguage) }
+    /// Ajustes › Apariencia: nil sigue al iPhone.
+    var colorScheme: ColorScheme? {
+        #if DEBUG
+        if let forced = Demo.appearance { return forced == "light" ? .light : .dark }
+        #endif
+        switch services.appSettings.appearance { case "light": return .light; case "dark": return .dark; default: return nil }
+    }
 
     // MARK: reproducir
     /// Reproduce con el motor propio o, si lo prefieres (o fallara), con Infuse.

@@ -20,6 +20,21 @@ final class DesignTests: XCTestCase {
         for key in json.keys where key != "_" { XCTAssertTrue(known.contains(key), "Orbital tiene un color nuevo («\(key)») que falta en DesignTokens") }
     }
 
+    /// Modo claro y oscuro: el texto se lee en los dos (WCAG AA), y el acento y la acción principal se distinguen del fondo.
+    func testBothAppearancesHaveReadableContrast() {
+        typealias R = DesignTokens.Role
+        for mode in ["dark", "light"] {
+            func hex(_ role: R) -> String { mode == "dark" ? role.hex.dark : role.hex.light }
+            for background in [R.background, .surface] {
+                XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.label), hex(background)), 7, "\(mode): texto sobre \(background)")
+                XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.secondaryLabel), hex(background)), 4.5, "\(mode): texto secundario sobre \(background)")
+                XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.accent), hex(background)), 4.5, "\(mode): el acento se lee sobre \(background)")
+                XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.danger), hex(background)), 4.5, "\(mode): el error se lee sobre \(background)")
+            }
+            XCTAssertGreaterThanOrEqual(DesignTokens.contrast(hex(.onPrimary), hex(.primary)), 7, "\(mode): texto del botón principal")
+        }
+    }
+
     func testHexParsing() throws {
         let c = try XCTUnwrap(rgb(hex: "#f5f4f0"))
         XCTAssertEqual(c.r, 245.0 / 255, accuracy: 1e-9)

@@ -225,18 +225,29 @@ struct BleedArt<Content: View>: View {
     var aspect: CGFloat?
     var minHeight: CGFloat = 0
     @ViewBuilder var content: () -> Content
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
+        // En oscuro el arte se funde con el fondo de borde a borde; en claro es una tarjeta con esquinas (la sala oscura no se
+        // funde con el papel: el texto claro de encima dejaría de leerse).
         ZStack(alignment: .bottomLeading) {
-            PosterView(url: url, title: title, aspect: aspect, bleed: true, maxPoints: DS.Image.bleed)
-                .overlay(LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: UnitPoint(x: 0.5, y: DS.Backdrop.artFadeStart / 2), endPoint: .bottom))
-                .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: (1 - DS.Backdrop.artFadeStart) / 2),
-                                             .init(color: .black, location: DS.Backdrop.artFadeStart),
-                                             .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
-            content().padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s3)
+            if scheme == .dark {
+                art.mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: (1 - DS.Backdrop.artFadeStart) / 2),
+                                                .init(color: .black, location: DS.Backdrop.artFadeStart),
+                                                .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
+            } else {
+                art.clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
+            }
+            content().onArt().padding(.horizontal, DS.Space.gutter).padding(.bottom, scheme == .dark ? DS.Space.s3 : DS.Space.s5)
         }
         .frame(minHeight: minHeight)      // con letra grande crece en vez de encimar el texto
+        .padding(.horizontal, scheme == .dark ? 0 : DS.Space.gutter)
         .accessibilityElement(children: .contain)
+    }
+
+    private var art: some View {
+        PosterView(url: url, title: title, aspect: aspect, bleed: true, maxPoints: DS.Image.bleed)
+            .overlay(LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: UnitPoint(x: 0.5, y: DS.Backdrop.artFadeStart / 2), endPoint: .bottom))
     }
 }
 
@@ -482,19 +493,22 @@ struct DSSpeedPill: View {
     }
 }
 
-/// Fondo de pantalla (`Backdrop` en la TV): el tono del arte enfocado o abierto tiñe TODA la pantalla (muy oscurecido, como
-/// `--art-tint`), con un fundido suave. Sin arte (`tint` nil) y con `space`, el «espacio vivo» de Inicio y Para ti: estrellas muy tenues.
+/// Fondo de pantalla de Proyección: el color del arte que está al frente ilumina la pantalla desde arriba y se funde con el
+/// fondo a media altura. En oscuro el tono se hunde hacia el grafito (como `--art-tint` en la TV); en claro es un velo de
+/// color muy suave sobre el papel. Sin arte, el fondo liso del modo.
 struct Backdrop: View {
+    /// El color medio del arte (sin mezclar: la mezcla depende del modo).
     var tint: Color?
-    var space = false
+    @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        let tone = tint ?? DS.bg
         ZStack {
             DS.bg
-            LinearGradient(colors: [tone, tone.mix(with: DS.bg, by: DS.Backdrop.tintFloor)], startPoint: .top, endPoint: .bottom)
-            Stars().opacity(space && tint == nil ? 1 : 0)
+            if let tint {
+                let tone = scheme == .dark ? tint.mix(with: DS.backdropDeep, by: DS.Backdrop.darkMix) : tint.mix(with: DS.paper, by: DS.Backdrop.lightMix)
+                LinearGradient(stops: [.init(color: tone, location: 0), .init(color: DS.bg, location: DS.Backdrop.fadeTo)], startPoint: .top, endPoint: .bottom)
+            }
         }
         .ignoresSafeArea()
         .animation(DS.Motion.tint(reduceMotion), value: tint)
@@ -502,25 +516,15 @@ struct Backdrop: View {
     }
 }
 
-/// Las estrellas del espacio vivo: puntos fijos y muy tenues, siempre en los mismos lugares (sin movimiento).
-private struct Stars: View {
-    var body: some View {
-        Canvas { context, size in
-            var seed = DS.Backdrop.starSeed
-            func next() -> Double { seed = (seed * 9301 + 49297).truncatingRemainder(dividingBy: 233280); return seed / 233280 }
-            for _ in 0..<DS.Backdrop.starCount {
-                let x = next() * size.width, y = next() * size.height, grow = 0.5 + next()
-                let r = DS.Backdrop.starRadius * grow
-                context.fill(Path(ellipseIn: CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)), with: .color(DS.text.opacity(DS.Backdrop.starOpacity * (0.4 + next() * 0.6))))
-            }
-        }
-    }
+/// Lo que va encima del arte (logos, datos, botones sobre el velo): siempre como en la sala oscura, en los dos modos.
+extension View {
+    func onArt() -> some View { environment(\.colorScheme, .dark) }
 }
 
 /// Tono medio de una imagen (para el fondo): se calcula una vez y se recuerda.
 @MainActor
 final class ArtTint: ObservableObject {
-    /// nil: no hay arte (el fondo es el de siempre, con su espacio vivo).
+    /// El color medio del arte; nil: no hay arte (el fondo es el liso del modo).
     @Published private(set) var color: Color?
     private static var cache: [String: Color] = [:]
     private static let cacheLimit = 64
@@ -531,11 +535,10 @@ final class ArtTint: ObservableObject {
         // Basta una miniatura para sacar el color medio: nunca se decodifica el fondo completo.
         guard let thumb = await ImagePipeline.shared.image(u, maxPixel: DS.Image.tintPixels),
               let average = await Task.detached(priority: .utility, operation: { thumb.averageColor }).value else { return }
-        // Muy oscurecido: mezcla con el grafito más profundo.
-        let mixed = Color(uiColor: average).mix(with: DS.backdropDeep, by: 0.55)
+        let tone = Color(uiColor: average)
         if Self.cache.count >= Self.cacheLimit { Self.cache.removeAll() }
-        Self.cache[url] = mixed
-        color = mixed
+        Self.cache[url] = tone
+        color = tone
     }
 }
 

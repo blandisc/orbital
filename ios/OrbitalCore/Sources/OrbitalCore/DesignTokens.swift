@@ -11,6 +11,58 @@ public enum DesignTokens {
         "pad-green": "#5cbf6d", "pad-red": "#e2514a", "pad-blue": "#4a8ae8", "pad-yellow": "#eec03a",
     ]
 
+    /// Los colores por su papel, en modo oscuro (la paleta de la consola) y en modo claro. Las pantallas nunca usan la paleta
+    /// directa: usan estos papeles (`DS.bg`, `DS.text`…), que cambian solos con el modo. El claro es «papel»: el mismo
+    /// grafito de la consola invertido, con el teal oscurecido para leerse sobre papel (prueba de contraste en `DesignTests`).
+    public enum Role: String, CaseIterable, Sendable {
+        /// Fondo de pantalla y superficies (tarjetas, renglones agrupados) y la superficie elevada (placeholders, hojas).
+        case background, surface, surfaceRaised
+        /// Texto principal, secundario y terciario (solo adornos y textos grandes: no pasa 4.5:1).
+        case label, secondaryLabel, tertiaryLabel
+        /// La acción principal (una por pantalla) y el texto sobre ella.
+        case primary, onPrimary
+        /// El único acento: avance y selección.
+        case accent
+        /// Avisos.
+        case warning, danger
+
+        /// «#rrggbb» de cada modo.
+        public var hex: (dark: String, light: String) {
+            switch self {
+            case .background: (palette["ink-950"]!, "#f6f5f1")
+            case .surface: (palette["ink-900"]!, "#ffffff")
+            case .surfaceRaised: (palette["ink-800"]!, "#ebe9e3")
+            case .label: (palette["paper"]!, "#111113")
+            case .secondaryLabel: (palette["ink-300"]!, "#5c5c64")
+            case .tertiaryLabel: (palette["ink-500"]!, "#9a9aa1")
+            case .primary: (palette["paper"]!, "#111113")
+            case .onPrimary: (palette["ink-1000"]!, palette["paper"]!)
+            case .accent: (palette["teal-300"]!, "#0b7a6e")
+            case .warning: (palette["amber-300"]!, "#9a6200")
+            case .danger: (palette["red-400"]!, "#c4362c")
+            }
+        }
+    }
+
+    /// Las capas translúcidas (líneas, rellenos, velos) se calculan sobre el color de texto de cada modo: blanco en oscuro y
+    /// negro en claro, con las opacidades de `Opacity`. Los velos sobre el arte son siempre negros (el arte es la sala oscura).
+    public enum Ink { public static let darkOverlay = "#ffffff", lightOverlay = "#000000", scrim = "#000000" }
+
+    /// El tono del arte que ilumina la pantalla (Proyección): cuánto se mezcla el color medio del arte con el fondo de cada modo.
+    /// En oscuro se hunde hacia el grafito; en claro se vuelve un velo de color muy suave sobre el papel.
+    public enum Projection { public static let darkMix = 0.55, lightMix = 0.84, fadeTo = 0.62 }
+
+    /// Contraste WCAG entre dos colores «#rrggbb» (1…21).
+    public static func contrast(_ a: String, _ b: String) -> Double {
+        func luminance(_ hex: String) -> Double {
+            guard let c = rgb(hex: hex) else { return 0 }
+            func channel(_ v: Double) -> Double { v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4) }
+            return 0.2126 * channel(c.r) + 0.7152 * channel(c.g) + 0.0722 * channel(c.b)
+        }
+        let (l1, l2) = (luminance(a), luminance(b))
+        return (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
+    }
+
     /// Espacio (puntos): 4, 8, 12, 16, 20, 24, 32, 40, 56.
     public enum Space { public static let s1 = 4.0, s2 = 8.0, s3 = 12.0, s4 = 16.0, s5 = 20.0, s6 = 24.0, s8 = 32.0, s10 = 40.0, s14 = 56.0 }
     public enum Radius { public static let xs = 5.0, sm = 7.0, md = 10.0, lg = 13.0, xl = 18.0, xxl = 22.0, pill = 999.0 }

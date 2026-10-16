@@ -16,7 +16,7 @@ struct OrbitalApp: App {
             RootView()
                 .environmentObject(env)
                 .environment(\.locale, env.uiLocale)
-                .preferredColorScheme(.dark)
+                .preferredColorScheme(env.colorScheme)   // Ajustes › Apariencia (por omisión, la del iPhone)
                 .tint(DS.primary)
                 .onOpenURL { url in Task { await env.handle(url: url) } }
         }

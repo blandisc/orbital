@@ -31,7 +31,7 @@ struct ParaTiView: View {
             }
         }
         .padding(.top, DS.Space.s2)
-        .background(Backdrop(tint: m.mode == .mosaic ? tint.color : nil, space: true))
+        .background(Backdrop(tint: m.mode == .mosaic ? tint.color : nil))
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
         .navigationTitle("Para ti").navigationBarTitleDisplayMode(.large)
         // De dónde salió lo que ves, en el mismo lugar que «Stremio al día» en Inicio (no un chip y un pie sueltos).
@@ -296,7 +296,7 @@ struct ListGridView: View {
                 .navigationTitle(shelfTitle(plan))
             }
         }
-        .background(Backdrop(tint: nil, space: true))
+        .background(Backdrop())
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -307,7 +307,7 @@ struct UpcomingScreen: View {
 
     var body: some View {
         ScrollView { UpcomingView(observer: observer).padding(.bottom, DS.Space.s14) }
-            .background(Backdrop(tint: nil, space: true))
+            .background(Backdrop())
             .navigationTitle("Próximos estrenos").navigationBarTitleDisplayMode(.inline)
     }
 }

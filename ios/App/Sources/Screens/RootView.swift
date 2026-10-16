@@ -76,12 +76,13 @@ struct MainTabs: View {
 
     var body: some View {
         TabView(selection: $tab) {
-            Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() } }
-            Tab("Para ti", systemImage: "sparkles", value: 1) { NavigationStack(path: $paths[1]) { ParaTiView() } }
-            Tab("Ver", systemImage: "play.rectangle", value: 2) { NavigationStack(path: $paths[2]) { BrowseView() } }
-            Tab("Descargas", systemImage: "arrow.down.circle", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() } }
+            Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary) }
+            Tab("Para ti", systemImage: "sparkles", value: 1) { NavigationStack(path: $paths[1]) { ParaTiView() }.tint(DS.primary) }
+            Tab("Ver", systemImage: "play.rectangle", value: 2) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
+            Tab("Descargas", systemImage: "arrow.down.circle", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary) }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
+        .tint(DS.accent)   // la pestaña elegida lleva el acento; dentro, los botones vuelven al papel
         .onAppear(perform: openDemoScreen)
         .onAppear(perform: openPendingTitle)
         .onChange(of: env.pendingTitle) { openPendingTitle() }

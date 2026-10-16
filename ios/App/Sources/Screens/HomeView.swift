@@ -63,7 +63,7 @@ struct HomeView: View {
             .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
             .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
         }
-        .background(Backdrop(tint: tint.color, space: true))
+        .background(Backdrop(tint: tint.color))
         .navigationTitle(greeting).navigationBarTitleDisplayMode(.large)
         .navigationSubtitle(syncText)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { NavigationLink(value: SettingsRoute()) { Image(systemName: "person.crop.circle") }.accessibilityLabel(Text("Ajustes")) } }

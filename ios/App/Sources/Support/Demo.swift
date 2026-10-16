@@ -75,6 +75,8 @@ enum Demo {
     static var gesture: String? { value(after: "-demo-gesture") }
     /// `-demo-console`: simula que tu Orbital de mentira sí contesta «Para ti» (con una lista de ejemplo con puesto),
     /// para ver el pie «Para ti de tu Orbital» y el número del Top 10 sin tener una consola real.
+    /// `-demo-appearance light|dark`: fuerza el modo claro u oscuro (para las capturas de los dos).
+    static var appearance: String? { value(after: "-demo-appearance") }
     static var console: Bool { ProcessInfo.processInfo.arguments.contains("-demo-console") }
     /// `-demo-mosaic-focus 3`: en «Para ti» › Mosaico, enfoca esa sugerencia (su índice en `model.mosaic`) al abrir.
     static var mosaicFocus: Int? { value(after: "-demo-mosaic-focus").flatMap(Int.init) }

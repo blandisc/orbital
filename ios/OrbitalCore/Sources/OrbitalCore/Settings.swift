@@ -39,6 +39,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var traktClientID = ""            // el identificador no es secreto; el secreto de la aplicación va en el Keychain
     public var subtitleSize = "medium"         // «small» | «medium» | «large»: el tamaño de la letra de los subtítulos
     public var orbitalAddress = ""             // tu Orbital por el túnel («orbital.midominio.com»); el token va en el Keychain
+    public var appearance = "system"           // «system» | «light» | «dark»: el modo de la app (por omisión, el del iPhone)
 
     public init() {}
 
@@ -61,11 +62,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
         traktClientID = try c.decodeIfPresent(String.self, forKey: .traktClientID) ?? traktClientID
         subtitleSize = try c.decodeIfPresent(String.self, forKey: .subtitleSize) ?? subtitleSize
         orbitalAddress = try c.decodeIfPresent(String.self, forKey: .orbitalAddress) ?? orbitalAddress
+        appearance = try c.decodeIfPresent(String.self, forKey: .appearance) ?? appearance
     }
 
     enum Keys: String, CodingKey {
         case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
-        case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize, orbitalAddress
+        case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
     }
     public var traktEnabled: Bool { !traktClientID.isEmpty }
 

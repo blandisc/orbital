@@ -31,6 +31,13 @@ struct SettingsView: View {
             orbitalSection(model)
             addons
             traktSection(model)
+            Section("Apariencia") {
+                Picker("Modo", selection: Binding(get: { s.appearance }, set: { v in model.update { $0.appearance = v } })) {
+                    Text("Como el iPhone").tag("system"); Text("Claro").tag("light"); Text("Oscuro").tag("dark")
+                }
+                .pickerStyle(.segmented)
+            }
+            .listRowBackground(DS.fill)
             Section("Idioma") {
                 Picker("Idioma de la app y de las fichas", selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } })) {
                     Text("Español").tag("es"); Text("English").tag("en")

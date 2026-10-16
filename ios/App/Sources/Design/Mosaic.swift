@@ -441,6 +441,7 @@ private struct MosaicTileCell: View {
                 .padding(DS.Space.s5)
             }
         }
+        .onArt()   // la pieza es arte: su texto, como en la sala oscura, en los dos modos
         .opacity(dimmed ? DesignTokens.Opacity.shrink : 1)
         .scaleEffect(alive ? 1 + DesignTokens.Opacity.hairline : 1)
         .animation(alive ? .linear(duration: DesignTokens.Mosaic.aliveZoomSeconds) : .default, value: alive)   // se acerca despacio, no de golpe
