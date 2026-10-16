@@ -67,6 +67,8 @@ public enum DesignTokens {
         public static let idleSeconds = 30.0, aliveSeconds = 2.2, driftTick = 1.0
         public static let driftPerSecond = 16.0
         public static let bufferHeight = 360.0
+        /// Piezas fuera de pantalla que aún se pintan, × el alto del mosaico (arriba y abajo); el resto no se renderiza.
+        public static let cullMargin = 0.5
         /// La fila enfocada, en alto, × el ancho de su columna: con las columnas angostas del iPhone
         /// hace falta más que en la TV (0,64) para que quepan etiqueta + logo + dato sin encimarse.
         public static let focusedRowRatio = 1.6

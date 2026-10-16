@@ -125,6 +125,13 @@ enum DS {
     }
 
     /// Tamaño de los pósters (relación 2:3, como en la TV).
+    /// A qué tamaño (lado más largo, en puntos) se reduce cada imagen remota al bajarla (`RemoteImage`).
+    enum Image {
+        static let card: CGFloat = 200, mosaic: CGFloat = 192, logo: CGFloat = 240, platformLogo: CGFloat = 96, bleed: CGFloat = 480
+        /// Basta una miniatura para sacar el color medio del fondo.
+        static let tintPixels: CGFloat = 48
+    }
+
     enum Poster {
         static let aspect = DesignTokens.Aspect.poster
         static let heroAspect = DesignTokens.Aspect.hero, stillAspect = DesignTokens.Aspect.still

@@ -124,4 +124,43 @@ final class MosaicLayoutTests: XCTestCase {
         var pool = MosaicPool(items: [])
         XCTAssertNil(pool.next(excluding: []))
     }
+
+    // MARK: relleno y poda convergen con el volumen real (CEN-49)
+
+    /// 96 sugerencias de formas mezcladas (arte ancho y solo póster), un ancho de iPhone y un desplazamiento largo hacia
+    /// abajo y hacia arriba: `fill` y `prune` terminan, ninguna columna queda vacía y las piezas vivas no crecen sin tope.
+    func testFillAndPruneConvergeWithNinetySixMixedTiles() {
+        let items = (0..<96).map { i in
+            Suggestion(kind: i % 2 == 0 ? "movie" : "series", imdb: "tt\(i)", title: "t\(i)", poster: "https://example.test/p\(i)",
+                       wide: i % 3 == 0 ? "" : "https://example.test/w\(i)", reason: .popular)
+        }
+        let geo = MosaicGeometry(columnCount: 4, gap: 12, ring: 8, growRatio: 1.8, focusedRowRatio: DesignTokens.Mosaic.focusedRowRatio)
+        let viewport = 700.0
+        var pool = MosaicPool(items: items)
+        var serial = 0
+        var columns = (0..<4).map { _ in MosaicColumn() }
+        geo.layout(&columns, totalWidth: 390, focus: (col: 1, row: 0))
+        var peak = 0
+        func fillAll() {
+            let visible = Set(columns.flatMap { $0.tiles.map(\.item.imdb) })
+            for c in columns.indices {
+                geo.fill(&columns[c], viewportHeight: viewport, buffer: DesignTokens.Mosaic.bufferHeight, isFocusedColumn: c == 1,
+                         focusedRow: c == 1 ? 0 : nil, pool: &pool, visible: visible, onScreen: visible, serial: &serial)
+            }
+        }
+        fillAll()
+        for step in 0..<400 {
+            let delta = step < 300 ? 40.0 : -40.0
+            for c in columns.indices {
+                columns[c].offset = max((columns[c].tiles.first?.top ?? 0) - geo.ring, columns[c].offset + delta)
+                geo.prune(&columns[c], viewportHeight: viewport)
+            }
+            fillAll()
+            geo.layout(&columns, totalWidth: 390, focus: (col: 1, row: 0))
+            peak = max(peak, columns.reduce(0) { $0 + $1.tiles.count })
+            XCTAssertTrue(columns.allSatisfy { !$0.tiles.isEmpty }, "ninguna columna queda vacía (paso \(step))")
+            XCTAssertTrue(columns.allSatisfy { $0.tiles.allSatisfy { $0.height > 0 } })
+        }
+        XCTAssertLessThan(peak, 160, "las piezas vivas no crecen sin tope al desplazar")
+    }
 }

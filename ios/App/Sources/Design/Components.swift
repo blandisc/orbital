@@ -63,7 +63,7 @@ struct DSPlatformLogo: View {
     var body: some View {
         Group {
             if let url, let u = URL(string: url) {
-                AsyncImage(url: u) { phase in
+                RemoteImage(url: u, maxPoints: DS.Image.platformLogo) { phase in
                     if case .success(let image) = phase { image.resizable().scaledToFit() } else { Color.clear }
                 }
             } else { Color.clear }
@@ -109,6 +109,43 @@ struct DSSectionHead: View {
     }
 }
 
+/// Una imagen remota (pósters, fondos, logos): la baja `ImagePipeline` reducida al tamaño en que se ve, con caché en
+/// memoria y disco compartido por toda la app, y la decodifica fuera del hilo principal. Si ya estaba en memoria
+/// aparece en el primer fotograma (sin parpadeo al reciclar la pieza). Mismo contrato que `AsyncImage`.
+enum RemoteImagePhase { case loading, success(Image), failure }
+
+struct RemoteImage<Content: View>: View {
+    let url: URL
+    let maxPoints: CGFloat
+    @ViewBuilder let content: (RemoteImagePhase) -> Content
+    @State private var loaded: UIImage?
+    @State private var didFail = false
+
+    init(url: URL, maxPoints: CGFloat, @ViewBuilder content: @escaping (RemoteImagePhase) -> Content) {
+        self.url = url; self.maxPoints = maxPoints; self.content = content
+        _loaded = State(initialValue: ImagePipeline.shared.cached(url, maxPixel: maxPoints * ImagePipeline.screenScale))
+    }
+
+    var body: some View {
+        content(phase).task(id: url) { await load() }
+    }
+
+    private var phase: RemoteImagePhase {
+        if let loaded { return .success(Image(uiImage: loaded)) }
+        return didFail ? .failure : .loading
+    }
+
+    private func load() async {
+        let pixels = maxPoints * ImagePipeline.screenScale
+        if let hit = ImagePipeline.shared.cached(url, maxPixel: pixels) { loaded = hit; return }
+        if ImagePipeline.shared.recentlyFailed(url, maxPixel: pixels) { didFail = true; return }
+        didFail = false
+        let image = await ImagePipeline.shared.image(url, maxPixel: pixels)
+        if Task.isCancelled { return }
+        if let image { loaded = image } else { didFail = true }
+    }
+}
+
 /// El póster de un título: la imagen, o su nombre sobre un fondo si no carga. La imagen llena su marco y se recorta:
 /// nunca agranda la vista (con `aspect: nil` ocupa el espacio que le den, como el destacado).
 struct PosterView: View {
@@ -117,6 +154,8 @@ struct PosterView: View {
     var aspect: CGFloat? = DS.Poster.aspect
     /// Arte a sangre (`BleedArt`): sin esquinas ni borde, solo recortado al marco.
     var bleed = false
+    /// El lado más largo, en puntos, al que se reduce la imagen al bajarla (no se decodifica a tamaño completo).
+    var maxPoints: CGFloat = DS.Image.card
 
     var body: some View {
         if bleed { art.clipped().accessibilityLabel(Text(title)) }
@@ -132,7 +171,7 @@ struct PosterView: View {
         frame
             .overlay {
                 if let url, let u = URL(string: url) {
-                    AsyncImage(url: u) { phase in
+                    RemoteImage(url: u, maxPoints: maxPoints) { phase in
                         switch phase {
                         case .success(let image): image.resizable().scaledToFill()
                         default: placeholder
@@ -189,7 +228,7 @@ struct BleedArt<Content: View>: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            PosterView(url: url, title: title, aspect: aspect, bleed: true)
+            PosterView(url: url, title: title, aspect: aspect, bleed: true, maxPoints: DS.Image.bleed)
                 .overlay(LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: UnitPoint(x: 0.5, y: DS.Backdrop.artFadeStart / 2), endPoint: .bottom))
                 .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: (1 - DS.Backdrop.artFadeStart) / 2),
                                              .init(color: .black, location: DS.Backdrop.artFadeStart),
@@ -213,7 +252,7 @@ struct TitleLogo: View {
     var body: some View {
         Group {
             if let url, let u = URL(string: url) {
-                AsyncImage(url: u) { phase in
+                RemoteImage(url: u, maxPoints: DS.Image.logo) { phase in
                     switch phase {
                     case .success(let image): image.resizable().scaledToFit().brightness(dark ? 1 : 0)
                     case .failure: name
@@ -486,8 +525,9 @@ final class ArtTint: ObservableObject {
     func load(_ url: String?) async {
         guard let url, let u = URL(string: url) else { color = nil; return }
         if let hit = Self.cache[url] { color = hit; return }
-        guard let (data, _) = try? await URLSession.shared.data(from: u),
-              let average = await Task.detached(priority: .utility, operation: { UIImage(data: data)?.averageColor }).value else { return }
+        // Basta una miniatura para sacar el color medio: nunca se decodifica el fondo completo.
+        guard let thumb = await ImagePipeline.shared.image(u, maxPixel: DS.Image.tintPixels),
+              let average = await Task.detached(priority: .utility, operation: { thumb.averageColor }).value else { return }
         // Muy oscurecido: mezcla con el grafito más profundo.
         let mixed = Color(uiColor: average).mix(with: DS.backdropDeep, by: 0.55)
         if Self.cache.count >= Self.cacheLimit { Self.cache.removeAll() }
