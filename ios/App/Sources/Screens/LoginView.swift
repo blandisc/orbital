@@ -22,9 +22,9 @@ struct LoginView: View {
                     Image("Logo").resizable().frame(width: DS.Size.logo, height: DS.Size.logo)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)).accessibilityHidden(true)
                         .padding(.bottom, DS.Space.s2)
-                    Text("Orbital").font(DS.font(.display, weight: .bold)).foregroundStyle(DS.text)
+                    Text("Orbital").font(DS.TextRecipe.display.font.weight(.bold)).foregroundStyle(DS.text)
                     Text("Entra con tu cuenta de Stremio. Lo que veas aquí aparece en Orbital y al revés.")
-                        .font(DS.font(.md)).foregroundStyle(DS.textMuted)
+                        .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted)
                 }
                 VStack(spacing: DS.Space.s3) {
                     TextField("Correo de Stremio", text: $email)
@@ -42,7 +42,7 @@ struct LoginView: View {
                 .dsPrimaryButton().controlSize(.large)
                 .disabled(observer.model.state == .signingIn || email.trimmingCharacters(in: .whitespaces).isEmpty || password.isEmpty)
                 Text("Tu contraseña no se guarda: solo la clave de sesión, en el Keychain de tu iPhone.")
-                    .font(DS.font(.xs)).foregroundStyle(DS.textFaint)
+                    .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
             }
             .padding(DS.Space.s6)
         }

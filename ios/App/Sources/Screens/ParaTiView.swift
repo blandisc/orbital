@@ -20,7 +20,7 @@ struct ParaTiView: View {
                 .padding(.horizontal, DS.Space.gutter)
             if m.isGeneric, m.mode == .mosaic, !m.mosaic.isEmpty {
                 Text("Lo más popular en Stremio. Conecta Trakt en Ajustes y el mosaico se arma con lo tuyo.")
-                    .font(DS.font(.xs)).foregroundStyle(DS.textMuted).frame(maxWidth: .infinity, alignment: .leading)
+                    .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, DS.Space.gutter)
             }
             if let error = m.error, m.mosaic.isEmpty, m.lists.isEmpty { DSNotice(text: LocalizedStringKey(error)).padding(.horizontal, DS.Space.gutter) }
@@ -42,7 +42,7 @@ struct ParaTiView: View {
                     .disabled(m.isLoading).accessibilityLabel(Text("Actualizar"))
             }
         }
-        .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
+        .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .task {
             #if DEBUG
@@ -100,7 +100,7 @@ struct ShelfPoster: View {
     var body: some View {
         Group {
             if style == .top10, let rank = suggestion.rank {
-                NavigationLink(value: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster) }.buttonStyle(.plain)
+                NavigationLink(value: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster).titleZoomSource(suggestion.route) }.buttonStyle(.plain)
             } else {
                 TitleLink(route: suggestion.route, badge: inList ? "En tu lista" : nil, rank: style == .platform ? suggestion.rank : nil,
                           detail: yearAndKind(year: suggestion.year.map(String.init) ?? "", kind: suggestion.kind))
@@ -215,8 +215,8 @@ struct ListsView: View {
             }
         }
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            Label { Text("Conecta Trakt o tu Orbital").font(DS.font(.lg, weight: .semibold)).foregroundStyle(DS.text) } icon: { Image(systemName: "link").foregroundStyle(DS.textMuted) }
-            Text("Tu watchlist, tus recomendaciones y el Top 10 de tus plataformas aparecen aquí.").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
+            Label { Text("Conecta Trakt o tu Orbital").font(DS.TextRecipe.cardTitle.font.weight(.semibold)).foregroundStyle(DS.text) } icon: { Image(systemName: "link").foregroundStyle(DS.textMuted) }
+            Text("Tu watchlist, tus recomendaciones y el Top 10 de tus plataformas aparecen aquí.").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
             NavigationLink(value: SettingsRoute()) { Label("Abrir Ajustes", systemImage: "gearshape") }
                 .buttonStyle(.glass).controlSize(.large)
         }
@@ -273,7 +273,7 @@ struct ListGridView: View {
                 VStack(alignment: .leading, spacing: DS.Space.s4) {
                     HStack(spacing: DS.Space.s3) {
                         if plan.style != .plain, let logo = plan.list.logo { DSPlatformLogo(url: logo) }
-                        if let meta = shelfMeta(plan) { meta.font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(2) }
+                        if let meta = shelfMeta(plan) { meta.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(2) }
                         Spacer(minLength: 0)
                     }
                     .padding(.horizontal, DS.Space.gutter)

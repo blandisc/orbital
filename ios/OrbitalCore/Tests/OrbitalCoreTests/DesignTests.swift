@@ -71,6 +71,14 @@ final class DesignTests: XCTestCase {
                 for (pattern, what) in forbidden where line.range(of: pattern, options: .regularExpression) != nil {
                     problems.append("\(relative):\(index + 1): \(what): \(line.trimmingCharacters(in: .whitespaces))")
                 }
+                // La app (no el widget, que tiene sus propios tamaños) solo escribe texto con las recetas de Proyección.
+                if relative.hasPrefix("Sources/"), line.contains("DS.font(") {
+                    problems.append("\(relative):\(index + 1): tamaño de letra suelto (usa una receta: DS.TextRecipe / .recipe(…)): \(line.trimmingCharacters(in: .whitespaces))")
+                }
+                // Los colores fijos no cambian con el modo claro u oscuro: van los papeles (`DS.text`, `DS.bg`…).
+                if relative.hasPrefix("Sources/Screens/"), line.range(of: #"Color\.(white|black)|\.foregroundStyle\(\.(white|black)\)"#, options: .regularExpression) != nil {
+                    problems.append("\(relative):\(index + 1): color fijo (no cambia con el modo): \(line.trimmingCharacters(in: .whitespaces))")
+                }
             }
         }
         XCTAssertTrue(problems.isEmpty, "Valores sueltos en las pantallas (usa un token o márcalo con «ds-exception: motivo»):\n" + problems.joined(separator: "\n"))

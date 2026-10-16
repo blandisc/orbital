@@ -122,14 +122,17 @@ enum DS {
     enum TextRecipe {
         /// Título grande de pantalla (lo pinta la barra de navegación nativa), título de sección, título de pieza, cuerpo,
         /// secundario, pie y dato.
-        case section, cardTitle, body, secondary, footnote, eyebrow, data
+        case display, title, section, cardTitle, body, secondary, footnote, caption, eyebrow, data
         var font: Font {
             switch self {
+            case .display: .system(.largeTitle, design: .default).weight(.bold)
+            case .title: .system(.title, design: .default).weight(.bold)
             case .section: .system(.title2, design: .default).weight(.bold)
             case .cardTitle: .system(.headline, design: .default)
             case .body: .system(.body, design: .default)
             case .secondary: .system(.subheadline, design: .default)
             case .footnote: .system(.footnote, design: .default)
+            case .caption: .system(.caption, design: .default)
             case .eyebrow: .system(.footnote, design: .default).weight(.semibold)
             case .data: .system(.footnote, design: .monospaced)
             }

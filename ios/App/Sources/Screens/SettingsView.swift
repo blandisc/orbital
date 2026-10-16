@@ -72,7 +72,7 @@ struct SettingsView: View {
                 }
                 SecureField(LocalizedStringKey(model.hasTMDBKey ? "Clave de TMDB guardada" : "Clave de TMDB"), text: $tmdbKey).textInputAutocapitalization(.never).autocorrectionDisabled()
                 if !tmdbKey.isEmpty { Button("Guardar clave de TMDB") { model.setTMDBKey(tmdbKey); tmdbKey = "" } }
-                Text("TMDB pone las fichas en español y busca lo popular en Netflix, Disney+ y HBO Max.").font(DS.font(.xs)).foregroundStyle(DS.textFaint)
+                Text("TMDB pone las fichas en español y busca lo popular en Netflix, Disney+ y HBO Max.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
             }
             .listRowBackground(DS.surface)
         }
@@ -99,11 +99,11 @@ struct SettingsView: View {
             ForEach(session.model.addons, id: \.url) { addon in
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text(addon.name).foregroundStyle(DS.text)
-                    Text(redact(addon.url)).font(DS.font(.xs)).foregroundStyle(DS.textFaint)   // solo el servidor: la ruta lleva tu clave
+                    Text(redact(addon.url)).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)   // solo el servidor: la ruta lleva tu clave
                 }
                 .swipeActions { if session.model.ownAddonURLs.contains(addon.url) { Button("Quitar", role: .destructive) { Task { await session.model.removeAddon(url: addon.url) } } } }
             }
-            if let error = session.model.addonError { Text(LocalizedStringKey(error)).foregroundStyle(DS.danger).font(DS.font(.sm)) }
+            if let error = session.model.addonError { Text(LocalizedStringKey(error)).foregroundStyle(DS.danger).font(DS.TextRecipe.footnote.font) }
             TextField("Pegar la dirección de un complemento", text: $newAddon).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
             if !newAddon.isEmpty { Button("Agregar complemento") { Task { await session.model.addAddon(newAddon); if session.model.addonError == nil { newAddon = "" } } } }
         }
@@ -125,17 +125,17 @@ struct SettingsView: View {
                 Button { Task { await model.checkOrbital() } } label: {
                     HStack { Text("Probar conexión"); Spacer(); if model.checkingOrbital { ProgressView() } }
                 }
-                if let problem = model.orbitalCheck, !problem.isEmpty { Text(LocalizedStringKey(problem)).font(DS.font(.sm)).foregroundStyle(DS.danger) }
+                if let problem = model.orbitalCheck, !problem.isEmpty { Text(LocalizedStringKey(problem)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.danger) }
                 if !model.importedFromOrbital.isEmpty {
                     Label("Traje de tu Orbital: \(imported(model)). No hay que escribirlo aquí.", systemImage: "arrow.down.doc")
-                        .font(DS.font(.sm)).foregroundStyle(DS.good)
+                        .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.good)
                 }
             } else {
                 // Lo fácil primero: un código en la TV, la cámara del iPhone y listo.
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    Label("En la TV: Ajustes › Cuentas › iPhone", systemImage: "qrcode").font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text)
+                    Label("En la TV: Ajustes › Cuentas › iPhone", systemImage: "qrcode").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
                     Text("Aparece un código. Apúntale con la cámara del iPhone y toca «Abrir en Orbital»: queda conectada, sin escribir nada.")
-                        .font(DS.font(.sm)).foregroundStyle(DS.textMuted)
+                        .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
                 }
                 .padding(.vertical, DS.Space.s1)
             }
@@ -157,7 +157,7 @@ struct SettingsView: View {
         Section("Trakt") {
             switch model.trakt {
             case .off:
-                Text("Conecta tu Orbital (arriba) y Trakt se configura solo. Si no, crea una aplicación en developer.trakt.tv y pega aquí su Client ID.").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
+                Text("Conecta tu Orbital (arriba) y Trakt se configura solo. Si no, crea una aplicación en developer.trakt.tv y pega aquí su Client ID.").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
                 TextField("Client ID de tu aplicación de Trakt", text: Binding(get: { model.settings.traktClientID }, set: { v in model.update { $0.traktClientID = v.trimmingCharacters(in: .whitespaces) } }))
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 DisclosureGroup("Aplicación anterior (con secreto)") {
@@ -166,18 +166,18 @@ struct SettingsView: View {
                 }
             case .unlinked:
                 Button("Conectar Trakt") { Task { await model.linkTrakt() } }
-                Text("Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.").font(DS.font(.xs)).foregroundStyle(DS.textFaint)
+                Text("Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
             case .linking(let code, let url):
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    Text("Escribe este código en \(url):").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
-                    Text(code).font(DS.font(.display, weight: .bold)).foregroundStyle(DS.text).textSelection(.enabled).monospaced()
-                    HStack { ProgressView(); Text("Esperando…").font(DS.font(.sm)).foregroundStyle(DS.textMuted) }
+                    Text("Escribe este código en \(url):").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
+                    Text(code).font(DS.TextRecipe.display.font.weight(.bold)).foregroundStyle(DS.text).textSelection(.enabled).monospaced()
+                    HStack { ProgressView(); Text("Esperando…").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
                 }
                 Button("Cancelar", role: .cancel) { model.cancelLinking() }
             case .linked(let name):
                 (name.isEmpty ? Label("Trakt conectado", systemImage: "checkmark.seal") : Label("Trakt: \(name)", systemImage: "checkmark.seal"))
                 if env.services.trakt?.borrowed == true {
-                    Text("Con la sesión de tu Orbital: no hay nada que conectar aquí.").font(DS.font(.xs)).foregroundStyle(DS.textFaint)
+                    Text("Con la sesión de tu Orbital: no hay nada que conectar aquí.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
                     Button("Dejar de usar Trakt en el iPhone", role: .destructive) { Task { await model.unlinkTrakt() } }
                 } else {
                     Button("Desconectar Trakt", role: .destructive) { Task { await model.unlinkTrakt() } }
@@ -196,17 +196,17 @@ struct SettingsView: View {
     @ViewBuilder
     private func scrobbleRow(_ model: SettingsModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
-            Text("Último scrobble").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
+            Text("Último scrobble").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
             if let last = model.scrobble.last {
-                Text(verbatim: last.title).font(DS.font(.sm)).foregroundStyle(DS.text)
+                Text(verbatim: last.title).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.text)
                 HStack(spacing: DS.Space.s1) {
                     Text(Self.actionLabel(last.action))
                     Text(verbatim: "·")
                     Text(verbatim: Self.ago(last.at, language: model.settings.uiLanguage, now: env.services.now()))
                 }
-                .font(DS.font(.xs)).foregroundStyle(DS.textFaint)
+                .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
             } else {
-                Text("Todavía nada: aparece cuando veas algo en el iPhone.").font(DS.font(.xs)).foregroundStyle(DS.textFaint)
+                Text("Todavía nada: aparece cuando veas algo en el iPhone.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
             }
             if let error = model.scrobble.error { DSNotice(text: LocalizedStringKey(error), tone: .warn) }
         }

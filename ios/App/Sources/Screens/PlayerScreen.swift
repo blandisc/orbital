@@ -281,7 +281,7 @@ struct PlayerScreen: View {
     // MARK: estados
     @ViewBuilder private func statusOverlays(_ model: PlayerModel) -> some View {
         switch model.phase {
-        case .preparing: VStack(spacing: DS.Space.s3) { ProgressView().tint(DS.text); Text(preparingText(model)).font(DS.font(.sm)).foregroundStyle(DS.textMuted) }
+        case .preparing: VStack(spacing: DS.Space.s3) { ProgressView().tint(DS.text); Text(preparingText(model)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
         case .failed(let message):
             VStack(spacing: DS.Space.s4) {
                 DSNotice(text: LocalizedStringKey(message), tone: .error)
@@ -304,8 +304,8 @@ struct PlayerScreen: View {
                 HStack(spacing: DS.Space.s3) {
                     DSIconButton(symbol: "chevron.down", label: "Cerrar") { Task { await close() } }
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(current.displayTitle).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
-                        if !current.episodeLabel.isEmpty { Text(current.episodeLabel).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1) }
+                        Text(current.displayTitle).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1)
+                        if !current.episodeLabel.isEmpty { Text(current.episodeLabel).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1) }
                     }
                     Spacer()
                     if model.skipIntroTo != nil { Button("Saltar intro") { Task { await model.skipIntro() } }.buttonStyle(.glass) }
@@ -348,9 +348,9 @@ struct PlayerScreen: View {
             }
             .tint(DS.primary)
             HStack {
-                Text(clock(shown)).font(DS.font(.xs)).foregroundStyle(DS.textMuted).monospacedDigit()
+                Text(clock(shown)).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).monospacedDigit()
                 Spacer()
-                Text("−\(clock(max(0, duration - shown)))").font(DS.font(.xs)).foregroundStyle(DS.textMuted).monospacedDigit()
+                Text("−\(clock(max(0, duration - shown)))").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).monospacedDigit()
             }
         }
     }
@@ -431,9 +431,9 @@ struct UpNextCard: View {
     var body: some View {
         VStack { Spacer(); HStack { Spacer()
             VStack(alignment: .leading, spacing: DS.Space.s2) {
-                Text("Siguiente episodio").font(DS.font(.xs)).foregroundStyle(DS.textMuted)
-                Text("\(card.label) · \(card.title)").font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(2)
-                if card.secondsLeft > 0 { Text("Empieza en \(card.secondsLeft) s").font(DS.font(.xs)).foregroundStyle(DS.textMuted) }
+                Text("Siguiente episodio").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted)
+                Text("\(card.label) · \(card.title)").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(2)
+                if card.secondsLeft > 0 { Text("Empieza en \(card.secondsLeft) s").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted) }
                 HStack(spacing: DS.Space.s2) {
                     Button("Ver ahora", action: watchNow).dsPrimaryButton()
                     Button("Cancelar", action: cancel).buttonStyle(.glass)
@@ -545,7 +545,7 @@ struct PlayerSources: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            Text("Otra fuente").font(DS.font(.xl, weight: .bold)).foregroundStyle(DS.text)
+            Text("Otra fuente").font(DS.TextRecipe.section.font.weight(.bold)).foregroundStyle(DS.text)
             ScrollView {
                 VStack(spacing: DS.Space.s2) {
                     ForEach(model.sourceChoices) { source in
@@ -553,8 +553,8 @@ struct PlayerSources: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                                     Text([source.resolution, source.languages.prefix(2).map { Streams.languageNames[$0] ?? $0 }.joined(separator: " + ")].filter { !$0.isEmpty }.joined(separator: " · "))
-                                        .font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text)
-                                    Text(source.release).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
+                                        .font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+                                    Text(source.release).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1)
                                 }
                                 Spacer()
                                 if source.index == model.source?.index { Image(systemName: "checkmark").foregroundStyle(DS.good) }

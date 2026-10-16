@@ -60,8 +60,9 @@ struct TitleLink: View {
         NavigationLink(value: route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterCard(title: route.title, poster: route.poster, badge: badge, rank: rank, progress: progress, width: width)
-                Text(route.title).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1).frame(width: width, alignment: .leading)
-                if let detail { detail.font(DS.font(.xs)).foregroundStyle(DS.textFaint).lineLimit(1).frame(width: width, alignment: .leading) }
+                    .titleZoomSource(route)
+                Text(route.title).recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading)
+                if let detail { detail.recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading) }
             }
         }
         .buttonStyle(.plain)
@@ -112,7 +113,7 @@ struct NowPlayingCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             Label(now.live ? "En la TV · En vivo" : "Viendo en la TV", systemImage: "tv")
-                .font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.textMuted)
+                .font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted)
             HStack(alignment: .center, spacing: DS.Space.s3) {
                 PosterView(url: now.poster, title: now.title, aspect: DS.Poster.aspect).frame(width: DS.Poster.nowPlayingWidth)
                 info
@@ -129,22 +130,22 @@ struct NowPlayingCard: View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             if now.live {
                 HStack(spacing: DS.Space.s1) {
-                    Text("●").font(DS.font(.xs)).foregroundStyle(DS.warning)
-                    Text("En vivo").font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.warning)
+                    Text("●").font(DS.TextRecipe.caption.font).foregroundStyle(DS.warning)
+                    Text("En vivo").font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.warning)
                 }
             }
-            Text(now.live ? (now.channel ?? now.title) : now.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
+            Text(now.live ? (now.channel ?? now.title) : now.title).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1)
             if now.live {
                 if let category = now.category, !category.isEmpty {
-                    Text(category).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1)
+                    Text(category).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(1)
                 }
             } else {
                 if !now.episodeLabel.isEmpty {
-                    Text(now.episodeLabel).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1)
+                    Text(now.episodeLabel).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(1)
                 }
                 TimelineView(.periodic(from: fetchedAt, by: DS.NowPlaying.progressTick)) { context in
                     let left = Int(max(0, now.duration - interpolatedPosition(at: context.date)) / 60)
-                    Text(timeLeftText(minutes: left)).font(DS.font(.xs)).foregroundStyle(DS.textFaint).lineLimit(1)
+                    Text(timeLeftText(minutes: left)).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint).lineLimit(1)
                 }
                 TimelineView(.periodic(from: fetchedAt, by: DS.NowPlaying.progressTick)) { context in
                     DSProgress(fraction: now.duration > 0 ? interpolatedPosition(at: context.date) / now.duration : 0)
@@ -231,13 +232,13 @@ struct FromTVCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             Label("Desde la TV", systemImage: "tv")
-                .font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.textMuted)
+                .font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted)
             HStack(alignment: .center, spacing: DS.Space.s3) {
                 PosterView(url: item.poster, title: item.title, aspect: DS.Poster.aspect).frame(width: DS.Poster.nowPlayingWidth)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text(item.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
+                    Text(item.title).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1)
                     if !item.episodeLabel.isEmpty {
-                        Text(item.episodeLabel).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1)
+                        Text(item.episodeLabel).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(1)
                     }
                 }
                 Spacer(minLength: 0)

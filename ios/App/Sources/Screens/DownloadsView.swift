@@ -49,7 +49,7 @@ struct DownloadsView: View {
         .scrollContentBackground(.hidden).background(Backdrop(tint: tint.color))
         .navigationTitle("Descargas").navigationBarTitleDisplayMode(.large)
         .navigationSubtitle(Text("Ocupan \(bytes(model.usedBytes)) · libres \(bytes(model.freeBytes))"))
-        .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
+        .titleDestinations()
         .task { await model.run() }
         .task(id: model.active.first?.metaID) { await tint.load(model.active.first.map { String(format: ForYou.metahubBackground, $0.metaID) }) }
     }

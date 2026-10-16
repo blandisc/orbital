@@ -75,6 +75,10 @@ public enum DesignTokens {
         public static let scrimStrong = 0.92, badge = 0.8, pressed = 0.8, disabled = 0.4, shrink = 0.85, subtitleShadow = 0.9
         /// El texto secundario sobre el velo del arte.
         public static let onArtSecondary = 0.82
+        /// Por debajo de esta luminancia media un logo se considera oscuro y se pinta claro sobre el arte.
+        public static let darkLogoLuminance = 0.3
+        /// …salvo que más de esta parte de sus píxeles tenga color (es un logo de color, no uno negro).
+        public static let colorfulLogoShare = 0.08
     }
     /// Subtítulos sobre el video: letra mínima, cuánto suben con los controles a la vista, espacio entre líneas
     /// (fracción de la letra), margen con el borde del video (fracción de su alto), sombra y contorno (fracción

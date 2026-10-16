@@ -14,8 +14,8 @@ extension Text {
 extension DS.TextRecipe {
     var defaultColor: Color {
         switch self {
-        case .section, .cardTitle, .body: DS.text
-        case .secondary, .footnote, .eyebrow, .data: DS.textMuted
+        case .display, .title, .section, .cardTitle, .body: DS.text
+        case .secondary, .footnote, .caption, .eyebrow, .data: DS.textMuted
         }
     }
 }
@@ -246,4 +246,45 @@ extension View {
     @ViewBuilder func bottomAccessory<Content: View>(isEnabled: Bool, @ViewBuilder content: @escaping () -> Content) -> some View {
         if #available(iOS 26.1, *) { tabViewBottomAccessory(isEnabled: isEnabled, content: content) } else { self }
     }
+}
+
+// MARK: Póster → ficha con la transición de zoom nativa
+
+private struct TitleZoomKey: EnvironmentKey { static let defaultValue: Namespace.ID? = nil }
+
+extension EnvironmentValues {
+    /// El espacio de la transición de zoom de la pantalla (lo pone `titleDestinations()`).
+    var titleZoom: Namespace.ID? {
+        get { self[TitleZoomKey.self] }
+        set { self[TitleZoomKey.self] = newValue }
+    }
+}
+
+/// La receta de cada pantalla que abre fichas: la navegación a `TitleRoute` y el zoom desde el póster que se tocó.
+private struct TitleDestinations: ViewModifier {
+    @Namespace private var zoom
+
+    func body(content: Content) -> some View {
+        content
+            .environment(\.titleZoom, zoom)
+            .navigationDestination(for: TitleRoute.self) { route in
+                TitleView(route: route).navigationTransition(.zoom(sourceID: route, in: zoom))
+            }
+    }
+}
+
+private struct TitleZoomSource: ViewModifier {
+    let route: TitleRoute
+    @Environment(\.titleZoom) private var zoom
+
+    func body(content: Content) -> some View {
+        if let zoom { content.matchedTransitionSource(id: route, in: zoom) } else { content }
+    }
+}
+
+extension View {
+    /// Abre fichas desde esta pantalla, con zoom desde el póster.
+    func titleDestinations() -> some View { modifier(TitleDestinations()) }
+    /// Este póster es el origen del zoom al abrir su ficha.
+    func titleZoomSource(_ route: TitleRoute) -> some View { modifier(TitleZoomSource(route: route)) }
 }

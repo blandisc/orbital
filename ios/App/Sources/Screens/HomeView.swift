@@ -68,7 +68,7 @@ struct HomeView: View {
         .navigationTitle(greeting).navigationBarTitleDisplayMode(.large)
         .navigationSubtitle(syncText)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { NavigationLink(value: SettingsRoute()) { Image(systemName: "person.crop.circle") }.accessibilityLabel(Text("Ajustes")) } }
-        .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
+        .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
         .task { await reload() }

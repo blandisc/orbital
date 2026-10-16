@@ -41,7 +41,7 @@ struct Shelf<Content: View>: View {
     private func headerRow(chevron: Bool) -> some View {
         HStack(spacing: DS.Space.s3) {
             if let logo, !logo.isEmpty { DSPlatformLogo(url: logo) }
-            else if let symbol { Image(systemName: symbol).font(DS.font(.md)).foregroundStyle(DS.textMuted).frame(width: DS.Space.s6).accessibilityHidden(true) }
+            else if let symbol { Image(systemName: symbol).font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted).frame(width: DS.Space.s6).accessibilityHidden(true) }
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
                 if let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }

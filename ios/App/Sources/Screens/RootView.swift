@@ -34,6 +34,7 @@ struct RootView: View {
         }
         .background(DS.bg.ignoresSafeArea())
         .fullScreenCover(item: $env.playing) { request in PlayerScreen(request: request) }
+        .sensoryFeedback(.impact(flexibility: .soft), trigger: env.playing?.id)   // empieza la función: un toque suave
         .alert("¿Terminaste de verlo?", isPresented: Binding(get: { env.askFinished != nil }, set: { if !$0 { env.askFinished = nil } })) {
             Button("Sí, marcar como visto") { if let r = env.askFinished { Task { await env.confirmFinished(r) } } }
             Button("No", role: .cancel) { env.askFinished = nil }

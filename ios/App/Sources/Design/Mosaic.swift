@@ -436,7 +436,7 @@ private struct MosaicTileCell: View {
                     ViewThatFits(in: .horizontal) {   // si no cabe, se quitan partes del medio antes de cortar
                         ForEach(Array(factVariants(tile.item).enumerated()), id: \.offset) { _, text in text.lineLimit(1).fixedSize(horizontal: true, vertical: false) }
                     }
-                    .font(DS.font(.sm)).foregroundStyle(DS.textMuted)
+                    .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
                 }
                 .padding(DS.Space.s5)
             }
@@ -450,7 +450,7 @@ private struct MosaicTileCell: View {
     }
 
     private var kindIcon: some View {
-        Image(systemName: tile.item.kind == "movie" ? "film" : "tv").font(DS.font(.xs, weight: .semibold))
+        Image(systemName: tile.item.kind == "movie" ? "film" : "tv").font(DS.TextRecipe.caption.font.weight(.semibold))
             .foregroundStyle(focused ? DS.onPrimary : DS.text)
             .padding(DS.Space.s1)
             // Sin enfoque, solo el glifo con una sombra suave (con 20 piezas a la vista una caja en cada una domina).

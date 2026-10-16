@@ -18,8 +18,8 @@ struct SourcesSheet: View {
     var body: some View {
         let model = observer.model
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            Text("Fuentes de Real-Debrid").font(DS.font(.xl, weight: .bold)).foregroundStyle(DS.text)
-            Text("La recomendada está arriba.").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
+            Text("Fuentes de Real-Debrid").font(DS.TextRecipe.section.font.weight(.bold)).foregroundStyle(DS.text)
+            Text("La recomendada está arriba.").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
             DSSegmented(options: [(Purpose.watch, "Ver"), (.download, "Descargar")], selection: $purpose)
             ScrollView {
                 VStack(spacing: DS.Space.s2) {
@@ -30,7 +30,7 @@ struct SourcesSheet: View {
                     }
                 }
             }
-            if env.connectivity.isCellular { Text("Con datos móviles te avisamos antes de usar fuentes de más de 5 GB.").font(DS.font(.xs)).foregroundStyle(DS.textFaint) }
+            if env.connectivity.isCellular { Text("Con datos móviles te avisamos antes de usar fuentes de más de 5 GB.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint) }
         }
         .padding(DS.Space.s4)
         .task(id: purpose) { await model.load(purpose, onCellular: env.connectivity.isCellular) }
@@ -44,7 +44,7 @@ struct SourceRowView: View {
     var body: some View {
         HStack(alignment: .top, spacing: DS.Space.s3) {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
-                Text(row.headline).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(2)
+                Text(row.headline).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(2)
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: DS.Space.s1) {
                         if row.recommended { DSChip(text: "Recomendada", tone: .good) }

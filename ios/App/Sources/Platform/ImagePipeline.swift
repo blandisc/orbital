@@ -116,7 +116,10 @@ final class ImagePipeline: @unchecked Sendable {
     /// Los bytes de una URL: del disco sin hacer fila; de la red con una sola descarga por URL.
     private func data(_ url: URL) async -> Data? {
         let request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad)
-        if let stored = cache.cachedResponse(for: request) { return stored.data }
+        // Solo una respuesta buena con contenido: el caché también guarda las redirecciones (las miniaturas de episodio de
+        // metahub mandan un 301 a TMDB) y ese 301 vacío no es la imagen.
+        if let stored = cache.cachedResponse(for: request), !stored.data.isEmpty,
+           ((stored.response as? HTTPURLResponse)?.statusCode ?? 200) < 300 { return stored.data }
         let job: Shared<Data?> = lock.withLock {
             if let existing = downloads[url] { existing.waiters += 1; return existing }
             let fresh = Shared<Data?>()

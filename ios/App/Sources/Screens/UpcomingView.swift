@@ -43,7 +43,7 @@ struct UpcomingView: View {
         }
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             DayHeading(day: selected.day)
-            if selected.airings.isEmpty { Text("Nada este día").font(DS.font(.sm)).foregroundStyle(DS.textMuted) }
+            if selected.airings.isEmpty { Text("Nada este día").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
             ForEach(selected.airings) { AiringRow(airing: $0) }
         }
         .padding(.horizontal, DS.Space.gutter)
@@ -57,8 +57,8 @@ struct DayHeading: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
-            dayName(day, locale: locale).font(DS.font(.lg, weight: .bold)).foregroundStyle(DS.text)
-            Text(verbatim: day.formatted(.dateTime.weekday(.wide).day().locale(locale))).font(DS.font(.sm)).foregroundStyle(DS.textMuted)
+            dayName(day, locale: locale).font(DS.TextRecipe.cardTitle.font.weight(.bold)).foregroundStyle(DS.text)
+            Text(verbatim: day.formatted(.dateTime.weekday(.wide).day().locale(locale))).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
         }
         .accessibilityElement(children: .combine).accessibilityAddTraits(.isHeader)
     }
@@ -89,8 +89,8 @@ struct DayPill: View {
                     if Calendar.current.isDateInToday(day.day) { Text("Hoy") }
                     else { Text(verbatim: day.day.formatted(.dateTime.weekday(.abbreviated).locale(locale))) }
                 }
-                .font(DS.font(.xs, weight: .semibold))
-                Text(verbatim: day.day.formatted(.dateTime.day().locale(locale))).font(DS.font(.lg, weight: .bold))
+                .font(DS.TextRecipe.caption.font.weight(.semibold))
+                Text(verbatim: day.day.formatted(.dateTime.day().locale(locale))).font(DS.TextRecipe.cardTitle.font.weight(.bold))
                 Circle().fill(day.airings.isEmpty ? Color.clear : (selected ? DS.onPrimary : DS.text)).frame(width: DS.Space.s1, height: DS.Space.s1)
             }
             .frame(minWidth: DS.Size.touchTarget).padding(.vertical, DS.Space.s2).padding(.horizontal, DS.Space.s1)
@@ -117,10 +117,10 @@ struct AiringRow: View {
                 }
                 .frame(width: DS.Poster.episodeThumbWidth)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text(verbatim: airing.series.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(2)
-                    when.font(DS.font(.sm)).foregroundStyle(DS.text).lineLimit(1)
+                    Text(verbatim: airing.series.title).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(2)
+                    when.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.text).lineLimit(1)
                     Text(verbatim: [airing.episodeLabel, airing.count > 1 ? nil : airing.episodeTitle].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
-                        .font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
+                        .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1)
                 }
                 Spacer(minLength: 0)
             }
@@ -144,9 +144,9 @@ struct AiringCard: View {
         NavigationLink(value: airing.series.route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterView(url: airing.series.wide, title: airing.series.title, aspect: DS.Poster.stillAspect)
-                Text(verbatim: airing.series.title).font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
+                Text(verbatim: airing.series.title).font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1)
                 (dayName(airing.day, locale: locale) + Text(verbatim: " · \(airing.episodeLabel)"))
-                    .font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
+                    .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1)
             }
             .frame(width: DS.Poster.episodeThumbWidth * 1.4)
         }

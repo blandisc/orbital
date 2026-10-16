@@ -17,7 +17,7 @@ struct DSChip: View {
     init(verbatim: String, tone: Tone = .normal) { label = Text(verbatim: verbatim); self.tone = tone }
 
     var body: some View {
-        label.font(DS.font(.xs)).lineLimit(1).fixedSize()
+        label.font(DS.TextRecipe.caption.font).lineLimit(1).fixedSize()
             .foregroundStyle(color)
             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
             .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
@@ -37,7 +37,7 @@ struct DSChipText: View {
 struct DSBadge: View {
     let text: LocalizedStringKey
     var body: some View {
-        Text(text).font(DS.font(.xs, weight: .semibold)).lineLimit(1).foregroundStyle(DS.text)
+        Text(text).font(DS.TextRecipe.caption.font.weight(.semibold)).lineLimit(1).foregroundStyle(DS.text)
             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
             .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
     }
@@ -48,7 +48,7 @@ struct DSBadge: View {
 struct DSRankBadge: View {
     let rank: Int
     var body: some View {
-        Text(verbatim: "\(rank)").font(DS.font(.xl, weight: .bold)).foregroundStyle(DS.text).lineLimit(1)
+        Text(verbatim: "\(rank)").font(DS.TextRecipe.section.font.weight(.bold)).foregroundStyle(DS.text).lineLimit(1)
             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
             .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.md))
             .accessibilityLabel(Text("Puesto \(rank)"))
@@ -101,8 +101,8 @@ struct DSSectionHead: View {
             Text(title).recipe(.section)
             Spacer()
             if let trailing {
-                if let action { Button(action: action) { Text(trailing) }.font(DS.font(.sm)).foregroundStyle(DS.textMuted) }
-                else { Text(trailing).font(DS.font(.sm)).foregroundStyle(DS.textMuted) }
+                if let action { Button(action: action) { Text(trailing) }.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
+                else { Text(trailing).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
             }
         }
         .accessibilityAddTraits(.isHeader)
@@ -188,7 +188,7 @@ struct PosterView: View {
     }
 
     private var placeholder: some View {
-        Text(title).font(DS.font(.sm, weight: .semibold)).foregroundStyle(DS.textMuted).multilineTextAlignment(.leading)
+        Text(title).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted).multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading).padding(DS.Space.s2)
     }
 }
@@ -261,19 +261,22 @@ struct TitleLogo: View {
     let title: String
     var size: Size = .tile
     var dark = false
+    /// Si el logo resultó oscuro al medirlo (un logo negro sobre la sala oscura no se lee): se pinta claro.
+    @State private var measuredDark = false
 
     var body: some View {
         Group {
             if let url, let u = URL(string: url) {
                 RemoteImage(url: u, maxPoints: DS.Image.logo) { phase in
                     switch phase {
-                    case .success(let image): image.resizable().scaledToFit().brightness(dark ? 1 : 0)
+                    case .success(let image): image.resizable().scaledToFit().brightness(dark || measuredDark ? 1 : 0)
                     case .failure: name
                     default: name.hidden()     // mientras carga guarda el sitio del nombre: no brinca si el logo llega
                     }
                 }
                 .frame(maxWidth: DS.Size.cardMax, maxHeight: height, alignment: .leading)
                 .shadow(color: DS.scrim, radius: DS.Space.s1)
+                .task(id: url) { measuredDark = await LogoTone.isDark(u) }
             } else { name }
         }
         .accessibilityLabel(Text(title))
@@ -283,7 +286,7 @@ struct TitleLogo: View {
 
     private var name: some View {
         // En una pieza, una sola línea (con puntos suspensivos si no cabe): en una columna angosta dos líneas se encimaban con el dato.
-        Text(title).font(DS.font(size == .hero ? .xl : .lg, weight: .bold)).foregroundStyle(DS.text)
+        Text(title).font((size == .hero ? DS.TextRecipe.section : DS.TextRecipe.cardTitle).font.weight(.bold)).foregroundStyle(DS.text)
             .lineLimit(size == .hero ? 2 : 1).frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -329,8 +332,8 @@ struct RowTile: View {
             }
             .frame(width: DS.Poster.episodeThumbWidth)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(2)
-                if !detail.isEmpty { Text(detail).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(2) }
+                Text(title).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(2)
+                if !detail.isEmpty { Text(detail).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(2) }
             }
             Spacer(minLength: 0)
         }
@@ -374,7 +377,7 @@ struct DSNotice: View {
     var body: some View {
         HStack(spacing: DS.Space.s2) {
             Image(systemName: symbol)
-            Text(text).font(DS.font(.sm)).multilineTextAlignment(.leading)
+            Text(text).font(DS.TextRecipe.footnote.font).multilineTextAlignment(.leading)
             Spacer(minLength: 0)
         }
         .foregroundStyle(color)
@@ -454,13 +457,13 @@ struct DSGestureIndicator: View {
 
     var body: some View {
         VStack(spacing: DS.Space.s2) {
-            Image(systemName: symbol).font(DS.font(.md)).foregroundStyle(DS.text)
+            Image(systemName: symbol).font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
             ZStack(alignment: .bottom) {
                 Capsule().fill(DS.track)
                 Capsule().fill(DS.primary).frame(height: DS.Gesture.indicatorBarHeight * min(1, max(0, value)))
             }
             .frame(width: DS.Gesture.indicatorBarWidth, height: DS.Gesture.indicatorBarHeight)
-            Text("\(Int((value * 100).rounded())) %").font(DS.font(.xs)).foregroundStyle(DS.textMuted).monospacedDigit()
+            Text("\(Int((value * 100).rounded())) %").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).monospacedDigit()
         }
         .padding(.vertical, DS.Space.s4).padding(.horizontal, DS.Space.s3)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl))
@@ -475,8 +478,8 @@ struct DSSeekBubble: View {
 
     var body: some View {
         VStack(spacing: DS.Space.s1) {
-            Text(time).font(DS.font(.xl, weight: .bold)).foregroundStyle(DS.text).monospacedDigit()
-            Text(delta).font(DS.font(.sm)).foregroundStyle(DS.textMuted).monospacedDigit()
+            Text(time).font(DS.TextRecipe.section.font.weight(.bold)).foregroundStyle(DS.text).monospacedDigit()
+            Text(delta).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).monospacedDigit()
         }
         .padding(.horizontal, DS.Space.s5).padding(.vertical, DS.Space.s3)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
@@ -487,7 +490,7 @@ struct DSSeekBubble: View {
 /// La píldora «2×» mientras mantienes el dedo (como YouTube/Infuse): sobre vidrio, arriba al centro.
 struct DSSpeedPill: View {
     var body: some View {
-        Text(verbatim: "2×").font(DS.font(.md, weight: .bold)).foregroundStyle(DS.text)
+        Text(verbatim: "2×").font(DS.TextRecipe.secondary.font.weight(.bold)).foregroundStyle(DS.text)
             .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
             .glassEffect(.regular, in: Capsule())
             .accessibilityHidden(true)
@@ -543,7 +546,45 @@ final class ArtTint: ObservableObject {
     }
 }
 
+/// ¿Es oscuro un logo? Su color medio pesado por la opacidad (los logos son PNG con fondo transparente), de una miniatura.
+/// Se recuerda por URL.
+@MainActor
+enum LogoTone {
+    private static var cache: [URL: Bool] = [:]
+
+    static func isDark(_ url: URL) async -> Bool {
+        if let hit = cache[url] { return hit }
+        guard let thumb = await ImagePipeline.shared.image(url, maxPixel: DS.Image.tintPixels),
+              let tone = await Task.detached(priority: .utility, operation: { thumb.opaqueTone }).value else { return false }
+        // Oscuro y sin color (un logo negro): se pinta claro. Con color (el anillo de Dune) se respeta tal cual.
+        let dark = tone.luminance < DesignTokens.Opacity.darkLogoLuminance && tone.colorful < DesignTokens.Opacity.colorfulLogoShare
+        cache[url] = dark
+        return dark
+    }
+}
+
 extension UIImage {
+    /// La luminancia media de los píxeles visibles (0…1, sin contar los transparentes) y qué parte de ellos tiene color;
+    /// nil si no hay nada visible.
+    var opaqueTone: (luminance: Double, colorful: Double)? {
+        guard let cg = cgImage else { return nil }
+        let w = cg.width, h = cg.height
+        var pixels = [UInt8](repeating: 0, count: w * h * 4)
+        guard let context = CGContext(data: &pixels, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+        var sum = 0.0, weight = 0.0, colorful = 0.0
+        for i in stride(from: 0, to: pixels.count, by: 4) {
+            let a = Double(pixels[i + 3]) / 255
+            guard a > 0.1 else { continue }
+            let r = Double(pixels[i]) / 255 / a, g = Double(pixels[i + 1]) / 255 / a, b = Double(pixels[i + 2]) / 255 / a
+            sum += (0.2126 * r + 0.7152 * g + 0.0722 * b) * a; weight += a
+            if max(r, g, b) - min(r, g, b) > 0.25 { colorful += a }
+        }
+        return weight > 0 ? (sum / weight, colorful / weight) : nil
+    }
+
+
     /// El color promedio, con un filtro de Core Image (1 píxel).
     var averageColor: UIColor? {
         guard let input = CIImage(image: self) else { return nil }

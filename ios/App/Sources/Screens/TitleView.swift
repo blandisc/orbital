@@ -30,7 +30,7 @@ struct TitleView: View {
                     if let message = model.message { DSNotice(text: LocalizedStringKey(message), tone: .error) }
                     if model.traktAvailable { watchlistToggle(model) }
                     if let error = model.error, model.overview.isEmpty { DSNotice(text: LocalizedStringKey(error), tone: .warn) }
-                    if !model.overview.isEmpty { Text(model.overview).font(DS.font(.md)).foregroundStyle(DS.textMuted) }
+                    if !model.overview.isEmpty { Text(model.overview).font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted) }
                     if model.kind == "series" { episodes(model) }
                     credits(model)
                 }
@@ -147,7 +147,7 @@ struct TitleView: View {
         Toggle(isOn: Binding(get: { model.inWatchlist }, set: { _ in Task { await model.toggleWatchlist() } })) {
             Label("En tu watchlist de Trakt", systemImage: "bookmark")
         }
-        .font(DS.font(.md)).foregroundStyle(DS.text)
+        .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
         .padding(DS.Space.s3).background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
         .sensoryFeedback(.success, trigger: model.inWatchlist)
     }
@@ -187,8 +187,8 @@ struct TitleView: View {
 
     private func creditLine(_ title: LocalizedStringKey, _ names: [String]) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
-            Text(title).font(DS.font(.xs)).foregroundStyle(DS.textFaint)
-            Text(names.joined(separator: ", ")).font(DS.font(.sm)).foregroundStyle(DS.textMuted)
+            Text(title).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
+            Text(names.joined(separator: ", ")).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
         }
     }
 
@@ -246,9 +246,9 @@ struct EpisodeRowView: View {
                     }
                     .frame(width: DS.Poster.episodeThumbWidth, height: DS.Poster.episodeThumbWidth / DS.Poster.stillAspect).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        (row.hasTitle ? Text("\(row.number) · \(row.title)") : Text("Episodio \(row.number)")).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(2)
-                        if hasStatus { status.font(DS.font(.xs)).foregroundStyle(DS.textMuted) }
-                        if !row.overview.isEmpty { Text(row.overview).font(DS.font(.xs)).foregroundStyle(DS.textFaint).lineLimit(2) }
+                        (row.hasTitle ? Text("\(row.number) · \(row.title)") : Text("Episodio \(row.number)")).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(2)
+                        if hasStatus { status.font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted) }
+                        if !row.overview.isEmpty { Text(row.overview).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint).lineLimit(2) }
                     }
                     Spacer(minLength: 0)
                 }

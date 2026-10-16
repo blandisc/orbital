@@ -34,7 +34,7 @@ struct BrowseView: View {
         .background(Backdrop())
         .navigationTitle("Buscar").navigationBarTitleDisplayMode(.large)
         .searchable(text: $query, prompt: Text("Películas y series"))
-        .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
+        .titleDestinations()
         .navigationDestination(for: GenreRoute.self) { GenreView(genre: $0.genre, model: catalog.model) }
         .task(id: query) {
             try? await Task.sleep(nanoseconds: DS.Timing.searchDebounce)    // espera a que termines de escribir
