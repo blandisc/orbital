@@ -132,8 +132,10 @@ public final class ParaTiModel: ObservableModel {
         error = mosaic.isEmpty && lists.isEmpty ? "Tu Orbital no tiene sugerencias todavía." : nil
         async let shelvesLoaded: Void = loadShelves()
         watchlistKeys = await fetchedKeys ?? []
-        airings = await fetchedAirings ?? []
-        services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno» también con la consola
+        if let fetched = await fetchedAirings, !Task.isCancelled {
+            airings = fetched
+            services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno» también con la consola
+        }
         await shelvesLoaded
         await topUpMosaic()
         return true
@@ -158,8 +160,10 @@ public final class ParaTiModel: ObservableModel {
         async let shelvesLoaded: Void = loadShelves()
         traktLinked = await linked
         watchlistKeys = await keys
-        airings = await newAirings ?? []
-        services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno»
+        if let fetched = await newAirings, !Task.isCancelled {   // sin respuesta (o cancelado), el widget conserva lo que tenía
+            airings = fetched
+            services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno»
+        }
         if mosaic.isEmpty && lists.isEmpty { error = services.appSettings.traktEnabled ? nil : "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias." }
         else { error = nil }
         await shelvesLoaded
@@ -197,18 +201,19 @@ public final class ParaTiModel: ObservableModel {
         guard !wanted.isEmpty else { return }
         loadingKeys.formUnion(wanted.map(\.key))
         let remote = services.forYouRemote, local = services.forYou, source = source, kind = kind
-        await withTaskGroup(of: (String, [Suggestion]).self) { group in
+        await withTaskGroup(of: (String, [Suggestion]?).self) { group in
             for entry in wanted {
                 group.addTask {
                     switch source {
-                    case .console: return (entry.key, (try? await remote.items(listID: entry.listID, kind: kind)) ?? [])
-                    case .phone: return (entry.key, (try? await local.items(listID: entry.listID, kind: kind)) ?? [])
+                    case .console: return (entry.key, try? await remote.items(listID: entry.listID, kind: kind))
+                    case .phone: return (entry.key, try? await local.items(listID: entry.listID, kind: kind))
                     }
                 }
             }
             for await (k, found) in group {
-                railItems[k] = found
                 loadingKeys.remove(k)
+                // Si falló o se canceló (te fuiste a mitad de la carga), no se guarda vacío: la próxima carga lo vuelve a pedir.
+                if let found, !Task.isCancelled { railItems[k] = found }
             }
         }
     }

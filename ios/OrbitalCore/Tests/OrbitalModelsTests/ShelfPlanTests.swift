@@ -127,6 +127,20 @@ final class ShelfPlanTests: XCTestCase {
         XCTAssertEqual(chartList.source, "Netflix")
     }
 
+    func testAShelfThatFailedIsAskedAgainOnTheNextLoad() async throws {
+        let rig = try consoleRig()
+        let url = "https://tv.example/api/foryou/list?id=watchlist&kind=series"
+        let saved = rig.http.json[url]
+        rig.http.json[url] = nil   // la consola no contesta ese estante (404)
+        let model = ParaTiModel(rig.services)
+        await model.load()
+        XCTAssertFalse(model.visibleShelves.contains { $0.id == "watchlist" })
+        rig.http.json[url] = saved
+        await model.load()
+        XCTAssertEqual(model.items(for: try XCTUnwrap(model.shelves.first { $0.id == "watchlist" })).map(\.imdb), ["tt3000001"],
+                       "un fallo no se guarda como estante vacío: la siguiente carga lo vuelve a pedir")
+    }
+
     func testEmptyFeedFallsBackToPopularAndInvitesToConnectSources() async throws {
         let rig = try ServicesRig()
         rig.http.json["https://v3-cinemeta.strem.io/catalog/series/top.json"] = ["metas": [["id": "tt0386676", "type": "series", "name": "The Office", "poster": "https://p/poster/small/1.jpg", "background": "https://b/1.jpg"]]]
