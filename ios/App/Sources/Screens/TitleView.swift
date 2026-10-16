@@ -109,7 +109,7 @@ struct TitleView: View {
         let label = model.continueLabel
         return VStack(spacing: DS.Space.s3) {
             Button { start(model, videoID: nil) } label: {
-                Label { primaryLabel(label, model).lineLimit(1) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
+                Label { primaryLabel(label, model).lineLimit(typeSize.isAccessibilitySize ? 2 : 1) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
             }
             .dsArtButton(tint.colors).controlSize(.large).disabled(model.continueVideoID == nil)   // el color del arte, como en la TV
             if let minutes = model.minutesToFinish {

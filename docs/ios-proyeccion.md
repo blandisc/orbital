@@ -81,6 +81,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `BleedArt` / `HeroCard` | Arte a sangre con rótulo, logo, `DataLine`, acciones y avance | Inicio (carrusel), Para ti › Listas, ficha |
 | `DataLine` | Datos en SF Mono; quita del final lo que no cabe | Destacados, ficha, descargas |
 | `Eyebrow` | Rótulo pequeño (acento o sobre el arte) | Destacados |
+| `HeroActions` | Las acciones de un destacado en un renglón; si no caben (letra grande, iPhone SE), apiladas | Inicio (carrusel), Para ti › Listas |
 | `ActionGrid` + `ProjectionAction` | Acciones secundarias iguales con ícono y nombre (se apilan con letra grande) | Ficha (Mi lista, Descargar, Fuentes) |
 | `StillCard` | Pieza 16:9 con avance, nombre y datos | «También tenías» |
 | `PageDots` | Puntos de un carrusel | Inicio |

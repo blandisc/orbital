@@ -256,7 +256,7 @@ final class AppEnvironment: ObservableObject {
         do {
             try await services.watch.setInLibrary(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster, add: true)
             notify("Agregada a tu lista.", tone: .success)
-        } catch { notify(format: "No pude cambiar tu lista de Stremio: %@", "\(error)") }
+        } catch { notify(format: "No pude cambiar tu lista de Stremio: %@", message("\(error)")) }   // la causa, también traducida
     }
 
     /// «Descargar» desde Para ti (la fuente recomendada).
@@ -272,7 +272,7 @@ final class AppEnvironment: ObservableObject {
 
     /// «Ver» en la tarjeta «Desde la TV»: lo mismo, con lo que mandó la consola.
     func play(_ item: OrbitalRemote.InboxItem) async {
-        await play(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title, originalTitle: item.title, episodeLabel: item.episodeLabel, poster: item.poster)
+        await play(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title, originalTitle: item.title, episodeLabel: services.tvEpisodeLabel(item.episodeLabel), poster: item.poster)
     }
 
     private func play(kind: String, metaID: String, videoID: String?, title: String, originalTitle: String, episodeLabel: String, poster: String?) async {

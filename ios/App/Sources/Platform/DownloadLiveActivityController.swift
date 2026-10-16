@@ -12,6 +12,11 @@ final class DownloadLiveActivityController {
     var language: () -> String = { "es" }
 
     func follow(_ downloads: Downloads) async {
+        // Si iOS cerró la app con una actividad viva (las descargas siguen en segundo plano), se retoma esa en vez de
+        // pedir otra; las de más se terminan. Sin esto, la vieja se quedaba en la pantalla bloqueada con el avance congelado.
+        let running = Activity<DownloadActivityAttributes>.activities
+        activity = running.first
+        for extra in running.dropFirst() { await extra.end(nil, dismissalPolicy: .immediate) }
         for await items in downloads.makeUpdates() { await update(items) }
     }
 
