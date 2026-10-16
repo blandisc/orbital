@@ -183,8 +183,17 @@ def send_to_phone(watch, config, action: str, kind: str, meta_id: str, video_id:
         video_id = video_id or meta_id
     item = {"id": uuid.uuid4().hex[:12], "kind": kind, "meta_id": meta_id, "video_id": video_id,
             "title": details.get("title") or "", "episode_label": label, "poster": details.get("poster"),
-            "action": action, "at": int(time.time())}
+            "action": action, "at": int(time.time()), **episode_numbers(video_id if kind == "series" else None)}
     return watch.state.inbox_add(item, INBOX_LIMIT)
+
+
+def episode_numbers(video_id: str | None) -> dict:
+    """`season` y `episode` como números (0 = especiales) para que el iPhone arme «T2 E5» en su idioma sin leer la
+    etiqueta; de un video de Cinemeta («tt0386676:2:5»). Sin episodio: los dos en None."""
+    parts = (video_id or "").split(":")
+    if len(parts) >= 3 and parts[-2].isdigit() and parts[-1].isdigit():
+        return {"season": int(parts[-2]), "episode": int(parts[-1])}
+    return {"season": None, "episode": None}
 
 
 def _first_episode(details: dict) -> str | None:

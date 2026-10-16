@@ -123,6 +123,7 @@ def test_now_playing_describes_a_movie(library):
 def test_now_playing_formats_the_episode_label(library):
     _play_episode(library)
     assert companion.now_playing(library)["episode_label"] == "T1 · E1"
+    assert (companion.now_playing(library)["season"], companion.now_playing(library)["episode"]) == (1, 1)  # números para el iPhone
 
 
 def test_now_playing_live_channel_has_no_progress(library):
@@ -288,6 +289,7 @@ def test_send_queues_the_episode_that_follows_with_its_label():
     watch = FakeWatch(State(), OFFICE)
     item = _send(watch)
     assert (item["title"], item["episode_label"], item["video_id"], item["action"]) == ("The Office", "T2 · E5", "tt:2:5", "download")
+    assert (item["season"], item["episode"]) == (2, 5)
     assert item["poster"] == "http://p" and item["id"] and item["at"]
     assert _send(watch, "open", video_id="tt:1:1")["episode_label"] == "T1 · E1"
     assert [i["action"] for i in watch.state.inbox()] == ["download", "open"]
@@ -297,6 +299,7 @@ def test_a_movie_uses_its_own_id_and_has_no_episode():
     from orbital.state import State
     item = _send(FakeWatch(State()), "open", kind="movie", meta_id="tt9")
     assert (item["video_id"], item["episode_label"]) == ("tt9", "")
+    assert (item["season"], item["episode"]) == (None, None)
 
 
 def test_the_same_title_and_action_pending_is_not_repeated_but_another_action_is():
