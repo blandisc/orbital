@@ -39,9 +39,11 @@ ALEXA_SKILL_ID = _SETTINGS["skill_id"]
 TIMEOUT = 6  # s en TOTAL para hablar con la consola: Alexa corta a los ~8 s
 MAX_SPEECH = 600  # Alexa acepta hasta 8000 caracteres; nadie quiere oír tanto
 
-HELP = ("Puedes decir: abre Hollow Knight, pon Interstellar, sigue viendo, pausa, "
-        "adelanta cinco minutos, salta la intro, pon subtítulos en español, pon el capítulo cinco, "
-        "siguiente episodio o cierra el juego.")
+HELP = ("Puedes decir: abre Hollow Knight, quiero ver Interstellar, sigue viendo, pon el canal ADN 40, "
+        "qué sale hoy, pausa, adelanta cinco minutos, salta la intro o sube el volumen. "
+        "La lista completa está en la app de Orbital del iPhone, en Ajustes.")
+# Sin coincidencia: corto y con ejemplos de lo que sí se puede (la ayuda entera era demasiado larga para repetirla).
+FALLBACK = "No entendí eso. Prueba con: quiero ver Interstellar, pon la tele o qué sale hoy."
 # Intents de Amazon que se pueden decir con la skill abierta ("pausa", "continúa", "siguiente").
 BUILT_IN = {"AMAZON.PauseIntent": "PauseIntent", "AMAZON.ResumeIntent": "ResumeIntent",
             "AMAZON.NextIntent": "NextEpisodeIntent", "AMAZON.PreviousIntent": "PreviousEpisodeIntent"}
@@ -183,7 +185,7 @@ def _handle(event: dict) -> dict:
     if name in ("AMAZON.StopIntent", "AMAZON.CancelIntent"):
         return speak("Hasta luego.")
     if name == "AMAZON.FallbackIntent":
-        return speak("No entendí. " + HELP, end=False)
+        return speak(FALLBACK, end=False)
     if name == "AMAZON.NavigateHomeIntent":
         name, slots = "NavigateIntent", {"direction": "home"}
     elif name in BUILT_IN:

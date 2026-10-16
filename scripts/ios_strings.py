@@ -20,6 +20,9 @@ OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
     "Abrir en Infuse": "Open in Infuse", "Abrir siempre en Infuse": "Always open in Infuse", "Adelantar 10 segundos": "Forward 10 seconds",
+    "Alexa": "Alexa", "Qué le puedes decir a Alexa": "What you can say to Alexa", "Cómo pedírselo": "How to ask", "Buscar una frase": "Search a phrase",
+    "Copiar": "Copy", "Si Alexa dice que no puede, empieza con «pídele a mi consola que…»: sin eso, Alexa intenta hacerlo ella sola.":
+        "If Alexa says she can't, start with “pídele a mi consola que…” (ask my console to…): without it, Alexa tries to do it herself.",
     "Próximos estrenos": "Upcoming episodes", "Por día": "By day", "Semana": "Week", "Hoy": "Today", "Mañana": "Tomorrow",
     "Sale hoy": "Out today", "Desde la madrugada": "Overnight", "Nada este día": "Nothing this day",
     "No sale nada en los próximos 14 días de las series que sigues.": "Nothing comes out in the next 14 days from the shows you follow.",

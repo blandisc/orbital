@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import math
 import re
+import threading
 import time
 from dataclasses import dataclass, field
 
@@ -23,7 +24,14 @@ DIRECTIONS = {
 
 
 SECTIONS = {"juegos": "games", "peliculas": "media", "series": "media", "peliculas y series": "media",
-            "apps": "apps", "aplicaciones": "apps", "games": "games", "media": "media"}
+            "apps": "apps", "aplicaciones": "apps", "games": "games", "media": "media",
+            "mis juegos": "games", "para ti": "foryou", "recomendaciones": "foryou", "sugerencias": "foryou", "foryou": "foryou",
+            "tv en vivo": "tv", "tele en vivo": "tv", "television en vivo": "tv", "la tele": "tv", "tele": "tv", "television": "tv",
+            "la television": "tv", "canales": "tv", "los canales": "tv", "tv": "tv"}
+SECTION_NAMES = {"games": "Juegos", "media": "Películas y series", "apps": "Apps", "foryou": "Para ti", "tv": "la TV en vivo"}
+CHANNEL_NEXT = {"next", "siguiente", "sube", "suba", "adelante", "otro"}
+CHANNEL_PREVIOUS = {"previous", "anterior", "baja", "baje", "atras", "el anterior"}
+QUICK_LOOKUP = 3.5  # s: Alexa corta a los ~8 s; si Trakt tarda, se enseña en pantalla y se dice que ahí está
 
 LANGUAGES = {
     "ingles": "en", "english": "en", "en": "en",
@@ -35,7 +43,7 @@ LANGUAGE_NAMES = {"en": "inglés", "es": "español", "fr": "francés", "pt": "po
                   "de": "alemán", "ja": "japonés", "ko": "coreano"}
 VAGUE_MEDIA = {"una pelicula", "una serie", "algo", "peliculas", "series", "una peli", "pelis", "algo bueno",
                "una telenovela", "una novela", "telenovelas", "novelas", "una caricatura", "caricaturas",
-               "un documental", "documentales", "algo de ver", "algo para ver", "la tele"}
+               "un documental", "documentales", "algo de ver", "algo para ver"}
 # «Pon la novela», «pon mi serie»: lo que estabas viendo (antes: «No encontré la telenovela en tu biblioteca»).
 THE_USUAL = {"la telenovela", "la novela", "mi novela", "mi telenovela", "mi serie", "la serie", "lo que estaba viendo",
              "lo que estabamos viendo", "lo de siempre", "mi pelicula", "la pelicula que estaba viendo"}
@@ -61,6 +69,29 @@ def spoken_number(value) -> float | None:
 
 SEEK_BACK = {"back", "regresa", "regrese", "retrocede", "retroceda", "atrasa", "atrase", "atras"}
 CLOUD = re.compile(r"\s+(?:en|desde)\s+(?:la\s+nube|geforce(?:\s+now)?|gfn)$")
+
+
+def spoken_list(names: list[str]) -> str:
+    """["Andor", "Silo", "The Bear"] → «Andor, Silo y The Bear»."""
+    names = [n for n in names if n]
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " y " + names[-1] if names else ""
+
+
+def upcoming_speech(items: list[dict], limit: int = 3) -> str:
+    """Los estrenos dichos por día: «Hoy sale Severance a las 20:00. Mañana: Andor y Silo, desde la madrugada.»"""
+    days: dict[str, list[dict]] = {}
+    for item in items:
+        days.setdefault(item.get("day_label") or "", []).append(item)
+    parts = []
+    for label, group in list(days.items())[:limit]:
+        names = [g["title"] for g in group[:4]]
+        times = {g.get("time") for g in group}
+        when = "" if len(times) != 1 else (", desde la madrugada" if times == {"Desde la madrugada"} else f" a las {group[0]['time']}")
+        if label == "Hoy":
+            parts.append(f"Hoy {'sale' if len(names) == 1 else 'salen'} {spoken_list(names)}{when}.")
+        else:
+            parts.append(f"{label}: {spoken_list(names)}{when}.")
+    return " ".join(parts)
 
 
 @dataclass
@@ -180,10 +211,29 @@ _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
     (re.compile(r"^(?:cierra|cierre|quita|quite)\s+(?:el\s+video|la\s+pelicula|la\s+serie|stremio)$"),
      "CloseGameIntent", None),
     (re.compile(r"^que\s+(?:estoy viendo|pelicula es esta|serie es esta|se esta reproduciendo)$"), "WhatsPlayingIntent", None),
+    # TV en vivo: «pon el canal ADN 40», «pon Azteca Uno en vivo», «siguiente canal», «pon la tele»
+    (re.compile(r"^(?:siguiente|el siguiente|otro)\s+canal$|^(?:cambia|cambie|sube|suba)\s+(?:de\s+|el\s+)?canal$"),
+     "ChannelStepIntent", None, {"step": "next"}),
+    (re.compile(r"^(?:el\s+)?canal\s+anterior$|^(?:regresa|regrese|baja|baje)\s+(?:de\s+|el\s+|al\s+)?canal(?:\s+anterior)?$"),
+     "ChannelStepIntent", None, {"step": "previous"}),
+    (re.compile(r"^(?:pon|ponga|sintoniza|sintonice|cambia a|cambie a|cambia al|cambie al|quiero ver)\s+(?:el\s+)?canal\s+(?P<v>.+)$"),
+     "LiveTvIntent", "channel"),
+    (re.compile(r"^(?:pon|ponga|sintoniza|sintonice|quiero ver)\s+(?P<v>.+?)\s+en\s+vivo$"), "LiveTvIntent", "channel"),
+    (re.compile(r"^(?:pon|ponga|abre|abra|quiero ver|prende|prenda)\s+(?:la\s+)?(?:tele|television|tv)(?:\s+en\s+vivo)?$"
+                r"|^(?:tele|television|tv)\s+en\s+vivo$"), "LiveTvIntent", None),
+    # Para ti: «qué sale hoy», «qué me recomiendas»
+    (re.compile(r"^(?:que|cuales)\s+(?:episodios\s+|estrenos\s+|capitulos\s+)?(?:sale|salen|se estrena|se estrenan|hay)\s+"
+                r"(?:hoy|esta semana|manana|de nuevo|nuevos?)$|^(?:que\s+)?(?:proximos\s+)?estrenos(?:\s+hay)?$"), "UpcomingIntent", None),
+    (re.compile(r"^(?:que|que me)\s+(?:recomiendas|sugieres)(?:\s+ver)?$|^(?:recomiendame|sugiereme|recomiendeme)\s+algo(?:\s+de\s+ver)?$"),
+     "RecommendIntent", None),
+    # Brillo de la pantalla
+    (re.compile(r"^(?P<brightness>sube|suba|subele|baja|baje|bajale)(?:\s+el)?\s+brillo(?:\s+a\s+(?P<level>\d+))?$"), "BrightnessIntent", None),
+    (re.compile(r"^(?:pon|ponga)\s+el\s+brillo\s+(?:en|a|al)\s+(?P<level>\d+)(?:\s+por\s*ciento)?$"), "BrightnessIntent", None),
     (re.compile(rf"^{_V['search']}\s+(?P<v>.+?)\s+en\s+stremio$"), "SearchMediaIntent", "query"),
     (re.compile(r"^(?:busca|busque|buscar)\s+(?P<v>.+)$"), "SearchMediaIntent", "query"),
     (re.compile(rf"^(?:{_V['go']}|{_V['move']}|{_V['open']})\s+(?:a\s+)?(?:la\s+seccion\s+de\s+|los\s+|las\s+|mis\s+)?"
-                r"(?P<direction>juegos|peliculas y series|peliculas|series|apps|aplicaciones)$"), "NavigateIntent", None),
+                r"(?P<direction>juegos|peliculas y series|peliculas|series|apps|aplicaciones|para ti|recomendaciones|tv en vivo|tele en vivo)$"),
+     "NavigateIntent", None),
     (re.compile(rf"^{_V['continue']}(?:\s+viendo)?(?:\s+(?P<v>.+))?$"), "ContinueWatchingIntent", "show"),
     # "quiero ver dune", "reproduce the office": como en Alexa.
     (re.compile(r"^(?:quiero ver|reproduce|reproduzca|reproducir)\s+(?P<v>.+)$"), "SearchMediaIntent", "query"),
@@ -204,7 +254,7 @@ _EPISODE_ONLY = [
 ]
 
 
-NUMERIC = {"VolumeIntent", "SeekIntent", "PlayEpisodeIntent"}  # «pon el volumen a cincuenta»: el número en palabras
+NUMERIC = {"VolumeIntent", "SeekIntent", "PlayEpisodeIntent", "BrightnessIntent", "LiveTvIntent"}  # «pon el volumen a cincuenta»: el número en palabras
 
 
 # Cómo se dice en México con «pídele a mi consola que…»: «le suba al volumen», «súbele tantito»,
@@ -299,6 +349,8 @@ class VoiceController:
             return self._watch_episode_intent(episode)
         if (vague := self._vague(name)) is not None:  # «pon la telenovela», «pon una película»
             return vague
+        if (section := self._section(name)) is not None:  # «abre Para ti», «abre la tele»
+            return section
         cloud = CLOUD.search(normalize(name))
         if cloud:  # "abre Fortnite en la nube / en GeForce NOW"
             name = normalize(name)[:cloud.start()]
@@ -313,11 +365,13 @@ class VoiceController:
                 or self.catalog.find(name, source="stremio"))
         if item is None:
             # Ni juego ni biblioteca: ¿es una película o serie? ("abre The Office")
+            if (channel := self._find_channel(name)) is not None:  # «abre Bandamax»: un canal de TV en vivo
+                return self._play_channel(channel)
             try:
                 watch = self._watch_exact(name)
             except cinemeta.CinemetaError:
                 watch = None
-            return watch or VoiceResult(f"No encontré {name} en tu biblioteca.", ok=False)
+            return watch or VoiceResult(f"No encontré {name} en tu biblioteca. Di busca {name} para buscarlo.", ok=False)
         runner_id = None
         if runner:
             match = next((r for r in item.runners if normalize(r.name) == runner), None)
@@ -356,6 +410,10 @@ class VoiceController:
             return self._watch_episode_intent(episode)
         if (vague := self._vague(query)) is not None:  # "quiero ver una película": no es un título
             return vague
+        if (section := self._section(query)) is not None:  # «pon la tele», «quiero ver Para ti»
+            return section
+        if (channel := self._find_channel(query)) is not None:  # «pon ADN 40»: el canal en vivo (antes: buscarlo en Stremio)
+            return self._play_channel(channel)
         # Si ya está en tu biblioteca de Stremio, se abre directo.
         item = self.catalog.find(query, source="stremio")
         if item is not None:
@@ -491,14 +549,150 @@ class VoiceController:
 
     def _navigate_intent(self, slots: dict) -> VoiceResult:
         said = normalize(slots.get("direction", ""))
-        if said in SECTIONS:  # «ve a juegos»: la sección (antes: «No entendí hacia dónde moverme»)
-            names = {"games": "Juegos", "media": "Películas y series", "apps": "Apps"}
-            name = names[SECTIONS[said]]
-            return VoiceResult(f"Abriendo {name}.", events=[self._show_view({"seccion": SECTIONS[said]}, name)])
-        direction = DIRECTIONS.get(said)
+        if (section := self._section(said)) is not None:  # «ve a juegos», «ve a Para ti»
+            return section
+        direction = DIRECTIONS.get(said) or DIRECTIONS.get(said.removeprefix("la ").removeprefix("el "))
         if not direction:
-            return VoiceResult("No entendí hacia dónde moverme.", ok=False)
+            return VoiceResult("No entendí a dónde ir. Puedes decir: ve a juegos, ve a Para ti o ve a la tele.", ok=False)
         return VoiceResult("Listo.", events=[{"type": "navigate", "direction": direction}])
+
+    # --- secciones, TV en vivo y Para ti ------------------------------------------------------
+    def _section(self, said: str) -> VoiceResult | None:
+        """«Para ti», «la tele», «juegos»: abre esa sección. None si no es el nombre de una."""
+        key = normalize(said).removeprefix("la seccion de ").removeprefix("seccion de ")
+        section = SECTIONS.get(key)
+        if section is None:
+            return None
+        name = SECTION_NAMES[section]
+        return VoiceResult(f"Abriendo {name}.", events=[self._show_view({"seccion": section}, name[:1].upper() + name[1:])])
+
+    @staticmethod
+    def _channel_key(name: str) -> str:
+        """«ADN 40 (720p) [Not 24/7]» → «adn 40»; «Azteca Uno» → «azteca 1» (Alexa dice los números con letra o cifra)."""
+        plain = re.sub(r"\s*[\(\[][^\)\]]*[\)\]]", "", str(name or ""))
+        return words_to_numbers(normalize(plain)).strip()
+
+    def _find_channel(self, said: str):
+        """El canal de TV en vivo con ese nombre (o «canal 5» si no hay uno que se llame así: su número en Orbital)."""
+        tv = getattr(self.catalog, "tv", None)
+        if tv is None:
+            return None
+        key = self._channel_key(said).removeprefix("el ")
+        bare = key.removeprefix("canal ")  # «canal 5» y «5» (de «pon el canal {channel}») buscan lo mismo
+        if not key:
+            return None
+        channels = tv.visible()
+        # Los que ya fallaron, al final: se prefiere uno que abre.
+        ranked = sorted(channels, key=lambda c: tv.store.verified(c.id) is False)
+        exact = [c for c in ranked if self._channel_key(c.name) in (key, bare, f"canal {bare}")]
+        if exact:
+            return exact[0]
+        if bare.isdigit():  # «pon el canal 12» (sin uno que se llame así): el número que tiene en Orbital
+            return next((c for c in channels if tv.store.number(c.id) == int(bare)), None)
+        # «pon Azteca Deportes»: el nombre empieza así (solo si es uno, para no adivinar)
+        starts = [c for c in ranked if self._channel_key(c.name).startswith(key + " ")]
+        return starts[0] if len({self._channel_key(c.name) for c in starts}) == 1 else None
+
+    def _play_channel(self, channel) -> VoiceResult:
+        try:
+            result = self.catalog.tv.play(channel.id)
+        except (LookupError, OSError) as exc:
+            return VoiceResult(str(exc) or f"No pude poner {channel.name}.", ok=False)
+        if self.kiosk is not None and result.get("reveal") is False and not result.get("tuned"):
+            self.kiosk.open()
+        name = re.sub(r"\s*[\(\[][^\)\]]*[\)\]]", "", channel.name).strip()
+        return VoiceResult(f"Poniendo {name}.")
+
+    def _live_tv_intent(self, slots: dict) -> VoiceResult:
+        said = slots.get("channel", "")
+        if not said:  # «pon la tele»: la sección de canales
+            return VoiceResult("Abriendo la TV en vivo.", events=[self._show_view({"seccion": "tv"}, "TV en vivo")])
+        channel = self._find_channel(said)
+        if channel is None:
+            return VoiceResult(f"No encontré el canal {said}. Te dejo la lista de canales.",
+                               ok=False, events=[self._show_view({"seccion": "tv"}, "TV en vivo")])
+        return self._play_channel(channel)
+
+    def _channel_step_intent(self, slots: dict) -> VoiceResult:
+        tv = self.catalog.tv
+        on_air = tv.playing()
+        segment = getattr(self.catalog.watch.player, "segment", None)
+        if on_air is None or segment is None:
+            return VoiceResult("No hay un canal al aire. Di, por ejemplo: pon el canal ADN 40.", ok=False)
+        step = normalize(slots.get("step", "next"))
+        delta = -1 if step in CHANNEL_PREVIOUS else 1
+        category, channels = tv.zap_list(segment.meta.get("list"))
+        ids = [c.id for c in channels]
+        if not ids:
+            return VoiceResult("No hay más canales en esta lista.", ok=False, events=[NO_TOAST])
+        here = ids.index(on_air) if on_air in ids else -1
+        target = channels[(here + delta) % len(ids)]
+        if not tv.tune(segment.meta, target.id, category):
+            return VoiceResult(f"No pude cambiar a {target.name}.", ok=False, events=[NO_TOAST])
+        return VoiceResult(f"Canal {target.name}.", events=[NO_TOAST])
+
+    @staticmethod
+    def _within(seconds: float, load):
+        """Lo que tarde menos de `seconds` (Alexa corta a los ~8 s); si no, None y sigue en segundo plano."""
+        box: dict = {}
+
+        def run() -> None:
+            try:
+                box["value"] = load()
+            except Exception as exc:  # noqa: BLE001 - quien llama decide qué decir
+                box["error"] = exc
+
+        worker = threading.Thread(target=run, daemon=True)
+        worker.start()
+        worker.join(seconds)
+        if "error" in box:
+            raise box["error"]
+        return box.get("value")
+
+    def _upcoming_intent(self, slots: dict) -> VoiceResult:
+        """«¿Qué sale hoy?»: lo que sale de las series que sigues (Trakt), hoy y los próximos días."""
+        foryou = self.catalog.foryou
+        if not foryou.trakt.linked:
+            return VoiceResult("Conecta Trakt en Ajustes de Orbital y te digo cuándo salen tus series.", ok=False)
+        show = self._show_view({"seccion": "foryou"}, "Próximos estrenos")
+        try:
+            items = self._within(QUICK_LOOKUP, foryou.calendar)
+        except Exception:  # noqa: BLE001 - sin red o Trakt caído: se dice, no «algo salió mal»
+            return VoiceResult("No pude preguntarle a Trakt ahora. Inténtalo en un rato.", ok=False)
+        if items is None:
+            return VoiceResult("Trakt está tardando. Te los enseño en Para ti, en Próximos estrenos.", events=[show])
+        if not items:
+            return VoiceResult("No sale nada de tus series en los próximos 14 días.")
+        return VoiceResult(upcoming_speech(items), events=[show])
+
+    def _recommend_intent(self, slots: dict) -> VoiceResult:
+        """«¿Qué me recomiendas?»: tres títulos de tus recomendaciones y Para ti en pantalla."""
+        foryou = self.catalog.foryou
+        show = self._show_view({"seccion": "foryou"}, "Para ti")
+        titles: list[str] = []
+        if foryou.trakt.linked:
+            try:
+                items = self._within(QUICK_LOOKUP, lambda: foryou.list_items("recs", "series")[:2] + foryou.list_items("recs", "movie")[:1])
+            except Exception:  # noqa: BLE001
+                items = None
+            titles = [i["title"] for i in items or [] if i.get("title")]
+        if not titles:
+            return VoiceResult("Te dejo Para ti abierto: ahí están tus sugerencias.", events=[show])
+        return VoiceResult(f"Te recomiendo {spoken_list(titles)}. Están en Para ti.", events=[show])
+
+    def _brightness_intent(self, slots: dict) -> VoiceResult:
+        from . import quick
+
+        current = quick.brightness()
+        if current is None:
+            return VoiceResult("No puedo cambiar el brillo de esta pantalla.", ok=False)
+        level = spoken_number(slots.get("level")) if slots.get("level") else None
+        if level is None:
+            amount = spoken_number(slots.get("amount")) if slots.get("amount") else None
+            step = 15 if amount is None else min(100, abs(amount))
+            level = current + (-step if normalize(slots.get("brightness", "")) in VOLUME_DOWN else step)
+        after = quick.set_brightness(int(level))
+        return VoiceResult(f"Brillo en {after if after is not None else current} por ciento.")
 
     # --- reproductor de Orbital -------------------------------------------------------------
     # Sin aviso en la interfaz (events=[NO_TOAST]): el video está encima y mpv ya lo muestra.
