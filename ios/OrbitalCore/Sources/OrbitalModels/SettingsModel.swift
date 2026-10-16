@@ -22,6 +22,8 @@ public final class SettingsModel: ObservableModel {
     public private(set) var scrobble = ScrobbleStatus() { didSet { changed() } }
     private let services: Services
     private var linking: Task<Void, Never>?
+    private var servicesWatch: ObservableModel.Subscription?
+    private var seenGeneration = 0
 
     public init(_ services: Services) {
         self.services = services
@@ -32,6 +34,22 @@ public final class SettingsModel: ObservableModel {
         scrobble = services.scrobbleLog.status
         super.init()
         trakt = computeTraktState()
+        seenGeneration = services.generation
+        // Emparejar con el QR de la TV mientras Ajustes está abierto trae la clave de TMDB y la sesión de Trakt: la pantalla
+        // se pone al día sola (sin salir y volver), y el campo del Client ID no se queda con el valor viejo.
+        servicesWatch = services.onChange { [weak self] in self?.servicesChanged() }
+    }
+
+    private func servicesChanged() {
+        guard services.generation != seenGeneration else { return }
+        seenGeneration = services.generation
+        settings = services.appSettings
+        hasTMDBKey = !(services.secrets.get(SecretKey.tmdbKey) ?? "").isEmpty
+        hasOrbitalToken = !(services.secrets.get(SecretKey.orbitalToken) ?? "").isEmpty
+        switch trakt {
+        case .linking, .failed: break   // a media conexión o con un error a la vista: se deja como está
+        default: trakt = computeTraktState()
+        }
     }
 
     public func refreshScrobble() { scrobble = services.scrobbleLog.status }
@@ -119,6 +137,8 @@ public final class SettingsModel: ObservableModel {
                     case .pending: break
                     }
                 }
+                // Se acabó el tiempo sin respuesta de Trakt: no se queda esperando para siempre con un código muerto.
+                if !Task.isCancelled { self?.setTrakt(.failed("El código caducó. Vuelve a intentarlo.")) }
             }
             linking = task
             await task.value

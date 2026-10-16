@@ -60,10 +60,10 @@ public final class HomeModel: ObservableModel {
             myList = await listed
             offline = false; error = nil
             services.kv.set(Self.cacheKey, data: try? JSONEncoder().encode(Cache(continueWatching: continueWatching, myList: myList)))
-        } catch {
+        } catch where !Task.isCancelled {   // cancelado (cambio de pestaña): no es estar sin conexión
             offline = true
             self.error = "\(error)"
-        }
+        } catch {}
         let forYou = services.forYou
         async let airings = try? forYou.calendar(), pending = try? forYou.items(listID: "watchlist")
         traktPending = Array(((await pending) ?? []).prefix(12))

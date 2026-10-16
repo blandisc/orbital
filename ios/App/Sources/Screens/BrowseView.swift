@@ -56,8 +56,10 @@ struct BrowseView: View {
     // MARK: resultados
     @ViewBuilder private var results: some View {
         let model = search.model
-        if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
-        else if model.results.isEmpty && !model.isSearching { ContentUnavailableView.search(text: query) }
+        // «Sin resultados» solo cuando ya contestó la búsqueda de lo que está escrito (no durante la espera de la última letra).
+        let answered = !model.isSearching && model.searchedQuery == query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let error = model.error, answered { DSNotice(verbatim: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
+        else if model.results.isEmpty && answered { ContentUnavailableView.search(text: query) }
         LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
             ForEach(model.results) { r in
                 TitleLink(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster), width: DS.Poster.gridMinimum,
@@ -66,7 +68,7 @@ struct BrowseView: View {
             }
         }
         .padding(.horizontal, DS.Space.gutter)
-        .overlay { if model.isSearching && model.results.isEmpty { ProgressView() } }
+        .overlay { if !answered && model.results.isEmpty && model.error == nil { ProgressView() } }
     }
 
     // MARK: sin escribir
