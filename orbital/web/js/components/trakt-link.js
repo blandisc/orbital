@@ -11,10 +11,14 @@ export function createTraktLink({ onMove, onClose }) {
   const code = h("div", { class: "trakt-link__code", "aria-live": "polite" });
   const where = h("p", { class: "trakt-link__step" });
   const status = h("div", { class: "trakt-link__status", role: "status" });
+  // O con la cámara del celular: abre la página donde va el código (sin teclear la dirección).
+  const qr = h("figure", { class: "trakt-link__qr", hidden: true },
+    h("img", { class: "trakt-link__qr-image", src: "/api/foryou/trakt/qr.svg", alt: "Código QR de trakt.tv/activate" }),
+    h("figcaption", {}, "O apunta la cámara aquí"));
   const el = h("section", { class: "trakt-link screen", hidden: true, "aria-label": "Conectar Trakt" },
     h("div", { class: "trakt-link__box" },
       ScreenHead({ eyebrow: "Cuentas", title: "Conectar Trakt" }),
-      where, code, status,
+      where, h("div", { class: "trakt-link__row" }, code, qr), status,
       h("ul", { class: "trakt-link__list" },
         h("li", {}, "Orbital podrá leer tus listas y lo que tienes pendiente"),
         h("li", {}, "Lo que has visto y tus calificaciones, para recomendarte"),
@@ -35,6 +39,7 @@ export function createTraktLink({ onMove, onClose }) {
     waiting = false;
     pending = true;
     mount(code, h("span", { class: "trakt-link__placeholder" }, "······"));
+    qr.hidden = true;
     mount(where, "Pidiendo un código a Trakt…");
     show("", "");
     try {
@@ -44,6 +49,7 @@ export function createTraktLink({ onMove, onClose }) {
       waiting = true;
       mount(where, "En tu celular entra a ", h("strong", {}, res.url || "trakt.tv/activate"), " y escribe este código:");
       mount(code, ...[...String(res.code || "")].map((ch) => h("span", { class: "trakt-link__char" }, ch)));
+      qr.hidden = false;
       show("waiting", "Esperando a que lo confirmes…");
     } catch (err) {
       if (mine !== attempt) return;

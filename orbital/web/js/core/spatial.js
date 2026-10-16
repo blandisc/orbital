@@ -59,5 +59,5 @@ export function measureFocusables(root) {
   return [...root.querySelectorAll("[data-focus-id]")].map((node) => {
     const r = node.getBoundingClientRect();
     return { id: node.dataset.focusId, x: r.left, y: r.top, w: r.width, h: r.height };
-  });
+  }).filter((p) => p.w > 0 && p.h > 0); // lo escondido (un renglón que no cabe) mide 0 en la esquina: no se enfoca
 }

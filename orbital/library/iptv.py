@@ -16,6 +16,7 @@ import logging
 import re
 import unicodedata
 import urllib.request
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -45,6 +46,29 @@ CATEGORY_ORDER = ["General", "Noticias", "Entretenimiento", "Deportes", "Pelícu
 
 QUALITY = re.compile(r"\s*\((\d{3,4}[pi])\)", re.I)
 TAG = re.compile(r"\s*\[([^\]]+)\]")
+# Lo que la lista agrega al nombre y no le dice nada a quien ve la tele: el país, la región y la señal de la estación.
+COUNTRY = re.compile(r"\s*\((?:Mexico|México|MX)\)", re.I)
+REGION_TAIL = re.compile(r"\s+(?:Latin America|Latinoam[eé]rica|Latam)(?:\s+(?:Mexico|México|North|South))*(?:\s+HD)?$|\s+HD$", re.I)
+CALLSIGN = re.compile(r"\s+X[A-Z]{2,4}(?:-(?:TDT|TV|DT))?$")
+
+
+def display_name(name: str) -> str:
+    """«Canal 5 (Mexico)» → «Canal 5»; «Discovery Kids Latin America Mexico» → «Discovery Kids»;
+    «Canal 5 (Mexico) XET-TDT» → «Canal 5». «Presumiendo Mexico» se queda: ahí «Mexico» es parte del nombre."""
+    clean = COUNTRY.sub("", name)
+    for _ in range(3):  # «… XET-TDT HD», «… Latin America North HD»: varias colas
+        clean = REGION_TAIL.sub("", CALLSIGN.sub("", clean)).strip(" -·")
+    return clean or name
+
+
+def tidy_names(channels: list[Channel]) -> list[Channel]:
+    """El nombre limpio de cada canal; si dos quedarían iguales («Disney Channel Latin America Mexico» y «… North»),
+    esos dos se quedan con solo el país quitado, para distinguirlos. El id no cambia (su número y su salud siguen)."""
+    clean = [display_name(c.name) for c in channels]
+    seen = Counter(fold(n) for n in clean)
+    for c, n in zip(channels, clean, strict=True):
+        c.name = n if seen[fold(n)] == 1 else (COUNTRY.sub("", c.name).strip(" -·") or c.name)
+    return channels
 # Solo desde el principio de una palabra: sin el (?<!…), una línea de 20 000 letras sin «=» tardaba 4 s (se
 # probaba cada letra como inicio de un atributo), y la lista viene de internet.
 ATTRIBUTE = re.compile(r'(?<![\w.-])([\w.-]+)="([^"]*)"')
@@ -151,7 +175,7 @@ def parse_m3u(text: str) -> list[Channel]:
             pending = None
             if channel is not None:
                 channels.append(channel)
-    return channels
+    return tidy_names(channels)
 
 
 def _channel(pending: dict, url: str, taken: set[str]) -> Channel | None:

@@ -357,7 +357,8 @@ class ChartSnapshots:
             log.warning("Para ti: no pude guardar la foto de %s (%s): %s", list_id, kind, exc)
             previous = None
         for e in entries:
-            was = None if previous is None else previous.get(e.get("imdb"))
+            imdb = e.get("imdb")
+            was = previous.get(imdb) if previous is not None and isinstance(imdb, str) else None
             e["movement"] = was - e["rank"] if was is not None else None
             e["new"] = previous is not None and was is None
         return entries

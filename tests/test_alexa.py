@@ -300,3 +300,14 @@ def test_rotate_gives_a_new_encrypted_token(tmp_path):
     cfg.write_text('server:\n  token: "viejo"\n', encoding="utf-8")
     new = alexa_setup.rotate_token(cfg)
     assert new != "viejo" and alexa_setup.read_token(cfg) == new and "viejo" not in cfg.read_text(encoding="utf-8")
+
+
+def test_settings_know_when_the_iphone_last_connected(public):
+    """Ajustes › Cuentas enseña «iPhone · Conectado · lo usaste hace 2 h»: cuando la app pide sus claves, se anota."""
+    client, main = public
+    state = main.state.catalog.state
+    assert "companion_seen" not in state.settings()
+    assert client.get("/api/companion", headers={"Authorization": "Bearer secreto"}).status_code == 200
+    first = state.settings()["companion_seen"]
+    client.get("/api/companion", headers={"Authorization": "Bearer secreto"})
+    assert state.settings()["companion_seen"] == first  # una escritura cada 10 min, no en cada petición

@@ -22,7 +22,7 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -36,6 +36,7 @@ from .catalog import Catalog
 from .config import Config
 from .foryou import SERVICE_ERRORS
 from .library import trakt
+from .remote_input import RemoteInput
 from .shell import ConsoleShell
 from .voice import VoiceController
 
@@ -148,6 +149,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     app.state.catalog = catalog
     app.state.bus = d.hub
     app.state.shell = shell
+    app.state.remote_input = RemoteInput(publish=catalog.events.publish)
 
     @app.middleware("http")
     async def security(request: Request, call_next):
@@ -164,6 +166,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
                  update.router(d, updater), foryou.router(d), tv.router(d)):
         app.include_router(part)
     _companion_routes(app, config)
+    _remote_input_routes(app, config)
     app.state.run_voice = d.extra["run_voice"]
     app.state.play_stremio = d.extra["play_stremio"]
     app.mount("/", WebFiles(directory=WEB_DIR, html=True), name="web")
@@ -289,6 +292,60 @@ def _companion_routes(app: FastAPI, config: Config) -> None:
         return Response(companion.qr_svg(info["link"]), media_type="image/svg+xml", headers={"Cache-Control": "no-store"})
 
 
+def _remote_input_routes(app: FastAPI, config: Config) -> None:
+    """Escribir desde el celular (remote_input.py): la TV pide un código, enseña su QR y recoge lo escrito. Solo local."""
+    from fastapi import Body, HTTPException
+    from fastapi.responses import Response
+
+    remote: RemoteInput = app.state.remote_input
+    urls: dict[str, str] = {}
+
+    @app.post("/api/remote-input")
+    def remote_start(title: str = Body(""), fields: list = Body(default_factory=list)) -> dict:
+        info = companion.pair_info(config)  # el celular entra por el mismo túnel que Alexa y el iPhone
+        if not info["ready"]:
+            return {"ready": False, "reason": info.get("reason", "")}
+        code = remote.start(title, fields)
+        if code is None:
+            raise HTTPException(422, "Formulario sin campos")
+        urls.clear()
+        urls[code] = f"https://{info['host']}/escribir/{code}"
+        return {"ready": True, "code": code, "host": info["host"]}
+
+    @app.get("/api/remote-input/qr.svg")
+    def remote_qr(code: str = "") -> Response:
+        if remote.form(code) is None or code not in urls:
+            return Response(status_code=404)
+        return Response(companion.qr_svg(urls[code]), media_type="image/svg+xml", headers={"Cache-Control": "no-store"})
+
+    @app.get("/api/remote-input/take")
+    def remote_take(code: str = "") -> Response:
+        values = remote.take(code)
+        if values is None:
+            return Response(status_code=204)
+        urls.pop(code, None)
+        return JSONResponse({"values": values}, headers={"Cache-Control": "no-store"})
+
+    @app.post("/api/remote-input/cancel")
+    def remote_cancel(code: str = Body("", embed=True)) -> dict:
+        remote.cancel(code or None)
+        urls.pop(code, None)
+        return {"ok": True}
+
+
+REMOTE_PAGE = Path(__file__).with_name("remote_input_page.html")
+# La página del celular no carga nada de fuera ni se deja incrustar; sin «Referer» (la dirección lleva el código).
+REMOTE_HEADERS = {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "X-Frame-Options": "DENY",
+                  "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; "
+                                             "connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"}
+
+
+def remote_page(form: dict | None) -> str:
+    import json
+    data = json.dumps(form, ensure_ascii=False).replace("<", "\\u003c")  # que un nombre no cierre el <script>
+    return REMOTE_PAGE.read_text(encoding="utf-8").replace("/*FORM*/null", data, 1)
+
+
 MAX_PUBLIC_BODY = 16 * 1024
 
 
@@ -318,6 +375,16 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         if size > MAX_PUBLIC_BODY:
             return JSONResponse({"detail": "Petición demasiado grande"}, status_code=413)
         key = FailedTokens.key(request)
+        if request.url.path.startswith("/escribir/"):
+            code = request.url.path.split("/", 2)[2].strip("/")
+            if guard.blocked(key):
+                return JSONResponse({"detail": "Demasiados intentos"}, status_code=429)
+            if main_app.state.remote_input.form(code) is not None:
+                return await call_next(request)
+            await asyncio.sleep(guard.failed(key))
+            if request.method == "GET":
+                return HTMLResponse(remote_page(None), status_code=404, headers=REMOTE_HEADERS)
+            return JSONResponse({"detail": "Este código ya no sirve. Vuelve a abrir el formulario en la tele."}, status_code=404)
         # El token correcto pasa siempre: quien falsifica tu dirección no te deja fuera.
         if token_ok(request, config.server.token):
             guard.succeeded(key)
@@ -352,9 +419,30 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         """La app del iPhone toma de aquí lo de «Para ti» para no escribirlo dos veces: la clave de TMDB, la aplicación
         de Trakt (su Client ID, que no es secreto; el secreto no sale de aquí) y el país."""
         p = config.para_ti
-        trakt = getattr(getattr(main_app.state.catalog, "foryou", None), "trakt", None)
-        return {"tmdb_key": p.tmdb_key, "trakt_client_id": p.trakt_client_id, "region": p.region,
-                "trakt_session": companion.trakt_session(trakt)}
+        # Para Ajustes › Cuentas: el iPhone está conectado (antes decía siempre «Conectar»). Una escritura cada 10 min.
+        state = getattr(main_app.state.catalog, "state", None)
+        if state is not None and time.time() - float(state.settings().get("companion_seen") or 0) > 600:
+            state.set_setting("companion_seen", time.time())
+        foryou = getattr(main_app.state.catalog, "foryou", None)
+        key = foryou.key if foryou else (lambda name: getattr(p, name))  # las escritas en la TV, o las de config.yaml
+        return {"tmdb_key": key("tmdb_key"), "trakt_client_id": key("trakt_client_id"), "region": p.region,
+                "trakt_session": companion.trakt_session(getattr(foryou, "trakt", None))}
+
+    @public.get("/escribir/{code}")
+    def remote_form(code: str) -> HTMLResponse:
+        """La página del celular para escribir en la tele (correo, contraseña, una clave)."""
+        return HTMLResponse(remote_page(main_app.state.remote_input.form(code)), headers=REMOTE_HEADERS)
+
+    @public.post("/escribir/{code}")
+    async def remote_send(code: str, request: Request) -> JSONResponse:
+        try:
+            body = await request.json()
+        except ValueError:
+            body = {}
+        problem = main_app.state.remote_input.submit(code, body.get("values") if isinstance(body, dict) else None)
+        if problem:
+            return JSONResponse({"detail": problem}, status_code=400)
+        return JSONResponse({"ok": True})
 
     @public.post("/api/stremio/play")
     def play_on_tv(body: media.PlayRequest) -> dict:

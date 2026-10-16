@@ -29,9 +29,18 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 .home__queue-head { flex: none; padding: 0 var(--space-2); justify-content: space-between; }
 /* Los renglones se reparten el alto de la columna: así no queda hueco abajo con letra normal ni se
    salen con letra grande. */
-.home__rows { flex: 1; min-height: 0; display: grid; grid-auto-rows: minmax(0, 1fr); gap: var(--space-3); }
+.home__rows { flex: 1; min-height: 0; display: grid; grid-auto-rows: minmax(4.3rem, 1fr); align-content: start; gap: var(--space-3); overflow: hidden; }
+.home__rows > [hidden] { display: none; } /* los que no caben (home.js · fitRows): mejor 3 legibles que 4 aplastados */
 
 /* Abajo: tus consolas en una fila que se desplaza si no caben (6 a la vista). */
+/* Compactas (home.js · fit): cuando enteras no caben junto a lo de arriba, foto más chica y sin el tercer renglón. */
+.home--compact .home__consoles-track > .tile--console { min-height: 0; }
+.home--compact .tile--console__media { height: 3.6rem; padding-top: var(--space-2); }
+.home--compact .tile--console__photo { max-height: 3.1rem; }
+.home--compact .tile--console__logo { height: 2.4rem; }
+.home--compact .tile--console__cover { max-height: 3.3rem; }
+.home--compact .tile--console__foot { display: none; }
+.home--compact .tile--console__text { padding-top: var(--space-2); padding-bottom: var(--space-3); }
 .home__consoles { flex: none; display: flex; flex-direction: column; gap: var(--space-3); }
 .home__consoles-viewport { overflow: hidden; padding: .6rem 1rem; margin: -.6rem -1rem; } /* espacio para el anillo y el crecer (también la última) */
 .home__consoles-track { display: flex; gap: var(--tile-gap); transition: transform var(--duration-slow) var(--ease-out); }
