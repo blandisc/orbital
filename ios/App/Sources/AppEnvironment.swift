@@ -40,6 +40,8 @@ final class AppEnvironment: ObservableObject {
     struct Banner: Equatable { var text: String; var tone: DSNotice.Tone }
 
     func notify(_ text: String, tone: DSNotice.Tone = .error) { banner = Banner(text: text, tone: tone) }
+    /// Un texto armado en español por un modelo (error o aviso), listo para `Text`/`DSNotice` en el idioma de la app.
+    func message(_ text: String) -> LocalizedStringKey { LocalizedStringKey(Strings.message(text, language: services.appSettings.uiLanguage)) }
     /// Un aviso con datos: la clave («… %@») se traduce primero y luego se llena (`LocalizedStringKey` no encuentra un texto ya armado).
     func notify(format key: String, _ args: CVarArg..., tone: DSNotice.Tone = .error) {
         notify(String(format: Strings.tr(key, language: services.appSettings.uiLanguage), arguments: args), tone: tone)
@@ -261,7 +263,7 @@ final class AppEnvironment: ObservableObject {
         switch outcome {
         case .queued: notify("Descargando. Lo verás en Descargas.", tone: .success)
         case .noSources: notify("No hay fuentes de Real-Debrid para descargar.")
-        case .notEnoughSpace(let text), .failed(let text): notify(Strings.downloadError(text, language: services.appSettings.uiLanguage))
+        case .notEnoughSpace(let text), .failed(let text): notify(text)
         case .already: notify("Ya está descargado.", tone: .info)
         }
     }

@@ -27,9 +27,9 @@ struct TitleView: View {
                 hero(model)
                 VStack(alignment: .leading, spacing: DS.Space.s4) {
                     actions(model)
-                    if let message = model.message { DSNotice(text: LocalizedStringKey(message), tone: .error) }
+                    if let message = model.message { DSNotice(text: env.message(message), tone: .error) }
                     if model.traktAvailable { watchlistToggle(model) }
-                    if let error = model.error, model.overview.isEmpty { DSNotice(text: LocalizedStringKey(error), tone: .warn) }
+                    if let error = model.error, model.overview.isEmpty { DSNotice(text: env.message(error), tone: .warn) }
                     if !model.overview.isEmpty { Text(model.overview).font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted) }
                     if model.kind == "series" { episodes(model) }
                     credits(model)
@@ -210,9 +210,9 @@ struct TitleView: View {
         switch outcome {
         case .queued(let n): if n == 1 { env.notify("Descargando. Lo verás en Descargas.", tone: .success) } else { env.notify(format: "Descargando %lld episodios. Los verás en Descargas.", n, tone: .success) }
         case .noSources: env.notify("No hay fuentes de Real-Debrid para descargar.")
-        case .notEnoughSpace(let text): env.notify(Strings.downloadError(text, language: env.services.appSettings.uiLanguage))
+        case .notEnoughSpace(let text): env.notify(text)
         case .already: env.notify("Ya está descargado.", tone: .info)
-        case .failed(let text): env.notify(Strings.downloadError(text, language: env.services.appSettings.uiLanguage))
+        case .failed(let text): env.notify(text)
         }
         await model.refreshState()
     }

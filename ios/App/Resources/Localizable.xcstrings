@@ -683,6 +683,39 @@
         }
       }
     },
+    "Conecta tu Orbital en Ajustes (la dirección y el token).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect your Orbital in Settings (the address and the token)."
+          }
+        }
+      }
+    },
+    "Conecta tu cuenta de Stremio en Ajustes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect your Stremio account in Settings"
+          }
+        }
+      }
+    },
+    "Conecta tu cuenta de Trakt en Ajustes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect your Trakt account in Settings."
+          }
+        }
+      }
+    },
     "Conectada": {
       "extractionState": "manual",
       "localizations": {
@@ -1387,6 +1420,17 @@
         }
       }
     },
+    "Error de Stremio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stremio error"
+          }
+        }
+      }
+    },
     "Escribe este código en %@:": {
       "extractionState": "manual",
       "localizations": {
@@ -1493,6 +1537,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The partial file is missing"
+          }
+        }
+      }
+    },
+    "Fecha inválida": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid date"
           }
         }
       }
@@ -1724,6 +1779,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ free"
+          }
+        }
+      }
+    },
+    "Lista inválida": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid list"
           }
         }
       }
@@ -2069,6 +2135,17 @@
         }
       }
     },
+    "No encontré tu Orbital. ¿Está prendida la consola y el túnel?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find your Orbital. Are the console and the tunnel on?"
+          }
+        }
+      }
+    },
     "No encontré una fuente para descargar %@ (desde la TV)": {
       "extractionState": "manual",
       "localizations": {
@@ -2201,6 +2278,28 @@
         }
       }
     },
+    "No pude conectar con Stremio: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't connect to Stremio: %@"
+          }
+        }
+      }
+    },
+    "No pude conectar con Trakt: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't connect to Trakt: %@"
+          }
+        }
+      }
+    },
     "No pude descargar %@ (desde la TV)": {
       "extractionState": "manual",
       "localizations": {
@@ -2230,6 +2329,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't read the Stremio catalog. Check your connection."
+          }
+        }
+      }
+    },
+    "No pude leer el catálogo de Stremio: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't read the Stremio catalog: %@"
           }
         }
       }
@@ -2773,6 +2883,28 @@
         }
       }
     },
+    "Respuesta de Stremio sin resultado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stremio's response had no result"
+          }
+        }
+      }
+    },
+    "Respuesta inesperada de Cinemeta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unexpected response from Cinemeta"
+          }
+        }
+      }
+    },
     "Retroceder 10 segundos": {
       "extractionState": "manual",
       "localizations": {
@@ -3092,6 +3224,28 @@
         }
       }
     },
+    "Stremio no devolvió la clave de sesión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stremio didn't return the session key"
+          }
+        }
+      }
+    },
+    "Stremio respondió HTTP %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stremio answered HTTP %@"
+          }
+        }
+      }
+    },
     "Subtítulos": {
       "extractionState": "manual",
       "localizations": {
@@ -3290,6 +3444,17 @@
         }
       }
     },
+    "Trakt cerró tu sesión: vuelve a conectarla en Ajustes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt signed you out: connect it again in Settings."
+          }
+        }
+      }
+    },
     "Trakt conectado": {
       "extractionState": "manual",
       "localizations": {
@@ -3301,6 +3466,17 @@
         }
       }
     },
+    "Trakt no acepta la sesión de tu Orbital: reconecta Trakt en la TV (Ajustes › Cuentas).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt doesn't accept your Orbital's session: reconnect Trakt on the TV (Settings › Accounts)."
+          }
+        }
+      }
+    },
     "Trakt no aceptó el código.": {
       "extractionState": "manual",
       "localizations": {
@@ -3308,6 +3484,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trakt didn't accept the code."
+          }
+        }
+      }
+    },
+    "Trakt no devolvió una sesión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt didn't return a session"
+          }
+        }
+      }
+    },
+    "Trakt no dio un código. Revisa la aplicación de Trakt.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt didn't give a code. Check the Trakt app."
+          }
+        }
+      }
+    },
+    "Trakt respondió HTTP %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt answered HTTP %lld"
           }
         }
       }
@@ -3334,6 +3543,39 @@
         }
       }
     },
+    "Tu Orbital contestó con un error (%@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Orbital answered with an error (%@)."
+          }
+        }
+      }
+    },
+    "Tu Orbital es de una versión anterior: actualízala para «Ver en la TV».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Orbital is an older version: update it to use “Watch on TV”."
+          }
+        }
+      }
+    },
+    "Tu Orbital no aceptó el token. Revísalo en Ajustes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Orbital didn't accept the token. Check it in Settings."
+          }
+        }
+      }
+    },
     "Tu Orbital no tiene sugerencias todavía.": {
       "extractionState": "manual",
       "localizations": {
@@ -3345,6 +3587,17 @@
         }
       }
     },
+    "Tu Orbital pidió esperar un poco: demasiados intentos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Orbital asked to wait a bit: too many attempts."
+          }
+        }
+      }
+    },
     "Tu contraseña no se guarda: solo la clave de sesión, en el Keychain de tu iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -3352,6 +3605,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your password isn't stored: only the session key, in your iPhone's Keychain."
+          }
+        }
+      }
+    },
+    "Tu sesión de Trakt caducó: vuelve a conectarla en Ajustes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Trakt session expired: connect it again in Settings."
           }
         }
       }
@@ -3396,6 +3660,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Yours"
+          }
+        }
+      }
+    },
+    "Título inválido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid title"
+          }
+        }
+      }
+    },
+    "Título no encontrado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title not found"
           }
         }
       }

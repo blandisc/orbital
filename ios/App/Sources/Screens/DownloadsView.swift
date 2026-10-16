@@ -87,7 +87,7 @@ struct DownloadsView: View {
         case .queued: return Strings.tr("En cola", language: language)
         case .downloading: return "\(bytes(item.writtenBytes)) / \(item.expectedBytes.map(bytes) ?? "—")"
         case .paused: return Strings.tr("En pausa", language: language)
-        case .failed: return item.lastError.map { Strings.downloadError($0, language: language) } ?? Strings.tr("No se pudo descargar", language: language)   // los errores fijos de la descarga, también traducidos
+        case .failed: return item.lastError.map { Strings.message($0, language: language) } ?? Strings.tr("No se pudo descargar", language: language)   // los errores fijos de la descarga, también traducidos
         case .done: return nil
         }
     }
@@ -135,5 +135,5 @@ struct DownloadsView: View {
     }
 
     /// «1,2 GB» en el idioma de la app (no en el del sistema).
-    private func bytes(_ n: Int64) -> String { n.formatted(.byteCount(style: .file).locale(env.uiLocale)) }
+    private func bytes(_ n: Int64) -> String { n.formatted(.byteCount(style: .file, spellsOutZero: false).locale(env.uiLocale)) }   // «0 KB», no «Zero kB»
 }
