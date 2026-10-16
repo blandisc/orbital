@@ -252,7 +252,9 @@ class ForYou:
 
     # --- qué hay -----------------------------------------------------------------------------
     def status(self) -> dict:
-        return {"trakt": {"configured": self.trakt.configured, "linked": self.trakt.linked},
+        return {"trakt": {"configured": self.trakt.configured, "linked": self.trakt.linked,
+                          # Lo último que el reproductor le contó a Trakt (o por qué no pudo): Ajustes › Cuentas.
+                          "scrobble": self.catalog.watch.scrobbler.snapshot()},
                 "tmdb": self.tmdb.configured, "rawg": self.rawg.configured,
                 # Cuáles escribiste en Ajustes (esas se pueden quitar desde ahí; las de config.yaml, no).
                 "saved": [s for s, names in KEYS.items() if self.catalog.credentials.get(KEY_PREFIX + names[0])]}

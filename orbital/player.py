@@ -63,6 +63,7 @@ from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las pi
     RB,
     RECAP,
     SAVE_EVERY,
+    SCROBBLE_SEEK,
     SKIP_VISIBLE,
     STARTUP_TIMEOUT,
     STILL_WATCHING_AFTER,
@@ -134,6 +135,7 @@ class OrbitalPlayer(PlayerScreen):
         self.sub_scale = 1.0
         self.on_finished = on_finished  # (meta, posición, duración, segundos vistos)
         self.on_progress = None  # igual que on_finished, cada minuto y al pausar
+        self.on_scrobble = None  # (acción, meta, posición, duración): «start» | «pause» | «stop» para Trakt; nunca de TV en vivo
         self.on_failed = None  # (meta, posición, sigue_abierto) -> True si se intenta con otra fuente
         self.next_provider = None  # (meta) -> {"label", "title", "play"} | None
         self.sources_provider = None  # (meta) -> [{"id", "label", "current"}]
@@ -294,6 +296,7 @@ class OrbitalPlayer(PlayerScreen):
                     self.show_hud()  # pausado con un toque en la pantalla (o por otro lado): que se vea la barra
                     if paused:
                         self._save_progress(segment)  # pausar = buen momento para guardar
+                    self._scrobble("pause" if paused else "start", segment)
                 was_paused = paused
                 paused = paused or (segment.live and self._away)  # un canal que dejaste con Home es un video olvidado
                 paused_since = (paused_since or now) if paused else None
@@ -358,12 +361,18 @@ class OrbitalPlayer(PlayerScreen):
         if idle:  # el archivo se cortó a media reproducción (stream caído): otra fuente, mismo punto
             self._fail(segment)
             return
+        jumped = isinstance(pos, (int, float)) and abs(pos - segment.position) >= SCROBBLE_SEEK
         if isinstance(pos, (int, float)):
             if not paused:
                 segment.watched += min(now - segment.last_tick, abs(pos - segment.position) + 1)
             segment.position = float(pos)
             if known:
                 segment.duration = float(dur)
+        if not segment.scrobbling:
+            if segment.duration and not paused:  # primera imagen real (o ya se supo la duración): «viendo ahora»
+                self._scrobble("start", segment)
+        elif jumped:  # saltaste: Trakt recibe el avance nuevo (en pausa, queda guardado como pausa)
+            self._scrobble("pause" if paused else "start", segment)
         segment.last_tick = now
         self._buffering_state(paused)
         if now - segment.last_save >= SAVE_EVERY and not paused:
@@ -448,6 +457,18 @@ class OrbitalPlayer(PlayerScreen):
             timer.daemon = True
             timer.start()
 
+    def _scrobble(self, action: str, segment: Segment) -> None:
+        """Avisa a Trakt (en su propio hilo: la red no toca el video). Nunca un canal en vivo."""
+        if segment.live or not self.on_scrobble or not segment.duration:
+            return
+        if action == "start":
+            segment.scrobbling = True
+        elif not segment.scrobbling:
+            return  # pausar o parar algo que Trakt nunca supo que empezó
+        elif action == "stop":
+            segment.scrobbling = False
+        self._safe(self.on_scrobble, action, segment.meta, segment.position, segment.duration)
+
     def _save_progress(self, segment: Segment) -> None:
         segment.last_save = time.monotonic()
         delta = segment.watched - segment.saved_watched
@@ -465,6 +486,7 @@ class OrbitalPlayer(PlayerScreen):
             segment.closed = True
         if segment.live:
             return  # la tele en vivo no guarda dónde ibas ni entra en «Seguir viendo»
+        self._scrobble("stop", segment)  # Trakt: lo que llevabas (≥ 80 % lo marca visto)
         if self.on_finished and segment.duration and not (segment.watched < 20 and segment.position >= segment.duration * .9):
             # (Casi nada visto y «al final»: un salto raro, no la película vista de principio a fin.)
             self._safe(self.on_finished, segment.meta, segment.position, segment.duration,

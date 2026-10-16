@@ -162,6 +162,7 @@ class Catalog:
                            cinemeta_client or cinemeta.Cinemeta(), self.store, self.events, self.sessions,
                            self.launcher)
         self.foryou = ForYou(config, self)  # «Para ti»: recomendaciones (no sale a internet hasta que se pide)
+        self.watch.scrobbler.trakt = lambda: self.foryou.trakt  # lo que ves, a Trakt (se pide en cada aviso)
         self.tv = LiveTV(config, self)  # «TV en vivo»: canales y su salud (no sale a internet hasta que arranca)
         self.events.subscribe(self._on_event)
 

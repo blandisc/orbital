@@ -9,6 +9,7 @@ secrets.json (credentials.py).
   POST /oauth/device/token  {code, client_id[, client_secret]}     -> 200 sesión · 400 aún no · 404/409/410/418 se acabó · 429 más despacio
   POST /oauth/token         {refresh_token, … grant_type}         -> sesión nueva (la de Trakt dura poco)
   GET  /recommendations/{movies|shows} · /sync/watchlist · /users/me/lists(/{id}/items)
+  POST /scrobble/{start|pause|stop}   {movie|show+episode, progress}  -> 201 · 409 ya registrado · 401 renovar sesión
   GET  /{movies|shows}/trending · /{movies|shows}/popular · /sync/history/episodes · /shows/{id}/progress/watched
 
 Solo cuenta lo que trae id de IMDb: así se ve con Cinemeta y Stremio, como todo lo demás.
@@ -18,6 +19,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import threading
 import time
 from dataclasses import dataclass
@@ -39,6 +41,24 @@ TOKENS_KEY = "trakt_tokens"
 # https://, así que va https://localhost; las aplicaciones viejas tienen el valor de antes.
 REDIRECTS = ("https://localhost/", "https://localhost", "urn:ietf:wg:oauth:2.0:oob")  # Trakt le agrega la «/»
 KINDS = {"movie": "movies", "series": "shows"}
+
+
+SCROBBLE_ACTIONS = ("start", "pause", "stop")
+
+
+def scrobble_target(kind: str, meta_id: str, video_id: str | None) -> dict | None:
+    """Lo que Trakt necesita para saber qué ves: la película (IMDb) o la serie con su temporada y episodio
+    (el video_id de Stremio es `tt123:2:5`). None si no hay forma de identificarlo (no se manda nada)."""
+    if not isinstance(meta_id, str) or not re.fullmatch(r"tt\d+", meta_id):
+        return None
+    if kind == "movie":
+        return {"movie": {"ids": {"imdb": meta_id}}}
+    if kind == "series":
+        match = re.fullmatch(r"(tt\d+):(\d+):(\d+)", str(video_id or ""))
+        if match and match.group(1) == meta_id:
+            return {"show": {"ids": {"imdb": meta_id}},
+                    "episode": {"season": int(match.group(2)), "number": int(match.group(3))}}
+    return None
 
 
 class TraktError(Exception):
@@ -209,6 +229,30 @@ class Trakt:
         if status != 200:
             raise TraktError(f"Trakt respondió HTTP {status}")
         return data
+
+    def _renew(self) -> None:
+        """Renueva la sesión ya (Trakt dijo 401 aunque aún no caducaba en nuestra cuenta)."""
+        with self._lock:
+            tokens = self._tokens()
+            if not tokens or not tokens.get("refresh_token"):
+                raise TraktAuthError("Conecta tu cuenta de Trakt en Ajustes › Cuentas.")
+            self._refresh(tokens)
+
+    def scrobble(self, action: str, target: dict, progress: float) -> None:
+        """Le dice a Trakt qué estás viendo («Viendo ahora») y cuánto llevas; al parar con ≥ 80 % lo marca visto.
+        `progress` va de 0 a 100. Un 409 es «ya registrado» (no es un error); un 401 renueva la sesión una vez y
+        reintenta; lo demás se lanza como TraktError."""
+        if action not in SCROBBLE_ACTIONS or not isinstance(target, dict) or not target:
+            raise TraktError("Scrobble inválido")
+        body = {**target, "progress": round(min(max(float(progress), 0.0), 100.0), 2)}
+        status, _ = self._call("POST", f"/scrobble/{action}", body=body)
+        if status == 401:
+            self._renew()
+            status, _ = self._call("POST", f"/scrobble/{action}", body=body)
+        if status == 401:
+            raise TraktAuthError("Trakt no acepta tu sesión: vuelve a conectarla en Ajustes › Cuentas.")
+        if status not in (200, 201, 409):
+            raise TraktError(f"Trakt respondió HTTP {status}")
 
     # --- listas ------------------------------------------------------------------------------
     def username(self) -> str:

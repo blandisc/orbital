@@ -319,7 +319,7 @@ def test_api_lists_details_dismiss_and_trakt(library, make_foryou):
     make_foryou(trakt_keys=False)
     with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 5000)) as c:
         data = c.get("/api/foryou").json()
-        assert data["status"]["trakt"] == {"configured": False, "linked": False}
+        assert data["status"]["trakt"] == {"configured": False, "linked": False, "scrobble": {"last": None, "error": None}}
         assert [row["id"] for row in data["lists"]] == [*CHART_LIST_IDS, "mygames"] and data["mosaic"]
         assert c.get("/api/foryou/list", params={"id": "mygames"}).json()["items"]
         assert c.get("/api/foryou/list", params={"id": "nada"}).status_code == 404

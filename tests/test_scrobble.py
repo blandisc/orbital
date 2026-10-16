@@ -1,0 +1,211 @@
+"""Scrobble de Trakt desde el reproductor, con un Trakt falso (nunca sale a internet)."""
+
+from __future__ import annotations
+
+import json
+import logging
+import re
+import time
+
+from orbital import player
+from orbital.library import trakt
+from orbital.scrobble import TraktScrobbler, label, percent
+
+
+class Creds:
+    def __init__(self, linked=True):
+        self.data = {trakt.TOKENS_KEY: json.dumps({"access_token": "tok", "refresh_token": "ref",
+                                                   "expires_at": time.time() + 86400})} if linked else {}
+
+    def get(self, key):
+        return self.data.get(key)
+
+    def set(self, key, value):
+        self.data[key] = value
+
+
+class FakeNet:
+    def __init__(self):
+        self.routes = []
+        self.calls = []
+
+    def on(self, pattern, reply):
+        self.routes.append((pattern, reply))
+        return self
+
+    def __call__(self, url, *, method="GET", headers=None, body=None, timeout=10):
+        self.calls.append((method, url, body))
+        for pattern, reply in self.routes:
+            if re.search(pattern, url):
+                value = reply(url, body) if callable(reply) else reply
+                if isinstance(value, Exception):
+                    raise value
+                return value
+        return 404, None
+
+    def scrobbles(self):
+        return [(url.rsplit("/", 1)[1], body) for method, url, body in self.calls if "/scrobble/" in url]
+
+
+def setup(monkeypatch, linked=True, reply=(201, {})):
+    net = FakeNet().on("/scrobble/", reply)
+    monkeypatch.setattr(trakt, "http_json", net)
+    t = trakt.Trakt("cid", "", Creds(linked))
+    return net, t, TraktScrobbler(lambda: t, clock=lambda: 1000.0)
+
+
+MOVIE = {"kind": "movie", "meta_id": "tt1375666", "video_id": "tt1375666", "title": "Origen"}
+EPISODE = {"kind": "series", "meta_id": "tt0386676", "video_id": "tt0386676:2:5", "title": "The Office"}
+
+
+# ---------------------------------------------------------------- piezas
+def test_percent_and_labels():
+    assert percent(30, 120) == 25.0 and percent(500, 120) == 100.0 and percent(-5, 120) == 0.0
+    assert percent(10, 0) is None and percent(10, None) is None
+    assert label(EPISODE) == "The Office T2 · E5" and label(MOVIE) == "Origen"
+
+
+def test_targets_are_built_from_the_imdb_ids():
+    assert trakt.scrobble_target("movie", "tt1375666", "tt1375666") == {"movie": {"ids": {"imdb": "tt1375666"}}}
+    assert trakt.scrobble_target("series", "tt0386676", "tt0386676:2:5") == {
+        "show": {"ids": {"imdb": "tt0386676"}}, "episode": {"season": 2, "number": 5}}
+    assert trakt.scrobble_target("series", "tt0386676", "tt0386676") is None  # sin episodio no se sabe qué ves
+    assert trakt.scrobble_target("movie", "kitsu:1", "kitsu:1") is None
+
+
+def test_each_action_goes_to_its_endpoint_with_a_percentage(monkeypatch):
+    net, t, s = setup(monkeypatch)
+    s.event("start", EPISODE, 300, 1200)
+    s.event("pause", EPISODE, 600, 1200)
+    s.event("stop", EPISODE, 1200, 1200)
+    s.wait()
+    target = {"show": {"ids": {"imdb": "tt0386676"}}, "episode": {"season": 2, "number": 5}}
+    assert net.scrobbles() == [("start", {**target, "progress": 25.0}), ("pause", {**target, "progress": 50.0}),
+                               ("stop", {**target, "progress": 100.0})]
+    assert s.snapshot() == {"last": {"title": "The Office T2 · E5", "action": "stop", "at": 1000.0}, "error": None}
+
+
+def test_a_409_on_stop_is_not_an_error(monkeypatch):
+    net, t, s = setup(monkeypatch, reply=(409, {"watched_at": "x"}))
+    s.event("stop", MOVIE, 7000, 7200)
+    s.wait()
+    assert s.snapshot()["error"] is None and s.snapshot()["last"]["action"] == "stop"
+
+
+def test_a_401_renews_the_session_once_and_retries(monkeypatch):
+    answers = iter([(401, None), (201, {})])
+    net, t, s = setup(monkeypatch, reply=lambda url, body: next(answers))
+    net.on("/oauth/token", (200, {"access_token": "nuevo", "refresh_token": "r2", "expires_in": 7200}))
+    s.event("start", MOVIE, 10, 7200)
+    s.wait()
+    assert len(net.scrobbles()) == 2 and sum("/oauth/token" in u for _, u, _ in net.calls) == 1
+    assert s.snapshot()["error"] is None
+    assert json.loads(t.credentials.get(trakt.TOKENS_KEY))["access_token"] == "nuevo"
+
+
+def test_a_server_error_is_said_in_words_and_logged_once_per_video(monkeypatch, caplog):
+    net, t, s = setup(monkeypatch, reply=(500, None))
+    with caplog.at_level(logging.WARNING, logger="orbital.scrobble"):
+        for action in ("start", "pause", "start", "stop"):
+            s.event(action, MOVIE, 100, 7200)
+        s.wait()
+        s.event("start", EPISODE, 100, 1200)  # otro video: se vuelve a avisar
+        s.wait()
+    assert "HTTP 500" in s.snapshot()["error"] and s.snapshot()["last"] is None
+    assert len([r for r in caplog.records if "No pude avisarle a Trakt" in r.message]) == 2
+
+
+def test_nothing_is_sent_without_trakt_or_for_live_tv(monkeypatch):
+    net, t, s = setup(monkeypatch, linked=False)
+    s.event("start", MOVIE, 10, 7200)
+    s.wait()
+    assert net.scrobbles() == []
+    net, t, s = setup(monkeypatch)
+    s.event("start", {"kind": "tv", "meta_id": "tt1", "video_id": "tt1", "title": "Canal"}, 10, 7200)
+    s.event("start", MOVIE, 10, 0)  # sin duración no hay porcentaje
+    s.wait()
+    assert net.scrobbles() == []
+    assert TraktScrobbler().event("start", MOVIE, 10, 7200) is None  # ni siquiera hay Trakt
+
+
+def test_a_dead_network_never_raises_into_the_player(monkeypatch):
+    net, t, s = setup(monkeypatch, reply=OSError("sin red"))
+    s.event("start", MOVIE, 10, 7200)
+    s.wait()
+    assert "No pude conectar con Trakt" in s.snapshot()["error"]
+
+
+# ---------------------------------------------------------------- el reproductor lo avisa
+class Mpv:
+    def __init__(self):
+        self.props = {"pause": False, "volume": 80, "track-list": []}
+        self.sent = []
+
+    def command(self, *args):
+        self.sent.append(args)
+
+    def command_named(self, **args):
+        pass
+
+    def get(self, prop):
+        return self.props.get(prop)
+
+
+class Script:
+    """process.poll(): cada vuelta del vigilante aplica un paso de la película y, al acabar, mpv se «cierra»."""
+
+    def __init__(self, mpv, steps):
+        self.mpv, self.steps = mpv, list(steps)
+
+    def poll(self):
+        if not self.steps:
+            return 0
+        self.mpv.props.update(self.steps.pop(0))
+        return None
+
+
+def watch(meta, steps, live=False):
+    mpv, got = Mpv(), []
+    p = player.OrbitalPlayer(mpv=mpv)
+    p.POLL = 0
+    p.on_scrobble = lambda action, m, pos, dur: got.append((action, round(pos), round(dur)))
+    p.current = playback = player.Playback("Peli", Script(mpv, steps), 0, {})
+    p.segment = player.Segment(meta, "Peli", "http://x/v", live=live)
+    if live:
+        p.segment.loaded -= 60
+    p._watch(playback)
+    return got
+
+
+def test_the_player_reports_play_pause_resume_seek_and_stop():
+    got = watch(MOVIE, [
+        {"time-pos": 10.0, "duration": 6000.0},                  # primera imagen
+        {"time-pos": 11.0},                                       # ya viendo: start
+        {"time-pos": 12.0, "pause": True},                        # pausa
+        {"time-pos": 12.0, "pause": False},                       # reanuda: start
+        {"time-pos": 3000.0},                                     # salto grande: start con el avance nuevo
+        {"time-pos": 3001.0},
+    ])
+    assert got == [("start", 11, 6000), ("pause", 11, 6000), ("start", 12, 6000), ("start", 3000, 6000),
+                   ("stop", 3001, 6000)]
+
+
+def test_a_seek_while_paused_reports_the_new_position_as_pause():
+    got = watch(MOVIE, [
+        {"time-pos": 10.0, "duration": 6000.0}, {"time-pos": 11.0}, {"pause": True, "time-pos": 11.0},
+        {"time-pos": 4000.0}])
+    assert [g[0] for g in got] == ["start", "pause", "pause", "stop"] and got[2][1] == 4000
+
+
+def test_a_small_skip_does_not_report_again():
+    got = watch(MOVIE, [{"time-pos": 10.0, "duration": 6000.0}, {"time-pos": 11.0}, {"time-pos": 41.0}, {"time-pos": 42.0}])
+    assert [g[0] for g in got] == ["start", "stop"]
+
+
+def test_opening_and_closing_before_any_image_reports_nothing():
+    assert watch(MOVIE, [{}, {}]) == []
+
+
+def test_live_tv_reports_nothing_to_trakt():
+    live = {"kind": "tv", "meta_id": "tv:canal", "video_id": "tv:canal", "title": "Canal"}
+    assert watch(live, [{"time-pos": 10.0, "path": "http://x/v"}] * 3, live=True) == []

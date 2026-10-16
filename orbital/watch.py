@@ -22,6 +22,7 @@ from .launcher import Launcher
 from .library import addons, cinemeta, localize, streams, stremio_api
 from .library import tmdb as tmdb_api
 from .library.models import LibraryItem
+from .scrobble import TraktScrobbler
 from .sessions import Sessions
 from .state import State
 from .store import ItemStore
@@ -194,6 +195,7 @@ class Watch:
             on_idle=lambda title, minutes, live=False: self.events.publish({
                 "type": "toast", "message": f"Cerré {title}: llevaba {minutes} min sin que lo vieras." if live
                 else f"Cerré {title}: llevaba {minutes} min en pausa. Sigues donde te quedaste."}))
+        self.scrobbler = TraktScrobbler()  # catalog.py le da el Trakt de «Para ti» cuando ya existe
         self._wire_player()
 
     # --- Stremio -------------------------------------------------------------
@@ -432,6 +434,7 @@ class Watch:
         """Lo que el reproductor le pregunta al catálogo (siguiente episodio, otras fuentes…)."""
         p = self.player
         p.on_progress = lambda meta, pos, dur, watched: self._save_progress(meta, pos, dur, watched, refresh=False)
+        p.on_scrobble = self.scrobbler.event
         p.on_failed = self._source_failed
         p.next_provider = self._next_up
         p.sources_provider = self._player_sources

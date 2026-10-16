@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { stepSetting } from "../../orbital/web/js/core/menus.js";
-import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingLabel, settingsMenu, settingsPage, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, memoryMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, gameMenu, keysMenu, mainMenu, nextSetting, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, scrobbleHint, settingLabel, settingsMenu, settingsPage, setupMenu, stopMenu, switchMenu, tourMenu, updateMenu, windowsMenu } from "../../orbital/web/js/core/menus.js";
 
 const zelda = {
   id: "emu:switch:1", title: "Zelda", favorite: false, runner: "switch", system: "switch",
@@ -109,6 +109,18 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   assert.deepEqual(keys.options[3].command, { type: "keys-menu", service: "tmdb" });
   assert.deepEqual(keys.options[4].command, { type: "keys", service: "rawg" });
   assert.deepEqual(keysMenu("tmdb").options.map((o) => o.command.type), ["close", "keys", "keys-remove"]);
+});
+
+test("ajustes › Cuentas › Trakt: último scrobble en palabras, o el error", () => {
+  const now = Date.UTC(2026, 9, 15, 12, 0, 0);
+  const at = now / 1000 - 180;
+  assert.equal(scrobbleHint({ last: { title: "The Office T2 · E5", action: "pause", at }, error: null }, now),
+    "Último scrobble: The Office T2 · E5 · en pausa · hace 3 min");
+  assert.equal(scrobbleHint({ last: null, error: null }, now), "Tus listas en Para ti · Último scrobble: aún nada");
+  assert.equal(scrobbleHint({ last: null, error: "Trakt respondió HTTP 500" }, now), "Trakt no recibe lo que ves: Trakt respondió HTTP 500");
+  const row = settingsPage("accounts", { trakt: { configured: true, linked: true, scrobble: { last: null, error: "No pude conectar con Trakt" } } })
+    .options.find((o) => o.label === "Trakt");
+  assert.match(row.hint, /^Trakt no recibe lo que ves/);
 });
 
 test("las opciones de una película no repiten A; la ficha va primero (con el dedo no hay X); la búsqueda solo busca", () => {
