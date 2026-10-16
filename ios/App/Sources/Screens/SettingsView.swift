@@ -69,7 +69,7 @@ struct SettingsView: View {
             }
             .listRowBackground(DS.fill)
         }
-        .scrollContentBackground(.hidden).background(TintedBackground())
+        .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle("Ajustes").navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("¿Cerrar sesión de Stremio?", isPresented: $confirmSignOut, titleVisibility: .visible) {
             Button("Cerrar sesión", role: .destructive) { Task { await session.model.signOut() } }

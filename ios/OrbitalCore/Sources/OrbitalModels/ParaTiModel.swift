@@ -18,6 +18,8 @@ public final class ParaTiModel: ObservableModel {
         public var shelfID: String?
         public var reason: FeaturedReason
     }
+    /// «Próximos estrenos»: por día (lista) o la semana (una tira de días).
+    public enum CalendarLayout: Equatable { case byDay, week }
     /// De dónde salió lo que ves: la consola (misma curaduría que la TV) o este iPhone (lógica local).
     public enum Source: Equatable, Sendable { case console, phone }
 
@@ -35,6 +37,9 @@ public final class ParaTiModel: ObservableModel {
     public private(set) var watchlistKeys = Set<String>() { didSet { changed() } }
     public private(set) var traktLinked = false { didSet { changed() } }
     public private(set) var isLoading = false { didSet { changed() } }
+    /// Los episodios que salen de las series que sigues (Trakt), hoy y los próximos 14 días.
+    public private(set) var airings: [Airing] = [] { didSet { changed() } }
+    public var calendarLayout: CalendarLayout = .byDay { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }
     /// El mosaico es lo popular de Stremio (sin Trakt ni TMDB todavía): la pantalla invita a conectarlos.
     public private(set) var isGeneric = false { didSet { changed() } }
@@ -116,6 +121,7 @@ public final class ParaTiModel: ObservableModel {
         shelves = ShelfPlanner.plan(lists)
         watchlistKeys = (try? await remote.watchlistKeys()) ?? []
         mosaic = fetchedMosaic
+        airings = (try? await services.forYou.calendar()) ?? []   // el calendario sale de tu Trakt (la consola trae la lista «estrenos», que aquí no se pinta como estante)
         isGeneric = false
         error = mosaic.isEmpty && lists.isEmpty ? "Tu Orbital no tiene sugerencias todavía." : nil
         await loadShelves()
@@ -128,6 +134,7 @@ public final class ParaTiModel: ObservableModel {
         lists = await services.forYou.lists()
         shelves = ShelfPlanner.plan(lists)
         watchlistKeys = await services.forYou.watchlistKeys()
+        airings = (try? await services.forYou.calendar()) ?? []
         mosaic = await services.forYou.mosaic()
         // Sin Trakt ni TMDB el mosaico no quedaría vacío: lo más popular de Stremio (Cinemeta no pide claves).
         isGeneric = mosaic.isEmpty
@@ -152,7 +159,7 @@ public final class ParaTiModel: ObservableModel {
         for shelf in shelves {
             for id in shelf.listIDs {
                 let k = key(listID: id, splits: shelf.splitsKinds)
-                if railItems[k] == nil, !wanted.contains(where: { $0.key == k }) { wanted.append((k, id)) }
+                if id != "estrenos", railItems[k] == nil, !wanted.contains(where: { $0.key == k }) { wanted.append((k, id)) }
             }
         }
         guard !wanted.isEmpty else { return }
@@ -214,6 +221,7 @@ public final class ParaTiModel: ObservableModel {
         }
         mosaic.removeAll { $0.imdb == s.imdb }
         railItems = railItems.mapValues { $0.filter { $0.imdb != s.imdb } }
+        airings.removeAll { $0.series.imdb == s.imdb }
     }
 
     /// El botón «Actualizar»: limpia la caché (de la consola o local, según de dónde viniera) y vuelve a cargar.

@@ -127,6 +127,29 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertTrue(request.episodeLabel.hasPrefix("T1 · E3"))
     }
 
+    /// CEN-37: con la consola conectada la ficha toma su sinopsis (en español) y si el logo es oscuro; sin consola, lo de Cinemeta.
+    func testTitleTakesTheConsolesOverviewWhenConnected() async throws {
+        let rig = try titleRig()
+        let title = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
+        await title.load()
+        let cinemeta = title.info.description
+        await title.loadConsoleDetails()
+        XCTAssertNil(title.consoleOverview, "sin consola no cambia nada")
+        XCTAssertEqual(title.overview, cinemeta)
+
+        rig.services.settings.update { $0.orbitalAddress = "tv.example" }
+        rig.secrets.set(SecretKey.orbitalToken, "tok")
+        rig.http.json["https://tv.example/api/foryou/details?key=video:tt0386676&kind=series"] = ["overview": " Un falso documental. ", "logo_dark": true]
+        await title.loadConsoleDetails()
+        XCTAssertEqual(title.overview, "Un falso documental.")
+        XCTAssertTrue(title.logoIsDark)
+
+        rig.http.json["https://tv.example/api/foryou/details?key=video:tt0386676&kind=series"] = ["overview": ""]
+        let other = TitleModel(rig.services, kind: "series", metaID: "tt0386676")
+        await other.load(); await other.loadConsoleDetails()
+        XCTAssertEqual(other.overview, other.info.description, "una sinopsis vacía no tapa la de Cinemeta")
+    }
+
     func testTitleWithoutHistoryStartsAtTheFirstEpisode() async throws {
         let rig = try ServicesRig()
         rig.http.json[stremioGet] = ["result": []]

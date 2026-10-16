@@ -61,9 +61,10 @@ class TraktScrobbler:
             trakt = self.trakt()
             if trakt is None or not trakt.linked or action not in trakt_api.SCROBBLE_ACTIONS:
                 return
-            if meta.get("kind") not in ("movie", "series"):
+            kind, meta_id = meta.get("kind"), meta.get("meta_id")
+            if kind not in ("movie", "series") or not isinstance(meta_id, str):
                 return  # TV en vivo, juegos…: nada que contarle a Trakt
-            target = trakt_api.scrobble_target(meta.get("kind"), meta.get("meta_id"), meta.get("video_id"))
+            target = trakt_api.scrobble_target(kind, meta_id, meta.get("video_id"))
             progress = percent(position, duration)
             if target is None or progress is None:
                 return

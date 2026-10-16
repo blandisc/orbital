@@ -41,6 +41,10 @@ enum Demo {
     }
     /// `-demo-player panel|sources`: ya reproduciendo, abre el panel de audio y subtítulos o el de otra fuente.
     static var player: String? { value(after: "-demo-player") }
+    /// `-demo-airings`: Trakt «conectado» con un calendario de mentira (Próximos estrenos) para ver el estante en Listas.
+    static var airings: Bool { ProcessInfo.processInfo.arguments.contains("-demo-airings") }
+    /// `-demo-shelf trend`: en Para ti › Listas, baja hasta ese estante al abrir (para capturarlo sin tocar la pantalla).
+    static var shelf: String? { value(after: "-demo-shelf") }
     /// `-demo-mode lists`: en Para ti, abre en Listas (en vez de Mosaico).
     static var mode: String? { value(after: "-demo-mode") }
     /// `-demo-lang en`: idioma de la app.
@@ -62,7 +66,7 @@ enum Demo {
     static func secrets() -> InMemorySecrets {
         let secrets = InMemorySecrets()
         if !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") { secrets.set(SecretKey.stremioAuth, "DEMO") }
-        if scrobble { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa: nada sale a Trakt
+        if scrobble || airings { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa: nada sale a Trakt
         if !noTV { secrets.set(SecretKey.orbitalToken, "demo") }      // una Orbital de mentira ya conectada («Ver en la TV»)
         return secrets
     }
@@ -102,6 +106,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         let url = request.url
         if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
         if url.host == "demo.orbital.invalid" { return addon(url.path) }
+        if url.host == "api.trakt.tv", url.path.hasPrefix("/calendars/my/shows") { return calendarDemo() }
         if url.host == "api.trakt.tv" {   // con `-demo-scrobble` Trakt es de mentira: ni una petición sale a internet
             let user: JSON = url.path == "/users/settings" ? ["user": ["username": "demo"]] : [:]
             return HTTPResponse(status: url.path == "/users/settings" ? 200 : 404, data: user.serialized())
@@ -148,6 +153,20 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         case "/api/foryou/dismiss": return HTTPResponse(status: 200, data: JSON.object(["ok": true]).serialized())
         default: return HTTPResponse(status: 404, data: Data())
         }
+    }
+
+    /// El calendario de Trakt de mentira: tres series que salen hoy, mañana y en tres días.
+    private func calendarDemo() -> HTTPResponse {
+        func row(_ imdb: String, _ title: String, days: Double, hour: Double, season: Int, episode: Int, network: String) -> JSON {
+            let when = Calendar.current.startOfDay(for: Date()).addingTimeInterval(days * 86_400 + hour * 3600)
+            return ["first_aired": .string(StremioLibrary.iso(when.timeIntervalSince1970)),
+                    "episode": ["season": .int(season), "number": .int(episode), "title": "Episodio de prueba"],
+                    "show": ["title": .string(title), "year": 2022, "network": .string(network), "ids": ["imdb": .string(imdb), "trakt": 1]]]
+        }
+        let rows: JSON = .array([row("tt14452776", "The Bear", days: 0, hour: 20, season: 3, episode: 4, network: "FX"),
+                                 row("tt11280740", "Severance", days: 1, hour: 21, season: 2, episode: 7, network: "Apple TV+"),
+                                 row("tt0903747", "Breaking Bad", days: 3, hour: 19, season: 1, episode: 4, network: "AMC")])
+        return HTTPResponse(status: 200, data: rows.serialized())
     }
 
     /// Lo que manda `orbital/foryou.py` para un `video_item`, con `rank` si es de un chart.

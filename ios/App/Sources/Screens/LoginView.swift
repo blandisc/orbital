@@ -47,7 +47,7 @@ struct LoginView: View {
             .padding(DS.Space.s6)
         }
         .scrollDismissesKeyboard(.interactively)
-        .background(TintedBackground())
+        .background(Backdrop())
     }
 
     private func signIn() { Task { await session.signIn(email: email, password: password) } }

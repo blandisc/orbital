@@ -1,5 +1,6 @@
 import { h, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
+import { settler } from "../core/motion.js";
 import { Button } from "./button.js";
 
 /**
@@ -19,6 +20,7 @@ export function createDetailPanel({ onAction }) {
   const el = h("aside", { class: "detail-panel", "aria-live": "polite" }, art, body);
   let shownKey = null;
   let swap = 0;
+  const wait = settler(); // al recorrer rápido, la ficha espera a que te detengas
 
   const stat = ([label, value]) => value && h("span", { class: "detail-panel__stat" },
     h("span", { class: "detail-panel__stat-label" }, label), h("span", { class: "detail-panel__stat-value" }, value));
@@ -26,19 +28,20 @@ export function createDetailPanel({ onAction }) {
   function fill(d) {
     const picture = d.art ? h("img", { class: ["detail-panel__img", d.artKind && `detail-panel__img--${d.artKind}`], src: d.art, alt: "" }) : null;
     picture?.addEventListener("error", () => picture.remove(), { once: true });
-    mount(art, picture);
+    // De dónde es, en una píldora sobre el arte (Steam, GOG, Serie · 2022).
+    mount(art, picture, d.platform && h("span", { class: "tile__platform tile__platform--pill detail-panel__store" },
+      svg(ICONS[d.platform.icon] || ICONS.apps), d.platform.text));
     const name = () => h("h2", { class: "detail-panel__title" }, d.title);
     const logo = d.logo ? h("img", { class: ["detail-panel__logo", d.logoDark && "detail-panel__logo--dark"], src: d.logo, alt: d.title }) : null;
     logo?.addEventListener("error", () => logo.replaceWith(name()), { once: true });
     const stats = (d.stats || []).filter(([, v]) => v);
     mount(body,
       logo || name(),
-      d.platform && h("span", { class: "detail-panel__platform" }, svg(ICONS[d.platform.icon] || ICONS.apps), d.platform.text),
       stats.length > 0 && h("div", { class: "detail-panel__stats" }, stats.map(stat)),
       h("p", { class: "detail-panel__description" }, d.description || ""),
       d.actions?.length
         ? h("div", { class: "button-row detail-panel__actions" }, d.actions.map((a) => Button({
-          label: a.label, ariaLabel: a.ariaLabel, glyph: a.glyph, variant: a.primary ? "primary" : undefined, yields: !!a.yields,
+          label: a.label, ariaLabel: a.ariaLabel, glyph: a.glyph, variant: a.primary ? "primary" : undefined, art: !!a.primary, yields: !!a.yields,
           onPress: () => onAction?.(a.id, d),
         })))
         : d.note && h("span", { class: "detail-panel__note" }, d.note));
@@ -56,7 +59,7 @@ export function createDetailPanel({ onAction }) {
       if (mine !== swap) return;
       fill(d);
       el.classList.remove("detail-panel--swap");
-    }, 90);
+    }, wait());
   }
 
   return { el, update, reset: () => { shownKey = null; }, get shown() { return shownKey !== null; } };

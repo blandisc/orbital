@@ -60,7 +60,7 @@ public enum ShelfPlanner {
         for id in ["trend", "popular", "cinemeta"] { if let l = has(id) { out.append(ShelfPlan(id: id, list: l, listIDs: [id], style: .plain)) } }
 
         // Catálogos de complementos: lo que queda (`<complemento>:<catálogo>`).
-        let known = Set(out.flatMap(\.listIDs)).union(["continue", "mylist"])
+        let known = Set(out.flatMap(\.listIDs)).union(["continue", "mylist", "estrenos"])   // los estrenos son el estante de calendario, no una lista
         for list in lists where !known.contains(list.id) && list.group == .discover && list.brand == nil {
             out.append(ShelfPlan(id: list.id, list: list, listIDs: [list.id], style: .plain))
         }

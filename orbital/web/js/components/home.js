@@ -1,6 +1,7 @@
 import { h, mount } from "../core/dom.js";
 import { dragArea, dragScroll } from "../core/swipe.js";
 import { buildHome, greeting } from "../core/home.js";
+import { settler } from "../core/motion.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { ConsoleTile, FeatureTile, RowTile } from "./tiles.js";
 import { SectionHead } from "./ui.js";
@@ -61,11 +62,14 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   let options = { runningId: null, glyphs: {} };
   let staged; // lo que enseña el destacado ahora (cambia al bajar por los renglones)
   let hiddenCount = 0;
+  // Al bajar rápido por los renglones solo se mueve el resaltado; el destacado cambia cuando te detienes.
+  const stageWait = settler({ quick: 0, held: 240 });
+  let stageTimer;
 
   /** Qué es lo enfocado (no dónde está): un juego o una consola. */
   const identity = (t) => (t?.item?.id ?? (t?.console ? `console:${t.console.id ?? t.console.system ?? t.console.name}` : null));
 
-  function render(rows, { runningId = null, glyphs = {}, hidden = 0 } = {}) {
+  function render(rows, { runningId = null, glyphs = {}, hidden = 0, airing = {} } = {}) {
     options = { runningId, glyphs };
     hiddenCount = hidden;
     staged = undefined; // se vuelve a pintar con los datos nuevos
@@ -85,7 +89,8 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
       : { kind: "empty", setup: !model.consoles.length && !hidden, unhide: !model.consoles.length && hidden > 0 });
     const queued = model.cards.map((item, i) => {
       targets.set(`card:${i}`, { kind: "item", item });
-      return RowTile(item, { focusId: `card:${i}`, onPress: pick(`card:${i}`) });
+      const imdb = item.extra?.meta_id;
+      return RowTile(item, { focusId: `card:${i}`, onPress: pick(`card:${i}`), airing: imdb && airing?.[imdb] });
     });
     top.classList.toggle("home__top--alone", !queued.length);
     mount(queue, queued.length > 0 && SectionHead("También tenías", { meta: String(queued.length), className: "home__queue-head" }),
@@ -110,6 +115,13 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     }
     paint();
     fit();
+  }
+
+  function queueStage() {
+    clearTimeout(stageTimer);
+    const wait = stageWait();
+    if (wait) stageTimer = setTimeout(renderStage, wait);
+    else renderStage();
   }
 
   /** El destacado enseña lo enfocado: el renglón en el que estás o, si no, lo último que tenías. */
@@ -167,7 +179,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   /** Marca el foco, atenúa lo demás y mantiene la consola enfocada a la vista. */
   function paint() {
     const inConsoles = focusId.startsWith("console:");
-    renderStage();
+    queueStage();
     const previewing = focusId.startsWith("card:"); // el destacado enseña el renglón enfocado: no se apaga
     for (const node of [...el.querySelectorAll("[data-focus-id]"), ...outside()]) {
       const focused = node.dataset.focusId === focusId;

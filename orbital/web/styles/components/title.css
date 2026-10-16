@@ -6,7 +6,7 @@
   display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: var(--space-10);
   padding: calc(var(--space-14) + var(--safe-y)) var(--page-gutter) calc(3.4rem + var(--space-4) + var(--safe-y));
   background: var(--color-tinted-bg);
-  animation: fade-in var(--duration-slow) var(--ease-out);
+  animation: fade-in var(--duration-fast) var(--ease-out); /* el arte aparece casi de inmediato y se queda quieto */
 }
 .title--series { grid-template-columns: minmax(0, 36fr) minmax(0, 44fr); }
 .title--leaving { animation: fade-out var(--duration-exit) var(--ease-in) forwards; }
@@ -28,8 +28,14 @@
 /* Izquierda: identidad y botones */
 .title__info {
   display: flex; flex-direction: column; justify-content: flex-end; gap: var(--space-4); min-width: 0; max-width: 46rem;
-  text-shadow: var(--shadow-text-strong); animation: rise-in var(--duration-enter) var(--ease-out);
+  text-shadow: var(--shadow-text-strong);
 }
+/* Al abrir, como Game Glance: el arte no se mueve; el título, los datos y los botones llegan a su lugar uno tras otro. */
+@keyframes title-settle { from { opacity: 0; transform: translateY(1.6rem); } }
+.title__info > * { animation: title-settle var(--duration-enter) var(--ease-out) backwards; }
+.title__info > .title__facts, .title__info > .title__avail, .title__info > .title__description { animation-delay: var(--delay-1); }
+.title__info > .title__people, .title__info > .title__progress { animation-delay: var(--delay-2); }
+.title__info > .title__actions, .title__info > .title__action-caption, .title__info > .title__status { animation-delay: var(--delay-3); }
 /* Nada se encoge: un título o una sinopsis encogidos se rebanaban a media línea (con letra grande). */
 .title__info > * { flex-shrink: 0; }
 @media (max-height: 820px) {
@@ -46,7 +52,7 @@
 .title__sep { opacity: .5; }
 .title__fact--start .title__sep { display: none; } /* empieza renglón: sin punto delante */
 /* Lo que hay para ver (antes de elegir): 4K · HDR · Inglés, Español · Al instante. */
-.title__avail { display: flex; flex-wrap: wrap; gap: var(--space-2); text-shadow: none; animation: fade-in var(--duration-slow) var(--ease-out); }
+.title__avail { display: flex; flex-wrap: wrap; gap: var(--space-2); text-shadow: none; }
 .title__avail .chip { background: var(--color-chip-on-art); box-shadow: inset 0 0 0 1px var(--color-hairline-strong); }
 .title__avail-none { display: inline-flex; align-items: center; min-height: 1.6rem; color: var(--color-text-muted); font-size: var(--text-sm); } /* la altura de un chip */
 .title__description {
@@ -100,6 +106,8 @@
 /* Foco invertido (como el menú): se ve desde el sofá. */
 .title__action--focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
 .title__action--focused small { color: inherit; opacity: .7; }
+/* «Ver» / «Continuar» con el color del arte del título (como el Jugar de Game Glance). */
+.title__action--primary.title__action--focused { background: var(--color-primary-art); }
 .title[data-zone="episodes"] .title__action--primary { box-shadow: inset 0 0 0 2px var(--color-hairline-strong); }
 
 /* Derecha: temporadas (LB/RB) y episodios (↑/↓) */

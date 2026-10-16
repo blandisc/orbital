@@ -110,6 +110,36 @@ export function playOf(item) {
 /** Para la ficha (title.js): la serie o película en su forma de Cinemeta. */
 export const titleOf = (item) => ({ ...item, kind: item.kind, meta_id: item.meta_id });
 
+/** «Próximos estrenos» por día: [{ day, title: «Hoy», sub: «jueves 15», entries: [{ item, n }] }] en el orden que llegan. */
+export function calendarDays(items) {
+  const groups = [];
+  (items || []).forEach((item, n) => {
+    let g = groups.at(-1);
+    if (!g || g.day !== item.day) groups.push(g = { day: item.day, title: item.day_label, sub: item.day_sub, entries: [] });
+    g.entries.push({ item, n });
+  });
+  return groups;
+}
+
+const WEEK = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+/** La semana desde `today` (AAAA-MM-DD): 7 columnas con sus estrenos (vacías también: «Nada este día»). */
+export function calendarWeek(items, today, days = 7) {
+  const [y, m, d] = String(today).split("-").map(Number);
+  return Array.from({ length: days }, (_, i) => {
+    const date = new Date(y, m - 1, d + i);
+    const day = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const name = WEEK[date.getDay()];
+    const title = i === 0 ? "Hoy" : i === 1 ? "Mañana" : name[0].toUpperCase() + name.slice(1);
+    return { day, today: i === 0, title, sub: String(date.getDate()),
+      entries: (items || []).map((item, n) => ({ item, n })).filter((e) => e.item.day === day) };
+  });
+}
+
+/** Hoy en AAAA-MM-DD, con la hora de aquí (la de la consola). */
+export const localDay = (now = new Date()) =>
+  `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
 /** Para el encabezado de una lista: «Trakt · Lo más visto esta semana», «12 series». */
 export function listMeta(list, count, kind = null) {
   const what = kind ? (kind === "movie" ? "película" : "serie") : list?.group === "games" ? "juego" : "título";

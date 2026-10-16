@@ -71,7 +71,7 @@ final class AppEnvironment: ObservableObject {
             SettingsStore(kv).update {
                 if let language = Demo.language { $0.uiLanguage = language }
                 if !Demo.noTV { $0.orbitalAddress = "tv.demo.invalid" }
-                if Demo.scrobble { $0.traktClientID = "demo" }
+                if Demo.scrobble || Demo.airings { $0.traktClientID = "demo" }
             }
             Demo.prefillScrobble(kv)
             return Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),

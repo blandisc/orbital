@@ -48,6 +48,11 @@ final class ShelfPlanTests: XCTestCase {
         XCTAssertEqual(disney.map(\.id), ["jw:disney"], "con jw:disney, el respaldo no se pinta aparte")
     }
 
+    func testTheCalendarListIsNotAShelfOfItsOwn() {
+        let ids = ShelfPlanner.plan(overview + [list("estrenos", title: "Próximos estrenos", group: .mine)]).map(\.id)
+        XCTAssertFalse(ids.contains("estrenos"), "los estrenos salen de `airings`: su estante es el de calendario, justo después del destacado")
+    }
+
     func testStylesTop10PlatformAndPlain() {
         let styles = Dictionary(uniqueKeysWithValues: ShelfPlanner.plan(overview).map { ($0.id, $0.style) })
         XCTAssertEqual(styles["chart:netflix"], .top10)

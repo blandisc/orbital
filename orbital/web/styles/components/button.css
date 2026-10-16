@@ -20,6 +20,8 @@
 .button:active { transform: scale(.97); }
 .button--primary { padding-right: 1.6rem; background: var(--color-primary); color: var(--color-on-primary); font-weight: var(--weight-bold); }
 .button--primary:hover { background: var(--color-primary); filter: brightness(.94); }
+/* Principal con el color del arte de lo que enseña (destacado del Inicio, ficha lateral, héroe). */
+.button--art, .button--art:hover { background: var(--color-primary-art); transition: background var(--duration-tint) var(--ease-out), transform var(--duration-fast) var(--ease-out); }
 /* Un botón que sí recibe el foco del mando (cuando es lo único que hay que hacer: Conectar Trakt). */
 .button.is-focused { box-shadow: var(--ring-focus); transform: scale(var(--inverse-scale)); }
 /* El principal ya es blanco: con el anillo blanco se veía doble borde. Enfocado, solo crece y se eleva. */

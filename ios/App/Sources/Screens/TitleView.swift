@@ -23,21 +23,26 @@ struct TitleView: View {
     var body: some View {
         let model = observer.model
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s4) {
+            VStack(alignment: .leading, spacing: 0) {
                 hero(model)
-                actions(model)
-                if let message = model.message { DSNotice(text: LocalizedStringKey(message), tone: .error) }
-                if model.traktAvailable { watchlistToggle(model) }
-                if let error = model.error, model.info.description.isEmpty { DSNotice(text: LocalizedStringKey(error), tone: .warn) }
-                if !model.info.description.isEmpty { Text(model.info.description).font(DS.font(.md)).foregroundStyle(DS.textMuted) }
-                if model.kind == "series" { episodes(model) }
-                credits(model)
+                VStack(alignment: .leading, spacing: DS.Space.s4) {
+                    actions(model)
+                    if let message = model.message { DSNotice(text: LocalizedStringKey(message), tone: .error) }
+                    if model.traktAvailable { watchlistToggle(model) }
+                    if let error = model.error, model.overview.isEmpty { DSNotice(text: LocalizedStringKey(error), tone: .warn) }
+                    if !model.overview.isEmpty { Text(model.overview).font(DS.font(.md)).foregroundStyle(DS.textMuted) }
+                    if model.kind == "series" { episodes(model) }
+                    credits(model)
+                }
+                .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s10)
             }
-            .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s10)
         }
-        .background(TintedBackground(tint: tint.color))
+        .background(Backdrop(tint: tint.color))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)     // el arte llega hasta arriba y la barra flota encima
+        .toolbar { topBar(model) }
         .task { await model.followDownloads() }
+        .task { await model.loadConsoleDetails() }     // la sinopsis en español, si tu Orbital está conectada
         .onChange(of: env.watchedSomething) { Task { await model.refreshState() } }   // vuelves de ver: avance, visto y «Continuar» al día
         .task {
             await model.load()
@@ -65,23 +70,36 @@ struct TitleView: View {
     }
 
     // MARK: partes
+    /// Arte a sangre que se funde con el fondo, el logo del título (o su nombre) y, debajo, de dónde es y hasta cuatro datos
+    /// (año · género · duración · calificación, como `detail-panel.js`).
     private func hero(_ model: TitleModel) -> some View {
-        ZStack(alignment: .bottomLeading) {
-            PosterView(url: model.background ?? model.poster, title: model.title, aspect: DS.Poster.heroAspect)
-            LinearGradient(colors: [.clear, DS.bg], startPoint: .center, endPoint: .bottom)
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(model.title).font(DS.font(.display, weight: .bold)).foregroundStyle(DS.text).lineLimit(3)
-                Text(meta(model)).font(DS.font(.sm)).foregroundStyle(DS.textMuted)
+        BleedArt(url: model.background ?? model.poster, title: model.title, aspect: DS.Poster.heroAspect) {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                TitleLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title, size: .hero, dark: model.logoIsDark)
+                Label(model.kind == "movie" ? "Película" : "Serie", systemImage: model.kind == "movie" ? "film" : "tv")
+                    .font(DS.font(.sm)).foregroundStyle(DS.textMuted)
+                let facts = Vocabulary.titleFacts(year: model.info.year, genres: model.info.genres, runtime: model.info.runtime, rating: model.info.rating)
+                if !facts.isEmpty { Text(verbatim: Vocabulary.factLine(facts)).font(DS.font(.sm)).foregroundStyle(DS.textMuted) }
             }
-            .padding(DS.Space.s3)
         }
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl))
+        .ignoresSafeArea(edges: .top)
     }
 
-    private func meta(_ model: TitleModel) -> String {
-        ([model.info.year, model.info.genres.prefix(2).joined(separator: ", "), model.info.runtime, model.info.rating.isEmpty ? "" : "★ \(model.info.rating)"]).filter { !$0.isEmpty }.joined(separator: " · ")
+    /// Mi lista y En la TV: botones de ícono en la barra de arriba (con su nombre para VoiceOver).
+    @ToolbarContentBuilder private func topBar(_ model: TitleModel) -> some ToolbarContent {
+        ToolbarItemGroup(placement: .topBarTrailing) {
+            if env.services.orbital.isConfigured {
+                Button { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: model.continueVideoID, title: model.title) } } label: { Image(systemName: "tv") }
+                    .disabled(model.continueVideoID == nil)
+                    .accessibilityLabel(Text("En la TV"))
+            }
+            Button { Task { await model.toggleLibrary() } } label: { Image(systemName: model.inLibrary ? "checkmark" : "plus") }
+                .sensoryFeedback(.success, trigger: model.inLibrary)
+                .accessibilityLabel(Text("Mi lista")).accessibilityValue(model.inLibrary ? Text("En Mi lista") : Text(verbatim: ""))
+        }
     }
 
+    /// El botón principal (blanco) y, debajo, Descargar y Fuentes. Mi lista y En la TV están arriba, en la barra.
     private func actions(_ model: TitleModel) -> some View {
         let label = model.continueLabel
         return VStack(spacing: DS.Space.s3) {
@@ -89,18 +107,12 @@ struct TitleView: View {
                 Label { primaryLabel(label, model).lineLimit(1) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
             }
             .dsPrimaryButton().controlSize(.large).disabled(model.continueVideoID == nil)
-            // Con letra de accesibilidad no caben tres en fila: van una debajo de otra, con su nombre completo.
+            // Con letra de accesibilidad no caben dos en fila: van una debajo de otra, con su nombre completo.
             let row = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: DS.Space.s2)) : AnyLayout(HStackLayout(spacing: DS.Space.s2))
             row {
-                secondary("Mi lista", symbol: model.inLibrary ? "checkmark" : "plus", value: model.inLibrary ? "En Mi lista" : nil) { Task { await model.toggleLibrary() } }
-                    .sensoryFeedback(.success, trigger: model.inLibrary)
                 downloadButton(model)
                 secondary("Fuentes", symbol: "list.bullet") { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) } }
                     .disabled(model.continueVideoID == nil)
-                if env.services.orbital.isConfigured {
-                    secondary("En la TV", symbol: "tv") { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: model.continueVideoID, title: model.title) } }
-                        .disabled(model.continueVideoID == nil)
-                }
             }
         }
     }
@@ -116,18 +128,10 @@ struct TitleView: View {
         }
     }
 
-    /// Una acción secundaria con su nombre (no solo el ícono): Mi lista, Descargar, Fuentes.
-    private func secondary(_ title: LocalizedStringKey, symbol: String, value: LocalizedStringKey? = nil, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Group {
-                if typeSize.isAccessibilitySize { Label(title, systemImage: symbol).font(DS.font(.md)) }
-                else { VStack(spacing: DS.Space.s1) { Image(systemName: symbol); Text(title).font(DS.font(.xs)).lineLimit(1) } }
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.glass).buttonBorderShape(.roundedRectangle(radius: DS.Radius.lg))
-        .controlSize(env.services.orbital.isConfigured ? .regular : .large)   // con «En la TV» son cuatro: menos relleno para que quepan los nombres
-        .accessibilityValue(value.map { Text($0) } ?? Text(verbatim: ""))
+    /// Una acción secundaria con su nombre (no solo el ícono): Descargar, Fuentes.
+    private func secondary(_ title: LocalizedStringKey, symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) { Label(title, systemImage: symbol).font(DS.font(.md)).lineLimit(1).frame(maxWidth: .infinity) }
+            .buttonStyle(.glass).buttonBorderShape(.roundedRectangle(radius: DS.Radius.lg)).controlSize(.large)
     }
 
     private func primaryLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> Text {
@@ -223,9 +227,10 @@ struct EpisodeRowView: View {
 
     var body: some View {
         // El botón de descargar va junto, no dentro, del que reproduce: anidados, tocar la flecha ponía el episodio.
-        HStack(alignment: .top, spacing: DS.Space.s3) {
+        // Miniatura, texto y estado en una misma línea central: el estado siempre cae en la misma columna.
+        HStack(alignment: .center, spacing: DS.Space.s3) {
             Button(action: play) {
-                HStack(alignment: .top, spacing: DS.Space.s3) {
+                HStack(alignment: .center, spacing: DS.Space.s3) {
                     ZStack(alignment: .bottom) {
                         PosterView(url: row.thumbnail, title: "\(row.number)", aspect: DS.Poster.stillAspect)
                         if let progress = row.progress { DSProgress(fraction: progress) }
@@ -233,7 +238,7 @@ struct EpisodeRowView: View {
                     .frame(width: DS.Poster.episodeThumbWidth, height: DS.Poster.episodeThumbWidth / DS.Poster.stillAspect).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
                         (row.hasTitle ? Text("\(row.number) · \(row.title)") : Text("Episodio \(row.number)")).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(2)
-                        status.font(DS.font(.xs)).foregroundStyle(DS.textMuted)
+                        if hasStatus { status.font(DS.font(.xs)).foregroundStyle(DS.textMuted) }
                         if !row.overview.isEmpty { Text(row.overview).font(DS.font(.xs)).foregroundStyle(DS.textFaint).lineLimit(2) }
                     }
                     Spacer(minLength: 0)
@@ -241,7 +246,7 @@ struct EpisodeRowView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            stateIcon
+            stateIcon.frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
         }
         .padding(.vertical, DS.Space.s3)
         .contextMenu {
@@ -252,11 +257,12 @@ struct EpisodeRowView: View {
         }
     }
 
+    private var hasStatus: Bool { row.watched || row.leftMinutes > 0 || row.download == .done }
+
     @ViewBuilder private var status: some View {
         if row.watched { Text("Visto") }
         else if row.leftMinutes > 0 { Text(timeLeftText(minutes: row.leftMinutes)) }
         else if row.download == .done { Text("Descargado") }
-        else { Text("") }
     }
 
     @ViewBuilder private var stateIcon: some View {

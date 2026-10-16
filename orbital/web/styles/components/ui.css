@@ -52,6 +52,11 @@
 .tile__shade { position: absolute; inset: 0; background: var(--gradient-tile-shade); pointer-events: none; }
 /* De dónde es (Steam, Switch, Película): ícono + nombre, en gris y sin mayúsculas; acompaña, no grita. */
 .tile__platform { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
+/* De dónde es, en una píldora de vidrio sobre el arte (Steam, GOG, Switch…), como Game Glance: se ve de un vistazo
+   sin leer los datos. La coloca quien la usa (destacado del Inicio, ficha lateral). */
+.tile__platform--pill { padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2); border-radius: var(--radius-pill);
+  background: var(--color-badge-bg); -webkit-backdrop-filter: blur(var(--blur-glass)); backdrop-filter: blur(var(--blur-glass));
+  color: var(--color-text); font-weight: var(--weight-medium); white-space: nowrap; max-width: calc(100% - 2 * var(--space-4)); overflow: hidden; text-overflow: ellipsis; }
 .tile__platform svg { flex: none; width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
 
 /* Badge grande: sobre arte a sangre (el mosaico de Para ti). */

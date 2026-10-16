@@ -26,3 +26,13 @@ test("solo se guarda el aviso más reciente de cada tipo", () => {
   deferred.offer({ type: "toast", message: "otro" });
   assert.deepEqual(deferred.take().map((e) => e.message), ["segundo", "otro"]);
 });
+
+test("al recorrer rápido, lo pesado espera a que te detengas", async () => {
+  const { settler } = await import("../../orbital/web/js/core/motion.js");
+  let t = 0;
+  const wait = settler({ quick: 90, held: 260, burst: 280, now: () => t });
+  assert.equal(wait(), 90); // primer paso: casi inmediato
+  t = 120; assert.equal(wait(), 260); // seguidos: espera
+  t = 240; assert.equal(wait(), 260);
+  t = 900; assert.equal(wait(), 90); // te detuviste: otra vez rápido
+});

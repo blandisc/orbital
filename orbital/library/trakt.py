@@ -99,6 +99,18 @@ def entry(raw: dict | None, kind: str) -> dict | None:
             "trakt_id": ids.get("trakt") if isinstance(ids.get("trakt"), int) else None}
 
 
+def _when(value) -> float | None:
+    """«2026-10-16T01:00:00.000Z» → segundos desde 1970 (None si no se entiende)."""
+    from datetime import datetime
+
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
 def _typed(rows) -> list[dict]:
     """Filas mezcladas («type»: movie/show) → solo películas y series con IMDb, sin repetir."""
     found, seen = [], set()
@@ -297,6 +309,27 @@ class Trakt:
     def popular(self, kind: str, limit: int = 30) -> list[dict]:
         rows = self._get(f"/{KINDS[kind]}/popular", auth=False, limit=limit, extended="full")
         return [e for e in (entry(r, kind) for r in rows) if e] if isinstance(rows, list) else []
+
+    def calendar(self, start: str, days: int = 15) -> list[dict]:
+        """Los episodios que salen de las series que sigues, desde `start` (AAAA-MM-DD, en hora universal) y `days` días:
+        {serie (como entry), season, episode, title, aired (segundos desde 1970), network, runtime}. Sin IMDb, no entra."""
+        rows = self._get(f"/calendars/my/shows/{start}/{max(1, min(int(days), 31))}", extended="full")
+        found = []
+        for row in rows if isinstance(rows, list) else []:
+            if not isinstance(row, dict):
+                continue
+            show = entry(row.get("show"), "series")
+            ep = row.get("episode") if isinstance(row.get("episode"), dict) else {}
+            aired = _when(row.get("first_aired"))
+            season, number = ep.get("season"), ep.get("number")
+            if not show or aired is None or not isinstance(season, int) or not isinstance(number, int):
+                continue
+            raw_show = row["show"]
+            network = raw_show.get("network") if isinstance(raw_show.get("network"), str) else ""
+            found.append({**show, "season": season, "episode": number, "episode_title": str(ep.get("title") or "").strip(),
+                          "aired": aired, "network": network.strip(),
+                          "runtime": _positive(ep.get("runtime")) or show.get("runtime")})
+        return sorted(found, key=lambda e: e["aired"])
 
     def watching(self, limit: int = 12) -> list[dict]:
         """Las series que estás viendo (lo más reciente primero) con el episodio que sigue; las terminadas no."""

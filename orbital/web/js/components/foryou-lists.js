@@ -1,5 +1,6 @@
 import { h, mount } from "../core/dom.js";
-import { iconName, kindLabel, listMeta, railEntries, SPLIT_KINDS } from "../core/foryou.js";
+import { calendarDays, calendarWeek, iconName, kindLabel, listMeta, localDay, railEntries, SPLIT_KINDS } from "../core/foryou.js";
+import { CalendarDays, CalendarWeek } from "./calendar.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { dragScroll, hoverArea } from "../core/swipe.js";
 import { BrowseHead, fillFilters, keepInView, replay } from "./browse.js";
@@ -53,8 +54,11 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
   let retry = false; // se entró de nuevo a una lista: si había fallado, se pide otra vez
 
   const list = () => lists.find((l) => l.id === listId) ?? null;
-  const kind = (l = list()) => (l?.split ? kindOf[l.id] || "series" : null);
-  const cacheKey = (l = list()) => `${l?.id}:${kind(l) || ""}`;
+  // Una lista con «vistas» (Próximos estrenos: Por día | Semana) usa las mismas píldoras que Series | Películas, pero
+  // la vista no cambia lo que se pide: los mismos estrenos, acomodados de otra forma.
+  const views = (l = list()) => (Array.isArray(l?.views) && l.views.length ? l.views : null);
+  const kind = (l = list()) => (views(l) ? kindOf[l.id] || views(l)[0].id : l?.split ? kindOf[l.id] || "series" : null);
+  const cacheKey = (l = list()) => `${l?.id}:${views(l) ? "" : kind(l) || ""}`;
   const entry = () => loaded.get(cacheKey()) ?? { state: "loading", items: [] };
   const index = () => Math.max(0, lists.findIndex((l) => l.id === listId));
   /** Las plataformas, con su logo de TMDB (si no carga, su ícono); las demás, su ícono. */
@@ -86,7 +90,7 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
     retry = false;
     const key = cacheKey(l);
     loaded.set(key, { state: "loading", items: [] });
-    loadList(l.id, kind(l)).then(
+    loadList(l.id, views(l) ? null : kind(l)).then(
       (items) => {
         loaded.set(key, { state: "ready", items: Array.isArray(items) ? items : [] });
         if (key !== cacheKey()) return;
@@ -106,8 +110,9 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
       title: l.title, media: media(l),
       meta: l.info ? l.meta || "" : state === "ready" ? listMeta(l, items.length, kind(l)) : [l.source, l.meta].filter(Boolean).join(" · "),
     }));
-    bar.hidden = !l?.split;
-    if (l?.split) fillFilters(filters, SPLIT_KINDS, { current: kind(l), targets, onPick });
+    bar.hidden = !l?.split && !views(l);
+    el.classList.toggle("foryou-lists--wide", views(l) !== null && kind(l) === "week");
+    if (views(l) || l?.split) fillFilters(filters, views(l) || SPLIT_KINDS, { current: kind(l), targets, onPick });
     else mount(filters);
     if (l?.info) { // una lista que explica algo (conectar Trakt, agregar claves) en vez de portadas
       const action = l.action && Button({ label: l.actionLabel, glyph: options.glyphs.select, variant: "primary",
@@ -117,6 +122,11 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
         targets.set("connect", { kind: "action", action: l.action, label: l.actionLabel });
       }
       mount(grid, h("div", { class: "foryou-lists__info" }, h("p", { class: "browse__empty" }, l.info), action));
+    } else if (state === "ready" && items.length && views(l)) {
+      items.forEach((item, n) => targets.set(`item:${n}`, { kind: "item", item }));
+      const press = (n) => onPick?.(targets.get(`item:${n}`), `item:${n}`);
+      mount(grid, kind(l) === "week" ? CalendarWeek(calendarWeek(items, localDay()), { onPress: press })
+        : CalendarDays(calendarDays(items), { onPress: press }));
     } else if (state === "ready" && items.length) {
       const external = l?.source === "RAWG"; // de afuera: los que ya tienes llevan palomita
       grid.classList.toggle("browse__grid--mixed", l?.group === "games"); // cada caja con su forma
@@ -144,8 +154,8 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
         // Las portadas aún no llegan: el foco las espera (en el filtro si hay; si no, en ninguna parte,
         // nunca en el riel) y cae en la primera en cuanto estén.
         waiting = "items";
-        focusId = l?.split ? "filter:0" : "item:wait";
-      } else focusId = count ? `item:${Math.min(memory[l?.id] ?? 0, count - 1)}` : l?.split ? "filter:0" : focusId;
+        focusId = l?.split || views(l) ? "filter:0" : "item:wait";
+      } else focusId = count ? `item:${Math.min(memory[l?.id] ?? 0, count - 1)}` : l?.split || views(l) ? "filter:0" : focusId;
     }
   }
 
@@ -182,7 +192,7 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
   function paint() {
     for (const node of el.querySelectorAll("[data-focus-id]")) {
       const focused = node.dataset.focusId === focusId;
-      node.classList.toggle(node.classList.contains("card") ? "card--focused" : "is-focused", focused);
+      node.classList.toggle(node.classList.contains("card") ? "card--focused" : node.classList.contains("tile") ? "tile--focused" : "is-focused", focused);
       if (focused) node.setAttribute("aria-current", "true");
       else if (!node.classList.contains("rail__item--current")) node.removeAttribute("aria-current");
     }
@@ -233,7 +243,7 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
 
   function setKind(value) {
     const l = list();
-    if (!l?.split || kind(l) === value) return false;
+    if ((!l?.split && !views(l)) || kind(l) === value) return false;
     kindOf[l.id] = value;
     memory[l.id] = 0;
     retry = true;

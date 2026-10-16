@@ -37,6 +37,48 @@ public struct Suggestion: Sendable, Equatable, Identifiable {
 
 public enum ForYouGroup: String, Sendable { case mine, discover, platforms }
 
+/// Un día de «Próximos estrenos» con lo que sale (vacío en la semana: «Nada este día»).
+public struct AiringDay: Sendable, Equatable, Identifiable {
+    public var day: Date
+    public var airings: [Airing]
+    public var id: Date { day }
+
+    /// Por día: solo los días con estrenos, en orden.
+    public static func byDay(_ airings: [Airing]) -> [AiringDay] {
+        var out: [AiringDay] = []
+        for a in airings {
+            if out.last?.day == a.day { out[out.count - 1].airings.append(a) } else { out.append(AiringDay(day: a.day, airings: [a])) }
+        }
+        return out
+    }
+
+    /// La semana desde hoy: siete días, también los que no tienen nada.
+    public static func week(_ airings: [Airing], from now: Date, calendar: Calendar = .current, days: Int = 7) -> [AiringDay] {
+        let today = calendar.startOfDay(for: now)
+        return (0..<days).compactMap { calendar.date(byAdding: .day, value: $0, to: today) }
+            .map { day in AiringDay(day: day, airings: airings.filter { $0.day == day }) }
+    }
+}
+
+/// Un estreno de «Próximos estrenos»: la serie (pulsar abre su ficha), el día y la hora de aquí, el episodio y dónde sale.
+/// Varios episodios de la misma serie el mismo día (las plataformas sueltan tres juntos) son uno solo: «T2 E4–E6».
+public struct Airing: Sendable, Equatable, Identifiable {
+    public var series: Suggestion
+    public var season: Int
+    public var first: Int
+    public var last: Int
+    public var count: Int
+    public var episodeTitle: String
+    public var aired: Date
+    /// El día (a medianoche, en la hora de aquí).
+    public var day: Date
+    public var network: String
+    /// Sale antes de las 6 de la mañana (lo de streaming): «Desde la madrugada» en vez de la hora.
+    public var atDawn: Bool
+    public var id: String { "\(series.imdb):\(Int(day.timeIntervalSince1970))" }
+    public var episodeLabel: String { count > 1 ? "T\(season) E\(first)–E\(last)" : "T\(season) E\(first)" }
+}
+
 public struct ForYouList: Sendable, Equatable, Identifiable {
     public var id: String
     public var title: String           // nombre propio (listas de Trakt, plataformas); vacío = la interfaz lo nombra
@@ -63,6 +105,8 @@ public actor ForYou {
     public static let popularTTL: TimeInterval = 6 * 3600
     public static let slowTTL: TimeInterval = 24 * 3600
     public static let mosaicSize = 48
+    public static let calendarDays = 14
+    public static let dawnHour = 6
     static let metahubPoster = "https://images.metahub.space/poster/medium/%@/img"
     static let metahubBackground = "https://images.metahub.space/background/medium/%@/img"
     static let metahubLogo = "https://images.metahub.space/logo/medium/%@/img"
@@ -112,7 +156,8 @@ public actor ForYou {
         var out: [ForYouList] = []
         if let trakt, trakt.linked {
             out += [ForYouList(id: "watchlist", title: "", group: .mine, brand: nil, logo: nil, splitsKinds: false),
-                    ForYouList(id: "mine", title: "", group: .mine, brand: nil, logo: nil, splitsKinds: false)]
+                    ForYouList(id: "mine", title: "", group: .mine, brand: nil, logo: nil, splitsKinds: false),
+                    ForYouList(id: "estrenos", title: "", group: .mine, brand: nil, logo: nil, splitsKinds: false)]
             let own = (try? await remember("trakt:lists", ttl: Self.mineTTL) { try await trakt.lists() }) ?? []
             out += own.prefix(8).map { ForYouList(id: "list:\($0.id)", title: $0.name, group: .mine, brand: nil, logo: nil, splitsKinds: false) }
             out.append(ForYouList(id: "recs", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: true))
@@ -177,6 +222,49 @@ public actor ForYou {
                                   logo: String(format: Self.metahubLogo, imdb), reason: .onPlatform(platform.name), next: nil)
             }
         }
+    }
+
+    // MARK: próximos estrenos
+    /// Lo que sale hoy y los próximos 14 días de las series que sigues en Trakt, con la hora de aquí. Sin Trakt: nada.
+    public func calendar(calendar: Calendar = .current) async throws -> [Airing] {
+        guard let trakt, trakt.linked else { return [] }
+        let now = clock()
+        // Trakt va en hora universal: se pide desde un día antes para no perder lo de hoy.
+        let start = Self.dayString(calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: now))!, calendar: calendar)
+        let rows = try await remember("trakt:calendar:\(start)", ttl: Self.recsTTL) { try await trakt.calendar(start: start, days: Self.calendarDays + 2) }
+        return Self.airings(rows, now: now, calendar: calendar).filter { !dismissed.contains($0.series.imdb) }
+    }
+
+    static func dayString(_ date: Date, calendar: Calendar) -> String {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian); f.locale = Locale(identifier: "en_US_POSIX"); f.timeZone = calendar.timeZone
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: date)
+    }
+
+    /// Agrupa por serie y día (en la hora de aquí), de hoy a 14 días, en orden de hora y luego de nombre.
+    public static func airings(_ rows: [TraktAiring], now: Date, calendar: Calendar) -> [Airing] {
+        let today = calendar.startOfDay(for: now)
+        guard let end = calendar.date(byAdding: .day, value: calendarDays, to: today) else { return [] }
+        var groups: [Airing] = [], index: [String: Int] = [:]
+        for row in rows {
+            let day = calendar.startOfDay(for: row.aired)
+            guard day >= today, day < end else { continue }
+            let key = "\(row.show.imdb)|\(day.timeIntervalSince1970)"
+            if let i = index[key] {
+                groups[i].first = min(groups[i].first, row.episode)
+                groups[i].last = max(groups[i].last, row.episode)
+                groups[i].count += 1
+                continue
+            }
+            let e = row.show
+            let series = Suggestion(kind: "series", imdb: e.imdb, title: e.title, year: e.year, runtime: e.runtime, overview: e.overview,
+                                    poster: String(format: metahubPoster, e.imdb), wide: String(format: metahubBackground, e.imdb), reason: .watching)
+            index[key] = groups.count
+            groups.append(Airing(series: series, season: row.season, first: row.episode, last: row.episode, count: 1, episodeTitle: row.episodeTitle,
+                                 aired: row.aired, day: day, network: row.network, atDawn: calendar.component(.hour, from: row.aired) < dawnHour))
+        }
+        return groups.sorted { ($0.aired, $0.series.title) < ($1.aired, $1.series.title) }
     }
 
     // MARK: mosaico

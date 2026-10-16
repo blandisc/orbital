@@ -102,6 +102,15 @@ enum DS {
         static let rankNumber = CGFloat(DesignTokens.Size.rankNumber)
         /// La cifra de un Top 10: enorme y pesada; no crece con Dynamic Type (es un adorno, el puesto ya se dice en la etiqueta).
         static var rankFont: Font { .system(size: rankNumber, weight: .black, design: .rounded) }
+        static let logoHero = CGFloat(DesignTokens.Size.logoHero)
+    }
+
+    /// El fondo de pantalla: tono del arte, estrellas del espacio vivo y el fundido del arte a sangre.
+    enum Backdrop {
+        static let tintFloor = DesignTokens.Backdrop.tintFloor
+        static let starCount = DesignTokens.Backdrop.starCount, starSeed = DesignTokens.Backdrop.starSeed
+        static let starRadius = CGFloat(DesignTokens.Backdrop.starRadius), starOpacity = DesignTokens.Backdrop.starOpacity
+        static let artFadeStart = DesignTokens.Backdrop.artFadeStart
     }
 
     /// Esperas de la interfaz (nanosegundos para `Task.sleep`).

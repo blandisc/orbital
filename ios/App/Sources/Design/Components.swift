@@ -115,8 +115,20 @@ struct PosterView: View {
     let url: String?
     let title: String
     var aspect: CGFloat? = DS.Poster.aspect
+    /// Arte a sangre (`BleedArt`): sin esquinas ni borde, solo recortado al marco.
+    var bleed = false
 
     var body: some View {
+        if bleed { art.clipped().accessibilityLabel(Text(title)) }
+        else {
+            art
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+                .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).stroke(DS.hairline))
+                .accessibilityLabel(Text(title))
+        }
+    }
+
+    private var art: some View {
         frame
             .overlay {
                 if let url, let u = URL(string: url) {
@@ -128,9 +140,6 @@ struct PosterView: View {
                     }
                 } else { placeholder }
             }
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).stroke(DS.hairline))
-            .accessibilityLabel(Text(title))
     }
 
     /// El fondo marca el tamaño: con proporción, la del póster; sin ella, todo lo que le den.
@@ -167,49 +176,115 @@ struct PosterCard: View {
     }
 }
 
-/// El destacado de Inicio y la ficha: arte a sangre con el título y sus botones.
+/// Arte a sangre (de borde a borde, sin esquinas) que se funde con el fondo por abajo con una máscara de gradiente: el
+/// destacado de Inicio y el encabezado de la ficha (`.title__backdrop` y el arte del `FeatureTile` en la TV). Lo que va encima
+/// (`content`) queda abajo, sobre el velo, y no se desvanece.
+struct BleedArt<Content: View>: View {
+    let url: String?
+    let title: String
+    /// Sin proporción llena el espacio que le den (con un mínimo, como el destacado); con ella, esa relación (la de la ficha).
+    var aspect: CGFloat?
+    var minHeight: CGFloat = 0
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            PosterView(url: url, title: title, aspect: aspect, bleed: true)
+                .overlay(LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: UnitPoint(x: 0.5, y: DS.Backdrop.artFadeStart / 2), endPoint: .bottom))
+                .mask(LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: (1 - DS.Backdrop.artFadeStart) / 2),
+                                             .init(color: .black, location: DS.Backdrop.artFadeStart),
+                                             .init(color: .clear, location: 1)], startPoint: .top, endPoint: .bottom))
+            content().padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s3)
+        }
+        .frame(minHeight: minHeight)      // con letra grande crece en vez de encimar el texto
+        .accessibilityElement(children: .contain)
+    }
+}
+
+/// El logo del título (metahub); si no carga o no hay, su nombre en texto (misma regla que `--logo` en la TV). `.tile` es el de una
+/// pieza del mosaico; `.hero`, el del destacado y la ficha (más grande, hasta dos líneas). `dark`: el logo es oscuro y se pinta blanco.
+struct TitleLogo: View {
+    enum Size { case tile, hero }
+    let url: String?
+    let title: String
+    var size: Size = .tile
+    var dark = false
+
+    var body: some View {
+        Group {
+            if let url, let u = URL(string: url) {
+                AsyncImage(url: u) { phase in
+                    switch phase {
+                    case .success(let image): image.resizable().scaledToFit().brightness(dark ? 1 : 0)
+                    case .failure: name
+                    default: name.hidden()     // mientras carga guarda el sitio del nombre: no brinca si el logo llega
+                    }
+                }
+                .frame(maxWidth: DS.Size.cardMax, maxHeight: height, alignment: .leading)
+                .shadow(color: DS.scrim, radius: DS.Space.s1)
+            } else { name }
+        }
+        .accessibilityLabel(Text(title))
+    }
+
+    private var height: CGFloat { size == .hero ? DS.Size.logoHero : DS.Size.logo }
+
+    private var name: some View {
+        // En una pieza, una sola línea (con puntos suspensivos si no cabe): en una columna angosta dos líneas se encimaban con el dato.
+        Text(title).font(DS.font(size == .hero ? .xl : .lg, weight: .bold)).foregroundStyle(DS.text)
+            .lineLimit(size == .hero ? 2 : 1).frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// El destacado de Inicio (`FeatureTile` en la TV): arte a sangre con velo inferior, el logo del título, el dato en el mismo
+/// vocabulario que la consola («T2 · E5 · quedan 20 min») y las acciones.
 struct HeroCard<Actions: View>: View {
     let title: String
     let detail: String
     let background: String?
+    var logo: String?
     var badge: LocalizedStringKey?
     var progress: Double?
-    /// El logo del título (metahub): si carga, sustituye al nombre; si no hay o falla, cae al nombre en texto.
-    var logo: String?
     /// El dato de una línea ya traducido (con `detail` vacío): «Película · 2021 · 2 h 35 min».
     var detailText: Text?
     @ViewBuilder var actions: () -> Actions
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            PosterView(url: background, title: title, aspect: nil)
-            LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom)
+        BleedArt(url: background, title: title, minHeight: DS.Poster.heroHeight) {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 if let badge { DSBadge(text: badge) }
-                titleOrLogo
-                (detailText ?? Text(detail)).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(detailText == nil ? 1 : 2)
+                TitleLogo(url: logo, title: title, size: .hero)
+                if let detailText { detailText.font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(2) }
+                else if !detail.isEmpty { Text(detail).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1) }
                 actions().padding(.top, DS.Space.s1)
                 if let progress { DSProgress(fraction: progress) }
             }
-            .padding(DS.Space.s4)
         }
-        .frame(minHeight: DS.Poster.heroHeight)      // con letra grande crece en vez de encimar el texto
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl))
-        .accessibilityElement(children: .contain)
     }
+}
 
-    private var nameText: some View { Text(title).font(DS.font(.xl, weight: .bold)).foregroundStyle(DS.text).lineLimit(2) }
+/// Un renglón de lista (`RowTile` en la TV): miniatura ancha, nombre y dato. «También tenías» en Inicio.
+struct RowTile: View {
+    let title: String
+    let thumb: String?
+    let detail: String
+    var progress: Double?
 
-    @ViewBuilder private var titleOrLogo: some View {
-        if let logo, let url = URL(string: logo) {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image): image.resizable().scaledToFit().frame(maxWidth: .infinity, maxHeight: DS.Size.logo, alignment: .leading).accessibilityLabel(Text(title))
-                case .failure: nameText
-                default: Color.clear.frame(height: DS.Size.logo)   // mientras llega, el mismo alto: nada salta
-                }
+    var body: some View {
+        HStack(alignment: .center, spacing: DS.Space.s3) {
+            ZStack(alignment: .bottom) {
+                PosterView(url: thumb, title: title, aspect: DS.Poster.stillAspect)
+                if let progress { DSProgress(fraction: progress) }
             }
-        } else { nameText }
+            .frame(width: DS.Poster.episodeThumbWidth)
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                Text(title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(2)
+                if !detail.isEmpty { Text(detail).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(2) }
+            }
+            Spacer(minLength: 0)
+        }
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -368,28 +443,51 @@ struct DSSpeedPill: View {
     }
 }
 
-/// Fondo de pantalla: el tono del título que ves, muy oscurecido (como `--art-tint` en la TV).
-struct TintedBackground: View {
-    var tint: Color = DS.bg
+/// Fondo de pantalla (`Backdrop` en la TV): el tono del arte enfocado o abierto tiñe TODA la pantalla (muy oscurecido, como
+/// `--art-tint`), con un fundido suave. Sin arte (`tint` nil) y con `space`, el «espacio vivo» de Inicio y Para ti: estrellas muy tenues.
+struct Backdrop: View {
+    var tint: Color?
+    var space = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        LinearGradient(colors: [tint, DS.bg], startPoint: .top, endPoint: .center)
-            .background(DS.bg)
-            .ignoresSafeArea()
-            .animation(DS.Motion.tint(reduceMotion), value: tint)
+        let tone = tint ?? DS.bg
+        ZStack {
+            DS.bg
+            LinearGradient(colors: [tone, tone.mix(with: DS.bg, by: DS.Backdrop.tintFloor)], startPoint: .top, endPoint: .bottom)
+            Stars().opacity(space && tint == nil ? 1 : 0)
+        }
+        .ignoresSafeArea()
+        .animation(DS.Motion.tint(reduceMotion), value: tint)
+        .accessibilityHidden(true)
+    }
+}
+
+/// Las estrellas del espacio vivo: puntos fijos y muy tenues, siempre en los mismos lugares (sin movimiento).
+private struct Stars: View {
+    var body: some View {
+        Canvas { context, size in
+            var seed = DS.Backdrop.starSeed
+            func next() -> Double { seed = (seed * 9301 + 49297).truncatingRemainder(dividingBy: 233280); return seed / 233280 }
+            for _ in 0..<DS.Backdrop.starCount {
+                let x = next() * size.width, y = next() * size.height, grow = 0.5 + next()
+                let r = DS.Backdrop.starRadius * grow
+                context.fill(Path(ellipseIn: CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)), with: .color(DS.text.opacity(DS.Backdrop.starOpacity * (0.4 + next() * 0.6))))
+            }
+        }
     }
 }
 
 /// Tono medio de una imagen (para el fondo): se calcula una vez y se recuerda.
 @MainActor
 final class ArtTint: ObservableObject {
-    @Published private(set) var color: Color = DS.bg
+    /// nil: no hay arte (el fondo es el de siempre, con su espacio vivo).
+    @Published private(set) var color: Color?
     private static var cache: [String: Color] = [:]
     private static let cacheLimit = 64
 
     func load(_ url: String?) async {
-        guard let url, let u = URL(string: url) else { return }
+        guard let url, let u = URL(string: url) else { color = nil; return }
         if let hit = Self.cache[url] { color = hit; return }
         guard let (data, _) = try? await URLSession.shared.data(from: u),
               let average = await Task.detached(priority: .utility, operation: { UIImage(data: data)?.averageColor }).value else { return }

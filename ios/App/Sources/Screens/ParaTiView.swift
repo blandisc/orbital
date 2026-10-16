@@ -5,6 +5,9 @@ import OrbitalModels
 /// «Para ti»: el mosaico (como en la TV, solo películas y series) y las listas (Trakt y plataformas).
 struct ParaTiView: View {
     @StateObject private var model: ModelObserver<ParaTiModel>
+    @StateObject private var tint = ArtTint()
+    /// El arte de la pieza enfocada del mosaico: el fondo de toda la pantalla toma su tono (nil en el ambiente o en Listas).
+    @State private var focusedArt: String?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -29,12 +32,14 @@ struct ParaTiView: View {
             .padding(.horizontal, DS.Space.gutter)
             if let error = m.error, m.mosaic.isEmpty, m.lists.isEmpty { DSNotice(text: LocalizedStringKey(error)).padding(.horizontal, DS.Space.gutter) }
             switch m.mode {
-            case .mosaic: Mosaic(items: m.mosaic, watchlistKeys: m.watchlistKeys, demoFocus: demoFocusImdb, onDismiss: { s in Task { await m.dismiss(s) } })
+            case .mosaic: Mosaic(items: m.mosaic, watchlistKeys: m.watchlistKeys, demoFocus: demoFocusImdb, onDismiss: { s in Task { await m.dismiss(s) } },
+                            onFocusChange: { focusedArt = $0?.wide })
             case .lists: ListsView(observer: model)
             }
         }
         .padding(.top, DS.Space.s2)
-        .background(TintedBackground())
+        .background(Backdrop(tint: m.mode == .mosaic ? tint.color : nil, space: true))
+        .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
         .navigationTitle("Para ti").navigationBarTitleDisplayMode(.large)
         .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
@@ -150,11 +155,29 @@ struct ListsView: View {
     private var model: ParaTiModel { observer.model }
 
     var body: some View {
+        ScrollViewReader { proxy in scroller.task { await demoScroll(proxy) } }
+    }
+
+    /// Modo demostración (`-demo-shelf id`): baja hasta ese estante al abrir, para las capturas.
+    private func demoScroll(_ proxy: ScrollViewProxy) async {
+        #if DEBUG
+        guard Demo.isOn, let id = Demo.shelf else { return }
+        try? await Task.sleep(for: .seconds(3))
+        proxy.scrollTo(id, anchor: .top)
+        #endif
+    }
+
+    private var scroller: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: DS.Space.s6, pinnedViews: [.sectionHeaders]) {
                 if let featured = model.featured { featuredTile(featured).padding(.horizontal, DS.Space.gutter) }
+                if !model.airings.isEmpty {   // justo después del destacado; vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
+                    Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), symbol: "calendar", route: ShelfRoute(id: "estrenos")) {
+                        ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
+                    }
+                }
                 Section {
-                    ForEach(model.visibleShelves) { plan in shelf(plan) }
+                    ForEach(model.visibleShelves) { plan in shelf(plan).id(plan.id) }
                     if model.needsSources { sourcesFallback }
                 } header: {
                     if model.hasKindSplit {
@@ -167,7 +190,9 @@ struct ListsView: View {
             .padding(.bottom, DS.Space.s14)   // aire bajo la última fila: la barra de pestañas no la tapa
         }
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
-        .navigationDestination(for: ShelfRoute.self) { ListGridView(observer: observer, shelfID: $0.id) }
+        .navigationDestination(for: ShelfRoute.self) { route in
+            if route.id == "estrenos" { UpcomingScreen(observer: observer) } else { ListGridView(observer: observer, shelfID: route.id) }
+        }
     }
 
     // MARK: estantes
@@ -203,7 +228,7 @@ struct ListsView: View {
     private func featuredTile(_ featured: ParaTiModel.Featured) -> some View {
         let s = featured.item
         let route = s.route
-        return HeroCard(title: s.title, detail: "", background: s.wide, badge: reasonKey(featured.reason), logo: s.logo, detailText: factVariants(s).first) {
+        return HeroCard(title: s.title, detail: "", background: s.wide, logo: s.logo, badge: reasonKey(featured.reason), detailText: factVariants(s).first) {
             // «Ver» y «Más» en un renglón; con letra grande, uno debajo del otro.
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: DS.Space.s2) { watchButton(s); moreMenu(s) }
@@ -272,7 +297,18 @@ struct ListGridView: View {
                 .navigationTitle(shelfTitle(plan))
             }
         }
-        .background(TintedBackground())
+        .background(Backdrop(tint: nil, space: true))
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// El calendario completo («Por día» · «Semana»): la vista de Próximos estrenos de siempre, abierta desde el encabezado del estante.
+struct UpcomingScreen: View {
+    @ObservedObject var observer: ModelObserver<ParaTiModel>
+
+    var body: some View {
+        ScrollView { UpcomingView(observer: observer).padding(.bottom, DS.Space.s14) }
+            .background(Backdrop(tint: nil, space: true))
+            .navigationTitle("Próximos estrenos").navigationBarTitleDisplayMode(.inline)
     }
 }

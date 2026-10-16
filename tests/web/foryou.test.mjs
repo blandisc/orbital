@@ -82,3 +82,17 @@ test("mosaico: las cajas de GBA casi cuadradas, y un juego sin fondo ancho de ve
   assert.ok(keys.some((key) => shapeOf({ key }) === "wide"));
   assert.ok(keys.every((key) => shapeOf({ key, hero_weak: true }) === "poster"));
 });
+
+test("próximos estrenos: por día en el orden que llegan y la semana con sus siete días", async () => {
+  const { calendarDays, calendarWeek, localDay } = await import("../../orbital/web/js/core/foryou.js");
+  const ep = (day, title, label) => ({ day, title, day_label: label, day_sub: "x" });
+  const items = [ep("2026-10-15", "Severance", "Hoy"), ep("2026-10-16", "Andor", "Mañana"), ep("2026-10-16", "Silo", "Mañana"), ep("2026-10-18", "Futurama", "Domingo 18")];
+  const days = calendarDays(items);
+  assert.deepEqual(days.map((d) => [d.title, d.entries.map((e) => e.n)]), [["Hoy", [0]], ["Mañana", [1, 2]], ["Domingo 18", [3]]]);
+  const week = calendarWeek(items, "2026-10-15");
+  assert.equal(week.length, 7);
+  assert.deepEqual(week.map((c) => c.title).slice(0, 3), ["Hoy", "Mañana", "Sábado"]);
+  assert.deepEqual(week.map((c) => c.entries.length), [1, 2, 0, 1, 0, 0, 0]);
+  assert.equal(calendarWeek([], "2026-12-30")[2].day, "2027-01-01"); // cambia de año
+  assert.equal(localDay(new Date(2026, 0, 5)), "2026-01-05");
+});
