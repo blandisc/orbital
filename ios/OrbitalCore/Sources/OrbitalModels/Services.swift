@@ -11,6 +11,8 @@ public final class Services: ObservableModel {
     public let settings: SettingsStore
     public let titlePrefs: TitlePreferences
     public let pending: PendingStore
+    /// Lo último que se le contó a Trakt (o el problema): vive aquí, no en `WatchService`, porque `reconfigure()` lo rearma.
+    public let scrobbleLog: ScrobbleLog
     private let flushGate = FlushGate()
     public let stremio: StremioAPI
 
@@ -40,6 +42,8 @@ public final class Services: ObservableModel {
                 clock: @escaping @Sendable () -> Date = { Date() }, onDownloadsChange: @escaping @Sendable ([DownloadItem]) -> Void = { _ in }) {
         self.http = http; self.secrets = secrets; self.kv = kv; self.pending = pending; self.downloadTransport = downloadTransport
         self.downloadsRoot = downloadsRoot; self.freeSpace = freeSpace; self.clock = clock; self.onDownloadsChange = onDownloadsChange
+        let scrobbleLog = ScrobbleLog(kv: kv)
+        self.scrobbleLog = scrobbleLog
         let settings = SettingsStore(kv)
         self.settings = settings
         self.titlePrefs = TitlePreferences(kv)
@@ -55,7 +59,7 @@ public final class Services: ObservableModel {
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, region: { settings.value.region }, kv: kv, clock: clock)
         self.forYouRemote = RemoteForYou(remote: { OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "") }, clock: clock)
-        self.watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate)
+        self.watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
         self.downloads = Downloads(transport: downloadTransport, secrets: secrets, root: downloadsRoot, saved: savedDownloads, freeSpace: freeSpace,
                                    refresh: Services.refresher(finder: finder, settings: settings, titlePrefs: titlePrefs),
                                    subtitles: Services.subtitleFetcher(http: http, finder: finder, settings: settings, titlePrefs: titlePrefs),
@@ -146,13 +150,14 @@ public final class Services: ObservableModel {
         localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock)
         trakt = Services.makeTrakt(http: http, secrets: secrets, settings: s, clock: clock)
         forYou = ForYou(trakt: trakt, tmdb: tmdb, region: { settings.value.region }, kv: kv, clock: clock)
-        watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate)
+        watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
         generation += 1
     }
 
     /// Al cerrar sesión: lo pendiente y lo guardado de la cuenta anterior no se sube ni se muestra con la siguiente.
     public func clearAccountData() {
         pending.save(PendingWork())
+        scrobbleLog.clear()
         kv.set("home-cache", data: nil)
     }
 

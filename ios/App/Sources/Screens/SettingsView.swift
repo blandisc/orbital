@@ -176,11 +176,45 @@ struct SettingsView: View {
                 } else {
                     Button("Desconectar Trakt", role: .destructive) { Task { await model.unlinkTrakt() } }
                 }
+                scrobbleRow(model)
             case .failed(let message):
                 DSNotice(text: LocalizedStringKey(message), tone: .error)
                 Button("Volver a intentar") { Task { await model.linkTrakt() } }
             }
         }
         .listRowBackground(DS.fill)
+        .onAppear { model.refreshScrobble() }
+    }
+
+    /// «Último scrobble»: lo último que se le contó a Trakt (o por qué no se pudo), para comprobarlo en trakt.tv › Historial.
+    @ViewBuilder
+    private func scrobbleRow(_ model: SettingsModel) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s1) {
+            Text("Último scrobble").font(DS.font(.sm)).foregroundStyle(DS.textMuted)
+            if let last = model.scrobble.last {
+                Text(verbatim: last.title).font(DS.font(.sm)).foregroundStyle(DS.text)
+                HStack(spacing: DS.Space.s1) {
+                    Text(Self.actionLabel(last.action))
+                    Text(verbatim: "·")
+                    Text(verbatim: Self.ago(last.at, language: model.settings.uiLanguage, now: env.services.now()))
+                }
+                .font(DS.font(.xs)).foregroundStyle(DS.textFaint)
+            } else {
+                Text("Todavía nada: aparece cuando veas algo en el iPhone.").font(DS.font(.xs)).foregroundStyle(DS.textFaint)
+            }
+            if let error = model.scrobble.error { DSNotice(text: LocalizedStringKey(error), tone: .warn) }
+        }
+    }
+
+    private static func actionLabel(_ action: ScrobbleAction) -> LocalizedStringKey {
+        switch action { case .start: "Viendo"; case .pause: "En pausa"; case .stop: "Cerrado" }
+    }
+
+    /// «hace 3 min» / «3 min ago», en el idioma de la app.
+    private static func ago(_ date: Date, language: String, now: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.locale = Locale(identifier: language)
+        formatter.unitsStyle = .short
+        return formatter.localizedString(for: date, relativeTo: now)
     }
 }

@@ -173,10 +173,13 @@ public actor WatchService {
     private let pending: PendingStore
     private let clock: @Sendable () -> Date
     private let gate: FlushGate
+    private let scrobbleLog: ScrobbleLog?
 
     public init(stremio: StremioAPI, authKey: @escaping @Sendable () -> String?, cinemeta: Cinemeta, trakt: Trakt? = nil,
-                pending: PendingStore, clock: @escaping @Sendable () -> Date = { Date() }, gate: FlushGate = FlushGate()) {
+                pending: PendingStore, clock: @escaping @Sendable () -> Date = { Date() }, gate: FlushGate = FlushGate(),
+                scrobbleLog: ScrobbleLog? = nil) {
         self.stremio = stremio; self.authKey = authKey; self.cinemeta = cinemeta; self.trakt = trakt; self.pending = pending; self.clock = clock; self.gate = gate
+        self.scrobbleLog = scrobbleLog
     }
 
     func authKeyValue() -> String? { authKey() }
@@ -224,15 +227,30 @@ public actor WatchService {
         case .paused: action = .pause
         case .stopped: action = .stop
         }
-        do { try await trakt.scrobble(action, target, progress: percent) }
-        catch let error as TraktError {
+        do {
+            let result = try await trakt.scrobble(action, target, progress: percent)
+            // 409 = ya estaba registrado: no es un error. Menos de 1 % (422) no cuenta como aviso.
+            if result != .ignored { scrobbleLog?.recordSent(title: Self.scrobbleTitle(event), action: action, at: clock()) }
+        } catch let error as TraktError {
+            scrobbleLog?.recordFailure(error.description)
             // Sin conexión (o Trakt con problemas) al terminar: lo visto (≥ 80 %) se sube después con su fecha real.
             if Self.shouldRetry(error), case .stopped = phase, percent >= 80 { enqueue(trakt: .init(target: target, at: event.at)) }
-        } catch {}
+        } catch {
+            scrobbleLog?.recordFailure("\(error)")
+        }
+    }
+
+    /// «The Office T2 · E5» o «Dune»: cómo se dice lo último que se mandó.
+    static func scrobbleTitle(_ event: ProgressEvent) -> String {
+        guard event.kind == "series", let target = TraktTarget(videoID: event.videoID, kind: "series"),
+              let season = target.season, let episode = target.episode else { return event.originalTitle }
+        return "\(event.originalTitle) T\(season) · E\(episode)"
     }
 
     private func enqueue(trakt item: PendingWork.TraktWatched) {
         var work = pending.load()
+        // El mismo título cerrado dos veces sin red es UN visionado, no dos.
+        work.traktWatched.removeAll { $0.target == item.target && abs($0.at - item.at) < 12 * 3600 }
         work.traktWatched.append(item)
         pending.save(work)
     }

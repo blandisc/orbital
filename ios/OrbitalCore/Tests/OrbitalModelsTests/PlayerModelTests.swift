@@ -547,4 +547,115 @@ final class PlayerModelRobustnessTests: XCTestCase {
         XCTAssertEqual(rig.http.calls.filter { $0.contains("/stream/series/") }.count, 2, "se volvió a pedir la lista antes de cambiar")
         XCTAssertEqual(rig.engine.loads.last?.start, 500)
     }
+
+    // MARK: scrobble a Trakt (CEN-46)
+
+    /// Un reproductor con Trakt conectado y su red falsa aparte, para contar lo que se le avisa.
+    func traktRig(request: Bool = true) throws -> (rig: Rig, probe: FakeHTTP, log: ScrobbleLog) {
+        let secrets = InMemorySecrets()
+        secrets.set(SecretKey.traktTokens, #"{"access_token":"AT","refresh_token":"RT","expires_at":\#(1_760_000_000 + 86400)}"#)
+        let probe = FakeHTTP()
+        let trakt = Trakt(http: probe, secrets: secrets, clientID: "CID", clock: { Date(timeIntervalSince1970: 1_760_000_000) }, pause: { _ in })
+        let log = ScrobbleLog()
+        let rig = try Rig(trakt: trakt, scrobbleLog: log)
+        rig.http.json["https://a.example/stream/series/tt0386676%3A1%3A1.json"] = ["streams": [rig.stream("a"), rig.stream("b", size: "💾 3 GB", name: "T\n1080p")]]
+        for action in ["start", "pause", "stop"] { probe.json["https://api.trakt.tv/scrobble/\(action)"] = [:] }
+        return (rig, probe, log)
+    }
+
+    /// El `progress` del primer aviso de esa acción (Trakt lo recibe como número: 50 o 50.5).
+    func percent(_ probe: FakeHTTP, _ action: String) -> Double? {
+        switch JSON.parse(probe.bodies("https://api.trakt.tv/scrobble/\(action)")[0])?["progress"] {
+        case .double(let d)?: return d
+        case .int(let i)?: return Double(i)
+        default: return nil
+        }
+    }
+
+    func scrobbles(_ probe: FakeHTTP) -> [String] { probe.calls.filter { $0.contains("/scrobble/") }.map { String($0.split(separator: "/").last!) } }
+
+    func testStartIsNotSentUntilTheEngineActuallyPlays() async throws {
+        let (rig, probe, _) = try traktRig()
+        await rig.model.begin(rig.request())
+        XCTAssertTrue(scrobbles(probe).isEmpty, "pedir el video no es verlo")
+        await rig.model.handle(rig.playing(0, state: .loading))
+        await rig.model.handle(rig.playing(0, state: .buffering))
+        XCTAssertTrue(scrobbles(probe).isEmpty, "cargando o armando buffer tampoco")
+        await rig.model.handle(rig.playing(12))
+        XCTAssertEqual(scrobbles(probe), ["start"])
+    }
+
+    func testStartWaitsForTheDurationWhenTheEngineDoesNotKnowItYet() async throws {
+        let (rig, probe, _) = try traktRig()
+        var request = rig.request()
+        request.meta = nil                              // sin ficha tampoco hay duración de respaldo
+        await rig.model.begin(request)
+        await rig.model.handle(rig.playing(5, duration: 0))
+        XCTAssertTrue(scrobbles(probe).isEmpty, "sin duración no hay porcentaje")
+        await rig.model.handle(rig.playing(9, duration: 1320))
+        XCTAssertEqual(scrobbles(probe), ["start"], "en cuanto se sabe, se avisa")
+        await rig.model.handle(rig.playing(10, duration: 1320))
+        XCTAssertEqual(scrobbles(probe), ["start"], "una sola vez")
+    }
+
+    func testPausingSendsPauseAndResumingEvenThroughBufferingSendsStartAgain() async throws {
+        let (rig, probe, _) = try traktRig()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(100))
+        rig.clock.advance(1)
+        await rig.model.handle(rig.playing(101, state: .paused))
+        XCTAssertEqual(scrobbles(probe), ["start", "pause"])
+        await rig.model.handle(rig.playing(101, state: .paused))             // el motor repite lo mismo: no se repite el aviso
+        XCTAssertEqual(scrobbles(probe), ["start", "pause"])
+        await rig.model.handle(rig.playing(101, state: .buffering))          // al reanudar un stream pasa por «cargando»
+        await rig.model.handle(rig.playing(102))
+        XCTAssertEqual(scrobbles(probe), ["start", "pause", "start"], "antes Trakt se quedaba en pausa")
+    }
+
+    func testClosingSendsStopWithTheRealPercentageOnlyOnce() async throws {
+        let (rig, probe, log) = try traktRig()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(660))
+        await rig.model.close()
+        await rig.model.close()
+        XCTAssertEqual(scrobbles(probe), ["start", "stop"])
+        let progress = try XCTUnwrap(percent(probe, "stop"))
+        XCTAssertEqual(progress, 50, accuracy: 0.1)
+        XCTAssertEqual(log.status.last?.action, .stop)
+        XCTAssertEqual(log.status.last?.title, "The Office T1 · E1")
+    }
+
+    func testFinishingAnEpisodeSendsStopNearOneHundredBeforeTheNextOnesStart() async throws {
+        let (rig, probe, _) = try traktRig()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(100))
+        rig.clock.advance(1)
+        await rig.model.handle(rig.playing(1320, state: .ended))
+        await rig.model.waitForTransition()
+        XCTAssertEqual(scrobbles(probe).prefix(2), ["start", "stop"])
+        let progress = try XCTUnwrap(percent(probe, "stop"))
+        XCTAssertEqual(progress, 100, accuracy: 0.1)
+    }
+
+    func testAnotherSourceAnnouncesStartAgainWhereYouWere() async throws {
+        let (rig, probe, _) = try traktRig()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(600))
+        let other = try XCTUnwrap(rig.model.sourceChoices.first { $0.playbackURL?.absoluteString.contains("/b.mkv") == true })
+        await rig.model.switchSource(to: other.index)
+        await rig.model.handle(rig.playing(600, state: .loading))
+        XCTAssertEqual(scrobbles(probe), ["start"])
+        await rig.model.handle(rig.playing(601))
+        XCTAssertEqual(scrobbles(probe), ["start", "start"], "la fuente nueva suena: Trakt recibe el avance donde va")
+    }
+
+    func testGoingToTheBackgroundSavesProgressButDoesNotClaimThatYouStopped() async throws {
+        // El audio sigue sonando en segundo plano (UIBackgroundModes: audio), así que NO es un `stop`: Trakt lo marcaría visto a ≥ 80 %.
+        let (rig, probe, _) = try traktRig()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(1200))
+        await rig.model.appDidEnterBackground()
+        XCTAssertEqual(scrobbles(probe), ["start"])
+        XCTAssertFalse(try rig.saved().isEmpty, "el avance sí se guarda en Stremio (iOS puede suspender la app)")
+    }
 }

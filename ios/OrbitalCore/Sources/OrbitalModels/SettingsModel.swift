@@ -18,6 +18,8 @@ public final class SettingsModel: ObservableModel {
     /// Resultado de «Probar conexión» con tu Orbital: nil sin probar, "" bien, o el problema.
     public private(set) var orbitalCheck: String? { didSet { changed() } }
     public private(set) var checkingOrbital = false { didSet { changed() } }
+    /// Lo último que se le contó a Trakt (o por qué no se pudo): se vuelve a leer al abrir Ajustes.
+    public private(set) var scrobble = ScrobbleStatus() { didSet { changed() } }
     private let services: Services
     private var linking: Task<Void, Never>?
 
@@ -27,9 +29,12 @@ public final class SettingsModel: ObservableModel {
         hasTMDBKey = !(services.secrets.get(SecretKey.tmdbKey) ?? "").isEmpty
         hasOrbitalToken = !(services.secrets.get(SecretKey.orbitalToken) ?? "").isEmpty
         trakt = .off
+        scrobble = services.scrobbleLog.status
         super.init()
         trakt = computeTraktState()
     }
+
+    public func refreshScrobble() { scrobble = services.scrobbleLog.status }
 
     private func computeTraktState() -> TraktState {
         guard let t = services.trakt else { return .off }
@@ -132,6 +137,8 @@ public final class SettingsModel: ObservableModel {
 
     public func unlinkTrakt() async {
         await services.trakt?.unlink()
+        services.scrobbleLog.clear()
+        scrobble = services.scrobbleLog.status
         await services.forYou.clearCache()
         services.reconfigure()
         trakt = computeTraktState()

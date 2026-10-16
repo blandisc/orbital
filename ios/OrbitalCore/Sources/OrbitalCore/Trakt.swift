@@ -257,9 +257,30 @@ public actor Trakt {
         lastWrite = slot
         let wait = slot.timeIntervalSince(now)
         if wait > 0 { await pause(wait) }
-        let result = try await call("POST", path, body: body)
-        if result.0 == 401 { secrets.set(SecretKey.traktTokens, nil); throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.") }
+        var result = try await call("POST", path, body: body)
+        if result.0 == 401 {
+            // Un 401 no siempre es el final: se pide una sesión nueva UNA vez (se renueva, o se la pide a tu Orbital) y se reintenta.
+            try await renewAfterRejection()
+            result = try await call("POST", path, body: body)
+            if result.0 == 401 { secrets.set(SecretKey.traktTokens, nil); throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.") }
+        }
         return result
+    }
+
+    /// Trakt rechazó la sesión (401). Con refresh token se renueva (ya limpia la sesión si Trakt también lo rechaza); si es la
+    /// prestada por tu Orbital se le pide otra a la consola. Si la consola no contesta o tiene la misma, lanza SIN olvidar la sesión
+    /// (puede ser la TV apagada): el aviso queda para reintentarse y la sesión sigue ahí.
+    private func renewAfterRejection() async throws {
+        guard let old = tokens() else { throw TraktError.auth("Conecta tu cuenta de Trakt en Ajustes.") }
+        if !(old.refresh_token ?? "").isEmpty { _ = try await refresh(old); return }
+        guard let borrow else {
+            secrets.set(SecretKey.traktTokens, nil)
+            throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.")
+        }
+        guard let fresh = await borrow(), fresh.accessToken != old.access_token else {
+            throw TraktError.auth("Trakt no acepta la sesión de tu Orbital: reconecta Trakt en la TV (Ajustes › Cuentas).")
+        }
+        adopt(fresh)
     }
 
     // MARK: listas (lectura)

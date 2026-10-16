@@ -60,7 +60,12 @@ final class AppEnvironment: ObservableObject {
         // Modo demostración: nada toca tu Keychain, tus ajustes ni tus descargas.
         if Demo.isOn {
             let kv = InMemoryKeyValueStore()
-            SettingsStore(kv).update { if let language = Demo.language { $0.uiLanguage = language }; if !Demo.noTV { $0.orbitalAddress = "tv.demo.invalid" } }
+            SettingsStore(kv).update {
+                if let language = Demo.language { $0.uiLanguage = language }
+                if !Demo.noTV { $0.orbitalAddress = "tv.demo.invalid" }
+                if Demo.scrobble { $0.traktClientID = "demo" }
+            }
+            Demo.prefillScrobble(kv)
             return Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),
                             downloadTransport: transport, downloadsRoot: FileManager.default.temporaryDirectory.appendingPathComponent("demo-downloads"),
                             freeSpace: { DiskSpace.freeBytes() })

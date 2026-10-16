@@ -71,7 +71,7 @@ final class Rig {
     let settings: SettingsStore, titlePrefs: TitlePreferences, finder: StreamFinder, watch: WatchService, model: PlayerModel
     let series: JSON
 
-    init(streams: [String: [JSON]] = [:], remote: JSON? = nil, trakt: Trakt? = nil) throws {
+    init(streams: [String: [JSON]] = [:], remote: JSON? = nil, trakt: Trakt? = nil, scrobbleLog: ScrobbleLog? = nil) throws {
         series = try Fixtures.json("cinemeta/meta_series_tt0386676.json")
         let http = self.http, clock = self.clock
         http.json["https://a.example/manifest.json"] = ["name": "Torrentio", "resources": ["stream", "subtitles"], "types": ["movie", "series"], "idPrefixes": ["tt"]]
@@ -90,7 +90,7 @@ final class Rig {
         titlePrefs = TitlePreferences(kv)
         finder = StreamFinder(http: http, registry: registry, clock: { clock.now })
         let cinemeta = Cinemeta(http: http, clock: { clock.now })
-        watch = WatchService(stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: { clock.now })
+        watch = WatchService(stremio: StremioAPI(http: http), authKey: { "KEY" }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: { clock.now }, scrobbleLog: scrobbleLog)
         model = PlayerModel(engine: engine, finder: finder, watch: watch, titlePrefs: titlePrefs, settings: settings, clock: { clock.now })
     }
 
