@@ -258,7 +258,9 @@ struct Mosaic: View {
                     .onEnded { _ in lastDragTranslation = 0; runtime.endScroll(); touch() }
             )
             .onAppear {
-                configure(items: items, columnCount: columnCount)
+                // Al volver de una ficha o de otra pestaña, el mosaico sigue donde estaba (mismo lugar, misma pieza enfocada).
+                if configuredIDs.isEmpty || Set(items.map(\.imdb)) != configuredIDs { configure(items: items, columnCount: columnCount) }
+                else { runtime.updateColumnCount(columnCount) }
                 runtime.updateSize(width: Double(geo.size.width), height: Double(geo.size.height))
                 if let demoFocus { runtime.focusTile(imdb: demoFocus) }
             }

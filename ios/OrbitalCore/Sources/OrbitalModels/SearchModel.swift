@@ -11,6 +11,8 @@ public final class SearchModel: ObservableModel {
     public private(set) var results: [Result] = [] { didSet { changed() } }
     public private(set) var isSearching = false { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }
+    /// Lo que se buscó para los `results` de ahora: hasta que la búsqueda nueva contesta, la pantalla no dice «Sin resultados».
+    public private(set) var searchedQuery: String? { didSet { changed() } }
     public private(set) var recent: [String] { didSet { changed() } }
     private let services: Services
     private var latest = 0
@@ -26,7 +28,7 @@ public final class SearchModel: ObservableModel {
         let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
         latest += 1
         let ticket = latest
-        guard query.count >= 2 else { results = []; error = nil; isSearching = false; return }
+        guard query.count >= 2 else { results = []; error = nil; isSearching = false; searchedQuery = nil; return }
         isSearching = true
         defer { if ticket == latest { isSearching = false } }
         do {
@@ -42,7 +44,12 @@ public final class SearchModel: ObservableModel {
             guard ticket == latest else { return }
             results = found.map { Result(kind: $0.kind, metaID: $0.metaID, title: names[$0.metaID] ?? $0.title, originalTitle: $0.title, poster: $0.poster, year: $0.year) }
             error = nil
-        } catch { if ticket == latest { results = []; self.error = "\(error)" } }
+            searchedQuery = query
+        } catch {
+            // Escribir otra letra cancela la búsqueda en vuelo: eso no es un error de red (ni vacía lo que ya se veía).
+            guard !Task.isCancelled, ticket == latest else { return }
+            results = []; self.error = "\(error)"; searchedQuery = query
+        }
     }
 
     /// Recuerda lo que buscaste (solo cuando abres un resultado).

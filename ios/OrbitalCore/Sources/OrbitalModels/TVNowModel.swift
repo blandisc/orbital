@@ -22,11 +22,22 @@ public final class TVNowModel: ObservableModel {
     private var pollTask: Task<Void, Never>?
     /// Sondeos fallidos seguidos: uno solo (un tropiezo del Wi‑Fi) no esconde la tarjeta ni cierra el control remoto.
     private var failures = 0
+    /// Si la app está al frente (lo último que pidió `setActive`).
+    private var active = false
+    private var servicesWatch: ObservableModel.Subscription?
+    private var seenGeneration = 0
 
     public init(_ services: Services, intervalSeconds: Double = 5) {
         self.services = services
         self.intervalNanoseconds = UInt64(intervalSeconds * 1_000_000_000)
         super.init()
+        seenGeneration = services.generation
+        // Conectar tu Orbital (a mano o con el QR) con la app abierta: el sondeo empieza ya, no al volver de segundo plano.
+        servicesWatch = services.onChange { [weak self] in
+            guard let self, self.services.generation != self.seenGeneration else { return }
+            self.seenGeneration = self.services.generation
+            if self.active { self.setActive(true) }
+        }
     }
 
     /// La pantalla apareció o la app volvió a primer plano (`active`), o se fue (`!active`): empieza o para el sondeo.
@@ -34,6 +45,7 @@ public final class TVNowModel: ObservableModel {
         pollTask?.cancel()
         pollTask = nil
         failures = 0
+        self.active = active
         guard active else { return }
         // Al volver de segundo plano, lo último que se supo puede ser viejo: la tarjeta no se queda esperando el primer sondeo.
         if now != nil, Date().timeIntervalSince(fetchedAt) > 2 * Double(intervalNanoseconds) / 1_000_000_000 { now = nil }

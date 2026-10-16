@@ -22,6 +22,7 @@ public final class CatalogModel: ObservableModel {
         defer { isLoading = false }
         async let m = rail("movie"), s = rail("series")
         let (movies, series) = await (m, s)
+        guard !Task.isCancelled else { return }   // se fue de la pantalla a medias: se queda lo que ya había, sin error falso
         self.movies = movies.items; self.series = series.items
         error = (movies.failed && series.failed) ? "No pude leer el catálogo de Stremio. Revisa tu conexión." : nil
     }
