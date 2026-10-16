@@ -35,7 +35,8 @@ public actor RemoteForYou {
             let brand = row["brand"]?.string
             listInfo[id] = (title, brand)
             out.append(ForYouList(id: id, title: title, group: Self.group(id: id, brand: brand), brand: brand,
-                                   logo: row["logo"]?.string, splitsKinds: row["split"]?.bool ?? false))
+                                   logo: row["logo"]?.string, splitsKinds: row["split"]?.bool ?? false,
+                                   source: row["source"]?.string ?? "", meta: row["meta"]?.string ?? ""))
         }
         return out
     }
@@ -71,7 +72,7 @@ public actor RemoteForYou {
               let imdb = row["meta_id"]?.string, !imdb.isEmpty, let title = row["title"]?.string else { return nil }
         return Suggestion(kind: kind, imdb: imdb, title: title, year: row["year"]?.intValue, runtime: nil,
                           overview: row["overview"]?.string ?? "", poster: row["image"]?.string ?? "", wide: row["hero"]?.string ?? "",
-                          reason: reason(listID: listID, why: row["why"]?.string), next: Self.nextFrom(row),
+                          logo: row["logo"]?.string.flatMap { $0.isEmpty ? nil : $0 }, reason: reason(listID: listID, why: row["why"]?.string), next: Self.nextFrom(row),
                           rank: row["rank"]?.intValue)
     }
 

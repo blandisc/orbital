@@ -105,6 +105,9 @@ enum DS {
         static let cardMax = CGFloat(DesignTokens.Size.cardMax), grabber = CGFloat(DesignTokens.Size.grabber), grabberHeight = CGFloat(DesignTokens.Size.grabberHeight)
         static let logo = CGFloat(DesignTokens.Size.logo)
         static let platformLogo = CGFloat(DesignTokens.Size.platformLogo)
+        static let rankNumber = CGFloat(DesignTokens.Size.rankNumber)
+        /// La cifra de un Top 10: enorme y pesada; no crece con Dynamic Type (es un adorno, el puesto ya se dice en la etiqueta).
+        static var rankFont: Font { .system(size: rankNumber, weight: .black, design: .rounded) }
         static let logoHero = CGFloat(DesignTokens.Size.logoHero)
     }
 

@@ -245,6 +245,8 @@ struct HeroCard<Actions: View>: View {
     var logo: String?
     var badge: LocalizedStringKey?
     var progress: Double?
+    /// El dato de una línea ya traducido (con `detail` vacío): «Película · 2021 · 2 h 35 min».
+    var detailText: Text?
     @ViewBuilder var actions: () -> Actions
 
     var body: some View {
@@ -252,7 +254,8 @@ struct HeroCard<Actions: View>: View {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 if let badge { DSBadge(text: badge) }
                 TitleLogo(url: logo, title: title, size: .hero)
-                if !detail.isEmpty { Text(detail).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1) }
+                if let detailText { detailText.font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(2) }
+                else if !detail.isEmpty { Text(detail).font(DS.font(.sm)).foregroundStyle(DS.textMuted).lineLimit(1) }
                 actions().padding(.top, DS.Space.s1)
                 if let progress { DSProgress(fraction: progress) }
             }

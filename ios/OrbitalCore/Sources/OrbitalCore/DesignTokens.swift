@@ -32,6 +32,8 @@ public enum DesignTokens {
         /// El logo de una plataforma (Netflix, Disney+…) en un chip o un encabezado: siempre la misma altura, venga el logo
         /// cuadrado o apaisado.
         public static let platformLogo = 18.0
+        /// La cifra enorme de un Top 10 (estilo Netflix), detrás del póster.
+        public static let rankNumber = 132.0
         /// El logo del título en el destacado de Inicio y en la ficha (en una pieza del mosaico va `logo`): tope de alto; de ancho,
         /// `cardMax`. Es el mismo tope relativo que `.title__logo` en la TV (más grande que el de la ficha lateral).
         public static let logoHero = 96.0

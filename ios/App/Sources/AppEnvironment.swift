@@ -86,7 +86,7 @@ final class AppEnvironment: ObservableObject {
             SettingsStore(kv).update {
                 if let language = Demo.language { $0.uiLanguage = language }
                 if !Demo.noTV { $0.orbitalAddress = "tv.demo.invalid" }
-                if Demo.scrobble { $0.traktClientID = "demo" }
+                if Demo.scrobble || Demo.airings { $0.traktClientID = "demo" }
             }
             Demo.prefillScrobble(kv)
             return Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),
@@ -222,6 +222,37 @@ final class AppEnvironment: ObservableObject {
         var label = ""
         if let episode = item.episode { label = Strings.episode(season: item.season, episode: episode, language: services.appSettings.uiLanguage) }
         await play(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title, originalTitle: item.originalTitle, episodeLabel: label, poster: item.poster)
+    }
+
+    /// El video de una sugerencia: el episodio en curso, la película, o el primer episodio de una serie sin avance.
+    func videoID(for s: Suggestion) -> String {
+        if let next = s.next { return "\(s.imdb):\(next.season):\(next.episode)" }
+        return s.kind == "movie" ? s.imdb : "\(s.imdb):1:1"
+    }
+
+    /// «Ver» desde Para ti: reproduce donde ibas (o desde el principio).
+    func play(_ s: Suggestion) async {
+        let label = s.next.map { Strings.episode(season: $0.season, episode: $0.episode, language: services.appSettings.uiLanguage) } ?? ""
+        await play(kind: s.kind, metaID: s.imdb, videoID: videoID(for: s), title: s.title, originalTitle: s.title, episodeLabel: label, poster: s.poster)
+    }
+
+    /// «Mi lista» desde Para ti.
+    func addToLibrary(_ s: Suggestion) async {
+        do {
+            try await services.watch.setInLibrary(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster, add: true)
+            notify("Agregada a tu lista.", tone: .success)
+        } catch { notify("No pude cambiar tu lista de Stremio: \(error)") }
+    }
+
+    /// «Descargar» desde Para ti (la fuente recomendada).
+    func download(_ s: Suggestion) async {
+        let outcome = await services.queueDownload(kind: s.kind, metaID: s.imdb, videoID: videoID(for: s), title: s.title, originalTitle: s.title, subtitle: "", poster: s.poster)
+        switch outcome {
+        case .queued: notify("Descargando. Lo verás en Descargas.", tone: .success)
+        case .noSources: notify("No hay fuentes de Real-Debrid para descargar.")
+        case .notEnoughSpace(let text), .failed(let text): notify(text)
+        case .already: notify("Ya está descargado.", tone: .info)
+        }
     }
 
     /// «Ver» en la tarjeta «Desde la TV»: lo mismo, con lo que mandó la consola.

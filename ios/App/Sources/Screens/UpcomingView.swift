@@ -135,7 +135,7 @@ struct AiringRow: View {
     }
 }
 
-/// Un estreno en la fila de «Todo»: la imagen ancha, el nombre y cuándo («Hoy · 20:00»).
+/// Un estreno en el estante «Próximos estrenos»: la imagen ancha, el nombre y cuándo («Hoy · T3 E4»; la hora, en el calendario completo).
 struct AiringCard: View {
     let airing: Airing
     @Environment(\.locale) private var locale
@@ -145,7 +145,7 @@ struct AiringCard: View {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterView(url: airing.series.wide, title: airing.series.title, aspect: DS.Poster.stillAspect)
                 Text(verbatim: airing.series.title).font(DS.font(.xs, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
-                (dayName(airing.day, locale: locale) + Text(verbatim: " · ") + airingTime(airing, locale: locale))
+                (dayName(airing.day, locale: locale) + Text(verbatim: " · \(airing.episodeLabel)"))
                     .font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1)
             }
             .frame(width: DS.Poster.episodeThumbWidth * 1.4)
