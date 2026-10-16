@@ -67,7 +67,7 @@ struct HomeView: View {
             .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
         }
         .background(Backdrop(tint: tint.color))
-        .navigationTitle(greeting).navigationBarTitleDisplayMode(.large)
+        .navigationTitle(greeting).toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .navigationSubtitle(syncText)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { NavigationLink(value: SettingsRoute()) { Image(systemName: "person.crop.circle") }.accessibilityLabel(Text("Ajustes")) } }
         .titleDestinations()

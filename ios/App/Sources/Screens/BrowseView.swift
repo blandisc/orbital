@@ -32,7 +32,7 @@ struct BrowseView: View {
             .padding(.bottom, DS.Space.s8)
         }
         .background(Backdrop())
-        .navigationTitle("Buscar").navigationBarTitleDisplayMode(.large)
+        .navigationTitle("Buscar").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .searchable(text: $query, prompt: Text("Películas y series"))
         .titleDestinations()
         .navigationDestination(for: GenreRoute.self) { GenreView(genre: $0.genre, model: catalog.model) }
@@ -155,7 +155,7 @@ struct GenreView: View {
         }
         .background(Backdrop())
         .navigationTitle(Text(verbatim: Vocabulary.genres([genre], language: env.services.appSettings.uiLanguage).first ?? genre))
-        .navigationBarTitleDisplayMode(.large)
+        .toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .task {
             items = await model.genre(genre)
             loaded = true
