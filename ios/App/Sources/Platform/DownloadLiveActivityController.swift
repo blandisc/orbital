@@ -12,6 +12,8 @@ final class DownloadLiveActivityController {
     var language: () -> String = { "es" }
     /// Quitaste la actividad de la pantalla bloqueada: no se vuelve a pedir mientras sigan estas descargas.
     private var dismissedByUser = false
+    /// Cómo estaba la actividad la última vez que se actualizó (para distinguir si la quitaste tú o iOS).
+    private var seenState: ActivityState?
 
     func follow(_ downloads: Downloads) async {
         // Si iOS cerró la app con una actividad viva (las descargas siguen en segundo plano), se retoma esa en vez de
@@ -41,18 +43,24 @@ final class DownloadLiveActivityController {
         if let current = activity {
             switch current.activityState {
             case .ended: activity = nil                                  // la terminó iOS (8 h): se pide otra
-            case .dismissed: activity = nil; dismissedByUser = true      // la quitaste tú: no vuelve hasta la próxima tanda
+            case .dismissed:
+                // Viva la última vez y ahora quitada: la quitaste tú (no vuelve hasta la próxima tanda). Si ya había terminado
+                // (las 8 h de iOS) y luego iOS la retiró, se pide otra.
+                dismissedByUser = seenState == .active || seenState == .stale
+                activity = nil
             default: break
             }
         }
         guard !dismissedByUser else { return }
         if let activity { await activity.update(content) }
         else { activity = try? Activity.request(attributes: DownloadActivityAttributes(), content: content) }
+        seenState = activity?.activityState
     }
 
     /// Ya no hay nada bajando: la actividad dice «Listo» un momento y se va.
     private func finish(_ items: [DownloadItem]) async {
         dismissedByUser = false
+        seenState = nil
         guard let activity else { return }
         let done = items.filter { $0.state == .done }.max { ($0.finishedAt ?? 0) < ($1.finishedAt ?? 0) }
         let final = DownloadActivityAttributes.ContentState(title: done?.title ?? last?.title ?? "", fraction: 1, remaining: 0, waiting: false, language: language())

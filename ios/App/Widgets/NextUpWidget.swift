@@ -21,8 +21,20 @@ struct NextUpProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<NextUpEntry>) -> Void) {
-        let now = Date()
-        completion(Timeline(entries: [NextUpEntry(date: now, snapshot: WidgetStore.load() ?? .empty)], policy: .after(now.addingTimeInterval(DS.Widget.fallbackRefresh))))
+        let now = Date(), stored = WidgetStore.load() ?? .empty
+        // Una entrada ahora y otra a medianoche: «Hoy» y «Mañana» cambian de día, y un estreno que ya pasó deja de verse.
+        let today = Calendar.current.startOfDay(for: now)
+        let midnight = Calendar.current.date(byAdding: .day, value: 1, to: today) ?? today
+        let entries = [now, midnight].map { NextUpEntry(date: $0, snapshot: Self.fromDay($0, stored)) }
+        completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(DS.Widget.fallbackRefresh))))
+    }
+
+    /// El snapshot sin los estrenos de días anteriores a `date`.
+    private static func fromDay(_ date: Date, _ snapshot: WidgetSnapshot) -> WidgetSnapshot {
+        var copy = snapshot
+        let start = Calendar.current.startOfDay(for: date)
+        copy.upcoming = snapshot.upcoming?.filter { $0.date >= start }
+        return copy
     }
 }
 

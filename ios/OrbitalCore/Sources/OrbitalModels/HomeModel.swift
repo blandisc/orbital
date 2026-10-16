@@ -66,8 +66,11 @@ public final class HomeModel: ObservableModel {
         } catch {}
         let forYou = services.forYou
         async let airings = try? forYou.calendar(), pending = try? forYou.items(listID: "watchlist")
-        traktPending = Array(((await pending) ?? []).prefix(12))
-        publishWidget(airings: (await airings) ?? [])   // los estrenos también van al widget mediano
+        let (fetchedPending, fetchedAirings) = await (pending, airings)
+        guard !Task.isCancelled else { return }   // cancelado: no se vacía «Tu watchlist» ni el «Próximo estreno» del widget
+        if let fetchedPending { traktPending = Array(fetchedPending.prefix(12)) }
+        else if !(await forYou.traktLinked) { traktPending = [] }   // desconectaste Trakt: ya no hay watchlist que enseñar
+        if let fetchedAirings { publishWidget(airings: fetchedAirings) }   // los estrenos también van al widget mediano
     }
 
     /// Los títulos en tu idioma (Stremio guarda el original) y con lo que hace falta para seguir viendo.

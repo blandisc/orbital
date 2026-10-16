@@ -204,7 +204,7 @@ struct TitleView: View {
     private func handle(source: Source, videoID: String, purpose: Purpose, model: TitleModel) {
         switch purpose {
         case .watch: start(model, videoID: videoID, source: source)
-        case .download: Task { await report(model.download([videoID]), model) }
+        case .download: Task { await report(model.download([videoID], source: source), model) }   // la fuente que elegiste
         }
     }
 
