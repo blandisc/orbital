@@ -36,7 +36,7 @@
 .sheet__item {
   display: flex; align-items: center; gap: var(--space-4);
   width: 100%; min-height: 3.6rem; padding: var(--space-2) var(--space-3); border-radius: var(--radius-lg);
-  font-size: var(--text-md); font-weight: var(--weight-medium); text-align: left; color: var(--color-text);
+  font-size: var(--type-card-title); font-weight: var(--weight-medium); text-align: left; color: var(--color-text);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
 }
 .sheet__item:hover { background: var(--color-fill); }

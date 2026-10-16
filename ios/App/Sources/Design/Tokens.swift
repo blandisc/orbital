@@ -43,7 +43,7 @@ enum DS {
     static let text = role(.label)
     static let textMuted = role(.secondaryLabel)
     static let textFaint = role(.tertiaryLabel)
-    static let ink500 = role(.tertiaryLabel)
+    static let ink500 = role(.decorative)
     static let primary = role(.primary)
     static let onPrimary = role(.onPrimary)
     static let accent = role(.accent)

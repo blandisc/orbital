@@ -18,6 +18,8 @@
   --color-text-muted: var(--palette-ink-300);
   --color-text-faint: rgba(255, 255, 255, .5); /* ≥ 4,5:1 (antes .18: el placeholder no se leía) */
   --color-text-faint-strong: rgba(255, 255, 255, .62);
+  --color-decorative: var(--palette-ink-500); /* solo adornos, nunca texto que leer: la cifra grande del Top 10 */
+  --color-on-art-secondary: color-mix(in oklab, var(--palette-paper) 82%, transparent); /* rótulo sobre el arte (iPhone: onArtSecondary) */
   --art-tint-neutral: rgb(24 24 28); /* sin color en la portada: grafito */
   --art-accent-neutral: rgb(205 205 211);
   --color-accent: var(--art-accent); /* sale de la portada, siempre claro */

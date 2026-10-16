@@ -67,7 +67,7 @@ test("qué hay disponible, antes de elegir", async () => {
 test("tráiler y Mi lista en la ficha", async () => {
   const { titleActions } = await import("../../orbital/web/js/core/watch.js");
   const labels = titleActions({ kind: "movie", resume: null, trailer: "abc", in_library: true }).map((a) => a.label);
-  assert.deepEqual(labels, ["Ver", "Tráiler", "En mi lista", "Elegir fuente"]);
+  assert.deepEqual(labels, ["Ver", "Tráiler", "En Mi lista", "Elegir fuente"]);
 });
 
 test("serie sin episodios: sin «Elegir fuente» (no había nada que elegir)", () => {
@@ -84,4 +84,14 @@ test("ficha: «Enviar al iPhone» y «Descargar en el iPhone» solo con un iPhon
   // Una serie sin episodios no tiene qué mandar; con error, solo Reintentar.
   assert.ok(!titleActions({ kind: "series", seasons: [], resume: null }, { phone: true }).some((a) => a.id.startsWith("phone-")));
   assert.deepEqual(titleActions({ error: true }, { phone: true }).map((a) => a.id), ["retry"]);
+});
+
+test("un estreno de otro año dice el año (si no, parecía de este año)", async () => {
+  const { episodeStates } = await import("../../orbital/web/js/core/watch.js");
+  const now = Date.UTC(2026, 9, 16, 12);
+  const details = { seasons: [{ season: 1, episodes: [
+    { id: "s:1:1", released: "2026-11-20T12:00:00Z" }, { id: "s:1:2", released: "2027-02-03T12:00:00Z" }] }] };
+  const states = episodeStates(details, now);
+  assert.doesNotMatch(states.get("s:1:1").upcoming, /2026/);
+  assert.match(states.get("s:1:2").upcoming, /2027/);
 });

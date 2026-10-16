@@ -9,6 +9,12 @@
 .tile--feature__store { position: absolute; z-index: var(--z-raised); left: var(--space-5); top: var(--space-5); }
 @container (max-height: 18rem) { .tile--feature__logo { max-height: 3.4rem; } }
 @container (max-height: 13rem) { .tile--feature__detail { display: none; } }
+/* El rótulo («Seguir viendo»), como el Eyebrow del iPhone: pegado al título; con poco alto se va antes que el dato. */
+.tile--feature__eyebrow {
+  flex-shrink: 0; margin-bottom: calc(-1 * var(--space-2)); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--color-on-art-secondary); font-size: var(--type-eyebrow); font-weight: var(--weight-medium); text-shadow: var(--shadow-text);
+}
+@container (max-height: 16rem) { .tile--feature__eyebrow { display: none; } }
 /* Un título largo sin logo (letra grande, 1280): no se encoge a media línea; con poco alto, un renglón con «…». */
 .tile--feature__title { flex-shrink: 0; }
 @container (max-height: 18rem) { .tile--feature .tile--feature__title { -webkit-line-clamp: 1; } } /* más específica: la general va después */
@@ -24,7 +30,7 @@
   padding: var(--space-6);
 }
 .tile--feature__title { max-width: min(100%, 40rem);
-  font-family: var(--font-sans); font-size: var(--text-3xl); font-weight: var(--weight-bold); line-height: 1.14;
+  font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--weight-bold); line-height: 1.14;
   letter-spacing: var(--tracking-display); text-shadow: var(--shadow-text); text-wrap: balance; /* sin relleno: no asoma la 3.ª línea */
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }

@@ -2,7 +2,7 @@ import { h, svg } from "../core/dom.js";
 import { duration, lastPlayed, shortAgo } from "../core/format.js";
 import { kicker, stageKind, SYSTEMS, systemColor, systemOf, thumbOf } from "../core/home.js";
 import { ICONS, systemIconName } from "../core/icons.js";
-import { alternativeRunner, clampRatio, coverRatio, isSeries, isWatchable, primaryLabel } from "../core/library.js";
+import { alternativeRunner, clampRatio, coverRatio, isGame, isSeries, isWatchable, primaryLabel } from "../core/library.js";
 import { Button } from "./button.js";
 import { Badge, Progress } from "./ui.js";
 
@@ -61,6 +61,16 @@ export function detailOf(item, now = Date.now()) {
     .filter(Boolean).join(" · ") || null;
 }
 
+/**
+ * El rótulo sobre el título del destacado, como el `Eyebrow` del iPhone: «Seguir viendo» (a medias), «Sigue» (el
+ * episodio que toca) o «Seguir jugando». Lo abierto ya lo dice su botón («Volver al juego»): sin rótulo.
+ */
+export function eyebrowOf(item, runningId = null) {
+  if (item.id === runningId) return null;
+  if (isWatchable(item)) return item.progress > 0 ? "Seguir viendo" : isSeries(item) || item.extra?.kind === "series" ? "Sigue" : null;
+  return isGame(item) && item.last_played ? "Seguir jugando" : null;
+}
+
 /** De dónde es: el ícono de su plataforma y su nombre («Steam», «Switch», «Película»). */
 const platform = (item, className) => h("span", { class: ["tile__platform", className] }, svg(ICONS[systemIconName(item)] || ICONS.apps), kicker(item));
 
@@ -81,6 +91,7 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
     h("span", { class: "tile__shade tile--feature__shade" }),
     platform(item, ["tile__platform--pill", "tile--feature__store"]),
     h("div", { class: "tile--feature__body" },
+      eyebrowOf(item, runningId) && h("span", { class: "tile--feature__eyebrow" }, eyebrowOf(item, runningId)),
       logo ? featureLogo(logo, item.title) : h("h2", { class: "tile--feature__title" }, item.title),
       detailOf(item) && h("span", { class: "tile--feature__detail" }, detailOf(item)),
       Progress(item.progress, { className: "tile--feature__progress" }),

@@ -85,3 +85,15 @@ test("GeForce NOW con arte de Steam también usa la cápsula de la tienda", () =
   assert.equal(thumbOf(halo).src, "https://cdn.cloudflare.steamstatic.com/steam/apps/976730/capsule_616x353.jpg");
   assert.equal(thumbOf({ id: "gfn:1", title: "Sin Steam", hero: "/h.jpg" }).src, "/h.jpg");
 });
+
+test("el destacado lleva rótulo como el iPhone: «Seguir viendo», «Sigue» o «Seguir jugando»", async () => {
+  const { eyebrowOf } = await import("../../orbital/web/js/components/tiles.js");
+  const series = { id: "cinemeta:series:tt1", source: "cinemeta" };
+  assert.equal(eyebrowOf({ ...series, progress: .4 }), "Seguir viendo");
+  assert.equal(eyebrowOf({ ...series, progress: 0 }), "Sigue"); // el episodio que toca
+  assert.equal(eyebrowOf({ id: "cinemeta:movie:tt2", source: "cinemeta", progress: 0 }), null);
+  const game = { id: "g", system: "steam", category: "games", last_played: Date.now() / 1000 };
+  assert.equal(eyebrowOf(game), "Seguir jugando");
+  assert.equal(eyebrowOf(game, "g"), null); // abierto: su botón ya dice «Volver al juego»
+  assert.equal(eyebrowOf({ id: "a", category: "apps", last_played: 1 }), null);
+});

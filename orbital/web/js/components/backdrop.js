@@ -29,7 +29,9 @@ function remotePalette(url, done) {
   probe.crossOrigin = "anonymous";
   probe.onload = () => done(paletteOf(probe, url) || paletteFor(null));
   probe.onerror = () => { palettes.set(url, paletteFor(null)); done(paletteFor(null)); };
-  probe.src = url;
+  // metahub, cuando no tiene la imagen a la mano, responde con una redirección (307) SIN permiso CORS (el destino, live.,
+  // sí lo tiene): pedida con CORS fallaba y dejaba un error en la consola. Se pide directo al destino.
+  probe.src = url.replace(/^https:\/\/images\.metahub\.space\//, "https://live.metahub.space/");
 }
 
 /** Tiñe la interfaz con el color del juego (las variables tienen transición en CSS). */

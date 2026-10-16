@@ -44,6 +44,15 @@
 }
 .card__trend--down.badge { color: var(--color-text-muted); }
 .card__trend--new.badge { font-weight: var(--weight-bold); }
+/* Top 10 (RankedCard): la cifra enorme en gris detrás del póster, como el iPhone (RankedPosterCard). Se apoya en la
+   base del póster; el póster va encima y, al enfocarse, crece sobre ella. Con la cifra, el ▲ ▼ sube a la esquina. */
+.card-ranked { display: inline-flex; align-items: flex-end; flex: none; }
+.card-ranked__number {
+  flex: none; margin-right: calc(-1 * var(--space-6)); margin-bottom: calc(-.12 * var(--card-height));
+  color: var(--color-decorative); font-family: var(--font-sans); font-size: calc(var(--card-height) * .82); font-weight: var(--weight-bold);
+  line-height: 1; letter-spacing: var(--tracking-rank); font-variant-numeric: tabular-nums; user-select: none; pointer-events: none;
+}
+.card-ranked .card__trend.badge { top: var(--space-2); }
 .card__rank.badge {
   position: absolute; top: var(--space-2); left: var(--space-2); z-index: var(--z-raised);
   background: var(--color-badge-bg); color: var(--color-text); box-shadow: var(--shadow-badge);
@@ -54,7 +63,7 @@
 .card__chip {
   position: absolute; left: 0; top: calc(100% + .45rem);
   max-width: 100%; overflow: hidden; text-overflow: ellipsis;
-  color: var(--color-text-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums; white-space: nowrap;
+  color: var(--color-text-muted); font-size: var(--type-data); font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 /* Pie con título y tipo (búsqueda): dos líneas, recortadas al ancho de la portada. */
 .card__caption {
@@ -86,7 +95,7 @@
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   font-size: var(--text-sm); font-weight: var(--weight-medium); line-height: 1.2; overflow-wrap: break-word; hyphens: auto;
 }
-.card__subtitle { color: var(--color-text-muted); font-size: var(--text-2xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* una línea: el nombre es lo que importa */
+.card__subtitle { color: var(--color-text-muted); font-size: var(--type-caption); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* una línea: el nombre es lo que importa */
 /* Foco: el juego salta (resorte con rebote), se eleva un poco y proyecta un brillo de su propio
    color sobre el fondo. Al perder el foco vuelve sin rebote (la transición base de .card). */
 .card--focused {

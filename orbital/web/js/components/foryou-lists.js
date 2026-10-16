@@ -1,11 +1,11 @@
 import { h, mount } from "../core/dom.js";
-import { calendarDays, calendarWeek, iconName, kindLabel, listMeta, localDay, railEntries, SPLIT_KINDS } from "../core/foryou.js";
+import { calendarDays, calendarWeek, iconName, kindLabel, listMeta, localDay, railEntries, rankOf, SPLIT_KINDS } from "../core/foryou.js";
 import { CalendarDays, CalendarWeek } from "./calendar.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { dragScroll, hoverArea } from "../core/swipe.js";
 import { BrowseHead, fillFilters, keepInView, replay } from "./browse.js";
 import { Button } from "./button.js";
-import { Card } from "./card.js";
+import { Card, RankedCard } from "./card.js";
 import { createDetailPanel } from "./detail-panel.js";
 import { createRail } from "./rail.js";
 
@@ -130,14 +130,17 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
     } else if (state === "ready" && items.length) {
       const external = l?.source === "RAWG"; // de afuera: los que ya tienes llevan palomita
       grid.classList.toggle("browse__grid--mixed", l?.group === "games"); // cada caja con su forma
+      // Un Top 10 (Netflix, lo más visto en una plataforma): la cifra grande junto a cada póster, como en el iPhone.
+      const ranked = items.every((item) => rankOf(item) != null);
       mount(grid, items.map((item, n) => {
         targets.set(`item:${n}`, { kind: "item", item });
         // extra: un juego sin portada propia lleva la genérica con su nombre encima, como en Juegos.
-        const card = Card({ ...item, id: item.key, source: item.kind === "game" ? item.item?.source || "steam" : "cinemeta",
-          system: item.item?.system, extra: item.item?.extra, owned: external && item.owned },
-          { onPress: () => onPick?.(targets.get(`item:${n}`), `item:${n}`) });
+        const data = { ...item, id: item.key, source: item.kind === "game" ? item.item?.source || "steam" : "cinemeta",
+          system: item.item?.system, extra: item.item?.extra, owned: external && item.owned };
+        const options = { onPress: () => onPick?.(targets.get(`item:${n}`), `item:${n}`) };
+        const { card, el } = ranked ? RankedCard(data, options) : { card: Card(data, options) };
         card.dataset.focusId = `item:${n}`;
-        return card;
+        return el ?? card;
       }));
     } else {
       mount(grid, h("p", { class: "browse__empty" },

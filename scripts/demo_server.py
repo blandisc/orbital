@@ -80,6 +80,55 @@ class DryLauncher:
         return cur is not None
 
 
+# Unas fichas de mentiras (sin internet): así el recorrido también pasa por la ficha, los episodios y Fuentes.
+DEMO_TITLES = {
+    ("series", "tt0386676"): {"name": "The Office", "year": "2005–2013", "imdbRating": "9.0", "genres": ["Comedy"],
+                              "description": "Un falso documental sobre la vida diaria en una oficina de papel en Scranton.",
+                              "seasons": 2, "episodes": 4, "hero": "hero-generic-3.jpg"},
+    ("series", "tt11280740"): {"name": "Severance", "year": "2022–", "imdbRating": "8.7", "genres": ["Drama", "Mystery"],
+                               "description": "Mark dirige un equipo cuyos recuerdos del trabajo y de la vida personal fueron separados.",
+                               "seasons": 2, "episodes": 3, "upcoming": True, "hero": "hero-switch-2.jpg"},
+    ("movie", "tt0816692"): {"name": "Interstellar", "year": "2014", "imdbRating": "8.7", "genres": ["Adventure", "Sci-Fi"],
+                             "description": "Un grupo de exploradores viaja a través de un agujero de gusano en busca de un nuevo hogar.",
+                             "runtime": "169 min", "hero": "hero-xbox-2.jpg"},
+}
+
+
+def demo_meta(kind: str, meta_id: str) -> dict | None:
+    t = DEMO_TITLES.get((kind, meta_id))
+    if not t:
+        return None
+    hero = f"/img/placeholders/{t['hero']}"
+    meta = {"id": meta_id, "type": kind, "name": t["name"], "year": t["year"], "releaseInfo": t["year"], "imdbRating": t["imdbRating"],
+            "genres": t["genres"], "description": t["description"], "background": hero, "poster": hero, "runtime": t.get("runtime", "")}
+    if kind == "series":
+        videos = []
+        for season in range(1, t["seasons"] + 1):
+            for ep in range(1, t["episodes"] + 1):
+                future = t.get("upcoming") and season == t["seasons"] and ep == t["episodes"]
+                videos.append({"id": f"{meta_id}:{season}:{ep}", "season": season, "episode": ep, "number": ep,
+                               "title": f"Episodio {ep}", "name": f"Episodio {ep}", "thumbnail": hero,
+                               "released": "2030-01-01T00:00:00.000Z" if future else f"20{10 + season}-0{ep}-01T00:00:00.000Z",
+                               "overview": f"Lo que pasa en el episodio {ep} de la temporada {season}."})
+        meta["videos"] = videos
+    return meta
+
+
+def demo_cinemeta(self, path: str, base: str | None = None) -> dict:
+    """Cinemeta sin internet: las fichas de DEMO_TITLES; búsqueda y catálogo sobre ellas."""
+    import re as _re
+    from urllib.parse import unquote
+    m = _re.match(r"^/meta/(movie|series)/([^/]+)\.json$", path)
+    if m:
+        meta = demo_meta(m.group(1), unquote(m.group(2)))
+        return {"meta": meta} if meta else {}
+    m = _re.match(r"^/catalog/(movie|series)/top(?:/search=(.*))?\.json$", path)
+    if m:
+        query = unquote(m.group(2) or "").lower()
+        return {"metas": [demo_meta(k, i) for (k, i), t in DEMO_TITLES.items() if k == m.group(1) and query in t["name"].lower()]}
+    return {"metas": []}
+
+
 def no_side_effects() -> None:
     """Nada de lo que se pulse en el demo toca este equipo: ni volumen, brillo o energía, ni apagar,
     ni ventanas, ni capturas, ni la música, ni cerrar programas, ni actualizar (git) la carpeta.
@@ -151,7 +200,7 @@ def build(tmp: Path):
     })
     # Sin internet ni programas de este equipo.
     no_side_effects()
-    cinemeta.Cinemeta._get = lambda self, path: {"metas": []}
+    cinemeta.Cinemeta._get = demo_cinemeta
     stremio.find_stremio = lambda cfg: None
     geforcenow.install_dir = lambda: None
     geforcenow.read_shortcuts = list

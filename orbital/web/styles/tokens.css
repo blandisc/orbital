@@ -57,6 +57,18 @@
   --text-2xl: calc(2.4rem * var(--text-scale));
   --text-3xl: calc(2.9rem * var(--text-scale));
   --text-display: calc(3.7rem * var(--text-scale));
+  /* Recetas de texto: los mismos nombres que el iPhone (design/tokens.json → «type»), sobre esta escala.
+     Una pieza nueva usa la receta; el peso va con ella (section y title en negrita, cardTitle y eyebrow medium). */
+  --type-display: var(--text-3xl);
+  --type-title: var(--text-2xl);
+  --type-section: var(--text-lg);
+  --type-card-title: var(--text-md);
+  --type-body: var(--text-md);
+  --type-secondary: var(--text-sm);
+  --type-footnote: var(--text-xs);
+  --type-caption: var(--text-2xs);
+  --type-eyebrow: var(--text-sm);
+  --type-data: var(--text-xs);
   --weight-regular: 400;
   --weight-medium: 600;
   --weight-bold: 700;
@@ -64,6 +76,7 @@
   --tracking-tight: -.015em;
   --tracking-label: .025em; /* letras chicas y en negrita: glifos, «Abierto» */
   --tracking-secret: .12em; /* los puntos de una contraseña */
+  --tracking-rank: -.08em; /* la cifra grande del Top 10: el «10» no se abre de más */
   --blur-case: 32px; /* el fondo del estuche: la portada de una caja, tan desenfocada que solo queda su color */
   --blur-glass: 14px; /* vidrio: lo que flota sobre el arte (íconos del mosaico, el selector, Atrás táctil) */
 
