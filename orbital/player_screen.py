@@ -236,15 +236,21 @@ class PlayerScreen:
         self._hud_visible = False
         self._overlay(1, None)
         self._overlay(4, None)  # la tarjeta vuelve al cerrar el panel
+        self._overlay(self.MUTE, None)  # el panel dice «sin sonido» (la píldora se encimaba sobre su etiqueta)
         self._draw_panel()
 
     def _draw_panel(self) -> None:
         if self.menu is not None:
-            self._overlay(2, player_ui.panel_ass(self.menu, playing=not self._value("pause")))
+            self._overlay(2, player_ui.panel_ass(self.menu, playing=not self._value("pause"), muted=self._live_muted()))
+
+    def _live_muted(self) -> bool:
+        return self._is_live() and bool(self._value("mute"))
 
     def close_menu(self) -> None:
         self.menu = None
         self._overlay(2, None)
+        if self._live_muted():
+            self._overlay(self.MUTE, player_ui.muted_ass())  # vuelve la píldora «Sin sonido»
         card = self._card
         if card and card.get("kind") == "next" and card["segment"].upnext_deadline is not None:
             card["segment"].upnext_deadline = time.monotonic() + UPNEXT_COUNTDOWN  # no arranca de golpe

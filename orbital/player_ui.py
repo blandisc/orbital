@@ -365,7 +365,7 @@ class Hud:
 def info_line(hud: Hud) -> str:
     """«Inglés · Subtítulos en español · 1080p · Torrentio»."""
     if hud.subtitles and hud.subtitles not in ("No", "—"):
-        subs = f"Subtítulos en {hud.subtitles.lower()}"
+        subs = f"Subtítulos en {hud.subtitles[:1].lower()}{hud.subtitles[1:]}"
     else:
         subs = "Sin subtítulos"
     return "  ·  ".join(p for p in (hud.audio if hud.audio != "—" else "", subs, hud.source) if p)
@@ -497,7 +497,7 @@ def paused_ass(hud: Hud) -> str:
             ("B", "Mantén: salir")]
     room = max(260, W - 2 * MARGIN - hints_width(more) - 48)
     if TOUCH:
-        room = max(260, W - 2 * MARGIN - 560)
+        room = max(260, W - 2 * MARGIN - pills_width(_touch_items(hud, paused=True)) - 48)
     lines += [bar, _times(hud, BAR_Y + 28),
               text(MARGIN, 1022, esc(fit(info_line(hud), 22, min(1200, room), "semi")), 22, MUTED, weight="semi", align=4),
               _touch_bar(hud, 1000, paused=True) if TOUCH else hints(more, 1022, right=W - MARGIN)]
@@ -544,13 +544,23 @@ def pills(items: Sequence[tuple[str, object]], y: float, *, right: float | None 
     return "\n".join(out)
 
 
+def _touch_items(hud: Hud, *, paused: bool) -> list[tuple[str, object]]:
+    """En pausa, Continuar, Audio y Episodios ya son botones grandes del bloque: abajo solo regresar, adelantar y salir."""
+    if paused:
+        return [("−10 s", "left"), ("+10 s", "right"), ("Salir", "quit")]
+    return [("−10 s", "left"), ("Pausa", "a"), ("+10 s", "right"), ("Audio y subtítulos", "x"),
+            ("Episodios" if hud.series else "Fuentes", "y"), ("Salir", "quit")]
+
+
+def pills_width(items: Sequence[tuple[str, object]], gap: float = 16, size: int = 24) -> float:
+    return sum(text_width(label, size, "semi") + 56 for label, _ in items) + gap * max(0, len(items) - 1)
+
+
 def _touch_bar(hud: Hud, y: float, *, paused: bool) -> str:
-    """Abajo, con el dedo: regresar, pausa, adelantar, audio y subtítulos, más, y salir (sin mantener B)."""
-    items = [("−10 s", "left"), ("Seguir" if paused else "Pausa", "a"), ("+10 s", "right")]
-    if not paused:  # en pausa, Audio y Episodios ya son botones grandes del bloque
-        items += [("Audio y subtítulos", "x"), ("Episodios" if hud.series else "Fuentes", "y")]
-    items.append(("Salir", "quit"))
-    return pills(items, y, center=W / 2, h=66)
+    """Abajo, con el dedo: regresar, pausa, adelantar, audio y subtítulos, más, y salir (sin mantener B). En pausa va a
+    la derecha, junto a la línea de audio y subtítulos (al centro se encimaba sobre ella)."""
+    items = _touch_items(hud, paused=paused)
+    return pills(items, y, right=W - MARGIN, h=66) if paused else pills(items, y, center=W / 2, h=66)
 
 
 # --- panel de columnas (X: Audio · Subtítulos · Tamaño; Y: Fuentes · Episodios) ------------------------------------
@@ -589,14 +599,15 @@ TAB_NAMES = {"audio": "Audio", "sub": "Subtítulos", "size": "Tamaño de los sub
 PANEL_ROWS = 6  # filas visibles por columna; el resto se desplaza con el foco
 
 
-def panel_ass(panel: Panel, *, playing: bool = True) -> str:
+def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str:
     """Panel abajo, sobre un velo: el video sigue arriba. La opción enfocada, clara; la puesta, con ✓."""
     # Una superficie sólida (como las hojas de Orbital) para leer sobre cualquier escena, con una
     # transición corta arriba; el video sigue visible encima.
     targets["panel"] = []
     lines = [gradient(440, 560, 255, 40, 16), rrect(0, 560, W, H - 560, 0, PANEL, "28")]
-    if playing:
-        label = "Sigue reproduciendo"
+    if playing or muted:
+        label = " · ".join(p for p in ("Sigue reproduciendo" if playing else "", "sin sonido" if muted else "") if p)
+        label = label[:1].upper() + label[1:]
         lines += [rrect(MARGIN, 64, text_width(label, 22, "semi") + 70, 46, 23, PANEL, "40"),
                   _shape(f"m {MARGIN + 24} 77 l {MARGIN + 38} 87 l {MARGIN + 24} 97", TEXT),
                   text(MARGIN + 50, 87, label, 22, weight="semi", align=4)]
@@ -857,22 +868,25 @@ def quit_hold_ass(progress: float) -> str:
 
 
 def volume_ass(volume: float) -> str:
-    """El volumen, con su barra (arriba a la derecha)."""
+    """El volumen: una barra vertical en el borde derecho, a media altura (como en las TV). Arriba a la derecha van los
+    avisos y antes se encimaban; abajo, la barra del video y los paneles."""
     try:
         level = max(0.0, min(100.0, float(volume)))
     except (TypeError, ValueError):
         level = 0.0
     if not math.isfinite(level):
         level = 0.0
-    w = 360
-    x = W - MARGIN - w
-    bar_x, bar_w = x + 70, 210
-    y = NOTICE_Y
-    speaker = _shape(f"m {x + 24} {y + 20} l {x + 32} {y + 20} l {x + 42} {y + 11} l {x + 42} {y + 43} "
-                     f"l {x + 32} {y + 34} l {x + 24} {y + 34}", TEXT)
-    return "\n".join([rrect(x, y, w, 54, 27, PANEL, "30"), speaker,
-                      rrect(bar_x, y + 23, bar_w, 8, 4, TEXT, "C0"), rrect(bar_x, y + 23, max(8, bar_w * level / 100), 8, 4, TEXT),
-                      text(x + w - 22, y + 27, f"{int(level)}", 24, weight="semi", align=6)])
+    w, h = 64, 286
+    x, y = W - MARGIN + 16 - w, BUFFER_Y + 80  # debajo de «Cargando…» y del anillo de «Salir»
+    bar_x, bar_y, bar_h = x + w / 2 - 4, y + 62, 170
+    fill = max(8, bar_h * level / 100)
+    sx, sy = x + w / 2 - 9, y + h - 54  # la bocina, abajo
+    speaker = _shape(f"m {sx} {sy + 9} l {sx + 8} {sy + 9} l {sx + 18} {sy} l {sx + 18} {sy + 32} "
+                     f"l {sx + 8} {sy + 23} l {sx} {sy + 23}", TEXT)
+    return "\n".join([rrect(x, y, w, h, 32, PANEL, "30"),
+                      text(x + w / 2, y + 34, f"{int(level)}", 24, weight="semi", align=5),
+                      rrect(bar_x, bar_y, 8, bar_h, 4, TEXT, "C0"), rrect(bar_x, bar_y + bar_h - fill, 8, fill, 4, TEXT),
+                      speaker])
 
 
 def ends_at(position: float | None, duration: float | None, now: float | None = None) -> str:
