@@ -24,6 +24,9 @@
   --color-focus: var(--palette-paper);
   --color-primary: var(--palette-paper);
   --color-on-primary: var(--palette-ink-1000);
+  /* El botón principal de un juego o un título (Jugar, Ver) toma el color de su arte, como Game Glance:
+     el acento ya es claro, así que el texto oscuro se sigue leyendo. Sin color: casi blanco. */
+  --color-primary-art: var(--art-accent);
   /* Foco invertido (teclas, chips, pestañas, opciones de menú): fondo claro, texto oscuro. */
   --inverse-bg: var(--color-primary);
   --inverse-fg: var(--color-on-primary);

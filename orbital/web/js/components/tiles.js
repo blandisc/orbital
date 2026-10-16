@@ -62,7 +62,7 @@ export function detailOf(item, now = Date.now()) {
 }
 
 /** De dónde es: el ícono de su plataforma y su nombre («Steam», «Switch», «Película»). */
-const platform = (item) => h("span", { class: "tile__platform" }, svg(ICONS[systemIconName(item)] || ICONS.apps), kicker(item));
+const platform = (item, className) => h("span", { class: ["tile__platform", className] }, svg(ICONS[systemIconName(item)] || ICONS.apps), kicker(item));
 
 /**
  * Destacado: lo último que jugaste o viste, a lo grande, con sus acciones (A, X, Y) como leyenda.
@@ -79,13 +79,13 @@ export function FeatureTile(item, { focusId = "feature", runningId = null, glyph
     !boxed && item.extra?.hero_lowres && "tile--lowres"], onPress, item.title,
     boxed ? caseArt(item) : art(item.hero || item.image),
     h("span", { class: "tile__shade tile--feature__shade" }),
+    platform(item, ["tile__platform--pill", "tile--feature__store"]),
     h("div", { class: "tile--feature__body" },
-      platform(item),
       logo ? featureLogo(logo, item.title) : h("h2", { class: "tile--feature__title" }, item.title),
       detailOf(item) && h("span", { class: "tile--feature__detail" }, detailOf(item)),
       Progress(item.progress, { className: "tile--feature__progress" }),
       h("span", { class: "button-row tile--feature__actions" },
-        Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", onPress: press("select") }),
+        Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", art: true, onPress: press("select") }),
         alt && !open && Button({ label: alt, glyph: glyphs.alt, yields: true, onPress: press("alt") }),
         Button({ label: "Opciones", glyph: glyphs.options, onPress: press("options") }))));
 }

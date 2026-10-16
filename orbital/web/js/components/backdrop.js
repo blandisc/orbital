@@ -1,23 +1,35 @@
 import { dominantHue, paletteFor } from "../core/color.js";
 import { cssUrl, h } from "../core/dom.js";
+import { settler } from "../core/motion.js";
 
 const SAMPLE = 24; // px: basta para el tono y es instantáneo
 const palettes = new Map(); // url -> { tint, accent }
 
-/** Tono de la imagen ya cargada (mismo origen: /api/art). */
+/** Tono de la imagen ya cargada (mismo origen: /api/art; de fuera, cargada con permiso CORS). null: no se pudo leer. */
 function paletteOf(img, url) {
   if (!palettes.has(url)) {
-    let palette = paletteFor(null);
+    let palette = null;
     try {
       const canvas = document.createElement("canvas");
       canvas.width = canvas.height = SAMPLE;
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
       ctx.drawImage(img, 0, 0, SAMPLE, SAMPLE);
       palette = paletteFor(dominantHue(ctx.getImageData(0, 0, SAMPLE, SAMPLE).data));
-    } catch { /* imagen sin permiso de lectura: grafito neutro */ }
-    palettes.set(url, palette);
+    } catch { /* imagen sin permiso de lectura: se prueba con CORS (tonoDeFuera) */ }
+    if (palette) palettes.set(url, palette);
+    return palette;
   }
   return palettes.get(url);
+}
+
+/** El arte de fuera (TMDB, Steam, metahub) no se deja leer tal cual: una copia aparte pedida con CORS da su tono.
+ *  Aparte, para que un servidor sin CORS no deje la pantalla sin fondo (solo se queda en grafito). */
+function remotePalette(url, done) {
+  const probe = new Image();
+  probe.crossOrigin = "anonymous";
+  probe.onload = () => done(paletteOf(probe, url) || paletteFor(null));
+  probe.onerror = () => { palettes.set(url, paletteFor(null)); done(paletteFor(null)); };
+  probe.src = url;
 }
 
 /** Tiñe la interfaz con el color del juego (las variables tienen transición en CSS). */
@@ -49,6 +61,7 @@ export function createBackdrop({ settle = 150 } = {}) {
   const el = h("div", { class: "backdrop", "aria-hidden": "true" }, space, ...layers.map((l) => l.el), h("div", { class: "backdrop__scrim" }));
   let front = 0;
   let token = 0;
+  const wait = settler({ quick: settle, held: settle * 2 });
 
   function swap(url, poster, pixel = false) {
     const back = layers[1 - front];
@@ -65,7 +78,7 @@ export function createBackdrop({ settle = 150 } = {}) {
   /** `poster`: la imagen es una portada vertical (no hay fanart). `pixel`: captura chica (pixel art). */
   function show(url, { poster = false, pixel = false } = {}) {
     const mine = ++token;
-    // Espera un poco: si el usuario sigue moviéndose rápido no cargamos cada fondo.
+    // Espera un poco: si el usuario sigue moviéndose rápido no cargamos cada fondo (y cambia cuando se detiene).
     setTimeout(() => {
       if (mine !== token) return;
       if (!url) {
@@ -75,7 +88,9 @@ export function createBackdrop({ settle = 150 } = {}) {
       const img = new Image();
       img.onload = () => {
         if (mine !== token) return;
-        applyPalette(paletteOf(img, url));
+        const palette = paletteOf(img, url);
+        if (palette) applyPalette(palette); // de fuera: el color anterior se queda hasta que llega el tono (sin parpadeo gris)
+        else remotePalette(url, (p) => { if (mine === token) applyPalette(p); });
         swap(url, poster, pixel);
       };
       img.onerror = () => {
@@ -84,7 +99,7 @@ export function createBackdrop({ settle = 150 } = {}) {
         swap(null, false);
       };
       img.src = url;
-    }, settle);
+    }, wait());
   }
 
   /** Paralaje: 0 = primer juego de la fila, 1 = último. */

@@ -1,6 +1,7 @@
 import { h, mount } from "../core/dom.js";
 import { dragArea, dragScroll } from "../core/swipe.js";
 import { buildHome, greeting } from "../core/home.js";
+import { settler } from "../core/motion.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { ConsoleTile, FeatureTile, RowTile } from "./tiles.js";
 import { SectionHead } from "./ui.js";
@@ -61,6 +62,9 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   let options = { runningId: null, glyphs: {} };
   let staged; // lo que enseña el destacado ahora (cambia al bajar por los renglones)
   let hiddenCount = 0;
+  // Al bajar rápido por los renglones solo se mueve el resaltado; el destacado cambia cuando te detienes.
+  const stageWait = settler({ quick: 0, held: 240 });
+  let stageTimer;
 
   /** Qué es lo enfocado (no dónde está): un juego o una consola. */
   const identity = (t) => (t?.item?.id ?? (t?.console ? `console:${t.console.id ?? t.console.system ?? t.console.name}` : null));
@@ -111,6 +115,13 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     }
     paint();
     fit();
+  }
+
+  function queueStage() {
+    clearTimeout(stageTimer);
+    const wait = stageWait();
+    if (wait) stageTimer = setTimeout(renderStage, wait);
+    else renderStage();
   }
 
   /** El destacado enseña lo enfocado: el renglón en el que estás o, si no, lo último que tenías. */
@@ -168,7 +179,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   /** Marca el foco, atenúa lo demás y mantiene la consola enfocada a la vista. */
   function paint() {
     const inConsoles = focusId.startsWith("console:");
-    renderStage();
+    queueStage();
     const previewing = focusId.startsWith("card:"); // el destacado enseña el renglón enfocado: no se apaga
     for (const node of [...el.querySelectorAll("[data-focus-id]"), ...outside()]) {
       const focused = node.dataset.focusId === focusId;
