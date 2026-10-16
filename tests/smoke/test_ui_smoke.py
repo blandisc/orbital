@@ -104,6 +104,10 @@ def test_diagnostics_screen(page):
     page.locator(".status-bar__brand").click()  # el logo abre el menú
     page.get_by_text("Ajustes", exact=True).first.click()
     page.get_by_text("Mantenimiento", exact=True).first.click()  # lo técnico vive en Ajustes → Mantenimiento
+    # «Diagnóstico» queda justo donde estaba «Mantenimiento»: un toque ahí antes de 400 ms la hoja lo toma como
+    # doble toque y lo ignora a propósito (así un doble toque no confirma «¿Reiniciar?»). Una persona no es tan rápida.
+    page.locator(".sheet__title", has_text="Mantenimiento").wait_for()
+    page.wait_for_timeout(500)
     page.get_by_text("Diagnóstico", exact=True).first.click()
     page.get_by_text("Memoria libre").wait_for(timeout=15_000)
 
