@@ -36,10 +36,12 @@ final class MosaicLayoutTests: XCTestCase {
     }
 
     func testFocusedTileIsTallerThanTheRestOfItsColumn() {
-        let geo = MosaicGeometry(columnCount: 4, gap: 12, ring: 8, growRatio: 1.8)
+        // Con la proporción real de la app (`DesignTokens.Mosaic.focusedRowRatio`): las vecinas conservan su forma
+        // (póster 1,5 o ancha 0,58 del ancho) y la enfocada es la más alta de su columna.
+        let geo = MosaicGeometry(columnCount: 4, gap: 12, ring: 8, growRatio: 1.8, focusedRowRatio: DesignTokens.Mosaic.focusedRowRatio)
         var columns = [MosaicColumn(tiles: [
             MosaicTile(id: "a", item: item("a"), shape: .poster),
-            MosaicTile(id: "b", item: item("b"), shape: .poster),
+            MosaicTile(id: "b", item: item("b"), shape: .wide),
             MosaicTile(id: "c", item: item("c"), shape: .poster),
         ])]
         geo.layout(&columns, totalWidth: 390, focus: (col: 0, row: 1))
