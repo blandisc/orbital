@@ -99,6 +99,15 @@ enum DS {
         static let cardMax = CGFloat(DesignTokens.Size.cardMax), grabber = CGFloat(DesignTokens.Size.grabber), grabberHeight = CGFloat(DesignTokens.Size.grabberHeight)
         static let logo = CGFloat(DesignTokens.Size.logo)
         static let platformLogo = CGFloat(DesignTokens.Size.platformLogo)
+        static let logoHero = CGFloat(DesignTokens.Size.logoHero)
+    }
+
+    /// El fondo de pantalla: tono del arte, estrellas del espacio vivo y el fundido del arte a sangre.
+    enum Backdrop {
+        static let tintFloor = DesignTokens.Backdrop.tintFloor
+        static let starCount = DesignTokens.Backdrop.starCount, starSeed = DesignTokens.Backdrop.starSeed
+        static let starRadius = CGFloat(DesignTokens.Backdrop.starRadius), starOpacity = DesignTokens.Backdrop.starOpacity
+        static let artFadeStart = DesignTokens.Backdrop.artFadeStart
     }
 
     /// Esperas de la interfaz (nanosegundos para `Task.sleep`).

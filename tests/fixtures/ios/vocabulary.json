@@ -1,0 +1,102 @@
+{
+ "runtime": [
+  {
+   "minutes": null,
+   "text": null
+  },
+  {
+   "minutes": 0,
+   "text": null
+  },
+  {
+   "minutes": 1,
+   "text": "1 min"
+  },
+  {
+   "minutes": 45,
+   "text": "45 min"
+  },
+  {
+   "minutes": 59,
+   "text": "59 min"
+  },
+  {
+   "minutes": 60,
+   "text": "1 h"
+  },
+  {
+   "minutes": 61,
+   "text": "1 h 1 min"
+  },
+  {
+   "minutes": 105,
+   "text": "1 h 45 min"
+  },
+  {
+   "minutes": 120,
+   "text": "2 h"
+  },
+  {
+   "minutes": 600,
+   "text": "10 h"
+  },
+  {
+   "minutes": 1439,
+   "text": "23 h 59 min"
+  }
+ ],
+ "time_left": [
+  {
+   "seconds": 0,
+   "text": ""
+  },
+  {
+   "seconds": 30,
+   "text": ""
+  },
+  {
+   "seconds": 59.9,
+   "text": ""
+  },
+  {
+   "seconds": 60,
+   "text": "quedan 1 min"
+  },
+  {
+   "seconds": 119,
+   "text": "quedan 1 min"
+  },
+  {
+   "seconds": 660,
+   "text": "quedan 11 min"
+  },
+  {
+   "seconds": 3000,
+   "text": "quedan 50 min"
+  },
+  {
+   "seconds": 3600,
+   "text": "quedan 1 h"
+  },
+  {
+   "seconds": 5999,
+   "text": "quedan 1 h 39 min"
+  },
+  {
+   "seconds": 6600,
+   "text": "quedan 1 h 50 min"
+  },
+  {
+   "seconds": 7200,
+   "text": "quedan 2 h"
+  },
+  {
+   "seconds": 7260,
+   "text": "quedan 2 h 1 min"
+  },
+  {
+   "seconds": 36000,
+   "text": "quedan 10 h"
+  }
+ ]
+}

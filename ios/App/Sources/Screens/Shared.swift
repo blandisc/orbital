@@ -2,9 +2,9 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// «quedan 1 h 40 min» en el idioma de la app.
+/// «quedan 1 h 40 min» en el idioma de la app (las mismas horas y minutos que `Vocabulary.timeLeft`).
 func timeLeftText(minutes: Int) -> LocalizedStringKey {
-    let h = minutes / 60, m = minutes % 60
+    let (h, m) = Vocabulary.hoursAndMinutes(minutes)
     if h > 0 && m > 0 { return "quedan \(h) h \(m) min" }
     if h > 0 { return "quedan \(h) h" }
     return "quedan \(m) min"
@@ -75,23 +75,17 @@ func yearAndKind(year: String, kind: String) -> Text {
 }
 
 /// El dato de una línea de una sugerencia, como `factLine` en la TV: «Serie · T2 · E5», «Película · 2026 · 1 h 45 min».
-/// Del más completo al más corto: si no cabe, se quita el año y luego la duración, nunca se corta un número a medias.
+/// Del más completo al más corto (`ViewThatFits` elige el que cabe); las reglas viven en `Vocabulary.factVariants`.
 @MainActor func factVariants(_ s: Suggestion) -> [Text] {
-    let kind = s.kind == "movie" ? Text("Película") : Text("Serie")
-    if let next = s.next { return [Text("\(kind) · \(episodeText(season: next.season, episode: next.episode))"), kind] }
-    var out: [Text] = []
-    let time = s.runtime.map(runtimeText)
-    if let year = s.year, let time { out.append(Text("\(kind) · \(String(year)) · \(time)")) }
-    if let time { out.append(Text("\(kind) · \(time)")) }
-    else if let year = s.year { out.append(Text("\(kind) · \(String(year))")) }
-    return out + [kind]
+    let language = AppEnvironment.shared.services.appSettings.uiLanguage
+    let next = s.next.map { episodeText(season: $0.season, episode: $0.episode) }
+    return Vocabulary.factVariants(kind: Strings.kind(s.kind, language: language), year: s.year, runtime: s.runtime, next: next).map { Text(verbatim: $0) }
 }
 
-/// «45 min», «1 h 45 min», «2 h».
-private func runtimeText(_ minutes: Int) -> String {
-    let h = minutes / 60, m = minutes % 60
-    if h == 0 { return "\(m) min" }
-    return m == 0 ? "\(h) h" : "\(h) h \(m) min"
+/// El dato de «Seguir viendo» con el mismo vocabulario que la consola: «T2 · E5 · quedan 20 min» (película: solo lo que queda).
+@MainActor func progressFact(season: Int?, episode: Int?, leftMinutes: Int) -> String {
+    let language = AppEnvironment.shared.services.appSettings.uiLanguage
+    return Vocabulary.factLine([episodeText(season: season, episode: episode), leftMinutes > 0 ? Strings.timeLeft(minutes: leftMinutes, language: language) : nil])
 }
 
 extension Suggestion {

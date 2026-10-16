@@ -13,7 +13,9 @@ import json
 import zlib
 from pathlib import Path
 
+from orbital.foryou import runtime_text
 from orbital.library import cinemeta, localize, streams, stremio_api, tmdb, trakt
+from orbital.watch import time_left
 
 OUT = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "ios"
 NOW = 1_760_000_000.0  # 2025-10-09T08:53:20Z: fijo, para que el resultado no dependa del reloj
@@ -178,6 +180,12 @@ def trakt_cases() -> dict:
             "typed": {"rows": rows, "result": trakt._typed(rows)}}
 
 
+def vocabulary_cases() -> dict:
+    """«45 min» / «1 h 45 min» y «quedan 11 min»: el vocabulario que la TV y el iPhone comparten (`Vocabulary` en Swift)."""
+    return {"runtime": [{"minutes": m, "text": runtime_text(m)} for m in (None, 0, 1, 45, 59, 60, 61, 105, 120, 600, 1439)],
+            "time_left": [{"seconds": x, "text": time_left(x)} for x in (0, 30, 59.9, 60, 119, 660, 3000, 3600, 5999, 6600, 7200, 7260, 36000)]}
+
+
 def main() -> None:
     write("zlib", zlib_cases())
     write("watched", watched_cases())
@@ -189,6 +197,7 @@ def main() -> None:
     write("cinemeta", cinemeta_cases())
     write("localize", localize_cases())
     write("trakt", trakt_cases())
+    write("vocabulary", vocabulary_cases())
     print(f"Escritos en {OUT}")
 
 

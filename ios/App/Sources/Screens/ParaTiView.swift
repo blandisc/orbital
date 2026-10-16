@@ -5,6 +5,9 @@ import OrbitalModels
 /// «Para ti»: el mosaico (como en la TV, solo películas y series) y las listas (Trakt y plataformas).
 struct ParaTiView: View {
     @StateObject private var model: ModelObserver<ParaTiModel>
+    @StateObject private var tint = ArtTint()
+    /// El arte de la pieza enfocada del mosaico: el fondo de toda la pantalla toma su tono (nil en el ambiente o en Listas).
+    @State private var focusedArt: String?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -29,12 +32,14 @@ struct ParaTiView: View {
             .padding(.horizontal, DS.Space.gutter)
             if let error = m.error, m.mosaic.isEmpty, m.lists.isEmpty { DSNotice(text: LocalizedStringKey(error)).padding(.horizontal, DS.Space.gutter) }
             switch m.mode {
-            case .mosaic: Mosaic(items: m.mosaic, watchlistKeys: m.watchlistKeys, demoFocus: demoFocusImdb, onDismiss: { s in Task { await m.dismiss(s) } })
+            case .mosaic: Mosaic(items: m.mosaic, watchlistKeys: m.watchlistKeys, demoFocus: demoFocusImdb, onDismiss: { s in Task { await m.dismiss(s) } },
+                            onFocusChange: { focusedArt = $0?.wide })
             case .lists: ListsView(observer: model)
             }
         }
         .padding(.top, DS.Space.s2)
-        .background(TintedBackground())
+        .background(Backdrop(tint: m.mode == .mosaic ? tint.color : nil, space: true))
+        .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
         .navigationTitle("Para ti").navigationBarTitleDisplayMode(.large)
         .navigationDestination(for: TitleRoute.self) { TitleView(route: $0) }
         .task {

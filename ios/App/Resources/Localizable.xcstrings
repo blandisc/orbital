@@ -221,6 +221,39 @@
         }
       }
     },
+    "Buenas noches": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good evening"
+          }
+        }
+      }
+    },
+    "Buenas tardes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good afternoon"
+          }
+        }
+      }
+    },
+    "Buenos días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good morning"
+          }
+        }
+      }
+    },
     "Buscando la mejor fuente…": {
       "extractionState": "manual",
       "localizations": {
@@ -2307,6 +2340,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Subtitle size"
+          }
+        }
+      }
+    },
+    "También tenías": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You also had"
           }
         }
       }

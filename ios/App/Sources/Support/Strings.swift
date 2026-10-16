@@ -1,4 +1,5 @@
 import Foundation
+import OrbitalCore
 
 /// Textos que no pasan por `Text(...)` (SwiftUI ya usa el idioma de la app en los `Text`). Se buscan en el
 /// catálogo `Localizable.xcstrings` con el idioma elegido en Ajustes, que puede ser distinto del del sistema.
@@ -13,4 +14,15 @@ enum Strings {
         guard let season else { return String(format: tr("E%lld", language: language), episode) }
         return String(format: tr("T%lld · E%lld", language: language), season, episode)
     }
+
+    /// «quedan 1 h 40 min» / «1 h 40 min left» (los minutos que faltan, con las horas y minutos de `Vocabulary`).
+    static func timeLeft(minutes: Int, language: String) -> String {
+        let (h, m) = Vocabulary.hoursAndMinutes(minutes)
+        if h > 0 && m > 0 { return String(format: tr("quedan %lld h %lld min", language: language), h, m) }
+        if h > 0 { return String(format: tr("quedan %lld h", language: language), h) }
+        return String(format: tr("quedan %lld min", language: language), m)
+    }
+
+    /// «Película» / «Serie» en el idioma de la app.
+    static func kind(_ kind: String, language: String) -> String { tr(kind == "movie" ? "Película" : "Serie", language: language) }
 }

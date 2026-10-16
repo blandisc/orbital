@@ -178,6 +178,8 @@ struct Mosaic: View {
     var watchlistKeys: Set<String> = []
     var demoFocus: String?
     let onDismiss: (Suggestion) -> Void
+    /// La pieza enfocada (nil en el ambiente): la pantalla tiñe su fondo con su arte (`Backdrop`).
+    var onFocusChange: ((Suggestion?) -> Void)?
 
     @StateObject private var runtime = MosaicRuntime()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -240,6 +242,7 @@ struct Mosaic: View {
             }
         }
         .overlay { if runtime.isEmpty { ProgressView() } }
+        .onChange(of: runtime.current?.imdb, initial: true) { _, _ in onFocusChange?(runtime.current) }
         .task(id: idleToken) {
             guard runtime.mode == .focus, !reduceMotion else { return }
             try? await Task.sleep(nanoseconds: DS.Timing.mosaicIdle)
@@ -342,28 +345,5 @@ private struct MosaicTileCell: View {
             // Sin enfoque, solo el glifo con una sombra suave (con 20 piezas a la vista una caja en cada una domina).
             .background { if focused { Circle().fill(DS.primary) } }
             .shadow(color: focused ? .clear : DS.scrim, radius: DS.Space.s1)
-    }
-}
-
-/// El logo del título (metahub); si no carga o no hay, su nombre en texto (misma regla que `--logo` en la TV).
-private struct TitleLogo: View {
-    let url: String?
-    let title: String
-
-    var body: some View {
-        if let url, let u = URL(string: url) {
-            AsyncImage(url: u) { phase in
-                switch phase {
-                case .success(let image): image.resizable().scaledToFit().frame(maxHeight: DS.Size.logo, alignment: .leading)
-                default: name
-                }
-            }
-        } else { name }
-    }
-
-    private var name: some View {
-        // Una sola línea (con puntos suspensivos si no cabe): en una columna angosta, dos líneas de
-        // letra grande se salían de la pieza y se encimaban con el dato de abajo.
-        Text(title).font(DS.font(.lg, weight: .bold)).foregroundStyle(DS.text).lineLimit(1)
     }
 }
