@@ -13,5 +13,7 @@ struct DownloadActivityAttributes: ActivityAttributes {
         var remaining: Int
         /// En pausa o esperando Wi‑Fi: no avanza.
         var waiting: Bool
+        /// El idioma de la app («es» / «en»): la pantalla bloqueada habla como la app, no como el sistema.
+        var language: String
     }
 }

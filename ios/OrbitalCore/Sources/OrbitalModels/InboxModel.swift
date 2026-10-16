@@ -66,23 +66,23 @@ public final class InboxModel: ObservableModel {
         let outcome = await queue(item)
         switch outcome {
         case .queued:
-            onEvent?(.downloading(item.displayName)); return true
+            onEvent?(.downloading(name(item))); return true
         case .already:
             return true
         case .noSources:
-            onEvent?(.downloadFailed(item.displayName, reason: .noSources)); return true
+            onEvent?(.downloadFailed(name(item), reason: .noSources)); return true
         case .notEnoughSpace:
-            onEvent?(.downloadFailed(item.displayName, reason: .notEnoughSpace)); return true
+            onEvent?(.downloadFailed(name(item), reason: .notEnoughSpace)); return true
         case .failed:
             failures[item.id, default: 0] += 1
             guard failures[item.id, default: 0] >= Self.maxFailures else { return false }
-            onEvent?(.downloadFailed(item.displayName, reason: .other)); return true
+            onEvent?(.downloadFailed(name(item), reason: .other)); return true
         }
     }
 
     private func queue(_ item: OrbitalRemote.InboxItem) async -> TitleModel.DownloadOutcome {
         await services.queueDownload(kind: item.kind, metaID: item.metaID, videoID: item.videoID ?? item.metaID, title: item.title,
-                                     originalTitle: item.title, subtitle: item.episodeLabel, poster: item.poster)
+                                     originalTitle: item.title, subtitle: services.tvEpisodeLabel(item.episodeLabel), poster: item.poster)
     }
 
     private func receive(_ item: OrbitalRemote.InboxItem) {
@@ -90,7 +90,7 @@ public final class InboxModel: ObservableModel {
         list.insert(item, at: 0)
         fromTV = Array(list.prefix(Self.limit))
         save()
-        onEvent?(.received(item.displayName))
+        onEvent?(.received(name(item)))
     }
 
     /// «Descartar» en la tarjeta.
@@ -103,11 +103,11 @@ public final class InboxModel: ObservableModel {
     /// tarjeta se queda para intentarlo otra vez.
     public func downloadFromCard(_ item: OrbitalRemote.InboxItem) async {
         switch await queue(item) {
-        case .queued: onEvent?(.downloading(item.displayName)); dismiss(item)
+        case .queued: onEvent?(.downloading(name(item))); dismiss(item)
         case .already: dismiss(item)
-        case .noSources: onEvent?(.downloadFailed(item.displayName, reason: .noSources))
-        case .notEnoughSpace: onEvent?(.downloadFailed(item.displayName, reason: .notEnoughSpace))
-        case .failed: onEvent?(.downloadFailed(item.displayName, reason: .other))
+        case .noSources: onEvent?(.downloadFailed(name(item), reason: .noSources))
+        case .notEnoughSpace: onEvent?(.downloadFailed(name(item), reason: .notEnoughSpace))
+        case .failed: onEvent?(.downloadFailed(name(item), reason: .other))
         }
     }
 
@@ -116,5 +116,10 @@ public final class InboxModel: ObservableModel {
 
     private func save() {
         services.kv.set(Self.storeKey, data: try? JSONEncoder().encode(fromTV))
+    }
+
+    /// «The Office T2 E5» con la etiqueta de la TV en el idioma de la app.
+    private func name(_ item: OrbitalRemote.InboxItem) -> String {
+        item.episodeLabel.isEmpty ? item.title : "\(item.title) \(services.tvEpisodeLabel(item.episodeLabel))"
     }
 }

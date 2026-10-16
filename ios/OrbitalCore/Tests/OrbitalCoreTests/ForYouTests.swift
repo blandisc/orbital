@@ -139,6 +139,7 @@ final class ForYouTests: XCTestCase {
         XCTAssertFalse(severance.atDawn)
         XCTAssertEqual(severance.day, mexico.startOfDay(for: Clock().now), "sale hoy, en la hora de aquí")
         XCTAssertEqual(andor.episodeLabel, "T2 E4–E6", "tres episodios el mismo día: una sola tarjeta")
+        XCTAssertEqual(andor.episodeLabel { "S\($0) E\($1)" }, "S2 E4–E6", "en inglés, con la forma de la interfaz")
         XCTAssertEqual(andor.count, 3)
         XCTAssertTrue(andor.atDawn, "a la 1:00: «Desde la madrugada»")
         XCTAssertEqual(andor.series.kind, "series", "pulsar abre la ficha de la serie")

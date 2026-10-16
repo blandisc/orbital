@@ -39,12 +39,13 @@ final class AppEnvironment: ObservableObject {
     @Published var banner: Banner?
     struct Banner: Equatable { var text: String; var tone: DSNotice.Tone }
 
-    func notify(_ text: String, tone: DSNotice.Tone = .error) { banner = Banner(text: text, tone: tone) }
+    /// Un aviso: lo que arma la app en español se traduce aquí, una sola vez (el aviso ya se pinta tal cual).
+    func notify(_ text: String, tone: DSNotice.Tone = .error) { banner = Banner(text: Strings.message(text, language: services.appSettings.uiLanguage), tone: tone) }
     /// Un texto armado en español por un modelo (error o aviso), listo para `Text`/`DSNotice` en el idioma de la app.
-    func message(_ text: String) -> LocalizedStringKey { LocalizedStringKey(Strings.message(text, language: services.appSettings.uiLanguage)) }
+    func message(_ text: String) -> String { Strings.message(text, language: services.appSettings.uiLanguage) }
     /// Un aviso con datos: la clave («… %@») se traduce primero y luego se llena (`LocalizedStringKey` no encuentra un texto ya armado).
     func notify(format key: String, _ args: CVarArg..., tone: DSNotice.Tone = .error) {
-        notify(String(format: Strings.tr(key, language: services.appSettings.uiLanguage), arguments: args), tone: tone)
+        banner = Banner(text: String(format: Strings.tr(key, language: services.appSettings.uiLanguage), arguments: args), tone: tone)
     }
 
     /// Un solo entorno para toda la app (las vistas lo comparten sin armar otro).
@@ -60,6 +61,7 @@ final class AppEnvironment: ObservableObject {
         let store = services.settings   // el almacén es seguro entre hilos: los cierres no tocan nada aislado al hilo principal
         transport.allowsCellular = { !store.value.wifiOnlyDownloads }
         services.episodeLabel = { Strings.episode(season: $0, episode: $1, language: store.value.uiLanguage) }
+        services.tvEpisodeLabel = { Strings.tvEpisode($0, language: store.value.uiLanguage) }
         // El widget «Lo siguiente para ti»: sus textos en el idioma de la app y quién escribe su snapshot (al actualizar Inicio).
         services.widgetLabels = WidgetLabels(
             episode: { Strings.episode(season: $0, episode: $1, language: store.value.uiLanguage) },
@@ -81,6 +83,8 @@ final class AppEnvironment: ObservableObject {
         tvNow.inbox = inbox
         inbox.onEvent = { [weak self] event in self?.announce(event) }
         Task { await services.downloads.start() }
+        let settings = services.settings
+        liveActivity.language = { settings.value.uiLanguage }
         Task { await liveActivity.follow(services.downloads) }
     }
 
@@ -109,16 +113,14 @@ final class AppEnvironment: ObservableObject {
 
     /// El aviso (con háptica, por el tono del aviso) de lo que pasó con lo que mandó la TV.
     private func announce(_ event: InboxModel.Event) {
-        let language = services.appSettings.uiLanguage
-        func line(_ key: String, _ name: String) -> String { String(format: Strings.tr(key, language: language), name) }
         switch event {
-        case .downloading(let name): notify(line("Descargando %@ (desde la TV)", name), tone: .success)
-        case .received(let name): notify(line("Desde la TV: %@", name), tone: .info)
+        case .downloading(let name): notify(format: "Descargando %@ (desde la TV)", name, tone: .success)
+        case .received(let name): notify(format: "Desde la TV: %@", name, tone: .info)
         case .downloadFailed(let name, let reason):
             switch reason {
-            case .noSources: notify(line("No encontré una fuente para descargar %@ (desde la TV)", name))
-            case .notEnoughSpace: notify(line("No hay espacio para descargar %@ (desde la TV)", name))
-            case .other: notify(line("No pude descargar %@ (desde la TV)", name))
+            case .noSources: notify(format: "No encontré una fuente para descargar %@ (desde la TV)", name)
+            case .notEnoughSpace: notify(format: "No hay espacio para descargar %@ (desde la TV)", name)
+            case .other: notify(format: "No pude descargar %@ (desde la TV)", name)
             }
         }
     }

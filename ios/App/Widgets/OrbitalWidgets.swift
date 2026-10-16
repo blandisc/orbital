@@ -27,6 +27,7 @@ struct DownloadLiveActivity: Widget {
                 }
             }
             .padding()
+            .environment(\.locale, Locale(identifier: context.state.language))   // el idioma de la app, no el del sistema
             .environment(\.colorScheme, .dark)   // el fondo es el velo oscuro en los dos modos: letra clara siempre
             .activityBackgroundTint(DS.scrim)
             .activitySystemActionForegroundColor(DS.paper)
@@ -42,6 +43,7 @@ struct DownloadLiveActivity: Widget {
                         ProgressView(value: context.state.fraction)
                         Text(subtitle(context.state)).font(DS.font(.sm)).foregroundStyle(.secondary)
                     }
+                    .environment(\.locale, Locale(identifier: context.state.language))
                 }
             } compactLeading: {
                 Image(systemName: "arrow.down.circle.fill")

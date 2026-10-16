@@ -25,7 +25,7 @@ struct SourcesSheet: View {
             ScrollView {
                 VStack(spacing: DS.Space.s2) {
                     if model.isLoading { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s6) }
-                    if let error = model.error { DSNotice(text: env.message(error), tone: .warn) }
+                    if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn) }
                     ForEach(model.rows) { row in
                         Button { if let source = model.source(row.id) { choose(source, purpose) } } label: { SourceRowView(row: row, purpose: purpose) }.buttonStyle(.plain)
                     }

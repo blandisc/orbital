@@ -107,7 +107,7 @@ struct SettingsView: View {
                 }
                 .swipeActions { if session.model.ownAddonURLs.contains(addon.url) { Button("Quitar", role: .destructive) { Task { await session.model.removeAddon(url: addon.url) } } } }
             }
-            if let error = session.model.addonError { Text(env.message(error)).foregroundStyle(DS.danger).font(DS.TextRecipe.footnote.font) }
+            if let error = session.model.addonError { Text(verbatim: env.message(error)).foregroundStyle(DS.danger).font(DS.TextRecipe.footnote.font) }
             TextField("Pegar la dirección de un complemento", text: $newAddon).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
             if !newAddon.isEmpty { Button("Agregar complemento") { Task { await session.model.addAddon(newAddon); if session.model.addonError == nil { newAddon = "" } } } }
         }
@@ -129,7 +129,7 @@ struct SettingsView: View {
                 Button { Task { await model.checkOrbital() } } label: {
                     HStack { Text("Probar conexión"); Spacer(); if model.checkingOrbital { ProgressView() } }
                 }
-                if let problem = model.orbitalCheck, !problem.isEmpty { Text(env.message(problem)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.danger) }
+                if let problem = model.orbitalCheck, !problem.isEmpty { Text(verbatim: env.message(problem)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.danger) }
                 if !model.importedFromOrbital.isEmpty {
                     Label("Traje de tu Orbital: \(imported(model)). No hay que escribirlo aquí.", systemImage: "arrow.down.doc")
                         .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.good)
@@ -188,7 +188,7 @@ struct SettingsView: View {
                 }
                 scrobbleRow(model)
             case .failed(let message):
-                DSNotice(text: env.message(message), tone: .error)
+                DSNotice(verbatim: env.message(message), tone: .error)
                 Button("Volver a intentar") { Task { await model.linkTrakt() } }
             }
         }
@@ -212,7 +212,7 @@ struct SettingsView: View {
             } else {
                 Text("Todavía nada: aparece cuando veas algo en el iPhone.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
             }
-            if let error = model.scrobble.error { DSNotice(text: env.message(error), tone: .warn) }
+            if let error = model.scrobble.error { DSNotice(verbatim: env.message(error), tone: .warn) }
         }
     }
 

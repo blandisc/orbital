@@ -17,6 +17,8 @@ struct BrowseView: View {
 
     /// Cuántos de lo más popular van en la lista con puesto.
     private static let popularCount = 5
+    /// Cuántas películas de cada género se consideran para su arte (para no repetir la de otro género).
+    private static let genreArtCandidates = 6
 
     init() {
         let services = AppEnvironment.shared.services
@@ -54,7 +56,7 @@ struct BrowseView: View {
     // MARK: resultados
     @ViewBuilder private var results: some View {
         let model = search.model
-        if let error = model.error { DSNotice(text: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
+        if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
         else if model.results.isEmpty && !model.isSearching { ContentUnavailableView.search(text: query) }
         LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
             ForEach(model.results) { r in
@@ -71,7 +73,7 @@ struct BrowseView: View {
     @ViewBuilder private var suggestions: some View {
         let model = catalog.model
         if !search.model.recent.isEmpty { recent }
-        if let error = model.error { DSNotice(text: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
+        if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
         if !model.popular.isEmpty { popular(model) }
         else if model.isLoading { ProgressView().frame(maxWidth: .infinity) }
         explore
@@ -120,17 +122,25 @@ struct BrowseView: View {
 
     private func genreName(_ genre: String) -> String { Vocabulary.genres([genre], language: env.services.appSettings.uiLanguage).first ?? genre }
 
-    /// El arte de cada género: el fondo de su primera película popular (todos a la vez; la fila de imágenes hace el resto).
+    /// El arte de cada género: el fondo de su película más popular que no use ya otro género (un mismo título es drama y
+    /// suspenso a la vez; sin esto, dos mosaicos salían con la misma imagen). Todos a la vez; la fila de imágenes hace el resto.
     private func loadGenreArt() async {
         let cinemeta = env.services.cinemeta
-        await withTaskGroup(of: (String, String?).self) { group in
+        var candidates: [String: [String]] = [:]
+        await withTaskGroup(of: (String, [String]).self) { group in
             for genre in CatalogModel.exploreGenres {
                 group.addTask {
-                    let first = (try? await cinemeta.catalog("movie", genre: genre))?.first?["id"]?.string
-                    return (genre, first.map { String(format: ForYou.metahubBackground, $0) })
+                    let ids = ((try? await cinemeta.catalog("movie", genre: genre)) ?? []).prefix(Self.genreArtCandidates).compactMap { $0["id"]?.string }
+                    return (genre, ids)
                 }
             }
-            for await (genre, art) in group { if let art { genreArt[genre] = art } }
+            for await (genre, ids) in group { candidates[genre] = ids }
+        }
+        var used = Set<String>()
+        for genre in CatalogModel.exploreGenres {
+            guard let ids = candidates[genre], let id = ids.first(where: { !used.contains($0) }) ?? ids.first else { continue }
+            used.insert(id)
+            genreArt[genre] = String(format: ForYou.metahubBackground, id)
         }
     }
 }
