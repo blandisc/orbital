@@ -763,11 +763,13 @@ class OrbitalPlayer(PlayerScreen):
                     "title": meta.get("title") or current.title, "number": meta.get("number"),
                     "category": meta.get("category") or "", "paused": False,
                     "muted": bool(self.mpv.get("mute"))}
+        from .companion import episode_numbers  # aquí: companion no se carga con el reproductor
         label = (meta.get("detail") or "").split(" · ", 1)[0]
         parts = label.split()
         episode_label = f"{parts[0]} · {parts[1]}" if len(parts) == 2 else ""
         return {"kind": meta.get("kind") or "movie", "live": False, "meta_id": meta.get("meta_id"),
                 "video_id": meta.get("video_id"), "title": meta.get("title") or current.title,
                 "episode_label": episode_label, "poster": meta.get("poster"),
+                **episode_numbers(meta.get("video_id") if meta.get("kind") == "series" else None),
                 "position": segment.position, "duration": segment.duration,
                 "paused": bool(self.mpv.get("pause"))}
