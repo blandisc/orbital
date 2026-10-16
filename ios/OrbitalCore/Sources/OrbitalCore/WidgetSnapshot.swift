@@ -18,15 +18,23 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         public var progress: Double?
         /// El póster remoto de donde salió la imagen (la app lo baja y lo reduce; el widget no lo usa).
         public var poster: String?
-        /// Nombre del archivo de la imagen reducida (JPEG, máx. `DesignTokens.Widget.maxImagePixels`), junto al snapshot.
+        /// Nombre del archivo del póster vertical reducido (JPEG, máx. `DesignTokens.Widget.maxImagePixels`), junto al snapshot.
         public var imageFile: String?
+        /// La imagen ancha (fondo) de donde salió `wideFile`, y el logo del título de donde salió `logoFile` (la app los baja y reduce).
+        public var wide: String?
+        public var logo: String?
+        /// La imagen ancha reducida (JPEG) y el logo reducido (PNG con transparencia), junto al snapshot; sin logo se pinta el título.
+        public var wideFile: String?
+        public var logoFile: String?
         /// Tono medio del arte, ya oscurecido como el fondo de las pantallas («#rrggbb»).
         public var tint: String?
 
         public init(kind: String, metaID: String, videoID: String? = nil, title: String, episodeLabel: String = "", status: String = "",
-                    progress: Double? = nil, poster: String? = nil, imageFile: String? = nil, tint: String? = nil) {
+                    progress: Double? = nil, poster: String? = nil, imageFile: String? = nil, wide: String? = nil, logo: String? = nil,
+                    wideFile: String? = nil, logoFile: String? = nil, tint: String? = nil) {
             self.kind = kind; self.metaID = metaID; self.videoID = videoID; self.title = title; self.episodeLabel = episodeLabel
             self.status = status; self.progress = progress; self.poster = poster; self.imageFile = imageFile; self.tint = tint
+            self.wide = wide; self.logo = logo; self.wideFile = wideFile; self.logoFile = logoFile
         }
 
         /// «T2 · E6 · quedan 20 min» (lo que hay, unido con « · »).
@@ -70,9 +78,15 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
     }
 
     /// Un nombre de archivo seguro para la imagen de un título (los ids de Stremio traen «:»).
-    public static func imageFileName(for metaID: String) -> String {
+    public static func imageFileName(for metaID: String, kind: ImageKind = .poster) -> String {
         let safe = metaID.map { $0.isLetter || $0.isNumber ? String($0) : "_" }.joined()
-        return "\(safe).jpg"
+        return "\(safe)\(kind.suffix)"
+    }
+
+    /// Las tres imágenes de un título: póster vertical, imagen ancha y logo.
+    public enum ImageKind: Sendable {
+        case poster, wide, logo
+        var suffix: String { switch self { case .poster: ".jpg"; case .wide: "-wide.jpg"; case .logo: "-logo.png" } }
     }
 
     /// El tono del fondo a partir del color medio del arte (0…1): se mezcla con el grafito más profundo igual que el fondo de las

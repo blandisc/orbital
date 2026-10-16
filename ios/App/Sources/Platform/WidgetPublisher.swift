@@ -4,8 +4,9 @@ import UIKit
 import WidgetKit
 import OrbitalCore
 
-/// Le deja al widget «Lo siguiente para ti» lo que necesita: baja los pósters de «Seguir viendo», los reduce (máx. 300 px, JPEG: el
-/// widget no va a la red y su memoria es corta), calcula el tono del arte, escribe el snapshot en el App Group y pide recarga.
+/// Le deja al widget «Lo siguiente para ti» lo que necesita: baja el póster, la imagen ancha y el logo de cada título de «Seguir viendo»,
+/// los reduce (máx. 300 px: el widget no va a la red y su memoria es corta), calcula el tono del arte, escribe el snapshot en el
+/// App Group y pide recarga.
 @MainActor
 enum WidgetPublisher {
     private static var running: Task<Void, Never>?
@@ -18,45 +19,50 @@ enum WidgetPublisher {
             for index in result.items.indices {
                 guard !Task.isCancelled else { return }
                 let item = result.items[index]
-                // Si el póster no cambió y su archivo sigue ahí, no se baja otra vez.
-                if let old = previous?.items.first(where: { $0.metaID == item.metaID && $0.poster == item.poster }),
-                   let file = old.imageFile, let url = WidgetStore.imageURL(file), FileManager.default.fileExists(atPath: url.path) {
-                    result.items[index].imageFile = file; result.items[index].tint = old.tint
-                    continue
-                }
-                guard let poster = item.poster, let remote = URL(string: poster), let directory = WidgetStore.directory,
-                      let (data, _) = try? await URLSession.shared.data(from: remote) else { continue }
-                let name = WidgetSnapshot.imageFileName(for: item.metaID)
-                let processed = await Task.detached(priority: .utility) { Self.reduce(data) }.value
-                guard let (jpeg, tint) = processed else { continue }
-                if (try? jpeg.write(to: directory.appendingPathComponent(name), options: .atomic)) != nil {
-                    result.items[index].imageFile = name; result.items[index].tint = tint
-                }
+                let old = previous?.items.first { $0.metaID == item.metaID }
+                let poster = await image(item.poster, as: .poster, id: item.metaID, reuse: old.flatMap { $0.poster == item.poster ? ($0.imageFile, $0.tint) : nil })
+                result.items[index].imageFile = poster.file; result.items[index].tint = poster.tint
+                let wide = await image(item.wide, as: .wide, id: item.metaID, reuse: old.flatMap { $0.wide == item.wide ? ($0.wideFile, nil) : nil })
+                result.items[index].wideFile = wide.file
+                if result.items[index].tint == nil { result.items[index].tint = wide.tint }
+                result.items[index].logoFile = await image(item.logo, as: .logo, id: item.metaID, reuse: old.flatMap { $0.logo == item.logo ? ($0.logoFile, nil) : nil }).file
             }
             guard !Task.isCancelled else { return }
             // Nada que escribir ni recargar si lo que se ve es lo mismo.
             if let previous, previous.items == result.items, previous.language == result.language, previous.upcoming == result.upcoming { return }
-            clean(keeping: Set(result.items.compactMap(\.imageFile)))
+            let kept = result.items.flatMap { [$0.imageFile, $0.wideFile, $0.logoFile] }.compactMap { $0 }
+            clean(keeping: Set(kept))
             if WidgetStore.save(result) { WidgetCenter.shared.reloadTimelines(ofKind: WidgetStore.kind) }
         }
     }
 
-    /// El póster en JPEG de a lo más 300 px y el tono medio de su arte.
-    nonisolated private static func reduce(_ data: Data) -> (Data, String)? {
+    /// Una imagen reducida en el App Group (se reutiliza la de antes si la URL no cambió); nil si no hay o no cargó.
+    private static func image(_ remote: String?, as kind: WidgetSnapshot.ImageKind, id: String, reuse: (String?, String?)?) async -> (file: String?, tint: String?) {
+        if let (file, tint) = reuse, let file, let url = WidgetStore.imageURL(file), FileManager.default.fileExists(atPath: url.path) { return (file, tint) }
+        guard let remote, let url = URL(string: remote), let directory = WidgetStore.directory,
+              let (data, response) = try? await URLSession.shared.data(from: url), (response as? HTTPURLResponse)?.statusCode ?? 200 < 400 else { return (nil, nil) }
+        let name = WidgetSnapshot.imageFileName(for: id, kind: kind)
+        let processed = await Task.detached(priority: .utility) { Self.reduce(data, png: kind == .logo) }.value
+        guard let (bytes, tint) = processed, (try? bytes.write(to: directory.appendingPathComponent(name), options: .atomic)) != nil else { return (nil, nil) }
+        return (name, tint)
+    }
+
+    /// La imagen de a lo más 300 px (JPEG, o PNG para el logo) y el tono medio de su arte.
+    nonisolated private static func reduce(_ data: Data, png: Bool) -> (Data, String)? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
         let options: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true,
                                         kCGImageSourceThumbnailMaxPixelSize: DesignTokens.Widget.maxImagePixels]
         guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
         let image = UIImage(cgImage: cg)
-        guard let jpeg = image.jpegData(compressionQuality: DesignTokens.Widget.jpegQuality) else { return nil }
+        guard let bytes = png ? image.pngData() : image.jpegData(compressionQuality: DesignTokens.Widget.jpegQuality) else { return nil }
         var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
         image.averageColor?.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        return (jpeg, WidgetSnapshot.tintHex(r: Double(red), g: Double(green), b: Double(blue)))
+        return (bytes, WidgetSnapshot.tintHex(r: Double(red), g: Double(green), b: Double(blue)))
     }
 
     /// Borra las imágenes de lo que ya no sale en el widget.
     private static func clean(keeping: Set<String>) {
         guard let directory = WidgetStore.directory, let files = try? FileManager.default.contentsOfDirectory(atPath: directory.path) else { return }
-        for file in files where file.hasSuffix(".jpg") && !keeping.contains(file) { try? FileManager.default.removeItem(at: directory.appendingPathComponent(file)) }
+        for file in files where (file.hasSuffix(".jpg") || file.hasSuffix(".png")) && !keeping.contains(file) { try? FileManager.default.removeItem(at: directory.appendingPathComponent(file)) }
     }
 }

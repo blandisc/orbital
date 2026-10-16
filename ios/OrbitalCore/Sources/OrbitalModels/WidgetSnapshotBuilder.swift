@@ -12,7 +12,7 @@ extension WidgetSnapshot {
             if item.nextUp { status = episode.isEmpty ? "" : labels.nextUp(episode); label = "" }
             else { status = item.leftMinutes > 0 ? labels.timeLeft(item.leftMinutes) : ""; label = episode }
             return Item(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title, episodeLabel: label, status: status,
-                        progress: item.nextUp ? nil : item.progress, poster: item.poster)
+                        progress: item.nextUp ? nil : item.progress, poster: item.poster, wide: item.background, logo: Artwork.logoURL(metaID: item.metaID))
         }
         return WidgetSnapshot(generatedAt: now, language: language, items: Array(mapped), upcoming: upcoming)
     }

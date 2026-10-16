@@ -48,12 +48,13 @@ enum Demo {
     /// El snapshot de ejemplo del widget: una serie a medias, el siguiente episodio de otra y una película.
     static var widgetSnapshot: WidgetSnapshot {
         func poster(_ id: String) -> String { "https://images.metahub.space/poster/medium/\(id)/img" }
+        func wide(_ id: String) -> String { "https://images.metahub.space/background/medium/\(id)/img" }
         let english = language == "en"
         return WidgetSnapshot(language: english ? "en" : "es", items: [
             .init(kind: "series", metaID: "tt0386676", videoID: "tt0386676:2:6", title: english ? "The Office" : "La Oficina", episodeLabel: english ? "S2 · E6" : "T2 · E6",
-                  status: english ? "20 min left" : "quedan 20 min", progress: 0.55, poster: poster("tt0386676")),
-            .init(kind: "series", metaID: "tt0903747", videoID: "tt0903747:2:1", title: "Breaking Bad", status: english ? "Next up: S2 · E1" : "Sigue: T2 · E1", poster: poster("tt0903747")),
-            .init(kind: "movie", metaID: "tt0816692", videoID: "tt0816692", title: "Interstellar", status: english ? "1 h 12 min left" : "quedan 1 h 12 min", progress: 0.3, poster: poster("tt0816692")),
+                  status: english ? "20 min left" : "quedan 20 min", progress: 0.55, poster: poster("tt0386676"), wide: wide("tt0386676"), logo: Artwork.logoURL(metaID: "tt0386676")),
+            .init(kind: "series", metaID: "tt0903747", videoID: "tt0903747:2:1", title: "Breaking Bad", status: english ? "Next up: S2 · E1" : "Sigue: T2 · E1", poster: poster("tt0903747"), wide: wide("tt0903747"), logo: Artwork.logoURL(metaID: "tt0903747")),
+            .init(kind: "movie", metaID: "tt0816692", videoID: "tt0816692", title: "Interstellar", status: english ? "1 h 12 min left" : "quedan 1 h 12 min", progress: 0.3, poster: poster("tt0816692"), wide: wide("tt0816692"), logo: Artwork.logoURL(metaID: "tt0816692")),
         ])
     }
 

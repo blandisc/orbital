@@ -66,7 +66,9 @@ public enum DesignTokens {
         public static let maxImagePixels = 300.0, jpegQuality = 0.7, tintMix = 0.55, fallbackRefreshHours = 6.0
         public static let progressHeight = 3.0, thumbWidth = 44.0
         /// Dónde empieza el velo inferior del póster (fracción de su alto) para que el título se lea.
-        public static let scrimStart = 0.25
+        public static let scrimStart = 0.25, scrimStartWide = 0.05
+        /// Alto del logo del título y radio de la sombra del texto sobre el arte (contraste del dato, como en el destacado de Inicio).
+        public static let logoHeight = 28.0, textShadowRadius = 3.0
     }
     /// El mosaico de «Para ti» (como `foryou-mosaic.js` en la TV): cuánto se ensancha la columna enfocada,
     /// cuánto se espera quieto antes del ambiente o de «cobrar vida», y a qué ritmo sube sola cada columna.

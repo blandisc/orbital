@@ -112,7 +112,8 @@ enum DS {
     /// dónde empieza el velo inferior del póster y cada cuánto se pide recarga si la app no avisa.
     enum Widget {
         static let progressHeight = CGFloat(DesignTokens.Widget.progressHeight), thumbWidth = CGFloat(DesignTokens.Widget.thumbWidth)
-        static let scrimStart = DesignTokens.Widget.scrimStart
+        static let scrimStart = DesignTokens.Widget.scrimStart, scrimStartWide = DesignTokens.Widget.scrimStartWide
+        static let logoHeight = CGFloat(DesignTokens.Widget.logoHeight), textShadowRadius = CGFloat(DesignTokens.Widget.textShadowRadius)
         static let fallbackRefresh = DesignTokens.Widget.fallbackRefreshHours * 3600
     }
 

@@ -82,13 +82,15 @@ private struct ProgressLine: View {
     }
 }
 
-/// El póster a sangre (o el tono del arte si no hay imagen), alineado arriba para que no se corte la cara.
+/// El arte a sangre (o el tono si no hay imagen), alineado arriba para que no se corten las cabezas. `wide`: la imagen ancha (con el póster
+/// de respaldo); si no, el póster vertical.
 private struct Art: View {
     var item: WidgetSnapshot.Item
+    var wide = false
     var body: some View {
         ZStack {
             tintedBackground(artTone(item))
-            if let image = poster(item) {
+            if let image = (wide ? item.wideFile.flatMap(load) : nil) ?? poster(item) {
                 // La imagen solo rellena el espacio que le toca (no lo agranda): si no, empuja el texto fuera del widget.
                 Color.clear.overlay(alignment: .top) { Image(uiImage: image).resizable().scaledToFill() }.clipped()
             }
@@ -96,20 +98,30 @@ private struct Art: View {
     }
 }
 
-/// El velo inferior: del arte limpio a casi opaco, para que el título se lea.
-private var bottomScrim: some View {
-    LinearGradient(stops: [.init(color: .clear, location: DS.Widget.scrimStart), .init(color: DS.scrimStrong, location: 1)], startPoint: .top, endPoint: .bottom)
+private func load(_ file: String) -> UIImage? { WidgetStore.imageURL(file).flatMap { UIImage(contentsOfFile: $0.path) } }
+
+/// El velo inferior: del arte limpio a casi opaco, para que el título y el dato se lean (en el ancho empieza más arriba).
+private func bottomScrim(wide: Bool = false) -> some View {
+    LinearGradient(stops: [.init(color: .clear, location: wide ? DS.Widget.scrimStartWide : DS.Widget.scrimStart), .init(color: DS.scrimStrong, location: 1)],
+                   startPoint: .top, endPoint: .bottom)
 }
 
-/// Título en una línea, «T2 · E6 · quedan 20 min» y la barra de avance.
+/// El logo del título si lo hay (y entonces no se pinta el título en texto), o el título en una línea; debajo «T2 · E6 · quedan 20 min» y la
+/// barra de avance. Letra clara con sombra sobre el velo, como el destacado de Inicio.
 private struct Caption: View {
     var item: WidgetSnapshot.Item
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
-            Text(item.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
-            if !item.detail.isEmpty { Text(item.detail).font(DS.font(.xs)).foregroundStyle(DS.textMuted).lineLimit(1) }
+            if let logo = item.logoFile.flatMap(load) {
+                Image(uiImage: logo).resizable().scaledToFit().frame(maxHeight: DS.Widget.logoHeight, alignment: .leading)
+                    .accessibilityLabel(item.title)
+            } else {
+                Text(item.title).font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text).lineLimit(1)
+            }
+            if !item.detail.isEmpty { Text(item.detail).font(DS.font(.xs, weight: .medium)).foregroundStyle(DS.text).lineLimit(2) }
             if let progress = item.progress { ProgressLine(fraction: progress) }
         }
+        .shadow(color: DS.scrimStrong, radius: DS.Widget.textShadowRadius)
     }
 }
 
@@ -139,7 +151,7 @@ private struct SmallView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .widgetURL(item.link)
-            .containerBackground(for: .widget) { ZStack { Art(item: item); bottomScrim } }
+            .containerBackground(for: .widget) { ZStack { Art(item: item); bottomScrim() } }
         } else {
             EmptyState()
         }
@@ -154,8 +166,8 @@ private struct MediumView: View {
             HStack(spacing: DS.Space.s3) {
                 Link(destination: first.link ?? URL(fileURLWithPath: "/")) {
                     ZStack(alignment: .bottomLeading) {
-                        Art(item: first)
-                        bottomScrim
+                        Art(item: first, wide: true)
+                        bottomScrim(wide: true)
                         Caption(item: first).padding(DS.Space.s2)
                     }
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
