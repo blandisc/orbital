@@ -71,10 +71,14 @@ public actor RemoteForYou {
     private func suggestion(_ row: JSON, listID: String) -> Suggestion? {
         guard let kind = row["kind"]?.string, kind == "movie" || kind == "series",
               let imdb = row["meta_id"]?.string, !imdb.isEmpty, let title = row["title"]?.string else { return nil }
-        return Suggestion(kind: kind, imdb: imdb, title: title, year: row["year"]?.intValue, runtime: nil,
-                          overview: row["overview"]?.string ?? "", poster: row["image"]?.string ?? "", wide: row["hero"]?.string ?? "",
-                          logo: row["logo"]?.string.flatMap { $0.isEmpty ? nil : $0 }, reason: reason(listID: listID, why: row["why"]?.string), next: Self.nextFrom(row),
-                          rank: row["rank"]?.intValue)
+        var s = Suggestion(kind: kind, imdb: imdb, title: title, year: row["year"]?.intValue, runtime: nil,
+                           overview: row["overview"]?.string ?? "", poster: row["image"]?.string ?? "", wide: row["hero"]?.string ?? "",
+                           logo: row["logo"]?.string.flatMap { $0.isEmpty ? nil : $0 }, reason: reason(listID: listID, why: row["why"]?.string), next: Self.nextFrom(row),
+                           rank: row["rank"]?.intValue)
+        // El Top 10 real de la TV (`chart:*`, `jw:*`): cuánto se movió y si es nuevo.
+        s.movement = row["movement"]?.intValue
+        s.isNew = row["new"]?.bool ?? false
+        return s
     }
 
     /// La consola ya manda el motivo en español («Recomendada», «En tendencia», «En Netflix»…): se traduce de
@@ -82,7 +86,7 @@ public actor RemoteForYou {
     private func reason(listID: String, why: String?) -> SuggestionReason {
         switch why {
         case "Sigues viéndola": return .watching
-        case "En tu lista": return .inWatchlist
+        case "En tu watchlist", "En tu lista": return .inWatchlist   // «En tu lista» es el nombre de antes en la TV
         case "Recomendada": return .recommended
         case "En tendencia": return .trending
         case "Popular": return .popular

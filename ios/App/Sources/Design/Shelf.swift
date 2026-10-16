@@ -73,8 +73,18 @@ struct RankedPosterCard: View {
     let title: String
     let poster: String?
     var width: CGFloat = DS.Poster.railWidth
+    /// Cuánto se movió y si es nuevo (el Top 10 real de la TV): va bajo el póster.
+    var movement: Int?
+    var isNew = false
 
     var body: some View {
+        VStack(alignment: .trailing, spacing: DS.Space.s1) {
+            numberAndPoster
+            if isNew || movement != nil { MovementBadge(movement: movement, isNew: isNew).frame(width: width, alignment: .leading) }
+        }
+    }
+
+    private var numberAndPoster: some View {
         HStack(alignment: .bottom, spacing: -DS.Space.s5) {
             Text(verbatim: "\(rank)").font(DS.Size.rankFont).foregroundStyle(DS.ink500).lineLimit(1).fixedSize()
                 .padding(.bottom, -DS.Space.s3)   // la cifra se apoya en la base del póster (sin el hueco del renglón)

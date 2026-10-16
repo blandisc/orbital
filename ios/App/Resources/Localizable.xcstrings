@@ -1244,6 +1244,17 @@
         }
       }
     },
+    "En tu watchlist": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In your watchlist"
+          }
+        }
+      }
+    },
     "En tu watchlist de Trakt": {
       "extractionState": "manual",
       "localizations": {
@@ -1251,6 +1262,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "In your Trakt watchlist"
+          }
+        }
+      }
+    },
+    "En una de tus listas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In one of your lists"
           }
         }
       }
@@ -3143,6 +3165,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your watchlist, your recommendations and your platforms' Top 10 show up here."
+          }
+        }
+      }
+    },
+    "Tus series": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your shows"
           }
         }
       }

@@ -22,21 +22,16 @@ final class ShelfPlanTests: XCTestCase {
          list("mylist", title: "Mi lista", group: .mine)]
     }
 
-    func testShelvesFollowTheBriefOrder() {
+    func testShelvesFollowTheTVOrder() {
         let ids = ShelfPlanner.plan(overview).map(\.id)
-        XCTAssertEqual(ids, ["mine", "recs", "list:7", "chart:netflix", "jw:disney", "hbo", "trend", "popular", "tv:movies"],
-                       "Lo tuyo → Top 10 → plataformas → tendencia/popular → complementos; Seguir viendo y Mi lista viven en Inicio")
+        XCTAssertEqual(ids, ["recs", "mine", "watchlist", "list:7", "trend", "popular", "tv:movies", "chart:netflix", "jw:disney", "hbo"],
+                       "el orden de foryou.py; Seguir viendo y Mi lista viven en Inicio")
     }
 
-    func testMineMergesWatchlistAndYourSeriesIntoOneShelf() throws {
+    func testEachListIsItsOwnShelfLikeTheTV() {
         let plan = ShelfPlanner.plan(overview)
-        let mine = try XCTUnwrap(plan.first)
-        XCTAssertEqual(mine.listIDs, ["watchlist", "mine"], "la watchlist primero, luego «Tus series»")
-        XCTAssertEqual(mine.title, "", "la interfaz lo nombra «Lo tuyo»")
-        XCTAssertEqual(plan.filter { $0.listIDs.contains("watchlist") }.count, 1, "no se repite como estante aparte")
-        XCTAssertEqual(plan.filter { $0.listIDs.contains("mine") }.count, 1)
-        XCTAssertEqual(ShelfPlanner.plan([list("mine", group: .mine)]).first?.listIDs, ["mine"], "con solo una de las dos, también hay «Lo tuyo»")
-        XCTAssertTrue(ShelfPlanner.plan([list("trend")]).allSatisfy { $0.id != "mine" }, "sin Trakt no hay «Lo tuyo»")
+        XCTAssertTrue(plan.allSatisfy { $0.listIDs.count == 1 }, "sin «Lo tuyo»: Tus series y Tu watchlist van aparte, como en la TV")
+        XCTAssertEqual(plan.first { $0.id == "watchlist" }?.title, "Tu watchlist")
     }
 
     func testTMDBFallbackOnlyWhenThereIsNoJustWatchOrChartOfThatBrand() {
@@ -116,8 +111,8 @@ final class ShelfPlanTests: XCTestCase {
         let rig = try consoleRig()
         let model = ParaTiModel(rig.services)
         await model.load()
-        XCTAssertEqual(model.shelves.map(\.id), ["mine", "chart:netflix", "cat:x"])
-        XCTAssertEqual(model.visibleShelves.map(\.id), ["mine", "chart:netflix"], "el estante vacío se descarta")
+        XCTAssertEqual(model.shelves.map(\.id), ["watchlist", "cat:x", "chart:netflix"], "el orden de la TV")
+        XCTAssertEqual(model.visibleShelves.map(\.id), ["watchlist", "chart:netflix"], "el estante vacío se descarta")
         XCTAssertTrue(model.hasKindSplit)
         let chart = try XCTUnwrap(model.shelves.first { $0.id == "chart:netflix" })
         XCTAssertEqual(model.items(for: chart).map(\.imdb), ["tt1000001"])

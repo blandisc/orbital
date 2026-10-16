@@ -15,10 +15,11 @@ final class RemoteForYouTests: XCTestCase {
                 ["id": "watchlist", "title": "", "icon": "bookmark", "source": "Trakt", "meta": "x", "split": false],
                 ["id": "netflix", "title": "Netflix", "icon": "trailer", "source": "TMDB", "meta": "x", "split": true,
                  "brand": "netflix", "logo": "https://logo/netflix.png"],
+                ["id": "mygames", "title": "Tus juegos", "group": "games"],   // de la consola: el iPhone no la pide
             ],
             "mosaic": [
                 ["key": "video:tt1160419", "id": "cinemeta:movie:tt1160419", "source": "cinemeta", "kind": "movie", "meta_id": "tt1160419",
-                 "title": "Dune", "year": 2021, "why": "En Netflix", "rank": 3, "image": "https://img/p.jpg", "hero": "https://img/h.jpg",
+                 "title": "Dune", "year": 2021, "why": "En Netflix", "rank": 3, "movement": 2, "new": false, "image": "https://img/p.jpg", "hero": "https://img/h.jpg",
                  "overview": "Sinopsis", "video_id": "tt1160419"],
                 // Un juego nunca debería llegar por el puerto público (ya se filtra allá), pero por si acaso se filtra aquí también.
                 ["key": "game:1", "kind": "game", "title": "Juego"],
@@ -34,6 +35,8 @@ final class RemoteForYouTests: XCTestCase {
         let mosaic = try await fy.mosaic()
         XCTAssertEqual(mosaic.map(\.imdb), ["tt1160419"], "el juego no pasa el filtro")
         XCTAssertEqual(mosaic[0].rank, 3)
+        XCTAssertEqual(mosaic[0].movement, 2, "subió 2 lugares (Top 10 real de la TV)")
+        XCTAssertFalse(mosaic[0].isNew)
         XCTAssertEqual(mosaic[0].reason, .onPlatform("Netflix"))
         XCTAssertEqual(mosaic[0].poster, "https://img/p.jpg")
     }

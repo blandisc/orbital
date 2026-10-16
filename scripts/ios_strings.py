@@ -20,6 +20,7 @@ OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
     # Proyección: modo claro y oscuro
+    "En tu watchlist": "In your watchlist", "En una de tus listas": "In one of your lists", "Tus series": "Your shows", "Tu watchlist": "Your watchlist",
     "En mi lista": "In My List", "Nada por aquí por ahora.": "Nothing here for now.", "Ver %@": "Watch %@", "Ver T%lld E%lld": "Watch S%lld E%lld",
     "Ver la serie": "View series", "Elegir fuente": "Choose source", "Ver en la TV": "Watch on TV",
     "Descarga inteligente": "Smart downloads", "Listas para ver": "Ready to watch", "Ocupan %@ · libres %@": "%@ used · %@ free",

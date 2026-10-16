@@ -15,7 +15,7 @@ public struct ShelfPlan: Identifiable, Hashable, Sendable {
     public var id: String
     /// La lista que da título, logo y dato; si hay varias fusionadas, la primera.
     public var list: ForYouList
-    /// Los ids de todas las listas que alimentan al estante (en «Lo tuyo»: watchlist y «Tus series»).
+    /// Los ids de las listas que alimentan al estante (una por estante, como en la TV).
     public var listIDs: [String]
     public var style: Style
     public var title: String { list.title }
@@ -26,45 +26,46 @@ public struct ShelfPlan: Identifiable, Hashable, Sendable {
 }
 
 public enum ShelfPlanner {
-    /// El orden del feed (brief de Para ti en el iPhone, §3):
-    /// Lo tuyo → Top 10 en Netflix → plataformas `jw:*` (y el respaldo de TMDB solo si no hay `jw` de esa marca) →
-    /// En tendencia / Lo más popular → catálogos de complementos. «Seguir viendo» y «Mi lista» de Stremio viven en Inicio.
+    /// El orden de la TV (`orbital/foryou.py`, `lists()`), que manda en los dos lados:
+    /// Recomendadas → Tus series → Tu watchlist → tus listas de Trakt → En tendencia → Lo más popular → catálogos de complementos →
+    /// plataformas (el Top 10 de Netflix, `jw:*` y el respaldo de TMDB solo si no hay nada más de esa marca).
+    /// «Seguir viendo» y «Mi lista» viven en Inicio; «Próximos estrenos» es su propio estante de calendario.
     public static func plan(_ lists: [ForYouList]) -> [ShelfPlan] {
-        func has(_ id: String) -> ForYouList? { lists.first { $0.id == id } }
+        let skipped: Set<String> = ["continue", "mylist", "estrenos"]
+        let chartBrands = Set(lists.filter { $0.id.hasPrefix("chart:") || $0.id.hasPrefix("jw:") }.compactMap(\.brand))
         var out: [ShelfPlan] = []
-
-        // Lo tuyo: watchlist y «Tus series» de Trakt, en un solo estante.
-        let mine = ["watchlist", "mine"].compactMap(has)
-        if let first = mine.first {
-            var head = first
-            head.title = ""            // la interfaz le pone «Lo tuyo»
-            head.meta = ""
-            out.append(ShelfPlan(id: "mine", list: head, listIDs: mine.map(\.id), style: .plain))
-        }
-        if let recs = has("recs") { out.append(ShelfPlan(id: recs.id, list: recs, listIDs: [recs.id], style: .plain)) }
-        for list in lists where list.id.hasPrefix("list:") { out.append(ShelfPlan(id: list.id, list: list, listIDs: [list.id], style: .plain)) }
-
-        // Top 10 (Netflix y lo que mande la consola con `chart:`).
-        for list in lists where list.id.hasPrefix("chart:") { out.append(ShelfPlan(id: list.id, list: list, listIDs: [list.id], style: .top10)) }
-
-        // Plataformas: JustWatch primero; el respaldo de TMDB solo si no hay nada de esa marca.
-        let jw = lists.filter { $0.id.hasPrefix("jw:") }
-        let covered = Set(jw.compactMap(\.brand) + lists.filter { $0.id.hasPrefix("chart:") }.compactMap(\.brand))
-        for list in jw { out.append(ShelfPlan(id: list.id, list: list, listIDs: [list.id], style: .platform)) }
-        for list in lists where list.group == .platforms && !list.id.hasPrefix("jw:") && !list.id.hasPrefix("chart:") {
-            if let brand = list.brand, covered.contains(brand) { continue }
-            out.append(ShelfPlan(id: list.id, list: list, listIDs: [list.id], style: .platform))
-        }
-
-        // Tendencias y popular (Trakt o el catálogo de Stremio).
-        for id in ["trend", "popular", "cinemeta"] { if let l = has(id) { out.append(ShelfPlan(id: id, list: l, listIDs: [id], style: .plain)) } }
-
-        // Catálogos de complementos: lo que queda (`<complemento>:<catálogo>`).
-        let known = Set(out.flatMap(\.listIDs)).union(["continue", "mylist", "estrenos"])   // los estrenos son el estante de calendario, no una lista
-        for list in lists where !known.contains(list.id) && list.group == .discover && list.brand == nil {
-            out.append(ShelfPlan(id: list.id, list: list, listIDs: [list.id], style: .plain))
+        // Orden estable: la posición de cada lista en el orden de la TV; dentro de cada grupo, como llegaron.
+        for (_, list) in lists.enumerated().sorted(by: { (rank($0.element), $0.offset) < (rank($1.element), $1.offset) }) {
+            guard !skipped.contains(list.id) else { continue }
+            let style: ShelfPlan.Style
+            if list.id.hasPrefix("chart:") { style = .top10 }
+            else if list.group == .platforms {
+                // El respaldo de TMDB solo si no hay Top 10 ni JustWatch de esa marca.
+                if !list.id.hasPrefix("jw:"), let brand = list.brand, chartBrands.contains(brand) { continue }
+                style = .platform
+            } else {
+                guard list.group != .platforms, list.brand == nil || list.group == .mine else { continue }
+                style = .plain
+            }
+            out.append(ShelfPlan(id: list.id, list: list, listIDs: [list.id], style: style))
         }
         return out
+    }
+
+    /// El lugar de una lista en el orden de la TV.
+    private static func rank(_ list: ForYouList) -> Int {
+        switch list.id {
+        case "recs": return 0
+        case "mine": return 1
+        case "watchlist": return 2
+        case _ where list.id.hasPrefix("list:"): return 3
+        case "trend": return 4
+        case "popular", "cinemeta": return 5
+        case _ where list.id.hasPrefix("chart:"): return 7
+        case _ where list.id.hasPrefix("jw:"): return 8
+        case _ where list.group == .platforms: return 9
+        default: return 6   // catálogos de complementos
+        }
     }
 
     /// Cuántas sugerencias de un estante pueden ser «Para ti hoy» (rota entre ellas con «Actualizar»).

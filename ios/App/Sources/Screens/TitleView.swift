@@ -145,7 +145,7 @@ struct TitleView: View {
 
     private func watchlistToggle(_ model: TitleModel) -> some View {
         Toggle(isOn: Binding(get: { model.inWatchlist }, set: { _ in Task { await model.toggleWatchlist() } })) {
-            Label("En tu watchlist de Trakt", systemImage: "bookmark")
+            Label("En tu watchlist", systemImage: "bookmark")
         }
         .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
         .padding(DS.Space.s3).background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))

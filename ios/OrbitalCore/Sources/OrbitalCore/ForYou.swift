@@ -23,6 +23,10 @@ public struct Suggestion: Sendable, Equatable, Identifiable {
     public var next: (season: Int, episode: Int)?
     /// El puesto en un Top 10 (chart de Netflix, JustWatch…), si la lista lo trae. Nil: no se pinta número.
     public var rank: Int?
+    /// Cuántos lugares subió (+) o bajó (−) en su lista desde la foto anterior; nil si no hay foto (no se inventan flechas).
+    public var movement: Int?
+    /// Entró a la lista en esta foto (semana o día).
+    public var isNew = false
     public var id: String { imdb }
 
     public init(kind: String, imdb: String, title: String, year: Int? = nil, runtime: Int? = nil, overview: String = "", poster: String, wide: String,

@@ -120,9 +120,9 @@ struct ShelfPoster: View {
     var body: some View {
         Group {
             if style == .top10, let rank = suggestion.rank {
-                NavigationLink(value: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster).titleZoomSource(suggestion.route) }.buttonStyle(.plain)
+                NavigationLink(value: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster, movement: suggestion.movement, isNew: suggestion.isNew).titleZoomSource(suggestion.route) }.buttonStyle(.plain)
             } else {
-                TitleLink(route: suggestion.route, badge: inList ? "En tu lista" : nil, rank: style == .platform ? suggestion.rank : nil,
+                TitleLink(route: suggestion.route, badge: inList ? "En tu watchlist" : nil, rank: style == .platform ? suggestion.rank : nil,
                           detail: yearAndKind(year: suggestion.year.map(String.init) ?? "", kind: suggestion.kind))
             }
         }
@@ -134,9 +134,10 @@ struct ShelfPoster: View {
 
 /// Los nombres de los estantes: los de la consola vienen ya con su texto; los de este iPhone se nombran por su id.
 @MainActor func shelfTitle(_ plan: ShelfPlan) -> Text {
-    if plan.id == "mine" { return Text("Lo tuyo") }
     if !plan.title.isEmpty { return Text(verbatim: plan.title) }
     switch plan.id {
+    case "mine": return Text("Tus series")
+    case "watchlist": return Text("Tu watchlist")
     case "recs": return Text("Recomendadas")
     case "trend": return Text("En tendencia")
     case "popular": return Text("Lo más popular")
@@ -145,7 +146,6 @@ struct ShelfPoster: View {
 }
 
 @MainActor func shelfMeta(_ plan: ShelfPlan) -> Text? {
-    if plan.id == "mine" { return Text("Lo que dejaste pendiente") }
     if !plan.list.meta.isEmpty { return Text(verbatim: plan.list.meta) }
     switch plan.id {
     case "recs": return Text("Por lo que has visto")
@@ -225,7 +225,7 @@ struct ListsView: View {
         return Shelf(title: shelfTitle(plan), meta: shelfMeta(plan), logo: plan.style == .plain ? nil : plan.list.logo, symbol: shelfSymbol(plan),
                      route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty) {
             ForEach(items) { s in
-                ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "mine" && model.watchlistKeys.contains(s.imdb)) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Lo tuyo» todo está en tu lista: la etiqueta sobra
+                ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb)) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Lo tuyo» todo está en tu lista: la etiqueta sobra
             }
         }
     }

@@ -157,8 +157,9 @@ struct RankedRow: View {
     let title: String
     let poster: String?
     var detail: Text?
-    /// Cuántos lugares subió (positivo) o bajó (negativo); nil si no se sabe, 0 si es nuevo en la lista.
+    /// Cuántos lugares subió (positivo) o bajó (negativo); nil si no se sabe.
     var movement: Int?
+    var isNew = false
 
     var body: some View {
         HStack(spacing: DS.Space.s3) {
@@ -169,7 +170,7 @@ struct RankedRow: View {
                 if let detail { detail.recipe(.footnote).lineLimit(1) }
             }
             Spacer(minLength: DS.Space.s2)
-            if let movement { MovementBadge(movement: movement) }
+            if isNew || movement != nil { MovementBadge(movement: movement, isNew: isNew) }
         }
         .frame(minHeight: DS.Size.touchTarget)
         .contentShape(Rectangle())
@@ -177,15 +178,17 @@ struct RankedRow: View {
     }
 }
 
-/// ▲ 2 · ▼ 1 · Nuevo: cuánto se movió un título en su lista (el acento solo cuando sube).
+/// ▲ 2 · ▼ 1 · = · Nuevo: cuánto se movió un título en su lista desde la foto anterior (el Top 10 real de la TV).
 struct MovementBadge: View {
-    let movement: Int
+    let movement: Int?
+    var isNew = false
 
     var body: some View {
         Group {
-            if movement == 0 { Text("Nuevo").recipe(.eyebrow, color: DS.accent) }
-            else if movement > 0 { Label { Text(verbatim: "\(movement)") } icon: { Image(systemName: "arrowtriangle.up.fill") }.recipe(.data, color: DS.accent) }
-            else { Label { Text(verbatim: "\(-movement)") } icon: { Image(systemName: "arrowtriangle.down.fill") }.recipe(.data) }
+            if isNew { Text("Nuevo").recipe(.eyebrow, color: DS.accent) }
+            else if let movement, movement == 0 { Text(verbatim: "=").recipe(.data) }
+            else if let movement, movement > 0 { Label { Text(verbatim: "\(movement)") } icon: { Image(systemName: "arrowtriangle.up.fill") }.recipe(.data, color: DS.accent) }
+            else if let movement { Label { Text(verbatim: "\(-movement)") } icon: { Image(systemName: "arrowtriangle.down.fill") }.recipe(.data) }
         }
         .labelStyle(.titleAndIcon)
     }

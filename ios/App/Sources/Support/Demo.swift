@@ -199,7 +199,13 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             "image": .string("https://images.metahub.space/poster/medium/\(imdb)/img"), "hero": .string("https://images.metahub.space/background/medium/\(imdb)/img"),
             "logo": .string("https://images.metahub.space/logo/medium/\(imdb)/img"), "overview": "", "video_id": .string(imdb), "action": "Ver",
         ]
-        if let rank { row["rank"] = .int(rank) }
+        if let rank {
+            row["rank"] = .int(rank)
+            // El Top 10 real de la TV trae cuánto se movió y si es nuevo: unos suben, otros bajan, uno entra.
+            let moves = [2, 0, -1, 3, -2, 0, 1, -3, 0, 4]
+            row["movement"] = .int(moves[(rank - 1) % moves.count])
+            row["new"] = .bool(rank == 4)
+        }
         return .object(row)
     }
 
@@ -209,8 +215,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                                                     ("tt0944947", "Game of Thrones", 2011, "series"), ("tt7366338", "Chernobyl", 2019, "series"), ("tt0108778", "Friends", 1994, "series"),
                                                     ("tt1375666", "Inception", 2010, "movie")]
         switch list {
-        case "chart:netflix": return top.enumerated().map { demoRow($1.0, $1.1, $1.2, $1.3, rank: $0 + 1, why: "En Netflix") }
-        case "watchlist", "mine": return [top[1], top[0], top[4], top[2]].map { demoRow($0.0, $0.1, $0.2, $0.3, why: "En tu lista") }
+        case "chart:netflix": return top.enumerated().map { demoRow($1.0, $1.1, $1.2, $1.3, rank: $0 + 1, why: "N.º \($0 + 1) en Netflix") }
+        case "watchlist", "mine": return [top[1], top[0], top[4], top[2]].map { demoRow($0.0, $0.1, $0.2, $0.3, why: "En tu watchlist") }
         case "jw:disney":
             return [("tt4154796", "Avengers: Endgame", 2019, "movie"), ("tt2250912", "Spider-Man: Homecoming", 2017, "movie"), ("tt3896198", "Guardianes de la Galaxia 2", 2017, "movie"),
                     ("tt2527338", "Star Wars: El ascenso de Skywalker", 2019, "movie"), ("tt0076759", "Star Wars", 1977, "movie"), ("tt1630029", "Avatar: El camino del agua", 2022, "movie")]

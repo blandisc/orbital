@@ -57,8 +57,9 @@ struct HomeView: View {
                     }
                 }
                 if !model.traktPending.isEmpty {
-                    Rail(title: "Pendientes en Trakt") {
-                        ForEach(model.traktPending) { s in TitleLink(route: s.route, badge: "En tu lista") }
+                    // «Tu watchlist» (Trakt), con el nombre de la TV; dentro, todo está en tu watchlist: la etiqueta sobra.
+                    Rail(title: "Tu watchlist") {
+                        ForEach(model.traktPending) { s in TitleLink(route: s.route) }
                     }
                 }
             }
