@@ -372,20 +372,20 @@ function edgeAware(key, value, step, page) {
 
 /** Un ícono por ajuste (antes, todos los de la página con el mismo). */
 const SETTING_ICONS = {
-  audio: "sound", subtitles: "info", quality: "star", sub_scale: "plus", text_size: "plus", safe_area: "wide",
+  audio: "sound", subtitles: "captions", quality: "hd", sub_scale: "text", text_size: "text", safe_area: "wide",
   reduce_motion: "moon", voice_tips: "assistant", sounds: "sound", haptics: "gamepad", game_idle_minutes: "gamepad",
-  video_idle_minutes: "play", close_previous: "close",
+  video_idle_minutes: "play", close_previous: "swap",
 };
 
 const SETTING_PAGES = {
-  playback: { title: "Películas y series", icon: "play", options: [
+  playback: { title: "Películas y series", icon: "play", hint: "Idioma, subtítulos y calidad", options: [
     ["audio", "Idioma", "En qué idioma prefieres oírlas"], ["subtitles", "Subtítulos", null], ["quality", "Calidad", null],
     ["sub_scale", "Letra de los subtítulos", null]] },
-  display: { title: "Pantalla y sonido", icon: "display", options: [
+  display: { title: "Pantalla y sonido", icon: "display", hint: "Texto, márgenes, sonidos y vibración", options: [
     ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],
     ["reduce_motion", "Reducir movimiento", null], ["voice_tips", "Frases para Alexa", null],
     ["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null]] },
-  sessions: { title: "Juegos y videos", icon: "gamepad", options: [
+  sessions: { title: "Juegos y videos", icon: "gamepad", hint: "Qué se cierra solo y cuándo", options: [
     ["game_idle_minutes", "Cerrar juegos olvidados en pausa", "Lo no guardado se pierde"],
     ["video_idle_minutes", "Cerrar videos olvidados en pausa", "Tu avance se guarda"],
     ["close_previous", "Abrir algo nuevo cierra lo anterior", null]] },
@@ -395,7 +395,7 @@ export function settingsMenu() {
   return {
     title: "Ajustes",
     options: [
-      ...Object.entries(SETTING_PAGES).map(([page, def]) => ({ icon: def.icon, label: def.title, command: { type: "settings", page } })),
+      ...Object.entries(SETTING_PAGES).map(([page, def]) => ({ icon: def.icon, label: def.title, hint: def.hint, command: { type: "settings", page } })),
       { icon: "account", label: "Cuentas", hint: "Stremio, Trakt, tu iPhone y claves de Para ti", command: { type: "settings", page: "accounts" } },
       { icon: "wrench", label: "Mantenimiento", hint: "Revisar, carpetas, actualizar", command: { type: "settings", page: "maintenance" } },
     ],
@@ -520,9 +520,9 @@ export function settingsPage(page, settings) {
           hint: settings.stremio_linked ? "Seguir viendo y fuentes" : "Para películas y series" },
         settings.trakt?.configured && { icon: "spark", label: "Trakt", value: settings.trakt.linked ? "Conectada" : "Conectar",
           command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
-          hint: settings.trakt.linked ? "Tus listas en Para ti" : "Tus listas y recomendaciones en Para ti" },
+          hint: settings.trakt.linked ? "Tus listas en Para ti" : "Listas y recomendaciones" },
         { icon: "phone", label: "iPhone", value: "Conectar", command: { type: "phone-link" },
-          hint: "Escanea un código con la cámara: la app queda conectada" },
+          hint: "Con un código QR" },
         settings.para_ti && { heading: true, label: "Claves de Para ti" },
         ...(settings.para_ti ? Object.keys(KEY_FORMS).map((service) => keyRow(service, settings.para_ti)) : []),
       ].filter(Boolean),
@@ -547,13 +547,13 @@ export function settingsPage(page, settings) {
  */
 export const KEY_FORMS = {
   tmdb: {
-    service: "tmdb", label: "TMDB", icon: "trailer", hint: "Netflix, Disney+ y HBO Max, y sinopsis en español",
+    service: "tmdb", label: "TMDB", icon: "movie", hint: "Plataformas y sinopsis en español",
     title: "Clave de TMDB", submitLabel: "Guardar",
     lead: "En themoviedb.org crea una cuenta, entra a Ajustes › API, pide una clave (uso personal) y copia la «Clave de la API».",
     fields: [{ name: "key", label: "Clave de la API de TMDB", secret: true }],
   },
   rawg: {
-    service: "rawg", label: "RAWG", icon: "gamepad", hint: "Novedades y lo mejor calificado en juegos",
+    service: "rawg", label: "RAWG", icon: "gamepad", hint: "Novedades y lo mejor en juegos",
     title: "Clave de RAWG", submitLabel: "Guardar",
     lead: "En rawg.io/apidocs crea una cuenta y pulsa «Get API key»: copia la clave que aparece.",
     fields: [{ name: "key", label: "Clave de RAWG", secret: true }],
@@ -566,13 +566,14 @@ export const KEY_FORMS = {
   },
 };
 
-/** Un renglón de Cuentas: «Agregar», «Lista» (la escribiste aquí: cambiar o quitar) o «En config.yaml». */
+/** Un renglón de Cuentas: «Agregar» o «Lista» (escrita aquí: cambiar o quitar; o en config.yaml: se puede escribir otra).
+ *  Antes decía «En config.yaml», que no le dice nada a quien no lo armó. */
 function keyRow(service, status) {
   const form = KEY_FORMS[service];
   const ready = service === "trakt" ? !!status.trakt?.configured : !!status[service];
   const saved = (status.saved || []).includes(service);
   return { icon: form.icon, label: form.label, hint: form.hint,
-    value: saved ? "Lista" : ready ? "En config.yaml" : "Agregar",
+    value: saved || ready ? "Lista" : "Agregar",
     command: saved ? { type: "keys-menu", service } : { type: "keys", service } };
 }
 

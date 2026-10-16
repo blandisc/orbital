@@ -110,6 +110,11 @@ def no_side_effects() -> None:
     capture.take = lambda title="": None
     music.command = lambda action: False
     memory.close = lambda exe, protect_pids=None: 0
+    # Tampoco enseña los programas de este equipo (salían la app de Claude y lo que tengas abierto): unos de mentiras.
+    memory.usage = lambda limit=6, protect_pids=None: [
+        memory.AppUsage("steam.exe", "Steam", 1300, [], True, "Las descargas siguen cuando lo vuelvas a abrir"),
+        memory.AppUsage("Discord.exe", "Discord", 620, [], True),
+        memory.AppUsage("msedge.exe", "Edge", 1400, [], False, "De Windows u Orbital: no se cierra")][:limit]
     ConsoleShell.open_windows = lambda self: []
     ConsoleShell.focus_window = lambda self, hwnd: False
     updater.Updater.apply = lambda self, progress=lambda m: None: (False, "En el demo no se actualiza.")
