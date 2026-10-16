@@ -15,9 +15,22 @@ enum MosaicMode: Equatable { case focus, ambient }
 
 /// El motor del mosaico: guarda las columnas y qué está enfocado, y llama a `OrbitalModels.MosaicGeometry`
 /// para acomodar, llenar y podar. Una instancia por pantalla (vive en el `@StateObject` de `Mosaic`).
+/// El desplazamiento de una columna, solo eso: lo observa únicamente la vista de esa columna, así el ambiente y el
+/// arrastre mueven un `offset` sin volver a evaluar el mosaico entero (CEN-49).
+@MainActor
+final class MosaicColumnScroll: ObservableObject {
+    @Published fileprivate(set) var offset: Double = 0
+}
+
 @MainActor
 final class MosaicRuntime: ObservableObject {
-    @Published private(set) var columns: [MosaicColumn] = []
+    /// Las columnas NO son `@Published`: cambian en cada fotograma del arrastre (su `offset`), y solo debe
+    /// reevaluarse el mosaico cuando cambia su estructura (piezas, marcos, foco) —ver `commit`—.
+    private(set) var columns: [MosaicColumn] = []
+    /// Un objeto de desplazamiento por columna y qué piezas de cada una se pintan (a la vista más un colchón).
+    private(set) var scrolls: [MosaicColumnScroll] = []
+    private(set) var rendered: [Range<Int>] = []
+    private var signature: [Int] = []
     @Published private(set) var focus: MosaicFocus?
     @Published private(set) var mode: MosaicMode = .focus
     @Published var aliveTileID: String?
@@ -32,6 +45,28 @@ final class MosaicRuntime: ObservableObject {
     var current: Suggestion? {
         guard mode == .focus, let focus, columns.indices.contains(focus.col), columns[focus.col].tiles.indices.contains(focus.row) else { return nil }
         return columns[focus.col].tiles[focus.row].item
+    }
+
+    /// Pasa el estado del modelo a la vista: copia los `offset` a sus objetos (solo lo que cambió), recalcula qué piezas
+    /// se pintan y avisa al mosaico solo si cambió la estructura (`force`, o las piezas pintadas).
+    private func commit(force: Bool = false) {
+        while scrolls.count < columns.count { scrolls.append(MosaicColumnScroll()) }
+        if scrolls.count > columns.count { scrolls.removeLast(scrolls.count - columns.count) }
+        let margin = size.height * DesignTokens.Mosaic.cullMargin
+        var ranges: [Range<Int>] = []
+        var sig: [Int] = []
+        for c in columns.indices {
+            if scrolls[c].offset != columns[c].offset { scrolls[c].offset = columns[c].offset }
+            let tiles = columns[c].tiles, offset = columns[c].offset
+            let lo = offset - margin, hi = offset + size.height + margin
+            let first = tiles.firstIndex { $0.top + $0.height >= lo } ?? tiles.count
+            let last = tiles.lastIndex { $0.top <= hi }.map { $0 + 1 } ?? first
+            ranges.append(first..<max(first, last))
+            sig.append(tiles.count); sig.append(ranges[c].lowerBound); sig.append(ranges[c].upperBound)
+        }
+        let changed = sig != signature || ranges != rendered
+        rendered = ranges; signature = sig
+        if force || changed { objectWillChange.send() }
     }
 
     /// Lo nuevo del servidor (o la primera carga): se vuelve a armar desde cero.
@@ -71,6 +106,8 @@ final class MosaicRuntime: ObservableObject {
     private func layoutAll() { geometry.layout(&columns, totalWidth: size.width, focus: focus.map { (col: $0.col, row: $0.row) }) }
 
     private func fillAll() {
+        // Casi siempre las columnas ya están llenas: no se arma el conjunto de llaves si no hace falta.
+        guard columns.indices.contains(where: { c in (columns[c].tiles.last.map { $0.top + $0.height } ?? 0) - columns[c].offset < size.height + DesignTokens.Mosaic.bufferHeight }) else { return }
         let visible = visibleKeys()
         for c in columns.indices {
             geometry.fill(&columns[c], viewportHeight: size.height, buffer: DesignTokens.Mosaic.bufferHeight,
@@ -91,6 +128,7 @@ final class MosaicRuntime: ObservableObject {
         layoutAll(); fillAll(); layoutAll()
         if mode == .focus { reveal() }
         pruneAll()
+        commit(force: true)
     }
 
     /// La enfocada, entera a la vista (como `reveal()` en la TV).
@@ -142,6 +180,7 @@ final class MosaicRuntime: ObservableObject {
             geometry.prune(&columns[c], viewportHeight: size.height)
         }
         fillAll()
+        commit()
     }
 
     /// Con el dedo: todo el mosaico sube o baja con el arrastre; abajo llegan piezas nuevas.
@@ -152,9 +191,10 @@ final class MosaicRuntime: ObservableObject {
             columns[c].offset = max(minOffset, columns[c].offset + delta)
         }
         fillAll()
+        commit()
     }
 
-    func endScroll() { pruneAll() }
+    func endScroll() { pruneAll(); commit() }
 
     /// «No me interesa»: ya no vuelve a salir; otra toma su lugar.
     func dismiss(_ imdb: String) {
@@ -191,22 +231,14 @@ struct Mosaic: View {
     @State private var configuredIDs: Set<String> = []
 
     var body: some View {
+        #if DEBUG
+        let _ = MosaicBench.tick("Mosaic")
+        #endif
         GeometryReader { geo in
             let columnCount = Self.columnCount(width: geo.size.width, horizontalSizeClass: horizontalSizeClass)
             ZStack(alignment: .topLeading) {
-                ForEach(Array(runtime.columns.enumerated()), id: \.offset) { c, column in
-                    ForEach(Array(column.tiles.enumerated()), id: \.element.id) { r, tile in
-                        let focused = runtime.mode == .focus && runtime.focus == MosaicFocus(col: c, row: r)
-                        MosaicTileCell(
-                            tile: tile, focused: focused, dimmed: runtime.mode == .focus && !focused,
-                            alive: !reduceMotion && runtime.aliveTileID == tile.id,
-                            inWatchlist: watchlistKeys.contains(tile.item.imdb),
-                            onFocus: { touch(); withAnimation(DS.Motion.spring(reduceMotion)) { runtime.focusTile(col: c, row: r) } }
-                        )
-                        .frame(width: CGFloat(column.frame.width), height: CGFloat(tile.height))
-                        .offset(x: CGFloat(column.frame.x), y: CGFloat(tile.top - column.offset))
-                        .contextMenu { Button("No me interesa", systemImage: "hand.thumbsdown") { dismiss(tile.item) } }
-                    }
+                ForEach(Array(0..<min(runtime.columns.count, runtime.scrolls.count)), id: \.self) { c in
+                    MosaicColumnView(scroll: runtime.scrolls[c], layer: layer(c))
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
@@ -242,6 +274,9 @@ struct Mosaic: View {
             }
         }
         .overlay { if runtime.isEmpty { ProgressView() } }
+        #if DEBUG
+        .task { await MosaicBench.runIfRequested(runtime) { c, r in withAnimation(DS.Motion.spring(reduceMotion)) { runtime.focusTile(col: c, row: r) } } }
+        #endif
         .onChange(of: runtime.current?.imdb, initial: true) { _, _ in onFocusChange?(runtime.current) }
         .task(id: idleToken) {
             guard runtime.mode == .focus, !reduceMotion else { return }
@@ -253,15 +288,29 @@ struct Mosaic: View {
             try? await Task.sleep(nanoseconds: DS.Timing.mosaicAlive)
             if !Task.isCancelled, runtime.mode == .focus, runtime.focus == id { runtime.aliveTileID = runtime.current.map { "\($0.imdb)" } }
         }
-        .task {
+        .task(id: runtime.mode) {
+            // El ambiente es lo único que se mueve solo: en foco no hay temporizador (ni se invalida nada cada segundo).
+            guard runtime.mode == .ambient, !reduceMotion else { return }
             var last = Date()
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: DS.Timing.mosaicDrift)
                 let now = Date(); let dt = now.timeIntervalSince(last); last = now
-                guard !reduceMotion else { continue }
                 withAnimation(.linear(duration: DS.Mosaic.driftTick)) { runtime.driftTick(dt, speeds: driftSpeeds) }
             }
         }
+    }
+
+    /// Lo que pinta una columna: solo las piezas a la vista (más un colchón), con lo mínimo para compararla.
+    private func layer(_ c: Int) -> MosaicColumnLayer {
+        let column = runtime.columns[c]
+        var range = runtime.rendered.indices.contains(c) ? runtime.rendered[c] : 0..<0
+        range = min(range.lowerBound, column.tiles.count)..<min(range.upperBound, column.tiles.count)
+        return MosaicColumnLayer(
+            column: c, frame: column.frame, first: range.lowerBound, tiles: Array(column.tiles[range]),
+            focusRow: runtime.focus?.col == c ? runtime.focus?.row : nil, focusMode: runtime.mode == .focus,
+            aliveID: runtime.aliveTileID, watchlist: watchlistKeys, reduceMotion: reduceMotion,
+            onFocus: { col, row in touch(); withAnimation(DS.Motion.spring(reduceMotion)) { runtime.focusTile(col: col, row: row) } },
+            onDismiss: { dismiss($0) })
     }
 
     private func touch() { activity += 1; withAnimation(DS.Motion.base(reduceMotion)) { runtime.wake() } }
@@ -293,6 +342,60 @@ struct Mosaic: View {
     }
 }
 
+/// Una columna: solo mueve su `offset` cuando cambia el desplazamiento (`MosaicColumnScroll`); sus piezas
+/// (`MosaicColumnLayer`) no se reevalúan mientras no cambien.
+private struct MosaicColumnView: View {
+    @ObservedObject var scroll: MosaicColumnScroll
+    let layer: MosaicColumnLayer
+
+    var body: some View {
+        layer.equatable().offset(y: -CGFloat(scroll.offset))
+    }
+}
+
+/// Las piezas pintadas de una columna, en coordenadas de la columna (arriba = 0). Es `Equatable`: si no cambió nada
+/// de lo que ve (piezas, marco, foco), SwiftUI no vuelve a evaluarla aunque el mosaico sí.
+private struct MosaicColumnLayer: View, Equatable {
+    let column: Int
+    let frame: MosaicColumnFrame
+    /// Fila de la primera pieza de `tiles` dentro de su columna.
+    let first: Int
+    let tiles: [MosaicTile]
+    let focusRow: Int?
+    let focusMode: Bool
+    let aliveID: String?
+    let watchlist: Set<String>
+    let reduceMotion: Bool
+    let onFocus: (Int, Int) -> Void
+    let onDismiss: (Suggestion) -> Void
+
+    static func == (a: Self, b: Self) -> Bool {
+        a.column == b.column && a.frame == b.frame && a.first == b.first && a.focusRow == b.focusRow && a.focusMode == b.focusMode
+            && a.aliveID == b.aliveID && a.reduceMotion == b.reduceMotion && a.tiles == b.tiles && a.watchlist == b.watchlist
+    }
+
+    var body: some View {
+        #if DEBUG
+        let _ = MosaicBench.tick("Layer")
+        #endif
+        ZStack(alignment: .topLeading) {
+            ForEach(Array(tiles.enumerated()), id: \.element.id) { i, tile in
+                let row = first + i
+                let focused = focusMode && focusRow == row
+                MosaicTileCell(
+                    tile: tile, focused: focused, dimmed: focusMode && !focused,
+                    alive: !reduceMotion && aliveID == tile.id,
+                    inWatchlist: watchlist.contains(tile.item.imdb),
+                    onFocus: { onFocus(column, row) }
+                )
+                .frame(width: CGFloat(frame.width), height: CGFloat(tile.height))
+                .offset(x: CGFloat(frame.x), y: CGFloat(tile.top))
+                .contextMenu { Button("No me interesa", systemImage: "hand.thumbsdown") { onDismiss(tile.item) } }
+            }
+        }
+    }
+}
+
 /// Una pieza del mosaico: su arte (portada o ancho), el ícono de su esquina, y si está enfocada, su
 /// etiqueta, el logo del título (o su nombre si no carga) y un dato de una línea.
 private struct MosaicTileCell: View {
@@ -304,6 +407,9 @@ private struct MosaicTileCell: View {
     let onFocus: () -> Void
 
     var body: some View {
+        #if DEBUG
+        let _ = MosaicBench.tick("Tile")
+        #endif
         Group {
             if focused { NavigationLink(value: tile.item.route) { content } }
             else { Button(action: onFocus) { content } }
@@ -316,7 +422,7 @@ private struct MosaicTileCell: View {
 
     private var content: some View {
         ZStack(alignment: .bottomLeading) {
-            PosterView(url: focused || tile.shape == .wide ? tile.item.wide : tile.item.poster, title: tile.item.title, aspect: nil)
+            PosterView(url: focused || tile.shape == .wide ? tile.item.wide : tile.item.poster, title: tile.item.title, aspect: nil, maxPoints: DS.Image.mosaic)
             if focused { LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom) }
             // El puesto en un Top 10 manda sobre el ícono de serie / película (una sola pieza en la esquina, como en Listas).
             VStack { HStack(alignment: .top) { if let rank = tile.item.rank { DSRankBadge(rank: rank) }; Spacer(); if tile.item.rank == nil { kindIcon } }; Spacer() }.padding(DS.Space.s3)
