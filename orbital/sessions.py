@@ -25,6 +25,17 @@ from .store import ItemStore
 
 log = logging.getLogger(__name__)
 
+GFN_READY_TIMEOUT = 30.0  # s de pantalla de carga como mucho en GeForce NOW (luego se ve su fila de espera)
+
+
+def _cloud_game_ready(exe: str) -> bool:
+    """El juego de GeForce NOW ya se ve: su ventana está a pantalla completa (antes: la de conexión, chica)."""
+    from . import windows
+
+    hwnd = windows.main_window(windows.pids_by_exe(exe))
+    return bool(hwnd) and windows.is_fullscreen(hwnd)
+
+
 TASKBAR_BACK_AFTER = 3.0  # s tras la pantalla de carga: el juego ya está en pantalla completa y tapa la barra
 _taskbar_holds = 0  # aperturas en curso (dos a la vez: la barra vuelve cuando acaba la última)
 _taskbar_lock = threading.Lock()
@@ -147,9 +158,22 @@ class Sessions:
         if item.source == "geforcenow":
             # La app (y su reproductor en la nube) es de instancia única: se vigila por ejecutable.
             exe = geforcenow.APP_EXE if item.id == "app:geforcenow" else geforcenow.STREAMER_EXE
-            self.launcher.run(item.argv, cwd=item.cwd)
-            self.launcher.track_exe(item.id, item.title, exe, runner="GeForce NOW")
-            threading.Thread(target=focus.bring_app_to_front, args=(exe,), daemon=True).start()
+            if item.id == "app:geforcenow":
+                self.launcher.run(item.argv, cwd=item.cwd)
+                self.launcher.track_exe(item.id, item.title, exe, runner="GeForce NOW")
+                threading.Thread(target=focus.bring_app_to_front, args=(exe,), daemon=True).start()
+            else:
+                # Un juego en la nube, como los demás: la pantalla de carga (con su arte) tapa las ventanas de GeForce NOW
+                # hasta que el juego está a pantalla completa; si tarda (fila de espera), se ve a los 30 s.
+                pinned = self.pin()
+                try:
+                    self.launcher.run(item.argv, cwd=item.cwd)
+                    self.launcher.track_exe(item.id, item.title, exe, runner="GeForce NOW")
+                except BaseException:
+                    self.unpin(pinned)
+                    raise
+                self.revealing = self.to_front(item.id, item.title, "GeForce NOW", pinned=pinned,
+                                               ready=lambda: _cloud_game_ready(exe), timeout=GFN_READY_TIMEOUT)
             self.state.record_launch(item.id)
             return item
         if runner or item.argv:

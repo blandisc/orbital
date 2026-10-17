@@ -82,3 +82,31 @@ def test_los_juegos_que_no_estan_en_steam_traen_su_ficha_de_wikidata(tmp_path, m
     store = wiki_games.WikiGames(tmp_path / "w.json", lookup_fn=lambda t: info, sleep=lambda s: None)
     assert store.warm(["World of Warcraft: Midnight"]) == 1 and store.cached("world of warcraft: midnight")["year"] == "2004"
     assert wiki_games.WikiGames(tmp_path / "w.json").cached("World of Warcraft: Midnight")["developer"] == "Blizzard Entertainment"
+
+
+def test_un_juego_de_geforce_now_abre_con_la_pantalla_de_carga(library, monkeypatch):
+    """Como los demás juegos: Orbital encima con su pantalla de carga hasta que el juego en la nube está a pantalla
+    completa (antes se veían las ventanas de conexión de GeForce NOW). La app de GeForce NOW sigue abriendo directo."""
+    import sys
+
+    from orbital import sessions as sessions_mod
+    from orbital.library.models import LibraryItem
+
+    ran, asked = [], {}
+    monkeypatch.setattr(library.launcher, "run", lambda argv, cwd=None: ran.append(argv))
+    monkeypatch.setattr(library.launcher, "track_exe", lambda *a, **k: None)
+    monkeypatch.setattr(library.sessions, "to_front", lambda item_id, title, runner=None, pinned=None, ready=None, timeout=0:
+                        asked.update(item=item_id, runner=runner, ready=ready, timeout=timeout) or True)
+    game = LibraryItem(id="gfn:1", title="Hogwarts Legacy", category="geforcenow", source="geforcenow",
+                       argv=["GeForceNOWStreamer.exe", "--url-route=#?cmsId=1"])
+    library.store.replace([game])
+    library.sessions.launch("gfn:1")
+    assert ran and asked["item"] == "gfn:1" and asked["runner"] == "GeForce NOW" and asked["timeout"] == sessions_mod.GFN_READY_TIMEOUT
+    assert library.sessions.revealing is True and callable(asked["ready"])
+    if sys.platform != "win32":
+        return
+    from orbital import windows
+    monkeypatch.setattr(windows, "pids_by_exe", lambda exe: {5})
+    monkeypatch.setattr(windows, "main_window", lambda pids: 77)
+    monkeypatch.setattr(windows, "is_fullscreen", lambda hwnd: hwnd == 77)
+    assert asked["ready"]() is True  # su ventana a pantalla completa: listo
