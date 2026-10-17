@@ -260,6 +260,10 @@ def test_the_iphone_turns_the_volume_up_or_down_and_sees_the_level(library):
         c.post("/api/companion/player", json={"action": "volume", "level": 40}, headers=auth)
         assert c.get("/api/companion/now", headers=auth).json()["volume"] == {"level": 40, "muted": False}
         assert c.post("/api/companion/player", json={"action": "volume"}, headers=auth).status_code == 409  # ¿cuánto?
+        assert c.post("/api/companion/player", json={"action": "mute"}, headers=auth).status_code == 200  # sin nada en la TV
+        assert c.get("/api/companion/now", headers=auth).json()["volume"] == {"level": 40, "muted": True}
+        c.post("/api/companion/player", json={"action": "mute"}, headers=auth)
+        assert c.get("/api/companion/now", headers=auth).json()["volume"]["muted"] is False
 
 
 def test_the_iphone_gets_the_channel_logo(library):

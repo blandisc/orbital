@@ -159,6 +159,13 @@ def control_player(catalog, action: str, delta: float | None = None, level: int 
     if action == "volume":  # sirve con o sin algo en la TV (un juego también suena)
         set_volume(delta, level)
         return now_playing(catalog)
+    if action == "mute" and now_playing(catalog) is None:  # sin nada en la TV: el silencio de Windows, sin tocar el nivel
+        from . import quick
+
+        now = quick.volume()
+        if now is not None:
+            quick.set_volume(muted=not now["muted"])
+        return None
     if now_playing(catalog) is None:
         raise NothingPlaying("No hay nada en la TV ahora mismo")
     player, segment = catalog.watch.player, catalog.watch.player.segment
