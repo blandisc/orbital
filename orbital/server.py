@@ -92,6 +92,9 @@ def paused_path() -> Path:
     return Path(os.environ.get("LOCALAPPDATA") or Path.home() / ".local" / "state") / "orbital" / "paused.json"
 
 
+HLTB_DELAY = 120  # s tras el primer escaneo antes de preguntar a HowLongToBeat (que el arranque termine primero)
+
+
 def emulator_updates_for(d: Deps):
     """Las actualizaciones de los emuladores que tienes (ver emulator_updates.py)."""
     from . import emulator_updates
@@ -136,6 +139,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
                     d.hub.publish_threadsafe({"type": "library-changed"})
                 shell.start()
                 try:  # cuánto tarda cada juego (HowLongToBeat): con calma, después de todo lo demás
+                    time.sleep(HLTB_DELAY)
                     catalog.warm_hltb()
                 except Exception:  # noqa: BLE001 - un sitio ajeno nunca tumba a Orbital
                     logging.getLogger(__name__).exception("HowLongToBeat")

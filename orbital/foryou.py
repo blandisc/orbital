@@ -42,6 +42,7 @@ from .text import clock
 log = logging.getLogger(__name__)
 
 METAHUB = "https://images.metahub.space/{kind}/medium/{imdb}/img"
+PREFETCH_DELAY = 45  # s tras armar el mosaico, antes de bajar sus imágenes (que el arranque termine primero)
 LOGO_RETRY = 30 * 60  # un logo que no se pudo bajar (o que no existe) no se vuelve a pedir en media hora
 STEAM_ART = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{file}"
 GAME_CATEGORIES = ("steam", "emulators")
@@ -697,6 +698,9 @@ class ForYou:
         ya bajados y reducidos: la primera vez que se veía el mosaico, cada imagen se bajaba en ese momento."""
         def run() -> None:
             items = self._safe(self.mosaic) or []
+            # Las imágenes, con calma: al arrancar Orbital ya escanea la biblioteca y el arte, y todo junto hacía que la
+            # interfaz tardara segundos en contestar.
+            time.sleep(PREFETCH_DELAY)
             self._safe(lambda: self.prefetch_art(items))
 
         threading.Thread(target=run, daemon=True, name="foryou-warm").start()
@@ -715,7 +719,7 @@ class ForYou:
                 self.trimmed_logo(imdb)
             return ok
 
-        with ThreadPoolExecutor(max_workers=4) as pool:
+        with ThreadPoolExecutor(max_workers=2) as pool:
             return sum(pool.map(one, items[:limit]))
 
     def _build_mosaic(self) -> list[dict]:
