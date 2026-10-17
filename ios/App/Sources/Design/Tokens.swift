@@ -165,6 +165,8 @@ enum DS {
         static let tracking: CGFloat = -0.035, markScale: CGFloat = 1.7, markGap: CGFloat = 0.5
         /// Al arrancar: el anillo se dibuja en este tiempo y la luna cae después (s), como en la TV (--duration-land).
         static let drawSeconds = 0.76, moonDelay = 0.76 * 1.7
+        /// La letra de «orbital» (en la TV, Segoe UI Variable Display): SF Pro Rounded en negrita, del tamaño de la marca.
+        static func wordFont(_ size: CGFloat) -> Font { .system(size: size, weight: .bold, design: .rounded) }
     }
 
     /// El control completo de la TV (`TouchPad`, `RemoteKey`).

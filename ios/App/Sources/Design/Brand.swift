@@ -64,7 +64,7 @@ struct OrbitalWordmark: View {
         HStack(alignment: .center, spacing: size * DS.Brand.markGap) {
             OrbitalMark(size: size * DS.Brand.markScale, animated: animated)
             HStack(alignment: .firstTextBaseline, spacing: size * DS.Brand.moonGap) {
-                Text(verbatim: "orbital").font(.system(size: size, weight: .bold, design: .rounded)).tracking(size * DS.Brand.tracking)
+                Text(verbatim: "orbital").font(DS.Brand.wordFont(size)).tracking(size * DS.Brand.tracking)
                 Circle()
                     .frame(width: size * DS.Brand.moon, height: size * DS.Brand.moon)
                     .alignmentGuide(.firstTextBaseline) { $0.height + size * DS.Brand.moonRise }
