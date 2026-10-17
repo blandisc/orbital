@@ -89,12 +89,16 @@ struct PanelChip: View {
     let title: Text
     let selected: Bool
     var font: Font = DS.TextRecipe.footnote.font
+    /// Un glifo que acompaña al texto (los ánimos de «Decide por mí»); con él, elegirlo no agrega la palomita.
+    var symbol: String?
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: DS.Space.s1) {
-                if selected { Image(systemName: "checkmark").font(DS.TextRecipe.caption.font.weight(.bold)) }
+                if let symbol {
+                    Image(systemName: symbol).font(font.weight(.semibold)).symbolVariant(selected ? .fill : .none)
+                } else if selected { Image(systemName: "checkmark").font(DS.TextRecipe.caption.font.weight(.bold)) }
                 title.font(font).fontWeight(selected ? .semibold : .regular).lineLimit(1)
             }
             .foregroundStyle(selected ? DS.backdropDeep : DS.text)
@@ -136,28 +140,38 @@ struct FlowChips: Layout {
     }
 }
 
-/// El aviso al pasar a la TV: qué pasó, dónde sigue y «Deshacer» (vuelve al iPhone en el mismo punto). Se va solo.
-struct HandoffToast: View {
-    let title: String
-    let at: String
-    let undo: () -> Void
+/// El aviso de la app (una sola familia): arriba, en vidrio, con su glifo de color, el texto y, si la tiene, una acción
+/// («Deshacer», «Ver»). Se va solo; tocarlo lo cierra.
+struct Toast: View {
+    let symbol: String
+    let color: Color
+    let title: Text
+    var detail: Text?
+    var actionTitle: LocalizedStringKey?
+    var action: (() -> Void)?
+    var seconds: UInt64 = DS.Timing.banner
     let dismiss: () -> Void
 
     var body: some View {
         HStack(spacing: DS.Space.s3) {
-            Image(systemName: "tv").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.backdropDeep)
-                .frame(width: DS.PlayerPanel.icon, height: DS.PlayerPanel.icon).background(DS.accent, in: Circle())
+            Image(systemName: symbol).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.backdropDeep)
+                .frame(width: DS.PlayerPanel.icon, height: DS.PlayerPanel.icon).background(color, in: Circle())
             VStack(alignment: .leading, spacing: 0) {
-                Text("Pasó a tu Orbital").recipe(.secondary, color: DS.text).fontWeight(.semibold)
-                Text("\(title) · sigue en \(at)").recipe(.footnote).lineLimit(1)
+                title.recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
+                if let detail { detail.recipe(.footnote).lineLimit(1) }
             }
             Spacer(minLength: DS.Space.s2)
-            Button("Deshacer", action: undo).buttonStyle(.glassProminent).tint(DS.paper).foregroundStyle(DS.backdropDeep)
+            if let actionTitle, let action {
+                Button(actionTitle) { action(); dismiss() }.buttonStyle(.glassProminent).tint(DS.paper).foregroundStyle(DS.backdropDeep)
+            }
         }
         .padding(.leading, DS.Space.s3).padding(.trailing, DS.Space.s2).padding(.vertical, DS.Space.s2)
+        .frame(minHeight: DS.PlayerPanel.icon + 2 * DS.Space.s2)
         .glassEffect(.regular, in: Capsule())
+        .contentShape(Capsule())
+        .onTapGesture(perform: dismiss)
         .padding(.horizontal, DS.Space.s4)
-        .task { try? await Task.sleep(nanoseconds: DS.Timing.handoff); dismiss() }
+        .task { try? await Task.sleep(nanoseconds: seconds); dismiss() }
         .accessibilityElement(children: .contain)
     }
 }

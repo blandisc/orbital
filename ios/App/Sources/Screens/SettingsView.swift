@@ -59,19 +59,25 @@ struct SettingsView: View {
                 NavigationLink { page("Tu Orbital") { orbitalSection(model) } } label: {
                     SettingsRow(title: "Tu Orbital", symbol: "tv", tint: DS.ListTint.series, value: env.services.orbital.isConfigured ? Text("Conectada") : Text("Sin conectar"))
                 }
-                NavigationLink { page("Trakt") { traktSection(model) } } label: {
-                    SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: traktValue(model))
-                }
-                NavigationLink { page("Complementos") { addons } } label: {
-                    SettingsRow(title: "Complementos", symbol: "puzzlepiece.extension", tint: DS.ListTint.addon, value: Text(verbatim: "\(session.model.addons.count)"))
-                }
-                NavigationLink { page("Sugerencias") { suggestions(model) } } label: {
-                    SettingsRow(title: "Sugerencias", symbol: "globe", tint: DS.ListTint.trend, value: Text(verbatim: env.uiLocale.localizedString(forRegionCode: s.region) ?? s.region))
+                if traktFromOrbital(model) {
+                    // Trakt llega de tu Orbital: aquí no hay nada que configurar.
+                    SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: Text("Desde tu Orbital"))
+                } else {
+                    NavigationLink { page("Trakt") { traktSection(model) } } label: {
+                        SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: traktValue(model))
+                    }
                 }
                 NavigationLink { VoiceGuideView() } label: {
                     SettingsRow(title: "Voz y Siri", symbol: "waveform", tint: DS.ListTint.bookmark)
                 }
             } header: { Text("Conexiones") }
+            .listRowBackground(DS.surface)
+            // Lo que casi no se toca: complementos, la clave de TMDB y el país.
+            Section {
+                NavigationLink { page("Avanzado") { advanced(model) } } label: {
+                    SettingsRow(title: "Avanzado", symbol: "slider.horizontal.3", tint: DS.ListTint.addon, value: Text("Complementos, TMDB, país"))
+                }
+            }
             .listRowBackground(DS.surface)
             Section {
                 Label("Stremio conectado", systemImage: "person.crop.circle.badge.checkmark")
@@ -105,8 +111,8 @@ struct SettingsView: View {
             .presentationDetents([.medium])
         }
         .task { await model.loadTraktName(); await session.model.loadAddons() }
-        #if DEBUG
         .navigationDestination(isPresented: $showsYear) { YearView() }
+        #if DEBUG
         .task { if Demo.isOn, Demo.open == "settings-avatar" { editingAvatar = true }; if Demo.isOn, Demo.open == "year" { showsYear = true } }
         #endif
     }
@@ -117,6 +123,23 @@ struct SettingsView: View {
             .tint(DS.accent)
             .scrollContentBackground(.hidden).background(Backdrop())
             .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// Trakt conectado con la sesión que copió tu Orbital (no se configura aquí).
+    private func traktFromOrbital(_ model: SettingsModel) -> Bool {
+        guard case .linked = model.trakt else { return false }
+        return env.services.orbital.isConfigured
+    }
+
+    /// «Avanzado»: complementos, y el país y la clave de TMDB de las sugerencias.
+    @ViewBuilder private func advanced(_ model: SettingsModel) -> some View {
+        Section {
+            NavigationLink { page("Complementos") { addons } } label: {
+                SettingsRow(title: "Complementos", symbol: "puzzlepiece.extension", tint: DS.ListTint.addon, value: Text(verbatim: "\(session.model.addons.count)"))
+            }
+        }
+        .listRowBackground(DS.surface)
+        suggestions(model)
     }
 
     /// «Stremio · Trakt · Orbital»: qué está conectado, bajo tu avatar.

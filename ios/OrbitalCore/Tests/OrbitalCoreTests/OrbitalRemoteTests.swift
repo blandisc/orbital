@@ -94,7 +94,7 @@ final class OrbitalRemoteTests: XCTestCase {
             .object(["id": "a1", "kind": "series", "meta_id": "tt1", "video_id": "tt1:2:5", "title": "The Office", "episode_label": "T2 · E5",
                      "season": 2, "episode": 5, "poster": "https://p", "action": "download", "at": .int(1_760_000_000)]),
             .object(["id": "b2", "kind": "movie", "meta_id": "tt9", "video_id": "tt9", "title": "Dune", "episode_label": "", "poster": .null,
-                     "action": "open", "at": .double(1_760_000_001.5)]),
+                     "action": "open", "at": .double(1_760_000_001.5), "position": .double(845.4)]),
             .object(["id": "x", "kind": "movie", "meta_id": "tt3", "action": "bailar"]),  // una acción que esta versión no conoce: se ignora
         ])])
         let snapshot = try await OrbitalRemote(http: http, address: "tv.example", token: "x").snapshot()
@@ -107,6 +107,8 @@ final class OrbitalRemoteTests: XCTestCase {
         XCTAssertEqual(snapshot.inbox[0].episode, 5)
         XCTAssertNil(snapshot.inbox[1].season, "película: sin números")
         XCTAssertEqual(snapshot.inbox[1].poster, nil)
+        XCTAssertEqual(snapshot.inbox[1].position, 845.4, "«Seguir en el iPhone»: el segundo exacto de la TV")
+        XCTAssertNil(snapshot.inbox[0].position, "«Enviar al iPhone»: donde te quedaste")
         // Una consola de una versión anterior no manda `inbox`: bandeja vacía, sin error.
         http.json["https://tv.example/api/companion/now"] = .object(["playing": .null])
         let old = try await OrbitalRemote(http: http, address: "tv.example", token: "x").snapshot()

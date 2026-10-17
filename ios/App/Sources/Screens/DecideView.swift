@@ -31,13 +31,13 @@ struct DecideView: View {
         PanelGroupTitle(title: "Tengo")
         FlowChips {
             ForEach(DecideModel.Time.allCases, id: \.self) { t in
-                PanelChip(title: timeName(t), selected: m.time == t) { m.time = t }
+                PanelChip(title: timeName(t), selected: m.time == t, font: DS.TextRecipe.body.font) { m.time = t }
             }
         }
         PanelGroupTitle(title: "Quiero algo")
         FlowChips {
             ForEach(DecideModel.Mood.allCases, id: \.self) { mood in
-                PanelChip(title: moodName(mood), selected: m.mood == mood) { m.mood = mood }
+                PanelChip(title: moodName(mood), selected: m.mood == mood, font: DS.TextRecipe.body.font, symbol: moodSymbol(mood)) { m.mood = mood }
             }
         }
         if m.exhausted { DSNotice(text: "No encontré otra con eso: prueba otro ánimo o más tiempo.") }
@@ -74,6 +74,10 @@ struct DecideView: View {
     }
 
     private func moodName(_ m: DecideModel.Mood) -> Text { Text(LocalizedStringKey(moodLabel(m))) }
+
+    private func moodSymbol(_ m: DecideModel.Mood) -> String {
+        switch m { case .light: "sun.max"; case .intense: "bolt"; case .think: "lightbulb"; case .together: "heart" }
+    }
 
     private func moodLabel(_ m: DecideModel.Mood) -> String {
         switch m { case .light: "Ligero"; case .intense: "Intenso"; case .think: "Para pensar"; case .together: "En pareja" }

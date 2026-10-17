@@ -127,3 +127,32 @@ struct TimeStylePreview: View {
         .accessibilityHidden(true)
     }
 }
+
+/// Un renglón con palomita (en qué listas está un título, «Guardar en…»): su glifo de color, el nombre y ✓ si está.
+struct CheckRow: View {
+    let title: Text
+    let symbol: String
+    let color: Color
+    let checked: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: DS.Space.s3) {
+                PanelIcon(symbol: symbol, color: color)
+                title.recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
+                Spacer(minLength: DS.Space.s2)
+                Image(systemName: checked ? "checkmark.circle.fill" : "circle")
+                    .font(DS.TextRecipe.title.font.weight(.regular))
+                    .foregroundStyle(checked ? DS.accent : DS.textFaint)
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .padding(DS.Space.s3)
+            .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(checked ? .isSelected : [])
+        .sensoryFeedback(.selection, trigger: checked)
+    }
+}

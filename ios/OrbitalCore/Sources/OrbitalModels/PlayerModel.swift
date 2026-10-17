@@ -14,6 +14,8 @@ public struct PlayRequest: Sendable {
     public var year: String?
     public var meta: JSON?                 // la ficha original: de ahí salen el siguiente episodio y las duraciones
     public var fromStart = false
+    /// El segundo exacto donde empezar («Seguir en el iPhone» desde la TV); sin él, donde te quedaste.
+    public var startPosition: Double?
     public var localFile: URL?             // una descarga: se reproduce sin red
     public var localSubtitles: [URL] = []
     public var binge: String?              // el grupo de la fuente anterior (misma calidad e idioma)
@@ -175,7 +177,7 @@ public final class PlayerModel: ObservableModel {
         guard let request else { return }
         if let file = request.localFile {
             var start = startAt ?? 0
-            if startAt == nil && !request.fromStart { start = await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) }
+            if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) } }
             guard mine == generation, !closing else { return }
             startLoading()
             do { try await loadVideo(file, at: start) } catch { fail("No pude abrir el archivo descargado.") }
@@ -198,7 +200,7 @@ public final class PlayerModel: ObservableModel {
             guard let found else { return fail(failedSources.isEmpty ? "No hay fuentes de Real-Debrid para este título." : "Ninguna fuente funcionó.") }
             source = found
             var start = startAt ?? 0
-            if startAt == nil && !request.fromStart { start = await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) }
+            if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) } }
             guard mine == generation, !closing else { return }
             guard let url = found.playbackURL else { failedSources.insert(found.index); continue }
             startLoading()

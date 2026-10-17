@@ -275,6 +275,16 @@ enum DS {
     }
 
     /// «Tus plataformas»: la tarjeta con su top 3 en abanico y su página de rankings.
+    /// Colecciones (Para ti › Listas): el alto de la estatuilla al frente, su halo y el color de cada premio.
+    enum Collections {
+        static let emblem: CGFloat = 70, glow: CGFloat = 16
+        static let gold = Color(red: 0.83, green: 0.65, blue: 0.25), silver = Color(red: 0.78, green: 0.76, blue: 0.72)
+        static let bronze = Color(red: 0.72, green: 0.45, blue: 0.26)
+        static func tint(_ award: String) -> Color {
+            switch award { case "emmy": silver; case "bafta", "ariel": bronze; default: gold }
+        }
+    }
+
     enum PlatformFan {
         /// El subrayado de la lista elegida en la página de una plataforma.
         static let tabUnderline: CGFloat = 3
@@ -420,7 +430,7 @@ enum DS {
         static let railWidth: CGFloat = 112
         static let gridMinimum: CGFloat = 100
         static let episodeThumbWidth: CGFloat = 122
-        /// Una pieza ancha (16:9) de un riel: «También tenías», episodios nuevos.
+        /// Una pieza ancha (16:9) de un riel: «Todo lo que sigues», episodios nuevos.
         static let stillWidth: CGFloat = 220
         static let heroHeight: CGFloat = 300
         /// El póster pequeño de «Viendo en la TV» (misma relación 2:3, más chico que el de la tira).

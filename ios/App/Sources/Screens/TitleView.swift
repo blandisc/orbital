@@ -2,7 +2,7 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// La ficha de una película o serie: continuar, Mi lista, descargar, watchlist de Trakt, temporadas y episodios.
+/// La ficha de una película o serie: continuar, guardar (en Mi lista, tu watchlist o tus listas), descargar, temporadas y episodios.
 struct TitleView: View {
     let route: TitleRoute
     @EnvironmentObject private var env: AppEnvironment
@@ -13,6 +13,7 @@ struct TitleView: View {
     @StateObject private var tint = ArtTint()
     @State private var sourcesFor: SourcesTarget?
     @State private var downloadMenu = false
+    @State private var saving = false
 
     struct SourcesTarget: Identifiable { var videoID: String; var purpose: Purpose; var id: String { "\(videoID)-\(purpose)" } }
 
@@ -29,7 +30,6 @@ struct TitleView: View {
                 VStack(alignment: .leading, spacing: DS.Space.s4) {
                     actions(model)
                     if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
-                    if model.traktAvailable { watchlistToggle(model) }
                     if let error = model.error, model.overview.isEmpty { DSNotice(verbatim: env.message(error), tone: .warn) }
                     RatingsRow(imdb: model.info.rating, tmdb: model.extras?.rating, trakt: model.traktRating)
                     if !model.overview.isEmpty { Text(model.overview).font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted) }
@@ -65,9 +65,9 @@ struct TitleView: View {
             }
             .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $saving) { SaveView(observer: observer).fittedSheet() }
         .confirmationDialog("Descargar", isPresented: $downloadMenu, titleVisibility: .visible) {
             if model.kind == "series" {
-                Button("Los siguientes 3 episodios") { Task { await report(model.downloadNext(3), model) } }
                 Button("Elegir la fuente de este episodio") { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .download) } }
             }
             Button("Descargar con la fuente recomendada") { Task { await report(model.download([model.continueVideoID ?? model.metaID]), model) } }
@@ -103,7 +103,7 @@ struct TitleView: View {
                     .disabled(model.continueVideoID == nil)
                     .accessibilityLabel(Text("En la TV"))
             }
-            // Mi lista vive en la rejilla de acciones; arriba, compartir (la ficha de IMDb, que abre en cualquier app).
+            // «Guardar» vive en la rejilla de acciones; arriba, compartir (la ficha de IMDb, que abre en cualquier app).
             if model.metaID.hasPrefix("tt"), let url = URL(string: "https://www.imdb.com/title/\(model.metaID)/") {
                 ShareLink(item: url, subject: Text(verbatim: model.title)) { Image(systemName: "square.and.arrow.up") }
                     .accessibilityLabel(Text("Compartir"))
@@ -111,7 +111,7 @@ struct TitleView: View {
         }
     }
 
-    /// El botón principal (papel), a qué hora terminas y, debajo, las acciones secundarias en una rejilla (Mi lista,
+    /// El botón principal (papel), a qué hora terminas y, debajo, las acciones secundarias en una rejilla (Guardar,
     /// Descargar, Fuentes). En la TV está arriba, en la barra.
     private func actions(_ model: TitleModel) -> some View {
         let label = model.continueLabel
@@ -124,7 +124,7 @@ struct TitleView: View {
                 DataLine(parts: [Strings.endsAt(minutesLeft: minutes, now: env.services.now(), language: env.services.appSettings.uiLanguage)])
             }
             ActionGrid(actions: [
-                ProjectionAction(id: "list", title: model.inLibrary ? "En Mi lista" : "Mi lista", symbol: model.inLibrary ? "checkmark" : "plus", active: model.inLibrary) { Task { await model.toggleLibrary() } },
+                ProjectionAction(id: "list", title: model.isSaved ? "Guardado" : "Guardar", symbol: model.isSaved ? "checkmark" : "plus", active: model.isSaved) { saving = true },
                 downloadAction(model),
                 ProjectionAction(id: "sources", title: "Elegir fuente", symbol: "list.bullet", disabled: model.continueVideoID == nil) {
                     if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
@@ -137,11 +137,11 @@ struct TitleView: View {
     private func downloadAction(_ model: TitleModel) -> ProjectionAction {
         switch model.kind == "movie" ? model.downloadState(model.metaID) : nil {
         case .done?:
-            return ProjectionAction(id: "download", title: "Descargado", symbol: "checkmark.circle", active: true) { env.notify("Ya está descargado. Lo encuentras en Descargas.", tone: .info) }
+            return ProjectionAction(id: "download", title: "Descargado", symbol: "checkmark.circle", active: true) { env.notify("Ya está descargado. Lo encuentras en Descargas.", tone: .info, action: .downloads) }
         case .downloading?, .queued?:
             let percent = model.downloadFraction(model.metaID).map { Int($0 * 100) }
             return ProjectionAction(id: "download", title: percent.map { LocalizedStringKey("\($0) %") } ?? "Descargando", symbol: "arrow.down.circle.dotted", active: true) {
-                env.notify("Descargando. Lo verás en Descargas.", tone: .info)
+                env.notify("Descargando. Lo verás en Descargas.", tone: .info, action: .downloads)
             }
         default:
             return ProjectionAction(id: "download", title: "Descargar", symbol: "arrow.down.circle") { downloadMenu = true }
@@ -151,15 +151,6 @@ struct TitleView: View {
     private func primaryLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> Text {
         if let s = label.season, let e = label.episode { return label.isResume ? Text("Continuar T\(s) E\(e)") : Text("Ver T\(s) E\(e)") }
         return label.isResume ? Text("Continuar") : Text("Ver")   // los nombres de la TV (`core/watch.js`)
-    }
-
-    private func watchlistToggle(_ model: TitleModel) -> some View {
-        Toggle(isOn: Binding(get: { model.inWatchlist }, set: { _ in Task { await model.toggleWatchlist() } })) {
-            Label("En tu watchlist", systemImage: "bookmark")
-        }
-        .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
-        .padding(DS.Space.s3).background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
-        .sensoryFeedback(.success, trigger: model.inWatchlist)
     }
 
     @ViewBuilder private func episodes(_ model: TitleModel) -> some View {
@@ -288,7 +279,7 @@ struct TitleView: View {
 
     private func report(_ outcome: TitleModel.DownloadOutcome, _ model: TitleModel) async {
         switch outcome {
-        case .queued(let n): if n == 1 { env.notify("Descargando. Lo verás en Descargas.", tone: .success) } else { env.notify(format: "Descargando %lld episodios. Los verás en Descargas.", n, tone: .success) }
+        case .queued(let n): if n == 1 { env.notify("Descargando. Lo verás en Descargas.", tone: .success, action: .downloads) } else { env.notify(format: "Descargando %lld episodios. Los verás en Descargas.", n, tone: .success, action: .downloads) }
         case .noSources: env.notify("No hay fuentes de Real-Debrid para descargar.")
         case .notEnoughSpace(let text): env.notify(text)
         case .already: env.notify("Ya está descargado.", tone: .info)

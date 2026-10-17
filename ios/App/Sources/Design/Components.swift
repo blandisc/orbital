@@ -375,7 +375,7 @@ struct HeroCard<Actions: View>: View {
     }
 }
 
-/// Un renglón de lista (`RowTile` en la TV): miniatura ancha, nombre y dato. «También tenías» en Inicio.
+/// Un renglón de lista (`RowTile` en la TV): miniatura ancha, nombre y dato. 
 struct RowTile: View {
     let title: String
     let thumb: String?

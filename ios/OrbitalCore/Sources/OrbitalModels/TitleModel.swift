@@ -33,6 +33,11 @@ public final class TitleModel: ObservableModel {
     public private(set) var rows: [EpisodeRow] = [] { didSet { changed() } }
     public private(set) var inLibrary = false { didSet { changed() } }
     public private(set) var inWatchlist = false { didSet { changed() } }
+    /// Tus listas de Trakt y si este título está en cada una («Guardar en…»); `nil` mientras no se han pedido.
+    public private(set) var lists: [SavedList]? { didSet { changed() } }
+    public private(set) var loadingLists = false { didSet { changed() } }
+    /// ¿Está guardado en algún lado? (Mi lista, tu watchlist o una de tus listas): el botón dice «Guardado».
+    public var isSaved: Bool { inLibrary || inWatchlist || (lists ?? []).contains(where: \.contains) }
     public private(set) var traktAvailable = false { didSet { changed() } }
     public private(set) var isLoading = false { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }
@@ -244,6 +249,48 @@ public final class TitleModel: ObservableModel {
         } catch { inWatchlist = !want; message = "No pude cambiar tu watchlist de Trakt: \(error)" }
     }
 
+    // MARK: tus listas de Trakt
+    /// Tus listas y en cuáles está este título (una consulta por lista: suelen ser pocas).
+    public func loadLists() async {
+        guard let trakt = services.trakt, trakt.linked, metaID.hasPrefix("tt") else { lists = []; return }
+        loadingLists = true
+        defer { loadingLists = false }
+        let all = (try? await trakt.lists()) ?? []
+        let id = metaID
+        lists = await withTaskGroup(of: (Int, SavedList).self) { group in
+            for (i, l) in all.enumerated() {
+                group.addTask { (i, SavedList(id: l.id, name: l.name, contains: ((try? await trakt.listMembers(l.id)) ?? []).contains(id))) }
+            }
+            var out: [(Int, SavedList)] = []
+            for await r in group { out.append(r) }
+            return out.sorted { $0.0 < $1.0 }.map(\.1)
+        }
+    }
+
+    public func toggleList(_ listID: String) async {
+        guard let trakt = services.trakt, var all = lists, let i = all.firstIndex(where: { $0.id == listID }) else { return }
+        let want = !all[i].contains
+        all[i].contains = want
+        lists = all
+        do {
+            try await trakt.setListItem(listID: listID, imdb: metaID, series: kind == "series", add: want)
+            await services.forYou.clearCache()
+        } catch {
+            if var back = lists, let j = back.firstIndex(where: { $0.id == listID }) { back[j].contains = !want; lists = back }
+            message = "No pude cambiar tu lista de Trakt: \(error)"
+        }
+    }
+
+    /// Una lista nueva en Trakt, ya con este título.
+    public func createList(named name: String) async {
+        guard let trakt = services.trakt, trakt.linked else { return }
+        do {
+            let made = try await trakt.createList(name: name)
+            lists = (lists ?? []) + [SavedList(id: made.id, name: made.name, contains: false)]
+            await toggleList(made.id)
+        } catch { message = "No pude crear la lista: \(error)" }
+    }
+
     /// Marca un episodio (o la película) como visto en Stremio y en Trakt. Se relee el item antes de escribir: lo que
     /// hayas hecho en otro dispositivo no se pisa, y marcar un episodio anterior no mueve tu punto de «Seguir viendo».
     public func markWatched(_ videoID: String) async {
@@ -283,4 +330,11 @@ public final class TitleModel: ObservableModel {
     }
 
     public func clearMessage() { message = nil }
+}
+
+/// Una de tus listas de Trakt, con si el título que ves está en ella.
+public struct SavedList: Identifiable, Equatable, Sendable {
+    public let id: String
+    public let name: String
+    public var contains: Bool
 }

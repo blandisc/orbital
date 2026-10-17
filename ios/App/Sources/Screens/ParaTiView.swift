@@ -43,6 +43,7 @@ struct ParaTiView: View {
                         // Como la TV: el motivo tal cual, y una serie sugerida abre su ficha («Ver la serie»), no un episodio al azar.
                         MosaicCaption(reason: Text(badgeKey(item.reason)), title: item.title, logo: item.logo,
                                       data: (factStrings(item).first ?? "").components(separatedBy: " · "), accent: tint.colors, isSeries: item.kind == "series",
+                                      open: { openTitle = item.route },
                                       watch: { if item.kind == "series" { openTitle = item.route } else { Task { await env.play(item) } } }) {
                             SuggestionActions(suggestion: item, includeWatch: false) { s in Task { await m.dismiss(s) } }
                         }
@@ -239,10 +240,12 @@ struct ListsView: View {
     @StateObject private var featuredTint = ArtTint()
     /// El que está al frente del carrusel del destacado.
     @State private var featuredID: String?
+    /// Premios, tus listas de Trakt y «Por año».
+    @StateObject private var collections = ModelObserver(CollectionsModel(AppEnvironment.shared.services))
     private var model: ParaTiModel { observer.model }
 
     var body: some View {
-        ScrollViewReader { proxy in scroller.task { await demoScroll(proxy) } }
+        ScrollViewReader { proxy in scroller(proxy).task { await demoScroll(proxy) } }
     }
 
     /// Modo demostración (`-demo-shelf id`): baja hasta ese estante al abrir, para las capturas.
@@ -254,7 +257,7 @@ struct ListsView: View {
         #endif
     }
 
-    private var scroller: some View {
+    private func scroller(_ proxy: ScrollViewProxy) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 // El arte a sangre ya pone su margen (en claro es tarjeta; en oscuro va de borde a borde).
@@ -263,9 +266,13 @@ struct ListsView: View {
                     DSChipRow(items: KindFilter.allCases, label: { Text($0.label) },
                               selection: Binding(get: { KindFilter(rawValue: model.kind) ?? .all }, set: { new in Task { await model.setKind(new.rawValue) } }))
                 }
+                sectionIndex(proxy)
                 let slides = model.featuredSlides
                 if !slides.isEmpty { featuredCarousel(slides) }
-                if !model.platformHubs.isEmpty { platforms }   // justo bajo el destacado: tus plataformas a la vista, no hasta abajo
+                if !model.platformHubs.isEmpty { platforms.id(CollectionSection.platforms) }   // justo bajo el destacado: tus plataformas a la vista, no hasta abajo
+                awards.id(CollectionSection.awards)
+                if !collections.model.lists.isEmpty { userLists.id(CollectionSection.lists) }
+                if collections.model.traktLinked { yearsSection.id(CollectionSection.years) }
                 if !model.airings.isEmpty {   // justo después del destacado; vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
                     Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), route: ShelfRoute(id: "estrenos")) {
                         ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
@@ -289,6 +296,8 @@ struct ListsView: View {
         .navigationDestination(for: PlatformRoute.self) { route in
             if let hub = model.platformHubs.first(where: { $0.brand == route.brand }) { PlatformRankingsView(observer: observer, hub: hub) }
         }
+        .navigationDestination(for: CollectionRoute.self) { route in CollectionGridView(collections: collections, route: route) }
+        .task { await collections.model.loadLists() }
         .navigationDestination(for: ShelfRoute.self) { route in
             if route.id == "estrenos" { UpcomingScreen(observer: observer) } else { ListGridView(observer: observer, shelfID: route.id) }
         }
@@ -308,6 +317,87 @@ struct ListsView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("platform-\(hub.brand)")
+                    }
+                }
+            }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+        }
+    }
+
+    // MARK: colecciones
+    /// El índice de arriba: salta a cada grupo.
+    private func sectionIndex(_ proxy: ScrollViewProxy) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: DS.Space.s2) {
+                ForEach(CollectionSection.allCases.filter(isShown), id: \.self) { section in
+                    PanelChip(title: section.title, selected: false) { withAnimation(DS.Motion.base(false)) { proxy.scrollTo(section, anchor: .top) } }
+                }
+            }
+        }
+        .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+    }
+
+    private func isShown(_ section: CollectionSection) -> Bool {
+        switch section {
+        case .platforms: !model.platformHubs.isEmpty
+        case .awards: !collections.model.awards.isEmpty
+        case .lists: !collections.model.lists.isEmpty
+        case .years: collections.model.traktLinked
+        }
+    }
+
+    /// Premios: cada uno con su estatuilla al frente, sobre sus tres ganadores más recientes.
+    @ViewBuilder private var awards: some View {
+        let all = collections.model.awards
+        if !all.isEmpty {
+            VStack(alignment: .leading, spacing: DS.Space.s3) {
+                DSSectionHead(title: "Premios", meta: Text("Los ganadores, del más reciente")).padding(.horizontal, DS.Space.gutter)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                        ForEach(all) { award in
+                            NavigationLink(value: CollectionRoute(kind: .award, id: award.id)) { AwardCard(award: award) }
+                                .buttonStyle(.plain)
+                                .accessibilityIdentifier("award-\(award.id)")
+                        }
+                    }
+                }
+                .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            }
+        }
+    }
+
+    /// Tus listas de Trakt, en pila con el sello de Trakt.
+    private var userLists: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: "Tus listas", meta: Text("De Trakt")).padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                    ForEach(collections.model.lists) { list in
+                        NavigationLink(value: CollectionRoute(kind: .list, id: list.id)) {
+                            CollectionCard(title: Text(verbatim: list.name), detail: Text("\(list.count) títulos"), name: list.name,
+                                           posters: list.posters.map { Optional($0) }, tint: DS.RatingBrand.trakt) { TraktEmblem() }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+        }
+    }
+
+    /// Por año: lo más popular de cada año (Trakt).
+    private var yearsSection: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: "Por año", meta: Text("Lo más popular de cada año")).padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: DS.Space.s2) {
+                    ForEach(collections.model.years, id: \.self) { year in
+                        NavigationLink(value: CollectionRoute(kind: .year, id: String(year))) {
+                            Text(verbatim: String(year)).recipe(.section).monospacedDigit()
+                                .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s3)
+                                .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }

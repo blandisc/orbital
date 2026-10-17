@@ -377,6 +377,23 @@ public actor Trakt {
         }
     }
 
+    /// Qué títulos (IMDb) tiene una de tus listas: para marcar ✓ en «Guardar en…» (sin datos extra: es rápido).
+    public func listMembers(_ id: String) async throws -> Set<String> {
+        guard Self.isListID(id) else { throw TraktError.invalid("Lista inválida") }
+        let rows = try await get("/users/me/lists/\(id)/items")?.array ?? []
+        return Set(rows.compactMap { ($0["movie"] ?? $0["show"])?["ids"]?["imdb"]?.string })
+    }
+
+    /// Todo lo que ya viste (películas y series con al menos un episodio), por IMDb: «Decide por mí» no te propone eso.
+    public func watchedIDs() async throws -> Set<String> {
+        async let movies = get("/sync/watched/movies")
+        async let shows = get("/sync/watched/shows", [("extended", "noseasons")])
+        let rows = (try await movies?.array ?? []) + (try await shows?.array ?? [])
+        return Set(rows.compactMap { ($0["movie"] ?? $0["show"])?["ids"]?["imdb"]?.string })
+    }
+
+    static func isListID(_ id: String) -> Bool { !id.isEmpty && id.allSatisfy(\.isASCII) && id.allSatisfy(\.isNumber) }
+
     public func listItems(_ id: String) async throws -> [TraktEntry] {
         guard !id.isEmpty, id.allSatisfy(\.isASCII), id.allSatisfy(\.isNumber) else { throw TraktError.invalid("Lista inválida") }
         return TraktParsing.typed(try await get("/users/me/lists/\(id)/items", [("extended", "full")])?.array)
@@ -388,8 +405,11 @@ public actor Trakt {
         return (rows?.array ?? []).compactMap { TraktParsing.entry($0[key], kind: kind) }
     }
 
-    public func popular(kind: String, limit: Int = 30) async throws -> [TraktEntry] {
-        let rows = try await get("/\(TraktParsing.kinds[kind]!)/popular", auth: false, [("limit", String(limit)), ("extended", "full")])
+    /// Lo más popular; con `years` («2024» o «1990-1999»), solo de esos años («Por año» en Colecciones).
+    public func popular(kind: String, limit: Int = 30, years: String? = nil) async throws -> [TraktEntry] {
+        var params = [("limit", String(limit)), ("extended", "full")]
+        if let years { params.append(("years", years)) }
+        let rows = try await get("/\(TraktParsing.kinds[kind]!)/popular", auth: false, params)
         return (rows?.array ?? []).compactMap { TraktParsing.entry($0, kind: kind) }
     }
 
@@ -471,6 +491,23 @@ public actor Trakt {
         let body: JSON = series ? ["shows": [["ids": ["imdb": .string(imdb)]]]] : ["movies": [["ids": ["imdb": .string(imdb)]]]]
         let (status, _) = try await write(add ? "/sync/watchlist" : "/sync/watchlist/remove", body)
         guard status == 200 || status == 201 else { throw TraktError.http(status) }
+    }
+
+    /// Pone o quita un título de una de tus listas.
+    public func setListItem(listID: String, imdb: String, series: Bool, add: Bool) async throws {
+        guard Self.isIMDb(imdb), Self.isListID(listID) else { throw TraktError.invalid("Título inválido") }
+        let body: JSON = series ? ["shows": [["ids": ["imdb": .string(imdb)]]]] : ["movies": [["ids": ["imdb": .string(imdb)]]]]
+        let (status, _) = try await write("/users/me/lists/\(listID)/items\(add ? "" : "/remove")", body)
+        guard status == 200 || status == 201 else { throw TraktError.http(status) }
+    }
+
+    /// Una lista nueva (privada); devuelve su id.
+    public func createList(name: String) async throws -> (id: String, name: String) {
+        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty else { throw TraktError.invalid("Ponle nombre a la lista") }
+        let (status, json) = try await write("/users/me/lists", ["name": .string(clean), "privacy": "private"])
+        guard status == 200 || status == 201, let id = json?["ids"]?["trakt"]?.intValue else { throw TraktError.http(status) }
+        return (String(id), clean)
     }
 
     /// Avisa a Trakt de lo que reproduces. `progress` va de 0 a 100; por encima de ~80 % al parar, Trakt lo marca visto.

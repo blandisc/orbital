@@ -177,6 +177,17 @@
         }
       }
     },
+    "%lld títulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld titles"
+          }
+        }
+      }
+    },
     "1 h": {
       "extractionState": "manual",
       "localizations": {
@@ -540,6 +551,17 @@
         }
       }
     },
+    "Ariel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ariel"
+          }
+        }
+      }
+    },
     "Atrás": {
       "extractionState": "manual",
       "localizations": {
@@ -580,6 +602,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Progress"
+          }
+        }
+      }
+    },
+    "Avanzado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Advanced"
           }
         }
       }
@@ -848,6 +881,17 @@
         }
       }
     },
+    "Cannes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cannes"
+          }
+        }
+      }
+    },
     "Carrusel": {
       "extractionState": "manual",
       "localizations": {
@@ -910,6 +954,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Night sky"
+          }
+        }
+      }
+    },
+    "Cine mexicano": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mexican cinema"
           }
         }
       }
@@ -998,6 +1053,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Add-ons"
+          }
+        }
+      }
+    },
+    "Complementos, TMDB, país": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add-ons, TMDB, country"
           }
         }
       }
@@ -1387,6 +1453,17 @@
         }
       }
     },
+    "Crear": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create"
+          }
+        }
+      }
+    },
     "Cuando descargues algo, aparece aquí.": {
       "extractionState": "manual",
       "localizations": {
@@ -1482,6 +1559,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What we call you"
+          }
+        }
+      }
+    },
+    "De Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From Trakt"
           }
         }
       }
@@ -1772,6 +1860,17 @@
         }
       }
     },
+    "Desde tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From your Orbital"
+          }
+        }
+      }
+    },
     "Deshacer": {
       "extractionState": "manual",
       "localizations": {
@@ -2010,6 +2109,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choose this episode's source"
+          }
+        }
+      }
+    },
+    "Emmy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emmy"
           }
         }
       }
@@ -2509,6 +2619,17 @@
         }
       }
     },
+    "Globos de Oro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Golden Globes"
+          }
+        }
+      }
+    },
     "Grande": {
       "extractionState": "manual",
       "localizations": {
@@ -2520,6 +2641,28 @@
         }
       }
     },
+    "Guardado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved"
+          }
+        }
+      }
+    },
+    "Guardar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        }
+      }
+    },
     "Guardar clave de TMDB": {
       "extractionState": "manual",
       "localizations": {
@@ -2527,6 +2670,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Save TMDB key"
+          }
+        }
+      }
+    },
+    "Guardar en…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save to…"
           }
         }
       }
@@ -3015,6 +3169,17 @@
         }
       }
     },
+    "Lo más popular de cada año": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The most popular of each year"
+          }
+        }
+      }
+    },
     "Lo más popular en Stremio": {
       "extractionState": "manual",
       "localizations": {
@@ -3158,6 +3323,17 @@
         }
       }
     },
+    "Los ganadores, del más reciente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The winners, newest first"
+          }
+        }
+      }
+    },
     "Los siguientes 3 episodios": {
       "extractionState": "manual",
       "localizations": {
@@ -3220,6 +3396,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Medium"
+          }
+        }
+      }
+    },
+    "Mejor película": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best Picture"
+          }
+        }
+      }
+    },
+    "Mejor película dramática": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best Motion Picture – Drama"
+          }
+        }
+      }
+    },
+    "Mejor serie de drama": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Outstanding Drama Series"
           }
         }
       }
@@ -3631,6 +3840,17 @@
         }
       }
     },
+    "No pude cambiar tu lista de Trakt: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't change your Trakt list: %@"
+          }
+        }
+      }
+    },
     "No pude cambiar tu watchlist de Trakt: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -3660,6 +3880,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't connect to Trakt: %@"
+          }
+        }
+      }
+    },
+    "No pude crear la lista: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't create the list: %@"
           }
         }
       }
@@ -3796,6 +4027,17 @@
         }
       }
     },
+    "Nombre": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        }
+      }
+    },
     "Novela": {
       "extractionState": "manual",
       "localizations": {
@@ -3803,6 +4045,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Novel"
+          }
+        }
+      }
+    },
+    "Nueva lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New list"
+          }
+        }
+      }
+    },
+    "Nueva lista…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New list…"
           }
         }
       }
@@ -3979,6 +4243,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "TV touchpad"
+          }
+        }
+      }
+    },
+    "Palma de Oro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palme d'Or"
           }
         }
       }
@@ -4181,6 +4456,17 @@
         }
       }
     },
+    "Plataformas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platforms"
+          }
+        }
+      }
+    },
     "Ponerla en la TV": {
       "extractionState": "manual",
       "localizations": {
@@ -4214,6 +4500,17 @@
         }
       }
     },
+    "Ponle nombre a la lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Give the list a name"
+          }
+        }
+      }
+    },
     "Popular": {
       "extractionState": "manual",
       "localizations": {
@@ -4221,6 +4518,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Popular"
+          }
+        }
+      }
+    },
+    "Por año": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By year"
           }
         }
       }
@@ -4276,6 +4584,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Asking your Orbital…"
+          }
+        }
+      }
+    },
+    "Premios": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Awards"
           }
         }
       }
@@ -4716,6 +5035,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sci-Fi"
+          }
+        }
+      }
+    },
+    "Se crea en Trakt (privada) y este título entra en ella.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It's created on Trakt (private) and this title goes in it."
           }
         }
       }
@@ -5435,6 +5765,28 @@
         }
       }
     },
+    "Todo lo que sigues": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything you're watching"
+          }
+        }
+      }
+    },
+    "Todo lo que sigues · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything you're watching · %@"
+          }
+        }
+      }
+    },
     "Token (el mismo de Alexa)": {
       "extractionState": "manual",
       "localizations": {
@@ -5805,6 +6157,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your watchlist, your recommendations and your platforms' Top 10 show up here."
+          }
+        }
+      }
+    },
+    "Tus listas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your lists"
+          }
+        }
+      }
+    },
+    "Tus listas de Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Trakt lists"
           }
         }
       }
@@ -6300,6 +6674,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "App icon"
+          }
+        }
+      }
+    },
+    "Óscar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oscar"
           }
         }
       }

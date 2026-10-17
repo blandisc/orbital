@@ -10,19 +10,37 @@ struct PlatformFanCard: View {
     let tint: Color
 
     var body: some View {
+        FanCard(name: name, eyebrow: Text("TOP"), posters: posters, tint: tint) {
+            PlatformLogoTile(url: logo, name: name, size: DS.PlatformFan.logo, radius: DS.PlatformFan.logoRadius, tint: tint, glow: DS.PlatformFan.glow)
+        }
+        .accessibilityLabel(Text("Rankings de \(name)"))
+    }
+}
+
+/// La tarjeta en abanico (plataformas y colecciones): tres pósters, el brillo de su color desde abajo y, al frente abajo,
+/// su emblema (el logo de la plataforma, la estatuilla del premio, el sello de Trakt).
+struct FanCard<Emblem: View>: View {
+    let name: String
+    var eyebrow: Text?
+    /// Los pósters del 1, 2 y 3 (en ese orden).
+    let posters: [String?]
+    let tint: Color
+    @ViewBuilder var emblem: () -> Emblem
+
+    var body: some View {
         ZStack(alignment: .topLeading) {
             RadialGradient(colors: [tint.opacity(DS.PlatformFan.tintTop), .clear], center: .bottom, startRadius: 0,
                            endRadius: DS.PlatformFan.height)
-            Text("TOP").recipe(.eyebrow, color: tint).padding(DS.Space.s3)
+            if let eyebrow { eyebrow.recipe(.eyebrow, color: tint).padding(DS.Space.s3) }
             fan.frame(maxWidth: .infinity)
-            VStack { Spacer(); logoView }.frame(maxWidth: .infinity)
+            VStack { Spacer(); emblem().padding(.bottom, DS.Space.s3) }.frame(maxWidth: .infinity)
         }
         .frame(width: DS.PlatformFan.width, height: DS.PlatformFan.height)
         .background(DS.surface)
         .clipShape(RoundedRectangle(cornerRadius: DS.PlatformFan.radius, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: DS.PlatformFan.radius, style: .continuous).stroke(tint.opacity(DS.PlatformFan.tintEdge)))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Rankings de \(name)"))
+        .accessibilityLabel(Text(verbatim: name))
     }
 
     /// El 2 a la izquierda, el 3 a la derecha y el 1 al frente.
@@ -40,11 +58,6 @@ struct PlatformFanCard: View {
     @ViewBuilder private func card(_ index: Int) -> some View {
         PosterView(url: index < posters.count ? posters[index] : nil, title: name).frame(width: DS.PlatformFan.poster)
             .shadow(color: DS.scrimStrong, radius: DS.Space.s2, y: DS.Space.s1)
-    }
-
-    private var logoView: some View {
-        PlatformLogoTile(url: logo, name: name, size: DS.PlatformFan.logo, radius: DS.PlatformFan.logoRadius, tint: tint, glow: DS.PlatformFan.glow)
-            .padding(.bottom, DS.Space.s3)
     }
 }
 

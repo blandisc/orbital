@@ -93,7 +93,8 @@ struct StillCard: View {
     let art: String?
     var data: [String] = []
     var progress: Double?
-    var width: CGFloat = DS.Poster.stillWidth
+    /// `nil`: el ancho de su columna (la cuadrícula de «Todo lo que sigues»).
+    var width: CGFloat? = DS.Poster.stillWidth
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
@@ -298,6 +299,8 @@ struct MosaicCaption<More: View>: View {
     var accent: ArtColors?
     /// Una serie abre su ficha («Ver la serie»).
     var isSeries = false
+    /// Tocar el logo o los datos abre la ficha (serie o película).
+    var open: (() -> Void)?
     let watch: () -> Void
     @Environment(\.colorScheme) private var scheme
     @ViewBuilder var more: () -> More
@@ -310,6 +313,11 @@ struct MosaicCaption<More: View>: View {
                 TitleLogo(url: scheme == .dark ? logo : nil, title: title).frame(maxHeight: DS.Size.captionLogo, alignment: .leading)
                 if !data.isEmpty { DataLine(parts: data) }
             }
+            // Un toque, no un arrastre: arrastrar desde el pie sigue moviendo el mosaico de atrás.
+            .onTapGesture { open?() }
+            .accessibilityAddTraits(open == nil ? [] : .isButton)
+            .accessibilityHint(open == nil ? Text(verbatim: "") : Text("Abre la ficha"))
+            .accessibilityIdentifier("mosaic-caption-open")
             Spacer(minLength: DS.Space.s2)
             Menu { more() } label: { Image(systemName: "ellipsis") }
                 .buttonStyle(.bordered).buttonBorderShape(.circle).controlSize(.large).tint(DS.text)

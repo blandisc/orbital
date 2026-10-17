@@ -20,6 +20,10 @@ public final class DecideModel: ObservableModel {
     private let pool: [Suggestion]
     private var details: [String: (genres: [String], minutes: Int?)] = [:]
     private var shown = Set<String>()
+    /// Las candidatas en el orden de esta vuelta (se barajan en cada «Decide por mí»: no sale siempre la misma).
+    private var order: [Suggestion] = []
+    /// Lo que tu historial de Trakt dice que ya viste (se pide una vez por hoja).
+    private var watched: Set<String>?
     static let skipKey = "decide-not-today"
 
     public init(_ services: Services, pool: [Suggestion]) {
@@ -48,6 +52,11 @@ public final class DecideModel: ObservableModel {
     public func decide() async {
         shown = []
         exhausted = false
+        order = pool.shuffled()
+        if watched == nil, let trakt = services.trakt, trakt.linked {
+            isLoading = true
+            watched = (try? await trakt.watchedIDs()) ?? []
+        }
         await next()
     }
 
@@ -57,7 +66,8 @@ public final class DecideModel: ObservableModel {
         defer { isLoading = false }
         let skipped = notToday()
         let wanted = Self.genres(for: mood)
-        let candidates = pool.filter { !shown.contains($0.imdb) && !skipped.contains($0.imdb) }
+        let seen = watched ?? []
+        let candidates = (order.isEmpty ? pool : order).filter { !shown.contains($0.imdb) && !skipped.contains($0.imdb) && !seen.contains($0.imdb) }
         var closest: Suggestion?   // del ánimo, aunque dure más: mejor eso que nada
         for chunk in stride(from: 0, to: candidates.count, by: 8).map({ Array(candidates[$0..<min($0 + 8, candidates.count)]) }) {
             await describe(chunk)

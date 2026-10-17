@@ -44,15 +44,22 @@ final class AppEnvironment: ObservableObject {
         var position: Double
         static func == (a: TVHandoff, b: TVHandoff) -> Bool { a.request.id == b.request.id && a.position == b.position }
     }
-    struct Banner: Equatable { var text: String; var tone: DSNotice.Tone }
+    struct Banner: Equatable { var text: String; var tone: DSNotice.Tone; var action: BannerAction? }
+    /// Lo que hace el botón de un aviso.
+    enum BannerAction: Equatable { case downloads }
+    /// Una pestaña que un aviso pide abrir («Ver» en «Descargando…»).
+    @Published var openTab: Int?
+    static let downloadsTab = 3
 
     /// Un aviso: lo que arma la app en español se traduce aquí, una sola vez (el aviso ya se pinta tal cual).
-    func notify(_ text: String, tone: DSNotice.Tone = .error) { banner = Banner(text: Strings.message(text, language: services.appSettings.uiLanguage), tone: tone) }
+    func notify(_ text: String, tone: DSNotice.Tone = .error, action: BannerAction? = nil) {
+        banner = Banner(text: Strings.message(text, language: services.appSettings.uiLanguage), tone: tone, action: action)
+    }
     /// Un texto armado en español por un modelo (error o aviso), listo para `Text`/`DSNotice` en el idioma de la app.
     func message(_ text: String) -> String { Strings.message(text, language: services.appSettings.uiLanguage) }
     /// Un aviso con datos: la clave («… %@») se traduce primero y luego se llena (`LocalizedStringKey` no encuentra un texto ya armado).
-    func notify(format key: String, _ args: CVarArg..., tone: DSNotice.Tone = .error) {
-        banner = Banner(text: String(format: Strings.tr(key, language: services.appSettings.uiLanguage), arguments: args), tone: tone)
+    func notify(format key: String, _ args: CVarArg..., tone: DSNotice.Tone = .error, action: BannerAction? = nil) {
+        banner = Banner(text: String(format: Strings.tr(key, language: services.appSettings.uiLanguage), arguments: args), tone: tone, action: action)
     }
 
     /// Un solo entorno para toda la app (las vistas lo comparten sin armar otro).
@@ -123,7 +130,7 @@ final class AppEnvironment: ObservableObject {
     /// El aviso (con háptica, por el tono del aviso) de lo que pasó con lo que mandó la TV.
     private func announce(_ event: InboxModel.Event) {
         switch event {
-        case .downloading(let name): notify(format: "Descargando %@ (desde la TV)", name, tone: .success)
+        case .downloading(let name): notify(format: "Descargando %@ (desde la TV)", name, tone: .success, action: .downloads)
         case .received(let name): notify(format: "Desde la TV: %@", name, tone: .info)
         case .downloadFailed(let name, let reason):
             switch reason {
@@ -299,7 +306,7 @@ final class AppEnvironment: ObservableObject {
     func download(_ s: Suggestion) async {
         let outcome = await services.queueDownload(kind: s.kind, metaID: s.imdb, videoID: videoID(for: s), title: s.title, originalTitle: s.title, subtitle: "", poster: s.poster)
         switch outcome {
-        case .queued: notify("Descargando. Lo verás en Descargas.", tone: .success)
+        case .queued: notify("Descargando. Lo verás en Descargas.", tone: .success, action: .downloads)
         case .noSources: notify("No hay fuentes de Real-Debrid para descargar.")
         case .notEnoughSpace(let text), .failed(let text): notify(text)
         case .already: notify("Ya está descargado.", tone: .info)
@@ -308,13 +315,15 @@ final class AppEnvironment: ObservableObject {
 
     /// «Ver» en la tarjeta «Desde la TV»: lo mismo, con lo que mandó la consola.
     func play(_ item: OrbitalRemote.InboxItem) async {
-        await play(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title, originalTitle: item.title, episodeLabel: services.tvEpisodeLabel(item.season, item.episode, item.episodeLabel), poster: item.poster)
+        await play(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title, originalTitle: item.title,
+                   episodeLabel: services.tvEpisodeLabel(item.season, item.episode, item.episodeLabel), poster: item.poster, at: item.position)
     }
 
-    private func play(kind: String, metaID: String, videoID: String?, title: String, originalTitle: String, episodeLabel: String, poster: String?) async {
+    private func play(kind: String, metaID: String, videoID: String?, title: String, originalTitle: String, episodeLabel: String, poster: String?, at position: Double? = nil) async {
         guard let videoID, let meta = try? await services.cinemeta.meta(kind: kind, id: metaID) else { return notify("No pude abrir ese título.") }
-        let request = PlayRequest(kind: kind, metaID: metaID, videoID: videoID, originalTitle: originalTitle, displayTitle: title,
+        var request = PlayRequest(kind: kind, metaID: metaID, videoID: videoID, originalTitle: originalTitle, displayTitle: title,
                                   episodeLabel: episodeLabel, poster: poster, meta: meta)
+        request.startPosition = position   // «Seguir en el iPhone»: el segundo exacto de la TV
         if services.appSettings.preferInfuse { await playExternal(request) } else { play(request) }
     }
 }

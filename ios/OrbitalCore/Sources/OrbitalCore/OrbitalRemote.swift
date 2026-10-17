@@ -157,10 +157,12 @@ public struct OrbitalRemote: Sendable {
         public var poster: String?
         public var action: Action
         public var at: Double
+        /// «Seguir en el iPhone»: el segundo exacto donde iba en la TV (nil con «Enviar al iPhone»).
+        public var position: Double?
 
         public init(id: String, kind: String, metaID: String, videoID: String? = nil, title: String, episodeLabel: String = "",
-                    poster: String? = nil, action: Action, at: Double = 0, season: Int? = nil, episode: Int? = nil) {
-            self.id = id; self.kind = kind; self.metaID = metaID; self.videoID = videoID; self.title = title
+                    poster: String? = nil, action: Action, at: Double = 0, season: Int? = nil, episode: Int? = nil, position: Double? = nil) {
+            self.id = id; self.kind = kind; self.metaID = metaID; self.videoID = videoID; self.title = title; self.position = position
             self.season = season; self.episode = episode
             self.episodeLabel = episodeLabel; self.poster = poster; self.action = action; self.at = at
         }
@@ -172,7 +174,8 @@ public struct OrbitalRemote: Sendable {
             return InboxItem(id: id, kind: json["kind"]?.string ?? "movie", metaID: metaID, videoID: json["video_id"]?.nonEmptyString,
                              title: json["title"]?.string ?? "", episodeLabel: json["episode_label"]?.string ?? "",
                              poster: json["poster"]?.nonEmptyString, action: action, at: at,
-                             season: json["season"]?.intValue, episode: json["episode"]?.intValue)
+                             season: json["season"]?.intValue, episode: json["episode"]?.intValue,
+                             position: json["position"]?.doubleValue.flatMap { $0 > 0 ? $0 : nil })
         }
 
         /// «The Office T2 · E5» (o solo el título, si es una película).

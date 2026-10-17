@@ -19,6 +19,16 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Cine mexicano": "Mexican cinema", "De Trakt": "From Trakt", "Globos de Oro": "Golden Globes", "Lo más popular de cada año": "The most popular of each year",
+    "Los ganadores, del más reciente": "The winners, newest first", "Mejor película": "Best Picture", "Mejor película dramática": "Best Motion Picture – Drama",
+    "Mejor serie de drama": "Outstanding Drama Series", "Palma de Oro": "Palme d'Or", "Plataformas": "Platforms", "Por año": "By year", "Premios": "Awards",
+    "Tus listas": "Your lists", "Óscar": "Oscar", "Ariel": "Ariel", "Emmy": "Emmy", "Cannes": "Cannes", "%lld títulos": "%lld titles",
+    "Complementos, TMDB, país": "Add-ons, TMDB, country", "Crear": "Create", "Desde tu Orbital": "From your Orbital", "Guardar en…": "Save to…",
+    "No pude cambiar tu lista de Trakt: %@": "I couldn't change your Trakt list: %@", "No pude crear la lista: %@": "I couldn't create the list: %@",
+    "Nombre": "Name", "Nueva lista": "New list", "Nueva lista…": "New list…", "Ponle nombre a la lista": "Give the list a name",
+    "Se crea en Trakt (privada) y este título entra en ella.": "It's created on Trakt (private) and this title goes in it.",
+    "Todo lo que sigues": "Everything you're watching", "Todo lo que sigues · %@": "Everything you're watching · %@", "Tus listas de Trakt": "Your Trakt lists",
+    "Avanzado": "Advanced", "Guardar": "Save", "Guardado": "Saved", "Ver": "View", "Pasó a tu Orbital": "Moved to your Orbital",
     "Cambiar lo que quiero": "Change what I want", "Conecta Trakt (en tu Orbital o en Ajustes) para ver tu año.": "Connect Trakt (on your Orbital or in Settings) to see your year.",
     "De lo último que viste": "From what you watched lately", "Decide por mí": "Decide for me", "Día por día": "Day by day", "En pareja": "As a couple",
     "Hoy no": "Not today", "Las dos": "Both", "Lo que más viste": "What you watched most", "Lo que viste": "What you watched",
@@ -285,7 +295,7 @@ TRANSLATIONS = {
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"Content-Type", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
           "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max",
-          "Icons/", "Avatars/", "AppIconPreview/day", "AppIconPreview/night", "AppIconNight"}  # el nombre de un ícono en el catálogo
+          "Icons/", "Avatars/", "Awards/", "AppIconPreview/day", "AppIconPreview/night", "AppIconNight"}  # el nombre de un ícono en el catálogo
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.
 CODE_KEYS = {k for k in TRANSLATIONS}
 

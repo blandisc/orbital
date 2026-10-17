@@ -52,7 +52,6 @@ struct HomeView: View {
                 } else if !model.isLoading {
                     DSNotice(text: "Aquí aparece lo que vas viendo, en el iPhone y en Orbital.").padding(.horizontal, DS.Space.gutter)
                 }
-                if model.continueWatching.count > Self.heroCount { alsoHad(model) }
                 if !model.myList.isEmpty {
                     Rail(title: "Mi lista", count: model.myList.count, route: HomeListRoute(id: "mylist")) {
                         ForEach(model.myList) { item in
@@ -101,7 +100,11 @@ struct HomeView: View {
     }
 
     /// «Mi lista» o «Tu watchlist» completas, en cuadrícula (desde el chevron de su encabezado).
-    private func homeList(_ route: HomeListRoute) -> some View {
+    @ViewBuilder private func homeList(_ route: HomeListRoute) -> some View {
+        if route.id == "continue" { allContinue(home.model) } else { titleGrid(route) }
+    }
+
+    private func titleGrid(_ route: HomeListRoute) -> some View {
         let routes = route.id == "watchlist" ? home.model.traktPending.map(\.route) : home.model.myList.map(self.route)
         return ScrollView {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
@@ -158,8 +161,8 @@ struct HomeView: View {
 
     private static var hasTabAccessory: Bool { if #available(iOS 26.1, *) { true } else { false } }
 
-    /// Cuántos de «Seguir viendo» van en el carrusel del destacado; el resto, en «También tenías».
-    private static let heroCount = 3
+    /// Cuántos de «Seguir viendo» van en el carrusel (los últimos); los demás, en «Todo lo que sigues» (el botón de abajo).
+    private static let heroCount = 5
 
     /// El que está al frente del carrusel (el fondo toma su color).
     private var currentHero: HomeItem? {
@@ -195,6 +198,14 @@ struct HomeView: View {
             .onAppear { if heroSlot == nil || (heroSlot ?? 0) >= copies * items.count { heroSlot = middle } }
             .onChange(of: items.map(\.id)) { heroSlot = middle }   // cambió lo que sigues viendo: de vuelta al primero
             PageDots(count: items.count, index: items.isEmpty ? 0 : (heroSlot ?? middle) % items.count)
+            if model.continueWatching.count > Self.heroCount {
+                NavigationLink(value: HomeListRoute(id: "continue")) {
+                    Label { Text("Todo lo que sigues · \(model.continueWatching.count)") } icon: { Image(systemName: "square.grid.2x2") }
+                        .font(DS.TextRecipe.footnote.font)
+                }
+                .buttonStyle(.glass).controlSize(.small)
+                .accessibilityIdentifier("home-all-continue")
+            }
         }
         .task(id: heroSlot) { await tint.load(currentHero.flatMap { $0.background ?? $0.poster }) }   // se cancela si pasas a otro
         .sensoryFeedback(.selection, trigger: heroSlot)
@@ -276,18 +287,24 @@ struct HomeView: View {
         return dayName(a.day, locale: locale)
     }
 
-    /// «También tenías»: lo demás de «Seguir viendo», en piezas anchas con su avance.
-    private func alsoHad(_ model: HomeModel) -> some View {
-        Rail(title: "También tenías", count: model.continueWatching.count - Self.heroCount) {
-            ForEach(model.continueWatching.dropFirst(Self.heroCount)) { item in
-                NavigationLink(value: route(item)) {
-                    StillCard(title: item.title, art: item.background ?? item.poster,
-                              data: progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes).components(separatedBy: " · "), progress: item.progress)
+    /// «Todo lo que sigues»: todo «Seguir viendo» (el carrusel solo trae los últimos), en piezas anchas con su avance.
+    private func allContinue(_ model: HomeModel) -> some View {
+        ScrollView {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible())], spacing: DS.Space.s4) {
+                ForEach(model.continueWatching) { item in
+                    NavigationLink(value: route(item)) {
+                        StillCard(title: item.title, art: item.background ?? item.poster,
+                                  data: progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes).components(separatedBy: " · "),
+                                  progress: item.progress, width: nil)
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu { Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { Task { await model.dismiss(item) } } }
                 }
-                .buttonStyle(.plain)
-                .contextMenu { Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { Task { await model.dismiss(item) } } }
             }
+            .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)
         }
+        .background(Backdrop(tint: tint.colors))
+        .navigationTitle(Text("Todo lo que sigues")).navigationBarTitleDisplayMode(.inline)
     }
 
     private func continueButton(_ item: HomeItem) -> some View {
