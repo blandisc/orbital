@@ -849,7 +849,7 @@ class OrbitalPlayer(PlayerScreen):
         meta = segment.meta
         if meta.get("synthetic"):  # un canal de Orbital, para el iPhone, es tele: el canal y lo que va
             return {"kind": "tv", "live": True, "channel": current.title, "title": meta.get("detail") or current.title,
-                    "number": None, "category": "Canales de Orbital", "paused": bool(self.mpv.get("pause")),
+                    "number": None, "category": "Orbital 24/7", "paused": bool(self.mpv.get("pause")),
                     "muted": self._muted()}
         if segment.live:
             return {"kind": "tv", "live": True, "channel": meta.get("title") or current.title,

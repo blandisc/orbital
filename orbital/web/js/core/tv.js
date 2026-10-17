@@ -109,6 +109,6 @@ const CATEGORY_ICONS = {
   Deportes: "catSports", "Películas": "movie", Series: "series", Infantil: "catKids", Familia: "catKids", "Animación": "catAnimation",
   Comedia: "catAnimation", "Música": "catMusic", Cultura: "catCulture", "Educación": "catEducation", Documentales: "catDocumentary",
   Ciencia: "catDocumentary", Viajes: "catDocumentary", Legislativo: "catLegislative", "Público": "catLegislative",
-  "Religión": "catReligion", Otros: "catOther", "Canales de Orbital": "spark",
+  "Religión": "catReligion", Otros: "catOther", "Orbital 24/7": "spark",
 };
 export const categoryIcon = (title) => CATEGORY_ICONS[title] ?? "tv";

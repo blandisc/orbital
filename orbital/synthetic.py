@@ -1,4 +1,4 @@
-"""Canales de Orbital: una serie al aire las 24 horas, como un canal de tele (TV en vivo › «Canales de Orbital»).
+"""Canales de Orbital: una serie al aire las 24 horas, como un canal de tele (TV en vivo › «Orbital 24/7»).
 
 Ningún servidor transmite nada: el canal es un horario. Los episodios de las temporadas elegidas se revuelven una vez por
 vuelta (siempre igual: el orden sale del número de la vuelta) y cada uno ocupa un espacio fijo desde una fecha de
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-CATEGORY = "Canales de Orbital"
+CATEGORY = "Orbital 24/7"
 EPOCH = 1_767_225_600  # 1 ene 2026: desde aquí corre el horario (todas las teles ven el mismo episodio a la misma hora)
 MAX_SOURCES = 3  # fuentes por episodio antes de pasar al siguiente
 MAX_SKIPS = 5  # episodios seguidos sin doblaje antes de rendirse (algo más pasa: Internet, los complementos)

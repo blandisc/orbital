@@ -136,7 +136,7 @@ def test_live_tv_categories_and_tuning_a_channel(page, server):
     assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
     page.keyboard.press("PageDown")  # la categoría siguiente (AvPág / RT); Q y E (LB RB) son las secciones
     page.wait_for_timeout(400)
-    assert page.locator(".tv__cat--on").inner_text().startswith("Canales de Orbital")
+    assert page.locator(".tv__cat--on").inner_text().startswith("Orbital 24/7")
     assert page.locator(".tv__tile").count() == 1
     page.keyboard.press("PageDown")
     page.wait_for_timeout(400)
