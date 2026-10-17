@@ -118,4 +118,11 @@ enum Strings {
 
     /// «Película» / «Serie» en el idioma de la app.
     static func kind(_ kind: String, language: String) -> String { tr(kind == "movie" ? "Película" : "Serie", language: language) }
+
+    /// «45 min», «1 h», «1 h 12 min» (lo que llevas jugando, cuánto le queda a la batería).
+    static func duration(_ minutes: Int) -> String {
+        let (h, m) = Vocabulary.hoursAndMinutes(max(0, minutes))
+        if h == 0 { return "\(m) min" }
+        return m == 0 ? "\(h) h" : "\(h) h \(m) min"
+    }
 }

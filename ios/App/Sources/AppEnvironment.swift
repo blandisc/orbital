@@ -58,6 +58,11 @@ final class AppEnvironment: ObservableObject {
     var openTab: Int? { get { ui.openTab } set { ui.openTab = newValue } }
     static let downloadsTab = 3
 
+    /// Las imágenes de tu Orbital (logos de canales, arte de juegos) se piden con su token.
+    private func shareConsoleWithImages() {
+        ImagePipeline.shared.setConsole(services.orbital.base, token: services.secrets.get(SecretKey.orbitalToken))
+    }
+
     /// Un aviso: lo que arma la app en español se traduce aquí, una sola vez (el aviso ya se pinta tal cual).
     func notify(_ text: String, tone: DSNotice.Tone = .error, action: BannerAction? = nil) {
         banner = Banner(text: Strings.message(text, language: services.appSettings.uiLanguage), tone: tone, action: action)
@@ -97,7 +102,8 @@ final class AppEnvironment: ObservableObject {
         }
         #endif
         // Cambiar el idioma (o una clave) vuelve a pintar toda la app.
-        servicesSubscription = services.onChange { [weak self] in self?.objectWillChange.send(); self?.applyAppearance() }
+        servicesSubscription = services.onChange { [weak self] in self?.objectWillChange.send(); self?.applyAppearance(); self?.shareConsoleWithImages() }
+        shareConsoleWithImages()
         session = SessionModel(services)
         inbox = InboxModel(services)
         tvNow = TVNowModel(services)

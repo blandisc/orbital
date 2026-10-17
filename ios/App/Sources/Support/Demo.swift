@@ -19,6 +19,8 @@ enum Demo {
     static var noTV: Bool { ProcessInfo.processInfo.arguments.contains("-demo-no-tv") }
     /// `-demo-tv-now`: la tarjeta «Viendo en la TV» con datos de mentira (para verla en el simulador).
     static var tvNow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tv-now") }
+    /// `-demo-game`: la consola de mentira tiene un juego abierto (modo acompañante).
+    static var game: Bool { ProcessInfo.processInfo.arguments.contains("-demo-game") }
 
     /// `-demo-inbox download|open`: tu Orbital de mentira dejó algo para el iPhone («Descargar en el iPhone» o «Enviar al iPhone»):
     /// con `download` se ve la descarga de prueba y el aviso; con `open`, la tarjeta «Desde la TV» en Inicio.
@@ -144,7 +146,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             return HTTPResponse(status: url.path == "/users/settings" ? 200 : 404, data: user.serialized())
         }
         if url.host == "api.themoviedb.org", Demo.tmdb { return tmdbDemo(url) }
-        if url.host == "tv.demo.invalid", Demo.tvNow || Demo.inbox != nil, url.path.hasPrefix("/api/companion/") {
+        if url.host == "tv.demo.invalid", Demo.tvNow || Demo.inbox != nil || Demo.game, url.path.hasPrefix("/api/companion/") {
             return lock.withLock { nowPlaying(path: url.path, body: request.body.flatMap(JSON.parse)) }
         }
         if url.host == "tv.demo.invalid" {
@@ -291,6 +293,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     private static let nowPlayingDuration = 1_320.0
 
     /// `/api/companion/now` y `/api/companion/player`: una serie de mentira, viendo su episodio 5 de la temporada 2.
+    private var demoGamePaused = false, demoGameOpen = true, demoPowerMode = "balanced"
+
     private func nowPlaying(path: String, body: JSON?) -> HTTPResponse {
         let now = Date()
         if !nowPlayingPaused { nowPlayingPosition = min(Self.nowPlayingDuration, nowPlayingPosition + now.timeIntervalSince(nowPlayingTicked)) }
@@ -323,6 +327,27 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                               "episode_label": .string(open ? "" : "T2 · E5"),
                               "poster": .string("https://images.metahub.space/poster/medium/\(open ? "tt1160419" : "tt0386676")/img"),
                               "action": .string(open ? "open" : "download"), "at": .double(Date().timeIntervalSince1970)])]
+        }
+        // El modo acompañante de mentira: Elden Ring abierto, la consola con su batería, controles y memoria.
+        if Demo.game {
+            if path == "/api/companion/game", let action = body?["action"]?.string {
+                switch action { case "home": demoGamePaused = true; case "resume": demoGamePaused = false; case "close": demoGameOpen = false; default: break }
+            }
+            if path == "/api/companion/console" {
+                if let mode = body?["power_mode"]?.string { demoPowerMode = mode }
+                let state: JSON = ["battery": ["percent": 58, "plugged": false, "minutes_left": 130], "power_mode": .string(demoPowerMode), "brightness": 70,
+                                   "wifi": ["ssid": "Casa 5G", "signal": 82],
+                                   "controllers": [["kind": "legion", "battery": "full"], ["kind": "xbox", "battery": "low"]],
+                                   "memory": ["free_gb": .double(6.1), "apps": [["name": "Chrome", "gb": .double(2.3), "closable": true], ["name": "Discord", "gb": .double(0.8), "closable": true]]]]
+                return HTTPResponse(status: 200, data: state.serialized())
+            }
+            let game: JSON = demoGameOpen ? .object(["id": "steam:1245620", "title": "Elden Ring", "system": "steam",
+                                                     "art": ["cover": "https://cdn.cloudflare.steamstatic.com/steam/apps/1245620/library_600x900.jpg",
+                                                             "hero": "https://cdn.cloudflare.steamstatic.com/steam/apps/1245620/library_hero.jpg",
+                                                             "logo": "https://cdn.cloudflare.steamstatic.com/steam/apps/1245620/logo.png"],
+                                                     "started": .double(Date().timeIntervalSince1970 - 72 * 60), "paused": .bool(demoGamePaused), "closes_at": .null]) : .null
+            if path == "/api/companion/game" { return HTTPResponse(status: 200, data: JSON.object(["game": game]).serialized()) }
+            return HTTPResponse(status: 200, data: JSON.object(["playing": .null, "inbox": .array(inbox), "game": game]).serialized())
         }
         guard Demo.tvNow else {
             return HTTPResponse(status: 200, data: JSON.object(["playing": .null, "inbox": .array(inbox)]).serialized())

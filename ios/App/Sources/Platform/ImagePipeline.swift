@@ -120,9 +120,21 @@ final class ImagePipeline: @unchecked Sendable {
         return Self.downsample(data, maxPixel: pixels)
     }
 
+    /// Tu Orbital (dirección y token): sus imágenes (logos de canales, arte de juegos) piden el token como el resto de su
+    /// puerto público; las demás (metahub, TMDB) van sin nada.
+    private var console: (host: String, port: Int?, token: String)?
+    func setConsole(_ base: URL?, token: String?) {
+        lock.withLock {
+            if let base, let host = base.host, let token, !token.isEmpty { console = (host, base.port, token) } else { console = nil }
+        }
+    }
+
     /// Los bytes de una URL: del disco sin hacer fila; de la red con una sola descarga por URL.
     private func data(_ url: URL) async -> Data? {
-        let request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad)
+        var request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad)
+        if let console = lock.withLock({ console }), url.host == console.host, url.port == console.port {
+            request.setValue("Bearer \(console.token)", forHTTPHeaderField: "Authorization")
+        }
         // Solo una respuesta buena con contenido: el caché también guarda las redirecciones (las miniaturas de episodio de
         // metahub mandan un 301 a TMDB) y ese 301 vacío no es la imagen.
         if let stored = cache.cachedResponse(for: request), !stored.data.isEmpty,

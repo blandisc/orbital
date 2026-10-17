@@ -284,6 +284,16 @@ enum DS {
         static let ratingSteps: [Double] = [0, 6, 7, 8]
     }
 
+    /// Modo acompañante: la tarjeta del juego, las del carrusel, la batería baja (%), las líneas de la nota y los tiempos
+    /// del temporizador (minutos).
+    enum Companion {
+        static let dot: CGFloat = 8, cardHeight: CGFloat = 300, panelWidth: CGFloat = 300, panelHeight: CGFloat = 250
+        static let lowBattery = 20, noteLines = 5
+        static let timerSteps = [15, 30, 60, 90]
+        /// Cuánto antes del cierre automático se avisa (segundos).
+        static let closeWarning: TimeInterval = 600
+    }
+
     enum Collections {
         static let emblem: CGFloat = 70, glow: CGFloat = 16
         /// El sello de dónde viene una lista (Trakt, Stremio, tu Orbital).

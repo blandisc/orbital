@@ -117,6 +117,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `YearCard` | Un año con cuatro de sus películas y el número grande | Para ti › Por año |
 | `SortableGrid` | Una lista abierta con ordenar y filtrar (series o películas, género, ocultar lo visto) arriba a la derecha | Listas, premios, años |
 | `StudioEmblem` | El nombre de un estudio al frente de su tarjeta | Para ti › Estudios |
+| `GameNowCard`, `CompanionPanel`, `ConsoleStatePanel`, `GuidePanel`, `NotesPanel`, `TimerPanel`, `ControlsPanel` | Modo acompañante: el juego en la consola (volver, inicio, cerrar) y su carrusel (la consola, guía, notas, temporizador, controles de emulador) | Inicio, mientras juegas |
 | `AppMark` | El logotipo como en la TV y la computadora (`OrbitalWordmark`: planeta, «orbital» y su luna) en lugar del saludo | Inicio |
 | `CenteredCarousel`, `reflected()` | Tira centrada (la del medio al frente, las de los lados más chicas) y el reflejo que da peso | Para ti › Plataformas, Premios, Estudios, Por año |
 | `ConfirmIconButton` | Botón de ícono que se abre para confirmar («¿Ver en la TV?») | Inicio › carrusel |

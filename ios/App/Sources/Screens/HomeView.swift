@@ -31,6 +31,11 @@ struct HomeView: View {
                 if model.offline { DSNotice(text: "Sin conexión: se ve lo último que guardé.", tone: .warn).padding(.horizontal, DS.Space.gutter) }
                 // Con iOS 26.1 lo que suena en la TV vive en el accesorio de la barra de pestañas (y su control remoto en una hoja);
                 // antes, en esta tarjeta.
+                // Modo acompañante: el juego que corre en la consola, con su carrusel (la consola, guía, notas, temporizador).
+                if let game = tvNow.model.game {
+                    GameCompanionView(tvNow: tvNow, game: game)
+                        .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
+                }
                 if !Self.hasTabAccessory, let now = tvNow.model.now {
                     NowPlayingCard(now: now, fetchedAt: tvNow.model.fetchedAt, busy: tvNow.model.busy,
                                   onAction: { action, delta in Task { await tvNow.model.control(action, delta: delta) } },
@@ -70,6 +75,7 @@ struct HomeView: View {
             .padding(.top, DS.Space.s3)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
             .padding(.bottom, DS.Space.s14)     // la última fila respira: la barra de pestañas no la tapa
             .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
+            .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.game?.id)
             .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
         }
         .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > DS.Size.titleCollapse } action: { _, down in scrolledDown = down }

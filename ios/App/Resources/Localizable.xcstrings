@@ -221,6 +221,17 @@
         }
       }
     },
+    "A la consola le queda %lld %% de batería.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The console has %lld %% battery left."
+          }
+        }
+      }
+    },
     "A · desliza para moverte": {
       "extractionState": "manual",
       "localizations": {
@@ -382,6 +393,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Update your Orbital to use the full remote."
+          }
+        }
+      }
+    },
+    "Actualiza tu Orbital para ver la batería, los controles y la memoria.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update your Orbital to see its battery, controllers and memory."
           }
         }
       }
@@ -738,6 +760,17 @@
         }
       }
     },
+    "Batería baja en la consola": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Console battery low"
+          }
+        }
+      }
+    },
     "Borrar": {
       "extractionState": "manual",
       "localizations": {
@@ -833,6 +866,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search"
+          }
+        }
+      }
+    },
+    "Buscar en la web": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search the web"
           }
         }
       }
@@ -1020,6 +1064,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Close"
+          }
+        }
+      }
+    },
+    "Cerrar %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close %@"
+          }
+        }
+      }
+    },
+    "Cerrar el juego": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close the game"
           }
         }
       }
@@ -2168,6 +2234,17 @@
         }
       }
     },
+    "Dónde te quedaste, qué te falta…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where you left off, what's missing…"
+          }
+        }
+      }
+    },
     "Dónde verlo": {
       "extractionState": "manual",
       "localizations": {
@@ -2241,6 +2318,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The iPhone has to be on the same network as the console (or on Tailscale), with Orbital open on the TV."
+          }
+        }
+      }
+    },
+    "El juego se va a cerrar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The game is about to close"
           }
         }
       }
@@ -2450,6 +2538,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Paused"
+          }
+        }
+      }
+    },
+    "En pausa en la consola": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused on the console"
           }
         }
       }
@@ -2938,6 +3037,39 @@
         }
       }
     },
+    "Guía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guide"
+          }
+        }
+      }
+    },
+    "Guías de la comunidad de Steam": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Steam community guides"
+          }
+        }
+      }
+    },
+    "Guías en YouTube": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guides on YouTube"
+          }
+        }
+      }
+    },
     "Género": {
       "extractionState": "manual",
       "localizations": {
@@ -3169,6 +3301,28 @@
         }
       }
     },
+    "Ir al inicio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go home"
+          }
+        }
+      }
+    },
+    "Jugando en la consola": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playing on the console"
+          }
+        }
+      }
+    },
     "JustWatch · hoy": {
       "extractionState": "manual",
       "localizations": {
@@ -3180,6 +3334,17 @@
         }
       }
     },
+    "La consola": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The console"
+          }
+        }
+      }
+    },
     "La descarga falló (código %@).": {
       "extractionState": "manual",
       "localizations": {
@@ -3187,6 +3352,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The download failed (code %@)."
+          }
+        }
+      }
+    },
+    "La distribución habitual del emulador.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The emulator's usual layout."
           }
         }
       }
@@ -3286,6 +3462,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The controller buttons, said on their own."
+          }
+        }
+      }
+    },
+    "Le queda %lld %%: conéctala antes de que se apague.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld %% left: plug it in before it shuts down."
           }
         }
       }
@@ -3396,6 +3583,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Done."
+          }
+        }
+      }
+    },
+    "Llevas %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ in"
+          }
+        }
+      }
+    },
+    "Llevas %@ en %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You've played %@ of %@."
           }
         }
       }
@@ -4731,6 +4940,17 @@
         }
       }
     },
+    "Pantalla táctil": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch screen"
+          }
+        }
+      }
+    },
     "Para conectar Trakt hace falta una aplicación de la API de Trakt (trakt.tv/oauth/applications). Pega aquí su identificador.": {
       "extractionState": "manual",
       "localizations": {
@@ -4738,6 +4958,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To connect Trakt you need a Trakt API application (trakt.tv/oauth/applications). Paste its identifier here."
+          }
+        }
+      }
+    },
+    "Para el jefe que te atoró o el objeto que no encuentras.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For the boss you're stuck on or the item you can't find."
           }
         }
       }
@@ -5545,6 +5776,17 @@
         }
       }
     },
+    "Se cumplió tu tiempo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time's up"
+          }
+        }
+      }
+    },
     "Secreto (si tu aplicación lo tiene)": {
       "extractionState": "manual",
       "localizations": {
@@ -5941,6 +6183,17 @@
         }
       }
     },
+    "Stick derecho": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right stick"
+          }
+        }
+      }
+    },
     "Stremio al día": {
       "extractionState": "manual",
       "localizations": {
@@ -6124,6 +6377,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Slow to start"
+          }
+        }
+      }
+    },
+    "Te aviso al terminar; no cierro nada.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'll tell you when it's over; I won't close anything."
           }
         }
       }
@@ -6997,6 +7261,17 @@
         }
       }
     },
+    "Volver al juego": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to the game"
+          }
+        }
+      }
+    },
     "Voz": {
       "extractionState": "manual",
       "localizations": {
@@ -7184,6 +7459,17 @@
         }
       }
     },
+    "¿Cerrar el juego?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close the game?"
+          }
+        }
+      }
+    },
     "¿Cerrar sesión de Stremio?": {
       "extractionState": "manual",
       "localizations": {
@@ -7191,6 +7477,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sign out of Stremio?"
+          }
+        }
+      }
+    },
+    "¿Cuánto quieres jugar?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How long do you want to play?"
           }
         }
       }

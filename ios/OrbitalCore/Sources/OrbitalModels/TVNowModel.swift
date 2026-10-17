@@ -9,6 +9,11 @@ import OrbitalCore
 @MainActor
 public final class TVNowModel: ObservableModel {
     public private(set) var now: OrbitalRemote.NowPlaying? { didSet { if oldValue != now { changed() } } }
+    /// El juego que corre en la consola (modo acompañante) y cómo está la consola mientras tanto.
+    public private(set) var game: OrbitalRemote.Game? { didSet { if oldValue != game { changed() } } }
+    public private(set) var console: OrbitalRemote.ConsoleState? { didSet { if oldValue != console { changed() } } }
+    private var consoleFetchedAt: Date?
+    static let consoleSeconds: TimeInterval = 30
     /// Cuándo llegó `now` (para interpolar el avance entre sondeos, sin saltar cada pocos segundos).
     public private(set) var fetchedAt = Date()
     /// El token de tu Orbital ya no sirve: Ajustes lo enseña (la tarjeta, mientras tanto, se oculta).
@@ -85,6 +90,7 @@ public final class TVNowModel: ObservableModel {
         do {
             let snapshot = try await services.orbital.snapshot()
             now = snapshot.playing
+            game = snapshot.game
             textField = snapshot.textField
             legend = snapshot.legend
             section = snapshot.section
@@ -93,14 +99,19 @@ public final class TVNowModel: ObservableModel {
             fetchedAt = Date()
             tokenProblem = false
             if !snapshot.inbox.isEmpty { await inbox?.process(snapshot.inbox) }
+            // Mientras hay juego, cómo está la consola (cada medio minuto; sin juego no se pide).
+            if game != nil {
+                if consoleFetchedAt.map({ Date().timeIntervalSince($0) > Self.consoleSeconds }) ?? true { await refreshConsole() }
+            } else { console = nil; consoleFetchedAt = nil }
         } catch OrbitalRemote.Failure.badToken {
             tokenProblem = true
             now = nil
+            game = nil
         } catch {
             // Sin red, la consola apagada o una versión vieja: la tarjeta se va sin ruido (se reintenta solo), pero no por un
             // solo tropiezo (un sondeo lento que vence a los 12 s tampoco cuenta doble).
             failures += 1
-            if failures >= 2 { now = nil }
+            if failures >= 2 { now = nil; game = nil }
         }
     }
 
@@ -159,6 +170,30 @@ public final class TVNowModel: ObservableModel {
     public func toggleMute() async {
         if let v = volume { volume = .init(level: v.level, muted: !v.muted) }
         await control("mute")
+    }
+
+    /// Cómo está la consola, ya (al abrir la tarjeta o tras cambiar algo).
+    public func refreshConsole() async {
+        consoleFetchedAt = Date()
+        if let state = try? await services.orbital.console() { console = state }
+    }
+
+    /// Volver al juego, ir al Inicio de Orbital (lo congela) o cerrarlo.
+    public func game(_ action: String) async {
+        guard !busy else { return }
+        busy = true
+        defer { busy = false }
+        do {
+            game = try await services.orbital.game(action: action)
+            tokenProblem = false
+        } catch OrbitalRemote.Failure.badToken { tokenProblem = true } catch {}
+    }
+
+    /// El modo de energía de la consola, o cerrar una app que gasta memoria.
+    public func setConsole(powerMode: String? = nil, closeApp: String? = nil) async {
+        if let powerMode, var c = console { c.powerMode = powerMode; console = c }   // al momento; el siguiente vistazo trae el de verdad
+        try? await services.orbital.console(powerMode: powerMode, closeApp: closeApp)
+        await refreshConsole()
     }
 
     deinit { pollTask?.cancel() }

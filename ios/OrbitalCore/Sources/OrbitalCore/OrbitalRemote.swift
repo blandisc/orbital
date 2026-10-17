@@ -193,7 +193,70 @@ public struct OrbitalRemote: Sendable {
         }
     }
 
+    /// El juego que corre en la consola (modo acompañante). nil si no hay juego o la consola es de antes.
+    public struct Game: Sendable, Equatable {
+        public var id: String, title: String
+        /// steam | gamecube | switch | ps2 | … | geforcenow
+        public var system: String
+        public var runner: String?
+        public var cover: String?, hero: String?, logo: String?
+        public var started: Date?
+        /// Congelado al ir al Inicio de Orbital.
+        public var paused: Bool
+        /// Cuándo se cerraría solo por inactividad (para avisar antes).
+        public var closesAt: Date?
+
+        public init(id: String, title: String, system: String, runner: String? = nil, cover: String? = nil, hero: String? = nil, logo: String? = nil,
+                    started: Date? = nil, paused: Bool = false, closesAt: Date? = nil) {
+            self.id = id; self.title = title; self.system = system; self.runner = runner; self.cover = cover; self.hero = hero; self.logo = logo
+            self.started = started; self.paused = paused; self.closesAt = closesAt
+        }
+
+        static func parse(_ json: JSON?) -> Game? {
+            guard let json, !json.isNull, let id = json["id"]?.nonEmptyString, let title = json["title"]?.nonEmptyString else { return nil }
+            func date(_ key: String) -> Date? { json[key]?.doubleValue.map { Date(timeIntervalSince1970: $0) } }
+            return Game(id: id, title: title, system: json["system"]?.string ?? "", runner: json["runner"]?.nonEmptyString,
+                        cover: json["art"]?["cover"]?.nonEmptyString, hero: json["art"]?["hero"]?.nonEmptyString, logo: json["art"]?["logo"]?.nonEmptyString,
+                        started: date("started"), paused: json["paused"]?.bool ?? false, closesAt: date("closes_at"))
+        }
+    }
+
+    /// Cómo está la consola mientras juegas: batería, controles, Wi‑Fi, memoria y modo de energía.
+    public struct ConsoleState: Sendable, Equatable {
+        public struct Controller: Sendable, Equatable { public var kind: String, battery: String }
+        public struct App: Sendable, Equatable { public var name: String, gb: Double, closable: Bool }
+        public var batteryPercent: Int?, plugged: Bool, minutesLeft: Int?
+        public var powerMode: String?, brightness: Int?
+        public var wifiSSID: String?, wifiSignal: Int?
+        public var controllers: [Controller]
+        public var freeGB: Double?
+        public var apps: [App]
+
+        public init(batteryPercent: Int? = nil, plugged: Bool = false, minutesLeft: Int? = nil, powerMode: String? = nil, brightness: Int? = nil,
+                    wifiSSID: String? = nil, wifiSignal: Int? = nil, controllers: [Controller] = [], freeGB: Double? = nil, apps: [App] = []) {
+            self.batteryPercent = batteryPercent; self.plugged = plugged; self.minutesLeft = minutesLeft; self.powerMode = powerMode
+            self.brightness = brightness; self.wifiSSID = wifiSSID; self.wifiSignal = wifiSignal; self.controllers = controllers
+            self.freeGB = freeGB; self.apps = apps
+        }
+
+        static func parse(_ json: JSON?) -> ConsoleState? {
+            guard let json, json.object != nil else { return nil }
+            let battery = json["battery"]
+            return ConsoleState(
+                batteryPercent: battery?["percent"]?.intValue, plugged: battery?["plugged"]?.bool ?? false, minutesLeft: battery?["minutes_left"]?.intValue,
+                powerMode: json["power_mode"]?.nonEmptyString, brightness: json["brightness"]?.intValue,
+                wifiSSID: json["wifi"]?["ssid"]?.nonEmptyString, wifiSignal: json["wifi"]?["signal"]?.intValue,
+                controllers: (json["controllers"]?.array ?? []).compactMap { c in c["kind"]?.string.map { Controller(kind: $0, battery: c["battery"]?.string ?? "") } },
+                freeGB: json["memory"]?["free_gb"]?.doubleValue,
+                apps: (json["memory"]?["apps"]?.array ?? []).compactMap { a in
+                    a["name"]?.nonEmptyString.map { App(name: $0, gb: a["gb"]?.doubleValue ?? 0, closable: a["closable"]?.bool ?? false) }
+                })
+        }
+    }
+
     public struct Snapshot: Sendable, Equatable {
+        /// El juego que corre (modo acompañante), si la consola lo dice.
+        public var game: Game?
         /// El volumen de la TV, si la consola lo dice (versiones nuevas).
         public var volume: Volume?
         public var playing: NowPlaying?
@@ -220,7 +283,39 @@ public struct OrbitalRemote: Sendable {
                                 legend: (json?["ui"]?["legend"]?.object ?? [:]).compactMapValues { $0.nonEmptyString },
                                 section: json?["ui"]?["section"]?.nonEmptyString)
         snapshot.volume = Volume.parse(json?["ui"]?["volume"] ?? json?["volume"])
+        snapshot.game = Game.parse(json?["game"]).map(absolute)
         return snapshot
+    }
+
+    /// Cómo está la consola (modo acompañante). nil: la consola es de antes.
+    public func console() async throws -> ConsoleState? {
+        do { return ConsoleState.parse(try await send("api/companion/console", method: "GET", body: nil)) }
+        catch Failure.refused { return nil }
+    }
+
+    /// Volver al juego, ir al Inicio de Orbital (lo congela) o cerrarlo. Devuelve el juego como quedó.
+    @discardableResult
+    public func game(action: String) async throws -> Game? {
+        let json = try await send("api/companion/game", method: "POST", body: JSON.object(["action": .string(action)]).serialized())
+        return Game.parse(json?["game"] ?? json).map(absolute)
+    }
+
+    /// El modo de energía (efficiency · balanced · performance) o cerrar una app que gasta memoria (nunca el juego).
+    public func console(powerMode: String? = nil, closeApp: String? = nil) async throws {
+        var body: [String: JSON] = [:]
+        if let powerMode { body["power_mode"] = .string(powerMode) }
+        if let closeApp { body["close_app"] = .string(closeApp) }
+        _ = try await send("api/companion/console", method: "POST", body: JSON.object(body).serialized())
+    }
+
+    private func absolute(_ game: Game) -> Game {
+        var g = game
+        func fix(_ s: String?) -> String? {
+            guard let s, s.hasPrefix("/"), let base else { return s }
+            return URL(string: s, relativeTo: base)?.absoluteString ?? s
+        }
+        g.cover = fix(g.cover); g.hero = fix(g.hero); g.logo = fix(g.logo)
+        return g
     }
 
     /// Qué se ve ahora en la TV (para la tarjeta del iPhone). nil si no hay nada abierto.

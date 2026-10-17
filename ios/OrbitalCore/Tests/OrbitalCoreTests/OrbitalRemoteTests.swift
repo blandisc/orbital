@@ -115,6 +115,34 @@ final class OrbitalRemoteTests: XCTestCase {
         XCTAssertTrue(old.inbox.isEmpty)
     }
 
+    func testNowBringsTheRunningGameAndTheConsoleState() async throws {
+        let http = FakeHTTP()
+        http.json["https://tv.example/api/companion/now"] = .object(["playing": .null, "inbox": .array([]), "game": .object([
+            "id": "steam:1245620", "title": "Elden Ring", "system": "steam", "art": .object(["cover": "/api/art/steam:1245620?kind=cover", "hero": "https://cdn/hero.jpg"]),
+            "started": .int(1_760_000_000), "paused": true, "closes_at": .null])])
+        http.json["https://tv.example/api/companion/console"] = .object([
+            "battery": .object(["percent": 58, "plugged": false, "minutes_left": 130]), "power_mode": "balanced",
+            "wifi": .object(["ssid": "Casa", "signal": 82]), "controllers": .array([.object(["kind": "legion", "battery": "full"])]),
+            "memory": .object(["free_gb": .double(6.1), "apps": .array([.object(["name": "Chrome", "gb": .double(2.3), "closable": true])])])])
+        let remote = OrbitalRemote(http: http, address: "tv.example", token: "x")
+        let snapshot = try await remote.snapshot()
+        let game = try XCTUnwrap(snapshot.game)
+        XCTAssertEqual(game.title, "Elden Ring")
+        XCTAssertTrue(game.paused)
+        XCTAssertEqual(game.cover, "https://tv.example/api/art/steam:1245620?kind=cover", "el arte de la consola, a su dirección")
+        XCTAssertEqual(game.hero, "https://cdn/hero.jpg")
+        XCTAssertEqual(game.started, Date(timeIntervalSince1970: 1_760_000_000))
+        let state = try await remote.console()
+        let console = try XCTUnwrap(state)
+        XCTAssertEqual(console.batteryPercent, 58); XCTAssertEqual(console.minutesLeft, 130)
+        XCTAssertEqual(console.powerMode, "balanced"); XCTAssertEqual(console.controllers.first?.battery, "full")
+        XCTAssertEqual(console.apps.first?.name, "Chrome"); XCTAssertEqual(console.freeGB, 6.1)
+        // Una consola de antes: sin juego, sin error.
+        http.json["https://tv.example/api/companion/now"] = .object(["playing": .null])
+        let old = try await remote.snapshot()
+        XCTAssertNil(old.game)
+    }
+
     func testAckSendsTheIDs() async throws {
         let http = FakeHTTP()
         http.json["https://tv.example/api/companion/inbox/ack"] = .object(["removed": .int(2)])
