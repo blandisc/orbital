@@ -76,7 +76,7 @@ final class AppEnvironment: ObservableObject {
         }
         #endif
         // Cambiar el idioma (o una clave) vuelve a pintar toda la app.
-        servicesSubscription = services.onChange { [weak self] in self?.objectWillChange.send() }
+        servicesSubscription = services.onChange { [weak self] in self?.objectWillChange.send(); self?.applyAppearance() }
         session = SessionModel(services)
         inbox = InboxModel(services)
         tvNow = TVNowModel(services)
@@ -141,6 +141,15 @@ final class AppEnvironment: ObservableObject {
         if let forced = Demo.appearance { return forced == "light" ? .light : .dark }
         #endif
         switch services.appSettings.appearance { case "light": return .light; case "dark": return .dark; default: return nil }
+    }
+
+    /// Pone el modo en todas las ventanas (la app, las hojas y el reproductor). `preferredColorScheme` no regresa a «Como el
+    /// iPhone» después de forzar claro u oscuro y a veces no llega a las hojas abiertas: la ventana sí obedece siempre.
+    func applyAppearance() {
+        let style: UIUserInterfaceStyle = switch colorScheme { case .light: .light; case .dark: .dark; default: .unspecified }
+        for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
+            for window in scene.windows where window.overrideUserInterfaceStyle != style { window.overrideUserInterfaceStyle = style }
+        }
     }
 
     // MARK: reproducir
