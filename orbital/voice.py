@@ -8,6 +8,7 @@ import re
 import threading
 import time
 from dataclasses import dataclass, field
+from difflib import SequenceMatcher
 
 from .catalog import Catalog, normalize
 from .library import cinemeta
@@ -371,7 +372,7 @@ class VoiceController:
                 watch = self._watch_exact(name)
             except cinemeta.CinemetaError:
                 watch = None
-            return watch or VoiceResult(f"No encontré {name} en tu biblioteca. Di busca {name} para buscarlo.", ok=False)
+            return watch or VoiceResult(f"No encontré {name}. Di busca {name} para buscarlo.", ok=False)
         runner_id = None
         if runner:
             match = next((r for r in item.runners if normalize(r.name) == runner), None)
@@ -458,12 +459,9 @@ class VoiceController:
         return {"type": "open-view", "view": view, "message": message}
 
     def _watch_exact(self, query: str) -> VoiceResult | None:
-        """Si el título coincide exacto con una película o serie: la película se pone directo y la
-        serie abre sus episodios en Orbital. None si no hay coincidencia exacta."""
-        target = normalize(query)
-        movies = self.catalog.cinemeta.search("movie", query)
-        series = self.catalog.cinemeta.search("series", query)
-        matches = [r for r in cinemeta.search_results(query, movies, series) if normalize(r["title"]) == target]
+        """Cualquier película o serie, esté o no en tu biblioteca: la película se pone directo y la serie abre sus
+        episodios en Orbital. Varias igual de buenas: a elegir en pantalla. None si no hay nada claro."""
+        matches = self._resolve_title(query)
         if len(matches) > 1:
             return self._ask_which(query, matches)
         match = matches[0] if matches else None
@@ -473,6 +471,36 @@ class VoiceController:
             problem = self.catalog.watch.play_title("movie", match["meta_id"], match["meta_id"], match["title"], wait=VOICE_WAIT)
             return VoiceResult(problem, ok=False) if problem else VoiceResult(f"Poniendo {match['title']}.")
         return VoiceResult(f"Abriendo {match['title']}. Elige el episodio.", events=[self._show_view({"serie": match["meta_id"]}, f"Abriendo {match['title']}")])
+
+    def _resolve_title(self, query: str) -> list[dict]:
+        """Lo dicho → la película o serie que es. Cinemeta guarda el título en inglés: «El viaje de Chihiro» llega como
+        «Spirited Away» y antes solo valía la coincidencia letra por letra («No encontré … en tu biblioteca»).
+        1) exacto en Cinemeta; 2) TMDB en español (si hay clave): su título coincide o se parece mucho; 3) el primero de
+        Cinemeta si se parece mucho (nunca «el único que salió»: un juego mal dicho ponía una película)."""
+        target = normalize(query)
+        movies = self.catalog.cinemeta.search("movie", query)
+        series = self.catalog.cinemeta.search("series", query)
+        results = cinemeta.search_results(query, movies, series)
+        exact = [r for r in results if normalize(r["title"]) == target]
+        if exact:
+            return exact
+        close = lambda title: SequenceMatcher(None, normalize(title), target).ratio() >= .85  # noqa: E731
+        tmdb = getattr(getattr(self.catalog, "foryou", None), "tmdb", None)
+        if tmdb is not None and getattr(tmdb, "configured", False):
+            found = []
+            for kind in ("movie", "series"):
+                try:
+                    hit = tmdb.search(kind, query)  # en español: «El viaje de Chihiro» sí lo encuentra
+                except Exception as exc:  # noqa: BLE001 - sin TMDB, lo de Cinemeta
+                    log.info("Voz: TMDB no respondió para %s: %s", query, exc)
+                    hit = None
+                if hit and hit.get("imdb") and close(hit.get("title") or ""):
+                    found.append({"kind": kind, "meta_id": hit["imdb"], "title": hit["title"]})
+            if found:
+                return found
+        if results and close(results[0]["title"]):  # (solo si se parece: un juego mal dicho no pone una película)
+            return [results[0]]
+        return []
 
     def _continue_watching_intent(self, slots: dict) -> VoiceResult:
         show = slots.get("show", "")
