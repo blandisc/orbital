@@ -140,3 +140,22 @@ test("Películas y series: la curaduría de Para ti entre lo tuyo y lo popular",
   const ordered = sectionRows([{ id: "movies" }, { id: "continue" }, ...rows, { id: "mylist" }], "media").map((r) => r.id);
   assert.deepEqual(ordered, ["continue", "mylist", "curated:chart:netflix", "movies"]);
 });
+
+test("Por género: tarjetas con arte que llevan a su estante, y el destacado no las trata como juego", async () => {
+  const { genreRows, spotlightRow, curatedLists } = await import("../../orbital/web/js/core/curation.js");
+  const { primaryLabel, isGame } = await import("../../orbital/web/js/core/library.js");
+  const { alexaTip } = await import("../../orbital/web/js/core/hints.js");
+  const movie = (id) => ({ id: `cinemeta:movie:${id}`, title: id, source: "cinemeta" });
+  const rows = genreRows({ Horror: [movie("tt1")], Comedy: [movie("tt2")] });
+  assert.deepEqual(rows.map((r) => r.id), ["curated:genres", "curated:genre:Comedy", "curated:genre:Horror"]);
+  const terror = rows[0].items.find((i) => i.genre === "Horror");
+  assert.equal(terror.image, "img/genres/genre-horror.jpg");
+  assert.equal(primaryLabel(terror), "Ver títulos");
+  assert.equal(isGame(terror), false);
+  assert.equal(alexaTip(terror), "«Alexa, pídele a mi consola que ponga algo de terror»");
+  // Destacados: el N.º 1 de cada plataforma, sin repetir.
+  const picked = curatedLists([{ id: "chart:netflix", brand: "netflix", title: "Top 10" }, { id: "jw:prime", brand: "prime", title: "Prime" }]);
+  const spot = spotlightRow(picked, { "chart:netflix": [{ meta_id: "tt1", kind: "series", title: "A", hero: "h1" }], "jw:prime": [{ meta_id: "tt2", kind: "movie", title: "B", hero: "h2" }] });
+  assert.deepEqual(spot.items.map((i) => [i.title, i.image]), [["A", "h1"], ["B", "h2"]]);
+  assert.equal(spot.spotlight, true);
+});

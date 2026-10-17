@@ -103,7 +103,7 @@ export function createHero({ onAction }) {
       sheet && Button({ label: sheet, glyph: glyphs.alt, onPress: () => onAction("alt") }),
       !sheet && alt && item.id !== runningId && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, yields: true, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
       // Antes era "☰", el mismo glifo del botón Menú del mando: se confundían.
-      Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction("options") }));
+      item.source !== "genre" && Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction("options") }));
     voice.hidden = !alexa || !tips;
     if (alexa && tips) mount(voice, svg(ICONS.assistant), h("span", {}, alexaTip(item, { runningId })));
     fit();

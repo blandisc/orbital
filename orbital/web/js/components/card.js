@@ -48,6 +48,8 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
     ? h("span", { class: "card__progress", role: "progressbar", "aria-valuenow": Math.round(item.progress * 100), "aria-valuemin": 0, "aria-valuemax": 100 },
       h("span", { class: "card__progress-fill", style: { width: `${Math.round(item.progress * 100)}%` } }))
     : null;
+  // Un nombre sobre el arte (Por género: «Terror»), como las tarjetas de Explora del iPhone.
+  const label = item.label ? h("span", { class: "card__label" }, item.label) : null;
   const icon = appIcon(item);
   const fallback = () => (icon
     ? h("span", { class: "card__placeholder card__placeholder--app", "aria-hidden": "true" }, h("img", { class: "card__app-icon", src: icon, alt: "" }))
@@ -87,7 +89,7 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   } else {
     card.append(fallback());
   }
-  card.append(...[badge, rank, trend, live, chip, meta, progress].filter(Boolean));
+  card.append(...[badge, rank, trend, live, chip, label, meta, progress].filter(Boolean));
   return card;
 }
 

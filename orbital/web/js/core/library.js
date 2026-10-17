@@ -81,7 +81,7 @@ export const isSeries = (item) => item?.source === "cinemeta" && String(item?.id
   || item?.kind === "series";
 
 /** Las apps y la multimedia no muestran "Sin jugar todavía". */
-export const isGame = (item) => !!item && !isWatchable(item) && item.category !== "media" && item.category !== "apps";
+export const isGame = (item) => !!item && !isWatchable(item) && item.category !== "media" && item.category !== "apps" && item.source !== "genre";
 
 /**
  * Texto del botón principal. `runningId`: lo que está abierto ahora (se vuelve a él, no se relanza).
@@ -93,6 +93,7 @@ export const primaryLabel = (item, runningId = null) => {
     return item.category === "apps" || item.category === "media" ? "Volver a la app" : "Volver al juego";
   }
   if (item?.source === "search") return "Buscar";
+  if (item?.source === "genre") return "Ver títulos"; // Por género: lleva a su estante
   if (item?.category === "apps" || item?.category === "media") return "Abrir"; // YouTube, Stremio: no se «juegan»
   if (isSeries(item)) return item.progress > 0 ? "Continuar" : "Ver la serie";
   return isWatchable(item) ? (item.progress > 0 ? "Continuar" : "Ver") : "Jugar";

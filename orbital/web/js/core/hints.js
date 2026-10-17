@@ -38,6 +38,7 @@ export function alexaTip(item, { runningId = null } = {}) {
   const title = shortTitle(item.title);
   if (item.id === runningId) return item.id === "media:player" ? ask("pause") : ask("cierre el juego");
   if (item.source === "search") return ask("busque Dune");
+  if (item.source === "genre") return ask(`ponga algo de ${item.title.toLowerCase()}`); // la voz recomienda por género
   if (item.source === "stremio") return item.progress > 0 ? ask("siga viendo") : ask(`ponga ${title}`);
   if (item.source === "cinemeta") return item.kind === "series" || item.id?.startsWith("cinemeta:series:")
     ? ask(`quiero ver ${title}`) : ask(`ponga ${title}`);

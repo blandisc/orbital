@@ -56,7 +56,7 @@ def _clean_id(value) -> bool:
 
 
 # Los géneros que se piden por estante (los nombres de Cinemeta).
-GENRES = {"Horror", "Comedy", "Action", "Sci-Fi", "Drama", "Animation", "Thriller", "Romance", "Documentary", "Adventure", "Family"}
+GENRES = {"Horror", "Comedy", "Action", "Sci-Fi", "Drama", "Animation", "Thriller", "Romance", "Crime", "Documentary", "Adventure", "Family"}
 
 
 def router(d: Deps) -> APIRouter:

@@ -63,17 +63,34 @@ export function curatedRows(picked, itemsById, limit = 15) {
 
 /** Estantes por género (lo más visto de cada uno en el catálogo de Stremio), al final de la curaduría. */
 export const GENRE_SHELVES = [
-  { genre: "Horror", kind: "movie", title: "Terror" },
-  { genre: "Comedy", kind: "movie", title: "Comedia" },
   { genre: "Action", kind: "movie", title: "Acción" },
+  { genre: "Comedy", kind: "movie", title: "Comedia" },
+  { genre: "Drama", kind: "movie", title: "Drama" },
   { genre: "Sci-Fi", kind: "movie", title: "Ciencia ficción" },
+  { genre: "Horror", kind: "movie", title: "Terror" },
+  { genre: "Thriller", kind: "movie", title: "Suspenso" },
   { genre: "Animation", kind: "movie", title: "Animación" },
+  { genre: "Romance", kind: "movie", title: "Romance" },
+  { genre: "Crime", kind: "movie", title: "Crimen" },
+  { genre: "Documentary", kind: "movie", title: "Documental" },
 ];
 
-/** Los estantes de género ya armados (los títulos ya vienen con la forma del catálogo). */
+/** El arte de cada género (el mismo que el iPhone: scripts/genre_art.py lo hace para los dos). */
+export const genreArt = (genre) => `img/genres/genre-${genre.toLowerCase().replace(/[^a-z0-9]/g, "")}.jpg`;
+
+/**
+ * «Por género» (como Explora del iPhone): una tarjeta con arte por género, con su nombre encima; elegirla lleva a su
+ * estante (abajo). Y los estantes de cada género (los títulos ya vienen con la forma del catálogo).
+ */
 export function genreRows(itemsByGenre, limit = 15) {
-  return GENRE_SHELVES.map((g) => ({ id: `curated:genre:${g.genre}`, title: g.title, items: (itemsByGenre[g.genre] || []).slice(0, limit) }))
+  const shelves = GENRE_SHELVES.map((g) => ({ id: `curated:genre:${g.genre}`, title: g.title, items: (itemsByGenre[g.genre] || []).slice(0, limit) }))
     .filter((row) => row.items.length);
+  if (shelves.length < 2) return shelves;
+  const tiles = GENRE_SHELVES.filter((g) => shelves.some((row) => row.id === `curated:genre:${g.genre}`)).map((g) => ({
+    id: `genre:${g.genre}`, title: g.title, label: g.title, source: "genre", genre: g.genre, subtitle: "Lo más visto en el catálogo",
+    image: genreArt(g.genre), hero: genreArt(g.genre),
+  }));
+  return [{ id: "curated:genres", title: "Por género", items: tiles }, ...shelves];
 }
 
 /** Las listas cuyo N.º 1 entra al carrusel de destacados: el Top 10 de Netflix y lo más visto de cada plataforma. */

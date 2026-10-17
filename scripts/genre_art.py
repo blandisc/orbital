@@ -4,6 +4,7 @@ Proyección («el arte es la luz»): cada género es una luz de sala sobre tinta
 lugar de un fondo de película pedido a internet (tardaba en cargar y dos géneros podían salir con la misma imagen).
 
     python3 scripts/genre_art.py        # escribe ios/App/Resources/Assets.xcassets/Genres/*.imageset
+                                        # y orbital/web/img/genres/*.jpg (la tele: Películas y series › Por género)
 
 Solo usa Pillow. Determinista (semilla fija): volver a correrlo da las mismas imágenes.
 """
@@ -19,6 +20,8 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Assets.xcassets/Genres"
+WEB = ROOT / "orbital/web/img/genres"  # la misma imagen para la tele, más ligera (una tarjeta de ~420 px)
+WEB_WIDTH = 720
 W, H = 1050, 576  # 3× de una tarjeta de ~350×192 pt (cubre la de 2 columnas en cualquier iPhone, con margen)
 INK = (13, 13, 16)  # ink-950, el fondo de la app en oscuro
 
@@ -219,7 +222,10 @@ def main() -> None:
         img.save(folder / f"{name}.jpg", quality=82, optimize=True, progressive=True)
         contents = {"images": [{"filename": f"{name}.jpg", "idiom": "universal"}], "info": {"author": "xcode", "version": 1}}
         (folder / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n")
-        print(f"{name}: {(folder / f'{name}.jpg').stat().st_size // 1024} KB")
+        WEB.mkdir(parents=True, exist_ok=True)
+        small = img.resize((WEB_WIDTH, round(WEB_WIDTH * H / W)), Image.Resampling.LANCZOS)
+        small.save(WEB / f"{name}.jpg", quality=80, optimize=True, progressive=True)
+        print(f"{name}: {(folder / f'{name}.jpg').stat().st_size // 1024} KB (tele: {(WEB / f'{name}.jpg').stat().st_size // 1024} KB)")
 
 
 if __name__ == "__main__":

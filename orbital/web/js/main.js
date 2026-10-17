@@ -1232,7 +1232,14 @@ function handleAction(action, { repeat = false } = {}) {
     case "nextsection": return stepSection(1);
     case "pageleft": return setFocus(r, c - 5, { edge: "left", repeat });
     case "pageright": return setFocus(r, c + 5, { edge: "right", repeat });
-    case "select": return launch(item);
+    case "select": {
+      if (item?.source === "genre") { // Por género: la tarjeta lleva a su estante
+        const to = state.rows.findIndex((row) => row.id === `curated:genre:${item.genre}`);
+        if (to >= 0) { sound.play("select"); return setFocus(to, state.memory[state.rows[to].id] ?? 0); }
+        return rumble("edge");
+      }
+      return launch(item);
+    }
     case "search": return openSearch();
     case "alt": {
       if (isWatchable(item)) return openTitle(item); // X = la ficha, en todas las pantallas
@@ -1241,7 +1248,9 @@ function handleAction(action, { repeat = false } = {}) {
       sound.play("error"); // X sin nada que hacer: un "no" suave en vez de silencio
       return rumble("edge");
     }
-    case "options": return openMenu(gameMenu(item, { running: state.running, phone: state.phone }));
+    case "options":
+      if (item?.source === "genre") { sound.play("error"); return rumble("edge"); } // un género no tiene opciones
+      return openMenu(gameMenu(item, { running: state.running, phone: state.phone }));
     case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));
     case "back":
     case "home": // B: al principio de la sección; si ya estás ahí, a la sección Inicio
