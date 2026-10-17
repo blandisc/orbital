@@ -82,7 +82,7 @@ struct MainTabs: View {
     var body: some View {
         TabView(selection: $tab) {
             Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary) }
-            Tab("Para ti", systemImage: "sparkles", value: 1) { NavigationStack(path: $paths[1]) { ParaTiView() }.tint(DS.primary) }
+            Tab("Para ti", image: OrbitalIcon.spark.asset, value: 1) { NavigationStack(path: $paths[1]) { ParaTiView() }.tint(DS.primary) }
             Tab("Descargas", systemImage: "arrow.down.circle", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary) }
             // Buscar es la pestaña de búsqueda del sistema: va aparte, al final, y se abre con el campo listo.
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }

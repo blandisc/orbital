@@ -192,6 +192,8 @@ enum DS {
         static let logo = CGFloat(DesignTokens.Size.logo)
         /// La letra de «orbital» en la marca grande (la bienvenida) y el planeta solo, junto a un título o en el widget.
         static let wordmark: CGFloat = 40, markSmall: CGFloat = 22
+        /// Un ícono de lista junto al título de su estante (`ListIcon`).
+        static let listIcon: CGFloat = 22
         static let platformLogo = CGFloat(DesignTokens.Size.platformLogo)
         static let rankNumber = CGFloat(DesignTokens.Size.rankNumber)
         /// La cifra de un Top 10: enorme y pesada; no crece con Dynamic Type (es un adorno, el puesto ya se dice en la etiqueta).

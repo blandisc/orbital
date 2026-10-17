@@ -78,7 +78,7 @@ struct DownloadsView: View {
             case .done: EmptyView()
             }
         }
-        .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } } }
+        .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
     }
 
     private func status(_ item: DownloadItem) -> String? {
@@ -127,7 +127,7 @@ struct DownloadsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } } }
+        .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
     }
 
     private func episodesText(_ count: Int) -> String {

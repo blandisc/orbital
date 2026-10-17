@@ -216,7 +216,8 @@ TRANSLATIONS = {
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"Content-Type", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
-          "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max"}
+          "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max",
+          "Icons/"}  # el nombre de un ícono en el catálogo
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.
 CODE_KEYS = {k for k in TRANSLATIONS}
 

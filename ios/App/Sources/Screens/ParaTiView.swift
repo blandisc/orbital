@@ -178,13 +178,17 @@ struct ShelfPoster: View {
     }
 }
 
-func shelfSymbol(_ plan: ShelfPlan) -> String {
+/// El ícono de cada estante: el mismo que le pone la TV a esa lista (orbital/foryou.py · lists()).
+func shelfIcon(_ plan: ShelfPlan) -> OrbitalIcon {
     switch plan.id {
-    case "mine", "watchlist": "bookmark"
-    case "recs": "sparkles"
-    case "trend": "chart.line.uptrend.xyaxis"
-    case "popular": "flame"
-    default: plan.style == .plain ? "square.stack" : "play.rectangle"
+    case "mine": .series
+    case "watchlist": .bookmark
+    case "recs": .spark
+    case "trend": .trend
+    case "popular", "cinemeta": .flame
+    case _ where plan.id.hasPrefix("addon:"): .addon
+    case _ where plan.id.hasPrefix("list:"): .list
+    default: plan.style == .plain ? .list : .chart
     }
 }
 
@@ -219,7 +223,7 @@ struct ListsView: View {
                     featuredTile(featured).task(id: featured.item.wide) { await featuredTint.load(featured.item.wide) }
                 }
                 if !model.airings.isEmpty {   // justo después del destacado; vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
-                    Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), symbol: "calendar", route: ShelfRoute(id: "estrenos")) {
+                    Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), icon: .calendar, route: ShelfRoute(id: "estrenos")) {
                         ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
                     }
                 }
@@ -245,7 +249,7 @@ struct ListsView: View {
     // MARK: estantes
     private func shelf(_ plan: ShelfPlan) -> some View {
         let items = model.items(for: plan)
-        return Shelf(title: shelfTitle(plan), meta: shelfMeta(plan), logo: plan.style == .plain ? nil : plan.list.logo, symbol: shelfSymbol(plan),
+        return Shelf(title: shelfTitle(plan), meta: shelfMeta(plan), logo: plan.style == .plain ? nil : plan.list.logo, icon: shelfIcon(plan),
                      route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty) {
             ForEach(items) { s in
                 ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb)) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Tu watchlist» todo está ahí: el marcador sobra
@@ -256,7 +260,7 @@ struct ListsView: View {
     /// Sin ninguna fuente tuya: lo más popular de Stremio y una invitación (un botón, no una tarjeta gris).
     @ViewBuilder private var sourcesFallback: some View {
         if !model.mosaic.isEmpty {
-            Shelf(title: Text("Lo más popular en Stremio"), meta: Text("Sin Trakt ni Orbital, esto es lo que ve todo el mundo"), symbol: "flame") {
+            Shelf(title: Text("Lo más popular en Stremio"), meta: Text("Sin Trakt ni Orbital, esto es lo que ve todo el mundo"), icon: .flame) {
                 ForEach(model.mosaic) { s in
                     ShelfPoster(suggestion: s, style: .plain, inList: false) { dismissed in Task { await model.dismiss(dismissed) } }
                 }

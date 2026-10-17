@@ -105,11 +105,13 @@ struct DSSectionHead: View {
     var trailing: LocalizedStringKey?
     /// El logo de la plataforma (Netflix, Disney+…), si la lista es de una: siempre a la misma altura que en los chips.
     var logo: String?
+    /// El ícono de la lista (el mismo de la TV), si no hay logo.
+    var icon: OrbitalIcon?
     var action: (() -> Void)?
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            if let logo { DSPlatformLogo(url: logo) }
+        HStack(alignment: .center, spacing: DS.Space.s2) {
+            if let logo { DSPlatformLogo(url: logo) } else if let icon { ListIcon(icon: icon).foregroundStyle(DS.textMuted) }
             Text(title).recipe(.section)
             Spacer()
             if let trailing {

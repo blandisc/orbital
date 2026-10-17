@@ -12,7 +12,7 @@ struct Shelf<Content: View>: View {
     var meta: Text?
     /// El logo de la plataforma (siempre a la misma altura) o, si no hay, un ícono de la fuente.
     var logo: String?
-    var symbol: String?
+    var icon: OrbitalIcon?
     /// Sin ruta, el encabezado no es un botón (los estantes de relleno).
     var route: ShelfRoute?
     var loading = false
@@ -41,7 +41,7 @@ struct Shelf<Content: View>: View {
     private func headerRow(chevron: Bool) -> some View {
         HStack(spacing: DS.Space.s3) {
             if let logo, !logo.isEmpty { DSPlatformLogo(url: logo) }
-            else if let symbol { Image(systemName: symbol).font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted).frame(width: DS.Space.s6).accessibilityHidden(true) }
+            else if let icon { ListIcon(icon: icon).foregroundStyle(DS.textMuted) }
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
                 if let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }

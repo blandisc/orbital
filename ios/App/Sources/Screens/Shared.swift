@@ -34,11 +34,12 @@ struct Rail<Content: View>: View {
     let title: LocalizedStringKey
     var trailing: LocalizedStringKey?
     var logo: String?
+    var icon: OrbitalIcon?
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: title, trailing: trailing, logo: logo).padding(.horizontal, DS.Space.gutter)
+            DSSectionHead(title: title, trailing: trailing, logo: logo, icon: icon).padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.padding(.horizontal, DS.Space.gutter)
             }

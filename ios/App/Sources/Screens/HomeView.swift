@@ -50,7 +50,7 @@ struct HomeView: View {
                 }
                 if model.continueWatching.count > Self.heroCount { alsoHad(model) }
                 if !model.myList.isEmpty {
-                    Rail(title: "Mi lista") {
+                    Rail(title: "Mi lista", icon: .library) {
                         ForEach(model.myList) { item in
                             TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster))
                         }
@@ -58,7 +58,7 @@ struct HomeView: View {
                 }
                 if !model.traktPending.isEmpty {
                     // «Tu watchlist» (Trakt), con el nombre de la TV; dentro, todo está en tu watchlist: la etiqueta sobra.
-                    Rail(title: "Tu watchlist") {
+                    Rail(title: "Tu watchlist", icon: .bookmark) {
                         ForEach(model.traktPending) { s in TitleLink(route: s.route) }
                     }
                 }
@@ -169,7 +169,7 @@ struct HomeView: View {
 
     /// «También tenías»: lo demás de «Seguir viendo», en piezas anchas con su avance.
     private func alsoHad(_ model: HomeModel) -> some View {
-        Rail(title: "También tenías") {
+        Rail(title: "También tenías", icon: .watching) {
             ForEach(model.continueWatching.dropFirst(Self.heroCount)) { item in
                 NavigationLink(value: route(item)) {
                     StillCard(title: item.title, art: item.background ?? item.poster,

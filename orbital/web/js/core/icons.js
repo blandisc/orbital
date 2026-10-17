@@ -61,22 +61,30 @@ export const ICONS = {
   assistant: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5a8 8 0 1 1-4.3 14.75L4 19.5l1.25-3.7A8 8 0 0 1 12 3.5z"/></svg>',
   mic: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5"/></svg>',
   exit: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4.5h4.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H14M10 16l4-4-4-4M14 12H4"/></svg>',
-  // «Para ti»: qué es (serie: pantallas apiladas, muchos episodios; película: claqueta) y cada lista.
-  series: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 3.8h9"/><path d="M5.5 6.4h13"/><rect x="3.5" y="9" width="17" height="11.2" rx="2.4"/><path d="M10.6 12.2v4.8l4.1-2.4z"/></svg>',
+  // «Para ti»: qué es (serie: una tele; película: claqueta) y cada lista. Los de las listas son un juego propio, el mismo
+  // en el iPhone (scripts/list_icons.mjs los copia a su catálogo): trazo de Orbital y, como firma, la luna de la marca, un
+  // punto que dice algo (dónde vas en «Seguir viendo», la punta de «En tendencia», el día de «Próximos», lo más alto del
+  // Top 10). Cada lista: spark recomendadas · watching seguir viendo · library Mi lista · bookmark watchlist · series tus
+  // series · calendar próximos · list tus listas · addon de un complemento · trend tendencia · flame popular · chart Top 10
+  // y plataformas · fresh novedades · trophy mejor calificados.
+  series: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3l3 3 3-3"/><rect x="3.5" y="6" width="17" height="12.5" rx="2"/><path d="M9 21h6"/><circle cx="16.5" cy="10" r="1.6" fill="currentColor" stroke="none"/></svg>',
   movie: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="10" width="17" height="10.2" rx="2"/><path d="M3.9 9.2 18.6 5.4a1 1 0 0 1 1.2.7l.5 1.9-16 4.1-.5-1.8a1 1 0 0 1 .1-1.1z"/><path d="m8.4 8 2.3 2.2M12.9 6.9l2.3 2.2"/></svg>',
-  spark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/><path d="M18.5 15.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></svg>',
-  watching: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M10.2 8.8v6.4l5.2-3.2z"/></svg>',
-  bookmark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V4.5a1 1 0 0 1 1-1z"/></svg>',
-  calendar: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
-  list: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5h10M9.5 12h10M9.5 17.5h10M4.5 6.5h.1M4.5 12h.1M4.5 17.5h.1"/></svg>',
-  trend: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 16.5l5.5-5.5 4 4 7.5-7.5"/><path d="M15 7.5h5.5V13"/></svg>',
-  fresh: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4M12 12.5v5M9.5 15h5"/></svg>',
-  flame: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21c-3.7 0-6.5-2.5-6.5-6.1 0-3.4 2.3-5.4 3.7-7.2.4 1.9 1.4 3 2.5 3.4-.3-3.4 1.2-6.3 3.5-8.1.3 3 1.7 4.8 3 6.5 1.1 1.5 2.3 3.2 2.3 5.4 0 3.6-2.8 6.1-8.5 6.1z"/></svg>',
+  spark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 5.5c.7 4.6 2.4 6.3 7 7-4.6.7-6.3 2.4-7 7-.7-4.6-2.4-6.3-7-7 4.6-.7 6.3-2.4 7-7z"/><circle cx="18.5" cy="5.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  watching: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75a8.25 8.25 0 1 1-8.25 8.25"/><path d="M10.4 9.1v5.8l4.7-2.9z"/><circle cx="6.17" cy="6.17" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  bookmark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V4.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="9.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  calendar: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="15.5" cy="15" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  list: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6.5h9.5M10 12h9.5M10 17.5h5.5M4.75 6.5h.01M4.75 12h.01M4.75 17.5h.01"/><circle cx="19.25" cy="17.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  trend: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 17.5l5.5-5.5 4 4 5.25-5.25"/><circle cx="20" cy="8.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  fresh: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M12 12.75v4.5M9.75 15h4.5"/></svg>',
+  flame: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21c-3.7 0-6.5-2.5-6.5-6.1 0-3.4 2.3-5.4 3.7-7.2.4 1.9 1.4 3 2.5 3.4-.3-3.4 1.2-6.3 3.5-8.1.3 3 1.7 4.8 3 6.5 1.1 1.5 2.3 3.2 2.3 5.4 0 3.6-2.8 6.1-8.5 6.1z"/><circle cx="12" cy="16.25" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  library: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 3.5h9a1.5 1.5 0 0 1 1.5 1.5v11.5"/><rect x="5" y="6.5" width="11" height="14" rx="1.5"/><circle cx="10.5" cy="13.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  chart: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20.5v-5M10.5 20.5V11M16 20.5V8.5"/><circle cx="16" cy="4.25" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  addon: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.4 7.6h3.25a2.25 2.25 0 1 1 4.5 0h3.25v3.25a2.25 2.25 0 1 1 0 4.5v3.25H5.4z"/></svg>',
   // TV en vivo: una pantalla con su antena.
   home: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19z"/></svg>',
   grid: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg>',
   tv: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7.5" width="18" height="11" rx="2.2"/><path d="M8.5 3.5 12 7l3.5-3.5M8.5 21.5h7"/></svg>',
-  trophy: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5.2a3 3 0 0 0 3 4M16 6h2.8a3 3 0 0 1-3 4M12 13v4M8.5 20.5h7M10 17h4"/></svg>',
+  trophy: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5.2a3 3 0 0 0 3 4M16 6h2.8a3 3 0 0 1-3 4M12 13v4M8.5 20.5h7M10 17h4"/><circle cx="12" cy="8" r="1.6" fill="currentColor" stroke="none"/></svg>',
 };
 
 /** Ícono del sistema de un elemento de la biblioteca. */
