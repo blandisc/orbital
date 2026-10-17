@@ -175,7 +175,7 @@ extension Label where Title == Text, Icon == Image {
 /// Un mosaico con arte y un nombre encima (géneros de Explora): el arte se tiñe de oscuro abajo para que el nombre se lea.
 struct ArtTile: View {
     let title: Text
-    /// El arte: una imagen del catálogo de la app (los géneros, `scripts/genre_art.py`) o, si no, una de internet.
+    /// El arte: una imagen del catálogo de la app (los géneros: arte de Grok Imagine, dirección cinematográfica) o, si no, una de internet.
     var asset: String? = nil
     var art: String? = nil
 

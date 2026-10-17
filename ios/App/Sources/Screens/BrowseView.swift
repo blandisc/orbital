@@ -135,7 +135,7 @@ struct BrowseView: View {
 
     private func genreName(_ genre: String) -> String { Vocabulary.genres([genre], language: env.services.appSettings.uiLanguage).first ?? genre }
 
-    /// El arte fijo de cada género (`scripts/genre_art.py`, en el catálogo de la app): se ve al instante, sin red.
+    /// El arte fijo de cada género (Grok Imagine, en el catálogo de la app): se ve al instante, sin red.
     static func genreAsset(_ genre: String) -> String { "genre-" + genre.lowercased().filter { $0.isLetter || $0.isNumber } }
 }
 
