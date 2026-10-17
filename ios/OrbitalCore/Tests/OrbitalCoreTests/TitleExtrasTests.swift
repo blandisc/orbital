@@ -122,3 +122,33 @@ final class LiveChannelArtTests: XCTestCase {
         XCTAssertEqual(movie.art, "https://img/d.jpg", "una película, su póster")
     }
 }
+
+final class YearInReviewTests: XCTestCase {
+    func testDaysHoursStreakGenreAndTop() {
+        var cal = Calendar(identifier: .gregorian); cal.timeZone = TimeZone(secondsFromGMT: 0)!
+        func at(_ d: Int, _ h: Int = 20) -> Date { cal.date(from: DateComponents(year: 2026, month: 3, day: d, hour: h))! }
+        let plays = [TraktPlay(at: at(1), kind: "movie", imdb: "tt1", title: "Dune", minutes: 155, genres: ["science-fiction"]),
+                     TraktPlay(at: at(2), kind: "series", imdb: "tt2", title: "Severance", minutes: 50, genres: ["drama", "science-fiction"]),
+                     TraktPlay(at: at(2, 22), kind: "movie", imdb: "tt3", title: "Past Lives", minutes: 105, genres: ["romance"]),
+                     TraktPlay(at: at(3), kind: "series", imdb: "tt2", title: "Severance", minutes: 50, genres: ["drama", "science-fiction"]),
+                     TraktPlay(at: at(9), kind: "series", imdb: "tt2", title: "Severance", minutes: 50, genres: ["drama", "science-fiction"])]
+        let y = YearInReview.make(plays, year: 2026, calendar: cal)
+        XCTAssertEqual(y.days[cal.startOfDay(for: at(1))], .movies)
+        XCTAssertEqual(y.days[cal.startOfDay(for: at(2))], .both, "película y serie el mismo día")
+        XCTAssertEqual(y.hours, 7, "410 min")
+        XCTAssertEqual(y.longestStreak, 3, "1, 2 y 3 de marzo")
+        XCTAssertEqual(y.movies, 2); XCTAssertEqual(y.episodes, 3)
+        XCTAssertEqual(y.topGenre, "science-fiction")
+        XCTAssertEqual(y.top.first?.title, "Severance")
+    }
+
+    func testAHistoryRowIsAPlay() throws {
+        let movie = try XCTUnwrap(TraktParsing.play(["type": "movie", "watched_at": "2026-03-01T20:00:00.000Z",
+                                                     "movie": ["title": "Dune", "runtime": 155, "genres": ["drama"], "ids": ["imdb": "tt1160419"]]]))
+        XCTAssertEqual(movie.minutes, 155)
+        let ep = try XCTUnwrap(TraktParsing.play(["type": "episode", "watched_at": "2026-03-02T20:00:00Z", "episode": ["runtime": 48],
+                                                  "show": ["title": "Severance", "runtime": 55, "ids": ["imdb": "tt11280740"]]]))
+        XCTAssertEqual(ep.kind, "series"); XCTAssertEqual(ep.minutes, 48, "el del episodio, no el de la serie")
+        XCTAssertNil(TraktParsing.play(["type": "movie", "movie": ["title": "x"]]), "sin fecha no cuenta")
+    }
+}

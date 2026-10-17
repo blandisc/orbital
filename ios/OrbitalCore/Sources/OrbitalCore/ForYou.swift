@@ -212,6 +212,24 @@ public actor ForYou {
         return try await raw(listID: listID, kind: kind).filter { !dismissed.contains($0.imdb) }
     }
 
+    /// «Porque viste X»: lo último que viste (película o serie) y lo que Trakt relaciona con él, sin lo que ya descartaste.
+    public func becauseYouWatched() async -> (seed: TraktEntry, items: [Suggestion])? {
+        guard let trakt, trakt.linked,
+              let seed = try? await remember("trakt:recent", ttl: Self.mineTTL, { try await trakt.recentlyWatched(limit: 1) }).first else { return nil }
+        let related = (try? await remember("trakt:related:\(seed.imdb)", ttl: Self.recsTTL) { try await trakt.related(kind: seed.kind, imdb: seed.imdb) }) ?? []
+        let items = related.map { suggestion($0, .recommended) }.filter { !dismissed.contains($0.imdb) }
+        return items.isEmpty ? nil : (seed, items)
+    }
+
+    /// «Tu año»: lo que viste desde el 1 de enero, del historial de Trakt (se guarda unas horas: son varias páginas).
+    public func yearInReview(calendar: Calendar = .current) async -> YearInReview? {
+        guard let trakt, trakt.linked else { return nil }
+        let now = clock()
+        guard let start = calendar.date(from: calendar.dateComponents([.year], from: now)) else { return nil }
+        guard let plays = try? await remember("trakt:year:\(calendar.component(.year, from: now))", ttl: Self.recsTTL, { try await trakt.plays(since: start, until: now) }) else { return nil }
+        return YearInReview.make(plays, year: calendar.component(.year, from: now), calendar: calendar)
+    }
+
     private func suggestion(_ e: TraktEntry, _ reason: SuggestionReason) -> Suggestion {
         Suggestion(kind: e.kind, imdb: e.imdb, title: e.title, year: e.year, runtime: e.runtime, overview: e.overview,
                    poster: String(format: Self.metahubPoster, e.imdb), wide: String(format: Self.metahubBackground, e.imdb),
@@ -476,3 +494,40 @@ struct SavedSuggestion: Codable {
     }
 }
 
+
+/// «Tu año»: lo que viste en el año, día por día (película, serie o las dos), horas, racha más larga, tu género y lo que más viste.
+public struct YearInReview: Sendable, Equatable {
+    public enum Day: Sendable, Equatable { case movies, series, both }
+    public struct Top: Sendable, Equatable, Identifiable { public var imdb: String; public var kind: String; public var title: String; public var plays: Int; public var id: String { imdb } }
+    public var year: Int
+    public var days: [Date: Day]
+    public var hours: Int
+    public var movies: Int
+    public var episodes: Int
+    public var longestStreak: Int
+    public var topGenre: String?
+    public var top: [Top]
+
+    public static func make(_ plays: [TraktPlay], year: Int, calendar: Calendar) -> YearInReview {
+        var days: [Date: Day] = [:], minutes = 0, movies = 0, episodes = 0
+        var genres: [String: Int] = [:], counts: [String: Top] = [:]
+        for p in plays {
+            let day = calendar.startOfDay(for: p.at)
+            let kind: Day = p.kind == "movie" ? .movies : .series
+            days[day] = days[day].map { $0 == kind ? $0 : .both } ?? kind
+            minutes += p.minutes
+            if p.kind == "movie" { movies += 1 } else { episodes += 1 }
+            for g in p.genres { genres[g, default: 0] += 1 }
+            counts[p.imdb, default: Top(imdb: p.imdb, kind: p.kind, title: p.title, plays: 0)].plays += 1
+        }
+        // La racha más larga: días seguidos con algo visto.
+        var longest = 0, run = 0, previous: Date?
+        for day in days.keys.sorted() {
+            if let previous, let next = calendar.date(byAdding: .day, value: 1, to: previous), calendar.isDate(next, inSameDayAs: day) { run += 1 } else { run = 1 }
+            longest = max(longest, run); previous = day
+        }
+        let top = counts.values.sorted { ($0.plays, $1.title) > ($1.plays, $0.title) }.prefix(10)
+        return YearInReview(year: year, days: days, hours: Int((Double(minutes) / 60).rounded()), movies: movies, episodes: episodes,
+                            longestStreak: longest, topGenre: genres.max { ($0.value, $1.key) < ($1.value, $0.key) }?.key, top: Array(top))
+    }
+}

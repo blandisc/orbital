@@ -14,6 +14,19 @@ public enum TraktError: Error, Sendable, CustomStringConvertible {
 }
 
 /// Una película o serie de Trakt, con su id de IMDb (sin él no se podría ver).
+/// Algo que viste según tu historial de Trakt: cuándo, qué (película o episodio de una serie), cuánto dura y sus géneros.
+public struct TraktPlay: Sendable, Equatable {
+    public var at: Date
+    public var kind: String          // movie | series
+    public var imdb: String
+    public var title: String
+    public var minutes: Int
+    public var genres: [String]
+    public init(at: Date, kind: String, imdb: String, title: String, minutes: Int, genres: [String]) {
+        self.at = at; self.kind = kind; self.imdb = imdb; self.title = title; self.minutes = minutes; self.genres = genres
+    }
+}
+
 public struct TraktEntry: Sendable, Equatable, Identifiable {
     public var kind: String          // movie | series
     public var imdb: String
@@ -104,6 +117,17 @@ public enum TraktParsing {
         return TraktEntry(kind: kind, imdb: imdb, title: title, year: isInt(raw["year"]), runtime: positive(raw["runtime"]),
                           episodes: positive(raw["aired_episodes"]), overview: (raw["overview"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
                           traktID: isInt(ids["trakt"]))
+    }
+
+    /// Una fila del historial: una película o un episodio, con su `watched_at`. Sin IMDb o sin fecha: nada.
+    public static func play(_ row: JSON) -> TraktPlay? {
+        guard let stamp = row["watched_at"]?.string, let at = date(stamp) else { return nil }
+        let isMovie = row["type"]?.string == "movie"
+        let item = isMovie ? row["movie"] : row["show"]
+        guard let item, let imdb = item["ids"]?["imdb"]?.string, imdb.hasPrefix("tt"), let title = item["title"]?.string else { return nil }
+        let minutes = (isMovie ? item["runtime"]?.intValue : row["episode"]?["runtime"]?.intValue ?? item["runtime"]?.intValue) ?? 0
+        let genres = (item["genres"]?.array ?? []).compactMap(\.string)
+        return TraktPlay(at: at, kind: isMovie ? "movie" : "series", imdb: imdb, title: title, minutes: max(0, minutes), genres: genres)
     }
 
     /// Una fila del calendario de Trakt («first_aired» en hora universal). Sin IMDb, fecha o número de episodio: nada.
@@ -402,6 +426,40 @@ public actor Trakt {
             return out
         }
         return results.compactMap { $0 }
+    }
+
+    /// Lo que viste entre dos fechas (cada película y cada episodio con su día y hora), por páginas: «Tu año» y «Porque viste».
+    public func plays(since: Date, until: Date, maxPages: Int = 20) async throws -> [TraktPlay] {
+        let f = ISO8601DateFormatter()
+        var out: [TraktPlay] = []
+        for page in 1...max(1, maxPages) {
+            let rows = try await get("/sync/history", [("start_at", f.string(from: since)), ("end_at", f.string(from: until)),
+                                                       ("extended", "full"), ("limit", String(Self.historyPage)), ("page", String(page))])?.array ?? []
+            out += rows.compactMap(TraktParsing.play)
+            if rows.count < Self.historyPage { break }
+        }
+        return out
+    }
+
+    static let historyPage = 250
+
+    /// Lo último que viste (película o serie), lo más reciente primero, sin repetir.
+    public func recentlyWatched(limit: Int = 5) async throws -> [TraktEntry] {
+        let rows = try await get("/sync/history", [("limit", "40"), ("extended", "full")])?.array ?? []
+        var seen = Set<String>(), out: [TraktEntry] = []
+        for row in rows {
+            let entry = row["type"]?.string == "movie" ? TraktParsing.entry(row["movie"], kind: "movie") : TraktParsing.entry(row["show"], kind: "series")
+            if let entry, seen.insert(entry.imdb).inserted { out.append(entry) }
+            if out.count >= limit { break }
+        }
+        return out
+    }
+
+    /// Los títulos que Trakt relaciona con uno («Porque viste X»).
+    public func related(kind: String, imdb: String, limit: Int = 15) async throws -> [TraktEntry] {
+        guard Self.isIMDb(imdb) else { return [] }
+        let rows = try await get("/\(kind == "movie" ? "movies" : "shows")/\(imdb)/related", auth: false, [("limit", String(limit)), ("extended", "full")])
+        return (rows?.array ?? []).compactMap { TraktParsing.entry($0, kind: kind) }
     }
 
     // MARK: escritura
