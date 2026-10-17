@@ -81,6 +81,13 @@ class Cinemeta:
         metas = self._get(f"/catalog/{kind}/top.json").get("metas")
         return [m for m in metas if _usable(m)] if isinstance(metas, list) else []
 
+    def genre(self, kind: str, genre: str) -> list[dict]:
+        """Lo más popular de un género («Horror», «Comedy»…): «pon algo de terror»."""
+        from urllib.parse import quote
+
+        metas = self._get(f"/catalog/{kind}/top/genre={quote(genre, safe='')}.json").get("metas")
+        return [m for m in metas if _usable(m)] if isinstance(metas, list) else []
+
     def search(self, kind: str, query: str) -> list[dict]:
         """Búsqueda tolerante a errores ("ofice" encuentra The Office); 2-3 letras suelen bastar."""
         from urllib.parse import quote

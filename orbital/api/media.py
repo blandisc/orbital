@@ -128,6 +128,13 @@ def router(d: Deps) -> APIRouter:
         title = body.title or "Stremio"
         video_id = body.video_id or (meta_id if kind == "movie" else None)
         player_ui.set_input("touch" if body.touch else "keyboard" if body.keyboard else "gamepad")
+        if kind == "series" and not video_id and catalog.native_player:
+            # Una serie sin episodio (la elegiste en la lista del iPhone): su ficha en la tele, como la voz, para elegir
+            # el episodio o seguir donde ibas (antes abría la app de Stremio).
+            if d.kiosk is not None:
+                d.kiosk.open()
+            catalog.events.publish({"type": "open-view", "view": {"serie": meta_id}, "message": f"Abriendo {title}"})
+            return {"ok": True, "opened": "title"}
         try:
             if body.source is not None and video_id:
                 catalog.watch.play_source(kind, meta_id, video_id, body.source, title, keep=body.keep,

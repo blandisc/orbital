@@ -46,6 +46,19 @@ VAGUE_MEDIA = {"una pelicula", "una serie", "algo", "peliculas", "series", "una 
                "una telenovela", "una novela", "telenovelas", "novelas", "una caricatura", "caricaturas",
                "un documental", "documentales", "algo de ver", "algo para ver"}
 # «Pon la novela», «pon mi serie»: lo que estabas viendo (antes: «No encontré la telenovela en tu biblioteca»).
+# Géneros dichos en español → los de Cinemeta («pon algo de terror», «una película de acción»).
+GENRES = {"terror": "Horror", "miedo": "Horror", "horror": "Horror", "sustos": "Horror", "comedia": "Comedy", "risa": "Comedy",
+          "reir": "Comedy", "accion": "Action", "drama": "Drama", "animada": "Animation", "animacion": "Animation",
+          "caricatura": "Animation", "caricaturas": "Animation", "romantica": "Romance", "romance": "Romance", "amor": "Romance",
+          "ciencia ficcion": "Sci-Fi", "sci fi": "Sci-Fi", "suspenso": "Thriller", "thriller": "Thriller", "documental": "Documentary",
+          "documentales": "Documentary", "misterio": "Mystery", "aventura": "Adventure", "aventuras": "Adventure",
+          "fantasia": "Fantasy", "crimen": "Crime", "policiaca": "Crime", "guerra": "War", "belica": "War", "familiar": "Family",
+          "ninos": "Family", "infantil": "Family", "musical": "Musical", "vaqueros": "Western", "western": "Western"}
+GENRE_NAMES = {"Horror": "terror", "Comedy": "comedia", "Action": "acción", "Drama": "drama", "Animation": "animación",
+               "Romance": "romance", "Sci-Fi": "ciencia ficción", "Thriller": "suspenso", "Documentary": "documental",
+               "Mystery": "misterio", "Adventure": "aventura", "Fantasy": "fantasía", "Crime": "crimen", "War": "guerra",
+               "Family": "familiar", "Musical": "musical", "Western": "vaqueros"}
+
 THE_USUAL = {"la telenovela", "la novela", "mi novela", "mi telenovela", "mi serie", "la serie", "lo que estaba viendo",
              "lo que estabamos viendo", "lo de siempre", "mi pelicula", "la pelicula que estaba viendo"}
 NO_TOAST = {"type": "noop"}  # la interfaz ignora este evento
@@ -186,7 +199,7 @@ _TEXT_RULES: list[tuple] = [  # (patrón, intent, slot | None[, slots fijos])
     (re.compile(r"^(?:pon|ponme|quiero ver|ver)?\s*(?:las\s+)?(?:noticias|el noticiero|un noticiero)$"), "LiveTvIntent", None, {"category": "noticias"}),
     # «pon algo», «algo de terror», «una comedia»: no es un título (antes buscaba un juego llamado «algo»)
     (re.compile(r"^(?:pon|ponme|quiero ver|ver|recomiendame|sugiereme)\s+algo(?:\s+(?:de|para)\s+(?P<genre>[a-z ]+))?$"
-                r"|^(?:pon|ponme|quiero ver|ver)\s+una?\s+(?:peli(?:cula)?|serie|show)\s+(?:de|para)\s+(?P<genre2>[a-z ]+)$"
+                r"|^(?:pon|ponme|quiero ver|ver)\s+una?\s+(?P<what>peli(?:cula)?|serie|show)\s+(?:de|para)\s+(?P<genre2>[a-z ]+)$"
                 r"|^(?:pon|ponme|quiero ver|ver)\s+una\s+(?P<genre3>comedia|caricatura)$"),
      "RecommendIntent", None),
     (re.compile(r"^(?:pon|ponme|quiero ver|ver|sigue con|continua con)?\s*(?:lo\s+que\s+(?:estaba|estabamos|estuve)\s+viendo"
@@ -872,7 +885,12 @@ class VoiceController:
         return VoiceResult(upcoming_speech(items), events=[show])
 
     def _recommend_intent(self, slots: dict) -> VoiceResult:
-        """«¿Qué me recomiendas?»: tres títulos de tus recomendaciones y Para ti en pantalla."""
+        """«¿Qué me recomiendas?»: tres títulos de tus recomendaciones y Para ti en pantalla. Con género («algo de terror»):
+        lo más popular de ese género, a elegir en la tele (y en el iPhone, que recibe la misma lista)."""
+        said = normalize(slots.get("genre") or "")
+        genre = GENRES.get(said) or next((g for word, g in GENRES.items() if word in said.split() or word == said), None)
+        if genre:
+            return self._recommend_genre(genre, "series" if normalize(slots.get("what") or "") == "serie" else "movie")
         foryou = self.catalog.foryou
         show = self._show_view({"seccion": "foryou"}, "Para ti")
         titles: list[str] = []
@@ -885,6 +903,26 @@ class VoiceController:
         if not titles:
             return VoiceResult("Te dejo Para ti abierto: ahí están tus sugerencias.", events=[show])
         return VoiceResult(f"Te recomiendo {spoken_list(titles)}. Están en Para ti.", events=[show])
+
+    def _recommend_genre(self, genre: str, kind: str) -> VoiceResult:
+        name = GENRE_NAMES.get(genre, genre.lower())
+        try:
+            metas = self._within(QUICK_LOOKUP, lambda: self.catalog.cinemeta.genre(kind, genre))
+        except Exception:  # noqa: BLE001 - sin catálogo (o tardó): Para ti
+            metas = None
+        if not metas:
+            return VoiceResult(f"No pude traer {'series' if kind == 'series' else 'películas'} de {name}. Te dejo Para ti.",
+                               ok=False, events=[self._show_view({"seccion": "foryou"}, "Para ti")])
+        options = [{**items[0].public(), "kind": kind, "meta_id": meta["id"]}  # uno por uno: el id va con su ficha
+                   for meta in metas[:6] if (items := cinemeta.catalog_items(kind, [meta]))]
+        if self.kiosk is not None:
+            self.kiosk.open()
+        what = "series" if kind == "series" else "películas"
+        titles = [o["title"] for o in options[:3]]
+        choices = [{k: o.get(k) for k in ("id", "title", "subtitle", "kind", "meta_id", "image", "hero")} for o in options]
+        return VoiceResult(f"De {name} te recomiendo {spoken_list(titles)}. Elige una.", choices=choices,
+                           events=[{"type": "choose", "query": f"{what} de {name}", "options": choices,
+                                    "message": f"{what.capitalize()} de {name}"}])
 
     def _brightness_intent(self, slots: dict) -> VoiceResult:
         from . import quick
