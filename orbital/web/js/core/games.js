@@ -10,7 +10,15 @@ export const FILTERS = [
   { id: "favorites", label: "Favoritos" },
   { id: "az", label: "A–Z" },
   { id: "unplayed", label: "Sin jugar" },
+  { id: "installed", label: "Instalados" },
+  { id: "controller", label: "Con control" },
 ];
+
+/** ¿Se juega con control? Los de consola, siempre; los de Steam y GeForce NOW, lo que dice la tienda (todo o parte). */
+export const playsWithController = (item) => item.category === "emulators" || ["full", "partial"].includes(item.extra?.controller);
+
+/** ¿Está en tu consola? Los de tu cuenta de Steam sin instalar dicen que no (extra.installed === false). */
+export const isInstalled = (item) => item.extra?.installed !== false;
 
 /** Tus consolas, la que usaste más recientemente primero (la misma lista que el Inicio). */
 export const gameConsoles = (rows) => consoleList(rows);
@@ -25,6 +33,8 @@ export function consoleGames(rows, consoleId, filter = "recent") {
   if (filter === "added") return [...items].sort((a, b) => (b.added || 0) - (a.added || 0) || byTitle(a, b));
   // Con horas jugadas (Steam a veces no da la fecha) no es «sin jugar».
   if (filter === "unplayed") return items.filter((i) => !i.last_played && !(i.playtime > 0)).sort(byTitle);
+  if (filter === "installed") return consoleGames(rows, consoleId).filter(isInstalled);
+  if (filter === "controller") return consoleGames(rows, consoleId).filter(playsWithController);
   const played = items.filter((i) => i.last_played).sort((a, b) => b.last_played - a.last_played);
   return [...played, ...items.filter((i) => !i.last_played).sort(byTitle)];
 }

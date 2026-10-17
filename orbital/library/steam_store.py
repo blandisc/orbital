@@ -35,12 +35,15 @@ def parse(body: dict) -> dict:
     year = re.search(r"\b(19|20)\d{2}\b", str((body.get("release_date") or {}).get("date") or ""))
     genres = [str(g.get("description")) for g in body.get("genres") or [] if isinstance(g, dict) and g.get("description")]
     developers = [str(d) for d in body.get("developers") or [] if d]
-    return {k: v for k, v in {
+    info = {k: v for k, v in {
         "description": plain(str(body.get("short_description") or "")),
         "year": year.group(0) if year else None,
         "genres": genres[:3],
         "developer": ", ".join(developers[:2]) or None,
     }.items() if v}
+    # ¿Se juega con control? «full» (todo) o «partial» (parte); sin el dato, «none» (teclado y ratón).
+    info["controller"] = str(body.get("controller_support") or "none")
+    return info
 
 
 def fetch(appid: int, timeout: float = 10) -> dict | None:
@@ -92,6 +95,8 @@ class SteamStore:
         entry = self._data.get(str(appid))
         if not entry:
             return True
+        if entry.get("info") and "controller" not in entry["info"]:
+            return True  # guardada antes de saber si se juega con control: se vuelve a pedir una vez
         return self._clock() - float(entry.get("at") or 0) > (REFRESH if entry.get("info") else RETRY_MISSING)
 
     def warm(self, appids: list[int], limit: int = 60, stop: threading.Event | None = None) -> int:

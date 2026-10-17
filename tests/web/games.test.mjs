@@ -34,3 +34,13 @@ test("añadidos: lo que llegó más reciente primero; sin fecha, al final y por 
   const added = [{ id: "emulators:x", items: [g("Viejo", 0, { added: 100 }), g("Nuevo", 0, { added: 900 }), g("Bsin"), g("Asin")] }];
   assert.deepEqual(consoleGames(added, "emulators:x", "added").map((i) => i.id), ["Nuevo", "Viejo", "Asin", "Bsin"]);
 });
+
+test("filtros «Instalados» y «Con control»", async () => {
+  const { consoleGames, playsWithController } = await import("../../orbital/web/js/core/games.js");
+  const steam = (id, extra) => ({ id, title: id, category: "steam", extra });
+  const rows = [{ id: "steam", items: [steam("Portal 2", { installed: false, controller: "full" }), steam("Factorio", { controller: "none" }),
+    steam("Hades", { controller: "full" }), steam("Celeste", { controller: "partial" })] }];
+  assert.deepEqual(consoleGames(rows, "steam", "installed").map((i) => i.id), ["Celeste", "Factorio", "Hades"]);
+  assert.deepEqual(consoleGames(rows, "steam", "controller").map((i) => i.id), ["Celeste", "Hades", "Portal 2"]);
+  assert.equal(playsWithController({ category: "emulators", extra: {} }), true); // los de consola, siempre
+});
