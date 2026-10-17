@@ -298,6 +298,7 @@ final class ScreenModelsTests: XCTestCase {
     /// CEN-18: con tu Orbital conectada, «Para ti» viene de allá (misma curaduría, con el puesto de un chart si lo trae).
     func testParaTiUsesTheConsolesForYouWhenConnected() async throws {
         let rig = try ServicesRig()
+        rig.services.forYouFromConsole = true   // la ruta de la consola (la app, por omisión, calcula Para ti en el iPhone)
         rig.services.settings.update { $0.orbitalAddress = "tv.example" }
         rig.secrets.set(SecretKey.orbitalToken, "tok")
         rig.http.json["https://tv.example/api/foryou"] = [
@@ -336,6 +337,25 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertTrue(model.isGeneric)
         XCTAssertEqual(model.mosaic.map(\.imdb), ["tt0386676", "tt1160419"])
         XCTAssertNil(model.error)
+    }
+
+    /// El iPhone calcula Para ti él mismo aunque tu Orbital esté conectada (no depende de que conteste): trae sus propias listas
+    /// con puesto (Top 10 de Netflix, tendencias de JustWatch) y solo le avisa a la consola lo que marcas «No me interesa».
+    func testParaTiIsComputedOnThePhoneEvenWithYourOrbitalConnected() async throws {
+        let rig = try ServicesRig()
+        rig.services.settings.update { $0.orbitalAddress = "tv.example" }
+        rig.secrets.set(SecretKey.orbitalToken, "tok")
+        rig.http.json["https://tv.example/api/foryou/dismiss"] = ["ok": true]
+        rig.http.json["https://v3-cinemeta.strem.io/catalog/movie/top.json"] = ["metas": [
+            ["id": "tt1160419", "type": "movie", "name": "Dune", "poster": "https://p/3.jpg", "releaseInfo": "2021"]]]
+        let model = ParaTiModel(rig.services)
+        await model.load()
+        XCTAssertEqual(model.source, .phone)
+        XCTAssertFalse(rig.http.calls.contains("https://tv.example/api/foryou"), "no le pide Para ti a la consola")
+        XCTAssertTrue(model.lists.contains { $0.id == "chart:netflix" }, "el Top 10 de Netflix lo calcula el iPhone")
+        XCTAssertTrue(model.lists.contains { $0.id == "jw:disney" }, "y las tendencias de Disney+")
+        await model.dismiss(model.mosaic[0])
+        XCTAssertTrue(rig.http.calls.contains("https://tv.example/api/foryou/dismiss"), "«No me interesa» también se le avisa a la TV")
     }
 
     func testConnectingYourOrbitalKeepsTheTokenInTheKeychainAndChecksIt() async throws {

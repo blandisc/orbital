@@ -5,12 +5,15 @@ import Foundation
 public struct OrbitalRemote: Sendable {
     public enum Failure: Error, Equatable, CustomStringConvertible {
         case notConfigured, badToken, unreachable, refused(String)
+        /// La consola no tiene esa ruta (versión anterior): el iPhone esconde lo que la usa.
+        case outdated
         public var description: String {
             switch self {
             case .notConfigured: "Conecta tu Orbital en Ajustes (la dirección y el token)."
             case .badToken: "Tu Orbital no aceptó el token. Revísalo en Ajustes."
             case .unreachable: "No encontré tu Orbital. ¿Está prendida la consola y el túnel?"
             case .refused(let message): message
+            case .outdated: "Actualiza tu Orbital para usar el control completo."
             }
         }
     }
@@ -75,14 +78,18 @@ public struct OrbitalRemote: Sendable {
     }
 
     // MARK: «Para ti» (RemoteForYou la usa cuando el iPhone está conectado a la consola)
+    /// La consola arma «Para ti» antes de contestar (Trakt, el Top 10 de Netflix, JustWatch…): con la caché fría tarda más
+    /// que un botón del control remoto. Con 12 s el iPhone se rendía y caía a sus listas propias, sin Top 10 ni plataformas.
+    public static let forYouTimeout: TimeInterval = 45
+
     public func foryouOverview() async throws -> JSON? {
-        try await send("api/foryou", method: "GET", body: nil)
+        try await send("api/foryou", method: "GET", body: nil, timeout: Self.forYouTimeout)
     }
 
     public func foryouList(id: String, kind: String?) async throws -> JSON? {
         var query = [URLQueryItem(name: "id", value: id)]
         if let kind { query.append(URLQueryItem(name: "kind", value: kind)) }
-        return try await send("api/foryou/list", method: "GET", query: query, body: nil)
+        return try await send("api/foryou/list", method: "GET", query: query, body: nil, timeout: Self.forYouTimeout)
     }
 
     public func foryouDetails(key: String, kind: String?) async throws -> JSON? {
@@ -170,6 +177,16 @@ public struct OrbitalRemote: Sendable {
     public struct Snapshot: Sendable, Equatable {
         public var playing: NowPlaying?
         public var inbox: [InboxItem]
+        /// Hay un campo de texto con foco en la TV (el control completo enseña «Escribir»). nil: la consola no lo dice.
+        public var textField: Bool?
+        /// Lo que hace cada botón en la pantalla de la TV ahora (la leyenda del pie: «alt» → «Mi lista»…). Vacío: no lo dice.
+        public var legend: [String: String]
+        /// La sección de la TV al frente («Inicio», «Juegos», «Películas y series», «Apps»).
+        public var section: String?
+
+        public init(playing: NowPlaying?, inbox: [InboxItem], textField: Bool? = nil, legend: [String: String] = [:], section: String? = nil) {
+            self.playing = playing; self.inbox = inbox; self.textField = textField; self.legend = legend; self.section = section
+        }
     }
 
     /// Qué se ve ahora en la TV y qué le dejó la TV al iPhone, en una sola petición.
@@ -177,7 +194,10 @@ public struct OrbitalRemote: Sendable {
         let json = try await send("api/companion/now", method: "GET", body: nil)
         var playing: NowPlaying?
         if let raw = json?["playing"], !raw.isNull { playing = NowPlaying.parse(raw) }
-        return Snapshot(playing: playing, inbox: (json?["inbox"]?.array ?? []).compactMap(InboxItem.parse))
+        return Snapshot(playing: playing, inbox: (json?["inbox"]?.array ?? []).compactMap(InboxItem.parse),
+                        textField: json?["ui"]?["text_field"]?.bool,
+                        legend: (json?["ui"]?["legend"]?.object ?? [:]).compactMapValues { $0.nonEmptyString },
+                        section: json?["ui"]?["section"]?.nonEmptyString)
     }
 
     /// Qué se ve ahora en la TV (para la tarjeta del iPhone). nil si no hay nada abierto.
@@ -191,6 +211,65 @@ public struct OrbitalRemote: Sendable {
         _ = try await send("api/companion/inbox/ack", method: "POST", body: JSON.object(["ids": .array(ids.map { .string($0) })]).serialized())
     }
 
+    /// Lo que contestó tu Orbital a una orden de voz: si la hizo y qué decir en voz alta («Poniendo The Office…»).
+    public struct VoiceReply: Sendable, Equatable {
+        public var ok: Bool
+        public var speech: String
+        /// Lo que se entendió («pon The Office», ya limpio), para enseñarlo bajo la respuesta. Vacío si la consola no lo manda.
+        public var heard: String
+        /// Varias con el mismo nombre (Dune de 1984 y de 2021): se enseñan para tocar la que es.
+        public var choices: [VoiceChoice]
+        public init(ok: Bool, speech: String, heard: String = "", choices: [VoiceChoice] = []) {
+            self.ok = ok; self.speech = speech; self.heard = heard; self.choices = choices
+        }
+    }
+
+    /// Una de las opciones que manda la consola cuando no sabe cuál: `kind` es movie o series.
+    public struct VoiceChoice: Sendable, Equatable, Identifiable {
+        public var id: String
+        public var title: String
+        public var subtitle: String
+        public var kind: String
+        public var metaID: String
+        public var image: String?
+        public init(id: String, title: String, subtitle: String, kind: String, metaID: String, image: String? = nil) {
+            self.id = id; self.title = title; self.subtitle = subtitle; self.kind = kind; self.metaID = metaID; self.image = image
+        }
+
+        init?(_ json: JSON) {
+            guard let title = json["title"]?.string, let metaID = json["meta_id"]?.string, !metaID.isEmpty else { return nil }
+            self.init(id: json["id"]?.string ?? metaID, title: title, subtitle: json["subtitle"]?.string ?? "",
+                      kind: json["kind"]?.string ?? "movie", metaID: metaID, image: json["image"]?.string)
+        }
+    }
+
+    /// Una orden en texto libre, como a Alexa («pon The Office temporada 2», «pausa», «abre Zelda»): la consola la entiende
+    /// con la misma lógica (`voice.py`). Sirve para Siri y para el micrófono de la app.
+    public func voice(_ text: String) async throws -> VoiceReply {
+        let trimmed = String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(500))
+        let json = try await send("api/voice", method: "POST", body: JSON.object(["text": .string(trimmed), "source": "iphone"]).serialized(), timeout: 20)   // no cuenta como «Alexa se usó»
+        let choices = (json?["choices"]?.array ?? []).compactMap(VoiceChoice.init)
+        return VoiceReply(ok: json?["ok"]?.bool ?? true, speech: json?["speech"]?.string ?? "", heard: json?["heard"]?.string ?? "",
+                          choices: choices)
+    }
+
+    /// Las acciones del mando de la TV (como `input.js`): el control completo del iPhone las manda como si fueran del mando.
+    public enum InputAction: String, Sendable, CaseIterable {
+        case up, down, left, right, select, back, home, menu, search, options, pageleft, pageright
+        /// X del mando; LB y RB (cambiar de sección); F5 (recargar).
+        case alt, prevsection, nextsection, refresh
+    }
+
+    /// Una tecla del mando, a la interfaz de la TV.
+    public func input(_ action: InputAction) async throws {
+        _ = try await send("api/companion/input", method: "POST", body: JSON.object(["action": .string(action.rawValue)]).serialized(), timeout: 5)
+    }
+
+    /// Texto al campo con foco de la TV (buscar); con `submit`, además lo envía.
+    public func type(_ text: String, submit: Bool) async throws {
+        _ = try await send("api/companion/text", method: "POST", body: JSON.object(["text": .string(text), "submit": .bool(submit)]).serialized(), timeout: 8)
+    }
+
     /// Un botón de la tarjeta: `toggle · pause · play · skip (con delta en segundos) · next · previous · stop · mute`.
     /// Devuelve lo que quedó viendo (nil si se detuvo).
     @discardableResult
@@ -202,7 +281,7 @@ public struct OrbitalRemote: Sendable {
         return NowPlaying.parse(playing)
     }
 
-    private func send(_ path: String, method: String, query: [URLQueryItem] = [], body: Data?) async throws -> JSON? {
+    private func send(_ path: String, method: String, query: [URLQueryItem] = [], body: Data?, timeout: TimeInterval = 12) async throws -> JSON? {
         guard let base, !token.isEmpty else { throw Failure.notConfigured }
         var headers = ["Authorization": "Bearer \(token)"]
         if body != nil { headers["Content-Type"] = "application/json" }
@@ -210,12 +289,14 @@ public struct OrbitalRemote: Sendable {
         if !query.isEmpty { components?.queryItems = query }
         guard let url = components?.url else { throw Failure.unreachable }
         let response: HTTPResponse
-        do { response = try await http.send(HTTPRequest(url: url, method: method, headers: headers, body: body, timeout: 12)) }
-        catch { throw Failure.unreachable }
+        do { response = try await http.send(HTTPRequest(url: url, method: method, headers: headers, body: body, timeout: timeout)) }
+        catch { if Task.isCancelled { throw CancellationError() }; throw Failure.unreachable }   // cancelar no es «la consola no contesta»
         switch response.status {
         case 200..<300: return JSON.parse(response.data)
         case 401, 403: throw Failure.badToken
         case 429: throw Failure.refused("Tu Orbital pidió esperar un poco: demasiados intentos.")
+        case 404 where path == "api/companion/input" || path == "api/companion/text":
+            throw Failure.outdated
         case 404 where path.hasPrefix("api/stremio") || path.hasPrefix("api/companion"):
             throw Failure.refused("Tu Orbital es de una versión anterior: actualízala para «Ver en la TV».")
         default:

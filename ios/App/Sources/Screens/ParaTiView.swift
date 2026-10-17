@@ -32,7 +32,11 @@ struct ParaTiView: View {
             switch m.mode {
             case .mosaic:
                 Mosaic(items: m.mosaic, watchlistKeys: m.watchlistKeys, demoFocus: demoFocusImdb, onDismiss: { s in Task { await m.dismiss(s) } },
-                       onFocusChange: { focused = $0; focusedArt = $0?.wide })
+                       onFocusChange: { new in
+                           // En el ambiente no hay foco: el pie se queda con la última pieza (no desaparece «Ver» bajo el dedo
+                           // ni cambia el alto del mosaico cada vez que se mueve solo).
+                           if let new { focused = new; focusedArt = new.wide }
+                       }, onOpen: { openTitle = $0.route })
                 // La pieza enfocada, contada bajo el mosaico (todas las piezas son del mismo tamaño: su información va aquí).
                 if DS.Mosaic.uniform, let item = focused {
                     // Como la TV: el motivo tal cual, y una serie sugerida abre su ficha («Ver la serie»), no un episodio al azar.
@@ -48,12 +52,12 @@ struct ParaTiView: View {
             case .lists: ListsView(observer: model)
             }
         }
-        .padding(.top, DS.Space.s2)
+        .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio
         .background(Backdrop(tint: m.mode == .mosaic ? tint.colors : nil))
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
         .navigationTitle("Para ti").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         // De dónde salió lo que ves, en el mismo lugar que «Stremio al día» en Inicio (no un chip y un pie sueltos).
-        .navigationSubtitle(subtitle(m))
+        .subtitle(sourceText(m))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { Task { await m.refresh() } } label: { Image(systemName: "arrow.clockwise") }
@@ -66,6 +70,7 @@ struct ParaTiView: View {
         .task {
             #if DEBUG
             if Demo.isOn, Demo.open == "lists" || Demo.mode == "lists" { m.mode = .lists }
+            if let start = Demo.startMode { m.mode = start == "lists" ? .lists : .mosaic }
             #endif
             await m.load()
         }
@@ -75,9 +80,9 @@ struct ParaTiView: View {
     }
 
     /// «De tu Orbital · Trakt al día» o «Calculado en el iPhone»: el subtítulo de la barra, como en Inicio.
-    private func subtitle(_ m: ParaTiModel) -> Text {
-        let source = m.source == .console ? Text("De tu Orbital") : Text("Calculado en el iPhone")
-        return m.traktLinked ? Text("\(source) · \(Text("Trakt al día"))") : source
+    /// Calculado en el iPhone es lo normal y no se dice; solo se nombra la consola cuando viene de ella.
+    private func sourceText(_ m: ParaTiModel) -> Text? {
+        m.source == .console ? Text("De tu Orbital") : nil
     }
 
     /// Modo demostración (`-demo-mosaic-focus N`): qué sugerencia enfocar al abrir, para las capturas de CEN-36.
@@ -173,13 +178,17 @@ struct ShelfPoster: View {
     }
 }
 
-func shelfSymbol(_ plan: ShelfPlan) -> String {
+/// El ícono de cada estante: el mismo que le pone la TV a esa lista (orbital/foryou.py · lists()).
+func shelfIcon(_ plan: ShelfPlan) -> OrbitalIcon {
     switch plan.id {
-    case "mine", "watchlist": "bookmark"
-    case "recs": "sparkles"
-    case "trend": "chart.line.uptrend.xyaxis"
-    case "popular": "flame"
-    default: plan.style == .plain ? "square.stack" : "play.rectangle"
+    case "mine": .series
+    case "watchlist": .bookmark
+    case "recs": .spark
+    case "trend": .trend
+    case "popular", "cinemeta": .flame
+    case _ where plan.id.hasPrefix("addon:"): .addon
+    case _ where plan.id.hasPrefix("list:"): .list
+    default: plan.style == .plain ? .list : .chart
     }
 }
 
@@ -191,6 +200,8 @@ struct ListsView: View {
     @State private var openTitle: TitleRoute?
     /// Los colores del arte del destacado: su «Ver» toma el color claro, como en la TV.
     @StateObject private var featuredTint = ArtTint()
+    /// El que está al frente del carrusel del destacado.
+    @State private var featuredID: String?
     private var model: ParaTiModel { observer.model }
 
     var body: some View {
@@ -210,11 +221,10 @@ struct ListsView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: DS.Space.s6, pinnedViews: [.sectionHeaders]) {
                 // El arte a sangre ya pone su margen (en claro es tarjeta; en oscuro va de borde a borde).
-                if let featured = model.featured {
-                    featuredTile(featured).task(id: featured.item.wide) { await featuredTint.load(featured.item.wide) }
-                }
+                let slides = model.featuredSlides
+                if !slides.isEmpty { featuredCarousel(slides) }
                 if !model.airings.isEmpty {   // justo después del destacado; vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
-                    Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), symbol: "calendar", route: ShelfRoute(id: "estrenos")) {
+                    Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), icon: .calendar, route: ShelfRoute(id: "estrenos")) {
                         ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
                     }
                 }
@@ -240,7 +250,7 @@ struct ListsView: View {
     // MARK: estantes
     private func shelf(_ plan: ShelfPlan) -> some View {
         let items = model.items(for: plan)
-        return Shelf(title: shelfTitle(plan), meta: shelfMeta(plan), logo: plan.style == .plain ? nil : plan.list.logo, symbol: shelfSymbol(plan),
+        return Shelf(title: shelfTitle(plan), meta: shelfMeta(plan), logo: plan.style == .plain ? nil : plan.list.logo, icon: shelfIcon(plan),
                      route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty) {
             ForEach(items) { s in
                 ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb)) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Tu watchlist» todo está ahí: el marcador sobra
@@ -251,7 +261,7 @@ struct ListsView: View {
     /// Sin ninguna fuente tuya: lo más popular de Stremio y una invitación (un botón, no una tarjeta gris).
     @ViewBuilder private var sourcesFallback: some View {
         if !model.mosaic.isEmpty {
-            Shelf(title: Text("Lo más popular en Stremio"), meta: Text("Sin Trakt ni Orbital, esto es lo que ve todo el mundo"), symbol: "flame") {
+            Shelf(title: Text("Lo más popular en Stremio"), meta: Text("Sin Trakt ni Orbital, esto es lo que ve todo el mundo"), icon: .flame) {
                 ForEach(model.mosaic) { s in
                     ShelfPoster(suggestion: s, style: .plain, inList: false) { dismissed in Task { await model.dismiss(dismissed) } }
                 }
@@ -267,6 +277,25 @@ struct ListsView: View {
     }
 
     // MARK: destacado
+    /// Varias de la misma lista del destacado, para pasar con el dedo (como «Seguir viendo» en Inicio), con sus puntos.
+    private func featuredCarousel(_ slides: [ParaTiModel.Featured]) -> some View {
+        let current = slides.first { $0.item.id == featuredID } ?? slides[0]
+        return VStack(spacing: DS.Space.s3) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 0) {
+                    ForEach(slides, id: \.item.id) { featuredTile($0).containerRelativeFrame(.horizontal) }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollTargetBehavior(.paging)
+            .scrollPosition(id: $featuredID)
+            if slides.count > 1 { PageDots(count: slides.count, index: slides.firstIndex { $0.item.id == current.item.id } ?? 0) }
+        }
+        .task(id: current.item.wide) { await featuredTint.load(current.item.wide) }   // «Ver» toma el color del que está al frente
+        .sensoryFeedback(.selection, trigger: featuredID)
+        .onChange(of: slides.first?.item.id) { featuredID = nil }   // «Actualizar» o Series ↔ Películas: de vuelta al primero
+    }
+
     private func featuredTile(_ featured: ParaTiModel.Featured) -> some View {
         let s = featured.item
         let route = s.route

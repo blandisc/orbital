@@ -34,11 +34,12 @@ struct Rail<Content: View>: View {
     let title: LocalizedStringKey
     var trailing: LocalizedStringKey?
     var logo: String?
+    var icon: OrbitalIcon?
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: title, trailing: trailing, logo: logo).padding(.horizontal, DS.Space.gutter)
+            DSSectionHead(title: title, trailing: trailing, logo: logo, icon: icon).padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.padding(.horizontal, DS.Space.gutter)
             }
@@ -69,6 +70,7 @@ struct TitleLink: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("title-link")   // para las pruebas de interfaz
     }
 }
 
@@ -110,6 +112,8 @@ struct NowPlayingCard: View {
     let busy: Bool
     let onAction: (String, Double?) -> Void
     let onContinueHere: () -> Void
+    /// Con su caja (en Inicio). En la hoja del control remoto, sin caja: la hoja ya es el contenedor.
+    var framed = true
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var tap = 0
 
@@ -124,8 +128,8 @@ struct NowPlayingCard: View {
             }
             controls
         }
-        .padding(DS.Space.s3)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .padding(framed ? DS.Space.s3 : 0)
+        .background(framed ? DS.fill : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
         .accessibilityElement(children: .contain)
     }
 
@@ -168,7 +172,8 @@ struct NowPlayingCard: View {
             if dynamicTypeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: DS.Space.s2) { buttons(labeled: true) }
             } else {
-                HStack(spacing: DS.Space.s2) { buttons(labeled: false) }
+                // Repartidos a lo ancho (en un iPhone grande no se amontonan a la izquierda).
+                HStack(spacing: DS.Space.s2) { buttons(labeled: false) }.frame(maxWidth: .infinity)
             }
         }
         .disabled(busy)
@@ -196,6 +201,7 @@ struct NowPlayingCard: View {
             if !now.live { Button("Seguir aquí", systemImage: "iphone") { onContinueHere() } }
         } label: { Image(systemName: "ellipsis.circle") }
         .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
+        .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? nil : .infinity)
         .accessibilityLabel(Text("Más"))
     }
 
@@ -206,7 +212,7 @@ struct NowPlayingCard: View {
             } else if labeled {
                 Button { tapAndRun(action) } label: { Label(text, systemImage: symbol) }.buttonStyle(.glass)
             } else {
-                DSIconButton(symbol: symbol, label: text, prominent: prominent) { tapAndRun(action) }
+                DSIconButton(symbol: symbol, label: text, prominent: prominent) { tapAndRun(action) }.frame(maxWidth: .infinity)
             }
         }
         .controlSize(prominent ? .extraLarge : .large)
@@ -230,42 +236,54 @@ struct FromTVCard: View {
     let onWatch: () -> Void
     let onDownload: () -> Void
     let onDismiss: () -> Void
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
+    /// Lo que mandaste desde la TV, como un destacado chico (Proyección: el arte es la luz): el fondo del título con su velo,
+    /// «Desde la TV · hace 2 minutos», su logo, el dato (episodio o «Película»), «Ver» con el color de su arte y «Descargar»;
+    /// descartarla es la ✕ discreta de la esquina.
     var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            Label("Desde la TV", systemImage: "tv")
-                .font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted)
-            HStack(alignment: .center, spacing: DS.Space.s3) {
-                PosterView(url: item.poster, title: item.title, aspect: DS.Poster.aspect).frame(width: DS.Poster.nowPlayingWidth)
-                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text(item.title).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1)
-                    if !item.episodeLabel.isEmpty {
-                        Text(verbatim: Strings.tvEpisode(season: item.season, episode: item.episode, label: item.episodeLabel, language: AppEnvironment.shared.services.appSettings.uiLanguage)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).lineLimit(1)
+        let background = item.metaID.hasPrefix("tt") ? String(format: ForYou.metahubBackground, item.metaID) : item.poster
+        WithArtColors(url: background) { colors in
+            ZStack(alignment: .bottomLeading) {
+                PosterView(url: background, title: item.title, aspect: nil, bleed: true, maxPoints: DS.Image.bleed)
+                    .overlay(LinearGradient(stops: [.init(color: DS.scrim, location: 0), .init(color: .clear, location: DS.Backdrop.scrimMid),
+                                                    .init(color: DS.scrimStrong, location: 1)], startPoint: .top, endPoint: .bottom))
+                VStack(alignment: .leading, spacing: DS.Space.s2) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Label { eyebrow } icon: { Image(systemName: "tv") }.recipe(.eyebrow, color: DS.onArtSecondary).lineLimit(1)
+                        Spacer(minLength: DS.Space.s2)
+                        Button(action: onDismiss) { Image(systemName: "xmark").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
+                            .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.small)
+                            .accessibilityLabel(Text("Descartar"))
                     }
+                    Spacer(minLength: DS.Space.s2)
+                    TitleLogo(url: Artwork.logoURL(metaID: item.metaID), title: item.title)
+                    DataLine(parts: [detail], color: DS.onArtSecondary)
+                    HeroActions {
+                        Button(action: onWatch) { Label("Ver", systemImage: "play.fill").lineLimit(1) }.dsArtButton(colors).controlSize(.large)
+                        Button(action: onDownload) { Label("Descargar", systemImage: "arrow.down.circle").lineLimit(1) }.buttonStyle(.glass).controlSize(.large)
+                    }
+                    .padding(.top, DS.Space.s1)
                 }
-                Spacer(minLength: 0)
+                .padding(DS.Space.s4)
+                .onArt()
             }
-            if dynamicTypeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: DS.Space.s2) { buttons }
-            } else {
-                HStack(spacing: DS.Space.s2) { buttons }
-            }
+            .frame(minHeight: DS.Poster.fromTVHeight)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xxl, style: .continuous))
         }
-        .padding(DS.Space.s3)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
         .accessibilityElement(children: .contain)
     }
 
-    @ViewBuilder private var buttons: some View {
-        Button(action: onWatch) { Label("Ver", systemImage: "play.fill").lineLimit(1) }.dsPrimaryButton().controlSize(.large)
-        if dynamicTypeSize.isAccessibilitySize {
-            Button(action: onDownload) { Label("Descargar", systemImage: "arrow.down.circle") }.buttonStyle(.glass).controlSize(.large)
-            Button(action: onDismiss) { Label("Descartar", systemImage: "xmark") }.buttonStyle(.glass).controlSize(.large)
-        } else {
-            // Dos íconos con su nombre para VoiceOver: con el texto no caben en un renglón (se cortaban en «Desc…»).
-            DSIconButton(symbol: "arrow.down.circle", label: "Descargar", prominent: false, action: onDownload).controlSize(.large)
-            DSIconButton(symbol: "xmark", label: "Descartar", prominent: false, action: onDismiss).controlSize(.large)
-        }
+    /// «Desde la TV · hace 2 minutos» (cuándo la mandaste, en el idioma de la app).
+    private var eyebrow: Text {
+        let sent = Date(timeIntervalSince1970: item.at)
+        guard item.at > 0 else { return Text("Desde la TV") }
+        return Text("Desde la TV · \(sent.formatted(.relative(presentation: .named).locale(AppEnvironment.shared.uiLocale)))")
+    }
+
+    /// «T2 E5» para un episodio, «Película» para una película.
+    private var detail: String {
+        let language = AppEnvironment.shared.services.appSettings.uiLanguage
+        if item.episodeLabel.isEmpty && item.episode == nil { return Strings.kind(item.kind, language: language) }
+        return Strings.tvEpisode(season: item.season, episode: item.episode, label: item.episodeLabel, language: language)
     }
 }

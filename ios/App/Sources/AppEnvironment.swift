@@ -99,9 +99,11 @@ final class AppEnvironment: ObservableObject {
                 if Demo.scrobble || Demo.airings { $0.traktClientID = "demo" }
             }
             Demo.prefillScrobble(kv)
-            return Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),
-                            downloadTransport: transport, downloadsRoot: FileManager.default.temporaryDirectory.appendingPathComponent("demo-downloads"),
-                            freeSpace: { DiskSpace.freeBytes() })
+            let services = Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),
+                                    downloadTransport: transport, downloadsRoot: FileManager.default.temporaryDirectory.appendingPathComponent("demo-downloads"),
+                                    freeSpace: { DiskSpace.freeBytes() })
+            services.forYouFromConsole = Demo.console   // la ruta de la consola, para verla con la Orbital de mentira
+            return services
         }
         #endif
         return Services(

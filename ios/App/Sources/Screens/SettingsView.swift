@@ -29,8 +29,8 @@ struct SettingsView: View {
             }
             .listRowBackground(DS.surface)
             orbitalSection(model)
-            Section("Alexa") {
-                NavigationLink { AlexaCommandsView() } label: { Label("Qué le puedes decir a Alexa", systemImage: "waveform") }
+            Section("Voz") {
+                NavigationLink { VoiceGuideView() } label: { Label("Lo que puedes decir", systemImage: "waveform") }
             }
             .listRowBackground(DS.surface)
             addons
@@ -105,7 +105,7 @@ struct SettingsView: View {
                     Text(addon.name).foregroundStyle(DS.text)
                     Text(redact(addon.url)).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)   // solo el servidor: la ruta lleva tu clave
                 }
-                .swipeActions { if session.model.ownAddonURLs.contains(addon.url) { Button("Quitar", role: .destructive) { Task { await session.model.removeAddon(url: addon.url) } } } }
+                .swipeActions { if session.model.ownAddonURLs.contains(addon.url) { Button("Quitar", role: .destructive) { Task { await session.model.removeAddon(url: addon.url) } }.tint(DS.danger) } }   // rojo, como en iOS
             }
             if let error = session.model.addonError { Text(verbatim: env.message(error)).foregroundStyle(DS.danger).font(DS.TextRecipe.footnote.font) }
             TextField("Pegar la dirección de un complemento", text: $newAddon).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
@@ -150,7 +150,7 @@ struct SettingsView: View {
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 if !orbitalToken.isEmpty { Button("Guardar token") { model.setOrbitalToken(orbitalToken); orbitalToken = ""; Task { await model.checkOrbital() } } }
             }
-        } header: { Text("Tu Orbital (la TV)") } footer: {
+        } header: { Label { Text("Tu Orbital (la TV)") } icon: { OrbitalMark(size: DS.Size.markSmall) } } footer: {
             Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y tu Trakt y las claves de Para ti salen de ella.")
         }
         .listRowBackground(DS.surface)

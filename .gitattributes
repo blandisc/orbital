@@ -1,0 +1,2 @@
+# Los íconos del iPhone se comparan byte a byte con icons.js (tests/web/list-icons.test.mjs): siempre LF.
+ios/**/*.svg text eol=lf

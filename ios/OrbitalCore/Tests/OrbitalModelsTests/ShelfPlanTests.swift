@@ -68,6 +68,8 @@ final class ShelfPlanTests: XCTestCase {
         XCTAssertEqual(ShelfPlanner.featured(shelves, rotation: 0)?.item.imdb, "tt2", "la primera con arte ancho (tt1 no tiene)")
         XCTAssertEqual(ShelfPlanner.featured(shelves, rotation: 1)?.item.imdb, "tt3", "«Actualizar» pasa a la siguiente")
         XCTAssertEqual(ShelfPlanner.featured(shelves, rotation: 2)?.item.imdb, "tt2", "y vuelve a empezar")
+        XCTAssertEqual(ShelfPlanner.featuredSlides(shelves, rotation: 1)?.items.map(\.imdb), ["tt3", "tt2"],
+                       "el carrusel: las de arte ancho de esa misma lista, empezando por la que toca")
         XCTAssertNil(ShelfPlanner.featured([(try XCTUnwrap(by["mine"]), [suggestion("x", wide: "")])], rotation: 0))
     }
 
@@ -85,6 +87,7 @@ final class ShelfPlanTests: XCTestCase {
         let rig = try ServicesRig()
         rig.services.settings.update { $0.orbitalAddress = "tv.example" }
         rig.secrets.set(SecretKey.orbitalToken, "tok")
+        rig.services.forYouFromConsole = true   // la ruta de la consola (en la app, Para ti se calcula en el iPhone)
         func row(_ id: String, rank: Int? = nil) -> JSON {
             var r: [String: JSON] = ["key": .string("video:\(id)"), "kind": "movie", "meta_id": .string(id), "title": .string(id), "year": 2021, "why": "En Netflix",
                                      "image": "https://p.jpg", "hero": "https://h.jpg", "overview": "", "video_id": .string(id)]
@@ -141,6 +144,16 @@ final class ShelfPlanTests: XCTestCase {
         await model.load()
         XCTAssertEqual(model.visibleShelves.map(\.id), ["chart:netflix", "disney"],
                        "Netflix ya tiene Top 10 (su respaldo no); Disney+ sin JustWatch: su respaldo sí, para que no desaparezca")
+    }
+
+    func testTheOverviewIsAskedOnceEvenThoughListsAndMosaicNeedIt() async throws {
+        let rig = try consoleRig()
+        rig.http.delays["https://tv.example/api/foryou"] = 100   // las dos peticiones se cruzan
+        let model = ParaTiModel(rig.services)
+        await model.load()
+        XCTAssertEqual(rig.http.calls.filter { $0 == "https://tv.example/api/foryou" }.count, 1,
+                       "el mosaico y las listas esperan la misma petición (dos idénticas duplicaban la espera)")
+        XCTAssertFalse(model.shelves.isEmpty, "y sí cargó de la consola")
     }
 
     func testAShelfThatFailedIsAskedAgainOnTheNextLoad() async throws {

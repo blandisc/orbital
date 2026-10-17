@@ -203,17 +203,24 @@ extension Label where Title == Text, Icon == Image {
 /// Un mosaico con arte y un nombre encima (géneros de Explora): el arte se tiñe de oscuro abajo para que el nombre se lea.
 struct ArtTile: View {
     let title: Text
-    let art: String?
+    /// El arte: una imagen del catálogo de la app (los géneros, `scripts/genre_art.py`) o, si no, una de internet.
+    var asset: String? = nil
+    var art: String? = nil
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            PosterView(url: art, title: "", aspect: nil, bleed: true, maxPoints: DS.Image.card)
-                .overlay(LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .top, endPoint: .bottom))
+            Group {
+                if let asset { Image(asset).resizable().scaledToFill() }
+                else { PosterView(url: art, title: "", aspect: nil, bleed: true, maxPoints: DS.Image.card) }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
+            .overlay(LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .top, endPoint: .bottom))
             title.recipe(.cardTitle).padding(DS.Space.s3).onArt()
         }
         .frame(height: DS.Size.artTileHeight)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(asset.map { "art-tile-\($0)" } ?? "art-tile")
     }
 }
 
@@ -254,6 +261,33 @@ struct TVAccessory: View {
         }
         .padding(.horizontal, DS.Space.s3)
         .accessibilityElement(children: .contain)
+    }
+}
+
+/// El accesorio cuando la TV no reproduce nada: el mismo lugar abre el control completo de tu Orbital (siempre se entra por
+/// aquí, con video o sin él).
+struct TVRemoteAccessory: View {
+    let openRemote: () -> Void
+    @Environment(\.tabViewBottomAccessoryPlacement) private var placement
+
+    var body: some View {
+        Button(action: openRemote) {
+            HStack(spacing: DS.Space.s3) {
+                Image(systemName: "av.remote").font(DS.TextRecipe.cardTitle.font)
+                    .frame(width: DS.Size.accessoryArt, height: DS.Size.accessoryArt)
+                    .background(DS.fill, in: Circle())
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Control de tu Orbital").recipe(.cardTitle).lineLimit(1)
+                    if placement != .inline { Text("Nada en la TV ahora").recipe(.footnote, color: DS.textMuted).lineLimit(1) }
+                }
+                Spacer(minLength: DS.Space.s2)
+                Image(systemName: "chevron.up").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+            }
+            .padding(.horizontal, DS.Space.s3)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(Text("Control remoto"))
     }
 }
 
@@ -361,5 +395,32 @@ struct HeroActions<Content: View>: View {
             HStack(spacing: DS.Space.s3) { content() }
             VStack(alignment: .leading, spacing: DS.Space.s2) { content() }
         }
+    }
+}
+
+/// Una hoja tan alta como lo que trae (el control remoto de la TV, avisos cortos): mide su contenido y lo usa de alto, en
+/// vez de media pantalla con un hueco abajo. Si el contenido cambia de alto, la hoja lo sigue.
+private struct FittedSheet: ViewModifier {
+    @State private var height: CGFloat = DS.Size.touchTarget * 6
+
+    func body(content: Content) -> some View {
+        content
+            .fixedSize(horizontal: false, vertical: true)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
+            .presentationDetents([.height(height)])
+            .presentationDragIndicator(.visible)
+    }
+}
+
+extension View {
+    /// Receta: hoja a la medida de su contenido (ver `FittedSheet`).
+    func fittedSheet() -> some View { modifier(FittedSheet()) }
+}
+
+extension View {
+    /// Receta: el subtítulo de la barra solo cuando dice algo («3 cambios por subir», el espacio de Descargas). Sin él, el
+    /// título se queda grande y todas las pestañas arrancan igual (con subtítulo iOS lo encoge).
+    @ViewBuilder func subtitle(_ text: Text?) -> some View {
+        if let text { navigationSubtitle(text) } else { self }
     }
 }

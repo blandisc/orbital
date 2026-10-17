@@ -89,6 +89,12 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `RankedRow` + `MovementBadge` | Renglón con puesto, póster chico y ▲ ▼ / Nuevo | Buscar › Lo más popular (y la Cartelera) |
 | `ArtTile` | Mosaico con arte y nombre | Buscar › Explora (géneros) |
 | `DSOptionMenu` | Menú nativo para elegir entre muchas opciones | Temporadas (más de `DS.Size.seasonChipsMax`) |
+| `TouchPad`, `RemoteKey`, `RemoteTextField` | El control completo de tu Orbital: pad (deslizar = flechas, tocar = A), teclas de la consola y escribir en la TV | `RemoteSheet` (la hoja del accesorio, estirada) |
+| `VoiceCommandBar`, `VoiceChoices` | La voz del control: el micrófono con lo que oyó, la respuesta y lo que entendió; y, si tu Orbital no supo cuál, las opciones para tocar (`VoiceAssistant.choose`) | `RemoteSheet` |
+| `VoiceGuideView` | «Lo que puedes decir»: dónde hablarle (control, Siri, Alexa), lo que solo hace el iPhone, las frases de la consola (alexa/commands.json) y qué hacer si no funciona | Ajustes › Voz y el «?» junto al micrófono del control |
+| `OrbitalIcon`, `ListIcon` | Los íconos de las listas, los mismos de la TV (icons.js → `node scripts/list_icons.mjs` → Assets.xcassets/Icons; tests/web/list-icons.test.mjs los mantiene iguales) | `Shelf`, `DSSectionHead`/`Rail`, la pestaña Para ti |
+| `TVRemoteAccessory` | El accesorio cuando la TV no reproduce nada: abre el control completo | Toda la app, con tu Orbital conectada |
+| `fittedSheet()` / `subtitle(_:)` | Hoja a la medida de su contenido; subtítulo de la barra solo cuando dice algo | Hojas cortas; Inicio, Para ti, Descargas |
 | `TVAccessory` | Lo que suena en tu Orbital, en el accesorio de la barra | Toda la app (iOS 26.1+) |
 | `Shelf`, `RankedPosterCard`, `PosterCard`, `TitleLink`, `Rail` | Estantes, Top 10, pósters | Para ti, Inicio, Buscar |
 | `Mosaic` | El mosaico que sube despacio (como `foryou-mosaic.js` de la TV) | Para ti |

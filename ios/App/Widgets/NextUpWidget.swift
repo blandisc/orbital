@@ -138,11 +138,11 @@ private struct Caption: View {
     }
 }
 
-/// Nada pendiente: el ícono de Orbital y un enlace a la app.
+/// Nada pendiente: la marca de Orbital y un enlace a la app.
 private struct EmptyState: View {
     var body: some View {
         VStack(spacing: DS.Space.s2) {
-            Image("Logo").resizable().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+            OrbitalMark(size: DS.Size.touchTarget).foregroundStyle(DS.text)   // la marca de la TV
             Text("Nada pendiente").font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text)
             Text("Abrir Orbital").font(DS.font(.xs)).foregroundStyle(DS.textMuted)
         }

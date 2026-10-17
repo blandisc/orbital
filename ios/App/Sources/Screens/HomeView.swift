@@ -50,7 +50,7 @@ struct HomeView: View {
                 }
                 if model.continueWatching.count > Self.heroCount { alsoHad(model) }
                 if !model.myList.isEmpty {
-                    Rail(title: "Mi lista") {
+                    Rail(title: "Mi lista", icon: .library) {
                         ForEach(model.myList) { item in
                             TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster))
                         }
@@ -58,19 +58,22 @@ struct HomeView: View {
                 }
                 if !model.traktPending.isEmpty {
                     // «Tu watchlist» (Trakt), con el nombre de la TV; dentro, todo está en tu watchlist: la etiqueta sobra.
-                    Rail(title: "Tu watchlist") {
+                    Rail(title: "Tu watchlist", icon: .bookmark) {
                         ForEach(model.traktPending) { s in TitleLink(route: s.route) }
                     }
                 }
             }
+            .padding(.top, DS.Space.s3)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
             .padding(.bottom, DS.Space.s14)     // la última fila respira: la barra de pestañas no la tapa
             .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
             .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
         }
         .background(Backdrop(tint: tint.colors))
         .navigationTitle(greeting).toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        .navigationSubtitle(syncText)
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { NavigationLink(value: SettingsRoute()) { Image(systemName: "person.crop.circle") }.accessibilityLabel(Text("Ajustes")) } }
+        .subtitle(syncText)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { NavigationLink(value: SettingsRoute()) { Image(systemName: "person.crop.circle") }.accessibilityLabel(Text("Ajustes")) }
+        }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
@@ -96,9 +99,9 @@ struct HomeView: View {
         }
     }
 
-    /// «Stremio al día» o «N cambios por subir» (si no hubo internet).
-    private var syncText: Text {
-        pendingCount > 0 ? Text("\(pendingCount) cambios por subir") : Text("Stremio al día")
+    /// Solo cuando hay algo que decir: «N cambios por subir» (lo que viste sin internet). Al día, nada (no hace falta decirlo).
+    private var syncText: Text? {
+        pendingCount > 0 ? Text("\(pendingCount) cambios por subir") : nil
     }
 
     private func route(_ item: HomeItem) -> TitleRoute { TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster) }
@@ -166,7 +169,7 @@ struct HomeView: View {
 
     /// «También tenías»: lo demás de «Seguir viendo», en piezas anchas con su avance.
     private func alsoHad(_ model: HomeModel) -> some View {
-        Rail(title: "También tenías") {
+        Rail(title: "También tenías", icon: .watching) {
             ForEach(model.continueWatching.dropFirst(Self.heroCount)) { item in
                 NavigationLink(value: route(item)) {
                     StillCard(title: item.title, art: item.background ?? item.poster,

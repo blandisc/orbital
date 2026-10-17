@@ -123,14 +123,21 @@ public actor ForYou {
 
     private let trakt: Trakt?
     private let tmdb: Tmdb?
+    /// Las listas con puesto (Top 10 de Netflix, tendencias de JustWatch), calculadas en el iPhone.
+    private let charts: Charts?
+    /// Tus complementos de Stremio (sus catálogos son estantes) y con qué pedir cada catálogo.
+    private let addons: AddonRegistry?
+    private let http: HTTPClient?
     private let region: @Sendable () -> String
     private let kv: KeyValueStore
     private let clock: @Sendable () -> Date
     private var cache: [String: (expires: Date, value: Any)] = [:]
     private var dismissed: Set<String>
 
-    public init(trakt: Trakt?, tmdb: Tmdb?, region: @escaping @Sendable () -> String, kv: KeyValueStore, clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.trakt = trakt; self.tmdb = tmdb; self.region = region; self.kv = kv; self.clock = clock
+    public init(trakt: Trakt?, tmdb: Tmdb?, charts: Charts? = nil, addons: AddonRegistry? = nil, http: HTTPClient? = nil,
+                region: @escaping @Sendable () -> String, kv: KeyValueStore, clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.trakt = trakt; self.tmdb = tmdb; self.charts = charts; self.addons = addons; self.http = http
+        self.region = region; self.kv = kv; self.clock = clock
         dismissed = Set(kv.data("foryou-dismissed").flatMap { try? JSONDecoder().decode([String].self, from: $0) } ?? [])
     }
 
@@ -176,6 +183,22 @@ public actor ForYou {
             out += [ForYouList(id: "trend", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: true),
                     ForYouList(id: "popular", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: true)]
         }
+        // Los catálogos de tus complementos de Stremio (como `addon_catalogs` en la TV).
+        for entry in await addonCatalogs() {
+            out.append(ForYouList(id: entry.id, title: entry.title, group: .discover, brand: nil, logo: nil, splitsKinds: entry.kinds.count > 1,
+                                  source: "Stremio", meta: "De \(entry.addon)"))
+        }
+        // Las listas con puesto, como en la TV: el Top 10 oficial de Netflix y la tendencia de cada plataforma en JustWatch.
+        // Ninguna pide clave; si una no trae nada, su estante no se pinta (y entra el respaldo de TMDB de esa marca).
+        if charts != nil {
+            let country = Self.countryName(region())
+            out.append(ForYouList(id: "chart:netflix", title: "Top 10 en Netflix", group: .platforms, brand: "netflix", logo: Charts.netflixLogo,
+                                  splitsKinds: true, source: "Netflix", meta: "Esta semana en \(country)"))
+            for p in Charts.justWatchPlatforms {
+                out.append(ForYouList(id: "jw:\(p.brand)", title: "Tendencias en \(p.name)", group: .platforms, brand: p.brand, logo: Charts.justWatchLogo(p.brand),
+                                      splitsKinds: true, source: "JustWatch", meta: "Tendencia en JustWatch · \(country)"))
+            }
+        }
         let found = await platforms()
         for p in Tmdb.platforms where found[p.brand] != nil {
             out.append(ForYouList(id: p.brand, title: p.name, group: .platforms, brand: p.brand, logo: found[p.brand]?.logo, splitsKinds: true))
@@ -210,7 +233,78 @@ public actor ForYou {
             }
         }
         if let platform = Tmdb.platforms.first(where: { $0.brand == listID }) { return try await platformItems(platform, kind: kind) }
+        if listID.hasPrefix("addon:"), let entry = await addonCatalogs().first(where: { $0.id == listID }) {
+            return try await remember("\(listID):\(kind)", ttl: Self.recsTTL) { try await addonItems(entry, kind: kind) }
+        }
+        if let charts, listID == "chart:netflix" { return try await charts.netflix(kind: kind).map { chartSuggestion($0, kind: kind, platform: "Netflix") } }
+        if let charts, listID.hasPrefix("jw:"), let p = Charts.justWatchPlatforms.first(where: { "jw:\($0.brand)" == listID }) {
+            return try await charts.justWatch(brand: p.brand, kind: kind).map { chartSuggestion($0, kind: kind, platform: p.name) }
+        }
         throw TraktError.invalid("Lista desconocida")
+    }
+
+    // MARK: catálogos de complementos
+    struct AddonCatalog: Sendable { var id: String; var title: String; var addon: String; var base: String; var catalog: String; var kinds: [String] }
+
+    static let skipAddons = ["cinemeta", "torrent", "opensubtitles", "local files"]
+    static let traktAddon = "trakt integration"
+    static let genericCatalogs: Set<String> = ["popular", "year", "language", "search", "new", "featured", "top seeded", "trending",
+                                               "last videos", "calendar videos", "realdebrid", "anime"]
+
+    /// Los catálogos de tus complementos que agregan algo: uno por nombre, con sus tipos y de qué complemento salen (las
+    /// mismas reglas que la TV). Sin Stremio conectado o sin red: ninguno.
+    func addonCatalogs() async -> [AddonCatalog] {
+        guard let addons, let installed = try? await addons.addons() else { return [] }
+        let covered: Set<String> = await platforms().isEmpty ? [] : Set(Tmdb.platforms.map { Charts.fold($0.name) })
+        var found: [String: AddonCatalog] = [:], order: [String] = []
+        for addon in installed where addon.url.hasPrefix("https://") {
+            let name = addon.name, lower = name.lowercased()
+            if Self.skipAddons.contains(where: { lower.contains($0) }) { continue }
+            if lower == Self.traktAddon, trakt?.linked == true { continue }   // Trakt conectado: esas listas ya llegan de Trakt
+            for cat in addon.catalogs {
+                guard let id = cat["id"]?.string, let catName = cat["name"]?.string, let type = cat["type"]?.string,
+                      type == "movie" || type == "series",
+                      !(cat["extra"]?.array ?? []).contains(where: { $0["isRequired"]?.bool == true }) else { continue }
+                let title = lower == Self.traktAddon && catName.hasPrefix("Trakt ") ? String(catName.dropFirst(6)).trimmingCharacters(in: .whitespaces) : catName
+                if Self.genericCatalogs.contains(catName.lowercased()) || covered.contains(Charts.fold(title)) { continue }
+                let key = "addon:\(Charts.fold(name)):\(id)"
+                if found[key] == nil { found[key] = AddonCatalog(id: key, title: title, addon: name, base: addon.base, catalog: id, kinds: []); order.append(key) }
+                found[key]?.kinds.append(type)
+            }
+        }
+        return order.compactMap { found[$0] }
+    }
+
+    private func addonItems(_ entry: AddonCatalog, kind: String) async throws -> [Suggestion] {
+        guard let http else { return [] }
+        let kind = entry.kinds.contains(kind) ? kind : entry.kinds[0]
+        let catalog = entry.catalog.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed.subtracting(CharacterSet(charactersIn: "/"))) ?? entry.catalog
+        guard let url = URL(string: "\(entry.base)/catalog/\(kind)/\(catalog).json") else { return [] }
+        let response = try await http.send(HTTPRequest(url: url, headers: ["User-Agent": "Orbital"], timeout: 12))
+        guard response.status < 400, let json = JSON.parse(response.data) else { throw NetworkError("\(entry.addon) no respondió") }
+        let reason: SuggestionReason = entry.title == "Watchlist" ? .inWatchlist : entry.title == "Recommendations" ? .recommended : .inList(entry.title)
+        return (json["metas"]?.array ?? []).compactMap { m in
+            guard let imdb = m["id"]?.string, imdb.range(of: #"^tt\d+$"#, options: .regularExpression) != nil, let name = m["name"]?.string else { return nil }
+            let year = (m["releaseInfo"]?.string ?? m["year"]?.string).flatMap { Int($0.prefix(4)) }
+            return Suggestion(kind: kind, imdb: imdb, title: name, year: year, runtime: nil, overview: m["description"]?.string ?? "",
+                              poster: String(format: Self.metahubPoster, imdb), wide: String(format: Self.metahubBackground, imdb),
+                              logo: String(format: Self.metahubLogo, imdb), reason: reason, next: nil)
+        }
+    }
+
+    /// Un título de una lista con puesto, como `_chart_item` de la TV: «N.º 3 en Netflix», con puesto, movimiento y «Nuevo».
+    private func chartSuggestion(_ e: ChartEntry, kind: String, platform: String) -> Suggestion {
+        var s = Suggestion(kind: kind, imdb: e.imdb, title: e.title, year: e.year, runtime: nil, overview: "",
+                           poster: String(format: Self.metahubPoster, e.imdb), wide: String(format: Self.metahubBackground, e.imdb),
+                           logo: String(format: Self.metahubLogo, e.imdb), reason: .onPlatform(platform), next: nil, rank: e.rank)
+        s.movement = e.movement
+        s.isNew = e.isNew
+        return s
+    }
+
+    /// «México» (para «Esta semana en México»), en español como el resto de los datos de la consola.
+    static func countryName(_ iso2: String) -> String {
+        Locale(identifier: "es_MX").localizedString(forRegionCode: iso2.uppercased()) ?? iso2.uppercased()
     }
 
     private func platformItems(_ platform: (brand: String, name: String, aliases: [String]), kind: String) async throws -> [Suggestion] {

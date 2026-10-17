@@ -81,17 +81,21 @@ public final class ParaTiModel: ObservableModel {
 
     /// «Para ti hoy»: la primera sugerencia con arte ancho del primer estante que la tenga (rota con «Actualizar»);
     /// sin estantes, la primera de lo popular del mosaico.
-    public var featured: Featured? {
+    public var featured: Featured? { featuredSlides.first }
+
+    /// El carrusel del destacado: varias de la misma lista de donde sale el primero (el Top 10 de Netflix, tus
+    /// recomendaciones…), cada una con su motivo («N.º 2 en Netflix»).
+    public var featuredSlides: [Featured] {
         let loaded = visibleShelves.map { (plan: $0, items: items(for: $0)) }
-        if let pick = ShelfPlanner.featured(loaded, rotation: featuredRotation) {
-            return Featured(item: pick.item, shelfID: pick.plan.id, reason: Self.reason(of: pick.item, in: pick.plan))
+        if let pick = ShelfPlanner.featuredSlides(loaded, rotation: featuredRotation) {
+            return pick.items.map { Featured(item: $0, shelfID: pick.plan.id, reason: Self.reason(of: $0, in: pick.plan)) }
         }
         let stand = ShelfPlan(id: "mosaic", list: ForYouList(id: "mosaic", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: false),
                               listIDs: [], style: .plain)
-        if let pick = ShelfPlanner.featured([(stand, mosaic)], rotation: featuredRotation) {
-            return Featured(item: pick.item, shelfID: nil, reason: Self.reason(of: pick.item, in: pick.plan))
+        if let pick = ShelfPlanner.featuredSlides([(stand, mosaic)], rotation: featuredRotation) {
+            return pick.items.map { Featured(item: $0, shelfID: nil, reason: Self.reason(of: $0, in: pick.plan)) }
         }
-        return nil
+        return []
     }
 
     static func reason(of item: Suggestion, in plan: ShelfPlan) -> FeaturedReason {
@@ -113,7 +117,12 @@ public final class ParaTiModel: ObservableModel {
         defer { isLoading = false }
         // Lo que ya se ve se queda mientras se refresca (antes los estantes se vaciaban cada vez que volvías a la pestaña);
         // `loadShelves` solo pide lo que falta y «Actualizar» sí limpia.
-        if services.orbital.isConfigured, await loadFromConsole() { return }
+        if services.forYouFromConsole, services.orbital.isConfigured {
+            if await loadFromConsole() { return }
+            // Cancelada (cambiaste de pestaña a media carga): no es que la consola no conteste; no se cae a las listas del
+            // iPhone (sin Top 10 ni plataformas) ni se borran los estantes.
+            guard !Task.isCancelled else { return }
+        }
         await loadFromPhone()
     }
 
@@ -169,9 +178,10 @@ public final class ParaTiModel: ObservableModel {
             airings = fetched
             services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno»
         }
-        if mosaic.isEmpty && lists.isEmpty { error = services.appSettings.traktEnabled ? nil : "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias." }
-        else { error = nil }
         await shelvesLoaded
+        // El aviso, solo si de verdad no hay nada que enseñar (las listas con puesto existen siempre, pero sin red llegan vacías).
+        if mosaic.isEmpty && shelves.allSatisfy({ items(for: $0).isEmpty }) { error = services.appSettings.traktEnabled ? nil : "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias." }
+        else { error = nil }
         await topUpMosaic()
     }
 
@@ -210,7 +220,11 @@ public final class ParaTiModel: ObservableModel {
             for entry in wanted {
                 group.addTask {
                     switch source {
-                    case .console: return (entry.key, try? await remote.items(listID: entry.listID, kind: kind))
+                    case .console:
+                        // Un estante que tarda (la consola refrescando JustWatch) tiene una segunda oportunidad.
+                        if let found = try? await remote.items(listID: entry.listID, kind: kind) { return (entry.key, found) }
+                        guard !Task.isCancelled else { return (entry.key, nil) }
+                        return (entry.key, try? await remote.items(listID: entry.listID, kind: kind))
                     case .phone: return (entry.key, try? await local.items(listID: entry.listID, kind: kind))
                     }
                 }
@@ -259,7 +273,10 @@ public final class ParaTiModel: ObservableModel {
     public func dismiss(_ s: Suggestion) async {
         switch source {
         case .console: await services.forYouRemote.dismiss(s.imdb)
-        case .phone: await services.forYou.dismiss(s.imdb)
+        case .phone:
+            await services.forYou.dismiss(s.imdb)
+            // La TV también deja de sugerirlo (si tu Orbital contesta; si no, queda en el iPhone).
+            if services.orbital.isConfigured { await services.forYouRemote.dismiss(s.imdb) }
         }
         mosaic.removeAll { $0.imdb == s.imdb }
         railItems = railItems.mapValues { $0.filter { $0.imdb != s.imdb } }

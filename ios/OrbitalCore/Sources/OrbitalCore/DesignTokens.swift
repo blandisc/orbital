@@ -157,6 +157,9 @@ public enum DesignTokens {
         public static let growRatio = 1.8
         public static let idleSeconds = 3.0, aliveSeconds = 2.2, driftTick = 1.0
         public static let driftPerSecond = 16.0
+        /// Inercia al soltar el mosaico, como una lista de iOS: cuánto de la velocidad queda tras un segundo (0.998 por ms,
+        /// la desaceleración normal de `UIScrollView`), cuándo se detiene (pt/s) y cada cuánto se mueve (s).
+        public static let flingDecayPerSecond = 0.135, flingStopSpeed = 20.0, flingFrame = 1.0 / 120
         /// Puntos por segundo de cada columna en el ambiente, en el mismo orden que `DRIFT` de la TV (se repite si hay más columnas).
         public static let driftPattern: [Double] = [16, 12, 19, 14, 17, 13]
         /// Cuánto tarda la pieza quieta en acercarse («cobra vida», `--duration-alive` de la TV).
