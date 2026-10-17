@@ -24,7 +24,7 @@
 .card__placeholder { position: absolute; inset: 0 0 30% 0; display: grid; place-items: center; }
 .card__placeholder svg { width: 42%; height: auto; fill: none; stroke: var(--color-text-muted); stroke-width: 2; stroke-linejoin: round; opacity: .55; }
 .card__badge {
-  position: absolute; top: var(--space-2); right: var(--space-2); z-index: var(--z-raised);
+  position: absolute; top: var(--inset-poster); right: var(--inset-poster); z-index: var(--z-raised);
   display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%;
   background: var(--color-badge-bg); color: var(--color-favorite);
   box-shadow: var(--shadow-badge);
@@ -39,7 +39,7 @@
    la misma placa oscura (legible sobre cualquier póster, claro u oscuro). */
 /* El sube y baja del Top 10, debajo del puesto. Sin verde: el teal es solo «En vivo»; abajo, tenue. */
 .card__trend.badge {
-  position: absolute; top: calc(var(--space-2) + 2.4rem); left: var(--space-2); z-index: var(--z-raised);
+  position: absolute; top: calc(var(--inset-poster) + 2.4rem); left: var(--inset-poster); z-index: var(--z-raised);
   background: var(--color-badge-bg); color: var(--color-text); box-shadow: var(--shadow-badge); font-variant-numeric: tabular-nums;
 }
 .card__trend--down.badge { color: var(--color-text-muted); }
@@ -52,9 +52,9 @@
   color: var(--color-decorative); font-family: var(--font-sans); font-size: calc(var(--card-height) * .82); font-weight: var(--weight-bold);
   line-height: 1; letter-spacing: var(--tracking-rank); font-variant-numeric: tabular-nums; user-select: none; pointer-events: none;
 }
-.card-ranked .card__trend.badge { top: var(--space-2); }
+.card-ranked .card__trend.badge { top: var(--inset-poster); }
 .card__rank.badge {
-  position: absolute; top: var(--space-2); left: var(--space-2); z-index: var(--z-raised);
+  position: absolute; top: var(--inset-poster); left: var(--inset-poster); z-index: var(--z-raised);
   background: var(--color-badge-bg); color: var(--color-text); box-shadow: var(--shadow-badge);
   font-variant-numeric: tabular-nums;
 }
@@ -116,7 +116,7 @@
   background: var(--gradient-art-base);
 }
 .card__progress {
-  position: absolute; left: var(--space-2); right: var(--space-2); bottom: var(--space-2); z-index: var(--z-raised);
+  position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised);
   height: var(--progress-height); border-radius: var(--radius-pill); background: var(--color-progress-track); overflow: hidden;
 }
 .card__progress-fill { display: block; height: 100%; border-radius: inherit; background: var(--color-progress); }
@@ -124,7 +124,7 @@
 
 /* Abierto ahora: píldora arriba a la izquierda, con el punto vivo de la barra de estado. */
 .card__live {
-  position: absolute; left: var(--space-2); top: var(--space-2); z-index: var(--z-above);
+  position: absolute; left: var(--inset-poster); top: var(--inset-poster); z-index: var(--z-above);
   display: inline-flex; align-items: center; gap: .35rem; padding: .15rem .55rem .15rem .45rem;
   border-radius: var(--radius-pill); background: var(--color-badge-bg); color: var(--color-text);
   font-size: var(--text-2xs); font-weight: var(--weight-bold); letter-spacing: var(--tracking-label);

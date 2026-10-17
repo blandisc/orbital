@@ -100,9 +100,9 @@ Globales: `--z-overlay`, `--z-hints`, `--z-launch`, `--z-toast`. Dentro de un co
 
 | Tamaño | Token | Valor | Dónde |
 |---|---|---|---|
-| Póster o miniatura | `--inset-poster` | `--space-2` | Insignias, puesto, avance sobre una portada o una miniatura |
+| Póster o miniatura | `--inset-poster` | `--space-2` | Insignias, puesto, avance sobre una portada o una miniatura (`Card`, número del canal, calendario compacto) |
 | Renglón | `--inset-row` | `--space-2` | `RowTile` (También tenías): del borde a la miniatura y al texto |
-| Tarjeta mediana | `--inset-card` | `--space-4` | `ConsoleTile` (y, al pasarlas, canales y calendario) |
+| Tarjeta mediana | `--inset-card` | `--space-4` | `ConsoleTile`, canal de TV en vivo y tarjeta del calendario |
 | Destacado | `--inset-feature` | `--space-6` | `FeatureTile` (y fichas grandes) |
 
 Reglas:

@@ -35,10 +35,10 @@ body[data-view="tv"] .backdrop__space { opacity: 1; }
   position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--tile-channel-width), 1fr));
   gap: var(--space-6) var(--space-5); transition: transform var(--duration-slow) var(--ease-out);
 }
-.tv__tile { aspect-ratio: 16 / 9; display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center; gap: var(--space-2); padding: var(--space-5) var(--space-4) var(--space-3); }
+.tv__tile { aspect-ratio: 16 / 9; display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center; gap: var(--space-2); padding: var(--inset-card); } /* tarjeta mediana: un margen, igual en los cuatro lados */
 /* El número y los avisos van sobre el logo (que ocupa casi toda la casilla): una placa oscura para que se lean sobre cualquiera. */
-.tv__number { position: absolute; z-index: var(--z-raised); top: var(--space-2); left: var(--space-2); }
-.tv__flag { position: absolute; z-index: var(--z-raised); top: var(--space-2); right: var(--space-2); }
+.tv__number { position: absolute; z-index: var(--z-raised); top: var(--inset-poster); left: var(--inset-poster); }
+.tv__flag { position: absolute; z-index: var(--z-raised); top: var(--inset-poster); right: var(--inset-poster); }
 .tv__number, .tv__flag.chip { background: var(--color-badge-bg); box-shadow: var(--shadow-badge); }
 /* El logo siempre dentro de su caja (los hay altos, cuadrados y anchos): ocupa el área y se ajusta sin salirse ni tapar el nombre. */
 .tv__media { position: relative; display: grid; place-items: center; width: 100%; height: 100%; min-height: 0; min-width: 0; }
