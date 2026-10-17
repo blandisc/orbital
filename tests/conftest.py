@@ -106,6 +106,17 @@ def _no_real_tv(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_real_hltb(monkeypatch):
+    """Ninguna prueba le pregunta a HowLongToBeat (test_hltb pone su doble)."""
+    from orbital.library import hltb
+
+    def offline(url, body=None, extra=None, timeout=12):
+        raise OSError(f"Sin conexión (pruebas): {url}")
+
+    monkeypatch.setattr(hltb, "_request", offline)
+
+
+@pytest.fixture(autouse=True)
 def _no_real_web_art(monkeypatch, tmp_path):
     """Ninguna prueba baja arte de internet ni escribe en el caché real (remote_art.py)."""
     from orbital import remote_art

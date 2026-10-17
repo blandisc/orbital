@@ -135,6 +135,10 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
                     catalog.scanning = False
                     d.hub.publish_threadsafe({"type": "library-changed"})
                 shell.start()
+                try:  # cuánto tarda cada juego (HowLongToBeat): con calma, después de todo lo demás
+                    catalog.warm_hltb()
+                except Exception:  # noqa: BLE001 - un sitio ajeno nunca tumba a Orbital
+                    logging.getLogger(__name__).exception("HowLongToBeat")
 
             # Con la biblioteca del último arranque, la interfaz entra ya; si no, espera el escaneo.
             catalog.scanning = not catalog.load_snapshot()  # antes de que la interfaz pregunte

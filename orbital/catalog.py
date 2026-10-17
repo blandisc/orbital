@@ -31,7 +31,7 @@ from .events import EventBus
 from .focus import READY_TIMEOUT, bring_app_to_front, bring_game_to_front, game_ready, is_orbital_window, pin_orbital  # noqa: F401 - compatibilidad
 from .foryou import ForYou
 from .launcher import Launcher
-from .library import cinemeta, detect, emulators, esde, geforcenow, steam, stremio, stremio_api
+from .library import cinemeta, detect, emulators, esde, geforcenow, hltb, steam, stremio, stremio_api
 from .library.media import KINDS, MediaStore, low_res, placeholder
 from .library.models import LibraryItem
 from .library.scraper import Scraper, Target
@@ -46,6 +46,7 @@ CONTINUE_LIMIT = 20  # "Seguir viendo": los más recientes
 JUMP_LIMIT = 16  # "Continuar" en Inicio
 NEW_FOR = 7 * 86400  # un juego es "nuevo" su primera semana
 STEAM_STATS_DELAY = 6  # s tras cerrar un juego de Steam, antes de releer sus horas
+HLTB_CATEGORIES = ("emulators", "steam", "geforcenow")  # los juegos (HowLongToBeat: cuánto tardan en terminarse)
 
 log = logging.getLogger(__name__)
 
@@ -148,6 +149,7 @@ class Catalog:
         # Cachés en disco (no en pruebas: sin config.yaml no se guarda nada).
         cache = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" if config.source else None
         self._steam_art = geforcenow.SteamArt(cache / "steam-appids.json" if cache else None)
+        self.hltb = hltb.Hltb(cache / "hltb.json" if cache else None)  # cuánto tarda cada juego (HowLongToBeat)
         # La biblioteca del último escaneo: la interfaz la muestra al instante mientras se escanea.
         self._snapshot = cache / "library.json" if cache else None
         self.media = MediaStore(Path(expand(config.art.dir)) if config.art.dir else None)
@@ -361,6 +363,8 @@ class Catalog:
             if not item.hero:
                 item.hero = placeholder("hero", item.system, item.id)
                 item.extra["placeholder_hero"] = True
+            if item.category in HLTB_CATEGORIES and (times := self.hltb.cached(item.title, item.extra.get("year"))):
+                item.extra["hltb"] = times
         self.state.mark_seen([i.id for i in found if i.category in ("emulators", "steam")])
         self.store.replace(found)
         self._save_snapshot(found)
@@ -578,6 +582,22 @@ class Catalog:
         if clear_runner:
             self.state.set_pref(item_id, "runner", None)
         return self.describe(item)
+
+    def warm_hltb(self, limit: int = 40) -> None:
+        """Pide a HowLongToBeat lo que falta de tus juegos (los más recientes primero), en segundo plano, y los
+        pone en la biblioteca sin reescanearla."""
+        games = [i for i in self.store.all() if i.category in HLTB_CATEGORIES]
+        games.sort(key=lambda i: self.last_played(i) or 0, reverse=True)
+        picked = games[:limit]
+        if not self.hltb.warm([(i.title, i.extra.get("year")) for i in picked]):
+            return
+
+        def apply(item: LibraryItem) -> None:
+            times = self.hltb.cached(item.title, item.extra.get("year"))
+            if times:
+                item.extra["hltb"] = times
+        self.store.update(apply, where=lambda i: i.category in HLTB_CATEGORIES)
+        self.notify({"type": "library-changed"})
 
     def refresh_steam_stats(self) -> None:
         """Relee las horas y la última vez de Steam (barato: no reescanea la biblioteca)."""
