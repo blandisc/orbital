@@ -97,6 +97,8 @@ log = logging.getLogger(__name__)
 SYNTHETIC_RESYNC_AFTER = 60.0  # s en pausa tras los que un canal de Orbital regresa a lo que va al aire
 # El fundido de entrada: el video arranca tapado de negro y se destapa ya con imagen (sin ventanas transparentes, que
 # hacían crecer la memoria de dibujo de Windows). Al abrirlo desde Orbital espera a que Orbital termine su salida a negro.
+PIP_WIDTH = .3  # del ancho de la pantalla: el video en pequeño (Home durante un video)
+PIP_MARGIN = .03
 CURTAIN_ID = 9
 CURTAIN_STEPS = (.86, .7, .52, .36, .22, .1, 0)  # opacidad, un paso cada CURTAIN_STEP s (~medio segundo)
 CURTAIN_STEP = .07
@@ -186,6 +188,7 @@ class OrbitalPlayer(PlayerScreen):
         self.on_synthetic_failed = None  # (meta) -> True si se intenta con otra fuente u otro episodio
         self.on_synthetic_resync = None  # (meta) -> True si regresó a lo que va al aire (tras una pausa larga)
         self.on_synthetic_duration = None  # (meta, segundos): lo que dura de verdad (la programación lo aprende)
+        self.pip = False  # el video en pequeño, en una esquina (Home durante un video)
         self.on_detached = None  # (meta): «Seguir solo este capítulo» (el canal ya no manda; la barra de arriba cambia)
         self._zap_view, self._zap_timer = None, None  # ▲▼ seguidos (ver _queue_channel)
         self._panel_category = None  # la categoría que enseña la guía de canales (Y)
@@ -233,6 +236,7 @@ class OrbitalPlayer(PlayerScreen):
             self.current = playback
             self.segment = Segment(meta, title, url, start=float(options.get("start") or 0), live=bool(options.get("live")))
         self._reveal_wait = CURTAIN_REVEAL_WAIT  # el primero de esta ventana: Orbital todavía tapa la pantalla
+        self.pip = False
         if not options.get("live"):
             self._curtain(1)
         if hasattr(self.mpv, "start_observing"):
@@ -474,6 +478,45 @@ class OrbitalPlayer(PlayerScreen):
             return
         segment.last_tick = now
         self._buffering_state(paused)
+
+    # --- el video en pequeño (PiP) ------------------------------------------------------------------------------------
+    def enter_pip(self) -> bool:
+        """Home durante un video: se encoge a una esquina y sigue sonando, encima de Orbital (sin transparencias).
+        False si no hay video abierto."""
+        current = self.current
+        if current is None or current.process is None or current.process.poll() is not None:
+            return False
+        self.pip = True
+        self.menu = None
+        for overlay in (1, 2, 4):  # la barra, el panel y la tarjeta no caben en la esquina
+            self._overlay(overlay, None)
+        for prop, value in (("fullscreen", False), ("border", False), ("ontop", True), ("keepaspect-window", True)):
+            self.mpv.command("set_property", prop, value)
+        threading.Thread(target=self._place_pip, args=(current,), daemon=True, name="pip").start()
+        log.info("Video en pequeño: %s", current.title)
+        return True
+
+    def _place_pip(self, current) -> None:
+        time.sleep(.25)  # mpv sale de pantalla completa y luego se le pone su lugar
+        if not self.pip or self.current is not current:
+            return
+        from . import windows
+
+        hwnd = windows.main_window(windows.process_tree(current.process.pid))
+        screen_w, screen_h = windows.screen_size()
+        width = int(screen_w * PIP_WIDTH)
+        height = int(width * 9 / 16)
+        margin = int(screen_w * PIP_MARGIN)
+        windows.place_window(hwnd, screen_w - width - margin, screen_h - height - margin, width, height)
+
+    def exit_pip(self) -> None:
+        """De vuelta a pantalla completa (Volver al video)."""
+        if not self.pip:
+            return
+        self.pip = False
+        for prop, value in (("ontop", False), ("border", True), ("fullscreen", True)):
+            self.mpv.command("set_property", prop, value)
+        log.info("Video a pantalla completa otra vez")
 
     def _curtain(self, opacity: float) -> None:
         """El negro del fundido de entrada (debajo de la barra, los avisos y los paneles)."""

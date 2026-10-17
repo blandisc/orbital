@@ -745,3 +745,13 @@ def test_the_video_fades_in_from_black_without_a_transparent_window(monkeypatch)
     p._curtain(0)
     p._started(live)
     assert mpv.overlays.get(player.CURTAIN_ID) is None  # la TV en vivo no lleva fundido
+
+
+def test_the_small_video_leaves_fullscreen_stays_on_top_and_comes_back(monkeypatch):
+    p, mpv = make_player()
+    p.current.process = type("Proc", (), {"poll": lambda self: None, "pid": 1})()
+    monkeypatch.setattr(p, "_place_pip", lambda current: None)
+    assert p.enter_pip() and p.pip
+    assert ("set_property", "fullscreen", False) in mpv.sent and ("set_property", "ontop", True) in mpv.sent
+    p.exit_pip()
+    assert not p.pip and mpv.sent[-1] == ("set_property", "fullscreen", True)

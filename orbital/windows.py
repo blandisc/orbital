@@ -341,6 +341,21 @@ def covers_center(hwnd: int) -> bool:
     return left <= x < right and top <= y < bottom
 
 
+def screen_size() -> tuple[int, int]:
+    """(ancho, alto) de la pantalla principal."""
+    if not WIN:
+        return 1920, 1080
+    return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+
+
+def place_window(hwnd: int, x: int, y: int, width: int, height: int, topmost: bool = True) -> bool:
+    """Pone la ventana en ese lugar y tamaño (encima de todo, sin quitarle el foco a nadie): el video en pequeño."""
+    if not WIN or not hwnd:
+        return False
+    insert = wintypes.HWND(-1 if topmost else -2)  # HWND_TOPMOST / HWND_NOTOPMOST
+    return bool(user32.SetWindowPos(wintypes.HWND(hwnd), insert, int(x), int(y), int(width), int(height), 0x0010))  # SWP_NOACTIVATE
+
+
 def window_rect(hwnd: int) -> tuple[int, int, int, int] | None:
     """(izquierda, arriba, derecha, abajo): para saber si la ventana del juego ya dejó de cambiar de tamaño."""
     if not WIN or not hwnd:

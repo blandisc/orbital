@@ -26,6 +26,7 @@ SETTINGS = {
     "voice_tips": {True, False},
     "game_idle_minutes": {0, 30, 60, 120},
     "video_idle_minutes": {0, 15, 30, 60},
+    "video_home": {"pip", "pause"},  # Home durante un video: en pequeño en una esquina, o pausa
     "close_previous": {True, False},  # la frase de Alexa debajo de los botones del héroe
     "welcomed": {True, False},
     "emulator_updates": {"avisar", "auto", "nunca"},
@@ -87,7 +88,7 @@ def router(d: Deps) -> APIRouter:
                 "reduce_motion": False, "sounds": True, "haptics": True, "voice_tips": True,
                 "game_idle_minutes": d.config.sessions.game_idle_minutes,
                 "video_idle_minutes": d.config.sessions.video_idle_minutes,
-                "close_previous": d.config.sessions.close_previous, "screensaver_minutes": 10, **catalog.state.settings(),
+                "close_previous": d.config.sessions.close_previous, "screensaver_minutes": 10, "video_home": "pip", **catalog.state.settings(),
                 "stremio_linked": catalog.stremio_linked, "alexa": d.alexa_ready, "alexa_last": d.alexa_last,
                 # «Para ti»: Ajustes › Cuentas enseña Trakt, TMDB y RAWG (y si su clave ya está).
                 "trakt": catalog.foryou.status()["trakt"], "para_ti": catalog.foryou.status()}

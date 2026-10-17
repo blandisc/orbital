@@ -136,12 +136,28 @@ class ConsoleShell:
             return
         self.remember(fg)
         log.info("Home: de %s a Orbital", self.win.title(fg) or self.win.exe_name(self.win.pid_of(fg)))
+        if self._video_to_corner(fg):
+            self.show_orbital()
+            return
         self.pause(fg)
         self.show_orbital()
+
+    def _video_to_corner(self, hwnd: int) -> bool:
+        """Home con un video al frente y Ajustes › «Home durante un video: En pequeño»: el video se va a una esquina y
+        sigue (en vez de pausarse)."""
+        if not self.player or self.win.exe_name(self.win.pid_of(hwnd)) != PLAYER_EXE:
+            return False
+        state = getattr(self.catalog, "state", None)
+        if (state.settings().get("video_home", "pip") if state is not None else "pip") != "pip":
+            return False
+        enter = getattr(self.player, "enter_pip", None)
+        return bool(enter and enter())
 
     def resume(self) -> bool:
         """Vuelve al juego (descongelándolo). Devuelve False si no hay juego abierto."""
         self.unpause()
+        if self.player and getattr(self.player, "pip", False):
+            self.player.exit_pip()  # el video en pequeño vuelve a pantalla completa
         target = self.game_window()
         if not target:
             return False
