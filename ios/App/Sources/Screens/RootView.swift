@@ -93,15 +93,17 @@ struct MainTabs: View {
         }
         // Si la TV deja de reproducir con la hoja abierta, la hoja se cierra (no se queda vacía).
         .onChange(of: tvNow.model.now == nil) { _, stopped in if stopped { showRemote = false } }
+        #if DEBUG
+        .onChange(of: tvNow.model.now == nil) { _, stopped in if !stopped, Demo.isOn, Demo.open == "remote" { showRemote = true } }   // `-demo-open remote`
+        #endif
         // Tocar el accesorio abre el control remoto completo (−10 · pausa · +10 · siguiente, salir, seguir aquí).
         .sheet(isPresented: $showRemote) {
             if let now = tvNow.model.now {
                 NowPlayingCard(now: now, fetchedAt: tvNow.model.fetchedAt, busy: tvNow.model.busy,
                                onAction: { action, delta in Task { await tvNow.model.control(action, delta: delta) } },
-                               onContinueHere: { showRemote = false; openNowPlaying(now) })
-                    .padding(DS.Space.gutter)
-                    .presentationDetents([.medium])
-                    .presentationDragIndicator(.visible)
+                               onContinueHere: { showRemote = false; openNowPlaying(now) }, framed: false)
+                    .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s6).padding(.bottom, DS.Space.s4)
+                    .fittedSheet()   // a la medida de la tarjeta: sin el hueco de media pantalla
             }
         }
         .tint(DS.accent)   // la pestaña elegida lleva el acento; dentro, los botones vuelven al papel

@@ -111,6 +111,8 @@ struct NowPlayingCard: View {
     let busy: Bool
     let onAction: (String, Double?) -> Void
     let onContinueHere: () -> Void
+    /// Con su caja (en Inicio). En la hoja del control remoto, sin caja: la hoja ya es el contenedor.
+    var framed = true
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var tap = 0
 
@@ -125,8 +127,8 @@ struct NowPlayingCard: View {
             }
             controls
         }
-        .padding(DS.Space.s3)
-        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
+        .padding(framed ? DS.Space.s3 : 0)
+        .background(framed ? DS.fill : .clear, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
         .accessibilityElement(children: .contain)
     }
 
@@ -169,7 +171,8 @@ struct NowPlayingCard: View {
             if dynamicTypeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: DS.Space.s2) { buttons(labeled: true) }
             } else {
-                HStack(spacing: DS.Space.s2) { buttons(labeled: false) }
+                // Repartidos a lo ancho (en un iPhone grande no se amontonan a la izquierda).
+                HStack(spacing: DS.Space.s2) { buttons(labeled: false) }.frame(maxWidth: .infinity)
             }
         }
         .disabled(busy)
@@ -197,6 +200,7 @@ struct NowPlayingCard: View {
             if !now.live { Button("Seguir aquí", systemImage: "iphone") { onContinueHere() } }
         } label: { Image(systemName: "ellipsis.circle") }
         .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
+        .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? nil : .infinity)
         .accessibilityLabel(Text("Más"))
     }
 
@@ -207,7 +211,7 @@ struct NowPlayingCard: View {
             } else if labeled {
                 Button { tapAndRun(action) } label: { Label(text, systemImage: symbol) }.buttonStyle(.glass)
             } else {
-                DSIconButton(symbol: symbol, label: text, prominent: prominent) { tapAndRun(action) }
+                DSIconButton(symbol: symbol, label: text, prominent: prominent) { tapAndRun(action) }.frame(maxWidth: .infinity)
             }
         }
         .controlSize(prominent ? .extraLarge : .large)

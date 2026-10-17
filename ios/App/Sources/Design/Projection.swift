@@ -370,3 +370,22 @@ struct HeroActions<Content: View>: View {
         }
     }
 }
+
+/// Una hoja tan alta como lo que trae (el control remoto de la TV, avisos cortos): mide su contenido y lo usa de alto, en
+/// vez de media pantalla con un hueco abajo. Si el contenido cambia de alto, la hoja lo sigue.
+private struct FittedSheet: ViewModifier {
+    @State private var height: CGFloat = DS.Size.touchTarget * 6
+
+    func body(content: Content) -> some View {
+        content
+            .fixedSize(horizontal: false, vertical: true)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
+            .presentationDetents([.height(height)])
+            .presentationDragIndicator(.visible)
+    }
+}
+
+extension View {
+    /// Receta: hoja a la medida de su contenido (ver `FittedSheet`).
+    func fittedSheet() -> some View { modifier(FittedSheet()) }
+}
