@@ -48,3 +48,10 @@ test("frase para Alexa según lo enfocado", async () => {
 test("en una hoja que solo se lee (ejemplos de Alexa), el pie no ofrece «Elegir»", () => {
   assert.deepEqual(footerHints(GLYPHS.gamepad, { sheetOpen: true, inert: true }).map((i) => i.label), ["Atrás"]);
 });
+
+test("la leyenda del pie, como {acción: texto}, para el control del iPhone", async () => {
+  const { legendOf } = await import("../../orbital/web/js/core/hints.js");
+  const glyphs = { select: "A", back: "B", alt: "X", section: "LB RB", page: "LT RT" };
+  const list = [{ glyph: "A", label: "Ver" }, { glyph: "X", label: "Mi lista" }, { glyph: "LB RB", label: "Sección" }, { glyph: "?", label: "Nada" }];
+  assert.deepEqual(legendOf(list, glyphs), { select: "Ver", alt: "Mi lista", section: "Sección" });
+});

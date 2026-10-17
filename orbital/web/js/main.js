@@ -7,9 +7,9 @@ import { h, svg } from "./core/dom.js";
 import { ICONS } from "./core/icons.js";
 import { closedMessage, crashMessage } from "./core/format.js";
 import { createInput, GLYPHS } from "./core/input.js";
-import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, sectionRows, visibleSections } from "./core/library.js";
+import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
-import { footerHints, gamesHints, homeHints, tvHints } from "./core/hints.js";
+import { footerHints, gamesHints, homeHints, legendOf, tvHints } from "./core/hints.js";
 import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
@@ -251,16 +251,22 @@ let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver
 const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.sources, ui.title, ui.search];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
-/** Qué hay al frente, para el control del iPhone («Escribir» solo con un campo de texto). Solo se manda si cambió. */
+/** Qué hay al frente, para el control del iPhone: la pantalla, si hay un campo de texto («Escribir»), la sección y la
+ *  leyenda del pie ({acción: texto}, para rotular sus botones como la tele). Solo se manda si cambió. */
 let reportedUi = "";
+let shownLegend = [];
+const renderLegend = ui.hints.render;
+ui.hints.render = (list) => { shownLegend = list; return renderLegend(list); };
 function reportUi() {
   const textField = ui.search.isOpen || ui.login.isOpen;
   const screen = ui.login.isOpen ? "login" : ui.search.isOpen ? "search" : ui.sheet.isOpen ? "menu"
     : ui.title.isOpen ? "title" : ui.sources.isOpen ? "sources" : state.section;
-  const key = `${screen}:${textField}`;
+  const body = { screen, text_field: textField, section: SECTIONS.find((s) => s.id === state.section)?.title ?? null,
+    legend: legendOf(shownLegend, glyphs()) };
+  const key = JSON.stringify(body);
   if (key === reportedUi) return;
   reportedUi = key;
-  api.uiState({ screen, text_field: textField }).catch(() => { reportedUi = ""; });
+  api.uiState(body).catch(() => { reportedUi = ""; });
 }
 
 /** «Escribir» del control del iPhone: al campo con foco (la cuenta de Stremio o la búsqueda); sin campo, abre la búsqueda. */
@@ -273,7 +279,7 @@ function remoteText(text, submit) {
 }
 
 function renderHints() {
-  reportUi();
+  queueMicrotask(reportUi); // después de pintar el pie: con su leyenda
   const g = glyphs();
   // Te moviste después de ocultar algo: Y ya no deshace, así que el aviso deja de decirlo.
   if (state.undoHide && !canUndoHide()) { state.undoHide = null; ui.toast.dismiss(); }

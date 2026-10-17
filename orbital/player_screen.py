@@ -673,8 +673,9 @@ class PlayerScreen:
             else:
                 self._quit()
             return
-        button = {"select": "a", "options": "y", "menu": "x", "pageleft": "lt", "pageright": "rt"}.get(action, action)
-        if button in ("up", "down", "left", "right", "a", "x", "y", "lt", "rt"):
+        button = {"select": "a", "alt": "x", "options": "y", "menu": "x", "pageleft": "lt", "pageright": "rt",
+                  "prevsection": "lb", "nextsection": "rb"}.get(action, action)
+        if button in ("up", "down", "left", "right", "a", "x", "y", "lt", "rt", "lb", "rb"):
             self.press(button)
 
     def _quit(self) -> None:

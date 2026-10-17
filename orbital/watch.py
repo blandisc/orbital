@@ -511,7 +511,7 @@ class Watch:
         return {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title, "detail": detail,
                 "facts": facts, "description": description, "poster": poster,
                 "source": source.index, "source_label": source_label(source), "binge": source.binge,
-                "tried": [source.index]}
+                "source_key": source.key, "tried": [source.index]}
 
     def best_source(self, kind: str, video_id: str, binge: str | None = None,
                     skip: set[int] | None = None, prefs: streams.Preferences | None = None) -> streams.Source | None:
@@ -541,16 +541,20 @@ class Watch:
                   from_start: bool = False) -> dict:
         """"Ver": sin lista de fuentes. Orbital elige la recomendada y arranca (la lista queda en Y)."""
         prefs, subtitles = self.language_for(meta_id)
-        source = self.best_source(kind, video_id, prefs=prefs)
+        resume = None if from_start else self.resume_choice(meta_id, video_id)
+        source = None
+        if resume and resume.get("source"):  # «Continuar»: la fuente con la que lo dejaste, si sigue ahí
+            source = next((s for s in self.stream_sources(kind, video_id, prefs) if s.key == resume["source"]), None)
+        source = source or self.best_source(kind, video_id, prefs=prefs)
         if source is None:
             raise LookupError(self.no_sources_message(kind, video_id))
         self.play_source(kind, meta_id, video_id, source.index, title, keep=keep, from_start=from_start,
-                         prefs=prefs, subtitles=subtitles)
+                         prefs=prefs, subtitles=subtitles, sub_pick=(resume or {}).get("sub"))
         return {"source": source.public(), "label": source_label(source)}
 
     def play_source(self, kind: str, meta_id: str, video_id: str, index: int, title: str, keep: bool = False,
                     from_start: bool = False, prefs: streams.Preferences | None = None,
-                    subtitles: str | None = None) -> str:
+                    subtitles: str | None = None, sub_pick: dict | None = None) -> str:
         """Reproduce la fuente elegida: en el reproductor de Orbital (mpv, con el mando) o, si no
         está o así se configuró, directo en el de Stremio (sin su lista de fuentes).
         `prefs`/`subtitles`: idioma pedido para esta vez ("…en español"); si no, el de Ajustes."""
@@ -568,7 +572,7 @@ class Watch:
         url = player.stream_url(source.stream)
         if mpv_exe and url:
             self.play_native(mpv_exe, url, kind, meta_id, video_id, title, keep=keep, source=source,
-                             from_start=from_start, audio=prefs.audio, subtitles=subtitles)
+                             from_start=from_start, audio=prefs.audio, subtitles=subtitles, sub_pick=sub_pick)
             return "orbital"
         uri = streams.player_link(source, cinemeta.MANIFEST, kind, meta_id, video_id)
         self.sessions.open_stremio(uri, title)
@@ -591,7 +595,7 @@ class Watch:
 
     def play_native(self, mpv_exe: str, url: str, kind: str, meta_id: str, video_id: str, title: str,
                     keep: bool = False, source: streams.Source | None = None, from_start: bool = False,
-                    audio: str | None = None, subtitles: str | None = None) -> None:
+                    audio: str | None = None, subtitles: str | None = None, sub_pick: dict | None = None) -> None:
         """mpv a pantalla completa, desde donde te quedaste (según Stremio)."""
         start = 0.0 if from_start else self.resume_position(meta_id, video_id)
         meta = self._media_meta(kind, meta_id, video_id, title, source) if source else \
@@ -609,7 +613,7 @@ class Watch:
                 self.launcher.run, mpv_exe, url, title, meta,
                 start=start, audio=audio or self.stream_prefs.audio,
                 subtitles=self.subtitles_lang if subtitles is None else subtitles,
-                fallback_subs=self._fallback_subs(kind, video_id, subtitles),
+                fallback_subs=self._fallback_subs(kind, video_id, subtitles), sub_pick=None if from_start else sub_pick,
                 started=lambda process: self.launcher.track("media:player", title, process, runner="Reproductor"))
         except BaseException:
             self.sessions.unpin(pinned)  # mpv no abrió: Orbital no se queda «siempre encima»
@@ -936,9 +940,30 @@ class Watch:
     def _player_finished(self, meta: dict, position: float, duration: float, watched: float) -> None:
         self._save_progress(meta, position, duration, watched, refresh=True)
 
+    def _safe_remember(self, meta: dict) -> None:
+        try:
+            self._remember_choice(meta)
+        except Exception:  # noqa: BLE001 - recordar la fuente nunca tumba el guardado del avance
+            log.exception("No pude recordar la fuente y los subtítulos")
+
+    def resume_choice(self, meta_id: str, video_id: str) -> dict | None:
+        """Con qué fuente y qué subtítulos dejaste ese video (para «Continuar»), o None."""
+        saved = self.state.prefs(f"stremio:{meta_id}").get("resume")
+        return saved if isinstance(saved, dict) and saved.get("video_id") == video_id else None
+
+    def _remember_choice(self, meta: dict) -> None:
+        """Junto a «dónde ibas»: la fuente (su huella) y la pista de subtítulos que tenías."""
+        if not meta.get("meta_id") or not meta.get("video_id") or meta.get("live"):
+            return
+        choice = {"video_id": meta["video_id"], "source": meta.get("source_key"), "sub": self.player.current_subtitle()}
+        if choice != self.state.prefs(f"stremio:{meta['meta_id']}").get("resume"):
+            self.state.set_pref(f"stremio:{meta['meta_id']}", "resume", choice)
+
     def _save_progress(self, meta: dict, position: float, duration: float, watched: float, refresh: bool) -> None:
         """Guarda en tu cuenta de Stremio dónde te quedaste (Seguir viendo, en Orbital y en Stremio).
         Se llama cada minuto, al pausar y al terminar; `watched` son los segundos vistos desde la vez anterior."""
+        if position >= 60:  # con qué fuente y subtítulos lo dejaste (para «Continuar»)
+            self._safe_remember(meta)
         auth = self.credentials.get(STREMIO_KEY)
         if not auth or (refresh and watched < 20 and position < 60):
             return  # se abrió y cerró sin ver nada: no se toca tu biblioteca

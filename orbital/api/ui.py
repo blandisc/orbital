@@ -95,9 +95,13 @@ def router(d: Deps) -> APIRouter:
     def report_state(body: dict) -> dict:
         """La interfaz cuenta qué pantalla tiene al frente y si hay un campo de texto: el control del iPhone enseña
         «Escribir» solo cuando sirve (/api/companion/now → ui)."""
-        screen = body.get("screen")
+        screen, section, legend = body.get("screen"), body.get("section"), body.get("legend")
+        clean = {k: v[:40] for k, v in legend.items() if isinstance(k, str) and len(k) < 20 and isinstance(v, str)} \
+            if isinstance(legend, dict) else {}
         ui_state.update(screen=screen if isinstance(screen, str) and len(screen) < 40 else "home",
-                        text_field=body.get("text_field") is True)
+                        text_field=body.get("text_field") is True,
+                        section=section if isinstance(section, str) and len(section) < 40 else None,
+                        legend=dict(list(clean.items())[:16]))
         return {"ok": True}
 
     @r.post("/api/ui/exit")

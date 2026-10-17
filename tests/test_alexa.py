@@ -358,5 +358,7 @@ def test_iphone_remote_text_and_what_the_tv_shows(public):
 def test_the_tv_reports_its_screen_for_the_iphone(public):
     client, main = public
     local = TestClient(main, base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1))
-    assert local.post("/api/ui/state", json={"screen": "search", "text_field": True}).status_code == 200
-    assert client.get("/api/companion/now", headers={"Authorization": "Bearer secreto"}).json()["ui"] == {"screen": "search", "text_field": True}
+    legend = {"select": "Ver", "back": "Atrás", "alt": "Mi lista", "section": "Sección"}
+    assert local.post("/api/ui/state", json={"screen": "search", "text_field": True, "section": "Inicio", "legend": legend}).status_code == 200
+    ui = client.get("/api/companion/now", headers={"Authorization": "Bearer secreto"}).json()["ui"]
+    assert ui == {"screen": "search", "text_field": True, "section": "Inicio", "legend": legend}

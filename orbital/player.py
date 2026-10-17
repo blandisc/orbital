@@ -181,18 +181,19 @@ class OrbitalPlayer(PlayerScreen):
 
     # --- arrancar / cambiar de archivo -------------------------------------------------------
     def play(self, run, mpv_exe: str, url: str, title: str, meta: dict, *, subtitles: str = "en",
-             fallback_subs=None, started=None, **options) -> subprocess.Popen:
+             fallback_subs=None, started=None, sub_pick: dict | None = None, **options) -> subprocess.Popen:
         """`run(argv)` lanza el proceso; `fallback_subs()` da URLs de subtítulos si el video no trae.
         `started(proceso)`: lo que hay que hacer con él en el mismo paso (vigilarlo).
         Uno a la vez: dos «pon…» seguidos (voz y mando) ya no dejan un mpv huérfano a pantalla completa."""
         with self._starting:
-            process = self._play(run, mpv_exe, url, title, meta, subtitles=subtitles, fallback_subs=fallback_subs, **options)
+            process = self._play(run, mpv_exe, url, title, meta, subtitles=subtitles, fallback_subs=fallback_subs,
+                                 sub_pick=sub_pick, **options)
             if started is not None:
                 started(process)
             return process
 
     def _play(self, run, mpv_exe: str, url: str, title: str, meta: dict, *, subtitles: str = "en",
-              fallback_subs=None, **options) -> subprocess.Popen:
+              fallback_subs=None, sub_pick: dict | None = None, **options) -> subprocess.Popen:
         self.stop()
         if self.segment is not None and self.segment.playing:
             self._close_segment(self.segment)  # lo visto del video anterior se guarda antes de soltarlo
@@ -204,6 +205,7 @@ class OrbitalPlayer(PlayerScreen):
         self.last_end = None
         self._quiet_episodes = 0
         self._subs_lang, self._fallback_subs = subtitles, fallback_subs
+        self._sub_pick, self._last_sub = sub_pick, None  # «Continuar»: los subtítulos que tenías (ver _apply_sub_pick)
         self._audio_lang = options.get("audio", "en")
         self._want.clear()
         self._restart_from = None
@@ -469,7 +471,8 @@ class OrbitalPlayer(PlayerScreen):
             self.toast("Esta fuente no trae audio en tu idioma · Y › Fuente para elegir otra", 6)
         elif segment.start > 5:
             self.toast("Sigues donde te quedaste · ◀ regresa", 3.5)
-        self._ensure_subtitles(self._subs_lang, self._fallback_subs)
+        if not self._apply_sub_pick(tracks):
+            self._ensure_subtitles(self._subs_lang, self._fallback_subs)
         self.show_hud()  # al empezar: qué estás viendo y qué hace cada botón
 
     def _fail_channel(self, segment: Segment) -> None:
@@ -675,6 +678,41 @@ class OrbitalPlayer(PlayerScreen):
             self._loading_until = time.monotonic() + 3
 
     # --- subtítulos ------------------------------------------------------------------------------
+    def current_subtitle(self) -> dict | None:
+        """Los subtítulos que tienes puestos ahora: {"off": True}, o idioma, nombre de la pista y, si son de un
+        complemento, su dirección. Se recuerda lo último que se vio (al cerrar mpv ya no se puede preguntar)."""
+        try:
+            tracks = self.mpv.get("track-list")
+        except Exception:  # noqa: BLE001 - mpv ya cerró
+            tracks = None
+        if isinstance(tracks, list) and tracks:
+            chosen = next((t for t in tracks if isinstance(t, dict) and t.get("type") == "sub" and t.get("selected")), None)
+            if chosen is None:
+                self._last_sub = {"off": True}
+            else:
+                self._last_sub = {"off": False, "lang": str(chosen.get("lang") or ""), "title": str(chosen.get("title") or ""),
+                                  "url": str(chosen.get("external-filename") or "") if chosen.get("external") else ""}
+        return getattr(self, "_last_sub", None)
+
+    def _apply_sub_pick(self, tracks: list) -> bool:
+        """«Continuar»: los mismos subtítulos que tenías al salir (la misma pista: Latinoamérica y no España, los
+        forzados, o los que se buscaron en tu complemento). True si quedaron puestos; si no, lo de siempre."""
+        pick, self._sub_pick = getattr(self, "_sub_pick", None), None
+        if not isinstance(pick, dict):
+            return False
+        if pick.get("off"):
+            self.mpv.command("set_property", "sid", "no")
+            return True
+        subs = [t for t in tracks if isinstance(t, dict) and t.get("type") == "sub"]
+        same = [t for t in subs if str(t.get("lang") or "") == pick.get("lang") and str(t.get("title") or "") == pick.get("title")]
+        if same:
+            self.mpv.command("set_property", "sid", same[0]["id"])
+            return True
+        if pick.get("url"):
+            self.mpv.command("sub-add", pick["url"], "select", pick.get("title") or "Subtítulos", pick.get("lang") or "")
+            return True
+        return False
+
     def _ensure_subtitles(self, lang: str, fallback_subs) -> None:
         if not lang or fallback_subs is None:
             return

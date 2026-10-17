@@ -95,6 +95,16 @@ class Source:
     score: float = 0.0
     binge: str | None = None  # behaviorHints.bingeGroup: misma calidad/idioma en el siguiente episodio
 
+    @property
+    def key(self) -> str:
+        """Una huella estable de esta fuente (su índice cambia de una búsqueda a otra): el torrent y su archivo o, si no
+        es torrent, complemento + nombre + tamaño. Para volver a la misma al «Continuar»."""
+        info_hash = self.stream.get("infoHash")
+        if info_hash:
+            return f"{self.addon}|{str(info_hash).lower()}|{self.stream.get('fileIdx', '')}"
+        name = self.release or str(self.stream.get("title") or self.stream.get("name") or "")
+        return f"{self.addon}|{name}|{self.size}"
+
     def public(self) -> dict:
         """Lo que ve la interfaz: nada de URLs ni claves."""
         return {

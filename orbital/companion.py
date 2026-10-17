@@ -85,7 +85,8 @@ PLAYER_ACTIONS = {"toggle", "pause", "play", "skip", "next", "previous", "stop",
 
 # El control remoto del iPhone (la hoja «Viendo en la TV» estirada): las mismas acciones que el mando en la interfaz
 # (input.js: KEYMAP/PADMAP). Van a lo que está al frente: la interfaz de Orbital o el reproductor.
-REMOTE_ACTIONS = {"up", "down", "left", "right", "select", "back", "home", "menu", "search", "options", "pageleft", "pageright"}
+REMOTE_ACTIONS = {"up", "down", "left", "right", "select", "back", "home", "menu", "search", "options", "pageleft", "pageright",
+                  "alt", "prevsection", "nextsection", "refresh"}
 REMOTE_TEXT_MAX = 500
 
 
