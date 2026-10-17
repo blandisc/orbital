@@ -45,6 +45,10 @@ FLAGS = [
     # Más liviana: la ventana de Orbital no necesita extensiones, sincronizar, barra lateral ni
     # compras. Medido en esta Legion Go: ~120 MB menos y 2 procesos menos (de ~910 MB / 17).
     "--renderer-process-limit=1",
+    # El micrófono (dictar en Buscar) sin preguntar cada vez: el quiosco de Edge corre como InPrivate y no hereda el
+    # «Permitir» guardado (allow_microphone), así que el aviso salía en cada sesión y con el mando no hay cómo
+    # contestarlo. Esta ventana solo abre la página de Orbital; tu Edge normal no cambia.
+    "--use-fake-ui-for-media-stream",
     "--disable-extensions",
     "--disable-background-networking",
     "--disable-sync",
