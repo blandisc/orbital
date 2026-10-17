@@ -457,3 +457,36 @@ def set_app_identity(hwnd: int, app_id: str, icon: str, name: str, command: str)
     except OSError as exc:
         log.debug("No pude darle identidad a la ventana %s: %s", hwnd, exc)
         return False
+
+
+# --- la barra de tareas de Windows en modo consola ----------------------------------------------------------------------
+# Al abrir un juego, el emulador recién abierto le roba el foco a Orbital con su ventana aún sin pantalla completa y
+# Windows saca su barra de tareas encima de todo (también de la pantalla de carga): se veía la barra y parecía que se
+# salía de pantalla completa. En modo consola se esconde, y vuelve al salir al escritorio o al cerrar Orbital. No es un
+# ajuste de Windows: si algo truena, reiniciar el Explorador (o la computadora) la regresa.
+_TASKBARS = ("Shell_TrayWnd", "Shell_SecondaryTrayWnd")
+
+
+def taskbars() -> list[int]:
+    if not WIN:
+        return []
+    found: list[int] = []
+    name = ctypes.create_unicode_buffer(64)
+
+    @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    def enum(hwnd, _):
+        user32.GetClassNameW(hwnd, name, 64)
+        if name.value in _TASKBARS:
+            found.append(hwnd)
+        return True
+
+    user32.EnumWindows(enum, 0)
+    return found
+
+
+def set_taskbar_visible(visible: bool) -> int:
+    """Esconde o regresa la barra de tareas (en todos los monitores). Devuelve cuántas tocó."""
+    bars = taskbars()
+    for hwnd in bars:
+        user32.ShowWindow(wintypes.HWND(hwnd), 5 if visible else 0)  # SW_SHOW / SW_HIDE
+    return len(bars)

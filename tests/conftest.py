@@ -52,6 +52,16 @@ def _no_real_machine_actions(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_real_taskbar(monkeypatch):
+    """Ninguna prueba esconde la barra de tareas de verdad (las ventanas de Orbital de mentiras la esconderían)."""
+    from orbital import windows
+
+    calls: list[bool] = []
+    monkeypatch.setattr(windows, "set_taskbar_visible", lambda visible: calls.append(visible) or 1)
+    return calls
+
+
+@pytest.fixture(autouse=True)
 def _no_real_screenshots(monkeypatch):
     """Ninguna prueba toma capturas de tu pantalla de verdad («toma una captura» por voz lo hacía)."""
     from orbital import capture

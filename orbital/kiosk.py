@@ -150,7 +150,7 @@ class KioskWindow:
     MAX_REOPENS = 3  # por minuto: si Edge falla de verdad, no entramos en un ciclo
 
     def __init__(self, url: str, browser: str | None = None, profile_dir: Path | None = None,
-                 keep_open: bool = True, on_closed=None) -> None:
+                 keep_open: bool = True, on_closed=None, hide_taskbar: bool = True) -> None:
         self.url = url
         self.browser = browser
         self.profile_dir = profile_dir or default_profile_dir()
@@ -159,6 +159,7 @@ class KioskWindow:
         self.keep_open = keep_open  # consola: si la ventana se cierra sin "Salir al escritorio", vuelve
         self.on_closed = on_closed  # sin keep_open: cerraste la ventana (Orbital se cierra)
         self._reopens: list[float] = []
+        self.hide_taskbar = hide_taskbar  # modo consola: la barra de Windows no se asoma al abrir un juego
         self._lock = threading.Lock()
 
     @property
@@ -181,6 +182,7 @@ class KioskWindow:
             self._process = subprocess.Popen(build_command(exe, self.url, self.profile_dir),
                                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             log.info("Interfaz abierta (pid %s)", self._process.pid)
+            self._console_taskbar(hidden=True)
             if sys.platform == "win32":
                 threading.Thread(target=self._brand, args=(self._process,), daemon=True, name="kiosk-icon").start()
             if self.keep_open or self.on_closed:
@@ -219,6 +221,7 @@ class KioskWindow:
                 return  # "Salir al escritorio" u otra ventana nueva: no es que la cerraste
         if not self.keep_open:
             log.info("Cerraste la ventana de Orbital: Orbital se cierra (no se reabre sola)")
+            self._console_taskbar(hidden=False)
             if self.on_closed:
                 self.on_closed()
             return
@@ -232,8 +235,21 @@ class KioskWindow:
         log.info("La ventana de Orbital se cerró sin \"Salir al escritorio\": la reabro")
         self.open()
 
+    def _console_taskbar(self, hidden: bool) -> None:
+        """Modo consola: sin la barra de tareas de Windows (ver windows.set_taskbar_visible); al salir, de regreso."""
+        if sys.platform != "win32" or not self.hide_taskbar:
+            return
+        from . import windows
+
+        try:
+            if windows.set_taskbar_visible(not hidden) and hidden:
+                log.info("Modo consola: barra de tareas escondida")
+        except OSError as exc:
+            log.debug("No pude %s la barra de tareas: %s", "esconder" if hidden else "mostrar", exc)
+
     def close(self) -> bool:
         """Sale al escritorio. Orbital sigue escuchando (Alexa puede volver a abrirla)."""
+        self._console_taskbar(hidden=False)  # en el escritorio, la barra de siempre
         with self._lock:
             proc, self._process = self._process, None
             self.exited_by_user = True
