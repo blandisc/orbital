@@ -6,11 +6,17 @@ import MediaPlayer
 /// Infuse y VLC. `volume` se pone a un valor para pedir el cambio; en cuanto se aplica, vuelve a `nil`.
 struct SystemVolumeControl: UIViewRepresentable {
     @Binding var volume: Float?
+    /// Lo mínimo para seguir «visible» para iOS.
+    private static let nearlyInvisible: CGFloat = 0.0001
 
     func makeUIView(context: Context) -> MPVolumeView {
         let view = MPVolumeView(frame: .zero)
         view.showsRouteButton = false
         view.showsVolumeSlider = true
+        // Tiene que estar en pantalla para que iOS no enseñe su HUD, pero no se debe ver: en iOS 26 su barra se pintaba como
+        // una cápsula blanca en medio del video. Casi transparente (con 0 iOS lo da por oculto y vuelve a salir el HUD).
+        view.alpha = Self.nearlyInvisible
+        view.isUserInteractionEnabled = false
         return view
     }
 
