@@ -152,3 +152,16 @@ final class YearInReviewTests: XCTestCase {
         XCTAssertNil(TraktParsing.play(["type": "movie", "movie": ["title": "x"]]), "sin fecha no cuenta")
     }
 }
+
+final class AwardsTests: XCTestCase {
+    func testEveryAwardHasWinnersNewestFirstWithIMDbIDs() {
+        XCTAssertEqual(Awards.all.map(\.id), ["oscar", "emmy", "globe", "palm", "bafta", "ariel"])
+        for award in Awards.all {
+            XCTAssertGreaterThan(award.winners.count, 20, award.id)
+            XCTAssertTrue(award.winners.allSatisfy { $0.imdb.hasPrefix("tt") }, award.id)
+            XCTAssertEqual(award.winners.map(\.awardYear), award.winners.map(\.awardYear).sorted(by: >), "\(award.id): del más reciente")
+            XCTAssertEqual(award.suggestions.first?.reason, .console(String(award.winners[0].awardYear)), "el año del premio, bajo el póster")
+        }
+        XCTAssertEqual(Awards.all.first { $0.id == "emmy" }?.kind, "series")
+    }
+}

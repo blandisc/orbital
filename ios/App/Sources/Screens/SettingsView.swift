@@ -29,10 +29,9 @@ struct SettingsView: View {
             Section {
                 ProfileCard(avatar: s.avatar, title: s.displayName.isEmpty ? Text("Tu perfil") : Text(verbatim: s.displayName), detail: connections(model)) { editingAvatar = true }
                 // Tu año: lo que viste, del historial de Trakt.
-                Button { showsYear = true } label: {
+                NavigationLink { YearView() } label: {
                     SettingsRow(title: "Tu año", symbol: "calendar", tint: DS.ListTint.calendar, value: Text("Lo que viste"))
                 }
-                .buttonStyle(.plain)
             }
             .listRowBackground(DS.surface)
             // Lo tuyo: cómo se ve y cómo se reproduce.
@@ -111,8 +110,8 @@ struct SettingsView: View {
             .presentationDetents([.medium])
         }
         .task { await model.loadTraktName(); await session.model.loadAddons() }
-        .navigationDestination(isPresented: $showsYear) { YearView() }
         #if DEBUG
+        .navigationDestination(isPresented: $showsYear) { YearView() }   // `-demo-open year`: para las capturas
         .task { if Demo.isOn, Demo.open == "settings-avatar" { editingAvatar = true }; if Demo.isOn, Demo.open == "year" { showsYear = true } }
         #endif
     }
