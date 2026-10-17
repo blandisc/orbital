@@ -63,6 +63,8 @@ struct MainTabs: View {
     @EnvironmentObject private var env: AppEnvironment
     @StateObject private var tvNow = ModelObserver(AppEnvironment.shared.tvNow)
     @State private var showRemote = false
+    /// La hoja del control estirada (el control completo) o corta.
+    @State private var remoteLarge = false
     @State private var tab: Int
     @State private var paths: [NavigationPath] = Array(repeating: NavigationPath(), count: 4)
 
@@ -86,25 +88,25 @@ struct MainTabs: View {
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
-        .bottomAccessory(isEnabled: tvNow.model.now != nil) {
+        // Con tu Orbital conectada el accesorio siempre está: lo que se ve en la TV, o el control de tu Orbital si no hay nada.
+        .bottomAccessory(isEnabled: tvNow.model.now != nil || tvNow.model.isConfigured) {
             if let now = tvNow.model.now {
-                TVAccessory(now: now, busy: tvNow.model.busy, toggle: { Task { await tvNow.model.control("toggle") } }, openRemote: { showRemote = true })
+                TVAccessory(now: now, busy: tvNow.model.busy, toggle: { Task { await tvNow.model.control("toggle") } }, openRemote: { remoteLarge = false; showRemote = true })
+            } else {
+                TVRemoteAccessory(openRemote: { remoteLarge = true; showRemote = true })
             }
         }
         // Si la TV deja de reproducir con la hoja abierta, la hoja se cierra (no se queda vacía).
-        .onChange(of: tvNow.model.now == nil) { _, stopped in if stopped { showRemote = false } }
+        // (Estirado, el control completo sirve aunque no haya video: se queda.)
+        .onChange(of: tvNow.model.now == nil) { _, stopped in if stopped, !remoteLarge { showRemote = false } }
         #if DEBUG
-        .onChange(of: tvNow.model.now == nil) { _, stopped in if !stopped, Demo.isOn, Demo.open == "remote" { showRemote = true } }   // `-demo-open remote`
+        .onChange(of: tvNow.model.now == nil) { _, stopped in   // `-demo-open remote` (corta) o `remote-full` (estirada)
+            if !stopped, Demo.isOn, Demo.open == "remote" || Demo.open == "remote-full" { remoteLarge = Demo.open == "remote-full"; showRemote = true }
+        }
         #endif
         // Tocar el accesorio abre el control remoto completo (−10 · pausa · +10 · siguiente, salir, seguir aquí).
         .sheet(isPresented: $showRemote) {
-            if let now = tvNow.model.now {
-                NowPlayingCard(now: now, fetchedAt: tvNow.model.fetchedAt, busy: tvNow.model.busy,
-                               onAction: { action, delta in Task { await tvNow.model.control(action, delta: delta) } },
-                               onContinueHere: { showRemote = false; openNowPlaying(now) }, framed: false)
-                    .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s6).padding(.bottom, DS.Space.s4)
-                    .fittedSheet()   // a la medida de la tarjeta: sin el hueco de media pantalla
-            }
+            RemoteSheet(tvNow: tvNow, large: $remoteLarge, onContinueHere: { now in showRemote = false; openNowPlaying(now) })
         }
         .tint(DS.accent)   // la pestaña elegida lleva el acento; dentro, los botones vuelven al papel
         .onAppear(perform: openDemoScreen)

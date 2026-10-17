@@ -5,12 +5,15 @@ import Foundation
 public struct OrbitalRemote: Sendable {
     public enum Failure: Error, Equatable, CustomStringConvertible {
         case notConfigured, badToken, unreachable, refused(String)
+        /// La consola no tiene esa ruta (versión anterior): el iPhone esconde lo que la usa.
+        case outdated
         public var description: String {
             switch self {
             case .notConfigured: "Conecta tu Orbital en Ajustes (la dirección y el token)."
             case .badToken: "Tu Orbital no aceptó el token. Revísalo en Ajustes."
             case .unreachable: "No encontré tu Orbital. ¿Está prendida la consola y el túnel?"
             case .refused(let message): message
+            case .outdated: "Actualiza tu Orbital para usar el control completo."
             }
         }
     }
@@ -174,6 +177,12 @@ public struct OrbitalRemote: Sendable {
     public struct Snapshot: Sendable, Equatable {
         public var playing: NowPlaying?
         public var inbox: [InboxItem]
+        /// Hay un campo de texto con foco en la TV (el control completo enseña «Escribir»). nil: la consola no lo dice.
+        public var textField: Bool?
+
+        public init(playing: NowPlaying?, inbox: [InboxItem], textField: Bool? = nil) {
+            self.playing = playing; self.inbox = inbox; self.textField = textField
+        }
     }
 
     /// Qué se ve ahora en la TV y qué le dejó la TV al iPhone, en una sola petición.
@@ -181,7 +190,8 @@ public struct OrbitalRemote: Sendable {
         let json = try await send("api/companion/now", method: "GET", body: nil)
         var playing: NowPlaying?
         if let raw = json?["playing"], !raw.isNull { playing = NowPlaying.parse(raw) }
-        return Snapshot(playing: playing, inbox: (json?["inbox"]?.array ?? []).compactMap(InboxItem.parse))
+        return Snapshot(playing: playing, inbox: (json?["inbox"]?.array ?? []).compactMap(InboxItem.parse),
+                        textField: json?["ui"]?["text_field"]?.bool)
     }
 
     /// Qué se ve ahora en la TV (para la tarjeta del iPhone). nil si no hay nada abierto.
@@ -193,6 +203,21 @@ public struct OrbitalRemote: Sendable {
     public func ack(ids: [String]) async throws {
         guard !ids.isEmpty else { return }
         _ = try await send("api/companion/inbox/ack", method: "POST", body: JSON.object(["ids": .array(ids.map { .string($0) })]).serialized())
+    }
+
+    /// Las acciones del mando de la TV (como `input.js`): el control completo del iPhone las manda como si fueran del mando.
+    public enum InputAction: String, Sendable, CaseIterable {
+        case up, down, left, right, select, back, home, menu, search, options, pageleft, pageright
+    }
+
+    /// Una tecla del mando, a la interfaz de la TV.
+    public func input(_ action: InputAction) async throws {
+        _ = try await send("api/companion/input", method: "POST", body: JSON.object(["action": .string(action.rawValue)]).serialized(), timeout: 5)
+    }
+
+    /// Texto al campo con foco de la TV (buscar); con `submit`, además lo envía.
+    public func type(_ text: String, submit: Bool) async throws {
+        _ = try await send("api/companion/text", method: "POST", body: JSON.object(["text": .string(text), "submit": .bool(submit)]).serialized(), timeout: 8)
     }
 
     /// Un botón de la tarjeta: `toggle · pause · play · skip (con delta en segundos) · next · previous · stop · mute`.
@@ -220,6 +245,8 @@ public struct OrbitalRemote: Sendable {
         case 200..<300: return JSON.parse(response.data)
         case 401, 403: throw Failure.badToken
         case 429: throw Failure.refused("Tu Orbital pidió esperar un poco: demasiados intentos.")
+        case 404 where path == "api/companion/input" || path == "api/companion/text":
+            throw Failure.outdated
         case 404 where path.hasPrefix("api/stremio") || path.hasPrefix("api/companion"):
             throw Failure.refused("Tu Orbital es de una versión anterior: actualízala para «Ver en la TV».")
         default:

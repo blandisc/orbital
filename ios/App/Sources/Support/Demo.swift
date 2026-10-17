@@ -253,6 +253,10 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             default: break
             }
         }
+        // El control completo: la TV de mentira acepta las teclas y el texto (no hay interfaz que mover).
+        if path == "/api/companion/input" || path == "/api/companion/text" {
+            return HTTPResponse(status: 200, data: JSON.object(["ok": true]).serialized())
+        }
         if path == "/api/companion/inbox/ack" {
             inboxAcked = true
             return HTTPResponse(status: 200, data: JSON.object(["removed": .int(1)]).serialized())

@@ -150,6 +150,22 @@ enum DS {
         static func spring(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.slow, bounce: 0.2) }
     }
 
+    /// El control completo de la TV (`TouchPad`, `RemoteKey`).
+    enum Remote {
+        /// Alto del pad táctil y de cada tecla.
+        static let padHeight: CGFloat = 280, keyHeight: CGFloat = 64
+        /// Qué parte del alto de la hoja estirada toma el pad (en un iPhone grande crece en vez de dejar un hueco abajo).
+        static let padShare: CGFloat = 0.52
+        /// Cuánto hay que deslizar para una flecha (y cada cuánto se repite al seguir deslizando).
+        static let swipeStep: CGFloat = 56
+        /// Lo que se puede mover el dedo y seguir contando como toque (A).
+        static let tapSlop: CGFloat = 10
+        /// La luz bajo el dedo en el pad.
+        static let touchGlow: CGFloat = 72
+        /// Cuánto se espera a que dejes de escribir para mandar el texto a la TV.
+        static let typeDebounce = UInt64(0.35 * 1e9)
+    }
+
     /// Medidas fijas.
     enum Size {
         static let touchTarget = CGFloat(DesignTokens.Size.touchTarget), thumbSmall = CGFloat(DesignTokens.Size.thumbSmall)

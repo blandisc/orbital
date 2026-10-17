@@ -264,6 +264,33 @@ struct TVAccessory: View {
     }
 }
 
+/// El accesorio cuando la TV no reproduce nada: el mismo lugar abre el control completo de tu Orbital (siempre se entra por
+/// aquí, con video o sin él).
+struct TVRemoteAccessory: View {
+    let openRemote: () -> Void
+    @Environment(\.tabViewBottomAccessoryPlacement) private var placement
+
+    var body: some View {
+        Button(action: openRemote) {
+            HStack(spacing: DS.Space.s3) {
+                Image(systemName: "av.remote").font(DS.TextRecipe.cardTitle.font)
+                    .frame(width: DS.Size.accessoryArt, height: DS.Size.accessoryArt)
+                    .background(DS.fill, in: Circle())
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Control de tu Orbital").recipe(.cardTitle).lineLimit(1)
+                    if placement != .inline { Text("Nada en la TV ahora").recipe(.footnote, color: DS.textMuted).lineLimit(1) }
+                }
+                Spacer(minLength: DS.Space.s2)
+                Image(systemName: "chevron.up").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+            }
+            .padding(.horizontal, DS.Space.s3)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(Text("Control remoto"))
+    }
+}
+
 extension View {
     /// El accesorio de la barra de pestañas solo mientras hay algo que enseñar (`isEnabled` es de iOS 26.1; en 26.0 no se pone).
     @ViewBuilder func bottomAccessory<Content: View>(isEnabled: Bool, @ViewBuilder content: @escaping () -> Content) -> some View {

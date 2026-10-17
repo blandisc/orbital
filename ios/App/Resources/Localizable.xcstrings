@@ -111,6 +111,17 @@
         }
       }
     },
+    "Actualiza tu Orbital para usar el control completo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update your Orbital to use the full remote."
+          }
+        }
+      }
+    },
     "Actualizar": {
       "extractionState": "manual",
       "localizations": {
@@ -239,6 +250,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What you're watching shows up here, on iPhone and on Orbital."
+          }
+        }
+      }
+    },
+    "Atrás": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
           }
         }
       }
@@ -826,6 +848,17 @@
         }
       }
     },
+    "Control de tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital remote"
+          }
+        }
+      }
+    },
     "Control remoto": {
       "extractionState": "manual",
       "localizations": {
@@ -1108,6 +1141,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Overnight"
+          }
+        }
+      }
+    },
+    "Desliza para moverte; toca para elegir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe to move; tap to select"
+          }
+        }
+      }
+    },
+    "Desliza · toca para elegir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe · tap to select"
           }
         }
       }
@@ -1475,6 +1530,17 @@
         }
       }
     },
+    "Escribir en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type on the TV"
+          }
+        }
+      }
+    },
     "Ese complemento no responde o no da fuentes ni fichas.": {
       "extractionState": "manual",
       "localizations": {
@@ -1548,6 +1614,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "This week in Mexico"
+          }
+        }
+      }
+    },
+    "Estira hacia arriba para el control completo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pull up for the full remote"
           }
         }
       }
@@ -2025,6 +2102,17 @@
         }
       }
     },
+    "Menú": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu"
+          }
+        }
+      }
+    },
     "Mi lista": {
       "extractionState": "manual",
       "localizations": {
@@ -2098,6 +2186,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing downloaded"
+          }
+        }
+      }
+    },
+    "Nada en la TV ahora": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing on the TV right now"
           }
         }
       }
@@ -2527,6 +2626,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Another source…"
+          }
+        }
+      }
+    },
+    "Pad de la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TV touchpad"
           }
         }
       }
@@ -3572,6 +3682,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trakt: %@"
+          }
+        }
+      }
+    },
+    "Tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Orbital"
           }
         }
       }
