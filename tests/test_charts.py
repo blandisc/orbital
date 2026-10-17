@@ -1,4 +1,4 @@
-"""Charts: el Top 10 de Netflix (TSV) y lo más popular de JustWatch (GraphQL), con dobles de red
+"""Charts: el Top 10 de Netflix (su página por país) y lo más popular de JustWatch (GraphQL), con dobles de red
 (nunca sale a internet). Fixtures en tests/fixtures/charts/."""
 
 from __future__ import annotations
@@ -27,27 +27,54 @@ def _post_fixture(name, status=200):
     return lambda url, **kwargs: (status, data)
 
 
-# ---------------------------------------------------------------- Netflix: el TSV
-def test_netflix_top10_takes_the_most_recent_week():
-    rows = charts.fetch_netflix_top10("MX", open_url=_open_fixture("netflix-countries-sample.tsv"))
-    assert [m["title"] for m in rows["movie"]] == ["UNABOMBER", "What a Father!"]
-    assert [m["rank"] for m in rows["movie"]] == [1, 2]
-    assert rows["movie"][0]["weeks"] == 2  # de la semana más reciente (2026-10-04), no la de antes
-    assert [s["title"] for s in rows["series"]] == ["Not a Stranger", "Physical 100: Mexico"]
-
-
-def test_netflix_without_the_country_falls_back_to_global():
-    open_url = _open_fixture("netflix-countries-sample.tsv")
-
+# ---------------------------------------------------------------- Netflix: su página por país
+def _pages(seen=None):
+    """La página de México (series) de esta semana y, con ?week=, la de la anterior (muestras reales en fixtures)."""
     def opener(url):
-        if "all-weeks-global" in url:
-            return io.BytesIO((FIXTURES / "netflix-global-sample.tsv").read_bytes())
-        return open_url(url)
+        if seen is not None:
+            seen.append(url)
+        name = "netflix_mexico_tv_prev.html" if "?week=" in url else "netflix_mexico_tv.html"
+        return io.BytesIO((FIXTURES / name).read_bytes())
+    return opener
 
-    rows = charts.fetch_netflix_top10("CL", open_url=opener)  # Chile no está en la muestra
-    # El global prefiere la edición en inglés (la que de verdad se enseña como «Top 10 global»).
-    assert [m["title"] for m in rows["movie"]] == ["Global Movie One", "Global Movie Two"]
-    assert [s["title"] for s in rows["series"]] == ["Global Show One", "Global Show Two"]
+
+def test_netflix_page_url_by_country_and_kind():
+    assert charts.netflix_page_url("MX", "series") == "https://www.netflix.com/tudum/top10/mexico/tv"
+    assert charts.netflix_page_url("mx", "movie") == "https://www.netflix.com/tudum/top10/mexico"
+    assert charts.netflix_page_url("ZZ", "movie") == "https://www.netflix.com/tudum/top10"  # sin página propia: la global
+    assert charts.netflix_page_url("MX", "series", "2026-10-04").endswith("/mexico/tv?week=2026-10-04")
+
+
+def test_netflix_page_parses_the_table_and_its_weeks():
+    rows, weeks = charts.parse_netflix_page((FIXTURES / "netflix_mexico_tv.html").read_text(encoding="utf-8"))
+    assert len(rows) == 10 and rows[0] == {"title": "Below: Limited Series", "rank": 1, "weeks": 1}
+    assert weeks[-1] == "2026-10-11"
+
+
+def test_netflix_titles_lose_the_season_to_find_the_show():
+    assert charts.show_title("Below: Limited Series") == "Below"
+    assert charts.show_title("Physical 100: Mexico: Season 1") == "Physical 100: Mexico"
+    assert charts.show_title("Monster: The Lizzie Borden Story: Season 1") == "Monster: The Lizzie Borden Story"
+    assert charts.show_title("UNABOMBER") == "UNABOMBER"
+
+
+def test_netflix_top10_takes_this_week_and_compares_with_the_last():
+    seen = []
+    rows = charts.fetch_netflix_top10("MX", "series", open_url=_pages(seen))
+    assert seen == ["https://www.netflix.com/tudum/top10/mexico/tv", "https://www.netflix.com/tudum/top10/mexico/tv?week=2026-10-04"]
+    first = rows[0]
+    assert (first["title"], first["rank"], first["new"], first["movement"], first["week"]) == ("Below", 1, True, None, "2026-10-11")
+    stranger = next(r for r in rows if r["title"] == "Not a Stranger")
+    assert (stranger["rank"], stranger["movement"], stranger["new"]) == (3, -2, False)  # era la 1 la semana pasada
+
+
+def test_netflix_without_last_week_has_no_arrows():
+    def opener(url):
+        if "?week=" in url:
+            raise OSError("sin red")
+        return io.BytesIO((FIXTURES / "netflix_mexico_tv.html").read_bytes())
+    rows = charts.fetch_netflix_top10("MX", "series", open_url=opener)
+    assert all(r["movement"] is None for r in rows)
 
 
 # ---------------------------------------------------------------- Netflix: título → IMDb
@@ -71,11 +98,11 @@ def test_resolve_imdb_without_tmdb_uses_cinemeta():
 def test_netflix_entries_only_keeps_what_resolves_to_imdb():
     class FakeCinemeta:
         def search(self, kind, query):
-            return [{"id": "tt6933238", "name": "UNABOMBER"}] if query == "UNABOMBER" else []  # "What a Father!" no se encuentra
+            return [{"id": "tt9999001", "name": "Below"}] if query == "Below" else []  # el resto no se encuentra
 
-    entries = charts.netflix_entries("MX", "movie", open_url=_open_fixture("netflix-countries-sample.tsv"), cinemeta=FakeCinemeta())
-    assert [e["title"] for e in entries] == ["UNABOMBER"]
-    assert entries[0]["imdb"] == "tt6933238" and entries[0]["rank"] == 1
+    entries = charts.netflix_entries("MX", "series", open_url=_pages(), cinemeta=FakeCinemeta())
+    assert [e["title"] for e in entries] == ["Below"]  # se busca sin «: Limited Series»
+    assert entries[0]["imdb"] == "tt9999001" and entries[0]["rank"] == 1
 
 
 # ---------------------------------------------------------------- JustWatch
@@ -129,26 +156,6 @@ def test_justwatch_asks_for_the_daily_chart_of_that_platform():
 
 
 # ---------------------------------------------------------------- sube y baja
-def test_netflix_movement_and_new_come_from_the_previous_week():
-    rows = charts.fetch_netflix_top10("MX", open_url=_open_fixture("netflix-countries-sample.tsv"))
-    unabomber, father = rows["movie"]
-    assert unabomber["week"] == "2026-10-04"
-    # La semana anterior (09-27) solo tenía «Vieja película»: ninguna estaba, así que son nuevas y sin flecha.
-    assert (unabomber["movement"], unabomber["new"]) == (None, True)
-    assert (father["movement"], father["new"]) == (None, True)
-
-
-def test_netflix_movement_counts_places(tmp_path):
-    tsv = ("country_name\tcountry_iso2\tweek\tcategory\tweekly_rank\tshow_title\tseason_title\tcumulative_weeks_in_top_10\n"
-           "Mexico\tMX\t2026-09-27\tTV\t1\tA\tA: S1\t3\nMexico\tMX\t2026-09-27\tTV\t2\tB\tB: S1\t2\n"
-           "Mexico\tMX\t2026-09-27\tTV\t3\tC\tC: S1\t1\n"
-           "Mexico\tMX\t2026-10-04\tTV\t1\tC\tC: S1\t2\nMexico\tMX\t2026-10-04\tTV\t2\tA\tA: S1\t4\n"
-           "Mexico\tMX\t2026-10-04\tTV\t3\tB\tB: S1\t3\nMexico\tMX\t2026-10-04\tTV\t4\tD\tD: S1\t1\n")
-    rows = charts.fetch_netflix_top10("MX", open_url=lambda url: io.BytesIO(tsv.encode()))
-    got = {e["title"]: (e["movement"], e["new"]) for e in rows["series"]}
-    assert got == {"C": (2, False), "A": (-1, False), "B": (-1, False), "D": (None, True)}
-
-
 def test_daily_snapshots_give_movement_and_survive_a_restart(tmp_path):
     from datetime import date
     db = tmp_path / "charts.sqlite"
