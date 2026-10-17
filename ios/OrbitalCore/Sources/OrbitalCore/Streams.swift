@@ -22,6 +22,14 @@ public struct Source: Sendable, Equatable, Identifiable {
 
     public var id: Int { index }
 
+    /// Una huella estable de esta fuente (su índice cambia de una búsqueda a otra), la misma de la TV (`streams.py`):
+    /// el torrent y su archivo o, si no es torrent, complemento + nombre + tamaño. Para volver a la misma al «Continuar».
+    public var key: String {
+        if let hash = stream["infoHash"]?.string { return "\(addon)|\(hash.lowercased())|\(stream["fileIdx"]?.intValue.map(String.init) ?? "")" }
+        let name = release.isEmpty ? (stream["title"]?.string ?? stream["name"]?.string ?? "") : release
+        return "\(addon)|\(name)|\(size)"
+    }
+
     /// La URL http(s) para reproducir. Los `infoHash` (torrent sin Real-Debrid) no se ofrecen en iOS.
     public var playbackURL: URL? {
         guard let text = stream["url"]?.nonEmptyString, let url = URL(string: text),

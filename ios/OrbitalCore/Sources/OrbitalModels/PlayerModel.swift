@@ -180,6 +180,9 @@ public final class PlayerModel: ObservableModel {
                 choicesAt = clock()
                 guard mine == generation, !closing else { return }
                 if let chosen = request.sourceIndex, failedSources.isEmpty, let pick = sourceChoices.first(where: { $0.index == chosen }) { found = pick }
+                // «Continuar»: la fuente con la que lo dejaste, si sigue ahí (como en la TV).
+                else if failedSources.isEmpty, !request.fromStart, let key = titlePrefs.resumeChoice(metaID: request.metaID, videoID: request.videoID)?.source,
+                        let pick = sourceChoices.first(where: { $0.key == key }) { found = pick }
                 else { found = try await finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs, binge: request.binge, skip: failedSources) }
             } catch { guard mine == generation else { return }; return fail("No pude pedir las fuentes: \(error)") }
             guard mine == generation, !closing else { return }
@@ -310,6 +313,7 @@ public final class PlayerModel: ObservableModel {
         if case .started = phase { reserved = 0 } else { reserved = watchedUnsaved; watchedUnsaved -= reserved }
         event.watched = reserved
         if case .stopped = phase { finalReported = true }
+        if case .started = phase {} else { rememberChoice() }
         let outcome = await watch.report(event, phase: phase)
         if case .started = phase { return }
         if outcome.savedToStremio || outcome.queued { lastSave = clock() } else { watchedUnsaved += reserved }
@@ -319,6 +323,8 @@ public final class PlayerModel: ObservableModel {
     private func applyTracksOnce(_ s: EngineSnapshot) async {
         guard !tracksApplied, !s.audioTracks.isEmpty || !s.subtitleTracks.isEmpty, let request else { return }
         tracksApplied = true
+        // «Continuar»: las mismas pistas con que lo dejaste; lo que no se encuentre, con la regla de siempre.
+        if !request.fromStart, let choice = titlePrefs.resumeChoice(metaID: request.metaID, videoID: request.videoID), await applyResumeTracks(choice, s) { return }
         let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
         let audio = TrackChooser.audio(s.audioTracks, language: langs.prefs.audio)
         if let audio, audio.id != s.selectedAudio { await engine.selectAudio(audio.id) }
@@ -332,6 +338,32 @@ public final class PlayerModel: ObservableModel {
             // El video no trae subtítulos en tu idioma: se piden a tus complementos (OpenSubtitles…) o a la descarga.
             await addExternalSubtitle(language: language)
         }
+    }
+
+    /// Las pistas guardadas, si están en este video. true si los subtítulos quedaron como los dejaste (el audio, si se
+    /// encuentra, también); false para elegir con la regla de siempre.
+    private func applyResumeTracks(_ choice: ResumeChoice, _ s: EngineSnapshot) async -> Bool {
+        func same(_ track: MediaTrack, _ saved: ResumeChoice.Track) -> Bool { track.language == saved.language && track.title == saved.title }
+        guard let sub = choice.subtitle else { return false }
+        if let audio = choice.audio, let track = s.audioTracks.first(where: { same($0, audio) }), track.id != s.selectedAudio { await engine.selectAudio(track.id) }
+        knownSubtitleIDs = Set(s.subtitleTracks.map(\.id))
+        if sub.off { await engine.selectSubtitle(nil); return true }
+        guard let track = s.subtitleTracks.first(where: { same($0, sub) }) else { return false }
+        await engine.selectSubtitle(track.id)
+        return true
+    }
+
+    /// Junto a «dónde ibas»: la fuente y las pistas que tienes puestas (para «Continuar»).
+    private func rememberChoice() {
+        guard let request, snapshot.position >= PlaybackRules.rememberChoiceAfter else { return }
+        func pick(_ tracks: [MediaTrack], _ selected: Int?) -> ResumeChoice.Track? {
+            guard !tracks.isEmpty else { return nil }
+            guard let selected, let t = tracks.first(where: { $0.id == selected }) else { return ResumeChoice.Track(off: true) }
+            return ResumeChoice.Track(language: t.language, title: t.title)
+        }
+        let audio = pick(snapshot.audioTracks, snapshot.selectedAudio).flatMap { $0.off ? nil : $0 }
+        titlePrefs.remember(metaID: request.metaID, choice: ResumeChoice(videoID: request.videoID, source: source?.key, audio: audio,
+                                                                        subtitle: pick(snapshot.subtitleTracks, snapshot.selectedSubtitle)))
     }
 
     private func addExternalSubtitle(language: String) async {

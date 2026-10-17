@@ -4,6 +4,7 @@ import Foundation
 public enum PlaybackRules {
     public static let startupTimeout: TimeInterval = 45      // s sin imagen: esa fuente no sirve, se prueba otra
     public static let saveEvery: TimeInterval = 60           // s entre guardados del avance en Stremio
+    public static let rememberChoiceAfter: Double = 60       // s vistos: desde ahí se recuerda la fuente y las pistas (como la TV)
     public static let upNextLookahead: TimeInterval = 180    // s antes del final: se busca ya el siguiente episodio
     public static let upNextAt: TimeInterval = 30            // s antes del final (o al empezar los créditos): tarjeta
     public static let upNextCountdown: TimeInterval = 8

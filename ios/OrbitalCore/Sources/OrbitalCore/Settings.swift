@@ -110,6 +110,24 @@ public final class SettingsStore: @unchecked Sendable {
     }
 }
 
+/// Con qué dejaste un video: la huella de la fuente y la pista exacta de audio y de subtítulos (Latinoamérica y no España,
+/// los forzados…). `subtitle` nil = no se sabe; con `off`, los apagaste.
+public struct ResumeChoice: Codable, Equatable, Sendable {
+    public struct Track: Codable, Equatable, Sendable {
+        public var off = false
+        public var language: String?
+        public var title: String?
+        public init(off: Bool = false, language: String? = nil, title: String? = nil) { self.off = off; self.language = language; self.title = title }
+    }
+    public var videoID: String
+    public var source: String?
+    public var audio: Track?
+    public var subtitle: Track?
+    public init(videoID: String, source: String? = nil, audio: Track? = nil, subtitle: Track? = nil) {
+        self.videoID = videoID; self.source = source; self.audio = audio; self.subtitle = subtitle
+    }
+}
+
 /// Cada serie o película recuerda el audio y los subtítulos que elegiste viéndola (como en Orbital).
 public final class TitlePreferences: @unchecked Sendable {
     struct Saved: Codable { var audio: String?; var subtitles: String? }
@@ -118,9 +136,13 @@ public final class TitlePreferences: @unchecked Sendable {
     private let lock = NSLock()
     private var all: [String: Saved]
 
+    static let resumeKey = "resume-choices"
+    private var resumes: [String: ResumeChoice]
+
     public init(_ kv: KeyValueStore) {
         self.kv = kv
         all = kv.data(Self.key).flatMap { try? JSONDecoder().decode([String: Saved].self, from: $0) } ?? [:]
+        resumes = kv.data(Self.resumeKey).flatMap { try? JSONDecoder().decode([String: ResumeChoice].self, from: $0) } ?? [:]
     }
 
     /// Idioma de audio y subtítulos para un título: el que elegiste viéndolo o, si nunca cambiaste, el de Ajustes.
@@ -129,6 +151,20 @@ public final class TitlePreferences: @unchecked Sendable {
         var prefs = settings.preferences(onCellular: onCellular)
         if let audio = saved?.audio, !audio.isEmpty { prefs.audio = audio }
         return (prefs, saved?.subtitles ?? settings.subtitles)
+    }
+
+    /// «Continuar»: con qué fuente y qué pistas dejaste ese video (la regla de la TV), o nil si es otro video.
+    public func resumeChoice(metaID: String, videoID: String) -> ResumeChoice? {
+        let saved = lock.withLock { resumes[metaID] }
+        return saved?.videoID == videoID ? saved : nil
+    }
+
+    public func remember(metaID: String, choice: ResumeChoice) {
+        lock.withLock {
+            guard resumes[metaID] != choice else { return }
+            resumes[metaID] = choice
+            kv.set(Self.resumeKey, data: try? JSONEncoder().encode(resumes))
+        }
     }
 
     /// Cambiaste el audio o los subtítulos en el reproductor: ese título lo recuerda. `code` es el de la pista.
