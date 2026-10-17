@@ -135,3 +135,13 @@ test("el pie de TV en vivo dice qué hace cada botón ahí", () => {
   const empty = labels(tvHints(g, null, { empty: true, categories: 1 }));
   assert.ok(!empty.includes("Ver") && empty.includes("Actualizar"));
 });
+
+test("un canal de Orbital dice qué episodio va y a qué hora termina", async () => {
+  const { airingLine, categoryIcon } = await import("../../orbital/web/js/core/tv.js");
+  const { clock } = await import("../../orbital/web/js/core/format.js");
+  const ends = new Date(2026, 9, 17, 21, 42).getTime() / 1000;
+  const channel = { synthetic: true, now: { label: "T5 E3", title: "Homero va a la universidad", ends } };
+  assert.equal(airingLine(channel, clock), "T5 E3 · Homero va a la universidad · termina a las 9:42 p. m.");
+  assert.equal(airingLine({ synthetic: true, now: null }, clock), ""); // Cinemeta no respondió: sin línea
+  assert.equal(categoryIcon("Canales de Orbital"), "spark");
+});

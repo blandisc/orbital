@@ -69,6 +69,16 @@ export function emptyState(data, { loading = false, error = "" } = {}) {
   return { title: "No encontré canales", text: "Pulsa X para buscar otra vez." };
 }
 
+/**
+ * Lo que va ahora en un canal de Orbital (una serie al aire todo el día): «T5 E3 · Bart, el genio · termina a las
+ * 9:42 p. m.». Vacío si el servidor no lo supo (Cinemeta no respondió).
+ */
+export function airingLine(channel, clock) {
+  const now = channel?.now;
+  if (!now) return "";
+  return [now.label, now.title, now.ends && `termina a las ${clock(new Date(now.ends * 1000))}`].filter(Boolean).join(" · ");
+}
+
 /** Para el lector de pantalla y el dedo: «12, Azteca 7». */
 export const channelLabel = (channel) => [channel?.number, channel?.name].filter(Boolean).join(", ");
 
@@ -99,6 +109,6 @@ const CATEGORY_ICONS = {
   Deportes: "catSports", "Películas": "movie", Series: "series", Infantil: "catKids", Familia: "catKids", "Animación": "catAnimation",
   Comedia: "catAnimation", "Música": "catMusic", Cultura: "catCulture", "Educación": "catEducation", Documentales: "catDocumentary",
   Ciencia: "catDocumentary", Viajes: "catDocumentary", Legislativo: "catLegislative", "Público": "catLegislative",
-  "Religión": "catReligion", Otros: "catOther",
+  "Religión": "catReligion", Otros: "catOther", "Canales de Orbital": "spark",
 };
 export const categoryIcon = (title) => CATEGORY_ICONS[title] ?? "tv";

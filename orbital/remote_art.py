@@ -24,7 +24,7 @@ from .net import NET_ERRORS, read_body
 
 log = logging.getLogger(__name__)
 
-HOSTS = ("images.metahub.space", "live.metahub.space", "image.tmdb.org", "cdn.cloudflare.steamstatic.com",
+HOSTS = ("images.metahub.space", "live.metahub.space", "episodes.metahub.space", "image.tmdb.org", "cdn.cloudflare.steamstatic.com",
          "cdn.akamai.steamstatic.com", "shared.cloudflare.steamstatic.com", "shared.akamai.steamstatic.com",
          "steamcdn-a.akamaihd.net", "thumbnails.libretro.com", "media.rawg.io", "walter-r2.trakt.tv")
 WIDTHS = (160, 240, 320, 480, 640, 960, 1280)

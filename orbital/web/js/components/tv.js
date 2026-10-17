@@ -4,7 +4,9 @@ import { ICONS } from "../core/icons.js";
 import { settler } from "../core/motion.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { swipeArea } from "../core/swipe.js";
-import { ALL, categoriesOf, categoryIcon, channelLabel, channelsIn, emptyState, headMeta, initials, isShaky } from "../core/tv.js";
+import { clock } from "../core/format.js";
+import { sized } from "../core/images.js";
+import { airingLine, ALL, categoriesOf, categoryIcon, channelLabel, channelsIn, emptyState, headMeta, initials, isShaky } from "../core/tv.js";
 import { keepInView, replay } from "./browse.js";
 import { Badge, Chip } from "./ui.js";
 
@@ -84,7 +86,7 @@ export function createTv({ onFocus, onPick }) {
     return h("button", {
       class: ["tile", "tv__tile", isShaky(channel) && "tile--dimmed"], type: "button", tabindex: "-1", "data-focus-id": id,
       "aria-label": channelLabel(channel), onClick: () => onPick?.(targets.get(id), id),
-    }, channel.number && Chip(String(channel.number), { className: "tv__number" }),
+    }, channel.synthetic ? Chip("24/7", { className: "tv__number" }) : channel.number && Chip(String(channel.number), { className: "tv__number" }),
     channel.id === playing ? Badge("Al aire", { className: "tv__flag" })
       : isShaky(channel) && Chip("Sin señal reciente", { tone: "warn", className: "tv__flag" }),
     h("span", { class: "tv__media" }, logo || fallback),
@@ -145,6 +147,14 @@ export function createTv({ onFocus, onPick }) {
   function describe(channel) {
     if (!channel) { mount(nowText); return; }
     const live = channel.id === playing;
+    if (channel.synthetic) { // un canal de Orbital: qué episodio va y a qué hora termina
+      mount(nowText,
+        h("span", { class: "tv__now-eyebrow" }, live ? "Al aire en grande" : "Canal de Orbital · Español latino"),
+        h("h2", { class: "tv__now-title" }, channel.name),
+        h("span", { class: "tv__now-meta" }, airingLine(channel, clock) || "Una serie al aire todo el día"),
+        h("span", { class: "tv__now-hint" }, live ? "A para volver a él." : "A para prenderlo: entras a media emisión, como en la tele."));
+      return;
+    }
     mount(nowText,
       h("span", { class: "tv__now-eyebrow" }, live ? "Al aire en grande" : "En vivo · sin sonido"),
       h("h2", { class: "tv__now-title" }, channel.name),
@@ -154,7 +164,7 @@ export function createTv({ onFocus, onPick }) {
 
   // --- la miniatura en vivo -----------------------------------------------------------------------------------------
   function showLogo(channel, text) {
-    preview.classList.remove("tv__preview--live");
+    preview.classList.remove("tv__preview--live", "tv__preview--still");
     mount(previewLogo, channel?.logo ? h("img", { src: channel.logo, alt: "" }) : h("span", { class: "tv__initials" }, initials(channel?.name || "")));
     previewBadge.textContent = text;
   }
@@ -178,10 +188,22 @@ export function createTv({ onFocus, onPick }) {
     previewTimer = setTimeout(() => startPreview(channel), settle());
   }
 
+  /** Un canal de Orbital no tiene señal que enseñar: la imagen del episodio que va. */
+  function showStill(channel) {
+    const still = channel.now?.still;
+    if (!still) return showLogo(channel, channel.now ? `Al aire · ${channel.now.label}` : "");
+    showLogo(channel, `Al aire · ${channel.now.label}`);
+    const img = h("img", { src: sized(still, 640), alt: "" });
+    img.addEventListener("error", () => showLogo(channel, `Al aire · ${channel.now.label}`), { once: true });
+    preview.classList.add("tv__preview--still");
+    mount(previewLogo, img);
+  }
+
   function startPreview(channel) {
     stopPreview();
     previewing = channel.id;
     if (channel.id === playing) return showLogo(channel, "Al aire en grande"); // ya se ve en el reproductor
+    if (channel.synthetic) return showStill(channel);
     if (document.documentElement.dataset.motion === "reduce") return showLogo(channel, "");
     previewBadge.textContent = "Conectando…";
     video.src = `/api/tv/preview.m3u8?id=${encodeURIComponent(channel.id)}`;

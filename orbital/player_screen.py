@@ -212,7 +212,7 @@ class PlayerScreen:
         sources = self._safe(self.sources_provider, meta) if self.sources_provider and self.current else None
         if still_wanted() and self.current is not None:  # mientras buscaba pulsaste otra cosa: no aparece de golpe
             # «Enviar al iPhone» solo con iPhone conectado y con una película o serie (no con la TV en vivo).
-            iphone = bool(self.on_send_iphone and self.iphone_provider and meta.get("meta_id") and not meta.get("live")
+            iphone = bool(self.on_send_iphone and self.iphone_provider and meta.get("meta_id") and not meta.get("live") and not meta.get("synthetic")
                           and self._safe(self.iphone_provider))
             self._open_panel(player_ui.more_panel(episodes=episodes or None, sources=sources or None,
                                                   back_to=getattr(self, "_restart_from", None), iphone=iphone))

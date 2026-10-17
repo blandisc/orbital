@@ -30,6 +30,9 @@ body[data-view="tv"] .backdrop__space { opacity: 1; }
 .tv__preview-logo img { max-width: 70%; max-height: 70%; object-fit: contain; filter: var(--shadow-drop-sm); }
 .tv__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--duration-slow) var(--ease-out); }
 .tv__preview--live .tv__video { opacity: 1; }
+/* Un canal de Orbital: la imagen del episodio que va, a sangre (no hay señal que enseñar). */
+.tv__preview--still .tv__preview-logo { padding: 0; }
+.tv__preview--still .tv__preview-logo img { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: cover; filter: none; }
 .tv__preview-badge { position: absolute; left: var(--inset-poster); top: var(--inset-poster); padding: .15rem .6rem; border-radius: var(--radius-pill);
   background: var(--color-badge-bg); box-shadow: var(--shadow-badge); font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .tv__preview-badge:empty { display: none; }

@@ -337,6 +337,33 @@ def idle_expired(since: float, now: float, limit: float) -> bool:
     return limit > 0 and now - since >= limit
 
 
+SPANISH_TRACK = re.compile(r"^(es|spa|es-\w+)$", re.I)
+LATINO_TRACK = re.compile(r"latin|\blat\b|419|latam|m[eé]xic|hispanoam", re.I)
+CASTELLANO_TRACK = re.compile(r"castellano|castilian|espa[ñn]a|spain|\bes-es\b|europe|ib[eé]ric", re.I)
+
+
+def dub_track(tracks: list[dict], dub: str = "latino") -> int | None | bool:
+    """La pista de audio de ese doblaje del español (los canales de Orbital). La que lo dice primero; si ninguna lo dice,
+    una en español que no diga ser del otro. None si el archivo no dice nada de idiomas (se queda la que trae);
+    False si trae español pero solo del otro doblaje, o idiomas pero ningún español (no sirve: otra fuente)."""
+    audio = [t for t in tracks or [] if t.get("type") == "audio" and isinstance(t.get("id"), int)]
+    wanted, other = (LATINO_TRACK, CASTELLANO_TRACK) if dub == "latino" else (CASTELLANO_TRACK, LATINO_TRACK)
+
+    def label(t: dict) -> str:
+        return f"{t.get('lang') or ''} {t.get('title') or ''}".strip()
+
+    spanish = [t for t in audio if SPANISH_TRACK.match(str(t.get("lang") or "")) or re.search(r"espa[ñn]ol|spanish", label(t), re.I)]
+    for t in spanish:
+        if wanted.search(label(t)):
+            return t["id"]
+    neutral = [t for t in spanish if not other.search(label(t))]
+    if neutral:
+        return neutral[0]["id"]
+    if spanish or any(t.get("lang") and str(t.get("lang")).lower() not in ("und", "mul") for t in audio):
+        return False
+    return None
+
+
 def wrong_audio(tracks: list[dict], lang: str) -> bool:
     """Las pistas de audio tienen idioma y ninguna es el tuyo (sin etiquetas no se sabe: no avisa)."""
     tagged = [str(t.get("lang")).lower() for t in tracks or []
