@@ -63,26 +63,35 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
     fit();
   }
 
-  /** La píldora bajo la pestaña activa; si venía de otra, parte de allá y se desliza. */
+  /**
+   * La píldora bajo la pestaña activa; si venía de otra, viaja como una gota: el borde de adelante sale primero y el de
+   * atrás lo alcanza (se estira a medio camino y se asienta en la nueva), sin el rebote del resorte de antes.
+   */
+  let travel = null;
   function placePill(from) {
     const tab = tabs.querySelector(".status-bar__tab--active");
     if (!tab) { pill.hidden = true; return; }
     pill.hidden = false;
     const base = tabs.getBoundingClientRect();
     const to = tab.getBoundingClientRect();
-    const at = (r) => `translateX(${r.left - base.left}px)`;
-    pill.style.width = `${to.width}px`;
+    const frame = (left, width) => ({ transform: `translateX(${left - base.left}px)`, width: `${width}px` });
     pill.style.height = `${to.height}px`;
     pill.style.top = `${to.top - base.top}px`;
-    if (from && from.width) {
-      pill.classList.add("status-bar__pill--still");
-      pill.style.transform = at(from);
-      pill.style.width = `${from.width}px`;
-      void pill.offsetWidth;
-      pill.classList.remove("status-bar__pill--still");
-      pill.style.width = `${to.width}px`;
-    }
-    pill.style.transform = at(to);
+    Object.assign(pill.style, frame(to.left, to.width));
+    if (!from) return; // solo reacomodo (cambió el tamaño): si va viajando, que termine su viaje
+    travel?.cancel();
+    travel = null;
+    const still = document.documentElement.dataset.motion === "reduce" || typeof pill.animate !== "function";
+    if (!from.width || still || Math.abs(from.left - to.left) < 1) return;
+    const right = to.left > from.left;
+    const lerp = (a, b, t) => a + (b - a) * t;
+    // A medio camino: el borde de adelante ya recorrió casi todo; el de atrás, apenas un tercio.
+    const lead = right ? lerp(from.right, to.right, .78) : lerp(from.left, to.left, .78);
+    const tail = right ? lerp(from.left, to.left, .3) : lerp(from.right, to.right, .3);
+    const mid = right ? frame(tail, lead - tail) : frame(lead, tail - lead);
+    const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    travel = pill.animate([frame(from.left, from.width), { ...mid, offset: .45 }, frame(to.left, to.width)],
+      { duration: parseFloat(token("--duration-enter")) || 520, easing: token("--ease-out") || "ease-out" });
   }
   if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => placePill(null)).observe(tabs);
 
