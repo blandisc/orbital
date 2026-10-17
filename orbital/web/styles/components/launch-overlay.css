@@ -61,7 +61,10 @@
 }
 
 /* Portada en el centro, con la órbita de la marca girando alrededor. */
-.launch__stage { position: relative; display: grid; place-items: center; height: 20rem; }
+.launch__stage { position: relative; display: grid; place-items: center; height: 20rem;
+  animation: launch-float var(--duration-launch-float) var(--ease-float) var(--duration-enter-long) infinite; }
+/* Flotar: unos pocos píxeles arriba y abajo, lento; sin esto el conjunto se veía pegado a la pantalla. */
+@keyframes launch-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-.4rem); } }
 .launch__cover {
   position: relative; z-index: var(--z-raised); height: 17rem; width: calc(17rem * var(--ratio, .667)); border-radius: var(--radius-lg);
   background: var(--gradient-card) center / cover; transform-origin: 50% 50%;
@@ -77,7 +80,7 @@
 /* El anillo: un trazo fino que se dibuja solo al entrar (de cero a la vuelta completa). Atrás, tenue (la profundidad). */
 .launch__ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .launch__ring ellipse {
-  fill: none; stroke: color-mix(in oklab, var(--art-accent) 55%, transparent); stroke-width: 1.5; vector-effect: non-scaling-stroke;
+  fill: none; stroke: color-mix(in oklab, var(--art-accent) 55%, transparent); stroke-width: 1.5;
   stroke-dasharray: 100; stroke-dashoffset: 100; stroke-linecap: round;
   animation: launch-draw var(--duration-launch-draw) var(--ease-out) var(--delay-1) forwards;
 }
@@ -92,6 +95,9 @@
   background: var(--color-star); box-shadow: 0 0 .7rem .18rem color-mix(in oklab, var(--art-accent) 70%, var(--color-star));
   animation: launch-counter var(--duration-launch-orbit) linear infinite;
 }
+/* Profundidad: al pasar por detrás de la portada el satélite se aleja (más chico y tenue); enfrente se acerca y brilla.
+   Va en el giro (opacidad) y en el contragiro (tamaño), con el mismo reloj, así nunca se desfasan. */
+.launch__spinner { animation-name: launch-spin, launch-depth; }
 /* La estela: cada punto sale un poco después (va detrás) y es más chico y tenue. El satélite y su giro llevan el mismo
    retraso, para que sigan sincronizados (si no, el punto se aplasta). */
 .launch__spinner--trail-1, .launch__satellite--trail-1 { animation-delay: var(--duration-launch-trail); }
@@ -101,7 +107,14 @@
 .launch__spinner--trail-1, .launch__spinner--trail-2 { animation-fill-mode: backwards; }
 .launch__satellite--trail-1, .launch__satellite--trail-2 { animation-fill-mode: backwards; }
 @keyframes launch-spin { to { transform: rotate(360deg); } }
-@keyframes launch-counter { from { transform: rotate(0deg) scaleY(var(--orbit-unsquash, 3.3)); } to { transform: rotate(-360deg) scaleY(var(--orbit-unsquash, 3.3)); } }
+@keyframes launch-depth { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+@keyframes launch-counter {
+  0% { transform: rotate(0deg) scaleY(var(--orbit-unsquash, 3.3)) scale(.7); }
+  25% { transform: rotate(-90deg) scaleY(var(--orbit-unsquash, 3.3)) scale(.92); }
+  50% { transform: rotate(-180deg) scaleY(var(--orbit-unsquash, 3.3)) scale(1.15); }
+  75% { transform: rotate(-270deg) scaleY(var(--orbit-unsquash, 3.3)) scale(.92); }
+  100% { transform: rotate(-360deg) scaleY(var(--orbit-unsquash, 3.3)) scale(.7); }
+}
 /* Profundidad: el arco de enfrente pasa por delante de la portada; el de atrás, detrás. */
 /* El de enfrente se ve encima de la portada: más claro y con su brillo (con 2 px sin brillo se perdía
    sobre un póster cargado y parecía que la órbita nunca pasaba por delante). */

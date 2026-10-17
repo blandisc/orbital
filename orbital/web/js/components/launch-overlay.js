@@ -32,13 +32,19 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
   const spinner = (trail) => h("span", { class: ["launch__spinner", TRAIL[trail]?.[0]] },
     h("span", { class: ["launch__satellite", TRAIL[trail]?.[1]] }));
   const satellite = () => h("span", { class: "launch__track" }, spinner(2), spinner(1), spinner(0));
-  // El anillo es un trazo (no un borde): se dibuja solo al entrar y su grosor no cambia con la forma de la elipse.
-  const ring = () => svg('<svg class="launch__ring" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
-    + '<ellipse cx="50" cy="50" rx="49.2" ry="48" pathLength="100"/></svg>');
-  const orbit = h("div", { class: "launch__orbit", "aria-hidden": "true" }, ring(), satellite());
+  // El anillo es un trazo (no un borde) que se dibuja solo al entrar. Se mide a la órbita en píxeles (fitRings): estirado
+  // con preserveAspectRatio + non-scaling-stroke, Chrome medía el guion sin estirar y solo pintaba un tercio de la vuelta.
+  const ring = () => svg('<svg class="launch__ring" aria-hidden="true"><ellipse pathLength="100"/></svg>');
+  const rings = [ring(), ring()];
+  const fitRings = (width, height) => rings.forEach((r) => {
+    r.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    const e = r.firstElementChild;
+    [["cx", width / 2], ["cy", height / 2], ["rx", width / 2], ["ry", height / 2]].forEach(([k, v]) => e.setAttribute(k, String(v)));
+  });
+  const orbit = h("div", { class: "launch__orbit", "aria-hidden": "true" }, rings[0], satellite());
   // El arco de enfrente lleva su propio satélite, al compás del de atrás: así el punto también cruza
   // por delante de la portada (antes siempre pasaba por detrás).
-  const front = h("div", { class: "launch__orbit launch__orbit--front", "aria-hidden": "true" }, ring(), satellite());
+  const front = h("div", { class: "launch__orbit launch__orbit--front", "aria-hidden": "true" }, rings[1], satellite());
   const label = h("div", { class: "launch__label" }, "Abriendo");
   const title = h("div", { class: "launch__title" });
   const subtitle = h("div", { class: "launch__subtitle" });
@@ -73,6 +79,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
     front.style.setProperty("--ratio", String(ratio));
     requestAnimationFrame(() => { // cuánto se aplasta la pista para ser la elipse (alto / ancho de la órbita)
       const squash = orbit.offsetWidth ? orbit.offsetHeight / orbit.offsetWidth : .3;
+      if (orbit.offsetWidth) fitRings(orbit.offsetWidth, orbit.offsetHeight);
       el.style.setProperty("--orbit-squash", String(squash));
       el.style.setProperty("--orbit-unsquash", String(1 / squash));
     });
