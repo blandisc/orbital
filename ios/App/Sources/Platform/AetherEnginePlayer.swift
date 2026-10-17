@@ -62,7 +62,13 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     func subtitleOverlay(lifted: Bool, heightFraction: Double) -> AnyView {
         AnyView(AetherSubtitleOverlay(engine: engine, clock: engine.clock, lifted: lifted, heightFraction: heightFraction, fills: fills))
     }
-    func setPictureInPictureActive(_ active: Bool) { engine.pictureInPictureActive = active }
+    func setPictureInPictureActive(_ active: Bool) {
+        engine.pictureInPictureActive = active
+        // En la ventana de PiP el subtítulo que dibujamos encima del video no existe: AVKit dibuja el suyo (la pista de
+        // texto nativa del motor) mientras la ventana está fuera, y al volver a la app se quita (vuelve el nuestro).
+        // No hay equivalente para subtítulos de imagen (PGS) ni para los que se agregan después de cargar.
+        engine.setNativeSubtitleRendering(active)
+    }
 
     func setRate(_ rate: Float) async { engine.setRate(rate) }
 
