@@ -86,6 +86,17 @@ export const stageKind = (item) => (weakHero(item) && realCover(item) ? "case" :
 /** Variable CSS del color de su consola (el punto y el brillo de la tarjeta). */
 export const systemColor = (system) => `var(--system-${system && /^[\w-]+$/.test(system) ? system : "default"}, var(--system-default))`;
 
+/**
+ * El color de su plataforma, para su ícono («Switch», «Steam», «Película»): se reconoce de un vistazo sin leer. Los videos
+ * llevan el de streaming; lo que no tiene plataforma conocida, ninguno (null: el ícono queda en gris).
+ */
+export function platformColor(item) {
+  if (!item) return null;
+  if (isWatchable(item)) return systemColor("media");
+  const system = systemOf(item) || (item.source === "geforcenow" ? "geforcenow" : null);
+  return system ? systemColor(system) : null;
+}
+
 /** Filas de consola: una por emulador, más Steam y GeForce NOW si hay juegos. */
 export function consoleList(rows) {
   const list = [];

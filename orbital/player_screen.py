@@ -21,6 +21,7 @@ import time
 
 from . import player_ui
 from .playback import CHAPTER_SEEK, UPNEXT_COUNTDOWN, seek_step
+from .text import clock
 
 log = logging.getLogger(__name__)
 
@@ -135,7 +136,7 @@ class PlayerScreen:
             position=position, duration=duration, paused=bool(self._value("pause")) if paused is None else paused,
             audio=player_ui.current_label(tracks, "audio"), subtitles=player_ui.current_label(tracks, "sub"),
             source=meta.get("source_label", ""), series=meta.get("kind") == "series" and self.on_episode is not None,
-            ends=player_ui.ends_at(position, duration), now=time.strftime("%H:%M"),
+            ends=player_ui.ends_at(position, duration), now=clock(),
             chapters=[float(c["time"]) for c in chapters], chapter_titles=[str(c.get("title") or "") for c in chapters],
             facts=meta.get("facts", ""), description=meta.get("description", ""), seeking=seeking)
 
@@ -707,7 +708,7 @@ class PlayerScreen:
                 status = "live"
         return player_ui.LiveHud(name=meta.get("title") or "", number=meta.get("number"), category=meta.get("category") or "",
                                  quality=meta.get("quality") or "", status=status, muted=self._muted(),
-                                 now=time.strftime("%H:%M"))
+                                 now=clock())
 
     def _show_live_hud(self, meta: dict | None = None, status: str | None = None) -> None:
         """La barra del canal; se va sola a los pocos segundos (salvo «Sin señal», que se queda hasta que hagas algo)."""

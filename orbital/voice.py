@@ -12,6 +12,7 @@ from difflib import SequenceMatcher
 
 from .catalog import Catalog, normalize
 from .library import cinemeta
+from .text import clock as text_clock
 
 log = logging.getLogger(__name__)
 
@@ -1017,7 +1018,7 @@ class VoiceController:
         if segment is None or not segment.duration:
             return VoiceResult("Todavía no sé cuánto dura.", ok=False)
         left = max(0, segment.duration - segment.position)
-        ends = time.strftime("%H:%M", time.localtime(time.time() + left))
+        ends = text_clock(time.time() + left)
         minutes = round(left / 60)
         what = "menos de un minuto" if minutes < 1 else f"{minutes} minuto{'s' if minutes != 1 else ''}"
         return VoiceResult(f"Faltan {what}; termina a las {ends}.")

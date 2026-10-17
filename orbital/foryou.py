@@ -37,6 +37,7 @@ from .library import stremio_api
 from .library import tmdb as tmdb_api
 from .library import trakt as trakt_api
 from .net import NET_ERRORS, read_json
+from .text import clock
 
 log = logging.getLogger(__name__)
 
@@ -219,7 +220,7 @@ def day_label(day: date, today: date) -> tuple[str, str]:
 def calendar_item(g: dict, today: date) -> dict:
     """Un estreno («Próximos estrenos»): la serie (A abre su ficha) con su día, hora, episodio y dónde sale."""
     when: datetime = g["when"]
-    time_text = "Desde la madrugada" if when.hour < DAWN_HOUR else when.strftime("%H:%M")
+    time_text = "Desde la madrugada" if when.hour < DAWN_HOUR else clock(when)
     if g["count"] > 1:
         episode = f"T{g['season']} E{g['first']}–E{g['last']}"
         episode_long = f"{episode} · {g['count']} episodios"
@@ -408,11 +409,11 @@ class ForYou:
         if self._stremio("continue"):
             video.append({"id": "continue", "title": "Seguir viendo", "icon": "watching", "source": "Stremio", "meta": "Donde te quedaste"})
         if self._stremio("mylist"):
-            video.append({"id": "mylist", "title": "Mi lista", "icon": "bookmark", "source": "Stremio", "meta": "Tu biblioteca"})
+            video.append({"id": "mylist", "title": "Mi lista", "icon": "library", "source": "Stremio", "meta": "Tu biblioteca"})
         if self.trakt.linked:
             video += [
                 {"id": "recs", "title": "Recomendadas", "icon": "spark", "source": "Trakt", "meta": "Por lo que has visto", "split": True},
-                {"id": "mine", "title": "Tus series", "icon": "watching", "source": "Trakt", "meta": "Las que estás viendo"},
+                {"id": "mine", "title": "Tus series", "icon": "series", "source": "Trakt", "meta": "Las que estás viendo"},
                 {"id": "watchlist", "title": "Tu watchlist", "icon": "bookmark", "source": "Trakt", "meta": "Lo que dejaste pendiente"},
                 # Dos formas de verlo (las píldoras de arriba): por día, o la semana como una guía de TV.
                 {"id": "estrenos", "title": "Próximos estrenos", "icon": "calendar", "source": "Trakt", "meta": "Las series que sigues",
@@ -434,16 +435,16 @@ class ForYou:
             video.append({"id": "cinemeta", "title": "Lo más popular", "icon": "flame", "source": "Stremio",
                           "meta": "En el catálogo de Stremio", "split": True})
         for entry in self.addon_catalogs():
-            video.append({"id": entry["id"], "title": entry["title"], "icon": "list", "source": "Stremio",
+            video.append({"id": entry["id"], "title": entry["title"], "icon": "addon", "source": "Stremio",
                           "meta": f"De {entry['addon']}", "split": len(entry["kinds"]) > 1})
         # Netflix (Top 10 oficial) y JustWatch (lo más visto por plataforma): ninguna pide clave.
-        video.append({"id": "chart:netflix", "title": "Top 10 en Netflix", "icon": "trailer", "source": "Netflix",
+        video.append({"id": "chart:netflix", "title": "Top 10 en Netflix", "icon": "chart", "source": "Netflix",
                       "meta": self._netflix_meta(), "split": True, "brand": "netflix",
                       "logo": self.platforms().get("netflix", {}).get("logo")})
         for brand in JW_LIST_BRANDS:
             name = charts_api.JUSTWATCH_PACKAGES[brand][1]
             # «Lo más visto» solo en Netflix (cuenta vistas); JustWatch mide interés: «Tendencias».
-            video.append({"id": f"jw:{brand}", "title": f"Tendencias en {name}", "icon": "trailer", "source": "JustWatch",
+            video.append({"id": f"jw:{brand}", "title": f"Tendencias en {name}", "icon": "chart", "source": "JustWatch",
                           "meta": f"Tendencia en JustWatch · {self._country()}", "split": True, "brand": brand,
                           "logo": charts_api.justwatch_logo(brand)})
         found = self.platforms()
@@ -454,7 +455,7 @@ class ForYou:
             # iPhone, por tipo (ShelfPlan.isFallback).
             if brand in found:
                 ranked = self._ranked_list(brand)
-                video.append({"id": brand, "title": name, "brand": brand, "logo": found[brand]["logo"], "icon": "trailer", "source": "TMDB",
+                video.append({"id": brand, "title": name, "brand": brand, "logo": found[brand]["logo"], "icon": "chart", "source": "TMDB",
                               "meta": f"Lo más popular en {self._country()}", "split": True,
                               "fallback_for": ranked, "covered": self._covered(ranked) if ranked else []})
         games: list[dict] = [{"id": "mygames", "title": "Tus juegos", "icon": "gamepad", "source": "",

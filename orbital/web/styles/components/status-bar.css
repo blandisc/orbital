@@ -37,8 +37,10 @@
 
 .status-bar__playing { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; color: var(--color-text-muted); animation: fade-in var(--duration-base) var(--ease-out); }
 /* Lo abierto: un ▶ quieto (en pausa, ‖ en ámbar); sin parpadeos que distraigan. */
-.status-bar__live { display: grid; place-items: center; width: 1rem; height: 1rem; color: var(--color-text-muted); }
-.status-bar__live .icon { width: .85rem; height: .85rem; fill: currentColor; stroke: none; }
+/* Del alto de las mayúsculas y centrado con ellas (no con la caja del renglón, que suma el espacio de las letras con cola:
+   el ▶ quedaba chico y arriba del título). */
+.status-bar__live { display: grid; place-items: center; width: 1.1rem; height: 1.1rem; color: var(--color-text-muted); translate: 0 .08em; }
+.status-bar__live .icon { width: 1.1rem; height: 1.1rem; fill: currentColor; stroke: none; }
 .status-bar__playing--paused .status-bar__live { color: var(--color-warning); }
 .status-bar__playing-title { overflow: hidden; max-width: 11rem; color: var(--color-text); text-overflow: ellipsis; white-space: nowrap; }
 /* Las pestañas van centradas: lo que está en curso no debe alcanzarlas. El ícono ya dice el estado
@@ -164,7 +166,9 @@
 .battery__body::after { content: ""; position: absolute; right: -4.5px; top: 30%; width: 2.5px; height: 40%; background: var(--color-text-muted); border-radius: 0 2px 2px 0; }
 .battery__level { position: absolute; inset: 1.5px auto 1.5px 1.5px; background: var(--color-text-muted); border-radius: 2px; transition: width var(--duration-slow) var(--ease-out); }
 .battery__body .icon--fill { position: relative; width: .8rem; height: .8rem; color: var(--color-text); filter: drop-shadow(0 0 2px var(--color-art-shade)); }
+.battery__percent { color: var(--color-text-muted); }
 .battery--low { color: var(--color-danger); }
+.battery--low .battery__percent { color: var(--color-danger); }
 .battery--low .battery__body { border-color: var(--color-danger); }
 .battery--low .battery__level { background: var(--color-danger); }
 .battery--charging .battery__level { background: var(--color-text-faint); }

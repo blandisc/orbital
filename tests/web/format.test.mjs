@@ -72,3 +72,10 @@ test("si un juego se cierra enseguida, el aviso dice qué revisar según de dón
   assert.match(crashMessage({ title: "Zelda", kind: "emulator" }), /ROM, firmware/);
   assert.match(crashMessage({ title: "Fortnite", kind: "geforcenow" }), /GeForce NOW/);
 });
+
+test("la hora va en 12 horas, como se dice en México", async () => {
+  const { clock } = await import("../../orbital/web/js/core/format.js");
+  assert.equal(clock(new Date(2026, 9, 16, 21, 5)), "9:05 p. m.");
+  assert.equal(clock(new Date(2026, 9, 16, 0, 30)), "12:30 a. m.");
+  assert.equal(clock(new Date(2026, 9, 16, 12, 0)), "12:00 p. m.");
+});
