@@ -29,7 +29,11 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 .home__queue-head { flex: none; padding: 0 var(--space-2); justify-content: space-between; }
 /* Los renglones se reparten el alto de la columna: así no queda hueco abajo con letra normal ni se
    salen con letra grande. */
-.home__rows { flex: 1; min-height: 0; display: grid; grid-auto-rows: minmax(4.3rem, 1fr); align-content: start; gap: var(--space-3); overflow: hidden; }
+.home__rows {
+  flex: 1; min-height: 0; display: grid; grid-auto-rows: minmax(auto, 1fr); align-content: start; gap: var(--space-2); overflow: hidden;
+  /* Aire para el anillo del foco (sale .34rem): sin esto la columna lo recortaba a los lados y arriba. */
+  padding: var(--space-2); margin: calc(-1 * var(--space-2));
+}
 .home__rows > [hidden] { display: none; } /* los que no caben (home.js · fitRows): mejor 3 legibles que 4 aplastados */
 
 /* Abajo: tus consolas en una fila que se desplaza si no caben (6 a la vista). */

@@ -229,21 +229,42 @@ def test_netflix_top10_and_justwatch_lists_bring_rank_and_why(make_foryou, monke
     assert fy.list_items("jw:disney", "series") == []  # esa plataforma no trajo series: queda vacía, no tumba nada
 
 
-def test_tmdb_platform_is_backup_only_when_justwatch_is_empty(make_foryou, net, monkeypatch):
+def test_tmdb_platform_backup_always_comes_with_what_its_ranked_list_covers(make_foryou, net, monkeypatch):
+    """El respaldo de TMDB va siempre (si JustWatch trae películas pero no series, con «Series» no quedaba nada de la
+    plataforma), con `fallback_for` y `covered`: lo que su lista con puesto ya trae, sin salir a internet."""
     fy = make_foryou(trakt_keys=False, tmdb_key="k")
     net.on("GET", r"/watch/providers/movie", (200, {"results": [{"provider_id": 8, "provider_name": "Netflix", "logo_path": "/n.png"}]}))
     net.on("GET", r"/watch/providers/tv", (200, {"results": []}))
-    # JustWatch (y el Top 10 de Netflix) sin nada: el riel enseña el respaldo de TMDB.
-    monkeypatch.setattr(charts, "netflix_entries", lambda region, kind, **kw: [])
-    monkeypatch.setattr(charts, "fetch_justwatch_chart", lambda brand, region, kind: [])
-    ids = [row["id"] for row in fy.lists()]
-    assert "netflix" in ids and "chart:netflix" in ids
-    # Ahora JustWatch sí trae algo para Netflix (el Top 10 de verdad): el respaldo de TMDB desaparece.
-    monkeypatch.setattr(charts, "netflix_entries", lambda region, kind, **kw:
-                        [{"imdb": "tt1", "title": "X", "rank": 1, "weeks": 1}] if kind == "movie" else [])
-    fy.cache.clear("charts:")  # la primera vuelta ya guardó «vacío»: se olvida para probar la de verdad
-    ids2 = [row["id"] for row in fy.lists()]
-    assert "chart:netflix" in ids2 and "netflix" not in ids2
+    calls = []
+    monkeypatch.setattr(charts, "netflix_entries", lambda region, kind, **kw: calls.append(kind) or (
+        [{"imdb": "tt1", "title": "X", "rank": 1, "weeks": 1}] if kind == "movie" else []))
+    rows = {row["id"]: row for row in fy.lists()}
+    assert rows["netflix"]["fallback_for"] == "chart:netflix" and rows["netflix"]["covered"] == []
+    assert calls == []  # el riel no espera al Top 10 de Netflix
+    fy.list_items("chart:netflix", "movie")
+    fy.list_items("chart:netflix", "series")
+    rows = {row["id"]: row for row in fy.lists()}
+    assert rows["netflix"]["covered"] == ["movie"]  # trae películas, no series: el respaldo sigue sirviendo
+
+
+def test_cache_can_answer_stale_and_refresh_in_the_background():
+    """Lo vencido se devuelve al instante y se renueva aparte (el iPhone no espera 30 s y se rinde)."""
+    import threading
+
+    from orbital.foryou import Cache
+
+    now = [0.0]
+    cache = Cache(clock=lambda: now[0])
+    assert cache.get("k", 10, lambda: "viejo", stale=True) == "viejo"  # la primera vez sí espera
+    now[0] = 100
+    done = threading.Event()
+    assert cache.get("k", 10, lambda: (done.set(), "nuevo")[1], stale=True) == "viejo"
+    assert done.wait(2)
+    for _ in range(50):
+        if cache.peek("k") == "nuevo":
+            break
+        threading.Event().wait(.02)
+    assert cache.peek("k") == "nuevo"
 
 
 def test_rawg_games_you_own_are_marked_and_play(make_foryou, net):

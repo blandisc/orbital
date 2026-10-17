@@ -119,7 +119,7 @@ test("el pie de TV en vivo dice qué hace cada botón ahí", () => {
   const onChannel = tvHints(g, { kind: "channel" }, { categories: 3, atStart: false });
   assert.deepEqual(labels(onChannel), ["Ver", "Categoría", "Actualizar", "Buscar", "Al principio", "Menú"]);
   assert.equal(onChannel[0].glyph, "A");
-  assert.equal(onChannel.find((x) => x.label === "Categoría").glyph, "LB RB");
+  assert.equal(onChannel.find((x) => x.label === "Categoría").glyph, "LT RT"); // LB RB son las secciones, como en toda la app
   assert.equal(onChannel.find((x) => x.label === "Actualizar").glyph, "X");
   assert.equal(tvHints(g, { kind: "channel" }, { categories: 3, atStart: true }).find((x) => x.glyph === "B").label, "Inicio");
   // Con una sola categoría no se enseña «Categoría» (pistas que no aplican, no).

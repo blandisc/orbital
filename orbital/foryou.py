@@ -106,11 +106,17 @@ class Cache:
         self._locks: dict[str, threading.Lock] = {}
         self._lock = threading.Lock()
 
-    def get(self, key: str, ttl: float, load: Callable[[], Any]) -> Any:
+    def get(self, key: str, ttl: float, load: Callable[[], Any], *, stale: bool = False) -> Any:
+        """`stale`: si ya venció, devuelve lo de antes al instante y lo renueva en segundo plano (el iPhone y la TV
+        no esperan 30 s al Top 10 de Netflix: con caché fría el iPhone se rendía y no enseñaba ni Top 10 ni Disney)."""
         with self._lock:
             hit = self._data.get(key)
             lock = self._locks.setdefault(key, threading.Lock())
         if hit and self.clock() - hit[0] < ttl:
+            return hit[1]
+        if hit and stale:
+            if lock.acquire(blocking=False):  # una sola renovación a la vez
+                threading.Thread(target=self._refresh, args=(key, load, lock), daemon=True, name=f"cache:{key}").start()
             return hit[1]
         with lock:
             with self._lock:
@@ -126,6 +132,16 @@ class Cache:
             with self._lock:
                 self._data[key] = (self.clock(), value)
             return value
+
+    def _refresh(self, key: str, load: Callable[[], Any], lock: threading.Lock) -> None:
+        try:
+            value = load()
+            with self._lock:
+                self._data[key] = (self.clock(), value)
+        except SERVICE_ERRORS as exc:  # sin red: se queda lo de antes
+            log.warning("Para ti: no pude renovar %s: %s", key, exc)
+        finally:
+            lock.release()
 
     def clear(self, prefix: str = "") -> None:
         with self._lock:
@@ -428,11 +444,15 @@ class ForYou:
                           "logo": charts_api.justwatch_logo(brand)})
         found = self.platforms()
         for brand, (name, _) in tmdb_api.PLATFORMS.items():
-            # Respaldo: solo si su lista de JustWatch (o el Top 10 de Netflix) no trajo nada, para no
-            # enseñar dos veces la misma plataforma.
-            if brand in found and not self._jw_covers(brand):
+            # Respaldo de cada plataforma: va siempre (si JustWatch trae películas pero no series, con «Series» no quedaba
+            # nada de Disney). `fallback_for` dice de qué lista es respaldo y `covered`, qué tipos esa lista ya trae (de lo
+            # que hay en caché: el riel no espera a JustWatch). La TV lo esconde si la lista con puesto trae los dos; el
+            # iPhone, por tipo (ShelfPlan.isFallback).
+            if brand in found:
+                ranked = self._ranked_list(brand)
                 video.append({"id": brand, "title": name, "brand": brand, "logo": found[brand]["logo"], "icon": "trailer", "source": "TMDB",
-                              "meta": f"Lo más popular en {self._country()}", "split": True})
+                              "meta": f"Lo más popular en {self._country()}", "split": True,
+                              "fallback_for": ranked, "covered": self._covered(ranked) if ranked else []})
         games: list[dict] = [{"id": "mygames", "title": "Tus juegos", "icon": "gamepad", "source": "",
                               "meta": "Favoritos, los más jugados y los que no has abierto"}]
         if self.rawg.configured:
@@ -498,14 +518,14 @@ class ForYou:
         if list_id in tmdb_api.PLATFORMS:
             return self.cache.get(f"tmdb:{list_id}:{kind}", POPULAR_TTL, lambda: self._platform(list_id, kind))
         if list_id == "chart:netflix":
-            entries = self.cache.get(f"charts:netflix:{kind}", SLOW_TTL, lambda: charts_api.netflix_entries(
+            entries = self.cache.get(f"charts:netflix:{kind}", SLOW_TTL, stale=True, load=lambda: charts_api.netflix_entries(
                 self.region, kind, tmdb=self.tmdb if self.tmdb.configured else None, cinemeta=self.catalog.cinemeta))
             return [self._chart_item(e, kind, "Netflix") for e in entries]
         if list_id.startswith("jw:"):
             brand = list_id.removeprefix("jw:")
             if brand not in charts_api.JUSTWATCH_PACKAGES:
                 raise KeyError(list_id)
-            entries = self.cache.get(f"charts:jw:{brand}:{kind}", POPULAR_TTL, lambda: self.snapshots.annotate(
+            entries = self.cache.get(f"charts:jw:{brand}:{kind}", POPULAR_TTL, stale=True, load=lambda: self.snapshots.annotate(
                 f"jw:{brand}", kind, charts_api.fetch_justwatch_chart(brand, self.region, kind)))
             name = charts_api.JUSTWATCH_PACKAGES[brand][1]
             return [self._chart_item(e, kind, name) for e in entries]
@@ -553,19 +573,15 @@ class ForYou:
                 return f"{self._country()} · semana del {start.day} de {months[start.month - 1]}"
         return f"Esta semana en {self._country()}"
 
-    def _jw_covers(self, brand: str) -> bool:
-        """¿Ya hay algo que enseñe esta plataforma (JustWatch, o el Top 10 de Netflix)? Evita que el
-        riel enseñe la misma marca dos veces (una de JustWatch y otra, de respaldo, de TMDB)."""
-        list_id = "chart:netflix" if brand == "netflix" else f"jw:{brand}" if brand in JW_LIST_BRANDS else None
-        if not list_id:
-            return False
-        for kind in ("movie", "series"):
-            try:
-                if self._list(list_id, kind):
-                    return True
-            except (KeyError, *SERVICE_ERRORS):
-                continue
-        return False
+    @staticmethod
+    def _ranked_list(brand: str) -> str | None:
+        """La lista con puesto de una plataforma: el Top 10 de Netflix o la de JustWatch (None si no tiene)."""
+        return "chart:netflix" if brand == "netflix" else f"jw:{brand}" if brand in JW_LIST_BRANDS else None
+
+    def _covered(self, list_id: str) -> list[str]:
+        """Qué tipos ya trae una lista con puesto, según lo que hay en caché (sin salir a internet)."""
+        prefix = "charts:netflix" if list_id == "chart:netflix" else f"charts:{list_id}"
+        return [kind for kind in ("movie", "series") if self.cache.peek(f"{prefix}:{kind}")]
 
     @staticmethod
     def _safe(call):
@@ -666,6 +682,16 @@ class ForYou:
 
     # --- el mosaico ----------------------------------------------------------------------------
     def mosaic(self) -> list[dict]:
+        """El mosaico de la caché (vencido o no, se renueva solo); solo la primera vez se espera a armarlo."""
+        hidden = self.catalog.state.dismissed()
+        return [i for i in self.cache.get("mosaic", MINE_TTL, self._build_mosaic, stale=True) if i["key"] not in hidden]
+
+    def warm(self) -> None:
+        """Al arrancar Orbital, arma el mosaico y las listas con puesto en segundo plano: la primera vez que la TV o el
+        iPhone abren Para ti ya está (antes esperaban el Top 10 de Netflix, unos 30 s)."""
+        threading.Thread(target=lambda: self._safe(self.mosaic), daemon=True, name="foryou-warm").start()
+
+    def _build_mosaic(self) -> list[dict]:
         """Lo tuyo, mezclado: tus recomendaciones, tu watchlist, tus listas, tus series y tus juegos.
         Sin Trakt conectado: lo que dejaste a medias y tu lista de Stremio, más lo que está en
         tendencia (o lo popular en tus plataformas, o en el catálogo de Stremio si no hay claves)."""

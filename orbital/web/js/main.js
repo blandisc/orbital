@@ -440,7 +440,7 @@ async function tvRefresh() {
   }
 }
 
-/** Botones en TV en vivo: moverse por los canales, LB/RB categorías, A sintonizar, X actualizar, B volver. */
+/** Botones en TV en vivo: moverse por los canales, LT/RT categorías, LB/RB secciones, A sintonizar, X actualizar, B volver. */
 function handleTv(action, { repeat = false } = {}) {
   const moved = ui.tv.handle(action === "home" ? "back" : action, { repeat });
   if (moved === true) {
@@ -453,7 +453,7 @@ function handleTv(action, { repeat = false } = {}) {
     case "select": return tvActivate(ui.tv.current);
     case "alt": return tvRefresh();
     case "options": sound.play("error"); return rumble("edge");
-    case "prevsection": return stepSection(-1); // en la primera categoría: la sección de la izquierda
+    case "prevsection": return stepSection(-1); // LB/RB: siempre la sección de al lado
     case "nextsection": return stepSection(1);
     case "search": return openSearch();
     case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));

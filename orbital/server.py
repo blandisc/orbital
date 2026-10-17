@@ -121,6 +121,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             # Con la biblioteca del último arranque, la interfaz entra ya; si no, espera el escaneo.
             catalog.scanning = not catalog.load_snapshot()  # antes de que la interfaz pregunte
             catalog.tv.start()  # revisa los canales de TV con calma (y cada ~6 h)
+            catalog.foryou.warm()  # Para ti listo antes de que la TV o el iPhone lo pidan
             threading.Thread(target=scan, daemon=True, name="first-scan").start()
         else:
             await run_in_threadpool(catalog.refresh)

@@ -123,12 +123,12 @@ export function RowTile(item, { focusId, onPress, airing = null }) {
       thumb.src && artOr(thumb.src, thumb.fallback, ["tile--row__art", thumb.kind === "crop" && "tile--row__art--crop"]),
       system && art(`img/consoles/${system.photo}`, ["tile--row__console", system.logo && "tile--row__console--logo"]),
       // Sale un episodio nuevo hoy (Próximos estrenos, de Trakt): «Sale hoy · 19:00».
-      airing && Badge(airing === "Desde la madrugada" ? "Nuevo hoy" : `Sale hoy · ${airing}`, { className: "tile--row__airing" })),
+      airing && Badge(airing === "Desde la madrugada" ? "Nuevo hoy" : `Sale hoy · ${airing}`, { className: "tile--row__airing" }),
+      watch && Progress(item.progress, { className: "tile--row__progress" })), // sobre la miniatura, como en un póster
     h("span", { class: "tile--row__text" },
       h("strong", { class: "tile--row__title" }, item.title),
       h("span", { class: "tile--row__detail" }, svg(ICONS[systemIconName(item)] || ICONS.apps),
-        h("span", { class: "tile--row__detail-text" }, [kicker(item), shortDetail(item), total].filter(Boolean).join(" · "))),
-      watch && Progress(item.progress, { className: "tile--row__progress" })));
+        h("span", { class: "tile--row__detail-text" }, [kicker(item), shortDetail(item), total].filter(Boolean).join(" · ")))));
   if (system) node.style.setProperty("--glow", systemColor(systemOf(item)));
   return node;
 }

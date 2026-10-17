@@ -661,8 +661,8 @@ def panel_ass(panel: Panel, *, playing: bool = True, muted: bool = False) -> str
                 lines += [rrect(x + 52, y + 47, bar_w, 4, 2, tint, "A0"),
                           rrect(x + 52, y + 47, max(4, bar_w * min(1, option["progress"])), 4, 2, tint)]
             y += 60
-        if len(column.options) > PANEL_ROWS:
-            lines.append(text(x + 18, y + 8, f"{column.index + 1} de {len(column.options)}", 20, MUTED))
+        if len(column.options) > PANEL_ROWS:  # en el encabezado, a la derecha: abajo se encimaba con la nota de Fuentes
+            lines.append(text(x + col_w - 18, 602, f"{column.index + 1} de {len(column.options)}", 20, MUTED, align=9))
     if panel.column.key == "source":  # qué quiere decir «Al instante», donde se elige
         lines.append(text(MARGIN, 1022, "Al instante: Real-Debrid ya la tiene guardada y arranca en segundos. "
                                         "Las demás primero se descargan y pueden tardar.", 20, MUTED, align=4))
