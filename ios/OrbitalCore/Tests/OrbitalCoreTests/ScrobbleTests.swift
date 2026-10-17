@@ -49,6 +49,25 @@ final class ScrobbleTests: XCTestCase {
         XCTAssertNil(rig.log.status.error)
     }
 
+    /// Un 401 al LEER (p. ej. al subir lo visto sin conexión) ya no borra la sesión prestada: le pide otra a tu Orbital, y si la
+    /// consola no contesta, la sesión se queda (antes el scrobble se apagaba sin avisar).
+    func testA401OnAReadAsksTheConsoleAndKeepsTheSessionIfItCannotAnswer() async {
+        let asked = Counter()
+        let rig = makeRig(borrow: { asked.bump(); return nil })
+        rig.http.json["\(api)/users/me/lists"] = [:]; rig.http.statuses["\(api)/users/me/lists"] = 401
+        do { _ = try await rig.trakt.lists(); XCTFail("debe avisar del error") } catch {}
+        XCTAssertEqual(asked.value, 1, "se le pidió una sesión nueva a la consola")
+        XCTAssertTrue(rig.trakt.linked, "la sesión prestada sigue ahí")
+    }
+
+    /// Un título sin IMDb no se puede registrar en Trakt: se dice (una vez, al empezar) en vez de callar.
+    func testATitleWithoutIMDbSaysSoInsteadOfStayingQuiet() async {
+        let rig = makeRig()
+        await rig.service.report(event(rig, position: 10, video: "kitsu:123:1"), phase: .started)
+        XCTAssertTrue(rig.http.calls.filter { $0.contains("/scrobble/") }.isEmpty)
+        XCTAssertTrue(rig.log.status.error?.contains("IMDb") == true)
+    }
+
     func testTicksNeverScrobble() async {
         let rig = makeRig()
         await rig.service.report(event(rig, position: 100), phase: .tick)
@@ -138,3 +157,4 @@ final class ScrobbleTests: XCTestCase {
 
 /// Para que la consola falsa (que corre dentro de `borrow`) pueda tocar la red falsa creada después.
 final class FakeHTTPBox: @unchecked Sendable { var value: FakeHTTP? }
+

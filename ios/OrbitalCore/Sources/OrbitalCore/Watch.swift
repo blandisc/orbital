@@ -216,7 +216,13 @@ public actor WatchService {
     }
 
     private func scrobble(_ event: ProgressEvent, _ phase: PlaybackPhase) async {
-        guard let trakt, trakt.linked, let target = TraktTarget(videoID: event.videoID, kind: event.kind), event.duration > 0 else { return }
+        guard let trakt, trakt.linked else { return }
+        guard let target = TraktTarget(videoID: event.videoID, kind: event.kind) else {
+            // Sin IMDb (un complemento con sus propios ids) Trakt no lo reconoce: se dice una vez, al empezar, en vez de callar.
+            if case .started = phase { scrobbleLog?.recordFailure("«\(Self.scrobbleTitle(event))» no tiene ficha de IMDb: Trakt no lo puede registrar.") }
+            return
+        }
+        guard event.duration > 0 else { return }
         let percent = min(100, max(0, event.position / event.duration * 100))
         let action: ScrobbleAction
         switch phase {

@@ -272,10 +272,13 @@ public actor Trakt {
     }
 
     private func get(_ path: String, auth: Bool = true, _ params: [(String, String)] = []) async throws -> JSON? {
-        let (status, data) = try await call("GET", path, auth: auth, params: params)
+        var (status, data) = try await call("GET", path, auth: auth, params: params)
         if status == 401 && auth {
-            secrets.set(SecretKey.traktTokens, nil)
-            throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.")
+            // Como en las escrituras: una sesión nueva UNA vez (renovar, o pedírsela a tu Orbital) antes de darla por perdida. Antes
+            // un 401 al leer borraba la sesión prestada y el scrobble se apagaba sin decir nada.
+            try await renewAfterRejection()
+            (status, data) = try await call("GET", path, auth: auth, params: params)
+            if status == 401 { secrets.set(SecretKey.traktTokens, nil); throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.") }
         }
         guard status == 200 else { throw TraktError.http(status) }
         return data

@@ -204,6 +204,7 @@ TRANSLATIONS = {
     "Solo en el iPhone": "Only on the iPhone",
     "Toca «En la TV», estira la hoja hacia arriba y toca el micrófono. Habla con calma: cuando terminas, se detiene solo y te contesta en voz alta.": "Tap “On TV”, pull the sheet up and tap the microphone. Speak calmly: when you finish it stops on its own and answers out loud.",
     "Voz": "Voice",
+    "«%@» no tiene ficha de IMDb: Trakt no lo puede registrar.": "“%@” has no IMDb page: Trakt can’t record it.",
     "Ponerla en la TV": "Play it on the TV", "Poniendo %@.": "Playing %@.", "Abriendo %@ en la TV.": "Opening %@ on the TV.",
     "Sigue aquí.": "Continuing here.", "Abre Orbital y toca «Seguir aquí».": "Open Orbital and tap “Continue here”.",
     "Entendí: «%@»": "I heard: “%@”", "«Pon The Office», «pausa», «descárgalo»": "“Play The Office”, “pause”, “download it”",

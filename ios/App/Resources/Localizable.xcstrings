@@ -4742,6 +4742,17 @@
         }
       }
     },
+    "«%@» no tiene ficha de IMDb: Trakt no lo puede registrar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@” has no IMDb page: Trakt can’t record it."
+          }
+        }
+      }
+    },
     "«Pon The Office», «pausa», «abre Zelda»": {
       "extractionState": "manual",
       "localizations": {

@@ -241,7 +241,8 @@ public final class PlayerModel: ObservableModel {
     /// pausar → `pause`; volver a sonar, aunque sea tras pasar por «cargando» (pausa, salto y seguir), → `start`; y un salto grande → `start`
     /// con el avance nuevo (su «Viendo ahora» calcula cuándo terminas con el último aviso).
     private func scrobbleIfNeeded(_ s: EngineSnapshot) async {
-        guard let known = event()?.duration, known > 0 else { return }
+        // Ya se dijo «terminé» (p. ej. «¿Sigues viendo?» pausa después): una pausa ahí dejaría en Trakt un «en pausa» de algo visto.
+        guard !finalReported, let known = event()?.duration, known > 0 else { return }
         if !scrobbleStarted {
             guard s.state == .playing else { return }
             scrobbleStarted = true; scrobblePlaying = true; rescrobbleAfterSeek = false
