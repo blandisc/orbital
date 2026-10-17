@@ -38,7 +38,7 @@ test("menú ☰: lo de todos los días; lo técnico en Ajustes → Mantenimiento
   assert.ok(!mainMenu({ running: { title: "Hades", managed: false } }).options.some((o) => o.label === "Cerrar Hades"));
   const maintenance = settingsPage("maintenance", {});
   assert.deepEqual(maintenance.options.map((o) => o.command.type),
-    ["setup", "refresh", "folders", "windows", "diagnostics", "update-check"]);
+    ["setup", "refresh", "folders", "windows", "diagnostics", "emulators", "update-check"]);
   assert.deepEqual(settingsMenu().options.map((o) => o.label),
     ["Películas y series", "Pantalla y sonido", "Juegos y videos", "Cuentas", "Mantenimiento"]);
 });
@@ -324,4 +324,22 @@ test("cuentas: el iPhone dice si ya está conectado (antes siempre «Conectar»)
   assert.equal(recent.hint, "Lo usaste hace 2 h");
   assert.equal(recent.command.type, "phone-link"); // sigue abriendo el QR (otro iPhone, o volver a conectarlo)
   assert.equal(phoneRow(now / 1000 - 90 * 86400, now).value, "Conectar"); // hace meses: como si no
+});
+
+test("Emuladores: cuál tiene versión nueva, cuál se instala aquí y el modo con ◀/▶", async () => {
+  const { emulatorsMenu, maintenanceMenu } = await import("../../orbital/web/js/core/menus.js");
+  assert.ok(maintenanceMenu().options.some((o) => o.command.type === "emulators"));
+  const menu = emulatorsMenu({ mode: "avisar", items: [
+    { id: "xemu", name: "xemu", installed: "0.8.137", latest: "v0.8.138", update: true, likely: false, can_install: true, page: "https://xemu.app/" },
+    { id: "dolphin", name: "Dolphin", installed: null, latest: "2609a", update: true, likely: true, can_install: false, page: "https://dolphin-emu.org/download/" },
+    { id: "ppsspp", name: "PPSSPP", installed: "v1.20.4", latest: "v1.20.4", update: false, can_install: false, page: "x" },
+  ] });
+  const [mode, , xemu, dolphin, ppsspp] = menu.options;
+  assert.equal(mode.value, "Avisarme");
+  assert.deepEqual(mode.adjust.right, { type: "emulators-mode", value: "auto" });
+  assert.deepEqual(xemu.command, { type: "emulator-install", id: "xemu", name: "xemu" });
+  assert.equal(xemu.value, "Nueva: v0.8.138");
+  assert.equal(dolphin.value, "Parece que hay nueva");
+  assert.equal(dolphin.hint, "Se baja a mano: dolphin-emu.org/download");
+  assert.equal(ppsspp.value, "Al día");
 });

@@ -6,6 +6,7 @@ export const ICONS = {
   wii: '<svg viewBox="0 0 48 48"><rect x="18" y="6" width="12" height="36" rx="6"/><circle cx="24" cy="15" r="2.5"/></svg>',
   gba: '<svg viewBox="0 0 48 48"><rect x="4" y="14" width="40" height="22" rx="10"/><rect x="15" y="18" width="18" height="14" rx="2"/></svg>',
   xbox: '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="16"/><path d="M14 14c6 3 14 12 20 22M34 14c-6 3-14 12-20 22"/></svg>',
+  ps4: '<svg viewBox="0 0 48 48"><path d="M5 30l7-14h29l2 8-7 14H7z"/><path d="M12 16l5 22"/></svg>',
   psp: '<svg viewBox="0 0 48 48"><rect x="3" y="15" width="42" height="18" rx="9"/><rect x="14" y="18" width="20" height="12" rx="1.5"/></svg>',
   media: '<svg viewBox="0 0 48 48"><path d="M24 6l18 18-18 18L6 24z"/><path d="M20 17l9 7-9 7z"/></svg>',
   apps: '<svg viewBox="0 0 48 48"><rect x="8" y="8" width="13" height="13" rx="3"/><rect x="27" y="8" width="13" height="13" rx="3"/><rect x="8" y="27" width="13" height="13" rx="3"/><rect x="27" y="27" width="13" height="13" rx="3"/></svg>',
@@ -100,6 +101,7 @@ export function systemIconName(item) {
   if (text.includes("gba") || text.includes("game boy")) return "gba";
   if (text.includes("xbox")) return "xbox";
   if (text.includes("psp")) return "psp";
+  if (text.includes("ps4") || text.includes("playstation 4")) return "ps4";
   if (item.category === "media") return "media";
   return "apps";
 }

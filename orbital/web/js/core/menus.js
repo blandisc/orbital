@@ -345,6 +345,7 @@ export const SETTING_VALUES = {
   game_idle_minutes: [[30, "30 min"], [60, "1 hora"], [120, "2 horas"], [0, "Nunca"]],
   video_idle_minutes: [[15, "15 min"], [30, "30 min"], [60, "1 hora"], [0, "Nunca"]],
   close_previous: [[true, "Sí"], [false, "No"]],
+  emulator_updates: [["avisar", "Avisarme"], ["auto", "Automático"], ["nunca", "No revisar"]],
 };
 
 export const settingLabel = (key, value) => SETTING_VALUES[key]?.find(([v]) => v === value)?.[1] ?? otherValue(key, value);
@@ -421,7 +422,43 @@ export function maintenanceMenu() {
       { icon: "folder", label: "Carpetas de juegos", command: { type: "folders" } },
       { icon: "windows", label: "Ventanas abiertas", command: { type: "windows" } },
       { icon: "pulse", label: "Diagnóstico", command: { type: "diagnostics" } },
+      { icon: "gamepad", label: "Emuladores", hint: "Versiones nuevas", command: { type: "emulators" } },
       { icon: "refresh", label: "Actualizar Orbital", command: { type: "update-check" } },
+    ],
+  };
+}
+
+const EMULATOR_MODE_HINTS = {
+  avisar: "Te aviso cuando haya una versión nueva",
+  auto: "Instalo solas las que se pueden, nunca con un juego abierto",
+  nunca: "No reviso (puedes revisar aquí cuando quieras)",
+};
+
+/**
+ * Emuladores: cada uno con su versión y si hay una nueva. Los que vienen en .zip se instalan desde aquí (A); los demás
+ * dicen dónde bajarlos. Arriba, el modo: avisar, automático o no revisar (◀/▶).
+ */
+export function emulatorsMenu({ mode = "avisar", items = [], installing = false } = {}) {
+  const row = (e) => {
+    const value = e.error ? "Sin revisar" : e.update ? (e.likely ? "Parece que hay nueva" : `Nueva: ${e.latest}`) : "Al día";
+    const hint = e.error ? e.error
+      : e.update && e.can_install ? `Tienes ${e.installed} · A para actualizar`
+        : e.update ? `Se baja a mano: ${e.page.replace(/^https?:\/\//, "").replace(/\/$/, "")}`
+          : e.installed ? `Versión ${e.installed}` : "";
+    return { icon: e.update ? "download" : "check", label: e.name, value, hint,
+      command: e.update && e.can_install && !installing ? { type: "emulator-install", id: e.id, name: e.name } : { type: "stay" } };
+  };
+  return {
+    title: "Emuladores", crumb: "Emuladores",
+    subtitle: installing ? "Actualizando un emulador… te aviso al terminar." : "",
+    options: [
+      { icon: "refresh", label: "Actualizaciones", value: settingLabel("emulator_updates", mode), hint: EMULATOR_MODE_HINTS[mode],
+        command: { type: "emulators-mode", value: nextSetting("emulator_updates", mode) },
+        adjust: { left: { type: "emulators-mode", value: stepSetting("emulator_updates", mode, -1) },
+          right: { type: "emulators-mode", value: stepSetting("emulator_updates", mode, 1) } } },
+      { heading: true, label: "Tus emuladores" },
+      ...items.map(row),
+      { icon: "refresh", label: "Revisar ahora", command: { type: "emulators", force: true } },
     ],
   };
 }

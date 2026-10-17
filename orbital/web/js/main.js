@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints, legendOf, tvHints } from "./core/hints.js";
-import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu } from "./core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createForYou } from "./components/foryou.js";
@@ -955,6 +955,18 @@ async function runCommand(command, context = null) {
         return ui.toast.show("Actualizando Orbital… puedes seguir usándolo.");
       case "folders":
         return openMenu(foldersMenu(await api.folders()), nested(context));
+      case "emulators":
+        if (command.force) ui.toast.show("Revisando versiones nuevas…");
+        return openMenu(emulatorsMenu(await api.emulatorUpdates(!!command.force)), command.force || command.again ? { index: context?.index ?? 0, stack: context?.stack ?? [] } : nested(context));
+      case "emulators-mode": {
+        applySettings(await api.setSettings({ emulator_updates: command.value }));
+        sound.play("select");
+        if (stillThere(context)) ui.sheet.open(emulatorsMenu(await api.emulatorUpdates()), { index: context?.index ?? 0, stack: context?.stack ?? [] });
+        return renderHints();
+      }
+      case "emulator-install":
+        await api.installEmulator(command.id);
+        return ui.toast.show(`Actualizando ${command.name}… puedes seguir usando Orbital.`);
       case "quick-set": { // cambia y se queda en el panel, en la misma opción
         const q = await api.setQuick(command.changes);
         sound.play("move");
@@ -1232,6 +1244,10 @@ function handleEvent(event) {
     return openMenu(healthMenu(event.message, { restart: event.restart !== false }));
   }
   if (event.type === "open-quick") return openQuick().catch((err) => ui.toast.show(err.message, { error: true }));
+  if (event.type === "emulator-update-done") {
+    sound.play(event.ok ? "select" : "error");
+    return ui.toast.show(event.message, { error: !event.ok });
+  }
   if (event.type === "update-done") {
     sound.play(event.ok ? "select" : "error");
     return ui.toast.show(event.message, { error: !event.ok });

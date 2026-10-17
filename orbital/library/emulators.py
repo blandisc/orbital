@@ -163,6 +163,8 @@ def scan(
     dirs = rom_dirs(emu, esde)
     if not dirs:
         log.warning("%s no tiene rom_dirs ni system de ES-DE", emu.name)
+    if emu.system == "ps4":
+        return _scan_ps4(emu, dirs, candidates, exes, media)
     for root in dirs:
         if not root.is_dir():
             log.warning("Carpeta de ROMs no encontrada para %s: %s", emu.name, root)
@@ -235,6 +237,28 @@ def scan(
                 default_runner=emu.id, art_path=art["cover"], hero_path=art["hero"], logo_path=art["logo"],
                 system=emu.system, media_key=name, extra={"added": added_at(package)}))
     return sorted(items, key=lambda i: i.title.lower())
+
+
+def _scan_ps4(emu: EmulatorConfig, dirs: list[Path], candidates: list[EmulatorConfig], exes: dict[str, Path | None],
+              media: MediaStore | None) -> list[LibraryItem]:
+    """PS4: los juegos son carpetas (ver library/ps4.py), de la carpeta de ROMs y de las que ya conoce shadPS4. Sin
+    portada propia, la del juego (icon0.png) y su fondo (pic1.png)."""
+    from . import ps4
+
+    items: list[LibraryItem] = []
+    for game in ps4.find_games([*dirs, *ps4.install_dirs(exes.get(emu.id))]):
+        key = game.title_id or game.folder.name
+        art = pick_art(media, None, emu.system, key, game.folder, None)
+        own = media.meta(emu.system, key) if media and emu.system else None
+        runners = [Runner(c.id, runner_name(c, exes[c.id]), build_argv(c, exes[c.id], game.eboot), str(exes[c.id].parent) if exes[c.id] else None)
+                   for c in candidates if c is emu or exes[c.id] is not None]
+        items.append(LibraryItem(
+            id=_item_id(emu.id, game.eboot), title=(own or {}).get("title") or game.title, category="emulators",
+            source=emu.id, subtitle=emu.name, runners=runners, default_runner=emu.id,
+            art_path=art["cover"] or (str(game.icon) if game.icon else None),
+            hero_path=art["hero"] or (str(game.background) if game.background else None), logo_path=art["logo"],
+            system=emu.system, media_key=key, extra={**game_extra(own), "added": added_at(game.eboot)}))
+    return items
 
 
 def _shortcut_rom(lnk: Path, emulator_exes: set[str]) -> Path | None:

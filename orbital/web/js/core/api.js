@@ -72,6 +72,8 @@ export const api = {
   folders: () => request("/api/folders"),
   checkUpdate: (force = false) => request(`/api/update${force ? "?force=true" : ""}`),
   applyUpdate: () => post("/api/update"),
+  emulatorUpdates: (force = false) => request(`/api/emulators/updates${force ? "?force=true" : ""}`),
+  installEmulator: (id) => post(`/api/emulators/updates/${encodeURIComponent(id)}`),
   setQuick: (changes) => post("/api/quick", changes),
   captures: () => request("/api/captures"),
   openCapture: (path) => post("/api/captures/open", { path }),

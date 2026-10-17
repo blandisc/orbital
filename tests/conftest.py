@@ -106,6 +106,19 @@ def _no_real_tv(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_real_emulator_updates(monkeypatch):
+    """Ninguna prueba pregunta a GitHub por versiones ni baja (o instala) un emulador de verdad."""
+    from orbital import emulator_updates
+
+    def offline(*args, **kwargs):
+        raise OSError("Sin conexión (pruebas)")
+
+    monkeypatch.setattr(emulator_updates, "http_get_json", offline)
+    monkeypatch.setattr(emulator_updates, "download", offline)
+    monkeypatch.setattr(emulator_updates, "file_version", lambda exe: None)
+
+
+@pytest.fixture(autouse=True)
 def _no_real_stremio(monkeypatch):
     """Ninguna prueba habla con Stremio de verdad (un login de prueba salía a internet)."""
     from orbital.library import stremio_api

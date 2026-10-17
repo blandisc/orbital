@@ -92,6 +92,21 @@ def paused_path() -> Path:
     return Path(os.environ.get("LOCALAPPDATA") or Path.home() / ".local" / "state") / "orbital" / "paused.json"
 
 
+def emulator_updates_for(d: Deps):
+    """Las actualizaciones de los emuladores que tienes (ver emulator_updates.py)."""
+    from . import emulator_updates
+    from .library import emulators as emulator_lib
+
+    def exes() -> list[Path]:
+        found = (emulator_lib.resolve_executable(e) for e in d.catalog.emulators)
+        return [emulator_updates.real_exe(p) for p in found if p is not None]
+
+    return emulator_updates.EmulatorUpdates(
+        exes, mode=lambda: d.catalog.state.settings().get("emulator_updates", "avisar"),
+        busy=lambda: d.catalog.launcher.status() is not None,
+        notify=lambda text: d.hub.publish_threadsafe({"type": "toast", "message": text}))
+
+
 def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, shortcuts: bool = False,
                log_path: Path | None = None, updater=None) -> FastAPI:
     """`shortcuts`: activa los atajos globales del mando (Home, Select+Start, Legion L)."""
@@ -102,6 +117,8 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     catalog.before_launch = shell.close_previous  # abrir algo nuevo cierra lo anterior (no queda olvidado)
     d = Deps(config=config, catalog=catalog, shell=shell, voice=VoiceController(catalog, kiosk), hub=SseHub(),
              kiosk=kiosk, log_path=log_path, started=time.time())
+
+    d.extra["emulator_updates"] = emulator_updates_for(d)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -123,6 +140,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             catalog.scanning = not catalog.load_snapshot()  # antes de que la interfaz pregunte
             catalog.tv.start()  # revisa los canales de TV con calma (y cada ~6 h)
             catalog.foryou.warm()  # Para ti listo antes de que la TV o el iPhone lo pidan
+            d.extra["emulator_updates"].start()  # versiones nuevas de los emuladores: avisa o instala (según Ajustes)
             # Un solo volumen: el reproductor mueve el de Windows (el de Ajustes rápidos y Alexa). Solo aquí, en la Orbital de
             # verdad: en pruebas movería el volumen real de la computadora.
             catalog.watch.player.system_volume = (system_audio.volume, system_audio.set_volume)
@@ -141,6 +159,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             with contextlib.suppress(Exception):
                 await run_in_threadpool(player.stop)
         catalog.tv.stop()
+        d.extra["emulator_updates"].stop()
         if problems:
             logging.getLogger("orbital").removeHandler(problems)
         status.cancel()

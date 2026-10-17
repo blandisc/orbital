@@ -28,6 +28,7 @@ export const SYSTEMS = {
   wii: { name: "Wii", photo: "wii.png" },
   gba: { name: "GBA", photo: "gba.png" },
   psp: { name: "PSP", photo: "psp.png" },
+  ps4: { name: "PS4", photo: "ps4.png" },
   xbox: { name: "Xbox", photo: "xbox.png" },
   xbox360: { name: "Xbox 360", photo: "xbox360.png" },
   // Plataformas de PC: no hay una consola que fotografiar, va su logotipo.

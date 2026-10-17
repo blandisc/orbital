@@ -56,7 +56,7 @@ para_ti:
 
 # --- Emuladores --------------------------------------------------------------
 # Orbital los DETECTA SOLO: busca Ryujinx, Eden, Citron, Dolphin, mGBA, xemu, Xenia,
-# DuckStation, PCSX2, PPSSPP, melonDS y Cemu en Descargas, Escritorio, C:\Emuladores,
+# DuckStation, PCSX2, PPSSPP, melonDS, Cemu y shadPS4 en Descargas, Escritorio, C:\Emuladores,
 # la carpeta Emulators de ES-DE, Archivos de programa, etc. Revisa con:  orbital --list
 detect:
   enabled: true
@@ -64,7 +64,7 @@ detect:
 
 # Solo si quieres cambiar algo de lo detectado (o añadir uno que no conozca), escríbelo
 # aquí con el mismo id: lo de este archivo manda. Ids detectables: switch, switch-eden,
-# switch-citron, switch-sudachi, gamecube, wii, gba, xbox, xbox360, psx, ps2, psp, nds, wiiu.
+# switch-citron, switch-sudachi, gamecube, wii, gba, xbox, xbox360, psx, ps2, psp, nds, wiiu, ps4.
 # Placeholders en args: {rom}, {rom_dir}, {rom_name}. Las rutas aceptan comodines (* y **).
 emulators: []
 #  - id: gba                          # p. ej. usar RetroArch para GBA en vez de mGBA

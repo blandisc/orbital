@@ -26,7 +26,8 @@ SETTINGS = {
     "game_idle_minutes": {0, 30, 60, 120},
     "video_idle_minutes": {0, 15, 30, 60},
     "close_previous": {True, False},  # la frase de Alexa debajo de los botones del héroe
-    "welcomed": {True, False},  # ya vio "Tu consola" (la pantalla de primer uso)
+    "welcomed": {True, False},
+    "emulator_updates": {"avisar", "auto", "nunca"},  # versiones nuevas de los emuladores (emulator_updates.py)  # ya vio "Tu consola" (la pantalla de primer uso)
 }
 VIEWS = ("buscar", "serie", "seccion", "fuentes")
 
