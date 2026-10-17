@@ -183,13 +183,18 @@ def test_your_series_bring_the_next_episode_and_skip_finished_ones(make_foryou, 
 CHART_LIST_IDS = ["chart:netflix", "jw:disney", "jw:hbo", "jw:prime", "jw:appletv", "jw:paramount"]
 
 
+def core(rows) -> list[str]:
+    """Las listas de siempre (sin las de Películas y series que vienen del iPhone: premios, estudios, años…)."""
+    return [row["id"] for row in rows if not row["id"].startswith(foryou_mod.TV_ONLY_PREFIXES)]
+
+
 def test_only_the_services_you_have_show_up(make_foryou, net):
     # Netflix (Top 10 oficial) y JustWatch no piden clave: siempre están, aunque vengan vacíos sin red.
-    assert [row["id"] for row in make_foryou(trakt_keys=False).lists()] == [*CHART_LIST_IDS, "mygames"]
-    ids = [row["id"] for row in make_foryou().lists()]
+    assert core(make_foryou(trakt_keys=False).lists()) == [*CHART_LIST_IDS, "mygames"]
+    ids = core(make_foryou().lists())
     assert ids == ["trend", "popular", *CHART_LIST_IDS, "mygames"]  # Trakt sin cuenta: tendencias y popular sí
     net.on("GET", r"/users/me/lists$", (200, [{"name": "Ciencia ficción", "ids": {"trakt": 77}}]))
-    linked = [row["id"] for row in make_foryou(linked=True, rawg_key="r").lists()]
+    linked = core(make_foryou(linked=True, rawg_key="r").lists())
     assert linked[:5] == ["recs", "mine", "watchlist", "estrenos", "list:77"]
     assert linked[-4:] == ["mygames", "rawg:new", "rawg:popular", "rawg:best"]
 
@@ -207,7 +212,7 @@ def test_streaming_platforms_come_from_tmdb_with_their_logo(make_foryou, net):
                                      "external_ids": {"imdb_id": "tt13443470"}}))
     net.on("GET", r"/tv/2\?", (200, {"id": 2, "name": "Sin IMDb", "external_ids": {}}))
     rows = {row["id"]: row for row in fy.lists()}
-    assert list(rows) == [*CHART_LIST_IDS, "netflix", "disney", "hbo", "mygames"]
+    assert core(rows.values()) == [*CHART_LIST_IDS, "netflix", "disney", "hbo", "mygames"]
     assert rows["netflix"]["logo"] == "https://image.tmdb.org/t/p/w154/n.png" and rows["netflix"]["split"]
     items = fy.list_items("netflix", "series")
     assert [(i["title"], i["detail"], i["why"]) for i in items] == [("Merlina", "2 temporadas", "En Netflix")]
@@ -341,7 +346,7 @@ def test_api_lists_details_dismiss_and_trakt(library, make_foryou):
     with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 5000)) as c:
         data = c.get("/api/foryou").json()
         assert data["status"]["trakt"] == {"configured": False, "linked": False, "scrobble": {"last": None, "error": None}}
-        assert [row["id"] for row in data["lists"]] == [*CHART_LIST_IDS, "mygames"] and data["mosaic"]
+        assert core(data["lists"]) == [*CHART_LIST_IDS, "mygames"] and data["mosaic"]
         assert c.get("/api/foryou/list", params={"id": "mygames"}).json()["items"]
         assert c.get("/api/foryou/list", params={"id": "nada"}).status_code == 404
         assert c.post("/api/foryou/dismiss", json={"key": "lo que sea"}).status_code == 422
@@ -660,3 +665,94 @@ def test_each_row_carries_genres_and_runtime_for_the_iphone():
     assert item["genres"] == ["Drama", "Science Fiction"] and item["runtime"] == 55
     bare = foryou.video_item({"imdb": "tt1", "kind": "movie", "title": "Sin datos"}, "x")
     assert "genres" not in bare and "runtime" not in bare  # sin el dato: se omite (el iPhone le pregunta a Cinemeta)
+
+
+# --- Películas y series como Para ti › Listas del iPhone ---------------------------------------------------------------
+def test_the_awards_are_the_iphones_and_each_opens_its_winners(make_foryou):
+    """Los premios salen de design/awards.json (el mismo archivo del iPhone): siempre están, con su estatuilla."""
+    rows = {row["id"]: row for row in make_foryou(trakt_keys=False).lists()}
+    awards = [r for r in rows.values() if r.get("collection") == "award"]
+    assert [r["id"] for r in awards] == ["award:oscar", "award:emmy", "award:globe", "award:palm", "award:bafta", "award:ariel"]
+    oscar = rows["award:oscar"]
+    assert oscar["title"] == "Óscar" and oscar["meta"] == "Mejor película" and oscar["statue"] == "/img/awards/oscar.png"
+    assert oscar["tint"] == "gold" and rows["award:emmy"]["tint"] == "silver" and rows["award:ariel"]["tint"] == "bronze"
+    assert sum(r["count"] for r in awards) == 152
+    winners = make_foryou(trakt_keys=False).list_items("award:oscar")
+    assert winners[0]["meta_id"] == "tt28607951" and winners[0]["title"] == "Anora" and winners[0]["award_year"] == 2025
+    assert winners[0]["why"] == "Óscar 2025" and winners[0]["kind"] == "movie"
+    assert make_foryou(trakt_keys=False).list_items("award:emmy")[0]["kind"] == "series"
+    with pytest.raises(KeyError):
+        make_foryou(trakt_keys=False).list_items("award:razzie")
+
+
+def test_awards_file_missing_or_broken_leaves_the_section_without_them(tmp_path):
+    assert foryou_mod.load_awards(tmp_path / "no.json") == []
+    (tmp_path / "roto.json").write_text("{", encoding="utf-8")
+    assert foryou_mod.load_awards(tmp_path / "roto.json") == []
+    (tmp_path / "raro.json").write_text(json.dumps({"awards": [{"id": "x", "kind": "movie", "tint": "verde", "winners": [
+        {"imdb": "tt1", "title": "A", "award_year": 2020}, {"imdb": "mal", "title": "B", "award_year": 2020}]}]}), encoding="utf-8")
+    assert foryou_mod.load_awards(tmp_path / "raro.json") == [
+        {"id": "x", "kind": "movie", "tint": "gold", "winners": [{"imdb": "tt1", "title": "A", "award_year": 2020}]}]
+
+
+def test_years_and_studios_only_with_their_service(make_foryou, net):
+    assert not [r for r in make_foryou(trakt_keys=False).lists() if r.get("collection") in ("year", "studio")]
+    years = [r for r in make_foryou().lists() if r.get("collection") == "year"]
+    assert years[0]["id"] == f"year:{foryou_mod.datetime.now().year}" and years[-1]["id"] == "year:1980" and years[0]["split"]
+    studios = [r["title"] for r in make_foryou(trakt_keys=False, tmdb_key="k").lists() if r.get("collection") == "studio"]
+    assert studios == ["A24", "Pixar", "Studio Ghibli", "Marvel Studios", "Lucasfilm", "Blumhouse", "DreamWorks Animation", "NEON"]
+
+
+def test_a_year_puts_that_years_winners_first_then_whats_popular(make_foryou, net):
+    net.on("GET", r"/movies/popular\?.*years=2024", (200, [
+        {"title": "Dune: Part Two", "year": 2024, "ids": {"imdb": "tt15239678"}, "rating": 8.4},
+        {"title": "Anora", "year": 2024, "ids": {"imdb": "tt28607951"}}]))
+    items = make_foryou().list_items("year:2024", "movie")
+    ids = [i["meta_id"] for i in items]
+    assert ids.index("tt28607951") < ids.index("tt15239678") and ids.count("tt28607951") == 1  # la premiada primero, una vez
+    assert next(i for i in items if i["meta_id"] == "tt15239678")["rating"] == 8.4  # la calificación de Trakt viaja
+    with pytest.raises(KeyError):
+        make_foryou().list_items("year:1900")
+
+
+def test_because_you_watched_uses_your_last_title_and_trakts_related(make_foryou, net):
+    net.on("GET", r"/sync/history\?", (200, [{"type": "episode", "watched_at": "2026-10-16T01:00:00.000Z",
+                                              "show": {"title": "Severance", "year": 2022, "ids": {"imdb": "tt11280740"}}}]))
+    net.on("GET", r"/shows/tt11280740/related", (200, [{"title": "Dark", "year": 2017, "ids": {"imdb": "tt5753856"}}]))
+    fy = make_foryou(linked=True)
+    because = next(r for r in fy.lists() if r["id"] == "because")
+    assert because["title"] == "Porque viste Severance" and because["seed"]["meta_id"] == "tt11280740"
+    assert because["seed"]["kind"] == "series" and because["source"] == "Trakt"
+    items = fy.list_items("because")
+    assert [i["title"] for i in items] == ["Dark"] and items[0]["why"] == "Porque viste Severance"
+
+
+def test_the_iphone_does_not_get_the_tv_only_lists(library, make_foryou):
+    """El iPhone calcula sus premios, años y estudios: por el túnel no le llegan los de la TV (los pintaría como estantes)."""
+    from orbital.server import create_public_app
+
+    make_foryou(trakt_keys=False)
+    main = create_app(library.config, library)
+    with TestClient(main, base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)):
+        public = TestClient(create_public_app(library.config, main), base_url="https://legion.ts.net", client=("127.0.0.1", 2))
+        tv = [row["id"] for row in TestClient(main, base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)).get("/api/foryou").json()["lists"]]
+        phone = [row["id"] for row in public.get("/api/foryou", headers={"Authorization": "Bearer secreto"}).json()["lists"]]
+    assert "award:oscar" in tv
+    assert phone and not [i for i in phone if i.startswith(foryou_mod.TV_ONLY_PREFIXES)]
+
+
+def test_studios_and_whats_new_come_from_tmdb_with_the_iphones_rules(make_foryou, net):
+    fy = make_foryou(trakt_keys=False, tmdb_key="k")
+    net.on("GET", r"/watch/providers/movie", (200, {"results": [{"provider_id": 8, "provider_name": "Netflix", "logo_path": "/n.png"}]}))
+    net.on("GET", r"/watch/providers/tv", (200, {"results": []}))
+    net.on("GET", r"/discover/movie\?.*with_companies=41077", (200, {"results": [{"id": 5}]}))
+    net.on("GET", r"/discover/tv\?.*air_date\.gte=", (200, {"results": [{"id": 6}]}))
+    net.on("GET", r"/movie/5\?", (200, {"id": 5, "title": "Past Lives", "release_date": "2023-06-02", "external_ids": {"imdb_id": "tt13238346"}}))
+    net.on("GET", r"/tv/6\?", (200, {"id": 6, "name": "Merlina", "first_air_date": "2022-11-23", "external_ids": {"imdb_id": "tt13443470"}}))
+    ids = [r["id"] for r in fy.lists()]
+    assert "fresh" in ids and "studio:41077" in ids
+    assert [i["title"] for i in fy.list_items("studio:41077")] == ["Past Lives"]
+    fresh = fy.list_items("fresh", "series")
+    assert [(i["title"], i["why"], i["brand"]) for i in fresh] == [("Merlina", "Nuevo en Netflix", "netflix")]
+    urls = [url for _, url, _ in net.calls]
+    assert any("air_date.lte=" in u for u in urls) and any("with_watch_monetization_types=flatrate" in u for u in urls)

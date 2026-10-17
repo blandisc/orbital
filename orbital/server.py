@@ -35,7 +35,7 @@ from .api.play import humane_error  # noqa: F401 - se importa desde aquí
 from .api.ui import SETTINGS  # noqa: F401
 from .catalog import Catalog
 from .config import Config
-from .foryou import SERVICE_ERRORS
+from .foryou import SERVICE_ERRORS, TV_ONLY_PREFIXES
 from .library import trakt
 from .remote_input import RemoteInput
 from .shell import ConsoleShell
@@ -590,7 +590,8 @@ def _foryou_public_routes(public: FastAPI, main_app: FastAPI) -> None:
     @public.get("/api/foryou")
     def overview() -> dict:
         data = foryou_of().overview()
-        data["lists"] = [row for row in data["lists"] if not _is_game_list(row["id"])]
+        # Ni juegos ni lo que solo arma la TV (premios, estudios, años…): el iPhone calcula los suyos.
+        data["lists"] = [row for row in data["lists"] if not _is_game_list(row["id"]) and not row["id"].startswith(TV_ONLY_PREFIXES)]
         data["mosaic"] = [item for item in data["mosaic"] if item.get("kind") != "game"]
         return data
 

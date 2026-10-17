@@ -17,6 +17,7 @@ Un servicio que falla no tumba los demás: su lista queda vacía y se reintenta 
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import random
@@ -73,6 +74,31 @@ TRAKT_ADDON = "trakt integration"
 
 # Las claves de cada servicio. Las que escribes en Ajustes › Cuentas se guardan cifradas con las
 # credenciales (como la sesión de Stremio) y mandan sobre las de config.yaml.
+# Películas y series (como Para ti › Listas del iPhone): premios fijos, «Nuevo en tus plataformas», estudios y por año.
+AWARDS_FILE = Path(__file__).resolve().parent.parent / "design" / "awards.json"  # compartido con el iPhone
+AWARD_TINTS = ("gold", "silver", "bronze")
+FRESH_BRANDS = ("netflix", "disney", "hbo")  # «Nuevo en tus plataformas» las alterna, como el iPhone
+FRESH_SERIES_DAYS, FRESH_MOVIE_DAYS = 14, 90
+FIRST_YEAR = 1980  # «Por año», del actual hacia atrás
+# Lo que solo arma la TV (el iPhone calcula los suyos): no viaja por el túnel (server._foryou_public_routes).
+TV_ONLY_PREFIXES = ("because", "fresh", "award:", "studio:", "year:")
+
+
+def load_awards(path: Path = AWARDS_FILE) -> list[dict]:
+    """Los premios (design/awards.json): [] si el archivo no está o viene roto (Películas y series sigue sin ellos)."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    awards = []
+    for a in data.get("awards") or [] if isinstance(data, dict) else []:
+        winners = [w for w in a.get("winners") or [] if isinstance(w, dict) and str(w.get("imdb", "")).startswith("tt")
+                   and w.get("title") and isinstance(w.get("award_year"), int)]
+        if isinstance(a, dict) and a.get("id") and a.get("kind") in ("movie", "series") and winners:
+            awards.append({**a, "tint": a.get("tint") if a.get("tint") in AWARD_TINTS else "gold", "winners": winners})
+    return awards
+
+
 KEYS = {"trakt": ("trakt_client_id", "trakt_client_secret"), "tmdb": ("tmdb_key",), "rawg": ("rawg_key",)}
 KEY_PREFIX = "para_ti."
 
@@ -189,6 +215,8 @@ def video_item(e: dict, why: str, *, title: str | None = None, poster: str | Non
         # Para «Decide por mí» del iPhone (sin preguntarle a Cinemeta título por título): en inglés, como vienen.
         **({"genres": list(e["genres"])} if e.get("genres") else {}),
         **({"runtime": int(e["runtime"])} if isinstance(e.get("runtime"), int) and e["runtime"] > 0 else {}),
+        # La calificación de Trakt (para ordenar «Mejor calificadas en Trakt», en la TV y en el iPhone).
+        **({"rating": e["rating"]} if isinstance(e.get("rating"), (int, float)) and e["rating"] > 0 else {}),
     }
 
 
@@ -464,6 +492,7 @@ class ForYou:
                 video.append({"id": brand, "title": name, "brand": brand, "logo": found[brand]["logo"], "icon": "chart", "source": "TMDB",
                               "meta": f"Lo más popular en {self._country()}", "split": True,
                               "fallback_for": ranked, "covered": self._covered(ranked) if ranked else []})
+        video += self._collections()
         games: list[dict] = [{"id": "mygames", "title": "Tus juegos", "icon": "gamepad", "source": "",
                               "meta": "Favoritos, los más jugados y los que no has abierto"}]
         if self.rawg.configured:
@@ -473,6 +502,41 @@ class ForYou:
                 {"id": "rawg:best", "title": "Mejor calificados", "icon": "trophy", "source": "RAWG", "meta": "Por Metacritic"},
             ]
         return [{**row, "group": "video"} for row in video] + [{**row, "group": "games"} for row in games]
+
+    def _collections(self) -> list[dict]:
+        """Lo de Películas y series que viene del iPhone (Para ti › Listas): «Porque viste X», «Nuevo en tus plataformas»,
+        los premios, los estudios y los años. `collection` dice qué tarjeta lleva (award, studio, year) en la TV."""
+        out: list[dict] = []
+        if self.trakt.linked:
+            seed = self._last_watched()
+            if seed:
+                out.append({"id": "because", "title": f"Porque viste {seed['title']}", "icon": "spark", "source": "Trakt",
+                            "meta": "Lo que Trakt relaciona con lo último que viste",
+                            "seed": {"meta_id": seed["imdb"], "kind": seed["kind"], "title": seed["title"],
+                                     "image": METAHUB.format(kind="poster", imdb=seed["imdb"]),
+                                     "watched_at": seed.get("watched_at")}})
+        if self.tmdb.configured and any(b in self.platforms() for b in FRESH_BRANDS):
+            out.append({"id": "fresh", "title": "Nuevo en tus plataformas", "icon": "fresh", "source": "TMDB",
+                        "meta": "Episodios de estas dos semanas y películas recién llegadas", "split": True})
+        for a in load_awards():
+            out.append({"id": f"award:{a['id']}", "title": a["title"], "meta": a.get("category") or "", "icon": "trophy",
+                        "source": "Orbital", "collection": "award", "kinds": [a["kind"]], "tint": a["tint"],
+                        "statue": f"/img/awards/{a['id']}.png", "count": len(a["winners"])})
+        if self.tmdb.configured:
+            out += [{"id": f"studio:{sid}", "title": name, "meta": "Lo más popular del estudio", "icon": "film", "source": "TMDB",
+                     "collection": "studio", "kinds": ["movie"]} for sid, name in tmdb_api.STUDIOS]
+        if self.trakt.configured:
+            this_year = datetime.now().year
+            out += [{"id": f"year:{y}", "title": str(y), "meta": f"Lo más popular de {y}", "icon": "calendar", "source": "Trakt",
+                     "collection": "year", "split": True} for y in range(this_year, FIRST_YEAR - 1, -1)]
+        return out
+
+    def _last_watched(self) -> dict | None:
+        try:
+            return self.cache.get("trakt:last", MINE_TTL, self.trakt.last_watched)
+        except SERVICE_ERRORS as exc:
+            log.info("Para ti: no pude leer lo último que viste: %s", exc)
+            return None
 
     def _country(self) -> str:
         return {"MX": "México", "US": "Estados Unidos", "ES": "España", "AR": "Argentina", "CO": "Colombia",
@@ -548,6 +612,33 @@ class ForYou:
                 f"jw:{brand}", kind, charts_api.fetch_justwatch_chart(brand, self.region, kind)))
             name = charts_api.JUSTWATCH_PACKAGES[brand][1]
             return [self._chart_item(e, kind, name) for e in entries]
+        if list_id == "because":
+            seed = self._last_watched()
+            if not seed:
+                return []
+            why = f"Porque viste {seed['title']}" if len(seed["title"]) <= 18 else "Porque viste algo parecido"
+            return [video_item(e, why) for e in self.cache.get(f"trakt:related:{seed['imdb']}", RECS_TTL,
+                                                                lambda: t.related(seed["kind"], seed["imdb"], 20))]
+        if list_id == "fresh":
+            return self.cache.get(f"tmdb:fresh:{kind}", POPULAR_TTL, lambda: self._fresh(kind))
+        if list_id.startswith("award:"):
+            award = next((a for a in load_awards() if a["id"] == list_id.removeprefix("award:")), None)
+            if not award:
+                raise KeyError(list_id)
+            return [{**video_item({"imdb": w["imdb"], "kind": award["kind"], "title": w["title"], "year": w.get("year")},
+                                  f"{award['title']} {w['award_year']}"), "award_year": w["award_year"]}
+                    for w in award["winners"]]
+        if list_id.startswith("studio:"):
+            sid = list_id.removeprefix("studio:")
+            name = next((n for i, n in tmdb_api.STUDIOS if str(i) == sid), None)
+            if not name or not self.tmdb.configured:
+                raise KeyError(list_id)
+            return self.cache.get(f"tmdb:studio:{sid}", SLOW_TTL, lambda: self._studio(int(sid), name))
+        if list_id.startswith("year:"):
+            year = list_id.removeprefix("year:")
+            if not year.isdigit() or not FIRST_YEAR <= int(year) <= datetime.now().year:
+                raise KeyError(list_id)
+            return self.cache.get(f"trakt:year:{year}:{kind}", SLOW_TTL, lambda: self._year(int(year), kind))
         if list_id == "mygames":
             return self.local_games()
         if list_id.startswith("rawg:"):
@@ -565,6 +656,45 @@ class ForYou:
         return [video_item(d, f"En {name}", title=d["title"], poster=d["poster"], wide=d["backdrop"],
                            overview=d["overview"], seasons=d.get("seasons"))
                 for d in details if d and d.get("imdb") and d.get("title")]
+
+    def _tmdb_items(self, rows: list[dict], kind: str, why: str, limit: int = 20) -> list[dict]:
+        """Filas de TMDB (discover) → video_item con su IMDb (la ficha y el reproductor lo necesitan)."""
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            details = list(pool.map(lambda r: self._safe(lambda: self.tmdb.details(kind, r["id"])), rows[:limit]))
+        return [video_item(d, why, title=d["title"], poster=d["poster"], wide=d["backdrop"], overview=d["overview"],
+                           seasons=d.get("seasons"))
+                for d in details if d and d.get("imdb") and d.get("title")]
+
+    def _fresh(self, kind: str) -> list[dict]:
+        """«Nuevo en tus plataformas»: lo nuevo de Netflix, Disney+ y HBO Max, alternados (como el iPhone)."""
+        found = self.platforms()
+        today = date.today()
+        batches = []
+        for brand in FRESH_BRANDS:
+            platform = found.get(brand)
+            if not platform:
+                continue
+            rows = self._safe(lambda platform=platform: self.tmdb.fresh(
+                kind, platform["id"], self.region, today.isoformat(), (today - timedelta(days=FRESH_SERIES_DAYS)).isoformat(),
+                (today - timedelta(days=FRESH_MOVIE_DAYS)).isoformat())) or []
+            name = tmdb_api.PLATFORMS[brand][0]
+            batches.append([{**i, "brand": brand} for i in self._tmdb_items(rows, kind, f"Nuevo en {name}", limit=8)])
+        return self._interleave(batches)
+
+    def _studio(self, company_id: int, name: str) -> list[dict]:
+        return self._tmdb_items(self.tmdb.studio(company_id), "movie", name)
+
+    def _year(self, year: int, kind: str) -> list[dict]:
+        """Lo más popular de un año en Trakt; en películas, primero las premiadas de ese año (como los pósters del iPhone)."""
+        items: list[dict] = []
+        if kind == "movie":
+            for a in load_awards():
+                for w in a["winners"]:
+                    if a["kind"] == "movie" and w.get("year") == year and all(i["meta_id"] != w["imdb"] for i in items):
+                        items.append(video_item({"imdb": w["imdb"], "kind": "movie", "title": w["title"], "year": year},
+                                                f"{a['title']} {w['award_year']}"))
+        popular = self.trakt.popular(kind, limit=60, years=year)
+        return items + [video_item(e, f"Popular en {year}") for e in popular if all(i["meta_id"] != e["imdb"] for i in items)]
 
     def _chart_item(self, entry: dict, kind: str, platform_name: str) -> dict:
         """Un título de Netflix (Top 10) o JustWatch (tendencia) en forma de video_item: «N.º 3 en Netflix», con `rank`,

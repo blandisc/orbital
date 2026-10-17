@@ -27,6 +27,10 @@ API = "https://api.themoviedb.org/3"
 IMAGES = "https://image.tmdb.org/t/p"
 KINDS = {"movie": "movie", "series": "tv"}
 # Cómo se llama cada plataforma en TMDB (cambian de nombre: «HBO Max» → «Max» → «HBO Max»).
+# Los estudios de «Estudios» (su id en TMDB), los mismos que el iPhone (Tmdb.studios).
+STUDIOS = [(41077, "A24"), (3, "Pixar"), (10342, "Studio Ghibli"), (420, "Marvel Studios"), (1, "Lucasfilm"),
+           (3172, "Blumhouse"), (521, "DreamWorks Animation"), (90733, "NEON")]
+
 PLATFORMS = {
     "netflix": ("Netflix", ("netflix",)),
     "disney": ("Disney+", ("disney plus", "disney+")),
@@ -99,6 +103,21 @@ class Tmdb:
     def discover(self, kind: str, provider_id: int, region: str) -> list[dict]:
         data = self._get(f"/discover/{KINDS[kind]}", with_watch_providers=provider_id, watch_region=region,
                          sort_by="popularity.desc", with_watch_monetization_types="flatrate", page=1)
+        return [r for r in data.get("results") or [] if isinstance(r, dict) and isinstance(r.get("id"), int)]
+
+    def fresh(self, kind: str, provider_id: int, region: str, today: str, since_series: str, since_movies: str) -> list[dict]:
+        """Lo nuevo en una plataforma, con las reglas del iPhone: series con episodios en las dos últimas semanas; películas
+        estrenadas en los últimos tres meses que ya están ahí (TMDB no dice cuándo llegó algo: esto es lo más cercano)."""
+        dates = ({"air_date.gte": since_series, "air_date.lte": today} if kind == "series"
+                 else {"primary_release_date.gte": since_movies, "primary_release_date.lte": today, "vote_count.gte": 10})
+        data = self._get(f"/discover/{KINDS[kind]}", with_watch_providers=provider_id, watch_region=region,
+                         with_watch_monetization_types="flatrate", sort_by="popularity.desc", page=1, **dates)
+        return [r for r in data.get("results") or [] if isinstance(r, dict) and isinstance(r.get("id"), int)]
+
+    def studio(self, company_id: int, kind: str = "movie") -> list[dict]:
+        """Lo más popular de un estudio (A24, Pixar, Ghibli…), con al menos 50 votos, como el iPhone."""
+        data = self._get(f"/discover/{KINDS[kind]}", with_companies=int(company_id), sort_by="popularity.desc",
+                         **{"vote_count.gte": 50}, page=1)
         return [r for r in data.get("results") or [] if isinstance(r, dict) and isinstance(r.get("id"), int)]
 
     def details(self, kind: str, tmdb_id: int) -> dict:
