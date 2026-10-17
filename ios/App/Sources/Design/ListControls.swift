@@ -33,7 +33,7 @@ struct ListFilter: Equatable {
 
 /// El nombre de un género de Trakt («science-fiction») en el idioma de la app.
 @MainActor func genreName(_ slug: String) -> String {
-    let english = slug == "science-fiction" ? "Sci-Fi" : slug.split(separator: "-").map { $0.capitalized }.joined(separator: " ")
+    let english = ["science-fiction", "science fiction"].contains(slug) ? "Sci-Fi" : slug.split(separator: "-").map { $0.capitalized }.joined(separator: " ")
     return Vocabulary.genres([english], language: AppEnvironment.shared.services.appSettings.uiLanguage).first ?? english
 }
 

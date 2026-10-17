@@ -2454,6 +2454,17 @@
         }
       }
     },
+    "Episodios de estas semanas y películas recién llegadas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week's episodes and newly arrived movies"
+          }
+        }
+      }
+    },
     "Error de Stremio": {
       "extractionState": "manual",
       "localizations": {
@@ -2604,6 +2615,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pull up for the full remote"
+          }
+        }
+      }
+    },
+    "Estudios": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Studios"
           }
         }
       }
@@ -3319,6 +3341,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Most popular · Series"
+          }
+        }
+      }
+    },
+    "Lo más visto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most watched"
+          }
+        }
+      }
+    },
+    "Lo más visto de cada uno": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The most watched from each"
           }
         }
       }
@@ -4199,6 +4243,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "New"
+          }
+        }
+      }
+    },
+    "Nuevo en tus plataformas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New on your platforms"
           }
         }
       }

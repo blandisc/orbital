@@ -19,6 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Episodios de estas semanas y películas recién llegadas": "This week's episodes and newly arrived movies", "Estudios": "Studios",
+    "Lo más visto": "Most watched", "Lo más visto de cada uno": "The most watched from each", "Nuevo en tus plataformas": "New on your platforms",
     "Año: más nuevas": "Year: newest", "Año: más viejas": "Year: oldest", "A–Z": "A–Z", "Como viene la lista": "As the list comes", "De %@": "From %@",
     "Género": "Genre", "Listas de Stremio": "Stremio lists", "Listas de Trakt": "Trakt lists", "Lo que Trakt relaciona con lo último que viste": "What Trakt relates to what you watched last",
     "Mostrar": "Show", "Nada con estos filtros.": "Nothing with these filters.", "Ocultar lo que ya vi": "Hide what I've watched", "Ordenar y filtrar": "Sort and filter",

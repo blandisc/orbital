@@ -94,6 +94,36 @@ public struct Tmdb: Sendable {
         return (data["results"]?.array ?? []).filter { $0["id"]?.intValue != nil }
     }
 
+    /// Lo nuevo en una plataforma: series con episodios de las dos últimas semanas; películas estrenadas en los últimos
+    /// tres meses que ya están ahí. (TMDB no dice cuándo llegó algo a una plataforma: esto es lo más cercano.)
+    public func fresh(kind: String, providerID: Int, region: String, now: Date) async throws -> [JSON] {
+        let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"
+        let today = f.string(from: now)
+        var params = [("with_watch_providers", String(providerID)), ("watch_region", region), ("with_watch_monetization_types", "flatrate"),
+                      ("sort_by", "popularity.desc"), ("page", "1")]
+        if kind == "series" {
+            params += [("air_date.gte", f.string(from: now.addingTimeInterval(-14 * 86_400))), ("air_date.lte", today)]
+        } else {
+            params += [("primary_release_date.gte", f.string(from: now.addingTimeInterval(-90 * 86_400))), ("primary_release_date.lte", today),
+                       ("vote_count.gte", "10")]
+        }
+        let data = try await get("/discover/\(Tmdb.kinds[kind] ?? "movie")", params)
+        return (data["results"]?.array ?? []).filter { $0["id"]?.intValue != nil }
+    }
+
+    /// Lo más popular de un estudio (A24, Pixar, Ghibli…).
+    public func studio(companyID: Int, kind: String = "movie") async throws -> [JSON] {
+        let data = try await get("/discover/\(Tmdb.kinds[kind] ?? "movie")", [("with_companies", String(companyID)), ("sort_by", "popularity.desc"),
+                                                                              ("vote_count.gte", "50"), ("page", "1")])
+        return (data["results"]?.array ?? []).filter { $0["id"]?.intValue != nil }
+    }
+
+    /// Los estudios de Colecciones › Estudios (su id en TMDB).
+    public static let studios: [(id: Int, name: String)] = [
+        (41077, "A24"), (3, "Pixar"), (10342, "Studio Ghibli"), (420, "Marvel Studios"), (1, "Lucasfilm"),
+        (3172, "Blumhouse"), (521, "DreamWorks Animation"), (90733, "NEON"),
+    ]
+
     public func details(kind: String, tmdbID: Int) async throws -> TmdbDetails {
         let raw = try await get("/\(Tmdb.kinds[kind] ?? "movie")/\(tmdbID)", [("append_to_response", "external_ids")])
         let imdb = raw["imdb_id"]?.nonEmptyString ?? raw["external_ids"]?["imdb_id"]?.nonEmptyString

@@ -42,7 +42,7 @@ public final class DecideModel: ObservableModel {
         switch mood {
         case .light: ["comedy", "animation", "family", "adventure", "musical"]
         case .intense: ["thriller", "action", "horror", "crime", "war"]
-        case .think: ["drama", "documentary", "sci-fi", "science-fiction", "mystery", "history", "biography"]
+        case .think: ["drama", "documentary", "sci-fi", "science-fiction", "science fiction", "mystery", "history", "biography"]
         case .together: ["romance", "comedy", "fantasy", "music"]
         }
     }

@@ -49,6 +49,8 @@ public final class ParaTiModel: ObservableModel {
     public var calendarLayout: CalendarLayout = .byDay { didSet { changed() } }
     /// «Porque viste X»: lo último que viste y lo que Trakt relaciona con él (nil sin Trakt o sin relacionados).
     public private(set) var because: (seed: TraktEntry, items: [Suggestion])? { didSet { changed() } }
+    /// «Nuevo en tus plataformas» (TMDB): series con episodios recientes y películas recién llegadas, de tus plataformas.
+    public private(set) var newOnPlatforms: [Suggestion] = [] { didSet { changed() } }
     /// El porqué de cada título en un póster (lo más fuerte: que sale pronto, o su puesto en una plataforma), por IMDb.
     public private(set) var badges: [String: PosterBadge] = [:] { didSet { if oldValue != badges { changed() } } }
     /// Cuántos días cubre `airings` desde hoy: crece de dos en dos semanas al deslizar la tira hasta el final.
@@ -177,6 +179,7 @@ public final class ParaTiModel: ObservableModel {
         }
         await shelvesLoaded
         because = await fetchedBecause
+        await loadNewOnPlatforms()
         rebuildBadges()
         await topUpMosaic()
         return true
@@ -215,6 +218,7 @@ public final class ParaTiModel: ObservableModel {
         }
         await shelvesLoaded
         because = await newBecause
+        await loadNewOnPlatforms()
         rebuildBadges()
         // El aviso, solo si de verdad no hay nada que enseñar (las listas con puesto existen siempre, pero sin red llegan vacías).
         if mosaic.isEmpty && shelves.allSatisfy({ items(for: $0).isEmpty }) { error = services.appSettings.traktEnabled ? nil : "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias." }
@@ -260,7 +264,26 @@ public final class ParaTiModel: ObservableModel {
     public func setKind(_ kind: String) async {
         self.kind = ["movie", "series"].contains(kind) ? kind : "all"
         await loadShelves()
+        await loadNewOnPlatforms()
         rebuildBadges()
+    }
+
+    /// Lo nuevo de tus plataformas, del tipo elegido (con «Todo», series y películas alternadas).
+    private func loadNewOnPlatforms() async {
+        let forYou = services.forYou
+        if kind == "all" {
+            async let series = forYou.newOnPlatforms(kind: "series")
+            async let movies = forYou.newOnPlatforms(kind: "movie")
+            let (a, b) = await (series, movies)
+            var mixed: [Suggestion] = []
+            for i in 0..<max(a.count, b.count) {
+                if i < a.count { mixed.append(a[i]) }
+                if i < b.count { mixed.append(b[i]) }
+            }
+            newOnPlatforms = mixed
+        } else {
+            newOnPlatforms = await forYou.newOnPlatforms(kind: kind)
+        }
     }
 
     public func key(_ list: ForYouList) -> String { key(listID: list.id, splits: list.splitsKinds) }

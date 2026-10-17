@@ -4,11 +4,11 @@ import OrbitalModels
 
 /// Los grupos de Para ti › Listas, en el orden del índice de arriba.
 enum CollectionSection: CaseIterable, Hashable {
-    case forYou, trakt, stremio, platforms, awards, years
+    case forYou, trakt, stremio, platforms, awards, studios, years
     var title: Text {
         switch self {
         case .forYou: Text("Para ti"); case .trakt: Text(verbatim: "Trakt"); case .stremio: Text(verbatim: "Stremio")
-        case .platforms: Text("Plataformas"); case .awards: Text("Premios"); case .years: Text("Por año")
+        case .platforms: Text("Plataformas"); case .awards: Text("Premios"); case .studios: Text("Estudios"); case .years: Text("Por año")
         }
     }
 }
@@ -30,7 +30,7 @@ struct SectionSpy: ViewModifier {
 
 /// Una colección abierta: un premio, un año o Mi lista de Stremio.
 struct CollectionRoute: Hashable {
-    enum Kind: Hashable { case award, year, myList }
+    enum Kind: Hashable { case award, year, myList, studio }
     let kind: Kind
     let id: String
 }
@@ -60,6 +60,7 @@ struct CollectionGridView: View {
         }
         .background(Backdrop())
         .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+        .task { if route.kind == .studio, let id = Int(route.id) { await collections.model.loadStudio(id) } }
         .task(id: kind) {
             guard route.kind == .year, let year = Int(route.id) else { return }
             loading = true
@@ -89,6 +90,7 @@ struct CollectionGridView: View {
         case .award: award?.suggestions ?? []
         case .year: yearItems
         case .myList: collections.model.myList
+        case .studio: Int(route.id).flatMap { collections.model.studioItems[$0] } ?? []
         }
     }
 
@@ -97,6 +99,7 @@ struct CollectionGridView: View {
         case .award: award.map { AwardNames.title($0.id) } ?? Text("Premios")
         case .year: Text(verbatim: route.id)
         case .myList: Text("Mi lista")
+        case .studio: Text(verbatim: collections.model.studios.first { String($0.id) == route.id }?.name ?? "")
         }
     }
 

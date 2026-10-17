@@ -333,21 +333,66 @@ public actor ForYou {
         guard let tmdb, let info = await platforms()[platform.brand] else { return [] }
         return try await remember("tmdb:\(platform.brand):\(kind)", ttl: Self.popularTTL) {
             let rows = try await tmdb.discover(kind: kind, providerID: info.id, region: region()).prefix(20)
-            let details = await withTaskGroup(of: (Int, TmdbDetails?).self) { group in
-                for (i, row) in rows.enumerated() {
-                    group.addTask { (i, try? await tmdb.details(kind: kind, tmdbID: row["id"]!.intValue!)) }  // una que falla se salta
-                }
-                var out = [TmdbDetails?](repeating: nil, count: rows.count)
-                for await (i, d) in group { out[i] = d }
-                return out
-            }
-            return details.compactMap { d -> Suggestion? in
-                guard let d, let imdb = d.imdb, !d.title.isEmpty else { return nil }
-                return Suggestion(kind: kind, imdb: imdb, title: d.title, year: d.year, runtime: d.runtime, overview: d.overview,
-                                  poster: d.poster ?? String(format: Self.metahubPoster, imdb), wide: d.backdrop ?? String(format: Self.metahubBackground, imdb),
-                                  logo: String(format: Self.metahubLogo, imdb), reason: .onPlatform(platform.name), next: nil)
-            }
+            return await Self.suggestions(Array(rows), kind: kind, reason: .onPlatform(platform.name), tmdb: tmdb)
         }
+    }
+
+    /// Filas de TMDB → sugerencias (cada una necesita su IMDb: se piden sus detalles a la vez; la que falla se salta).
+    static func suggestions(_ rows: [JSON], kind: String, reason: SuggestionReason, tmdb: Tmdb) async -> [Suggestion] {
+        let details = await withTaskGroup(of: (Int, TmdbDetails?).self) { group in
+            for (i, row) in rows.enumerated() {
+                guard let id = row["id"]?.intValue else { continue }
+                group.addTask { (i, try? await tmdb.details(kind: kind, tmdbID: id)) }
+            }
+            var out = [TmdbDetails?](repeating: nil, count: rows.count)
+            for await (i, d) in group { out[i] = d }
+            return out
+        }
+        return details.compactMap { d -> Suggestion? in
+            guard let d, let imdb = d.imdb, !d.title.isEmpty else { return nil }
+            return Suggestion(kind: kind, imdb: imdb, title: d.title, year: d.year, runtime: d.runtime, overview: d.overview,
+                              poster: d.poster ?? String(format: metahubPoster, imdb), wide: d.backdrop ?? String(format: metahubBackground, imdb),
+                              logo: String(format: metahubLogo, imdb), reason: reason, next: nil)
+        }
+    }
+
+    /// «Nuevo en tus plataformas»: lo nuevo de cada plataforma que tienes en tu país (series con episodios recientes y
+    /// películas recién estrenadas), alternando plataformas, con «En Netflix» como motivo. Sin TMDB: nada.
+    public func newOnPlatforms(kind: String) async -> [Suggestion] {
+        guard let tmdb, tmdb.configured else { return [] }
+        let found = await platforms()
+        let available = Tmdb.platforms.filter { found[$0.brand] != nil }
+        let region = region(), now = clock()
+        let platforms = available.compactMap { p in found[p.brand].map { (name: p.name, id: $0.id) } }
+        return (try? await remember("tmdb:new:\(kind):\(region)", ttl: Self.popularTTL) {
+            let lists = await withTaskGroup(of: (Int, [Suggestion]).self) { group in
+                for (i, p) in platforms.enumerated() {
+                    group.addTask {
+                        let rows = (try? await tmdb.fresh(kind: kind, providerID: p.id, region: region, now: now)) ?? []
+                        return (i, await Self.suggestions(Array(rows.prefix(Self.freshPerPlatform)), kind: kind, reason: .onPlatform(p.name), tmdb: tmdb))
+                    }
+                }
+                var out: [(Int, [Suggestion])] = []
+                for await r in group { out.append(r) }
+                return out.sorted { $0.0 < $1.0 }.map(\.1)
+            }
+            var mixed: [Suggestion] = [], seen = Set<String>()
+            for i in 0..<(lists.map(\.count).max() ?? 0) {
+                for list in lists where i < list.count && seen.insert(list[i].imdb).inserted { mixed.append(list[i]) }
+            }
+            return mixed
+        }) ?? []
+    }
+
+    static let freshPerPlatform = 10
+
+    /// Lo más popular de un estudio (Colecciones › Estudios).
+    public func studioItems(companyID: Int, name: String) async -> [Suggestion] {
+        guard let tmdb, tmdb.configured else { return [] }
+        return (try? await remember("tmdb:studio:\(companyID)", ttl: Self.slowTTL) {
+            let rows = try await tmdb.studio(companyID: companyID).prefix(20)
+            return await Self.suggestions(Array(rows), kind: "movie", reason: .console(name), tmdb: tmdb)
+        }) ?? []
     }
 
     // MARK: próximos estrenos

@@ -116,6 +116,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `BecauseCard` | «Porque viste X»: el póster de lo que viste y lo relacionado al lado | Para ti › Listas |
 | `YearCard` | Un año con cuatro de sus películas y el número grande | Para ti › Por año |
 | `SortableGrid` | Una lista abierta con ordenar y filtrar (series o películas, género, ocultar lo visto) arriba a la derecha | Listas, premios, años |
+| `StudioEmblem` | El nombre de un estudio al frente de su tarjeta | Para ti › Estudios |
 | `AppMark` | El ícono de la app y «Orbital» en lugar del título | Para ti |
 | `CheckRow` | Renglón con ✓ para elegir varias (en qué listas va un título) | Ficha › Guardar en… |
 | `QualityBadges` | Insignias con contorno: 4K · DV · HDR10+ · ATMOS · TRUEHD | Fuentes (ficha y reproductor) |

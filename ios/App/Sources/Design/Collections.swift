@@ -198,3 +198,16 @@ struct AppMark: View {
         .accessibilityAddTraits(.isHeader)
     }
 }
+
+/// El nombre de un estudio al frente de su tarjeta (sus logos de TMDB no se leen sobre fondo oscuro).
+struct StudioEmblem: View {
+    let name: String
+    var body: some View {
+        Text(verbatim: name).recipe(.cardTitle, color: DS.backdropDeep).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s1)
+            .background(DS.paper, in: Capsule())
+            .shadow(color: DS.scrimStrong, radius: DS.Space.s2)
+            .padding(.horizontal, DS.Space.s2)
+            .accessibilityHidden(true)
+    }
+}

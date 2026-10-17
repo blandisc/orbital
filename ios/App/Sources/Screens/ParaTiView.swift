@@ -62,8 +62,8 @@ struct ParaTiView: View {
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
         // Arriba, solo el ícono y «Orbital» (la pestaña de abajo ya dice dónde estás); el título queda para VoiceOver y el «atrás».
         .navigationTitle("Para ti").toolbarTitleDisplayMode(.inline)
+        .toolbar(removing: .title)
         .toolbar {
-            ToolbarItem(placement: .principal) { EmptyView() }   // sin el título en medio
             ToolbarItem(placement: .topBarLeading) { AppMark() }
                 .sharedBackgroundVisibility(.hidden)
             // Todo · Series · Películas (en Listas): un botón, no una fila más arriba.
@@ -317,13 +317,23 @@ struct ListsView: View {
 
     private func scroller(_ proxy: ScrollViewProxy) -> some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            // Un `VStack` (no perezoso): son pocos grupos y así el índice puede saltar a cualquiera; lo pesado de adentro
+            // (las tiras) sí es perezoso.
+            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 // Para ti: lo general (el destacado, «Porque viste», las sugerencias y los estrenos), cada fila con su sello.
                 VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                     let slides = model.featuredSlides
                     if !slides.isEmpty { featuredCarousel(slides) }
                     if let because = model.because { becauseCard(because) }
                     ForEach(generalShelves) { plan in shelf(plan).id(plan.id) }
+                    // Lo nuevo en tus plataformas (TMDB): series con episodios recientes y películas recién llegadas.
+                    if !model.newOnPlatforms.isEmpty {
+                        Shelf(title: Text("Nuevo en tus plataformas"), meta: Text("Episodios de estas semanas y películas recién llegadas")) {
+                            ForEach(model.newOnPlatforms) { s in
+                                ShelfPoster(suggestion: s, style: .plain, inList: model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb]) { dismissed in Task { await model.dismiss(dismissed) } }
+                            }
+                        }
+                    }
                     if !model.airings.isEmpty {   // vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
                         Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), route: ShelfRoute(id: "estrenos"), source: .trakt) {
                             ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
@@ -337,6 +347,7 @@ struct ListsView: View {
                 if !stremioCards.isEmpty { listGroup(title: "Listas de Stremio", source: .stremio, cards: stremioCards).modifier(SectionSpy(section: .stremio, active: $activeSection)) }
                 if !model.platformHubs.isEmpty { platforms.modifier(SectionSpy(section: .platforms, active: $activeSection)) }
                 awards.modifier(SectionSpy(section: .awards, active: $activeSection))
+                if collections.model.tmdbReady { studiosSection.modifier(SectionSpy(section: .studios, active: $activeSection)) }
                 if collections.model.traktLinked { yearsSection.modifier(SectionSpy(section: .years, active: $activeSection)) }
             }
             .padding(.top, DS.Space.s2)
@@ -405,6 +416,7 @@ struct ListsView: View {
         case .stremio: !stremioCards.isEmpty
         case .platforms: !model.platformHubs.isEmpty
         case .awards: !collections.model.awards.isEmpty
+        case .studios: collections.model.tmdbReady
         case .years: collections.model.traktLinked
         }
     }
@@ -454,6 +466,28 @@ struct ListsView: View {
                 }
                 .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             }
+        }
+    }
+
+    /// Estudios: A24, Pixar, Ghibli… cada uno con sus tres películas más vistas y su nombre al frente.
+    private var studiosSection: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: "Estudios", meta: Text("Lo más visto de cada uno")).padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                    ForEach(collections.model.studios, id: \.id) { studio in
+                        NavigationLink(value: CollectionRoute(kind: .studio, id: String(studio.id))) {
+                            CollectionCard(title: Text(verbatim: studio.name), detail: Text("Lo más visto"), name: studio.name,
+                                           posters: (collections.model.studioItems[studio.id] ?? []).prefix(3).map { Optional($0.poster) }, tint: DS.Collections.studio) {
+                                StudioEmblem(name: studio.name)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .task { await collections.model.loadStudio(studio.id) }
+                    }
+                }
+            }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
         }
     }
 

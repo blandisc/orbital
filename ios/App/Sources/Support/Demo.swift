@@ -168,6 +168,15 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                     "biography": "Actor, comediante y productor estadounidense. Conocido por Michael Scott en The Office, y por Foxcatcher, Little Miss Sunshine y The Big Short.",
                     "combined_credits": ["cast": [["id": 2, "media_type": "tv", "name": "The Office", "poster_path": "/o.jpg", "popularity": 90, "character": "Michael Scott"],
                                                   ["id": 3, "media_type": "movie", "title": "Foxcatcher", "poster_path": "/f.jpg", "popularity": 40, "character": "John du Pont"]]]]
+        } else if path.hasPrefix("/watch/providers/") {
+            body = ["results": [["provider_id": 8, "provider_name": "Netflix"], ["provider_id": 337, "provider_name": "Disney Plus"], ["provider_id": 1899, "provider_name": "HBO Max"]]]
+        } else if path.hasPrefix("/discover/") {
+            // Colecciones › Estudios y «Nuevo en tus plataformas»: ids 100+ que la ficha de abajo vuelve títulos reales.
+            let offset = abs(url.query?.hashValue ?? 0) % Self.demoIMDb.count
+            body = ["results": .array((0..<8).map { ["id": .int(100 + (offset + $0) % Self.demoIMDb.count)] })]
+        } else if let id = Int(url.lastPathComponent), id >= 100, Self.demoIMDb.indices.contains(id - 100) {
+            let pick = Self.demoIMDb[id - 100]
+            body = ["id": .int(id), "title": .string(pick.1), "name": .string(pick.1), "imdb_id": .string(pick.0), "release_date": "2024-03-01", "first_air_date": "2024-03-01"]
         } else if path.hasPrefix("/collection/") {
             body = ["name": "Dune: colección", "parts": [["id": 5, "title": "Dune", "release_date": "2021-09-15", "poster_path": "/d1.jpg"],
                                                         ["id": 6, "title": "Dune: Part Two", "release_date": "2024-02-27", "poster_path": "/d2.jpg"]]]
@@ -185,6 +194,13 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         }
         return HTTPResponse(status: 200, data: body.serialized())
     }
+
+    /// Títulos reales para el TMDB de mentira (sus pósters salen de metahub).
+    static let demoIMDb: [(String, String)] = [
+        ("tt11280740", "Severance"), ("tt15239678", "Dune: Part Two"), ("tt6710474", "Everything Everywhere All at Once"), ("tt14452776", "The Bear"),
+        ("tt5788792", "Moonlight"), ("tt13623632", "Alien: Romulus"), ("tt8111088", "The Mandalorian"), ("tt2560140", "Attack on Titan"),
+        ("tt0386676", "The Office"), ("tt7660850", "Succession"), ("tt10986410", "Ted Lasso"), ("tt5180504", "The Witcher"),
+    ]
 
     /// Un overview de «Para ti» de mentira con varios estantes (Lo tuyo, Top 10 de Netflix con puesto, una plataforma, tendencias y el
     /// catálogo de un complemento), para ver el feed de Listas completo sin una consola real (`-demo-console`).

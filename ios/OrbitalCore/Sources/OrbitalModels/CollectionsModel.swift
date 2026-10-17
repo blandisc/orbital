@@ -11,6 +11,10 @@ public final class CollectionsModel: ObservableModel {
     /// Los pósters de cada año en «Por año» (hasta cuatro): ganadoras de ese año y, si faltan, lo más popular.
     public private(set) var yearPosters: [Int: [String]] = [:] { didSet { changed() } }
     private var watchedCache: Set<String>?
+    /// Los estudios (Colecciones › Estudios) y lo que tiene cada uno (se pide al verlo).
+    public let studios: [(id: Int, name: String)] = Tmdb.studios
+    public private(set) var studioItems: [Int: [Suggestion]] = [:] { didSet { changed() } }
+    public var tmdbReady: Bool { services.tmdb.configured }
     /// Los años de «Por año», del actual hacia atrás.
     public let years: [Int]
 
@@ -59,6 +63,13 @@ public final class CollectionsModel: ObservableModel {
     }
 
     static let yearCover = 4
+
+    /// Lo más popular de un estudio (una vez; luego de la caché).
+    public func loadStudio(_ id: Int) async {
+        guard studioItems[id] == nil, let studio = studios.first(where: { $0.id == id }) else { return }
+        let found = await services.forYou.studioItems(companyID: id, name: studio.name)
+        if !found.isEmpty { studioItems[id] = found }
+    }
 
     /// Lo que ya viste (Trakt), para «Ocultar lo que ya vi»; se pide una vez.
     public func watchedIDs() async -> Set<String> {

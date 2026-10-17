@@ -293,6 +293,8 @@ enum DS {
         static let spyLine: CGFloat = 70
         static let gold = Color(red: 0.83, green: 0.65, blue: 0.25), silver = Color(red: 0.78, green: 0.76, blue: 0.72)
         static let bronze = Color(red: 0.72, green: 0.45, blue: 0.26)
+        /// El halo de los estudios (neutro: cada estudio es de muchos colores).
+        static let studio = Color(red: 0.55, green: 0.56, blue: 0.62)
         static func tint(_ award: String) -> Color {
             switch award { case "emmy": silver; case "bafta", "ariel": bronze; default: gold }
         }
