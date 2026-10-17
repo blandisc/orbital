@@ -246,6 +246,17 @@ class OrbitalPlayer(PlayerScreen):
         log.info("Reproduciendo en mpv: %s", title)
         return process
 
+    def starting(self, video_id: str | None, source_key: str | None = None) -> bool:
+        """Ese mismo video ya se está abriendo (todavía sin imagen). Otro «ver» no lo empieza de cero: con un stream
+        lento (20–40 s) cada A, cada «pon…» del iPhone o de Alexa cerraba mpv y volvía a cargar desde el principio.
+        Otra fuente elegida a propósito (`source_key` distinto) sí se abre."""
+        playback, segment = self.current, self.segment
+        return bool(video_id and playback is not None and playback.process.poll() is None and segment is not None
+                    and not segment.playing and not segment.failed and not segment.live
+                    and segment.meta.get("video_id") == video_id
+                    and (source_key is None or segment.meta.get("source_key") == source_key)
+                    and time.monotonic() - segment.loaded < STARTUP_TIMEOUT)
+
     def load(self, url: str, title: str, meta: dict, *, start: float = 0, fallback_subs=None,
              subtitles: str | None = None, audio: str | None = None, message: str | None = None) -> bool:
         """Otro archivo en la misma ventana: el siguiente episodio, u otra fuente del mismo título.

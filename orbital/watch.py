@@ -605,6 +605,11 @@ class Watch:
                     keep: bool = False, source: streams.Source | None = None, from_start: bool = False,
                     audio: str | None = None, subtitles: str | None = None, sub_pick: dict | None = None) -> None:
         """mpv a pantalla completa, desde donde te quedaste (según Stremio)."""
+        if not from_start and self.player.starting(video_id, source.key if source else None):
+            # Ya está cargando: Orbital sigue tapando hasta la primera imagen (el aviso del primer intento sigue en pie).
+            log.info("%s ya se está abriendo: no lo empiezo otra vez", title)
+            self.sessions.revealing = True
+            return
         start = 0.0 if from_start else self.resume_position(meta_id, video_id)
         meta = self._media_meta(kind, meta_id, video_id, title, source) if source else \
             {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title}

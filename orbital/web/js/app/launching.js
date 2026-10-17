@@ -39,7 +39,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
     // (antes se iba a los 8 s y un segundo Enter lanzaba otra reproducción).
     state.launchLockedUntil = Infinity;
     state.launchingTitle = title;
-    ui.launch.keep(40_000);
+    ui.launch.keep(40_000, { waiting: native }); // la ventana de mpv se lleva el foco antes de que el servidor conteste
     try {
       // Si el servidor no contesta en 40 s, la pantalla se va y se dice la verdad: sigue abriéndose y saldrá
       // solo (antes decía «inténtalo de nuevo» y, si lo hacías, se abrían dos). A sigue diciendo «Todavía

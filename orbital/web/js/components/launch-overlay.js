@@ -1,7 +1,9 @@
 import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { KeyHint } from "./ui.js";
 
-const HOLD_MS = 26_000; // con pantalla de carga: el servidor avisa antes (25 s como máximo)
+// Con pantalla de carga el servidor avisa antes: un video espera su primera imagen hasta 50 s (STARTUP_TIMEOUT + 5).
+// Con 26 s la pantalla se iba antes, Orbital quedaba encima con la biblioteca y otro A volvía a abrir el video de cero.
+const HOLD_MS = 52_000;
 
 /**
  * Pantalla de carga: el viaje de Orbital al juego.
@@ -59,6 +61,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
     h("div", { class: "launch__flash", "aria-hidden": "true" }));
   let timer;
   let holding = false;
+  let waiting = false; // el servidor abre algo que se lleva el foco (mpv) y luego avisa: perder el foco no la oculta
   let cancelExit = () => {};
 
   /**
@@ -88,6 +91,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
     title.textContent = item.title;
     subtitle.textContent = detail || "";
     holding = false;
+    waiting = false;
     cancelExit();
     el.classList.remove("launch--revealing", "launch--holding");
     el.hidden = false;
@@ -108,6 +112,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
   function hold() {
     if (el.hidden) return;
     holding = true;
+    waiting = false;
     el.classList.add("launch--holding");
     label.textContent = "Preparando";
     clearTimeout(timer);
@@ -115,9 +120,11 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
   }
 
   /** Se queda a la vista `ms` más (mientras el servidor busca la fuente: antes se iba a los 8 s y
-   *  parecía que no pasaba nada, aunque seguía buscando). */
-  function keep(ms) {
+   *  parecía que no pasaba nada, aunque seguía buscando). `waiting`: el servidor va a abrir algo que se lleva el foco
+   *  (mpv) y luego avisa; perder el foco entonces no la oculta. */
+  function keep(ms, { waiting: wait = false } = {}) {
     if (el.hidden) return;
+    waiting = wait;
     clearTimeout(timer);
     timer = setTimeout(hide, ms);
   }
@@ -126,6 +133,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
   function reveal() {
     if (el.hidden) return;
     holding = false;
+    waiting = false;
     label.textContent = "Listo";
     el.classList.add("launch--revealing");
     clearTimeout(timer);
@@ -142,12 +150,13 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
   function hide() {
     clearTimeout(timer);
     holding = false;
+    waiting = false;
     cancelExit = hideAfterExit(el, "launch--leaving", 350);
   }
 
   // Cuando el emulador/juego toma el foco, la ventana de Orbital lo pierde. Con pantalla de carga
   // el foco puede irse al emulador mientras Orbital sigue encima: ahí no se oculta.
-  window.addEventListener("blur", () => { if (!el.hidden && !holding) setTimeout(() => !holding && hide(), 600); });
+  window.addEventListener("blur", () => { if (!el.hidden && !holding && !waiting) setTimeout(() => !holding && !waiting && hide(), 600); });
 
   return {
     el, show, hold, keep, reveal, hide, status,

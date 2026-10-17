@@ -794,3 +794,23 @@ def test_each_mpv_command_takes_only_its_own_answer():
                   {"data": [{"id": 1, "type": "audio"}], "error": "success", "request_id": 7}])
     reply = m._exchange(b'{"command": ["get_property", "track-list"], "request_id": 7}\n', "track-list", 7)
     assert reply["data"] == [{"id": 1, "type": "audio"}]
+
+
+def test_the_same_video_still_loading_is_not_started_again():
+    """Un stream lento (20–40 s sin imagen): otro A, o un «pon…» del iPhone, no cierra mpv para empezar de cero."""
+    class Alive:
+        def poll(self):
+            return None
+
+    p, _ = make_player()
+    p.current = player.Playback("Calle Oak", Alive(), 0, {})
+    p.segment = player.Segment({"video_id": "tt27165187", "source_key": "a"}, "Calle Oak", "http://x")
+    assert p.starting("tt27165187")
+    assert p.starting("tt27165187", "a")
+    assert not p.starting("tt27165187", "b")  # otra fuente elegida a propósito sí se abre
+    assert not p.starting("tt0076162")  # otro video, también
+    p.segment.loaded -= player.STARTUP_TIMEOUT + 1
+    assert not p.starting("tt27165187")  # ya pasó el tiempo de arranque: esa fuente no sirve, se puede volver a pedir
+    p.segment.loaded += player.STARTUP_TIMEOUT + 1
+    p.segment.playing = True
+    assert not p.starting("tt27165187")  # ya se ve: lo de siempre (reanudar, etc.)
