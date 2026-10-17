@@ -39,6 +39,8 @@ struct RemoteSheet: View {
             set: { large = $0 == .large }))
         .presentationDragIndicator(.visible)
         .presentationBackgroundInteraction(.disabled)
+        // Vidrio también estirada: iOS la vuelve opaca en la altura completa; el control se queda transparente, como corto.
+        .presentationBackground { Rectangle().fill(.clear).glassEffect(.regular, in: Rectangle()) }
         .animation(DS.Motion.base(false), value: large)
         .onDisappear { speech.cancel() }
         .task { if Demo.isOn, Demo.open == "voice-guide" { showsGuide = true } }   // -demo-open voice-guide: la guía, para capturas
