@@ -82,7 +82,7 @@ public final class Services: ObservableModel {
         let trakt = Services.makeTrakt(http: http, secrets: secrets, settings: settings.value, clock: clock)
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock),
-                             region: { settings.value.region }, kv: kv, clock: clock)
+                             addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
         self.forYouRemote = RemoteForYou(remote: { OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "") }, clock: clock)
         self.watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
         self.downloads = Downloads(transport: downloadTransport, secrets: secrets, root: downloadsRoot, saved: savedDownloads, freeSpace: freeSpace,
@@ -175,7 +175,7 @@ public final class Services: ObservableModel {
         localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock)
         trakt = Services.makeTrakt(http: http, secrets: secrets, settings: s, clock: clock)
         let charts = Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock)
-        forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: charts, region: { settings.value.region }, kv: kv, clock: clock)
+        forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: charts, addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
         watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
         generation += 1
     }
