@@ -171,6 +171,7 @@ export function ConsoleTile(system, { focusId, index = 0, onPress }) {
     h("span", { class: "tile--console__count" }, `${system.count} juego${system.count === 1 ? "" : "s"}`,
       system.fresh > 0 && Badge(`+${system.fresh} nuevo${system.fresh === 1 ? "" : "s"}`)),
     // Lo último que jugaste ahí: lo que A/X retoman (el pie de la pantalla dice qué botón).
-    h("span", { class: "tile--console__foot" }, last ? `${last.title} · ${shortAgo(last.last_played)}` : "Sin jugar todavía")));
+    h("span", { class: "tile--console__foot" }, last ? `${last.title} · ${shortAgo(last.last_played)}`
+      : system.count ? "Sin jugar todavía" : "Sin juegos todavía")));
 }
 

@@ -527,12 +527,25 @@ class Catalog:
             elif cat["id"] == "favorites":
                 members = [i for i in alpha if self.is_favorite(i)]
             elif cat["id"] == "emulators":
-                # Una fila por sistema, en el orden de config.yaml.
+                # Una fila por sistema, en el orden de config.yaml. Un emulador instalado sin juegos también sale (vacía,
+                # con dónde ponerlos): si no, parecía que Orbital no lo había reconocido (RPCS3 recién instalado).
+                with_games: set[str] = set()
+                empty: list[dict] = []
                 for emu in self.emulators:
                     games = [i for i in items if i.category == "emulators" and i.source == emu.id]
                     if games:
+                        with_games.add(emu.system or emu.id)
                         rows.append({"id": f"emulators:{emu.id}", "title": emu.name,
                                      "items": [self.describe(i) for i in games]})
+                    elif emu.system and emulators.executable_found(emu):
+                        folder = emulators.rom_dirs(emu, self.esde)
+                        empty.append({"id": f"emulators:{emu.id}", "title": emu.name, "items": [], "empty": True,
+                                      "system": emu.system, "folder": str(folder[0]) if folder else None})
+                seen_empty: set[str] = set()
+                for row in empty:  # uno por sistema y solo si ese sistema no tiene juegos con otro emulador
+                    if row["system"] not in with_games and row["system"] not in seen_empty:
+                        seen_empty.add(row["system"])
+                        rows.append(row)
                 continue
             else:
                 members = [i for i in items if i.category == cat["id"]]

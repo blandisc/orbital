@@ -103,6 +103,7 @@ inicio de sesión automático; así, al encender la Legion Go, arranca directo e
 | Xbox / Xbox 360 | xemu (ISO en XISO) / Xenia Canary | `xbox` / `xbox360` | `-full-screen -dvd_path {rom}` / `--fullscreen {rom}` |
 | PlayStation 1 / 2 / PSP | DuckStation / PCSX2 / PPSSPP | `psx` / `ps2` / `psp` | `-batch -fullscreen {rom}` / `--fullscreen {rom}` |
 | Nintendo DS / Wii U | melonDS / Cemu | `nds` / `wiiu` | `-f {rom}` / `-f -g {rom}` |
+| PlayStation 3 | RPCS3 (de disco: carpetas con `PS3_GAME`; instalados en `dev_hdd0`; `.iso`) | `ps3` | `--no-gui --fullscreen {rom}` |
 | PlayStation 4 | shadPS4 (cada juego es una carpeta con `eboot.bin`, en `ROMs/ps4` o las carpetas de shadPS4) | `ps4` | `--fullscreen true --game {rom}` |
 
 Busca en: Descargas (4 niveles de subcarpetas), Escritorio, `%USERPROFILE%\Emuladores`,

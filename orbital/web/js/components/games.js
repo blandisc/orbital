@@ -103,7 +103,8 @@ export function createGames({ onFocus, onPick, onAction }) {
       return card;
     }) : h("p", { class: "browse__empty" }, filter === "favorites"
       ? "Aún no tienes favoritos aquí. Para marcar uno, enfoca un juego y pulsa Y → Añadir a favoritos."
-      : "Nada por aquí."));
+      : c?.folder !== undefined ? `Ya tienes el emulador. Pon tus juegos en ${c.folder || "su carpeta de ROMs"} y elige ☰ → Buscar juegos nuevos.`
+        : "Nada por aquí."));
     el.classList.toggle("games--empty", games.length === 0);
     const remembered = games.findIndex((g) => g.id === memory[consoleId]);
     if (focusId.startsWith("game:") && remembered >= 0) {

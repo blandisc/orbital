@@ -76,6 +76,7 @@ SOURCES: tuple[Source, ...] = (
            "https://dolphin-emu.org/download/", dated=True),
     Source("eden", "Eden", ("eden.exe",), "forgejo", "https://git.eden-emu.dev/api/v1/repos/eden-emu/eden/releases?limit=1",
            "https://eden-emu.dev/", dated=True),
+    Source("rpcs3", "RPCS3", ("rpcs3.exe",), "github", "RPCS3/rpcs3-binaries-win", "https://rpcs3.net/download", dated=True),
     Source("ryujinx", "Ryujinx", ("ryujinx.exe",), "gitlab", "https://git.ryujinx.app/api/v4/projects/ryubing%2Fryujinx/releases?per_page=1",
            "https://ryujinx.app/download"),
 )

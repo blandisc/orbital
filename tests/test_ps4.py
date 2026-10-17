@@ -60,3 +60,31 @@ def test_shadps4_is_detected_and_its_games_open_with_their_eboot(tmp_path, monke
     argv = items[0].runners[0].argv
     assert argv == [str(exe), "--fullscreen", "true", "--game", str(games / "CUSA00900" / "eboot.bin")]
     assert items[0].art_path.endswith("icon0.png") and items[0].system == "ps4"
+
+
+def test_ps3_disc_installed_and_iso_games_open_in_rpcs3(tmp_path):
+    from orbital.library import ps3
+
+    emu_dir = tmp_path / "Emulators" / "RPCS3"
+    (emu_dir / "config").mkdir(parents=True)
+    exe = emu_dir / "rpcs3.exe"
+    exe.write_bytes(b"")
+    # De disco, en ROMs/ps3 como lo nombra ES-DE
+    disc = tmp_path / "ROMs" / "ps3" / "Demons Souls.ps3" / "PS3_GAME"
+    (disc / "USRDIR").mkdir(parents=True)
+    (disc / "USRDIR" / "EBOOT.BIN").write_bytes(b"")
+    (disc / "PARAM.SFO").write_bytes(sfo({"TITLE": "Demon's Souls", "TITLE_ID": "BLUS30443", "CATEGORY": "DG"}))
+    # Instalado en el disco duro de la consola (HG) y una actualización (GD) que no cuenta
+    for serial, category in (("NPUB30001", "HG"), ("BLUS30443", "GD")):
+        hdd = emu_dir / "dev_hdd0" / "game" / serial
+        (hdd / "USRDIR").mkdir(parents=True)
+        (hdd / "USRDIR" / "EBOOT.BIN").write_bytes(b"")
+        (hdd / "PARAM.SFO").write_bytes(sfo({"TITLE": "Journey", "TITLE_ID": serial, "CATEGORY": category}))
+    (emu_dir / "games").mkdir()
+    (emu_dir / "games" / "Gran Turismo 5.iso").write_bytes(b"")
+    found = detect.detect([detect.SearchDir(tmp_path / "Emulators")])
+    cfg = next(e for e in found.emulators if e.id == "ps3")
+    items = emulators.scan(EmulatorConfig(**{**cfg.__dict__, "rom_dirs": [str(tmp_path / "ROMs" / "ps3")]}))
+    assert [i.title for i in items] == ["Demon's Souls", "Gran Turismo 5", "Journey"]
+    assert items[0].runners[0].argv == [str(exe), "--no-gui", "--fullscreen", str(disc / "USRDIR" / "EBOOT.BIN")]
+    assert ps3.known_paths(exe) == []

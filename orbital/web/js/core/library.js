@@ -36,7 +36,7 @@ export function rowJump(rows, memory, r, delta) {
 
 /** Proporción típica (ancho / alto) de las portadas de cada sistema, medida en una biblioteca real. */
 export const COVER_RATIOS = { gba: 1, gb: 1, gbc: 1, nds: .9, psx: 1, ps1: 1, gamecube: .71, gc: .71, wii: .71, xbox: .705,
-  xbox360: .705, steam: .667, psp: .57, switch: .618, ps4: .79 };
+  xbox360: .705, steam: .667, psp: .57, switch: .618, ps3: .86, ps4: .79 };
 
 /** La forma de las cajas de una consola (Juegos: todas sus portadas con esa forma; GBA cuadradas). */
 export const systemRatio = (system) => COVER_RATIOS[String(system || "").replace(/-.*/, "")] ?? .7;

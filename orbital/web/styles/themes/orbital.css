@@ -107,9 +107,10 @@
   --system-xbox: #5daa2e;
   --system-xbox360: #7fc241;
   --system-ps4: #2f7fe0;
+  --system-ps3: #9aa3b5; /* el negro piano y cromo de la PS3, aclarado para leerse sobre lo oscuro */
   --system-steam: #66c0f4;
   --system-geforcenow: #76b900;
-  --system-media: #ff6fae; /* películas y series (streaming): ninguna consola lo usa */
+  --system-media: #c084fc; /* películas y series (streaming): morado, como Stremio (más rosado que el violeta de GameCube) */
   --assistant-accent: #3cc8f4; /* Alexa: el anillo azul cuando acaba de escucharte */
   --system-default: var(--palette-ink-300);
 

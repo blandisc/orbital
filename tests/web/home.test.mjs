@@ -115,3 +115,12 @@ test("el ícono de cada plataforma lleva su color: consolas, Steam y streaming",
   assert.equal(platformColor({ source: "stremio", category: "media", kind: "movie" })?.includes("--system-media"), true);
   assert.equal(platformColor({ source: "apps" }), null);
 });
+
+test("un emulador instalado sin juegos también sale en Tus consolas, con dónde ponerlos", async () => {
+  const { consoleList } = await import("../../orbital/web/js/core/home.js");
+  const [ps3] = consoleList([{ id: "emulators:ps3", title: "PlayStation 3", items: [], empty: true, system: "ps3", folder: "C:\ROMs\ps3" }]);
+  assert.equal(ps3.name, "PS3");
+  assert.equal(ps3.count, 0);
+  assert.equal(ps3.folder, "C:\ROMs\ps3");
+  assert.equal(consoleList([{ id: "emulators:x", title: "X", items: [] }]).length, 0);
+});

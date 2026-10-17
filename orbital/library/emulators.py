@@ -165,6 +165,8 @@ def scan(
         log.warning("%s no tiene rom_dirs ni system de ES-DE", emu.name)
     if emu.system == "ps4":
         return _scan_ps4(emu, dirs, candidates, exes, media)
+    if emu.system == "ps3":
+        return _scan_ps3(emu, dirs, candidates, exes, media)
     for root in dirs:
         if not root.is_dir():
             log.warning("Carpeta de ROMs no encontrada para %s: %s", emu.name, root)
@@ -258,6 +260,31 @@ def _scan_ps4(emu: EmulatorConfig, dirs: list[Path], candidates: list[EmulatorCo
             art_path=art["cover"] or (str(game.icon) if game.icon else None),
             hero_path=art["hero"] or (str(game.background) if game.background else None), logo_path=art["logo"],
             system=emu.system, media_key=key, extra={**game_extra(own), "added": added_at(game.eboot)}))
+    return items
+
+
+def _scan_ps3(emu: EmulatorConfig, dirs: list[Path], candidates: list[EmulatorConfig], exes: dict[str, Path | None],
+              media: MediaStore | None) -> list[LibraryItem]:
+    """PS3: de disco (ROMs/ps3 y la carpeta games de RPCS3), instalados (dev_hdd0/game) y los que RPCS3 ya conoce
+    (config/games.yml). Sin portada propia, la del juego (ICON0.PNG) y su fondo (PIC1.PNG)."""
+    from . import ps3
+
+    exe = exes.get(emu.id)
+    roots = [*dirs, *([exe.parent / "games"] if exe else [])]
+    hdd = exe.parent / "dev_hdd0" / "game" if exe else None
+    items: list[LibraryItem] = []
+    for game in ps3.find_games(roots, hdd, ps3.known_paths(exe)):
+        key = game.title_id or game.folder.name
+        art = pick_art(media, None, emu.system, key, game.folder, None)
+        own = media.meta(emu.system, key) if media and emu.system else None
+        runners = [Runner(c.id, runner_name(c, exes[c.id]), build_argv(c, exes[c.id], game.boot), str(exes[c.id].parent) if exes[c.id] else None)
+                   for c in candidates if c is emu or exes[c.id] is not None]
+        items.append(LibraryItem(
+            id=_item_id(emu.id, game.boot), title=(own or {}).get("title") or game.title, category="emulators",
+            source=emu.id, subtitle=emu.name, runners=runners, default_runner=emu.id,
+            art_path=art["cover"] or (str(game.icon) if game.icon else None),
+            hero_path=art["hero"] or (str(game.background) if game.background else None), logo_path=art["logo"],
+            system=emu.system, media_key=key, extra={**game_extra(own), "added": added_at(game.boot)}))
     return items
 
 

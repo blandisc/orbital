@@ -28,6 +28,7 @@ export const SYSTEMS = {
   wii: { name: "Wii", photo: "wii.png" },
   gba: { name: "GBA", photo: "gba.png" },
   psp: { name: "PSP", photo: "psp.png" },
+  ps3: { name: "PS3", photo: "ps3.png" },
   ps4: { name: "PS4", photo: "ps4.png" },
   xbox: { name: "Xbox", photo: "xbox.png" },
   xbox360: { name: "Xbox 360", photo: "xbox360.png" },
@@ -104,8 +105,8 @@ export function consoleList(rows) {
   for (const row of rows) {
     const isEmu = row.id.startsWith("emulators:");
     if (!isEmu && row.id !== "steam" && row.id !== "geforcenow") continue;
-    if (!row.items.length) continue;
-    const system = isEmu ? (row.items.find((i) => i.system)?.system ?? null) : row.id;
+    if (!row.items.length && !row.empty) continue;
+    const system = isEmu ? (row.items.find((i) => i.system)?.system ?? row.system ?? null) : row.id;
     const last = [...row.items].filter((i) => i.last_played).sort((a, b) => b.last_played - a.last_played)[0] ?? null;
     list.push({
       id: row.id,
@@ -117,6 +118,7 @@ export function consoleList(rows) {
       cover: last?.image ?? row.items[0]?.image ?? null, // sin foto de consola (Steam): la portada del último
       last,
       fresh: row.items.filter((i) => i.new).length,
+      folder: row.empty ? row.folder ?? null : undefined, // instalado, sin juegos: dónde ponerlos
     });
   }
   // La que usaste más recientemente, primero (es a la que más vuelves).

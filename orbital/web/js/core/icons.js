@@ -102,6 +102,7 @@ export function systemIconName(item) {
   if (text.includes("xbox")) return "xbox";
   if (text.includes("psp")) return "psp";
   if (text.includes("ps4") || text.includes("playstation 4")) return "ps4";
+  if (text.includes("ps3") || text.includes("playstation 3")) return "ps4"; // la misma silueta de consola PlayStation
   if (item.category === "media") return "media";
   return "apps";
 }

@@ -64,6 +64,9 @@ KNOWN: tuple[KnownEmulator, ...] = (
                   ("-f", "{rom}"), (".nds", ".zip"), label="melonDS"),
     KnownEmulator("wiiu", "Wii U", "wiiu", ("cemu.exe",),
                   ("-f", "-g", "{rom}"), (".wua", ".wux", ".rpx"), label="Cemu"),
+    # PS3: juegos de disco (carpetas con PS3_GAME), instalados en dev_hdd0 o .iso (ver library/ps3.py).
+    KnownEmulator("ps3", "PlayStation 3", "ps3", ("rpcs3.exe", "rpcs3"),
+                  ("--no-gui", "--fullscreen", "{rom}"), (), label="RPCS3"),
     # PS4: cada juego es una carpeta con su eboot.bin (ver library/ps4.py); a shadPS4 se le da ese eboot.bin.
     KnownEmulator("ps4", "PlayStation 4", "ps4", ("shadps4.exe", "shadps4"),
                   ("--fullscreen", "true", "--game", "{rom}"), (), label="shadPS4"),
