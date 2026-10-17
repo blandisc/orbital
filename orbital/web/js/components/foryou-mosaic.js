@@ -1,5 +1,5 @@
 import { h, svg } from "../core/dom.js";
-import { brandParts, factLine, trimmedLogo, iconName, nearestTile, nextUnseen, posterRatio, shapeOf } from "../core/foryou.js";
+import { brandParts, factLine, trimmedLogo, iconName, nearestTile, nextUnseen, posterRatio } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { sized } from "../core/images.js";
 import { Badge } from "./ui.js";
@@ -85,13 +85,19 @@ export function createForYouMosaic({ onFocus, onPick }) {
       });
     };
     const poster = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--poster", src: sized(item.image || item.hero || "", POSTER_PX), alt: "", decoding: "async" });
-    const wide = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--wide", src: sized(item.hero || item.image || "", WIDE_PX), alt: "", decoding: "async" });
+    // El arte ancho solo hace falta cuando su columna se enfoca (ahí todas pasan a lo ancho): se pide hasta entonces.
+    // Antes cada pieza cargaba también su fondo ancho, aunque nunca se viera (el doble de memoria en Edge).
+    const wide = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--wide", alt: "", decoding: "async" });
     swap(poster, sized(item.image_fallback || item.hero, POSTER_PX));
     swap(wide, sized(item.image, WIDE_PX));
-    // Sin foco, un juego de Steam enseña su cápsula (lleva el juego y su nombre); el «hero» es un fondo
-    // pensado para el logo encima, así que solo sale enfocado, con el logo.
-    const capsule = item.wide && h("img", { class: "foryou-mosaic__art foryou-mosaic__art--capsule", src: sized(item.wide, WIDE_PX), alt: "", decoding: "async" });
+    // En la columna enfocada, un juego de Steam sin foco enseña su cápsula (lleva el juego y su nombre); el «hero» es un
+    // fondo pensado para el logo encima, así que solo sale en la pieza enfocada, con el logo.
+    const capsule = item.wide && h("img", { class: "foryou-mosaic__art foryou-mosaic__art--capsule", alt: "", decoding: "async" });
     if (capsule) capsule.addEventListener("error", () => capsule.remove(), { once: true });
+    const loadWide = () => {
+      if (!wide.getAttribute("src")) wide.src = sized(item.hero || item.image || "", WIDE_PX);
+      if (capsule && !capsule.getAttribute("src")) capsule.src = sized(item.wide, WIDE_PX);
+    };
     const name = () => h("strong", { class: "foryou-mosaic__name" }, item.title);
     const logo = item.logo ? h("img", { class: "foryou-mosaic__logo", src: sized(trimmedLogo(item.logo), 320), alt: item.title }) : name();
     if (item.logo) logo.addEventListener("error", () => logo.replaceWith(name()), { once: true });
@@ -103,7 +109,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
         item.why && Badge(h("span", {}, brandParts(item.why).map((p) => (p.brand ? h("span", { class: ["brand-name", `brand-name--${p.brand}`] }, p.text) : p.text))),
           { large: true }), logo,
         h("span", { class: "foryou-mosaic__fact" }, factLine(item))));
-    return { item, node, logo, top: 0, h: 0 };
+    return { item, node, logo, loadWide, top: 0, h: 0 };
   }
 
   // Lo que se ve y lo que viene abajo (entra junto al bajar). Lo que ya subió no cuenta: antes también,
@@ -125,7 +131,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
   function tileHeight(col, c, r, item) {
     const wideCol = mode === "focus" && c === focus.col;
     if (wideCol) return Math.round(col.w * (r === focus.row ? .64 : .5));
-    return Math.round(col.w * (shapeOf(item) === "wide" ? .58 : 1 / posterRatio(item)));
+    return Math.round(col.w / posterRatio(item)); // sin foco, todas en vertical (las cajas de GBA, casi cuadradas)
   }
 
   /** Anchos de columna, alto y lugar de cada pieza; siempre con piezas de sobra abajo. */
@@ -151,7 +157,8 @@ export function createForYouMosaic({ onFocus, onPick }) {
         y += t.h + g;
         t.node.style.top = `${t.top}px`;
         t.node.style.height = `${t.h}px`;
-        t.node.classList.toggle("foryou-mosaic__tile--land", wideCol || shapeOf(t.item) === "wide");
+        t.node.classList.toggle("foryou-mosaic__tile--land", wideCol);
+        if (wideCol) t.loadWide();
         t.node.classList.toggle("foryou-mosaic__tile--on", mode === "focus" && c === focus.col && r === focus.row);
       });
     });
@@ -171,7 +178,6 @@ export function createForYouMosaic({ onFocus, onPick }) {
       t.h = tileHeight(col, c, col.tiles.length, item);
       t.node.style.top = `${t.top}px`;
       t.node.style.height = `${t.h}px`;
-      t.node.classList.toggle("foryou-mosaic__tile--land", shapeOf(item) === "wide");
       col.tiles.push(t);
       col.track.append(t.node);
     }

@@ -48,17 +48,6 @@ export function iconName(item) {
   return item.kind === "series" ? "series" : "movie";
 }
 
-/** Número estable a partir de un texto (para que cada pieza tenga siempre la misma forma). */
-export function hashOf(text) {
-  let h = 2166136261;
-  for (const ch of String(text)) h = Math.imul(h ^ ch.codePointAt(0), 16777619);
-  return h >>> 0;
-}
-
-/** Portada alta o arte ancho en el mosaico: más o menos dos de cada cinco, anchas. Un juego sin un
- *  fondo ancho de verdad (el respaldo de Orbital, una captura chiquita de GBA) va siempre en vertical. */
-export const shapeOf = (item) => (!item?.hero_weak && hashOf(item?.key) % 5 < 2 ? "wide" : "poster");
-
 /** Ancho / alto de su portada: las cajas de GBA son casi cuadradas, las de Switch altas, un póster 2:3. */
 export const posterRatio = (item) => (item?.kind === "game" && item.item ? clampRatio(coverRatio(item.item)) : 2 / 3);
 

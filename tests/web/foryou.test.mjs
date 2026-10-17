@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  factLine, hashOf, iconName, kindLabel, listMeta, nearestTile, nextUnseen, playOf, posterRatio, primaryAction, railEntries, rankOf, shapeOf,
+  factLine, iconName, kindLabel, listMeta, nearestTile, nextUnseen, playOf, posterRatio, primaryAction, railEntries, rankOf,
 } from "../../orbital/web/js/core/foryou.js";
 
 const series = { key: "video:tt1", kind: "series", title: "Severance", detail: "Sigue T2 E6", meta_id: "tt1", video_id: "tt1:2:6", episode: "T2 E6" };
@@ -38,12 +38,7 @@ test("A: ver con su episodio, jugar lo tuyo, y nada con un juego que no tienes",
   assert.deepEqual(playOf(series), { kind: "series", id: "tt1", video_id: "tt1:2:6", title: "Severance", item: series });
 });
 
-test("la forma de cada pieza es siempre la misma y hay de las dos", () => {
-  assert.equal(hashOf("abc"), hashOf("abc"));
-  assert.equal(shapeOf(series), shapeOf({ ...series }));
-  const shapes = new Set(Array.from({ length: 40 }, (_, i) => shapeOf({ key: `video:tt${i}` })));
-  assert.deepEqual([...shapes].sort(), ["poster", "wide"]);
-});
+
 
 test("el mosaico no repite lo que ya está a la vista", () => {
   const pool = [{ key: "a" }, { key: "b" }, { key: "c" }];
@@ -74,13 +69,10 @@ test("el encabezado de una lista dice cuántos y de dónde", () => {
   assert.equal(listMeta({ group: "video", source: "TMDB" }, 3, "movie"), "3 películas · TMDB");
 });
 
-test("mosaico: las cajas de GBA casi cuadradas, y un juego sin fondo ancho de verdad siempre en vertical", () => {
+test("mosaico: todas en vertical, con las cajas de GBA casi cuadradas", () => {
   const gba = { key: "game:emu:gba:1", kind: "game", item: { source: "gba" } };
   assert.equal(posterRatio(gba), 1);
   assert.equal(posterRatio({ key: "video:tt1", kind: "movie" }), 2 / 3);
-  const keys = Array.from({ length: 40 }, (_, i) => `game:${i}`);
-  assert.ok(keys.some((key) => shapeOf({ key }) === "wide"));
-  assert.ok(keys.every((key) => shapeOf({ key, hero_weak: true }) === "poster"));
 });
 
 test("próximos estrenos: por día en el orden que llegan y la semana con sus siete días", async () => {
