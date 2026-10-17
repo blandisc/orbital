@@ -1,50 +1,82 @@
 import Foundation
 import OrbitalCore
 
-/// «Decide por mí» (Para ti › 🎲): cuánto tiempo tienes y qué quieres, y una sola propuesta (de tus sugerencias, que no
-/// hayas descartado hoy) con su porqué. «Otra» propone la siguiente; «Hoy no» la aparta 24 horas.
+/// «¿Qué vemos?» (Para ti › 🎲), en tres niveles de la misma hoja:
+/// 1. Al abrir, una propuesta rápida con el contexto (la hora, lo que sigues), que se baraja.
+/// 2. Estirada: cuánto tiempo, qué ánimo, series o películas, géneros.
+/// 3. Hasta arriba: de qué lista, época y calificación mínima en un servicio.
+/// Siempre una sola propuesta (de tus sugerencias, que no hayas visto ni apartado hoy) con su porqué.
 @MainActor
 public final class DecideModel: ObservableModel {
     public enum Time: String, CaseIterable, Sendable { case short, hour, long }
     public enum Mood: String, CaseIterable, Sendable { case light, intense, think, together }
+    public enum RatingService: String, CaseIterable, Sendable { case imdb, trakt }
+
+    /// De dónde puede salir la propuesta (nivel 3): una de tus listas o estantes, con lo que tiene.
+    public struct Source: Sendable, Identifiable {
+        public let id: String, name: String, items: [Suggestion]
+        public init(id: String, name: String, items: [Suggestion]) { self.id = id; self.name = name; self.items = items }
+    }
 
     public private(set) var pick: Suggestion? { didSet { changed() } }
-    /// Por qué esta: la duración y el ánimo que coinciden («58 min · ligera»).
+    /// Por qué esta: la duración y lo que coincide («58 min · ligera»).
     public private(set) var minutes: Int? { didSet { changed() } }
+    /// La calificación de IMDb de la propuesta, si se conoce.
+    public private(set) var imdbRating: Double? { didSet { changed() } }
     public private(set) var isLoading = false { didSet { changed() } }
     public private(set) var exhausted = false { didSet { changed() } }
-    public var time: Time = .hour { didSet { changed() } }
-    public var mood: Mood = .light { didSet { changed() } }
-    /// Más opciones: solo series o solo películas (nil: las dos).
+    public var time: Time { didSet { changed() } }
+    /// nil: cualquier ánimo (la propuesta rápida no lo pregunta).
+    public var mood: Mood? { didSet { changed() } }
+    /// Solo series o solo películas (nil: las dos).
     public var kind: String? { didSet { changed() } }
-    /// Más opciones: géneros elegidos (en inglés, en minúsculas); si hay, mandan sobre el ánimo.
+    /// Géneros elegidos (en inglés, en minúsculas); si hay, mandan sobre el ánimo.
     public var genres: Set<String> = [] { didSet { changed() } }
-    /// Más opciones: también lo que ya viste.
+    /// También lo que ya viste.
     public var includeWatched = false { didSet { changed() } }
+    /// Nivel 3: de qué lista (nil: de todo lo sugerido).
+    public var sourceID: String? { didSet { changed() } }
+    /// Nivel 3: épocas (el año en que empieza cada década: 2020, 2010…; 1980 cuenta todo lo anterior a 1990).
+    public var decades: Set<Int> = [] { didSet { changed() } }
+    /// Nivel 3: calificación mínima (0: sin mínimo) y en qué servicio.
+    public var minRating: Double = 0 { didSet { changed() } }
+    public var ratingService: RatingService = .imdb { didSet { changed() } }
 
-    /// Los géneros que se ofrecen en «Más opciones» (su nombre en inglés, como los dan Trakt y Cinemeta).
+    /// Los géneros que se ofrecen (su nombre en inglés, como los dan Trakt y Cinemeta).
     public static let genreChoices = ["comedy", "drama", "action", "thriller", "horror", "sci-fi", "animation", "romance", "documentary", "crime", "fantasy", "mystery"]
+    public static let decadeChoices = [2020, 2010, 2000, 1990, 1980]
 
+    public let sources: [Source]
     private let services: Services
     private let pool: [Suggestion]
-    private var details: [String: (genres: [String], minutes: Int?)] = [:]
+    private var details: [String: (genres: [String], minutes: Int?, rating: Double?, year: Int?)] = [:]
     private var shown = Set<String>()
-    /// Las candidatas en el orden de esta vuelta (se barajan en cada «Decide por mí»: no sale siempre la misma).
+    /// Las candidatas en el orden de esta vuelta.
     private var order: [Suggestion] = []
     /// Lo que tu historial de Trakt dice que ya viste (se pide una vez por hoja).
     private var watched: Set<String>?
     static let skipKey = "decide-not-today"
 
-    public init(_ services: Services, pool: [Suggestion]) {
+    public init(_ services: Services, pool: [Suggestion], sources: [Source] = []) {
         self.services = services
         var seen = Set<String>()
-        self.pool = pool.filter { seen.insert($0.imdb).inserted }
+        self.pool = (pool + sources.flatMap(\.items)).filter { seen.insert($0.imdb).inserted }
+        self.sources = sources.filter { !$0.items.isEmpty }
+        self.time = Self.contextTime(services.now())
         super.init()
-        // Lo que ya viste se pide desde que se abre la hoja: al tocar «Decide por mí» ya está (o casi).
+        // Lo que ya viste se pide desde que se abre la hoja: al decidir ya está (o casi).
         if let trakt = services.trakt, trakt.linked { watchedTask = Task { try? await trakt.watchedIDs() } }
     }
 
     private var watchedTask: Task<Set<String>?, Never>?
+
+    /// El tiempo según la hora: muy noche, poco; viernes en la noche y el fin de semana, dos horas o más; lo demás, una.
+    nonisolated static func contextTime(_ now: Date, calendar: Calendar = .current) -> Time {
+        let hour = calendar.component(.hour, from: now), weekday = calendar.component(.weekday, from: now)   // 1 domingo … 7 sábado
+        if hour >= 23 || hour < 5 { return .short }
+        if weekday == 1 || weekday == 7 || (weekday == 6 && hour >= 18) { return .long }
+        return .hour
+    }
 
     /// Qué géneros cuentan para cada ánimo (en minúsculas: sirven los de Cinemeta, «Sci-Fi», y los de Trakt, «science-fiction»).
     nonisolated static func genres(for mood: Mood) -> Set<String> {
@@ -77,10 +109,44 @@ public final class DecideModel: ObservableModel {
         switch time { case .short: return minutes <= 35; case .hour: return minutes <= 75; case .long: return true }
     }
 
+    /// ¿Es de alguna de estas épocas? (1980 cuenta todo lo anterior a 1990.)
+    nonisolated static func inDecades(_ year: Int, _ decades: Set<Int>) -> Bool {
+        decades.contains { d in d == 1980 ? year < 1990 : (d...(d + 9)).contains(year) }
+    }
+
+    /// Nivel 1: la propuesta rápida (lo que sigues primero si cabe; si no, al azar entre lo tuyo).
+    public func quick() async {
+        await prepare()
+        let following = pool.filter { $0.reason == .watching }.shuffled()
+        order = following + pool.filter { $0.reason != .watching }.shuffled()
+        await next()
+    }
+
+    /// La duración y la calificación de la propuesta, si no se sabían (sin filtros no se le preguntaron a Cinemeta): el
+    /// porqué siempre lleva datos que se pueden comprobar.
+    private func enrichPick() async {
+        guard let s = pick, details[s.imdb] == nil else { return }
+        await describe([s])
+        guard pick?.imdb == s.imdb else { return }
+        minutes = s.runtime ?? details[s.imdb]?.minutes
+        imdbRating = details[s.imdb]?.rating
+    }
+
+    /// Niveles 2 y 3: con lo que elegiste.
     public func decide() async {
+        await prepare()
+        order = candidatesPool.shuffled()
+        await next()
+    }
+
+    private var candidatesPool: [Suggestion] {
+        if let sourceID, let source = sources.first(where: { $0.id == sourceID }) { return source.items }
+        return pool
+    }
+
+    private func prepare() async {
         shown = []
         exhausted = false
-        order = pool.shuffled()
         if watched == nil, let trakt = services.trakt, trakt.linked {
             isLoading = true
             // Lo que ya viste, con tiempo máximo: si Trakt tarda, se decide sin eso (y se pide otra vez la próxima).
@@ -94,37 +160,51 @@ public final class DecideModel: ObservableModel {
             }
             watched = found
         }
-        await next()
     }
 
-    /// La siguiente que cabe. Lo que ya trae su género y su duración (lo de Trakt) se decide al momento; lo demás se le
-    /// pregunta a Cinemeta, unas cuantas a la vez, con un tiempo máximo: si se acaba, la más cercana del ánimo.
+    /// La siguiente que cabe. Lo que ya trae su género, duración, año y calificación se decide al momento; lo demás se le
+    /// pregunta a Cinemeta, unas cuantas a la vez, con un tiempo máximo: si se acaba, la más cercana.
     public func next() async {
+        await search()
+        await enrichPick()
+    }
+
+    private func search() async {
         isLoading = true
         defer { isLoading = false }
         let started = services.now()
         let skipped = notToday()
         let seen = includeWatched ? [] : (watched ?? [])
-        let candidates = (order.isEmpty ? pool : order).filter {
+        let candidates = (order.isEmpty ? candidatesPool : order).filter {
             !shown.contains($0.imdb) && !skipped.contains($0.imdb) && !seen.contains($0.imdb) && (kind == nil || $0.kind == kind)
         }
-        var closest: Suggestion?   // del ánimo, aunque dure más: mejor eso que nada
-        func verdict(_ s: Suggestion) -> (mood: Bool, fits: Bool)? {
+        var closest: Suggestion?   // de lo que pediste, aunque dure más: mejor eso que nada
+        func verdict(_ s: Suggestion) -> (matches: Bool, fits: Bool)? {
             let d = details[s.imdb]
-            let genres = s.genres.isEmpty ? d?.genres : s.genres
-            guard let genres else { return nil }   // falta preguntar
-            return (self.genres.isEmpty ? Self.matches(genres, mood) : Self.matches(genres, picked: self.genres), Self.fits(s.runtime ?? d?.minutes, time))
+            let genreList = s.genres.isEmpty ? d?.genres : s.genres
+            if (!genres.isEmpty || mood != nil) && genreList == nil { return nil }   // falta preguntar
+            let year = s.year ?? d?.year
+            if !decades.isEmpty && year == nil && d == nil { return nil }
+            if minRating > 0 && ratingService == .imdb && d == nil { return nil }
+            let rating: Double? = ratingService == .trakt ? s.traktRating : d?.rating
+            var ok = true
+            if !genres.isEmpty { ok = Self.matches(genreList ?? [], picked: genres) }
+            else if let mood { ok = Self.matches(genreList ?? [], mood) }
+            if ok, !decades.isEmpty { ok = year.map { Self.inDecades($0, decades) } ?? false }
+            if ok, minRating > 0 { ok = (rating ?? 0) >= minRating }
+            return (ok, Self.fits(s.runtime ?? d?.minutes, time))
         }
         func take(_ s: Suggestion) {
             shown.insert(s.imdb)
             pick = s
             minutes = s.runtime ?? details[s.imdb]?.minutes
+            imdbRating = details[s.imdb]?.rating
         }
         // 1) Lo que ya se sabe, sin red.
         for s in candidates {
             guard let v = verdict(s) else { continue }
-            if v.mood && v.fits { return take(s) }
-            if v.mood, closest == nil { closest = s }
+            if v.matches && v.fits { return take(s) }
+            if v.matches, closest == nil { closest = s }
         }
         // 2) Lo demás, de 12 en 12, mientras haya tiempo.
         let unknown = candidates.filter { verdict($0) == nil }
@@ -133,8 +213,8 @@ public final class DecideModel: ObservableModel {
             await describe(chunk)
             for s in chunk {
                 guard let v = verdict(s) else { continue }
-                if v.mood && v.fits { return take(s) }
-                if v.mood, closest == nil { closest = s }
+                if v.matches && v.fits { return take(s) }
+                if v.matches, closest == nil { closest = s }
             }
         }
         for s in candidates where verdict(s) != nil { shown.insert(s.imdb) }
@@ -173,19 +253,21 @@ public final class DecideModel: ObservableModel {
     private func describe(_ items: [Suggestion]) async {
         let cinemeta = services.cinemeta
         let missing = items.filter { details[$0.imdb] == nil }
-        let found = await withTaskGroup(of: (String, [String], Int?).self) { group in
+        let found = await withTaskGroup(of: (String, [String], Int?, Double?, Int?).self) { group in
             for s in missing {
                 group.addTask {
-                    guard let meta = try? await cinemeta.meta(kind: s.kind, id: s.imdb) else { return (s.imdb, [], nil) }
+                    guard let meta = try? await cinemeta.meta(kind: s.kind, id: s.imdb) else { return (s.imdb, [], nil, nil, nil) }
                     let info = CinemetaParsing.describe(meta)
                     let seconds = CinemetaParsing.runtimeSeconds(info.runtime); let minutes = seconds > 0 ? Int(seconds / 60) : nil
-                    return (s.imdb, (meta["genres"]?.array ?? meta["genre"]?.array ?? []).compactMap(\.string), minutes)
+                    let rating = (meta["imdbRating"]?.string).flatMap(Double.init) ?? meta["imdbRating"]?.doubleValue
+                    let year = (meta["year"]?.string).flatMap { Int($0.prefix(4)) } ?? meta["year"]?.intValue
+                    return (s.imdb, (meta["genres"]?.array ?? meta["genre"]?.array ?? []).compactMap(\.string), minutes, rating, year)
                 }
             }
-            var out: [(String, [String], Int?)] = []
+            var out: [(String, [String], Int?, Double?, Int?)] = []
             for await r in group { out.append(r) }
             return out
         }
-        for (id, genres, minutes) in found { details[id] = (genres, minutes) }
+        for (id, genres, minutes, rating, year) in found { details[id] = (genres, minutes, rating, year) }
     }
 }

@@ -2,33 +2,114 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// «Decide por mí»: dos preguntas (cuánto tiempo tienes, qué quieres) y una sola propuesta grande con su porqué.
+/// «¿Qué vemos?»: una sola hoja en tres alturas. Corta: la propuesta al instante (con la hora y lo que sigues) y
+/// «Barajar». Estirada: tiempo, ánimo, series o películas, géneros. Hasta arriba: de qué lista, época y calificación
+/// mínima. La propuesta queda siempre arriba y cambia al tocar «Decide por mí».
 struct DecideView: View {
-    @State private var moreOptions = false
     @StateObject private var observer: ModelObserver<DecideModel>
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.dismiss) private var dismiss
+    @State private var level: PresentationDetent = Self.quick
     let open: (TitleRoute) -> Void
 
-    init(pool: [Suggestion], open: @escaping (TitleRoute) -> Void) {
-        _observer = StateObject(wrappedValue: ModelObserver(DecideModel(AppEnvironment.shared.services, pool: pool)))
+    static let quick = PresentationDetent.height(DS.Decide.quickHeight)
+    static let more = PresentationDetent.fraction(DS.Decide.moreShare)
+
+    init(pool: [Suggestion], sources: [DecideModel.Source] = [], open: @escaping (TitleRoute) -> Void) {
+        _observer = StateObject(wrappedValue: ModelObserver(DecideModel(AppEnvironment.shared.services, pool: pool, sources: sources)))
         self.open = open
     }
 
     var body: some View {
         let m = observer.model
-        VStack(alignment: .leading, spacing: DS.Space.s4) {
-            if let pick = m.pick { proposal(pick, m) } else { questions(m) }
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: DS.Space.s4) {
+                    header(m).id("top")
+                    proposal(m)
+                    if level != Self.quick { questions(m).transition(.opacity) }
+                    if level == .large { precision(m).transition(.opacity) }
+                }
+                .padding(DS.Space.s5)
+                .padding(.bottom, level == Self.quick ? 0 : DS.Space.s14)
+            }
+            .scrollDisabled(level == Self.quick)
+            .safeAreaInset(edge: .bottom) {
+                if level != Self.quick {
+                    Button { Task { await m.decide(); withAnimation(DS.Motion.base(false)) { proxy.scrollTo("top", anchor: .top) } } } label: {
+                        HStack { if m.isLoading { ProgressView() }; Text("Decide por mí") }.frame(maxWidth: .infinity)
+                    }
+                    .dsPrimaryButton().controlSize(.large).disabled(m.isLoading)
+                    .padding(.horizontal, DS.Space.s5).padding(.bottom, DS.Space.s2)
+                    .accessibilityIdentifier("decide-go")
+                }
+            }
         }
-        .padding(DS.Space.s5)
+        .presentationDetents([Self.quick, Self.more, .large], selection: $level)
+        .presentationDragIndicator(.visible)
+        .animation(DS.Motion.base(false), value: level)
         .animation(DS.Motion.base(false), value: m.pick?.imdb)
+        .task { if m.pick == nil { await m.quick() } }
+        #if DEBUG
+        .task { if Demo.isOn, let l = Demo.value(after: "-demo-decide-level") { level = l == "3" ? .large : l == "2" ? Self.more : Self.quick } }
+        #endif
     }
 
-    @ViewBuilder private func questions(_ m: DecideModel) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s1) {
-            Text("¿Qué vemos?").recipe(.title)
-            Text("Una sola, de tus sugerencias, que no hayas visto.").recipe(.footnote)
+    // MARK: nivel 1
+    private func header(_ m: DecideModel) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                Text("¿Qué vemos?").recipe(.title)
+                Text(level == Self.quick ? "Una para ahora · desliza hacia arriba para elegir" : "Elige y toca «Decide por mí»").recipe(.footnote)
+            }
+            Spacer()
         }
+    }
+
+    @ViewBuilder private func proposal(_ m: DecideModel) -> some View {
+        if let s = m.pick {
+            let facts = why(s, m)
+            CoverCard(art: s.wide, logo: s.logo, title: s.title, why: facts.isEmpty ? Text(badgeKey(s.reason)) : Text(verbatim: facts),
+                      detail: facts.isEmpty ? nil : Text(badgeKey(s.reason)))
+                .frame(height: DS.Decide.cardHeight)
+                .onTapGesture { dismiss(); open(s.route) }
+            HStack(spacing: DS.Space.s3) {
+                Button {
+                    dismiss()
+                    if s.kind == "series" { open(s.route) } else { Task { await env.play(s) } }
+                } label: { Label(s.kind == "series" ? "Ver la serie" : "Ver", systemImage: "play.fill").frame(maxWidth: .infinity) }
+                    .dsPrimaryButton().controlSize(.large)
+                Button { Task { await m.next() } } label: { Label("Barajar", systemImage: "shuffle").frame(maxWidth: .infinity) }
+                    .buttonStyle(.glass).controlSize(.large).disabled(m.isLoading)
+                    .accessibilityIdentifier("decide-shuffle")
+            }
+            Button("Hoy no") { Task { await m.skipToday() } }
+                .font(DS.TextRecipe.footnote.font).buttonStyle(.borderless).foregroundStyle(DS.textMuted)
+        } else if m.exhausted {
+            DSNotice(text: "No encontré una con eso: prueba con otro filtro o más tiempo.")
+        } else {
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous).fill(DS.fill)
+                .frame(height: DS.Decide.cardHeight)
+                .overlay { ProgressView() }
+        }
+    }
+
+    /// «58 min · terminas 23:15 · IMDb 8.4 · Ligero»: lo que se puede comprobar.
+    private func why(_ s: Suggestion, _ m: DecideModel) -> String {
+        let language = env.services.appSettings.uiLanguage
+        var parts: [String] = []
+        if let minutes = m.minutes {
+            parts.append("\(minutes) min")
+            parts.append(Strings.endsAt(minutesLeft: minutes, now: env.services.now(), language: language))
+        }
+        if let r = m.imdbRating { parts.append(String(format: "IMDb %.1f", r)) }
+        else if let r = s.traktRating { parts.append(String(format: "Trakt %.1f", r)) }
+        if let mood = m.mood { parts.append(Strings.tr(moodLabel(mood), language: language)) }
+        return parts.joined(separator: " · ")
+    }
+
+    // MARK: nivel 2
+    @ViewBuilder private func questions(_ m: DecideModel) -> some View {
         PanelGroupTitle(title: "Tengo")
         FlowChips {
             ForEach(DecideModel.Time.allCases, id: \.self) { t in
@@ -37,63 +118,65 @@ struct DecideView: View {
         }
         PanelGroupTitle(title: "Quiero algo")
         FlowChips {
+            PanelChip(title: Text("Lo que sea"), selected: m.mood == nil, font: DS.TextRecipe.body.font) { m.mood = nil }
             ForEach(DecideModel.Mood.allCases, id: \.self) { mood in
                 PanelChip(title: moodName(mood), selected: m.mood == mood, font: DS.TextRecipe.body.font, symbol: moodSymbol(mood)) { m.mood = mood }
             }
         }
-        // Más opciones (la hoja crece hacia arriba): series o películas, géneros (mandan sobre el ánimo) y lo que ya viste.
-        Button { withAnimation(DS.Motion.base(false)) { moreOptions.toggle() } } label: {
-            Label { Text(moreOptions ? "Menos opciones" : "Más opciones") } icon: { Image(systemName: moreOptions ? "chevron.up" : "chevron.down") }
-                .font(DS.TextRecipe.footnote.font.weight(.semibold))
+        PanelGroupTitle(title: "Qué")
+        FlowChips {
+            PanelChip(title: Text("Todo"), selected: m.kind == nil, font: DS.TextRecipe.body.font) { m.kind = nil }
+            PanelChip(title: Text("Series"), selected: m.kind == "series", font: DS.TextRecipe.body.font, symbol: "tv") { m.kind = "series" }
+            PanelChip(title: Text("Películas"), selected: m.kind == "movie", font: DS.TextRecipe.body.font, symbol: "film") { m.kind = "movie" }
         }
-        .buttonStyle(.borderless).foregroundStyle(DS.textMuted)
-        .accessibilityIdentifier("decide-more")
-        if moreOptions {
-            PanelGroupTitle(title: "Qué")
-            FlowChips {
-                PanelChip(title: Text("Todo"), selected: m.kind == nil, font: DS.TextRecipe.body.font) { m.kind = nil }
-                PanelChip(title: Text("Series"), selected: m.kind == "series", font: DS.TextRecipe.body.font, symbol: "tv") { m.kind = "series" }
-                PanelChip(title: Text("Películas"), selected: m.kind == "movie", font: DS.TextRecipe.body.font, symbol: "film") { m.kind = "movie" }
-            }
-            PanelGroupTitle(title: "Géneros")
-            FlowChips {
-                ForEach(DecideModel.genreChoices, id: \.self) { g in
-                    PanelChip(title: Text(verbatim: genreName(g)), selected: m.genres.contains(g)) {
-                        if m.genres.contains(g) { m.genres.remove(g) } else { m.genres.insert(g) }
-                    }
+        PanelGroupTitle(title: "Géneros")
+        FlowChips {
+            ForEach(DecideModel.genreChoices, id: \.self) { g in
+                PanelChip(title: Text(verbatim: genreName(g)), selected: m.genres.contains(g)) {
+                    if m.genres.contains(g) { m.genres.remove(g) } else { m.genres.insert(g) }
                 }
             }
-            if !m.genres.isEmpty { Text("Con géneros elegidos, el ánimo no cuenta.").recipe(.caption) }
-            Toggle(isOn: Binding(get: { m.includeWatched }, set: { m.includeWatched = $0 })) { Text("Incluir lo que ya vi").recipe(.secondary, color: DS.text) }
-                .tint(DS.accent)
         }
-        if m.exhausted { DSNotice(text: "No encontré otra con eso: prueba otro ánimo o más tiempo.") }
-        Button { Task { await m.decide() } } label: {
-            HStack { if m.isLoading { ProgressView() }; Text("Decide por mí") }.frame(maxWidth: .infinity)
+        if !m.genres.isEmpty { Text("Con géneros elegidos, el ánimo no cuenta.").recipe(.caption) }
+        if level == Self.more {
+            Label("Desliza hasta arriba para más precisión: de qué lista, época y calificación", systemImage: "chevron.compact.up")
+                .recipe(.caption, color: DS.textFaint)
         }
-        .dsPrimaryButton().controlSize(.large).disabled(m.isLoading)
     }
 
-    @ViewBuilder private func proposal(_ s: Suggestion, _ m: DecideModel) -> some View {
-        let why = [m.minutes.map { "\($0) min" }, Strings.tr(moodLabel(m.mood), language: env.services.appSettings.uiLanguage)].compactMap { $0 }.joined(separator: " · ")
-        CoverCard(art: s.wide, logo: s.logo, title: s.title, why: Text(verbatim: why), detail: Text(badgeKey(s.reason)))
-            .frame(height: DS.Editorial.decideHeight)
-            .onTapGesture { dismiss(); open(s.route) }
-        HStack(spacing: DS.Space.s3) {
-            Button {
-                dismiss()
-                if s.kind == "series" { open(s.route) } else { Task { await env.play(s) } }
-            } label: { Label(s.kind == "series" ? "Ver la serie" : "Ver", systemImage: "play.fill").frame(maxWidth: .infinity) }
-                .dsPrimaryButton().controlSize(.large)
-            Button { Task { await m.next() } } label: { Text("Otra").frame(maxWidth: .infinity) }
-                .buttonStyle(.glass).controlSize(.large).disabled(m.isLoading)
+    // MARK: nivel 3
+    @ViewBuilder private func precision(_ m: DecideModel) -> some View {
+        if !m.sources.isEmpty {
+            PanelGroupTitle(title: "De dónde")
+            FlowChips {
+                PanelChip(title: Text("De todo lo sugerido"), selected: m.sourceID == nil) { m.sourceID = nil }
+                ForEach(m.sources) { source in
+                    PanelChip(title: Text(verbatim: source.name), selected: m.sourceID == source.id) { m.sourceID = source.id }
+                }
+            }
         }
-        HStack {
-            Button("Hoy no") { Task { await m.skipToday() } }
-            Spacer()
-            Button("Cambiar lo que quiero") { Task { await m.reset() } }
+        PanelGroupTitle(title: "Época")
+        FlowChips {
+            ForEach(DecideModel.decadeChoices, id: \.self) { d in
+                PanelChip(title: decadeName(d), selected: m.decades.contains(d)) {
+                    if m.decades.contains(d) { m.decades.remove(d) } else { m.decades.insert(d) }
+                }
+            }
         }
-        .font(DS.TextRecipe.footnote.font).buttonStyle(.borderless).foregroundStyle(DS.textMuted)
+        PanelGroupTitle(title: "Calificación mínima")
+        DSSegmented(options: [(DecideModel.RatingService.imdb, LocalizedStringKey("IMDb")), (DecideModel.RatingService.trakt, LocalizedStringKey("Trakt"))],
+                    selection: Binding(get: { m.ratingService }, set: { m.ratingService = $0 }))
+        FlowChips {
+            ForEach(DS.Decide.ratingSteps, id: \.self) { r in
+                PanelChip(title: r == 0 ? Text("Cualquiera") : Text(verbatim: String(format: "%.0f+", r)), selected: m.minRating == r) { m.minRating = r }
+            }
+        }
+        Toggle(isOn: Binding(get: { m.includeWatched }, set: { m.includeWatched = $0 })) { Text("Incluir lo que ya vi").recipe(.secondary, color: DS.text) }
+            .tint(DS.accent)
+    }
+
+    private func decadeName(_ d: Int) -> Text {
+        d == 1980 ? Text("Antes de los 90") : Text(verbatim: "\(d)s")
     }
 
     private func timeName(_ t: DecideModel.Time) -> Text {

@@ -112,11 +112,30 @@ struct ParaTiView: View {
         }
         .refreshable { await m.refresh() }
         .sheet(isPresented: $deciding) {
-            DecideView(pool: (m.because?.items ?? []) + m.mosaic + m.visibleShelves.flatMap { m.items(for: $0) }) { openTitle = $0 }
-                .fittedSheet().presentationDragIndicator(.visible)
+            DecideView(pool: (m.because?.items ?? []) + m.mosaic + m.visibleShelves.flatMap { m.items(for: $0) }, sources: decideSources(m)) { openTitle = $0 }
         }
         .animation(DS.Motion.base(reduceMotion), value: m.mode)
         .animation(DS.Motion.base(reduceMotion), value: focused?.imdb)
+    }
+
+    /// «¿Qué vemos?» › De dónde: «Porque viste», lo nuevo en tus plataformas y cada estante que se ve (con su nombre).
+    private func decideSources(_ m: ParaTiModel) -> [DecideModel.Source] {
+        let language = env.services.appSettings.uiLanguage
+        var out: [DecideModel.Source] = []
+        if let because = m.because { out.append(.init(id: "because", name: String(format: Strings.tr("Porque viste %@", language: language), because.seed.title), items: because.items)) }
+        if !m.newOnPlatforms.isEmpty { out.append(.init(id: "new", name: Strings.tr("Nuevo en tus plataformas", language: language), items: m.newOnPlatforms)) }
+        for plan in m.visibleShelves {
+            let name: String = switch plan.id {
+            case "watchlist": Strings.tr("Tu watchlist", language: language)
+            case "mine": Strings.tr("Tus series", language: language)
+            case "recs": Strings.tr("Recomendadas", language: language)
+            case "trend": Strings.tr("En tendencia", language: language)
+            case "popular": Strings.tr("Lo más popular", language: language)
+            default: plan.title.isEmpty ? plan.id : plan.title
+            }
+            out.append(.init(id: plan.id, name: name, items: m.items(for: plan)))
+        }
+        return out
     }
 
     /// Modo demostración (`-demo-mosaic-focus N`): qué sugerencia enfocar al abrir, para las capturas de CEN-36.

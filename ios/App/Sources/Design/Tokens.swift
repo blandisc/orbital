@@ -217,8 +217,7 @@ enum DS {
     /// La dirección «Editorial» (A + una portada): espacio entre secciones, la portada y la pieza panorámica.
     enum Editorial {
         static let sectionGap: CGFloat = 36, coverHeight: CGFloat = 200, wideWidth: CGFloat = 250, veilStart: CGFloat = 0.35
-        /// La propuesta grande de «Decide por mí».
-        static let decideHeight: CGFloat = 320
+
         /// Hasta dónde crece el logo en la portada y en la pieza panorámica.
         static let coverLogo = CGSize(width: 200, height: 60), wideLogo = CGSize(width: 130, height: 34)
     }
@@ -276,6 +275,13 @@ enum DS {
 
     /// «Tus plataformas»: la tarjeta con su top 3 en abanico y su página de rankings.
     /// Colecciones (Para ti › Listas): el alto de la estatuilla al frente, su halo y el color de cada premio.
+    /// «¿Qué vemos?»: el alto de la hoja corta (la propuesta rápida), la parte de la pantalla de la estirada, el alto de la
+    /// propuesta y los mínimos de calificación que se ofrecen.
+    enum Decide {
+        static let quickHeight: CGFloat = 470, moreShare: CGFloat = 0.72, cardHeight: CGFloat = 230
+        static let ratingSteps: [Double] = [0, 6, 7, 8]
+    }
+
     enum Collections {
         static let emblem: CGFloat = 70, glow: CGFloat = 16
         /// El sello de dónde viene una lista (Trakt, Stremio, tu Orbital).

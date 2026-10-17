@@ -496,6 +496,17 @@
         }
       }
     },
+    "Antes de los 90": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Before the 90s"
+          }
+        }
+      }
+    },
     "Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.": {
       "extractionState": "manual",
       "localizations": {
@@ -716,6 +727,17 @@
         }
       }
     },
+    "Barajar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shuffle"
+          }
+        }
+      }
+    },
     "Borrar": {
       "extractionState": "manual",
       "localizations": {
@@ -877,6 +899,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Quality"
+          }
+        }
+      }
+    },
+    "Calificación mínima": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimum rating"
           }
         }
       }
@@ -1563,6 +1596,17 @@
         }
       }
     },
+    "Cualquiera": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Any"
+          }
+        }
+      }
+    },
     "Cuando descargues algo, aparece aquí.": {
       "extractionState": "manual",
       "localizations": {
@@ -1684,6 +1728,17 @@
         }
       }
     },
+    "De dónde": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From where"
+          }
+        }
+      }
+    },
     "De lo último que viste": {
       "extractionState": "manual",
       "localizations": {
@@ -1691,6 +1746,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "From what you watched lately"
+          }
+        }
+      }
+    },
+    "De todo lo sugerido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From everything suggested"
           }
         }
       }
@@ -1992,6 +2058,17 @@
         }
       }
     },
+    "Desliza hasta arriba para más precisión: de qué lista, época y calificación": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe all the way up for more precision: which list, era and rating"
+          }
+        }
+      }
+    },
     "Desliza para moverte; toca para %@": {
       "extractionState": "manual",
       "localizations": {
@@ -2219,6 +2296,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choose this episode's source"
+          }
+        }
+      }
+    },
+    "Elige y toca «Decide por mí»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose and tap «Decide for me»"
           }
         }
       }
@@ -3543,6 +3631,17 @@
         }
       }
     },
+    "Lo que sea": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anything"
+          }
+        }
+      }
+    },
     "Lo que viste": {
       "extractionState": "manual",
       "localizations": {
@@ -4001,6 +4100,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't find your Orbital. Are the console and the tunnel on?"
+          }
+        }
+      }
+    },
+    "No encontré una con eso: prueba con otro filtro o más tiempo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find one with that: try another filter or more time."
           }
         }
       }
@@ -6689,6 +6799,17 @@
         }
       }
     },
+    "Una para ahora · desliza hacia arriba para elegir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One for now · swipe up to choose"
+          }
+        }
+      }
+    },
     "Una sola, de tus sugerencias, que no hayas visto.": {
       "extractionState": "manual",
       "localizations": {
@@ -7125,6 +7246,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Watch on the TV?"
+          }
+        }
+      }
+    },
+    "Época": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Era"
           }
         }
       }

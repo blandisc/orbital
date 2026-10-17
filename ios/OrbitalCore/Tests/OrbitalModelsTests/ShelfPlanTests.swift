@@ -195,5 +195,14 @@ final class DecideRulesTests: XCTestCase {
         XCTAssertTrue(DecideModel.matches(["science-fiction"], .think), "y los de Trakt")
         XCTAssertFalse(DecideModel.matches(["horror"], .together))
         XCTAssertTrue(DecideModel.matches(["Science Fiction"], picked: ["sci-fi"]), "géneros elegidos: el mismo con otro nombre")
+        XCTAssertTrue(DecideModel.inDecades(2014, [2010])); XCTAssertFalse(DecideModel.inDecades(2021, [2010]))
+        XCTAssertTrue(DecideModel.inDecades(1975, [1980]), "«antes de los 90» incluye todo lo anterior")
+        var cal = Calendar(identifier: .gregorian); cal.timeZone = TimeZone(identifier: "UTC")!
+        let thursdayNight = cal.date(from: DateComponents(year: 2026, month: 10, day: 15, hour: 21))!
+        let saturday = cal.date(from: DateComponents(year: 2026, month: 10, day: 17, hour: 17))!
+        let late = cal.date(from: DateComponents(year: 2026, month: 10, day: 15, hour: 23, minute: 30))!
+        XCTAssertEqual(DecideModel.contextTime(thursdayNight, calendar: cal), .hour)
+        XCTAssertEqual(DecideModel.contextTime(saturday, calendar: cal), .long, "fin de semana: hay tiempo")
+        XCTAssertEqual(DecideModel.contextTime(late, calendar: cal), .short, "muy noche: algo corto")
     }
 }

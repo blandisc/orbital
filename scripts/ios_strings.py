@@ -19,6 +19,10 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Calificación mínima": "Minimum rating", "Cualquiera": "Any", "De dónde": "From where", "De todo lo sugerido": "From everything suggested",
+    "Desliza hasta arriba para más precisión: de qué lista, época y calificación": "Swipe all the way up for more precision: which list, era and rating",
+    "Elige y toca «Decide por mí»": "Choose and tap «Decide for me»", "Lo que sea": "Anything", "No encontré una con eso: prueba con otro filtro o más tiempo.": "I couldn't find one with that: try another filter or more time.",
+    "Una para ahora · desliza hacia arriba para elegir": "One for now · swipe up to choose", "Época": "Era", "Antes de los 90": "Before the 90s", "Barajar": "Shuffle",
     "Buscaste hace poco": "Recent searches", "Lo más popular de cada uno": "The most popular of each", "Lo que más se ve hoy en Stremio, películas y series": "What's most watched today on Stremio, movies and shows",
     "Con géneros elegidos, el ánimo no cuenta.": "With genres picked, the mood doesn't count.", "Géneros": "Genres", "Incluir lo que ya vi": "Include what I've watched",
     "Ir a una sección": "Go to a section", "Mejor calificadas en IMDb": "Top rated on IMDb", "Mejor calificadas en Trakt": "Top rated on Trakt",
@@ -307,7 +311,7 @@ TRANSLATIONS = {
     "Viendo en la TV": "Watching on TV",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
-IGNORE = {"Content-Type", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
+IGNORE = {"Content-Type", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
           "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max",
           "Icons/", "Avatars/", "Awards/", "AppIconPreview/day", "AppIconPreview/night", "AppIconNight"}  # el nombre de un ícono en el catálogo
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.
