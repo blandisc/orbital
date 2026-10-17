@@ -127,12 +127,12 @@ struct BrowseView: View {
     /// El arte de cada género: el fondo de su película más popular que no use ya otro género (un mismo título es drama y
     /// suspenso a la vez; sin esto, dos mosaicos salían con la misma imagen). Todos a la vez; la fila de imágenes hace el resto.
     private func loadGenreArt() async {
-        let cinemeta = env.services.cinemeta
+        let cinemeta = env.services.cinemeta, perGenre = Self.genreArtCandidates
         var candidates: [String: [String]] = [:]
         await withTaskGroup(of: (String, [String]).self) { group in
             for genre in CatalogModel.exploreGenres {
                 group.addTask {
-                    let ids = ((try? await cinemeta.catalog("movie", genre: genre)) ?? []).prefix(Self.genreArtCandidates).compactMap { $0["id"]?.string }
+                    let ids = ((try? await cinemeta.catalog("movie", genre: genre)) ?? []).prefix(perGenre).compactMap { $0["id"]?.string }
                     return (genre, ids)
                 }
             }
