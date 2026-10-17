@@ -42,6 +42,17 @@ struct SettingsView: View {
                 .pickerStyle(.segmented)
             }
             .listRowBackground(DS.surface)
+            Section {
+                Picker("Carrusel", selection: Binding(get: { s.homeDeck }, set: { v in model.update { $0.homeDeck = v } })) {
+                    Text("Coverflow").tag(DeckStyle.coverflow.rawValue); Text("Abanico").tag(DeckStyle.fan.rawValue)
+                }
+                Picker("Cuánto falta", selection: Binding(get: { s.homeTime }, set: { v in model.update { $0.homeTime = v } })) {
+                    Text("Píldora de vidrio").tag(TimeStyle.pill.rawValue); Text("El borde avanza").tag(TimeStyle.edge.rawValue)
+                    Text("Botón que se llena").tag(TimeStyle.fill.rawValue); Text("Arco orbital").tag(TimeStyle.arc.rawValue)
+                }
+                AvatarPicker(selection: Binding(get: { s.avatar }, set: { v in model.update { $0.avatar = v } }))
+            } header: { Text("Inicio") } footer: { Text("Cómo se acomodan las tarjetas de «Seguir viendo», cómo se dice cuánto te falta y tu avatar.") }
+            .listRowBackground(DS.surface)
             Section("Idioma") {
                 Picker("Idioma de la app y de las fichas", selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } })) {
                     Text("Español").tag("es"); Text("English").tag("en")

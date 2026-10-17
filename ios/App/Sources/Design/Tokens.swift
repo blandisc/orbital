@@ -169,6 +169,34 @@ enum DS {
         static func wordFont(_ size: CGFloat) -> Font { .system(size: size, weight: .bold, design: .rounded) }
     }
 
+    /// El carrusel de «Seguir viendo» en Inicio (`DeckCard`, `deckTransition`): tarjetas con lo que sigue a los lados, más
+    /// chicas, oscuras y desenfocadas; coverflow las gira en 3D y abanico las inclina desde abajo.
+    enum Deck {
+        /// Qué parte del ancho toma la tarjeta del frente (asoman las de los lados) y su alto.
+        static let sideMargin: CGFloat = 36, height: CGFloat = 430
+        static let radius: CGFloat = 28, spacing: CGFloat = 4
+        /// Lo que pierde una tarjeta a un lugar de distancia: tamaño, nitidez y luz.
+        static let sideShrink: CGFloat = 0.12, sideBlur: CGFloat = 5, sideDim: Double = 0.28
+        static let coverflowAngle: Double = 38, perspective: CGFloat = 0.6
+        static let fanAngle: Double = 9, fanDrop: CGFloat = 24
+        /// Donde empieza el velo (para que el texto se lea) y la sombra de la tarjeta.
+        static let veilStart: CGFloat = 0.38, shadow: CGFloat = 24, shadowY: CGFloat = 14
+        /// El indicador de tiempo: la barrita de la píldora, el trazo del borde y del arco, y el tamaño de la órbita.
+        static let pillBar: CGFloat = 56, edgeStroke: CGFloat = 3, arcStroke: CGFloat = 2.5, arcSize: CGFloat = 150, arcInset: CGFloat = 14
+        /// La parte de la órbita que se ve dentro de la tarjeta (un cuarto) y su giro.
+        static let arcQuarter: CGFloat = 0.25, arcQuarterDegrees: Double = 90
+        /// El ancho del botón que se llena (con el de la TV al lado).
+        static let fillWidth: CGFloat = 200
+        static let moonDot: CGFloat = 9
+        /// El botón que se llena: el tono del avance y lo tenue de los minutos.
+        static let fillOpacity: Double = 0.55, fillMinutesOpacity: Double = 0.7
+    }
+
+    /// Tu avatar: en Inicio (junto al saludo) y en Ajustes.
+    enum Avatar {
+        static let toolbar: CGFloat = 34, picker: CGFloat = 64, ring: CGFloat = 3
+    }
+
     /// El color de cada lista (su ícono en Inicio y Para ti): fijo, el mismo siempre, para encontrarla de un vistazo. Tonos de
     /// brillo parecido para que ninguno grite más que los demás.
     enum ListTint {

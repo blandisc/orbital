@@ -635,9 +635,11 @@ enum LogoTrim {
 }
 
 enum LogoTone {
-    private static var cache: [URL: Bool] = [:]
+    // En el hilo principal, como `LogoTrim`: varios logos a la vez (el carrusel de Inicio enseña tres) escribían el diccionario
+    // desde hilos distintos y la app se cerraba.
+    @MainActor private static var cache: [URL: Bool] = [:]
 
-    static func isDark(_ url: URL) async -> Bool {
+    @MainActor static func isDark(_ url: URL) async -> Bool {
         if let hit = cache[url] { return hit }
         guard let thumb = await ImagePipeline.shared.image(url, maxPixel: DS.Image.tintPixels),
               let tone = await Task.detached(priority: .utility, operation: { thumb.opaqueTone }).value else { return false }

@@ -40,6 +40,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var subtitleSize = "medium"         // «small» | «medium» | «large»: el tamaño de la letra de los subtítulos
     public var orbitalAddress = ""             // tu Orbital por el túnel («orbital.midominio.com»); el token va en el Keychain
     public var appearance = "system"           // «system» | «light» | «dark»: el modo de la app (por omisión, el del iPhone)
+    public var homeDeck = "coverflow"          // el carrusel de Inicio: «coverflow» | «fan» (abanico)
+    public var homeTime = "pill"               // cuánto falta en la tarjeta: «pill» | «edge» | «fill» | «arc»
+    public var avatar = "planet"               // tu avatar (Assets › Avatars)
 
     public init() {}
 
@@ -63,11 +66,15 @@ public struct AppSettings: Codable, Equatable, Sendable {
         subtitleSize = try c.decodeIfPresent(String.self, forKey: .subtitleSize) ?? subtitleSize
         orbitalAddress = try c.decodeIfPresent(String.self, forKey: .orbitalAddress) ?? orbitalAddress
         appearance = try c.decodeIfPresent(String.self, forKey: .appearance) ?? appearance
+        homeDeck = try c.decodeIfPresent(String.self, forKey: .homeDeck) ?? homeDeck
+        homeTime = try c.decodeIfPresent(String.self, forKey: .homeTime) ?? homeTime
+        avatar = try c.decodeIfPresent(String.self, forKey: .avatar) ?? avatar
     }
 
     enum Keys: String, CodingKey {
         case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
         case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
+        case homeDeck, homeTime, avatar
     }
     public var traktEnabled: Bool { !traktClientID.isEmpty }
 

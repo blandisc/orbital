@@ -56,6 +56,17 @@
         }
       }
     },
+    "%lld min": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min"
+          }
+        }
+      }
+    },
     "A · desliza para moverte": {
       "extractionState": "manual",
       "localizations": {
@@ -63,6 +74,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "A · swipe to move"
+          }
+        }
+      }
+    },
+    "Abanico": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fan"
           }
         }
       }
@@ -320,6 +342,17 @@
         }
       }
     },
+    "Arco orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbit arc"
+          }
+        }
+      }
+    },
     "Atrás": {
       "extractionState": "manual",
       "localizations": {
@@ -415,6 +448,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Delete when watched"
+          }
+        }
+      }
+    },
+    "Botón que se llena": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filling button"
           }
         }
       }
@@ -580,6 +624,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cancel"
+          }
+        }
+      }
+    },
+    "Carrusel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carousel"
           }
         }
       }
@@ -1002,6 +1057,17 @@
         }
       }
     },
+    "Coverflow": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coverflow"
+          }
+        }
+      }
+    },
     "Crea una aplicación en developer.trakt.tv y pega aquí su Client ID (las nuevas ya no dan secreto).": {
       "extractionState": "manual",
       "localizations": {
@@ -1046,6 +1112,17 @@
         }
       }
     },
+    "Cuánto falta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time left"
+          }
+        }
+      }
+    },
     "Cómo pedírselo": {
       "extractionState": "manual",
       "localizations": {
@@ -1053,6 +1130,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "How to ask"
+          }
+        }
+      }
+    },
+    "Cómo se acomodan las tarjetas de «Seguir viendo», cómo se dice cuánto te falta y tu avatar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How the “Continue watching” cards are laid out, how the time left is shown, and your avatar."
           }
         }
       }
@@ -1416,6 +1504,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The downloaded file is incomplete or isn't the video"
+          }
+        }
+      }
+    },
+    "El borde avanza": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progress border"
           }
         }
       }
@@ -3400,6 +3499,28 @@
         }
       }
     },
+    "Píldora de vidrio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glass pill"
+          }
+        }
+      }
+    },
+    "Quedan %@ min": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ min left"
+          }
+        }
+      }
+    },
     "Quitar": {
       "extractionState": "manual",
       "localizations": {
@@ -4694,6 +4815,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Already downloaded. You'll find it in Downloads."
+          }
+        }
+      }
+    },
+    "min": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "min"
           }
         }
       }

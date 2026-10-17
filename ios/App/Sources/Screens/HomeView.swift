@@ -11,6 +11,8 @@ struct HomeView: View {
     @State private var pendingCount = 0
     @State private var openTitle: TitleRoute?
     @State private var heroID: String?
+    /// Los ajustes de cómo se ve Inicio (carrusel, tiempo, avatar): se leen al aparecer (al volver de Ajustes, ya cambiados).
+    @State private var look = AppSettings()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init() {
@@ -72,11 +74,21 @@ struct HomeView: View {
         .navigationTitle(greeting).toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .subtitle(syncText)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) { NavigationLink(value: SettingsRoute()) { Image(systemName: "person.crop.circle") }.accessibilityLabel(Text("Ajustes")) }
+            ToolbarItem(placement: .topBarTrailing) { NavigationLink(value: SettingsRoute()) { AvatarImage(id: look.avatar) }.accessibilityLabel(Text("Ajustes")) }
         }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
+        .onAppear {
+            look = env.services.appSettings
+            #if DEBUG
+            if Demo.isOn {   // `-demo-deck fan`, `-demo-time arc`, `-demo-avatar comet`: para ver cada estilo en las capturas
+                if let v = Demo.value(after: "-demo-deck") { look.homeDeck = v }
+                if let v = Demo.value(after: "-demo-time") { look.homeTime = v }
+                if let v = Demo.value(after: "-demo-avatar") { look.avatar = v }
+            }
+            #endif
+        }
         .task { await reload() }
         .refreshable { await reload() }
         .onChange(of: env.watchedSomething) { Task { await reload() } }
@@ -117,18 +129,25 @@ struct HomeView: View {
         return items.first { $0.id == heroID } ?? items.first
     }
 
-    /// «Seguir viendo»: un carrusel de destacados a sangre que se detiene en cada uno, con sus puntos; el fondo de la
-    /// pantalla toma el color del que está al frente.
+    /// «Seguir viendo»: tarjetas en carrusel (`DeckCard`) con las que siguen a los lados, más chicas y desenfocadas, en
+    /// coverflow o abanico (Ajustes › Inicio); el fondo de la pantalla toma el color del que está al frente.
     private func heroCarousel(_ model: HomeModel) -> some View {
         let items = Array(model.continueWatching.prefix(Self.heroCount))
+        let deck = DeckStyle(rawValue: look.homeDeck) ?? .coverflow
         return VStack(spacing: DS.Space.s3) {
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 0) {
-                    ForEach(items) { item in hero(item).containerRelativeFrame(.horizontal) }
+                LazyHStack(spacing: DS.Deck.spacing) {
+                    ForEach(items) { item in
+                        hero(item)
+                            .containerRelativeFrame(.horizontal) { width, _ in width - 2 * DS.Deck.sideMargin }
+                            .deckTransition(deck, reduceMotion: reduceMotion)
+                    }
                 }
                 .scrollTargetLayout()
             }
-            .scrollTargetBehavior(.paging)
+            .contentMargins(.horizontal, DS.Deck.sideMargin, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+            .scrollClipDisabled()
             .scrollPosition(id: $heroID)
             PageDots(count: items.count, index: items.firstIndex { $0.id == (heroID ?? items.first?.id) } ?? 0)
         }
@@ -139,20 +158,28 @@ struct HomeView: View {
     private func hero(_ item: HomeItem) -> some View {
         // La tarjeta abre la ficha con su propio toque; «Continuar» va aparte (un botón dentro de un NavigationLink puede
         // abrir la ficha en vez de reproducir).
-        HeroCard(title: item.title, background: item.background ?? item.poster, logo: Artwork.logoURL(metaID: item.metaID),
+        DeckCard(title: item.title, background: item.background ?? item.poster, logo: Artwork.logoURL(metaID: item.metaID),
                  eyebrow: item.nextUp ? Text("Sigue") : Text("Seguir viendo"), data: heroData(item), progress: item.progress,
+                 minutesLeft: item.leftMinutes, timeStyle: TimeStyle(rawValue: look.homeTime) ?? .pill,
                  open: { openTitle = route(item) }) {
-            HeroActions {
-                continueButton(item)
-                if env.services.orbital.isConfigured {
-                    DSIconButton(symbol: "tv", label: "Ver en la TV") {
-                        Task { await env.playOnTV(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title) }
-                    }
-                }
+            if look.homeTime == TimeStyle.fill.rawValue {
+                // El botón que se llena tiene ancho fijo: siempre cabe en un renglón con el de la TV.
+                HStack(spacing: DS.Space.s3) { heroButtons(item) }
+            } else {
+                HeroActions { heroButtons(item) }   // con letra grande, uno debajo del otro
             }
         }
         .contentShape(Rectangle())
         .onTapGesture { openTitle = route(item) }
+    }
+
+    @ViewBuilder private func heroButtons(_ item: HomeItem) -> some View {
+        continueButton(item)
+        if env.services.orbital.isConfigured {
+            DSIconButton(symbol: "tv", label: "Ver en la TV") {
+                Task { await env.playOnTV(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title) }
+            }
+        }
     }
 
     /// «T2 · E5 · quedan 20 min · termina a las 23:21».
@@ -160,10 +187,8 @@ struct HomeView: View {
         let language = env.services.appSettings.uiLanguage
         var parts: [String] = []
         if let episode = item.episode { parts.append(Strings.episode(season: item.season, episode: episode, language: language)) }
-        if item.leftMinutes > 0 {
-            parts.append(Strings.timeLeft(minutes: item.leftMinutes, language: language))
-            parts.append(Strings.endsAt(minutesLeft: item.leftMinutes, now: env.services.now(), language: language))
-        }
+        // «quedan N min» lo dice el indicador de la tarjeta (píldora, borde, botón u órbita); aquí, a qué hora terminas.
+        if item.leftMinutes > 0 { parts.append(Strings.endsAt(minutesLeft: item.leftMinutes, now: env.services.now(), language: language)) }
         return parts
     }
 
@@ -183,12 +208,20 @@ struct HomeView: View {
 
     private func continueButton(_ item: HomeItem) -> some View {
         // Como la TV: «Continuar» si ibas a medias; si toca el siguiente episodio, «Ver T3 E6». Con el color de su propio arte.
-        WithArtColors(url: item.background ?? item.poster) { colors in
-            Button { Task { await env.play(item) } } label: {
-                Label { item.nextUp && item.episode != nil ? Text("Ver \(Strings.episode(season: item.season, episode: item.episode ?? 0, language: env.services.appSettings.uiLanguage))") : Text("Continuar") } icon: { Image(systemName: "play.fill") }
-                    .lineLimit(1)
+        let text = item.nextUp && item.episode != nil ? Text("Ver \(Strings.episode(season: item.season, episode: item.episode ?? 0, language: env.services.appSettings.uiLanguage))") : Text("Continuar")
+        return Group {
+            if look.homeTime == TimeStyle.fill.rawValue, let progress = item.progress {
+                // Estilo «botón»: «Continuar» se llena con lo que llevas y dice cuánto falta.
+                Button { Task { await env.play(item) } } label: { ProgressFillLabel(text: text, minutes: item.leftMinutes, fraction: progress) }
+                    .buttonStyle(.plain)
+            } else {
+                WithArtColors(url: item.background ?? item.poster) { colors in
+                    Button { Task { await env.play(item) } } label: {
+                        Label { text } icon: { Image(systemName: "play.fill") }.lineLimit(1)
+                    }
+                    .dsArtButton(colors)
+                }
             }
-            .dsArtButton(colors)
         }
     }
 }

@@ -205,6 +205,18 @@ TRANSLATIONS = {
     "Toca «En la TV», estira la hoja hacia arriba y toca el micrófono. Habla con calma: cuando terminas, se detiene solo y te contesta en voz alta.": "Tap “On TV”, pull the sheet up and tap the microphone. Speak calmly: when you finish it stops on its own and answers out loud.",
     "Voz": "Voice",
     "«%@» no tiene ficha de IMDb: Trakt no lo puede registrar.": "“%@” has no IMDb page: Trakt can’t record it.",
+    "Carrusel": "Carousel",
+    "Coverflow": "Coverflow",
+    "Abanico": "Fan",
+    "Cuánto falta": "Time left",
+    "Píldora de vidrio": "Glass pill",
+    "El borde avanza": "Progress border",
+    "Botón que se llena": "Filling button",
+    "Arco orbital": "Orbit arc",
+    "Cómo se acomodan las tarjetas de «Seguir viendo», cómo se dice cuánto te falta y tu avatar.": "How the “Continue watching” cards are laid out, how the time left is shown, and your avatar.",
+    "%lld min": "%lld min",
+    "Quedan %@ min": "%@ min left",
+    "min": "min",
     "Ponerla en la TV": "Play it on the TV", "Poniendo %@.": "Playing %@.", "Abriendo %@ en la TV.": "Opening %@ on the TV.",
     "Sigue aquí.": "Continuing here.", "Abre Orbital y toca «Seguir aquí».": "Open Orbital and tap “Continue here”.",
     "Entendí: «%@»": "I heard: “%@”", "«Pon The Office», «pausa», «descárgalo»": "“Play The Office”, “pause”, “download it”",
@@ -218,7 +230,7 @@ TRANSLATIONS = {
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"Content-Type", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
           "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max",
-          "Icons/"}  # el nombre de un ícono en el catálogo
+          "Icons/", "Avatars/"}  # el nombre de un ícono en el catálogo
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.
 CODE_KEYS = {k for k in TRANSLATIONS}
 
