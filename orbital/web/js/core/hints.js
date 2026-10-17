@@ -115,3 +115,17 @@ export function tvHints(glyphs, target, { empty = false, categories = 1, atStart
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
   return list;
 }
+
+/**
+ * La leyenda del pie como {acción: texto} (select «Ver», back «Atrás», page «De 5 en 5», section «Sección»…), para que el
+ * control del iPhone rotule sus botones igual que la tele. Una tecla que no sale en el pie no está (ahí no hace nada).
+ */
+export function legendOf(list, glyphs) {
+  const byGlyph = new Map(Object.entries(glyphs || {}).map(([action, glyph]) => [glyph, action]));
+  const legend = {};
+  for (const entry of list || []) {
+    const action = byGlyph.get(entry?.glyph);
+    if (action && entry.label && !(action in legend)) legend[action] = entry.label;
+  }
+  return legend;
+}
