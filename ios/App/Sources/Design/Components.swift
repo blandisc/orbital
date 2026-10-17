@@ -111,7 +111,7 @@ struct DSSectionHead: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: DS.Space.s2) {
-            if let logo { DSPlatformLogo(url: logo) } else if let icon { ListIcon(icon: icon).foregroundStyle(DS.textMuted) }
+            if let logo { DSPlatformLogo(url: logo) } else if let icon { ListIcon(icon: icon) }
             Text(title).recipe(.section)
             Spacer()
             if let trailing {

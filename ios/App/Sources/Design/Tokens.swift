@@ -169,6 +169,23 @@ enum DS {
         static func wordFont(_ size: CGFloat) -> Font { .system(size: size, weight: .bold, design: .rounded) }
     }
 
+    /// El color de cada lista (su ícono en Inicio y Para ti): fijo, el mismo siempre, para encontrarla de un vistazo. Tonos de
+    /// brillo parecido para que ninguno grite más que los demás.
+    enum ListTint {
+        static let watching = Color(red: 1, green: 0.71, blue: 0.28)        // ámbar
+        static let library = Color(red: 0.35, green: 0.78, blue: 0.98)      // azul cielo
+        static let bookmark = Color(red: 1, green: 0.44, blue: 0.68)        // rosa
+        static let spark = Color(red: 0.71, green: 0.55, blue: 1)           // violeta
+        static let calendar = Color(red: 0.18, green: 0.77, blue: 0.65)     // verde agua
+        static let series = Color(red: 0.48, green: 0.64, blue: 1)          // azul
+        static let trend = Color(red: 1, green: 0.48, blue: 0.35)           // coral
+        static let flame = Color(red: 1, green: 0.62, blue: 0.04)           // naranja
+        static let list = Color(red: 0.62, green: 0.82, blue: 0.42)         // verde
+        static let addon = Color(red: 0.79, green: 0.63, blue: 1)           // lila
+        static let chart = Color(red: 1, green: 0.37, blue: 0.49)           // frambuesa
+        static let trophy = Color(red: 1, green: 0.82, blue: 0.4)           // oro
+    }
+
     /// El control completo de la TV (`TouchPad`, `RemoteKey`).
     enum Remote {
         /// Alto del pad táctil y de cada tecla.
@@ -193,7 +210,9 @@ enum DS {
         /// La letra de «orbital» en la marca grande (la bienvenida) y el planeta solo, junto a un título o en el widget.
         static let wordmark: CGFloat = 40, markSmall: CGFloat = 22
         /// Un ícono de lista junto al título de su estante (`ListIcon`).
-        static let listIcon: CGFloat = 22
+        static let listIcon: CGFloat = 20
+        /// El azulejo de color detrás del ícono de una lista, y cuánto se tiñe.
+        static let listTile: CGFloat = 32, listTileOpacity: Double = 0.16
         static let platformLogo = CGFloat(DesignTokens.Size.platformLogo)
         static let rankNumber = CGFloat(DesignTokens.Size.rankNumber)
         /// La cifra de un Top 10: enorme y pesada; no crece con Dynamic Type (es un adorno, el puesto ya se dice en la etiqueta).

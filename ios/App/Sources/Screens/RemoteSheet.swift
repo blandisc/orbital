@@ -34,9 +34,12 @@ struct RemoteSheet: View {
         }
         .scrollDisabled(!large)
         .scrollBounceBehavior(.basedOnSize)
-        .presentationDetents([.height(compactHeight), .large], selection: Binding(
-            get: { large ? .large : .height(compactHeight) },
+        // Sin nada en la TV la hoja corta no tiene qué enseñar (quedaba «Tu Orbital» y un hueco, y bajarla se atoraba ahí):
+        // solo la altura completa, y bajarla la cierra.
+        .presentationDetents(model.now == nil ? [.large] : [.height(compactHeight), .large], selection: Binding(
+            get: { large || model.now == nil ? .large : .height(compactHeight) },
             set: { large = $0 == .large }))
+        .onChange(of: model.now == nil) { _, idle in if idle { large = true } }
         .presentationDragIndicator(.visible)
         .presentationBackgroundInteraction(.disabled)
         // Vidrio también estirada: iOS la vuelve opaca en la altura completa; el control se queda transparente, como corto.

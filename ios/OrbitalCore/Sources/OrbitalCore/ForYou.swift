@@ -394,8 +394,19 @@ public actor ForYou {
             for await (i, b) in group { out[i] = b }
             return out
         }
-        return Self.interleave(batches, limit: Self.mosaicSize)
+        let mosaic = Self.interleave(batches, limit: Self.mosaicSize)
+        if !mosaic.isEmpty { kv.set(Self.mosaicKey, data: try? JSONEncoder().encode(mosaic.map(SavedSuggestion.init))) }
+        return mosaic
     }
+
+    /// El último mosaico, guardado en el teléfono: al abrir la app se pinta al instante mientras llega el nuevo (sin red,
+    /// se queda ese). Sin lo que marcaste «No me interesa» desde entonces.
+    public func cachedMosaic() -> [Suggestion] {
+        guard let data = kv.data(Self.mosaicKey), let saved = try? JSONDecoder().decode([SavedSuggestion].self, from: data) else { return [] }
+        return saved.map(\.suggestion).filter { !dismissed.contains($0.imdb) }
+    }
+
+    static let mosaicKey = "foryou-mosaic"
 
     /// Una de cada fuente por turno (así el mosaico no es solo recomendaciones), sin repetir.
     public static func interleave(_ batches: [[Suggestion]], limit: Int) -> [Suggestion] {
@@ -413,3 +424,48 @@ public actor ForYou {
         return Set(((try? await remember("trakt:watchlist", ttl: Self.mineTTL) { try await trakt.watchlist() }) ?? []).map(\.imdb))
     }
 }
+
+/// Una sugerencia tal como se guarda en el teléfono (`Suggestion` lleva una tupla y un motivo con datos).
+struct SavedSuggestion: Codable {
+    var kind, imdb, title, overview, poster, wide: String
+    var year, runtime, rank, movement, nextSeason, nextEpisode: Int?
+    var logo: String?
+    var reason: String
+    var reasonText: String?
+    var isNew: Bool
+
+    init(_ s: Suggestion) {
+        kind = s.kind; imdb = s.imdb; title = s.title; overview = s.overview; poster = s.poster; wide = s.wide
+        year = s.year; runtime = s.runtime; rank = s.rank; movement = s.movement; logo = s.logo; isNew = s.isNew
+        nextSeason = s.next?.season; nextEpisode = s.next?.episode
+        switch s.reason {
+        case .recommended: reason = "recommended"
+        case .watching: reason = "watching"
+        case .inWatchlist: reason = "inWatchlist"
+        case .inList(let name): reason = "inList"; reasonText = name
+        case .trending: reason = "trending"
+        case .popular: reason = "popular"
+        case .onPlatform(let name): reason = "onPlatform"; reasonText = name
+        case .console(let text): reason = "console"; reasonText = text
+        }
+    }
+
+    var suggestion: Suggestion {
+        let why: SuggestionReason = switch reason {
+        case "watching": .watching
+        case "inWatchlist": .inWatchlist
+        case "inList": .inList(reasonText ?? "")
+        case "trending": .trending
+        case "popular": .popular
+        case "onPlatform": .onPlatform(reasonText ?? "")
+        case "console": .console(reasonText ?? "")
+        default: .recommended
+        }
+        var s = Suggestion(kind: kind, imdb: imdb, title: title, year: year, runtime: runtime, overview: overview, poster: poster, wide: wide,
+                           logo: logo, reason: why)
+        if let nextSeason, let nextEpisode { s.next = (nextSeason, nextEpisode) }
+        s.rank = rank; s.movement = movement; s.isNew = isNew
+        return s
+    }
+}
+

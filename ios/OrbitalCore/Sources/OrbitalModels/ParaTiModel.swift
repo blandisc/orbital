@@ -164,8 +164,15 @@ public final class ParaTiModel: ObservableModel {
         async let keys = forYou.watchlistKeys()
         async let newAirings = try? forYou.calendar()
         async let newMosaic = forYou.mosaic()
-        // El mosaico es lo primero que se ve: en cuanto llega se pinta.
-        mosaic = await newMosaic
+        // Al abrir la app, el de la última vez (guardado en el teléfono): el mosaico aparece al instante. El nuevo no lo
+        // reemplaza en ese momento (lo movería bajo tu dedo): queda guardado para la próxima vez; «Actualizar» lo trae ya.
+        var showedSaved = false
+        if mosaic.isEmpty {
+            let saved = await forYou.cachedMosaic()
+            if !saved.isEmpty { mosaic = saved; showedSaved = true }
+        }
+        let fresh = await newMosaic
+        if !showedSaved, !fresh.isEmpty || mosaic.isEmpty { mosaic = fresh }
         // Sin Trakt ni TMDB el mosaico no quedaría vacío: lo más popular de Stremio (Cinemeta no pide claves).
         isGeneric = mosaic.isEmpty
         if isGeneric { mosaic = await popular() }

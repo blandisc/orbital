@@ -371,16 +371,27 @@ public actor Trakt {
             if let show = TraktParsing.entry(row["show"], kind: "series"), show.traktID != nil, seen.insert(show.imdb).inserted { shows.append(show) }
             if shows.count >= limit { break }
         }
-        var found: [TraktEntry] = []
-        for var show in shows {
-            do {
-                let progress = try await get("/shows/\(show.traktID!)/progress/watched", [("hidden", "false"), ("specials", "false")])
-                if let next = progress?["next_episode"], let s = next["season"]?.intValue, let n = next["number"]?.intValue { show.next = (s, n); found.append(show) }
-            } catch let error as TraktError {
-                if case .auth = error { throw error }  // una serie que falla no tumba las demás
+        // El avance de cada serie, todas a la vez (una tras otra eran ~12 viajes seguidos: el mosaico esperaba segundos).
+        let results = try await withThrowingTaskGroup(of: (Int, TraktEntry?).self) { group in
+            for (i, show) in shows.enumerated() {
+                group.addTask {
+                    do {
+                        let progress = try await self.get("/shows/\(show.traktID!)/progress/watched", [("hidden", "false"), ("specials", "false")])
+                        guard let next = progress?["next_episode"], let s = next["season"]?.intValue, let n = next["number"]?.intValue else { return (i, nil) }
+                        var found = show
+                        found.next = (s, n)
+                        return (i, found)
+                    } catch let error as TraktError {
+                        if case .auth = error { throw error }  // una serie que falla no tumba las demás
+                        return (i, nil)
+                    }
+                }
             }
+            var out = [TraktEntry?](repeating: nil, count: shows.count)
+            for try await (i, entry) in group { out[i] = entry }
+            return out
         }
-        return found
+        return results.compactMap { $0 }
     }
 
     // MARK: escritura

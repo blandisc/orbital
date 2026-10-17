@@ -38,6 +38,26 @@ final class ForYouTests: XCTestCase {
         XCTAssertTrue(items[0].poster.contains("images.metahub.space/poster/medium/"))
     }
 
+    /// El mosaico se guarda en el teléfono para pintarse al instante la próxima vez (sin lo que marcaste «No me interesa»).
+    func testTheMosaicIsSavedForAnInstantNextLaunch() async {
+        let http = FakeHTTP(); stubTrakt(http)
+        let forYou = makeForYou(http)
+        let fresh = await forYou.mosaic()
+        let cached = await forYou.cachedMosaic()
+        XCTAssertEqual(cached, fresh, "vuelve igual: motivo, póster, episodio que sigue")
+        await forYou.dismiss(fresh[0].imdb)
+        let after = await forYou.cachedMosaic()
+        XCTAssertFalse(after.contains { $0.imdb == fresh[0].imdb })
+    }
+
+    func testASavedSuggestionKeepsEverything() {
+        var s = Suggestion(kind: "series", imdb: "tt1", title: "Uno", year: 2024, poster: "p", wide: "w", logo: "l", reason: .inList("Terror"), next: (2, 5), rank: 3)
+        s.movement = -1; s.isNew = true
+        let back = SavedSuggestion(s).suggestion
+        XCTAssertEqual(back, s)
+        XCTAssertEqual(back.rank, 3); XCTAssertEqual(back.movement, -1); XCTAssertTrue(back.isNew); XCTAssertEqual(back.logo, "l")
+    }
+
     func testListsShowMineBeforeDiscover() async {
         let http = FakeHTTP(); stubTrakt(http)
         http.json["https://api.themoviedb.org/3/watch/providers/movie?watch_region=MX&api_key=K&language=es-MX"] = ["results": [["provider_id": 8, "provider_name": "Netflix", "logo_path": "/n.jpg"]]]
