@@ -49,6 +49,10 @@ FLAGS = [
     # «Permitir» guardado (allow_microphone), así que el aviso salía en cada sesión y con el mando no hay cómo
     # contestarlo. Esta ventana solo abre la página de Orbital; tu Edge normal no cambia.
     "--use-fake-ui-for-media-stream",
+    # Menos memoria de video para pintar la interfaz (en la Legion Go sale de la RAM): el presupuesto de mosaicos de la GPU
+    # y la caché de imágenes ya decodificadas. Medido en esta Legion Go (ver docs y el commit): sin cambio visible.
+    "--force-gpu-mem-available-mb=512",
+    "--force-gpu-mem-discardable-limit-mb=128",
     "--disable-extensions",
     "--disable-background-networking",
     "--disable-sync",
