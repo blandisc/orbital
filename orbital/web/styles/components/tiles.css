@@ -57,6 +57,9 @@
 /* --- Renglón: miniatura ancha y, al lado, el nombre grande y su dato (siempre a la vista) ---- */
 .tile--row {
   display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-5);
+  /* Un solo renglón del alto del tile: la miniatura (height: 100%) se mide contra él. Sin esto tomaba su tope de 8rem,
+     se salía por arriba y por abajo y el último renglón de «También tenías» quedaba cortado. */
+  grid-template-rows: minmax(0, 1fr);
   min-height: 0; padding: var(--space-3); background: var(--color-fill);
 }
 .tile--row.tile--focused { background: var(--color-fill-hover); transform: none; }
