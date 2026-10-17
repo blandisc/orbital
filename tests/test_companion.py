@@ -411,3 +411,12 @@ def test_the_inbox_survives_a_restart(tmp_path):
     assert [i["id"] for i in again.inbox()] == [kept["id"]]
     again.inbox_ack([kept["id"]])
     assert State(path).inbox() == []
+
+
+def test_keep_watching_on_the_iphone_carries_the_exact_second():
+    """«Seguir en el iPhone»: el mismo pendiente que «Enviar» (el iPhone de hoy ya lo entiende) más `position`."""
+    from orbital.state import State
+    watch = FakeWatch(State(), OFFICE)
+    item = companion.send_to_phone(watch, config(), "open", "series", "tt", "tt:2:5", connected=lambda c: True, position=845.37)
+    assert item["action"] == "open" and item["position"] == 845.4
+    assert "position" not in _send(watch, "open", video_id="tt:1:1")  # «Enviar» sigue igual: desde donde ibas

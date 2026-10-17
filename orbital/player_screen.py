@@ -212,10 +212,12 @@ class PlayerScreen:
         sources = self._safe(self.sources_provider, meta) if self.sources_provider and self.current else None
         if still_wanted() and self.current is not None:  # mientras buscaba pulsaste otra cosa: no aparece de golpe
             # «Enviar al iPhone» solo con iPhone conectado y con una película o serie (no con la TV en vivo).
-            iphone = bool(self.on_send_iphone and self.iphone_provider and meta.get("meta_id") and not meta.get("live") and not meta.get("synthetic")
+            iphone = bool(self.on_send_iphone and self.iphone_provider and meta.get("meta_id") and not meta.get("live")
                           and self._safe(self.iphone_provider))
-            self._open_panel(player_ui.more_panel(episodes=episodes or None, sources=sources or None,
-                                                  back_to=getattr(self, "_restart_from", None), iphone=iphone))
+            channel = bool(meta.get("synthetic"))
+            self._open_panel(player_ui.more_panel(episodes=None if channel else episodes or None,
+                                                  sources=None if channel else sources or None,
+                                                  back_to=getattr(self, "_restart_from", None), iphone=iphone, channel=channel))
 
     def _open_more_soon(self) -> None:
         """Y: las fuentes se buscan por internet (hasta segundos). Se buscan aparte: el mando (el mismo
@@ -296,6 +298,8 @@ class PlayerScreen:
         elif prop == "iphone":
             if self.on_send_iphone and meta.get("meta_id"):
                 self._in_background(self._send_iphone, meta, value, failed="No pude mandarlo al iPhone")
+        elif prop == "detach":
+            self.detach_channel()
         elif prop == "resume-at":
             self._restart_from = None
             self.mpv.command("seek", float(value), "absolute")
@@ -322,10 +326,39 @@ class PlayerScreen:
                     self._safe(self.on_language, meta, "audio" if prop == "aid" else "subtitles", lang)
 
     def _send_iphone(self, meta: dict, action: str) -> None:
+        position = self.mpv.get("time-pos")
         try:
-            self.toast(self.on_send_iphone(meta, action) or "Listo", 5)
+            said = self.on_send_iphone(meta, action, position if isinstance(position, (int, float)) else None)
         except ValueError as exc:  # sin iPhone o sin internet: en palabras, nunca un error crudo
             self.toast(str(exc), 4)
+            return
+        self.toast(said or "Listo", 5)
+        if action == "continue":  # sigue allá: la TV regresa a Orbital (lo visto se guarda al cerrar)
+            time.sleep(1.5)
+            self.stop()
+
+    def detach_channel(self) -> None:
+        """Y › «Seguir solo este capítulo»: el episodio del canal se vuelve un episodio normal ahí mismo, sin recargar
+        (pausa, adelantar, «Donde te quedaste» y el siguiente de verdad, con la misma fuente y doblaje)."""
+        segment, current = self.segment, self.current
+        if segment is None or current is None or not segment.meta.get("synthetic"):
+            return
+        meta = {k: v for k, v in segment.meta.items() if k not in ("synthetic", "channel_id", "cycle", "place", "skips")}
+        tried = meta.get("tried") or []
+        label = next((part for part in str(meta.get("detail") or "").split(" · ") if part.startswith("T") and " E" in part), "")
+        title = " · ".join(p for p in (meta.get("series") or current.title, label) if p)  # «Los Simpson · T7 E17»
+        meta.update(kind="series", title=title, source=tried[-1] if tried else None)
+        with self._swap:
+            segment.meta = meta
+            current.meta, current.title = meta, title
+        self.mpv.command("set_property", "force-media-title", title)
+        running = getattr(self, "on_detached", None)
+        if running:
+            self._safe(running, meta)
+        self.menu = None
+        self._overlay(2, None)
+        self.toast(f"Sigues en {meta.get('detail') or title} · fuera del canal", 4)
+        self.show_hud()
 
     def _fetch_subs(self, lang: str) -> None:
         try:

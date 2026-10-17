@@ -83,7 +83,7 @@ def fake_catalog(found: dict[str, list[streams.Source]], infos: dict | None = No
     watch = SimpleNamespace(
         cinemeta=SimpleNamespace(meta=lambda kind, meta_id: (infos or {}).get(meta_id) or info()),
         stream_sources=lambda kind, video_id, prefs: list(found.get(video_id, [])),
-        stream_prefs=streams.Preferences(audio="en", quality="1080p"), player=pl)
+        stream_prefs=streams.Preferences(audio="en", quality="1080p"), player=pl, _wire_player=lambda: None)
     sessions = SimpleNamespace(before_launch=None, pin=lambda: None, unpin=lambda p: None,
                                to_front=lambda *a, **k: False, revealing=False)
     launcher = SimpleNamespace(run=None, track=lambda *a, **k: None)
@@ -297,3 +297,38 @@ def test_el_iphone_ve_el_logo_del_canal_y_la_imagen_del_episodio():
     assert now["logo"] == "/api/tv/logo?id=orbital%3Asimpsons" and now["poster"].endswith("x.jpg") and now["meta_id"] == "tt0096697"
     p.segment = player.Segment({"channel_id": "ADN40.mx@SD", "title": "ADN 40"}, "ADN 40", "u", live=True)
     assert p.now_playing()["logo"] == "/api/tv/logo?id=ADN40.mx%40SD"
+
+
+def test_seguir_solo_este_capitulo_y_seguir_en_el_iphone():
+    """Y en un canal: «Seguir solo este capítulo» lo vuelve un episodio normal sin recargar (guarda avance, siguiente de
+    verdad, misma fuente); «Seguir en el iPhone» manda el mismo minuto y la TV regresa a Orbital."""
+    from tests.test_player import make_player
+
+    p, mpv = make_player()
+    meta = {"synthetic": True, "kind": "channel", "channel_id": "orbital:simpsons", "title": "Los Simpson 24/7",
+            "series": "Los Simpson", "detail": "T7 E17 · Homero Smithers", "meta_id": "tt0096697",
+            "video_id": "tt0096697:7:17", "tried": [4], "binge": "lat|1080p", "cycle": 3, "place": 9}
+    p.current = player.Playback("Los Simpson 24/7", None, 0, meta)
+    p.segment = player.Segment(meta, "Los Simpson 24/7", "u")
+    p.iphone_provider, sent = (lambda: True), []
+    p.on_send_iphone = lambda m, action, position=None: sent.append((m["video_id"], action, position)) or "ok"
+    p.open_more()
+    assert [o["label"] for c in p.menu.columns for o in c.options] == ["Seguir solo este capítulo", "Seguir en el iPhone"]
+    p.detach_channel()
+    now = p.segment.meta
+    assert "synthetic" not in now and now["kind"] == "series" and now["title"] == "Los Simpson · T7 E17"
+    assert now["source"] == 4 and now["binge"] == "lat|1080p" and "cycle" not in now
+    saved = []
+    p.on_progress = lambda *a: saved.append(a)
+    p.segment.duration, p.segment.watched = 1300.0, 120.0
+    p._save_progress(p.segment)
+    for _ in range(50):
+        if saved:
+            break
+        time.sleep(.02)
+    assert saved  # ya cuenta como episodio tuyo («Donde te quedaste»)
+    stopped = []
+    p.stop = lambda: stopped.append(True)
+    mpv.props["time-pos"] = 845.0
+    p._send_iphone(now, "continue")
+    assert sent == [("tt0096697:7:17", "continue", 845.0)] and stopped == [True]

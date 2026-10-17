@@ -314,7 +314,8 @@ class SyntheticTV:
                 "detail": detail, "dub": channel.dub, "description": episode.get("overview") or "",
                 "poster": episode.get("poster"), "still": episode.get("thumbnail"), "cycle": cycle, "place": place,
                 "tried": tried,
-                "source_label": "Latino" if channel.dub == "latino" else "",
+                "source_label": "Latino" if channel.dub == "latino" else "", "binge": source.binge,
+                "source_key": source.key,
                 "skips": skips}  # episodios seguidos que no abrieron: con MAX_SKIPS se rinde
 
     def _pick(self, channel: SyntheticChannel, cycle: int, place: int, skip: set[int] | None = None,
@@ -362,6 +363,7 @@ class SyntheticTV:
         meta = self._meta(channel, episode, picked_cycle, picked_place, source, [source.index])
         if sessions.before_launch and not keep:
             sessions.before_launch("media:player")
+        watch._wire_player()  # lo de siempre (siguiente episodio, fuentes, iPhone…), para «Seguir solo este capítulo»
         self.wire(watch.player)
         pinned = sessions.pin()
         try:
@@ -378,10 +380,17 @@ class SyntheticTV:
         return {"ok": True, "reveal": sessions.revealing}
 
     def wire(self, p) -> None:
+        p.on_detached = self.detached
         p.on_synthetic_end = self.ended
         p.on_synthetic_failed = self.failed
         p.on_synthetic_resync = self.resync
         p.on_synthetic_duration = self.learned
+
+    def detached(self, meta: dict) -> None:
+        """«Seguir solo este capítulo»: la barra de arriba de Orbital dice el episodio, no el canal."""
+        running = getattr(self.catalog.launcher, "current", None)
+        if running is not None and getattr(running, "item_id", "") == "media:player":
+            running.title = meta.get("title") or running.title
 
     def learned(self, meta: dict, seconds: float) -> None:
         """Lo que dura de verdad el episodio que se está viendo: la programación lo usa desde ya."""

@@ -474,9 +474,16 @@ class Watch:
         p.on_language = self._remember_language
         p.sub_scale = float(self.setting("sub_scale", 1.0) or 1.0)
 
-    def _send_to_phone(self, meta: dict, action: str) -> str:
-        """Y › «Enviar al iPhone» / «Descargar en el iPhone» con lo que se está viendo (el episodio en curso)."""
-        companion.send_to_phone(self, self.config, action, meta.get("kind") or "movie", meta.get("meta_id") or "", meta.get("video_id"))
+    def _send_to_phone(self, meta: dict, action: str, position: float | None = None) -> str:
+        """Y › «Seguir en el iPhone» (el mismo minuto) / «Enviar al iPhone» / «Descargar en el iPhone» con lo que se está
+        viendo (el episodio en curso; el de un canal de Orbital, como episodio de su serie)."""
+        kind = "series" if meta.get("synthetic") or meta.get("kind") == "channel" else meta.get("kind") or "movie"
+        sent = companion.send_to_phone(self, self.config, "open" if action == "continue" else action, kind,
+                                       meta.get("meta_id") or "", meta.get("video_id"),
+                                       position=position if action == "continue" else None)
+        if action == "continue":
+            minute = int((position or 0) // 60)
+            return f"Abriendo en tu iPhone · {sent.get('episode_label') or sent.get('title') or ''} en el minuto {minute}".replace(" ·  en", " en")
         return companion.SENT_TOAST[action]
 
     @staticmethod

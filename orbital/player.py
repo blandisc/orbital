@@ -186,6 +186,7 @@ class OrbitalPlayer(PlayerScreen):
         self.on_synthetic_failed = None  # (meta) -> True si se intenta con otra fuente u otro episodio
         self.on_synthetic_resync = None  # (meta) -> True si regresó a lo que va al aire (tras una pausa larga)
         self.on_synthetic_duration = None  # (meta, segundos): lo que dura de verdad (la programación lo aprende)
+        self.on_detached = None  # (meta): «Seguir solo este capítulo» (el canal ya no manda; la barra de arriba cambia)
         self._zap_view, self._zap_timer = None, None  # ▲▼ seguidos (ver _queue_channel)
         self._panel_category = None  # la categoría que enseña la guía de canales (Y)
         self._away = False  # Home: estás en Orbital y el canal sigue al aire sin sonido

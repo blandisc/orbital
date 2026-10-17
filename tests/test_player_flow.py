@@ -305,7 +305,7 @@ def _wait_for(cond):
 
 def test_more_panel_offers_the_iphone_only_when_one_is_connected():
     p, _ = series_player()
-    p.on_send_iphone = lambda meta, action: "ok"
+    p.on_send_iphone = lambda meta, action, position=None: "ok"
     labels = lambda: [o["label"] for c in p.menu.columns for o in c.options]  # noqa: E731
     p.open_more()  # sin iPhone conectado: nada del iPhone
     assert [c.key for c in p.menu.columns] == ["playback"] and labels() == ["Desde el principio"]
@@ -316,13 +316,13 @@ def test_more_panel_offers_the_iphone_only_when_one_is_connected():
     p.open_more()
     # Dentro de Reproducción (como cuarta columna todo se cortaba).
     assert [c.key for c in p.menu.columns] == ["playback"]
-    assert labels() == ["Desde el principio", "Enviar al iPhone", "Descargar en el iPhone"]
+    assert labels() == ["Desde el principio", "Seguir en el iPhone", "Enviar al iPhone", "Descargar en el iPhone"]
 
 
 def test_more_panel_has_no_iphone_for_live_tv():
     p, _ = series_player()
     p.current.meta = {"kind": "tv", "live": True, "title": "Canal"}
-    p.iphone_provider, p.on_send_iphone = (lambda: True), (lambda meta, action: "ok")
+    p.iphone_provider, p.on_send_iphone = (lambda: True), (lambda meta, action, position=None: "ok")
     p.open_more()
     assert not any("iPhone" in o["label"] for c in p.menu.columns for o in c.options)
 
@@ -331,8 +331,9 @@ def test_choosing_an_iphone_option_sends_the_episode_in_progress_and_says_so():
     p, mpv = series_player()
     sent = []
     p.iphone_provider = lambda: True
-    p.on_send_iphone = lambda meta, action: sent.append((meta["video_id"], action)) or "Enviado al iPhone: listo"
+    p.on_send_iphone = lambda meta, action, position=None: sent.append((meta["video_id"], action)) or "Enviado al iPhone: listo"
     p.open_more()
+    p.press("down")
     p.press("down")
     p.press("down")
     p.press("a")  # Reproducción › Descargar en el iPhone
@@ -346,11 +347,12 @@ def test_an_iphone_without_connection_says_it_in_words_not_with_an_error():
     p, mpv = series_player()
     p.iphone_provider = lambda: True
 
-    def refuse(meta, action):
+    def refuse(meta, action, position=None):
         raise ValueError("Conecta tu iPhone en Ajustes › Cuentas")
 
     p.on_send_iphone = refuse
     p.open_more()
+    p.press("down")
     p.press("down")
     p.press("a")  # Reproducción › Enviar al iPhone
     _wait_for(lambda: "Conecta tu iPhone" in str(mpv.overlays.get(p.TOAST)))

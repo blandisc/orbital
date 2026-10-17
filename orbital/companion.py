@@ -226,7 +226,8 @@ class PhoneNotConnected(ValueError):
     """No hay iPhone conectado (sin token o sin Tailscale): no hay a dónde mandar nada."""
 
 
-def send_to_phone(watch, config, action: str, kind: str, meta_id: str, video_id: str | None = None, *, connected=None) -> dict:
+def send_to_phone(watch, config, action: str, kind: str, meta_id: str, video_id: str | None = None, *, connected=None,
+                  position: float | None = None) -> dict:
     """Deja un pendiente para el iPhone («Enviar al iPhone» abre el título allá; «Descargar en el iPhone» lo baja).
 
     El iPhone lo recoge en su próximo sondeo de `/api/companion/now` (o en segundo plano, si iOS lo deja) y lo quita
@@ -250,6 +251,8 @@ def send_to_phone(watch, config, action: str, kind: str, meta_id: str, video_id:
     item = {"id": uuid.uuid4().hex[:12], "kind": kind, "meta_id": meta_id, "video_id": video_id,
             "title": details.get("title") or "", "episode_label": label, "poster": details.get("poster"),
             "action": action, "at": int(time.time()), **episode_numbers(video_id if kind == "series" else None)}
+    if isinstance(position, (int, float)) and position > 0:
+        item["position"] = round(float(position), 1)  # «Seguir en el iPhone»: el iPhone abre en ese segundo
     return watch.state.inbox_add(item, INBOX_LIMIT)
 
 

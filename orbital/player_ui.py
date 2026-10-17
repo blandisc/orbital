@@ -709,7 +709,7 @@ def tracks_panel(tracks: list[dict], sub_scale: float, extra_subs: list[dict] | 
 
 
 def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None = None,
-               back_to: float | None = None, iphone: bool = False) -> Panel:
+               back_to: float | None = None, iphone: bool = False, channel: bool = False) -> Panel:
     """Y: Episodios (series) · Fuentes · Reproducción (Desde el principio / Volver a… y, con un iPhone conectado, mandarlo o
     descargarlo allá). El iPhone va dentro de Reproducción: como cuarta columna todo se cortaba («2…», «Desde el prin…»)."""
     columns = []
@@ -722,11 +722,18 @@ def more_panel(*, episodes: list[dict] | None = None, sources: list[dict] | None
     if sources:
         columns.append(_column("source", [{"label": s["label"], "hint": s.get("hint", ""), "action": ("source", s["id"]),
                                            "current": bool(s.get("current"))} for s in sources]))
+    if channel:  # un canal de Orbital: salirte del canal y quedarte en este episodio, o seguirlo en el iPhone
+        playback = [{"label": "Seguir solo este capítulo", "hint": "Sale del canal", "action": ("detach", None), "current": False}]
+        if iphone:
+            playback.append({"label": "Seguir en el iPhone", "hint": "Mismo minuto", "action": ("iphone", "continue"), "current": False})
+        columns.append(Column("playback", playback))
+        return Panel("more", columns, 0)
     playback = [{"label": "Desde el principio", "action": ("restart", None), "current": False}]
     if back_to:  # empezaste desde el principio sin querer: volver a donde ibas
         playback.insert(0, {"label": f"Volver a {clock(back_to)}", "action": ("resume-at", back_to), "current": False})
-    if iphone:  # lo que ves (el episodio en curso) se manda al iPhone o se descarga allá
-        playback += [{"label": "Enviar al iPhone", "action": ("iphone", "open"), "current": False},
+    if iphone:  # lo que ves: seguir en el iPhone en el mismo minuto, mandarlo (desde donde ibas) o descargarlo allá
+        playback += [{"label": "Seguir en el iPhone", "hint": "Mismo minuto", "action": ("iphone", "continue"), "current": False},
+                     {"label": "Enviar al iPhone", "action": ("iphone", "open"), "current": False},
                      {"label": "Descargar en el iPhone", "action": ("iphone", "download"), "current": False}]
     columns.append(Column("playback", playback))
     return Panel("more", columns, 0)
