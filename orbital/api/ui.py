@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import asyncio
 import threading
 
@@ -66,6 +68,17 @@ def router(d: Deps) -> APIRouter:
                 "player": "orbital" if catalog.native_player else "stremio",
                 # Alexa configurada (token fijo): la interfaz enseña frases que puedes decirle.
                 "alexa": d.alexa_ready}
+
+    @r.get("/api/voice/commands")
+    def voice_commands() -> dict:
+        """«Lo que puedes decir»: la misma guía que el iPhone (alexa/commands.json; una prueba comprueba que cada frase llega a
+        un comando de verdad)."""
+        from ..alexa_setup import SKILL_SOURCE
+
+        try:
+            return json.loads((SKILL_SOURCE / "commands.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return {"how": [], "groups": []}
 
     @r.get("/api/settings")
     def get_settings() -> dict:

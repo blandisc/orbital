@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints, legendOf, tvHints } from "./core/hints.js";
-import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu } from "./core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createForYou } from "./components/foryou.js";
@@ -61,7 +61,7 @@ const glyphs = () => GLYPHS[state.modality];
 // ---------------------------------------------------------------- componentes
 const ui = {
   backdrop: createBackdrop(),
-  status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch(), onAlexa: () => openMenu(alexaMenu()) }),
+  status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch(), onAlexa: () => runCommand({ type: "alexa-menu" }) }),
   hero: createHero({ onAction: (action) => handleAction(action) }),
   home: createHome({
     outside: () => [ui.status.searchButton, ui.status.alexaButton], // Buscar y Alexa (arriba) también se alcanzan con ↑
@@ -594,7 +594,7 @@ function homeActivate(target, action = "select") {
     return target.setup ? runCommand({ type: "setup" }) : goToSection("games", 1);
   }
   if (target.kind === "search") return action === "select" ? openSearch() : rumble("edge");
-  if (target.kind === "alexa") return action === "select" ? openMenu(alexaMenu()) : rumble("edge");
+  if (target.kind === "alexa") return action === "select" ? runCommand({ type: "alexa-menu" }) : rumble("edge");
   if (target.kind === "console") {
     if (action === "alt" && target.console.last) return launch(target.console.last);
     if (action !== "select") { sound.play("error"); return rumble("edge"); }
@@ -1055,7 +1055,14 @@ async function runCommand(command, context = null) {
         sound.play("select");
         return goToSection(command.id);
       case "alexa-menu":
-        return openMenu(alexaMenu(), nested(context));
+        state.voiceGuide ??= await api.voiceCommands().catch(() => null);
+        return openMenu(alexaMenu(state.voiceGuide), nested(context));
+      case "voice-group": {
+        const group = state.voiceGuide?.groups?.[command.index];
+        return group ? openMenu(voiceGroupMenu(group), nested(context)) : undefined;
+      }
+      case "voice-help":
+        return openMenu(voiceHelpMenu(), nested(context));
       case "view-capture":
         sound.play("open");
         captureFrom = context ? { options: { stack: context.stack }, first: context.index - command.index } : null;

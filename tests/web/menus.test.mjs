@@ -351,3 +351,17 @@ test("Pantalla y sonido: el protector de pantalla (el mosaico) con su tiempo", a
   assert.equal(row.value, "10 min");
   assert.deepEqual(row.command, { type: "setting", key: "screensaver_minutes", value: 20, page: "display" });
 });
+
+test("Lo que puedes decir: la guía del iPhone (cómo decirlo, cada tema y si no funciona)", async () => {
+  const { alexaMenu, voiceGroupMenu, voiceHelpMenu } = await import("../../orbital/web/js/core/menus.js");
+  const guide = { how: [{ say: "Alexa, abre mi consola", note: "Y luego lo dices" }],
+    groups: [{ title: "Juegos", icon: "gamecontroller", commands: [{ say: "abre Hollow Knight", note: "Cualquier juego" }] }] };
+  const menu = alexaMenu(guide);
+  assert.equal(menu.title, "Lo que puedes decir");
+  const juegos = menu.options.find((o) => o.label === "Juegos");
+  assert.deepEqual(juegos.command, { type: "voice-group", index: 0 });
+  assert.equal(juegos.icon, "gamepad");
+  assert.equal(voiceGroupMenu(guide.groups[0]).options[0].label, "«abre Hollow Knight»");
+  assert.ok(voiceHelpMenu().options.length >= 4);
+  assert.equal(alexaMenu(null).title, "Pídeselo a Alexa"); // sin la guía, los ejemplos de siempre
+});

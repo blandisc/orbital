@@ -152,3 +152,21 @@ def test_brightness_by_voice(library, monkeypatch):
     assert voice.handle_intent("BrightnessIntent", {"level": "30"}).speech == "Brillo en 30 por ciento."
     monkeypatch.setattr(quick, "brightness", lambda: None)
     assert not voice.handle_intent("BrightnessIntent", {"brightness": "down"}).ok
+
+
+def test_the_tv_shows_the_same_guide(make_client):
+    data = make_client().get("/api/voice/commands").json()
+    assert data == COMMANDS
+
+
+def test_genre_art_is_the_same_on_the_tv_and_the_iphone():
+    """Películas y series › Por género usa el arte de Explora del iPhone (más ligero, misma proporción)."""
+    from PIL import Image
+
+    ios = sorted((ROOT / "ios/App/Resources/Assets.xcassets/Genres").glob("genre-*.imageset/*.jpg"))
+    assert ios
+    for path in ios:
+        tv = ROOT / "orbital/web/img/genres" / path.name
+        assert tv.is_file(), f"falta {tv.name} en la tele (scripts/genre_art.py)"
+        a, b = Image.open(path).size, Image.open(tv).size
+        assert abs(a[0] / a[1] - b[0] / b[1]) < .01

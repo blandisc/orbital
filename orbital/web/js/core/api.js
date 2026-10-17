@@ -89,6 +89,7 @@ export const api = {
     request(`/api/stremio/sources?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`),
   focusWindow: (id) => post("/api/windows/focus", { id }),
   // «Para ti»
+  voiceCommands: () => request("/api/voice/commands"),
   forYou: () => request("/api/foryou"),
   forYouList: (id, kind = null) => request(`/api/foryou/list?id=${encodeURIComponent(id)}${kind ? `&kind=${kind}` : ""}`),
   forYouDetails: (key, kind = null) => request(`/api/foryou/details?key=${encodeURIComponent(key)}${kind ? `&kind=${kind}` : ""}`),

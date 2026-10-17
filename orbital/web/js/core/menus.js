@@ -105,11 +105,53 @@ export const ALEXA_EXAMPLES = [
   { icon: "sound", label: "«le suba al volumen»", hint: "O «le baje tantito», «ponga el volumen en 30»" },
 ];
 
-export function alexaMenu() {
+export function alexaMenu(guide = null) {
+  // «Lo que puedes decir» (como en el iPhone): cómo decirlo, cada tema con todas sus frases y qué hacer si no funciona.
+  // Las frases son las de alexa/commands.json (la misma lista que el iPhone). Sin la guía, los ejemplos de siempre.
+  if (!guide?.groups?.length) {
+    return {
+      title: "Pídeselo a Alexa",
+      subtitle: "Empieza con «Alexa, pídele a mi consola que…» y sigue con lo que quieras:",
+      options: ALEXA_EXAMPLES.map((e) => ({ ...e, command: { type: "stay" } })),
+    };
+  }
   return {
-    title: "Pídeselo a Alexa",
-    subtitle: "Empieza con «Alexa, pídele a mi consola que…» y sigue con lo que quieras:",
-    options: ALEXA_EXAMPLES.map((e) => ({ ...e, command: { type: "stay" } })),
+    title: "Lo que puedes decir", crumb: "Voz",
+    subtitle: "Con Alexa, el micrófono del control del iPhone o Siri: las mismas frases.",
+    options: [
+      { heading: true, label: "Cómo decirlo" },
+      ...(guide.how || []).map((h) => ({ icon: "assistant", label: `«${h.say}»`, hint: h.note, command: { type: "stay" } })),
+      { heading: true, label: "Por tema" },
+      ...guide.groups.map((g, i) => ({ icon: GUIDE_ICONS[g.icon] || "assistant", label: g.title, value: String(g.commands.length),
+        command: { type: "voice-group", index: i } })),
+      { icon: "info", label: "Si no funciona", command: { type: "voice-help" } },
+    ],
+  };
+}
+
+/** Los íconos de los temas de la guía (los nombres de SF Symbols del iPhone → los de la tele). */
+const GUIDE_ICONS = { gamecontroller: "gamepad", film: "movie", "play.rectangle": "play", play: "play", tv: "tv",
+  sparkles: "spark", gearshape: "settings", gear: "settings" };
+
+/** Un tema de la guía: todas sus frases, con lo que hace cada una. */
+export function voiceGroupMenu(group) {
+  return {
+    title: group.title, crumb: group.title, subtitle: "Empieza con «Alexa, pídele a mi consola que…»",
+    options: group.commands.map((c) => ({ icon: "assistant", label: `«${c.say}»`, hint: c.note, command: { type: "stay" } })),
+  };
+}
+
+/** Si la voz no funciona: lo que más pasa, en la tele. */
+export function voiceHelpMenu() {
+  return {
+    title: "Si no funciona", crumb: "Si no funciona",
+    options: [
+      { icon: "assistant", label: "Empieza con «pídele a mi consola que…»", hint: "Sin eso, Alexa intenta hacerlo ella sola", command: { type: "stay" } },
+      { icon: "search", label: "Revisa lo que entendió", hint: "Abajo sale «No entendí…» con lo que escuchó: dilo más despacio o búscalo", command: { type: "stay" } },
+      { icon: "grid", label: "Cuando hay varias", hint: "Si pides «pon Dune» y hay más de una, salen en la tele para elegir", command: { type: "stay" } },
+      { icon: "wifi", label: "Si Alexa no encuentra tu consola", hint: "Orbital tiene que estar encendida y con Internet", command: { type: "stay" } },
+      { icon: "phone", label: "Desde el iPhone", hint: "El micrófono del control y Siri usan las mismas frases", command: { type: "stay" } },
+    ],
   };
 }
 
@@ -128,7 +170,7 @@ export function mainMenu({ running, hiddenCount, canExit = false, alexa = false 
     options.push({ icon: "show", label: "Mostrar juegos ocultos", hint: String(hiddenCount), command: { type: "unhide-all" } });
   }
   options.push({ icon: "gamepad", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });
-  if (alexa) options.push({ icon: "assistant", label: "Pídeselo a Alexa", hint: "Frases que entiende", command: { type: "alexa-menu" } });
+  if (alexa) options.push({ icon: "assistant", label: "Lo que puedes decir", hint: "Alexa, el iPhone y Siri", command: { type: "alexa-menu" } });
   options.push({ icon: "settings", label: "Ajustes", command: { type: "settings" } });
   options.push({ icon: "power", label: "Apagar", hint: "Suspender, reiniciar o apagar", command: { type: "power-menu" } });
   if (canExit) {
