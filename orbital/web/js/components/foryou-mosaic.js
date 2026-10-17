@@ -2,6 +2,7 @@ import { h, svg } from "../core/dom.js";
 import { brandParts, factLine, trimmedLogo, iconName, nearestTile, nextUnseen, posterRatio } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { sized } from "../core/images.js";
+import { settler } from "../core/motion.js";
 import { Badge } from "./ui.js";
 import { dragArea, hoverArea } from "../core/swipe.js";
 
@@ -216,6 +217,26 @@ export function createForYouMosaic({ onFocus, onPick }) {
     applyOffsets();
   }
 
+  // Recorrer rápido (cruceta sostenida o pasos seguidos): solo se mueve el marco; la columna se abre, el arte llega y se
+  // piden los datos cuando te detienes (como Inicio y Game Glance). Antes cada paso reacomodaba todo el mosaico.
+  const settle = settler({ quick: 0, held: 220 });
+  let settleTimer = 0;
+  let next = null;
+
+  function markNext(t) {
+    next?.node.classList.remove("foryou-mosaic__tile--next");
+    next = t;
+    t?.node.classList.add("foryou-mosaic__tile--next");
+  }
+
+  function paintSoon(options) {
+    const wait = settle();
+    clearTimeout(settleTimer);
+    if (!wait) { markNext(null); paint(options); return; }
+    markNext(columns[focus.col]?.tiles[focus.row] ?? null);
+    settleTimer = setTimeout(() => { markNext(null); paint(options); }, wait);
+  }
+
   function paint({ together = false } = {}) {
     if (!el.clientWidth) return; // oculto (se precarga al arrancar): se acomoda al mostrarse
     el.classList.toggle("foryou-mosaic--focusing", mode === "focus");
@@ -225,6 +246,16 @@ export function createForYouMosaic({ onFocus, onPick }) {
     else applyOffsets();
     alive();
     onFocus?.(current());
+    if (mode === "focus") readyAhead();
+  }
+
+  /** Las columnas de al lado, listas antes de llegar: su arte ancho (el de las piezas a la vista) se pide ya. */
+  function readyAhead() {
+    const { H } = size();
+    for (const c of [focus.col - 1, focus.col + 1]) {
+      const col = columns[c];
+      col?.tiles.forEach((t) => { if (t.top + t.h > col.offset - H * .25 && t.top < col.offset + H * 1.25) t.loadWide(); });
+    }
   }
 
   // «Cobra vida»: quieto en una pieza, su arte se acerca despacio.
@@ -300,7 +331,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
       const t = from.tiles[focus.row];
       const center = t.top - from.offset + t.h / 2;
       focus = { col: c, row: nearestTile(columns[c].tiles, columns[c].offset, center) };
-      paint();
+      paintSoon();
       return true;
     }
     const col = columns[focus.col];
@@ -309,6 +340,8 @@ export function createForYouMosaic({ onFocus, onPick }) {
     fill(col, focus.col);
     if (row >= col.tiles.length) return "edge";
     focus.row = row;
+    clearTimeout(settleTimer);
+    markNext(null);
     paint({ together: true });
     return true;
   }

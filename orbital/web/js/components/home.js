@@ -93,6 +93,8 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
       return RowTile(item, { focusId: `card:${i}`, onPress: pick(`card:${i}`), airing: imdb && airing?.[imdb] });
     });
     top.classList.toggle("home__top--alone", !queued.length);
+    // Listo antes de abrir: el fondo de cada tarjeta (lo usan la pantalla de carga y la ficha) se pide de una vez.
+    model.cards.forEach((item) => { const art = item.hero || item.image; if (art) new Image().src = art; });
     mount(queue, queued.length > 0 && SectionHead(queueTitle(model.cards), { className: "home__queue-head" }),
       queued.length > 0 && h("div", { class: "home__rows" }, queued));
 
