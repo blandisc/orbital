@@ -12,9 +12,9 @@ public final class TVNowModel: ObservableModel {
     /// Cuándo llegó `now` (para interpolar el avance entre sondeos, sin saltar cada pocos segundos).
     public private(set) var fetchedAt = Date()
     /// El token de tu Orbital ya no sirve: Ajustes lo enseña (la tarjeta, mientras tanto, se oculta).
-    public private(set) var tokenProblem = false { didSet { changed() } }
+    public private(set) var tokenProblem = false { didSet { if oldValue != tokenProblem { changed() } } }
     /// Un botón está en vuelo: el siguiente toque se ignora (sin doble acción) y el botón se atenúa.
-    public private(set) var busy = false { didSet { changed() } }
+    public private(set) var busy = false { didSet { if oldValue != busy { changed() } } }
     /// Hay un campo de texto con foco en la TV («Escribir» en el control completo). nil: la consola no lo dice (se enseña igual).
     public private(set) var textField: Bool? { didSet { if oldValue != textField { changed() } } }
     /// Lo que hace cada botón del mando en la pantalla de la TV ahora («alt» → «Mi lista»), para rotular el control.

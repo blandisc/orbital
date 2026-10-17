@@ -86,7 +86,7 @@ public final class Services: ObservableModel {
         let finder = StreamFinder(http: http, registry: registry, clock: clock)
         let cinemeta = Cinemeta(http: http, registry: registry, clock: clock)
         let tmdb = Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "", language: "es-MX")
-        let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock)
+        let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
         let trakt = Services.makeTrakt(http: http, secrets: secrets, settings: settings.value, clock: clock)
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt; self.tmdb = tmdb
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock),
@@ -154,14 +154,19 @@ public final class Services: ObservableModel {
         var got: [String] = []
         if !keys.tmdbKey.isEmpty, (secrets.get(SecretKey.tmdbKey) ?? "").isEmpty { secrets.set(SecretKey.tmdbKey, keys.tmdbKey); got.append("TMDB") }
         if !keys.traktClientID.isEmpty, settings.value.traktClientID.isEmpty { settings.update { $0.traktClientID = keys.traktClientID }; got.append("Trakt") }
-        if keys.region.count == 2 { settings.update { $0.region = keys.region } }
-        reconfigure()
-        // Trakt sin conectar en el iPhone (o con la sesión prestada de antes): la de la consola.
-        if let session = keys.traktSession, let trakt, !trakt.linked || trakt.borrowed {
+        let regionChanged = keys.region.count == 2 && keys.region != settings.value.region
+        if regionChanged { settings.update { $0.region = keys.region } }
+        // Solo se rearma si algo cambió: rearmar tira las cachés (traducciones, listas) y vuelve a pintar toda la app, y esto
+        // corre en cada arranque.
+        var needsReconfigure = !got.isEmpty || regionChanged
+        if needsReconfigure { reconfigure(); needsReconfigure = false }
+        // Trakt sin conectar en el iPhone (o con la sesión prestada de antes): la de la consola, si es otra.
+        if let session = keys.traktSession, let trakt, !trakt.linked || (trakt.borrowed && trakt.accessToken != session.accessToken) {
             trakt.adopt(session)
             if !got.contains("Trakt") { got.append("Trakt") }
-            reconfigure()
+            needsReconfigure = true
         }
+        if needsReconfigure { reconfigure() }
         return got
     }
 
@@ -180,7 +185,7 @@ public final class Services: ObservableModel {
         let s = settings.value
         let tmdb = Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "", language: "es-MX")
         let settings = settings, secrets = secrets
-        localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock)
+        localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
         self.tmdb = tmdb
         trakt = Services.makeTrakt(http: http, secrets: secrets, settings: s, clock: clock)
         let charts = Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock)

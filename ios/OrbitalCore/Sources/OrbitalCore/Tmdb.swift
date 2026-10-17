@@ -173,9 +173,42 @@ public actor Localizer {
     private let language: @Sendable () -> String?
     private let clock: @Sendable () -> Date
     private var cache: [String: (expires: Date, value: Translation?)] = [:]
+    /// Lo que ya se está pidiendo: dos listas con el mismo título (Seguir viendo y Mi lista) comparten la petición.
+    private var inflight: [String: Task<Translation?, Never>] = [:]
+    /// Título, sinopsis y géneros en disco (sin episodios): al abrir la app ya salen en tu idioma, sin esperar a TMDB.
+    private let store: KeyValueStore?
+    private var disk: [String: Saved]?
+    private var saveScheduled = false
+    private struct Saved: Codable { var t: String; var o: String; var g: [String]; var d: Double }
+    static let diskKey = "tmdb-translations", diskSeconds: TimeInterval = 7 * 24 * 3600, diskLimit = 3000
+    /// Cuántas traducciones a la vez (antes, cientos juntas: TMDB contestaba 429 y se quedaban en inglés).
+    static let concurrency = 8
 
-    public init(tmdb: Tmdb, language: @escaping @Sendable () -> String?, clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.tmdb = tmdb; self.language = language; self.clock = clock
+    public init(tmdb: Tmdb, language: @escaping @Sendable () -> String?, clock: @escaping @Sendable () -> Date = { Date() }, store: KeyValueStore? = nil) {
+        self.tmdb = tmdb; self.language = language; self.clock = clock; self.store = store
+    }
+
+    private func saved(_ key: String) -> Translation? {
+        if disk == nil { disk = store?.data(Self.diskKey).flatMap { try? JSONDecoder().decode([String: Saved].self, from: $0) } ?? [:] }
+        guard let s = disk?[key], clock().timeIntervalSince1970 - s.d < Self.diskSeconds else { return nil }
+        return Translation(title: s.t, overview: s.o, genres: s.g)
+    }
+
+    private func remember(_ key: String, _ t: Translation) {
+        guard store != nil else { return }
+        if disk == nil { _ = saved(key) }
+        disk?[key] = Saved(t: t.title, o: t.overview, g: t.genres, d: clock().timeIntervalSince1970)
+        if let count = disk?.count, count > Self.diskLimit, let oldest = disk?.sorted(by: { $0.value.d < $1.value.d }).prefix(count - Self.diskLimit).map(\.key) {
+            for k in oldest { disk?[k] = nil }
+        }
+        guard !saveScheduled else { return }
+        saveScheduled = true
+        Task { [weak self] in try? await Task.sleep(nanoseconds: 2_000_000_000); await self?.flush() }   // ds-exception: se juntan las escrituras a disco
+    }
+
+    private func flush() {
+        saveScheduled = false
+        if let disk, let data = try? JSONEncoder().encode(disk) { store?.set(Self.diskKey, data: data) }
     }
 
     public var active: String? { tmdb.configured ? Localizer.tmdbLanguage(language()) : nil }
@@ -183,12 +216,23 @@ public actor Localizer {
     private func translation(kind: String, imdb: String, lang: String, episodes: Bool) async -> Translation? {
         let key = "\(lang)|\(imdb)|\(kind)|\(episodes)"
         if let hit = cache[key], clock() < hit.expires { return hit.value }
-        var value: Translation?, ttl = Localizer.cacheSeconds
-        do {
-            if let id = try await tmdb.findID(imdb: imdb, kind: kind) { value = try await tmdb.translation(kind: kind, tmdbID: id, language: lang, episodes: episodes) }
-        } catch { value = nil; ttl = Localizer.retrySeconds }
+        if !episodes, let hit = saved(key) { cache[key] = (clock().addingTimeInterval(Localizer.cacheSeconds), hit); return hit }
+        if let running = inflight[key] { return await running.value }
+        let tmdb = tmdb
+        let task = Task<Translation?, Never> {
+            do {
+                guard let id = try await tmdb.findID(imdb: imdb, kind: kind) else { return Translation() }
+                return try await tmdb.translation(kind: kind, tmdbID: id, language: lang, episodes: episodes)
+            } catch { return nil }
+        }
+        inflight[key] = task
+        let result = await task.value
+        inflight[key] = nil
+        // nil: falló (sin red, 429): se reintenta pronto. Vacío: TMDB no lo tiene; eso sí se recuerda.
+        let value = result.flatMap { $0.isEmpty ? nil : $0 }
         if cache.count >= 500 { for k in cache.sorted(by: { $0.value.expires < $1.value.expires }).prefix(125).map(\.key) { cache[k] = nil } }
-        cache[key] = (clock().addingTimeInterval(ttl), value)
+        cache[key] = (clock().addingTimeInterval(result == nil ? Localizer.retrySeconds : Localizer.cacheSeconds), value)
+        if !episodes, let value { remember(key, value) }
         return value
     }
 
@@ -204,15 +248,19 @@ public actor Localizer {
     public func catalog(kind: String, metas: [JSON]) async -> [JSON] {
         guard let lang = active else { return metas }
         return await withTaskGroup(of: (Int, JSON).self) { group in
-            for (i, meta) in metas.enumerated() {
+            var out = metas, next = 0
+            func add() {
+                guard next < metas.count else { return }
+                let i = next, meta = metas[i]
+                next += 1
                 group.addTask {
                     guard let imdb = meta["id"]?.string, imdb.hasPrefix("tt"),
                           let found = await self.translation(kind: kind, imdb: imdb, lang: lang, episodes: false), !found.isEmpty else { return (i, meta) }
                     return (i, Localizer.apply(meta, found))
                 }
             }
-            var out = metas
-            for await (i, meta) in group { out[i] = meta }
+            for _ in 0..<Localizer.concurrency { add() }   // unas cuantas a la vez; al terminar una, entra la siguiente
+            for await (i, meta) in group { out[i] = meta; add() }
             return out
         }
     }

@@ -38,7 +38,18 @@ public final class KeychainSecrets: SecretsStore, @unchecked Sendable {
         [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: key]
     }
 
+    /// Lo leído del Keychain, en memoria (también lo que no existe): leerlo en cada acceso desde las vistas trababa la interfaz.
+    private var cache: [String: String?] = [:]
+    private let lock = NSLock()
+
     public func get(_ key: String) -> String? {
+        if let hit = lock.withLock({ cache[key] }) { return hit }
+        let value = read(key)
+        lock.withLock { cache[key] = .some(value) }
+        return value
+    }
+
+    private func read(_ key: String) -> String? {
         var q = query(key)
         q[kSecReturnData as String] = true
         q[kSecMatchLimit as String] = kSecMatchLimitOne
@@ -48,6 +59,7 @@ public final class KeychainSecrets: SecretsStore, @unchecked Sendable {
     }
 
     public func set(_ key: String, _ value: String?) {
+        lock.withLock { cache[key] = .some(value) }
         guard let value, let data = value.data(using: .utf8) else { SecItemDelete(query(key) as CFDictionary); return }
         // Se actualiza en su sitio: si falla el guardado, el valor anterior (p. ej. el token de Trakt, de un solo uso) no se pierde.
         let update = SecItemUpdate(query(key) as CFDictionary, [kSecValueData as String: data] as CFDictionary)

@@ -51,16 +51,11 @@ public struct URLSessionHTTPClient: HTTPClient {
             let session = self.session, urlRequest = urlRequest
             return try await withThrowingTaskGroup(of: HTTPResponse.self) { group in
                 group.addTask {
-                    #if canImport(FoundationNetworking)
-                    let (data, response) = try await session.data(for: urlRequest)     // Linux (pruebas): sin lectura por trozos
-                    #else
-                    let (bytes, response) = try await session.bytes(for: urlRequest)
-                    var data = Data()
-                    for try await byte in bytes {
-                        data.append(byte)
-                        if data.count > URLSessionHTTPClient.maxBody { throw NetworkError("La respuesta es demasiado grande") }
-                    }
-                    #endif
+                    // De un jalón (antes byte por byte: un `await` por byte hacía lenta cada respuesta grande, como la biblioteca
+                    // de Stremio). El tope de tamaño se revisa con lo que anuncia el servidor y con lo que llegó; el plazo total
+                    // de abajo sigue cortando a uno que gotea.
+                    let (data, response) = try await session.data(for: urlRequest)
+                    if response.expectedContentLength > Int64(URLSessionHTTPClient.maxBody) { throw NetworkError("La respuesta es demasiado grande") }
                     guard data.count <= URLSessionHTTPClient.maxBody else { throw NetworkError("La respuesta es demasiado grande") }
                     return HTTPResponse(status: (response as? HTTPURLResponse)?.statusCode ?? 0, data: data)
                 }

@@ -202,6 +202,9 @@ public actor Trakt {
         secrets.set(SecretKey.traktTokens, (try? JSONEncoder().encode(tokens)).flatMap { String(data: $0, encoding: .utf8) })
     }
 
+    /// El token de la sesión de ahora (para no volver a adoptar la misma sesión de tu Orbital en cada arranque).
+    public nonisolated var accessToken: String? { tokens()?.access_token }
+
     private nonisolated func tokens() -> Tokens? {
         guard let raw = secrets.get(SecretKey.traktTokens), let data = raw.data(using: .utf8),
               let t = try? JSONDecoder().decode(Tokens.self, from: data), !t.access_token.isEmpty else { return nil }

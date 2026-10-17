@@ -15,6 +15,7 @@ struct HomeView: View {
     @State private var scrolledDown = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.openRemote) private var openRemote
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         _home = StateObject(wrappedValue: ModelObserver(HomeModel(AppEnvironment.shared.services)))
@@ -93,9 +94,10 @@ struct HomeView: View {
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(for: HomeListRoute.self) { route in homeList(route) }
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
-        .task { await reload() }
+        .task { await reload(ifStale: true) }   // volver de otra pestaña o de una ficha no lo vuelve a pedir todo
         .refreshable { await reload() }
         .onChange(of: env.watchedSomething) { Task { await reload() } }
+        .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await reload(ifStale: true) } } }   // al volver a la app
     }
 
     /// «Mi lista» o «Tu watchlist» completas, en cuadrícula (desde el chevron de su encabezado).
@@ -112,8 +114,8 @@ struct HomeView: View {
     }
 
     /// Lo de Stremio, lo pendiente por subir y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo).
-    private func reload() async {
-        await home.model.refresh()
+    private func reload(ifStale: Bool = false) async {
+        if ifStale { await home.model.refreshIfStale() } else { await home.model.refresh() }
         let work = env.services.pending.load()      // una sola lectura por actualización, no una por cada pintado
         pendingCount = work.progress.count + work.traktWatched.count
         await tint.load(currentHero.flatMap { $0.background ?? $0.poster })

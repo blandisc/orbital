@@ -46,8 +46,18 @@ public final class HomeModel: ObservableModel {
         }
     }
 
+    /// Al volver a Inicio (otra pestaña, una ficha): solo si lo último tiene más de un minuto. Deslizar hacia abajo, volver de
+    /// ver algo o abrir la app sí piden todo (`refresh`).
+    public func refreshIfStale(maxAge: TimeInterval = 60) async {
+        if let last = lastRefresh, services.now().timeIntervalSince(last) < maxAge { return }
+        await refresh()
+    }
+
+    private var lastRefresh: Date?
+
     public func refresh() async {
         guard services.isSignedIn else { return }
+        lastRefresh = services.now()
         isLoading = true
         defer { isLoading = false }
         do {

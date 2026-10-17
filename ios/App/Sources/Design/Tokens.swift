@@ -175,7 +175,7 @@ enum DS {
         /// Qué parte del ancho toma la tarjeta del frente (asoman las de los lados) y su alto.
         static let sideMargin: CGFloat = 36, height: CGFloat = 430
         /// Cuántas veces se repiten las tarjetas para la vuelta infinita (se empieza a la mitad: nunca se llega al final).
-        static let loopCopies = 200
+        static let loopCopies = 40
         static let radius: CGFloat = 28, spacing: CGFloat = 4
         /// Lo que pierde una tarjeta a un lugar de distancia: tamaño, nitidez y luz.
         static let sideShrink: CGFloat = 0.12, sideBlur: CGFloat = 5, sideDim: Double = 0.28
