@@ -1,6 +1,6 @@
 import { h, mount } from "../core/dom.js";
 import { dragArea, dragScroll } from "../core/swipe.js";
-import { buildHome, greeting, queueTitle } from "../core/home.js";
+import { buildHome, queueTitle } from "../core/home.js";
 import { settler } from "../core/motion.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { ConsoleTile, FeatureTile, RowTile } from "./tiles.js";
@@ -31,8 +31,6 @@ function emptyFeature(hasGames, hidden = 0) {
 const TOP_MIN = .52; // lo de arriba (lo último y «También tenías») nunca menos que esto del alto disponible
 
 export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
-  const hello = h("h1", { class: "home__hello" });
-  const greetingRow = h("div", { class: "home__greeting" }, hello);
   const stage = h("div", { class: "home__stage" });
   const queue = h("div", { class: "home__queue" });
   const top = h("div", { class: "home__top" }, stage, queue);
@@ -40,12 +38,12 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   const consolesTrack = h("div", { class: "home__consoles-track", role: "group" });
   const consolesViewport = h("div", { class: "home__consoles-viewport" }, consolesTrack);
   const consoles = h("div", { class: "home__consoles" }, consolesHead, consolesViewport);
-  const scroller = h("div", { class: "home__scroll" }, greetingRow, top, consoles);
+  const scroller = h("div", { class: "home__scroll" }, top, consoles);
   const el = h("section", { class: "home", hidden: true, "aria-label": "Inicio" }, scroller);
   // Lo de arriba llena la pantalla y de Tus consolas solo asoma su título: el alto se mide aquí
   // (cambia con la ventana y con el tamaño del texto).
   // También lo de adentro: al cambiar el tamaño del texto el Inicio mide lo mismo, pero el saludo y las consolas no.
-  { const watch = new ResizeObserver(() => fit()); [el, greetingRow, consoles].forEach((node) => watch.observe(node)); }
+  { const watch = new ResizeObserver(() => fit()); [el, consoles].forEach((node) => watch.observe(node)); }
   // Con el dedo, como en el celular: «Tus consolas» se desliza de lado bajo el dedo, y arrastrar hacia
   // arriba sube el Inicio para verlas (antes solo se llegaba con la cruceta).
   dragScroll(consolesViewport, consolesTrack, { axis: "x", onScroll: (s) => consoleEdges(s) });
@@ -81,7 +79,6 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     const keep = identity(targets.get(focusId));
     model = buildHome(rows, { runningId });
     targets = new Map();
-    hello.textContent = greeting();
     const pick = (id) => () => onPick?.(targets.get(id), id);
 
     // Fuera del Inicio pero alcanzable navegando: Buscar, arriba (↑ desde lo de arriba).
@@ -152,7 +149,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   function fit() {
     if (el.hidden || !el.clientHeight) return;
     const gap = parseFloat(getComputedStyle(scroller).rowGap) || 0;
-    const avail = room() - greetingRow.offsetHeight - gap;
+    const avail = room(); // sin saludo: lo de arriba empieza bajo la barra
     // Tus consolas, enteras a la vista (antes solo asomaba su título y lo de arriba ocupaba toda la pantalla). Si no
     // caben junto a lo de arriba, primero se compactan; si ni así (letra muy grande en pantalla baja), como antes: asoma
     // su título y al bajar el Inicio se desliza. Nunca quedan a medias debajo del pie.

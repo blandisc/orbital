@@ -397,3 +397,23 @@ def test_own_addons_are_saved_encrypted_and_never_shown_whole(library, monkeypat
     with pytest.raises(ValueError):
         library.watch.add_addon("C:/addon")
     assert library.watch.remove_addon(1) == "torrentio.strem.fun" and not library.watch.has_addons
+
+
+def test_voice_puts_any_title_even_said_in_spanish(linked, monkeypatch):
+    """«pon El viaje de Chihiro»: Cinemeta lo guarda como «Spirited Away»; TMDB en español lo reconoce y se pone (antes:
+    «No encontré El viaje de Chihiro en tu biblioteca»). Un nombre casi igual también; uno que no se parece, no."""
+    from orbital.library import cinemeta
+
+    catalog = {"movie": [{"id": "tt0245429", "name": "Spirited Away"}], "series": []}
+    monkeypatch.setattr(cinemeta.Cinemeta, "search", lambda self, kind, q: catalog[kind])
+    tmdb = linked.foryou.tmdb
+    monkeypatch.setattr(type(tmdb), "configured", property(lambda self: True))
+    monkeypatch.setattr(tmdb, "search", lambda kind, title, year=None:
+                        {"imdb": "tt0245429", "title": "El viaje de Chihiro"} if kind == "movie" else None)
+    voice = VoiceController(linked)
+    assert voice.handle_text("pon el viaje de chihiro").speech == "Poniendo El viaje de Chihiro."
+    assert sent(linked) == "stremio:///detail/movie/tt0245429/tt0245429?autoPlay=true"
+    monkeypatch.setattr(type(tmdb), "configured", property(lambda self: False))
+    assert voice.handle_text("pon spirited awey").speech == "Poniendo Spirited Away."  # casi igual en Cinemeta
+    result = voice.handle_text("abre hollow night")  # un juego mal dicho no pone una película cualquiera
+    assert not result.ok and "en tu biblioteca" not in result.speech
