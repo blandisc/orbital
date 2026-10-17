@@ -237,6 +237,18 @@ export function createTv({ onFocus, onPick }) {
     }
     loading = false;
     render();
+    scheduleAiringRefresh();
+  }
+
+  /** Los canales de Orbital cambian de episodio: al terminar lo que va, la sección se pone al día sola (antes se quedaba
+   *  con el episodio que ya había acabado hasta salir y volver). */
+  let airingTimer = 0;
+  function scheduleAiringRefresh() {
+    clearTimeout(airingTimer);
+    const ends = (data?.channels || []).filter((c) => c.synthetic && c.now?.ends).map((c) => c.now.ends * 1000);
+    if (!ends.length || el.hidden) return;
+    const wait = Math.max(5000, Math.min(...ends) - Date.now() + 3000);
+    airingTimer = setTimeout(() => { if (!el.hidden) load({ force: true }); }, Math.min(wait, 30 * 60_000));
   }
 
   /** Teclear un número: se junta (hasta 3 cifras) y, si no llega otro, se sintoniza ese canal. */
@@ -338,8 +350,8 @@ export function createTv({ onFocus, onPick }) {
     el, load, render, handle, setCategory, remember, setPlaying,
     setGlyphs: () => {}, // las categorías se ven a la izquierda; LT/RT las cambian (la leyenda lo dice)
     focus: (id) => { if (targets.has(id)) { focusId = id; paint(); } },
-    show: () => { el.hidden = false; load(); if (data) paint(); },
-    hide: () => { el.hidden = true; stopPreview(); previewing = null; },
+    show: () => { el.hidden = false; load(); if (data) { paint(); scheduleAiringRefresh(); } },
+    hide: () => { el.hidden = true; stopPreview(); previewing = null; clearTimeout(airingTimer); },
     get current() { return targets.get(focusId) ?? null; },
     get focusId() { return focusId; },
     get category() { return category === RECENT ? ALL : category ?? ALL; },

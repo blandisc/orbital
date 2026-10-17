@@ -13,8 +13,8 @@ const HOLD_MS = 26_000; // con pantalla de carga: el servidor avisa antes (25 s 
  * Normal: se oculta cuando el juego toma la pantalla (Orbital pierde el foco) o tras `timeout`.
  * Con `hold()`: Orbital se queda ENCIMA del emulador mientras abre (no se ve ni su lista de juegos
  * ni su ventana brincando); el servidor avisa con launch-ready cuando el juego está listo y en
- * pantalla completa: la portada "salta" hacia adelante, las estrellas se estiran (velocidad luz)
- * y todo se va a negro; el juego entra en ese instante de negro (y un video se funde solo desde negro).
+ * pantalla completa: la portada se acerca apenas y se desvanece, la órbita se abre y se apaga, las estrellas se van y
+ * todo se funde a negro; el juego entra en ese instante de negro (y un video se funde solo desde negro).
  *
  * Del arte al juego: con un fondo propio del juego, se ve nítido y avanza despacio mientras carga (antes, oscuro y
  * borroso); al estar listo se acerca un poco y se va a negro. Sin fondo propio, el de siempre (borroso).
@@ -24,10 +24,14 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
   const stars = h("div", { class: "launch__stars", "aria-hidden": "true" },
     h("span", { class: "launch__starfield launch__starfield--far" }), h("span", { class: "launch__starfield launch__starfield--near" }));
   const cover = h("div", { class: "launch__cover" });
-  const orbit = h("div", { class: "launch__orbit", "aria-hidden": "true" }, h("span", { class: "launch__satellite" }));
+  // El satélite gira con transformaciones (las dibuja la GPU): con offset-path lo animaba el hilo principal y, mientras
+  // Orbital abría el juego, se trababa. Una pista cuadrada aplastada a la forma de la elipse gira, y el satélite gira al
+  // revés y se «desaplasta» para seguir redondo.
+  const satellite = () => h("span", { class: "launch__track" }, h("span", { class: "launch__spinner" }, h("span", { class: "launch__satellite" })));
+  const orbit = h("div", { class: "launch__orbit", "aria-hidden": "true" }, satellite());
   // El arco de enfrente lleva su propio satélite, al compás del de atrás: así el punto también cruza
   // por delante de la portada (antes siempre pasaba por detrás).
-  const front = h("div", { class: "launch__orbit launch__orbit--front", "aria-hidden": "true" }, h("span", { class: "launch__satellite" }));
+  const front = h("div", { class: "launch__orbit launch__orbit--front", "aria-hidden": "true" }, satellite());
   const label = h("div", { class: "launch__label" }, "Abriendo");
   const title = h("div", { class: "launch__title" });
   const subtitle = h("div", { class: "launch__subtitle" });
@@ -60,6 +64,11 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
     cover.style.setProperty("--ratio", String(ratio));
     orbit.style.setProperty("--ratio", String(ratio));
     front.style.setProperty("--ratio", String(ratio));
+    requestAnimationFrame(() => { // cuánto se aplasta la pista para ser la elipse (alto / ancho de la órbita)
+      const squash = orbit.offsetWidth ? orbit.offsetHeight / orbit.offsetWidth : .3;
+      el.style.setProperty("--orbit-squash", String(squash));
+      el.style.setProperty("--orbit-unsquash", String(1 / squash));
+    });
     label.textContent = "Abriendo";
     mount(leave, KeyHint(backGlyph(), "Ocultar"));
     title.textContent = item.title;
@@ -99,7 +108,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
     timer = setTimeout(hide, ms);
   }
 
-  /** El juego está listo: salto a velocidad luz y a negro; el juego entra en ese negro. */
+  /** El juego está listo: todo se funde a negro (sin salto); el juego entra en ese negro. */
   function reveal() {
     if (el.hidden) return;
     holding = false;

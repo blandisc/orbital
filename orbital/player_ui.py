@@ -363,6 +363,7 @@ class Hud:
     description: str = ""  # sinopsis (en pausa)
     seeking: str = ""  # "+10 s" / "−1 min" mientras adelantas: solo la barra y la burbuja
     focus: int | None = None  # con el stick: el botón enfocado de la fila de abajo (A lo elige)
+    pip: bool = False  # Home lo pone en pequeño (Ajustes): se dice arriba, que si no nadie lo descubre
 
 
 def info_line(hud: Hud) -> str:
@@ -450,6 +451,8 @@ def hud_ass(hud: Hud) -> str:
     lines.append(gradient(0, 200, 100, 255, 14))
     if hud.now:
         lines.append(text(W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
+    if hud.pip:
+        lines.append(hints([("Home", "Ver en pequeño")], 56, left=MARGIN))
     if hud.detail:
         lines.append(text(MARGIN, 772, esc(fit(hud.detail, 24, min(1300, W - 2 * MARGIN), "semi")), 24, SOFT, weight="semi"))
     lines.append(text(MARGIN, 806, esc(fit(hud.title, 48, min(1500, W - 2 * MARGIN), "bold")), 48, weight="bold"))
@@ -473,6 +476,8 @@ def paused_ass(hud: Hud) -> str:
     lines = [rrect(0, 0, W, H, 0, SHADE, "88"), gradient(420, H, 255, 70), gradient(0, 200, 140, 255, 14)]
     if hud.now:
         lines.append(text(W - MARGIN, 56, esc(hud.now), 34, weight="semi", align=9))
+    if hud.pip:
+        lines.append(hints([("Home", "Ver en pequeño")], 56, left=MARGIN))
     # El bloque va abajo, apoyado sobre la barra (como en las TV), no a media pantalla: se mide primero
     # y se coloca para que los botones queden justo encima de la barra de progreso.
     width = min(1180, W - 2 * MARGIN)

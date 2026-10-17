@@ -94,6 +94,7 @@ from .player_screen import PlayerScreen
 
 log = logging.getLogger(__name__)
 
+LOAD_GRACE = 1.5  # s tras cargar otro archivo antes de leer su posición (ver tick)
 SYNTHETIC_RESYNC_AFTER = 60.0  # s en pausa tras los que un canal de Orbital regresa a lo que va al aire
 # El fundido de entrada: el video arranca tapado de negro y se destapa ya con imagen (sin ventanas transparentes, que
 # hacían crecer la memoria de dibujo de Windows). Al abrirlo desde Orbital espera a que Orbital termine su salida a negro.
@@ -252,7 +253,7 @@ class OrbitalPlayer(PlayerScreen):
         playback = self.current
         if playback is None or playback.process.poll() is not None:
             return False
-        segment = Segment(meta, title, url, start=start)
+        segment = Segment(meta, title, url, start=start, grace_until=time.monotonic() + LOAD_GRACE)
         with self._swap:  # mientras se buscaba la fuente pudo abrirse otro video: entonces este archivo ya no va
             if self.current is not playback:
                 return False
@@ -414,6 +415,10 @@ class OrbitalPlayer(PlayerScreen):
         if segment.live:
             return self._live_tick(segment, now, paused, pos, idle)
         known = isinstance(dur, (int, float)) and dur > 0
+        if now < segment.grace_until and not segment.playing:
+            # Recién cargado otro archivo en la misma ventana: mpv tarda un instante en soltar lo del anterior (su posición
+            # al final y «llegó al final»). Sin esta espera el episodio nuevo se daba por terminado y se cargaba otro.
+            return
         if not segment.playing:
             # Arrancó: hay posición y, o se sabe cuánto dura, o la posición ya avanza (un torrent que aún
             # descarga no dice su duración; antes se daba por fallido a los 45 s aunque se estuviera viendo).

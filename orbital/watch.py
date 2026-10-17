@@ -472,6 +472,7 @@ class Watch:
         p.on_send_iphone = self._send_to_phone
         p.idle_seconds = int(self.setting("video_idle_minutes", self.config.sessions.video_idle_minutes)) * 60
         p.on_language = self._remember_language
+        p.pip_on_home = self.setting("video_home", "pip") == "pip"  # la barra dice «Home · Ver en pequeño»
         p.sub_scale = float(self.setting("sub_scale", 1.0) or 1.0)
 
     def _send_to_phone(self, meta: dict, action: str, position: float | None = None) -> str:

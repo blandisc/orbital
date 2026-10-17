@@ -232,8 +232,10 @@ def test_los_episodios_sin_latino_se_quedan_fuera_del_horario(tmp_path):
     tv._stop = SimpleNamespace(wait=lambda seconds: False, is_set=lambda: False)  # sin esperar entre episodios
     assert tv.scan(limit=100) == 12  # revisó los doce
     assert tv.coverage.has("tt1:3:1") is True and tv.coverage.has("tt1:3:2") is False
-    # Todos sin latino menos uno: el horario solo lo tiene a él (si fueran todos, todos: algo raro pasó).
-    assert [e["id"] for e in tv._episodes(CHANNEL)] == ["tt1:3:1"]
+    # El horario no se recorre (siguen todos), pero lo que va y «A continuación» saltan a los que tienen latino.
+    assert len(tv._episodes(CHANNEL)) == 12
+    now = tv.now(CHANNEL)
+    assert now["label"] == "T3 E1" and now["next"]["label"] == "T3 E1"  # el único con latino
     again = synthetic.SyntheticTV(catalog, [CHANNEL], directory=tmp_path)  # se guardó en disco
     assert again.coverage.has("tt1:3:2") is False and not again.coverage.stale("tt1:3:1", synthetic.EPOCH + 20)
     assert again.coverage.stale("tt1:3:2", synthetic.EPOCH + 10 + synthetic.RECHECK_MISSING + 1)  # a la semana, otra vez

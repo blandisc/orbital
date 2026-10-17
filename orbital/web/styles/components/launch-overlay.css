@@ -77,14 +77,17 @@
   transition: transform var(--duration-enter-long) var(--ease-in), opacity var(--duration-enter) var(--ease-in);
   animation: fade-in var(--duration-enter-long) var(--ease-out) var(--delay-2) backwards;
 }
-/* El satélite recorre la elipse de verdad (offset-path), no un círculo. */
+/* El satélite recorre la elipse con transformaciones (GPU): una pista cuadrada del ancho de la órbita, aplastada a su
+   alto, gira; el satélite gira al revés y se desaplasta, así sigue redondo y en la línea. */
+.launch__track { position: absolute; left: 0; top: 50%; width: 100%; aspect-ratio: 1; margin-top: -50%; transform: scaleY(var(--orbit-squash, .3)); }
+.launch__spinner { position: absolute; inset: 0; animation: launch-spin var(--duration-launch-orbit) linear infinite; }
 .launch__satellite {
-  position: absolute; left: 0; top: 0; width: 12px; height: 12px; border-radius: 50%;
+  position: absolute; left: 50%; top: 0; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
   background: var(--color-star); box-shadow: 0 0 .9rem .25rem color-mix(in oklab, var(--art-accent) 75%, var(--color-star));
-  offset-path: ellipse(50% 50% at 50% 50%); offset-rotate: 0deg;
-  animation: launch-orbit var(--duration-launch-orbit) linear infinite;
+  animation: launch-counter var(--duration-launch-orbit) linear infinite;
 }
-@keyframes launch-orbit { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+@keyframes launch-spin { to { transform: rotate(360deg); } }
+@keyframes launch-counter { from { transform: rotate(0deg) scaleY(var(--orbit-unsquash, 3.3)); } to { transform: rotate(-360deg) scaleY(var(--orbit-unsquash, 3.3)); } }
 /* Profundidad: el arco de enfrente pasa por delante de la portada; el de atrás, detrás. */
 /* El de enfrente se ve encima de la portada: más claro y con su brillo (con 2 px sin brillo se perdía
    sobre un póster cargado y parecía que la órbita nunca pasaba por delante). */
@@ -93,7 +96,7 @@
   border-color: color-mix(in oklab, var(--color-star) 80%, var(--art-accent));
   box-shadow: 0 0 1.2rem -.2rem color-mix(in oklab, var(--art-accent) 60%, transparent), 0 0 .35rem color-mix(in oklab, var(--color-star) 55%, transparent);
 }
-.launch--revealing .launch__orbit--front { transform: rotate(-24deg) scale(4); opacity: 0; }
+.launch--revealing .launch__orbit--front { transform: rotate(-24deg) scale(1.18); opacity: 0; }
 /* Sin portada (una app): solo la órbita, con un planeta de la marca al centro. */
 .launch--no-cover .launch__stage::before {
   content: ""; position: absolute; width: 6rem; height: 6rem; border-radius: 50%;
@@ -121,19 +124,20 @@
   background: radial-gradient(circle at 50% 45%, color-mix(in oklab, var(--art-accent) 60%, var(--color-star)) 0%, transparent 60%);
 }
 
-/* --- Listo: salto a velocidad luz --------------------------------------------------------- */
+/* --- Listo: todo se funde a negro, sin salto ----------------------------------------------- */
 .launch--revealing { background-color: var(--color-video-bg); }
-.launch--revealing .launch__backdrop { opacity: 0; transform: scale(1.25); }
+.launch--revealing .launch__backdrop { opacity: 0; transform: scale(1.08); }
 /* Con arte: se acerca un poco y se va a negro (sin el salto grande: el arte ya llena la pantalla). */
 .launch--art.launch--revealing .launch__backdrop { animation: none; transform: scale(1.06); }
 .launch--art.launch--revealing .launch__stars { background: none; }
-.launch--revealing .launch__starfield { animation-duration: var(--duration-launch-reveal); animation-iteration-count: 1; }
-.launch--revealing .launch__starfield--near { animation-delay: var(--duration-none); }
-.launch--revealing .launch__cover { transform: scale(5.5); opacity: 0; }
-.launch--revealing .launch__orbit { transform: rotate(-24deg) scale(4); opacity: 0; }
+.launch--revealing .launch__stars { opacity: 0; transition: opacity var(--duration-launch-reveal) var(--ease-out); }
+.launch--revealing .launch__cover { transform: scale(1.06); opacity: 0;
+  transition: transform var(--duration-launch-reveal) var(--ease-out), opacity var(--duration-launch-reveal) var(--ease-in); }
+.launch--revealing .launch__orbit { transform: rotate(-24deg) scale(1.18); opacity: 0;
+  transition: transform var(--duration-launch-reveal) var(--ease-out), opacity var(--duration-launch-out) var(--ease-in); }
 .launch--revealing .launch__text { opacity: 0; }
 .launch--revealing .launch__flash { animation: launch-flash var(--duration-launch-reveal) var(--ease-out) forwards; }
-@keyframes launch-flash { 0% { opacity: 0; } 30% { opacity: .55; } 100% { opacity: 0; } }
+@keyframes launch-flash { 0% { opacity: 0; } 35% { opacity: .22; } 100% { opacity: 0; } }
 
 @media (max-width: 700px), (max-height: 520px) {
   .launch__stage { height: 13rem; }

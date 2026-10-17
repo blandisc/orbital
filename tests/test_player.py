@@ -755,3 +755,17 @@ def test_the_small_video_leaves_fullscreen_stays_on_top_and_comes_back(monkeypat
     assert ("set_property", "fullscreen", False) in mpv.sent and ("set_property", "ontop", True) in mpv.sent
     p.exit_pip()
     assert not p.pip and mpv.sent[-1] == ("set_property", "fullscreen", True)
+
+
+def test_a_new_file_is_not_mistaken_for_the_end_of_the_previous_one():
+    """Recién cargado otro episodio en la misma ventana, mpv tarda un instante en soltar lo del anterior (posición al
+    final y «llegó al final»): el nuevo no se da por terminado (antes se cargaba otro encima)."""
+    import time as _t
+
+    p, mpv = make_player(**{"time-pos": 1335.0, "duration": 1340.0, "eof-reached": True})
+    ended = []
+    p.on_synthetic_end = lambda meta: ended.append(meta) or True
+    segment = player.Segment({"synthetic": True, "kind": "channel"}, "Serie 24/7", "u2", grace_until=_t.monotonic() + 1.5)
+    p.segment = segment
+    p.tick(segment, _t.monotonic(), False)  # recién cargado: no se lee nada todavía
+    assert not segment.playing and ended == []

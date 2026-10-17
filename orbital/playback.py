@@ -276,6 +276,7 @@ class Segment:
     upnext_deadline: float | None = None
     paused_at: float | None = None  # canal de Orbital: desde cuándo está en pausa (al seguir, regresa al aire)
     duration_told: bool = False  # canal de Orbital: ya se le dijo cuánto dura de verdad este episodio
+    grace_until: float = 0.0  # otro archivo en la misma ventana: hasta entonces no se lee su posición (player.tick)
 
 
 class PlayerRemote:

@@ -139,7 +139,7 @@ class PlayerScreen:
             ends=player_ui.ends_at(position, duration), now=clock(),
             chapters=[float(c["time"]) for c in chapters], chapter_titles=[str(c.get("title") or "") for c in chapters],
             facts=meta.get("facts", ""), description=meta.get("description", ""), seeking=seeking,
-            focus=getattr(self, "_hud_focus", None))
+            focus=getattr(self, "_hud_focus", None), pip=bool(getattr(self, "pip_on_home", False)))
 
     def show_hud(self, seeking: str = "", *, position: float | None = None, paused: bool | None = None) -> None:
         """Barra inferior: se queda en pausa; reproduciendo, se va sola a los pocos segundos.

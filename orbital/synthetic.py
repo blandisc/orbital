@@ -201,10 +201,17 @@ class SyntheticTV:
         return out
 
     def _episodes(self, channel: SyntheticChannel) -> list[dict]:
-        """Los del horario: sin los que ya se sabe que no tienen el doblaje (si fueran todos, todos: algo raro pasó)."""
-        episodes = self.all_episodes(channel)
-        kept = [e for e in episodes if self.coverage.has(e["id"]) is not False]
-        return kept or episodes
+        """Los del horario: TODOS (antes se quitaban los sin doblaje y, cada vez que la revisión de fondo quitaba unos, el
+        horario entero se recorría: volvía a salir el mismo episodio). Los sin doblaje se saltan al ponerlos."""
+        return self.all_episodes(channel)
+
+    def _airable(self, channel: SyntheticChannel, episodes: list[dict], cycle: int, place: int) -> tuple[int, int]:
+        """Desde ese lugar, el primero que no se sabe sin doblaje (sin preguntarle a nadie: lo que ya revisó la de fondo)."""
+        for _ in range(2 * len(episodes)):  # puede cruzar a la vuelta siguiente (otro orden)
+            if self.coverage.has(self._at(channel, episodes, cycle, place)["id"]) is not False:
+                return cycle, place
+            cycle, place = following(len(episodes), cycle, place)
+        return cycle, place
 
     def _at(self, channel: SyntheticChannel, episodes: list[dict], cycle: int, place: int) -> dict:
         return episodes[cycle_order(len(episodes), channel.id, cycle)[place % len(episodes)]]
@@ -225,9 +232,12 @@ class SyntheticTV:
             return None
         now = self.clock()
         cycle, place, offset = self._on_air(channel, episodes, now)
+        airable = self._airable(channel, episodes, cycle, place)
+        if airable != (cycle, place):  # lo de esta hora no tiene doblaje: va el siguiente, desde el principio
+            cycle, place, offset = *airable, 0.0
         episode = self._at(channel, episodes, cycle, place)
         ends = now - offset + self._length(channel, episode)
-        upcoming = self._at(channel, episodes, *following(len(episodes), cycle, place))
+        upcoming = self._at(channel, episodes, *self._airable(channel, episodes, *following(len(episodes), cycle, place)))
         many = len(channel.shows) > 1
         return {"series": episode["series"] if many else "", "label": episode["label"], "title": episode["title"],
                 "still": episode.get("thumbnail"), "ends": ends,
@@ -325,6 +335,7 @@ class SyntheticTV:
         if not episodes:
             return None
         for _ in range(MAX_SKIPS - skips):
+            cycle, place = self._airable(channel, episodes, cycle, place)  # los que ya se sabe que no: sin preguntar
             episode = self._at(channel, episodes, cycle, place)
             found = self.sources(channel, episode["id"], skip)
             if not skip:
