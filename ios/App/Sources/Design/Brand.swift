@@ -48,8 +48,8 @@ struct MarkRing: Shape {
     }
 }
 
-/// La marca con su nombre: el planeta, «orbital» en minúsculas y negrita, y la luna como punto arriba a la derecha de la
-/// palabra. Al aparecer (`animated`), el anillo se dibuja y luego la luna cae en su lugar con un resorte corto; tocarla le da
+/// La marca con su nombre: el planeta, «orbital» en minúsculas y negrita, y la luna (turquesa, `DS.brandMoon`) como punto
+/// arriba a la derecha de la palabra. Al aparecer (`animated`), el anillo se dibuja y luego la luna cae en su lugar con un resorte corto; tocarla le da
 /// un saltito. Con «Reducir movimiento», quieta.
 struct OrbitalWordmark: View {
     /// El tamaño de la letra de «orbital».
@@ -65,7 +65,8 @@ struct OrbitalWordmark: View {
             OrbitalMark(size: size * DS.Brand.markScale, animated: animated)
             HStack(alignment: .firstTextBaseline, spacing: size * DS.Brand.moonGap) {
                 Text(verbatim: "orbital").font(DS.Brand.wordFont(size)).tracking(size * DS.Brand.tracking)
-                Circle()
+                // La luna, en el turquesa de la marca (como la barra de la TV y el ícono).
+                Circle().fill(DS.brandMoon)
                     .frame(width: size * DS.Brand.moon, height: size * DS.Brand.moon)
                     .alignmentGuide(.firstTextBaseline) { $0.height + size * DS.Brand.moonRise }
                     .scaleEffect(still || landed ? 1 : DS.Brand.moonFromScale)

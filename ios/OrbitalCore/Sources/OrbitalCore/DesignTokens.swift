@@ -30,6 +30,8 @@ public enum DesignTokens {
         case accent
         /// «En vivo» (TV en vivo): el único uso del teal, como `--color-live` en la TV.
         case live
+        /// La luna de la marca (ícono y logotipo «orbital»), como `--color-brand-moon`: fija, la misma en los dos modos.
+        case brandMoon
         /// Avisos.
         case warning, danger
 
@@ -47,6 +49,7 @@ public enum DesignTokens {
             case .onPrimary: (palette["ink-1000"]!, palette["paper"]!)
             case .accent: (palette["paper"]!, "#111113")
             case .live: (palette["teal-300"]!, "#0b7a6e")
+            case .brandMoon: (palette["teal-300"]!, palette["teal-300"]!)
             case .warning: (palette["amber-300"]!, "#9a6200")
             case .danger: (palette["red-400"]!, "#c4362c")
             }

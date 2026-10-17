@@ -49,6 +49,8 @@ enum DS {
     static let accent = role(.accent)
     /// «En vivo» (el único teal, como en la TV).
     static let live = role(.live)
+    /// La luna de la marca (turquesa, igual en los dos modos).
+    static let brandMoon = role(.brandMoon)
     /// Lo que salió bien o ya está (visto, descargado, conectado): el papel, como la TV.
     static let good = role(.accent)
     static let warning = role(.warning)

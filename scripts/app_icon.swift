@@ -1,6 +1,6 @@
 // El ícono de la app de iPhone con la marca de la TV (orbital/web/js/core/icons.js · mark), igual al de Windows
 // (scripts/make_icon.py): el planeta de contorno, el anillo
-// que lo cruza por delante y la luna como un punto aparte arriba a la derecha (el mismo gesto que el punto de «orbital»).
+// que lo cruza por delante y la luna como un punto aparte arriba a la derecha, en el turquesa de la marca (el punto de «orbital»).
 // Sin la palabra. Tres variantes para iOS: la de siempre (papel sobre grafito), la oscura (fondo transparente: iOS pone el
 // suyo) y la teñida (grises sobre negro: iOS la tiñe).
 //
@@ -21,7 +21,7 @@ func rgb(_ hex: Int, _ alpha: CGFloat = 1) -> CGColor {
 let box = (origin: 8.0, side: 240.0)
 let px = CGFloat(side) / CGFloat(box.side)
 
-func render(_ name: String, background: (top: CGColor, bottom: CGColor)?, ink: CGColor, cut: CGColor?) throws {
+func render(_ name: String, background: (top: CGColor, bottom: CGColor)?, ink: CGColor, cut: CGColor?, moon: CGColor? = nil) throws {
     let space = CGColorSpace(name: CGColorSpace.sRGB)!
     let ctx = CGContext(data: nil, width: side, height: side, bitsPerComponent: 8, bytesPerRow: 0, space: space,
                         bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
@@ -51,15 +51,16 @@ func render(_ name: String, background: (top: CGColor, bottom: CGColor)?, ink: C
     // El anillo.
     ctx.setStrokeColor(ink); ctx.setLineWidth(2.1); ring(); ctx.strokePath()
     ctx.restoreGState()
-    // La luna.
-    ctx.setFillColor(ink)
+    // La luna, en el turquesa de la marca (teal-300, `--color-brand-moon`); la teñida, del mismo gris que el resto.
+    ctx.setFillColor(moon ?? ink)
     ctx.fillEllipse(in: CGRect(x: 196 - 11, y: 62 - 11, width: 22, height: 22))
     let rep = NSBitmapImageRep(cgImage: ctx.makeImage()!)
     try rep.representation(using: .png, properties: [:])!.write(to: out.appendingPathComponent(name))
 }
 
 let paper = rgb(0xf5f4f0)
-try render("AppIcon.png", background: (rgb(0x1e1e23), rgb(0x0c0c0e)), ink: paper, cut: rgb(0x141417))
-try render("AppIcon-Dark.png", background: nil, ink: paper, cut: nil)
+let moon = rgb(0x5fd6c6)
+try render("AppIcon.png", background: (rgb(0x1e1e23), rgb(0x0c0c0e)), ink: paper, cut: rgb(0x141417), moon: moon)
+try render("AppIcon-Dark.png", background: nil, ink: paper, cut: nil, moon: moon)
 try render("AppIcon-Tinted.png", background: (rgb(0x000000), rgb(0x000000)), ink: rgb(0xffffff), cut: rgb(0x000000))
 print("Ícono listo en \(out.path)")
