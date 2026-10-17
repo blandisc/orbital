@@ -346,6 +346,7 @@ export const SETTING_VALUES = {
   video_idle_minutes: [[15, "15 min"], [30, "30 min"], [60, "1 hora"], [0, "Nunca"]],
   close_previous: [[true, "Sí"], [false, "No"]],
   emulator_updates: [["avisar", "Avisarme"], ["auto", "Automático"], ["nunca", "No revisar"]],
+  screensaver_minutes: [[5, "5 min"], [10, "10 min"], [20, "20 min"], [30, "30 min"], [0, "Nunca"]],
 };
 
 export const settingLabel = (key, value) => SETTING_VALUES[key]?.find(([v]) => v === value)?.[1] ?? otherValue(key, value);
@@ -384,7 +385,7 @@ function edgeAware(key, value, step, page) {
 const SETTING_ICONS = {
   audio: "sound", subtitles: "captions", quality: "hd", sub_scale: "text", text_size: "text", safe_area: "wide",
   reduce_motion: "moon", voice_tips: "assistant", sounds: "sound", haptics: "gamepad", game_idle_minutes: "gamepad",
-  video_idle_minutes: "play", close_previous: "swap",
+  video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid",
 };
 
 const SETTING_PAGES = {
@@ -394,7 +395,8 @@ const SETTING_PAGES = {
   display: { title: "Pantalla y sonido", icon: "display", hint: "Texto, márgenes, sonidos y vibración", options: [
     ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],
     ["reduce_motion", "Reducir movimiento", null], ["voice_tips", "Frases para Alexa", null],
-    ["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null]] },
+    ["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null],
+    ["screensaver_minutes", "Protector de pantalla", "El mosaico de Para ti tras ese rato sin usarla"]] },
   sessions: { title: "Juegos y videos", icon: "gamepad", hint: "Qué se cierra solo y cuándo", options: [
     ["game_idle_minutes", "Cerrar juegos olvidados en pausa", "Lo no guardado se pierde"],
     ["video_idle_minutes", "Cerrar videos olvidados en pausa", "Tu avance se guarda"],

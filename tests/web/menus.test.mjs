@@ -343,3 +343,11 @@ test("Emuladores: cuál tiene versión nueva, cuál se instala aquí y el modo c
   assert.equal(dolphin.hint, "Se baja en dolphin-emu.org");
   assert.equal(ppsspp.value, "Al día");
 });
+
+test("Pantalla y sonido: el protector de pantalla (el mosaico) con su tiempo", async () => {
+  const { settingsPage } = await import("../../orbital/web/js/core/menus.js");
+  const page = settingsPage("display", { screensaver_minutes: 10 });
+  const row = page.options.find((o) => o.label === "Protector de pantalla");
+  assert.equal(row.value, "10 min");
+  assert.deepEqual(row.command, { type: "setting", key: "screensaver_minutes", value: 20, page: "display" });
+});

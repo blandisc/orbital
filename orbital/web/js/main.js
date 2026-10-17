@@ -1110,6 +1110,7 @@ async function undoHide(undo = state.undoHide) {
 function handleAction(action, { repeat = false } = {}) {
   // Con el planeta en pantalla no se ve nada: un Enter abría un juego (o el menú) a ciegas.
   if (boot.blocking) return;
+  if (saver.wake()) return; // con el protector de pantalla, el primer botón solo lo quita
   // Y justo después de ocultar algo: deshacer (si no hay un menú u otra vista encima).
   if (action === "options" && canUndoHide() && !ui.sheet.isOpen && !topOverlay()) {
     return undoHide();
@@ -1325,6 +1326,43 @@ createInput({
   onText: (char) => { (ui.login.isOpen ? ui.login.type(char) : ui.search.type(char)); renderHints(); }, // Enter salta a resultados: «Abrir»
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
 });
+// Protector de pantalla (Ajustes › Pantalla y sonido): tras un rato sin tocar nada, el mosaico de Para ti a pantalla
+// completa, solo con la hora (como el de Game Glance, con tus juegos y películas). Nunca con un juego o un video al frente
+// (Orbital ni se ve) ni con una ficha o un menú abiertos; cualquier botón, toque o voz lo quita y vuelve a donde estabas.
+const saver = (() => {
+  let last = Date.now();
+  let back = null; // la sección donde estabas
+  const minutes = () => Number(state.settings?.screensaver_minutes ?? 10);
+  const busy = () => document.hidden || !state.libraryLoaded || boot.blocking || ui.sheet.isOpen || topOverlay() || ui.launch.visible
+    || (state.running && !state.running.paused);
+  function start() {
+    if (!visibleSections(state.allRows).some((s) => s.id === "foryou")) return; // sin Para ti, no hay mosaico
+    back = state.section;
+    document.body.dataset.screensaver = "true";
+    goToSection("foryou");
+    ui.foryou.screensaver(true);
+  }
+  return {
+    get active() { return back !== null; },
+    wake() {
+      last = Date.now();
+      if (back === null) return false;
+      const to = back;
+      back = null;
+      delete document.body.dataset.screensaver;
+      ui.foryou.screensaver(false);
+      goToSection(to);
+      return true;
+    },
+    check() {
+      if (back !== null || !minutes() || busy() || Date.now() - last < minutes() * 60_000) return;
+      start();
+    },
+  };
+})();
+setInterval(() => saver.check(), 15_000);
+for (const type of ["pointerdown", "wheel", "touchstart"]) document.addEventListener(type, () => saver.wake(), { capture: true, passive: true });
+
 // Al volver la conexión (Orbital se reinició), la biblioteca y el estado se piden otra vez.
 api.events(handleEvent, { onReconnect: () => { loadLibrary(); pollStatus(); } });
 // Al volver a la ventana (p. ej. tras cerrar un juego) refresca recientes y tiempo jugado, y salen

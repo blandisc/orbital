@@ -135,3 +135,10 @@ def test_api_lists_updates_and_the_setting_is_saved(make_client):
     assert data["mode"] == "avisar" and isinstance(data["items"], list)
     assert c.post("/api/settings", json={"emulator_updates": "auto"}).json()["emulator_updates"] == "auto"
     assert c.post("/api/settings", json={"emulator_updates": "siempre"}).status_code == 422
+
+
+def test_screensaver_setting_is_saved(make_client):
+    c = make_client()
+    assert c.get("/api/settings").json()["screensaver_minutes"] == 10
+    assert c.post("/api/settings", json={"screensaver_minutes": 0}).json()["screensaver_minutes"] == 0
+    assert c.post("/api/settings", json={"screensaver_minutes": 7}).status_code == 422

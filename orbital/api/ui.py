@@ -27,7 +27,8 @@ SETTINGS = {
     "video_idle_minutes": {0, 15, 30, 60},
     "close_previous": {True, False},  # la frase de Alexa debajo de los botones del héroe
     "welcomed": {True, False},
-    "emulator_updates": {"avisar", "auto", "nunca"},  # versiones nuevas de los emuladores (emulator_updates.py)  # ya vio "Tu consola" (la pantalla de primer uso)
+    "emulator_updates": {"avisar", "auto", "nunca"},
+    "screensaver_minutes": {0, 5, 10, 20, 30},  # protector de pantalla: el mosaico de Para ti tras ese rato sin tocar nada  # versiones nuevas de los emuladores (emulator_updates.py)  # ya vio "Tu consola" (la pantalla de primer uso)
 }
 VIEWS = ("buscar", "serie", "seccion", "fuentes")
 
@@ -74,7 +75,7 @@ def router(d: Deps) -> APIRouter:
                 "reduce_motion": False, "sounds": True, "haptics": True, "voice_tips": True,
                 "game_idle_minutes": d.config.sessions.game_idle_minutes,
                 "video_idle_minutes": d.config.sessions.video_idle_minutes,
-                "close_previous": d.config.sessions.close_previous, **catalog.state.settings(),
+                "close_previous": d.config.sessions.close_previous, "screensaver_minutes": 10, **catalog.state.settings(),
                 "stremio_linked": catalog.stremio_linked, "alexa": d.alexa_ready, "alexa_last": d.alexa_last,
                 # «Para ti»: Ajustes › Cuentas enseña Trakt, TMDB y RAWG (y si su clave ya está).
                 "trakt": catalog.foryou.status()["trakt"], "para_ti": catalog.foryou.status()}
