@@ -161,6 +161,23 @@ def dwm_gpu_mb() -> tuple[int, int] | None:
     return int(totals[0] // (1024 * 1024)), int(totals[1] // (1024 * 1024))
 
 
+_last_dwm: list[int] = []
+
+
+def note_dwm(moment: str) -> None:
+    """Al registro: la memoria con la que Windows dibuja las ventanas en este momento y cuánto cambió desde la anterior
+    (al abrir algo y al regresar a Orbital). Así se ve qué la hace crecer. Nunca falla."""
+    try:
+        dwm = dwm_gpu_mb()
+    except Exception:  # noqa: BLE001 - medir nunca tumba una apertura
+        return
+    if dwm is None:
+        return
+    delta = f" ({dwm[0] - _last_dwm[0]:+d} MB)" if _last_dwm else ""
+    _last_dwm[:] = [dwm[0]]
+    log.info("Memoria de dibujo de Windows (DWM) %s: %d MB%s", moment, dwm[0], delta)
+
+
 def dwm_leak(dwm: tuple[int, int] | None) -> bool:
     return dwm is not None and dwm[0] > DWM_HIGH_MB
 

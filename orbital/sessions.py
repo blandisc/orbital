@@ -14,7 +14,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from . import focus, system
+from . import focus, health, system
 from .config import Config
 from .events import EventBus
 from .launcher import Launcher
@@ -197,7 +197,14 @@ class Sessions:
             return False
         self._reveal_skip = threading.Event()
         launched = time.monotonic()
-        threading.Thread(target=taskbar_hidden, args=(focus.bring_game_to_front, self.launcher, item_id, title, runner),
+        health.note_dwm(f"antes de abrir {title}")
+
+        def reveal(*args, **kwargs):
+            shown = taskbar_hidden(focus.bring_game_to_front, *args, **kwargs)
+            health.note_dwm(f"con {title} al frente")
+            return shown
+
+        threading.Thread(target=reveal, args=(self.launcher, item_id, title, runner),
                          kwargs={"notify": self.events.publish, "skip": self._reveal_skip, "pinned": pinned,
                                  "ready_check": ready, "timeout": timeout,
                                  "user_returned": lambda: self.returned_at > launched},
@@ -270,6 +277,7 @@ class Sessions:
             self.kiosk.open()  # al frente o, si alguien cerró la ventana, otra vez abierta
         else:
             system.bring_to_front()
+        threading.Timer(3, health.note_dwm, args=(f"de vuelta de {title}",)).start()
         # Se cerró solo a los pocos segundos: casi siempre es que no pudo abrir (falta la ROM, el
         # firmware, una clave…). No es "de vuelta de": se avisa como problema.
         crashed = (seconds < QUICK_EXIT and not self.launcher.last_stopped_by_user
