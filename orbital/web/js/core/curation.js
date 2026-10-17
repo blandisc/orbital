@@ -111,3 +111,11 @@ export function spotlightRow(picked, itemsById, limit = 6) {
   }
   return items.length >= 2 ? { id: "curated:spotlight", title: "Destacados", items, spotlight: true } : null;
 }
+
+/** El próximo estreno de tus series (Próximos estrenos de Trakt): el primero que no ha salido. null si no hay. */
+export function nextAiring(items, today = new Date()) {
+  const day = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const next = (Array.isArray(items) ? items : []).find((i) => i && i.title && (i.day || "") >= day);
+  if (!next) return null;
+  return { title: next.title, episode: next.episode_label || null, when: [next.day_label, next.time].filter(Boolean).join(" · "), meta_id: next.meta_id };
+}

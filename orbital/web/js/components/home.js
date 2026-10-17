@@ -1,4 +1,5 @@
-import { h, mount } from "../core/dom.js";
+import { h, mount, svg } from "../core/dom.js";
+import { ICONS } from "../core/icons.js";
 import { dragArea, dragScroll } from "../core/swipe.js";
 import { buildHome, queueTitle } from "../core/home.js";
 import { settler } from "../core/motion.js";
@@ -70,7 +71,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   /** Qué es lo enfocado (no dónde está): un juego o una consola. */
   const identity = (t) => (t?.item?.id ?? (t?.console ? `console:${t.console.id ?? t.console.system ?? t.console.name}` : null));
 
-  function render(rows, { runningId = null, glyphs = {}, hidden = 0, airing = {} } = {}) {
+  function render(rows, { runningId = null, glyphs = {}, hidden = 0, airing = {}, nextUp = null } = {}) {
     options = { runningId, glyphs };
     hiddenCount = hidden;
     staged = undefined; // se vuelve a pintar con los datos nuevos
@@ -95,7 +96,11 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     top.classList.toggle("home__top--alone", !queued.length);
     // Listo antes de abrir: el fondo de cada tarjeta (lo usan la pantalla de carga y la ficha) se pide de una vez.
     model.cards.forEach((item) => { const art = item.hero || item.image; if (art) new Image().src = art; });
+    // Bajo el título, el próximo estreno de tus series (como el widget del iPhone): «The Simpsons T38 E3 · Mañana · 6:00 p. m.».
+    const upcoming = nextUp && h("div", { class: "home__next" }, svg(ICONS.calendar),
+      h("span", { class: "home__next-text" }, [nextUp.title, nextUp.episode].filter(Boolean).join(" ")), h("span", { class: "home__next-when" }, `· ${nextUp.when}`));
     mount(queue, queued.length > 0 && SectionHead(queueTitle(model.cards), { className: "home__queue-head" }),
+      queued.length > 0 && upcoming,
       queued.length > 0 && h("div", { class: "home__rows" }, queued));
 
     mount(consolesHead, model.consoles.length > 0 && SectionHead("Tus consolas", {

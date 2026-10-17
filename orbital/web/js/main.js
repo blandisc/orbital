@@ -36,7 +36,7 @@ import { createLaunching } from "./app/launching.js";
 import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
-import { curatedLists, curatedRows, GENRE_SHELVES, genreRows, spotlightRow } from "./core/curation.js";
+import { curatedLists, curatedRows, GENRE_SHELVES, genreRows, nextAiring, spotlightRow } from "./core/curation.js";
 
 const state = createState();
 // La Gamepad API no enseña el mando hasta la primera pulsación: se arranca con la última forma de
@@ -556,7 +556,7 @@ function handleGames(action, { repeat = false } = {}) {
 }
 
 function renderHome() {
-  ui.home.render(state.allRows, { runningId: state.running?.id, glyphs: glyphs(), hidden: state.hidden, airing: state.airing });
+  ui.home.render(state.allRows, { runningId: state.running?.id, glyphs: glyphs(), hidden: state.hidden, airing: state.airing, nextUp: state.nextUp });
 }
 
 /** Lo que sale hoy de tus series (Trakt): el Inicio lo marca «Sale hoy · 19:00». Cada media hora; sin Trakt, nada. */
@@ -564,6 +564,13 @@ let airingAt = 0;
 function loadAiring() {
   if (Date.now() - airingAt < 30 * 60_000) return;
   airingAt = Date.now();
+  // El próximo estreno de tus series (como el widget del iPhone): en Inicio, junto a «Seguir viendo».
+  api.forYouList("estrenos").then((res) => {
+    const next = nextAiring(res?.items);
+    if (JSON.stringify(next) === JSON.stringify(state.nextUp ?? null)) return;
+    state.nextUp = next;
+    if (inHome()) renderHome();
+  }).catch(() => {});
   api.forYouToday().then((res) => {
     const airing = res?.airing && typeof res.airing === "object" ? res.airing : {};
     if (JSON.stringify(airing) === JSON.stringify(state.airing || {})) return;

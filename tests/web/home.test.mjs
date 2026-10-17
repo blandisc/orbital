@@ -124,3 +124,11 @@ test("un emulador instalado sin juegos también sale en Tus consolas, con dónde
   assert.equal(ps3.folder, "C:\ROMs\ps3");
   assert.equal(consoleList([{ id: "emulators:x", title: "X", items: [] }]).length, 0);
 });
+
+test("el próximo estreno de tus series: el primero que no ha salido", async () => {
+  const { nextAiring } = await import("../../orbital/web/js/core/curation.js");
+  const today = new Date(2026, 9, 17);
+  const items = [{ title: "Viejo", day: "2026-10-10" }, { title: "The Simpsons", day: "2026-10-18", day_label: "Mañana", time: "6:00 p. m.", episode_label: "T38 E3" }];
+  assert.deepEqual(nextAiring(items, today), { title: "The Simpsons", episode: "T38 E3", when: "Mañana · 6:00 p. m.", meta_id: undefined });
+  assert.equal(nextAiring([], today), null);
+});
