@@ -49,7 +49,7 @@ def executable_found(emu: EmulatorConfig) -> bool:
 
 def build_argv(emu: EmulatorConfig, exe: Path | None, rom: Path) -> list[str]:
     # Reemplazo literal: una llave suelta en un argumento («{"x":1}») ya no tumba el lanzamiento.
-    values = {"{rom}": str(rom), "{rom_dir}": str(rom.parent), "{rom_name}": rom.stem}
+    values = {"{rom}": str(rom), "{rom_dir}": str(rom.parent), "{rom_name}": rom.stem, "{rom_file}": rom.name}
     return [str(exe or emu.executable)] + [_fill(arg, values) for arg in emu.args]
 
 

@@ -207,6 +207,23 @@ class Catalog:
             threading.Timer(STEAM_STATS_DELAY, self.refresh_steam_stats).start()
 
     # --- escaneo -------------------------------------------------------------
+    def _esde_emulators(self) -> list:
+        """Los sistemas que tienes en ES-DE y Orbital no conoce por su cuenta (Nintendo 64, SNES…), con los emuladores
+        que ES-DE sabe usar (ver library/esde_systems.py)."""
+        if not self.esde or not self.esde.executable:
+            return []
+        from .library import esde_systems
+
+        covered = {e.system for e in self.emulators if e.system}
+        try:
+            preferred = {s: g.system_emulator for s in os.listdir(self.esde.home / "gamelists")
+                         if (g := self.esde.gamelist(s)).system_emulator} if (self.esde.home / "gamelists").is_dir() else {}
+            return esde_systems.configs(self.esde.executable.parent, self.esde.home / "custom_systems", self.esde.rom_root,
+                                        covered, preferred)
+        except Exception:  # noqa: BLE001 - las reglas de ES-DE nunca dejan a Orbital sin biblioteca
+            log.exception("No pude leer los sistemas de ES-DE")
+            return []
+
     def refresh(self) -> int:
         """Vuelve a buscar todo. Si ya hay un escaneo en curso, espera a que termine y usa ese."""
         if not self._refreshing.acquire(blocking=False):
@@ -293,6 +310,7 @@ class Catalog:
             result = detect.detect(dirs, skip_ids={e.id for e in self.config.emulators})
             self.emulators = detect.merge(self.config.emulators, result.emulators)
             self.detected = result.found
+        self.emulators += self._esde_emulators()
         for emu, alternatives in emulators.split_alternatives(self.emulators):
             try:
                 found += emulators.scan(emu, self.esde, alternatives, self.media)
