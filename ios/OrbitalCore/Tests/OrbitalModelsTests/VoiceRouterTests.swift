@@ -118,4 +118,21 @@ final class VoiceAssistantTests: XCTestCase {
         XCTAssertFalse(outcome.ok)
         XCTAssertFalse(outcome.speech.isEmpty, "siempre se dice algo, nunca silencio")
     }
+
+    /// Dos con el mismo nombre: la consola manda las opciones y tocar una la pone en la TV.
+    func testChoicesArriveAndTappingOnePlaysIt() async throws {
+        let rig = try connected()
+        let dune84: JSON = ["id": "a", "title": "Dune", "subtitle": "Película · 1984", "kind": "movie", "meta_id": "tt0087182"]
+        let dune21: JSON = ["id": "b", "title": "Dune", "subtitle": "Película · 2021", "kind": "movie", "meta_id": "tt1160419"]
+        rig.http.json["https://tv.example/api/voice"] = ["ok": true, "speech": "Encontré varias.", "choices": .array([dune84, dune21, ["title": "sin id"]])]
+        rig.http.json["https://tv.example/api/stremio/play"] = ["ok": true]
+        let assistant = VoiceAssistant(services: rig.services, tvNow: TVNowModel(rig.services))
+        let asked = await assistant.handle("pon Dune")
+        XCTAssertEqual(asked.choices.map(\.metaID), ["tt0087182", "tt1160419"], "sin meta_id no se puede poner: se omite")
+        let played = await assistant.choose(asked.choices[1])
+        XCTAssertTrue(played.ok)
+        let body = rig.http.bodies("https://tv.example/api/stremio/play").first.flatMap { JSON.parse($0) }
+        XCTAssertEqual(body?["id"]?.string, "tt1160419")
+        XCTAssertEqual(body?["video_id"]?.string, "tt1160419")
+    }
 }

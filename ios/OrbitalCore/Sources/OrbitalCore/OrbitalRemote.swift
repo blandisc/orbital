@@ -217,7 +217,30 @@ public struct OrbitalRemote: Sendable {
         public var speech: String
         /// Lo que se entendió («pon The Office», ya limpio), para enseñarlo bajo la respuesta. Vacío si la consola no lo manda.
         public var heard: String
-        public init(ok: Bool, speech: String, heard: String = "") { self.ok = ok; self.speech = speech; self.heard = heard }
+        /// Varias con el mismo nombre (Dune de 1984 y de 2021): se enseñan para tocar la que es.
+        public var choices: [VoiceChoice]
+        public init(ok: Bool, speech: String, heard: String = "", choices: [VoiceChoice] = []) {
+            self.ok = ok; self.speech = speech; self.heard = heard; self.choices = choices
+        }
+    }
+
+    /// Una de las opciones que manda la consola cuando no sabe cuál: `kind` es movie o series.
+    public struct VoiceChoice: Sendable, Equatable, Identifiable {
+        public var id: String
+        public var title: String
+        public var subtitle: String
+        public var kind: String
+        public var metaID: String
+        public var image: String?
+        public init(id: String, title: String, subtitle: String, kind: String, metaID: String, image: String? = nil) {
+            self.id = id; self.title = title; self.subtitle = subtitle; self.kind = kind; self.metaID = metaID; self.image = image
+        }
+
+        init?(_ json: JSON) {
+            guard let title = json["title"]?.string, let metaID = json["meta_id"]?.string, !metaID.isEmpty else { return nil }
+            self.init(id: json["id"]?.string ?? metaID, title: title, subtitle: json["subtitle"]?.string ?? "",
+                      kind: json["kind"]?.string ?? "movie", metaID: metaID, image: json["image"]?.string)
+        }
     }
 
     /// Una orden en texto libre, como a Alexa («pon The Office temporada 2», «pausa», «abre Zelda»): la consola la entiende
@@ -225,7 +248,9 @@ public struct OrbitalRemote: Sendable {
     public func voice(_ text: String) async throws -> VoiceReply {
         let trimmed = String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(500))
         let json = try await send("api/voice", method: "POST", body: JSON.object(["text": .string(trimmed), "source": "iphone"]).serialized(), timeout: 20)   // no cuenta como «Alexa se usó»
-        return VoiceReply(ok: json?["ok"]?.bool ?? true, speech: json?["speech"]?.string ?? "", heard: json?["heard"]?.string ?? "")
+        let choices = (json?["choices"]?.array ?? []).compactMap(VoiceChoice.init)
+        return VoiceReply(ok: json?["ok"]?.bool ?? true, speech: json?["speech"]?.string ?? "", heard: json?["heard"]?.string ?? "",
+                          choices: choices)
     }
 
     /// Las acciones del mando de la TV (como `input.js`): el control completo del iPhone las manda como si fueran del mando.

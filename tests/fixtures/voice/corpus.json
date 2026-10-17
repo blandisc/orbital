@@ -524,7 +524,7 @@
   },
   {
    "text": "Qué hay de nuevo",
-   "intent": null
+   "intent": "UpcomingIntent"
   },
   {
    "text": "Busca Dune",

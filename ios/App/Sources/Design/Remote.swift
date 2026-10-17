@@ -190,3 +190,37 @@ struct VoiceCommandBar: View {
         return Text("«Pon The Office», «pausa», «descárgalo»")
     }
 }
+
+/// Las opciones cuando tu Orbital no supo cuál («pon Dune»: la de 1984 o la de 2021): un renglón por opción, con su póster;
+/// tocar una la pone en la TV.
+struct VoiceChoices: View {
+    let choices: [OrbitalRemote.VoiceChoice]
+    let action: (OrbitalRemote.VoiceChoice) -> Void
+    @State private var taps = 0
+
+    var body: some View {
+        VStack(spacing: DS.Space.s2) {
+            ForEach(choices) { choice in
+                Button { taps += 1; action(choice) } label: {
+                    HStack(spacing: DS.Space.s3) {
+                        PosterView(url: choice.image, title: choice.title, aspect: DS.Poster.aspect).frame(width: DS.Size.thumbSmall)
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(verbatim: choice.title).recipe(.cardTitle).lineLimit(1)
+                            if !choice.subtitle.isEmpty { Text(verbatim: choice.subtitle).recipe(.footnote, color: DS.textMuted).lineLimit(1) }
+                        }
+                        Spacer(minLength: DS.Space.s2)
+                        Image(systemName: "play.fill").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
+                    }
+                    .padding(DS.Space.s2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(verbatim: [choice.title, choice.subtitle].filter { !$0.isEmpty }.joined(separator: ", ")))
+                .accessibilityHint(Text("Ponerla en la TV"))
+            }
+        }
+        .sensoryFeedback(.selection, trigger: taps)
+    }
+}

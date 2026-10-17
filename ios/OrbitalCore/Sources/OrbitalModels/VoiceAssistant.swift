@@ -15,13 +15,15 @@ public final class VoiceAssistant {
         /// Lo que se entendió, ya limpio («pon El viaje de Chihiro»): se enseña bajo la respuesta para saber si el dictado
         /// escribió bien el nombre.
         public var heard = ""
+        /// La consola no supo cuál (varias con el mismo nombre): se tocan en el iPhone (`choose`).
+        public var choices: [OrbitalRemote.VoiceChoice] = []
 
-        public init(ok: Bool, speech: String, continueHere: Bool = false, heard: String = "") {
-            self.ok = ok; self.speech = speech; self.continueHere = continueHere; self.heard = heard
+        public init(ok: Bool, speech: String, continueHere: Bool = false, heard: String = "", choices: [OrbitalRemote.VoiceChoice] = []) {
+            self.ok = ok; self.speech = speech; self.continueHere = continueHere; self.heard = heard; self.choices = choices
         }
 
         /// Para la barra de voz.
-        public var reply: OrbitalRemote.VoiceReply { .init(ok: ok, speech: speech, heard: heard) }
+        public var reply: OrbitalRemote.VoiceReply { .init(ok: ok, speech: speech, heard: heard, choices: choices) }
     }
 
     private let services: Services
@@ -50,7 +52,20 @@ public final class VoiceAssistant {
             return await download(title)
         case .console(let text):
             let reply = await tvNow.say(text)
-            return Outcome(ok: reply.ok, speech: reply.speech, heard: reply.heard)
+            return Outcome(ok: reply.ok, speech: reply.speech, heard: reply.heard, choices: reply.choices)
+        }
+    }
+
+    /// Tocaste una de las opciones: se pone en la TV (la película, o la serie donde ibas), como «Ver en la TV».
+    public func choose(_ choice: OrbitalRemote.VoiceChoice) async -> Outcome {
+        do {
+            try await services.orbital.play(kind: choice.kind, metaID: choice.metaID, videoID: choice.kind == "movie" ? choice.metaID : nil,
+                                            title: choice.title)
+            return Outcome(ok: true, speech: "Poniendo \(choice.title).", heard: choice.title)
+        } catch let failure as OrbitalRemote.Failure {
+            return Outcome(ok: false, speech: failure.description, heard: choice.title)
+        } catch {
+            return Outcome(ok: false, speech: OrbitalRemote.Failure.unreachable.description, heard: choice.title)
         }
     }
 

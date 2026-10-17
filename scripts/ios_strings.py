@@ -176,6 +176,7 @@ TRANSLATIONS = {
     "No encontré una fuente para descargar %@.": "I did not find a source to download %@.",
     "No hay nada en la TV para descargar.": "Nothing is playing on the TV to download.",
     "No hay nada en la TV para seguir aquí.": "Nothing is playing on the TV to continue here.", "No te escuché.": "I did not hear you.",
+    "Ponerla en la TV": "Play it on the TV", "Poniendo %@.": "Playing %@.",
     "Sigue aquí.": "Continuing here.", "Abre Orbital y toca «Seguir aquí».": "Open Orbital and tap “Continue here”.",
     "Entendí: «%@»": "I heard: “%@”", "«Pon The Office», «pausa», «descárgalo»": "“Play The Office”, “pause”, “download it”",
     "No pude cambiar tu lista de Stremio: %@": "I couldn't change your Stremio list: %@", "No pude cambiar tu watchlist de Trakt: %@": "I couldn't change your Trakt watchlist: %@",

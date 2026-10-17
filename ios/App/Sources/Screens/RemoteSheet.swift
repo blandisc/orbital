@@ -51,18 +51,23 @@ struct RemoteSheet: View {
         // El nombre de lo que se ve en la TV, para que el dictado lo escriba bien («descarga Shōgun»).
         let hints = ["Orbital"] + [model.now?.title, model.now?.channel].compactMap { $0 }
         Task {
-            await speech.start(language: language, hints: hints) { said in
-                Task {
-                    asking = true; reply = nil
-                    let outcome = await VoiceAssistant(services: env.services, tvNow: model).handle(said)
-                    asking = false
-                    var shown = outcome.reply
-                    shown.speech = Strings.message(outcome.speech, language: language)
-                    reply = shown
-                    speech.speak(shown.speech, language: language)
-                    if outcome.continueHere, let now = model.now { onContinueHere(now) }
-                }
-            }
+            await speech.start(language: language, hints: hints) { said in answer(model) { await $0.handle(said) } }
+        }
+    }
+
+    /// Lo que contestó (a lo que dijiste o a la opción que tocaste): se enseña, se dice y, si es «sigue aquí», se hace.
+    private func answer(_ model: TVNowModel, _ ask: @escaping @MainActor (VoiceAssistant) async -> VoiceAssistant.Outcome) {
+        guard !asking else { return }
+        let language = env.services.appSettings.uiLanguage
+        Task {
+            asking = true; reply = nil
+            let outcome = await ask(VoiceAssistant(services: env.services, tvNow: model))
+            asking = false
+            var shown = outcome.reply
+            shown.speech = Strings.message(outcome.speech, language: language)
+            withAnimation(DS.Motion.base(false)) { reply = shown }
+            speech.speak(shown.speech, language: language)
+            if outcome.continueHere, let now = model.now { onContinueHere(now) }
         }
     }
 
@@ -111,6 +116,10 @@ struct RemoteSheet: View {
             // La voz, como Alexa: lo mismo que «Oye Siri, dile a Orbital…».
             VoiceCommandBar(listening: speech.listening, transcript: speech.transcript, reply: reply, denied: speech.denied,
                             heardNothing: speech.heardNothing, asking: asking) { listen(model) }
+            if let choices = reply?.choices, !choices.isEmpty {
+                VoiceChoices(choices: choices) { choice in answer(model) { await $0.choose(choice) } }
+                    .transition(.opacity)
+            }
             // Como el mando: arriba los gatillos de sección (LB / RB), al centro el pad (A al tocar), luego B · X · Y y abajo
             // LT / RT, Inicio, ☰ y ⧉. Cada tecla dice lo que hace en la pantalla de la TV (su leyenda), si la consola lo dice.
             HStack(spacing: DS.Space.s2) {

@@ -333,6 +333,22 @@ def test_voice_asks_which_when_two_share_the_name(linked, monkeypatch):
     assert result.speech.startswith("Encontré varias: Dune, película de 2021; Dune, película de 1984")
     event = result.events[0]
     assert event["type"] == "choose" and [o["meta_id"] for o in event["options"]] == ["tt1160419", "tt0087182"]
+    # El iPhone recibe la misma lista para tocar (sin buscar el control).
+    assert [c["meta_id"] for c in result.as_dict()["choices"]] == ["tt1160419", "tt0087182"]
+
+
+def test_voice_latest_episode(linked, monkeypatch):
+    """«Pon el último episodio de X»: el más reciente que ya salió (no uno anunciado para el futuro)."""
+    from orbital.library import cinemeta
+    monkeypatch.setattr(cinemeta.Cinemeta, "search", lambda self, kind, q: [{"id": "tt1", "name": "Serie"}])
+    videos = [{"id": "tt1:1:1", "season": 1, "episode": 1, "released": "2020-01-01"},
+              {"id": "tt1:2:3", "season": 2, "episode": 3, "released": "2021-01-01"},
+              {"id": "tt1:2:4", "season": 2, "episode": 4, "released": "2999-01-01"}]
+    monkeypatch.setattr(cinemeta.Cinemeta, "meta", lambda self, kind, meta_id, **kw: {"name": "Serie", "videos": videos})
+    played = []
+    monkeypatch.setattr(linked.watch, "play_title", lambda *a, **kw: played.append(a[2]))
+    assert VoiceController(linked).handle_text("pon el último episodio de serie").speech == "Poniendo Serie, temporada 2, episodio 3."
+    assert played == ["tt1:2:3"]
 
 
 def test_my_list_and_trailer_helpers():
@@ -417,3 +433,25 @@ def test_voice_puts_any_title_even_said_in_spanish(linked, monkeypatch):
     assert voice.handle_text("pon spirited awey").speech == "Poniendo Spirited Away."  # casi igual en Cinemeta
     result = voice.handle_text("abre hollow night")  # un juego mal dicho no pone una película cualquiera
     assert not result.ok and "en tu biblioteca" not in result.speech
+
+
+def test_voice_end_to_end_as_people_say_it(linked, monkeypatch):
+    """De la frase a lo que pasa: Siri con su «dile a Orbital que… por favor», la pista de tipo, y un juego que no está."""
+    from orbital.library import cinemeta
+
+    catalog = {"movie": [{"id": "tt0245429", "name": "Spirited Away"}],
+               "series": [{"id": "tt0386676", "name": "The Office", "releaseInfo": "2005"}]}
+    monkeypatch.setattr(cinemeta.Cinemeta, "search", lambda self, kind, q: catalog[kind])
+    tmdb = linked.foryou.tmdb
+    monkeypatch.setattr(type(tmdb), "configured", property(lambda self: True))
+    monkeypatch.setattr(tmdb, "search", lambda kind, title, year=None:
+                        {"imdb": "tt0245429", "title": "El viaje de Chihiro"} if kind == "movie" and "chihiro" in title else None)
+    voice = VoiceController(linked)
+    result = voice.handle_text("Dile a Orbital que ponga la película El viaje de Chihiro, por favor.")
+    assert result.speech == "Poniendo El viaje de Chihiro." and result.as_dict()["intent"] == "LaunchGameIntent"
+    assert result.as_dict()["heard"] == "ponga la pelicula el viaje de chihiro"
+    linked.watch.unlink_stremio()
+    assert voice.handle_text("pon la serie the office").speech == "Abriendo The Office. Elige el episodio."
+    assert voice.handle_text("abre el juego dune").speech == "No encontré el juego dune."
+    lost = voice.handle_text("blablá")
+    assert not lost.ok and "«blabla»" in lost.speech and lost.as_dict()["heard"] == "blabla"

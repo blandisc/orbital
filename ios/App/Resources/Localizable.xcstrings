@@ -3037,6 +3037,28 @@
         }
       }
     },
+    "Ponerla en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play it on the TV"
+          }
+        }
+      }
+    },
+    "Poniendo %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playing %@."
+          }
+        }
+      }
+    },
     "Poniéndolo en la TV.": {
       "extractionState": "manual",
       "localizations": {
