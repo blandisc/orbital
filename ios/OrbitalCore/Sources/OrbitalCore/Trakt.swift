@@ -37,6 +37,8 @@ public struct TraktEntry: Sendable, Equatable, Identifiable {
     public var overview: String
     public var traktID: Int?
     public var next: (season: Int, episode: Int)?
+    /// Los géneros de Trakt («comedy», «science-fiction»), con `extended=full`.
+    public var genres: [String] = []
     public var id: String { imdb }
 
     public static func == (a: TraktEntry, b: TraktEntry) -> Bool {
@@ -114,9 +116,11 @@ public enum TraktParsing {
               let title = raw["title"]?.string?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
         func positive(_ j: JSON?) -> Int? { j?.intValue.flatMap { $0 > 0 ? $0 : nil } }
         func isInt(_ j: JSON?) -> Int? { if case .int(let i)? = j { return i }; return nil }
-        return TraktEntry(kind: kind, imdb: imdb, title: title, year: isInt(raw["year"]), runtime: positive(raw["runtime"]),
-                          episodes: positive(raw["aired_episodes"]), overview: (raw["overview"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
-                          traktID: isInt(ids["trakt"]))
+        var entry = TraktEntry(kind: kind, imdb: imdb, title: title, year: isInt(raw["year"]), runtime: positive(raw["runtime"]),
+                               episodes: positive(raw["aired_episodes"]), overview: (raw["overview"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
+                               traktID: isInt(ids["trakt"]))
+        entry.genres = (raw["genres"]?.array ?? []).compactMap(\.string)
+        return entry
     }
 
     /// Una fila del historial: una película o un episodio, con su `watched_at`. Sin IMDb o sin fecha: nada.

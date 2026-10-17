@@ -191,7 +191,8 @@ final class DecideRulesTests: XCTestCase {
         XCTAssertTrue(DecideModel.fits(30, .short)); XCTAssertFalse(DecideModel.fits(58, .short))
         XCTAssertTrue(DecideModel.fits(58, .hour)); XCTAssertFalse(DecideModel.fits(140, .hour)); XCTAssertTrue(DecideModel.fits(140, .long))
         XCTAssertFalse(DecideModel.fits(nil, .short), "sin duración, no para «30 min»")
-        XCTAssertTrue(DecideModel.genres(for: .light).contains("Comedy"))
-        XCTAssertTrue(DecideModel.genres(for: .intense).contains("Thriller"))
+        XCTAssertTrue(DecideModel.matches(["Comedy"], .light), "los de Cinemeta")
+        XCTAssertTrue(DecideModel.matches(["science-fiction"], .think), "y los de Trakt")
+        XCTAssertFalse(DecideModel.matches(["horror"], .together))
     }
 }

@@ -31,16 +31,25 @@ public final class DecideModel: ObservableModel {
         var seen = Set<String>()
         self.pool = pool.filter { seen.insert($0.imdb).inserted }
         super.init()
+        // Lo que ya viste se pide desde que se abre la hoja: al tocar «Decide por mí» ya está (o casi).
+        if let trakt = services.trakt, trakt.linked { watchedTask = Task { try? await trakt.watchedIDs() } }
     }
 
-    /// Qué géneros (los de Cinemeta, en inglés) cuentan para cada ánimo.
+    private var watchedTask: Task<Set<String>?, Never>?
+
+    /// Qué géneros cuentan para cada ánimo (en minúsculas: sirven los de Cinemeta, «Sci-Fi», y los de Trakt, «science-fiction»).
     nonisolated static func genres(for mood: Mood) -> Set<String> {
         switch mood {
-        case .light: ["Comedy", "Animation", "Family", "Adventure", "Musical"]
-        case .intense: ["Thriller", "Action", "Horror", "Crime", "War"]
-        case .think: ["Drama", "Documentary", "Sci-Fi", "Mystery", "History", "Biography"]
-        case .together: ["Romance", "Comedy", "Fantasy", "Music"]
+        case .light: ["comedy", "animation", "family", "adventure", "musical"]
+        case .intense: ["thriller", "action", "horror", "crime", "war"]
+        case .think: ["drama", "documentary", "sci-fi", "science-fiction", "mystery", "history", "biography"]
+        case .together: ["romance", "comedy", "fantasy", "music"]
         }
+    }
+
+    /// ¿Alguno de estos géneros es del ánimo?
+    nonisolated static func matches(_ list: [String], _ mood: Mood) -> Bool {
+        !genres(for: mood).isDisjoint(with: list.map { $0.lowercased() })
     }
 
     /// ¿Cabe en el tiempo que tienes? (una serie cuenta por episodio).
@@ -55,42 +64,68 @@ public final class DecideModel: ObservableModel {
         order = pool.shuffled()
         if watched == nil, let trakt = services.trakt, trakt.linked {
             isLoading = true
-            watched = (try? await trakt.watchedIDs()) ?? []
+            // Lo que ya viste, con tiempo máximo: si Trakt tarda, se decide sin eso (y se pide otra vez la próxima).
+            let pending = watchedTask ?? Task { try? await trakt.watchedIDs() }
+            let found = await withTaskGroup(of: Set<String>?.self) { group -> Set<String>? in
+                group.addTask { await pending.value }
+                group.addTask { try? await Task.sleep(nanoseconds: UInt64(Self.watchedWait * 1_000_000_000)); return nil }
+                let first = await group.next() ?? nil
+                group.cancelAll()
+                return first
+            }
+            watched = found
         }
         await next()
     }
 
-    /// La siguiente que cabe (pide géneros y duración a Cinemeta solo de las que hacen falta, unas cuantas a la vez).
+    /// La siguiente que cabe. Lo que ya trae su género y su duración (lo de Trakt) se decide al momento; lo demás se le
+    /// pregunta a Cinemeta, unas cuantas a la vez, con un tiempo máximo: si se acaba, la más cercana del ánimo.
     public func next() async {
         isLoading = true
         defer { isLoading = false }
+        let started = services.now()
         let skipped = notToday()
-        let wanted = Self.genres(for: mood)
         let seen = watched ?? []
         let candidates = (order.isEmpty ? pool : order).filter { !shown.contains($0.imdb) && !skipped.contains($0.imdb) && !seen.contains($0.imdb) }
         var closest: Suggestion?   // del ánimo, aunque dure más: mejor eso que nada
-        for chunk in stride(from: 0, to: candidates.count, by: 8).map({ Array(candidates[$0..<min($0 + 8, candidates.count)]) }) {
+        func verdict(_ s: Suggestion) -> (mood: Bool, fits: Bool)? {
+            let d = details[s.imdb]
+            let genres = s.genres.isEmpty ? d?.genres : s.genres
+            guard let genres else { return nil }   // falta preguntar
+            return (Self.matches(genres, mood), Self.fits(s.runtime ?? d?.minutes, time))
+        }
+        func take(_ s: Suggestion) {
+            shown.insert(s.imdb)
+            pick = s
+            minutes = s.runtime ?? details[s.imdb]?.minutes
+        }
+        // 1) Lo que ya se sabe, sin red.
+        for s in candidates {
+            guard let v = verdict(s) else { continue }
+            if v.mood && v.fits { return take(s) }
+            if v.mood, closest == nil { closest = s }
+        }
+        // 2) Lo demás, de 12 en 12, mientras haya tiempo.
+        let unknown = candidates.filter { verdict($0) == nil }
+        for chunk in stride(from: 0, to: unknown.count, by: Self.chunk).map({ Array(unknown[$0..<min($0 + Self.chunk, unknown.count)]) }) {
+            if services.now().timeIntervalSince(started) > Self.budget { break }
             await describe(chunk)
-            if let hit = chunk.first(where: { s in
-                let d = details[s.imdb]
-                return Self.fits(d?.minutes ?? s.runtime, time) && !wanted.isDisjoint(with: d?.genres ?? [])
-            }) {
-                shown.insert(hit.imdb)
-                pick = hit
-                minutes = details[hit.imdb]?.minutes ?? hit.runtime
-                return
+            for s in chunk {
+                guard let v = verdict(s) else { continue }
+                if v.mood && v.fits { return take(s) }
+                if v.mood, closest == nil { closest = s }
             }
-            if closest == nil { closest = chunk.first { !wanted.isDisjoint(with: details[$0.imdb]?.genres ?? []) } }
-            for s in chunk { shown.insert(s.imdb) }
         }
-        if let closest {
-            pick = closest
-            minutes = details[closest.imdb]?.minutes ?? closest.runtime
-            return
-        }
+        for s in candidates where verdict(s) != nil { shown.insert(s.imdb) }
+        if let closest { return take(closest) }
         pick = nil
         exhausted = true
     }
+
+    static let chunk = 12
+    static let watchedWait: Double = 4
+    /// Lo más que se busca antes de proponer la más cercana (segundos).
+    static let budget: TimeInterval = 6
 
     /// Volver a las preguntas.
     public func reset() async { pick = nil; exhausted = false }

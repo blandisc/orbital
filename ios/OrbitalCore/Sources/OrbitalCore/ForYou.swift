@@ -15,6 +15,8 @@ public struct Suggestion: Sendable, Equatable, Identifiable {
     public var year: Int?
     public var runtime: Int?
     public var overview: String
+    /// Los géneros, si la fuente los trae (Trakt): «Decide por mí» no tiene que pedirlos.
+    public var genres: [String] = []
     public var poster: String
     public var wide: String
     /// Logo del título (metahub), como en la TV; si no carga o no hay, la interfaz cae al nombre en texto.
@@ -231,9 +233,11 @@ public actor ForYou {
     }
 
     private func suggestion(_ e: TraktEntry, _ reason: SuggestionReason) -> Suggestion {
-        Suggestion(kind: e.kind, imdb: e.imdb, title: e.title, year: e.year, runtime: e.runtime, overview: e.overview,
-                   poster: String(format: Self.metahubPoster, e.imdb), wide: String(format: Self.metahubBackground, e.imdb),
-                   logo: String(format: Self.metahubLogo, e.imdb), reason: reason, next: e.next)
+        var s = Suggestion(kind: e.kind, imdb: e.imdb, title: e.title, year: e.year, runtime: e.runtime, overview: e.overview,
+                           poster: String(format: Self.metahubPoster, e.imdb), wide: String(format: Self.metahubBackground, e.imdb),
+                           logo: String(format: Self.metahubLogo, e.imdb), reason: reason, next: e.next)
+        s.genres = e.genres
+        return s
     }
 
     private func raw(listID: String, kind: String) async throws -> [Suggestion] {
