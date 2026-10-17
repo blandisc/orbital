@@ -81,10 +81,17 @@ public enum ShelfPlanner {
     /// El destacado: la primera sugerencia con arte ancho (`wide`) del primer estante que tenga alguna; con cada
     /// «Actualizar» (`rotation`) pasa a la siguiente del mismo estante.
     public static func featured(_ shelves: [(plan: ShelfPlan, items: [Suggestion])], rotation: Int) -> (plan: ShelfPlan, item: Suggestion)? {
+        featuredSlides(shelves, rotation: rotation).flatMap { pick in pick.items.first.map { (pick.plan, $0) } }
+    }
+
+    /// El carrusel del destacado: las de arte ancho del primer estante que las tenga (hasta `featuredPool`), empezando por la
+    /// que toca con `rotation` («Actualizar» pasa a la siguiente) y siguiendo en el orden de la lista.
+    public static func featuredSlides(_ shelves: [(plan: ShelfPlan, items: [Suggestion])], rotation: Int) -> (plan: ShelfPlan, items: [Suggestion])? {
         for shelf in shelves {
             let pool = Array(shelf.items.filter { !$0.wide.isEmpty }.prefix(featuredPool))
             guard !pool.isEmpty else { continue }
-            return (shelf.plan, pool[((rotation % pool.count) + pool.count) % pool.count])
+            let start = ((rotation % pool.count) + pool.count) % pool.count
+            return (shelf.plan, Array(pool[start...] + pool[..<start]))
         }
         return nil
     }

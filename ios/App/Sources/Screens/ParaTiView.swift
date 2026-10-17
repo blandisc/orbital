@@ -200,6 +200,8 @@ struct ListsView: View {
     @State private var openTitle: TitleRoute?
     /// Los colores del arte del destacado: su «Ver» toma el color claro, como en la TV.
     @StateObject private var featuredTint = ArtTint()
+    /// El que está al frente del carrusel del destacado.
+    @State private var featuredID: String?
     private var model: ParaTiModel { observer.model }
 
     var body: some View {
@@ -219,9 +221,8 @@ struct ListsView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: DS.Space.s6, pinnedViews: [.sectionHeaders]) {
                 // El arte a sangre ya pone su margen (en claro es tarjeta; en oscuro va de borde a borde).
-                if let featured = model.featured {
-                    featuredTile(featured).task(id: featured.item.wide) { await featuredTint.load(featured.item.wide) }
-                }
+                let slides = model.featuredSlides
+                if !slides.isEmpty { featuredCarousel(slides) }
                 if !model.airings.isEmpty {   // justo después del destacado; vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
                     Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), icon: .calendar, route: ShelfRoute(id: "estrenos")) {
                         ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
@@ -276,6 +277,25 @@ struct ListsView: View {
     }
 
     // MARK: destacado
+    /// Varias de la misma lista del destacado, para pasar con el dedo (como «Seguir viendo» en Inicio), con sus puntos.
+    private func featuredCarousel(_ slides: [ParaTiModel.Featured]) -> some View {
+        let current = slides.first { $0.item.id == featuredID } ?? slides[0]
+        return VStack(spacing: DS.Space.s3) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 0) {
+                    ForEach(slides, id: \.item.id) { featuredTile($0).containerRelativeFrame(.horizontal) }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollTargetBehavior(.paging)
+            .scrollPosition(id: $featuredID)
+            if slides.count > 1 { PageDots(count: slides.count, index: slides.firstIndex { $0.item.id == current.item.id } ?? 0) }
+        }
+        .task(id: current.item.wide) { await featuredTint.load(current.item.wide) }   // «Ver» toma el color del que está al frente
+        .sensoryFeedback(.selection, trigger: featuredID)
+        .onChange(of: slides.first?.item.id) { featuredID = nil }   // «Actualizar» o Series ↔ Películas: de vuelta al primero
+    }
+
     private func featuredTile(_ featured: ParaTiModel.Featured) -> some View {
         let s = featured.item
         let route = s.route

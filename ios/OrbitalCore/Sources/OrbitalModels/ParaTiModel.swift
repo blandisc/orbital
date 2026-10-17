@@ -81,17 +81,21 @@ public final class ParaTiModel: ObservableModel {
 
     /// «Para ti hoy»: la primera sugerencia con arte ancho del primer estante que la tenga (rota con «Actualizar»);
     /// sin estantes, la primera de lo popular del mosaico.
-    public var featured: Featured? {
+    public var featured: Featured? { featuredSlides.first }
+
+    /// El carrusel del destacado: varias de la misma lista de donde sale el primero (el Top 10 de Netflix, tus
+    /// recomendaciones…), cada una con su motivo («N.º 2 en Netflix»).
+    public var featuredSlides: [Featured] {
         let loaded = visibleShelves.map { (plan: $0, items: items(for: $0)) }
-        if let pick = ShelfPlanner.featured(loaded, rotation: featuredRotation) {
-            return Featured(item: pick.item, shelfID: pick.plan.id, reason: Self.reason(of: pick.item, in: pick.plan))
+        if let pick = ShelfPlanner.featuredSlides(loaded, rotation: featuredRotation) {
+            return pick.items.map { Featured(item: $0, shelfID: pick.plan.id, reason: Self.reason(of: $0, in: pick.plan)) }
         }
         let stand = ShelfPlan(id: "mosaic", list: ForYouList(id: "mosaic", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: false),
                               listIDs: [], style: .plain)
-        if let pick = ShelfPlanner.featured([(stand, mosaic)], rotation: featuredRotation) {
-            return Featured(item: pick.item, shelfID: nil, reason: Self.reason(of: pick.item, in: pick.plan))
+        if let pick = ShelfPlanner.featuredSlides([(stand, mosaic)], rotation: featuredRotation) {
+            return pick.items.map { Featured(item: $0, shelfID: nil, reason: Self.reason(of: $0, in: pick.plan)) }
         }
-        return nil
+        return []
     }
 
     static func reason(of item: Suggestion, in plan: ShelfPlan) -> FeaturedReason {

@@ -68,6 +68,8 @@ final class ShelfPlanTests: XCTestCase {
         XCTAssertEqual(ShelfPlanner.featured(shelves, rotation: 0)?.item.imdb, "tt2", "la primera con arte ancho (tt1 no tiene)")
         XCTAssertEqual(ShelfPlanner.featured(shelves, rotation: 1)?.item.imdb, "tt3", "«Actualizar» pasa a la siguiente")
         XCTAssertEqual(ShelfPlanner.featured(shelves, rotation: 2)?.item.imdb, "tt2", "y vuelve a empezar")
+        XCTAssertEqual(ShelfPlanner.featuredSlides(shelves, rotation: 1)?.items.map(\.imdb), ["tt3", "tt2"],
+                       "el carrusel: las de arte ancho de esa misma lista, empezando por la que toca")
         XCTAssertNil(ShelfPlanner.featured([(try XCTUnwrap(by["mine"]), [suggestion("x", wide: "")])], rotation: 0))
     }
 
