@@ -11,7 +11,7 @@
     { "texto": "Mi lista", "en": ["tv", "ios"], "evitar": ["mi lista", "Mi Lista"], "nota": "Nombre propio de tu biblioteca de Stremio: siempre con M." },
     { "texto": "En Mi lista", "en": ["tv", "ios"] },
     { "texto": "Tu watchlist", "en": ["tv", "ios"], "evitar": ["Tu Watchlist", "tu Watchlist"] },
-    { "texto": "Seguir viendo", "en": ["tv", "ios"], "evitar": ["Continuar viendo", "Seguir mirando"] },
+    { "texto": "Seguir viendo", "en": ["tv", "ios"], "evitar": ["Continuar viendo", "Seguir mirando", "Donde te quedaste"] },
     { "texto": "Para ti", "en": ["tv", "ios"], "evitar": ["Para Ti", "Para tí"] },
     { "texto": "Top 10 en", "en": ["tv", "ios"] },
     { "texto": "En vivo", "en": ["tv", "ios"], "evitar": ["En Vivo", "EN VIVO"] },

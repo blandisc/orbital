@@ -441,7 +441,7 @@ class ForYou:
         video: list[dict] = []
         # Lo de tu Stremio no necesita ninguna clave: sin Trakt, «Para ti» no se queda solo con juegos.
         if self._stremio("continue"):
-            video.append({"id": "continue", "title": "Seguir viendo", "icon": "watching", "source": "Stremio", "meta": "Donde te quedaste"})
+            video.append({"id": "continue", "title": "Seguir viendo", "icon": "watching", "source": "Stremio", "meta": "Lo que dejaste a medias"})
         if self._stremio("mylist"):
             video.append({"id": "mylist", "title": "Mi lista", "icon": "library", "source": "Stremio", "meta": "Tu biblioteca"})
         if self.trakt.linked:

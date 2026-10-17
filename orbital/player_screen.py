@@ -411,7 +411,7 @@ class PlayerScreen:
 
     def detach_channel(self) -> None:
         """Y › «Seguir solo este capítulo»: el episodio del canal se vuelve un episodio normal ahí mismo, sin recargar
-        (pausa, adelantar, «Donde te quedaste» y el siguiente de verdad, con la misma fuente y doblaje)."""
+        (pausa, adelantar, «Seguir viendo» y el siguiente de verdad, con la misma fuente y doblaje)."""
         segment, current = self.segment, self.current
         if segment is None or current is None or not segment.meta.get("synthetic"):
             return
