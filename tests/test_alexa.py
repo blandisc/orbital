@@ -319,3 +319,44 @@ def test_the_iphone_open_counts_as_a_visit_too(public):
     state = main.state.catalog.state
     assert client.get("/api/companion/now", headers={"Authorization": "Bearer secreto"}).status_code == 200
     assert state.settings()["companion_seen"]
+
+
+def test_iphone_remote_buttons_go_to_whatever_is_in_front(public, monkeypatch):
+    """El control del iPhone: un botón llega a la interfaz como el mando (o al reproductor si está al frente), con token
+    y sin pasarse de ~15 por segundo."""
+    from orbital import companion
+
+    client, main = public
+    auth = {"Authorization": "Bearer secreto"}
+    assert client.post("/api/companion/input", json={"action": "down"}).status_code == 401
+    events = []
+    main.state.catalog.events.subscribe(events.append)
+    monkeypatch.setattr(companion, "_front", lambda catalog, shell: "ui")
+    r = client.post("/api/companion/input", json={"action": "down"}, headers=auth)
+    assert r.status_code == 200 and r.json() == {"ok": True, "target": "ui"}
+    assert {"type": "input", "action": "down"} in events
+    assert client.post("/api/companion/input", json={"action": "borrar-todo"}, headers=auth).status_code == 400
+    pressed = []
+    monkeypatch.setattr(companion, "_front", lambda catalog, shell: "player")
+    monkeypatch.setattr(main.state.catalog.watch.player, "phone_button", pressed.append)
+    assert client.post("/api/companion/input", json={"action": "select"}, headers=auth).json()["target"] == "player"
+    assert pressed == ["select"]
+    codes = [client.post("/api/companion/input", json={"action": "left"}, headers=auth).status_code for _ in range(40)]
+    assert 429 in codes  # mantener el pad no satura la tele
+
+
+def test_iphone_remote_text_and_what_the_tv_shows(public):
+    client, main = public
+    auth = {"Authorization": "Bearer secreto"}
+    events = []
+    main.state.catalog.events.subscribe(events.append)
+    assert client.post("/api/companion/text", json={"text": "dune", "submit": True}, headers=auth).status_code == 200
+    assert {"type": "text", "text": "dune", "submit": True} in events
+    assert client.get("/api/companion/now", headers=auth).json()["ui"] == {"screen": "home", "text_field": False}
+
+
+def test_the_tv_reports_its_screen_for_the_iphone(public):
+    client, main = public
+    local = TestClient(main, base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1))
+    assert local.post("/api/ui/state", json={"screen": "search", "text_field": True}).status_code == 200
+    assert client.get("/api/companion/now", headers={"Authorization": "Bearer secreto"}).json()["ui"] == {"screen": "search", "text_field": True}

@@ -1,15 +1,12 @@
 """Charts: el Top 10 oficial de Netflix (TSV público, por semana y país) y lo más popular de
 JustWatch (GraphQL público) por plataforma. Ninguna de las dos fuentes pide clave.
 
-  Netflix:   GET https://www.netflix.com/tudum/top10/data/all-weeks-countries.tsv  (varios MB: se
-             lee en streaming y se filtra por país sin cargar el archivo entero en memoria).
-             Columnas: country_name, country_iso2, week, category (Films|TV), weekly_rank,
-             show_title, season_title, cumulative_weeks_in_top_10. Se toma la semana más reciente
-             del país de Orbital y, para el sube y baja, la anterior (el TSV trae todas las semanas);
-             sin datos de ese país, cae a .../all-weeks-global.tsv (otro
-             esquema: category "Films (English)" / "TV (English)" / … , sin país).
-             Solo trae títulos, no IMDb: se resuelve con TMDB (si hay clave) o, si no, con la
-             búsqueda de Cinemeta. Lo que no se resuelve se omite (sin IMDb no hay con qué enlazarlo).
+  Netflix:   GET https://www.netflix.com/tudum/top10/<país>[/tv]  (la página pública de la semana, ~600 KB; la misma
+             que usa el iPhone, así los dos enseñan la misma semana). Trae la tabla (puesto, título con su temporada,
+             semanas en el Top 10) y la lista de semanas: la anterior (?week=AAAA-MM-DD) da el sube y baja. Un país que
+             Netflix no publica: la global. Solo trae títulos, no IMDb: se resuelve (sin la temporada) con TMDB si hay
+             clave o con la búsqueda de Cinemeta; lo que no se resuelve se omite. (Antes era el TSV de todas las semanas:
+             32 MB por bajada e iba una semana atrás de la página.)
 
   JustWatch: POST https://apis.justwatch.com/graphql con la consulta (no documentada) `streamingCharts`
              (la de las tendencias diarias de su sitio), filtrada por país, plataforma (`packages`: su
@@ -26,13 +23,11 @@ JustWatch (GraphQL público) por plataforma. Ninguna de las dos fuentes pide cla
 
 from __future__ import annotations
 
-import csv
-import io
+import html
 import logging
 import re
 import sqlite3
 import threading
-import time
 import urllib.request
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -46,12 +41,19 @@ from .tmdb import Tmdb
 
 log = logging.getLogger(__name__)
 
-NETFLIX_COUNTRIES_URL = "https://www.netflix.com/tudum/top10/data/all-weeks-countries.tsv"
-NETFLIX_GLOBAL_URL = "https://www.netflix.com/tudum/top10/data/all-weeks-global.tsv"
+NETFLIX_PAGE = "https://www.netflix.com/tudum/top10"
+# Los países de la página de Netflix (ISO2 → nombre en la URL), los mismos que el iPhone (Charts.netflixCountries). Uno que
+# no esté: el Top 10 global.
+NETFLIX_COUNTRIES = {
+    "MX": "mexico", "US": "united-states", "CA": "canada", "AR": "argentina", "BO": "bolivia", "BR": "brazil", "CL": "chile",
+    "CO": "colombia", "CR": "costa-rica", "DO": "dominican-republic", "EC": "ecuador", "SV": "el-salvador", "GT": "guatemala",
+    "HN": "honduras", "NI": "nicaragua", "PA": "panama", "PY": "paraguay", "PE": "peru", "UY": "uruguay", "VE": "venezuela",
+    "ES": "spain", "GB": "united-kingdom", "FR": "france", "DE": "germany", "IT": "italy", "PT": "portugal", "JP": "japan",
+    "KR": "south-korea", "AU": "australia", "IN": "india",
+}
 JUSTWATCH_URL = "https://apis.justwatch.com/graphql"
-NETFLIX_TIMEOUT = 30
+NETFLIX_TIMEOUT = 20
 
-CATEGORY_KIND = {"Films": "movie", "TV": "series"}
 
 JUSTWATCH_IMAGES = "https://images.justwatch.com"
 
@@ -118,109 +120,71 @@ def _jw_warn_once(brand: str, exc: Exception) -> None:
     log.warning("Para ti: JustWatch cambió (o no respondió) para %s, se deja esa lista vacía: %s", brand, exc)
 
 
-# ---------------------------------------------------------------- Netflix: el TSV
+# ---------------------------------------------------------------- Netflix: su página por país
 def _open(url: str, timeout: float):
-    req = urllib.request.Request(url, headers={"User-Agent": "Orbital"})
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Accept-Language": "en-US"})
     return urllib.request.urlopen(req, timeout=timeout)
 
 
-def _country_rows(url: str, iso2: str | None, *, open_url: Callable[[str], Any] | None = None,
-                   timeout: float = NETFLIX_TIMEOUT) -> list[dict[str, str]]:
-    """Lee el TSV en streaming (línea por línea, sin guardarlo entero) y se queda solo con las filas
-    del país pedido (o todas, si `iso2` es None: el archivo global no tiene columna de país)."""
-    opener = open_url or (lambda u: _open(u, timeout))
-    deadline = time.monotonic() + max(10.0, timeout)
+def netflix_page_url(region: str, kind: str, week: str | None = None) -> str:
+    """La página del Top 10 de ese país (o la global, si Netflix no publica el de ese país), de películas o de series."""
+    slug = NETFLIX_COUNTRIES.get(region.upper())
+    url = NETFLIX_PAGE + (f"/{slug}" if slug else "") + ("/tv" if kind == "series" else "")
+    return url + (f"?week={week}" if week else "")
+
+
+_ROW = re.compile(r'<span class="rank">(\d+)</span>.*?<button>(.*?)</button></td><td data-uia="top10-table-row-weeks">(\d+)</td>', re.S)
+_WEEK = re.compile(r'"endDate":"(\d{4}-\d{2}-\d{2})"')
+# «Below: Limited Series» → «Below»; «Physical 100: Mexico: Season 1» → «Physical 100: Mexico»: la página trae la temporada
+# pegada al nombre y, para encontrar la serie, va sin ella (como `showTitle` en el iPhone).
+_SEASON = re.compile(r":\s*(Season|Limited Series|Temporada|Miniserie|Part|Parte|Volume|Vol\.|Book|Chapter|Series)\b[^:]*$", re.I)
+
+
+def show_title(title: str) -> str:
+    return _SEASON.sub("", title).strip()
+
+
+def parse_netflix_page(page: str) -> tuple[list[dict], list[str]]:
+    """La tabla de la página (puesto, título, semanas en el Top 10) y las semanas que conoce (la última es la que enseña)."""
+    rows = []
+    for rank, title, weeks in _ROW.findall(page):
+        title = html.unescape(re.sub(r"<[^>]+>", "", title)).strip()
+        if title and len(rows) < 10:
+            rows.append({"title": title, "rank": int(rank), "weeks": int(weeks)})
+    return sorted(rows, key=lambda r: r["rank"]), sorted(set(_WEEK.findall(page)))
+
+
+def _read_page(url: str, open_url: Callable[[str], Any] | None) -> tuple[list[dict], list[str]]:
+    opener = open_url or (lambda u: _open(u, NETFLIX_TIMEOUT))
     try:
         with opener(url) as res:
-            wrapper = io.TextIOWrapper(res, encoding="utf-8", errors="replace", newline="")
-            reader = csv.reader(wrapper, delimiter="\t")
-            try:
-                header = next(reader)
-            except StopIteration:
-                return []
-            idx = {name: i for i, name in enumerate(header)}
-            country_col = idx.get("country_iso2")
-            rows: list[dict[str, str]] = []
-            for n, cols in enumerate(reader):
-                if n % 5000 == 0 and time.monotonic() > deadline:
-                    raise TimeoutError("El Top 10 de Netflix tardó demasiado en llegar")
-                if len(cols) != len(header):
-                    continue
-                if country_col is not None and iso2 is not None and cols[country_col] != iso2:
-                    continue
-                rows.append(dict(zip(header, cols, strict=True)))
-            return rows
+            return parse_netflix_page(res.read().decode("utf-8", errors="replace"))
     except NET_ERRORS as exc:
         raise ChartsError(f"No pude leer el Top 10 de Netflix: {exc}") from exc
 
 
-def _weeks(rows: list[dict[str, str]]) -> list[str]:
-    return sorted({week for r in rows if (week := r.get("week"))})
-
-
-def _week_rows(rows: list[dict[str, str]], week: str | None) -> list[dict[str, str]]:
-    return [r for r in rows if week and r.get("week") == week]
-
-
-def _with_movement(latest: dict[str, list[dict]], previous: dict[str, list[dict]] | None, week: str) -> dict[str, list[dict]]:
-    """El sube y baja contra la semana anterior: +2 si subió dos, None si la semana pasada no estaba (o no hay semana
-    pasada). `new`: su primera semana en el Top 10, o no estaba la semana pasada."""
-    for kind, entries in latest.items():
-        before = None if previous is None else {_fold(e["title"]): e["rank"] for e in previous.get(kind, [])}
-        for e in entries:
-            was = None if before is None else before.get(_fold(e["title"]))
-            e["movement"] = was - e["rank"] if was is not None else None
-            e["new"] = e.get("weeks") == 1 or (before is not None and was is None)
-            e["week"] = week
-    return latest
-
-
-def _rows_to_top10(rows: list[dict[str, str]], kind_of: Callable[[dict[str, str]], str | None]) -> dict[str, list[dict]]:
-    out: dict[str, list[dict]] = {"movie": [], "series": []}
-    for row in rows:
-        kind = kind_of(row)
-        if kind not in out or len(out[kind]) >= 10:
-            continue
-        title = str(row.get("show_title") or "").strip()
-        rank = str(row.get("weekly_rank") or "")
-        if not title or not rank.isdigit():
-            continue
-        weeks_raw = str(row.get("cumulative_weeks_in_top_10") or "")
-        out[kind].append({"title": title, "rank": int(rank), "weeks": int(weeks_raw) if weeks_raw.isdigit() else None})
-    for kind in out:
-        out[kind].sort(key=lambda e: e["rank"])
+def fetch_netflix_top10(region: str, kind: str, *, open_url: Callable[[str], Any] | None = None) -> list[dict]:
+    """El Top 10 oficial de Netflix de la semana más reciente, de su página pública por país (`netflix.com/tudum/top10`,
+    ~600 KB: el iPhone usa la misma, así enseñan la misma semana; el TSV de todas las semanas pesaba 32 MB e iba una
+    semana atrás). Cada uno con `title` (sin la temporada), `rank`, `weeks`, `movement` y `new` contra la semana
+    anterior (`?week=`), y `week`."""
+    rows, weeks = _read_page(netflix_page_url(region, kind), open_url)
+    if not rows:
+        return []
+    previous = None
+    if len(weeks) > 1:
+        try:
+            previous = _read_page(netflix_page_url(region, kind, weeks[-2]), open_url)[0]
+        except ChartsError:
+            previous = None  # sin la semana pasada: sin flechas (no se inventan)
+    before = None if previous is None else {_fold(r["title"]): r["rank"] for r in previous}
+    out = []
+    for r in rows:
+        was = None if before is None else before.get(_fold(r["title"]))
+        out.append({"title": show_title(r["title"]), "rank": r["rank"], "weeks": r["weeks"],
+                    "movement": was - r["rank"] if was is not None else None,
+                    "new": r["weeks"] == 1 or (before is not None and was is None), "week": weeks[-1] if weeks else None})
     return out
-
-
-def _global_top10(rows: list[dict[str, str]]) -> dict[str, list[dict]]:
-    """El archivo global separa «(English)» de «(Non-English)»: se prefiere la de inglés (el Top 10
-    global que de verdad se enseña); si no está, cualquiera que empiece con «Films»/«TV». `rows`: las de una semana."""
-    latest = rows
-    out: dict[str, list[dict]] = {}
-    for prefix, kind in CATEGORY_KIND.items():
-        preferred = [r for r in latest if r.get("category") == f"{prefix} (English)"]
-        out[kind] = preferred or [r for r in latest if str(r.get("category") or "").startswith(prefix)]
-    return {kind: _rows_to_top10(out[kind], lambda r, k=kind: k)[kind] for kind in out}
-
-
-def fetch_netflix_top10(region: str, *, open_url: Callable[[str], Any] | None = None) -> dict[str, list[dict]]:
-    """El Top 10 oficial de Netflix de la semana más reciente: hasta 10 películas y 10 series, con
-    `title`, `rank` (1..10), `weeks` (semanas acumuladas en el Top 10), `movement` y `new` (contra la semana
-    anterior) y `week`. Sin datos del país pedido: el Top 10 global (edición en inglés)."""
-    country = _country_rows(NETFLIX_COUNTRIES_URL, region.upper(), open_url=open_url)
-    weeks = _weeks(country)
-    kind_of = lambda r: CATEGORY_KIND.get(str(r.get("category") or ""))  # noqa: E731
-    if weeks:
-        latest = _rows_to_top10(_week_rows(country, weeks[-1]), kind_of)
-        previous = _rows_to_top10(_week_rows(country, weeks[-2]), kind_of) if len(weeks) > 1 else None
-        return _with_movement(latest, previous, weeks[-1])
-    global_rows = _country_rows(NETFLIX_GLOBAL_URL, None, open_url=open_url)
-    weeks = _weeks(global_rows)
-    if not weeks:
-        return {"movie": [], "series": []}
-    latest = _global_top10(_week_rows(global_rows, weeks[-1]))
-    previous = _global_top10(_week_rows(global_rows, weeks[-2])) if len(weeks) > 1 else None
-    return _with_movement(latest, previous, weeks[-1])
 
 
 # ---------------------------------------------------------------- Netflix: título → IMDb
@@ -248,7 +212,7 @@ def _best_match(title: str, metas: list[dict]) -> dict | None:
 def netflix_entries(region: str, kind: str, *, open_url: Callable[[str], Any] | None = None,
                      tmdb: Tmdb | None = None, cinemeta: cinemeta_api.Cinemeta | None = None) -> list[dict]:
     """El Top 10 de Netflix de ese tipo, ya con `imdb` (los que no se pudieron resolver, fuera)."""
-    rows = fetch_netflix_top10(region, open_url=open_url).get(kind, [])
+    rows = fetch_netflix_top10(region, kind, open_url=open_url)
 
     def resolve(row: dict) -> dict | None:
         try:

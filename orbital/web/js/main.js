@@ -251,7 +251,29 @@ let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver
 const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.sources, ui.title, ui.search];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
+/** Qué hay al frente, para el control del iPhone («Escribir» solo con un campo de texto). Solo se manda si cambió. */
+let reportedUi = "";
+function reportUi() {
+  const textField = ui.search.isOpen || ui.login.isOpen;
+  const screen = ui.login.isOpen ? "login" : ui.search.isOpen ? "search" : ui.sheet.isOpen ? "menu"
+    : ui.title.isOpen ? "title" : ui.sources.isOpen ? "sources" : state.section;
+  const key = `${screen}:${textField}`;
+  if (key === reportedUi) return;
+  reportedUi = key;
+  api.uiState({ screen, text_field: textField }).catch(() => { reportedUi = ""; });
+}
+
+/** «Escribir» del control del iPhone: al campo con foco (la cuenta de Stremio o la búsqueda); sin campo, abre la búsqueda. */
+function remoteText(text, submit) {
+  if (ui.login.isOpen) for (const char of text) ui.login.type(char);
+  else if (ui.search.isOpen) for (const char of text) ui.search.type(char);
+  else if (text) openSearch(text);
+  if (submit) (ui.login.isOpen ? ui.login : ui.search).type(String.fromCharCode(10)); // Enter
+  renderHints();
+}
+
 function renderHints() {
+  reportUi();
   const g = glyphs();
   // Te moviste después de ocultar algo: Y ya no deshace, así que el aviso deja de decirlo.
   if (state.undoHide && !canUndoHide()) { state.undoHide = null; ui.toast.dismiss(); }
@@ -1191,6 +1213,8 @@ function handleEvent(event) {
     });
   }
   if (event.type === "launch-ready") return ui.launch.reveal();
+  if (event.type === "input") return handleAction(event.action); // el control remoto del iPhone, como el mando
+  if (event.type === "text") return remoteText(String(event.text || ""), !!event.submit);
   if (event.type === "settings") return event.settings && applySettings(event.settings);
   if (event.type === "health") { // memoria casi llena
     // Con la ventana tapada (un juego o un video encima) no sale nada: ni sonido ni repintado, que

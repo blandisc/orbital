@@ -155,6 +155,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     app.state.bus = d.hub
     app.state.shell = shell
     app.state.remote_input = RemoteInput(publish=catalog.events.publish)
+    app.state.ui_state = d.extra.setdefault("ui_state", {"screen": "home", "text_field": False})  # lo cuenta la interfaz (POST /api/ui/state)
 
     @app.middleware("http")
     async def security(request: Request, call_next):
@@ -250,6 +251,15 @@ async def invalid_request(request: Request, exc: RequestValidationError) -> JSON
 class CompanionPlayerAction(BaseModel):
     action: str
     delta: float | None = None  # "skip": segundos (±10, ±30)
+
+
+class CompanionInput(BaseModel):
+    action: str  # up, down, left, right, select, back, home, menu, search, options, pageleft, pageright
+
+
+class CompanionText(BaseModel):
+    text: str
+    submit: bool = False
 
 
 class CompanionSend(BaseModel):
@@ -466,12 +476,43 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         # Lo que la TV le dejó al iPhone («Enviar» / «Descargar en el iPhone») viaja aquí: ni una petición de más.
         catalog = main_app.state.catalog
         saw_phone()  # lo que el iPhone pide cada 5 s abierto (antes solo contaba /api/companion, que pide al emparejarse)
-        return {"playing": companion.now_playing(catalog), "inbox": companion.inbox_pending(catalog.state)}
+        return {"playing": companion.now_playing(catalog), "inbox": companion.inbox_pending(catalog.state),
+                "ui": main_app.state.ui_state}  # qué pantalla y si hay un campo de texto (el iPhone enseña «Escribir»)
 
     @public.post("/api/companion/inbox/ack")
     def companion_inbox_ack(body: CompanionAck) -> dict:
         """El iPhone ya actuó sobre estos pendientes: se quitan de la bandeja."""
         return {"removed": companion.inbox_ack(main_app.state.catalog.state, body.ids)}
+
+    remote_bucket = {"tokens": 20.0, "at": time.monotonic()}  # el pad manda ~10 por segundo al mantener
+
+    def remote_allowed() -> bool:
+        now = time.monotonic()
+        remote_bucket["tokens"] = min(20.0, remote_bucket["tokens"] + (now - remote_bucket["at"]) * 15)
+        remote_bucket["at"] = now
+        if remote_bucket["tokens"] < 1:
+            return False
+        remote_bucket["tokens"] -= 1
+        return True
+
+    @public.post("/api/companion/input")
+    def companion_input(body: CompanionInput) -> dict:
+        """El control remoto del iPhone: un botón, como si fuera del mando (a la interfaz o al reproductor)."""
+        if not remote_allowed():
+            raise HTTPException(429, "Más despacio")
+        try:
+            target = companion.remote_input(main_app.state.catalog, main_app.state.shell, body.action)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc))
+        return {"ok": True, "target": target}
+
+    @public.post("/api/companion/text")
+    def companion_text(body: CompanionText) -> dict:
+        """«Escribir» del control del iPhone: el texto al campo con foco de la tele (sin QR)."""
+        if not remote_allowed():
+            raise HTTPException(429, "Más despacio")
+        companion.remote_text(main_app.state.catalog, body.text, body.submit)
+        return {"ok": True}
 
     @public.post("/api/companion/player")
     def companion_player(body: CompanionPlayerAction) -> dict:

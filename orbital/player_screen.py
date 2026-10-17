@@ -661,6 +661,22 @@ class PlayerScreen:
         self._ask("time-pos", target)
         return target
 
+    def phone_button(self, action: str) -> None:
+        """Un botón del control del iPhone con el reproductor al frente: como el mando, salvo B, que sale sin mantener
+        (en el teléfono no hay «mantener B»): con un panel o los controles a la vista, primero los quita."""
+        if action == "back":
+            if self.menu is not None:
+                self.press("b")
+                self.press("b-up")
+            elif self._hud_visible and not self._value("pause"):
+                self.hide_hud()
+            else:
+                self._quit()
+            return
+        button = {"select": "a", "options": "y", "menu": "x", "pageleft": "lt", "pageright": "rt"}.get(action, action)
+        if button in ("up", "down", "left", "right", "a", "x", "y", "lt", "rt"):
+            self.press(button)
+
     def _quit(self) -> None:
         """Cierra mpv anotando ANTES cómo terminó (el catálogo lo lee al volver a Orbital: "Terminaste…"
         en vez de "Guardé dónde ibas"). Antes de cerrar, no después: el lanzador puede ver el proceso

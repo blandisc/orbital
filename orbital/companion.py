@@ -83,6 +83,49 @@ class NothingPlaying(Exception):
 
 PLAYER_ACTIONS = {"toggle", "pause", "play", "skip", "next", "previous", "stop", "mute"}
 
+# El control remoto del iPhone (la hoja «Viendo en la TV» estirada): las mismas acciones que el mando en la interfaz
+# (input.js: KEYMAP/PADMAP). Van a lo que está al frente: la interfaz de Orbital o el reproductor.
+REMOTE_ACTIONS = {"up", "down", "left", "right", "select", "back", "home", "menu", "search", "options", "pageleft", "pageright"}
+REMOTE_TEXT_MAX = 500
+
+
+def remote_input(catalog, shell, action: str) -> str:
+    """Un botón del control del iPhone. Devuelve a dónde fue: "ui" (la interfaz, como el mando), "player" (el
+    reproductor al frente: ← → buscan, A pausa, B sale) o "game" (un juego al frente: solo Inicio hace algo, como el
+    botón Home del mando)."""
+    if action not in REMOTE_ACTIONS:
+        raise ValueError("Ese botón no existe")
+    front = _front(catalog, shell)
+    if action == "home" and front != "ui":
+        shell.home()  # como el botón Home del mando: Orbital al frente (el juego o el video se pausan)
+        return front
+    if front == "player":
+        catalog.watch.player.phone_button(action)
+    elif front == "ui":
+        catalog.events.publish({"type": "input", "action": action})
+    return front
+
+
+def remote_text(catalog, text: str, submit: bool) -> None:
+    """«Escribir» del control del iPhone: el texto va al campo con foco (la búsqueda, o la cuenta de Stremio); sin
+    campo abierto, abre la búsqueda con él. `submit`: como Enter."""
+    text = str(text or "")[:REMOTE_TEXT_MAX]
+    catalog.events.publish({"type": "text", "text": text, "submit": bool(submit)})
+
+
+def _front(catalog, shell) -> str:
+    """Qué está al frente: la interfaz de Orbital, el reproductor o un juego."""
+    if shell is None:
+        return "ui"
+    win = shell.win
+    fg = win.foreground()
+    if not fg or shell.is_orbital(fg):
+        return "ui"
+    running = catalog.launcher.status()
+    if running and running.get("id") == "media:player":
+        return "player"
+    return "game" if running else "ui"
+
 
 def now_playing(catalog) -> dict | None:
     """Lo que se ve ahora en la TV, para la tarjeta «Viendo en la TV» del iPhone. None si no hay nada abierto."""
