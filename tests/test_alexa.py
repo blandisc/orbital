@@ -362,3 +362,15 @@ def test_the_tv_reports_its_screen_for_the_iphone(public):
     assert local.post("/api/ui/state", json={"screen": "search", "text_field": True, "section": "Inicio", "legend": legend}).status_code == 200
     ui = client.get("/api/companion/now", headers={"Authorization": "Bearer secreto"}).json()["ui"]
     assert ui == {"screen": "search", "text_field": True, "section": "Inicio", "legend": legend}
+
+
+def test_iphone_voice_does_not_count_as_alexa(public):
+    """Siri y el micrófono del control mandan source=iphone: Ajustes no dice que se usó Alexa."""
+    client, main = public
+    auth = {"Authorization": "Bearer secreto"}
+    deps = main.state.deps
+    deps.alexa_last = None
+    assert client.post("/api/voice", json={"text": "pausa", "source": "iphone"}, headers=auth).status_code == 200
+    assert deps.alexa_last is None
+    client.post("/api/voice", json={"text": "pausa"}, headers=auth)
+    assert deps.alexa_last is not None

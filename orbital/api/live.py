@@ -27,6 +27,7 @@ class VoiceRequest(BaseModel):
     intent: str | None = None
     slots: dict[str, str] | None = None
     text: str | None = Field(None, max_length=500)  # una frase; Alexa repite lo que no entendió
+    source: str | None = Field(None, max_length=20)  # "iphone": Siri o el micrófono del control (no cuenta como Alexa)
 
 
 class SseHub:
@@ -107,7 +108,7 @@ def router(d: Deps, is_local) -> APIRouter:
     r = APIRouter()
 
     async def run_voice(body: VoiceRequest, remote: bool) -> dict:
-        if remote:
+        if remote and body.source != "iphone":  # «Alexa se usó hace…» solo con Alexa, no con Siri ni el iPhone
             d.alexa_last = time.time()
         if body.intent:
             result = await run_in_threadpool(d.voice.handle_intent, body.intent, body.slots)
