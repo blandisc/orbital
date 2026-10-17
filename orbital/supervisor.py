@@ -40,6 +40,16 @@ def decide(code: int, crashes: list[float], now: float) -> tuple[str, float]:
     return "restart", BACKOFF[min(len(crashes), len(BACKOFF)) - 1]
 
 
+def _taskbar_back() -> None:
+    if sys.platform != "win32" or os.environ.get("ORBITAL_TEST"):
+        return
+    try:
+        from . import windows
+        windows.set_taskbar_visible(True)
+    except Exception:  # noqa: BLE001 - nunca impide reabrir Orbital
+        log.debug("No pude regresar la barra de tareas", exc_info=True)
+
+
 def run(argv: list[str], spawn=subprocess.call, sleep=time.sleep, clock=time.monotonic) -> int:
     """Abre `python -m orbital argv` como hijo y lo reabre según `decide`. Devuelve el último código."""
     crashes: list[float] = []
@@ -47,6 +57,7 @@ def run(argv: list[str], spawn=subprocess.call, sleep=time.sleep, clock=time.mon
     while True:
         command = [sys.executable, *argv] if getattr(sys, "frozen", False) else [sys.executable, "-m", "orbital", *argv]
         code = spawn(command, env=env)  # empaquetado (Orbital.exe) el ejecutable ya es Orbital
+        _taskbar_back()  # si Orbital tronó con la barra de Windows escondida (modo consola), de regreso
         action, wait = decide(code, crashes, clock())
         if action == "stop":
             if code not in (0, RESTART):

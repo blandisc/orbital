@@ -328,6 +328,11 @@ def main(argv: list[str] | None = None) -> None:
     holder: dict = {}
     kiosk = KioskWindow(url, config.ui.browser, keep_open=False,
                         on_closed=lambda: quit_orbital(holder.get("app"))) if mode == "browser" else None
+    if kiosk is not None and sys.platform == "win32":
+        import atexit
+
+        from . import windows
+        atexit.register(windows.set_taskbar_visible, True)  # al cerrar Orbital (de cualquier forma limpia), la barra vuelve
     app = create_app(config, kiosk=kiosk, shortcuts=True, log_path=log_path)
     holder["app"] = app
     public_app = create_public_app(config, app) if config.server.public_port else None

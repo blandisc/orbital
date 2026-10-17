@@ -77,3 +77,19 @@ def test_kiosk_not_reopened_after_exit_to_desktop(tmp_path):
     assert kiosk.open() and kiosk.close()
     time.sleep(0.4)
     assert not kiosk.is_open
+
+
+def test_console_mode_hides_the_taskbar_and_brings_it_back(tmp_path, _no_real_taskbar):
+    """Modo consola: al abrir la ventana de Orbital se esconde la barra de Windows (al abrir un juego ya no se asoma) y
+    al salir al escritorio vuelve. (Con el sustituto de conftest: nunca se toca la barra de verdad.)"""
+    fake = tmp_path / "browser.cmd"
+    fake.write_text("@ping -n 30 127.0.0.1 >nul\n")
+    kiosk = KioskWindow("http://x", str(fake), tmp_path / "perfil")
+    assert kiosk.open()
+    assert _no_real_taskbar[-1] is False
+    assert kiosk.close()
+    assert _no_real_taskbar[-1] is True
+    off = KioskWindow("http://x", str(fake), tmp_path / "perfil2", hide_taskbar=False)
+    _no_real_taskbar.clear()
+    assert off.open() and off.close()
+    assert _no_real_taskbar == []
