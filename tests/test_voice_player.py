@@ -360,3 +360,17 @@ def test_apaga_never_closes_a_game(library, monkeypatch):
     monkeypatch.setattr(library.launcher, "stop", lambda: stopped.append(1) or True)
     result = VoiceController(library).handle_text("apaga")
     assert not result.ok and "cierra el juego" in result.speech and not stopped
+
+
+def test_something_scary_lists_horror_to_choose(voice, monkeypatch):
+    """«Pon algo de terror»: lo más popular de terror, a elegir en la tele y en el iPhone (antes: Para ti sin filtrar)."""
+    asked = []
+    monkeypatch.setattr(voice.catalog.cinemeta, "genre", lambda kind, genre: asked.append((kind, genre)) or
+                        [{"id": "tt1", "name": "El conjuro", "type": "movie"}, {"id": "tt2", "name": "Hereditary", "type": "movie"}])
+    result = voice.handle_text("pon algo de terror")
+    assert asked == [("movie", "Horror")]
+    assert result.speech == "De terror te recomiendo El conjuro y Hereditary. Elige una."
+    assert [c["meta_id"] for c in result.as_dict()["choices"]] == ["tt1", "tt2"]
+    assert result.events[0]["type"] == "choose"
+    voice.handle_text("quiero ver una serie de comedia")
+    assert asked[-1] == ("series", "Comedy")

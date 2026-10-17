@@ -374,3 +374,16 @@ def test_iphone_voice_does_not_count_as_alexa(public):
     assert deps.alexa_last is None
     client.post("/api/voice", json={"text": "pausa"}, headers=auth)
     assert deps.alexa_last is not None
+
+
+def test_iphone_choosing_a_series_opens_its_page_on_the_tv(public, monkeypatch):
+    """La lista de «choices» del iPhone: una serie (sin episodio) abre su ficha en la tele, como la voz."""
+    client, main = public
+    catalog = main.state.catalog
+    monkeypatch.setattr(type(catalog), "native_player", property(lambda self: True))
+    events = []
+    catalog.events.subscribe(events.append)
+    r = client.post("/api/stremio/play", json={"kind": "series", "id": "tt0386676", "title": "The Office"},
+                    headers={"Authorization": "Bearer secreto"})
+    assert r.status_code == 200 and r.json()["opened"] == "title"
+    assert {"type": "open-view", "view": {"serie": "tt0386676"}, "message": "Abriendo The Office"} in events

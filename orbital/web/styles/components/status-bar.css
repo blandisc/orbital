@@ -12,26 +12,26 @@
 }
 .status-bar__brand:hover { background: var(--color-fill); }
 .status-bar__brand { gap: .6rem; }
-/* La marca (icons.js · mark): planeta, anillo que pasa por detrás y por delante, y su luna. */
+/* La marca (icons.js · mark): el planeta de contorno, el anillo que pasa por delante y la luna como punto final de
+   «orbital». Al arrancar, el planeta aparece, el anillo se dibuja de una vez y la luna cae en su lugar; al señalar la
+   marca, la luna da un saltito en su órbita. Con «Reducir movimiento», quieta. */
 .status-bar__brand .mark { width: 2.05rem; height: 2.05rem; color: var(--color-text); overflow: visible; }
-.mark__ring--back { opacity: .45; }
-/* Al arrancar, el anillo se dibuja alrededor del planeta y la luna aparece al final. */
-.status-bar__brand .mark__ring { stroke-dasharray: 1; animation: mark-draw var(--duration-land) var(--ease-out) both; }
-.status-bar__brand .mark__ring--front { animation-delay: var(--delay-2); }
+/* Después de la pantalla de arranque (si no, pasaba detrás de ella): el anillo y luego la luna. */
+.status-bar__brand .mark__ring { opacity: .7; stroke-dasharray: 1; animation: mark-draw var(--duration-land) var(--ease-out) both; animation-delay: var(--duration-land); }
 .status-bar__brand .mark__planet { transform-origin: 16px 16px; animation: mark-planet var(--duration-enter) var(--ease-spring) both; }
-.status-bar__brand .mark__moon {
-  transform-box: fill-box; transform-origin: center; animation: mark-moon var(--duration-enter) var(--ease-spring) both;
-  animation-delay: calc(var(--duration-land) * .7); transition: translate var(--duration-slow) var(--ease-spring);
-}
-/* Al pasar por encima, la luna avanza un poco en su órbita. */
-.status-bar__brand:hover .mark__moon { translate: 1px -1.4px; }
 @keyframes mark-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes mark-planet { from { opacity: 0; transform: scale(.6); } }
-@keyframes mark-moon { from { opacity: 0; transform: scale(0); } }
+.status-bar__moon {
+  display: inline-block; width: .26em; height: .26em; margin-left: .1em; border-radius: 50%; background: currentColor;
+  vertical-align: .62em; animation: mark-moon var(--duration-enter) var(--ease-spring) both; animation-delay: calc(var(--duration-land) * 1.7);
+  transition: translate var(--duration-slow) var(--ease-spring);
+}
+.status-bar__brand:hover .status-bar__moon, .status-bar__brand.is-focused .status-bar__moon { translate: .08em -.18em; }
+@keyframes mark-moon { from { opacity: 0; translate: -.9em -.7em; scale: .2; } 70% { opacity: 1; } }
 
 .status-bar__wordmark {
   font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold);
-  letter-spacing: var(--tracking-tight); line-height: 1; padding-bottom: .08em; /* centro óptico con el planeta */
+  letter-spacing: var(--tracking-display); line-height: 1; padding-bottom: .08em; /* centro óptico con el planeta */
   animation: fade-in var(--duration-enter) var(--ease-out) both; animation-delay: var(--delay-1);
 }
 
