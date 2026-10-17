@@ -371,8 +371,35 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     }
   }
 
+  /**
+   * Al abrir desde una tarjeta (como Game Glance): el arte se abre desde la tarjeta hasta toda la pantalla y el logo
+   * viaja de la tarjeta a su lugar; lo demás llega a su sitio solo (title.css · title-settle). `from`: { rect, logoRect }.
+   */
+  function flyIn(from) {
+    if (!from?.rect || !backdrop.animate || document.documentElement.dataset.motion === "reduce") return;
+    const r = from.rect;
+    const ease = "cubic-bezier(.16, 1, .3, 1)";
+    backdrop.animate([
+      { clipPath: `inset(${r.top}px ${innerWidth - r.right}px ${innerHeight - r.bottom}px ${r.left}px round 18px)`, opacity: 1 },
+      { clipPath: "inset(0px 0px 0px 0px round 0px)" },
+    ], { duration: 560, easing: ease });
+    if (!from.logoRect) return;
+    const go = () => {
+      const to = logo.getBoundingClientRect();
+      if (logo.hidden || !to.width) return;
+      const fly = logo.animate([
+        { transform: `translate(${from.logoRect.left - to.left}px, ${from.logoRect.top - to.top}px) scale(${from.logoRect.width / to.width})` },
+        { transform: "none" },
+      ], { duration: 620, easing: ease });
+      logo.classList.add("title__logo--flying");
+      fly.finished.catch(() => {}).finally(() => logo.classList.remove("title__logo--flying"));
+    };
+    if (logo.complete && logo.naturalWidth) requestAnimationFrame(go);
+    else logo.addEventListener("load", () => requestAnimationFrame(go), { once: true });
+  }
+
   /** `info`: { kind, meta_id, title, hero, image, extra } (lo que ya se sabe, para pintar al instante). */
-  function open(info) {
+  function open(info, from = null) {
     item = info;
     cancelExit();
     zone = "actions";
@@ -384,6 +411,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     mount(tabs);
     mount(list);
     el.hidden = false;
+    flyIn(from);
     load();
   }
 

@@ -760,8 +760,19 @@ function openTitle(item) {
   if (!ref) return;
   if (ui.sources.isOpen) ui.sources.close();
   sound.play("open");
-  ui.title.open(ref);
+  ui.title.open(ref, openingFrom());
   renderHints();
+}
+
+/** De dónde se abre la ficha: la tarjeta enfocada en pantalla y su logo (el arte se abre desde ahí; el logo viaja). */
+function openingFrom() {
+  const view = inForYou() ? ui.foryou.el : inHome() ? ui.home.el : inGames() ? ui.games.el : null;
+  const node = view?.querySelector(".tile--focused, .foryou-mosaic__tile--on, .card--focused");
+  const rect = node?.getBoundingClientRect();
+  if (!rect?.width) return null;
+  const logo = node.querySelector(".tile--feature__logo, .foryou-mosaic__logo");
+  const logoRect = logo?.getBoundingClientRect();
+  return { rect, logoRect: logoRect?.width ? logoRect : null };
 }
 
 const { watch, launch, resumeRunning, playChannel } = createLaunching({
