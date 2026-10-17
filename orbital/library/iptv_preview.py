@@ -32,6 +32,14 @@ class PreviewError(Exception):
     """El canal no dio una lista HLS que se pueda enseñar en miniatura."""
 
 
+class PreviewRedirect(Exception):  # noqa: N818 - no es un error: «pídela tú, aquí está»
+    """El canal deja que la página lo lea: la tele pide directo esta lista (la de calidad más baja)."""
+
+    def __init__(self, url: str) -> None:
+        super().__init__(url)
+        self.url = url
+
+
 def sign(channel_id: str, url: str) -> str:
     return hmac.new(_SECRET, f"{channel_id}\n{url}".encode(), hashlib.sha256).hexdigest()[:32]
 
@@ -74,13 +82,10 @@ def lowest_variant(text: str, base: str) -> str | None:
     return best[1] if best else None
 
 
-def rewrite(text: str, base: str, channel_id: str, direct: bool = False) -> str:
-    """Cada pedazo (y las llaves o el mapa de inicio) apunta a Orbital, firmado; o, si el canal deja que la página lo lea
-    (`direct`), a su dirección completa: la tele lo baja directo, más rápido y sin cargar a Orbital."""
+def rewrite(text: str, base: str, channel_id: str) -> str:
+    """Cada pedazo (y las llaves o el mapa de inicio) apunta a Orbital, firmado."""
     def local(uri: str) -> str:
         absolute = urljoin(base, uri.strip())
-        if direct:
-            return absolute
         return f"preview-seg?c={quote(channel_id, safe='')}&u={quote(absolute, safe='')}&s={sign(channel_id, absolute)}"
 
     out = []
@@ -100,7 +105,9 @@ class Previews:
         self._lock = threading.Lock()
 
     def playlist(self, channel: Channel) -> str:
-        """La lista de la calidad más baja del canal, con los pedazos pasando por Orbital."""
+        """La lista de la calidad más baja del canal, con los pedazos pasando por Orbital. Si el canal deja que la página
+        lo lea, PreviewRedirect con la dirección de esa lista: la tele la pide directo (el reproductor de Edge no acepta una
+        lista de Orbital con pedazos de otro sitio)."""
         with self._lock:
             cached = self._variants.get(channel.id)
         url = cached[1] if cached and time.monotonic() - cached[0] < VARIANT_TTL else channel.url
@@ -117,8 +124,9 @@ class Previews:
             if lowest_variant(text, final):
                 raise PreviewError("lista maestra anidada")
         # Directo solo si el canal da permiso y no pide cabeceras propias (la página no puede mandarlas).
-        direct = cors and not channel.user_agent and not channel.referrer
-        return rewrite(text, final, channel.id, direct=direct)
+        if cors and not channel.user_agent and not channel.referrer:
+            raise PreviewRedirect(final)
+        return rewrite(text, final, channel.id)
 
     def segment(self, channel: Channel, url: str):
         """(pedazos, tipo): se van pasando mientras llegan. Antes se bajaba el pedazo entero (hasta 4 MB en un canal sin

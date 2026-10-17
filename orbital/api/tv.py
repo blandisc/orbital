@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import FileResponse, Response, StreamingResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 
 from ..library import iptv_preview
@@ -53,6 +53,8 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(404, "Ese canal ya no está disponible.")
         try:
             text = previews.playlist(channel)
+        except iptv_preview.PreviewRedirect as go:
+            return RedirectResponse(go.url, status_code=307, headers={"Cache-Control": "no-store"})
         except (iptv_preview.PreviewError, *NET_ERRORS) as exc:
             log.debug("Sin vista previa de %s: %s", channel.name, exc)
             raise HTTPException(502, "Este canal no tiene vista previa.")

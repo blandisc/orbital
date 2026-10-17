@@ -51,8 +51,11 @@ def test_api_refuses_unsigned_pieces_and_unknown_channels(make_client):
 
 def test_a_channel_that_allows_it_is_read_directly_by_the_tv(monkeypatch):
     monkeypatch.setattr(ip, "fetch", lambda channel, url, limit: (MEDIA.encode(), url, "application/vnd.apple.mpegurl", True))
-    text = ip.Previews().playlist(Channel("Y.mx@SD", "Y", "https://tv.example/live/index.m3u8"))
-    assert "https://tv.example/live/seg1.ts" in text and "preview-seg" not in text
+    try:
+        ip.Previews().playlist(Channel("Y.mx@SD", "Y", "https://tv.example/live/index.m3u8"))
+        raise AssertionError("debía mandarla directo")
+    except ip.PreviewRedirect as go:
+        assert go.url == "https://tv.example/live/index.m3u8"
     # Con cabeceras propias (la página no puede mandarlas), aunque dé permiso, pasa por Orbital.
     text = ip.Previews().playlist(Channel("Z.mx@SD", "Z", "https://tv.example/live/index.m3u8", referrer="https://tv.example/"))
     assert "preview-seg" in text
