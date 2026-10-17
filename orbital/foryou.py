@@ -693,8 +693,30 @@ class ForYou:
 
     def warm(self) -> None:
         """Al arrancar Orbital, arma el mosaico y las listas con puesto en segundo plano: la primera vez que la TV o el
-        iPhone abren Para ti ya está (antes esperaban el Top 10 de Netflix, unos 30 s)."""
-        threading.Thread(target=lambda: self._safe(self.mosaic), daemon=True, name="foryou-warm").start()
+        iPhone abren Para ti ya está (antes esperaban el Top 10 de Netflix, unos 30 s). Y sus primeros pósters y logos,
+        ya bajados y reducidos: la primera vez que se veía el mosaico, cada imagen se bajaba en ese momento."""
+        def run() -> None:
+            items = self._safe(self.mosaic) or []
+            self._safe(lambda: self.prefetch_art(items))
+
+        threading.Thread(target=run, daemon=True, name="foryou-warm").start()
+
+    def prefetch_art(self, items: list[dict], limit: int = 60) -> int:
+        """Baja y reduce los pósters (al ancho del mosaico) y los logos de las primeras piezas. Devuelve cuántas."""
+        from . import remote_art
+
+        def one(item: dict) -> bool:
+            ok = False
+            url = item.get("image")
+            if isinstance(url, str) and remote_art.allowed(url):
+                ok = remote_art.sized(url, 360) is not None  # POSTER_PX del mosaico (foryou-mosaic.js)
+            imdb = item.get("meta_id")
+            if isinstance(imdb, str) and str(item.get("logo") or "").startswith("https://images.metahub.space/logo/"):
+                self.trimmed_logo(imdb)
+            return ok
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            return sum(pool.map(one, items[:limit]))
 
     def _build_mosaic(self) -> list[dict]:
         """Lo tuyo, mezclado: tus recomendaciones, tu watchlist, tus listas, tus series y tus juegos.

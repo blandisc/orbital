@@ -636,3 +636,14 @@ def test_trim_rejects_what_is_not_a_logo():
         iptv_logos.trim(b"no soy una imagen")
     with pytest.raises(iptv_logos.LogoError):
         iptv_logos.trim(_logo_png(box=(0, 0, 0, 0)))
+
+
+def test_the_first_mosaic_art_is_ready_before_it_is_seen(library, make_foryou, monkeypatch):
+    from orbital import remote_art
+
+    asked: list[tuple[str, int]] = []
+    monkeypatch.setattr(remote_art, "sized", lambda url, width, *a, **k: asked.append((url, width)) or "ok")
+    fy = make_foryou(trakt_keys=False)
+    items = [{"image": "https://images.metahub.space/poster/medium/tt1/img"}, {"image": "img/placeholders/x.jpg"}]
+    assert fy.prefetch_art(items) == 1
+    assert asked == [("https://images.metahub.space/poster/medium/tt1/img", 360)]
