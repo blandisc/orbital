@@ -1,5 +1,5 @@
 import { cssUrl, h, svg } from "../core/dom.js";
-import { duration, hltbText, lastPlayed, shortAgo } from "../core/format.js";
+import { duration, endsAt, hltbText, lastPlayed, shortAgo } from "../core/format.js";
 import { kicker, platformColor, stageKind, SYSTEMS, systemColor, systemOf, thumbOf } from "../core/home.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { sized } from "../core/images.js";
@@ -54,8 +54,8 @@ function featureLogo(src, title) {
 
 /** Dato debajo del título: lo que queda (videos) o cuándo jugaste (juegos). */
 export function detailOf(item, now = Date.now()) {
-  // «Película · quedan 1 h 40 min» → «quedan 1 h 40 min»: la barra de avance ya dice que es un video.
-  if (isWatchable(item)) return item.subtitle?.replace(/^Película · /, "") || null;
+  // «Película · quedan 1 h 40 min» → «quedan 1 h 40 min · termina a las 11:20 p. m.»: la barra ya dice que es un video.
+  if (isWatchable(item)) return [item.subtitle?.replace(/^Película · /, ""), endsAt(item.extra?.left, now)].filter(Boolean).join(" · ") || null;
   const when = lastPlayed(item.last_played, now, "Jugaste");
   const total = item.playtime >= 600 ? duration(item.playtime) : null;
   return [when && when.replace("Jugaste hace", "jugaste hace").replace("Jugaste", "jugaste"), total && `${total} en total`]

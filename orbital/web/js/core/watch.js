@@ -2,18 +2,19 @@
  * Lógica pura de la ficha de películas y series (con pruebas en tests/web): qué botones
  * ofrecer y en qué estado está cada episodio.
  */
-import { duration } from "./format.js";
+import { duration, endsAt } from "./format.js";
 
-const left = (resume) => {
+// «quedan 22 min · termina a las 11:40 p. m.» (como el iPhone).
+const left = (resume, now = Date.now()) => {
   const rest = resume?.duration && resume?.position ? resume.duration - resume.position : 0;
-  return rest > 60 ? `quedan ${duration(rest)}` : null;
+  return rest > 60 ? `quedan ${duration(rest)} · ${endsAt(rest, now)}` : null;
 };
 
 /**
  * La línea de avance bajo los datos (fuera de los botones, que así caben en un renglón):
  * "T8 E23 · Homer's Enemy · quedan 11 min" con su barra, o "Sigue: T8 E24 · Nombre".
  */
-export function titleProgress(details) {
+export function titleProgress(details, now = Date.now()) {
   const resume = details?.resume;
   if (!resume) return null;
   const started = resume.position > 0;
@@ -21,10 +22,10 @@ export function titleProgress(details) {
   if ((details.kind || "movie") === "series") {
     const episode = [resume.label, resume.episode_title].filter(Boolean).join(" · ");
     // Lo que queda va antes del nombre del episodio: con un nombre largo, lo que se recorta es el nombre.
-    return started ? { label: [resume.label, left(resume), resume.episode_title].filter(Boolean).join(" · "), fraction }
+    return started ? { label: [resume.label, left(resume, now), resume.episode_title].filter(Boolean).join(" · "), fraction }
       : { label: `Sigue: ${episode}`, fraction: null };
   }
-  return started ? { label: left(resume) ? left(resume).replace(/^q/, "Q") : "Casi terminada", fraction } : null;
+  return started ? { label: left(resume, now) ? left(resume, now).replace(/^q/, "Q") : "Casi terminada", fraction } : null;
 }
 
 /**

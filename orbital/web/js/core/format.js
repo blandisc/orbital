@@ -42,6 +42,10 @@ export function duration(seconds) {
 export const clock = (date = new Date()) =>
   `${date.getHours() % 12 || 12}:${String(date.getMinutes()).padStart(2, "0")} ${date.getHours() < 12 ? "a. m." : "p. m."}`;
 
+/** «termina a las 11:40 p. m.»: a qué hora acabas si lo ves de corrido (como el iPhone y el reproductor). */
+export const endsAt = (seconds, now = Date.now()) =>
+  seconds >= 60 ? `termina a las ${clock(new Date(now + seconds * 1000))}` : null;
+
 const GENRES = {
   Action: "Acción", Adventure: "Aventura", Animation: "Animación", Biography: "Biografía", Comedy: "Comedia",
   Crime: "Crimen", Documentary: "Documental", Drama: "Drama", Family: "Familiar", Fantasy: "Fantasía",

@@ -123,7 +123,7 @@ def stremio_item(w: stremio_api.Watchable) -> LibraryItem:
         last_watched=w.last_watched,
         # Para elegir la fuente en Orbital (Seguir viendo -> el mismo episodio).
         extra={"kind": w.type, "meta_id": w.id, "video_id": w.video_id or (w.id if w.type == "movie" else None),
-               "in_library": w.in_library,
+               "in_library": w.in_library, "left": round(left) if left >= 60 else None,  # para «termina a las…»
                "eyebrow": " · ".join(filter(None, ["Película" if w.type == "movie" else "Serie", detail if episode else ""]))},
     )
 

@@ -298,7 +298,9 @@ def test_continue_cards_say_what_is_left_and_skip_what_you_barely_opened():
 
     item = stremio_item(w())
     assert item.subtitle == "T8 E23 · quedan 10 min" and item.category == "continue"
+    assert item.extra["left"] == 636  # para «termina a las…» en Inicio
     assert stremio_item(w(time_offset=1, duration=0)).subtitle == "Sigue: T8 E23"  # el siguiente, listo
+    assert stremio_item(w(time_offset=1, duration=0)).extra["left"] is None
     assert stremio_item(w(type="movie", video_id="tt1", time_offset=20_000, duration=6_000_000)).category == "stremio"  # 0,3 %
     assert time_left(6000) == "quedan 1 h 40 min" and time_left(30) == ""
     enrich_watch_item(item, {"description": "Springfield.", "imdbRating": "8.6",
