@@ -6,7 +6,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .. import player_ui
 from ..library import cinemeta, stremio_api
@@ -59,6 +59,12 @@ def _clean_id(value) -> bool:
 GENRES = {"Horror", "Comedy", "Action", "Sci-Fi", "Drama", "Animation", "Thriller", "Romance", "Crime", "Documentary", "Adventure", "Family"}
 
 
+class ArtChoice(BaseModel):
+    meta_id: str = Field(max_length=20)
+    which: str = Field(max_length=12)  # "poster" | "background"
+    url: str | None = Field(default=None, max_length=300)
+
+
 def router(d: Deps) -> APIRouter:
     r = APIRouter(prefix="/api/stremio")
     catalog = d.catalog
@@ -109,6 +115,26 @@ def router(d: Deps) -> APIRouter:
             raise HTTPException(502, "No pude cargar los episodios. Revisa tu conexión e inténtalo de nuevo.")
         return {"id": meta_id, "title": meta.get("name") or "", "seasons": cinemeta.seasons(meta),
                 "background": meta.get("background") or None, **cinemeta.describe_meta(meta)}
+
+    @r.get("/art")
+    def art_choices(kind: str, id: str) -> dict:
+        """«Cambiar el arte»: los pósters y fondos que se pueden elegir y los que tiene ahora."""
+        if kind not in ("movie", "series") or not id.startswith("tt"):
+            raise HTTPException(400, "Solo películas y series")
+        try:
+            return catalog.watch.art_choices(kind, id[:20])
+        except LookupError as exc:
+            raise HTTPException(404, str(exc))
+
+    @r.post("/art")
+    def set_art(body: ArtChoice) -> dict:
+        """Elegiste un póster o un fondo (o `url` vacío: el de siempre). Se ve ya en la biblioteca, Para ti y la ficha."""
+        try:
+            art = catalog.watch.set_art(body.meta_id[:20], body.which, body.url or None)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc))
+        catalog.apply_art(body.meta_id[:20])
+        return {"ok": True, "art": art}
 
     @r.get("/sources")
     def sources(kind: str, id: str, video: str | None = None) -> dict:

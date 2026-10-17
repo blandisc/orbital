@@ -28,6 +28,11 @@ export function gameMenu(item, { running = null, phone = false } = {}) {
     const series = item.extra?.kind === "series" || String(item.id || "").startsWith("cinemeta:series:");
     options.push({ icon: "info", label: series ? "Ver episodios" : "Ver ficha", command: { type: "title", id: item.id } });
   }
+  // Una película o serie: elegir otro póster o fondo (de TMDB) cuando el de siempre no te gusta.
+  const metaId = item.extra?.meta_id || item.meta_id;
+  if (isWatchable(item) && !isOpen && /^tt\d+$/.test(metaId || "")) {
+    options.push({ icon: "cover", label: "Cambiar el arte", command: { type: "media-art", kind: item.extra?.kind || item.kind || "movie", metaId, title: item.title } });
+  }
   if (item.source === "stremio" && item.category === "continue") {
     options.push({ icon: "minus", label: "Quitar de Seguir viendo", command: { type: "dismiss", id: item.id, title: item.title } });
   }

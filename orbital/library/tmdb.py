@@ -118,6 +118,18 @@ class Tmdb:
             "poster": image(raw.get("poster_path")), "backdrop": image(raw.get("backdrop_path"), "w1280"),
         }
 
+    def images(self, kind: str, tmdb_id: int, limit: int = 18) -> dict[str, list[str]]:
+        """Los pósters y fondos de un título (para «Cambiar el arte»): primero los en español, luego inglés y sin texto."""
+        raw = self._get(f"/{KINDS[kind]}/{int(tmdb_id)}/images", include_image_language="es,en,null", language="es")
+        order = {"es": 0, "en": 1, None: 2}
+
+        def pick(rows, size):
+            rows = [r for r in rows or [] if isinstance(r, dict) and r.get("file_path")]
+            rows.sort(key=lambda r: (order.get(r.get("iso_639_1"), 3), -float(r.get("vote_average") or 0)))
+            return [url for r in rows[:limit] if (url := image(r["file_path"], size))]
+
+        return {"posters": pick(raw.get("posters"), "w500"), "backgrounds": pick(raw.get("backdrops"), "w1280")}
+
     def find_id(self, imdb: str, kind: str) -> int | None:
         """El id de TMDB de un título de IMDb (None si TMDB no lo tiene)."""
         data = self._get(f"/find/{imdb}", external_source="imdb_id")

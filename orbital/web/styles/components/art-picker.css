@@ -1,0 +1,26 @@
+/* Cambiar el arte (js/components/art-picker.js): dos filas, Póster y Fondo, con lo de TMDB; la primera casilla es
+   «El de siempre». El marco (fondo, margen, entrada y salida) es .screen y el encabezado ScreenHead (ui.css). */
+.art-picker { display: grid; place-items: center; }
+.art-picker__box {
+  display: flex; flex-direction: column; gap: var(--space-5); width: min(84rem, 100%); max-height: 100%;
+  padding: var(--space-8); border-radius: var(--radius-2xl);
+  background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-hairline), var(--shadow-overlay);
+  animation: rise-in var(--duration-enter) var(--ease-out);
+}
+.art-picker__box .screen-head { justify-self: center; align-self: center; }
+.art-picker__lead { margin: 0; text-align: center; color: var(--color-text-muted); font-size: var(--text-md); }
+.art-picker__body { display: grid; gap: var(--space-6); min-height: 0; }
+.art-picker__status { margin: 0; text-align: center; color: var(--color-text-muted); font-size: var(--text-md); }
+.art-picker__status--error { color: var(--color-danger); }
+.art-picker__label { margin: 0 0 var(--space-3); font-size: var(--type-section); font-weight: var(--weight-bold); }
+/* Una fila que se recorre de lado (sin barra): la enfocada siempre a la vista (scrollIntoView). */
+.art-picker__track { display: flex; gap: var(--space-4); overflow-x: auto; scrollbar-width: none; padding: var(--space-2); }
+.art-picker__tile {
+  flex: none; height: 13rem; aspect-ratio: 2 / 3; padding: 0; overflow: hidden; display: grid; place-items: center;
+  background: var(--color-surface-raised);
+}
+.art-picker__tile--wide { aspect-ratio: 16 / 9; }
+.art-picker__image { width: 100%; height: 100%; object-fit: cover; }
+.art-picker__original { padding: var(--space-3); color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium); text-align: center; }
+/* El que tiene ahora: el borde del acento. */
+.art-picker__tile--current { box-shadow: inset 0 0 0 3px var(--color-accent); }

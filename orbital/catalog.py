@@ -387,6 +387,7 @@ class Catalog:
                 item.hero = placeholder("hero", item.system, item.id)
                 item.extra["placeholder_hero"] = True
             self._store_facts(item)
+            self._chosen_art(item)
         self.state.mark_seen([i.id for i in found if i.category in ("emulators", "steam")])
         self.store.replace(found)
         self._save_snapshot(found)
@@ -617,6 +618,22 @@ class Catalog:
         if clear_runner:
             self.state.set_pref(item_id, "runner", None)
         return self.describe(item)
+
+    def _chosen_art(self, item: LibraryItem) -> None:
+        """«Cambiar el arte»: el póster o el fondo que elegiste para esa película o serie, en lugar del de siempre."""
+        meta_id = (item.extra or {}).get("meta_id")
+        if item.source not in ("stremio", "cinemeta") or not meta_id:
+            return
+        art = self.watch.art_for(meta_id)
+        if art.get("poster"):
+            item.image = art["poster"]
+        if art.get("background"):
+            item.hero = art["background"]
+
+    def apply_art(self, meta_id: str) -> None:
+        """Se acaba de elegir arte: la biblioteca lo toma ya, sin reescanear."""
+        self.store.update(self._chosen_art, where=lambda i: (i.extra or {}).get("meta_id") == meta_id)
+        self.notify({"type": "library-changed"})
 
     STORE_SOURCES = ("steam", "geforcenow")
 

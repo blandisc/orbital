@@ -483,7 +483,15 @@ class ForYou:
         kind = kind if kind in ("movie", "series") else "series"
         hidden = self.catalog.state.dismissed()
         items = self._list(list_id, kind)
-        return [i for i in items if i["key"] not in hidden]
+        return [self._with_art(i) for i in items if i["key"] not in hidden]
+
+    def _with_art(self, item: dict) -> dict:
+        """El póster o fondo que elegiste para ese título («Cambiar el arte»), en lugar del de siempre."""
+        art = self.catalog.watch.art_for(item.get("meta_id")) if item.get("meta_id") else {}
+        if not art:
+            return item
+        return {**item, **({"image": art["poster"]} if art.get("poster") else {}),
+                **({"hero": art["background"]} if art.get("background") else {})}
 
     def _stremio(self, which: str, kind: str | None = None) -> list:
         """Lo que Orbital ya trajo de Stremio: «continue» (Seguir viendo), «mylist» (Mi lista) o
@@ -695,7 +703,7 @@ class ForYou:
     def mosaic(self) -> list[dict]:
         """El mosaico de la caché (vencido o no, se renueva solo); solo la primera vez se espera a armarlo."""
         hidden = self.catalog.state.dismissed()
-        return [i for i in self.cache.get("mosaic", MINE_TTL, self._build_mosaic, stale=True) if i["key"] not in hidden]
+        return [self._with_art(i) for i in self.cache.get("mosaic", MINE_TTL, self._build_mosaic, stale=True) if i["key"] not in hidden]
 
     def warm(self) -> None:
         """Al arrancar Orbital, arma el mosaico y las listas con puesto en segundo plano: la primera vez que la TV o el

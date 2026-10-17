@@ -28,6 +28,7 @@ import { createLogin } from "./components/login.js";
 import { createTitle, titleRef } from "./components/title.js";
 import { createToast } from "./components/toast.js";
 import { createPhoneLink } from "./components/phone-link.js";
+import { createArtPicker } from "./components/art-picker.js";
 import { createTv } from "./components/tv.js";
 import { createTraktLink } from "./components/trakt-link.js";
 import { createViewer } from "./components/viewer.js";
@@ -155,6 +156,11 @@ const ui = {
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); returnToMenu(phoneFrom); },
   }),
+  artPicker: createArtPicker({
+    onMove: () => sound.play("move"),
+    onPicked: (target) => { sound.play("select"); ui.toast.show(`Listo: arte nuevo para ${target.title}`); loadLibrary(); },
+    onClose: () => { sound.play("back"); renderHints(); },
+  }),
   launch: createLaunchOverlay({ backGlyph: () => glyphs().back }),
   viewer: createViewer({
     // B regresa a la lista de Capturas, en la que estabas viendo (antes saltaba hasta Inicio).
@@ -176,7 +182,7 @@ const touchBack = h("button", { class: "touch-back", type: "button", "aria-label
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -249,7 +255,7 @@ function returnToMenu(from) {
   }, 0);
 }
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
-const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.sources, ui.title, ui.search];
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.search];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 /** Qué hay al frente, para el control del iPhone: la pantalla, si hay un campo de texto («Escribir»), la sección y la
@@ -937,6 +943,10 @@ async function runCommand(command, context = null) {
       }
       case "phone-send":
         return sendToPhone(command);
+      case "media-art": // elegir otro póster o fondo de una película o serie
+        sound.play("open");
+        ui.artPicker.open({ kind: command.kind === "series" ? "series" : "movie", metaId: command.metaId, title: command.title });
+        return renderHints();
       case "mylist":
         await api.setInLibrary(command.kind, command.metaId, command.add);
         sound.play("select");

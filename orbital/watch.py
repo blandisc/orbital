@@ -886,8 +886,9 @@ class Watch:
     def title_details(self, kind: str, meta_id: str) -> dict:
         """Todo para la ficha: datos, reparto, temporadas y dónde ibas (para "Continuar T3 E5")."""
         info = self.cinemeta.meta(kind, meta_id)
-        details = {"id": meta_id, "kind": kind, "title": info.get("name") or "", "poster": info.get("poster"),
-                   "background": info.get("background") or None, **cinemeta.describe_meta(info),
+        chosen = self.art_for(meta_id)  # «Cambiar el arte»
+        details = {"id": meta_id, "kind": kind, "title": info.get("name") or "", "poster": chosen.get("poster") or info.get("poster"),
+                   "background": chosen.get("background") or info.get("background") or None, **cinemeta.describe_meta(info),
                    **cinemeta.credits(info)}
         if kind == "series":
             details["seasons"] = cinemeta.seasons(info)
@@ -919,6 +920,42 @@ class Watch:
         video = trailer_id(info)
         details["trailer"] = video if video and self.trailer_available(video) else None  # «Tráiler» solo si se puede ver
         return details
+
+    # --- «Cambiar el arte» de una película o serie ---------------------------------------------------------------------
+    ART_KINDS = ("poster", "background")
+
+    def art_choices(self, kind: str, meta_id: str) -> dict:
+        """Los pósters y fondos que se pueden elegir (de TMDB) y los que tiene ahora. LookupError en palabras si no hay."""
+        tmdb = self.localizer.tmdb
+        if not tmdb.configured:
+            raise LookupError("Para elegir otro arte hace falta la clave de TMDB (Ajustes › Cuentas).")
+        try:
+            tmdb_id = tmdb.find_id(meta_id, kind)
+            found = tmdb.images(kind, tmdb_id) if tmdb_id else {"posters": [], "backgrounds": []}
+        except tmdb_api.TmdbError as exc:
+            raise LookupError(str(exc)) from exc
+        if not found["posters"] and not found["backgrounds"]:
+            raise LookupError("TMDB no tiene otras imágenes de este título.")
+        return {**found, "current": self.art_for(meta_id)}
+
+    def art_for(self, meta_id: str | None) -> dict:
+        """El arte que elegiste para ese título ({"poster", "background"}); {} si nunca lo cambiaste."""
+        saved = self.state.prefs(f"stremio:{meta_id}").get("art") if meta_id else None
+        return {k: v for k, v in (saved or {}).items() if k in self.ART_KINDS and isinstance(v, str) and v} if isinstance(saved, dict) else {}
+
+    def set_art(self, meta_id: str, which: str, url: str | None) -> dict:
+        """Recuerda el póster o el fondo elegido (`url` None: vuelve el de siempre). Devuelve el arte de ese título."""
+        if which not in self.ART_KINDS:
+            raise ValueError("Solo se cambia el póster o el fondo")
+        if url is not None and not str(url).startswith(tmdb_api.IMAGES):
+            raise ValueError("Esa imagen no es de TMDB")
+        art = self.art_for(meta_id)
+        if url:
+            art[which] = url
+        else:
+            art.pop(which, None)
+        self.state.set_pref(f"stremio:{meta_id}", "art", art or None)
+        return art
 
     def set_in_library(self, kind: str, meta_id: str, add: bool) -> None:
         """Añadir o quitar de Mi lista (tu biblioteca de Stremio: se ve igual en Stremio)."""
