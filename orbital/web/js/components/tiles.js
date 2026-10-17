@@ -2,6 +2,7 @@ import { h, svg } from "../core/dom.js";
 import { duration, lastPlayed, shortAgo } from "../core/format.js";
 import { kicker, platformColor, stageKind, SYSTEMS, systemColor, systemOf, thumbOf } from "../core/home.js";
 import { ICONS, systemIconName } from "../core/icons.js";
+import { sized } from "../core/images.js";
 import { alternativeRunner, clampRatio, coverRatio, isGame, isSeries, isWatchable, primaryLabel } from "../core/library.js";
 import { Button } from "./button.js";
 import { Badge, Progress } from "./ui.js";
@@ -123,7 +124,7 @@ export function RowTile(item, { focusId, onPress, airing = null }) {
   const total = !watch && item.playtime >= 600 ? duration(item.playtime) : null;
   const node = tile(focusId, "tile--row", onPress, item.title,
     h("span", { class: ["tile--row__thumb", system && "tile--row__thumb--console"] },
-      thumb.src && artOr(thumb.src, thumb.fallback, ["tile--row__art", thumb.kind === "crop" && "tile--row__art--crop"]),
+      thumb.src && artOr(sized(thumb.src, 240), sized(thumb.fallback, 240), ["tile--row__art", thumb.kind === "crop" && "tile--row__art--crop"]),
       system && art(`img/consoles/${system.photo}`, ["tile--row__console", system.logo && "tile--row__console--logo"]),
       // Sale un episodio nuevo hoy (Próximos estrenos, de Trakt): «Sale hoy · 19:00».
       airing && Badge(airing === "Desde la madrugada" ? "Nuevo hoy" : `Sale hoy · ${airing}`, { className: "tile--row__airing" }),

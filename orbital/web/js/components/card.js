@@ -2,6 +2,7 @@ import { h, svg } from "../core/dom.js";
 import { shortAgo } from "../core/format.js";
 import { rankOf, trendOf } from "../core/foryou.js";
 import { ICONS, systemIconName } from "../core/icons.js";
+import { sized } from "../core/images.js";
 import { clampRatio, coverRatio } from "../core/library.js";
 import { Badge } from "./ui.js";
 
@@ -13,7 +14,7 @@ import { Badge } from "./ui.js";
  */
 /** La portada al tamaño de la tarjeta (el servidor la reduce una vez: thumbs.py), no la de 2 MB. */
 export const coverSrc = (url) => (typeof url === "string" && url.startsWith("/api/art/") && !/[?&](kind|w)=/.test(url)
-  ? `${url}${url.includes("?") ? "&" : "?"}w=480` : url);
+  ? `${url}${url.includes("?") ? "&" : "?"}w=480` : sized(url, 240));
 
 /** El ícono de una app: el que trae (ES-DE) o el logotipo de su plataforma. */
 const APP_ICONS = {

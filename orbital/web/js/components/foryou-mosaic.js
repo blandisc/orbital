@@ -1,8 +1,13 @@
 import { h, svg } from "../core/dom.js";
 import { brandParts, factLine, trimmedLogo, iconName, nearestTile, nextUnseen, posterRatio, shapeOf } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
+import { sized } from "../core/images.js";
 import { Badge } from "./ui.js";
 import { dragArea, hoverArea } from "../core/swipe.js";
+
+// Al ancho en que se ven (core/images.js): el póster de una columna y la pieza enfocada, que se ensancha.
+const POSTER_PX = 360;
+const WIDE_PX = 720;
 
 /**
  * «Para ti» · mosaico: columnas de imágenes (portadas altas y arte ancho) con lo tuyo mezclado.
@@ -79,16 +84,16 @@ export function createForYouMosaic({ onFocus, onPick }) {
         if (!node.querySelector(".foryou-mosaic__art")) node.classList.add("foryou-mosaic__tile--bare");
       });
     };
-    const poster = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--poster", src: item.image || item.hero || "", alt: "", decoding: "async" });
-    const wide = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--wide", src: item.hero || item.image || "", alt: "", decoding: "async" });
-    swap(poster, item.image_fallback || item.hero);
-    swap(wide, item.image);
+    const poster = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--poster", src: sized(item.image || item.hero || "", POSTER_PX), alt: "", decoding: "async" });
+    const wide = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--wide", src: sized(item.hero || item.image || "", WIDE_PX), alt: "", decoding: "async" });
+    swap(poster, sized(item.image_fallback || item.hero, POSTER_PX));
+    swap(wide, sized(item.image, WIDE_PX));
     // Sin foco, un juego de Steam enseña su cápsula (lleva el juego y su nombre); el «hero» es un fondo
     // pensado para el logo encima, así que solo sale enfocado, con el logo.
-    const capsule = item.wide && h("img", { class: "foryou-mosaic__art foryou-mosaic__art--capsule", src: item.wide, alt: "", decoding: "async" });
+    const capsule = item.wide && h("img", { class: "foryou-mosaic__art foryou-mosaic__art--capsule", src: sized(item.wide, WIDE_PX), alt: "", decoding: "async" });
     if (capsule) capsule.addEventListener("error", () => capsule.remove(), { once: true });
     const name = () => h("strong", { class: "foryou-mosaic__name" }, item.title);
-    const logo = item.logo ? h("img", { class: "foryou-mosaic__logo", src: trimmedLogo(item.logo), alt: item.title }) : name();
+    const logo = item.logo ? h("img", { class: "foryou-mosaic__logo", src: sized(trimmedLogo(item.logo), 320), alt: item.title }) : name();
     if (item.logo) logo.addEventListener("error", () => logo.replaceWith(name()), { once: true });
     const node = h("div", { class: "foryou-mosaic__tile", role: "button", tabindex: "-1", "aria-label": item.title, onClick: () => tap(node) },
       poster, wide, capsule,

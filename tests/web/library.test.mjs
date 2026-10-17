@@ -112,3 +112,15 @@ test("buscar en la biblioteca: juegos y apps, sin acentos, todas las palabras, p
   assert.deepEqual(searchLibrary(rows, "legend zel").map((i) => i.id), ["s2"]);
   assert.deepEqual(searchLibrary(rows, "  "), []);
 });
+
+test("cada imagen se pide al tamaño en que se ve", async () => {
+  const { sized, snapWidth } = await import("../../orbital/web/js/core/images.js");
+  assert.equal(snapWidth(133, 1), 160);
+  assert.equal(snapWidth(240, 1.5), 480);
+  assert.equal(sized("https://images.metahub.space/background/medium/tt1/img", 240, 1),
+    "/api/img?w=240&u=https%3A%2F%2Fimages.metahub.space%2Fbackground%2Fmedium%2Ftt1%2Fimg");
+  assert.equal(sized("/api/art/emu:x?kind=hero&v=1", 240, 1), "/api/art/emu:x?kind=hero&v=1&w=240");
+  assert.equal(sized("/api/art/emu:x?kind=logo", 240, 1), "/api/art/emu:x?kind=logo");
+  assert.equal(sized("https://otro.sitio/x.jpg", 240, 1), "https://otro.sitio/x.jpg");
+  assert.equal(sized("img/placeholders/a.jpg", 240, 1), "img/placeholders/a.jpg");
+});
