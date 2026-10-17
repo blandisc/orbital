@@ -500,6 +500,23 @@ public actor ForYou {
         guard let trakt, trakt.linked else { return [] }
         return Set(((try? await remember("trakt:watchlist", ttl: Self.mineTTL) { try await trakt.watchlist() }) ?? []).map(\.imdb))
     }
+
+    /// Qué títulos (IMDb) están en alguna de tus listas de Trakt: la ficha dice «Guardado» sin abrir «Guardar en…». Se pide
+    /// una vez y lo comparten todas las fichas (las mismas listas que ya pide Para ti).
+    public func listKeys() async -> Set<String> {
+        guard let trakt, trakt.linked else { return [] }
+        return (try? await remember("trakt:listkeys", ttl: Self.mineTTL) {
+            let lists = try await trakt.lists()
+            return await withTaskGroup(of: Set<String>.self) { group in
+                for list in lists.prefix(Self.listKeysMax) { group.addTask { (try? await trakt.listMembers(list.id)) ?? [] } }
+                var all = Set<String>()
+                for await ids in group { all.formUnion(ids) }
+                return all
+            }
+        }) ?? []
+    }
+
+    static let listKeysMax = 12
 }
 
 /// Una sugerencia tal como se guarda en el teléfono (`Suggestion` lleva una tupla y un motivo con datos).

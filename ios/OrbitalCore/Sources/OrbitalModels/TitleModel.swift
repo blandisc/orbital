@@ -37,7 +37,9 @@ public final class TitleModel: ObservableModel {
     public private(set) var lists: [SavedList]? { didSet { changed() } }
     public private(set) var loadingLists = false { didSet { changed() } }
     /// ¿Está guardado en algún lado? (Mi lista, tu watchlist o una de tus listas): el botón dice «Guardado».
-    public var isSaved: Bool { inLibrary || inWatchlist || (lists ?? []).contains(where: \.contains) }
+    public var isSaved: Bool { inLibrary || inWatchlist || (lists.map { $0.contains(where: \.contains) } ?? inSomeList) }
+    /// Está en alguna de tus listas de Trakt (sin abrir «Guardar en…»; al abrirla manda lo que diga cada lista).
+    public private(set) var inSomeList = false { didSet { changed() } }
     public private(set) var traktAvailable = false { didSet { changed() } }
     public private(set) var isLoading = false { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }
@@ -167,6 +169,7 @@ public final class TitleModel: ObservableModel {
         let forYou = services.forYou, downloads = services.downloads, watch = services.watch, id = metaID
         async let linked = forYou.traktLinked
         async let keys = forYou.watchlistKeys()
+        async let listed = forYou.listKeys()
         async let queue = downloads.all
         if let prefetched { raw = prefetched } else { raw = await watch.rawItem(metaID: id) }
         let ids = meta.map(CinemetaParsing.seasonVideoIDs) ?? []
@@ -174,6 +177,7 @@ public final class TitleModel: ObservableModel {
         inLibrary = StremioLibrary.isInLibrary(raw)
         traktAvailable = await linked
         inWatchlist = await keys.contains(metaID)
+        inSomeList = await listed.contains(metaID)
         applyDownloads(await queue)
         if let state = StremioLibrary.state(of: raw)["video_id"]?.string, kind == "series", let season = seasons.first(where: { $0.episodes.contains { $0.id == state } }) { selectedSeason = season.season }
         else if !seasons.contains(where: { $0.season == selectedSeason }) { selectedSeason = seasons.first { !$0.isSpecials }?.season ?? seasons.first?.season ?? 1 }
