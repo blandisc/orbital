@@ -185,6 +185,8 @@ struct VoiceCommandBar: View {
 
     private var subtitle: Text {
         if listening { return Text("Toca para terminar") }
-        return Text("«Pon The Office», «pausa», «abre Zelda»")
+        // Lo que se entendió, para ver si el dictado escribió bien el nombre.
+        if !asking, let reply, !reply.heard.isEmpty { return Text("Entendí: «\(reply.heard)»") }
+        return Text("«Pon The Office», «pausa», «descárgalo»")
     }
 }

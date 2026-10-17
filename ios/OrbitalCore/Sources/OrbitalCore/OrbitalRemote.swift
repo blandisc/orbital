@@ -215,7 +215,9 @@ public struct OrbitalRemote: Sendable {
     public struct VoiceReply: Sendable, Equatable {
         public var ok: Bool
         public var speech: String
-        public init(ok: Bool, speech: String) { self.ok = ok; self.speech = speech }
+        /// Lo que se entendió («pon The Office», ya limpio), para enseñarlo bajo la respuesta. Vacío si la consola no lo manda.
+        public var heard: String
+        public init(ok: Bool, speech: String, heard: String = "") { self.ok = ok; self.speech = speech; self.heard = heard }
     }
 
     /// Una orden en texto libre, como a Alexa («pon The Office temporada 2», «pausa», «abre Zelda»): la consola la entiende
@@ -223,7 +225,7 @@ public struct OrbitalRemote: Sendable {
     public func voice(_ text: String) async throws -> VoiceReply {
         let trimmed = String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(500))
         let json = try await send("api/voice", method: "POST", body: JSON.object(["text": .string(trimmed), "source": "iphone"]).serialized(), timeout: 20)   // no cuenta como «Alexa se usó»
-        return VoiceReply(ok: json?["ok"]?.bool ?? true, speech: json?["speech"]?.string ?? "")
+        return VoiceReply(ok: json?["ok"]?.bool ?? true, speech: json?["speech"]?.string ?? "", heard: json?["heard"]?.string ?? "")
     }
 
     /// Las acciones del mando de la TV (como `input.js`): el control completo del iPhone las manda como si fueran del mando.

@@ -69,6 +69,15 @@ public final class TVNowModel: ObservableModel {
         }
     }
 
+    /// Lo que se ve en la TV, al día aunque no se esté sondeando (Siri con la app en segundo plano): si lo último que se
+    /// supo tiene más de unos segundos o no se está sondeando, se pregunta otra vez.
+    public func refreshNow() async {
+        guard services.orbital.isConfigured, pollTask == nil || Date().timeIntervalSince(fetchedAt) > Self.freshSeconds else { return }
+        await tick()
+    }
+
+    static let freshSeconds: TimeInterval = 3
+
     private func tick() async {
         do {
             let snapshot = try await services.orbital.snapshot()

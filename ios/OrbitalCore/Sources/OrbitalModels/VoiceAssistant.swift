@@ -12,8 +12,16 @@ public final class VoiceAssistant {
         public var speech: String
         /// Seguir viendo en el iPhone lo que se ve en la TV (lo hace la pantalla: abrir el reproductor).
         public var continueHere = false
+        /// Lo que se entendió, ya limpio («pon El viaje de Chihiro»): se enseña bajo la respuesta para saber si el dictado
+        /// escribió bien el nombre.
+        public var heard = ""
 
-        public init(ok: Bool, speech: String, continueHere: Bool = false) { self.ok = ok; self.speech = speech; self.continueHere = continueHere }
+        public init(ok: Bool, speech: String, continueHere: Bool = false, heard: String = "") {
+            self.ok = ok; self.speech = speech; self.continueHere = continueHere; self.heard = heard
+        }
+
+        /// Para la barra de voz.
+        public var reply: OrbitalRemote.VoiceReply { .init(ok: ok, speech: speech, heard: heard) }
     }
 
     private let services: Services
@@ -22,6 +30,12 @@ public final class VoiceAssistant {
     public init(services: Services, tvNow: TVNowModel) { self.services = services; self.tvNow = tvNow }
 
     public func handle(_ said: String) async -> Outcome {
+        var outcome = await run(said)
+        if outcome.heard.isEmpty { outcome.heard = VoiceRouter.clean(said) }
+        return outcome
+    }
+
+    private func run(_ said: String) async -> Outcome {
         switch VoiceRouter.route(said) {
         case .nothing:
             return Outcome(ok: false, speech: "No te escuché.")
@@ -29,13 +43,14 @@ public final class VoiceAssistant {
             await tvNow.press(action)
             return Outcome(ok: true, speech: "")
         case .continueHere:
+            await tvNow.refreshNow()
             guard tvNow.now != nil else { return Outcome(ok: false, speech: "No hay nada en la TV para seguir aquí.") }
             return Outcome(ok: true, speech: "Sigue aquí.", continueHere: true)
         case .download(let title):
             return await download(title)
         case .console(let text):
             let reply = await tvNow.say(text)
-            return Outcome(ok: reply.ok, speech: reply.speech)
+            return Outcome(ok: reply.ok, speech: reply.speech, heard: reply.heard)
         }
     }
 
@@ -55,6 +70,7 @@ public final class VoiceAssistant {
                                                        originalTitle: pick.title, subtitle: "", poster: pick.poster)
             return Self.outcome(outcome, name: pick.title)
         }
+        await tvNow.refreshNow()
         guard let now = tvNow.now, let metaID = now.metaID, !now.live else {
             return Outcome(ok: false, speech: "No hay nada en la TV para descargar.")
         }

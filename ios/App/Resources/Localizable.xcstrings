@@ -67,6 +67,17 @@
         }
       }
     },
+    "Abre Orbital y toca «Seguir aquí».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Orbital and tap “Continue here”."
+          }
+        }
+      }
+    },
     "Abre la ficha": {
       "extractionState": "manual",
       "localizations": {
@@ -1046,6 +1057,17 @@
         }
       }
     },
+    "Descargando %@ en el iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading %@ on the iPhone."
+          }
+        }
+      }
+    },
     "Descargando %lld episodios. Los verás en Descargas.": {
       "extractionState": "manual",
       "localizations": {
@@ -1537,6 +1559,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "In “%@”"
+          }
+        }
+      }
+    },
+    "Entendí: «%@»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I heard: “%@”"
           }
         }
       }
@@ -2366,6 +2399,17 @@
         }
       }
     },
+    "No encontré %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I did not find %@."
+          }
+        }
+      }
+    },
     "No encontré ese título.": {
       "extractionState": "manual",
       "localizations": {
@@ -2406,6 +2450,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I did not find a source to download %@ (from the TV)"
+          }
+        }
+      }
+    },
+    "No encontré una fuente para descargar %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I did not find a source to download %@."
           }
         }
       }
@@ -2461,6 +2516,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing here yet."
+          }
+        }
+      }
+    },
+    "No hay nada en la TV para descargar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing is playing on the TV to download."
+          }
+        }
+      }
+    },
+    "No hay nada en la TV para seguir aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing is playing on the TV to continue here."
           }
         }
       }
@@ -2648,6 +2725,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Could not play"
+          }
+        }
+      }
+    },
+    "No te escuché.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I did not hear you."
           }
         }
       }
@@ -3418,6 +3506,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Next up"
+          }
+        }
+      }
+    },
+    "Sigue aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuing here."
           }
         }
       }
@@ -4309,6 +4408,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "“Play The Office”, “pause”, “open Zelda”"
+          }
+        }
+      }
+    },
+    "«Pon The Office», «pausa», «descárgalo»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Play The Office”, “pause”, “download it”"
           }
         }
       }

@@ -39,6 +39,31 @@ struct RemoteSheet: View {
         .presentationDragIndicator(.visible)
         .presentationBackgroundInteraction(.disabled)
         .animation(DS.Motion.base(false), value: large)
+        .onDisappear { speech.cancel() }
+    }
+
+    /// La voz: lo que dices lo atiende el iPhone (descargar, seguir aquí, las teclas) o tu Orbital (`VoiceAssistant`); la
+    /// respuesta se enseña y se dice en voz alta, en el idioma de la app.
+    private func listen(_ model: TVNowModel) {
+        if speech.listening { speech.finish(); return }
+        guard !asking else { return }
+        let language = env.services.appSettings.uiLanguage
+        // El nombre de lo que se ve en la TV, para que el dictado lo escriba bien («descarga Shōgun»).
+        let hints = ["Orbital"] + [model.now?.title, model.now?.channel].compactMap { $0 }
+        Task {
+            await speech.start(language: language, hints: hints) { said in
+                Task {
+                    asking = true; reply = nil
+                    let outcome = await VoiceAssistant(services: env.services, tvNow: model).handle(said)
+                    asking = false
+                    var shown = outcome.reply
+                    shown.speech = Strings.message(outcome.speech, language: language)
+                    reply = shown
+                    speech.speak(shown.speech, language: language)
+                    if outcome.continueHere, let now = model.now { onContinueHere(now) }
+                }
+            }
+        }
     }
 
     /// Una tecla del mando: su nombre es el de la leyenda de la TV para esa tecla si la consola la manda (lo que dice el pie de
@@ -85,21 +110,7 @@ struct RemoteSheet: View {
             if model.remoteOutdated { DSNotice(text: "Actualiza tu Orbital para usar el control completo.", tone: .warn) }
             // La voz, como Alexa: lo mismo que «Oye Siri, dile a Orbital…».
             VoiceCommandBar(listening: speech.listening, transcript: speech.transcript, reply: reply, denied: speech.denied,
-                            heardNothing: speech.heardNothing, asking: asking) {
-                if speech.listening { speech.finish(); return }
-                let language = env.services.appSettings.uiLanguage
-                Task {
-                    await speech.start(language: language) { said in
-                        Task {
-                            asking = true; reply = nil
-                            let answer = await model.say(said)
-                            asking = false
-                            reply = answer
-                            speech.speak(answer.speech, language: language)
-                        }
-                    }
-                }
-            }
+                            heardNothing: speech.heardNothing, asking: asking) { listen(model) }
             // Como el mando: arriba los gatillos de sección (LB / RB), al centro el pad (A al tocar), luego B · X · Y y abajo
             // LT / RT, Inicio, ☰ y ⧉. Cada tecla dice lo que hace en la pantalla de la TV (su leyenda), si la consola lo dice.
             HStack(spacing: DS.Space.s2) {

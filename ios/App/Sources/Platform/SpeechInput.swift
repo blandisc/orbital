@@ -19,12 +19,20 @@ final class SpeechInput: ObservableObject {
     private var silence: Task<Void, Never>?
     private var onFinish: ((String) -> Void)?
     private let voice = AVSpeechSynthesizer()
+    /// Pidiendo permisos: un segundo toque en ese rato no arranca otra vez (instalaría dos veces el micrófono y truena).
+    private var starting = false
 
-    /// Cuánto silencio cierra la orden (s).
+    /// Cuánto silencio cierra la orden (s), y cuánto se espera a que empieces a hablar.
     static let silenceSeconds = 1.4
+    static let firstWordSeconds = 5.0
 
-    func start(language: String, onFinish: @escaping (String) -> Void) async {
-        guard !listening else { return }
+    /// `hints`: nombres que es probable que digas (lo que se ve en la TV, tu biblioteca): el dictado los escribe mejor.
+    func start(language: String, hints: [String] = [], onFinish: @escaping (String) -> Void) async {
+        guard !listening, !starting else { return }
+        starting = true
+        defer { starting = false }
+        // Si todavía está diciendo la respuesta anterior, se calla: si no, el micrófono se oye a sí mismo.
+        voice.stopSpeaking(at: .immediate)
         self.onFinish = onFinish
         let speechOK = await withCheckedContinuation { c in SFSpeechRecognizer.requestAuthorization { c.resume(returning: $0 == .authorized) } }
         let micOK = await AVAudioApplication.requestRecordPermission()
@@ -41,6 +49,7 @@ final class SpeechInput: ObservableObject {
             // iOS usa el del teléfono cuando puede.
             request.requiresOnDeviceRecognition = false
             request.taskHint = .search
+            request.contextualStrings = Array(hints.prefix(100))
             self.request = request
             let input = engine.inputNode
             input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in request.append(buffer) }
@@ -52,11 +61,11 @@ final class SpeechInput: ObservableObject {
             task = recognizer.recognitionTask(with: request) { [weak self] result, error in
                 Task { @MainActor in
                     guard let self else { return }
-                    if let result { self.transcript = result.bestTranscription.formattedString; self.armSilence() }
+                    if let result { self.transcript = result.bestTranscription.formattedString; self.armSilence(Self.silenceSeconds) }
                     if error != nil || result?.isFinal == true { self.finish() }
                 }
             }
-            armSilence()
+            armSilence(Self.firstWordSeconds)
         } catch {
             stopEngine()
             denied = true
@@ -72,18 +81,27 @@ final class SpeechInput: ObservableObject {
         onFinish = nil
     }
 
+    /// Cerrar sin mandar nada (se cerró la hoja): el micrófono no se queda abierto.
+    func cancel() {
+        onFinish = nil
+        stopEngine()
+        voice.stopSpeaking(at: .immediate)
+    }
+
     /// La respuesta de la consola, dicha en voz alta (como Alexa).
     func speak(_ text: String, language: String) {
-        guard !text.isEmpty else { return }
+        guard !text.isEmpty, !listening else { return }
+        // Para hablar, la sesión de reproducción (la de grabar, en modo medición, la decía casi sin volumen).
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(language: language.hasPrefix("en") ? "en-US" : "es-MX")
         voice.speak(utterance)
     }
 
-    private func armSilence() {
+    private func armSilence(_ seconds: Double) {
         silence?.cancel()
         silence = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(Self.silenceSeconds * 1e9))
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1e9))
             guard !Task.isCancelled else { return }
             self?.finish()
         }

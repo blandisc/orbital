@@ -1,8 +1,10 @@
 import AppIntents
 import OrbitalCore
+import OrbitalModels
 
-// Siri y Atajos: «Oye Siri, dile a Orbital…» manda la orden a tu Orbital como si fuera Alexa (`/api/voice`: misma lógica,
-// mismas frases) y Siri dice en voz alta lo que contestó. No abre la app.
+// Siri y Atajos: «Oye Siri, habla con Orbital» pregunta la orden y la atiende como el micrófono del control
+// (`VoiceAssistant`): descargar en el iPhone lo hace el teléfono, lo demás tu Orbital como si fuera Alexa (`/api/voice`).
+// Siri dice en voz alta lo que contestó. No abre la app.
 
 /// «Dile a Orbital que ponga The Office»: la orden en texto libre.
 struct AskOrbitalIntent: AppIntent {
@@ -15,8 +17,12 @@ struct AskOrbitalIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let reply = await AppEnvironment.shared.tvNow.say(command)
-        let speech = reply.speech.isEmpty ? String(localized: "Listo.") : reply.speech
+        let env = AppEnvironment.shared
+        let outcome = await VoiceAssistant(services: env.services, tvNow: env.tvNow).handle(command)
+        let language = env.services.appSettings.uiLanguage
+        // Seguir aquí necesita la pantalla: Siri no abre el reproductor.
+        let said = outcome.continueHere ? "Abre Orbital y toca «Seguir aquí»." : outcome.speech
+        let speech = said.isEmpty ? String(localized: "Listo.") : Strings.message(said, language: language)
         return .result(dialog: IntentDialog(stringLiteral: speech))
     }
 }

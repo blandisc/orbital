@@ -74,7 +74,7 @@ final class VoiceAssistantTests: XCTestCase {
         rig.http.json["https://tv.example/api/companion/input"] = ["ok": true]
         let assistant = VoiceAssistant(services: rig.services, tvNow: TVNowModel(rig.services))
         let played = await assistant.handle("Orbital, pon El viaje de Chihiro, por favor.")
-        XCTAssertEqual(played, .init(ok: true, speech: "Poniendo El viaje de Chihiro."))
+        XCTAssertEqual(played, .init(ok: true, speech: "Poniendo El viaje de Chihiro.", heard: "pon El viaje de Chihiro"))
         XCTAssertEqual(rig.http.bodies("https://tv.example/api/voice").first.flatMap { JSON.parse($0)?["text"]?.string }, "pon El viaje de Chihiro",
                        "a la consola llega limpio")
         _ = await assistant.handle("Atrás")
@@ -87,7 +87,28 @@ final class VoiceAssistantTests: XCTestCase {
         let here = await assistant.handle("Ponlo aquí")
         XCTAssertFalse(here.ok); XCTAssertFalse(here.continueHere)
         let download = await assistant.handle("Descárgalo en el iPhone")
-        XCTAssertEqual(download, .init(ok: false, speech: "No hay nada en la TV para descargar."))
+        XCTAssertEqual(download, .init(ok: false, speech: "No hay nada en la TV para descargar.", heard: "Descárgalo en el iPhone"))
+    }
+
+    /// Desde Siri la app está en segundo plano y no sondea: «síguela aquí» pregunta qué se ve en vez de decir que nada.
+    func testPhoneCommandsAskWhatIsOnTheTVWhenNotPolling() async throws {
+        let rig = try connected()
+        let playing: JSON = .object(["kind": .string("movie"), "live": .bool(false), "title": .string("Interstellar"),
+                                     "position": .int(10), "duration": .int(100), "paused": .bool(false)])
+        rig.http.json["https://tv.example/api/companion/now"] = .object(["playing": playing])
+        let tvNow = TVNowModel(rig.services)
+        XCTAssertNil(tvNow.now)
+        let here = await VoiceAssistant(services: rig.services, tvNow: tvNow).handle("Síguela en mi iPhone")
+        XCTAssertTrue(here.continueHere)
+        XCTAssertEqual(tvNow.now?.title, "Interstellar")
+    }
+
+    /// Lo que entendió la consola gana a lo que mandó el iPhone (ella lo deja más limpio).
+    func testHeardComesFromTheConsoleWhenItSendsIt() async throws {
+        let rig = try connected()
+        rig.http.json["https://tv.example/api/voice"] = ["ok": true, "speech": "Pausado.", "heard": "pausa"]
+        let outcome = await VoiceAssistant(services: rig.services, tvNow: TVNowModel(rig.services)).handle("pausa la tele porfa")
+        XCTAssertEqual(outcome.heard, "pausa")
     }
 
     func testAnUnreachableOrbitalIsSaidOutLoud() async throws {
