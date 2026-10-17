@@ -837,6 +837,17 @@
         }
       }
     },
+    "Buscaste hace poco": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent searches"
+          }
+        }
+      }
+    },
     "Búsquedas recientes": {
       "extractionState": "manual",
       "localizations": {
@@ -3367,6 +3378,17 @@
         }
       }
     },
+    "Lo más popular de cada uno": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The most popular of each"
+          }
+        }
+      }
+    },
     "Lo más popular en Stremio": {
       "extractionState": "manual",
       "localizations": {
@@ -3473,6 +3495,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What you left for later"
+          }
+        }
+      }
+    },
+    "Lo que más se ve hoy en Stremio, películas y series": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What's most watched today on Stremio, movies and shows"
           }
         }
       }

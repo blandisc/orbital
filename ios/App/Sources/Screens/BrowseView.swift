@@ -12,6 +12,8 @@ struct BrowseView: View {
     @StateObject private var catalog: ModelObserver<CatalogModel>
     @StateObject private var search: ModelObserver<SearchModel>
     @State private var query = ""
+    /// Los colores del n.º 1 de hoy: el fondo de la pantalla y las cifras del Top 10 toman su tono (como Inicio).
+    @StateObject private var tint = ArtTint()
     /// El póster que ilustra cada género (el primero de su catálogo), según van llegando.
 
     /// Cuántos de lo más popular van en el carrusel con puesto (un Top 10).
@@ -28,9 +30,11 @@ struct BrowseView: View {
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 if query.trimmingCharacters(in: .whitespaces).count >= 2 { results } else { suggestions }
             }
+            .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio y Para ti
             .padding(.bottom, DS.Space.s8)
         }
-        .background(Backdrop())
+        .background(Backdrop(tint: tint.colors))
+        .task(id: catalog.model.popular.first?.poster) { await tint.load(catalog.model.popular.first?.poster) }
         .navigationTitle("Buscar").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .searchable(text: $query, prompt: Text("Películas y series"))
         // El campo vive abajo (pestaña de búsqueda, como Trakt); al escribir, el título se queda arriba y los resultados
@@ -88,28 +92,35 @@ struct BrowseView: View {
         explore
     }
 
+    /// Lo que buscaste, en cápsulas bajo el título (un toque lo vuelve a buscar); «Borrar» al final.
     private var recent: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            DSSectionHead(title: "Búsquedas recientes", trailing: "Borrar") { search.model.clearRecent() }
-            ForEach(search.model.recent, id: \.self) { text in
-                Button { query = text } label: { Label(text, systemImage: "clock.arrow.circlepath").recipe(.body, color: DS.textMuted) }
-                    .frame(minHeight: DS.Size.touchTarget)
+            Text("Buscaste hace poco").recipe(.footnote).padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DS.Space.s2) {
+                    ForEach(search.model.recent, id: \.self) { text in
+                        PanelChip(title: Text(verbatim: text), selected: false, symbol: "clock.arrow.circlepath") { query = text }
+                    }
+                    Button("Borrar") { search.model.clearRecent() }
+                        .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).buttonStyle(.borderless)
+                }
             }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
         }
-        .padding(.horizontal, DS.Space.gutter)
     }
 
     /// «Lo más popular hoy»: el Top 10 de Stremio en carrusel, con la cifra grande (el mismo lenguaje que los rankings de
     /// tus plataformas). Películas y series alternadas, de Cinemeta.
     private func popular(_ model: CatalogModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Lo más popular hoy", trailing: "Stremio").padding(.horizontal, DS.Space.gutter)
+            DSSectionHead(title: "Lo más popular hoy", meta: Text("Lo que más se ve hoy en Stremio, películas y series"), source: .stremio)
+                .padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Space.s3) {
                     ForEach(Array(model.popular.prefix(Self.popularCount).enumerated()), id: \.element.id) { index, item in
                         let route = TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)
                         NavigationLink(value: route) {
-                            RankedPosterCard(rank: index + 1, title: item.title, poster: item.poster).titleZoomSource(route)
+                            RankedPosterCard(rank: index + 1, title: item.title, poster: item.poster, tint: tint.colors?.accent).titleZoomSource(route)
                         }
                         .buttonStyle(.plain)
                     }
@@ -124,7 +135,7 @@ struct BrowseView: View {
     /// «Por género»: los géneros en mosaicos con su arte, bajo un encabezado igual al de arriba (una sola pantalla, no dos).
     private var explore: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Por género")
+            DSSectionHead(title: "Por género", meta: Text("Lo más popular de cada uno"))
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
                 ForEach(CatalogModel.exploreGenres, id: \.self) { genre in
                     NavigationLink(value: GenreRoute(genre: genre)) { ArtTile(title: Text(verbatim: genreName(genre)), asset: Self.genreAsset(genre)) }

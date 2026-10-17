@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Buscaste hace poco": "Recent searches", "Lo más popular de cada uno": "The most popular of each", "Lo que más se ve hoy en Stremio, películas y series": "What's most watched today on Stremio, movies and shows",
     "Con géneros elegidos, el ánimo no cuenta.": "With genres picked, the mood doesn't count.", "Géneros": "Genres", "Incluir lo que ya vi": "Include what I've watched",
     "Ir a una sección": "Go to a section", "Mejor calificadas en IMDb": "Top rated on IMDb", "Mejor calificadas en Trakt": "Top rated on Trakt",
     "Menos opciones": "Fewer options", "Más opciones": "More options", "Qué": "What", "Toca otra vez para confirmar": "Tap again to confirm",

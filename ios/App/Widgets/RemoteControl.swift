@@ -9,7 +9,7 @@ struct RemoteControlButton: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "mx.iracheta.orbital.remote") {
             ControlWidgetButton(action: OpenRemoteIntent()) {
-                Label("Control de Orbital", systemImage: "av.remote")
+                Label("Control de Orbital", image: "orbital.mark")   // la marca de Orbital (símbolo propio, como lo pide el Centro de control)
             }
         }
         .displayName("Control de Orbital")
