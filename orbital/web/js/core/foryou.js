@@ -177,3 +177,12 @@ export function brandParts(text) {
   }
   return source ? [{ text: source }] : [];
 }
+
+/**
+ * El logo de un título de metahub, pedido a Orbital: lo devuelve sin el aire transparente que trae alrededor (el de
+ * Midnight Mass trae casi la mitad arriba y quedaba un hueco bajo su etiqueta). Cualquier otro logo, tal cual.
+ */
+export function trimmedLogo(url) {
+  const found = /^https:\/\/images\.metahub\.space\/logo\/[a-z]+\/(tt\d+)\/img$/.exec(String(url ?? ""));
+  return found ? `/api/foryou/logo/${found[1]}` : url;
+}

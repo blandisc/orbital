@@ -128,6 +128,26 @@ def prepare(data: bytes) -> bytes:
     return out.getvalue()
 
 
+def trim(data: bytes) -> bytes:
+    """El logo sin el aire transparente que trae alrededor (PNG). Los logos de títulos de metahub traen a veces casi la
+    mitad de aire arriba (Midnight Mass): encima de su etiqueta quedaba un hueco que otros no tenían. Lanza LogoError."""
+    try:
+        image = Image.open(io.BytesIO(data))
+        if image.width * image.height > MAX_PIXELS:
+            raise LogoError("demasiado grande")
+        image = image.convert("RGBA")
+    except LogoError:
+        raise
+    except (OSError, ValueError, Image.DecompressionBombError, SyntaxError) as exc:
+        raise LogoError(f"no es una imagen ({type(exc).__name__})") from exc
+    box = image.getchannel("A").point([0] * 25 + [255] * 231).getbbox()  # lo que se ve (opacidad > 24 de 255)
+    if box is None:
+        raise LogoError("transparente")
+    out = io.BytesIO()
+    image.crop(box).save(out, "PNG", optimize=True)
+    return out.getvalue()
+
+
 def public_host(url: str) -> bool:
     """¿Se puede pedir esta dirección? Solo internet: ni localhost ni la red de la casa (una lista ajena no manda a Orbital
     a leer lo que hay en tu router o en tu equipo)."""

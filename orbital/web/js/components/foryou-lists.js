@@ -1,5 +1,5 @@
 import { h, mount } from "../core/dom.js";
-import { calendarDays, calendarWeek, iconName, kindLabel, listMeta, localDay, railEntries, rankOf, SPLIT_KINDS } from "../core/foryou.js";
+import { calendarDays, calendarWeek, iconName, kindLabel, listMeta, localDay, railEntries, rankOf, SPLIT_KINDS, trimmedLogo } from "../core/foryou.js";
 import { CalendarDays, CalendarWeek } from "./calendar.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { dragScroll, hoverArea } from "../core/swipe.js";
@@ -166,7 +166,7 @@ export function createForYouLists({ loadList, onFocus, onPick, onMore }) {
   function detail(item) {
     const g = options.glyphs;
     return {
-      key: item.key, item, title: item.title, art: item.hero || item.image, logo: item.logo, logoDark: item.logo_dark,
+      key: item.key, item, title: item.title, art: item.hero || item.image, logo: trimmedLogo(item.logo), logoDark: item.logo_dark,
       platform: { icon: iconName(item), text: [kindLabel(item), item.year].filter(Boolean).join(" · ") },
       stats: item.facts || [], description: item.overview,
       actions: item.action ? [{ id: "select", label: item.action, glyph: g.select, primary: true }, { id: "options", label: "Más", glyph: g.options }] : [],

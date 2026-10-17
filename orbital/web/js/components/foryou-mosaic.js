@@ -1,5 +1,5 @@
 import { h, svg } from "../core/dom.js";
-import { brandParts, factLine, iconName, nearestTile, nextUnseen, posterRatio, shapeOf } from "../core/foryou.js";
+import { brandParts, factLine, trimmedLogo, iconName, nearestTile, nextUnseen, posterRatio, shapeOf } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { Badge } from "./ui.js";
 import { dragArea, hoverArea } from "../core/swipe.js";
@@ -88,7 +88,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
     const capsule = item.wide && h("img", { class: "foryou-mosaic__art foryou-mosaic__art--capsule", src: item.wide, alt: "", decoding: "async" });
     if (capsule) capsule.addEventListener("error", () => capsule.remove(), { once: true });
     const name = () => h("strong", { class: "foryou-mosaic__name" }, item.title);
-    const logo = item.logo ? h("img", { class: "foryou-mosaic__logo", src: item.logo, alt: item.title }) : name();
+    const logo = item.logo ? h("img", { class: "foryou-mosaic__logo", src: trimmedLogo(item.logo), alt: item.title }) : name();
     if (item.logo) logo.addEventListener("error", () => logo.replaceWith(name()), { once: true });
     const node = h("div", { class: "foryou-mosaic__tile", role: "button", tabindex: "-1", "aria-label": item.title, onClick: () => tap(node) },
       poster, wide, capsule,
