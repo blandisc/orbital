@@ -2,23 +2,41 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// Los grupos de Colecciones (Para ti › Listas), en el orden del índice de arriba.
+/// Los grupos de Para ti › Listas, en el orden del índice de arriba.
 enum CollectionSection: CaseIterable, Hashable {
-    case platforms, awards, lists, years
+    case forYou, trakt, stremio, platforms, awards, years
     var title: Text {
-        switch self { case .platforms: Text("Plataformas"); case .awards: Text("Premios"); case .lists: Text("Tus listas"); case .years: Text("Por año") }
+        switch self {
+        case .forYou: Text("Para ti"); case .trakt: Text(verbatim: "Trakt"); case .stremio: Text(verbatim: "Stremio")
+        case .platforms: Text("Plataformas"); case .awards: Text("Premios"); case .years: Text("Por año")
+        }
     }
 }
 
-/// Una colección abierta: un premio, una de tus listas o un año.
+/// Marca el grupo que cruza la parte de arriba de la pantalla (el índice lo resalta) y le da su id para saltar a él.
+struct SectionSpy: ViewModifier {
+    let section: CollectionSection
+    @Binding var active: CollectionSection
+
+    func body(content: Content) -> some View {
+        content
+            .id(section)
+            .onGeometryChange(for: Bool.self) { proxy in
+                let frame = proxy.frame(in: .scrollView)
+                return frame.minY <= DS.Collections.spyLine && frame.maxY > DS.Collections.spyLine
+            } action: { inside in if inside { active = section } }
+    }
+}
+
+/// Una colección abierta: un premio, un año o Mi lista de Stremio.
 struct CollectionRoute: Hashable {
-    enum Kind: Hashable { case award, list, year }
+    enum Kind: Hashable { case award, year, myList }
     let kind: Kind
     let id: String
 }
 
-/// Una colección en cuadrícula de pósters: los ganadores de un premio (con el año del premio), tu lista, o lo más
-/// popular de un año (películas o series).
+/// Una colección en cuadrícula de pósters (con ordenar y filtrar): los ganadores de un premio (con el año del premio), Mi
+/// lista de Stremio, o lo más popular de un año (películas o series).
 struct CollectionGridView: View {
     @ObservedObject var collections: ModelObserver<CollectionsModel>
     let route: CollectionRoute
@@ -34,12 +52,9 @@ struct CollectionGridView: View {
                     DSSegmented(options: [("movie", "Películas"), ("series", "Series")], selection: $kind).padding(.horizontal, DS.Space.gutter)
                 }
                 if loading && items.isEmpty { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s10) }
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
-                    ForEach(items) { s in
-                        TitleLink(route: s.route, width: DS.Poster.gridMinimum, detail: detail(s))
-                    }
+                SortableGrid(listID: "\(route.kind):\(route.id)", items: items, watched: { await collections.model.watchedIDs() }) { s in
+                    TitleLink(route: s.route, width: DS.Poster.gridMinimum, detail: detail(s))
                 }
-                .padding(.horizontal, DS.Space.gutter)
             }
             .padding(.bottom, DS.Space.s14)
         }
@@ -72,16 +87,16 @@ struct CollectionGridView: View {
     private var items: [Suggestion] {
         switch route.kind {
         case .award: award?.suggestions ?? []
-        case .list: collections.model.items(ofList: route.id)
         case .year: yearItems
+        case .myList: collections.model.myList
         }
     }
 
     private var title: Text {
         switch route.kind {
         case .award: award.map { AwardNames.title($0.id) } ?? Text("Premios")
-        case .list: Text(verbatim: collections.model.lists.first { $0.id == route.id }?.name ?? "")
         case .year: Text(verbatim: route.id)
+        case .myList: Text("Mi lista")
         }
     }
 

@@ -111,6 +111,12 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `PlayerLabelButton` | Botón del reproductor con su nombre («En la TV», «Ventana», «Audio y subtítulos»); si no cabe, solo el ícono | Reproductor |
 | `PanelRow`, `PanelIcon`, `PanelChip`, `PanelGroupTitle`, `FlowChips`, `SpeedStepper` | El panel «Ajustes del video»: renglones con su valor (ícono del sistema solo en su color, como Ajustes), opciones en cápsula (con glifo opcional) y la velocidad − 1× + | Reproductor, «Decide por mí» (a la derecha en horizontal, hoja ajustada en vertical) |
 | `Toast` | El único aviso pasajero: arriba, en vidrio, glifo de color, texto y su acción («Pasó a tu Orbital · Deshacer», «Descargando… · Ver»); las notas fijas de una pantalla siguen siendo `DSNotice` | Toda la app |
+| `FanCard`, `CollectionCard`, `AwardCard`, `AwardEmblem` | La tarjeta en abanico (plataformas y colecciones) con su emblema al frente; un premio con su estatuilla real | Para ti › Listas |
+| `ListCard`, `SourceBadge` | Una lista tuya (pila de pósters, nombre, sello y cuántos) y el sello de origen (Trakt, Stremio, Orbital) junto a un título | Para ti › Listas |
+| `BecauseCard` | «Porque viste X»: el póster de lo que viste y lo relacionado al lado | Para ti › Listas |
+| `YearCard` | Un año con cuatro de sus películas y el número grande | Para ti › Por año |
+| `SortableGrid` | Una lista abierta con ordenar y filtrar (series o películas, género, ocultar lo visto) arriba a la derecha | Listas, premios, años |
+| `AppMark` | El ícono de la app y «Orbital» en lugar del título | Para ti |
 | `CheckRow` | Renglón con ✓ para elegir varias (en qué listas va un título) | Ficha › Guardar en… |
 | `QualityBadges` | Insignias con contorno: 4K · DV · HDR10+ · ATMOS · TRUEHD | Fuentes (ficha y reproductor) |
 | `RatingsRow`, `RatingMark` | IMDb · TMDB · Trakt con el logotipo de cada servicio en sus colores (guarda su alto: no brinca) | Ficha |

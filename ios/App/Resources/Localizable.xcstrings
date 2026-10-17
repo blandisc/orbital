@@ -628,6 +628,39 @@
         }
       }
     },
+    "Año: más nuevas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Year: newest"
+          }
+        }
+      }
+    },
+    "Año: más viejas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Year: oldest"
+          }
+        }
+      }
+    },
+    "A–Z": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A–Z"
+          }
+        }
+      }
+    },
     "Bajar el siguiente episodio al terminar uno": {
       "extractionState": "manual",
       "localizations": {
@@ -1031,6 +1064,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Match iPhone"
+          }
+        }
+      }
+    },
+    "Como viene la lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As the list comes"
           }
         }
       }
@@ -1559,6 +1603,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What we call you"
+          }
+        }
+      }
+    },
+    "De %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From %@"
           }
         }
       }
@@ -2718,6 +2773,17 @@
         }
       }
     },
+    "Género": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Genre"
+          }
+        }
+      }
+    },
     "Habla con Orbital": {
       "extractionState": "manual",
       "localizations": {
@@ -3070,6 +3136,28 @@
         }
       }
     },
+    "Listas de Stremio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stremio lists"
+          }
+        }
+      }
+    },
+    "Listas de Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trakt lists"
+          }
+        }
+      }
+    },
     "Listas para ver": {
       "extractionState": "manual",
       "localizations": {
@@ -3242,6 +3330,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Most watched this week"
+          }
+        }
+      }
+    },
+    "Lo que Trakt relaciona con lo último que viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What Trakt relates to what you watched last"
           }
         }
       }
@@ -3477,6 +3576,17 @@
         }
       }
     },
+    "Mostrar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show"
+          }
+        }
+      }
+    },
     "Motor": {
       "extractionState": "manual",
       "localizations": {
@@ -3539,6 +3649,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No. %lld on %@"
+          }
+        }
+      }
+    },
+    "Nada con estos filtros.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing with these filters."
           }
         }
       }
@@ -4082,6 +4203,17 @@
         }
       }
     },
+    "Ocultar lo que ya vi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide what I've watched"
+          }
+        }
+      }
+    },
     "Ocupan %@": {
       "extractionState": "manual",
       "localizations": {
@@ -4144,6 +4276,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Command"
+          }
+        }
+      }
+    },
+    "Ordenar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort"
+          }
+        }
+      }
+    },
+    "Ordenar y filtrar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort and filter"
           }
         }
       }
@@ -4562,6 +4716,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Based on what you've watched"
+          }
+        }
+      }
+    },
+    "Porque viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Because you watched"
           }
         }
       }
@@ -5138,6 +5303,17 @@
         }
       }
     },
+    "Series o películas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows or movies"
+          }
+        }
+      }
+    },
     "Series populares": {
       "extractionState": "manual",
       "localizations": {
@@ -5343,6 +5519,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Offline: showing what I saved last."
+          }
+        }
+      }
+    },
+    "Sin lo que ya vi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without what I've watched"
           }
         }
       }
@@ -5783,6 +5970,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Everything you're watching · %@"
+          }
+        }
+      }
+    },
+    "Todos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
           }
         }
       }

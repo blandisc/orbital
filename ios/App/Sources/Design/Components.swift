@@ -112,19 +112,24 @@ struct DSSectionHead: View {
     var chevron = false
     /// La línea gris de abajo.
     var meta: Text?
+    /// De dónde viene (Trakt, Stremio, tu Orbital): su sello junto al título.
+    var source: ListSource?
 
-    init(title: Text, trailing: Text? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil) {
-        self.title = title; self.trailing = trailing; self.action = action; self.count = count; self.chevron = chevron; self.meta = meta
+    init(title: Text, trailing: Text? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil) {
+        self.title = title; self.trailing = trailing; self.action = action; self.count = count; self.chevron = chevron; self.meta = meta; self.source = source
     }
 
-    init(title: LocalizedStringKey, trailing: LocalizedStringKey? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil) {
-        self.init(title: Text(title), trailing: trailing.map { Text($0) }, action: action, count: count, chevron: chevron, meta: meta)
+    init(title: LocalizedStringKey, trailing: LocalizedStringKey? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil) {
+        self.init(title: Text(title), trailing: trailing.map { Text($0) }, action: action, count: count, chevron: chevron, meta: meta, source: source)
     }
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
+                HStack(alignment: .center, spacing: DS.Space.s2) {
+                    title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
+                    if let source { SourceBadge(source: source) }
+                }
                 if let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }
             }
             Spacer(minLength: DS.Space.s2)

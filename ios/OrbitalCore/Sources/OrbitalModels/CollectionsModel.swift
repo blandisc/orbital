@@ -1,23 +1,20 @@
 import Foundation
 import OrbitalCore
 
-/// Colecciones (Para ti › Listas): los premios (fijos), tus listas de Trakt con sus tres primeros pósters, y lo más
-/// popular de cada año.
+/// Colecciones (Para ti › Listas): Mi lista de Stremio, los premios (fijos), lo más popular de cada año (con varios pósters
+/// por año) y lo que ya viste (para «Ocultar lo que ya vi» en una lista abierta).
 @MainActor
 public final class CollectionsModel: ObservableModel {
-    /// Una de tus listas de Trakt: nombre, cuántos títulos y sus tres primeros pósters (la pila de la tarjeta).
-    public struct UserList: Sendable, Identifiable, Equatable {
-        public let id: String, name: String, count: Int, posters: [String]
-    }
-
     public let awards: [AwardCollection] = Awards.all
-    public private(set) var lists: [UserList] = [] { didSet { changed() } }
-    public private(set) var loadingLists = false { didSet { changed() } }
+    /// Mi lista de Stremio (tu biblioteca), lo más reciente primero.
+    public private(set) var myList: [Suggestion] = [] { didSet { changed() } }
+    /// Los pósters de cada año en «Por año» (hasta cuatro): ganadoras de ese año y, si faltan, lo más popular.
+    public private(set) var yearPosters: [Int: [String]] = [:] { didSet { changed() } }
+    private var watchedCache: Set<String>?
     /// Los años de «Por año», del actual hacia atrás.
     public let years: [Int]
 
     private let services: Services
-    private var listItems: [String: [Suggestion]] = [:]
     private var yearItems: [String: [Suggestion]] = [:]
 
     public init(_ services: Services) {
@@ -31,28 +28,45 @@ public final class CollectionsModel: ObservableModel {
 
     public var traktLinked: Bool { services.trakt?.linked ?? false }
 
-    /// Tus listas (y lo que tiene cada una, para su pila de pósters).
-    public func loadLists() async {
-        guard let trakt = services.trakt, trakt.linked, lists.isEmpty else { return }
-        loadingLists = true
-        defer { loadingLists = false }
-        let all = (try? await trakt.lists()) ?? []
-        let loaded = await withTaskGroup(of: (Int, String, [Suggestion]).self) { group in
-            for (i, l) in all.enumerated() {
-                group.addTask { (i, l.id, ((try? await trakt.listItems(l.id)) ?? []).map { Suggestion($0, reason: .inList(l.name)) }) }
-            }
-            var out: [(Int, String, [Suggestion])] = []
-            for await r in group { out.append(r) }
-            return out.sorted { $0.0 < $1.0 }
-        }
-        for (_, id, items) in loaded { listItems[id] = items }
-        lists = all.map { l in
-            let items = listItems[l.id] ?? []
-            return UserList(id: l.id, name: l.name, count: items.count, posters: items.prefix(3).map(\.poster))
+    /// Mi lista de Stremio (tu biblioteca), lo último que agregaste o viste primero.
+    public func loadMyList() async {
+        guard let all = try? await services.watch.library() else { return }
+        myList = all.filter(\.inLibrary).sorted { ($0.lastWatched ?? 0) > ($1.lastWatched ?? 0) }.compactMap { w in
+            guard w.type == "movie" || w.type == "series" else { return nil }
+            var s = Suggestion(art: w.id, kind: w.type, title: w.name, year: nil, reason: .inList("Mi lista"))
+            if let poster = w.poster, !poster.isEmpty { s.poster = poster }
+            return s
         }
     }
 
-    public func items(ofList id: String) -> [Suggestion] { listItems[id] ?? [] }
+    /// Hasta cuatro pósters de un año: primero las películas premiadas de ese año (sin consultas), luego lo más popular.
+    public func loadYearPosters(_ year: Int) async {
+        guard yearPosters[year] == nil else { return }
+        var posters: [String] = []
+        for award in awards where award.kind == "movie" {
+            for w in award.winners where w.year == year && !posters.contains(String(format: ForYou.metahubPoster, w.imdb)) {
+                posters.append(String(format: ForYou.metahubPoster, w.imdb))
+            }
+        }
+        if posters.count < Self.yearCover, let trakt = services.trakt {
+            let popular = (try? await trakt.popular(kind: "movie", limit: Self.yearCover, years: String(year))) ?? []
+            for e in popular where posters.count < Self.yearCover {
+                let poster = String(format: ForYou.metahubPoster, e.imdb)
+                if !posters.contains(poster) { posters.append(poster) }
+            }
+        }
+        yearPosters[year] = Array(posters.prefix(Self.yearCover))
+    }
+
+    static let yearCover = 4
+
+    /// Lo que ya viste (Trakt), para «Ocultar lo que ya vi»; se pide una vez.
+    public func watchedIDs() async -> Set<String> {
+        if let watchedCache { return watchedCache }
+        guard let trakt = services.trakt, trakt.linked, let found = try? await trakt.watchedIDs() else { return [] }
+        watchedCache = found
+        return found
+    }
 
     /// Lo más popular de un año en Trakt (películas o series).
     public func items(year: Int, kind: String) async -> [Suggestion] {

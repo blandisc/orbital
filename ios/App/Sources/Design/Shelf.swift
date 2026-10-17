@@ -13,6 +13,8 @@ struct Shelf<Content: View>: View {
     /// Sin ruta, el encabezado no es un botón (los estantes de relleno).
     var route: ShelfRoute?
     var loading = false
+    /// De dónde viene (su sello junto al título).
+    var source: ListSource?
     @ViewBuilder var content: () -> Content
 
     var body: some View {
@@ -37,7 +39,7 @@ struct Shelf<Content: View>: View {
     }
 
     private func headerRow(chevron: Bool) -> some View {
-        DSSectionHead(title: title, chevron: chevron, meta: meta)
+        DSSectionHead(title: title, chevron: chevron, meta: meta, source: source)
     }
 }
 

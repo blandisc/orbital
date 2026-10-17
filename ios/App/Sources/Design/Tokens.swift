@@ -278,6 +278,19 @@ enum DS {
     /// Colecciones (Para ti › Listas): el alto de la estatuilla al frente, su halo y el color de cada premio.
     enum Collections {
         static let emblem: CGFloat = 70, glow: CGFloat = 16
+        /// El sello de dónde viene una lista (Trakt, Stremio, tu Orbital).
+        static let stremio = Color(red: 0.54, green: 0.35, blue: 0.67), orbital = Color(red: 0.24, green: 0.48, blue: 0.85)
+        static let badgeRadius: CGFloat = 5
+        /// La tarjeta de una lista: su pila de pósters.
+        static let stackPoster: CGFloat = 40, stackWidth: CGFloat = 54, stackAngle: Double = 8
+        /// «Porque viste»: el póster de lo que viste y los relacionados.
+        static let seedPoster: CGFloat = 104, relatedPoster: CGFloat = 64
+        /// «Por año»: la tarjeta (cuatro pósters) y su número.
+        static let yearWidth: CGFloat = 150, yearHeight: CGFloat = 150
+        /// El ícono de la app junto a «Orbital», arriba de Para ti.
+        static let appMark: CGFloat = 28, appMarkRadius: CGFloat = 7
+        /// La línea (desde arriba de lo visible, bajo la barra) que decide qué grupo marca el índice.
+        static let spyLine: CGFloat = 70
         static let gold = Color(red: 0.83, green: 0.65, blue: 0.25), silver = Color(red: 0.78, green: 0.76, blue: 0.72)
         static let bronze = Color(red: 0.72, green: 0.45, blue: 0.26)
         static func tint(_ award: String) -> Color {

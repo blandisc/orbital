@@ -60,10 +60,26 @@ struct ParaTiView: View {
         .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio
         .background(Backdrop(tint: m.mode == .mosaic ? tint.colors : nil))
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
-        .navigationTitle("Para ti").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        // De dónde salió lo que ves, en el mismo lugar que «Stremio al día» en Inicio (no un chip y un pie sueltos).
-        .subtitle(sourceText(m))
+        // Arriba, solo el ícono y «Orbital» (la pestaña de abajo ya dice dónde estás); el título queda para VoiceOver y el «atrás».
+        .navigationTitle("Para ti").toolbarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .principal) { EmptyView() }   // sin el título en medio
+            ToolbarItem(placement: .topBarLeading) { AppMark() }
+                .sharedBackgroundVisibility(.hidden)
+            // Todo · Series · Películas (en Listas): un botón, no una fila más arriba.
+            if m.mode == .lists, m.hasKindSplit {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Picker(selection: Binding(get: { KindFilter(rawValue: m.kind) ?? .all }, set: { new in Task { await m.setKind(new.rawValue) } })) {
+                            ForEach(KindFilter.allCases) { Text($0.label).tag($0) }
+                        } label: { Text("Mostrar") }
+                    } label: {
+                        Image(systemName: m.kind == KindFilter.all.rawValue ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+                    }
+                    .accessibilityLabel(Text("Series o películas"))
+                    .accessibilityIdentifier("paraTi-kind")
+                }
+            }
             // «Decide por mí»: una sola propuesta, por tiempo y ánimo.
             ToolbarItem(placement: .topBarTrailing) {
                 Button { deciding = true } label: { Image(systemName: "dice") }.accessibilityLabel(Text("Decide por mí"))
@@ -107,12 +123,6 @@ struct ParaTiView: View {
         .animation(DS.Motion.base(reduceMotion), value: focused?.imdb)
     }
 
-    /// «De tu Orbital · Trakt al día» o «Calculado en el iPhone»: el subtítulo de la barra, como en Inicio.
-    /// Calculado en el iPhone es lo normal y no se dice; solo se nombra la consola cuando viene de ella.
-    private func sourceText(_ m: ParaTiModel) -> Text? {
-        m.source == .console ? Text("De tu Orbital") : nil
-    }
-
     /// Modo demostración (`-demo-mosaic-focus N`): qué sugerencia enfocar al abrir, para las capturas de CEN-36.
     private var demoFocusImdb: String? {
         #if DEBUG
@@ -149,6 +159,8 @@ struct ShelfPoster: View {
     let inList: Bool
     /// El porqué en el póster («Sale el viernes», «N.º 3 en Netflix»), si lo hay.
     var badge: PosterBadge? = nil
+    /// El ancho del póster (más chico dentro de «Porque viste»).
+    var width: CGFloat = DS.Poster.railWidth
     let onDismiss: (Suggestion) -> Void
     @State private var taps = 0
 
@@ -157,7 +169,7 @@ struct ShelfPoster: View {
             if style == .top10, let rank = suggestion.rank {
                 NavigationLink(value: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster, movement: suggestion.movement, isNew: suggestion.isNew).titleZoomSource(suggestion.route) }.buttonStyle(.plain)
             } else {
-                TitleLink(route: suggestion.route, badge: badge.map(badgeText), bookmarked: inList, rank: style == .platform ? suggestion.rank : nil,
+                TitleLink(route: suggestion.route, badge: badge.map(badgeText), bookmarked: inList, rank: style == .platform ? suggestion.rank : nil, width: width,
                           detail: yearAndKind(year: suggestion.year.map(String.init) ?? "", kind: suggestion.kind))
             }
         }
@@ -242,7 +254,53 @@ struct ListsView: View {
     @State private var featuredID: String?
     /// Premios, tus listas de Trakt y «Por año».
     @StateObject private var collections = ModelObserver(CollectionsModel(AppEnvironment.shared.services))
+    /// El grupo que estás viendo (el índice de arriba lo marca).
+    @State private var activeSection: CollectionSection = .forYou
     private var model: ParaTiModel { observer.model }
+
+    /// Lo general: todo lo que no es una lista tuya ni una plataforma.
+    private var generalShelves: [ShelfPlan] { model.visibleShelves.filter { $0.list.group != .platforms && listSource($0) == nil } }
+
+    /// Si un estante es una lista tuya, de dónde: tu watchlist, tus series y tus listas son de Trakt; los catálogos de tus
+    /// complementos, de Stremio.
+    private func listSource(_ plan: ShelfPlan) -> ListSource? {
+        if plan.id == "watchlist" || plan.id == "mine" || plan.id.hasPrefix("list:") { return .trakt }
+        if plan.id.hasPrefix("addon:") { return .stremio }
+        return nil
+    }
+
+    /// Una tarjeta del grupo de listas: el nombre, su pila de pósters y adónde lleva.
+    struct ListCardItem: Identifiable {
+        let id: String, name: String, posters: [String], count: Int?
+        /// Un estante abre su lista completa; Mi lista de Stremio, su colección.
+        var shelf: ShelfRoute?
+        var collection: CollectionRoute?
+    }
+
+    private var traktLists: [ListCardItem] {
+        model.visibleShelves.filter { listSource($0) == .trakt }.map(card)
+    }
+
+    private var stremioCards: [ListCardItem] {
+        var cards: [ListCardItem] = []
+        let mine = collections.model.myList
+        if !mine.isEmpty {
+            cards.append(ListCardItem(id: "mylist", name: Strings.tr("Mi lista", language: env.services.appSettings.uiLanguage),
+                                      posters: mine.prefix(2).map(\.poster), count: mine.count, collection: CollectionRoute(kind: .myList, id: "mylist")))
+        }
+        return cards + model.visibleShelves.filter { listSource($0) == .stremio }.map(card)
+    }
+
+    private func card(_ plan: ShelfPlan) -> ListCardItem {
+        let items = model.items(for: plan)
+        let language = env.services.appSettings.uiLanguage
+        let name: String = switch plan.id {
+        case "watchlist": Strings.tr("Tu watchlist", language: language)
+        case "mine": Strings.tr("Tus series", language: language)
+        default: plan.title.isEmpty ? plan.id : plan.title
+        }
+        return ListCardItem(id: plan.id, name: name, posters: items.prefix(2).map(\.poster), count: items.isEmpty ? nil : items.count, shelf: ShelfRoute(id: plan.id))
+    }
 
     var body: some View {
         ScrollViewReader { proxy in scroller(proxy).task { await demoScroll(proxy) } }
@@ -260,46 +318,40 @@ struct ListsView: View {
     private func scroller(_ proxy: ScrollViewProxy) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
-                // El arte a sangre ya pone su margen (en claro es tarjeta; en oscuro va de borde a borde).
-                // El único filtro de la pantalla, arriba: lo cambia todo lo de abajo (los estantes que separan series y películas).
-                if model.hasKindSplit {
-                    DSChipRow(items: KindFilter.allCases, label: { Text($0.label) },
-                              selection: Binding(get: { KindFilter(rawValue: model.kind) ?? .all }, set: { new in Task { await model.setKind(new.rawValue) } }))
-                }
-                sectionIndex(proxy)
-                let slides = model.featuredSlides
-                if !slides.isEmpty { featuredCarousel(slides) }
-                if !model.platformHubs.isEmpty { platforms.id(CollectionSection.platforms) }   // justo bajo el destacado: tus plataformas a la vista, no hasta abajo
-                awards.id(CollectionSection.awards)
-                if !collections.model.lists.isEmpty { userLists.id(CollectionSection.lists) }
-                if collections.model.traktLinked { yearsSection.id(CollectionSection.years) }
-                if !model.airings.isEmpty {   // justo después del destacado; vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
-                    Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), route: ShelfRoute(id: "estrenos")) {
-                        ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
-                    }
-                }
-                // «Porque viste X»: lo que Trakt relaciona con lo último que viste.
-                if let because = model.because {
-                    Shelf(title: Text("Porque viste \(because.seed.title)"), meta: Text("De lo último que viste")) {
-                        ForEach(because.items) { s in
-                            ShelfPoster(suggestion: s, style: .plain, inList: model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb]) { dismissed in Task { await model.dismiss(dismissed) } }
+                // Para ti: lo general (el destacado, «Porque viste», las sugerencias y los estrenos), cada fila con su sello.
+                VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+                    let slides = model.featuredSlides
+                    if !slides.isEmpty { featuredCarousel(slides) }
+                    if let because = model.because { becauseCard(because) }
+                    ForEach(generalShelves) { plan in shelf(plan).id(plan.id) }
+                    if !model.airings.isEmpty {   // vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
+                        Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), route: ShelfRoute(id: "estrenos"), source: .trakt) {
+                            ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
                         }
                     }
+                    if model.needsSources { sourcesFallback }
                 }
-                // Las plataformas viven en «Tus plataformas» (arriba): aquí, lo demás.
-                ForEach(model.visibleShelves.filter { $0.list.group != .platforms }) { plan in shelf(plan).id(plan.id) }
-                if model.needsSources { sourcesFallback }
+                .modifier(SectionSpy(section: .forYou, active: $activeSection))
+                // Las listas, cada una en un solo lugar: las de Trakt y las de Stremio, aparte.
+                if !traktLists.isEmpty { listGroup(title: "Listas de Trakt", source: .trakt, cards: traktLists).modifier(SectionSpy(section: .trakt, active: $activeSection)) }
+                if !stremioCards.isEmpty { listGroup(title: "Listas de Stremio", source: .stremio, cards: stremioCards).modifier(SectionSpy(section: .stremio, active: $activeSection)) }
+                if !model.platformHubs.isEmpty { platforms.modifier(SectionSpy(section: .platforms, active: $activeSection)) }
+                awards.modifier(SectionSpy(section: .awards, active: $activeSection))
+                if collections.model.traktLinked { yearsSection.modifier(SectionSpy(section: .years, active: $activeSection)) }
             }
+            .padding(.top, DS.Space.s2)
             .padding(.bottom, DS.Space.s14)   // aire bajo la última fila: la barra de pestañas no la tapa
         }
+        // El índice, pegado arriba bajo la barra: marca dónde estás al bajar y salta al tocarlo.
+        .safeAreaBar(edge: .top) { sectionIndex(proxy) }
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
         .navigationDestination(for: PlatformRoute.self) { route in
             if let hub = model.platformHubs.first(where: { $0.brand == route.brand }) { PlatformRankingsView(observer: observer, hub: hub) }
         }
         .navigationDestination(for: CollectionRoute.self) { route in CollectionGridView(collections: collections, route: route) }
-        .task { await collections.model.loadLists() }
+        .task { await collections.model.loadMyList() }
         .navigationDestination(for: ShelfRoute.self) { route in
-            if route.id == "estrenos" { UpcomingScreen(observer: observer) } else { ListGridView(observer: observer, shelfID: route.id) }
+            if route.id == "estrenos" { UpcomingScreen(observer: observer) } else { ListGridView(observer: observer, collections: collections, shelfID: route.id) }
         }
     }
 
@@ -327,22 +379,61 @@ struct ListsView: View {
     // MARK: colecciones
     /// El índice de arriba: salta a cada grupo.
     private func sectionIndex(_ proxy: ScrollViewProxy) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DS.Space.s2) {
-                ForEach(CollectionSection.allCases.filter(isShown), id: \.self) { section in
-                    PanelChip(title: section.title, selected: false) { withAnimation(DS.Motion.base(false)) { proxy.scrollTo(section, anchor: .top) } }
+        ScrollViewReader { chips in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DS.Space.s2) {
+                    ForEach(CollectionSection.allCases.filter(isShown), id: \.self) { section in
+                        PanelChip(title: section.title, selected: activeSection == section) {
+                            activeSection = section
+                            withAnimation(DS.Motion.base(false)) { proxy.scrollTo(section, anchor: .top) }
+                        }
+                        .id(section)
+                    }
                 }
             }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .padding(.vertical, DS.Space.s2)
+            .onChange(of: activeSection) { _, new in withAnimation(DS.Motion.base(false)) { chips.scrollTo(new, anchor: .center) } }
         }
-        .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+        .sensoryFeedback(.selection, trigger: activeSection)
     }
 
     private func isShown(_ section: CollectionSection) -> Bool {
         switch section {
+        case .forYou: true
+        case .trakt: !traktLists.isEmpty
+        case .stremio: !stremioCards.isEmpty
         case .platforms: !model.platformHubs.isEmpty
         case .awards: !collections.model.awards.isEmpty
-        case .lists: !collections.model.lists.isEmpty
         case .years: collections.model.traktLinked
+        }
+    }
+
+    /// «Porque viste X»: una tarjeta propia (no una fila más) con lo que viste y lo relacionado.
+    private func becauseCard(_ because: (seed: TraktEntry, items: [Suggestion])) -> some View {
+        BecauseCard(seedTitle: because.seed.title, seedPoster: String(format: ForYou.metahubPoster, because.seed.imdb)) {
+            ForEach(because.items) { s in
+                ShelfPoster(suggestion: s, style: .plain, inList: model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb], width: DS.Collections.relatedPoster) { dismissed in Task { await model.dismiss(dismissed) } }
+            }
+        }
+        .padding(.horizontal, DS.Space.gutter)
+    }
+
+    /// Un grupo de listas (de Trakt o de Stremio): tarjetas de dos en dos que abren la lista completa.
+    private func listGroup(title: LocalizedStringKey, source: ListSource, cards: [ListCardItem]) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: title).padding(.horizontal, DS.Space.gutter)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible())], spacing: DS.Space.s3) {
+                ForEach(cards) { c in
+                    Group {
+                        if let shelf = c.shelf { NavigationLink(value: shelf) { ListCard(name: c.name, source: source, posters: c.posters, count: c.count) } }
+                        else if let collection = c.collection { NavigationLink(value: collection) { ListCard(name: c.name, source: source, posters: c.posters, count: c.count) } }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("list-\(c.id)")
+                }
+            }
+            .padding(.horizontal, DS.Space.gutter)
         }
     }
 
@@ -366,38 +457,18 @@ struct ListsView: View {
         }
     }
 
-    /// Tus listas de Trakt, en pila con el sello de Trakt.
-    private var userLists: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Tus listas", meta: Text("De Trakt")).padding(.horizontal, DS.Space.gutter)
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
-                    ForEach(collections.model.lists) { list in
-                        NavigationLink(value: CollectionRoute(kind: .list, id: list.id)) {
-                            CollectionCard(title: Text(verbatim: list.name), detail: Text("\(list.count) títulos"), name: list.name,
-                                           posters: list.posters.map { Optional($0) }, tint: DS.RatingBrand.trakt) { TraktEmblem() }
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-        }
-    }
-
-    /// Por año: lo más popular de cada año (Trakt).
+    /// Por año: cada año con cuatro de sus películas (las premiadas, y si faltan, lo más popular).
     private var yearsSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: "Por año", meta: Text("Lo más popular de cada año")).padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: DS.Space.s2) {
+                LazyHStack(spacing: DS.Space.s3) {
                     ForEach(collections.model.years, id: \.self) { year in
                         NavigationLink(value: CollectionRoute(kind: .year, id: String(year))) {
-                            Text(verbatim: String(year)).recipe(.section).monospacedDigit()
-                                .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s3)
-                                .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                            YearCard(year: year, posters: collections.model.yearPosters[year] ?? [])
                         }
                         .buttonStyle(.plain)
+                        .task { await collections.model.loadYearPosters(year) }
                     }
                 }
             }
@@ -406,10 +477,22 @@ struct ListsView: View {
     }
 
     // MARK: estantes
+    /// De dónde viene una fila general: lo de Trakt (recomendadas, tendencias, populares), lo de Stremio (catálogos), o tu Orbital.
+    private func shelfSource(_ plan: ShelfPlan) -> ListSource? {
+        switch plan.id {
+        case "recs", "trend", "popular", "mine", "watchlist": return .trakt
+        case "cinemeta": return .stremio
+        default:
+            if plan.id.hasPrefix("list:") { return .trakt }
+            if plan.id.hasPrefix("addon:") { return .stremio }
+            return model.source == .console ? .orbital : nil
+        }
+    }
+
     private func shelf(_ plan: ShelfPlan) -> some View {
         let items = model.items(for: plan)
         return Shelf(title: shelfTitle(plan), meta: shelfMeta(plan),
-                     route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty) {
+                     route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty, source: shelfSource(plan)) {
             ForEach(items) { s in
                 ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb]) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Tu watchlist» todo está ahí: el marcador sobra
             }
@@ -495,8 +578,13 @@ struct ListsView: View {
 /// La lista completa de un estante, en cuadrícula (el mismo título y logo del encabezado que se tocó).
 struct ListGridView: View {
     @ObservedObject var observer: ModelObserver<ParaTiModel>
+    @ObservedObject var collections: ModelObserver<CollectionsModel>
     let shelfID: String
     private var model: ParaTiModel { observer.model }
+
+    private func poster(_ s: Suggestion, _ plan: ShelfPlan) -> some View {
+        ShelfPoster(suggestion: s, style: plan.style == .top10 ? .platform : plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb)) { dismissed in Task { await model.dismiss(dismissed) } }
+    }
 
     var body: some View {
         ScrollView {
@@ -508,20 +596,17 @@ struct ListGridView: View {
                         Spacer(minLength: 0)
                     }
                     .padding(.horizontal, DS.Space.gutter)
-                    if plan.splitsKinds {
-                        DSChipRow(items: KindFilter.allCases, label: { Text($0.label) },
-                                  selection: Binding(get: { KindFilter(rawValue: model.kind) ?? .all }, set: { new in Task { await model.setKind(new.rawValue) } }))
-                    }
                     let items = model.items(for: plan)
                     if items.isEmpty && !model.isLoading(shelf: plan) {
                         DSNotice(text: "Nada por aquí por ahora.").padding(.horizontal, DS.Space.gutter)
-                    } else {
+                    } else if plan.style == .top10 {
+                        // Un ranking se lee en su orden: sin ordenar ni filtrar.
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
-                            ForEach(items) { s in
-                                ShelfPoster(suggestion: s, style: plan.style == .top10 ? .platform : plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb)) { dismissed in Task { await model.dismiss(dismissed) } }
-                            }
+                            ForEach(items) { s in poster(s, plan) }
                         }
                         .padding(.horizontal, DS.Space.gutter)
+                    } else {
+                        SortableGrid(listID: plan.id, items: items, watched: { await collections.model.watchedIDs() }) { s in poster(s, plan) }
                     }
                 }
                 .padding(.bottom, DS.Space.s14)
