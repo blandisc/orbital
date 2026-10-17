@@ -41,6 +41,7 @@ from .net import NET_ERRORS, read_json
 log = logging.getLogger(__name__)
 
 METAHUB = "https://images.metahub.space/{kind}/medium/{imdb}/img"
+LOGO_RETRY = 30 * 60  # un logo que no se pudo bajar (o que no existe) no se vuelve a pedir en media hora
 STEAM_ART = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{file}"
 GAME_CATEGORIES = ("steam", "emulators")
 SERVICE_ERRORS = (trakt_api.TraktError, tmdb_api.TmdbError, rawg_api.RawgError, stremio_api.StremioError,
@@ -273,6 +274,9 @@ class ForYou:
         self._link_lock = threading.Lock()
         self._link_gen = 0  # cada pedido o cancelación de código lo sube: solo cuenta el último
         self._dark: dict[str, bool | None] = {}
+        self.logo_dir = folder / "title-logos" if folder else None
+        self._logos: dict[str, bytes] = {}  # sin carpeta (pruebas): en memoria
+        self._logo_misses: dict[str, float] = {}
 
     def _key(self, name: str) -> str:
         return (self.catalog.credentials.get(KEY_PREFIX + name) or "") or getattr(self.settings, name)
@@ -829,6 +833,45 @@ class ForYou:
             self._dark.clear()
         self._dark[url] = verdict
         return verdict
+
+    def trimmed_logo(self, imdb: str) -> bytes | None:
+        """El logo del título (metahub) ya sin su aire transparente, guardado en disco: la tele lo pide aquí, así el hueco
+        entre la etiqueta y el logo es el mismo en todos. None si no hay (o no se pudo bajar: se reintenta en un rato)."""
+        from .library import iptv_logos
+
+        if not re.fullmatch(r"tt[0-9]{1,12}", imdb or ""):
+            return None
+        path = self.logo_dir / f"{imdb}.png" if self.logo_dir else None
+        try:
+            if path is not None and path.is_file():
+                return path.read_bytes()
+        except OSError:
+            pass
+        if imdb in self._logos:
+            return self._logos[imdb]
+        if time.monotonic() - self._logo_misses.get(imdb, -1e9) < LOGO_RETRY:
+            return None
+        try:
+            png = iptv_logos.trim(iptv_logos.download_logo(METAHUB.format(kind="logo", imdb=imdb)))
+        except (iptv_logos.LogoError, *NET_ERRORS) as exc:
+            log.debug("Sin logo de %s: %s", imdb, exc)
+            if len(self._logo_misses) > 2000:
+                self._logo_misses.clear()
+            self._logo_misses[imdb] = time.monotonic()
+            return None
+        if path is not None:
+            try:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                tmp = path.with_suffix(".tmp")
+                tmp.write_bytes(png)
+                tmp.replace(path)
+                return png
+            except OSError as exc:
+                log.info("No pude guardar un logo: %s", exc)
+        if len(self._logos) > 300:
+            self._logos.clear()
+        self._logos[imdb] = png
+        return png
 
     # --- «No me interesa» ----------------------------------------------------------------------
     def dismiss(self, key: str) -> None:

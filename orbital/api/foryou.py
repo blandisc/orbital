@@ -55,6 +55,14 @@ def router(d: Deps) -> APIRouter:
         except SERVICE_ERRORS:
             return {"overview": ""}  # sin sinopsis no pasa nada
 
+    @r.get("/logo/{imdb}")
+    def logo(imdb: str) -> Response:
+        """El logo del título sin su aire transparente (ver ForYou.trimmed_logo)."""
+        png = foryou.trimmed_logo(imdb[:20])
+        if png is None:
+            raise HTTPException(404, "Sin logo.")
+        return Response(png, media_type="image/png", headers={"Cache-Control": "public, max-age=604800"})
+
     @r.post("/dismiss")
     def dismiss(body: DismissRequest) -> dict:
         try:

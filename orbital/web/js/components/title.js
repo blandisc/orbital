@@ -2,6 +2,7 @@ import { api } from "../core/api.js";
 import { Chip } from "./ui.js";
 import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { genres } from "../core/format.js";
+import { trimmedLogo } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { motion } from "../core/motion.js";
 import { availability, episodeStates, titleActions, titleProgress } from "../core/watch.js";
@@ -62,7 +63,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     backdrop.style.backgroundImage = cssUrl(info.background);
     name.textContent = info.title || "";
     logo.hidden = !info.logo;
-    if (info.logo) logo.src = info.logo;
+    if (info.logo) logo.src = trimmedLogo(info.logo);
     else logo.removeAttribute("src");
     name.hidden = !!info.logo;
     const runtime = info.runtime || "";

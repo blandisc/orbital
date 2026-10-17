@@ -580,3 +580,59 @@ def test_trakt_qr_opens_the_activation_page_and_setup_knows_about_para_ti(librar
         res = c.get("/api/foryou/trakt/qr.svg")
         assert res.status_code == 200 and res.headers["content-type"].startswith("image/svg+xml") and "<svg" in res.text
         assert c.get("/api/setup").json()["trakt"] == library.foryou.status()["trakt"]
+
+
+# ---------------------------------------------------------------- logos sin aire
+def _logo_png(size=(80, 40), box=(10, 20, 70, 30)) -> bytes:
+    import io
+
+    from PIL import Image, ImageDraw
+
+    image = Image.new("RGBA", size, (0, 0, 0, 0))
+    if box[2] > box[0]:
+        ImageDraw.Draw(image).rectangle((box[0], box[1], box[2] - 1, box[3] - 1), fill=(255, 255, 255, 255))
+    out = io.BytesIO()
+    image.save(out, "PNG")
+    return out.getvalue()
+
+
+def test_title_logos_lose_their_transparent_padding_and_are_kept(library, make_foryou, monkeypatch, tmp_path):
+    """El logo de Midnight Mass trae casi la mitad de aire arriba: se recorta, así el hueco bajo la etiqueta es parejo."""
+    import io
+
+    from PIL import Image
+
+    from orbital.library import iptv_logos
+
+    asked: list[str] = []
+
+    def download(url, timeout=8):
+        asked.append(url)
+        if "tt404" in url:
+            raise OSError("404")
+        return _logo_png()
+
+    monkeypatch.setattr(iptv_logos, "download_logo", download)
+    fy = make_foryou(trakt_keys=False)
+    fy.logo_dir = tmp_path / "title-logos"
+    png = fy.trimmed_logo("tt10574558")
+    assert Image.open(io.BytesIO(png)).size == (60, 10)
+    assert asked == ["https://images.metahub.space/logo/medium/tt10574558/img"]
+    assert fy.trimmed_logo("tt10574558") == png and len(asked) == 1  # del disco
+    assert (tmp_path / "title-logos" / "tt10574558.png").read_bytes() == png
+    assert fy.trimmed_logo("tt404") is None and fy.trimmed_logo("tt404") is None and len(asked) == 2  # no insiste
+    assert fy.trimmed_logo("../etc") is None and len(asked) == 2  # solo ids de IMDb
+    with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 5000)) as c:
+        library.foryou = fy
+        ok = c.get("/api/foryou/logo/tt10574558")
+        assert ok.status_code == 200 and ok.headers["content-type"] == "image/png" and ok.content == png
+        assert c.get("/api/foryou/logo/tt404").status_code == 404
+
+
+def test_trim_rejects_what_is_not_a_logo():
+    from orbital.library import iptv_logos
+
+    with pytest.raises(iptv_logos.LogoError):
+        iptv_logos.trim(b"no soy una imagen")
+    with pytest.raises(iptv_logos.LogoError):
+        iptv_logos.trim(_logo_png(box=(0, 0, 0, 0)))
