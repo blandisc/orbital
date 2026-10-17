@@ -1,7 +1,8 @@
-import { h, svg } from "../core/dom.js";
-import { duration, lastPlayed, shortAgo } from "../core/format.js";
+import { cssUrl, h, svg } from "../core/dom.js";
+import { duration, endsAt, lastPlayed, shortAgo } from "../core/format.js";
 import { kicker, platformColor, stageKind, SYSTEMS, systemColor, systemOf, thumbOf } from "../core/home.js";
 import { ICONS, systemIconName } from "../core/icons.js";
+import { sized } from "../core/images.js";
 import { alternativeRunner, clampRatio, coverRatio, isGame, isSeries, isWatchable, primaryLabel } from "../core/library.js";
 import { Button } from "./button.js";
 import { Badge, Progress } from "./ui.js";
@@ -53,8 +54,8 @@ function featureLogo(src, title) {
 
 /** Dato debajo del título: lo que queda (videos) o cuándo jugaste (juegos). */
 export function detailOf(item, now = Date.now()) {
-  // «Película · quedan 1 h 40 min» → «quedan 1 h 40 min»: la barra de avance ya dice que es un video.
-  if (isWatchable(item)) return item.subtitle?.replace(/^Película · /, "") || null;
+  // «Película · quedan 1 h 40 min» → «quedan 1 h 40 min · termina a las 11:20 p. m.»: la barra ya dice que es un video.
+  if (isWatchable(item)) return [item.subtitle?.replace(/^Película · /, ""), endsAt(item.extra?.left, now)].filter(Boolean).join(" · ") || null;
   const when = lastPlayed(item.last_played, now, "Jugaste");
   const total = item.playtime >= 600 ? duration(item.playtime) : null;
   return [when && when.replace("Jugaste hace", "jugaste hace").replace("Jugaste", "jugaste"), total && `${total} en total`]
@@ -111,6 +112,15 @@ export function shortDetail(item, now = Date.now()) {
   return ago ? (ago === "ahora" || ago === "ayer" ? ago : `hace ${ago}`) : null;
 }
 
+/** Lo que enseña la tarjeta crecida (Inicio: la enfocada ocupa dos lugares): año, géneros y jugadores. Sin la
+ * descripción: en ese espacio se veía cortada (la ficha la tiene completa). */
+function rowMore(item) {
+  const extra = item.extra || {};
+  const facts = [extra.year, ...(Array.isArray(extra.genres) ? extra.genres.slice(0, 2) : []), extra.players && `${extra.players} jugadores`]
+    .filter(Boolean).join(" · ");
+  return facts ? h("span", { class: "tile--row__more" }, h("span", { class: "tile--row__facts" }, facts)) : null;
+}
+
 /**
  * Renglón (Inicio · «También tenías»): una miniatura ancha y, al lado, el nombre grande y su dato
  * siempre a la vista («Steam · hace 4 h · 31 h», o «Serie · T2 E6 · quedan 32 min» con su avance).
@@ -121,9 +131,12 @@ export function RowTile(item, { focusId, onPress, airing = null }) {
   const thumb = thumbOf(item);
   const system = thumb.kind === "console" ? SYSTEMS[systemOf(item)] : null;
   const total = !watch && item.playtime >= 600 ? duration(item.playtime) : null;
+  const crop = thumb.kind === "crop" && thumb.src;
   const node = tile(focusId, "tile--row", onPress, item.title,
-    h("span", { class: ["tile--row__thumb", system && "tile--row__thumb--console"] },
-      thumb.src && artOr(thumb.src, thumb.fallback, ["tile--row__art", thumb.kind === "crop" && "tile--row__art--crop"]),
+    h("span", { class: ["tile--row__thumb", system && "tile--row__thumb--console", crop && "tile--row__thumb--case"],
+      // Una caja (GBA) en la tarjeta crecida: entera, sobre su propia imagen desenfocada (recortada se veía rota).
+      style: crop ? { "--thumb-art": cssUrl(sized(thumb.src, 240)) } : undefined },
+      thumb.src && artOr(sized(thumb.src, 240), sized(thumb.fallback, 240), ["tile--row__art", thumb.kind === "crop" && "tile--row__art--crop"]),
       system && art(`img/consoles/${system.photo}`, ["tile--row__console", system.logo && "tile--row__console--logo"]),
       // Sale un episodio nuevo hoy (Próximos estrenos, de Trakt): «Sale hoy · 19:00».
       airing && Badge(airing === "Desde la madrugada" ? "Nuevo hoy" : `Sale hoy · ${airing}`, { className: "tile--row__airing" }),
@@ -131,7 +144,8 @@ export function RowTile(item, { focusId, onPress, airing = null }) {
     h("span", { class: "tile--row__text" },
       h("strong", { class: "tile--row__title" }, item.title),
       h("span", { class: "tile--row__detail", style: tint(item) }, svg(ICONS[systemIconName(item)] || ICONS.apps),
-        h("span", { class: "tile--row__detail-text" }, [kicker(item), shortDetail(item), total].filter(Boolean).join(" · ")))));
+        h("span", { class: "tile--row__detail-text" }, [kicker(item), shortDetail(item), total].filter(Boolean).join(" · "))),
+      rowMore(item)));
   if (system) node.style.setProperty("--glow", systemColor(systemOf(item)));
   return node;
 }
@@ -151,6 +165,7 @@ export function ConsoleTile(system, { focusId, index = 0, onPress }) {
     h("span", { class: "tile--console__count" }, `${system.count} juego${system.count === 1 ? "" : "s"}`,
       system.fresh > 0 && Badge(`+${system.fresh} nuevo${system.fresh === 1 ? "" : "s"}`)),
     // Lo último que jugaste ahí: lo que A/X retoman (el pie de la pantalla dice qué botón).
-    h("span", { class: "tile--console__foot" }, last ? `${last.title} · ${shortAgo(last.last_played)}` : "Sin jugar todavía")));
+    h("span", { class: "tile--console__foot" }, last ? `${last.title} · ${shortAgo(last.last_played)}`
+      : system.count ? "Sin jugar todavía" : "Sin juegos todavía")));
 }
 

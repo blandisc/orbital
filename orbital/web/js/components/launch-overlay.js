@@ -1,7 +1,9 @@
-import { cssUrl, h, hideAfterExit, mount } from "../core/dom.js";
+import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { KeyHint } from "./ui.js";
 
-const HOLD_MS = 26_000; // con pantalla de carga: el servidor avisa antes (25 s como máximo)
+// Con pantalla de carga el servidor avisa antes: un video espera su primera imagen hasta 50 s (STARTUP_TIMEOUT + 5).
+// Con 26 s la pantalla se iba antes, Orbital quedaba encima con la biblioteca y otro A volvía a abrir el video de cero.
+const HOLD_MS = 52_000;
 
 /**
  * Pantalla de carga: el viaje de Orbital al juego.
@@ -13,18 +15,38 @@ const HOLD_MS = 26_000; // con pantalla de carga: el servidor avisa antes (25 s 
  * Normal: se oculta cuando el juego toma la pantalla (Orbital pierde el foco) o tras `timeout`.
  * Con `hold()`: Orbital se queda ENCIMA del emulador mientras abre (no se ve ni su lista de juegos
  * ni su ventana brincando); el servidor avisa con launch-ready cuando el juego está listo y en
- * pantalla completa: la portada "salta" hacia adelante, las estrellas se estiran (velocidad luz)
- * y todo se va a negro; entonces Windows funde la ventana de Orbital sobre el juego.
+ * pantalla completa: la portada se acerca apenas y se desvanece, la órbita se abre y se apaga, las estrellas se van y
+ * todo se funde a negro; el juego entra en ese instante de negro (y un video se funde solo desde negro).
+ *
+ * Del arte al juego: con un fondo propio del juego, se ve nítido y avanza despacio mientras carga (antes, oscuro y
+ * borroso); al estar listo se acerca un poco y se va a negro. Sin fondo propio, el de siempre (borroso).
  */
 export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = {}) {
   const backdrop = h("div", { class: "launch__backdrop" });
   const stars = h("div", { class: "launch__stars", "aria-hidden": "true" },
     h("span", { class: "launch__starfield launch__starfield--far" }), h("span", { class: "launch__starfield launch__starfield--near" }));
   const cover = h("div", { class: "launch__cover" });
-  const orbit = h("div", { class: "launch__orbit", "aria-hidden": "true" }, h("span", { class: "launch__satellite" }));
+  // El satélite gira con transformaciones (las dibuja la GPU): con offset-path lo animaba el hilo principal y, mientras
+  // Orbital abría el juego, se trababa. Una pista cuadrada aplastada a la forma de la elipse gira, y el satélite gira al
+  // revés y se «desaplasta» para seguir redondo.
+  // La estela: dos puntos más chicos y tenues que van detrás del satélite (cada uno con su retraso), como un cometa.
+  const TRAIL = { 1: ["launch__spinner--trail-1", "launch__satellite--trail-1"], 2: ["launch__spinner--trail-2", "launch__satellite--trail-2"] };
+  const spinner = (trail) => h("span", { class: ["launch__spinner", TRAIL[trail]?.[0]] },
+    h("span", { class: ["launch__satellite", TRAIL[trail]?.[1]] }));
+  const satellite = () => h("span", { class: "launch__track" }, spinner(2), spinner(1), spinner(0));
+  // El anillo es un trazo (no un borde) que se dibuja solo al entrar. Se mide a la órbita en píxeles (fitRings): estirado
+  // con preserveAspectRatio + non-scaling-stroke, Chrome medía el guion sin estirar y solo pintaba un tercio de la vuelta.
+  const ring = () => svg('<svg class="launch__ring" aria-hidden="true"><ellipse pathLength="100"/></svg>');
+  const rings = [ring(), ring()];
+  const fitRings = (width, height) => rings.forEach((r) => {
+    r.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    const e = r.firstElementChild;
+    [["cx", width / 2], ["cy", height / 2], ["rx", width / 2], ["ry", height / 2]].forEach(([k, v]) => e.setAttribute(k, String(v)));
+  });
+  const orbit = h("div", { class: "launch__orbit", "aria-hidden": "true" }, rings[0], satellite());
   // El arco de enfrente lleva su propio satélite, al compás del de atrás: así el punto también cruza
   // por delante de la portada (antes siempre pasaba por detrás).
-  const front = h("div", { class: "launch__orbit launch__orbit--front", "aria-hidden": "true" }, h("span", { class: "launch__satellite" }));
+  const front = h("div", { class: "launch__orbit launch__orbit--front", "aria-hidden": "true" }, rings[1], satellite());
   const label = h("div", { class: "launch__label" }, "Abriendo");
   const title = h("div", { class: "launch__title" });
   const subtitle = h("div", { class: "launch__subtitle" });
@@ -39,6 +61,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
     h("div", { class: "launch__flash", "aria-hidden": "true" }));
   let timer;
   let holding = false;
+  let waiting = false; // el servidor abre algo que se lleva el foco (mpv) y luego avisa: perder el foco no la oculta
   let cancelExit = () => {};
 
   /**
@@ -47,19 +70,28 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
    */
   function show(item, detail, { from = null } = {}) {
     backdrop.style.backgroundImage = cssUrl(item.hero || item.image);
+    el.classList.toggle("launch--art", Boolean(item.hero) && !item.extra?.placeholder_hero);
     cover.style.backgroundImage = cssUrl(item.image);
     cover.hidden = !item.image; // sin portada, la órbita gira sola alrededor de la marca
     el.classList.toggle("launch--no-cover", !item.image);
     if (!from?.rect?.width) from = null; // una tarjeta oculta (0×0) hacía crecer la portada desde la esquina
-    const ratio = from?.ratio ?? (item.image ? .667 : 1);
+    // Como mucho cuadrada: desde una tarjeta ancha (Inicio) la portada quedaba enorme y tapaba el arte del fondo.
+    const ratio = Math.min(from?.ratio ?? (item.image ? .667 : 1), 1);
     cover.style.setProperty("--ratio", String(ratio));
     orbit.style.setProperty("--ratio", String(ratio));
     front.style.setProperty("--ratio", String(ratio));
+    requestAnimationFrame(() => { // cuánto se aplasta la pista para ser la elipse (alto / ancho de la órbita)
+      const squash = orbit.offsetWidth ? orbit.offsetHeight / orbit.offsetWidth : .3;
+      if (orbit.offsetWidth) fitRings(orbit.offsetWidth, orbit.offsetHeight);
+      el.style.setProperty("--orbit-squash", String(squash));
+      el.style.setProperty("--orbit-unsquash", String(1 / squash));
+    });
     label.textContent = "Abriendo";
     mount(leave, KeyHint(backGlyph(), "Ocultar"));
     title.textContent = item.title;
     subtitle.textContent = detail || "";
     holding = false;
+    waiting = false;
     cancelExit();
     el.classList.remove("launch--revealing", "launch--holding");
     el.hidden = false;
@@ -80,6 +112,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
   function hold() {
     if (el.hidden) return;
     holding = true;
+    waiting = false;
     el.classList.add("launch--holding");
     label.textContent = "Preparando";
     clearTimeout(timer);
@@ -87,17 +120,20 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
   }
 
   /** Se queda a la vista `ms` más (mientras el servidor busca la fuente: antes se iba a los 8 s y
-   *  parecía que no pasaba nada, aunque seguía buscando). */
-  function keep(ms) {
+   *  parecía que no pasaba nada, aunque seguía buscando). `waiting`: el servidor va a abrir algo que se lleva el foco
+   *  (mpv) y luego avisa; perder el foco entonces no la oculta. */
+  function keep(ms, { waiting: wait = false } = {}) {
     if (el.hidden) return;
+    waiting = wait;
     clearTimeout(timer);
     timer = setTimeout(hide, ms);
   }
 
-  /** El juego está listo: salto a velocidad luz y a negro; Windows funde Orbital sobre el juego. */
+  /** El juego está listo: todo se funde a negro (sin salto); el juego entra en ese negro. */
   function reveal() {
     if (el.hidden) return;
     holding = false;
+    waiting = false;
     label.textContent = "Listo";
     el.classList.add("launch--revealing");
     clearTimeout(timer);
@@ -114,12 +150,13 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
   function hide() {
     clearTimeout(timer);
     holding = false;
+    waiting = false;
     cancelExit = hideAfterExit(el, "launch--leaving", 350);
   }
 
   // Cuando el emulador/juego toma el foco, la ventana de Orbital lo pierde. Con pantalla de carga
   // el foco puede irse al emulador mientras Orbital sigue encima: ahí no se oculta.
-  window.addEventListener("blur", () => { if (!el.hidden && !holding) setTimeout(() => !holding && hide(), 600); });
+  window.addEventListener("blur", () => { if (!el.hidden && !holding && !waiting) setTimeout(() => !holding && !waiting && hide(), 600); });
 
   return {
     el, show, hold, keep, reveal, hide, status,

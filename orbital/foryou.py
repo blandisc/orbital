@@ -42,6 +42,7 @@ from .text import clock
 log = logging.getLogger(__name__)
 
 METAHUB = "https://images.metahub.space/{kind}/medium/{imdb}/img"
+PREFETCH_DELAY = 45  # s tras armar el mosaico, antes de bajar sus imágenes (que el arranque termine primero)
 LOGO_RETRY = 30 * 60  # un logo que no se pudo bajar (o que no existe) no se vuelve a pedir en media hora
 STEAM_ART = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{file}"
 GAME_CATEGORIES = ("steam", "emulators")
@@ -185,6 +186,9 @@ def video_item(e: dict, why: str, *, title: str | None = None, poster: str | Non
         "hero": wide or METAHUB.format(kind="background", imdb=imdb),
         "logo": METAHUB.format(kind="logo", imdb=imdb),
         "overview": overview or "", "video_id": video_id, "episode": episode, "action": action,
+        # Para «Decide por mí» del iPhone (sin preguntarle a Cinemeta título por título): en inglés, como vienen.
+        **({"genres": list(e["genres"])} if e.get("genres") else {}),
+        **({"runtime": int(e["runtime"])} if isinstance(e.get("runtime"), int) and e["runtime"] > 0 else {}),
     }
 
 
@@ -197,8 +201,10 @@ def library_entry(item) -> dict | None:
     year = re.match(r"\d{4}", str(extra.get("year") or ""))
     minutes = re.match(r"\d+", str(extra.get("runtime") or ""))
     e: dict[str, Any] = {"imdb": imdb, "kind": kind, "title": item.title, "year": int(year.group()) if year else None}
-    if kind == "movie" and minutes:
+    if minutes:  # en una serie, lo que dura un episodio
         e["runtime"] = int(minutes.group())
+    if isinstance(extra.get("genres"), list) and extra["genres"]:
+        e["genres"] = [str(g) for g in extra["genres"]][:4]
     parts = str(extra.get("video_id") or "").split(":")
     if kind == "series" and len(parts) == 3 and parts[1].isdigit() and parts[2].isdigit():
         e["next"] = {"season": int(parts[1]), "episode": int(parts[2])}  # el episodio en que vas
@@ -477,7 +483,15 @@ class ForYou:
         kind = kind if kind in ("movie", "series") else "series"
         hidden = self.catalog.state.dismissed()
         items = self._list(list_id, kind)
-        return [i for i in items if i["key"] not in hidden]
+        return [self._with_art(i) for i in items if i["key"] not in hidden]
+
+    def _with_art(self, item: dict) -> dict:
+        """El póster o fondo que elegiste para ese título («Cambiar el arte»), en lugar del de siempre."""
+        art = self.catalog.watch.art_for(item.get("meta_id")) if item.get("meta_id") else {}
+        if not art:
+            return item
+        return {**item, **({"image": art["poster"]} if art.get("poster") else {}),
+                **({"hero": art["background"]} if art.get("background") else {})}
 
     def _stremio(self, which: str, kind: str | None = None) -> list:
         """Lo que Orbital ya trajo de Stremio: «continue» (Seguir viendo), «mylist» (Mi lista) o
@@ -689,12 +703,37 @@ class ForYou:
     def mosaic(self) -> list[dict]:
         """El mosaico de la caché (vencido o no, se renueva solo); solo la primera vez se espera a armarlo."""
         hidden = self.catalog.state.dismissed()
-        return [i for i in self.cache.get("mosaic", MINE_TTL, self._build_mosaic, stale=True) if i["key"] not in hidden]
+        return [self._with_art(i) for i in self.cache.get("mosaic", MINE_TTL, self._build_mosaic, stale=True) if i["key"] not in hidden]
 
     def warm(self) -> None:
         """Al arrancar Orbital, arma el mosaico y las listas con puesto en segundo plano: la primera vez que la TV o el
-        iPhone abren Para ti ya está (antes esperaban el Top 10 de Netflix, unos 30 s)."""
-        threading.Thread(target=lambda: self._safe(self.mosaic), daemon=True, name="foryou-warm").start()
+        iPhone abren Para ti ya está (antes esperaban el Top 10 de Netflix, unos 30 s). Y sus primeros pósters y logos,
+        ya bajados y reducidos: la primera vez que se veía el mosaico, cada imagen se bajaba en ese momento."""
+        def run() -> None:
+            items = self._safe(self.mosaic) or []
+            # Las imágenes, con calma: al arrancar Orbital ya escanea la biblioteca y el arte, y todo junto hacía que la
+            # interfaz tardara segundos en contestar.
+            time.sleep(PREFETCH_DELAY)
+            self._safe(lambda: self.prefetch_art(items))
+
+        threading.Thread(target=run, daemon=True, name="foryou-warm").start()
+
+    def prefetch_art(self, items: list[dict], limit: int = 60) -> int:
+        """Baja y reduce los pósters (al ancho del mosaico) y los logos de las primeras piezas. Devuelve cuántas."""
+        from . import remote_art
+
+        def one(item: dict) -> bool:
+            ok = False
+            url = item.get("image")
+            if isinstance(url, str) and remote_art.allowed(url):
+                ok = remote_art.sized(url, 360) is not None  # POSTER_PX del mosaico (foryou-mosaic.js)
+            imdb = item.get("meta_id")
+            if isinstance(imdb, str) and str(item.get("logo") or "").startswith("https://images.metahub.space/logo/"):
+                self.trimmed_logo(imdb)
+            return ok
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            return sum(pool.map(one, items[:limit]))
 
     def _build_mosaic(self) -> list[dict]:
         """Lo tuyo, mezclado: tus recomendaciones, tu watchlist, tus listas, tus series y tus juegos.

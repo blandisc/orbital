@@ -382,3 +382,35 @@ def test_memory_warning_never_pops_over_a_game_and_waits_for_orbital():
     shell._stop = SimpleNamespace(wait=wait)
     shell._watch_foreground()
     assert shell.health.flushed == 1  # una sola vez, al cambiar al frente (no en cada vuelta)
+
+
+def test_home_during_a_video_sends_it_to_a_corner_and_back(tmp_path):
+    """Ajustes › «Home durante un video: En pequeño»: el video se va a una esquina y sigue (no se pausa); Home otra vez
+    (o «Volver al video») lo regresa a pantalla completa. Con «Pausar», como antes."""
+    from orbital.state import State
+
+    class PipPlayer(FakePlayer):
+        pip = False
+
+        def enter_pip(self):
+            self.pip = True
+            self.calls.append("pip")
+            return True
+
+        def exit_pip(self):
+            self.pip = False
+            self.calls.append("full")
+
+    player_running = {"title": "Interstellar", "managed": True, "runner": "Reproductor", "pid": 30}
+    shell, win, _ = make(player_running)
+    shell.catalog.player = PipPlayer()
+    shell.catalog.state = State(tmp_path / "state.json")
+    win.windows[DESKTOP_APP] = ("Interstellar", 30, "mpv.exe")
+    win.fg = DESKTOP_APP
+    shell.home()
+    assert win.fg == ORBITAL and shell.player.calls == ["pip"]  # sin pausa
+    shell.home()
+    assert win.fg == DESKTOP_APP and shell.player.calls[-2:] == ["full", "progress"]
+    shell.catalog.state.set_setting("video_home", "pause")
+    shell.home()
+    assert shell.player.calls[-1] == "pause"

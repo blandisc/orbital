@@ -99,9 +99,7 @@ test("la columna de la derecha dice qué es y no repite el destacado", async () 
   const { buildHome, queueTitle } = await import("../../orbital/web/js/core/home.js");
   const video = (id, title) => ({ id, title, source: "cinemeta", progress: .5, last_played: Date.now() / 1000 });
   const game = (id, title) => ({ id, title, system: "steam", category: "games", last_played: Date.now() / 1000 });
-  assert.equal(queueTitle([video("a", "A")]), "Seguir viendo");
-  assert.equal(queueTitle([game("g", "G")]), "Seguir jugando");
-  assert.equal(queueTitle([video("a", "A"), game("g", "G")]), "Seguir viendo y jugando");
+  assert.equal(queueTitle([video("a", "A"), game("g", "G")]), "Donde te quedaste");
   // La serie a medias y su siguiente episodio son la misma: no sale dos veces (ni junto al destacado).
   const home = buildHome([{ id: "jump", items: [video("s1", "Futurama"), video("s2", "Futurama"), game("g", "Hades"), game("g2", "Hades")] }]);
   assert.equal(home.feature.title, "Futurama");
@@ -114,4 +112,21 @@ test("el ícono de cada plataforma lleva su color: consolas, Steam y streaming",
   assert.equal(platformColor({ source: "steam" }), "var(--system-steam, var(--system-default))");
   assert.equal(platformColor({ source: "stremio", category: "media", kind: "movie" })?.includes("--system-media"), true);
   assert.equal(platformColor({ source: "apps" }), null);
+});
+
+test("un emulador instalado sin juegos también sale en Tus consolas, con dónde ponerlos", async () => {
+  const { consoleList } = await import("../../orbital/web/js/core/home.js");
+  const [ps3] = consoleList([{ id: "emulators:ps3", title: "PlayStation 3", items: [], empty: true, system: "ps3", folder: "C:\ROMs\ps3" }]);
+  assert.equal(ps3.name, "PS3");
+  assert.equal(ps3.count, 0);
+  assert.equal(ps3.folder, "C:\ROMs\ps3");
+  assert.equal(consoleList([{ id: "emulators:x", title: "X", items: [] }]).length, 0);
+});
+
+test("el próximo estreno de tus series: el primero que no ha salido", async () => {
+  const { nextAiring } = await import("../../orbital/web/js/core/curation.js");
+  const today = new Date(2026, 9, 17);
+  const items = [{ title: "Viejo", day: "2026-10-10" }, { title: "The Simpsons", day: "2026-10-18", day_label: "Mañana", time: "6:00 p. m.", episode_label: "T38 E3" }];
+  assert.deepEqual(nextAiring(items, today), { title: "The Simpsons", episode: "T38 E3", when: "Mañana · 6:00 p. m.", meta_id: undefined });
+  assert.equal(nextAiring([], today), null);
 });

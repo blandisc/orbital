@@ -17,6 +17,24 @@
   transition: opacity var(--duration-launch-out) var(--ease-in), transform var(--duration-launch-reveal) var(--ease-in);
 }
 
+/* Del arte al juego: el fondo propio del juego, nítido y avanzando despacio (solo transform: nada de filtros animados).
+   Un velo abajo y al centro para que se lean la portada y el texto. */
+.launch--art .launch__backdrop {
+  inset: 0; filter: brightness(.5) saturate(1.1);
+  animation: launch-drift var(--duration-launch-drift) var(--ease-out) forwards;
+}
+.launch--art .launch__stars {
+  background: radial-gradient(70% 60% at 50% 55%, color-mix(in oklab, var(--color-video-bg) 55%, transparent), transparent 75%),
+    linear-gradient(transparent 55%, color-mix(in oklab, var(--color-video-bg) 70%, transparent));
+}
+.launch--art .launch__starfield { opacity: 0; animation-name: launch-travel-soft; } /* sobre el arte, estrellas tenues */
+@keyframes launch-drift { from { transform: scale(1.12); } to { transform: scale(1); } }
+@keyframes launch-travel-soft {
+  0% { transform: scale(.55); opacity: 0; }
+  25% { opacity: .35; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
 /* Estrellas: dos capas de puntos que vienen hacia ti (cerca más rápido que lejos). */
 .launch__stars { position: absolute; inset: 0; pointer-events: none; }
 .launch__starfield {
@@ -43,7 +61,10 @@
 }
 
 /* Portada en el centro, con la órbita de la marca girando alrededor. */
-.launch__stage { position: relative; display: grid; place-items: center; height: 20rem; }
+.launch__stage { position: relative; display: grid; place-items: center; height: 20rem;
+  animation: launch-float var(--duration-launch-float) var(--ease-float) var(--duration-enter-long) infinite; }
+/* Flotar: unos pocos píxeles arriba y abajo, lento; sin esto el conjunto se veía pegado a la pantalla. */
+@keyframes launch-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-.4rem); } }
 .launch__cover {
   position: relative; z-index: var(--z-raised); height: 17rem; width: calc(17rem * var(--ratio, .667)); border-radius: var(--radius-lg);
   background: var(--gradient-card) center / cover; transform-origin: 50% 50%;
@@ -53,29 +74,57 @@
 .launch__orbit {
   position: absolute; left: 50%; top: 50%;
   width: calc(17rem * var(--ratio, .667) + 13rem); height: 7.5rem; margin: -3.75rem 0 0 calc((17rem * var(--ratio, .667) + 13rem) / -2);
-  border-radius: 50%; border: 2px solid color-mix(in oklab, var(--art-accent) 70%, transparent);
   transform: rotate(-24deg);
-  box-shadow: 0 0 1.2rem -.2rem color-mix(in oklab, var(--art-accent) 50%, transparent);
   transition: transform var(--duration-enter-long) var(--ease-in), opacity var(--duration-enter) var(--ease-in);
-  animation: fade-in var(--duration-enter-long) var(--ease-out) var(--delay-2) backwards;
 }
-/* El satélite recorre la elipse de verdad (offset-path), no un círculo. */
+/* El anillo: un trazo fino que se dibuja solo al entrar (de cero a la vuelta completa). Atrás, tenue (la profundidad). */
+.launch__ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.launch__ring ellipse {
+  fill: none; stroke: color-mix(in oklab, var(--art-accent) 55%, transparent); stroke-width: 1.5;
+  stroke-dasharray: 100; stroke-dashoffset: 100; stroke-linecap: round;
+  animation: launch-draw var(--duration-launch-draw) var(--ease-out) var(--delay-1) forwards;
+}
+@keyframes launch-draw { to { stroke-dashoffset: 0; } }
+/* El satélite recorre la elipse con transformaciones (GPU): una pista cuadrada del ancho de la órbita, aplastada a su
+   alto, gira; el satélite gira al revés y se desaplasta, así sigue redondo y en la línea. */
+.launch__track { position: absolute; left: 0; top: 50%; width: 100%; aspect-ratio: 1; margin-top: -50%; transform: scaleY(var(--orbit-squash, .3));
+  animation: fade-in var(--duration-enter-long) var(--ease-out) var(--delay-2) backwards; } /* el satélite llega con el anillo ya dibujándose */
+.launch__spinner { position: absolute; inset: 0; animation: launch-spin var(--duration-launch-orbit) linear infinite; }
 .launch__satellite {
-  position: absolute; left: 0; top: 0; width: 12px; height: 12px; border-radius: 50%;
-  background: var(--color-star); box-shadow: 0 0 .9rem .25rem color-mix(in oklab, var(--art-accent) 75%, var(--color-star));
-  offset-path: ellipse(50% 50% at 50% 50%); offset-rotate: 0deg;
-  animation: launch-orbit var(--duration-launch-orbit) linear infinite;
+  position: absolute; left: 50%; top: 0; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%;
+  background: var(--color-star); box-shadow: 0 0 .7rem .18rem color-mix(in oklab, var(--art-accent) 70%, var(--color-star));
+  animation: launch-counter var(--duration-launch-orbit) linear infinite;
 }
-@keyframes launch-orbit { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+/* Profundidad: al pasar por detrás de la portada el satélite se aleja (más chico y tenue); enfrente se acerca y brilla.
+   Va en el giro (opacidad) y en el contragiro (tamaño), con el mismo reloj, así nunca se desfasan. */
+.launch__spinner { animation-name: launch-spin, launch-depth; }
+/* La estela: cada punto sale un poco después (va detrás) y es más chico y tenue. El satélite y su giro llevan el mismo
+   retraso, para que sigan sincronizados (si no, el punto se aplasta). */
+.launch__spinner--trail-1, .launch__satellite--trail-1 { animation-delay: var(--duration-launch-trail); }
+.launch__spinner--trail-2, .launch__satellite--trail-2 { animation-delay: calc(var(--duration-launch-trail) * 2); }
+.launch__satellite--trail-1 { width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; opacity: .42; box-shadow: none; }
+.launch__satellite--trail-2 { width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; opacity: .2; box-shadow: none; }
+.launch__spinner--trail-1, .launch__spinner--trail-2 { animation-fill-mode: backwards; }
+.launch__satellite--trail-1, .launch__satellite--trail-2 { animation-fill-mode: backwards; }
+@keyframes launch-spin { to { transform: rotate(360deg); } }
+@keyframes launch-depth { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+@keyframes launch-counter {
+  0% { transform: rotate(0deg) scaleY(var(--orbit-unsquash, 3.3)) scale(.7); }
+  25% { transform: rotate(-90deg) scaleY(var(--orbit-unsquash, 3.3)) scale(.92); }
+  50% { transform: rotate(-180deg) scaleY(var(--orbit-unsquash, 3.3)) scale(1.15); }
+  75% { transform: rotate(-270deg) scaleY(var(--orbit-unsquash, 3.3)) scale(.92); }
+  100% { transform: rotate(-360deg) scaleY(var(--orbit-unsquash, 3.3)) scale(.7); }
+}
 /* Profundidad: el arco de enfrente pasa por delante de la portada; el de atrás, detrás. */
 /* El de enfrente se ve encima de la portada: más claro y con su brillo (con 2 px sin brillo se perdía
    sobre un póster cargado y parecía que la órbita nunca pasaba por delante). */
-.launch__orbit--front {
-  z-index: var(--z-above); clip-path: inset(50% -2rem -2rem -2rem);
-  border-color: color-mix(in oklab, var(--color-star) 80%, var(--art-accent));
-  box-shadow: 0 0 1.2rem -.2rem color-mix(in oklab, var(--art-accent) 60%, transparent), 0 0 .35rem color-mix(in oklab, var(--color-star) 55%, transparent);
+.launch__orbit--front { z-index: var(--z-above); clip-path: inset(50% -2rem -2rem -2rem); }
+/* El arco de enfrente: claro y con un brillo suave (sobre un póster cargado se perdía). */
+.launch__orbit--front .launch__ring ellipse {
+  stroke: color-mix(in oklab, var(--color-star) 85%, var(--art-accent)); stroke-width: 1.75;
 }
-.launch--revealing .launch__orbit--front { transform: rotate(-24deg) scale(4); opacity: 0; }
+.launch__orbit--front .launch__ring { filter: drop-shadow(0 0 .35rem color-mix(in oklab, var(--art-accent) 55%, transparent)); }
+.launch--revealing .launch__orbit--front { transform: rotate(-24deg) scale(1.18); opacity: 0; }
 /* Sin portada (una app): solo la órbita, con un planeta de la marca al centro. */
 .launch--no-cover .launch__stage::before {
   content: ""; position: absolute; width: 6rem; height: 6rem; border-radius: 50%;
@@ -103,16 +152,20 @@
   background: radial-gradient(circle at 50% 45%, color-mix(in oklab, var(--art-accent) 60%, var(--color-star)) 0%, transparent 60%);
 }
 
-/* --- Listo: salto a velocidad luz --------------------------------------------------------- */
+/* --- Listo: todo se funde a negro, sin salto ----------------------------------------------- */
 .launch--revealing { background-color: var(--color-video-bg); }
-.launch--revealing .launch__backdrop { opacity: 0; transform: scale(1.25); }
-.launch--revealing .launch__starfield { animation-duration: var(--duration-launch-reveal); animation-iteration-count: 1; }
-.launch--revealing .launch__starfield--near { animation-delay: var(--duration-none); }
-.launch--revealing .launch__cover { transform: scale(5.5); opacity: 0; }
-.launch--revealing .launch__orbit { transform: rotate(-24deg) scale(4); opacity: 0; }
+.launch--revealing .launch__backdrop { opacity: 0; transform: scale(1.08); }
+/* Con arte: se acerca un poco y se va a negro (sin el salto grande: el arte ya llena la pantalla). */
+.launch--art.launch--revealing .launch__backdrop { animation: none; transform: scale(1.06); }
+.launch--art.launch--revealing .launch__stars { background: none; }
+.launch--revealing .launch__stars { opacity: 0; transition: opacity var(--duration-launch-reveal) var(--ease-out); }
+.launch--revealing .launch__cover { transform: scale(1.06); opacity: 0;
+  transition: transform var(--duration-launch-reveal) var(--ease-out), opacity var(--duration-launch-reveal) var(--ease-in); }
+.launch--revealing .launch__orbit { transform: rotate(-24deg) scale(1.18); opacity: 0;
+  transition: transform var(--duration-launch-reveal) var(--ease-out), opacity var(--duration-launch-out) var(--ease-in); }
 .launch--revealing .launch__text { opacity: 0; }
 .launch--revealing .launch__flash { animation: launch-flash var(--duration-launch-reveal) var(--ease-out) forwards; }
-@keyframes launch-flash { 0% { opacity: 0; } 30% { opacity: .55; } 100% { opacity: 0; } }
+@keyframes launch-flash { 0% { opacity: 0; } 35% { opacity: .22; } 100% { opacity: 0; } }
 
 @media (max-width: 700px), (max-height: 520px) {
   .launch__stage { height: 13rem; }

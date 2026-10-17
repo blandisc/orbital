@@ -3,18 +3,16 @@
  * el servidor:
  *   · destacado: lo último que jugaste o viste (lo abierto, primero); al bajar por la lista de la
  *     derecha, el destacado enseña lo enfocado;
- *   · a la derecha («Seguir viendo», «Seguir jugando» o los dos): lo que sigue de esa lista, sin repetir el destacado;
+ *   · a la derecha («Donde te quedaste»): lo que sigue de esa lista, sin repetir el destacado;
  *   · tus consolas: cada sistema con su foto, cuántos juegos, el último que jugaste y los nuevos.
  */
 import { isWatchable } from "./library.js";
 
 export const CARDS = 4;
 
-/** El título de la columna de la derecha, según lo que trae (antes «También tenías», que no decía qué era). */
-export function queueTitle(items) {
-  const videos = items.filter(isWatchable).length;
-  if (videos === items.length) return "Seguir viendo";
-  return videos ? "Seguir viendo y jugando" : "Seguir jugando";
+/** El título de la columna de la derecha (antes «También tenías», que no decía qué era). */
+export function queueTitle() {
+  return "Donde te quedaste"; // sirve igual para series, películas y juegos (antes cambiaba: «Seguir viendo y jugando»)
 }
 
 /** El mismo título dos veces (la serie a medias y su episodio siguiente, un juego en dos consolas): una sola. */
@@ -28,6 +26,8 @@ export const SYSTEMS = {
   wii: { name: "Wii", photo: "wii.png" },
   gba: { name: "GBA", photo: "gba.png" },
   psp: { name: "PSP", photo: "psp.png" },
+  ps3: { name: "PS3", photo: "ps3.png" },
+  ps4: { name: "PS4", photo: "ps4.png" },
   xbox: { name: "Xbox", photo: "xbox.png" },
   xbox360: { name: "Xbox 360", photo: "xbox360.png" },
   // Plataformas de PC: no hay una consola que fotografiar, va su logotipo.
@@ -103,8 +103,8 @@ export function consoleList(rows) {
   for (const row of rows) {
     const isEmu = row.id.startsWith("emulators:");
     if (!isEmu && row.id !== "steam" && row.id !== "geforcenow") continue;
-    if (!row.items.length) continue;
-    const system = isEmu ? (row.items.find((i) => i.system)?.system ?? null) : row.id;
+    if (!row.items.length && !row.empty) continue;
+    const system = isEmu ? (row.items.find((i) => i.system)?.system ?? row.system ?? null) : row.id;
     const last = [...row.items].filter((i) => i.last_played).sort((a, b) => b.last_played - a.last_played)[0] ?? null;
     list.push({
       id: row.id,
@@ -116,6 +116,7 @@ export function consoleList(rows) {
       cover: last?.image ?? row.items[0]?.image ?? null, // sin foto de consola (Steam): la portada del último
       last,
       fresh: row.items.filter((i) => i.new).length,
+      folder: row.empty ? row.folder ?? null : undefined, // instalado, sin juegos: dónde ponerlos
     });
   }
   // La que usaste más recientemente, primero (es a la que más vuelves).

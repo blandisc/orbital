@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import quote
 
-from . import player, system
+from . import player, synthetic, system
 from .library import iptv, iptv_health, iptv_logos
 from .library.iptv import OTHER, Channel
 
@@ -68,6 +68,8 @@ class LiveTV:
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self.set_channels(iptv.read_copy(self._copy))
+        # Los canales de Orbital (una serie al aire todo el día): sin lista ni salud, van primero.
+        self.synthetic = synthetic.SyntheticTV(catalog, directory=directory) if catalog is not None else None
 
     # --- la lista ------------------------------------------------------------------------------
     def set_channels(self, channels: list[Channel]) -> None:
@@ -103,22 +105,32 @@ class LiveTV:
     def logo_path(self, channel_id: str) -> Path | None:
         """El archivo del logo de un canal (se baja la primera vez). None si no tiene o no se pudo."""
         channel = next((c for c in self._channels if c.id == channel_id), None)
-        return self.logos.get(channel.logo) if channel is not None else None
+        if channel is None:  # un canal de Orbital: su logo de internet (bajado y parejo) o el archivo de la interfaz
+            own = self.synthetic.channel(channel_id) if self.synthetic else None
+            if own is not None and (own.logo or "").startswith("/img/"):
+                local = Path(__file__).parent / "web" / own.logo.lstrip("/")
+                return local if local.is_file() else None
+            return self.logos.get(self.synthetic.remote_logo(channel_id)) if self.synthetic else None
+        return self.logos.get(channel.logo)
 
     def playing(self) -> str | None:
         """El canal que está al aire ahora (en el reproductor), si lo hay."""
         player_ = getattr(self.catalog.watch, "player", None) if self.catalog is not None else None
         segment = getattr(player_, "segment", None)
-        if player_ is None or not getattr(player_, "playing", False) or segment is None or not segment.live:
+        if player_ is None or not getattr(player_, "playing", False) or segment is None:
+            return None
+        if not segment.live and not segment.meta.get("synthetic"):
             return None
         return segment.meta.get("channel_id")
 
-    def overview(self) -> dict:
-        """Lo que pinta la interfaz: pestañas de categoría y los canales, con su número."""
+    def overview(self, own: bool = True) -> dict:
+        """Lo que pinta la interfaz: pestañas de categoría y los canales, con su número. `own=False`: sin los canales de
+        Orbital (la guía del reproductor: ▲▼ salta solo entre los de la lista)."""
         visible = self.visible()
         mapped = self._categories(visible)
         count = Counter(cat for cats in mapped.values() for cat in cats)
-        categories = [{"id": ALL, "title": "Todos", "count": len(visible)}] + [
+        ours = [self.synthetic.describe(c) for c in self.synthetic.channels] if self.synthetic and own else []
+        categories = [{"id": ALL, "title": "Todos", "count": len(visible) + len(ours)}] +             ([{"id": iptv.slug(synthetic.CATEGORY), "title": synthetic.CATEGORY, "count": len(ours)}] if ours else []) + [
             {"id": iptv.slug(title), "title": title, "count": count[title]}
             for title in sorted(count, key=iptv.category_sort_key)]
         if not self._channels and self._thread is not None and not self.checking and time.monotonic() - self._asked > 60:
@@ -126,8 +138,10 @@ class LiveTV:
             self.refresh(background=True)  # sin copia en disco: no esperar a los 20 s del arranque
         # Los que ya fallaron una vez, al final de su lista: lo primero que se ve son canales que abren.
         shown = sorted(visible, key=lambda c: self.store.verified(c.id) is False)
-        return {"categories": categories, "channels": [self.describe(c, mapped[c.id]) for c in shown],
+        return {"categories": categories, "channels": ours + [self.describe(c, mapped[c.id]) for c in shown],
                 "checking": self.checking, "offline": self.offline, "updated": self.updated, "playing": self.playing(),
+                # «Tus canales»: los últimos que viste (solo los que siguen en la lista).
+                "recent": [cid for cid in self.store.recent() if cid in {c.id for c in visible}],
                 "total": len(self._channels), "hidden": len(self._channels) - len(visible)}
 
     def zap_list(self, category: str | None) -> tuple[str, list[Channel]]:
@@ -183,9 +197,13 @@ class LiveTV:
         self._stop.clear()
         self._thread = threading.Thread(target=self._loop, daemon=True, name="tv-health")
         self._thread.start()
+        if self.synthetic is not None:
+            self.synthetic.start()  # qué episodios de los canales de Orbital tienen doblaje, con calma
 
     def stop(self) -> None:
         self._stop.set()
+        if self.synthetic is not None:
+            self.synthetic.stop()
 
     def _loop(self) -> None:
         if self._stop.wait(START_DELAY):
@@ -213,6 +231,8 @@ class LiveTV:
     def play(self, channel_id: str, category: str = ALL, *, keep: bool = False, fresh: bool = False) -> dict:
         """Abre mpv en ese canal (o lo sintoniza si ya había uno en vivo). LookupError si no se puede. `fresh`: en un mpv
         nuevo aunque haya uno al aire (el vigilante de memoria: el viejo se cierra y su memoria se suelta)."""
+        if self.synthetic is not None and self.synthetic.channel(channel_id) is not None:
+            return self.synthetic.play(channel_id, keep=keep)
         channel = self.channel(channel_id)
         if channel is None:
             raise LookupError("Ese canal ya no está disponible. Elige otro.")
@@ -259,7 +279,7 @@ class LiveTV:
     def guide(self, meta: dict, category: str | None = None) -> dict:
         """La guía (Y) y la lista de ▲▼: categorías y canales de la lista elegida, con el que ves marcado."""
         picked, channels = self.zap_list(category or meta.get("list"))
-        overview = self.overview()
+        overview = self.overview(own=False)
         return {
             "category": picked,
             "categories": [{"id": c["id"], "label": c["title"], "hint": str(c["count"]), "current": c["id"] == picked}
@@ -294,6 +314,7 @@ class LiveTV:
         """El canal dio imagen: abrió de verdad (sus fallos seguidos se borran)."""
         meta.pop("retried", None)
         self.store.record(meta["channel_id"], True)
+        self.store.watched(meta["channel_id"])
         self.store.save()
 
     def failed(self, meta: dict, was_playing: bool) -> bool:

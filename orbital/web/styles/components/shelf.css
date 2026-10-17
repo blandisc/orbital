@@ -13,6 +13,8 @@
   font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight);
   transition: opacity var(--duration-base) var(--ease-out);
 }
+/* El logo de la plataforma en el título del estante, a la altura del texto (va en lugar de su nombre). */
+.shelf__logo { height: 1.15em; width: auto; max-width: 6em; border-radius: var(--radius-sm); align-self: center; object-fit: contain; }
 .shelf__count {
   color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-regular);
   font-variant-numeric: tabular-nums;
@@ -37,3 +39,9 @@
 .view--from-right { animation: section-in-right var(--duration-enter) var(--ease-out); }
 .view--from-left { animation: section-in-left var(--duration-enter) var(--ease-out); }
 .shelf__empty { max-width: 32rem; padding-top: var(--space-2); color: var(--color-text-muted); line-height: 1.5; }
+
+/* Destacados (carrusel): un punto por pieza junto al título; el actual, alargado (como PageDots del iPhone). */
+.shelf__dots { display: inline-flex; align-items: center; gap: var(--space-1); margin-left: var(--space-3); }
+.shelf__dots i { width: .45rem; height: .45rem; border-radius: var(--radius-pill); background: var(--color-text-faint);
+  transition: width var(--duration-base) var(--ease-out), background var(--duration-base) var(--ease-out); }
+.shelf__dots i.on { width: 1.4rem; background: var(--color-text); }

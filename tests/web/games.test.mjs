@@ -34,3 +34,21 @@ test("añadidos: lo que llegó más reciente primero; sin fecha, al final y por 
   const added = [{ id: "emulators:x", items: [g("Viejo", 0, { added: 100 }), g("Nuevo", 0, { added: 900 }), g("Bsin"), g("Asin")] }];
   assert.deepEqual(consoleGames(added, "emulators:x", "added").map((i) => i.id), ["Nuevo", "Viejo", "Asin", "Bsin"]);
 });
+
+test("filtros «Instalados» y «Con control»", async () => {
+  const { consoleGames, playsWithController } = await import("../../orbital/web/js/core/games.js");
+  const steam = (id, extra) => ({ id, title: id, category: "steam", extra });
+  const rows = [{ id: "steam", items: [steam("Portal 2", { installed: false, controller: "full" }), steam("Factorio", { controller: "none" }),
+    steam("Hades", { controller: "full" }), steam("Celeste", { controller: "partial" })] }];
+  assert.deepEqual(consoleGames(rows, "steam", "installed").map((i) => i.id), ["Celeste", "Factorio", "Hades"]);
+  assert.deepEqual(consoleGames(rows, "steam", "controller").map((i) => i.id), ["Celeste", "Hades", "Portal 2"]);
+  assert.equal(playsWithController({ category: "emulators", extra: {} }), true); // los de consola, siempre
+});
+
+test("sin fecha de Orbital, lo reciente de su tienda va antes que el orden alfabético (GeForce NOW)", async () => {
+  const { consoleGames } = await import("../../orbital/web/js/core/games.js");
+  const rows = [{ id: "geforcenow", items: [
+    { id: "a", title: "Age of Empires", extra: {} }, { id: "h", title: "Hogwarts Legacy", extra: { recent_rank: 9 } },
+    { id: "x", title: "Halo", extra: { recent_rank: 0 } }, { id: "z", title: "Zelda", last_played: 100, extra: {} }] }];
+  assert.deepEqual(consoleGames(rows, "geforcenow").map((i) => i.id), ["z", "x", "h", "a"]);
+});

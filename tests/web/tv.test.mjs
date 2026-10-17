@@ -117,7 +117,7 @@ test("el pie de TV en vivo dice qué hace cada botón ahí", () => {
   const g = GLYPHS.gamepad;
   const labels = (hints) => hints.map((x) => x.label);
   const onChannel = tvHints(g, { kind: "channel" }, { categories: 3, atStart: false });
-  assert.deepEqual(labels(onChannel), ["Ver", "Categoría", "Actualizar", "Buscar", "Al principio", "Menú"]);
+  assert.deepEqual(labels(onChannel), ["Ver", "Categoría", "Actualizar", "Buscar", "Categorías", "Menú"]);
   assert.equal(onChannel[0].glyph, "A");
   assert.equal(onChannel.find((x) => x.label === "Categoría").glyph, "LT RT"); // LB RB son las secciones, como en toda la app
   assert.equal(onChannel.find((x) => x.label === "Actualizar").glyph, "X");
@@ -134,4 +134,19 @@ test("el pie de TV en vivo dice qué hace cada botón ahí", () => {
   // Sin canales no hay nada que ver: solo actualizar y volver.
   const empty = labels(tvHints(g, null, { empty: true, categories: 1 }));
   assert.ok(!empty.includes("Ver") && empty.includes("Actualizar"));
+});
+
+test("un canal de Orbital dice qué episodio va y a qué hora termina", async () => {
+  const { airingLine, categoryIcon } = await import("../../orbital/web/js/core/tv.js");
+  const { clock } = await import("../../orbital/web/js/core/format.js");
+  const ends = new Date(2026, 9, 17, 21, 42).getTime() / 1000;
+  const channel = { synthetic: true, now: { label: "T5 E3", title: "Homero va a la universidad", ends } };
+  assert.equal(airingLine(channel, clock), "T5 E3 · Homero va a la universidad · termina a las 9:42 p. m.");
+  assert.equal(airingLine({ synthetic: true, now: null }, clock), ""); // Cinemeta no respondió: sin línea
+  assert.equal(airingLine({ now: { ...channel.now, series: "Batman: La serie animada" } }, clock).split(" · ")[0], "Batman: La serie animada");
+  assert.equal(categoryIcon("Orbital 24/7"), "spark");
+  const { nextLine } = await import("../../orbital/web/js/core/tv.js");
+  const next = { ...channel, now: { ...channel.now, next: { label: "T7 E17", title: "Homero Smithers", starts: ends } } };
+  assert.equal(nextLine(next, clock), "A continuación · 9:42 p. m. · T7 E17 · Homero Smithers");
+  assert.equal(nextLine(channel, clock), "");
 });

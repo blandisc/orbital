@@ -31,7 +31,7 @@ from .events import EventBus
 from .focus import READY_TIMEOUT, bring_app_to_front, bring_game_to_front, game_ready, is_orbital_window, pin_orbital  # noqa: F401 - compatibilidad
 from .foryou import ForYou
 from .launcher import Launcher
-from .library import cinemeta, detect, emulators, esde, geforcenow, steam, stremio, stremio_api
+from .library import cinemeta, detect, emulators, esde, geforcenow, steam, steam_store, stremio, stremio_api, wiki_games
 from .library.media import KINDS, MediaStore, low_res, placeholder
 from .library.models import LibraryItem
 from .library.scraper import Scraper, Target
@@ -148,6 +148,12 @@ class Catalog:
         # Cachés en disco (no en pruebas: sin config.yaml no se guarda nada).
         cache = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" if config.source else None
         self._steam_art = geforcenow.SteamArt(cache / "steam-appids.json" if cache else None)
+        # De qué trata cada juego de Steam y GeForce NOW (la tienda de Steam, en español; ver steam_store.py).
+        self.steam_store = steam_store.SteamStore(cache / "steam-store.json" if cache else None)
+        # Los juegos de GeForce NOW que no están en Steam (Blizzard…): su ficha de Wikidata/Wikipedia (wiki_games.py).
+        self.wiki_games = wiki_games.WikiGames(cache / "wiki-games.json" if cache else None)
+        self._steam_owned: list[str] = []  # los juegos de tu cuenta de Steam que no están instalados (números)
+        self._cache = cache
         # La biblioteca del último escaneo: la interfaz la muestra al instante mientras se escanea.
         self._snapshot = cache / "library.json" if cache else None
         self.media = MediaStore(Path(expand(config.art.dir)) if config.art.dir else None)
@@ -207,6 +213,23 @@ class Catalog:
             threading.Timer(STEAM_STATS_DELAY, self.refresh_steam_stats).start()
 
     # --- escaneo -------------------------------------------------------------
+    def _esde_emulators(self) -> list:
+        """Los sistemas que tienes en ES-DE y Orbital no conoce por su cuenta (Nintendo 64, SNES…), con los emuladores
+        que ES-DE sabe usar (ver library/esde_systems.py)."""
+        if not self.esde or not self.esde.executable:
+            return []
+        from .library import esde_systems
+
+        covered = {e.system for e in self.emulators if e.system}
+        try:
+            preferred = {s: e for s in os.listdir(self.esde.home / "gamelists")
+                         if (e := self.esde.gamelist(s).system_emulator)} if (self.esde.home / "gamelists").is_dir() else {}
+            return esde_systems.configs(self.esde.executable.parent, self.esde.home / "custom_systems", self.esde.rom_root,
+                                        covered, preferred)
+        except Exception:  # noqa: BLE001 - las reglas de ES-DE nunca dejan a Orbital sin biblioteca
+            log.exception("No pude leer los sistemas de ES-DE")
+            return []
+
     def refresh(self) -> int:
         """Vuelve a buscar todo. Si ya hay un escaneo en curso, espera a que termine y usa ese."""
         if not self._refreshing.acquire(blocking=False):
@@ -255,7 +278,10 @@ class Catalog:
             self.steam_root = steam.find_steam(self.config.steam.path)
             if self.steam_root:
                 try:
-                    found += steam.scan(self.steam_root)
+                    installed = steam.scan(self.steam_root)
+                    found += installed
+                    have = {i.id.removeprefix("steam:") for i in installed}
+                    self._steam_owned = sorted(steam.owned_appids(self.steam_root) - have)
                 except Exception:  # noqa: BLE001 - un archivo de Steam roto no tumba el escaneo
                     log.exception("No pude leer la biblioteca de Steam")
                 if self.config.steam.silent_start and self.config.source:  # no en pruebas
@@ -293,6 +319,7 @@ class Catalog:
             result = detect.detect(dirs, skip_ids={e.id for e in self.config.emulators})
             self.emulators = detect.merge(self.config.emulators, result.emulators)
             self.detected = result.found
+        self.emulators += self._esde_emulators()
         for emu, alternatives in emulators.split_alternatives(self.emulators):
             try:
                 found += emulators.scan(emu, self.esde, alternatives, self.media)
@@ -301,9 +328,25 @@ class Catalog:
         if self.config.stremio.enabled:
             found += stremio.items(self.config.stremio)
         gfn_app = geforcenow.app_item()
+        cloud: dict[str, dict] = {}
         if gfn_app:
             found.append(gfn_app)
-            found += geforcenow.items(self._steam_art)
+            # Los de tu cuenta de Steam sin instalar que se pueden jugar en la nube: como juegos de GeForce NOW.
+            if self._steam_owned and self.config.source:  # no en pruebas: la lista pública sale a internet
+                try:
+                    public = geforcenow.cloud_by_steam(self._cache / "gfn-public.json" if self._cache else None)
+                    cloud = {a: public[a] for a in self._steam_owned if a in public}
+                except Exception:  # noqa: BLE001 - la lista de NVIDIA nunca tumba el escaneo
+                    log.exception("No pude leer la lista pública de GeForce NOW")
+            gfn_games = geforcenow.items(self._steam_art, list(cloud.items()))
+            found += gfn_games
+            in_cloud = {str(i.steam_appid) for i in gfn_games if i.steam_appid}  # ya en GeForce NOW: no repetido en Steam
+        else:
+            in_cloud = set()
+        # El resto de tu cuenta de Steam sin instalar (los que la tienda dice que son juegos): con «Instalar».
+        for appid in self._steam_owned:
+            if appid not in cloud and appid not in in_cloud and (name := self.steam_store.game_name(appid)):
+                found.append(steam.uninstalled_item(appid, name))
         for app in self.config.apps:
             is_uri = "://" in app.target
             found.append(
@@ -343,6 +386,8 @@ class Catalog:
             if not item.hero:
                 item.hero = placeholder("hero", item.system, item.id)
                 item.extra["placeholder_hero"] = True
+            self._store_facts(item)
+            self._chosen_art(item)
         self.state.mark_seen([i.id for i in found if i.category in ("emulators", "steam")])
         self.store.replace(found)
         self._save_snapshot(found)
@@ -505,12 +550,25 @@ class Catalog:
             elif cat["id"] == "favorites":
                 members = [i for i in alpha if self.is_favorite(i)]
             elif cat["id"] == "emulators":
-                # Una fila por sistema, en el orden de config.yaml.
+                # Una fila por sistema, en el orden de config.yaml. Un emulador instalado sin juegos también sale (vacía,
+                # con dónde ponerlos): si no, parecía que Orbital no lo había reconocido (RPCS3 recién instalado).
+                with_games: set[str] = set()
+                empty: list[dict] = []
                 for emu in self.emulators:
                     games = [i for i in items if i.category == "emulators" and i.source == emu.id]
                     if games:
+                        with_games.add(emu.system or emu.id)
                         rows.append({"id": f"emulators:{emu.id}", "title": emu.name,
                                      "items": [self.describe(i) for i in games]})
+                    elif emu.system and emulators.executable_found(emu):
+                        folder = emulators.rom_dirs(emu, self.esde)
+                        empty.append({"id": f"emulators:{emu.id}", "title": emu.name, "items": [], "empty": True,
+                                      "system": emu.system, "folder": str(folder[0]) if folder else None})
+                seen_empty: set[str] = set()
+                for row in empty:  # uno por sistema y solo si ese sistema no tiene juegos con otro emulador
+                    if row["system"] not in with_games and row["system"] not in seen_empty:
+                        seen_empty.add(row["system"])
+                        rows.append(row)
                 continue
             else:
                 members = [i for i in items if i.category == cat["id"]]
@@ -560,6 +618,52 @@ class Catalog:
         if clear_runner:
             self.state.set_pref(item_id, "runner", None)
         return self.describe(item)
+
+    def _chosen_art(self, item: LibraryItem) -> None:
+        """«Cambiar el arte»: el póster o el fondo que elegiste para esa película o serie, en lugar del de siempre."""
+        meta_id = (item.extra or {}).get("meta_id")
+        if item.source not in ("stremio", "cinemeta") or not meta_id:
+            return
+        art = self.watch.art_for(meta_id)
+        if art.get("poster"):
+            item.image = art["poster"]
+        if art.get("background"):
+            item.hero = art["background"]
+
+    def apply_art(self, meta_id: str) -> None:
+        """Se acaba de elegir arte: la biblioteca lo toma ya, sin reescanear."""
+        self.store.update(self._chosen_art, where=lambda i: (i.extra or {}).get("meta_id") == meta_id)
+        self.notify({"type": "library-changed"})
+
+    STORE_SOURCES = ("steam", "geforcenow")
+
+    def _store_facts(self, item: LibraryItem) -> None:
+        """Descripción, año, géneros y desarrollador de la tienda de Steam (sin pisar lo que el juego ya trae)."""
+        if item.source in self.STORE_SOURCES and item.steam_appid:
+            for key, value in self.steam_store.cached(item.steam_appid).items():
+                item.extra.setdefault(key, value)
+        elif item.source == "geforcenow" and item.category == "geforcenow":  # no está en Steam: Wikidata/Wikipedia
+            for key, value in self.wiki_games.cached(item.title).items():
+                item.extra.setdefault(key, value)
+
+    def warm_store(self, stop: threading.Event | None = None) -> None:
+        """Pide a la tienda de Steam las fichas que faltan (los jugados hace poco primero), en segundo plano, y las
+        pone en la biblioteca sin reescanearla."""
+        games = [i for i in self.store.all() if i.source in self.STORE_SOURCES and i.steam_appid]
+        games.sort(key=lambda i: self.last_played(i) or 0, reverse=True)
+        unknown = [int(a) for a in self._steam_owned if not self.steam_store.known(a)]  # para saber nombre y si es juego
+        no_steam = [i.title for i in self.store.all() if i.category == "geforcenow" and not i.steam_appid]
+        wiki = self.wiki_games.warm(no_steam, stop=stop)
+        if not self.steam_store.warm([i.steam_appid for i in games if i.steam_appid] + unknown, limit=400, stop=stop):
+            if wiki:
+                self.store.update(self._store_facts, where=lambda i: i.source in self.STORE_SOURCES)
+                self.notify({"type": "library-changed"})
+            return
+        if any(self.steam_store.known(a) for a in unknown):
+            self.refresh()  # llegaron nombres de juegos sin instalar: entran a la biblioteca
+        else:
+            self.store.update(self._store_facts, where=lambda i: i.source in self.STORE_SOURCES)
+        self.notify({"type": "library-changed"})
 
     def refresh_steam_stats(self) -> None:
         """Relee las horas y la última vez de Steam (barato: no reescanea la biblioteca)."""

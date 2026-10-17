@@ -56,6 +56,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onConnect, on
   let loading = null;
   let loads = 0;
   let glyphs = {};
+  let saverMode = null; // el modo que tenías antes del protector de pantalla
 
   function paintMode() {
     el.dataset.mode = mode;
@@ -206,6 +207,11 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onConnect, on
     hide: () => { mosaic.stop(); el.hidden = true; },
     setGlyphs: (g) => { glyphs = g; if (data) lists.setLists(allLists(), { glyphs }); paintMode(); },
     wake: () => mosaic.wake(),
+    /** Protector de pantalla: el mosaico aunque estés en Listas (sin cambiar tu preferencia); al salir, como estaba. */
+    screensaver(on) {
+      if (on) { saverMode = mode; mode = "mosaic"; } else if (saverMode) { mode = saverMode; saverMode = null; }
+      paintMode();
+    },
     get current() { return current(); },
     get mode() { return mode; },
     get loaded() { return !!data; },

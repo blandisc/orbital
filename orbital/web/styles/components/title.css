@@ -33,6 +33,8 @@
 /* Al abrir, como Game Glance: el arte no se mueve; el título, los datos y los botones llegan a su lugar uno tras otro. */
 @keyframes title-settle { from { opacity: 0; transform: translateY(1.6rem); } }
 .title__info > * { animation: title-settle var(--duration-enter) var(--ease-out) backwards; }
+/* El logo que viaja desde la tarjeta (title.js · flyIn) no entra además desde abajo. */
+.title__info > .title__logo--flying { animation: none; transform-origin: top left; }
 .title__info > .title__facts, .title__info > .title__avail, .title__info > .title__description { animation-delay: var(--delay-1); }
 .title__info > .title__people, .title__info > .title__progress { animation-delay: var(--delay-2); }
 .title__info > .title__actions, .title__info > .title__action-caption, .title__info > .title__status { animation-delay: var(--delay-3); }

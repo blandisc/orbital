@@ -22,7 +22,7 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -87,9 +87,29 @@ def token_ok(request: Request, expected: str) -> bool:
     return hmac.compare_digest(sent, expected.encode("utf-8", "surrogatepass"))
 
 
+STORE_DELAY = 90  # s tras el primer escaneo antes de pedir fichas a la tienda de Steam (que el arranque termine primero)
+
+
 def paused_path() -> Path:
     """Qué quedó congelado (para descongelarlo si Orbital se cierra de golpe)."""
     return Path(os.environ.get("LOCALAPPDATA") or Path.home() / ".local" / "state") / "orbital" / "paused.json"
+
+
+
+
+def emulator_updates_for(d: Deps):
+    """Las actualizaciones de los emuladores que tienes (ver emulator_updates.py)."""
+    from . import emulator_updates
+    from .library import emulators as emulator_lib
+
+    def exes() -> list[Path]:
+        found = (emulator_lib.resolve_executable(e) for e in d.catalog.emulators)
+        return [emulator_updates.real_exe(p) for p in found if p is not None]
+
+    return emulator_updates.EmulatorUpdates(
+        exes, mode=lambda: d.catalog.state.settings().get("emulator_updates", "avisar"),
+        busy=lambda: d.catalog.launcher.status() is not None,
+        notify=lambda text: d.hub.publish_threadsafe({"type": "toast", "message": text}))
 
 
 def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, shortcuts: bool = False,
@@ -102,6 +122,8 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
     catalog.before_launch = shell.close_previous  # abrir algo nuevo cierra lo anterior (no queda olvidado)
     d = Deps(config=config, catalog=catalog, shell=shell, voice=VoiceController(catalog, kiosk), hub=SseHub(),
              kiosk=kiosk, log_path=log_path, started=time.time())
+
+    d.extra["emulator_updates"] = emulator_updates_for(d)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -118,11 +140,17 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
                     catalog.scanning = False
                     d.hub.publish_threadsafe({"type": "library-changed"})
                 shell.start()
+                try:  # de qué trata cada juego de Steam y GeForce NOW: con calma, después de todo lo demás
+                    time.sleep(STORE_DELAY)
+                    catalog.warm_store()
+                except Exception:  # noqa: BLE001 - la tienda nunca tumba a Orbital
+                    logging.getLogger(__name__).exception("Fichas de la tienda de Steam")
 
             # Con la biblioteca del último arranque, la interfaz entra ya; si no, espera el escaneo.
             catalog.scanning = not catalog.load_snapshot()  # antes de que la interfaz pregunte
             catalog.tv.start()  # revisa los canales de TV con calma (y cada ~6 h)
             catalog.foryou.warm()  # Para ti listo antes de que la TV o el iPhone lo pidan
+            d.extra["emulator_updates"].start()  # versiones nuevas de los emuladores: avisa o instala (según Ajustes)
             # Un solo volumen: el reproductor mueve el de Windows (el de Ajustes rápidos y Alexa). Solo aquí, en la Orbital de
             # verdad: en pruebas movería el volumen real de la computadora.
             catalog.watch.player.system_volume = (system_audio.volume, system_audio.set_volume)
@@ -141,6 +169,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             with contextlib.suppress(Exception):
                 await run_in_threadpool(player.stop)
         catalog.tv.stop()
+        d.extra["emulator_updates"].stop()
         if problems:
             logging.getLogger("orbital").removeHandler(problems)
         status.cancel()
@@ -250,7 +279,8 @@ async def invalid_request(request: Request, exc: RequestValidationError) -> JSON
 
 class CompanionPlayerAction(BaseModel):
     action: str
-    delta: float | None = None  # "skip": segundos (±10, ±30)
+    delta: float | None = None  # "skip": segundos (±10, ±30); "volume": cuánto sube o baja (±5)
+    level: int | None = None  # "volume": el nivel exacto (0-100)
 
 
 class CompanionInput(BaseModel):
@@ -477,7 +507,16 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         catalog = main_app.state.catalog
         saw_phone()  # lo que el iPhone pide cada 5 s abierto (antes solo contaba /api/companion, que pide al emparejarse)
         return {"playing": companion.now_playing(catalog), "inbox": companion.inbox_pending(catalog.state),
-                "ui": main_app.state.ui_state}  # qué pantalla y si hay un campo de texto (el iPhone enseña «Escribir»)
+                "ui": main_app.state.ui_state,  # qué pantalla y si hay un campo de texto (el iPhone enseña «Escribir»)
+                "volume": _volume()}  # {"level", "muted"}: la barra de volumen del control del iPhone
+
+    @public.get("/api/tv/logo")
+    def companion_channel_logo(id: str) -> FileResponse:
+        """El logo del canal que se ve (el iPhone lo pinta en «Viendo en la TV»)."""
+        path = main_app.state.catalog.tv.logo_path(id[:200])
+        if path is None:
+            raise HTTPException(404, "Ese canal no tiene logo.")
+        return FileResponse(path, headers={"Cache-Control": "public, max-age=86400"})
 
     @public.post("/api/companion/inbox/ack")
     def companion_inbox_ack(body: CompanionAck) -> dict:
@@ -518,7 +557,7 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     def companion_player(body: CompanionPlayerAction) -> dict:
         """Un botón de la tarjeta «Viendo en la TV»: pausa, adelantar, siguiente episodio o canal…"""
         try:
-            now = companion.control_player(main_app.state.catalog, body.action, body.delta)
+            now = companion.control_player(main_app.state.catalog, body.action, body.delta, body.level)
         except companion.NothingPlaying as exc:
             raise HTTPException(409, str(exc))
         except ValueError as exc:
@@ -526,6 +565,15 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         return {"playing": now}
 
     return public
+
+
+def _volume() -> dict | None:
+    from . import quick
+
+    try:
+        return quick.volume()
+    except OSError:
+        return None
 
 
 def _is_game_list(list_id: str) -> bool:

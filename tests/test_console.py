@@ -243,3 +243,10 @@ def test_kiosk_allows_the_microphone_only_for_orbital(tmp_path):
     assert allow_microphone(tmp_path, "http://127.0.0.1:8710/?seccion=foryou")
     assert json.loads(prefs.read_text())["profile"]["exit_type"] == "Crashed"
     assert not allow_microphone(tmp_path, "no-es-una-url")
+
+
+def test_the_kiosk_never_asks_for_the_microphone_again(tmp_path):
+    """El quiosco de Edge es InPrivate: no hereda el «Permitir» guardado y preguntaba en cada sesión."""
+    from orbital.kiosk import build_command
+
+    assert "--use-fake-ui-for-media-stream" in build_command("msedge.exe", "http://127.0.0.1:8710", tmp_path)

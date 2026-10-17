@@ -6,6 +6,7 @@ export const ICONS = {
   wii: '<svg viewBox="0 0 48 48"><rect x="18" y="6" width="12" height="36" rx="6"/><circle cx="24" cy="15" r="2.5"/></svg>',
   gba: '<svg viewBox="0 0 48 48"><rect x="4" y="14" width="40" height="22" rx="10"/><rect x="15" y="18" width="18" height="14" rx="2"/></svg>',
   xbox: '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="16"/><path d="M14 14c6 3 14 12 20 22M34 14c-6 3-14 12-20 22"/></svg>',
+  ps4: '<svg viewBox="0 0 48 48"><path d="M5 30l7-14h29l2 8-7 14H7z"/><path d="M12 16l5 22"/></svg>',
   psp: '<svg viewBox="0 0 48 48"><rect x="3" y="15" width="42" height="18" rx="9"/><rect x="14" y="18" width="20" height="12" rx="1.5"/></svg>',
   media: '<svg viewBox="0 0 48 48"><path d="M24 6l18 18-18 18L6 24z"/><path d="M20 17l9 7-9 7z"/></svg>',
   apps: '<svg viewBox="0 0 48 48"><rect x="8" y="8" width="13" height="13" rx="3"/><rect x="27" y="8" width="13" height="13" rx="3"/><rect x="8" y="27" width="13" height="13" rx="3"/><rect x="27" y="27" width="13" height="13" rx="3"/></svg>',
@@ -69,6 +70,7 @@ export const ICONS = {
   // y plataformas · fresh novedades · trophy mejor calificados.
   series: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3l3 3 3-3"/><rect x="3.5" y="6" width="17" height="12.5" rx="2"/><path d="M9 21h6"/><circle cx="16.5" cy="10" r="1.6" fill="currentColor" stroke="none"/></svg>',
   movie: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="10" width="17" height="10.2" rx="2"/><path d="M3.9 9.2 18.6 5.4a1 1 0 0 1 1.2.7l.5 1.9-16 4.1-.5-1.8a1 1 0 0 1 .1-1.1z"/><path d="m8.4 8 2.3 2.2M12.9 6.9l2.3 2.2"/></svg>',
+  cloud: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.5 9.6 4.5 4.5 0 0 0 7 18.5z"/></svg>',
   spark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 5.5c.7 4.6 2.4 6.3 7 7-4.6.7-6.3 2.4-7 7-.7-4.6-2.4-6.3-7-7 4.6-.7 6.3-2.4 7-7z"/><circle cx="18.5" cy="5.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
   watching: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75a8.25 8.25 0 1 1-8.25 8.25"/><path d="M10.4 9.1v5.8l4.7-2.9z"/><circle cx="6.17" cy="6.17" r="1.6" fill="currentColor" stroke="none"/></svg>',
   bookmark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V4.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="9.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
@@ -83,6 +85,20 @@ export const ICONS = {
   // TV en vivo: una pantalla con su antena.
   home: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19z"/></svg>',
   grid: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg>',
+  // Categorías de TV en vivo (core/tv.js · categoryIcon): el trazo de las listas, con la luna como punto.
+  catGeneral: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.2"/><path d="M7.4 7.4a6.5 6.5 0 0 0 0 9.2M16.6 7.4a6.5 6.5 0 0 1 0 9.2M4.6 4.6a10.4 10.4 0 0 0 0 14.8"/><circle cx="19.4" cy="4.6" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  catNews: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3.5" width="6" height="10.5" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5M8.5 20.5h7"/><circle cx="19.5" cy="5" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  catEntertainment: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5V6.5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a2.5 2.5 0 0 0 0 5v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a2.5 2.5 0 0 0 0-5zM14.5 5.5v11"/><circle cx="9.25" cy="11" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  catSports: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.25"/><path d="M12 7.5l3.4 2.5-1.3 4h-4.2l-1.3-4zM12 3.75v3.75M15.4 10l3.9-1.6M14.1 14l2.4 3.4M9.9 14l-2.4 3.4M8.6 10l-3.9-1.6"/><circle cx="19.75" cy="19.75" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  catKids: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l6.5 6.5-6.5 6.5-6.5-6.5zM12 16.5c0 2-1.5 3-3 4M8.5 18l1 1.3M10.6 19.8l-.3-1.6"/><circle cx="12" cy="10" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  catAnimation: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.25"/><path d="M8.5 14.25a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/><circle cx="18.5" cy="5.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  catMusic: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l10-2v12"/><circle cx="6.75" cy="18" r="2.25"/><circle cx="16.75" cy="16" r="2.25"/><circle cx="9" cy="9.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  catCulture: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 9.5 12 4l8.5 5.5zM5.5 10v7.5M10 10v7.5M14 10v7.5M18.5 10v7.5M3.5 20.5h17"/><circle cx="12" cy="7.4" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  catEducation: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.75 9 12 4.75 21.25 9 12 13.25zM6.5 11v4.5c1.5 1.5 3.5 2.25 5.5 2.25s4-.75 5.5-2.25V11M21.25 9v5"/><circle cx="21.25" cy="16.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  catDocumentary: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.25"/><path d="M3.75 12h16.5M12 3.75c2.3 2.4 3.4 5.1 3.4 8.25s-1.1 5.85-3.4 8.25c-2.3-2.4-3.4-5.1-3.4-8.25S9.7 6.15 12 3.75z"/><circle cx="18" cy="6" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  catLegislative: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 10.5a4 4 0 0 1 8 0M4.5 10.5h15M6 10.5v7M10 10.5v7M14 10.5v7M18 10.5v7M3.5 20.5h17M12 3.5v3"/><circle cx="12" cy="3.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  catReligion: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 10.5h5v10h-5zM12 3.5c1.4 1.6 2 2.8 2 3.9a2 2 0 0 1-4 0c0-1.1.6-2.3 2-3.9z"/><circle cx="12" cy="7.6" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  catOther: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h.01M12 6h.01M18 6h.01M6 12h.01M12 12h.01M6 18h.01M12 18h.01"/><circle cx="18" cy="18" r="1.6" fill="currentColor" stroke="none"/></svg>',
   tv: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7.5" width="18" height="11" rx="2.2"/><path d="M8.5 3.5 12 7l3.5-3.5M8.5 21.5h7"/></svg>',
   trophy: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5.2a3 3 0 0 0 3 4M16 6h2.8a3 3 0 0 1-3 4M12 13v4M8.5 20.5h7M10 17h4"/><circle cx="12" cy="8" r="1.6" fill="currentColor" stroke="none"/></svg>',
 };
@@ -100,6 +116,8 @@ export function systemIconName(item) {
   if (text.includes("gba") || text.includes("game boy")) return "gba";
   if (text.includes("xbox")) return "xbox";
   if (text.includes("psp")) return "psp";
+  if (text.includes("ps4") || text.includes("playstation 4")) return "ps4";
+  if (text.includes("ps3") || text.includes("playstation 3")) return "ps4"; // la misma silueta de consola PlayStation
   if (item.category === "media") return "media";
   return "apps";
 }

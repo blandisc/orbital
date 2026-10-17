@@ -341,29 +341,19 @@ def covers_center(hwnd: int) -> bool:
     return left <= x < right and top <= y < bottom
 
 
-GWL_EXSTYLE, WS_EX_LAYERED, LWA_ALPHA = -20, 0x80000, 0x2
+def screen_size() -> tuple[int, int]:
+    """(ancho, alto) de la pantalla principal."""
+    if not WIN:
+        return 1920, 1080
+    return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
 
 
-def set_alpha(hwnd: int, alpha: int | None) -> bool:
-    """Transparencia de toda la ventana (0-255), para fundir Orbital sobre el juego en vez de cortar.
-    `None` la deja como estaba (opaca, sin el estilo de capa).
-
-    Poner y quitar el estilo de capa no es lo que hace crecer a DWM (medido 2026-10-11 en la Legion
-    Go: 10 altas/bajas seguidas, +13 MB; DWM crece cientos de MB cada 5 min sin que Orbital abra nada)."""
+def place_window(hwnd: int, x: int, y: int, width: int, height: int, topmost: bool = True) -> bool:
+    """Pone la ventana en ese lugar y tamaño (encima de todo, sin quitarle el foco a nadie): el video en pequeño."""
     if not WIN or not hwnd:
         return False
-    user32.GetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int]
-    user32.SetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int, ctypes.c_long]
-    user32.SetLayeredWindowAttributes.argtypes = [wintypes.HWND, wintypes.DWORD, ctypes.c_ubyte, wintypes.DWORD]
-    style = user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
-    if alpha is None:
-        if style & WS_EX_LAYERED:
-            user32.SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA)
-            user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style & ~WS_EX_LAYERED)
-        return True
-    if not style & WS_EX_LAYERED:
-        user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED)
-    return bool(user32.SetLayeredWindowAttributes(hwnd, 0, max(0, min(255, int(alpha))), LWA_ALPHA))
+    insert = wintypes.HWND(-1 if topmost else -2)  # HWND_TOPMOST / HWND_NOTOPMOST
+    return bool(user32.SetWindowPos(wintypes.HWND(hwnd), insert, int(x), int(y), int(width), int(height), 0x0010))  # SWP_NOACTIVATE
 
 
 def window_rect(hwnd: int) -> tuple[int, int, int, int] | None:

@@ -14,7 +14,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from . import focus, system
+from . import emulator_clock, focus, health, system
 from .config import Config
 from .events import EventBus
 from .launcher import Launcher
@@ -24,6 +24,42 @@ from .state import State
 from .store import ItemStore
 
 log = logging.getLogger(__name__)
+
+GFN_READY_TIMEOUT = 30.0  # s de pantalla de carga como mucho en GeForce NOW (luego se ve su fila de espera)
+
+
+def _cloud_game_ready(exe: str) -> bool:
+    """El juego de GeForce NOW ya se ve: su ventana está a pantalla completa (antes: la de conexión, chica)."""
+    from . import windows
+
+    hwnd = windows.main_window(windows.pids_by_exe(exe))
+    return bool(hwnd) and windows.is_fullscreen(hwnd)
+
+
+TASKBAR_BACK_AFTER = 3.0  # s tras la pantalla de carga: el juego ya está en pantalla completa y tapa la barra
+_taskbar_holds = 0  # aperturas en curso (dos a la vez: la barra vuelve cuando acaba la última)
+_taskbar_lock = threading.Lock()
+
+
+def taskbar_hidden(fn, *args, **kwargs):
+    """Corre `fn` con la barra de tareas de Windows escondida y la regresa unos segundos después. Al abrir un juego, el
+    emulador le roba el foco a Orbital con su ventana aún sin pantalla completa y Windows sacaba su barra encima de la
+    pantalla de carga. Antes se escondía todo el tiempo y ya nunca se veía, ni en el escritorio."""
+    global _taskbar_holds
+    from . import windows
+
+    with _taskbar_lock:
+        _taskbar_holds += 1
+        if _taskbar_holds == 1:
+            windows.set_taskbar_visible(False)
+    try:
+        return fn(*args, **kwargs)
+    finally:
+        time.sleep(TASKBAR_BACK_AFTER)
+        with _taskbar_lock:
+            _taskbar_holds -= 1
+            if _taskbar_holds == 0:
+                windows.set_taskbar_visible(True)
 
 QUICK_EXIT = 15  # s: un juego que se cierra antes, solo, seguramente no pudo abrir
 
@@ -122,12 +158,26 @@ class Sessions:
         if item.source == "geforcenow":
             # La app (y su reproductor en la nube) es de instancia única: se vigila por ejecutable.
             exe = geforcenow.APP_EXE if item.id == "app:geforcenow" else geforcenow.STREAMER_EXE
-            self.launcher.run(item.argv, cwd=item.cwd)
-            self.launcher.track_exe(item.id, item.title, exe, runner="GeForce NOW")
-            threading.Thread(target=focus.bring_app_to_front, args=(exe,), daemon=True).start()
+            if item.id == "app:geforcenow":
+                self.launcher.run(item.argv, cwd=item.cwd)
+                self.launcher.track_exe(item.id, item.title, exe, runner="GeForce NOW")
+                threading.Thread(target=focus.bring_app_to_front, args=(exe,), daemon=True).start()
+            else:
+                # Un juego en la nube, como los demás: la pantalla de carga (con su arte) tapa las ventanas de GeForce NOW
+                # hasta que el juego está a pantalla completa; si tarda (fila de espera), se ve a los 30 s.
+                pinned = self.pin()
+                try:
+                    self.launcher.run(item.argv, cwd=item.cwd)
+                    self.launcher.track_exe(item.id, item.title, exe, runner="GeForce NOW")
+                except BaseException:
+                    self.unpin(pinned)
+                    raise
+                self.revealing = self.to_front(item.id, item.title, "GeForce NOW", pinned=pinned,
+                                               ready=lambda: _cloud_game_ready(exe), timeout=GFN_READY_TIMEOUT)
             self.state.record_launch(item.id)
             return item
         if runner or item.argv:
+            emulator_clock.sync_for(argv or [])  # su hora, la de la computadora (los de Switch traen la suya)
             # Orbital encima ANTES de lanzar: la ventana del emulador nunca se asoma.
             pinned = self.pin()
             try:
@@ -172,7 +222,14 @@ class Sessions:
             return False
         self._reveal_skip = threading.Event()
         launched = time.monotonic()
-        threading.Thread(target=focus.bring_game_to_front, args=(self.launcher, item_id, title, runner),
+        health.note_dwm(f"antes de abrir {title}")
+
+        def reveal(*args, **kwargs):
+            shown = taskbar_hidden(focus.bring_game_to_front, *args, **kwargs)
+            health.note_dwm(f"con {title} al frente")
+            return shown
+
+        threading.Thread(target=reveal, args=(self.launcher, item_id, title, runner),
                          kwargs={"notify": self.events.publish, "skip": self._reveal_skip, "pinned": pinned,
                                  "ready_check": ready, "timeout": timeout,
                                  "user_returned": lambda: self.returned_at > launched},
@@ -245,6 +302,7 @@ class Sessions:
             self.kiosk.open()  # al frente o, si alguien cerró la ventana, otra vez abierta
         else:
             system.bring_to_front()
+        health.note_dwm(f"de vuelta de {title}")
         # Se cerró solo a los pocos segundos: casi siempre es que no pudo abrir (falta la ROM, el
         # firmware, una clave…). No es "de vuelta de": se avisa como problema.
         crashed = (seconds < QUICK_EXIT and not self.launcher.last_stopped_by_user

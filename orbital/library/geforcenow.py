@@ -37,6 +37,54 @@ STEAM_SEARCH = "https://store.steampowered.com/api/storesearch/?term={term}&l=en
 STEAM_ART = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{name}"
 
 
+PUBLIC_LIST = "https://static.nvidiagrid.net/supported-public-game-list/locales/gfnpc-en-US.json"
+PUBLIC_REFRESH = 24 * 3600
+
+
+def fetch_public() -> list | None:
+    """La lista pública de NVIDIA con todo lo que se puede jugar en GeForce NOW (sin cuenta). None si no se pudo."""
+    try:
+        req = urllib.request.Request(PUBLIC_LIST, headers={"User-Agent": "Mozilla/5.0 Orbital"})
+        with urllib.request.urlopen(req, timeout=20) as res:
+            data = read_json(res, timeout=20, limit=8 * 1024 * 1024)
+    except NET_ERRORS:
+        return None
+    return data if isinstance(data, list) else None
+
+
+def cloud_by_steam(path: Path | None, now: float | None = None) -> dict[str, dict]:
+    """{número de Steam: {"cms_id", "title"}} de los juegos de Steam que se pueden jugar en GeForce NOW. Se baja una
+    vez al día y se guarda; sin red, la copia guardada."""
+    now = now if now is not None else time.time()
+    games = None
+    if path is not None and path.exists() and now - path.stat().st_mtime < PUBLIC_REFRESH:
+        games = _read_json(path)
+    if games is None:
+        games = fetch_public()
+        if games is not None and path is not None:
+            try:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(games), encoding="utf-8")
+            except OSError as exc:
+                log.info("No pude guardar la lista de GeForce NOW: %s", exc)
+        elif path is not None and path.exists():
+            games = _read_json(path)
+    out: dict[str, dict] = {}
+    for game in games or []:
+        if not isinstance(game, dict) or game.get("status") != "AVAILABLE" or not game.get("id"):
+            continue
+        if (m := re.search(r"/app/(\d+)", str(game.get("steamUrl") or ""))):
+            out[m.group(1)] = {"cms_id": str(game["id"]), "title": clean_title(str(game.get("title") or ""))}
+    return out
+
+
+def _read_json(path: Path):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
 def install_dir() -> Path | None:
     if sys.platform != "win32":
         return None
@@ -124,12 +172,15 @@ def parse_library(data: dict) -> list[dict]:
                     or next((v for v in variants if lib(v).get("status")), None)
                 if not variant or not app.get("title"):
                     continue
-                playable = lib(variant).get("playStatus") in (None, "PLAYABLE") and \
-                    (app.get("gfn") or {}).get("playabilityState") in (None, "PLAYABLE")
+                # Uno que agregaste a mano viene con playStatus «UNKNOWN» aunque se pueda jugar (Empire of the Ants se
+                # quedaba fuera): manda lo que dice el juego (playabilityState).
+                playable = (lib(variant).get("playStatus") in (None, "PLAYABLE", "UNKNOWN")
+                            and (app.get("gfn") or {}).get("playabilityState") in (None, "PLAYABLE"))
                 if not playable:
                     continue  # en tu biblioteca pero no se puede jugar (no está en GFN, membresía…)
                 images = app.get("images") or {}
                 games.append({
+                    "recent": len(games),  # el orden del panel: del jugado más reciente al más viejo
                     "title": clean_title(app["title"]), "cms_id": str(variant["id"]),
                     "short_name": variant.get("shortName") or "", "store": STORES.get(variant.get("appStore") or "", ""),
                     "banner": images.get("TV_BANNER"), "hero": images.get("HERO_IMAGE") or images.get("TV_BANNER"),
@@ -163,6 +214,9 @@ def read_library_cache(folder: Path | None = None) -> list[dict]:
             continue
         games = parse_library(data)
         if games:
+            items = sum(len(s.get("items") or []) for p in (data.get("data") or {}).get("panels") or [] for s in p.get("sections") or [])
+            if items >= 40:  # el panel trae solo tus 40 más recientes: los de atrás no se ven (salvo los de Steam)
+                log.info("GeForce NOW: tu biblioteca trae %d juegos (los más recientes); puede haber más que no se ven", items)
             return games
     return []
 
@@ -239,7 +293,9 @@ class SteamArt:
             log.info("No pude guardar la caché de portadas: %s", exc)
 
 
-def items(art: SteamArt | None = None) -> list[LibraryItem]:
+def items(art: SteamArt | None = None, cloud: list[tuple[str, dict]] | None = None) -> list[LibraryItem]:
+    """Tus juegos de GeForce NOW: tus accesos directos, tu «Mi biblioteca» (los 40 jugados más recientes que guarda la
+    app) y `cloud`: los juegos de tu cuenta de Steam que se pueden jugar en la nube ([(número de Steam, juego)])."""
     art = art or SteamArt()
     found: dict[str, LibraryItem] = {}
     for sc in read_shortcuts():
@@ -255,13 +311,22 @@ def items(art: SteamArt | None = None) -> list[LibraryItem]:
             if game["cms_id"] not in found:
                 found[game["cms_id"]] = _item(art, game["cms_id"], game["title"],
                                               library_argv(str(folder / STREAMER_EXE), game), game)
+        titles = {i.title.lower() for i in found.values()}
+        appids = {i.steam_appid for i in found.values() if i.steam_appid}
+        for appid, game in cloud or []:
+            if game["cms_id"] in found or int(appid) in appids or game["title"].lower() in titles:
+                continue  # ya estaba en tu biblioteca de GeForce NOW
+            found[game["cms_id"]] = _item(art, game["cms_id"], game["title"],
+                                          library_argv(str(folder / STREAMER_EXE), {**game, "short_name": ""}),
+                                          {"store": "Steam"}, appid=int(appid))
     if hasattr(art, "save"):
         art.save()
     return sorted(found.values(), key=lambda i: i.title.lower())
 
 
-def _item(art: SteamArt, cms_id: str, title: str, argv: list[str], game: dict | None = None) -> LibraryItem:
-    appid = art.appid(title)
+def _item(art: SteamArt, cms_id: str, title: str, argv: list[str], game: dict | None = None,
+          appid: int | None = None) -> LibraryItem:
+    appid = appid or art.appid(title)
     game = game or {}
     store = game.get("store")
     return LibraryItem(
@@ -274,7 +339,9 @@ def _item(art: SteamArt, cms_id: str, title: str, argv: list[str], game: dict | 
         # Portada vertical de Steam (las filas son de portadas); si no, el banner de GFN.
         image=STEAM_ART.format(appid=appid, name="library_600x900.jpg") if appid else game.get("banner"),
         hero=STEAM_ART.format(appid=appid, name="library_hero.jpg") if appid else game.get("hero"),
-        extra={"logo": STEAM_ART.format(appid=appid, name="logo.png")} if appid else {},
+        extra={**({"logo": STEAM_ART.format(appid=appid, name="logo.png")} if appid else {}),
+               **({"recent_rank": game["recent"]} if "recent" in game else {})},
+        steam_appid=appid,  # el mismo juego en la tienda de Steam: de ahí su descripción, año y géneros
     )
 
 

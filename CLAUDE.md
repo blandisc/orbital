@@ -25,6 +25,12 @@ node --test tests/web/*.test.mjs
 .venv/Scripts/python -m ruff check .
 ```
 
+```bash
+npx --yes pyright@1.1.390
+```
+
+(La CI de GitHub corre las cuatro; pyright necesita el `.venv` en el PATH para encontrar las dependencias.)
+
 Pruebas de humo (navegador real): `ORBITAL_SMOKE_BROWSER=msedge .venv/Scripts/python -m pytest -q tests/smoke`.
 
 ## Ver la interfaz sin tocar la TV

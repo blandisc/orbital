@@ -112,3 +112,56 @@ test("buscar en la biblioteca: juegos y apps, sin acentos, todas las palabras, p
   assert.deepEqual(searchLibrary(rows, "legend zel").map((i) => i.id), ["s2"]);
   assert.deepEqual(searchLibrary(rows, "  "), []);
 });
+
+test("cada imagen se pide al tamaño en que se ve", async () => {
+  const { sized, snapWidth } = await import("../../orbital/web/js/core/images.js");
+  assert.equal(snapWidth(133, 1), 160);
+  assert.equal(snapWidth(240, 1.5), 480);
+  assert.equal(sized("https://images.metahub.space/background/medium/tt1/img", 240, 1),
+    "/api/img?w=240&u=https%3A%2F%2Fimages.metahub.space%2Fbackground%2Fmedium%2Ftt1%2Fimg");
+  assert.equal(sized("/api/art/emu:x?kind=hero&v=1", 240, 1), "/api/art/emu:x?kind=hero&v=1&w=240");
+  assert.equal(sized("/api/art/emu:x?kind=logo", 240, 1), "/api/art/emu:x?kind=logo");
+  assert.equal(sized("https://otro.sitio/x.jpg", 240, 1), "https://otro.sitio/x.jpg");
+  assert.equal(sized("img/placeholders/a.jpg", 240, 1), "img/placeholders/a.jpg");
+});
+
+test("Películas y series: la curaduría de Para ti entre lo tuyo y lo popular", async () => {
+  const { curatedLists, curatedRows } = await import("../../orbital/web/js/core/curation.js");
+  const { sectionRows } = await import("../../orbital/web/js/core/library.js");
+  const lists = [{ id: "continue" }, { id: "jw:prime", brand: "prime", title: "Tendencias en Prime Video" }, { id: "prime", brand: "prime", title: "Prime Video" },
+    { id: "disney", brand: "disney", title: "Disney+" }, { id: "chart:netflix", brand: "netflix", title: "Top 10 en Netflix" },
+    { id: "list:9", title: "animadas" }, { id: "recs", title: "Recomendadas" }, { id: "mygames", title: "Tus juegos" }];
+  const picked = curatedLists(lists);
+  assert.deepEqual(picked.map((l) => l.id), ["chart:netflix", "recs", "jw:prime", "disney", "list:9"]); // TMDB de Prime sobra: ya están sus tendencias
+  const rows = curatedRows(picked, { "chart:netflix": [{ meta_id: "tt1", kind: "series", title: "X", rank: 1, why: "N.º 1 en Netflix" }], recs: [] });
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].ranked, true);
+  assert.equal(rows[0].items[0].id, "cinemeta:series:tt1");
+  const ordered = sectionRows([{ id: "movies" }, { id: "continue" }, ...rows, { id: "mylist" }], "media").map((r) => r.id);
+  assert.deepEqual(ordered, ["continue", "mylist", "curated:chart:netflix", "movies"]);
+});
+
+test("Por género: tarjetas con arte que llevan a su estante, y el destacado no las trata como juego", async () => {
+  const { genreRows, spotlightRow, curatedLists } = await import("../../orbital/web/js/core/curation.js");
+  const { primaryLabel, isGame } = await import("../../orbital/web/js/core/library.js");
+  const { alexaTip } = await import("../../orbital/web/js/core/hints.js");
+  const movie = (id) => ({ id: `cinemeta:movie:${id}`, title: id, source: "cinemeta" });
+  const rows = genreRows({ Horror: [movie("tt1")], Comedy: [movie("tt2")] });
+  assert.deepEqual(rows.map((r) => r.id), ["curated:genres", "curated:genre:Comedy", "curated:genre:Horror"]);
+  const terror = rows[0].items.find((i) => i.genre === "Horror");
+  assert.equal(terror.image, "img/genres/genre-horror.jpg");
+  assert.equal(primaryLabel(terror), "Ver títulos");
+  assert.equal(isGame(terror), false);
+  assert.equal(alexaTip(terror), "«Alexa, pídele a mi consola que ponga algo de terror»");
+  // Destacados: el N.º 1 de cada plataforma, sin repetir.
+  const picked = curatedLists([{ id: "chart:netflix", brand: "netflix", title: "Top 10" }, { id: "jw:prime", brand: "prime", title: "Prime" }]);
+  const spot = spotlightRow(picked, { "chart:netflix": [{ meta_id: "tt1", kind: "series", title: "A", hero: "h1" }], "jw:prime": [{ meta_id: "tt2", kind: "movie", title: "B", hero: "h2" }] });
+  assert.deepEqual(spot.items.map((i) => [i.title, i.image]), [["A", "h1"], ["B", "h2"]]);
+  assert.equal(spot.spotlight, true);
+});
+
+test("un juego de Steam sin instalar dice «Instalar»", async () => {
+  const { primaryLabel } = await import("../../orbital/web/js/core/library.js");
+  assert.equal(primaryLabel({ id: "steam:620", category: "steam", source: "steam", extra: { installed: false } }), "Instalar");
+  assert.equal(primaryLabel({ id: "steam:367520", category: "steam", source: "steam", extra: {} }), "Jugar");
+});

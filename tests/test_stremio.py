@@ -256,6 +256,9 @@ def test_chosen_source_plays_in_orbital_player_from_where_you_left(linked, monke
     played = []
 
     class FakePlayer:
+        def starting(self, video_id, source_key=None):
+            return False
+
         def play(self, run, exe, url, title, meta, started=None, **options):
             played.append((exe, url, title, meta, options))
             process = run([exe, url])
@@ -298,7 +301,9 @@ def test_continue_cards_say_what_is_left_and_skip_what_you_barely_opened():
 
     item = stremio_item(w())
     assert item.subtitle == "T8 E23 · quedan 10 min" and item.category == "continue"
+    assert item.extra["left"] == 636  # para «termina a las…» en Inicio
     assert stremio_item(w(time_offset=1, duration=0)).subtitle == "Sigue: T8 E23"  # el siguiente, listo
+    assert stremio_item(w(time_offset=1, duration=0)).extra["left"] is None
     assert stremio_item(w(type="movie", video_id="tt1", time_offset=20_000, duration=6_000_000)).category == "stremio"  # 0,3 %
     assert time_left(6000) == "quedan 1 h 40 min" and time_left(30) == ""
     enrich_watch_item(item, {"description": "Springfield.", "imdbRating": "8.6",
@@ -455,3 +460,11 @@ def test_voice_end_to_end_as_people_say_it(linked, monkeypatch):
     assert voice.handle_text("abre el juego dune").speech == "No encontré el juego dune."
     lost = voice.handle_text("blablá")
     assert not lost.ok and "«blabla»" in lost.speech and lost.as_dict()["heard"] == "blabla"
+
+
+def test_genre_shelves_come_from_the_catalog(make_client, library, monkeypatch):
+    monkeypatch.setattr(library.cinemeta, "genre", lambda kind, genre: [{"id": "tt0000001", "name": "Scream", "type": "movie", "poster": "https://images.metahub.space/poster/medium/tt0000001/img"}])
+    c = make_client()
+    items = c.get("/api/stremio/genre", params={"kind": "movie", "genre": "Horror"}).json()["items"]
+    assert items[0]["id"] == "cinemeta:movie:tt0000001" and items[0]["title"] == "Scream"
+    assert c.get("/api/stremio/genre", params={"kind": "movie", "genre": "Lo que sea"}).status_code == 400

@@ -10,7 +10,7 @@ import { createInput, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints, legendOf, tvHints } from "./core/hints.js";
-import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu } from "./core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createForYou } from "./components/foryou.js";
@@ -28,6 +28,7 @@ import { createLogin } from "./components/login.js";
 import { createTitle, titleRef } from "./components/title.js";
 import { createToast } from "./components/toast.js";
 import { createPhoneLink } from "./components/phone-link.js";
+import { createArtPicker } from "./components/art-picker.js";
 import { createTv } from "./components/tv.js";
 import { createTraktLink } from "./components/trakt-link.js";
 import { createViewer } from "./components/viewer.js";
@@ -36,6 +37,7 @@ import { createLaunching } from "./app/launching.js";
 import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
+import { curatedLists, curatedRows, GENRE_SHELVES, genreRows, nextAiring, spotlightRow } from "./core/curation.js";
 
 const state = createState();
 // La Gamepad API no enseña el mando hasta la primera pulsación: se arranca con la última forma de
@@ -60,7 +62,7 @@ const glyphs = () => GLYPHS[state.modality];
 // ---------------------------------------------------------------- componentes
 const ui = {
   backdrop: createBackdrop(),
-  status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch(), onAlexa: () => openMenu(alexaMenu()) }),
+  status: createStatusBar({ onBrand: () => handleAction("menu"), onSection: (id) => goToSection(id), onSearch: () => openSearch(), onAlexa: () => runCommand({ type: "alexa-menu" }) }),
   hero: createHero({ onAction: (action) => handleAction(action) }),
   home: createHome({
     outside: () => [ui.status.searchButton, ui.status.alexaButton], // Buscar y Alexa (arriba) también se alcanzan con ↑
@@ -154,6 +156,11 @@ const ui = {
     onMove: () => sound.play("move"),
     onClose: () => { sound.play("back"); renderHints(); returnToMenu(phoneFrom); },
   }),
+  artPicker: createArtPicker({
+    onMove: () => sound.play("move"),
+    onPicked: (target) => { sound.play("select"); ui.toast.show(`Listo: arte nuevo para ${target.title}`); loadLibrary(); },
+    onClose: () => { sound.play("back"); renderHints(); },
+  }),
   launch: createLaunchOverlay({ backGlyph: () => glyphs().back }),
   viewer: createViewer({
     // B regresa a la lista de Capturas, en la que estabas viendo (antes saltaba hasta Inicio).
@@ -175,7 +182,7 @@ const touchBack = h("button", { class: "touch-back", type: "button", "aria-label
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -248,7 +255,7 @@ function returnToMenu(from) {
   }, 0);
 }
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
-const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.sources, ui.title, ui.search];
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.search];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 /** Qué hay al frente, para el control del iPhone: la pantalla, si hay un campo de texto («Escribir»), la sección y la
@@ -449,7 +456,11 @@ function tvFocused() {
 /** A: sintoniza el canal enfocado, o aplica la categoría de la píldora enfocada. */
 function tvActivate(target) {
   if (!target) return;
-  if (target.kind === "filter") { sound.play("select"); return ui.tv.setCategory(target.value); }
+  if (target.kind === "filter") { // una categoría: ↑↓ ya la eligen; A pasa a sus canales
+    sound.play("select");
+    if (!ui.tv.setCategory(target.value)) ui.tv.handle("right");
+    return renderHints();
+  }
   ui.tv.remember(target.channel);
   if (target.channel.id === ui.tv.playing) return resumeRunning(); // ya está al aire: se vuelve a él (no se sintoniza otra vez)
   return playChannel(target.channel, ui.tv.category);
@@ -551,7 +562,7 @@ function handleGames(action, { repeat = false } = {}) {
 }
 
 function renderHome() {
-  ui.home.render(state.allRows, { runningId: state.running?.id, glyphs: glyphs(), hidden: state.hidden, airing: state.airing });
+  ui.home.render(state.allRows, { runningId: state.running?.id, glyphs: glyphs(), hidden: state.hidden, airing: state.airing, nextUp: state.nextUp });
 }
 
 /** Lo que sale hoy de tus series (Trakt): el Inicio lo marca «Sale hoy · 19:00». Cada media hora; sin Trakt, nada. */
@@ -559,6 +570,13 @@ let airingAt = 0;
 function loadAiring() {
   if (Date.now() - airingAt < 30 * 60_000) return;
   airingAt = Date.now();
+  // El próximo estreno de tus series (como el widget del iPhone): en Inicio, junto a «Seguir viendo».
+  api.forYouList("estrenos").then((res) => {
+    const next = nextAiring(res?.items);
+    if (JSON.stringify(next) === JSON.stringify(state.nextUp ?? null)) return;
+    state.nextUp = next;
+    if (inHome()) renderHome();
+  }).catch(() => {});
   api.forYouToday().then((res) => {
     const airing = res?.airing && typeof res.airing === "object" ? res.airing : {};
     if (JSON.stringify(airing) === JSON.stringify(state.airing || {})) return;
@@ -589,7 +607,7 @@ function homeActivate(target, action = "select") {
     return target.setup ? runCommand({ type: "setup" }) : goToSection("games", 1);
   }
   if (target.kind === "search") return action === "select" ? openSearch() : rumble("edge");
-  if (target.kind === "alexa") return action === "select" ? openMenu(alexaMenu()) : rumble("edge");
+  if (target.kind === "alexa") return action === "select" ? runCommand({ type: "alexa-menu" }) : rumble("edge");
   if (target.kind === "console") {
     if (action === "alt" && target.console.last) return launch(target.console.last);
     if (action !== "select") { sound.play("error"); return rumble("edge"); }
@@ -678,7 +696,7 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     const itemId = moved || !wanted ? current()?.id : wanted;
     const rowId = state.rows[state.focus.r]?.id;
     const countBefore = (state.allRows || []).reduce((n, row) => n + (row.items?.length ?? 0), 0);
-    state.allRows = data.rows;
+    state.allRows = [...data.rows, ...curated]; // con la curaduría de Películas y series que ya llegó
     loadAiring();
     if (!visibleSections(state.allRows).some((s) => s.id === state.section)) state.section = "home";
     state.rows = sectionRows(state.allRows, state.section);
@@ -691,6 +709,7 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     });
     state.popId = null;
     if (!state.libraryLoaded) {
+      loadCuration(); // los estantes de Películas y series (Top 10, plataformas, tus listas), en segundo plano
       ui.search.refresh(); // abierta antes de que cargara: que salgan tus juegos
       ui.foryou.load(); // en segundo plano: Para ti ya está listo cuando llegas (LB desde el Inicio)
       ui.tv.load(); // y la TV en vivo, para que los canales ya estén cuando llegas
@@ -717,6 +736,63 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     setTimeout(() => loadLibrary({ refresh: false, keepId }), Math.min(15_000, 1000 * 2 ** libraryRetry));
   }
 }
+
+// ---------------------------------------------------------------- Películas y series: curaduría
+// Las listas de Para ti como estantes de la sección (core/curation.js). Se piden en segundo plano y se ponen al día cada
+// media hora; si Para ti no contesta, la sección queda como estaba.
+let curated = [];
+let curating = null;
+
+async function loadCuration() {
+  if (curating) return curating;
+  curating = (async () => {
+    try {
+      const picked = curatedLists((await api.forYou()).lists);
+      const itemsById = {};
+      const queue = [...picked];
+      await Promise.all(Array.from({ length: 4 }, async () => {
+        for (let l = queue.shift(); l; l = queue.shift()) {
+          itemsById[l.id] = (await api.forYouList(l.id).catch(() => ({ items: [] }))).items || [];
+        }
+      }));
+      const byGenre = {};
+      await Promise.all(GENRE_SHELVES.map(async (g) => {
+        byGenre[g.genre] = (await api.genre(g.kind, g.genre).catch(() => ({ items: [] }))).items || [];
+      }));
+      const spotlight = spotlightRow(picked, itemsById);
+      applyCuration([...(spotlight ? [spotlight] : []), ...curatedRows(picked, itemsById), ...genreRows(byGenre)]);
+    } catch { /* sin Para ti: la sección sigue con lo tuyo y lo popular */ }
+    finally { curating = null; }
+  })();
+  return curating;
+}
+
+function applyCuration(rows) {
+  curated = rows;
+  if (!state.allRows) return;
+  state.allRows = [...state.allRows.filter((row) => !row.id.startsWith("curated:")), ...rows];
+  if (state.section !== "media") return;
+  const rowId = state.rows[state.focus.r]?.id;
+  const itemId = current()?.id;
+  state.rows = sectionRows(state.allRows, state.section);
+  ui.shelf.setRows(state.rows);
+  const { r, c } = restoreFocus(state.rows, { rowId, itemId, ...state.focus });
+  state.focus = { r, c };
+  renderView();
+  setFocus(r, c, { silent: true });
+}
+setInterval(() => loadCuration(), 30 * 60_000);
+
+// Destacados en carrusel: quieto en esa fila, avanza solo al siguiente (y el héroe de arriba con él), como en el iPhone.
+const SPOTLIGHT_MS = 8000;
+let spotlightIdle = Date.now();
+setInterval(() => {
+  const row = state.rows?.[state.focus.r];
+  if (state.section !== "media" || !row?.spotlight || document.hidden || ui.sheet.isOpen || topOverlay() || saver.active) return;
+  if (Date.now() - spotlightIdle < SPOTLIGHT_MS) return;
+  spotlightIdle = Date.now();
+  setFocus(state.focus.r, (state.focus.c + 1) % row.items.length, { silent: true });
+}, 1000);
 
 /** Lo que está abierto: llega solo por SSE ("status") al cambiar; se pregunta tras abrir o cerrar algo. */
 function applyStatus(running) {
@@ -760,8 +836,19 @@ function openTitle(item) {
   if (!ref) return;
   if (ui.sources.isOpen) ui.sources.close();
   sound.play("open");
-  ui.title.open(ref);
+  ui.title.open(ref, openingFrom());
   renderHints();
+}
+
+/** De dónde se abre la ficha: la tarjeta enfocada en pantalla y su logo (el arte se abre desde ahí; el logo viaja). */
+function openingFrom() {
+  const view = inForYou() ? ui.foryou.el : inHome() ? ui.home.el : inGames() ? ui.games.el : ui.shelf.el;
+  const node = view?.querySelector(".tile--focused, .foryou-mosaic__tile--on, .card--focused");
+  const rect = node?.getBoundingClientRect();
+  if (!rect?.width) return null;
+  const logo = node.querySelector(".tile--feature__logo, .foryou-mosaic__logo");
+  const logoRect = logo?.getBoundingClientRect();
+  return { rect, logoRect: logoRect?.width ? logoRect : null };
 }
 
 const { watch, launch, resumeRunning, playChannel } = createLaunching({
@@ -856,6 +943,10 @@ async function runCommand(command, context = null) {
       }
       case "phone-send":
         return sendToPhone(command);
+      case "media-art": // elegir otro póster o fondo de una película o serie
+        sound.play("open");
+        ui.artPicker.open({ kind: command.kind === "series" ? "series" : "movie", metaId: command.metaId, title: command.title });
+        return renderHints();
       case "mylist":
         await api.setInLibrary(command.kind, command.metaId, command.add);
         sound.play("select");
@@ -955,6 +1046,18 @@ async function runCommand(command, context = null) {
         return ui.toast.show("Actualizando Orbital… puedes seguir usándolo.");
       case "folders":
         return openMenu(foldersMenu(await api.folders()), nested(context));
+      case "emulators":
+        if (command.force) ui.toast.show("Revisando versiones nuevas…");
+        return openMenu(emulatorsMenu(await api.emulatorUpdates(!!command.force)), command.force || command.again ? { index: context?.index ?? 0, stack: context?.stack ?? [] } : nested(context));
+      case "emulators-mode": {
+        applySettings(await api.setSettings({ emulator_updates: command.value }));
+        sound.play("select");
+        if (stillThere(context)) ui.sheet.open(emulatorsMenu(await api.emulatorUpdates()), { index: context?.index ?? 0, stack: context?.stack ?? [] });
+        return renderHints();
+      }
+      case "emulator-install":
+        await api.installEmulator(command.id);
+        return ui.toast.show(`Actualizando ${command.name}… puedes seguir usando Orbital.`);
       case "quick-set": { // cambia y se queda en el panel, en la misma opción
         const q = await api.setQuick(command.changes);
         sound.play("move");
@@ -969,7 +1072,14 @@ async function runCommand(command, context = null) {
         sound.play("select");
         return goToSection(command.id);
       case "alexa-menu":
-        return openMenu(alexaMenu(), nested(context));
+        state.voiceGuide ??= await api.voiceCommands().catch(() => null);
+        return openMenu(alexaMenu(state.voiceGuide), nested(context));
+      case "voice-group": {
+        const group = state.voiceGuide?.groups?.[command.index];
+        return group ? openMenu(voiceGroupMenu(group), nested(context)) : undefined;
+      }
+      case "voice-help":
+        return openMenu(voiceHelpMenu(), nested(context));
       case "view-capture":
         sound.play("open");
         captureFrom = context ? { options: { stack: context.stack }, first: context.index - command.index } : null;
@@ -1087,6 +1197,8 @@ async function undoHide(undo = state.undoHide) {
 function handleAction(action, { repeat = false } = {}) {
   // Con el planeta en pantalla no se ve nada: un Enter abría un juego (o el menú) a ciegas.
   if (boot.blocking) return;
+  if (saver.wake()) return; // con el protector de pantalla, el primer botón solo lo quita
+  spotlightIdle = Date.now(); // el carrusel de Destacados espera mientras te mueves
   // Y justo después de ocultar algo: deshacer (si no hay un menú u otra vista encima).
   if (action === "options" && canUndoHide() && !ui.sheet.isOpen && !topOverlay()) {
     return undoHide();
@@ -1144,7 +1256,14 @@ function handleAction(action, { repeat = false } = {}) {
     case "nextsection": return stepSection(1);
     case "pageleft": return setFocus(r, c - 5, { edge: "left", repeat });
     case "pageright": return setFocus(r, c + 5, { edge: "right", repeat });
-    case "select": return launch(item);
+    case "select": {
+      if (item?.source === "genre") { // Por género: la tarjeta lleva a su estante
+        const to = state.rows.findIndex((row) => row.id === `curated:genre:${item.genre}`);
+        if (to >= 0) { sound.play("select"); return setFocus(to, state.memory[state.rows[to].id] ?? 0); }
+        return rumble("edge");
+      }
+      return launch(item);
+    }
     case "search": return openSearch();
     case "alt": {
       if (isWatchable(item)) return openTitle(item); // X = la ficha, en todas las pantallas
@@ -1153,7 +1272,9 @@ function handleAction(action, { repeat = false } = {}) {
       sound.play("error"); // X sin nada que hacer: un "no" suave en vez de silencio
       return rumble("edge");
     }
-    case "options": return openMenu(gameMenu(item, { running: state.running, phone: state.phone }));
+    case "options":
+      if (item?.source === "genre") { sound.play("error"); return rumble("edge"); } // un género no tiene opciones
+      return openMenu(gameMenu(item, { running: state.running, phone: state.phone }));
     case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));
     case "back":
     case "home": // B: al principio de la sección; si ya estás ahí, a la sección Inicio
@@ -1232,6 +1353,10 @@ function handleEvent(event) {
     return openMenu(healthMenu(event.message, { restart: event.restart !== false }));
   }
   if (event.type === "open-quick") return openQuick().catch((err) => ui.toast.show(err.message, { error: true }));
+  if (event.type === "emulator-update-done") {
+    sound.play(event.ok ? "select" : "error");
+    return ui.toast.show(event.message, { error: !event.ok });
+  }
   if (event.type === "update-done") {
     sound.play(event.ok ? "select" : "error");
     return ui.toast.show(event.message, { error: !event.ok });
@@ -1298,12 +1423,51 @@ createInput({
   onText: (char) => { (ui.login.isOpen ? ui.login.type(char) : ui.search.type(char)); renderHints(); }, // Enter salta a resultados: «Abrir»
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
 });
+// Protector de pantalla (Ajustes › Pantalla y sonido): tras un rato sin tocar nada, el mosaico de Para ti a pantalla
+// completa, solo con la hora (como el de Game Glance, con tus juegos y películas). Nunca con un juego o un video al frente
+// (Orbital ni se ve) ni con una ficha o un menú abiertos; cualquier botón, toque o voz lo quita y vuelve a donde estabas.
+const saver = (() => {
+  let last = Date.now();
+  let back = null; // la sección donde estabas
+  const minutes = () => Number(state.settings?.screensaver_minutes ?? 10);
+  const busy = () => document.hidden || !state.libraryLoaded || boot.blocking || ui.sheet.isOpen || topOverlay() || ui.launch.visible
+    || (state.running && !state.running.paused);
+  function start() {
+    if (!visibleSections(state.allRows).some((s) => s.id === "foryou")) return; // sin Para ti, no hay mosaico
+    back = state.section;
+    document.body.dataset.screensaver = "true";
+    goToSection("foryou");
+    ui.foryou.screensaver(true);
+  }
+  return {
+    get active() { return back !== null; },
+    wake() {
+      last = Date.now();
+      if (back === null) return false;
+      const to = back;
+      back = null;
+      delete document.body.dataset.screensaver;
+      ui.foryou.screensaver(false);
+      goToSection(to);
+      return true;
+    },
+    check() {
+      if (back !== null || !minutes() || busy() || Date.now() - last < minutes() * 60_000) return;
+      start();
+    },
+  };
+})();
+setInterval(() => saver.check(), 15_000);
+for (const type of ["pointerdown", "wheel", "touchstart"]) document.addEventListener(type, () => saver.wake(), { capture: true, passive: true });
+
 // Al volver la conexión (Orbital se reinició), la biblioteca y el estado se piden otra vez.
 api.events(handleEvent, { onReconnect: () => { loadLibrary(); pollStatus(); } });
 // Al volver a la ventana (p. ej. tras cerrar un juego) refresca recientes y tiempo jugado, y salen
 // los avisos que esperaban a que Orbital se viera (memoria).
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
+    // Home con un juego o un video abierto: Orbital al frente también aterriza (antes solo al cerrarlo).
+    if (state.running && !ui.launch.visible) boot.land();
     pollStatus();
     loadLibrary();
     for (const event of deferred.take()) handleEvent(event);

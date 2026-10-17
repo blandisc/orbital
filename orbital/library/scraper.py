@@ -34,7 +34,7 @@ TIMEOUT = 15
 # Sistemas de ES-DE -> plataforma de TheGamesDB.
 TGDB_PLATFORMS = {
     "switch": 4971, "gc": 2, "wii": 9, "wiiu": 38, "n64": 3, "nes": 7, "snes": 6, "gb": 4, "gbc": 41,
-    "gba": 5, "nds": 8, "n3ds": 4912, "3ds": 4912, "psx": 10, "ps2": 11, "ps3": 12, "psp": 13,
+    "gba": 5, "nds": 8, "n3ds": 4912, "3ds": 4912, "psx": 10, "ps2": 11, "ps3": 12, "ps4": 4919, "psp": 13,
     "psvita": 39, "xbox": 14, "xbox360": 15, "dreamcast": 16, "saturn": 17, "genesis": 18,
     "megadrive": 36, "mastersystem": 35, "gamegear": 20,
 }

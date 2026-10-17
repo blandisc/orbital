@@ -83,7 +83,6 @@ def pin_orbital(win=None) -> int:
 
 
 FULLSCREEN_GRACE = 4.0  # s: el juego ya cargó (su nombre en la ventana) pero aún no ocupa la pantalla
-REVEAL_FADE = (210, 160, 110, 60, 20, 0)  # opacidad de Orbital al fundirse sobre el juego
 # Tras la transición, el juego se cuida unos segundos: si el emulador recrea su ventana (xemu, Eden al
 # pasar a pantalla completa) o mpv cambia de modo, Windows le regresaba el foco a Orbital.
 FOCUS_TRIES = 8  # x .25 s: dos segundos para que Windows dé el foco al juego o al video
@@ -186,21 +185,16 @@ def bring_game_to_front(launcher: Launcher, item_id: str, title: str = "", runne
             sleep(FADE_TO_BLACK)
             if target and win.foreground() != target:
                 win.focus(target)  # el juego al frente, aún debajo de Orbital (que sigue encima)
-            fade = getattr(win, "set_alpha", None)
-            if fade and target:
-                for alpha in REVEAL_FADE:  # Orbital se funde y aparece el juego
-                    fade(orbital, alpha)
-                    sleep(.04)
+            # Del negro de la pantalla de carga al juego, sin fundir la ventana de Orbital encima: volverla
+            # transparente (estilo de capa) sobre un juego a pantalla completa hacía crecer la memoria con la que
+            # Windows dibuja las ventanas (DWM) cientos de MB en cada apertura y regreso, sin soltarla.
     finally:
         if orbital:
             win.set_topmost(orbital, False)
             if target and hasattr(win, "place_below"):
                 # Sin "siempre encima", Windows deja a Orbital arriba de las ventanas normales: encima
-                # del juego aunque el juego tenga el foco. Se manda detrás antes de volverla opaca.
+                # del juego aunque el juego tenga el foco. Se manda detrás.
                 win.place_below(orbital, target)
-            fade = getattr(win, "set_alpha", None)
-            if fade:
-                fade(orbital, None)  # vuelve a ser opaca (ya detrás del juego)
     if not target:
         return False
     fg = win.foreground()

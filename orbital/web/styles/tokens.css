@@ -94,6 +94,7 @@
   --ease-pop: cubic-bezier(.22, 1.35, .42, 1); /* el juego enfocado "salta" y se asienta */
   --ease-launch: cubic-bezier(.7, 0, .84, 0); /* la portada sale disparada al abrir un juego */
   --ease-sweep: cubic-bezier(.45, 0, .55, 1); /* barrido de la barra de carga */
+  --ease-float: cubic-bezier(.37, 0, .63, 1); /* vaivén suave de lo que flota (pantalla de carga) */
   --duration-snap: 360ms; /* el foco de una portada, una sección que entra de lado */
   --duration-enter: 520ms; /* algo que aparece: tarjetas, textos, insignias */
   --duration-enter-long: 640ms; /* la primera entrada de una pantalla */
@@ -108,10 +109,14 @@
   /* Pantalla de carga (cinemática: más lenta a propósito) */
   --duration-launch-travel: 5.5s;
   --duration-launch-travel-near: 3.2s;
-  --duration-launch-orbit: 2.6s;
+  --duration-launch-orbit: 3.4s; /* una vuelta pausada: con 2.6 s se sentía ansiosa */
   --duration-launch-sweep: 1.6s;
   --duration-launch-reveal: 700ms;
   --duration-launch-out: 420ms;
+  --duration-launch-drift: 26s; /* el arte del juego avanza despacio mientras carga */
+  --duration-launch-draw: 1.1s; /* la órbita se dibuja al entrar */
+  --duration-launch-float: 9s; /* portada y órbita flotan apenas, como en ingravidez */
+  --duration-launch-trail: 110ms; /* cada punto de la estela del satélite, detrás del anterior */
   /* Escalonado: cada pieza entra un poco después que la anterior */
   --stagger: 45ms;
   --delay-1: 90ms;
@@ -155,6 +160,9 @@
   --radius-2xl: 1.4rem;
   --tile-radius: var(--radius-xl);
   --tile-focus-scale: 1.03;
+  /* El realce al enfocar: lo de dentro (la consola, el logo, la miniatura) crece y se levanta un poco, con resorte. */
+  --pop-transform: scale(1.06) translateY(-.1rem);
+  --pop-zoom: scale(1.04); /* el arte a sangre detrás del logo: se acerca, sin salirse */
   --tile-dim-opacity: .8;
   --tile-gap: 1.1rem;
   /* Márgenes de una tarjeta (docs/sistema-de-diseno.md · «Tarjetas»): del borde a lo que lleva dentro, igual en los cuatro
@@ -167,6 +175,8 @@
   --radius-inner-row: calc(var(--tile-radius) - var(--inset-row));
   --home-queue-width: 34rem; /* Inicio: la columna de «También tenías» */
   --key-height: 3.2rem;
+  --tv-rail-width: 15rem; /* TV en vivo: la lista de categorías */
+  --tv-preview-width: 30rem; /* TV en vivo: la miniatura en vivo del canal enfocado */
   --tile-channel-width: 14.5rem; /* un canal de TV en vivo: ancho mínimo; las columnas se reparten el resto */
   --focus-outline: 3px; /* contorno de :focus-visible (teclado y ratón) */
   --inverse-scale: 1.06; /* teclas, chips y opciones enfocadas crecen un poco */

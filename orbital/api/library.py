@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
@@ -86,10 +86,40 @@ def router(d: Deps) -> APIRouter:
         path = None if item is None else getattr(item, paths.get(kind, "art_path"))
         if not path or not Path(path).is_file():
             raise HTTPException(404)
-        if w is not None and kind == "cover":  # la tarjeta pide la portada a su tamaño (thumbs.py)
-            path = thumbs.thumbnail(Path(path), max(120, min(1200, w)), catalog.thumbs_dir())
+        if w is not None and kind in ("cover", "hero"):  # la tarjeta pide la imagen a su tamaño (thumbs.py)
+            path = thumbs.thumbnail(Path(path), max(120, min(1280, w)), catalog.thumbs_dir())
         # Windows no siempre conoce .webp: sin esto salía como «application/octet-stream».
         media_type = "image/webp" if str(path).lower().endswith(".webp") else None
         return FileResponse(path, media_type=media_type, headers={"Cache-Control": "max-age=86400"})
 
+    @r.get("/api/img")
+    def web_art(u: str, w: int = 480):
+        """El arte de internet al ancho en que se ve (remote_art.py); si no se pudo, la dirección original."""
+        from .. import remote_art
+
+        if not remote_art.allowed(u):
+            raise HTTPException(404)
+        path = remote_art.sized(u, max(120, min(1280, w)))
+        if path is None:
+            return RedirectResponse(u, status_code=307)
+        return FileResponse(path, media_type=image_type(path), headers={"Cache-Control": "max-age=604800"})
+
     return r
+
+
+def image_type(path: Path) -> str:
+    """El tipo por sus primeros bytes (los originales bajados se guardan sin extensión de imagen)."""
+    try:
+        with open(path, "rb") as f:
+            head = f.read(12)
+    except OSError:
+        return "application/octet-stream"
+    if head.startswith(b"\xff\xd8"):
+        return "image/jpeg"
+    if head.startswith(b"\x89PNG"):
+        return "image/png"
+    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return "image/webp"
+    if head[:3] == b"GIF":
+        return "image/gif"
+    return "application/octet-stream"

@@ -106,6 +106,32 @@ def _no_real_tv(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_real_web_art(monkeypatch, tmp_path):
+    """Ninguna prueba baja arte de internet ni escribe en el caché real (remote_art.py)."""
+    from orbital import remote_art
+
+    def offline(url, timeout=10):
+        raise OSError(f"Sin conexión (pruebas): {url}")
+
+    monkeypatch.setattr(remote_art, "fetch", offline)
+    monkeypatch.setattr(remote_art, "cache_root", lambda: tmp_path / "art-web")
+    remote_art._misses.clear()
+
+
+@pytest.fixture(autouse=True)
+def _no_real_emulator_updates(monkeypatch):
+    """Ninguna prueba pregunta a GitHub por versiones ni baja (o instala) un emulador de verdad."""
+    from orbital import emulator_updates
+
+    def offline(*args, **kwargs):
+        raise OSError("Sin conexión (pruebas)")
+
+    monkeypatch.setattr(emulator_updates, "http_get_json", offline)
+    monkeypatch.setattr(emulator_updates, "download", offline)
+    monkeypatch.setattr(emulator_updates, "file_version", lambda exe: None)
+
+
+@pytest.fixture(autouse=True)
 def _no_real_stremio(monkeypatch):
     """Ninguna prueba habla con Stremio de verdad (un login de prueba salía a internet)."""
     from orbital.library import stremio_api
@@ -252,3 +278,36 @@ def make_client(library):
     def make(client=("127.0.0.1", 5000)):
         return TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=client)
     return make
+
+
+@pytest.fixture(autouse=True)
+def _no_real_steam_store(monkeypatch):
+    """Ninguna prueba le pregunta a la tienda de Steam (test_steam_store pone su doble)."""
+    from orbital.library import steam_store
+
+    monkeypatch.setattr(steam_store, "fetch", lambda appid, timeout=10: None)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_gfn_list(monkeypatch):
+    """Ninguna prueba baja la lista pública de GeForce NOW."""
+    from orbital.library import geforcenow
+
+    monkeypatch.setattr(geforcenow, "fetch_public", lambda: None)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_wikidata(monkeypatch):
+    """Ninguna prueba le pregunta a Wikidata ni a Wikipedia."""
+    from orbital.library import wiki_games
+
+    monkeypatch.setattr(wiki_games, "lookup", lambda title: None)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_subtitle_downloads(monkeypatch):
+    """Ningún subtítulo se baja de internet (la «descarga» da la misma URL) y se pone en el mismo hilo."""
+    from orbital import player
+
+    monkeypatch.setattr(player, "fetch_subtitle", lambda url: url)
+    monkeypatch.setattr(player, "in_background", lambda work: work())

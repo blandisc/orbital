@@ -25,6 +25,7 @@ def test_command_full_screen_languages_and_resume():
     assert f"--input-ipc-server={player.PIPE}" in cmd and "--fullscreen" in cmd
     assert "--alang=en,eng,English" in cmd and "--slang=en,eng,English" in cmd
     assert "--start=2530" in cmd
+    assert "--d3d11-flip=no" in cmd  # con «flip», cada ventana de mpv dejaba memoria de DWM que Windows nunca devolvía
     assert not any(a.startswith("--start") for a in player.build_command("mpv.exe", RD_URL, "x", start=3))
 
 
@@ -709,3 +710,136 @@ def test_one_volume_the_players_buttons_move_the_computers():
     assert not any(c[:2] == ("set_property", "volume") or c[:2] == ("add", "volume") for c in mpv.sent)
     assert p.toggle_mute() is True and system["muted"] is True
     assert "--volume=100" in player.build_command("mpv.exe", "u", "t")
+
+
+def test_volume_shows_its_level_with_waves_and_a_cross_when_muted():
+    from orbital import player_ui
+
+    def waves(ass):  # cada onda es un tramo de anillo: una figura más después del cuerpo de la bocina
+        return ass.count("\p1}") - 4  # cápsula, riel, relleno y cuerpo de la bocina
+    assert waves(player_ui.volume_ass(15)) == 1 and waves(player_ui.volume_ass(50)) == 2 and waves(player_ui.volume_ass(90)) == 3
+    muted = player_ui.volume_ass(50, muted=True)
+    assert "—" in muted and muted.count("\p1}") == 4  # cápsula, riel (sin relleno), cuerpo y la ✕
+    assert player_ui.volume_ass(float("nan")) and player_ui.volume_ass("x")  # nunca truena
+
+
+def test_the_video_fades_in_from_black_without_a_transparent_window(monkeypatch):
+    """El video arranca tapado de negro (capa del reproductor) y se destapa ya con imagen: el fundido de entrada sin
+    volver transparente la ventana de Orbital. Otro episodio en la misma ventana también entra fundiéndose."""
+    import time as _t
+
+    monkeypatch.setattr(player, "CURTAIN_STEP", 0)
+    p, mpv = make_player()
+    segment = player.Segment({"kind": "series"}, "Serie", "u")
+    p.segment = segment
+    p._reveal_wait = 0
+    p._curtain(1)
+    assert mpv.overlays[player.CURTAIN_ID].startswith(r"{\an7")
+    p._started(segment)
+    for _ in range(100):
+        if mpv.overlays.get(player.CURTAIN_ID) is None:
+            break
+        _t.sleep(.01)
+    assert mpv.overlays.get(player.CURTAIN_ID) is None  # destapado
+    live = player.Segment({"kind": "tv"}, "Canal", "u", live=True)
+    p.segment = live
+    p._curtain(0)
+    p._started(live)
+    assert mpv.overlays.get(player.CURTAIN_ID) is None  # la TV en vivo no lleva fundido
+
+
+def test_the_small_video_leaves_fullscreen_stays_on_top_and_comes_back(monkeypatch):
+    p, mpv = make_player()
+    p.current.process = type("Proc", (), {"poll": lambda self: None, "pid": 1})()
+    monkeypatch.setattr(p, "_place_pip", lambda current: None)
+    assert p.enter_pip() and p.pip
+    assert ("set_property", "fullscreen", False) in mpv.sent and ("set_property", "ontop", True) in mpv.sent
+    p.exit_pip()
+    assert not p.pip and mpv.sent[-1] == ("set_property", "fullscreen", True)
+
+
+def test_a_new_file_is_not_mistaken_for_the_end_of_the_previous_one():
+    """Recién cargado otro episodio en la misma ventana, mpv tarda un instante en soltar lo del anterior (posición al
+    final y «llegó al final»): el nuevo no se da por terminado (antes se cargaba otro encima)."""
+    import time as _t
+
+    p, mpv = make_player(**{"time-pos": 1335.0, "duration": 1340.0, "eof-reached": True})
+    ended = []
+    p.on_synthetic_end = lambda meta: ended.append(meta) or True
+    segment = player.Segment({"synthetic": True, "kind": "channel"}, "Serie 24/7", "u2", grace_until=_t.monotonic() + 1.5)
+    p.segment = segment
+    p.tick(segment, _t.monotonic(), False)  # recién cargado: no se lee nada todavía
+    assert not segment.playing and ended == []
+
+
+def test_each_mpv_command_takes_only_its_own_answer():
+    """Una respuesta que llegó tarde (de otro comando) se salta: antes la siguiente pregunta la tomaba como suya y el
+    vigilante recibió un número en vez de la lista de pistas."""
+    import io
+    import json
+
+    from orbital.mpv import Mpv
+
+    class Pipe(io.BytesIO):
+        def __init__(self, lines):
+            super().__init__(b"".join((json.dumps(line) + "\n").encode() for line in lines))
+            self.sent = []
+
+        def write(self, data):
+            self.sent.append(data)
+            return len(data)
+
+    m = Mpv(pipe="no-existe")
+    m._fh = Pipe([{"data": 1080, "error": "success", "request_id": 6},  # la de un comando anterior, atrasada
+                  {"event": "property-change"},
+                  {"data": [{"id": 1, "type": "audio"}], "error": "success", "request_id": 7}])
+    reply = m._exchange(b'{"command": ["get_property", "track-list"], "request_id": 7}\n', "track-list", 7)
+    assert reply["data"] == [{"id": 1, "type": "audio"}]
+
+
+def test_the_same_video_still_loading_is_not_started_again():
+    """Un stream lento (20–40 s sin imagen): otro A, o un «pon…» del iPhone, no cierra mpv para empezar de cero."""
+    class Alive:
+        def poll(self):
+            return None
+
+    p, _ = make_player()
+    p.current = player.Playback("Calle Oak", Alive(), 0, {})
+    p.segment = player.Segment({"video_id": "tt27165187", "source_key": "a"}, "Calle Oak", "http://x")
+    assert p.starting("tt27165187")
+    assert p.starting("tt27165187", "a")
+    assert not p.starting("tt27165187", "b")  # otra fuente elegida a propósito sí se abre
+    assert not p.starting("tt0076162")  # otro video, también
+    p.segment.loaded -= player.STARTUP_TIMEOUT + 1
+    assert not p.starting("tt27165187")  # ya pasó el tiempo de arranque: esa fuente no sirve, se puede volver a pedir
+    p.segment.loaded += player.STARTUP_TIMEOUT + 1
+    p.segment.playing = True
+    assert not p.starting("tt27165187")  # ya se ve: lo de siempre (reanudar, etc.)
+
+
+def test_subtitles_from_the_internet_are_downloaded_apart_and_mpv_gets_the_file():
+    """Con la URL mpv bajaba el subtítulo él mismo y mientras tanto no contestaba (pausa, volumen, la interfaz)."""
+    p, mpv = make_player()
+    p.fetch_subtitle = lambda url: "C:/cache/subs/abc.srt"
+    p.add_subtitles("https://subs5.strem.io/en/download/file/1962602374", "es")
+    assert mpv.sent[-1] == ("sub-add", "C:/cache/subs/abc.srt", "select", "Subtítulos", "es")
+    # «Continuar» recuerda de dónde vino, no el archivo del caché.
+    mpv.props["track-list"] = [{"type": "sub", "id": 3, "lang": "es", "title": "Subtítulos", "selected": True,
+                                "external": True, "external-filename": "C:/cache/subs/abc.srt"}]
+    assert p.current_subtitle()["url"] == "https://subs5.strem.io/en/download/file/1962602374"
+
+    def fails(url):
+        raise OSError("timed out")
+
+    p.fetch_subtitle = fails
+    sent = len(mpv.sent)
+    p.add_subtitles("https://subs/otro.srt", "es")
+    assert len(mpv.sent) == sent  # no se bajó: mpv ni se entera (antes se quedaba esperando)
+
+    pending = []
+    p.fetch_subtitle = lambda url: "C:/cache/subs/tarde.srt"
+    p.background = pending.append
+    p.add_subtitles("https://subs/tarde.srt", "es")
+    p.current = player.Playback("Otro video", None, 0, {})
+    pending[0]()
+    assert len(mpv.sent) == sent  # llegó cuando ya era otro video: no se le pone

@@ -1,7 +1,8 @@
 import { h, svg } from "../core/dom.js";
 import { shortAgo } from "../core/format.js";
-import { rankOf, trendOf } from "../core/foryou.js";
+import { rankOf, trendOf, trimmedLogo } from "../core/foryou.js";
 import { ICONS, systemIconName } from "../core/icons.js";
+import { sized } from "../core/images.js";
 import { clampRatio, coverRatio } from "../core/library.js";
 import { Badge } from "./ui.js";
 
@@ -13,7 +14,7 @@ import { Badge } from "./ui.js";
  */
 /** La portada al tamaño de la tarjeta (el servidor la reduce una vez: thumbs.py), no la de 2 MB. */
 export const coverSrc = (url) => (typeof url === "string" && url.startsWith("/api/art/") && !/[?&](kind|w)=/.test(url)
-  ? `${url}${url.includes("?") ? "&" : "?"}w=480` : url);
+  ? `${url}${url.includes("?") ? "&" : "?"}w=480` : sized(url, 240));
 
 /** El ícono de una app: el que trae (ES-DE) o el logotipo de su plataforma. */
 const APP_ICONS = {
@@ -22,13 +23,17 @@ const APP_ICONS = {
 };
 export const appIcon = (item) => (item.category === "apps" ? item.extra?.icon || APP_ICONS[item.id] || null : APP_ICONS[item.id] ?? null);
 
-export function Card(item, { onPress, onRatio, showAgo = false, caption = false, pop = false, ranked = false } = {}) {
+/** Una pieza ancha (Destacados, como el carrusel de Stremio): el arte 16:9 a su tamaño real y el logo del título encima. */
+export const WIDE_RATIO = 16 / 9;
+
+export function Card(item, { onPress, onRatio, showAgo = false, caption = false, pop = false, ranked = false, wide = false } = {}) {
   const meta = h("span", { class: "card__meta" },
     h("strong", { class: "card__title" }, item.title),
     h("small", { class: "card__subtitle" }, item.subtitle));
   // Una esquina: tu favorito (estrella) o, en una lista de afuera (Para ti), que ya lo tienes (palomita).
   const badge = item.favorite ? h("span", { class: ["card__badge", pop && "card__badge--pop"], "aria-label": "Favorito" }, svg(ICONS.star))
-    : item.owned ? h("span", { class: "card__badge card__badge--owned", "aria-label": "Lo tienes" }, svg(ICONS.check)) : null;
+    : item.owned ? h("span", { class: "card__badge card__badge--owned", "aria-label": "Lo tienes" }, svg(ICONS.check))
+      : item.extra?.installed === false ? h("span", { class: "card__badge", "aria-label": "Sin instalar" }, svg(ICONS.cloud)) : null;
   // El puesto del Top 10 (Netflix oficial, lo más visto de una plataforma): la otra esquina, siempre
   // legible sobre cualquier póster (la misma receta de insignia que el resto de la app).
   const place = rankOf(item);
@@ -47,6 +52,12 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
     ? h("span", { class: "card__progress", role: "progressbar", "aria-valuenow": Math.round(item.progress * 100), "aria-valuemin": 0, "aria-valuemax": 100 },
       h("span", { class: "card__progress-fill", style: { width: `${Math.round(item.progress * 100)}%` } }))
     : null;
+  // Un nombre sobre el arte (Por género: «Terror»), como las tarjetas de Explora del iPhone.
+  const label = item.label ? h("span", { class: "card__label" }, item.label) : null;
+  // Ancha: el logo del título sobre el arte (sin él, el arte de fondo no dice qué es); si no carga, el nombre.
+  const logoUrl = item.extra?.logo || (/^tt\d+$/.test(item.meta_id ?? "") ? `/api/foryou/logo/${item.meta_id}` : null);
+  const logo = wide && logoUrl ? h("img", { class: "card__logo", src: trimmedLogo(logoUrl), alt: item.title, decoding: "async" }) : null;
+  logo?.addEventListener("error", () => logo.replaceWith(h("span", { class: "card__label" }, item.title)), { once: true });
   const icon = appIcon(item);
   const fallback = () => (icon
     ? h("span", { class: "card__placeholder card__placeholder--app", "aria-hidden": "true" }, h("img", { class: "card__app-icon", src: icon, alt: "" }))
@@ -54,7 +65,7 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
 
   const card = h("button", {
     // Portada de respaldo (sin arte propio): la imagen genérica con el nombre del juego encima.
-    class: ["card", item.image ? "card--has-art" : "card--no-art", item.extra?.placeholder_cover && "card--named", progress && "card--has-progress"],
+    class: ["card", wide && "card--wide", item.image ? "card--has-art" : "card--no-art", item.extra?.placeholder_cover && "card--named", progress && "card--has-progress"],
     type: "button",
     "aria-label": item.title,
     onClick: onPress,
@@ -63,17 +74,18 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
     card.dataset.ratio = String(ratio);
     card.style.setProperty("--ratio", String(ratio));
   };
-  setRatio(coverRatio(item));
+  setRatio(wide ? WIDE_RATIO : coverRatio(item));
   if (item.image) {
     // Sin loading="lazy": las filas de abajo están fuera de vista y cada portada aparecería
     // vacía un instante al cambiar de fila. Son archivos locales; se cargan de una vez.
-    const img = h("img", { class: "card__image", src: coverSrc(item.image), alt: "", decoding: "async" });
+    // Ancha: del tamaño en que se ve (~500 px; antes se pedía como póster, a 240, y se veía borrosa).
+    const img = h("img", { class: "card__image", src: wide ? sized(item.image, 520) : coverSrc(item.image), alt: "", decoding: "async" });
     // Ya cargada antes (volviste a esa consola o fila): se ve al instante, sin volver a fundirse.
     if (img.complete && img.naturalWidth) img.classList.add("card__image--loaded", "card__image--instant");
     img.addEventListener("load", () => {
       img.classList.add("card__image--loaded");
       const real = clampRatio(img.naturalWidth / img.naturalHeight);
-      if (Math.abs(real - Number(card.dataset.ratio)) > .02) {
+      if (!wide && Math.abs(real - Number(card.dataset.ratio)) > .02) { // la ancha siempre es 16:9 (no un recorte cuadrado)
         setRatio(real);
         onRatio?.();
       }
@@ -86,7 +98,7 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   } else {
     card.append(fallback());
   }
-  card.append(...[badge, rank, trend, live, chip, meta, progress].filter(Boolean));
+  card.append(...[badge, rank, trend, live, chip, label, logo, meta, progress].filter(Boolean));
   return card;
 }
 
@@ -94,8 +106,13 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
  * Un puesto del Top 10 al estilo Netflix (como `RankedPosterCard` del iPhone): la cifra enorme en gris, detrás del
  * póster, que va encima a su derecha. La cifra es adorno: el puesto se dice en la etiqueta de la tarjeta.
  */
+/** Las plataformas con color propio: su Top 10 lleva la cifra de ese color (como en la app de cada una). */
+const BRAND_COLORS = new Set(["netflix", "prime", "disney", "hbo", "paramount", "appletv"]);
+
 export function RankedCard(item, options = {}) {
   const card = Card(item, { ...options, ranked: true });
   card.setAttribute("aria-label", `Puesto ${rankOf(item)}: ${item.title}`);
-  return { card, el: h("div", { class: "card-ranked" }, h("span", { class: "card-ranked__number", "aria-hidden": "true" }, String(rankOf(item))), card) };
+  const brand = BRAND_COLORS.has(options.brand) ? options.brand : null;
+  return { card, el: h("div", { class: ["card-ranked", brand && `card-ranked--${brand}`] },
+    h("span", { class: "card-ranked__number", "aria-hidden": "true" }, String(rankOf(item))), card) };
 }

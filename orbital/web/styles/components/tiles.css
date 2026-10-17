@@ -19,6 +19,12 @@
 .tile--feature__title { flex-shrink: 0; }
 @container (max-height: 18rem) { .tile--feature .tile--feature__title { -webkit-line-clamp: 1; } } /* más específica: la general va después */
 .tile--feature.tile--focused { transform: none; }
+/* Realce al enfocar (como la consola de Tus consolas): el logo (o el título) sale un poco y el arte se acerca detrás. */
+.tile--feature__logo, .tile--feature__title { transform-origin: left bottom; transition: transform var(--duration-base) var(--ease-spring); }
+.tile--feature > .tile__art, .tile--feature .tile__case-box { transition: transform var(--duration-slow) var(--ease-out); }
+.tile--feature.tile--focused .tile--feature__logo, .tile--feature.tile--focused .tile--feature__title { transform: var(--pop-transform); }
+.tile--feature.tile--focused > .tile__art { transform: var(--pop-zoom); }
+.tile--feature.tile--focused .tile__case-box { transform: var(--pop-transform); }
 .tile--feature__shade {
   background:
     linear-gradient(90deg, color-mix(in oklab, var(--color-art-shade) 88%, transparent) 0%, color-mix(in oklab, var(--color-art-shade) 55%, transparent) 42%, transparent 78%),
@@ -63,6 +69,9 @@
   min-height: 0; padding: var(--inset-row); background: var(--color-fill);
 }
 .tile--row.tile--focused { background: var(--color-fill-hover); transform: none; }
+/* Realce al enfocar: la miniatura sale un poco, con su sombra (como la consola de Tus consolas). */
+.tile--row__thumb { transition: transform var(--duration-base) var(--ease-spring), box-shadow var(--duration-base) var(--ease-out); }
+.tile--row.tile--focused .tile--row__thumb { transform: var(--pop-transform); box-shadow: var(--shadow-card); }
 .tile--row__thumb {
   position: relative; height: 100%; max-height: 8rem; aspect-ratio: 16 / 9; overflow: hidden;
   border-radius: var(--radius-inner-row); background: var(--color-surface);
@@ -83,6 +92,9 @@
 .tile--row__detail { display: flex; align-items: center; gap: var(--space-2); min-width: 0; color: var(--color-text-muted); font-size: var(--type-secondary); white-space: nowrap; }
 .tile--row__detail svg { width: 1.1rem; height: 1.1rem; flex: none; fill: none; stroke: var(--platform-ink, currentColor); stroke-width: 2.6; stroke-linejoin: round; }
 .tile--row__detail-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
+/* Lo de más (solo en la tarjeta crecida del Inicio, home.css): año, géneros y jugadores en un renglón. */
+.tile--row__more { display: none; flex-direction: column; gap: var(--space-1); min-width: 0; margin-top: var(--space-1); }
+.tile--row__facts { color: var(--color-text-muted); font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tile--row__progress { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised); --progress-width: auto; box-shadow: var(--shadow-badge); }
 
 /* Captura chica de un juego retro: nítida, como en la consola (no un borrón estirado). */
@@ -110,10 +122,10 @@
   filter: var(--shadow-drop-lg);
   transition: transform var(--duration-base) var(--ease-spring);
 }
-.tile--console.tile--focused .tile--console__photo { transform: scale(1.06) translateY(-.1rem); }
+.tile--console.tile--focused .tile--console__photo { transform: var(--pop-transform); }
 /* Steam y GeForce NOW: su logotipo en blanco, del tamaño visual de una foto de consola. */
 .tile--console__logo { height: 3.2rem; width: auto; opacity: .92; filter: var(--shadow-drop); transition: transform var(--duration-base) var(--ease-spring); }
-.tile--console.tile--focused .tile--console__logo { transform: scale(1.06); opacity: 1; }
+.tile--console.tile--focused .tile--console__logo { transform: var(--pop-transform); opacity: 1; }
 .tile--console__cover { max-height: 4.8rem; width: auto; border-radius: var(--radius-sm); box-shadow: var(--shadow-card); }
 .tile--console__text { position: relative; display: flex; flex-direction: column; gap: .2rem; padding: var(--space-3) var(--inset-card) var(--inset-card); }
 .tile--console__name {

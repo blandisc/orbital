@@ -69,6 +69,23 @@ export function emptyState(data, { loading = false, error = "" } = {}) {
   return { title: "No encontré canales", text: "Pulsa X para buscar otra vez." };
 }
 
+/**
+ * Lo que va ahora en un canal de Orbital (series al aire todo el día): «T5 E3 · Bart, el genio · termina a las 9:42 p. m.»;
+ * en uno de varias series, con cuál va primero («Batman · T1 E3 · …»). Vacío si el servidor no lo supo.
+ */
+export function airingLine(channel, clock) {
+  const now = channel?.now;
+  if (!now) return "";
+  return [now.series, now.label, now.title, now.ends && `termina a las ${clock(new Date(now.ends * 1000))}`].filter(Boolean).join(" · ");
+}
+
+/** «A continuación · 6:22 p. m. · T7 E17 · Homero Smithers» (la programación es corrida: entra en cuanto acaba). */
+export function nextLine(channel, clock) {
+  const next = channel?.now?.next;
+  if (!next) return "";
+  return ["A continuación", next.starts && clock(new Date(next.starts * 1000)), next.series, next.label, next.title].filter(Boolean).join(" · ");
+}
+
 /** Para el lector de pantalla y el dedo: «12, Azteca 7». */
 export const channelLabel = (channel) => [channel?.number, channel?.name].filter(Boolean).join(", ");
 
@@ -92,3 +109,13 @@ export function columnsOf(rects) {
   const tolerance = Math.min(...rects.map((r) => r.h)) / 2;
   return Math.max(1, rects.filter((r) => r.y - top < tolerance).length);
 }
+
+/** El ícono de cada categoría (por su nombre en español; las que no tienen uno propio, la tele). */
+const CATEGORY_ICONS = {
+  "Tus canales": "watching", Todos: "grid", General: "catGeneral", Noticias: "catNews", Entretenimiento: "catEntertainment",
+  Deportes: "catSports", "Películas": "movie", Series: "series", Infantil: "catKids", Familia: "catKids", "Animación": "catAnimation",
+  Comedia: "catAnimation", "Música": "catMusic", Cultura: "catCulture", "Educación": "catEducation", Documentales: "catDocumentary",
+  Ciencia: "catDocumentary", Viajes: "catDocumentary", Legislativo: "catLegislative", "Público": "catLegislative",
+  "Religión": "catReligion", Otros: "catOther", "Orbital 24/7": "spark",
+};
+export const categoryIcon = (title) => CATEGORY_ICONS[title] ?? "tv";

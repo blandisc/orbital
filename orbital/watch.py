@@ -123,7 +123,7 @@ def stremio_item(w: stremio_api.Watchable) -> LibraryItem:
         last_watched=w.last_watched,
         # Para elegir la fuente en Orbital (Seguir viendo -> el mismo episodio).
         extra={"kind": w.type, "meta_id": w.id, "video_id": w.video_id or (w.id if w.type == "movie" else None),
-               "in_library": w.in_library,
+               "in_library": w.in_library, "left": round(left) if left >= 60 else None,  # para «termina a las…»
                "eyebrow": " · ".join(filter(None, ["Película" if w.type == "movie" else "Serie", detail if episode else ""]))},
     )
 
@@ -472,11 +472,19 @@ class Watch:
         p.on_send_iphone = self._send_to_phone
         p.idle_seconds = int(self.setting("video_idle_minutes", self.config.sessions.video_idle_minutes)) * 60
         p.on_language = self._remember_language
+        p.pip_on_home = self.setting("video_home", "pip") == "pip"  # la barra dice «Home · Ver en pequeño»
         p.sub_scale = float(self.setting("sub_scale", 1.0) or 1.0)
 
-    def _send_to_phone(self, meta: dict, action: str) -> str:
-        """Y › «Enviar al iPhone» / «Descargar en el iPhone» con lo que se está viendo (el episodio en curso)."""
-        companion.send_to_phone(self, self.config, action, meta.get("kind") or "movie", meta.get("meta_id") or "", meta.get("video_id"))
+    def _send_to_phone(self, meta: dict, action: str, position: float | None = None) -> str:
+        """Y › «Seguir en el iPhone» (el mismo minuto) / «Enviar al iPhone» / «Descargar en el iPhone» con lo que se está
+        viendo (el episodio en curso; el de un canal de Orbital, como episodio de su serie)."""
+        kind = "series" if meta.get("synthetic") or meta.get("kind") == "channel" else meta.get("kind") or "movie"
+        sent = companion.send_to_phone(self, self.config, "open" if action == "continue" else action, kind,
+                                       meta.get("meta_id") or "", meta.get("video_id"),
+                                       position=position if action == "continue" else None)
+        if action == "continue":
+            minute = int((position or 0) // 60)
+            return f"Abriendo en tu iPhone · {sent.get('episode_label') or sent.get('title') or ''} en el minuto {minute}".replace(" ·  en", " en")
         return companion.SENT_TOAST[action]
 
     @staticmethod
@@ -597,6 +605,11 @@ class Watch:
                     keep: bool = False, source: streams.Source | None = None, from_start: bool = False,
                     audio: str | None = None, subtitles: str | None = None, sub_pick: dict | None = None) -> None:
         """mpv a pantalla completa, desde donde te quedaste (según Stremio)."""
+        if not from_start and self.player.starting(video_id, source.key if source else None):
+            # Ya está cargando: Orbital sigue tapando hasta la primera imagen (el aviso del primer intento sigue en pie).
+            log.info("%s ya se está abriendo: no lo empiezo otra vez", title)
+            self.sessions.revealing = True
+            return
         start = 0.0 if from_start else self.resume_position(meta_id, video_id)
         meta = self._media_meta(kind, meta_id, video_id, title, source) if source else \
             {"kind": kind, "meta_id": meta_id, "video_id": video_id, "title": title}
@@ -878,8 +891,9 @@ class Watch:
     def title_details(self, kind: str, meta_id: str) -> dict:
         """Todo para la ficha: datos, reparto, temporadas y dónde ibas (para "Continuar T3 E5")."""
         info = self.cinemeta.meta(kind, meta_id)
-        details = {"id": meta_id, "kind": kind, "title": info.get("name") or "", "poster": info.get("poster"),
-                   "background": info.get("background") or None, **cinemeta.describe_meta(info),
+        chosen = self.art_for(meta_id)  # «Cambiar el arte»
+        details = {"id": meta_id, "kind": kind, "title": info.get("name") or "", "poster": chosen.get("poster") or info.get("poster"),
+                   "background": chosen.get("background") or info.get("background") or None, **cinemeta.describe_meta(info),
                    **cinemeta.credits(info)}
         if kind == "series":
             details["seasons"] = cinemeta.seasons(info)
@@ -911,6 +925,42 @@ class Watch:
         video = trailer_id(info)
         details["trailer"] = video if video and self.trailer_available(video) else None  # «Tráiler» solo si se puede ver
         return details
+
+    # --- «Cambiar el arte» de una película o serie ---------------------------------------------------------------------
+    ART_KINDS = ("poster", "background")
+
+    def art_choices(self, kind: str, meta_id: str) -> dict:
+        """Los pósters y fondos que se pueden elegir (de TMDB) y los que tiene ahora. LookupError en palabras si no hay."""
+        tmdb = self.localizer.tmdb
+        if not tmdb.configured:
+            raise LookupError("Para elegir otro arte hace falta la clave de TMDB (Ajustes › Cuentas).")
+        try:
+            tmdb_id = tmdb.find_id(meta_id, kind)
+            found = tmdb.images(kind, tmdb_id) if tmdb_id else {"posters": [], "backgrounds": []}
+        except tmdb_api.TmdbError as exc:
+            raise LookupError(str(exc)) from exc
+        if not found["posters"] and not found["backgrounds"]:
+            raise LookupError("TMDB no tiene otras imágenes de este título.")
+        return {**found, "current": self.art_for(meta_id)}
+
+    def art_for(self, meta_id: str | None) -> dict:
+        """El arte que elegiste para ese título ({"poster", "background"}); {} si nunca lo cambiaste."""
+        saved = self.state.prefs(f"stremio:{meta_id}").get("art") if meta_id else None
+        return {k: v for k, v in (saved or {}).items() if k in self.ART_KINDS and isinstance(v, str) and v} if isinstance(saved, dict) else {}
+
+    def set_art(self, meta_id: str, which: str, url: str | None) -> dict:
+        """Recuerda el póster o el fondo elegido (`url` None: vuelve el de siempre). Devuelve el arte de ese título."""
+        if which not in self.ART_KINDS:
+            raise ValueError("Solo se cambia el póster o el fondo")
+        if url is not None and not str(url).startswith(tmdb_api.IMAGES):
+            raise ValueError("Esa imagen no es de TMDB")
+        art = self.art_for(meta_id)
+        if url:
+            art[which] = url
+        else:
+            art.pop(which, None)
+        self.state.set_pref(f"stremio:{meta_id}", "art", art or None)
+        return art
 
     def set_in_library(self, kind: str, meta_id: str, add: bool) -> None:
         """Añadir o quitar de Mi lista (tu biblioteca de Stremio: se ve igual en Stremio)."""

@@ -17,6 +17,7 @@
   position: absolute; left: 0; right: 0; overflow: hidden; border-radius: var(--tile-radius); background: var(--color-surface);
   box-shadow: inset 0 0 0 1px var(--color-hairline);
   transition: top var(--duration-enter) var(--ease-out), height var(--duration-enter) var(--ease-out),
+    left var(--duration-enter) var(--ease-out), right var(--duration-enter) var(--ease-out),
     opacity var(--duration-enter) var(--ease-out), filter var(--duration-enter) var(--ease-out), box-shadow var(--duration-slow) var(--ease-out);
 }
 .foryou-mosaic--drifting .foryou-mosaic__tile { transition: opacity var(--duration-enter) var(--ease-out), filter var(--duration-enter) var(--ease-out); }
@@ -34,6 +35,8 @@
 /* Con foco: lo demás se apaga un poco; la enfocada lleva el anillo. */
 .foryou-mosaic--focusing .foryou-mosaic__tile:not(.foryou-mosaic__tile--on) { opacity: .5; filter: saturate(.6); }
 .foryou-mosaic__tile--on { z-index: var(--z-raised); box-shadow: var(--ring-focus); }
+/* Recorriendo rápido: el marco va adelante y la columna se abre al detenerte (foryou-mosaic.js · paintSoon). */
+.foryou-mosaic__tile--next { z-index: var(--z-raised); box-shadow: var(--ring-focus); opacity: 1 !important; filter: none !important; }
 .foryou-mosaic__tile--on::after { opacity: 1; }
 
 /* Qué es: su ícono en un círculo de vidrio (la consola de un juego, o serie / película). */

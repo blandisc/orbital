@@ -85,6 +85,19 @@ def test_saying_a_channel_as_a_search_puts_it_on(library, channels):
     assert channels == ["adn", "bm"]
 
 
+def test_the_simpsons_channel_by_voice_but_the_series_stays_the_series(library, channels, monkeypatch):
+    """«pon el canal de los Simpson» prende el canal de Orbital (Alexa y «Dile a Orbital» del iPhone); «pon los Simpson»
+    sin decir canal sigue siendo la serie (no se secuestra)."""
+    voice = VoiceController(library)
+    assert parse_text("pon el canal de los simpson") == ("LiveTvIntent", {"channel": "de los simpson"})
+    assert voice.handle_intent("LiveTvIntent", {"channel": "de los simpson"}).speech == "Poniendo Los Simpson 24/7."
+    assert voice.handle_intent("LiveTvIntent", {"channel": "los simpsons"}).ok  # Alexa: «pon el canal de {channel}»
+    assert voice.handle_intent("LaunchGameIntent", {"game": "los simpson 24 7"}).ok
+    assert voice.handle_intent("LiveTvIntent", {"channel": "de caricaturas"}).ok
+    assert channels == ["orbital:simpsons"] * 3 + ["orbital:caricaturas"]
+    assert voice._find_channel("los simpson") is None  # «pon los Simpson»: la serie, no el canal
+
+
 def test_an_unknown_channel_shows_the_list(library, channels):
     result = VoiceController(library).handle_intent("LiveTvIntent", {"channel": "canal que no existe"})
     assert not result.ok and "No encontré el canal" in result.speech
@@ -152,3 +165,21 @@ def test_brightness_by_voice(library, monkeypatch):
     assert voice.handle_intent("BrightnessIntent", {"level": "30"}).speech == "Brillo en 30 por ciento."
     monkeypatch.setattr(quick, "brightness", lambda: None)
     assert not voice.handle_intent("BrightnessIntent", {"brightness": "down"}).ok
+
+
+def test_the_tv_shows_the_same_guide(make_client):
+    data = make_client().get("/api/voice/commands").json()
+    assert data == COMMANDS
+
+
+def test_genre_art_is_the_same_on_the_tv_and_the_iphone():
+    """Películas y series › Por género usa el arte de Explora del iPhone (más ligero, misma proporción)."""
+    from PIL import Image
+
+    ios = sorted((ROOT / "ios/App/Resources/Assets.xcassets/Genres").glob("genre-*.imageset/*.jpg"))
+    assert ios
+    for path in ios:
+        tv = ROOT / "orbital/web/img/genres" / path.name
+        assert tv.is_file(), f"falta {tv.name} en la tele (scripts/genre_art.py)"
+        a, b = Image.open(path).size, Image.open(tv).size
+        assert abs(a[0] / a[1] - b[0] / b[1]) < .01

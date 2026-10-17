@@ -38,7 +38,7 @@ test("menú ☰: lo de todos los días; lo técnico en Ajustes → Mantenimiento
   assert.ok(!mainMenu({ running: { title: "Hades", managed: false } }).options.some((o) => o.label === "Cerrar Hades"));
   const maintenance = settingsPage("maintenance", {});
   assert.deepEqual(maintenance.options.map((o) => o.command.type),
-    ["setup", "refresh", "folders", "windows", "diagnostics", "update-check"]);
+    ["setup", "refresh", "folders", "windows", "diagnostics", "emulators", "update-check"]);
   assert.deepEqual(settingsMenu().options.map((o) => o.label),
     ["Películas y series", "Pantalla y sonido", "Juegos y videos", "Cuentas", "Mantenimiento"]);
 });
@@ -324,4 +324,44 @@ test("cuentas: el iPhone dice si ya está conectado (antes siempre «Conectar»)
   assert.equal(recent.hint, "Lo usaste hace 2 h");
   assert.equal(recent.command.type, "phone-link"); // sigue abriendo el QR (otro iPhone, o volver a conectarlo)
   assert.equal(phoneRow(now / 1000 - 90 * 86400, now).value, "Conectar"); // hace meses: como si no
+});
+
+test("Emuladores: cuál tiene versión nueva, cuál se instala aquí y el modo con ◀/▶", async () => {
+  const { emulatorsMenu, maintenanceMenu } = await import("../../orbital/web/js/core/menus.js");
+  assert.ok(maintenanceMenu().options.some((o) => o.command.type === "emulators"));
+  const menu = emulatorsMenu({ mode: "avisar", items: [
+    { id: "xemu", name: "xemu", installed: "0.8.137", latest: "v0.8.138", update: true, likely: false, can_install: true, page: "https://xemu.app/" },
+    { id: "dolphin", name: "Dolphin", installed: null, latest: "2609a", update: true, likely: true, can_install: false, page: "https://dolphin-emu.org/download/" },
+    { id: "ppsspp", name: "PPSSPP", installed: "v1.20.4", latest: "v1.20.4", update: false, can_install: false, page: "x" },
+  ] });
+  const [mode, , xemu, dolphin, ppsspp] = menu.options;
+  assert.equal(mode.value, "Avisarme");
+  assert.deepEqual(mode.adjust.right, { type: "emulators-mode", value: "auto" });
+  assert.deepEqual(xemu.command, { type: "emulator-install", id: "xemu", name: "xemu" });
+  assert.equal(xemu.value, "Nueva: v0.8.138");
+  assert.equal(dolphin.value, "Puede haber nueva");
+  assert.equal(dolphin.hint, "Se baja en dolphin-emu.org");
+  assert.equal(ppsspp.value, "Al día");
+});
+
+test("Pantalla y sonido: el protector de pantalla (el mosaico) con su tiempo", async () => {
+  const { settingsPage } = await import("../../orbital/web/js/core/menus.js");
+  const page = settingsPage("display", { screensaver_minutes: 10 });
+  const row = page.options.find((o) => o.label === "Protector de pantalla");
+  assert.equal(row.value, "10 min");
+  assert.deepEqual(row.command, { type: "setting", key: "screensaver_minutes", value: 20, page: "display" });
+});
+
+test("Lo que puedes decir: la guía del iPhone (cómo decirlo, cada tema y si no funciona)", async () => {
+  const { alexaMenu, voiceGroupMenu, voiceHelpMenu } = await import("../../orbital/web/js/core/menus.js");
+  const guide = { how: [{ say: "Alexa, abre mi consola", note: "Y luego lo dices" }],
+    groups: [{ title: "Juegos", icon: "gamecontroller", commands: [{ say: "abre Hollow Knight", note: "Cualquier juego" }] }] };
+  const menu = alexaMenu(guide);
+  assert.equal(menu.title, "Lo que puedes decir");
+  const juegos = menu.options.find((o) => o.label === "Juegos");
+  assert.deepEqual(juegos.command, { type: "voice-group", index: 0 });
+  assert.equal(juegos.icon, "gamepad");
+  assert.equal(voiceGroupMenu(guide.groups[0]).options[0].label, "«abre Hollow Knight»");
+  assert.ok(voiceHelpMenu().options.length >= 4);
+  assert.equal(alexaMenu(null).title, "Pídeselo a Alexa"); // sin la guía, los ejemplos de siempre
 });

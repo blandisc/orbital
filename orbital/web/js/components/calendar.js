@@ -1,4 +1,5 @@
 import { h } from "../core/dom.js";
+import { sized } from "../core/images.js";
 import { Badge } from "./ui.js";
 
 /**
@@ -11,7 +12,7 @@ import { Badge } from "./ui.js";
  * Los grupos los arma core/foryou.js (calendarDays, calendarWeek). `onPress(n)` al tocar una.
  */
 function EpisodeTile({ item, n }, { onPress, compact = false }) {
-  const img = item.hero && h("img", { class: "tile__art", src: item.hero, alt: "", loading: "lazy", decoding: "async" });
+  const img = item.hero && h("img", { class: "tile__art", src: sized(item.hero, 320), alt: "", loading: "lazy", decoding: "async" });
   img?.addEventListener("error", () => img.remove(), { once: true });
   return h("div", {
     class: ["tile", "calendar__tile", compact && "calendar__tile--compact"], role: "button", tabindex: "-1",

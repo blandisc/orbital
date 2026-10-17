@@ -33,6 +33,22 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
   padding: var(--space-2); margin: calc(-1 * var(--space-2));
 }
 .home__rows > [hidden] { display: none; } /* los que no caben (home.js · fitRows): mejor 3 legibles que 4 aplastados */
+/* La enfocada ocupa dos lugares (home.js · growRows): las demás se recorren y, con cuatro, una sale por arriba o por abajo. */
+.home__rows { transition: grid-template-rows var(--duration-enter) var(--ease-out); }
+/* Crecida, la separación la pone cada tarjeta (la que sale mide cero y no deja hueco; el espacio de la cuadrícula sí lo dejaba). */
+.home__rows--grown { align-content: stretch; row-gap: 0; }
+.home__rows--grown > .tile--row { margin-bottom: var(--space-2); }
+.home__rows > .tile--row { min-height: 0; transition: transform var(--duration-base) var(--ease-spring), opacity var(--duration-base) var(--ease-out),
+  padding var(--duration-enter) var(--ease-out), background var(--duration-base) var(--ease-out); }
+.home__rows--grown > .tile--row-out { opacity: 0; padding-block: 0; margin-bottom: 0; box-shadow: none; }
+.home__rows--grown > .tile--focused .tile--row__thumb { max-height: none; }
+.home__rows--grown > .tile--focused .tile--row__title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.home__rows--grown > .tile--focused .tile--row__more { display: flex; }
+/* La caja (GBA) en la crecida: entera, sobre su propia imagen desenfocada. */
+.tile--row__thumb--case::before { content: ""; position: absolute; inset: -1rem; background: var(--thumb-art) center / cover;
+  filter: blur(var(--blur-case)) saturate(1.2) brightness(.7); opacity: 0; transition: opacity var(--duration-base) var(--ease-out); }
+.home__rows--grown > .tile--focused .tile--row__thumb--case::before { opacity: 1; }
+.home__rows--grown > .tile--focused .tile--row__art--crop { object-fit: contain; padding: var(--space-2) 0; }
 
 /* Abajo: tus consolas en una fila que se desplaza si no caben (6 a la vista). */
 /* Compactas (home.js · fit): cuando enteras no caben junto a lo de arriba, foto más chica y sin el tercer renglón. */
@@ -81,3 +97,9 @@ body[data-view="home"] .backdrop { transition: --art-tint var(--duration-tint) v
   .home__queue { display: none; }
   .home__consoles-track > .tile--console { flex-basis: calc((100% - 2 * var(--tile-gap)) / 2.35); }
 }
+
+/* El próximo estreno (bajo «Seguir viendo»): discreto, en una línea; si no cabe, se corta el nombre con «…» (la fecha siempre se ve). */
+.home__next { flex: none; display: flex; align-items: center; padding: 0 var(--space-2); gap: var(--space-2); min-width: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+.home__next .icon { flex: none; width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.home__next-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text); }
+.home__next-when { flex: none; white-space: nowrap; }

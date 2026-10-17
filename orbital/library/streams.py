@@ -60,6 +60,11 @@ WORD_LANG = [
     (re.compile(r"\b(korean|kor)\b", re.I), "ko"),
     (re.compile(r"\b(nordic|swedish|danish|norwegian|finnish)\b", re.I), "sv"),
 ]
+# El español viene en dos doblajes que no se parecen (Los Simpson, sobre todo): latino y castellano. «Lat» y «LAT» con
+# mayúscula (en «Dual-Lat»); en minúsculas puede ser parte de otra palabra.
+LATINO = re.compile(r"\b(latino|latam|latinoam[eé]rica(no)?|es-?419|hispanoam[eé]rica)\b|🇲🇽|🇦🇷|🇨🇴|🇨🇱|🇵🇪|🇻🇪", re.I)
+LATINO_STRICT = re.compile(r"\b(Lat|LAT)\b")
+CASTELLANO = re.compile(r"(?i:\b(castellano|castilian|es-es)\b)|\bCAST\b|🇪🇸")
 LANG_NAMES = {"en": "Inglés", "es": "Español", "fr": "Francés", "it": "Italiano", "de": "Alemán", "pt": "Portugués",
               "ru": "Ruso", "ja": "Japonés", "ko": "Coreano", "zh": "Chino", "hi": "Hindi", "pl": "Polaco",
               "tr": "Turco", "uk": "Ucraniano", "nl": "Neerlandés", "cs": "Checo", "sk": "Eslovaco",
@@ -94,6 +99,7 @@ class Source:
     tags: list[str] = field(default_factory=list)
     score: float = 0.0
     binge: str | None = None  # behaviorHints.bingeGroup: misma calidad/idioma en el siguiente episodio
+    dub: str = ""  # en español: "latino", "castellano" o "" si no lo dice (con los dos, "latino": trae esa pista)
 
     @property
     def key(self) -> str:
@@ -185,17 +191,30 @@ def parse(stream: dict, addon: str, transport_url: str, index: int) -> Source:
     for pattern, lang in WORD_LANG:
         if pattern.search(first) or pattern.search(filename):
             langs.append(lang)
+    dub = spanish_dub(f"{text}\n{filename}")
+    if dub and "es" not in langs:
+        langs.append("es")  # «Dual-Lat», «[Castellano]»: español aunque no traiga bandera
     if re.search(r"\bdual\b", blob, re.I) and "en" not in langs:
         langs.append("en")  # "dual": casi siempre el original en inglés + el doblaje
     if re.search(r"\bmulti\b", blob, re.I) and "en" not in langs:
         langs.append("en")
     src.languages = list(dict.fromkeys(langs)) or ["en"]  # sin banderas: el idioma original
     src.release = first
+    src.dub = dub
     src.tags = [t for t, p in (("REMUX", r"\bremux\b"), ("BluRay", r"\bblu-?ray\b"), ("WEB-DL", r"\bweb-?(dl|rip)\b"),
                                 ("x265", r"\b(x265|hevc|h\.?265)\b"), ("AV1", r"\bav1\b"), ("Atmos", r"\batmos\b"),
                                 ("5.1", r"\b(5\.1|ddp?5|dts)"), ("Tráiler", r"\btrailer\b"), ("CAM", r"\b(cam|hdcam|ts|telesync)\b"))
                 if re.search(p, blob, re.I)]
+    if src.dub:
+        src.tags.insert(0, src.dub.capitalize())  # «Latino» / «Castellano» en la lista de fuentes
     return src
+
+
+def spanish_dub(text: str) -> str:
+    """"latino", "castellano" o "" según lo que diga el título de la fuente. Si dice los dos, "latino" (trae esa pista)."""
+    if LATINO.search(text) or LATINO_STRICT.search(text):
+        return "latino"
+    return "castellano" if CASTELLANO.search(text) else ""
 
 
 @dataclass

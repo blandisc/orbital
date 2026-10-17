@@ -27,11 +27,16 @@ vigilar, guardar el avance, fuentes que fallan y el siguiente episodio.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import math
+import os
 import subprocess
 import threading
 import time
+import urllib.request
+from pathlib import Path
+from urllib.parse import quote, urlsplit
 
 from . import player_ui
 from .gamepad import (  # noqa: F401 - las pruebas los piden a player
@@ -50,6 +55,7 @@ from .gamepad import (  # noqa: F401 - las pruebas los piden a player
     Y_BUTTON,
 )
 from .mpv import PIPE, Mpv  # noqa: F401 - se importan desde aquí
+from .net import read_body
 from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las piden a player
     CHAPTER_SEEK,
     CREDITS,
@@ -78,6 +84,7 @@ from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las pi
     build_command,
     build_lang_list,
     chapter_kind,
+    dub_track,
     find_mpv,
     has_language,
     idle_expired,
@@ -91,6 +98,17 @@ from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las pi
 from .player_screen import PlayerScreen
 
 log = logging.getLogger(__name__)
+
+LOAD_GRACE = 1.5  # s tras cargar otro archivo antes de leer su posición (ver tick)
+SYNTHETIC_RESYNC_AFTER = 60.0  # s en pausa tras los que un canal de Orbital regresa a lo que va al aire
+# El fundido de entrada: el video arranca tapado de negro y se destapa ya con imagen (sin ventanas transparentes, que
+# hacían crecer la memoria de dibujo de Windows). Al abrirlo desde Orbital espera a que Orbital termine su salida a negro.
+PIP_WIDTH = .3  # del ancho de la pantalla: el video en pequeño (Home durante un video)
+PIP_MARGIN = .03
+CURTAIN_ID = 9
+CURTAIN_STEPS = (.86, .7, .52, .36, .22, .1, 0)  # opacidad, un paso cada CURTAIN_STEP s (~medio segundo)
+CURTAIN_STEP = .07
+CURTAIN_REVEAL_WAIT = 1.1  # s tras la primera imagen al abrir desde Orbital: lo que tarda su salida (focus.FADE_TO_BLACK)
 CUT_MARGIN = 90  # s: un «final» antes de esto es la conexión que se cortó, no el final de verdad
 NEXT_LOAD_WAIT = 25  # s que el final espera al siguiente episodio que se está cargando
 
@@ -105,6 +123,32 @@ def process_memory_mb(pid: int) -> int:
         return _private_mb(pid)
     except Exception:  # noqa: BLE001 - sin el dato no se hace nada
         return 0
+
+
+SUB_MAX_BYTES = 4 * 1024 * 1024  # un subtítulo nunca pesa tanto
+SUB_TIMEOUT = 15.0
+
+
+def subtitle_cache() -> Path:
+    return Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" / "subs"
+
+
+def fetch_subtitle(url: str) -> str:
+    """Baja un subtítulo de internet a un archivo local y da su ruta. Con la URL, mpv lo bajaba él mismo y mientras
+    tanto no contestaba nada (pausa, volumen, la interfaz: «mpv no contestó» y respuestas atrasadas)."""
+    ext = os.path.splitext(urlsplit(url).path)[1].lower()
+    path = subtitle_cache() / (hashlib.sha1(url.encode()).hexdigest()[:20] + (ext if ext in {".srt", ".vtt", ".ass", ".ssa", ".sub"} else ".srt"))
+    if not path.exists():
+        req = urllib.request.Request(url, headers={"User-Agent": "Orbital/0.1"})
+        with urllib.request.urlopen(req, timeout=SUB_TIMEOUT) as res:
+            data = read_body(res, timeout=SUB_TIMEOUT, limit=SUB_MAX_BYTES)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+    return str(path)
+
+
+def in_background(work) -> None:
+    threading.Thread(target=work, daemon=True, name="subtítulos").start()
 
 
 class OrbitalPlayer(PlayerScreen):
@@ -135,6 +179,9 @@ class OrbitalPlayer(PlayerScreen):
         self._hud_visible = False
         self._card: dict | None = None  # {"kind": "skip" | "next" | "still", ...}
         self._subs_lang = "en"
+        self._sub_urls: dict[str, str] = {}  # archivo local → la URL de donde se bajó (lo que «Continuar» recuerda)
+        self.fetch_subtitle = fetch_subtitle
+        self.background = in_background
         self._audio_lang = "en"
         self._fallback_subs = None
         self._user_quit = False  # B, Orbital o la voz lo cerraron: no es un fallo
@@ -171,6 +218,13 @@ class OrbitalPlayer(PlayerScreen):
         self.on_channel_ok = None  # (meta): el canal dio imagen
         self.on_memory_full = None  # (meta): un canal ocupa demasiada memoria; ábrelo de nuevo en un mpv nuevo
         self.memory_of = process_memory_mb  # (pid) -> MB (las pruebas lo cambian)
+        # Canales de Orbital (ver synthetic.py): una serie al aire; al terminar o fallar, el canal decide qué sigue.
+        self.on_synthetic_end = None  # (meta) -> True si cargó el siguiente episodio
+        self.on_synthetic_failed = None  # (meta) -> True si se intenta con otra fuente u otro episodio
+        self.on_synthetic_resync = None  # (meta) -> True si regresó a lo que va al aire (tras una pausa larga)
+        self.on_synthetic_duration = None  # (meta, segundos): lo que dura de verdad (la programación lo aprende)
+        self.pip = False  # el video en pequeño, en una esquina (Home durante un video)
+        self.on_detached = None  # (meta): «Seguir solo este capítulo» (el canal ya no manda; la barra de arriba cambia)
         self._zap_view, self._zap_timer = None, None  # ▲▼ seguidos (ver _queue_channel)
         self._panel_category = None  # la categoría que enseña la guía de canales (Y)
         self._away = False  # Home: estás en Orbital y el canal sigue al aire sin sonido
@@ -216,11 +270,26 @@ class OrbitalPlayer(PlayerScreen):
         with self._swap:  # el vigilante del video anterior ve los dos cambios juntos, nunca uno solo
             self.current = playback
             self.segment = Segment(meta, title, url, start=float(options.get("start") or 0), live=bool(options.get("live")))
+        self._reveal_wait = CURTAIN_REVEAL_WAIT  # el primero de esta ventana: Orbital todavía tapa la pantalla
+        self.pip = False
+        if not options.get("live"):
+            self._curtain(1)
         if hasattr(self.mpv, "start_observing"):
             self.mpv.start_observing()  # mpv avisa de pausa, posición… en vez de preguntarle cada segundo
         threading.Thread(target=self._watch, args=(playback,), daemon=True, name="mpv").start()
         log.info("Reproduciendo en mpv: %s", title)
         return process
+
+    def starting(self, video_id: str | None, source_key: str | None = None) -> bool:
+        """Ese mismo video ya se está abriendo (todavía sin imagen). Otro «ver» no lo empieza de cero: con un stream
+        lento (20–40 s) cada A, cada «pon…» del iPhone o de Alexa cerraba mpv y volvía a cargar desde el principio.
+        Otra fuente elegida a propósito (`source_key` distinto) sí se abre."""
+        playback, segment = self.current, self.segment
+        return bool(video_id and playback is not None and playback.process.poll() is None and segment is not None
+                    and not segment.playing and not segment.failed and not segment.live
+                    and segment.meta.get("video_id") == video_id
+                    and (source_key is None or segment.meta.get("source_key") == source_key)
+                    and time.monotonic() - segment.loaded < STARTUP_TIMEOUT)
 
     def load(self, url: str, title: str, meta: dict, *, start: float = 0, fallback_subs=None,
              subtitles: str | None = None, audio: str | None = None, message: str | None = None) -> bool:
@@ -229,7 +298,7 @@ class OrbitalPlayer(PlayerScreen):
         playback = self.current
         if playback is None or playback.process.poll() is not None:
             return False
-        segment = Segment(meta, title, url, start=start)
+        segment = Segment(meta, title, url, start=start, grace_until=time.monotonic() + LOAD_GRACE)
         with self._swap:  # mientras se buscaba la fuente pudo abrirse otro video: entonces este archivo ya no va
             if self.current is not playback:
                 return False
@@ -261,6 +330,8 @@ class OrbitalPlayer(PlayerScreen):
         self.mpv.command("set_property", "pause", False)
         for prop, value in track_properties(self._audio_lang, self._subs_lang):
             self.mpv.command("set_property", prop, value)  # el idioma de este título, no la pista del anterior
+        self._reveal_wait = 0.0  # otro episodio u otra fuente en la misma ventana: se destapa en cuanto haya imagen
+        self._curtain(1)
         self.mpv.command("loadfile", url, "replace")
         self.toast(message or f"Cargando {title}…", 4)
         log.info("Cargando en el mismo mpv: %s", title)
@@ -389,6 +460,10 @@ class OrbitalPlayer(PlayerScreen):
         if segment.live:
             return self._live_tick(segment, now, paused, pos, idle)
         known = isinstance(dur, (int, float)) and dur > 0
+        if now < segment.grace_until and not segment.playing:
+            # Recién cargado otro archivo en la misma ventana: mpv tarda un instante en soltar lo del anterior (su posición
+            # al final y «llegó al final»). Sin esta espera el episodio nuevo se daba por terminado y se cargaba otro.
+            return
         if not segment.playing:
             # Arrancó: hay posición y, o se sabe cuánto dura, o la posición ya avanza (un torrent que aún
             # descarga no dice su duración; antes se daba por fallido a los 45 s aunque se estuviera viendo).
@@ -422,6 +497,8 @@ class OrbitalPlayer(PlayerScreen):
             self._save_progress(segment)
         self._chapters_tick(segment, now)
         self._upnext_tick(segment, now)
+        if segment.meta.get("synthetic"):
+            self._synthetic_tick(segment, now, paused)
         if self.mpv.get("eof-reached"):
             if segment.duration and segment.position < segment.duration - CUT_MARGIN:
                 # Llegó al «final» a media película: la conexión se cortó (con keep-open, mpv se queda en
@@ -452,11 +529,81 @@ class OrbitalPlayer(PlayerScreen):
         segment.last_tick = now
         self._buffering_state(paused)
 
+    # --- el video en pequeño (PiP) ------------------------------------------------------------------------------------
+    def enter_pip(self) -> bool:
+        """Home durante un video: se encoge a una esquina y sigue sonando, encima de Orbital (sin transparencias).
+        False si no hay video abierto."""
+        current = self.current
+        if current is None or current.process is None or current.process.poll() is not None:
+            return False
+        self.pip = True
+        self.menu = None
+        for overlay in (1, 2, 4):  # la barra, el panel y la tarjeta no caben en la esquina
+            self._overlay(overlay, None)
+        for prop, value in (("fullscreen", False), ("border", False), ("ontop", True), ("keepaspect-window", True)):
+            self.mpv.command("set_property", prop, value)
+        threading.Thread(target=self._place_pip, args=(current,), daemon=True, name="pip").start()
+        log.info("Video en pequeño: %s", current.title)
+        return True
+
+    def _place_pip(self, current) -> None:
+        time.sleep(.25)  # mpv sale de pantalla completa y luego se le pone su lugar
+        if not self.pip or self.current is not current:
+            return
+        from . import windows
+
+        hwnd = windows.main_window(windows.process_tree(current.process.pid))
+        screen_w, screen_h = windows.screen_size()
+        width = int(screen_w * PIP_WIDTH)
+        height = int(width * 9 / 16)
+        margin = int(screen_w * PIP_MARGIN)
+        windows.place_window(hwnd, screen_w - width - margin, screen_h - height - margin, width, height)
+
+    def exit_pip(self) -> None:
+        """De vuelta a pantalla completa (Volver al video)."""
+        if not self.pip:
+            return
+        self.pip = False
+        for prop, value in (("ontop", False), ("border", True), ("fullscreen", True)):
+            self.mpv.command("set_property", prop, value)
+        log.info("Video a pantalla completa otra vez")
+
+    def _curtain(self, opacity: float) -> None:
+        """El negro del fundido de entrada (debajo de la barra, los avisos y los paneles)."""
+        try:
+            self.mpv.command_named(name="osd-overlay", id=CURTAIN_ID, format="ass-events" if opacity > 0 else "none",
+                                   data=player_ui.curtain_ass(opacity) if opacity > 0 else "",
+                                   res_x=player_ui.W, res_y=player_ui.H, z=0)
+        except Exception:  # noqa: BLE001 - el fundido nunca tumba la reproducción
+            log.debug("No pude dibujar el fundido", exc_info=True)
+
+    def _lift_curtain(self, segment: Segment) -> None:
+        """Destapa el video en medio segundo, en su hilo (y si mientras tanto se cargó otro, ese ya trae su propio negro)."""
+        wait, self._reveal_wait = getattr(self, "_reveal_wait", 0.0), 0.0
+
+        def run() -> None:
+            time.sleep(wait)
+            for opacity in CURTAIN_STEPS:
+                if self.segment is not segment:
+                    return
+                self._curtain(opacity)
+                time.sleep(CURTAIN_STEP)
+
+        threading.Thread(target=run, daemon=True, name="curtain").start()
+
     def _started(self, segment: Segment) -> None:
         """Primera imagen de este archivo: avisos, subtítulos, capítulos y la barra."""
-        tracks = self.mpv.get("track-list") or []
-        chapters = self.mpv.get("chapter-list") or []
+        if not segment.live:
+            self._lift_curtain(segment)
+        tracks = self.mpv.get("track-list")
+        tracks = tracks if isinstance(tracks, list) else []  # una respuesta rara de mpv nunca tumba al vigilante
+        chapters = self.mpv.get("chapter-list")
+        chapters = chapters if isinstance(chapters, list) else []
         segment.chapters = [c for c in chapters if isinstance(c, dict) and isinstance(c.get("time"), (int, float))]
+        if segment.meta.get("synthetic"):
+            if segment.duration and segment.start > 5 and segment.position >= segment.duration - 10:
+                return self._at_end(segment)  # lo que iba al aire ya acabó (duraba menos de lo estimado): el siguiente
+            return self._synthetic_started(segment, tracks)
         if segment.duration and segment.start > 5 and segment.position >= segment.duration - 30:
             # Donde ibas queda más allá del final de este archivo (otra fuente, otra edición): desde el
             # principio, en vez de saltar al final y dar la película por vista.
@@ -466,7 +613,7 @@ class OrbitalPlayer(PlayerScreen):
             self._ensure_subtitles(self._subs_lang, self._fallback_subs)
             self.show_hud()
             return
-        if wrong_audio(tracks, self._audio_lang):
+        if wrong_audio(tracks, self._audio_lang) and not segment.meta.get("synthetic"):
             # El archivo dice ser de otro idioma (un doblaje mal etiquetado): avisa en vez de callar.
             self.toast("Esta fuente no trae audio en tu idioma · Y › Fuente para elegir otra", 6)
         elif segment.start > 5:
@@ -474,6 +621,33 @@ class OrbitalPlayer(PlayerScreen):
         if not self._apply_sub_pick(tracks):
             self._ensure_subtitles(self._subs_lang, self._fallback_subs)
         self.show_hud()  # al empezar: qué estás viendo y qué hace cada botón
+
+    def _synthetic_tick(self, segment: Segment, now: float, paused: bool) -> None:
+        """Un canal de Orbital va al aire aunque no lo veas: tras una pausa de más de un minuto, al seguir, regresa a lo
+        que va a esta hora (como la tele en vivo). Y la programación aprende cuánto dura de verdad cada episodio."""
+        if segment.duration and not segment.duration_told and self.on_synthetic_duration:
+            segment.duration_told = True
+            self._safe(self.on_synthetic_duration, segment.meta, segment.duration)
+        if paused:
+            segment.paused_at = segment.paused_at or now
+            return
+        away, segment.paused_at = (now - segment.paused_at if segment.paused_at else 0), None
+        if away > SYNTHETIC_RESYNC_AFTER and self.on_synthetic_resync and not segment.next_loading:
+            segment.next_loading = time.monotonic()
+            self.toast(f"De vuelta al aire · {segment.title}", 4)
+            self._in_background(self.on_synthetic_resync, segment.meta, failed="No pude volver a lo que va al aire")
+
+    def _synthetic_started(self, segment: Segment, tracks: list) -> None:
+        """Un canal de Orbital: la pista del doblaje del canal (si el archivo no la trae, otra fuente) y qué va."""
+        pick = dub_track(tracks, segment.meta.get("dub") or "latino")
+        if pick is False:
+            log.info("%s no trae audio %s: otra fuente", segment.meta.get("detail"), segment.meta.get("dub"))
+            return self._fail(segment)
+        if pick is not None:
+            self.mpv.command("set_property", "aid", pick)
+        self.mpv.command("set_property", "sid", "no")
+        self.toast(f"Al aire · {segment.meta.get('detail') or segment.title}", 4)
+        self.show_hud()
 
     def _fail_channel(self, segment: Segment) -> None:
         """Un canal no abrió o se cortó: se marca y, si hay otro, se pasa a él (tv.py decide cuál)."""
@@ -490,6 +664,8 @@ class OrbitalPlayer(PlayerScreen):
         segment.failed = True
         if segment.live:
             return self._fail_channel(segment)
+        if segment.meta.get("synthetic"):
+            return self._fail_synthetic(segment)
         log.info("La fuente de %s %s", segment.title, "se cortó" if segment.playing else "no arrancó")
         retrying = False
         if self.on_failed:
@@ -501,10 +677,24 @@ class OrbitalPlayer(PlayerScreen):
             timer.daemon = True
             timer.start()
 
+    def _fail_synthetic(self, segment: Segment) -> None:
+        """Un episodio de un canal de Orbital no abrió: el canal prueba otra fuente u otro episodio (en su hilo)."""
+        log.info("%s: la fuente de %s %s", segment.title, segment.meta.get("detail"), "se cortó" if segment.playing else "no arrancó")
+        handler = self.on_synthetic_failed
+
+        def retry() -> None:
+            if not (handler and self._safe(handler, segment.meta)) and self.segment is segment:
+                self.toast(f"No pude seguir con {segment.title}", 4)
+                timer = threading.Timer(4, lambda: self.segment is segment and self._quit())
+                timer.daemon = True
+                timer.start()
+
+        threading.Thread(target=retry, daemon=True, name="synthetic-retry").start()
+
     def _scrobble(self, action: str, segment: Segment) -> None:
         """Avisa a Trakt (en su propio hilo: la red no toca el video). Nunca un canal en vivo."""
-        if segment.live or not self.on_scrobble or not segment.duration:
-            return
+        if segment.live or segment.meta.get("synthetic") or not self.on_scrobble or not segment.duration:
+            return  # un canal de Orbital tampoco: es la tele de fondo
         if action == "start":
             segment.scrobbling = True
         elif not segment.scrobbling:
@@ -516,7 +706,7 @@ class OrbitalPlayer(PlayerScreen):
     def _save_progress(self, segment: Segment) -> None:
         segment.last_save = time.monotonic()
         delta = segment.watched - segment.saved_watched
-        if segment.live or not self.on_progress or not segment.duration or delta <= 0:
+        if segment.live or segment.meta.get("synthetic") or not self.on_progress or not segment.duration or delta <= 0:
             return
         segment.saved_watched = segment.watched
         threading.Thread(target=self._safe, args=(self.on_progress, segment.meta, segment.position,
@@ -528,8 +718,8 @@ class OrbitalPlayer(PlayerScreen):
             if segment.closed:
                 return
             segment.closed = True
-        if segment.live:
-            return  # la tele en vivo no guarda dónde ibas ni entra en «Seguir viendo»
+        if segment.live or segment.meta.get("synthetic"):
+            return  # la tele (en vivo o un canal de Orbital) no guarda dónde ibas ni entra en «Seguir viendo»
         self._scrobble("stop", segment)  # Trakt: lo que llevabas (≥ 80 % lo marca visto)
         if self.on_finished and segment.duration and not (segment.watched < 20 and segment.position >= segment.duration * .9):
             # (Casi nada visto y «al final»: un salto raro, no la película vista de principio a fin.)
@@ -653,6 +843,11 @@ class OrbitalPlayer(PlayerScreen):
         """Llegó al final (mpv se queda en el último cuadro)."""
         if segment.closed:
             return
+        if segment.meta.get("synthetic") and self.on_synthetic_end:
+            if not segment.next_loading:  # el siguiente episodio del canal, una sola vez
+                segment.next_loading = time.monotonic()
+                self._in_background(self._synthetic_next, segment, failed="No pude seguir con el canal")
+            return
         if segment.upnext and not segment.upnext_dismissed:
             if self._card is None or self._card.get("kind") != "still":
                 self._play_next(segment, auto=True)
@@ -663,6 +858,12 @@ class OrbitalPlayer(PlayerScreen):
             return  # el siguiente episodio se está cargando: no cerrar mpv debajo de él
         self._user_quit = True
         self._quit()
+
+    def _synthetic_next(self, segment: Segment) -> None:
+        handler = self.on_synthetic_end
+        if not (handler and handler(segment.meta)) and self.segment is segment:
+            self._user_quit = True
+            self._quit()
 
     def _play_next(self, segment: Segment, auto: bool) -> None:
         info = segment.upnext
@@ -691,7 +892,7 @@ class OrbitalPlayer(PlayerScreen):
                 self._last_sub = {"off": True}
             else:
                 self._last_sub = {"off": False, "lang": str(chosen.get("lang") or ""), "title": str(chosen.get("title") or ""),
-                                  "url": str(chosen.get("external-filename") or "") if chosen.get("external") else ""}
+                                  "url": self._sub_url(chosen) if chosen.get("external") else ""}
         return getattr(self, "_last_sub", None)
 
     def _apply_sub_pick(self, tracks: list) -> bool:
@@ -709,7 +910,7 @@ class OrbitalPlayer(PlayerScreen):
             self.mpv.command("set_property", "sid", same[0]["id"])
             return True
         if pick.get("url"):
-            self.mpv.command("sub-add", pick["url"], "select", pick.get("title") or "Subtítulos", pick.get("lang") or "")
+            self.add_sub(pick["url"], pick.get("title") or "Subtítulos", pick.get("lang") or "")
             return True
         return False
 
@@ -725,8 +926,36 @@ class OrbitalPlayer(PlayerScreen):
             log.exception("No pude buscar subtítulos")
             return
         if urls:
-            self.mpv.command("sub-add", urls[0], "select", "Subtítulos", lang)
+            self.add_sub(urls[0], "Subtítulos", lang)
             log.info("Subtítulos de un addon (%d disponibles)", len(urls))
+
+    def _sub_url(self, track: dict) -> str:
+        name = str(track.get("external-filename") or "")
+        return self._sub_urls.get(name, name)
+
+    def add_sub(self, url: str, title: str, lang: str, done: str | None = None) -> None:
+        """Agrega y elige un subtítulo. Uno de internet se baja aparte (en segundo plano) y mpv recibe el archivo:
+        así nunca se queda sin contestar mientras lo baja. `done`: el aviso cuando ya está puesto."""
+        playback = self.current
+
+        def work() -> None:
+            path = url
+            if url.startswith(("http://", "https://")):
+                try:
+                    path = self.fetch_subtitle(url)
+                except (OSError, ValueError) as exc:
+                    log.info("No pude bajar los subtítulos: %s", exc)
+                    if done and self.current is playback:
+                        self.toast("No pude bajar esos subtítulos", 2.5)
+                    return
+                self._sub_urls[path] = url
+            if self.current is not playback:
+                return  # mientras se bajaba se abrió otro video: ya no van
+            self.mpv.command("sub-add", path, "select", title, lang)
+            if done:
+                self.toast(done)
+
+        self.background(work)
 
     def pause(self) -> None:
         if self._is_live():
@@ -773,8 +1002,7 @@ class OrbitalPlayer(PlayerScreen):
         return True
 
     def add_subtitles(self, url: str, lang: str) -> None:
-        self.mpv.command("sub-add", url, "select", "Subtítulos", lang)
-        self.toast(f"Subtítulos: {player_ui.language(lang)}")
+        self.add_sub(url, "Subtítulos", lang, done=f"Subtítulos: {player_ui.language(lang)}")
 
     def subtitles_off(self) -> None:
         self.mpv.command("set_property", "sid", "no")
@@ -802,11 +1030,17 @@ class OrbitalPlayer(PlayerScreen):
         if current is None or segment is None:
             return None
         meta = segment.meta
+        logo = f"/api/tv/logo?id={quote(meta['channel_id'], safe='')}" if meta.get("channel_id") else None
+        if meta.get("synthetic"):  # un canal de Orbital, para el iPhone, es tele: el canal y lo que va
+            return {"kind": "tv", "live": True, "channel": current.title, "title": meta.get("detail") or current.title,
+                    "number": None, "category": "Orbital 24/7", "paused": bool(self.mpv.get("pause")),
+                    "muted": self._muted(), "logo": logo, "poster": meta.get("still") or meta.get("poster"),
+                    "meta_id": meta.get("meta_id")}
         if segment.live:
             return {"kind": "tv", "live": True, "channel": meta.get("title") or current.title,
                     "title": meta.get("title") or current.title, "number": meta.get("number"),
                     "category": meta.get("category") or "", "paused": False,
-                    "muted": self._muted()}
+                    "muted": self._muted(), "logo": logo}
         from .companion import episode_numbers  # aquí: companion no se carga con el reproductor
         label = (meta.get("detail") or "").split(" · ", 1)[0]
         parts = label.split()

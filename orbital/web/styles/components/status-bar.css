@@ -22,7 +22,7 @@
 @keyframes mark-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes mark-planet { from { opacity: 0; transform: scale(.6); } }
 .status-bar__moon {
-  display: inline-block; width: .26em; height: .26em; margin-left: .1em; border-radius: 50%; background: currentColor;
+  display: inline-block; width: .26em; height: .26em; margin-left: .1em; border-radius: 50%; background: var(--color-brand-moon);
   vertical-align: .62em; animation: mark-moon var(--duration-enter) var(--ease-spring) both; animation-delay: calc(var(--duration-land) * 1.7);
   transition: translate var(--duration-slow) var(--ease-spring);
 }

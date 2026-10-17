@@ -1,44 +1,66 @@
-/* TV en vivo (js/components/tv.js): categorías en píldora y una cuadrícula de canales. Las piezas son las de una
-   vista con secciones (browse.css: encabezado, píldoras, ventana con desvanecido) y la base .tile (ui.css).
+/* TV en vivo (js/components/tv.js): a la izquierda las categorías, siempre a la vista; a la derecha, arriba, el canal
+   enfocado en vivo (miniatura sin sonido) y abajo los canales de la categoría. La base de cada casilla es .tile (ui.css).
    El fondo es el espacio vivo del Inicio: aquí no hay arte que enseñar, los logos están en cada canal. */
 body[data-view="tv"] .hero, body[data-view="tv"] .shelf { display: none; }
 body[data-view="tv"] .backdrop__layer, body[data-view="tv"] .backdrop__scrim { opacity: 0; }
 body[data-view="tv"] .backdrop { transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--color-backdrop-deep); }
 body[data-view="tv"] .backdrop__space { opacity: 1; }
 
-.tv { grid-row: 2 / 4; position: relative; min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: var(--space-5); padding: var(--space-4) var(--page-gutter) var(--space-2); }
-/* La última fila no queda bajo el desvanecido ni el pie, y la primera se funde bajo las píldoras en vez de cortarse en seco. */
-.tv .browse__viewport {
-  padding-bottom: 3.6rem;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 1.4rem, var(--mask-solid) calc(100% - 3rem), transparent 100%);
-  mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 1.4rem, var(--mask-solid) calc(100% - 3rem), transparent 100%);
-}
+.tv { grid-row: 2 / 4; position: relative; min-height: 0; min-width: 0; display: grid; grid-template-columns: var(--tv-rail-width) minmax(0, 1fr);
+  gap: var(--space-8); padding: var(--space-4) var(--page-gutter) var(--space-2); }
 
-/* LB y RB a los lados de las píldoras, como en la barra de arriba. Las píldoras, en una sola fila: si no caben (letra grande,
-   muchas categorías), la fila se recorre y siempre queda a la vista la categoría activa (tv.js, showPill). */
-.tv__bar { gap: var(--space-4); min-width: 0; }
-.tv__key { display: inline-flex; flex: none; }
-.tv__key:empty { display: none; }
-/* El desvanecido de cada lado solo se enciende cuando ahí hay píldoras escondidas (tv.js lo marca): así «Todos» no nace
-   medio borroso y la última no se queda cortada debajo de la tecla RB. */
-.tv__bar .browse__filters {
-  --fade-left: 0px; --fade-right: 0px;
-  position: relative; flex: 0 1 auto; min-width: 0; flex-wrap: nowrap; overflow: hidden; padding: .35rem 0; margin: -.35rem 0;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, var(--mask-solid) var(--fade-left), var(--mask-solid) calc(100% - var(--fade-right)), transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, var(--mask-solid) var(--fade-left), var(--mask-solid) calc(100% - var(--fade-right)), transparent 100%);
-}
-.tv__filters--left { --fade-left: 2.5rem; }
-.tv__filters--right { --fade-right: 2.5rem; }
+/* Las categorías: una lista vertical con cuántos canales tiene cada una; la elegida, marcada aunque el foco esté en los canales. */
+.tv__cats { display: flex; flex-direction: column; gap: var(--space-1); min-height: 0; overflow: hidden; padding: var(--space-2); margin: calc(-1 * var(--space-2)); }
+.tv__cat { display: flex; align-items: baseline; gap: var(--space-3); padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg); color: var(--color-text-muted); font-size: var(--text-md); text-align: left;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }
+.tv__cat-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tv__cat .icon { flex: none; width: 1.3rem; height: 1.3rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; align-self: center; }
+.tv__cat-count { flex: none; color: var(--color-text-faint-strong); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+.tv__cat--on { background: var(--color-fill); color: var(--color-text); font-weight: var(--weight-medium); }
+.tv__cat.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); }
+.tv__cat.is-focused .tv__cat-count { color: inherit; opacity: .7; }
+
+.tv__main { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; min-height: 0; }
+/* Arriba: la miniatura en vivo (o el logo mientras conecta o si el canal no da vista previa) y qué canal es. */
+.tv__now { flex: none; display: grid; grid-template-columns: minmax(0, var(--tv-preview-width)) minmax(0, 1fr); gap: var(--space-8); align-items: center; }
+.tv__preview { position: relative; aspect-ratio: 16 / 9; border-radius: var(--tile-radius); overflow: hidden; background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-hairline-strong), var(--shadow-card); }
+.tv__preview-logo { position: absolute; inset: 0; display: grid; place-items: center; padding: var(--space-8); }
+.tv__preview-logo img { max-width: 70%; max-height: 70%; object-fit: contain; filter: var(--shadow-drop-sm); }
+.tv__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--duration-slow) var(--ease-out); }
+.tv__preview--live .tv__video { opacity: 1; }
+/* Un canal de Orbital: la imagen del episodio que va, a sangre (no hay señal que enseñar). */
+.tv__preview--still .tv__preview-logo { padding: 0; }
+.tv__preview--still .tv__preview-logo img { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: cover; filter: none; }
+.tv__preview-badge { position: absolute; left: var(--inset-poster); top: var(--inset-poster); padding: .15rem .6rem; border-radius: var(--radius-pill);
+  background: var(--color-badge-bg); box-shadow: var(--shadow-badge); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.tv__preview-badge:empty { display: none; }
+.tv__preview--live .tv__preview-badge::before { content: ""; display: inline-block; width: .5em; height: .5em; margin-right: .4em; border-radius: 50%; background: var(--color-danger); vertical-align: .1em; }
+.tv__now-text { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.tv__now-eyebrow { color: var(--color-live); font-size: var(--type-eyebrow); font-weight: var(--weight-medium); }
+.tv__now-title { margin: 0; font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display);
+  line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .1em; }
+.tv__now-meta { color: var(--color-text-muted); font-size: var(--text-md); }
+.tv__now-hint { color: var(--color-text-faint-strong); font-size: var(--text-sm); }
+
+/* Abajo: los canales de la categoría, en cuadrícula; la ventana se desliza para dejar el enfocado a la vista. */
+.tv__viewport { flex: 1; min-height: 0; padding-bottom: 3.6rem;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 1.2rem, var(--mask-solid) calc(100% - 3rem), transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 1.2rem, var(--mask-solid) calc(100% - 3rem), transparent 100%); }
+.tv__grid { position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--tile-channel-width), 1fr));
+  gap: var(--space-5); transition: transform var(--duration-slow) var(--ease-out); }
+
+/* Tecleando un número (como el control del cable): las cifras en la esquina hasta que se sintoniza. */
+.tv__typed { position: absolute; top: var(--space-4); right: var(--page-gutter); z-index: var(--z-panel);
+  padding: var(--space-2) var(--space-5); border-radius: var(--radius-lg); background: var(--color-badge-bg); box-shadow: var(--shadow-badge);
+  font-family: var(--font-sans); font-size: var(--text-2xl); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums; letter-spacing: .12em; }
 
 /* Una casilla: el logo al centro, el nombre abajo y su número en la esquina. */
-.tv__grid {
-  position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--tile-channel-width), 1fr));
-  gap: var(--space-6) var(--space-5); transition: transform var(--duration-slow) var(--ease-out);
-}
-.tv__tile { aspect-ratio: 16 / 9; display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center; gap: var(--space-2); padding: var(--space-5) var(--space-4) var(--space-3); }
+.tv__tile { aspect-ratio: 16 / 9; display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center; gap: var(--space-2); padding: var(--inset-card); } /* tarjeta mediana: un margen, igual en los cuatro lados */
 /* El número y los avisos van sobre el logo (que ocupa casi toda la casilla): una placa oscura para que se lean sobre cualquiera. */
-.tv__number { position: absolute; z-index: var(--z-raised); top: var(--space-2); left: var(--space-2); }
-.tv__flag { position: absolute; z-index: var(--z-raised); top: var(--space-2); right: var(--space-2); }
+.tv__number { position: absolute; z-index: var(--z-raised); top: var(--inset-poster); left: var(--inset-poster); }
+.tv__flag { position: absolute; z-index: var(--z-raised); top: var(--inset-poster); right: var(--inset-poster); }
 .tv__number, .tv__flag.chip { background: var(--color-badge-bg); box-shadow: var(--shadow-badge); }
 /* El logo siempre dentro de su caja (los hay altos, cuadrados y anchos): ocupa el área y se ajusta sin salirse ni tapar el nombre. */
 .tv__media { position: relative; display: grid; place-items: center; width: 100%; height: 100%; min-height: 0; min-width: 0; }

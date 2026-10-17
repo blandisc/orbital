@@ -33,3 +33,26 @@ body[data-view="foryou"] .backdrop__space { opacity: 1; }
 [data-input="touch"] .foryou__switch-glyph { display: none; }
 .foryou__switch-opt { padding: .32rem .9rem; border-radius: var(--radius-pill); color: var(--color-text-muted); font-size: var(--text-sm); transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out); }
 .foryou__switch-opt--on { background: var(--inverse-bg); color: var(--inverse-fg); font-weight: var(--weight-medium); }
+
+/* Protector de pantalla (main.js · saver): el mosaico a pantalla completa y solo la hora; nada de botones ni leyendas. */
+body[data-screensaver] .hints, body[data-screensaver] .foryou__switch, body[data-screensaver] .status-bar__brand,
+body[data-screensaver] .status-bar__search, body[data-screensaver] .status-bar__tabs,
+body[data-screensaver] .status-bar__right > :not(.status-bar__clock):not(.battery) { display: none; }
+body[data-screensaver] .foryou-mosaic__tile--on { box-shadow: none; }
+/* De borde a borde (sin el aire de la barra ni del pie) y, encima, a la derecha, solo la batería y la hora en blanco. */
+body[data-screensaver] .foryou { position: fixed; inset: 0; z-index: var(--z-raised); padding: 0 var(--page-gutter); }
+body[data-screensaver] .foryou-mosaic {
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 3%, var(--mask-solid) 97%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 3%, var(--mask-solid) 97%, transparent 100%);
+}
+body[data-screensaver] .status-bar { z-index: var(--z-overlay); }
+/* En una cápsula de vidrio, como la etiqueta de plataforma: se lee sobre cualquier póster (sobre uno claro, el texto con
+   sombra se perdía), y sigue siendo discreta. */
+body[data-screensaver] .status-bar__right {
+  margin-left: auto; gap: var(--space-4); padding: var(--space-2) var(--space-5); border-radius: var(--radius-pill); color: var(--color-text);
+  background: var(--color-badge-bg); -webkit-backdrop-filter: blur(var(--blur-glass)); backdrop-filter: blur(var(--blur-glass));
+}
+body[data-screensaver] .status-bar__clock { padding-left: var(--space-4); border-left-color: var(--color-hairline-strong); }
+body[data-screensaver] .battery__percent { color: var(--color-text); }
+body[data-screensaver] .battery__body { border-color: var(--color-text); }
+body[data-screensaver] .battery__level, body[data-screensaver] .battery__body::after { background: var(--color-text); }

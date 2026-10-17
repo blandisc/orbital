@@ -1,4 +1,5 @@
-import { h, mount } from "../core/dom.js";
+import { h, mount, svg } from "../core/dom.js";
+import { ICONS } from "../core/icons.js";
 import { dragArea, dragScroll } from "../core/swipe.js";
 import { buildHome, queueTitle } from "../core/home.js";
 import { settler } from "../core/motion.js";
@@ -70,7 +71,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   /** Qué es lo enfocado (no dónde está): un juego o una consola. */
   const identity = (t) => (t?.item?.id ?? (t?.console ? `console:${t.console.id ?? t.console.system ?? t.console.name}` : null));
 
-  function render(rows, { runningId = null, glyphs = {}, hidden = 0, airing = {} } = {}) {
+  function render(rows, { runningId = null, glyphs = {}, hidden = 0, airing = {}, nextUp = null } = {}) {
     options = { runningId, glyphs };
     hiddenCount = hidden;
     staged = undefined; // se vuelve a pintar con los datos nuevos
@@ -93,7 +94,13 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
       return RowTile(item, { focusId: `card:${i}`, onPress: pick(`card:${i}`), airing: imdb && airing?.[imdb] });
     });
     top.classList.toggle("home__top--alone", !queued.length);
-    mount(queue, queued.length > 0 && SectionHead(queueTitle(model.cards), { className: "home__queue-head" }),
+    // Listo antes de abrir: el fondo de cada tarjeta (lo usan la pantalla de carga y la ficha) se pide de una vez.
+    model.cards.forEach((item) => { const art = item.hero || item.image; if (art) new Image().src = art; });
+    // Bajo el título, el próximo estreno de tus series (como el widget del iPhone): «The Simpsons T38 E3 · Mañana · 6:00 p. m.».
+    const upcoming = nextUp && h("div", { class: "home__next" }, svg(ICONS.calendar),
+      h("span", { class: "home__next-text" }, [nextUp.title, nextUp.episode].filter(Boolean).join(" ")), h("span", { class: "home__next-when" }, `· ${nextUp.when}`));
+    mount(queue, queued.length > 0 && SectionHead(queueTitle(), { className: "home__queue-head" }),
+      queued.length > 0 && upcoming,
       queued.length > 0 && h("div", { class: "home__rows" }, queued));
 
     mount(consolesHead, model.consoles.length > 0 && SectionHead("Tus consolas", {
@@ -171,8 +178,27 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     const list = queue.querySelector(".home__rows");
     if (!list) return;
     const rows = [...list.children];
-    rows.forEach((row) => { row.hidden = false; });
+    list.style.gridTemplateRows = ""; // se mide con todas iguales
+    list.classList.remove("home__rows--grown");
+    rows.forEach((row) => { row.hidden = false; row.classList.remove("tile--row-out"); });
     for (let n = rows.length - 1; n > 0 && list.scrollHeight > list.clientHeight + 1; n--) rows[n].hidden = true;
+    growRows();
+  }
+
+  /**
+   * La tarjeta enfocada ocupa dos lugares y enseña más (rowMore en tiles.js). Con cuatro, una sale: si es de las
+   * primeras, empuja a la de hasta abajo; si es de las últimas, a la de hasta arriba. Fuera de la columna, todas iguales.
+   */
+  function growRows() {
+    const list = queue.querySelector(".home__rows");
+    if (!list) return;
+    const rows = [...list.children].filter((row) => !row.hidden);
+    const i = rows.findIndex((row) => row.dataset.focusId === focusId);
+    const out = i >= 0 && rows.length >= 4 ? (i < rows.length / 2 ? rows.length - 1 : 0) : -1;
+    rows.forEach((row, j) => row.classList.toggle("tile--row-out", j === out));
+    list.classList.toggle("home__rows--grown", i >= 0 && rows.length >= 2);
+    list.style.gridTemplateRows = i >= 0 && rows.length >= 2
+      ? rows.map((_, j) => (j === i ? "2fr" : j === out ? "0fr" : "1fr")).join(" ") : "";
   }
 
   /** En Tus consolas el Inicio se desliza lo justo para enseñarlas enteras; arriba, vuelve. */
@@ -208,6 +234,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
       else node.removeAttribute("aria-current");
     }
     el.dataset.zone = inConsoles ? "consoles" : "top";
+    growRows();
     keepConsoleVisible();
     scrollToFocus();
     onFocus?.(targets.get(focusId));

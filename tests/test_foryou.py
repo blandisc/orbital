@@ -636,3 +636,27 @@ def test_trim_rejects_what_is_not_a_logo():
         iptv_logos.trim(b"no soy una imagen")
     with pytest.raises(iptv_logos.LogoError):
         iptv_logos.trim(_logo_png(box=(0, 0, 0, 0)))
+
+
+def test_the_first_mosaic_art_is_ready_before_it_is_seen(library, make_foryou, monkeypatch):
+    from orbital import remote_art
+
+    asked: list[tuple[str, int]] = []
+    monkeypatch.setattr(remote_art, "sized", lambda url, width, *a, **k: asked.append((url, width)) or "ok")
+    fy = make_foryou(trakt_keys=False)
+    items = [{"image": "https://images.metahub.space/poster/medium/tt1/img"}, {"image": "img/placeholders/x.jpg"}]
+    assert fy.prefetch_art(items) == 1
+    assert asked == [("https://images.metahub.space/poster/medium/tt1/img", 360)]
+
+
+def test_each_row_carries_genres_and_runtime_for_the_iphone():
+    """«Decide por mí» del iPhone: cada fila trae sus géneros y lo que dura (en una serie, un episodio), si se saben."""
+    from orbital import foryou
+    from orbital.library import trakt
+
+    e = trakt.entry({"title": "Severance", "year": 2022, "runtime": 55, "genres": ["drama", "science-fiction"],
+                     "ids": {"imdb": "tt11280740", "trakt": 1}}, "series")
+    item = foryou.video_item(e, "Porque sí")
+    assert item["genres"] == ["Drama", "Science Fiction"] and item["runtime"] == 55
+    bare = foryou.video_item({"imdb": "tt1", "kind": "movie", "title": "Sin datos"}, "x")
+    assert "genres" not in bare and "runtime" not in bare  # sin el dato: se omite (el iPhone le pregunta a Cinemeta)

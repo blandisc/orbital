@@ -1,8 +1,14 @@
 import { h, svg } from "../core/dom.js";
-import { brandParts, factLine, trimmedLogo, iconName, nearestTile, nextUnseen, posterRatio, shapeOf } from "../core/foryou.js";
+import { brandParts, factLine, trimmedLogo, iconName, nearestTile, nextUnseen, posterRatio } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
+import { sized } from "../core/images.js";
+import { settler } from "../core/motion.js";
 import { Badge } from "./ui.js";
 import { dragArea, hoverArea } from "../core/swipe.js";
+
+// Al ancho en que se ven (core/images.js): el póster de una columna y la pieza enfocada, que se ensancha.
+const POSTER_PX = 360;
+const WIDE_PX = 720;
 
 /**
  * «Para ti» · mosaico: columnas de imágenes (portadas altas y arte ancho) con lo tuyo mezclado.
@@ -79,16 +85,22 @@ export function createForYouMosaic({ onFocus, onPick }) {
         if (!node.querySelector(".foryou-mosaic__art")) node.classList.add("foryou-mosaic__tile--bare");
       });
     };
-    const poster = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--poster", src: item.image || item.hero || "", alt: "", decoding: "async" });
-    const wide = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--wide", src: item.hero || item.image || "", alt: "", decoding: "async" });
-    swap(poster, item.image_fallback || item.hero);
-    swap(wide, item.image);
-    // Sin foco, un juego de Steam enseña su cápsula (lleva el juego y su nombre); el «hero» es un fondo
-    // pensado para el logo encima, así que solo sale enfocado, con el logo.
-    const capsule = item.wide && h("img", { class: "foryou-mosaic__art foryou-mosaic__art--capsule", src: item.wide, alt: "", decoding: "async" });
+    const poster = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--poster", src: sized(item.image || item.hero || "", POSTER_PX), alt: "", decoding: "async" });
+    // El arte ancho solo hace falta cuando su columna se enfoca (ahí todas pasan a lo ancho): se pide hasta entonces.
+    // Antes cada pieza cargaba también su fondo ancho, aunque nunca se viera (el doble de memoria en Edge).
+    const wide = h("img", { class: "foryou-mosaic__art foryou-mosaic__art--wide", alt: "", decoding: "async" });
+    swap(poster, sized(item.image_fallback || item.hero, POSTER_PX));
+    swap(wide, sized(item.image, WIDE_PX));
+    // En la columna enfocada, un juego de Steam sin foco enseña su cápsula (lleva el juego y su nombre); el «hero» es un
+    // fondo pensado para el logo encima, así que solo sale en la pieza enfocada, con el logo.
+    const capsule = item.wide && h("img", { class: "foryou-mosaic__art foryou-mosaic__art--capsule", alt: "", decoding: "async" });
     if (capsule) capsule.addEventListener("error", () => capsule.remove(), { once: true });
+    const loadWide = () => {
+      if (!wide.getAttribute("src")) wide.src = sized(item.hero || item.image || "", WIDE_PX);
+      if (capsule && !capsule.getAttribute("src")) capsule.src = sized(item.wide, WIDE_PX);
+    };
     const name = () => h("strong", { class: "foryou-mosaic__name" }, item.title);
-    const logo = item.logo ? h("img", { class: "foryou-mosaic__logo", src: trimmedLogo(item.logo), alt: item.title }) : name();
+    const logo = item.logo ? h("img", { class: "foryou-mosaic__logo", src: sized(trimmedLogo(item.logo), 320), alt: item.title }) : name();
     if (item.logo) logo.addEventListener("error", () => logo.replaceWith(name()), { once: true });
     const node = h("div", { class: "foryou-mosaic__tile", role: "button", tabindex: "-1", "aria-label": item.title, onClick: () => tap(node) },
       poster, wide, capsule,
@@ -98,7 +110,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
         item.why && Badge(h("span", {}, brandParts(item.why).map((p) => (p.brand ? h("span", { class: ["brand-name", `brand-name--${p.brand}`] }, p.text) : p.text))),
           { large: true }), logo,
         h("span", { class: "foryou-mosaic__fact" }, factLine(item))));
-    return { item, node, logo, top: 0, h: 0 };
+    return { item, node, logo, loadWide, top: 0, h: 0 };
   }
 
   // Lo que se ve y lo que viene abajo (entra junto al bajar). Lo que ya subió no cuenta: antes también,
@@ -117,10 +129,18 @@ export function createForYouMosaic({ onFocus, onPick }) {
   }
 
   // --- acomodo ----------------------------------------------------------------------------------
+  let unitW = 0; // el ancho de una columna sin foco (las piezas verticales miden eso, también en la columna enfocada)
+
+  /** Solo la enfocada se abre a lo ancho; las demás de su columna siguen en vertical, del ancho de siempre y centradas
+   *  (queda aire a los lados, pero no cambian de forma). Sin foco, todas en vertical (las cajas de GBA, casi cuadradas). */
   function tileHeight(col, c, r, item) {
-    const wideCol = mode === "focus" && c === focus.col;
-    if (wideCol) return Math.round(col.w * (r === focus.row ? .64 : .5));
-    return Math.round(col.w * (shapeOf(item) === "wide" ? .58 : 1 / posterRatio(item)));
+    if (mode === "focus" && c === focus.col && r === focus.row) return Math.round(col.w * .64);
+    return Math.round((unitW || col.w) / posterRatio(item));
+  }
+
+  function tileInset(col, c, r) {
+    const narrow = mode === "focus" && c === focus.col && r !== focus.row && unitW && col.w > unitW;
+    return narrow ? `${Math.round((col.w - unitW) / 2)}px` : "";
   }
 
   /** Anchos de columna, alto y lugar de cada pieza; siempre con piezas de sobra abajo. */
@@ -130,6 +150,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
     const weights = columns.map((_, c) => (mode === "focus" && c === focus.col ? GROW : 1));
     const r = ring();
     const unit = (W - 2 * r - g * (COLS - 1)) / weights.reduce((a, b) => a + b, 0);
+    unitW = unit;
     let x = r;
     columns.forEach((col, c) => {
       col.x = x;
@@ -140,13 +161,15 @@ export function createForYouMosaic({ onFocus, onPick }) {
       fill(col, c); // primero las piezas que falten; luego cada una en su lugar (y la enfocada, marcada)
       let y = col.tiles[0]?.top ?? 0; // desde donde empieza lo que sigue vivo (lo de arriba pudo podarse)
       col.tiles.forEach((t, r) => {
-        const wideCol = mode === "focus" && c === focus.col;
+        const on = mode === "focus" && c === focus.col && r === focus.row;
         t.h = tileHeight(col, c, r, t.item);
         t.top = y;
         y += t.h + g;
         t.node.style.top = `${t.top}px`;
         t.node.style.height = `${t.h}px`;
-        t.node.classList.toggle("foryou-mosaic__tile--land", wideCol || shapeOf(t.item) === "wide");
+        t.node.style.left = t.node.style.right = tileInset(col, c, r);
+        t.node.classList.toggle("foryou-mosaic__tile--land", on);
+        if (on) t.loadWide();
         t.node.classList.toggle("foryou-mosaic__tile--on", mode === "focus" && c === focus.col && r === focus.row);
       });
     });
@@ -166,7 +189,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
       t.h = tileHeight(col, c, col.tiles.length, item);
       t.node.style.top = `${t.top}px`;
       t.node.style.height = `${t.h}px`;
-      t.node.classList.toggle("foryou-mosaic__tile--land", shapeOf(item) === "wide");
+      t.node.style.left = t.node.style.right = tileInset(col, c, col.tiles.length);
       col.tiles.push(t);
       col.track.append(t.node);
     }
@@ -205,6 +228,26 @@ export function createForYouMosaic({ onFocus, onPick }) {
     applyOffsets();
   }
 
+  // Recorrer rápido (cruceta sostenida o pasos seguidos): solo se mueve el marco; la columna se abre, el arte llega y se
+  // piden los datos cuando te detienes (como Inicio y Game Glance). Antes cada paso reacomodaba todo el mosaico.
+  const settle = settler({ quick: 0, held: 220 });
+  let settleTimer = 0;
+  let next = null;
+
+  function markNext(t) {
+    next?.node.classList.remove("foryou-mosaic__tile--next");
+    next = t;
+    t?.node.classList.add("foryou-mosaic__tile--next");
+  }
+
+  function paintSoon(options) {
+    const wait = settle();
+    clearTimeout(settleTimer);
+    if (!wait) { markNext(null); paint(options); return; }
+    markNext(columns[focus.col]?.tiles[focus.row] ?? null);
+    settleTimer = setTimeout(() => { markNext(null); paint(options); }, wait);
+  }
+
   function paint({ together = false } = {}) {
     if (!el.clientWidth) return; // oculto (se precarga al arrancar): se acomoda al mostrarse
     el.classList.toggle("foryou-mosaic--focusing", mode === "focus");
@@ -214,6 +257,16 @@ export function createForYouMosaic({ onFocus, onPick }) {
     else applyOffsets();
     alive();
     onFocus?.(current());
+    if (mode === "focus") readyAhead();
+  }
+
+  /** Lo que sigue, listo antes de llegar: el arte ancho de las piezas a la vista de su columna y de las de al lado. */
+  function readyAhead() {
+    const { H } = size();
+    for (const c of [focus.col - 1, focus.col, focus.col + 1]) {
+      const col = columns[c];
+      col?.tiles.forEach((t) => { if (t.top + t.h > col.offset - H * .25 && t.top < col.offset + H * 1.25) t.loadWide(); });
+    }
   }
 
   // «Cobra vida»: quieto en una pieza, su arte se acerca despacio.
@@ -289,7 +342,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
       const t = from.tiles[focus.row];
       const center = t.top - from.offset + t.h / 2;
       focus = { col: c, row: nearestTile(columns[c].tiles, columns[c].offset, center) };
-      paint();
+      paintSoon();
       return true;
     }
     const col = columns[focus.col];
@@ -298,6 +351,8 @@ export function createForYouMosaic({ onFocus, onPick }) {
     fill(col, focus.col);
     if (row >= col.tiles.length) return "edge";
     focus.row = row;
+    clearTimeout(settleTimer);
+    markNext(null);
     paint({ together: true });
     return true;
   }

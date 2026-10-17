@@ -28,6 +28,11 @@ export function gameMenu(item, { running = null, phone = false } = {}) {
     const series = item.extra?.kind === "series" || String(item.id || "").startsWith("cinemeta:series:");
     options.push({ icon: "info", label: series ? "Ver episodios" : "Ver ficha", command: { type: "title", id: item.id } });
   }
+  // Una película o serie: elegir otro póster o fondo (de TMDB) cuando el de siempre no te gusta.
+  const metaId = item.extra?.meta_id || item.meta_id;
+  if (isWatchable(item) && !isOpen && /^tt\d+$/.test(metaId || "")) {
+    options.push({ icon: "cover", label: "Cambiar el arte", command: { type: "media-art", kind: item.extra?.kind || item.kind || "movie", metaId, title: item.title } });
+  }
   if (item.source === "stremio" && item.category === "continue") {
     options.push({ icon: "minus", label: "Quitar de Seguir viendo", command: { type: "dismiss", id: item.id, title: item.title } });
   }
@@ -105,11 +110,53 @@ export const ALEXA_EXAMPLES = [
   { icon: "sound", label: "«le suba al volumen»", hint: "O «le baje tantito», «ponga el volumen en 30»" },
 ];
 
-export function alexaMenu() {
+export function alexaMenu(guide = null) {
+  // «Lo que puedes decir» (como en el iPhone): cómo decirlo, cada tema con todas sus frases y qué hacer si no funciona.
+  // Las frases son las de alexa/commands.json (la misma lista que el iPhone). Sin la guía, los ejemplos de siempre.
+  if (!guide?.groups?.length) {
+    return {
+      title: "Pídeselo a Alexa",
+      subtitle: "Empieza con «Alexa, pídele a mi consola que…» y sigue con lo que quieras:",
+      options: ALEXA_EXAMPLES.map((e) => ({ ...e, command: { type: "stay" } })),
+    };
+  }
   return {
-    title: "Pídeselo a Alexa",
-    subtitle: "Empieza con «Alexa, pídele a mi consola que…» y sigue con lo que quieras:",
-    options: ALEXA_EXAMPLES.map((e) => ({ ...e, command: { type: "stay" } })),
+    title: "Lo que puedes decir", crumb: "Voz",
+    subtitle: "Con Alexa, el micrófono del control del iPhone o Siri: las mismas frases.",
+    options: [
+      { heading: true, label: "Cómo decirlo" },
+      ...(guide.how || []).map((h) => ({ icon: "assistant", label: `«${h.say}»`, hint: h.note, command: { type: "stay" } })),
+      { heading: true, label: "Por tema" },
+      ...guide.groups.map((g, i) => ({ icon: GUIDE_ICONS[g.icon] || "assistant", label: g.title, value: String(g.commands.length),
+        command: { type: "voice-group", index: i } })),
+      { icon: "info", label: "Si no funciona", command: { type: "voice-help" } },
+    ],
+  };
+}
+
+/** Los íconos de los temas de la guía (los nombres de SF Symbols del iPhone → los de la tele). */
+const GUIDE_ICONS = { gamecontroller: "gamepad", film: "movie", "play.rectangle": "play", play: "play", tv: "tv",
+  sparkles: "spark", gearshape: "settings", gear: "settings" };
+
+/** Un tema de la guía: todas sus frases, con lo que hace cada una. */
+export function voiceGroupMenu(group) {
+  return {
+    title: group.title, crumb: group.title, subtitle: "Empieza con «Alexa, pídele a mi consola que…»",
+    options: group.commands.map((c) => ({ icon: "assistant", label: `«${c.say}»`, hint: c.note, command: { type: "stay" } })),
+  };
+}
+
+/** Si la voz no funciona: lo que más pasa, en la tele. */
+export function voiceHelpMenu() {
+  return {
+    title: "Si no funciona", crumb: "Si no funciona",
+    options: [
+      { icon: "assistant", label: "Empieza con «pídele a mi consola que…»", hint: "Sin eso, Alexa intenta hacerlo ella sola", command: { type: "stay" } },
+      { icon: "search", label: "Revisa lo que entendió", hint: "Abajo sale «No entendí…» con lo que escuchó: dilo más despacio o búscalo", command: { type: "stay" } },
+      { icon: "grid", label: "Cuando hay varias", hint: "Si pides «pon Dune» y hay más de una, salen en la tele para elegir", command: { type: "stay" } },
+      { icon: "wifi", label: "Si Alexa no encuentra tu consola", hint: "Orbital tiene que estar encendida y con Internet", command: { type: "stay" } },
+      { icon: "phone", label: "Desde el iPhone", hint: "El micrófono del control y Siri usan las mismas frases", command: { type: "stay" } },
+    ],
   };
 }
 
@@ -128,7 +175,7 @@ export function mainMenu({ running, hiddenCount, canExit = false, alexa = false 
     options.push({ icon: "show", label: "Mostrar juegos ocultos", hint: String(hiddenCount), command: { type: "unhide-all" } });
   }
   options.push({ icon: "gamepad", label: "Cómo se usa", hint: "Qué hace cada botón", command: { type: "controls" } });
-  if (alexa) options.push({ icon: "assistant", label: "Pídeselo a Alexa", hint: "Frases que entiende", command: { type: "alexa-menu" } });
+  if (alexa) options.push({ icon: "assistant", label: "Lo que puedes decir", hint: "Alexa, el iPhone y Siri", command: { type: "alexa-menu" } });
   options.push({ icon: "settings", label: "Ajustes", command: { type: "settings" } });
   options.push({ icon: "power", label: "Apagar", hint: "Suspender, reiniciar o apagar", command: { type: "power-menu" } });
   if (canExit) {
@@ -344,7 +391,10 @@ export const SETTING_VALUES = {
   voice_tips: [[true, "Sí"], [false, "No"]],
   game_idle_minutes: [[30, "30 min"], [60, "1 hora"], [120, "2 horas"], [0, "Nunca"]],
   video_idle_minutes: [[15, "15 min"], [30, "30 min"], [60, "1 hora"], [0, "Nunca"]],
+  video_home: [["pip", "En pequeño"], ["pause", "Pausar"]],
   close_previous: [[true, "Sí"], [false, "No"]],
+  emulator_updates: [["avisar", "Avisarme"], ["auto", "Automático"], ["nunca", "No revisar"]],
+  screensaver_minutes: [[5, "5 min"], [10, "10 min"], [20, "20 min"], [30, "30 min"], [0, "Nunca"]],
 };
 
 export const settingLabel = (key, value) => SETTING_VALUES[key]?.find(([v]) => v === value)?.[1] ?? otherValue(key, value);
@@ -383,7 +433,7 @@ function edgeAware(key, value, step, page) {
 const SETTING_ICONS = {
   audio: "sound", subtitles: "captions", quality: "hd", sub_scale: "text", text_size: "text", safe_area: "wide",
   reduce_motion: "moon", voice_tips: "assistant", sounds: "sound", haptics: "gamepad", game_idle_minutes: "gamepad",
-  video_idle_minutes: "play", close_previous: "swap",
+  video_idle_minutes: "play", close_previous: "swap", screensaver_minutes: "grid", video_home: "wide",
 };
 
 const SETTING_PAGES = {
@@ -393,10 +443,12 @@ const SETTING_PAGES = {
   display: { title: "Pantalla y sonido", icon: "display", hint: "Texto, márgenes, sonidos y vibración", options: [
     ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],
     ["reduce_motion", "Reducir movimiento", null], ["voice_tips", "Frases para Alexa", null],
-    ["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null]] },
+    ["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null],
+    ["screensaver_minutes", "Protector de pantalla", "El mosaico de Para ti tras ese rato sin usarla"]] },
   sessions: { title: "Juegos y videos", icon: "gamepad", hint: "Qué se cierra solo y cuándo", options: [
     ["game_idle_minutes", "Cerrar juegos olvidados en pausa", "Lo no guardado se pierde"],
     ["video_idle_minutes", "Cerrar videos olvidados en pausa", "Tu avance se guarda"],
+    ["video_home", "Home durante un video", "En pequeño: sigue en una esquina"],
     ["close_previous", "Abrir algo nuevo cierra lo anterior", null]] },
 };
 
@@ -421,7 +473,44 @@ export function maintenanceMenu() {
       { icon: "folder", label: "Carpetas de juegos", command: { type: "folders" } },
       { icon: "windows", label: "Ventanas abiertas", command: { type: "windows" } },
       { icon: "pulse", label: "Diagnóstico", command: { type: "diagnostics" } },
+      { icon: "gamepad", label: "Emuladores", hint: "Versiones nuevas", command: { type: "emulators" } },
       { icon: "refresh", label: "Actualizar Orbital", command: { type: "update-check" } },
+    ],
+  };
+}
+
+const EMULATOR_MODE_HINTS = {
+  avisar: "Te aviso cuando haya una versión nueva",
+  auto: "Instalo solas las que se pueden, nunca con un juego abierto",
+  nunca: "No reviso (puedes revisar aquí cuando quieras)",
+};
+
+/**
+ * Emuladores: cada uno con su versión y si hay una nueva. Los que vienen en .zip se instalan desde aquí (A); los demás
+ * dicen dónde bajarlos. Arriba, el modo: avisar, automático o no revisar (◀/▶).
+ */
+export function emulatorsMenu({ mode = "avisar", items = [], installing = false } = {}) {
+  const row = (e) => {
+    const value = e.error ? "Sin revisar" : e.update ? (e.likely ? "Puede haber nueva" : `Nueva: ${e.latest}`) : "Al día";
+    const site = String(e.page || "").replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+    const hint = e.error ? "Su sitio no contestó"
+      : e.update && e.can_install ? `Tienes ${e.installed}`
+        : e.update ? `Se baja en ${site}`
+          : e.installed ? `Versión ${e.installed}` : "";
+    return { icon: e.error ? "info" : e.update ? "download" : "check", label: e.name, value, hint,
+      command: e.update && e.can_install && !installing ? { type: "emulator-install", id: e.id, name: e.name } : { type: "stay" } };
+  };
+  return {
+    title: "Emuladores", crumb: "Emuladores",
+    subtitle: installing ? "Actualizando un emulador… te aviso al terminar." : "",
+    options: [
+      { icon: "refresh", label: "Actualizaciones", value: settingLabel("emulator_updates", mode), hint: EMULATOR_MODE_HINTS[mode],
+        command: { type: "emulators-mode", value: nextSetting("emulator_updates", mode) },
+        adjust: { left: { type: "emulators-mode", value: stepSetting("emulator_updates", mode, -1) },
+          right: { type: "emulators-mode", value: stepSetting("emulator_updates", mode, 1) } } },
+      { heading: true, label: "Tus emuladores" },
+      ...items.map(row),
+      { icon: "refresh", label: "Revisar ahora", command: { type: "emulators", force: true } },
     ],
   };
 }

@@ -201,6 +201,10 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
         f"--title={title}", f"--force-media-title={title}",
         f"--alang={','.join(build_lang_list(audio))}", *subtitle_options(subtitles, audio),
         "--sub-auto=fuzzy", *cache, "--hwdec=auto-safe",
+        # Sin el modo «flip» de Direct3D: con él, cada ventana de mpv dejaba ~140 MB en la memoria de dibujo de Windows
+        # (DWM) y cada cambio de video ~100 MB más, sin devolverlos nunca (controlador AMD, tele 4K: llegó a 14 GB y
+        # Windows se quedaba sin RAM). Medido en la tele: con flip, +578 MB en 4 ventanas; sin flip, 0 MB.
+        "--d3d11-flip=no",
         "--save-position-on-quit=no", "--volume=100", "--msg-level=all=warn", *mpv_background(mpv), *OSD_STYLE,  # el volumen es el de Windows
     ]
     if live:
@@ -274,6 +278,9 @@ class Segment:
     next_loading: float = 0.0  # cuándo se pidió el siguiente episodio (mientras carga, el final no cierra)
     upnext_dismissed: bool = False
     upnext_deadline: float | None = None
+    paused_at: float | None = None  # canal de Orbital: desde cuándo está en pausa (al seguir, regresa al aire)
+    duration_told: bool = False  # canal de Orbital: ya se le dijo cuánto dura de verdad este episodio
+    grace_until: float = 0.0  # otro archivo en la misma ventana: hasta entonces no se lee su posición (player.tick)
 
 
 class PlayerRemote:
@@ -335,6 +342,33 @@ def has_language(tracks: list[dict], kind: str, codes: set[str]) -> bool:
 def idle_expired(since: float, now: float, limit: float) -> bool:
     """¿Lleva más de `limit` segundos en pausa? (0 = nunca se cierra solo)."""
     return limit > 0 and now - since >= limit
+
+
+SPANISH_TRACK = re.compile(r"^(es|spa|es-\w+)$", re.I)
+LATINO_TRACK = re.compile(r"latin|\blat\b|419|latam|m[eé]xic|hispanoam", re.I)
+CASTELLANO_TRACK = re.compile(r"castellano|castilian|espa[ñn]a|spain|\bes-es\b|europe|ib[eé]ric", re.I)
+
+
+def dub_track(tracks: list[dict], dub: str = "latino") -> int | None | bool:
+    """La pista de audio de ese doblaje del español (los canales de Orbital). La que lo dice primero; si ninguna lo dice,
+    una en español que no diga ser del otro. None si el archivo no dice nada de idiomas (se queda la que trae);
+    False si trae español pero solo del otro doblaje, o idiomas pero ningún español (no sirve: otra fuente)."""
+    audio = [t for t in tracks or [] if t.get("type") == "audio" and isinstance(t.get("id"), int)]
+    wanted, other = (LATINO_TRACK, CASTELLANO_TRACK) if dub == "latino" else (CASTELLANO_TRACK, LATINO_TRACK)
+
+    def label(t: dict) -> str:
+        return f"{t.get('lang') or ''} {t.get('title') or ''}".strip()
+
+    spanish = [t for t in audio if SPANISH_TRACK.match(str(t.get("lang") or "")) or re.search(r"espa[ñn]ol|spanish", label(t), re.I)]
+    for t in spanish:
+        if wanted.search(label(t)):
+            return t["id"]
+    neutral = [t for t in spanish if not other.search(label(t))]
+    if neutral:
+        return neutral[0]["id"]
+    if spanish or any(t.get("lang") and str(t.get("lang")).lower() not in ("und", "mul") for t in audio):
+        return False
+    return None
 
 
 def wrong_audio(tracks: list[dict], lang: str) -> bool:

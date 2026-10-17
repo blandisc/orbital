@@ -130,7 +130,7 @@ def test_now_playing_live_channel_has_no_progress(library):
     _play_channel(library)
     now = companion.now_playing(library)
     assert now == {"kind": "tv", "live": True, "channel": "Canal 2", "title": "Canal 2", "number": 2,
-                   "category": "Noticias", "paused": False, "muted": False}
+                   "category": "Noticias", "paused": False, "muted": False, "logo": "/api/tv/logo?id=c2"}
 
 
 def test_control_player_raises_without_anything_playing(library):
@@ -221,7 +221,8 @@ def test_companion_now_is_null_without_anything_open(library):
     main = create_app(library.config, library)
     with TestClient(create_public_app(library.config, main)) as c:
         r = c.get("/api/companion/now", headers={"Authorization": "Bearer secreto"})
-        assert r.status_code == 200 and r.json() == {"playing": None, "inbox": [], "ui": {"screen": "home", "text_field": False}}
+        assert r.status_code == 200 and r.json() == {"playing": None, "inbox": [], "ui": {"screen": "home", "text_field": False},
+                                             "volume": {"level": r.json()["volume"]["level"], "muted": False}}
 
 
 def test_companion_now_reports_whats_playing(library):
@@ -245,6 +246,33 @@ def test_companion_player_toggle_pauses_through_the_route(library):
     with TestClient(create_public_app(library.config, main)) as c:
         r = c.post("/api/companion/player", json={"action": "toggle"}, headers={"Authorization": "Bearer secreto"})
         assert r.status_code == 200 and r.json()["playing"]["paused"] is True
+
+
+def test_the_iphone_turns_the_volume_up_or_down_and_sees_the_level(library):
+    """El control del iPhone: subir/bajar (el volumen de Windows, como «silenciar»), con o sin algo en la TV; y
+    «Viendo en la TV» dice el nivel para pintar la barra. (conftest: nunca el volumen de verdad.)"""
+    main = create_app(library.config, library)
+    auth = {"Authorization": "Bearer secreto"}
+    with TestClient(create_public_app(library.config, main)) as c:
+        start = c.get("/api/companion/now", headers=auth).json()["volume"]["level"]
+        assert c.post("/api/companion/player", json={"action": "volume", "delta": 5}, headers=auth).status_code == 200
+        assert c.get("/api/companion/now", headers=auth).json()["volume"]["level"] == min(100, start + 5)
+        c.post("/api/companion/player", json={"action": "volume", "level": 40}, headers=auth)
+        assert c.get("/api/companion/now", headers=auth).json()["volume"] == {"level": 40, "muted": False}
+        assert c.post("/api/companion/player", json={"action": "volume"}, headers=auth).status_code == 409  # ¿cuánto?
+        assert c.post("/api/companion/player", json={"action": "mute"}, headers=auth).status_code == 200  # sin nada en la TV
+        assert c.get("/api/companion/now", headers=auth).json()["volume"] == {"level": 40, "muted": True}
+        c.post("/api/companion/player", json={"action": "mute"}, headers=auth)
+        assert c.get("/api/companion/now", headers=auth).json()["volume"]["muted"] is False
+
+
+def test_the_iphone_gets_the_channel_logo(library):
+    """«Viendo en la TV» de un canal: su logo, por el puerto del iPhone (también el de un canal de Orbital)."""
+    main = create_app(library.config, library)
+    with TestClient(create_public_app(library.config, main)) as c:
+        r = c.get("/api/tv/logo", params={"id": "orbital:caricaturas"}, headers={"Authorization": "Bearer secreto"})
+        assert r.status_code == 200 and r.headers["content-type"] == "image/png"
+        assert c.get("/api/tv/logo", params={"id": "no-existe"}, headers={"Authorization": "Bearer secreto"}).status_code == 404
 
 
 def test_companion_player_requires_a_token(library):
@@ -383,3 +411,12 @@ def test_the_inbox_survives_a_restart(tmp_path):
     assert [i["id"] for i in again.inbox()] == [kept["id"]]
     again.inbox_ack([kept["id"]])
     assert State(path).inbox() == []
+
+
+def test_keep_watching_on_the_iphone_carries_the_exact_second():
+    """«Seguir en el iPhone»: el mismo pendiente que «Enviar» (el iPhone de hoy ya lo entiende) más `position`."""
+    from orbital.state import State
+    watch = FakeWatch(State(), OFFICE)
+    item = companion.send_to_phone(watch, config(), "open", "series", "tt", "tt:2:5", connected=lambda c: True, position=845.37)
+    assert item["action"] == "open" and item["position"] == 845.4
+    assert "position" not in _send(watch, "open", video_id="tt:1:1")  # «Enviar» sigue igual: desde donde ibas

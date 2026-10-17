@@ -305,7 +305,7 @@ def _wait_for(cond):
 
 def test_more_panel_offers_the_iphone_only_when_one_is_connected():
     p, _ = series_player()
-    p.on_send_iphone = lambda meta, action: "ok"
+    p.on_send_iphone = lambda meta, action, position=None: "ok"
     labels = lambda: [o["label"] for c in p.menu.columns for o in c.options]  # noqa: E731
     p.open_more()  # sin iPhone conectado: nada del iPhone
     assert [c.key for c in p.menu.columns] == ["playback"] and labels() == ["Desde el principio"]
@@ -316,13 +316,13 @@ def test_more_panel_offers_the_iphone_only_when_one_is_connected():
     p.open_more()
     # Dentro de Reproducción (como cuarta columna todo se cortaba).
     assert [c.key for c in p.menu.columns] == ["playback"]
-    assert labels() == ["Desde el principio", "Enviar al iPhone", "Descargar en el iPhone"]
+    assert labels() == ["Desde el principio", "Seguir en el iPhone", "Enviar al iPhone", "Descargar en el iPhone"]
 
 
 def test_more_panel_has_no_iphone_for_live_tv():
     p, _ = series_player()
     p.current.meta = {"kind": "tv", "live": True, "title": "Canal"}
-    p.iphone_provider, p.on_send_iphone = (lambda: True), (lambda meta, action: "ok")
+    p.iphone_provider, p.on_send_iphone = (lambda: True), (lambda meta, action, position=None: "ok")
     p.open_more()
     assert not any("iPhone" in o["label"] for c in p.menu.columns for o in c.options)
 
@@ -331,8 +331,9 @@ def test_choosing_an_iphone_option_sends_the_episode_in_progress_and_says_so():
     p, mpv = series_player()
     sent = []
     p.iphone_provider = lambda: True
-    p.on_send_iphone = lambda meta, action: sent.append((meta["video_id"], action)) or "Enviado al iPhone: listo"
+    p.on_send_iphone = lambda meta, action, position=None: sent.append((meta["video_id"], action)) or "Enviado al iPhone: listo"
     p.open_more()
+    p.press("down")
     p.press("down")
     p.press("down")
     p.press("a")  # Reproducción › Descargar en el iPhone
@@ -346,11 +347,12 @@ def test_an_iphone_without_connection_says_it_in_words_not_with_an_error():
     p, mpv = series_player()
     p.iphone_provider = lambda: True
 
-    def refuse(meta, action):
+    def refuse(meta, action, position=None):
         raise ValueError("Conecta tu iPhone en Ajustes › Cuentas")
 
     p.on_send_iphone = refuse
     p.open_more()
+    p.press("down")
     p.press("down")
     p.press("a")  # Reproducción › Enviar al iPhone
     _wait_for(lambda: "Conecta tu iPhone" in str(mpv.overlays.get(p.TOAST)))
@@ -391,3 +393,36 @@ def test_the_time_is_said_in_12_hours():
     assert clock(datetime(2026, 10, 16, 23, 40)) == "11:40 p. m."
     assert clock(datetime(2026, 10, 16, 0, 5)) == "12:05 a. m."
     assert clock(datetime(2026, 10, 16, 9, 0)) == "9:00 a. m."
+
+
+def test_the_stick_walks_the_buttons_and_a_presses_the_focused_one():
+    """El stick recorre los botones de siempre (empieza en Pausa) y A elige el enfocado; Adelantar, Volumen y Episodio
+    abren sus opciones (A elige); la cruceta sigue siendo atajo y B quita el foco."""
+    from orbital import player_ui
+
+    p, mpv = series_player()
+    p.on_episode = lambda meta, step: None  # una serie con LT/RT: sale «Episodio»
+    p.press("stick-right")
+    assert p._hud_focus == 0 and "Pausa" in mpv.overlays[1]  # Pausa enfocado
+    p.press("stick-right")
+    items = player_ui.nav_items(p._hud(p.current), paused=False)
+    assert items[p._hud_focus][2] == "x"  # Audio y subtítulos
+    p.press("a")
+    assert p.menu is not None and p.menu.kind == "tracks"  # A abrió lo enfocado (no pausó)
+    p.press("b")  # cierra el panel
+    p._hud_focus = [i for i, it in enumerate(items) if it[2] == "seek"][0]
+    p.show_hud()
+    p.press("a")
+    assert p.menu.kind == "seek" and p.menu.column.options[p.menu.column.index]["label"] == "+10 s"
+    p.press("down")
+    p.press("a")  # +30 s
+    assert ("seek", 30, "relative") in mpv.sent and p.menu is None
+    p._hud_focus = [i for i, it in enumerate(items) if it[2] == "episode"][0]
+    p.show_hud()
+    p.press("a")
+    assert p.menu.kind == "episode" and p.menu.column.options[0]["label"] == "Siguiente episodio"
+    p.press("b")
+    p.press("b")
+    assert p._hud_focus is None  # B quita el foco
+    p.press("right")  # la cruceta sigue adelantando como siempre
+    assert any(c[0] == "seek" and c[1] != 30 for c in mpv.sent[-3:])

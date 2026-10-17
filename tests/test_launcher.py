@@ -219,12 +219,12 @@ def test_never_steals_focus_from_another_app():
     assert win.focused == [] and win.topmost == []  # sin pantalla de carga encima de otra app
 
 
-def test_waits_for_fullscreen_and_fades_orbital_over_the_game():
-    """El juego ya cargó pero sigue en ventana: se espera a la pantalla completa (sin brinco) y
-    Orbital se funde encima del juego en vez de un corte."""
+def test_waits_for_fullscreen_and_goes_from_black_to_the_game_without_a_transparent_window():
+    """El juego ya cargó pero sigue en ventana: se espera a la pantalla completa (sin brinco). Del negro de la pantalla
+    de carga al juego, sin volver transparente la ventana de Orbital (eso hacía crecer la memoria de DWM)."""
     win = FocusWindows()
     win.alpha = []
-    win.set_alpha = lambda h, a: win.alpha.append(a)
+    win.set_alpha = lambda h, a: win.alpha.append(a)  # si alguien la vuelve a usar, la prueba lo ve
     win.open(3, "Eden | Mario Party Superstars", fullscreen=False)
     steps = []
 
@@ -237,7 +237,7 @@ def test_waits_for_fullscreen_and_fades_orbital_over_the_game():
                                timeout=5, win=win, sleep=sleep, pinned=1)
     assert len(steps) >= 3  # no cortó mientras seguía en ventana
     assert win.focused == [3] and win.topmost == [(1, False)]  # ya venía fijada desde antes de lanzar
-    assert win.alpha[:-1] == list(focus_mod.REVEAL_FADE) and win.alpha[-1] is None  # fundido y opaca al final
+    assert win.alpha == []  # nunca transparente
 
 
 def test_video_waits_for_the_first_frame_not_the_black_window():
@@ -304,7 +304,6 @@ class _Launcher:
 
 
 def test_game_goes_back_in_front_if_orbital_covers_it():
-    from orbital import focus as focus_mod
 
     win, launcher = _Win(), _Launcher()
     clock = iter(range(1000))
@@ -316,7 +315,6 @@ def test_game_goes_back_in_front_if_orbital_covers_it():
 def test_guard_sends_orbital_behind_when_it_covers_the_focused_game():
     """El juego tiene el foco pero Orbital se VE encima (Windows la dejó arriba al quitarle el
     "siempre encima"): Orbital va detrás del juego."""
-    from orbital import focus as focus_mod
 
     win, launcher = _Win(), _Launcher()
     win.fg = 3
@@ -340,7 +338,6 @@ def test_reveal_leaves_orbital_behind_the_game():
 
 
 def test_guard_respects_home_and_closed_games():
-    from orbital import focus as focus_mod
 
     win, launcher = _Win(), _Launcher()
     clock = iter(range(1000))
@@ -383,3 +380,15 @@ def test_missing_emulator_keeps_the_running_game(library, tmp_path):
     with pytest.raises(FileNotFoundError):
         library.sessions.launch(rom.id)
     assert closed == [] and library.launcher.current["id"] == "steam:367520"
+
+
+def test_measuring_windows_memory_never_holds_the_launch(monkeypatch):
+    """Los contadores de DWM tardan hasta medio minuto: medir va en su hilo (antes la pantalla de carga se quedaba)."""
+    from orbital import health
+
+    started = threading.Event()
+    monkeypatch.setattr(health, "dwm_gpu_mb", lambda: started.wait(5) and None)
+    t0 = time.monotonic()
+    health.note_dwm("antes de abrir algo")
+    assert time.monotonic() - t0 < .5
+    started.set()
