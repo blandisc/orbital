@@ -32,6 +32,7 @@ import math
 import subprocess
 import threading
 import time
+from urllib.parse import quote
 
 from . import player_ui
 from .gamepad import (  # noqa: F401 - las pruebas los piden a player
@@ -870,15 +871,17 @@ class OrbitalPlayer(PlayerScreen):
         if current is None or segment is None:
             return None
         meta = segment.meta
+        logo = f"/api/tv/logo?id={quote(meta['channel_id'], safe='')}" if meta.get("channel_id") else None
         if meta.get("synthetic"):  # un canal de Orbital, para el iPhone, es tele: el canal y lo que va
             return {"kind": "tv", "live": True, "channel": current.title, "title": meta.get("detail") or current.title,
                     "number": None, "category": "Orbital 24/7", "paused": bool(self.mpv.get("pause")),
-                    "muted": self._muted()}
+                    "muted": self._muted(), "logo": logo, "poster": meta.get("still") or meta.get("poster"),
+                    "meta_id": meta.get("meta_id")}
         if segment.live:
             return {"kind": "tv", "live": True, "channel": meta.get("title") or current.title,
                     "title": meta.get("title") or current.title, "number": meta.get("number"),
                     "category": meta.get("category") or "", "paused": False,
-                    "muted": self._muted()}
+                    "muted": self._muted(), "logo": logo}
         from .companion import episode_numbers  # aquí: companion no se carga con el reproductor
         label = (meta.get("detail") or "").split(" · ", 1)[0]
         parts = label.split()

@@ -283,3 +283,17 @@ def test_el_reproductor_regresa_al_aire_tras_una_pausa_larga_y_dice_lo_que_dura(
             break
         time.sleep(.02)
     assert len(resynced) == 1 and durations == [1300.0]
+
+
+def test_el_iphone_ve_el_logo_del_canal_y_la_imagen_del_episodio():
+    from tests.test_player import make_player
+
+    p, mpv = make_player()
+    p.current = player.Playback("Los Simpson 24/7", None, 0, {})
+    p.segment = player.Segment({"synthetic": True, "kind": "channel", "channel_id": "orbital:simpsons", "detail": "T5 E3 · Uno",
+                                "still": "https://episodes.metahub.space/x.jpg", "poster": "p.jpg", "meta_id": "tt0096697"},
+                               "Los Simpson 24/7", "u")
+    now = p.now_playing()
+    assert now["logo"] == "/api/tv/logo?id=orbital%3Asimpsons" and now["poster"].endswith("x.jpg") and now["meta_id"] == "tt0096697"
+    p.segment = player.Segment({"channel_id": "ADN40.mx@SD", "title": "ADN 40"}, "ADN 40", "u", live=True)
+    assert p.now_playing()["logo"] == "/api/tv/logo?id=ADN40.mx%40SD"

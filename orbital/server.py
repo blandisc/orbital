@@ -22,7 +22,7 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -279,7 +279,8 @@ async def invalid_request(request: Request, exc: RequestValidationError) -> JSON
 
 class CompanionPlayerAction(BaseModel):
     action: str
-    delta: float | None = None  # "skip": segundos (±10, ±30)
+    delta: float | None = None  # "skip": segundos (±10, ±30); "volume": cuánto sube o baja (±5)
+    level: int | None = None  # "volume": el nivel exacto (0-100)
 
 
 class CompanionInput(BaseModel):
@@ -506,7 +507,16 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         catalog = main_app.state.catalog
         saw_phone()  # lo que el iPhone pide cada 5 s abierto (antes solo contaba /api/companion, que pide al emparejarse)
         return {"playing": companion.now_playing(catalog), "inbox": companion.inbox_pending(catalog.state),
-                "ui": main_app.state.ui_state}  # qué pantalla y si hay un campo de texto (el iPhone enseña «Escribir»)
+                "ui": main_app.state.ui_state,  # qué pantalla y si hay un campo de texto (el iPhone enseña «Escribir»)
+                "volume": _volume()}  # {"level", "muted"}: la barra de volumen del control del iPhone
+
+    @public.get("/api/tv/logo")
+    def companion_channel_logo(id: str) -> FileResponse:
+        """El logo del canal que se ve (el iPhone lo pinta en «Viendo en la TV»)."""
+        path = main_app.state.catalog.tv.logo_path(id[:200])
+        if path is None:
+            raise HTTPException(404, "Ese canal no tiene logo.")
+        return FileResponse(path, headers={"Cache-Control": "public, max-age=86400"})
 
     @public.post("/api/companion/inbox/ack")
     def companion_inbox_ack(body: CompanionAck) -> dict:
@@ -547,7 +557,7 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     def companion_player(body: CompanionPlayerAction) -> dict:
         """Un botón de la tarjeta «Viendo en la TV»: pausa, adelantar, siguiente episodio o canal…"""
         try:
-            now = companion.control_player(main_app.state.catalog, body.action, body.delta)
+            now = companion.control_player(main_app.state.catalog, body.action, body.delta, body.level)
         except companion.NothingPlaying as exc:
             raise HTTPException(409, str(exc))
         except ValueError as exc:
@@ -555,6 +565,15 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         return {"playing": now}
 
     return public
+
+
+def _volume() -> dict | None:
+    from . import quick
+
+    try:
+        return quick.volume()
+    except OSError:
+        return None
 
 
 def _is_game_list(list_id: str) -> bool:

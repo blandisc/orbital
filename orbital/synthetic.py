@@ -312,7 +312,8 @@ class SyntheticTV:
         return {"kind": "channel", "synthetic": True, "channel_id": channel.id, "title": channel.name,
                 "meta_id": episode["meta_id"], "video_id": episode["id"], "series": episode["series"],
                 "detail": detail, "dub": channel.dub, "description": episode.get("overview") or "",
-                "poster": episode.get("poster"), "cycle": cycle, "place": place, "tried": tried,
+                "poster": episode.get("poster"), "still": episode.get("thumbnail"), "cycle": cycle, "place": place,
+                "tried": tried,
                 "source_label": "Latino" if channel.dub == "latino" else "",
                 "skips": skips}  # episodios seguidos que no abrieron: con MAX_SKIPS se rinde
 

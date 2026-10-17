@@ -105,7 +105,11 @@ class LiveTV:
     def logo_path(self, channel_id: str) -> Path | None:
         """El archivo del logo de un canal (se baja la primera vez). None si no tiene o no se pudo."""
         channel = next((c for c in self._channels if c.id == channel_id), None)
-        if channel is None:  # un canal de Orbital con logo de internet (los de la interfaz no pasan por aquí)
+        if channel is None:  # un canal de Orbital: su logo de internet (bajado y parejo) o el archivo de la interfaz
+            own = self.synthetic.channel(channel_id) if self.synthetic else None
+            if own is not None and (own.logo or "").startswith("/img/"):
+                local = Path(__file__).parent / "web" / own.logo.lstrip("/")
+                return local if local.is_file() else None
             return self.logos.get(self.synthetic.remote_logo(channel_id)) if self.synthetic else None
         return self.logos.get(channel.logo)
 

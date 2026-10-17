@@ -81,7 +81,7 @@ class NothingPlaying(Exception):
     """Nada se está viendo ahora mismo: no hay «Viendo en la TV» que enseñar ni que controlar."""
 
 
-PLAYER_ACTIONS = {"toggle", "pause", "play", "skip", "next", "previous", "stop", "mute"}
+PLAYER_ACTIONS = {"toggle", "pause", "play", "skip", "next", "previous", "stop", "mute", "volume"}
 
 # El control remoto del iPhone (la hoja «Viendo en la TV» estirada): las mismas acciones que el mando en la interfaz
 # (input.js: KEYMAP/PADMAP). Van a lo que está al frente: la interfaz de Orbital o el reproductor.
@@ -136,13 +136,29 @@ def now_playing(catalog) -> dict | None:
     return catalog.watch.player.now_playing()
 
 
-def control_player(catalog, action: str, delta: float | None = None) -> dict | None:
+def set_volume(delta: float | None = None, level: int | None = None) -> dict | None:
+    """El volumen de Windows (el mismo de la TV, el mando y Alexa): `delta` sube o baja (±5), `level` lo fija (0-100).
+    Al subir se quita el silencio. Devuelve {"level", "muted"} o None si no hay altavoz."""
+    from . import quick
+
+    if level is None and not isinstance(delta, (int, float)):
+        raise ValueError("Falta cuánto subir o bajar")
+    now = quick.volume() or {"level": 0, "muted": False}
+    target = int(level) if level is not None else int(now["level"] + float(delta or 0))
+    target = max(0, min(100, target))
+    return quick.set_volume(target, muted=False if target > now["level"] or level is not None else None)
+
+
+def control_player(catalog, action: str, delta: float | None = None, level: int | None = None) -> dict | None:
     """Un botón de la tarjeta del iPhone. Devuelve lo que quedó viendo (None si se detuvo).
 
     Lanza `NothingPlaying` si no hay nada abierto, y `ValueError` (en palabras) si la acción no
     aplica a lo que se ve (adelantar la TV en vivo, episodio de una película…)."""
     if action not in PLAYER_ACTIONS:
         raise ValueError("Esa acción no existe")
+    if action == "volume":  # sirve con o sin algo en la TV (un juego también suena)
+        set_volume(delta, level)
+        return now_playing(catalog)
     if now_playing(catalog) is None:
         raise NothingPlaying("No hay nada en la TV ahora mismo")
     player, segment = catalog.watch.player, catalog.watch.player.segment
