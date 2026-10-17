@@ -21,6 +21,9 @@ public final class TVNowModel: ObservableModel {
     public private(set) var legend: [String: String] = [:] { didSet { if oldValue != legend { changed() } } }
     /// La sección de la TV al frente, para «‹ Sección ›».
     public private(set) var section: String? { didSet { if oldValue != section { changed() } } }
+    /// El volumen de la TV (si la consola lo dice) y si tu Orbital todavía no sabe cambiarlo desde el iPhone.
+    public private(set) var volume: OrbitalRemote.Volume? { didSet { if oldValue != volume { changed() } } }
+    public private(set) var volumeOutdated = false { didSet { if oldValue != volumeOutdated { changed() } } }
     /// Tu Orbital está conectada (dirección y token): el control de la TV está a la mano aunque no se reproduzca nada.
     public var isConfigured: Bool { services.orbital.isConfigured }
     /// La consola todavía no tiene el control completo (versión anterior): el pad se esconde y se avisa.
@@ -85,6 +88,7 @@ public final class TVNowModel: ObservableModel {
             textField = snapshot.textField
             legend = snapshot.legend
             section = snapshot.section
+            if let v = snapshot.volume { volume = v }
             failures = 0
             fetchedAt = Date()
             tokenProblem = false
@@ -136,6 +140,25 @@ public final class TVNowModel: ObservableModel {
         } catch {
             // No se pudo: se deja como estaba: el siguiente sondeo (5 s) lo corrige solo.
         }
+    }
+
+    /// Sube o baja el volumen de la TV (de 5 en 5): la barra se mueve al momento y el siguiente sondeo trae el de verdad.
+    public func changeVolume(by delta: Int) async {
+        if let v = volume { volume = .init(level: max(0, min(100, v.level + delta)), muted: false) }
+        do {
+            now = try await services.orbital.control(action: "volume", delta: Double(delta))
+            volumeOutdated = false
+        } catch OrbitalRemote.Failure.badToken {
+            tokenProblem = true
+        } catch {
+            volumeOutdated = true   // una consola sin la acción «volume»: se avisa que hay que actualizarla
+        }
+    }
+
+    /// Silencio sí / no (el de Windows, igual que en la TV).
+    public func toggleMute() async {
+        if let v = volume { volume = .init(level: v.level, muted: !v.muted) }
+        await control("mute")
     }
 
     deinit { pollTask?.cancel() }

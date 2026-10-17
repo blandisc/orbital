@@ -112,6 +112,10 @@ public struct OrbitalRemote: Sendable {
         public var poster: String?
         public var position: Double, duration: Double, paused: Bool
         public var channel: String?, number: Int?, category: String?, muted: Bool
+        /// El logotipo del canal en vivo (o de la serie de un canal de Orbital 24/7), si la TV lo manda.
+        public var logo: String?
+        /// Lo que se pinta: en vivo, el logotipo del canal (si no hay, el póster); si no, el póster.
+        public var art: String? { live ? (logo ?? poster) : poster }
 
         public init(kind: String, live: Bool, metaID: String? = nil, videoID: String? = nil, title: String,
                     episodeLabel: String = "", poster: String? = nil, position: Double = 0, duration: Double = 0,
@@ -128,12 +132,14 @@ public struct OrbitalRemote: Sendable {
             func number(_ key: String) -> Double {
                 switch json[key] { case .int(let i)?: Double(i); case .double(let d)?: d; default: 0 }
             }
-            return NowPlaying(kind: json["kind"]?.string ?? "movie", live: json["live"]?.bool ?? false,
+            var now = NowPlaying(kind: json["kind"]?.string ?? "movie", live: json["live"]?.bool ?? false,
                               metaID: json["meta_id"]?.string, videoID: json["video_id"]?.string, title: title,
                               episodeLabel: json["episode_label"]?.string ?? "", poster: json["poster"]?.string,
                               position: number("position"), duration: number("duration"), paused: json["paused"]?.bool ?? false,
                               channel: json["channel"]?.string, number: json["number"]?.intValue, category: json["category"]?.string,
                               muted: json["muted"]?.bool ?? false, season: json["season"]?.intValue, episode: json["episode"]?.intValue)
+            now.logo = json["logo"]?.nonEmptyString
+            return now
         }
     }
 
@@ -174,7 +180,19 @@ public struct OrbitalRemote: Sendable {
     }
 
     /// Lo que contesta la consola en cada sondeo: lo que se ve ahora y lo que la TV le dejó al iPhone.
+    /// El volumen de la TV (el de Windows): 0–100 y si está en silencio.
+    public struct Volume: Sendable, Equatable {
+        public var level: Int, muted: Bool
+        public init(level: Int, muted: Bool) { self.level = level; self.muted = muted }
+        static func parse(_ json: JSON?) -> Volume? {
+            guard let level = json?["level"]?.intValue else { return nil }
+            return Volume(level: max(0, min(100, level)), muted: json?["muted"]?.bool ?? false)
+        }
+    }
+
     public struct Snapshot: Sendable, Equatable {
+        /// El volumen de la TV, si la consola lo dice (versiones nuevas).
+        public var volume: Volume?
         public var playing: NowPlaying?
         public var inbox: [InboxItem]
         /// Hay un campo de texto con foco en la TV (el control completo enseña «Escribir»). nil: la consola no lo dice.
@@ -193,11 +211,13 @@ public struct OrbitalRemote: Sendable {
     public func snapshot() async throws -> Snapshot {
         let json = try await send("api/companion/now", method: "GET", body: nil)
         var playing: NowPlaying?
-        if let raw = json?["playing"], !raw.isNull { playing = NowPlaying.parse(raw) }
-        return Snapshot(playing: playing, inbox: (json?["inbox"]?.array ?? []).compactMap(InboxItem.parse),
-                        textField: json?["ui"]?["text_field"]?.bool,
-                        legend: (json?["ui"]?["legend"]?.object ?? [:]).compactMapValues { $0.nonEmptyString },
-                        section: json?["ui"]?["section"]?.nonEmptyString)
+        if let raw = json?["playing"], !raw.isNull { playing = NowPlaying.parse(raw).map(absolute) }
+        var snapshot = Snapshot(playing: playing, inbox: (json?["inbox"]?.array ?? []).compactMap(InboxItem.parse),
+                                textField: json?["ui"]?["text_field"]?.bool,
+                                legend: (json?["ui"]?["legend"]?.object ?? [:]).compactMapValues { $0.nonEmptyString },
+                                section: json?["ui"]?["section"]?.nonEmptyString)
+        snapshot.volume = Volume.parse(json?["ui"]?["volume"] ?? json?["volume"])
+        return snapshot
     }
 
     /// Qué se ve ahora en la TV (para la tarjeta del iPhone). nil si no hay nada abierto.
@@ -278,7 +298,18 @@ public struct OrbitalRemote: Sendable {
         if let delta { body["delta"] = .double(delta) }
         let json = try await send("api/companion/player", method: "POST", body: JSON.object(body).serialized())
         guard let playing = json?["playing"], !playing.isNull else { return nil }
-        return NowPlaying.parse(playing)
+        return NowPlaying.parse(playing).map(absolute)
+    }
+
+    /// Una imagen que la consola sirve ella misma («/api/img?…») se pide a su dirección.
+    private func absolute(_ now: NowPlaying) -> NowPlaying {
+        var n = now
+        func fix(_ s: String?) -> String? {
+            guard let s, s.hasPrefix("/"), let base else { return s }
+            return URL(string: s, relativeTo: base)?.absoluteString ?? s
+        }
+        n.poster = fix(n.poster); n.logo = fix(n.logo)
+        return n
     }
 
     private func send(_ path: String, method: String, query: [URLQueryItem] = [], body: Data?, timeout: TimeInterval = 12) async throws -> JSON? {

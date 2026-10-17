@@ -12,53 +12,82 @@ struct VoiceGuideView: View {
     private let guide = AlexaGuide.load()
 
     var body: some View {
-        List {
-            if query.isEmpty {
-                Section {
-                    HowRow(symbol: "mic.fill", title: Text("En el control"),
-                           detail: Text("Toca «En la TV», estira la hoja hacia arriba y toca el micrófono. Habla con calma: cuando terminas, se detiene solo y te contesta en voz alta."))
-                    HowRow(symbol: "waveform", title: Text("Con Siri"),
-                           detail: Text("Di «Oye Siri, habla con Orbital» y, cuando pregunte, la orden. Para lo de siempre, directo: «Oye Siri, pausa Orbital» o «Oye Siri, reanuda Orbital»."))
-                    HowRow(symbol: "homepod.fill", title: Text("Con Alexa"),
-                           detail: Text("Empieza con «Alexa, pídele a mi consola que…»: sin eso, Alexa intenta hacerlo ella sola."))
-                } header: { Text("Dónde hablarle") } footer: {
-                    Text("Las frases de abajo funcionan igual en los tres: las entiende tu Orbital.")
-                }
-                .listRowBackground(DS.surface)
-                Section {
-                    ForEach(Self.phoneOnly, id: \.say) { PhraseRow(say: $0.say, note: $0.note) }
-                } header: { Label("Solo en el iPhone", systemImage: "iphone") } footer: {
-                    Text("Descargar funciona aunque estés fuera de casa; lo demás necesita tu Orbital encendida.")
-                }
-                .listRowBackground(DS.surface)
-            }
-            ForEach(filtered) { group in
-                Section {
-                    ForEach(group.commands) { PhraseRow(say: $0.say, note: Text(verbatim: $0.note), noteEmpty: $0.note.isEmpty) }
-                } header: { Label { Text(verbatim: group.title) } icon: { Image(systemName: group.icon) } }
-                .listRowBackground(DS.surface)
-            }
-            if query.isEmpty {
-                Section {
-                    HowRow(symbol: "text.bubble", title: Text("Revisa lo que entendió"),
-                           detail: Text("Bajo la respuesta sale «Entendí: …». Si el nombre salió mal, dilo más despacio o búscalo con «Escribir»."))
-                    HowRow(symbol: "rectangle.stack", title: Text("Cuando hay varias"),
-                           detail: Text("Si dices «pon Dune» y hay más de una, salen bajo el micrófono con su póster: toca la que es."))
-                    HowRow(symbol: "wifi", title: Text("Si contesta que no encuentra tu Orbital"),
-                           detail: Text("El iPhone tiene que estar en la misma red que la consola (o con Tailscale), y Orbital abierta en la TV."))
-                    HowRow(symbol: "mic.slash", title: Text("Si no te escucha"),
-                           detail: Text("Permite el micrófono y el reconocimiento de voz para Orbital."))
-                    Button { if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) } } label: {
-                        Label("Abrir los permisos de Orbital", systemImage: "gear")
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+                    if query.isEmpty {
+                        // Dónde hablarle: tres tarjetas, cada una con la frase para empezar en su globo.
+                        VStack(alignment: .leading, spacing: DS.Space.s3) {
+                            DSSectionHead(title: "Dónde hablarle", meta: Text("Las frases de abajo funcionan igual en los tres."))
+                            WhereCard(symbol: "mic.fill", tint: DS.ListTint.spark, title: Text("En el control"), starter: "pon The Office",
+                                      detail: Text("Estira el control hacia arriba y toca «Dile a Orbital». Se detiene solo cuando terminas."))
+                            WhereCard(symbol: "waveform", tint: DS.ListTint.bookmark, title: Text("Con Siri"), starter: "Oye Siri, habla con Orbital",
+                                      detail: Text("Y cuando pregunte, la orden. Directo: «Oye Siri, pausa Orbital»."))
+                            WhereCard(symbol: "homepod.fill", tint: DS.ListTint.library, title: Text("Con Alexa"), starter: "Alexa, pídele a mi consola que…",
+                                      detail: Text("Sin «pídele a mi consola», Alexa intenta hacerlo ella sola."))
+                        }
+                        // Los temas, para saltar sin bajar todo.
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: DS.Space.s2) {
+                                topicChip("Solo en el iPhone", id: "phone", proxy: proxy)
+                                ForEach(guide.groups) { g in topicChip(g.title, id: g.id, proxy: proxy, verbatim: true) }
+                                topicChip("Si no funciona", id: "help", proxy: proxy)
+                            }
+                        }
+                        .padding(.horizontal, -DS.Space.gutter).contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+                        topic(Text("Solo en el iPhone"), meta: Text("Descargar funciona aunque estés fuera de casa.")) {
+                            ForEach(Self.phoneOnly, id: \.say) { PhraseRow(say: $0.say, note: $0.note) }
+                        }
+                        .id("phone")
                     }
-                } header: { Text("Si no funciona") }
-                .listRowBackground(DS.surface)
+                    ForEach(filtered) { group in
+                        topic(Text(verbatim: group.title)) {
+                            ForEach(group.commands) { PhraseRow(say: $0.say, note: Text(verbatim: $0.note), noteEmpty: $0.note.isEmpty) }
+                        }
+                        .id(group.id)
+                    }
+                    if query.isEmpty {
+                        topic(Text("Si no funciona")) {
+                            HowRow(symbol: "text.bubble", title: Text("Revisa lo que entendió"),
+                                   detail: Text("Bajo la respuesta sale «Entendí: …». Si el nombre salió mal, dilo más despacio o búscalo con «Escribir»."))
+                            HowRow(symbol: "rectangle.stack", title: Text("Cuando hay varias"),
+                                   detail: Text("Si dices «pon Dune» y hay más de una, salen bajo el micrófono con su póster: toca la que es."))
+                            HowRow(symbol: "wifi", title: Text("Si contesta que no encuentra tu Orbital"),
+                                   detail: Text("El iPhone tiene que estar en la misma red que la consola (o con Tailscale), y Orbital abierta en la TV."))
+                            HowRow(symbol: "mic.slash", title: Text("Si no te escucha"),
+                                   detail: Text("Permite el micrófono y el reconocimiento de voz para Orbital."))
+                            Button { if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) } } label: {
+                                Label("Abrir los permisos de Orbital", systemImage: "gear")
+                            }
+                            .buttonStyle(.glass)
+                        }
+                        .id("help")
+                    }
+                }
+                .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s4).padding(.bottom, DS.Space.s14)
             }
         }
         .tint(DS.accent)
-        .scrollContentBackground(.hidden).background(Backdrop())
+        .background(Backdrop())
         .searchable(text: $query, prompt: Text("Buscar una frase"))
         .navigationTitle("Lo que puedes decir").navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// Un tema: su encabezado (el de toda la app) y sus frases en una tarjeta.
+    private func topic<Content: View>(_ title: Text, meta: Text? = nil, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: title, meta: meta)
+            VStack(alignment: .leading, spacing: DS.Space.s3) { content() }
+                .padding(DS.Space.s4).frame(maxWidth: .infinity, alignment: .leading)
+                .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        }
+    }
+
+    private func topicChip(_ title: String, id: String, proxy: ScrollViewProxy, verbatim: Bool = false) -> some View {
+        Button { withAnimation { proxy.scrollTo(id, anchor: .top) } } label: {
+            (verbatim ? Text(verbatim: title) : Text(LocalizedStringKey(title))).lineLimit(1)
+        }
+        .buttonStyle(.bordered).buttonBorderShape(.capsule).controlSize(.small)
     }
 
     /// Lo que atiende el iPhone sin preguntarle a la consola (`VoiceRouter`): descargar, seguir aquí, las teclas y el inglés.
@@ -100,7 +129,7 @@ private struct HowRow: View {
     }
 }
 
-/// Una frase («pon el canal ADN 40») y para qué sirve. Mantener pulsado la copia.
+/// Una frase («pon el canal ADN 40») en su globo, y para qué sirve debajo. Mantener pulsado la copia.
 private struct PhraseRow: View {
     let say: String
     let note: Text
@@ -109,11 +138,39 @@ private struct PhraseRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s1) {
             Text(verbatim: "«\(say)»").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
-            if !noteEmpty { note.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
+                .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+                .background(DS.fill, in: UnevenRoundedRectangle(topLeadingRadius: DS.Radius.lg, bottomLeadingRadius: DS.Space.s1,
+                                                                 bottomTrailingRadius: DS.Radius.lg, topTrailingRadius: DS.Radius.lg, style: .continuous))
+            if !noteEmpty { note.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).padding(.leading, DS.Space.s1) }
         }
-        .padding(.vertical, DS.Space.s1)
         .accessibilityElement(children: .combine)
         .contextMenu { Button("Copiar", systemImage: "doc.on.doc") { UIPasteboard.general.string = say } }
+    }
+}
+
+/// Dónde hablarle: el ícono en su color, el nombre, la frase para empezar en su globo y cómo.
+private struct WhereCard: View {
+    let symbol: String
+    let tint: Color
+    let title: Text
+    let starter: String
+    let detail: Text
+
+    var body: some View {
+        HStack(alignment: .top, spacing: DS.Space.s3) {
+            Image(systemName: symbol).font(DS.TextRecipe.section.font).foregroundStyle(tint).frame(width: DS.Size.iconColumn * 3 / 2)
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                title.recipe(.cardTitle).fontWeight(.semibold)
+                Text(verbatim: "«\(starter)»").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+                    .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s1)
+                    .background(tint.opacity(DS.VoiceGuide.starterFill), in: Capsule())
+                detail.recipe(.footnote)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(DS.Space.s4)
+        .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .accessibilityElement(children: .combine)
     }
 }
 

@@ -19,6 +19,13 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Actualiza tu Orbital para cambiar el volumen desde aquí.": "Update your Orbital to change the volume from here.",
+    "Alexa, pídele a mi consola que…": "Alexa, ask my console to…", "Bajar volumen": "Volume down", "Subir volumen": "Volume up", "Quitar silencio": "Unmute",
+    "Descargar funciona aunque estés fuera de casa.": "Downloading works even away from home.",
+    "Estira el control hacia arriba y toca «Dile a Orbital». Se detiene solo cuando terminas.": "Pull the remote up and tap “Tell Orbital”. It stops on its own when you finish.",
+    "Las frases de abajo funcionan igual en los tres.": "The phrases below work the same in all three.", "Oye Siri, habla con Orbital": "Hey Siri, talk to Orbital",
+    "Sin «pídele a mi consola», Alexa intenta hacerlo ella sola.": "Without “ask my console”, Alexa tries to do it herself.",
+    "Y cuando pregunte, la orden. Directo: «Oye Siri, pausa Orbital».": "Then, when asked, the command. Direct: “Hey Siri, pause Orbital”.",
     "Saltar resumen": "Skip recap",
     "Lo mejor disponible": "Best available",
     "Sale pronto": "Coming up", "Ver todo": "See all", "Sale hoy": "Out today",

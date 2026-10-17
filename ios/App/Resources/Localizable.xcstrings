@@ -265,6 +265,17 @@
         }
       }
     },
+    "Actualiza tu Orbital para cambiar el volumen desde aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Update your Orbital to change the volume from here."
+          }
+        }
+      }
+    },
     "Actualiza tu Orbital para usar el control completo.": {
       "extractionState": "manual",
       "localizations": {
@@ -360,6 +371,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Alexa"
+          }
+        }
+      }
+    },
+    "Alexa, pídele a mi consola que…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alexa, ask my console to…"
           }
         }
       }
@@ -514,6 +536,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Download the next episode when one finishes"
+          }
+        }
+      }
+    },
+    "Bajar volumen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volume down"
           }
         }
       }
@@ -1497,6 +1530,17 @@
         }
       }
     },
+    "Descargar funciona aunque estés fuera de casa.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading works even away from home."
+          }
+        }
+      }
+    },
     "Descargar funciona aunque estés fuera de casa; lo demás necesita tu Orbital encendida.": {
       "extractionState": "manual",
       "localizations": {
@@ -2234,6 +2278,17 @@
         }
       }
     },
+    "Estira el control hacia arriba y toca «Dile a Orbital». Se detiene solo cuando terminas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pull the remote up and tap “Tell Orbital”. It stops on its own when you finish."
+          }
+        }
+      }
+    },
     "Estira hacia arriba para el control completo": {
       "extractionState": "manual",
       "localizations": {
@@ -2571,6 +2626,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The saga"
+          }
+        }
+      }
+    },
+    "Las frases de abajo funcionan igual en los tres.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The phrases below work the same in all three."
           }
         }
       }
@@ -3642,6 +3708,17 @@
         }
       }
     },
+    "Oye Siri, habla con Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hey Siri, talk to Orbital"
+          }
+        }
+      }
+    },
     "Pad de la TV": {
       "extractionState": "manual",
       "localizations": {
@@ -4045,6 +4122,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Remove from Continue Watching"
+          }
+        }
+      }
+    },
+    "Quitar silencio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unmute"
           }
         }
       }
@@ -4654,6 +4742,17 @@
         }
       }
     },
+    "Sin «pídele a mi consola», Alexa intenta hacerlo ella sola.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without “ask my console”, Alexa tries to do it herself."
+          }
+        }
+      }
+    },
     "Solo con Wi‑Fi": {
       "extractionState": "manual",
       "localizations": {
@@ -4727,6 +4826,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stremio answered HTTP %@"
+          }
+        }
+      }
+    },
+    "Subir volumen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volume up"
           }
         }
       }
@@ -5585,6 +5695,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Watchlist"
+          }
+        }
+      }
+    },
+    "Y cuando pregunte, la orden. Directo: «Oye Siri, pausa Orbital».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Then, when asked, the command. Direct: “Hey Siri, pause Orbital”."
           }
         }
       }

@@ -132,6 +132,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     private var nowPlayingTicked = Date()
     private var nowPlayingPaused = false
     private var inboxAcked = false
+    private var demoVolume = 40, demoMuted = false
 
     func send(_ request: HTTPRequest) async throws -> HTTPResponse {
         let url = request.url
@@ -284,6 +285,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             case "play": nowPlayingPaused = false
             case "toggle": nowPlayingPaused.toggle()
             case "skip": nowPlayingPosition = min(Self.nowPlayingDuration, max(0, nowPlayingPosition + Double(body?["delta"]?.intValue ?? 0)))
+            case "volume": demoVolume = max(0, min(100, demoVolume + Int(body?["delta"]?.doubleValue ?? 0))); demoMuted = false
+            case "mute": demoMuted.toggle()
             default: break
             }
         }
@@ -315,7 +318,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         // La pantalla de la TV de mentira: en su ficha, con la leyenda del pie (como la manda la consola de verdad).
         let ui: JSON = ["screen": "title", "text_field": false, "section": "Películas y series",
                         "legend": ["select": "Reproducir", "back": "Atrás", "alt": "Mi lista", "options": "Más", "menu": "Menú", "search": "Buscar",
-                                   "page": "De 5 en 5", "section": "Secciones"]]
+                                   "page": "De 5 en 5", "section": "Secciones"],
+                        "volume": ["level": .int(demoVolume), "muted": .bool(demoMuted)]]
         return HTTPResponse(status: 200, data: JSON.object(["playing": playing, "inbox": .array(inbox), "ui": ui]).serialized())
     }
 

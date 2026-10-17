@@ -224,3 +224,38 @@ struct VoiceChoices: View {
         .sensoryFeedback(.selection, trigger: taps)
     }
 }
+
+/// El volumen de la TV en el control: silencio, −, la barra con el nivel y +. Sin el dato de la consola, la barra se
+/// queda vacía y los botones funcionan igual.
+struct VolumeControl: View {
+    let level: Int?
+    let muted: Bool
+    let down: () -> Void
+    let up: () -> Void
+    let mute: () -> Void
+
+    var body: some View {
+        HStack(spacing: DS.Space.s3) {
+            Button(action: mute) { Image(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2.fill").frame(width: DS.Size.touchTarget * 3 / 4) }
+                .accessibilityLabel(muted ? Text("Quitar silencio") : Text("Silencio"))
+            Button(action: down) { Image(systemName: "minus") }.accessibilityLabel(Text("Bajar volumen"))
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(DS.fill)
+                    Capsule().fill(muted ? DS.textFaint : DS.text).frame(width: geo.size.width * CGFloat(level ?? 0) / 100)
+                }
+            }
+            .frame(height: DS.Remote.volumeBar)
+            .accessibilityHidden(true)
+            Button(action: up) { Image(systemName: "plus") }.accessibilityLabel(Text("Subir volumen"))
+        }
+        .font(DS.TextRecipe.cardTitle.font.weight(.semibold))
+        .foregroundStyle(DS.text)
+        .buttonStyle(.plain)
+        .padding(.horizontal, DS.Space.s4).frame(height: DS.Size.touchTarget)
+        .glassEffect(.regular, in: Capsule())
+        .sensoryFeedback(.selection, trigger: level)
+        .accessibilityElement(children: .contain)
+        .accessibilityValue(level.map { Text("\($0) %") } ?? Text(""))
+    }
+}

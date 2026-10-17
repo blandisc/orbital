@@ -111,3 +111,14 @@ final class IntroDBTests: XCTestCase {
         XCTAssertNil(notImdb, "sin id de IMDb no se pregunta")
     }
 }
+
+final class LiveChannelArtTests: XCTestCase {
+    func testALiveChannelShowsItsLogoAndFallsBackToThePoster() throws {
+        let live = try XCTUnwrap(OrbitalRemote.NowPlaying.parse(["kind": "tv", "live": true, "title": "Los Simpson 24/7", "logo": "https://img/simpsons.png", "poster": "https://img/p.jpg"]))
+        XCTAssertEqual(live.art, "https://img/simpsons.png", "en vivo, el logotipo del canal")
+        let noLogo = try XCTUnwrap(OrbitalRemote.NowPlaying.parse(["kind": "tv", "live": true, "title": "Canal 5", "poster": "https://img/p.jpg"]))
+        XCTAssertEqual(noLogo.art, "https://img/p.jpg")
+        let movie = try XCTUnwrap(OrbitalRemote.NowPlaying.parse(["kind": "movie", "title": "Dune", "poster": "https://img/d.jpg", "logo": "https://img/l.png"]))
+        XCTAssertEqual(movie.art, "https://img/d.jpg", "una película, su póster")
+    }
+}

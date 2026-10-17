@@ -154,7 +154,7 @@ struct NowPlayingCard: View {
             Label(now.live ? "En la TV · En vivo" : "Viendo en la TV", systemImage: "tv")
                 .font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted)
             HStack(alignment: .center, spacing: DS.Space.s3) {
-                PosterView(url: now.poster, title: now.title, aspect: DS.Poster.aspect).frame(width: DS.Poster.nowPlayingWidth)
+                PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect).frame(width: DS.Poster.nowPlayingWidth)
                 info
                 Spacer(minLength: 0)
             }

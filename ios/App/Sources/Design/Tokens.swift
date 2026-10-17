@@ -174,6 +174,8 @@ enum DS {
     enum Deck {
         /// Qué parte del ancho toma la tarjeta del frente (asoman las de los lados) y su alto.
         static let sideMargin: CGFloat = 36, height: CGFloat = 430
+        /// Cuántas veces se repiten las tarjetas para la vuelta infinita (se empieza a la mitad: nunca se llega al final).
+        static let loopCopies = 200
         static let radius: CGFloat = 28, spacing: CGFloat = 4
         /// Lo que pierde una tarjeta a un lugar de distancia: tamaño, nitidez y luz.
         static let sideShrink: CGFloat = 0.12, sideBlur: CGFloat = 5, sideDim: Double = 0.28
@@ -227,6 +229,9 @@ enum DS {
         static let trakt = Color(red: 0.93, green: 0.11, blue: 0.14)
         static let markHeight: CGFloat = 18, markRadius: CGFloat = 4
     }
+
+    /// «Lo que puedes decir»: el globo con la frase para empezar toma un poco del color de su lugar.
+    enum VoiceGuide { static let starterFill = 0.18 }
 
     /// La barra de espacio de Descargas.
     enum Storage {
@@ -299,10 +304,14 @@ enum DS {
 
     /// El control completo de la TV (`TouchPad`, `RemoteKey`).
     enum Remote {
+        /// La barra del volumen de la TV en el control.
+        static let volumeBar: CGFloat = 6
         /// Alto del pad táctil y de cada tecla.
         static let padHeight: CGFloat = 200, keyHeight: CGFloat = 60
-        /// Qué parte del alto de la hoja estirada toma el pad (en un iPhone grande crece en vez de dejar un hueco abajo).
-        static let padShare: CGFloat = 0.37
+        /// Qué parte del alto de la pantalla toma el pad (en un iPhone grande crece).
+        static let padShare: CGFloat = 0.25
+        /// Lo más que crece la hoja estirada (por debajo de la altura completa, que iOS vuelve opaca).
+        static let maxShare: CGFloat = 0.86
         /// Cuánto hay que deslizar para una flecha (y cada cuánto se repite al seguir deslizando).
         static let swipeStep: CGFloat = 56
         /// Lo que se puede mover el dedo y seguir contando como toque (A).

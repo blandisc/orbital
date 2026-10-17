@@ -10,7 +10,8 @@ struct HomeView: View {
     @StateObject private var tint = ArtTint()
     @State private var pendingCount = 0
     @State private var openTitle: TitleRoute?
-    @State private var heroID: String?
+    /// La tarjeta al frente del carrusel: su lugar en la vuelta infinita (`slot % cuántas`).
+    @State private var heroSlot: Int?
     @State private var scrolledDown = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.openRemote) private var openRemote
@@ -163,8 +164,9 @@ struct HomeView: View {
 
     /// El que está al frente del carrusel (el fondo toma su color).
     private var currentHero: HomeItem? {
-        let items = home.model.continueWatching.prefix(Self.heroCount)
-        return items.first { $0.id == heroID } ?? items.first
+        let items = Array(home.model.continueWatching.prefix(Self.heroCount))
+        guard !items.isEmpty else { return nil }
+        return items[(heroSlot ?? 0) % items.count]
     }
 
     /// «Seguir viendo»: tarjetas en carrusel (`DeckCard`) con las que siguen a los lados, más chicas y desenfocadas, en
@@ -172,11 +174,15 @@ struct HomeView: View {
     private func heroCarousel(_ model: HomeModel) -> some View {
         let items = Array(model.continueWatching.prefix(Self.heroCount))
         let deck = DeckStyle(rawValue: look.homeDeck) ?? .coverflow
+        // Una vuelta infinita: las mismas tarjetas repetidas muchas veces y se empieza a la mitad; al llegar a la última
+        // sigue la primera (y hacia atrás igual). Con una sola, no hay vuelta.
+        let copies = items.count > 1 ? DS.Deck.loopCopies : 1
+        let middle = (copies / 2) * items.count
         return VStack(spacing: DS.Space.s3) {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: DS.Deck.spacing) {
-                    ForEach(items) { item in
-                        hero(item)
+                    ForEach(0..<(copies * items.count), id: \.self) { slot in
+                        hero(items[slot % items.count])
                             .containerRelativeFrame(.horizontal) { width, _ in width - 2 * DS.Deck.sideMargin }
                             .deckTransition(deck, reduceMotion: reduceMotion)
                     }
@@ -186,11 +192,13 @@ struct HomeView: View {
             .contentMargins(.horizontal, DS.Deck.sideMargin, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
             .scrollClipDisabled()
-            .scrollPosition(id: $heroID)
-            PageDots(count: items.count, index: items.firstIndex { $0.id == (heroID ?? items.first?.id) } ?? 0)
+            .scrollPosition(id: $heroSlot)
+            .onAppear { if heroSlot == nil || (heroSlot ?? 0) >= copies * items.count { heroSlot = middle } }
+            .onChange(of: items.map(\.id)) { heroSlot = middle }   // cambió lo que sigues viendo: de vuelta al primero
+            PageDots(count: items.count, index: items.isEmpty ? 0 : (heroSlot ?? middle) % items.count)
         }
-        .task(id: heroID) { await tint.load(currentHero.flatMap { $0.background ?? $0.poster }) }   // se cancela si pasas a otro
-        .sensoryFeedback(.selection, trigger: heroID)
+        .task(id: heroSlot) { await tint.load(currentHero.flatMap { $0.background ?? $0.poster }) }   // se cancela si pasas a otro
+        .sensoryFeedback(.selection, trigger: heroSlot)
     }
 
     private func hero(_ item: HomeItem) -> some View {

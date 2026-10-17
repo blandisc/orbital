@@ -10,6 +10,9 @@ struct RemoteSheet: View {
     @Binding var large: Bool
     let onContinueHere: (OrbitalRemote.NowPlaying) -> Void
     @State private var compactHeight: CGFloat = DS.Remote.padHeight
+    /// El alto del control completo, medido: la hoja estirada mide eso (sin hueco abajo) y, como no llega a la altura
+    /// completa de la pantalla, iOS la deja de vidrio translúcido como la corta (a la altura completa la vuelve opaca).
+    @State private var fullHeight: CGFloat = DS.Remote.padHeight * 4
     @State private var text = ""
     @StateObject private var speech = SpeechInput()
     @State private var reply: OrbitalRemote.VoiceReply?
@@ -31,18 +34,19 @@ struct RemoteSheet: View {
                 }
             }
             .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s6).padding(.bottom, DS.Space.s4)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if large { fullHeight = min($0, UIScreen.main.bounds.height * DS.Remote.maxShare) } }
         }
         .scrollDisabled(!large)
         .scrollBounceBehavior(.basedOnSize)
         // Sin nada en la TV la hoja corta no tiene qué enseñar (quedaba «Tu Orbital» y un hueco, y bajarla se atoraba ahí):
         // solo la altura completa, y bajarla la cierra.
-        .presentationDetents(model.now == nil ? [.large] : [.height(compactHeight), .large], selection: Binding(
-            get: { large || model.now == nil ? .large : .height(compactHeight) },
-            set: { large = $0 == .large }))
+        .presentationDetents(model.now == nil ? [.height(fullHeight)] : [.height(compactHeight), .height(fullHeight)], selection: Binding(
+            get: { large || model.now == nil ? .height(fullHeight) : .height(compactHeight) },
+            set: { large = $0 == .height(fullHeight) }))
         .onChange(of: model.now == nil) { _, idle in if idle { large = true } }
         .presentationDragIndicator(.visible)
         .presentationBackgroundInteraction(.disabled)
-        // Vidrio también estirada: iOS la vuelve opaca en la altura completa; el control se queda transparente, como corto.
+        // Vidrio en las dos alturas (la estirada no llega a la altura completa, que iOS volvería opaca).
         .presentationBackground { Rectangle().fill(.clear).glassEffect(.regular, in: Rectangle()) }
         .animation(DS.Motion.base(false), value: large)
         .onDisappear { speech.cancel() }
@@ -102,7 +106,7 @@ struct RemoteSheet: View {
         if large, let now = model.now {
             // Estirada: lo que se ve en la TV en un renglón (póster, nombre y pausa); el resto del alto es para el control.
             HStack(spacing: DS.Space.s3) {
-                PosterView(url: now.poster, title: now.title, aspect: DS.Poster.aspect).frame(width: DS.Size.thumbSmall)
+                PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect).frame(width: DS.Size.thumbSmall)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(now.live ? (now.channel ?? now.title) : now.title).recipe(.cardTitle).lineLimit(1)
                     Text(now.live ? "En la TV · En vivo" : "En la TV").recipe(.footnote, color: now.live ? DS.live : DS.textMuted).lineLimit(1)
@@ -134,10 +138,17 @@ struct RemoteSheet: View {
             HStack(spacing: DS.Space.s2) {
                 VoiceCommandBar(listening: speech.listening, transcript: speech.transcript, reply: reply, denied: speech.denied,
                                 heardNothing: speech.heardNothing, asking: asking) { listen(model) }
-                // Lo que puedes decir: donde surge la duda.
-                DSIconButton(symbol: "questionmark", label: "Lo que puedes decir") { showsGuide = true }
+                // Lo que puedes decir: donde surge la duda (de vidrio, como el resto del control).
+                Button { showsGuide = true } label: { Image(systemName: "questionmark").font(DS.TextRecipe.cardTitle.font.weight(.semibold)) }
+                    .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
+                    .accessibilityLabel(Text("Lo que puedes decir"))
                     .accessibilityIdentifier("remote-voice-guide")
             }
+            // El volumen de la TV (el de Windows, como Alexa): − · barra · +, y silencio.
+            VolumeControl(level: model.volume?.level, muted: model.volume?.muted ?? false,
+                          down: { Task { await model.changeVolume(by: -5) } }, up: { Task { await model.changeVolume(by: 5) } },
+                          mute: { Task { await model.toggleMute() } })
+            if model.volumeOutdated { DSNotice(text: "Actualiza tu Orbital para cambiar el volumen desde aquí.", tone: .warn) }
             if let choices = reply?.choices, !choices.isEmpty {
                 VoiceChoices(choices: choices) { choice in answer(model) { await $0.choose(choice) } }
                     .transition(.opacity)
@@ -153,7 +164,8 @@ struct RemoteSheet: View {
             }
             TouchPad(selectLabel: model.legend["select"]) { action in Task { await model.press(action) } }
                 .animation(DS.Motion.base(false), value: model.legend["select"])
-                .containerRelativeFrame(.vertical) { length, _ in max(DS.Remote.padHeight, length * DS.Remote.padShare) }
+                // Por el alto de la pantalla (no de la hoja: la hoja mide lo que mide el control).
+                .frame(height: max(DS.Remote.padHeight, UIScreen.main.bounds.height * DS.Remote.padShare))
             HStack(spacing: DS.Space.s2) {
                 key(model, "chevron.backward", "B", "back", Text("Atrás"), .back)
                 key(model, "square.on.square", "X", "alt", Text("Acción X"), .alt)
