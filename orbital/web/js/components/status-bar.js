@@ -41,7 +41,7 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
   const tabs = h("nav", { class: "status-bar__tabs", "aria-label": "Secciones" });
   const el = h("header", { class: "status-bar" },
     h("button", { class: "status-bar__brand", type: "button", "aria-label": "Orbital: menú", onClick: onBrand },
-      svg(ICONS.mark), h("span", { class: "status-bar__wordmark" }, "orbital")),
+      svg(ICONS.mark), h("span", { class: "status-bar__wordmark" }, "orbital", h("i", { class: "status-bar__moon", "aria-hidden": "true" }))),
     search,
     tabs,
     h("div", { class: "status-bar__right" }, playing, alexa, offline, wifi, battery, time));
