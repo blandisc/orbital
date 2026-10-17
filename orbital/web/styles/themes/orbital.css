@@ -36,6 +36,14 @@
   --color-danger: var(--palette-red-400);
   --color-warning: var(--palette-amber-300);
   --color-live: var(--palette-teal-300);
+  /* El nombre de una plataforma dentro de un motivo del mosaico («N.º 1 en Prime Video»): su color de marca, en el tono
+     que se lee sobre la insignia clara de la pieza enfocada (≥ 4,5:1 sobre el papel). Solo para ese nombre. */
+  --brand-netflix: #d10a14;
+  --brand-prime: #006bb8;
+  --brand-disney: #113ccf;
+  --brand-hbo: #5a22b4;
+  --brand-paramount: #0057e0;
+  --brand-crunchyroll: #b8500a;
   --color-progress: var(--palette-paper);
   --color-progress-track: rgba(255, 255, 255, .2);
   --color-pad-a: var(--palette-pad-green);

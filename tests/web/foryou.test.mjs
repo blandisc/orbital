@@ -115,3 +115,11 @@ test("el respaldo de TMDB de una plataforma se esconde si su lista con puesto ya
   ];
   assert.deepEqual(railEntries(lists).filter((e) => !e.heading).map((e) => e.id), ["jw:disney", "disney"]);
 });
+
+test("en un motivo, solo el nombre de la plataforma lleva su estilo", async () => {
+  const { brandParts } = await import("../../orbital/web/js/core/foryou.js");
+  assert.deepEqual(brandParts("N.º 1 en Prime Video"), [{ text: "N.º 1 en " }, { text: "Prime Video", brand: "prime" }]);
+  assert.deepEqual(brandParts("En Netflix"), [{ text: "En " }, { text: "Netflix", brand: "netflix" }]);
+  assert.deepEqual(brandParts("Recomendada"), [{ text: "Recomendada" }]);
+  assert.deepEqual(brandParts(""), []);
+});

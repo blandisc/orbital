@@ -477,6 +477,19 @@
           ]
         },
         {
+          "name": "RestartIntent",
+          "slots": [],
+          "samples": [
+            "desde el principio",
+            "empieza desde el principio",
+            "empieza de nuevo",
+            "vuelve a empezar",
+            "ponlo desde el principio",
+            "otra vez desde el principio",
+            "reinicia el video"
+          ]
+        },
+        {
           "name": "CaptureIntent",
           "slots": [],
           "samples": [

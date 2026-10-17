@@ -158,3 +158,22 @@ export function listMeta(list, count, kind = null) {
   const counted = `${count} ${what}${count === 1 ? "" : "s"}`;
   return [counted, list?.source, list?.meta].filter(Boolean).join(" · ");
 }
+
+/** Las plataformas cuyo nombre se pinta con su estilo cuando sale en un motivo («N.º 1 en Prime Video»). */
+const BRANDS = [["Prime Video", "prime"], ["Disney+", "disney"], ["HBO Max", "hbo"], ["Apple TV+", "appletv"],
+  ["Paramount+", "paramount"], ["Crunchyroll", "crunchyroll"], ["Netflix", "netflix"]];
+
+/**
+ * El texto partido en pedazos, con la plataforma aparte: «N.º 1 en Prime Video» → [{text: "N.º 1 en "}, {text: "Prime Video",
+ * brand: "prime"}]. Solo el nombre lleva el estilo de su marca; lo demás queda como está.
+ */
+export function brandParts(text) {
+  const source = String(text ?? "");
+  for (const [name, brand] of BRANDS) {
+    const at = source.indexOf(name);
+    if (at >= 0) {
+      return [{ text: source.slice(0, at) }, { text: name, brand }, { text: source.slice(at + name.length) }].filter((p) => p.text);
+    }
+  }
+  return source ? [{ text: source }] : [];
+}
