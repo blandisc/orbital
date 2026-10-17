@@ -17,6 +17,7 @@
   position: absolute; left: 0; right: 0; overflow: hidden; border-radius: var(--tile-radius); background: var(--color-surface);
   box-shadow: inset 0 0 0 1px var(--color-hairline);
   transition: top var(--duration-enter) var(--ease-out), height var(--duration-enter) var(--ease-out),
+    left var(--duration-enter) var(--ease-out), right var(--duration-enter) var(--ease-out),
     opacity var(--duration-enter) var(--ease-out), filter var(--duration-enter) var(--ease-out), box-shadow var(--duration-slow) var(--ease-out);
 }
 .foryou-mosaic--drifting .foryou-mosaic__tile { transition: opacity var(--duration-enter) var(--ease-out), filter var(--duration-enter) var(--ease-out); }

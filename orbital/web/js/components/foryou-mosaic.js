@@ -129,10 +129,18 @@ export function createForYouMosaic({ onFocus, onPick }) {
   }
 
   // --- acomodo ----------------------------------------------------------------------------------
+  let unitW = 0; // el ancho de una columna sin foco (las piezas verticales miden eso, también en la columna enfocada)
+
+  /** Solo la enfocada se abre a lo ancho; las demás de su columna siguen en vertical, del ancho de siempre y centradas
+   *  (queda aire a los lados, pero no cambian de forma). Sin foco, todas en vertical (las cajas de GBA, casi cuadradas). */
   function tileHeight(col, c, r, item) {
-    const wideCol = mode === "focus" && c === focus.col;
-    if (wideCol) return Math.round(col.w * (r === focus.row ? .64 : .5));
-    return Math.round(col.w / posterRatio(item)); // sin foco, todas en vertical (las cajas de GBA, casi cuadradas)
+    if (mode === "focus" && c === focus.col && r === focus.row) return Math.round(col.w * .64);
+    return Math.round((unitW || col.w) / posterRatio(item));
+  }
+
+  function tileInset(col, c, r) {
+    const narrow = mode === "focus" && c === focus.col && r !== focus.row && unitW && col.w > unitW;
+    return narrow ? `${Math.round((col.w - unitW) / 2)}px` : "";
   }
 
   /** Anchos de columna, alto y lugar de cada pieza; siempre con piezas de sobra abajo. */
@@ -142,6 +150,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
     const weights = columns.map((_, c) => (mode === "focus" && c === focus.col ? GROW : 1));
     const r = ring();
     const unit = (W - 2 * r - g * (COLS - 1)) / weights.reduce((a, b) => a + b, 0);
+    unitW = unit;
     let x = r;
     columns.forEach((col, c) => {
       col.x = x;
@@ -152,14 +161,15 @@ export function createForYouMosaic({ onFocus, onPick }) {
       fill(col, c); // primero las piezas que falten; luego cada una en su lugar (y la enfocada, marcada)
       let y = col.tiles[0]?.top ?? 0; // desde donde empieza lo que sigue vivo (lo de arriba pudo podarse)
       col.tiles.forEach((t, r) => {
-        const wideCol = mode === "focus" && c === focus.col;
+        const on = mode === "focus" && c === focus.col && r === focus.row;
         t.h = tileHeight(col, c, r, t.item);
         t.top = y;
         y += t.h + g;
         t.node.style.top = `${t.top}px`;
         t.node.style.height = `${t.h}px`;
-        t.node.classList.toggle("foryou-mosaic__tile--land", wideCol);
-        if (wideCol) t.loadWide();
+        t.node.style.left = t.node.style.right = tileInset(col, c, r);
+        t.node.classList.toggle("foryou-mosaic__tile--land", on);
+        if (on) t.loadWide();
         t.node.classList.toggle("foryou-mosaic__tile--on", mode === "focus" && c === focus.col && r === focus.row);
       });
     });
@@ -179,6 +189,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
       t.h = tileHeight(col, c, col.tiles.length, item);
       t.node.style.top = `${t.top}px`;
       t.node.style.height = `${t.h}px`;
+      t.node.style.left = t.node.style.right = tileInset(col, c, col.tiles.length);
       col.tiles.push(t);
       col.track.append(t.node);
     }
@@ -249,10 +260,10 @@ export function createForYouMosaic({ onFocus, onPick }) {
     if (mode === "focus") readyAhead();
   }
 
-  /** Las columnas de al lado, listas antes de llegar: su arte ancho (el de las piezas a la vista) se pide ya. */
+  /** Lo que sigue, listo antes de llegar: el arte ancho de las piezas a la vista de su columna y de las de al lado. */
   function readyAhead() {
     const { H } = size();
-    for (const c of [focus.col - 1, focus.col + 1]) {
+    for (const c of [focus.col - 1, focus.col, focus.col + 1]) {
       const col = columns[c];
       col?.tiles.forEach((t) => { if (t.top + t.h > col.offset - H * .25 && t.top < col.offset + H * 1.25) t.loadWide(); });
     }
