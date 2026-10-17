@@ -277,7 +277,7 @@ class Sessions:
             self.kiosk.open()  # al frente o, si alguien cerró la ventana, otra vez abierta
         else:
             system.bring_to_front()
-        threading.Timer(3, health.note_dwm, args=(f"de vuelta de {title}",)).start()
+        health.note_dwm(f"de vuelta de {title}")
         # Se cerró solo a los pocos segundos: casi siempre es que no pudo abrir (falta la ROM, el
         # firmware, una clave…). No es "de vuelta de": se avisa como problema.
         crashed = (seconds < QUICK_EXIT and not self.launcher.last_stopped_by_user

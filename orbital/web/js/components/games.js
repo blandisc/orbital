@@ -1,5 +1,5 @@
 import { h, mount } from "../core/dom.js";
-import { duration, hltbText, lastPlayed, shortAgo } from "../core/format.js";
+import { duration, lastPlayed, shortAgo } from "../core/format.js";
 import { consoleGames, FILTERS, gameConsoles, pickConsole, stepConsole } from "../core/games.js";
 import { systemColor } from "../core/home.js";
 import { systemIconName } from "../core/icons.js";
@@ -129,7 +129,6 @@ export function createGames({ onFocus, onPick, onAction }) {
         ["Jugado", item.playtime >= 60 ? duration(item.playtime) : null],
         ["Jugadores", extra.players ? (Number(extra.players) > 1 ? `1 a ${extra.players}` : "1") : null],
         ["Año", extra.year],
-        ["Para terminarlo", hltbText(extra.hltb)],
       ],
       description: extra.description,
       actions: [

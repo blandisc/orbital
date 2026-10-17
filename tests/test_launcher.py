@@ -380,3 +380,15 @@ def test_missing_emulator_keeps_the_running_game(library, tmp_path):
     with pytest.raises(FileNotFoundError):
         library.sessions.launch(rom.id)
     assert closed == [] and library.launcher.current["id"] == "steam:367520"
+
+
+def test_measuring_windows_memory_never_holds_the_launch(monkeypatch):
+    """Los contadores de DWM tardan hasta medio minuto: medir va en su hilo (antes la pantalla de carga se quedaba)."""
+    from orbital import health
+
+    started = threading.Event()
+    monkeypatch.setattr(health, "dwm_gpu_mb", lambda: started.wait(5) and None)
+    t0 = time.monotonic()
+    health.note_dwm("antes de abrir algo")
+    assert time.monotonic() - t0 < .5
+    started.set()

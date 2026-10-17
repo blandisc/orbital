@@ -1,5 +1,5 @@
 import { cssUrl, h, svg } from "../core/dom.js";
-import { duration, endsAt, hltbText, lastPlayed, shortAgo } from "../core/format.js";
+import { duration, endsAt, lastPlayed, shortAgo } from "../core/format.js";
 import { kicker, platformColor, stageKind, SYSTEMS, systemColor, systemOf, thumbOf } from "../core/home.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { sized } from "../core/images.js";
@@ -118,11 +118,8 @@ function rowMore(item) {
   const facts = [extra.year, ...(Array.isArray(extra.genres) ? extra.genres.slice(0, 2) : []), extra.players && `${extra.players} jugadores`]
     .filter(Boolean).join(" · ");
   const about = [extra.episode_title && `«${extra.episode_title}»`, extra.description].filter(Boolean).join(" ");
-  // Un juego: cuánto tarda en terminarse (HowLongToBeat); cuándo jugaste y cuánto llevas ya lo dice el renglón de arriba.
-  const played = hltbText(extra.hltb, { short: true }) && `${hltbText(extra.hltb, { short: true })} para terminarlo`;
-  if (!facts && !about && !played) return null;
+  if (!facts && !about) return null;
   return h("span", { class: "tile--row__more" },
-    played && h("span", { class: "tile--row__facts" }, played),
     facts && h("span", { class: "tile--row__facts" }, facts),
     about && h("span", { class: "tile--row__about" }, about));
 }

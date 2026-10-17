@@ -166,7 +166,12 @@ _last_dwm: list[int] = []
 
 def note_dwm(moment: str) -> None:
     """Al registro: la memoria con la que Windows dibuja las ventanas en este momento y cuánto cambió desde la anterior
-    (al abrir algo y al regresar a Orbital). Así se ve qué la hace crecer. Nunca falla."""
+    (al abrir algo y al regresar a Orbital). Así se ve qué la hace crecer. En su propio hilo: los contadores de Windows
+    tardan hasta medio minuto en contestar, y al medir antes de abrir el juego se quedaba la pantalla de carga."""
+    threading.Thread(target=_note_dwm, args=(moment,), daemon=True, name="dwm-note").start()
+
+
+def _note_dwm(moment: str) -> None:
     try:
         dwm = dwm_gpu_mb()
     except Exception:  # noqa: BLE001 - medir nunca tumba una apertura

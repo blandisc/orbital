@@ -82,15 +82,3 @@ export function crashMessage({ title, kind = "emulator" }) {
   return `${title} se cerró enseguida. Revisa que el juego y el emulador estén completos (ROM, firmware, claves).`;
 }
 
-/**
- * Cuánto tarda en terminarse (HowLongToBeat): la historia, y si con extras es bastante más, también («~24 h · 49 h con
- * extras»). null si no se sabe.
- */
-export function hltbText(times, { short = false } = {}) {
-  const main = Number(times?.main) || 0;
-  const plus = Number(times?.plus) || 0;
-  if (!main && !plus) return null;
-  const h = (n) => `${n >= 10 ? Math.round(n) : Math.round(n * 2) / 2} h`.replace(".5", "½");
-  if (!main) return `~${h(plus)}`;
-  return plus >= main * 1.5 && !short ? `~${h(main)} · ${h(plus)} con extras` : `~${h(main)}`;
-}

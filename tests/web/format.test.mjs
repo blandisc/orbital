@@ -79,11 +79,3 @@ test("la hora va en 12 horas, como se dice en México", async () => {
   assert.equal(clock(new Date(2026, 9, 16, 0, 30)), "12:30 a. m.");
   assert.equal(clock(new Date(2026, 9, 16, 12, 0)), "12:00 p. m.");
 });
-
-test("cuánto tarda en terminarse: la historia y, si es bastante más, con extras", async () => {
-  const { hltbText } = await import("../../orbital/web/js/core/format.js");
-  assert.equal(hltbText({ main: 23.5, plus: 48.5 }), "~24 h · 49 h con extras");
-  assert.equal(hltbText({ main: 6.5, plus: 8 }), "~6½ h");
-  assert.equal(hltbText({ main: 23.5, plus: 48.5 }, { short: true }), "~24 h");
-  assert.equal(hltbText(null), null);
-});
