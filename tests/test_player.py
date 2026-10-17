@@ -720,3 +720,28 @@ def test_volume_shows_its_level_with_waves_and_a_cross_when_muted():
     muted = player_ui.volume_ass(50, muted=True)
     assert "—" in muted and muted.count("\p1}") == 4  # cápsula, riel (sin relleno), cuerpo y la ✕
     assert player_ui.volume_ass(float("nan")) and player_ui.volume_ass("x")  # nunca truena
+
+
+def test_the_video_fades_in_from_black_without_a_transparent_window(monkeypatch):
+    """El video arranca tapado de negro (capa del reproductor) y se destapa ya con imagen: el fundido de entrada sin
+    volver transparente la ventana de Orbital. Otro episodio en la misma ventana también entra fundiéndose."""
+    import time as _t
+
+    monkeypatch.setattr(player, "CURTAIN_STEP", 0)
+    p, mpv = make_player()
+    segment = player.Segment({"kind": "series"}, "Serie", "u")
+    p.segment = segment
+    p._reveal_wait = 0
+    p._curtain(1)
+    assert mpv.overlays[player.CURTAIN_ID].startswith(r"{\an7")
+    p._started(segment)
+    for _ in range(100):
+        if mpv.overlays.get(player.CURTAIN_ID) is None:
+            break
+        _t.sleep(.01)
+    assert mpv.overlays.get(player.CURTAIN_ID) is None  # destapado
+    live = player.Segment({"kind": "tv"}, "Canal", "u", live=True)
+    p.segment = live
+    p._curtain(0)
+    p._started(live)
+    assert mpv.overlays.get(player.CURTAIN_ID) is None  # la TV en vivo no lleva fundido

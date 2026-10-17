@@ -14,7 +14,10 @@ const HOLD_MS = 26_000; // con pantalla de carga: el servidor avisa antes (25 s 
  * Con `hold()`: Orbital se queda ENCIMA del emulador mientras abre (no se ve ni su lista de juegos
  * ni su ventana brincando); el servidor avisa con launch-ready cuando el juego está listo y en
  * pantalla completa: la portada "salta" hacia adelante, las estrellas se estiran (velocidad luz)
- * y todo se va a negro; entonces Windows funde la ventana de Orbital sobre el juego.
+ * y todo se va a negro; el juego entra en ese instante de negro (y un video se funde solo desde negro).
+ *
+ * Del arte al juego: con un fondo propio del juego, se ve nítido y avanza despacio mientras carga (antes, oscuro y
+ * borroso); al estar listo se acerca un poco y se va a negro. Sin fondo propio, el de siempre (borroso).
  */
 export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = {}) {
   const backdrop = h("div", { class: "launch__backdrop" });
@@ -47,11 +50,13 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
    */
   function show(item, detail, { from = null } = {}) {
     backdrop.style.backgroundImage = cssUrl(item.hero || item.image);
+    el.classList.toggle("launch--art", Boolean(item.hero) && !item.extra?.placeholder_hero);
     cover.style.backgroundImage = cssUrl(item.image);
     cover.hidden = !item.image; // sin portada, la órbita gira sola alrededor de la marca
     el.classList.toggle("launch--no-cover", !item.image);
     if (!from?.rect?.width) from = null; // una tarjeta oculta (0×0) hacía crecer la portada desde la esquina
-    const ratio = from?.ratio ?? (item.image ? .667 : 1);
+    // Como mucho cuadrada: desde una tarjeta ancha (Inicio) la portada quedaba enorme y tapaba el arte del fondo.
+    const ratio = Math.min(from?.ratio ?? (item.image ? .667 : 1), 1);
     cover.style.setProperty("--ratio", String(ratio));
     orbit.style.setProperty("--ratio", String(ratio));
     front.style.setProperty("--ratio", String(ratio));
@@ -94,7 +99,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
     timer = setTimeout(hide, ms);
   }
 
-  /** El juego está listo: salto a velocidad luz y a negro; Windows funde Orbital sobre el juego. */
+  /** El juego está listo: salto a velocidad luz y a negro; el juego entra en ese negro. */
   function reveal() {
     if (el.hidden) return;
     holding = false;

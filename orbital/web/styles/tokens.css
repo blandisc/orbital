@@ -112,6 +112,7 @@
   --duration-launch-sweep: 1.6s;
   --duration-launch-reveal: 700ms;
   --duration-launch-out: 420ms;
+  --duration-launch-drift: 26s; /* el arte del juego avanza despacio mientras carga */
   /* Escalonado: cada pieza entra un poco después que la anterior */
   --stagger: 45ms;
   --delay-1: 90ms;

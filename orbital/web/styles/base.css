@@ -97,6 +97,16 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 [data-landing="boot"] .shelf { animation-delay: var(--delay-2); }
 [data-landing="boot"] .hints { animation-delay: var(--delay-3); }
 @keyframes land { from { opacity: 0; transform: scale(1.04) translateY(.6rem); } }
+/* De regreso de un juego o un video (Home o al cerrarlo): desde negro, como la salida pero en reversa, y lo que
+   tenías enfocado se asienta al último para que sepas dónde estás. */
+[data-landing="return"]::before {
+  content: ""; position: fixed; inset: 0; z-index: var(--z-launch); pointer-events: none; background: var(--color-video-bg);
+  animation: fade-out var(--duration-land) var(--ease-out) forwards;
+}
+[data-landing="return"] .tile--focused, [data-landing="return"] .card--focused {
+  animation: land-focus var(--duration-land) var(--ease-out) var(--delay-2) both;
+}
+@keyframes land-focus { from { opacity: .4; transform: scale(.94); } }
 
 /* Las imágenes son decorado: sin puntero ni arrastre. Así Edge no les pone encima su botón de
    «búsqueda visual» (con su engrane) al pasar el cursor o el dedo; los botones que las contienen

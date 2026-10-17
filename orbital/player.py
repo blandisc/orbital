@@ -95,6 +95,12 @@ from .player_screen import PlayerScreen
 log = logging.getLogger(__name__)
 
 SYNTHETIC_RESYNC_AFTER = 60.0  # s en pausa tras los que un canal de Orbital regresa a lo que va al aire
+# El fundido de entrada: el video arranca tapado de negro y se destapa ya con imagen (sin ventanas transparentes, que
+# hacían crecer la memoria de dibujo de Windows). Al abrirlo desde Orbital espera a que Orbital termine su salida a negro.
+CURTAIN_ID = 9
+CURTAIN_STEPS = (.86, .7, .52, .36, .22, .1, 0)  # opacidad, un paso cada CURTAIN_STEP s (~medio segundo)
+CURTAIN_STEP = .07
+CURTAIN_REVEAL_WAIT = 1.1  # s tras la primera imagen al abrir desde Orbital: lo que tarda su salida (focus.FADE_TO_BLACK)
 CUT_MARGIN = 90  # s: un «final» antes de esto es la conexión que se cortó, no el final de verdad
 NEXT_LOAD_WAIT = 25  # s que el final espera al siguiente episodio que se está cargando
 
@@ -225,6 +231,9 @@ class OrbitalPlayer(PlayerScreen):
         with self._swap:  # el vigilante del video anterior ve los dos cambios juntos, nunca uno solo
             self.current = playback
             self.segment = Segment(meta, title, url, start=float(options.get("start") or 0), live=bool(options.get("live")))
+        self._reveal_wait = CURTAIN_REVEAL_WAIT  # el primero de esta ventana: Orbital todavía tapa la pantalla
+        if not options.get("live"):
+            self._curtain(1)
         if hasattr(self.mpv, "start_observing"):
             self.mpv.start_observing()  # mpv avisa de pausa, posición… en vez de preguntarle cada segundo
         threading.Thread(target=self._watch, args=(playback,), daemon=True, name="mpv").start()
@@ -270,6 +279,8 @@ class OrbitalPlayer(PlayerScreen):
         self.mpv.command("set_property", "pause", False)
         for prop, value in track_properties(self._audio_lang, self._subs_lang):
             self.mpv.command("set_property", prop, value)  # el idioma de este título, no la pista del anterior
+        self._reveal_wait = 0.0  # otro episodio u otra fuente en la misma ventana: se destapa en cuanto haya imagen
+        self._curtain(1)
         self.mpv.command("loadfile", url, "replace")
         self.toast(message or f"Cargando {title}…", 4)
         log.info("Cargando en el mismo mpv: %s", title)
@@ -463,8 +474,33 @@ class OrbitalPlayer(PlayerScreen):
         segment.last_tick = now
         self._buffering_state(paused)
 
+    def _curtain(self, opacity: float) -> None:
+        """El negro del fundido de entrada (debajo de la barra, los avisos y los paneles)."""
+        try:
+            self.mpv.command_named(name="osd-overlay", id=CURTAIN_ID, format="ass-events" if opacity > 0 else "none",
+                                   data=player_ui.curtain_ass(opacity) if opacity > 0 else "",
+                                   res_x=player_ui.W, res_y=player_ui.H, z=0)
+        except Exception:  # noqa: BLE001 - el fundido nunca tumba la reproducción
+            log.debug("No pude dibujar el fundido", exc_info=True)
+
+    def _lift_curtain(self, segment: Segment) -> None:
+        """Destapa el video en medio segundo, en su hilo (y si mientras tanto se cargó otro, ese ya trae su propio negro)."""
+        wait, self._reveal_wait = getattr(self, "_reveal_wait", 0.0), 0.0
+
+        def run() -> None:
+            time.sleep(wait)
+            for opacity in CURTAIN_STEPS:
+                if self.segment is not segment:
+                    return
+                self._curtain(opacity)
+                time.sleep(CURTAIN_STEP)
+
+        threading.Thread(target=run, daemon=True, name="curtain").start()
+
     def _started(self, segment: Segment) -> None:
         """Primera imagen de este archivo: avisos, subtítulos, capítulos y la barra."""
+        if not segment.live:
+            self._lift_curtain(segment)
         tracks = self.mpv.get("track-list") or []
         chapters = self.mpv.get("chapter-list") or []
         segment.chapters = [c for c in chapters if isinstance(c, dict) and isinstance(c.get("time"), (int, float))]

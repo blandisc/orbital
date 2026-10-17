@@ -1456,6 +1456,8 @@ api.events(handleEvent, { onReconnect: () => { loadLibrary(); pollStatus(); } })
 // los avisos que esperaban a que Orbital se viera (memoria).
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
+    // Home con un juego o un video abierto: Orbital al frente también aterriza (antes solo al cerrarlo).
+    if (state.running && !ui.launch.visible) boot.land();
     pollStatus();
     loadLibrary();
     for (const event of deferred.take()) handleEvent(event);

@@ -930,6 +930,12 @@ def volume_ass(volume: float, muted: bool = False) -> str:
     return "\n".join(parts)
 
 
+def curtain_ass(opacity: float) -> str:
+    """Un negro de pantalla completa con esa opacidad (1 = tapa todo, 0 = transparente): el fundido de entrada del video."""
+    alpha = max(0, min(255, round((1 - opacity) * 255)))
+    return f"{{\\an7\\pos(0,0)\\bord0\\shad0\\1c&H000000&\\1a&H{alpha:02X}&\\p1}}m 0 0 l {W} 0 {W} {H} 0 {H}{{\\p0}}"
+
+
 def ends_at(position: float | None, duration: float | None, now: float | None = None) -> str:
     """«11:40 p. m.»: la hora a la que termina si sigues viendo de corrido."""
     if not isinstance(duration, (int, float)) or not isinstance(position, (int, float)):

@@ -9,6 +9,8 @@ const BOOT_MIN_MS = 1100; // la animación de entrada (900 ms) se ve completa; a
 
 const LANDING_BLOCK_MS = 600; // el planeta todavía tapa la interfaz los primeros instantes de la salida
 
+let landTimer = 0;
+
 export function createBoot({ state, applySettings, openMenu, busy = () => false, el = document.getElementById("boot") }) {
   let leavingAt = 0;
   /** La primera vez: "Tu consola" (qué encontró Orbital y qué falta), una sola vez. */
@@ -49,10 +51,13 @@ export function createBoot({ state, applySettings, openMenu, busy = () => false,
       if (node) node.textContent = text;
     },
 
-    /** De vuelta de un juego: la interfaz "aterriza" (entra desde un poco más cerca) en vez de aparecer de golpe. */
+    /** De vuelta de un juego o un video: la interfaz "aterriza" desde negro (entra desde un poco más cerca y lo
+     *  enfocado se asienta al último) en vez de aparecer de golpe. */
     land() {
+      if (document.body.dataset.landing === "boot") return; // el arranque ya hace su entrada
       document.body.dataset.landing = "return";
-      setTimeout(() => { if (document.body.dataset.landing === "return") delete document.body.dataset.landing; }, 800);
+      clearTimeout(landTimer);
+      landTimer = setTimeout(() => { if (document.body.dataset.landing === "return") delete document.body.dataset.landing; }, 1300);
     },
   };
 }

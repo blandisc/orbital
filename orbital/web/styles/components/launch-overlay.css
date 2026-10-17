@@ -17,6 +17,24 @@
   transition: opacity var(--duration-launch-out) var(--ease-in), transform var(--duration-launch-reveal) var(--ease-in);
 }
 
+/* Del arte al juego: el fondo propio del juego, nítido y avanzando despacio (solo transform: nada de filtros animados).
+   Un velo abajo y al centro para que se lean la portada y el texto. */
+.launch--art .launch__backdrop {
+  inset: 0; filter: brightness(.5) saturate(1.1);
+  animation: launch-drift var(--duration-launch-drift) var(--ease-out) forwards;
+}
+.launch--art .launch__stars {
+  background: radial-gradient(70% 60% at 50% 55%, color-mix(in oklab, var(--color-video-bg) 55%, transparent), transparent 75%),
+    linear-gradient(transparent 55%, color-mix(in oklab, var(--color-video-bg) 70%, transparent));
+}
+.launch--art .launch__starfield { opacity: 0; animation-name: launch-travel-soft; } /* sobre el arte, estrellas tenues */
+@keyframes launch-drift { from { transform: scale(1.12); } to { transform: scale(1); } }
+@keyframes launch-travel-soft {
+  0% { transform: scale(.55); opacity: 0; }
+  25% { opacity: .35; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
 /* Estrellas: dos capas de puntos que vienen hacia ti (cerca más rápido que lejos). */
 .launch__stars { position: absolute; inset: 0; pointer-events: none; }
 .launch__starfield {
@@ -106,6 +124,9 @@
 /* --- Listo: salto a velocidad luz --------------------------------------------------------- */
 .launch--revealing { background-color: var(--color-video-bg); }
 .launch--revealing .launch__backdrop { opacity: 0; transform: scale(1.25); }
+/* Con arte: se acerca un poco y se va a negro (sin el salto grande: el arte ya llena la pantalla). */
+.launch--art.launch--revealing .launch__backdrop { animation: none; transform: scale(1.06); }
+.launch--art.launch--revealing .launch__stars { background: none; }
 .launch--revealing .launch__starfield { animation-duration: var(--duration-launch-reveal); animation-iteration-count: 1; }
 .launch--revealing .launch__starfield--near { animation-delay: var(--duration-none); }
 .launch--revealing .launch__cover { transform: scale(5.5); opacity: 0; }
