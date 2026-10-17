@@ -373,3 +373,12 @@ def test_the_quit_ring_fills_smoothly_on_its_own_clock():
     p.press("b-up")
     time.sleep(.1)
     assert mpv.overlays[6] is None and ("quit",) not in mpv.sent
+
+
+def test_iphone_remote_in_the_player():
+    """El control del iPhone con el video al frente: A pausa, ← → buscan y B sale sin mantener (primero quita lo que haya)."""
+    p, mpv = make_player()
+    p.phone_button("select")
+    assert ("set_property", "pause", True) in mpv.sent
+    p.phone_button("back")  # en pausa, con la barra: sale (en el teléfono no hay «mantener B»)
+    assert ("quit",) in mpv.sent

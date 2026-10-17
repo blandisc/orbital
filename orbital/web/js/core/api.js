@@ -55,6 +55,7 @@ export const api = {
   ui: () => request("/api/ui"),
   exitToDesktop: () => post("/api/ui/exit"),
   resume: () => post("/api/ui/resume"),
+  uiState: (body) => post("/api/ui/state", body), // qué hay al frente (el control del iPhone enseña «Escribir» si sirve)
   windows: () => request("/api/windows"),
   power: (action) => post("/api/power", { action }),
   stremioSearch: (q) => request(`/api/stremio/search?q=${encodeURIComponent(q)}`),

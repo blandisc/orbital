@@ -89,6 +89,17 @@ def router(d: Deps) -> APIRouter:
             catalog.state.set_setting(key, value)
         return get_settings()
 
+    ui_state = d.extra.setdefault("ui_state", {"screen": "home", "text_field": False})
+
+    @r.post("/api/ui/state")
+    def report_state(body: dict) -> dict:
+        """La interfaz cuenta qué pantalla tiene al frente y si hay un campo de texto: el control del iPhone enseña
+        «Escribir» solo cuando sirve (/api/companion/now → ui)."""
+        screen = body.get("screen")
+        ui_state.update(screen=screen if isinstance(screen, str) and len(screen) < 40 else "home",
+                        text_field=body.get("text_field") is True)
+        return {"ok": True}
+
     @r.post("/api/ui/exit")
     async def ui_exit() -> dict:
         if kiosk is None:

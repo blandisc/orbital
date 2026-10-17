@@ -221,7 +221,7 @@ def test_companion_now_is_null_without_anything_open(library):
     main = create_app(library.config, library)
     with TestClient(create_public_app(library.config, main)) as c:
         r = c.get("/api/companion/now", headers={"Authorization": "Bearer secreto"})
-        assert r.status_code == 200 and r.json() == {"playing": None, "inbox": []}
+        assert r.status_code == 200 and r.json() == {"playing": None, "inbox": [], "ui": {"screen": "home", "text_field": False}}
 
 
 def test_companion_now_reports_whats_playing(library):
