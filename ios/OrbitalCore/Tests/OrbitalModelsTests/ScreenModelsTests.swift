@@ -542,5 +542,9 @@ final class CatalogAndSourcesTests: XCTestCase {
         let episodes = DownloadGroup.group([item("tt9", "tt9:2:1", bytes: 1), item("tt9", "tt9:1:3", bytes: 1), item("tt9", "tt9:1:1", bytes: 1)])
         XCTAssertEqual(episodes.first?.items.map(\.videoID), ["tt9:1:1", "tt9:1:3", "tt9:2:1"], "en orden de temporada y episodio")
         XCTAssertEqual(groups.first?.bytes, 4)
+        let seasons = try! XCTUnwrap(episodes.first).seasons
+        XCTAssertEqual(seasons.map(\.number), [1, 2], "por temporada, no archivo por archivo")
+        XCTAssertEqual(seasons.map { $0.items.count }, [2, 1])
+        XCTAssertEqual(seasons.first?.bytes, 2)
     }
 }

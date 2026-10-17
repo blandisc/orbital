@@ -28,12 +28,32 @@ public struct DownloadGroup: Identifiable, Equatable, Sendable {
         }
     }
 
+    /// Una serie por temporadas (en orden). Una película, o episodios sin temporada, quedan en la temporada 0.
+    public var seasons: [DownloadSeason] {
+        var order: [Int] = [], bySeason: [Int: [DownloadItem]] = [:]
+        for item in items {
+            let season = Self.episodeKey(item.videoID).0
+            if bySeason[season] == nil { order.append(season) }
+            bySeason[season, default: []].append(item)
+        }
+        return order.sorted().map { DownloadSeason(metaID: metaID, number: $0, items: bySeason[$0] ?? []) }
+    }
+
     /// «tt0386676:2:5» → (2, 5); una película o un id sin temporada va primero.
     static func episodeKey(_ videoID: String) -> (Int, Int) {
         let parts = videoID.split(separator: ":")
         guard parts.count >= 3, let s = Int(parts[parts.count - 2]), let e = Int(parts[parts.count - 1]) else { return (0, 0) }
         return (s, e)
     }
+}
+
+/// Una temporada descargada de una serie: sus episodios en orden y cuánto ocupan.
+public struct DownloadSeason: Identifiable, Equatable, Sendable {
+    public var id: String { "\(metaID):\(number)" }
+    public var metaID: String
+    public var number: Int
+    public var items: [DownloadItem]
+    public var bytes: Int64 { items.reduce(0) { $0 + $1.writtenBytes } }
 }
 
 @MainActor
@@ -59,6 +79,9 @@ public final class DownloadsModel: ObservableModel {
     public var ready: [DownloadItem] { items.filter { $0.state == .done } }
     /// Lo listo para ver, agrupado por título (los episodios de una serie en un solo renglón).
     public var readyGroups: [DownloadGroup] { DownloadGroup.group(ready) }
+    /// Lo listo, separado: series (cada una, una fila; dentro, sus temporadas) y películas.
+    public var readySeries: [DownloadGroup] { readyGroups.filter { $0.kind == "series" } }
+    public var readyMovies: [DownloadGroup] { readyGroups.filter { $0.kind != "series" } }
     public var usedBytes: Int64 { items.reduce(0) { $0 + $1.writtenBytes } }
 
     public func pause(_ id: String) async { await services.downloads.pause(id) }

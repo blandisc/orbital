@@ -21,9 +21,25 @@ struct DownloadsView: View {
                 Section("Descargando") { ForEach(model.active) { row($0, model) } }
                     .listRowBackground(DS.surface)
             }
-            if !model.readyGroups.isEmpty {
-                Section("Listas para ver") { ForEach(model.readyGroups) { group($0, model) } }
-                    .listRowBackground(DS.surface)
+            // Listo para ver: series (una fila cada una; dentro, sus temporadas y episodios) y películas, aparte.
+            if !model.readySeries.isEmpty {
+                Section("Series") {
+                    ForEach(model.readySeries) { g in
+                        NavigationLink(value: DownloadSeriesRoute(metaID: g.metaID)) { seriesRow(g) }
+                            .swipeActions { Button("Borrar", role: .destructive) { Task { for item in g.items { await model.remove(item.id) } } }.tint(DS.danger) }
+                    }
+                }
+                .listRowBackground(DS.surface)
+            }
+            if !model.readyMovies.isEmpty {
+                Section("Películas") {
+                    ForEach(model.readyMovies) { g in
+                        if let item = g.items.first {
+                            readyRow(title: g.title, poster: g.poster, data: [bytes(g.bytes)], item: item, model: model)
+                        }
+                    }
+                }
+                .listRowBackground(DS.surface)
             }
             if !model.items.isEmpty {
                 Section {
@@ -50,6 +66,8 @@ struct DownloadsView: View {
         .navigationTitle("Descargas").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .subtitle(model.usedBytes > 0 ? Text("Ocupan \(bytes(model.usedBytes)) · libres \(bytes(model.freeBytes))") : nil)   // vacío, no hay nada que contar
         .titleDestinations()
+        .navigationDestination(for: DownloadSeriesRoute.self) { DownloadSeriesView(observer: observer, metaID: $0.metaID) }
+        .navigationDestination(for: DownloadSeasonRoute.self) { DownloadSeasonView(observer: observer, metaID: $0.metaID, season: $0.season) }
         .task { await model.run() }
         .task(id: model.active.first?.metaID) {
             // El arte de metahub solo existe para ids de IMDb; con otro id, fondo liso.
@@ -92,28 +110,18 @@ struct DownloadsView: View {
         }
     }
 
-    /// Un título listo para ver: una película se reproduce al tocarla; una serie despliega sus episodios.
-    @ViewBuilder private func group(_ group: DownloadGroup, _ model: DownloadsModel) -> some View {
-        if group.items.count == 1, let item = group.items.first {
-            readyRow(title: group.title, poster: group.poster, data: [item.subtitle, bytes(item.writtenBytes)], item: item, model: model)
-        } else {
-            DisclosureGroup {
-                ForEach(group.items) { item in
-                    readyRow(title: item.subtitle.isEmpty ? group.title : item.subtitle, poster: nil, data: [bytes(item.writtenBytes)], item: item, model: model)
-                }
-            } label: {
-                HStack(spacing: DS.Space.s3) {
-                    PosterView(url: group.poster, title: group.title).frame(width: DS.Size.thumbSmall)
-                    VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        Text(group.title).recipe(.cardTitle).lineLimit(1)
-                        DataLine(parts: [episodesText(group.items.count), bytes(group.bytes)])
-                    }
-                }
+    /// Una serie descargada: su póster, cuántas temporadas y episodios, y cuánto ocupa (sin archivos sueltos).
+    private func seriesRow(_ g: DownloadGroup) -> some View {
+        HStack(spacing: DS.Space.s3) {
+            PosterView(url: g.poster, title: g.title).frame(width: DS.Size.thumbSmall)
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                Text(g.title).recipe(.cardTitle).lineLimit(1)
+                DataLine(parts: [g.seasons.count > 1 ? seasonsText(g.seasons.count) : seasonText(g.seasons.first?.number), episodesText(g.items.count), bytes(g.bytes)].compactMap { $0 })
             }
         }
     }
 
-    private func readyRow(title: String, poster: String?, data: [String], item: DownloadItem, model: DownloadsModel) -> some View {
+    func readyRow(title: String, poster: String?, data: [String], item: DownloadItem, model: DownloadsModel) -> some View {
         Button { Task { env.play(await model.playRequest(item)) } } label: {
             HStack(spacing: DS.Space.s3) {
                 if let poster { PosterView(url: poster, title: title).frame(width: DS.Size.thumbSmall) }
@@ -131,9 +139,92 @@ struct DownloadsView: View {
     }
 
     private func episodesText(_ count: Int) -> String {
-        String(format: Strings.tr("%lld episodios", language: env.services.appSettings.uiLanguage), count)
+        String(format: Strings.tr(count == 1 ? "%lld episodio" : "%lld episodios", language: env.services.appSettings.uiLanguage), count)
+    }
+
+    private func seasonsText(_ count: Int) -> String {
+        String(format: Strings.tr("%lld temporadas", language: env.services.appSettings.uiLanguage), count)
+    }
+
+    private func seasonText(_ number: Int?) -> String? {
+        guard let number, number > 0 else { return nil }
+        return String(format: Strings.tr("Temporada %lld", language: env.services.appSettings.uiLanguage), number)
     }
 
     /// «1,2 GB» en el idioma de la app (no en el del sistema).
     private func bytes(_ n: Int64) -> String { n.formatted(.byteCount(style: .file, spellsOutZero: false).locale(env.uiLocale)) }   // «0 KB», no «Zero kB»
+}
+
+/// A dónde lleva una serie descargada (sus temporadas) y una temporada (sus episodios).
+struct DownloadSeriesRoute: Hashable { var metaID: String }
+struct DownloadSeasonRoute: Hashable { var metaID: String; var season: Int }
+
+/// Una serie descargada: con varias temporadas, una fila por temporada; con una sola, directo sus episodios.
+struct DownloadSeriesView: View {
+    @ObservedObject var observer: ModelObserver<DownloadsModel>
+    let metaID: String
+
+    var body: some View {
+        let group = observer.model.readySeries.first { $0.metaID == metaID }
+        Group {
+            if let group, group.seasons.count > 1 {
+                List {
+                    Section {
+                        ForEach(group.seasons) { season in
+                            NavigationLink(value: DownloadSeasonRoute(metaID: metaID, season: season.number)) {
+                                LabeledContent {
+                                    Text(verbatim: season.bytes.formatted(.byteCount(style: .file)))
+                                } label: {
+                                    Text("Temporada \(season.number)").recipe(.cardTitle)
+                                    Text("\(season.items.count) episodios").recipe(.footnote)
+                                }
+                            }
+                            .swipeActions { Button("Borrar", role: .destructive) { Task { for item in season.items { await observer.model.remove(item.id) } } }.tint(DS.danger) }
+                        }
+                    }
+                    .listRowBackground(DS.surface)
+                }
+            } else if let season = group?.seasons.first {
+                DownloadSeasonView(observer: observer, metaID: metaID, season: season.number)
+            }
+        }
+        .scrollContentBackground(.hidden).background(Backdrop())
+        .navigationTitle(Text(verbatim: group?.title ?? "")).navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// Los episodios descargados de una temporada: tocar uno lo reproduce; deslizar lo borra.
+struct DownloadSeasonView: View {
+    @ObservedObject var observer: ModelObserver<DownloadsModel>
+    @EnvironmentObject private var env: AppEnvironment
+    let metaID: String
+    let season: Int
+
+    var body: some View {
+        let model = observer.model
+        let group = model.readySeries.first { $0.metaID == metaID }
+        let items = group?.seasons.first { $0.number == season }?.items ?? []
+        List {
+            Section {
+                ForEach(items) { item in
+                    Button { Task { env.play(await model.playRequest(item)) } } label: {
+                        HStack(spacing: DS.Space.s3) {
+                            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                                Text(verbatim: item.subtitle.isEmpty ? item.title : item.subtitle).recipe(.cardTitle).lineLimit(2)
+                                DataLine(parts: [item.writtenBytes.formatted(.byteCount(style: .file))])
+                            }
+                            Spacer(minLength: DS.Space.s2)
+                            Image(systemName: "play.circle.fill").font(DS.TextRecipe.section.font).foregroundStyle(DS.text).accessibilityHidden(true)
+                        }
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }
+                }
+            } header: { if season > 0 { Text("Temporada \(season)") } }
+            .listRowBackground(DS.surface)
+        }
+        .scrollContentBackground(.hidden).background(Backdrop())
+        .navigationTitle(Text(verbatim: group?.title ?? "")).navigationBarTitleDisplayMode(.inline)
+    }
 }

@@ -33,6 +33,9 @@ struct BrowseView: View {
         .background(Backdrop())
         .navigationTitle("Buscar").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .searchable(text: $query, prompt: Text("Películas y series"))
+        // El campo vive abajo (pestaña de búsqueda, como Trakt); al escribir, el título se queda arriba y los resultados
+        // empiezan bajo él (antes la barra se escondía y lo de arriba chocaba con la hora).
+        .searchPresentationToolbarBehavior(.avoidHidingContent)
         .titleDestinations()
         .navigationDestination(for: GenreRoute.self) { GenreView(genre: $0.genre, model: catalog.model) }
         .task(id: query) {
@@ -57,6 +60,13 @@ struct BrowseView: View {
         if let error = model.error, answered { DSNotice(verbatim: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
         else if model.results.isEmpty && answered { ContentUnavailableView.search(text: query) }
         LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
+            if !answered && model.results.isEmpty && model.error == nil {
+                // Mientras llega: pósters vacíos en su lugar (antes, una ruedita sobre la barra de arriba).
+                ForEach(0..<9, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: DS.Radius.md).fill(DS.fill).aspectRatio(DS.Poster.aspect, contentMode: .fit)
+                }
+                .accessibilityHidden(true)
+            }
             ForEach(model.results) { r in
                 TitleLink(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster), width: DS.Poster.gridMinimum,
                           detail: yearAndKind(year: r.year, kind: r.kind))
@@ -64,7 +74,6 @@ struct BrowseView: View {
             }
         }
         .padding(.horizontal, DS.Space.gutter)
-        .overlay { if !answered && model.results.isEmpty && model.error == nil { ProgressView() } }
     }
 
     // MARK: sin escribir
