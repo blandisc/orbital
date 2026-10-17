@@ -9,7 +9,7 @@ import { Badge, Chip } from "./ui.js";
 
 const FRESH_MS = 4000; // lo que llegó hace menos que esto no se vuelve a pedir al volver a la sección
 const TYPE_MS = 1300; // tecleando un número: lo que se espera al siguiente dígito antes de sintonizar
-const PREVIEW_STALL_MS = 9000; // si la miniatura no da imagen en este rato, se queda el logo
+const PREVIEW_STALL_MS = 16000; // si la miniatura no da imagen en este rato, se queda el logo (hay canales de pedazos de 10 s)
 const RECENT = "recent";
 
 /**

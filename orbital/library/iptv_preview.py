@@ -111,6 +111,20 @@ class Previews:
                 raise PreviewError("lista maestra anidada")
         return rewrite(text, final, channel.id)
 
-    def segment(self, channel: Channel, url: str) -> tuple[bytes, str]:
-        body, _, kind = fetch(channel, url, SEGMENT_LIMIT)
-        return body, kind or "video/mp2t"
+    def segment(self, channel: Channel, url: str):
+        """(pedazos, tipo): se van pasando mientras llegan. Antes se bajaba el pedazo entero (hasta 4 MB en un canal sin
+        calidades) y la miniatura tardaba tanto que se daba por perdida."""
+        res = urllib.request.urlopen(urllib.request.Request(url, headers=_headers(channel)), timeout=TIMEOUT)
+        kind = res.headers.get("Content-Type", "") or "video/mp2t"
+
+        def chunks():
+            sent = 0
+            try:
+                while chunk := res.read(64 * 1024):
+                    sent += len(chunk)
+                    if sent > SEGMENT_LIMIT:
+                        return
+                    yield chunk
+            finally:
+                res.close()
+        return chunks(), kind

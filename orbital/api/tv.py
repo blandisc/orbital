@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 
 from ..library import iptv_preview
@@ -66,10 +66,10 @@ def router(d: Deps) -> APIRouter:
         if channel is None:
             raise HTTPException(404)
         try:
-            body, kind = previews.segment(channel, u)
+            chunks, kind = previews.segment(channel, u)
         except NET_ERRORS:
             raise HTTPException(502)
-        return Response(body, media_type=kind, headers={"Cache-Control": "no-store"})
+        return StreamingResponse(chunks, media_type=kind, headers={"Cache-Control": "no-store"})
 
     @r.get("/logo")
     def logo(id: str = Query(max_length=200)) -> FileResponse:
