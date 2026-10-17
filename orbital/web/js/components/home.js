@@ -99,7 +99,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     // Bajo el título, el próximo estreno de tus series (como el widget del iPhone): «The Simpsons T38 E3 · Mañana · 6:00 p. m.».
     const upcoming = nextUp && h("div", { class: "home__next" }, svg(ICONS.calendar),
       h("span", { class: "home__next-text" }, [nextUp.title, nextUp.episode].filter(Boolean).join(" ")), h("span", { class: "home__next-when" }, `· ${nextUp.when}`));
-    mount(queue, queued.length > 0 && SectionHead(queueTitle(model.cards), { className: "home__queue-head" }),
+    mount(queue, queued.length > 0 && SectionHead(queueTitle(), { className: "home__queue-head" }),
       queued.length > 0 && upcoming,
       queued.length > 0 && h("div", { class: "home__rows" }, queued));
 
