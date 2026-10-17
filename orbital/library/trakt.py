@@ -316,6 +316,14 @@ class Trakt:
         rows = self._get(f"/{KINDS[kind]}/popular", auth=False, **params)
         return [e for e in (entry(r, kind) for r in rows) if e] if isinstance(rows, list) else []
 
+    def rating(self, kind: str, imdb: str) -> float | None:
+        """La calificación de Trakt de un título (0–10; para la ficha, como el iPhone). None si no la tiene."""
+        if not isinstance(imdb, str) or not imdb.startswith("tt") or not imdb[2:].isdigit():
+            return None
+        raw = self._get(f"/{KINDS[kind]}/{imdb}", auth=False, extended="full")
+        found = entry(raw, kind) if isinstance(raw, dict) else None
+        return found.get("rating") if found else None
+
     def watched_ids(self) -> list[str]:
         """Los IMDb de lo que ya viste (películas y series), para «Ocultar lo que ya vi» en una lista."""
         found: list[str] = []

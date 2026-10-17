@@ -47,10 +47,10 @@ test("avance fuera de los botones: con barra y lo que queda", async () => {
   const { titleProgress } = await import("../../orbital/web/js/core/watch.js");
   const now = new Date(2026, 9, 17, 22, 0).getTime();
   assert.deepEqual(titleProgress({ kind: "series", resume: { label: "T8 E23", episode_title: "Homer's Enemy", position: 732, duration: 1368 } }, now),
-    { label: "T8 E23 · quedan 11 min · termina a las 10:10 p. m. · Homer's Enemy", fraction: 732 / 1368 });
+    { label: "T8 E23 · quedan 11 min · Homer's Enemy", fraction: 732 / 1368 });
   assert.deepEqual(titleProgress({ kind: "series", resume: { label: "T8 E24", episode_title: "Las Supermamás", position: 0 } }),
     { label: "Sigue: T8 E24 · Las Supermamás", fraction: null });
-  assert.equal(titleProgress({ kind: "movie", resume: { position: 600, duration: 6600 } }, now).label, "Quedan 1 h 40 min · termina a las 11:40 p. m.");
+  assert.equal(titleProgress({ kind: "movie", resume: { position: 600, duration: 6600 } }, now).label, "Quedan 1 h 40 min"); // sin «termina a las…» en la ficha
   assert.equal(titleProgress({ kind: "movie", resume: null }), null);
 });
 
@@ -97,7 +97,7 @@ test("un estreno de otro año dice el año (si no, parecía de este año)", asyn
   assert.match(states.get("s:1:2").upcoming, /2027/);
 });
 
-test("«termina a las…»: la hora en que acabas (en Inicio y en la ficha, como el iPhone)", async () => {
+test("«termina a las…»: la hora en que acabas (en el Inicio; en la ficha ya no)", async () => {
   const { endsAt } = await import("../../orbital/web/js/core/format.js");
   const { detailOf } = await import("../../orbital/web/js/components/tiles.js");
   const now = new Date(2026, 9, 17, 23, 30).getTime();

@@ -80,7 +80,9 @@
 /* El anillo: un trazo fino que se dibuja solo al entrar (de cero a la vuelta completa). Atrás, tenue (la profundidad). */
 .launch__ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .launch__ring ellipse {
-  fill: none; stroke: color-mix(in oklab, var(--art-accent) 55%, transparent); stroke-width: 1.5;
+  /* Un solo color en toda la vuelta (antes la mitad de atrás iba en el tono del arte y la de enfrente casi blanca con
+     brillo: se veían dos mitades). La profundidad la da el satélite, que atrás se aleja. */
+  fill: none; stroke: color-mix(in oklab, var(--color-star) 78%, var(--art-accent)); stroke-width: 1.6;
   stroke-dasharray: 100; stroke-dashoffset: 100; stroke-linecap: round;
   animation: launch-draw var(--duration-launch-draw) var(--ease-out) var(--delay-1) forwards;
 }
@@ -116,14 +118,9 @@
   100% { transform: rotate(-360deg) scaleY(var(--orbit-unsquash, 3.3)) scale(.7); }
 }
 /* Profundidad: el arco de enfrente pasa por delante de la portada; el de atrás, detrás. */
-/* El de enfrente se ve encima de la portada: más claro y con su brillo (con 2 px sin brillo se perdía
-   sobre un póster cargado y parecía que la órbita nunca pasaba por delante). */
 .launch__orbit--front { z-index: var(--z-above); clip-path: inset(50% -2rem -2rem -2rem); }
-/* El arco de enfrente: claro y con un brillo suave (sobre un póster cargado se perdía). */
-.launch__orbit--front .launch__ring ellipse {
-  stroke: color-mix(in oklab, var(--color-star) 85%, var(--art-accent)); stroke-width: 1.75;
-}
-.launch__orbit--front .launch__ring { filter: drop-shadow(0 0 .35rem color-mix(in oklab, var(--art-accent) 55%, transparent)); }
+/* Las dos mitades con el mismo trazo y la misma luz suave (que se lea sobre un póster cargado sin cambiar de color). */
+.launch__ring { filter: drop-shadow(0 0 .3rem color-mix(in oklab, var(--art-accent) 45%, transparent)); }
 .launch--revealing .launch__orbit--front { transform: rotate(-24deg) scale(1.18); opacity: 0; }
 /* Sin portada (una app): solo la órbita, con un planeta de la marca al centro. */
 .launch--no-cover .launch__stage::before {

@@ -13,8 +13,8 @@ import { SourceBadge } from "./collection-card.js";
  * open({ id, title, meta, media: { statue?, logo? }, source?, tabs: [{ id, label, load, ranked?, brand? }] })
  * onPick(item) · onMore(item) · onSort(screen) · onMove() · onClose()
  */
+// Sin «Como viene»: si no eliges orden, la lista va como llega (elegir otra vez el que está puesto lo quita).
 export const SORTS = [
-  { id: "default", label: "Como viene" },
   { id: "imdb", label: "Mejor calificadas en IMDb" },
   { id: "trakt", label: "Mejor calificadas en Trakt" },
   { id: "year", label: "Año (lo más nuevo primero)" },
@@ -53,7 +53,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
 
   function paintHead() {
     mount(media, list.media?.statue ? h("img", { class: "list-screen__statue", src: list.media.statue, alt: "" })
-      : list.media?.logo ? h("img", { class: "list-screen__logo", src: list.media.logo, alt: "" }) : null);
+      : list.media?.logo ? h("img", { class: ["list-screen__logo", list.media.mono && "list-screen__logo--mono"], src: list.media.logo, alt: "" }) : null);
     media.hidden = !media.firstChild;
     title.textContent = list.title;
     mount(meta, [list.source && SourceBadge(list.source), list.meta && h("span", {}, list.meta)].filter(Boolean));
@@ -220,10 +220,10 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
       for (const i of loaded.get(tab) || []) (i.genres || []).forEach((g) => all.add(g));
       return [...all].sort();
     },
-    /** Hay de los dos tipos (sin pestañas Series · Películas): se puede filtrar por tipo. */
-    get mixed() { const kinds = new Set((loaded.get(tab) || []).map((i) => i.kind)); return kinds.size > 1; },
+    /** Sus pestañas ya son Series · Películas (entonces el filtro de tipo sobra). */
+    get kindTabs() { return !!list?.tabs.some((t) => t.id === "series" || t.id === "movie"); },
     async setSort(id) {
-      settings.sort = id;
+      settings.sort = settings.sort === id ? "default" : id; // el que ya estaba puesto se quita
       storage.set(sortKey(list.id), id);
       if (id === "imdb") {
         const ids = (loaded.get(tab) || []).filter((i) => imdb[i.meta_id] == null).map((i) => ({ kind: i.kind, meta_id: i.meta_id }));

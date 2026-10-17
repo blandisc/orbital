@@ -15,6 +15,8 @@
 }
 .hero__content > * { flex-shrink: 0; } /* solo el logotipo cede espacio; el texto no se aplasta */
 .hero__content > .hero__logo { flex-shrink: 1; }
+/* El logo de un estudio (TMDB, casi siempre oscuro): en blanco, como los logos de los títulos. */
+.hero__logo.hero__logo--mono { filter: brightness(0) invert(1) var(--shadow-logo); max-height: 5rem; }
 /* Salida corta y acelerando; la entrada usa la transición base (desacelerando). */
 .hero__content--leaving {
   opacity: 0; transform: translateY(.35rem);

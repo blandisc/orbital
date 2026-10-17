@@ -21,6 +21,8 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   const name = h("h1", { class: "title__name" });
   logo.addEventListener("error", () => { logo.hidden = true; name.hidden = false; }); // sin Internet o 404
   const facts = h("div", { class: "title__facts" });
+  // IMDb · TMDB · Trakt, cada una con el logotipo de su servicio (RatingsRow del iPhone). Guarda su alto mientras llegan.
+  const ratings = h("div", { class: "title__ratings", "aria-label": "Calificaciones" });
   const description = h("p", { class: "title__description" });
   const people = h("div", { class: "title__people" });
   const avail = h("div", { class: "title__avail", hidden: true });
@@ -39,7 +41,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   const browser = h("div", { class: "title__browser" }, tabs, list);
   const el = h("section", { class: "title", hidden: true, "aria-label": "Ficha" },
     backdrop,
-    h("div", { class: "title__info" }, logo, name, facts, avail, description, people, progress, actions, caption, status),
+    h("div", { class: "title__info" }, logo, name, facts, ratings, avail, description, people, progress, actions, caption, status),
     browser);
 
   let item = null;
@@ -69,7 +71,8 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     const runtime = info.runtime || "";
     // Cada dato con su «·» delante, en un solo bloque: el punto nunca queda colgando al final del
     // renglón; si un dato empieza renglón, su punto se oculta (title--fact-start).
-    mount(facts, [info.year, info.rating && `★ ${info.rating}`, runtime, genres(info.genres || []).join(", ")]
+    // Sin «★ 8.1»: la de IMDb va en su renglón, con TMDB y Trakt (como el iPhone).
+    mount(facts, [info.year, runtime, genres(info.genres || []).join(", ")]
       .filter(Boolean).map((t, i) => h("span", { class: "title__fact" }, i > 0 && h("span", { class: "title__sep", "aria-hidden": "true" }, "·"), t)));
     requestAnimationFrame(() => {
       let top = null;
@@ -85,6 +88,23 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     ].filter(Boolean);
     mount(people, lines);
     people.hidden = !lines.length;
+  }
+
+  /** Las calificaciones (0–10): IMDb «8.1», TMDB y Trakt en por ciento, como el iPhone. */
+  function showRatings(r, mine) {
+    if (mine !== token) return;
+    const mark = {
+      imdb: h("span", { class: "title__rating-mark title__rating-mark--imdb" }, "IMDb"),
+      tmdb: h("span", { class: "title__rating-mark title__rating-mark--tmdb" }, "TMDB"),
+      trakt: h("span", { class: "title__rating-mark title__rating-mark--trakt", "aria-hidden": "true" }),
+    };
+    const shown = [
+      r?.imdb && ["imdb", Number(r.imdb).toFixed(1), "IMDb"],
+      r?.tmdb && ["tmdb", `${Math.round(r.tmdb * 10)} %`, "TMDB"],
+      r?.trakt && ["trakt", `${Math.round(r.trakt * 10)} %`, "Trakt"],
+    ].filter(Boolean);
+    mount(ratings, shown.map(([id, value, label]) => h("span", { class: "title__rating", "aria-label": `${label} ${value}` }, mark[id],
+      h("span", { class: "title__rating-value" }, value))));
   }
 
   function renderActions() {
@@ -313,6 +333,8 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
       if (mine !== token) return;
       if (!data || typeof data !== "object" || (!data.id && !data.title)) throw new Error("La ficha llegó incompleta. Intenta de nuevo.");
       details = data;
+      showRatings({ imdb: Number(data.rating) || null }, mine);
+      api.titleRatings(kind, id).then((r) => showRatings({ ...r, imdb: r?.imdb ?? (Number(data.rating) || null) }, mine)).catch(() => {});
       fillInfo({ ...data, title: data.title || item.title, background: data.background || item.hero || item.image,
         ...(item.extra?.logo ? { logo: item.extra.logo } : {}) });
       states = episodeStates(data, Date.now());

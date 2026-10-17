@@ -36,7 +36,7 @@ export const GENRE_SHELVES = [
   { genre: "Documentary", kind: "movie", title: "Documental" },
 ];
 
-/** El arte de cada género (el mismo que el iPhone: scripts/genre_art.py lo hace para los dos). */
+/** El arte de cada género: el mismo del iPhone (Grok Imagine, dirección cinematográfica; orbital/web/img/genres). */
 export const genreArt = (genre) => `img/genres/genre-${genre.toLowerCase().replace(/[^a-z0-9]/g, "")}.jpg`;
 
 /**

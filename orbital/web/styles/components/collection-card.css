@@ -29,6 +29,9 @@
 }
 .collection__foot--start { align-items: flex-start; text-align: left; right: 38%; }
 .collection__logo { display: block; max-width: 70%; max-height: 2rem; object-fit: contain; filter: drop-shadow(0 0 .9rem var(--halo, transparent)); }
+/* El logo de un estudio (TMDB los da en sus colores, casi siempre oscuros): en blanco y con sombra para leerse sobre
+   los pósters (sin placa: el filtro también la pintaría de blanco). */
+.collection__logo--mono { max-height: 2.2rem; filter: brightness(0) invert(1) drop-shadow(0 .15rem .5rem color-mix(in oklab, var(--color-bg) 85%, transparent)); }
 .collection__name {
   font-size: var(--text-md); font-weight: var(--weight-bold); line-height: 1.1; letter-spacing: var(--tracking-tight);
   text-shadow: var(--shadow-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;

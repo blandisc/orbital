@@ -6,6 +6,7 @@
 .list-screen__media { flex: none; display: grid; place-items: end center; height: 7rem; }
 .list-screen__statue { height: 100%; width: auto; filter: drop-shadow(0 0 1.6rem color-mix(in oklab, var(--color-award-gold) 45%, transparent)); }
 .list-screen__logo { max-height: 4rem; max-width: 14rem; object-fit: contain; }
+.list-screen__logo--mono { filter: brightness(0) invert(1); } /* el logo de un estudio, en blanco */
 .list-screen__heading { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
 .list-screen__title { margin: 0; font-size: var(--text-3xl); font-weight: var(--weight-bold); line-height: 1; letter-spacing: var(--tracking-display); text-wrap: balance; }
 .list-screen__meta { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-md); }

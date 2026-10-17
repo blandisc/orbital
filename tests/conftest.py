@@ -311,3 +311,19 @@ def _no_real_subtitle_downloads(monkeypatch):
 
     monkeypatch.setattr(player, "fetch_subtitle", lambda url: url)
     monkeypatch.setattr(player, "in_background", lambda work: work())
+
+
+@pytest.fixture(autouse=True)
+def _no_real_logo_warming(monkeypatch):
+    """Ninguna prueba baja logos de metahub en segundo plano (Para ti los calienta al armar cada lista)."""
+    from orbital.foryou import ForYou
+
+    monkeypatch.setattr(ForYou, "_warm_logos", lambda self, items: None)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_studio_logos(monkeypatch):
+    """Ninguna prueba pide a TMDB los logos de los estudios en segundo plano."""
+    from orbital.foryou import ForYou
+
+    monkeypatch.setattr(ForYou, "_studio_logos", lambda self: {})

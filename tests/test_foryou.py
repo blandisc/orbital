@@ -777,3 +777,16 @@ def test_a_list_can_be_sorted_by_imdb_and_hide_what_you_watched(make_foryou, net
     net.on("GET", r"/sync/watched/shows", (200, [{"show": {"ids": {"imdb": "tt8"}}}, {"show": {"ids": {}}}]))
     assert fy.watched_ids() == ["tt9", "tt8"]
     assert make_foryou().watched_ids() == []  # sin cuenta de Trakt, nada que ocultar
+
+
+def test_the_title_shows_imdb_tmdb_and_trakt_like_the_iphone(make_foryou, net, library, monkeypatch):
+    fy = make_foryou(tmdb_key="k")
+    monkeypatch.setattr(library.cinemeta, "meta", lambda kind, imdb, localized=True: {"imdbRating": "8.6"})
+    net.on("GET", r"/find/tt2788316", (200, {"tv_results": [{"id": 126308}]}))
+    net.on("GET", r"/tv/126308\?", (200, {"id": 126308, "name": "Shōgun", "vote_average": 8.55, "vote_count": 2100,
+                                         "external_ids": {"imdb_id": "tt2788316"}}))
+    net.on("GET", r"/shows/tt2788316\?", (200, {"title": "Shōgun", "year": 2024, "ids": {"imdb": "tt2788316"}, "rating": 8.62}))
+    assert fy.title_ratings("series", "tt2788316") == {"imdb": 8.6, "tmdb": 8.6, "trakt": 8.6}
+    assert fy.title_ratings("series", "nada") == {"imdb": None, "tmdb": None, "trakt": None}
+    # Sin claves de TMDB ni Trakt: solo IMDb, y la ficha no truena.
+    assert make_foryou(trakt_keys=False).title_ratings("movie", "tt1")["tmdb"] is None

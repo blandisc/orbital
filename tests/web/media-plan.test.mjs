@@ -122,8 +122,11 @@ test("LT/RT pasan de grupo en grupo", async () => {
   assert.equal(groupJump(rows, 0, -1), null);
 });
 
-test("filas centradas: la enfocada al centro de lo visible", async () => {
+test("filas centradas: la enfocada al centro, sin hueco a la izquierda ni pasarse del final", async () => {
   const { centeredOffset } = await import("../../orbital/web/js/core/library.js");
-  assert.equal(centeredOffset([100, 100, 100], 1, { gap: 10, visible: 400 }), 110 + 50 - 200);
-  assert.equal(centeredOffset([100, 100, 100], 0, { gap: 10, visible: 400 }), -150); // la primera también al centro
+  const widths = Array(8).fill(100);
+  assert.equal(centeredOffset(widths, 0, { gap: 10, visible: 400 }), 0); // la primera, pegada a la izquierda
+  assert.equal(centeredOffset(widths, 4, { gap: 10, visible: 400 }), 440 + 50 - 200); // en medio, al centro
+  assert.equal(centeredOffset(widths, 7, { gap: 10, visible: 400 }), 870 - 400); // la última, sin aire de más
+  assert.equal(centeredOffset([100, 100], 1, { gap: 10, visible: 400 }), 0); // si caben todas, no se mueve
 });

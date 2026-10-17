@@ -49,10 +49,10 @@ function poster(url, i) {
 const fan = (posters) => h("span", { class: "collection__fan", "aria-hidden": "true" },
   posters.slice(0, 3).map((url, i) => poster(url, [1, 0, 2][i] ?? i)));
 
-function brandMark(c) {
-  if (!c.logo) return h("span", { class: "collection__name" }, c.name);
-  const img = h("img", { class: "collection__logo", src: c.logo, alt: c.name, decoding: "async" });
-  img.addEventListener("error", () => img.replaceWith(h("span", { class: "collection__name" }, c.name)), { once: true });
+function brandMark(c, { mono = false, fallback = "collection__name" } = {}) {
+  if (!c.logo) return h("span", { class: fallback }, c.name);
+  const img = h("img", { class: ["collection__logo", mono && "collection__logo--mono"], src: c.logo, alt: c.name, decoding: "async" });
+  img.addEventListener("error", () => img.replaceWith(h("span", { class: fallback }, c.name)), { once: true });
   return img;
 }
 
@@ -62,8 +62,9 @@ function body(c) {
     case "platform":
       return [h("span", { class: "collection__glow", "aria-hidden": "true" }), fan(posters), h("span", { class: "collection__foot" }, brandMark(c))];
     case "studio":
+      // El logo del estudio (en blanco); sin logo, su nombre en cápsula.
       return [h("span", { class: "collection__glow", "aria-hidden": "true" }), fan(posters),
-        h("span", { class: "collection__foot" }, h("span", { class: "collection__capsule" }, c.name))];
+        h("span", { class: "collection__foot" }, brandMark(c, { mono: true, fallback: "collection__capsule" }))];
     case "award":
       return [h("span", { class: "collection__glow", "aria-hidden": "true" }), fan(posters),
         c.statue && h("img", { class: "collection__statue", src: c.statue, alt: "", decoding: "async" }),

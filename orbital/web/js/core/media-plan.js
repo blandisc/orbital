@@ -85,8 +85,11 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   const because = byId.because;
   if (because?.seed) {
     const related = itemsOf(itemsById, because, filter);
+    // Su propio fondo y su logo (antes el héroe enseñaba el fondo del primer relacionado y el nombre en texto).
+    const art = (kind) => `https://images.metahub.space/${kind}/medium/${because.seed.meta_id}/img`;
     const seed = card("collection:because", because.seed.title, { type: "seed", name: because.seed.title, posters: [because.seed.image],
-      detail: "Lo último que viste" }, { meta_id: because.seed.meta_id, kind: because.seed.kind, ...heroOf(related[0], "Porque viste") });
+      detail: "Lo último que viste" }, { meta_id: because.seed.meta_id, kind: because.seed.kind, image: art("background"), hero: art("background"),
+      extra: { eyebrow: "Porque viste", description: "", logo: art("logo") } });
     if (related.length) rows.push({ id: "curated:because", title: because.title, seal: "trakt", group: "because", items: [seed, ...related.slice(0, 20).map(curatedItem)] });
   }
   for (const [id, seal] of [["recs", "trakt"], ["trend", "trakt"], ["popular", "trakt"], ["cinemeta", "stremio"]]) {
@@ -106,8 +109,11 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
     const items = lists.filter((l) => l.collection === type && (filter === "all" || (l.kinds || ["series", "movie"]).includes(filter) || SPLIT(l)))
       .map((l) => {
         const got = type === "year" ? (years[l.id] || []) : itemsOf(itemsById, l);
+        const hero = heroOf(got[0], EYEBROW[type]);
+        // Un estudio: su logo (TMDB) en la tarjeta, arriba en el héroe y en su lista, en blanco (mono).
+        if (type === "studio" && l.logo) hero.extra = { ...hero.extra, logo: l.logo, logoMono: true };
         return card(`collection:${l.id}`, l.title, { type: type === "award" ? "award" : type, name: l.title, detail: l.meta, statue: l.statue,
-          tint: l.tint, count: l.count, posters: got.slice(0, type === "year" ? 4 : 3).map(posterOf), list: l }, heroOf(got[0], EYEBROW[type]));
+          tint: l.tint, count: l.count, logo: l.logo || null, posters: got.slice(0, type === "year" ? 4 : 3).map(posterOf), list: l }, hero);
       }).filter((c) => type === "year" || c.collection.posters.length);
     if (items.length) rows.push({ id: `curated:${group}`, title, group, cards: true, items });
   };

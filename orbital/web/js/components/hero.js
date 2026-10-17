@@ -3,6 +3,7 @@ import { bytes, duration, genres, lastPlayed, percent } from "../core/format.js"
 import { ICONS, systemIconName } from "../core/icons.js";
 import { alternativeRunner, isGame, isSeries, isWatchable, primaryLabel, runnerName } from "../core/library.js";
 import { alexaTip } from "../core/hints.js";
+import { trimmedLogo } from "../core/foryou.js";
 import { Button } from "./button.js";
 import { appIcon } from "./card.js";
 
@@ -69,7 +70,9 @@ export function createHero({ onAction }) {
     title.classList.toggle("hero__title--long", item.title.length > 28);
     title.hidden = false;
     logo.hidden = true;
-    if (extra.logo) logo.src = extra.logo;
+    // El logo recortado y guardado por Orbital (/api/foryou/logo), no el original de internet: carga al instante.
+    if (extra.logo) logo.src = trimmedLogo(extra.logo);
+    logo.classList.toggle("hero__logo--mono", !!extra.logoMono); // el logo de un estudio, en blanco
     else logo.removeAttribute("src");
     description.textContent = extra.description || "";
     description.hidden = !extra.description;

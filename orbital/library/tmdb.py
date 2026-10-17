@@ -120,6 +120,11 @@ class Tmdb:
                          **{"vote_count.gte": 50}, page=1)
         return [r for r in data.get("results") or [] if isinstance(r, dict) and isinstance(r.get("id"), int)]
 
+    def company_logo(self, company_id: int) -> str | None:
+        """El logo de un estudio (PNG transparente de TMDB), para Películas y series › Estudios."""
+        raw = self._get(f"/company/{int(company_id)}")
+        return image(raw.get("logo_path"), "w300") if isinstance(raw, dict) else None
+
     def details(self, kind: str, tmdb_id: int) -> dict:
         """Lo que hace falta para la ficha, en español; con su id de IMDb (None si TMDB no lo tiene)."""
         raw = self._get(f"/{KINDS[kind]}/{int(tmdb_id)}", append_to_response="external_ids")
@@ -135,6 +140,9 @@ class Tmdb:
             "seasons": raw.get("number_of_seasons") if isinstance(raw.get("number_of_seasons"), int) else None,
             "episodes": raw.get("number_of_episodes") if isinstance(raw.get("number_of_episodes"), int) else None,
             "poster": image(raw.get("poster_path")), "backdrop": image(raw.get("backdrop_path"), "w1280"),
+            # La calificación de TMDB (0–10), para la ficha («TMDB 84 %», como el iPhone); None sin votos.
+            "rating": round(float(raw["vote_average"]), 1) if isinstance(raw.get("vote_average"), (int, float))
+            and raw.get("vote_average") and (raw.get("vote_count") or 0) > 0 else None,
         }
 
     def images(self, kind: str, tmdb_id: int, limit: int = 18) -> dict[str, list[str]]:

@@ -67,12 +67,15 @@ export function rowOffset(widths, c, { gap, grow = 0, visible }) {
   return Math.min(lefts[Math.max(0, c - 1)] ?? 0, max);
 }
 
-/** Fila centrada (Tus plataformas, Premios…): la enfocada al centro de lo visible, como el carrusel centrado del iPhone.
- *  Puede ser negativo (la primera también queda al centro, con aire a la izquierda). La enfocada crece desde su centro. */
+/** Fila centrada (Tus plataformas, Premios…): la enfocada al centro de lo visible, como el carrusel centrado del iPhone,
+ *  pero sin hueco: las primeras arrancan pegadas a la izquierda y las últimas no se pasan del final (antes la primera
+ *  quedaba al centro con un espacio muerto a la izquierda). La enfocada crece desde su centro. */
 export function centeredOffset(widths, c, { gap, grow = 0, visible }) {
   let left = 0;
   for (let i = 0; i < c; i++) left += (widths[i] ?? 0) + gap;
-  return left + grow / 2 + (widths[c] ?? 0) / 2 - visible / 2;
+  const total = widths.reduce((sum, w) => sum + w, 0) + gap * Math.max(0, widths.length - 1) + grow;
+  const centered = left + grow / 2 + (widths[c] ?? 0) / 2 - visible / 2;
+  return Math.min(Math.max(0, centered), Math.max(0, total - visible));
 }
 
 /** El emulador alternativo (p. ej. Eden cuando el predeterminado es Ryujinx). */
@@ -125,9 +128,8 @@ export const SECTIONS = [
   // que la fila de apps (Buscar, YouTube…) va al final.
   // Con la curaduría de Para ti (core/curation.js) entre lo tuyo y lo popular: Top 10, plataformas, tus listas.
   // Como Para ti › Listas del iPhone (core/media-plan.js): el mismo orden y los mismos nombres. «Seguir viendo» vive en el
-  // Inicio y Mi lista en «Listas de Stremio»; los lanzadores (Stremio, YouTube…) al final.
-  { id: "media", title: "Películas y series", rows: (id) => id === "media" || id.startsWith("curated:"),
-    order: ["curated:spotlight", "curated:*", "media"] },
+  // Inicio y Mi lista en «Listas de Stremio». Sin la fila «Multimedia» (Buscar, Stremio, YouTube): el usuario ya no la usa; Buscar es ⧉.
+  { id: "media", title: "Películas y series", rows: (id) => id.startsWith("curated:"), order: ["curated:spotlight", "curated:*"] },
   // TV en vivo: los canales de México (su propia vista, sin filas de biblioteca). Siempre a la vista: aunque
   // la lista aún no llegue, la sección dice qué está pasando en vez de desaparecer de la barra.
   { id: "tv", title: "TV en vivo", rows: () => false, always: true },

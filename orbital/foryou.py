@@ -45,6 +45,7 @@ log = logging.getLogger(__name__)
 METAHUB = "https://images.metahub.space/{kind}/medium/{imdb}/img"
 PREFETCH_DELAY = 45  # s tras armar el mosaico, antes de bajar sus imágenes (que el arranque termine primero)
 LOGO_RETRY = 30 * 60  # un logo que no se pudo bajar (o que no existe) no se vuelve a pedir en media hora
+LOGO_WARM = 12  # de cada lista, los logos que se bajan antes de que se pidan
 STEAM_ART = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{file}"
 GAME_CATEGORIES = ("steam", "emulators")
 SERVICE_ERRORS = (trakt_api.TraktError, tmdb_api.TmdbError, rawg_api.RawgError, stremio_api.StremioError,
@@ -311,6 +312,8 @@ class ForYou:
         self._dark: dict[str, bool | None] = {}
         self.logo_dir = folder / "title-logos" if folder else None
         self._logos: dict[str, bytes] = {}  # sin carpeta (pruebas): en memoria
+        self._logo_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="logos")  # calentar logos, de uno en uno
+        self._studio_logos_busy = False
         self._logo_misses: dict[str, float] = {}
 
     def _key(self, name: str) -> str:
@@ -523,8 +526,10 @@ class ForYou:
                         "source": "Orbital", "collection": "award", "kinds": [a["kind"]], "tint": a["tint"],
                         "statue": f"/img/awards/{a['id']}.png", "count": len(a["winners"])})
         if self.tmdb.configured:
+            logos = self._studio_logos()
             out += [{"id": f"studio:{sid}", "title": name, "meta": "Lo más popular del estudio", "icon": "film", "source": "TMDB",
-                     "collection": "studio", "kinds": ["movie"]} for sid, name in tmdb_api.STUDIOS]
+                     "collection": "studio", "kinds": ["movie"], **({"logo": logos[str(sid)]} if logos.get(str(sid)) else {})}
+                    for sid, name in tmdb_api.STUDIOS]
         if self.trakt.configured:
             this_year = datetime.now().year
             out += [{"id": f"year:{y}", "title": str(y), "meta": f"Lo más popular de {y}", "icon": "calendar", "source": "Trakt",
@@ -549,6 +554,36 @@ class ForYou:
         with ThreadPoolExecutor(max_workers=12) as pool:
             return {imdb: rating for imdb, rating in pool.map(one, pairs) if rating}
 
+    def title_ratings(self, kind: str, imdb: str) -> dict:
+        """Las calificaciones de la ficha, como el iPhone (RatingsRow): IMDb (de Cinemeta), TMDB y Trakt, en 0–10. Las que no
+        se pueden saber (sin clave, sin red, sin votos) quedan en None; se recuerdan un día."""
+        kind = kind if kind in ("movie", "series") else "movie"
+        if not isinstance(imdb, str) or not re.fullmatch(r"tt[0-9]{1,12}", imdb):
+            return {"imdb": None, "tmdb": None, "trakt": None}
+
+        def imdb_rating() -> float | None:
+            return self.imdb_ratings([(kind, imdb)]).get(imdb)
+
+        def tmdb_rating() -> float | None:
+            if not self.tmdb.configured:
+                return None
+            tmdb_id = self.tmdb.find_id(imdb, kind)
+            return self.tmdb.details(kind, tmdb_id).get("rating") if tmdb_id else None
+
+        def trakt_rating() -> float | None:
+            return self.trakt.rating(kind, imdb) if self.trakt.configured else None
+
+        def safe(name: str, load: Callable[[], float | None]) -> float | None:
+            try:
+                return self.cache.get(f"rating:{name}:{imdb}", SLOW_TTL, load)
+            except Exception:  # noqa: BLE001 - una calificación que falla no tumba la ficha
+                return None
+
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            jobs = {name: pool.submit(safe, name, load) for name, load in
+                    (("imdb", imdb_rating), ("tmdb", tmdb_rating), ("trakt", trakt_rating))}
+            return {name: job.result() for name, job in jobs.items()}
+
     def watched_ids(self) -> list[str]:
         """Lo que ya viste en Trakt (sin Trakt, nada): «Ocultar lo que ya vi»."""
         if not self.trakt.linked:
@@ -558,6 +593,25 @@ class ForYou:
         except SERVICE_ERRORS as exc:
             log.info("Para ti: no pude leer lo que ya viste: %s", exc)
             return []
+
+    def _studio_logos(self) -> dict[str, str]:
+        """Los logos de los estudios (TMDB), sin hacer esperar al riel: si aún no están, se piden en segundo plano y mientras
+        tanto la tarjeta dice el nombre. Se recuerdan un día."""
+        found = self.cache.peek("tmdb:studio-logos")
+        if found is None and not self._studio_logos_busy:
+            self._studio_logos_busy = True
+
+            def load() -> None:
+                try:
+                    with ThreadPoolExecutor(max_workers=4) as pool:
+                        pairs = list(pool.map(lambda s: (str(s[0]), self._safe(lambda: self.tmdb.company_logo(s[0]))), tmdb_api.STUDIOS))
+                    self.cache.get("tmdb:studio-logos", SLOW_TTL, lambda: {k: v for k, v in pairs if v})
+                finally:
+                    self._studio_logos_busy = False
+                    self.publish({"type": "studio-logos"})  # Películas y series se pone al día con los logos
+
+            threading.Thread(target=load, daemon=True, name="studio-logos").start()
+        return found or {}
 
     def _last_watched(self) -> dict | None:
         try:
@@ -575,7 +629,16 @@ class ForYou:
         kind = kind if kind in ("movie", "series") else "series"
         hidden = self.catalog.state.dismissed()
         items = self._list(list_id, kind)
-        return [self._with_art(i) for i in items if i["key"] not in hidden]
+        out = [self._with_art(i) for i in items if i["key"] not in hidden]
+        self._warm_logos(out[:LOGO_WARM])
+        return out
+
+    def _warm_logos(self, items: list[dict]) -> None:
+        """Baja en segundo plano (uno a la vez) los logos recortados de los primeros títulos de una lista: cuando el héroe
+        de la tele los pide ya están en disco (antes una serie nueva tardaba en enseñar su título estilizado)."""
+        wanted = [i["meta_id"] for i in items if isinstance(i.get("meta_id"), str) and i["meta_id"].startswith("tt")]
+        if wanted:
+            self._logo_pool.submit(lambda: [self.trimmed_logo(imdb) for imdb in wanted])
 
     def _with_art(self, item: dict) -> dict:
         """El póster o fondo que elegiste para ese título («Cambiar el arte»), en lugar del de siempre."""
