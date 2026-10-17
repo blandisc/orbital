@@ -1,0 +1,591 @@
+{
+ "about": "Frases de voz como las dicta el iPhone (o las oye Alexa) y quién las atiende. «phone»: el iPhone mismo (descargar, seguir aquí, una tecla del control, o la orden ya traducida para la consola en «send»); «intent»/«slots»: lo que debe entender voice.py (null: sin intención útil, se contesta «no entendí»). Lo usan tests/test_voice_corpus.py (consola) y VoiceRouterTests (iPhone).",
+ "phrases": [
+  {
+   "text": "Pon The Office.",
+   "intent": "LaunchGameIntent"
+  },
+  {
+   "text": "pon el viaje de chihiro",
+   "intent": "LaunchGameIntent"
+  },
+  {
+   "text": "Pon El Viaje De Chihiro, por favor.",
+   "intent": "LaunchGameIntent",
+   "slots": {
+    "game": "el viaje de chihiro"
+   }
+  },
+  {
+   "text": "Por favor pon Dune",
+   "intent": "LaunchGameIntent",
+   "slots": {
+    "game": "dune"
+   }
+  },
+  {
+   "text": "Orbital, pon Dune",
+   "intent": "LaunchGameIntent",
+   "slots": {
+    "game": "dune"
+   }
+  },
+  {
+   "text": "Oye Orbital pon Dune",
+   "intent": "LaunchGameIntent",
+   "slots": {
+    "game": "dune"
+   }
+  },
+  {
+   "text": "Pon la película de Dune",
+   "intent": "LaunchGameIntent",
+   "slots": {
+    "game": "dune"
+   }
+  },
+  {
+   "text": "Pon la serie The Office",
+   "intent": "LaunchGameIntent",
+   "slots": {
+    "game": "the office"
+   }
+  },
+  {
+   "text": "Quiero ver Dune parte dos",
+   "intent": "SearchMediaIntent"
+  },
+  {
+   "text": "Ponme Dune",
+   "intent": "LaunchGameIntent"
+  },
+  {
+   "text": "Ver Dune",
+   "intent": "SearchMediaIntent",
+   "slots": {
+    "query": "dune"
+   }
+  },
+  {
+   "text": "Reproduce Interstellar",
+   "intent": "SearchMediaIntent"
+  },
+  {
+   "text": "Pon Dune en la tele",
+   "intent": "LaunchGameIntent",
+   "slots": {
+    "game": "dune"
+   }
+  },
+  {
+   "text": "Pon Dune en la TV",
+   "intent": "LaunchGameIntent",
+   "slots": {
+    "game": "dune"
+   }
+  },
+  {
+   "text": "Pon Dune en español",
+   "intent": "LaunchGameIntent"
+  },
+  {
+   "text": "Pon Dune con subtítulos",
+   "intent": "LaunchGameIntent"
+  },
+  {
+   "text": "Pon Friends desde el principio",
+   "intent": "LaunchGameIntent"
+  },
+  {
+   "text": "Pon algo",
+   "intent": "RecommendIntent"
+  },
+  {
+   "text": "Pon una película",
+   "intent": "LaunchGameIntent"
+  },
+  {
+   "text": "Quiero ver algo",
+   "intent": "RecommendIntent"
+  },
+  {
+   "text": "Pon algo de terror",
+   "intent": "RecommendIntent"
+  },
+  {
+   "text": "Pon una comedia",
+   "intent": "RecommendIntent"
+  },
+  {
+   "text": "Pon The Office temporada 2 episodio 5",
+   "intent": "WatchEpisodeIntent"
+  },
+  {
+   "text": "Pon The Office temporada dos capítulo tres",
+   "intent": "WatchEpisodeIntent"
+  },
+  {
+   "text": "Pon la temporada 2 de The Office",
+   "intent": "WatchEpisodeIntent"
+  },
+  {
+   "text": "Pon el capítulo 3",
+   "intent": "PlayEpisodeIntent"
+  },
+  {
+   "text": "Pon el episodio 3 de la temporada 2",
+   "intent": "PlayEpisodeIntent"
+  },
+  {
+   "text": "Pon el último episodio de The Office",
+   "intent": "WatchEpisodeIntent"
+  },
+  {
+   "text": "Pon el primer capítulo de Severance",
+   "intent": "WatchEpisodeIntent"
+  },
+  {
+   "text": "Sigue viendo The Office",
+   "intent": "ContinueWatchingIntent"
+  },
+  {
+   "text": "Continúa The Office",
+   "intent": "ContinueWatchingIntent"
+  },
+  {
+   "text": "Sigue con The Office",
+   "intent": "ContinueWatchingIntent"
+  },
+  {
+   "text": "Sigue donde me quedé",
+   "intent": "ContinueWatchingIntent"
+  },
+  {
+   "text": "Lo que estaba viendo",
+   "intent": "ContinueWatchingIntent"
+  },
+  {
+   "text": "Pon lo que estaba viendo",
+   "intent": "ContinueWatchingIntent"
+  },
+  {
+   "text": "Pausa",
+   "intent": "PauseIntent"
+  },
+  {
+   "text": "Pausa.",
+   "intent": "PauseIntent"
+  },
+  {
+   "text": "Pausa por favor",
+   "intent": "PauseIntent"
+  },
+  {
+   "text": "Ponle pausa",
+   "intent": "PauseIntent"
+  },
+  {
+   "text": "Detenlo",
+   "intent": "PauseIntent"
+  },
+  {
+   "text": "Para el video",
+   "intent": "PauseIntent"
+  },
+  {
+   "text": "Espera",
+   "intent": "PauseIntent"
+  },
+  {
+   "text": "Continúa",
+   "intent": "ResumeIntent"
+  },
+  {
+   "text": "Sigue",
+   "intent": "ResumeIntent"
+  },
+  {
+   "text": "Play",
+   "intent": "ResumeIntent"
+  },
+  {
+   "text": "Dale play",
+   "intent": "ResumeIntent"
+  },
+  {
+   "text": "Reanuda",
+   "intent": "ResumeIntent"
+  },
+  {
+   "text": "Adelanta 30 segundos",
+   "intent": "SeekIntent"
+  },
+  {
+   "text": "Adelanta treinta segundos",
+   "intent": "SeekIntent"
+  },
+  {
+   "text": "Regresa un minuto",
+   "intent": "SeekIntent"
+  },
+  {
+   "text": "Regresa 10 segundos",
+   "intent": "SeekIntent"
+  },
+  {
+   "text": "Adelanta 5 minutos",
+   "intent": "SeekIntent"
+  },
+  {
+   "text": "Atrasa 10",
+   "intent": "SeekIntent"
+  },
+  {
+   "text": "Adelántale",
+   "intent": "SeekIntent"
+  },
+  {
+   "text": "Ve al minuto 20",
+   "intent": "SeekIntent"
+  },
+  {
+   "text": "Desde el principio",
+   "intent": "RestartIntent"
+  },
+  {
+   "text": "Empieza de nuevo",
+   "intent": "RestartIntent"
+  },
+  {
+   "text": "Sube el volumen",
+   "intent": "VolumeIntent"
+  },
+  {
+   "text": "Súbele",
+   "intent": "VolumeIntent"
+  },
+  {
+   "text": "Súbele tantito",
+   "intent": "VolumeIntent"
+  },
+  {
+   "text": "Más volumen",
+   "intent": "VolumeIntent"
+  },
+  {
+   "text": "Menos volumen",
+   "intent": "VolumeIntent"
+  },
+  {
+   "text": "Baja el volumen",
+   "intent": "VolumeIntent"
+  },
+  {
+   "text": "Volumen al 50",
+   "intent": "VolumeIntent"
+  },
+  {
+   "text": "Pon el volumen en 30",
+   "intent": "VolumeIntent"
+  },
+  {
+   "text": "Volumen 40",
+   "intent": "VolumeIntent"
+  },
+  {
+   "text": "Silencio",
+   "intent": "MuteIntent"
+  },
+  {
+   "text": "Silencia",
+   "intent": "MuteIntent"
+  },
+  {
+   "text": "Quita el silencio",
+   "intent": "UnmuteIntent"
+  },
+  {
+   "text": "Subtítulos en inglés",
+   "intent": "SubtitlesIntent"
+  },
+  {
+   "text": "Pon subtítulos",
+   "intent": "SubtitlesIntent"
+  },
+  {
+   "text": "Quita los subtítulos",
+   "intent": "SubtitlesOffIntent"
+  },
+  {
+   "text": "Quita subtítulos",
+   "intent": "SubtitlesOffIntent"
+  },
+  {
+   "text": "Sin subtítulos",
+   "intent": "SubtitlesOffIntent"
+  },
+  {
+   "text": "Audio en inglés",
+   "intent": "AudioLanguageIntent"
+  },
+  {
+   "text": "Ponlo en inglés",
+   "intent": "AudioLanguageIntent"
+  },
+  {
+   "text": "Cámbialo a español",
+   "intent": "AudioLanguageIntent"
+  },
+  {
+   "text": "En inglés",
+   "intent": "AudioLanguageIntent"
+  },
+  {
+   "text": "Siguiente episodio",
+   "intent": "NextEpisodeIntent"
+  },
+  {
+   "text": "El siguiente",
+   "intent": "NextEpisodeIntent"
+  },
+  {
+   "text": "Siguiente",
+   "intent": "NextEpisodeIntent"
+  },
+  {
+   "text": "Otro episodio",
+   "intent": "NextEpisodeIntent"
+  },
+  {
+   "text": "Pásale al siguiente",
+   "intent": "NextEpisodeIntent"
+  },
+  {
+   "text": "Episodio anterior",
+   "intent": "PreviousEpisodeIntent"
+  },
+  {
+   "text": "Salta la intro",
+   "intent": "SkipIntroIntent"
+  },
+  {
+   "text": "Sáltate la intro",
+   "intent": "SkipIntroIntent"
+  },
+  {
+   "text": "Quita la intro",
+   "intent": "SkipIntroIntent"
+  },
+  {
+   "text": "Qué estoy viendo",
+   "intent": "WhatsPlayingIntent"
+  },
+  {
+   "text": "¿Qué estoy viendo?",
+   "intent": "WhatsPlayingIntent"
+  },
+  {
+   "text": "Cuánto falta",
+   "intent": "TimeLeftIntent"
+  },
+  {
+   "text": "¿Cuánto le falta?",
+   "intent": "TimeLeftIntent"
+  },
+  {
+   "text": "¿A qué hora termina?",
+   "intent": "TimeLeftIntent"
+  },
+  {
+   "text": "Cierra el video",
+   "intent": "CloseGameIntent"
+  },
+  {
+   "text": "Quita el video",
+   "intent": "CloseGameIntent"
+  },
+  {
+   "text": "Sal del video",
+   "intent": "CloseGameIntent"
+  },
+  {
+   "text": "Ya",
+   "intent": null
+  },
+  {
+   "text": "Apaga la tele",
+   "intent": "CloseGameIntent"
+  },
+  {
+   "text": "Apaga",
+   "intent": "CloseGameIntent"
+  },
+  {
+   "text": "Abre Zelda",
+   "intent": "LaunchGameIntent"
+  },
+  {
+   "text": "Juega Mario Kart",
+   "intent": "LaunchGameIntent"
+  },
+  {
+   "text": "Abre Fortnite en la nube",
+   "intent": "LaunchGameIntent"
+  },
+  {
+   "text": "Cierra el juego",
+   "intent": "CloseGameIntent"
+  },
+  {
+   "text": "Abre Steam",
+   "intent": "OpenSteamIntent"
+  },
+  {
+   "text": "Abre Stremio",
+   "intent": "OpenStremioIntent"
+  },
+  {
+   "text": "Abre YouTube",
+   "intent": "LaunchGameIntent"
+  },
+  {
+   "text": "Abre Netflix",
+   "intent": "LaunchGameIntent"
+  },
+  {
+   "text": "Abre Orbital",
+   "intent": "OpenOrbitalIntent"
+  },
+  {
+   "text": "Pon el canal ADN 40",
+   "intent": "LiveTvIntent"
+  },
+  {
+   "text": "Pon Azteca Uno en vivo",
+   "intent": "LiveTvIntent"
+  },
+  {
+   "text": "Pon la tele",
+   "intent": "LiveTvIntent"
+  },
+  {
+   "text": "Siguiente canal",
+   "intent": "ChannelStepIntent"
+  },
+  {
+   "text": "Canal anterior",
+   "intent": "ChannelStepIntent"
+  },
+  {
+   "text": "Pon las noticias",
+   "intent": "LiveTvIntent"
+  },
+  {
+   "text": "Ve a juegos",
+   "intent": "NavigateIntent"
+  },
+  {
+   "text": "Abre Para ti",
+   "intent": "NavigateIntent"
+  },
+  {
+   "text": "Ve a películas y series",
+   "intent": "NavigateIntent"
+  },
+  {
+   "text": "Ve a inicio",
+   "intent": "NavigateIntent"
+  },
+  {
+   "text": "Regresa",
+   "phone": "key",
+   "key": "back"
+  },
+  {
+   "text": "Atrás",
+   "phone": "key",
+   "key": "back"
+  },
+  {
+   "text": "Qué sale hoy",
+   "intent": "UpcomingIntent"
+  },
+  {
+   "text": "¿Qué estrenos hay?",
+   "intent": "UpcomingIntent"
+  },
+  {
+   "text": "Qué me recomiendas",
+   "intent": "RecommendIntent"
+  },
+  {
+   "text": "Recomiéndame algo",
+   "intent": "RecommendIntent"
+  },
+  {
+   "text": "Qué hay de nuevo",
+   "intent": "UpcomingIntent"
+  },
+  {
+   "text": "Busca Dune",
+   "intent": "SearchMediaIntent"
+  },
+  {
+   "text": "Búscame películas de Nolan",
+   "intent": "SearchMediaIntent"
+  },
+  {
+   "text": "Sube el brillo",
+   "intent": "BrightnessIntent"
+  },
+  {
+   "text": "Baja el brillo",
+   "intent": "BrightnessIntent"
+  },
+  {
+   "text": "Descárgalo en el iPhone",
+   "phone": "download"
+  },
+  {
+   "text": "Descarga Dune",
+   "phone": "download",
+   "title": "dune"
+  },
+  {
+   "text": "Manda Dune a mi iPhone",
+   "phone": "download",
+   "title": "dune"
+  },
+  {
+   "text": "Ponlo aquí",
+   "phone": "continueHere"
+  },
+  {
+   "text": "Ponlo en el iPhone",
+   "phone": "continueHere"
+  },
+  {
+   "text": "Sigue aquí",
+   "phone": "continueHere"
+  },
+  {
+   "text": "Play The Office",
+   "phone": "console",
+   "send": "pon the office"
+  },
+  {
+   "text": "Pause",
+   "intent": "PauseIntent"
+  },
+  {
+   "text": "Resume",
+   "phone": "console",
+   "send": "sigue"
+  },
+  {
+   "text": "Next episode",
+   "phone": "console",
+   "send": "siguiente episodio"
+  }
+ ]
+}

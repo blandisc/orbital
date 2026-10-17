@@ -333,6 +333,22 @@ def test_voice_asks_which_when_two_share_the_name(linked, monkeypatch):
     assert result.speech.startswith("Encontré varias: Dune, película de 2021; Dune, película de 1984")
     event = result.events[0]
     assert event["type"] == "choose" and [o["meta_id"] for o in event["options"]] == ["tt1160419", "tt0087182"]
+    # El iPhone recibe la misma lista para tocar (sin buscar el control).
+    assert [c["meta_id"] for c in result.as_dict()["choices"]] == ["tt1160419", "tt0087182"]
+
+
+def test_voice_latest_episode(linked, monkeypatch):
+    """«Pon el último episodio de X»: el más reciente que ya salió (no uno anunciado para el futuro)."""
+    from orbital.library import cinemeta
+    monkeypatch.setattr(cinemeta.Cinemeta, "search", lambda self, kind, q: [{"id": "tt1", "name": "Serie"}])
+    videos = [{"id": "tt1:1:1", "season": 1, "episode": 1, "released": "2020-01-01"},
+              {"id": "tt1:2:3", "season": 2, "episode": 3, "released": "2021-01-01"},
+              {"id": "tt1:2:4", "season": 2, "episode": 4, "released": "2999-01-01"}]
+    monkeypatch.setattr(cinemeta.Cinemeta, "meta", lambda self, kind, meta_id, **kw: {"name": "Serie", "videos": videos})
+    played = []
+    monkeypatch.setattr(linked.watch, "play_title", lambda *a, **kw: played.append(a[2]))
+    assert VoiceController(linked).handle_text("pon el último episodio de serie").speech == "Poniendo Serie, temporada 2, episodio 3."
+    assert played == ["tt1:2:3"]
 
 
 def test_my_list_and_trailer_helpers():

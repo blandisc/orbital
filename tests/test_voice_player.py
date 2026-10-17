@@ -43,6 +43,7 @@ class FakePlayer:
 
     def set_pause(self, paused): self.calls.append(("pause", paused))
     def seek(self, seconds): self.calls.append(("seek", seconds))
+    def seek_to(self, seconds): self.calls.append(("seek-to", seconds))
     def subtitles_off(self): self.calls.append(("subs", None))
     def toast(self, text, seconds=1.6): self.calls.append(("toast", text))
     def add_subtitles(self, url, lang): self.calls.append(("add-subs", url, lang))
@@ -73,8 +74,8 @@ def test_pause_resume_and_seek(voice):
     assert voice.handle_intent("SeekIntent", {"seek": "forward", "amount": "5", "unit": "minutes"}).speech \
         == "Adelantando 5 minutos."
     assert voice.handle_intent("SeekIntent", {"seek": "back", "unit": "minutes"}).speech == "Regresando 1 minuto."
-    assert voice.handle_intent("SeekIntent", {"seek": "forward"}).speech == "Adelantando 30 segundos."
-    assert voice.catalog.player.calls == [("pause", True), ("pause", False), ("seek", 300), ("seek", -60), ("seek", 30)]
+    assert voice.handle_intent("SeekIntent", {"seek": "forward"}).speech == "Adelantando 10 segundos."  # como el botón
+    assert voice.catalog.player.calls == [("pause", True), ("pause", False), ("seek", 300), ("seek", -60), ("seek", 10)]
 
 
 def test_player_commands_dont_toast_over_the_video(voice):
@@ -340,3 +341,22 @@ def test_round_two_phrases(text, expected):
 def test_go_to_a_section_by_voice(library):
     result = VoiceController(library).handle_text("ve a películas y series")
     assert result.ok and result.events[0] == {"type": "open-view", "view": {"seccion": "media"}, "message": "Películas y series"}
+
+
+def test_new_player_phrases_from_the_phone_corpus(voice):
+    """Lo nuevo del corpus del iPhone, de punta a punta: reiniciar, ir a un minuto, adelantar sin unidad y «apaga»."""
+    assert voice.handle_text("desde el principio").speech == "Desde el principio."
+    assert voice.handle_text("ve al minuto veinte").speech == "Al minuto 20."
+    assert voice.handle_text("adelántale").speech == "Adelantando 10 segundos."
+    assert voice.handle_text("atrasa 15").speech == "Regresando 15 segundos."
+    assert voice.catalog.player.calls[-4:] == [("seek-to", 0), ("seek-to", 1200), ("seek", 10), ("seek", -15)]
+
+
+def test_apaga_never_closes_a_game(library, monkeypatch):
+    """«Apaga» sin video abierto no cierra el juego (ni apaga la consola): dice cómo cerrarlo."""
+    library.player = FakePlayer(playing=False)
+    monkeypatch.setattr(library.launcher, "status", lambda: {"id": "steam:1", "title": "Hades"})
+    stopped = []
+    monkeypatch.setattr(library.launcher, "stop", lambda: stopped.append(1) or True)
+    result = VoiceController(library).handle_text("apaga")
+    assert not result.ok and "cierra el juego" in result.speech and not stopped

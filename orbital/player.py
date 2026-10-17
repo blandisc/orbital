@@ -751,6 +751,11 @@ class OrbitalPlayer(PlayerScreen):
         self.mpv.command("set_property", "pause", paused)
         self.show_hud()
 
+    def seek_to(self, seconds: float) -> None:
+        """A un punto exacto (voz: «desde el principio», «ve al minuto 20»)."""
+        self.mpv.command("seek", max(0.0, seconds), "absolute")
+        self.show_hud()
+
     def seek(self, seconds: float) -> None:
         self.mpv.command("seek", seconds, "relative")
         self.show_hud()

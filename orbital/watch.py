@@ -753,7 +753,7 @@ class Watch:
         return self.config.stremio.player == "orbital" and self.has_addons and player.find_mpv() is not None
 
     def play_title(self, kind: str, meta_id: str, video_id: str, title: str, audio: str | None = None,
-                   wait: float = 0.0) -> str | None:
+                   wait: float = 0.0, from_start: bool = False) -> str | None:
         """Para la voz: pone algo sin preguntar, con la fuente recomendada. Buscar fuentes tarda
         unos segundos (Alexa corta a los ~8 s), así que se hace en segundo plano.
 
@@ -789,7 +789,7 @@ class Watch:
                         subtitles = audio
                         name = {"es": "español", "en": "inglés"}.get(audio, audio)
                         self.events.publish({"type": "toast", "message": f"No hay audio en {name} para {title}: va con subtítulos en {name}"})
-                self.play_source(kind, meta_id, video_id, source.index, title, prefs=prefs, subtitles=subtitles)
+                self.play_source(kind, meta_id, video_id, source.index, title, prefs=prefs, subtitles=subtitles, from_start=from_start)
                 if audio:  # lo pediste en voz alta: el siguiente episodio y el respaldo siguen igual
                     key = f"stremio:{meta_id}"
                     if audio in source.languages:
