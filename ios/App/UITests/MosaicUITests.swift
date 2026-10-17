@@ -60,8 +60,8 @@ final class MosaicUITests: XCTestCase {
 
     func testAfterChoosingATileTheMosaicStillScrolls() {
         launch()
-        let tile = tiles.element(boundBy: 2)
-        XCTAssertTrue(tile.isHittable)
+        // La primera que se puede tocar (en un SE la tercera puede quedar bajo la franja o fuera de la pantalla).
+        guard let tile = tiles.allElementsBoundByIndex.dropFirst().first(where: \.isHittable) else { return XCTFail("ninguna pieza a la vista") }
         tile.tap()   // la elige (un segundo toque la abriría)
         sleep(1)
         let p = probe()
