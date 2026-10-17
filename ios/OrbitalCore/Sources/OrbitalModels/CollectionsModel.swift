@@ -14,6 +14,8 @@ public final class CollectionsModel: ObservableModel {
     /// Los estudios (Colecciones › Estudios) y lo que tiene cada uno (se pide al verlo).
     public let studios: [(id: Int, name: String)] = Tmdb.studios
     public private(set) var studioItems: [Int: [Suggestion]] = [:] { didSet { changed() } }
+    /// El logo de cada estudio (TMDB), si lo tiene; se guarda en el iPhone (no cambia).
+    public private(set) var studioLogos: [Int: String] = [:] { didSet { changed() } }
     public var tmdbReady: Bool { services.tmdb.configured }
     /// Los años de «Por año», del actual hacia atrás.
     public let years: [Int]
@@ -69,6 +71,12 @@ public final class CollectionsModel: ObservableModel {
         guard studioItems[id] == nil, let studio = studios.first(where: { $0.id == id }) else { return }
         let found = await services.forYou.studioItems(companyID: id, name: studio.name)
         if !found.isEmpty { studioItems[id] = found }
+        let key = "studio-logo.\(id)"
+        if let saved = services.kv.data(key).flatMap({ String(data: $0, encoding: .utf8) }) { studioLogos[id] = saved }
+        else if services.tmdb.configured, let logo = try? await services.tmdb.companyLogo(id) {
+            studioLogos[id] = logo
+            services.kv.set(key, data: logo.data(using: .utf8))
+        }
     }
 
     /// La calificación de IMDb de cada título (de Cinemeta, 12 a la vez), para «Mejor calificadas en IMDb»; se recuerda.

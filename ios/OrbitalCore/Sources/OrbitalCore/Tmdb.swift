@@ -118,6 +118,11 @@ public struct Tmdb: Sendable {
         return (data["results"]?.array ?? []).filter { $0["id"]?.intValue != nil }
     }
 
+    /// El logo de un estudio (PNG con fondo transparente), si TMDB lo tiene.
+    public func companyLogo(_ companyID: Int) async throws -> String? {
+        Tmdb.image(try await get("/company/\(companyID)")["logo_path"], size: "w300")
+    }
+
     /// Los estudios de Colecciones › Estudios (su id en TMDB).
     public static let studios: [(id: Int, name: String)] = [
         (41077, "A24"), (3, "Pixar"), (10342, "Studio Ghibli"), (420, "Marvel Studios"), (1, "Lucasfilm"),

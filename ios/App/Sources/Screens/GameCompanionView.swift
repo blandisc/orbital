@@ -3,7 +3,8 @@ import UserNotifications
 import OrbitalCore
 import OrbitalModels
 
-/// Modo acompañante (Inicio, mientras juegas en la consola): la tarjeta del juego y, debajo, un carrusel con la consola,
+/// Modo acompañante (una hoja, como el control: se abre desde el accesorio mientras juegas en la consola): la tarjeta del
+/// juego y, debajo, un carrusel con la consola,
 /// la guía, tus notas, el temporizador y, en juegos de emulador, sus controles. Avisa en el iPhone cuando la batería de la
 /// consola baja, cuando se cumple el temporizador y 10 minutos antes de que un juego en pausa se cierre solo.
 struct GameCompanionView: View {

@@ -265,6 +265,17 @@
         }
       }
     },
+    "Abre el acompañante del juego": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the game companion"
+          }
+        }
+      }
+    },
     "Abre el control de tu Orbital.": {
       "extractionState": "manual",
       "localizations": {
@@ -5842,6 +5853,17 @@
         }
       }
     },
+    "Seguir viendo: ver las %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue watching: see all %@"
+          }
+        }
+      }
+    },
     "Semana": {
       "extractionState": "manual",
       "localizations": {
@@ -7191,6 +7213,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "View series"
+          }
+        }
+      }
+    },
+    "Ver las %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See all %@"
           }
         }
       }

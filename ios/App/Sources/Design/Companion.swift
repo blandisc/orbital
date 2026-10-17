@@ -208,3 +208,32 @@ struct ControlsPanel: View {
         "nds": [("A", "B"), ("B", "A"), ("X", "Y"), ("Y", "X"), ("L · R", "LB · RB"), ("Start · Select", "☰ · ⧉"), ("Pantalla táctil", "Stick derecho")],
     ]
 }
+
+/// El juego abierto en la consola, en el accesorio de la barra de pestañas (como lo que suena en la TV): su portada,
+/// su nombre y cuánto llevas; tocarlo abre el acompañante.
+struct GameAccessory: View {
+    let game: OrbitalRemote.Game
+    let open: () -> Void
+    @Environment(\.tabViewBottomAccessoryPlacement) private var placement
+
+    var body: some View {
+        Button(action: open) {
+            HStack(spacing: DS.Space.s3) {
+                PosterView(url: game.cover ?? game.hero, title: game.title, aspect: 1).frame(width: DS.Size.accessoryArt).clipShape(Circle())
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(verbatim: game.title).recipe(.cardTitle).lineLimit(1)
+                    if placement != .inline {
+                        (game.paused ? Text("En pausa en la consola") : Text("Jugando en la consola")).recipe(.footnote, color: game.paused ? DS.warning : DS.live).lineLimit(1)
+                    }
+                }
+                Spacer(minLength: DS.Space.s2)
+                Image(systemName: "gamecontroller").foregroundStyle(DS.textMuted)
+            }
+            .padding(.horizontal, DS.Space.s4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(Text("Abre el acompañante del juego"))
+        .accessibilityIdentifier("game-accessory")
+    }
+}

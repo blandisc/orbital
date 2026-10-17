@@ -395,7 +395,7 @@ struct ListsView: View {
                 NavigationLink(value: PlatformRoute(brand: hub.brand)) {
                     PlatformFanCard(name: hub.name, logo: hub.logo, posters: model.cover(of: hub).map { Optional($0.poster) },
                                     tint: DS.PlatformTint.color(hub.brand))
-                        .reflected()
+                        .reflected(weight: DS.PlatformTint.color(hub.brand))
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("platform-\(hub.brand)")
@@ -488,7 +488,7 @@ struct ListsView: View {
                 NavigationLink(value: CollectionRoute(kind: .studio, id: String(studio.id))) {
                     CollectionCard(title: Text(verbatim: studio.name), detail: Text("Lo más visto"), name: studio.name,
                                    posters: (collections.model.studioItems[studio.id] ?? []).prefix(3).map { Optional($0.poster) }, tint: DS.Collections.studio) {
-                        StudioEmblem(name: studio.name)
+                        StudioEmblem(name: studio.name, logo: collections.model.studioLogos[studio.id])
                     }
                 }
                 .buttonStyle(.plain)

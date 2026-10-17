@@ -312,10 +312,12 @@ enum DS {
         static let bronze = Color(red: 0.72, green: 0.45, blue: 0.26)
         /// El carrusel centrado: cuánto se encogen y apagan las de los lados; el reflejo (alto, separación, intensidad) y el peso.
         static let sideShrink: CGFloat = 0.1, sideFade: Double = 0.18
-        static let reflection: CGFloat = 44, reflectionGap: CGFloat = 4, reflectionOpacity: Double = 0.3
+        static let reflection: CGFloat = 44, reflectionGap: CGFloat = 4, reflectionOpacity: Double = 0.3, reflectionBlur: CGFloat = 1.5
         static let weight: CGFloat = 18, weightY: CGFloat = 12, weightTint: Double = 0.35
         /// El halo de los estudios (neutro: cada estudio es de muchos colores).
         static let studio = Color(red: 0.55, green: 0.56, blue: 0.62)
+        /// El logo del estudio en su cápsula.
+        static let studioLogoWidth: CGFloat = 96, studioLogoHeight: CGFloat = 26
         static func tint(_ award: String) -> Color {
             switch award { case "emmy": silver; case "bafta", "ariel": bronze; default: gold }
         }

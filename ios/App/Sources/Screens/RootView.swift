@@ -83,6 +83,8 @@ struct MainTabs: View {
     @ObservedObject private var ui = AppEnvironment.shared.ui   // la ficha o la pestaña que se pide abrir
     @StateObject private var tvNow = ModelObserver(AppEnvironment.shared.tvNow)
     @State private var showRemote = false
+    /// El acompañante del juego abierto en la consola.
+    @State private var showGame = false
     /// La hoja del control estirada (el control completo) o corta.
     @State private var remoteLarge = false
     @State private var tab: Int
@@ -110,8 +112,11 @@ struct MainTabs: View {
         .tabBarMinimizeBehavior(.onScrollDown)
         // El accesorio solo cuando hace falta: mientras la TV reproduce algo y en la pantalla de arriba de cada pestaña (en una
         // ficha o en Ajustes se va: no hay doble fila abajo). Sin nada en la TV, el control se abre con el botón junto al avatar.
-        .bottomAccessory(isEnabled: tvNow.model.now != nil && paths[tab].isEmpty) {
-            if let now = tvNow.model.now {
+        .bottomAccessory(isEnabled: (tvNow.model.now != nil || tvNow.model.game != nil) && paths[tab].isEmpty) {
+            // Un juego en la consola: su acompañante (como el control lo es de lo que suena).
+            if let game = tvNow.model.game {
+                GameAccessory(game: game) { showGame = true }
+            } else if let now = tvNow.model.now {
                 TVAccessory(now: now, busy: tvNow.model.busy, toggle: { Task { await tvNow.model.control("toggle") } }, openRemote: { remoteLarge = false; showRemote = true })
             }
         }
@@ -126,6 +131,16 @@ struct MainTabs: View {
         .task { if Demo.isOn, Demo.open == "remote-idle" { remoteLarge = true; showRemote = true } }   // el control sin nada en la TV
         #endif
         // Tocar el accesorio abre el control remoto completo (−10 · pausa · +10 · siguiente, salir, seguir aquí).
+        .sheet(isPresented: $showGame) {
+            if let game = tvNow.model.game {
+                GameCompanionView(tvNow: tvNow, game: game).padding(.top, DS.Space.s6).padding(.bottom, DS.Space.s4)
+                    .fittedSheet().presentationDragIndicator(.visible)   // del alto de lo que tiene, como el control
+            }
+        }
+        .onChange(of: tvNow.model.game == nil) { _, ended in if ended { showGame = false } }
+        #if DEBUG
+        .onChange(of: tvNow.model.game?.id) { _, id in if id != nil, Demo.isOn, Demo.open == "game" { showGame = true } }   // `-demo-open game`
+        #endif
         .sheet(isPresented: $showRemote) {
             RemoteSheet(tvNow: tvNow, large: $remoteLarge, onContinueHere: { now in showRemote = false; openNowPlaying(now) })
         }

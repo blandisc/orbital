@@ -13,7 +13,7 @@ struct CollectionCard<Emblem: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            FanCard(name: name, posters: posters, tint: tint, emblem: emblem).reflected()
+            FanCard(name: name, posters: posters, tint: tint, emblem: emblem).reflected(weight: tint)
             VStack(alignment: .leading, spacing: 0) {
                 title.recipe(.cardTitle).lineLimit(1)
                 detail.recipe(.caption).lineLimit(1)
@@ -190,21 +190,37 @@ struct AppMark: View {
     }
 }
 
-/// El nombre de un estudio al frente de su tarjeta (sus logos de TMDB no se leen sobre fondo oscuro).
+/// El logo de un estudio al frente de su tarjeta, sobre una cápsula clara (muchos logos son oscuros); sin logo, su nombre.
 struct StudioEmblem: View {
     let name: String
+    var logo: String?
+
     var body: some View {
+        Group {
+            if let url = logo.flatMap(URL.init(string:)) {
+                RemoteImage(url: url, maxPoints: DS.Collections.studioLogoWidth) { phase in
+                    switch phase {
+                    case .success(let image): image.resizable().scaledToFit()
+                    default: nameText
+                    }
+                }
+                .frame(width: DS.Collections.studioLogoWidth, height: DS.Collections.studioLogoHeight)
+            } else { nameText }
+        }
+        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+        .background(DS.paper, in: Capsule())
+        .shadow(color: DS.scrimStrong, radius: DS.Space.s2)
+        .padding(.horizontal, DS.Space.s2)
+        .accessibilityHidden(true)
+    }
+
+    private var nameText: some View {
         Text(verbatim: name).recipe(.cardTitle, color: DS.backdropDeep).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
-            .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s1)
-            .background(DS.paper, in: Capsule())
-            .shadow(color: DS.scrimStrong, radius: DS.Space.s2)
-            .padding(.horizontal, DS.Space.s2)
-            .accessibilityHidden(true)
     }
 }
 
-/// Una tira de tarjetas centrada (Plataformas, Premios, Estudios, Por año): la del medio al frente, las de los lados asomando
-/// más chicas y tenues, como el carrusel de Inicio.
+/// Una tira de tarjetas (Plataformas, Premios, Estudios, Por año) desde la orilla izquierda: las que van saliendo por los
+/// lados se encogen y oscurecen un poco.
 struct CenteredCarousel<Item, ID: Hashable, Card: View>: View {
     let items: [Item]
     let id: KeyPath<Item, ID>
@@ -224,22 +240,26 @@ struct CenteredCarousel<Item, ID: Hashable, Card: View>: View {
             }
             .scrollTargetLayout()
         }
-        // Márgenes para que la primera también quede al centro.
-        .contentMargins(.horizontal, max(DS.Space.gutter, (UIScreen.main.bounds.width - cardWidth) / 2), for: .scrollContent)
+        // Desde la orilla izquierda, como el resto de las tiras (sin espacio muerto antes de la primera).
+        .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
         .scrollTargetBehavior(.viewAligned)
         .scrollClipDisabled()
     }
 }
 
-/// El reflejo de una tarjeta sobre el piso (la tarjeta volteada, corta y que se desvanece): le da peso.
+/// El reflejo de una tarjeta sobre el piso (la tarjeta volteada, corta, un poco desenfocada y que se desvanece) y su peso:
+/// una sombra de su color solo bajo la tarjeta (en el reflejo dibujaba esquinas que no existen).
 struct Reflection: ViewModifier {
+    var weight: Color?
     func body(content: Content) -> some View {
         VStack(spacing: DS.Collections.reflectionGap) {
             content
+                .shadow(color: (weight ?? .clear).opacity(DS.Collections.weightTint), radius: DS.Collections.weight, y: DS.Collections.weightY)
             content
                 .scaleEffect(x: 1, y: -1)
                 .frame(height: DS.Collections.reflection, alignment: .top)
                 .clipped()
+                .blur(radius: DS.Collections.reflectionBlur)
                 .mask(LinearGradient(colors: [DS.text.opacity(DS.Collections.reflectionOpacity), .clear], startPoint: .top, endPoint: .bottom))
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
@@ -248,6 +268,6 @@ struct Reflection: ViewModifier {
 }
 
 extension View {
-    /// Con su reflejo debajo (Colecciones).
-    func reflected() -> some View { modifier(Reflection()) }
+    /// Con su reflejo debajo y, si se da, el peso de su color (Colecciones).
+    func reflected(weight: Color? = nil) -> some View { modifier(Reflection(weight: weight)) }
 }

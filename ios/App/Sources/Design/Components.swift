@@ -418,9 +418,40 @@ extension View {
 
     /// El botón principal de un título con arte (Ver, Continuar): toma el color claro del arte, con texto oscuro, como
     /// `--color-primary-art` en la TV. Sin colores, el neutro casi papel de la TV.
-    func dsArtButton(_ colors: ArtColors?) -> some View {
-        buttonStyle(.glassProminent).tint((colors ?? .neutral).accent).foregroundStyle(DS.backdropDeep)
+    func dsArtButton(_ colors: ArtColors?) -> some View { modifier(ArtButton(colors: colors)) }
+}
+
+/// Botones sólidos (sin vidrio) en lo que se gira en 3D: el carrusel de Inicio en coverflow deformaba el vidrio.
+private struct SolidButtonsKey: EnvironmentKey { static let defaultValue = false }
+extension EnvironmentValues {
+    var solidButtons: Bool {
+        get { self[SolidButtonsKey.self] }
+        set { self[SolidButtonsKey.self] = newValue }
     }
+}
+
+private struct ArtButton: ViewModifier {
+    let colors: ArtColors?
+    @Environment(\.solidButtons) private var solid
+    func body(content: Content) -> some View {
+        if solid {
+            content.buttonStyle(.borderedProminent).buttonBorderShape(.capsule).tint((colors ?? .neutral).accent).foregroundStyle(DS.backdropDeep)
+        } else {
+            content.buttonStyle(.glassProminent).tint((colors ?? .neutral).accent).foregroundStyle(DS.backdropDeep)
+        }
+    }
+}
+
+/// El botón de ícono secundario: de vidrio; sólido donde el vidrio no se lleva bien (`solidButtons`).
+private struct IconButtonLook: ViewModifier {
+    @Environment(\.solidButtons) private var solid
+    func body(content: Content) -> some View {
+        if solid { content.buttonStyle(.bordered).tint(DS.paper) } else { content.buttonStyle(.glass) }
+    }
+}
+
+extension View {
+    func dsIconButtonLook() -> some View { modifier(IconButtonLook()) }
 }
 
 /// Un botón redondo con un ícono (más, descargar, cerrar): el botón nativo con vidrio de iOS 26, ya con su tamaño táctil de 44 pt.
@@ -433,7 +464,7 @@ struct DSIconButton: View {
     var body: some View {
         Group {
             if prominent { Button(action: action) { Image(systemName: symbol) }.dsPrimaryButton() }
-            else { Button(action: action) { Image(systemName: symbol) }.buttonStyle(.glass) }
+            else { Button(action: action) { Image(systemName: symbol) }.dsIconButtonLook() }
         }
         .buttonBorderShape(.circle).controlSize(.large)
         .accessibilityLabel(Text(label))
@@ -458,7 +489,7 @@ struct ConfirmIconButton: View {
                 if asking { Text(prompt).lineLimit(1).fixedSize().transition(.opacity.combined(with: .move(edge: .leading))) }
             }
         }
-        .buttonStyle(.glass)
+        .dsIconButtonLook()
         .buttonBorderShape(asking ? .capsule : .circle).controlSize(.large)
         .accessibilityLabel(Text(label))
         .accessibilityHint(asking ? Text("Toca otra vez para confirmar") : Text(prompt))

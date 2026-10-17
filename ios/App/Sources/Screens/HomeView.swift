@@ -31,11 +31,6 @@ struct HomeView: View {
                 if model.offline { DSNotice(text: "Sin conexión: se ve lo último que guardé.", tone: .warn).padding(.horizontal, DS.Space.gutter) }
                 // Con iOS 26.1 lo que suena en la TV vive en el accesorio de la barra de pestañas (y su control remoto en una hoja);
                 // antes, en esta tarjeta.
-                // Modo acompañante: el juego que corre en la consola, con su carrusel (la consola, guía, notas, temporizador).
-                if let game = tvNow.model.game {
-                    GameCompanionView(tvNow: tvNow, game: game)
-                        .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
-                }
                 if !Self.hasTabAccessory, let now = tvNow.model.now {
                     NowPlayingCard(now: now, fetchedAt: tvNow.model.fetchedAt, busy: tvNow.model.busy,
                                   onAction: { action, delta in Task { await tvNow.model.control(action, delta: delta) } },
@@ -75,7 +70,6 @@ struct HomeView: View {
             .padding(.top, DS.Space.s3)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
             .padding(.bottom, DS.Space.s14)     // la última fila respira: la barra de pestañas no la tapa
             .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
-            .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.game?.id)
             .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
         }
         .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > DS.Size.titleCollapse } action: { _, down in scrolledDown = down }
@@ -164,7 +158,7 @@ struct HomeView: View {
 
     private static var hasTabAccessory: Bool { if #available(iOS 26.1, *) { true } else { false } }
 
-    /// Cuántos de «Seguir viendo» van en el carrusel (los últimos); los demás, en «Todo lo que estás viendo» (el botón de abajo).
+    /// Cuántos de «Seguir viendo» van en el carrusel (los últimos); los demás, en «Ver las N» junto a los puntos.
     private static let heroCount = 5
 
     /// El que está al frente del carrusel (el fondo toma su color).
@@ -188,6 +182,7 @@ struct HomeView: View {
                 LazyHStack(spacing: DS.Deck.spacing) {
                     ForEach(0..<(copies * items.count), id: \.self) { slot in
                         hero(items[slot % items.count])
+                            .environment(\.solidButtons, true)   // la tarjeta se gira en 3D: sus botones sin vidrio (se deformaba)
                             .containerRelativeFrame(.horizontal)   // el ancho visible ya descuenta los márgenes: centrada, con las de los lados asomando
                             .deckTransition(deck, reduceMotion: reduceMotion)
                     }
@@ -200,15 +195,24 @@ struct HomeView: View {
             .scrollPosition(id: $heroSlot, anchor: .center)   // centrada: las de los lados asoman igual
             .onAppear { if heroSlot == nil || (heroSlot ?? 0) >= copies * items.count { heroSlot = middle } }
             .onChange(of: items.map(\.id)) { heroSlot = middle }   // cambió lo que sigues viendo: de vuelta al primero
+            // Los puntos al centro y, en el mismo renglón a la derecha, «Ver todo» (como cada sección): sin un botón más que
+            // agregue altura ni cambie de lugar.
             PageDots(count: items.count, index: items.isEmpty ? 0 : (heroSlot ?? middle) % items.count)
-            if model.continueWatching.count > Self.heroCount {
-                NavigationLink(value: HomeListRoute(id: "continue")) {
-                    Label { Text("Todo lo que estás viendo · \(model.continueWatching.count)") } icon: { Image(systemName: "square.grid.2x2") }
-                        .font(DS.TextRecipe.footnote.font)
+                .frame(maxWidth: .infinity)
+                .overlay(alignment: .trailing) {
+                    if model.continueWatching.count > Self.heroCount {
+                        NavigationLink(value: HomeListRoute(id: "continue")) {
+                            HStack(spacing: DS.Space.s1) {
+                                Text("Ver las \(model.continueWatching.count)").recipe(.secondary, color: DS.textMuted)
+                                Image(systemName: "chevron.right").font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, DS.Space.gutter)
+                        .accessibilityLabel(Text("Seguir viendo: ver las \(model.continueWatching.count)"))
+                        .accessibilityIdentifier("home-all-continue")
+                    }
                 }
-                .buttonStyle(.glass).controlSize(.small)
-                .accessibilityIdentifier("home-all-continue")
-            }
         }
         .task(id: heroSlot) { await tint.load(currentHero.flatMap { $0.background ?? $0.poster }) }   // se cancela si pasas a otro
         .sensoryFeedback(.selection, trigger: heroSlot)
@@ -291,7 +295,7 @@ struct HomeView: View {
         return dayName(a.day, locale: locale)
     }
 
-    /// «Todo lo que estás viendo»: todo «Seguir viendo» (el carrusel solo trae los últimos), en piezas anchas con su avance.
+    /// «Seguir viendo» completo: todo (el carrusel solo trae los últimos), en piezas anchas con su avance.
     private func allContinue(_ model: HomeModel) -> some View {
         ScrollView {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible())], spacing: DS.Space.s4) {
@@ -308,7 +312,7 @@ struct HomeView: View {
             .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)
         }
         .background(Backdrop(tint: tint.colors))
-        .navigationTitle(Text("Todo lo que estás viendo")).navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(Text("Seguir viendo")).navigationBarTitleDisplayMode(.inline)
     }
 
     private func continueButton(_ item: HomeItem) -> some View {

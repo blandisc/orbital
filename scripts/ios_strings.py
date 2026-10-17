@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Abre el acompañante del juego": "Opens the game companion", "Seguir viendo: ver las %@": "Continue watching: see all %@", "Ver las %@": "See all %@",
     "A la consola le queda %lld %% de batería.": "The console has %lld %% battery left.", "Actualiza tu Orbital para ver la batería, los controles y la memoria.": "Update your Orbital to see its battery, controllers and memory.",
     "Batería baja en la consola": "Console battery low", "Buscar en la web": "Search the web", "Cerrar %@": "Close %@",
     "Cerrar el juego": "Close the game", "Dónde te quedaste, qué te falta…": "Where you left off, what's missing…", "El juego se va a cerrar": "The game is about to close",
