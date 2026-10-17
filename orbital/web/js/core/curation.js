@@ -75,3 +75,22 @@ export function genreRows(itemsByGenre, limit = 15) {
   return GENRE_SHELVES.map((g) => ({ id: `curated:genre:${g.genre}`, title: g.title, items: (itemsByGenre[g.genre] || []).slice(0, limit) }))
     .filter((row) => row.items.length);
 }
+
+/** Las listas cuyo N.º 1 entra al carrusel de destacados: el Top 10 de Netflix y lo más visto de cada plataforma. */
+const SPOTLIGHT = (id) => id === "chart:netflix" || id.startsWith("jw:") || BRAND_FALLBACK.has(id);
+
+/**
+ * «Destacados» (como el carrusel del destacado en el iPhone): el N.º 1 de cada plataforma, con su arte ancho; arriba de la
+ * sección, y avanza solo si te quedas en esa fila (main.js). El héroe de la pantalla dice por qué («N.º 1 en Netflix»).
+ */
+export function spotlightRow(picked, itemsById, limit = 6) {
+  const items = [];
+  for (const l of picked.filter((x) => SPOTLIGHT(x.id))) {
+    const first = (itemsById[l.id] || []).find((i) => i && i.meta_id && i.kind !== "game");
+    if (!first || items.some((i) => i.meta_id === first.meta_id)) continue;
+    const item = curatedItem(first);
+    items.push({ ...item, image: first.hero || first.image, rank: undefined, trend: undefined });
+    if (items.length >= limit) break;
+  }
+  return items.length >= 2 ? { id: "curated:spotlight", title: "Destacados", items, spotlight: true } : null;
+}

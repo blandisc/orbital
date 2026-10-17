@@ -59,8 +59,11 @@ export function createShelf({ onPick, onSwipe }) {
       const els = built.map((b) => b.el ?? b.card);
       const track = h("div", { class: "shelf__track", role: "group" }, els);
       const count = h("span", { class: "shelf__count" }, String(row.items.length));
-      const rowEl = h("div", { class: "shelf__row" }, h("h2", { class: "shelf__heading" }, row.title, count), track);
-      return { rowEl, track, cards, els, count, ranked: !!row.ranked };
+      // Destacados: puntos en vez del contador (uno por pieza; el actual, alargado), como el carrusel del iPhone.
+      const dots = row.spotlight && h("span", { class: "shelf__dots", "aria-hidden": "true" }, row.items.map(() => h("i")));
+      const rowEl = h("div", { class: ["shelf__row", row.spotlight && "shelf__row--spotlight"] },
+        h("h2", { class: "shelf__heading" }, row.title, dots || count), track);
+      return { rowEl, track, cards, els, count, dots, ranked: !!row.ranked };
     });
     mount(rowsEl, rowEls.map((x) => x.rowEl));
     if (!introduced) {
@@ -77,11 +80,12 @@ export function createShelf({ onPick, onSwipe }) {
     if (!rowEls.length) return;
     if (!metrics) measure();
     rowsEl.style.transform = `translateY(${-r * metrics.rowHeight}px)`;
-    rowEls.forEach(({ rowEl, track, cards, count }, index) => {
+    rowEls.forEach(({ rowEl, track, cards, count, dots }, index) => {
       const isCurrent = index === r;
       rowEl.classList.toggle("shelf__row--current", isCurrent);
       // En la fila actual, en cuál vas: "3 / 15" (solo si hay más de uno).
       count.textContent = isCurrent && cards.length > 1 ? `${c + 1} / ${cards.length}` : String(cards.length);
+      dots?.querySelectorAll("i").forEach((dot, i) => dot.classList.toggle("on", i === (isCurrent ? c : 0)));
       cards.forEach((card, col) => {
         const focused = isCurrent && col === c;
         card.classList.toggle("card--focused", focused);

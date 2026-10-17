@@ -36,7 +36,7 @@ import { createLaunching } from "./app/launching.js";
 import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
-import { curatedLists, curatedRows, GENRE_SHELVES, genreRows } from "./core/curation.js";
+import { curatedLists, curatedRows, GENRE_SHELVES, genreRows, spotlightRow } from "./core/curation.js";
 
 const state = createState();
 // La Gamepad API no enseña el mando hasta la primera pulsación: se arranca con la última forma de
@@ -746,7 +746,8 @@ async function loadCuration() {
       await Promise.all(GENRE_SHELVES.map(async (g) => {
         byGenre[g.genre] = (await api.genre(g.kind, g.genre).catch(() => ({ items: [] }))).items || [];
       }));
-      applyCuration([...curatedRows(picked, itemsById), ...genreRows(byGenre)]);
+      const spotlight = spotlightRow(picked, itemsById);
+      applyCuration([...(spotlight ? [spotlight] : []), ...curatedRows(picked, itemsById), ...genreRows(byGenre)]);
     } catch { /* sin Para ti: la sección sigue con lo tuyo y lo popular */ }
     finally { curating = null; }
   })();
@@ -768,6 +769,17 @@ function applyCuration(rows) {
   setFocus(r, c, { silent: true });
 }
 setInterval(() => loadCuration(), 30 * 60_000);
+
+// Destacados en carrusel: quieto en esa fila, avanza solo al siguiente (y el héroe de arriba con él), como en el iPhone.
+const SPOTLIGHT_MS = 8000;
+let spotlightIdle = Date.now();
+setInterval(() => {
+  const row = state.rows?.[state.focus.r];
+  if (state.section !== "media" || !row?.spotlight || document.hidden || ui.sheet.isOpen || topOverlay() || saver.active) return;
+  if (Date.now() - spotlightIdle < SPOTLIGHT_MS) return;
+  spotlightIdle = Date.now();
+  setFocus(state.focus.r, (state.focus.c + 1) % row.items.length, { silent: true });
+}, 1000);
 
 /** Lo que está abierto: llega solo por SSE ("status") al cambiar; se pregunta tras abrir o cerrar algo. */
 function applyStatus(running) {
@@ -1162,6 +1174,7 @@ function handleAction(action, { repeat = false } = {}) {
   // Con el planeta en pantalla no se ve nada: un Enter abría un juego (o el menú) a ciegas.
   if (boot.blocking) return;
   if (saver.wake()) return; // con el protector de pantalla, el primer botón solo lo quita
+  spotlightIdle = Date.now(); // el carrusel de Destacados espera mientras te mueves
   // Y justo después de ocultar algo: deshacer (si no hay un menú u otra vista encima).
   if (action === "options" && canUndoHide() && !ui.sheet.isOpen && !topOverlay()) {
     return undoHide();
