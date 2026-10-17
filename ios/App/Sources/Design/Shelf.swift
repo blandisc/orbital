@@ -39,19 +39,7 @@ struct Shelf<Content: View>: View {
     }
 
     private func headerRow(chevron: Bool) -> some View {
-        HStack(spacing: DS.Space.s3) {
-            if let logo, !logo.isEmpty { DSPlatformLogo(url: logo) }
-            else if let icon { ListIcon(icon: icon) }
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
-                if let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }
-            }
-            Spacer(minLength: DS.Space.s2)
-            if chevron { Image(systemName: "chevron.right").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.textMuted).accessibilityHidden(true) }
-        }
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isHeader)
+        DSSectionHead(title: title, logo: logo, icon: icon, chevron: chevron, meta: meta)
     }
 }
 

@@ -66,10 +66,15 @@ struct ParaTiView: View {
                 .accessibilityIdentifier("paraTi-mode")
                 .sensoryFeedback(.selection, trigger: m.mode)
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { Task { await m.refresh() } } label: { Image(systemName: "arrow.clockwise") }
-                    .disabled(m.isLoading).accessibilityLabel(Text("Actualizar"))
+            // «Actualizar»: en Listas, deslizando hacia abajo; el mosaico no se desliza, así que ahí es un botón.
+            if m.mode == .mosaic {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { Task { await m.refresh() } } label: { Image(systemName: "arrow.clockwise") }
+                        .disabled(m.isLoading).accessibilityLabel(Text("Actualizar"))
+                }
             }
+            ToolbarSpacer(.fixed, placement: .topBarTrailing)
+            ToolbarItem(placement: .topBarTrailing) { ProfileButton() }
         }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
@@ -269,7 +274,7 @@ struct ListsView: View {
     /// Cada plataforma, una tarjeta con su top 3 en abanico; tocarla abre sus rankings.
     private var platforms: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            Text("Tus plataformas").recipe(.section).padding(.horizontal, DS.Space.gutter)
+            DSSectionHead(title: "Tus plataformas", icon: .chart, count: model.platformHubs.count, meta: Text("Sus rankings de hoy")).padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: DS.Space.s3) {
                     ForEach(model.platformHubs) { hub in
@@ -463,12 +468,8 @@ struct PlatformRankingsView: View {
         let items = model.items(for: ranking)
         if !items.isEmpty || model.isLoading(ranking: ranking) {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
-                HStack(alignment: .firstTextBaseline) {
-                    rankingTitle(ranking).recipe(.section)
-                    Spacer(minLength: DS.Space.s2)
-                    rankingSource(ranking).recipe(.footnote, color: DS.textMuted)
-                }
-                .padding(.horizontal, DS.Space.gutter)
+                DSSectionHead(title: rankingTitle(ranking), trailing: rankingSource(ranking), icon: ranking.source == .netflixTop10 ? .chart : .trend)
+                    .padding(.horizontal, DS.Space.gutter)
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: DS.Space.s3) {
                         if items.isEmpty { ShelfSkeleton() }

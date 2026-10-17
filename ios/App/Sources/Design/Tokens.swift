@@ -192,6 +192,13 @@ enum DS {
         static let fillOpacity: Double = 0.55, fillMinutesOpacity: Double = 0.7
     }
 
+    /// La barra de espacio de Descargas.
+    enum Storage {
+        static let height: CGFloat = 14, gap: CGFloat = 2, minSegment: CGFloat = 3, dot: CGFloat = 8
+        /// Por debajo de esta parte libre, el dato se pone en ámbar.
+        static let lowFraction = 0.1
+    }
+
     /// Ajustes: los renglones con su ícono de color y las vistas previas de cada estilo de Inicio.
     enum SettingsLook {
         static let rowIcon: CGFloat = 28
@@ -272,6 +279,8 @@ enum DS {
 
     /// Medidas fijas.
     enum Size {
+        /// Cuánto hay que bajar para que el título grande se encoja (y el de Inicio diga otra cosa).
+        static let titleCollapse: CGFloat = 8
         static let touchTarget = CGFloat(DesignTokens.Size.touchTarget), thumbSmall = CGFloat(DesignTokens.Size.thumbSmall)
         static let cardMax = CGFloat(DesignTokens.Size.cardMax), grabber = CGFloat(DesignTokens.Size.grabber), grabberHeight = CGFloat(DesignTokens.Size.grabberHeight)
         static let logo = CGFloat(DesignTokens.Size.logo)

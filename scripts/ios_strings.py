@@ -19,6 +19,9 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Sus rankings de hoy": "Their charts today", "%lld descargando": "%lld downloading", "Descarga inteligente": "Smart downloads",
+    "En la TV: %@": "On TV: %@", "Sale hoy: %@": "Out today: %@", "%lld por terminar": "%lld to finish", "Inicio": "Home",
+    "Otras apps": "Other apps", "Espacio": "Storage", "%@ libres de %@": "%@ free of %@",
     "%lld episodio": "%lld episode", "%lld temporadas": "%lld seasons", "Temporada %lld": "Season %lld", "Temporada %@": "Season %@", "Series": "Shows", "Películas": "Movies",
     # Repensado: Ajustes por páginas, un solo filtro en Para ti, Buscar integrado
     "Cambiar avatar": "Change avatar", "Conectado": "Connected", "Conectado: %@": "Connected: %@", "Conectando…": "Connecting…",

@@ -36,7 +36,9 @@ struct BrowseView: View {
         // El campo vive abajo (pestaña de búsqueda, como Trakt); al escribir, el título se queda arriba y los resultados
         // empiezan bajo él (antes la barra se escondía y lo de arriba chocaba con la hora).
         .searchPresentationToolbarBehavior(.avoidHidingContent)
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
         .titleDestinations()
+        .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(for: GenreRoute.self) { GenreView(genre: $0.genre, model: catalog.model) }
         .task(id: query) {
             try? await Task.sleep(nanoseconds: DS.Timing.searchDebounce)    // espera a que termines de escribir

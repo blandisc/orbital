@@ -12,6 +12,17 @@
         }
       }
     },
+    "%@ libres de %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ free of %@"
+          }
+        }
+      }
+    },
     "%@ · %@": {
       "extractionState": "manual",
       "localizations": {
@@ -45,6 +56,17 @@
         }
       }
     },
+    "%lld descargando": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld downloading"
+          }
+        }
+      }
+    },
     "%lld episodio": {
       "extractionState": "manual",
       "localizations": {
@@ -74,6 +96,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld min"
+          }
+        }
+      }
+    },
+    "%lld por terminar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld to finish"
           }
         }
       }
@@ -1816,6 +1849,17 @@
         }
       }
     },
+    "En la TV: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On TV: %@"
+          }
+        }
+      }
+    },
     "En la TV: Ajustes › Cuentas › iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -3356,6 +3400,17 @@
         }
       }
     },
+    "Otras apps": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other apps"
+          }
+        }
+      }
+    },
     "Pad de la TV": {
       "extractionState": "manual",
       "localizations": {
@@ -3939,6 +3994,17 @@
         }
       }
     },
+    "Sale hoy: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Out today: %@"
+          }
+        }
+      }
+    },
     "Salir": {
       "extractionState": "manual",
       "localizations": {
@@ -4419,6 +4485,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Its rankings"
+          }
+        }
+      }
+    },
+    "Sus rankings de hoy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Their charts today"
           }
         }
       }

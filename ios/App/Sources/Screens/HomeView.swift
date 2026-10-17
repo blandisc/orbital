@@ -11,6 +11,7 @@ struct HomeView: View {
     @State private var pendingCount = 0
     @State private var openTitle: TitleRoute?
     @State private var heroID: String?
+    @State private var scrolledDown = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.openRemote) private var openRemote
 
@@ -69,8 +70,11 @@ struct HomeView: View {
             .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
             .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
         }
+        .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > DS.Size.titleCollapse } action: { _, down in scrolledDown = down }
         .background(Backdrop(tint: tint.colors))
-        .navigationTitle(greeting).toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
+        // Arriba, el saludo; al bajar (la barra se encoge), algo útil en su lugar: lo que suena en la TV, lo que sale hoy o
+        // cuántas tienes por terminar (y si no hay nada que decir, «Inicio»).
+        .navigationTitle(scrolledDown ? scrolledTitle : Text(greeting)).toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .subtitle(syncText)
         .toolbar {
             // Sin nada en la TV, el control de tu Orbital vive aquí (con algo reproduciéndose, en el accesorio de abajo).
@@ -81,7 +85,7 @@ struct HomeView: View {
                 }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
             }
-            ToolbarItem(placement: .topBarTrailing) { NavigationLink(value: SettingsRoute()) { AvatarImage(id: look.avatar) }.accessibilityLabel(Text("Ajustes")) }
+            ToolbarItem(placement: .topBarTrailing) { ProfileButton(avatar: look.avatar) }
         }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
@@ -120,6 +124,15 @@ struct HomeView: View {
         case .afternoon: "Buenas tardes"
         case .evening: "Buenas noches"
         }
+    }
+
+    /// El título con la barra encogida: lo más útil que haya.
+    private var scrolledTitle: Text {
+        if let now = tvNow.model.now { return Text("En la TV: \(now.live ? (now.channel ?? now.title) : now.title)") }
+        if let airing = home.model.airingToday { return Text("Sale hoy: \(airing.series.title)") }
+        let left = home.model.continueWatching.count
+        if left > 1 { return Text("\(left) por terminar") }
+        return Text("Inicio")
     }
 
     /// Solo cuando hay algo que decir: «N cambios por subir» (lo que viste sin internet). Al día, nada (no hace falta decirlo).

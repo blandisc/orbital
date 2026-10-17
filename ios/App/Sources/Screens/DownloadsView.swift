@@ -17,27 +17,39 @@ struct DownloadsView: View {
         let model = observer.model
         let settings = env.services.appSettings
         List {
+            if !model.items.isEmpty {
+                Section {
+                    StorageBar(parts: [.init(id: "series", label: Text("Series"), bytes: model.items.filter { $0.kind == "series" }.reduce(0) { $0 + $1.writtenBytes }, color: DS.ListTint.series),
+                                       .init(id: "movies", label: Text("Películas"), bytes: model.items.filter { $0.kind != "series" }.reduce(0) { $0 + $1.writtenBytes }, color: DS.ListTint.watching)],
+                               free: model.freeBytes, total: DiskSpace.totalBytes(), format: bytes)
+                }
+                .listRowBackground(DS.surface)
+            }
             if !model.active.isEmpty {
-                Section("Descargando") { ForEach(model.active) { row($0, model) } }
+                Section { ForEach(model.active) { row($0, model) } } header: { DSSectionHead(title: "Descargando", icon: .watching, count: model.active.count) }
                     .listRowBackground(DS.surface)
             }
             // Listo para ver: series (una fila cada una; dentro, sus temporadas y episodios) y películas, aparte.
             if !model.readySeries.isEmpty {
-                Section("Series") {
+                Section {
                     ForEach(model.readySeries) { g in
                         NavigationLink(value: DownloadSeriesRoute(metaID: g.metaID)) { seriesRow(g) }
                             .swipeActions { Button("Borrar", role: .destructive) { Task { for item in g.items { await model.remove(item.id) } } }.tint(DS.danger) }
                     }
+                } header: {
+                    DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes })), icon: .series)
                 }
                 .listRowBackground(DS.surface)
             }
             if !model.readyMovies.isEmpty {
-                Section("Películas") {
+                Section {
                     ForEach(model.readyMovies) { g in
                         if let item = g.items.first {
                             readyRow(title: g.title, poster: g.poster, data: [bytes(g.bytes)], item: item, model: model)
                         }
                     }
+                } header: {
+                    DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes })), icon: .library)
                 }
                 .listRowBackground(DS.surface)
             }
@@ -45,7 +57,7 @@ struct DownloadsView: View {
                 Section {
                     Toggle("Bajar el siguiente episodio al terminar uno", isOn: setting(\.autoNextDownload))
                     Toggle("Borrar al terminar de verlo", isOn: setting(\.deleteWhenWatched))
-                } header: { Text("Descarga inteligente") } footer: {
+                } header: { DSSectionHead(title: "Descarga inteligente", icon: .spark) } footer: {
                     if settings.wifiOnlyDownloads { Label("Solo con Wi‑Fi", systemImage: "wifi").recipe(.footnote) }
                 }
                 .listRowBackground(DS.surface)
@@ -64,8 +76,10 @@ struct DownloadsView: View {
         .tint(DS.accent)   // interruptores y botones de la lista: el acento (lo interactivo)
         .scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
         .navigationTitle("Descargas").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        .subtitle(model.usedBytes > 0 ? Text("Ocupan \(bytes(model.usedBytes)) · libres \(bytes(model.freeBytes))") : nil)   // vacío, no hay nada que contar
+        .subtitle(model.active.isEmpty ? nil : Text("\(model.active.count) descargando"))   // el espacio, en su barra
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
         .titleDestinations()
+        .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(for: DownloadSeriesRoute.self) { DownloadSeriesView(observer: observer, metaID: $0.metaID) }
         .navigationDestination(for: DownloadSeasonRoute.self) { DownloadSeasonView(observer: observer, metaID: $0.metaID, season: $0.season) }
         .task { await model.run() }
