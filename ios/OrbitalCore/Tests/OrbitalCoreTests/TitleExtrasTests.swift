@@ -86,3 +86,28 @@ final class AudioBadgeTests: XCTestCase {
         XCTAssertNil(Source.best([]))
     }
 }
+
+final class IntroDBTests: XCTestCase {
+    func testReadsIntroRecapAndCreditsInSeconds() {
+        let json: JSON = ["imdb_id": "tt0944947", "intro": ["start_sec": 437, "end_sec": 531], "recap": .null,
+                          "outro": ["start_sec": .double(3631.5), "end_sec": .double(3699.5)], "post_credits": .null]
+        let s = IntroDB.parse(json)
+        XCTAssertEqual(s.intro, 437...531)
+        XCTAssertNil(s.recap)
+        XCTAssertEqual(s.credits?.lowerBound, 3631.5, "los créditos (outro) en segundos")
+        XCTAssertTrue(IntroDB.parse(["intro": ["start_sec": 50, "end_sec": 10]]).isEmpty, "un tramo al revés no cuenta")
+    }
+
+    func testAsksBySeasonAndEpisodeOrAsAMovie() async {
+        let http = FakeHTTP()
+        http.json["https://api.introdb.app/segments?imdb_id=tt0944947&season=1&episode=1"] = ["intro": ["start_sec": 10, "end_sec": 70]]
+        http.json["https://api.introdb.app/segments?imdb_id=tt0133093&is_movie=true"] = ["intro": .null, "outro": .null]
+        let db = IntroDB(http: http)
+        let episode = await db.segments(videoID: "tt0944947:1:1")
+        XCTAssertEqual(episode?.intro, 10...70)
+        let movie = await db.segments(videoID: "tt0133093")
+        XCTAssertNil(movie, "sin marcas: nada")
+        let notImdb = await db.segments(videoID: "kitsu:1:1")
+        XCTAssertNil(notImdb, "sin id de IMDb no se pregunta")
+    }
+}

@@ -213,6 +213,25 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertNil(rig.titlePrefs.resumeChoice(metaID: "tt0386676", videoID: "tt0386676:1:2"), "es de ese episodio, no del siguiente")
     }
 
+    /// IntroDB: sin capítulos en el archivo, «Saltar resumen» y «Saltar intro» salen de las marcas de la comunidad, y los
+    /// créditos marcados adelantan «Siguiente episodio».
+    func testCommunityMarksSkipTheRecapAndIntro() async throws {
+        let rig = try twoSources()
+        let model = PlayerModel(engine: rig.engine, finder: rig.finder, watch: rig.watch, titlePrefs: rig.titlePrefs, settings: rig.settings, clock: { rig.clock.now },
+                                skipSegments: { _ in SkipSegments(intro: 60...120, recap: 0...45, credits: 1200...1320) })
+        await model.begin(rig.request())
+        await model.handle(rig.playing(10))
+        try await Task.sleep(nanoseconds: 50_000_000)   // las marcas llegan aparte
+        await model.handle(rig.playing(11))
+        XCTAssertEqual(model.skipKind, .recap)
+        XCTAssertEqual(model.skipIntroTo, 45)
+        await model.handle(rig.playing(70))
+        XCTAssertEqual(model.skipKind, .intro)
+        XCTAssertEqual(model.skipIntroTo, 120)
+        await model.handle(rig.playing(300))
+        XCTAssertNil(model.skipIntroTo)
+    }
+
     func testAsksYourAddonsForSubtitlesWhenTheVideoHasNone() async throws {
         let rig = try twoSources()
         rig.settings.update { $0.audio = "en"; $0.subtitles = "es" }

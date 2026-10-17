@@ -66,6 +66,12 @@ public final class PlayerModel: ObservableModel {
     public private(set) var sourceChoices: [Source] = [] { didSet { changed() } }
     public private(set) var upNext: UpNext? { didSet { changed() } }
     public private(set) var skipIntroTo: Double? { didSet { changed() } }
+    /// Qué se salta con el botón: la intro o el resumen («Anteriormente en…»).
+    public enum SkipKind: Sendable, Equatable { case intro, recap }
+    public private(set) var skipKind: SkipKind = .intro { didSet { changed() } }
+    /// Las marcas de la comunidad (IntroDB) del video que suena: intro, resumen y créditos.
+    public private(set) var segments: SkipSegments? { didSet { changed() } }
+    private var segmentsFor: String?
     public private(set) var stillWatchingPrompt = false { didSet { changed() } }
     public private(set) var notice: PlayerNotice? { didSet { changed() } }
     /// Velocidad de reproducción elegida (sigue igual en el siguiente episodio y al cambiar de fuente).
@@ -112,14 +118,16 @@ public final class PlayerModel: ObservableModel {
     private var closing = false
     private var choicesAt = Date.distantPast
     private var nextLocal: LocalEpisode?
+    private let skipSegments: @Sendable (String) async -> SkipSegments?
     static let choicesLifetime: TimeInterval = StreamFinder.cacheSeconds   // los enlaces de Real-Debrid caducan
 
     public init(engine: PlayerEngine, finder: StreamFinder, watch: WatchService, titlePrefs: TitlePreferences, settings: SettingsStore,
                 clock: @escaping @Sendable () -> Date = { Date() }, onCellular: @escaping @Sendable () -> Bool = { false },
                 episodeLabel: @escaping @Sendable (Int, Int) -> String = { "T\($0) · E\($1)" },
-                localEpisode: @escaping @Sendable (String, String) async -> LocalEpisode? = { _, _ in nil }) {
+                localEpisode: @escaping @Sendable (String, String) async -> LocalEpisode? = { _, _ in nil },
+                skipSegments: @escaping @Sendable (String) async -> SkipSegments? = { _ in nil }) {
         self.engine = engine; self.finder = finder; self.watch = watch; self.titlePrefs = titlePrefs; self.settings = settings
-        self.clock = clock; self.onCellular = onCellular; self.episodeLabel = episodeLabel; self.localEpisode = localEpisode; self.lastSave = clock()
+        self.clock = clock; self.onCellular = onCellular; self.episodeLabel = episodeLabel; self.localEpisode = localEpisode; self.skipSegments = skipSegments; self.lastSave = clock()
         super.init()
     }
 
@@ -156,6 +164,7 @@ public final class PlayerModel: ObservableModel {
 
     /// Justo antes de cargar: de aquí en adelante lo que diga el motor es del video nuevo.
     private func startLoading() {
+        loadSegmentsIfNeeded()
         acceptingSnapshots = true; retrying = false; hasPlayed = false; tracksApplied = false
         scrobbleStarted = false   // otra carga (otra fuente, otro episodio): cuando suene, Trakt recibe el avance donde va
         startupDeadline = clock().addingTimeInterval(PlaybackRules.startupTimeout)
@@ -443,11 +452,28 @@ public final class PlayerModel: ObservableModel {
     }
 
     // MARK: intro y siguiente episodio
+    /// Las marcas de IntroDB del video que va a sonar (una vez por video; otra fuente del mismo no las vuelve a pedir).
+    private func loadSegmentsIfNeeded() {
+        guard let videoID = request?.videoID, segmentsFor != videoID else { return }
+        segmentsFor = videoID
+        segments = nil
+        let fetch = skipSegments
+        Task { [weak self] in
+            let found = await fetch(videoID)
+            guard let self, self.request?.videoID == videoID else { return }
+            self.segments = found
+        }
+    }
+
+    /// «Saltar intro» / «Saltar resumen»: primero los capítulos del archivo; si no los trae, las marcas de la comunidad.
     private func updateSkipIntro(_ s: EngineSnapshot) {
         let sorted = s.chapters.sorted { $0.time < $1.time }
         for (i, chapter) in sorted.enumerated() where PlaybackRules.chapterKind(chapter.title) == .intro {
             let end = i + 1 < sorted.count ? sorted[i + 1].time : s.duration
-            if s.position >= chapter.time && s.position < end - 1 { skipIntroTo = end; return }
+            if s.position >= chapter.time && s.position < end - 1 { skipKind = .intro; skipIntroTo = end; return }
+        }
+        for (kind, range) in [(SkipKind.recap, segments?.recap), (.intro, segments?.intro)] {
+            if let range, s.position >= range.lowerBound, s.position < range.upperBound - 1 { skipKind = kind; skipIntroTo = range.upperBound; return }
         }
         skipIntroTo = nil
     }
@@ -476,7 +502,9 @@ public final class PlayerModel: ObservableModel {
         }
         let current = s.chapters.sorted { $0.time < $1.time }.last { $0.time <= s.position }
         // «Opening Credits» al principio no son los créditos del final: solo cuentan en la segunda mitad.
-        let inCredits = (current.map { PlaybackRules.chapterKind($0.title) == .credits } ?? false) && s.position > s.duration / 2
+        // Los créditos: por capítulo del archivo o por la marca de la comunidad (IntroDB).
+        let inCredits = ((current.map { PlaybackRules.chapterKind($0.title) == .credits } ?? false) || (segments?.credits.map { s.position >= $0.lowerBound } ?? false))
+            && s.position > s.duration / 2
         let near = PlaybackRules.shouldShowUpNext(position: s.position, duration: s.duration, inCredits: inCredits)
         if upNext == nil && !upNextDismissed && near {
             upNextDeadline = now.addingTimeInterval(PlaybackRules.upNextCountdown)

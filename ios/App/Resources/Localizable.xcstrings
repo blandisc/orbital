@@ -4302,6 +4302,17 @@
         }
       }
     },
+    "Saltar resumen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip recap"
+          }
+        }
+      }
+    },
     "Sci-Fi": {
       "extractionState": "manual",
       "localizations": {

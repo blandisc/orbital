@@ -20,6 +20,8 @@ public final class Services: ObservableModel {
     public private(set) var finder: StreamFinder { didSet { changed() } }
     public private(set) var cinemeta: Cinemeta { didSet { changed() } }
     public private(set) var localizer: Localizer { didSet { changed() } }
+    /// IntroDB: dónde saltar la intro y el resumen (y cuándo empiezan los créditos).
+    public var introDB: IntroDB { IntroDB(http: http) }
     /// TMDB directo (la ficha rica: elenco, saga, «Más como esto»…); sin clave, `configured` es false.
     public private(set) var tmdb: Tmdb { didSet { changed() } }
     public private(set) var trakt: Trakt? { didSet { changed() } }

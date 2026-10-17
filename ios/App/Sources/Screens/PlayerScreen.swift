@@ -21,7 +21,8 @@ final class PlayerHolder: ObservableObject {
                                 guard let item = await services.downloads.item(DownloadItem.makeID(metaID: metaID, videoID: videoID)), item.state == .done else { return nil }
                                 let file = await services.downloads.fileURL(item)
                                 return LocalEpisode(file: file, subtitles: item.subtitleFiles.map { file.deletingLastPathComponent().appendingPathComponent($0) })
-                            })
+                            },
+                            skipSegments: { videoID in await services.introDB.segments(videoID: videoID) })   // saltar intro y resumen (IntroDB, como Infuse)
         subscription = model.onChange { [weak self] in self?.objectWillChange.send() }
         // Episodios descargados que se encadenan solos: cada uno visto se atiende al pasar al siguiente (borrar / bajar el que sigue).
         model.onFinishedLocal = { finished in
@@ -355,7 +356,9 @@ struct PlayerScreen: View {
                         if !current.episodeLabel.isEmpty { Text(current.episodeLabel).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1) }
                     }
                     Spacer()
-                    if model.skipIntroTo != nil { Button("Saltar intro") { Task { await model.skipIntro() } }.buttonStyle(.glass) }
+                    if model.skipIntroTo != nil {
+                        Button(model.skipKind == .recap ? "Saltar resumen" : "Saltar intro", systemImage: "forward.fill") { Task { await model.skipIntro() } }.buttonStyle(.glass)
+                    }
                     // Cada botón dice qué hace (si no cabe, solo el ícono; VoiceOver dice el nombre).
                     if env.services.orbital.isConfigured { PlayerLabelButton(title: "En la TV", symbol: "tv") { Task { await continueOnTV() } } }
                     if pip.isPossible { PlayerLabelButton(title: "Ventana", symbol: "pip.enter") { pip.toggle() } }
