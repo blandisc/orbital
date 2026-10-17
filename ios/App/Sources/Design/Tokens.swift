@@ -173,12 +173,12 @@ enum DS {
     /// chicas, oscuras y desenfocadas; coverflow las gira en 3D y abanico las inclina desde abajo.
     enum Deck {
         /// Qué parte del ancho toma la tarjeta del frente (asoman las de los lados) y su alto.
-        static let sideMargin: CGFloat = 52, height: CGFloat = 430
+        static let sideMargin: CGFloat = 66, height: CGFloat = 430
         /// Cuántas veces se repiten las tarjetas para la vuelta infinita (se empieza a la mitad: nunca se llega al final).
         static let loopCopies = 40
-        static let radius: CGFloat = 28, spacing: CGFloat = -14   // negativa: las de los lados se meten tras la del frente y asoman
+        static let radius: CGFloat = 28, spacing: CGFloat = -18   // negativa: las de los lados se meten tras la del frente y asoman
         /// Lo que pierde una tarjeta a un lugar de distancia: tamaño, nitidez y luz.
-        static let sideShrink: CGFloat = 0.12, sideBlur: CGFloat = 5, sideDim: Double = 0.28
+        static let sideShrink: CGFloat = 0.12, sideBlur: CGFloat = 3, sideDim: Double = 0.16
         static let coverflowAngle: Double = 38, perspective: CGFloat = 0.6
         static let fanAngle: Double = 9, fanDrop: CGFloat = 24
         /// Donde empieza el velo (para que el texto se lea) y la sombra de la tarjeta.
@@ -289,12 +289,11 @@ enum DS {
         static let yearWidth: CGFloat = 150, yearHeight: CGFloat = 150
         /// La línea (desde arriba de lo visible, bajo la barra) que decide qué grupo marca el índice.
         static let spyLine: CGFloat = 70
-        /// El ícono de la app junto a «Orbital», arriba de Inicio.
-        static let appMark: CGFloat = 28, appMarkRadius: CGFloat = 7
+
         static let gold = Color(red: 0.83, green: 0.65, blue: 0.25), silver = Color(red: 0.78, green: 0.76, blue: 0.72)
         static let bronze = Color(red: 0.72, green: 0.45, blue: 0.26)
         /// El carrusel centrado: cuánto se encogen y apagan las de los lados; el reflejo (alto, separación, intensidad) y el peso.
-        static let sideShrink: CGFloat = 0.1, sideFade: Double = 0.35
+        static let sideShrink: CGFloat = 0.1, sideFade: Double = 0.18
         static let reflection: CGFloat = 44, reflectionGap: CGFloat = 4, reflectionOpacity: Double = 0.3
         static let weight: CGFloat = 18, weightY: CGFloat = 12, weightTint: Double = 0.35
         /// El halo de los estudios (neutro: cada estudio es de muchos colores).
@@ -365,6 +364,8 @@ enum DS {
 
     /// Medidas fijas.
     enum Size {
+        /// El logotipo arriba de Inicio (el tamaño de la letra de «orbital»).
+        static let headerWordmark: CGFloat = 26
         /// Lo más que se encoge un número de «Tu año» para caber en su tarjeta.
         static let statScale: CGFloat = 0.6
         /// Cuánto hay que bajar para que el título grande se encoja (y el de Inicio diga otra cosa).

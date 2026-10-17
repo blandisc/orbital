@@ -182,20 +182,11 @@ struct YearCard: View {
     }
 }
 
-/// Arriba de Inicio: el ícono de la app y «Orbital» (en lugar del saludo).
+/// Arriba de Inicio: el logotipo de la app como en la TV y la computadora (el planeta, «orbital» y su luna), en lugar del
+/// saludo. Al abrir, el anillo se dibuja y la luna cae en su lugar.
 struct AppMark: View {
-    @Environment(\.colorScheme) private var scheme
     var body: some View {
-        HStack(spacing: DS.Space.s2) {
-            Image(scheme == .dark ? "AppIconPreview/night" : "AppIconPreview/day").resizable().scaledToFill()
-                .frame(width: DS.Collections.appMark, height: DS.Collections.appMark)
-                .clipShape(RoundedRectangle(cornerRadius: DS.Collections.appMarkRadius, style: .continuous))
-            Text(verbatim: "Orbital").recipe(.section).lineLimit(1)
-        }
-        .fixedSize()
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text(verbatim: "Orbital"))
-        .accessibilityAddTraits(.isHeader)
+        OrbitalWordmark(size: DS.Size.headerWordmark, animated: true).foregroundStyle(DS.text).fixedSize()
     }
 }
 
