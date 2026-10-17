@@ -6,6 +6,8 @@ import OrbitalCore
 /// El pad táctil, como el del control del Apple TV: deslizar = flechas (una por cada `DS.Remote.swipeStep`, con toque
 /// háptico; al seguir deslizando se repite), tocar = A (elegir). Se usa sin mirar.
 struct TouchPad: View {
+    /// Lo que hace tocar (la A) en la pantalla de la TV ahora («Ver», «Escribir», «Jugar»…), de su leyenda; nil: «A».
+    var selectLabel: String?
     let onAction: (OrbitalRemote.InputAction) -> Void
     @State private var origin: CGPoint?
     @State private var moved = false
@@ -48,7 +50,7 @@ struct TouchPad: View {
             .sensoryFeedback(.selection, trigger: ticks)
             .accessibilityElement()
             .accessibilityLabel(Text("Pad de la TV"))
-            .accessibilityHint(Text("Desliza para moverte; toca para elegir"))
+            .accessibilityHint(selectLabel.map { Text("Desliza para moverte; toca para \($0)") } ?? Text("Desliza para moverte; toca para elegir"))
             .accessibilityAction(named: Text("Arriba")) { onAction(.up) }
             .accessibilityAction(named: Text("Abajo")) { onAction(.down) }
             .accessibilityAction(named: Text("Izquierda")) { onAction(.left) }
@@ -67,8 +69,9 @@ struct TouchPad: View {
             VStack { chevron("chevron.up"); Spacer(); chevron("chevron.down") }
             HStack { chevron("chevron.left"); Spacer(); chevron("chevron.right") }
             VStack(spacing: DS.Space.s1) {
-                Text(verbatim: "A").recipe(.title, color: DS.textMuted)
-                Text("Desliza · toca para elegir").recipe(.caption, color: DS.textFaint)
+                // La A dice lo que va a pasar al tocar, como el pie de la TV; sin leyenda, la letra del mando.
+                Text(verbatim: selectLabel ?? "A").recipe(.title, color: DS.textMuted).lineLimit(1).contentTransition(.opacity)
+                (selectLabel == nil ? Text("Desliza · toca para elegir") : Text("A · desliza para moverte")).recipe(.caption, color: DS.textFaint)
             }
         }
         .padding(DS.Space.s4)

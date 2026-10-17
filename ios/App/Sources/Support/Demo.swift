@@ -280,7 +280,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                                      "position": .double(nowPlayingPosition), "duration": .double(Self.nowPlayingDuration), "paused": .bool(nowPlayingPaused)])
         // La pantalla de la TV de mentira: en su ficha, con la leyenda del pie (como la manda la consola de verdad).
         let ui: JSON = ["screen": "title", "text_field": false, "section": "Películas y series",
-                        "legend": ["select": "Ver", "back": "Atrás", "alt": "Mi lista", "options": "Más", "menu": "Menú", "search": "Buscar",
+                        "legend": ["select": "Reproducir", "back": "Atrás", "alt": "Mi lista", "options": "Más", "menu": "Menú", "search": "Buscar",
                                    "page": "De 5 en 5", "section": "Secciones"]]
         return HTTPResponse(status: 200, data: JSON.object(["playing": playing, "inbox": .array(inbox), "ui": ui]).serialized())
     }

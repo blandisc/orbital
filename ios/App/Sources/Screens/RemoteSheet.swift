@@ -109,7 +109,8 @@ struct RemoteSheet: View {
                 }
                 key(model, "chevron.right.2", "RB", nil, Text("Siguiente"), .nextsection)
             }
-            TouchPad { action in Task { await model.press(action) } }
+            TouchPad(selectLabel: model.legend["select"]) { action in Task { await model.press(action) } }
+                .animation(DS.Motion.base(false), value: model.legend["select"])
                 .containerRelativeFrame(.vertical) { length, _ in max(DS.Remote.padHeight, length * DS.Remote.padShare) }
             HStack(spacing: DS.Space.s2) {
                 key(model, "chevron.backward", "B", "back", Text("Atrás"), .back)

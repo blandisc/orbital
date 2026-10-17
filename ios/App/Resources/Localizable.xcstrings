@@ -56,6 +56,17 @@
         }
       }
     },
+    "A · desliza para moverte": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A · swipe to move"
+          }
+        }
+      }
+    },
     "Abre la ficha": {
       "extractionState": "manual",
       "localizations": {
@@ -1174,6 +1185,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Overnight"
+          }
+        }
+      }
+    },
+    "Desliza para moverte; toca para %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe to move; tap to %@"
           }
         }
       }
