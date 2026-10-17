@@ -51,7 +51,7 @@ def test_library_from_gfn_cache(tmp_path):
     (entry / "aaa_0").write_bytes(head + json.dumps(LIBRARY).encode() + b"\x00trailer")
     (entry / "bbb_0").write_bytes(b"otra cosa")
     games = geforcenow.read_library_cache(tmp_path)
-    assert games == [{"title": "Apex Legends", "cms_id": "100013311", "short_name": "apex_steam", "store": "Steam",
+    assert games == [{"recent": 0, "title": "Apex Legends", "cms_id": "100013311", "short_name": "apex_steam", "store": "Steam",
                       "banner": "https://img/b.jpg", "hero": "https://img/h.jpg"}]  # solo lo jugable
     argv = geforcenow.library_argv(r"C:\GFN\GeForceNOWStreamer.exe", games[0])
     assert argv[1] == "--url-route=#?cmsId=100013311&launchSource=External&shortName=apex_steam&parentGameId="
@@ -113,3 +113,14 @@ def test_steam_art_is_remembered_between_starts(tmp_path, monkeypatch):
     assert calls == []  # sin preguntar a Steam
     again.appid("Caido")  # el fallo de red sí se reintenta
     assert len(calls) == 1
+
+
+def test_a_game_added_by_hand_counts_and_the_library_keeps_its_order():
+    """Uno agregado a mano viene con playStatus «UNKNOWN» pero se puede jugar (Empire of the Ants se quedaba fuera); y
+    cada juego lleva su lugar en tu biblioteca (del más reciente al más viejo) para ordenarlos así."""
+    entry = lambda title, cms, status: {"app": {"title": title, "images": {}, "gfn": {"playabilityState": "PLAYABLE"}, "variants": [  # noqa: E731
+        {"id": cms, "appStore": "STEAM", "gfn": {"library": {"status": "MANUAL", "selected": True, "playStatus": status}}}]}}
+    data = {"data": {"panels": [{"sections": [{"items": [entry("Halo", "1", "PLAYABLE"), entry("Empire of the Ants", "2", "UNKNOWN"),
+                                                          entry("Hogwarts Legacy", "3", "PLAYABLE")]}]}]}}
+    games = geforcenow.parse_library(data)
+    assert [(g["title"], g["recent"]) for g in games] == [("Halo", 0), ("Empire of the Ants", 1), ("Hogwarts Legacy", 2)]

@@ -44,3 +44,11 @@ test("filtros «Instalados» y «Con control»", async () => {
   assert.deepEqual(consoleGames(rows, "steam", "controller").map((i) => i.id), ["Celeste", "Hades", "Portal 2"]);
   assert.equal(playsWithController({ category: "emulators", extra: {} }), true); // los de consola, siempre
 });
+
+test("sin fecha de Orbital, lo reciente de su tienda va antes que el orden alfabético (GeForce NOW)", async () => {
+  const { consoleGames } = await import("../../orbital/web/js/core/games.js");
+  const rows = [{ id: "geforcenow", items: [
+    { id: "a", title: "Age of Empires", extra: {} }, { id: "h", title: "Hogwarts Legacy", extra: { recent_rank: 9 } },
+    { id: "x", title: "Halo", extra: { recent_rank: 0 } }, { id: "z", title: "Zelda", last_played: 100, extra: {} }] }];
+  assert.deepEqual(consoleGames(rows, "geforcenow").map((i) => i.id), ["z", "x", "h", "a"]);
+});

@@ -36,7 +36,10 @@ export function consoleGames(rows, consoleId, filter = "recent") {
   if (filter === "installed") return consoleGames(rows, consoleId).filter(isInstalled);
   if (filter === "controller") return consoleGames(rows, consoleId).filter(playsWithController);
   const played = items.filter((i) => i.last_played).sort((a, b) => b.last_played - a.last_played);
-  return [...played, ...items.filter((i) => !i.last_played).sort(byTitle)];
+  // Sin fecha de Orbital: lo reciente que diga su tienda (GeForce NOW: el orden de tu biblioteca; antes Hogwarts Legacy,
+  // tu 10.º, quedaba enterrado en orden alfabético), luego A–Z.
+  const rank = (i) => (Number.isFinite(i.extra?.recent_rank) ? i.extra.recent_rank : Infinity);
+  return [...played, ...items.filter((i) => !i.last_played).sort((a, b) => rank(a) - rank(b) || byTitle(a, b))];
 }
 
 /** La consola anterior / siguiente (da la vuelta: después de la última, la primera). */

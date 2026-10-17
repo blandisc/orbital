@@ -172,12 +172,15 @@ def parse_library(data: dict) -> list[dict]:
                     or next((v for v in variants if lib(v).get("status")), None)
                 if not variant or not app.get("title"):
                     continue
-                playable = lib(variant).get("playStatus") in (None, "PLAYABLE") and \
-                    (app.get("gfn") or {}).get("playabilityState") in (None, "PLAYABLE")
+                # Uno que agregaste a mano viene con playStatus «UNKNOWN» aunque se pueda jugar (Empire of the Ants se
+                # quedaba fuera): manda lo que dice el juego (playabilityState).
+                playable = (lib(variant).get("playStatus") in (None, "PLAYABLE", "UNKNOWN")
+                            and (app.get("gfn") or {}).get("playabilityState") in (None, "PLAYABLE"))
                 if not playable:
                     continue  # en tu biblioteca pero no se puede jugar (no está en GFN, membresía…)
                 images = app.get("images") or {}
                 games.append({
+                    "recent": len(games),  # el orden del panel: del jugado más reciente al más viejo
                     "title": clean_title(app["title"]), "cms_id": str(variant["id"]),
                     "short_name": variant.get("shortName") or "", "store": STORES.get(variant.get("appStore") or "", ""),
                     "banner": images.get("TV_BANNER"), "hero": images.get("HERO_IMAGE") or images.get("TV_BANNER"),
@@ -211,6 +214,9 @@ def read_library_cache(folder: Path | None = None) -> list[dict]:
             continue
         games = parse_library(data)
         if games:
+            items = sum(len(s.get("items") or []) for p in (data.get("data") or {}).get("panels") or [] for s in p.get("sections") or [])
+            if items >= 40:  # el panel trae solo tus 40 más recientes: los de atrás no se ven (salvo los de Steam)
+                log.info("GeForce NOW: tu biblioteca trae %d juegos (los más recientes); puede haber más que no se ven", items)
             return games
     return []
 
@@ -333,7 +339,8 @@ def _item(art: SteamArt, cms_id: str, title: str, argv: list[str], game: dict | 
         # Portada vertical de Steam (las filas son de portadas); si no, el banner de GFN.
         image=STEAM_ART.format(appid=appid, name="library_600x900.jpg") if appid else game.get("banner"),
         hero=STEAM_ART.format(appid=appid, name="library_hero.jpg") if appid else game.get("hero"),
-        extra={"logo": STEAM_ART.format(appid=appid, name="logo.png")} if appid else {},
+        extra={**({"logo": STEAM_ART.format(appid=appid, name="logo.png")} if appid else {}),
+               **({"recent_rank": game["recent"]} if "recent" in game else {})},
         steam_appid=appid,  # el mismo juego en la tienda de Steam: de ahí su descripción, año y géneros
     )
 
