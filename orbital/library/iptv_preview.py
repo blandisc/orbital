@@ -47,11 +47,15 @@ def _headers(channel: Channel) -> dict:
     return headers
 
 
-def fetch(channel: Channel, url: str, limit: int) -> tuple[bytes, str, str]:
-    """(contenido, dirección final tras redirecciones, tipo)."""
-    req = urllib.request.Request(url, headers=_headers(channel))
+ORIGIN = "http://127.0.0.1:8710"  # la página de Orbital: si el canal le da permiso CORS, la tele baja el video directo
+
+
+def fetch(channel: Channel, url: str, limit: int) -> tuple[bytes, str, str, bool]:
+    """(contenido, dirección final tras redirecciones, tipo, ¿deja que una página lo lea directo?)."""
+    req = urllib.request.Request(url, headers={**_headers(channel), "Origin": ORIGIN})
     with urllib.request.urlopen(req, timeout=TIMEOUT) as res:
-        return read_body(res, timeout=TIMEOUT, limit=limit), res.geturl(), res.headers.get("Content-Type", "")
+        cors = res.headers.get("Access-Control-Allow-Origin", "") in ("*", ORIGIN)
+        return read_body(res, timeout=TIMEOUT, limit=limit), res.geturl(), res.headers.get("Content-Type", ""), cors
 
 
 def lowest_variant(text: str, base: str) -> str | None:
@@ -70,10 +74,13 @@ def lowest_variant(text: str, base: str) -> str | None:
     return best[1] if best else None
 
 
-def rewrite(text: str, base: str, channel_id: str) -> str:
-    """Cada pedazo (y las llaves o el mapa de inicio) apunta a Orbital, firmado."""
+def rewrite(text: str, base: str, channel_id: str, direct: bool = False) -> str:
+    """Cada pedazo (y las llaves o el mapa de inicio) apunta a Orbital, firmado; o, si el canal deja que la página lo lea
+    (`direct`), a su dirección completa: la tele lo baja directo, más rápido y sin cargar a Orbital."""
     def local(uri: str) -> str:
         absolute = urljoin(base, uri.strip())
+        if direct:
+            return absolute
         return f"preview-seg?c={quote(channel_id, safe='')}&u={quote(absolute, safe='')}&s={sign(channel_id, absolute)}"
 
     out = []
@@ -97,7 +104,7 @@ class Previews:
         with self._lock:
             cached = self._variants.get(channel.id)
         url = cached[1] if cached and time.monotonic() - cached[0] < VARIANT_TTL else channel.url
-        body, final, _ = fetch(channel, url, PLAYLIST_LIMIT)
+        body, final, _, cors = fetch(channel, url, PLAYLIST_LIMIT)
         text = body.decode("utf-8", "replace")
         if "#EXTM3U" not in text[:1024]:
             raise PreviewError("no es una lista HLS")
@@ -105,22 +112,25 @@ class Previews:
         if variant:
             with self._lock:
                 self._variants[channel.id] = (time.monotonic(), variant)
-            body, final, _ = fetch(channel, variant, PLAYLIST_LIMIT)
+            body, final, _, cors = fetch(channel, variant, PLAYLIST_LIMIT)
             text = body.decode("utf-8", "replace")
             if lowest_variant(text, final):
                 raise PreviewError("lista maestra anidada")
-        return rewrite(text, final, channel.id)
+        # Directo solo si el canal da permiso y no pide cabeceras propias (la página no puede mandarlas).
+        direct = cors and not channel.user_agent and not channel.referrer
+        return rewrite(text, final, channel.id, direct=direct)
 
     def segment(self, channel: Channel, url: str):
         """(pedazos, tipo): se van pasando mientras llegan. Antes se bajaba el pedazo entero (hasta 4 MB en un canal sin
         calidades) y la miniatura tardaba tanto que se daba por perdida."""
         res = urllib.request.urlopen(urllib.request.Request(url, headers=_headers(channel)), timeout=TIMEOUT)
+        # Pedazos grandes (menos vueltas entre hilos): el que pasa por aquí es un canal sin permiso CORS o con cabeceras.
         kind = res.headers.get("Content-Type", "") or "video/mp2t"
 
         def chunks():
             sent = 0
             try:
-                while chunk := res.read(64 * 1024):
+                while chunk := res.read(256 * 1024):
                     sent += len(chunk)
                     if sent > SEGMENT_LIMIT:
                         return

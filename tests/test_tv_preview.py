@@ -25,8 +25,8 @@ def test_the_lowest_quality_is_picked_and_every_piece_goes_through_orbital(monke
     def fake(channel, url, limit):
         asked.append(url)
         if url.endswith("master.m3u8"):
-            return MASTER.encode(), url, "application/vnd.apple.mpegurl"
-        return MEDIA.encode(), url, "application/vnd.apple.mpegurl"
+            return MASTER.encode(), url, "application/vnd.apple.mpegurl", True
+        return MEDIA.encode(), url, "application/vnd.apple.mpegurl", True
 
     monkeypatch.setattr(ip, "fetch", fake)
     channel = Channel("X.mx@SD", "X", "https://tv.example/live/master.m3u8", user_agent="UA")
@@ -47,3 +47,12 @@ def test_api_refuses_unsigned_pieces_and_unknown_channels(make_client):
     c = make_client()
     assert c.get("/api/tv/preview-seg", params={"c": "X", "u": "https://evil/", "s": "nada"}).status_code == 403
     assert c.get("/api/tv/preview.m3u8", params={"id": "no-existe"}).status_code == 404
+
+
+def test_a_channel_that_allows_it_is_read_directly_by_the_tv(monkeypatch):
+    monkeypatch.setattr(ip, "fetch", lambda channel, url, limit: (MEDIA.encode(), url, "application/vnd.apple.mpegurl", True))
+    text = ip.Previews().playlist(Channel("Y.mx@SD", "Y", "https://tv.example/live/index.m3u8"))
+    assert "https://tv.example/live/seg1.ts" in text and "preview-seg" not in text
+    # Con cabeceras propias (la página no puede mandarlas), aunque dé permiso, pasa por Orbital.
+    text = ip.Previews().playlist(Channel("Z.mx@SD", "Z", "https://tv.example/live/index.m3u8", referrer="https://tv.example/"))
+    assert "preview-seg" in text
