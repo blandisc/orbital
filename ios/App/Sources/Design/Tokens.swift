@@ -153,9 +153,9 @@ enum DS {
     /// El control completo de la TV (`TouchPad`, `RemoteKey`).
     enum Remote {
         /// Alto del pad táctil y de cada tecla.
-        static let padHeight: CGFloat = 280, keyHeight: CGFloat = 64
+        static let padHeight: CGFloat = 200, keyHeight: CGFloat = 60
         /// Qué parte del alto de la hoja estirada toma el pad (en un iPhone grande crece en vez de dejar un hueco abajo).
-        static let padShare: CGFloat = 0.52
+        static let padShare: CGFloat = 0.37
         /// Cuánto hay que deslizar para una flecha (y cada cuánto se repite al seguir deslizando).
         static let swipeStep: CGFloat = 56
         /// Lo que se puede mover el dedo y seguir contando como toque (A).

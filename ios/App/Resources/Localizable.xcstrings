@@ -111,6 +111,17 @@
         }
       }
     },
+    "Acción X": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "X action"
+          }
+        }
+      }
+    },
     "Actualiza tu Orbital para usar el control completo.": {
       "extractionState": "manual",
       "localizations": {
@@ -195,6 +206,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Alexa"
+          }
+        }
+      }
+    },
+    "Anterior": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous"
           }
         }
       }
@@ -1167,6 +1189,17 @@
         }
       }
     },
+    "Dile a Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tell Orbital"
+          }
+        }
+      }
+    },
     "Dirección": {
       "extractionState": "manual",
       "localizations": {
@@ -1372,6 +1405,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Paused"
+          }
+        }
+      }
+    },
+    "En pausa.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused."
           }
         }
       }
@@ -1937,6 +1981,17 @@
         }
       }
     },
+    "Listo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done."
+          }
+        }
+      }
+    },
     "Llevas tres episodios seguidos.": {
       "extractionState": "manual",
       "localizations": {
@@ -2065,6 +2120,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The next 3 episodes"
+          }
+        }
+      }
+    },
+    "Manda una orden a tu Orbital, como a Alexa: «pon The Office», «pausa», «abre Zelda».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send a command to your Orbital, like to Alexa: “play The Office”, “pause”, “open Zelda”."
           }
         }
       }
@@ -2575,6 +2641,17 @@
         }
       }
     },
+    "Opciones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Options"
+          }
+        }
+      }
+    },
     "Orbital · descargando": {
       "extractionState": "manual",
       "localizations": {
@@ -2593,6 +2670,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Orbital · %lld left"
+          }
+        }
+      }
+    },
+    "Orden": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Command"
           }
         }
       }
@@ -2696,6 +2784,17 @@
         }
       }
     },
+    "Pausar la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause the TV"
+          }
+        }
+      }
+    },
     "País (para lo popular en plataformas)": {
       "extractionState": "manual",
       "localizations": {
@@ -2780,6 +2879,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pending on Trakt"
+          }
+        }
+      }
+    },
+    "Permite el micrófono y el dictado en Ajustes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow the microphone and dictation in Settings"
           }
         }
       }
@@ -3158,6 +3268,17 @@
         }
       }
     },
+    "Seguir en la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume the TV"
+          }
+        }
+      }
+    },
     "Seguir viendo": {
       "extractionState": "manual",
       "localizations": {
@@ -3246,6 +3367,17 @@
         }
       }
     },
+    "Sigue.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resuming."
+          }
+        }
+      }
+    },
     "Sigue: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -3264,6 +3396,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "You're watching"
+          }
+        }
+      }
+    },
+    "Siguiente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next"
           }
         }
       }
@@ -3488,6 +3631,17 @@
         }
       }
     },
+    "Te escucho…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listening…"
+          }
+        }
+      }
+    },
     "Temporada %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -3517,6 +3671,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trending on %@"
+          }
+        }
+      }
+    },
+    "Terminar la orden": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish the command"
+          }
+        }
+      }
+    },
+    "Toca para terminar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to finish"
           }
         }
       }
@@ -4060,6 +4236,17 @@
         }
       }
     },
+    "«Pon The Office», «pausa», «abre Zelda»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Play The Office”, “pause”, “open Zelda”"
+          }
+        }
+      }
+    },
     "¿Cerrar sesión de Stremio?": {
       "extractionState": "manual",
       "localizations": {
@@ -4067,6 +4254,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sign out of Stremio?"
+          }
+        }
+      }
+    },
+    "¿Qué le digo a Orbital?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What should I tell Orbital?"
           }
         }
       }

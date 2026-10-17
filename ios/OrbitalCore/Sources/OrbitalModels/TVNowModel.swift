@@ -17,6 +17,10 @@ public final class TVNowModel: ObservableModel {
     public private(set) var busy = false { didSet { changed() } }
     /// Hay un campo de texto con foco en la TV («Escribir» en el control completo). nil: la consola no lo dice (se enseña igual).
     public private(set) var textField: Bool? { didSet { if oldValue != textField { changed() } } }
+    /// Lo que hace cada botón del mando en la pantalla de la TV ahora («alt» → «Mi lista»), para rotular el control.
+    public private(set) var legend: [String: String] = [:] { didSet { if oldValue != legend { changed() } } }
+    /// La sección de la TV al frente, para «‹ Sección ›».
+    public private(set) var section: String? { didSet { if oldValue != section { changed() } } }
     /// Tu Orbital está conectada (dirección y token): el control de la TV está a la mano aunque no se reproduzca nada.
     public var isConfigured: Bool { services.orbital.isConfigured }
     /// La consola todavía no tiene el control completo (versión anterior): el pad se esconde y se avisa.
@@ -70,6 +74,8 @@ public final class TVNowModel: ObservableModel {
             let snapshot = try await services.orbital.snapshot()
             now = snapshot.playing
             textField = snapshot.textField
+            legend = snapshot.legend
+            section = snapshot.section
             failures = 0
             fetchedAt = Date()
             tokenProblem = false
@@ -91,6 +97,13 @@ public final class TVNowModel: ObservableModel {
         catch OrbitalRemote.Failure.outdated { remoteOutdated = true }
         catch OrbitalRemote.Failure.badToken { tokenProblem = true }
         catch {}
+    }
+
+    /// Una orden de voz a tu Orbital (el micrófono del control, Siri): lo que contestó, o por qué no se pudo.
+    public func say(_ text: String) async -> OrbitalRemote.VoiceReply {
+        do { return try await services.orbital.voice(text) }
+        catch let failure as OrbitalRemote.Failure { return .init(ok: false, speech: failure.description) }
+        catch { return .init(ok: false, speech: OrbitalRemote.Failure.unreachable.description) }
     }
 
     /// Escribir en la TV (lo que tiene el foco, normalmente la búsqueda); `submit`: además, buscar.

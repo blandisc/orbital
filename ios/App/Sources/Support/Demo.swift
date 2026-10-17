@@ -278,7 +278,11 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                                      "video_id": .string("tt0386676:2:5"), "title": .string("The Office"),
                                      "episode_label": .string("T2 · E5"), "poster": .string("https://images.metahub.space/poster/medium/tt0386676/img"),
                                      "position": .double(nowPlayingPosition), "duration": .double(Self.nowPlayingDuration), "paused": .bool(nowPlayingPaused)])
-        return HTTPResponse(status: 200, data: JSON.object(["playing": playing, "inbox": .array(inbox)]).serialized())
+        // La pantalla de la TV de mentira: en su ficha, con la leyenda del pie (como la manda la consola de verdad).
+        let ui: JSON = ["screen": "title", "text_field": false, "section": "Películas y series",
+                        "legend": ["select": "Ver", "back": "Atrás", "alt": "Mi lista", "options": "Más", "menu": "Menú", "search": "Buscar",
+                                   "page": "De 5 en 5", "section": "Secciones"]]
+        return HTTPResponse(status: 200, data: JSON.object(["playing": playing, "inbox": .array(inbox), "ui": ui]).serialized())
     }
 
     private func ok(_ result: JSON) -> HTTPResponse { HTTPResponse(status: 200, data: JSON.object(["result": result]).serialized()) }

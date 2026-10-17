@@ -179,9 +179,13 @@ public struct OrbitalRemote: Sendable {
         public var inbox: [InboxItem]
         /// Hay un campo de texto con foco en la TV (el control completo enseña «Escribir»). nil: la consola no lo dice.
         public var textField: Bool?
+        /// Lo que hace cada botón en la pantalla de la TV ahora (la leyenda del pie: «alt» → «Mi lista»…). Vacío: no lo dice.
+        public var legend: [String: String]
+        /// La sección de la TV al frente («Inicio», «Juegos», «Películas y series», «Apps»).
+        public var section: String?
 
-        public init(playing: NowPlaying?, inbox: [InboxItem], textField: Bool? = nil) {
-            self.playing = playing; self.inbox = inbox; self.textField = textField
+        public init(playing: NowPlaying?, inbox: [InboxItem], textField: Bool? = nil, legend: [String: String] = [:], section: String? = nil) {
+            self.playing = playing; self.inbox = inbox; self.textField = textField; self.legend = legend; self.section = section
         }
     }
 
@@ -191,7 +195,9 @@ public struct OrbitalRemote: Sendable {
         var playing: NowPlaying?
         if let raw = json?["playing"], !raw.isNull { playing = NowPlaying.parse(raw) }
         return Snapshot(playing: playing, inbox: (json?["inbox"]?.array ?? []).compactMap(InboxItem.parse),
-                        textField: json?["ui"]?["text_field"]?.bool)
+                        textField: json?["ui"]?["text_field"]?.bool,
+                        legend: (json?["ui"]?["legend"]?.object ?? [:]).compactMapValues { $0.nonEmptyString },
+                        section: json?["ui"]?["section"]?.nonEmptyString)
     }
 
     /// Qué se ve ahora en la TV (para la tarjeta del iPhone). nil si no hay nada abierto.
@@ -205,9 +211,26 @@ public struct OrbitalRemote: Sendable {
         _ = try await send("api/companion/inbox/ack", method: "POST", body: JSON.object(["ids": .array(ids.map { .string($0) })]).serialized())
     }
 
+    /// Lo que contestó tu Orbital a una orden de voz: si la hizo y qué decir en voz alta («Poniendo The Office…»).
+    public struct VoiceReply: Sendable, Equatable {
+        public var ok: Bool
+        public var speech: String
+        public init(ok: Bool, speech: String) { self.ok = ok; self.speech = speech }
+    }
+
+    /// Una orden en texto libre, como a Alexa («pon The Office temporada 2», «pausa», «abre Zelda»): la consola la entiende
+    /// con la misma lógica (`voice.py`). Sirve para Siri y para el micrófono de la app.
+    public func voice(_ text: String) async throws -> VoiceReply {
+        let trimmed = String(text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(500))
+        let json = try await send("api/voice", method: "POST", body: JSON.object(["text": .string(trimmed), "source": "iphone"]).serialized(), timeout: 20)   // no cuenta como «Alexa se usó»
+        return VoiceReply(ok: json?["ok"]?.bool ?? true, speech: json?["speech"]?.string ?? "")
+    }
+
     /// Las acciones del mando de la TV (como `input.js`): el control completo del iPhone las manda como si fueran del mando.
     public enum InputAction: String, Sendable, CaseIterable {
         case up, down, left, right, select, back, home, menu, search, options, pageleft, pageright
+        /// X del mando; LB y RB (cambiar de sección); F5 (recargar).
+        case alt, prevsection, nextsection, refresh
     }
 
     /// Una tecla del mando, a la interfaz de la TV.

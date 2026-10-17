@@ -123,4 +123,20 @@ final class OrbitalRemoteTests: XCTestCase {
         try await remote.ack(ids: [])  // nada que avisar: ni una petición
         XCTAssertEqual(http.bodies(for: "https://tv.example/api/companion/inbox/ack").count, 1)
     }
+
+    /// La pantalla de la TV ahora (para rotular el control) y las órdenes de voz, como a Alexa.
+    func testTheTVsLegendAndVoiceCommands() async throws {
+        let http = FakeHTTP()
+        http.json["https://tv.example/api/companion/now"] = .object(["playing": .null, "ui": ["screen": "games", "text_field": false, "section": "Juegos",
+                                                                                          "legend": ["back": "Inicio", "page": "Otra consola", "menu": "Menú"]]])
+        http.json["https://tv.example/api/voice"] = ["ok": true, "speech": "Poniendo The Office."]
+        let remote = OrbitalRemote(http: http, address: "tv.example", token: "x")
+        let snapshot = try await remote.snapshot()
+        XCTAssertEqual(snapshot.section, "Juegos")
+        XCTAssertEqual(snapshot.legend["page"], "Otra consola")
+        XCTAssertEqual(snapshot.textField, false)
+        let reply = try await remote.voice("pon The Office")
+        XCTAssertEqual(reply, OrbitalRemote.VoiceReply(ok: true, speech: "Poniendo The Office."))
+        XCTAssertEqual(http.bodies(for: "https://tv.example/api/voice").first.flatMap { JSON.parse($0)?["text"]?.string }, "pon The Office")
+    }
 }

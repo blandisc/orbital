@@ -11,13 +11,17 @@ struct RemoteSheet: View {
     let onContinueHere: (OrbitalRemote.NowPlaying) -> Void
     @State private var compactHeight: CGFloat = DS.Remote.padHeight
     @State private var text = ""
+    @StateObject private var speech = SpeechInput()
+    @State private var reply: OrbitalRemote.VoiceReply?
+    @EnvironmentObject private var env: AppEnvironment
 
     var body: some View {
         let model = tvNow.model
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s5) {
                 header(model)
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { compactHeight = $0 + DS.Space.s6 + DS.Space.s10 }
+                    // El alto de la hoja corta: el de la tarjeta completa (estirada se vuelve compacta y no cuenta).
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if !large { compactHeight = $0 + DS.Space.s6 + DS.Space.s10 } }
                 if large { full(model).transition(.opacity.combined(with: .move(edge: .bottom))) }
                 else {
                     Label("Estira hacia arriba para el control completo", systemImage: "chevron.compact.up")
@@ -36,9 +40,36 @@ struct RemoteSheet: View {
         .animation(DS.Motion.base(false), value: large)
     }
 
+    /// Una tecla del mando: su nombre es el de la leyenda de la TV para esa tecla si la consola la manda (lo que dice el pie de
+    /// la pantalla); si no, el de siempre. Que no salga en el pie no quiere decir que no haga nada (en Inicio A, X y Y están en
+    /// los botones del destacado), así que nunca se atenúa.
+    private func key(_ model: TVNowModel, _ symbol: String, _ glyph: String?, _ legendKey: String?, _ fallback: Text,
+                     _ action: OrbitalRemote.InputAction) -> some View {
+        let named = legendKey.flatMap { model.legend[$0] }
+        return RemoteKey(symbol: symbol, title: named.map { Text(verbatim: $0) } ?? fallback, glyph: glyph) {
+            Task { await model.press(action) }
+        }
+        .accessibilityIdentifier("remote-\(action.rawValue)")   // fijo aunque el nombre cambie con la leyenda
+    }
+
     /// Lo que se ve en la TV (el control de siempre) o, si nada se reproduce, solo el nombre de tu Orbital.
     @ViewBuilder private func header(_ model: TVNowModel) -> some View {
-        if let now = model.now {
+        if large, let now = model.now {
+            // Estirada: lo que se ve en la TV en un renglón (póster, nombre y pausa); el resto del alto es para el control.
+            HStack(spacing: DS.Space.s3) {
+                PosterView(url: now.poster, title: now.title, aspect: DS.Poster.aspect).frame(width: DS.Size.thumbSmall)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(now.live ? (now.channel ?? now.title) : now.title).recipe(.cardTitle).lineLimit(1)
+                    Text(now.live ? "En la TV · En vivo" : "En la TV").recipe(.footnote, color: now.live ? DS.live : DS.textMuted).lineLimit(1)
+                }
+                Spacer(minLength: DS.Space.s2)
+                if !now.live {
+                    DSIconButton(symbol: now.paused ? "play.fill" : "pause.fill", label: now.paused ? "Reanudar" : "Pausa", prominent: true) {
+                        Task { await model.control("toggle") }
+                    }
+                }
+            }
+        } else if let now = model.now {
             NowPlayingCard(now: now, fetchedAt: model.fetchedAt, busy: model.busy,
                            onAction: { action, delta in Task { await model.control(action, delta: delta) } },
                            onContinueHere: { onContinueHere(now) }, framed: false)
@@ -51,14 +82,42 @@ struct RemoteSheet: View {
     @ViewBuilder private func full(_ model: TVNowModel) -> some View {
         VStack(spacing: DS.Space.s4) {
             if model.remoteOutdated { DSNotice(text: "Actualiza tu Orbital para usar el control completo.", tone: .warn) }
+            // La voz, como Alexa: lo mismo que «Oye Siri, dile a Orbital…».
+            VoiceCommandBar(listening: speech.listening, transcript: speech.transcript, reply: reply, denied: speech.denied) {
+                if speech.listening { speech.finish(); return }
+                let language = env.services.appSettings.uiLanguage
+                Task {
+                    await speech.start(language: language) { said in
+                        Task {
+                            let answer = await model.say(said)
+                            reply = answer
+                            speech.speak(answer.speech, language: language)
+                        }
+                    }
+                }
+            }
+            // Como el mando: arriba los gatillos de sección (LB / RB), al centro el pad (A al tocar), luego B · X · Y y abajo
+            // LT / RT, Inicio, ☰ y ⧉. Cada tecla dice lo que hace en la pantalla de la TV (su leyenda), si la consola lo dice.
+            HStack(spacing: DS.Space.s2) {
+                key(model, "chevron.left.2", "LB", nil, Text("Anterior"), .prevsection)
+                if let section = model.section {
+                    Text(verbatim: section).recipe(.caption, color: DS.textMuted).lineLimit(1).fixedSize()
+                }
+                key(model, "chevron.right.2", "RB", nil, Text("Siguiente"), .nextsection)
+            }
             TouchPad { action in Task { await model.press(action) } }
                 .containerRelativeFrame(.vertical) { length, _ in max(DS.Remote.padHeight, length * DS.Remote.padShare) }
             HStack(spacing: DS.Space.s2) {
-                RemoteKey(symbol: "chevron.backward", title: "Atrás") { Task { await model.press(.back) } }
-                RemoteKey(symbol: "house", title: "Inicio") { Task { await model.press(.home) } }
-                RemoteKey(symbol: "line.3.horizontal", title: "Menú") { Task { await model.press(.menu) } }
-                RemoteKey(symbol: "magnifyingglass", title: "Buscar") { Task { await model.press(.search) } }
-                RemoteKey(symbol: "ellipsis", title: "Opciones") { Task { await model.press(.options) } }
+                key(model, "chevron.backward", "B", "back", Text("Atrás"), .back)
+                key(model, "square.on.square", "X", "alt", Text("Acción X"), .alt)
+                key(model, "ellipsis", "Y", "options", Text("Opciones"), .options)
+            }
+            HStack(spacing: DS.Space.s2) {
+                key(model, "backward.end", "LT", "page", Text("−5"), .pageleft)
+                key(model, "house", nil, nil, Text("Inicio"), .home)
+                key(model, "line.3.horizontal", "☰", "menu", Text("Menú"), .menu)
+                key(model, "magnifyingglass", "⧉", "search", Text("Buscar"), .search)
+                key(model, "forward.end", "RT", "page", Text("+5"), .pageright)
             }
             // Siempre: si la TV no tiene un campo abierto, escribir abre su búsqueda con ese texto.
             RemoteTextField(text: $text) { let typed = text; Task { await model.type(typed, submit: true) } }

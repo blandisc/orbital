@@ -9,8 +9,13 @@ final class RemoteUITests: XCTestCase {
         let pad = app.descendants(matching: .any)["Pad de la TV"]
         XCTAssertTrue(pad.waitForExistence(timeout: 20), "estirada, la hoja trae el pad")
         pad.swipeRight(); pad.swipeDown(); pad.tap()          // flechas y A: la demo las acepta sin error
-        for key in ["Atrás", "Inicio", "Menú", "Buscar", "Opciones"] { XCTAssertTrue(app.buttons[key].exists, "la tecla \(key)") }
-        app.buttons["Atrás"].tap()
+        // Todos los botones del mando (los mismos de `input.js`): LB/RB, B, X, Y, LT/RT, Inicio, ☰ y ⧉; A es tocar el pad.
+        for action in ["prevsection", "nextsection", "back", "alt", "options", "pageleft", "pageright", "home", "menu", "search"] {
+            XCTAssertTrue(app.buttons["remote-\(action)"].exists, "la tecla de \(action)")
+        }
+        app.buttons["remote-back"].tap()
+        XCTAssertTrue(app.buttons["remote-alt"].label.contains("Mi lista"), "rotulada con la leyenda de la TV")
+        XCTAssertTrue(app.buttons["Dile a Orbital"].exists, "y el micrófono")
         XCTAssertFalse(app.staticTexts["Actualiza tu Orbital para usar el control completo."].exists, "la consola (demo) sí tiene el control completo")
         XCTAssertTrue(app.textFields["Escribir en la TV"].exists, "y se puede escribir en la TV")
     }

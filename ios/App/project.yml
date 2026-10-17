@@ -67,6 +67,9 @@ targets:
         BGTaskSchedulerPermittedIdentifiers: [mx.iracheta.orbital.inbox]
         ITSAppUsesNonExemptEncryption: false
         NSSupportsLiveActivities: true          # descargas en la pantalla bloqueada y la Dynamic Island
+        # El micrófono del control: le das órdenes a tu Orbital con la voz (como Alexa).
+        NSMicrophoneUsageDescription: "Para darle órdenes de voz a tu Orbital, como a Alexa."
+        NSSpeechRecognitionUsageDescription: "Para entender lo que le pides a tu Orbital."
         # Para volver desde Infuse: orbital-ios://infuse-done?lastPlayedUrl=…&position=…
         CFBundleURLTypes:
           - CFBundleURLName: com.example.orbital.ios.infuse-callback
