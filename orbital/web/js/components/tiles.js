@@ -112,16 +112,13 @@ export function shortDetail(item, now = Date.now()) {
   return ago ? (ago === "ahora" || ago === "ayer" ? ago : `hace ${ago}`) : null;
 }
 
-/** Lo que enseña la tarjeta crecida (Inicio: la enfocada ocupa dos lugares): año y géneros, y de qué trata. */
+/** Lo que enseña la tarjeta crecida (Inicio: la enfocada ocupa dos lugares): año, géneros y jugadores. Sin la
+ * descripción: en ese espacio se veía cortada (la ficha la tiene completa). */
 function rowMore(item) {
   const extra = item.extra || {};
   const facts = [extra.year, ...(Array.isArray(extra.genres) ? extra.genres.slice(0, 2) : []), extra.players && `${extra.players} jugadores`]
     .filter(Boolean).join(" · ");
-  const about = [extra.episode_title && `«${extra.episode_title}»`, extra.description].filter(Boolean).join(" ");
-  if (!facts && !about) return null;
-  return h("span", { class: "tile--row__more" },
-    facts && h("span", { class: "tile--row__facts" }, facts),
-    about && h("span", { class: "tile--row__about" }, about));
+  return facts ? h("span", { class: "tile--row__more" }, h("span", { class: "tile--row__facts" }, facts)) : null;
 }
 
 /**

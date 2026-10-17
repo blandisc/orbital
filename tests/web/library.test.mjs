@@ -159,3 +159,9 @@ test("Por género: tarjetas con arte que llevan a su estante, y el destacado no 
   assert.deepEqual(spot.items.map((i) => [i.title, i.image]), [["A", "h1"], ["B", "h2"]]);
   assert.equal(spot.spotlight, true);
 });
+
+test("un juego de Steam sin instalar dice «Instalar»", async () => {
+  const { primaryLabel } = await import("../../orbital/web/js/core/library.js");
+  assert.equal(primaryLabel({ id: "steam:620", category: "steam", source: "steam", extra: { installed: false } }), "Instalar");
+  assert.equal(primaryLabel({ id: "steam:367520", category: "steam", source: "steam", extra: {} }), "Jugar");
+});

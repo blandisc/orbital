@@ -92,11 +92,9 @@
 .tile--row__detail { display: flex; align-items: center; gap: var(--space-2); min-width: 0; color: var(--color-text-muted); font-size: var(--type-secondary); white-space: nowrap; }
 .tile--row__detail svg { width: 1.1rem; height: 1.1rem; flex: none; fill: none; stroke: var(--platform-ink, currentColor); stroke-width: 2.6; stroke-linejoin: round; }
 .tile--row__detail-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
-/* Lo de más (solo en la tarjeta crecida del Inicio, home.css): año y géneros, y de qué trata en dos renglones. */
+/* Lo de más (solo en la tarjeta crecida del Inicio, home.css): año, géneros y jugadores en un renglón. */
 .tile--row__more { display: none; flex-direction: column; gap: var(--space-1); min-width: 0; margin-top: var(--space-1); }
 .tile--row__facts { color: var(--color-text-muted); font-size: var(--text-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tile--row__about { color: var(--color-text); opacity: .82; font-size: var(--text-sm); line-height: 1.4;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .tile--row__progress { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised); --progress-width: auto; box-shadow: var(--shadow-badge); }
 
 /* Captura chica de un juego retro: nítida, como en la consola (no un borrón estirado). */

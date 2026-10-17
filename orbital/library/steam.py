@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import subprocess
 import sys
 import time
@@ -137,6 +138,36 @@ def scan(steam_root: Path) -> list[LibraryItem]:
                 },
             )
     return sorted(items.values(), key=lambda i: i.title.lower())
+
+
+def owned_appids(steam_root: Path) -> set[str]:
+    """Los juegos de tu cuenta, instalados o no. Sin cuenta ni clave: Steam guarda el arte de toda tu biblioteca en
+    appcache/librarycache (un archivo o carpeta por juego, con su número) y lo que has abierto en localconfig.vdf.
+    Puede traer algo que no es juego (una banda sonora, un DLC): la tienda dice qué es cada uno (steam_store)."""
+    found: set[str] = set()
+    cache = steam_root / "appcache" / "librarycache"
+    try:
+        found |= {m.group(0) for p in cache.iterdir() if (m := re.match(r"\d+", p.name))}
+    except OSError:
+        pass
+    found |= {a for a in user_stats(steam_root) if a.isdigit()}
+    return {a for a in found if a not in _NOT_GAME_IDS}
+
+
+def uninstalled_item(appid: str, title: str) -> LibraryItem:
+    """Un juego de tu cuenta que no está instalado: «Instalar» abre la instalación de Steam."""
+    return LibraryItem(
+        id=f"steam:{appid}",
+        title=title,
+        category="steam",
+        source="steam",
+        subtitle="Steam · Sin instalar",
+        image=CDN.format(appid=appid, name="library_600x900"),
+        hero=CDN.format(appid=appid, name="library_hero"),
+        steam_appid=int(appid),
+        uri=f"steam://install/{appid}",
+        extra={"logo": LOGO.format(appid=appid), "installed": False},
+    )
 
 
 def local_art_path(steam_root: Path, appid: str, name: str = "library_600x900") -> Path | None:

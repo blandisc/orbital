@@ -150,6 +150,8 @@ class Catalog:
         self._steam_art = geforcenow.SteamArt(cache / "steam-appids.json" if cache else None)
         # De qué trata cada juego de Steam y GeForce NOW (la tienda de Steam, en español; ver steam_store.py).
         self.steam_store = steam_store.SteamStore(cache / "steam-store.json" if cache else None)
+        self._steam_owned: list[str] = []  # los juegos de tu cuenta de Steam que no están instalados (números)
+        self._cache = cache
         # La biblioteca del último escaneo: la interfaz la muestra al instante mientras se escanea.
         self._snapshot = cache / "library.json" if cache else None
         self.media = MediaStore(Path(expand(config.art.dir)) if config.art.dir else None)
@@ -274,7 +276,10 @@ class Catalog:
             self.steam_root = steam.find_steam(self.config.steam.path)
             if self.steam_root:
                 try:
-                    found += steam.scan(self.steam_root)
+                    installed = steam.scan(self.steam_root)
+                    found += installed
+                    have = {i.id.removeprefix("steam:") for i in installed}
+                    self._steam_owned = sorted(steam.owned_appids(self.steam_root) - have)
                 except Exception:  # noqa: BLE001 - un archivo de Steam roto no tumba el escaneo
                     log.exception("No pude leer la biblioteca de Steam")
                 if self.config.steam.silent_start and self.config.source:  # no en pruebas
@@ -321,9 +326,21 @@ class Catalog:
         if self.config.stremio.enabled:
             found += stremio.items(self.config.stremio)
         gfn_app = geforcenow.app_item()
+        cloud: dict[str, dict] = {}
         if gfn_app:
             found.append(gfn_app)
-            found += geforcenow.items(self._steam_art)
+            # Los de tu cuenta de Steam sin instalar que se pueden jugar en la nube: como juegos de GeForce NOW.
+            if self._steam_owned and self.config.source:  # no en pruebas: la lista pública sale a internet
+                try:
+                    public = geforcenow.cloud_by_steam(self._cache / "gfn-public.json" if self._cache else None)
+                    cloud = {a: public[a] for a in self._steam_owned if a in public}
+                except Exception:  # noqa: BLE001 - la lista de NVIDIA nunca tumba el escaneo
+                    log.exception("No pude leer la lista pública de GeForce NOW")
+            found += geforcenow.items(self._steam_art, list(cloud.items()))
+        # El resto de tu cuenta de Steam sin instalar (los que la tienda dice que son juegos): con «Instalar».
+        for appid in self._steam_owned:
+            if appid not in cloud and (name := self.steam_store.game_name(appid)):
+                found.append(steam.uninstalled_item(appid, name))
         for app in self.config.apps:
             is_uri = "://" in app.target
             found.append(
@@ -608,9 +625,13 @@ class Catalog:
         pone en la biblioteca sin reescanearla."""
         games = [i for i in self.store.all() if i.source in self.STORE_SOURCES and i.steam_appid]
         games.sort(key=lambda i: self.last_played(i) or 0, reverse=True)
-        if not self.steam_store.warm([i.steam_appid for i in games if i.steam_appid], stop=stop):
+        unknown = [int(a) for a in self._steam_owned if not self.steam_store.known(a)]  # para saber nombre y si es juego
+        if not self.steam_store.warm([i.steam_appid for i in games if i.steam_appid] + unknown, limit=400, stop=stop):
             return
-        self.store.update(self._store_facts, where=lambda i: i.source in self.STORE_SOURCES)
+        if any(self.steam_store.known(a) for a in unknown):
+            self.refresh()  # llegaron nombres de juegos sin instalar: entran a la biblioteca
+        else:
+            self.store.update(self._store_facts, where=lambda i: i.source in self.STORE_SOURCES)
         self.notify({"type": "library-changed"})
 
     def refresh_steam_stats(self) -> None:

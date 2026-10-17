@@ -95,6 +95,7 @@ export const primaryLabel = (item, runningId = null) => {
   if (item?.source === "search") return "Buscar";
   if (item?.source === "genre") return "Ver títulos"; // Por género: lleva a su estante
   if (item?.category === "apps" || item?.category === "media") return "Abrir"; // YouTube, Stremio: no se «juegan»
+  if (item?.extra?.installed === false) return "Instalar"; // de tu cuenta de Steam, sin instalar: abre su instalación
   if (isSeries(item)) return item.progress > 0 ? "Continuar" : "Ver la serie";
   return isWatchable(item) ? (item.progress > 0 ? "Continuar" : "Ver") : "Jugar";
 };

@@ -37,6 +37,54 @@ STEAM_SEARCH = "https://store.steampowered.com/api/storesearch/?term={term}&l=en
 STEAM_ART = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{name}"
 
 
+PUBLIC_LIST = "https://static.nvidiagrid.net/supported-public-game-list/locales/gfnpc-en-US.json"
+PUBLIC_REFRESH = 24 * 3600
+
+
+def fetch_public() -> list | None:
+    """La lista pública de NVIDIA con todo lo que se puede jugar en GeForce NOW (sin cuenta). None si no se pudo."""
+    try:
+        req = urllib.request.Request(PUBLIC_LIST, headers={"User-Agent": "Mozilla/5.0 Orbital"})
+        with urllib.request.urlopen(req, timeout=20) as res:
+            data = read_json(res, timeout=20, limit=8 * 1024 * 1024)
+    except NET_ERRORS:
+        return None
+    return data if isinstance(data, list) else None
+
+
+def cloud_by_steam(path: Path | None, now: float | None = None) -> dict[str, dict]:
+    """{número de Steam: {"cms_id", "title"}} de los juegos de Steam que se pueden jugar en GeForce NOW. Se baja una
+    vez al día y se guarda; sin red, la copia guardada."""
+    now = now if now is not None else time.time()
+    games = None
+    if path is not None and path.exists() and now - path.stat().st_mtime < PUBLIC_REFRESH:
+        games = _read_json(path)
+    if games is None:
+        games = fetch_public()
+        if games is not None and path is not None:
+            try:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(games), encoding="utf-8")
+            except OSError as exc:
+                log.info("No pude guardar la lista de GeForce NOW: %s", exc)
+        elif path is not None and path.exists():
+            games = _read_json(path)
+    out: dict[str, dict] = {}
+    for game in games or []:
+        if not isinstance(game, dict) or game.get("status") != "AVAILABLE" or not game.get("id"):
+            continue
+        if (m := re.search(r"/app/(\d+)", str(game.get("steamUrl") or ""))):
+            out[m.group(1)] = {"cms_id": str(game["id"]), "title": clean_title(str(game.get("title") or ""))}
+    return out
+
+
+def _read_json(path: Path):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
 def install_dir() -> Path | None:
     if sys.platform != "win32":
         return None
@@ -239,7 +287,9 @@ class SteamArt:
             log.info("No pude guardar la caché de portadas: %s", exc)
 
 
-def items(art: SteamArt | None = None) -> list[LibraryItem]:
+def items(art: SteamArt | None = None, cloud: list[tuple[str, dict]] | None = None) -> list[LibraryItem]:
+    """Tus juegos de GeForce NOW: tus accesos directos, tu «Mi biblioteca» (los 40 jugados más recientes que guarda la
+    app) y `cloud`: los juegos de tu cuenta de Steam que se pueden jugar en la nube ([(número de Steam, juego)])."""
     art = art or SteamArt()
     found: dict[str, LibraryItem] = {}
     for sc in read_shortcuts():
@@ -255,13 +305,22 @@ def items(art: SteamArt | None = None) -> list[LibraryItem]:
             if game["cms_id"] not in found:
                 found[game["cms_id"]] = _item(art, game["cms_id"], game["title"],
                                               library_argv(str(folder / STREAMER_EXE), game), game)
+        titles = {i.title.lower() for i in found.values()}
+        appids = {i.steam_appid for i in found.values() if i.steam_appid}
+        for appid, game in cloud or []:
+            if game["cms_id"] in found or int(appid) in appids or game["title"].lower() in titles:
+                continue  # ya estaba en tu biblioteca de GeForce NOW
+            found[game["cms_id"]] = _item(art, game["cms_id"], game["title"],
+                                          library_argv(str(folder / STREAMER_EXE), {**game, "short_name": ""}),
+                                          {"store": "Steam"}, appid=int(appid))
     if hasattr(art, "save"):
         art.save()
     return sorted(found.values(), key=lambda i: i.title.lower())
 
 
-def _item(art: SteamArt, cms_id: str, title: str, argv: list[str], game: dict | None = None) -> LibraryItem:
-    appid = art.appid(title)
+def _item(art: SteamArt, cms_id: str, title: str, argv: list[str], game: dict | None = None,
+          appid: int | None = None) -> LibraryItem:
+    appid = appid or art.appid(title)
     game = game or {}
     store = game.get("store")
     return LibraryItem(

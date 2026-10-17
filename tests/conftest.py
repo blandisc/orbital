@@ -286,3 +286,11 @@ def _no_real_steam_store(monkeypatch):
     from orbital.library import steam_store
 
     monkeypatch.setattr(steam_store, "fetch", lambda appid, timeout=10: None)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_gfn_list(monkeypatch):
+    """Ninguna prueba baja la lista pública de GeForce NOW."""
+    from orbital.library import geforcenow
+
+    monkeypatch.setattr(geforcenow, "fetch_public", lambda: None)

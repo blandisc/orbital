@@ -53,7 +53,10 @@ def fetch(appid: int, timeout: float = 10) -> dict | None:
         return None  # 429: demasiadas consultas; se reintenta en la siguiente vuelta
     entry = data.get(str(appid))
     body = entry.get("data") if isinstance(entry, dict) and entry.get("success") else None
-    return parse(body) if isinstance(body, dict) else {}
+    if not isinstance(body, dict):
+        return {}
+    # El nombre y qué es (juego, DLC, música…): para los juegos de tu cuenta que no están instalados.
+    return {**parse(body), "_name": str(body.get("name") or ""), "_type": str(body.get("type") or "")}
 
 
 class SteamStore:
@@ -75,7 +78,15 @@ class SteamStore:
     def cached(self, appid: int | None) -> dict:
         """Lo que se sabe de ese juego ({} si nada todavía)."""
         entry = self._data.get(str(appid)) if appid else None
-        return dict(entry.get("info") or {}) if entry else {}
+        return {k: v for k, v in (entry.get("info") or {}).items() if not k.startswith("_")} if entry else {}
+
+    def game_name(self, appid: int | str) -> str | None:
+        """El nombre en la tienda si es un juego; None si no se sabe todavía o no es juego (DLC, banda sonora…)."""
+        info = (self._data.get(str(appid)) or {}).get("info") or {}
+        return info.get("_name") or None if info.get("_type") == "game" else None
+
+    def known(self, appid: int | str) -> bool:
+        return str(appid) in self._data
 
     def _stale(self, appid: int) -> bool:
         entry = self._data.get(str(appid))
