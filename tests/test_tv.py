@@ -512,3 +512,13 @@ def test_un_canal_que_ocupa_demasiada_memoria_se_abre_en_un_mpv_nuevo(live, libr
     library.before_launch = None
     service.reopen({"channel_id": "Cine.mx@SD", "title": "Cine", "list": "todos"})
     assert fake.tuned == [] and len(fake.played) == 1
+
+
+def test_tus_canales_son_los_ultimos_que_diste_imagen_y_se_guardan(tmp_path):
+    live = make_tv(directory=tmp_path)
+    live.opened({"channel_id": "Cine.mx@SD"})
+    live.opened({"channel_id": "Azteca7.mx@SD"})
+    live.opened({"channel_id": "Cine.mx@SD"})  # otra vez: sube, no se repite
+    assert live.overview()["recent"] == ["Cine.mx@SD", "Azteca7.mx@SD"]
+    again = make_tv(directory=tmp_path)  # se recuerdan al reabrir Orbital
+    assert again.overview()["recent"] == ["Cine.mx@SD", "Azteca7.mx@SD"]

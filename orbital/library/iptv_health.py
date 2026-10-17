@@ -144,6 +144,9 @@ def check_channel(channel: Channel, fetch_fn: Fetch = fetch) -> Check:
         return done(False, exc.reason)
 
 
+RECENT_KEEP = 12  # cuántos canales recientes se recuerdan
+
+
 class HealthStore:
     """Qué se sabe de cada canal (en disco, junto al resto de cachés) y el número fijo de cada uno.
 
@@ -157,6 +160,7 @@ class HealthStore:
         self._lock = threading.Lock()
         self._records: dict[str, dict] = {}
         self._numbers: dict[str, int] = {}
+        self._recent: list[str] = []  # los últimos canales que viste (TV en vivo · «Tus canales»), el más reciente primero
         self._load()
 
     # --- disco ------------------------------------------------------------------------------
@@ -181,12 +185,14 @@ class HealthStore:
         for key, number in (numbers.items() if isinstance(numbers, dict) else ()):
             if isinstance(number, int) and not isinstance(number, bool) and number > 0:
                 self._numbers[str(key)] = number
+        recent = data.get("recent")
+        self._recent = [str(c) for c in recent if isinstance(c, str)][:RECENT_KEEP] if isinstance(recent, list) else []
 
     def save(self) -> None:
         if self.path is None:
             return
         with self._lock:
-            payload = {"channels": self._records, "numbers": self._numbers}
+            payload = {"channels": self._records, "numbers": self._numbers, "recent": self._recent}
             try:
                 self.path.parent.mkdir(parents=True, exist_ok=True)
                 tmp = self.path.with_suffix(".tmp")
@@ -194,6 +200,16 @@ class HealthStore:
                 tmp.replace(self.path)
             except OSError as exc:
                 log.warning("No pude guardar la salud de los canales: %s", exc)
+
+    # --- los que viste ----------------------------------------------------------------------
+    def watched(self, channel_id: str) -> None:
+        """Ese canal dio imagen: va primero en «Tus canales»."""
+        with self._lock:
+            self._recent = [channel_id, *(c for c in self._recent if c != channel_id)][:RECENT_KEEP]
+
+    def recent(self) -> list[str]:
+        with self._lock:
+            return list(self._recent)
 
     # --- consultas --------------------------------------------------------------------------
     def hidden(self, channel_id: str) -> bool:

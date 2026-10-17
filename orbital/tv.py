@@ -128,6 +128,8 @@ class LiveTV:
         shown = sorted(visible, key=lambda c: self.store.verified(c.id) is False)
         return {"categories": categories, "channels": [self.describe(c, mapped[c.id]) for c in shown],
                 "checking": self.checking, "offline": self.offline, "updated": self.updated, "playing": self.playing(),
+                # «Tus canales»: los últimos que viste (solo los que siguen en la lista).
+                "recent": [cid for cid in self.store.recent() if cid in {c.id for c in visible}],
                 "total": len(self._channels), "hidden": len(self._channels) - len(visible)}
 
     def zap_list(self, category: str | None) -> tuple[str, list[Channel]]:
@@ -294,6 +296,7 @@ class LiveTV:
         """El canal dio imagen: abrió de verdad (sus fallos seguidos se borran)."""
         meta.pop("retried", None)
         self.store.record(meta["channel_id"], True)
+        self.store.watched(meta["channel_id"])
         self.store.save()
 
     def failed(self, meta: dict, was_playing: bool) -> bool:
