@@ -16,7 +16,9 @@ test("el iPhone tiene la misma copia (corre node scripts/list_icons.mjs)", () =>
   assert.deepEqual(sets, [...LIST_ICONS].sort());
   for (const name of LIST_ICONS) {
     const dir = join(catalog, `${name}.imageset`);
-    assert.equal(readFileSync(join(dir, `${name}.svg`), "utf8"), iosSVG(name), `${name} distinto en el iPhone`);
-    assert.equal(readFileSync(join(dir, "Contents.json"), "utf8"), contents(name));
+    // Sin importar el fin de línea (en Windows git puede bajarlos con CRLF).
+    const read = (file) => readFileSync(join(dir, file), "utf8").replace(/\r\n/g, "\n");
+    assert.equal(read(`${name}.svg`), iosSVG(name), `${name} distinto en el iPhone`);
+    assert.equal(read("Contents.json"), contents(name));
   }
 });
