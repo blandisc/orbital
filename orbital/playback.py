@@ -201,6 +201,10 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
         f"--title={title}", f"--force-media-title={title}",
         f"--alang={','.join(build_lang_list(audio))}", *subtitle_options(subtitles, audio),
         "--sub-auto=fuzzy", *cache, "--hwdec=auto-safe",
+        # Sin el modo «flip» de Direct3D: con él, cada ventana de mpv dejaba ~140 MB en la memoria de dibujo de Windows
+        # (DWM) y cada cambio de video ~100 MB más, sin devolverlos nunca (controlador AMD, tele 4K: llegó a 14 GB y
+        # Windows se quedaba sin RAM). Medido en la tele: con flip, +578 MB en 4 ventanas; sin flip, 0 MB.
+        "--d3d11-flip=no",
         "--save-position-on-quit=no", "--volume=100", "--msg-level=all=warn", *mpv_background(mpv), *OSD_STYLE,  # el volumen es el de Windows
     ]
     if live:

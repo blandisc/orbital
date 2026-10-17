@@ -25,6 +25,7 @@ def test_command_full_screen_languages_and_resume():
     assert f"--input-ipc-server={player.PIPE}" in cmd and "--fullscreen" in cmd
     assert "--alang=en,eng,English" in cmd and "--slang=en,eng,English" in cmd
     assert "--start=2530" in cmd
+    assert "--d3d11-flip=no" in cmd  # con «flip», cada ventana de mpv dejaba memoria de DWM que Windows nunca devolvía
     assert not any(a.startswith("--start") for a in player.build_command("mpv.exe", RD_URL, "x", start=3))
 
 
