@@ -170,6 +170,8 @@
   --radius-inner-row: calc(var(--tile-radius) - var(--inset-row));
   --home-queue-width: 34rem; /* Inicio: la columna de «También tenías» */
   --key-height: 3.2rem;
+  --tv-rail-width: 15rem; /* TV en vivo: la lista de categorías */
+  --tv-preview-width: 30rem; /* TV en vivo: la miniatura en vivo del canal enfocado */
   --tile-channel-width: 14.5rem; /* un canal de TV en vivo: ancho mínimo; las columnas se reparten el resto */
   --focus-outline: 3px; /* contorno de :focus-visible (teclado y ratón) */
   --inverse-scale: 1.06; /* teclas, chips y opciones enfocadas crecen un poco */

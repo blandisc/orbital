@@ -109,7 +109,7 @@ export function tvHints(glyphs, target, { empty = false, categories = 1, atStart
   if (!empty && categories > 1 && glyphs.page) list.push({ glyph: glyphs.page, label: "Categoría" });
   list.push({ glyph: glyphs.alt, label: "Actualizar", secondary: true });
   if (glyphs.search) list.push({ glyph: glyphs.search, label: "Buscar", secondary: true });
-  list.push({ glyph: glyphs.back, label: atStart ? "Inicio" : "Al principio", secondary: true });
+  list.push({ glyph: glyphs.back, label: atStart ? "Inicio" : "Categorías", secondary: true }); // de los canales, B vuelve a la lista de categorías
   // Con un canal al aire, recuerda cómo volver a él (Home solo existe en el mando).
   if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${running.title}` });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });

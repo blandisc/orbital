@@ -450,7 +450,11 @@ function tvFocused() {
 /** A: sintoniza el canal enfocado, o aplica la categoría de la píldora enfocada. */
 function tvActivate(target) {
   if (!target) return;
-  if (target.kind === "filter") { sound.play("select"); return ui.tv.setCategory(target.value); }
+  if (target.kind === "filter") { // una categoría: ↑↓ ya la eligen; A pasa a sus canales
+    sound.play("select");
+    if (!ui.tv.setCategory(target.value)) ui.tv.handle("right");
+    return renderHints();
+  }
   ui.tv.remember(target.channel);
   if (target.channel.id === ui.tv.playing) return resumeRunning(); // ya está al aire: se vuelve a él (no se sintoniza otra vez)
   return playChannel(target.channel, ui.tv.category);

@@ -1,36 +1,51 @@
-/* TV en vivo (js/components/tv.js), en estantes como Películas y series: arriba el canal al aire o el último que viste,
-   en grande; abajo «Tus canales» y un estante por categoría. La base de cada casilla es .tile (ui.css).
+/* TV en vivo (js/components/tv.js): a la izquierda las categorías, siempre a la vista; a la derecha, arriba, el canal
+   enfocado en vivo (miniatura sin sonido) y abajo los canales de la categoría. La base de cada casilla es .tile (ui.css).
    El fondo es el espacio vivo del Inicio: aquí no hay arte que enseñar, los logos están en cada canal. */
 body[data-view="tv"] .hero, body[data-view="tv"] .shelf { display: none; }
 body[data-view="tv"] .backdrop__layer, body[data-view="tv"] .backdrop__scrim { opacity: 0; }
 body[data-view="tv"] .backdrop { transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--color-backdrop-deep); }
 body[data-view="tv"] .backdrop__space { opacity: 1; }
 
-.tv { grid-row: 2 / 4; position: relative; min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: var(--space-6); padding: var(--space-4) var(--page-gutter) var(--space-2); }
+.tv { grid-row: 2 / 4; position: relative; min-height: 0; min-width: 0; display: grid; grid-template-columns: var(--tv-rail-width) minmax(0, 1fr);
+  gap: var(--space-8); padding: var(--space-4) var(--page-gutter) var(--space-2); }
 
-/* El destacado: la casilla del canal en grande y, al lado, qué es y qué hace A. En los estantes se encoge para darles lugar. */
-.tv__hero { flex: none; display: grid; grid-template-columns: minmax(0, 26rem) minmax(0, 1fr); gap: var(--space-8); align-items: center;
-  transition: opacity var(--duration-base) var(--ease-out); }
-.tv__hero .tv__tile { width: 100%; }
-.tv__hero-text { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
-.tv__hero-eyebrow { color: var(--color-live); font-size: var(--type-eyebrow); font-weight: var(--weight-medium); }
-.tv__hero-title { margin: 0; font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display);
+/* Las categorías: una lista vertical con cuántos canales tiene cada una; la elegida, marcada aunque el foco esté en los canales. */
+.tv__cats { display: flex; flex-direction: column; gap: var(--space-1); min-height: 0; overflow: hidden; padding: var(--space-2); margin: calc(-1 * var(--space-2)); }
+.tv__cat { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg); color: var(--color-text-muted); font-size: var(--text-md); text-align: left;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }
+.tv__cat-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tv__cat-count { flex: none; color: var(--color-text-faint-strong); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+.tv__cat--on { background: var(--color-fill); color: var(--color-text); font-weight: var(--weight-medium); }
+.tv__cat.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); }
+.tv__cat.is-focused .tv__cat-count { color: inherit; opacity: .7; }
+
+.tv__main { display: flex; flex-direction: column; gap: var(--space-6); min-width: 0; min-height: 0; }
+/* Arriba: la miniatura en vivo (o el logo mientras conecta o si el canal no da vista previa) y qué canal es. */
+.tv__now { flex: none; display: grid; grid-template-columns: minmax(0, var(--tv-preview-width)) minmax(0, 1fr); gap: var(--space-8); align-items: center; }
+.tv__preview { position: relative; aspect-ratio: 16 / 9; border-radius: var(--tile-radius); overflow: hidden; background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-hairline-strong), var(--shadow-card); }
+.tv__preview-logo { position: absolute; inset: 0; display: grid; place-items: center; padding: var(--space-8); }
+.tv__preview-logo img { max-width: 70%; max-height: 70%; object-fit: contain; filter: var(--shadow-drop-sm); }
+.tv__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity var(--duration-slow) var(--ease-out); }
+.tv__preview--live .tv__video { opacity: 1; }
+.tv__preview-badge { position: absolute; left: var(--inset-poster); top: var(--inset-poster); padding: .15rem .6rem; border-radius: var(--radius-pill);
+  background: var(--color-badge-bg); box-shadow: var(--shadow-badge); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.tv__preview-badge:empty { display: none; }
+.tv__preview--live .tv__preview-badge::before { content: ""; display: inline-block; width: .5em; height: .5em; margin-right: .4em; border-radius: 50%; background: var(--color-danger); vertical-align: .1em; }
+.tv__now-text { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.tv__now-eyebrow { color: var(--color-live); font-size: var(--type-eyebrow); font-weight: var(--weight-medium); }
+.tv__now-title { margin: 0; font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display);
   line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .1em; }
-.tv__hero-meta { color: var(--color-text-muted); font-size: var(--text-md); }
-.tv__hero-hint { color: var(--color-text-faint-strong); font-size: var(--text-sm); }
-.tv--shelves .tv__hero { opacity: .55; }
+.tv__now-meta { color: var(--color-text-muted); font-size: var(--text-md); }
+.tv__now-hint { color: var(--color-text-faint-strong); font-size: var(--text-sm); }
 
-/* Los estantes: uno por fila, se recorren de lado; el actual sube a la vista y los demás se atenúan. */
-.tv__shelves { position: relative; flex: 1; min-height: 0; overflow: hidden; padding: var(--space-2); margin: calc(-1 * var(--space-2));
-  -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%);
-  mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%); }
-.tv__rows { display: flex; flex-direction: column; gap: var(--space-6); transition: transform var(--duration-slow) var(--ease-out); }
-.tv__row { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; overflow: visible; transition: opacity var(--duration-base) var(--ease-out); }
-.tv--shelves .tv__row:not(.tv__row--current) { opacity: .6; }
-.tv__row-head { margin: 0; display: flex; align-items: baseline; gap: var(--space-3); font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--weight-bold); }
-.tv__row-count { color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-regular); }
-.tv__track { display: flex; gap: var(--space-5); transition: transform var(--duration-slow) var(--ease-out); }
-.tv__track .tv__tile { flex: none; width: var(--tile-channel-width); }
+/* Abajo: los canales de la categoría, en cuadrícula; la ventana se desliza para dejar el enfocado a la vista. */
+.tv__viewport { flex: 1; min-height: 0; padding-bottom: 3.6rem;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 1.2rem, var(--mask-solid) calc(100% - 3rem), transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0, var(--mask-solid) 1.2rem, var(--mask-solid) calc(100% - 3rem), transparent 100%); }
+.tv__grid { position: relative; display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--tile-channel-width), 1fr));
+  gap: var(--space-5); transition: transform var(--duration-slow) var(--ease-out); }
 
 /* Tecleando un número (como el control del cable): las cifras en la esquina hasta que se sintoniza. */
 .tv__typed { position: absolute; top: var(--space-4); right: var(--page-gutter); z-index: var(--z-panel);
