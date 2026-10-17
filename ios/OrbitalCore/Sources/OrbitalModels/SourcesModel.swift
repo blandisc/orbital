@@ -23,6 +23,7 @@ public final class SourcesModel: ObservableModel {
     public private(set) var error: String? { didSet { changed() } }
     private var sources: [Source] = []
     private let services: Services
+    private var loadCount = 0
     private let kind: String, videoID: String, metaID: String
 
     public init(_ services: Services, kind: String, metaID: String, videoID: String) {
@@ -31,18 +32,27 @@ public final class SourcesModel: ObservableModel {
     }
 
     public func load(_ purpose: Purpose, onCellular: Bool = false) async {
+        // Al cambiar Ver ↔ Descargar, la lista vieja se quita: no se puede tocar una fuente de «Ver» para descargarla.
+        if purpose != self.purpose { sources = []; rows = []; error = nil }
         self.purpose = purpose
         isLoading = true
-        defer { isLoading = false }
+        // Solo la última carga apaga el indicador: la vieja que se cancela al cambiar de pestaña no lo quita a media espera.
+        loadCount += 1
+        let ticket = loadCount
+        defer { if ticket == loadCount { isLoading = false } }
         let settings = services.appSettings
         let prefs = services.titlePrefs.languages(for: metaID, settings: settings, onCellular: onCellular).prefs
-        do {
-            sources = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: purpose)
-            error = sources.isEmpty ? "No hay fuentes de Real-Debrid para este título." : nil
-        } catch { sources = []; self.error = "\(error)" }
+        let found: [Source]
+        do { found = try await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: purpose) }
+        catch where !Task.isCancelled { sources = []; rows = []; self.error = "\(error)"; return }
+        catch { return }
+        // Cancelada (cambiaste de pestaña antes de que llegara): no pisa la lista nueva.
+        guard !Task.isCancelled, purpose == self.purpose else { return }
+        sources = found
+        error = sources.isEmpty ? "No hay fuentes de Real-Debrid para este título." : nil
         let limit = Int64(settings.warnCellularOverGB * 1e9)
         rows = sources.enumerated().map { i, s in
-            let langs = s.languages.prefix(2).map { Streams.languageNames[$0] ?? $0 }.joined(separator: " + ")
+            let langs = s.languages.prefix(2).map { Streams.languageName($0, in: services.appSettings.uiLanguage) }.joined(separator: " + ")
             let headline = [s.resolution.isEmpty ? "SD" : s.resolution, langs, s.tags.first(where: { ["REMUX", "WEB-DL", "BluRay"].contains($0) }), s.tags.contains("x265") ? "x265" : nil]
                 .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
             return SourceRow(id: s.index, headline: headline, recommended: i == 0, cached: s.cached, sizeGB: s.size > 0 ? Double(s.size) / 1e9 : nil,

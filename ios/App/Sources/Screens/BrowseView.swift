@@ -13,7 +13,6 @@ struct BrowseView: View {
     @StateObject private var search: ModelObserver<SearchModel>
     @State private var query = ""
     /// El póster que ilustra cada género (el primero de su catálogo), según van llegando.
-    @State private var genreArt: [String: String] = [:]
 
     /// Cuántos de lo más popular van en la lista con puesto.
     private static let popularCount = 5
@@ -47,15 +46,16 @@ struct BrowseView: View {
             #endif
             await catalog.model.load()
         }
-        .task { await loadGenreArt() }
         .refreshable { await catalog.model.load() }
     }
 
     // MARK: resultados
     @ViewBuilder private var results: some View {
         let model = search.model
-        if let error = model.error { DSNotice(text: LocalizedStringKey(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
-        else if model.results.isEmpty && !model.isSearching { ContentUnavailableView.search(text: query) }
+        // «Sin resultados» solo cuando ya contestó la búsqueda de lo que está escrito (no durante la espera de la última letra).
+        let answered = !model.isSearching && model.searchedQuery == query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let error = model.error, answered { DSNotice(verbatim: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
+        else if model.results.isEmpty && answered { ContentUnavailableView.search(text: query) }
         LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
             ForEach(model.results) { r in
                 TitleLink(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster), width: DS.Poster.gridMinimum,
@@ -64,14 +64,14 @@ struct BrowseView: View {
             }
         }
         .padding(.horizontal, DS.Space.gutter)
-        .overlay { if model.isSearching && model.results.isEmpty { ProgressView() } }
+        .overlay { if !answered && model.results.isEmpty && model.error == nil { ProgressView() } }
     }
 
     // MARK: sin escribir
     @ViewBuilder private var suggestions: some View {
         let model = catalog.model
         if !search.model.recent.isEmpty { recent }
-        if let error = model.error { DSNotice(text: LocalizedStringKey(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
+        if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
         if !model.popular.isEmpty { popular(model) }
         else if model.isLoading { ProgressView().frame(maxWidth: .infinity) }
         explore
@@ -92,12 +92,13 @@ struct BrowseView: View {
     private func popular(_ model: CatalogModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             DSSectionHead(title: "Lo más popular hoy")
-            ForEach(Array(model.popular.prefix(Self.popularCount).enumerated()), id: \.element.id) { index, item in
+            let shown = Array(model.popular.prefix(Self.popularCount))
+            ForEach(Array(shown.enumerated()), id: \.element.id) { index, item in
                 NavigationLink(value: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)) {
                     RankedRow(rank: index + 1, title: item.title, poster: item.poster, detail: yearAndKind(year: item.year, kind: item.kind))
                 }
                 .buttonStyle(.plain)
-                if index < Self.popularCount - 1 { Divider().overlay(DS.hairline) }
+                if index < shown.count - 1 { Divider().overlay(DS.hairline) }
             }
         }
         .padding(.horizontal, DS.Space.gutter)
@@ -109,7 +110,7 @@ struct BrowseView: View {
             DSSectionHead(title: "Explora")
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
                 ForEach(CatalogModel.exploreGenres, id: \.self) { genre in
-                    NavigationLink(value: GenreRoute(genre: genre)) { ArtTile(title: Text(verbatim: genreName(genre)), art: genreArt[genre]) }
+                    NavigationLink(value: GenreRoute(genre: genre)) { ArtTile(title: Text(verbatim: genreName(genre)), asset: Self.genreAsset(genre)) }
                         .buttonStyle(.plain)
                 }
             }
@@ -119,19 +120,8 @@ struct BrowseView: View {
 
     private func genreName(_ genre: String) -> String { Vocabulary.genres([genre], language: env.services.appSettings.uiLanguage).first ?? genre }
 
-    /// El arte de cada género: el fondo de su primera película popular (todos a la vez; la fila de imágenes hace el resto).
-    private func loadGenreArt() async {
-        let cinemeta = env.services.cinemeta
-        await withTaskGroup(of: (String, String?).self) { group in
-            for genre in CatalogModel.exploreGenres {
-                group.addTask {
-                    let first = (try? await cinemeta.catalog("movie", genre: genre))?.first?["id"]?.string
-                    return (genre, first.map { String(format: ForYou.metahubBackground, $0) })
-                }
-            }
-            for await (genre, art) in group { if let art { genreArt[genre] = art } }
-        }
-    }
+    /// El arte fijo de cada género (`scripts/genre_art.py`, en el catálogo de la app): se ve al instante, sin red.
+    static func genreAsset(_ genre: String) -> String { "genre-" + genre.lowercased().filter { $0.isLetter || $0.isNumber } }
 }
 
 /// Un género de Explora: lo más popular de ese género, películas y series, en cuadrícula.
@@ -157,7 +147,8 @@ struct GenreView: View {
         .navigationTitle(Text(verbatim: Vocabulary.genres([genre], language: env.services.appSettings.uiLanguage).first ?? genre))
         .toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .task {
-            items = await model.genre(genre)
+            // Primero lo de Cinemeta (se ve ya); luego los mismos títulos en tu idioma.
+            await model.genre(genre) { items = $0; loaded = true }
             loaded = true
         }
     }

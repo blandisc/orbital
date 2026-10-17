@@ -20,6 +20,9 @@ OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
     # Proyección: modo claro y oscuro
+    "Falta el archivo parcial": "The partial file is missing", "No se pudo reproducir": "Could not play",
+    "Puesto %lld": "No. %lld", "Puesto %@": "No. %@", "Control remoto": "Remote control", "Esta semana en México": "This week in Mexico", "Las que estás viendo": "Shows you're watching", "Tendencia en JustWatch · México": "JustWatch trend · Mexico",
+    "Tendencias en %@": "Trending on %@", "Top 10 en %@": "Top 10 on %@",
     "En tu watchlist": "In your watchlist", "En una de tus listas": "In one of your lists", "Tus series": "Your shows",
     "Nada por aquí por ahora.": "Nothing here for now.", "Ver %@": "Watch %@", "Ver T%lld E%lld": "Watch S%lld E%lld",
     "Ver la serie": "View series", "Elegir fuente": "Choose source", "Ver en la TV": "Watch on TV",
@@ -86,7 +89,15 @@ TRANSLATIONS = {
     "Entra con tu cuenta de Stremio. Lo que veas aquí aparece en Orbital y al revés.": "Sign in with your Stremio account. What you watch here shows up on Orbital and vice versa.",
     "Entrar": "Sign in", "Episodio %lld": "Episode %lld", "Escribe este código en %@:": "Enter this code at %@:",
     "Escribe tu correo y tu contraseña de Stremio.": "Enter your Stremio email and password.", "Ese complemento no responde o no da fuentes ni fichas.": "That add-on doesn't respond or provides no sources or details.",
-    "Especiales": "Specials", "Esperando…": "Waiting…", "Fuentes de Real-Debrid": "Real-Debrid sources", "Guardar clave de TMDB": "Save TMDB key", "Guion": "Written by", "Guardar secreto": "Save secret",
+    "Especial": "Special", "A · desliza para moverte": "A · swipe to move", "Desliza para moverte; toca para %@": "Swipe to move; tap to %@", "Habla con Orbital": "Talk to Orbital", "Preguntándole a tu Orbital…": "Asking your Orbital…", "No te escuché. Toca y vuelve a intentar": "I didn't hear you. Tap and try again", "Desde la TV · %@": "From the TV · %@", "Opciones": "Options", "Anterior": "Previous", "Siguiente": "Next", "Acción X": "X action", "Te escucho…": "Listening…", "Permite el micrófono y el dictado en Ajustes": "Allow the microphone and dictation in Settings", "Dile a Orbital": "Tell Orbital",
+    "Toca para terminar": "Tap to finish", "«Pon The Office», «pausa», «abre Zelda»": "“Play The Office”, “pause”, “open Zelda”", "Terminar la orden": "Finish the command",
+    "Manda una orden a tu Orbital, como a Alexa: «pon The Office», «pausa», «abre Zelda».": "Send a command to your Orbital, like to Alexa: “play The Office”, “pause”, “open Zelda”.",
+    "Orden": "Command", "¿Qué le digo a Orbital?": "What should I tell Orbital?", "Listo.": "Done.", "Pausar la TV": "Pause the TV", "En pausa.": "Paused.",
+    "Seguir en la TV": "Resume the TV", "Sigue.": "Resuming.",
+    "Actualiza tu Orbital para usar el control completo.": "Update your Orbital to use the full remote.", "Atrás": "Back", "Control de tu Orbital": "Orbital remote", "Nada en la TV ahora": "Nothing on the TV right now",
+    "Desliza para moverte; toca para elegir": "Swipe to move; tap to select", "Desliza · toca para elegir": "Swipe · tap to select", "Escribir en la TV": "Type on the TV",
+    "Estira hacia arriba para el control completo": "Pull up for the full remote", "Menú": "Menu", "Pad de la TV": "TV touchpad", "Tu Orbital": "Your Orbital",
+    "Abre la ficha": "Opens the details", "Elegir": "Choose", "Especiales": "Specials", "Esperando…": "Waiting…", "Fuentes de Real-Debrid": "Real-Debrid sources", "Guardar clave de TMDB": "Save TMDB key", "Guion": "Written by", "Guardar secreto": "Save secret",
     "Identificador de la aplicación (client id)": "Application identifier (client id)", "Idioma": "Language", "Idioma de la app y de las fichas": "App and title language",
     "Infuse no dice cuánto dura, así que no sé si llegaste al final.": "Infuse doesn't report the length, so I can't tell if you reached the end.",
     "Infuse no pudo reproducirlo.": "Infuse couldn't play it.", "Infuse no pudo reproducirlo: %@": "Infuse couldn't play it: %@", "Inicio": "Home",
@@ -98,6 +109,45 @@ TRANSLATIONS = {
     "No hay nada aquí todavía.": "Nothing here yet.", "No me interesa": "Not interested", "No pude abrir Infuse. ¿Está instalado?": "I couldn't open Infuse. Is it installed?",
     "No pude abrir el archivo descargado.": "I couldn't open the downloaded file.", "No pude abrir ese título.": "I couldn't open that title.",
     "No pude leer el catálogo de Stremio. Revisa tu conexión.": "I couldn't read the Stremio catalog. Check your connection.", "No se pudo descargar": "Download failed",
+    # Los errores de las cuentas y de tu Orbital (OrbitalCore): llegan a avisos y a Ajustes.
+    "Conecta tu Orbital en Ajustes (la dirección y el token).": "Connect your Orbital in Settings (the address and the token).",
+    "Conecta tu cuenta de Stremio en Ajustes": "Connect your Stremio account in Settings",
+    "Conecta tu cuenta de Trakt en Ajustes.": "Connect your Trakt account in Settings.",
+    "Error de Stremio": "Stremio error",
+    "Fecha inválida": "Invalid date",
+    "Lista inválida": "Invalid list",
+    "No encontré tu Orbital. ¿Está prendida la consola y el túnel?": "I couldn't find your Orbital. Are the console and the tunnel on?",
+    "No pude conectar con Stremio: %@": "I couldn't connect to Stremio: %@",
+    "No pude conectar con Trakt: %@": "I couldn't connect to Trakt: %@",
+    "No pude leer el catálogo de Stremio: %@": "I couldn't read the Stremio catalog: %@",
+    "Respuesta de Stremio sin resultado": "Stremio's response had no result",
+    "Respuesta inesperada de Cinemeta": "Unexpected response from Cinemeta",
+    "Stremio no devolvió la clave de sesión": "Stremio didn't return the session key",
+    "Stremio respondió HTTP %@": "Stremio answered HTTP %@",
+    "Trakt cerró tu sesión: vuelve a conectarla en Ajustes.": "Trakt signed you out: connect it again in Settings.",
+    "Trakt no acepta la sesión de tu Orbital: reconecta Trakt en la TV (Ajustes › Cuentas).": "Trakt doesn't accept your Orbital's session: reconnect Trakt on the TV (Settings › Accounts).",
+    "Trakt no devolvió una sesión": "Trakt didn't return a session",
+    "Trakt no dio un código. Revisa la aplicación de Trakt.": "Trakt didn't give a code. Check the Trakt app.",
+    "Trakt respondió HTTP %lld": "Trakt answered HTTP %lld",
+    "Tu Orbital contestó con un error (%@).": "Your Orbital answered with an error (%@).",
+    "Tu Orbital es de una versión anterior: actualízala para «Ver en la TV».": "Your Orbital is an older version: update it to use “Watch on TV”.",
+    "Tu Orbital no aceptó el token. Revísalo en Ajustes.": "Your Orbital didn't accept the token. Check it in Settings.",
+    "Tu Orbital pidió esperar un poco: demasiados intentos.": "Your Orbital asked to wait a bit: too many attempts.",
+    "Tu sesión de Trakt caducó: vuelve a conectarla en Ajustes.": "Your Trakt session expired: connect it again in Settings.",
+    "Título inválido": "Invalid title",
+    "No encontré ese título.": "I couldn't find that title.",
+    "Título no encontrado": "Title not found",
+    # Los errores de la descarga (OrbitalCore/Downloads.swift y el transporte en segundo plano).
+    "El archivo bajado está incompleto o no es el video": "The downloaded file is incomplete or isn't the video",
+    "El enlace de la fuente caducó o ya no existe. Toca ▶ para buscar otro.": "The source link expired or no longer exists. Tap ▶ to find another.",
+    "El nombre de este título no sirve para guardarlo.": "This title's name can't be used to save it.",
+    "El servidor de la fuente falló. Se vuelve a intentar.": "The source's server failed. Trying again.",
+    "Esta fuente no tiene un enlace para descargar.": "This source has no download link.",
+    "La descarga falló (código %@).": "The download failed (code %@).",
+    "La fuente pidió esperar un poco. Se vuelve a intentar.": "The source asked to wait a bit. Trying again.",
+    "Lo bajado no cuadra con el archivo: se empieza de nuevo.": "What was downloaded doesn't match the file: starting over.",
+    "No hay espacio: hacen falta %@ MB y hay %@ MB libres.": "Not enough space: %@ MB needed and %@ MB free.",
+    "No pude guardar el archivo: %@": "I couldn't save the file: %@",
     "Ocupan %@": "%@ used", "Otra fuente": "Another source", "Otra fuente…": "Another source…",
     "Actualizar": "Refresh", "Para ti de tu Orbital": "For You, from your Orbital", "Calculado en el iPhone": "Calculated on the iPhone",
     "Tu Orbital no tiene sugerencias todavía.": "Your Orbital doesn't have suggestions yet.",
@@ -122,6 +172,41 @@ TRANSLATIONS = {
     "¿Cerrar sesión de Stremio?": "Sign out of Stremio?", "¿Sigues viendo?": "Still watching?", "¿Terminaste de verlo?": "Did you finish it?",
     "quedan %lld h %lld min": "%lld h %lld min left", "quedan %lld h": "%lld h left", "quedan %lld min": "%lld min left",
     "Descargando %lld episodios. Los verás en Descargas.": "Downloading %lld episodes. You'll see them in Downloads.",
+    "Descargando %@ en el iPhone.": "Downloading %@ on the iPhone.", "No encontré %@.": "I did not find %@.",
+    "No encontré una fuente para descargar %@.": "I did not find a source to download %@.",
+    "No hay nada en la TV para descargar.": "Nothing is playing on the TV to download.",
+    "No hay nada en la TV para seguir aquí.": "Nothing is playing on the TV to continue here.", "No te escuché.": "I did not hear you.",
+    "Abrir los permisos de Orbital": "Open Orbital's permissions",
+    "Bajo la respuesta sale «Entendí: …». Si el nombre salió mal, dilo más despacio o búscalo con «Escribir».": "Under the answer you'll see “I heard: …”. If the name came out wrong, say it more slowly or search for it with “Type”.",
+    "Busca la película y la descarga. Una serie, desde su ficha.": "Finds the movie and downloads it. For a series, use its page.",
+    "Con Alexa": "With Alexa",
+    "Con Siri": "With Siri",
+    "Cuando hay varias": "When there are several",
+    "Descarga en el iPhone lo que se ve en la TV.": "Downloads what's on the TV to the iPhone.",
+    "Descargar funciona aunque estés fuera de casa; lo demás necesita tu Orbital encendida.": "Downloading works even away from home; everything else needs your Orbital on.",
+    "Di «Oye Siri, habla con Orbital» y, cuando pregunte, la orden. Para lo de siempre, directo: «Oye Siri, pausa Orbital» o «Oye Siri, reanuda Orbital».": "Say “Hey Siri, talk to Orbital” and, when it asks, the command. For the everyday ones, directly: “Hey Siri, pause Orbital” or “Hey Siri, resume Orbital”.",
+    "Dónde hablarle": "Where to talk to it",
+    "El iPhone tiene que estar en la misma red que la consola (o con Tailscale), y Orbital abierta en la TV.": "The iPhone has to be on the same network as the console (or on Tailscale), with Orbital open on the TV.",
+    "Empieza con «Alexa, pídele a mi consola que…»: sin eso, Alexa intenta hacerlo ella sola.": "Start with “Alexa, pídele a mi consola que…”: without it, Alexa tries to do it herself.",
+    "En el control": "In the remote",
+    "Las frases de abajo funcionan igual en los tres: las entiende tu Orbital.": "The phrases below work the same in all three: your Orbital understands them. They are in Spanish.",
+    "Las teclas del mando, dichas solas.": "The controller buttons, said on their own.",
+    "Listo": "Done",
+    "Lo básico también en inglés.": "The basics in English too.",
+    "Lo que puedes decir": "What you can say",
+    "Permite el micrófono y el reconocimiento de voz para Orbital.": "Allow the microphone and speech recognition for Orbital.",
+    "Revisa lo que entendió": "Check what it heard",
+    "Si contesta que no encuentra tu Orbital": "If it says it can't find your Orbital",
+    "Si dices «pon Dune» y hay más de una, salen bajo el micrófono con su póster: toca la que es.": "If you say “pon Dune” and there's more than one, they show up under the microphone with their poster: tap the right one.",
+    "Si no funciona": "If it doesn't work",
+    "Si no te escucha": "If it doesn't hear you",
+    "Sigue aquí lo que se ve en la TV, donde iba.": "Continues here what's on the TV, where it was.",
+    "Solo en el iPhone": "Only on the iPhone",
+    "Toca «En la TV», estira la hoja hacia arriba y toca el micrófono. Habla con calma: cuando terminas, se detiene solo y te contesta en voz alta.": "Tap “On TV”, pull the sheet up and tap the microphone. Speak calmly: when you finish it stops on its own and answers out loud.",
+    "Voz": "Voice",
+    "Ponerla en la TV": "Play it on the TV", "Poniendo %@.": "Playing %@.", "Abriendo %@ en la TV.": "Opening %@ on the TV.",
+    "Sigue aquí.": "Continuing here.", "Abre Orbital y toca «Seguir aquí».": "Open Orbital and tap “Continue here”.",
+    "Entendí: «%@»": "I heard: “%@”", "«Pon The Office», «pausa», «descárgalo»": "“Play The Office”, “pause”, “download it”",
     "No pude cambiar tu lista de Stremio: %@": "I couldn't change your Stremio list: %@", "No pude cambiar tu watchlist de Trakt: %@": "I couldn't change your Trakt watchlist: %@",
     "No pude marcarlo: %@": "I couldn't mark it: %@", "No pude pedir las fuentes: %@": "I couldn't get the sources: %@",
       "%@ de %@": "%@ of %@",  "Sí": "Yes",
@@ -130,8 +215,9 @@ TRANSLATIONS = {
     "Viendo en la TV": "Watching on TV",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
-IGNORE = {"T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
-          "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max"}
+IGNORE = {"Content-Type", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
+          "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max",
+          "Icons/"}  # el nombre de un ícono en el catálogo
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.
 CODE_KEYS = {k for k in TRANSLATIONS}
 
@@ -161,10 +247,11 @@ def to_format(literal: str) -> str:
 def used_literals() -> dict[str, str]:
     lit = re.compile(r'"((?:[^"\\]|\\.)*)"')
     found: dict[str, str] = {}
-    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift"))
+    files = glob.glob(str(ROOT / "ios/App/Sources/**/*.swift"), recursive=True) + glob.glob(str(ROOT / "ios/App/Widgets/*.swift")) + glob.glob(str(ROOT / "ios/OrbitalCore/Sources/OrbitalModels/*.swift")) + [str(ROOT / f"ios/OrbitalCore/Sources/OrbitalCore/{n}.swift") for n in ("Downloads", "OrbitalRemote", "Trakt", "Watch", "StremioAPI", "Cinemeta")]  # sus errores llegan a la pantalla
     for f in files:
         f = Path(f).as_posix()  # en Windows glob da «\»: sin esto el modo demo y Platform/ se colaban
-        if "/Design/" in f or "/Platform/" in f or f.endswith(("/Support/Demo.swift", "Previews.swift")):   # el modo demo (solo Debug) no se traduce
+        # El modo demo (solo Debug) no se traduce; de Design/ solo se saltan los tokens y el banco de pruebas (las piezas sí llevan texto).
+        if "/Platform/" in f or f.endswith(("/Support/Demo.swift", "Previews.swift", "/Design/Tokens.swift", "/Design/MosaicBench.swift", "/Design/ModelObserver.swift")):
             continue
         for number, line in enumerate(Path(f).read_text(encoding="utf-8").splitlines(), 1):
             stripped = line.strip()
@@ -177,7 +264,7 @@ def used_literals() -> dict[str, str]:
                 if re.fullmatch(r"[A-Z0-9_ ]+", text) and len(text) < 6:
                     continue
                 key = to_format(text)
-                if re.fullmatch(r"(%lld|%@|[ ·:|\-−/])+", key) or "|" in key or key.startswith(("%@:", "%@-")):
+                if re.fullmatch(r"(%lld|%@|[ ·:|\-−/])+", key) or "|" in key or key.startswith(("%@:", "%@-", "Bearer ")):
                     continue
                 found.setdefault(key, f"{Path(f).name}:{number}")
     return found
@@ -189,7 +276,7 @@ UI_CALL = r'(Text|Button|Label|Section|Toggle|Picker|TextField|SecureField|Tab|n
 def ui_word(word: str) -> bool:
     """¿La palabra aparece como el texto de un control en alguna pantalla?"""
     pattern = re.compile(UI_CALL.format(re.escape(word)))
-    files = glob.glob(str(ROOT / "ios/App/Sources/Screens/*.swift")) + glob.glob(str(ROOT / "ios/App/Sources/Design/Components.swift"))
+    files = glob.glob(str(ROOT / "ios/App/Sources/Screens/*.swift")) + glob.glob(str(ROOT / "ios/App/Sources/Design/Components.swift")) + [str(ROOT / f"ios/App/Sources/Design/{n}.swift") for n in ("Projection", "Shelf", "Mosaic")]
     return any(pattern.search(Path(f).read_text(encoding="utf-8")) for f in files)
 
 

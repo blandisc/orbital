@@ -86,7 +86,8 @@ public final class TitleModel: ObservableModel {
             meta = original
             // Arte y póster en cuanto llega Cinemeta; el texto traducido llega después.
             poster = CinemetaParsing.medium(original["poster"]?.string) ?? poster
-            if let art = original["background"]?.string, !art.isEmpty { background = art }
+            // Si Cinemeta no trae fondo, tampoco hay en metahub: se cae al póster (no a un hueco).
+            if let art = original["background"]?.string, !art.isEmpty { background = art } else { background = nil }
             let local = await services.localizer.meta(kind: kind, meta: original)
             localized = local
             title = local["name"]?.string ?? original["name"]?.string ?? title
@@ -95,7 +96,7 @@ public final class TitleModel: ObservableModel {
             credits = CinemetaParsing.credits(local)
             seasons = CinemetaParsing.seasons(local)
             error = nil
-        } catch { self.error = "\(error)" }
+        } catch where !Task.isCancelled { self.error = "\(error)" } catch {}   // cancelado al salir: sin error falso
         await refreshState()
     }
 
@@ -217,12 +218,12 @@ public final class TitleModel: ObservableModel {
 
     /// Descarga uno o varios episodios con la fuente que mejor sirve para guardar (1080p, moderada).
     @discardableResult
-    public func download(_ videoIDs: [String]) async -> DownloadOutcome {
+    public func download(_ videoIDs: [String], source: Source? = nil) async -> DownloadOutcome {
         var queued = 0
         for video in videoIDs {
             var label = ""
             if let found = episode(video) { label = services.episodeLabel(found.0, found.1.episode) + (found.1.hasTitle ? " · \(found.1.title)" : "") }
-            switch await services.queueDownload(kind: kind, metaID: metaID, videoID: video, title: title, originalTitle: originalTitle, subtitle: label, poster: poster) {
+            switch await services.queueDownload(kind: kind, metaID: metaID, videoID: video, title: title, originalTitle: originalTitle, subtitle: label, poster: poster, source: source) {
             case .queued: queued += 1
             case .noSources: if queued == 0 { return .noSources } else { continue }
             case .already: if videoIDs.count == 1 { return .already } else { continue }

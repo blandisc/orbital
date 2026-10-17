@@ -63,6 +63,8 @@ struct MainTabs: View {
     @EnvironmentObject private var env: AppEnvironment
     @StateObject private var tvNow = ModelObserver(AppEnvironment.shared.tvNow)
     @State private var showRemote = false
+    /// La hoja del control estirada (el control completo) o corta.
+    @State private var remoteLarge = false
     @State private var tab: Int
     @State private var paths: [NavigationPath] = Array(repeating: NavigationPath(), count: 4)
 
@@ -72,7 +74,7 @@ struct MainTabs: View {
         // después de que la restauración ya aplicó lo suyo). Fuera de demo, la pestaña que recuerdes sigue igual.
         var initial = 0
         #if DEBUG
-        if Demo.isOn { initial = Demo.tab }
+        if Demo.isOn { initial = Demo.tab } else if let start = Demo.startTab { initial = start }
         #endif
         _tab = State(initialValue: initial)
     }
@@ -80,29 +82,31 @@ struct MainTabs: View {
     var body: some View {
         TabView(selection: $tab) {
             Tab("Inicio", systemImage: "house", value: 0) { NavigationStack(path: $paths[0]) { HomeView() }.tint(DS.primary) }
-            Tab("Para ti", systemImage: "sparkles", value: 1) { NavigationStack(path: $paths[1]) { ParaTiView() }.tint(DS.primary) }
+            Tab("Para ti", image: OrbitalIcon.spark.asset, value: 1) { NavigationStack(path: $paths[1]) { ParaTiView() }.tint(DS.primary) }
             Tab("Descargas", systemImage: "arrow.down.circle", value: 3) { NavigationStack(path: $paths[3]) { DownloadsView() }.tint(DS.primary) }
             // Buscar es la pestaña de búsqueda del sistema: va aparte, al final, y se abre con el campo listo.
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
-        .bottomAccessory(isEnabled: tvNow.model.now != nil) {
+        // Con tu Orbital conectada el accesorio siempre está: lo que se ve en la TV, o el control de tu Orbital si no hay nada.
+        .bottomAccessory(isEnabled: tvNow.model.now != nil || tvNow.model.isConfigured) {
             if let now = tvNow.model.now {
-                TVAccessory(now: now, busy: tvNow.model.busy) { Task { await tvNow.model.control("toggle") } }
-                    .contentShape(Rectangle())
-                    .onTapGesture { showRemote = true }
+                TVAccessory(now: now, busy: tvNow.model.busy, toggle: { Task { await tvNow.model.control("toggle") } }, openRemote: { remoteLarge = false; showRemote = true })
+            } else {
+                TVRemoteAccessory(openRemote: { remoteLarge = true; showRemote = true })
             }
         }
+        // Si la TV deja de reproducir con la hoja abierta, la hoja se cierra (no se queda vacía).
+        // (Estirado, el control completo sirve aunque no haya video: se queda.)
+        .onChange(of: tvNow.model.now == nil) { _, stopped in if stopped, !remoteLarge { showRemote = false } }
+        #if DEBUG
+        .onChange(of: tvNow.model.now == nil) { _, stopped in   // `-demo-open remote` (corta) o `remote-full` (estirada)
+            if !stopped, Demo.isOn, ["remote", "remote-full", "voice-guide"].contains(Demo.open) { remoteLarge = Demo.open != "remote"; showRemote = true }
+        }
+        #endif
         // Tocar el accesorio abre el control remoto completo (−10 · pausa · +10 · siguiente, salir, seguir aquí).
         .sheet(isPresented: $showRemote) {
-            if let now = tvNow.model.now {
-                NowPlayingCard(now: now, fetchedAt: tvNow.model.fetchedAt, busy: tvNow.model.busy,
-                               onAction: { action, delta in Task { await tvNow.model.control(action, delta: delta) } },
-                               onContinueHere: { showRemote = false; openNowPlaying(now) })
-                    .padding(DS.Space.gutter)
-                    .presentationDetents([.medium])
-                    .presentationDragIndicator(.visible)
-            }
+            RemoteSheet(tvNow: tvNow, large: $remoteLarge, onContinueHere: { now in showRemote = false; openNowPlaying(now) })
         }
         .tint(DS.accent)   // la pestaña elegida lleva el acento; dentro, los botones vuelven al papel
         .onAppear(perform: openDemoScreen)
@@ -134,7 +138,7 @@ struct MainTabs: View {
     /// Solo la pestaña (repetible: no abre nada encima dos veces).
     private func forceDemoTab() {
         #if DEBUG
-        if Demo.isOn { tab = Demo.tab }
+        if Demo.isOn { tab = Demo.tab } else if let start = Demo.startTab { tab = start }
         #endif
     }
 
@@ -154,7 +158,7 @@ struct BannerView: View {
 
     var body: some View {
         if let banner = env.banner {
-            DSNotice(text: LocalizedStringKey(banner.text), tone: banner.tone)
+            DSNotice(verbatim: banner.text, tone: banner.tone)
                 // Flota sobre la pantalla: vidrio de verdad, o el texto se mezcla con lo de abajo.
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
                 .padding(.horizontal, DS.Space.s4).padding(.bottom, DS.Space.s14 + DS.Space.s2)

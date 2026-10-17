@@ -119,7 +119,7 @@ struct AiringRow: View {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text(verbatim: airing.series.title).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(2)
                     when.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.text).lineLimit(1)
-                    Text(verbatim: [airing.episodeLabel, airing.count > 1 ? nil : airing.episodeTitle].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
+                    Text(verbatim: [airing.episodeLabel(AppEnvironment.shared.services.episodeLabel), airing.count > 1 ? nil : airing.episodeTitle].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
                         .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1)
                 }
                 Spacer(minLength: 0)
@@ -145,7 +145,7 @@ struct AiringCard: View {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterView(url: airing.series.wide, title: airing.series.title, aspect: DS.Poster.stillAspect)
                 Text(verbatim: airing.series.title).font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1)
-                (dayName(airing.day, locale: locale) + Text(verbatim: " · \(airing.episodeLabel)"))
+                (dayName(airing.day, locale: locale) + Text(verbatim: " · \(airing.episodeLabel(AppEnvironment.shared.services.episodeLabel))"))
                     .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1)
             }
             .frame(width: DS.Poster.episodeThumbWidth * 1.4)

@@ -50,7 +50,7 @@ struct HomeView: View {
                 }
                 if model.continueWatching.count > Self.heroCount { alsoHad(model) }
                 if !model.myList.isEmpty {
-                    Rail(title: "Mi lista") {
+                    Rail(title: "Mi lista", icon: .library) {
                         ForEach(model.myList) { item in
                             TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster))
                         }
@@ -58,19 +58,22 @@ struct HomeView: View {
                 }
                 if !model.traktPending.isEmpty {
                     // «Tu watchlist» (Trakt), con el nombre de la TV; dentro, todo está en tu watchlist: la etiqueta sobra.
-                    Rail(title: "Tu watchlist") {
+                    Rail(title: "Tu watchlist", icon: .bookmark) {
                         ForEach(model.traktPending) { s in TitleLink(route: s.route) }
                     }
                 }
             }
+            .padding(.top, DS.Space.s3)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
             .padding(.bottom, DS.Space.s14)     // la última fila respira: la barra de pestañas no la tapa
             .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
             .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
         }
         .background(Backdrop(tint: tint.colors))
         .navigationTitle(greeting).toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        .navigationSubtitle(syncText)
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { NavigationLink(value: SettingsRoute()) { Image(systemName: "person.crop.circle") }.accessibilityLabel(Text("Ajustes")) } }
+        .subtitle(syncText)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { NavigationLink(value: SettingsRoute()) { Image(systemName: "person.crop.circle") }.accessibilityLabel(Text("Ajustes")) }
+        }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
@@ -96,9 +99,9 @@ struct HomeView: View {
         }
     }
 
-    /// «Stremio al día» o «N cambios por subir» (si no hubo internet).
-    private var syncText: Text {
-        pendingCount > 0 ? Text("\(pendingCount) cambios por subir") : Text("Stremio al día")
+    /// Solo cuando hay algo que decir: «N cambios por subir» (lo que viste sin internet). Al día, nada (no hace falta decirlo).
+    private var syncText: Text? {
+        pendingCount > 0 ? Text("\(pendingCount) cambios por subir") : nil
     }
 
     private func route(_ item: HomeItem) -> TitleRoute { TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster) }
@@ -129,7 +132,7 @@ struct HomeView: View {
             .scrollPosition(id: $heroID)
             PageDots(count: items.count, index: items.firstIndex { $0.id == (heroID ?? items.first?.id) } ?? 0)
         }
-        .onChange(of: heroID) { Task { await tint.load(currentHero.flatMap { $0.background ?? $0.poster }) } }
+        .task(id: heroID) { await tint.load(currentHero.flatMap { $0.background ?? $0.poster }) }   // se cancela si pasas a otro
         .sensoryFeedback(.selection, trigger: heroID)
     }
 
@@ -137,8 +140,9 @@ struct HomeView: View {
         // La tarjeta abre la ficha con su propio toque; «Continuar» va aparte (un botón dentro de un NavigationLink puede
         // abrir la ficha en vez de reproducir).
         HeroCard(title: item.title, background: item.background ?? item.poster, logo: Artwork.logoURL(metaID: item.metaID),
-                 eyebrow: item.nextUp ? Text("Sigue") : Text("Seguir viendo"), data: heroData(item), progress: item.progress) {
-            HStack(spacing: DS.Space.s3) {
+                 eyebrow: item.nextUp ? Text("Sigue") : Text("Seguir viendo"), data: heroData(item), progress: item.progress,
+                 open: { openTitle = route(item) }) {
+            HeroActions {
                 continueButton(item)
                 if env.services.orbital.isConfigured {
                     DSIconButton(symbol: "tv", label: "Ver en la TV") {
@@ -149,7 +153,6 @@ struct HomeView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { openTitle = route(item) }
-        .accessibilityAction(named: Text("Ver ficha")) { openTitle = route(item) }
     }
 
     /// «T2 · E5 · quedan 20 min · termina a las 23:21».
@@ -166,11 +169,11 @@ struct HomeView: View {
 
     /// «También tenías»: lo demás de «Seguir viendo», en piezas anchas con su avance.
     private func alsoHad(_ model: HomeModel) -> some View {
-        Rail(title: "También tenías") {
+        Rail(title: "También tenías", icon: .watching) {
             ForEach(model.continueWatching.dropFirst(Self.heroCount)) { item in
                 NavigationLink(value: route(item)) {
                     StillCard(title: item.title, art: item.background ?? item.poster,
-                              data: [progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes)], progress: item.progress)
+                              data: progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes).components(separatedBy: " · "), progress: item.progress)
                 }
                 .buttonStyle(.plain)
                 .contextMenu { Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { Task { await model.dismiss(item) } } }
@@ -179,11 +182,13 @@ struct HomeView: View {
     }
 
     private func continueButton(_ item: HomeItem) -> some View {
-        // Como la TV: «Continuar» si ibas a medias; si toca el siguiente episodio, «Ver T3 E6».
-        Button { Task { await env.play(item) } } label: {
-            Label { item.nextUp && item.episode != nil ? Text("Ver \(Strings.episode(season: item.season, episode: item.episode ?? 0, language: env.services.appSettings.uiLanguage))") : Text("Continuar") } icon: { Image(systemName: "play.fill") }
-                .lineLimit(1)
+        // Como la TV: «Continuar» si ibas a medias; si toca el siguiente episodio, «Ver T3 E6». Con el color de su propio arte.
+        WithArtColors(url: item.background ?? item.poster) { colors in
+            Button { Task { await env.play(item) } } label: {
+                Label { item.nextUp && item.episode != nil ? Text("Ver \(Strings.episode(season: item.season, episode: item.episode ?? 0, language: env.services.appSettings.uiLanguage))") : Text("Continuar") } icon: { Image(systemName: "play.fill") }
+                    .lineLimit(1)
+            }
+            .dsArtButton(colors)
         }
-        .dsArtButton(tint.colors)
     }
 }

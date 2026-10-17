@@ -107,6 +107,13 @@ public struct Tmdb: Sendable {
             poster: Tmdb.image(raw["poster_path"]), backdrop: Tmdb.image(raw["backdrop_path"], size: "w1280"))
     }
 
+    /// Título (sin año: el Top 10 de Netflix no lo trae) → id de IMDb del resultado más popular. Como `tmdb.search` de la TV.
+    public func searchIMDb(kind: String, title: String) async throws -> String? {
+        let data = try await get("/search/\(Tmdb.kinds[kind] ?? "movie")", [("query", title), ("include_adult", "false")])
+        guard let id = data["results"]?.array?.first?["id"]?.intValue else { return nil }
+        return try await details(kind: kind, tmdbID: id).imdb
+    }
+
     /// El id de TMDB de un título de IMDb (nil si TMDB no lo tiene).
     public func findID(imdb: String, kind: String) async throws -> Int? {
         guard imdb.range(of: #"^tt[0-9]{1,12}$"#, options: .regularExpression) != nil else { return nil }

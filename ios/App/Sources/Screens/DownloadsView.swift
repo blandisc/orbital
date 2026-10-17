@@ -48,10 +48,13 @@ struct DownloadsView: View {
         .tint(DS.accent)   // interruptores y botones de la lista: el acento (lo interactivo)
         .scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
         .navigationTitle("Descargas").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        .navigationSubtitle(Text("Ocupan \(bytes(model.usedBytes)) · libres \(bytes(model.freeBytes))"))
+        .subtitle(model.usedBytes > 0 ? Text("Ocupan \(bytes(model.usedBytes)) · libres \(bytes(model.freeBytes))") : nil)   // vacío, no hay nada que contar
         .titleDestinations()
         .task { await model.run() }
-        .task(id: model.active.first?.metaID) { await tint.load(model.active.first.map { String(format: ForYou.metahubBackground, $0.metaID) }) }
+        .task(id: model.active.first?.metaID) {
+            // El arte de metahub solo existe para ids de IMDb; con otro id, fondo liso.
+            await tint.load(model.active.first.flatMap { $0.metaID.hasPrefix("tt") ? String(format: ForYou.metahubBackground, $0.metaID) : nil })
+        }
     }
 
     /// Un ajuste de Descargas como interruptor (se guarda al momento, igual que en Ajustes).
@@ -75,7 +78,7 @@ struct DownloadsView: View {
             case .done: EmptyView()
             }
         }
-        .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } } }
+        .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
     }
 
     private func status(_ item: DownloadItem) -> String? {
@@ -84,7 +87,7 @@ struct DownloadsView: View {
         case .queued: return Strings.tr("En cola", language: language)
         case .downloading: return "\(bytes(item.writtenBytes)) / \(item.expectedBytes.map(bytes) ?? "—")"
         case .paused: return Strings.tr("En pausa", language: language)
-        case .failed: return item.lastError ?? Strings.tr("No se pudo descargar", language: language)
+        case .failed: return item.lastError.map { Strings.message($0, language: language) } ?? Strings.tr("No se pudo descargar", language: language)   // los errores fijos de la descarga, también traducidos
         case .done: return nil
         }
     }
@@ -124,7 +127,7 @@ struct DownloadsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } } }
+        .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
     }
 
     private func episodesText(_ count: Int) -> String {
@@ -132,5 +135,5 @@ struct DownloadsView: View {
     }
 
     /// «1,2 GB» en el idioma de la app (no en el del sistema).
-    private func bytes(_ n: Int64) -> String { n.formatted(.byteCount(style: .file).locale(env.uiLocale)) }
+    private func bytes(_ n: Int64) -> String { n.formatted(.byteCount(style: .file, spellsOutZero: false).locale(env.uiLocale)) }   // «0 KB», no «Zero kB»
 }

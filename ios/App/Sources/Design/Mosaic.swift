@@ -80,7 +80,14 @@ final class MosaicRuntime: ObservableObject {
         focus = MosaicFocus(col: min(focus?.col ?? 0, self.columnCount - 1), row: 0)
         mode = .focus
         aliveTileID = nil
-        relayoutAndFill()
+        relayoutAndFill(reveal: true)
+    }
+
+    /// Más sugerencias de las mismas (completar el mosaico con lo de los estantes): entran a la fila sin rearmar nada,
+    /// así no se pierde el lugar ni la pieza elegida.
+    func extend(items: [Suggestion]) {
+        pool = MosaicPool(items: items)
+        fillAll(); layoutAll(); commit(force: true)
     }
 
     /// Cambió el tamaño de pantalla (rotación, iPad, letra grande): se reacomoda en su lugar.
@@ -124,12 +131,32 @@ final class MosaicRuntime: ObservableObject {
         }
     }
 
-    private func relayoutAndFill() {
+    /// `reveal`: lleva la pieza enfocada a la vista. Solo cuando la eliges (o al armar): si se hiciera siempre, cada
+    /// cambio de tamaño o cada despertar regresaba esa columna a donde estaba la pieza, aunque ya hubieras bajado.
+    private func relayoutAndFill(reveal shouldReveal: Bool = false) {
         guard size.width > 0 else { return }
         layoutAll(); fillAll(); layoutAll()
-        if mode == .focus { reveal() }
+        if mode == .focus, shouldReveal { reveal() }
         pruneAll()
         commit(force: true)
+    }
+
+    /// La pieza de la columna `c` más cerca del centro de lo que se ve.
+    private func centerRow(_ c: Int) -> Int? {
+        guard columns.indices.contains(c), !columns[c].tiles.isEmpty else { return nil }
+        let middle = columns[c].offset + size.height / 2
+        return columns[c].tiles.indices.min { abs(columns[c].tiles[$0].top + columns[c].tiles[$0].height / 2 - middle) < abs(columns[c].tiles[$1].top + columns[c].tiles[$1].height / 2 - middle) }
+    }
+
+    /// Si la enfocada ya no se ve (bajaste, o el ambiente la subió), el foco pasa a la del centro de su columna.
+    private func refocusIfOffscreen() {
+        guard let f = focus, columns.indices.contains(f.col) else { return }
+        let column = columns[f.col]
+        let visible = column.tiles.indices.contains(f.row) && {
+            let t = column.tiles[f.row]
+            return t.top + t.height > column.offset && t.top < column.offset + size.height
+        }()
+        if !visible, let row = centerRow(f.col) { focus = MosaicFocus(col: f.col, row: row) }
     }
 
     /// La enfocada, entera a la vista (como `reveal()` en la TV).
@@ -147,7 +174,7 @@ final class MosaicRuntime: ObservableObject {
         mode = .focus
         focus = MosaicFocus(col: col, row: row)
         aliveTileID = nil
-        relayoutAndFill()
+        relayoutAndFill(reveal: true)
     }
 
     /// Para el modo demostración: enfoca la sugerencia con ese `imdb` si ya está colocada.
@@ -163,6 +190,8 @@ final class MosaicRuntime: ObservableObject {
         guard mode == .ambient else { return false }
         mode = .focus
         aliveTileID = nil
+        // Como `wake()` en la TV: se enfoca lo que quedó al centro (no la pieza de antes, que el ambiente ya subió).
+        if let col = focus?.col, let row = centerRow(col) { focus = MosaicFocus(col: col, row: row) }
         relayoutAndFill()
         return true
     }
@@ -179,7 +208,8 @@ final class MosaicRuntime: ObservableObject {
         guard mode == .ambient else { return }
         for c in columns.indices {
             columns[c].offset += (speeds.indices.contains(c) ? speeds[c] : geometry.gap) * dt
-            geometry.prune(&columns[c], viewportHeight: size.height)
+            let removed = geometry.prune(&columns[c], viewportHeight: size.height)
+            if removed > 0, c == focus?.col, var f = focus { f.row = max(0, f.row - removed); focus = f }   // la misma pieza sigue enfocada
         }
         fillAll()
         commit()
@@ -196,7 +226,7 @@ final class MosaicRuntime: ObservableObject {
         commit()
     }
 
-    func endScroll() { pruneAll(); commit() }
+    func endScroll() { pruneAll(); refocusIfOffscreen(); commit() }
 
     /// «No me interesa»: ya no vuelve a salir; otra toma su lugar.
     func dismiss(_ imdb: String) {
@@ -214,7 +244,7 @@ private extension Array {
 }
 
 /// El mosaico de «Para ti»: pieza del catálogo (`Design/Mosaic.swift`), equivalente a `foryou-mosaic` en la TV.
-/// Tocar una pieza la enfoca; volver a tocar la abre; mantener pulsado, «No me interesa».
+/// Tocar una pieza la enfoca; volver a tocar la abre; arrastrar sube y baja (con inercia). «No me interesa» va en «Más», bajo el mosaico.
 struct Mosaic: View {
     let items: [Suggestion]
     var watchlistKeys: Set<String> = []
@@ -222,11 +252,16 @@ struct Mosaic: View {
     let onDismiss: (Suggestion) -> Void
     /// La pieza enfocada (nil en el ambiente): la pantalla tiñe su fondo con su arte (`Backdrop`).
     var onFocusChange: ((Suggestion?) -> Void)?
+    /// Un segundo toque en la enfocada: abre su ficha (lo hace la pantalla).
+    var onOpen: ((Suggestion) -> Void)?
 
     @StateObject private var runtime = MosaicRuntime()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var lastDragTranslation: Double = 0
+    @State private var dragging = false
+    /// La inercia en curso (al soltar): se detiene en cuanto el dedo vuelve a tocar.
+    @State private var inertia: Task<Void, Never>?
     @State private var activity = 0
     /// Lo que ya colocó `runtime`: si lo nuevo es solo un subconjunto (una «no me interesa» que el
     /// propio `runtime.dismiss` ya quitó), no se vuelve a armar todo —eso perdería el foco y el lugar.
@@ -247,18 +282,28 @@ struct Mosaic: View {
             .clipped()
             .mask(LinearGradient(stops: Self.maskStops, startPoint: .top, endPoint: .bottom))
             .contentShape(Rectangle())
-            .gesture(
-                DragGesture()
+            // A la par de los toques de las piezas (no detrás de ellos): en un iPhone de verdad casi todo arrastre empieza
+            // sobre una pieza, y con `.gesture` el botón se quedaba con él y el mosaico no bajaba.
+            .simultaneousGesture(
+                DragGesture(minimumDistance: DS.Gesture.axisThreshold)
                     .onChanged { value in
-                        touch()
+                        // Una sola vez al empezar (no en cada cuadro: eso reevaluaba todo el mosaico a 120 Hz).
+                        if !dragging { dragging = true; inertia?.cancel(); inertia = nil; touch() }
                         let delta = value.translation.height - lastDragTranslation
                         lastDragTranslation = value.translation.height
                         runtime.scrollBy(-delta)
                     }
-                    .onEnded { _ in lastDragTranslation = 0; runtime.endScroll(); touch() }
+                    .onEnded { value in
+                        dragging = false
+                        lastDragTranslation = 0
+                        touch()
+                        fling(velocity: -Double(value.velocity.height))
+                    }
             )
             .onAppear {
-                configure(items: items, columnCount: columnCount)
+                // Al volver de una ficha o de otra pestaña, el mosaico sigue donde estaba (mismo lugar, misma pieza enfocada).
+                if configuredIDs.isEmpty || Set(items.map(\.imdb)) != configuredIDs { configure(items: items, columnCount: columnCount) }
+                else { runtime.updateColumnCount(columnCount) }
                 runtime.updateSize(width: Double(geo.size.width), height: Double(geo.size.height))
                 if let demoFocus { runtime.focusTile(imdb: demoFocus) }
             }
@@ -269,6 +314,12 @@ struct Mosaic: View {
             .onChange(of: items) { _, newItems in
                 let newIDs = Set(newItems.map(\.imdb))
                 guard !newIDs.isSubset(of: configuredIDs) else { return }   // una «no me interesa»: `runtime.dismiss` ya la quitó
+                // Llegaron más de las mismas (se completó con los estantes): se suman sin volver al principio.
+                if !configuredIDs.isEmpty, configuredIDs.isSubset(of: newIDs) {
+                    configuredIDs = newIDs
+                    runtime.extend(items: newItems)
+                    return
+                }
                 let wasEmpty = configuredIDs.isEmpty
                 configure(items: newItems, columnCount: columnCount)
                 // La primera vez que llega la lista de verdad (al abrir estaba vacía): aplica el foco del modo demostración.
@@ -276,14 +327,19 @@ struct Mosaic: View {
             }
         }
         .overlay { if runtime.isEmpty { ProgressView() } }
+        .accessibilityElement(children: .contain).accessibilityIdentifier("mosaic")   // para las pruebas de interfaz
         #if DEBUG
         .task { await MosaicBench.runIfRequested(runtime) { c, r in withAnimation(DS.Motion.spring(reduceMotion)) { runtime.focusTile(col: c, row: r) } } }
         #endif
         .onChange(of: runtime.current?.imdb, initial: true) { _, _ in onFocusChange?(runtime.current) }
         .task(id: idleToken) {
             guard runtime.mode == .focus, !reduceMotion else { return }
+            #if DEBUG
+            if Demo.noIdle { return }
+            #endif
             try? await Task.sleep(nanoseconds: DS.Timing.mosaicIdle)
-            if !Task.isCancelled { withAnimation(DS.Motion.enter(reduceMotion)) { runtime.goAmbient() } }
+            // Mientras sigue la inercia o el dedo está encima, no es «quieto».
+            if !Task.isCancelled, inertia == nil, !dragging { withAnimation(DS.Motion.enter(reduceMotion)) { runtime.goAmbient() } }
         }
         .task(id: aliveToken) {
             guard runtime.mode == .focus, !reduceMotion, let id = runtime.focus else { return }
@@ -312,10 +368,31 @@ struct Mosaic: View {
             focusRow: runtime.focus?.col == c ? runtime.focus?.row : nil, focusMode: runtime.mode == .focus,
             aliveID: runtime.aliveTileID, watchlist: watchlistKeys, reduceMotion: reduceMotion,
             onFocus: { col, row in touch(); withAnimation(DS.Motion.spring(reduceMotion)) { runtime.focusTile(col: col, row: row) } },
+            onOpen: { onOpen?($0) },
             onDismiss: { dismiss($0) })
     }
 
-    private func touch() { activity += 1; withAnimation(DS.Motion.base(reduceMotion)) { runtime.wake() } }
+    /// Inercia como una lista de iOS: la velocidad del dedo se va apagando cuadro por cuadro (llegan piezas por el camino,
+    /// sin huecos) y un toque nuevo la detiene. Con «Reducir movimiento», se queda donde soltaste.
+    private func fling(velocity start: Double) {
+        inertia?.cancel()
+        guard !reduceMotion, abs(start) > DesignTokens.Mosaic.flingStopSpeed else { runtime.endScroll(); return }
+        inertia = Task { @MainActor in
+            var velocity = start
+            var last = Date()
+            while !Task.isCancelled, abs(velocity) > DesignTokens.Mosaic.flingStopSpeed {
+                try? await Task.sleep(nanoseconds: DS.Timing.mosaicFlingFrame)
+                guard !Task.isCancelled else { return }
+                let now = Date(), dt = now.timeIntervalSince(last)
+                last = now
+                runtime.scrollBy(velocity * dt)
+                velocity *= pow(DesignTokens.Mosaic.flingDecayPerSecond, dt)
+            }
+            if !Task.isCancelled { runtime.endScroll(); inertia = nil; touch() }
+        }
+    }
+
+    private func touch() { activity += 1; withAnimation(DS.Motion.base(reduceMotion)) { _ = runtime.wake() } }
 
     private func configure(items: [Suggestion], columnCount: Int) {
         configuredIDs = Set(items.map(\.imdb))
@@ -370,6 +447,7 @@ private struct MosaicColumnLayer: View, Equatable {
     let watchlist: Set<String>
     let reduceMotion: Bool
     let onFocus: (Int, Int) -> Void
+    let onOpen: (Suggestion) -> Void
     let onDismiss: (Suggestion) -> Void
 
     static func == (a: Self, b: Self) -> Bool {
@@ -389,11 +467,11 @@ private struct MosaicColumnLayer: View, Equatable {
                     tile: tile, focused: focused, dimmed: focusMode && !focused,
                     alive: !reduceMotion && aliveID == tile.id,
                     inWatchlist: watchlist.contains(tile.item.imdb),
-                    onFocus: { onFocus(column, row) }
+                    onFocus: { onFocus(column, row) },
+                    onOpen: { onOpen(tile.item) }
                 )
                 .frame(width: CGFloat(frame.width), height: CGFloat(tile.height))
                 .offset(x: CGFloat(frame.x), y: CGFloat(tile.top))
-                .contextMenu { Button("No me interesa", systemImage: "hand.thumbsdown") { onDismiss(tile.item) } }
             }
         }
     }
@@ -408,18 +486,24 @@ private struct MosaicTileCell: View {
     let alive: Bool
     let inWatchlist: Bool
     let onFocus: () -> Void
+    let onOpen: () -> Void
 
     var body: some View {
         #if DEBUG
         let _ = MosaicBench.tick("Tile")
         #endif
-        Group {
-            if focused { NavigationLink(value: tile.item.route) { content } }
-            else { Button(action: onFocus) { content } }
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text(tile.item.title))
+        // Un toque de verdad, no un botón: la pieza se mueve con el dedo al arrastrar, así que al soltar el dedo sigue
+        // «encima» y un botón lo contaba como toque (abría la ficha o saltaba a otra pieza: el mosaico «se quedaba pegado»).
+        // Un `TapGesture` se cancela en cuanto el dedo se mueve.
+        content
+            .contentShape(Rectangle())
+            .onTapGesture { if focused { onOpen() } else { onFocus() } }
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { if focused { onOpen() } else { onFocus() } }
+            .accessibilityHint(focused ? Text("Abre la ficha") : Text("Elegir"))
+            .accessibilityLabel(Text(tile.item.title))
+        .accessibilityIdentifier("mosaic-tile")
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)   // las piezas son arte: con letra de accesibilidad el texto de la pieza no crece más
     }
 

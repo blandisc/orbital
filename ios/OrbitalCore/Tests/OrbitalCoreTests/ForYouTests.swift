@@ -139,6 +139,7 @@ final class ForYouTests: XCTestCase {
         XCTAssertFalse(severance.atDawn)
         XCTAssertEqual(severance.day, mexico.startOfDay(for: Clock().now), "sale hoy, en la hora de aquí")
         XCTAssertEqual(andor.episodeLabel, "T2 E4–E6", "tres episodios el mismo día: una sola tarjeta")
+        XCTAssertEqual(andor.episodeLabel { "S\($0) E\($1)" }, "S2 E4–E6", "en inglés, con la forma de la interfaz")
         XCTAssertEqual(andor.count, 3)
         XCTAssertTrue(andor.atDawn, "a la 1:00: «Desde la madrugada»")
         XCTAssertEqual(andor.series.kind, "series", "pulsar abre la ficha de la serie")
@@ -151,5 +152,32 @@ final class ForYouTests: XCTestCase {
     func testNoUpcomingEpisodesWithoutTrakt() async throws {
         let airings = try await makeForYou(FakeHTTP(), linked: false).calendar()
         XCTAssertTrue(airings.isEmpty)
+    }
+}
+
+/// Los catálogos de tus complementos de Stremio, calculados en el iPhone con las mismas reglas que la TV (`addon_catalogs`).
+final class ForYouAddonCatalogsTests: XCTestCase {
+    func testAddonCatalogsAreShelvesWithTheTVsRules() async throws {
+        let http = FakeHTTP()
+        http.json["https://api.strem.io/api/addonCollectionGet"] = ["result": ["addons": [
+            ["transportUrl": "https://listas.example/manifest.json", "manifest": ["name": "Mis Listas", "resources": ["catalog"], "types": ["movie", "series"],
+             "catalogs": [["id": "horror", "name": "Terror de culto", "type": "movie"], ["id": "horror", "name": "Terror de culto", "type": "series"],
+                          ["id": "pop", "name": "Popular", "type": "movie"],                                                   // genérico: fuera
+                          ["id": "buscar", "name": "Por género", "type": "movie", "extra": [["name": "genre", "isRequired": true]]]]]],   // pide algo: fuera
+            ["transportUrl": "https://v3-cinemeta.strem.io/manifest.json", "manifest": ["name": "Cinemeta", "resources": ["catalog"], "types": ["movie"],
+             "catalogs": [["id": "top", "name": "Top", "type": "movie"]]]],                                                     // Cinemeta: fuera
+        ]]]
+        http.json["https://listas.example/catalog/series/horror.json"] = ["metas": [["id": "tt0108778", "name": "Friends", "releaseInfo": "1994–2004"],
+                                                                                    ["id": "kitsu:1", "name": "Sin IMDb"]]]
+        let registry = AddonRegistry(http: http, account: StremioAPI(http: http), auth: { "KEY" })
+        let forYou = ForYou(trakt: nil, tmdb: nil, addons: registry, http: http, region: { "MX" }, kv: InMemoryKeyValueStore())
+        let lists = await forYou.lists()
+        XCTAssertEqual(lists.map(\.id), ["addon:mislistas:horror"], "uno por nombre; ni genéricos, ni los que piden algo, ni Cinemeta")
+        XCTAssertEqual(lists.first?.splitsKinds, true, "trae películas y series")
+        XCTAssertEqual(lists.first?.meta, "De Mis Listas")
+        let items = try await forYou.items(listID: "addon:mislistas:horror", kind: "series")
+        XCTAssertEqual(items.map(\.imdb), ["tt0108778"], "sin IMDb no se puede ver")
+        XCTAssertEqual(items.first?.reason, .inList("Terror de culto"))
+        XCTAssertEqual(items.first?.year, 1994)
     }
 }

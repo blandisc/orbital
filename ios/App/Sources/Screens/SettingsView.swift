@@ -29,10 +29,10 @@ struct SettingsView: View {
             }
             .listRowBackground(DS.surface)
             orbitalSection(model)
-            Section("Alexa") {
-                NavigationLink { AlexaCommandsView() } label: { Label("Qué le puedes decir a Alexa", systemImage: "waveform") }
+            Section("Voz") {
+                NavigationLink { VoiceGuideView() } label: { Label("Lo que puedes decir", systemImage: "waveform") }
             }
-            .listRowBackground(DS.fill)
+            .listRowBackground(DS.surface)
             addons
             traktSection(model)
             Section("Apariencia") {
@@ -105,9 +105,9 @@ struct SettingsView: View {
                     Text(addon.name).foregroundStyle(DS.text)
                     Text(redact(addon.url)).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)   // solo el servidor: la ruta lleva tu clave
                 }
-                .swipeActions { if session.model.ownAddonURLs.contains(addon.url) { Button("Quitar", role: .destructive) { Task { await session.model.removeAddon(url: addon.url) } } } }
+                .swipeActions { if session.model.ownAddonURLs.contains(addon.url) { Button("Quitar", role: .destructive) { Task { await session.model.removeAddon(url: addon.url) } }.tint(DS.danger) } }   // rojo, como en iOS
             }
-            if let error = session.model.addonError { Text(LocalizedStringKey(error)).foregroundStyle(DS.danger).font(DS.TextRecipe.footnote.font) }
+            if let error = session.model.addonError { Text(verbatim: env.message(error)).foregroundStyle(DS.danger).font(DS.TextRecipe.footnote.font) }
             TextField("Pegar la dirección de un complemento", text: $newAddon).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
             if !newAddon.isEmpty { Button("Agregar complemento") { Task { await session.model.addAddon(newAddon); if session.model.addonError == nil { newAddon = "" } } } }
         }
@@ -129,7 +129,7 @@ struct SettingsView: View {
                 Button { Task { await model.checkOrbital() } } label: {
                     HStack { Text("Probar conexión"); Spacer(); if model.checkingOrbital { ProgressView() } }
                 }
-                if let problem = model.orbitalCheck, !problem.isEmpty { Text(LocalizedStringKey(problem)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.danger) }
+                if let problem = model.orbitalCheck, !problem.isEmpty { Text(verbatim: env.message(problem)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.danger) }
                 if !model.importedFromOrbital.isEmpty {
                     Label("Traje de tu Orbital: \(imported(model)). No hay que escribirlo aquí.", systemImage: "arrow.down.doc")
                         .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.good)
@@ -150,7 +150,7 @@ struct SettingsView: View {
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 if !orbitalToken.isEmpty { Button("Guardar token") { model.setOrbitalToken(orbitalToken); orbitalToken = ""; Task { await model.checkOrbital() } } }
             }
-        } header: { Text("Tu Orbital (la TV)") } footer: {
+        } header: { Label { Text("Tu Orbital (la TV)") } icon: { OrbitalMark(size: DS.Size.markSmall) } } footer: {
             Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y tu Trakt y las claves de Para ti salen de ella.")
         }
         .listRowBackground(DS.surface)
@@ -188,7 +188,7 @@ struct SettingsView: View {
                 }
                 scrobbleRow(model)
             case .failed(let message):
-                DSNotice(text: LocalizedStringKey(message), tone: .error)
+                DSNotice(verbatim: env.message(message), tone: .error)
                 Button("Volver a intentar") { Task { await model.linkTrakt() } }
             }
         }
@@ -212,7 +212,7 @@ struct SettingsView: View {
             } else {
                 Text("Todavía nada: aparece cuando veas algo en el iPhone.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
             }
-            if let error = model.scrobble.error { DSNotice(text: LocalizedStringKey(error), tone: .warn) }
+            if let error = model.scrobble.error { DSNotice(verbatim: env.message(error), tone: .warn) }
         }
     }
 

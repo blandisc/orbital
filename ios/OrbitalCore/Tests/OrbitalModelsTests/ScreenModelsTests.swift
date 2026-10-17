@@ -93,6 +93,10 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertTrue(search.results.isEmpty, "con una letra no se busca")
         await search.search("dune")
         XCTAssertTrue(search.results.contains { $0.kind == "movie" } && search.results.contains { $0.kind == "series" })
+        XCTAssertEqual(search.searchedQuery, "dune", "la pantalla sabe a qué búsqueda pertenecen los resultados")
+        await search.search("d")
+        XCTAssertNil(search.searchedQuery, "con una letra no hay búsqueda contestada")
+        await search.search("dune")
         search.remember("dune"); search.remember("Severance"); search.remember("DUNE")
         XCTAssertEqual(search.recent, ["DUNE", "Severance"])
         XCTAssertEqual(SearchModel(rig.services).recent, ["DUNE", "Severance"], "se guarda")
@@ -250,14 +254,14 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertTrue(model.traktLinked)
         XCTAssertEqual(Set(model.mosaic.map(\.imdb)), ["tt11280740", "tt2788316", "tt13238346"])
         XCTAssertEqual(model.watchlistKeys, ["tt11280740"])
-        XCTAssertEqual(model.visibleShelves.map(\.id), ["mine", "recs"], "Lo tuyo (watchlist + Tus series) y las recomendadas; tendencias sin contenido no se pinta")
-        let mine = try XCTUnwrap(model.visibleShelves.first)
-        XCTAssertEqual(model.items(for: mine).map(\.imdb), ["tt11280740"])
-        let recs = try XCTUnwrap(model.visibleShelves.last)
+        XCTAssertEqual(model.visibleShelves.map(\.id), ["recs", "watchlist"], "el orden de la TV: Recomendadas y luego Tu watchlist; lo vacío no se pinta")
+        let recs = try XCTUnwrap(model.visibleShelves.first)
         XCTAssertEqual(model.items(for: recs).map(\.imdb), ["tt2788316"])
+        let watchlist = try XCTUnwrap(model.visibleShelves.last)
+        XCTAssertEqual(model.items(for: watchlist).map(\.imdb), ["tt11280740"])
         await model.setKind("movie")
         XCTAssertEqual(model.items(for: recs).map(\.imdb), ["tt13238346"])
-        XCTAssertEqual(model.items(for: mine).map(\.imdb), ["tt11280740"], "Lo tuyo no tiene split: Series · Películas no lo toca")
+        XCTAssertEqual(model.items(for: watchlist).map(\.imdb), ["tt11280740"], "Tu watchlist no tiene split: Series · Películas no la toca")
         await model.dismiss(model.mosaic[0])
         XCTAssertEqual(model.mosaic.count, 2)
     }
@@ -294,6 +298,7 @@ final class ScreenModelsTests: XCTestCase {
     /// CEN-18: con tu Orbital conectada, «Para ti» viene de allá (misma curaduría, con el puesto de un chart si lo trae).
     func testParaTiUsesTheConsolesForYouWhenConnected() async throws {
         let rig = try ServicesRig()
+        rig.services.forYouFromConsole = true   // la ruta de la consola (la app, por omisión, calcula Para ti en el iPhone)
         rig.services.settings.update { $0.orbitalAddress = "tv.example" }
         rig.secrets.set(SecretKey.orbitalToken, "tok")
         rig.http.json["https://tv.example/api/foryou"] = [
@@ -332,6 +337,25 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertTrue(model.isGeneric)
         XCTAssertEqual(model.mosaic.map(\.imdb), ["tt0386676", "tt1160419"])
         XCTAssertNil(model.error)
+    }
+
+    /// El iPhone calcula Para ti él mismo aunque tu Orbital esté conectada (no depende de que conteste): trae sus propias listas
+    /// con puesto (Top 10 de Netflix, tendencias de JustWatch) y solo le avisa a la consola lo que marcas «No me interesa».
+    func testParaTiIsComputedOnThePhoneEvenWithYourOrbitalConnected() async throws {
+        let rig = try ServicesRig()
+        rig.services.settings.update { $0.orbitalAddress = "tv.example" }
+        rig.secrets.set(SecretKey.orbitalToken, "tok")
+        rig.http.json["https://tv.example/api/foryou/dismiss"] = ["ok": true]
+        rig.http.json["https://v3-cinemeta.strem.io/catalog/movie/top.json"] = ["metas": [
+            ["id": "tt1160419", "type": "movie", "name": "Dune", "poster": "https://p/3.jpg", "releaseInfo": "2021"]]]
+        let model = ParaTiModel(rig.services)
+        await model.load()
+        XCTAssertEqual(model.source, .phone)
+        XCTAssertFalse(rig.http.calls.contains("https://tv.example/api/foryou"), "no le pide Para ti a la consola")
+        XCTAssertTrue(model.lists.contains { $0.id == "chart:netflix" }, "el Top 10 de Netflix lo calcula el iPhone")
+        XCTAssertTrue(model.lists.contains { $0.id == "jw:disney" }, "y las tendencias de Disney+")
+        await model.dismiss(model.mosaic[0])
+        XCTAssertTrue(rig.http.calls.contains("https://tv.example/api/foryou/dismiss"), "«No me interesa» también se le avisa a la TV")
     }
 
     func testConnectingYourOrbitalKeepsTheTokenInTheKeychainAndChecksIt() async throws {
@@ -501,6 +525,8 @@ final class CatalogAndSourcesTests: XCTestCase {
         let groups = DownloadGroup.group([item("tt2", "a", bytes: 1), item("tt1", "b", bytes: 2), item("tt2", "c", bytes: 3)])
         XCTAssertEqual(groups.map(\.metaID), ["tt2", "tt1"])
         XCTAssertEqual(groups.first?.items.map(\.videoID), ["a", "c"])
+        let episodes = DownloadGroup.group([item("tt9", "tt9:2:1", bytes: 1), item("tt9", "tt9:1:3", bytes: 1), item("tt9", "tt9:1:1", bytes: 1)])
+        XCTAssertEqual(episodes.first?.items.map(\.videoID), ["tt9:1:1", "tt9:1:3", "tt9:2:1"], "en orden de temporada y episodio")
         XCTAssertEqual(groups.first?.bytes, 4)
     }
 }

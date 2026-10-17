@@ -30,6 +30,8 @@ final class TVNowModelTests: XCTestCase {
         try await Task.sleep(nanoseconds: 30_000_000)
         XCTAssertEqual(model.now?.title, "Interstellar")
         model.setActive(false)
+        // La petición que ya iba en camino al parar puede llegar un instante después: se deja aterrizar antes de contar.
+        try await Task.sleep(nanoseconds: 10_000_000)
         let callsAtStop = rig.http.calls.count
         try await Task.sleep(nanoseconds: 30_000_000)
         XCTAssertEqual(rig.http.calls.count, callsAtStop)  // ya no sondea
@@ -72,5 +74,30 @@ final class TVNowModelTests: XCTestCase {
         XCTAssertFalse(model.busy)
         XCTAssertEqual(model.now?.paused, true)
         XCTAssertEqual(rig.http.bodies("https://tv.example/api/companion/player").count, 1)
+    }
+
+    /// El control completo: cada tecla y el texto van a la consola como si fueran del mando.
+    func testTheFullRemoteSendsKeysAndText() async throws {
+        let rig = try connected()
+        rig.http.json["https://tv.example/api/companion/input"] = ["ok": true, "target": "ui"]
+        rig.http.json["https://tv.example/api/companion/text"] = ["ok": true]
+        let model = TVNowModel(rig.services, intervalSeconds: 0.01)
+        await model.press(.right)
+        await model.press(.select)
+        await model.type("dune", submit: true)
+        let sent = rig.http.bodies("https://tv.example/api/companion/input").compactMap { JSON.parse($0)?["action"]?.string }
+        XCTAssertEqual(sent, ["right", "select"])
+        let text = try XCTUnwrap(rig.http.bodies("https://tv.example/api/companion/text").first.flatMap { JSON.parse($0) })
+        XCTAssertEqual(text["text"]?.string, "dune")
+        XCTAssertEqual(text["submit"]?.bool, true)
+        XCTAssertFalse(model.remoteOutdated)
+    }
+
+    /// Una consola de antes (sin la ruta): el pad se esconde y se avisa que hay que actualizarla.
+    func testAnOlderOrbitalHidesThePad() async throws {
+        let rig = try connected()   // /api/companion/input no se registra: 404, como una versión anterior
+        let model = TVNowModel(rig.services, intervalSeconds: 0.01)
+        await model.press(.up)
+        XCTAssertTrue(model.remoteOutdated)
     }
 }

@@ -7,6 +7,12 @@ import OrbitalCore
 /// sirve para recorrer la app en el simulador sin tu cuenta.
 enum Demo {
     static var isOn: Bool { ProcessInfo.processInfo.arguments.contains("-demo") }
+    /// `-start-tab N` y `-start-mode lists|mosaic`: abren esa pestaña con tus datos de verdad (sin `-demo`), para revisar
+    /// un iPhone físico desde la Mac (`devicectl … process launch`) y capturarlo. Solo Debug.
+    static var startTab: Int? { value(after: "-start-tab").flatMap(Int.init) }
+    static var startMode: String? { value(after: "-start-mode") }
+    /// `-demo-no-idle`: el mosaico no se mueve solo (las pruebas de arrastre miden solo lo que hace el dedo).
+    static var noIdle: Bool { ProcessInfo.processInfo.arguments.contains("-demo-no-idle") }
 
     static let addonURL = "https://demo.orbital.invalid/manifest.json"
     /// `-demo-no-tv`: sin Orbital conectada (para probar el QR: `xcrun simctl openurl booted "orbital-ios://pair?u=https%3A%2F%2Ftv.demo.invalid&t=demo"`).
@@ -161,7 +167,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                 "lists": [list("watchlist", "Tu watchlist", "Trakt", "Lo que dejaste pendiente", split: false),
                           list("mine", "Tus series", "Trakt", "Las que estás viendo", split: false),
                           list("chart:netflix", "Top 10 en Netflix", "Netflix", "Esta semana en México", split: true, brand: "netflix", logo: logo("tt1160419")),
-                          list("jw:disney", "Lo más visto en Disney+", "JustWatch", "Popular en México", split: true, brand: "disney", logo: logo("tt4154796")),
+                          list("jw:disney", "Tendencias en Disney+", "JustWatch", "Tendencia en JustWatch · México", split: true, brand: "disney", logo: logo("tt4154796")),
                           list("trend", "En tendencia", "Trakt", "Lo más visto esta semana", split: true),
                           list("addon:cat", "Clásicos", "Stremio", "De Cinemeta", split: false),
                           list("addon:empty", "Un catálogo vacío", "Stremio", "De nadie", split: false)],
@@ -247,6 +253,10 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             default: break
             }
         }
+        // El control completo: la TV de mentira acepta las teclas y el texto (no hay interfaz que mover).
+        if path == "/api/companion/input" || path == "/api/companion/text" {
+            return HTTPResponse(status: 200, data: JSON.object(["ok": true]).serialized())
+        }
         if path == "/api/companion/inbox/ack" {
             inboxAcked = true
             return HTTPResponse(status: 200, data: JSON.object(["removed": .int(1)]).serialized())
@@ -268,7 +278,11 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                                      "video_id": .string("tt0386676:2:5"), "title": .string("The Office"),
                                      "episode_label": .string("T2 · E5"), "poster": .string("https://images.metahub.space/poster/medium/tt0386676/img"),
                                      "position": .double(nowPlayingPosition), "duration": .double(Self.nowPlayingDuration), "paused": .bool(nowPlayingPaused)])
-        return HTTPResponse(status: 200, data: JSON.object(["playing": playing, "inbox": .array(inbox)]).serialized())
+        // La pantalla de la TV de mentira: en su ficha, con la leyenda del pie (como la manda la consola de verdad).
+        let ui: JSON = ["screen": "title", "text_field": false, "section": "Películas y series",
+                        "legend": ["select": "Reproducir", "back": "Atrás", "alt": "Mi lista", "options": "Más", "menu": "Menú", "search": "Buscar",
+                                   "page": "De 5 en 5", "section": "Secciones"]]
+        return HTTPResponse(status: 200, data: JSON.object(["playing": playing, "inbox": .array(inbox), "ui": ui]).serialized())
     }
 
     private func ok(_ result: JSON) -> HTTPResponse { HTTPResponse(status: 200, data: JSON.object(["result": result]).serialized()) }

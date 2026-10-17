@@ -150,11 +150,50 @@ enum DS {
         static func spring(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.slow, bounce: 0.2) }
     }
 
+    /// La marca de Orbital (la de la TV: icons.js · mark y status-bar.css «La marca»). Todo en las unidades de su caja de 32
+    /// (el planeta y el anillo) o en em de la palabra (la luna, el interletrado, el tamaño de la marca junto a la palabra).
+    enum Brand {
+        static let box: CGFloat = 32
+        static let planetRadius: CGFloat = 7.2, planetStroke: CGFloat = 2.8, ringStroke: CGFloat = 2.1
+        /// El anillo, un poco más tenue que el planeta.
+        static let ringOpacity: Double = 0.7
+        /// La luna: su ancho, lo que sube sobre la línea de base y lo que la separa de la palabra (em).
+        static let moon: CGFloat = 0.26, moonRise: CGFloat = 0.62, moonGap: CGFloat = 0.1
+        /// De dónde cae la luna al aparecer (em) y lo chica que empieza.
+        static let moonFromX: CGFloat = -0.9, moonFromY: CGFloat = -0.7, moonFromScale: CGFloat = 0.2
+        /// «orbital»: interletrado apretado (em); la marca mide 1.7 veces la letra y va a media letra de ella.
+        static let tracking: CGFloat = -0.035, markScale: CGFloat = 1.7, markGap: CGFloat = 0.5
+        /// Al arrancar: el anillo se dibuja en este tiempo y la luna cae después (s), como en la TV (--duration-land).
+        static let drawSeconds = 0.76, moonDelay = 0.76 * 1.7
+        /// La letra de «orbital» (en la TV, Segoe UI Variable Display): SF Pro Rounded en negrita, del tamaño de la marca.
+        static func wordFont(_ size: CGFloat) -> Font { .system(size: size, weight: .bold, design: .rounded) }
+    }
+
+    /// El control completo de la TV (`TouchPad`, `RemoteKey`).
+    enum Remote {
+        /// Alto del pad táctil y de cada tecla.
+        static let padHeight: CGFloat = 200, keyHeight: CGFloat = 60
+        /// Qué parte del alto de la hoja estirada toma el pad (en un iPhone grande crece en vez de dejar un hueco abajo).
+        static let padShare: CGFloat = 0.37
+        /// Cuánto hay que deslizar para una flecha (y cada cuánto se repite al seguir deslizando).
+        static let swipeStep: CGFloat = 56
+        /// Lo que se puede mover el dedo y seguir contando como toque (A).
+        static let tapSlop: CGFloat = 10
+        /// La luz bajo el dedo en el pad.
+        static let touchGlow: CGFloat = 72
+        /// Cuánto se espera a que dejes de escribir para mandar el texto a la TV.
+        static let typeDebounce = UInt64(0.35 * 1e9)
+    }
+
     /// Medidas fijas.
     enum Size {
         static let touchTarget = CGFloat(DesignTokens.Size.touchTarget), thumbSmall = CGFloat(DesignTokens.Size.thumbSmall)
         static let cardMax = CGFloat(DesignTokens.Size.cardMax), grabber = CGFloat(DesignTokens.Size.grabber), grabberHeight = CGFloat(DesignTokens.Size.grabberHeight)
         static let logo = CGFloat(DesignTokens.Size.logo)
+        /// La letra de «orbital» en la marca grande (la bienvenida) y el planeta solo, junto a un título o en el widget.
+        static let wordmark: CGFloat = 40, markSmall: CGFloat = 22
+        /// Un ícono de lista junto al título de su estante (`ListIcon`).
+        static let listIcon: CGFloat = 22
         static let platformLogo = CGFloat(DesignTokens.Size.platformLogo)
         static let rankNumber = CGFloat(DesignTokens.Size.rankNumber)
         /// La cifra de un Top 10: enorme y pesada; no crece con Dynamic Type (es un adorno, el puesto ya se dice en la etiqueta).
@@ -166,6 +205,8 @@ enum DS {
         static let captionLogo: CGFloat = 34
         /// El arte redondo del accesorio «En la TV».
         static let accessoryArt: CGFloat = 32
+        /// La columna del símbolo en los renglones de una guía («Lo que puedes decir»): alinea los textos.
+        static let iconColumn: CGFloat = 24
         /// El alto de un mosaico con arte (géneros de Explora).
         static let artTileHeight: CGFloat = 96
         /// Hasta cuántas temporadas se enseñan como filtros; con más, un menú.
@@ -207,6 +248,7 @@ enum DS {
         /// Quieto en el mosaico: a los 30 s el ambiente despierta solo; sobre una pieza, a los 2,2 s cobra vida.
         static let mosaicIdle = UInt64(DesignTokens.Mosaic.idleSeconds * 1e9), mosaicAlive = UInt64(DesignTokens.Mosaic.aliveSeconds * 1e9)
         static let mosaicDrift = UInt64(DesignTokens.Mosaic.driftTick * 1e9)
+        static let mosaicFlingFrame = UInt64(DesignTokens.Mosaic.flingFrame * 1e9)
     }
 
     /// Tamaño de los pósters (relación 2:3, como en la TV).
@@ -230,6 +272,8 @@ enum DS {
         static let heroHeight: CGFloat = 300
         /// El póster pequeño de «Viendo en la TV» (misma relación 2:3, más chico que el de la tira).
         static let nowPlayingWidth: CGFloat = 56
+        /// La tarjeta «Desde la TV»: arte ancho con su logo, datos y acciones encima.
+        static let fromTVHeight: CGFloat = 220
     }
 
     /// «Viendo en la TV»: cada cuánto se vuelve a dibujar la barra de avance mientras se interpola entre sondeos.

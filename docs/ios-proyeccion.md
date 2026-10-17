@@ -82,12 +82,19 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `BleedArt` / `HeroCard` | Arte a sangre con rótulo, logo, `DataLine`, acciones y avance | Inicio (carrusel), Para ti › Listas, ficha |
 | `DataLine` | Datos con números tabulares (no una monoespaciada); quita del final lo que no cabe | Destacados, ficha, descargas |
 | `Eyebrow` | Rótulo pequeño (acento o sobre el arte) | Destacados |
+| `HeroActions` | Las acciones de un destacado en un renglón; si no caben (letra grande, iPhone SE), apiladas | Inicio (carrusel), Para ti › Listas |
 | `ActionGrid` + `ProjectionAction` | Acciones secundarias iguales con ícono y nombre (se apilan con letra grande) | Ficha (Mi lista, Descargar, Fuentes) |
 | `StillCard` | Pieza 16:9 con avance, nombre y datos | «También tenías» |
 | `PageDots` | Puntos de un carrusel | Inicio |
 | `RankedRow` + `MovementBadge` | Renglón con puesto, póster chico y ▲ ▼ / Nuevo | Buscar › Lo más popular (y la Cartelera) |
 | `ArtTile` | Mosaico con arte y nombre | Buscar › Explora (géneros) |
 | `DSOptionMenu` | Menú nativo para elegir entre muchas opciones | Temporadas (más de `DS.Size.seasonChipsMax`) |
+| `TouchPad`, `RemoteKey`, `RemoteTextField` | El control completo de tu Orbital: pad (deslizar = flechas, tocar = A), teclas de la consola y escribir en la TV | `RemoteSheet` (la hoja del accesorio, estirada) |
+| `VoiceCommandBar`, `VoiceChoices` | La voz del control: el micrófono con lo que oyó, la respuesta y lo que entendió; y, si tu Orbital no supo cuál, las opciones para tocar (`VoiceAssistant.choose`) | `RemoteSheet` |
+| `VoiceGuideView` | «Lo que puedes decir»: dónde hablarle (control, Siri, Alexa), lo que solo hace el iPhone, las frases de la consola (alexa/commands.json) y qué hacer si no funciona | Ajustes › Voz y el «?» junto al micrófono del control |
+| `OrbitalIcon`, `ListIcon` | Los íconos de las listas, los mismos de la TV (icons.js → `node scripts/list_icons.mjs` → Assets.xcassets/Icons; tests/web/list-icons.test.mjs los mantiene iguales) | `Shelf`, `DSSectionHead`/`Rail`, la pestaña Para ti |
+| `TVRemoteAccessory` | El accesorio cuando la TV no reproduce nada: abre el control completo | Toda la app, con tu Orbital conectada |
+| `fittedSheet()` / `subtitle(_:)` | Hoja a la medida de su contenido; subtítulo de la barra solo cuando dice algo | Hojas cortas; Inicio, Para ti, Descargas |
 | `TVAccessory` | Lo que suena en tu Orbital, en el accesorio de la barra | Toda la app (iOS 26.1+) |
 | `Shelf`, `RankedPosterCard`, `PosterCard`, `TitleLink`, `Rail` | Estantes, Top 10, pósters | Para ti, Inicio, Buscar |
 | `Mosaic` | El mosaico que sube despacio (como `foryou-mosaic.js` de la TV) | Para ti |
@@ -131,7 +138,9 @@ Con «Reducir movimiento»: sin ambiente, sin acercamiento, sin fundidos.
 
 Todo texto de pantalla es su clave en español (`LocalizedStringKey`) y su traducción vive en `scripts/ios_strings.py`
 (`python scripts/ios_strings.py --check` falla si falta una). Los textos armados (`Strings.endsAt`, `Strings.timeLeft`,
-`Strings.episode`) usan el idioma de Ajustes, no el del sistema. Los géneros de Cinemeta se traducen con
+`Strings.episode`) usan el idioma de Ajustes, no el del sistema. Los errores y avisos que arma un modelo en español («No pude marcarlo: …»,
+«La descarga falló (código 418).») se muestran con `env.message(…)` / `Strings.message`: reconoce la forma de su clave en el
+catálogo y la vuelve a armar traducida, nunca `LocalizedStringKey(texto)` (un texto ya armado no encuentra su clave). Los géneros de Cinemeta se traducen con
 `Vocabulary.genres` (la misma tabla que `format.js` de la TV).
 
 ## 7. Modo claro y oscuro

@@ -37,9 +37,21 @@ struct DSChipText: View {
 struct DSBadge: View {
     let text: LocalizedStringKey
     var body: some View {
-        Text(text).font(DS.TextRecipe.caption.font.weight(.semibold)).lineLimit(1).foregroundStyle(DS.text)
+        Text(text).font(DS.TextRecipe.caption.font.weight(.semibold)).lineLimit(1).foregroundStyle(DS.paper)   // sobre la placa oscura del arte, en los dos modos
             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
             .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+    }
+}
+
+/// Una marca de una sola idea en la esquina de un póster (en tu watchlist): el ícono sobre la placa oscura, con su nombre para VoiceOver.
+struct DSIconBadge: View {
+    let symbol: String
+    let label: LocalizedStringKey
+    var body: some View {
+        Image(systemName: symbol).font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.paper)
+            .padding(DS.Space.s1 + DS.Space.s1 / 2)
+            .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.sm))
+            .accessibilityLabel(Text(label))
     }
 }
 
@@ -48,7 +60,7 @@ struct DSBadge: View {
 struct DSRankBadge: View {
     let rank: Int
     var body: some View {
-        Text(verbatim: "\(rank)").font(DS.TextRecipe.section.font.weight(.bold)).foregroundStyle(DS.text).lineLimit(1)
+        Text(verbatim: "\(rank)").font(DS.TextRecipe.section.font.weight(.bold)).foregroundStyle(DS.paper).lineLimit(1)   // sobre la placa oscura, en los dos modos
             .padding(.horizontal, DS.Space.s2).padding(.vertical, DS.Space.s1)
             .background(DS.badgeBackground, in: RoundedRectangle(cornerRadius: DS.Radius.md))
             .accessibilityLabel(Text("Puesto \(rank)"))
@@ -93,11 +105,13 @@ struct DSSectionHead: View {
     var trailing: LocalizedStringKey?
     /// El logo de la plataforma (Netflix, Disney+…), si la lista es de una: siempre a la misma altura que en los chips.
     var logo: String?
+    /// El ícono de la lista (el mismo de la TV), si no hay logo.
+    var icon: OrbitalIcon?
     var action: (() -> Void)?
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            if let logo { DSPlatformLogo(url: logo) }
+        HStack(alignment: .center, spacing: DS.Space.s2) {
+            if let logo { DSPlatformLogo(url: logo) } else if let icon { ListIcon(icon: icon).foregroundStyle(DS.textMuted) }
             Text(title).recipe(.section)
             Spacer()
             if let trailing {
@@ -138,6 +152,7 @@ struct RemoteImage<Content: View>: View {
     private func load() async {
         let pixels = maxPoints * ImagePipeline.screenScale
         if let hit = ImagePipeline.shared.cached(url, maxPixel: pixels) { loaded = hit; return }
+        loaded = nil   // otra URL en la misma vista: no se queda la imagen de antes mientras llega (o si falla) la nueva
         if ImagePipeline.shared.recentlyFailed(url, maxPixel: pixels) { didFail = true; return }
         didFail = false
         let image = await ImagePipeline.shared.image(url, maxPixel: pixels)
@@ -198,6 +213,8 @@ struct PosterCard: View {
     let title: String
     let poster: String?
     var badge: LocalizedStringKey?
+    /// En tu watchlist: un marcador (ícono) en la esquina.
+    var bookmarked = false
     /// El puesto en un Top 10: sustituye a `badge` en la esquina (una sola pieza, no dos encimadas).
     var rank: Int?
     var progress: Double?
@@ -208,6 +225,7 @@ struct PosterCard: View {
             PosterView(url: poster, title: title)
             if let rank { DSRankBadge(rank: rank).padding(DS.Space.s2) }
             else if let badge { DSBadge(text: badge).padding(DS.Space.s2) }
+            else if bookmarked { DSIconBadge(symbol: "bookmark.fill", label: "En tu watchlist").padding(DS.Space.s2) }
             if let progress { VStack { Spacer(); DSProgress(fraction: progress) } }
         }
         .frame(width: width)
@@ -263,26 +281,41 @@ struct TitleLogo: View {
     var dark = false
     /// Si el logo resultó oscuro al medirlo (un logo negro sobre la sala oscura no se lee): se pinta claro.
     @State private var measuredDark = false
+    /// El logo sin su margen transparente (metahub los trae con ~25 % vacío arriba y abajo: el rótulo se veía flotando).
+    @State private var trimmed: UIImage?
+    @State private var failed = false
 
     var body: some View {
         Group {
             if let url, let u = URL(string: url) {
-                RemoteImage(url: u, maxPoints: DS.Image.logo) { phase in
-                    switch phase {
-                    case .success(let image): image.resizable().scaledToFit().brightness(dark || measuredDark ? 1 : 0)
-                    case .failure: name
-                    default: name.hidden()     // mientras carga guarda el sitio del nombre: no brinca si el logo llega
-                    }
+                Group {
+                    if let trimmed { Image(uiImage: trimmed).resizable().scaledToFit().brightness(dark || measuredDark ? 1 : 0) }
+                    else if failed { name }
+                    else { name.hidden() }     // mientras carga guarda el sitio del nombre: no brinca si el logo llega
                 }
-                .frame(maxWidth: DS.Size.cardMax, maxHeight: height, alignment: .leading)
+                // Su alto real (por su proporción, con el tope de siempre): una caja más alta que el logo dejaba un hueco
+                // entre el rótulo y el logo.
+                .frame(maxWidth: DS.Size.cardMax, maxHeight: fittedHeight, alignment: .bottomLeading)
                 .shadow(color: DS.scrim, radius: DS.Space.s1)
-                .task(id: url) { measuredDark = await LogoTone.isDark(u) }
+                .task(id: url) {
+                    trimmed = LogoTrim.cached(u)
+                    if trimmed == nil {
+                        if let found = await LogoTrim.load(u) { trimmed = found } else { failed = true }
+                    }
+                    measuredDark = await LogoTone.isDark(u)
+                }
             } else { name }
         }
         .accessibilityLabel(Text(title))
     }
 
     private var height: CGFloat { size == .hero ? DS.Size.logoHero : DS.Size.logo }
+
+    /// El alto que de verdad ocupa el logo recortado a lo ancho de siempre (sin pasar del tope).
+    private var fittedHeight: CGFloat {
+        guard let trimmed, trimmed.size.width > 0, trimmed.size.height > 0 else { return height }
+        return min(height, DS.Size.cardMax * trimmed.size.height / trimmed.size.width)
+    }
 
     private var name: some View {
         // En una pieza, una sola línea (con puntos suspensivos si no cabe): en una columna angosta dos líneas se encimaban con el dato.
@@ -302,14 +335,20 @@ struct HeroCard<Actions: View>: View {
     var accentEyebrow = false
     var data: [String] = []
     var progress: Double?
+    /// Abrir la ficha: la tarjeta lo hace con su toque y VoiceOver con la acción «Ver ficha» sobre el nombre.
+    var open: (() -> Void)?
     @ViewBuilder var actions: () -> Actions
 
     var body: some View {
         BleedArt(url: background, title: title, minHeight: DS.Poster.heroHeight) {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
-                if let eyebrow { Eyebrow(text: eyebrow, accent: accentEyebrow, onArt: true) }
-                TitleLogo(url: logo, title: title, size: .hero)
-                if !data.isEmpty { DataLine(parts: data, color: DS.onArtSecondary) }
+                VStack(alignment: .leading, spacing: DS.Space.s3) {
+                    if let eyebrow { Eyebrow(text: eyebrow, accent: accentEyebrow, onArt: true) }
+                    TitleLogo(url: logo, title: title, size: .hero)
+                    if !data.isEmpty { DataLine(parts: data, color: DS.onArtSecondary) }
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityAction(named: Text("Ver ficha")) { open?() }
                 actions().padding(.top, DS.Space.s1)
                 if let progress { DSProgress(fraction: progress) }
             }
@@ -377,13 +416,17 @@ struct DSIconButton: View {
 /// Un aviso corto con su color (sin conexión, error).
 struct DSNotice: View {
     enum Tone { case info, success, warn, error }
-    let text: LocalizedStringKey
+    let text: Text
     var tone: Tone = .info
+
+    init(text: LocalizedStringKey, tone: Tone = .info) { self.text = Text(text); self.tone = tone }
+    /// Un texto ya en el idioma de la app (un error o aviso traducido con `Strings.message`): tal cual, sin buscarlo otra vez.
+    init(verbatim: String, tone: Tone = .info) { self.text = Text(verbatim: verbatim); self.tone = tone }
 
     var body: some View {
         HStack(spacing: DS.Space.s2) {
             Image(systemName: symbol)
-            Text(text).font(DS.TextRecipe.footnote.font).multilineTextAlignment(.leading)
+            text.font(DS.TextRecipe.footnote.font).multilineTextAlignment(.leading)
             Spacer(minLength: 0)
         }
         .foregroundStyle(color)
@@ -553,13 +596,20 @@ final class ArtTint: ObservableObject {
     private static var cache: [String: ArtColors] = [:]
     private static let cacheLimit = 64
 
+    /// Lo último que se pidió: gana siempre (un arte anterior que llega tarde no pinta encima del de ahora).
+    private var requested: String?
+
     func load(_ url: String?) async {
+        requested = url
         guard let url, let u = URL(string: url) else { colors = nil; return }
         if let hit = Self.cache[url] { colors = hit; return }
         // Basta una miniatura para sacar el tono dominante: nunca se decodifica el fondo completo.
-        guard let thumb = await ImagePipeline.shared.image(u, maxPixel: DS.Image.tintPixels),
-              let palette = await Task.detached(priority: .utility, operation: { thumb.rgbaPixels.map { ArtPalette.palette(for: ArtPalette.dominantHue(rgba: $0)) } }).value
-        else { return }
+        let palette: (tint: ArtPalette.RGB, accent: ArtPalette.RGB)?
+        if let thumb = await ImagePipeline.shared.image(u, maxPixel: DS.Image.tintPixels) {
+            palette = await Task.detached(priority: .utility, operation: { thumb.rgbaPixels.map { ArtPalette.palette(for: ArtPalette.dominantHue(rgba: $0)) } }).value
+        } else { palette = nil }
+        guard requested == url, !Task.isCancelled else { return }
+        guard let palette else { colors = nil; return }   // sin arte: fondo liso, no el color del título anterior
         let found = ArtColors(palette)
         if Self.cache.count >= Self.cacheLimit { Self.cache.removeAll() }
         Self.cache[url] = found
@@ -570,6 +620,20 @@ final class ArtTint: ObservableObject {
 /// ¿Es oscuro un logo? Su color medio pesado por la opacidad (los logos son PNG con fondo transparente), de una miniatura.
 /// Se recuerda por URL.
 @MainActor
+/// Los logos sin su margen transparente, recortados una vez (fuera del hilo principal) y recordados.
+enum LogoTrim {
+    @MainActor private static var cache: [URL: UIImage] = [:]
+
+    @MainActor static func cached(_ url: URL) -> UIImage? { cache[url] }
+
+    @MainActor static func load(_ url: URL) async -> UIImage? {
+        guard let image = await ImagePipeline.shared.image(url, maxPixel: DS.Image.logo * ImagePipeline.screenScale) else { return nil }
+        let result = await Task.detached(priority: .userInitiated) { image.trimmingTransparentEdges() ?? image }.value
+        cache[url] = result
+        return result
+    }
+}
+
 enum LogoTone {
     private static var cache: [URL: Bool] = [:]
 
@@ -585,6 +649,23 @@ enum LogoTone {
 }
 
 extension UIImage {
+    /// La imagen sin las orillas totalmente transparentes (nil si no hay nada que recortar o no se puede leer).
+    func trimmingTransparentEdges() -> UIImage? {
+        guard let cg = cgImage, let pixels = rgbaPixels else { return nil }
+        let w = cg.width, h = cg.height
+        var top = h, bottom = -1, left = w, right = -1
+        for y in 0..<h {
+            let row = y * w * 4
+            for x in 0..<w where pixels[row + x * 4 + 3] > 8 {
+                if y < top { top = y }; if y > bottom { bottom = y }
+                if x < left { left = x }; if x > right { right = x }
+            }
+        }
+        guard bottom >= top, right >= left, (top > 0 || left > 0 || bottom < h - 1 || right < w - 1),
+              let cropped = cg.cropping(to: CGRect(x: left, y: top, width: right - left + 1, height: bottom - top + 1)) else { return nil }
+        return UIImage(cgImage: cropped, scale: scale, orientation: imageOrientation)
+    }
+
     /// Los píxeles en RGBA de 8 bits (para `ArtPalette`).
     var rgbaPixels: [UInt8]? {
         guard let cg = cgImage else { return nil }

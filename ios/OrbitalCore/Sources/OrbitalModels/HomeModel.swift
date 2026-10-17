@@ -60,14 +60,21 @@ public final class HomeModel: ObservableModel {
             myList = await listed
             offline = false; error = nil
             services.kv.set(Self.cacheKey, data: try? JSONEncoder().encode(Cache(continueWatching: continueWatching, myList: myList)))
-        } catch {
+        } catch where !Task.isCancelled {   // cancelado (cambio de pestaña): no es estar sin conexión
             offline = true
             self.error = "\(error)"
-        }
+        } catch {}
         let forYou = services.forYou
         async let airings = try? forYou.calendar(), pending = try? forYou.items(listID: "watchlist")
-        traktPending = Array(((await pending) ?? []).prefix(12))
-        publishWidget(airings: (await airings) ?? [])   // los estrenos también van al widget mediano
+        let (fetchedPending, fetchedAirings) = await (pending, airings)
+        // Cancelado o sin respuesta de Trakt: no se vacía «Tu watchlist» ni el «Próximo estreno» del widget (nil = se queda el
+        // que había). «Seguir viendo» sí va al widget siempre.
+        let cancelled = Task.isCancelled
+        if !cancelled {
+            if let fetchedPending { traktPending = Array(fetchedPending.prefix(12)) }
+            else if !(await forYou.traktLinked) { traktPending = [] }   // desconectaste Trakt: ya no hay watchlist que enseñar
+        }
+        publishWidget(airings: cancelled ? nil : fetchedAirings)   // los estrenos también van al widget mediano
     }
 
     /// Los títulos en tu idioma (Stremio guarda el original) y con lo que hace falta para seguir viendo.

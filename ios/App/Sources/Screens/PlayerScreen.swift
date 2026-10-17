@@ -23,6 +23,13 @@ final class PlayerHolder: ObservableObject {
                                 return LocalEpisode(file: file, subtitles: item.subtitleFiles.map { file.deletingLastPathComponent().appendingPathComponent($0) })
                             })
         subscription = model.onChange { [weak self] in self?.objectWillChange.send() }
+        // Episodios descargados que se encadenan solos: cada uno visto se atiende al pasar al siguiente (borrar / bajar el que sigue).
+        model.onFinishedLocal = { finished in
+            Task {
+                guard let item = await services.downloads.item(DownloadItem.makeID(metaID: finished.metaID, videoID: finished.videoID)) else { return }
+                await DownloadsModel(services, freeSpace: { DiskSpace.freeBytes() }).afterWatching(item)
+            }
+        }
     }
 }
 
@@ -33,6 +40,8 @@ struct PlayerScreen: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Con VoiceOver los controles no se esconden solos (si no, no queda nada que tocar).
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @StateObject private var holder = PlayerHolder()
     @State private var controlsVisible = true
     @State private var hideTask: Task<Void, Never>?
@@ -86,6 +95,12 @@ struct PlayerScreen: View {
             if let up = model.upNext { UpNextCard(card: up, watchNow: { Task { await model.playNextNow() } }, cancel: { model.cancelUpNext() }) }
         }
         .onArt()   // sobre el video siempre se ve como en la sala oscura, aunque la app esté en modo claro
+        // Los arrastres verticales (brillo, volumen) que empiezan cerca del borde no abren el Centro de control ni el de
+        // notificaciones: iOS pide un segundo deslizamiento, como en cualquier reproductor.
+        .defersSystemGestures(on: .vertical)
+        // VoiceOver: frotar con dos dedos cierra; el doble toque con dos dedos pausa o sigue (los gestos de siempre de iOS).
+        .accessibilityAction(.escape) { Task { await close() } }
+        .accessibilityAction(.magicTap) { Task { await holder.model.togglePlay() } }
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
@@ -120,6 +135,7 @@ struct PlayerScreen: View {
         }
         .onChange(of: scenePhase) { _, phase in if phase != .active { Task { await model.appDidEnterBackground() } } }
         .onChange(of: model.phase) { _, phase in if phase == .closed { finish() } }
+        .onChange(of: voiceOver) { _, on in if on { controlsVisible = true } }   // con VoiceOver, los controles no se esconden
         .alert("¿Sigues viendo?", isPresented: Binding(get: { model.stillWatchingPrompt }, set: { _ in })) {
             Button("Seguir") { Task { await model.confirmStillWatching() } }
             Button("Salir", role: .cancel) { Task { await close() } }
@@ -274,7 +290,8 @@ struct PlayerScreen: View {
         hideTask?.cancel()
         hideTask = Task {
             try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
-            if !Task.isCancelled, holder.model.snapshot.state == .playing { controlsVisible = false }
+            // Con la barra de avance bajo el dedo, los controles no se esconden (se iría el slider a media búsqueda).
+            if !Task.isCancelled, !voiceOver, scrubbing == nil, holder.model.snapshot.state == .playing { controlsVisible = false }
         }
     }
 
@@ -284,7 +301,7 @@ struct PlayerScreen: View {
         case .preparing: VStack(spacing: DS.Space.s3) { ProgressView().tint(DS.text); Text(preparingText(model)).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
         case .failed(let message):
             VStack(spacing: DS.Space.s4) {
-                DSNotice(text: LocalizedStringKey(message), tone: .error)
+                DSNotice(verbatim: env.message(message), tone: .error)
                 HStack { Button("Cerrar") { Task { await close() } }.buttonStyle(.glass); Button("Abrir en Infuse") { Task { await openInInfuse() } }.dsPrimaryButton() }
             }.padding(DS.Space.s6)
         default: if !controlsVisible, model.snapshot.state == .buffering || model.snapshot.state == .loading { ProgressView().tint(DS.text) }   // con controles, va en el centro
@@ -343,16 +360,23 @@ struct PlayerScreen: View {
         let shown = scrubbing ?? (dragAxis == .horizontal ? seekPreview : nil) ?? model.snapshot.position
         return VStack(spacing: DS.Space.s1) {
             Slider(value: Binding(get: { shown }, set: { scrubbing = $0 }), in: 0...duration) { editing in
-                if !editing, let target = scrubbing { Task { await model.seek(to: target); scrubbing = nil } }
+                if editing { hideTask?.cancel(); controlsVisible = true; return }   // mientras arrastras, nada se esconde
+                if let target = scrubbing { Task { await model.seek(to: target); scrubbing = nil } }
                 pulse()
             }
             .tint(DS.accent)   // el avance, en el acento (como en toda la app)
+            .accessibilityLabel(Text("Avance")).accessibilityValue(Text(verbatim: "\(clock(shown)) / \(clock(duration))"))
+            // Con VoiceOver, deslizar arriba/abajo no llama a `onEditingChanged`: salta 10 s como los botones.
+            .accessibilityAdjustableAction { d in
+                Task { await model.skip(d == .increment ? PlaybackRules.skipSeconds : -PlaybackRules.skipSeconds) }
+            }
             HStack {
                 Text(verbatim: clock(shown)).recipe(.data)
                 Spacer()
                 // Lo que falta y a qué hora terminas (la misma cuenta que la ficha), con números tabulares como todos los datos.
-                let left = max(0, duration - shown)
-                Text(verbatim: "−\(clock(left)) · \(Strings.endsAt(minutesLeft: Int((left / 60).rounded(.up)), now: env.services.now(), language: env.services.appSettings.uiLanguage))").recipe(.data)
+                // El «−» es lo que falta del video (como el slider); la hora de fin sí cuenta la velocidad (a 2× acabas antes).
+                let left = max(0, duration - shown), real = left / Double(max(model.rate, 0.25))
+                Text(verbatim: "−\(clock(left)) · \(Strings.endsAt(minutesLeft: Int((real / 60).rounded(.up)), now: env.services.now(), language: env.services.appSettings.uiLanguage))").recipe(.data)
             }
         }
     }
@@ -554,7 +578,7 @@ struct PlayerSources: View {
                         Button { Task { await model.switchSource(to: source.index); done() } } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                                    Text([source.resolution, source.languages.prefix(2).map { Streams.languageNames[$0] ?? $0 }.joined(separator: " + ")].filter { !$0.isEmpty }.joined(separator: " · "))
+                                    Text([source.resolution, source.languages.prefix(2).map { Streams.languageName($0, in: AppEnvironment.shared.services.appSettings.uiLanguage) }.joined(separator: " + ")].filter { !$0.isEmpty }.joined(separator: " · "))
                                         .font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
                                     Text(source.release).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1)
                                 }

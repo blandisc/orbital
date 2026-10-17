@@ -155,7 +155,10 @@ public final class FlushGate: @unchecked Sendable {
     func leave() { lock.withLock { busy = false } }
 }
 
-enum WatchError: Error { case noTitle }
+enum WatchError: Error, CustomStringConvertible {
+    case noTitle
+    var description: String { "No encontré ese título." }
+}
 
 /// Guarda lo que ves: en tu cuenta de Stremio (eje de todo, lo leen la app, Orbital y Stremio) y en Trakt
 /// (scrobble). Lo que no se pueda subir (sin internet) espera en una cola y se sube al volver, sin pisar

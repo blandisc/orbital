@@ -8,6 +8,7 @@ struct TitleView: View {
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.colorScheme) private var scheme
     @StateObject private var observer: ModelObserver<TitleModel>
     @StateObject private var tint = ArtTint()
     @State private var sourcesFor: SourcesTarget?
@@ -27,14 +28,15 @@ struct TitleView: View {
                 hero(model)
                 VStack(alignment: .leading, spacing: DS.Space.s4) {
                     actions(model)
-                    if let message = model.message { DSNotice(text: LocalizedStringKey(message), tone: .error) }
+                    if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
                     if model.traktAvailable { watchlistToggle(model) }
-                    if let error = model.error, model.overview.isEmpty { DSNotice(text: LocalizedStringKey(error), tone: .warn) }
+                    if let error = model.error, model.overview.isEmpty { DSNotice(verbatim: env.message(error), tone: .warn) }
                     if !model.overview.isEmpty { Text(model.overview).font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted) }
                     if model.kind == "series" { episodes(model) }
                     credits(model)
                 }
                 .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s10)
+                .padding(.top, scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: las acciones no se le pegan
             }
         }
         .background(Backdrop(tint: tint.colors))
@@ -54,9 +56,9 @@ struct TitleView: View {
             await tint.load(model.background ?? model.poster)
         }
         .sheet(item: $sourcesFor) { target in
-            SourcesSheet(model: model, videoID: target.videoID, purpose: target.purpose) { source in
+            SourcesSheet(model: model, videoID: target.videoID, purpose: target.purpose) { source, purpose in
                 sourcesFor = nil
-                handle(source: source, videoID: target.videoID, purpose: target.purpose, model: model)
+                handle(source: source, videoID: target.videoID, purpose: purpose, model: model)   // lo que quedó en el selector de la hoja
             }
             .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
@@ -107,7 +109,7 @@ struct TitleView: View {
         let label = model.continueLabel
         return VStack(spacing: DS.Space.s3) {
             Button { start(model, videoID: nil) } label: {
-                Label { primaryLabel(label, model).lineLimit(1) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
+                Label { primaryLabel(label, model).lineLimit(typeSize.isAccessibilitySize ? 2 : 1) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
             }
             .dsArtButton(tint.colors).controlSize(.large).disabled(model.continueVideoID == nil)   // el color del arte, como en la TV
             if let minutes = model.minutesToFinish {
@@ -202,13 +204,13 @@ struct TitleView: View {
     private func handle(source: Source, videoID: String, purpose: Purpose, model: TitleModel) {
         switch purpose {
         case .watch: start(model, videoID: videoID, source: source)
-        case .download: Task { await report(model.download([videoID]), model) }
+        case .download: Task { await report(model.download([videoID], source: source), model) }   // la fuente que elegiste
         }
     }
 
     private func report(_ outcome: TitleModel.DownloadOutcome, _ model: TitleModel) async {
         switch outcome {
-        case .queued(let n): env.notify(n == 1 ? "Descargando. Lo verás en Descargas." : "Descargando \(n) episodios. Los verás en Descargas.", tone: .success)
+        case .queued(let n): if n == 1 { env.notify("Descargando. Lo verás en Descargas.", tone: .success) } else { env.notify(format: "Descargando %lld episodios. Los verás en Descargas.", n, tone: .success) }
         case .noSources: env.notify("No hay fuentes de Real-Debrid para descargar.")
         case .notEnoughSpace(let text): env.notify(text)
         case .already: env.notify("Ya está descargado.", tone: .info)

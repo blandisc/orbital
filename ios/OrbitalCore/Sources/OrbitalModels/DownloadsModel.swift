@@ -18,7 +18,21 @@ public struct DownloadGroup: Identifiable, Equatable, Sendable {
             }
             groups[item.metaID]?.items.append(item)
         }
-        return order.compactMap { groups[$0] }
+        // Los episodios de una serie en orden (T1 E1, T1 E2…), no en el orden en que se bajaron.
+        return order.compactMap { id in
+            groups[id].map { g in
+                var sorted = g
+                sorted.items.sort { episodeKey($0.videoID) < episodeKey($1.videoID) }
+                return sorted
+            }
+        }
+    }
+
+    /// «tt0386676:2:5» → (2, 5); una película o un id sin temporada va primero.
+    static func episodeKey(_ videoID: String) -> (Int, Int) {
+        let parts = videoID.split(separator: ":")
+        guard parts.count >= 3, let s = Int(parts[parts.count - 2]), let e = Int(parts[parts.count - 1]) else { return (0, 0) }
+        return (s, e)
     }
 }
 
@@ -55,10 +69,21 @@ public final class DownloadsModel: ObservableModel {
     public func playRequest(_ item: DownloadItem) async -> PlayRequest {
         let file = await services.downloads.fileURL(item)
         let subs = item.subtitleFiles.map { file.deletingLastPathComponent().appendingPathComponent($0) }
+        // La ficha (para el siguiente episodio y los datos) es opcional: sin red o con una que no contesta (Wi‑Fi del avión),
+        // no se espera más de unos segundos para ver lo que ya está en el teléfono.
+        let cinemeta = services.cinemeta, kind = item.kind, id = item.metaID
+        let meta = await withTaskGroup(of: JSON?.self) { group -> JSON? in
+            group.addTask { try? await cinemeta.meta(kind: kind, id: id) }
+            group.addTask { try? await Task.sleep(nanoseconds: UInt64(Self.offlineMetaWait * 1_000_000_000)); return nil }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
+        }
         return PlayRequest(kind: item.kind, metaID: item.metaID, videoID: item.videoID, originalTitle: item.originalTitle, displayTitle: item.title,
-                           episodeLabel: item.subtitle, poster: item.poster, meta: try? await services.cinemeta.meta(kind: item.kind, id: item.metaID),
-                           localFile: file, localSubtitles: subs)
+                           episodeLabel: item.subtitle, poster: item.poster, meta: meta, localFile: file, localSubtitles: subs)
     }
+    /// Cuánto se espera la ficha antes de ver una descarga sin ella (segundos).
+    static let offlineMetaWait = 3.0
 
     /// «T2 · E6 · Halloween» para una descarga (sin esto, varios episodios de la misma serie se ven iguales en la lista).
     static func episodeLabel(_ videoID: String, meta: JSON, services: Services) -> String {

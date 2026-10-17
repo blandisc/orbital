@@ -67,6 +67,9 @@ targets:
         BGTaskSchedulerPermittedIdentifiers: [mx.iracheta.orbital.inbox]
         ITSAppUsesNonExemptEncryption: false
         NSSupportsLiveActivities: true          # descargas en la pantalla bloqueada y la Dynamic Island
+        # El micrófono del control: le das órdenes a tu Orbital con la voz (como Alexa).
+        NSMicrophoneUsageDescription: "Para darle órdenes de voz a tu Orbital, como a Alexa."
+        NSSpeechRecognitionUsageDescription: "Para entender lo que le pides a tu Orbital."
         # Para volver desde Infuse: orbital-ios://infuse-done?lastPlayedUrl=…&position=…
         CFBundleURLTypes:
           - CFBundleURLName: com.example.orbital.ios.infuse-callback
@@ -78,7 +81,7 @@ targets:
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
     scheme:
-      testTargets: []
+      testTargets: [OrbitalUITests]
 
   # Extensión de widgets: «Lo siguiente para ti» (Seguir viendo) y la actividad en vivo de las descargas.
   OrbitalWidgets:
@@ -88,8 +91,9 @@ targets:
       - path: Widgets
       - path: Shared
       - path: Resources/Localizable.xcstrings
-      - path: Resources/Assets.xcassets        # el ícono de Orbital del estado vacío
+      - path: Resources/Assets.xcassets        # el arte que comparte con la app
       - path: Sources/Design/Tokens.swift     # los mismos tokens que la app (`DS`)
+      - path: Sources/Design/Brand.swift      # la marca de Orbital (widget sin pendientes)
     dependencies:
       - package: OrbitalCore
         product: OrbitalCore
@@ -114,3 +118,21 @@ targets:
         CFBundleDevelopmentRegion: es
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+
+  # Pruebas de interfaz (XCUITest): gestos de verdad en el simulador (arrastrar el mosaico, tocar), con el modo demo.
+  #   xcodebuild test -project Orbital.xcodeproj -scheme Orbital -destination 'platform=iOS Simulator,name=Orbital QA'
+  OrbitalUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: Orbital
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mx.iracheta.orbital.uitests
+        DEVELOPMENT_TEAM: B7KRCF776Z
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.0"
+        TEST_TARGET_NAME: Orbital
+        GENERATE_INFOPLIST_FILE: YES

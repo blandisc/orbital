@@ -515,6 +515,8 @@ final class PlayerModelRobustnessTests: XCTestCase {
                                 localEpisode: { _, video in video == "tt0386676:1:2" ? next : nil })
         var request = rig.request()
         request.localFile = URL(fileURLWithPath: "/tmp/ep1.mkv")
+        var finished: [String] = []
+        model.onFinishedLocal = { finished.append($0.videoID) }
         await model.begin(request)
         await model.handle(rig.playing(10))
         rig.clock.advance(1); await model.handle(rig.playing(1295))
@@ -523,6 +525,7 @@ final class PlayerModelRobustnessTests: XCTestCase {
         await model.handle(rig.playing(1304)); await model.tick()
         await model.waitForTransition()
         XCTAssertEqual(rig.engine.loads.map(\.url.path), ["/tmp/ep1.mkv", "/tmp/ep2.mkv"], "el siguiente episodio descargado, no el mismo archivo con otro id")
+        XCTAssertEqual(finished, ["tt0386676:1:1"], "el episodio descargado que se terminó se avisa (para «Borrar al terminar de verlo»)")
     }
 
     func testOfflineWithoutTheNextEpisodeDownloadedShowsNoNextCard() async throws {

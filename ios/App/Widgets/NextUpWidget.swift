@@ -21,8 +21,20 @@ struct NextUpProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<NextUpEntry>) -> Void) {
-        let now = Date()
-        completion(Timeline(entries: [NextUpEntry(date: now, snapshot: WidgetStore.load() ?? .empty)], policy: .after(now.addingTimeInterval(DS.Widget.fallbackRefresh))))
+        let now = Date(), stored = WidgetStore.load() ?? .empty
+        // Una entrada ahora y otra a medianoche: «Hoy» y «Mañana» cambian de día, y un estreno que ya pasó deja de verse.
+        let today = Calendar.current.startOfDay(for: now)
+        let midnight = Calendar.current.date(byAdding: .day, value: 1, to: today) ?? today
+        let entries = [now, midnight].map { NextUpEntry(date: $0, snapshot: Self.fromDay($0, stored)) }
+        completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(DS.Widget.fallbackRefresh))))
+    }
+
+    /// El snapshot sin los estrenos de días anteriores a `date`.
+    private static func fromDay(_ date: Date, _ snapshot: WidgetSnapshot) -> WidgetSnapshot {
+        var copy = snapshot
+        let start = Calendar.current.startOfDay(for: date)
+        copy.upcoming = snapshot.upcoming?.filter { $0.date >= start }
+        return copy
     }
 }
 
@@ -46,7 +58,7 @@ struct NextUpView: View {
 
     var body: some View {
         switch family {
-        case .systemMedium: MediumView(snapshot: entry.snapshot)
+        case .systemMedium: MediumView(snapshot: entry.snapshot, date: entry.date)
         case .accessoryRectangular: LockView(snapshot: entry.snapshot)
         default: SmallView(snapshot: entry.snapshot)
         }
@@ -122,14 +134,15 @@ private struct Caption: View {
             if let progress = item.progress { ProgressLine(fraction: progress) }
         }
         .shadow(color: DS.scrimStrong, radius: DS.Widget.textShadowRadius)
+        .environment(\.colorScheme, .dark)   // va sobre el velo del arte: letra clara también con la pantalla de inicio en claro
     }
 }
 
-/// Nada pendiente: el ícono de Orbital y un enlace a la app.
+/// Nada pendiente: la marca de Orbital y un enlace a la app.
 private struct EmptyState: View {
     var body: some View {
         VStack(spacing: DS.Space.s2) {
-            Image("Logo").resizable().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+            OrbitalMark(size: DS.Size.touchTarget).foregroundStyle(DS.text)   // la marca de la TV
             Text("Nada pendiente").font(DS.font(.md, weight: .semibold)).foregroundStyle(DS.text)
             Text("Abrir Orbital").font(DS.font(.xs)).foregroundStyle(DS.textMuted)
         }
@@ -160,6 +173,8 @@ private struct SmallView: View {
 
 private struct MediumView: View {
     var snapshot: WidgetSnapshot
+    /// El momento de la entrada (no el de pintarla): la de medianoche dice «Hoy» del día nuevo.
+    var date: Date
 
     var body: some View {
         if let first = snapshot.items.first {
@@ -177,7 +192,8 @@ private struct MediumView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .containerBackground(for: .widget) { tintedBackground(artTone(first)) }
+            .environment(\.colorScheme, .dark)   // el fondo es el tono oscuro del arte: letra clara en los dos modos
+            .containerBackground(for: .widget) { tintedBackground(artTone(first)).environment(\.colorScheme, .dark) }   // el fondo también: sala oscura
         } else {
             EmptyState()
         }
@@ -187,7 +203,7 @@ private struct MediumView: View {
     @ViewBuilder private func rows(_ rest: [WidgetSnapshot.Item]) -> some View {
         if let next = snapshot.upcoming?.first {
             if let one = rest.first { Row(item: one) }
-            UpcomingRow(episode: next, language: snapshot.language)
+            UpcomingRow(episode: next, language: snapshot.language, date: date)
         } else {
             ForEach(rest.prefix(2)) { Row(item: $0) }
         }
@@ -219,12 +235,13 @@ private struct Row: View {
 private struct UpcomingRow: View {
     var episode: WidgetSnapshot.UpcomingEpisode
     var language: String
+    var date: Date
 
     /// «Hoy», «Mañana» o «Viernes 17» (en el idioma del snapshot).
     private var dayText: Text {
         let calendar = Calendar.current
-        if calendar.isDateInToday(episode.date) { return Text("Hoy") }
-        if calendar.isDateInTomorrow(episode.date) { return Text("Mañana") }
+        if calendar.isDate(episode.date, inSameDayAs: date) { return Text("Hoy") }
+        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: date), calendar.isDate(episode.date, inSameDayAs: tomorrow) { return Text("Mañana") }
         return Text(episode.date.formatted(.dateTime.weekday(.wide).day().locale(Locale(identifier: language))).localizedCapitalized)
     }
 
@@ -244,8 +261,8 @@ private struct LockView: View {
     var body: some View {
         if let item = snapshot.items.first {
             VStack(alignment: .leading) {
-                Text(item.title).font(.headline).lineLimit(1)
-                if !item.detail.isEmpty { Text(item.detail).font(.caption).lineLimit(1) }
+                Text(item.title).font(DS.font(.lg)).lineLimit(1)
+                if !item.detail.isEmpty { Text(item.detail).font(DS.font(.sm)).lineLimit(1) }
                 if let progress = item.progress { ProgressView(value: progress) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -253,8 +270,8 @@ private struct LockView: View {
             .containerBackground(for: .widget) { AccessoryWidgetBackground() }
         } else {
             VStack(alignment: .leading) {
-                Text("Nada pendiente").font(.headline).lineLimit(1)
-                Text("Abrir Orbital").font(.caption).lineLimit(1)
+                Text("Nada pendiente").font(DS.font(.lg)).lineLimit(1)
+                Text("Abrir Orbital").font(DS.font(.sm)).lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .widgetURL(URL(string: "\(WidgetLink.scheme)://"))

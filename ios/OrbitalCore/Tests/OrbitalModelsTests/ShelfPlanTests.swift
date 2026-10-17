@@ -24,7 +24,7 @@ final class ShelfPlanTests: XCTestCase {
 
     func testShelvesFollowTheTVOrder() {
         let ids = ShelfPlanner.plan(overview).map(\.id)
-        XCTAssertEqual(ids, ["recs", "mine", "watchlist", "list:7", "trend", "popular", "tv:movies", "chart:netflix", "jw:disney", "hbo"],
+        XCTAssertEqual(ids, ["recs", "mine", "watchlist", "list:7", "trend", "popular", "tv:movies", "chart:netflix", "jw:disney", "netflix", "hbo"],
                        "el orden de foryou.py; Seguir viendo y Mi lista viven en Inicio")
     }
 
@@ -34,13 +34,10 @@ final class ShelfPlanTests: XCTestCase {
         XCTAssertEqual(plan.first { $0.id == "watchlist" }?.title, "Tu watchlist")
     }
 
-    func testTMDBFallbackOnlyWhenThereIsNoJustWatchOrChartOfThatBrand() {
-        let ids = ShelfPlanner.plan(overview).map(\.id)
-        XCTAssertFalse(ids.contains("netflix"), "ya hay Top 10 de Netflix")
-        XCTAssertTrue(ids.contains("hbo"), "no hay jw:hbo: el respaldo de TMDB entra")
-        let disney = ShelfPlanner.plan([list("disney", title: "Disney+", group: .platforms, brand: "disney", split: true),
-                                        list("jw:disney", group: .platforms, brand: "disney", split: true)])
-        XCTAssertEqual(disney.map(\.id), ["jw:disney"], "con jw:disney, el respaldo no se pinta aparte")
+    func testTMDBFallbackIsMarkedWhenTheBrandHasARankedList() {
+        let plan = Dictionary(uniqueKeysWithValues: ShelfPlanner.plan(overview).map { ($0.id, $0) })
+        XCTAssertEqual(plan["netflix"]?.isFallback, true, "hay Top 10 de Netflix: el respaldo solo se ve si ese llega vacío")
+        XCTAssertEqual(plan["hbo"]?.isFallback, false, "no hay jw:hbo: el respaldo de TMDB es el estante de HBO")
     }
 
     func testTheCalendarListIsNotAShelfOfItsOwn() {
@@ -51,7 +48,7 @@ final class ShelfPlanTests: XCTestCase {
     func testStylesTop10PlatformAndPlain() {
         let styles = Dictionary(uniqueKeysWithValues: ShelfPlanner.plan(overview).map { ($0.id, $0.style) })
         XCTAssertEqual(styles["chart:netflix"], .top10)
-        XCTAssertEqual(styles["jw:disney"], .platform)
+        XCTAssertEqual(styles["jw:disney"], .top10, "JustWatch también trae puesto: cifra grande, como RankedCard en la TV")
         XCTAssertEqual(styles["hbo"], .platform)
         XCTAssertEqual(styles["trend"], .plain)
     }
@@ -71,6 +68,8 @@ final class ShelfPlanTests: XCTestCase {
         XCTAssertEqual(ShelfPlanner.featured(shelves, rotation: 0)?.item.imdb, "tt2", "la primera con arte ancho (tt1 no tiene)")
         XCTAssertEqual(ShelfPlanner.featured(shelves, rotation: 1)?.item.imdb, "tt3", "«Actualizar» pasa a la siguiente")
         XCTAssertEqual(ShelfPlanner.featured(shelves, rotation: 2)?.item.imdb, "tt2", "y vuelve a empezar")
+        XCTAssertEqual(ShelfPlanner.featuredSlides(shelves, rotation: 1)?.items.map(\.imdb), ["tt3", "tt2"],
+                       "el carrusel: las de arte ancho de esa misma lista, empezando por la que toca")
         XCTAssertNil(ShelfPlanner.featured([(try XCTUnwrap(by["mine"]), [suggestion("x", wide: "")])], rotation: 0))
     }
 
@@ -88,6 +87,7 @@ final class ShelfPlanTests: XCTestCase {
         let rig = try ServicesRig()
         rig.services.settings.update { $0.orbitalAddress = "tv.example" }
         rig.secrets.set(SecretKey.orbitalToken, "tok")
+        rig.services.forYouFromConsole = true   // la ruta de la consola (en la app, Para ti se calcula en el iPhone)
         func row(_ id: String, rank: Int? = nil) -> JSON {
             var r: [String: JSON] = ["key": .string("video:\(id)"), "kind": "movie", "meta_id": .string(id), "title": .string(id), "year": 2021, "why": "En Netflix",
                                      "image": "https://p.jpg", "hero": "https://h.jpg", "overview": "", "video_id": .string(id)]
@@ -125,6 +125,49 @@ final class ShelfPlanTests: XCTestCase {
         let chartList = try XCTUnwrap(model.lists.first { $0.id == "chart:netflix" })
         XCTAssertEqual(chartList.meta, "Esta semana en México")
         XCTAssertEqual(chartList.source, "Netflix")
+    }
+
+    func testTheFallbackShowsOnlyWhenTheRankedListOfItsBrandIsEmpty() async throws {
+        let rig = try consoleRig()
+        func row(_ id: String) -> JSON { ["key": .string("video:\(id)"), "kind": "series", "meta_id": .string(id), "title": .string(id), "image": "https://p.jpg", "video_id": .string(id)] }
+        rig.http.json["https://tv.example/api/foryou"] = [
+            "lists": [["id": "chart:netflix", "title": "Top 10 en Netflix", "split": true, "brand": "netflix"],
+                      ["id": "jw:disney", "title": "Tendencias en Disney+", "split": true, "brand": "disney"],
+                      ["id": "netflix", "title": "Netflix", "split": true, "brand": "netflix"],
+                      ["id": "disney", "title": "Disney+", "split": true, "brand": "disney"]],
+            "mosaic": [row("tt0000001")],
+        ]
+        rig.http.json["https://tv.example/api/foryou/list?id=jw:disney&kind=series"] = ["items": []]   // JustWatch no trajo nada
+        rig.http.json["https://tv.example/api/foryou/list?id=netflix&kind=series"] = ["items": [row("tt5")]]
+        rig.http.json["https://tv.example/api/foryou/list?id=disney&kind=series"] = ["items": [row("tt6")]]
+        let model = ParaTiModel(rig.services)
+        await model.load()
+        XCTAssertEqual(model.visibleShelves.map(\.id), ["chart:netflix", "disney"],
+                       "Netflix ya tiene Top 10 (su respaldo no); Disney+ sin JustWatch: su respaldo sí, para que no desaparezca")
+    }
+
+    func testTheOverviewIsAskedOnceEvenThoughListsAndMosaicNeedIt() async throws {
+        let rig = try consoleRig()
+        rig.http.delays["https://tv.example/api/foryou"] = 100   // las dos peticiones se cruzan
+        let model = ParaTiModel(rig.services)
+        await model.load()
+        XCTAssertEqual(rig.http.calls.filter { $0 == "https://tv.example/api/foryou" }.count, 1,
+                       "el mosaico y las listas esperan la misma petición (dos idénticas duplicaban la espera)")
+        XCTAssertFalse(model.shelves.isEmpty, "y sí cargó de la consola")
+    }
+
+    func testAShelfThatFailedIsAskedAgainOnTheNextLoad() async throws {
+        let rig = try consoleRig()
+        let url = "https://tv.example/api/foryou/list?id=watchlist&kind=series"
+        let saved = rig.http.json[url]
+        rig.http.json[url] = nil   // la consola no contesta ese estante (404)
+        let model = ParaTiModel(rig.services)
+        await model.load()
+        XCTAssertFalse(model.visibleShelves.contains { $0.id == "watchlist" })
+        rig.http.json[url] = saved
+        await model.load()
+        XCTAssertEqual(model.items(for: try XCTUnwrap(model.shelves.first { $0.id == "watchlist" })).map(\.imdb), ["tt3000001"],
+                       "un fallo no se guarda como estante vacío: la siguiente carga lo vuelve a pedir")
     }
 
     func testEmptyFeedFallsBackToPopularAndInvitesToConnectSources() async throws {
