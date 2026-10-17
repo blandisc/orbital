@@ -141,6 +141,9 @@ struct VoiceCommandBar: View {
     let transcript: String
     let reply: OrbitalRemote.VoiceReply?
     let denied: Bool
+    var heardNothing = false
+    /// Esperando lo que contesta tu Orbital.
+    var asking = false
     let action: () -> Void
     @State private var taps = 0
 
@@ -171,6 +174,8 @@ struct VoiceCommandBar: View {
     private var title: Text {
         if listening { return transcript.isEmpty ? Text("Te escucho…") : Text(verbatim: transcript) }
         if denied { return Text("Permite el micrófono y el dictado en Ajustes") }
+        if asking { return Text("Preguntándole a tu Orbital…") }
+        if heardNothing { return Text("No te escuché. Toca y vuelve a intentar") }
         if let reply, !reply.speech.isEmpty { return Text(verbatim: reply.speech) }
         return Text("Dile a Orbital")
     }

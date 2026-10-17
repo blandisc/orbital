@@ -6,7 +6,7 @@ import OrbitalCore
 
 /// «Dile a Orbital que ponga The Office»: la orden en texto libre.
 struct AskOrbitalIntent: AppIntent {
-    static let title: LocalizedStringResource = "Dile a Orbital"
+    static let title: LocalizedStringResource = "Habla con Orbital"
     static let description = IntentDescription("Manda una orden a tu Orbital, como a Alexa: «pon The Office», «pausa», «abre Zelda».")
     static let openAppWhenRun = false
 
@@ -47,9 +47,11 @@ struct ResumeTVIntent: AppIntent {
 /// Las frases que Siri reconoce sin configurar nada (aparecen solas en Atajos).
 struct OrbitalShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
+        // Sin «Dile a…»: Siri lo toma como mandar un mensaje a un contacto. Y la orden no va en la frase (los atajos de
+        // una app no aceptan texto libre ahí): Siri la pregunta después («¿Qué le digo a Orbital?»).
         AppShortcut(intent: AskOrbitalIntent(), phrases: [
-            "Dile a \(.applicationName)", "Pídele a \(.applicationName)", "Orden para \(.applicationName)",
-        ], shortTitle: "Dile a Orbital", systemImageName: "waveform")
+            "Habla con \(.applicationName)", "Orden para \(.applicationName)", "Usa \(.applicationName)", "\(.applicationName)",
+        ], shortTitle: "Habla con Orbital", systemImageName: "waveform")
         AppShortcut(intent: PauseTVIntent(), phrases: [
             "Pausa la TV con \(.applicationName)", "Pausa \(.applicationName)",
         ], shortTitle: "Pausar la TV", systemImageName: "pause.fill")

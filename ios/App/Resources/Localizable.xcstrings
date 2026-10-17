@@ -1145,6 +1145,17 @@
         }
       }
     },
+    "Desde la TV · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From the TV · %@"
+          }
+        }
+      }
+    },
     "Desde la TV: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -1779,6 +1790,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Written by"
+          }
+        }
+      }
+    },
+    "Habla con Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Talk to Orbital"
           }
         }
       }
@@ -2608,6 +2630,17 @@
         }
       }
     },
+    "No te escuché. Toca y vuelve a intentar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I didn't hear you. Tap and try again"
+          }
+        }
+      }
+    },
     "Nuevo": {
       "extractionState": "manual",
       "localizations": {
@@ -2934,6 +2967,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Based on what you've watched"
+          }
+        }
+      }
+    },
+    "Preguntándole a tu Orbital…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asking your Orbital…"
           }
         }
       }

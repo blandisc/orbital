@@ -13,6 +13,7 @@ struct RemoteSheet: View {
     @State private var text = ""
     @StateObject private var speech = SpeechInput()
     @State private var reply: OrbitalRemote.VoiceReply?
+    @State private var asking = false
     @EnvironmentObject private var env: AppEnvironment
 
     var body: some View {
@@ -83,13 +84,16 @@ struct RemoteSheet: View {
         VStack(spacing: DS.Space.s4) {
             if model.remoteOutdated { DSNotice(text: "Actualiza tu Orbital para usar el control completo.", tone: .warn) }
             // La voz, como Alexa: lo mismo que «Oye Siri, dile a Orbital…».
-            VoiceCommandBar(listening: speech.listening, transcript: speech.transcript, reply: reply, denied: speech.denied) {
+            VoiceCommandBar(listening: speech.listening, transcript: speech.transcript, reply: reply, denied: speech.denied,
+                            heardNothing: speech.heardNothing, asking: asking) {
                 if speech.listening { speech.finish(); return }
                 let language = env.services.appSettings.uiLanguage
                 Task {
                     await speech.start(language: language) { said in
                         Task {
+                            asking = true; reply = nil
                             let answer = await model.say(said)
+                            asking = false
                             reply = answer
                             speech.speak(answer.speech, language: language)
                         }

@@ -247,6 +247,8 @@ enum DS {
         static let heroHeight: CGFloat = 300
         /// El póster pequeño de «Viendo en la TV» (misma relación 2:3, más chico que el de la tira).
         static let nowPlayingWidth: CGFloat = 56
+        /// La tarjeta «Desde la TV»: arte ancho con su logo, datos y acciones encima.
+        static let fromTVHeight: CGFloat = 220
     }
 
     /// «Viendo en la TV»: cada cuánto se vuelve a dibujar la barra de avance mientras se interpola entre sondeos.

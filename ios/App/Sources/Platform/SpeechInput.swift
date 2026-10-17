@@ -10,6 +10,8 @@ final class SpeechInput: ObservableObject {
     @Published private(set) var listening = false
     /// Sin permiso de micrófono o de dictado: se avisa en vez del botón.
     @Published private(set) var denied = false
+    /// No se oyó nada (o el reconocimiento falló): se dice, en vez de quedarse callado.
+    @Published private(set) var heardNothing = false
 
     private let engine = AVAudioEngine()
     private var request: SFSpeechAudioBufferRecognitionRequest?
@@ -35,13 +37,17 @@ final class SpeechInput: ObservableObject {
             try session.setActive(true, options: .notifyOthersOnDeactivation)
             let request = SFSpeechAudioBufferRecognitionRequest()
             request.shouldReportPartialResults = true
-            if recognizer.supportsOnDeviceRecognition { request.requiresOnDeviceRecognition = true }   // privado y sin esperar a la red
+            // Sin exigir el reconocimiento en el iPhone: si el español no está descargado para eso, fallaba sin decir nada.
+            // iOS usa el del teléfono cuando puede.
+            request.requiresOnDeviceRecognition = false
+            request.taskHint = .search
             self.request = request
             let input = engine.inputNode
             input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in request.append(buffer) }
             engine.prepare()
             try engine.start()
             transcript = ""
+            heardNothing = false
             listening = true
             task = recognizer.recognitionTask(with: request) { [weak self] result, error in
                 Task { @MainActor in
@@ -62,7 +68,7 @@ final class SpeechInput: ObservableObject {
         guard listening else { return }
         stopEngine()
         let text = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !text.isEmpty { onFinish?(text) }
+        if text.isEmpty { heardNothing = true } else { onFinish?(text) }
         onFinish = nil
     }
 
