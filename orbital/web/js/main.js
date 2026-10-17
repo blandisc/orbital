@@ -36,6 +36,7 @@ import { createLaunching } from "./app/launching.js";
 import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
+import { curatedLists, curatedRows, GENRE_SHELVES, genreRows } from "./core/curation.js";
 
 const state = createState();
 // La Gamepad API no enseña el mando hasta la primera pulsación: se arranca con la última forma de
@@ -678,7 +679,7 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     const itemId = moved || !wanted ? current()?.id : wanted;
     const rowId = state.rows[state.focus.r]?.id;
     const countBefore = (state.allRows || []).reduce((n, row) => n + (row.items?.length ?? 0), 0);
-    state.allRows = data.rows;
+    state.allRows = [...data.rows, ...curated]; // con la curaduría de Películas y series que ya llegó
     loadAiring();
     if (!visibleSections(state.allRows).some((s) => s.id === state.section)) state.section = "home";
     state.rows = sectionRows(state.allRows, state.section);
@@ -691,6 +692,7 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     });
     state.popId = null;
     if (!state.libraryLoaded) {
+      loadCuration(); // los estantes de Películas y series (Top 10, plataformas, tus listas), en segundo plano
       ui.search.refresh(); // abierta antes de que cargara: que salgan tus juegos
       ui.foryou.load(); // en segundo plano: Para ti ya está listo cuando llegas (LB desde el Inicio)
       ui.tv.load(); // y la TV en vivo, para que los canales ya estén cuando llegas
@@ -717,6 +719,51 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     setTimeout(() => loadLibrary({ refresh: false, keepId }), Math.min(15_000, 1000 * 2 ** libraryRetry));
   }
 }
+
+// ---------------------------------------------------------------- Películas y series: curaduría
+// Las listas de Para ti como estantes de la sección (core/curation.js). Se piden en segundo plano y se ponen al día cada
+// media hora; si Para ti no contesta, la sección queda como estaba.
+let curated = [];
+let curating = null;
+
+async function loadCuration() {
+  if (curating) return curating;
+  curating = (async () => {
+    try {
+      const picked = curatedLists((await api.forYou()).lists);
+      const itemsById = {};
+      const queue = [...picked];
+      await Promise.all(Array.from({ length: 4 }, async () => {
+        for (let l = queue.shift(); l; l = queue.shift()) {
+          itemsById[l.id] = (await api.forYouList(l.id).catch(() => ({ items: [] }))).items || [];
+        }
+      }));
+      const byGenre = {};
+      await Promise.all(GENRE_SHELVES.map(async (g) => {
+        byGenre[g.genre] = (await api.genre(g.kind, g.genre).catch(() => ({ items: [] }))).items || [];
+      }));
+      applyCuration([...curatedRows(picked, itemsById), ...genreRows(byGenre)]);
+    } catch { /* sin Para ti: la sección sigue con lo tuyo y lo popular */ }
+    finally { curating = null; }
+  })();
+  return curating;
+}
+
+function applyCuration(rows) {
+  curated = rows;
+  if (!state.allRows) return;
+  state.allRows = [...state.allRows.filter((row) => !row.id.startsWith("curated:")), ...rows];
+  if (state.section !== "media") return;
+  const rowId = state.rows[state.focus.r]?.id;
+  const itemId = current()?.id;
+  state.rows = sectionRows(state.allRows, state.section);
+  ui.shelf.setRows(state.rows);
+  const { r, c } = restoreFocus(state.rows, { rowId, itemId, ...state.focus });
+  state.focus = { r, c };
+  renderView();
+  setFocus(r, c, { silent: true });
+}
+setInterval(() => loadCuration(), 30 * 60_000);
 
 /** Lo que está abierto: llega solo por SSE ("status") al cambiar; se pregunta tras abrir o cerrar algo. */
 function applyStatus(running) {
@@ -766,7 +813,7 @@ function openTitle(item) {
 
 /** De dónde se abre la ficha: la tarjeta enfocada en pantalla y su logo (el arte se abre desde ahí; el logo viaja). */
 function openingFrom() {
-  const view = inForYou() ? ui.foryou.el : inHome() ? ui.home.el : inGames() ? ui.games.el : null;
+  const view = inForYou() ? ui.foryou.el : inHome() ? ui.home.el : inGames() ? ui.games.el : ui.shelf.el;
   const node = view?.querySelector(".tile--focused, .foryou-mosaic__tile--on, .card--focused");
   const rect = node?.getBoundingClientRect();
   if (!rect?.width) return null;

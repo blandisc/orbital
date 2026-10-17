@@ -110,8 +110,9 @@ export const SECTIONS = [
   { id: "games", title: "Juegos", rows: (id) => ["recent", "steam", "geforcenow"].includes(id) || id.startsWith("emulators:") },
   // Lo tuyo primero (Seguir viendo). Buscar es un atajo (botón Vista o la píldora de arriba), así
   // que la fila de apps (Buscar, YouTube…) va al final.
-  { id: "media", title: "Películas y series", rows: (id) => ["continue", "mylist", "media", "movies", "series"].includes(id),
-    order: ["continue", "mylist", "movies", "series", "media"] },
+  // Con la curaduría de Para ti (core/curation.js) entre lo tuyo y lo popular: Top 10, plataformas, tus listas.
+  { id: "media", title: "Películas y series", rows: (id) => ["continue", "mylist", "media", "movies", "series"].includes(id) || id.startsWith("curated:"),
+    order: ["continue", "mylist", "curated:*", "movies", "series", "media"] },
   // TV en vivo: los canales de México (su propia vista, sin filas de biblioteca). Siempre a la vista: aunque
   // la lista aún no llegue, la sección dice qué está pasando en vez de desaparecer de la barra.
   { id: "tv", title: "TV en vivo", rows: () => false, always: true },
@@ -122,7 +123,9 @@ export const SECTIONS = [
 export function sectionRows(rows, sectionId) {
   const section = SECTIONS.find((s) => s.id === sectionId) ?? SECTIONS.find((s) => s.id === "home");
   const picked = rows.filter((row) => section.rows(row.id));
-  if (section.order) picked.sort((a, b) => section.order.indexOf(a.id) - section.order.indexOf(b.id));
+  // «curated:*» toma el lugar de todos los curados (que conservan su orden: el sort es estable).
+  const place = (id) => { const at = section.order.indexOf(id); return at >= 0 ? at : section.order.indexOf(`${id.split(":")[0]}:*`); };
+  if (section.order) picked.sort((a, b) => place(a.id) - place(b.id));
   return picked.length || section.id !== "home" ? picked : sectionRows(rows, "games");
 }
 

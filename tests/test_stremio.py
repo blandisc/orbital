@@ -455,3 +455,11 @@ def test_voice_end_to_end_as_people_say_it(linked, monkeypatch):
     assert voice.handle_text("abre el juego dune").speech == "No encontré el juego dune."
     lost = voice.handle_text("blablá")
     assert not lost.ok and "«blabla»" in lost.speech and lost.as_dict()["heard"] == "blabla"
+
+
+def test_genre_shelves_come_from_the_catalog(make_client, library, monkeypatch):
+    monkeypatch.setattr(library.cinemeta, "genre", lambda kind, genre: [{"id": "tt0000001", "name": "Scream", "type": "movie", "poster": "https://images.metahub.space/poster/medium/tt0000001/img"}])
+    c = make_client()
+    items = c.get("/api/stremio/genre", params={"kind": "movie", "genre": "Horror"}).json()["items"]
+    assert items[0]["id"] == "cinemeta:movie:tt0000001" and items[0]["title"] == "Scream"
+    assert c.get("/api/stremio/genre", params={"kind": "movie", "genre": "Lo que sea"}).status_code == 400

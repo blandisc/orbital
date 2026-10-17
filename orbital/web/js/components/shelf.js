@@ -2,7 +2,7 @@ import { h, mount } from "../core/dom.js";
 import { rowOffset } from "../core/library.js";
 import { swipeArea, swipeSteps } from "../core/swipe.js";
 import { tokenPx } from "../core/tokens.js";
-import { Card } from "./card.js";
+import { Card, RankedCard } from "./card.js";
 
 /**
  * Filas de tarjetas. Muestra una fila a la vez (la siguiente asoma) y desplaza la
@@ -47,14 +47,20 @@ export function createShelf({ onPick, onSwipe }) {
       return;
     }
     rowEls = rows.map((row, r) => {
-      const cards = row.items.map((item, c) => Card(item, {
-        onPress: () => onPick(r, c), showAgo: row.id === "recent" || row.id === "jump", pop: item.id === popId,
-        onRatio: () => r === focus.r && place(), // la portada real cambió el ancho
-      }));
-      const track = h("div", { class: "shelf__track", role: "group" }, cards);
+      // Un Top 10 (row.ranked): cada póster con su cifra grande detrás, como en Para ti y el iPhone.
+      const built = row.items.map((item, c) => {
+        const options = {
+          onPress: () => onPick(r, c), showAgo: row.id === "recent" || row.id === "jump", pop: item.id === popId,
+          onRatio: () => r === focus.r && place(), // la portada real cambió el ancho
+        };
+        return row.ranked ? RankedCard(item, options) : { card: Card(item, options) };
+      });
+      const cards = built.map((b) => b.card);
+      const els = built.map((b) => b.el ?? b.card);
+      const track = h("div", { class: "shelf__track", role: "group" }, els);
       const count = h("span", { class: "shelf__count" }, String(row.items.length));
       const rowEl = h("div", { class: "shelf__row" }, h("h2", { class: "shelf__heading" }, row.title, count), track);
-      return { rowEl, track, cards, count };
+      return { rowEl, track, cards, els, count, ranked: !!row.ranked };
     });
     mount(rowsEl, rowEls.map((x) => x.rowEl));
     if (!introduced) {
@@ -92,7 +98,8 @@ export function createShelf({ onPick, onSwipe }) {
   function place() {
     const row = rowEls[focus.r];
     if (!row || !metrics) return;
-    const widths = row.cards.map((card) => metrics.cardHeight * Number(card.dataset.ratio));
+    // Con la cifra del Top 10, cada pieza es más ancha que su póster: se mide lo que de verdad ocupa.
+    const widths = row.ranked ? row.els.map((node) => node.offsetWidth) : row.cards.map((card) => metrics.cardHeight * Number(card.dataset.ratio));
     const grow = (widths[focus.c] ?? 0) * (metrics.scale - 1);
     const x = rowOffset(widths, focus.c, { gap: metrics.gap, grow, visible: metrics.visible });
     row.track.style.transform = `translateX(${-x}px)`;

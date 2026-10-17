@@ -60,6 +60,7 @@ export const api = {
   power: (action) => post("/api/power", { action }),
   stremioSearch: (q) => request(`/api/stremio/search?q=${encodeURIComponent(q)}`),
   stremioPlay: (body) => post("/api/stremio/play", body),
+  genre: (kind, genre) => request(`/api/stremio/genre?kind=${kind}&genre=${encodeURIComponent(genre)}`),
   stremioTitle: (kind, id) => request(`/api/stremio/title/${kind}/${encodeURIComponent(id)}`),
   settings: () => request("/api/settings"),
   setup: () => request("/api/setup"),

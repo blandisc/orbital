@@ -124,3 +124,19 @@ test("cada imagen se pide al tamaño en que se ve", async () => {
   assert.equal(sized("https://otro.sitio/x.jpg", 240, 1), "https://otro.sitio/x.jpg");
   assert.equal(sized("img/placeholders/a.jpg", 240, 1), "img/placeholders/a.jpg");
 });
+
+test("Películas y series: la curaduría de Para ti entre lo tuyo y lo popular", async () => {
+  const { curatedLists, curatedRows } = await import("../../orbital/web/js/core/curation.js");
+  const { sectionRows } = await import("../../orbital/web/js/core/library.js");
+  const lists = [{ id: "continue" }, { id: "jw:prime", brand: "prime", title: "Tendencias en Prime Video" }, { id: "prime", brand: "prime", title: "Prime Video" },
+    { id: "disney", brand: "disney", title: "Disney+" }, { id: "chart:netflix", brand: "netflix", title: "Top 10 en Netflix" },
+    { id: "list:9", title: "animadas" }, { id: "recs", title: "Recomendadas" }, { id: "mygames", title: "Tus juegos" }];
+  const picked = curatedLists(lists);
+  assert.deepEqual(picked.map((l) => l.id), ["chart:netflix", "recs", "jw:prime", "disney", "list:9"]); // TMDB de Prime sobra: ya están sus tendencias
+  const rows = curatedRows(picked, { "chart:netflix": [{ meta_id: "tt1", kind: "series", title: "X", rank: 1, why: "N.º 1 en Netflix" }], recs: [] });
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].ranked, true);
+  assert.equal(rows[0].items[0].id, "cinemeta:series:tt1");
+  const ordered = sectionRows([{ id: "movies" }, { id: "continue" }, ...rows, { id: "mylist" }], "media").map((r) => r.id);
+  assert.deepEqual(ordered, ["continue", "mylist", "curated:chart:netflix", "movies"]);
+});

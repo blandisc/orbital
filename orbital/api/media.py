@@ -55,6 +55,10 @@ def _clean_id(value) -> bool:
     return True
 
 
+# Los géneros que se piden por estante (los nombres de Cinemeta).
+GENRES = {"Horror", "Comedy", "Action", "Sci-Fi", "Drama", "Animation", "Thriller", "Romance", "Documentary", "Adventure", "Family"}
+
+
 def router(d: Deps) -> APIRouter:
     r = APIRouter(prefix="/api/stremio")
     catalog = d.catalog
@@ -72,6 +76,16 @@ def router(d: Deps) -> APIRouter:
                 return {"results": cinemeta.search_results(q, movies.result(), series.result())}
             except cinemeta.CinemetaError:
                 raise HTTPException(502, "Sin conexión con el catálogo de películas y series. Tus juegos siguen aquí.")
+
+    @r.get("/genre")
+    def genre(kind: str = "movie", genre: str = "") -> dict:
+        """Lo más popular de un género en el catálogo de Stremio (Películas y series · estantes por género)."""
+        if kind not in ("movie", "series") or genre not in GENRES:
+            raise HTTPException(400, "Género inválido")
+        try:
+            return {"items": [catalog.describe(i) for i in cinemeta.catalog_items(kind, catalog.cinemeta.genre(kind, genre), 15)]}
+        except cinemeta.CinemetaError:
+            raise HTTPException(502, "Sin conexión con el catálogo de películas y series.")
 
     @r.get("/title/{kind}/{meta_id}")
     def title(kind: str, meta_id: str) -> dict:
