@@ -78,7 +78,7 @@ targets:
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
     scheme:
-      testTargets: []
+      testTargets: [OrbitalUITests]
 
   # Extensión de widgets: «Lo siguiente para ti» (Seguir viendo) y la actividad en vivo de las descargas.
   OrbitalWidgets:
@@ -114,3 +114,21 @@ targets:
         CFBundleDevelopmentRegion: es
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+
+  # Pruebas de interfaz (XCUITest): gestos de verdad en el simulador (arrastrar el mosaico, tocar), con el modo demo.
+  #   xcodebuild test -project Orbital.xcodeproj -scheme Orbital -destination 'platform=iOS Simulator,name=Orbital QA'
+  OrbitalUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: Orbital
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: mx.iracheta.orbital.uitests
+        DEVELOPMENT_TEAM: B7KRCF776Z
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.0"
+        TEST_TARGET_NAME: Orbital
+        GENERATE_INFOPLIST_FILE: YES

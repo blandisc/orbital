@@ -13,12 +13,9 @@ struct BrowseView: View {
     @StateObject private var search: ModelObserver<SearchModel>
     @State private var query = ""
     /// El póster que ilustra cada género (el primero de su catálogo), según van llegando.
-    @State private var genreArt: [String: String] = [:]
 
     /// Cuántos de lo más popular van en la lista con puesto.
     private static let popularCount = 5
-    /// Cuántas películas de cada género se consideran para su arte (para no repetir la de otro género).
-    private static let genreArtCandidates = 6
 
     init() {
         let services = AppEnvironment.shared.services
@@ -49,7 +46,6 @@ struct BrowseView: View {
             #endif
             await catalog.model.load()
         }
-        .task { await loadGenreArt() }
         .refreshable { await catalog.model.load() }
     }
 
@@ -114,7 +110,7 @@ struct BrowseView: View {
             DSSectionHead(title: "Explora")
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
                 ForEach(CatalogModel.exploreGenres, id: \.self) { genre in
-                    NavigationLink(value: GenreRoute(genre: genre)) { ArtTile(title: Text(verbatim: genreName(genre)), art: genreArt[genre]) }
+                    NavigationLink(value: GenreRoute(genre: genre)) { ArtTile(title: Text(verbatim: genreName(genre)), asset: Self.genreAsset(genre)) }
                         .buttonStyle(.plain)
                 }
             }
@@ -124,27 +120,8 @@ struct BrowseView: View {
 
     private func genreName(_ genre: String) -> String { Vocabulary.genres([genre], language: env.services.appSettings.uiLanguage).first ?? genre }
 
-    /// El arte de cada género: el fondo de su película más popular que no use ya otro género (un mismo título es drama y
-    /// suspenso a la vez; sin esto, dos mosaicos salían con la misma imagen). Todos a la vez; la fila de imágenes hace el resto.
-    private func loadGenreArt() async {
-        let cinemeta = env.services.cinemeta, perGenre = Self.genreArtCandidates
-        var candidates: [String: [String]] = [:]
-        await withTaskGroup(of: (String, [String]).self) { group in
-            for genre in CatalogModel.exploreGenres {
-                group.addTask {
-                    let ids = ((try? await cinemeta.catalog("movie", genre: genre)) ?? []).prefix(perGenre).compactMap { $0["id"]?.string }
-                    return (genre, ids)
-                }
-            }
-            for await (genre, ids) in group { candidates[genre] = ids }
-        }
-        var used = Set<String>()
-        for genre in CatalogModel.exploreGenres {
-            guard let ids = candidates[genre], let id = ids.first(where: { !used.contains($0) }) ?? ids.first else { continue }
-            used.insert(id)
-            genreArt[genre] = String(format: ForYou.metahubBackground, id)
-        }
-    }
+    /// El arte fijo de cada género (`scripts/genre_art.py`, en el catálogo de la app): se ve al instante, sin red.
+    static func genreAsset(_ genre: String) -> String { "genre-" + genre.lowercased().filter { $0.isLetter || $0.isNumber } }
 }
 
 /// Un género de Explora: lo más popular de ese género, películas y series, en cuadrícula.
@@ -170,7 +147,8 @@ struct GenreView: View {
         .navigationTitle(Text(verbatim: Vocabulary.genres([genre], language: env.services.appSettings.uiLanguage).first ?? genre))
         .toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .task {
-            items = await model.genre(genre)
+            // Primero lo de Cinemeta (se ve ya); luego los mismos títulos en tu idioma.
+            await model.genre(genre) { items = $0; loaded = true }
             loaded = true
         }
     }

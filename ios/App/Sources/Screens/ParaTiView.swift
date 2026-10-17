@@ -32,7 +32,7 @@ struct ParaTiView: View {
             switch m.mode {
             case .mosaic:
                 Mosaic(items: m.mosaic, watchlistKeys: m.watchlistKeys, demoFocus: demoFocusImdb, onDismiss: { s in Task { await m.dismiss(s) } },
-                       onFocusChange: { focused = $0; focusedArt = $0?.wide })
+                       onFocusChange: { focused = $0; focusedArt = $0?.wide }, onOpen: { openTitle = $0.route })
                 // La pieza enfocada, contada bajo el mosaico (todas las piezas son del mismo tamaño: su información va aquí).
                 if DS.Mosaic.uniform, let item = focused {
                     // Como la TV: el motivo tal cual, y una serie sugerida abre su ficha («Ver la serie»), no un episodio al azar.
@@ -66,6 +66,7 @@ struct ParaTiView: View {
         .task {
             #if DEBUG
             if Demo.isOn, Demo.open == "lists" || Demo.mode == "lists" { m.mode = .lists }
+            if let start = Demo.startMode { m.mode = start == "lists" ? .lists : .mosaic }
             #endif
             await m.load()
         }

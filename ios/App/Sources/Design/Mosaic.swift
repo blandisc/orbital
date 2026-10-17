@@ -222,6 +222,8 @@ struct Mosaic: View {
     let onDismiss: (Suggestion) -> Void
     /// La pieza enfocada (nil en el ambiente): la pantalla tiñe su fondo con su arte (`Backdrop`).
     var onFocusChange: ((Suggestion?) -> Void)?
+    /// Un segundo toque en la enfocada: abre su ficha (lo hace la pantalla).
+    var onOpen: ((Suggestion) -> Void)?
 
     @StateObject private var runtime = MosaicRuntime()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -286,12 +288,16 @@ struct Mosaic: View {
             }
         }
         .overlay { if runtime.isEmpty { ProgressView() } }
+        .accessibilityElement(children: .contain).accessibilityIdentifier("mosaic")   // para las pruebas de interfaz
         #if DEBUG
         .task { await MosaicBench.runIfRequested(runtime) { c, r in withAnimation(DS.Motion.spring(reduceMotion)) { runtime.focusTile(col: c, row: r) } } }
         #endif
         .onChange(of: runtime.current?.imdb, initial: true) { _, _ in onFocusChange?(runtime.current) }
         .task(id: idleToken) {
             guard runtime.mode == .focus, !reduceMotion else { return }
+            #if DEBUG
+            if Demo.noIdle { return }
+            #endif
             try? await Task.sleep(nanoseconds: DS.Timing.mosaicIdle)
             if !Task.isCancelled { withAnimation(DS.Motion.enter(reduceMotion)) { runtime.goAmbient() } }
         }
@@ -322,6 +328,7 @@ struct Mosaic: View {
             focusRow: runtime.focus?.col == c ? runtime.focus?.row : nil, focusMode: runtime.mode == .focus,
             aliveID: runtime.aliveTileID, watchlist: watchlistKeys, reduceMotion: reduceMotion,
             onFocus: { col, row in touch(); withAnimation(DS.Motion.spring(reduceMotion)) { runtime.focusTile(col: col, row: row) } },
+            onOpen: { onOpen?($0) },
             onDismiss: { dismiss($0) })
     }
 
@@ -380,6 +387,7 @@ private struct MosaicColumnLayer: View, Equatable {
     let watchlist: Set<String>
     let reduceMotion: Bool
     let onFocus: (Int, Int) -> Void
+    let onOpen: (Suggestion) -> Void
     let onDismiss: (Suggestion) -> Void
 
     static func == (a: Self, b: Self) -> Bool {
@@ -399,7 +407,8 @@ private struct MosaicColumnLayer: View, Equatable {
                     tile: tile, focused: focused, dimmed: focusMode && !focused,
                     alive: !reduceMotion && aliveID == tile.id,
                     inWatchlist: watchlist.contains(tile.item.imdb),
-                    onFocus: { onFocus(column, row) }
+                    onFocus: { onFocus(column, row) },
+                    onOpen: { onOpen(tile.item) }
                 )
                 .frame(width: CGFloat(frame.width), height: CGFloat(tile.height))
                 .offset(x: CGFloat(frame.x), y: CGFloat(tile.top))
@@ -417,18 +426,24 @@ private struct MosaicTileCell: View {
     let alive: Bool
     let inWatchlist: Bool
     let onFocus: () -> Void
+    let onOpen: () -> Void
 
     var body: some View {
         #if DEBUG
         let _ = MosaicBench.tick("Tile")
         #endif
-        Group {
-            if focused { NavigationLink(value: tile.item.route) { content } }
-            else { Button(action: onFocus) { content } }
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text(tile.item.title))
+        // Un toque de verdad, no un botón: la pieza se mueve con el dedo al arrastrar, así que al soltar el dedo sigue
+        // «encima» y un botón lo contaba como toque (abría la ficha o saltaba a otra pieza: el mosaico «se quedaba pegado»).
+        // Un `TapGesture` se cancela en cuanto el dedo se mueve.
+        content
+            .contentShape(Rectangle())
+            .onTapGesture { if focused { onOpen() } else { onFocus() } }
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { if focused { onOpen() } else { onFocus() } }
+            .accessibilityHint(focused ? Text("Abre la ficha") : Text("Elegir"))
+            .accessibilityLabel(Text(tile.item.title))
+        .accessibilityIdentifier("mosaic-tile")
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)   // las piezas son arte: con letra de accesibilidad el texto de la pieza no crece más
     }
 

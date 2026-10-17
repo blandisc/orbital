@@ -72,7 +72,7 @@ struct MainTabs: View {
         // después de que la restauración ya aplicó lo suyo). Fuera de demo, la pestaña que recuerdes sigue igual.
         var initial = 0
         #if DEBUG
-        if Demo.isOn { initial = Demo.tab }
+        if Demo.isOn { initial = Demo.tab } else if let start = Demo.startTab { initial = start }
         #endif
         _tab = State(initialValue: initial)
     }
@@ -134,7 +134,7 @@ struct MainTabs: View {
     /// Solo la pestaña (repetible: no abre nada encima dos veces).
     private func forceDemoTab() {
         #if DEBUG
-        if Demo.isOn { tab = Demo.tab }
+        if Demo.isOn { tab = Demo.tab } else if let start = Demo.startTab { tab = start }
         #endif
     }
 

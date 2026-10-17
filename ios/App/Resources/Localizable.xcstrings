@@ -56,6 +56,17 @@
         }
       }
     },
+    "Abre la ficha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the details"
+          }
+        }
+      }
+    },
     "Abrir Ajustes": {
       "extractionState": "manual",
       "localizations": {
@@ -1185,6 +1196,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The source's server failed. Trying again."
+          }
+        }
+      }
+    },
+    "Elegir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose"
           }
         }
       }

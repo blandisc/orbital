@@ -203,12 +203,18 @@ extension Label where Title == Text, Icon == Image {
 /// Un mosaico con arte y un nombre encima (géneros de Explora): el arte se tiñe de oscuro abajo para que el nombre se lea.
 struct ArtTile: View {
     let title: Text
-    let art: String?
+    /// El arte: una imagen del catálogo de la app (los géneros, `scripts/genre_art.py`) o, si no, una de internet.
+    var asset: String? = nil
+    var art: String? = nil
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            PosterView(url: art, title: "", aspect: nil, bleed: true, maxPoints: DS.Image.card)
-                .overlay(LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .top, endPoint: .bottom))
+            Group {
+                if let asset { Image(asset).resizable().scaledToFill() }
+                else { PosterView(url: art, title: "", aspect: nil, bleed: true, maxPoints: DS.Image.card) }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
+            .overlay(LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .top, endPoint: .bottom))
             title.recipe(.cardTitle).padding(DS.Space.s3).onArt()
         }
         .frame(height: DS.Size.artTileHeight)

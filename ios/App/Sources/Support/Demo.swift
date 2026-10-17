@@ -7,6 +7,12 @@ import OrbitalCore
 /// sirve para recorrer la app en el simulador sin tu cuenta.
 enum Demo {
     static var isOn: Bool { ProcessInfo.processInfo.arguments.contains("-demo") }
+    /// `-start-tab N` y `-start-mode lists|mosaic`: abren esa pestaña con tus datos de verdad (sin `-demo`), para revisar
+    /// un iPhone físico desde la Mac (`devicectl … process launch`) y capturarlo. Solo Debug.
+    static var startTab: Int? { value(after: "-start-tab").flatMap(Int.init) }
+    static var startMode: String? { value(after: "-start-mode") }
+    /// `-demo-no-idle`: el mosaico no se mueve solo (las pruebas de arrastre miden solo lo que hace el dedo).
+    static var noIdle: Bool { ProcessInfo.processInfo.arguments.contains("-demo-no-idle") }
 
     static let addonURL = "https://demo.orbital.invalid/manifest.json"
     /// `-demo-no-tv`: sin Orbital conectada (para probar el QR: `xcrun simctl openurl booted "orbital-ios://pair?u=https%3A%2F%2Ftv.demo.invalid&t=demo"`).
