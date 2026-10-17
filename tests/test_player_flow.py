@@ -382,3 +382,12 @@ def test_iphone_remote_in_the_player():
     assert ("set_property", "pause", True) in mpv.sent
     p.phone_button("back")  # en pausa, con la barra: sale (en el teléfono no hay «mantener B»)
     assert ("quit",) in mpv.sent
+
+
+def test_the_time_is_said_in_12_hours():
+    from datetime import datetime
+
+    from orbital.text import clock
+    assert clock(datetime(2026, 10, 16, 23, 40)) == "11:40 p. m."
+    assert clock(datetime(2026, 10, 16, 0, 5)) == "12:05 a. m."
+    assert clock(datetime(2026, 10, 16, 9, 0)) == "9:00 a. m."

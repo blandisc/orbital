@@ -530,7 +530,7 @@ def test_upcoming_episodes_by_day_with_local_time(make_foryou, net):
         row("Lejos", "tt3", 1, 1, at(20, 20))]))
     items = fy.calendar(now=now)
     assert [(i["title"], i["day_label"], i["time"], i["episode_label"]) for i in items] == [
-        ("SVU", "Hoy", "19:00", "T28 E2"), ("Avatar", "Mañana", "Desde la madrugada", "T1 E4–E6")]
+        ("SVU", "Hoy", "7:00 p. m.", "T28 E2"), ("Avatar", "Mañana", "Desde la madrugada", "T1 E4–E6")]
     assert items[0]["today"] and items[0]["why"] == "Sale hoy" and items[0]["action"] == "Ver la serie"
     assert ["Episodio", "T1 E4–E6"] in items[1]["facts"] and items[1]["overview"].startswith("T1 E4–E6 · 3 episodios")
     lists = {row["id"]: row for row in fy.lists()}

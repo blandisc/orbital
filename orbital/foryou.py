@@ -37,6 +37,7 @@ from .library import stremio_api
 from .library import tmdb as tmdb_api
 from .library import trakt as trakt_api
 from .net import NET_ERRORS, read_json
+from .text import clock
 
 log = logging.getLogger(__name__)
 
@@ -219,7 +220,7 @@ def day_label(day: date, today: date) -> tuple[str, str]:
 def calendar_item(g: dict, today: date) -> dict:
     """Un estreno («Próximos estrenos»): la serie (A abre su ficha) con su día, hora, episodio y dónde sale."""
     when: datetime = g["when"]
-    time_text = "Desde la madrugada" if when.hour < DAWN_HOUR else when.strftime("%H:%M")
+    time_text = "Desde la madrugada" if when.hour < DAWN_HOUR else clock(when)
     if g["count"] > 1:
         episode = f"T{g['season']} E{g['first']}–E{g['last']}"
         episode_long = f"{episode} · {g['count']} episodios"

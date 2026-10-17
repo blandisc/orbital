@@ -29,6 +29,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .text import clock as time_of_day
+
 W, H = 1920, 1080  # coordenadas del lienzo: 1080 de alto y lo ancho que dé la pantalla (ver set_canvas)
 MARGIN = 96
 
@@ -897,14 +899,14 @@ def volume_ass(volume: float) -> str:
 
 
 def ends_at(position: float | None, duration: float | None, now: float | None = None) -> str:
-    """"23:40": la hora a la que termina si sigues viendo de corrido."""
+    """«11:40 p. m.»: la hora a la que termina si sigues viendo de corrido."""
     if not isinstance(duration, (int, float)) or not isinstance(position, (int, float)):
         return ""
     if not (math.isfinite(duration) and math.isfinite(position)):
         return ""
     if not duration or duration - position < 60 or duration - position > 86400 * 2:
         return ""
-    return time.strftime("%H:%M", time.localtime((now if now is not None else time.time()) + duration - position))
+    return time_of_day((now if now is not None else time.time()) + duration - position)
 
 
 def seek_label(seconds: int) -> str:

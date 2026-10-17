@@ -81,7 +81,7 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .12em; margin-bottom: -.08em;
 }
 .tile--row__detail { display: flex; align-items: center; gap: var(--space-2); min-width: 0; color: var(--color-text-muted); font-size: var(--type-secondary); white-space: nowrap; }
-.tile--row__detail svg { width: 1.1rem; height: 1.1rem; flex: none; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linejoin: round; }
+.tile--row__detail svg { width: 1.1rem; height: 1.1rem; flex: none; fill: none; stroke: var(--platform-ink, currentColor); stroke-width: 2.6; stroke-linejoin: round; }
 .tile--row__detail-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
 .tile--row__progress { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised); --progress-width: auto; box-shadow: var(--shadow-badge); }
 
