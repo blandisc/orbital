@@ -52,3 +52,33 @@ def test_los_de_la_nube_entran_como_juegos_de_geforce_now_sin_repetir(tmp_path, 
     witcher = found[1]
     assert witcher.id == "gfn:2002" and witcher.steam_appid == 292030 and "cmsId=2002" in witcher.argv[1]
     assert witcher.image and "292030" in witcher.image  # el arte de Steam por su número
+
+
+def test_los_juegos_que_no_estan_en_steam_traen_su_ficha_de_wikidata(tmp_path, monkeypatch):
+    """Hearthstone, Diablo Immortal… (GeForce NOW, no Steam): descripción, año, desarrollador y géneros de Wikidata y
+    Wikipedia en español; una expansión («World of Warcraft: Midnight») busca el juego de antes de los dos puntos."""
+    from orbital.library import wiki_games
+
+    answers = {
+        "wbsearchentities&search=World%20of%20Warcraft%3A%20Midnight": {"search": [{"id": "Q9", "description": "expansión"}]},
+        "wbsearchentities&search=World%20of%20Warcraft": {"search": [{"id": "Q1", "description": "videojuego de rol"}]},
+        "ids=Q1&props=claims": {"entities": {"Q1": {"claims": {
+            "P577": [{"mainsnak": {"datavalue": {"value": {"time": "+2004-11-23T00:00:00Z"}}}}],
+            "P178": [{"mainsnak": {"datavalue": {"value": {"id": "Q50"}}}}],
+            "P136": [{"mainsnak": {"datavalue": {"value": {"id": "Q60"}}}}]},
+            "sitelinks": {"eswiki": {"title": "World of Warcraft"}}}}},
+        "ids=Q50|Q60&props=labels": {"entities": {"Q50": {"labels": {"es": {"value": "Blizzard Entertainment"}}},
+                                                  "Q60": {"labels": {"es": {"value": "videojuego de rol multijugador masivo en línea"}}}}},
+        "page/summary/World_of_Warcraft": {"extract": "World of Warcraft es un videojuego de rol multijugador masivo en línea."},
+    }
+
+    def fake(url, headers=None, timeout=10):
+        return 200, next((v for k, v in answers.items() if k in url), {})
+
+    monkeypatch.setattr(wiki_games, "http_json", fake)
+    info = wiki_games.find("World of Warcraft: Midnight")
+    assert info == {"description": "World of Warcraft es un videojuego de rol multijugador masivo en línea.", "year": "2004",
+                    "developer": "Blizzard Entertainment", "genres": ["Rol multijugador masivo en línea"]}
+    store = wiki_games.WikiGames(tmp_path / "w.json", lookup_fn=lambda t: info, sleep=lambda s: None)
+    assert store.warm(["World of Warcraft: Midnight"]) == 1 and store.cached("world of warcraft: midnight")["year"] == "2004"
+    assert wiki_games.WikiGames(tmp_path / "w.json").cached("World of Warcraft: Midnight")["developer"] == "Blizzard Entertainment"

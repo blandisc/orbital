@@ -294,3 +294,11 @@ def _no_real_gfn_list(monkeypatch):
     from orbital.library import geforcenow
 
     monkeypatch.setattr(geforcenow, "fetch_public", lambda: None)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_wikidata(monkeypatch):
+    """Ninguna prueba le pregunta a Wikidata ni a Wikipedia."""
+    from orbital.library import wiki_games
+
+    monkeypatch.setattr(wiki_games, "lookup", lambda title: None)

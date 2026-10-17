@@ -31,7 +31,7 @@ from .events import EventBus
 from .focus import READY_TIMEOUT, bring_app_to_front, bring_game_to_front, game_ready, is_orbital_window, pin_orbital  # noqa: F401 - compatibilidad
 from .foryou import ForYou
 from .launcher import Launcher
-from .library import cinemeta, detect, emulators, esde, geforcenow, steam, steam_store, stremio, stremio_api
+from .library import cinemeta, detect, emulators, esde, geforcenow, steam, steam_store, stremio, stremio_api, wiki_games
 from .library.media import KINDS, MediaStore, low_res, placeholder
 from .library.models import LibraryItem
 from .library.scraper import Scraper, Target
@@ -150,6 +150,8 @@ class Catalog:
         self._steam_art = geforcenow.SteamArt(cache / "steam-appids.json" if cache else None)
         # De qué trata cada juego de Steam y GeForce NOW (la tienda de Steam, en español; ver steam_store.py).
         self.steam_store = steam_store.SteamStore(cache / "steam-store.json" if cache else None)
+        # Los juegos de GeForce NOW que no están en Steam (Blizzard…): su ficha de Wikidata/Wikipedia (wiki_games.py).
+        self.wiki_games = wiki_games.WikiGames(cache / "wiki-games.json" if cache else None)
         self._steam_owned: list[str] = []  # los juegos de tu cuenta de Steam que no están instalados (números)
         self._cache = cache
         # La biblioteca del último escaneo: la interfaz la muestra al instante mientras se escanea.
@@ -336,10 +338,14 @@ class Catalog:
                     cloud = {a: public[a] for a in self._steam_owned if a in public}
                 except Exception:  # noqa: BLE001 - la lista de NVIDIA nunca tumba el escaneo
                     log.exception("No pude leer la lista pública de GeForce NOW")
-            found += geforcenow.items(self._steam_art, list(cloud.items()))
+            gfn_games = geforcenow.items(self._steam_art, list(cloud.items()))
+            found += gfn_games
+            in_cloud = {str(i.steam_appid) for i in gfn_games if i.steam_appid}  # ya en GeForce NOW: no repetido en Steam
+        else:
+            in_cloud = set()
         # El resto de tu cuenta de Steam sin instalar (los que la tienda dice que son juegos): con «Instalar».
         for appid in self._steam_owned:
-            if appid not in cloud and (name := self.steam_store.game_name(appid)):
+            if appid not in cloud and appid not in in_cloud and (name := self.steam_store.game_name(appid)):
                 found.append(steam.uninstalled_item(appid, name))
         for app in self.config.apps:
             is_uri = "://" in app.target
@@ -619,6 +625,9 @@ class Catalog:
         if item.source in self.STORE_SOURCES and item.steam_appid:
             for key, value in self.steam_store.cached(item.steam_appid).items():
                 item.extra.setdefault(key, value)
+        elif item.source == "geforcenow" and item.category == "geforcenow":  # no está en Steam: Wikidata/Wikipedia
+            for key, value in self.wiki_games.cached(item.title).items():
+                item.extra.setdefault(key, value)
 
     def warm_store(self, stop: threading.Event | None = None) -> None:
         """Pide a la tienda de Steam las fichas que faltan (los jugados hace poco primero), en segundo plano, y las
@@ -626,7 +635,12 @@ class Catalog:
         games = [i for i in self.store.all() if i.source in self.STORE_SOURCES and i.steam_appid]
         games.sort(key=lambda i: self.last_played(i) or 0, reverse=True)
         unknown = [int(a) for a in self._steam_owned if not self.steam_store.known(a)]  # para saber nombre y si es juego
+        no_steam = [i.title for i in self.store.all() if i.category == "geforcenow" and not i.steam_appid]
+        wiki = self.wiki_games.warm(no_steam, stop=stop)
         if not self.steam_store.warm([i.steam_appid for i in games if i.steam_appid] + unknown, limit=400, stop=stop):
+            if wiki:
+                self.store.update(self._store_facts, where=lambda i: i.source in self.STORE_SOURCES)
+                self.notify({"type": "library-changed"})
             return
         if any(self.steam_store.known(a) for a in unknown):
             self.refresh()  # llegaron nombres de juegos sin instalar: entran a la biblioteca
