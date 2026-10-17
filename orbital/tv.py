@@ -69,7 +69,7 @@ class LiveTV:
         self._thread: threading.Thread | None = None
         self.set_channels(iptv.read_copy(self._copy))
         # Los canales de Orbital (una serie al aire todo el día): sin lista ni salud, van primero.
-        self.synthetic = synthetic.SyntheticTV(catalog) if catalog is not None else None
+        self.synthetic = synthetic.SyntheticTV(catalog, directory=directory) if catalog is not None else None
 
     # --- la lista ------------------------------------------------------------------------------
     def set_channels(self, channels: list[Channel]) -> None:
@@ -104,8 +104,10 @@ class LiveTV:
 
     def logo_path(self, channel_id: str) -> Path | None:
         """El archivo del logo de un canal (se baja la primera vez). None si no tiene o no se pudo."""
-        channel = next((c for c in self._channels if c.id == channel_id), None) or             (self.synthetic.channel(channel_id) if self.synthetic else None)
-        return self.logos.get(channel.logo) if channel is not None else None
+        channel = next((c for c in self._channels if c.id == channel_id), None)
+        if channel is None:  # un canal de Orbital con logo de internet (los de la interfaz no pasan por aquí)
+            return self.logos.get(self.synthetic.remote_logo(channel_id)) if self.synthetic else None
+        return self.logos.get(channel.logo)
 
     def playing(self) -> str | None:
         """El canal que está al aire ahora (en el reproductor), si lo hay."""
@@ -191,9 +193,13 @@ class LiveTV:
         self._stop.clear()
         self._thread = threading.Thread(target=self._loop, daemon=True, name="tv-health")
         self._thread.start()
+        if self.synthetic is not None:
+            self.synthetic.start()  # qué episodios de los canales de Orbital tienen doblaje, con calma
 
     def stop(self) -> None:
         self._stop.set()
+        if self.synthetic is not None:
+            self.synthetic.stop()
 
     def _loop(self) -> None:
         if self._stop.wait(START_DELAY):

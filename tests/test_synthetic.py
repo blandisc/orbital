@@ -9,12 +9,12 @@ from orbital import player, synthetic
 from orbital.library import streams
 from orbital.playback import dub_track
 
-CHANNEL = synthetic.SyntheticChannel("orbital:test", "Serie 24/7", "tt1", (3, 5), slot=1000)
+CHANNEL = synthetic.SyntheticChannel("orbital:test", "Serie 24/7", (synthetic.Show("tt1", (3, 5)),), slot=1000)
 
 
-def info(seasons=range(1, 8), per=4) -> dict:
-    return {"name": "La serie", "poster": "p.jpg", "videos": [
-        {"id": f"tt1:{s}:{e}", "season": s, "episode": e, "name": f"Episodio {s}x{e}", "overview": f"Sinopsis {s}x{e}"}
+def info(seasons=range(1, 8), per=4, meta_id="tt1", name="La serie") -> dict:
+    return {"name": name, "poster": "p.jpg", "videos": [
+        {"id": f"{meta_id}:{s}:{e}", "season": s, "episode": e, "name": f"Episodio {s}x{e}", "overview": f"Sinopsis {s}x{e}"}
         for s in range(8) if s in seasons for e in range(1, per + 1)]}
 
 
@@ -54,7 +54,7 @@ def test_la_pista_de_audio_del_doblaje():
 
 # --- el horario -----------------------------------------------------------------------------------------------------
 def test_el_horario_es_el_mismo_para_todos_y_revuelve_cada_vuelta():
-    episodes = synthetic.lineup(info(), CHANNEL.seasons)
+    episodes = synthetic.lineup(info(), CHANNEL.shows[0])
     assert [e["label"] for e in episodes][:2] == ["T3 E1", "T3 E2"] and len(episodes) == 12  # solo de la 3 a la 5
     first, again = synthetic.cycle_order(12, CHANNEL.id, 7), synthetic.cycle_order(12, CHANNEL.id, 7)
     assert first == again and sorted(first) == list(range(12))  # siempre el mismo orden y están todos
@@ -78,10 +78,10 @@ class FakePlayer:
         return True
 
 
-def fake_catalog(found: dict[str, list[streams.Source]]):
+def fake_catalog(found: dict[str, list[streams.Source]], infos: dict | None = None):
     pl = FakePlayer()
     watch = SimpleNamespace(
-        cinemeta=SimpleNamespace(meta=lambda kind, meta_id: info()),
+        cinemeta=SimpleNamespace(meta=lambda kind, meta_id: (infos or {}).get(meta_id) or info()),
         stream_sources=lambda kind, video_id, prefs: list(found.get(video_id, [])),
         stream_prefs=streams.Preferences(audio="en", quality="1080p"), player=pl)
     sessions = SimpleNamespace(before_launch=None, pin=lambda: None, unpin=lambda p: None,
@@ -91,7 +91,7 @@ def fake_catalog(found: dict[str, list[streams.Source]]):
 
 
 def on_air_now(now: float):
-    episodes = synthetic.lineup(info(), CHANNEL.seasons)
+    episodes = synthetic.lineup(info(), CHANNEL.shows[0])
     cycle, place, offset = synthetic.on_air(len(episodes), CHANNEL, now)
     order = synthetic.cycle_order(len(episodes), CHANNEL.id, cycle)
     return episodes, cycle, place, offset, order
@@ -206,3 +206,34 @@ def test_un_archivo_sin_la_pista_latina_pide_otra_fuente():
     p.segment = segment
     p._started(segment)
     assert ("set_property", "aid", 2) in mpv.sent and not segment.failed
+
+
+# --- varias series y la memoria del doblaje --------------------------------------------------------------------------
+def test_un_canal_de_varias_series_dice_cual_va_y_usa_el_logo_de_la_interfaz(monkeypatch):
+    monkeypatch.setattr(player, "find_mpv", lambda: "mpv.exe")
+    toons = synthetic.SyntheticChannel("orbital:toons", "Caricaturas", (synthetic.Show("tt7"), synthetic.Show("tt8")),
+                                       slot=1000, logo="/img/channels/caricaturas.png", aliases=("caricaturas",))
+    infos = {"tt7": info(range(1, 3), 2, "tt7", "Pinky y Cerebro"), "tt8": info(range(1, 2), 2, "tt8", "Batman")}
+    found = {f"{m}:{s}:{e}": [source(0, f"{m} {s}x{e} Dual-Lat")] for m, ss in (("tt7", (1, 2)), ("tt8", (1,))) for s in ss for e in (1, 2)}
+    catalog, pl = fake_catalog(found, infos)
+    tv = synthetic.SyntheticTV(catalog, [toons], clock=lambda: synthetic.EPOCH + 3_500.0)
+    assert len(tv.all_episodes(toons)) == 6  # las dos series juntas, sin especiales
+    described = tv.describe(toons)
+    assert described["logo"] == "/img/channels/caricaturas.png" and described["now"]["series"] in ("Pinky y Cerebro", "Batman")
+    assert tv.remote_logo(toons.id) is None
+    tv.play(toons.id)
+    meta = pl.played[0][2]
+    assert meta["detail"].startswith(meta["series"] + " · T") and meta["meta_id"] == meta["video_id"].split(":")[0]
+
+
+def test_los_episodios_sin_latino_se_quedan_fuera_del_horario(tmp_path):
+    catalog, _ = fake_catalog({"tt1:3:1": [source(0, "Dual-Lat")]})
+    tv = synthetic.SyntheticTV(catalog, [CHANNEL], clock=lambda: synthetic.EPOCH + 10.0, directory=tmp_path)
+    tv._stop = SimpleNamespace(wait=lambda seconds: False, is_set=lambda: False)  # sin esperar entre episodios
+    assert tv.scan(limit=100) == 12  # revisó los doce
+    assert tv.coverage.has("tt1:3:1") is True and tv.coverage.has("tt1:3:2") is False
+    # Todos sin latino menos uno: el horario solo lo tiene a él (si fueran todos, todos: algo raro pasó).
+    assert [e["id"] for e in tv._episodes(CHANNEL)] == ["tt1:3:1"]
+    again = synthetic.SyntheticTV(catalog, [CHANNEL], directory=tmp_path)  # se guardó en disco
+    assert again.coverage.has("tt1:3:2") is False and not again.coverage.stale("tt1:3:1", synthetic.EPOCH + 20)
+    assert again.coverage.stale("tt1:3:2", synthetic.EPOCH + 10 + synthetic.RECHECK_MISSING + 1)  # a la semana, otra vez

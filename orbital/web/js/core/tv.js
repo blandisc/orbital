@@ -70,13 +70,13 @@ export function emptyState(data, { loading = false, error = "" } = {}) {
 }
 
 /**
- * Lo que va ahora en un canal de Orbital (una serie al aire todo el día): «T5 E3 · Bart, el genio · termina a las
- * 9:42 p. m.». Vacío si el servidor no lo supo (Cinemeta no respondió).
+ * Lo que va ahora en un canal de Orbital (series al aire todo el día): «T5 E3 · Bart, el genio · termina a las 9:42 p. m.»;
+ * en uno de varias series, con cuál va primero («Batman · T1 E3 · …»). Vacío si el servidor no lo supo.
  */
 export function airingLine(channel, clock) {
   const now = channel?.now;
   if (!now) return "";
-  return [now.label, now.title, now.ends && `termina a las ${clock(new Date(now.ends * 1000))}`].filter(Boolean).join(" · ");
+  return [now.series, now.label, now.title, now.ends && `termina a las ${clock(new Date(now.ends * 1000))}`].filter(Boolean).join(" · ");
 }
 
 /** Para el lector de pantalla y el dedo: «12, Azteca 7». */

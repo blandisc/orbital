@@ -783,11 +783,27 @@ class VoiceController:
         plain = re.sub(r"\s*[\(\[][^\)\]]*[\)\]]", "", str(name or ""))
         return words_to_numbers(normalize(plain)).strip()
 
-    def _find_channel(self, said: str):
+    def _find_own(self, said: str, asked_channel: bool):
+        """Un canal de Orbital (synthetic.py) por cómo se pide: «el canal de los Simpson», «Los Simpson 24/7». Solo si se
+        pidió un canal (`asked_channel`, o lo dice): «pon los Simpson» sigue siendo la serie."""
+        own = getattr(getattr(self.catalog, "tv", None), "synthetic", None)
+        if own is None:
+            return None
+        key = words_to_numbers(normalize(said)).strip()
+        asked_channel = asked_channel or "canal" in key.split() or bool(re.search(r"\b24\s*7\b", key))
+        key = re.sub(r"\s*\b24\s*7\b\s*", " ", key).strip()
+        key = re.sub(r"^(?:el\s+)?(?:canal\s+)?(?:de\s+)?", "", key).strip()
+        if not asked_channel or not key:
+            return None
+        return next((c for c in own.channels if key in {normalize(a) for a in (*c.aliases, c.name)}), None)
+
+    def _find_channel(self, said: str, asked_channel: bool = False):
         """El canal de TV en vivo con ese nombre (o «canal 5» si no hay uno que se llame así: su número en Orbital)."""
         tv = getattr(self.catalog, "tv", None)
         if tv is None:
             return None
+        if (own := self._find_own(said, asked_channel)) is not None:
+            return own
         key = self._channel_key(said).removeprefix("el ")
         bare = key.removeprefix("canal ")  # «canal 5» y «5» (de «pon el canal {channel}») buscan lo mismo
         if not key:
@@ -827,7 +843,7 @@ class VoiceController:
                                events=[self._show_view({"seccion": "tv"}, "TV en vivo")])
         if not said:  # «pon la tele»: la sección de canales
             return VoiceResult("Abriendo la TV en vivo.", events=[self._show_view({"seccion": "tv"}, "TV en vivo")])
-        channel = self._find_channel(said)
+        channel = self._find_channel(said, asked_channel=True)
         if channel is None:
             return VoiceResult(f"No encontré el canal {said}. Te dejo la lista de canales.",
                                ok=False, events=[self._show_view({"seccion": "tv"}, "TV en vivo")])

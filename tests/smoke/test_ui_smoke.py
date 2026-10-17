@@ -123,7 +123,7 @@ def test_live_tv_categories_and_tuning_a_channel(page, server):
     assert page.locator(".status-bar__tab--active").inner_text() == "TV en vivo"
     assert page.locator(".tv__cat").count() > 1  # las categorías, siempre a la vista
     assert page.locator(".tv__cat--on").inner_text().startswith("Todos")
-    assert page.locator(".tv__tile").count() == 41 and page.locator(".tv__tile.tile--focused").count() == 1
+    assert page.locator(".tv__tile").count() == 42 and page.locator(".tv__tile.tile--focused").count() == 1
     # Los canales de Orbital (una serie al aire todo el día) van primero, con «24/7» en vez de número.
     assert "Los Simpson 24/7" in page.locator(".tv__tile").first.inner_text() and "24/7" in page.locator(".tv__number").first.inner_text()
     # Un canal que ya falló una vez sale atenuado y con su aviso; los que nadie ha revisado, normales.
@@ -137,7 +137,7 @@ def test_live_tv_categories_and_tuning_a_channel(page, server):
     page.keyboard.press("PageDown")  # la categoría siguiente (AvPág / RT); Q y E (LB RB) son las secciones
     page.wait_for_timeout(400)
     assert page.locator(".tv__cat--on").inner_text().startswith("Orbital 24/7")
-    assert page.locator(".tv__tile").count() == 1
+    assert page.locator(".tv__tile").count() == 2
     page.keyboard.press("PageDown")
     page.wait_for_timeout(400)
     assert page.locator(".tv__cat--on").inner_text().startswith("General")

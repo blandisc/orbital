@@ -1,21 +1,26 @@
-"""Canales de Orbital: una serie al aire las 24 horas, como un canal de tele (TV en vivo › «Orbital 24/7»).
+"""Canales de Orbital: series al aire las 24 horas, como un canal de tele (TV en vivo › «Orbital 24/7»).
 
-Ningún servidor transmite nada: el canal es un horario. Los episodios de las temporadas elegidas se revuelven una vez por
-vuelta (siempre igual: el orden sale del número de la vuelta) y cada uno ocupa un espacio fijo desde una fecha de
-arranque. Al prenderlo, la hora dice qué episodio va y en qué minuto: entras a media emisión, como en la tele. Al terminar
-un episodio sigue el siguiente de la vuelta, en el mismo reproductor.
+Ningún servidor transmite nada: el canal es un horario. Los episodios de sus series se revuelven una vez por vuelta
+(siempre igual: el orden sale del número de la vuelta) y cada uno ocupa un espacio fijo desde una fecha de arranque. Al
+prenderlo, la hora dice qué episodio va y en qué minuto: entras a media emisión, como en la tele. Al terminar un episodio
+sigue el siguiente de la vuelta, en el mismo reproductor.
 
 Cada episodio se pone con una fuente de tus complementos de Stremio en el doblaje del canal (latino: nunca castellano)
-y el reproductor elige esa pista de audio (playback.dub_track). Si un episodio no tiene ese doblaje, se salta. Un canal
-no toca «Seguir viendo» ni Trakt: es la tele de fondo, no lo que estás viendo tú.
+y el reproductor elige esa pista de audio (playback.dub_track). No todos los episodios tienen ese doblaje: en segundo
+plano, con calma, Orbital revisa cuáles sí (`Coverage`, guardado en disco) y los que no se quedan fuera del horario; uno
+que nadie ha revisado todavía entra, y si al ponerlo no tiene doblaje se salta (y se anota). Un canal no toca «Seguir
+viendo» ni Trakt: es la tele de fondo, no lo que estás viendo tú.
 """
 
 from __future__ import annotations
 
+import json
 import logging
 import random
+import threading
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import quote
 
@@ -31,34 +36,58 @@ CATEGORY = "Orbital 24/7"
 EPOCH = 1_767_225_600  # 1 ene 2026: desde aquí corre el horario (todas las teles ven el mismo episodio a la misma hora)
 MAX_SOURCES = 3  # fuentes por episodio antes de pasar al siguiente
 MAX_SKIPS = 5  # episodios seguidos sin doblaje antes de rendirse (algo más pasa: Internet, los complementos)
+SCAN_DELAY = 300.0  # s tras arrancar antes de revisar episodios: que Orbital abra primero
+SCAN_EVERY = 15.0  # s entre episodio y episodio al revisar: sin prisa, nunca le quita Internet a lo que ves
+RECHECK_OK = 30 * 86400  # un episodio con doblaje se vuelve a revisar al mes
+RECHECK_MISSING = 7 * 86400  # uno sin doblaje, a la semana (alguien pudo subirlo)
+
+
+@dataclass(frozen=True)
+class Show:
+    meta_id: str  # IMDb de la serie
+    seasons: tuple[int, int] | None = None  # de la primera a la última, incluidas; None: todas (sin especiales)
 
 
 @dataclass(frozen=True)
 class SyntheticChannel:
     id: str
     name: str
-    meta_id: str  # IMDb de la serie
-    seasons: tuple[int, int]  # de la primera a la última, incluidas
+    shows: tuple[Show, ...]
+    tagline: str = ""  # lo que dice la sección cuando no sabe qué va («Pinky y Cerebro, Batman, ThunderCats…»)
     dub: str = "latino"  # streams.Source.dub que se acepta
-    slot: int = 1320  # s por episodio en el horario: menos que el más corto, para no entrar después del final
-    logo: str | None = None
+    slot: int = 1260  # s por episodio en el horario: menos que el más corto, para no entrar después del final
+    logo: str | None = None  # dirección de internet (Orbital la baja y la empareja) o un archivo de la interfaz («/img/…»)
+    aliases: tuple[str, ...] = ()  # cómo lo pides por voz: «pon el canal de los Simpson» (voice._find_own)
 
     def public(self) -> dict:
-        return {"id": self.id, "name": self.name, "logo": self.logo, "categories": [CATEGORY], "quality": "",
-                "synthetic": True}
+        return {"id": self.id, "name": self.name, "categories": [CATEGORY], "quality": "", "synthetic": True,
+                "tagline": self.tagline}
 
 
 CHANNELS = [
-    SyntheticChannel("orbital:simpsons", "Los Simpson 24/7", "tt0096697", (3, 10),
-                     logo="https://images.metahub.space/logo/medium/tt0096697/img"),
+    SyntheticChannel("orbital:simpsons", "Los Simpson 24/7", (Show("tt0096697", (3, 10)),), slot=1320,
+                     logo="https://images.metahub.space/logo/medium/tt0096697/img",
+                     aliases=("los simpson", "simpson", "los simpsons", "simpsons")),
+    # Las de los 90 que sí tienen doblaje latino en los complementos (las de los 60 y 70 casi no: ver la historia del
+    # cambio). Gárgolas y ThunderCats solo en parte: la revisión de fondo deja fuera sus episodios sin latino.
+    SyntheticChannel("orbital:caricaturas", "Caricaturas de siempre", (
+        Show("tt0112123"),  # Pinky y Cerebro
+        Show("tt0103359"),  # Batman: La serie animada
+        Show("tt0112175"),  # El Hombre Araña (1994)
+        Show("tt0108783"),  # Gárgolas
+        Show("tt0088631"),  # ThunderCats (1985)
+    ), tagline="Pinky y Cerebro, Batman, El Hombre Araña, Gárgolas y ThunderCats", logo="/img/channels/caricaturas.png",
+       aliases=("caricaturas", "las caricaturas", "caricaturas de siempre", "caricaturas viejitas", "monitos")),
 ]
 
 
-def lineup(info: dict, seasons: tuple[int, int]) -> list[dict]:
-    """Los episodios de esas temporadas, en orden, con su etiqueta («T5 E3»)."""
-    first, last = seasons
-    return [{**e, "season": s["season"], "label": f"T{s['season']} E{e['episode']}"}
-            for s in cinemeta.seasons(info) if first <= s["season"] <= last for e in s["episodes"]]
+def lineup(info: dict, show: Show) -> list[dict]:
+    """Los episodios de una serie (las temporadas elegidas, sin especiales), en orden, con su etiqueta («T5 E3»)."""
+    first, last = show.seasons or (1, 10_000)
+    series = str(info.get("name") or "")
+    return [{**e, "season": s["season"], "label": f"T{s['season']} E{e['episode']}", "meta_id": show.meta_id,
+             "series": series, "poster": info.get("poster")}
+            for s in cinemeta.seasons(info) if s["season"] > 0 and first <= s["season"] <= last for e in s["episodes"]]
 
 
 def cycle_order(count: int, channel_id: str, cycle: int) -> list[int]:
@@ -79,20 +108,83 @@ def following(count: int, cycle: int, place: int) -> tuple[int, int]:
     return (cycle + 1, 0) if place + 1 >= count else (cycle, place + 1)
 
 
+class Coverage:
+    """Qué episodios tienen el doblaje del canal: {video_id: [sí/no, cuándo se revisó]}, en disco."""
+
+    def __init__(self, path: Path | None) -> None:
+        self.path = path
+        self._lock = threading.Lock()
+        self._data: dict[str, list] = {}
+        if path is not None:
+            try:
+                raw = json.loads(path.read_text(encoding="utf-8"))
+                self._data = {k: v for k, v in raw.items() if isinstance(v, list) and len(v) == 2} if isinstance(raw, dict) else {}
+            except (OSError, ValueError):
+                self._data = {}
+
+    def has(self, video_id: str) -> bool | None:
+        """True / False según la última revisión; None si nadie lo ha revisado."""
+        entry = self._data.get(video_id)
+        return bool(entry[0]) if entry else None
+
+    def stale(self, video_id: str, now: float) -> bool:
+        entry = self._data.get(video_id)
+        if not entry:
+            return True
+        return now - float(entry[1] or 0) > (RECHECK_OK if entry[0] else RECHECK_MISSING)
+
+    def record(self, video_id: str, ok: bool, now: float | None = None) -> None:
+        with self._lock:
+            self._data[video_id] = [bool(ok), now if now is not None else time.time()]
+
+    def save(self) -> None:
+        if self.path is None:
+            return
+        with self._lock:
+            text = json.dumps(self._data, separators=(",", ":"))
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.path.with_suffix(".tmp")
+            tmp.write_text(text, encoding="utf-8")
+            tmp.replace(self.path)
+        except OSError as exc:
+            log.warning("No pude guardar qué episodios tienen doblaje: %s", exc)
+
+
 class SyntheticTV:
-    def __init__(self, catalog: Catalog, channels: list[SyntheticChannel] | None = None, clock=time.time) -> None:
+    def __init__(self, catalog: Catalog, channels: list[SyntheticChannel] | None = None, clock=time.time,
+                 directory: Path | None = None) -> None:
         self.catalog = catalog
         self.channels = list(CHANNELS if channels is None else channels)
         self.clock = clock
+        self.coverage = Coverage(directory / "tv-orbital.json" if directory else None)
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
 
     def channel(self, channel_id: str) -> SyntheticChannel | None:
         return next((c for c in self.channels if c.id == channel_id), None)
 
+    def all_episodes(self, channel: SyntheticChannel) -> list[dict]:
+        """Todos los episodios de sus series (una serie que Cinemeta no da se queda fuera; si ninguna, CinemetaError)."""
+        out: list[dict] = []
+        error: cinemeta.CinemetaError | None = None
+        for show in channel.shows:
+            try:
+                out += lineup(self.catalog.watch.cinemeta.meta("series", show.meta_id), show)
+            except cinemeta.CinemetaError as exc:
+                error = exc
+        if not out and error is not None:
+            raise error
+        return out
+
     def _episodes(self, channel: SyntheticChannel) -> list[dict]:
-        return lineup(self.catalog.watch.cinemeta.meta("series", channel.meta_id), channel.seasons)
+        """Los del horario: sin los que ya se sabe que no tienen el doblaje (si fueran todos, todos: algo raro pasó)."""
+        episodes = self.all_episodes(channel)
+        kept = [e for e in episodes if self.coverage.has(e["id"]) is not False]
+        return kept or episodes
 
     def _at(self, channel: SyntheticChannel, episodes: list[dict], cycle: int, place: int) -> dict:
-        return episodes[cycle_order(len(episodes), channel.id, cycle)[place]]
+        return episodes[cycle_order(len(episodes), channel.id, cycle)[place % len(episodes)]]
 
     def now(self, channel: SyntheticChannel) -> dict | None:
         """Lo que va ahora (para la sección): episodio, imagen y a qué hora termina. None si Cinemeta no responde."""
@@ -105,12 +197,66 @@ class SyntheticTV:
         now = self.clock()
         cycle, place, offset = on_air(len(episodes), channel, now)
         episode = self._at(channel, episodes, cycle, place)
-        return {"label": episode["label"], "title": episode["title"], "still": episode.get("thumbnail"),
-                "ends": now - offset + channel.slot}
+        return {"series": episode["series"] if len(channel.shows) > 1 else "", "label": episode["label"],
+                "title": episode["title"], "still": episode.get("thumbnail"), "ends": now - offset + channel.slot}
 
     def describe(self, channel: SyntheticChannel) -> dict:
-        logo = f"/api/tv/logo?id={quote(channel.id, safe='')}" if channel.logo else None
+        logo = channel.logo if (channel.logo or "").startswith("/") else \
+            f"/api/tv/logo?id={quote(channel.id, safe='')}" if channel.logo else None
         return {**channel.public(), "logo": logo, "number": None, "verified": True, "now": self.now(channel)}
+
+    def remote_logo(self, channel_id: str) -> str | None:
+        """La dirección de internet del logo (la baja y empareja la TV); None si es un archivo de la interfaz."""
+        channel = self.channel(channel_id)
+        return channel.logo if channel and channel.logo and not channel.logo.startswith("/") else None
+
+    # --- qué episodios tienen el doblaje (en segundo plano) ---------------------------------------------------------
+    def start(self) -> None:
+        """Revisa con calma, episodio por episodio. Solo lo llama el arranque de verdad."""
+        if self._thread is not None and self._thread.is_alive():
+            return
+        self._stop.clear()
+        self._thread = threading.Thread(target=self._scan_loop, daemon=True, name="tv-orbital")
+        self._thread.start()
+
+    def stop(self) -> None:
+        self._stop.set()
+
+    def _scan_loop(self) -> None:
+        if self._stop.wait(SCAN_DELAY):
+            return
+        while not self._stop.is_set():
+            checked = self.scan(limit=40)
+            if self._stop.wait(SCAN_EVERY if checked else 6 * 3600):  # todo al día: se vuelve a ver en unas horas
+                return
+
+    def scan(self, limit: int = 40) -> int:
+        """Revisa hasta `limit` episodios que nadie ha revisado (o hace mucho), uno cada SCAN_EVERY s. Cuántos revisó."""
+        checked = 0
+        for channel in self.channels:
+            try:
+                episodes = self.all_episodes(channel)
+            except cinemeta.CinemetaError:
+                continue
+            for episode in episodes:
+                if checked >= limit or self._stop.is_set():
+                    break
+                if not self.coverage.stale(episode["id"], self.clock()):
+                    continue
+                try:
+                    found = bool(self.sources(channel, episode["id"]))
+                except stremio_api.StremioError:
+                    return checked  # sin complementos o sin cuenta: ya se revisará
+                self.coverage.record(episode["id"], found, self.clock())
+                checked += 1
+                if checked % 10 == 0:
+                    self.coverage.save()
+                if self._stop.wait(SCAN_EVERY):
+                    break
+        if checked:
+            self.coverage.save()
+            log.info("Canales de Orbital: revisé %d episodios", checked)
+        return checked
 
     # --- ponerlo en pantalla -------------------------------------------------------------------------------------
     def sources(self, channel: SyntheticChannel, video_id: str, skip: set[int] | None = None) -> list[streams.Source]:
@@ -123,28 +269,31 @@ class SyntheticTV:
                  and not {"CAM", "Tráiler"} & set(s.tags)]
         return [s for s in found if s.dub == channel.dub] + [s for s in found if not s.dub]
 
-    def _meta(self, channel: SyntheticChannel, info: dict, episode: dict, cycle: int, place: int,
+    def _meta(self, channel: SyntheticChannel, episode: dict, cycle: int, place: int,
               source: streams.Source, tried: list[int], skips: int = 0) -> dict:
-        series = info.get("name") or channel.name
+        detail = f"{episode['label']} · {episode['title']}"
+        if len(channel.shows) > 1:
+            detail = f"{episode['series']} · {detail}"  # en un canal de varias series, cuál es
         return {"kind": "channel", "synthetic": True, "channel_id": channel.id, "title": channel.name,
-                "meta_id": channel.meta_id, "video_id": episode["id"], "series": series,
-                "detail": f"{episode['label']} · {episode['title']}", "dub": channel.dub,
-                "description": episode.get("overview") or "", "poster": info.get("poster"),
-                "cycle": cycle, "place": place, "tried": tried, "source_label": "Latino" if channel.dub == "latino" else "",
+                "meta_id": episode["meta_id"], "video_id": episode["id"], "series": episode["series"],
+                "detail": detail, "dub": channel.dub, "description": episode.get("overview") or "",
+                "poster": episode.get("poster"), "cycle": cycle, "place": place, "tried": tried,
+                "source_label": "Latino" if channel.dub == "latino" else "",
                 "skips": skips}  # episodios seguidos que no abrieron: con MAX_SKIPS se rinde
 
     def _pick(self, channel: SyntheticChannel, cycle: int, place: int, skip: set[int] | None = None,
-              skips: int = 0) -> tuple[dict, dict, streams.Source, int, int] | None:
-        """(ficha, episodio, fuente, vuelta, lugar) del primer episodio desde ese lugar que tenga el doblaje."""
-        info = self.catalog.watch.cinemeta.meta("series", channel.meta_id)
-        episodes = lineup(info, channel.seasons)
+              skips: int = 0) -> tuple[dict, streams.Source, int, int] | None:
+        """(episodio, fuente, vuelta, lugar) del primer episodio desde ese lugar que tenga el doblaje."""
+        episodes = self._episodes(channel)
         if not episodes:
             return None
         for _ in range(MAX_SKIPS - skips):
             episode = self._at(channel, episodes, cycle, place)
             found = self.sources(channel, episode["id"], skip)
+            if not skip:
+                self.coverage.record(episode["id"], bool(found), self.clock())  # lo que se vio al ponerlo también cuenta
             if found:
-                return info, episode, found[0], cycle, place
+                return episode, found[0], cycle, place
             log.info("%s: %s no tiene doblaje %s, sigue el siguiente", channel.name, episode["label"], channel.dub)
             skip = None
             cycle, place = following(len(episodes), cycle, place)
@@ -161,19 +310,20 @@ class SyntheticTV:
         if not mpv_exe:
             raise LookupError("No encuentro mpv, el reproductor de Orbital. Instálalo desde Ajustes o revisa tu instalación.")
         try:
-            info = watch.cinemeta.meta("series", channel.meta_id)
-            episodes = lineup(info, channel.seasons)
+            episodes = self._episodes(channel)
             if not episodes:
                 raise LookupError(f"No encontré los episodios de {channel.name}.")
             cycle, place, offset = on_air(len(episodes), channel, self.clock())
             picked = self._pick(channel, cycle, place)
         except (cinemeta.CinemetaError, stremio_api.StremioError) as exc:
             raise LookupError(f"No pude prender {channel.name}: {exc}") from exc
+        finally:
+            self.coverage.save()
         if picked is None:
             raise LookupError(f"No encontré {channel.name} en español latino en tus complementos de Stremio.")
-        info, episode, source, picked_cycle, picked_place = picked
+        episode, source, picked_cycle, picked_place = picked
         start = offset if (picked_cycle, picked_place) == (cycle, place) else 0.0  # se saltó uno: el siguiente desde el principio
-        meta = self._meta(channel, info, episode, picked_cycle, picked_place, source, [source.index])
+        meta = self._meta(channel, episode, picked_cycle, picked_place, source, [source.index])
         if sessions.before_launch and not keep:
             sessions.before_launch("media:player")
         self.wire(watch.player)
@@ -188,7 +338,7 @@ class SyntheticTV:
             raise
         sessions.revealing = sessions.to_front("media:player", channel.name, pinned=pinned, timeout=player.STARTUP_TIMEOUT + 5,
                                                ready=lambda: bool(watch.player.segment and watch.player.segment.playing))
-        log.info("%s al aire: %s (%s, desde %d s)", channel.name, meta["detail"], streams.LANG_NAMES.get("es"), int(start))
+        log.info("%s al aire: %s (desde %d s)", channel.name, meta["detail"], int(start))
         return {"ok": True, "reveal": sessions.revealing}
 
     def wire(self, p) -> None:
@@ -196,8 +346,8 @@ class SyntheticTV:
         p.on_synthetic_failed = self.failed
 
     def _load(self, channel: SyntheticChannel, picked, tried: list[int], message: str, skips: int = 0) -> bool:
-        info, episode, source, cycle, place = picked
-        meta = self._meta(channel, info, episode, cycle, place, source, tried, skips)
+        episode, source, cycle, place = picked
+        meta = self._meta(channel, episode, cycle, place, source, tried, skips)
         return self.catalog.watch.player.load(player.stream_url(source.stream) or "", channel.name, meta, start=0,
                                               audio="es", subtitles="", message=message)
 
@@ -212,9 +362,11 @@ class SyntheticTV:
         except (cinemeta.CinemetaError, stremio_api.StremioError, KeyError, ValueError) as exc:
             log.warning("%s: no pude seguir con el siguiente episodio: %s", channel.name, exc)
             return False
+        finally:
+            self.coverage.save()
         if picked is None:
             return False
-        return self._load(channel, picked, [picked[2].index], f"{channel.name} · {picked[1]['label']}")
+        return self._load(channel, picked, [picked[1].index], f"{channel.name} · {picked[0]['label']}")
 
     def failed(self, meta: dict) -> bool:
         """La fuente no abrió, se cortó o no traía el doblaje: otra del mismo episodio; si no hay, el siguiente."""
@@ -226,7 +378,7 @@ class SyntheticTV:
         try:
             cycle, place = int(meta["cycle"]), int(meta["place"])
             picked = self._pick(channel, cycle, place, skip=tried, skips=skips) if len(tried) < MAX_SOURCES else None
-            if picked is not None and (picked[3], picked[4]) != (cycle, place):
+            if picked is not None and (picked[2], picked[3]) != (cycle, place):
                 tried, skips = set(), skips + 1  # ya es otro episodio
             if picked is None and skips + 1 < MAX_SKIPS:
                 count = len(self._episodes(channel))
@@ -235,6 +387,8 @@ class SyntheticTV:
         except (cinemeta.CinemetaError, stremio_api.StremioError, KeyError, ValueError) as exc:
             log.warning("%s: no pude cambiar de fuente: %s", channel.name, exc)
             return False
+        finally:
+            self.coverage.save()
         if picked is None or skips >= MAX_SKIPS:
             return False  # varios episodios seguidos sin abrir: algo más pasa (Internet, los complementos)
-        return self._load(channel, picked, sorted(tried | {picked[2].index}), f"{channel.name} · probando otra fuente", skips)
+        return self._load(channel, picked, sorted(tried | {picked[1].index}), f"{channel.name} · probando otra fuente", skips)

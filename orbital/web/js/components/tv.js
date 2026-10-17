@@ -151,7 +151,7 @@ export function createTv({ onFocus, onPick }) {
       mount(nowText,
         h("span", { class: "tv__now-eyebrow" }, live ? "Al aire en grande" : "Canal de Orbital · Español latino"),
         h("h2", { class: "tv__now-title" }, channel.name),
-        h("span", { class: "tv__now-meta" }, airingLine(channel, clock) || "Una serie al aire todo el día"),
+        h("span", { class: "tv__now-meta" }, airingLine(channel, clock) || channel.tagline || "Al aire todo el día"),
         h("span", { class: "tv__now-hint" }, live ? "A para volver a él." : "A para prenderlo: entras a media emisión, como en la tele."));
       return;
     }

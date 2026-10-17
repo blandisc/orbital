@@ -51,7 +51,9 @@
       {"say": "pon Azteca Uno en vivo", "note": "También así."},
       {"say": "siguiente canal", "note": "O canal anterior."},
       {"say": "canal anterior", "note": "El de antes en la lista."},
-      {"say": "pon las noticias", "note": "Un canal de noticias."}
+      {"say": "pon las noticias", "note": "Un canal de noticias."},
+      {"say": "pon el canal de los Simpson", "note": "Los Simpson en latino, todo el día."},
+      {"say": "pon el canal de caricaturas", "note": "Caricaturas de siempre, en latino."}
     ]},
     {"title": "Para ti", "icon": "sparkles", "commands": [
       {"say": "qué sale hoy", "note": "Los episodios nuevos de las series que sigues (Trakt)."},

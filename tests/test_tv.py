@@ -435,7 +435,8 @@ def test_api_lista_los_canales(client):
     data = c.get("/api/tv").json()
     assert [x["title"] for x in data["categories"]] == ["Todos", "Orbital 24/7", "General", "Otros"]
     assert data["channels"][0]["synthetic"] is True and data["channels"][0]["name"] == "Los Simpson 24/7"  # los de Orbital, primero
-    assert len(data["channels"]) == 9 and data["checking"] is False and data["offline"] is False
+    assert data["channels"][1]["name"] == "Caricaturas de siempre" and data["channels"][1]["logo"].startswith("/img/")
+    assert len(data["channels"]) == 10 and data["checking"] is False and data["offline"] is False
     assert "tv.example.mx" not in c.get("/api/tv").text
 
 

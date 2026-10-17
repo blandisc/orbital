@@ -85,6 +85,19 @@ def test_saying_a_channel_as_a_search_puts_it_on(library, channels):
     assert channels == ["adn", "bm"]
 
 
+def test_the_simpsons_channel_by_voice_but_the_series_stays_the_series(library, channels, monkeypatch):
+    """«pon el canal de los Simpson» prende el canal de Orbital (Alexa y «Dile a Orbital» del iPhone); «pon los Simpson»
+    sin decir canal sigue siendo la serie (no se secuestra)."""
+    voice = VoiceController(library)
+    assert parse_text("pon el canal de los simpson") == ("LiveTvIntent", {"channel": "de los simpson"})
+    assert voice.handle_intent("LiveTvIntent", {"channel": "de los simpson"}).speech == "Poniendo Los Simpson 24/7."
+    assert voice.handle_intent("LiveTvIntent", {"channel": "los simpsons"}).ok  # Alexa: «pon el canal de {channel}»
+    assert voice.handle_intent("LaunchGameIntent", {"game": "los simpson 24 7"}).ok
+    assert voice.handle_intent("LiveTvIntent", {"channel": "de caricaturas"}).ok
+    assert channels == ["orbital:simpsons"] * 3 + ["orbital:caricaturas"]
+    assert voice._find_channel("los simpson") is None  # «pon los Simpson»: la serie, no el canal
+
+
 def test_an_unknown_channel_shows_the_list(library, channels):
     result = VoiceController(library).handle_intent("LiveTvIntent", {"channel": "canal que no existe"})
     assert not result.ok and "No encontré el canal" in result.speech
