@@ -279,26 +279,41 @@ struct TitleLogo: View {
     var dark = false
     /// Si el logo resultó oscuro al medirlo (un logo negro sobre la sala oscura no se lee): se pinta claro.
     @State private var measuredDark = false
+    /// El logo sin su margen transparente (metahub los trae con ~25 % vacío arriba y abajo: el rótulo se veía flotando).
+    @State private var trimmed: UIImage?
+    @State private var failed = false
 
     var body: some View {
         Group {
             if let url, let u = URL(string: url) {
-                RemoteImage(url: u, maxPoints: DS.Image.logo) { phase in
-                    switch phase {
-                    case .success(let image): image.resizable().scaledToFit().brightness(dark || measuredDark ? 1 : 0)
-                    case .failure: name
-                    default: name.hidden()     // mientras carga guarda el sitio del nombre: no brinca si el logo llega
-                    }
+                Group {
+                    if let trimmed { Image(uiImage: trimmed).resizable().scaledToFit().brightness(dark || measuredDark ? 1 : 0) }
+                    else if failed { name }
+                    else { name.hidden() }     // mientras carga guarda el sitio del nombre: no brinca si el logo llega
                 }
-                .frame(maxWidth: DS.Size.cardMax, maxHeight: height, alignment: .leading)
+                // Su alto real (por su proporción, con el tope de siempre): una caja más alta que el logo dejaba un hueco
+                // entre el rótulo y el logo.
+                .frame(maxWidth: DS.Size.cardMax, maxHeight: fittedHeight, alignment: .bottomLeading)
                 .shadow(color: DS.scrim, radius: DS.Space.s1)
-                .task(id: url) { measuredDark = await LogoTone.isDark(u) }
+                .task(id: url) {
+                    trimmed = LogoTrim.cached(u)
+                    if trimmed == nil {
+                        if let found = await LogoTrim.load(u) { trimmed = found } else { failed = true }
+                    }
+                    measuredDark = await LogoTone.isDark(u)
+                }
             } else { name }
         }
         .accessibilityLabel(Text(title))
     }
 
     private var height: CGFloat { size == .hero ? DS.Size.logoHero : DS.Size.logo }
+
+    /// El alto que de verdad ocupa el logo recortado a lo ancho de siempre (sin pasar del tope).
+    private var fittedHeight: CGFloat {
+        guard let trimmed, trimmed.size.width > 0, trimmed.size.height > 0 else { return height }
+        return min(height, DS.Size.cardMax * trimmed.size.height / trimmed.size.width)
+    }
 
     private var name: some View {
         // En una pieza, una sola línea (con puntos suspensivos si no cabe): en una columna angosta dos líneas se encimaban con el dato.
@@ -603,6 +618,20 @@ final class ArtTint: ObservableObject {
 /// ¿Es oscuro un logo? Su color medio pesado por la opacidad (los logos son PNG con fondo transparente), de una miniatura.
 /// Se recuerda por URL.
 @MainActor
+/// Los logos sin su margen transparente, recortados una vez (fuera del hilo principal) y recordados.
+enum LogoTrim {
+    @MainActor private static var cache: [URL: UIImage] = [:]
+
+    @MainActor static func cached(_ url: URL) -> UIImage? { cache[url] }
+
+    @MainActor static func load(_ url: URL) async -> UIImage? {
+        guard let image = await ImagePipeline.shared.image(url, maxPixel: DS.Image.logo * ImagePipeline.screenScale) else { return nil }
+        let result = await Task.detached(priority: .userInitiated) { image.trimmingTransparentEdges() ?? image }.value
+        cache[url] = result
+        return result
+    }
+}
+
 enum LogoTone {
     private static var cache: [URL: Bool] = [:]
 
@@ -618,6 +647,23 @@ enum LogoTone {
 }
 
 extension UIImage {
+    /// La imagen sin las orillas totalmente transparentes (nil si no hay nada que recortar o no se puede leer).
+    func trimmingTransparentEdges() -> UIImage? {
+        guard let cg = cgImage, let pixels = rgbaPixels else { return nil }
+        let w = cg.width, h = cg.height
+        var top = h, bottom = -1, left = w, right = -1
+        for y in 0..<h {
+            let row = y * w * 4
+            for x in 0..<w where pixels[row + x * 4 + 3] > 8 {
+                if y < top { top = y }; if y > bottom { bottom = y }
+                if x < left { left = x }; if x > right { right = x }
+            }
+        }
+        guard bottom >= top, right >= left, (top > 0 || left > 0 || bottom < h - 1 || right < w - 1),
+              let cropped = cg.cropping(to: CGRect(x: left, y: top, width: right - left + 1, height: bottom - top + 1)) else { return nil }
+        return UIImage(cgImage: cropped, scale: scale, orientation: imageOrientation)
+    }
+
     /// Los píxeles en RGBA de 8 bits (para `ArtPalette`).
     var rgbaPixels: [UInt8]? {
         guard let cg = cgImage else { return nil }

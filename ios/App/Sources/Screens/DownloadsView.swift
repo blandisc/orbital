@@ -48,7 +48,7 @@ struct DownloadsView: View {
         .tint(DS.accent)   // interruptores y botones de la lista: el acento (lo interactivo)
         .scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
         .navigationTitle("Descargas").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        .navigationSubtitle(Text("Ocupan \(bytes(model.usedBytes)) · libres \(bytes(model.freeBytes))"))
+        .subtitle(model.usedBytes > 0 ? Text("Ocupan \(bytes(model.usedBytes)) · libres \(bytes(model.freeBytes))") : nil)   // vacío, no hay nada que contar
         .titleDestinations()
         .task { await model.run() }
         .task(id: model.active.first?.metaID) {

@@ -52,12 +52,12 @@ struct ParaTiView: View {
             case .lists: ListsView(observer: model)
             }
         }
-        .padding(.top, DS.Space.s2)
+        .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio
         .background(Backdrop(tint: m.mode == .mosaic ? tint.colors : nil))
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
         .navigationTitle("Para ti").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         // De dónde salió lo que ves, en el mismo lugar que «Stremio al día» en Inicio (no un chip y un pie sueltos).
-        .navigationSubtitle(subtitle(m))
+        .subtitle(sourceText(m))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { Task { await m.refresh() } } label: { Image(systemName: "arrow.clockwise") }
@@ -80,10 +80,9 @@ struct ParaTiView: View {
     }
 
     /// «De tu Orbital · Trakt al día» o «Calculado en el iPhone»: el subtítulo de la barra, como en Inicio.
-    private func subtitle(_ m: ParaTiModel) -> Text {
-        // Calculado en el iPhone es lo normal (no se dice); solo se nombra la consola cuando viene de ella.
-        if m.source == .console { return m.traktLinked ? Text("\(Text("De tu Orbital")) · \(Text("Trakt al día"))") : Text("De tu Orbital") }
-        return m.traktLinked ? Text("Trakt al día") : Text(verbatim: "")
+    /// Calculado en el iPhone es lo normal y no se dice; solo se nombra la consola cuando viene de ella.
+    private func sourceText(_ m: ParaTiModel) -> Text? {
+        m.source == .console ? Text("De tu Orbital") : nil
     }
 
     /// Modo demostración (`-demo-mosaic-focus N`): qué sugerencia enfocar al abrir, para las capturas de CEN-36.

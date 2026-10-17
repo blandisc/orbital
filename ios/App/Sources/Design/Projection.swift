@@ -389,3 +389,11 @@ extension View {
     /// Receta: hoja a la medida de su contenido (ver `FittedSheet`).
     func fittedSheet() -> some View { modifier(FittedSheet()) }
 }
+
+extension View {
+    /// Receta: el subtítulo de la barra solo cuando dice algo («3 cambios por subir», el espacio de Descargas). Sin él, el
+    /// título se queda grande y todas las pestañas arrancan igual (con subtítulo iOS lo encoge).
+    @ViewBuilder func subtitle(_ text: Text?) -> some View {
+        if let text { navigationSubtitle(text) } else { self }
+    }
+}
