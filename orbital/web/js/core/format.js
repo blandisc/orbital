@@ -38,7 +38,9 @@ export function duration(seconds) {
   return m && h < 10 ? `${h} h ${m} min` : `${h} h`;
 }
 
-export const clock = (date = new Date()) => date.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
+/** La hora en 12 horas, como se dice en México: «9:05 p. m.» (la misma que el reproductor y la voz: orbital/text.py). */
+export const clock = (date = new Date()) =>
+  `${date.getHours() % 12 || 12}:${String(date.getMinutes()).padStart(2, "0")} ${date.getHours() < 12 ? "a. m." : "p. m."}`;
 
 const GENRES = {
   Action: "Acción", Adventure: "Aventura", Animation: "Animación", Biography: "Biografía", Comedy: "Comedia",

@@ -107,3 +107,11 @@ test("la columna de la derecha dice qué es y no repite el destacado", async () 
   assert.equal(home.feature.title, "Futurama");
   assert.deepEqual(home.cards.map((c) => c.title), ["Hades"]);
 });
+
+test("el ícono de cada plataforma lleva su color: consolas, Steam y streaming", async () => {
+  const { platformColor } = await import("../../orbital/web/js/core/home.js");
+  assert.equal(platformColor({ system: "switch" }), "var(--system-switch, var(--system-default))");
+  assert.equal(platformColor({ source: "steam" }), "var(--system-steam, var(--system-default))");
+  assert.equal(platformColor({ source: "stremio", category: "media", kind: "movie" })?.includes("--system-media"), true);
+  assert.equal(platformColor({ source: "apps" }), null);
+});

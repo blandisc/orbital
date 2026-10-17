@@ -34,8 +34,9 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
   const offline = h("span", { class: "status-bar__offline", role: "status", hidden: true }, "Sin Internet");
   const level = h("i", { class: "battery__level" });
   const bolt = svg(ICONS.bolt);
-  // La batería: la pila con su nivel y el rayo dentro al cargar (sin el número: la pila ya lo dice).
-  const battery = h("span", { class: "battery", hidden: true }, h("b", { class: "battery__body" }, level, bolt));
+  // La batería: la pila con su nivel (el rayo dentro al cargar) y, al lado, cuánto le queda.
+  const percent = h("span", { class: "battery__percent" });
+  const battery = h("span", { class: "battery", hidden: true }, h("b", { class: "battery__body" }, level, bolt), percent);
   const time = h("span", { class: "status-bar__clock" });
 
   const tabs = h("nav", { class: "status-bar__tabs", "aria-label": "Secciones" });
@@ -196,6 +197,7 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
         level.style.width = `calc(${pct}% - 4px)`;
         bolt.style.display = info.charging ? "" : "none";
         battery.title = `${info.charging ? "Cargando" : "Batería"} · ${pct} %`;
+        percent.textContent = `${pct}%`;
       };
       update();
       info.addEventListener("levelchange", update);

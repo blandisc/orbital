@@ -1,6 +1,6 @@
 import { h, svg } from "../core/dom.js";
 import { duration, lastPlayed, shortAgo } from "../core/format.js";
-import { kicker, stageKind, SYSTEMS, systemColor, systemOf, thumbOf } from "../core/home.js";
+import { kicker, platformColor, stageKind, SYSTEMS, systemColor, systemOf, thumbOf } from "../core/home.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { alternativeRunner, clampRatio, coverRatio, isGame, isSeries, isWatchable, primaryLabel } from "../core/library.js";
 import { Button } from "./button.js";
@@ -72,7 +72,10 @@ export function eyebrowOf(item, runningId = null) {
 }
 
 /** De dónde es: el ícono de su plataforma y su nombre («Steam», «Switch», «Película»). */
-const platform = (item, className) => h("span", { class: ["tile__platform", className] }, svg(ICONS[systemIconName(item)] || ICONS.apps), kicker(item));
+const platform = (item, className) => h("span", { class: ["tile__platform", className], style: tint(item) }, svg(ICONS[systemIconName(item)] || ICONS.apps), kicker(item));
+
+/** El ícono de la plataforma con su color (ver platformColor): `--platform` lo pinta en .tile__platform y .tile--row__detail. */
+const tint = (item) => (platformColor(item) ? { "--platform": platformColor(item) } : undefined);
 
 /**
  * Destacado: lo último que jugaste o viste, a lo grande, con sus acciones (A, X, Y) como leyenda.
@@ -127,7 +130,7 @@ export function RowTile(item, { focusId, onPress, airing = null }) {
       watch && Progress(item.progress, { className: "tile--row__progress" })), // sobre la miniatura, como en un póster
     h("span", { class: "tile--row__text" },
       h("strong", { class: "tile--row__title" }, item.title),
-      h("span", { class: "tile--row__detail" }, svg(ICONS[systemIconName(item)] || ICONS.apps),
+      h("span", { class: "tile--row__detail", style: tint(item) }, svg(ICONS[systemIconName(item)] || ICONS.apps),
         h("span", { class: "tile--row__detail-text" }, [kicker(item), shortDetail(item), total].filter(Boolean).join(" · ")))));
   if (system) node.style.setProperty("--glow", systemColor(systemOf(item)));
   return node;
