@@ -46,7 +46,9 @@ struct RemoteSheet: View {
         .presentationBackground { Rectangle().fill(.clear).glassEffect(.regular, in: Rectangle()) }
         .animation(DS.Motion.base(false), value: large)
         .onDisappear { speech.cancel() }
+        #if DEBUG
         .task { if Demo.isOn, Demo.open == "voice-guide" { showsGuide = true } }   // -demo-open voice-guide: la guía, para capturas
+        #endif
         .sheet(isPresented: $showsGuide) {
             NavigationStack {
                 VoiceGuideView().toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { showsGuide = false } } }
