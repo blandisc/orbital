@@ -34,6 +34,7 @@ class Mpv:
         self.observe = observe
         self._lock = threading.Lock()
         self._fh = None  # conexión de comandos
+        self._next_id = 0  # cada comando lleva su número y solo acepta la respuesta con ese número
         self._cache: dict[str, object] = {}
         self._cache_lock = threading.Lock()
         self._observer: threading.Thread | None = None
@@ -52,13 +53,17 @@ class Mpv:
     def _send(self, payload: dict, label) -> dict | None:
         """Un comando y su respuesta, con plazo. La lectura de la tubería no tiene plazo propio: va en
         un hilo y, si no termina a tiempo, esa conexión se abandona (la próxima abre otra)."""
-        line = (json.dumps(payload) + "\n").encode()
         if not self._lock.acquire(timeout=self.TIMEOUT):
             log.debug("mpv ocupado: se omite %s", label)
             return None
         try:
+            # Cada comando con su número (mpv lo devuelve en la respuesta): antes se tomaba «la primera respuesta» y,
+            # tras una que llegó tarde, la siguiente pregunta recibía la de otra (track-list llegó como un número).
+            self._next_id += 1
+            request_id = self._next_id
+            line = (json.dumps({**payload, "request_id": request_id}) + "\n").encode()
             box: dict = {}
-            worker = threading.Thread(target=lambda: box.update(reply=self._exchange(line, label)), daemon=True,
+            worker = threading.Thread(target=lambda: box.update(reply=self._exchange(line, label, request_id)), daemon=True,
                                       name="mpv-ipc")
             worker.start()
             worker.join(self.TIMEOUT)
@@ -70,19 +75,19 @@ class Mpv:
         finally:
             self._lock.release()
 
-    def _exchange(self, line: bytes, label) -> dict | None:
+    def _exchange(self, line: bytes, label, request_id: int | None = None) -> dict | None:
         for attempt in (1, 2):  # si mpv se reinició, la conexión vieja ya no sirve: una nueva
             fh = self._fh
             try:
                 if fh is None:
                     fh = self._fh = self._connect()
                 fh.write(line)
-                for _ in range(20):  # por si quedó algún evento antes de disable_event
+                for _ in range(50):  # eventos y respuestas atrasadas de otros comandos se saltan
                     reply = fh.readline()
                     if not reply:
                         raise OSError("mpv cerró la conexión")
                     data = json.loads(reply)
-                    if "error" in data:
+                    if "error" in data and (request_id is None or data.get("request_id") in (request_id, None)):
                         return data
                 return None
             except (OSError, ValueError) as exc:

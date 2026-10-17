@@ -550,8 +550,10 @@ class OrbitalPlayer(PlayerScreen):
         """Primera imagen de este archivo: avisos, subtítulos, capítulos y la barra."""
         if not segment.live:
             self._lift_curtain(segment)
-        tracks = self.mpv.get("track-list") or []
-        chapters = self.mpv.get("chapter-list") or []
+        tracks = self.mpv.get("track-list")
+        tracks = tracks if isinstance(tracks, list) else []  # una respuesta rara de mpv nunca tumba al vigilante
+        chapters = self.mpv.get("chapter-list")
+        chapters = chapters if isinstance(chapters, list) else []
         segment.chapters = [c for c in chapters if isinstance(c, dict) and isinstance(c.get("time"), (int, float))]
         if segment.meta.get("synthetic"):
             if segment.duration and segment.start > 5 and segment.position >= segment.duration - 10:

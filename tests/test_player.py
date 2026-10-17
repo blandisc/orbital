@@ -769,3 +769,28 @@ def test_a_new_file_is_not_mistaken_for_the_end_of_the_previous_one():
     p.segment = segment
     p.tick(segment, _t.monotonic(), False)  # recién cargado: no se lee nada todavía
     assert not segment.playing and ended == []
+
+
+def test_each_mpv_command_takes_only_its_own_answer():
+    """Una respuesta que llegó tarde (de otro comando) se salta: antes la siguiente pregunta la tomaba como suya y el
+    vigilante recibió un número en vez de la lista de pistas."""
+    import io
+    import json
+
+    from orbital.mpv import Mpv
+
+    class Pipe(io.BytesIO):
+        def __init__(self, lines):
+            super().__init__(b"".join((json.dumps(line) + "\n").encode() for line in lines))
+            self.sent = []
+
+        def write(self, data):
+            self.sent.append(data)
+            return len(data)
+
+    m = Mpv(pipe="no-existe")
+    m._fh = Pipe([{"data": 1080, "error": "success", "request_id": 6},  # la de un comando anterior, atrasada
+                  {"event": "property-change"},
+                  {"data": [{"id": 1, "type": "audio"}], "error": "success", "request_id": 7}])
+    reply = m._exchange(b'{"command": ["get_property", "track-list"], "request_id": 7}\n', "track-list", 7)
+    assert reply["data"] == [{"id": 1, "type": "audio"}]
