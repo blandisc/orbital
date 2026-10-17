@@ -25,6 +25,31 @@ from .store import ItemStore
 
 log = logging.getLogger(__name__)
 
+TASKBAR_BACK_AFTER = 3.0  # s tras la pantalla de carga: el juego ya está en pantalla completa y tapa la barra
+_taskbar_holds = 0  # aperturas en curso (dos a la vez: la barra vuelve cuando acaba la última)
+_taskbar_lock = threading.Lock()
+
+
+def taskbar_hidden(fn, *args, **kwargs):
+    """Corre `fn` con la barra de tareas de Windows escondida y la regresa unos segundos después. Al abrir un juego, el
+    emulador le roba el foco a Orbital con su ventana aún sin pantalla completa y Windows sacaba su barra encima de la
+    pantalla de carga. Antes se escondía todo el tiempo y ya nunca se veía, ni en el escritorio."""
+    global _taskbar_holds
+    from . import windows
+
+    with _taskbar_lock:
+        _taskbar_holds += 1
+        if _taskbar_holds == 1:
+            windows.set_taskbar_visible(False)
+    try:
+        return fn(*args, **kwargs)
+    finally:
+        time.sleep(TASKBAR_BACK_AFTER)
+        with _taskbar_lock:
+            _taskbar_holds -= 1
+            if _taskbar_holds == 0:
+                windows.set_taskbar_visible(True)
+
 QUICK_EXIT = 15  # s: un juego que se cierra antes, solo, seguramente no pudo abrir
 
 
@@ -172,7 +197,7 @@ class Sessions:
             return False
         self._reveal_skip = threading.Event()
         launched = time.monotonic()
-        threading.Thread(target=focus.bring_game_to_front, args=(self.launcher, item_id, title, runner),
+        threading.Thread(target=taskbar_hidden, args=(focus.bring_game_to_front, self.launcher, item_id, title, runner),
                          kwargs={"notify": self.events.publish, "skip": self._reveal_skip, "pinned": pinned,
                                  "ready_check": ready, "timeout": timeout,
                                  "user_returned": lambda: self.returned_at > launched},

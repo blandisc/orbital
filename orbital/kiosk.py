@@ -186,7 +186,10 @@ class KioskWindow:
             self._process = subprocess.Popen(build_command(exe, self.url, self.profile_dir),
                                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             log.info("Interfaz abierta (pid %s)", self._process.pid)
-            self._console_taskbar(hidden=True)
+            # La barra de Windows se ve como siempre (la pantalla completa de Orbital la tapa); solo se esconde mientras
+            # abre un juego o un video (sessions.taskbar_hidden). Al abrir, de regreso por si un Orbital anterior la
+            # dejó escondida (lo cerraron a la fuerza a media apertura).
+            self._console_taskbar(hidden=False)
             if sys.platform == "win32":
                 threading.Thread(target=self._brand, args=(self._process,), daemon=True, name="kiosk-icon").start()
             if self.keep_open or self.on_closed:
@@ -240,7 +243,7 @@ class KioskWindow:
         self.open()
 
     def _console_taskbar(self, hidden: bool) -> None:
-        """Modo consola: sin la barra de tareas de Windows (ver windows.set_taskbar_visible); al salir, de regreso."""
+        """Esconde o regresa la barra de tareas de Windows (ver windows.set_taskbar_visible)."""
         if sys.platform != "win32" or not self.hide_taskbar:
             return
         from . import windows

@@ -79,14 +79,21 @@ def test_kiosk_not_reopened_after_exit_to_desktop(tmp_path):
     assert not kiosk.is_open
 
 
-def test_console_mode_hides_the_taskbar_and_brings_it_back(tmp_path, _no_real_taskbar):
-    """Modo consola: al abrir la ventana de Orbital se esconde la barra de Windows (al abrir un juego ya no se asoma) y
-    al salir al escritorio vuelve. (Con el sustituto de conftest: nunca se toca la barra de verdad.)"""
+def test_the_taskbar_stays_visible_and_hides_only_while_something_opens(tmp_path, _no_real_taskbar, monkeypatch):
+    """La barra de Windows se ve como siempre (antes se escondía todo el modo consola y ya nunca salía); al abrir la
+    ventana de Orbital se regresa por si quedó escondida, y solo se esconde mientras abre un juego. (Con el sustituto
+    de conftest: nunca se toca la barra de verdad.)"""
+    from orbital import sessions
+
     fake = tmp_path / "browser.cmd"
     fake.write_text("@ping -n 30 127.0.0.1 >nul\n")
     kiosk = KioskWindow("http://x", str(fake), tmp_path / "perfil")
     assert kiosk.open()
-    assert _no_real_taskbar[-1] is False
+    assert _no_real_taskbar[-1] is True  # a la vista
+    monkeypatch.setattr(sessions, "TASKBAR_BACK_AFTER", 0)
+    seen = []
+    assert sessions.taskbar_hidden(lambda: seen.append(list(_no_real_taskbar)) or "ok") == "ok"
+    assert seen[0][-1] is False and _no_real_taskbar[-1] is True  # escondida al abrir, de regreso al terminar
     assert kiosk.close()
     assert _no_real_taskbar[-1] is True
     off = KioskWindow("http://x", str(fake), tmp_path / "perfil2", hide_taskbar=False)
