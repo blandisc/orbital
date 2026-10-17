@@ -1,9 +1,10 @@
 import { api } from "../core/api.js";
-import { h, mount } from "../core/dom.js";
+import { h, mount, svg } from "../core/dom.js";
+import { ICONS } from "../core/icons.js";
 import { settler } from "../core/motion.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { swipeArea } from "../core/swipe.js";
-import { ALL, categoriesOf, channelLabel, channelsIn, emptyState, headMeta, initials, isShaky } from "../core/tv.js";
+import { ALL, categoriesOf, categoryIcon, channelLabel, channelsIn, emptyState, headMeta, initials, isShaky } from "../core/tv.js";
 import { keepInView, replay } from "./browse.js";
 import { Badge, Chip } from "./ui.js";
 
@@ -96,7 +97,7 @@ export function createTv({ onFocus, onPick }) {
       targets.set(id, { kind: "filter", value: c.id });
       return h("button", { class: ["tv__cat", c.id === category && "tv__cat--on"], type: "button", tabindex: "-1", "data-focus-id": id,
         onClick: () => onPick?.(targets.get(id), id) },
-      h("span", { class: "tv__cat-name" }, c.title), h("span", { class: "tv__cat-count" }, String(c.count)));
+      svg(ICONS[categoryIcon(c.title)] || ICONS.tv), h("span", { class: "tv__cat-name" }, c.title), h("span", { class: "tv__cat-count" }, String(c.count)));
     }));
   }
 
@@ -133,7 +134,8 @@ export function createTv({ onFocus, onPick }) {
     const target = targets.get(focusId);
     if (target?.kind === "channel") memory[category] = target.channel.id;
     keepInView(grid, viewport, focusId);
-    const shown = target?.kind === "channel" ? target.channel : previewing ?? byId(playing) ?? recent()[0] ?? channels[0] ?? null;
+    // En los canales, el enfocado; en las categorías, el que ya se veía en la miniatura (o el al aire, o el último que viste).
+    const shown = target?.kind === "channel" ? target.channel : byId(previewing) ?? byId(playing) ?? recent()[0] ?? channels[0] ?? null;
     describe(shown);
     schedulePreview(shown);
     onFocus?.(target ?? null);

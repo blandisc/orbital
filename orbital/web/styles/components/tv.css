@@ -11,10 +11,11 @@ body[data-view="tv"] .backdrop__space { opacity: 1; }
 
 /* Las categorías: una lista vertical con cuántos canales tiene cada una; la elegida, marcada aunque el foco esté en los canales. */
 .tv__cats { display: flex; flex-direction: column; gap: var(--space-1); min-height: 0; overflow: hidden; padding: var(--space-2); margin: calc(-1 * var(--space-2)); }
-.tv__cat { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3); padding: var(--space-3) var(--space-4);
+.tv__cat { display: flex; align-items: baseline; gap: var(--space-3); padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-lg); color: var(--color-text-muted); font-size: var(--text-md); text-align: left;
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out); }
-.tv__cat-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tv__cat-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tv__cat .icon { flex: none; width: 1.3rem; height: 1.3rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; align-self: center; }
 .tv__cat-count { flex: none; color: var(--color-text-faint-strong); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
 .tv__cat--on { background: var(--color-fill); color: var(--color-text); font-weight: var(--weight-medium); }
 .tv__cat.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); }

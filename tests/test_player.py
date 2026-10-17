@@ -709,3 +709,14 @@ def test_one_volume_the_players_buttons_move_the_computers():
     assert not any(c[:2] == ("set_property", "volume") or c[:2] == ("add", "volume") for c in mpv.sent)
     assert p.toggle_mute() is True and system["muted"] is True
     assert "--volume=100" in player.build_command("mpv.exe", "u", "t")
+
+
+def test_volume_shows_its_level_with_waves_and_a_cross_when_muted():
+    from orbital import player_ui
+
+    def waves(ass):  # cada onda es un tramo de anillo: una figura más después del cuerpo de la bocina
+        return ass.count("\p1}") - 4  # cápsula, riel, relleno y cuerpo de la bocina
+    assert waves(player_ui.volume_ass(15)) == 1 and waves(player_ui.volume_ass(50)) == 2 and waves(player_ui.volume_ass(90)) == 3
+    muted = player_ui.volume_ass(50, muted=True)
+    assert "—" in muted and muted.count("\p1}") == 4  # cápsula, riel (sin relleno), cuerpo y la ✕
+    assert player_ui.volume_ass(float("nan")) and player_ui.volume_ass("x")  # nunca truena

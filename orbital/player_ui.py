@@ -876,26 +876,58 @@ def quit_hold_ass(progress: float) -> str:
                       text(cx - r - 16, cy, "Salir", 24, SOFT, weight="semi", align=6)])
 
 
-def volume_ass(volume: float) -> str:
-    """El volumen: una barra vertical en el borde derecho, a media altura (como en las TV). Arriba a la derecha van los
-    avisos y antes se encimaban; abajo, la barra del video y los paneles."""
+def arc(cx: float, cy: float, r: float, thickness: float, start: float, end: float, color: str, alpha: str = "00") -> str:
+    """Un tramo de anillo entre dos ángulos (grados, 0 = a la derecha, en el sentido del reloj): las ondas de la bocina."""
+    steps = max(6, int(abs(end - start) / 6))
+    outer, inner = r + thickness / 2, r - thickness / 2
+
+    def point(radius: float, deg: float) -> str:
+        a = math.radians(deg)
+        return f"{cx + radius * math.cos(a):.1f} {cy + radius * math.sin(a):.1f}"
+
+    outside = [point(outer, start + (end - start) * i / steps) for i in range(steps + 1)]
+    inside = [point(inner, start + (end - start) * i / steps) for i in range(steps, -1, -1)]
+    return _shape("m " + outside[0] + " l " + " ".join(outside[1:] + inside), color, alpha)
+
+
+def speaker(cx: float, cy: float, level: float, muted: bool = False, color: str = TEXT) -> str:
+    """La bocina del volumen: el cuerpo y el cono, y de una a tres ondas según el nivel (con una ✕ si está en silencio)."""
+    x = cx - 22
+    body = _shape(f"m {x:.1f} {cy - 7:.1f} l {x + 8:.1f} {cy - 7:.1f} l {x + 19:.1f} {cy - 16:.1f} l {x + 19:.1f} {cy + 16:.1f} "
+                  f"l {x + 8:.1f} {cy + 7:.1f} l {x:.1f} {cy + 7:.1f}", color)
+    if muted:
+        mx, my, d, t = x + 32, cy, 7, 1.7  # la ✕: dos trazos cruzados
+        cross = (f"m {mx - d:.1f} {my - d + t:.1f} l {mx - d + t:.1f} {my - d:.1f} l {mx:.1f} {my - t:.1f} l {mx + d - t:.1f} {my - d:.1f} "
+                 f"l {mx + d:.1f} {my - d + t:.1f} l {mx + t:.1f} {my:.1f} l {mx + d:.1f} {my + d - t:.1f} l {mx + d - t:.1f} {my + d:.1f} "
+                 f"l {mx:.1f} {my + t:.1f} l {mx - d + t:.1f} {my + d:.1f} l {mx - d:.1f} {my + d - t:.1f} l {mx - t:.1f} {my:.1f}")
+        return "\n".join([body, _shape(cross, color)])
+    waves = 0 if level <= 0 else 1 if level < 34 else 2 if level < 67 else 3
+    return "\n".join([body, *(arc(x + 19, cy, 9 + 7 * i, 3, -48, 48, color) for i in range(waves))])
+
+
+def volume_ass(volume: float, muted: bool = False) -> str:
+    """El volumen: una cápsula vertical en el borde derecho, a media altura (como en las TV): el nivel arriba, la barra
+    que se llena de abajo arriba y la bocina abajo, con sus ondas según el nivel (o una ✕ en silencio: la barra se apaga).
+    Arriba a la derecha van los avisos y antes se encimaban; abajo, la barra del video y los paneles."""
     try:
         level = max(0.0, min(100.0, float(volume)))
     except (TypeError, ValueError):
         level = 0.0
     if not math.isfinite(level):
         level = 0.0
-    w, h = 64, 286
-    x, y = W - MARGIN + 16 - w, BUFFER_Y + 80  # debajo de «Cargando…» y del anillo de «Salir»
-    bar_x, bar_y, bar_h = x + w / 2 - 4, y + 62, 170
-    fill = max(8, bar_h * level / 100)
-    sx, sy = x + w / 2 - 9, y + h - 54  # la bocina, abajo
-    speaker = _shape(f"m {sx} {sy + 9} l {sx + 8} {sy + 9} l {sx + 18} {sy} l {sx + 18} {sy + 32} "
-                     f"l {sx + 8} {sy + 23} l {sx} {sy + 23}", TEXT)
-    return "\n".join([rrect(x, y, w, h, 32, PANEL, "30"),
-                      text(x + w / 2, y + 34, f"{int(level)}", 24, weight="semi", align=5),
-                      rrect(bar_x, bar_y, 8, bar_h, 4, TEXT, "C0"), rrect(bar_x, bar_y + bar_h - fill, 8, fill, 4, TEXT),
-                      speaker])
+    w, h = 84, 330
+    x, y = W - MARGIN + 20 - w, BUFFER_Y + 80  # debajo de «Cargando…» y del anillo de «Salir»
+    track_w, track_top, track_h = 14, y + 70, 170
+    track_x = x + (w - track_w) / 2
+    fill = 0 if muted else max(track_w, track_h * level / 100)
+    number = "—" if muted else f"{int(level)}"
+    parts = [rrect(x, y, w, h, w / 2, PANEL, "38", blur=1),  # la cápsula, como los paneles (un poco de vidrio)
+             text(x + w / 2, y + 38, number, 30, TEXT, weight="semi", align=5, alpha="70" if muted else "00"),
+             rrect(track_x, track_top, track_w, track_h, track_w / 2, TEXT, "D0")]  # el riel
+    if fill:
+        parts.append(rrect(track_x, track_top + track_h - fill, track_w, fill, track_w / 2, TEXT))
+    parts.append(speaker(x + w / 2 + 4, y + h - 46, level, muted))
+    return "\n".join(parts)
 
 
 def ends_at(position: float | None, duration: float | None, now: float | None = None) -> str:

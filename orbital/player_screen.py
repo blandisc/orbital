@@ -579,7 +579,7 @@ class PlayerScreen:
             now = system[0]() or {}
             level = max(0, min(100, int(now.get("level") or 0) + 5 * direction))
             after = system[1](level=level, muted=False if direction > 0 else None) or {"level": level}
-            self._show_notice(player_ui.volume_ass(after.get("level", level)), 1.6, layer=self.VOLUME)
+            self._show_notice(player_ui.volume_ass(after.get("level", level), muted=bool(after.get("muted"))), 1.6, layer=self.VOLUME)
             return
         before = self._value("volume")
         if isinstance(before, (int, float)) and not isinstance(before, bool):
@@ -588,7 +588,7 @@ class PlayerScreen:
             volume = max(0, min(top, before + 5 * direction))
             self.mpv.command("set_property", "volume", volume)
             self._ask("volume", volume)
-            self._show_notice(player_ui.volume_ass(volume), 1.6, layer=self.VOLUME)
+            self._show_notice(player_ui.volume_ass(volume, muted=self._muted()), 1.6, layer=self.VOLUME)
         else:
             self.mpv.command("add", "volume", 5 * direction)
             self.toast("Volumen")

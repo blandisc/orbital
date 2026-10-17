@@ -92,3 +92,13 @@ export function columnsOf(rects) {
   const tolerance = Math.min(...rects.map((r) => r.h)) / 2;
   return Math.max(1, rects.filter((r) => r.y - top < tolerance).length);
 }
+
+/** El ícono de cada categoría (por su nombre en español; las que no tienen uno propio, la tele). */
+const CATEGORY_ICONS = {
+  "Tus canales": "watching", Todos: "grid", General: "catGeneral", Noticias: "catNews", Entretenimiento: "catEntertainment",
+  Deportes: "catSports", "Películas": "movie", Series: "series", Infantil: "catKids", Familia: "catKids", "Animación": "catAnimation",
+  Comedia: "catAnimation", "Música": "catMusic", Cultura: "catCulture", "Educación": "catEducation", Documentales: "catDocumentary",
+  Ciencia: "catDocumentary", Viajes: "catDocumentary", Legislativo: "catLegislative", "Público": "catLegislative",
+  "Religión": "catReligion", Otros: "catOther",
+};
+export const categoryIcon = (title) => CATEGORY_ICONS[title] ?? "tv";
