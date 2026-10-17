@@ -29,8 +29,8 @@ struct SettingsView: View {
             }
             .listRowBackground(DS.surface)
             orbitalSection(model)
-            Section("Alexa") {
-                NavigationLink { AlexaCommandsView() } label: { Label("Qué le puedes decir a Alexa", systemImage: "waveform") }
+            Section("Voz") {
+                NavigationLink { VoiceGuideView() } label: { Label("Lo que puedes decir", systemImage: "waveform") }
             }
             .listRowBackground(DS.surface)
             addons

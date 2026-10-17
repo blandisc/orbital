@@ -16,6 +16,13 @@ final class RemoteUITests: XCTestCase {
         app.buttons["remote-back"].tap()
         XCTAssertTrue(app.buttons["remote-alt"].label.contains("Mi lista"), "rotulada con la leyenda de la TV")
         XCTAssertTrue(app.buttons["Dile a Orbital"].exists, "y el micrófono")
+        // Junto al micrófono, lo que puedes decir: dónde hablarle, lo del iPhone y las frases de la consola.
+        app.buttons["remote-voice-guide"].tap()
+        XCTAssertTrue(app.navigationBars["Lo que puedes decir"].waitForExistence(timeout: 5), "abre la guía de voz")
+        XCTAssertTrue(app.staticTexts["Con Siri"].exists)
+        XCTAssertTrue(app.staticTexts["«descárgalo»"].exists, "con lo que solo hace el iPhone")
+        app.navigationBars["Lo que puedes decir"].buttons["Listo"].tap()
+        XCTAssertTrue(app.buttons["Dile a Orbital"].waitForExistence(timeout: 5), "y regresa al control")
         XCTAssertFalse(app.staticTexts["Actualiza tu Orbital para usar el control completo."].exists, "la consola (demo) sí tiene el control completo")
         XCTAssertTrue(app.textFields["Escribir en la TV"].exists, "y se puede escribir en la TV")
     }

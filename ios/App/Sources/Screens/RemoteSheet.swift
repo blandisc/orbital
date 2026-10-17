@@ -14,6 +14,7 @@ struct RemoteSheet: View {
     @StateObject private var speech = SpeechInput()
     @State private var reply: OrbitalRemote.VoiceReply?
     @State private var asking = false
+    @State private var showsGuide = false
     @EnvironmentObject private var env: AppEnvironment
 
     var body: some View {
@@ -40,6 +41,12 @@ struct RemoteSheet: View {
         .presentationBackgroundInteraction(.disabled)
         .animation(DS.Motion.base(false), value: large)
         .onDisappear { speech.cancel() }
+        .task { if Demo.isOn, Demo.open == "voice-guide" { showsGuide = true } }   // -demo-open voice-guide: la guía, para capturas
+        .sheet(isPresented: $showsGuide) {
+            NavigationStack {
+                VoiceGuideView().toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { showsGuide = false } } }
+            }
+        }
     }
 
     /// La voz: lo que dices lo atiende el iPhone (descargar, seguir aquí, las teclas) o tu Orbital (`VoiceAssistant`); la
@@ -114,8 +121,13 @@ struct RemoteSheet: View {
         VStack(spacing: DS.Space.s4) {
             if model.remoteOutdated { DSNotice(text: "Actualiza tu Orbital para usar el control completo.", tone: .warn) }
             // La voz, como Alexa: lo mismo que «Oye Siri, dile a Orbital…».
-            VoiceCommandBar(listening: speech.listening, transcript: speech.transcript, reply: reply, denied: speech.denied,
-                            heardNothing: speech.heardNothing, asking: asking) { listen(model) }
+            HStack(spacing: DS.Space.s2) {
+                VoiceCommandBar(listening: speech.listening, transcript: speech.transcript, reply: reply, denied: speech.denied,
+                                heardNothing: speech.heardNothing, asking: asking) { listen(model) }
+                // Lo que puedes decir: donde surge la duda.
+                DSIconButton(symbol: "questionmark", label: "Lo que puedes decir") { showsGuide = true }
+                    .accessibilityIdentifier("remote-voice-guide")
+            }
             if let choices = reply?.choices, !choices.isEmpty {
                 VoiceChoices(choices: choices) { choice in answer(model) { await $0.choose(choice) } }
                     .transition(.opacity)

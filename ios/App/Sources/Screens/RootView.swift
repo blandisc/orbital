@@ -101,7 +101,7 @@ struct MainTabs: View {
         .onChange(of: tvNow.model.now == nil) { _, stopped in if stopped, !remoteLarge { showRemote = false } }
         #if DEBUG
         .onChange(of: tvNow.model.now == nil) { _, stopped in   // `-demo-open remote` (corta) o `remote-full` (estirada)
-            if !stopped, Demo.isOn, Demo.open == "remote" || Demo.open == "remote-full" { remoteLarge = Demo.open == "remote-full"; showRemote = true }
+            if !stopped, Demo.isOn, ["remote", "remote-full", "voice-guide"].contains(Demo.open) { remoteLarge = Demo.open != "remote"; showRemote = true }
         }
         #endif
         // Tocar el accesorio abre el control remoto completo (−10 · pausa · +10 · siguiente, salir, seguir aquí).

@@ -182,6 +182,8 @@ enum DS {
         static let captionLogo: CGFloat = 34
         /// El arte redondo del accesorio «En la TV».
         static let accessoryArt: CGFloat = 32
+        /// La columna del símbolo en los renglones de una guía («Lo que puedes decir»): alinea los textos.
+        static let iconColumn: CGFloat = 24
         /// El alto de un mosaico con arte (géneros de Explora).
         static let artTileHeight: CGFloat = 96
         /// Hasta cuántas temporadas se enseñan como filtros; con más, un menú.

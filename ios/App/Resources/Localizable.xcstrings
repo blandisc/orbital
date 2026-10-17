@@ -133,6 +133,17 @@
         }
       }
     },
+    "Abrir los permisos de Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Orbital's permissions"
+          }
+        }
+      }
+    },
     "Abrir siempre en Infuse": {
       "extractionState": "manual",
       "localizations": {
@@ -375,6 +386,17 @@
         }
       }
     },
+    "Bajo la respuesta sale «Entendí: …». Si el nombre salió mal, dilo más despacio o búscalo con «Escribir».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Under the answer you'll see “I heard: …”. If the name came out wrong, say it more slowly or search for it with “Type”."
+          }
+        }
+      }
+    },
     "Borrar": {
       "extractionState": "manual",
       "localizations": {
@@ -426,6 +448,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Good morning"
+          }
+        }
+      }
+    },
+    "Busca la película y la descarga. Una serie, desde su ficha.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finds the movie and downloads it. For a series, use its page."
           }
         }
       }
@@ -668,6 +701,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Add-ons"
+          }
+        }
+      }
+    },
+    "Con Alexa": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With Alexa"
+          }
+        }
+      }
+    },
+    "Con Siri": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With Siri"
           }
         }
       }
@@ -969,6 +1024,17 @@
         }
       }
     },
+    "Cuando hay varias": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When there are several"
+          }
+        }
+      }
+    },
     "Cuenta": {
       "extractionState": "manual",
       "localizations": {
@@ -1020,6 +1086,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stop using Trakt on iPhone"
+          }
+        }
+      }
+    },
+    "Descarga en el iPhone lo que se ve en la TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloads what's on the TV to the iPhone."
           }
         }
       }
@@ -1119,6 +1196,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Download with the recommended source"
+          }
+        }
+      }
+    },
+    "Descargar funciona aunque estés fuera de casa; lo demás necesita tu Orbital encendida.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading works even away from home; everything else needs your Orbital on."
           }
         }
       }
@@ -1255,6 +1343,17 @@
         }
       }
     },
+    "Di «Oye Siri, habla con Orbital» y, cuando pregunte, la orden. Para lo de siempre, directo: «Oye Siri, pausa Orbital» o «Oye Siri, reanuda Orbital».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Say “Hey Siri, talk to Orbital” and, when it asks, the command. For the everyday ones, directly: “Hey Siri, pause Orbital” or “Hey Siri, resume Orbital”."
+          }
+        }
+      }
+    },
     "Dile a Orbital": {
       "extractionState": "manual",
       "localizations": {
@@ -1284,6 +1383,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Address (orbital.yourdomain.com)"
+          }
+        }
+      }
+    },
+    "Dónde hablarle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where to talk to it"
           }
         }
       }
@@ -1328,6 +1438,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The source link expired or no longer exists. Tap ▶ to find another."
+          }
+        }
+      }
+    },
+    "El iPhone tiene que estar en la misma red que la consola (o con Tailscale), y Orbital abierta en la TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The iPhone has to be on the same network as the console (or on Tailscale), with Orbital open on the TV."
           }
         }
       }
@@ -1387,6 +1508,17 @@
         }
       }
     },
+    "Empieza con «Alexa, pídele a mi consola que…»: sin eso, Alexa intenta hacerlo ella sola.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start with “Alexa, pídele a mi consola que…”: without it, Alexa tries to do it herself."
+          }
+        }
+      }
+    },
     "Empieza en %lld s": {
       "extractionState": "manual",
       "localizations": {
@@ -1427,6 +1559,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Queued"
+          }
+        }
+      }
+    },
+    "En el control": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In the remote"
           }
         }
       }
@@ -2003,6 +2146,17 @@
         }
       }
     },
+    "Las frases de abajo funcionan igual en los tres: las entiende tu Orbital.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The phrases below work the same in all three: your Orbital understands them. They are in Spanish."
+          }
+        }
+      }
+    },
     "Las que estás viendo": {
       "extractionState": "manual",
       "localizations": {
@@ -2010,6 +2164,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Shows you're watching"
+          }
+        }
+      }
+    },
+    "Las teclas del mando, dichas solas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The controller buttons, said on their own."
           }
         }
       }
@@ -2069,6 +2234,17 @@
         }
       }
     },
+    "Listo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        }
+      }
+    },
     "Listo.": {
       "extractionState": "manual",
       "localizations": {
@@ -2098,6 +2274,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What was downloaded doesn't match the file: starting over."
+          }
+        }
+      }
+    },
+    "Lo básico también en inglés.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The basics in English too."
           }
         }
       }
@@ -2164,6 +2351,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What you left for later"
+          }
+        }
+      }
+    },
+    "Lo que puedes decir": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you can say"
           }
         }
       }
@@ -3048,6 +3246,17 @@
         }
       }
     },
+    "Permite el micrófono y el reconocimiento de voz para Orbital.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow the microphone and speech recognition for Orbital."
+          }
+        }
+      }
+    },
     "Ponerla en la TV": {
       "extractionState": "manual",
       "localizations": {
@@ -3367,6 +3576,17 @@
         }
       }
     },
+    "Revisa lo que entendió": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check what it heard"
+          }
+        }
+      }
+    },
     "Sale hoy": {
       "extractionState": "manual",
       "localizations": {
@@ -3532,6 +3752,50 @@
         }
       }
     },
+    "Si contesta que no encuentra tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If it says it can't find your Orbital"
+          }
+        }
+      }
+    },
+    "Si dices «pon Dune» y hay más de una, salen bajo el micrófono con su póster: toca la que es.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you say “pon Dune” and there's more than one, they show up under the microphone with their poster: tap the right one."
+          }
+        }
+      }
+    },
+    "Si no funciona": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If it doesn't work"
+          }
+        }
+      }
+    },
+    "Si no te escucha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If it doesn't hear you"
+          }
+        }
+      }
+    },
     "Sigue": {
       "extractionState": "manual",
       "localizations": {
@@ -3539,6 +3803,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Next up"
+          }
+        }
+      }
+    },
+    "Sigue aquí lo que se ve en la TV, donde iba.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continues here what's on the TV, where it was."
           }
         }
       }
@@ -3682,6 +3957,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wi‑Fi only"
+          }
+        }
+      }
+    },
+    "Solo en el iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only on the iPhone"
           }
         }
       }
@@ -3891,6 +4177,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tap to finish"
+          }
+        }
+      }
+    },
+    "Toca «En la TV», estira la hoja hacia arriba y toca el micrófono. Habla con calma: cuando terminas, se detiene solo y te contesta en voz alta.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap “On TV”, pull the sheet up and tap the microphone. Speak calmly: when you finish it stops on its own and answers out loud."
           }
         }
       }
@@ -4353,6 +4650,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Try again"
+          }
+        }
+      }
+    },
+    "Voz": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voice"
           }
         }
       }
