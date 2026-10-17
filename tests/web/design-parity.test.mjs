@@ -119,6 +119,12 @@ test("capas translúcidas y el tono del arte: las mismas opacidades", () => {
   }
 });
 
+test("el mosaico espera lo mismo antes de subir solo", () => {
+  const tvIdle = Number(read("orbital", "web", "js", "components", "foryou-mosaic.js").match(/const IDLE_MS = ([\d_]+)/)[1].replace(/_/g, ""));
+  assert.equal(tvIdle, TOKENS.mosaic.idleMs, "TV IDLE_MS");
+  assert.equal(Math.round(swiftEnum("Mosaic").idleSeconds * 1000), TOKENS.mosaic.idleMs, "iPhone Mosaic.idleSeconds");
+});
+
 test("las recetas de texto se llaman igual en los dos lados", () => {
   const kebab = (s) => s.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
   for (const [recipe, spec] of entries(TOKENS.type)) {

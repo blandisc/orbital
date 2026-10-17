@@ -11,6 +11,9 @@ import logging
 import os
 import threading
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -136,6 +139,27 @@ def trailer_id(info: dict) -> str | None:
     return None
 
 
+_YOUTUBE_SEEN: dict[str, bool] = {}
+
+
+def youtube_available(video: str, *, open_url=urllib.request.urlopen) -> bool:
+    """¿Ese video de YouTube existe y es público? Cinemeta a veces trae el id de un tráiler que ya borraron o que es
+    privado, y «Tráiler» salía para nada. oEmbed contesta 401/404 en esos casos. Sin red: sí (un tropiezo no lo esconde,
+    y no se recuerda)."""
+    if video in _YOUTUBE_SEEN:
+        return _YOUTUBE_SEEN[video]
+    url = "https://www.youtube.com/oembed?format=json&url=" + urllib.parse.quote(f"https://www.youtube.com/watch?v={video}", safe="")
+    try:
+        with open_url(url, timeout=3) as response:
+            ok = 200 <= response.status < 300
+    except urllib.error.HTTPError as exc:
+        ok = exc.code not in (400, 401, 403, 404)
+    except (OSError, ValueError):
+        return True
+    _YOUTUBE_SEEN[video] = ok
+    return ok
+
+
 def enrich_watch_item(item: LibraryItem, info: dict) -> None:
     """Seguir viendo con lo mismo que el catálogo: sinopsis, calificación, géneros, logo y el
     nombre del episodio ("Serie · T8 E23 · Homer's Enemy")."""
@@ -164,6 +188,7 @@ class Watch:
         self.credentials = credentials
         self.stremio_client = stremio_client
         self.cinemeta = cinemeta_client
+        self.trailer_available = youtube_available  # «Tráiler» solo si el video existe (las pruebas lo cambian)
         self.store = store
         self.events = events
         self.sessions = sessions
@@ -879,7 +904,8 @@ class Watch:
                     resume = {"video_id": video_id, "position": position, "duration": duration,
                               "label": label, "episode_title": name}
         details["resume"] = resume
-        details["trailer"] = trailer_id(info)
+        video = trailer_id(info)
+        details["trailer"] = video if video and self.trailer_available(video) else None  # «Tráiler» solo si se puede ver
         return details
 
     def set_in_library(self, kind: str, meta_id: str, add: bool) -> None:
@@ -901,7 +927,7 @@ class Watch:
     def play_trailer(self, kind: str, meta_id: str) -> str:
         """El tráiler en YouTube para TV (se maneja con el mando; Home vuelve a Orbital)."""
         video = trailer_id(self.cinemeta.meta(kind, meta_id))
-        if not video:
+        if not video or not self.trailer_available(video):
             raise LookupError("Este título no tiene tráiler")
         url = f"https://www.youtube.com/tv#/watch?v={video}"
         self.launcher.open_uri(url)
