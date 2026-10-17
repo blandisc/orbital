@@ -302,3 +302,12 @@ def _no_real_wikidata(monkeypatch):
     from orbital.library import wiki_games
 
     monkeypatch.setattr(wiki_games, "lookup", lambda title: None)
+
+
+@pytest.fixture(autouse=True)
+def _no_real_subtitle_downloads(monkeypatch):
+    """Ningún subtítulo se baja de internet (la «descarga» da la misma URL) y se pone en el mismo hilo."""
+    from orbital import player
+
+    monkeypatch.setattr(player, "fetch_subtitle", lambda url: url)
+    monkeypatch.setattr(player, "in_background", lambda work: work())

@@ -27,12 +27,16 @@ vigilar, guardar el avance, fuentes que fallan y el siguiente episodio.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import math
+import os
 import subprocess
 import threading
 import time
-from urllib.parse import quote
+import urllib.request
+from pathlib import Path
+from urllib.parse import quote, urlsplit
 
 from . import player_ui
 from .gamepad import (  # noqa: F401 - las pruebas los piden a player
@@ -51,6 +55,7 @@ from .gamepad import (  # noqa: F401 - las pruebas los piden a player
     Y_BUTTON,
 )
 from .mpv import PIPE, Mpv  # noqa: F401 - se importan desde aquí
+from .net import read_body
 from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las piden a player
     CHAPTER_SEEK,
     CREDITS,
@@ -120,6 +125,32 @@ def process_memory_mb(pid: int) -> int:
         return 0
 
 
+SUB_MAX_BYTES = 4 * 1024 * 1024  # un subtítulo nunca pesa tanto
+SUB_TIMEOUT = 15.0
+
+
+def subtitle_cache() -> Path:
+    return Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" / "subs"
+
+
+def fetch_subtitle(url: str) -> str:
+    """Baja un subtítulo de internet a un archivo local y da su ruta. Con la URL, mpv lo bajaba él mismo y mientras
+    tanto no contestaba nada (pausa, volumen, la interfaz: «mpv no contestó» y respuestas atrasadas)."""
+    ext = os.path.splitext(urlsplit(url).path)[1].lower()
+    path = subtitle_cache() / (hashlib.sha1(url.encode()).hexdigest()[:20] + (ext if ext in {".srt", ".vtt", ".ass", ".ssa", ".sub"} else ".srt"))
+    if not path.exists():
+        req = urllib.request.Request(url, headers={"User-Agent": "Orbital/0.1"})
+        with urllib.request.urlopen(req, timeout=SUB_TIMEOUT) as res:
+            data = read_body(res, timeout=SUB_TIMEOUT, limit=SUB_MAX_BYTES)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+    return str(path)
+
+
+def in_background(work) -> None:
+    threading.Thread(target=work, daemon=True, name="subtítulos").start()
+
+
 class OrbitalPlayer(PlayerScreen):
     """Arranca mpv, lo vigila y avisa cuánto se vio (para Seguir viendo).
 
@@ -148,6 +179,9 @@ class OrbitalPlayer(PlayerScreen):
         self._hud_visible = False
         self._card: dict | None = None  # {"kind": "skip" | "next" | "still", ...}
         self._subs_lang = "en"
+        self._sub_urls: dict[str, str] = {}  # archivo local → la URL de donde se bajó (lo que «Continuar» recuerda)
+        self.fetch_subtitle = fetch_subtitle
+        self.background = in_background
         self._audio_lang = "en"
         self._fallback_subs = None
         self._user_quit = False  # B, Orbital o la voz lo cerraron: no es un fallo
@@ -858,7 +892,7 @@ class OrbitalPlayer(PlayerScreen):
                 self._last_sub = {"off": True}
             else:
                 self._last_sub = {"off": False, "lang": str(chosen.get("lang") or ""), "title": str(chosen.get("title") or ""),
-                                  "url": str(chosen.get("external-filename") or "") if chosen.get("external") else ""}
+                                  "url": self._sub_url(chosen) if chosen.get("external") else ""}
         return getattr(self, "_last_sub", None)
 
     def _apply_sub_pick(self, tracks: list) -> bool:
@@ -876,7 +910,7 @@ class OrbitalPlayer(PlayerScreen):
             self.mpv.command("set_property", "sid", same[0]["id"])
             return True
         if pick.get("url"):
-            self.mpv.command("sub-add", pick["url"], "select", pick.get("title") or "Subtítulos", pick.get("lang") or "")
+            self.add_sub(pick["url"], pick.get("title") or "Subtítulos", pick.get("lang") or "")
             return True
         return False
 
@@ -892,8 +926,36 @@ class OrbitalPlayer(PlayerScreen):
             log.exception("No pude buscar subtítulos")
             return
         if urls:
-            self.mpv.command("sub-add", urls[0], "select", "Subtítulos", lang)
+            self.add_sub(urls[0], "Subtítulos", lang)
             log.info("Subtítulos de un addon (%d disponibles)", len(urls))
+
+    def _sub_url(self, track: dict) -> str:
+        name = str(track.get("external-filename") or "")
+        return self._sub_urls.get(name, name)
+
+    def add_sub(self, url: str, title: str, lang: str, done: str | None = None) -> None:
+        """Agrega y elige un subtítulo. Uno de internet se baja aparte (en segundo plano) y mpv recibe el archivo:
+        así nunca se queda sin contestar mientras lo baja. `done`: el aviso cuando ya está puesto."""
+        playback = self.current
+
+        def work() -> None:
+            path = url
+            if url.startswith(("http://", "https://")):
+                try:
+                    path = self.fetch_subtitle(url)
+                except (OSError, ValueError) as exc:
+                    log.info("No pude bajar los subtítulos: %s", exc)
+                    if done and self.current is playback:
+                        self.toast("No pude bajar esos subtítulos", 2.5)
+                    return
+                self._sub_urls[path] = url
+            if self.current is not playback:
+                return  # mientras se bajaba se abrió otro video: ya no van
+            self.mpv.command("sub-add", path, "select", title, lang)
+            if done:
+                self.toast(done)
+
+        self.background(work)
 
     def pause(self) -> None:
         if self._is_live():
@@ -940,8 +1002,7 @@ class OrbitalPlayer(PlayerScreen):
         return True
 
     def add_subtitles(self, url: str, lang: str) -> None:
-        self.mpv.command("sub-add", url, "select", "Subtítulos", lang)
-        self.toast(f"Subtítulos: {player_ui.language(lang)}")
+        self.add_sub(url, "Subtítulos", lang, done=f"Subtítulos: {player_ui.language(lang)}")
 
     def subtitles_off(self) -> None:
         self.mpv.command("set_property", "sid", "no")

@@ -814,3 +814,31 @@ def test_the_same_video_still_loading_is_not_started_again():
     p.segment.loaded += player.STARTUP_TIMEOUT + 1
     p.segment.playing = True
     assert not p.starting("tt27165187")  # ya se ve: lo de siempre (reanudar, etc.)
+
+
+def test_subtitles_from_the_internet_are_downloaded_apart_and_mpv_gets_the_file():
+    """Con la URL mpv bajaba el subtítulo él mismo y mientras tanto no contestaba (pausa, volumen, la interfaz)."""
+    p, mpv = make_player()
+    p.fetch_subtitle = lambda url: "C:/cache/subs/abc.srt"
+    p.add_subtitles("https://subs5.strem.io/en/download/file/1962602374", "es")
+    assert mpv.sent[-1] == ("sub-add", "C:/cache/subs/abc.srt", "select", "Subtítulos", "es")
+    # «Continuar» recuerda de dónde vino, no el archivo del caché.
+    mpv.props["track-list"] = [{"type": "sub", "id": 3, "lang": "es", "title": "Subtítulos", "selected": True,
+                                "external": True, "external-filename": "C:/cache/subs/abc.srt"}]
+    assert p.current_subtitle()["url"] == "https://subs5.strem.io/en/download/file/1962602374"
+
+    def fails(url):
+        raise OSError("timed out")
+
+    p.fetch_subtitle = fails
+    sent = len(mpv.sent)
+    p.add_subtitles("https://subs/otro.srt", "es")
+    assert len(mpv.sent) == sent  # no se bajó: mpv ni se entera (antes se quedaba esperando)
+
+    pending = []
+    p.fetch_subtitle = lambda url: "C:/cache/subs/tarde.srt"
+    p.background = pending.append
+    p.add_subtitles("https://subs/tarde.srt", "es")
+    p.current = player.Playback("Otro video", None, 0, {})
+    pending[0]()
+    assert len(mpv.sent) == sent  # llegó cuando ya era otro video: no se le pone

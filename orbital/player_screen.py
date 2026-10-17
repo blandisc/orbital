@@ -439,8 +439,7 @@ class PlayerScreen:
             log.exception("No pude buscar subtítulos")
             urls = []
         if urls:
-            self.mpv.command("sub-add", urls[0], "select", "Subtítulos", lang)
-            self.toast(f"Subtítulos: {player_ui.language(lang)}")
+            self.add_sub(urls[0], "Subtítulos", lang, done=f"Subtítulos: {player_ui.language(lang)}")
         else:
             self.toast("No encontré subtítulos en tu addon", 2.5)
 
