@@ -134,6 +134,11 @@ struct MainTabs: View {
         .onAppear(perform: openPendingTitle)
         .onChange(of: ui.pendingTitle) { openPendingTitle() }
         .onChange(of: ui.openTab) { _, new in if let new { tab = new; env.openTab = nil } }
+        .onChange(of: ui.openRemote, initial: true) { _, wants in
+            guard wants else { return }
+            ui.openRemote = false
+            if tvNow.model.isConfigured { remoteLarge = true; showRemote = true }
+        }
         .task { forceDemoTab() }   // una segunda vez: gana aunque la restauración de escena llegue después de aparecer
         #if DEBUG
         // iOS restaura la pestaña que viste la última vez (independiente de nuestro @State) y lo hace después de

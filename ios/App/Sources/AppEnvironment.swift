@@ -223,6 +223,8 @@ final class AppEnvironment: ObservableObject {
     /// Sin episodio conocido, o si la ficha no carga, se cae a la ficha.
     private func open(_ link: WidgetLink) async {
         switch link {
+        case .remote:
+            ui.openRemote = true
         case .title(let kind, let id):
             pendingTitle = TitleRoute(kind: kind, metaID: id, title: "", poster: nil)
         case .play(let kind, let id, let video):
@@ -361,4 +363,6 @@ final class AppUI: ObservableObject {
     @Published var banner: AppEnvironment.Banner?
     @Published var handoff: AppEnvironment.TVHandoff?
     @Published var openTab: Int?
+    /// El Centro de control pidió el control de tu Orbital.
+    @Published var openRemote = false
 }

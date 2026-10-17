@@ -339,6 +339,8 @@ enum DS {
 
     /// El control completo de la TV (`TouchPad`, `RemoteKey`).
     enum Remote {
+        /// Cuánto se mantiene una tecla para su segunda acción (mantener «Atrás»: al inicio).
+        static let holdSeconds: Double = 0.6
         /// La barra del volumen de la TV en el control.
         static let volumeBar: CGFloat = 6
         /// Alto del pad táctil y de cada tecla.

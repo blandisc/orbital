@@ -121,6 +121,11 @@ public struct WidgetLabels: Sendable {
 public enum WidgetLink: Equatable, Sendable {
     case play(kind: String, id: String, video: String?)
     case title(kind: String, id: String)
+    /// El control de tu Orbital (el botón del Centro de control).
+    case remote
+
+    /// `orbital-ios://remote`
+    public static var remoteURL: URL { URL(string: "\(scheme)://remote")! }
 
     public static let scheme = "orbital-ios"
 
@@ -139,9 +144,10 @@ public enum WidgetLink: Equatable, Sendable {
         return parts.url
     }
 
-    /// `orbital-ios://play?kind=&id=&video=` o `orbital-ios://title?kind=&id=`; cualquier otra cosa (el QR de la TV, Infuse) es nil.
+    /// `orbital-ios://play?kind=&id=&video=`, `orbital-ios://title?kind=&id=` u `orbital-ios://remote`; cualquier otra cosa (el QR de la TV, Infuse) es nil.
     public static func parse(_ url: URL) -> WidgetLink? {
         guard url.scheme == scheme, let parts = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }
+        if parts.host == "remote" { return .remote }
         func value(_ name: String) -> String? { parts.queryItems?.first { $0.name == name }?.value.flatMap { $0.isEmpty ? nil : $0 } }
         guard let kind = value("kind"), let id = value("id") else { return nil }
         switch parts.host {

@@ -50,6 +50,8 @@ struct RemoteSheet: View {
         .presentationBackground { Rectangle().fill(.clear).glassEffect(.regular, in: Rectangle()) }
         .animation(DS.Motion.base(false), value: large)
         .onDisappear { speech.cancel() }
+        // Los botones de volumen del iPhone suben y bajan la TV mientras el control está abierto (como el del Apple TV).
+        .background { if model.isConfigured { HardwareVolumeButtons { up in Task { await model.changeVolume(by: up ? 5 : -5) } } } }
         #if DEBUG
         .task { if Demo.isOn, Demo.open == "voice-guide" { showsGuide = true } }   // -demo-open voice-guide: la guía, para capturas
         #endif
@@ -93,9 +95,10 @@ struct RemoteSheet: View {
     /// la pantalla); si no, el de siempre. Que no salga en el pie no quiere decir que no haga nada (en Inicio A, X y Y están en
     /// los botones del destacado), así que nunca se atenúa.
     private func key(_ model: TVNowModel, _ symbol: String, _ glyph: String?, _ legendKey: String?, _ fallback: Text,
-                     _ action: OrbitalRemote.InputAction) -> some View {
+                     _ action: OrbitalRemote.InputAction, hold: OrbitalRemote.InputAction? = nil) -> some View {
         let named = legendKey.flatMap { model.legend[$0] }
-        return RemoteKey(symbol: symbol, title: named.map { Text(verbatim: $0) } ?? fallback, glyph: glyph) {
+        return RemoteKey(symbol: symbol, title: named.map { Text(verbatim: $0) } ?? fallback, glyph: glyph,
+                         longPress: hold.map { held in { Task { await model.press(held) } } }) {
             Task { await model.press(action) }
         }
         .accessibilityIdentifier("remote-\(action.rawValue)")   // fijo aunque el nombre cambie con la leyenda
@@ -167,7 +170,7 @@ struct RemoteSheet: View {
                 // Por el alto de la pantalla (no de la hoja: la hoja mide lo que mide el control).
                 .frame(height: max(DS.Remote.padHeight, UIScreen.main.bounds.height * DS.Remote.padShare))
             HStack(spacing: DS.Space.s2) {
-                key(model, "chevron.backward", "B", "back", Text("Atrás"), .back)
+                key(model, "chevron.backward", "B", "back", Text("Atrás"), .back, hold: .home)   // mantener: al inicio
                 key(model, "square.on.square", "X", "alt", Text("Acción X"), .alt)
                 key(model, "ellipsis", "Y", "options", Text("Opciones"), .options)
             }
@@ -179,7 +182,7 @@ struct RemoteSheet: View {
                 key(model, "forward.end", "RT", "page", Text("+5"), .pageright)
             }
             // Siempre: si la TV no tiene un campo abierto, escribir abre su búsqueda con ese texto.
-            RemoteTextField(text: $text) { let typed = text; Task { await model.type(typed, submit: true) } }
+            RemoteTextField(text: $text, autoFocus: model.textField == true) { let typed = text; Task { await model.type(typed, submit: true) } }
                 .task(id: text) {
                     // Mientras escribes, la TV lo va enseñando (sin mandar cada letra por separado).
                     guard !text.isEmpty else { return }

@@ -91,8 +91,11 @@ struct RemoteKey: View {
     var glyph: String?
     /// La TV dice que en esta pantalla no hace nada: se atenúa, sin moverse de lugar.
     var idle = false
+    /// Mantener el dedo (como en el control del Apple TV: mantener «Atrás» lleva al inicio).
+    var longPress: (() -> Void)?
     let action: () -> Void
     @State private var taps = 0
+    @State private var held = 0
 
     var body: some View {
         Button { taps += 1; action() } label: {
@@ -113,13 +116,21 @@ struct RemoteKey: View {
         .buttonStyle(.plain)
         .foregroundStyle(DS.text)
         .sensoryFeedback(.impact(flexibility: .soft), trigger: taps)
+        .simultaneousGesture(LongPressGesture(minimumDuration: DS.Remote.holdSeconds).onEnded { _ in
+            guard let longPress else { return }
+            held += 1; longPress()
+        })
+        .sensoryFeedback(.impact(weight: .heavy), trigger: held)
     }
 }
 
 /// Escribir en la TV (la búsqueda de la consola): el campo con el estilo de las teclas del control.
 struct RemoteTextField: View {
     @Binding var text: String
+    /// La TV abrió un campo de texto: el teclado sale solo (como el control del Apple TV).
+    var autoFocus = false
     let onSubmit: () -> Void
+    @FocusState private var focused: Bool
 
     var body: some View {
         HStack(spacing: DS.Space.s3) {
@@ -129,7 +140,9 @@ struct RemoteTextField: View {
                 .autocorrectionDisabled()
                 .onSubmit(onSubmit)
                 .foregroundStyle(DS.text)
+                .focused($focused)
         }
+        .onChange(of: autoFocus, initial: true) { _, wants in if wants { focused = true } }
         .font(DS.TextRecipe.body.font)
         .padding(.horizontal, DS.Space.s4)
         .frame(minHeight: DS.Remote.keyHeight)

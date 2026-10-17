@@ -254,6 +254,17 @@
         }
       }
     },
+    "Abre el control de tu Orbital.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens your Orbital's remote."
+          }
+        }
+      }
+    },
     "Abre la ficha": {
       "extractionState": "manual",
       "localizations": {
@@ -294,6 +305,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Open Orbital"
+          }
+        }
+      }
+    },
+    "Abrir el control de Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the Orbital remote"
           }
         }
       }
@@ -1416,6 +1438,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Password"
+          }
+        }
+      }
+    },
+    "Control de Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital remote"
           }
         }
       }

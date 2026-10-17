@@ -26,6 +26,7 @@ final class WidgetSnapshotTests: XCTestCase {
     func testLinksRoundTripAndRejectForeignURLs() throws {
         let play = try XCTUnwrap(WidgetLink.play(kind: "series", id: "tt0386676", video: "tt0386676:2:6"))
         XCTAssertEqual(WidgetLink.parse(play), .play(kind: "series", id: "tt0386676", video: "tt0386676:2:6"))
+        XCTAssertEqual(WidgetLink.parse(WidgetLink.remoteURL), .remote, "el botón del Centro de control")
         let title = try XCTUnwrap(WidgetLink.title(kind: "movie", id: "tt1160419"))
         XCTAssertEqual(WidgetLink.parse(title), .title(kind: "movie", id: "tt1160419"))
         XCTAssertNil(WidgetLink.parse(try XCTUnwrap(URL(string: "orbital-ios://pair?u=https%3A%2F%2Ftv&t=x"))))

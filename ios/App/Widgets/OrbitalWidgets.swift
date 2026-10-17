@@ -7,6 +7,7 @@ struct OrbitalWidgets: WidgetBundle {
     var body: some Widget {
         NextUpWidget()
         DownloadLiveActivity()
+        RemoteControlButton()
     }
 }
 
