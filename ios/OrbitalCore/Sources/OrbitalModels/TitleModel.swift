@@ -42,6 +42,8 @@ public final class TitleModel: ObservableModel {
     public private(set) var logoIsDark = false { didSet { changed() } }
     /// La ficha rica de TMDB (elenco con foto, saga, tráiler…); nil sin clave de TMDB o mientras llega.
     public private(set) var extras: TitleExtras? { didSet { changed() } }
+    /// «Lo mejor disponible» entre las fuentes del episodio o película que toca (como el encabezado de Infuse).
+    public private(set) var bestSource: Source? { didSet { changed() } }
     /// La calificación de Trakt (0–10), si alguien votó.
     public private(set) var traktRating: Double? { didSet { changed() } }
 
@@ -117,6 +119,15 @@ public final class TitleModel: ObservableModel {
             extras = try? await tmdb.extras(kind: kind, tmdbID: id, region: region)
         }
         traktRating = await rating?.rating
+    }
+
+    /// Busca las fuentes del video que toca (el mismo pedido que «Elegir fuente», así luego sale de la caché) y se queda con
+    /// la mejor para el encabezado. Sin fuentes o sin red, no se enseña nada.
+    public func loadBestSource() async {
+        guard let videoID = continueVideoID else { return }
+        let prefs = services.titlePrefs.languages(for: metaID, settings: services.appSettings).prefs
+        guard let found = try? await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch), !Task.isCancelled else { return }
+        bestSource = Source.best(found)
     }
 
     /// Un título de TMDB (recomendación, saga, filmografía) → su id de IMDb, para abrir su ficha.

@@ -22,6 +22,17 @@ public struct Source: Sendable, Equatable, Identifiable {
 
     public var id: Int { index }
 
+    /// «Lo mejor disponible» (el encabezado de la ficha, como Infuse): la de más resolución y, entre esas, la de más
+    /// insignias (DV, HDR, Atmos…). Los tráileres y las de cámara no cuentan.
+    public static func best(_ sources: [Source]) -> Source? {
+        let rank = ["4K": 4, "1440p": 3, "1080p": 2, "720p": 1]
+        return sources.filter { !$0.tags.contains("Tráiler") && !$0.tags.contains("CAM") }
+            .max { a, b in
+                let ra = rank[a.resolution] ?? 0, rb = rank[b.resolution] ?? 0
+                return ra != rb ? ra < rb : a.hdr.count + a.audioBadges.count < b.hdr.count + b.audioBadges.count
+            }
+    }
+
     /// El sonido, para las insignias (como Infuse): Atmos, TrueHD, DTS‑HD, DD+, 7.1 o 5.1. Aparte de `tags` (que son las de
     /// la TV, iguales en los dos lados).
     public var audioBadges: [String] {

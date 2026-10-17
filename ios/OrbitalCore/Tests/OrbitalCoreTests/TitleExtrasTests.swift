@@ -73,4 +73,16 @@ final class AudioBadgeTests: XCTestCase {
         XCTAssertEqual(badges("Show.S01E01.1080p.WEB-DL.DDP5.1"), ["DD+"])
         XCTAssertEqual(badges("Movie.1080p.BluRay.DTS-HD.MA.5.1"), ["DTS-HD", "5.1"], "DTS-HD, no también DTS")
     }
+
+    func testTheBestAvailableIsTheSharpestWithTheMostBadges() {
+        func src(_ i: Int, _ res: String, _ hdr: [String], _ title: String, tags: [String] = []) -> Source {
+            var s = Source(index: i, addon: "T", stream: ["title": .string(title)], transportURL: "")
+            s.resolution = res; s.hdr = hdr; s.tags = tags
+            return s
+        }
+        let sources = [src(0, "1080p", ["HDR"], "a.1080p.Atmos"), src(1, "4K", [], "b.2160p"), src(2, "4K", ["DV"], "c.2160p.DV.Atmos"),
+                       src(3, "4K", ["DV", "HDR"], "d.2160p.Trailer", tags: ["Tráiler"])]
+        XCTAssertEqual(Source.best(sources)?.index, 2, "4K con DV y Atmos; el tráiler no cuenta")
+        XCTAssertNil(Source.best([]))
+    }
 }

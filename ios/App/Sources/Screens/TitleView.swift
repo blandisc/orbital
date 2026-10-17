@@ -50,6 +50,7 @@ struct TitleView: View {
         .onChange(of: env.watchedSomething) { Task { await model.refreshState() } }   // vuelves de ver: avance, visto y «Continuar» al día
         .task {
             await model.load()
+            Task { await model.loadBestSource() }   // aparte: las fuentes tardan y no detienen el color del fondo
             #if DEBUG
             if Demo.isOn, Demo.open == "play" { start(model, videoID: nil) }
             if Demo.isOn, Demo.open == "sources", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
@@ -84,6 +85,11 @@ struct TitleView: View {
                 let facts = [Strings.kind(model.kind, language: language)] + [model.extras?.certification].compactMap { $0 }
                     + Vocabulary.titleFacts(year: model.info.year, genres: Vocabulary.genres(model.info.genres, language: language), runtime: model.info.runtime, rating: "")   // la calificación va en sus cápsulas (IMDb · TMDB · Trakt)
                 Text(verbatim: Vocabulary.factLine(facts)).recipe(.secondary, color: DS.onArtSecondary).lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
+                // Lo mejor disponible entre sus fuentes (como el encabezado de Infuse): 4K · DV · ATMOS.
+                if let best = model.bestSource {
+                    QualityBadges(items: QualityBadges.items(resolution: best.resolution, hdr: best.hdr, audio: best.audioBadges))
+                        .accessibilityLabel(Text("Lo mejor disponible"))
+                }
             }
         }
         .ignoresSafeArea(edges: .top)

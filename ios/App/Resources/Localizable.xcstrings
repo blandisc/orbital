@@ -2718,6 +2718,17 @@
         }
       }
     },
+    "Lo mejor disponible": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best available"
+          }
+        }
+      }
+    },
     "Lo más popular": {
       "extractionState": "manual",
       "localizations": {
