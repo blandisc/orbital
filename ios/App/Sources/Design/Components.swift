@@ -108,6 +108,9 @@ struct DSSectionHead: View {
     /// El ícono de la lista (el mismo de la TV), si no hay logo.
     var icon: OrbitalIcon?
     var action: (() -> Void)?
+    /// Cuántos hay (a la derecha, en gris) y un chevron: el encabezado abre la lista completa.
+    var count: Int?
+    var chevron = false
 
     var body: some View {
         HStack(alignment: .center, spacing: DS.Space.s2) {
@@ -118,7 +121,10 @@ struct DSSectionHead: View {
                 if let action { Button(action: action) { Text(trailing) }.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
                 else { Text(trailing).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
             }
+            if let count { Text(verbatim: "\(count)").recipe(.footnote, color: DS.textMuted) }
+            if chevron { Image(systemName: "chevron.right").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.textMuted).accessibilityHidden(true) }
         }
+        .contentShape(Rectangle())
         .accessibilityAddTraits(.isHeader)
     }
 }
@@ -575,6 +581,7 @@ struct Backdrop: View {
             if let tint {
                 let tone = scheme == .dark ? tint.tint : tint.accent.mix(with: DS.paper, by: DS.Backdrop.lightMix)
                 LinearGradient(stops: [.init(color: tone, location: 0), .init(color: DS.bg, location: DS.Backdrop.fadeTo)], startPoint: .top, endPoint: .bottom)
+                RadialGradient(colors: [tone.opacity(DS.Backdrop.lowGlow), .clear], center: DS.Backdrop.lowGlowCenter, startRadius: 0, endRadius: DS.Backdrop.lowGlowRadius)
             }
         }
         .ignoresSafeArea()

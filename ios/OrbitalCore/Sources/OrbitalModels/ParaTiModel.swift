@@ -28,7 +28,8 @@ public final class ParaTiModel: ObservableModel {
     public private(set) var lists: [ForYouList] = [] { didSet { changed() } }
     /// Los estantes del feed de Listas, en su orden (`ShelfPlanner`). Los vacíos se descartan al terminar de cargar.
     public private(set) var shelves: [ShelfPlan] = [] { didSet { changed() } }
-    public private(set) var kind = "series" { didSet { changed() } }
+    /// «Todo», «Series» o «Películas» (`all`, `series`, `movie`): los estantes con `split` enseñan eso; «Todo» alterna ambos.
+    public private(set) var kind = "all" { didSet { changed() } }
     /// Las listas que aún se están pidiendo (su estante enseña esqueletos, no un hueco).
     public private(set) var loadingKeys = Set<String>() { didSet { changed() } }
     /// Cuántas veces se pidió «Actualizar»: el destacado pasa al siguiente de su estante.
@@ -40,6 +41,11 @@ public final class ParaTiModel: ObservableModel {
     /// Los episodios que salen de las series que sigues (Trakt), hoy y los próximos 14 días.
     public private(set) var airings: [Airing] = [] { didSet { changed() } }
     public var calendarLayout: CalendarLayout = .byDay { didSet { changed() } }
+    /// Cuántos días cubre `airings` desde hoy: crece de dos en dos semanas al deslizar la tira hasta el final.
+    public private(set) var airingDays = ForYou.calendarDays { didSet { changed() } }
+    /// Hasta dónde se puede deslizar la tira (Trakt contesta hasta 31 días por pedido; más allá casi no hay fechas).
+    public static let maxAiringDays = 84
+    private var loadingMoreAirings = false
     public private(set) var error: String? { didSet { changed() } }
     /// El mosaico es lo popular de Stremio (sin Trakt ni TMDB todavía): la pantalla invita a conectarlos.
     public private(set) var isGeneric = false { didSet { changed() } }
@@ -147,7 +153,7 @@ public final class ParaTiModel: ObservableModel {
         async let shelvesLoaded: Void = loadShelves()
         watchlistKeys = await fetchedKeys ?? []
         if let fetched = await fetchedAirings, !Task.isCancelled {
-            airings = fetched
+            airings = fetched; airingDays = ForYou.calendarDays
             services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno» también con la consola
         }
         await shelvesLoaded
@@ -182,7 +188,7 @@ public final class ParaTiModel: ObservableModel {
         traktLinked = await linked
         watchlistKeys = await keys
         if let fetched = await newAirings, !Task.isCancelled {   // sin respuesta (o cancelado), el widget conserva lo que tenía
-            airings = fetched
+            airings = fetched; airingDays = ForYou.calendarDays
             services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno»
         }
         await shelvesLoaded
@@ -202,9 +208,21 @@ public final class ParaTiModel: ObservableModel {
         mosaic = filled
     }
 
+    /// Las dos semanas siguientes del calendario (al llegar al final de la tira de días). Sin Trakt o sin red, nada cambia.
+    public func loadMoreAirings() async {
+        guard !loadingMoreAirings, airingDays < Self.maxAiringDays else { return }
+        loadingMoreAirings = true
+        defer { loadingMoreAirings = false }
+        let more = ForYou.calendarDays
+        guard let fetched = try? await services.forYou.calendar(skip: airingDays, days: more), !Task.isCancelled else { return }
+        let known = Set(airings.map(\.id))
+        airings += fetched.filter { !known.contains($0.id) }
+        airingDays += more
+    }
+
     /// «Series · Películas»: solo cambia los estantes con `split`; el resto sigue igual.
     public func setKind(_ kind: String) async {
-        self.kind = kind == "movie" ? "movie" : "series"
+        self.kind = ["movie", "series"].contains(kind) ? kind : "all"
         await loadShelves()
     }
 
@@ -226,14 +244,23 @@ public final class ParaTiModel: ObservableModel {
         await withTaskGroup(of: (String, [Suggestion]?).self) { group in
             for entry in wanted {
                 group.addTask {
-                    switch source {
-                    case .console:
-                        // Un estante que tarda (la consola refrescando JustWatch) tiene una segunda oportunidad.
-                        if let found = try? await remote.items(listID: entry.listID, kind: kind) { return (entry.key, found) }
-                        guard !Task.isCancelled else { return (entry.key, nil) }
-                        return (entry.key, try? await remote.items(listID: entry.listID, kind: kind))
-                    case .phone: return (entry.key, try? await local.items(listID: entry.listID, kind: kind))
+                    @Sendable func fetch(_ kind: String) async -> [Suggestion]? {
+                        switch source {
+                        case .console:
+                            // Un estante que tarda (la consola refrescando JustWatch) tiene una segunda oportunidad.
+                            if let found = try? await remote.items(listID: entry.listID, kind: kind) { return found }
+                            guard !Task.isCancelled else { return nil }
+                            return try? await remote.items(listID: entry.listID, kind: kind)
+                        case .phone: return try? await local.items(listID: entry.listID, kind: kind)
+                        }
                     }
+                    guard kind == "all" else { return (entry.key, await fetch(kind)) }
+                    // «Todo»: series y películas a la vez, alternadas (un estante que no separa trae lo mismo en ambas: sin repetir).
+                    async let series = fetch("series")
+                    async let movies = fetch("movie")
+                    let (s, m) = await (series, movies)
+                    if s == nil && m == nil { return (entry.key, nil) }
+                    return (entry.key, Self.interleaved(s ?? [], m ?? []))
                 }
             }
             for await (k, found) in group {
@@ -242,6 +269,15 @@ public final class ParaTiModel: ObservableModel {
                 if let found, !Task.isCancelled { railItems[k] = found }
             }
         }
+    }
+
+    /// Una y una (serie, película…), sin repetir títulos: lo que queda de la más larga va al final.
+    nonisolated static func interleaved(_ a: [Suggestion], _ b: [Suggestion]) -> [Suggestion] {
+        var out: [Suggestion] = [], seen = Set<String>()
+        for i in 0..<max(a.count, b.count) {
+            for list in [a, b] where i < list.count && seen.insert(list[i].imdb).inserted { out.append(list[i]) }
+        }
+        return out
     }
 
     private func itemsFromCurrentSource(listID: String) async -> [Suggestion] {

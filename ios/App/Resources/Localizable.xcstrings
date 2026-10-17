@@ -595,6 +595,17 @@
         }
       }
     },
+    "Cambiar avatar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change avatar"
+          }
+        }
+      }
+    },
     "Canal anterior": {
       "extractionState": "manual",
       "localizations": {
@@ -958,6 +969,17 @@
         }
       }
     },
+    "Conectado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected"
+          }
+        }
+      }
+    },
     "Conectado con tu Orbital.": {
       "extractionState": "manual",
       "localizations": {
@@ -980,6 +1002,28 @@
         }
       }
     },
+    "Conectado: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected: %@"
+          }
+        }
+      }
+    },
+    "Conectando…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecting…"
+          }
+        }
+      }
+    },
     "Conectar Trakt": {
       "extractionState": "manual",
       "localizations": {
@@ -998,6 +1042,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Connect manually"
+          }
+        }
+      }
+    },
+    "Conexiones": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connections"
           }
         }
       }
@@ -1163,6 +1218,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "How the “Continue watching” cards are laid out, how the time left is shown, and your avatar."
+          }
+        }
+      }
+    },
+    "Cómo se acomodan las tarjetas de «Seguir viendo».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How the Continue Watching cards are arranged."
+          }
+        }
+      }
+    },
+    "Cómo te dice la tarjeta lo que te queda por ver.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How the card tells you how much is left."
           }
         }
       }
@@ -2186,6 +2263,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "App and title language"
+          }
+        }
+      }
+    },
+    "Idioma y subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language and subtitles"
           }
         }
       }
@@ -3488,6 +3576,17 @@
         }
       }
     },
+    "Por género": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By genre"
+          }
+        }
+      }
+    },
     "Por lo que has visto": {
       "extractionState": "manual",
       "localizations": {
@@ -3715,6 +3814,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cast"
+          }
+        }
+      }
+    },
+    "Reproducción": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Playback"
           }
         }
       }
@@ -4005,6 +4115,17 @@
         }
       }
     },
+    "Siempre": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Always"
+          }
+        }
+      }
+    },
     "Sigue": {
       "extractionState": "manual",
       "localizations": {
@@ -4111,6 +4232,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Without Trakt or Orbital, this is what everyone is watching"
+          }
+        }
+      }
+    },
+    "Sin conectar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not connected"
           }
         }
       }
@@ -4698,6 +4830,17 @@
         }
       }
     },
+    "Tu avatar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your avatar"
+          }
+        }
+      }
+    },
     "Tu contraseña no se guarda: solo la clave de sesión, en el Keychain de tu iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -4705,6 +4848,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your password isn't stored: only the session key, in your iPhone's Keychain."
+          }
+        }
+      }
+    },
+    "Tu perfil": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your profile"
           }
         }
       }
@@ -4852,6 +5006,17 @@
         }
       }
     },
+    "Ver el mosaico": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show the mosaic"
+          }
+        }
+      }
+    },
     "Ver en la TV": {
       "extractionState": "manual",
       "localizations": {
@@ -4881,6 +5046,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "View series"
+          }
+        }
+      }
+    },
+    "Ver las listas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show the lists"
           }
         }
       }
@@ -4936,6 +5112,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Voice"
+          }
+        }
+      }
+    },
+    "Voz y Siri": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voice and Siri"
           }
         }
       }
@@ -5101,6 +5288,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Did you finish it?"
+          }
+        }
+      }
+    },
+    "Ícono de la app": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App icon"
           }
         }
       }

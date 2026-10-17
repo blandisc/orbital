@@ -21,8 +21,6 @@ struct ParaTiView: View {
     var body: some View {
         let m = model.model
         VStack(spacing: DS.Space.s2) {
-            DSSegmented<ParaTiModel.Mode>(options: [(.mosaic, "Mosaico"), (.lists, "Listas")], selection: Binding(get: { m.mode }, set: { m.mode = $0 }))
-                .padding(.horizontal, DS.Space.gutter)
             if m.isGeneric, m.mode == .mosaic, !m.mosaic.isEmpty {
                 Text("Lo más popular en Stremio. Conecta Trakt en Ajustes y el mosaico se arma con lo tuyo.")
                     .font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).frame(maxWidth: .infinity, alignment: .leading)
@@ -59,6 +57,15 @@ struct ParaTiView: View {
         // De dónde salió lo que ves, en el mismo lugar que «Stremio al día» en Inicio (no un chip y un pie sueltos).
         .subtitle(sourceText(m))
         .toolbar {
+            // Un solo selector en la pantalla (Todo · Series · Películas, en Listas): mosaico ↔ listas es este botón.
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { m.mode = m.mode == .mosaic ? .lists : .mosaic } label: {
+                    Image(systemName: m.mode == .mosaic ? "list.bullet.rectangle" : "square.grid.2x2")
+                }
+                .accessibilityLabel(m.mode == .mosaic ? Text("Ver las listas") : Text("Ver el mosaico"))
+                .accessibilityIdentifier("paraTi-mode")
+                .sensoryFeedback(.selection, trigger: m.mode)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button { Task { await m.refresh() } } label: { Image(systemName: "arrow.clockwise") }
                     .disabled(m.isLoading).accessibilityLabel(Text("Actualizar"))
@@ -192,7 +199,16 @@ func shelfIcon(_ plan: ShelfPlan) -> OrbitalIcon {
     }
 }
 
-/// «Para ti › Listas»: un destacado, el selector Series · Películas y los estantes (cada uno dice de dónde viene).
+/// El filtro de «Para ti › Listas»: todo, solo series o solo películas.
+enum KindFilter: String, CaseIterable, Identifiable {
+    case all, series, movie
+    var id: String { rawValue }
+    var label: LocalizedStringKey {
+        switch self { case .all: "Todo"; case .series: "Series"; case .movie: "Películas" }
+    }
+}
+
+/// «Para ti › Listas»: el filtro Todo · Series · Películas, un destacado y los estantes (cada uno dice de dónde viene).
 struct ListsView: View {
     @ObservedObject var observer: ModelObserver<ParaTiModel>
     @EnvironmentObject private var env: AppEnvironment
@@ -219,8 +235,13 @@ struct ListsView: View {
 
     private var scroller: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: DS.Space.s6, pinnedViews: [.sectionHeaders]) {
+            LazyVStack(alignment: .leading, spacing: DS.Space.s6) {
                 // El arte a sangre ya pone su margen (en claro es tarjeta; en oscuro va de borde a borde).
+                // El único filtro de la pantalla, arriba: lo cambia todo lo de abajo (los estantes que separan series y películas).
+                if model.hasKindSplit {
+                    DSChipRow(items: KindFilter.allCases, label: { Text($0.label) },
+                              selection: Binding(get: { KindFilter(rawValue: model.kind) ?? .all }, set: { new in Task { await model.setKind(new.rawValue) } }))
+                }
                 let slides = model.featuredSlides
                 if !slides.isEmpty { featuredCarousel(slides) }
                 if !model.platformHubs.isEmpty { platforms }   // justo bajo el destacado: tus plataformas a la vista, no hasta abajo
@@ -229,17 +250,9 @@ struct ListsView: View {
                         ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
                     }
                 }
-                Section {
-                    // Las plataformas viven en «Tus plataformas» (arriba): aquí, lo demás.
-                    ForEach(model.visibleShelves.filter { $0.list.group != .platforms }) { plan in shelf(plan).id(plan.id) }
-                    if model.needsSources { sourcesFallback }
-                } header: {
-                    if model.hasKindSplit {
-                        DSSegmented(options: [("series", "Series"), ("movie", "Películas")], selection: Binding(get: { model.kind }, set: { new in Task { await model.setKind(new) } }))
-                            .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s2)
-                            .background(.bar)
-                    }
-                }
+                // Las plataformas viven en «Tus plataformas» (arriba): aquí, lo demás.
+                ForEach(model.visibleShelves.filter { $0.list.group != .platforms }) { plan in shelf(plan).id(plan.id) }
+                if model.needsSources { sourcesFallback }
             }
             .padding(.bottom, DS.Space.s14)   // aire bajo la última fila: la barra de pestañas no la tapa
         }
@@ -377,8 +390,8 @@ struct ListGridView: View {
                     }
                     .padding(.horizontal, DS.Space.gutter)
                     if plan.splitsKinds {
-                        DSSegmented(options: [("series", "Series"), ("movie", "Películas")], selection: Binding(get: { model.kind }, set: { new in Task { await model.setKind(new) } }))
-                            .padding(.horizontal, DS.Space.gutter)
+                        DSChipRow(items: KindFilter.allCases, label: { Text($0.label) },
+                                  selection: Binding(get: { KindFilter(rawValue: model.kind) ?? .all }, set: { new in Task { await model.setKind(new.rawValue) } }))
                     }
                     let items = model.items(for: plan)
                     if items.isEmpty && !model.isLoading(shelf: plan) {

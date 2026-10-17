@@ -169,6 +169,21 @@ final class ForYouTests: XCTestCase {
         XCTAssertEqual(week.map { $0.airings.count }, [1, 1, 0, 0, 0, 0, 0], "los días sin nada también están")
     }
 
+    func testTheNextWeeksOfTheCalendarComeWhenAsked() async throws {
+        let http = FakeHTTP()
+        var mexico = Calendar(identifier: .gregorian)
+        mexico.timeZone = TimeZone(secondsFromGMT: -6 * 3600)!
+        // Hoy es el 9: las dos semanas que siguen empiezan el 23 (se pide desde el 22, en hora universal).
+        http.json["\(api)/calendars/my/shows/2025-10-22/16?extended=full"] = [
+            ["first_aired": "2025-10-22T20:00:00.000Z", "episode": ["season": 1, "number": 1], "show": ["title": "Antes", "ids": ["imdb": "tt0000001", "trakt": 1]]],
+            ["first_aired": "2025-10-30T20:00:00.000Z", "episode": ["season": 3, "number": 2], "show": ["title": "Muy lejos", "ids": ["imdb": "tt0000002", "trakt": 2]]]]
+        let airings = try await makeForYou(http).calendar(skip: 14, days: 14, calendar: mexico)
+        XCTAssertEqual(airings.map(\.series.title), ["Muy lejos"], "lo del 22 ya estaba en las primeras dos semanas")
+        let strip = AiringDay.week(airings, from: Clock().now, calendar: mexico, days: 28)
+        XCTAssertEqual(strip.count, 28, "la tira llega hasta donde se cargó")
+        XCTAssertEqual(strip.firstIndex { !$0.airings.isEmpty }, 21)
+    }
+
     func testNoUpcomingEpisodesWithoutTrakt() async throws {
         let airings = try await makeForYou(FakeHTTP(), linked: false).calendar()
         XCTAssertTrue(airings.isEmpty)

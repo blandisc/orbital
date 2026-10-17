@@ -5,7 +5,7 @@ import OrbitalModels
 /// Un género de «Explora» al que se navega (nombre de Cinemeta, en inglés).
 struct GenreRoute: Hashable { var genre: String }
 
-/// «Buscar» (la pestaña de búsqueda nativa de iOS 26): sin escribir, lo más popular hoy con su puesto y los géneros para
+/// «Buscar» (la pestaña de búsqueda nativa de iOS 26): sin escribir, el Top 10 de hoy en carrusel y los géneros para
 /// explorar; al escribir, los resultados en cuadrícula.
 struct BrowseView: View {
     @EnvironmentObject private var env: AppEnvironment
@@ -14,8 +14,8 @@ struct BrowseView: View {
     @State private var query = ""
     /// El póster que ilustra cada género (el primero de su catálogo), según van llegando.
 
-    /// Cuántos de lo más popular van en la lista con puesto.
-    private static let popularCount = 5
+    /// Cuántos de lo más popular van en el carrusel con puesto (un Top 10).
+    private static let popularCount = 10
 
     init() {
         let services = AppEnvironment.shared.services
@@ -25,7 +25,7 @@ struct BrowseView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s8) {
+            VStack(alignment: .leading, spacing: DS.Space.s6) {
                 if query.trimmingCharacters(in: .whitespaces).count >= 2 { results } else { suggestions }
             }
             .padding(.bottom, DS.Space.s8)
@@ -88,26 +88,32 @@ struct BrowseView: View {
         .padding(.horizontal, DS.Space.gutter)
     }
 
-    /// «Lo más popular hoy»: renglones con su puesto (películas y series alternadas, de Cinemeta).
+    /// «Lo más popular hoy»: el Top 10 de Stremio en carrusel, con la cifra grande (el mismo lenguaje que los rankings de
+    /// tus plataformas). Películas y series alternadas, de Cinemeta.
     private func popular(_ model: CatalogModel) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
-            DSSectionHead(title: "Lo más popular hoy")
-            let shown = Array(model.popular.prefix(Self.popularCount))
-            ForEach(Array(shown.enumerated()), id: \.element.id) { index, item in
-                NavigationLink(value: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)) {
-                    RankedRow(rank: index + 1, title: item.title, poster: item.poster, detail: yearAndKind(year: item.year, kind: item.kind))
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: "Lo más popular hoy", trailing: "Stremio", icon: .flame).padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                    ForEach(Array(model.popular.prefix(Self.popularCount).enumerated()), id: \.element.id) { index, item in
+                        let route = TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)
+                        NavigationLink(value: route) {
+                            RankedPosterCard(rank: index + 1, title: item.title, poster: item.poster).titleZoomSource(route)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-                .buttonStyle(.plain)
-                if index < shown.count - 1 { Divider().overlay(DS.hairline) }
+                .scrollTargetLayout()
             }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
         }
-        .padding(.horizontal, DS.Space.gutter)
     }
 
-    /// «Explora»: los géneros en mosaicos con el arte de su título más popular.
+    /// «Por género»: los géneros en mosaicos con su arte, bajo un encabezado igual al de arriba (una sola pantalla, no dos).
     private var explore: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Explora")
+            DSSectionHead(title: "Por género", icon: .spark)
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
                 ForEach(CatalogModel.exploreGenres, id: \.self) { genre in
                     NavigationLink(value: GenreRoute(genre: genre)) { ArtTile(title: Text(verbatim: genreName(genre)), asset: Self.genreAsset(genre)) }

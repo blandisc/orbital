@@ -2,7 +2,8 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// Ajustes: cuenta de Stremio, complementos, Trakt, idiomas, calidad, descargas y reproductor.
+/// Ajustes: tu perfil arriba (el avatar se toca) y dos grupos de renglones que llevan a su página, cada uno con cómo
+/// está ahora: lo tuyo (apariencia, Inicio, idioma, reproducción, descargas) y las conexiones (Orbital, Trakt…).
 struct SettingsView: View {
     @EnvironmentObject private var env: AppEnvironment
     @StateObject private var settings: ModelObserver<SettingsModel>
@@ -12,6 +13,7 @@ struct SettingsView: View {
     @State private var secret = ""
     @State private var confirmSignOut = false
     @State private var orbitalToken = ""
+    @State private var editingAvatar = false
 
     init() {
         let services = AppEnvironment.shared.services
@@ -23,73 +25,52 @@ struct SettingsView: View {
         let model = settings.model
         let s = model.settings
         Form {
-            Section("Cuenta") {
-                Label("Stremio conectado", systemImage: "person.crop.circle.badge.checkmark")
-                Button("Cerrar sesión", role: .destructive) { confirmSignOut = true }
+            Section {
+                ProfileCard(avatar: s.avatar, title: Text("Tu perfil"), detail: connections(model)) { editingAvatar = true }
             }
             .listRowBackground(DS.surface)
-            orbitalSection(model)
-            Section("Voz") {
-                NavigationLink { VoiceGuideView() } label: { Label("Lo que puedes decir", systemImage: "waveform") }
-            }
-            .listRowBackground(DS.surface)
-            addons
-            traktSection(model)
-            Section("Apariencia") {
-                Picker("Modo", selection: Binding(get: { s.appearance }, set: { v in model.update { $0.appearance = v } })) {
-                    Text("Como el iPhone").tag("system"); Text("Claro").tag("light"); Text("Oscuro").tag("dark")
+            // Lo tuyo: cómo se ve y cómo se reproduce.
+            Section {
+                NavigationLink { page("Apariencia") { appearance(model) } } label: {
+                    SettingsRow(title: "Apariencia", symbol: "circle.lefthalf.filled", tint: DS.ListTint.spark, value: appearanceName(s.appearance))
                 }
-                .pickerStyle(.segmented)
-                AppIconPicker()
+                NavigationLink { page("Inicio") { home(model) } } label: {
+                    SettingsRow(title: "Inicio", symbol: "house", tint: DS.ListTint.watching, value: s.homeDeck == DeckStyle.fan.rawValue ? Text("Abanico") : Text("Coverflow"))
+                }
+                NavigationLink { page("Idioma y subtítulos") { language(model) } } label: {
+                    SettingsRow(title: "Idioma y subtítulos", symbol: "captions.bubble", tint: DS.ListTint.library, value: s.uiLanguage == "en" ? Text(verbatim: "English") : Text(verbatim: "Español"))
+                }
+                NavigationLink { page("Reproducción") { playback(model) } } label: {
+                    SettingsRow(title: "Reproducción", symbol: "play.circle", tint: DS.ListTint.list, value: Text(verbatim: s.quality))
+                }
+                NavigationLink { page("Descargas") { downloads(model) } } label: {
+                    SettingsRow(title: "Descargas", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: s.wifiOnlyDownloads ? Text("Solo con Wi‑Fi") : Text("Siempre"))
+                }
             }
+            .listRowBackground(DS.surface)
+            // Con qué se conecta.
+            Section {
+                NavigationLink { page("Tu Orbital") { orbitalSection(model) } } label: {
+                    SettingsRow(title: "Tu Orbital", symbol: "tv", tint: DS.ListTint.series, value: env.services.orbital.isConfigured ? Text("Conectada") : Text("Sin conectar"))
+                }
+                NavigationLink { page("Trakt") { traktSection(model) } } label: {
+                    SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: traktValue(model))
+                }
+                NavigationLink { page("Complementos") { addons } } label: {
+                    SettingsRow(title: "Complementos", symbol: "puzzlepiece.extension", tint: DS.ListTint.addon, value: Text(verbatim: "\(session.model.addons.count)"))
+                }
+                NavigationLink { page("Sugerencias") { suggestions(model) } } label: {
+                    SettingsRow(title: "Sugerencias", symbol: "globe", tint: DS.ListTint.trend, value: Text(verbatim: env.uiLocale.localizedString(forRegionCode: s.region) ?? s.region))
+                }
+                NavigationLink { VoiceGuideView() } label: {
+                    SettingsRow(title: "Voz y Siri", symbol: "waveform", tint: DS.ListTint.bookmark)
+                }
+            } header: { Text("Conexiones") }
             .listRowBackground(DS.surface)
             Section {
-                Picker("Carrusel", selection: Binding(get: { s.homeDeck }, set: { v in model.update { $0.homeDeck = v } })) {
-                    Text("Coverflow").tag(DeckStyle.coverflow.rawValue); Text("Abanico").tag(DeckStyle.fan.rawValue)
-                }
-                Picker("Cuánto falta", selection: Binding(get: { s.homeTime }, set: { v in model.update { $0.homeTime = v } })) {
-                    Text("Píldora de vidrio").tag(TimeStyle.pill.rawValue); Text("El borde avanza").tag(TimeStyle.edge.rawValue)
-                    Text("Botón que se llena").tag(TimeStyle.fill.rawValue); Text("Arco orbital").tag(TimeStyle.arc.rawValue)
-                }
-                AvatarPicker(selection: Binding(get: { s.avatar }, set: { v in model.update { $0.avatar = v } }))
-            } header: { Text("Inicio") } footer: { Text("Cómo se acomodan las tarjetas de «Seguir viendo», cómo se dice cuánto te falta y tu avatar.") }
-            .listRowBackground(DS.surface)
-            Section("Idioma") {
-                Picker("Idioma de la app y de las fichas", selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } })) {
-                    Text("Español").tag("es"); Text("English").tag("en")
-                }
-                Picker("Audio", selection: Binding(get: { s.audio }, set: { v in model.update { $0.audio = v } })) { languageOptions }
-                Picker("Subtítulos", selection: Binding(get: { s.subtitles }, set: { v in model.update { $0.subtitles = v } })) { languageOptions; Text("Sin subtítulos").tag("") }
-                Toggle("Solo subtítulos forzados", isOn: Binding(get: { s.onlyForcedSubtitles }, set: { v in model.update { $0.onlyForcedSubtitles = v } }))
-                Picker("Tamaño de subtítulos", selection: Binding(get: { s.subtitleSize }, set: { v in model.update { $0.subtitleSize = v } })) {
-                    Text("Chico").tag("small"); Text("Mediano").tag("medium"); Text("Grande").tag("large")
-                }
-            }
-            .listRowBackground(DS.surface)
-            Section("Calidad") {
-                Picker("Con Wi‑Fi", selection: Binding(get: { s.quality }, set: { v in model.update { $0.quality = v } })) { qualityOptions }
-                Picker("Con datos móviles", selection: Binding(get: { s.cellularQuality }, set: { v in model.update { $0.cellularQuality = v } })) { qualityOptions }
-            }
-            .listRowBackground(DS.surface)
-            Section("Descargas") {
-                Toggle("Descargar solo con Wi‑Fi", isOn: Binding(get: { s.wifiOnlyDownloads }, set: { v in model.update { $0.wifiOnlyDownloads = v } }))
-                Toggle("Bajar el siguiente episodio al terminar uno", isOn: Binding(get: { s.autoNextDownload }, set: { v in model.update { $0.autoNextDownload = v } }))
-                Toggle("Borrar al terminar de verlo", isOn: Binding(get: { s.deleteWhenWatched }, set: { v in model.update { $0.deleteWhenWatched = v } }))
-            }
-            .listRowBackground(DS.surface)
-            Section("Reproductor") {
-                LabeledContent("Motor", value: PlayerEngines.aetherAvailable ? "AetherEngine" : "AVPlayer")
-                Toggle("Abrir siempre en Infuse", isOn: Binding(get: { s.preferInfuse }, set: { v in model.update { $0.preferInfuse = v } }))
-            }
-            .listRowBackground(DS.surface)
-            Section("Sugerencias") {
-                Picker("País (para lo popular en plataformas)", selection: Binding(get: { s.region }, set: { v in model.update { $0.region = v } })) {
-                    ForEach(["MX", "US", "ES", "AR", "CO", "CL", "PE"], id: \.self) { Text(verbatim: env.uiLocale.localizedString(forRegionCode: $0) ?? $0).tag($0) }
-                }
-                SecureField(LocalizedStringKey(model.hasTMDBKey ? "Clave de TMDB guardada" : "Clave de TMDB"), text: $tmdbKey).textInputAutocapitalization(.never).autocorrectionDisabled()
-                if !tmdbKey.isEmpty { Button("Guardar clave de TMDB") { model.setTMDBKey(tmdbKey); tmdbKey = "" } }
-                Text("TMDB pone las fichas en español y busca lo popular en Netflix, Disney+ y HBO Max.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
-            }
+                Label("Stremio conectado", systemImage: "person.crop.circle.badge.checkmark")
+                Button("Cerrar sesión", role: .destructive) { confirmSignOut = true }
+            } header: { Text("Cuenta") }
             .listRowBackground(DS.surface)
         }
         .tint(DS.accent)   // interruptores, selectores y botones del formulario: el acento (lo interactivo)
@@ -98,7 +79,142 @@ struct SettingsView: View {
         .confirmationDialog("¿Cerrar sesión de Stremio?", isPresented: $confirmSignOut, titleVisibility: .visible) {
             Button("Cerrar sesión", role: .destructive) { Task { await session.model.signOut() } }
         }
+        .sheet(isPresented: $editingAvatar) {
+            NavigationStack {
+                Form { AvatarPicker(selection: Binding(get: { settings.model.settings.avatar }, set: { v in settings.model.update { $0.avatar = v } })).listRowBackground(DS.surface) }
+                    .scrollContentBackground(.hidden).background(Backdrop())
+                    .navigationTitle("Tu avatar").navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { editingAvatar = false } } }
+            }
+            .presentationDetents([.medium])
+        }
         .task { await model.loadTraktName(); await session.model.loadAddons() }
+        #if DEBUG
+        .task { if Demo.isOn, Demo.open == "settings-avatar" { editingAvatar = true } }
+        #endif
+    }
+
+    /// Una página de Ajustes: el mismo formulario y fondo.
+    private func page<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
+        Form { content() }
+            .tint(DS.accent)
+            .scrollContentBackground(.hidden).background(Backdrop())
+            .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// «Stremio · Trakt · Orbital»: qué está conectado, bajo tu avatar.
+    private func connections(_ model: SettingsModel) -> Text {
+        var parts = ["Stremio"]
+        if case .linked = model.trakt { parts.append("Trakt") }
+        if env.services.orbital.isConfigured { parts.append("Orbital") }
+        return Text("Conectado: \(parts.joined(separator: " · "))")
+    }
+
+    private func appearanceName(_ value: String) -> Text {
+        switch value { case "light": Text("Claro"); case "dark": Text("Oscuro"); default: Text("Como el iPhone") }
+    }
+
+    private func traktValue(_ model: SettingsModel) -> Text {
+        switch model.trakt {
+        case .linked(let name): name.isEmpty ? Text("Conectado") : Text(verbatim: name)
+        case .linking: Text("Conectando…")
+        default: Text("Sin conectar")
+        }
+    }
+
+    // MARK: páginas
+    @ViewBuilder private func appearance(_ model: SettingsModel) -> some View {
+        Section("Modo") {
+            Picker("Modo", selection: Binding(get: { model.settings.appearance }, set: { v in model.update { $0.appearance = v } })) {
+                Text("Como el iPhone").tag("system"); Text("Claro").tag("light"); Text("Oscuro").tag("dark")
+            }
+            .pickerStyle(.segmented)
+        }
+        .listRowBackground(DS.surface)
+        Section("Ícono de la app") { AppIconPicker() }.listRowBackground(DS.surface)
+    }
+
+    /// Inicio: cada estilo se elige viéndolo (el carrusel se mueve solo; cuánto falta, sobre una tarjeta).
+    @ViewBuilder private func home(_ model: SettingsModel) -> some View {
+        let s = model.settings
+        Section {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
+                StyleOption(label: "Coverflow", selected: s.homeDeck != DeckStyle.fan.rawValue, action: { model.update { $0.homeDeck = DeckStyle.coverflow.rawValue } }) { DeckStylePreview(style: .coverflow) }
+                StyleOption(label: "Abanico", selected: s.homeDeck == DeckStyle.fan.rawValue, action: { model.update { $0.homeDeck = DeckStyle.fan.rawValue } }) { DeckStylePreview(style: .fan) }
+            }
+            .padding(.vertical, DS.Space.s2)
+            .accessibilityIdentifier("deck-options")
+        } header: { Text("Carrusel") } footer: { Text("Cómo se acomodan las tarjetas de «Seguir viendo».") }
+        .listRowBackground(DS.surface)
+        Section {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
+                ForEach(TimeStyle.allCases, id: \.self) { style in
+                    StyleOption(label: timeName(style), selected: s.homeTime == style.rawValue, action: { model.update { $0.homeTime = style.rawValue } }) { TimeStylePreview(style: style) }
+                }
+            }
+            .padding(.vertical, DS.Space.s2)
+        } header: { Text("Cuánto falta") } footer: { Text("Cómo te dice la tarjeta lo que te queda por ver.") }
+        .listRowBackground(DS.surface)
+        .sensoryFeedback(.selection, trigger: s.homeDeck + s.homeTime)
+    }
+
+    private func timeName(_ style: TimeStyle) -> LocalizedStringKey {
+        switch style { case .pill: "Píldora de vidrio"; case .edge: "El borde avanza"; case .fill: "Botón que se llena"; case .arc: "Arco orbital" }
+    }
+
+    @ViewBuilder private func language(_ model: SettingsModel) -> some View {
+        let s = model.settings
+        Section {
+            Picker("Idioma de la app y de las fichas", selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } })) {
+                Text("Español").tag("es"); Text("English").tag("en")
+            }
+            Picker("Audio", selection: Binding(get: { s.audio }, set: { v in model.update { $0.audio = v } })) { languageOptions }
+        }
+        .listRowBackground(DS.surface)
+        Section("Subtítulos") {
+            Picker("Subtítulos", selection: Binding(get: { s.subtitles }, set: { v in model.update { $0.subtitles = v } })) { languageOptions; Text("Sin subtítulos").tag("") }
+            Toggle("Solo subtítulos forzados", isOn: Binding(get: { s.onlyForcedSubtitles }, set: { v in model.update { $0.onlyForcedSubtitles = v } }))
+            Picker("Tamaño de subtítulos", selection: Binding(get: { s.subtitleSize }, set: { v in model.update { $0.subtitleSize = v } })) {
+                Text("Chico").tag("small"); Text("Mediano").tag("medium"); Text("Grande").tag("large")
+            }
+        }
+        .listRowBackground(DS.surface)
+    }
+
+    @ViewBuilder private func playback(_ model: SettingsModel) -> some View {
+        let s = model.settings
+        Section("Calidad") {
+            Picker("Con Wi‑Fi", selection: Binding(get: { s.quality }, set: { v in model.update { $0.quality = v } })) { qualityOptions }
+            Picker("Con datos móviles", selection: Binding(get: { s.cellularQuality }, set: { v in model.update { $0.cellularQuality = v } })) { qualityOptions }
+        }
+        .listRowBackground(DS.surface)
+        Section("Reproductor") {
+            LabeledContent("Motor", value: PlayerEngines.aetherAvailable ? "AetherEngine" : "AVPlayer")
+            Toggle("Abrir siempre en Infuse", isOn: Binding(get: { s.preferInfuse }, set: { v in model.update { $0.preferInfuse = v } }))
+        }
+        .listRowBackground(DS.surface)
+    }
+
+    @ViewBuilder private func downloads(_ model: SettingsModel) -> some View {
+        let s = model.settings
+        Section {
+            Toggle("Descargar solo con Wi‑Fi", isOn: Binding(get: { s.wifiOnlyDownloads }, set: { v in model.update { $0.wifiOnlyDownloads = v } }))
+            Toggle("Bajar el siguiente episodio al terminar uno", isOn: Binding(get: { s.autoNextDownload }, set: { v in model.update { $0.autoNextDownload = v } }))
+            Toggle("Borrar al terminar de verlo", isOn: Binding(get: { s.deleteWhenWatched }, set: { v in model.update { $0.deleteWhenWatched = v } }))
+        }
+        .listRowBackground(DS.surface)
+    }
+
+    @ViewBuilder private func suggestions(_ model: SettingsModel) -> some View {
+        let s = model.settings
+        Section {
+            Picker("País (para lo popular en plataformas)", selection: Binding(get: { s.region }, set: { v in model.update { $0.region = v } })) {
+                ForEach(["MX", "US", "ES", "AR", "CO", "CL", "PE"], id: \.self) { Text(verbatim: env.uiLocale.localizedString(forRegionCode: $0) ?? $0).tag($0) }
+            }
+            SecureField(LocalizedStringKey(model.hasTMDBKey ? "Clave de TMDB guardada" : "Clave de TMDB"), text: $tmdbKey).textInputAutocapitalization(.never).autocorrectionDisabled()
+            if !tmdbKey.isEmpty { Button("Guardar clave de TMDB") { model.setTMDBKey(tmdbKey); tmdbKey = "" } }
+        } footer: { Text("TMDB pone las fichas en español y busca lo popular en Netflix, Disney+ y HBO Max.") }
+        .listRowBackground(DS.surface)
     }
 
     @ViewBuilder private var languageOptions: some View {

@@ -19,6 +19,13 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    # Repensado: Ajustes por páginas, un solo filtro en Para ti, Buscar integrado
+    "Cambiar avatar": "Change avatar", "Conectado": "Connected", "Conectado: %@": "Connected: %@", "Conectando…": "Connecting…",
+    "Conexiones": "Connections", "Cómo se acomodan las tarjetas de «Seguir viendo».": "How the Continue Watching cards are arranged.",
+    "Cómo te dice la tarjeta lo que te queda por ver.": "How the card tells you how much is left.", "Idioma y subtítulos": "Language and subtitles",
+    "Por género": "By genre", "Reproducción": "Playback", "Siempre": "Always", "Sin conectar": "Not connected", "Tu avatar": "Your avatar",
+    "Tu perfil": "Your profile", "Ver el mosaico": "Show the mosaic", "Ver las listas": "Show the lists", "Voz y Siri": "Voice and Siri",
+    "Ícono de la app": "App icon",
     # Proyección: modo claro y oscuro
     "Falta el archivo parcial": "The partial file is missing", "No se pudo reproducir": "Could not play",
     "Puesto %lld": "No. %lld", "Puesto %@": "No. %@", "Control remoto": "Remote control", "Esta semana en México": "This week in Mexico", "Las que estás viendo": "Shows you're watching", "Tendencia en JustWatch · México": "JustWatch trend · Mexico",

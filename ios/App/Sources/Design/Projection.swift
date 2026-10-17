@@ -150,34 +150,6 @@ struct DSOptionMenu<Item: Hashable & Identifiable>: View {
     }
 }
 
-/// Un renglón con su puesto (lo más popular, la cartelera de una plataforma): el número en SF Mono, el póster chico, el nombre
-/// y un dato; a la derecha, opcional, cuánto subió o bajó.
-struct RankedRow: View {
-    let rank: Int
-    let title: String
-    let poster: String?
-    var detail: Text?
-    /// Cuántos lugares subió (positivo) o bajó (negativo); nil si no se sabe.
-    var movement: Int?
-    var isNew = false
-
-    var body: some View {
-        HStack(spacing: DS.Space.s3) {
-            Text(verbatim: "\(rank)").recipe(.data).frame(minWidth: DS.Space.s5, alignment: .leading)
-            PosterView(url: poster, title: title).frame(width: DS.Poster.rowWidth)
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(title).recipe(.body).lineLimit(1)
-                if let detail { detail.recipe(.footnote).lineLimit(1) }
-            }
-            Spacer(minLength: DS.Space.s2)
-            if isNew || movement != nil { MovementBadge(movement: movement, isNew: isNew) }
-        }
-        .frame(minHeight: DS.Size.touchTarget)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-    }
-}
-
 /// ▲ 2 · ▼ 1 · = · Nuevo: cuánto se movió un título en su lista desde la foto anterior (el Top 10 real de la TV).
 struct MovementBadge: View {
     let movement: Int?
@@ -261,33 +233,6 @@ struct TVAccessory: View {
         }
         .padding(.horizontal, DS.Space.s3)
         .accessibilityElement(children: .contain)
-    }
-}
-
-/// El accesorio cuando la TV no reproduce nada: el mismo lugar abre el control completo de tu Orbital (siempre se entra por
-/// aquí, con video o sin él).
-struct TVRemoteAccessory: View {
-    let openRemote: () -> Void
-    @Environment(\.tabViewBottomAccessoryPlacement) private var placement
-
-    var body: some View {
-        Button(action: openRemote) {
-            HStack(spacing: DS.Space.s3) {
-                Image(systemName: "av.remote").font(DS.TextRecipe.cardTitle.font)
-                    .frame(width: DS.Size.accessoryArt, height: DS.Size.accessoryArt)
-                    .background(DS.fill, in: Circle())
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Control de tu Orbital").recipe(.cardTitle).lineLimit(1)
-                    if placement != .inline { Text("Nada en la TV ahora").recipe(.footnote, color: DS.textMuted).lineLimit(1) }
-                }
-                Spacer(minLength: DS.Space.s2)
-                Image(systemName: "chevron.up").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
-            }
-            .padding(.horizontal, DS.Space.s3)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityHint(Text("Control remoto"))
     }
 }
 

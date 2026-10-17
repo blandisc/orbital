@@ -192,6 +192,18 @@ enum DS {
         static let fillOpacity: Double = 0.55, fillMinutesOpacity: Double = 0.7
     }
 
+    /// Ajustes: los renglones con su ícono de color y las vistas previas de cada estilo de Inicio.
+    enum SettingsLook {
+        static let rowIcon: CGFloat = 28
+        static let profileAvatar: CGFloat = 60, editBadge: CGFloat = 22
+        /// La vista previa del carrusel: tres tarjetas chicas que se deslizan solas, de ida y vuelta.
+        static let deckPreviewHeight: CGFloat = 120, deckPreviewCard = CGSize(width: 58, height: 86), deckPreviewStep: CGFloat = 50
+        static let deckPreviewBlur: CGFloat = 1.5, deckPreviewDrop: CGFloat = 6, deckPreviewSpeed: Double = 0.9
+        /// La vista previa de cuánto falta: una tarjeta del tamaño real, reducida.
+        static let timePreviewCard = CGSize(width: 300, height: 190), timePreviewScale: CGFloat = 0.5
+        static let optionRadius: CGFloat = 18, optionRing: CGFloat = 2
+    }
+
     /// El color de cada plataforma (su tarjeta en abanico, el brillo de su logo y de los números de sus rankings).
     enum PlatformTint {
         static func color(_ brand: String) -> Color {
@@ -307,6 +319,10 @@ enum DS {
         static let starCount = DesignTokens.Backdrop.starCount, starSeed = DesignTokens.Backdrop.starSeed
         static let starRadius = CGFloat(DesignTokens.Backdrop.starRadius), starOpacity = DesignTokens.Backdrop.starOpacity
         static let artFadeStart = DesignTokens.Backdrop.artFadeStart
+        /// Un segundo brillo del mismo tono, abajo a un lado: lo de debajo del destacado no queda en negro liso.
+        static let lowGlow: Double = 0.22
+        static let lowGlowCenter = UnitPoint(x: 0.85, y: 0.75)
+        static let lowGlowRadius: CGFloat = 420
     }
 
     /// Esperas de la interfaz (nanosegundos para `Task.sleep`).
@@ -338,8 +354,6 @@ enum DS {
         static let railWidth: CGFloat = 112
         static let gridMinimum: CGFloat = 100
         static let episodeThumbWidth: CGFloat = 122
-        /// El póster chico de un renglón (listas con puesto, descargas).
-        static let rowWidth: CGFloat = 36
         /// Una pieza ancha (16:9) de un riel: «También tenías», episodios nuevos.
         static let stillWidth: CGFloat = 220
         static let heroHeight: CGFloat = 300

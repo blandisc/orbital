@@ -29,17 +29,34 @@ extension View {
     /// oscurece, se desenfoca y gira (coverflow) o se inclina (abanico). Con «Reducir movimiento», quietas.
     func deckTransition(_ style: DeckStyle, reduceMotion: Bool) -> some View {
         scrollTransition(.interactive, axis: .horizontal) { content, phase in
-            let value = reduceMotion ? 0 : phase.value
-            let distance = abs(value)
-            return content
-                .scaleEffect(1 - distance * DS.Deck.sideShrink)
-                .blur(radius: distance * DS.Deck.sideBlur)
-                .brightness(-distance * DS.Deck.sideDim)
-                .rotation3DEffect(.degrees(style == .coverflow ? -value * DS.Deck.coverflowAngle : 0), axis: (x: 0, y: 1, z: 0),
-                                  perspective: DS.Deck.perspective)
-                .rotationEffect(.degrees(style == .fan ? value * DS.Deck.fanAngle : 0), anchor: .bottom)
-                .offset(y: style == .fan ? distance * DS.Deck.fanDrop : 0)
+            content.deckEffect(style, value: reduceMotion ? 0 : phase.value)
         }
+    }
+
+    /// El mismo efecto con la distancia dada (−1 a 1), para la vista previa de Ajustes (que se mueve sola, sin desplazarse).
+    func deckEffect(_ style: DeckStyle, value: Double, blur: CGFloat = DS.Deck.sideBlur, drop: CGFloat = DS.Deck.fanDrop) -> some View {
+        let distance = abs(value)
+        return scaleEffect(1 - distance * DS.Deck.sideShrink)
+            .blur(radius: distance * blur)
+            .brightness(-distance * DS.Deck.sideDim)
+            .rotation3DEffect(.degrees(style == .coverflow ? -value * DS.Deck.coverflowAngle : 0), axis: (x: 0, y: 1, z: 0),
+                              perspective: DS.Deck.perspective)
+            .rotationEffect(.degrees(style == .fan ? value * DS.Deck.fanAngle : 0), anchor: .bottom)
+            .offset(y: style == .fan ? distance * drop : 0)
+    }
+}
+
+extension VisualEffect {
+    /// `View.deckEffect` dentro de `scrollTransition` (los mismos pasos, en su tipo).
+    func deckEffect(_ style: DeckStyle, value: Double) -> some VisualEffect {
+        let distance = abs(value)
+        return scaleEffect(1 - distance * DS.Deck.sideShrink)
+            .blur(radius: distance * DS.Deck.sideBlur)
+            .brightness(-distance * DS.Deck.sideDim)
+            .rotation3DEffect(.degrees(style == .coverflow ? -value * DS.Deck.coverflowAngle : 0), axis: (x: 0, y: 1, z: 0),
+                              perspective: DS.Deck.perspective)
+            .rotationEffect(.degrees(style == .fan ? value * DS.Deck.fanAngle : 0), anchor: .bottom)
+            .offset(y: style == .fan ? distance * DS.Deck.fanDrop : 0)
     }
 }
 
@@ -76,18 +93,25 @@ struct DeckCard<Actions: View>: View {
             .padding(DS.Space.s4)
         }
         .frame(height: DS.Deck.height)
-        .overlay(alignment: .topTrailing) { badge }
-        .overlay { if timeStyle == .edge, let progress { EdgeProgress(fraction: progress) } }
+        .overlay { if minutesLeft > 0, let progress { TimeBadge(style: timeStyle, minutes: minutesLeft, fraction: progress) } }
         .clipShape(RoundedRectangle(cornerRadius: DS.Deck.radius, style: .continuous))
         .shadow(color: DS.scrimStrong, radius: DS.Deck.shadow, y: DS.Deck.shadowY)
     }
+}
 
-    @ViewBuilder private var badge: some View {
-        if minutesLeft > 0, let progress {
-            switch timeStyle {
-            case .pill: TimePill(minutes: minutesLeft, fraction: progress).padding(DS.Space.s3)
-            case .edge: MinutesText(minutes: minutesLeft).padding(DS.Space.s3)
-            case .arc: OrbitArc(minutes: minutesLeft, fraction: progress)
+/// Cuánto falta, sobre la tarjeta, en el estilo elegido (el botón que se llena va en las acciones: aquí, nada).
+struct TimeBadge: View {
+    let style: TimeStyle
+    let minutes: Int
+    let fraction: Double
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.clear
+            switch style {
+            case .pill: TimePill(minutes: minutes, fraction: fraction).padding(DS.Space.s3)
+            case .edge: EdgeProgress(fraction: fraction); MinutesText(minutes: minutes).padding(DS.Space.s3)
+            case .arc: OrbitArc(minutes: minutes, fraction: fraction)
             case .fill: EmptyView()
             }
         }
@@ -95,7 +119,7 @@ struct DeckCard<Actions: View>: View {
 }
 
 /// «32 min» en la tarjeta, en una cápsula de vidrio (se lee aunque el arte sea claro).
-private struct MinutesText: View {
+struct MinutesText: View {
     let minutes: Int
     var body: some View {
         Text("\(minutes) min").recipe(.footnote, color: DS.accent).fontWeight(.bold)
@@ -106,7 +130,7 @@ private struct MinutesText: View {
 }
 
 /// Píldora de vidrio con los minutos y una barrita de avance.
-private struct TimePill: View {
+struct TimePill: View {
     let minutes: Int
     let fraction: Double
     var body: some View {
@@ -122,7 +146,7 @@ private struct TimePill: View {
 }
 
 /// El borde de la tarjeta como barra de avance.
-private struct EdgeProgress: View {
+struct EdgeProgress: View {
     let fraction: Double
     var body: some View {
         ZStack {
@@ -136,7 +160,7 @@ private struct EdgeProgress: View {
 
 /// Una órbita en la esquina: su centro está en la esquina de arriba a la derecha y dentro de la tarjeta se ve su cuarto de
 /// abajo a la izquierda; el avance recorre ese cuarto y la luna marca dónde vas. Los minutos, en la esquina.
-private struct OrbitArc: View {
+struct OrbitArc: View {
     let minutes: Int
     let fraction: Double
     var body: some View {

@@ -29,20 +29,35 @@ func badgeKey(_ reason: SuggestionReason) -> LocalizedStringKey {
     }
 }
 
-/// Una fila horizontal de portadas con su título.
+/// Una lista de Inicio abierta completa desde su encabezado («Mi lista 12 ›»).
+struct HomeListRoute: Hashable { var id: String }
+
+/// Una fila horizontal de portadas con su título; con `route`, el encabezado dice cuántos hay y abre la lista completa.
 struct Rail<Content: View>: View {
     let title: LocalizedStringKey
     var trailing: LocalizedStringKey?
     var logo: String?
     var icon: OrbitalIcon?
+    var count: Int?
+    var route: HomeListRoute?
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: title, trailing: trailing, logo: logo, icon: icon).padding(.horizontal, DS.Space.gutter)
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.padding(.horizontal, DS.Space.gutter)
+            Group {
+                if let route {
+                    NavigationLink(value: route) { DSSectionHead(title: title, trailing: trailing, logo: logo, icon: icon, count: count, chevron: true) }
+                        .buttonStyle(.plain)
+                } else {
+                    DSSectionHead(title: title, trailing: trailing, logo: logo, icon: icon, count: count)
+                }
             }
+            .padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.scrollTargetLayout()
+            }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
         }
     }
 }

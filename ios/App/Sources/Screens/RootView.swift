@@ -56,6 +56,11 @@ struct RootView: View {
     }
 }
 
+extension EnvironmentValues {
+    /// Abre el control de tu Orbital (el botón de la barra de Inicio); nil sin tu Orbital conectada.
+    @Entry var openRemote: (() -> Void)? = nil
+}
+
 extension PlayRequest: @retroactive Identifiable { public var id: String { "\(metaID)|\(videoID)" } }
 
 /// La barra de pestañas nativa: en iOS 26 es de vidrio (Liquid Glass) y se encoge al deslizar.
@@ -88,14 +93,14 @@ struct MainTabs: View {
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
-        // Con tu Orbital conectada el accesorio siempre está: lo que se ve en la TV, o el control de tu Orbital si no hay nada.
-        .bottomAccessory(isEnabled: tvNow.model.now != nil || tvNow.model.isConfigured) {
+        // El accesorio solo cuando hace falta: mientras la TV reproduce algo y en la pantalla de arriba de cada pestaña (en una
+        // ficha o en Ajustes se va: no hay doble fila abajo). Sin nada en la TV, el control se abre con el botón junto al avatar.
+        .bottomAccessory(isEnabled: tvNow.model.now != nil && paths[tab].isEmpty) {
             if let now = tvNow.model.now {
                 TVAccessory(now: now, busy: tvNow.model.busy, toggle: { Task { await tvNow.model.control("toggle") } }, openRemote: { remoteLarge = false; showRemote = true })
-            } else {
-                TVRemoteAccessory(openRemote: { remoteLarge = true; showRemote = true })
             }
         }
+        .environment(\.openRemote, tvNow.model.isConfigured ? { remoteLarge = tvNow.model.now == nil; showRemote = true } : nil)
         // Si la TV deja de reproducir con la hoja abierta, la hoja se cierra (no se queda vacía).
         // (Estirado, el control completo sirve aunque no haya video: se queda.)
         .onChange(of: tvNow.model.now == nil) { _, stopped in if stopped, !remoteLarge { showRemote = false } }

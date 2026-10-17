@@ -9,6 +9,7 @@ import OrbitalModels
 struct UpcomingView: View {
     @ObservedObject var observer: ModelObserver<ParaTiModel>
     @State private var picked: Date?
+    @Environment(\.locale) private var locale
     private var model: ParaTiModel { observer.model }
 
     var body: some View {
@@ -33,13 +34,23 @@ struct UpcomingView: View {
     }
 
     @ViewBuilder private var week: some View {
-        let days = AiringDay.week(model.airings, from: Date())
+        let days = AiringDay.week(model.airings, from: Date(), days: model.airingDays)
         let selected = days.first { $0.day == picked } ?? days.first { !$0.airings.isEmpty } ?? days[0]
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: DS.Space.s2) {
-                ForEach(days) { d in DayPill(day: d, selected: d.day == selected.day) { picked = d.day } }
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            // El mes del día elegido (la tira sigue a las semanas siguientes: el mes cambia al cruzarlo).
+            Text(verbatim: selected.day.formatted(.dateTime.month(.wide).locale(locale)).capitalized(with: locale))
+                .recipe(.footnote, color: DS.textMuted).padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: DS.Space.s2) {
+                    ForEach(days) { d in
+                        DayPill(day: d, selected: d.day == selected.day) { picked = d.day }
+                            // Al asomarse el último día, las dos semanas que siguen (hasta donde Trakt tiene fechas).
+                            .onAppear { if d.id == days.last?.id { Task { await model.loadMoreAirings() } } }
+                    }
+                }
+                .padding(.horizontal, DS.Space.gutter)
             }
-            .padding(.horizontal, DS.Space.gutter)
+            .fixedSize(horizontal: false, vertical: true)
         }
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             DayHeading(day: selected.day)

@@ -40,5 +40,16 @@ final class RemoteUITests: XCTestCase {
         XCTAssertFalse(pad.exists, "se cerró")
         XCTAssertFalse(app.staticTexts["Estira hacia arriba para el control completo"].exists, "y no quedó la hoja corta vacía")
     }
-}
 
+    /// Sin nada en la TV no hay accesorio abajo (ni doble fila): el control se abre desde el botón junto al avatar.
+    func testWithNothingOnTheTVTheRemoteLivesNextToTheAvatar() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-demo", "-demo-appearance", "dark"]
+        app.launch()
+        let button = app.buttons["home-remote"]
+        XCTAssertTrue(button.waitForExistence(timeout: 20), "el botón del control, en la barra de Inicio")
+        XCTAssertFalse(app.staticTexts["Nada en la TV ahora"].exists, "y abajo ya no hay accesorio vacío")
+        button.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["Pad de la TV"].waitForExistence(timeout: 10), "abre el control completo")
+    }
+}

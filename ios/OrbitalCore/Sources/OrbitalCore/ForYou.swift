@@ -330,13 +330,14 @@ public actor ForYou {
 
     // MARK: próximos estrenos
     /// Lo que sale hoy y los próximos 14 días de las series que sigues en Trakt, con la hora de aquí. Sin Trakt: nada.
-    public func calendar(calendar: Calendar = .current) async throws -> [Airing] {
+    /// `skip` días después de hoy y los `days` siguientes (las semanas que siguen, al deslizar la tira de «Próximos estrenos»).
+    public func calendar(skip: Int = 0, days: Int = calendarDays, calendar: Calendar = .current) async throws -> [Airing] {
         guard let trakt, trakt.linked else { return [] }
         let now = clock()
         // Trakt va en hora universal: se pide desde un día antes para no perder lo de hoy.
-        let start = Self.dayString(calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: now))!, calendar: calendar)
-        let rows = try await remember("trakt:calendar:\(start)", ttl: Self.recsTTL) { try await trakt.calendar(start: start, days: Self.calendarDays + 2) }
-        return Self.airings(rows, now: now, calendar: calendar).filter { !dismissed.contains($0.series.imdb) }
+        let start = Self.dayString(calendar.date(byAdding: .day, value: skip - 1, to: calendar.startOfDay(for: now))!, calendar: calendar)
+        let rows = try await remember("trakt:calendar:\(start):\(days)", ttl: Self.recsTTL) { try await trakt.calendar(start: start, days: days + 2) }
+        return Self.airings(rows, now: now, calendar: calendar, skip: skip, days: days).filter { !dismissed.contains($0.series.imdb) }
     }
 
     static func dayString(_ date: Date, calendar: Calendar) -> String {
@@ -346,10 +347,10 @@ public actor ForYou {
         return f.string(from: date)
     }
 
-    /// Agrupa por serie y día (en la hora de aquí), de hoy a 14 días, en orden de hora y luego de nombre.
-    public static func airings(_ rows: [TraktAiring], now: Date, calendar: Calendar) -> [Airing] {
-        let today = calendar.startOfDay(for: now)
-        guard let end = calendar.date(byAdding: .day, value: calendarDays, to: today) else { return [] }
+    /// Agrupa por serie y día (en la hora de aquí), de hoy (más `skip`) a `days` días, en orden de hora y luego de nombre.
+    public static func airings(_ rows: [TraktAiring], now: Date, calendar: Calendar, skip: Int = 0, days: Int = calendarDays) -> [Airing] {
+        guard let today = calendar.date(byAdding: .day, value: skip, to: calendar.startOfDay(for: now)),
+              let end = calendar.date(byAdding: .day, value: days, to: today) else { return [] }
         var groups: [Airing] = [], index: [String: Int] = [:]
         for row in rows {
             let day = calendar.startOfDay(for: row.aired)

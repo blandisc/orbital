@@ -86,7 +86,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `ActionGrid` + `ProjectionAction` | Acciones secundarias iguales con ícono y nombre (se apilan con letra grande) | Ficha (Mi lista, Descargar, Fuentes) |
 | `StillCard` | Pieza 16:9 con avance, nombre y datos | «También tenías» |
 | `PageDots` | Puntos de un carrusel | Inicio |
-| `RankedRow` + `MovementBadge` | Renglón con puesto, póster chico y ▲ ▼ / Nuevo | Buscar › Lo más popular (y la Cartelera) |
+| `MovementBadge` | ▲ ▼ / Nuevo bajo un puesto | Rankings de plataformas (Buscar › Lo más popular usa `RankedPosterCard`) |
 | `ArtTile` | Mosaico con arte y nombre | Buscar › Explora (géneros) |
 | `DSOptionMenu` | Menú nativo para elegir entre muchas opciones | Temporadas (más de `DS.Size.seasonChipsMax`) |
 | `TouchPad`, `RemoteKey`, `RemoteTextField` | El control completo de tu Orbital: pad (deslizar = flechas, tocar = A), teclas de la consola y escribir en la TV | `RemoteSheet` (la hoja del accesorio, estirada) |
@@ -95,7 +95,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `OrbitalIcon`, `ListIcon` | Los íconos de las listas, los mismos de la TV (icons.js → `node scripts/list_icons.mjs` → Assets.xcassets/Icons; tests/web/list-icons.test.mjs los mantiene iguales) | `Shelf`, `DSSectionHead`/`Rail`, la pestaña Para ti |
 | `DeckCard`, `deckTransition`, `TimeStyle`, `ProgressFillLabel` | El carrusel de «Seguir viendo»: tarjetas con lo que sigue a los lados (coverflow o abanico, más chicas y desenfocadas) y cuánto falta (píldora de vidrio, borde, botón que se llena u órbita); lo elige el usuario en Ajustes › Inicio | `HomeView` |
 | `AvatarImage`, `AvatarPicker` | Tu avatar (Assets › Avatars, 12 espaciales) y su selector | `HomeView` (junto al saludo), Ajustes › Inicio |
-| `TVRemoteAccessory` | El accesorio cuando la TV no reproduce nada: abre el control completo | Toda la app, con tu Orbital conectada |
+| Botón «Control de tu Orbital» (`av.remote`) | Sin nada en la TV, abre el control completo desde la barra de Inicio (el accesorio solo aparece mientras la TV reproduce, y no dentro de fichas ni Ajustes) | Inicio, con tu Orbital conectada |
 | `fittedSheet()` / `subtitle(_:)` | Hoja a la medida de su contenido; subtítulo de la barra solo cuando dice algo | Hojas cortas; Inicio, Para ti, Descargas |
 | `TVAccessory` | Lo que suena en tu Orbital, en el accesorio de la barra | Toda la app (iOS 26.1+) |
 | `Shelf`, `RankedPosterCard`, `PosterCard`, `TitleLink`, `Rail` | Estantes, Top 10, pósters | Para ti, Inicio, Buscar |

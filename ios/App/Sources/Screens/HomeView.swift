@@ -12,6 +12,7 @@ struct HomeView: View {
     @State private var openTitle: TitleRoute?
     @State private var heroID: String?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.openRemote) private var openRemote
 
     init() {
         _home = StateObject(wrappedValue: ModelObserver(HomeModel(AppEnvironment.shared.services)))
@@ -50,7 +51,7 @@ struct HomeView: View {
                 }
                 if model.continueWatching.count > Self.heroCount { alsoHad(model) }
                 if !model.myList.isEmpty {
-                    Rail(title: "Mi lista", icon: .library) {
+                    Rail(title: "Mi lista", icon: .library, count: model.myList.count, route: HomeListRoute(id: "mylist")) {
                         ForEach(model.myList) { item in
                             TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster))
                         }
@@ -58,7 +59,7 @@ struct HomeView: View {
                 }
                 if !model.traktPending.isEmpty {
                     // «Tu watchlist» (Trakt), con el nombre de la TV; dentro, todo está en tu watchlist: la etiqueta sobra.
-                    Rail(title: "Tu watchlist", icon: .bookmark) {
+                    Rail(title: "Tu watchlist", icon: .bookmark, count: model.traktPending.count, route: HomeListRoute(id: "watchlist")) {
                         ForEach(model.traktPending) { s in TitleLink(route: s.route) }
                     }
                 }
@@ -72,14 +73,36 @@ struct HomeView: View {
         .navigationTitle(greeting).toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .subtitle(syncText)
         .toolbar {
+            // Sin nada en la TV, el control de tu Orbital vive aquí (con algo reproduciéndose, en el accesorio de abajo).
+            if let openRemote, tvNow.model.now == nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: openRemote) { Image(systemName: "av.remote") }
+                        .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
+                }
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+            }
             ToolbarItem(placement: .topBarTrailing) { NavigationLink(value: SettingsRoute()) { AvatarImage(id: look.avatar) }.accessibilityLabel(Text("Ajustes")) }
         }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
+        .navigationDestination(for: HomeListRoute.self) { route in homeList(route) }
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
         .task { await reload() }
         .refreshable { await reload() }
         .onChange(of: env.watchedSomething) { Task { await reload() } }
+    }
+
+    /// «Mi lista» o «Tu watchlist» completas, en cuadrícula (desde el chevron de su encabezado).
+    private func homeList(_ route: HomeListRoute) -> some View {
+        let routes = route.id == "watchlist" ? home.model.traktPending.map(\.route) : home.model.myList.map(self.route)
+        return ScrollView {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
+                ForEach(routes, id: \.metaID) { TitleLink(route: $0, width: DS.Poster.gridMinimum) }
+            }
+            .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)
+        }
+        .background(Backdrop(tint: tint.colors))
+        .navigationTitle(route.id == "watchlist" ? Text("Tu watchlist") : Text("Mi lista")).navigationBarTitleDisplayMode(.inline)
     }
 
     /// Lo de Stremio, lo pendiente por subir y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo).
@@ -195,7 +218,7 @@ struct HomeView: View {
 
     /// «También tenías»: lo demás de «Seguir viendo», en piezas anchas con su avance.
     private func alsoHad(_ model: HomeModel) -> some View {
-        Rail(title: "También tenías", icon: .watching) {
+        Rail(title: "También tenías", icon: .watching, count: model.continueWatching.count - Self.heroCount) {
             ForEach(model.continueWatching.dropFirst(Self.heroCount)) { item in
                 NavigationLink(value: route(item)) {
                     StillCard(title: item.title, art: item.background ?? item.poster,

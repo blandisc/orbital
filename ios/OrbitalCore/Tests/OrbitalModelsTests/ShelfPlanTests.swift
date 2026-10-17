@@ -115,8 +115,11 @@ final class ShelfPlanTests: XCTestCase {
         XCTAssertEqual(model.visibleShelves.map(\.id), ["watchlist", "chart:netflix"], "el estante vacío se descarta")
         XCTAssertTrue(model.hasKindSplit)
         let chart = try XCTUnwrap(model.shelves.first { $0.id == "chart:netflix" })
-        XCTAssertEqual(model.items(for: chart).map(\.imdb), ["tt1000001"])
+        XCTAssertEqual(model.kind, "all", "«Todo» de entrada: series y películas alternadas")
+        XCTAssertEqual(model.items(for: chart).map(\.imdb), ["tt1000001", "tt2000001"])
         XCTAssertEqual(model.items(for: chart).first?.rank, 1)
+        await model.setKind("series")
+        XCTAssertEqual(model.items(for: chart).map(\.imdb), ["tt1000001"])
         let before = rig.http.calls.filter { $0.contains("id=watchlist") }.count
         await model.setKind("movie")
         XCTAssertEqual(model.items(for: chart).map(\.imdb), ["tt2000001"])
