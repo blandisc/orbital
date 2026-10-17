@@ -201,7 +201,7 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
         f"--title={title}", f"--force-media-title={title}",
         f"--alang={','.join(build_lang_list(audio))}", *subtitle_options(subtitles, audio),
         "--sub-auto=fuzzy", *cache, "--hwdec=auto-safe",
-        "--save-position-on-quit=no", "--msg-level=all=warn", *mpv_background(mpv), *OSD_STYLE,
+        "--save-position-on-quit=no", "--volume=100", "--msg-level=all=warn", *mpv_background(mpv), *OSD_STYLE,  # el volumen es el de Windows
     ]
     if live:
         cmd.append(f"--user-agent={user_agent or LIVE_USER_AGENT}")

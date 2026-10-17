@@ -687,3 +687,25 @@ def test_source_counter_sits_in_the_header_not_on_the_note():
     ass = player_ui.panel_ass(panel)
     assert re.search(r"\\an9\\pos\(\d+,602\)[^}]*}7 de 12", ass)
     assert "Al instante: Real-Debrid" in ass
+
+
+def test_one_volume_the_players_buttons_move_the_computers():
+    """Con el volumen de Windows conectado (de mentiras aquí), ▲ ▼ lo mueven y «Sin sonido» es el suyo: mpv no se toca."""
+    system = {"level": 30, "muted": True}
+
+    def write(level=None, muted=None):
+        if level is not None:
+            system["level"] = level
+        if muted is not None:
+            system["muted"] = muted
+        return dict(system)
+
+    p, mpv = make_player()
+    p.system_volume = (lambda: dict(system), write)
+    p.press("up")
+    assert system == {"level": 35, "muted": False}  # subir también quita el silencio
+    p.press("down")
+    assert system["level"] == 30
+    assert not any(c[:2] == ("set_property", "volume") or c[:2] == ("add", "volume") for c in mpv.sent)
+    assert p.toggle_mute() is True and system["muted"] is True
+    assert "--volume=100" in player.build_command("mpv.exe", "u", "t")

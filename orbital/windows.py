@@ -394,3 +394,66 @@ def is_fullscreen(hwnd: int) -> bool:
         return False
     m = info.rcMonitor
     return rect.left <= m.left and rect.top <= m.top and rect.right >= m.right and rect.bottom >= m.bottom
+
+
+# --- la identidad de una ventana en la barra de tareas ------------------------------------------------------------------
+# La ventana de Orbital es de Edge: sin esto, abajo salía el ícono de Edge, agrupada con tu Edge normal. Con su propio
+# AppUserModelID (y el ícono y el nombre para fijarla) la barra la trata como otra aplicación: «Orbital», con su ícono.
+class _Guid(ctypes.Structure):
+    _fields_ = [("a", wintypes.DWORD), ("b", wintypes.WORD), ("c", wintypes.WORD), ("d", ctypes.c_ubyte * 8)]
+
+    @classmethod
+    def of(cls, text: str) -> _Guid:
+        g = cls()
+        ctypes.oledll.ole32.CLSIDFromString(ctypes.c_wchar_p(text), ctypes.byref(g))  # type: ignore[attr-defined]
+        return g
+
+
+class _PropertyKey(ctypes.Structure):
+    _fields_ = [("fmtid", _Guid), ("pid", wintypes.DWORD)]
+
+
+class _PropVariant(ctypes.Structure):
+    _fields_ = [("vt", wintypes.USHORT), ("r1", wintypes.USHORT), ("r2", wintypes.USHORT), ("r3", wintypes.USHORT),
+                ("value", ctypes.c_void_p), ("pad", ctypes.c_void_p)]
+
+
+_APP_MODEL = "{9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3}"  # PKEY_AppUserModel_*: 2 relanzar, 3 ícono, 4 nombre, 5 id
+VT_LPWSTR, WM_SETICON, IMAGE_ICON, LR_LOADFROMFILE = 31, 0x0080, 1, 0x0010
+
+
+def set_app_identity(hwnd: int, app_id: str, icon: str, name: str, command: str) -> bool:
+    """Le da a una ventana (de otro proceso, como el kiosko de Edge) su propia identidad en la barra de tareas: id de
+    aplicación, ícono, nombre y cómo volver a abrirla si la fijas. Además le pone el ícono a la ventana (Alt+Tab)."""
+    if not WIN or not hwnd:
+        return False
+    try:
+        store = ctypes.c_void_p()
+        shell32 = ctypes.windll.shell32  # type: ignore[attr-defined]
+        iid = _Guid.of("{886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99}")  # IPropertyStore
+        if shell32.SHGetPropertyStoreForWindow(wintypes.HWND(hwnd), ctypes.byref(iid), ctypes.byref(store)) != 0:
+            return False
+        vtable = ctypes.cast(ctypes.cast(store, ctypes.POINTER(ctypes.c_void_p))[0], ctypes.POINTER(ctypes.c_void_p))
+        set_value = ctypes.WINFUNCTYPE(ctypes.HRESULT, ctypes.c_void_p, ctypes.POINTER(_PropertyKey),
+                                       ctypes.POINTER(_PropVariant))(vtable[6])
+        commit = ctypes.WINFUNCTYPE(ctypes.HRESULT, ctypes.c_void_p)(vtable[7])
+        release = ctypes.WINFUNCTYPE(wintypes.ULONG, ctypes.c_void_p)(vtable[2])
+        texts = []  # vivos hasta el Commit
+        try:
+            # El id va al final: con él cambia el grupo, y para entonces el ícono y el nombre ya están puestos.
+            for pid, value in ((2, command), (3, icon), (4, name), (5, app_id)):
+                texts.append(ctypes.create_unicode_buffer(value))
+                variant = _PropVariant(vt=VT_LPWSTR, value=ctypes.cast(texts[-1], ctypes.c_void_p))
+                set_value(store, ctypes.byref(_PropertyKey(_Guid.of(_APP_MODEL), pid)), ctypes.byref(variant))
+            commit(store)
+        finally:
+            release(store)
+        user32.LoadImageW.restype = wintypes.HANDLE
+        for which, size in ((1, 256), (0, 32)):  # ICON_BIG, ICON_SMALL
+            handle = user32.LoadImageW(None, icon, IMAGE_ICON, size, size, LR_LOADFROMFILE)
+            if handle:
+                user32.SendMessageW(wintypes.HWND(hwnd), WM_SETICON, which, handle)
+        return True
+    except OSError as exc:
+        log.debug("No pude darle identidad a la ventana %s: %s", hwnd, exc)
+        return False

@@ -247,7 +247,7 @@ class PlayerScreen:
             self._overlay(2, player_ui.panel_ass(self.menu, playing=not self._value("pause"), muted=self._live_muted()))
 
     def _live_muted(self) -> bool:
-        return self._is_live() and bool(self._value("mute"))
+        return self._is_live() and self._muted()
 
     def close_menu(self) -> None:
         self.menu = None
@@ -549,7 +549,37 @@ class PlayerScreen:
         elif button in ("up", "down"):
             self._change_volume(1 if button == "up" else -1)
 
+    # --- un solo volumen: el de Windows ------------------------------------------------------------------------------
+    # Con `system_volume` = (leer, escribir) (quick.volume / quick.set_volume, lo conecta watch.py), ▲ ▼ y «Sin sonido»
+    # mueven el volumen de la computadora, el mismo de Ajustes rápidos y de Alexa, y mpv se queda al 100 %: antes había
+    # tres volúmenes (el de la tele, el de Windows y el del reproductor). Sin él (pruebas), el de mpv como antes.
+    def _muted(self) -> bool:
+        system = getattr(self, "system_volume", None)
+        if system:
+            return bool((system[0]() or {}).get("muted"))
+        return bool(self._value("mute"))
+
+    def set_muted(self, muted: bool) -> None:
+        system = getattr(self, "system_volume", None)
+        if system:
+            system[1](muted=muted)
+        else:
+            self.mpv.command("set_property", "mute", muted)
+            self._ask("mute", muted)
+
+    def toggle_mute(self) -> bool:
+        muted = not self._muted()
+        self.set_muted(muted)
+        return muted
+
     def _change_volume(self, direction: int) -> None:
+        system = getattr(self, "system_volume", None)
+        if system:
+            now = system[0]() or {}
+            level = max(0, min(100, int(now.get("level") or 0) + 5 * direction))
+            after = system[1](level=level, muted=False if direction > 0 else None) or {"level": level}
+            self._show_notice(player_ui.volume_ass(after.get("level", level)), 1.6, layer=self.VOLUME)
+            return
         before = self._value("volume")
         if isinstance(before, (int, float)) and not isinstance(before, bool):
             top = self.mpv.get("volume-max")  # mpv deja pasar de 100 (130 de fábrica)
@@ -659,7 +689,7 @@ class PlayerScreen:
             elif segment is not None and segment.playing:
                 status = "live"
         return player_ui.LiveHud(name=meta.get("title") or "", number=meta.get("number"), category=meta.get("category") or "",
-                                 quality=meta.get("quality") or "", status=status, muted=bool(self._value("mute")),
+                                 quality=meta.get("quality") or "", status=status, muted=self._muted(),
                                  now=time.strftime("%H:%M"))
 
     def _show_live_hud(self, meta: dict | None = None, status: str | None = None) -> None:
@@ -679,9 +709,7 @@ class PlayerScreen:
     def _live_press(self, button: str) -> bool:
         """Los botones de la TV en vivo. False: ese botón hace lo de siempre (B salir, X audio)."""
         if button == "a":
-            muted = not bool(self._value("mute"))
-            self.mpv.command("set_property", "mute", muted)
-            self._ask("mute", muted)
+            muted = self.toggle_mute()
             self._overlay(self.MUTE, player_ui.muted_ass() if muted else None)  # se queda a la vista mientras no haya sonido
             self.show_hud()
         elif button in ("left", "right"):

@@ -162,6 +162,7 @@ class OrbitalPlayer(PlayerScreen):
         self.on_sub_scale = None  # (escala): para recordarla
         self.iphone_provider = None  # () -> bool: ¿hay iPhone conectado? (Y › «Enviar al iPhone»)
         self.on_send_iphone = None  # (meta, "open" | "download") -> aviso en palabras (o lanza ValueError con el motivo)
+        self.system_volume = None  # (leer, escribir) del volumen de Windows: un solo volumen (ver player_screen._muted)
         self.on_language = None  # (meta, "audio" | "subtitles", código): el idioma que elegiste
         # TV en vivo (ver tv.py): el reproductor solo pregunta y avisa, no sabe de listas ni de salud.
         self.channels_provider = None  # (meta, categoría | None) -> {"category", "categories", "channels"}
@@ -289,7 +290,7 @@ class OrbitalPlayer(PlayerScreen):
         self._away = False
         self.mpv.command("set_property", "force-media-title", title)
         self.mpv.command("set_property", "pause", False)
-        self.mpv.command("set_property", "mute", False)
+        self.set_muted(False)
         self._overlay(self.MUTE, None)  # un canal nuevo suena (y la píldora de «Sin sonido» se va)
         # Siempre las dos opciones, aunque vayan vacías: el Referer del canal anterior no se hereda.
         self.mpv.command("loadfile", url, "replace", -1, {"user-agent": user_agent or LIVE_USER_AGENT, "referrer": referrer or ""})
@@ -762,7 +763,7 @@ class OrbitalPlayer(PlayerScreen):
             return {"kind": "tv", "live": True, "channel": meta.get("title") or current.title,
                     "title": meta.get("title") or current.title, "number": meta.get("number"),
                     "category": meta.get("category") or "", "paused": False,
-                    "muted": bool(self.mpv.get("mute"))}
+                    "muted": self._muted()}
         from .companion import episode_numbers  # aquí: companion no se carga con el reproductor
         label = (meta.get("detail") or "").split(" · ", 1)[0]
         parts = label.split()

@@ -181,9 +181,34 @@ class KioskWindow:
             self._process = subprocess.Popen(build_command(exe, self.url, self.profile_dir),
                                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             log.info("Interfaz abierta (pid %s)", self._process.pid)
+            if sys.platform == "win32":
+                threading.Thread(target=self._brand, args=(self._process,), daemon=True, name="kiosk-icon").start()
             if self.keep_open or self.on_closed:
                 threading.Thread(target=self._watch, args=(self._process,), daemon=True).start()
             return True
+
+    APP_ID = "Orbital.Consola"
+    ICON = Path(__file__).parent / "web" / "icons" / "orbital.ico"
+
+    def _brand(self, proc: subprocess.Popen) -> None:
+        """Abajo, en la barra de tareas, «Orbital» con su ícono (no el de Edge, agrupada con tu Edge normal). La ventana
+        tarda en aparecer y Edge puede volver a ponerle su ícono al cargar: se aplica unas veces en los primeros segundos."""
+        from . import windows
+
+        profile = f"--user-data-dir={self.profile_dir}".lower()
+        startup = Path(os.environ.get("APPDATA", "")) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / "Orbital.lnk"
+        command = f'explorer.exe "{startup}"' if startup.exists() else f'"{sys.executable}" -m orbital'
+        done = False
+        for wait in (1, 2, 3, 4, 10, 20):
+            time.sleep(wait)
+            if proc.poll() is not None and self._process is not proc:
+                return
+            pids = {pid for pid, (exe, _parent) in windows.processes().items()
+                    if exe in ("msedge.exe", "chrome.exe") and profile in windows.command_line(pid).lower()}
+            hwnd = windows.main_window(pids)
+            if hwnd and windows.set_app_identity(hwnd, self.APP_ID, str(self.ICON), "Orbital", command) and not done:
+                log.info("Ventana de Orbital con su propio ícono en la barra de tareas")
+                done = True
 
     def _watch(self, proc: subprocess.Popen) -> None:
         """Si la ventana se cierra sola (o con Alt+F4), la reabre: en modo consola Orbital siempre está."""
