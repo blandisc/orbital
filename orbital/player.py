@@ -92,6 +92,8 @@ from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las pi
 from .player_screen import PlayerScreen
 
 log = logging.getLogger(__name__)
+
+SYNTHETIC_RESYNC_AFTER = 60.0  # s en pausa tras los que un canal de Orbital regresa a lo que va al aire
 CUT_MARGIN = 90  # s: un «final» antes de esto es la conexión que se cortó, no el final de verdad
 NEXT_LOAD_WAIT = 25  # s que el final espera al siguiente episodio que se está cargando
 
@@ -175,6 +177,8 @@ class OrbitalPlayer(PlayerScreen):
         # Canales de Orbital (ver synthetic.py): una serie al aire; al terminar o fallar, el canal decide qué sigue.
         self.on_synthetic_end = None  # (meta) -> True si cargó el siguiente episodio
         self.on_synthetic_failed = None  # (meta) -> True si se intenta con otra fuente u otro episodio
+        self.on_synthetic_resync = None  # (meta) -> True si regresó a lo que va al aire (tras una pausa larga)
+        self.on_synthetic_duration = None  # (meta, segundos): lo que dura de verdad (la programación lo aprende)
         self._zap_view, self._zap_timer = None, None  # ▲▼ seguidos (ver _queue_channel)
         self._panel_category = None  # la categoría que enseña la guía de canales (Y)
         self._away = False  # Home: estás en Orbital y el canal sigue al aire sin sonido
@@ -426,6 +430,8 @@ class OrbitalPlayer(PlayerScreen):
             self._save_progress(segment)
         self._chapters_tick(segment, now)
         self._upnext_tick(segment, now)
+        if segment.meta.get("synthetic"):
+            self._synthetic_tick(segment, now, paused)
         if self.mpv.get("eof-reached"):
             if segment.duration and segment.position < segment.duration - CUT_MARGIN:
                 # Llegó al «final» a media película: la conexión se cortó (con keep-open, mpv se queda en
@@ -461,6 +467,10 @@ class OrbitalPlayer(PlayerScreen):
         tracks = self.mpv.get("track-list") or []
         chapters = self.mpv.get("chapter-list") or []
         segment.chapters = [c for c in chapters if isinstance(c, dict) and isinstance(c.get("time"), (int, float))]
+        if segment.meta.get("synthetic"):
+            if segment.duration and segment.start > 5 and segment.position >= segment.duration - 10:
+                return self._at_end(segment)  # lo que iba al aire ya acabó (duraba menos de lo estimado): el siguiente
+            return self._synthetic_started(segment, tracks)
         if segment.duration and segment.start > 5 and segment.position >= segment.duration - 30:
             # Donde ibas queda más allá del final de este archivo (otra fuente, otra edición): desde el
             # principio, en vez de saltar al final y dar la película por vista.
@@ -470,9 +480,7 @@ class OrbitalPlayer(PlayerScreen):
             self._ensure_subtitles(self._subs_lang, self._fallback_subs)
             self.show_hud()
             return
-        if segment.meta.get("synthetic"):
-            return self._synthetic_started(segment, tracks)
-        if wrong_audio(tracks, self._audio_lang):
+        if wrong_audio(tracks, self._audio_lang) and not segment.meta.get("synthetic"):
             # El archivo dice ser de otro idioma (un doblaje mal etiquetado): avisa en vez de callar.
             self.toast("Esta fuente no trae audio en tu idioma · Y › Fuente para elegir otra", 6)
         elif segment.start > 5:
@@ -480,6 +488,21 @@ class OrbitalPlayer(PlayerScreen):
         if not self._apply_sub_pick(tracks):
             self._ensure_subtitles(self._subs_lang, self._fallback_subs)
         self.show_hud()  # al empezar: qué estás viendo y qué hace cada botón
+
+    def _synthetic_tick(self, segment: Segment, now: float, paused: bool) -> None:
+        """Un canal de Orbital va al aire aunque no lo veas: tras una pausa de más de un minuto, al seguir, regresa a lo
+        que va a esta hora (como la tele en vivo). Y la programación aprende cuánto dura de verdad cada episodio."""
+        if segment.duration and not segment.duration_told and self.on_synthetic_duration:
+            segment.duration_told = True
+            self._safe(self.on_synthetic_duration, segment.meta, segment.duration)
+        if paused:
+            segment.paused_at = segment.paused_at or now
+            return
+        away, segment.paused_at = (now - segment.paused_at if segment.paused_at else 0), None
+        if away > SYNTHETIC_RESYNC_AFTER and self.on_synthetic_resync and not segment.next_loading:
+            segment.next_loading = time.monotonic()
+            self.toast(f"De vuelta al aire · {segment.title}", 4)
+            self._in_background(self.on_synthetic_resync, segment.meta, failed="No pude volver a lo que va al aire")
 
     def _synthetic_started(self, segment: Segment, tracks: list) -> None:
         """Un canal de Orbital: la pista del doblaje del canal (si el archivo no la trae, otra fuente) y qué va."""

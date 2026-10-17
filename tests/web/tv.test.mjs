@@ -145,4 +145,8 @@ test("un canal de Orbital dice qué episodio va y a qué hora termina", async ()
   assert.equal(airingLine({ synthetic: true, now: null }, clock), ""); // Cinemeta no respondió: sin línea
   assert.equal(airingLine({ now: { ...channel.now, series: "Batman: La serie animada" } }, clock).split(" · ")[0], "Batman: La serie animada");
   assert.equal(categoryIcon("Orbital 24/7"), "spark");
+  const { nextLine } = await import("../../orbital/web/js/core/tv.js");
+  const next = { ...channel, now: { ...channel.now, next: { label: "T7 E17", title: "Homero Smithers", starts: ends } } };
+  assert.equal(nextLine(next, clock), "A continuación · 9:42 p. m. · T7 E17 · Homero Smithers");
+  assert.equal(nextLine(channel, clock), "");
 });

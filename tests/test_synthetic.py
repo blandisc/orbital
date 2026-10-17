@@ -60,7 +60,7 @@ def test_el_horario_es_el_mismo_para_todos_y_revuelve_cada_vuelta():
     assert first == again and sorted(first) == list(range(12))  # siempre el mismo orden y están todos
     assert synthetic.cycle_order(12, CHANNEL.id, 8) != first  # la siguiente vuelta, otro orden
     at = synthetic.EPOCH + 12 * 1000 * 3 + 5 * 1000 + 250  # tercera vuelta, sexto episodio, 250 s adentro
-    assert synthetic.on_air(12, CHANNEL, at) == (3, 5, 250)
+    assert synthetic.on_air([1000] * 12, CHANNEL.id, at) == (3, 5, 250)
     assert synthetic.following(12, 3, 5) == (3, 6) and synthetic.following(12, 3, 11) == (4, 0)
 
 
@@ -92,7 +92,7 @@ def fake_catalog(found: dict[str, list[streams.Source]], infos: dict | None = No
 
 def on_air_now(now: float):
     episodes = synthetic.lineup(info(), CHANNEL.shows[0])
-    cycle, place, offset = synthetic.on_air(len(episodes), CHANNEL, now)
+    cycle, place, offset = synthetic.on_air([CHANNEL.slot] * len(episodes), CHANNEL.id, now)
     order = synthetic.cycle_order(len(episodes), CHANNEL.id, cycle)
     return episodes, cycle, place, offset, order
 
@@ -150,7 +150,7 @@ def test_al_terminar_sigue_el_siguiente_de_la_vuelta_y_si_falla_otra_fuente():
     nxt = episodes[synthetic.cycle_order(len(episodes), CHANNEL.id, nxt_cycle)[nxt_place]]["id"]
     catalog, pl = fake_catalog({here: [source(0, "A-Dual-Lat"), source(1, "B Latino")], nxt: [source(5, "C-Dual-Lat")]})
     tv = synthetic.SyntheticTV(catalog, [CHANNEL], clock=lambda: now)
-    meta = {"channel_id": CHANNEL.id, "cycle": cycle, "place": place, "tried": [0]}
+    meta = {"channel_id": CHANNEL.id, "cycle": cycle, "place": place, "tried": [0], "video_id": here}
     assert tv.failed(meta) is True  # la fuente falló: la otra del mismo episodio
     assert pl.loaded[-1][0] == "http://rd/1" and pl.loaded[-1][2]["tried"] == [0, 1]
     assert tv.failed({**meta, "tried": [0, 1]}) is True  # ya no hay otra: el siguiente episodio
@@ -237,3 +237,49 @@ def test_los_episodios_sin_latino_se_quedan_fuera_del_horario(tmp_path):
     again = synthetic.SyntheticTV(catalog, [CHANNEL], directory=tmp_path)  # se guardó en disco
     assert again.coverage.has("tt1:3:2") is False and not again.coverage.stale("tt1:3:1", synthetic.EPOCH + 20)
     assert again.coverage.stale("tt1:3:2", synthetic.EPOCH + 10 + synthetic.RECHECK_MISSING + 1)  # a la semana, otra vez
+
+
+def test_programacion_corrida_aprende_lo_que_dura_cada_episodio_y_regresa_al_aire(tmp_path, monkeypatch):
+    """Sin huecos: un episodio entra en cuanto acaba el otro, con su duración real. Tras una pausa larga se regresa a lo
+    que va al aire; al terminar, si lo que «va» es lo mismo que acaba de acabar (duraba menos), el siguiente."""
+    assert synthetic.on_air([600, 300, 900], "x", synthetic.EPOCH) [0] == 0
+    lengths = [600.0, 300.0, 900.0]
+    order = synthetic.cycle_order(3, "x", 0)
+    second = lengths[order[0]] + 10  # 10 s dentro del segundo episodio de la vuelta
+    assert synthetic.on_air(lengths, "x", synthetic.EPOCH + second) == (0, 1, 10)
+    now = [synthetic.EPOCH + 5_000.0]
+    episodes = synthetic.lineup(info(), CHANNEL.shows[0])
+    catalog, pl = fake_catalog({e["id"]: [source(0, f"{e['id']} Dual-Lat")] for e in episodes})
+    tv = synthetic.SyntheticTV(catalog, [CHANNEL], clock=lambda: now[0], directory=tmp_path)
+    before = tv.now(CHANNEL)
+    assert before["next"]["starts"] == before["ends"]  # «A continuación» empieza en cuanto acaba
+    cycle, place, offset = tv._on_air(CHANNEL, episodes, now[0])
+    current = tv._at(CHANNEL, episodes, cycle, place)
+    tv.learned({"video_id": current["id"]}, 900.0)  # duraba 15 min, no los 16 2/3 estimados
+    assert tv.coverage.duration(current["id"]) == 900.0 and tv.now(CHANNEL)["ends"] != before["ends"]
+    assert tv.resync({"channel_id": CHANNEL.id, "video_id": "otro"}) is True  # tras la pausa: lo que va, en su minuto
+    url, title, meta, options = pl.loaded[-1]
+    on = tv._at(CHANNEL, episodes, *tv._on_air(CHANNEL, episodes, now[0])[:2])
+    assert meta["video_id"] == on["id"]
+    assert tv.ended({"channel_id": CHANNEL.id, "video_id": on["id"]}) is True  # acabó antes de lo estimado: el siguiente
+    assert pl.loaded[-1][2]["video_id"] != on["id"] and pl.loaded[-1][3]["start"] == 0
+
+
+def test_el_reproductor_regresa_al_aire_tras_una_pausa_larga_y_dice_lo_que_dura():
+    from tests.test_player import make_player
+
+    p, mpv = make_player()
+    resynced, durations = [], []
+    p.on_synthetic_resync = lambda meta: resynced.append(meta) or True
+    p.on_synthetic_duration = lambda meta, seconds: durations.append(seconds)
+    segment = player.Segment({"synthetic": True, "kind": "channel", "detail": "T3 E1"}, "Serie 24/7", "u")
+    segment.duration = 1300.0
+    p._synthetic_tick(segment, 100.0, paused=True)
+    p._synthetic_tick(segment, 130.0, paused=False)  # medio minuto: sigue donde iba
+    p._synthetic_tick(segment, 200.0, paused=True)
+    p._synthetic_tick(segment, 300.0, paused=False)  # más de un minuto: de vuelta al aire
+    for _ in range(50):
+        if resynced:
+            break
+        time.sleep(.02)
+    assert len(resynced) == 1 and durations == [1300.0]

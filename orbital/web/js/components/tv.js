@@ -6,7 +6,7 @@ import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { swipeArea } from "../core/swipe.js";
 import { clock } from "../core/format.js";
 import { sized } from "../core/images.js";
-import { airingLine, ALL, categoriesOf, categoryIcon, channelLabel, channelsIn, emptyState, headMeta, initials, isShaky } from "../core/tv.js";
+import { airingLine, ALL, nextLine, categoriesOf, categoryIcon, channelLabel, channelsIn, emptyState, headMeta, initials, isShaky } from "../core/tv.js";
 import { keepInView, replay } from "./browse.js";
 import { Badge, Chip } from "./ui.js";
 
@@ -152,6 +152,7 @@ export function createTv({ onFocus, onPick }) {
         h("span", { class: "tv__now-eyebrow" }, live ? "Al aire en grande" : "Canal de Orbital · Español latino"),
         h("h2", { class: "tv__now-title" }, channel.name),
         h("span", { class: "tv__now-meta" }, airingLine(channel, clock) || channel.tagline || "Al aire todo el día"),
+        nextLine(channel, clock) && h("span", { class: "tv__now-meta" }, nextLine(channel, clock)),
         h("span", { class: "tv__now-hint" }, live ? "A para volver a él." : "A para prenderlo: entras a media emisión, como en la tele."));
       return;
     }

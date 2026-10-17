@@ -79,6 +79,13 @@ export function airingLine(channel, clock) {
   return [now.series, now.label, now.title, now.ends && `termina a las ${clock(new Date(now.ends * 1000))}`].filter(Boolean).join(" · ");
 }
 
+/** «A continuación · 6:22 p. m. · T7 E17 · Homero Smithers» (la programación es corrida: entra en cuanto acaba). */
+export function nextLine(channel, clock) {
+  const next = channel?.now?.next;
+  if (!next) return "";
+  return ["A continuación", next.starts && clock(new Date(next.starts * 1000)), next.series, next.label, next.title].filter(Boolean).join(" · ");
+}
+
 /** Para el lector de pantalla y el dedo: «12, Azteca 7». */
 export const channelLabel = (channel) => [channel?.number, channel?.name].filter(Boolean).join(", ");
 
