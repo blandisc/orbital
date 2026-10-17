@@ -219,6 +219,15 @@ enum DS {
         static let coverLogo = CGSize(width: 200, height: 60), wideLogo = CGSize(width: 130, height: 34)
     }
 
+    /// Los colores de marca de las calificaciones (IMDb, TMDB, Trakt) para sus logotipos en la ficha.
+    enum RatingBrand {
+        static let imdb = Color(red: 0.96, green: 0.77, blue: 0.09), imdbInk = Color(red: 0, green: 0, blue: 0)
+        static let tmdbStart = Color(red: 0.56, green: 0.81, blue: 0.63), tmdbEnd = Color(red: 0, green: 0.71, blue: 0.89)
+        static let tmdbInk = Color(red: 0.05, green: 0.15, blue: 0.25)
+        static let trakt = Color(red: 0.93, green: 0.11, blue: 0.14)
+        static let markHeight: CGFloat = 18, markRadius: CGFloat = 4
+    }
+
     /// La barra de espacio de Descargas.
     enum Storage {
         static let height: CGFloat = 14, gap: CGFloat = 2, minSegment: CGFloat = 3, dot: CGFloat = 8

@@ -25,30 +25,58 @@ struct QualityBadges: View {
     }
 }
 
-/// IMDb · TMDB · Trakt, cada una en su cápsula. El renglón guarda su alto aunque aún no llegue nada (no brinca).
+/// IMDb · TMDB · Trakt, cada una con el logotipo de su servicio y su calificación. El renglón guarda su alto aunque aún no
+/// llegue nada (no brinca).
 struct RatingsRow: View {
     let imdb: String?
     let tmdb: Double?
     let trakt: Double?
 
     var body: some View {
-        HStack(spacing: DS.Space.s2) {
-            if let imdb, !imdb.isEmpty { pill("IMDb", Text(verbatim: imdb)) }
-            if let tmdb { pill("TMDB", Text(verbatim: "\(Int((tmdb * 10).rounded())) %")) }
-            if let trakt { pill("Trakt", Text(verbatim: "\(Int((trakt * 10).rounded())) %")) }
+        HStack(spacing: DS.Space.s4) {
+            if let imdb, !imdb.isEmpty { rating(RatingMark(service: .imdb), Text(verbatim: imdb)) }
+            if let tmdb { rating(RatingMark(service: .tmdb), Text(verbatim: "\(Int((tmdb * 10).rounded())) %")) }
+            if let trakt { rating(RatingMark(service: .trakt), Text(verbatim: "\(Int((trakt * 10).rounded())) %")) }
             Spacer(minLength: 0)
         }
         .frame(minHeight: DS.Size.touchTarget / 2)
         .accessibilityElement(children: .combine)
     }
 
-    private func pill(_ source: String, _ value: Text) -> some View {
-        HStack(spacing: DS.Space.s1) {
-            Text(verbatim: source).font(DS.TextRecipe.caption.font.weight(.heavy)).foregroundStyle(DS.textMuted)
-            value.font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.text)
+    private func rating(_ mark: RatingMark, _ value: Text) -> some View {
+        HStack(spacing: DS.Space.s2) {
+            mark
+            value.font(DS.TextRecipe.secondary.font.weight(.semibold)).monospacedDigit().foregroundStyle(DS.text)
         }
-        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s1)
-        .background(DS.fill, in: Capsule())
+    }
+}
+
+/// El logotipo de un servicio de calificaciones, dibujado en sus colores de marca (como los muestra Infuse).
+struct RatingMark: View {
+    enum Service { case imdb, tmdb, trakt }
+    let service: Service
+
+    var body: some View {
+        Group {
+            switch service {
+            case .imdb:
+                Text(verbatim: "IMDb").font(DS.TextRecipe.caption.font.weight(.black)).foregroundStyle(DS.RatingBrand.imdbInk)
+                    .padding(.horizontal, DS.Space.s1)
+                    .frame(height: DS.RatingBrand.markHeight)
+                    .background(DS.RatingBrand.imdb, in: RoundedRectangle(cornerRadius: DS.RatingBrand.markRadius))
+            case .tmdb:
+                Text(verbatim: "TMDB").font(DS.TextRecipe.caption.font.weight(.heavy)).foregroundStyle(DS.RatingBrand.tmdbInk)
+                    .padding(.horizontal, DS.Space.s1)
+                    .frame(height: DS.RatingBrand.markHeight)
+                    .background(LinearGradient(colors: [DS.RatingBrand.tmdbStart, DS.RatingBrand.tmdbEnd], startPoint: .leading, endPoint: .trailing),
+                                in: RoundedRectangle(cornerRadius: DS.RatingBrand.markRadius))
+            case .trakt:
+                Image(systemName: "checkmark").font(DS.TextRecipe.caption.font.weight(.heavy)).foregroundStyle(DS.paper)
+                    .frame(width: DS.RatingBrand.markHeight, height: DS.RatingBrand.markHeight)
+                    .background(DS.RatingBrand.trakt, in: Circle())
+            }
+        }
+        .accessibilityLabel(Text(verbatim: service == .imdb ? "IMDb" : service == .tmdb ? "TMDB" : "Trakt"))
     }
 }
 

@@ -136,6 +136,12 @@ public final class ParaTiModel: ObservableModel {
     /// Todo se pide a la vez: el mosaico y los estantes aparecen en cuanto llegan, sin esperar al calendario.
     private func loadFromConsole() async -> Bool {
         let remote = services.forYouRemote, forYou = services.forYou
+        // Mientras contesta la consola, el mosaico de la última vez (guardado en el teléfono) aparece al instante.
+        var showedSaved = false
+        if mosaic.isEmpty {
+            let saved = await forYou.cachedMosaic()
+            if !saved.isEmpty { mosaic = saved; showedSaved = true }
+        }
         async let fetchedLists = try? remote.lists()
         async let fetchedMosaic = try? remote.mosaic()
         // Si la consola no contesta, se cae a la lógica local sin esperar el calendario: este se pide solo si contestó.
@@ -147,7 +153,9 @@ public final class ParaTiModel: ObservableModel {
         traktLinked = newLists.contains { $0.id == "watchlist" || $0.id == "mine" }
         lists = newLists
         shelves = ShelfPlanner.plan(newLists)
-        mosaic = newMosaic
+        // El nuevo se guarda para la próxima vez; si ya se veía el guardado, no se cambia bajo tu dedo («Actualizar» lo trae).
+        await forYou.saveMosaic(newMosaic)
+        if !showedSaved || mosaic.isEmpty { mosaic = newMosaic }
         isGeneric = false
         error = mosaic.isEmpty && lists.isEmpty ? "Tu Orbital no tiene sugerencias todavía." : nil
         async let shelvesLoaded: Void = loadShelves()

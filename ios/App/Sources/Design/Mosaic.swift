@@ -77,10 +77,10 @@ final class MosaicRuntime: ObservableObject {
         serial = 0
         // Cada columna empieza un poco más abajo según su turno: una entrada escalonada, como en la TV.
         columns = (0..<self.columnCount).map { c in MosaicColumn(offset: c % 2 == 1 ? gap * 5 : 0) }
-        focus = MosaicFocus(col: min(focus?.col ?? 0, self.columnCount - 1), row: 0)
+        focus = nil   // empieza sin nada elegido: se recorre libre y se elige tocando
         mode = .focus
         aliveTileID = nil
-        relayoutAndFill(reveal: true)
+        relayoutAndFill()
     }
 
     /// Más sugerencias de las mismas (completar el mosaico con lo de los estantes): entran a la fila sin rearmar nada,
@@ -104,7 +104,7 @@ final class MosaicRuntime: ObservableObject {
         let existing = columns.flatMap(\.tiles)
         columns = (0..<count).map { _ in MosaicColumn() }
         for (i, tile) in existing.enumerated() { columns[i % count].tiles.append(tile) }
-        focus = MosaicFocus(col: min(focus?.col ?? 0, count - 1), row: 0)
+        focus = nil
         relayoutAndFill()
     }
 
@@ -141,13 +141,6 @@ final class MosaicRuntime: ObservableObject {
         commit(force: true)
     }
 
-    /// La pieza de la columna `c` más cerca del centro de lo que se ve.
-    private func centerRow(_ c: Int) -> Int? {
-        guard columns.indices.contains(c), !columns[c].tiles.isEmpty else { return nil }
-        let middle = columns[c].offset + size.height / 2
-        return columns[c].tiles.indices.min { abs(columns[c].tiles[$0].top + columns[c].tiles[$0].height / 2 - middle) < abs(columns[c].tiles[$1].top + columns[c].tiles[$1].height / 2 - middle) }
-    }
-
     /// Si la enfocada ya no se ve (bajaste, o el ambiente la subió), el foco pasa a la del centro de su columna.
     private func refocusIfOffscreen() {
         guard let f = focus, columns.indices.contains(f.col) else { return }
@@ -156,7 +149,8 @@ final class MosaicRuntime: ObservableObject {
             let t = column.tiles[f.row]
             return t.top + t.height > column.offset && t.top < column.offset + size.height
         }()
-        if !visible, let row = centerRow(f.col) { focus = MosaicFocus(col: f.col, row: row) }
+        // Se fue de la vista: queda sin elegir (no se elige sola otra mientras recorres).
+        if !visible { focus = nil; aliveTileID = nil; relayoutAndFill() }
     }
 
     /// La enfocada, entera a la vista (como `reveal()` en la TV).
@@ -190,8 +184,8 @@ final class MosaicRuntime: ObservableObject {
         guard mode == .ambient else { return false }
         mode = .focus
         aliveTileID = nil
-        // Como `wake()` en la TV: se enfoca lo que quedó al centro (no la pieza de antes, que el ambiente ya subió).
-        if let col = focus?.col, let row = centerRow(col) { focus = MosaicFocus(col: col, row: row) }
+        // Al despertar no se elige nada solo (la de antes el ambiente ya la subió): se recorre libre y se elige tocando.
+        focus = nil
         relayoutAndFill()
         return true
     }
@@ -233,7 +227,7 @@ final class MosaicRuntime: ObservableObject {
         pool.remove(imdb: imdb)
         for c in columns.indices { columns[c].tiles.removeAll { $0.item.imdb == imdb } }
         if let focus, let count = columns[safe: focus.col]?.tiles.count, focus.row >= count {
-            self.focus = MosaicFocus(col: focus.col, row: max(0, count - 1))
+            self.focus = nil
         }
         relayoutAndFill()
     }
@@ -365,7 +359,7 @@ struct Mosaic: View {
         range = min(range.lowerBound, column.tiles.count)..<min(range.upperBound, column.tiles.count)
         return MosaicColumnLayer(
             column: c, frame: column.frame, first: range.lowerBound, tiles: Array(column.tiles[range]),
-            focusRow: runtime.focus?.col == c ? runtime.focus?.row : nil, focusMode: runtime.mode == .focus,
+            focusRow: runtime.focus?.col == c ? runtime.focus?.row : nil, focusMode: runtime.mode == .focus && runtime.focus != nil,   // sin nada elegido, nada se oscurece
             aliveID: runtime.aliveTileID, watchlist: watchlistKeys, reduceMotion: reduceMotion,
             onFocus: { col, row in touch(); withAnimation(DS.Motion.spring(reduceMotion)) { runtime.focusTile(col: col, row: row) } },
             onOpen: { onOpen?($0) },
@@ -533,7 +527,8 @@ private struct MosaicTileCell: View {
     /// La TV (y el iPad si se vuelve a pedir): la enfocada crece y lleva su etiqueta, logo y dato encima.
     private var framed: some View {
         ZStack(alignment: .bottomLeading) {
-            PosterView(url: focused || tile.shape == .wide ? tile.item.wide : tile.item.poster, title: tile.item.title, aspect: nil, maxPoints: DS.Image.mosaic)
+            // Elegir no cambia de imagen: bajarla y decodificarla en ese momento trababa el mosaico.
+            PosterView(url: tile.shape == .wide ? tile.item.wide : tile.item.poster, title: tile.item.title, aspect: nil, maxPoints: DS.Image.mosaic)
             if focused { LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom) }
             // Como en la TV: el ícono de serie / película solo en la pieza enfocada (en todas tapaba los logos de las portadas)
             // y sin puesto (el puesto es de su lista, en Listas).

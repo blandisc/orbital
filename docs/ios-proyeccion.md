@@ -112,7 +112,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `PanelRow`, `PanelIcon`, `PanelChip`, `PanelGroupTitle`, `FlowChips`, `SpeedStepper` | El panel «Ajustes del video»: renglones con su valor (ícono del sistema solo en su color, como Ajustes), opciones en cápsula y la velocidad − 1× + | Reproductor (a la derecha en horizontal, hoja ajustada en vertical) |
 | `HandoffToast` | «Pasó a tu Orbital · sigue en 12:34 · Deshacer» | Toda la app, al pasar el video a la TV |
 | `QualityBadges` | Insignias con contorno: 4K · DV · HDR10+ · ATMOS · TRUEHD | Fuentes (ficha y reproductor) |
-| `RatingsRow` | IMDb · TMDB · Trakt en cápsulas (guarda su alto: no brinca) | Ficha |
+| `RatingsRow`, `RatingMark` | IMDb · TMDB · Trakt con el logotipo de cada servicio en sus colores (guarda su alto: no brinca) | Ficha |
 | `PersonPhoto`, `PersonFace` | La cara de alguien (o sus iniciales), con nombre y personaje | Ficha › Reparto y equipo, Persona |
 | `VideoClipCard` | Tráiler o extra de YouTube con ▶ | Ficha |
 | `BrandLogos`, `TmdbPoster` | Dónde verlo; un título de TMDB (saga, «Más como esto», filmografía) que abre su ficha | Ficha, Persona |

@@ -402,6 +402,12 @@ public actor ForYou {
 
     /// El último mosaico, guardado en el teléfono: al abrir la app se pinta al instante mientras llega el nuevo (sin red,
     /// se queda ese). Sin lo que marcaste «No me interesa» desde entonces.
+    /// Guarda un mosaico que llegó de otra fuente (tu Orbital): la próxima vez aparece al instante, como el del iPhone.
+    public func saveMosaic(_ mosaic: [Suggestion]) {
+        guard !mosaic.isEmpty else { return }
+        kv.set(Self.mosaicKey, data: try? JSONEncoder().encode(mosaic.map(SavedSuggestion.init)))
+    }
+
     public func cachedMosaic() -> [Suggestion] {
         guard let data = kv.data(Self.mosaicKey), let saved = try? JSONDecoder().decode([SavedSuggestion].self, from: data) else { return [] }
         return saved.map(\.suggestion).filter { !dismissed.contains($0.imdb) }

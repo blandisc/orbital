@@ -31,21 +31,25 @@ struct ParaTiView: View {
             case .mosaic:
                 Mosaic(items: m.mosaic, watchlistKeys: m.watchlistKeys, demoFocus: demoFocusImdb, onDismiss: { s in Task { await m.dismiss(s) } },
                        onFocusChange: { new in
-                           // En el ambiente no hay foco: el pie se queda con la última pieza (no desaparece «Ver» bajo el dedo
-                           // ni cambia el alto del mosaico cada vez que se mueve solo).
-                           if let new { focused = new; focusedArt = new.wide }
+                           // Sin nada elegido (al abrir, o al pasar de largo) no hay pie; elegir una lo muestra.
+                           focused = new
+                           if let new { focusedArt = new.wide }
                        }, onOpen: { openTitle = $0.route })
-                // La pieza enfocada, contada bajo el mosaico (todas las piezas son del mismo tamaño: su información va aquí).
-                if DS.Mosaic.uniform, let item = focused {
-                    // Como la TV: el motivo tal cual, y una serie sugerida abre su ficha («Ver la serie»), no un episodio al azar.
-                    MosaicCaption(reason: Text(badgeKey(item.reason)), title: item.title, logo: item.logo,
-                                  data: (factStrings(item).first ?? "").components(separatedBy: " · "), accent: tint.colors, isSeries: item.kind == "series",
-                                  watch: { if item.kind == "series" { openTitle = item.route } else { Task { await env.play(item) } } }) {
-                        SuggestionActions(suggestion: item, includeWatch: false) { s in Task { await m.dismiss(s) } }
+                // La pieza elegida, contada sobre el pie del mosaico (flota: el mosaico no cambia de alto al elegir o soltar).
+                .overlay(alignment: .bottom) {
+                    if DS.Mosaic.uniform, let item = focused {
+                        // Como la TV: el motivo tal cual, y una serie sugerida abre su ficha («Ver la serie»), no un episodio al azar.
+                        MosaicCaption(reason: Text(badgeKey(item.reason)), title: item.title, logo: item.logo,
+                                      data: (factStrings(item).first ?? "").components(separatedBy: " · "), accent: tint.colors, isSeries: item.kind == "series",
+                                      watch: { if item.kind == "series" { openTitle = item.route } else { Task { await env.play(item) } } }) {
+                            SuggestionActions(suggestion: item, includeWatch: false) { s in Task { await m.dismiss(s) } }
+                        }
+                        .padding(DS.Space.s4)
+                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+                        .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .id(item.imdb)
                     }
-                    .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .id(item.imdb)
                 }
             case .lists: ListsView(observer: model)
             }
