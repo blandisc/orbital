@@ -19,7 +19,11 @@
       {"say": "sigue viendo", "note": "Lo último que dejaste a medias."},
       {"say": "sigue viendo The Office", "note": "Una serie en particular, donde ibas."},
       {"say": "pon la novela", "note": "Lo que estabas viendo."},
-      {"say": "busca Dune", "note": "Abre la búsqueda con el texto."}
+      {"say": "busca Dune", "note": "Abre la búsqueda con el texto."},
+      {"say": "pon Dune en inglés desde el principio", "note": "El idioma y desde el inicio, en la misma frase."},
+      {"say": "pon el último episodio de The Office", "note": "El más reciente que ya salió."},
+      {"say": "pon algo de terror", "note": "Lo más popular de ese género, para elegir."},
+      {"say": "quiero ver una serie de comedia", "note": "Series o películas, del género que digas."}
     ]},
     {"title": "Mientras ves algo", "icon": "play.rectangle", "commands": [
       {"say": "pausa", "note": "También: ponle pausa."},
@@ -34,19 +38,26 @@
       {"say": "quita los subtítulos", "note": "Sin subtítulos."},
       {"say": "pon el audio en inglés", "note": "Cambia el idioma."},
       {"say": "cuánto le falta", "note": "Lo que queda del video."},
-      {"say": "cierra el video", "note": "Guarda dónde ibas."}
+      {"say": "cierra el video", "note": "Guarda dónde ibas."},
+      {"say": "espera", "note": "Pausa; también: detenlo."},
+      {"say": "ve al minuto 20", "note": "A un punto exacto."},
+      {"say": "empieza desde el principio", "note": "El video desde el inicio."},
+      {"say": "a qué hora termina", "note": "La hora en que acaba."},
+      {"say": "sal del video", "note": "Cierra el video (nunca un juego)."}
     ]},
     {"title": "TV en vivo", "icon": "antenna.radiowaves.left.and.right", "commands": [
       {"say": "pon la tele", "note": "La lista de canales."},
       {"say": "pon el canal ADN 40", "note": "Un canal por su nombre."},
       {"say": "pon Azteca Uno en vivo", "note": "También así."},
       {"say": "siguiente canal", "note": "O canal anterior."},
-      {"say": "canal anterior", "note": "El de antes en la lista."}
+      {"say": "canal anterior", "note": "El de antes en la lista."},
+      {"say": "pon las noticias", "note": "Un canal de noticias."}
     ]},
     {"title": "Para ti", "icon": "sparkles", "commands": [
       {"say": "qué sale hoy", "note": "Los episodios nuevos de las series que sigues (Trakt)."},
       {"say": "qué me recomiendas", "note": "Tres sugerencias, y Para ti en pantalla."},
-      {"say": "ve a Para ti", "note": "Abre la sección."}
+      {"say": "ve a Para ti", "note": "Abre la sección."},
+      {"say": "qué hay de nuevo", "note": "Los estrenos de las series que sigues."}
     ]},
     {"title": "Consola", "icon": "tv", "commands": [
       {"say": "sube el volumen", "note": "O bájale, súbele tantito."},
@@ -57,7 +68,8 @@
       {"say": "ve atrás", "note": "Como el botón Atrás."},
       {"say": "toma una captura", "note": "Una foto de la pantalla."},
       {"say": "abre Steam", "note": "Steam en modo tele."},
-      {"say": "sal al escritorio", "note": "Y abre la consola para volver."}
+      {"say": "sal al escritorio", "note": "Y abre la consola para volver."},
+      {"say": "volumen 40", "note": "También: más volumen, menos volumen."}
     ]}
   ]
 }

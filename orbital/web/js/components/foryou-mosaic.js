@@ -1,5 +1,5 @@
 import { h, svg } from "../core/dom.js";
-import { factLine, iconName, nearestTile, nextUnseen, posterRatio, shapeOf } from "../core/foryou.js";
+import { brandParts, factLine, iconName, nearestTile, nextUnseen, posterRatio, shapeOf } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { Badge } from "./ui.js";
 import { dragArea, hoverArea } from "../core/swipe.js";
@@ -94,7 +94,9 @@ export function createForYouMosaic({ onFocus, onPick }) {
       poster, wide, capsule,
       h("span", { class: "foryou-mosaic__kind", "aria-hidden": "true" }, svg(ICONS[iconName(item)] || ICONS.apps)),
       h("div", { class: "foryou-mosaic__info" },
-        item.why && Badge(item.why, { large: true }), logo,
+        // Un solo renglón de texto (la insignia es flex: con pedazos sueltos se perdía el espacio, «enNetflix»).
+        item.why && Badge(h("span", {}, brandParts(item.why).map((p) => (p.brand ? h("span", { class: ["brand-name", `brand-name--${p.brand}`] }, p.text) : p.text))),
+          { large: true }), logo,
         h("span", { class: "foryou-mosaic__fact" }, factLine(item))));
     return { item, node, logo, top: 0, h: 0 };
   }
