@@ -160,7 +160,7 @@ struct MainTabs: View {
         #if DEBUG
         guard Demo.isOn else { return }
         tab = Demo.tab
-        if Demo.open == "settings" { paths[tab].append(SettingsRoute()) }
+        if Demo.open == "settings" || Demo.open == "year" { paths[tab].append(SettingsRoute()) }
         if let title = Demo.title { paths[tab].append(TitleRoute(kind: title.kind, metaID: title.id, title: "", poster: nil)) }
         #endif
     }

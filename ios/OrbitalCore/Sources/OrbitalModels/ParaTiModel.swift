@@ -6,6 +6,12 @@ import OrbitalCore
 /// Con tu Orbital conectada, la curaduría se calcula una vez allá y aquí solo se enseña (mismas listas y
 /// caché que la TV, por `RemoteForYou`); sin ella, o si no contesta, se calcula aquí mismo con `ForYou` local
 /// (lo de siempre, sin aviso de error: la persona ni se entera de que falló el salto a la consola).
+/// El porqué en un póster: sale pronto (ese día) o su puesto en una plataforma.
+public enum PosterBadge: Sendable, Equatable {
+    case airs(Date)
+    case rank(Int, platform: String)
+}
+
 @MainActor
 public final class ParaTiModel: ObservableModel {
     public enum Mode: Equatable { case mosaic, lists }
@@ -41,6 +47,10 @@ public final class ParaTiModel: ObservableModel {
     /// Los episodios que salen de las series que sigues (Trakt), hoy y los próximos 14 días.
     public private(set) var airings: [Airing] = [] { didSet { changed() } }
     public var calendarLayout: CalendarLayout = .byDay { didSet { changed() } }
+    /// «Porque viste X»: lo último que viste y lo que Trakt relaciona con él (nil sin Trakt o sin relacionados).
+    public private(set) var because: (seed: TraktEntry, items: [Suggestion])? { didSet { changed() } }
+    /// El porqué de cada título en un póster (lo más fuerte: que sale pronto, o su puesto en una plataforma), por IMDb.
+    public private(set) var badges: [String: PosterBadge] = [:] { didSet { if oldValue != badges { changed() } } }
     /// Cuántos días cubre `airings` desde hoy: crece de dos en dos semanas al deslizar la tira hasta el final.
     public private(set) var airingDays = ForYou.calendarDays { didSet { changed() } }
     /// Hasta dónde se puede deslizar la tira (Trakt contesta hasta 31 días por pedido; más allá casi no hay fechas).
@@ -147,6 +157,7 @@ public final class ParaTiModel: ObservableModel {
         // Si la consola no contesta, se cae a la lógica local sin esperar el calendario: este se pide solo si contestó.
         guard let newLists = await fetchedLists, let newMosaic = await fetchedMosaic else { return false }
         async let fetchedKeys = try? remote.watchlistKeys()
+        async let fetchedBecause = forYou.becauseYouWatched()
         async let fetchedAirings = try? forYou.calendar()   // el calendario sale de tu Trakt (la consola trae la lista «estrenos», que aquí no se pinta como estante)
         if source != .console { railItems = [:] }   // venía del iPhone: los estantes de la otra fuente no se mezclan
         source = .console
@@ -165,6 +176,8 @@ public final class ParaTiModel: ObservableModel {
             services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno» también con la consola
         }
         await shelvesLoaded
+        because = await fetchedBecause
+        rebuildBadges()
         await topUpMosaic()
         return true
     }
@@ -177,6 +190,7 @@ public final class ParaTiModel: ObservableModel {
         async let newLists = forYou.lists()
         async let keys = forYou.watchlistKeys()
         async let newAirings = try? forYou.calendar()
+        async let newBecause = forYou.becauseYouWatched()
         async let newMosaic = forYou.mosaic()
         // Al abrir la app, el de la última vez (guardado en el teléfono): el mosaico aparece al instante. El nuevo no lo
         // reemplaza en ese momento (lo movería bajo tu dedo): queda guardado para la próxima vez; «Actualizar» lo trae ya.
@@ -200,6 +214,8 @@ public final class ParaTiModel: ObservableModel {
             services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno»
         }
         await shelvesLoaded
+        because = await newBecause
+        rebuildBadges()
         // El aviso, solo si de verdad no hay nada que enseñar (las listas con puesto existen siempre, pero sin red llegan vacías).
         if mosaic.isEmpty && shelves.allSatisfy({ items(for: $0).isEmpty }) { error = services.appSettings.traktEnabled ? nil : "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias." }
         else { error = nil }
@@ -228,10 +244,23 @@ public final class ParaTiModel: ObservableModel {
         airingDays += more
     }
 
+    /// Una etiqueta por título: que sale pronto (calendario) gana a su puesto en una plataforma (Top 10 de Netflix, JustWatch).
+    func rebuildBadges() {
+        var out: [String: PosterBadge] = [:]
+        for shelf in shelves where shelf.style == .top10 {
+            let platform = Self.platformName(shelf.list)
+            for item in items(for: shelf) { if let rank = item.rank, out[item.imdb] == nil { out[item.imdb] = .rank(rank, platform: platform) } }
+        }
+        let horizon = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
+        for airing in airings where airing.day < horizon { out[airing.series.imdb] = .airs(airing.day) }
+        badges = out
+    }
+
     /// «Series · Películas»: solo cambia los estantes con `split`; el resto sigue igual.
     public func setKind(_ kind: String) async {
         self.kind = ["movie", "series"].contains(kind) ? kind : "all"
         await loadShelves()
+        rebuildBadges()
     }
 
     public func key(_ list: ForYouList) -> String { key(listID: list.id, splits: list.splitsKinds) }

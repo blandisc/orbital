@@ -89,6 +89,28 @@
         }
       }
     },
+    "%lld días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days"
+          }
+        }
+      }
+    },
+    "%lld días con algo visto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld days with something watched"
+          }
+        }
+      }
+    },
     "%lld episodio": {
       "extractionState": "manual",
       "localizations": {
@@ -122,6 +144,17 @@
         }
       }
     },
+    "%lld películas · %lld episodios": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld movies · %lld episodes"
+          }
+        }
+      }
+    },
     "%lld por terminar": {
       "extractionState": "manual",
       "localizations": {
@@ -140,6 +173,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld seasons"
+          }
+        }
+      }
+    },
+    "1 h": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 h"
+          }
+        }
+      }
+    },
+    "2 h o más": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2 h or more"
+          }
+        }
+      }
+    },
+    "30 min": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 min"
           }
         }
       }
@@ -738,6 +804,17 @@
         }
       }
     },
+    "Cambiar lo que quiero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change what I want"
+          }
+        }
+      }
+    },
     "Canal anterior": {
       "extractionState": "manual",
       "localizations": {
@@ -998,6 +1075,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "With your Orbital connected, “Watch on TV” plays what you're watching here on the console, right where you were, and your Trakt and For You keys come from it."
+          }
+        }
+      }
+    },
+    "Conecta Trakt (en tu Orbital o en Ajustes) para ver tu año.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Trakt (on your Orbital or in Settings) to see your year."
           }
         }
       }
@@ -1398,6 +1486,17 @@
         }
       }
     },
+    "De lo último que viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From what you watched lately"
+          }
+        }
+      }
+    },
     "De todos los tiempos": {
       "extractionState": "manual",
       "localizations": {
@@ -1416,6 +1515,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "From your Orbital"
+          }
+        }
+      }
+    },
+    "Decide por mí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decide for me"
           }
         }
       }
@@ -1750,6 +1860,17 @@
         }
       }
     },
+    "Día por día": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Day by day"
+          }
+        }
+      }
+    },
     "Dónde hablarle": {
       "extractionState": "manual",
       "localizations": {
@@ -1999,6 +2120,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "On the TV: Settings › Accounts › iPhone"
+          }
+        }
+      }
+    },
+    "En pareja": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As a couple"
           }
         }
       }
@@ -2487,6 +2619,17 @@
         }
       }
     },
+    "Hoy no": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not today"
+          }
+        }
+      }
+    },
     "Identificador de la aplicación (client id)": {
       "extractionState": "manual",
       "localizations": {
@@ -2597,6 +2740,17 @@
         }
       }
     },
+    "Intenso": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intense"
+          }
+        }
+      }
+    },
     "JustWatch · hoy": {
       "extractionState": "manual",
       "localizations": {
@@ -2663,6 +2817,17 @@
         }
       }
     },
+    "Las dos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Both"
+          }
+        }
+      }
+    },
     "Las frases de abajo funcionan igual en los tres.": {
       "extractionState": "manual",
       "localizations": {
@@ -2714,6 +2879,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ free"
+          }
+        }
+      }
+    },
+    "Ligero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
           }
         }
       }
@@ -2916,6 +3092,17 @@
         }
       }
     },
+    "Lo que más viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you watched most"
+          }
+        }
+      }
+    },
     "Lo que puedes decir": {
       "extractionState": "manual",
       "localizations": {
@@ -2934,6 +3121,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What is coming out from the shows you follow"
+          }
+        }
+      }
+    },
+    "Lo que viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you watched"
           }
         }
       }
@@ -3253,6 +3451,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't find anything with that name."
+          }
+        }
+      }
+    },
+    "No encontré otra con eso: prueba otro ánimo o más tiempo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find another one: try another mood or more time."
           }
         }
       }
@@ -3686,6 +3895,17 @@
         }
       }
     },
+    "Otra": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another"
+          }
+        }
+      }
+    },
     "Otra fuente": {
       "extractionState": "manual",
       "localizations": {
@@ -3770,6 +3990,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To connect Trakt you need a Trakt API application (trakt.tv/oauth/applications). Paste its identifier here."
+          }
+        }
+      }
+    },
+    "Para pensar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thought-provoking"
           }
         }
       }
@@ -4027,6 +4258,17 @@
         }
       }
     },
+    "Porque viste %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Because you watched %@"
+          }
+        }
+      }
+    },
     "Preguntándole a tu Orbital…": {
       "extractionState": "manual",
       "localizations": {
@@ -4122,6 +4364,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ min left"
+          }
+        }
+      }
+    },
+    "Quiero algo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I want something"
           }
         }
       }
@@ -4357,6 +4610,17 @@
         }
       }
     },
+    "Sale el %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Out %@"
+          }
+        }
+      }
+    },
     "Sale hoy": {
       "extractionState": "manual",
       "localizations": {
@@ -4375,6 +4639,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Out today: %@"
+          }
+        }
+      }
+    },
+    "Sale mañana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Out tomorrow"
           }
         }
       }
@@ -5094,6 +5369,17 @@
         }
       }
     },
+    "Tengo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I have"
+          }
+        }
+      }
+    },
     "Terminar la orden": {
       "extractionState": "manual",
       "localizations": {
@@ -5336,6 +5622,17 @@
         }
       }
     },
+    "Tu %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your %@"
+          }
+        }
+      }
+    },
     "Tu Orbital": {
       "extractionState": "manual",
       "localizations": {
@@ -5420,6 +5717,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your avatar"
+          }
+        }
+      }
+    },
+    "Tu año": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your year"
           }
         }
       }
@@ -5552,6 +5860,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Title not found"
+          }
+        }
+      }
+    },
+    "Una sola, de tus sugerencias, que no hayas visto.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Just one, from your suggestions, that you haven't seen."
           }
         }
       }
@@ -5842,6 +6161,17 @@
         }
       }
     },
+    "racha más larga": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "longest streak"
+          }
+        }
+      }
+    },
     "termina a las %@": {
       "extractionState": "manual",
       "localizations": {
@@ -5849,6 +6179,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "ends at %@"
+          }
+        }
+      }
+    },
+    "tu género": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "your genre"
+          }
+        }
+      }
+    },
+    "vistas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "watched"
           }
         }
       }
@@ -5904,6 +6256,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What should I tell Orbital?"
+          }
+        }
+      }
+    },
+    "¿Qué vemos?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What should we watch?"
           }
         }
       }

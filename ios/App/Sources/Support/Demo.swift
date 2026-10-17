@@ -369,5 +369,32 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         ]
         return HTTPResponse(status: 200, data: JSON.object(["streams": .array(streams)]).serialized())
     }
+
+    /// «Tu año» con un historial inventado (siempre el mismo): unas noches de serie, unas de película, rachas.
+    static var demoYear: YearInReview {
+        let cal = Calendar.current, now = Date()
+        let start = cal.date(from: cal.dateComponents([.year], from: now)) ?? now
+        let days = cal.dateComponents([.day], from: start, to: now).day ?? 0
+        let shows = [("tt0903747", "Breaking Bad"), ("tt5180504", "The Witcher"), ("tt11280740", "Severance")]
+        let movies = [("tt15239678", "Dune: Part Two", ["science-fiction", "adventure"]), ("tt6710474", "Everything Everywhere All at Once", ["science-fiction", "comedy"]),
+                      ("tt1160419", "Dune", ["science-fiction", "drama"])]
+        var plays: [TraktPlay] = []
+        for d in 0...max(days, 0) {
+            let seed = (d * 7919) % 23
+            guard let day = cal.date(byAdding: .day, value: d, to: start), seed < 13 else { continue }
+            if seed % 3 != 0 {
+                let show = shows[(d / 9) % shows.count]
+                for e in 0..<(1 + seed % 3) { plays.append(TraktPlay(at: day.addingTimeInterval(Double(e) * 3600), kind: "series", imdb: show.0, title: show.1, minutes: 50, genres: ["drama"])) }
+            }
+            if seed % 4 == 0 {
+                let movie = movies[(d / 5) % movies.count]
+                plays.append(TraktPlay(at: day.addingTimeInterval(7200), kind: "movie", imdb: movie.0, title: movie.1, minutes: 140, genres: movie.2))
+            }
+        }
+        return YearInReview.make(plays, year: cal.component(.year, from: now), calendar: cal)
+    }
+}
+extension Demo {
+    static var yearInReview: YearInReview { DemoHTTPClient.demoYear }
 }
 #endif

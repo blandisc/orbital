@@ -13,6 +13,8 @@ struct ParaTiView: View {
     @State private var focused: Suggestion?
     /// Una ficha abierta desde la franja del mosaico («Ver la serie»).
     @State private var openTitle: TitleRoute?
+    /// «Decide por mí» abierto.
+    @State private var deciding = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -61,6 +63,10 @@ struct ParaTiView: View {
         // De dónde salió lo que ves, en el mismo lugar que «Stremio al día» en Inicio (no un chip y un pie sueltos).
         .subtitle(sourceText(m))
         .toolbar {
+            // «Decide por mí»: una sola propuesta, por tiempo y ánimo.
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { deciding = true } label: { Image(systemName: "dice") }.accessibilityLabel(Text("Decide por mí"))
+            }
             // Un solo selector en la pantalla (Todo · Series · Películas, en Listas): mosaico ↔ listas es este botón.
             ToolbarItem(placement: .topBarTrailing) {
                 Button { m.mode = m.mode == .mosaic ? .lists : .mosaic } label: {
@@ -86,11 +92,16 @@ struct ParaTiView: View {
         .task {
             #if DEBUG
             if Demo.isOn, Demo.open == "lists" || Demo.mode == "lists" { m.mode = .lists }
+            if Demo.isOn, Demo.open == "decide" { Task { try? await Task.sleep(for: .seconds(4)); deciding = true } }   // cuando ya cargó lo que se sugiere
             if let start = Demo.startMode { m.mode = start == "lists" ? .lists : .mosaic }
             #endif
             await m.load()
         }
         .refreshable { await m.refresh() }
+        .sheet(isPresented: $deciding) {
+            DecideView(pool: (m.because?.items ?? []) + m.mosaic + m.visibleShelves.flatMap { m.items(for: $0) }) { openTitle = $0 }
+                .fittedSheet().presentationDragIndicator(.visible)
+        }
         .animation(DS.Motion.base(reduceMotion), value: m.mode)
         .animation(DS.Motion.base(reduceMotion), value: focused?.imdb)
     }
@@ -135,6 +146,8 @@ struct ShelfPoster: View {
     let suggestion: Suggestion
     let style: ShelfPlan.Style
     let inList: Bool
+    /// El porqué en el póster («Sale el viernes», «N.º 3 en Netflix»), si lo hay.
+    var badge: PosterBadge? = nil
     let onDismiss: (Suggestion) -> Void
     @State private var taps = 0
 
@@ -143,13 +156,25 @@ struct ShelfPoster: View {
             if style == .top10, let rank = suggestion.rank {
                 NavigationLink(value: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster, movement: suggestion.movement, isNew: suggestion.isNew).titleZoomSource(suggestion.route) }.buttonStyle(.plain)
             } else {
-                TitleLink(route: suggestion.route, bookmarked: inList, rank: style == .platform ? suggestion.rank : nil,
+                TitleLink(route: suggestion.route, badge: badge.map(badgeText), bookmarked: inList, rank: style == .platform ? suggestion.rank : nil,
                           detail: yearAndKind(year: suggestion.year.map(String.init) ?? "", kind: suggestion.kind))
             }
         }
         .simultaneousGesture(TapGesture().onEnded { taps += 1 })
         .sensoryFeedback(.impact(flexibility: .soft), trigger: taps)
         .contextMenu { SuggestionActions(suggestion: suggestion, onDismiss: onDismiss) }
+    }
+}
+
+/// «Sale hoy», «Sale mañana», «Sale el viernes» o «N.º 3 en Netflix».
+@MainActor func badgeText(_ badge: PosterBadge) -> LocalizedStringKey {
+    switch badge {
+    case .rank(let n, let platform): return "N.º \(n) en \(platform)"
+    case .airs(let day):
+        if Calendar.current.isDateInToday(day) { return "Sale hoy" }
+        if Calendar.current.isDateInTomorrow(day) { return "Sale mañana" }
+        let weekday = day.formatted(.dateTime.weekday(.wide).locale(AppEnvironment.shared.uiLocale))
+        return "Sale el \(weekday)"
     }
 }
 
@@ -246,6 +271,14 @@ struct ListsView: View {
                         ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
                     }
                 }
+                // «Porque viste X»: lo que Trakt relaciona con lo último que viste.
+                if let because = model.because {
+                    Shelf(title: Text("Porque viste \(because.seed.title)"), meta: Text("De lo último que viste")) {
+                        ForEach(because.items) { s in
+                            ShelfPoster(suggestion: s, style: .plain, inList: model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb]) { dismissed in Task { await model.dismiss(dismissed) } }
+                        }
+                    }
+                }
                 // Las plataformas viven en «Tus plataformas» (arriba): aquí, lo demás.
                 ForEach(model.visibleShelves.filter { $0.list.group != .platforms }) { plan in shelf(plan).id(plan.id) }
                 if model.needsSources { sourcesFallback }
@@ -288,7 +321,7 @@ struct ListsView: View {
         return Shelf(title: shelfTitle(plan), meta: shelfMeta(plan),
                      route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty) {
             ForEach(items) { s in
-                ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb)) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Tu watchlist» todo está ahí: el marcador sobra
+                ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb]) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Tu watchlist» todo está ahí: el marcador sobra
             }
         }
     }

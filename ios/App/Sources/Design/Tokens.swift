@@ -217,6 +217,8 @@ enum DS {
     /// La dirección «Editorial» (A + una portada): espacio entre secciones, la portada y la pieza panorámica.
     enum Editorial {
         static let sectionGap: CGFloat = 36, coverHeight: CGFloat = 200, wideWidth: CGFloat = 250, veilStart: CGFloat = 0.35
+        /// La propuesta grande de «Decide por mí».
+        static let decideHeight: CGFloat = 320
         /// Hasta dónde crece el logo en la portada y en la pieza panorámica.
         static let coverLogo = CGSize(width: 200, height: 60), wideLogo = CGSize(width: 130, height: 34)
     }
@@ -232,6 +234,12 @@ enum DS {
 
     /// «Lo que puedes decir»: el globo con la frase para empezar toma un poco del color de su lugar.
     enum VoiceGuide { static let starterFill = 0.18 }
+
+    /// «Tu año»: el mapa de calor (una columna por semana) y sus colores.
+    enum YearMap {
+        static let cell: CGFloat = 9, gap: CGFloat = 3, radius: CGFloat = 2
+        static let movies = Color(red: 0.24, green: 0.44, blue: 0.85), series = Color(red: 0.42, green: 0.29, blue: 0.77), both = Color(red: 0.69, green: 0.29, blue: 0.84)
+    }
 
     /// La barra de espacio de Descargas.
     enum Storage {
@@ -326,6 +334,8 @@ enum DS {
 
     /// Medidas fijas.
     enum Size {
+        /// Lo más que se encoge un número de «Tu año» para caber en su tarjeta.
+        static let statScale: CGFloat = 0.6
         /// Cuánto hay que bajar para que el título grande se encoja (y el de Inicio diga otra cosa).
         static let titleCollapse: CGFloat = 8
         static let touchTarget = CGFloat(DesignTokens.Size.touchTarget), thumbSmall = CGFloat(DesignTokens.Size.thumbSmall)

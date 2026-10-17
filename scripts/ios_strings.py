@@ -19,6 +19,16 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Cambiar lo que quiero": "Change what I want", "Conecta Trakt (en tu Orbital o en Ajustes) para ver tu año.": "Connect Trakt (on your Orbital or in Settings) to see your year.",
+    "De lo último que viste": "From what you watched lately", "Decide por mí": "Decide for me", "Día por día": "Day by day", "En pareja": "As a couple",
+    "Hoy no": "Not today", "Las dos": "Both", "Lo que más viste": "What you watched most", "Lo que viste": "What you watched",
+    "No encontré otra con eso: prueba otro ánimo o más tiempo.": "I couldn't find another one: try another mood or more time.",
+    "Otra": "Another", "Para pensar": "Thought-provoking", "Porque viste %@": "Because you watched %@", "Quiero algo": "I want something",
+    "Sale el %@": "Out %@", "Sale mañana": "Out tomorrow", "Sale hoy": "Out today", "Tu %@": "Your %@", "Tu año": "Your year",
+    "Una sola, de tus sugerencias, que no hayas visto.": "Just one, from your suggestions, that you haven't seen.", "¿Qué vemos?": "What should we watch?",
+    "Tengo": "I have", "30 min": "30 min", "1 h": "1 h", "2 h o más": "2 h or more", "Ligero": "Light", "Intenso": "Intense",
+    "vistas": "watched", "racha más larga": "longest streak", "tu género": "your genre", "%lld días": "%lld days",
+    "%lld películas · %lld episodios": "%lld movies · %lld episodes", "%lld días con algo visto": "%lld days with something watched",
     "Tendencia": "Trending", "Top 10": "Top 10",
     "Hola": "Hi", "Hola, %@": "Hi, %@", "Cómo te llamamos": "What we call you", "Tu nombre": "Your name",
     "Actualiza tu Orbital para cambiar el volumen desde aquí.": "Update your Orbital to change the volume from here.",

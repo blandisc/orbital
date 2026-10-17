@@ -14,6 +14,7 @@ struct SettingsView: View {
     @State private var confirmSignOut = false
     @State private var orbitalToken = ""
     @State private var editingAvatar = false
+    @State private var showsYear = false
 
     init() {
         let services = AppEnvironment.shared.services
@@ -27,6 +28,11 @@ struct SettingsView: View {
         Form {
             Section {
                 ProfileCard(avatar: s.avatar, title: s.displayName.isEmpty ? Text("Tu perfil") : Text(verbatim: s.displayName), detail: connections(model)) { editingAvatar = true }
+                // Tu año: lo que viste, del historial de Trakt.
+                Button { showsYear = true } label: {
+                    SettingsRow(title: "Tu año", symbol: "calendar", tint: DS.ListTint.calendar, value: Text("Lo que viste"))
+                }
+                .buttonStyle(.plain)
             }
             .listRowBackground(DS.surface)
             // Lo tuyo: cómo se ve y cómo se reproduce.
@@ -100,7 +106,8 @@ struct SettingsView: View {
         }
         .task { await model.loadTraktName(); await session.model.loadAddons() }
         #if DEBUG
-        .task { if Demo.isOn, Demo.open == "settings-avatar" { editingAvatar = true } }
+        .navigationDestination(isPresented: $showsYear) { YearView() }
+        .task { if Demo.isOn, Demo.open == "settings-avatar" { editingAvatar = true }; if Demo.isOn, Demo.open == "year" { showsYear = true } }
         #endif
     }
 
