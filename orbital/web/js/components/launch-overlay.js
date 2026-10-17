@@ -1,4 +1,4 @@
-import { cssUrl, h, hideAfterExit, mount } from "../core/dom.js";
+import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { KeyHint } from "./ui.js";
 
 const HOLD_MS = 26_000; // con pantalla de carga: el servidor avisa antes (25 s como máximo)
@@ -27,11 +27,18 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
   // El satélite gira con transformaciones (las dibuja la GPU): con offset-path lo animaba el hilo principal y, mientras
   // Orbital abría el juego, se trababa. Una pista cuadrada aplastada a la forma de la elipse gira, y el satélite gira al
   // revés y se «desaplasta» para seguir redondo.
-  const satellite = () => h("span", { class: "launch__track" }, h("span", { class: "launch__spinner" }, h("span", { class: "launch__satellite" })));
-  const orbit = h("div", { class: "launch__orbit", "aria-hidden": "true" }, satellite());
+  // La estela: dos puntos más chicos y tenues que van detrás del satélite (cada uno con su retraso), como un cometa.
+  const TRAIL = { 1: ["launch__spinner--trail-1", "launch__satellite--trail-1"], 2: ["launch__spinner--trail-2", "launch__satellite--trail-2"] };
+  const spinner = (trail) => h("span", { class: ["launch__spinner", TRAIL[trail]?.[0]] },
+    h("span", { class: ["launch__satellite", TRAIL[trail]?.[1]] }));
+  const satellite = () => h("span", { class: "launch__track" }, spinner(2), spinner(1), spinner(0));
+  // El anillo es un trazo (no un borde): se dibuja solo al entrar y su grosor no cambia con la forma de la elipse.
+  const ring = () => svg('<svg class="launch__ring" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
+    + '<ellipse cx="50" cy="50" rx="49.2" ry="48" pathLength="100"/></svg>');
+  const orbit = h("div", { class: "launch__orbit", "aria-hidden": "true" }, ring(), satellite());
   // El arco de enfrente lleva su propio satélite, al compás del de atrás: así el punto también cruza
   // por delante de la portada (antes siempre pasaba por detrás).
-  const front = h("div", { class: "launch__orbit launch__orbit--front", "aria-hidden": "true" }, satellite());
+  const front = h("div", { class: "launch__orbit launch__orbit--front", "aria-hidden": "true" }, ring(), satellite());
   const label = h("div", { class: "launch__label" }, "Abriendo");
   const title = h("div", { class: "launch__title" });
   const subtitle = h("div", { class: "launch__subtitle" });

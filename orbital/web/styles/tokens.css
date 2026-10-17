@@ -113,6 +113,8 @@
   --duration-launch-reveal: 700ms;
   --duration-launch-out: 420ms;
   --duration-launch-drift: 26s; /* el arte del juego avanza despacio mientras carga */
+  --duration-launch-draw: 1.1s; /* la órbita se dibuja al entrar */
+  --duration-launch-trail: 90ms; /* cada punto de la estela del satélite, detrás del anterior */
   /* Escalonado: cada pieza entra un poco después que la anterior */
   --stagger: 45ms;
   --delay-1: 90ms;
