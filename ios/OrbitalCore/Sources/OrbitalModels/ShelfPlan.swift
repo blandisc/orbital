@@ -4,9 +4,10 @@ import OrbitalCore
 /// Un estante de «Para ti › Listas»: qué lista(s) de la consola pinta y cómo se ve. Sin SwiftUI, para poder probarlo.
 public struct ShelfPlan: Identifiable, Hashable, Sendable {
     public enum Style: Sendable, Hashable {
-        /// Top 10 de Netflix: cifra enorme a la izquierda de cada póster (`chart:*`).
+        /// Una lista con puesto (Top 10 de Netflix `chart:*`, tendencias de JustWatch `jw:*`): cifra enorme a la izquierda de
+        /// cada póster, como `RankedCard` en la TV.
         case top10
-        /// Lo más visto de una plataforma (`jw:*`, respaldo TMDB): puesto discreto sobre el póster.
+        /// Lo popular de una plataforma sin puesto (respaldo de TMDB).
         case platform
         /// Lo tuyo, tendencias, catálogos de complementos.
         case plain
@@ -18,6 +19,8 @@ public struct ShelfPlan: Identifiable, Hashable, Sendable {
     /// Los ids de las listas que alimentan al estante (una por estante, como en la TV).
     public var listIDs: [String]
     public var style: Style
+    /// El respaldo de TMDB de una marca que también tiene lista con puesto: solo se ve si esa lista llega vacía.
+    public var isFallback = false
     public var title: String { list.title }
     public var splitsKinds: Bool { list.splitsKinds }
 
@@ -38,16 +41,20 @@ public enum ShelfPlanner {
         for (_, list) in lists.enumerated().sorted(by: { (rank($0.element), $0.offset) < (rank($1.element), $1.offset) }) {
             guard !skipped.contains(list.id) else { continue }
             let style: ShelfPlan.Style
-            if list.id.hasPrefix("chart:") { style = .top10 }
+            var fallback = false
+            if list.id.hasPrefix("chart:") || list.id.hasPrefix("jw:") { style = .top10 }
             else if list.group == .platforms {
-                // El respaldo de TMDB solo si no hay Top 10 ni JustWatch de esa marca.
-                if !list.id.hasPrefix("jw:"), let brand = list.brand, chartBrands.contains(brand) { continue }
+                // El respaldo de TMDB de una marca con Top 10 o JustWatch entra, pero solo se ve si esa lista llega vacía
+                // (la consola lo manda justo cuando JustWatch no trajo nada).
+                if let brand = list.brand, chartBrands.contains(brand) { fallback = true }
                 style = .platform
             } else {
                 guard list.group != .platforms, list.brand == nil || list.group == .mine else { continue }
                 style = .plain
             }
-            out.append(ShelfPlan(id: list.id, list: list, listIDs: [list.id], style: style))
+            var plan = ShelfPlan(id: list.id, list: list, listIDs: [list.id], style: style)
+            plan.isFallback = fallback
+            out.append(plan)
         }
         return out
     }

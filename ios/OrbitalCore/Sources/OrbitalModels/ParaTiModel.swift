@@ -53,7 +53,12 @@ public final class ParaTiModel: ObservableModel {
     public var platformLists: [ForYouList] { lists.filter { $0.group == .platforms } }
 
     /// Los estantes que se pintan: con algo dentro, o todavía cargando (con esqueleto). Vacío o fallido: no se pinta.
-    public var visibleShelves: [ShelfPlan] { shelves.filter { isLoading(shelf: $0) || !items(for: $0).isEmpty } }
+    public var visibleShelves: [ShelfPlan] {
+        let shown = shelves.filter { isLoading(shelf: $0) || !items(for: $0).isEmpty }
+        // El respaldo de una marca se esconde si su lista con puesto sí trajo algo (o aún carga): la misma plataforma, una vez.
+        let covered = Set(shown.filter { !$0.isFallback && $0.style == .top10 }.compactMap(\.list.brand))
+        return shown.filter { !$0.isFallback || !covered.contains($0.list.brand ?? "") }
+    }
     /// Ninguna fuente dio estantes: el feed cae a lo popular de Stremio y a la invitación a conectar fuentes.
     public var feedIsEmpty: Bool { !isLoading && visibleShelves.isEmpty }
     /// Mostrar «Conecta Trakt o tu Orbital»: no hay ninguna fuente tuya (solo lo popular de Stremio).
