@@ -27,6 +27,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import __version__, companion
+from . import quick as system_audio
 from .api import diagnostics, foryou, library, live, media, play, quick, tv, ui, update
 from .api.deps import Deps
 from .api.live import SseHub, VoiceRequest
@@ -122,6 +123,9 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             catalog.scanning = not catalog.load_snapshot()  # antes de que la interfaz pregunte
             catalog.tv.start()  # revisa los canales de TV con calma (y cada ~6 h)
             catalog.foryou.warm()  # Para ti listo antes de que la TV o el iPhone lo pidan
+            # Un solo volumen: el reproductor mueve el de Windows (el de Ajustes rápidos y Alexa). Solo aquí, en la Orbital de
+            # verdad: en pruebas movería el volumen real de la computadora.
+            catalog.watch.player.system_volume = (system_audio.volume, system_audio.set_volume)
             threading.Thread(target=scan, daemon=True, name="first-scan").start()
         else:
             await run_in_threadpool(catalog.refresh)
@@ -415,15 +419,18 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     async def voice_command(body: VoiceRequest) -> dict:
         return await main_app.state.run_voice(body, remote=True)
 
+    def saw_phone() -> None:
+        """Para Ajustes › Cuentas («Conectado · Lo usaste hace 2 h»): una escritura cada 10 min como mucho."""
+        state = getattr(main_app.state.catalog, "state", None)
+        if state is not None and time.time() - float(state.settings().get("companion_seen") or 0) > 600:
+            state.set_setting("companion_seen", time.time())
+
     @public.get("/api/companion")
     def companion_keys() -> dict:
         """La app del iPhone toma de aquí lo de «Para ti» para no escribirlo dos veces: la clave de TMDB, la aplicación
         de Trakt (su Client ID, que no es secreto; el secreto no sale de aquí) y el país."""
         p = config.para_ti
-        # Para Ajustes › Cuentas: el iPhone está conectado (antes decía siempre «Conectar»). Una escritura cada 10 min.
-        state = getattr(main_app.state.catalog, "state", None)
-        if state is not None and time.time() - float(state.settings().get("companion_seen") or 0) > 600:
-            state.set_setting("companion_seen", time.time())
+        saw_phone()  # Ajustes › Cuentas: el iPhone está conectado (antes decía siempre «Conectar»)
         foryou = getattr(main_app.state.catalog, "foryou", None)
         key = foryou.key if foryou else (lambda name: getattr(p, name))  # las escritas en la TV, o las de config.yaml
         return {"tmdb_key": key("tmdb_key"), "trakt_client_id": key("trakt_client_id"), "region": p.region,
@@ -458,6 +465,7 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         """«Viendo en la TV» del iPhone: qué se ve ahora (o `null` si no hay nada abierto)."""
         # Lo que la TV le dejó al iPhone («Enviar» / «Descargar en el iPhone») viaja aquí: ni una petición de más.
         catalog = main_app.state.catalog
+        saw_phone()  # lo que el iPhone pide cada 5 s abierto (antes solo contaba /api/companion, que pide al emparejarse)
         return {"playing": companion.now_playing(catalog), "inbox": companion.inbox_pending(catalog.state)}
 
     @public.post("/api/companion/inbox/ack")

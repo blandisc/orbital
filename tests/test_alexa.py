@@ -311,3 +311,11 @@ def test_settings_know_when_the_iphone_last_connected(public):
     first = state.settings()["companion_seen"]
     client.get("/api/companion", headers={"Authorization": "Bearer secreto"})
     assert state.settings()["companion_seen"] == first  # una escritura cada 10 min, no en cada petición
+
+
+def test_the_iphone_open_counts_as_a_visit_too(public):
+    """El iPhone abierto pide /api/companion/now cada 5 s: eso también es «lo usaste» (antes solo contaba al emparejarse)."""
+    client, main = public
+    state = main.state.catalog.state
+    assert client.get("/api/companion/now", headers={"Authorization": "Bearer secreto"}).status_code == 200
+    assert state.settings()["companion_seen"]

@@ -107,8 +107,7 @@ def control_player(catalog, action: str, delta: float | None = None) -> dict | N
         player.stop()
         return None
     if action == "mute":
-        muted = not bool(player.mpv.get("mute"))
-        player.mpv.command("set_property", "mute", muted)
+        player.toggle_mute()  # el de Windows (el mismo de la TV y de Alexa), no uno aparte del reproductor
         return now_playing(catalog)
     if action in ("toggle", "pause", "play"):
         if live:
