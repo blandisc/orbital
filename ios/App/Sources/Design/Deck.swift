@@ -50,9 +50,10 @@ extension VisualEffect {
     /// `View.deckEffect` dentro de `scrollTransition` (los mismos pasos, en su tipo).
     func deckEffect(_ style: DeckStyle, value: Double) -> some VisualEffect {
         let distance = abs(value)
-        // Sin desenfoque al deslizar: costaba una pasada fuera de pantalla por tarjeta en cada cuadro (el carrusel se
-        // trababa); lo de los lados ya se aleja con el tamaño y la luz.
+        // El desenfoque se queda: además de alejar lo de los lados, dibuja cada tarjeta aparte antes de girarla; sin él, en
+        // coverflow el vidrio de sus botones girado en 3D dejaba una capa con posición inválida y la app se cerraba.
         return scaleEffect(1 - distance * DS.Deck.sideShrink)
+            .blur(radius: distance * DS.Deck.sideBlur)
             .brightness(-distance * DS.Deck.sideDim)
             .rotation3DEffect(.degrees(style == .coverflow ? -value * DS.Deck.coverflowAngle : 0), axis: (x: 0, y: 1, z: 0),
                               perspective: DS.Deck.perspective)
@@ -96,11 +97,7 @@ struct DeckCard<Actions: View>: View {
         .frame(height: DS.Deck.height)
         .overlay { if minutesLeft > 0, let progress { TimeBadge(style: timeStyle, minutes: minutesLeft, fraction: progress) } }
         .clipShape(RoundedRectangle(cornerRadius: DS.Deck.radius, style: .continuous))
-        // La sombra la proyecta una forma sola, detrás (no la tarjeta entera: así no se recalcula con cada cuadro al deslizar).
-        .background {
-            RoundedRectangle(cornerRadius: DS.Deck.radius, style: .continuous).fill(DS.bg)
-                .shadow(color: DS.scrimStrong, radius: DS.Deck.shadow, y: DS.Deck.shadowY)
-        }
+        .shadow(color: DS.scrimStrong, radius: DS.Deck.shadow, y: DS.Deck.shadowY)
     }
 }
 
@@ -144,7 +141,10 @@ struct TimePill: View {
             DSProgress(fraction: fraction).frame(width: DS.Deck.pillBar)
         }
         .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+        // Velo oscuro, no vidrio ni material: girados en 3D por el coverflow dejaban una capa con posición inválida y la app se
+        // cerraba al deslizar el carrusel.
+        .background(DS.scrimStrong, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).strokeBorder(DS.hairline, lineWidth: DS.Size.hairline))
         .onArt()
         .accessibilityElement(children: .combine)
     }
@@ -215,7 +215,7 @@ struct ProgressFillLabel: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(DS.paper)
-                    Capsule().fill(DS.accent.opacity(DS.Deck.fillOpacity)).frame(width: geo.size.width * min(1, max(0, fraction)))
+                    if fraction > 0 { Capsule().fill(DS.accent.opacity(DS.Deck.fillOpacity)).frame(width: max(DS.Size.hairline, geo.size.width * min(1, fraction))) }
                 }
             }
         }

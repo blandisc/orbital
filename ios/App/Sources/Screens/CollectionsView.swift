@@ -2,18 +2,19 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// Los grupos de Para ti › Listas, en el orden del índice de arriba.
+/// Los grupos de Para ti › Listas, en orden (el menú «Ir a una sección» los lista así).
 enum CollectionSection: CaseIterable, Hashable {
-    case forYou, trakt, stremio, platforms, awards, studios, years
+    case forYou, platforms, awards, studios, years, airings, trakt, stremio
     var title: Text {
         switch self {
-        case .forYou: Text("Para ti"); case .trakt: Text(verbatim: "Trakt"); case .stremio: Text(verbatim: "Stremio")
+        case .forYou: Text("Para ti"); case .trakt: Text("Listas de Trakt"); case .stremio: Text("Listas de Stremio")
         case .platforms: Text("Plataformas"); case .awards: Text("Premios"); case .studios: Text("Estudios"); case .years: Text("Por año")
+        case .airings: Text("Próximos estrenos")
         }
     }
 }
 
-/// Marca el grupo que cruza la parte de arriba de la pantalla (el índice lo resalta) y le da su id para saltar a él.
+/// Marca el grupo que cruza la parte de arriba de la pantalla (el menú lo palomea) y le da su id para saltar a él.
 struct SectionSpy: ViewModifier {
     let section: CollectionSection
     @Binding var active: CollectionSection
@@ -52,7 +53,8 @@ struct CollectionGridView: View {
                     DSSegmented(options: [("movie", "Películas"), ("series", "Series")], selection: $kind).padding(.horizontal, DS.Space.gutter)
                 }
                 if loading && items.isEmpty { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s10) }
-                SortableGrid(listID: "\(route.kind):\(route.id)", items: items, watched: { await collections.model.watchedIDs() }) { s in
+                SortableGrid(listID: "\(route.kind):\(route.id)", items: items, watched: { await collections.model.watchedIDs() },
+                             imdbRatings: { items in await collections.model.imdbRatings(items.map { ($0.kind, $0.imdb) }) }) { s in
                     TitleLink(route: s.route, width: DS.Poster.gridMinimum, detail: detail(s))
                 }
             }

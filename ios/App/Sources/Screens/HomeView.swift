@@ -76,9 +76,12 @@ struct HomeView: View {
         .background(Backdrop(tint: tint.colors))
         // Arriba, el saludo; al bajar (la barra se encoge), algo útil en su lugar: lo que suena en la TV, lo que sale hoy o
         // cuántas tienes por terminar (y si no hay nada que decir, «Inicio»).
-        .navigationTitle(scrolledDown ? scrolledTitle : greeting).toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
+        // Arriba, el ícono y «Orbital» (el carácter de la app); al bajar, en medio, lo más útil que haya (lo que suena en la TV…).
+        .navigationTitle(scrolledDown ? scrolledTitle : Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
         .subtitle(syncText)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) { AppMark() }
+                .sharedBackgroundVisibility(.hidden)
             // Sin nada en la TV, el control de tu Orbital vive aquí (con algo reproduciéndose, en el accesorio de abajo).
             if let openRemote, tvNow.model.now == nil {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -124,12 +127,6 @@ struct HomeView: View {
         await tint.load(currentHero.flatMap { $0.background ?? $0.poster })
     }
 
-    /// «Hola, Fer» (el nombre de tu perfil; sin nombre, «Hola»): lo primero que se lee en Inicio.
-    private var greeting: Text {
-        let name = env.services.appSettings.displayName.trimmingCharacters(in: .whitespaces)
-        return name.isEmpty ? Text("Hola") : Text("Hola, \(name)")
-    }
-
     /// El título con la barra encogida: lo más útil que haya.
     private var scrolledTitle: Text {
         if let now = tvNow.model.now { return Text("En la TV: \(now.live ? (now.channel ?? now.title) : now.title)") }
@@ -161,7 +158,7 @@ struct HomeView: View {
 
     private static var hasTabAccessory: Bool { if #available(iOS 26.1, *) { true } else { false } }
 
-    /// Cuántos de «Seguir viendo» van en el carrusel (los últimos); los demás, en «Todo lo que sigues» (el botón de abajo).
+    /// Cuántos de «Seguir viendo» van en el carrusel (los últimos); los demás, en «Todo lo que estás viendo» (el botón de abajo).
     private static let heroCount = 5
 
     /// El que está al frente del carrusel (el fondo toma su color).
@@ -185,7 +182,7 @@ struct HomeView: View {
                 LazyHStack(spacing: DS.Deck.spacing) {
                     ForEach(0..<(copies * items.count), id: \.self) { slot in
                         hero(items[slot % items.count])
-                            .containerRelativeFrame(.horizontal) { width, _ in width - 2 * DS.Deck.sideMargin }
+                            .containerRelativeFrame(.horizontal)   // el ancho visible ya descuenta los márgenes: centrada, con las de los lados asomando
                             .deckTransition(deck, reduceMotion: reduceMotion)
                     }
                 }
@@ -194,13 +191,13 @@ struct HomeView: View {
             .contentMargins(.horizontal, DS.Deck.sideMargin, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
             .scrollClipDisabled()
-            .scrollPosition(id: $heroSlot)
+            .scrollPosition(id: $heroSlot, anchor: .center)   // centrada: las de los lados asoman igual
             .onAppear { if heroSlot == nil || (heroSlot ?? 0) >= copies * items.count { heroSlot = middle } }
             .onChange(of: items.map(\.id)) { heroSlot = middle }   // cambió lo que sigues viendo: de vuelta al primero
             PageDots(count: items.count, index: items.isEmpty ? 0 : (heroSlot ?? middle) % items.count)
             if model.continueWatching.count > Self.heroCount {
                 NavigationLink(value: HomeListRoute(id: "continue")) {
-                    Label { Text("Todo lo que sigues · \(model.continueWatching.count)") } icon: { Image(systemName: "square.grid.2x2") }
+                    Label { Text("Todo lo que estás viendo · \(model.continueWatching.count)") } icon: { Image(systemName: "square.grid.2x2") }
                         .font(DS.TextRecipe.footnote.font)
                 }
                 .buttonStyle(.glass).controlSize(.small)
@@ -232,7 +229,8 @@ struct HomeView: View {
     @ViewBuilder private func heroButtons(_ item: HomeItem) -> some View {
         continueButton(item)
         if env.services.orbital.isConfigured {
-            DSIconButton(symbol: "tv", label: "Ver en la TV") {
+            // Un toque lo explica («¿Ver en la TV?»), el segundo lo manda: solo el ícono no decía qué hacía.
+            ConfirmIconButton(symbol: "tv", prompt: "¿Ver en la TV?", label: "Ver en la TV") {
                 Task { await env.playOnTV(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title) }
             }
         }
@@ -287,7 +285,7 @@ struct HomeView: View {
         return dayName(a.day, locale: locale)
     }
 
-    /// «Todo lo que sigues»: todo «Seguir viendo» (el carrusel solo trae los últimos), en piezas anchas con su avance.
+    /// «Todo lo que estás viendo»: todo «Seguir viendo» (el carrusel solo trae los últimos), en piezas anchas con su avance.
     private func allContinue(_ model: HomeModel) -> some View {
         ScrollView {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible())], spacing: DS.Space.s4) {
@@ -304,7 +302,7 @@ struct HomeView: View {
             .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)
         }
         .background(Backdrop(tint: tint.colors))
-        .navigationTitle(Text("Todo lo que sigues")).navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(Text("Todo lo que estás viendo")).navigationBarTitleDisplayMode(.inline)
     }
 
     private func continueButton(_ item: HomeItem) -> some View {

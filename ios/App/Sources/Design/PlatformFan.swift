@@ -39,6 +39,8 @@ struct FanCard<Emblem: View>: View {
         .background(DS.surface)
         .clipShape(RoundedRectangle(cornerRadius: DS.PlatformFan.radius, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: DS.PlatformFan.radius, style: .continuous).stroke(tint.opacity(DS.PlatformFan.tintEdge)))
+        // Peso: una sombra de su color, como si flotara sobre el piso.
+        .shadow(color: tint.opacity(DS.Collections.weightTint), radius: DS.Collections.weight, y: DS.Collections.weightY)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: name))
     }

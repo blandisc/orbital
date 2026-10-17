@@ -15,6 +15,15 @@ public final class DecideModel: ObservableModel {
     public private(set) var exhausted = false { didSet { changed() } }
     public var time: Time = .hour { didSet { changed() } }
     public var mood: Mood = .light { didSet { changed() } }
+    /// Más opciones: solo series o solo películas (nil: las dos).
+    public var kind: String? { didSet { changed() } }
+    /// Más opciones: géneros elegidos (en inglés, en minúsculas); si hay, mandan sobre el ánimo.
+    public var genres: Set<String> = [] { didSet { changed() } }
+    /// Más opciones: también lo que ya viste.
+    public var includeWatched = false { didSet { changed() } }
+
+    /// Los géneros que se ofrecen en «Más opciones» (su nombre en inglés, como los dan Trakt y Cinemeta).
+    public static let genreChoices = ["comedy", "drama", "action", "thriller", "horror", "sci-fi", "animation", "romance", "documentary", "crime", "fantasy", "mystery"]
 
     private let services: Services
     private let pool: [Suggestion]
@@ -52,6 +61,16 @@ public final class DecideModel: ObservableModel {
         !genres(for: mood).isDisjoint(with: list.map { $0.lowercased() })
     }
 
+    /// ¿Alguno de estos géneros es de los elegidos? («Science Fiction», «science-fiction» y «Sci-Fi» son el mismo.)
+    nonisolated static func matches(_ list: [String], picked: Set<String>) -> Bool {
+        !picked.isDisjoint(with: list.map(normalized))
+    }
+
+    nonisolated static func normalized(_ genre: String) -> String {
+        let g = genre.lowercased()
+        return ["science-fiction", "science fiction"].contains(g) ? "sci-fi" : g
+    }
+
     /// ¿Cabe en el tiempo que tienes? (una serie cuenta por episodio).
     nonisolated static func fits(_ minutes: Int?, _ time: Time) -> Bool {
         guard let minutes, minutes > 0 else { return time != .short }   // sin dato: no para «30 min»
@@ -85,14 +104,16 @@ public final class DecideModel: ObservableModel {
         defer { isLoading = false }
         let started = services.now()
         let skipped = notToday()
-        let seen = watched ?? []
-        let candidates = (order.isEmpty ? pool : order).filter { !shown.contains($0.imdb) && !skipped.contains($0.imdb) && !seen.contains($0.imdb) }
+        let seen = includeWatched ? [] : (watched ?? [])
+        let candidates = (order.isEmpty ? pool : order).filter {
+            !shown.contains($0.imdb) && !skipped.contains($0.imdb) && !seen.contains($0.imdb) && (kind == nil || $0.kind == kind)
+        }
         var closest: Suggestion?   // del ánimo, aunque dure más: mejor eso que nada
         func verdict(_ s: Suggestion) -> (mood: Bool, fits: Bool)? {
             let d = details[s.imdb]
             let genres = s.genres.isEmpty ? d?.genres : s.genres
             guard let genres else { return nil }   // falta preguntar
-            return (Self.matches(genres, mood), Self.fits(s.runtime ?? d?.minutes, time))
+            return (self.genres.isEmpty ? Self.matches(genres, mood) : Self.matches(genres, picked: self.genres), Self.fits(s.runtime ?? d?.minutes, time))
         }
         func take(_ s: Suggestion) {
             shown.insert(s.imdb)

@@ -60,12 +60,8 @@ struct ParaTiView: View {
         .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio
         .background(Backdrop(tint: m.mode == .mosaic ? tint.colors : nil))
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
-        // Arriba, solo el ícono y «Orbital» (la pestaña de abajo ya dice dónde estás); el título queda para VoiceOver y el «atrás».
-        .navigationTitle("Para ti").toolbarTitleDisplayMode(.inline)
-        .toolbar(removing: .title)
+        .navigationTitle("Para ti").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) { AppMark() }
-                .sharedBackgroundVisibility(.hidden)
             // Todo · Series · Películas (en Listas): un botón, no una fila más arriba.
             if m.mode == .lists, m.hasKindSplit {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -320,7 +316,7 @@ struct ListsView: View {
             // Un `VStack` (no perezoso): son pocos grupos y así el índice puede saltar a cualquiera; lo pesado de adentro
             // (las tiras) sí es perezoso.
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
-                // Para ti: lo general (el destacado, «Porque viste», las sugerencias y los estrenos), cada fila con su sello.
+                // Para ti: lo general (el destacado, «Porque viste», las sugerencias), cada fila con su sello.
                 VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                     let slides = model.featuredSlides
                     if !slides.isEmpty { featuredCarousel(slides) }
@@ -334,27 +330,32 @@ struct ListsView: View {
                             }
                         }
                     }
-                    if !model.airings.isEmpty {   // vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
-                        Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), route: ShelfRoute(id: "estrenos"), source: .trakt) {
-                            ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
-                        }
-                    }
                     if model.needsSources { sourcesFallback }
                 }
                 .modifier(SectionSpy(section: .forYou, active: $activeSection))
-                // Las listas, cada una en un solo lugar: las de Trakt y las de Stremio, aparte.
-                if !traktLists.isEmpty { listGroup(title: "Listas de Trakt", source: .trakt, cards: traktLists).modifier(SectionSpy(section: .trakt, active: $activeSection)) }
-                if !stremioCards.isEmpty { listGroup(title: "Listas de Stremio", source: .stremio, cards: stremioCards).modifier(SectionSpy(section: .stremio, active: $activeSection)) }
+                // Las colecciones (con su carácter: en carrusel, con peso y reflejo), justo después de lo general.
                 if !model.platformHubs.isEmpty { platforms.modifier(SectionSpy(section: .platforms, active: $activeSection)) }
                 awards.modifier(SectionSpy(section: .awards, active: $activeSection))
                 if collections.model.tmdbReady { studiosSection.modifier(SectionSpy(section: .studios, active: $activeSection)) }
                 if collections.model.traktLinked { yearsSection.modifier(SectionSpy(section: .years, active: $activeSection)) }
+                if !model.airings.isEmpty {   // vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
+                    Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), route: ShelfRoute(id: "estrenos"), source: .trakt) {
+                        ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
+                    }
+                    .modifier(SectionSpy(section: .airings, active: $activeSection))
+                }
+                // Al final, las listas: las de Trakt y las de Stremio, aparte.
+                if !traktLists.isEmpty { listGroup(title: "Listas de Trakt", source: .trakt, cards: traktLists).modifier(SectionSpy(section: .trakt, active: $activeSection)) }
+                if !stremioCards.isEmpty { listGroup(title: "Listas de Stremio", source: .stremio, cards: stremioCards).modifier(SectionSpy(section: .stremio, active: $activeSection)) }
             }
             .padding(.top, DS.Space.s2)
             .padding(.bottom, DS.Space.s14)   // aire bajo la última fila: la barra de pestañas no la tapa
         }
-        // El índice, pegado arriba bajo la barra: marca dónde estás al bajar y salta al tocarlo.
-        .safeAreaBar(edge: .top) { sectionIndex(proxy) }
+        // Brincar a una sección: un menú en la barra (marca en cuál estás).
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { sectionMenu(proxy) }
+        }
+
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
         .navigationDestination(for: PlatformRoute.self) { route in
             if let hub = model.platformHubs.first(where: { $0.brand == route.brand }) { PlatformRankingsView(observer: observer, hub: hub) }
@@ -371,41 +372,36 @@ struct ListsView: View {
     private var platforms: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: "Tus plataformas", meta: Text("Sus rankings de hoy")).padding(.horizontal, DS.Space.gutter)
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: DS.Space.s3) {
-                    ForEach(model.platformHubs) { hub in
-                        NavigationLink(value: PlatformRoute(brand: hub.brand)) {
-                            PlatformFanCard(name: hub.name, logo: hub.logo, posters: model.cover(of: hub).map { Optional($0.poster) },
-                                            tint: DS.PlatformTint.color(hub.brand))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("platform-\(hub.brand)")
-                    }
+            CenteredCarousel(items: model.platformHubs, id: \.id, cardWidth: DS.PlatformFan.width) { hub in
+                NavigationLink(value: PlatformRoute(brand: hub.brand)) {
+                    PlatformFanCard(name: hub.name, logo: hub.logo, posters: model.cover(of: hub).map { Optional($0.poster) },
+                                    tint: DS.PlatformTint.color(hub.brand))
+                        .reflected()
                 }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("platform-\(hub.brand)")
             }
-            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
         }
     }
 
     // MARK: colecciones
+    /// Un estudio para la tira (con su id para `ForEach`).
+    struct StudioItem { let id: Int; let name: String }
+
     /// El índice de arriba: salta a cada grupo.
-    private func sectionIndex(_ proxy: ScrollViewProxy) -> some View {
-        ScrollViewReader { chips in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: DS.Space.s2) {
-                    ForEach(CollectionSection.allCases.filter(isShown), id: \.self) { section in
-                        PanelChip(title: section.title, selected: activeSection == section) {
-                            activeSection = section
-                            withAnimation(DS.Motion.base(false)) { proxy.scrollTo(section, anchor: .top) }
-                        }
-                        .id(section)
-                    }
+    private func sectionMenu(_ proxy: ScrollViewProxy) -> some View {
+        Menu {
+            ForEach(CollectionSection.allCases.filter(isShown), id: \.self) { section in
+                Button {
+                    activeSection = section
+                    withAnimation(DS.Motion.base(false)) { proxy.scrollTo(section, anchor: .top) }
+                } label: {
+                    if activeSection == section { Label { section.title } icon: { Image(systemName: "checkmark") } } else { section.title }
                 }
             }
-            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-            .padding(.vertical, DS.Space.s2)
-            .onChange(of: activeSection) { _, new in withAnimation(DS.Motion.base(false)) { chips.scrollTo(new, anchor: .center) } }
-        }
+        } label: { Image(systemName: "list.bullet.indent") }
+        .accessibilityLabel(Text("Ir a una sección"))
+        .accessibilityIdentifier("paraTi-sections")
         .sensoryFeedback(.selection, trigger: activeSection)
     }
 
@@ -418,6 +414,7 @@ struct ListsView: View {
         case .awards: !collections.model.awards.isEmpty
         case .studios: collections.model.tmdbReady
         case .years: collections.model.traktLinked
+        case .airings: !model.airings.isEmpty
         }
     }
 
@@ -455,16 +452,11 @@ struct ListsView: View {
         if !all.isEmpty {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
                 DSSectionHead(title: "Premios", meta: Text("Los ganadores, del más reciente")).padding(.horizontal, DS.Space.gutter)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: DS.Space.s3) {
-                        ForEach(all) { award in
-                            NavigationLink(value: CollectionRoute(kind: .award, id: award.id)) { AwardCard(award: award) }
-                                .buttonStyle(.plain)
-                                .accessibilityIdentifier("award-\(award.id)")
-                        }
-                    }
+                CenteredCarousel(items: all, id: \.id, cardWidth: DS.PlatformFan.width) { award in
+                    NavigationLink(value: CollectionRoute(kind: .award, id: award.id)) { AwardCard(award: award) }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("award-\(award.id)")
                 }
-                .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             }
         }
     }
@@ -473,21 +465,16 @@ struct ListsView: View {
     private var studiosSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: "Estudios", meta: Text("Lo más visto de cada uno")).padding(.horizontal, DS.Space.gutter)
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
-                    ForEach(collections.model.studios, id: \.id) { studio in
-                        NavigationLink(value: CollectionRoute(kind: .studio, id: String(studio.id))) {
-                            CollectionCard(title: Text(verbatim: studio.name), detail: Text("Lo más visto"), name: studio.name,
-                                           posters: (collections.model.studioItems[studio.id] ?? []).prefix(3).map { Optional($0.poster) }, tint: DS.Collections.studio) {
-                                StudioEmblem(name: studio.name)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .task { await collections.model.loadStudio(studio.id) }
+            CenteredCarousel(items: collections.model.studios.map { StudioItem(id: $0.id, name: $0.name) }, id: \.id, cardWidth: DS.PlatformFan.width) { studio in
+                NavigationLink(value: CollectionRoute(kind: .studio, id: String(studio.id))) {
+                    CollectionCard(title: Text(verbatim: studio.name), detail: Text("Lo más visto"), name: studio.name,
+                                   posters: (collections.model.studioItems[studio.id] ?? []).prefix(3).map { Optional($0.poster) }, tint: DS.Collections.studio) {
+                        StudioEmblem(name: studio.name)
                     }
                 }
+                .buttonStyle(.plain)
+                .task { await collections.model.loadStudio(studio.id) }
             }
-            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
         }
     }
 
@@ -495,18 +482,13 @@ struct ListsView: View {
     private var yearsSection: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             DSSectionHead(title: "Por año", meta: Text("Lo más popular de cada año")).padding(.horizontal, DS.Space.gutter)
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: DS.Space.s3) {
-                    ForEach(collections.model.years, id: \.self) { year in
-                        NavigationLink(value: CollectionRoute(kind: .year, id: String(year))) {
-                            YearCard(year: year, posters: collections.model.yearPosters[year] ?? [])
-                        }
-                        .buttonStyle(.plain)
-                        .task { await collections.model.loadYearPosters(year) }
-                    }
+            CenteredCarousel(items: collections.model.years, id: \.self, cardWidth: DS.Collections.yearWidth) { year in
+                NavigationLink(value: CollectionRoute(kind: .year, id: String(year))) {
+                    YearCard(year: year, posters: collections.model.yearPosters[year] ?? []).reflected()
                 }
+                .buttonStyle(.plain)
+                .task { await collections.model.loadYearPosters(year) }
             }
-            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
         }
     }
 
@@ -640,7 +622,8 @@ struct ListGridView: View {
                         }
                         .padding(.horizontal, DS.Space.gutter)
                     } else {
-                        SortableGrid(listID: plan.id, items: items, watched: { await collections.model.watchedIDs() }) { s in poster(s, plan) }
+                        SortableGrid(listID: plan.id, items: items, watched: { await collections.model.watchedIDs() },
+                             imdbRatings: { items in await collections.model.imdbRatings(items.map { ($0.kind, $0.imdb) }) }) { s in poster(s, plan) }
                     }
                 }
                 .padding(.bottom, DS.Space.s14)

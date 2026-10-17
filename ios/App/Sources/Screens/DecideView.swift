@@ -4,6 +4,7 @@ import OrbitalModels
 
 /// «Decide por mí»: dos preguntas (cuánto tiempo tienes, qué quieres) y una sola propuesta grande con su porqué.
 struct DecideView: View {
+    @State private var moreOptions = false
     @StateObject private var observer: ModelObserver<DecideModel>
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.dismiss) private var dismiss
@@ -39,6 +40,32 @@ struct DecideView: View {
             ForEach(DecideModel.Mood.allCases, id: \.self) { mood in
                 PanelChip(title: moodName(mood), selected: m.mood == mood, font: DS.TextRecipe.body.font, symbol: moodSymbol(mood)) { m.mood = mood }
             }
+        }
+        // Más opciones (la hoja crece hacia arriba): series o películas, géneros (mandan sobre el ánimo) y lo que ya viste.
+        Button { withAnimation(DS.Motion.base(false)) { moreOptions.toggle() } } label: {
+            Label { Text(moreOptions ? "Menos opciones" : "Más opciones") } icon: { Image(systemName: moreOptions ? "chevron.up" : "chevron.down") }
+                .font(DS.TextRecipe.footnote.font.weight(.semibold))
+        }
+        .buttonStyle(.borderless).foregroundStyle(DS.textMuted)
+        .accessibilityIdentifier("decide-more")
+        if moreOptions {
+            PanelGroupTitle(title: "Qué")
+            FlowChips {
+                PanelChip(title: Text("Todo"), selected: m.kind == nil, font: DS.TextRecipe.body.font) { m.kind = nil }
+                PanelChip(title: Text("Series"), selected: m.kind == "series", font: DS.TextRecipe.body.font, symbol: "tv") { m.kind = "series" }
+                PanelChip(title: Text("Películas"), selected: m.kind == "movie", font: DS.TextRecipe.body.font, symbol: "film") { m.kind = "movie" }
+            }
+            PanelGroupTitle(title: "Géneros")
+            FlowChips {
+                ForEach(DecideModel.genreChoices, id: \.self) { g in
+                    PanelChip(title: Text(verbatim: genreName(g)), selected: m.genres.contains(g)) {
+                        if m.genres.contains(g) { m.genres.remove(g) } else { m.genres.insert(g) }
+                    }
+                }
+            }
+            if !m.genres.isEmpty { Text("Con géneros elegidos, el ánimo no cuenta.").recipe(.caption) }
+            Toggle(isOn: Binding(get: { m.includeWatched }, set: { m.includeWatched = $0 })) { Text("Incluir lo que ya vi").recipe(.secondary, color: DS.text) }
+                .tint(DS.accent)
         }
         if m.exhausted { DSNotice(text: "No encontré otra con eso: prueba otro ánimo o más tiempo.") }
         Button { Task { await m.decide() } } label: {

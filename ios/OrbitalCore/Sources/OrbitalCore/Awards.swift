@@ -26,6 +26,6 @@ public extension Suggestion {
 
     init(_ e: TraktEntry, reason: SuggestionReason) {
         self.init(art: e.imdb, kind: e.kind, title: e.title, year: e.year, reason: reason)
-        runtime = e.runtime; overview = e.overview; genres = e.genres
+        runtime = e.runtime; overview = e.overview; genres = e.genres; traktRating = e.rating
     }
 }

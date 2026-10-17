@@ -173,10 +173,10 @@ enum DS {
     /// chicas, oscuras y desenfocadas; coverflow las gira en 3D y abanico las inclina desde abajo.
     enum Deck {
         /// Qué parte del ancho toma la tarjeta del frente (asoman las de los lados) y su alto.
-        static let sideMargin: CGFloat = 36, height: CGFloat = 430
+        static let sideMargin: CGFloat = 52, height: CGFloat = 430
         /// Cuántas veces se repiten las tarjetas para la vuelta infinita (se empieza a la mitad: nunca se llega al final).
         static let loopCopies = 40
-        static let radius: CGFloat = 28, spacing: CGFloat = 4
+        static let radius: CGFloat = 28, spacing: CGFloat = -14   // negativa: las de los lados se meten tras la del frente y asoman
         /// Lo que pierde una tarjeta a un lugar de distancia: tamaño, nitidez y luz.
         static let sideShrink: CGFloat = 0.12, sideBlur: CGFloat = 5, sideDim: Double = 0.28
         static let coverflowAngle: Double = 38, perspective: CGFloat = 0.6
@@ -287,12 +287,16 @@ enum DS {
         static let seedPoster: CGFloat = 104, relatedPoster: CGFloat = 64
         /// «Por año»: la tarjeta (cuatro pósters) y su número.
         static let yearWidth: CGFloat = 150, yearHeight: CGFloat = 150
-        /// El ícono de la app junto a «Orbital», arriba de Para ti.
-        static let appMark: CGFloat = 28, appMarkRadius: CGFloat = 7
         /// La línea (desde arriba de lo visible, bajo la barra) que decide qué grupo marca el índice.
         static let spyLine: CGFloat = 70
+        /// El ícono de la app junto a «Orbital», arriba de Inicio.
+        static let appMark: CGFloat = 28, appMarkRadius: CGFloat = 7
         static let gold = Color(red: 0.83, green: 0.65, blue: 0.25), silver = Color(red: 0.78, green: 0.76, blue: 0.72)
         static let bronze = Color(red: 0.72, green: 0.45, blue: 0.26)
+        /// El carrusel centrado: cuánto se encogen y apagan las de los lados; el reflejo (alto, separación, intensidad) y el peso.
+        static let sideShrink: CGFloat = 0.1, sideFade: Double = 0.35
+        static let reflection: CGFloat = 44, reflectionGap: CGFloat = 4, reflectionOpacity: Double = 0.3
+        static let weight: CGFloat = 18, weightY: CGFloat = 12, weightTint: Double = 0.35
         /// El halo de los estudios (neutro: cada estudio es de muchos colores).
         static let studio = Color(red: 0.55, green: 0.56, blue: 0.62)
         static func tint(_ award: String) -> Color {
@@ -418,6 +422,8 @@ enum DS {
 
     /// Esperas de la interfaz (nanosegundos para `Task.sleep`).
     enum Timing {
+        /// Cuánto espera una confirmación («¿Ver en la TV?») antes de cerrarse sola.
+        static let confirm: UInt64 = 3_500_000_000
         static let controlsHide = UInt64(DesignTokens.Timing.controlsHide * 1e9), banner = UInt64(DesignTokens.Timing.banner * 1e9)
         /// Cuánto se queda el aviso «Pasó a tu Orbital» (con «Deshacer»).
         static let handoff = UInt64(8 * 1e9)

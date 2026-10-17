@@ -3,9 +3,12 @@ import OrbitalCore
 
 /// Cómo se ordena una lista abierta.
 enum ListSort: String, CaseIterable {
-    case added, newest, oldest, title
+    case added, imdb, trakt, newest, oldest, title
     var label: LocalizedStringKey {
-        switch self { case .added: "Como viene la lista"; case .newest: "Año: más nuevas"; case .oldest: "Año: más viejas"; case .title: "A–Z" }
+        switch self {
+        case .added: "Como viene la lista"; case .imdb: "Mejor calificadas en IMDb"; case .trakt: "Mejor calificadas en Trakt"
+        case .newest: "Año: más nuevas"; case .oldest: "Año: más viejas"; case .title: "A–Z"
+        }
     }
 }
 
@@ -16,7 +19,7 @@ struct ListFilter: Equatable {
     var hideWatched = false
     var isActive: Bool { kind != nil || genre != nil || hideWatched }
 
-    func apply(_ items: [Suggestion], sort: ListSort, watched: Set<String>) -> [Suggestion] {
+    func apply(_ items: [Suggestion], sort: ListSort, watched: Set<String>, imdb: [String: Double] = [:]) -> [Suggestion] {
         let kept = items.filter { s in
             (kind == nil || s.kind == kind)
                 && (genre == nil || s.genres.contains { $0.lowercased() == genre })
@@ -24,6 +27,8 @@ struct ListFilter: Equatable {
         }
         switch sort {
         case .added: return kept
+        case .imdb: return kept.sorted { (imdb[$0.imdb] ?? 0) > (imdb[$1.imdb] ?? 0) }
+        case .trakt: return kept.sorted { ($0.traktRating ?? 0) > ($1.traktRating ?? 0) }
         case .newest: return kept.sorted { ($0.year ?? 0) > ($1.year ?? 0) }
         case .oldest: return kept.sorted { ($0.year ?? Int.max) < ($1.year ?? Int.max) }
         case .title: return kept.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
@@ -33,7 +38,7 @@ struct ListFilter: Equatable {
 
 /// El nombre de un género de Trakt («science-fiction») en el idioma de la app.
 @MainActor func genreName(_ slug: String) -> String {
-    let english = ["science-fiction", "science fiction"].contains(slug) ? "Sci-Fi" : slug.split(separator: "-").map { $0.capitalized }.joined(separator: " ")
+    let english = ["science-fiction", "science fiction", "sci-fi"].contains(slug) ? "Sci-Fi" : slug.split(separator: "-").map { $0.capitalized }.joined(separator: " ")
     return Vocabulary.genres([english], language: AppEnvironment.shared.services.appSettings.uiLanguage).first ?? english
 }
 
@@ -44,20 +49,26 @@ struct SortableGrid<Cell: View>: View {
     let items: [Suggestion]
     /// Lo que ya viste (para «Ocultar lo que ya vi»); nil si no hay Trakt.
     var watched: (() async -> Set<String>)?
+    /// Las calificaciones de IMDb (se piden al elegir ese orden).
+    var imdbRatings: (([Suggestion]) async -> [String: Double])?
     @ViewBuilder var cell: (Suggestion) -> Cell
     @State private var sort: ListSort
     @State private var filter = ListFilter()
     @State private var seen: Set<String> = []
+    @State private var imdb: [String: Double] = [:]
+    @State private var rating = false
 
-    init(listID: String, items: [Suggestion], watched: (() async -> Set<String>)? = nil, @ViewBuilder cell: @escaping (Suggestion) -> Cell) {
-        self.listID = listID; self.items = items; self.watched = watched; self.cell = cell
+    init(listID: String, items: [Suggestion], watched: (() async -> Set<String>)? = nil,
+         imdbRatings: (([Suggestion]) async -> [String: Double])? = nil, @ViewBuilder cell: @escaping (Suggestion) -> Cell) {
+        self.listID = listID; self.items = items; self.watched = watched; self.imdbRatings = imdbRatings; self.cell = cell
         _sort = State(initialValue: UserDefaults.standard.string(forKey: "list-sort.\(listID)").flatMap(ListSort.init(rawValue:)) ?? .added)
     }
 
     var body: some View {
-        let shown = filter.apply(items, sort: sort, watched: seen)
+        let shown = filter.apply(items, sort: sort, watched: seen, imdb: imdb)
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             if filter.isActive { activeChips }
+            if rating { ProgressView().frame(maxWidth: .infinity) }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
                 ForEach(shown) { s in cell(s) }
             }
@@ -67,6 +78,12 @@ struct SortableGrid<Cell: View>: View {
         .toolbar { ToolbarItem(placement: .topBarTrailing) { menu } }
         .onChange(of: sort) { _, new in UserDefaults.standard.set(new.rawValue, forKey: "list-sort.\(listID)") }
         .task(id: filter.hideWatched) { if filter.hideWatched, let watched { seen = await watched() } }
+        .task(id: sort) {
+            guard sort == .imdb, let imdbRatings else { return }
+            rating = true
+            imdb = await imdbRatings(items)
+            rating = false
+        }
     }
 
     private var genres: [String] {
@@ -75,22 +92,29 @@ struct SortableGrid<Cell: View>: View {
         return counts.sorted { $0.value > $1.value }.prefix(12).map(\.key)
     }
 
-    private var kinds: Set<String> { Set(items.map(\.kind)) }
+    /// Los órdenes que tienen sentido aquí: IMDb si se puede pedir; Trakt si la lista trae su calificación.
+    private var sorts: [ListSort] {
+        ListSort.allCases.filter { s in
+            switch s {
+            case .imdb: imdbRatings != nil
+            case .trakt: items.contains { $0.traktRating != nil }
+            default: true
+            }
+        }
+    }
 
     private var menu: some View {
         Menu {
             Picker(selection: $sort) {
-                ForEach(ListSort.allCases, id: \.self) { Text($0.label).tag($0) }
+                ForEach(sorts, id: \.self) { Text($0.label).tag($0) }
             } label: { Label("Ordenar", systemImage: "arrow.up.arrow.down") }
             .pickerStyle(.menu)
-            if kinds.count > 1 {
-                Picker(selection: $filter.kind) {
-                    Text("Todo").tag(String?.none)
-                    Text("Series").tag(String?.some("series"))
-                    Text("Películas").tag(String?.some("movie"))
-                } label: { Label("Series o películas", systemImage: "film.stack") }
-                .pickerStyle(.menu)
-            }
+            Picker(selection: $filter.kind) {
+                Text("Todo").tag(String?.none)
+                Text("Series").tag(String?.some("series"))
+                Text("Películas").tag(String?.some("movie"))
+            } label: { Label("Series o películas", systemImage: "film.stack") }
+            .pickerStyle(.menu)
             if !genres.isEmpty {
                 Picker(selection: $filter.genre) {
                     Text("Todos").tag(String?.none)

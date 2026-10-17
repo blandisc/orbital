@@ -91,7 +91,8 @@ struct DSProgress: View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 Rectangle().fill(DS.track)
-                Rectangle().fill(DS.accent).frame(width: geo.size.width * min(1, max(0, fraction)))   // el acento es avance
+                // Sin avance no se dibuja (una forma de ancho cero, dentro del vidrio y girada en 3D en el carrusel, cerraba la app).
+                if fraction > 0 { Rectangle().fill(DS.accent).frame(width: max(DS.Size.hairline, geo.size.width * min(1, fraction))) }   // el acento es avance
             }
         }
         .frame(height: DS.Space.s1).clipShape(Capsule())
@@ -436,6 +437,37 @@ struct DSIconButton: View {
         }
         .buttonBorderShape(.circle).controlSize(.large)
         .accessibilityLabel(Text(label))
+    }
+}
+
+/// Un botón de ícono que pide confirmación: el primer toque lo abre en una cápsula que dice qué hará («¿Ver en la TV?»),
+/// el segundo lo hace; si no lo tocas otra vez, se cierra solo.
+struct ConfirmIconButton: View {
+    let symbol: String
+    let prompt: LocalizedStringKey
+    let label: LocalizedStringKey
+    let action: () -> Void
+    @State private var asking = false
+
+    var body: some View {
+        Button {
+            if asking { asking = false; action() } else { withAnimation(DS.Motion.base(false)) { asking = true } }
+        } label: {
+            HStack(spacing: DS.Space.s2) {
+                Image(systemName: symbol)
+                if asking { Text(prompt).lineLimit(1).fixedSize().transition(.opacity.combined(with: .move(edge: .leading))) }
+            }
+        }
+        .buttonStyle(.glass)
+        .buttonBorderShape(asking ? .capsule : .circle).controlSize(.large)
+        .accessibilityLabel(Text(label))
+        .accessibilityHint(asking ? Text("Toca otra vez para confirmar") : Text(prompt))
+        .sensoryFeedback(.selection, trigger: asking)
+        .task(id: asking) {
+            guard asking else { return }
+            try? await Task.sleep(nanoseconds: DS.Timing.confirm)
+            withAnimation(DS.Motion.base(false)) { asking = false }
+        }
     }
 }
 

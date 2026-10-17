@@ -39,6 +39,8 @@ public struct TraktEntry: Sendable, Equatable, Identifiable {
     public var next: (season: Int, episode: Int)?
     /// Los géneros de Trakt («comedy», «science-fiction»), con `extended=full`.
     public var genres: [String] = []
+    /// La calificación de Trakt (0 a 10), con `extended=full`.
+    public var rating: Double?
     public var id: String { imdb }
 
     public static func == (a: TraktEntry, b: TraktEntry) -> Bool {
@@ -120,6 +122,7 @@ public enum TraktParsing {
                                episodes: positive(raw["aired_episodes"]), overview: (raw["overview"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
                                traktID: isInt(ids["trakt"]))
         entry.genres = (raw["genres"]?.array ?? []).compactMap(\.string)
+        entry.rating = raw["rating"]?.doubleValue.flatMap { $0 > 0 ? $0 : nil }
         return entry
     }
 

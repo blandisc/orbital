@@ -87,6 +87,7 @@ public actor RemoteForYou {
         // Género y duración (minutos), si la consola los manda: «Decide por mí» no tiene que pedirlos a Cinemeta.
         s.genres = (row["genres"]?.array ?? []).compactMap(\.string)
         s.runtime = row["runtime"]?.intValue.flatMap { $0 > 0 ? $0 : nil }
+        s.traktRating = row["rating"]?.doubleValue.flatMap { $0 > 0 ? $0 : nil }
         s.movement = row["movement"]?.intValue
         s.isNew = row["new"]?.bool ?? false
         return s

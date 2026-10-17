@@ -19,6 +19,11 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Con géneros elegidos, el ánimo no cuenta.": "With genres picked, the mood doesn't count.", "Géneros": "Genres", "Incluir lo que ya vi": "Include what I've watched",
+    "Ir a una sección": "Go to a section", "Mejor calificadas en IMDb": "Top rated on IMDb", "Mejor calificadas en Trakt": "Top rated on Trakt",
+    "Menos opciones": "Fewer options", "Más opciones": "More options", "Qué": "What", "Toca otra vez para confirmar": "Tap again to confirm",
+    "Todo lo que estás viendo": "Everything you're watching", "Todo lo que estás viendo · %@": "Everything you're watching · %@", "¿Ver en la TV?": "Watch on the TV?",
+    "Listas de Trakt": "Trakt lists", "Listas de Stremio": "Stremio lists", "Próximos estrenos": "Upcoming",
     "Abre el control de tu Orbital.": "Opens your Orbital's remote.", "Abrir el control de Orbital": "Open the Orbital remote", "Control de Orbital": "Orbital remote",
     "Episodios de estas semanas y películas recién llegadas": "This week's episodes and newly arrived movies", "Estudios": "Studios",
     "Lo más visto": "Most watched", "Lo más visto de cada uno": "The most watched from each", "Nuevo en tus plataformas": "New on your platforms",

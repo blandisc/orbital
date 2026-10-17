@@ -13,7 +13,7 @@ struct CollectionCard<Emblem: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            FanCard(name: name, posters: posters, tint: tint, emblem: emblem)
+            FanCard(name: name, posters: posters, tint: tint, emblem: emblem).reflected()
             VStack(alignment: .leading, spacing: 0) {
                 title.recipe(.cardTitle).lineLimit(1)
                 detail.recipe(.caption).lineLimit(1)
@@ -182,7 +182,7 @@ struct YearCard: View {
     }
 }
 
-/// Arriba de Para ti: el ícono de la app y «Orbital» (sin el título de la pantalla).
+/// Arriba de Inicio: el ícono de la app y «Orbital» (en lugar del saludo).
 struct AppMark: View {
     @Environment(\.colorScheme) private var scheme
     var body: some View {
@@ -210,4 +210,53 @@ struct StudioEmblem: View {
             .padding(.horizontal, DS.Space.s2)
             .accessibilityHidden(true)
     }
+}
+
+/// Una tira de tarjetas centrada (Plataformas, Premios, Estudios, Por año): la del medio al frente, las de los lados asomando
+/// más chicas y tenues, como el carrusel de Inicio.
+struct CenteredCarousel<Item, ID: Hashable, Card: View>: View {
+    let items: [Item]
+    let id: KeyPath<Item, ID>
+    let cardWidth: CGFloat
+    @ViewBuilder var card: (Item) -> Card
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                ForEach(items, id: id) { item in
+                    card(item)
+                        .scrollTransition(.interactive, axis: .horizontal) { content, phase in
+                            content.scaleEffect(1 - abs(phase.value) * DS.Collections.sideShrink)
+                                .brightness(-abs(phase.value) * DS.Collections.sideFade)   // más oscuras, como en el carrusel de Inicio
+                        }
+                }
+            }
+            .scrollTargetLayout()
+        }
+        // Márgenes para que la primera también quede al centro.
+        .contentMargins(.horizontal, max(DS.Space.gutter, (UIScreen.main.bounds.width - cardWidth) / 2), for: .scrollContent)
+        .scrollTargetBehavior(.viewAligned)
+        .scrollClipDisabled()
+    }
+}
+
+/// El reflejo de una tarjeta sobre el piso (la tarjeta volteada, corta y que se desvanece): le da peso.
+struct Reflection: ViewModifier {
+    func body(content: Content) -> some View {
+        VStack(spacing: DS.Collections.reflectionGap) {
+            content
+            content
+                .scaleEffect(x: 1, y: -1)
+                .frame(height: DS.Collections.reflection, alignment: .top)
+                .clipped()
+                .mask(LinearGradient(colors: [DS.text.opacity(DS.Collections.reflectionOpacity), .clear], startPoint: .top, endPoint: .bottom))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+    }
+}
+
+extension View {
+    /// Con su reflejo debajo (Colecciones).
+    func reflected() -> some View { modifier(Reflection()) }
 }

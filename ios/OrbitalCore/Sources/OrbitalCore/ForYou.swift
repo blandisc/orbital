@@ -17,6 +17,8 @@ public struct Suggestion: Sendable, Equatable, Identifiable {
     public var overview: String
     /// Los géneros, si la fuente los trae (Trakt): «Decide por mí» no tiene que pedirlos.
     public var genres: [String] = []
+    /// La calificación de Trakt (0 a 10), si la fuente la trae: «Mejor calificadas en Trakt» en una lista.
+    public var traktRating: Double?
     public var poster: String
     public var wide: String
     /// Logo del título (metahub), como en la TV; si no carga o no hay, la interfaz cae al nombre en texto.
@@ -237,6 +239,7 @@ public actor ForYou {
                            poster: String(format: Self.metahubPoster, e.imdb), wide: String(format: Self.metahubBackground, e.imdb),
                            logo: String(format: Self.metahubLogo, e.imdb), reason: reason, next: e.next)
         s.genres = e.genres
+        s.traktRating = e.rating
         return s
     }
 

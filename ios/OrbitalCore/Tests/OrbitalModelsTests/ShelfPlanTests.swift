@@ -194,5 +194,6 @@ final class DecideRulesTests: XCTestCase {
         XCTAssertTrue(DecideModel.matches(["Comedy"], .light), "los de Cinemeta")
         XCTAssertTrue(DecideModel.matches(["science-fiction"], .think), "y los de Trakt")
         XCTAssertFalse(DecideModel.matches(["horror"], .together))
+        XCTAssertTrue(DecideModel.matches(["Science Fiction"], picked: ["sci-fi"]), "géneros elegidos: el mismo con otro nombre")
     }
 }
