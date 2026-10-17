@@ -256,6 +256,8 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(model.watchlistKeys, ["tt11280740"])
         XCTAssertEqual(model.visibleShelves.map(\.id), ["recs", "watchlist"], "el orden de la TV: Recomendadas y luego Tu watchlist; lo vacío no se pinta")
         let recs = try XCTUnwrap(model.visibleShelves.first)
+        XCTAssertEqual(model.items(for: recs).map(\.imdb), ["tt2788316", "tt13238346"], "«Todo»: la serie y la película, alternadas")
+        await model.setKind("series")
         XCTAssertEqual(model.items(for: recs).map(\.imdb), ["tt2788316"])
         let watchlist = try XCTUnwrap(model.visibleShelves.last)
         XCTAssertEqual(model.items(for: watchlist).map(\.imdb), ["tt11280740"])
