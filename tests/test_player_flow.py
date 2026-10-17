@@ -396,26 +396,33 @@ def test_the_time_is_said_in_12_hours():
 
 
 def test_the_stick_walks_the_buttons_and_a_presses_the_focused_one():
-    """El stick recorre los botones de abajo (empieza en Pausa) y A elige el enfocado; la cruceta sigue siendo atajo y
-    B quita el foco."""
+    """El stick recorre los botones de siempre (empieza en Pausa) y A elige el enfocado; Adelantar, Volumen y Episodio
+    abren sus opciones (A elige); la cruceta sigue siendo atajo y B quita el foco."""
     from orbital import player_ui
 
     p, mpv = series_player()
+    p.on_episode = lambda meta, step: None  # una serie con LT/RT: sale «Episodio»
     p.press("stick-right")
-    assert p._hud_focus == 1 and "Pausa" in mpv.overlays[1]  # Pausa enfocado
-    p.press("stick-right")
+    assert p._hud_focus == 0 and "Pausa" in mpv.overlays[1]  # Pausa enfocado
     p.press("stick-right")
     items = player_ui.nav_items(p._hud(p.current), paused=False)
-    assert items[p._hud_focus][1] == "x"  # Audio y subtítulos
+    assert items[p._hud_focus][2] == "x"  # Audio y subtítulos
     p.press("a")
     assert p.menu is not None and p.menu.kind == "tracks"  # A abrió lo enfocado (no pausó)
     p.press("b")  # cierra el panel
-    p.press("stick-left")
-    p._hud_focus = 0
-    seeks = len([c for c in mpv.sent if c[0] == "seek"])
-    p.press("a")  # −10 s
-    assert len([c for c in mpv.sent if c[0] == "seek"]) == seeks + 1
+    p._hud_focus = [i for i, it in enumerate(items) if it[2] == "seek"][0]
+    p.show_hud()
+    p.press("a")
+    assert p.menu.kind == "seek" and p.menu.column.options[p.menu.column.index]["label"] == "+10 s"
+    p.press("down")
+    p.press("a")  # +30 s
+    assert ("seek", 30, "relative") in mpv.sent and p.menu is None
+    p._hud_focus = [i for i, it in enumerate(items) if it[2] == "episode"][0]
+    p.show_hud()
+    p.press("a")
+    assert p.menu.kind == "episode" and p.menu.column.options[0]["label"] == "Siguiente episodio"
+    p.press("b")
     p.press("b")
     assert p._hud_focus is None  # B quita el foco
     p.press("right")  # la cruceta sigue adelantando como siempre
-    assert mpv.sent[-1][0] == "seek" or any(c[0] == "seek" for c in mpv.sent[-3:])
+    assert any(c[0] == "seek" and c[1] != 30 for c in mpv.sent[-3:])

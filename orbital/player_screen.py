@@ -179,7 +179,7 @@ class PlayerScreen:
         focus = getattr(self, "_hud_focus", None)
         if button in ("stick-left", "stick-right"):
             if focus is None:
-                focus = 1  # Pausa / Continuar
+                focus = 0  # Pausa / Continuar (el primero, como siempre)
             else:
                 focus = max(0, min(len(items) - 1, focus + (1 if button == "stick-right" else -1)))
             self._hud_focus = focus
@@ -192,16 +192,21 @@ class PlayerScreen:
             return None
         paused = bool(self._value("pause"))
         items = player_ui.nav_items(self._hud(self.current), paused=paused)
-        action = items[max(0, min(len(items) - 1, focus))][1]
+        action = items[max(0, min(len(items) - 1, focus))][2]
         if action == "a":
             return None  # Pausa / Continuar: lo de siempre de A
         if action == "quit":
             self._user_quit = True
             self._quit()
-            return action
-        self.press(action)
-        if action in ("left", "right") and self._hud_focus is not None:
-            self.show_hud()  # sigue la fila (no la burbuja de adelantar)
+        elif action in ("x", "y"):
+            self.press(action)
+        elif action == "seek":
+            self._open_panel(player_ui.seek_panel())
+        elif action == "volume":
+            now = (getattr(self, "system_volume", None) or [lambda: {"level": self._value("volume"), "muted": self._value("mute")}])[0]() or {}
+            self._open_panel(player_ui.volume_panel(int(now.get("level") or 0), bool(now.get("muted"))))
+        elif action == "episode":
+            self._open_panel(player_ui.episode_panel())
         return action
 
     def hide_hud(self) -> None:
@@ -305,6 +310,36 @@ class PlayerScreen:
         prop, value = option["action"]
         if prop == "category":  # la guía de canales: otra categoría, y se pasa a su lista de canales
             self._show_category(value)
+            return
+        if prop == "volumeto":  # se queda en el panel: oyes el cambio y sigues ajustando
+            system = getattr(self, "system_volume", None)
+            if system:
+                after = system[1](level=int(value), muted=False) or {"level": value}
+                self._show_notice(player_ui.volume_ass(after.get("level", value), muted=bool(after.get("muted"))), 1.6, layer=self.VOLUME)
+            else:
+                self.mpv.command("set_property", "volume", int(value))
+            for o in self.menu.column.options if self.menu else []:
+                o["current"] = o is option
+            self._draw_panel()
+            return
+        if prop == "mute":
+            self.close_menu()
+            self.toggle_mute()
+            return
+        if prop == "seekby":
+            self.close_menu()
+            self.mpv.command("seek", int(value), "relative")
+            self.show_hud(seeking=player_ui.seek_label(int(value)), position=self._expected_position(int(value)))
+            return
+        if prop == "epstep":
+            self.close_menu()
+            meta = getattr(self.current, "meta", None) or {}
+            if meta.get("kind") == "series" and self.on_episode:
+                self._queue_episode(meta, int(value))
+            return
+        if prop == "episodes":
+            self.close_menu()
+            self._open_more_soon()
             return
         if prop == "subscale":  # se queda en el panel: ves el cambio y sigues ajustando
             self.sub_scale = value
