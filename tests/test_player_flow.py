@@ -393,3 +393,29 @@ def test_the_time_is_said_in_12_hours():
     assert clock(datetime(2026, 10, 16, 23, 40)) == "11:40 p. m."
     assert clock(datetime(2026, 10, 16, 0, 5)) == "12:05 a. m."
     assert clock(datetime(2026, 10, 16, 9, 0)) == "9:00 a. m."
+
+
+def test_the_stick_walks_the_buttons_and_a_presses_the_focused_one():
+    """El stick recorre los botones de abajo (empieza en Pausa) y A elige el enfocado; la cruceta sigue siendo atajo y
+    B quita el foco."""
+    from orbital import player_ui
+
+    p, mpv = series_player()
+    p.press("stick-right")
+    assert p._hud_focus == 1 and "Pausa" in mpv.overlays[1]  # Pausa enfocado
+    p.press("stick-right")
+    p.press("stick-right")
+    items = player_ui.nav_items(p._hud(p.current), paused=False)
+    assert items[p._hud_focus][1] == "x"  # Audio y subtítulos
+    p.press("a")
+    assert p.menu is not None and p.menu.kind == "tracks"  # A abrió lo enfocado (no pausó)
+    p.press("b")  # cierra el panel
+    p.press("stick-left")
+    p._hud_focus = 0
+    seeks = len([c for c in mpv.sent if c[0] == "seek"])
+    p.press("a")  # −10 s
+    assert len([c for c in mpv.sent if c[0] == "seek"]) == seeks + 1
+    p.press("b")
+    assert p._hud_focus is None  # B quita el foco
+    p.press("right")  # la cruceta sigue adelantando como siempre
+    assert mpv.sent[-1][0] == "seek" or any(c[0] == "seek" for c in mpv.sent[-3:])

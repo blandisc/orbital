@@ -138,7 +138,8 @@ class PlayerScreen:
             source=meta.get("source_label", ""), series=meta.get("kind") == "series" and self.on_episode is not None,
             ends=player_ui.ends_at(position, duration), now=clock(),
             chapters=[float(c["time"]) for c in chapters], chapter_titles=[str(c.get("title") or "") for c in chapters],
-            facts=meta.get("facts", ""), description=meta.get("description", ""), seeking=seeking)
+            facts=meta.get("facts", ""), description=meta.get("description", ""), seeking=seeking,
+            focus=getattr(self, "_hud_focus", None))
 
     def show_hud(self, seeking: str = "", *, position: float | None = None, paused: bool | None = None) -> None:
         """Barra inferior: se queda en pausa; reproduciendo, se va sola a los pocos segundos.
@@ -168,10 +169,46 @@ class PlayerScreen:
         if self._value("pause") and self._hud_visible and self.menu is None:
             self.show_hud()
 
+    def _stick_focus(self, button: str) -> None:
+        """◀ ▶ con el stick: el foco recorre los botones de abajo (empieza en Pausa/Continuar); ▲ ▼ solo enseñan la barra."""
+        if self._is_live() or self.current is None:
+            self.show_hud()
+            return
+        paused = bool(self._value("pause"))
+        items = player_ui.nav_items(self._hud(self.current), paused=paused)
+        focus = getattr(self, "_hud_focus", None)
+        if button in ("stick-left", "stick-right"):
+            if focus is None:
+                focus = 1  # Pausa / Continuar
+            else:
+                focus = max(0, min(len(items) - 1, focus + (1 if button == "stick-right" else -1)))
+            self._hud_focus = focus
+        self.show_hud()
+
+    def _focused_action(self) -> str | None:
+        """A con un botón enfocado por el stick: hace lo de ese botón. Devuelve cuál (None si no había foco)."""
+        focus = getattr(self, "_hud_focus", None)
+        if focus is None or not self._hud_visible or self.menu is not None or self._card is not None or self.current is None:
+            return None
+        paused = bool(self._value("pause"))
+        items = player_ui.nav_items(self._hud(self.current), paused=paused)
+        action = items[max(0, min(len(items) - 1, focus))][1]
+        if action == "a":
+            return None  # Pausa / Continuar: lo de siempre de A
+        if action == "quit":
+            self._user_quit = True
+            self._quit()
+            return action
+        self.press(action)
+        if action in ("left", "right") and self._hud_focus is not None:
+            self.show_hud()  # sigue la fila (no la burbuja de adelantar)
+        return action
+
     def hide_hud(self) -> None:
         if self._hud_timer:
             self._hud_timer.cancel()
         self._hud_visible = False
+        self._hud_focus = None  # el foco del stick se va con la barra
         self._overlay(1, None)
 
     def _hide_hud_if_playing(self) -> None:
@@ -518,12 +555,18 @@ class PlayerScreen:
             self._hold_to_quit()
             return
         if button.startswith("stick-"):
-            # Un stick: en un panel mueve el foco como la cruceta; si no, solo enciende los controles
-            # (no adelanta ni sube el volumen: un empujón sin querer no cambia nada).
+            # Un stick: en un panel mueve el foco como la cruceta; si no, recorre los botones de abajo (A elige; la
+            # cruceta sigue siendo atajo). No adelanta ni sube el volumen: un empujón sin querer no cambia nada.
             if self.menu is not None:
                 self._menu_press(button.removeprefix("stick-"))
             elif self._card is None:
-                self.show_hud()
+                self._stick_focus(button)
+            return
+        if button == "b" and getattr(self, "_hud_focus", None) is not None and self.menu is None and self._card is None:
+            self._hud_focus = None  # B quita el foco del stick (otra B ya es «Mantén: salir»)
+            self.show_hud()
+            return
+        if button == "a" and self._focused_action() is not None:
             return
         if button != "y":
             self._more_token = None  # el panel Y que se estaba buscando ya no se abre

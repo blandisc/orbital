@@ -362,6 +362,7 @@ class Hud:
     facts: str = ""  # "2024 · ★ 8.5 · Ciencia ficción" (en pausa)
     description: str = ""  # sinopsis (en pausa)
     seeking: str = ""  # "+10 s" / "−1 min" mientras adelantas: solo la barra y la burbuja
+    focus: int | None = None  # con el stick: el botón enfocado de la fila de abajo (A lo elige)
 
 
 def info_line(hud: Hud) -> str:
@@ -460,8 +461,9 @@ def hud_ass(hud: Hud) -> str:
              ("◀ ▶", "Adelantar"), *([("LT RT", "Episodio")] if hud.series else []), ("B", "Mantén: salir")]
     while len(items) > 4 and hints_width(items) > W - 2 * MARGIN:
         items.pop(-2)  # si no caben (4:3): primero LT/RT, luego ◀▶
-    lines += [bar, _times(hud, BAR_Y + 28),
-              _touch_bar(hud, 1000, paused=False) if TOUCH else hints(items, 1022, right=W - MARGIN)]
+    bottom = nav_bar(hud, 1000, paused=False) if hud.focus is not None else \
+        _touch_bar(hud, 1000, paused=False) if TOUCH else hints(items, 1022, right=W - MARGIN)
+    lines += [bar, _times(hud, BAR_Y + 28), bottom]
     return "\n".join(lines)
 
 
@@ -493,16 +495,22 @@ def paused_ass(hud: Hud) -> str:
         lines.append(text(MARGIN, y + 4, esc(line), 26, SOFT))
         y += 40
     y += 30
-    lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes")], MARGIN, y))
+    if hud.focus is None:  # con el stick, los mismos botones van en la fila de abajo (no dos veces)
+        lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes")], MARGIN, y))
     bar, _ = progress_bar(hud)
     more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), *([("LT RT", "Episodio")] if hud.series else []),
             ("B", "Mantén: salir")]
     room = max(260, W - 2 * MARGIN - hints_width(more) - 48)
     if TOUCH:
         room = max(260, W - 2 * MARGIN - pills_width(_touch_items(hud, paused=True)) - 48)
-    lines += [bar, _times(hud, BAR_Y + 28),
-              text(MARGIN, 1022, esc(fit(info_line(hud), 22, min(1200, room), "semi")), 22, MUTED, weight="semi", align=4),
-              _touch_bar(hud, 1000, paused=True) if TOUCH else hints(more, 1022, right=W - MARGIN)]
+    if hud.focus is not None:
+        room = max(0, W - 2 * MARGIN - pills_width(nav_items(hud, paused=True)) - 48)
+    bottom = nav_bar(hud, 1000, paused=True) if hud.focus is not None else \
+        _touch_bar(hud, 1000, paused=True) if TOUCH else hints(more, 1022, right=W - MARGIN)
+    lines += [bar, _times(hud, BAR_Y + 28)]
+    if room >= 260:  # con la fila del stick a veces no cabe la línea de audio: se quita (está en X)
+        lines.append(text(MARGIN, 1022, esc(fit(info_line(hud), 22, min(1200, room), "semi")), 22, MUTED, weight="semi", align=4))
+    lines.append(bottom)
     return "\n".join(lines)
 
 
@@ -529,7 +537,7 @@ def buttons(items: list[tuple[str, str]], x: float, y: float, *, layer: str = "h
 
 
 def pills(items: Sequence[tuple[str, object]], y: float, *, right: float | None = None, left: float | None = None,
-          center: float | None = None, layer: str = "hud", h: float = 72) -> str:
+          center: float | None = None, layer: str = "hud", h: float = 72, selected: int | None = None) -> str:
     """Con el dedo: una fila de botones tocables («−10 s», «+10 s», «Salir»…), anotados en `layer`."""
     if not items:
         return ""
@@ -538,12 +546,30 @@ def pills(items: Sequence[tuple[str, object]], y: float, *, right: float | None 
     total = sum(widths) + gap * (len(items) - 1)
     x = (right - total) if right is not None else (center - total / 2) if center is not None else (left if left is not None else MARGIN)
     out = []
-    for (label, action), w in zip(items, widths, strict=True):
-        out.append(rrect(x, y, w, h, h / 2, PANEL, "30", outline=TEXT, width=1.5))
-        out.append(text(x + w / 2, y + h / 2, esc(label), size, weight="semi", align=5))
+    for i, ((label, action), w) in enumerate(zip(items, widths, strict=True)):
+        if i == selected:  # el enfocado con el stick: claro, con letra oscura
+            out.append(rrect(x, y, w, h, h / 2, TEXT, "00"))
+            out.append(text(x + w / 2, y + h / 2, esc(label), size, ON_LIGHT, weight="semi", align=5))
+        else:
+            out.append(rrect(x, y, w, h, h / 2, PANEL, "30", outline=TEXT, width=1.5))
+            out.append(text(x + w / 2, y + h / 2, esc(label), size, weight="semi", align=5))
         targets[layer].append((x, y, w, h, action))
         x += w + gap
     return "\n".join(out)
+
+
+def nav_items(hud: Hud, *, paused: bool) -> list[tuple[str, str]]:
+    """Con el stick: los botones de abajo, en orden, para recorrerlos y elegir con A (la cruceta sigue siendo atajo)."""
+    return [("−10 s", "left"), ("Continuar" if paused else "Pausa", "a"), ("+10 s", "right"), ("Audio y subtítulos", "x"),
+            ("Episodios" if hud.series else "Fuentes", "y"), *([("Siguiente episodio", "rt")] if hud.series else []),
+            ("Salir", "quit")]
+
+
+def nav_bar(hud: Hud, y: float, *, paused: bool) -> str:
+    """La fila de botones con el enfocado resaltado (claro, como el foco en todo Orbital)."""
+    items = nav_items(hud, paused=paused)
+    focus = max(0, min(len(items) - 1, hud.focus or 0))
+    return pills(items, y, right=W - MARGIN, h=66, selected=focus) if paused else pills(items, y, center=W / 2, h=66, selected=focus)
 
 
 def _touch_items(hud: Hud, *, paused: bool) -> list[tuple[str, object]]:
