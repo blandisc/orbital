@@ -92,7 +92,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `TouchPad`, `RemoteKey`, `RemoteTextField` | El control completo de tu Orbital: pad (deslizar = flechas, tocar = A), teclas de la consola y escribir en la TV | `RemoteSheet` (la hoja del accesorio, estirada) |
 | `VoiceCommandBar`, `VoiceChoices` | La voz del control: el micrófono con lo que oyó, la respuesta y lo que entendió; y, si tu Orbital no supo cuál, las opciones para tocar (`VoiceAssistant.choose`) | `RemoteSheet` |
 | `VoiceGuideView` | «Lo que puedes decir»: dónde hablarle (control, Siri, Alexa), lo que solo hace el iPhone, las frases de la consola (alexa/commands.json) y qué hacer si no funciona | Ajustes › Voz y el «?» junto al micrófono del control |
-| `OrbitalIcon`, `ListIcon` | Los íconos de las listas, los mismos de la TV (icons.js → `node scripts/list_icons.mjs` → Assets.xcassets/Icons; tests/web/list-icons.test.mjs los mantiene iguales) | `Shelf`, `DSSectionHead`/`Rail`, la pestaña Para ti |
+| `OrbitalIcon` | Los íconos propios de Orbital, los mismos de la TV (icons.js → `node scripts/list_icons.mjs` → Assets.xcassets/Icons; tests/web/list-icons.test.mjs los mantiene iguales). En el iPhone solo como marca | La pestaña Para ti |
 | `DeckCard`, `deckTransition`, `TimeStyle`, `ProgressFillLabel` | El carrusel de «Seguir viendo»: tarjetas con lo que sigue a los lados (coverflow o abanico, más chicas y desenfocadas) y cuánto falta (píldora de vidrio, borde, botón que se llena u órbita); lo elige el usuario en Ajustes › Inicio | `HomeView` |
 | `AvatarImage`, `AvatarPicker` | Tu avatar (Assets › Avatars, 12 espaciales) y su selector | `HomeView` (junto al saludo), Ajustes › Inicio |
 | Botón «Control de tu Orbital» (`av.remote`) | Sin nada en la TV, abre el control completo desde la barra de Inicio (el accesorio solo aparece mientras la TV reproduce, y no dentro de fichas ni Ajustes) | Inicio, con tu Orbital conectada |
@@ -101,7 +101,9 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `Shelf`, `RankedPosterCard`, `PosterCard`, `TitleLink`, `Rail` | Estantes, Top 10, pósters | Para ti, Inicio, Buscar |
 | `Mosaic` | El mosaico que sube despacio (como `foryou-mosaic.js` de la TV) | Para ti |
 | `DSSegmented`, `DSChipRow`, `DSIconButton`, `DSNotice`, `DSProgress` | Controles nativos con los tokens de Orbital | Varias |
-| `DSSectionHead` | El encabezado de toda sección: ícono de color (o logo), título, dato o cuántos a la derecha, «›» si abre algo y una línea gris debajo | Todas las pantallas (también `Shelf` y las listas de Descargas) |
+| `DSSectionHead` | El encabezado de toda sección («Editorial»): título grande, «Ver todo» si abre la lista completa (o un dato corto) y una línea gris solo si ayuda; sin íconos | Todas las pantallas (también `Shelf` y las listas de Descargas) |
+| `CoverCard`, `WideCard` | La portada de una sección (lo más importante en grande, con su porqué en ámbar) y la pieza panorámica con su dato en la esquina | Inicio › Sale hoy / Sale pronto |
+| `posterCaptions` (entorno) | El nombre bajo el póster: sí en cuadrículas, no en las tiras de una sección | Tiras y cuadrículas |
 | `ProfileButton` | Tu avatar arriba a la derecha de cada pestaña: abre Ajustes | Inicio, Para ti, Buscar, Descargas |
 | `StorageBar` | El espacio del iPhone: series, películas, otras apps y libre (ámbar con poco espacio) | Descargas |
 | `SettingsRow`, `ProfileCard` | Renglón de Ajustes con su ícono de color y su valor actual; tu perfil arriba (el avatar con lápiz) | Ajustes |
@@ -121,6 +123,13 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 - `.onArt()`: lo que va sobre el arte, como en la sala oscura.
 - `.bottomAccessory(isEnabled:)`: el accesorio de la barra solo cuando hay algo (iOS 26.1+; en 26.0, la tarjeta en Inicio).
 - `.tint(DS.accent)` en listas y formularios: lo interactivo (interruptores, botones de la lista) en el acento.
+
+### Regla de íconos
+
+- **Secciones**: sin ícono. El color lo pone el arte.
+- **Renglones de ajustes** (Ajustes, «Ajustes del video»): símbolo del sistema (SF Symbols) solo en su color de `DS.ListTint`, sin fondo.
+- **Botones y controles**: símbolo del sistema en blanco (o el color del texto), con su nombre cuando no es obvio.
+- **Íconos propios de Orbital** (`OrbitalIcon`): solo como marca (la pestaña «Para ti»).
 
 ## 5. Movimiento con causa
 

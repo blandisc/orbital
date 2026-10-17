@@ -25,7 +25,7 @@ struct BrowseView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s6) {
+            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 if query.trimmingCharacters(in: .whitespaces).count >= 2 { results } else { suggestions }
             }
             .padding(.bottom, DS.Space.s8)
@@ -103,7 +103,7 @@ struct BrowseView: View {
     /// tus plataformas). Películas y series alternadas, de Cinemeta.
     private func popular(_ model: CatalogModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Lo más popular hoy", trailing: "Stremio", icon: .flame).padding(.horizontal, DS.Space.gutter)
+            DSSectionHead(title: "Lo más popular hoy", trailing: "Stremio").padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: DS.Space.s3) {
                     ForEach(Array(model.popular.prefix(Self.popularCount).enumerated()), id: \.element.id) { index, item in
@@ -124,7 +124,7 @@ struct BrowseView: View {
     /// «Por género»: los géneros en mosaicos con su arte, bajo un encabezado igual al de arriba (una sola pantalla, no dos).
     private var explore: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Por género", icon: .spark)
+            DSSectionHead(title: "Por género")
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
                 ForEach(CatalogModel.exploreGenres, id: \.self) { genre in
                     NavigationLink(value: GenreRoute(genre: genre)) { ArtTile(title: Text(verbatim: genreName(genre)), asset: Self.genreAsset(genre)) }

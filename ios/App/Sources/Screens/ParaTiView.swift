@@ -190,19 +190,6 @@ struct ShelfPoster: View {
     }
 }
 
-/// El ícono de cada estante: el mismo que le pone la TV a esa lista (orbital/foryou.py · lists()).
-func shelfIcon(_ plan: ShelfPlan) -> OrbitalIcon {
-    switch plan.id {
-    case "mine": .series
-    case "watchlist": .bookmark
-    case "recs": .spark
-    case "trend": .trend
-    case "popular", "cinemeta": .flame
-    case _ where plan.id.hasPrefix("addon:"): .addon
-    case _ where plan.id.hasPrefix("list:"): .list
-    default: plan.style == .plain ? .list : .chart
-    }
-}
 
 /// El filtro de «Para ti › Listas»: todo, solo series o solo películas.
 enum KindFilter: String, CaseIterable, Identifiable {
@@ -240,7 +227,7 @@ struct ListsView: View {
 
     private var scroller: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: DS.Space.s6) {
+            LazyVStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 // El arte a sangre ya pone su margen (en claro es tarjeta; en oscuro va de borde a borde).
                 // El único filtro de la pantalla, arriba: lo cambia todo lo de abajo (los estantes que separan series y películas).
                 if model.hasKindSplit {
@@ -251,7 +238,7 @@ struct ListsView: View {
                 if !slides.isEmpty { featuredCarousel(slides) }
                 if !model.platformHubs.isEmpty { platforms }   // justo bajo el destacado: tus plataformas a la vista, no hasta abajo
                 if !model.airings.isEmpty {   // justo después del destacado; vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
-                    Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), icon: .calendar, route: ShelfRoute(id: "estrenos")) {
+                    Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), route: ShelfRoute(id: "estrenos")) {
                         ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
                     }
                 }
@@ -274,7 +261,7 @@ struct ListsView: View {
     /// Cada plataforma, una tarjeta con su top 3 en abanico; tocarla abre sus rankings.
     private var platforms: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Tus plataformas", icon: .chart, count: model.platformHubs.count, meta: Text("Sus rankings de hoy")).padding(.horizontal, DS.Space.gutter)
+            DSSectionHead(title: "Tus plataformas", meta: Text("Sus rankings de hoy")).padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: DS.Space.s3) {
                     ForEach(model.platformHubs) { hub in
@@ -294,7 +281,7 @@ struct ListsView: View {
     // MARK: estantes
     private func shelf(_ plan: ShelfPlan) -> some View {
         let items = model.items(for: plan)
-        return Shelf(title: shelfTitle(plan), meta: shelfMeta(plan), logo: plan.style == .plain ? nil : plan.list.logo, icon: shelfIcon(plan),
+        return Shelf(title: shelfTitle(plan), meta: shelfMeta(plan),
                      route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty) {
             ForEach(items) { s in
                 ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb)) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Tu watchlist» todo está ahí: el marcador sobra
@@ -305,7 +292,7 @@ struct ListsView: View {
     /// Sin ninguna fuente tuya: lo más popular de Stremio y una invitación (un botón, no una tarjeta gris).
     @ViewBuilder private var sourcesFallback: some View {
         if !model.mosaic.isEmpty {
-            Shelf(title: Text("Lo más popular en Stremio"), meta: Text("Sin Trakt ni Orbital, esto es lo que ve todo el mundo"), icon: .flame) {
+            Shelf(title: Text("Lo más popular en Stremio"), meta: Text("Sin Trakt ni Orbital, esto es lo que ve todo el mundo")) {
                 ForEach(model.mosaic) { s in
                     ShelfPoster(suggestion: s, style: .plain, inList: false) { dismissed in Task { await model.dismiss(dismissed) } }
                 }
@@ -444,7 +431,7 @@ struct PlatformRankingsView: View {
     var body: some View {
         let tint = DS.PlatformTint.color(hub.brand)
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s6) {
+            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 HStack(spacing: DS.Space.s4) {
                     PlatformLogoTile(url: hub.logo, name: hub.name, size: DS.PlatformFan.headerLogo, radius: DS.Radius.lg, tint: tint,
                                      glow: DS.PlatformFan.headerGlow)
@@ -468,7 +455,7 @@ struct PlatformRankingsView: View {
         let items = model.items(for: ranking)
         if !items.isEmpty || model.isLoading(ranking: ranking) {
             VStack(alignment: .leading, spacing: DS.Space.s3) {
-                DSSectionHead(title: rankingTitle(ranking), trailing: rankingSource(ranking), icon: ranking.source == .netflixTop10 ? .chart : .trend)
+                DSSectionHead(title: rankingTitle(ranking), trailing: rankingSource(ranking))
                     .padding(.horizontal, DS.Space.gutter)
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: DS.Space.s3) {

@@ -26,7 +26,7 @@ struct DownloadsView: View {
                 .listRowBackground(DS.surface)
             }
             if !model.active.isEmpty {
-                Section { ForEach(model.active) { row($0, model) } } header: { DSSectionHead(title: "Descargando", icon: .watching, count: model.active.count) }
+                Section { ForEach(model.active) { row($0, model) } } header: { DSSectionHead(title: "Descargando", count: model.active.count) }
                     .listRowBackground(DS.surface)
             }
             // Listo para ver: series (una fila cada una; dentro, sus temporadas y episodios) y películas, aparte.
@@ -37,7 +37,7 @@ struct DownloadsView: View {
                             .swipeActions { Button("Borrar", role: .destructive) { Task { for item in g.items { await model.remove(item.id) } } }.tint(DS.danger) }
                     }
                 } header: {
-                    DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes })), icon: .series)
+                    DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes })))
                 }
                 .listRowBackground(DS.surface)
             }
@@ -49,7 +49,7 @@ struct DownloadsView: View {
                         }
                     }
                 } header: {
-                    DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes })), icon: .library)
+                    DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes })))
                 }
                 .listRowBackground(DS.surface)
             }
@@ -57,7 +57,7 @@ struct DownloadsView: View {
                 Section {
                     Toggle("Bajar el siguiente episodio al terminar uno", isOn: setting(\.autoNextDownload))
                     Toggle("Borrar al terminar de verlo", isOn: setting(\.deleteWhenWatched))
-                } header: { DSSectionHead(title: "Descarga inteligente", icon: .spark) } footer: {
+                } header: { DSSectionHead(title: "Descarga inteligente") } footer: {
                     if settings.wifiOnlyDownloads { Label("Solo con Wi‑Fi", systemImage: "wifi").recipe(.footnote) }
                 }
                 .listRowBackground(DS.surface)

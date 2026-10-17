@@ -29,6 +29,11 @@ func badgeKey(_ reason: SuggestionReason) -> LocalizedStringKey {
     }
 }
 
+extension EnvironmentValues {
+    /// El nombre bajo cada póster: sí en cuadrículas, no en las tiras de una sección (el póster ya lo dice).
+    @Entry var posterCaptions = true
+}
+
 /// Arriba a la derecha de cada pestaña: tu avatar, que abre Ajustes (en todas igual: siempre se sabe dónde están).
 struct ProfileButton: View {
     @EnvironmentObject private var env: AppEnvironment
@@ -46,8 +51,6 @@ struct HomeListRoute: Hashable { var id: String }
 struct Rail<Content: View>: View {
     let title: LocalizedStringKey
     var trailing: LocalizedStringKey?
-    var logo: String?
-    var icon: OrbitalIcon?
     var count: Int?
     var route: HomeListRoute?
     @ViewBuilder var content: () -> Content
@@ -56,15 +59,15 @@ struct Rail<Content: View>: View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             Group {
                 if let route {
-                    NavigationLink(value: route) { DSSectionHead(title: title, trailing: trailing, logo: logo, icon: icon, count: count, chevron: true) }
+                    NavigationLink(value: route) { DSSectionHead(title: title, trailing: trailing, count: count, chevron: true) }
                         .buttonStyle(.plain)
                 } else {
-                    DSSectionHead(title: title, trailing: trailing, logo: logo, icon: icon, count: count)
+                    DSSectionHead(title: title, trailing: trailing, count: count)
                 }
             }
             .padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.scrollTargetLayout()
+                LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.scrollTargetLayout().environment(\.posterCaptions, false)
             }
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
@@ -84,14 +87,18 @@ struct TitleLink: View {
     var width: CGFloat = DS.Poster.railWidth
     /// Un renglón más debajo del nombre («2021 · Película»): distingue títulos que se llaman igual.
     var detail: Text?
+    @Environment(\.posterCaptions) private var captions
 
     var body: some View {
         NavigationLink(value: route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterCard(title: route.title, poster: route.poster, badge: badge, bookmarked: bookmarked, rank: rank, progress: progress, width: width)
                     .titleZoomSource(route)
-                Text(route.title).recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading)
-                if let detail { detail.recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading) }
+                // En una tira (Editorial) el póster habla solo; en una cuadrícula (resultados, géneros) el nombre ayuda a distinguir.
+                if captions {
+                    Text(route.title).recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading)
+                    if let detail { detail.recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading) }
+                }
             }
         }
         .buttonStyle(.plain)

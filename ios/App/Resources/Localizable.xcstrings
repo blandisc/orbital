@@ -4247,6 +4247,17 @@
         }
       }
     },
+    "Sale pronto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coming up"
+          }
+        }
+      }
+    },
     "Salir": {
       "extractionState": "manual",
       "localizations": {
@@ -5464,6 +5475,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Show the lists"
+          }
+        }
+      }
+    },
+    "Ver todo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See all"
           }
         }
       }

@@ -27,8 +27,10 @@ public final class HomeModel: ObservableModel {
     public private(set) var myList: [HomeItem] = [] { didSet { changed() } }
     public private(set) var traktPending: [Suggestion] = [] { didSet { changed() } }
     public private(set) var isLoading = false { didSet { changed() } }
-    /// Lo primero que sale hoy de tus series (Trakt): el título de Inicio al bajar lo dice («Sale hoy: Severance»).
-    public private(set) var airingToday: Airing? { didSet { changed() } }
+    /// Lo que sale de tus series en los próximos días (Trakt): «Sale hoy» (portada) y «Sale pronto» en Inicio.
+    public private(set) var upcoming: [Airing] = [] { didSet { changed() } }
+    /// Lo primero que sale hoy: la portada de Inicio y el título al bajar («Sale hoy: Severance»).
+    public var airingToday: Airing? { upcoming.first { Calendar.current.isDateInToday($0.day) } }
     public private(set) var offline = false { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }
     private let services: Services
@@ -76,7 +78,7 @@ public final class HomeModel: ObservableModel {
             if let fetchedPending { traktPending = Array(fetchedPending.prefix(12)) }
             else if !(await forYou.traktLinked) { traktPending = [] }   // desconectaste Trakt: ya no hay watchlist que enseñar
         }
-        if !cancelled, let fetchedAirings { airingToday = fetchedAirings.first { Calendar.current.isDateInToday($0.day) } }
+        if !cancelled, let fetchedAirings { upcoming = Array(fetchedAirings.prefix(10)) }
         publishWidget(airings: cancelled ? nil : fetchedAirings)   // los estrenos también van al widget mediano
     }
 

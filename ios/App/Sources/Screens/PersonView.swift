@@ -47,7 +47,7 @@ struct PersonView: View {
                         .onTapGesture { withAnimation { expanded.toggle() } }
                 }
                 if let credits = person?.credits, !credits.isEmpty {
-                    DSSectionHead(title: "Filmografía", icon: .list, count: credits.count)
+                    DSSectionHead(title: "Filmografía")
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.railWidth), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
                         ForEach(credits) { TmdbPoster(title: $0) }
                     }

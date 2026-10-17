@@ -25,7 +25,7 @@ struct HomeView: View {
     var body: some View {
         let model = home.model
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s6) {
+            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 if model.offline { DSNotice(text: "Sin conexión: se ve lo último que guardé.", tone: .warn).padding(.horizontal, DS.Space.gutter) }
                 // Con iOS 26.1 lo que suena en la TV vive en el accesorio de la barra de pestañas (y su control remoto en una hoja);
                 // antes, en esta tarjeta.
@@ -52,15 +52,16 @@ struct HomeView: View {
                 }
                 if model.continueWatching.count > Self.heroCount { alsoHad(model) }
                 if !model.myList.isEmpty {
-                    Rail(title: "Mi lista", icon: .library, count: model.myList.count, route: HomeListRoute(id: "mylist")) {
+                    Rail(title: "Mi lista", count: model.myList.count, route: HomeListRoute(id: "mylist")) {
                         ForEach(model.myList) { item in
                             TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster))
                         }
                     }
                 }
+                if !model.upcoming.isEmpty { upcoming(model) }
                 if !model.traktPending.isEmpty {
                     // «Tu watchlist» (Trakt), con el nombre de la TV; dentro, todo está en tu watchlist: la etiqueta sobra.
-                    Rail(title: "Tu watchlist", icon: .bookmark, count: model.traktPending.count, route: HomeListRoute(id: "watchlist")) {
+                    Rail(title: "Tu watchlist", count: model.traktPending.count, route: HomeListRoute(id: "watchlist")) {
                         ForEach(model.traktPending) { s in TitleLink(route: s.route) }
                     }
                 }
@@ -229,9 +230,48 @@ struct HomeView: View {
         return parts
     }
 
+    /// «Sale hoy» (A + una portada): lo de hoy en grande con su hora; lo demás, en panorámicas. Sin nada hoy, «Sale pronto».
+    @ViewBuilder private func upcoming(_ model: HomeModel) -> some View {
+        let today = model.airingToday
+        let rest = model.upcoming.filter { $0.id != today?.id }
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: today == nil ? Text("Sale pronto") : Text("Sale hoy")).padding(.horizontal, DS.Space.gutter)
+            if let today {
+                NavigationLink(value: today.series.route) {
+                    CoverCard(art: today.series.wide, logo: Artwork.logoURL(metaID: today.series.imdb), title: today.series.title,
+                              why: airingWhen(today), detail: Text(verbatim: today.episodeLabel(env.services.episodeLabel)))
+                }
+                .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
+            }
+            if !rest.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                        ForEach(rest) { a in
+                            NavigationLink(value: a.series.route) {
+                                WideCard(art: a.series.wide, logo: Artwork.logoURL(metaID: a.series.imdb), title: a.series.title, badge: airingWhen(a),
+                                         caption: Text(verbatim: "\(a.series.title) · \(a.episodeLabel(env.services.episodeLabel))"))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .scrollTargetLayout()
+                }
+                .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+                .scrollTargetBehavior(.viewAligned)
+            }
+        }
+    }
+
+    /// «Hoy · 21:00», «Mañana», «Viernes 24».
+    private func airingWhen(_ a: Airing) -> Text {
+        let locale = env.uiLocale
+        if Calendar.current.isDateInToday(a.day) { return Text("Hoy") + Text(verbatim: " · ") + airingTime(a, locale: locale) }
+        return dayName(a.day, locale: locale)
+    }
+
     /// «También tenías»: lo demás de «Seguir viendo», en piezas anchas con su avance.
     private func alsoHad(_ model: HomeModel) -> some View {
-        Rail(title: "También tenías", icon: .watching, count: model.continueWatching.count - Self.heroCount) {
+        Rail(title: "También tenías", count: model.continueWatching.count - Self.heroCount) {
             ForEach(model.continueWatching.dropFirst(Self.heroCount)) { item in
                 NavigationLink(value: route(item)) {
                     StillCard(title: item.title, art: item.background ?? item.poster,

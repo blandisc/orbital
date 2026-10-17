@@ -99,48 +99,41 @@ struct DSProgress: View {
     }
 }
 
-/// El encabezado de toda sección de la app (Inicio, Para ti, Buscar, Descargas): el ícono de la lista en su color (o el logo
-/// de la plataforma), el título, a la derecha el dato (cuántos hay, de dónde viene) y «›» si abre algo; debajo, en gris,
-/// una línea opcional («Esta semana en México»). Una sola pieza: todas las secciones se ven igual.
+/// El encabezado de toda sección de la app (dirección «Editorial»): el título grande, a la derecha «Ver todo» si abre la
+/// lista completa (o un dato corto), y debajo una línea gris solo cuando ayuda a decidir. Sin íconos: el color lo pone el
+/// arte de abajo. Una sola pieza: todas las secciones se ven igual.
 struct DSSectionHead: View {
     let title: Text
     var trailing: Text?
-    /// El logo de la plataforma (Netflix, Disney+…), si la lista es de una: siempre a la misma altura que en los chips.
-    var logo: String?
-    /// El ícono de la lista (el mismo de la TV), si no hay logo.
-    var icon: OrbitalIcon?
     var action: (() -> Void)?
-    /// Cuántos hay (a la derecha, en gris) y un chevron: el encabezado abre la lista completa.
+    /// Cuántos hay (en gris), en listas que son herramienta (Descargas); en un escaparate, mejor «Ver todo».
     var count: Int?
+    /// Abre la lista completa: «Ver todo».
     var chevron = false
     /// La línea gris de abajo.
     var meta: Text?
 
-    init(title: Text, trailing: Text? = nil, logo: String? = nil, icon: OrbitalIcon? = nil, action: (() -> Void)? = nil, count: Int? = nil,
-         chevron: Bool = false, meta: Text? = nil) {
-        self.title = title; self.trailing = trailing; self.logo = logo; self.icon = icon; self.action = action; self.count = count
-        self.chevron = chevron; self.meta = meta
+    init(title: Text, trailing: Text? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil) {
+        self.title = title; self.trailing = trailing; self.action = action; self.count = count; self.chevron = chevron; self.meta = meta
     }
 
-    init(title: LocalizedStringKey, trailing: LocalizedStringKey? = nil, logo: String? = nil, icon: OrbitalIcon? = nil, action: (() -> Void)? = nil,
-         count: Int? = nil, chevron: Bool = false, meta: Text? = nil) {
-        self.init(title: Text(title), trailing: trailing.map { Text($0) }, logo: logo, icon: icon, action: action, count: count, chevron: chevron, meta: meta)
+    init(title: LocalizedStringKey, trailing: LocalizedStringKey? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil) {
+        self.init(title: Text(title), trailing: trailing.map { Text($0) }, action: action, count: count, chevron: chevron, meta: meta)
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: DS.Space.s2) {
-            if let logo, !logo.isEmpty { DSPlatformLogo(url: logo) } else if let icon { ListIcon(icon: icon) }
+        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
                 if let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }
             }
             Spacer(minLength: DS.Space.s2)
             if let trailing {
-                if let action { Button(action: action) { trailing }.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
-                else { trailing.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
+                if let action { Button(action: action) { trailing }.font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted) }
+                else { trailing.font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted) }
             }
-            if let count { Text(verbatim: "\(count)").recipe(.footnote, color: DS.textMuted) }
-            if chevron { Image(systemName: "chevron.right").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.textMuted).accessibilityHidden(true) }
+            if chevron { Text("Ver todo").recipe(.secondary, color: DS.textMuted) }
+            else if let count { Text(verbatim: "\(count)").recipe(.secondary, color: DS.textMuted) }
         }
         .textCase(nil)   // también como encabezado de una lista (Descargas): sin las mayúsculas del sistema
         .contentShape(Rectangle())

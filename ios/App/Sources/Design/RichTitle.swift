@@ -149,12 +149,15 @@ struct PersonRoute: Hashable { var id: Int; var name: String }
 /// Un póster de TMDB que abre su ficha.
 struct TmdbPoster: View {
     let title: TmdbTitle
+    @Environment(\.posterCaptions) private var captions
     var body: some View {
         NavigationLink(value: TmdbRoute(title: title)) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterCard(title: title.title, poster: title.poster, width: DS.Poster.railWidth)
-                Text(verbatim: title.title).recipe(.footnote).lineLimit(1).frame(width: DS.Poster.railWidth, alignment: .leading)
-                Text(verbatim: title.role ?? title.year.map(String.init) ?? "").recipe(.footnote).lineLimit(1).frame(width: DS.Poster.railWidth, alignment: .leading)
+                if captions {   // en la filmografía (cuadrícula) dice su papel; en una tira, solo el póster
+                    Text(verbatim: title.title).recipe(.footnote).lineLimit(1).frame(width: DS.Poster.railWidth, alignment: .leading)
+                    Text(verbatim: title.role ?? title.year.map(String.init) ?? "").recipe(.footnote).lineLimit(1).frame(width: DS.Poster.railWidth, alignment: .leading)
+                }
             }
         }
         .buttonStyle(.plain)

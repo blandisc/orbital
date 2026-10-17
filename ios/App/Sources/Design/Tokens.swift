@@ -212,6 +212,13 @@ enum DS {
         static let videoShare: CGFloat = 0.5
     }
 
+    /// La dirección «Editorial» (A + una portada): espacio entre secciones, la portada y la pieza panorámica.
+    enum Editorial {
+        static let sectionGap: CGFloat = 36, coverHeight: CGFloat = 200, wideWidth: CGFloat = 250, veilStart: CGFloat = 0.35
+        /// Hasta dónde crece el logo en la portada y en la pieza panorámica.
+        static let coverLogo = CGSize(width: 200, height: 60), wideLogo = CGSize(width: 130, height: 34)
+    }
+
     /// La barra de espacio de Descargas.
     enum Storage {
         static let height: CGFloat = 14, gap: CGFloat = 2, minSegment: CGFloat = 3, dot: CGFloat = 8
@@ -306,8 +313,6 @@ enum DS {
         static let logo = CGFloat(DesignTokens.Size.logo)
         /// La letra de «orbital» en la marca grande (la bienvenida) y el planeta solo, junto a un título o en el widget.
         static let wordmark: CGFloat = 40, markSmall: CGFloat = 22
-        /// Un ícono de lista junto al título de su estante (`ListIcon`).
-        static let listIcon: CGFloat = 22
         static let platformLogo = CGFloat(DesignTokens.Size.platformLogo)
         static let rankNumber = CGFloat(DesignTokens.Size.rankNumber)
         /// La cifra de un Top 10: enorme y pesada; no crece con Dynamic Type (es un adorno, el puesto ya se dice en la etiqueta).

@@ -194,16 +194,16 @@ struct TitleView: View {
     /// Lo de TMDB, como Infuse: tráiler y extras, reparto con cara (toca para ver su trabajo), dónde verlo, la saga y
     /// «Más como esto». Cada sección con el encabezado de toda la app; las tiras van de borde a borde.
     @ViewBuilder private func rich(_ x: TitleExtras) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s6) {
+        VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
             if let trailer = x.trailer {
-                section(title: "Tráiler y extras", icon: .flame, count: x.extras.isEmpty ? nil : x.extras.count + 1) {
+                section(title: "Tráiler y extras") {
                     VideoClipCard(clip: trailer)
                     ForEach(x.extras) { VideoClipCard(clip: $0) }
                 }
             }
             let people = x.crew + x.cast
             if !people.isEmpty {
-                section(title: "Reparto y equipo", icon: .series, count: people.count) {
+                section(title: "Reparto y equipo") {
                     ForEach(people) { p in
                         NavigationLink(value: PersonRoute(id: p.personID, name: p.name)) { PersonFace(name: p.name, role: crewRole(p.role), photo: p.photo) }
                             .buttonStyle(.plain)
@@ -212,25 +212,25 @@ struct TitleView: View {
             }
             if !x.providers.isEmpty || !x.studios.isEmpty {
                 VStack(alignment: .leading, spacing: DS.Space.s3) {
-                    DSSectionHead(title: "Dónde verlo", icon: .chart, meta: x.studios.isEmpty ? nil : Text(verbatim: x.studios.map(\.name).joined(separator: " · ")))
+                    DSSectionHead(title: "Dónde verlo", meta: x.studios.isEmpty ? nil : Text(verbatim: x.studios.map(\.name).joined(separator: " · ")))
                     if !x.providers.isEmpty { BrandLogos(brands: x.providers) }
                 }
                 .padding(.horizontal, DS.Space.gutter)
             }
             if let saga = x.collection {
-                section(title: "La saga", icon: .list, meta: Text(verbatim: saga.name), count: saga.parts.count) { ForEach(saga.parts) { TmdbPoster(title: $0) } }
+                section(title: "La saga", meta: Text(verbatim: saga.name)) { ForEach(saga.parts) { TmdbPoster(title: $0) } }
             }
             if !x.recommendations.isEmpty {
-                section(title: "Más como esto", icon: .spark) { ForEach(x.recommendations) { TmdbPoster(title: $0) } }
+                section(title: "Más como esto") { ForEach(x.recommendations) { TmdbPoster(title: $0) } }
             }
         }
     }
 
-    private func section<Content: View>(title: LocalizedStringKey, icon: OrbitalIcon, meta: Text? = nil, count: Int? = nil, @ViewBuilder content: () -> Content) -> some View {
+    private func section<Content: View>(title: LocalizedStringKey, meta: Text? = nil, count: Int? = nil, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: title, icon: icon, count: count, meta: meta).padding(.horizontal, DS.Space.gutter)
+            DSSectionHead(title: title, count: count, meta: meta).padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.scrollTargetLayout()
+                LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.scrollTargetLayout().environment(\.posterCaptions, false)
             }
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)

@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Sale pronto": "Coming up", "Ver todo": "See all", "Sale hoy": "Out today",
     "Más lento": "Slower", "Más rápido": "Faster",
     "%@ de %@": "%@ of %@",
     "Ajustes del video": "Video settings", "Archivo descargado": "Downloaded file", "La que tienes": "Current", "Pasó a tu Orbital": "Moved to your Orbital",

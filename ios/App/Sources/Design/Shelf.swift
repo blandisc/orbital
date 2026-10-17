@@ -10,9 +10,6 @@ struct ShelfRoute: Hashable { var id: String }
 struct Shelf<Content: View>: View {
     let title: Text
     var meta: Text?
-    /// El logo de la plataforma (siempre a la misma altura) o, si no hay, un ícono de la fuente.
-    var logo: String?
-    var icon: OrbitalIcon?
     /// Sin ruta, el encabezado no es un botón (los estantes de relleno).
     var route: ShelfRoute?
     var loading = false
@@ -26,6 +23,7 @@ struct Shelf<Content: View>: View {
                     if loading { ShelfSkeleton() } else { content() }
                 }
                 .scrollTargetLayout()
+                .environment(\.posterCaptions, false)
             }
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
@@ -39,7 +37,7 @@ struct Shelf<Content: View>: View {
     }
 
     private func headerRow(chevron: Bool) -> some View {
-        DSSectionHead(title: title, logo: logo, icon: icon, chevron: chevron, meta: meta)
+        DSSectionHead(title: title, chevron: chevron, meta: meta)
     }
 }
 
