@@ -253,6 +253,51 @@ public final class ParaTiModel: ObservableModel {
 
     public func items(for list: ForYouList) -> [Suggestion] { railItems[key(list)] ?? [] }
 
+    // MARK: tus plataformas
+    /// Las plataformas con sus rankings (la fila en abanico de «Tus plataformas» y su página).
+    public var platformHubs: [PlatformHub] { PlatformPlanner.hubs(lists) }
+    public private(set) var rankingItems: [String: [Suggestion]] = [:] { didSet { changed() } }
+    private var rankingLoading: Set<String> = []
+
+    /// Un ranking ya cargado: lo pedido en la página o, si es del tipo que enseñan los estantes, lo de su estante.
+    public func items(for ranking: PlatformRanking) -> [Suggestion] {
+        rankingItems[ranking.id] ?? railItems["\(ranking.listID):\(ranking.kind)"] ?? []
+    }
+
+    public func isLoading(ranking: PlatformRanking) -> Bool { rankingLoading.contains(ranking.id) || (isLoading && items(for: ranking).isEmpty) }
+
+    /// Los tres primeros de la plataforma (su tarjeta en abanico): del primer ranking que ya tenga algo.
+    public func cover(of hub: PlatformHub) -> [Suggestion] {
+        for ranking in hub.rankings {
+            let found = items(for: ranking)
+            if !found.isEmpty { return Array(found.prefix(3)) }
+        }
+        let fromShelves = railItems.filter { key, _ in hub.rankings.contains { key.hasPrefix($0.listID + ":") } }.values.first { !$0.isEmpty } ?? []
+        return Array(fromShelves.prefix(3))
+    }
+
+    /// Pide todos los rankings de la plataforma que falten (series y películas), a la vez.
+    public func loadRankings(_ hub: PlatformHub) async {
+        let wanted = hub.rankings.filter { rankingItems[$0.id] == nil && !rankingLoading.contains($0.id) }
+        guard !wanted.isEmpty else { return }
+        rankingLoading.formUnion(wanted.map(\.id))
+        let remote = services.forYouRemote, local = services.forYou, source = source
+        await withTaskGroup(of: (String, [Suggestion]?).self) { group in
+            for ranking in wanted {
+                group.addTask {
+                    switch source {
+                    case .console: return (ranking.id, try? await remote.items(listID: ranking.listID, kind: ranking.kind))
+                    case .phone: return (ranking.id, try? await local.items(listID: ranking.listID, kind: ranking.kind))
+                    }
+                }
+            }
+            for await (id, found) in group {
+                rankingLoading.remove(id)
+                if let found, !Task.isCancelled { rankingItems[id] = found }
+            }
+        }
+    }
+
     /// Lo más popular de Cinemeta, series y películas alternadas, en tu idioma.
     private func popular() async -> [Suggestion] {
         async let series = popular("series"), movies = popular("movie")
@@ -297,6 +342,7 @@ public final class ParaTiModel: ObservableModel {
         case .phone: await services.forYou.clearCache()
         }
         railItems = [:]
+        rankingItems = [:]
         featuredRotation += 1
         await load()
     }

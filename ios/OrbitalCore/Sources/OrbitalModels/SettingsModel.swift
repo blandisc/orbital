@@ -63,6 +63,7 @@ public final class SettingsModel: ObservableModel {
         let before = settings
         services.settings.update(change)
         settings = services.appSettings
+        services.settingsDidChange()
         if before.traktClientID != settings.traktClientID || before.uiLanguage != settings.uiLanguage || before.region != settings.region {
             services.reconfigure()
             trakt = computeTraktState()

@@ -192,9 +192,37 @@ enum DS {
         static let fillOpacity: Double = 0.55, fillMinutesOpacity: Double = 0.7
     }
 
+    /// El color de cada plataforma (su tarjeta en abanico, el brillo de su logo y de los números de sus rankings).
+    enum PlatformTint {
+        static func color(_ brand: String) -> Color {
+            switch brand {
+            case "netflix": Color(red: 0.9, green: 0.04, blue: 0.08)
+            case "disney": Color(red: 0.27, green: 0.43, blue: 1)
+            case "hbo": Color(red: 0.48, green: 0.24, blue: 1)
+            case "prime": Color(red: 0.1, green: 0.6, blue: 1)
+            case "paramount": Color(red: 0, green: 0.39, blue: 1)
+            default: Color(red: 0.78, green: 0.78, blue: 0.82)   // Apple TV+ y las demás: plata
+            }
+        }
+    }
+
+    /// «Tus plataformas»: la tarjeta con su top 3 en abanico y su página de rankings.
+    enum PlatformFan {
+        static let width: CGFloat = 168, height: CGFloat = 176, radius: CGFloat = 22
+        static let poster: CGFloat = 66, posterTop: CGFloat = 26, angle: Double = 15, spread: CGFloat = 8, lift: CGFloat = 6
+        static let logo: CGFloat = 34, logoRadius: CGFloat = 10, glow: CGFloat = 18
+        static let tintTop: Double = 0.42, tintEdge: Double = 0.45
+        /// El logo grande de la página de la plataforma y su halo.
+        static let headerLogo: CGFloat = 72, headerGlow: CGFloat = 44
+        /// El brillo de los números de un ranking.
+        static let numberGlow: CGFloat = 12, numberTint: Double = 0.55
+    }
+
     /// Tu avatar: en Inicio (junto al saludo) y en Ajustes.
     enum Avatar {
         static let toolbar: CGFloat = 34, picker: CGFloat = 64, ring: CGFloat = 3
+        /// La esquina de un ícono de app (la curva de iOS: 22.37 % del lado).
+        static let iconCorner: CGFloat = 0.2237
     }
 
     /// El color de cada lista (su ícono en Inicio y Para ti): fijo, el mismo siempre, para encontrarla de un vistazo. Tonos de
@@ -238,9 +266,7 @@ enum DS {
         /// La letra de «orbital» en la marca grande (la bienvenida) y el planeta solo, junto a un título o en el widget.
         static let wordmark: CGFloat = 40, markSmall: CGFloat = 22
         /// Un ícono de lista junto al título de su estante (`ListIcon`).
-        static let listIcon: CGFloat = 20
-        /// El azulejo de color detrás del ícono de una lista, y cuánto se tiñe.
-        static let listTile: CGFloat = 32, listTileOpacity: Double = 0.16
+        static let listIcon: CGFloat = 22
         static let platformLogo = CGFloat(DesignTokens.Size.platformLogo)
         static let rankNumber = CGFloat(DesignTokens.Size.rankNumber)
         /// La cifra de un Top 10: enorme y pesada; no crece con Dynamic Type (es un adorno, el puesto ya se dice en la etiqueta).

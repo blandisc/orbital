@@ -223,13 +223,15 @@ struct ListsView: View {
                 // El arte a sangre ya pone su margen (en claro es tarjeta; en oscuro va de borde a borde).
                 let slides = model.featuredSlides
                 if !slides.isEmpty { featuredCarousel(slides) }
+                if !model.platformHubs.isEmpty { platforms }   // justo bajo el destacado: tus plataformas a la vista, no hasta abajo
                 if !model.airings.isEmpty {   // justo después del destacado; vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
                     Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), icon: .calendar, route: ShelfRoute(id: "estrenos")) {
                         ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
                     }
                 }
                 Section {
-                    ForEach(model.visibleShelves) { plan in shelf(plan).id(plan.id) }
+                    // Las plataformas viven en «Tus plataformas» (arriba): aquí, lo demás.
+                    ForEach(model.visibleShelves.filter { $0.list.group != .platforms }) { plan in shelf(plan).id(plan.id) }
                     if model.needsSources { sourcesFallback }
                 } header: {
                     if model.hasKindSplit {
@@ -242,8 +244,32 @@ struct ListsView: View {
             .padding(.bottom, DS.Space.s14)   // aire bajo la última fila: la barra de pestañas no la tapa
         }
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
+        .navigationDestination(for: PlatformRoute.self) { route in
+            if let hub = model.platformHubs.first(where: { $0.brand == route.brand }) { PlatformRankingsView(observer: observer, hub: hub) }
+        }
         .navigationDestination(for: ShelfRoute.self) { route in
             if route.id == "estrenos" { UpcomingScreen(observer: observer) } else { ListGridView(observer: observer, shelfID: route.id) }
+        }
+    }
+
+    // MARK: tus plataformas
+    /// Cada plataforma, una tarjeta con su top 3 en abanico; tocarla abre sus rankings.
+    private var platforms: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            Text("Tus plataformas").recipe(.section).padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: DS.Space.s3) {
+                    ForEach(model.platformHubs) { hub in
+                        NavigationLink(value: PlatformRoute(brand: hub.brand)) {
+                            PlatformFanCard(name: hub.name, logo: hub.logo, posters: model.cover(of: hub).map { Optional($0.poster) },
+                                            tint: DS.PlatformTint.color(hub.brand))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("platform-\(hub.brand)")
+                    }
+                }
+            }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
         }
     }
 
@@ -383,5 +409,86 @@ struct UpcomingScreen: View {
         ScrollView { UpcomingView(observer: observer).padding(.bottom, DS.Space.s14) }
             .background(Backdrop())
             .navigationTitle("Próximos estrenos").navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+
+/// A dónde lleva una tarjeta de «Tus plataformas».
+struct PlatformRoute: Hashable { var brand: String }
+
+/// Los rankings de una plataforma: su logo con su brillo arriba y, por ranking (Top 10 de Netflix, tendencia de JustWatch;
+/// series y películas), los pósters con su número grande en el color de la plataforma. Tocar uno abre su ficha.
+struct PlatformRankingsView: View {
+    @ObservedObject var observer: ModelObserver<ParaTiModel>
+    let hub: PlatformHub
+    private var model: ParaTiModel { observer.model }
+
+    var body: some View {
+        let tint = DS.PlatformTint.color(hub.brand)
+        ScrollView {
+            VStack(alignment: .leading, spacing: DS.Space.s6) {
+                HStack(spacing: DS.Space.s4) {
+                    PlatformLogoTile(url: hub.logo, name: hub.name, size: DS.PlatformFan.headerLogo, radius: DS.Radius.lg, tint: tint,
+                                     glow: DS.PlatformFan.headerGlow)
+                    VStack(alignment: .leading, spacing: DS.Space.s1) {
+                        Text("Hoy en tu país").recipe(.footnote, color: DS.textMuted)
+                        Text("Sus rankings").recipe(.title)
+                    }
+                }
+                .padding(.horizontal, DS.Space.gutter)
+                ForEach(hub.rankings) { ranking in section(ranking, tint: tint) }
+            }
+            .padding(.vertical, DS.Space.s4)
+            .padding(.bottom, DS.Space.s14)
+        }
+        .background(Backdrop())
+        .navigationTitle(Text(verbatim: hub.name)).navigationBarTitleDisplayMode(.inline)
+        .task { await model.loadRankings(hub) }
+    }
+
+    @ViewBuilder private func section(_ ranking: PlatformRanking, tint: Color) -> some View {
+        let items = model.items(for: ranking)
+        if !items.isEmpty || model.isLoading(ranking: ranking) {
+            VStack(alignment: .leading, spacing: DS.Space.s3) {
+                HStack(alignment: .firstTextBaseline) {
+                    rankingTitle(ranking).recipe(.section)
+                    Spacer(minLength: DS.Space.s2)
+                    rankingSource(ranking).recipe(.footnote, color: DS.textMuted)
+                }
+                .padding(.horizontal, DS.Space.gutter)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                        if items.isEmpty { ShelfSkeleton() }
+                        ForEach(Array(items.enumerated()), id: \.element.id) { index, s in
+                            NavigationLink(value: s.route) {
+                                RankedPosterCard(rank: s.rank ?? index + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: tint)
+                                    .titleZoomSource(s.route)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            }
+        }
+    }
+
+    private func rankingTitle(_ ranking: PlatformRanking) -> Text {
+        switch (ranking.source, ranking.kind) {
+        case (.netflixTop10, "movie"): Text("Top 10 · Películas")
+        case (.netflixTop10, _): Text("Top 10 · Series")
+        case (.justWatch, "movie"): Text("Tendencia hoy · Películas")
+        case (.justWatch, _): Text("Tendencia hoy · Series")
+        case (.popular, "movie"): Text("Lo más popular · Películas")
+        case (.popular, _): Text("Lo más popular · Series")
+        }
+    }
+
+    private func rankingSource(_ ranking: PlatformRanking) -> Text {
+        switch ranking.source {
+        case .netflixTop10: Text("Netflix · esta semana")
+        case .justWatch: Text("JustWatch · hoy")
+        case .popular: Text("TMDB")
+        }
     }
 }

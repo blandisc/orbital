@@ -683,6 +683,17 @@
         }
       }
     },
+    "Cielo nocturno": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Night sky"
+          }
+        }
+      }
+    },
     "Claro": {
       "extractionState": "manual",
       "localizations": {
@@ -723,6 +734,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your Trakt app's Client ID"
+          }
+        }
+      }
+    },
+    "Clásico": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Classic"
           }
         }
       }
@@ -2124,6 +2146,17 @@
         }
       }
     },
+    "Hoy en tu país": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today in your country"
+          }
+        }
+      }
+    },
     "Identificador de la aplicación (client id)": {
       "extractionState": "manual",
       "localizations": {
@@ -2208,6 +2241,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Home"
+          }
+        }
+      }
+    },
+    "JustWatch · hoy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "JustWatch · today"
           }
         }
       }
@@ -2428,6 +2472,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Most popular today"
+          }
+        }
+      }
+    },
+    "Lo más popular · Películas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most popular · Movies"
+          }
+        }
+      }
+    },
+    "Lo más popular · Series": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most popular · Series"
           }
         }
       }
@@ -2681,6 +2747,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing here for now."
+          }
+        }
+      }
+    },
+    "Netflix · esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Netflix · this week"
           }
         }
       }
@@ -3565,6 +3642,17 @@
         }
       }
     },
+    "Rankings de %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ rankings"
+          }
+        }
+      }
+    },
     "Reanudar": {
       "extractionState": "manual",
       "localizations": {
@@ -4170,6 +4258,17 @@
         }
       }
     },
+    "Sus rankings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Its rankings"
+          }
+        }
+      }
+    },
     "Sí": {
       "extractionState": "manual",
       "localizations": {
@@ -4269,6 +4368,28 @@
         }
       }
     },
+    "Tendencia hoy · Películas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trending today · Movies"
+          }
+        }
+      }
+    },
+    "Tendencia hoy · Series": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trending today · Series"
+          }
+        }
+      }
+    },
     "Tendencias en %@": {
       "extractionState": "manual",
       "localizations": {
@@ -4364,6 +4485,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Top 10 on %@"
+          }
+        }
+      }
+    },
+    "Top 10 · Películas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top 10 · Movies"
+          }
+        }
+      }
+    },
+    "Top 10 · Series": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top 10 · Series"
           }
         }
       }
@@ -4595,6 +4738,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your watchlist, your recommendations and your platforms' Top 10 show up here."
+          }
+        }
+      }
+    },
+    "Tus plataformas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your platforms"
           }
         }
       }

@@ -10,13 +10,16 @@ final class ScreensUITests: XCTestCase {
     }
 
     /// Para ti › Listas con tu Orbital: el Top 10 de Netflix y las tendencias de Disney+ llevan la cifra grande.
-    func testListsShowTheBigRankNumbers() {
-        app.launchArguments = ["-demo", "-demo-console", "-demo-tab", "1", "-demo-mode", "lists", "-demo-shelf", "chart:netflix", "-demo-no-idle"]
+    /// «Tus plataformas»: cada una en su tarjeta (Netflix y Disney+); al tocar Netflix, sus rankings con la cifra grande.
+    func testPlatformsOpenTheirRankingsWithTheBigNumbers() {
+        app.launchArguments = ["-demo", "-demo-console", "-demo-tab", "1", "-demo-mode", "lists", "-demo-no-idle"]
         app.launch()
+        let netflix = app.buttons["platform-netflix"]
+        XCTAssertTrue(netflix.waitForExistence(timeout: 20), "la tarjeta de Netflix")
+        XCTAssertTrue(app.buttons["platform-disney"].waitForExistence(timeout: 10), "y la de Disney+")
+        netflix.tap()
         let ranked = app.descendants(matching: .any).matching(identifier: "ranked-poster")
-        XCTAssertTrue(ranked.firstMatch.waitForExistence(timeout: 20), "hay pósters con la cifra grande")
-        XCTAssertTrue(app.staticTexts["Tendencias en Disney+"].exists || app.buttons["Tendencias en Disney+"].exists
-                      || app.descendants(matching: .any)["Tendencias en Disney+"].waitForExistence(timeout: 10), "y está la lista de Disney+")
+        XCTAssertTrue(ranked.firstMatch.waitForExistence(timeout: 20), "sus rankings, con la cifra grande")
     }
 
     /// Buscar › Explora: cada género con su imagen fija (sin esperar a la red) y al tocarlo, su lista aparece pronto.

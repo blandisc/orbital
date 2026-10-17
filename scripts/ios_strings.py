@@ -217,6 +217,19 @@ TRANSLATIONS = {
     "%lld min": "%lld min",
     "Quedan %@ min": "%@ min left",
     "min": "min",
+    "Hoy en tu país": "Today in your country",
+    "JustWatch · hoy": "JustWatch · today",
+    "Lo más popular · Películas": "Most popular · Movies",
+    "Lo más popular · Series": "Most popular · Series",
+    "Netflix · esta semana": "Netflix · this week",
+    "Rankings de %@": "%@ rankings",
+    "Sus rankings": "Its rankings",
+    "Tendencia hoy · Películas": "Trending today · Movies",
+    "Tendencia hoy · Series": "Trending today · Series",
+    "Top 10 · Películas": "Top 10 · Movies",
+    "Top 10 · Series": "Top 10 · Series",
+    "Tus plataformas": "Your platforms",
+    "Clásico": "Classic", "Cielo nocturno": "Night sky",
     "Ponerla en la TV": "Play it on the TV", "Poniendo %@.": "Playing %@.", "Abriendo %@ en la TV.": "Opening %@ on the TV.",
     "Sigue aquí.": "Continuing here.", "Abre Orbital y toca «Seguir aquí».": "Open Orbital and tap “Continue here”.",
     "Entendí: «%@»": "I heard: “%@”", "«Pon The Office», «pausa», «descárgalo»": "“Play The Office”, “pause”, “download it”",
@@ -230,7 +243,7 @@ TRANSLATIONS = {
 # Textos que no se traducen: nombres propios, ids y formatos.
 IGNORE = {"Content-Type", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
           "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max",
-          "Icons/", "Avatars/"}  # el nombre de un ícono en el catálogo
+          "Icons/", "Avatars/", "AppIconPreview/day", "AppIconPreview/night", "AppIconNight"}  # el nombre de un ícono en el catálogo
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.
 CODE_KEYS = {k for k in TRANSLATIONS}
 

@@ -76,6 +76,8 @@ struct RankedPosterCard: View {
     /// Cuánto se movió y si es nuevo (el Top 10 real de la TV): va bajo el póster.
     var movement: Int?
     var isNew = false
+    /// El color de la plataforma: la cifra toma un tono suyo y su brillo (la página de rankings). Sin él, gris.
+    var tint: Color?
 
     var body: some View {
         VStack(alignment: .trailing, spacing: DS.Space.s1) {
@@ -86,7 +88,9 @@ struct RankedPosterCard: View {
 
     private var numberAndPoster: some View {
         HStack(alignment: .bottom, spacing: -DS.Space.s5) {
-            Text(verbatim: "\(rank)").font(DS.Size.rankFont).foregroundStyle(DS.ink500).lineLimit(1).fixedSize()
+            Text(verbatim: "\(rank)").font(DS.Size.rankFont).foregroundStyle(tint.map { $0.opacity(DS.PlatformFan.numberTint) } ?? DS.ink500)
+                .shadow(color: tint ?? .clear, radius: DS.PlatformFan.numberGlow)
+                .lineLimit(1).fixedSize()
                 .padding(.bottom, -DS.Space.s3)   // la cifra se apoya en la base del póster (sin el hueco del renglón)
                 .accessibilityHidden(true)
             PosterView(url: poster, title: title).frame(width: width)

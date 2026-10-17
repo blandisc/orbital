@@ -231,3 +231,36 @@ struct AvatarPicker: View {
         .sensoryFeedback(.selection, trigger: selection)
     }
 }
+
+/// El ícono de la app: el de siempre o Cielo nocturno (un ícono alterno de iOS; el sistema avisa al cambiarlo).
+struct AppIconPicker: View {
+    @State private var current = UIApplication.shared.alternateIconName
+
+    var body: some View {
+        HStack(spacing: DS.Space.s5) {
+            option(nil, preview: "AppIconPreview/day", label: Text("Clásico"))
+            option("AppIconNight", preview: "AppIconPreview/night", label: Text("Cielo nocturno"))
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, DS.Space.s2)
+        .sensoryFeedback(.selection, trigger: current)
+    }
+
+    private func option(_ name: String?, preview: String, label: Text) -> some View {
+        Button {
+            guard current != name else { return }
+            UIApplication.shared.setAlternateIconName(name) { error in if error == nil { current = name } }
+        } label: {
+            VStack(spacing: DS.Space.s2) {
+                Image(preview).resizable().scaledToFit()
+                    .frame(width: DS.Avatar.picker, height: DS.Avatar.picker)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Avatar.picker * DS.Avatar.iconCorner, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: DS.Avatar.picker * DS.Avatar.iconCorner, style: .continuous)
+                        .stroke(current == name ? DS.accent : .clear, lineWidth: DS.Avatar.ring).padding(-DS.Avatar.ring * 2))
+                label.recipe(.caption, color: current == name ? DS.text : DS.textMuted)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(current == name ? .isSelected : [])
+    }
+}

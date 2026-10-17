@@ -11,8 +11,6 @@ struct HomeView: View {
     @State private var pendingCount = 0
     @State private var openTitle: TitleRoute?
     @State private var heroID: String?
-    /// Los ajustes de cómo se ve Inicio (carrusel, tiempo, avatar): se leen al aparecer (al volver de Ajustes, ya cambiados).
-    @State private var look = AppSettings()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init() {
@@ -79,16 +77,6 @@ struct HomeView: View {
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
-        .onAppear {
-            look = env.services.appSettings
-            #if DEBUG
-            if Demo.isOn {   // `-demo-deck fan`, `-demo-time arc`, `-demo-avatar comet`: para ver cada estilo en las capturas
-                if let v = Demo.value(after: "-demo-deck") { look.homeDeck = v }
-                if let v = Demo.value(after: "-demo-time") { look.homeTime = v }
-                if let v = Demo.value(after: "-demo-avatar") { look.avatar = v }
-            }
-            #endif
-        }
         .task { await reload() }
         .refreshable { await reload() }
         .onChange(of: env.watchedSomething) { Task { await reload() } }
@@ -117,6 +105,19 @@ struct HomeView: View {
     }
 
     private func route(_ item: HomeItem) -> TitleRoute { TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster) }
+
+    /// Cómo se ve Inicio (carrusel, tiempo, avatar), en vivo: al cambiarlo en Ajustes, Inicio se vuelve a pintar.
+    private var look: AppSettings {
+        var settings = env.services.appSettings
+        #if DEBUG
+        if Demo.isOn {   // `-demo-deck fan`, `-demo-time arc`, `-demo-avatar comet`: para ver cada estilo en las capturas
+            if let v = Demo.value(after: "-demo-deck") { settings.homeDeck = v }
+            if let v = Demo.value(after: "-demo-time") { settings.homeTime = v }
+            if let v = Demo.value(after: "-demo-avatar") { settings.avatar = v }
+        }
+        #endif
+        return settings
+    }
 
     private static var hasTabAccessory: Bool { if #available(iOS 26.1, *) { true } else { false } }
 

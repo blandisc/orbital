@@ -358,6 +358,20 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertTrue(rig.http.calls.contains("https://tv.example/api/foryou/dismiss"), "«No me interesa» también se le avisa a la TV")
     }
 
+    /// Cambiar un ajuste avisa a quien escucha a los servicios (la app entera se vuelve a pintar): antes el modo oscuro o el
+    /// carrusel de Inicio no cambiaban hasta reabrir la app.
+    @MainActor func testChangingASettingTellsTheApp() throws {
+        let rig = try ServicesRig()
+        let model = SettingsModel(rig.services)
+        var told = 0
+        let subscription = rig.services.onChange { told += 1 }
+        model.update { $0.appearance = "light" }
+        model.update { $0.homeDeck = "fan" }
+        XCTAssertEqual(told, 2)
+        XCTAssertEqual(rig.services.appSettings.homeDeck, "fan")
+        subscription.cancel()
+    }
+
     func testConnectingYourOrbitalKeepsTheTokenInTheKeychainAndChecksIt() async throws {
         let rig = try ServicesRig()
         let model = SettingsModel(rig.services)

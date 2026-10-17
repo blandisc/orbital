@@ -29,17 +29,14 @@ enum OrbitalIcon: String, CaseIterable {
     }
 }
 
-/// Un ícono de lista junto a un título: en su color, sobre un azulejo tenue del mismo color (crece con Dynamic Type).
+/// Un ícono de lista junto a un título: solo el trazo, en su color (crece con Dynamic Type).
 struct ListIcon: View {
     let icon: OrbitalIcon
     @ScaledMetric(relativeTo: .title3) private var side = DS.Size.listIcon
-    @ScaledMetric(relativeTo: .title3) private var tile = DS.Size.listTile
 
     var body: some View {
         icon.image.resizable().scaledToFit().frame(width: side, height: side)
             .foregroundStyle(icon.tint)
-            .frame(width: tile, height: tile)
-            .background(icon.tint.opacity(DS.Size.listTileOpacity), in: RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             .accessibilityHidden(true)
     }
 }

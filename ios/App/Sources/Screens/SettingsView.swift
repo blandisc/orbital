@@ -40,6 +40,7 @@ struct SettingsView: View {
                     Text("Como el iPhone").tag("system"); Text("Claro").tag("light"); Text("Oscuro").tag("dark")
                 }
                 .pickerStyle(.segmented)
+                AppIconPicker()
             }
             .listRowBackground(DS.surface)
             Section {

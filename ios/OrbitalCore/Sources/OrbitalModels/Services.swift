@@ -55,6 +55,10 @@ public final class Services: ObservableModel {
     /// Cambia cuando se reconfiguran claves (para que las pantallas se actualicen).
     public private(set) var generation = 0 { didSet { changed() } }
 
+    /// Un ajuste cambió (apariencia, idioma, cómo se ve Inicio…): quien escucha a los servicios (la app entera) se vuelve a
+    /// pintar. Antes nadie se enteraba y el modo oscuro o el carrusel no cambiaban hasta reabrir la app.
+    public func settingsDidChange() { changed() }
+
     private let downloadTransport: DownloadTransport
     private let downloadsRoot: URL
     private let freeSpace: @Sendable () -> Int64
