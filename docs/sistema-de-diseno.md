@@ -96,6 +96,26 @@ Globales: `--z-overlay`, `--z-hints`, `--z-launch`, `--z-toast`. Dentro de un co
 | `RowTile` (`tiles`) | Renglón: miniatura ancha (cápsula de Steam, fondo, o la caja recortada) y al lado el nombre grande y su dato siempre a la vista, con avance si es video. El texto nunca va encima del arte. |
 | `ConsoleTile` (`tiles`) | Foto real de la consola (o logo) con brillo de su color, juegos, nuevos y lo último. |
 
+### Márgenes de las tarjetas
+
+| Tamaño | Token | Valor | Dónde |
+|---|---|---|---|
+| Póster o miniatura | `--inset-poster` | `--space-2` | Insignias, puesto, avance sobre una portada o una miniatura |
+| Renglón | `--inset-row` | `--space-2` | `RowTile` (También tenías): del borde a la miniatura y al texto |
+| Tarjeta mediana | `--inset-card` | `--space-4` | `ConsoleTile` (y, al pasarlas, canales y calendario) |
+| Destacado | `--inset-feature` | `--space-6` | `FeatureTile` (y fichas grandes) |
+
+Reglas:
+1. **Un margen por tarjeta, igual en los cuatro lados.**
+2. **Lo que va en una esquina usa el mismo margen que el texto** (píldora de plataforma, insignia, número): su borde
+   izquierdo queda en la misma línea que el título.
+3. **Esquinas concéntricas:** lo que va dentro curva como la tarjeta menos el margen (`--radius-inner-row`); así no
+   asoman esquinas claras entre la miniatura y el borde.
+4. **El avance de un video va sobre la imagen**, abajo, con `--inset-poster` (póster, miniatura de renglón), nunca como
+   renglón extra de texto.
+5. **Nada más grande que su tarjeta:** una imagen dentro de un renglón se mide contra el alto del renglón
+   (`grid-template-rows: minmax(0, 1fr)` + `height: 100%`), no contra un tope fijo.
+
 **Ningún texto de tarjeta o botón se sale**: una línea con «…» (o `line-clamp` con espacio para las
 letras que bajan: g, p, j, y).
 

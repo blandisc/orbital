@@ -1,6 +1,6 @@
 import { h, mount } from "../core/dom.js";
 import { dragArea, dragScroll } from "../core/swipe.js";
-import { buildHome, greeting } from "../core/home.js";
+import { buildHome, greeting, queueTitle } from "../core/home.js";
 import { settler } from "../core/motion.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { ConsoleTile, FeatureTile, RowTile } from "./tiles.js";
@@ -96,7 +96,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
       return RowTile(item, { focusId: `card:${i}`, onPress: pick(`card:${i}`), airing: imdb && airing?.[imdb] });
     });
     top.classList.toggle("home__top--alone", !queued.length);
-    mount(queue, queued.length > 0 && SectionHead("También tenías", { meta: String(queued.length), className: "home__queue-head" }),
+    mount(queue, queued.length > 0 && SectionHead(queueTitle(model.cards), { className: "home__queue-head" }),
       queued.length > 0 && h("div", { class: "home__rows" }, queued));
 
     mount(consolesHead, model.consoles.length > 0 && SectionHead("Tus consolas", {
@@ -127,13 +127,12 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     else renderStage();
   }
 
-  /** El destacado enseña lo enfocado: el renglón en el que estás o, si no, lo último que tenías. */
+  /** El destacado: siempre lo último que tenías. Ya no copia el renglón enfocado (el mismo título salía dos veces). */
   function renderStage() {
-    const item = (focusId.startsWith("card:") ? targets.get(focusId)?.item : model?.feature) ?? null;
+    const item = model?.feature ?? null;
     if (staged === item) return;
     staged = item;
-    // Sus botones actúan sobre lo que enseña (con el dedo: tocarlo mientras estás en un renglón lo abre).
-    const owner = () => (focusId.startsWith("card:") ? focusId : "feature");
+    const owner = () => "feature";
     mount(stage, item
       ? FeatureTile(item, { runningId: options.runningId, glyphs: options.glyphs,
         onPress: () => onPick?.(targets.get(owner()), owner()),
@@ -204,12 +203,10 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   function paint() {
     const inConsoles = focusId.startsWith("console:");
     queueStage();
-    const previewing = focusId.startsWith("card:"); // el destacado enseña el renglón enfocado: no se apaga
     for (const node of [...el.querySelectorAll("[data-focus-id]"), ...outside()]) {
       const focused = node.dataset.focusId === focusId;
       node.classList.toggle(node.classList.contains("tile") ? "tile--focused" : "is-focused", focused);
-      const preview = previewing && node.dataset.focusId === "feature";
-      if (node.classList.contains("tile")) node.classList.toggle("tile--dimmed", !focused && !preview && focusId !== "search" && focusId !== "alexa");
+      if (node.classList.contains("tile")) node.classList.toggle("tile--dimmed", !focused && focusId !== "search" && focusId !== "alexa");
       if (focused) node.setAttribute("aria-current", "true");
       else node.removeAttribute("aria-current");
     }

@@ -3,12 +3,22 @@
  * el servidor:
  *   · destacado: lo último que jugaste o viste (lo abierto, primero); al bajar por la lista de la
  *     derecha, el destacado enseña lo enfocado;
- *   · «También tenías»: lo que sigue de esa lista, en renglones;
+ *   · a la derecha («Seguir viendo», «Seguir jugando» o los dos): lo que sigue de esa lista, sin repetir el destacado;
  *   · tus consolas: cada sistema con su foto, cuántos juegos, el último que jugaste y los nuevos.
  */
 import { isWatchable } from "./library.js";
 
 export const CARDS = 4;
+
+/** El título de la columna de la derecha, según lo que trae (antes «También tenías», que no decía qué era). */
+export function queueTitle(items) {
+  const videos = items.filter(isWatchable).length;
+  if (videos === items.length) return "Seguir viendo";
+  return videos ? "Seguir viendo y jugando" : "Seguir jugando";
+}
+
+/** El mismo título dos veces (la serie a medias y su episodio siguiente, un juego en dos consolas): una sola. */
+const sameAs = (a, b) => a.id === b.id || (a.title && a.title === b.title && isWatchable(a) === isWatchable(b));
 
 /** Nombre corto y foto de cada sistema (ES-DE). Lo que no esté aquí usa el título de su fila. */
 export const SYSTEMS = {
@@ -128,7 +138,8 @@ export function buildHome(rows, { runningId = null, now = Date.now() } = {}) {
     pending: jump.length,
     pendingItems: jump,
     feature: ordered[0] ?? null,
-    cards: ordered.slice(1, 1 + CARDS),
+    cards: ordered.slice(1).filter((item, i, rest) => !sameAs(item, ordered[0]) && rest.findIndex((o) => sameAs(o, item)) === i)
+      .slice(0, CARDS),
     consoles: list,
     games: list.reduce((n, c) => n + c.count, 0),
   };

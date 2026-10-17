@@ -6,7 +6,7 @@
 .tile--feature { min-height: 0; background: var(--color-surface); container-type: size; }
 /* El detalle («T8 E23 · quedan 9 min») es lo que más importa: con poco alto se va primero «Serie» y
    el logo se achica; el detalle no se encoge (antes quedaba cortado a la mitad en la Legion Go). */
-.tile--feature__store { position: absolute; z-index: var(--z-raised); left: var(--space-5); top: var(--space-5); }
+.tile--feature__store { position: absolute; z-index: var(--z-raised); left: var(--inset-feature); top: var(--inset-feature); } /* alineada con el texto */
 @container (max-height: 18rem) { .tile--feature__logo { max-height: 3.4rem; } }
 @container (max-height: 13rem) { .tile--feature__detail { display: none; } }
 /* El rótulo («Seguir viendo»), como el Eyebrow del iPhone: pegado al título; con poco alto se va antes que el dato. */
@@ -27,7 +27,7 @@
 .tile--feature__body {
   position: absolute; inset: auto 0 0 0; z-index: var(--z-raised); max-height: 100%;
   display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3);
-  padding: var(--space-6);
+  padding: var(--inset-feature);
 }
 .tile--feature__title { max-width: min(100%, 40rem);
   font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--weight-bold); line-height: 1.14;
@@ -54,18 +54,18 @@
 }
 .tile--feature-case .tile--feature__title { max-width: 55%; }
 
-/* --- Renglón: miniatura ancha y, al lado, el nombre grande y su dato (siempre a la vista) ---- */
+/* --- Renglón: miniatura ancha y, al lado, el nombre y su dato (siempre a la vista) -------------------------
+   Caben los cuatro de «También tenías»: el avance va sobre la miniatura (como en un póster), no debajo del texto. */
 .tile--row {
-  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-5);
-  /* Un solo renglón del alto del tile: la miniatura (height: 100%) se mide contra él. Sin esto tomaba su tope de 8rem,
-     se salía por arriba y por abajo y el último renglón de «También tenías» quedaba cortado. */
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-4);
+  /* Un solo renglón del alto del tile: la miniatura (height: 100%) se mide contra él (si no, tomaba su tope y se salía). */
   grid-template-rows: minmax(0, 1fr);
-  min-height: 0; padding: var(--space-3); background: var(--color-fill);
+  min-height: 0; padding: var(--inset-row); background: var(--color-fill);
 }
 .tile--row.tile--focused { background: var(--color-fill-hover); transform: none; }
 .tile--row__thumb {
   position: relative; height: 100%; max-height: 8rem; aspect-ratio: 16 / 9; overflow: hidden;
-  border-radius: var(--radius-md); background: var(--color-surface);
+  border-radius: var(--radius-inner-row); background: var(--color-surface);
 }
 .tile--row__art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 /* Solo hay caja (GBA): recortada llena el marco y se ve su nombre (la parte de arriba). */
@@ -74,16 +74,16 @@
 .tile--row__thumb--console { background: radial-gradient(70% 90% at 50% 50%, color-mix(in oklab, var(--glow) 34%, transparent) 0%, var(--color-surface) 75%); }
 .tile--row__console { position: absolute; inset: 12%; width: 76%; height: 76%; object-fit: contain; filter: var(--shadow-drop); }
 .tile--row__console--logo { inset: 24%; width: 52%; height: 52%; }
-.tile--row__airing { position: absolute; left: var(--space-2); top: var(--space-2); z-index: var(--z-raised); }
+.tile--row__airing { position: absolute; left: var(--inset-poster); top: var(--inset-poster); z-index: var(--z-raised); }
 .tile--row__text { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
 .tile--row__title {
-  font-family: var(--font-sans); font-size: var(--text-xl); font-weight: var(--weight-bold); line-height: 1.15; letter-spacing: var(--tracking-tight);
+  font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--weight-bold); line-height: 1.15; letter-spacing: var(--tracking-tight);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .12em; margin-bottom: -.08em;
 }
-.tile--row__detail { display: flex; align-items: center; gap: var(--space-2); min-width: 0; color: var(--color-text-muted); font-size: var(--text-md); white-space: nowrap; }
+.tile--row__detail { display: flex; align-items: center; gap: var(--space-2); min-width: 0; color: var(--color-text-muted); font-size: var(--type-secondary); white-space: nowrap; }
 .tile--row__detail svg { width: 1.1rem; height: 1.1rem; flex: none; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linejoin: round; }
 .tile--row__detail-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; }
-.tile--row__progress { --progress-width: 70%; margin-top: var(--space-2); }
+.tile--row__progress { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised); --progress-width: auto; box-shadow: var(--shadow-badge); }
 
 /* Captura chica de un juego retro: nítida, como en la consola (no un borrón estirado). */
 .tile--lowres .tile__art { image-rendering: pixelated; }
@@ -104,7 +104,7 @@
 .tile--console.tile--focused .tile--console__glow {
   background: radial-gradient(95% 75% at 50% 18%, color-mix(in oklab, var(--glow) 38%, transparent) 0%, transparent 75%);
 }
-.tile--console__media { position: relative; flex: none; height: 5rem; display: grid; place-items: center; padding: var(--space-3) var(--space-4) 0; }
+.tile--console__media { position: relative; flex: none; height: 5rem; display: grid; place-items: center; padding: var(--space-3) var(--inset-card) 0; }
 .tile--console__photo {
   max-width: 88%; max-height: 4.4rem; object-fit: contain; /* fotos altas (Xbox 360) no tapan el texto */
   filter: var(--shadow-drop-lg);
@@ -115,7 +115,7 @@
 .tile--console__logo { height: 3.2rem; width: auto; opacity: .92; filter: var(--shadow-drop); transition: transform var(--duration-base) var(--ease-spring); }
 .tile--console.tile--focused .tile--console__logo { transform: scale(1.06); opacity: 1; }
 .tile--console__cover { max-height: 4.8rem; width: auto; border-radius: var(--radius-sm); box-shadow: var(--shadow-card); }
-.tile--console__text { position: relative; display: flex; flex-direction: column; gap: .2rem; padding: var(--space-3) var(--space-4) var(--space-4); }
+.tile--console__text { position: relative; display: flex; flex-direction: column; gap: .2rem; padding: var(--space-3) var(--inset-card) var(--inset-card); }
 .tile--console__name {
   font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold); line-height: 1.15; letter-spacing: var(--tracking-tight);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .12em; margin-bottom: -.08em;

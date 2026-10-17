@@ -157,6 +157,14 @@
   --tile-focus-scale: 1.03;
   --tile-dim-opacity: .8;
   --tile-gap: 1.1rem;
+  /* Márgenes de una tarjeta (docs/sistema-de-diseno.md · «Tarjetas»): del borde a lo que lleva dentro, igual en los cuatro
+     lados, y lo que va en una esquina (píldora, insignia, número) usa el mismo, así su borde se alinea con el texto. */
+  --inset-poster: var(--space-2); /* póster o miniatura: insignias, avance */
+  --inset-row: var(--space-2); /* renglón (También tenías): miniatura y texto */
+  --inset-card: var(--space-4); /* tarjeta mediana: consola, canal, calendario */
+  --inset-feature: var(--space-6); /* destacado y fichas grandes */
+  /* Esquinas concéntricas: lo que va dentro de una tarjeta curva lo mismo que ella, menos el margen. */
+  --radius-inner-row: calc(var(--tile-radius) - var(--inset-row));
   --home-queue-width: 34rem; /* Inicio: la columna de «También tenías» */
   --key-height: 3.2rem;
   --tile-channel-width: 14.5rem; /* un canal de TV en vivo: ancho mínimo; las columnas se reparten el resto */

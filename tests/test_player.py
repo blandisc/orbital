@@ -674,3 +674,16 @@ def test_overlays_that_can_be_together_do_not_overlap():
 def test_info_line_keeps_the_region_capitalized():
     hud = player_ui.Hud(title="X", audio="Inglés", subtitles="Español (Latinoamérica)")
     assert "Subtítulos en español (Latinoamérica)" in player_ui.info_line(hud)
+
+
+def test_source_counter_sits_in_the_header_not_on_the_note():
+    """«7 de 12» va en el encabezado de la columna: abajo se encimaba con «Al instante: Real-Debrid…»."""
+    import re
+
+    sources = [{"label": f"{i}p", "hint": "Torrentio", "id": f"s{i}", "current": i == 0} for i in range(12)]
+    panel = player_ui.more_panel(sources=sources)
+    panel.col = next(i for i, c in enumerate(panel.columns) if c.key == "source")
+    panel.columns[panel.col].index = 6
+    ass = player_ui.panel_ass(panel)
+    assert re.search(r"\\an9\\pos\(\d+,602\)[^}]*}7 de 12", ass)
+    assert "Al instante: Real-Debrid" in ass

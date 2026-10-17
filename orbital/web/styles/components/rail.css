@@ -52,6 +52,7 @@
 .rail__item { position: relative; display: flex; align-items: center; gap: var(--space-4); width: 100%; min-width: 0; text-align: left; }
 .rail__tile {
   position: relative; flex: none; display: grid; place-items: center; box-sizing: border-box; overflow: hidden;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr); /* la foto se mide contra la casilla: la Xbox 360 (alta) se cortaba abajo */
   width: var(--rail-tile); height: var(--rail-tile); padding: .5rem; margin-left: calc((var(--rail-width) - var(--rail-tile)) / 2);
   border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-hairline); color: var(--color-text-muted);
   opacity: .6;

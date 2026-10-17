@@ -3,7 +3,7 @@ import { h, mount } from "../core/dom.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { storage } from "../core/storage.js";
 import { dragScroll, swipeArea } from "../core/swipe.js";
-import { ALL, categoriesOf, channelLabel, channelsIn, columnsOf, emptyState, headMeta, initials, isShaky, pickCategory, startIndex, stepCategory } from "../core/tv.js";
+import { ALL, categoriesOf, channelLabel, channelsIn, emptyState, headMeta, initials, isShaky, pickCategory, startIndex, stepCategory } from "../core/tv.js";
 import { BrowseHead, fillFilters, keepInView, replay } from "./browse.js";
 import { Glyph } from "./glyph.js";
 import { Badge, Chip } from "./ui.js";
@@ -44,7 +44,6 @@ export function createTv({ onFocus, onPick }) {
   const memory = {}; // categoría -> canal enfocado
   const targets = new Map();
 
-  const columns = () => columnsOf(measureFocusables(grid));
 
   // Con el dedo, como en el celular: los canales se desplazan bajo el dedo (tocar enfoca y volver a tocar
   // sintoniza); deslizar de lado cambia de categoría. Antes deslizar movía el foco de fila en fila, como el mando.
@@ -153,22 +152,14 @@ export function createTv({ onFocus, onPick }) {
 
   /**
    * Botones. true = se movió · "edge" = nada hacia allá · "exit" = B sin a dónde volver aquí (al Inicio) ·
-   * false = no es suyo (LB/RB en la primera o la última categoría: cambian de sección).
+   * false = no es suyo (LB/RB: cambian de sección, como en toda la app).
    */
-  function handle(action, { repeat = false } = {}) {
-    if (action === "prevsection" || action === "nextsection") {
-      const next = stepCategory(data, category, action === "prevsection" ? -1 : 1);
-      return next === null ? false : setCategory(next);
-    }
+  function handle(action) {
+    // LT/RT cambian de categoría, como cambian de consola en Juegos y de lista en Para ti: LB/RB son siempre las
+    // secciones (antes aquí también eran las categorías y no había cómo saber cuál de los dos ibas a mover).
     if (action === "pageleft" || action === "pageright") {
-      // LT/RT saltan una pantalla de canales (3 filas).
-      if (!channels.length) return "edge";
-      const at = focusId.startsWith("channel:") ? Number(focusId.split(":")[1]) : 0;
-      const to = Math.max(0, Math.min(channels.length - 1, at + (action === "pageleft" ? -1 : 1) * columns() * 3));
-      if (to === at) return "edge";
-      focusId = `channel:${to}`;
-      paint();
-      return true;
+      const next = stepCategory(data, category, action === "pageleft" ? -1 : 1);
+      return next === null ? "edge" : setCategory(next);
     }
     if (["up", "down", "left", "right"].includes(action)) {
       const next = nextFocus(measureFocusables(el).filter((r) => r.w > 0), focusId, action);
@@ -198,7 +189,7 @@ export function createTv({ onFocus, onPick }) {
   }
 
   function setGlyphs(glyphs) {
-    const [prev, next] = (glyphs?.section || "").split(" ");
+    const [prev, next] = (glyphs?.page || "").split(" "); // LT RT (RePág AvPág): las categorías
     mount(keyPrev, prev && Glyph(prev, { small: true }));
     mount(keyNext, next && Glyph(next, { small: true }));
   }

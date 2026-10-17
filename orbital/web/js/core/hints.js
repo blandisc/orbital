@@ -98,15 +98,15 @@ export function gamesHints(glyphs, target) {
 }
 
 /**
- * Pie de TV en vivo (lógica pura): A sintoniza el canal enfocado; LB/RB cambian de categoría (en la
- * primera o la última pasan a la sección de al lado); X vuelve a buscar y revisar los canales.
+ * Pie de TV en vivo (lógica pura): A sintoniza el canal enfocado; LT/RT cambian de categoría (LB/RB, como en toda
+ * la app, de sección); X vuelve a buscar y revisar los canales.
  */
 export function tvHints(glyphs, target, { empty = false, categories = 1, atStart = true, onAir = false, running = null } = {}) {
   const list = [];
   // El canal que ya está al aire: A vuelve a él (no lo sintoniza otra vez).
   if (!empty && target?.kind === "channel") list.push({ glyph: glyphs.select, label: onAir ? "Volver al canal" : "Ver" });
   else if (!empty && target?.kind === "filter") list.push({ glyph: glyphs.select, label: "Elegir" });
-  if (!empty && categories > 1 && glyphs.section) list.push({ glyph: glyphs.section, label: "Categoría" });
+  if (!empty && categories > 1 && glyphs.page) list.push({ glyph: glyphs.page, label: "Categoría" });
   list.push({ glyph: glyphs.alt, label: "Actualizar", secondary: true });
   if (glyphs.search) list.push({ glyph: glyphs.search, label: "Buscar", secondary: true });
   list.push({ glyph: glyphs.back, label: atStart ? "Inicio" : "Al principio", secondary: true });

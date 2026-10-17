@@ -97,3 +97,16 @@ test("el destacado lleva rótulo como el iPhone: «Seguir viendo», «Sigue» o 
   assert.equal(eyebrowOf(game, "g"), null); // abierto: su botón ya dice «Volver al juego»
   assert.equal(eyebrowOf({ id: "a", category: "apps", last_played: 1 }), null);
 });
+
+test("la columna de la derecha dice qué es y no repite el destacado", async () => {
+  const { buildHome, queueTitle } = await import("../../orbital/web/js/core/home.js");
+  const video = (id, title) => ({ id, title, source: "cinemeta", progress: .5, last_played: Date.now() / 1000 });
+  const game = (id, title) => ({ id, title, system: "steam", category: "games", last_played: Date.now() / 1000 });
+  assert.equal(queueTitle([video("a", "A")]), "Seguir viendo");
+  assert.equal(queueTitle([game("g", "G")]), "Seguir jugando");
+  assert.equal(queueTitle([video("a", "A"), game("g", "G")]), "Seguir viendo y jugando");
+  // La serie a medias y su siguiente episodio son la misma: no sale dos veces (ni junto al destacado).
+  const home = buildHome([{ id: "jump", items: [video("s1", "Futurama"), video("s2", "Futurama"), game("g", "Hades"), game("g2", "Hades")] }]);
+  assert.equal(home.feature.title, "Futurama");
+  assert.deepEqual(home.cards.map((c) => c.title), ["Hades"]);
+});

@@ -130,7 +130,7 @@ def test_live_tv_categories_and_tuning_a_channel(page, server):
     assert page.locator(".tv__initials").count() >= 1
     # La sección cabe en la pantalla (antes las píldoras la ensanchaban y se cortaba la última columna).
     assert page.evaluate("document.querySelector('.tv').scrollWidth <= document.documentElement.clientWidth")
-    page.keyboard.press("e")  # categoría siguiente: General
+    page.keyboard.press("PageDown")  # categoría siguiente (AvPág / RT): General; Q y E (LB RB) son las secciones
     page.wait_for_timeout(400)
     assert page.locator(".tv .browse__filter--on").inner_text() == "General"
     assert 1 < page.locator(".tv__tile").count() < 40
