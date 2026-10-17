@@ -647,3 +647,16 @@ def test_the_first_mosaic_art_is_ready_before_it_is_seen(library, make_foryou, m
     items = [{"image": "https://images.metahub.space/poster/medium/tt1/img"}, {"image": "img/placeholders/x.jpg"}]
     assert fy.prefetch_art(items) == 1
     assert asked == [("https://images.metahub.space/poster/medium/tt1/img", 360)]
+
+
+def test_each_row_carries_genres_and_runtime_for_the_iphone():
+    """«Decide por mí» del iPhone: cada fila trae sus géneros y lo que dura (en una serie, un episodio), si se saben."""
+    from orbital import foryou
+    from orbital.library import trakt
+
+    e = trakt.entry({"title": "Severance", "year": 2022, "runtime": 55, "genres": ["drama", "science-fiction"],
+                     "ids": {"imdb": "tt11280740", "trakt": 1}}, "series")
+    item = foryou.video_item(e, "Porque sí")
+    assert item["genres"] == ["Drama", "Science Fiction"] and item["runtime"] == 55
+    bare = foryou.video_item({"imdb": "tt1", "kind": "movie", "title": "Sin datos"}, "x")
+    assert "genres" not in bare and "runtime" not in bare  # sin el dato: se omite (el iPhone le pregunta a Cinemeta)

@@ -186,6 +186,9 @@ def video_item(e: dict, why: str, *, title: str | None = None, poster: str | Non
         "hero": wide or METAHUB.format(kind="background", imdb=imdb),
         "logo": METAHUB.format(kind="logo", imdb=imdb),
         "overview": overview or "", "video_id": video_id, "episode": episode, "action": action,
+        # Para «Decide por mí» del iPhone (sin preguntarle a Cinemeta título por título): en inglés, como vienen.
+        **({"genres": list(e["genres"])} if e.get("genres") else {}),
+        **({"runtime": int(e["runtime"])} if isinstance(e.get("runtime"), int) and e["runtime"] > 0 else {}),
     }
 
 
@@ -198,8 +201,10 @@ def library_entry(item) -> dict | None:
     year = re.match(r"\d{4}", str(extra.get("year") or ""))
     minutes = re.match(r"\d+", str(extra.get("runtime") or ""))
     e: dict[str, Any] = {"imdb": imdb, "kind": kind, "title": item.title, "year": int(year.group()) if year else None}
-    if kind == "movie" and minutes:
+    if minutes:  # en una serie, lo que dura un episodio
         e["runtime"] = int(minutes.group())
+    if isinstance(extra.get("genres"), list) and extra["genres"]:
+        e["genres"] = [str(g) for g in extra["genres"]][:4]
     parts = str(extra.get("video_id") or "").split(":")
     if kind == "series" and len(parts) == 3 and parts[1].isdigit() and parts[2].isdigit():
         e["next"] = {"season": int(parts[1]), "episode": int(parts[2])}  # el episodio en que vas

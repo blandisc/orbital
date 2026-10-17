@@ -94,7 +94,8 @@ def entry(raw: dict | None, kind: str) -> dict | None:
     year = raw.get("year") if isinstance(raw.get("year"), int) else None
     runtime = _positive(raw.get("runtime"))
     episodes = _positive(raw.get("aired_episodes"))
-    return {"kind": kind, "imdb": imdb, "title": title.strip(), "year": year, "runtime": runtime,
+    genres = [str(g).replace("-", " ").title() for g in raw.get("genres") or [] if isinstance(g, str)][:4]  # «Science Fiction»
+    return {"kind": kind, "imdb": imdb, "title": title.strip(), "year": year, "runtime": runtime, "genres": genres,
             "episodes": episodes, "overview": str(raw.get("overview") or "").strip(),
             "trakt_id": ids.get("trakt") if isinstance(ids.get("trakt"), int) else None}
 
