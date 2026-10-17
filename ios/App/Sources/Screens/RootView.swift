@@ -40,6 +40,14 @@ struct RootView: View {
             Button("No", role: .cancel) { env.askFinished = nil }
         } message: { Text("Infuse no dice cuánto dura, así que no sé si llegaste al final.") }
         .overlay(alignment: .bottom) { BannerView() }
+        .overlay(alignment: .top) {
+            if let h = env.handoff {
+                HandoffToast(title: h.request.displayTitle, at: Duration.seconds(h.position).formatted(.time(pattern: h.position >= 3600 ? .hourMinuteSecond : .minuteSecond)),
+                             undo: { Task { await env.undoHandoff() } }, dismiss: { env.handoff = nil })
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(DS.Motion.base(false), value: env.handoff)
         .task {
             _ = await env.services.watch.flushPending()
             // Con tu Orbital conectada: lo nuevo de la consola (otra clave, Trakt recién conectado allá) llega solo.

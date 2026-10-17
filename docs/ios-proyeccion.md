@@ -106,6 +106,9 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `StorageBar` | El espacio del iPhone: series, películas, otras apps y libre (ámbar con poco espacio) | Descargas |
 | `SettingsRow`, `ProfileCard` | Renglón de Ajustes con su ícono de color y su valor actual; tu perfil arriba (el avatar con lápiz) | Ajustes |
 | `StyleOption`, `DeckStylePreview`, `TimeStylePreview` | Elegir un estilo viéndolo: el carrusel que se mueve solo y cuánto falta sobre una tarjeta | Ajustes › Inicio |
+| `PlayerLabelButton` | Botón del reproductor con su nombre («En la TV», «Ventana», «Audio y subtítulos»); si no cabe, solo el ícono | Reproductor |
+| `PanelRow`, `PanelIcon`, `PanelChip`, `PanelGroupTitle`, `FlowChips`, `SpeedStepper` | El panel «Ajustes del video»: renglones con su valor (ícono del sistema solo en su color, como Ajustes), opciones en cápsula y la velocidad − 1× + | Reproductor (a la derecha en horizontal, hoja ajustada en vertical) |
+| `HandoffToast` | «Pasó a tu Orbital · sigue en 12:34 · Deshacer» | Toda la app, al pasar el video a la TV |
 | `QualityBadges` | Insignias con contorno: 4K · DV · HDR10+ · ATMOS · TRUEHD | Fuentes (ficha y reproductor) |
 | `RatingsRow` | IMDb · TMDB · Trakt en cápsulas (guarda su alto: no brinca) | Ficha |
 | `PersonPhoto`, `PersonFace` | La cara de alguien (o sus iniciales), con nombre y personaje | Ficha › Reparto y equipo, Persona |

@@ -46,7 +46,7 @@ struct PlayerScreen: View {
     @State private var controlsVisible = true
     @State private var hideTask: Task<Void, Never>?
     @State private var panel = false
-    @State private var sources = false
+    @Environment(\.verticalSizeClass) private var verticalSize
     @State private var scrubbing: Double?
     @State private var finished = false
     @StateObject private var pip = PictureInPicture()
@@ -78,21 +78,48 @@ struct PlayerScreen: View {
         let model = holder.model
         ZStack {
             DS.video.ignoresSafeArea()
-            holder.engine.surface
-            if dragAxis != .horizontal {
-                // Mientras buscas arrastrando, el subtítulo se quita: la burbuja ya dice el tiempo y no hay con qué encimarlo.
-                holder.engine.subtitleOverlay(lifted: controlsVisible, heightFraction: env.services.appSettings.subtitleHeightFraction)
-                    .ignoresSafeArea()
-                    .transition(.opacity)
+            // En vertical con el panel abierto, el video sube a la parte de arriba (la hoja ocupa la de abajo).
+            GeometryReader { geo in
+                ZStack {
+                    holder.engine.surface
+                    if dragAxis != .horizontal {
+                        // Mientras buscas arrastrando, el subtítulo se quita: la burbuja ya dice el tiempo y no hay con qué encimarlo.
+                        holder.engine.subtitleOverlay(lifted: controlsVisible, heightFraction: env.services.appSettings.subtitleHeightFraction)
+                            .transition(.opacity)
+                    }
+                }
+                .overlay(alignment: .bottom) {
+                    // En vertical con el panel: bajo el video, qué es y dónde vas (llena el espacio y orienta).
+                    if panel && !landscape {
+                        VStack(spacing: DS.Space.s1) {
+                            Text(current.displayTitle).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
+                            Text(verbatim: [current.episodeLabel, positionText(model)].filter { !$0.isEmpty }.joined(separator: " · ")).recipe(.footnote).lineLimit(1)
+                        }
+                        .padding(.bottom, DS.Space.s4)
+                    }
+                }
+                // En horizontal, el video se recorre a la izquierda del panel: el subtítulo nunca queda debajo de él.
+                .frame(width: panel && landscape ? max(0, geo.size.width - DS.PlayerPanel.width - DS.Space.s4 * 2) : geo.size.width,
+                       height: panel && !landscape ? geo.size.height * DS.PlayerPanel.videoShare : geo.size.height)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
+            .ignoresSafeArea()
             gestureLayer(model)
             SystemVolumeControl(volume: $requestedVolume)
                 .frame(width: DS.Gesture.indicatorBarWidth, height: DS.Gesture.indicatorBarWidth)
                 .allowsHitTesting(false).accessibilityHidden(true)
             statusOverlays(model)
             gestureOverlays
-            if controlsVisible { controls(model).transition(.opacity) }
-            if let up = model.upNext { UpNextCard(card: up, watchNow: { Task { await model.playNextNow() } }, cancel: { model.cancelUpNext() }) }
+            if controlsVisible && !(panel && landscape) { controls(model).transition(.opacity) }
+            if panel && landscape {
+                // Tocar fuera del panel lo cierra; el video sigue a la vista (el cambio de subtítulos se ve al momento).
+                Color.clear.contentShape(Rectangle()).onTapGesture { panel = false }
+                HStack { Spacer(); settingsPanel(model).frame(width: DS.PlayerPanel.width)
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.radius, style: .continuous)) }
+                    .padding(DS.Space.s4)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
+            if let up = model.upNext, !panel { UpNextCard(card: up, watchNow: { Task { await model.playNextNow() } }, cancel: { model.cancelUpNext() }) }
         }
         .onArt()   // sobre el video siempre se ve como en la sala oscura, aunque la app esté en modo claro
         // Los arrastres verticales (brillo, volumen) que empiezan cerca del borde no abren el Centro de control ni el de
@@ -104,6 +131,7 @@ struct PlayerScreen: View {
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
         .animation(DS.Motion.base(reduceMotion), value: controlsVisible)
+        .animation(DS.Motion.base(reduceMotion), value: panel)
         .animation(DS.Motion.base(reduceMotion), value: dragAxis)
         .task {
             lockLandscape()
@@ -118,7 +146,7 @@ struct PlayerScreen: View {
                 #if DEBUG
                 if Demo.isOn, let open = Demo.player {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
-                    if open == "panel" { panel = true } else if open == "sources" { sources = true } else if open == "close" { await close() }
+                    if open == "panel" || open == "sources" { panel = true } else if open == "close" { await close() }
                 }
                 if Demo.isOn, let gesture = Demo.gesture {
                     try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 4)
@@ -140,8 +168,10 @@ struct PlayerScreen: View {
             Button("Seguir") { Task { await model.confirmStillWatching() } }
             Button("Salir", role: .cancel) { Task { await close() } }
         } message: { Text("Llevas tres episodios seguidos.") }
-        .sheet(isPresented: $panel) { TrackPanel(model: model, openSources: { panel = false; Task { try? await Task.sleep(nanoseconds: DS.Timing.controlsHide / 8); sources = true } }, openInInfuse: { Task { await openInInfuse() } }).presentationDetents([.medium, .large]).presentationDragIndicator(.visible) }
-        .sheet(isPresented: $sources) { PlayerSources(model: model) { sources = false }.presentationDetents([.large]).presentationDragIndicator(.visible) }
+        // En vertical, el panel es una hoja ajustada a lo que tiene (sin espacio muerto); en horizontal va a la derecha (arriba).
+        .sheet(isPresented: Binding(get: { panel && !landscape }, set: { if !$0 { panel = false } })) {
+            settingsPanel(model).fittedSheet().presentationDragIndicator(.visible)
+        }
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false; pip.stop(); nowPlaying.stop(); unlockPortrait()
             UIScreen.main.brightness = CGFloat(originalBrightness)   // el brillo es del sistema: no se queda en lo que dejó el gesto
@@ -326,11 +356,12 @@ struct PlayerScreen: View {
                     }
                     Spacer()
                     if model.skipIntroTo != nil { Button("Saltar intro") { Task { await model.skipIntro() } }.buttonStyle(.glass) }
-                    if pip.isPossible { DSIconButton(symbol: "pip.enter", label: "Imagen dentro de imagen") { pip.toggle() } }
-                    if env.services.orbital.isConfigured { DSIconButton(symbol: "tv", label: "Ver en la TV") { Task { await continueOnTV() } } }
+                    // Cada botón dice qué hace (si no cabe, solo el ícono; VoiceOver dice el nombre).
+                    if env.services.orbital.isConfigured { PlayerLabelButton(title: "En la TV", symbol: "tv") { Task { await continueOnTV() } } }
+                    if pip.isPossible { PlayerLabelButton(title: "Ventana", symbol: "pip.enter") { pip.toggle() } }
+                    PlayerLabelButton(title: "Audio y subtítulos", symbol: "captions.bubble") { panel = true }
                     AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
                         .accessibilityLabel(Text("AirPlay"))
-                    DSIconButton(symbol: "text.bubble", label: "Audio y subtítulos") { panel = true }
                 }
                 Spacer()
                 if model.phase != .preparing { transport(model) }
@@ -407,11 +438,25 @@ struct PlayerScreen: View {
     }
 
     /// Sigue en la TV: se guarda dónde ibas (Stremio) y tu Orbital retoma desde ahí.
+    /// Pasa a tu Orbital donde vas y avisa en la app: «Pasó a tu Orbital · sigue en 12:34 · Deshacer».
     private func continueOnTV() async {
+        let current = current, position = holder.model.snapshot.position
         await holder.model.close()
         finish()
-        let current = current
-        await env.playOnTV(kind: current.kind, metaID: current.metaID, videoID: current.videoID, title: current.displayTitle)
+        await env.handOffToTV(current, position: position)
+    }
+
+    private var landscape: Bool { verticalSize == .compact }
+
+    /// «12:34 de 22:00».
+    private func positionText(_ model: PlayerModel) -> String {
+        guard model.snapshot.duration > 0 else { return "" }
+        func t(_ s: Double) -> String { Duration.seconds(s).formatted(.time(pattern: s >= 3600 ? .hourMinuteSecond : .minuteSecond)) }
+        return String(format: Strings.tr("%@ de %@", language: env.services.appSettings.uiLanguage), t(model.snapshot.position), t(model.snapshot.duration))
+    }
+
+    private func settingsPanel(_ model: PlayerModel) -> some View {
+        VideoSettingsPanel(model: model, close: { panel = false }, openInInfuse: { Task { await openInInfuse() } })
     }
 
     private func openInInfuse() async {
@@ -473,125 +518,192 @@ struct UpNextCard: View {
 }
 
 /// Un solo panel para audio, subtítulos y velocidad (recuerda lo que eliges por serie). En horizontal, audio y subtítulos
-/// van en dos columnas (como el panel de la TV) para no tener que desplazarse.
-struct TrackPanel: View {
+/// «Ajustes del video»: un panel con cuatro renglones que dicen cómo está cada cosa (audio, subtítulos, fuente y velocidad,
+/// esta última ahí mismo) y, al tocar uno, su página con opciones grandes. En horizontal va a la derecha con el video a la
+/// vista; en vertical, como hoja ajustada a lo que tiene (sin espacio muerto).
+struct VideoSettingsPanel: View {
+    enum Page { case hub, audio, subtitles, source }
     let model: PlayerModel
-    let openSources: () -> Void
+    let close: () -> Void
     let openInInfuse: () -> Void
     @EnvironmentObject private var env: AppEnvironment
-    @Environment(\.verticalSizeClass) private var verticalSize
     @StateObject private var observer: ModelObserver<PlayerModel>
+    @State private var page: Page = .hub
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(model: PlayerModel, openSources: @escaping () -> Void, openInInfuse: @escaping () -> Void) {
-        self.model = model; self.openSources = openSources; self.openInInfuse = openInInfuse
+    init(model: PlayerModel, close: @escaping () -> Void, openInInfuse: @escaping () -> Void) {
+        self.model = model; self.close = close; self.openInInfuse = openInInfuse
         _observer = StateObject(wrappedValue: ModelObserver(model))
     }
 
-    private var locale: Locale { Locale(identifier: env.services.appSettings.uiLanguage) }
+    private var language: String { env.services.appSettings.uiLanguage }
+    private var locale: Locale { Locale(identifier: language) }
 
     var body: some View {
-        if verticalSize == .compact {
-            VStack(spacing: 0) {
-                speed.padding(.horizontal, DS.Space.s4).padding(.top, DS.Space.s4)
-                HStack(spacing: 0) {
-                    List { audioSection }.listStyle(.insetGrouped)
-                    List { subtitleSection }.listStyle(.insetGrouped)
+        ScrollView {
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                switch page {
+                case .hub: hub
+                case .audio: audio
+                case .subtitles: subtitles
+                case .source: source
                 }
-                .scrollContentBackground(.hidden)
-                HStack(spacing: DS.Space.s3) {
-                    Button("Otra fuente…", systemImage: "list.bullet", action: openSources).buttonStyle(.glass)
-                    Button("Abrir en Infuse", systemImage: "arrow.up.forward.app", action: openInInfuse).buttonStyle(.glass)
-                }
-                .padding(.bottom, DS.Space.s4)
             }
-        } else {
-            List {
-                Section { speed }.listRowBackground(DS.surface)
-                audioSection
-                subtitleSection
-                Section("Más") {
-                    Button("Otra fuente…", action: openSources)
-                    Button { openInInfuse() } label: { Label("Abrir en Infuse", systemImage: "arrow.up.forward.app") }
-                }
-                .listRowBackground(DS.surface)
-            }
+            .padding(DS.Space.s4)
+            .animation(DS.Motion.base(reduceMotion), value: page)
         }
+        .scrollBounceBehavior(.basedOnSize)
     }
 
-    private var speed: some View {
+    private func header(_ title: LocalizedStringKey, back: Bool) -> some View {
+        HStack(spacing: DS.Space.s2) {
+            if back {
+                Button { page = .hub } label: { Image(systemName: "chevron.left") }.buttonStyle(.glass).accessibilityLabel(Text("Atrás")).accessibilityIdentifier("panel-back")
+            }
+            Text(title).recipe(.section)
+            Spacer()
+            if !back { Button(action: close) { Image(systemName: "xmark") }.buttonStyle(.glass).accessibilityLabel(Text("Cerrar")) }
+        }
+        .padding(.bottom, DS.Space.s2)
+    }
+
+    // MARK: el panel
+    @ViewBuilder private var hub: some View {
+        let s = model.snapshot
+        header("Ajustes del video", back: false)
+        PanelRow(title: "Audio", symbol: "speaker.wave.2.fill", color: DS.ListTint.library, action: { page = .audio }) {
+            trackValue(s.audioTracks.first { $0.id == s.selectedAudio }, empty: Text("Sin pistas de audio"))
+        }
+        .accessibilityIdentifier("panel-audio")
+        PanelRow(title: "Subtítulos", symbol: "captions.bubble.fill", color: DS.ListTint.spark, action: { page = .subtitles }) {
+            trackValue(s.subtitleTracks.first { $0.id == s.selectedSubtitle }, empty: Text("Sin subtítulos"))
+        }
+        .accessibilityIdentifier("panel-subtitles")
+        PanelRow(title: "Fuente", symbol: "bolt.fill", color: DS.ListTint.flame, action: model.sourceChoices.count > 1 ? { page = .source } : nil) {
+            if let src = model.source { sourceValue(src) } else { Text("Archivo descargado").recipe(.footnote) }
+        }
+        .accessibilityIdentifier("panel-source")
+        // La velocidad, en el mismo renglón: − 1× + (sin una segunda fila de cápsulas).
         HStack(spacing: DS.Space.s3) {
-            Label("Velocidad", systemImage: "gauge.with.dots.needle.67percent").foregroundStyle(DS.text).labelStyle(.titleAndIcon).fixedSize()
-            DSSegmented(options: PlayerModel.rates.map { ($0, LocalizedStringKey(Self.rateText($0))) },
-                        selection: Binding(get: { model.rate }, set: { (v: Float) in Task { @MainActor in await model.setRate(v) } }))
+            PanelIcon(symbol: "gauge.with.dots.needle.67percent", color: DS.ListTint.list)
+            Text("Velocidad").recipe(.secondary, color: DS.text).fontWeight(.semibold)
+            Spacer(minLength: DS.Space.s2)
+            SpeedStepper(rates: PlayerModel.rates, rate: model.rate) { rate in Task { await model.setRate(rate) } }
+        }
+        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+        Button(action: openInInfuse) { Label("Abrir en Infuse", systemImage: "arrow.up.forward.app") }
+            .buttonStyle(.borderless).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
+            .frame(maxWidth: .infinity).padding(.top, DS.Space.s2)
+    }
+
+
+    @ViewBuilder private func trackValue(_ track: MediaTrack?, empty: Text) -> some View {
+        if let track {
+            let tech = TrackChooser.technical(track)
+            Text(verbatim: [TrackChooser.label(track, locale: locale, technical: false), tech].filter { !$0.isEmpty }.joined(separator: " · "))
+                .recipe(.footnote).lineLimit(1)
+        } else { empty.recipe(.footnote) }
+    }
+
+    private func sourceValue(_ src: Source) -> some View {
+        HStack(spacing: DS.Space.s1) {
+            QualityBadges(items: QualityBadges.items(resolution: src.resolution, hdr: src.hdr, audio: src.audioBadges))
+            if src.size > 0 { Text(verbatim: Int64(src.size).formatted(.byteCount(style: .file))).recipe(.footnote).lineLimit(1) }
         }
     }
 
-    static func rateText(_ rate: Float) -> String { rate == 1 ? "1×" : String(format: "%g×", rate) }
-
-    private var audioSection: some View {
-        let snapshot = model.snapshot
-        return Section("Audio") {
-            ForEach(snapshot.audioTracks) { track in
-                row(TrackChooser.label(track, locale: locale), selected: snapshot.selectedAudio == track.id) { Task { await model.selectAudio(track.id) } }
-            }
-            if snapshot.audioTracks.isEmpty { Text("Sin pistas de audio").foregroundStyle(DS.textMuted) }
+    // MARK: audio
+    @ViewBuilder private var audio: some View {
+        let s = model.snapshot
+        header("Audio", back: true)
+        ForEach(s.audioTracks) { track in
+            choiceRow(selected: s.selectedAudio == track.id, title: Text(verbatim: TrackChooser.label(track, locale: locale, technical: false)),
+                      detail: Text(verbatim: TrackChooser.technical(track))) { Task { await model.selectAudio(track.id) } }
         }
-        .listRowBackground(DS.surface)
     }
 
-    private var subtitleSection: some View {
-        let snapshot = model.snapshot
-        return Section("Subtítulos") {
-            row(Strings.tr("Sin subtítulos", language: env.services.appSettings.uiLanguage), selected: snapshot.selectedSubtitle == nil) { Task { await model.selectSubtitle(nil) } }
-            ForEach(snapshot.subtitleTracks) { track in
-                row(TrackChooser.label(track, locale: locale), selected: snapshot.selectedSubtitle == track.id) { Task { await model.selectSubtitle(track.id) } }
-            }
-        }
-        .listRowBackground(DS.surface)
-    }
-
-    private func row(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+    private func choiceRow(selected: Bool, title: Text, detail: Text?, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack { Text(title).foregroundStyle(DS.text); Spacer(); if selected { Image(systemName: "checkmark").foregroundStyle(DS.good) } }
+            HStack(spacing: DS.Space.s3) {
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    title.recipe(.secondary, color: DS.text).fontWeight(.semibold)
+                    if let detail { detail.recipe(.footnote) }
+                }
+                Spacer(minLength: DS.Space.s2)
+                if selected { Image(systemName: "checkmark").fontWeight(.bold).foregroundStyle(DS.accent) }
+            }
+            .padding(DS.Space.s3)
+            .background(selected ? DS.fillStrong : DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous).stroke(selected ? DS.accent : .clear))
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
-}
 
-/// «Otra fuente…» dentro del reproductor: cambia de fuente en el mismo punto.
-struct PlayerSources: View {
-    let model: PlayerModel
-    let done: () -> Void
-    @StateObject private var observer: ModelObserver<PlayerModel>
-
-    init(model: PlayerModel, done: @escaping () -> Void) {
-        self.model = model; self.done = done
-        _observer = StateObject(wrappedValue: ModelObserver(model))
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            Text("Otra fuente").font(DS.TextRecipe.section.font.weight(.bold)).foregroundStyle(DS.text)
-            ScrollView {
-                VStack(spacing: DS.Space.s2) {
-                    ForEach(model.sourceChoices) { source in
-                        Button { Task { await model.switchSource(to: source.index); done() } } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: DS.Space.s1) {
-                                    Text([source.resolution, source.languages.prefix(2).map { Streams.languageName($0, in: AppEnvironment.shared.services.appSettings.uiLanguage) }.joined(separator: " + ")].filter { !$0.isEmpty }.joined(separator: " · "))
-                                        .font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
-                                    QualityBadges(items: QualityBadges.items(resolution: "", hdr: source.hdr, audio: source.audioBadges))
-                                    Text(source.release).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1)
-                                }
-                                Spacer()
-                                if source.index == model.source?.index { Image(systemName: "checkmark").foregroundStyle(DS.good) }
-                            }
-                            .padding(DS.Space.s3).background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
-                        }
-                    }
+    // MARK: subtítulos
+    @ViewBuilder private var subtitles: some View {
+        let s = model.snapshot
+        let settings = env.services.appSettings
+        let mine = [settings.subtitles, settings.audio].filter { !$0.isEmpty }
+        let yours = s.subtitleTracks.filter { t in mine.contains { TrackChooser.matches(t, $0) } }
+        let others = s.subtitleTracks.filter { t in !yours.contains(t) }
+        header("Subtítulos", back: true)
+        if !yours.isEmpty {
+            PanelGroupTitle(title: "Tu idioma")
+            FlowChips { ForEach(yours) { chip($0, selected: s.selectedSubtitle == $0.id) } }
+        }
+        PanelGroupTitle(title: yours.isEmpty ? "Idiomas" : "Otros")
+        FlowChips {
+            ForEach(others) { chip($0, selected: s.selectedSubtitle == $0.id) }
+            PanelChip(title: Text("Sin subtítulos"), selected: s.selectedSubtitle == nil) { Task { await model.selectSubtitle(nil) } }
+        }
+        PanelGroupTitle(title: "Tamaño")
+        FlowChips {
+            ForEach(["small", "medium", "large"], id: \.self) { size in
+                PanelChip(title: Text(verbatim: "Aa"), selected: settings.subtitleSize == size, font: .system(size: DS.PlayerPanel.sampleSizes[size] ?? 15)) {   // ds-exception: la muestra «Aa» se ve del tamaño que elige
+                    env.services.settings.update { $0.subtitleSize = size }; observer.objectWillChange.send()
                 }
+                .accessibilityLabel(size == "small" ? Text("Chico") : size == "large" ? Text("Grande") : Text("Mediano"))
             }
         }
-        .padding(DS.Space.s4)
+    }
+
+    private func chip(_ track: MediaTrack, selected: Bool) -> some View {
+        PanelChip(title: Text(verbatim: TrackChooser.label(track, locale: locale, technical: false)), selected: selected) { Task { await model.selectSubtitle(track.id) } }
+    }
+
+    // MARK: fuente
+    @ViewBuilder private var source: some View {
+        let current = model.source
+        let rest = model.sourceChoices.filter { $0.index != current?.index }
+        header("Fuente", back: true)
+        if let current {
+            PanelGroupTitle(title: "La que tienes")
+            sourceRow(current, selected: true)
+        }
+        if !rest.isEmpty { PanelGroupTitle(title: "Otras") }
+        ForEach(rest) { sourceRow($0, selected: false) }
+    }
+
+    private func sourceRow(_ src: Source, selected: Bool) -> some View {
+        let langs = src.languages.prefix(2).map { Streams.languageName($0, in: language) }.joined(separator: " + ")
+        let size = src.size > 0 ? Int64(src.size).formatted(.byteCount(style: .file)) : ""
+        return Button { if !selected { Task { await model.switchSource(to: src.index); page = .hub } } } label: {
+            HStack(spacing: DS.Space.s3) {
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    QualityBadges(items: QualityBadges.items(resolution: src.resolution.isEmpty ? "SD" : src.resolution, hdr: src.hdr, audio: src.audioBadges))
+                    Text(verbatim: [langs, size].filter { !$0.isEmpty }.joined(separator: " · ")).recipe(.footnote)
+                    (src.cached ? Text("Al instante") : Text("Tarda en empezar")).recipe(.caption, color: src.cached ? DS.good : DS.textMuted)
+                }
+                Spacer(minLength: DS.Space.s2)
+                if selected { Image(systemName: "checkmark").fontWeight(.bold).foregroundStyle(DS.accent) }
+            }
+            .padding(DS.Space.s3)
+            .background(selected ? DS.fillStrong : DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous).stroke(selected ? DS.accent : .clear))
+        }
+        .buttonStyle(.plain)
     }
 }

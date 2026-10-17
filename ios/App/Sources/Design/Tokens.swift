@@ -201,6 +201,17 @@ enum DS {
         static let personPhoto: CGFloat = 120, bioLines = 5
     }
 
+    /// El panel «Ajustes del video» del reproductor: a la derecha en horizontal, hoja ajustada en vertical.
+    enum PlayerPanel {
+        static let width: CGFloat = 420, radius: CGFloat = 30, rowRadius: CGFloat = 16, icon: CGFloat = 32
+        /// El ancho del valor de la velocidad («1.25×») entre − y +.
+        static let speedValue: CGFloat = 52
+        /// Tamaños de letra de muestra («Aa») para chico, mediano y grande.
+        static let sampleSizes: [String: CGFloat] = ["small": 12, "medium": 15, "large": 19]
+        /// En vertical con el panel abierto, la parte de arriba de la pantalla que queda para el video.
+        static let videoShare: CGFloat = 0.5
+    }
+
     /// La barra de espacio de Descargas.
     enum Storage {
         static let height: CGFloat = 14, gap: CGFloat = 2, minSegment: CGFloat = 3, dot: CGFloat = 8
@@ -346,6 +357,8 @@ enum DS {
     /// Esperas de la interfaz (nanosegundos para `Task.sleep`).
     enum Timing {
         static let controlsHide = UInt64(DesignTokens.Timing.controlsHide * 1e9), banner = UInt64(DesignTokens.Timing.banner * 1e9)
+        /// Cuánto se queda el aviso «Pasó a tu Orbital» (con «Deshacer»).
+        static let handoff = UInt64(8 * 1e9)
         static let searchDebounce = UInt64(DesignTokens.Timing.searchDebounce * 1e9), tick = UInt64(DesignTokens.Timing.tick * 1e9)
         static let longPressDelay = DesignTokens.Timing.longPressDelay
         /// Cada cuánto, como pronto, le pide iOS a la app mirar en segundo plano lo que dejó la TV (iOS decide si y cuándo corre).

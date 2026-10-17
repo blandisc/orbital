@@ -34,6 +34,17 @@
         }
       }
     },
+    "%@ · sigue en %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · continues at %@"
+          }
+        }
+      }
+    },
     "%lld cambios por subir": {
       "extractionState": "manual",
       "localizations": {
@@ -320,6 +331,17 @@
         }
       }
     },
+    "Ajustes del video": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video settings"
+          }
+        }
+      }
+    },
     "Al instante": {
       "extractionState": "manual",
       "localizations": {
@@ -404,6 +426,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What you're watching shows up here, on iPhone and on Orbital."
+          }
+        }
+      }
+    },
+    "Archivo descargado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloaded file"
           }
         }
       }
@@ -1574,6 +1607,17 @@
         }
       }
     },
+    "Deshacer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
+          }
+        }
+      }
+    },
     "Desliza para moverte; toca para %@": {
       "extractionState": "manual",
       "localizations": {
@@ -2399,6 +2443,17 @@
         }
       }
     },
+    "Idiomas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Languages"
+          }
+        }
+      }
+    },
     "Imagen dentro de imagen": {
       "extractionState": "manual",
       "localizations": {
@@ -2483,6 +2538,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The source asked to wait a bit. Trying again."
+          }
+        }
+      }
+    },
+    "La que tienes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current"
           }
         }
       }
@@ -2923,6 +2989,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "More like this"
+          }
+        }
+      }
+    },
+    "Más lento": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slower"
+          }
+        }
+      }
+    },
+    "Más rápido": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faster"
           }
         }
       }
@@ -3510,6 +3598,17 @@
         }
       }
     },
+    "Otras": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Others"
+          }
+        }
+      }
+    },
     "Otras apps": {
       "extractionState": "manual",
       "localizations": {
@@ -3517,6 +3616,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Other apps"
+          }
+        }
+      }
+    },
+    "Otros": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Others"
           }
         }
       }
@@ -3561,6 +3671,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "For You, from your Orbital"
+          }
+        }
+      }
+    },
+    "Pasó a tu Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moved to your Orbital"
           }
         }
       }
@@ -4665,6 +4786,17 @@
         }
       }
     },
+    "Tamaño": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size"
+          }
+        }
+      }
+    },
     "Tamaño de subtítulos": {
       "extractionState": "manual",
       "localizations": {
@@ -4683,6 +4815,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "You also had"
+          }
+        }
+      }
+    },
+    "Tarda en empezar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Slow to start"
           }
         }
       }
@@ -5094,6 +5237,17 @@
         }
       }
     },
+    "Tu idioma": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your language"
+          }
+        }
+      }
+    },
     "Tu perfil": {
       "extractionState": "manual",
       "localizations": {
@@ -5200,6 +5354,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Speed"
+          }
+        }
+      }
+    },
+    "Ventana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Window"
           }
         }
       }

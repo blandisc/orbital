@@ -37,6 +37,13 @@ final class AppEnvironment: ObservableObject {
     @Published var askFinished: PlayRequest?
     /// Un aviso corto abajo: lo que pasó («Descargando…») o lo que salió mal.
     @Published var banner: Banner?
+    /// Lo que acabas de pasar a la TV desde el reproductor: el aviso con «Deshacer» (regresa al iPhone en el mismo punto).
+    @Published var handoff: TVHandoff?
+    struct TVHandoff: Equatable {
+        var request: PlayRequest
+        var position: Double
+        static func == (a: TVHandoff, b: TVHandoff) -> Bool { a.request.id == b.request.id && a.position == b.position }
+    }
     struct Banner: Equatable { var text: String; var tone: DSNotice.Tone }
 
     /// Un aviso: lo que arma la app en español se traduce aquí, una sola vez (el aviso ya se pinta tal cual).
@@ -241,6 +248,24 @@ final class AppEnvironment: ObservableObject {
             try await services.orbital.play(kind: kind, metaID: metaID, videoID: videoID, title: title)
             notify("Poniéndolo en la TV.", tone: .success)
         } catch { notify((error as? OrbitalRemote.Failure)?.description ?? "\(error)") }
+    }
+
+    /// Del reproductor del iPhone a tu Orbital, en el mismo punto: la TV sigue donde ibas y la app enseña el aviso.
+    func handOffToTV(_ request: PlayRequest, position: Double) async {
+        do {
+            try await services.orbital.play(kind: request.kind, metaID: request.metaID, videoID: request.videoID, title: request.displayTitle)
+            handoff = TVHandoff(request: request, position: position)
+        } catch { notify((error as? OrbitalRemote.Failure)?.description ?? "\(error)") }
+    }
+
+    /// «Deshacer»: la TV se detiene y sigues en el iPhone donde ibas (el avance ya se guardó al cerrar).
+    func undoHandoff() async {
+        guard let h = handoff else { return }
+        handoff = nil
+        _ = try? await services.orbital.control(action: "stop")
+        var request = h.request
+        request.fromStart = false
+        play(request)
     }
 
     /// Un título desde Inicio: reproduce directo donde ibas.

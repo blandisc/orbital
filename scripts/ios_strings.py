@@ -19,6 +19,11 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Más lento": "Slower", "Más rápido": "Faster",
+    "%@ de %@": "%@ of %@",
+    "Ajustes del video": "Video settings", "Archivo descargado": "Downloaded file", "La que tienes": "Current", "Pasó a tu Orbital": "Moved to your Orbital",
+    "Tamaño": "Size", "Tarda en empezar": "Slow to start", "Tu idioma": "Your language", "Ventana": "Window", "Idiomas": "Languages", "Otros": "Others",
+    "Otras": "Others", "Al instante": "Instant", "Atrás": "Back", "%@ · sigue en %@": "%@ · continues at %@", "Deshacer": "Undo",
     "Creación": "Created by", "Dónde verlo": "Where to watch", "Este título no está en Stremio.": "This title isn't on Stremio.", "Filmografía": "Filmography",
     "La saga": "The saga", "Marcar temporada como vista": "Mark season as watched", "Más como esto": "More like this",
     "No pude traer a esta persona de TMDB.": "Couldn't load this person from TMDB.", "Reparto y equipo": "Cast and crew", "Tráiler y extras": "Trailer and extras",
