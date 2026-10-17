@@ -5,7 +5,13 @@ import { ICONS } from "../core/icons.js";
 
 const ALEXA_LIVE_SECONDS = 600;
 
-/** Barra superior: marca (abre el menú), juego en curso, Alexa, Wi-Fi, batería y hora. */
+/** El ícono de cada sección en la barra (la palabra solo sale en la activa). */
+const SECTION_ICONS = { foryou: "spark", home: "home", games: "gamepad", media: "trailer", tv: "tv", apps: "grid" };
+
+/**
+ * Barra superior: la marca (abre el menú), Buscar con su botón, las secciones como íconos —la activa se expande con su
+ * nombre— entre LB y RB y, a la derecha, lo abierto, Alexa, Wi-Fi, la pila y la hora.
+ */
 export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
   // Buscar siempre a la mano (botón Vista ⧉): juegos, películas y series desde cualquier sección.
   const searchGlyph = h("span", { class: "status-bar__search-glyph" });
@@ -27,10 +33,9 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
   // Sin Internet, se dice antes de que falle Películas, Fuentes o Buscar (que no haya ícono no dice nada).
   const offline = h("span", { class: "status-bar__offline", role: "status", hidden: true }, "Sin Internet");
   const level = h("i", { class: "battery__level" });
-  const batteryText = h("span");
   const bolt = svg(ICONS.bolt);
-  // La batería: el rayo va dentro de la pila (no al lado, en verde) y el número en gris.
-  const battery = h("span", { class: "battery", hidden: true }, h("b", { class: "battery__body" }, level, bolt), batteryText);
+  // La batería: la pila con su nivel y el rayo dentro al cargar (sin el número: la pila ya lo dice).
+  const battery = h("span", { class: "battery", hidden: true }, h("b", { class: "battery__body" }, level, bolt));
   const time = h("span", { class: "status-bar__clock" });
 
   const tabs = h("nav", { class: "status-bar__tabs", "aria-label": "Secciones" });
@@ -41,59 +46,91 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
     tabs,
     h("div", { class: "status-bar__right" }, playing, alexa, offline, wifi, battery, time));
 
-  // La píldora de la sección activa es una sola: al cambiar de sección se desliza hasta la nueva.
+  // La píldora de la sección activa es una sola: al cambiar de sección viaja hasta la nueva y se ajusta a ella mientras
+  // su nombre se despliega.
   const pill = h("span", { class: "status-bar__pill", "aria-hidden": "true" });
   let shown = null;
+  let shownIds = "";
 
-  /** Pestañas de sección (Inicio, Juegos, Películas y series, Apps) con LB/RB a los lados. */
+  /** Las secciones: íconos (la activa, con su nombre: se despliega al llegar, se pliega al irte), con LB/RB a los lados. */
   function setSections(sections, active, glyphs) {
     const [prev, next] = (glyphs?.section || "").split(" ");
-    const before = shown && tabs.querySelector(".status-bar__tab--active")?.getBoundingClientRect();
-    mount(tabs,
-      pill,
-      prev && Glyph(prev, { small: true }),
-      sections.map((section) => h("button", {
-        class: ["status-bar__tab", section.id === active && "status-bar__tab--active"], type: "button",
-        "aria-current": section.id === active ? "page" : null, onClick: () => onSection?.(section.id),
-      }, section.title)),
+    const ids = `${sections.map((s) => s.id).join(",")}|${glyphs?.section || ""}`;
+    if (ids !== shownIds) {
+      shownIds = ids;
+      mount(tabs, pill, prev && Glyph(prev, { small: true }), sections.map((section) => h("button", {
+        class: "status-bar__tab", type: "button", "data-section": section.id, title: section.title,
+        onClick: () => onSection?.(section.id),
+      }, svg(ICONS[SECTION_ICONS[section.id]] || ICONS.apps), h("span", { class: "status-bar__tab-label" }, h("span", {}, section.title)))),
       next && Glyph(next, { small: true }));
+    }
     mount(searchGlyph, glyphs?.search && Glyph(glyphs.search, { small: true }));
-    placePill(active !== shown && before ? before : null);
+    for (const tab of tabs.querySelectorAll(".status-bar__tab")) {
+      const on = tab.dataset.section === active;
+      tab.classList.toggle("status-bar__tab--active", on);
+      if (on) tab.setAttribute("aria-current", "page");
+      else tab.removeAttribute("aria-current");
+    }
+    placePill(shown !== null && active !== shown);
     shown = active;
     fit();
   }
 
   /**
-   * La píldora bajo la pestaña activa; si venía de otra, viaja como una gota: el borde de adelante sale primero y el de
-   * atrás lo alcanza (se estira a medio camino y se asienta en la nueva), sin el rebote del resorte de antes.
+   * La píldora persigue a la pestaña activa cuadro a cuadro, como una gota: el borde de adelante va más rápido que el de
+   * atrás (se estira a medio camino) y los dos siguen a la pestaña mientras su nombre se despliega, hasta asentarse.
    */
-  let travel = null;
-  function placePill(from) {
+  let edges = null;
+  let chasing = 0;
+  let last = 0;
+  const target = () => {
     const tab = tabs.querySelector(".status-bar__tab--active");
-    if (!tab) { pill.hidden = true; return; }
-    pill.hidden = false;
+    if (!tab) return null;
     const base = tabs.getBoundingClientRect();
-    const to = tab.getBoundingClientRect();
-    const frame = (left, width) => ({ transform: `translateX(${left - base.left}px)`, width: `${width}px` });
-    pill.style.height = `${to.height}px`;
-    pill.style.top = `${to.top - base.top}px`;
-    Object.assign(pill.style, frame(to.left, to.width));
-    if (!from) return; // solo reacomodo (cambió el tamaño): si va viajando, que termine su viaje
-    travel?.cancel();
-    travel = null;
-    const still = document.documentElement.dataset.motion === "reduce" || typeof pill.animate !== "function";
-    if (!from.width || still || Math.abs(from.left - to.left) < 1) return;
-    const right = to.left > from.left;
-    const lerp = (a, b, t) => a + (b - a) * t;
-    // A medio camino: el borde de adelante ya recorrió casi todo; el de atrás, apenas un tercio.
-    const lead = right ? lerp(from.right, to.right, .78) : lerp(from.left, to.left, .78);
-    const tail = right ? lerp(from.left, to.left, .3) : lerp(from.right, to.right, .3);
-    const mid = right ? frame(tail, lead - tail) : frame(lead, tail - lead);
-    const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    travel = pill.animate([frame(from.left, from.width), { ...mid, offset: .45 }, frame(to.left, to.width)],
-      { duration: parseFloat(token("--duration-enter")) || 520, easing: token("--ease-out") || "ease-out" });
+    const r = tab.getBoundingClientRect();
+    return { l: r.left - base.left, r: r.right - base.left, top: r.top - base.top, h: r.height };
+  };
+  const paint = () => {
+    pill.style.transform = `translateX(${edges.l}px)`;
+    pill.style.width = `${Math.max(0, edges.r - edges.l)}px`;
+  };
+  function chase(now) {
+    const t = target();
+    if (!t) { chasing = 0; return; }
+    const dt = Math.min(64, now - last || 16.7);
+    last = now;
+    const k = (rate) => 1 - (1 - rate) ** (dt / 16.7); // igual a 60 o a 30 cuadros por segundo
+    const right = (t.l + t.r) / 2 > (edges.l + edges.r) / 2;
+    const [lead, tail] = [k(.24), k(.13)];
+    edges.r += (t.r - edges.r) * (right ? lead : tail);
+    edges.l += (t.l - edges.l) * (right ? tail : lead);
+    pill.style.top = `${t.top}px`;
+    pill.style.height = `${t.h}px`;
+    if (Math.abs(t.l - edges.l) < .4 && Math.abs(t.r - edges.r) < .4) {
+      edges = { l: t.l, r: t.r };
+      paint();
+      chasing = 0;
+      return;
+    }
+    paint();
+    chasing = requestAnimationFrame(chase);
   }
-  if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => placePill(null)).observe(tabs);
+  function placePill(travel) {
+    const t = target();
+    if (!t) { pill.hidden = true; return; }
+    pill.hidden = false;
+    const still = document.documentElement.dataset.motion === "reduce";
+    if (travel && edges && !still) {
+      if (!chasing) { last = performance.now(); chasing = requestAnimationFrame(chase); }
+      return;
+    }
+    if (chasing) return; // va viajando: la persecución ya sigue a la pestaña (también si cambia de tamaño)
+    edges = { l: t.l, r: t.r };
+    pill.style.top = `${t.top}px`;
+    pill.style.height = `${t.h}px`;
+    paint();
+  }
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => placePill(false)).observe(tabs);
 
   // Si la barra no cabe (letra grande en la Legion Go: la letra crece con el alto de la pantalla y la hora se salía por la
   // derecha), cede en pasos, midiendo de verdad: 1) «Buscar» queda en la lupa y lo abierto en su ▶; 2) menos aire;
@@ -107,7 +144,7 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
     fitting = requestAnimationFrame(() => {
       for (let i = 1; i <= TIGHT; i++) el.classList.remove(`status-bar--tight-${i}`);
       for (let i = 1; i <= TIGHT && overflows(); i++) el.classList.add(`status-bar--tight-${i}`);
-      placePill(null);
+      placePill(false);
     });
   }
   // La barra mide lo mismo aunque cambie la letra (Ajustes → Tamaño del texto): se observa también lo de adentro.
@@ -158,8 +195,7 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
         battery.classList.toggle("battery--charging", info.charging);
         level.style.width = `calc(${pct}% - 4px)`;
         bolt.style.display = info.charging ? "" : "none";
-        batteryText.textContent = `${pct} %`;
-        battery.title = info.charging ? "Cargando" : "Batería";
+        battery.title = `${info.charging ? "Cargando" : "Batería"} · ${pct} %`;
       };
       update();
       info.addEventListener("levelchange", update);

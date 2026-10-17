@@ -1,5 +1,5 @@
-/* StatusBar: marca, juego en curso, Alexa, Wi-Fi, batería y hora.
-   Texto limpio sobre el velo superior del fondo; sin cápsulas ni vidrio. */
+/* StatusBar: la marca, Buscar, las secciones como íconos (la activa se expande con su nombre) entre LB y RB y, a la
+   derecha, lo abierto, Alexa, Wi-Fi, la pila y la hora. Sin cápsulas ni vidrio. */
 .status-bar {
   position: relative; display: flex; align-items: center; gap: var(--space-8); min-width: 0;
   height: 3rem; margin: calc(var(--space-5) + var(--safe-y)) var(--page-gutter) 0;
@@ -28,6 +28,7 @@
 @keyframes mark-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes mark-planet { from { opacity: 0; transform: scale(.6); } }
 @keyframes mark-moon { from { opacity: 0; transform: scale(0); } }
+
 .status-bar__wordmark {
   font-family: var(--font-sans); font-size: var(--text-lg); font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-tight); line-height: 1; padding-bottom: .08em; /* centro óptico con el planeta */
@@ -57,16 +58,29 @@
 }
 .status-bar__tab { position: relative; } /* encima de la píldora */
 .status-bar__tabs .glyph { margin: 0 var(--space-2); }
+/* Una sección: su ícono y, plegado, su nombre. La activa lo despliega (grid 0fr → 1fr: el ancho se anima sin medirlo)
+   y la píldora la persigue mientras crece; la que dejas lo pliega a la vez, así los íconos de en medio se deslizan. */
 .status-bar__tab {
-  /* Centrado óptico: con .5rem arriba y abajo la palabra quedaba baja (medido en «Inicio» a 1920: 19 px de aire arriba
-     y 15,7 abajo). Sube .06rem sin cambiar el alto de la píldora. */
-  padding: .44rem 1.05rem .56rem; border-radius: var(--radius-pill);
+  display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 .78rem; border-radius: var(--radius-pill);
   color: var(--color-text-muted); font-size: var(--text-md); font-weight: var(--weight-medium); white-space: nowrap;
-  transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
+  transition: color var(--duration-base) var(--ease-out);
 }
+.status-bar__tab .icon { flex: none; width: 1.4rem; height: 1.4rem; stroke-width: 2; }
+.status-bar__tab-label {
+  display: grid; grid-template-columns: 0fr; opacity: 0;
+  transition: grid-template-columns var(--duration-slow) var(--ease-out), margin var(--duration-slow) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+}
+/* .1em abajo: el centro óptico de la palabra con el ícono (sin él quedaba baja). */
+.status-bar__tab-label > span { min-width: 0; overflow: hidden; padding-bottom: .1em; }
 .status-bar__tab:hover { color: var(--color-text); }
 /* El texto cambia de color cuando la píldora ya llegó a él (no antes: se veía gris sobre blanco a medio camino). */
 .status-bar__tab--active { color: var(--color-on-primary); transition: color var(--duration-fast) var(--ease-out) var(--delay-2); }
+.status-bar__tab--active .status-bar__tab-label {
+  grid-template-columns: 1fr; opacity: 1; margin-left: var(--space-2);
+  transition: grid-template-columns var(--duration-slow) var(--ease-out), margin var(--duration-slow) var(--ease-out),
+    opacity var(--duration-base) var(--ease-out) var(--delay-1);
+}
 /* Buscar: atajo global junto a la marca (botón Vista ⧉). Discreto hasta que lo señalas. */
 .status-bar__search {
   display: inline-flex; align-items: center; gap: var(--space-2); margin-left: calc(-1 * var(--space-3));
@@ -97,9 +111,9 @@
 /* Cuando no cabe (status-bar.js · fit), cede en pasos; la hora nunca se sale de la pantalla. */
 .status-bar--tight-1 .status-bar__search > span:not(.status-bar__search-glyph), .status-bar--tight-1 .status-bar__playing-title { display: none; }
 .status-bar--tight-2 { gap: var(--space-4); }
-.status-bar--tight-2 .status-bar__tab { padding-inline: var(--space-3); }
+.status-bar--tight-2 .status-bar__tab { padding-inline: var(--space-2); }
 .status-bar--tight-2 .status-bar__right { gap: var(--space-3); }
-.status-bar--tight-3 .battery > span { display: none; }
+.status-bar--tight-3 .status-bar__offline { font-size: var(--text-xs); }
 .status-bar--tight-4 .status-bar__wordmark { display: none; }
 .status-bar--tight-5 .status-bar__tabs .glyph { display: none; }
 .status-bar--tight-6 .status-bar__tab { font-size: var(--text-sm); }
@@ -158,13 +172,6 @@
 @media (max-width: 700px) { .status-bar .assistant, .status-bar__playing { display: none; } }
 
 /* Pantallas angostas: primero se van los textos de apoyo, nunca las pestañas ni la hora. */
-/* Legion Go (1280): el nombre de lo abierto se acorta (un ▶ suelto no decía qué); el % de batería cede su sitio. */
-@media (max-width: 1300px) {
-  .status-bar__playing-title { max-width: 6.5rem; }
-  .battery > span:not(.battery__body) { display: none; }
-}
-/* Letra Muy grande: el % de batería también cede su sitio (con márgenes Grande la hora se salía). */
-@media (max-width: 1920px) { [data-text-size="xlarge"] .battery > span:not(.battery__body) { display: none; } }
 @media (max-width: 1000px) {
   .status-bar { gap: var(--space-4); }
   .status-bar__wordmark, .status-bar .assistant { display: none; }
@@ -172,7 +179,7 @@
   .status-bar__clock { font-size: var(--text-lg); }
 }
 @media (max-width: 760px) {
-  .status-bar__tabs .glyph, .battery > span:not(.battery__body) { display: none; }
-  .status-bar__tab { padding: .45rem .7rem; }
+  .status-bar__tabs .glyph { display: none; }
+  .status-bar__tab { padding: 0 .55rem; }
 }
 @media (max-width: 480px) { .status-bar__search, .battery { display: none; } }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildHome, greeting, kicker, stageKind, systemColor, thumbOf } from "../../orbital/web/js/core/home.js";
+import { buildHome, kicker, stageKind, systemColor, thumbOf } from "../../orbital/web/js/core/home.js";
 
 const game = (id, system, last = 0, extra = {}) => ({ id, title: id, source: system, system, category: "emulators", last_played: last, ...extra });
 const show = { id: "stremio:tt1", title: "The Simpsons", source: "stremio", category: "continue", progress: .5, extra: { kind: "series" } };
@@ -55,10 +55,7 @@ test("sin nada a medias, tus favoritos ocupan el destacado", () => {
   assert.equal(home.pending, 0);
 });
 
-test("textos: saludo según la hora, tipo de cada tile y color de su consola", () => {
-  assert.equal(greeting(new Date(2026, 0, 1, 9)), "Buenos días");
-  assert.equal(greeting(new Date(2026, 0, 1, 15)), "Buenas tardes");
-  assert.equal(greeting(new Date(2026, 0, 1, 23)), "Buenas noches");
+test("textos: tipo de cada tile y color de su consola", () => {
   assert.equal(kicker(show), "Serie");
   assert.equal(kicker(game("x", "gba")), "GBA");
   assert.equal(systemColor("switch"), "var(--system-switch, var(--system-default))");

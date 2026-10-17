@@ -35,14 +35,6 @@ export const SYSTEMS = {
   geforcenow: { name: "GeForce NOW", photo: "geforcenow.svg", logo: true },
 };
 
-/** «Buenos días / Buenas tardes / Buenas noches». */
-export function greeting(date = new Date()) {
-  const hour = date.getHours();
-  if (hour >= 5 && hour < 12) return "Buenos días";
-  if (hour >= 12 && hour < 20) return "Buenas tardes";
-  return "Buenas noches";
-}
-
 /** Sistema de un juego (Switch, GBA…), de una fila de emuladores o de Steam. */
 export const systemOf = (item) => item?.system || (item?.source === "steam" ? "steam" : null);
 
