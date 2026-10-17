@@ -113,45 +113,47 @@ def test_diagnostics_screen(page):
 
 
 def test_live_tv_categories_and_tuning_a_channel(page, server):
-    """TV en vivo: LB/RB pasan de categoría, A sintoniza y B vuelve (con canales de mentiras, sin mpv)."""
+    """TV en vivo en estantes: uno por categoría (LT/RT saltan de estante), A sintoniza y B vuelve (canales de mentiras, sin mpv)."""
     ready(page)
     for _ in range(3):  # Inicio → Juegos → Películas y series → TV en vivo
         page.keyboard.press("e")
         page.wait_for_timeout(350)
     page.locator(".tv__tile").first.wait_for(timeout=5000)
     assert page.locator(".status-bar__tab--active").inner_text() == "TV en vivo"
-    assert page.locator(".tv__tile").count() == 40 and page.locator(".tv__tile.tile--focused").count() == 1
-    # Un canal que ya falló una vez sale al final, atenuado y con su aviso; los que nadie ha revisado, normales.
-    assert page.locator(".tv__tile.tile--dimmed").count() == 1
-    assert page.locator(".tv__tile").last.locator(".tv__flag", has_text="Sin señal reciente").count() == 1
-    assert "1 sin señal reciente" in page.locator(".tv .browse__meta").inner_text()
+    assert page.locator(".tv__row").count() > 1  # un estante por categoría
+    assert page.locator(".tv__tile").count() >= 40 and page.locator(".tv__tile.tile--focused").count() == 1
+    # Un canal que ya falló una vez sale atenuado y con su aviso; los que nadie ha revisado, normales.
+    assert page.locator(".tv__tile.tile--dimmed").count() >= 1
+    assert page.locator(".tv__flag", has_text="Sin señal reciente").count() >= 1
     # Los logos los sirve Orbital (parejos) y cargan; el que no trae logo muestra las letras de su nombre.
     page.wait_for_function("document.querySelectorAll('.tv__logo').length > 5 && [...document.querySelectorAll('.tv__logo')].some((i) => i.complete && i.naturalWidth > 0)")
     assert page.locator(".tv__initials").count() >= 1
-    # La sección cabe en la pantalla (antes las píldoras la ensanchaban y se cortaba la última columna).
-    assert page.evaluate("document.querySelector('.tv').scrollWidth <= document.documentElement.clientWidth")
-    page.keyboard.press("PageDown")  # categoría siguiente (AvPág / RT): General; Q y E (LB RB) son las secciones
+    # La página no se ensancha: los estantes se recorren dentro de su ventana.
+    assert page.evaluate("document.documentElement.scrollWidth <= document.documentElement.clientWidth")
+    first_row = page.locator(".tv__row-head").first.inner_text()
+    page.keyboard.press("PageDown")  # el estante de abajo (AvPág / RT); Q y E (LB RB) son las secciones
     page.wait_for_timeout(400)
-    assert page.locator(".tv .browse__filter--on").inner_text() == "General"
-    assert 1 < page.locator(".tv__tile").count() < 40
+    assert page.locator(".tv__row--current .tv__row-head").inner_text() != first_row
     page.keyboard.press("Enter")  # sintoniza el canal enfocado (el lanzador de prueba no abre nada de verdad)
     deadline = time.monotonic() + 10
     while not status(server)["running"] and time.monotonic() < deadline:
         time.sleep(.2)
     assert status(server)["running"]["id"] == "media:player"
-    # Al aire: su casilla lo dice, A vuelve a él, y con uno al aire otro canal se sintoniza sin pantalla de carga.
-    page.locator(".tv__flag", has_text="Al aire").wait_for(timeout=5000)
+    # Al aire: arriba lo dice en grande, su casilla también, y A vuelve a él.
+    page.locator(".tv__hero-eyebrow", has_text="Al aire").wait_for(timeout=5000)
     assert status(server)["running"]["live"]
     assert "Volver al canal" in page.locator(".hints").inner_text()
     page.wait_for_timeout(2000)  # que se vaya la pantalla de carga del primer canal
-    page.keyboard.press("ArrowRight")
+    page.keyboard.press("ArrowRight")  # con uno al aire, otro canal se sintoniza sin pantalla de carga
     page.keyboard.press("Enter")
     page.wait_for_timeout(500)
     assert not page.locator(".launch").is_visible()
-    assert page.locator(".tv__flag", has_text="Al aire").count() == 1
+    # Un solo canal al aire (sale en «Tus canales» y en su categoría: las dos casillas son el mismo).
+    on_air = page.eval_on_selector_all(".tv__track .tv__tile:has(.tv__flag)", "(tiles) => tiles.filter((t) => t.textContent.includes('Al aire')).map((t) => t.querySelector('.tv__name').textContent)")
+    assert len(set(on_air)) == 1
     urllib.request.urlopen(urllib.request.Request(f"{server}/api/stop", method="POST"), timeout=5)
     page.locator(".toast", has_text="De vuelta de la TV en vivo").wait_for(timeout=10_000)  # no «dónde ibas»: la tele no lo guarda
-    page.keyboard.press("Escape")  # B: primero al primer canal; otra vez, a Inicio
+    page.keyboard.press("Escape")  # B: primero al destacado; otra vez, a Inicio
     page.wait_for_timeout(300)
     page.keyboard.press("Escape")
     page.wait_for_timeout(500)
