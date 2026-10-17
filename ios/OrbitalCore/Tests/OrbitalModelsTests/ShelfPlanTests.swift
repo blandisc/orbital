@@ -143,6 +143,16 @@ final class ShelfPlanTests: XCTestCase {
                        "Netflix ya tiene Top 10 (su respaldo no); Disney+ sin JustWatch: su respaldo sí, para que no desaparezca")
     }
 
+    func testTheOverviewIsAskedOnceEvenThoughListsAndMosaicNeedIt() async throws {
+        let rig = try consoleRig()
+        rig.http.delays["https://tv.example/api/foryou"] = 100   // las dos peticiones se cruzan
+        let model = ParaTiModel(rig.services)
+        await model.load()
+        XCTAssertEqual(rig.http.calls.filter { $0 == "https://tv.example/api/foryou" }.count, 1,
+                       "el mosaico y las listas esperan la misma petición (dos idénticas duplicaban la espera)")
+        XCTAssertFalse(model.shelves.isEmpty, "y sí cargó de la consola")
+    }
+
     func testAShelfThatFailedIsAskedAgainOnTheNextLoad() async throws {
         let rig = try consoleRig()
         let url = "https://tv.example/api/foryou/list?id=watchlist&kind=series"

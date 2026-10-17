@@ -220,6 +220,7 @@ struct ArtTile: View {
         .frame(height: DS.Size.artTileHeight)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(asset.map { "art-tile-\($0)" } ?? "art-tile")
     }
 }
 

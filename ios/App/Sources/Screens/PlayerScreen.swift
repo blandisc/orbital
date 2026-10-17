@@ -95,6 +95,9 @@ struct PlayerScreen: View {
             if let up = model.upNext { UpNextCard(card: up, watchNow: { Task { await model.playNextNow() } }, cancel: { model.cancelUpNext() }) }
         }
         .onArt()   // sobre el video siempre se ve como en la sala oscura, aunque la app esté en modo claro
+        // Los arrastres verticales (brillo, volumen) que empiezan cerca del borde no abren el Centro de control ni el de
+        // notificaciones: iOS pide un segundo deslizamiento, como en cualquier reproductor.
+        .defersSystemGestures(on: .vertical)
         // VoiceOver: frotar con dos dedos cierra; el doble toque con dos dedos pausa o sigue (los gestos de siempre de iOS).
         .accessibilityAction(.escape) { Task { await close() } }
         .accessibilityAction(.magicTap) { Task { await holder.model.togglePlay() } }
@@ -287,7 +290,8 @@ struct PlayerScreen: View {
         hideTask?.cancel()
         hideTask = Task {
             try? await Task.sleep(nanoseconds: DS.Timing.controlsHide)
-            if !Task.isCancelled, !voiceOver, holder.model.snapshot.state == .playing { controlsVisible = false }
+            // Con la barra de avance bajo el dedo, los controles no se esconden (se iría el slider a media búsqueda).
+            if !Task.isCancelled, !voiceOver, scrubbing == nil, holder.model.snapshot.state == .playing { controlsVisible = false }
         }
     }
 
@@ -356,7 +360,8 @@ struct PlayerScreen: View {
         let shown = scrubbing ?? (dragAxis == .horizontal ? seekPreview : nil) ?? model.snapshot.position
         return VStack(spacing: DS.Space.s1) {
             Slider(value: Binding(get: { shown }, set: { scrubbing = $0 }), in: 0...duration) { editing in
-                if !editing, let target = scrubbing { Task { await model.seek(to: target); scrubbing = nil } }
+                if editing { hideTask?.cancel(); controlsVisible = true; return }   // mientras arrastras, nada se esconde
+                if let target = scrubbing { Task { await model.seek(to: target); scrubbing = nil } }
                 pulse()
             }
             .tint(DS.accent)   // el avance, en el acento (como en toda la app)

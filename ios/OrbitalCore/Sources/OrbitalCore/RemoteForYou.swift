@@ -17,9 +17,17 @@ public actor RemoteForYou {
 
     public func clearCache() { cache.removeAll() }
 
-    private func remember<T>(_ key: String, ttl: TimeInterval, _ load: () async throws -> T) async throws -> T {
-        if let hit = cache[key], clock() < hit.expires, let value = hit.value as? T { return value }
-        let value = try await load()
+    /// Lo que ya se está pidiendo: el mosaico y las listas salen del mismo overview y se piden a la vez; sin esto salían
+    /// dos peticiones idénticas a la consola (y bastaba que una tardara para caer a las listas del iPhone).
+    private var inFlight: [String: Task<JSON, Error>] = [:]
+
+    private func remember(_ key: String, ttl: TimeInterval, _ load: @escaping @Sendable () async throws -> JSON) async throws -> JSON {
+        if let hit = cache[key], clock() < hit.expires, let value = hit.value as? JSON { return value }
+        if let running = inFlight[key] { return try await running.value }
+        let task = Task { try await load() }
+        inFlight[key] = task
+        defer { inFlight[key] = nil }
+        let value = try await task.value
         cache[key] = (clock().addingTimeInterval(ttl), value)
         return value
     }

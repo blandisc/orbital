@@ -75,14 +75,18 @@ public struct OrbitalRemote: Sendable {
     }
 
     // MARK: «Para ti» (RemoteForYou la usa cuando el iPhone está conectado a la consola)
+    /// La consola arma «Para ti» antes de contestar (Trakt, el Top 10 de Netflix, JustWatch…): con la caché fría tarda más
+    /// que un botón del control remoto. Con 12 s el iPhone se rendía y caía a sus listas propias, sin Top 10 ni plataformas.
+    public static let forYouTimeout: TimeInterval = 45
+
     public func foryouOverview() async throws -> JSON? {
-        try await send("api/foryou", method: "GET", body: nil)
+        try await send("api/foryou", method: "GET", body: nil, timeout: Self.forYouTimeout)
     }
 
     public func foryouList(id: String, kind: String?) async throws -> JSON? {
         var query = [URLQueryItem(name: "id", value: id)]
         if let kind { query.append(URLQueryItem(name: "kind", value: kind)) }
-        return try await send("api/foryou/list", method: "GET", query: query, body: nil)
+        return try await send("api/foryou/list", method: "GET", query: query, body: nil, timeout: Self.forYouTimeout)
     }
 
     public func foryouDetails(key: String, kind: String?) async throws -> JSON? {
@@ -202,7 +206,7 @@ public struct OrbitalRemote: Sendable {
         return NowPlaying.parse(playing)
     }
 
-    private func send(_ path: String, method: String, query: [URLQueryItem] = [], body: Data?) async throws -> JSON? {
+    private func send(_ path: String, method: String, query: [URLQueryItem] = [], body: Data?, timeout: TimeInterval = 12) async throws -> JSON? {
         guard let base, !token.isEmpty else { throw Failure.notConfigured }
         var headers = ["Authorization": "Bearer \(token)"]
         if body != nil { headers["Content-Type"] = "application/json" }
@@ -210,8 +214,8 @@ public struct OrbitalRemote: Sendable {
         if !query.isEmpty { components?.queryItems = query }
         guard let url = components?.url else { throw Failure.unreachable }
         let response: HTTPResponse
-        do { response = try await http.send(HTTPRequest(url: url, method: method, headers: headers, body: body, timeout: 12)) }
-        catch { throw Failure.unreachable }
+        do { response = try await http.send(HTTPRequest(url: url, method: method, headers: headers, body: body, timeout: timeout)) }
+        catch { if Task.isCancelled { throw CancellationError() }; throw Failure.unreachable }   // cancelar no es «la consola no contesta»
         switch response.status {
         case 200..<300: return JSON.parse(response.data)
         case 401, 403: throw Failure.badToken

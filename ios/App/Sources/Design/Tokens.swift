@@ -207,6 +207,7 @@ enum DS {
         /// Quieto en el mosaico: a los 30 s el ambiente despierta solo; sobre una pieza, a los 2,2 s cobra vida.
         static let mosaicIdle = UInt64(DesignTokens.Mosaic.idleSeconds * 1e9), mosaicAlive = UInt64(DesignTokens.Mosaic.aliveSeconds * 1e9)
         static let mosaicDrift = UInt64(DesignTokens.Mosaic.driftTick * 1e9)
+        static let mosaicFlingFrame = UInt64(DesignTokens.Mosaic.flingFrame * 1e9)
     }
 
     /// Tamaño de los pósters (relación 2:3, como en la TV).

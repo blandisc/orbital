@@ -93,5 +93,6 @@ struct RankedPosterCard: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Puesto \(rank)")).accessibilityValue(Text(title))
+        .accessibilityIdentifier("ranked-poster")   // para las pruebas de interfaz
     }
 }

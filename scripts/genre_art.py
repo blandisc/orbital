@@ -120,8 +120,8 @@ def comedy(rng):  # luz cálida de tarde y burbujas
 
 def drama(rng):  # un solo seguidor de teatro desde arriba
     img = canvas()
-    img = beam(img, (W * 0.5, -40), math.pi / 2, 0.42, H * 1.3, (120, 150, 230), 55)
-    img = glow(img, (W * 0.5, H * 0.92), 200, (150, 175, 255), 0.55)
+    img = beam(img, (W * 0.5, -40), math.pi / 2, 0.5, H * 1.3, (150, 175, 245), 50)
+    img = glow(img, (W * 0.5, H * 0.7), 230, (160, 185, 255), 0.6)
     return finish(img, rng, vignette=0.6)
 
 
@@ -130,11 +130,11 @@ def scifi(rng):  # el borde de un planeta con su luz y estrellas
     img = stars(img, rng, 160)
     layer = Image.new("RGB", (W, H), (0, 0, 0))
     d = ImageDraw.Draw(layer)
-    d.ellipse([-W * 0.4, H * 0.62, W * 1.4, H * 2.6], outline=(90, 220, 255), width=18)
+    d.ellipse([-W * 0.4, H * 0.42, W * 1.4, H * 2.4], outline=(90, 220, 255), width=18)
     layer = layer.filter(ImageFilter.GaussianBlur(14))
     img = ImageChops.add(img, layer)
-    img = glow(img, (W * 0.5, H * 0.78), 330, (110, 70, 255), 0.55)
-    img = glow(img, (W * 0.5, H * 0.66), 160, (120, 230, 255), 0.5)
+    img = glow(img, (W * 0.5, H * 0.6), 330, (110, 70, 255), 0.6)
+    img = glow(img, (W * 0.5, H * 0.46), 160, (120, 230, 255), 0.55)
     return finish(img, rng, vignette=0.45)
 
 

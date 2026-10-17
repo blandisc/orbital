@@ -113,7 +113,12 @@ public final class ParaTiModel: ObservableModel {
         defer { isLoading = false }
         // Lo que ya se ve se queda mientras se refresca (antes los estantes se vaciaban cada vez que volvías a la pestaña);
         // `loadShelves` solo pide lo que falta y «Actualizar» sí limpia.
-        if services.orbital.isConfigured, await loadFromConsole() { return }
+        if services.orbital.isConfigured {
+            if await loadFromConsole() { return }
+            // Cancelada (cambiaste de pestaña a media carga): no es que la consola no conteste; no se cae a las listas del
+            // iPhone (sin Top 10 ni plataformas) ni se borran los estantes.
+            guard !Task.isCancelled else { return }
+        }
         await loadFromPhone()
     }
 
@@ -210,7 +215,11 @@ public final class ParaTiModel: ObservableModel {
             for entry in wanted {
                 group.addTask {
                     switch source {
-                    case .console: return (entry.key, try? await remote.items(listID: entry.listID, kind: kind))
+                    case .console:
+                        // Un estante que tarda (la consola refrescando JustWatch) tiene una segunda oportunidad.
+                        if let found = try? await remote.items(listID: entry.listID, kind: kind) { return (entry.key, found) }
+                        guard !Task.isCancelled else { return (entry.key, nil) }
+                        return (entry.key, try? await remote.items(listID: entry.listID, kind: kind))
                     case .phone: return (entry.key, try? await local.items(listID: entry.listID, kind: kind))
                     }
                 }

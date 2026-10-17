@@ -69,6 +69,7 @@ struct TitleLink: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("title-link")   // para las pruebas de interfaz
     }
 }
 
