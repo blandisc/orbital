@@ -18,7 +18,8 @@ import { dragArea, hoverArea } from "../core/swipe.js";
 const COLS = 6;
 const GROW = 2.3; // cuánto más ancha es la columna enfocada
 const DRIFT = [16, 12, 19, 14, 17, 13]; // px/s de cada columna en el ambiente (cada una a su ritmo)
-const IDLE_MS = 30_000;
+const IDLE_MS = 3000; // quieto 3 s: el mosaico empieza a subir solo (el iPhone igual: DesignTokens.Mosaic.idleSeconds)
+const RAMP_MS = 2400; // y arranca suave: de quieto a su ritmo en ~2,4 s, sin tirón
 const ALIVE_MS = 2200;
 const BUFFER = 360; // px de piezas de sobra debajo de lo visible (más, y se gastaban sugerencias que aún no se ven)
 
@@ -56,6 +57,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
   let mode = "focus"; // focus | ambient
   let running = false;
   let idleTimer = 0;
+  let ambientSince = 0; // cuándo empezó a subir solo (para arrancar suave)
   let aliveTimer = 0;
   let frame = 0;
   let last = 0;
@@ -225,8 +227,10 @@ export function createForYouMosaic({ onFocus, onPick }) {
     const dt = Math.min(.05, (now - last) / 1000);
     last = now;
     if (mode === "ambient") {
+      const t = Math.min(1, (now - ambientSince) / RAMP_MS);
+      const ease = t * t * (3 - 2 * t); // acelera despacio y se asienta en su ritmo
       columns.forEach((col, c) => {
-        col.offset += DRIFT[c] * dt;
+        col.offset += DRIFT[c] * ease * dt;
         while (col.tiles.length > 1 && col.tiles[0].top + col.tiles[0].h < col.offset - 80) col.tiles.shift().node.remove();
         fill(col, c);
       });
@@ -238,6 +242,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
   function goAmbient() {
     if (!running || mode === "ambient" || reduced() || !pool.length) return;
     mode = "ambient";
+    ambientSince = performance.now();
     paint();
     setTimeout(() => { if (mode === "ambient") el.classList.add("foryou-mosaic--drifting"); }, 560);
   }

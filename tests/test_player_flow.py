@@ -355,3 +355,21 @@ def test_an_iphone_without_connection_says_it_in_words_not_with_an_error():
     p.press("a")  # Reproducción › Enviar al iPhone
     _wait_for(lambda: "Conecta tu iPhone" in str(mpv.overlays.get(p.TOAST)))
     assert "Conecta tu iPhone" in str(mpv.overlays.get(p.TOAST))
+
+
+
+def test_the_quit_ring_fills_smoothly_on_its_own_clock():
+    """El anillo de «Salir» se redibuja solo (a 30 cuadros por segundo), no solo con cada repetición de B; al soltar
+    se va y no sale."""
+    import time
+    p, mpv = make_player()
+    drawn = []
+    original = p._overlay
+    p._overlay = lambda layer, ass: (drawn.append((layer, ass)) if layer == p.HOLD else None, original(layer, ass))[1]
+    p.press("b")
+    time.sleep(.3)
+    rings = [a for layer, a in drawn if a]
+    assert len(rings) >= 5  # varios cuadros sin que llegue otra repetición de B
+    p.press("b-up")
+    time.sleep(.1)
+    assert mpv.overlays[6] is None and ("quit",) not in mpv.sent

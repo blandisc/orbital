@@ -155,7 +155,7 @@ public enum DesignTokens {
         /// teléfono un poco menos apagadas, porque se ven a la vez más cerca).
         public static let focusScale = 1.04, dimmedOpacity = 0.6, dimmedSaturation = 0.6
         public static let growRatio = 1.8
-        public static let idleSeconds = 30.0, aliveSeconds = 2.2, driftTick = 1.0
+        public static let idleSeconds = 3.0, aliveSeconds = 2.2, driftTick = 1.0
         public static let driftPerSecond = 16.0
         /// Puntos por segundo de cada columna en el ambiente, en el mismo orden que `DRIFT` de la TV (se repite si hay más columnas).
         public static let driftPattern: [Double] = [16, 12, 19, 14, 17, 13]
