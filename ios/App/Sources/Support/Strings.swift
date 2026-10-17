@@ -1,12 +1,24 @@
 import Foundation
+import Synchronization
 import OrbitalCore
 
 /// Textos que no pasan por `Text(...)` (SwiftUI ya usa el idioma de la app en los `Text`). Se buscan en el
 /// catálogo `Localizable.xcstrings` con el idioma elegido en Ajustes, que puede ser distinto del del sistema.
 enum Strings {
     static func tr(_ key: String, language: String) -> String {
-        guard let path = Bundle.main.path(forResource: language, ofType: "lproj"), let bundle = Bundle(path: path) else { return key }
+        guard let bundle = bundle(language) else { return key }
         return bundle.localizedString(forKey: key, value: key, table: nil)
+    }
+
+    /// El paquete de cada idioma, buscado una sola vez (antes se buscaba en disco con cada texto).
+    private static let bundles = Mutex<[String: Bundle?]>([:])
+    private static func bundle(_ language: String) -> Bundle? {
+        bundles.withLock { cache in
+            if let hit = cache[language] { return hit }
+            let found = Bundle.main.path(forResource: language, ofType: "lproj").flatMap(Bundle.init(path:))
+            cache[language] = found
+            return found
+        }
     }
 
     /// Un texto que el modelo arma en español (un error, un aviso) en el idioma de la app. Los fijos son su clave; los que

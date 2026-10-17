@@ -72,8 +72,19 @@ public final class DownloadsModel: ObservableModel {
     public func run() async {
         items = await services.downloads.all
         freeBytes = freeSpace()
-        for await snapshot in services.downloads.makeUpdates() { items = snapshot; freeBytes = freeSpace() }
+        // El avance llega muchas veces por segundo: se pinta como mucho cada `progressInterval`; un cambio de verdad (una
+        // descarga nueva, en pausa, terminada o borrada) se pinta en el acto.
+        var lastPaint = Date.distantPast
+        for await snapshot in services.downloads.makeUpdates() {
+            let now = Date()
+            if Self.shape(snapshot) == Self.shape(items), now.timeIntervalSince(lastPaint) < Self.progressInterval { continue }
+            items = snapshot; freeBytes = freeSpace(); lastPaint = now
+        }
     }
+
+    /// Cada cuánto se pinta el avance (segundos).
+    static let progressInterval = 0.5
+    private static func shape(_ items: [DownloadItem]) -> [String] { items.map { "\($0.id)|\($0.state)" } }
 
     public var active: [DownloadItem] { items.filter { $0.state != .done } }
     public var ready: [DownloadItem] { items.filter { $0.state == .done } }

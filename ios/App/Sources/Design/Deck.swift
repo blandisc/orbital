@@ -50,8 +50,9 @@ extension VisualEffect {
     /// `View.deckEffect` dentro de `scrollTransition` (los mismos pasos, en su tipo).
     func deckEffect(_ style: DeckStyle, value: Double) -> some VisualEffect {
         let distance = abs(value)
+        // Sin desenfoque al deslizar: costaba una pasada fuera de pantalla por tarjeta en cada cuadro (el carrusel se
+        // trababa); lo de los lados ya se aleja con el tamaño y la luz.
         return scaleEffect(1 - distance * DS.Deck.sideShrink)
-            .blur(radius: distance * DS.Deck.sideBlur)
             .brightness(-distance * DS.Deck.sideDim)
             .rotation3DEffect(.degrees(style == .coverflow ? -value * DS.Deck.coverflowAngle : 0), axis: (x: 0, y: 1, z: 0),
                               perspective: DS.Deck.perspective)
@@ -95,7 +96,11 @@ struct DeckCard<Actions: View>: View {
         .frame(height: DS.Deck.height)
         .overlay { if minutesLeft > 0, let progress { TimeBadge(style: timeStyle, minutes: minutesLeft, fraction: progress) } }
         .clipShape(RoundedRectangle(cornerRadius: DS.Deck.radius, style: .continuous))
-        .shadow(color: DS.scrimStrong, radius: DS.Deck.shadow, y: DS.Deck.shadowY)
+        // La sombra la proyecta una forma sola, detrás (no la tarjeta entera: así no se recalcula con cada cuadro al deslizar).
+        .background {
+            RoundedRectangle(cornerRadius: DS.Deck.radius, style: .continuous).fill(DS.bg)
+                .shadow(color: DS.scrimStrong, radius: DS.Deck.shadow, y: DS.Deck.shadowY)
+        }
     }
 }
 

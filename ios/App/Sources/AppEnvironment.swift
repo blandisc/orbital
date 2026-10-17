@@ -18,27 +18,34 @@ final class AppEnvironment: ObservableObject {
     let connectivity = Connectivity.shared
     private let liveActivity = DownloadLiveActivityController()
 
+    /// El estado que solo pinta la raíz (el reproductor, los avisos, la pestaña que se pide abrir) vive aparte, en `ui`:
+    /// así un aviso o el reproductor que se abre no vuelven a pintar Inicio, Para ti y la ficha (que observan `env`).
+    let ui = AppUI()
+
     /// Lo que se está reproduciendo con el reproductor propio (la vista del reproductor cubre toda la pantalla).
     /// El reproductor puede girar; el resto de la app es vertical. Se permite antes de presentarlo: la pantalla
     /// presentada toma las orientaciones permitidas al aparecer y no las vuelve a leer.
-    @Published var playing: PlayRequest? {
-        didSet {
-            AppDelegate.orientations = playing == nil ? .portrait : .allButUpsideDown
-            if playing == nil, oldValue != nil { watchedSomething += 1 }
+    var playing: PlayRequest? {
+        get { ui.playing }
+        set {
+            let old = ui.playing
+            AppDelegate.orientations = newValue == nil ? .portrait : .allButUpsideDown
+            ui.playing = newValue
+            if newValue == nil, old != nil { watchedSomething += 1 }
         }
     }
     /// Cambia cada vez que termina una reproducción (aquí o en Infuse): Inicio y la ficha se ponen al día.
     @Published private(set) var watchedSomething = 0
     /// Una ficha que pidió abrir un enlace (el widget): `MainTabs` la empuja en Inicio y la vacía.
-    @Published var pendingTitle: TitleRoute?
-    /// Lo que se abrió en Infuse y está esperando a que vuelva.
-    @Published private var external: ExternalSession?
+    var pendingTitle: TitleRoute? { get { ui.pendingTitle } set { ui.pendingTitle = newValue } }
+    /// Lo que se abrió en Infuse y está esperando a que vuelva (no se pinta).
+    private var external: ExternalSession?
     /// Infuse volvió sin duración y no se sabe si terminaste: se pregunta.
-    @Published var askFinished: PlayRequest?
-    /// Un aviso corto abajo: lo que pasó («Descargando…») o lo que salió mal.
-    @Published var banner: Banner?
+    var askFinished: PlayRequest? { get { ui.askFinished } set { ui.askFinished = newValue } }
+    /// Un aviso: lo que pasó («Descargando…») o lo que salió mal.
+    var banner: Banner? { get { ui.banner } set { ui.banner = newValue } }
     /// Lo que acabas de pasar a la TV desde el reproductor: el aviso con «Deshacer» (regresa al iPhone en el mismo punto).
-    @Published var handoff: TVHandoff?
+    var handoff: TVHandoff? { get { ui.handoff } set { ui.handoff = newValue } }
     struct TVHandoff: Equatable {
         var request: PlayRequest
         var position: Double
@@ -48,7 +55,7 @@ final class AppEnvironment: ObservableObject {
     /// Lo que hace el botón de un aviso.
     enum BannerAction: Equatable { case downloads }
     /// Una pestaña que un aviso pide abrir («Ver» en «Descargando…»).
-    @Published var openTab: Int?
+    var openTab: Int? { get { ui.openTab } set { ui.openTab = newValue } }
     static let downloadsTab = 3
 
     /// Un aviso: lo que arma la app en español se traduce aquí, una sola vez (el aviso ya se pinta tal cual).
@@ -343,4 +350,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // Puede llegar antes de que exista ninguna vista: se arma el entorno (que reconecta la sesión de descargas) y se guarda aquí.
         AppEnvironment.shared.transport.backgroundCompletion = completionHandler
     }
+}
+
+/// Lo que solo pinta la raíz de la app: el reproductor a pantalla completa, los avisos y lo que se pide abrir.
+@MainActor
+final class AppUI: ObservableObject {
+    @Published var playing: PlayRequest?
+    @Published var pendingTitle: TitleRoute?
+    @Published var askFinished: PlayRequest?
+    @Published var banner: AppEnvironment.Banner?
+    @Published var handoff: AppEnvironment.TVHandoff?
+    @Published var openTab: Int?
 }

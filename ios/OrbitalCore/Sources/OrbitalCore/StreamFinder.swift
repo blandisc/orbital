@@ -6,6 +6,9 @@ public actor StreamFinder {
     public static let cacheSeconds: TimeInterval = 600
     public static let retryFailed: TimeInterval = 15
     static let cacheMax = 200
+    /// Cuánto se espera a los complementos lentos cuando otro ya dio fuentes (segundos).
+    static let budget: Double = 5
+    private enum Arrival: Sendable { case addon(Int, [JSON]?), budget }
 
     private let http: HTTPClient
     private let registry: AddonRegistry
@@ -31,10 +34,22 @@ public actor StreamFinder {
         let key = "\(kind):\(videoID):\(prefs.audio):\(prefs.quality):\(purpose):\(onlyPlayable)"
         if !fresh, let hit = cache[key], clock() < hit.expires { return hit.sources }
         let serving = try await registry.serving("stream", kind: kind, itemID: videoID)
-        let results = await withTaskGroup(of: (Int, [JSON]?).self) { group in
-            for (i, addon) in serving.enumerated() { group.addTask { (i, await self.fetch(addon, kind: kind, videoID: videoID)) } }
+        // Un complemento lento no detiene a los demás: pasado `budget`, si alguno ya dio fuentes, no se le espera (cuenta como
+        // fallido: se vuelve a preguntar pronto).
+        let budget = Self.budget
+        let results = await withTaskGroup(of: Arrival.self) { group in
+            for (i, addon) in serving.enumerated() { group.addTask { .addon(i, await self.fetch(addon, kind: kind, videoID: videoID)) } }
+            group.addTask { try? await Task.sleep(nanoseconds: UInt64(budget * 1_000_000_000)); return .budget }
             var out = [[JSON]?](repeating: nil, count: serving.count)
-            for await (i, streams) in group { out[i] = streams }
+            var pending = serving.count, overBudget = false
+            while pending > 0, let next = await group.next() {
+                switch next {
+                case .addon(let i, let streams): out[i] = streams; pending -= 1
+                case .budget: overBudget = true
+                }
+                if overBudget, out.contains(where: { !($0 ?? []).isEmpty }) { break }
+            }
+            group.cancelAll()
             return out
         }
         let failed = results.contains { $0 == nil }

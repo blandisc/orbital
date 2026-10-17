@@ -255,7 +255,8 @@ struct Mosaic: View {
     @State private var lastDragTranslation: Double = 0
     @State private var dragging = false
     /// La inercia en curso (al soltar): se detiene en cuanto el dedo vuelve a tocar.
-    @State private var inertia: Task<Void, Never>?
+    /// La inercia al soltar, cuadro a cuadro al ritmo de la pantalla (hasta 120 Hz).
+    @State private var inertia = FrameTicker()
     @State private var activity = 0
     /// Lo que ya colocó `runtime`: si lo nuevo es solo un subconjunto (una «no me interesa» que el
     /// propio `runtime.dismiss` ya quitó), no se vuelve a armar todo —eso perdería el foco y el lugar.
@@ -282,7 +283,7 @@ struct Mosaic: View {
                 DragGesture(minimumDistance: DS.Gesture.axisThreshold)
                     .onChanged { value in
                         // Una sola vez al empezar (no en cada cuadro: eso reevaluaba todo el mosaico a 120 Hz).
-                        if !dragging { dragging = true; inertia?.cancel(); inertia = nil; touch() }
+                        if !dragging { dragging = true; inertia.stop(); touch() }
                         let delta = value.translation.height - lastDragTranslation
                         lastDragTranslation = value.translation.height
                         runtime.scrollBy(-delta)
@@ -333,7 +334,7 @@ struct Mosaic: View {
             #endif
             try? await Task.sleep(nanoseconds: DS.Timing.mosaicIdle)
             // Mientras sigue la inercia o el dedo está encima, no es «quieto».
-            if !Task.isCancelled, inertia == nil, !dragging { withAnimation(DS.Motion.enter(reduceMotion)) { runtime.goAmbient() } }
+            if !Task.isCancelled, !inertia.isRunning, !dragging { withAnimation(DS.Motion.enter(reduceMotion)) { runtime.goAmbient() } }
         }
         .task(id: aliveToken) {
             guard runtime.mode == .focus, !reduceMotion, let id = runtime.focus else { return }
@@ -369,20 +370,14 @@ struct Mosaic: View {
     /// Inercia como una lista de iOS: la velocidad del dedo se va apagando cuadro por cuadro (llegan piezas por el camino,
     /// sin huecos) y un toque nuevo la detiene. Con «Reducir movimiento», se queda donde soltaste.
     private func fling(velocity start: Double) {
-        inertia?.cancel()
+        inertia.stop()
         guard !reduceMotion, abs(start) > DesignTokens.Mosaic.flingStopSpeed else { runtime.endScroll(); return }
-        inertia = Task { @MainActor in
-            var velocity = start
-            var last = Date()
-            while !Task.isCancelled, abs(velocity) > DesignTokens.Mosaic.flingStopSpeed {
-                try? await Task.sleep(nanoseconds: DS.Timing.mosaicFlingFrame)
-                guard !Task.isCancelled else { return }
-                let now = Date(), dt = now.timeIntervalSince(last)
-                last = now
-                runtime.scrollBy(velocity * dt)
-                velocity *= pow(DesignTokens.Mosaic.flingDecayPerSecond, dt)
-            }
-            if !Task.isCancelled { runtime.endScroll(); inertia = nil; touch() }
+        var velocity = start
+        inertia.start { dt in
+            runtime.scrollBy(velocity * dt)
+            velocity *= pow(DesignTokens.Mosaic.flingDecayPerSecond, dt)
+            guard abs(velocity) > DesignTokens.Mosaic.flingStopSpeed else { runtime.endScroll(); touch(); return false }
+            return true
         }
     }
 
@@ -557,5 +552,42 @@ private struct MosaicTileCell: View {
             // Sin enfoque, solo el glifo con una sombra suave (con 20 piezas a la vista una caja en cada una domina).
             .background { if focused { Circle().fill(DS.primary) } }
             .shadow(color: focused ? .clear : DS.scrim, radius: DS.Space.s1)
+    }
+}
+
+/// Llama a una función en cada cuadro de la pantalla (`CADisplayLink`, hasta 120 Hz) con el tiempo desde el anterior,
+/// hasta que la función devuelve `false` o se detiene. Una pausa fija (`Task.sleep`) no cae con los cuadros y se veía trabado.
+@MainActor
+final class FrameTicker {
+    private var link: CADisplayLink?
+    private var onFrame: ((Double) -> Bool)?
+    private var last: CFTimeInterval = 0
+    private lazy var target = Target(self)
+
+    var isRunning: Bool { link != nil }
+
+    func start(_ frame: @escaping (Double) -> Bool) {
+        stop()
+        onFrame = frame
+        last = 0
+        let link = CADisplayLink(target: target, selector: #selector(Target.tick(_:)))
+        link.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120)
+        link.add(to: .main, forMode: .common)
+        self.link = link
+    }
+
+    func stop() { link?.invalidate(); link = nil; onFrame = nil }
+
+    fileprivate func tick(_ link: CADisplayLink) {
+        let dt = last == 0 ? link.duration : link.targetTimestamp - last
+        last = link.targetTimestamp
+        if onFrame?(dt) == false { stop() }
+    }
+
+    /// `CADisplayLink` retiene a su destino: un objeto aparte (con referencia débil) para no retener al reloj.
+    private final class Target: NSObject {
+        weak var owner: FrameTicker?
+        init(_ owner: FrameTicker) { self.owner = owner }
+        @objc func tick(_ link: CADisplayLink) { MainActor.assumeIsolated { owner?.tick(link) } }
     }
 }

@@ -15,6 +15,8 @@ struct TitleRoute: Hashable {
 
 struct RootView: View {
     @EnvironmentObject private var env: AppEnvironment
+    /// El reproductor y los avisos: solo la raíz se vuelve a pintar cuando cambian.
+    @ObservedObject private var ui = AppEnvironment.shared.ui
     @StateObject private var session: ModelObserver<SessionModel>
     @StateObject private var services: ModelObserver<Services>
     @Environment(\.scenePhase) private var scenePhase
@@ -34,14 +36,14 @@ struct RootView: View {
         }
         .background(DS.bg.ignoresSafeArea())
         .fullScreenCover(item: $env.playing) { request in PlayerScreen(request: request) }
-        .sensoryFeedback(.impact(flexibility: .soft), trigger: env.playing?.id)   // empieza la función: un toque suave
+        .sensoryFeedback(.impact(flexibility: .soft), trigger: ui.playing?.id)   // empieza la función: un toque suave
         .alert("¿Terminaste de verlo?", isPresented: Binding(get: { env.askFinished != nil }, set: { if !$0 { env.askFinished = nil } })) {
             Button("Sí, marcar como visto") { if let r = env.askFinished { Task { await env.confirmFinished(r) } } }
             Button("No", role: .cancel) { env.askFinished = nil }
         } message: { Text("Infuse no dice cuánto dura, así que no sé si llegaste al final.") }
         // Los avisos, siempre arriba y del mismo tipo (`Toast`): «Pasó a tu Orbital · Deshacer» gana sobre los demás.
         .overlay(alignment: .top) {
-            if let h = env.handoff {
+            if let h = ui.handoff {
                 Toast(symbol: "tv", color: DS.accent, title: Text("Pasó a tu Orbital"),
                       detail: Text("\(h.request.displayTitle) · sigue en \(Duration.seconds(h.position).formatted(.time(pattern: h.position >= 3600 ? .hourMinuteSecond : .minuteSecond)))"),
                       actionTitle: "Deshacer", action: { Task { await env.undoHandoff() } }, seconds: DS.Timing.handoff, dismiss: { env.handoff = nil })
@@ -50,8 +52,8 @@ struct RootView: View {
                 BannerView()
             }
         }
-        .animation(DS.Motion.base(false), value: env.handoff)
-        .animation(DS.Motion.base(false), value: env.banner)
+        .animation(DS.Motion.base(false), value: ui.handoff)
+        .animation(DS.Motion.base(false), value: ui.banner)
         .task {
             _ = await env.services.watch.flushPending()
             // Con tu Orbital conectada: lo nuevo de la consola (otra clave, Trakt recién conectado allá) llega solo.
@@ -78,6 +80,7 @@ extension PlayRequest: @retroactive Identifiable { public var id: String { "\(me
 /// La barra de pestañas nativa: en iOS 26 es de vidrio (Liquid Glass) y se encoge al deslizar.
 struct MainTabs: View {
     @EnvironmentObject private var env: AppEnvironment
+    @ObservedObject private var ui = AppEnvironment.shared.ui   // la ficha o la pestaña que se pide abrir
     @StateObject private var tvNow = ModelObserver(AppEnvironment.shared.tvNow)
     @State private var showRemote = false
     /// La hoja del control estirada (el control completo) o corta.
@@ -129,8 +132,8 @@ struct MainTabs: View {
         .tint(DS.accent)   // la pestaña elegida lleva el acento; dentro, los botones vuelven al papel
         .onAppear(perform: openDemoScreen)
         .onAppear(perform: openPendingTitle)
-        .onChange(of: env.pendingTitle) { openPendingTitle() }
-        .onChange(of: env.openTab) { _, new in if let new { tab = new; env.openTab = nil } }
+        .onChange(of: ui.pendingTitle) { openPendingTitle() }
+        .onChange(of: ui.openTab) { _, new in if let new { tab = new; env.openTab = nil } }
         .task { forceDemoTab() }   // una segunda vez: gana aunque la restauración de escena llegue después de aparecer
         #if DEBUG
         // iOS restaura la pestaña que viste la última vez (independiente de nuestro @State) y lo hace después de
@@ -174,9 +177,10 @@ struct MainTabs: View {
 /// Un aviso de la app (sin Infuse, sin fuentes, descargando…), arriba como todos: se va solo; tocarlo lo cierra.
 struct BannerView: View {
     @EnvironmentObject private var env: AppEnvironment
+    @ObservedObject private var ui = AppEnvironment.shared.ui
 
     var body: some View {
-        if let banner = env.banner {
+        if let banner = ui.banner {
             Toast(symbol: symbol(banner.tone), color: color(banner.tone), title: Text(verbatim: banner.text),
                   actionTitle: banner.action == nil ? nil : "Ver", action: banner.action.map { a in { run(a) } },
                   dismiss: { env.banner = nil })

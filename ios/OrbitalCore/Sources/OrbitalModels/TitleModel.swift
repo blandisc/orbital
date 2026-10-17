@@ -92,6 +92,9 @@ public final class TitleModel: ObservableModel {
     public func load() async {
         isLoading = true
         defer { isLoading = false }
+        // Lo tuyo en Stremio (avance, vistos) se pide a la vez que la ficha: no espera a Cinemeta ni a la traducción.
+        let watch = services.watch, id = metaID
+        let state = Task { await watch.rawItem(metaID: id) }
         do {
             let original = try await services.cinemeta.meta(kind: kind, id: metaID)
             meta = original
@@ -108,7 +111,7 @@ public final class TitleModel: ObservableModel {
             seasons = CinemetaParsing.seasons(local)
             error = nil
         } catch where !Task.isCancelled { self.error = "\(error)" } catch {}   // cancelado al salir: sin error falso
-        await refreshState()
+        await refreshState(prefetched: await state.value)
     }
 
     /// La sinopsis de la ficha: la de tu Orbital si contestó (viene en español), si no la de Cinemeta de siempre.
@@ -157,14 +160,21 @@ public final class TitleModel: ObservableModel {
     }
 
     /// Lo que cambia viendo, descargando o marcando: lo tuyo en Stremio, Trakt y las descargas.
-    public func refreshState() async {
-        raw = await services.watch.rawItem(metaID: metaID)
+    public func refreshState() async { await refreshState(prefetched: nil) }
+
+    /// Lo tuyo en Stremio, Trakt y las descargas: las cuatro consultas a la vez.
+    private func refreshState(prefetched: JSON??) async {
+        let forYou = services.forYou, downloads = services.downloads, watch = services.watch, id = metaID
+        async let linked = forYou.traktLinked
+        async let keys = forYou.watchlistKeys()
+        async let queue = downloads.all
+        if let prefetched { raw = prefetched } else { raw = await watch.rawItem(metaID: id) }
         let ids = meta.map(CinemetaParsing.seasonVideoIDs) ?? []
         watched = StremioLibrary.parseWatched(raw?["state"]?["watched"]?.string, videoIDs: ids)
         inLibrary = StremioLibrary.isInLibrary(raw)
-        traktAvailable = await services.forYou.traktLinked
-        inWatchlist = await services.forYou.watchlistKeys().contains(metaID)
-        applyDownloads(await services.downloads.all)
+        traktAvailable = await linked
+        inWatchlist = await keys.contains(metaID)
+        applyDownloads(await queue)
         if let state = StremioLibrary.state(of: raw)["video_id"]?.string, kind == "series", let season = seasons.first(where: { $0.episodes.contains { $0.id == state } }) { selectedSeason = season.season }
         else if !seasons.contains(where: { $0.season == selectedSeason }) { selectedSeason = seasons.first { !$0.isSpecials }?.season ?? seasons.first?.season ?? 1 }
         buildRows()

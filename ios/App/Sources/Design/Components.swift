@@ -156,15 +156,17 @@ struct RemoteImage<Content: View>: View {
 
     init(url: URL, maxPoints: CGFloat, @ViewBuilder content: @escaping (RemoteImagePhase) -> Content) {
         self.url = url; self.maxPoints = maxPoints; self.content = content
-        _loaded = State(initialValue: ImagePipeline.shared.cached(url, maxPixel: maxPoints * ImagePipeline.screenScale))
     }
 
     var body: some View {
         content(phase).task(id: url) { await load() }
     }
 
+    /// La caché se consulta al pintar, no al crear la vista: SwiftUI crea la vista cada vez que se pinta su padre (cada
+    /// póster de cada estante), pero solo la vuelve a pintar si cambió algo suyo.
     private var phase: RemoteImagePhase {
         if let loaded { return .success(Image(uiImage: loaded)) }
+        if let hit = ImagePipeline.shared.cached(url, maxPixel: maxPoints * ImagePipeline.screenScale) { return .success(Image(uiImage: hit)) }
         return didFail ? .failure : .loading
     }
 
