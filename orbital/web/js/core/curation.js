@@ -23,6 +23,14 @@ const ORDER = [
 /** Los títulos de cada estante: el nombre de la lista, salvo los que dicen poco fuera de Para ti. */
 const TITLES = { recs: "Recomendadas para ti", mine: "Tus series", trend: "En tendencia esta semana" };
 
+/** Un estante de una plataforma lleva su logo, así que el título ya no dice su nombre («Top 10 en Netflix» → logo + «Top 10»). */
+function brandTitle(l) {
+  if (!l.logo || !l.brand) return null;
+  if (l.id === "chart:netflix") return "Top 10 esta semana";
+  if (l.id.startsWith("jw:")) return "Lo más visto";
+  return "Popular";
+}
+
 /** Qué listas de Para ti se vuelven estantes, y en qué orden (sin las de juegos, avisos ni las de la propia sección). */
 export function curatedLists(lists = []) {
   const usable = lists.filter((l) => l && !l.heading && !l.info && l.id && !["continue", "mylist", "estrenos", "mygames"].includes(l.id)
@@ -37,7 +45,8 @@ export function curatedLists(lists = []) {
       picked.push(l);
     }
   }
-  return picked.map((l) => ({ id: l.id, title: TITLES[l.id] || l.title, ranked: l.id === "chart:netflix" }));
+  return picked.map((l) => ({ id: l.id, title: brandTitle(l) || TITLES[l.id] || l.title, ranked: l.id === "chart:netflix" || l.id.startsWith("jw:"),
+    brand: l.brand || null, logo: l.logo || null, label: l.title }));
 }
 
 const KIND_LABEL = { movie: "Película", series: "Serie" };
@@ -57,7 +66,8 @@ export function curatedItem(item) {
 export function curatedRows(picked, itemsById, limit = 15) {
   return picked.map((l) => {
     const items = (itemsById[l.id] || []).filter((i) => i && i.meta_id && i.kind !== "game").slice(0, limit).map(curatedItem);
-    return { id: `curated:${l.id}`, title: l.title, items, ranked: l.ranked && items.every((i) => i.rank != null) };
+    return { id: `curated:${l.id}`, title: l.title, items, ranked: l.ranked && items.every((i) => i.rank != null),
+      brand: l.brand ?? null, logo: l.logo ?? null, label: l.label ?? l.title };
   }).filter((row) => row.items.length);
 }
 

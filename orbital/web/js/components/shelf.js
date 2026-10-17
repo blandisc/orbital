@@ -53,7 +53,7 @@ export function createShelf({ onPick, onSwipe }) {
           onPress: () => onPick(r, c), showAgo: row.id === "recent" || row.id === "jump", pop: item.id === popId, wide: !!row.spotlight,
           onRatio: () => r === focus.r && place(), // la portada real cambió el ancho
         };
-        return row.ranked ? RankedCard(item, options) : { card: Card(item, options) };
+        return row.ranked ? RankedCard(item, { ...options, brand: row.brand }) : { card: Card(item, options) };
       });
       const cards = built.map((b) => b.card);
       const els = built.map((b) => b.el ?? b.card);
@@ -61,8 +61,11 @@ export function createShelf({ onPick, onSwipe }) {
       const count = h("span", { class: "shelf__count" }, String(row.items.length));
       // Destacados: puntos en vez del contador (uno por pieza; el actual, alargado), como el carrusel del iPhone.
       const dots = row.spotlight && h("span", { class: "shelf__dots", "aria-hidden": "true" }, row.items.map(() => h("i")));
+      // Una plataforma: su logo en vez de su nombre (como en el iPhone); el nombre queda para el lector de pantalla.
+      const logo = row.logo && h("img", { class: "shelf__logo", src: row.logo, alt: row.label || "", decoding: "async" });
+      logo?.addEventListener("error", () => logo.replaceWith(row.label || ""), { once: true });
       const rowEl = h("div", { class: ["shelf__row", row.spotlight && "shelf__row--spotlight"] },
-        h("h2", { class: "shelf__heading" }, row.title, dots || count), track);
+        h("h2", { class: "shelf__heading" }, logo, row.title, dots || count), track);
       return { rowEl, track, cards, els, count, dots, ranked: !!row.ranked };
     });
     mount(rowsEl, rowEls.map((x) => x.rowEl));

@@ -43,6 +43,7 @@
   --brand-disney: #113ccf;
   --brand-hbo: #5a22b4;
   --brand-paramount: #0057e0;
+  --brand-appletv: #c7c7cc; /* Apple TV+: gris claro (su marca es blanco y negro) */
   --brand-crunchyroll: #b8500a;
   --color-progress: var(--palette-paper);
   --color-progress-track: rgba(255, 255, 255, .2);

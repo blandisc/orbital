@@ -53,6 +53,13 @@
   line-height: 1; letter-spacing: var(--tracking-rank); font-variant-numeric: tabular-nums; user-select: none; pointer-events: none;
 }
 .card-ranked .card__trend.badge { top: var(--inset-poster); }
+/* El Top 10 de una plataforma: la cifra en su color (como en la app de cada una), un poco apagada para no gritar. */
+.card-ranked--netflix .card-ranked__number { color: color-mix(in oklab, var(--brand-netflix) 85%, transparent); }
+.card-ranked--prime .card-ranked__number { color: color-mix(in oklab, var(--brand-prime) 85%, transparent); }
+.card-ranked--disney .card-ranked__number { color: color-mix(in oklab, var(--brand-disney) 90%, transparent); }
+.card-ranked--hbo .card-ranked__number { color: color-mix(in oklab, var(--brand-hbo) 90%, transparent); }
+.card-ranked--paramount .card-ranked__number { color: color-mix(in oklab, var(--brand-paramount) 90%, transparent); }
+.card-ranked--appletv .card-ranked__number { color: var(--brand-appletv); }
 .card__rank.badge {
   position: absolute; top: var(--inset-poster); left: var(--inset-poster); z-index: var(--z-raised);
   background: var(--color-badge-bg); color: var(--color-text); box-shadow: var(--shadow-badge);

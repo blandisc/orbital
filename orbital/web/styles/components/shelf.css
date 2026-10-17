@@ -13,6 +13,8 @@
   font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight);
   transition: opacity var(--duration-base) var(--ease-out);
 }
+/* El logo de la plataforma en el título del estante, a la altura del texto (va en lugar de su nombre). */
+.shelf__logo { height: 1.15em; width: auto; max-width: 6em; border-radius: var(--radius-sm); align-self: center; object-fit: contain; }
 .shelf__count {
   color: var(--color-text-muted); font-size: var(--type-secondary); font-weight: var(--weight-regular);
   font-variant-numeric: tabular-nums;

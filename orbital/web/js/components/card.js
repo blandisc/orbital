@@ -106,8 +106,13 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
  * Un puesto del Top 10 al estilo Netflix (como `RankedPosterCard` del iPhone): la cifra enorme en gris, detrás del
  * póster, que va encima a su derecha. La cifra es adorno: el puesto se dice en la etiqueta de la tarjeta.
  */
+/** Las plataformas con color propio: su Top 10 lleva la cifra de ese color (como en la app de cada una). */
+const BRAND_COLORS = new Set(["netflix", "prime", "disney", "hbo", "paramount", "appletv"]);
+
 export function RankedCard(item, options = {}) {
   const card = Card(item, { ...options, ranked: true });
   card.setAttribute("aria-label", `Puesto ${rankOf(item)}: ${item.title}`);
-  return { card, el: h("div", { class: "card-ranked" }, h("span", { class: "card-ranked__number", "aria-hidden": "true" }, String(rankOf(item))), card) };
+  const brand = BRAND_COLORS.has(options.brand) ? options.brand : null;
+  return { card, el: h("div", { class: ["card-ranked", brand && `card-ranked--${brand}`] },
+    h("span", { class: "card-ranked__number", "aria-hidden": "true" }, String(rankOf(item))), card) };
 }
