@@ -26,6 +26,10 @@ public final class Services: ObservableModel {
     public private(set) var forYouRemote: RemoteForYou { didSet { changed() } }
     public private(set) var watch: WatchService { didSet { changed() } }
     public private(set) var downloads: Downloads { didSet { changed() } }
+    /// «Para ti» de tu Orbital en vez de calcularlo en el iPhone. Apagado: el iPhone lo calcula él mismo (Trakt, el Top 10 de
+    /// Netflix, las tendencias de JustWatch, TMDB) y no depende de que la consola conteste; la consola solo se entera de lo
+    /// que marcas «No me interesa». Encendido solo en la demostración (`-demo-console`) y en las pruebas de esa ruta.
+    public var forYouFromConsole = false
     /// Cómo se escribe «T2 · E5» en el idioma de la app (la interfaz lo cambia; por omisión, en español).
     public var episodeLabel: @Sendable (Int, Int) -> String = { "T\($0) · E\($1)" }
     /// El episodio de lo que manda la TV en el idioma de la app: con los números (temporada, episodio; 0 = especiales) si la
@@ -77,7 +81,8 @@ public final class Services: ObservableModel {
         let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock)
         let trakt = Services.makeTrakt(http: http, secrets: secrets, settings: settings.value, clock: clock)
         self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt
-        self.forYou = ForYou(trakt: trakt, tmdb: tmdb, region: { settings.value.region }, kv: kv, clock: clock)
+        self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock),
+                             region: { settings.value.region }, kv: kv, clock: clock)
         self.forYouRemote = RemoteForYou(remote: { OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "") }, clock: clock)
         self.watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
         self.downloads = Downloads(transport: downloadTransport, secrets: secrets, root: downloadsRoot, saved: savedDownloads, freeSpace: freeSpace,
@@ -169,7 +174,8 @@ public final class Services: ObservableModel {
         let settings = settings, secrets = secrets
         localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock)
         trakt = Services.makeTrakt(http: http, secrets: secrets, settings: s, clock: clock)
-        forYou = ForYou(trakt: trakt, tmdb: tmdb, region: { settings.value.region }, kv: kv, clock: clock)
+        let charts = Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock)
+        forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: charts, region: { settings.value.region }, kv: kv, clock: clock)
         watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
         generation += 1
     }

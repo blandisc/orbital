@@ -113,7 +113,7 @@ public final class ParaTiModel: ObservableModel {
         defer { isLoading = false }
         // Lo que ya se ve se queda mientras se refresca (antes los estantes se vaciaban cada vez que volvías a la pestaña);
         // `loadShelves` solo pide lo que falta y «Actualizar» sí limpia.
-        if services.orbital.isConfigured {
+        if services.forYouFromConsole, services.orbital.isConfigured {
             if await loadFromConsole() { return }
             // Cancelada (cambiaste de pestaña a media carga): no es que la consola no conteste; no se cae a las listas del
             // iPhone (sin Top 10 ni plataformas) ni se borran los estantes.
@@ -174,9 +174,10 @@ public final class ParaTiModel: ObservableModel {
             airings = fetched
             services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno»
         }
-        if mosaic.isEmpty && lists.isEmpty { error = services.appSettings.traktEnabled ? nil : "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias." }
-        else { error = nil }
         await shelvesLoaded
+        // El aviso, solo si de verdad no hay nada que enseñar (las listas con puesto existen siempre, pero sin red llegan vacías).
+        if mosaic.isEmpty && shelves.allSatisfy({ items(for: $0).isEmpty }) { error = services.appSettings.traktEnabled ? nil : "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias." }
+        else { error = nil }
         await topUpMosaic()
     }
 
@@ -268,7 +269,10 @@ public final class ParaTiModel: ObservableModel {
     public func dismiss(_ s: Suggestion) async {
         switch source {
         case .console: await services.forYouRemote.dismiss(s.imdb)
-        case .phone: await services.forYou.dismiss(s.imdb)
+        case .phone:
+            await services.forYou.dismiss(s.imdb)
+            // La TV también deja de sugerirlo (si tu Orbital contesta; si no, queda en el iPhone).
+            if services.orbital.isConfigured { await services.forYouRemote.dismiss(s.imdb) }
         }
         mosaic.removeAll { $0.imdb == s.imdb }
         railItems = railItems.mapValues { $0.filter { $0.imdb != s.imdb } }

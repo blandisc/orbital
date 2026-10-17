@@ -85,6 +85,7 @@ final class ShelfPlanTests: XCTestCase {
         let rig = try ServicesRig()
         rig.services.settings.update { $0.orbitalAddress = "tv.example" }
         rig.secrets.set(SecretKey.orbitalToken, "tok")
+        rig.services.forYouFromConsole = true   // la ruta de la consola (en la app, Para ti se calcula en el iPhone)
         func row(_ id: String, rank: Int? = nil) -> JSON {
             var r: [String: JSON] = ["key": .string("video:\(id)"), "kind": "movie", "meta_id": .string(id), "title": .string(id), "year": 2021, "why": "En Netflix",
                                      "image": "https://p.jpg", "hero": "https://h.jpg", "overview": "", "video_id": .string(id)]

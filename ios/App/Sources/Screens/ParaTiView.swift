@@ -81,8 +81,9 @@ struct ParaTiView: View {
 
     /// «De tu Orbital · Trakt al día» o «Calculado en el iPhone»: el subtítulo de la barra, como en Inicio.
     private func subtitle(_ m: ParaTiModel) -> Text {
-        let source = m.source == .console ? Text("De tu Orbital") : Text("Calculado en el iPhone")
-        return m.traktLinked ? Text("\(source) · \(Text("Trakt al día"))") : source
+        // Calculado en el iPhone es lo normal (no se dice); solo se nombra la consola cuando viene de ella.
+        if m.source == .console { return m.traktLinked ? Text("\(Text("De tu Orbital")) · \(Text("Trakt al día"))") : Text("De tu Orbital") }
+        return m.traktLinked ? Text("Trakt al día") : Text(verbatim: "")
     }
 
     /// Modo demostración (`-demo-mosaic-focus N`): qué sugerencia enfocar al abrir, para las capturas de CEN-36.

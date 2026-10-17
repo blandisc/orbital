@@ -123,14 +123,16 @@ public actor ForYou {
 
     private let trakt: Trakt?
     private let tmdb: Tmdb?
+    /// Las listas con puesto (Top 10 de Netflix, tendencias de JustWatch), calculadas en el iPhone.
+    private let charts: Charts?
     private let region: @Sendable () -> String
     private let kv: KeyValueStore
     private let clock: @Sendable () -> Date
     private var cache: [String: (expires: Date, value: Any)] = [:]
     private var dismissed: Set<String>
 
-    public init(trakt: Trakt?, tmdb: Tmdb?, region: @escaping @Sendable () -> String, kv: KeyValueStore, clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.trakt = trakt; self.tmdb = tmdb; self.region = region; self.kv = kv; self.clock = clock
+    public init(trakt: Trakt?, tmdb: Tmdb?, charts: Charts? = nil, region: @escaping @Sendable () -> String, kv: KeyValueStore, clock: @escaping @Sendable () -> Date = { Date() }) {
+        self.trakt = trakt; self.tmdb = tmdb; self.charts = charts; self.region = region; self.kv = kv; self.clock = clock
         dismissed = Set(kv.data("foryou-dismissed").flatMap { try? JSONDecoder().decode([String].self, from: $0) } ?? [])
     }
 
@@ -176,6 +178,17 @@ public actor ForYou {
             out += [ForYouList(id: "trend", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: true),
                     ForYouList(id: "popular", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: true)]
         }
+        // Las listas con puesto, como en la TV: el Top 10 oficial de Netflix y la tendencia de cada plataforma en JustWatch.
+        // Ninguna pide clave; si una no trae nada, su estante no se pinta (y entra el respaldo de TMDB de esa marca).
+        if charts != nil {
+            let country = Self.countryName(region())
+            out.append(ForYouList(id: "chart:netflix", title: "Top 10 en Netflix", group: .platforms, brand: "netflix", logo: Charts.netflixLogo,
+                                  splitsKinds: true, source: "Netflix", meta: "Esta semana en \(country)"))
+            for p in Charts.justWatchPlatforms {
+                out.append(ForYouList(id: "jw:\(p.brand)", title: "Tendencias en \(p.name)", group: .platforms, brand: p.brand, logo: Charts.justWatchLogo(p.brand),
+                                      splitsKinds: true, source: "JustWatch", meta: "Tendencia en JustWatch · \(country)"))
+            }
+        }
         let found = await platforms()
         for p in Tmdb.platforms where found[p.brand] != nil {
             out.append(ForYouList(id: p.brand, title: p.name, group: .platforms, brand: p.brand, logo: found[p.brand]?.logo, splitsKinds: true))
@@ -210,7 +223,26 @@ public actor ForYou {
             }
         }
         if let platform = Tmdb.platforms.first(where: { $0.brand == listID }) { return try await platformItems(platform, kind: kind) }
+        if let charts, listID == "chart:netflix" { return try await charts.netflix(kind: kind).map { chartSuggestion($0, kind: kind, platform: "Netflix") } }
+        if let charts, listID.hasPrefix("jw:"), let p = Charts.justWatchPlatforms.first(where: { "jw:\($0.brand)" == listID }) {
+            return try await charts.justWatch(brand: p.brand, kind: kind).map { chartSuggestion($0, kind: kind, platform: p.name) }
+        }
         throw TraktError.invalid("Lista desconocida")
+    }
+
+    /// Un título de una lista con puesto, como `_chart_item` de la TV: «N.º 3 en Netflix», con puesto, movimiento y «Nuevo».
+    private func chartSuggestion(_ e: ChartEntry, kind: String, platform: String) -> Suggestion {
+        var s = Suggestion(kind: kind, imdb: e.imdb, title: e.title, year: e.year, runtime: nil, overview: "",
+                           poster: String(format: Self.metahubPoster, e.imdb), wide: String(format: Self.metahubBackground, e.imdb),
+                           logo: String(format: Self.metahubLogo, e.imdb), reason: .onPlatform(platform), next: nil, rank: e.rank)
+        s.movement = e.movement
+        s.isNew = e.isNew
+        return s
+    }
+
+    /// «México» (para «Esta semana en México»), en español como el resto de los datos de la consola.
+    static func countryName(_ iso2: String) -> String {
+        Locale(identifier: "es_MX").localizedString(forRegionCode: iso2.uppercased()) ?? iso2.uppercased()
     }
 
     private func platformItems(_ platform: (brand: String, name: String, aliases: [String]), kind: String) async throws -> [Suggestion] {

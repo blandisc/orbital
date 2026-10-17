@@ -31,6 +31,12 @@ final class FakeHTTP: HTTPClient, @unchecked Sendable {
         get { lock.withLock { _json } }
         set { lock.withLock { _json = newValue } }
     }
+    private var _raw: [String: Data] = [:]
+    /// Respuestas que no son JSON (el HTML de la página del Top 10 de Netflix).
+    var raw: [String: Data] {
+        get { lock.withLock { _raw } }
+        set { lock.withLock { _raw = newValue } }
+    }
     var calls: [String] { lock.withLock { _calls } }
     func bodies(for url: String) -> [Data] { lock.withLock { _bodies[url] ?? [] } }
 
@@ -43,6 +49,7 @@ final class FakeHTTP: HTTPClient, @unchecked Sendable {
         if let ms = lock.withLock({ _delays[key] }) { try? await Task.sleep(nanoseconds: UInt64(ms) * 1_000_000) }
         if fail || lock.withLock({ _failing.contains(key) }) { throw NetworkError("sin conexión") }
         let forced = lock.withLock { _statuses[key] }
+        if let data = lock.withLock({ _raw[key] }) { return HTTPResponse(status: forced ?? status, data: data) }
         guard let body = lock.withLock({ _json[key] }) else { return HTTPResponse(status: forced ?? 404, data: Data()) }
         return HTTPResponse(status: forced ?? status, data: body.serialized())
     }
