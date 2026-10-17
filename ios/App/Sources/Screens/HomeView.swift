@@ -76,7 +76,7 @@ struct HomeView: View {
         .background(Backdrop(tint: tint.colors))
         // Arriba, el saludo; al bajar (la barra se encoge), algo útil en su lugar: lo que suena en la TV, lo que sale hoy o
         // cuántas tienes por terminar (y si no hay nada que decir, «Inicio»).
-        .navigationTitle(scrolledDown ? scrolledTitle : Text(greeting)).toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
+        .navigationTitle(scrolledDown ? scrolledTitle : greeting).toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .subtitle(syncText)
         .toolbar {
             // Sin nada en la TV, el control de tu Orbital vive aquí (con algo reproduciéndose, en el accesorio de abajo).
@@ -119,13 +119,10 @@ struct HomeView: View {
         await tint.load(currentHero.flatMap { $0.background ?? $0.poster })
     }
 
-    /// «Buenos días / Buenas tardes / Buenas noches», como en la consola: lo primero que se lee en Inicio.
-    private var greeting: LocalizedStringKey {
-        switch Vocabulary.greeting(hour: Calendar.current.component(.hour, from: Date())) {
-        case .morning: "Buenos días"
-        case .afternoon: "Buenas tardes"
-        case .evening: "Buenas noches"
-        }
+    /// «Hola, Fer» (el nombre de tu perfil; sin nombre, «Hola»): lo primero que se lee en Inicio.
+    private var greeting: Text {
+        let name = env.services.appSettings.displayName.trimmingCharacters(in: .whitespaces)
+        return name.isEmpty ? Text("Hola") : Text("Hola, \(name)")
     }
 
     /// El título con la barra encogida: lo más útil que haya.

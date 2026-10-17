@@ -268,6 +268,8 @@ enum DS {
 
     /// «Tus plataformas»: la tarjeta con su top 3 en abanico y su página de rankings.
     enum PlatformFan {
+        /// El subrayado de la lista elegida en la página de una plataforma.
+        static let tabUnderline: CGFloat = 3
         static let width: CGFloat = 168, height: CGFloat = 176, radius: CGFloat = 22
         static let poster: CGFloat = 66, posterTop: CGFloat = 26, angle: Double = 15, spread: CGFloat = 8, lift: CGFloat = 6
         static let logo: CGFloat = 34, logoRadius: CGFloat = 10, glow: CGFloat = 18

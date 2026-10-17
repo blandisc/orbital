@@ -1387,6 +1387,17 @@
         }
       }
     },
+    "Cómo te llamamos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What we call you"
+          }
+        }
+      }
+    },
     "De todos los tiempos": {
       "extractionState": "manual",
       "localizations": {
@@ -2428,6 +2439,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Talk to Orbital"
+          }
+        }
+      }
+    },
+    "Hola": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hi"
+          }
+        }
+      }
+    },
+    "Hola, %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hi, %@"
           }
         }
       }
@@ -5006,6 +5039,17 @@
         }
       }
     },
+    "Tendencia": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trending"
+          }
+        }
+      }
+    },
     "Tendencia en JustWatch · México": {
       "extractionState": "manual",
       "localizations": {
@@ -5123,6 +5167,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Token saved"
+          }
+        }
+      }
+    },
+    "Top 10": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top 10"
           }
         }
       }
@@ -5387,6 +5442,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your language"
+          }
+        }
+      }
+    },
+    "Tu nombre": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your name"
           }
         }
       }

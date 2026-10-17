@@ -114,7 +114,11 @@ public final class SettingsModel: ObservableModel {
 
     public func loadTraktName() async {
         guard let t = services.trakt, t.linked else { return }
-        if let name = try? await t.username() { trakt = .linked(name) }
+        if let name = try? await t.username() {
+            trakt = .linked(name)
+            // Sin nombre propio todavía: el primero de tu Trakt («Fernando Iracheta» → «Fernando»); se cambia en tu perfil.
+            if settings.displayName.isEmpty, let first = name.split(separator: " ").first, !first.isEmpty { update { $0.displayName = String(first) } }
+        }
     }
 
     /// Conecta Trakt con el código de dispositivo: se muestra un código y se espera a que lo escribas en trakt.tv/activate.

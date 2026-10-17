@@ -26,7 +26,7 @@ struct SettingsView: View {
         let s = model.settings
         Form {
             Section {
-                ProfileCard(avatar: s.avatar, title: Text("Tu perfil"), detail: connections(model)) { editingAvatar = true }
+                ProfileCard(avatar: s.avatar, title: s.displayName.isEmpty ? Text("Tu perfil") : Text(verbatim: s.displayName), detail: connections(model)) { editingAvatar = true }
             }
             .listRowBackground(DS.surface)
             // Lo tuyo: cómo se ve y cómo se reproduce.
@@ -81,9 +81,19 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $editingAvatar) {
             NavigationStack {
-                Form { AvatarPicker(selection: Binding(get: { settings.model.settings.avatar }, set: { v in settings.model.update { $0.avatar = v } })).listRowBackground(DS.surface) }
+                Form {
+                    Section("Cómo te llamamos") {
+                        TextField("Tu nombre", text: Binding(get: { settings.model.settings.displayName }, set: { v in settings.model.update { $0.displayName = v } }))
+                            .textInputAutocapitalization(.words).autocorrectionDisabled()
+                    }
+                    .listRowBackground(DS.surface)
+                    Section("Tu avatar") {
+                        AvatarPicker(selection: Binding(get: { settings.model.settings.avatar }, set: { v in settings.model.update { $0.avatar = v } }))
+                    }
+                    .listRowBackground(DS.surface)
+                }
                     .scrollContentBackground(.hidden).background(Backdrop())
-                    .navigationTitle("Tu avatar").navigationBarTitleDisplayMode(.inline)
+                    .navigationTitle("Tu perfil").navigationBarTitleDisplayMode(.inline)
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { editingAvatar = false } } }
             }
             .presentationDetents([.medium])

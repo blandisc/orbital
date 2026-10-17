@@ -431,21 +431,68 @@ struct PlatformRankingsView: View {
     @ObservedObject var observer: ModelObserver<ParaTiModel>
     let hub: PlatformHub
     private var model: ParaTiModel { observer.model }
+    /// «Series» o «Películas» (pestañas grandes) y cuál de sus listas (pestañas de texto con el subrayado de la marca).
+    @State private var kind: String?
+    @State private var source: PlatformRanking.Source?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var kinds: [String] { ["series", "movie"].filter { k in hub.rankings.contains { $0.kind == k } } }
+    private var currentKind: String { kind ?? kinds.first ?? "series" }
+    private var sources: [PlatformRanking.Source] {
+        var seen = Set<String>()
+        return hub.rankings.filter { $0.kind == currentKind }.map(\.source).filter { seen.insert($0.rawValue).inserted }
+    }
+    private var current: PlatformRanking? {
+        let wanted = source.flatMap { s in sources.contains(s) ? s : nil } ?? sources.first
+        return hub.rankings.first { $0.kind == currentKind && $0.source == wanted }
+    }
 
     var body: some View {
         let tint = DS.PlatformTint.color(hub.brand)
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            VStack(alignment: .leading, spacing: DS.Space.s5) {
                 HStack(spacing: DS.Space.s4) {
                     PlatformLogoTile(url: hub.logo, name: hub.name, size: DS.PlatformFan.headerLogo, radius: DS.Radius.lg, tint: tint,
                                      glow: DS.PlatformFan.headerGlow)
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
-                        Text("Hoy en tu país").recipe(.footnote, color: DS.textMuted)
-                        Text("Sus rankings").recipe(.title)
+                        if let current { rankingSource(current).recipe(.footnote, color: DS.textMuted) }
+                        Text(verbatim: hub.name).recipe(.title)
                     }
                 }
                 .padding(.horizontal, DS.Space.gutter)
-                ForEach(hub.rankings) { ranking in section(ranking, tint: tint) }
+                // Pestañas grandes: la elegida brilla, la otra se apaga.
+                if kinds.count > 1 {
+                    HStack(alignment: .firstTextBaseline, spacing: DS.Space.s5) {
+                        ForEach(kinds, id: \.self) { k in
+                            Button { withAnimation(DS.Motion.base(reduceMotion)) { kind = k } } label: {
+                                (k == "movie" ? Text("Películas") : Text("Series")).recipe(.title, color: k == currentKind ? DS.text : DS.textFaint)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityAddTraits(k == currentKind ? .isSelected : [])
+                        }
+                    }
+                    .padding(.horizontal, DS.Space.gutter)
+                    .sensoryFeedback(.selection, trigger: currentKind)
+                }
+                // Sus listas, como pestañas de texto con el subrayado en el color de la plataforma.
+                if sources.count > 1, let current {
+                    HStack(spacing: DS.Space.s5) {
+                        ForEach(sources, id: \.rawValue) { src in
+                            Button { withAnimation(DS.Motion.base(reduceMotion)) { source = src } } label: {
+                                VStack(spacing: DS.Space.s2) {
+                                    sourceName(src).recipe(.secondary, color: src == current.source ? DS.text : DS.textMuted).fontWeight(.semibold)
+                                    Capsule().fill(src == current.source ? tint : .clear).frame(height: DS.PlatformFan.tabUnderline)
+                                }
+                                .fixedSize()
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityAddTraits(src == current.source ? .isSelected : [])
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.horizontal, DS.Space.gutter)
+                }
+                if let current { grid(current, tint: tint) }
             }
             .padding(.vertical, DS.Space.s4)
             .padding(.bottom, DS.Space.s14)
@@ -455,38 +502,26 @@ struct PlatformRankingsView: View {
         .task { await model.loadRankings(hub) }
     }
 
-    @ViewBuilder private func section(_ ranking: PlatformRanking, tint: Color) -> some View {
+    /// La lista en cuadrícula de dos, con el número grande en el color de la plataforma y su brillo (como hoy).
+    @ViewBuilder private func grid(_ ranking: PlatformRanking, tint: Color) -> some View {
         let items = model.items(for: ranking)
-        if !items.isEmpty || model.isLoading(ranking: ranking) {
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
-                DSSectionHead(title: rankingTitle(ranking), trailing: rankingSource(ranking))
-                    .padding(.horizontal, DS.Space.gutter)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: DS.Space.s3) {
-                        if items.isEmpty { ShelfSkeleton() }
-                        ForEach(Array(items.enumerated()), id: \.element.id) { index, s in
-                            NavigationLink(value: s.route) {
-                                RankedPosterCard(rank: s.rank ?? index + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: tint)
-                                    .titleZoomSource(s.route)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s5) {
+            if items.isEmpty && model.isLoading(ranking: ranking) { ShelfSkeleton() }
+            ForEach(Array(items.enumerated()), id: \.element.id) { index, s in
+                NavigationLink(value: s.route) {
+                    RankedPosterCard(rank: s.rank ?? index + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: tint)
+                        .titleZoomSource(s.route)
                 }
-                .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+                .buttonStyle(.plain)
             }
         }
+        .padding(.horizontal, DS.Space.gutter)
+        .id(ranking.id)
+        .transition(.opacity)
     }
 
-    private func rankingTitle(_ ranking: PlatformRanking) -> Text {
-        switch (ranking.source, ranking.kind) {
-        case (.netflixTop10, "movie"): Text("Top 10 · Películas")
-        case (.netflixTop10, _): Text("Top 10 · Series")
-        case (.justWatch, "movie"): Text("Tendencia hoy · Películas")
-        case (.justWatch, _): Text("Tendencia hoy · Series")
-        case (.popular, "movie"): Text("Lo más popular · Películas")
-        case (.popular, _): Text("Lo más popular · Series")
-        }
+    private func sourceName(_ source: PlatformRanking.Source) -> Text {
+        switch source { case .netflixTop10: Text("Top 10"); case .justWatch: Text("Tendencia"); case .popular: Text("Lo más popular") }
     }
 
     private func rankingSource(_ ranking: PlatformRanking) -> Text {

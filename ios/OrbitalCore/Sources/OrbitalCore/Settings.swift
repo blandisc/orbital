@@ -43,6 +43,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var homeDeck = "coverflow"          // el carrusel de Inicio: «coverflow» | «fan» (abanico)
     public var homeTime = "pill"               // cuánto falta en la tarjeta: «pill» | «edge» | «fill» | «arc»
     public var avatar = "planet"               // tu avatar (Assets › Avatars)
+    public var displayName = ""                // cómo te saluda Inicio («Hola, Fer»); vacío: el de tu Trakt
 
     public init() {}
 
@@ -69,12 +70,13 @@ public struct AppSettings: Codable, Equatable, Sendable {
         homeDeck = try c.decodeIfPresent(String.self, forKey: .homeDeck) ?? homeDeck
         homeTime = try c.decodeIfPresent(String.self, forKey: .homeTime) ?? homeTime
         avatar = try c.decodeIfPresent(String.self, forKey: .avatar) ?? avatar
+        displayName = try c.decodeIfPresent(String.self, forKey: .displayName) ?? displayName
     }
 
     enum Keys: String, CodingKey {
         case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
         case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
-        case homeDeck, homeTime, avatar
+        case homeDeck, homeTime, avatar, displayName
     }
     public var traktEnabled: Bool { !traktClientID.isEmpty }
 
