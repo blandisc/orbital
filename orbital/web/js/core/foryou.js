@@ -93,6 +93,8 @@ export function railEntries(lists) {
   const out = [];
   let group = null;
   for (const list of lists || []) {
+    // El respaldo de TMDB de una plataforma sobra si su lista con puesto (JustWatch, el Top 10) ya trae series y películas.
+    if (list.fallback_for && (list.covered || []).length >= 2) continue;
     if (list.group !== group) {
       group = list.group;
       out.push({ heading: GROUPS[group] ?? group });

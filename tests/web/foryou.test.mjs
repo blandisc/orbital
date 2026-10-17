@@ -106,3 +106,12 @@ test("Top 10: el sube y baja debajo del puesto, sin inventar flechas", async () 
   assert.equal(trendOf({ rank: 3, movement: null, new: false }), null); // sin con qué comparar: nada
   assert.equal(trendOf({ movement: 4 }), null); // sin puesto no es Top 10
 });
+
+test("el respaldo de TMDB de una plataforma se esconde si su lista con puesto ya trae series y películas", () => {
+  const lists = [
+    { id: "jw:disney", group: "video" },
+    { id: "disney", group: "video", fallback_for: "jw:disney", covered: ["movie"] },
+    { id: "netflix", group: "video", fallback_for: "chart:netflix", covered: ["movie", "series"] },
+  ];
+  assert.deepEqual(railEntries(lists).filter((e) => !e.heading).map((e) => e.id), ["jw:disney", "disney"]);
+});
