@@ -112,7 +112,10 @@ struct RemoteSheet: View {
                            onAction: { action, delta in Task { await model.control(action, delta: delta) } },
                            onContinueHere: { onContinueHere(now) }, framed: false)
         } else {
-            Label("Tu Orbital", systemImage: "tv").recipe(.section)
+            HStack(spacing: DS.Space.s2) {
+                OrbitalMark(size: DS.Size.markSmall).foregroundStyle(DS.text)
+                Text("Tu Orbital").recipe(.section)
+            }
         }
     }
 

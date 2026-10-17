@@ -19,10 +19,9 @@ struct LoginView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: DS.Space.s6) {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    Image("Logo").resizable().frame(width: DS.Size.logo, height: DS.Size.logo)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)).accessibilityHidden(true)
+                    // La marca de la TV: el anillo se dibuja y la luna cae en su lugar, como al arrancar Orbital.
+                    OrbitalWordmark(size: DS.Size.wordmark, animated: true).foregroundStyle(DS.text)
                         .padding(.bottom, DS.Space.s2)
-                    Text("Orbital").font(DS.TextRecipe.display.font.weight(.bold)).foregroundStyle(DS.text)
                     Text("Entra con tu cuenta de Stremio. Lo que veas aquí aparece en Orbital y al revés.")
                         .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted)
                 }

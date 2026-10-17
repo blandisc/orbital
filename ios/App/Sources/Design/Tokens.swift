@@ -150,6 +150,23 @@ enum DS {
         static func spring(_ reduce: Bool) -> Animation? { reduce ? nil : .spring(duration: DesignTokens.Motion.slow, bounce: 0.2) }
     }
 
+    /// La marca de Orbital (la de la TV: icons.js · mark y status-bar.css «La marca»). Todo en las unidades de su caja de 32
+    /// (el planeta y el anillo) o en em de la palabra (la luna, el interletrado, el tamaño de la marca junto a la palabra).
+    enum Brand {
+        static let box: CGFloat = 32
+        static let planetRadius: CGFloat = 7.2, planetStroke: CGFloat = 2.8, ringStroke: CGFloat = 2.1
+        /// El anillo, un poco más tenue que el planeta.
+        static let ringOpacity: Double = 0.7
+        /// La luna: su ancho, lo que sube sobre la línea de base y lo que la separa de la palabra (em).
+        static let moon: CGFloat = 0.26, moonRise: CGFloat = 0.62, moonGap: CGFloat = 0.1
+        /// De dónde cae la luna al aparecer (em) y lo chica que empieza.
+        static let moonFromX: CGFloat = -0.9, moonFromY: CGFloat = -0.7, moonFromScale: CGFloat = 0.2
+        /// «orbital»: interletrado apretado (em); la marca mide 1.7 veces la letra y va a media letra de ella.
+        static let tracking: CGFloat = -0.035, markScale: CGFloat = 1.7, markGap: CGFloat = 0.5
+        /// Al arrancar: el anillo se dibuja en este tiempo y la luna cae después (s), como en la TV (--duration-land).
+        static let drawSeconds = 0.76, moonDelay = 0.76 * 1.7
+    }
+
     /// El control completo de la TV (`TouchPad`, `RemoteKey`).
     enum Remote {
         /// Alto del pad táctil y de cada tecla.
@@ -171,6 +188,8 @@ enum DS {
         static let touchTarget = CGFloat(DesignTokens.Size.touchTarget), thumbSmall = CGFloat(DesignTokens.Size.thumbSmall)
         static let cardMax = CGFloat(DesignTokens.Size.cardMax), grabber = CGFloat(DesignTokens.Size.grabber), grabberHeight = CGFloat(DesignTokens.Size.grabberHeight)
         static let logo = CGFloat(DesignTokens.Size.logo)
+        /// La letra de «orbital» en la marca grande (la bienvenida) y el planeta solo, junto a un título o en el widget.
+        static let wordmark: CGFloat = 40, markSmall: CGFloat = 22
         static let platformLogo = CGFloat(DesignTokens.Size.platformLogo)
         static let rankNumber = CGFloat(DesignTokens.Size.rankNumber)
         /// La cifra de un Top 10: enorme y pesada; no crece con Dynamic Type (es un adorno, el puesto ya se dice en la etiqueta).

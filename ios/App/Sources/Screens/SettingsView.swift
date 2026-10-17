@@ -150,7 +150,7 @@ struct SettingsView: View {
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                 if !orbitalToken.isEmpty { Button("Guardar token") { model.setOrbitalToken(orbitalToken); orbitalToken = ""; Task { await model.checkOrbital() } } }
             }
-        } header: { Text("Tu Orbital (la TV)") } footer: {
+        } header: { Label { Text("Tu Orbital (la TV)") } icon: { OrbitalMark(size: DS.Size.markSmall) } } footer: {
             Text("Con tu Orbital conectada, «Ver en la TV» pone en la consola lo que ves aquí, donde ibas, y tu Trakt y las claves de Para ti salen de ella.")
         }
         .listRowBackground(DS.surface)

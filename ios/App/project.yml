@@ -91,8 +91,9 @@ targets:
       - path: Widgets
       - path: Shared
       - path: Resources/Localizable.xcstrings
-      - path: Resources/Assets.xcassets        # el ícono de Orbital del estado vacío
+      - path: Resources/Assets.xcassets        # el arte que comparte con la app
       - path: Sources/Design/Tokens.swift     # los mismos tokens que la app (`DS`)
+      - path: Sources/Design/Brand.swift      # la marca de Orbital (widget sin pendientes)
     dependencies:
       - package: OrbitalCore
         product: OrbitalCore
