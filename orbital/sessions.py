@@ -14,7 +14,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from . import focus, health, system
+from . import emulator_clock, focus, health, system
 from .config import Config
 from .events import EventBus
 from .launcher import Launcher
@@ -153,6 +153,7 @@ class Sessions:
             self.state.record_launch(item.id)
             return item
         if runner or item.argv:
+            emulator_clock.sync_for(argv or [])  # su hora, la de la computadora (los de Switch traen la suya)
             # Orbital encima ANTES de lanzar: la ventana del emulador nunca se asoma.
             pinned = self.pin()
             try:
