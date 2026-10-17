@@ -318,6 +318,13 @@ public actor Trakt {
         adopt(fresh)
     }
 
+    /// La calificación de la comunidad de Trakt (0–10) y cuántos votaron; nil si nadie ha votado.
+    public func rating(kind: String, imdb: String) async throws -> (rating: Double, votes: Int)? {
+        let path = "/\(kind == "movie" ? "movies" : "shows")/\(imdb)/ratings"
+        guard let row = try await get(path, auth: false), let rating = row["rating"]?.doubleValue, rating > 0 else { return nil }
+        return (rating, row["votes"]?.intValue ?? 0)
+    }
+
     // MARK: listas (lectura)
     public func username() async throws -> String {
         let user = try await get("/users/settings")?["user"]

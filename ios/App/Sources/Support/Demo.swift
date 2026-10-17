@@ -84,6 +84,8 @@ enum Demo {
     /// `-demo-appearance light|dark`: fuerza el modo claro u oscuro (para las capturas de los dos).
     static var appearance: String? { value(after: "-demo-appearance") }
     static var console: Bool { ProcessInfo.processInfo.arguments.contains("-demo-console") }
+    /// `-demo-tmdb`: TMDB de mentira (elenco, saga, tráiler, dónde verlo) para ver la ficha rica sin clave.
+    static var tmdb: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tmdb") }
     /// `-demo-mosaic-focus 3`: en «Para ti» › Mosaico, enfoca esa sugerencia (su índice en `model.mosaic`) al abrir.
     static var mosaicFocus: Int? { value(after: "-demo-mosaic-focus").flatMap(Int.init) }
 
@@ -96,6 +98,7 @@ enum Demo {
         if !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") { secrets.set(SecretKey.stremioAuth, "DEMO") }
         if scrobble || airings { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa: nada sale a Trakt
         if !noTV { secrets.set(SecretKey.orbitalToken, "demo") }      // una Orbital de mentira ya conectada («Ver en la TV»)
+        if tmdb { secrets.set(SecretKey.tmdbKey, "DEMO") }            // TMDB de mentira: la ficha rica sin clave de verdad
         return secrets
     }
 }
@@ -139,6 +142,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             let user: JSON = url.path == "/users/settings" ? ["user": ["username": "demo"]] : [:]
             return HTTPResponse(status: url.path == "/users/settings" ? 200 : 404, data: user.serialized())
         }
+        if url.host == "api.themoviedb.org", Demo.tmdb { return tmdbDemo(url) }
         if url.host == "tv.demo.invalid", Demo.tvNow || Demo.inbox != nil, url.path.hasPrefix("/api/companion/") {
             return lock.withLock { nowPlaying(path: url.path, body: request.body.flatMap(JSON.parse)) }
         }
@@ -149,6 +153,36 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             return HTTPResponse(status: 200, data: JSON.object(["ok": true]).serialized())
         }
         return try await real.send(request)
+    }
+
+    /// TMDB de mentira (`-demo-tmdb`): cualquier título es el 1; su ficha trae reparto (con caras de metahub), tráiler, saga,
+    /// recomendaciones y dónde verlo; una persona trae su biografía y su trabajo.
+    private func tmdbDemo(_ url: URL) -> HTTPResponse {
+        let path = url.path.replacingOccurrences(of: "/3", with: "")
+        let body: JSON
+        if path.hasPrefix("/find/") {
+            body = ["movie_results": [["id": 1]], "tv_results": [["id": 1]]]
+        } else if path.hasPrefix("/person/") {
+            body = ["id": 1, "name": "Steve Carell", "birthday": "1962-08-16", "place_of_birth": "Concord, Massachusetts",
+                    "biography": "Actor, comediante y productor estadounidense. Conocido por Michael Scott en The Office, y por Foxcatcher, Little Miss Sunshine y The Big Short.",
+                    "combined_credits": ["cast": [["id": 2, "media_type": "tv", "name": "The Office", "poster_path": "/o.jpg", "popularity": 90, "character": "Michael Scott"],
+                                                  ["id": 3, "media_type": "movie", "title": "Foxcatcher", "poster_path": "/f.jpg", "popularity": 40, "character": "John du Pont"]]]]
+        } else if path.hasPrefix("/collection/") {
+            body = ["name": "Dune: colección", "parts": [["id": 5, "title": "Dune", "release_date": "2021-09-15", "poster_path": "/d1.jpg"],
+                                                        ["id": 6, "title": "Dune: Part Two", "release_date": "2024-02-27", "poster_path": "/d2.jpg"]]]
+        } else {
+            body = ["id": 1, "vote_average": .double(8.6), "vote_count": 4000, "belongs_to_collection": ["id": 9],
+                    "networks": [["name": "NBC"]], "created_by": [["id": 7, "name": "Greg Daniels"]],
+                    "credits": ["cast": [["id": 1, "name": "Steve Carell", "character": "Michael Scott"], ["id": 2, "name": "Rainn Wilson", "character": "Dwight Schrute"],
+                                         ["id": 3, "name": "John Krasinski", "character": "Jim Halpert"], ["id": 4, "name": "Jenna Fischer", "character": "Pam Beesly"]], "crew": []],
+                    "content_ratings": ["results": [["iso_3166_1": "MX", "rating": "B"]]],
+                    "videos": ["results": [["site": "YouTube", "key": "LHOtME2DL4g", "type": "Trailer", "name": "Tráiler"],
+                                           ["site": "YouTube", "key": "gO8N3L_aERg", "type": "Featurette", "name": "Así se hizo"]]],
+                    "recommendations": ["results": [["id": 8, "name": "Parks and Recreation", "first_air_date": "2009-04-09", "poster_path": "/p.jpg"],
+                                                    ["id": 10, "name": "Brooklyn Nine-Nine", "first_air_date": "2013-09-17", "poster_path": "/b.jpg"]]],
+                    "watch/providers": ["results": ["MX": ["flatrate": [["provider_name": "Prime Video"], ["provider_name": "Netflix"]]]]]]
+        }
+        return HTTPResponse(status: 200, data: body.serialized())
     }
 
     /// Un overview de «Para ti» de mentira con varios estantes (Lo tuyo, Top 10 de Netflix con puesto, una plataforma, tendencias y el

@@ -56,6 +56,17 @@
         }
       }
     },
+    "%lld de %lld vistos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld of %lld watched"
+          }
+        }
+      }
+    },
     "%lld descargando": {
       "extractionState": "manual",
       "localizations": {
@@ -1211,6 +1222,17 @@
         }
       }
     },
+    "Creación": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Created by"
+          }
+        }
+      }
+    },
     "Cuando descargues algo, aparece aquí.": {
       "extractionState": "manual",
       "localizations": {
@@ -1636,6 +1658,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Where to talk to it"
+          }
+        }
+      }
+    },
+    "Dónde verlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where to watch"
           }
         }
       }
@@ -2146,6 +2179,17 @@
         }
       }
     },
+    "Este título no está en Stremio.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This title isn't on Stremio."
+          }
+        }
+      }
+    },
     "Estira hacia arriba para el control completo": {
       "extractionState": "manual",
       "localizations": {
@@ -2186,6 +2230,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Invalid date"
+          }
+        }
+      }
+    },
+    "Filmografía": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filmography"
           }
         }
       }
@@ -2439,6 +2494,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The recommended one is at the top."
+          }
+        }
+      }
+    },
+    "La saga": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The saga"
           }
         }
       }
@@ -2751,6 +2817,17 @@
         }
       }
     },
+    "Marcar temporada como vista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark season as watched"
+          }
+        }
+      }
+    },
     "Mañana": {
       "extractionState": "manual",
       "localizations": {
@@ -2835,6 +2912,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "More"
+          }
+        }
+      }
+    },
+    "Más como esto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More like this"
           }
         }
       }
@@ -3235,6 +3323,17 @@
         }
       }
     },
+    "No pude traer a esta persona de TMDB.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load this person from TMDB."
+          }
+        }
+      }
+    },
     "No sale nada en los próximos 14 días de las series que sigues.": {
       "extractionState": "manual",
       "localizations": {
@@ -3286,6 +3385,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I didn't hear you. Tap and try again"
+          }
+        }
+      }
+    },
+    "Novela": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novel"
           }
         }
       }
@@ -3891,6 +4001,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cast"
+          }
+        }
+      }
+    },
+    "Reparto y equipo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cast and crew"
           }
         }
       }
@@ -4859,6 +4980,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trakt: %@"
+          }
+        }
+      }
+    },
+    "Tráiler y extras": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trailer and extras"
           }
         }
       }

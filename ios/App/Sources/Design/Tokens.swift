@@ -192,6 +192,15 @@ enum DS {
         static let fillOpacity: Double = 0.55, fillMinutesOpacity: Double = 0.7
     }
 
+    /// La ficha rica (como Infuse): caras del reparto, insignias de calidad, calificaciones, tráiler y logos.
+    enum Rich {
+        static let face: CGFloat = 72, faceColumn: CGFloat = 84
+        static let badgeStroke: CGFloat = 1, badgeRadius: CGFloat = 4
+        static let clipWidth: CGFloat = 240, trailerPlay: CGFloat = 44
+        static let logo: CGFloat = 36, logoRadius: CGFloat = 8
+        static let personPhoto: CGFloat = 120, bioLines = 5
+    }
+
     /// La barra de espacio de Descargas.
     enum Storage {
         static let height: CGFloat = 14, gap: CGFloat = 2, minSegment: CGFloat = 3, dot: CGFloat = 8

@@ -265,6 +265,8 @@ private struct TitleDestinations: ViewModifier {
             .navigationDestination(for: TitleRoute.self) { route in
                 TitleView(route: route).navigationTransition(.zoom(sourceID: route, in: zoom))
             }
+            .navigationDestination(for: TmdbRoute.self) { TmdbTitleView(title: $0.title) }   // recomendaciones, saga, filmografía
+            .navigationDestination(for: PersonRoute.self) { PersonView(route: $0) }
     }
 }
 

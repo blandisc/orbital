@@ -52,7 +52,7 @@ struct SourceRowView: View {
                         if row.recommended { DSChip(text: "Recomendada", tone: .good) }
                         if row.cached { DSChip(text: "Al instante", tone: .good) }
                         if let gb = row.sizeGB { DSChipText(text: gb >= 1 ? String(format: "%.1f GB", gb) : String(format: "%.0f MB", gb * 1000), tone: row.heavy ? .warn : .normal) }
-                        ForEach(row.hdr, id: \.self) { DSChipText(text: $0) }
+                        QualityBadges(items: QualityBadges.items(resolution: row.resolution, hdr: row.hdr, audio: row.audio))
                         ForEach(row.tags, id: \.self) { DSChipText(text: $0) }
                     }
                 }

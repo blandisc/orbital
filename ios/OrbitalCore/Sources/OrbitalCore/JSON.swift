@@ -69,6 +69,10 @@ public enum JSON: Sendable, Equatable, Codable {
         default: return nil
         }
     }
+    /// Número (entero o decimal) como Double.
+    public var doubleValue: Double? {
+        switch self { case .int(let i): return Double(i); case .double(let d): return d.isFinite ? d : nil; default: return nil }
+    }
     public var isNull: Bool { if case .null = self { return true }; return false }
 }
 

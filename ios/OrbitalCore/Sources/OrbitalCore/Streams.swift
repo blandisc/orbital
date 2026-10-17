@@ -22,6 +22,22 @@ public struct Source: Sendable, Equatable, Identifiable {
 
     public var id: Int { index }
 
+    /// El sonido, para las insignias (como Infuse): Atmos, TrueHD, DTS‑HD, DD+, 7.1 o 5.1. Aparte de `tags` (que son las de
+    /// la TV, iguales en los dos lados).
+    public var audioBadges: [String] {
+        let blob = [release, stream["title"]?.string ?? "", stream["name"]?.string ?? "", stream["description"]?.string ?? ""].joined(separator: " ")
+        let range = NSRange(blob.startIndex..., in: blob)
+        var found = Self.audioPatterns.filter { $0.1.firstMatch(in: blob, range: range) != nil }.map(\.0)
+        if found.contains("7.1") { found.removeAll { $0 == "5.1" } }
+        if found.contains("DTS-HD") { found.removeAll { $0 == "DTS" } }
+        return found
+    }
+
+    static let audioPatterns: [(String, NSRegularExpression)] = [
+        ("Atmos", Streams.r(#"\batmos\b"#)), ("TrueHD", Streams.r(#"\btrue-?hd\b"#)), ("DTS-HD", Streams.r(#"\bdts-?hd\b"#)),
+        ("DTS", Streams.r(#"\bdts\b"#)), ("DD+", Streams.r(#"\b(ddp|dd\+|e-?ac-?3)"#)), ("7.1", Streams.r(#"\b7\.1\b"#)), ("5.1", Streams.r(#"\b5\.1\b"#)),
+    ]
+
     /// Una huella estable de esta fuente (su índice cambia de una búsqueda a otra), la misma de la TV (`streams.py`):
     /// el torrent y su archivo o, si no es torrent, complemento + nombre + tamaño. Para volver a la misma al «Continuar».
     public var key: String {

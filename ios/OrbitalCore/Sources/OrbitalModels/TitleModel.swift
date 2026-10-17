@@ -40,6 +40,10 @@ public final class TitleModel: ObservableModel {
     /// La sinopsis que dio tu Orbital (en español cuando puede) y si su logo es oscuro (se pinta blanco); nil si no hay consola.
     public private(set) var consoleOverview: String? { didSet { changed() } }
     public private(set) var logoIsDark = false { didSet { changed() } }
+    /// La ficha rica de TMDB (elenco con foto, saga, tráiler…); nil sin clave de TMDB o mientras llega.
+    public private(set) var extras: TitleExtras? { didSet { changed() } }
+    /// La calificación de Trakt (0–10), si alguien votó.
+    public private(set) var traktRating: Double? { didSet { changed() } }
 
     private let services: Services
     private var meta: JSON?                // la ficha ORIGINAL
@@ -104,6 +108,30 @@ public final class TitleModel: ObservableModel {
     public var overview: String { consoleOverview ?? info.description }
 
     /// Pide a tu Orbital la sinopsis y el tipo de logo (`/api/foryou/details`). Sin consola o sin respuesta no cambia nada.
+    /// Lo de la ficha rica: TMDB (elenco, saga, tráiler, dónde verlo…) y la calificación de Trakt, a la vez.
+    public func loadExtras() async {
+        guard metaID.hasPrefix("tt") else { return }
+        let tmdb = services.tmdb, trakt = services.trakt, kind = kind, metaID = metaID, region = services.appSettings.region
+        async let rating = try? trakt?.rating(kind: kind, imdb: metaID)
+        if tmdb.configured, let id = try? await tmdb.findID(imdb: metaID, kind: kind) {
+            extras = try? await tmdb.extras(kind: kind, tmdbID: id, region: region)
+        }
+        traktRating = await rating?.rating
+    }
+
+    /// Un título de TMDB (recomendación, saga, filmografía) → su id de IMDb, para abrir su ficha.
+    public static func imdbID(of title: TmdbTitle, services: Services) async -> String? {
+        try? await services.tmdb.details(kind: title.kind, tmdbID: title.tmdbID).imdb
+    }
+
+    /// Marca como vistos los episodios de la temporada elegida que te faltan (como «Marcar como visto» en cada uno).
+    public func markSeasonWatched() async {
+        for row in rows where !row.watched { await markWatched(row.id) }
+    }
+
+    /// «4 de 10 vistos» de la temporada elegida.
+    public var seasonProgress: (watched: Int, total: Int) { (rows.filter(\.watched).count, rows.count) }
+
     public func loadConsoleDetails() async {
         let remote = services.orbital
         guard remote.isConfigured, metaID.hasPrefix("tt") else { return }

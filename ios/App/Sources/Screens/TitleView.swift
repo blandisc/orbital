@@ -31,9 +31,10 @@ struct TitleView: View {
                     if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
                     if model.traktAvailable { watchlistToggle(model) }
                     if let error = model.error, model.overview.isEmpty { DSNotice(verbatim: env.message(error), tone: .warn) }
+                    RatingsRow(imdb: model.info.rating, tmdb: model.extras?.rating, trakt: model.traktRating)
                     if !model.overview.isEmpty { Text(model.overview).font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted) }
                     if model.kind == "series" { episodes(model) }
-                    credits(model)
+                    if let extras = model.extras { rich(extras).padding(.horizontal, -DS.Space.gutter) } else { credits(model) }
                 }
                 .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s10)
                 .padding(.top, scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: las acciones no se le pegan
@@ -44,7 +45,8 @@ struct TitleView: View {
         .toolbarBackground(.hidden, for: .navigationBar)     // el arte llega hasta arriba y la barra flota encima
         .toolbar { topBar(model) }
         .task { await model.followDownloads() }
-        .task { await model.loadConsoleDetails() }     // la sinopsis en español, si tu Orbital está conectada
+        .task { await model.loadConsoleDetails() }
+        .task { await model.loadExtras() }     // la ficha rica: elenco con foto, saga, tráiler, dónde verlo (TMDB) y Trakt     // la sinopsis en español, si tu Orbital está conectada
         .onChange(of: env.watchedSomething) { Task { await model.refreshState() } }   // vuelves de ver: avance, visto y «Continuar» al día
         .task {
             await model.load()
@@ -79,8 +81,8 @@ struct TitleView: View {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 TitleLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title, size: .hero, dark: model.logoIsDark)
                 let language = env.services.appSettings.uiLanguage
-                let facts = [Strings.kind(model.kind, language: language)]
-                    + Vocabulary.titleFacts(year: model.info.year, genres: Vocabulary.genres(model.info.genres, language: language), runtime: model.info.runtime, rating: model.info.rating)
+                let facts = [Strings.kind(model.kind, language: language)] + [model.extras?.certification].compactMap { $0 }
+                    + Vocabulary.titleFacts(year: model.info.year, genres: Vocabulary.genres(model.info.genres, language: language), runtime: model.info.runtime, rating: "")   // la calificación va en sus cápsulas (IMDb · TMDB · Trakt)
                 Text(verbatim: Vocabulary.factLine(facts)).recipe(.secondary, color: DS.onArtSecondary).lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
             }
         }
@@ -166,6 +168,18 @@ struct TitleView: View {
                 DSOptionMenu(items: chips, label: label, selection: selection)
             }
         }
+        // Cuántos llevas de esta temporada y marcarla completa (como en Infuse y Trakt).
+        let progress = model.seasonProgress
+        if progress.total > 0 {
+            HStack {
+                Text("\(progress.watched) de \(progress.total) vistos").recipe(.footnote)
+                Spacer()
+                if progress.watched < progress.total {
+                    Button("Marcar temporada como vista", systemImage: "checkmark.circle") { Task { await model.markSeasonWatched() } }
+                        .font(DS.TextRecipe.footnote.font).buttonStyle(.borderless)
+                }
+            }
+        }
         VStack(spacing: 0) {
             ForEach(model.rows) { row in
                 EpisodeRowView(row: row, play: { start(model, videoID: row.id) }, download: { Task { await report(model.download([row.id]), model) } },
@@ -174,6 +188,64 @@ struct TitleView: View {
                                playOnTV: env.services.orbital.isConfigured ? { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: row.id, title: model.title) } } : nil)
                 Divider().overlay(DS.hairline)
             }
+        }
+    }
+
+    /// Lo de TMDB, como Infuse: tráiler y extras, reparto con cara (toca para ver su trabajo), dónde verlo, la saga y
+    /// «Más como esto». Cada sección con el encabezado de toda la app; las tiras van de borde a borde.
+    @ViewBuilder private func rich(_ x: TitleExtras) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s6) {
+            if let trailer = x.trailer {
+                section(title: "Tráiler y extras", icon: .flame, count: x.extras.isEmpty ? nil : x.extras.count + 1) {
+                    VideoClipCard(clip: trailer)
+                    ForEach(x.extras) { VideoClipCard(clip: $0) }
+                }
+            }
+            let people = x.crew + x.cast
+            if !people.isEmpty {
+                section(title: "Reparto y equipo", icon: .series, count: people.count) {
+                    ForEach(people) { p in
+                        NavigationLink(value: PersonRoute(id: p.personID, name: p.name)) { PersonFace(name: p.name, role: crewRole(p.role), photo: p.photo) }
+                            .buttonStyle(.plain)
+                    }
+                }
+            }
+            if !x.providers.isEmpty || !x.studios.isEmpty {
+                VStack(alignment: .leading, spacing: DS.Space.s3) {
+                    DSSectionHead(title: "Dónde verlo", icon: .chart, meta: x.studios.isEmpty ? nil : Text(verbatim: x.studios.map(\.name).joined(separator: " · ")))
+                    if !x.providers.isEmpty { BrandLogos(brands: x.providers) }
+                }
+                .padding(.horizontal, DS.Space.gutter)
+            }
+            if let saga = x.collection {
+                section(title: "La saga", icon: .list, meta: Text(verbatim: saga.name), count: saga.parts.count) { ForEach(saga.parts) { TmdbPoster(title: $0) } }
+            }
+            if !x.recommendations.isEmpty {
+                section(title: "Más como esto", icon: .spark) { ForEach(x.recommendations) { TmdbPoster(title: $0) } }
+            }
+        }
+    }
+
+    private func section<Content: View>(title: LocalizedStringKey, icon: OrbitalIcon, meta: Text? = nil, count: Int? = nil, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: title, icon: icon, count: count, meta: meta).padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.scrollTargetLayout()
+            }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+        }
+    }
+
+    /// El trabajo de alguien del equipo, en español (TMDB lo manda en inglés); un personaje se queda tal cual.
+    private func crewRole(_ role: String) -> String {
+        let language = env.services.appSettings.uiLanguage
+        switch role {
+        case "Director": return Strings.tr("Dirección", language: language)
+        case "Screenplay", "Writer": return Strings.tr("Guion", language: language)
+        case "Novel": return Strings.tr("Novela", language: language)
+        case "Creator": return Strings.tr("Creación", language: language)
+        default: return role
         }
     }
 

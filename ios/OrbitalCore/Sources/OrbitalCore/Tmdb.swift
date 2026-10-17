@@ -67,7 +67,7 @@ public struct Tmdb: Sendable {
         return found
     }
 
-    private func get(_ path: String, _ params: [(String, String)] = []) async throws -> JSON {
+    func get(_ path: String, _ params: [(String, String)] = []) async throws -> JSON {
         var items = params
         var headers: [String: String] = [:]
         if key.hasPrefix("eyJ") { headers["Authorization"] = "Bearer \(key)" } else { items.append(("api_key", key)) }

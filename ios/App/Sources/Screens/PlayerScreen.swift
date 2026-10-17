@@ -580,6 +580,7 @@ struct PlayerSources: View {
                                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                                     Text([source.resolution, source.languages.prefix(2).map { Streams.languageName($0, in: AppEnvironment.shared.services.appSettings.uiLanguage) }.joined(separator: " + ")].filter { !$0.isEmpty }.joined(separator: " · "))
                                         .font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+                                    QualityBadges(items: QualityBadges.items(resolution: "", hdr: source.hdr, audio: source.audioBadges))
                                     Text(source.release).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1)
                                 }
                                 Spacer()

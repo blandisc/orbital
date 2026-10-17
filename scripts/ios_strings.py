@@ -19,6 +19,10 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Creación": "Created by", "Dónde verlo": "Where to watch", "Este título no está en Stremio.": "This title isn't on Stremio.", "Filmografía": "Filmography",
+    "La saga": "The saga", "Marcar temporada como vista": "Mark season as watched", "Más como esto": "More like this",
+    "No pude traer a esta persona de TMDB.": "Couldn't load this person from TMDB.", "Reparto y equipo": "Cast and crew", "Tráiler y extras": "Trailer and extras",
+    "Novela": "Novel", "%lld de %lld vistos": "%lld of %lld watched",
     "Sus rankings de hoy": "Their charts today", "%lld descargando": "%lld downloading", "Descarga inteligente": "Smart downloads",
     "En la TV: %@": "On TV: %@", "Sale hoy: %@": "Out today: %@", "%lld por terminar": "%lld to finish", "Inicio": "Home",
     "Otras apps": "Other apps", "Espacio": "Storage", "%@ libres de %@": "%@ free of %@",
