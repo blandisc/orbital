@@ -214,7 +214,7 @@ private extension Array {
 }
 
 /// El mosaico de «Para ti»: pieza del catálogo (`Design/Mosaic.swift`), equivalente a `foryou-mosaic` en la TV.
-/// Tocar una pieza la enfoca; volver a tocar la abre; mantener pulsado, «No me interesa».
+/// Tocar una pieza la enfoca; volver a tocar la abre; arrastrar sube y baja (con inercia). «No me interesa» va en «Más», bajo el mosaico.
 struct Mosaic: View {
     let items: [Suggestion]
     var watchlistKeys: Set<String> = []
@@ -247,15 +247,23 @@ struct Mosaic: View {
             .clipped()
             .mask(LinearGradient(stops: Self.maskStops, startPoint: .top, endPoint: .bottom))
             .contentShape(Rectangle())
-            .gesture(
-                DragGesture()
+            // A la par de los toques de las piezas (no detrás de ellos): en un iPhone de verdad casi todo arrastre empieza
+            // sobre una pieza, y con `.gesture` el botón se quedaba con él y el mosaico no bajaba.
+            .simultaneousGesture(
+                DragGesture(minimumDistance: DS.Gesture.axisThreshold)
                     .onChanged { value in
                         touch()
                         let delta = value.translation.height - lastDragTranslation
                         lastDragTranslation = value.translation.height
                         runtime.scrollBy(-delta)
                     }
-                    .onEnded { _ in lastDragTranslation = 0; runtime.endScroll(); touch() }
+                    .onEnded { value in
+                        // Inercia: sigue lo que el dedo llevaba de impulso, como una lista de iOS (no se frena en seco).
+                        let fling = value.predictedEndTranslation.height - value.translation.height
+                        lastDragTranslation = 0
+                        withAnimation(DS.Motion.enter(reduceMotion)) { runtime.scrollBy(-fling) }
+                        runtime.endScroll(); touch()
+                    }
             )
             .onAppear {
                 // Al volver de una ficha o de otra pestaña, el mosaico sigue donde estaba (mismo lugar, misma pieza enfocada).
@@ -317,7 +325,7 @@ struct Mosaic: View {
             onDismiss: { dismiss($0) })
     }
 
-    private func touch() { activity += 1; withAnimation(DS.Motion.base(reduceMotion)) { runtime.wake() } }
+    private func touch() { activity += 1; withAnimation(DS.Motion.base(reduceMotion)) { _ = runtime.wake() } }
 
     private func configure(items: [Suggestion], columnCount: Int) {
         configuredIDs = Set(items.map(\.imdb))
@@ -395,7 +403,6 @@ private struct MosaicColumnLayer: View, Equatable {
                 )
                 .frame(width: CGFloat(frame.width), height: CGFloat(tile.height))
                 .offset(x: CGFloat(frame.x), y: CGFloat(tile.top))
-                .contextMenu { Button("No me interesa", systemImage: "hand.thumbsdown") { onDismiss(tile.item) } }
             }
         }
     }

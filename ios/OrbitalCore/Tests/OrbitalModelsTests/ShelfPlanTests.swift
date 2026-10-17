@@ -24,7 +24,7 @@ final class ShelfPlanTests: XCTestCase {
 
     func testShelvesFollowTheTVOrder() {
         let ids = ShelfPlanner.plan(overview).map(\.id)
-        XCTAssertEqual(ids, ["recs", "mine", "watchlist", "list:7", "trend", "popular", "tv:movies", "chart:netflix", "jw:disney", "hbo"],
+        XCTAssertEqual(ids, ["recs", "mine", "watchlist", "list:7", "trend", "popular", "tv:movies", "chart:netflix", "jw:disney", "netflix", "hbo"],
                        "el orden de foryou.py; Seguir viendo y Mi lista viven en Inicio")
     }
 
@@ -34,13 +34,10 @@ final class ShelfPlanTests: XCTestCase {
         XCTAssertEqual(plan.first { $0.id == "watchlist" }?.title, "Tu watchlist")
     }
 
-    func testTMDBFallbackOnlyWhenThereIsNoJustWatchOrChartOfThatBrand() {
-        let ids = ShelfPlanner.plan(overview).map(\.id)
-        XCTAssertFalse(ids.contains("netflix"), "ya hay Top 10 de Netflix")
-        XCTAssertTrue(ids.contains("hbo"), "no hay jw:hbo: el respaldo de TMDB entra")
-        let disney = ShelfPlanner.plan([list("disney", title: "Disney+", group: .platforms, brand: "disney", split: true),
-                                        list("jw:disney", group: .platforms, brand: "disney", split: true)])
-        XCTAssertEqual(disney.map(\.id), ["jw:disney"], "con jw:disney, el respaldo no se pinta aparte")
+    func testTMDBFallbackIsMarkedWhenTheBrandHasARankedList() {
+        let plan = Dictionary(uniqueKeysWithValues: ShelfPlanner.plan(overview).map { ($0.id, $0) })
+        XCTAssertEqual(plan["netflix"]?.isFallback, true, "hay Top 10 de Netflix: el respaldo solo se ve si ese llega vacío")
+        XCTAssertEqual(plan["hbo"]?.isFallback, false, "no hay jw:hbo: el respaldo de TMDB es el estante de HBO")
     }
 
     func testTheCalendarListIsNotAShelfOfItsOwn() {
@@ -51,7 +48,7 @@ final class ShelfPlanTests: XCTestCase {
     func testStylesTop10PlatformAndPlain() {
         let styles = Dictionary(uniqueKeysWithValues: ShelfPlanner.plan(overview).map { ($0.id, $0.style) })
         XCTAssertEqual(styles["chart:netflix"], .top10)
-        XCTAssertEqual(styles["jw:disney"], .platform)
+        XCTAssertEqual(styles["jw:disney"], .top10, "JustWatch también trae puesto: cifra grande, como RankedCard en la TV")
         XCTAssertEqual(styles["hbo"], .platform)
         XCTAssertEqual(styles["trend"], .plain)
     }
@@ -125,6 +122,25 @@ final class ShelfPlanTests: XCTestCase {
         let chartList = try XCTUnwrap(model.lists.first { $0.id == "chart:netflix" })
         XCTAssertEqual(chartList.meta, "Esta semana en México")
         XCTAssertEqual(chartList.source, "Netflix")
+    }
+
+    func testTheFallbackShowsOnlyWhenTheRankedListOfItsBrandIsEmpty() async throws {
+        let rig = try consoleRig()
+        func row(_ id: String) -> JSON { ["key": .string("video:\(id)"), "kind": "series", "meta_id": .string(id), "title": .string(id), "image": "https://p.jpg", "video_id": .string(id)] }
+        rig.http.json["https://tv.example/api/foryou"] = [
+            "lists": [["id": "chart:netflix", "title": "Top 10 en Netflix", "split": true, "brand": "netflix"],
+                      ["id": "jw:disney", "title": "Tendencias en Disney+", "split": true, "brand": "disney"],
+                      ["id": "netflix", "title": "Netflix", "split": true, "brand": "netflix"],
+                      ["id": "disney", "title": "Disney+", "split": true, "brand": "disney"]],
+            "mosaic": [row("tt0000001")],
+        ]
+        rig.http.json["https://tv.example/api/foryou/list?id=jw:disney&kind=series"] = ["items": []]   // JustWatch no trajo nada
+        rig.http.json["https://tv.example/api/foryou/list?id=netflix&kind=series"] = ["items": [row("tt5")]]
+        rig.http.json["https://tv.example/api/foryou/list?id=disney&kind=series"] = ["items": [row("tt6")]]
+        let model = ParaTiModel(rig.services)
+        await model.load()
+        XCTAssertEqual(model.visibleShelves.map(\.id), ["chart:netflix", "disney"],
+                       "Netflix ya tiene Top 10 (su respaldo no); Disney+ sin JustWatch: su respaldo sí, para que no desaparezca")
     }
 
     func testAShelfThatFailedIsAskedAgainOnTheNextLoad() async throws {
