@@ -329,7 +329,7 @@ def test_mexican_phrasing(text, expected):
     ("busque dune", ("SearchMediaIntent", {"query": "dune"})),
     ("ve a juegos", ("NavigateIntent", {"direction": "juegos"})),
     ("ponme la temporada dos", ("PlayEpisodeIntent", {"season": "2", "episode": "1"})),
-    ("pon los simpson temporada dos", ("WatchEpisodeIntent", {"series": "los simpson", "season": "dos", "episode": "1"})),
+    ("pon los simpson temporada dos", ("WatchEpisodeIntent", {"series": "los simpson", "season": "2", "episode": "1"})),
     ("me pones dune", ("LaunchGameIntent", {"game": "dune"})),
     ("pásale al siguiente", ("NextEpisodeIntent", {})),
 ])

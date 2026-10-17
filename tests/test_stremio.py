@@ -417,3 +417,25 @@ def test_voice_puts_any_title_even_said_in_spanish(linked, monkeypatch):
     assert voice.handle_text("pon spirited awey").speech == "Poniendo Spirited Away."  # casi igual en Cinemeta
     result = voice.handle_text("abre hollow night")  # un juego mal dicho no pone una película cualquiera
     assert not result.ok and "en tu biblioteca" not in result.speech
+
+
+def test_voice_end_to_end_as_people_say_it(linked, monkeypatch):
+    """De la frase a lo que pasa: Siri con su «dile a Orbital que… por favor», la pista de tipo, y un juego que no está."""
+    from orbital.library import cinemeta
+
+    catalog = {"movie": [{"id": "tt0245429", "name": "Spirited Away"}],
+               "series": [{"id": "tt0386676", "name": "The Office", "releaseInfo": "2005"}]}
+    monkeypatch.setattr(cinemeta.Cinemeta, "search", lambda self, kind, q: catalog[kind])
+    tmdb = linked.foryou.tmdb
+    monkeypatch.setattr(type(tmdb), "configured", property(lambda self: True))
+    monkeypatch.setattr(tmdb, "search", lambda kind, title, year=None:
+                        {"imdb": "tt0245429", "title": "El viaje de Chihiro"} if kind == "movie" and "chihiro" in title else None)
+    voice = VoiceController(linked)
+    result = voice.handle_text("Dile a Orbital que ponga la película El viaje de Chihiro, por favor.")
+    assert result.speech == "Poniendo El viaje de Chihiro." and result.as_dict()["intent"] == "LaunchGameIntent"
+    assert result.as_dict()["heard"] == "ponga la pelicula el viaje de chihiro"
+    linked.watch.unlink_stremio()
+    assert voice.handle_text("pon la serie the office").speech == "Abriendo The Office. Elige el episodio."
+    assert voice.handle_text("abre el juego dune").speech == "No encontré el juego dune."
+    lost = voice.handle_text("blablá")
+    assert not lost.ok and "«blabla»" in lost.speech and lost.as_dict()["heard"] == "blabla"
