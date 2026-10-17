@@ -1,53 +1,10 @@
 /**
- * Películas y series · curaduría: las listas de Para ti (Top 10 de Netflix, tendencias de cada plataforma, tus
- * recomendaciones y tus listas de Trakt…) como estantes de la sección, entre lo tuyo y lo popular. Antes vivían solo en
- * Para ti › Listas y la sección enseñaba únicamente Seguir viendo, Mi lista y lo popular.
+ * Películas y series · piezas de la curaduría: un título de Para ti con la forma del catálogo (curatedItem), Destacados,
+ * Por género y el próximo estreno. El orden y las filas de la sección viven en media-plan.js (el del iPhone).
  */
 
 /** Las tendencias de una plataforma (JustWatch) mandan; lo popular en esa plataforma (TMDB) solo si no las hay. */
 const BRAND_FALLBACK = new Set(["netflix", "disney", "hbo", "prime", "appletv", "paramount"]);
-
-/** El orden de los estantes, por grupos: lo de cada quien primero, luego plataformas, luego tus listas. */
-const ORDER = [
-  (l) => l.id === "chart:netflix",
-  (l) => l.id === "recs",
-  (l) => l.id.startsWith("jw:"),
-  (l) => BRAND_FALLBACK.has(l.id),
-  (l) => l.id === "watchlist",
-  (l) => l.id.startsWith("list:"),
-  (l) => l.id === "mine",
-  (l) => l.id === "trend",
-  (l) => l.id.startsWith("addon:") && /rotten|rt:/i.test(`${l.id} ${l.title}`),
-];
-
-/** Los títulos de cada estante: el nombre de la lista, salvo los que dicen poco fuera de Para ti. */
-const TITLES = { recs: "Recomendadas para ti", mine: "Tus series", trend: "En tendencia esta semana" };
-
-/** Un estante de una plataforma lleva su logo, así que el título ya no dice su nombre («Top 10 en Netflix» → logo + «Top 10»). */
-function brandTitle(l) {
-  if (!l.logo || !l.brand) return null;
-  if (l.id === "chart:netflix") return "Top 10 esta semana";
-  if (l.id.startsWith("jw:")) return "Lo más visto";
-  return "Popular";
-}
-
-/** Qué listas de Para ti se vuelven estantes, y en qué orden (sin las de juegos, avisos ni las de la propia sección). */
-export function curatedLists(lists = []) {
-  const usable = lists.filter((l) => l && !l.heading && !l.info && l.id && !["continue", "mylist", "estrenos", "mygames"].includes(l.id)
-    && !String(l.id).startsWith("rawg:"));
-  const brandsWithTrends = new Set(usable.filter((l) => l.id.startsWith("jw:")).map((l) => l.brand));
-  if (usable.some((l) => l.id === "chart:netflix")) brandsWithTrends.add("netflix");
-  const picked = [];
-  for (const test of ORDER) {
-    for (const l of usable) {
-      if (!test(l) || picked.includes(l)) continue;
-      if (BRAND_FALLBACK.has(l.id) && brandsWithTrends.has(l.brand)) continue; // ya está su Top 10 o sus tendencias
-      picked.push(l);
-    }
-  }
-  return picked.map((l) => ({ id: l.id, title: brandTitle(l) || TITLES[l.id] || l.title, ranked: l.id === "chart:netflix" || l.id.startsWith("jw:"),
-    brand: l.brand || null, logo: l.logo || null, label: l.title }));
-}
 
 const KIND_LABEL = { movie: "Película", series: "Serie" };
 
@@ -57,18 +14,12 @@ export function curatedItem(item) {
   return {
     id: `cinemeta:${kind}:${item.meta_id}`, title: item.title, source: "cinemeta", kind, meta_id: item.meta_id,
     image: item.image, hero: item.hero, rank: item.rank ?? undefined, trend: item.trend ?? undefined,
+    // Para ordenar y filtrar una lista abierta (list-screen), y la placa del año del premio o el día del estreno.
+    year: item.year ?? undefined, rating: item.rating ?? undefined, genres: item.genres ?? undefined,
+    award_year: item.award_year ?? undefined, day_label: item.day_label ?? undefined,
     subtitle: [KIND_LABEL[kind], item.year].filter(Boolean).join(" · "),
     extra: { kind, meta_id: item.meta_id, year: item.year, description: item.overview || "", logo: item.logo, eyebrow: item.why || undefined },
   };
-}
-
-/** Los estantes ya armados (id «curated:…»): solo los que trajeron algo, y sin juegos. */
-export function curatedRows(picked, itemsById, limit = 15) {
-  return picked.map((l) => {
-    const items = (itemsById[l.id] || []).filter((i) => i && i.meta_id && i.kind !== "game").slice(0, limit).map(curatedItem);
-    return { id: `curated:${l.id}`, title: l.title, items, ranked: l.ranked && items.every((i) => i.rank != null),
-      brand: l.brand ?? null, logo: l.logo ?? null, label: l.label ?? l.title };
-  }).filter((row) => row.items.length);
 }
 
 /** Estantes por género (lo más visto de cada uno en el catálogo de Stremio), al final de la curaduría. */

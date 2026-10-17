@@ -4,7 +4,7 @@
  * Jugar, "Con Eden" y Opciones ya están en los botones del héroe con su glifo, así que el
  * pie no los repite: solo enseña cómo moverse y cómo volver.
  */
-export function footerHints(glyphs, { sheetOpen = false, adjustable = false, inert = false, atHome = true, longRow = false, running = null, rows = 2,
+export function footerHints(glyphs, { sheetOpen = false, adjustable = false, inert = false, atHome = true, longRow = false, groups = false, running = null, rows = 2,
   primary = null, alt = null } = {}) {
   if (sheetOpen) {
     // Una fila que solo informa («Cómo se usa», ejemplos de Alexa): A no hace nada, no se ofrece.
@@ -20,7 +20,8 @@ export function footerHints(glyphs, { sheetOpen = false, adjustable = false, ine
     rows > 1 && { glyph: glyphs.rows, label: "Cambiar de fila" },
     glyphs.search && { glyph: glyphs.search, label: "Buscar", secondary: true },
     glyphs.section && { glyph: glyphs.section, label: "Sección", secondary: true },
-    longRow && { glyph: glyphs.page, label: "Saltar 5", secondary: true },
+    // Películas y series: LT/RT pasan de grupo (Plataformas, Premios…) en vez de saltar de 5 en 5.
+    groups ? { glyph: glyphs.page, label: "Grupo", secondary: true } : longRow && { glyph: glyphs.page, label: "Saltar 5", secondary: true },
     !atHome && { glyph: glyphs.back, label: "Atrás", secondary: true },
     // Con un juego abierto, recuerda cómo volver a él (Home solo existe en el mando).
     running && glyphs.home && { glyph: glyphs.home, label: `Volver a ${running.title}` },
@@ -39,6 +40,7 @@ export function alexaTip(item, { runningId = null } = {}) {
   if (item.id === runningId) return item.id === "media:player" ? ask("pause") : ask("cierre el juego");
   if (item.source === "search") return ask("busque Dune");
   if (item.source === "genre") return ask(`ponga algo de ${item.title.toLowerCase()}`); // la voz recomienda por género
+  if (item.source === "collection") return null; // una lista (plataforma, premio…): la voz no la abre
   if (item.source === "stremio") return item.progress > 0 ? ask("siga viendo") : ask(`ponga ${title}`);
   if (item.source === "cinemeta") return item.kind === "series" || item.id?.startsWith("cinemeta:series:")
     ? ask(`quiero ver ${title}`) : ask(`ponga ${title}`);

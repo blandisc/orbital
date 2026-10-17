@@ -91,6 +91,10 @@ export function createHero({ onAction }) {
       if (extra.update) list.push(h("span", { class: "hero__fact--warning" }, "Actualización pendiente"));
     }
     if (item.favorite) list.push(h("span", { class: "hero__fact--favorite" }, svg(ICONS.star), "Favorito"));
+    if (item.source === "collection") { // una tarjeta de colección: qué es y cuántos tiene, no «Sin jugar todavía»
+      const c = item.collection || {};
+      list.splice(0, list.length, ...[c.detail, c.count != null && `${c.count} títulos`].filter(Boolean).map((text) => h("span", {}, text)));
+    }
     mount(facts, list.flatMap((node, i) => (i ? [h("span", { class: "hero__fact-sep", "aria-hidden": "true" }, "·"), node] : [node])));
 
     const alt = alternativeRunner(item);
@@ -103,9 +107,10 @@ export function createHero({ onAction }) {
       sheet && Button({ label: sheet, glyph: glyphs.alt, onPress: () => onAction("alt") }),
       !sheet && alt && item.id !== runningId && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, yields: true, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
       // Antes era "☰", el mismo glifo del botón Menú del mando: se confundían.
-      item.source !== "genre" && Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction("options") }));
-    voice.hidden = !alexa || !tips;
-    if (alexa && tips) mount(voice, svg(ICONS.assistant), h("span", {}, alexaTip(item, { runningId })));
+      item.source !== "genre" && item.source !== "collection" && Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction("options") }));
+    const tip = alexa && tips ? alexaTip(item, { runningId }) : null;
+    voice.hidden = !tip;
+    if (tip) mount(voice, svg(ICONS.assistant), h("span", {}, tip));
     fit();
   }
 

@@ -531,6 +531,34 @@ class ForYou:
                      "collection": "year", "split": True} for y in range(this_year, FIRST_YEAR - 1, -1)]
         return out
 
+    def imdb_ratings(self, wanted: list[tuple[str, str]]) -> dict[str, float]:
+        """La calificación de IMDb de cada título (de Cinemeta, varios a la vez; se recuerda un día), para ordenar una lista
+        «Mejor calificadas en IMDb», como el iPhone. Los que Cinemeta no tiene no salen."""
+        def one(pair: tuple[str, str]) -> tuple[str, float | None]:
+            kind, imdb = pair
+
+            def load() -> float | None:
+                try:
+                    raw = self.catalog.cinemeta.meta(kind, imdb, localized=False).get("imdbRating")
+                    return float(raw) if raw not in (None, "") else None
+                except Exception:  # noqa: BLE001 - sin calificación no pasa nada
+                    return None
+            return imdb, self.cache.get(f"imdb:rating:{imdb}", SLOW_TTL, load)
+
+        pairs = [(k if k in ("movie", "series") else "movie", i) for k, i in wanted if isinstance(i, str) and i.startswith("tt")][:120]
+        with ThreadPoolExecutor(max_workers=12) as pool:
+            return {imdb: rating for imdb, rating in pool.map(one, pairs) if rating}
+
+    def watched_ids(self) -> list[str]:
+        """Lo que ya viste en Trakt (sin Trakt, nada): «Ocultar lo que ya vi»."""
+        if not self.trakt.linked:
+            return []
+        try:
+            return self.cache.get("trakt:watched", MINE_TTL, self.trakt.watched_ids)
+        except SERVICE_ERRORS as exc:
+            log.info("Para ti: no pude leer lo que ya viste: %s", exc)
+            return []
+
     def _last_watched(self) -> dict | None:
         try:
             return self.cache.get("trakt:last", MINE_TTL, self.trakt.last_watched)

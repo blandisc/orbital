@@ -316,6 +316,18 @@ class Trakt:
         rows = self._get(f"/{KINDS[kind]}/popular", auth=False, **params)
         return [e for e in (entry(r, kind) for r in rows) if e] if isinstance(rows, list) else []
 
+    def watched_ids(self) -> list[str]:
+        """Los IMDb de lo que ya viste (películas y series), para «Ocultar lo que ya vi» en una lista."""
+        found: list[str] = []
+        for kind, key in (("movies", "movie"), ("shows", "show")):
+            rows = self._get(f"/sync/watched/{kind}")
+            for row in rows if isinstance(rows, list) else []:
+                raw = row.get(key) if isinstance(row, dict) else None
+                imdb = (raw.get("ids") or {}).get("imdb") if isinstance(raw, dict) and isinstance(raw.get("ids"), dict) else None
+                if isinstance(imdb, str) and imdb.startswith("tt"):
+                    found.append(imdb)
+        return found
+
     def related(self, kind: str, imdb: str, limit: int = 15) -> list[dict]:
         """Lo que Trakt relaciona con un título («Porque viste X»), como el iPhone."""
         if not isinstance(imdb, str) or not imdb.startswith("tt") or not imdb[2:].isdigit():

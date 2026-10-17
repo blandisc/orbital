@@ -756,3 +756,24 @@ def test_studios_and_whats_new_come_from_tmdb_with_the_iphones_rules(make_foryou
     assert [(i["title"], i["why"], i["brand"]) for i in fresh] == [("Merlina", "Nuevo en Netflix", "netflix")]
     urls = [url for _, url, _ in net.calls]
     assert any("air_date.lte=" in u for u in urls) and any("with_watch_monetization_types=flatrate" in u for u in urls)
+
+
+def test_a_list_can_be_sorted_by_imdb_and_hide_what_you_watched(make_foryou, net, library, monkeypatch):
+    fy = make_foryou(linked=True)
+    seen = []
+
+    def meta(kind, imdb, localized=True):
+        seen.append(imdb)
+        if imdb == "tt2":
+            raise RuntimeError("sin ficha")
+        return {"imdbRating": "8.1" if imdb == "tt1" else ""}
+
+    monkeypatch.setattr(library.cinemeta, "meta", meta)
+    assert fy.imdb_ratings([("movie", "tt1"), ("series", "tt2"), ("movie", "tt3"), ("movie", "nada")]) == {"tt1": 8.1}
+    assert "nada" not in seen
+    fy.imdb_ratings([("movie", "tt1")])
+    assert seen.count("tt1") == 1  # se recuerda
+    net.on("GET", r"/sync/watched/movies", (200, [{"movie": {"ids": {"imdb": "tt9"}}}]))
+    net.on("GET", r"/sync/watched/shows", (200, [{"show": {"ids": {"imdb": "tt8"}}}, {"show": {"ids": {}}}]))
+    assert fy.watched_ids() == ["tt9", "tt8"]
+    assert make_foryou().watched_ids() == []  # sin cuenta de Trakt, nada que ocultar
