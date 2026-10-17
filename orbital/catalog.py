@@ -31,7 +31,7 @@ from .events import EventBus
 from .focus import READY_TIMEOUT, bring_app_to_front, bring_game_to_front, game_ready, is_orbital_window, pin_orbital  # noqa: F401 - compatibilidad
 from .foryou import ForYou
 from .launcher import Launcher
-from .library import cinemeta, detect, emulators, esde, geforcenow, steam, stremio, stremio_api
+from .library import cinemeta, detect, emulators, esde, geforcenow, steam, steam_store, stremio, stremio_api
 from .library.media import KINDS, MediaStore, low_res, placeholder
 from .library.models import LibraryItem
 from .library.scraper import Scraper, Target
@@ -148,6 +148,8 @@ class Catalog:
         # Cachés en disco (no en pruebas: sin config.yaml no se guarda nada).
         cache = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" if config.source else None
         self._steam_art = geforcenow.SteamArt(cache / "steam-appids.json" if cache else None)
+        # De qué trata cada juego de Steam y GeForce NOW (la tienda de Steam, en español; ver steam_store.py).
+        self.steam_store = steam_store.SteamStore(cache / "steam-store.json" if cache else None)
         # La biblioteca del último escaneo: la interfaz la muestra al instante mientras se escanea.
         self._snapshot = cache / "library.json" if cache else None
         self.media = MediaStore(Path(expand(config.art.dir)) if config.art.dir else None)
@@ -361,6 +363,7 @@ class Catalog:
             if not item.hero:
                 item.hero = placeholder("hero", item.system, item.id)
                 item.extra["placeholder_hero"] = True
+            self._store_facts(item)
         self.state.mark_seen([i.id for i in found if i.category in ("emulators", "steam")])
         self.store.replace(found)
         self._save_snapshot(found)
@@ -591,6 +594,24 @@ class Catalog:
         if clear_runner:
             self.state.set_pref(item_id, "runner", None)
         return self.describe(item)
+
+    STORE_SOURCES = ("steam", "geforcenow")
+
+    def _store_facts(self, item: LibraryItem) -> None:
+        """Descripción, año, géneros y desarrollador de la tienda de Steam (sin pisar lo que el juego ya trae)."""
+        if item.source in self.STORE_SOURCES and item.steam_appid:
+            for key, value in self.steam_store.cached(item.steam_appid).items():
+                item.extra.setdefault(key, value)
+
+    def warm_store(self, stop: threading.Event | None = None) -> None:
+        """Pide a la tienda de Steam las fichas que faltan (los jugados hace poco primero), en segundo plano, y las
+        pone en la biblioteca sin reescanearla."""
+        games = [i for i in self.store.all() if i.source in self.STORE_SOURCES and i.steam_appid]
+        games.sort(key=lambda i: self.last_played(i) or 0, reverse=True)
+        if not self.steam_store.warm([i.steam_appid for i in games if i.steam_appid], stop=stop):
+            return
+        self.store.update(self._store_facts, where=lambda i: i.source in self.STORE_SOURCES)
+        self.notify({"type": "library-changed"})
 
     def refresh_steam_stats(self) -> None:
         """Relee las horas y la última vez de Steam (barato: no reescanea la biblioteca)."""

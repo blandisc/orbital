@@ -87,6 +87,9 @@ def token_ok(request: Request, expected: str) -> bool:
     return hmac.compare_digest(sent, expected.encode("utf-8", "surrogatepass"))
 
 
+STORE_DELAY = 90  # s tras el primer escaneo antes de pedir fichas a la tienda de Steam (que el arranque termine primero)
+
+
 def paused_path() -> Path:
     """Qué quedó congelado (para descongelarlo si Orbital se cierra de golpe)."""
     return Path(os.environ.get("LOCALAPPDATA") or Path.home() / ".local" / "state") / "orbital" / "paused.json"
@@ -137,6 +140,11 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
                     catalog.scanning = False
                     d.hub.publish_threadsafe({"type": "library-changed"})
                 shell.start()
+                try:  # de qué trata cada juego de Steam y GeForce NOW: con calma, después de todo lo demás
+                    time.sleep(STORE_DELAY)
+                    catalog.warm_store()
+                except Exception:  # noqa: BLE001 - la tienda nunca tumba a Orbital
+                    logging.getLogger(__name__).exception("Fichas de la tienda de Steam")
 
             # Con la biblioteca del último arranque, la interfaz entra ya; si no, espera el escaneo.
             catalog.scanning = not catalog.load_snapshot()  # antes de que la interfaz pregunte

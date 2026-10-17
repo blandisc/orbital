@@ -278,3 +278,11 @@ def make_client(library):
     def make(client=("127.0.0.1", 5000)):
         return TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=client)
     return make
+
+
+@pytest.fixture(autouse=True)
+def _no_real_steam_store(monkeypatch):
+    """Ninguna prueba le pregunta a la tienda de Steam (test_steam_store pone su doble)."""
+    from orbital.library import steam_store
+
+    monkeypatch.setattr(steam_store, "fetch", lambda appid, timeout=10: None)

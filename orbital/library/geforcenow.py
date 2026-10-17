@@ -275,6 +275,7 @@ def _item(art: SteamArt, cms_id: str, title: str, argv: list[str], game: dict | 
         image=STEAM_ART.format(appid=appid, name="library_600x900.jpg") if appid else game.get("banner"),
         hero=STEAM_ART.format(appid=appid, name="library_hero.jpg") if appid else game.get("hero"),
         extra={"logo": STEAM_ART.format(appid=appid, name="logo.png")} if appid else {},
+        steam_appid=appid,  # el mismo juego en la tienda de Steam: de ahí su descripción, año y géneros
     )
 
 
