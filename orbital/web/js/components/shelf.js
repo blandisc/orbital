@@ -50,7 +50,7 @@ export function createShelf({ onPick, onSwipe }) {
       // Un Top 10 (row.ranked): cada póster con su cifra grande detrás, como en Para ti y el iPhone.
       const built = row.items.map((item, c) => {
         const options = {
-          onPress: () => onPick(r, c), showAgo: row.id === "recent" || row.id === "jump", pop: item.id === popId,
+          onPress: () => onPick(r, c), showAgo: row.id === "recent" || row.id === "jump", pop: item.id === popId, wide: !!row.spotlight,
           onRatio: () => r === focus.r && place(), // la portada real cambió el ancho
         };
         return row.ranked ? RankedCard(item, options) : { card: Card(item, options) };

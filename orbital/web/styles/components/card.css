@@ -139,6 +139,11 @@
 /* Sin portada propia, el nombre y la consola ya van sobre el arte: en el pie de Buscar no se repiten. */
 .card--no-art .card__caption, .card--named .card__caption { display: none; }
 
+/* Destacados: el logo del título sobre el arte ancho, abajo a la izquierda, con la base oscura del arte para leerse. */
+.card--wide.card--has-art::before { content: ""; position: absolute; inset: 40% 0 0; border-radius: inherit; background: var(--gradient-art-base); pointer-events: none; z-index: var(--z-raised); }
+.card__logo { position: absolute; left: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised);
+  max-width: 58%; max-height: 38%; object-fit: contain; object-position: left bottom; filter: var(--shadow-drop-sm); }
+
 /* El nombre sobre el arte (Por género), abajo a la izquierda con el margen del póster; el arte ya es oscuro abajo. */
 .card__label { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised);
   font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight);
