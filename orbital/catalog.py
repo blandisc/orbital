@@ -218,8 +218,8 @@ class Catalog:
 
         covered = {e.system for e in self.emulators if e.system}
         try:
-            preferred = {s: g.system_emulator for s in os.listdir(self.esde.home / "gamelists")
-                         if (g := self.esde.gamelist(s)).system_emulator} if (self.esde.home / "gamelists").is_dir() else {}
+            preferred = {s: e for s in os.listdir(self.esde.home / "gamelists")
+                         if (e := self.esde.gamelist(s).system_emulator)} if (self.esde.home / "gamelists").is_dir() else {}
             return esde_systems.configs(self.esde.executable.parent, self.esde.home / "custom_systems", self.esde.rom_root,
                                         covered, preferred)
         except Exception:  # noqa: BLE001 - las reglas de ES-DE nunca dejan a Orbital sin biblioteca

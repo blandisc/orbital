@@ -56,7 +56,7 @@ def best_match(title: str, results: list[dict], year: int | str | None = None) -
     """El resultado con el nombre más parecido; con el año del juego, gana el de ese año («Star Wars: Battlefront II» de
     2005, no el de 2017); si empatan, el que más gente ha registrado."""
     want = normalize(title)
-    year = int(year) if str(year or "").isdigit() else None
+    year = int(str(year)) if str(year or "").isdigit() else None
     scored = []
     for r in results:
         if not isinstance(r, dict):
@@ -159,13 +159,15 @@ class Hltb:
                                             "gameplay": {"perspective": "", "flow": "", "genre": "", "difficulty": ""},
                                             "modifier": "hide_dlc"},
                                   "users": {}, "filter": "", "sort": 0, "randomizer": 0}}
-        extra = {"x-auth-token": self._auth["token"]}
-        if self._auth.get("hp_key") and self._auth.get("hp_val"):
-            extra |= {"x-hp-key": self._auth["hp_key"], "x-hp-val": self._auth["hp_val"]}
-            body[self._auth["hp_key"]] = self._auth["hp_val"]
+        auth = self._auth or {}
+        extra = {"x-auth-token": auth.get("token", "")}
+        if auth.get("hp_key") and auth.get("hp_val"):
+            extra |= {"x-hp-key": auth["hp_key"], "x-hp-val": auth["hp_val"]}
+            body[auth["hp_key"]] = auth["hp_val"]
         with self._request(f"{SITE}{self._search}", body=body, extra=extra) as res:
             data = read_json(res, timeout=12)
-        return data.get("data") if isinstance(data, dict) and isinstance(data.get("data"), list) else []
+        items = data.get("data") if isinstance(data, dict) else None
+        return items if isinstance(items, list) else []
 
     def search(self, title: str) -> list[dict]:
         """Busca (con token; si falla, token nuevo; si vuelve a fallar, redescubre la ruta)."""
