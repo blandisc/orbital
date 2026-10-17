@@ -440,12 +440,13 @@ const EMULATOR_MODE_HINTS = {
  */
 export function emulatorsMenu({ mode = "avisar", items = [], installing = false } = {}) {
   const row = (e) => {
-    const value = e.error ? "Sin revisar" : e.update ? (e.likely ? "Parece que hay nueva" : `Nueva: ${e.latest}`) : "Al día";
-    const hint = e.error ? e.error
-      : e.update && e.can_install ? `Tienes ${e.installed} · A para actualizar`
-        : e.update ? `Se baja a mano: ${e.page.replace(/^https?:\/\//, "").replace(/\/$/, "")}`
+    const value = e.error ? "Sin revisar" : e.update ? (e.likely ? "Puede haber nueva" : `Nueva: ${e.latest}`) : "Al día";
+    const site = String(e.page || "").replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+    const hint = e.error ? "Su sitio no contestó"
+      : e.update && e.can_install ? `Tienes ${e.installed}`
+        : e.update ? `Se baja en ${site}`
           : e.installed ? `Versión ${e.installed}` : "";
-    return { icon: e.update ? "download" : "check", label: e.name, value, hint,
+    return { icon: e.error ? "info" : e.update ? "download" : "check", label: e.name, value, hint,
       command: e.update && e.can_install && !installing ? { type: "emulator-install", id: e.id, name: e.name } : { type: "stay" } };
   };
   return {

@@ -339,7 +339,7 @@ test("Emuladores: cuál tiene versión nueva, cuál se instala aquí y el modo c
   assert.deepEqual(mode.adjust.right, { type: "emulators-mode", value: "auto" });
   assert.deepEqual(xemu.command, { type: "emulator-install", id: "xemu", name: "xemu" });
   assert.equal(xemu.value, "Nueva: v0.8.138");
-  assert.equal(dolphin.value, "Parece que hay nueva");
-  assert.equal(dolphin.hint, "Se baja a mano: dolphin-emu.org/download");
+  assert.equal(dolphin.value, "Puede haber nueva");
+  assert.equal(dolphin.hint, "Se baja en dolphin-emu.org");
   assert.equal(ppsspp.value, "Al día");
 });
