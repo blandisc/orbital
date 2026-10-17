@@ -192,7 +192,7 @@ struct VoiceCommandBar: View {
 }
 
 /// Las opciones cuando tu Orbital no supo cuál («pon Dune»: la de 1984 o la de 2021): un renglón por opción, con su póster;
-/// tocar una la pone en la TV.
+/// tocar una la pone en la TV (una serie abre allá su ficha).
 struct VoiceChoices: View {
     let choices: [OrbitalRemote.VoiceChoice]
     let action: (OrbitalRemote.VoiceChoice) -> Void

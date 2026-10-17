@@ -56,12 +56,13 @@ public final class VoiceAssistant {
         }
     }
 
-    /// Tocaste una de las opciones: se pone en la TV (la película, o la serie donde ibas), como «Ver en la TV».
+    /// Tocaste una de las opciones: la película se pone en la TV; la serie abre su ficha allá para elegir el episodio.
     public func choose(_ choice: OrbitalRemote.VoiceChoice) async -> Outcome {
         do {
             try await services.orbital.play(kind: choice.kind, metaID: choice.metaID, videoID: choice.kind == "movie" ? choice.metaID : nil,
                                             title: choice.title)
-            return Outcome(ok: true, speech: "Poniendo \(choice.title).", heard: choice.title)
+            let speech = choice.kind == "movie" ? "Poniendo \(choice.title)." : "Abriendo \(choice.title) en la TV."
+            return Outcome(ok: true, speech: speech, heard: choice.title)
         } catch let failure as OrbitalRemote.Failure {
             return Outcome(ok: false, speech: failure.description, heard: choice.title)
         } catch {

@@ -89,6 +89,17 @@
         }
       }
     },
+    "Abriendo %@ en la TV.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opening %@ on the TV."
+          }
+        }
+      }
+    },
     "Abrir Ajustes": {
       "extractionState": "manual",
       "localizations": {
