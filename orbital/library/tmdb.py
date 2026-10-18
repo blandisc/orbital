@@ -145,6 +145,31 @@ class Tmdb:
             and raw.get("vote_average") and (raw.get("vote_count") or 0) > 0 else None,
         }
 
+    def extras(self, kind: str, tmdb_id: int, region: str = "MX") -> dict:
+        """Lo de la ficha del iPhone que Cinemeta no trae: la frase de la película, la clasificación (la de tu país; si no,
+        la de EE. UU.) y quién la hizo («Creada por» en series; «Dirección» y «Guion» en películas)."""
+        extra = "credits,content_ratings" if kind == "series" else "credits,release_dates"
+        raw = self._get(f"/{KINDS[kind]}/{int(tmdb_id)}", append_to_response=extra)
+        crew = (raw.get("credits") or {}).get("crew") or [] if isinstance(raw.get("credits"), dict) else []
+        names = lambda jobs: list(dict.fromkeys(p.get("name") for p in crew if isinstance(p, dict) and p.get("job") in jobs and p.get("name")))  # noqa: E731
+        creators = [c.get("name") for c in raw.get("created_by") or [] if isinstance(c, dict) and c.get("name")]
+        cast = [c.get("name") for c in ((raw.get("credits") or {}).get("cast") or [])[:3] if isinstance(c, dict) and c.get("name")]
+        rating = None
+        if kind == "series":
+            rows = (raw.get("content_ratings") or {}).get("results") or []
+            by = {r.get("iso_3166_1"): r.get("rating") for r in rows if isinstance(r, dict) and r.get("rating")}
+            rating = by.get(region) or by.get("US")
+        else:
+            rows = (raw.get("release_dates") or {}).get("results") or []
+            for country in (region, "US"):
+                hit = next((r for r in rows if isinstance(r, dict) and r.get("iso_3166_1") == country), None)
+                rating = next((d.get("certification") for d in (hit or {}).get("release_dates") or [] if d.get("certification")), None)
+                if rating:
+                    break
+        return {"tagline": str(raw.get("tagline") or "").strip() or None, "certification": rating,
+                "directors": creators or names({"Director"}), "writers": [] if kind == "series" else names({"Screenplay", "Writer"}),
+                "cast": cast}
+
     def images(self, kind: str, tmdb_id: int, limit: int = 18) -> dict[str, list[str]]:
         """Los pósters y fondos de un título (para «Cambiar el arte»): primero los en español, luego inglés y sin texto."""
         raw = self._get(f"/{KINDS[kind]}/{int(tmdb_id)}/images", include_image_language="es,en,null", language="es")

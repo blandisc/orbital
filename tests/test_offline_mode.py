@@ -26,3 +26,23 @@ def test_a_title_you_already_opened_still_shows_without_internet(tmp_path, monke
         raise AssertionError("debió fallar")
     except cinemeta.CinemetaError:
         pass
+
+
+def test_the_tv_title_page_gets_tagline_rating_and_credits_like_the_iphone(monkeypatch):
+    """La ficha como el iPhone: frase, clasificación (la de tu país; si no, EE. UU.) y «Dirección · Guion» o «Creada por»."""
+    from orbital.library import tmdb
+
+    client = tmdb.Tmdb("clave")
+    movie = {"tagline": "Larga vida a la lucha.", "release_dates": {"results": [
+        {"iso_3166_1": "US", "release_dates": [{"certification": "PG-13"}]}]},
+        "credits": {"crew": [{"job": "Director", "name": "Denis Villeneuve"}, {"job": "Screenplay", "name": "Jon Spaihts"}],
+                    "cast": [{"name": "Timothée Chalamet"}, {"name": "Zendaya"}, {"name": "Rebecca Ferguson"}, {"name": "Otro"}]}}
+    monkeypatch.setattr(client, "_get", lambda path, **params: movie)
+    x = client.extras("movie", 693134, "MX")
+    assert x == {"tagline": "Larga vida a la lucha.", "certification": "PG-13", "directors": ["Denis Villeneuve"],
+                 "writers": ["Jon Spaihts"], "cast": ["Timothée Chalamet", "Zendaya", "Rebecca Ferguson"]}
+    show = {"tagline": "", "created_by": [{"name": "Dan Erickson"}], "content_ratings": {"results": [{"iso_3166_1": "MX", "rating": "B15"}]},
+            "credits": {"crew": [], "cast": [{"name": "Adam Scott"}]}}
+    monkeypatch.setattr(client, "_get", lambda path, **params: show)
+    assert client.extras("series", 95396, "MX") == {"tagline": None, "certification": "B15", "directors": ["Dan Erickson"],
+                                                    "writers": [], "cast": ["Adam Scott"]}

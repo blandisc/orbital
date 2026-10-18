@@ -11,7 +11,7 @@ const seasons = [
 test("película: Ver, o Continuar con lo que queda y Desde el principio", () => {
   assert.deepEqual(titleActions({ kind: "movie", resume: null }).map((a) => a.label), ["Ver", "Guardar", "Elegir fuente"]);
   const half = titleActions({ kind: "movie", resume: { position: 3600, duration: 7200 } });
-  assert.deepEqual(half.map((a) => a.id), ["play", "restart", "mylist", "sources"]);
+  assert.deepEqual(half.map((a) => a.id), ["play", "mylist", "sources", "restart"]); // el orden del iPhone
   assert.equal(half[0].label, "Continuar");
   assert.equal(half[0].hint, undefined); // lo que queda va en la línea de avance, no en el botón
   assert.ok(half[0].primary);
@@ -21,7 +21,7 @@ test("serie: el foco empieza en el episodio en el que ibas (o el siguiente)", ()
   const going = titleActions({ kind: "series", seasons, resume: { video_id: "s:2:1", label: "T2 E1", position: 600, duration: 1800 } });
   assert.equal(going[0].label, "Continuar T2 E1");
   assert.equal(going[0].video_id, "s:2:1");
-  assert.equal(going[1].id, "restart");
+  assert.ok(going.some((a) => a.id === "restart"));
   const next = titleActions({ kind: "series", seasons, resume: { video_id: "s:1:2", label: "T1 E2", episode_title: "Dos", position: 0 } });
   assert.equal(next[0].label, "Ver T1 E2");
   assert.ok(!next.some((a) => a.id === "restart"));
@@ -68,7 +68,7 @@ test("qué hay disponible, antes de elegir", async () => {
 test("tráiler y Mi lista en la ficha", async () => {
   const { titleActions } = await import("../../orbital/web/js/core/watch.js");
   const labels = titleActions({ kind: "movie", resume: null, trailer: "abc", in_library: true }).map((a) => a.label);
-  assert.deepEqual(labels, ["Ver", "Tráiler", "Guardada", "Elegir fuente"]);
+  assert.deepEqual(labels, ["Ver", "Guardada", "Tráiler", "Elegir fuente"]);
 });
 
 test("serie sin episodios: sin «Elegir fuente» (no había nada que elegir)", () => {
@@ -80,8 +80,8 @@ test("ficha: «Enviar al iPhone» y «Descargar en el iPhone» solo con un iPhon
   const movie = { kind: "movie", resume: null };
   assert.ok(!titleActions(movie).some((a) => a.id.startsWith("phone-")));
   assert.deepEqual(titleActions(movie, { phone: true }).map((a) => a.label),
-    ["Ver", "Guardar", "Elegir fuente", "Enviar al iPhone", "Descargar en el iPhone"]);
-  assert.deepEqual(titleActions(movie, { phone: true }).slice(-2).map((a) => a.id), ["phone-open", "phone-download"]);
+    ["Ver", "Guardar", "Descargar en el iPhone", "Elegir fuente", "Enviar al iPhone"]);
+  assert.deepEqual(titleActions(movie, { phone: true }).map((a) => a.id).filter((id) => id.startsWith("phone")), ["phone-download", "phone-open"]);
   // Una serie sin episodios no tiene qué mandar; con error, solo Reintentar.
   assert.ok(!titleActions({ kind: "series", seasons: [], resume: null }, { phone: true }).some((a) => a.id.startsWith("phone-")));
   assert.deepEqual(titleActions({ error: true }, { phone: true }).map((a) => a.id), ["retry"]);

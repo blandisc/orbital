@@ -157,6 +157,13 @@ class DemoTmdb:
     def company_logo(self, company_id):  # sin internet: los estudios van con su nombre
         return None
 
+    def extras(self, kind, tmdb_id, region="MX"):  # la ficha: frase, clasificación y créditos de muestra
+        if kind == "series":
+            return {"tagline": "Separa tu vida del trabajo. Para siempre.", "certification": "B15", "directors": ["Dan Erickson"],
+                    "writers": [], "cast": ["Adam Scott", "Britt Lower", "Zach Cherry"]}
+        return {"tagline": "Larga vida a la lucha.", "certification": "B", "directors": ["Denis Villeneuve"],
+                "writers": ["Jon Spaihts"], "cast": ["Timothée Chalamet", "Zendaya", "Rebecca Ferguson"]}
+
     def discover(self, kind, provider_id, region):
         brand = list(self.PLATFORMS)[provider_id - 1]
         return [{"id": n, "key": k} for n, k in enumerate(self.PLATFORMS[brand]) if (k in S) == (kind == "series")]

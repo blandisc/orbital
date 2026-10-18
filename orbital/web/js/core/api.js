@@ -102,6 +102,7 @@ export const api = {
   forYouWatched: () => request("/api/foryou/watched"),
   traceInput: (entries) => post("/api/ui/trace", { entries }),
   titleRatings: (kind, id) => request(`/api/foryou/title-ratings?kind=${kind}&id=${encodeURIComponent(id)}`),
+  titleExtras: (kind, id) => request(`/api/foryou/title-extras?kind=${kind}&id=${encodeURIComponent(id)}`),
   forYouToday: () => request("/api/foryou/today"),
   forYouKeys: (service, values, signal) => post("/api/foryou/keys", { service, values }, { signal, timeout: 20000 }),
   traktLink: () => post("/api/foryou/trakt/link"),
