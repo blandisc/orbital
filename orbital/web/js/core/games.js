@@ -14,6 +14,12 @@ export const FILTERS = [
   { id: "controller", label: "Con control" },
 ];
 
+/** Solo en Steam: ahí hay juegos sin instalar y juegos de teclado; en una consola todo está y todo es con control. */
+const STEAM_ONLY = new Set(["installed", "controller"]);
+
+/** Los filtros de una consola. */
+export const filtersFor = (consoleId) => FILTERS.filter((f) => consoleId === "steam" || !STEAM_ONLY.has(f.id));
+
 /** ¿Se juega con control? Los de consola, siempre; los de Steam y GeForce NOW, lo que dice la tienda (todo o parte). */
 export const playsWithController = (item) => item.category === "emulators" || ["full", "partial"].includes(item.extra?.controller);
 

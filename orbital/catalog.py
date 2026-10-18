@@ -17,14 +17,13 @@ import difflib
 import json
 import logging
 import os
-import sys
 import threading
 import time
 from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import quote
 
-from . import music, player
+from . import player
 from .config import Config, expand
 from .credentials import Credentials
 from .events import EventBus
@@ -343,10 +342,14 @@ class Catalog:
             in_cloud = {str(i.steam_appid) for i in gfn_games if i.steam_appid}  # ya en GeForce NOW: no repetido en Steam
         else:
             in_cloud = set()
-        # El resto de tu cuenta de Steam sin instalar (los que la tienda dice que son juegos): con «Instalar».
+        # Todo lo de tu cuenta de Steam sin instalar (los que la tienda dice que son juegos) también está en Steam, con
+        # «Instalar»: lo que se juega en la nube sigue además en GeForce NOW (antes solo ahí, y «Papers, Please» parecía
+        # no estar en tu Steam).
         for appid in self._steam_owned:
-            if appid not in cloud and appid not in in_cloud and (name := self.steam_store.game_name(appid)):
-                found.append(steam.uninstalled_item(appid, name))
+            playable = appid in cloud or appid in in_cloud
+            name = (cloud.get(appid) or {}).get("title") if appid in cloud else None
+            if name := name or self.steam_store.game_name(appid):
+                found.append(steam.uninstalled_item(appid, name, cloud=playable))
         for app in self.config.apps:
             is_uri = "://" in app.target
             found.append(
@@ -359,12 +362,6 @@ class Catalog:
                     argv=[] if is_uri else [app.target, *app.args],
                 )
             )
-        if sys.platform == "win32" and not any(a.id == "applemusic" for a in self.config.apps):
-            installed = music.apple_music_installed()
-            found.append(LibraryItem(
-                id="app:applemusic", title="Apple Music", category="apps", source="app",
-                subtitle="Música" if installed else "Instalar desde Microsoft Store",
-                uri=music.APPLE_MUSIC_URI if installed else music.APPLE_MUSIC_STORE))
         found += self.watch.stremio_items
         found += self.watch.cinemeta_items
         for item in found:

@@ -52,18 +52,26 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 
 /* Abajo: tus consolas en una fila que se desplaza si no caben (6 a la vista). */
 /* Compactas (home.js · fit): cuando enteras no caben junto a lo de arriba, foto más chica y sin el tercer renglón. */
-.home--compact .home__consoles-track > .tile--console { min-height: 0; }
-.home--compact .tile--console__media { height: 3.6rem; padding-top: var(--space-2); }
+.home--compact { --console-size: 7.4rem; }
+.home--compact .tile--console__media { padding-top: var(--space-2); }
 .home--compact .tile--console__photo { max-height: 3.1rem; }
 .home--compact .tile--console__logo { height: 2.4rem; }
 .home--compact .tile--console__cover { max-height: 3.3rem; }
-.home--compact .tile--console__foot { display: none; }
 .home--compact .tile--console__text { padding-top: var(--space-2); padding-bottom: var(--space-3); }
 .home__consoles { flex: none; display: flex; flex-direction: column; gap: var(--space-3); }
 .home__consoles-viewport { overflow: hidden; padding: .6rem 1rem; margin: -.6rem -1rem; } /* espacio para el anillo y el crecer (también la última) */
-.home__consoles-track { display: flex; gap: var(--tile-gap); transition: transform var(--duration-slow) var(--ease-out); }
-/* 6 enteras y la séptima asomando (así se nota que hay más); el borde se desvanece hacia ese lado. */
-.home__consoles-track > .tile--console { flex: 0 0 calc((100% - 6 * var(--tile-gap)) / 6.35); height: auto; min-height: 11rem; }
+/* Tarjetas cuadradas (7 enteras y la octava asomando: así se nota que hay más; el borde se desvanece hacia ese lado).
+   La enfocada crece hacia arriba (la fila guarda ese alto: nada brinca). */
+.home__consoles-track {
+  --console-size: 9.6rem; --console-grow: 1.4rem;
+  display: flex; align-items: flex-end; height: calc(var(--console-size) + var(--console-grow));
+  gap: var(--tile-gap); transition: transform var(--duration-slow) var(--ease-out);
+}
+.home__consoles-track > .tile--console {
+  flex: 0 0 calc((100% - 7 * var(--tile-gap)) / 7.35); height: var(--console-size);
+  transition: height var(--duration-base) var(--ease-spring), box-shadow var(--duration-base) var(--ease-out);
+}
+.home__consoles-track > .tile--console.tile--focused { height: calc(var(--console-size) + var(--console-grow)); transform: none; }
 .home__consoles-viewport { --fade-left: var(--mask-solid); --fade-right: var(--mask-solid); -webkit-mask-image: linear-gradient(90deg, var(--fade-left) 0, var(--mask-solid) 8%, var(--mask-solid) 86%, var(--fade-right) 100%); mask-image: linear-gradient(90deg, var(--fade-left) 0, var(--mask-solid) 8%, var(--mask-solid) 86%, var(--fade-right) 100%); }
 .home__consoles-viewport--more { --fade-right: transparent; }
 .home__consoles-viewport--before { --fade-left: transparent; }
@@ -85,12 +93,12 @@ body[data-view="home"] .backdrop { transition: --art-tint var(--duration-tint) v
    (antes 760 px: la TV al 300 % —720 px— se compactaba y quedaba un hueco abajo). */
 @media (max-height: 600px) {
   .home__scroll { gap: var(--space-3); }
-  .home__consoles-track > .tile--console { min-height: 9.2rem; }
+  .home__consoles-track { --console-size: 8.4rem; }
   .tile--console__text { padding-bottom: var(--space-3); }
 }
 /* Angostas: 4 consolas a la vista; muy angostas, solo el destacado. */
 @media (max-width: 1000px) {
-  .home__consoles-track > .tile--console { flex-basis: calc((100% - 4 * var(--tile-gap)) / 4.35); }
+  .home__consoles-track > .tile--console { flex-basis: calc((100% - 5 * var(--tile-gap)) / 5.35); }
 }
 @media (max-width: 760px) {
   .home__top { grid-template-columns: 1fr; }

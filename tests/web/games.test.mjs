@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { consoleGames, gameConsoles, pickConsole, stepConsole } from "../../orbital/web/js/core/games.js";
+import { consoleGames, filtersFor, gameConsoles, pickConsole, stepConsole } from "../../orbital/web/js/core/games.js";
 
 const g = (id, last = 0, extra = {}) => ({ id, title: id, system: "switch", last_played: last, ...extra });
 const rows = [
@@ -51,4 +51,11 @@ test("sin fecha de Orbital, lo reciente de su tienda va antes que el orden alfab
     { id: "a", title: "Age of Empires", extra: {} }, { id: "h", title: "Hogwarts Legacy", extra: { recent_rank: 9 } },
     { id: "x", title: "Halo", extra: { recent_rank: 0 } }, { id: "z", title: "Zelda", last_played: 100, extra: {} }] }];
   assert.deepEqual(consoleGames(rows, "geforcenow").map((i) => i.id), ["z", "x", "h", "a"]);
+});
+
+test("«Con control» e «Instalados» solo en Steam (en una consola todo es con control y está instalado)", () => {
+  assert.ok(filtersFor("steam").some((f) => f.id === "controller"));
+  assert.ok(filtersFor("steam").some((f) => f.id === "installed"));
+  assert.ok(!filtersFor("emulators:switch").some((f) => f.id === "controller" || f.id === "installed"));
+  assert.ok(!filtersFor("geforcenow").some((f) => f.id === "controller"));
 });

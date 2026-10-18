@@ -154,14 +154,15 @@ def owned_appids(steam_root: Path) -> set[str]:
     return {a for a in found if a not in _NOT_GAME_IDS}
 
 
-def uninstalled_item(appid: str, title: str) -> LibraryItem:
-    """Un juego de tu cuenta que no está instalado: «Instalar» abre la instalación de Steam."""
+def uninstalled_item(appid: str, title: str, *, cloud: bool = False) -> LibraryItem:
+    """Un juego de tu cuenta que no está instalado: «Instalar» abre la instalación de Steam. `cloud`: también se juega
+    en GeForce NOW (ahí está, en su fila)."""
     return LibraryItem(
         id=f"steam:{appid}",
         title=title,
         category="steam",
         source="steam",
-        subtitle="Steam · Sin instalar",
+        subtitle="Steam · Sin instalar · En GeForce NOW" if cloud else "Steam · Sin instalar",
         image=CDN.format(appid=appid, name="library_600x900"),
         hero=CDN.format(appid=appid, name="library_hero"),
         steam_appid=int(appid),

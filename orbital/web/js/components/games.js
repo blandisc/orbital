@@ -1,6 +1,6 @@
 import { h, mount } from "../core/dom.js";
 import { duration, lastPlayed, shortAgo } from "../core/format.js";
-import { consoleGames, FILTERS, gameConsoles, pickConsole, stepConsole } from "../core/games.js";
+import { consoleGames, filtersFor, gameConsoles, pickConsole, stepConsole } from "../core/games.js";
 import { systemColor } from "../core/home.js";
 import { systemIconName } from "../core/icons.js";
 import { alternativeRunner, primaryLabel, systemRatio } from "../core/library.js";
@@ -47,7 +47,8 @@ export function createGames({ onFocus, onPick, onAction }) {
   const targets = new Map();
 
   const current = () => list.find((c) => c.id === consoleId) ?? null;
-  const activeFilter = () => `filter:${Math.max(0, FILTERS.findIndex((f) => f.id === (filterOf[consoleId] ?? "recent")))}`;
+  const filterNow = () => (filtersFor(consoleId).some((f) => f.id === filterOf[consoleId]) ? filterOf[consoleId] : "recent");
+  const activeFilter = () => `filter:${Math.max(0, filtersFor(consoleId).findIndex((f) => f.id === filterNow()))}`;
   const index = () => Math.max(0, list.findIndex((c) => c.id === consoleId));
   const media = (c) => (c.photo ? { photo: c.photo, logo: !!c.logo } : c.cover ? { cover: c.cover } : { icon: "gamepad" });
   const plural = (n) => `${n} juego${n === 1 ? "" : "s"}`;
@@ -84,7 +85,7 @@ export function createGames({ onFocus, onPick, onAction }) {
   // --- la consola: encabezado, filtros, portadas ----------------------------------------------
   function renderConsole() {
     const c = current();
-    const filter = filterOf[consoleId] ?? "recent";
+    const filter = filterNow();
     games = c ? consoleGames(rows, consoleId, filter) : [];
     const last = c?.last;
     const ago = last && shortAgo(last.last_played);
@@ -94,7 +95,7 @@ export function createGames({ onFocus, onPick, onAction }) {
       meta: [plural(c.count), ago && `jugaste ${last.title} ${ago === "ahora" || ago === "ayer" ? ago : `hace ${ago}`}`].filter(Boolean).join(" · "),
     }));
     // Con el dedo, un toque basta: la píldora se enfoca y se aplica a la vez.
-    fillFilters(filters, FILTERS, { current: filter, targets, onPick: (t, id) => { focusId = id; onPick?.(t, id); } });
+    fillFilters(filters, filtersFor(consoleId), { current: filter, targets, onPick: (t, id) => { focusId = id; onPick?.(t, id); } });
     fitBar(bar, filters);
     mount(grid, games.length ? games.map((item, i) => {
       targets.set(`game:${i}`, { kind: "game", item, console: c });

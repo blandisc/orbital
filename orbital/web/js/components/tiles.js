@@ -150,22 +150,20 @@ export function RowTile(item, { focusId, onPress, airing = null }) {
   return node;
 }
 
-/** Consola: su foto (o la portada de lo último, si no hay foto), cuántos juegos y lo último que jugaste. */
+/** Consola: su foto (o la portada de lo último, si no hay foto) y cuántos juegos. Lo último que jugaste ya no va aquí
+ * (lo dice la leyenda: «X · Seguir Pikmin 2»): la tarjeta queda cuadrada, sin hueco. */
 export function ConsoleTile(system, { focusId, index = 0, onPress }) {
-  const last = system.last;
   return h("div", {
     class: ["tile", "tile--console", system.logo && "tile--console-logo"], role: "button", tabindex: "-1", "data-focus-id": focusId, onClick: onPress,
     "aria-label": `${system.name}: ${system.count} juegos`, style: { "--i": index, "--glow": systemColor(system.system) },
   },
   h("span", { class: "tile--console__glow" }),
+  // Lo nuevo, en la esquina: en su propio renglón empujaba el texto y se cortaba abajo (la «g» de «juegos» en Steam).
+  system.fresh > 0 && Badge(`+${system.fresh} nuevo${system.fresh === 1 ? "" : "s"}`, { className: "tile--console__fresh" }),
   h("span", { class: "tile--console__media" },
     system.photo ? art(system.photo, system.logo ? "tile--console__logo" : "tile--console__photo") : art(system.cover, "tile--console__cover")),
   h("span", { class: "tile--console__text" },
     h("strong", { class: "tile--console__name" }, system.name),
-    h("span", { class: "tile--console__count" }, `${system.count} juego${system.count === 1 ? "" : "s"}`,
-      system.fresh > 0 && Badge(`+${system.fresh} nuevo${system.fresh === 1 ? "" : "s"}`)),
-    // Lo último que jugaste ahí: lo que A/X retoman (el pie de la pantalla dice qué botón).
-    h("span", { class: "tile--console__foot" }, last ? `${last.title} · ${shortAgo(last.last_played)}`
-      : system.count ? "Sin jugar todavía" : "Sin juegos todavía")));
+    h("span", { class: "tile--console__count" }, `${system.count} juego${system.count === 1 ? "" : "s"}`)));
 }
 
