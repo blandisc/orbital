@@ -1,11 +1,12 @@
 import { h, mount, svg } from "../core/dom.js";
 import { bytes, duration, genres, lastPlayed, percent } from "../core/format.js";
-import { ICONS, systemIconName } from "../core/icons.js";
+import { ICONS, platformMark, systemIconName } from "../core/icons.js";
 import { alternativeRunner, isGame, isSeries, isWatchable, primaryLabel, runnerName } from "../core/library.js";
 import { alexaTip } from "../core/hints.js";
 import { trimmedLogo } from "../core/foryou.js";
 import { Button } from "./button.js";
 import { appIcon } from "./card.js";
+import { PlatformMark } from "./ui.js";
 
 /** Información grande del juego seleccionado: sistema, título, datos y acciones. */
 /** Sin subtítulo propio, el nombre de la categoría en palabras (no «media» en minúsculas). */
@@ -63,7 +64,8 @@ export function createHero({ onAction }) {
     // Apps: su propio ícono (el de ES-DE, el de GeForce NOW…), no el genérico de cuadritos.
     const icon = appIcon(item);
     const above = `${extra.eyebrow || item.subtitle || item.category}${runner}`;
-    mount(eyebrow, icon ? h("img", { class: "hero__eyebrow-icon", src: icon, alt: "" }) : svg(ICONS[systemIconName(item)]),
+    mount(eyebrow, icon ? h("img", { class: "hero__eyebrow-icon", src: icon, alt: "" })
+      : PlatformMark(platformMark(item), svg(ICONS[systemIconName(item)])),
       h("span", {}, above));
 
     title.textContent = item.title;

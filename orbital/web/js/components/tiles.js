@@ -1,11 +1,11 @@
 import { cssUrl, h, svg } from "../core/dom.js";
 import { duration, endsAt, lastPlayed, shortAgo } from "../core/format.js";
 import { kicker, platformColor, stageKind, SYSTEMS, systemColor, systemOf, thumbOf } from "../core/home.js";
-import { ICONS, systemIconName } from "../core/icons.js";
+import { ICONS, platformMark, systemIconName } from "../core/icons.js";
 import { sized } from "../core/images.js";
 import { alternativeRunner, clampRatio, coverRatio, isGame, isSeries, isWatchable, primaryLabel } from "../core/library.js";
 import { Button } from "./button.js";
-import { Badge, Progress } from "./ui.js";
+import { Badge, PlatformMark, Progress } from "./ui.js";
 
 /**
  * Tiles del sistema de diseño: piezas grandes y enfocables de las pantallas nuevas (Inicio y las
@@ -73,7 +73,8 @@ export function eyebrowOf(item, runningId = null) {
 }
 
 /** De dónde es: el ícono de su plataforma y su nombre («Steam», «Switch», «Película»). */
-const platform = (item, className) => h("span", { class: ["tile__platform", className], style: tint(item) }, svg(ICONS[systemIconName(item)] || ICONS.apps), kicker(item));
+const mark = (item) => PlatformMark(platformMark(item), svg(ICONS[systemIconName(item)] || ICONS.apps));
+const platform = (item, className) => h("span", { class: ["tile__platform", className], style: tint(item) }, mark(item), kicker(item));
 
 /** El ícono de la plataforma con su color (ver platformColor): `--platform` lo pinta en .tile__platform y .tile--row__detail. */
 const tint = (item) => (platformColor(item) ? { "--platform": platformColor(item) } : undefined);
@@ -143,7 +144,7 @@ export function RowTile(item, { focusId, onPress, airing = null }) {
       watch && Progress(item.progress, { className: "tile--row__progress" })), // sobre la miniatura, como en un póster
     h("span", { class: "tile--row__text" },
       h("strong", { class: "tile--row__title" }, item.title),
-      h("span", { class: "tile--row__detail", style: tint(item) }, svg(ICONS[systemIconName(item)] || ICONS.apps),
+      h("span", { class: "tile--row__detail", style: tint(item) }, mark(item),
         h("span", { class: "tile--row__detail-text" }, [kicker(item), shortDetail(item), total].filter(Boolean).join(" · "))),
       rowMore(item)));
   if (system) node.style.setProperty("--glow", systemColor(systemOf(item)));

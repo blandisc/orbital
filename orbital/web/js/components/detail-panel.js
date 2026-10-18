@@ -1,5 +1,6 @@
 import { h, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
+import { PlatformMark } from "./ui.js";
 import { settler } from "../core/motion.js";
 import { Button } from "./button.js";
 
@@ -10,7 +11,7 @@ import { Button } from "./button.js";
  *
  * update(ficha | null) con ficha = {
  *   key, title, art?, artKind?: "wide" | "poster" | "pixel", logo?, logoDark?,
- *   platform: { icon, text }, stats: [[etiqueta, valor]], description?,
+ *   platform: { icon, mark?, text } (mark: la marca real, platformMark), stats: [[etiqueta, valor]], description?,
  *   actions: [{ id, label, glyph, primary?, yields?, ariaLabel? }] | note: «No lo tienes» }
  * onAction(id, ficha): un botón de la ficha (lo mismo que A, X o Y).
  */
@@ -30,7 +31,7 @@ export function createDetailPanel({ onAction }) {
     picture?.addEventListener("error", () => picture.remove(), { once: true });
     // De dónde es, en una píldora sobre el arte (Steam, GOG, Serie · 2022).
     mount(art, picture, d.platform && h("span", { class: "tile__platform tile__platform--pill detail-panel__store" },
-      svg(ICONS[d.platform.icon] || ICONS.apps), d.platform.text));
+      PlatformMark(d.platform.mark, svg(ICONS[d.platform.icon] || ICONS.apps)), d.platform.text));
     const name = () => h("h2", { class: "detail-panel__title" }, d.title);
     const logo = d.logo ? h("img", { class: ["detail-panel__logo", d.logoDark && "detail-panel__logo--dark"], src: d.logo, alt: d.title }) : null;
     logo?.addEventListener("error", () => logo.replaceWith(name()), { once: true });

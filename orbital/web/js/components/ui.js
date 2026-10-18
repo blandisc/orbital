@@ -11,6 +11,9 @@ import { Glyph } from "./glyph.js";
 export const Chip = (text, { tone = null, className = null } = {}) =>
   h("span", { class: ["chip", tone && `chip--${tone}`, className] }, text);
 
+/** La marca de una plataforma (platformMark: logo o foto real, a color); sin marca, el ícono de líneas que le pases. */
+export const PlatformMark = (src, fallback = null) => (src ? h("img", { class: "platform-mark", src, alt: "", "aria-hidden": "true" }) : fallback);
+
 /** Etiqueta que llama la atención: «+2 nuevos», «Recomendada» (large: sobre arte grande, el mosaico). */
 export const Badge = (text, { className = null, large = false } = {}) => h("span", { class: ["badge", large && "badge--lg", className] }, text);
 

@@ -2,7 +2,7 @@ import { h, mount } from "../core/dom.js";
 import { duration, lastPlayed, shortAgo } from "../core/format.js";
 import { consoleGames, filtersFor, gameConsoles, pickConsole, stepConsole } from "../core/games.js";
 import { systemColor } from "../core/home.js";
-import { systemIconName } from "../core/icons.js";
+import { platformMark, systemIconName } from "../core/icons.js";
 import { alternativeRunner, primaryLabel, systemRatio } from "../core/library.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { dragScroll } from "../core/swipe.js";
@@ -124,7 +124,7 @@ export function createGames({ onFocus, onPick, onAction }) {
     return {
       key: item.id, item, title: item.title, logo: extra.logo,
       art: item.hero || item.image, artKind: extra.hero_lowres ? "pixel" : !item.hero ? "poster" : null,
-      platform: { icon: systemIconName(item), text: [item.subtitle, runner].filter(Boolean).join(" · ") },
+      platform: { icon: systemIconName(item), mark: platformMark(item), text: [item.subtitle, runner].filter(Boolean).join(" · ") },
       stats: [
         ["Última vez", item.last_played ? lastPlayed(item.last_played).replace(/^Jugado /, "") : item.playtime >= 60 ? null : "Sin jugar"],
         ["Jugado", item.playtime >= 60 ? duration(item.playtime) : null],

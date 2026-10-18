@@ -103,6 +103,22 @@ export const ICONS = {
   trophy: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5.2a3 3 0 0 0 3 4M16 6h2.8a3 3 0 0 1-3 4M12 13v4M8.5 20.5h7M10 17h4"/><circle cx="12" cy="8" r="1.6" fill="currentColor" stroke="none"/></svg>',
 };
 
+/** La marca real de su plataforma (a color, la misma en todas las pantallas): el logo de Stremio para películas y
+ * series, los de Steam y GeForce NOW, y la foto de la consola para un juego retro. null: va el ícono de líneas. */
+export function platformMark(item) {
+  if (!item) return null;
+  const file = (name) => `img/consoles/${name}`;
+  if (["stremio", "cinemeta"].includes(item.source) || item.category === "media") return file("stremio.svg");
+  if (item.source === "geforcenow" || item.category === "geforcenow") return file("geforcenow.svg");
+  if (item.category === "steam" || item.source === "steam") return file("steam.svg");
+  const text = `${item.source} ${item.subtitle} ${item.system ?? ""}`.toLowerCase();
+  const marks = [["switch", "switch.png"], ["gamecube", "gc.png"], ["wii", "wii.png"], ["gba", "gba.png"], ["game boy", "gba.png"],
+    ["xbox 360", "xbox360.png"], ["xbox360", "xbox360.png"], ["xbox", "xbox.png"], ["psp", "psp.png"], ["ps4", "ps4.png"],
+    ["playstation 4", "ps4.png"], ["ps3", "ps3.png"], ["playstation 3", "ps3.png"]];
+  const found = marks.find(([key]) => text.includes(key)) ?? (/gc/.test(text) ? ["gc", "gc.png"] : null);
+  return found ? file(found[1]) : null;
+}
+
 /** Ícono del sistema de un elemento de la biblioteca. */
 export function systemIconName(item) {
   if (!item) return "apps";
