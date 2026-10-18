@@ -43,16 +43,19 @@ def read_json(res, *, timeout: float, limit: int = MAX_BYTES):
 
 
 def http_json(url: str, *, method: str = "GET", headers: dict | None = None, body: dict | None = None,
-              timeout: float = 10) -> tuple[int, object]:
+              timeout: float = 10, form: dict | None = None) -> tuple[int, object]:
     """Una petición JSON que devuelve (código HTTP, cuerpo) también cuando el código es de error: Trakt
     dice «todavía no» con un 400 y «más despacio» con un 429. Los fallos de red sí se lanzan (NET_ERRORS)."""
     import urllib.error
     import urllib.request
+    from urllib.parse import urlencode
 
-    data = json.dumps(body).encode() if body is not None else None
+    # `form`: como formulario (el inicio de sesión de Microsoft lo pide así); `body`: JSON.
+    data = urlencode(form).encode() if form is not None else json.dumps(body).encode() if body is not None else None
+    kind = "application/x-www-form-urlencoded" if form is not None else "application/json"
     req = urllib.request.Request(url, data=data, method=method,
                                  headers={"User-Agent": "Orbital", "Accept": "application/json",
-                                          **({"Content-Type": "application/json"} if data is not None else {}),
+                                          **({"Content-Type": kind} if data is not None else {}),
                                           **(headers or {})})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as res:

@@ -10,7 +10,7 @@ import { createInput, ERASE_WORD, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints, legendOf, tvHints } from "./core/hints.js";
-import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu } from "./core/menus.js";
+import { alexaMenu, artMenu, capturesMenu, closeAppConfirmMenu, controlsMenu, diagnosticsMenu, exitMenu, foldersMenu, forYouMenu, gameMenu, healthMenu, KEY_FORMS, keysMenu, mainMenu, onedriveFolderMenu, onedriveMenu, memoryMenu, powerConfirmMenu, powerMenu, quickMenu, runnerMenu, settingsMenu, settingsPage, setupMenu, stopMenu, stremioAccountMenu, tourMenu, traktAccountMenu, updateMenu, windowsMenu, emulatorsMenu, voiceGroupMenu, voiceHelpMenu } from "./core/menus.js";
 import { sound } from "./core/sound.js";
 import { createBackdrop } from "./components/backdrop.js";
 import { createForYou } from "./components/foryou.js";
@@ -250,6 +250,13 @@ function accountsAt(context) {
 /** Una clave de Para ti guardada (o quitada): Cuentas al día y Para ti se vuelve a pedir. */
 async function keysSaved(form, status, { removed = false } = {}) {
   sound.play("select");
+  if (form.service === "onedrive") { // su propio estado (no el de Para ti)
+    ui.toast.show(removed ? "Quité la clave de OneDrive" : "Listo: clave de OneDrive guardada · ahora conéctalo");
+    const at = accountsAt(loginFrom?.context);
+    applySettings({ ...state.settings, onedrive: status });
+    if (at && !ui.sheet.isOpen && !topOverlay()) ui.sheet.open(settingsPage("accounts", state.settings), at);
+    return renderHints();
+  }
   ui.toast.show(removed ? `Quité la clave de ${form.label}` : `Listo: ${form.label} guardada · Para ti se actualiza`);
   const at = accountsAt(loginFrom?.context);
   applySettings({ ...state.settings, trakt: status.trakt, para_ti: status });
@@ -262,7 +269,8 @@ async function keysSaved(form, status, { removed = false } = {}) {
 function keysForm(service) {
   const form = KEY_FORMS[service];
   return { ...form, id: service, missing: service === "trakt" ? "Escribe el Client ID." : "Escribe la clave.",
-    submit: (values, signal) => api.forYouKeys(service, form.fields.map((f) => values[f.name].trim()), signal) };
+    submit: (values, signal) => (service === "onedrive" ? api.onedriveClient(values.id.trim(), signal)
+      : api.forYouKeys(service, form.fields.map((f) => values[f.name].trim()), signal)) };
 }
 
 function returnToMenu(from) {
@@ -865,6 +873,14 @@ async function loadCuration() {
     try {
       mediaLists = ((await api.forYou()).lists || []).filter((l) => l.group !== "games");
       const wanted = fetchPlan(mediaLists);
+      // «En tu OneDrive»: lo que se reconoció en la carpeta que elegiste (no es una lista de Para ti).
+      if (state.settings?.onedrive?.titles) {
+        const res = await api.onedriveTitles().catch(() => null);
+        if (res?.items?.length) {
+          mediaLists.push({ id: "onedrive", title: "En tu OneDrive" });
+          mediaItems[keyOf("onedrive", null)] = res.items;
+        }
+      }
       const chosen = becauseSeed(mediaLists.find((l) => l.id === "because"), becauseChoice()).listId;
       if (chosen !== "because") wanted.push({ id: chosen, kind: null }); // el que elegiste hoy con X
       await fetchMany(wanted.filter((w) => !LATER(w)));
@@ -1386,7 +1402,8 @@ async function runCommand(command, context = null) {
       case "keys-menu":
         return openMenu(keysMenu(command.service), nested(context));
       case "keys-remove": {
-        const status = await api.forYouKeys(command.service, KEY_FORMS[command.service].fields.map(() => ""));
+        const status = command.service === "onedrive" ? await api.onedriveClient("")
+          : await api.forYouKeys(command.service, KEY_FORMS[command.service].fields.map(() => ""));
         loginFrom = { context };
         return keysSaved(KEY_FORMS[command.service], status, { removed: true });
       }
@@ -1397,6 +1414,30 @@ async function runCommand(command, context = null) {
         return renderHints();
       case "trakt-account":
         return openMenu(traktAccountMenu(), nested(context));
+      case "onedrive-link": // un código para microsoft.com/link (el aviso llega por SSE)
+        sound.play("open");
+        traktFrom = { context };
+        ui.traktLink.open("onedrive");
+        return renderHints();
+      case "onedrive-account":
+        return openMenu(onedriveMenu(await api.onedrive()), nested(context));
+      case "onedrive-folder": { // recorrer tus carpetas para elegir la de tus videos (solo las que tú abres)
+        const res = await api.onedriveFolders(command.path || "");
+        return openMenu(onedriveFolderMenu(res.path || "", res.folders || []), nested(context));
+      }
+      case "onedrive-use": {
+        const status = await api.onedriveFolder(command.path);
+        applySettings({ ...state.settings, onedrive: status });
+        sound.play("select");
+        return ui.toast.show(`Listo: busco tus videos en «${command.path}»`);
+      }
+      case "onedrive-scan":
+        await api.onedriveScan();
+        return ui.toast.show("Buscando lo nuevo en tu OneDrive…");
+      case "onedrive-unlink":
+        applySettings({ ...state.settings, onedrive: await api.onedriveUnlink() });
+        ui.toast.show("OneDrive desconectado");
+        return loadCuration();
       case "trakt-unlink":
         await api.traktUnlink();
         ui.toast.show("Trakt desconectado");
@@ -1666,6 +1707,19 @@ function handleEvent(event) {
     sound.play("select");
     ui.toast.show(event.name ? `Listo: Trakt conectado como ${event.name}` : "Listo: Trakt conectado");
     return;
+  } else if (event.type === "onedrive-linked") {
+    if (traktFrom) traktFrom.done = true;
+    ui.traktLink.close({ cancel: false });
+    sound.play("select");
+    ui.toast.show("Listo: OneDrive conectado · ahora elige la carpeta de tus videos en Ajustes › Cuentas");
+    api.onedrive().then((s) => applySettings({ ...state.settings, onedrive: s })).catch(() => {});
+    return;
+  } else if (event.type === "onedrive-link-failed") {
+    sound.play("error");
+    return ui.traktLink.failed(event.message);
+  } else if (event.type === "onedrive-changed") { // terminó de buscar tus videos: la fila «En tu OneDrive»
+    api.onedrive().then((s) => applySettings({ ...state.settings, onedrive: s })).catch(() => {});
+    return loadCuration();
   } else if (event.type === "trakt-link-failed") {
     sound.play("error");
     return ui.traktLink.failed(event.message);
