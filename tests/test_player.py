@@ -549,7 +549,7 @@ def test_sticks_wake_the_controls_and_move_in_panels():
     assert gamepad.with_sticks(0, 0, 0, 0) == 0
     assert gamepad.with_sticks(5000, -3000, 0, 0) == 0  # deriva: no cuenta
     assert gamepad.with_sticks(0, 30000, 0, 0) == gamepad.STICK_UP
-    assert gamepad.with_sticks(0, 0, -25000, 8000) == gamepad.STICK_LEFT  # el derecho también
+    assert gamepad.with_sticks(0, 0, -25000, 8000) == gamepad.STICK_LEFT  # la función sabe leer los dos (el ciclo solo usa el izquierdo)
     p, mpv = make_player()
     p.press("stick-right")  # sin panel: solo enciende los controles, no adelanta
     assert mpv.overlays.get(1) and not any(c[0] == "seek" for c in mpv.sent)

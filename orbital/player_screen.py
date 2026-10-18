@@ -563,8 +563,7 @@ class PlayerScreen:
             if self._hud_visible and not self._value("pause"):
                 self.hide_hud()
             self._quit_hold = time.monotonic()
-            self._overlay(self.HOLD, player_ui.quit_hold_ass(0))
-            self._animate_hold(self._quit_hold)
+            self._animate_hold(self._quit_hold)  # el anillo sale solo si lo mantienes (un toque solo oculta)
         elif button == "x":
             self.open_tracks()
         elif button == "y":
@@ -632,12 +631,14 @@ class PlayerScreen:
             self.toast("Volumen")
 
     QUIT_HOLD = 1.5  # s con B mantenido para salir
+    HOLD_SHOW_AFTER = .25  # s mantenido B antes de dibujar el anillo de salir
     HOLD_FPS = 30  # el anillo de «Salir» se llena con su propio reloj (antes, a saltos: solo con cada repetición de B)
 
     def _animate_hold(self, started: float) -> None:
         """Redibuja el anillo a 30 cuadros por segundo mientras B siga mantenido. Solo dibuja: salir lo sigue decidiendo
         `_hold_to_quit` con la repetición de B (soltar a tiempo nunca sale)."""
         def run() -> None:
+            time.sleep(self.HOLD_SHOW_AFTER)  # un toque de B no enseña el anillo: parecía que B hacía dos cosas
             while getattr(self, "_quit_hold", None) == started:
                 progress = (time.monotonic() - started) / self.QUIT_HOLD
                 self._overlay(self.HOLD, player_ui.quit_hold_ass(min(1.0, progress)))

@@ -375,7 +375,10 @@ class GamepadWatcher:
                     if connected:
                         pad = state.Gamepad
                         buttons |= with_triggers(pad.bLeftTrigger, pad.bRightTrigger)
-                        axes = (pad.sThumbLX, pad.sThumbLY, pad.sThumbRX, pad.sThumbRY)
+                        # Solo el stick izquierdo, como en la interfaz: el derecho no hace nada en el reproductor, y en el
+                        # mando del usuario se queda abajo a tope (ry = -32768 en entrada.log, también al soltarlo) y el
+                        # pulgar lo roza al picar B; «abajo» sin parar volvía a enseñar los controles que B acababa de quitar.
+                        axes = (pad.sThumbLX, pad.sThumbLY)
                         # Un stick recién conectado no cuenta hasta verlo en el centro (algunos llegan con el eje cargado
                         # y el reproductor lo tomaba como empujado sin parar).
                         if not sticks_armed[slot] and max(abs(a) for a in axes) < STICK_REST:
