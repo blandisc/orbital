@@ -11,6 +11,11 @@ public final class CollectionsModel: ObservableModel {
     /// Los pósters de cada año en «Por año» (hasta cuatro): ganadoras de ese año y, si faltan, lo más popular.
     public private(set) var yearPosters: [Int: [String]] = [:] { didSet { changed() } }
     private var watchedCache: Set<String>?
+
+    /// Viste algo: «Ocultar lo que ya vi» se vuelve a preguntar.
+    public func forgetWatched() { watchedCache = nil }
+    /// Otra cuenta (o desconectaste Trakt): nada de la anterior se queda.
+    public func resetAccount() { watchedCache = nil; myList = [] }
     /// Los estudios (Colecciones › Estudios) y lo que tiene cada uno (se pide al verlo).
     public let studios: [(id: Int, name: String)] = Tmdb.studios
     public private(set) var studioItems: [Int: [Suggestion]] = [:] { didSet { changed() } }

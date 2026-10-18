@@ -175,6 +175,7 @@ struct PlayerScreen: View {
             Button("Salir", role: .cancel) { Task { await close() } }
         } message: { Text("Llevas tres episodios seguidos.") }
         // En vertical, el panel es una hoja ajustada a lo que tiene (sin espacio muerto); en horizontal va a la derecha (arriba).
+        .onChange(of: panel) { _, open in holder.model.panelOpen = open }   // la cuenta de «Siguiente» se detiene con el panel abierto
         .sheet(isPresented: Binding(get: { panel && !landscape }, set: { if !$0 { panel = false } })) {
             settingsPanel(model).fittedSheet().presentationDragIndicator(.visible)
         }
@@ -365,7 +366,10 @@ struct PlayerScreen: View {
                         Button(model.skipKind == .recap ? "Saltar resumen" : "Saltar intro", systemImage: "forward.fill") { Task { await model.skipIntro() } }.buttonStyle(.glass)
                     }
                     // Cada botón dice qué hace (si no cabe, solo el ícono; VoiceOver dice el nombre).
-                    if env.services.orbital.isConfigured { PlayerLabelButton(title: "En la TV", symbol: "tv") { Task { await continueOnTV() } } }
+                    // Un video que te pasaron (sin reconocer) no lo puede poner la TV.
+                    if env.services.orbital.isConfigured, model.request?.metaID.hasPrefix("file:") != true {
+                        PlayerLabelButton(title: "Ver en la TV", symbol: "tv") { Task { await continueOnTV() } }
+                    }
                     if pip.isPossible { PlayerLabelButton(title: "Ventana", symbol: "pip.enter") { pip.toggle() } }
                     PlayerLabelButton(title: "Audio y subtítulos", symbol: "captions.bubble") { panel = true }
                     AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())

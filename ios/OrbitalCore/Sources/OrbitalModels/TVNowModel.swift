@@ -161,7 +161,7 @@ public final class TVNowModel: ObservableModel {
             let stale = Date().timeIntervalSince(fetchedAt) > Self.hideAfter
             // Unos tropiezos seguidos (Wi‑Fi que se duerme) no lo esconden; pero si lo último que se supo ya es viejo (volviste a
             // la app horas después, la TV apagada), con el primero basta: no se enseña lo de ayer.
-            if stale, failures >= Self.failuresToHide || !answeredSinceActive { now = nil; game = nil }
+            if stale, failures >= Self.failuresToHide || (!answeredSinceActive && failures >= 2) { now = nil; game = nil }
         }
     }
 
@@ -178,16 +178,17 @@ public final class TVNowModel: ObservableModel {
 
     /// Lo que suena. Una sola respuesta vacía (la TV entre un episodio y el siguiente) no lo quita: hacen falta dos seguidas
     /// o unos segundos; si no, la hoja del control se cerraba y el accesorio parpadeaba.
-    private func setNow(_ value: OrbitalRemote.NowPlaying?) {
-        if value == nil, now != nil {
+    private func setNow(_ value: OrbitalRemote.NowPlaying?, immediately: Bool = false) {
+        if value == nil, now != nil, !immediately {
             emptyAnswers += 1
-            if emptyAnswers < Self.emptyToStop, Date().timeIntervalSince(lastPlaying) < Self.emptyGrace { return }
+            if emptyAnswers == 1 { firstEmpty = Date() }
+            // La primera vacía no lo quita; la segunda, o unos segundos después de la primera, sí (con cualquier ritmo de sondeo).
+            if emptyAnswers < Self.emptyToStop, Date().timeIntervalSince(firstEmpty) < Self.emptyGrace { return }
         } else { emptyAnswers = 0 }
-        if value != nil { lastPlaying = Date() }
         now = value
     }
     private var emptyAnswers = 0
-    private var lastPlaying = Date.distantPast
+    private var firstEmpty = Date.distantPast
     static let emptyToStop = 2
     static let emptyGrace: TimeInterval = 3
 
@@ -195,20 +196,23 @@ public final class TVNowModel: ObservableModel {
     public func press(_ action: OrbitalRemote.InputAction) async {
         // En fila, una tras otra: «abajo, abajo, derecha» llega en ese orden (cada una en su propia petición podía llegar
         // revuelta por el túnel y el foco caía en otro lado).
-        pendingKeys.append(action)
+        pendingKeys.append((action, Date()))
         guard !sendingKeys else { return }
         sendingKeys = true
         defer { sendingKeys = false }
         while !pendingKeys.isEmpty {
             let next = pendingKeys.removeFirst()
-            do { try await services.orbital.input(next); remoteOutdated = false }
+            // Una tecla que esperó demasiado (la red se atoró) ya no se manda: llegaría tarde y haría otra cosa.
+            guard Date().timeIntervalSince(next.at) < Self.keyFreshness else { continue }
+            do { try await services.orbital.input(next.action); remoteOutdated = false }
             catch OrbitalRemote.Failure.outdated { remoteOutdated = true; pendingKeys.removeAll() }
             catch OrbitalRemote.Failure.badToken { tokenProblem = true; pendingKeys.removeAll() }
-            catch {}
+            catch { pendingKeys.removeAll() }   // sin red: las que esperaban se tiran (no llegan 50 s después)
         }
         refreshSoon()
     }
-    private var pendingKeys: [OrbitalRemote.InputAction] = []
+    private var pendingKeys: [(action: OrbitalRemote.InputAction, at: Date)] = []
+    static let keyFreshness: TimeInterval = 1.5
     private var sendingKeys = false
 
     /// Tras una tecla, la pantalla de la TV cambió: lo que hace cada botón (la leyenda) se pide enseguida, no al siguiente
@@ -246,9 +250,15 @@ public final class TVNowModel: ObservableModel {
         defer { busy = false }
         let ticket = nextTicket()
         do {
-            let playing = try await services.orbital.control(action: action, delta: delta, track: track)
+            var playing: OrbitalRemote.NowPlaying?
+            do { playing = try await services.orbital.control(action: action, delta: delta, track: track) }
+            catch OrbitalRemote.Failure.refused where ["channel_up", "channel_down"].contains(action) {
+                // Una consola de antes no conoce «channel_up/down»: con «next/previous» cambiaba de canal igual.
+                playing = try await services.orbital.control(action: action == "channel_up" ? "next" : "previous", delta: delta, track: track)
+            }
             guard accept(ticket) else { return }
-            setNow(playing)
+            applied = issued   // la respuesta de una acción es la verdad: un sondeo de antes que llegue después no la deshace
+            setNow(playing, immediately: action == "stop")   // «Salir» se ve al momento
             fetchedAt = Date()
             tokenProblem = false
         } catch OrbitalRemote.Failure.badToken {
@@ -270,6 +280,8 @@ public final class TVNowModel: ObservableModel {
             tokenProblem = true
         } catch OrbitalRemote.Failure.outdated {
             volumeOutdated = true   // una consola sin la acción «volume»: se avisa que hay que actualizarla
+        } catch OrbitalRemote.Failure.refused {
+            volumeOutdated = true   // las de antes contestan «Esa acción no existe»
         } catch {}
     }
 

@@ -187,7 +187,7 @@ public final class DecideModel: ObservableModel {
         imdbRating = details[s.imdb]?.rating
     }
 
-    private func search() async {
+    private func search(retried: Bool = false) async {
         isLoading = true
         defer { isLoading = false }
         let started = services.now()
@@ -242,6 +242,8 @@ public final class DecideModel: ObservableModel {
         }
         // La más cercana (aunque dure más de lo que tienes); solo esa cuenta como enseñada, no todas las revisadas.
         if let closest { return take(closest) }
+        // Con un filtro, las que cumplen ya salieron todas: otra vuelta desde el principio (una vez), no «No encontré».
+        if !retried, !shown.isEmpty { shown = []; isLoading = false; return await search(retried: true) }
         pick = nil
         exhausted = true
     }

@@ -115,6 +115,7 @@ final class AppEnvironment: ObservableObject {
         inbox.onEvent = { [weak self] event in self?.announce(event) }
         Task { await services.downloads.start() }
         DownloadsModel.clearShared()   // los enlaces de «Compartir» de la vez pasada
+        Task.detached(priority: .background) { AppEnvironment.pruneImported() }
         let settings = services.settings
         liveActivity.language = { settings.value.uiLanguage }
         Task { await liveActivity.follow(services.downloads) }
@@ -156,7 +157,13 @@ final class AppEnvironment: ObservableObject {
             case .notEnoughSpace: notify(format: "No hay espacio para descargar %@ (desde la TV)", name)
             case .other: notify(format: "No pude descargar %@ (desde la TV)", name)
             }
-        case .played(let item): ui.played = item   // el resumen de la sesión de juego, en su hoja
+        case .played(let item):
+            // El resumen de la sesión, en su hoja; un momento después, por si la hoja del juego se está cerrando (dos hojas en
+            // el mismo cambio: la segunda no salía).
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: DS.Timing.sheetHandoff)
+                self.ui.played = item
+            }
         }
     }
 
@@ -239,21 +246,29 @@ final class AppEnvironment: ObservableObject {
     private func openFile(_ url: URL) async {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-        let folder = AppFiles.support.appendingPathComponent("Importados", isDirectory: true)
-        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let old = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
-        for file in old where ((try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast) < Date().addingTimeInterval(-Self.importedDays * 86_400) {
-            try? FileManager.default.removeItem(at: file)
-        }
+        Self.pruneImported()
+        let folder = Self.importedFolder
         let target = folder.appendingPathComponent(url.lastPathComponent)
         if target.standardizedFileURL != url.standardizedFileURL {
             try? FileManager.default.removeItem(at: target)
-            do { try FileManager.default.copyItem(at: url, to: target) } catch { notify("No pude abrir ese archivo."); return }
+            do {
+                // Lo que llega por AirDrop o «Abrir con…» queda en Documents/Inbox: se mueve (no se queda una segunda copia de gigas).
+                if url.path.contains("/Inbox/") { try FileManager.default.moveItem(at: url, to: target) }
+                else { try FileManager.default.copyItem(at: url, to: target) }
+            } catch { notify("No pude abrir ese archivo."); return }
         }
+        // Fuera del respaldo de iCloud (como las descargas) y con la fecha de hoy (de ella se cuentan los días para borrarlo).
+        var values = URLResourceValues(); values.isExcludedFromBackup = true
+        var mutable = target; try? mutable.setResourceValues(values)
+        try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: target.path)
         let parsed = ReleaseName.parse(url.lastPathComponent)
         let kind = parsed.isSeries ? "series" : "movie"
         let found = ((try? await services.cinemeta.searchAll(parsed.title)) ?? []).filter { $0.kind == kind }
-        let match = found.first { r in parsed.year.map { r.year.hasPrefix(String($0)) } ?? true } ?? (parsed.year == nil ? found.first : nil)
+        // Con año, el de ese año; sin año, solo si el nombre es exactamente el mismo («Vacaciones.mov» no es la película «Vacation»).
+        func plain(_ text: String) -> String { text.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil).filter { $0.isLetter || $0.isNumber } }
+        let match = parsed.year != nil
+            ? found.first { r in r.year.hasPrefix(String(parsed.year ?? 0)) }
+            : found.first { plain($0.title) == plain(parsed.title) }
         var request: PlayRequest
         if let match {
             let video = parsed.isSeries ? "\(match.metaID):\(parsed.season ?? 1):\(parsed.episode ?? 1)" : match.metaID
@@ -269,7 +284,21 @@ final class AppEnvironment: ObservableObject {
     }
 
     /// Cuántos días se queda un video que te pasaron antes de borrarse solo.
-    static let importedDays: Double = 3
+    nonisolated static let importedDays: Double = 3
+    nonisolated static var importedFolder: URL {
+        let folder = AppFiles.support.appendingPathComponent("Importados", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return folder
+    }
+
+    /// Borra los videos que te pasaron hace más de `importedDays` (los de Documents/Inbox se mueven al abrirlos: no se quedan).
+    nonisolated static func pruneImported() {
+        let fm = FileManager.default
+        let old = (try? fm.contentsOfDirectory(at: importedFolder, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
+        for file in old where ((try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast) < Date().addingTimeInterval(-importedDays * 86_400) {
+            try? fm.removeItem(at: file)
+        }
+    }
 
     /// `orbital-ios://play?kind=&id=&video=` abre el reproductor en ese episodio (donde ibas); `orbital-ios://title?kind=&id=` abre la ficha.
     /// Sin episodio conocido, o si la ficha no carga, se cae a la ficha.

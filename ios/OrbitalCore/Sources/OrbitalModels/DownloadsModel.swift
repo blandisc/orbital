@@ -99,6 +99,22 @@ public final class DownloadsModel: ObservableModel {
     public func resume(_ id: String) async { await services.downloads.resume(id) }
     public func remove(_ id: String) async { await services.downloads.remove(id); Self.clearShared() }
 
+    /// «Buscar subtítulos» de una descarga: lo que hay en OpenSubtitles y tus complementos, con la huella del archivo (los de
+    /// esa copia exacta primero).
+    public func subtitleOptions(_ item: DownloadItem) async -> [SubtitleOption] {
+        let file = await services.downloads.fileURL(item)
+        return await services.finder.subtitleOptions(kind: item.kind, videoID: item.videoID, file: FileFingerprint.of(file))
+    }
+
+    /// Baja ese subtítulo y lo guarda con la descarga (sin conexión también sale). Nombre «es-2.srt»: el reproductor elige por
+    /// el idioma del principio del nombre.
+    public func saveSubtitle(_ item: DownloadItem, _ option: SubtitleOption) async -> Bool {
+        guard let response = try? await services.http.send(HTTPRequest(url: option.url, timeout: 20)), response.status == 200, !response.data.isEmpty else { return false }
+        let two = Streams.languageCodes.first { $0.value == option.language }?.key ?? option.language
+        let count = item.subtitleFiles.filter { ($0 as NSString).lastPathComponent.hasPrefix(two) }.count
+        return await services.downloads.addSubtitle(id: item.id, name: "\(two)-\(count + 1).srt", data: response.data)
+    }
+
     /// Donde se ponen los enlaces para compartir. Se vacía al borrar una descarga y al abrir la app: un enlace olvidado
     /// mantenía ocupados los gigas del archivo borrado.
     public static let sharedFolder = FileManager.default.temporaryDirectory.appendingPathComponent("Compartir", isDirectory: true)

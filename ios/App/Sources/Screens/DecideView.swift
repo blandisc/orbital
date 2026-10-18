@@ -10,6 +10,7 @@ struct DecideView: View {
     @StateObject private var observer: ModelObserver<DecideModel>
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
     /// En qué nivel está la hoja (no el detent: el alto de la corta cambia al medirse y no debe cambiar el nivel).
     @State private var stage: Stage = .quick
     enum Stage { case quick, more, precise }
@@ -112,7 +113,9 @@ struct DecideView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { dismiss(); open(s.route) }
-            HStack(spacing: DS.Space.s3) {
+            // Lado a lado; con letra de accesibilidad, uno debajo del otro (si no, «Barajar» salía letra por letra).
+            let buttonsLayout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: DS.Space.s2)) : AnyLayout(HStackLayout(spacing: DS.Space.s3))
+            buttonsLayout {
                 Button {
                     dismiss()
                     if s.kind == "series" { open(s.route) } else { Task { await env.play(s) } }

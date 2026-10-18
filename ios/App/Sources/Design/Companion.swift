@@ -27,7 +27,7 @@ struct GameNowCard: View {
                     }
                 }
                 HStack(spacing: DS.Space.s2) {
-                    Button(action: onResume) { Label("Volver al juego", systemImage: "play.fill").frame(maxWidth: .infinity) }
+                    Button(action: onResume) { Label("Volver al juego", systemImage: "play.fill").lineLimit(1).minimumScaleFactor(DS.Size.statScale).frame(maxWidth: .infinity) }
                         .dsPrimaryButton().controlSize(.large).disabled(busy)
                     DSIconButton(symbol: "house", label: "Ir al inicio", action: onHome).disabled(busy)
                     ConfirmIconButton(symbol: "xmark", prompt: "¿Cerrar el juego?", label: "Cerrar el juego", action: onClose)
@@ -253,7 +253,7 @@ struct GameSessionSummary: View {
         let session = item.played ?? .init(seconds: 0)
         VStack(alignment: .leading, spacing: DS.Space.s4) {
             ZStack(alignment: .bottomLeading) {
-                PosterView(url: session.art, title: item.title, aspect: DS.Poster.stillAspect)
+                PosterView(url: session.art, title: "", aspect: DS.Poster.stillAspect)   // sin arte, liso (el nombre ya va encima)
                 LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom)
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Eyebrow(text: Text("Sesión terminada"), accent: true, onArt: true)
@@ -262,12 +262,10 @@ struct GameSessionSummary: View {
                 .padding(DS.Space.s4)
             }
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-            HStack(alignment: .firstTextBaseline, spacing: DS.Space.s5) {
-                stat(Text(verbatim: Strings.duration(Int(session.seconds / 60))), Text("esta vez"))
-                if let total = session.totalSeconds, total > session.seconds {
-                    stat(Text(verbatim: Strings.duration(Int(total / 60))), Text("en total"))
-                }
-                if session.captures > 0 { stat(Text(verbatim: "\(session.captures)"), Text("capturas")) }
+            // En renglón; con letra grande, uno debajo del otro (las cifras no se parten).
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: DS.Space.s5) { stats(session) }
+                VStack(alignment: .leading, spacing: DS.Space.s2) { stats(session) }
             }
             if session.crashed { DSNotice(text: "El juego se cerró solo: no fuiste tú. Si se repite, revisa sus ajustes en la consola.", tone: .warn) }
             else if session.lowMemory { DSNotice(text: "Se cerró por falta de memoria: cierra otras apps de la consola antes de volver a jugar.", tone: .warn) }
@@ -276,9 +274,17 @@ struct GameSessionSummary: View {
         .padding(DS.Space.s5)
     }
 
+    @ViewBuilder private func stats(_ session: OrbitalRemote.InboxItem.Session) -> some View {
+        stat(Text(verbatim: Strings.duration(Int(session.seconds / 60))), Text("esta vez"))
+        if let total = session.totalSeconds, total > session.seconds {
+            stat(Text(verbatim: Strings.duration(Int(total / 60))), Text("en total"))
+        }
+        if session.captures > 0 { stat(Text(verbatim: "\(session.captures)"), Text("capturas")) }
+    }
+
     private func stat(_ value: Text, _ label: Text) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            value.recipe(.title).monospacedDigit()
+            value.recipe(.title).monospacedDigit().fixedSize()
             label.recipe(.caption, color: DS.textMuted)
         }
         .accessibilityElement(children: .combine)

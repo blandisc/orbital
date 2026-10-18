@@ -90,8 +90,8 @@ struct HardwareVolumeButtons: UIViewRepresentable {
             observation?.invalidate()
             observation = nil
             if let released { NotificationCenter.default.removeObserver(released) }
-            // De vuelta a la sesión de video (sin mezclar), como la pide el reproductor.
-            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
+            // Se suelta la sesión avisando a las demás apps (tu música sigue, sin cortarse); el reproductor pone la suya al abrir.
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
             if let original, abs(original - base) > Self.noise { set(original) }
         }
 

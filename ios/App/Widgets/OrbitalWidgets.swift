@@ -82,7 +82,7 @@ struct DownloadLiveActivity: Widget {
 
     private func subtitle(_ state: DownloadActivityAttributes.ContentState) -> LocalizedStringKey {
         if state.done { return "Descargado · listo para ver sin conexión" }
-        if state.waiting { return "En pausa" }
+        if state.waiting { return "En espera" }   // en pausa o esperando red
         return state.remaining > 1 ? "Orbital · faltan \(state.remaining)" : "Orbital · descargando"
     }
 }

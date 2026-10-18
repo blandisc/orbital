@@ -529,6 +529,17 @@
         }
       }
     },
+    "Ahorro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saver"
+          }
+        }
+      }
+    },
     "Ajustes": {
       "extractionState": "manual",
       "localizations": {
@@ -976,6 +987,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Finding the best source…"
+          }
+        }
+      }
+    },
+    "Buscando subtítulos…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Searching subtitles…"
           }
         }
       }
@@ -2883,6 +2905,17 @@
         }
       }
     },
+    "En espera": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On hold"
+          }
+        }
+      }
+    },
     "En internet": {
       "extractionState": "manual",
       "localizations": {
@@ -3147,6 +3180,17 @@
         }
       }
     },
+    "Equilibrado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Balanced"
+          }
+        }
+      }
+    },
     "Error de Stremio": {
       "extractionState": "manual",
       "localizations": {
@@ -3231,6 +3275,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Specials"
+          }
+        }
+      }
+    },
+    "Esperando Wi‑Fi": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for Wi‑Fi"
+          }
+        }
+      }
+    },
+    "Esperando conexión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for connection"
           }
         }
       }
@@ -4984,6 +5050,17 @@
         }
       }
     },
+    "No encontré subtítulos para este video (o no hay conexión).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find subtitles for this video (or there's no connection)."
+          }
+        }
+      }
+    },
     "No encontré subtítulos para este video.": {
       "extractionState": "manual",
       "localizations": {
@@ -5167,6 +5244,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't open that title."
+          }
+        }
+      }
+    },
+    "No pude bajar ese subtítulo: prueba otro.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't download that subtitle: try another one."
           }
         }
       }
@@ -6326,6 +6414,17 @@
         }
       }
     },
+    "Rendimiento": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Performance"
+          }
+        }
+      }
+    },
     "Reparto": {
       "extractionState": "manual",
       "localizations": {
@@ -6586,6 +6685,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Time's up"
+          }
+        }
+      }
+    },
+    "Se guardan con la descarga: también los ves sin conexión.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They are saved with the download: you can watch them offline too."
           }
         }
       }
@@ -7136,6 +7246,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Subtitles"
+          }
+        }
+      }
+    },
+    "Subtítulos guardados con la descarga.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitles saved with the download."
           }
         }
       }
@@ -8456,6 +8577,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "continue it on my iPhone"
+          }
+        }
+      }
+    },
+    "termina a la %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ends at %@"
           }
         }
       }

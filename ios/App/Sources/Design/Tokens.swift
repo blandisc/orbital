@@ -368,6 +368,8 @@ enum DS {
         static let playhead: CGFloat = 14
         /// Cuántos segundos antes de un susto vibra (si pediste el aviso) y cada cuánto se revisa.
         static let scareLead: Double = 5, scareTick: Double = 0.5
+        /// Tras «mantener», cuánto se ignora el toque de soltar.
+        static let holdTapWindow: TimeInterval = 0.8
         /// Cuánto se mantiene una tecla para su segunda acción (mantener «Atrás»: al inicio).
         static let holdSeconds: Double = 0.6
         /// La barra del volumen de la TV en el control.
@@ -467,6 +469,8 @@ enum DS {
 
     /// Esperas de la interfaz (nanosegundos para `Task.sleep`).
     enum Timing {
+        /// Entre que se cierra una hoja y se abre otra (el resumen del juego tras cerrar su hoja).
+        static let sheetHandoff: UInt64 = 600_000_000
         /// Cuánto espera una confirmación («¿Ver en la TV?») antes de cerrarse sola.
         static let confirm: UInt64 = 3_500_000_000
         static let controlsHide = UInt64(DesignTokens.Timing.controlsHide * 1e9), banner = UInt64(DesignTokens.Timing.banner * 1e9)

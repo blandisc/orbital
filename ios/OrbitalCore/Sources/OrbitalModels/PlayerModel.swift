@@ -109,6 +109,9 @@ public final class PlayerModel: ObservableModel {
     private var knownSubtitleIDs = Set<Int>()
     private var preloadedNext = false
     private var upNextDeadline: Date?
+    private var lastTick: Date?
+    /// El panel de ajustes del video está abierto (la tarjeta de «Siguiente» no se ve).
+    public var panelOpen = false
     private var upNextDismissed = false
     private var autoAdvances = 0
     private var reachedEnd = false
@@ -281,10 +284,13 @@ public final class PlayerModel: ObservableModel {
     public func tick() async {
         guard phase != .closed, !closing else { return }
         let now = clock()
+        defer { lastTick = now }
         if let deadline = startupDeadline, now >= deadline, !hasPlayed, phase == .preparing, !retrying { return await retryWithAnotherSource()?.value ?? () }
         if snapshot.state == .playing {
             if now.timeIntervalSince(lastSave) >= PlaybackRules.saveEvery { await report(.tick) }
             if var card = upNext, let deadline = upNextDeadline {
+                // Con el panel de ajustes abierto la tarjeta no se ve: la cuenta se detiene (no cambia de episodio a escondidas).
+                if panelOpen { upNextDeadline = deadline.addingTimeInterval(now.timeIntervalSince(lastTick ?? now)); lastTick = now; return }
                 card.secondsLeft = max(0, Int(deadline.timeIntervalSince(now).rounded(.up)))
                 upNext = card
                 if now >= deadline { await advance(auto: true)?.value }

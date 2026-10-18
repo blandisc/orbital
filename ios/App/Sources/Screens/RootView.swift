@@ -61,6 +61,9 @@ struct RootView: View {
             if env.services.orbital.isConfigured { _ = try? await env.services.connectOrbital() }
         }
         .task { env.tvNow.setActive(scenePhase == .active) }
+        // Las colecciones (una para toda la app): lo visto se vuelve a preguntar y otra cuenta no hereda nada.
+        .onChange(of: env.watchedSomething) { ListsView.sharedCollections.forgetWatched() }
+        .onChange(of: env.services.generation) { ListsView.sharedCollections.resetAccount() }
         .task(priority: .userInitiated) {
             // Buscar, adelantado y primero (antes que la fila de imágenes de Inicio): el color de su n.º 1 y los pósters del
             // Top 10 de la copia guardada; luego lo de hoy, y si cambió, otra vez.

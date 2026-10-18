@@ -130,7 +130,7 @@ struct DSSectionHead: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                if let eyebrow { eyebrow.recipe(.eyebrow, color: DS.eyebrow).lineLimit(1) }
+                if let eyebrow { eyebrow.recipe(.eyebrow, color: DS.eyebrow).lineLimit(2) }   // con letra grande, en dos renglones (no «En tendencia y…»)
                 HStack(alignment: .center, spacing: DS.Space.s2) {
                     title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
                     if let source { SourceBadge(source: source) }
@@ -529,7 +529,7 @@ struct DSNotice: View {
     }
 
     private var symbol: String {
-        switch tone { case .info: "info.circle"; case .success: "checkmark.circle.fill"; case .warn: "wifi.slash"; case .error: "exclamationmark.triangle.fill" }
+        switch tone { case .info: "info.circle"; case .success: "checkmark.circle.fill"; case .warn: "exclamationmark.triangle"; case .error: "exclamationmark.triangle.fill" }
     }
 
     private var color: Color {
@@ -865,13 +865,19 @@ struct StorageBar: View {
                 .clipShape(Capsule())
             }
             .frame(height: DS.Storage.height)
-            HStack(spacing: DS.Space.s3) {
-                ForEach(parts) { part in legend(part.label + Text(verbatim: " \(format(part.bytes))"), color: part.color) }
-                legend(Text("Otras apps"), color: DS.textFaint)
+            // En renglón; si no cabe (letra grande, iPhone chico), uno debajo del otro: sin «Series…».
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Space.s3) { legends }
+                VStack(alignment: .leading, spacing: DS.Space.s1) { legends }
             }
         }
         .padding(.vertical, DS.Space.s1)
         .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder private var legends: some View {
+        ForEach(parts) { part in legend(part.label + Text(verbatim: " \(format(part.bytes))"), color: part.color) }
+        legend(Text("Otras apps"), color: DS.textFaint)
     }
 
     private func segment(_ bytes: Int64, width: CGFloat, color: Color) -> some View {

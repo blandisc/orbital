@@ -100,12 +100,14 @@ struct RemoteKey: View {
     let action: () -> Void
     @State private var taps = 0
     @State private var held = 0
-    @State private var heldFired = false
+    /// Cuándo se disparó «mantener»: el toque que llega justo después (al soltar) no se manda; uno de verdad, luego, sí.
+    @State private var heldAt: Date?
 
     var body: some View {
         Button {
             // Si se mantuvo (su segunda acción ya se mandó), soltar no manda también la de un toque.
-            if heldFired { heldFired = false; return }
+            if let held = heldAt, Date().timeIntervalSince(held) < DS.Remote.holdTapWindow { heldAt = nil; return }
+            heldAt = nil
             taps += 1; action()
         } label: {
             VStack(spacing: DS.Space.s1) {
@@ -127,7 +129,7 @@ struct RemoteKey: View {
         .sensoryFeedback(.impact(flexibility: .soft), trigger: taps)
         .simultaneousGesture(LongPressGesture(minimumDuration: DS.Remote.holdSeconds).onEnded { _ in
             guard let longPress else { return }
-            held += 1; heldFired = true; longPress()
+            held += 1; heldAt = Date(); longPress()
         })
         .accessibilityActions { if let longPress { Button("Mantener") { longPress() } } }
         .sensoryFeedback(.impact(weight: .heavy), trigger: held)
@@ -347,34 +349,47 @@ private struct ScareStatus: View {
         let next = scares.first { $0.time > position }
         let left = scares.filter { $0.time > position }
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(alignment: .firstTextBaseline) {
-                Label("Sustos", systemImage: "bolt.heart").recipe(.cardTitle)
-                Spacer()
-                let majorCount = left.filter(\.major).count
-                Text("\(left.count) por delante · \(majorCount) fuertes").recipe(.caption, color: DS.textMuted)
+            let majorCount = left.filter(\.major).count
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline) {
+                    Label("Sustos", systemImage: "bolt.heart").recipe(.cardTitle).fixedSize()
+                    Spacer()
+                    Text("\(left.count) por delante · \(majorCount) fuertes").recipe(.caption, color: DS.textMuted)
+                }
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    Label("Sustos", systemImage: "bolt.heart").recipe(.cardTitle)
+                    Text("\(left.count) por delante · \(majorCount) fuertes").recipe(.caption, color: DS.textMuted)
+                }
             }
             ScareTimeline(position: position, duration: duration, scares: scares)
-            HStack(spacing: DS.Space.s3) {
-                if let next {
-                    let seconds = Int(next.time - position)
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(verbatim: clock(seconds)).recipe(.title, color: seconds <= Int(DS.Remote.scareLead) ? DS.danger : DS.text).monospacedDigit()
-                            .contentTransition(.numericText(countsDown: true))
-                        (next.major ? Text("para el siguiente · fuerte") : Text("para el siguiente · leve")).recipe(.caption, color: DS.textMuted)
-                    }
-                } else {
-                    Label("Ya no quedan sustos", systemImage: "checkmark.circle").recipe(.secondary, color: DS.good)
-                }
-                Spacer()
-                Toggle(isOn: $warn) { Label("Avisarme", systemImage: "iphone.radiowaves.left.and.right").recipe(.footnote, color: DS.text) }
-                    .toggleStyle(.button).buttonStyle(.bordered).tint(warn ? DS.accent : DS.textMuted)
-                    .accessibilityHint(Text("Vibra unos segundos antes de cada susto"))
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Space.s3) { countdown(next); Spacer(); warnToggle.fixedSize() }
+                VStack(alignment: .leading, spacing: DS.Space.s2) { countdown(next); warnToggle }
             }
             Text("Tiempos de Where's The Jump").recipe(.caption, color: DS.textFaint)
         }
         .padding(DS.Space.s4)
         .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
 
+    }
+
+    @ViewBuilder private func countdown(_ next: JumpScare?) -> some View {
+        if let next {
+            let seconds = Int(next.time - position)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(verbatim: clock(seconds)).recipe(.title, color: seconds <= Int(DS.Remote.scareLead) ? DS.danger : DS.text).monospacedDigit()
+                    .contentTransition(.numericText(countsDown: true))
+                (next.major ? Text("para el siguiente · fuerte") : Text("para el siguiente · leve")).recipe(.caption, color: DS.textMuted)
+            }
+        } else {
+            Label("Ya no quedan sustos", systemImage: "checkmark.circle").recipe(.secondary, color: DS.good)
+        }
+    }
+
+    private var warnToggle: some View {
+        Toggle(isOn: $warn) { Label("Avisarme", systemImage: "iphone.radiowaves.left.and.right").recipe(.footnote, color: DS.text) }
+            .toggleStyle(.button).buttonStyle(.bordered).tint(warn ? DS.accent : DS.textMuted)
+            .accessibilityHint(Text("Vibra unos segundos antes de cada susto"))
     }
 
     private func clock(_ seconds: Int) -> String {
@@ -423,7 +438,7 @@ private struct ScareWarning: ViewModifier {
         // El siguiente que está a menos de `scareLead` segundos: su tiempo identifica el aviso (dos seguidos vibran dos veces).
         let soon = scares.first { $0.time > position && $0.time - position <= DS.Remote.scareLead }?.time
         content
-            .onChange(of: soon) { _, time in if enabled, let time, time != warned { warned = time; buzz += 1 } }
+            .onChange(of: soon, initial: true) { _, time in if enabled, let time, time != warned { warned = time; buzz += 1 } }
             .sensoryFeedback(.warning, trigger: buzz)
     }
 }

@@ -66,12 +66,19 @@ public final class HomeModel: ObservableModel {
         guard services.isSignedIn else { return }
         // Una a la vez: deslizar, volver de ver algo y volver a la app pedían todo a la vez y la que terminaba al último
         // pisaba a las demás (y regresaba lo que acababas de quitar). La que llega mientras otra corre, espera a esa.
-        if let running = refreshing { return await running.value }
-        let task = Task { await self.load() }
+        // Si ya va una, al terminar se da otra pasada (lo que pidió esta, p. ej. tu avance recién guardado, ya no se pierde).
+        if let running = refreshing { rerun = true; return await running.value }
+        let task = Task {
+            repeat { rerun = false; await self.load() } while rerun
+        }
         refreshing = task
         await task.value
         refreshing = nil
     }
+
+    private var rerun = false
+    /// Lo que quitaste de «Seguir viendo» mientras se cargaba: una carga que ya venía no lo regresa.
+    private var dismissed: Set<String> = []
 
     private var refreshing: Task<Void, Never>?
 
@@ -89,7 +96,7 @@ public final class HomeModel: ObservableModel {
             }
             let mine = all.filter(\.inLibrary)
             async let continued = items(continueItems), listed = items(mine)   // las dos traducciones a la vez
-            continueWatching = await continued
+            continueWatching = await continued.filter { !dismissed.contains($0.metaID) }
             myList = await listed
             offline = false; error = nil
             services.kv.set(Self.cacheKey, data: try? JSONEncoder().encode(Cache(continueWatching: continueWatching, myList: myList)))
@@ -185,7 +192,7 @@ public final class HomeModel: ObservableModel {
 
     /// «Quitar de Seguir viendo».
     public func dismiss(_ item: HomeItem) async {
-        if let refreshing { await refreshing.value }   // que una carga que ya venía no lo regrese
+        dismissed.insert(item.metaID)   // al instante (sin esperar la carga en curso); la carga lo filtra
         continueWatching.removeAll { $0.metaID == item.metaID }
         publishWidget()
         try? await services.watch.dismissContinue(metaID: item.metaID)

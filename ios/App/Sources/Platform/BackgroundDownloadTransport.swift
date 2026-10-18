@@ -167,6 +167,12 @@ final class BackgroundDownloadTransport: NSObject, DownloadTransport, URLSession
         continuation.yield(.failed(id: id, status: (task.response as? HTTPURLResponse)?.statusCode, message: error.localizedDescription))
     }
 
+    /// Sin la red que pide (con «Solo con Wi‑Fi», sin Wi‑Fi): se dice «Esperando Wi‑Fi» en vez de parecer que baja.
+    func urlSession(_ session: URLSession, taskIsWaitingForConnectivity task: URLSessionTask) {
+        guard let id = task.taskDescription else { return }
+        continuation.yield(.waiting(id: id))
+    }
+
     func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
         DispatchQueue.main.async { [weak self] in self?.backgroundCompletion?(); self?.backgroundCompletion = nil }
     }

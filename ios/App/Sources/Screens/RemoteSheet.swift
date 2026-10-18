@@ -278,7 +278,7 @@ struct RemoteSheet: View {
                 .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             }
             .accessibilityLabel(title)
-            .accessibilityValue(Text(verbatim: tracks.first(where: \.selected)?.label ?? ""))
+            .accessibilityValue(tracks.first(where: \.selected).map { Text(verbatim: $0.label) } ?? Text("Sin subtítulos"))
         }
     }
 
@@ -335,6 +335,7 @@ struct RemoteSheet: View {
     private func typing(_ model: TVNowModel, autoFocus: Bool) -> some View {
         RemoteTextField(text: $text, autoFocus: autoFocus) {
             let typed = text
+            sentText = text   // lo que espera mandarse ya va aquí (no reemplaza el campo después de buscar)
             Task { await model.type(typed, submit: true, replace: true) }
         }
         .task(id: text) {

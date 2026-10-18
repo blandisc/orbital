@@ -97,6 +97,7 @@ struct SourceBadge: View {
             .font(DS.TextRecipe.caption.font.weight(.bold)).tracking(DS.Collections.badgeRadius / 10)   // negrita, como `.source-badge` de la TV
             .foregroundStyle(DS.paper)
             .padding(.horizontal, DS.Space.s1 + DS.Size.hairline).padding(.vertical, DS.Size.hairline)
+            .lineLimit(1).fixedSize()   // un sello no se parte en dos renglones («STRE / MIO»)
             .background(source.color, in: RoundedRectangle(cornerRadius: DS.Collections.badgeRadius, style: .continuous))
             .accessibilityLabel(Text("De \(source.name)"))
     }

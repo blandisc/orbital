@@ -9,6 +9,8 @@ struct DownloadsView: View {
     @EnvironmentObject private var env: AppEnvironment
     @StateObject private var observer: ModelObserver<DownloadsModel>
     @StateObject private var tint = ArtTint()
+    /// La descarga a la que se le buscan subtítulos.
+    @State private var subtitlesFor: DownloadItem?
 
     init() {
         _observer = StateObject(wrappedValue: ModelObserver(DownloadsModel(AppEnvironment.shared.services, freeSpace: { DiskSpace.freeBytes() })))
@@ -85,6 +87,7 @@ struct DownloadsView: View {
         .navigationDestination(for: DownloadSeriesRoute.self) { DownloadSeriesView(observer: observer, metaID: $0.metaID) }
         .navigationDestination(for: DownloadSeasonRoute.self) { DownloadSeasonView(observer: observer, metaID: $0.metaID, season: $0.season) }
         .task { await model.run() }
+        .sheet(item: $subtitlesFor) { item in DownloadSubtitlesSheet(item: item, model: model).fittedSheet().presentationDragIndicator(.visible) }
         .task(id: model.active.first?.metaID) {
             // El arte de metahub solo existe para ids de IMDb; con otro id, fondo liso.
             await tint.load(model.active.first.flatMap { $0.metaID.hasPrefix("tt") ? String(format: ForYou.metahubBackground, $0.metaID) : nil })
@@ -120,9 +123,12 @@ struct DownloadsView: View {
 
     private func status(_ item: DownloadItem) -> String? {
         let language = env.services.appSettings.uiLanguage
+        let settings = env.services.appSettings
         switch item.state {
         case .queued: return Strings.tr("En cola", language: language)
-        case .downloading: return "\(bytes(item.writtenBytes)) / \(item.expectedBytes.map(bytes) ?? "—")"
+        case .downloading:
+            if item.waitingForNetwork { return Strings.tr(settings.wifiOnlyDownloads ? "Esperando Wi‑Fi" : "Esperando conexión", language: language) }
+            return "\(bytes(item.writtenBytes)) / \(item.expectedBytes.map(bytes) ?? "—")"
         case .paused: return Strings.tr("En pausa", language: language)
         case .failed: return item.lastError.map { Strings.message($0, language: language) } ?? Strings.tr("No se pudo descargar", language: language)   // los errores fijos de la descarga, también traducidos
         case .done: return nil
@@ -162,6 +168,7 @@ struct DownloadsView: View {
 
     /// Lo que se hace con el archivo, como con cualquier otro: compartirlo (AirDrop, Guardar en Archivos, otra app) o borrarlo.
     @ViewBuilder func fileMenu(_ item: DownloadItem, title: String, model: DownloadsModel) -> some View {
+        Button("Buscar subtítulos", systemImage: "captions.bubble") { subtitlesFor = item }
         ShareLink(item: DownloadedFile(item: item, model: model), preview: SharePreview(Text(verbatim: title))) {
             Label("Compartir el archivo", systemImage: "square.and.arrow.up")
         }
@@ -229,6 +236,7 @@ struct DownloadSeriesView: View {
 struct DownloadSeasonView: View {
     @ObservedObject var observer: ModelObserver<DownloadsModel>
     @EnvironmentObject private var env: AppEnvironment
+    @State private var subtitlesFor: DownloadItem?
     let metaID: String
     let season: Int
 
@@ -253,6 +261,7 @@ struct DownloadSeasonView: View {
                     .buttonStyle(.plain)
                     .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }
                     .contextMenu {
+                        Button("Buscar subtítulos", systemImage: "captions.bubble") { subtitlesFor = item }
                         ShareLink(item: DownloadedFile(item: item, model: model), preview: SharePreview(Text(verbatim: item.subtitle.isEmpty ? item.title : item.subtitle))) {
                             Label("Compartir el archivo", systemImage: "square.and.arrow.up")
                         }
@@ -264,6 +273,71 @@ struct DownloadSeasonView: View {
         .listRowSpacing(DS.Space.s2)
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle(Text(verbatim: group?.title ?? "")).navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $subtitlesFor) { item in DownloadSubtitlesSheet(item: item, model: model).fittedSheet().presentationDragIndicator(.visible) }
+    }
+}
+
+/// «Buscar subtítulos» de una descarga: los idiomas que hay (el tuyo primero) y, al tocar uno, se baja y se guarda con el video
+/// (sale sin conexión). Cada toque suma otro de ese idioma, por si el primero no va a tiempo.
+struct DownloadSubtitlesSheet: View {
+    let item: DownloadItem
+    let model: DownloadsModel
+    @EnvironmentObject private var env: AppEnvironment
+    @Environment(\.locale) private var locale
+    @State private var found: [SubtitleOption]?
+    @State private var saved: [String: Int] = [:]
+    @State private var saving: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            Text("Subtítulos").recipe(.title)
+            Text(verbatim: item.subtitle.isEmpty ? item.title : "\(item.title) · \(item.subtitle)").recipe(.footnote).lineLimit(1)
+            if let found {
+                if found.isEmpty {
+                    DSNotice(text: "No encontré subtítulos para este video (o no hay conexión).")
+                } else {
+                    Text("Se guardan con la descarga: también los ves sin conexión.").recipe(.caption, color: DS.textMuted)
+                    FlowChips {
+                        ForEach(languages(found), id: \.self) { code in
+                            let options = found.filter { $0.language == code }
+                            let done = saved[code, default: 0]
+                            PanelChip(title: Text(verbatim: done == 0 ? "\(name(code)) · \(options.count)" : "\(name(code)) · \(done)/\(options.count)"),
+                                      selected: done > 0, symbol: saving == code ? "arrow.down.circle.dotted" : (done > 0 ? "checkmark" : "arrow.down.circle")) {
+                                Task { await save(code, options) }
+                            }
+                            .disabled(saving != nil || done >= options.count)
+                        }
+                    }
+                }
+            } else {
+                HStack(spacing: DS.Space.s2) { ProgressView(); Text("Buscando subtítulos…").recipe(.footnote) }
+            }
+        }
+        .padding(DS.Space.s5)
+        .task { found = await model.subtitleOptions(item) }
+    }
+
+    private func save(_ code: String, _ options: [SubtitleOption]) async {
+        let next = saved[code, default: 0]
+        guard next < options.count else { return }
+        saving = code
+        let ok = await model.saveSubtitle(item, options[next])
+        saving = nil
+        if ok { saved[code, default: 0] += 1; env.notify("Subtítulos guardados con la descarga.", tone: .success) }
+        else { env.notify("No pude bajar ese subtítulo: prueba otro.") }
+    }
+
+    /// El idioma de la app primero; luego, los que más tienen.
+    private func languages(_ found: [SubtitleOption]) -> [String] {
+        var counts: [String: Int] = [:]
+        for o in found { counts[o.language, default: 0] += 1 }
+        let mine = Set([env.services.appSettings.subtitles, env.services.appSettings.audio].flatMap { [$0, Streams.languageCodes[$0] ?? $0] })
+        return counts.keys.sorted { a, b in mine.contains(a) != mine.contains(b) ? mine.contains(a) : (counts[a] ?? 0) > (counts[b] ?? 0) }
+    }
+
+    private func name(_ code: String) -> String {
+        let two = Streams.languageCodes.first { $0.value == code }?.key ?? code
+        return locale.localizedString(forLanguageCode: two)?.capitalized(with: locale) ?? code
     }
 }
 

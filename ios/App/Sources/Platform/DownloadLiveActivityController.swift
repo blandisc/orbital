@@ -39,7 +39,7 @@ final class DownloadLiveActivityController {
         let state = DownloadActivityAttributes.ContentState(
             title: current.title,
             fraction: expected > 0 ? min(1, Double(written) / Double(expected)) : 0,
-            remaining: pending.count, waiting: !pending.contains { $0.state == .downloading }, language: language(),
+            remaining: pending.count, waiting: !pending.contains { $0.state == .downloading && !$0.waitingForNetwork }, language: language(),
             detail: current.subtitle, poster: await posterFile(current))
         if let last, last.title == state.title, last.detail == state.detail, last.poster == state.poster, last.remaining == state.remaining,
            last.waiting == state.waiting, last.language == state.language, abs(last.fraction - state.fraction) < 0.01 { return }

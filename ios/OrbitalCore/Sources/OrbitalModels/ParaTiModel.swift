@@ -289,8 +289,8 @@ public final class ParaTiModel: ObservableModel {
         }
     }
 
-    /// «Actualizar»: se piden otra vez los estantes aunque ya haya algo (lo de antes se queda a la vista mientras).
-    private var reloading = false
+    /// Lo que «Actualizar» marcó como viejo: se vuelve a pedir la próxima vez que haga falta (lo de antes se queda a la vista).
+    private var staleKeys: Set<String> = [], staleRankings: Set<String> = []
 
     public func key(_ list: ForYouList) -> String { key(listID: list.id, splits: list.splitsKinds) }
     func key(listID: String, splits: Bool) -> String { "\(listID):\(splits ? kind : "-")" }
@@ -301,7 +301,7 @@ public final class ParaTiModel: ObservableModel {
         for shelf in shelves {
             for id in shelf.listIDs {
                 let k = key(listID: id, splits: shelf.splitsKinds)
-                if id != "estrenos", railItems[k] == nil || reloading, !wanted.contains(where: { $0.key == k }) { wanted.append((k, id)) }
+                if id != "estrenos", railItems[k] == nil || staleKeys.contains(k), !wanted.contains(where: { $0.key == k }) { wanted.append((k, id)) }
             }
         }
         guard !wanted.isEmpty else { return }
@@ -332,7 +332,7 @@ public final class ParaTiModel: ObservableModel {
             for await (k, found) in group {
                 loadingKeys.remove(k)
                 // Si falló o se canceló (te fuiste a mitad de la carga), no se guarda vacío: la próxima carga lo vuelve a pedir.
-                if let found, !Task.isCancelled { railItems[k] = found }
+                if let found, !Task.isCancelled { railItems[k] = found; staleKeys.remove(k) }
             }
         }
     }
@@ -380,7 +380,7 @@ public final class ParaTiModel: ObservableModel {
 
     /// Pide todos los rankings de la plataforma que falten (series y películas), a la vez.
     public func loadRankings(_ hub: PlatformHub) async {
-        let wanted = hub.rankings.filter { (rankingItems[$0.id] == nil || reloading) && !rankingLoading.contains($0.id) }
+        let wanted = hub.rankings.filter { (rankingItems[$0.id] == nil || staleRankings.contains($0.id)) && !rankingLoading.contains($0.id) }
         guard !wanted.isEmpty else { return }
         rankingLoading.formUnion(wanted.map(\.id))
         let remote = services.forYouRemote, local = services.forYou, source = source
@@ -395,7 +395,7 @@ public final class ParaTiModel: ObservableModel {
             }
             for await (id, found) in group {
                 rankingLoading.remove(id)
-                if let found, !Task.isCancelled { rankingItems[id] = found }
+                if let found, !Task.isCancelled { rankingItems[id] = found; staleRankings.remove(id) }
             }
         }
     }
@@ -446,8 +446,10 @@ public final class ParaTiModel: ObservableModel {
         // Lo de antes se queda a la vista hasta que llega lo nuevo (antes se vaciaba y el destacado brincaba al mosaico y de
         // regreso, con su toque y su color).
         featuredRotation += 1
-        reloading = true
+        // Todo lo que hay se marca viejo: se vuelve a pedir (aquí, al cambiar de tipo o al abrir una plataforma) y mientras
+        // tanto se queda a la vista.
+        staleKeys = Set(railItems.keys)
+        staleRankings = Set(rankingItems.keys)
         await load()
-        reloading = false
     }
 }

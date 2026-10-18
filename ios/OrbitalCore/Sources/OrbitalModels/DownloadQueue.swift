@@ -23,7 +23,10 @@ extension Services {
             // Cambiar la copia que ya tienes por otra fuente (una sola por película o episodio): la de antes se borra hasta que la
             // nueva ya tiene enlace y cabe (contando lo que libera la vieja); si algo falla antes, te quedas con la que tenías.
             if replace, let old = await downloads.item(item.id) {
-                if let size = item.expectedBytes, size > freeSpace() + old.writtenBytes { return .notEnoughSpace(DownloadError.notEnoughSpace(needed: size, free: freeSpace() + old.writtenBytes).description) }
+                guard await downloads.canFit(item, freeing: old.id) else {
+                    return .notEnoughSpace(DownloadError.notEnoughSpace(needed: item.expectedBytes ?? 0, free: freeSpace() + old.writtenBytes).description)
+                }
+                DownloadsModel.clearShared()   // un enlace de «Compartir» mantendría ocupado el espacio de la vieja
                 await downloads.remove(old.id)
             }
             try await downloads.enqueue(item, url: url)

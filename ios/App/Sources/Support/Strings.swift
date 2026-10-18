@@ -113,7 +113,9 @@ enum Strings {
     static func endsAt(minutesLeft: Int, now: Date = Date(), language: String) -> String {
         let end = Vocabulary.endTime(minutesLeft: minutesLeft, now: now)
         let time = clock(end, language: language)
-        return String(format: tr("termina a las %@", language: language), time)
+        // «a la 1:05», «a las 2:05» (en español la una va en singular).
+        let one = Calendar.current.component(.hour, from: end) % 12 == 1
+        return String(format: tr(one ? "termina a la %@" : "termina a las %@", language: language), time)
     }
 
     /// La hora en 12 horas, como la TV y como se dice en México: «9:05 p. m.» (en inglés, «9:05 PM»).

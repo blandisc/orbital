@@ -33,6 +33,8 @@ public struct DownloadItem: Sendable, Codable, Equatable, Identifiable {
     public var attempts = 0
     public var refreshes = 0              // cuántas veces se pidió un enlace nuevo (tope: `Downloads.maxRefreshes`)
     public var lastError: String?
+    /// En espera de red (no se guarda: es del momento).
+    public var waitingForNetwork = false
     public var createdAt: Double
     public var finishedAt: Double?
 
@@ -99,6 +101,8 @@ public enum DownloadEvent: Sendable, Equatable {
     case progress(id: String, written: Int64, total: Int64?)
     case finished(id: String)
     case failed(id: String, status: Int?, message: String)
+    /// El sistema la tiene en espera de red (con «Solo con Wi‑Fi», sin Wi‑Fi).
+    case waiting(id: String)
 }
 
 public enum DownloadMessages {
@@ -208,6 +212,15 @@ public actor Downloads {
     }
 
     /// Añade a la cola. `url` es el enlace de la fuente (se guarda en el Keychain, no en el archivo de la cola).
+    /// ¿Cabe esta descarga si se borra `freeing`? La misma cuenta que `enqueue` (con su margen y lo que falta de las demás):
+    /// cambiar de fuente no borra tu copia si la nueva no va a caber.
+    public func canFit(_ item: DownloadItem, freeing: String) -> Bool {
+        guard let size = item.expectedBytes else { return true }
+        let old = items[freeing]?.writtenBytes ?? 0
+        let needed = Int64(Double(size) * 1.05) + Self.spaceMargin + pendingBytes(excluding: item.id)
+        return needed <= freeSpace() + old
+    }
+
     public func enqueue(_ item: DownloadItem, url: URL) throws {
         if let existing = items[item.id] {
             if existing.state == .done { throw DownloadError.alreadyDownloaded }
@@ -274,6 +287,8 @@ public actor Downloads {
                 item.state = .done; item.writtenBytes = onDisk; item.finishedAt = clock().timeIntervalSince1970; item.lastError = nil
                 items[item.id] = item
                 secrets.set(SecretKey.download(item.id), nil)
+                let id = item.id
+                Task { await saveSubtitles(for: id); changed() }   // también sus subtítulos, como al terminar normal
                 continue
             }
             // Se reanuda donde está el archivo parcial de verdad. En segundo plano lo bajado vive en los datos de reanudación
@@ -312,9 +327,15 @@ public actor Downloads {
 
     private func handle(_ event: DownloadEvent) async {
         switch event {
+        case .waiting(let id):
+            guard var item = items[id], item.state == .downloading, !item.waitingForNetwork else { return }
+            item.waitingForNetwork = true
+            items[id] = item
+            changed()
         case .progress(let id, let written, let total):
             guard var item = items[id], item.state == .downloading else { return }
             item.writtenBytes = written
+            item.waitingForNetwork = false
             // El tamaño del servidor manda (la fuente puede anunciar el de todo un paquete de temporada), salvo que sea
             // diminuto frente a lo anunciado: una lista HLS de 6 kB o una página de error no son el video, y la revisión
             // al terminar lo tiene que poder ver.
@@ -397,6 +418,21 @@ public actor Downloads {
             item.subtitleFiles.append("subs/\(name)")
         }
         items[id] = item
+    }
+
+    /// Un subtítulo que buscaste para una descarga (en «Buscar subtítulos»): se guarda junto al video, para verlo sin conexión.
+    @discardableResult
+    public func addSubtitle(id: String, name: String, data: Data) -> Bool {
+        guard var item = items[id] else { return false }
+        let folder = fileURL(item).deletingLastPathComponent().appendingPathComponent("subs")
+        guard DownloadFiles.isStrictlyInside(folder, root: root) else { return false }
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let file = DownloadFiles.component(name)
+        guard (try? data.write(to: folder.appendingPathComponent(file))) != nil else { return false }
+        if !item.subtitleFiles.contains("subs/\(file)") { item.subtitleFiles.append("subs/\(file)") }
+        items[id] = item
+        changed()
+        return true
     }
 
     /// Para «reponer el siguiente episodio»: ¿qué episodio sigue a los ya descargados de esa serie y todavía no está?
