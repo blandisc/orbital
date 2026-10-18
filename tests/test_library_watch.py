@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from orbital.library_watch import LibraryWatcher, folder_signature
+from orbital.library_watch import NAMES_ONLY, LibraryWatcher, folder_signature
 
 
 def test_the_signature_sees_new_files_and_files_still_growing(tmp_path):
@@ -50,10 +50,21 @@ def test_a_game_copied_with_orbital_open_appears_and_the_tv_is_told(library):
     library.events.publish = events.append
     roms = Path(library.config.emulators[0].rom_dirs[0])
     assert (roms, True) in library.watched_folders()
-    assert any(str(f).endswith("steamapps") for f, _ in library.watched_folders())  # también Steam (juegos instalados)
+    assert any(str(f).endswith("steamapps") and mode == NAMES_ONLY for f, mode in library.watched_folders())  # también Steam (solo nombres)
     (roms / "Earthbound (USA).sfc").write_bytes(b"")
     new = library.rescan_for_new()
     assert [i.title for i in new] == ["Earthbound"]
     assert {"type": "library-changed"} in events
     assert any(e.get("type") == "toast" and "Earthbound" in e.get("message", "") for e in events)
     assert library.rescan_for_new() == []  # sin cambios: no avisa otra vez
+
+
+def test_steam_rewriting_its_own_files_is_not_a_new_game(tmp_path):
+    apps = tmp_path / "steamapps"
+    apps.mkdir()
+    (apps / "appmanifest_1.acf").write_text("a")
+    before = folder_signature([(apps, NAMES_ONLY)])
+    (apps / "appmanifest_1.acf").write_text("reescrito por Steam")
+    assert folder_signature([(apps, NAMES_ONLY)]) == before
+    (apps / "appmanifest_2.acf").write_text("b")  # un juego recién instalado
+    assert folder_signature([(apps, NAMES_ONLY)]) != before

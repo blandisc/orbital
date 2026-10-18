@@ -38,14 +38,19 @@ def _entries(folder: Path, depth: int):
             continue  # se está copiando o se acaba de borrar: en la siguiente vuelta
 
 
-def folder_signature(folders: list[tuple[Path, bool]]) -> frozenset:
-    """Lo que hay en esas carpetas: (ruta, tamaño, fecha). `True` en la tupla: también subcarpetas (hasta DEPTH)."""
+NAMES_ONLY = "names"  # en vez de True/False: solo cuenta qué archivos hay (Steam reescribe los suyos a cada rato)
+
+
+def folder_signature(folders: list[tuple[Path, bool | str]]) -> frozenset:
+    """Lo que hay en esas carpetas: (ruta, tamaño, fecha). `True` en la tupla: también subcarpetas (hasta DEPTH);
+    NAMES_ONLY: solo los nombres (un juego de Steam nuevo es un appmanifest nuevo; Steam reescribe los que ya están
+    al arrancar y al actualizar, y eso reescaneaba la biblioteca sin que hubiera nada nuevo)."""
     seen: set[tuple[str, int, int]] = set()
-    for folder, recursive in folders:
-        for n, item in enumerate(_entries(folder, DEPTH if recursive else 0)):
+    for folder, mode in folders:
+        for n, (path, size, mtime) in enumerate(_entries(folder, DEPTH if mode is True else 0)):
             if n >= MAX_FILES:
                 break
-            seen.add(item)
+            seen.add((path, 0, 0) if mode == NAMES_ONLY else (path, size, mtime))
     return frozenset(seen)
 
 
@@ -54,7 +59,7 @@ class LibraryWatcher:
 
     `folders()` dice qué carpetas vigilar (se vuelve a preguntar en cada vuelta: un emulador recién instalado entra solo)."""
 
-    def __init__(self, folders: Callable[[], list[tuple[Path, bool]]], on_change: Callable[[], object],
+    def __init__(self, folders: Callable[[], list[tuple[Path, bool | str]]], on_change: Callable[[], object],
                  interval: float = INTERVAL) -> None:
         self.folders = folders
         self.on_change = on_change
@@ -90,8 +95,9 @@ class LibraryWatcher:
         if now != self._pending:  # cambió (o sigue cambiando: una copia en curso): se espera una vuelta más
             self._pending = now
             return False
+        changed = sorted({p for p, _, _ in (now ^ (self._known or frozenset()))})[:3]
         self._known, self._pending = now, None
-        log.info("Carpetas de juegos con cambios: vuelvo a buscar juegos")
+        log.info("Carpetas de juegos con cambios (%s): vuelvo a buscar juegos", ", ".join(changed))
         try:
             self.on_change()
         except Exception:  # noqa: BLE001

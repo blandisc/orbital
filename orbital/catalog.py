@@ -34,7 +34,7 @@ from .library import cinemeta, detect, emulators, esde, geforcenow, steam, steam
 from .library.media import KINDS, MediaStore, low_res, placeholder
 from .library.models import LibraryItem
 from .library.scraper import Scraper, Target
-from .library_watch import LibraryWatcher
+from .library_watch import NAMES_ONLY, LibraryWatcher
 from .sessions import QUICK_EXIT, Sessions  # noqa: F401
 from .state import State
 from .store import ItemStore
@@ -434,14 +434,14 @@ class Catalog:
     # --- juegos nuevos con Orbital abierto (library_watch.py) ------------------
     library_watch: LibraryWatcher | None = None  # el vigilante de carpetas (solo en la Orbital de verdad: server.py lo arranca)
 
-    def watched_folders(self) -> list[tuple[Path, bool]]:
+    def watched_folders(self) -> list[tuple[Path, bool | str]]:
         """Las carpetas donde aparecen juegos: las de cada emulador (con subcarpetas si el emulador las recorre) y las de
         Steam (sus appmanifest: un juego recién instalado)."""
-        out: list[tuple[Path, bool]] = []
+        out: list[tuple[Path, bool | str]] = []
         for emu in self.emulators:
             out += [(d, bool(emu.recursive)) for d in emulators.rom_dirs(emu, self.esde)]
         if self.steam_root:
-            out += [(f, False) for f in steam.library_folders(self.steam_root)]
+            out += [(f, NAMES_ONLY) for f in steam.library_folders(self.steam_root)]
         return out
 
     def rescan_for_new(self) -> list[LibraryItem]:
