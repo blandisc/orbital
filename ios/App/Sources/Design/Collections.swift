@@ -141,6 +141,9 @@ struct ListCard: View {
 struct BecauseCard<Related: View>: View {
     let seedTitle: String
     let seedPoster: String?
+    /// Lo último que viste, para elegir «Porque vi…» (id, nombre); vacío: sin menú.
+    var choices: [(id: String, title: String)] = []
+    var choose: (String) -> Void = { _ in }
     @ViewBuilder var related: () -> Related
 
     var body: some View {
@@ -148,8 +151,29 @@ struct BecauseCard<Related: View>: View {
             PosterView(url: seedPoster, title: seedTitle).frame(width: DS.Collections.seedPoster)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text("Porque viste").recipe(.eyebrow, color: DS.accent)
-                Text(verbatim: seedTitle).recipe(.cardTitle).lineLimit(2)
-                Text("Lo que Trakt relaciona con lo último que viste").recipe(.caption).lineLimit(2)
+                if choices.count > 1 {
+                    // «Porque vi esto»: tú eliges de qué; sin elegir, cambia solo cada día.
+                    Menu {
+                        Section("Recomiéndame por…") {
+                            ForEach(choices, id: \.id) { c in
+                                Button { choose(c.id) } label: {
+                                    if c.title == seedTitle { Label(c.title, systemImage: "checkmark") } else { Text(verbatim: c.title) }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
+                            Text(verbatim: seedTitle).recipe(.cardTitle).lineLimit(2).multilineTextAlignment(.leading)
+                            Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint(Text("Elige otro título para recomendarte por él"))
+                    .accessibilityIdentifier("because-choose")
+                } else {
+                    Text(verbatim: seedTitle).recipe(.cardTitle).lineLimit(2)
+                }
+                Text(choices.count > 1 ? "Toca el nombre para elegir otro de lo que viste" : "Lo que Trakt relaciona con lo último que viste").recipe(.caption).lineLimit(2)
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: DS.Space.s2) { related() }
                         .environment(\.posterCaptions, false)
@@ -300,6 +324,9 @@ extension View {
         }
         .padding(.bottom, DS.Collections.reflection + DS.Collections.reflectionGap)
     }
+
+    /// Una sección cuya última fila lleva reflejo (sin texto debajo): la siguiente se monta sobre la parte desvanecida.
+    func reflectionTail() -> some View { padding(.bottom, -DS.Collections.reflectionTail) }
 
     /// Con su reflejo debajo y, si se da, el peso de su color (Colecciones).
     func reflected(weight: Color? = nil) -> some View { modifier(Reflection(weight: weight)) }

@@ -217,13 +217,38 @@ public actor ForYou {
     }
 
     /// «Porque viste X»: lo último que viste (película o serie) y lo que Trakt relaciona con él, sin lo que ya descartaste.
-    public func becauseYouWatched() async -> (seed: TraktEntry, items: [Suggestion])? {
-        guard let trakt, trakt.linked,
-              let seed = try? await remember("trakt:recent", ttl: Self.mineTTL, { try await trakt.recentlyWatched(limit: 1) }).first else { return nil }
+    ///
+    /// Sin elegir, cambia solo: cada día con otro de lo último que viste (antes era siempre lo más reciente, y si veías la
+    /// misma serie varios días se quedaba clavado). `seed` (un id de IMDb): «Porque vi esto», el que elegiste tú.
+    public func becauseYouWatched(seed chosen: String? = nil, calendar: Calendar = .current) async -> (seed: TraktEntry, items: [Suggestion])? {
+        let seeds = await recentSeeds()
+        guard !seeds.isEmpty else { return nil }
+        let start: Int
+        if let chosen, let i = seeds.firstIndex(where: { $0.imdb == chosen }) { start = i }
+        else { start = (calendar.ordinality(of: .day, in: .era, for: clock()) ?? 0) % min(seeds.count, Self.becauseRotation) }
+        // Si el elegido no tiene relacionados, el siguiente.
+        for seed in seeds[start...] + seeds[..<start] {
+            if let found = await related(to: seed) { return found }
+        }
+        return nil
+    }
+
+    /// Lo último que viste (títulos distintos): de dónde sale «Porque viste» y lo que se puede elegir.
+    public func recentSeeds() async -> [TraktEntry] {
+        guard let trakt, trakt.linked else { return [] }
+        return (try? await remember("trakt:recent:\(Self.becauseChoices)", ttl: Self.mineTTL) { try await trakt.recentlyWatched(limit: Self.becauseChoices) }) ?? []
+    }
+
+    /// «Porque viste» con cualquier título (también uno que no esté en lo último que viste: desde su ficha).
+    public func related(to seed: TraktEntry) async -> (seed: TraktEntry, items: [Suggestion])? {
+        guard let trakt else { return nil }
         let related = (try? await remember("trakt:related:\(seed.imdb)", ttl: Self.recsTTL) { try await trakt.related(kind: seed.kind, imdb: seed.imdb) }) ?? []
         let items = related.map { suggestion($0, .recommended) }.filter { !dismissed.contains($0.imdb) }
         return items.isEmpty ? nil : (seed, items)
     }
+
+    /// Cuántos de lo último que viste se ofrecen para «Porque vi…», y entre cuántos rota solo, uno por día.
+    static let becauseChoices = 12, becauseRotation = 5
 
     /// «Tu año»: lo que viste desde el 1 de enero, del historial de Trakt (se guarda unas horas: son varias páginas).
     public func yearInReview(calendar: Calendar = .current) async -> YearInReview? {
@@ -576,12 +601,16 @@ public struct YearInReview: Sendable, Equatable {
     public var longestStreak: Int
     public var topGenre: String?
     public var top: [Top]
+    /// Lo que viste cada día (en el orden en que lo viste): al tocar un día del mapa.
+    public var plays: [Date: [TraktPlay]] = [:]
 
     public static func make(_ plays: [TraktPlay], year: Int, calendar: Calendar) -> YearInReview {
         var days: [Date: Day] = [:], minutes = 0, movies = 0, episodes = 0
         var genres: [String: Int] = [:], counts: [String: Top] = [:]
+        var byDay: [Date: [TraktPlay]] = [:]
         for p in plays {
             let day = calendar.startOfDay(for: p.at)
+            byDay[day, default: []].append(p)
             let kind: Day = p.kind == "movie" ? .movies : .series
             days[day] = days[day].map { $0 == kind ? $0 : .both } ?? kind
             minutes += p.minutes
@@ -597,6 +626,7 @@ public struct YearInReview: Sendable, Equatable {
         }
         let top = counts.values.sorted { ($0.plays, $1.title) > ($1.plays, $0.title) }.prefix(10)
         return YearInReview(year: year, days: days, hours: Int((Double(minutes) / 60).rounded()), movies: movies, episodes: episodes,
-                            longestStreak: longest, topGenre: genres.max { ($0.value, $1.key) < ($1.value, $0.key) }?.key, top: Array(top))
+                            longestStreak: longest, topGenre: genres.max { ($0.value, $1.key) < ($1.value, $0.key) }?.key, top: Array(top),
+                            plays: byDay.mapValues { $0.sorted { $0.at < $1.at } })
     }
 }

@@ -457,7 +457,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             guard let day = cal.date(byAdding: .day, value: d, to: start), seed < 13 else { continue }
             if seed % 3 != 0 {
                 let show = shows[(d / 9) % shows.count]
-                for e in 0..<(1 + seed % 3) { plays.append(TraktPlay(at: day.addingTimeInterval(Double(e) * 3600), kind: "series", imdb: show.0, title: show.1, minutes: 50, genres: ["drama"])) }
+                for e in 0..<(1 + seed % 3) { plays.append(TraktPlay(at: day.addingTimeInterval(Double(e) * 3600), kind: "series", imdb: show.0, title: show.1, minutes: 50, genres: ["drama"],
+                                                                         season: 1 + d / 60, episode: 1 + (d + e) % 10, episodeTitle: "Episodio \(1 + (d + e) % 10)")) }
             }
             if seed % 4 == 0 {
                 let movie = movies[(d / 5) % movies.count]

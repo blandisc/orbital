@@ -60,7 +60,10 @@ struct DecideView: View {
         .presentationDragIndicator(.visible)
         .animation(DS.Motion.base(reduceMotion), value: stage)
         .animation(DS.Motion.base(reduceMotion), value: m.pick?.imdb)
-        .task { if m.pick == nil { await m.quick() } }
+        .task {
+            m.warmPosters = { await ImagePipeline.shared.warmPosters($0) }
+            if m.pick == nil { await m.quick() }
+        }
         #if DEBUG
         .task { if Demo.isOn, let l = Demo.value(after: "-demo-decide-level") { stage = l == "3" ? .precise : l == "2" ? .more : .quick } }
         #endif
@@ -104,6 +107,8 @@ struct DecideView: View {
                 }
             }
             .frame(maxHeight: stage == .quick ? nil : DS.Decide.trioCompactHeight)
+            .opacity(m.isLoading ? DS.Decide.otherOpacity : 1)
+            .overlay { if m.isLoading { ProgressView() } }
             .sensoryFeedback(.selection, trigger: s.imdb)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(verbatim: s.title).recipe(.cardTitle).lineLimit(1)

@@ -369,10 +369,10 @@ struct ListsView: View {
                 // Las colecciones (con su carácter: en carrusel, con peso y reflejo), justo después de lo general.
                 // Plataformas, Estudios, Premios y Por año, juntas y con el mismo aire entre ellas (el reflejo ya separa).
                 VStack(alignment: .leading, spacing: DS.Collections.groupGap) {
-                    if !model.platformHubs.isEmpty { platforms.modifier(SectionSpy(section: .platforms, active: $activeSection)) }
-                    if collections.model.tmdbReady { studiosSection.modifier(SectionSpy(section: .studios, active: $activeSection)) }
+                    if !model.platformHubs.isEmpty { platforms.reflectionTail().modifier(SectionSpy(section: .platforms, active: $activeSection)) }
+                    if collections.model.tmdbReady { studiosSection.reflectionTail().modifier(SectionSpy(section: .studios, active: $activeSection)) }
                     awards.modifier(SectionSpy(section: .awards, active: $activeSection))
-                    if collections.model.traktLinked { yearsSection.modifier(SectionSpy(section: .years, active: $activeSection)) }
+                    if collections.model.traktLinked { yearsSection.reflectionTail().modifier(SectionSpy(section: .years, active: $activeSection)) }
                 }
                 if !model.airings.isEmpty {   // vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
                     Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), route: ShelfRoute(id: "estrenos"), source: .trakt) {
@@ -484,7 +484,9 @@ struct ListsView: View {
 
     /// «Porque viste X»: una tarjeta propia (no una fila más) con lo que viste y lo relacionado.
     private func becauseCard(_ because: (seed: TraktEntry, items: [Suggestion])) -> some View {
-        BecauseCard(seedTitle: because.seed.title, seedPoster: String(format: ForYou.metahubPoster, because.seed.imdb)) {
+        BecauseCard(seedTitle: because.seed.title, seedPoster: String(format: ForYou.metahubPoster, because.seed.imdb),
+                    choices: model.becauseSeeds.map { ($0.imdb, $0.title) },
+                    choose: { id in if let seed = model.becauseSeeds.first(where: { $0.imdb == id }) { Task { await model.chooseBecause(seed) } } }) {
             ForEach(because.items) { s in
                 ShelfPoster(suggestion: s, style: .plain, inList: model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb], width: DS.Collections.relatedPoster) { dismissed in Task { await model.dismiss(dismissed) } }
             }
@@ -578,6 +580,7 @@ struct ListsView: View {
                 ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb], reflected: true) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Tu watchlist» todo está ahí: el marcador sobra
             }
         }
+        .reflectionTail()
         // Los Top 10 (y los rankings de plataformas), con sus pósters pedidos en cuanto llega la lista.
         .task(id: items.first?.imdb) { if plan.style == .top10 || plan.style == .platform { ImagePipeline.shared.prefetchPosters(items.prefix(DS.Size.searchPrefetch).map(\.poster)) } }
     }

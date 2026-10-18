@@ -50,6 +50,16 @@ public final class ParaTiModel: ObservableModel {
     public var calendarLayout: CalendarLayout = .byDay { didSet { changed() } }
     /// «Porque viste X»: lo último que viste y lo que Trakt relaciona con él (nil sin Trakt o sin relacionados).
     public private(set) var because: (seed: TraktEntry, items: [Suggestion])? { didSet { changed() } }
+    /// Lo último que viste: para elegir «Porque vi…».
+    public private(set) var becauseSeeds: [TraktEntry] = [] { didSet { changed() } }
+    /// El que elegiste (nil: cambia solo cada día).
+    private var chosenSeed: String?
+
+    /// «Porque vi esto»: las relacionadas con el que elijas.
+    public func chooseBecause(_ seed: TraktEntry) async {
+        chosenSeed = seed.imdb
+        if let found = await services.forYou.related(to: seed) { because = found }
+    }
     /// «Nuevo en tus plataformas» (TMDB): series con episodios recientes y películas recién llegadas, de tus plataformas.
     public private(set) var newOnPlatforms: [Suggestion] = [] { didSet { changed() } }
     /// El porqué de cada título en un póster (lo más fuerte: que sale pronto, o su puesto en una plataforma), por IMDb.
@@ -174,7 +184,7 @@ public final class ParaTiModel: ObservableModel {
         // Si la consola no contesta, se cae a la lógica local sin esperar el calendario: este se pide solo si contestó.
         guard let newLists = await fetchedLists, let newMosaic = await fetchedMosaic else { return false }
         async let fetchedKeys = try? remote.watchlistKeys()
-        async let fetchedBecause = forYou.becauseYouWatched()
+        async let fetchedBecause = forYou.becauseYouWatched(seed: chosenSeed)
         async let fetchedAirings = try? forYou.calendar()   // el calendario sale de tu Trakt (la consola trae la lista «estrenos», que aquí no se pinta como estante)
         if source != .console { railItems = [:] }   // venía del iPhone: los estantes de la otra fuente no se mezclan
         source = .console
@@ -194,6 +204,7 @@ public final class ParaTiModel: ObservableModel {
         }
         await shelvesLoaded
         because = await fetchedBecause
+        becauseSeeds = await forYou.recentSeeds()
         await loadNewOnPlatforms()
         rebuildBadges()
         await topUpMosaic()
@@ -208,7 +219,7 @@ public final class ParaTiModel: ObservableModel {
         async let newLists = forYou.lists()
         async let keys = forYou.watchlistKeys()
         async let newAirings = try? forYou.calendar()
-        async let newBecause = forYou.becauseYouWatched()
+        async let newBecause = forYou.becauseYouWatched(seed: chosenSeed)
         async let newMosaic = forYou.mosaic()
         // Al abrir la app, el de la última vez (guardado en el teléfono): el mosaico aparece al instante. El nuevo no lo
         // reemplaza en ese momento (lo movería bajo tu dedo): queda guardado para la próxima vez; «Actualizar» lo trae ya.
@@ -233,6 +244,7 @@ public final class ParaTiModel: ObservableModel {
         }
         await shelvesLoaded
         because = await newBecause
+        becauseSeeds = await forYou.recentSeeds()
         await loadNewOnPlatforms()
         rebuildBadges()
         // El aviso, solo si de verdad no hay nada que enseñar (las listas con puesto existen siempre, pero sin red llegan vacías).

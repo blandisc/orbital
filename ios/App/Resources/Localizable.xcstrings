@@ -2509,6 +2509,17 @@
         }
       }
     },
+    "Desliza hacia arriba o abajo para ir de un día con algo visto a otro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe up or down to move between days you watched something"
+          }
+        }
+      }
+    },
     "Desliza hasta arriba para más precisión: de qué lista, época y calificación": {
       "extractionState": "manual",
       "localizations": {
@@ -2619,6 +2630,17 @@
         }
       }
     },
+    "Día anterior con algo visto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous day you watched something"
+          }
+        }
+      }
+    },
     "Día por día": {
       "extractionState": "manual",
       "localizations": {
@@ -2626,6 +2648,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Day by day"
+          }
+        }
+      }
+    },
+    "Día siguiente con algo visto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next day you watched something"
           }
         }
       }
@@ -2813,6 +2846,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choose this episode's source"
+          }
+        }
+      }
+    },
+    "Elige otro título para recomendarte por él": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick another title to get recommendations from"
           }
         }
       }
@@ -3253,6 +3297,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "That add-on doesn't respond or provides no sources or details."
+          }
+        }
+      }
+    },
+    "Ese día no viste nada.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You didn't watch anything that day."
           }
         }
       }
@@ -6491,6 +6546,17 @@
         }
       }
     },
+    "Recomiéndame por…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommend based on…"
+          }
+        }
+      }
+    },
     "Reintentar la descarga": {
       "extractionState": "manual",
       "localizations": {
@@ -7609,6 +7675,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Times from Where's The Jump"
+          }
+        }
+      }
+    },
+    "Toca el nombre para elegir otro de lo que viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap the name to pick something else you watched"
           }
         }
       }

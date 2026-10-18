@@ -90,6 +90,14 @@ final class ImagePipeline: @unchecked Sendable {
         }
     }
 
+    /// Como `prefetchPosters`, pero espera a que estén (para enseñar varios carteles juntos, ya con imagen).
+    nonisolated func warmPosters(_ urls: [String]) async {
+        let pixels = await MainActor.run { DS.Image.card * Self.screenScale }
+        await withTaskGroup(of: Void.self) { group in
+            for case let url? in urls.map(URL.init(string:)) { group.addTask { _ = await self.image(url, maxPixel: pixels) } }
+        }
+    }
+
     func image(_ requested: URL, maxPixel: CGFloat) async -> UIImage? {
         let url = Self.resolve(requested, maxPixel)
         let k = key(url, maxPixel)

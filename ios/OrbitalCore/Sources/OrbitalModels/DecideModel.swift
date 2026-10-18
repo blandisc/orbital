@@ -117,6 +117,18 @@ public final class DecideModel: ObservableModel {
         decades.contains { d in d == 1980 ? year < 1990 : (d...(d + 9)).contains(year) }
     }
 
+    /// Baja los carteles antes de enseñarlos (la app lo pone): los tres aparecen juntos, ya con imagen, en vez de uno y
+    /// luego los otros.
+    public var warmPosters: (@MainActor ([String]) async -> Void)?
+    /// Los tres siguientes, ya buscados y con sus carteles bajados mientras ves estos: «Barajar» los cambia al instante.
+    private var upcoming: (key: String, task: Task<[Suggestion], Never>)?
+
+    /// Lo que eligiste, en una cadena: los siguientes ya buscados solo sirven si no cambió.
+    private var filtersKey: String {
+        [time.rawValue, mood?.rawValue ?? "", kind ?? "", genres.sorted().joined(separator: ","), "\(includeWatched)", sourceID ?? "",
+         decades.sorted().map(String.init).joined(separator: ","), "\(minRating)", ratingService.rawValue].joined(separator: "|")
+    }
+
     /// Nivel 1: la propuesta rápida (lo que sigues primero si cabe; si no, al azar entre lo tuyo).
     public func quick() async {
         await prepare()
@@ -148,6 +160,7 @@ public final class DecideModel: ObservableModel {
     }
 
     private func prepare() async {
+        if let stale = upcoming { upcoming = nil; _ = await stale.task.value }
         shown = []
         exhausted = false
         if watched == nil, let trakt = services.trakt, trakt.linked {
@@ -167,17 +180,47 @@ public final class DecideModel: ObservableModel {
 
     /// La siguiente que cabe. Lo que ya trae su género, duración, año y calificación se decide al momento; lo demás se le
     /// pregunta a Cinemeta, unas cuantas a la vez, con un tiempo máximo: si se acaba, la más cercana.
+    ///
+    /// Mientras busca, los tres de antes se quedan quietos (antes el nombre cambiaba con cada búsqueda y los carteles
+    /// hasta el final); los nuevos llegan juntos, con sus datos y sus carteles.
     public func next() async {
+        isLoading = true
+        defer { isLoading = false }
+        let key = filtersKey
+        var found: [Suggestion]
+        if let ready = upcoming, ready.key == key {
+            upcoming = nil
+            let skipped = notToday()
+            found = await ready.task.value.filter { !skipped.contains($0.imdb) }
+            if found.isEmpty { found = await trio() }
+        } else {
+            if let stale = upcoming { upcoming = nil; _ = await stale.task.value }   // que no busquen dos a la vez
+            found = await trio()
+        }
+        picks = found
+        if let first = found.first { select(first) } else { pick = nil; exhausted = true }
+        // Los que siguen, desde ya.
+        upcoming = (key, Task { [weak self] in await self?.trio() ?? [] })
+    }
+
+    /// Tres que caben, con sus datos y sus carteles ya bajados (con un tiempo máximo: si la red tarda, se enseñan igual).
+    private func trio() async -> [Suggestion] {
         var found: [Suggestion] = []
         for _ in 0..<Self.trio {
-            await search()
-            guard let p = pick, !found.contains(where: { $0.imdb == p.imdb }) else { break }
+            guard let p = await search(), !found.contains(where: { $0.imdb == p.imdb }) else { break }
             found.append(p)
         }
-        // Las tres con sus datos (duración, calificación), de una vez; la primera queda elegida.
         await describe(found)
-        picks = found
-        if let first = found.first { select(first) } else { pick = nil }
+        if let warm = warmPosters {
+            let posters = found.compactMap(\.poster)
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask { await warm(posters) }
+                group.addTask { try? await Task.sleep(nanoseconds: UInt64(Self.posterWait * 1_000_000_000)) }
+                await group.next()
+                group.cancelAll()
+            }
+        }
+        return found
     }
 
     /// Tocar uno de los tres carteles: esa es la propuesta.
@@ -187,9 +230,8 @@ public final class DecideModel: ObservableModel {
         imdbRating = details[s.imdb]?.rating
     }
 
-    private func search(retried: Bool = false) async {
-        isLoading = true
-        defer { isLoading = false }
+    /// La siguiente candidata que cabe (y la marca como enseñada); nil: no hay ninguna.
+    private func search(retried: Bool = false) async -> Suggestion? {
         let started = services.now()
         let skipped = notToday()
         let seen = includeWatched ? [] : (watched ?? [])
@@ -217,11 +259,9 @@ public final class DecideModel: ObservableModel {
             if ok, minRating > 0 { ok = (rating ?? 0) >= minRating }
             return (ok, Self.fits(s.runtime ?? d?.minutes, time))
         }
-        func take(_ s: Suggestion) {
+        func take(_ s: Suggestion) -> Suggestion {
             shown.insert(s.imdb)
-            pick = s
-            minutes = s.runtime ?? details[s.imdb]?.minutes
-            imdbRating = details[s.imdb]?.rating
+            return s
         }
         // 1) Lo que ya se sabe, sin red.
         for s in candidates {
@@ -243,18 +283,19 @@ public final class DecideModel: ObservableModel {
         // La más cercana (aunque dure más de lo que tienes); solo esa cuenta como enseñada, no todas las revisadas.
         if let closest { return take(closest) }
         // Con un filtro, las que cumplen ya salieron todas: otra vuelta desde el principio (una vez), no «No encontré».
-        if !retried, !shown.isEmpty { shown = []; isLoading = false; return await search(retried: true) }
-        pick = nil
-        exhausted = true
+        if !retried, !shown.isEmpty { shown = []; return await search(retried: true) }
+        return nil
     }
 
     static let chunk = 12
     static let watchedWait: Double = 4
     /// Lo más que se busca antes de proponer la más cercana (segundos).
     static let budget: TimeInterval = 6
+    /// Lo más que se espera a los carteles antes de enseñar los tres (segundos).
+    static let posterWait: Double = 2.5
 
     /// Volver a las preguntas.
-    public func reset() async { pick = nil; exhausted = false }
+    public func reset() async { pick = nil; exhausted = false; upcoming = nil }
 
     /// «Hoy no»: no vuelve a salir en 24 horas; y otra.
     public func skipToday() async {
@@ -265,9 +306,10 @@ public final class DecideModel: ObservableModel {
             // Solo esa se cambia por otra; las otras dos se quedan.
             let current = pick.imdb
             let others = picks.filter { $0.imdb != current }
-            await search()
-            if let fresh = self.pick, !others.contains(where: { $0.imdb == fresh.imdb }) {
+            if let stale = upcoming { upcoming = nil; _ = await stale.task.value }   // que no busquen dos a la vez
+            if let fresh = await search(), !others.contains(where: { $0.imdb == fresh.imdb }) {
                 await describe([fresh])
+                await warmPosters?([fresh.poster].compactMap { $0 })
                 picks = picks.map { $0.imdb == current ? fresh : $0 }
                 select(fresh)
             } else {

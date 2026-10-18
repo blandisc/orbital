@@ -253,6 +253,8 @@ enum DS {
     /// «Tu año»: el mapa de calor (una columna por semana) y sus colores.
     enum YearMap {
         static let cell: CGFloat = 9, gap: CGFloat = 3, radius: CGFloat = 2
+        /// El aro del día elegido y el póster de lo que viste ese día.
+        static let ring: CGFloat = 1.5, dayPoster: CGFloat = 40
         static let movies = Color(red: 0.24, green: 0.44, blue: 0.85), series = Color(red: 0.42, green: 0.29, blue: 0.77), both = Color(red: 0.69, green: 0.29, blue: 0.84)
     }
 
@@ -324,6 +326,9 @@ enum DS {
         /// El carrusel centrado: cuánto se encogen y apagan las de los lados; el reflejo (alto, separación, intensidad) y el peso.
         static let sideShrink: CGFloat = 0.1, sideFade: Double = 0.18
         static let reflection: CGFloat = 44, reflectionGap: CGFloat = 4, reflectionOpacity: Double = 0.3, reflectionBlur: CGFloat = 1.5
+        /// Lo que la sección siguiente puede montarse sobre el reflejo de la última fila (su parte ya desvanecida): sin esto,
+        /// entre una fila con reflejo y la siguiente quedaba el reflejo entero más el aire entre secciones (un hueco vacío).
+        static let reflectionTail: CGFloat = 30
         static let weight: CGFloat = 18, weightY: CGFloat = 12, weightTint: Double = 0.35
         /// El aire entre Plataformas, Estudios, Premios y Por año (menos que entre secciones: el reflejo ya separa).
         static let groupGap: CGFloat = 20

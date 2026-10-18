@@ -8,6 +8,8 @@ struct YearView: View {
     @EnvironmentObject private var env: AppEnvironment
     @State private var review: YearInReview?
     @State private var loading = true
+    /// El día que tocaste en el mapa (al abrir: el último con algo visto).
+    @State private var selectedDay: Date?
 
     var body: some View {
         ScrollView {
@@ -25,6 +27,7 @@ struct YearView: View {
                         HStack(spacing: DS.Space.s4) {
                             legend(DS.YearMap.movies, Text("Películas")); legend(DS.YearMap.series, Text("Series")); legend(DS.YearMap.both, Text("Las dos"))
                         }
+                        dayDetail(r)
                     }
                     .padding(DS.Space.s4)
                     .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
@@ -54,10 +57,11 @@ struct YearView: View {
         .navigationTitle(Text("Tu \(String(review?.year ?? Calendar.current.component(.year, from: Date())))")).navigationBarTitleDisplayMode(.inline)
         .task {
             #if DEBUG
-            if Demo.isOn { review = Demo.yearInReview; loading = false; return }
+            if Demo.isOn { review = Demo.yearInReview; loading = false; selectedDay = review?.plays.keys.max(); return }
             #endif
             review = await env.services.forYou.yearInReview()
             loading = false
+            selectedDay = review?.plays.keys.max()
         }
     }
 
@@ -95,12 +99,98 @@ struct YearView: View {
                         RoundedRectangle(cornerRadius: DS.YearMap.radius)
                             .fill(offset < 0 || day > today ? Color.clear : color(r.days[day]))
                             .frame(width: DS.YearMap.cell, height: DS.YearMap.cell)
+                            .overlay {
+                                if let selectedDay, cal.isDate(day, inSameDayAs: selectedDay), offset >= 0 {
+                                    RoundedRectangle(cornerRadius: DS.YearMap.radius).strokeBorder(DS.text, lineWidth: DS.YearMap.ring)
+                                        .padding(-DS.YearMap.ring)
+                                }
+                            }
                     }
                 }
             }
         }
+        // Las casillas son chicas: el toque elige la más cercana (no hace falta atinarle exacta).
+        .contentShape(Rectangle())
+        .onTapGesture { point in
+            let pitch = DS.YearMap.cell + DS.YearMap.gap
+            let w = Int(point.x / pitch), d = min(6, max(0, Int(point.y / pitch)))
+            let offset = w * 7 + d - firstWeekday
+            guard offset >= 0, let day = cal.date(byAdding: .day, value: offset, to: start), day <= today else { return }
+            selectedDay = day
+        }
+        .sensoryFeedback(.selection, trigger: selectedDay)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("\(r.days.count) días con algo visto"))
+        .accessibilityHint(Text("Desliza hacia arriba o abajo para ir de un día con algo visto a otro"))
+        .accessibilityAdjustableAction { direction in step(r, forward: direction == .increment) }
+    }
+
+    /// Al día con algo visto anterior o siguiente.
+    private func step(_ r: YearInReview, forward: Bool) {
+        let days = r.plays.keys.sorted()
+        guard !days.isEmpty else { return }
+        guard let current = selectedDay else { selectedDay = days.last; return }
+        selectedDay = forward ? days.first { $0 > current } ?? current : days.last { $0 < current } ?? current
+    }
+
+    /// Lo que viste el día elegido: cada título una vez (con sus episodios de ese día), y flechas para ir al día anterior o
+    /// siguiente con algo visto.
+    @ViewBuilder private func dayDetail(_ r: YearInReview) -> some View {
+        if let day = selectedDay {
+            let plays = r.plays[Calendar.current.startOfDay(for: day)] ?? []
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                HStack {
+                    Text(day.formatted(.dateTime.weekday(.wide).day().month(.wide))).recipe(.cardTitle)
+                    Spacer()
+                    Button { step(r, forward: false) } label: { Image(systemName: "chevron.left") }
+                        .accessibilityLabel(Text("Día anterior con algo visto"))
+                    Button { step(r, forward: true) } label: { Image(systemName: "chevron.right") }
+                        .accessibilityLabel(Text("Día siguiente con algo visto"))
+                }
+                .buttonStyle(.glass).buttonBorderShape(.circle)
+                if plays.isEmpty {
+                    Text("Ese día no viste nada.").recipe(.footnote)
+                } else {
+                    ForEach(groups(plays), id: \.imdb) { g in
+                        NavigationLink(value: TitleRoute(kind: g.kind, metaID: g.imdb, title: g.title, poster: String(format: ForYou.metahubPoster, g.imdb))) {
+                            HStack(spacing: DS.Space.s3) {
+                                PosterView(url: String(format: ForYou.metahubPoster, g.imdb), title: g.title).frame(width: DS.YearMap.dayPoster)
+                                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                                    Text(verbatim: g.title).recipe(.cardTitle).lineLimit(1)
+                                    Text(verbatim: g.detail).recipe(.footnote).lineLimit(2)
+                                }
+                                Spacer(minLength: 0)
+                                Image(systemName: "chevron.right").foregroundStyle(DS.textMuted)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(.top, DS.Space.s2)
+            .animation(nil, value: selectedDay)
+        }
+    }
+
+    /// Los títulos de un día, cada uno una vez: «Película · 2 h 20 min» o «T1 E3 «Nombre», T1 E4».
+    private func groups(_ plays: [TraktPlay]) -> [(imdb: String, kind: String, title: String, detail: String)] {
+        var order: [String] = [], byTitle: [String: [TraktPlay]] = [:]
+        for p in plays { if byTitle[p.imdb] == nil { order.append(p.imdb) }; byTitle[p.imdb, default: []].append(p) }
+        return order.compactMap { id in
+            guard let list = byTitle[id], let first = list.first else { return nil }
+            let detail: String
+            if first.kind == "movie" {
+                let m = first.minutes
+                detail = m > 0 ? (m >= 60 ? "\(m / 60) h \(m % 60) min" : "\(m) min") : ""
+            } else {
+                detail = list.map { p in
+                    guard let s = p.season, let e = p.episode else { return p.episodeTitle ?? "" }
+                    return "T\(s) E\(e)" + (p.episodeTitle.map { " «\($0)»" } ?? "")
+                }.joined(separator: ", ")
+            }
+            return (id, first.kind, first.title, detail)
+        }
     }
 
     private func color(_ day: YearInReview.Day?) -> Color {

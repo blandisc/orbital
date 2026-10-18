@@ -22,8 +22,12 @@ public struct TraktPlay: Sendable, Equatable {
     public var title: String
     public var minutes: Int
     public var genres: [String]
-    public init(at: Date, kind: String, imdb: String, title: String, minutes: Int, genres: [String]) {
+    /// El episodio (temporada, número y nombre), si fue de una serie.
+    public var season: Int?, episode: Int?, episodeTitle: String?
+    public init(at: Date, kind: String, imdb: String, title: String, minutes: Int, genres: [String],
+                season: Int? = nil, episode: Int? = nil, episodeTitle: String? = nil) {
         self.at = at; self.kind = kind; self.imdb = imdb; self.title = title; self.minutes = minutes; self.genres = genres
+        self.season = season; self.episode = episode; self.episodeTitle = episodeTitle
     }
 }
 
@@ -134,7 +138,10 @@ public enum TraktParsing {
         guard let item, let imdb = item["ids"]?["imdb"]?.string, imdb.hasPrefix("tt"), let title = item["title"]?.string else { return nil }
         let minutes = (isMovie ? item["runtime"]?.intValue : row["episode"]?["runtime"]?.intValue ?? item["runtime"]?.intValue) ?? 0
         let genres = (item["genres"]?.array ?? []).compactMap(\.string)
-        return TraktPlay(at: at, kind: isMovie ? "movie" : "series", imdb: imdb, title: title, minutes: max(0, minutes), genres: genres)
+        let ep = isMovie ? nil : row["episode"]
+        let episodeTitle = ep?["title"]?.string?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return TraktPlay(at: at, kind: isMovie ? "movie" : "series", imdb: imdb, title: title, minutes: max(0, minutes), genres: genres,
+                         season: ep?["season"]?.intValue, episode: ep?["number"]?.intValue, episodeTitle: episodeTitle?.isEmpty == false ? episodeTitle : nil)
     }
 
     /// Una fila del calendario de Trakt («first_aired» en hora universal). Sin IMDb, fecha o número de episodio: nada.
