@@ -140,7 +140,7 @@ struct YearView: View {
             let plays = r.plays[Calendar.current.startOfDay(for: day)] ?? []
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 HStack {
-                    Text(day.formatted(.dateTime.weekday(.wide).day().month(.wide))).recipe(.cardTitle)
+                    Text(day.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(env.uiLocale)).capitalized(with: env.uiLocale)).recipe(.cardTitle)   // en el idioma de la app
                     Spacer()
                     Button { step(r, forward: false) } label: { Image(systemName: "chevron.left") }
                         .accessibilityLabel(Text("Día anterior con algo visto"))

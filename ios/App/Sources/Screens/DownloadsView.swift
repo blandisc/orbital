@@ -37,7 +37,7 @@ struct DownloadsView: View {
                 Section {
                     ForEach(model.readySeries) { g in
                         NavigationLink(value: DownloadSeriesRoute(metaID: g.metaID)) { seriesRow(g) }
-                            .swipeActions { Button("Borrar", role: .destructive) { Task { for item in g.items { await model.remove(item.id) } } }.tint(DS.danger) }
+                            .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { Task { for item in g.items { await model.remove(item.id) } } }.tint(DS.danger) }
                     }
                 } header: {
                     DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes })))
@@ -108,17 +108,31 @@ struct DownloadsView: View {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(item.title).recipe(.cardTitle).lineLimit(1)
                 DataLine(parts: [item.subtitle.isEmpty ? nil : item.subtitle, item.quality, status(item)].compactMap { $0 }, color: item.state == .failed ? DS.danger : nil)
-                if let progress = item.progress { DSProgress(fraction: progress) }
             }
             Spacer(minLength: DS.Space.s2)
+            // El avance es el mismo anillo de la ficha y de la fila de un episodio, con pausar o reanudar adentro.
             switch item.state {
-            case .downloading, .queued: DSIconButton(symbol: "pause.fill", label: "Pausar") { Task { await model.pause(item.id) } }
-            case .paused, .failed: DSIconButton(symbol: "play.fill", label: "Reanudar") { Task { await model.resume(item.id) } }
+            case .downloading, .queued: ringButton(item, symbol: "pause.fill", label: "Pausar") { Task { await model.pause(item.id) } }
+            case .paused, .failed: ringButton(item, symbol: item.state == .failed ? "arrow.clockwise" : "play.fill", label: item.state == .failed ? "Reintentar" : "Reanudar") { Task { await model.resume(item.id) } }
             case .done: EmptyView()
             }
         }
         .padding(.vertical, DS.Space.s1)
-        .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
+        .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
+    }
+
+    private func ringButton(_ item: DownloadItem, symbol: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            ZStack {
+                DownloadRing(fraction: item.progress ?? 0, tint: item.state == .failed ? DS.warning : DS.accent, lineWidth: DS.TitleAction.ringSmallLine)
+                Image(systemName: symbol).font(DS.TextRecipe.caption.font.weight(.bold)).foregroundStyle(DS.text)
+            }
+            .frame(width: DS.TitleAction.ringSmall, height: DS.TitleAction.ringSmall)
+            .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(label))
     }
 
     private func status(_ item: DownloadItem) -> String? {
@@ -162,7 +176,7 @@ struct DownloadsView: View {
         }
         .buttonStyle(.plain)
         .padding(.vertical, DS.Space.s1)   // aire arriba y abajo: al deslizar para borrar, el póster no se corta en las esquinas
-        .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
+        .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
         .contextMenu { fileMenu(item, title: title, model: model) }
     }
 
@@ -217,7 +231,7 @@ struct DownloadSeriesView: View {
                                     Text(verbatim: String(format: Strings.tr(season.items.count == 1 ? "%lld episodio" : "%lld episodios", language: env.services.appSettings.uiLanguage), season.items.count)).recipe(.footnote)
                                 }
                             }
-                            .swipeActions { Button("Borrar", role: .destructive) { Task { for item in season.items { await observer.model.remove(item.id) } } }.tint(DS.danger) }
+                            .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { Task { for item in season.items { await observer.model.remove(item.id) } } }.tint(DS.danger) }
                         }
                     }
                     .downloadCard()
@@ -259,7 +273,7 @@ struct DownloadSeasonView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }
+                    .swipeActions { Button("Borrar", systemImage: "trash", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }
                     .contextMenu {
                         Button("Buscar subtítulos", systemImage: "captions.bubble") { subtitlesFor = item }
                         ShareLink(item: DownloadedFile(item: item, model: model), preview: SharePreview(Text(verbatim: item.subtitle.isEmpty ? item.title : item.subtitle))) {

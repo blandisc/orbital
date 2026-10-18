@@ -3191,6 +3191,17 @@
         }
       }
     },
+    "Empieza en un momento…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starting in a moment…"
+          }
+        }
+      }
+    },
     "En %@": {
       "extractionState": "manual",
       "localizations": {
@@ -6293,6 +6304,17 @@
         }
       }
     },
+    "Otro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another"
+          }
+        }
+      }
+    },
     "Otros": {
       "extractionState": "manual",
       "localizations": {
@@ -9028,6 +9050,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "See all"
+          }
+        }
+      }
+    },
+    "Ver ya": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch now"
           }
         }
       }

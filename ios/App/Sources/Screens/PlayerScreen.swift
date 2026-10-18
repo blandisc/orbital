@@ -423,6 +423,7 @@ struct PlayerScreen: View {
                         Spacer()
                         if model.phase != .preparing { transport(model) }
                         Spacer()
+                        skipIntro(model)
                         if model.snapshot.duration > 0 { scrubber(model) }
                     }
                     .padding(DS.Space.s6)
@@ -432,6 +433,7 @@ struct PlayerScreen: View {
                 ZStack(alignment: .top) {
                     topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
                     VStack(spacing: DS.Space.s5) {
+                        skipIntro(model)
                         if model.snapshot.duration > 0 { scrubber(model) }
                         if model.phase != .preparing { transport(model) }
                         HStack(spacing: DS.Space.s2) { actions(model) }
@@ -458,12 +460,21 @@ struct PlayerScreen: View {
                 if !current.episodeLabel.isEmpty { Text(current.episodeLabel).recipe(.footnote).lineLimit(2) }
             }
             .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
-            if model.skipIntroTo != nil {
-                Button(model.skipKind == .recap ? "Saltar resumen" : "Saltar intro", systemImage: "forward.fill") { Task { await model.skipIntro() } }.buttonStyle(.glass)
-            }
             if withActions { actions(model) }
             AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
                 .accessibilityLabel(Text("AirPlay"))
+        }
+    }
+
+    /// «Saltar intro» (o «Saltar resumen»): abajo a la derecha, justo encima de la barra de avance (donde lo buscas al verla).
+    @ViewBuilder private func skipIntro(_ model: PlayerModel) -> some View {
+        if model.skipIntroTo != nil {
+            HStack {
+                Spacer()
+                Button(model.skipKind == .recap ? "Saltar resumen" : "Saltar intro", systemImage: "forward.fill") { Task { await model.skipIntro() } }
+                    .buttonStyle(.glass).controlSize(.large)
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+            }
         }
     }
 
@@ -707,7 +718,7 @@ struct VideoSettingsPanel: View {
             trackValue(s.subtitleTracks.first { $0.id == s.selectedSubtitle }, empty: Text("Sin subtítulos"))
         }
         .accessibilityIdentifier("panel-subtitles")
-        PanelRow(title: "Fuente", symbol: "bolt.fill", color: DS.ListTint.flame, action: model.sourceChoices.count > 1 ? { page = .source } : nil) {
+        PanelRow(title: "Fuente", symbol: "list.bullet", color: DS.ListTint.flame, action: model.sourceChoices.count > 1 ? { page = .source } : nil) {
             if let src = model.source { sourceValue(src) } else { Text("Archivo descargado").recipe(.footnote) }
         }
         .accessibilityIdentifier("panel-source")

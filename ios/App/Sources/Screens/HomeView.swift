@@ -16,6 +16,8 @@ struct HomeView: View {
     @State private var placingHero = false
     /// El Top 10 de Netflix: series (por omisión) o películas.
     @State private var topMovies = false
+    /// La ruleta de «Un Simpson al azar».
+    @State private var rollingSimpsons = false
     /// El alto de cada renglón de «Tu watchlist», que crece con el tamaño de letra.
     @ScaledMetric(relativeTo: .body) private var watchRow = DS.Editorial.watchlistRow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -92,6 +94,7 @@ struct HomeView: View {
         // Arriba, el ícono y «Orbital» (el carácter de la app); al bajar, en medio, lo más útil que haya (lo que suena en la TV…).
         .navigationTitle(scrolledDown ? scrolledTitle : Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
         .subtitle(syncText)
+        .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette() }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { AppMark() }
                 .sharedBackgroundVisibility(.hidden)
@@ -104,18 +107,11 @@ struct HomeView: View {
                 }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
             }
-            // Un Simpson al azar (T5–T15), aquí o en la TV.
+            // Un Simpson al azar (T5–T15): un toque, la ruleta, y empieza en el iPhone.
             ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Section("Un Simpson al azar (T5–T15)") {
-                    Button("Ver aquí", systemImage: "iphone") { Task { await env.randomSimpsons(onTV: false) } }
-                    if env.services.orbital.isConfigured {
-                        Button("Ver en la TV", systemImage: "tv") { Task { await env.randomSimpsons(onTV: true) } }
-                    }
-                    }
-                } label: { Image("Glyphs/donut") }   // la dona de Los Simpson (el dado es «¿Qué vemos?», en Para ti)
-                .accessibilityLabel(Text("Un Simpson al azar"))
-                .accessibilityIdentifier("home-random-simpsons")
+                Button { rollingSimpsons = true } label: { Image("Glyphs/donut").renderingMode(.original) }
+                    .accessibilityLabel(Text("Un Simpson al azar"))
+                    .accessibilityIdentifier("home-random-simpsons")
             }
             ToolbarSpacer(.fixed, placement: .topBarTrailing)
             ToolbarItem(placement: .topBarTrailing) { ProfileButton(avatar: look.avatar) }

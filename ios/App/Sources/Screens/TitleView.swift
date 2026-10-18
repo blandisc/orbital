@@ -162,17 +162,17 @@ struct TitleView: View {
                         .accessibilityIdentifier("title-restart")
                 }
             }
-            HStack(alignment: .top, spacing: DS.Space.s2) {
-                saveAction(model)
-                downloadAction(model)
+            HStack(alignment: .top, spacing: DS.Space.s2) {   // rectángulos que llenan el renglón (antes círculos con hueco)
+                saveAction(model).frame(maxWidth: .infinity)
+                downloadAction(model).frame(maxWidth: .infinity)
                 if let url = model.extras?.trailer?.url {
-                    Button { openURL(url) } label: { CircleActionLabel(title: Text("Tráiler"), symbol: "play.rectangle", tint: artAccent) }
-                        .buttonStyle(.plain).accessibilityIdentifier("title-trailer")
+                    Button { openURL(url) } label: { ActionTileLabel(title: Text("Tráiler"), symbol: "play.rectangle", tint: artAccent) }
+                        .buttonStyle(.plain).frame(maxWidth: .infinity).accessibilityIdentifier("title-trailer")
                 }
                 Button { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) } } label: {
-                    CircleActionLabel(title: Text("Fuente"), symbol: "list.bullet", tint: artAccent)
+                    ActionTileLabel(title: Text("Fuente"), symbol: "list.bullet", tint: artAccent)
                 }
-                .buttonStyle(.plain).disabled(model.continueVideoID == nil).accessibilityIdentifier("title-sources")
+                .buttonStyle(.plain).frame(maxWidth: .infinity).disabled(model.continueVideoID == nil).accessibilityIdentifier("title-sources")
             }
             .animation(DS.Motion.base(reduceMotion), value: model.isSaved)
         }
@@ -191,7 +191,7 @@ struct TitleView: View {
                 Button("Tus listas de Trakt…", systemImage: "list.bullet") { saving = true }
             }
         } label: {
-            CircleActionLabel(title: model.isSaved ? Text("Guardada") : Text("Guardar"), symbol: model.isSaved ? "checkmark" : "plus", active: model.isSaved, tint: artAccent)
+            ActionTileLabel(title: model.isSaved ? Text("Guardada") : Text("Guardar"), symbol: model.isSaved ? "checkmark" : "plus", active: model.isSaved, tint: artAccent)
         } primaryAction: {
             Task { await quickSave(model) }
         }
@@ -223,11 +223,11 @@ struct TitleView: View {
             case .downloading?, .queued?:
                 Menu {
                     if let fraction { Text("Lleva \(Int(fraction * 100)) %") }
-                    Button("Pausar", systemImage: "pause") { if let target { Task { await model.pauseDownload(target) } } }
+                    Button("Pausar", systemImage: "pause.fill") { if let target { Task { await model.pauseDownload(target) } } }
                     Button("Ver en Descargas", systemImage: "arrow.down.circle") { env.openTab = AppEnvironment.downloadsTab }
                     Button("Cancelar la descarga", systemImage: "xmark", role: .destructive) { if let target { Task { await model.cancelDownload(target) } } }
                 } label: {
-                    CircleActionLabel(title: fraction.map { Text(verbatim: "\(Int($0 * 100)) %") } ?? Text("En espera"), symbol: "pause.fill", active: true, progress: fraction ?? 0, tint: artAccent)
+                    ActionTileLabel(title: fraction.map { Text(verbatim: "\(Int($0 * 100)) %") } ?? Text("En espera"), symbol: "pause.fill", active: true, progress: fraction ?? 0, tint: artAccent)
                 }
             case .paused?, .failed?:
                 let failed = model.downloadState(target) == .failed
@@ -235,7 +235,7 @@ struct TitleView: View {
                     Button("Ver en Descargas", systemImage: "arrow.down.circle") { env.openTab = AppEnvironment.downloadsTab }
                     Button("Cancelar la descarga", systemImage: "xmark", role: .destructive) { if let target { Task { await model.cancelDownload(target) } } }
                 } label: {
-                    CircleActionLabel(title: failed ? Text("Reintentar") : Text("En pausa"), symbol: failed ? "arrow.clockwise" : "play.fill", active: true, progress: fraction, tint: failed ? DS.warning : artAccent)
+                    ActionTileLabel(title: failed ? Text("Reintentar") : Text("En pausa"), symbol: failed ? "arrow.clockwise" : "play.fill", active: true, progress: fraction, tint: failed ? DS.warning : artAccent)
                 } primaryAction: {
                     if let target { Task { await model.resumeDownload(target) } }
                 }
@@ -245,7 +245,7 @@ struct TitleView: View {
                     Button("Ver en Descargas", systemImage: "arrow.down.circle") { env.openTab = AppEnvironment.downloadsTab }
                     Button("Borrar la descarga", systemImage: "trash", role: .destructive) { if let target { Task { await model.cancelDownload(target) } } }
                 } label: {
-                    CircleActionLabel(title: Text("Descargada"), symbol: "checkmark", active: true, tint: artAccent)
+                    ActionTileLabel(title: Text("Descargada"), symbol: "checkmark", active: true, tint: artAccent)
                 }
             default:
                 Menu {
@@ -254,7 +254,7 @@ struct TitleView: View {
                         Button("Los siguientes \(DS.Size.downloadNext)", systemImage: "square.stack.3d.down.right") { Task { await report(model.downloadNext(DS.Size.downloadNext), model) } }
                     }
                 } label: {
-                    CircleActionLabel(title: Text("Descargar"), symbol: "arrow.down", tint: artAccent)
+                    ActionTileLabel(title: Text("Descargar"), symbol: "arrow.down.circle", tint: artAccent)
                 } primaryAction: {
                     Task { await downloadRecommended(model) }
                 }
@@ -543,7 +543,7 @@ struct EpisodeRowView: View {
         .contextMenu {
             Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched)
             Button("Descargar", systemImage: "arrow.down.circle", action: download)
-            Button("Elegir fuente", systemImage: "list.bullet", action: chooseSource)
+            Button("Elegir la fuente…", systemImage: "list.bullet", action: chooseSource)
             if let playOnTV { Button("Ver en la TV", systemImage: "tv", action: playOnTV) }
         }
     }
@@ -567,10 +567,10 @@ struct EpisodeRowView: View {
         else if row.download == .paused || row.download == .failed {
             // En pausa o falló: seguir donde iba (no empezar de cero con otra fuente).
             Button(action: resumeDownload) {
-                Image(systemName: row.download == .failed ? "exclamationmark.arrow.circlepath" : "play.circle").foregroundStyle(row.download == .failed ? DS.warning : DS.textMuted)
+                Image(systemName: row.download == .failed ? "arrow.clockwise" : "play.circle").foregroundStyle(row.download == .failed ? DS.warning : DS.textMuted)
                     .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
             }
-            .buttonStyle(.plain).accessibilityLabel(row.download == .failed ? Text("Reintentar la descarga") : Text("Seguir la descarga"))
+            .buttonStyle(.plain).accessibilityLabel(row.download == .failed ? Text("Reintentar") : Text("Reanudar"))
         }
         else { Button(action: download) { Image(systemName: "arrow.down.circle").foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget) }.buttonStyle(.plain).accessibilityLabel(Text("Descargar")) }
     }

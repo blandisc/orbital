@@ -22,30 +22,38 @@ struct DownloadRing: View {
     }
 }
 
-/// Una acción de la ficha: un círculo con su ícono y el nombre debajo (Guardar, Descargar, Tráiler, Fuente). Activa (Guardada,
-/// Descargada) se pinta con el color del arte; con `progress`, el círculo lleva el anillo de la descarga. Es solo la etiqueta:
-/// quien la usa la pone en un `Button` o en un `Menu` (tocar hace lo principal; mantener presionado, el resto).
-struct CircleActionLabel: View {
+/// Una acción de la ficha: un rectángulo que llena su parte del renglón (sin espacio muerto entre ellas) con el ícono arriba
+/// y el nombre abajo: Guardar, Descargar, Tráiler, Fuente. Activa (Guardada, Descargada) se tiñe del color del arte; con
+/// `progress`, el ícono lleva el anillo de la descarga. Es solo la etiqueta: quien la usa la pone en un `Button` o en un `Menu`
+/// (tocar hace lo principal; mantener presionado, el resto).
+struct ActionTileLabel: View {
     let title: Text
     let symbol: String
     var active = false
     var progress: Double?
     var tint: Color = DS.accent
+    @Environment(\.colorScheme) private var scheme
+
+    /// El color del arte suele ser claro: en el modo claro se oscurece para que «Guardada» se lea sobre el papel.
+    private var ink: Color { scheme == .light ? tint.mix(with: DS.backdropDeep, by: DS.TitleAction.lightDeepen) : tint }
 
     var body: some View {
-        VStack(spacing: DS.Space.s2) {
+        let tint = ink
+        let shape = RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+        VStack(spacing: DS.Space.s1) {
             ZStack {
-                Circle().fill(active ? tint.opacity(DesignTokens.Opacity.track) : DS.fill)
-                Circle().strokeBorder(active ? tint.opacity(DesignTokens.Opacity.faint) : DS.hairline, lineWidth: DS.Size.hairline)
-                if let progress { DownloadRing(fraction: progress, tint: tint).padding(DS.TitleAction.ring / 2) }
-                Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(active ? tint : DS.text)
+                if let progress { DownloadRing(fraction: progress, tint: tint, lineWidth: DS.TitleAction.ringSmallLine) }
+                Image(systemName: symbol).font((progress == nil ? DS.TextRecipe.cardTitle : DS.TextRecipe.caption).font.weight(.semibold))
+                    .foregroundStyle(active ? tint : DS.text)
                     .contentTransition(.symbolEffect(.replace))
             }
-            .frame(width: DS.TitleAction.circle, height: DS.TitleAction.circle)
-            title.font(DS.TextRecipe.caption.font).foregroundStyle(active ? DS.text : DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
+            .frame(width: DS.TitleAction.ringSmall, height: DS.TitleAction.ringSmall)
+            title.font(DS.TextRecipe.caption.font.weight(.medium)).foregroundStyle(active ? DS.text : DS.textMuted).lineLimit(1).minimumScaleFactor(DS.Size.statScale)
                 .contentTransition(.numericText())
         }
-        .frame(maxWidth: .infinity)
-        .contentShape(Rectangle())
+        .frame(maxWidth: .infinity, minHeight: DS.TitleAction.tile)
+        .background(active ? tint.opacity(DesignTokens.Opacity.track) : DS.fill, in: shape)
+        .overlay(shape.strokeBorder(active ? tint.opacity(DesignTokens.Opacity.faint) : DS.hairline, lineWidth: DS.Size.hairline))
+        .contentShape(shape)
     }
 }

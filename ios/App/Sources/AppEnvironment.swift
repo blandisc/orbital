@@ -365,22 +365,36 @@ final class AppEnvironment: ObservableObject {
 
     /// «Ver en la TV»: tu Orbital pone el título (la fuente recomendada, donde ibas; el avance vive en Stremio).
     /// Un episodio de Los Simpson al azar, de la temporada 5 a la 15 (las buenas), aquí o en la TV.
-    func randomSimpsons(onTV: Bool) async {
-        let id = Self.simpsons
-        guard let meta = try? await services.cinemeta.meta(kind: "series", id: id) else { return notify("No pude traer los episodios de Los Simpson.") }
-        let pool = CinemetaParsing.seasons(meta).filter { Self.simpsonsSeasons.contains($0.season) }
-            .flatMap { season in season.episodes.map { (season.season, $0) } }
-        guard let (season, episode) = pool.randomElement() else { return notify("No pude traer los episodios de Los Simpson.") }
-        let language = services.appSettings.uiLanguage
-        let label = Strings.episode(season: season, episode: episode.episode, language: language) + (episode.hasTitle ? " · \(episode.title)" : "")
-        let name = meta["name"]?.string ?? "The Simpsons"
-        if onTV {
-            await playOnTV(kind: "series", metaID: id, videoID: episode.id, title: name)
-        } else {
-            play(PlayRequest(kind: "series", metaID: id, videoID: episode.id, originalTitle: name, displayTitle: name, episodeLabel: label,
-                             poster: String(format: ForYou.metahubPoster, id), meta: meta, fromStart: true))
-        }
+    /// Un Simpson al azar (T5–T15): los episodios (para la ruleta) y el elegido. nil si Cinemeta no contesta.
+    struct SimpsonsDraw: Equatable {
+        var meta: JSON
+        var name: String
+        var reel: [(season: Int, episode: Episode)]
+        var chosen: (season: Int, episode: Episode) { reel[reel.count - 1] }
+        static func == (a: SimpsonsDraw, b: SimpsonsDraw) -> Bool { a.reel.map(\.episode.id) == b.reel.map(\.episode.id) }
     }
+
+    /// Elige uno y arma la tira de la ruleta (otros al azar y, al final, el elegido).
+    func drawSimpsons(reelLength: Int) async -> SimpsonsDraw? {
+        let id = Self.simpsons
+        guard let meta = try? await services.cinemeta.meta(kind: "series", id: id) else { notify("No pude traer los episodios de Los Simpson."); return nil }
+        let pool = CinemetaParsing.seasons(meta).filter { Self.simpsonsSeasons.contains($0.season) }
+            .flatMap { season in season.episodes.map { (season: season.season, episode: $0) } }
+        guard pool.count > 1, let chosen = pool.randomElement() else { notify("No pude traer los episodios de Los Simpson."); return nil }
+        let others = (0..<max(0, reelLength - 1)).compactMap { _ in pool.randomElement() }
+        return SimpsonsDraw(meta: meta, name: meta["name"]?.string ?? "The Simpsons", reel: others + [chosen])
+    }
+
+    /// El elegido, en el iPhone y desde el principio.
+    func playSimpsons(_ draw: SimpsonsDraw) {
+        let (season, episode) = draw.chosen
+        let label = Strings.episode(season: season, episode: episode.episode, language: services.appSettings.uiLanguage) + (episode.hasTitle ? " · \(episode.title)" : "")
+        play(PlayRequest(kind: "series", metaID: Self.simpsons, videoID: episode.id, originalTitle: draw.name, displayTitle: draw.name, episodeLabel: label,
+                         poster: String(format: ForYou.metahubPoster, Self.simpsons), meta: draw.meta, fromStart: true))
+    }
+
+    /// La imagen de un episodio (metahub).
+    static func simpsonsStill(season: Int, episode: Int) -> String { "https://episodes.metahub.space/\(simpsons)/\(season)/\(episode)/w780.jpg" }
 
     static let simpsons = "tt0096697"
     static let simpsonsSeasons = 5...15

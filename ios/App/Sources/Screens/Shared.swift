@@ -237,8 +237,9 @@ struct NowPlayingCard: View {
 
     @ViewBuilder private func buttons(labeled: Bool) -> some View {
         if now.live {
-            actionButton(symbol: "chevron.up", text: "Canal anterior", labeled: labeled) { act("previous") }
-            actionButton(symbol: "chevron.down", text: "Canal siguiente", labeled: labeled) { act("next") }
+            // Igual que el control remoto: arriba es el siguiente canal, abajo el anterior.
+            actionButton(symbol: "chevron.up", text: "Canal siguiente", labeled: labeled) { act("next") }
+            actionButton(symbol: "chevron.down", text: "Canal anterior", labeled: labeled) { act("previous") }
             actionButton(symbol: now.muted ? "speaker.slash.fill" : "speaker.wave.2.fill", text: "Sin sonido", labeled: labeled) { act("mute") }
         } else {
             actionButton(symbol: "gobackward.10", text: "Retroceder 10 segundos", labeled: labeled) { act("skip", -10) }

@@ -62,20 +62,6 @@ struct ParaTiView: View {
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
         .navigationTitle("Para ti").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones
         .toolbar {
-            // Todo · Series · Películas (en Listas): un botón, no una fila más arriba.
-            if m.mode == .lists, m.hasKindSplit {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Picker(selection: Binding(get: { KindFilter(rawValue: m.kind) ?? .all }, set: { new in Task { await m.setKind(new.rawValue) } })) {
-                            ForEach(KindFilter.allCases) { Text($0.label).tag($0) }
-                        } label: { Text("Mostrar") }
-                    } label: {
-                        Image(systemName: m.kind == KindFilter.all.rawValue ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
-                    }
-                    .accessibilityLabel(Text("Series o películas"))
-                    .accessibilityIdentifier("paraTi-kind")
-                }
-            }
             // «Decide por mí»: una sola propuesta, por tiempo y ánimo.
             ToolbarItem(placement: .topBarTrailing) {
                 Button { deciding = true } label: { Image(systemName: "dice") }.accessibilityLabel(Text("Decide por mí"))
@@ -450,8 +436,17 @@ struct ListsView: View {
     struct StudioItem { let id: Int; let name: String }
 
     /// El índice de arriba: salta a cada grupo.
+    /// Un solo menú en la barra para Listas: qué mostrar (Todo · Series · Películas) e ir a una sección. Antes eran dos botones
+    /// y, con los demás, el título «Para ti» se cortaba.
     private func sectionMenu(_ proxy: ScrollViewProxy) -> some View {
         Menu {
+            if model.hasKindSplit {
+                Picker(selection: Binding(get: { KindFilter(rawValue: model.kind) ?? .all }, set: { new in Task { await model.setKind(new.rawValue) } })) {
+                    ForEach(KindFilter.allCases) { Text($0.label).tag($0) }
+                } label: { Text("Mostrar") }
+                .pickerStyle(.inline)
+                Divider()
+            }
             ForEach(CollectionSection.allCases.filter(isShown), id: \.self) { section in
                 Button {
                     activeSection = section
@@ -462,7 +457,7 @@ struct ListsView: View {
                     Label { activeSection == section ? section.title + Text(verbatim: "  ✓") : section.title } icon: { Image(systemName: section.symbol) }
                 }
             }
-        } label: { Image(systemName: "list.bullet.indent") }
+        } label: { Image(systemName: model.kind == KindFilter.all.rawValue ? "list.bullet.indent" : "line.3.horizontal.decrease.circle.fill") }
         .accessibilityLabel(Text("Ir a una sección"))
         .accessibilityIdentifier("paraTi-sections")
         .sensoryFeedback(.selection, trigger: jumps)   // solo al elegir una sección (no en cada una al deslizar)

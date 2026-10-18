@@ -76,9 +76,20 @@ enum DS {
     static let subtitleText = Color.white       // subtítulos: blanco puro sobre el video, como cualquier reproductor
     static let subtitleShadow = Color.black.opacity(DesignTokens.Opacity.subtitleShadow)
 
-    /// Las acciones de la ficha (Guardar, Descargar, Tráiler, Fuente): el círculo, el grueso del anillo de avance. El anillo es el mismo en la fila de un episodio (`ring`).
+    /// Las acciones de la ficha (Guardar, Descargar, Tráiler, Fuente): el alto del rectángulo y el grueso del anillo de avance. El anillo es el mismo en la fila de un episodio (`ring`).
+    /// «Un Simpson al azar»: la ruleta de episodios (ancho de cada imagen, espacio, cuánto gira y cuánto se queda el elegido
+    /// antes de empezar), la dona y el amarillo de Los Simpson.
+    enum Simpsons {
+        static let card: CGFloat = 200, gap: CGFloat = 14, reelLength = 22, warmWait: Double = 1.5
+        static let spin: Double = 3.2, hold: Double = 2.4, donut: CGFloat = 72, donutTurns: Double = 720
+        static let chosenScale: CGFloat = 1.08, revealScale: CGFloat = 0.92, glow: CGFloat = 420
+        static let amarillo = Color(red: 1, green: 0.85, blue: 0.12)   // el amarillo de Los Simpson
+    }
+
     enum TitleAction {
-        static let circle: CGFloat = 48, ring: CGFloat = 3, ringSmall: CGFloat = 26, ringSmallLine: CGFloat = 2.5
+        /// Cuánto se oscurece el color del arte en el modo claro (para que se lea sobre el papel).
+        static let lightDeepen: Double = 0.45
+        static let tile: CGFloat = 64, ring: CGFloat = 3, ringSmall: CGFloat = 26, ringSmallLine: CGFloat = 2.5
         /// Cuántos renglones de sinopsis antes de «más».
         static let synopsisLines = 3
         /// El alto del arte de la ficha (proporción ancho / alto) y el ancho máximo del logo centrado.
