@@ -3,6 +3,7 @@ import OrbitalModels
 
 /// Entrar con tu cuenta de Stremio (el eje de todo): lo que ves aquí aparece en Orbital y al revés.
 struct LoginView: View {
+    @State private var signingIn = false
     let session: SessionModel
     @StateObject private var observer: ModelObserver<SessionModel>
     @State private var email = ""
@@ -49,5 +50,10 @@ struct LoginView: View {
         .background(Backdrop())
     }
 
-    private func signIn() { Task { await session.signIn(email: email, password: password) } }
+    /// Una vez: dar Enter dos veces mientras entra no manda dos inicios de sesión.
+    private func signIn() {
+        guard !signingIn else { return }
+        signingIn = true
+        Task { await session.signIn(email: email, password: password); signingIn = false }
+    }
 }

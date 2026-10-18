@@ -4,6 +4,7 @@ import OrbitalModels
 
 /// La ficha de una película o serie: continuar, guardar (en Mi lista, tu watchlist o tus listas), descargar, temporadas y episodios.
 struct TitleView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let route: TitleRoute
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.dismiss) private var dismiss
@@ -82,7 +83,9 @@ struct TitleView: View {
             Button("Cambiarla por esta fuente") { Task { await report(model.download([r.videoID], source: r.source, replace: true), model) } }
             Button("Dejar la que tengo", role: .cancel) {}
         } message: { r in
-            Text("Guardamos una sola copia. La que tienes es \(r.existing.quality ?? r.existing.addon); si la cambias, se borra y se baja la nueva.")
+            let what = r.existing.quality ?? (r.existing.addon.isEmpty ? nil : r.existing.addon)
+            if let what { Text("Guardamos una sola copia. La que tienes es \(what); si la cambias, se borra y se baja la nueva.") }
+            else { Text("Guardamos una sola copia: si la cambias, se borra la que tienes y se baja la nueva.") }
         }
     }
 
@@ -150,7 +153,7 @@ struct TitleView: View {
                 .font(DS.TextRecipe.footnote.font.weight(.semibold))
                 .lineLimit(1)
             }
-            GlassEffectContainer(spacing: DS.Space.s3) {
+            GlassEffectContainer(spacing: DS.Space.s1) {   // menos que el hueco entre botones: solo se funde el panel con su botón
                 VStack(spacing: DS.Space.s2) {
                     ActionGrid(actions: [
                         ProjectionAction(id: "list", title: model.isSaved ? "Guardado" : "Guardar", symbol: model.isSaved ? "checkmark" : "plus", active: model.isSaved) { saving = true },
@@ -162,7 +165,7 @@ struct TitleView: View {
                     if downloadOpen { downloadPanel(model) }
                 }
             }
-            .animation(DS.Motion.base(false), value: downloadOpen)
+            .animation(DS.Motion.base(reduceMotion), value: downloadOpen)
         }
     }
 
@@ -190,6 +193,10 @@ struct TitleView: View {
             return ProjectionAction(id: "download", title: percent.map { LocalizedStringKey("\($0) %") } ?? "Descargando", symbol: "arrow.down.circle.dotted", active: true) {
                 env.openTab = AppEnvironment.downloadsTab
             }
+        case .paused?:
+            return ProjectionAction(id: "download", title: "En pausa", symbol: "play.circle") { Task { await model.resumeDownload(model.metaID) } }
+        case .failed?:
+            return ProjectionAction(id: "download", title: "Reintentar", symbol: "exclamationmark.arrow.circlepath") { Task { await model.resumeDownload(model.metaID) } }
         default:
             return ProjectionAction(id: "download", title: "Descargar", symbol: downloadOpen ? "chevron.down.circle" : "arrow.down.circle", active: downloadOpen) {
                 downloadOpen.toggle()
@@ -230,6 +237,7 @@ struct TitleView: View {
             ForEach(model.rows) { row in
                 EpisodeRowView(row: row, play: { start(model, videoID: row.id) }, download: { Task { await report(model.download([row.id]), model) } },
                                markWatched: { Task { await model.markWatched(row.id) } }, chooseSource: { sourcesFor = SourcesTarget(videoID: row.id, purpose: .watch) },
+                               resumeDownload: { Task { await model.resumeDownload(row.id) } },
                                downloadFraction: model.downloadFraction(row.id),
                                playOnTV: env.services.orbital.isConfigured ? { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: row.id, title: model.title) } } : nil)
                 Divider().overlay(DS.hairline)
@@ -351,6 +359,7 @@ struct EpisodeRowView: View {
     let download: () -> Void
     let markWatched: () -> Void
     let chooseSource: () -> Void
+    var resumeDownload: () -> Void = {}
     var downloadFraction: Double?
     var playOnTV: (() -> Void)?
 
@@ -395,11 +404,19 @@ struct EpisodeRowView: View {
     }
 
     @ViewBuilder private var stateIcon: some View {
-        if row.watched { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good) }
-        else if row.download == .done { Image(systemName: "arrow.down.circle.fill").foregroundStyle(DS.good) }
+        if row.watched { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("Visto")) }
+        else if row.download == .done { Image(systemName: "arrow.down.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("Descargado")) }
         else if row.download == .downloading || row.download == .queued {
             if let downloadFraction { Gauge(value: downloadFraction) { EmptyView() }.gaugeStyle(.accessoryCircularCapacity).tint(DS.primary).scaleEffect(DS.Gauge.episodeScale) }
             else { ProgressView() }
+        }
+        else if row.download == .paused || row.download == .failed {
+            // En pausa o falló: seguir donde iba (no empezar de cero con otra fuente).
+            Button(action: resumeDownload) {
+                Image(systemName: row.download == .failed ? "exclamationmark.arrow.circlepath" : "play.circle").foregroundStyle(row.download == .failed ? DS.warning : DS.textMuted)
+                    .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+            }
+            .buttonStyle(.plain).accessibilityLabel(row.download == .failed ? Text("Reintentar la descarga") : Text("Seguir la descarga"))
         }
         else { Button(action: download) { Image(systemName: "arrow.down.circle").foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget) }.buttonStyle(.plain).accessibilityLabel(Text("Descargar")) }
     }

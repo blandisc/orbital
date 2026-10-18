@@ -2,6 +2,11 @@ import AVFoundation
 import MediaPlayer
 import SwiftUI
 
+extension Notification.Name {
+    /// La voz del control soltó la sesión de audio (al terminar de escuchar o de hablar).
+    static let orbitalAudioReleased = Notification.Name("orbital.audio-released")
+}
+
 /// Los botones de volumen del iPhone como botones del control (como el control del Apple TV): mientras esta vista está en
 /// pantalla, subir o bajar llama a `onPress` y el volumen del iPhone se regresa a donde estaba (no cambia, ni sale el aviso
 /// del sistema: lo tapa un `MPVolumeView` invisible). Al irse, el volumen queda como lo tenías.
@@ -37,7 +42,13 @@ struct HardwareVolumeButtons: UIViewRepresentable {
 
         func attach(_ view: MPVolumeView) {
             let session = AVAudioSession.sharedInstance()
-            try? session.setActive(true)   // sin sesión activa iOS no avisa del volumen
+            // Mezclando con lo que suene (tu música no se para por abrir el control) y activa: sin sesión activa iOS no avisa
+            // del volumen.
+            Self.activate()
+            // Tras la voz del control (que suelta la sesión), se vuelve a tomar: si no, los botones volvían a ser del iPhone.
+            released = NotificationCenter.default.addObserver(forName: .orbitalAudioReleased, object: nil, queue: .main) { _ in
+                Task { @MainActor in Self.activate() }
+            }
             original = session.outputVolume
             base = session.outputVolume
             // En un extremo (0 o 100 %) un botón no cambiaría nada: se acerca al centro (y se devuelve al cerrar).
@@ -67,9 +78,20 @@ struct HardwareVolumeButtons: UIViewRepresentable {
             slider.sendActions(for: .valueChanged)
         }
 
+        private var released: NSObjectProtocol?
+
+        static func activate() {
+            let session = AVAudioSession.sharedInstance()
+            try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try? session.setActive(true)
+        }
+
         func detach() {
             observation?.invalidate()
             observation = nil
+            if let released { NotificationCenter.default.removeObserver(released) }
+            // De vuelta a la sesión de video (sin mezclar), como la pide el reproductor.
+            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
             if let original, abs(original - base) > Self.noise { set(original) }
         }
 

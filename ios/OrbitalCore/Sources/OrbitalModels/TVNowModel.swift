@@ -80,6 +80,7 @@ public final class TVNowModel: ObservableModel {
         pollTask?.cancel()
         pollTask = nil
         failures = 0
+        answeredSinceActive = false
         self.active = active
         guard active else { return }
         // Al volver de segundo plano se pregunta ya (el primer sondeo va sin espera); lo último que se supo se queda mientras
@@ -126,9 +127,12 @@ public final class TVNowModel: ObservableModel {
     }
 
     private func tick() async {
+        let ticket = nextTicket()
         do {
             let snapshot = try await services.orbital.snapshot()
-            now = snapshot.playing
+            // Una respuesta más vieja que la última aplicada (un sondeo lento que llega después de una tecla) no la deshace.
+            guard accept(ticket) else { return }
+            setNow(snapshot.playing)
             game = snapshot.game
             textField = snapshot.textField
             legend = snapshot.legend
@@ -148,24 +152,64 @@ public final class TVNowModel: ObservableModel {
             tokenProblem = true
             now = nil
             game = nil
+        } catch is CancellationError {
+            // Se canceló (se abrió o cerró el control, otra tecla): no es que la TV no conteste.
         } catch {
             // Sin red, la consola apagada o una versión vieja: la tarjeta se va sin ruido (se reintenta solo), pero no por un
             // solo tropiezo (un sondeo lento que vence a los 12 s tampoco cuenta doble).
             failures += 1
-            // Unos tropiezos seguidos (Wi‑Fi que se duerme, un sondeo lento) no lo esconden: solo tras varios y un rato sin
-            // respuesta.
-            if failures >= Self.failuresToHide, Date().timeIntervalSince(fetchedAt) > Self.hideAfter { now = nil; game = nil }
+            let stale = Date().timeIntervalSince(fetchedAt) > Self.hideAfter
+            // Unos tropiezos seguidos (Wi‑Fi que se duerme) no lo esconden; pero si lo último que se supo ya es viejo (volviste a
+            // la app horas después, la TV apagada), con el primero basta: no se enseña lo de ayer.
+            if stale, failures >= Self.failuresToHide || !answeredSinceActive { now = nil; game = nil }
         }
     }
 
+    // MARK: orden de las respuestas
+    private var issued = 0, applied = 0
+    private func nextTicket() -> Int { issued += 1; return issued }
+    private func accept(_ ticket: Int) -> Bool {
+        guard ticket >= applied else { return false }
+        applied = ticket
+        answeredSinceActive = true
+        return true
+    }
+    private var answeredSinceActive = false
+
+    /// Lo que suena. Una sola respuesta vacía (la TV entre un episodio y el siguiente) no lo quita: hacen falta dos seguidas
+    /// o unos segundos; si no, la hoja del control se cerraba y el accesorio parpadeaba.
+    private func setNow(_ value: OrbitalRemote.NowPlaying?) {
+        if value == nil, now != nil {
+            emptyAnswers += 1
+            if emptyAnswers < Self.emptyToStop, Date().timeIntervalSince(lastPlaying) < Self.emptyGrace { return }
+        } else { emptyAnswers = 0 }
+        if value != nil { lastPlaying = Date() }
+        now = value
+    }
+    private var emptyAnswers = 0
+    private var lastPlaying = Date.distantPast
+    static let emptyToStop = 2
+    static let emptyGrace: TimeInterval = 3
+
     /// Una tecla del mando desde el control completo (sin esperar ni bloquear: el pad manda varias seguidas).
     public func press(_ action: OrbitalRemote.InputAction) async {
-        do { try await services.orbital.input(action); remoteOutdated = false }
-        catch OrbitalRemote.Failure.outdated { remoteOutdated = true }
-        catch OrbitalRemote.Failure.badToken { tokenProblem = true }
-        catch {}
+        // En fila, una tras otra: «abajo, abajo, derecha» llega en ese orden (cada una en su propia petición podía llegar
+        // revuelta por el túnel y el foco caía en otro lado).
+        pendingKeys.append(action)
+        guard !sendingKeys else { return }
+        sendingKeys = true
+        defer { sendingKeys = false }
+        while !pendingKeys.isEmpty {
+            let next = pendingKeys.removeFirst()
+            do { try await services.orbital.input(next); remoteOutdated = false }
+            catch OrbitalRemote.Failure.outdated { remoteOutdated = true; pendingKeys.removeAll() }
+            catch OrbitalRemote.Failure.badToken { tokenProblem = true; pendingKeys.removeAll() }
+            catch {}
+        }
         refreshSoon()
     }
+    private var pendingKeys: [OrbitalRemote.InputAction] = []
+    private var sendingKeys = false
 
     /// Tras una tecla, la pantalla de la TV cambió: lo que hace cada botón (la leyenda) se pide enseguida, no al siguiente
     /// sondeo; varias teclas seguidas piden una sola vez.
@@ -189,8 +233,8 @@ public final class TVNowModel: ObservableModel {
     }
 
     /// Escribir en la TV (lo que tiene el foco, normalmente la búsqueda); `submit`: además, buscar.
-    public func type(_ text: String, submit: Bool) async {
-        do { try await services.orbital.type(text, submit: submit) }
+    public func type(_ text: String, submit: Bool, replace: Bool = false) async {
+        do { try await services.orbital.type(text, submit: submit, replace: replace) }
         catch OrbitalRemote.Failure.outdated { remoteOutdated = true }
         catch {}
     }
@@ -200,8 +244,11 @@ public final class TVNowModel: ObservableModel {
         guard !busy else { return }
         busy = true
         defer { busy = false }
+        let ticket = nextTicket()
         do {
-            now = try await services.orbital.control(action: action, delta: delta, track: track)
+            let playing = try await services.orbital.control(action: action, delta: delta, track: track)
+            guard accept(ticket) else { return }
+            setNow(playing)
             fetchedAt = Date()
             tokenProblem = false
         } catch OrbitalRemote.Failure.badToken {
@@ -214,18 +261,21 @@ public final class TVNowModel: ObservableModel {
     /// Sube o baja el volumen de la TV (de 5 en 5): la barra se mueve al momento y el siguiente sondeo trae el de verdad.
     public func changeVolume(by delta: Int) async {
         if let v = volume { volume = .init(level: max(0, min(100, v.level + delta)), muted: false) }
+        let ticket = nextTicket()
         do {
-            now = try await services.orbital.control(action: "volume", delta: Double(delta))
+            let playing = try await services.orbital.control(action: "volume", delta: Double(delta))
+            if accept(ticket) { setNow(playing); fetchedAt = Date() }   // con su hora: la barra de avance no brinca
             volumeOutdated = false
         } catch OrbitalRemote.Failure.badToken {
             tokenProblem = true
-        } catch {
+        } catch OrbitalRemote.Failure.outdated {
             volumeOutdated = true   // una consola sin la acción «volume»: se avisa que hay que actualizarla
-        }
+        } catch {}
     }
 
     /// Silencio sí / no (el de Windows, igual que en la TV).
     public func toggleMute() async {
+        guard !busy else { return }   // si no se va a mandar, no se cambia el ícono
         if let v = volume { volume = .init(level: v.level, muted: !v.muted) }
         await control("mute")
     }

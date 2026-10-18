@@ -90,9 +90,15 @@ struct TitleLink: View {
     var width: CGFloat = DS.Poster.railWidth
     /// Un renglón más debajo del nombre («2021 · Película»): distingue títulos que se llaman igual.
     var detail: Text?
+    /// Con el reflejo del póster debajo (los renglones de Inicio y Para ti).
+    var reflected = false
     @Environment(\.posterCaptions) private var captions
 
     var body: some View {
+        link.modifier(OptionalPosterReflection(on: reflected && !captions, url: route.poster, title: route.title, width: width))
+    }
+
+    private var link: some View {
         NavigationLink(value: route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterCard(title: route.title, poster: route.poster, badge: badge, bookmarked: bookmarked, rank: rank, progress: progress, width: width)
@@ -106,6 +112,16 @@ struct TitleLink: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("title-link")   // para las pruebas de interfaz
+    }
+}
+
+private struct OptionalPosterReflection: ViewModifier {
+    let on: Bool
+    let url: String?
+    let title: String
+    let width: CGFloat
+    func body(content: Content) -> some View {
+        if on { content.posterReflection(url, title: title, width: width) } else { content }
     }
 }
 
@@ -201,8 +217,8 @@ struct NowPlayingCard: View {
 
     /// Mientras no está en pausa, el avance se calcula a partir del último sondeo (no salta cada 5 s).
     private func interpolatedPosition(at date: Date) -> Double {
-        guard !now.paused, !now.live else { return now.position }
-        return min(now.duration, now.position + max(0, date.timeIntervalSince(fetchedAt)))
+        guard !now.live else { return now.position }
+        return now.position(at: date, since: fetchedAt)
     }
 
     @ViewBuilder private var controls: some View {

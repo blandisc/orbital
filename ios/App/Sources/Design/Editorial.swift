@@ -82,7 +82,8 @@ struct WatchlistCard: View {
             Spacer(minLength: 0)
         }
         .padding(DS.Space.s2)
-        .frame(width: DS.Editorial.watchlistWidth, alignment: .leading)
+        .frame(width: DS.Editorial.watchlistWidth, alignment: .topLeading)
+        .frame(maxHeight: .infinity, alignment: .top)
         .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         .accessibilityElement(children: .combine)
     }

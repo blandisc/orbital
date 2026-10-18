@@ -66,7 +66,9 @@ struct CollectionGridView: View {
         .task(id: kind) {
             guard route.kind == .year, let year = Int(route.id) else { return }
             loading = true
-            yearItems = await collections.model.items(year: year, kind: kind)
+            let found = await collections.model.items(year: year, kind: kind)
+            guard !Task.isCancelled else { return }   // cambiaste de Películas a Series: no se pinta lo del otro
+            yearItems = found
             loading = false
         }
     }

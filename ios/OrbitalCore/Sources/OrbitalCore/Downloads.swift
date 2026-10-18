@@ -226,10 +226,11 @@ public actor Downloads {
     }
 
     public func pause(_ id: String) async {
-        guard var item = items[id], item.state == .downloading || item.state == .queued else { return }
+        guard let before = items[id], before.state == .downloading || before.state == .queued else { return }
         waiting.remove(id)
         await transport.cancel(id: id)
-        guard items[id] != nil else { return }            // lo borraron mientras se pausaba
+        // Se vuelve a leer después de esperar: la borraron o terminó mientras se pausaba (no se pisa un «listo» con «en pausa»).
+        guard var item = items[id], item.state == .downloading || item.state == .queued else { return }
         item.state = .paused
         items[id] = item
         changed()
@@ -268,6 +269,13 @@ public actor Downloads {
             let file = fileURL(item)
             try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
             let onDisk = (try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? Int64) ?? 0
+            // Ya estaba completo (terminó en segundo plano y la app se cerró antes de anotarlo): se anota, no se baja otra vez.
+            if let expected = item.expectedBytes, expected > Self.wholeVideoMinimum, onDisk >= expected {
+                item.state = .done; item.writtenBytes = onDisk; item.finishedAt = clock().timeIntervalSince1970; item.lastError = nil
+                items[item.id] = item
+                secrets.set(SecretKey.download(item.id), nil)
+                continue
+            }
             // Se reanuda donde está el archivo parcial de verdad. En segundo plano lo bajado vive en los datos de reanudación
             // del sistema, no en el archivo: el avance no se regresa a cero al retomarla (al bloquear el iPhone parecía que
             // se reiniciaba); el primer avance real lo corrige si de verdad empezó de nuevo.
@@ -276,6 +284,9 @@ public actor Downloads {
             items[item.id] = item
             active += 1
             await transport.start(id: item.id, url: url, resumeFrom: onDisk, file: file)
+            // Mientras arrancaba la borraron o la pausaron: la tarea que se acaba de crear no se queda bajando a escondidas.
+            if items[item.id] == nil { await transport.discard(id: item.id) }
+            else if items[item.id]?.state != .downloading { await transport.cancel(id: item.id) }
         }
         changed()
     }
@@ -289,6 +300,9 @@ public actor Downloads {
             await pump()
         }
     }
+
+    /// Un video de verdad (no un tamaño anunciado a medias): solo con esto se da por completo un archivo que ya estaba en disco.
+    static let wholeVideoMinimum: Int64 = 50_000_000
 
     /// Menos de 2 MB cuando se esperaban más de 50: una lista de reproducción o una página de error, nunca un video.
     static func notTheVideo(size: Int64, advertised: Int64?) -> Bool {

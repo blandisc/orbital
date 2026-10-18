@@ -45,7 +45,7 @@ struct BrowseView: View {
         .autocorrectionDisabled()
         .textInputAutocapitalization(.never)
         .scrollDismissesKeyboard(.immediately)
-        .onChange(of: query) { _, text in if text.isEmpty { kind = "" } }
+        .onChange(of: query) { kind = "" }   // otra búsqueda empieza con «Todo» (un filtro viejo dejaba la pantalla en blanco)
         // El campo vive abajo (pestaña de búsqueda, como Trakt); al escribir, el título se queda arriba y los resultados
         // empiezan bajo él (antes la barra se escondía y lo de arriba chocaba con la hora).
         .searchPresentationToolbarBehavior(.avoidHidingContent)
@@ -75,14 +75,15 @@ struct BrowseView: View {
         if let error = model.error, answered { DSNotice(verbatim: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
         else if model.results.isEmpty && answered { ContentUnavailableView.search(text: query) }
         let shown = kind.isEmpty ? model.results : model.results.filter { $0.kind == kind }
-        if model.results.count > 1 {
+        let movieCount = model.results.filter { $0.kind == "movie" }.count, seriesCount = model.results.filter { $0.kind == "series" }.count
+        if model.results.count > 1 || !kind.isEmpty {
             // Todo · Películas · Series (cuántas de cada una), como en Para ti.
-            HStack(spacing: DS.Space.s2) {
+            ScrollView(.horizontal, showsIndicators: false) { HStack(spacing: DS.Space.s2) {
                 PanelChip(title: Text("Todo"), selected: kind.isEmpty) { kind = "" }
-                PanelChip(title: Text("Películas \(model.results.filter { $0.kind == "movie" }.count)"), selected: kind == "movie", symbol: "film") { kind = "movie" }
-                PanelChip(title: Text("Series \(model.results.filter { $0.kind == "series" }.count)"), selected: kind == "series", symbol: "tv") { kind = "series" }
-            }
-            .padding(.horizontal, DS.Space.gutter)
+                PanelChip(title: Text("Películas \(movieCount)"), selected: kind == "movie", symbol: "film") { kind = "movie" }
+                PanelChip(title: Text("Series \(seriesCount)"), selected: kind == "series", symbol: "tv") { kind = "series" }
+            } }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
         }
         // El que mejor coincide, en grande (con su arte), como el primer resultado de Apple TV.
         if let top = shown.first, top.metaID.hasPrefix("tt") {
@@ -93,6 +94,9 @@ struct BrowseView: View {
             }
             .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
             .simultaneousGesture(TapGesture().onEnded { model.remember(query) })
+        }
+        if answered, !model.results.isEmpty, shown.isEmpty {
+            DSNotice(text: "Nada de ese tipo: prueba con «Todo».").padding(.horizontal, DS.Space.gutter)
         }
         LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
             if !answered && model.results.isEmpty && model.error == nil {

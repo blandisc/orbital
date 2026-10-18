@@ -138,6 +138,9 @@ struct PlayerScreen: View {
         .animation(DS.Motion.base(reduceMotion), value: dragAxis)
         .task {
             lockLandscape()
+            // La sesión de video, siempre (la voz del control la deja en otro modo y con el volumen bajado).
+            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
+            try? AVAudioSession.sharedInstance().setActive(true)
             UIApplication.shared.isIdleTimerDisabled = true
             originalBrightness = Double(UIScreen.main.brightness)
             // `begin` va aparte: el plazo de arranque (45 s) tiene que seguir corriendo mientras carga.

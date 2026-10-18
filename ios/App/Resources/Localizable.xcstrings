@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "es",
   "strings": {
+    "%@ GB libres": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ GB free"
+          }
+        }
+      }
+    },
     "%@ de %@": {
       "extractionState": "manual",
       "localizations": {
@@ -8,6 +19,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ of %@"
+          }
+        }
+      }
+    },
+    "%@ de batería": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ of battery"
           }
         }
       }
@@ -155,6 +177,17 @@
         }
       }
     },
+    "%lld por delante · %lld fuertes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld ahead · %lld big"
+          }
+        }
+      }
+    },
     "%lld por terminar": {
       "extractionState": "manual",
       "localizations": {
@@ -162,6 +195,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld to finish"
+          }
+        }
+      }
+    },
+    "%lld sustos por delante": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld scares ahead"
           }
         }
       }
@@ -239,6 +283,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "A · swipe to move"
+          }
+        }
+      }
+    },
+    "Abajo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Down"
           }
         }
       }
@@ -639,6 +694,17 @@
         }
       }
     },
+    "Arriba": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up"
+          }
+        }
+      }
+    },
     "Atmos · 5.1": {
       "extractionState": "manual",
       "localizations": {
@@ -701,6 +767,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Advanced"
+          }
+        }
+      }
+    },
+    "Avisarme": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warn me"
           }
         }
       }
@@ -1134,6 +1211,17 @@
         }
       }
     },
+    "Cargando": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charging"
+          }
+        }
+      }
+    },
     "Carrusel": {
       "extractionState": "manual",
       "localizations": {
@@ -1405,6 +1493,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "On cellular data"
+          }
+        }
+      }
+    },
+    "Con datos móviles te avisamos antes de usar fuentes de más de %lld GB.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On cellular we ask before using sources over %lld GB."
           }
         }
       }
@@ -1959,6 +2058,17 @@
         }
       }
     },
+    "De lo más popular": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Among the most popular"
+          }
+        }
+      }
+    },
     "De lo último que viste": {
       "extractionState": "manual",
       "localizations": {
@@ -2014,6 +2124,17 @@
         }
       }
     },
+    "Dejan de salir tu watchlist, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your watchlist, lists and shows stop appearing; what you watch is no longer marked on Trakt."
+          }
+        }
+      }
+    },
     "Dejar de usar Trakt en el iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -2043,6 +2164,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "From the streaming service: good quality, medium size."
+          }
+        }
+      }
+    },
+    "Derecha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Right"
           }
         }
       }
@@ -2230,6 +2362,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dismiss"
+          }
+        }
+      }
+    },
+    "Desconectar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect"
           }
         }
       }
@@ -2850,6 +2993,17 @@
         }
       }
     },
+    "En tendencia y para ti": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trending and for you"
+          }
+        }
+      }
+    },
     "En tu lista": {
       "extractionState": "manual",
       "localizations": {
@@ -3290,6 +3444,17 @@
         }
       }
     },
+    "Guardamos una sola copia: si la cambias, se borra la que tienes y se baja la nueva.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We keep a single copy: if you replace it, yours is deleted and the new one downloads."
+          }
+        }
+      }
+    },
     "Guardar": {
       "extractionState": "manual",
       "localizations": {
@@ -3638,6 +3803,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Go home"
+          }
+        }
+      }
+    },
+    "Izquierda": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Left"
           }
         }
       }
@@ -4302,13 +4478,13 @@
         }
       }
     },
-    "Los siguientes %@ episodios": {
+    "Los siguientes %lld episodios": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The next %@ episodes"
+            "value": "The next %lld episodes"
           }
         }
       }
@@ -4346,13 +4522,24 @@
         }
       }
     },
-    "Mapa de sustos · %@": {
+    "Mantener": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jump scare map · %@"
+            "value": "Hold"
+          }
+        }
+      }
+    },
+    "Mapa de sustos · %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jump scare map · %lld"
           }
         }
       }
@@ -4639,6 +4826,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing with these filters."
+          }
+        }
+      }
+    },
+    "Nada de ese tipo: prueba con «Todo».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing of that kind: try “All”."
           }
         }
       }
@@ -5644,13 +5842,13 @@
         }
       }
     },
-    "Películas %@": {
+    "Películas %lld": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Movies %@"
+            "value": "Movies %lld"
           }
         }
       }
@@ -5952,13 +6150,13 @@
         }
       }
     },
-    "Quedan %@ min": {
+    "Quedan %lld min": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ min left"
+            "value": "%lld min left"
           }
         }
       }
@@ -6113,6 +6311,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recommended"
+          }
+        }
+      }
+    },
+    "Reintentar la descarga": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry the download"
           }
         }
       }
@@ -6337,6 +6546,17 @@
         }
       }
     },
+    "Se borra lo que tenías pendiente de subir y tus búsquedas recientes. Tus descargas se quedan en el iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending uploads and your recent searches are deleted. Your downloads stay on the iPhone."
+          }
+        }
+      }
+    },
     "Se cerró por falta de memoria: cierra otras apps de la consola antes de volver a jugar.": {
       "extractionState": "manual",
       "localizations": {
@@ -6414,6 +6634,17 @@
         }
       }
     },
+    "Seguir la descarga": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resume the download"
+          }
+        }
+      }
+    },
     "Seguir viendo": {
       "extractionState": "manual",
       "localizations": {
@@ -6480,13 +6711,13 @@
         }
       }
     },
-    "Series %@": {
+    "Series %lld": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Shows %@"
+            "value": "Shows %lld"
           }
         }
       }
@@ -6685,6 +6916,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Next episode"
+          }
+        }
+      }
+    },
+    "Silencio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mute"
           }
         }
       }
@@ -6927,6 +7169,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Their charts today"
+          }
+        }
+      }
+    },
+    "Sustos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scares"
           }
         }
       }
@@ -8130,6 +8383,28 @@
         }
       }
     },
+    "para el siguiente · fuerte": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "to the next one · big"
+          }
+        }
+      }
+    },
+    "para el siguiente · leve": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "to the next one · mild"
+          }
+        }
+      }
+    },
     "quedan %lld h": {
       "extractionState": "manual",
       "localizations": {
@@ -8170,6 +8445,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "longest streak"
+          }
+        }
+      }
+    },
+    "síguela en mi iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "continue it on my iPhone"
           }
         }
       }
@@ -8269,6 +8555,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "How long do you want to play?"
+          }
+        }
+      }
+    },
+    "¿Desconectar Trakt?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect Trakt?"
           }
         }
       }

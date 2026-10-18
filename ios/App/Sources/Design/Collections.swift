@@ -25,7 +25,9 @@ struct CollectionCard<Emblem: View>: View {
             }
         }
         .frame(width: DS.PlatformFan.width, alignment: .leading)
-        .accessibilityElement(children: .combine)
+        // VoiceOver dice el nombre y la categoría («Óscar, Mejor película»), no el id interno del premio («palm»).
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(captioned ? title + Text(verbatim: ", ") + detail : title)
     }
 }
 
@@ -280,6 +282,24 @@ struct Reflection: ViewModifier {
 }
 
 extension View {
+    /// El reflejo de un póster (solo el arte, no la tarjeta con su texto, sus marcas ni su punto de zoom): una franja volteada
+    /// que se desvanece, del ancho del póster.
+    func posterReflection(_ url: String?, title: String, width: CGFloat) -> some View {
+        overlay(alignment: .bottom) {
+            PosterView(url: url, title: title).frame(width: width)
+                .scaleEffect(x: 1, y: -1)
+                .blur(radius: DS.Collections.reflectionBlur)
+                .mask(alignment: .top) {
+                    LinearGradient(colors: [DS.text.opacity(DS.Collections.reflectionOpacity), .clear], startPoint: .top, endPoint: .bottom)
+                        .frame(height: DS.Collections.reflection)
+                }
+                .alignmentGuide(.bottom) { d in d[.top] - DS.Collections.reflectionGap }
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+        .padding(.bottom, DS.Collections.reflection + DS.Collections.reflectionGap)
+    }
+
     /// Con su reflejo debajo y, si se da, el peso de su color (Colecciones).
     func reflected(weight: Color? = nil) -> some View { modifier(Reflection(weight: weight)) }
 }

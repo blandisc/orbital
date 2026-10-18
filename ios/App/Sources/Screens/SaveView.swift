@@ -5,6 +5,7 @@ import OrbitalModels
 /// «Guardar en…»: en qué listas va un título, varias a la vez — Mi lista (Stremio), tu watchlist y tus listas de Trakt
 /// (las mismas que ves en la TV y en «Tus listas»); abajo, una lista nueva.
 struct SaveView: View {
+    @EnvironmentObject private var env: AppEnvironment
     @ObservedObject var observer: ModelObserver<TitleModel>
     @State private var naming = false
     @State private var newName = ""
@@ -32,7 +33,7 @@ struct SaveView: View {
                     Button { naming = true } label: { Label("Nueva lista…", systemImage: "plus") }
                         .buttonStyle(.glass).controlSize(.large).padding(.top, DS.Space.s2)
                 }
-                if let message = m.message { DSNotice(verbatim: message, tone: .error) }
+                if let message = m.message { DSNotice(verbatim: env.message(message), tone: .error) }
             }
             .padding(DS.Space.gutter)
         }
@@ -40,7 +41,8 @@ struct SaveView: View {
         .task { if m.lists == nil { await m.loadLists() } }
         .alert("Nueva lista", isPresented: $naming) {
             TextField("Nombre", text: $newName)
-            Button("Crear") { let name = newName; newName = ""; Task { await m.createList(named: name) } }
+            Button("Crear") { let name = newName.trimmingCharacters(in: .whitespacesAndNewlines); newName = ""; Task { await m.createList(named: name) } }
+                .disabled(newName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             Button("Cancelar", role: .cancel) { newName = "" }
         } message: { Text("Se crea en Trakt (privada) y este título entra en ella.") }
     }

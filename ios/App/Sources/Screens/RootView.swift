@@ -15,6 +15,7 @@ struct TitleRoute: Hashable {
 
 struct RootView: View {
     @EnvironmentObject private var env: AppEnvironment
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// El reproductor y los avisos: solo la raíz se vuelve a pintar cuando cambian.
     @ObservedObject private var ui = AppEnvironment.shared.ui
     @StateObject private var session: ModelObserver<SessionModel>
@@ -52,8 +53,8 @@ struct RootView: View {
                 BannerView()
             }
         }
-        .animation(DS.Motion.base(false), value: ui.handoff)
-        .animation(DS.Motion.base(false), value: ui.banner)
+        .animation(DS.Motion.base(reduceMotion), value: ui.handoff)
+        .animation(DS.Motion.base(reduceMotion), value: ui.banner)
         .task {
             _ = await env.services.watch.flushPending()
             // Con tu Orbital conectada: lo nuevo de la consola (otra clave, Trakt recién conectado allá) llega solo.

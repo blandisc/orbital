@@ -101,6 +101,20 @@ final class DownloadsTests: XCTestCase {
         XCTAssertEqual(transport.starts[1].resumeFrom, 4096, "continúa con Range desde lo que ya hay")
     }
 
+    func testAFileThatFinishedWhileTheAppWasClosedIsNotDownloadedAgain() async throws {
+        let transport = FakeTransport(), secrets = InMemorySecrets()
+        var saved = item("tt1:1:2", size: 60_000_000)
+        saved.state = .downloading
+        let file = root.appendingPathComponent(saved.relativePath)
+        try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        FileManager.default.createFile(atPath: file.path, contents: nil)
+        let handle = try FileHandle(forWritingTo: file); try handle.truncate(atOffset: 60_000_000); try handle.close()   // completo en disco
+        secrets.set(SecretKey.download(saved.id), "https://rd.example/a.mkv")
+        let d = makeDownloads(transport, secrets: secrets, saved: [saved])
+        await settle("listo") { await d.item(saved.id)?.state == .done }
+        XCTAssertTrue(transport.starts.isEmpty, "no se vuelve a pedir")
+    }
+
     func testNetworkFailuresRetryThenGiveUp() async throws {
         let transport = FakeTransport()
         let d = makeDownloads(transport)

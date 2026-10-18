@@ -66,6 +66,7 @@ struct ConsoleStatePanel: View {
     let state: OrbitalRemote.ConsoleState?
     let setPower: (String) -> Void
     let closeApp: (String) -> Void
+    private var language: String { AppEnvironment.shared.services.appSettings.uiLanguage }
 
     var body: some View {
         CompanionPanel(title: "La consola", symbol: "gamecontroller") {
@@ -76,7 +77,9 @@ struct ConsoleStatePanel: View {
                             Text(verbatim: "\(percent) %").recipe(.section)
                             Spacer()
                             if s.plugged { Text("Cargando").recipe(.caption) }
-                            else if let minutes = s.minutesLeft { Text("\(Strings.duration(minutes)) de batería").recipe(.caption) }
+                            else if let minutes = s.minutesLeft {
+                                Text(verbatim: String(format: Strings.tr("%@ de batería", language: language), Strings.duration(minutes))).recipe(.caption)
+                            }
                         }
                         ProgressView(value: Double(percent), total: 100).tint(percent <= DS.Companion.lowBattery ? DS.danger : DS.live)
                     }
@@ -89,7 +92,8 @@ struct ConsoleStatePanel: View {
                 }
                 if let free = s.freeGB {
                     HStack {
-                        Text("\(String(format: "%.1f", free)) GB libres").recipe(.caption)
+                        // El decimal en el idioma de la app («1,5» / «1.5»).
+                        Text(verbatim: String(format: Strings.tr("%@ GB libres", language: language), free.formatted(.number.precision(.fractionLength(1)).locale(Locale(identifier: language))))).recipe(.caption)
                         Spacer()
                         if let app = s.apps.first(where: \.closable) {
                             Button { closeApp(app.name) } label: { Text("Cerrar \(app.name)") }

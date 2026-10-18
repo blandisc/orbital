@@ -6,6 +6,7 @@ import OrbitalModels
 /// ve en la TV (pausa, ±10, siguiente…); estirada hacia arriba, además el control completo de la consola: el pad
 /// (`TouchPad`), sus teclas (`RemoteKey`) y «Escribir» cuando la TV tiene dónde.
 struct RemoteSheet: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject var tvNow: ModelObserver<TVNowModel>
     @Binding var large: Bool
     let onContinueHere: (OrbitalRemote.NowPlaying) -> Void
@@ -31,7 +32,7 @@ struct RemoteSheet: View {
             VStack(alignment: .leading, spacing: DS.Space.s5) {
                 header(model)
                     // El alto de la hoja corta: el de la tarjeta completa (estirada se vuelve compacta y no cuenta).
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if !large { compactHeight = $0 + DS.Space.s6 + DS.Space.s10 } }
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if !large { compactHeight = min($0 + DS.Space.s6 + DS.Space.s10, UIScreen.main.bounds.height * DS.Remote.maxShare) } }
                 if large { full(model).transition(.opacity.combined(with: .move(edge: .bottom))) }
                 else {
                     Label("Estira hacia arriba para el control completo", systemImage: "chevron.compact.up")
@@ -41,7 +42,7 @@ struct RemoteSheet: View {
             .padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s6).padding(.bottom, DS.Space.s4)
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if large { fullHeight = min($0, UIScreen.main.bounds.height * DS.Remote.maxShare) } }
         }
-        .scrollDisabled(!large)
+        .scrollDisabled(!large && compactHeight < UIScreen.main.bounds.height * DS.Remote.maxShare)   // corta y sin caber (letra grande): se desliza
         .scrollBounceBehavior(.basedOnSize)
         // Sin nada en la TV la hoja corta no tiene qué enseñar (quedaba «Tu Orbital» y un hueco, y bajarla se atoraba ahí):
         // solo la altura completa, y bajarla la cierra.
@@ -53,7 +54,7 @@ struct RemoteSheet: View {
         .presentationBackgroundInteraction(.disabled)
         // Vidrio en las dos alturas (la estirada no llega a la altura completa, que iOS volvería opaca).
         .presentationBackground { Rectangle().fill(.clear).glassEffect(.regular, in: Rectangle()) }
-        .animation(DS.Motion.base(false), value: large)
+        .animation(DS.Motion.base(reduceMotion), value: large)
         .onDisappear { speech.cancel(); model.setRemoteOpen(false) }
         .onAppear { model.setRemoteOpen(true) }   // con el control abierto, la TV se consulta más seguido
         .task(id: model.now?.metaID) { await model.loadScares() }   // el mapa de sustos de la película que suena
@@ -93,7 +94,7 @@ struct RemoteSheet: View {
             asking = false
             var shown = outcome.reply
             shown.speech = Strings.message(outcome.speech, language: language)
-            withAnimation(DS.Motion.base(false)) { reply = shown }
+            withAnimation(DS.Motion.base(reduceMotion)) { reply = shown }
             speech.speak(shown.speech, language: language)
             if outcome.continueHere, let now = model.now { onContinueHere(now) }
         }
@@ -137,10 +138,10 @@ struct RemoteSheet: View {
                 // Una película con mapa de sustos: un toque lo abre aquí mismo (la línea de tiempo, el siguiente y el aviso).
                 if let scares = model.scares {
                     if showsScares { ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares).transition(.opacity.combined(with: .move(edge: .top))) }
-                    Button { withAnimation(DS.Motion.base(false)) { showsScares.toggle() } } label: {
+                    Button { withAnimation(DS.Motion.base(reduceMotion)) { showsScares.toggle() } } label: {
                         Label(showsScares ? "Ocultar los sustos" : "Mapa de sustos · \(scares.count)", systemImage: showsScares ? "chevron.up" : "bolt.heart")
                             .recipe(.footnote, color: DS.text).fontWeight(.semibold)
-                            .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+                            .padding(.horizontal, DS.Space.s4).frame(minHeight: DS.Size.touchTarget)
                             .background(DS.fill, in: Capsule())
                     }
                     .buttonStyle(.plain).frame(maxWidth: .infinity)
@@ -199,7 +200,7 @@ struct RemoteSheet: View {
                 typing(model, autoFocus: model.textField == true)
             }
         }
-        .animation(DS.Motion.base(false), value: model.context)
+        .animation(DS.Motion.base(reduceMotion), value: model.context)
     }
 
     private func voice(_ model: TVNowModel) -> some View {
@@ -233,7 +234,7 @@ struct RemoteSheet: View {
             ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares)
         } else {
             TimelineView(.periodic(from: model.fetchedAt, by: DS.NowPlaying.progressTick)) { context in
-                let position = now.paused ? now.position : min(now.duration, now.position + max(0, context.date.timeIntervalSince(model.fetchedAt)))
+                let position = now.position(at: context.date, since: model.fetchedAt)
                 ScareTimeline(position: position, duration: now.duration)
             }
         }
@@ -257,6 +258,11 @@ struct RemoteSheet: View {
             key(model, symbol, nil, legendKey, title, fallback)
         } else {
             Menu {
+                if action == "subtitles" {
+                    Button { Task { await model.control(action, track: "no") } } label: {
+                        if !tracks.contains(where: \.selected) { Label("Sin subtítulos", systemImage: "checkmark") } else { Text("Sin subtítulos") }
+                    }
+                }
                 ForEach(tracks) { t in
                     Button { Task { await model.control(action, track: t.id) } } label: {
                         if t.selected { Label(t.label, systemImage: "checkmark") } else { Text(verbatim: t.label) }
@@ -265,28 +271,29 @@ struct RemoteSheet: View {
             } label: {
                 VStack(spacing: DS.Space.s1) {
                     Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font)
-                    Text(verbatim: tracks.first(where: \.selected)?.label ?? "—").recipe(.caption, color: DS.textMuted).lineLimit(1)
+                    (tracks.first(where: \.selected).map { Text(verbatim: $0.label) } ?? Text("Sin subtítulos")).recipe(.caption, color: DS.textMuted).lineLimit(1)
                 }
                 .foregroundStyle(DS.text)
                 .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeight)
                 .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
             }
             .accessibilityLabel(title)
+            .accessibilityValue(Text(verbatim: tracks.first(where: \.selected)?.label ?? ""))
         }
     }
 
     /// En vivo: canal anterior y siguiente, grandes, y silencio.
     private func liveDeck(_ model: TVNowModel) -> some View {
         HStack(spacing: DS.Space.s2) {
-            RemoteKey(symbol: "chevron.up", title: Text("Canal anterior")) { Task { await model.control("previous") } }
-            RemoteKey(symbol: "chevron.down", title: Text("Canal siguiente")) { Task { await model.control("next") } }
-            key(model, "list.bullet.rectangle", "Y", "options", Text("Guía"), .options)
+            RemoteKey(symbol: "chevron.up", title: Text("Canal siguiente")) { Task { await model.control("channel_up") } }
+            RemoteKey(symbol: "chevron.down", title: Text("Canal anterior")) { Task { await model.control("channel_down") } }
+            RemoteKey(symbol: "list.bullet.rectangle", title: Text("Guía")) { Task { await model.control("guide") } }
         }
     }
 
     /// El pad plegado (reproduciendo o en vivo): un renglón que lo abre para moverte por los menús de la TV.
     @ViewBuilder private func foldedPad(_ model: TVNowModel) -> some View {
-        Button { withAnimation(DS.Motion.base(false)) { showsPad.toggle() } } label: {
+        Button { withAnimation(DS.Motion.base(reduceMotion)) { showsPad.toggle() } } label: {
             Label(showsPad ? "Ocultar el pad" : "Moverte por la TV", systemImage: showsPad ? "chevron.up" : "hand.point.up.left")
                 .recipe(.footnote, color: DS.text).fontWeight(.semibold)
                 .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
@@ -307,7 +314,7 @@ struct RemoteSheet: View {
             key(model, "chevron.right.2", "RB", nil, Text("Siguiente"), .nextsection)
         }
         TouchPad(selectLabel: model.legend["select"]) { action in Task { await model.press(action) } }
-            .animation(DS.Motion.base(false), value: model.legend["select"])
+            .animation(DS.Motion.base(reduceMotion), value: model.legend["select"])
             // Por el alto de la pantalla (no de la hoja: la hoja mide lo que mide el control).
             .frame(height: max(DS.Remote.padHeight, UIScreen.main.bounds.height * DS.Remote.padShare))
         HStack(spacing: DS.Space.s2) {
@@ -327,18 +334,16 @@ struct RemoteSheet: View {
     /// Escribir en la TV: si no tiene un campo abierto, abre su búsqueda con ese texto.
     private func typing(_ model: TVNowModel, autoFocus: Bool) -> some View {
         RemoteTextField(text: $text, autoFocus: autoFocus) {
-            let change = RemoteTyping.delta(from: sentText, to: text); sentText = text
-            Task { await model.type(change, submit: true) }
+            let typed = text
+            Task { await model.type(typed, submit: true, replace: true) }
         }
         .task(id: text) {
-            // Mientras escribes, la TV lo va enseñando: solo lo que cambió desde lo último que se mandó (la tele agrega cada
-            // letra; mandar todo otra vez lo repetía).
+            // Mientras escribes, la TV lo va enseñando: el campo de la TV se reemplaza entero con lo que hay aquí (antes se
+            // mandaban letras sueltas y si la TV ya tenía algo, se pegaba: «dune» + «x» = «dunex»).
             try? await Task.sleep(nanoseconds: DS.Remote.typeDebounce)
-            guard !Task.isCancelled else { return }
-            let change = RemoteTyping.delta(from: sentText, to: text)
-            guard !change.isEmpty else { return }
+            guard !Task.isCancelled, text != sentText else { return }
             sentText = text
-            await model.type(change, submit: false)
+            await model.type(text, submit: false, replace: true)
         }
     }
 }

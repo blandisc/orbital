@@ -343,6 +343,12 @@ public final class TitleModel: ObservableModel {
         return await download(Array(ids.dropFirst(i).prefix(count)))
     }
 
+    /// Seguir una descarga en pausa o que falló (donde iba, con la misma fuente), en vez de empezarla de cero.
+    public func resumeDownload(_ videoID: String) async {
+        await services.downloads.resume(DownloadItem.makeID(metaID: metaID, videoID: videoID))
+        await refreshState()
+    }
+
     /// La copia que ya tienes (o se está bajando) de este video, para preguntar antes de cambiarla por otra fuente.
     public func existingDownload(_ videoID: String) async -> DownloadItem? { await services.downloads.item(DownloadItem.makeID(metaID: metaID, videoID: videoID)) }
 

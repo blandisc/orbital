@@ -34,6 +34,7 @@ public final class SearchModel: ObservableModel {
         let key = query.lowercased()
         if let cached = memory[key] { results = cached; error = nil; searchedQuery = query; isSearching = false; return }
         isSearching = true
+        error = nil   // un error de la búsqueda anterior no tapa lo que está cargando
         defer { if ticket == latest { isSearching = false } }
         do {
             let found = try await services.cinemeta.searchAll(query)
@@ -47,7 +48,8 @@ public final class SearchModel: ObservableModel {
             async let seriesNames = names(found, kind: "series")
             let names = await movieNames.merging(seriesNames) { a, _ in a }
             let localized = results.map { r in var r = r; r.title = names[r.metaID] ?? r.title; return r }
-            remember(results: localized, for: key)
+            // Solo se recuerda si la traducción terminó (cancelada por otra letra, se habrían guardado los nombres en inglés).
+            if !Task.isCancelled { remember(results: localized, for: key) }
             guard ticket == latest else { return }
             if localized != results { results = localized }
         } catch {

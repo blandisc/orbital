@@ -12,6 +12,7 @@ struct SettingsView: View {
     @State private var newAddon = ""
     @State private var secret = ""
     @State private var confirmSignOut = false
+    @State private var confirmUnlink = false
     @State private var orbitalToken = ""
     @State private var editingAvatar = false
     @State private var showsYear = false
@@ -89,7 +90,10 @@ struct SettingsView: View {
         .navigationTitle("Ajustes").navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("¿Cerrar sesión de Stremio?", isPresented: $confirmSignOut, titleVisibility: .visible) {
             Button("Cerrar sesión", role: .destructive) { Task { await session.model.signOut() } }
-        }
+        } message: { Text("Se borra lo que tenías pendiente de subir y tus búsquedas recientes. Tus descargas se quedan en el iPhone.") }
+        .confirmationDialog("¿Desconectar Trakt?", isPresented: $confirmUnlink, titleVisibility: .visible) {
+            Button("Desconectar", role: .destructive) { Task { await settings.model.unlinkTrakt() } }
+        } message: { Text("Dejan de salir tu watchlist, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.") }
         .sheet(isPresented: $editingAvatar) {
             NavigationStack {
                 Form {
@@ -349,9 +353,9 @@ struct SettingsView: View {
                 (name.isEmpty ? Label("Trakt conectado", systemImage: "checkmark.seal") : Label("Trakt: \(name)", systemImage: "checkmark.seal"))
                 if env.services.trakt?.borrowed == true {
                     Text("Con la sesión de tu Orbital: no hay nada que conectar aquí.").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint)
-                    Button("Dejar de usar Trakt en el iPhone", role: .destructive) { Task { await model.unlinkTrakt() } }
+                    Button("Dejar de usar Trakt en el iPhone", role: .destructive) { confirmUnlink = true }
                 } else {
-                    Button("Desconectar Trakt", role: .destructive) { Task { await model.unlinkTrakt() } }
+                    Button("Desconectar Trakt", role: .destructive) { confirmUnlink = true }
                 }
                 scrobbleRow(model)
             case .failed(let message):

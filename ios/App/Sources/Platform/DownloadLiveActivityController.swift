@@ -15,6 +15,8 @@ final class DownloadLiveActivityController {
     private var dismissedByUser = false
     /// Cómo estaba la actividad la última vez que se actualizó (para distinguir si la quitaste tú o iOS).
     private var seenState: ActivityState?
+    /// Cuándo empezó la tanda de ahora (para decir «Descargado» solo de lo que terminó en ella).
+    private var batchStarted: Double?
 
     func follow(_ downloads: Downloads) async {
         // Si iOS cerró la app con una actividad viva (las descargas siguen en segundo plano), se retoma esa en vez de
@@ -29,6 +31,7 @@ final class DownloadLiveActivityController {
     func update(_ items: [DownloadItem]) async {
         let pending = items.filter { $0.state == .downloading || $0.state == .queued || $0.state == .paused }
         guard !pending.isEmpty else { return await finish(items) }
+        if batchStarted == nil { batchStarted = Date().timeIntervalSince1970 }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         let current = pending.first { $0.state == .downloading } ?? pending[0]
         let written = pending.reduce(Int64(0)) { $0 + $1.writtenBytes }
@@ -63,11 +66,18 @@ final class DownloadLiveActivityController {
     private func finish(_ items: [DownloadItem]) async {
         dismissedByUser = false
         seenState = nil
+        let started = batchStarted ?? 0
+        batchStarted = nil
         guard let activity else { return }
-        let done = items.filter { $0.state == .done }.max { ($0.finishedAt ?? 0) < ($1.finishedAt ?? 0) }
-        var final = DownloadActivityAttributes.ContentState(title: done?.title ?? last?.title ?? "", fraction: 1, remaining: 0, waiting: false, language: language(),
-                                                           detail: done?.subtitle ?? last?.detail ?? "", poster: last?.poster, done: true)
-        if let done { final.poster = await posterFile(done) ?? final.poster }
+        // «Descargado» solo si algo de esta tanda terminó de verdad; si la borraste o falló, la actividad se va sin decir que sí.
+        guard let done = items.filter({ $0.state == .done && ($0.finishedAt ?? 0) >= started }).max(by: { ($0.finishedAt ?? 0) < ($1.finishedAt ?? 0) }) else {
+            await activity.end(nil, dismissalPolicy: .immediate)
+            self.activity = nil; last = nil
+            return
+        }
+        var final = DownloadActivityAttributes.ContentState(title: done.title, fraction: 1, remaining: 0, waiting: false, language: language(),
+                                                           detail: done.subtitle, poster: last?.poster, done: true)
+        final.poster = await posterFile(done) ?? final.poster
         await activity.end(ActivityContent(state: final, staleDate: nil), dismissalPolicy: .default)
         self.activity = nil; last = nil
     }

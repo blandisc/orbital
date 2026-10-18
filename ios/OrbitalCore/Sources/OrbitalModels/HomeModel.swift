@@ -64,6 +64,18 @@ public final class HomeModel: ObservableModel {
 
     public func refresh() async {
         guard services.isSignedIn else { return }
+        // Una a la vez: deslizar, volver de ver algo y volver a la app pedían todo a la vez y la que terminaba al último
+        // pisaba a las demás (y regresaba lo que acababas de quitar). La que llega mientras otra corre, espera a esa.
+        if let running = refreshing { return await running.value }
+        let task = Task { await self.load() }
+        refreshing = task
+        await task.value
+        refreshing = nil
+    }
+
+    private var refreshing: Task<Void, Never>?
+
+    private func load() async {
         lastRefresh = services.now()
         isLoading = true
         defer { isLoading = false }
@@ -93,7 +105,7 @@ public final class HomeModel: ObservableModel {
         // que había). «Seguir viendo» sí va al widget siempre.
         let cancelled = Task.isCancelled
         if !cancelled {
-            if let fetchedPending { traktPending = Array(fetchedPending.prefix(12)) }
+            if let fetchedPending { traktPending = fetchedPending }   // toda (el renglón enseña los primeros; «Ver todo», todas)
             else if !(await forYou.traktLinked) { traktPending = [] }   // desconectaste Trakt: ya no hay watchlist que enseñar
         }
         if !cancelled, let fetchedAirings { upcoming = Array(fetchedAirings.prefix(10)) }
@@ -173,6 +185,7 @@ public final class HomeModel: ObservableModel {
 
     /// «Quitar de Seguir viendo».
     public func dismiss(_ item: HomeItem) async {
+        if let refreshing { await refreshing.value }   // que una carga que ya venía no lo regrese
         continueWatching.removeAll { $0.metaID == item.metaID }
         publishWidget()
         try? await services.watch.dismissContinue(metaID: item.metaID)

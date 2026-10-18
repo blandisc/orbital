@@ -116,7 +116,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `BecauseCard` | «Porque viste X»: el póster de lo que viste y lo relacionado al lado | Para ti › Listas |
 | `YearCard` | Un año con cuatro de sus películas y el número grande | Para ti › Por año |
 | `SortableGrid` | Una lista abierta con ordenar y filtrar (series o películas, género, ocultar lo visto) arriba a la derecha | Listas, premios, años |
-| `StudioEmblem` | El nombre de un estudio al frente de su tarjeta | Para ti › Estudios |
+| `StudioEmblem` | El logo del estudio en blanco (como la TV); sin logo, su nombre en cápsula | Para ti › Estudios |
 | `GameNowCard`, `CompanionPanel`, `ConsoleStatePanel`, `GuidePanel`, `NotesPanel`, `TimerPanel`, `ControlsPanel` | Modo acompañante: el juego en la consola (volver, inicio, cerrar) y su carrusel (la consola, guía, notas, temporizador, controles de emulador) | Inicio, mientras juegas |
 | `AppMark` | El logotipo como en la TV y la computadora (`OrbitalWordmark`: planeta, «orbital» y su luna) en lugar del saludo | Inicio |
 | `CenteredCarousel`, `reflected()` | Tira centrada (la del medio al frente, las de los lados más chicas) y el reflejo que da peso | Para ti › Plataformas, Premios, Estudios, Por año |
@@ -127,6 +127,15 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `PersonPhoto`, `PersonFace` | La cara de alguien (o sus iniciales), con nombre y personaje | Ficha › Reparto y equipo, Persona |
 | `VideoClipCard` | Tráiler o extra de YouTube con ▶ | Ficha |
 | `BrandLogos`, `TmdbPoster` | Dónde verlo; un título de TMDB (saga, «Más como esto», filmografía) que abre su ficha | Ficha, Persona |
+| `DownloadPanel` | Descargar estirado de su botón (gota de vidrio): la recomendada, los siguientes episodios, elegir la fuente | Ficha |
+| `SourcesGlossary`, `SourceRowView` | Qué significa cada etiqueta de las fuentes (Al instante, DV, REMUX…); un renglón de fuente que se toca y cuyas etiquetas se deslizan | Fuentes |
+| `WatchlistCard` | Un pendiente de tu watchlist: póster chico, año y género, nombre y sinopsis (dos renglones que se deslizan juntos) | Inicio › Tu watchlist |
+| `posterReflection(_:title:width:)` | El reflejo de solo el póster (no de la tarjeta con su texto ni su zoom) | Inicio y Para ti › renglones |
+| `ScareTimeline`, `ScareMarks`, `ScarePanel`, `ScareWatcher`, `scareWarning(…)` | El mapa de sustos (Where's The Jump): la línea con cada susto (rojo los fuertes), el siguiente con su cuenta, «Avisarme» y la vibración unos segundos antes | Control (corto y estirado), reproductor |
+| `VolumeControl`, `RemoteKey`, `TouchPad`, `VoiceCommandBar` | El control de la TV: todas sus piezas con el mismo relleno, esquinas y alto | Control |
+| `GameSessionSummary` | Al cerrar un juego: cuánto jugaste esta vez y en total, capturas y si se cerró solo | Hoja al terminar |
+| `ActivityPoster` | El póster en la actividad en vivo de las descargas (del App Group) | Pantalla bloqueada, Dynamic Island |
+| `DownloadedFile` | Un archivo descargado para compartir (AirDrop, Archivos) con su nombre legible | Descargas › mantener |
 
 ### Recetas de pantalla
 

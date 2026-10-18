@@ -78,7 +78,7 @@ struct DownloadsView: View {
         .tint(DS.accent)   // interruptores y botones de la lista: el acento (lo interactivo)
         .scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
         .navigationTitle("Descargas").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        .subtitle(model.active.isEmpty ? nil : Text("\(model.active.count) descargando"))   // el espacio, en su barra
+        .subtitle(downloadingCount(model) == 0 ? nil : Text("\(downloadingCount(model)) descargando"))   // solo las que bajan (no las en pausa)   // el espacio, en su barra
         .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
@@ -90,6 +90,8 @@ struct DownloadsView: View {
             await tint.load(model.active.first.flatMap { $0.metaID.hasPrefix("tt") ? String(format: ForYou.metahubBackground, $0.metaID) : nil })
         }
     }
+
+    private func downloadingCount(_ model: DownloadsModel) -> Int { model.active.filter { $0.state == .downloading || $0.state == .queued }.count }
 
     /// Un ajuste de Descargas como interruptor (se guarda al momento, igual que en Ajustes).
     private func setting(_ key: WritableKeyPath<AppSettings, Bool>) -> Binding<Bool> {
@@ -190,6 +192,7 @@ struct DownloadSeasonRoute: Hashable { var metaID: String; var season: Int }
 /// Una serie descargada: con varias temporadas, una fila por temporada; con una sola, directo sus episodios.
 struct DownloadSeriesView: View {
     @ObservedObject var observer: ModelObserver<DownloadsModel>
+    @EnvironmentObject private var env: AppEnvironment
     let metaID: String
 
     var body: some View {
@@ -201,10 +204,10 @@ struct DownloadSeriesView: View {
                         ForEach(group.seasons) { season in
                             NavigationLink(value: DownloadSeasonRoute(metaID: metaID, season: season.number)) {
                                 LabeledContent {
-                                    Text(verbatim: season.bytes.formatted(.byteCount(style: .file)))
+                                    Text(verbatim: season.bytes.formatted(.byteCount(style: .file, spellsOutZero: false).locale(env.uiLocale)))
                                 } label: {
                                     Text("Temporada \(season.number)").recipe(.cardTitle)
-                                    Text("\(season.items.count) episodios").recipe(.footnote)
+                                    Text(verbatim: String(format: Strings.tr(season.items.count == 1 ? "%lld episodio" : "%lld episodios", language: env.services.appSettings.uiLanguage), season.items.count)).recipe(.footnote)
                                 }
                             }
                             .swipeActions { Button("Borrar", role: .destructive) { Task { for item in season.items { await observer.model.remove(item.id) } } }.tint(DS.danger) }
@@ -240,7 +243,7 @@ struct DownloadSeasonView: View {
                         HStack(spacing: DS.Space.s3) {
                             VStack(alignment: .leading, spacing: DS.Space.s1) {
                                 Text(verbatim: item.subtitle.isEmpty ? item.title : item.subtitle).recipe(.cardTitle).lineLimit(2)
-                                DataLine(parts: [item.quality, item.writtenBytes.formatted(.byteCount(style: .file))].compactMap { $0 })
+                                DataLine(parts: [item.quality, item.writtenBytes.formatted(.byteCount(style: .file, spellsOutZero: false).locale(env.uiLocale))].compactMap { $0 })
                             }
                             Spacer(minLength: DS.Space.s2)
                             Image(systemName: "play.circle.fill").font(DS.TextRecipe.section.font).foregroundStyle(DS.text).accessibilityHidden(true)

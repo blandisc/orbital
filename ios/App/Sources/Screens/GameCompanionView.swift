@@ -89,6 +89,11 @@ enum CompanionAlerts {
     /// Diez minutos antes de que un juego en pausa se cierre solo (sin pausa, nada pendiente).
     static func scheduleCloseWarning(_ env: AppEnvironment, game: OrbitalRemote.Game?) {
         let center = UNUserNotificationCenter.current()
+        // Sin juego (lo cerraste) o sin pausa: el aviso pendiente se quita (antes llegaba «se va a cerrar» de un juego ya cerrado).
+        center.getPendingNotificationRequests { requests in
+            let old = requests.map(\.identifier).filter { $0.hasPrefix("game-closing.") && $0 != game.map { "game-closing.\($0.id)" } }
+            center.removePendingNotificationRequests(withIdentifiers: old)
+        }
         guard let game else { return }
         let id = "game-closing.\(game.id)"
         center.removePendingNotificationRequests(withIdentifiers: [id])

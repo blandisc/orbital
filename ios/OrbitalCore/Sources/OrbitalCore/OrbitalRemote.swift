@@ -419,8 +419,11 @@ public struct OrbitalRemote: Sendable {
     }
 
     /// Texto al campo con foco de la TV (buscar); con `submit`, además lo envía.
-    public func type(_ text: String, submit: Bool) async throws {
-        _ = try await send("api/companion/text", method: "POST", body: JSON.object(["text": .string(text), "submit": .bool(submit)]).serialized(), timeout: 8)
+    /// `replace`: el texto reemplaza el campo entero (consolas nuevas); sin él, se agrega letra por letra.
+    public func type(_ text: String, submit: Bool, replace: Bool = false) async throws {
+        var body: [String: JSON] = ["text": .string(text), "submit": .bool(submit)]
+        if replace { body["replace"] = .bool(true) }
+        _ = try await send("api/companion/text", method: "POST", body: JSON.object(body).serialized(), timeout: 8)
     }
 
     /// Un botón de la tarjeta: `toggle · pause · play · skip (con delta en segundos) · next · previous · stop · mute`.

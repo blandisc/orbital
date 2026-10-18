@@ -6,6 +6,7 @@ import OrbitalModels
 /// «Barajar». Estirada: tiempo, ánimo, series o películas, géneros. Hasta arriba: de qué lista, época y calificación
 /// mínima. La propuesta queda siempre arriba y cambia al tocar «Decide por mí».
 struct DecideView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var observer: ModelObserver<DecideModel>
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.dismiss) private var dismiss
@@ -14,6 +15,7 @@ struct DecideView: View {
     enum Stage { case quick, more, precise }
     /// El alto de la hoja corta: el de su contenido, medido (sin hueco abajo).
     @State private var quickHeight: CGFloat = DS.Decide.quickHeight
+    @State private var measuredQuick: CGFloat = 0
     let open: (TitleRoute) -> Void
 
     private var quick: PresentationDetent { .height(quickHeight) }
@@ -39,7 +41,7 @@ struct DecideView: View {
                     if stage == .precise { precision(m).transition(.opacity) }
                     if stage != .quick {
                         // Al final de lo que elegiste (no flotando encima de las opciones).
-                        Button { Task { await m.decide(); withAnimation(DS.Motion.base(false)) { proxy.scrollTo("top", anchor: .top) } } } label: {
+                        Button { Task { await m.decide(); withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo("top", anchor: .top) } } } label: {
                             HStack { if m.isLoading { ProgressView() }; Text(stage == .precise ? "Encuéntrala" : "Decide por mí") }.frame(maxWidth: .infinity)
                         }
                         .dsPrimaryButton().controlSize(.large).disabled(m.isLoading)
@@ -48,14 +50,15 @@ struct DecideView: View {
                 }
                 .padding(DS.Space.s5)
                 // La hoja corta mide lo que su contenido (sin hueco abajo).
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { h in if stage == .quick { quickHeight = h } }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { h in if stage == .quick { measuredQuick = h; quickHeight = min(h, UIScreen.main.bounds.height * DS.Remote.maxShare) } }
             }
-            .scrollDisabled(stage == .quick)
+            // Con letra grande la hoja corta puede no caber: entonces sí se desliza (si no, Ver y Barajar quedaban fuera).
+            .scrollDisabled(stage == .quick && measuredQuick <= quickHeight)
         }
         .presentationDetents([quick, Self.more, .large], selection: detent)
         .presentationDragIndicator(.visible)
-        .animation(DS.Motion.base(false), value: stage)
-        .animation(DS.Motion.base(false), value: m.pick?.imdb)
+        .animation(DS.Motion.base(reduceMotion), value: stage)
+        .animation(DS.Motion.base(reduceMotion), value: m.pick?.imdb)
         .task { if m.pick == nil { await m.quick() } }
         #if DEBUG
         .task { if Demo.isOn, let l = Demo.value(after: "-demo-decide-level") { stage = l == "3" ? .precise : l == "2" ? .more : .quick } }
@@ -86,7 +89,7 @@ struct DecideView: View {
             HStack(spacing: DS.Space.s3) {
                 ForEach(m.picks) { option in
                     let chosen = option.imdb == s.imdb
-                    Button { withAnimation(DS.Motion.base(false)) { m.select(option) } } label: {
+                    Button { withAnimation(DS.Motion.base(reduceMotion)) { m.select(option) } } label: {
                         PosterView(url: option.poster, title: option.title)
                             .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
                                 .strokeBorder(chosen ? DS.accent : .clear, lineWidth: DS.Decide.chosenStroke))
@@ -103,7 +106,7 @@ struct DecideView: View {
             .sensoryFeedback(.selection, trigger: s.imdb)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(verbatim: s.title).recipe(.cardTitle).lineLimit(1)
-                Text(verbatim: facts.isEmpty ? "" : facts).recipe(.footnote, color: DS.accent).fontWeight(.semibold).lineLimit(1)
+                if !facts.isEmpty { Text(verbatim: facts).recipe(.footnote, color: DS.accent).fontWeight(.semibold).lineLimit(1) }
                 // Por qué verla: el arranque de su sinopsis.
                 if stage == .quick, let pitch = pitch(s) { Text(verbatim: pitch).recipe(.footnote, color: DS.textMuted).lineLimit(2) }
             }

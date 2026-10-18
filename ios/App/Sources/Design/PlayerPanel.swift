@@ -101,9 +101,9 @@ struct PanelChip: View {
                 } else if selected { Image(systemName: "checkmark").font(DS.TextRecipe.caption.font.weight(.bold)) }
                 title.font(font).fontWeight(selected ? .semibold : .regular).lineLimit(1)
             }
-            .foregroundStyle(selected ? DS.backdropDeep : DS.text)
+            .foregroundStyle(selected ? DS.onPrimary : DS.text)   // elegido: el color principal del modo (en claro el papel se perdía en el fondo)
             .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
-            .background(selected ? DS.paper : DS.fill, in: Capsule())
+            .background(selected ? DS.primary : DS.fill, in: Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -151,6 +151,7 @@ struct Toast: View {
     var action: (() -> Void)?
     var seconds: UInt64 = DS.Timing.banner
     let dismiss: () -> Void
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
 
     var body: some View {
         // Una píldora chica y discreta (como los avisos de iOS): el ícono en su color, el texto en una línea y «Ver ›» como enlace.
@@ -175,7 +176,11 @@ struct Toast: View {
         .onTapGesture(perform: dismiss)
         .frame(maxWidth: .infinity)   // al centro, del ancho de lo que dice
         .padding(.horizontal, DS.Space.s4)
-        .task { try? await Task.sleep(nanoseconds: seconds); dismiss() }
+        // Con VoiceOver se anuncia y no se va solo (si no, «Deshacer» desaparecía antes de poder llegar a él).
+        .task {
+            if voiceOver { UIAccessibility.post(notification: .layoutChanged, argument: nil); return }   // VoiceOver lo encuentra y se queda
+            try? await Task.sleep(nanoseconds: seconds); dismiss()
+        }
         .accessibilityElement(children: .contain)
     }
 }

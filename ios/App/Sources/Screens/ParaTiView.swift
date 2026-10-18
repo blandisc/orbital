@@ -177,6 +177,8 @@ struct ShelfPoster: View {
     var badge: PosterBadge? = nil
     /// El ancho del póster (más chico dentro de «Porque viste»).
     var width: CGFloat = DS.Poster.railWidth
+    /// El reflejo del póster debajo (no en el Top 10: abajo va su ▲ ▼ y la cifra).
+    var reflected = false
     let onDismiss: (Suggestion) -> Void
     @State private var taps = 0
 
@@ -186,7 +188,7 @@ struct ShelfPoster: View {
                 NavigationLink(value: suggestion.route) { RankedPosterCard(rank: rank, title: suggestion.title, poster: suggestion.poster, movement: suggestion.movement, isNew: suggestion.isNew).titleZoomSource(suggestion.route) }.buttonStyle(.plain)
             } else {
                 TitleLink(route: suggestion.route, badge: badge.map(badgeText), bookmarked: inList, rank: style == .platform ? suggestion.rank : nil, width: width,
-                          detail: yearAndKind(year: suggestion.year.map(String.init) ?? "", kind: suggestion.kind))
+                          detail: yearAndKind(year: suggestion.year.map(String.init) ?? "", kind: suggestion.kind), reflected: reflected)
             }
         }
         .simultaneousGesture(TapGesture().onEnded { taps += 1 })
@@ -269,9 +271,14 @@ struct ListsView: View {
     /// La posición del carrusel del destacado (vuelta infinita: la tarjeta es la posición módulo cuántas hay).
     @State private var featuredSlot: Int?
     /// Premios, tus listas de Trakt y «Por año».
-    @StateObject private var collections = ModelObserver(CollectionsModel(AppEnvironment.shared.services))
+    /// Uno para toda la app: cambiar entre mosaico y listas ya no lo vuelve a pedir todo (Mi lista, años, estudios).
+    @StateObject private var collections = ModelObserver(Self.sharedCollections)
+    @MainActor static let sharedCollections = CollectionsModel(AppEnvironment.shared.services)
     /// El grupo que estás viendo (el índice de arriba lo marca).
     @State private var activeSection: CollectionSection = .forYou
+    /// Saltos elegidos en el índice (el toque háptico es de esos, no de cada sección que pasa al deslizar).
+    @State private var jumps = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var model: ParaTiModel { observer.model }
 
     /// Lo general: todo lo que no es una lista tuya ni una plataforma.
@@ -423,7 +430,8 @@ struct ListsView: View {
             ForEach(CollectionSection.allCases.filter(isShown), id: \.self) { section in
                 Button {
                     activeSection = section
-                    withAnimation(DS.Motion.base(false)) { proxy.scrollTo(section, anchor: .top) }
+                    jumps += 1
+                    withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(section, anchor: .top) }
                 } label: {
                     if activeSection == section { Label { section.title } icon: { Image(systemName: "checkmark") } } else { section.title }
                 }
@@ -431,7 +439,7 @@ struct ListsView: View {
         } label: { Image(systemName: "list.bullet.indent") }
         .accessibilityLabel(Text("Ir a una sección"))
         .accessibilityIdentifier("paraTi-sections")
-        .sensoryFeedback(.selection, trigger: activeSection)
+        .sensoryFeedback(.selection, trigger: jumps)   // solo al elegir una sección (no en cada una al deslizar)
     }
 
     private func isShown(_ section: CollectionSection) -> Bool {
@@ -540,8 +548,7 @@ struct ListsView: View {
         return Shelf(title: shelfTitle(plan),
                      route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty, source: shelfSource(plan), eyebrow: shelfMeta(plan)) {
             ForEach(items) { s in
-                ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb]) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Tu watchlist» todo está ahí: el marcador sobra
-                    .reflected()
+                ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb], reflected: true) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Tu watchlist» todo está ahí: el marcador sobra
             }
         }
     }

@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 import UIKit
 import OrbitalCore
 import OrbitalModels
@@ -113,6 +114,7 @@ final class AppEnvironment: ObservableObject {
         catalog = CatalogModel(services)
         inbox.onEvent = { [weak self] event in self?.announce(event) }
         Task { await services.downloads.start() }
+        DownloadsModel.clearShared()   // los enlaces de «Compartir» de la vez pasada
         let settings = services.settings
         liveActivity.language = { settings.value.uiLanguage }
         Task { await liveActivity.follow(services.downloads) }
@@ -387,13 +389,20 @@ final class AppEnvironment: ObservableObject {
     }
 }
 
-final class AppDelegate: NSObject, UIApplicationDelegate {
+final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     static var orientations: UIInterfaceOrientationMask = .portrait
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // Se registra antes de que termine de arrancar la app (lo exige iOS).
         InboxBackgroundTask.register()
+        // Los avisos de la app (tu tiempo de juego, la batería de la consola) se ven también con la app abierta.
+        UNUserNotificationCenter.current().delegate = self
         return true
+    }
+
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+                                            withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound])
     }
 
     func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask { Self.orientations }

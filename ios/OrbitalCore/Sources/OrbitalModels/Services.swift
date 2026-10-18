@@ -79,7 +79,7 @@ public final class Services: ObservableModel {
 
     private let downloadTransport: DownloadTransport
     private let downloadsRoot: URL
-    private let freeSpace: @Sendable () -> Int64
+    let freeSpace: @Sendable () -> Int64
     private let clock: @Sendable () -> Date
     private let onDownloadsChange: @Sendable ([DownloadItem]) -> Void
 
@@ -213,6 +213,7 @@ public final class Services: ObservableModel {
         pending.save(PendingWork())
         scrobbleLog.clear()
         kv.set("home-cache", data: nil)
+        kv.set("recent-searches", data: nil)   // lo que buscaste no pasa a la siguiente cuenta
     }
 
     /// Los complementos o la cuenta cambiaron: se vuelve a preguntar todo.

@@ -100,9 +100,14 @@ struct RemoteKey: View {
     let action: () -> Void
     @State private var taps = 0
     @State private var held = 0
+    @State private var heldFired = false
 
     var body: some View {
-        Button { taps += 1; action() } label: {
+        Button {
+            // Si se mantuvo (su segunda acción ya se mandó), soltar no manda también la de un toque.
+            if heldFired { heldFired = false; return }
+            taps += 1; action()
+        } label: {
             VStack(spacing: DS.Space.s1) {
                 Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font)
                 title.recipe(.caption, color: DS.textMuted).lineLimit(1)
@@ -122,8 +127,9 @@ struct RemoteKey: View {
         .sensoryFeedback(.impact(flexibility: .soft), trigger: taps)
         .simultaneousGesture(LongPressGesture(minimumDuration: DS.Remote.holdSeconds).onEnded { _ in
             guard let longPress else { return }
-            held += 1; longPress()
+            held += 1; heldFired = true; longPress()
         })
+        .accessibilityActions { if let longPress { Button("Mantener") { longPress() } } }
         .sensoryFeedback(.impact(weight: .heavy), trigger: held)
     }
 }
@@ -253,9 +259,10 @@ struct VolumeControl: View {
 
     var body: some View {
         HStack(spacing: DS.Space.s3) {
-            Button(action: mute) { Image(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2.fill").frame(width: DS.Size.touchTarget * 3 / 4) }
+            Button(action: mute) { Image(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2.fill").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Rectangle()) }
                 .accessibilityLabel(muted ? Text("Quitar silencio") : Text("Silencio"))
-            Button(action: down) { Image(systemName: "minus") }.accessibilityLabel(Text("Bajar volumen"))
+            Button(action: down) { Image(systemName: "minus").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Rectangle()) }
+                .accessibilityLabel(Text("Bajar volumen"))
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(DS.fill)
@@ -264,13 +271,14 @@ struct VolumeControl: View {
             }
             .frame(height: DS.Remote.volumeBar)
             .accessibilityHidden(true)
-            Button(action: up) { Image(systemName: "plus") }.accessibilityLabel(Text("Subir volumen"))
+            Button(action: up) { Image(systemName: "plus").frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).contentShape(Rectangle()) }
+                .accessibilityLabel(Text("Subir volumen"))
         }
         .font(DS.TextRecipe.cardTitle.font.weight(.semibold))
         .foregroundStyle(DS.text)
         .buttonStyle(.plain)
         // Como las teclas y «Dile a Orbital»: el mismo relleno, esquinas y alto (antes era una cápsula de vidrio, distinta).
-        .padding(.horizontal, DS.Space.s4).frame(minHeight: DS.Remote.keyHeight)
+        .padding(.horizontal, DS.Space.s2).frame(minHeight: DS.Remote.keyHeight)
         .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         .sensoryFeedback(.selection, trigger: level)
         .accessibilityElement(children: .contain)
@@ -323,7 +331,7 @@ struct ScarePanel: View {
 
     var body: some View {
         TimelineView(.periodic(from: fetchedAt, by: DS.Remote.scareTick)) { context in
-            let position = now.paused ? now.position : min(now.duration, now.position + max(0, context.date.timeIntervalSince(fetchedAt)))
+            let position = now.position(at: context.date, since: fetchedAt)
             ScareStatus(position: position, duration: now.duration, scares: scares, warn: $warn)
         }
     }
@@ -342,7 +350,8 @@ private struct ScareStatus: View {
             HStack(alignment: .firstTextBaseline) {
                 Label("Sustos", systemImage: "bolt.heart").recipe(.cardTitle)
                 Spacer()
-                Text("\(left.count) por delante · \(left.filter(\.major).count) fuertes").recipe(.caption, color: DS.textMuted)
+                let majorCount = left.filter(\.major).count
+                Text("\(left.count) por delante · \(majorCount) fuertes").recipe(.caption, color: DS.textMuted)
             }
             ScareTimeline(position: position, duration: duration, scares: scares)
             HStack(spacing: DS.Space.s3) {
@@ -428,9 +437,18 @@ struct ScareWatcher: View {
 
     var body: some View {
         TimelineView(.periodic(from: fetchedAt, by: DS.Remote.scareTick)) { context in
-            let position = now.paused ? now.position : min(now.duration, now.position + max(0, context.date.timeIntervalSince(fetchedAt)))
+            let position = now.position(at: context.date, since: fetchedAt)
             Color.clear.scareWarning(position: position, scares: scares, enabled: warn && !now.paused)
         }
         .accessibilityHidden(true)
+    }
+}
+
+extension OrbitalRemote.NowPlaying {
+    /// Dónde va, contando lo que avanzó desde el último sondeo (en pausa, donde quedó). Sin duración conocida no se topa en 0.
+    func position(at date: Date, since fetchedAt: Date) -> Double {
+        guard !paused else { return position }
+        let moved = position + max(0, date.timeIntervalSince(fetchedAt))
+        return duration > 0 ? min(duration, moved) : moved
     }
 }

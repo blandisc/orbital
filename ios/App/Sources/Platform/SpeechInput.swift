@@ -116,5 +116,6 @@ final class SpeechInput: ObservableObject {
         request = nil; task = nil
         listening = false
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        NotificationCenter.default.post(name: .orbitalAudioReleased, object: nil)
     }
 }

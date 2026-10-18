@@ -50,7 +50,7 @@ struct SourcesSheet: View {
             .contentMargins(.horizontal, DS.Space.s4, for: .scrollContent)
             .contentMargins(.vertical, DS.Space.s1, for: .scrollContent)
             if env.connectivity.isCellular {
-                Text("Con datos móviles te avisamos antes de usar fuentes de más de 5 GB.").recipe(.caption, color: DS.textFaint).padding(.horizontal, DS.Space.s4)
+                Text("Con datos móviles te avisamos antes de usar fuentes de más de \(Int(env.services.appSettings.warnCellularOverGB)) GB.").recipe(.caption, color: DS.textFaint).padding(.horizontal, DS.Space.s4)
             }
         }
         .padding(.vertical, DS.Space.s4)

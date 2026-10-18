@@ -55,7 +55,12 @@ public final class CollectionsModel: ObservableModel {
             }
         }
         if posters.count < Self.yearCover, let trakt = services.trakt {
-            let popular = (try? await trakt.popular(kind: "movie", limit: Self.yearCover, years: String(year))) ?? []
+            // Si se cancela (la tarjeta salió de la vista) o falla, no se guarda nada: la próxima vez se vuelve a pedir (antes
+            // quedaba vacía para siempre).
+            guard let popular = try? await trakt.popular(kind: "movie", limit: Self.yearCover, years: String(year)), !Task.isCancelled else {
+                if !posters.isEmpty, !Task.isCancelled { yearPosters[year] = Array(posters.prefix(Self.yearCover)) }
+                return
+            }
             for e in popular where posters.count < Self.yearCover {
                 let poster = String(format: ForYou.metahubPoster, e.imdb)
                 if !posters.contains(poster) { posters.append(poster) }
@@ -115,7 +120,8 @@ public final class CollectionsModel: ObservableModel {
         let key = "\(kind):\(year)"
         if let cached = yearItems[key] { return cached }
         guard let trakt = services.trakt else { return [] }
-        let found = ((try? await trakt.popular(kind: kind, limit: 60, years: String(year))) ?? []).map { Suggestion($0, reason: .popular) }
+        guard let entries = try? await trakt.popular(kind: kind, limit: 60, years: String(year)), !Task.isCancelled else { return [] }   // sin guardar el vacío
+        let found = entries.map { Suggestion($0, reason: .popular) }
         yearItems[key] = found
         return found
     }

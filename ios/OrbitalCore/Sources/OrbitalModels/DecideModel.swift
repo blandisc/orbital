@@ -193,9 +193,14 @@ public final class DecideModel: ObservableModel {
         let started = services.now()
         let skipped = notToday()
         let seen = includeWatched ? [] : (watched ?? [])
-        let candidates = (order.isEmpty ? candidatesPool : order).filter {
-            !shown.contains($0.imdb) && !skipped.contains($0.imdb) && !seen.contains($0.imdb) && (kind == nil || $0.kind == kind)
+        func available() -> [Suggestion] {
+            (order.isEmpty ? candidatesPool : order).filter {
+                !shown.contains($0.imdb) && !skipped.contains($0.imdb) && !seen.contains($0.imdb) && (kind == nil || $0.kind == kind)
+            }
         }
+        var candidates = available()
+        // Ya se enseñó todo lo que cabe: se da otra vuelta (antes se quedaba en «No encontré» sin botones).
+        if candidates.isEmpty, !shown.isEmpty { shown = []; candidates = available() }
         var closest: Suggestion?   // de lo que pediste, aunque dure más: mejor eso que nada
         func verdict(_ s: Suggestion) -> (matches: Bool, fits: Bool)? {
             let d = details[s.imdb]
@@ -235,7 +240,7 @@ public final class DecideModel: ObservableModel {
                 if v.matches, closest == nil { closest = s }
             }
         }
-        for s in candidates where verdict(s) != nil { shown.insert(s.imdb) }
+        // La más cercana (aunque dure más de lo que tienes); solo esa cuenta como enseñada, no todas las revisadas.
         if let closest { return take(closest) }
         pick = nil
         exhausted = true

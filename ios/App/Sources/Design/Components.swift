@@ -478,6 +478,7 @@ struct DSIconButton: View {
 /// Un botón de ícono que pide confirmación: el primer toque lo abre en una cápsula que dice qué hará («¿Ver en la TV?»),
 /// el segundo lo hace; si no lo tocas otra vez, se cierra solo.
 struct ConfirmIconButton: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let symbol: String
     let prompt: LocalizedStringKey
     let label: LocalizedStringKey
@@ -486,7 +487,7 @@ struct ConfirmIconButton: View {
 
     var body: some View {
         Button {
-            if asking { asking = false; action() } else { withAnimation(DS.Motion.base(false)) { asking = true } }
+            if asking { asking = false; action() } else { withAnimation(DS.Motion.base(reduceMotion)) { asking = true } }
         } label: {
             HStack(spacing: DS.Space.s2) {
                 Image(systemName: symbol)
@@ -501,7 +502,7 @@ struct ConfirmIconButton: View {
         .task(id: asking) {
             guard asking else { return }
             try? await Task.sleep(nanoseconds: DS.Timing.confirm)
-            withAnimation(DS.Motion.base(false)) { asking = false }
+            withAnimation(DS.Motion.base(reduceMotion)) { asking = false }
         }
     }
 }

@@ -13,6 +13,9 @@ struct HomeView: View {
     /// La tarjeta al frente del carrusel: su lugar en la vuelta infinita (`slot % cuántas`).
     @State private var heroSlot: Int?
     @State private var scrolledDown = false
+    @State private var placingHero = false
+    /// El alto de cada renglón de «Tu watchlist», que crece con el tamaño de letra.
+    @ScaledMetric(relativeTo: .body) private var watchRow = DS.Editorial.watchlistRow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.openRemote) private var openRemote
     @Environment(\.scenePhase) private var scenePhase
@@ -62,7 +65,7 @@ struct HomeView: View {
                     Rail(title: "Mi lista", count: model.myList.count, route: HomeListRoute(id: "mylist"),
                          eyebrow: Text("Lo que guardaste"), source: .stremio) {
                         ForEach(model.myList) { item in
-                            TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)).reflected()
+                            TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster), reflected: true)
                         }
                     }
                 }
@@ -83,7 +86,8 @@ struct HomeView: View {
             ToolbarItem(placement: .topBarLeading) { AppMark() }
                 .sharedBackgroundVisibility(.hidden)
             // Sin nada en la TV, el control de tu Orbital vive aquí (con algo reproduciéndose, en el accesorio de abajo).
-            if let openRemote, tvNow.model.now == nil {
+            // Sin accesorio (iOS 26.0) el botón se queda siempre: era la única entrada al control con algo sonando.
+            if let openRemote, tvNow.model.now == nil || !Self.hasTabAccessory {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: openRemote) { Image(systemName: "av.remote") }
                         .accessibilityLabel(Text("Control de tu Orbital")).accessibilityIdentifier("home-remote")
@@ -155,6 +159,13 @@ struct HomeView: View {
 
     private static var hasTabAccessory: Bool { if #available(iOS 26.1, *) { true } else { false } }
 
+    /// Pone el carrusel en una tarjeta sin el toque háptico (no fue tu dedo).
+    private func placeHero(_ slot: Int) {
+        placingHero = true
+        heroSlot = slot
+        DispatchQueue.main.async { placingHero = false }
+    }
+
     /// Cuántos de «Destacado» van en el carrusel.
     private static let heroCount = 10
 
@@ -178,7 +189,7 @@ struct HomeView: View {
         let middle = (copies / 2) * items.count
         return VStack(spacing: DS.Space.s3) {
             HStack(alignment: .lastTextBaseline) {
-                DSSectionHead(title: Text("Destacado"), eyebrow: Text("Lo más visto esta semana"))
+                DSSectionHead(title: Text("Destacado"), eyebrow: Text("En tendencia y para ti"))
                 Spacer(minLength: DS.Space.s2)
                 kindFilter(model)
             }
@@ -198,13 +209,19 @@ struct HomeView: View {
             .scrollTargetBehavior(.viewAligned)
             .scrollClipDisabled()
             .scrollPosition(id: $heroSlot, anchor: .center)   // centrada: las de los lados asoman igual
-            .onAppear { if heroSlot == nil || (heroSlot ?? 0) >= copies * items.count { heroSlot = middle } }
-            .onChange(of: items.map(\.id)) { heroSlot = middle }   // cambió el filtro o la lista: de vuelta al primero
+            .onAppear { if heroSlot == nil || (heroSlot ?? 0) >= copies * items.count { placeHero(middle) } }
+            // Cambió la lista (al volver de ver algo, al refrescar): se queda en la que estabas si sigue; si no (o cambiaste el
+            // filtro), la primera. Sin brincar al inicio cada vez.
+            .onChange(of: items.map(\.id)) { old, new in
+                let current = (heroSlot.map { old.isEmpty ? nil : old[$0 % old.count] }) ?? nil
+                placeHero(middle + (current.flatMap { new.firstIndex(of: $0) } ?? 0))
+            }
             PageDots(count: items.count, index: items.isEmpty ? 0 : (heroSlot ?? middle) % items.count)
                 .frame(maxWidth: .infinity)
         }
         .task(id: heroSlot) { await tint.load(currentHero?.wide) }   // se cancela si pasas a otro
-        .sensoryFeedback(.selection, trigger: heroSlot)
+        // El toque solo al deslizar tú (no al acomodarla la app).
+        .sensoryFeedback(.selection, trigger: heroSlot) { old, _ in old != nil && !placingHero }
     }
 
     /// Todo · Películas · Series: un botón chico (como el de Para ti), sin otro renglón.
@@ -261,7 +278,7 @@ struct HomeView: View {
         switch reason {
         case .trending: Text("En tendencia")
         case .recommended: Text("Para ti")
-        case .popular: Text("Popular esta semana")
+        case .popular: Text("De lo más popular")
         default: Text("Destacado")
         }
     }
@@ -314,9 +331,9 @@ struct HomeView: View {
             }
             .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHGrid(rows: [GridItem(.fixed(DS.Editorial.watchlistPoster / DS.Poster.aspect + 2 * DS.Space.s2), spacing: DS.Space.s3),
-                                 GridItem(.fixed(DS.Editorial.watchlistPoster / DS.Poster.aspect + 2 * DS.Space.s2))], spacing: DS.Space.s3) {
-                    ForEach(model.traktPending) { s in
+                // Dos renglones (uno si son pocas), del alto que pida la letra; en el renglón, las primeras.
+                LazyHGrid(rows: Array(repeating: GridItem(.fixed(watchRow), spacing: DS.Space.s3), count: model.traktPending.count < 3 ? 1 : 2), spacing: DS.Space.s3) {
+                    ForEach(model.traktPending.prefix(DS.Editorial.watchlistInRow)) { s in
                         let facts = [s.year.map(String.init), Vocabulary.genres(s.genres, language: language).first].compactMap { $0 }.joined(separator: " · ")
                         NavigationLink(value: s.route) {
                             WatchlistCard(title: s.title, poster: s.poster, facts: facts, overview: s.overview).titleZoomSource(s.route)
