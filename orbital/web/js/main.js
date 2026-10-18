@@ -343,6 +343,7 @@ function renderHints() {
     groups: state.section === "media" && state.rows.some((row) => row.group),
     running: state.running?.managed ? state.running : null,
     rows: state.rows.length,
+    heroButtons: !!item, // el héroe enseña los botones de lo enfocado
   }));
 }
 

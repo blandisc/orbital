@@ -149,18 +149,18 @@ export function createTv({ onFocus, onPick }) {
     const live = channel.id === playing;
     if (channel.synthetic) { // un canal de Orbital: qué episodio va y a qué hora termina
       mount(nowText,
-        h("span", { class: "tv__now-eyebrow" }, live ? "Al aire en grande" : "Canal de Orbital · Español latino"),
+        h("span", { class: ["tv__now-eyebrow", live && "tv__now-eyebrow--live"] }, live ? "Al aire en grande" : "Canal de Orbital · Español latino"),
         h("h2", { class: "tv__now-title" }, channel.name),
         h("span", { class: "tv__now-meta" }, airingLine(channel, clock) || channel.tagline || "Al aire todo el día"),
         nextLine(channel, clock) && h("span", { class: "tv__now-meta" }, nextLine(channel, clock)),
-        h("span", { class: "tv__now-hint" }, live ? "A para volver a él." : "A para prenderlo: entras a media emisión, como en la tele."));
+        h("span", { class: "tv__now-hint" }, live ? "Elígelo para volver a él." : "Al elegirlo entras a media emisión, como en la tele."));
       return;
     }
     mount(nowText,
-      h("span", { class: "tv__now-eyebrow" }, live ? "Al aire en grande" : "En vivo · sin sonido"),
+      h("span", { class: ["tv__now-eyebrow", "tv__now-eyebrow--live"] }, live ? "Al aire en grande" : "En vivo · sin sonido"),
       h("h2", { class: "tv__now-title" }, channel.name),
       h("span", { class: "tv__now-meta" }, [channel.categories?.[0], channel.quality, channel.number && `Canal ${channel.number}`].filter(Boolean).join(" · ")),
-      h("span", { class: "tv__now-hint" }, live ? "A para volver a él." : `A para verlo en grande · ${headMeta(data)}`));
+      h("span", { class: "tv__now-hint" }, live ? "Elígelo para volver a él." : `Elígelo para verlo en grande · ${headMeta(data)}`));
   }
 
   // --- la miniatura en vivo -----------------------------------------------------------------------------------------

@@ -760,7 +760,8 @@ class LiveHud:
 
 
 # Qué dice y de qué color es cada estado del canal.
-LIVE_STATUS = {"live": ("En vivo", GLYPH["A"]), "tuning": ("Sintonizando…", MUTED), "nosignal": ("Sin señal", GLYPH["B"])}
+LIVE = ass_color(PALETTE["teal-300"])  # «En vivo» del mismo color en toda la app (--color-live; antes verde aquí y rojo en TV)
+LIVE_STATUS = {"live": ("En vivo", LIVE), "tuning": ("Sintonizando…", MUTED), "nosignal": ("Sin señal", GLYPH["B"])}
 
 
 def live_info_line(hud: LiveHud) -> str:

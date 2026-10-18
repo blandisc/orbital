@@ -9,7 +9,7 @@
  * pie no los repite: solo enseña cómo moverse y cómo volver.
  */
 export function footerHints(glyphs, { sheetOpen = false, adjustable = false, inert = false, atHome = true, longRow = false, groups = false, running = null, rows = 2,
-  primary = null, alt = null } = {}) {
+  primary = null, alt = null, heroButtons = false } = {}) {
   if (sheetOpen) {
     // Una fila que solo informa («Cómo se usa», ejemplos de Alexa): A no hace nada, no se ofrece.
     if (inert) return [{ glyph: glyphs.back, label: "Atrás" }];
@@ -19,8 +19,9 @@ export function footerHints(glyphs, { sheetOpen = false, adjustable = false, ine
   }
   return [
     // Lo que hace A con la tarjeta enfocada («Continuar», «Ver»…) y X (su ficha): como en Inicio y Juegos.
-    primary && { glyph: glyphs.select, label: primary },
-    alt && glyphs.alt && { glyph: glyphs.alt, label: alt, secondary: true },
+    // Con el héroe a la vista, sus botones ya dicen A y X («Ver la serie», «Episodios»): el pie no los repite.
+    primary && { glyph: glyphs.select, label: primary, offscreen: heroButtons },
+    alt && glyphs.alt && { glyph: glyphs.alt, label: alt, secondary: true, offscreen: heroButtons },
     rows > 1 && { glyph: glyphs.rows, label: "Cambiar de fila", offscreen: true },
     glyphs.search && { glyph: glyphs.search, label: "Buscar", offscreen: true },
     glyphs.section && { glyph: glyphs.section, label: "Sección", offscreen: true },

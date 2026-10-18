@@ -137,7 +137,6 @@
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 .title__tab--active { background: var(--color-fill-hover); color: var(--color-text); }
-.title[data-zone="episodes"] .title__tab--active { background: var(--color-primary); color: var(--color-on-primary); }
 .title__episodes {
   display: flex; flex-direction: column; gap: var(--space-2); min-height: 0; overflow-y: auto; scrollbar-width: none;
   padding: var(--space-6) var(--space-2) var(--space-2); margin: 0 calc(-1 * var(--space-2));
