@@ -286,7 +286,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
       await api.setInLibrary(kind, d.id, add);
       d.in_library = add;
       if (mine === token) { renderActions(); onChange(); }
-      onNotice(add ? `${d.title} está en Mi lista` : `Quité ${d.title} de Mi lista`);
+      onNotice(add ? `Guardé ${d.title} en Mi lista` : `Quité ${d.title} de Mi lista`);
     } catch (err) {
       onNotice(err.message, true);
     }

@@ -57,9 +57,10 @@ export function titleActions(details, { kind = "movie", phone = false } = {}) {
   }
   if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
   // + para agregar y ✓ cuando ya está, como el iPhone (la ★ en Juegos es «favorito»: dos cosas con el mismo ícono).
+  // «Guardar» es la acción y «Mi lista» el lugar (design/vocabulario.json), como el iPhone.
   out.push(details.in_library
-    ? { id: "mylist", icon: "check", label: "En Mi lista" }
-    : { id: "mylist", icon: "plus", label: "Mi lista" });
+    ? { id: "mylist", icon: "check", label: "Guardada" }
+    : { id: "mylist", icon: "plus", label: "Guardar" });
   // Una serie sin episodios (ni uno en el que ibas) no tiene fuente que elegir: el botón no hacía nada.
   const playable = (details.kind || kind) !== "series" || resume?.video_id || (details.seasons || []).some((s) => s.episodes?.length);
   if (playable) out.push({ id: "sources", icon: "swap", label: "Elegir fuente", short: "Fuente" });

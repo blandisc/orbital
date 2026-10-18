@@ -41,7 +41,7 @@ export function gameMenu(item, { running = null, phone = false } = {}) {
   if (watch) {
     options.push(watch.in_library
       ? { icon: "check", label: "Quitar de Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: false, title: item.title } }
-      : { icon: "plus", label: "Añadir a Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: true, title: item.title } });
+      : { icon: "plus", label: "Guardar en Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: true, title: item.title } });
   }
   // Un video de Seguir viendo se puede llevar al iPhone (el episodio que sigue): solo si hay uno conectado.
   if (phone && !isOpen && watch) {

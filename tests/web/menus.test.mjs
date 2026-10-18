@@ -194,7 +194,7 @@ test("Mi lista se maneja desde la tarjeta, sin abrir la ficha", () => {
   assert.equal(remove.label, "Quitar de Mi lista");
   assert.deepEqual(remove.command, { type: "mylist", kind: "movie", metaId: "tt1", add: false, title: "Dune" });
   const add = gameMenu({ ...item, extra: { ...item.extra, in_library: false } }).options.find((o) => o.command.type === "mylist");
-  assert.equal(add.label, "Añadir a Mi lista");
+  assert.equal(add.label, "Guardar en Mi lista");
   assert.equal(gameMenu({ id: "steam:1", title: "Hades", source: "steam", category: "steam" }).options.some((o) => o.command.type === "mylist"), false);
 });
 

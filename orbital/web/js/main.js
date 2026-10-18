@@ -1147,7 +1147,7 @@ async function runCommand(command, context = null) {
       case "mylist":
         await api.setInLibrary(command.kind, command.metaId, command.add);
         sound.play("select");
-        ui.toast.show(command.add ? `${command.title} está en Mi lista` : `Quité ${command.title} de Mi lista`);
+        ui.toast.show(command.add ? `Guardé ${command.title} en Mi lista` : `Quité ${command.title} de Mi lista`);
         return loadLibrary();
       case "dismiss":
         await api.dismiss(command.id);
