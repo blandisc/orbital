@@ -438,6 +438,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   function handle(act) {
     if (el.hidden || el.classList.contains("title--leaving")) return false;
     if (act === "menu") return false; // ☰ abre el menú desde cualquier pantalla (como en Xbox)
+    if (act === "search") { close(); return false; } // S: buscar otra cosa (la ficha se cierra y se abre Buscar)
     if (act === "back") {
       if (zone === "episodes") { zone = "actions"; onMove?.(); render(); return true; }
       close();

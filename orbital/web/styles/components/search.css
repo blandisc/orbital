@@ -43,7 +43,7 @@
   --focus-grow: calc(var(--card-height) * (var(--card-focus-scale) - 1));
   min-height: calc(var(--card-height) * var(--card-focus-scale) + var(--space-4));
   /* Arriba: lo que crece, lo que sube (translateY .35rem del foco) y el anillo. */
-  padding: calc(var(--focus-grow) + .7rem + var(--space-2)) calc(var(--focus-grow) / 2 + var(--space-2)) 4.6rem; /* abajo: el pie (la enfocada, en dos líneas) */
+  padding: calc(var(--focus-grow) + .2rem) calc(var(--focus-grow) / 2 + var(--space-2)) 4.6rem; /* abajo: el pie (la enfocada, en dos líneas); arriba ya da aire el nombre del grupo */
   margin: 0 calc(-1 * var(--space-2)); scroll-padding-inline: calc(var(--focus-grow) / 2 + var(--space-2));
   overflow-x: auto; scrollbar-width: none;
 }
@@ -53,18 +53,18 @@
 /* El teclado es el componente común (keyboard.css): aquí solo dónde va. */
 .search .keyboard { align-self: end; justify-self: center; min-height: 0; }
 
-/* Encabezados de grupo (Tus juegos y apps · Películas · Series): no se enfocan. */
+/* Cada grupo (En tu consola · Películas · Series · Listas): su nombre encima de sus portadas, derecho. No se enfoca. */
+.search__set { flex: none; display: flex; flex-direction: column; gap: var(--space-2); }
+.search__set-cards { display: flex; align-items: flex-end; gap: var(--card-gap); }
 .search__group {
-  flex: none; align-self: stretch; display: flex; align-items: flex-start;
-  writing-mode: vertical-rl; transform: rotate(180deg); padding: var(--space-2) 0;
-  /* Nunca más alto que la portada: con letra grande «Tus juegos y apps» estiraba la fila y el teclado
-     tapaba los pies de los resultados. */
-  max-height: calc(var(--card-height) * var(--card-focus-scale)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium);
+  flex: none; color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium); line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* Los títulos de los resultados, legibles desde el sillón (antes en letra de pie de foto). */
+.search .card__caption { font-size: var(--text-sm); }
 /* Caja vacía: búsquedas recientes como píldoras. */
 .search__results--recent { align-items: center; min-height: 0; padding-bottom: var(--space-4); }
-.search__results--recent .search__group { writing-mode: horizontal-tb; transform: none; align-self: center; padding: 0 var(--space-2) 0 0; }
+.search__results--recent .search__group { align-self: center; padding: 0 var(--space-2) 0 0; }
 .search__recent {
   flex: none; display: inline-flex; align-items: center; gap: var(--space-2);
   height: 2.8rem; padding: 0 var(--space-5) 0 var(--space-4); border-radius: var(--radius-pill);
