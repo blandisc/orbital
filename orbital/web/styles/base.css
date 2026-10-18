@@ -85,6 +85,10 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 }
 .touch-back svg { width: 1.3rem; height: 1.3rem; }
 [data-input="touch"][data-overlay="true"] .touch-back { display: inline-flex; animation: fade-in var(--duration-base) var(--ease-out); }
+/* «Menú», abajo a la derecha, solo sin nada encima (con una vista encima va «Atrás»). */
+.touch-back--menu { left: auto; right: var(--page-gutter); }
+[data-input="touch"][data-overlay="true"] .touch-back--menu { display: none; }
+[data-input="touch"]:not([data-overlay="true"]) .touch-back--menu { display: inline-flex; }
 /* Dedos: objetivos de al menos ~44 px. */
 [data-input="touch"] .button, [data-input="touch"] .status-bar__tab, [data-input="touch"] .sheet__item,
 [data-input="touch"] .status-bar__search, [data-input="touch"] .assistant, [data-input="touch"] .title__tab { min-height: 2.9rem; }

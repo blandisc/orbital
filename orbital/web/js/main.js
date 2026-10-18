@@ -191,10 +191,13 @@ const ui = {
 // Con el dedo no hay botón B: en las vistas encima (buscar, ficha, fuentes, menú) aparece "Atrás".
 const touchBack = h("button", { class: "touch-back", type: "button", "aria-label": "Atrás", onClick: () => handleAction("back") },
   svg(ICONS.back), h("span", {}, "Atrás"));
+// …y en las pantallas de siempre, «Menú» abajo a la derecha (el pie con ☰ no se ve con el dedo; antes solo el logo lo abría).
+const touchMenu = h("button", { class: "touch-back touch-back--menu", type: "button", "aria-label": "Menú", onClick: () => handleAction("menu") },
+  svg(ICONS.menu), h("span", {}, "Menú"));
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.listScreen.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.listScreen.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -685,6 +688,12 @@ function renderSections() {
 }
 
 /** Cambia de sección (LB/RB) recordando dónde estabas en la que dejas. */
+/** Qué dice una sección vacía: Películas y series, mientras llega su curaduría, que está cargando. */
+function emptyFor(section, fallback = null) {
+  if (section === "media") return { emptyTitle: "Cargando películas y series…", emptyText: "La primera vez tarda unos segundos." };
+  return fallback ?? {};
+}
+
 function goToSection(id, direction = 0) {
   if (id === state.section) return;
   const list = visibleSections(state.allRows);
@@ -695,7 +704,7 @@ function goToSection(id, direction = 0) {
   state.section = id;
   state.rows = sectionRows(state.allRows, id);
   renderView();
-  ui.shelf.setRows(state.rows, { emptyTitle: "Nada por aquí todavía", emptyText: "" });
+  ui.shelf.setRows(state.rows, emptyFor(id, { emptyTitle: "Nada por aquí todavía", emptyText: "" }));
   const saved = state.sectionFocus[id] || {};
   const { r, c } = restoreFocus(state.rows, { rowId: saved.rowId, itemId: saved.itemId, r: 0, c: 0 });
   state.focus = { r: -1, c: -1 }; // fuerza a redibujar héroe y fondo
@@ -755,8 +764,8 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     renderSections();
     state.hidden = data.hidden || 0;
     ui.shelf.setRows(state.rows, {
-      emptyTitle: "Aún no encontré juegos",
-      emptyText: "Instala Steam o pon tus emuladores en Descargas, el Escritorio o C:\\Emuladores, y abre ☰ → Actualizar biblioteca.",
+      emptyTitle: state.section === "media" ? emptyFor("media").emptyTitle : "Aún no encontré juegos",
+      emptyText: state.section === "media" ? emptyFor("media").emptyText : "Instala Steam o pon tus emuladores en Descargas, el Escritorio o C:\\Emuladores, y abre ☰ → Actualizar biblioteca.",
       popId: state.popId,
     });
     state.popId = null;

@@ -369,3 +369,11 @@ test("Lo que puedes decir: la guía del iPhone (cómo decirlo, cada tema y si no
   assert.ok(voiceHelpMenu().options.length >= 4);
   assert.equal(alexaMenu(null).title, "Pídeselo a Alexa"); // sin la guía, los ejemplos de siempre
 });
+
+test("abrir lo que ya está abierto: solo «Volver a…» (no «¿Cerrar X? Para abrir X»)", async () => {
+  const { switchMenu } = await import("../../orbital/web/js/core/menus.js");
+  const same = switchMenu({ running: { title: "Severance · T2 E2" }, title: "Severance · T2 E2", command: { type: "watch" } });
+  assert.deepEqual(same.options.map((o) => o.command.type), ["resume"]);
+  const other = switchMenu({ running: { title: "Hades" }, title: "Severance · T2 E2", command: { type: "watch" } });
+  assert.equal(other.options.length, 2);
+});

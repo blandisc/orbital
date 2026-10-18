@@ -16,6 +16,8 @@ import { availability, episodeStates, titleActions, titleProgress } from "../cor
  *     con su barra, los que no se han estrenado atenuados con su fecha;
  *   · A ve (Orbital elige la mejor fuente y arranca) · Y elige la fuente · B vuelve.
  */
+const touching = () => document.body.dataset.input === "touch";
+
 export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {} }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
@@ -151,7 +153,8 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
           st.upcoming && "episode--upcoming"],
         type: "button", role: "listitem",
         onClick: () => {
-          if (zone === "episodes" && i === index) return play(ep);
+          // Con el dedo, un toque lo pone (no hay foco que mover primero); con el ratón, el segundo clic.
+          if ((zone === "episodes" && i === index) || touching()) return play(ep);
           zone = "episodes";
           setIndex(i);
           render();
@@ -440,7 +443,8 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     if (act === "menu") return false; // ☰ abre el menú desde cualquier pantalla (como en Xbox)
     if (act === "search") { close(); return false; } // S: buscar otra cosa (la ficha se cierra y se abre Buscar)
     if (act === "back") {
-      if (zone === "episodes") { zone = "actions"; onMove?.(); render(); return true; }
+      // Con el mando, B primero sube de los episodios a los botones; con el dedo, «Atrás» cierra (ese paso no se veía).
+      if (zone === "episodes" && !touching()) { zone = "actions"; onMove?.(); render(); return true; }
       close();
       return true;
     }

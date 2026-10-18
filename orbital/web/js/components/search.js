@@ -139,7 +139,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     render();
   }
 
-  const count = (n) => `${n} resultado${n === 1 ? "" : "s"} · ↑ para elegir`;
+  // Con el dedo no hay «↑»: se toca el resultado.
+  const count = (n) => `${n} resultado${n === 1 ? "" : "s"} · ${document.body.dataset.input === "touch" ? "toca uno para abrirlo" : "↑ para elegir"}`;
 
   function schedule(delay = DEBOUNCE_MS) {
     clearTimeout(timer);

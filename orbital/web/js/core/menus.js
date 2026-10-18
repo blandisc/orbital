@@ -205,6 +205,10 @@ export function stopMenu({ title, runner }) {
  * Como se pierde lo no guardado, se pregunta; "Volver a…" va primero (A sin querer = nada se pierde).
  */
 export function switchMenu({ running, title, command }) {
+  // Lo que quieres abrir ya es lo que está abierto: solo volver a él (antes «¿Cerrar X? Para abrir X»).
+  if (running.title === title) {
+    return { title: `${title} ya está abierto`, options: [{ icon: "play", label: `Volver a ${title}`, command: { type: "resume" } }], cancel: { type: "close" } };
+  }
   return {
     title: `¿Cerrar ${running.title}?`,
     subtitle: `Para abrir ${title}. Lo que no hayas guardado se perderá.`,
