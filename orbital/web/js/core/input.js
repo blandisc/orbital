@@ -104,7 +104,9 @@ export function padActions(pads, memory = new Map()) {
  * acelera: tras `accelerateAfter` repeticiones el paso baja a `fastRate` (filas largas).
  */
 export class Repeater {
-  constructor({ delay = 380, rate = 110, fastRate = 60, accelerateAfter = 8 } = {}) {
+  /** `canRepeat(acción)`: qué se repite al mantener (moverse; y borrar mientras escribes, ver createInput). */
+  constructor({ delay = 380, rate = 110, fastRate = 60, accelerateAfter = 8, canRepeat = (action) => REPEATABLE.has(action) } = {}) {
+    this.canRepeat = canRepeat;
     this.delay = delay;
     this.rate = rate;
     this.fastRate = fastRate;
@@ -140,7 +142,7 @@ export class Repeater {
         this.held.set(action, now + this.delay);
         this.repeats.set(action, 0);
         fire.push(action);
-      } else if (REPEATABLE.has(action) && now >= this.held.get(action)) {
+      } else if (this.canRepeat(action) && now >= this.held.get(action)) {
         const count = (this.repeats.get(action) || 0) + 1;
         this.repeats.set(action, count);
         this.held.set(action, now + (count >= this.accelerateAfter ? this.fastRate : this.rate));
@@ -150,6 +152,9 @@ export class Repeater {
     return fire;
   }
 }
+
+/** Borrar la última palabra (Retroceso mantenido; Ctrl+W). */
+export const ERASE_WORD = "\u0017";
 
 // Escribiendo: Retroceso borra, Enter busca o avanza de campo, Tab cambia de campo.
 const TYPING_KEYS = { Backspace: "\b", Enter: "\n", Tab: "\t" };
@@ -166,10 +171,11 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
   document.addEventListener("keydown", (event) => {
     if (onText && typing() && (isTextKey(event) || TYPING_KEYS[event.key])) {
       event.preventDefault();
-      // Escribiendo solo se repite borrar: un Enter sostenido saltaba a los resultados y abría el primero.
+      // Escribiendo solo se repite borrar: un Enter sostenido saltaba a los resultados y abría el primero. Mantener
+      // Retroceso borra palabra por palabra («\u0017», como Ctrl+W), no letra por letra.
       if (event.repeat && event.key !== "Backspace") return;
       onModality("keyboard");
-      onText(TYPING_KEYS[event.key] || event.key);
+      onText(event.key === "Backspace" && event.repeat ? ERASE_WORD : TYPING_KEYS[event.key] || event.key);
       return;
     }
     const action = keyToAction(event.key);
@@ -213,7 +219,8 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
     onAction(vertical ? (event.deltaY > 0 ? "down" : "up") : (event.deltaX > 0 ? "right" : "left"), { repeat: false });
   }, { passive: true });
 
-  const repeater = new Repeater();
+  // Con el teclado de Buscar abierto, mantener X (Retroceso) también se repite: borra palabra por palabra, rápido.
+  const repeater = new Repeater({ canRepeat: (action) => REPEATABLE.has(action) || (action === "alt" && typing()) });
   const sticks = new Map();
   // Durante un momento tras recuperar el foco, lo que llegue presionado se ignora.
   let swallowUntil = 0;

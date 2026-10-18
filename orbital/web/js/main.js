@@ -6,7 +6,7 @@ import { api } from "./core/api.js";
 import { h, svg } from "./core/dom.js";
 import { ICONS } from "./core/icons.js";
 import { closedMessage, crashMessage } from "./core/format.js";
-import { createInput, GLYPHS } from "./core/input.js";
+import { createInput, ERASE_WORD, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints, legendOf, tvHints } from "./core/hints.js";
@@ -1407,7 +1407,7 @@ function handleAction(action, { repeat = false } = {}) {
     }
   }
   // Vistas a pantalla completa (OVERLAYS): la de más arriba se queda con el botón.
-  if (OVERLAYS.some((view) => view.handle(action))) return renderHints();
+  if (OVERLAYS.some((view) => view.handle(action, { repeat }))) return renderHints();
   if (inForYou()) return handleForYou(action, { repeat });
   if (inTv()) return handleTv(action, { repeat });
   if (inHome()) return handleHome(action, { repeat });
@@ -1599,7 +1599,8 @@ createInput({
   onAction: handleAction,
   onModality: setModality,
   // Con un teclado físico, en Buscar se escribe directo (las letras no son atajos ahí).
-  onText: (char) => { (ui.login.isOpen ? ui.login.type(char) : ui.search.type(char)); renderHints(); }, // Enter salta a resultados: «Abrir»
+  // Conectar Stremio no borra por palabras (es un correo o una contraseña): ahí Retroceso mantenido sigue de letra en letra.
+  onText: (char) => { (ui.login.isOpen ? ui.login.type(char === ERASE_WORD ? "" : char) : ui.search.type(char)); renderHints(); }, // Enter salta a resultados: «Abrir»
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
 });
 // Protector de pantalla (Ajustes › Pantalla y sonido): tras un rato sin tocar nada, el mosaico de Para ti a pantalla

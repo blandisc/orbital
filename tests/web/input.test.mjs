@@ -101,3 +101,15 @@ test("los glifos de la leyenda dicen qué acción hacen (tocarlos en el pie = la
     }
   }
 });
+
+test("borrar en Buscar: una pulsación borra una letra; mantener, palabra por palabra", async () => {
+  const typing = { on: true };
+  const r = new Repeater({ delay: 300, rate: 100, canRepeat: (a) => a === "alt" && typing.on });
+  const held = new Set(["alt"]);
+  assert.deepEqual(r.update(held, 0), ["alt"]);
+  assert.equal(r.isRepeat("alt"), false); // la primera: una letra
+  assert.deepEqual(r.update(held, 300), ["alt"]);
+  assert.equal(r.isRepeat("alt"), true); // mantenido: Buscar borra una palabra
+  typing.on = false;
+  assert.deepEqual(r.update(held, 400), []); // fuera de Buscar, X (la ficha) no se repite
+});
