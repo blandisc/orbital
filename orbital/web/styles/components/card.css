@@ -98,6 +98,14 @@
   content: ""; position: absolute; inset: 40% 0 0 0; border-radius: 0 0 var(--card-radius) var(--card-radius); pointer-events: none;
   background: var(--gradient-art-base);
 }
+/* Sin portada propia (Card · standIn): la foto de su consola sobre el color de la consola y el nombre completo. */
+.card__stand-in {
+  position: absolute; inset: 0; display: grid; justify-items: center; align-content: start; padding-top: 20%; border-radius: inherit;
+  background: radial-gradient(120% 75% at 50% 0%, color-mix(in oklab, var(--glow) 55%, transparent) 0%, transparent 72%), var(--color-surface-raised);
+}
+.card__stand-in-photo { width: 88%; max-height: 50%; object-fit: contain; filter: var(--shadow-drop-lg); }
+.card--stand-in .card__subtitle { display: none; } /* la consola ya la dice la foto */
+.card--stand-in .card__title { font-family: var(--font-sans); font-size: var(--text-md); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); }
 .card__title {
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   font-size: var(--text-sm); font-weight: var(--weight-medium); line-height: 1.2; overflow-wrap: break-word; hyphens: auto;

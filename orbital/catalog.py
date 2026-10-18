@@ -348,7 +348,7 @@ class Catalog:
         for appid in self._steam_owned:
             playable = appid in cloud or appid in in_cloud
             name = (cloud.get(appid) or {}).get("title") if appid in cloud else None
-            if name := name or self.steam_store.game_name(appid):
+            if (name := name or self.steam_store.game_name(appid)) and steam._is_game(appid, name):
                 found.append(steam.uninstalled_item(appid, name, cloud=playable))
         for app in self.config.apps:
             is_uri = "://" in app.target

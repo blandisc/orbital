@@ -2,7 +2,7 @@
    Riel (rail.css) | encabezado, filtros y portadas | ficha (detail-panel.css). */
 .browse {
   --browse-inset: 0px; --browse-rail: 6.2rem; --browse-sheet: min(33rem, 36vw);
-  --card-height: 10rem; --card-focus-scale: 1.06;
+  --card-height: 12.4rem; --card-focus-scale: 1.1; /* las portadas y su foco, como en Películas y series */
   position: relative; min-height: 0;
 }
 .browse__main {
@@ -49,13 +49,22 @@
 /* --- Filtros ------------------------------------------------------------------------------------ */
 .browse__bar { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
 .browse__bar[hidden] { display: none; }
-.browse__filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); min-width: 0; }
+/* Siempre en un renglón (fitBar): si ni compactos caben, se desvanecen al final y el enfocado se desliza a la vista.
+   El relleno es aire para el anillo del foco (si no, lo recortaba). */
+.browse__filters { --fade-start: var(--mask-solid); display: flex; flex-wrap: nowrap; align-items: center; gap: var(--space-2) var(--space-3); min-width: 0; overflow: hidden;
+  padding: var(--space-2); margin: calc(-1 * var(--space-2)); }
+.browse__bar--fade .browse__filters {
+  -webkit-mask-image: linear-gradient(90deg, var(--fade-start) 0, var(--mask-solid) 12%, var(--mask-solid) 86%, transparent);
+  mask-image: linear-gradient(90deg, var(--fade-start) 0, var(--mask-solid) 12%, var(--mask-solid) 86%, transparent); }
+.browse__bar .browse__filters--scrolled { --fade-start: transparent; } /* recorrida: también se desvanece por la izquierda */
 .browse__filter {
-  min-height: 2.5rem; padding: 0 var(--space-5); border-radius: var(--radius-pill); white-space: nowrap;
+  flex: none; min-height: 2.5rem; padding: 0 var(--space-5); border-radius: var(--radius-pill); white-space: nowrap;
   box-shadow: inset 0 0 0 1px var(--color-hairline-strong); color: var(--color-text-muted); font-size: var(--text-sm);
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-spring);
 }
-.browse__filter--on { color: var(--color-text); box-shadow: inset 0 0 0 1.5px var(--color-text); font-weight: var(--weight-medium); }
+/* Lo elegido lleva un relleno tenue y el foco se invierte (blanco), como los botones del menú y del teclado. Sin líneas
+   blancas: antes lo elegido llevaba contorno blanco y parecía otro foco. */
+.browse__filter--on { color: var(--color-text); background: var(--color-fill-hover); box-shadow: none; font-weight: var(--weight-medium); }
 .browse__filter.is-focused { background: var(--inverse-bg); color: var(--inverse-fg); box-shadow: none; transform: scale(var(--inverse-scale)); }
 .browse__count { flex: none; white-space: nowrap; margin-left: auto; color: var(--color-text-muted); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
 .browse__bar--compact .browse__filter { padding: 0 var(--space-4); }

@@ -1,4 +1,4 @@
-import { cssUrl, h, svg } from "../core/dom.js";
+import { h, svg } from "../core/dom.js";
 import { duration, endsAt, lastPlayed, shortAgo } from "../core/format.js";
 import { kicker, platformColor, stageKind, SYSTEMS, systemColor, systemOf, thumbOf } from "../core/home.js";
 import { ICONS, platformMark, systemIconName } from "../core/icons.js";
@@ -55,11 +55,12 @@ function featureLogo(src, title) {
 /** Dato debajo del título: lo que queda (videos) o cuándo jugaste (juegos). */
 export function detailOf(item, now = Date.now()) {
   // «Película · quedan 1 h 40 min» → «quedan 1 h 40 min · termina a las 11:20 p. m.»: la barra ya dice que es un video.
-  if (isWatchable(item)) return [item.subtitle?.replace(/^Película · /, ""), endsAt(item.extra?.left, now)].filter(Boolean).join(" · ") || null;
+  // Empieza con mayúscula, como todo texto suelto de Orbital («Jugaste hace 12 h», «Quedan 52 min»).
+  const capital = (text) => (text ? text[0].toUpperCase() + text.slice(1) : null);
+  if (isWatchable(item)) return capital([item.subtitle?.replace(/^Película · /, ""), endsAt(item.extra?.left, now)].filter(Boolean).join(" · "));
   const when = lastPlayed(item.last_played, now, "Jugaste");
   const total = item.playtime >= 600 ? duration(item.playtime) : null;
-  return [when && when.replace("Jugaste hace", "jugaste hace").replace("Jugaste", "jugaste"), total && `${total} en total`]
-    .filter(Boolean).join(" · ") || null;
+  return capital([when, total && `${total} en total`].filter(Boolean).join(" · "));
 }
 
 /**
@@ -113,15 +114,6 @@ export function shortDetail(item, now = Date.now()) {
   return ago ? (ago === "ahora" || ago === "ayer" ? ago : `hace ${ago}`) : null;
 }
 
-/** Lo que enseña la tarjeta crecida (Inicio: la enfocada ocupa dos lugares): año, géneros y jugadores. Sin la
- * descripción: en ese espacio se veía cortada (la ficha la tiene completa). */
-function rowMore(item) {
-  const extra = item.extra || {};
-  const facts = [extra.year, ...(Array.isArray(extra.genres) ? extra.genres.slice(0, 2) : []), extra.players && `${extra.players} jugadores`]
-    .filter(Boolean).join(" · ");
-  return facts ? h("span", { class: "tile--row__more" }, h("span", { class: "tile--row__facts" }, facts)) : null;
-}
-
 /**
  * Renglón (Inicio · «También tenías»): una miniatura ancha y, al lado, el nombre grande y su dato
  * siempre a la vista («Steam · hace 4 h · 31 h», o «Serie · T2 E6 · quedan 32 min» con su avance).
@@ -132,11 +124,8 @@ export function RowTile(item, { focusId, onPress, airing = null }) {
   const thumb = thumbOf(item);
   const system = thumb.kind === "console" ? SYSTEMS[systemOf(item)] : null;
   const total = !watch && item.playtime >= 600 ? duration(item.playtime) : null;
-  const crop = thumb.kind === "crop" && thumb.src;
   const node = tile(focusId, "tile--row", onPress, item.title,
-    h("span", { class: ["tile--row__thumb", system && "tile--row__thumb--console", crop && "tile--row__thumb--case"],
-      // Una caja (GBA) en la tarjeta crecida: entera, sobre su propia imagen desenfocada (recortada se veía rota).
-      style: crop ? { "--thumb-art": cssUrl(sized(thumb.src, 240)) } : undefined },
+    h("span", { class: ["tile--row__thumb", system && "tile--row__thumb--console"] },
       thumb.src && artOr(sized(thumb.src, 240), sized(thumb.fallback, 240), ["tile--row__art", thumb.kind === "crop" && "tile--row__art--crop"]),
       system && art(`img/consoles/${system.photo}`, ["tile--row__console", system.logo && "tile--row__console--logo"]),
       // Sale un episodio nuevo hoy (Próximos estrenos, de Trakt): «Sale hoy · 19:00».
@@ -145,8 +134,7 @@ export function RowTile(item, { focusId, onPress, airing = null }) {
     h("span", { class: "tile--row__text" },
       h("strong", { class: "tile--row__title" }, item.title),
       h("span", { class: "tile--row__detail", style: tint(item) }, mark(item),
-        h("span", { class: "tile--row__detail-text" }, [kicker(item), shortDetail(item), total].filter(Boolean).join(" · "))),
-      rowMore(item)));
+        h("span", { class: "tile--row__detail-text" }, [kicker(item), shortDetail(item), total].filter(Boolean).join(" · ")))));
   if (system) node.style.setProperty("--glow", systemColor(systemOf(item)));
   return node;
 }

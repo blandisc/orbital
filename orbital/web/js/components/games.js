@@ -6,7 +6,7 @@ import { platformMark, systemIconName } from "../core/icons.js";
 import { alternativeRunner, primaryLabel, systemRatio } from "../core/library.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { dragScroll } from "../core/swipe.js";
-import { BrowseHead, fillFilters, fitBar, keepInView, replay } from "./browse.js";
+import { BrowseHead, fillFilters, fitBar, keepInView, replay, showFilter } from "./browse.js";
 import { Card } from "./card.js";
 import { createDetailPanel } from "./detail-panel.js";
 import { createRail } from "./rail.js";
@@ -118,7 +118,8 @@ export function createGames({ onFocus, onPick, onAction }) {
   /** La ficha de un juego: arte, logo, de dónde es, sus datos y A / X / Y. */
   function detail(item) {
     const extra = item.extra || {};
-    const runner = item.runners?.find((r) => r.id === item.runner)?.name;
+    // Con qué se abre, solo si hay de dónde elegir (con un solo emulador, «Nintendo Switch · Emu» no decía nada).
+    const runner = item.runners?.length > 1 ? item.runners.find((r) => r.id === item.runner)?.name : null;
     const alt = alternativeRunner(item);
     const g = options.glyphs;
     return {
@@ -149,6 +150,7 @@ export function createGames({ onFocus, onPick, onAction }) {
       else if (!node.classList.contains("rail__item--current")) node.removeAttribute("aria-current");
     }
     const target = targets.get(focusId);
+    if (focusId.startsWith("filter:")) showFilter(filters, filters.querySelector(`[data-focus-id="${focusId}"]`));
     if (target?.kind === "game") memory[consoleId] = target.item.id;
     // Aún sin juego enfocado (filtros, riel): la ficha del primero, nunca vacía.
     const shown = target?.kind === "game" ? target.item : games[0] ?? null;

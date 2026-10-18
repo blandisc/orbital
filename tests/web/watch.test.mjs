@@ -105,6 +105,6 @@ test("«termina a las…»: la hora en que acabas (en el Inicio; en la ficha ya 
   assert.equal(endsAt(30, now), null);
   assert.equal(endsAt(undefined, now), null);
   const movie = { source: "stremio", subtitle: "Película · quedan 1 h 43 min", progress: .2, extra: { kind: "movie", left: 6180 } };
-  assert.equal(detailOf(movie, now), "quedan 1 h 43 min · termina a las 1:13 a. m.");
-  assert.equal(detailOf({ ...movie, extra: { kind: "movie" } }, now), "quedan 1 h 43 min");
+  assert.equal(detailOf(movie, now), "Quedan 1 h 43 min · termina a las 1:13 a. m.");
+  assert.equal(detailOf({ ...movie, extra: { kind: "movie" } }, now), "Quedan 1 h 43 min");
 });

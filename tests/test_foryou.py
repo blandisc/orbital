@@ -98,7 +98,7 @@ def test_titles_without_imdb_are_skipped():
 def test_a_library_game_plays_from_here():
     item = game_item({"id": "steam:1145360", "title": "Hades", "playtime": 48 * 3600, "extra": {"logo": "/l.png"}}, "Tu más jugado")
     assert item["detail"] == "48 h jugadas" and item["action"] == "Jugar" and item["logo"] == "/l.png"
-    assert game_item({"id": "x", "title": "Celeste", "playtime": 0}, "Sin estrenar")["detail"] == "Nunca lo has abierto"
+    assert game_item({"id": "x", "title": "Celeste", "playtime": 0}, "Sin jugar")["detail"] == "Nunca lo has abierto"
 
 
 # ---------------------------------------------------------------- caché
@@ -298,7 +298,7 @@ def test_your_games_favorites_most_played_unopened_and_one_at_random(library, ma
     picks = make_foryou(trakt_keys=False).local_games(seed=1)
     by = {p["title"]: p["why"] for p in picks}
     assert by["Hollow Knight"] == "Tu favorito" and by["Hades"] == "Tu más jugado"
-    assert "Sin estrenar" in by.values()  # las ROMs que nunca abriste
+    assert "Sin jugar" in by.values()  # las ROMs que nunca abriste
     assert all(p["kind"] == "game" and p["item"]["id"] == p["id"] for p in picks)
 
 
@@ -425,7 +425,7 @@ def test_keys_written_in_settings_are_checked_saved_and_removed(library, make_fo
 
 
 def test_steam_games_carry_their_store_capsule_for_the_mosaic():
-    item = game_item({"id": "steam:1313140", "title": "Cult of the Lamb", "playtime": 0, "extra": {}}, "Sin estrenar")
+    item = game_item({"id": "steam:1313140", "title": "Cult of the Lamb", "playtime": 0, "extra": {}}, "Sin jugar")
     assert item["steam_appid"] == 1313140 and item["wide"].endswith("/1313140/capsule_616x353.jpg")
     gba = game_item({"id": "emu:gba:1", "title": "Kirby", "playtime": 0, "extra": {"hero_lowres": True}}, "Al azar")
     assert gba["wide"] is None and gba["hero_weak"]

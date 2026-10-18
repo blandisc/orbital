@@ -10,7 +10,7 @@
 .detail-panel--idle { visibility: hidden; }
 /* El arte se funde con la ficha (una máscara, no una capa encima: ninguna foto deja un borde). */
 .detail-panel__art {
-  position: relative; flex: none; height: 40%; overflow: hidden;
+  position: relative; flex: none; height: 52%; overflow: hidden; /* más arte: la ficha ya no queda medio vacía */
   -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) 45%, transparent 100%); mask-image: linear-gradient(180deg, var(--mask-solid) 45%, transparent 100%);
   transition: opacity var(--duration-base) var(--ease-out);
 }

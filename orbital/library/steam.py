@@ -17,6 +17,10 @@ log = logging.getLogger(__name__)
 
 # Herramientas que Steam instala como "apps" pero no son juegos.
 _NOT_GAMES = ("proton", "steam linux runtime", "steamworks common", "steamvr")
+# Lo que la tienda llama «juego» pero no se juega: servidores, herramientas, pruebas, demos y reproductores (salían en la
+# fila de Steam: «Left 4 Dead 2 Dedicated Server», «Halo MCC Mod Uploader», «Resident Evil 6 Benchmark Tool»…).
+_NOT_GAME_WORDS = re.compile(r"\b(dedicated server|sdk|mod tools?|mod uploader|benchmark( tool)?|playtest|demo|"
+                             r"stress test|performance test|video player|source filmmaker|soundtrack|ost|test server)\b", re.I)
 _NOT_GAME_IDS = {"228980", "1070560", "1391110", "1628350"}
 
 CDN = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{name}.jpg"
@@ -74,7 +78,7 @@ def library_folders(steam_root: Path) -> list[Path]:
 
 def _is_game(appid: str, name: str) -> bool:
     lowered = name.lower()
-    return appid not in _NOT_GAME_IDS and not any(word in lowered for word in _NOT_GAMES)
+    return appid not in _NOT_GAME_IDS and not any(word in lowered for word in _NOT_GAMES) and not _NOT_GAME_WORDS.search(name)
 
 
 def user_stats(steam_root: Path) -> dict[str, dict]:

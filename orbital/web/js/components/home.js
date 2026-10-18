@@ -99,7 +99,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     // Bajo el título, el próximo estreno de tus series (como el widget del iPhone): «The Simpsons T38 E3 · Mañana · 6:00 p. m.».
     const upcoming = nextUp && h("div", { class: "home__next" }, svg(ICONS.calendar),
       h("span", { class: "home__next-text" }, [nextUp.title, nextUp.episode].filter(Boolean).join(" ")), h("span", { class: "home__next-when" }, `· ${nextUp.when}`));
-    mount(queue, queued.length > 0 && SectionHead(queueTitle(), { className: "home__queue-head" }),
+    mount(queue, queued.length > 0 && SectionHead(queueTitle(queued), { className: "home__queue-head" }),
       queued.length > 0 && upcoming,
       queued.length > 0 && h("div", { class: "home__rows" }, queued));
 
@@ -178,27 +178,19 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     const list = queue.querySelector(".home__rows");
     if (!list) return;
     const rows = [...list.children];
-    list.style.gridTemplateRows = ""; // se mide con todas iguales
-    list.classList.remove("home__rows--grown");
-    rows.forEach((row) => { row.hidden = false; row.classList.remove("tile--row-out"); });
+    rows.forEach((row) => { row.hidden = false; });
     for (let n = rows.length - 1; n > 0 && list.scrollHeight > list.clientHeight + 1; n--) rows[n].hidden = true;
-    growRows();
   }
 
-  /**
-   * La tarjeta enfocada ocupa dos lugares y enseña más (rowMore en tiles.js). Con cuatro, una sale: si es de las
-   * primeras, empuja a la de hasta abajo; si es de las últimas, a la de hasta arriba. Fuera de la columna, todas iguales.
-   */
-  function growRows() {
-    const list = queue.querySelector(".home__rows");
-    if (!list) return;
-    const rows = [...list.children].filter((row) => !row.hidden);
-    const i = rows.findIndex((row) => row.dataset.focusId === focusId);
-    const out = i >= 0 && rows.length >= 4 ? (i < rows.length / 2 ? rows.length - 1 : 0) : -1;
-    rows.forEach((row, j) => row.classList.toggle("tile--row-out", j === out));
-    list.classList.toggle("home__rows--grown", i >= 0 && rows.length >= 2);
-    list.style.gridTemplateRows = i >= 0 && rows.length >= 2
-      ? rows.map((_, j) => (j === i ? "2fr" : j === out ? "0fr" : "1fr")).join(" ") : "";
+  /** El botón del destacado conserva el color del destacado: al bajar a la lista, el fondo toma el color de lo enfocado
+   * pero el destacado sigue enseñando lo suyo (antes su «Jugar» se pintaba del color de otro juego). */
+  function keepFeatureColor(leaving) {
+    const feature = top.querySelector(".tile--feature");
+    if (!feature) return;
+    if (!leaving) return feature.style.removeProperty("--color-primary-art");
+    if (!feature.style.getPropertyValue("--color-primary-art")) {
+      feature.style.setProperty("--color-primary-art", getComputedStyle(document.documentElement).getPropertyValue("--art-accent"));
+    }
   }
 
   /** En Tus consolas el Inicio se desliza lo justo para enseñarlas enteras; arriba, vuelve. */
@@ -234,7 +226,7 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
       else node.removeAttribute("aria-current");
     }
     el.dataset.zone = inConsoles ? "consoles" : "top";
-    growRows();
+    keepFeatureColor(focusId.startsWith("card:"));
     keepConsoleVisible();
     scrollToFocus();
     onFocus?.(targets.get(focusId));

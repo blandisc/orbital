@@ -1,7 +1,7 @@
 import { api } from "../core/api.js";
 import { Chip } from "./ui.js";
 import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
-import { genres } from "../core/format.js";
+import { genres, runtime } from "../core/format.js";
 import { trimmedLogo } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { motion } from "../core/motion.js";
@@ -68,11 +68,11 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     if (info.logo) logo.src = trimmedLogo(info.logo);
     else logo.removeAttribute("src");
     name.hidden = !!info.logo;
-    const runtime = info.runtime || "";
+    const length = runtime(info.runtime) || "";
     // Cada dato con su «·» delante, en un solo bloque: el punto nunca queda colgando al final del
     // renglón; si un dato empieza renglón, su punto se oculta (title--fact-start).
     // Sin «★ 8.1»: la de IMDb va en su renglón, con TMDB y Trakt (como el iPhone).
-    mount(facts, [info.year, runtime, genres(info.genres || []).join(", ")]
+    mount(facts, [info.year, length, genres(info.genres || []).join(", ")]
       .filter(Boolean).map((t, i) => h("span", { class: "title__fact" }, i > 0 && h("span", { class: "title__sep", "aria-hidden": "true" }, "·"), t)));
     requestAnimationFrame(() => {
       let top = null;

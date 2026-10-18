@@ -11,7 +11,7 @@ Junta tres servicios (todos opcionales) con lo que Orbital ya sabe de tus juegos
              Tomatoes…) y, sin Trakt conectado, las listas de «Trakt Integration» (library/stremio_api.py)
 
 Dos formas de verlo en la interfaz: el mosaico (lo tuyo, mezclado) y las listas (un riel como el de
-Juegos). Cada sugerencia sale con una etiqueta corta («Recomendada», «Sin estrenar»…) y un dato.
+Juegos). Cada sugerencia sale con una etiqueta corta («Recomendada», «Sin jugar»…) y un dato.
 Un servicio que falla no tumba los demás: su lista queda vacía y se reintenta más tarde.
 """
 
@@ -916,7 +916,7 @@ class ForYou:
         rest = [d for d in described if d["id"] not in taken]
         lucky_picks = rng.sample(rest, min(lucky, len(rest)))
         picks = ([game_item(d, "Tu favorito") for d in favorites] + [game_item(d, "Tu más jugado") for d in most]
-                 + [game_item(d, "Sin estrenar") for d in fresh] + [game_item(d, "Al azar") for d in lucky_picks])
+                 + [game_item(d, "Sin jugar") for d in fresh] + [game_item(d, "Al azar") for d in lucky_picks])
         hidden = self.catalog.state.dismissed()
         return [p for p in picks if p["key"] not in hidden]
 

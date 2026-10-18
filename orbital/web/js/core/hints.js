@@ -94,8 +94,8 @@ export function gamesHints(glyphs, target) {
   if (glyphs.page && target?.kind !== "rail") list.push({ glyph: glyphs.page, label: "Otra consola" });
   if (glyphs.search) list.push({ glyph: glyphs.search, label: "Buscar", secondary: true });
   if (glyphs.section) list.push({ glyph: glyphs.section, label: "Sección", secondary: true });
-  // B: primero al primer juego; desde ahí, a Inicio.
-  list.push({ glyph: glyphs.back, label: target?.focusId === "game:0" ? "Inicio" : "Al principio", secondary: true });
+  // B: primero al primer juego; desde ahí, a Inicio. Siempre dice «Atrás», como en el resto de Orbital.
+  list.push({ glyph: glyphs.back, label: "Atrás", secondary: true });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
   return list;
 }

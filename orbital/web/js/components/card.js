@@ -1,6 +1,7 @@
 import { h, svg } from "../core/dom.js";
 import { shortAgo } from "../core/format.js";
 import { rankOf, trendOf, trimmedLogo } from "../core/foryou.js";
+import { SYSTEMS, systemColor, systemOf } from "../core/home.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { sized } from "../core/images.js";
 import { clampRatio, coverRatio } from "../core/library.js";
@@ -63,9 +64,13 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
     ? h("span", { class: "card__placeholder card__placeholder--app", "aria-hidden": "true" }, h("img", { class: "card__app-icon", src: icon, alt: "" }))
     : h("span", { class: "card__placeholder", "aria-hidden": "true" }, svg(ICONS[systemIconName(item)])));
 
+  // Sin portada propia: la foto de su consola sobre el color de la consola, con el nombre completo (antes una imagen
+  // genérica, la misma para todos, con un punto negro y «Nintendo …» cortado).
+  const standIn = item.extra?.placeholder_cover && SYSTEMS[systemOf(item)]?.photo && !wide;
   const card = h("button", {
     // Portada de respaldo (sin arte propio): la imagen genérica con el nombre del juego encima.
-    class: ["card", wide && "card--wide", item.image ? "card--has-art" : "card--no-art", item.extra?.placeholder_cover && "card--named", progress && "card--has-progress"],
+    class: ["card", wide && "card--wide", item.image ? "card--has-art" : "card--no-art", item.extra?.placeholder_cover && "card--named",
+      standIn && "card--stand-in", progress && "card--has-progress"],
     type: "button",
     "aria-label": item.title,
     onClick: onPress,
@@ -75,7 +80,11 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
     card.style.setProperty("--ratio", String(ratio));
   };
   setRatio(wide ? WIDE_RATIO : coverRatio(item));
-  if (item.image) {
+  if (standIn) {
+    card.style.setProperty("--glow", systemColor(systemOf(item)));
+    card.append(h("span", { class: "card__stand-in", "aria-hidden": "true" },
+      h("img", { class: "card__stand-in-photo", src: `img/consoles/${SYSTEMS[systemOf(item)].photo}`, alt: "", decoding: "async" })));
+  } else if (item.image) {
     // Sin loading="lazy": las filas de abajo están fuera de vista y cada portada aparecería
     // vacía un instante al cambiar de fila. Son archivos locales; se cargan de una vez.
     // Ancha: del tamaño en que se ve (~500 px; antes se pedía como póster, a 240, y se veía borrosa).
