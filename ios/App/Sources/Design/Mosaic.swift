@@ -75,8 +75,8 @@ final class MosaicRuntime: ObservableObject {
         geometry = MosaicGeometry(columnCount: self.columnCount, gap: gap, ring: ring, growRatio: growRatio, focusedRowRatio: focusedRowRatio, uniform: DS.Mosaic.uniform)
         pool = MosaicPool(items: items)
         serial = 0
-        // Cada columna empieza un poco más abajo según su turno: una entrada escalonada, como en la TV.
-        columns = (0..<self.columnCount).map { c in MosaicColumn(offset: c % 2 == 1 ? gap * 5 : 0) }
+        // Todas las columnas empiezan alineadas: el escalón llega con el ambiente (`goAmbient`).
+        columns = (0..<self.columnCount).map { _ in MosaicColumn() }
         focus = nil   // empieza sin nada elegido: se recorre libre y se elige tocando
         mode = .focus
         aliveTileID = nil
@@ -194,6 +194,11 @@ final class MosaicRuntime: ObservableObject {
         guard mode == .focus, !isEmpty else { return }
         mode = .ambient
         aliveTileID = nil
+        // Si siguen parejas (la primera vez, o tras recorrerlas con el dedo), las de turno impar suben un poco antes de
+        // que empiece la deriva; quien llama lo anima.
+        if let first = columns.first?.offset, columns.allSatisfy({ $0.offset == first }) {
+            for c in columns.indices where c % 2 == 1 { columns[c].offset += geometry.gap * DesignTokens.Mosaic.ambientLiftGaps }
+        }
         relayoutAndFill()
     }
 

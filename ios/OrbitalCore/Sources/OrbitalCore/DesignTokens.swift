@@ -172,6 +172,9 @@ public enum DesignTokens {
         public static let flingDecayPerSecond = 0.135, flingStopSpeed = 20.0, flingFrame = 1.0 / 120
         /// Puntos por segundo de cada columna en el ambiente, en el mismo orden que `DRIFT` de la TV (se repite si hay más columnas).
         public static let driftPattern: [Double] = [16, 12, 19, 14, 17, 13]
+        /// Al abrir, las columnas van alineadas (se recorre parejo); al empezar el ambiente, las de turno impar suben
+        /// esta cantidad de separaciones y desde ahí cada una sigue a su ritmo.
+        public static let ambientLiftGaps = 5.0
         /// Cuánto tarda la pieza quieta en acercarse («cobra vida», `--duration-alive` de la TV).
         public static let aliveZoomSeconds = 9.0
         public static let bufferHeight = 360.0
