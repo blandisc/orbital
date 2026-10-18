@@ -308,7 +308,7 @@ struct FromTVCard: View {
                         Spacer(minLength: DS.Space.s2)
                         Button(action: onDismiss) { Image(systemName: "xmark").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
                             .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.small)
-                            .accessibilityLabel(Text("Descartar"))
+                            .accessibilityLabel(Text("Quitar"))
                     }
                     Spacer(minLength: DS.Space.s2)
                     TitleLogo(url: Artwork.logoURL(metaID: item.metaID), title: item.title)

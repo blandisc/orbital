@@ -74,17 +74,12 @@ struct BrowseView: View {
         // «Sin resultados» solo cuando ya contestó la búsqueda de lo que está escrito (no durante la espera de la última letra).
         let answered = !model.isSearching && model.searchedQuery == query.trimmingCharacters(in: .whitespacesAndNewlines)
         if let error = model.error, answered { DSNotice(verbatim: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
-        else if model.results.isEmpty && answered { ContentUnavailableView.search(text: query) }
+        else if model.results.isEmpty && answered { DSEmptyState(symbol: "magnifyingglass", title: Text("Sin resultados"), message: Text("Nada con «\(query)». Prueba con otro nombre.")) }
         let shown = kind.isEmpty ? model.results : model.results.filter { $0.kind == kind }
         let movieCount = model.results.filter { $0.kind == "movie" }.count, seriesCount = model.results.filter { $0.kind == "series" }.count
         if model.results.count > 1 || !kind.isEmpty {
-            // Todo · Películas · Series (cuántas de cada una), como en Para ti.
-            ScrollView(.horizontal, showsIndicators: false) { HStack(spacing: DS.Space.s2) {
-                PanelChip(title: Text("Todo"), selected: kind.isEmpty) { kind = "" }
-                PanelChip(title: Text("Películas \(movieCount)"), selected: kind == "movie", symbol: "film") { kind = "movie" }
-                PanelChip(title: Text("Series \(seriesCount)"), selected: kind == "series", symbol: "tv") { kind = "series" }
-            } }
-            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            // Todo · Películas · Series (cuántas de cada una): el filtro de toda la app.
+            DSKindFilter(kind: $kind, counts: (movieCount, seriesCount)).padding(.horizontal, DS.Space.gutter)
         }
         // El que mejor coincide, en grande (con su arte), como el primer resultado de Apple TV.
         if let top = shown.first, top.metaID.hasPrefix("tt") {
@@ -98,7 +93,7 @@ struct BrowseView: View {
             .simultaneousGesture(TapGesture().onEnded { model.remember(query) })
         }
         if answered, !model.results.isEmpty, shown.isEmpty {
-            DSNotice(text: "Nada de ese tipo: prueba con «Todo».").padding(.horizontal, DS.Space.gutter)
+            DSEmptyState(symbol: "line.3.horizontal.decrease.circle", title: Text("Nada de ese tipo"), message: Text("Prueba con «Todo»."))
         }
         LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
             if !answered && model.results.isEmpty && model.error == nil {

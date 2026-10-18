@@ -73,7 +73,7 @@ struct SortableGrid<Cell: View>: View {
                 ForEach(shown) { s in cell(s) }
             }
             .padding(.horizontal, DS.Space.gutter)
-            if shown.isEmpty, !items.isEmpty { DSNotice(text: "Nada con estos filtros.").padding(.horizontal, DS.Space.gutter) }
+            if shown.isEmpty, !items.isEmpty { DSEmptyState(symbol: "line.3.horizontal.decrease.circle", title: Text("Nada con estos filtros"), message: Text("Cambia el orden o lo que ocultas.")) }
         }
         .toolbar { ToolbarItem(placement: .topBarTrailing) { menu } }
         .onChange(of: sort) { _, new in UserDefaults.standard.set(new.rawValue, forKey: "list-sort.\(listID)") }

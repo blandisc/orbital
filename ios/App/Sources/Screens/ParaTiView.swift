@@ -237,14 +237,8 @@ struct ShelfPoster: View {
 }
 
 
-/// El filtro de «Para ti › Listas»: todo, solo series o solo películas.
-enum KindFilter: String, CaseIterable, Identifiable {
-    case all, series, movie
-    var id: String { rawValue }
-    var label: LocalizedStringKey {
-        switch self { case .all: "Todo"; case .series: "Series"; case .movie: "Películas" }
-    }
-}
+/// Cómo guarda «Para ti › Listas» su filtro (el control es `DSKindFilter`, el de toda la app).
+enum KindFilter: String { case all, series, movie }
 
 /// «Para ti › Listas»: el filtro Todo · Series · Películas, un destacado y los estantes (cada uno dice de dónde viene).
 struct ListsView: View {
@@ -331,6 +325,11 @@ struct ListsView: View {
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 // Para ti: lo general (el destacado, «Porque viste», las sugerencias), cada fila con su sello.
                 VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+                    if model.hasKindSplit {
+                        DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
+                                                   set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }))
+                            .padding(.horizontal, DS.Space.gutter)
+                    }
                     let slides = model.featuredSlides
                     if !slides.isEmpty { featuredCarousel(slides).perfTag("paraTi.hero") }
                     if let because = model.because { becauseCard(because) }
@@ -436,17 +435,9 @@ struct ListsView: View {
     struct StudioItem { let id: Int; let name: String }
 
     /// El índice de arriba: salta a cada grupo.
-    /// Un solo menú en la barra para Listas: qué mostrar (Todo · Series · Películas) e ir a una sección. Antes eran dos botones
-    /// y, con los demás, el título «Para ti» se cortaba.
+    /// Ir a una sección (el filtro Todo · Películas · Series va arriba de la lista, el mismo de toda la app).
     private func sectionMenu(_ proxy: ScrollViewProxy) -> some View {
         Menu {
-            if model.hasKindSplit {
-                Picker(selection: Binding(get: { KindFilter(rawValue: model.kind) ?? .all }, set: { new in Task { await model.setKind(new.rawValue) } })) {
-                    ForEach(KindFilter.allCases) { Text($0.label).tag($0) }
-                } label: { Text("Mostrar") }
-                .pickerStyle(.inline)
-                Divider()
-            }
             ForEach(CollectionSection.allCases.filter(isShown), id: \.self) { section in
                 Button {
                     activeSection = section
@@ -457,7 +448,7 @@ struct ListsView: View {
                     Label { activeSection == section ? section.title + Text(verbatim: "  ✓") : section.title } icon: { Image(systemName: section.symbol) }
                 }
             }
-        } label: { Image(systemName: model.kind == KindFilter.all.rawValue ? "list.bullet.indent" : "line.3.horizontal.decrease.circle.fill") }
+        } label: { Image(systemName: "list.bullet.indent") }
         .accessibilityLabel(Text("Ir a una sección"))
         .accessibilityIdentifier("paraTi-sections")
         .sensoryFeedback(.selection, trigger: jumps)   // solo al elegir una sección (no en cada una al deslizar)
@@ -592,13 +583,10 @@ struct ListsView: View {
                 }
             }
         }
-        VStack(alignment: .leading, spacing: DS.Space.s3) {
-            Label { Text("Conecta Trakt o tu Orbital").font(DS.TextRecipe.cardTitle.font.weight(.semibold)).foregroundStyle(DS.text) } icon: { Image(systemName: "link").foregroundStyle(DS.textMuted) }
-            Text("Tu watchlist, tus recomendaciones y el Top 10 de tus plataformas aparecen aquí.").font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
+        DSEmptyState(symbol: "link", title: Text("Conecta Trakt o tu Orbital"),
+                     message: Text("Tu watchlist, tus recomendaciones y el Top 10 de tus plataformas aparecen aquí.")) {
             NavigationLink(value: SettingsRoute()) { Label("Abrir Ajustes", systemImage: "gearshape") }
-                .buttonStyle(.glass).controlSize(.large)
         }
-        .padding(.horizontal, DS.Space.gutter)
     }
 
     // MARK: destacado
@@ -687,7 +675,7 @@ struct ListGridView: View {
                     .padding(.horizontal, DS.Space.gutter)
                     let items = model.items(for: plan)
                     if items.isEmpty && !model.isLoading(shelf: plan) {
-                        DSNotice(text: "Nada por aquí por ahora.").padding(.horizontal, DS.Space.gutter)
+                        DSEmptyState(symbol: "tray", title: Text("Nada por aquí por ahora"))
                     } else if plan.style == .top10 {
                         // Un ranking se lee en su orden: sin ordenar ni filtrar.
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
@@ -758,19 +746,10 @@ struct PlatformRankingsView: View {
                     }
                 }
                 .padding(.horizontal, DS.Space.gutter)
-                // Pestañas grandes: la elegida brilla, la otra se apaga.
+                // Películas · Series: el filtro de toda la app.
                 if kinds.count > 1 {
-                    HStack(alignment: .firstTextBaseline, spacing: DS.Space.s5) {
-                        ForEach(kinds, id: \.self) { k in
-                            Button { withAnimation(DS.Motion.base(reduceMotion)) { kind = k } } label: {
-                                (k == "movie" ? Text("Películas") : Text("Series")).recipe(.title, color: k == currentKind ? DS.text : DS.textFaint)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityAddTraits(k == currentKind ? .isSelected : [])
-                        }
-                    }
-                    .padding(.horizontal, DS.Space.gutter)
-                    .sensoryFeedback(.selection, trigger: currentKind)
+                    DSKindFilter(kind: Binding(get: { currentKind }, set: { new in withAnimation(DS.Motion.base(reduceMotion)) { kind = new } }), includeAll: false)
+                        .padding(.horizontal, DS.Space.gutter)
                 }
                 // Sus listas, como pestañas de texto con el subrayado en el color de la plataforma.
                 if sources.count > 1, let current {

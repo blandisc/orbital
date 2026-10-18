@@ -91,10 +91,13 @@ public enum Artwork {
         return url
     }
 
-    /// Una versión ligera de la misma imagen para enseñar mientras llega la buena (el fondo «medium» de metahub son
-    /// 1920×1080 y ~1 MB; el «small», 480×270 y ~20 KB): nil si no hay una más ligera.
-    public static func preview(_ url: String) -> String? {
-        url.contains("images.metahub.space/background/medium/") ? url.replacingOccurrences(of: "/background/medium/", with: "/background/small/") : nil
+    /// Una versión ligera de la misma imagen para enseñar mientras llega la buena, y su lado más largo: el fondo «medium» de
+    /// metahub son 1920×1080 y ~1 MB (el «small», 480×270 y ~20 KB); el póster «medium», 500×750 y ~100 KB (el «small»,
+    /// 300×450 y ~20 KB: llega en una fracción). nil si no hay una más ligera.
+    public static func preview(_ url: String) -> (url: String, pixels: Int)? {
+        if url.contains("images.metahub.space/background/medium/") { return (url.replacingOccurrences(of: "/background/medium/", with: "/background/small/"), 480) }
+        if url.contains("images.metahub.space/poster/medium/") { return (url.replacingOccurrences(of: "/poster/medium/", with: "/poster/small/"), 450) }
+        return nil
     }
 
     /// Hasta aquí alcanza el fondo «small» de metahub (480 px de ancho) sin verse borroso en una pieza.

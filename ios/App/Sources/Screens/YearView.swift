@@ -48,7 +48,7 @@ struct YearView: View {
                 } else if loading {
                     ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s10)
                 } else {
-                    DSNotice(text: "Conecta Trakt (en tu Orbital o en Ajustes) para ver tu año.")
+                    DSEmptyState(symbol: "calendar", title: Text("Conecta Trakt"), message: Text("Conecta Trakt (en tu Orbital o en Ajustes) para ver tu año."))
                 }
             }
             .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s4).padding(.bottom, DS.Space.s14)

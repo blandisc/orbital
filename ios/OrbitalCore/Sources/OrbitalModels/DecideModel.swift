@@ -314,6 +314,15 @@ public final class DecideModel: ObservableModel {
     /// Volver a las preguntas.
     public func reset() async { pick = nil; exhausted = false; upcoming = nil }
 
+    /// «No me interesa» (lo mismo que en Para ti): ya no se sugiere en ningún lado (ni en la TV) y se cambia por otra.
+    public func notInterested() async {
+        if let pick {
+            await services.forYou.dismiss(pick.imdb)
+            if services.orbital.isConfigured { await services.forYouRemote.dismiss(pick.imdb) }
+        }
+        await skipToday()
+    }
+
     /// «Hoy no»: no vuelve a salir en 24 horas; y otra.
     public func skipToday() async {
         if let pick {

@@ -46,6 +46,11 @@ struct PlayerScreen: View {
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @StateObject private var holder = PlayerHolder()
     @State private var controlsVisible = true
+    /// «Bloquear» (como Netflix): sin controles y la pantalla no responde a toques ni deslizamientos (para no pausar o adelantar
+    /// sin querer). Un toque enseña el candado unos segundos; tocarlo desbloquea.
+    @State private var locked = false
+    @State private var unlockPrompt = false
+    @State private var unlockHide: Task<Void, Never>?
     @State private var hideTask: Task<Void, Never>?
     @State private var panel = false
     @Environment(\.verticalSizeClass) private var verticalSize
@@ -119,14 +124,14 @@ struct PlayerScreen: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
             .ignoresSafeArea(edges: landscape ? .all : [])   // en vertical el video respeta la isla y el indicador de inicio
-            gestureLayer(model)
+            if locked { lockLayer } else { gestureLayer(model) }
             SystemVolumeControl(volume: $requestedVolume)
                 .frame(width: DS.Gesture.indicatorBarWidth, height: DS.Gesture.indicatorBarWidth)
                 .allowsHitTesting(false).accessibilityHidden(true)
             statusOverlays(model)
             gestureOverlays
-            // En vertical los controles van bajo el video (no tapan nada): siempre a la vista.
-            if (controlsVisible || !landscape) && !(panel && landscape) && !(panel && !landscape) { controls(model).transition(.opacity) }
+            // En los dos sentidos los controles se esconden solos si no haces nada (un toque los trae); bloqueado, no salen.
+            if controlsVisible && !locked && !panel { controls(model).transition(.opacity) }
             if panel && landscape {
                 // Tocar fuera del panel lo cierra; el video sigue a la vista (el cambio de subtítulos se ve al momento).
                 Color.clear.contentShape(Rectangle()).onTapGesture { panel = false }
@@ -210,6 +215,58 @@ struct PlayerScreen: View {
             UIApplication.shared.isIdleTimerDisabled = false; pip.stop(); nowPlaying.stop(); tilt.stop(); unlockPortrait()
             UIScreen.main.brightness = CGFloat(originalBrightness)   // el brillo es del sistema: no se queda en lo que dejó el gesto
         }
+    }
+
+    // MARK: bloquear
+    /// Bloqueado: todo toque solo enseña el candado; nada pausa, adelanta ni mueve el video.
+    private var lockLayer: some View {
+        ZStack(alignment: .bottom) {
+            Color.clear.contentShape(Rectangle())
+                .onTapGesture { showUnlockPrompt() }
+                .gesture(DragGesture(minimumDistance: 0).onEnded { _ in showUnlockPrompt() })
+            if unlockPrompt {
+                Button { unlock() } label: {
+                    HStack(spacing: DS.Space.s3) {
+                        Image(systemName: "lock.fill").font(DS.TextRecipe.cardTitle.font)
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("Pantalla bloqueada").recipe(.footnote, color: DS.text).fontWeight(.semibold)
+                            Text("Toca para desbloquear").recipe(.caption)
+                        }
+                    }
+                    .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s3)
+                    .glassEffect(.regular.interactive(), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .padding(.bottom, DS.Space.s14)
+                .transition(.opacity.combined(with: .scale(scale: DS.PlayerPanel.lockScale)))
+                .accessibilityIdentifier("player-unlock")
+            }
+        }
+        .animation(DS.Motion.base(reduceMotion), value: unlockPrompt)
+        .accessibilityElement(children: .contain)
+    }
+
+    private func lock() {
+        panel = false
+        hideTask?.cancel()
+        withAnimation(DS.Motion.base(reduceMotion)) { controlsVisible = false; locked = true }
+        showUnlockPrompt()
+    }
+
+    private func showUnlockPrompt() {
+        unlockPrompt = true
+        unlockHide?.cancel()
+        unlockHide = Task {
+            try? await Task.sleep(nanoseconds: DS.Timing.unlockPrompt)
+            if !Task.isCancelled { unlockPrompt = false }
+        }
+    }
+
+    private func unlock() {
+        unlockHide?.cancel()
+        unlockPrompt = false
+        withAnimation(DS.Motion.base(reduceMotion)) { locked = false; controlsVisible = true }
+        scheduleHide()
     }
 
     // MARK: gestos
@@ -481,6 +538,8 @@ struct PlayerScreen: View {
     /// Lo que se hace con el video (cada botón dice qué hace; si no cabe, solo el ícono y VoiceOver dice el nombre).
     @ViewBuilder private func actions(_ model: PlayerModel) -> some View {
         PlayerLabelButton(title: "Audio y subtítulos", symbol: "captions.bubble") { panel = true }
+        PlayerLabelButton(title: "Bloquear", symbol: "lock") { lock() }
+            .accessibilityIdentifier("player-lock")
         if pip.isPossible { PlayerLabelButton(title: "Ventana", symbol: "pip.enter") { pip.toggle() } }
         // Un video que te pasaron (sin reconocer) no lo puede poner la TV.
         if env.services.orbital.isConfigured, model.request?.metaID.hasPrefix("file:") != true {
@@ -816,7 +875,7 @@ struct VideoSettingsPanel: View {
                 }
             }
         } else {
-            if model.subtitleSearchFailed { Text("No encontré subtítulos (o no hay conexión). Vuelve a intentar.").recipe(.footnote) }
+            if model.subtitleSearchFailed { DSNotice(text: "No encontré subtítulos (o no hay conexión). Vuelve a intentar.", tone: .warn) }
             PanelChip(title: model.searchingSubtitles ? Text("Buscando…") : (model.subtitleSearchFailed ? Text("Volver a buscar") : Text("Buscar subtítulos")),
                       selected: false, symbol: "magnifyingglass") {
                 Task { await model.searchSubtitles() }

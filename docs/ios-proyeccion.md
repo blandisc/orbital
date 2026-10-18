@@ -85,6 +85,8 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `HeroActions` | Las acciones de un destacado en un renglón; si no caben (letra grande, iPhone SE), apiladas | Inicio (carrusel), Para ti › Listas |
 | `ActionTileLabel` | Acción de la ficha: rectángulo que llena su parte del renglón, ícono arriba y nombre abajo; activa con el color del arte; con anillo de avance alrededor del ícono (Descargar). Tocar hace lo principal, mantener presionado el resto (`Menu` con `primaryAction`) | Ficha (Guardar, Descargar, Tráiler, Fuente) |
 | `Glyphs/donut` (catálogo de imágenes) | La dona de Los Simpson, con el trazo de los íconos propios (solo iPhone; los de `Icons/` vienen de la TV) | Inicio › un Simpson al azar (el dado es «¿Qué vemos?») |
+| `DSKindFilter` | El filtro de tipo de toda la app: Todo · Películas · Series (o Películas · Series), segmentado y siempre en ese orden | Inicio (destacado y Top 10), Para ti › Listas, plataforma, colección por año, Buscar (con cuántas), «¿Qué vemos?» |
+| `DSEmptyState` | Un área entera vacía: el vacío nativo con ícono, qué pasa y qué hacer. Regla: área vacía → esto; renglón vacío → texto chico; error → `DSNotice` | Descargas, Buscar, listas con filtros, Próximos estrenos, Inicio, «¿Qué vemos?», Tu año, Para ti |
 | `DownloadRing` | El anillo de avance de una descarga | Ficha (Descargar) y la fila de cada episodio |
 | `StillCard` | Pieza 16:9 con avance, nombre y datos | Inicio › Todo lo que sigues |
 | `PageDots` | Puntos de un carrusel | Inicio |

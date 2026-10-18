@@ -59,7 +59,7 @@ struct CollectionGridView: View {
             VStack(alignment: .leading, spacing: DS.Space.s4) {
                 header
                 if route.kind == .year {
-                    DSSegmented(options: [("movie", "Películas"), ("series", "Series")], selection: $kind).padding(.horizontal, DS.Space.gutter)
+                    DSKindFilter(kind: $kind, includeAll: false).padding(.horizontal, DS.Space.gutter)
                 }
                 if loading && items.isEmpty { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s10) }
                 SortableGrid(listID: "\(route.kind):\(route.id)", items: items, watched: { await collections.model.watchedIDs() },

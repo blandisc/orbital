@@ -55,11 +55,21 @@ struct HomeView: View {
                         .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
                 }
                 // Abre con «Destacado» (lo que se está viendo esta semana, para ti); lo que dejaste a medias va justo debajo.
-                if !model.spotlight.isEmpty { spotlightCarousel(model).perfTag("home.hero") }
+                if !model.spotlight.isEmpty {
+                    spotlightCarousel(model).perfTag("home.hero")
+                        // Las primeras tarjetas: su fondo ligero se pide en cuanto se sabe cuáles son (no al pintarse). Los logos no:
+                        // pesan ~350 KB y le quitaban red a la imagen grande.
+                        .task(id: model.spotlight.first?.imdb) {
+                            for case let preview? in model.spotlight.prefix(DS.Size.heroPrefetch).map({ Artwork.preview($0.wide) }) {
+                                let pixels = CGFloat(preview.pixels)
+                                if let url = URL(string: preview.url) { Task { _ = await ImagePipeline.shared.image(url, maxPixel: pixels, urgent: true) } }
+                            }
+                        }
+                }
                 if !model.continueWatching.isEmpty {
                     continueRail(model).perfTag("home.rail")
                 } else if !model.isLoading, model.spotlight.isEmpty {
-                    DSNotice(text: "Aquí aparece lo que vas viendo, en el iPhone y en Orbital.").padding(.horizontal, DS.Space.gutter)
+                    DSEmptyState(symbol: "play.rectangle.on.rectangle", title: Text("Todavía nada"), message: Text("Aquí aparece lo que vas viendo, en el iPhone y en Orbital."))
                 }
                 // Primero lo pendiente (tu watchlist), luego lo que sale y al final lo que guardaste; cada renglón con su porqué
                 // arriba, su sello de origen y su reflejo (el peso del carrusel de arriba).
@@ -208,9 +218,9 @@ struct HomeView: View {
         let copies = items.count > 1 ? DS.Deck.loopCopies : 1
         let middle = (copies / 2) * items.count
         return VStack(spacing: DS.Space.s3) {
-            HStack(alignment: .lastTextBaseline) {
+            // El filtro de tres opciones, a todo lo ancho bajo el título (como en Para ti y Buscar): junto al título lo apretaba.
+            VStack(alignment: .leading, spacing: DS.Space.s3) {
                 DSSectionHead(title: Text("En tendencia"), eyebrow: Text("Lo que todo el mundo está viendo"))
-                Spacer(minLength: DS.Space.s2)
                 kindFilter(model)
             }
             .padding(.horizontal, DS.Space.gutter)
@@ -246,23 +256,8 @@ struct HomeView: View {
 
     /// Todo · Películas · Series: un botón chico (como el de Para ti), sin otro renglón.
     private func kindFilter(_ model: HomeModel) -> some View {
-        Menu {
-            Picker(selection: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 })) {
-                Label("Todo", systemImage: "square.grid.2x2").tag("")
-                Label("Películas", systemImage: "film").tag("movie")
-                Label("Series", systemImage: "tv").tag("series")
-            } label: { EmptyView() }
-        } label: {
-            HStack(spacing: DS.Space.s1) {
-                Text(model.spotlightKind == "movie" ? "Películas" : model.spotlightKind == "series" ? "Series" : "Todo")
-                    .recipe(.footnote, color: DS.text).fontWeight(.semibold)
-                Image(systemName: "chevron.down").font(DS.TextRecipe.caption.font.weight(.bold)).foregroundStyle(DS.textMuted)
-            }
-            .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s1)
-            .background(DS.fill, in: Capsule())
-        }
-        .accessibilityLabel(Text("Filtrar Destacado"))
-        .accessibilityIdentifier("home-kind-filter")
+        DSKindFilter(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }))
+            .accessibilityIdentifier("home-kind-filter")
     }
 
     private func hero(_ s: Suggestion) -> some View {
@@ -368,6 +363,13 @@ struct HomeView: View {
         }
     }
 
+    /// A qué pastilla se ancla la fila: la elegida contra el margen (donde se detiene al deslizar), o el principio si es de las
+    /// primeras (se ve completa sin mover nada).
+    private func pillAnchor(_ brand: String) -> String {
+        let all = HomeModel.topServices.map(\.brand)
+        return (all.firstIndex(of: brand) ?? 0) <= 1 ? all[0] : brand
+    }
+
     private func topTen(_ model: HomeModel) -> some View {
         let service = model.topService
         let series = model.top(kind: "series"), films = model.top(kind: "movie")
@@ -379,30 +381,37 @@ struct HomeView: View {
                               eyebrow: service.weekly ? Text("Lo más visto en tu país esta semana") : Text("Lo más visto hoy · JustWatch"))
                 Spacer(minLength: DS.Space.s2)
                 if !series.isEmpty, !films.isEmpty {
-                    Picker(selection: $topMovies) { Text("Series").tag(false); Text("Películas").tag(true) } label: { EmptyView() }
-                        .pickerStyle(.segmented).fixedSize()
+                    DSKindFilter(kind: Binding(get: { topMovies ? "movie" : "series" }, set: { topMovies = $0 == "movie" }), includeAll: false).fixedSize()
                 }
             }
             .padding(.horizontal, DS.Space.gutter)
-            // De qué servicio: una pastilla por cada uno, con su logo (la elegida, con su color).
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: DS.Space.s2) {
-                    ForEach(HomeModel.topServices) { s in
-                        PlatformPill(name: s.name, logo: s.logo, brand: s.brand, selected: s.brand == service.brand) {
-                            Task { await model.selectTop(s.brand) }
+            // De qué servicio: una pastilla por cada uno, con su logo (la elegida, con su color). Ancladas: al deslizar se
+            // detienen en el borde de una pastilla (nunca a la mitad) y la elegida siempre queda a la vista.
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: DS.Space.s2) {
+                        ForEach(HomeModel.topServices) { s in
+                            PlatformPill(name: s.name, logo: s.logo, brand: s.brand, selected: s.brand == service.brand) {
+                                Task { await model.selectTop(s.brand) }
+                            }
+                            .id(s.brand)
+                            .accessibilityIdentifier("top-\(s.brand)")
                         }
-                        .accessibilityIdentifier("top-\(s.brand)")
                     }
+                    .scrollTargetLayout()
                 }
+                .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+                .contentMargins(.vertical, DS.PlatformFan.pillStroke, for: .scrollContent)   // el borde de la elegida no se recorta
+                .scrollTargetBehavior(.viewAligned)
+                .onAppear { proxy.scrollTo(pillAnchor(service.brand), anchor: .leading) }
+                .onChange(of: service.brand) { _, brand in withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(pillAnchor(brand), anchor: .leading) } }
             }
-            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-            .contentMargins(.vertical, DS.PlatformFan.pillStroke, for: .scrollContent)   // el borde de la elegida no se recorta
             .sensoryFeedback(.selection, trigger: service.brand)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .bottom, spacing: DS.Space.s3) {
                     if items.isEmpty {
                         if model.loadingTop { ShelfSkeleton() }
-                        else { DSNotice(text: "Hoy no hay ranking de este servicio.").frame(width: DS.Size.cardMax) }
+                        else { Text("Hoy no hay ranking de este servicio.").recipe(.footnote).frame(width: DS.Size.cardMax, alignment: .leading) }
                     }
                     ForEach(Array(items.enumerated()), id: \.element.id) { i, s in
                         NavigationLink(value: s.route) { RankedPosterCard(rank: s.rank ?? i + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: DS.PlatformTint.color(service.brand)).titleZoomSource(s.route) }

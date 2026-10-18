@@ -1002,6 +1002,17 @@
         }
       }
     },
+    "Bloquear": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lock"
+          }
+        }
+      }
+    },
     "Borrar": {
       "extractionState": "manual",
       "localizations": {
@@ -1262,6 +1273,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Minimum rating"
+          }
+        }
+      }
+    },
+    "Cambia el orden o lo que ocultas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change the sort or what you hide."
           }
         }
       }
@@ -1735,6 +1757,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "With your Orbital connected, “Watch on TV” plays what you're watching here on the console, right where you were, and your Trakt and For You keys come from it."
+          }
+        }
+      }
+    },
+    "Conecta Trakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Trakt"
           }
         }
       }
@@ -3708,6 +3741,17 @@
         }
       }
     },
+    "Este título no está en Stremio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This title isn't on Stremio"
+          }
+        }
+      }
+    },
     "Este título no está en Stremio.": {
       "extractionState": "manual",
       "localizations": {
@@ -5468,6 +5512,17 @@
         }
       }
     },
+    "Nada con estos filtros": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing with these filters"
+          }
+        }
+      }
+    },
     "Nada con estos filtros.": {
       "extractionState": "manual",
       "localizations": {
@@ -5475,6 +5530,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing with these filters."
+          }
+        }
+      }
+    },
+    "Nada con «%@». Prueba con otro nombre.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing for “%@”. Try another name."
+          }
+        }
+      }
+    },
+    "Nada de ese tipo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing of that type"
           }
         }
       }
@@ -5512,6 +5589,17 @@
         }
       }
     },
+    "Nada en los próximos 14 días": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing in the next 14 days"
+          }
+        }
+      }
+    },
     "Nada este día": {
       "extractionState": "manual",
       "localizations": {
@@ -5530,6 +5618,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nothing pending"
+          }
+        }
+      }
+    },
+    "Nada por aquí por ahora": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing here yet"
           }
         }
       }
@@ -5662,6 +5761,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't find your Orbital. Are the console and the tunnel on?"
+          }
+        }
+      }
+    },
+    "No encontré una con eso": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find one like that"
           }
         }
       }
@@ -5992,6 +6102,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't get The Simpsons episodes."
+          }
+        }
+      }
+    },
+    "No sale nada de las series que sigues.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing coming from the shows you follow."
           }
         }
       }
@@ -6359,6 +6480,17 @@
         }
       }
     },
+    "Pantalla bloqueada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screen locked"
+          }
+        }
+      }
+    },
     "Pantalla táctil": {
       "extractionState": "manual",
       "localizations": {
@@ -6531,6 +6663,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Movies"
+          }
+        }
+      }
+    },
+    "Películas %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies %@"
           }
         }
       }
@@ -6795,6 +6938,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Test connection"
+          }
+        }
+      }
+    },
+    "Prueba con otro filtro o más tiempo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try another filter or more time."
+          }
+        }
+      }
+    },
+    "Prueba con «Todo».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try “All”."
           }
         }
       }
@@ -7481,6 +7646,17 @@
         }
       }
     },
+    "Series %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows %@"
+          }
+        }
+      }
+    },
     "Series %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -7752,6 +7928,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No audio tracks"
+          }
+        }
+      }
+    },
+    "Sin resultados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No results"
           }
         }
       }
@@ -8207,6 +8394,17 @@
         }
       }
     },
+    "Toca para desbloquear": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to unlock"
+          }
+        }
+      }
+    },
     "Toca para terminar": {
       "extractionState": "manual",
       "localizations": {
@@ -8236,6 +8434,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "All"
+          }
+        }
+      }
+    },
+    "Todavía nada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing yet"
           }
         }
       }

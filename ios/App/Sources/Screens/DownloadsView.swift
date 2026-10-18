@@ -69,11 +69,7 @@ struct DownloadsView: View {
         .overlay {
             // Sin nada en cola ni listo: el vacío nativo, con qué hacer.
             if model.items.isEmpty {
-                ContentUnavailableView {
-                    Label("Nada descargado", systemImage: "arrow.down.circle")
-                } description: {
-                    Text("En una ficha, toca Descargar y lo ves aquí sin conexión.")
-                }
+                DSEmptyState(symbol: "arrow.down.circle", title: Text("Nada descargado"), message: Text("En una ficha, toca Descargar y lo ves aquí sin conexión."))
             }
         }
         .listRowSpacing(DS.Space.s2)
@@ -308,7 +304,7 @@ struct DownloadSubtitlesSheet: View {
             Text(verbatim: item.subtitle.isEmpty ? item.title : "\(item.title) · \(item.subtitle)").recipe(.footnote).lineLimit(1)
             if let found {
                 if found.isEmpty {
-                    DSNotice(text: "No encontré subtítulos para este video (o no hay conexión).")
+                    DSNotice(text: "No encontré subtítulos (o no hay conexión). Vuelve a intentar.", tone: .warn)
                 } else {
                     Text("Se guardan con la descarga: también los ves sin conexión.").recipe(.caption, color: DS.textMuted)
                     FlowChips {

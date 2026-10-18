@@ -189,10 +189,11 @@ struct RemoteImage<Content: View>: View {
         loaded = nil   // otra URL en la misma vista: no se queda la imagen de antes mientras llega (o si falla) la nueva
         if ImagePipeline.shared.recentlyFailed(url, maxPixel: pixels) { didFail = true; return }
         didFail = false
-        // Un fondo grande: primero su versión ligera (llega en una fracción) y encima la buena cuando esté.
-        if pixels > CGFloat(Artwork.smallBackgroundPixels), let preview = Artwork.preview(url.absoluteString).flatMap(URL.init(string:)) {
+        // Un fondo o un póster: primero su versión ligera (llega en una fracción) y encima la buena cuando esté.
+        // (También si la buena ya está en el disco: decodificar 1920 px tarda; la ligera sale casi al instante.)
+        if let preview = Artwork.preview(url.absoluteString), pixels > CGFloat(preview.pixels), let quickURL = URL(string: preview.url) {
             async let full = ImagePipeline.shared.image(url, maxPixel: pixels)
-            if let quick = await ImagePipeline.shared.image(preview, maxPixel: CGFloat(Artwork.smallBackgroundPixels)), !Task.isCancelled {
+            if let quick = await ImagePipeline.shared.image(quickURL, maxPixel: CGFloat(preview.pixels), urgent: true), !Task.isCancelled {
                 if loaded == nil { loaded = quick; if let perfTag { Perf.mark(perfTag + ".image") } }
             }
             let image = await full
@@ -571,6 +572,53 @@ struct DSSegmented<Value: Hashable>: View {
         } label: { EmptyView() }
         .pickerStyle(.segmented)
         .sensoryFeedback(.selection, trigger: current)
+    }
+}
+
+/// Cuando un área entera no tiene nada (Descargas vacía, sin resultados, nada con estos filtros): siempre esto, el vacío nativo
+/// de iOS con un ícono, qué pasa y, si lo hay, qué hacer. Regla de la app: un área vacía → `DSEmptyState`; un renglón vacío
+/// dentro de una sección → texto chico; un error o sin conexión → `DSNotice`.
+struct DSEmptyState<Actions: View>: View {
+    let symbol: String
+    let title: Text
+    var message: Text?
+    @ViewBuilder var actions: () -> Actions
+
+    var body: some View {
+        ContentUnavailableView {
+            Label { title } icon: { Image(systemName: symbol) }
+        } description: {
+            if let message { message }
+        } actions: {
+            actions().buttonStyle(.glass).controlSize(.large)
+        }
+    }
+}
+
+extension DSEmptyState where Actions == EmptyView {
+    init(symbol: String, title: Text, message: Text? = nil) {
+        self.init(symbol: symbol, title: title, message: message) { EmptyView() }
+    }
+}
+
+/// El filtro de tipo de toda la app: Todo · Películas · Series (o solo Películas · Series), siempre el mismo control y en
+/// ese orden (antes había cinco: cápsulas, un menú, pestañas grandes, un segmentado y un botón en la barra).
+/// `kind`: "" es todo, «movie» o «series». `counts`: cuántas hay de cada uno (Buscar).
+struct DSKindFilter: View {
+    @Binding var kind: String
+    var includeAll = true
+    var counts: (movies: Int, series: Int)?
+
+    var body: some View {
+        DSSegmented(options: options, selection: $kind)
+            .accessibilityLabel(Text("Series o películas"))
+            .accessibilityIdentifier("kind-filter")
+    }
+
+    private var options: [(String, LocalizedStringKey)] {
+        let movies: LocalizedStringKey = counts.map { "Películas \($0.movies)" } ?? "Películas"
+        let series: LocalizedStringKey = counts.map { "Series \($0.series)" } ?? "Series"
+        return (includeAll ? [("", "Todo")] : []) + [("movie", movies), ("series", series)]
     }
 }
 

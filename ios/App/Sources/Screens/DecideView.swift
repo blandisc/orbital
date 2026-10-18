@@ -130,14 +130,14 @@ struct DecideView: View {
                     .buttonStyle(.glass).controlSize(.large).disabled(m.isLoading)
                     .accessibilityIdentifier("decide-shuffle")
                 Menu {
-                    Button("Hoy no", systemImage: "moon.zzz") { Task { await m.skipToday() } }
+                    Button("No me interesa", systemImage: "hand.thumbsdown", role: .destructive) { Task { await m.notInterested() } }
                     Button("Ver la ficha", systemImage: "info.circle") { dismiss(); open(s.route) }
                 } label: { Image(systemName: "ellipsis") }
                     .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
                     .accessibilityLabel(Text("Más"))
             }
         } else if m.exhausted {
-            DSNotice(text: "No encontré una con eso: prueba con otro filtro o más tiempo.")
+            DSEmptyState(symbol: "dice", title: Text("No encontré una con eso"), message: Text("Prueba con otro filtro o más tiempo."))
         } else {
             HStack(spacing: DS.Space.s3) {
                 ForEach(0..<DecideModel.trio, id: \.self) { _ in
@@ -185,11 +185,7 @@ struct DecideView: View {
             }
         }
         PanelGroupTitle(title: "Qué")
-        FlowChips {
-            PanelChip(title: Text("Todo"), selected: m.kind == nil, font: DS.TextRecipe.body.font) { m.kind = nil }
-            PanelChip(title: Text("Series"), selected: m.kind == "series", font: DS.TextRecipe.body.font, symbol: "tv") { m.kind = "series" }
-            PanelChip(title: Text("Películas"), selected: m.kind == "movie", font: DS.TextRecipe.body.font, symbol: "film") { m.kind = "movie" }
-        }
+        DSKindFilter(kind: Binding(get: { m.kind ?? "" }, set: { m.kind = $0.isEmpty ? nil : $0 }))
         PanelGroupTitle(title: "Géneros")
         FlowChips {
             ForEach(DecideModel.genreChoices, id: \.self) { g in

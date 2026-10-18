@@ -230,6 +230,8 @@ enum DS {
 
     /// El panel «Ajustes del video» del reproductor: a la derecha en horizontal, hoja ajustada en vertical.
     enum PlayerPanel {
+        /// El candado de «Pantalla bloqueada» entra creciendo desde este tamaño.
+        static let lockScale: CGFloat = 0.9
         /// El ícono de una app (Infuse) junto a su botón: tamaño y redondeo como los íconos de iOS.
         static let appIcon: CGFloat = 20, appIconCorner: CGFloat = 0.225
         static let width: CGFloat = 420, radius: CGFloat = 30, rowRadius: CGFloat = 16, icon: CGFloat = 32
@@ -442,6 +444,8 @@ enum DS {
         static let statScale: CGFloat = 0.6
         /// Una sinopsis más larga que esto (caracteres) se corta con «más».
         static let synopsisFold = 160
+        /// Cuántas tarjetas de «En tendencia» se piden de antemano (fondo y logo).
+        static let heroPrefetch = 3
         /// Cuánto hay que bajar para que el título grande se encoja (y el de Inicio diga otra cosa).
         static let titleCollapse: CGFloat = 8
         static let touchTarget = CGFloat(DesignTokens.Size.touchTarget), thumbSmall = CGFloat(DesignTokens.Size.thumbSmall)
@@ -528,6 +532,8 @@ enum DS {
         static let inboxRefresh: TimeInterval = 15 * 60
         /// Cada cuánto (como mínimo) iOS despierta la app para ver si un estreno ya se puede ver.
         static let releaseRefresh: TimeInterval = 30 * 60
+        /// Cuánto se queda a la vista el candado de «Pantalla bloqueada» tras un toque.
+        static let unlockPrompt: UInt64 = 3_000_000_000
         /// Cuánto se queda a la vista el indicador de brillo o volumen tras soltar, antes de desvanecerse.
         static let gestureIndicatorHold = UInt64(DesignTokens.Timing.gestureIndicatorHold * 1e9)
         /// Quieto en el mosaico: a los 30 s el ambiente despierta solo; sobre una pieza, a los 2,2 s cobra vida.

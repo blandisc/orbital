@@ -110,7 +110,8 @@ struct PlatformPill: View {
                 // rectas que casi tocaba el borde redondo y parecía cortado.
                 PlatformLogoTile(url: logo, name: name, size: DS.PlatformFan.pillLogo, radius: DS.PlatformFan.pillLogo / 2, tint: tint, glow: 0)
                     .overlay(Circle().strokeBorder(DS.hairline, lineWidth: DS.Size.hairline))
-                Text(verbatim: name).font(DS.TextRecipe.footnote.font).fontWeight(selected ? .semibold : .regular).lineLimit(1).fixedSize()
+                // El mismo peso elegida o no: antes la elegida pasaba a negritas, se ensanchaba y empujaba a las demás.
+                Text(verbatim: name).font(DS.TextRecipe.footnote.font.weight(.semibold)).lineLimit(1).fixedSize()
             }
             .foregroundStyle(DS.text)
             .padding(.leading, DS.PlatformFan.pillInset).padding(.trailing, DS.Space.s4).padding(.vertical, DS.PlatformFan.pillInset)

@@ -490,6 +490,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // Se registra antes de que termine de arrancar la app (lo exige iOS).
+        ImagePipeline.shared.preconnect()   // lo primero: la conexión con las imágenes, mientras arranca lo demás
         InboxBackgroundTask.register()
         ReleaseNotifier.register()
         ReleaseNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)

@@ -18,7 +18,7 @@ struct UpcomingView: View {
                                                    selection: Binding(get: { model.calendarLayout }, set: { model.calendarLayout = $0 }))
                 .padding(.horizontal, DS.Space.gutter)
             if model.airings.isEmpty {
-                DSNotice(text: "No sale nada en los próximos 14 días de las series que sigues.").padding(.horizontal, DS.Space.gutter)
+                DSEmptyState(symbol: "calendar", title: Text("Nada en los próximos 14 días"), message: Text("No sale nada de las series que sigues."))
             } else if model.calendarLayout == .byDay {
                 ForEach(AiringDay.byDay(model.airings)) { day in
                     VStack(alignment: .leading, spacing: DS.Space.s2) {

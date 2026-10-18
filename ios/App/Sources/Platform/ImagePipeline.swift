@@ -90,6 +90,17 @@ final class ImagePipeline: @unchecked Sendable {
         }
     }
 
+    /// Abre la conexión con los servidores de imágenes desde el arranque (DNS, TLS y HTTP/2): la primera imagen ya no paga
+    /// ese saludo (unos cientos de milisegundos en datos móviles).
+    func preconnect() {
+        for host in Self.imageHosts {
+            guard let url = URL(string: host) else { continue }
+            var request = URLRequest(url: url); request.httpMethod = "HEAD"; request.timeoutInterval = 10
+            session.dataTask(with: request).resume()
+        }
+    }
+    static let imageHosts = ["https://images.metahub.space/", "https://episodes.metahub.space/"]
+
     /// Como `prefetchPosters`, pero espera a que estén (para enseñar varios carteles juntos, ya con imagen).
     nonisolated func warmPosters(_ urls: [String]) async {
         let pixels = await MainActor.run { DS.Image.card * Self.screenScale }
@@ -98,7 +109,9 @@ final class ImagePipeline: @unchecked Sendable {
         }
     }
 
-    func image(_ requested: URL, maxPixel: CGFloat) async -> UIImage? {
+    /// `urgent`: la versión ligera de una imagen (~20 KB) no hace fila detrás de las buenas: sale primero (antes, los pósters
+    /// pedidos después le ganaban al fondo grande).
+    func image(_ requested: URL, maxPixel: CGFloat, urgent: Bool = false) async -> UIImage? {
         let url = Self.resolve(requested, maxPixel)
         let k = key(url, maxPixel)
         if let hit = memory.object(forKey: k as NSString) { return hit }
@@ -107,7 +120,7 @@ final class ImagePipeline: @unchecked Sendable {
             if let existing = decodes[k] { existing.waiters += 1; return existing }
             let fresh = Shared<UIImage?>()
             fresh.task = Task.detached(priority: .userInitiated) { [self] in
-                let image = await decode(url, pixels: pixels)
+                let image = await decode(url, pixels: pixels, urgent: urgent)
                 lock.withLock {
                     if decodes[k] === fresh { decodes[k] = nil }   // solo si sigue siendo este trabajo (no su reemplazo)
                     if image == nil, !Task.isCancelled { markFailed(k) } else { failed[k] = nil }
@@ -129,8 +142,9 @@ final class ImagePipeline: @unchecked Sendable {
     }
 
     /// Los bytes (del disco o de la red) y luego la reducción, con su propio límite.
-    private func decode(_ url: URL, pixels: Int) async -> UIImage? {
-        guard let data = await data(url), !Task.isCancelled else { return nil }
+    private func decode(_ url: URL, pixels: Int, urgent: Bool) async -> UIImage? {
+        guard let data = await data(url, urgent: urgent), !Task.isCancelled else { return nil }
+        if urgent { return Self.downsample(data, maxPixel: pixels) }   // chica: se decodifica al momento
         guard await decoder.acquire() else { return nil }
         defer { Task { await decoder.release() } }
         return Self.downsample(data, maxPixel: pixels)
@@ -146,7 +160,7 @@ final class ImagePipeline: @unchecked Sendable {
     }
 
     /// Los bytes de una URL: del disco sin hacer fila; de la red con una sola descarga por URL.
-    private func data(_ url: URL) async -> Data? {
+    private func data(_ url: URL, urgent: Bool = false) async -> Data? {
         var request = URLRequest(url: url, cachePolicy: .returnCacheDataElseLoad)
         if let console = lock.withLock({ console }), url.host == console.host, url.port == console.port {
             request.setValue("Bearer \(console.token)", forHTTPHeaderField: "Authorization")
@@ -160,8 +174,8 @@ final class ImagePipeline: @unchecked Sendable {
             let fresh = Shared<Data?>()
             fresh.task = Task.detached(priority: .userInitiated) { [self] in
                 defer { lock.withLock { if downloads[url] === fresh { downloads[url] = nil } } }
-                guard await network.acquire() else { return nil }
-                defer { Task { await network.release() } }
+                if !urgent { guard await network.acquire() else { return nil } }
+                defer { if !urgent { Task { await network.release() } } }
                 guard let (fresh, response) = try? await session.data(for: request),
                       let http = response as? HTTPURLResponse, http.statusCode < 400 else { return nil }
                 // `URLSession` ya guarda lo que trae cabeceras de caché (metahub manda 60 días); solo se fuerza si no las trae.
