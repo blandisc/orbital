@@ -91,16 +91,17 @@ def split_alternatives(emus: list[EmulatorConfig]) -> list[tuple[EmulatorConfig,
     El primero de config.yaml es el principal; los demás solo se usan si ES-DE los eligió.
     """
     groups: list[tuple[EmulatorConfig, list[EmulatorConfig]]] = []
-    primary_by_system: dict[str, tuple[EmulatorConfig, list[EmulatorConfig]]] = {}
+    primary_by: dict[tuple, tuple[EmulatorConfig, list[EmulatorConfig]]] = {}
     for emu in emus:
-        shared = emu.system and not emu.rom_dirs
-        if shared and emu.system in primary_by_system:
-            primary_by_system[emu.system][1].append(emu)
+        # Misma consola y misma carpeta (la de ES-DE, o la de tu carpeta de ROMs sin ES-DE): una sola lista.
+        key = (emu.system, tuple(str(d).lower() for d in emu.rom_dirs)) if emu.system else None
+        if key and key in primary_by:
+            primary_by[key][1].append(emu)
             continue
         group = (emu, [])
         groups.append(group)
-        if shared:
-            primary_by_system[emu.system] = group
+        if key:
+            primary_by[key] = group
     return groups
 
 
