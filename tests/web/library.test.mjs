@@ -87,7 +87,8 @@ test("secciones: cada fila en su lugar; Inicio vacío cae en Juegos; secciones v
   const ids = (sec) => sectionRows(rows, sec).map((r) => r.id);
   assert.deepEqual(ids("home"), ["jump", "favorites"]);
   assert.deepEqual(ids("games"), ["recent", "steam", "geforcenow", "emulators:switch"]);
-  assert.deepEqual(ids("media"), ["continue", "movies", "series", "media"]); // lo tuyo primero; Buscar es un atajo
+  // Como Para ti › Listas del iPhone: «Seguir viendo» vive en el Inicio; aquí solo lo de Para ti (sin «Multimedia»).
+  assert.deepEqual(ids("media"), []);
   assert.deepEqual(ids("apps"), ["apps"]);
   const fresh = rows.filter((r) => !["jump", "recent", "continue", "favorites"].includes(r.id));
   assert.deepEqual(sectionRows(fresh, "home").map((r) => r.id), ["steam", "geforcenow", "emulators:switch"]);
@@ -125,24 +126,14 @@ test("cada imagen se pide al tamaño en que se ve", async () => {
   assert.equal(sized("img/placeholders/a.jpg", 240, 1), "img/placeholders/a.jpg");
 });
 
-test("Películas y series: la curaduría de Para ti entre lo tuyo y lo popular", async () => {
-  const { curatedLists, curatedRows } = await import("../../orbital/web/js/core/curation.js");
+test("Películas y series: Destacados arriba y lo de Para ti en su orden, sin «Multimedia»", async () => {
   const { sectionRows } = await import("../../orbital/web/js/core/library.js");
-  const lists = [{ id: "continue" }, { id: "jw:prime", brand: "prime", title: "Tendencias en Prime Video" }, { id: "prime", brand: "prime", title: "Prime Video" },
-    { id: "disney", brand: "disney", title: "Disney+" }, { id: "chart:netflix", brand: "netflix", title: "Top 10 en Netflix" },
-    { id: "list:9", title: "animadas" }, { id: "recs", title: "Recomendadas" }, { id: "mygames", title: "Tus juegos" }];
-  const picked = curatedLists(lists);
-  assert.deepEqual(picked.map((l) => l.id), ["chart:netflix", "recs", "jw:prime", "disney", "list:9"]); // TMDB de Prime sobra: ya están sus tendencias
-  const rows = curatedRows(picked, { "chart:netflix": [{ meta_id: "tt1", kind: "series", title: "X", rank: 1, why: "N.º 1 en Netflix" }], recs: [] });
-  assert.equal(rows.length, 1);
-  assert.equal(rows[0].ranked, true);
-  assert.equal(rows[0].items[0].id, "cinemeta:series:tt1");
-  const ordered = sectionRows([{ id: "movies" }, { id: "continue" }, ...rows, { id: "mylist" }], "media").map((r) => r.id);
-  assert.deepEqual(ordered, ["continue", "mylist", "curated:chart:netflix", "movies"]);
+  const rows = [{ id: "media" }, { id: "continue" }, { id: "curated:recs" }, { id: "curated:platforms" }, { id: "curated:spotlight" }, { id: "movies" }];
+  assert.deepEqual(sectionRows(rows, "media").map((r) => r.id), ["curated:spotlight", "curated:recs", "curated:platforms"]);
 });
 
 test("Por género: tarjetas con arte que llevan a su estante, y el destacado no las trata como juego", async () => {
-  const { genreRows, spotlightRow, curatedLists } = await import("../../orbital/web/js/core/curation.js");
+  const { genreRows, spotlightRow } = await import("../../orbital/web/js/core/curation.js");
   const { primaryLabel, isGame } = await import("../../orbital/web/js/core/library.js");
   const { alexaTip } = await import("../../orbital/web/js/core/hints.js");
   const movie = (id) => ({ id: `cinemeta:movie:${id}`, title: id, source: "cinemeta" });
@@ -152,9 +143,9 @@ test("Por género: tarjetas con arte que llevan a su estante, y el destacado no 
   assert.equal(terror.image, "img/genres/genre-horror.jpg");
   assert.equal(primaryLabel(terror), "Ver títulos");
   assert.equal(isGame(terror), false);
-  assert.equal(alexaTip(terror), "«Alexa, pídele a mi consola que ponga algo de terror»");
+  assert.equal(alexaTip(terror), "«Alexa, pídele a Orbital que ponga algo de terror»");
   // Destacados: el N.º 1 de cada plataforma, sin repetir.
-  const picked = curatedLists([{ id: "chart:netflix", brand: "netflix", title: "Top 10" }, { id: "jw:prime", brand: "prime", title: "Prime" }]);
+  const picked = [{ id: "chart:netflix", brand: "netflix", title: "Top 10" }, { id: "jw:prime", brand: "prime", title: "Prime" }];
   const spot = spotlightRow(picked, { "chart:netflix": [{ meta_id: "tt1", kind: "series", title: "A", hero: "h1" }], "jw:prime": [{ meta_id: "tt2", kind: "movie", title: "B", hero: "h2" }] });
   assert.deepEqual(spot.items.map((i) => [i.title, i.image]), [["A", "h1"], ["B", "h2"]]);
   assert.equal(spot.spotlight, true);

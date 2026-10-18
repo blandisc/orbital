@@ -328,7 +328,7 @@ def test_seguir_solo_este_capitulo_y_seguir_en_el_iphone():
         if saved:
             break
         time.sleep(.02)
-    assert saved  # ya cuenta como episodio tuyo («Donde te quedaste»)
+    assert saved  # ya cuenta como episodio tuyo («Seguir viendo»)
     stopped = []
     p.stop = lambda: stopped.append(True)
     mpv.props["time-pos"] = 845.0

@@ -1,0 +1,40 @@
+/* Una lista abierta (js/components/list-screen.js), como SortableGrid del iPhone: la lista en grande arriba (estatuilla o
+   logo), pestañas en píldora, filtros activos en cápsula y la cuadrícula de pósters con su nombre. El marco (fondo,
+   margen, entrada y salida) es .screen. */
+.list-screen { display: flex; flex-direction: column; gap: var(--space-5); }
+.list-screen__head { display: flex; align-items: flex-end; gap: var(--space-6); min-height: 6rem; }
+.list-screen__media { flex: none; display: grid; place-items: end center; height: 7rem; }
+.list-screen__statue { height: 100%; width: auto; filter: drop-shadow(0 0 1.6rem color-mix(in oklab, var(--color-award-gold) 45%, transparent)); }
+.list-screen__logo { max-height: 4rem; max-width: 14rem; object-fit: contain; }
+.list-screen__logo--mono { filter: brightness(0) invert(1); } /* el logo de un estudio, en blanco */
+.list-screen__heading { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.list-screen__title.award-wordmark { font-weight: var(--weight-regular); letter-spacing: var(--tracking-award); } /* el nombre de un premio, como en su tarjeta */
+.list-screen__title { margin: 0; font-size: var(--text-3xl); font-weight: var(--weight-bold); line-height: 1; letter-spacing: var(--tracking-display); text-wrap: balance; }
+.list-screen__meta { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-md); }
+.list-screen__chips { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); align-self: center; }
+.list-screen__chip {
+  padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--color-hairline); font-size: var(--text-sm); font-weight: var(--weight-medium);
+}
+.list-screen__tabs { display: flex; gap: var(--space-2); }
+.list-screen__tab {
+  padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill); color: var(--color-text-muted);
+  font-size: var(--text-md); font-weight: var(--weight-medium); background: transparent; box-shadow: inset 0 0 0 1px var(--color-hairline);
+}
+.list-screen__tab--on { background: var(--color-text); color: var(--color-bg); box-shadow: none; }
+.list-screen__tab--focused { box-shadow: var(--ring-focus); }
+.list-screen__status { margin: 0; color: var(--color-text-muted); font-size: var(--text-md); }
+.list-screen__viewport {
+  flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 3.2rem 1rem 1rem; margin: 0 -1rem; /* arriba, lugar para la enfocada (crece) */
+  -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%); mask-image: linear-gradient(180deg, var(--mask-solid) calc(100% - 3rem), transparent 100%);
+}
+/* Entre renglones, lugar para el nombre y el año que van bajo cada póster. */
+.list-screen__grid { position: relative; display: flex; flex-wrap: wrap; align-content: flex-start; gap: calc(var(--space-8) * 2.4) var(--space-6); transition: transform var(--duration-slow) var(--ease-out); }
+.list-screen__grid .card { --ratio: .667 !important; }
+.list-screen__grid .card--focused { margin-right: 0; transform: scale(var(--card-focus-scale)); transform-origin: center bottom; z-index: var(--z-raised); }
+/* El año del premio o el día del estreno, en una placa sobre el póster (como bajo el póster en el iPhone). */
+.list-screen__note {
+  position: absolute; top: var(--inset-poster); left: var(--inset-poster); z-index: var(--z-raised);
+  padding: .1rem .45rem; border-radius: var(--radius-xs); background: var(--color-badge-bg); box-shadow: var(--shadow-badge);
+  font-size: var(--type-caption); font-weight: var(--weight-bold); font-variant-numeric: tabular-nums;
+}

@@ -46,6 +46,21 @@
   --brand-paramount: #0057e0;
   --brand-appletv: #c7c7cc; /* Apple TV+: gris claro (su marca es blanco y negro) */
   --brand-crunchyroll: #b8500a;
+  /* Películas y series (como Para ti › Listas del iPhone, DS.Collections): el sello de dónde viene una lista y los halos
+     de las tarjetas. Los mismos valores que el iPhone. */
+  --color-source-trakt: #ed1c24;
+  --color-source-stremio: #8a59ab;
+  --color-source-orbital: #3d7ad9;
+  --color-award-gold: #d4a640;
+  --color-award-silver: #c7c2b8;
+  --color-award-bronze: #b87342;
+  --color-studio-halo: #8c8f9e; /* neutro: cada estudio es de muchos colores */
+  /* Las calificaciones de la ficha (IMDb, TMDB; Trakt usa --color-source-trakt), en sus colores de marca (DS.RatingBrand). */
+  --color-rating-imdb: #f5c518;
+  --color-rating-imdb-ink: #000000;
+  --color-rating-tmdb-start: #8fcfa1;
+  --color-rating-tmdb-end: #00b5e3;
+  --color-rating-tmdb-ink: #0d2640;
   --color-progress: var(--palette-paper);
   --color-progress-track: rgba(255, 255, 255, .2);
   --color-pad-a: var(--palette-pad-green);

@@ -1,5 +1,4 @@
-/* «Para ti» (js/components/foryou.js): ocupa el centro, como Juegos; el fondo es el espacio del Inicio.
-   El selector de modo (X · Mosaico | Listas) va al centro del pie, nunca encima del contenido. */
+/* «Para ti» (js/components/foryou.js): el mosaico ocupa el centro, como Juegos; el fondo es el espacio del Inicio. */
 body[data-view="foryou"] .hero, body[data-view="foryou"] .shelf { display: none; }
 body[data-view="foryou"] .backdrop__layer, body[data-view="foryou"] .backdrop__scrim { opacity: 0; }
 body[data-view="foryou"] .backdrop { transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--color-backdrop-deep); }
@@ -7,35 +6,14 @@ body[data-view="foryou"] .backdrop__space { opacity: 1; }
 
 .foryou { grid-row: 2 / 4; position: relative; min-height: 0; padding: var(--space-4) var(--page-gutter) var(--space-2); }
 .foryou__stage { position: relative; height: 100%; min-height: 0; }
-.foryou[data-mode="mosaic"] .foryou-lists, .foryou[data-mode="lists"] .foryou-mosaic { display: none; }
-.foryou__stage--switch > * { animation: fade-in var(--duration-slow) var(--ease-out); }
 
 .foryou__notice { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
 .foryou__notice:empty { display: none; }
 .foryou__message { max-width: 34rem; padding: 0 var(--space-6); text-align: center; color: var(--color-text-muted); font-size: var(--text-md); line-height: 1.5; }
 .foryou__message--waiting { animation: fade-in var(--duration-enter) var(--ease-out); }
 
-.foryou__switch {
-  position: fixed; left: 50%; bottom: calc(var(--space-5) + var(--safe-y)); transform: translateX(-50%); z-index: var(--z-hints);
-  display: inline-flex; align-items: center; gap: .25rem; padding: .3rem .35rem .3rem .55rem; border-radius: var(--radius-pill);
-  background: var(--color-badge-bg); backdrop-filter: blur(var(--blur-glass)); box-shadow: inset 0 0 0 1px var(--color-hairline);
-}
-/* En Listas, el selector flota sobre las portadas: la última fila deja su sitio. */
-.foryou[data-mode="lists"] .browse__viewport { padding-bottom: 3.6rem; }
-/* Pantalla angosta con letra grande: el selector sube sobre el pie (tapaba «Otra lista»). */
-@media (max-width: 1400px) {
-  [data-text-size="large"] .foryou__switch, [data-text-size="xlarge"] .foryou__switch { bottom: calc(var(--space-5) + var(--safe-y) + 3.2rem); }
-}
-.foryou[hidden] .foryou__switch, body[data-overlay="true"] .foryou__switch { display: none; } /* con una vista o un menú encima, no */
-.foryou__switch-glyph { display: inline-flex; margin-right: .3rem; }
-/* Con el dedo no hay botón X que enseñar: sin su hueco, las dos opciones quedan centradas. */
-[data-input="touch"] .foryou__switch { padding-left: .35rem; }
-[data-input="touch"] .foryou__switch-glyph { display: none; }
-.foryou__switch-opt { padding: .32rem .9rem; border-radius: var(--radius-pill); color: var(--color-text-muted); font-size: var(--text-sm); transition: background var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out); }
-.foryou__switch-opt--on { background: var(--inverse-bg); color: var(--inverse-fg); font-weight: var(--weight-medium); }
-
 /* Protector de pantalla (main.js · saver): el mosaico a pantalla completa y solo la hora; nada de botones ni leyendas. */
-body[data-screensaver] .hints, body[data-screensaver] .foryou__switch, body[data-screensaver] .status-bar__brand,
+body[data-screensaver] .hints, body[data-screensaver] .status-bar__brand,
 body[data-screensaver] .status-bar__search, body[data-screensaver] .status-bar__tabs,
 body[data-screensaver] .status-bar__right > :not(.status-bar__clock):not(.battery) { display: none; }
 body[data-screensaver] .foryou-mosaic__tile--on { box-shadow: none; }

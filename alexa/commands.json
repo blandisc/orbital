@@ -1,8 +1,8 @@
 {
   "how": [
-    {"say": "Alexa, pídele a mi consola que ponga Interstellar", "note": "Todo de una vez: «pídele a mi consola que…» y lo que quieras."},
-    {"say": "Alexa, abre mi consola", "note": "Y luego lo dices sin repetir «mi consola» (Alexa se queda escuchando)."},
-    {"say": "Alexa, dile a mi consola que pause", "note": "«dile a mi consola», «pide a mi consola»: también sirven."}
+    {"say": "Alexa, pídele a Orbital que ponga Interstellar", "note": "Todo de una vez: «pídele a Orbital que…» y lo que quieras."},
+    {"say": "Alexa, abre Orbital", "note": "Y luego lo dices sin repetir «Orbital» (Alexa se queda escuchando)."},
+    {"say": "Alexa, dile a Orbital que pause", "note": "«dile a Orbital», «pide a Orbital»: también sirven."}
   ],
   "groups": [
     {"title": "Juegos", "icon": "gamecontroller", "commands": [

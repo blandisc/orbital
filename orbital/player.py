@@ -105,6 +105,9 @@ SYNTHETIC_RESYNC_AFTER = 60.0  # s en pausa tras los que un canal de Orbital reg
 # hacían crecer la memoria de dibujo de Windows). Al abrirlo desde Orbital espera a que Orbital termine su salida a negro.
 PIP_WIDTH = .3  # del ancho de la pantalla: el video en pequeño (Home durante un video)
 PIP_MARGIN = .03
+PIP_GLIDE = .34  # s: lo que tarda en irse a la esquina (o volver), con una curva que frena al llegar
+PIP_FRAME = .016  # un paso de la animación (~60 por segundo)
+PIP_CONTROLS_SECONDS = 3.0  # los tres botones del video en pequeño, antes de irse solos
 CURTAIN_ID = 9
 CURTAIN_STEPS = (.86, .7, .52, .36, .22, .1, 0)  # opacidad, un paso cada CURTAIN_STEP s (~medio segundo)
 CURTAIN_STEP = .07
@@ -531,42 +534,119 @@ class OrbitalPlayer(PlayerScreen):
 
     # --- el video en pequeño (PiP) ------------------------------------------------------------------------------------
     def enter_pip(self) -> bool:
-        """Home durante un video: se encoge a una esquina y sigue sonando, encima de Orbital (sin transparencias).
-        False si no hay video abierto."""
+        """Home durante un video: se desliza y se encoge, con calma, a la esquina de abajo a la derecha, y sigue sonando
+        encima de Orbital. False si no hay video abierto."""
         current = self.current
         if current is None or current.process is None or current.process.poll() is not None:
             return False
         self.pip = True
         self.menu = None
+        self._card = None
         for overlay in (1, 2, 4):  # la barra, el panel y la tarjeta no caben en la esquina
             self._overlay(overlay, None)
-        for prop, value in (("fullscreen", False), ("border", False), ("ontop", True), ("keepaspect-window", True)):
-            self.mpv.command("set_property", prop, value)
-        threading.Thread(target=self._place_pip, args=(current,), daemon=True, name="pip").start()
+        threading.Thread(target=self._to_corner, args=(current,), daemon=True, name="pip").start()
         log.info("Video en pequeño: %s", current.title)
         return True
 
-    def _place_pip(self, current) -> None:
-        time.sleep(.25)  # mpv sale de pantalla completa y luego se le pone su lugar
-        if not self.pip or self.current is not current:
-            return
+    def _window(self, current):
         from . import windows
 
-        hwnd = windows.main_window(windows.process_tree(current.process.pid))
+        return windows, windows.main_window(windows.process_tree(current.process.pid))
+
+    def _pip_rect(self, windows) -> tuple[int, int, int, int]:
         screen_w, screen_h = windows.screen_size()
         width = int(screen_w * PIP_WIDTH)
         height = int(width * 9 / 16)
         margin = int(screen_w * PIP_MARGIN)
-        windows.place_window(hwnd, screen_w - width - margin, screen_h - height - margin, width, height)
+        return screen_w - width - margin, screen_h - height - margin, width, height
+
+    def _glide(self, windows, hwnd, start: tuple, end: tuple, still) -> None:
+        """La ventana de un lugar a otro en PIP_GLIDE segundos, con una curva que frena al llegar (nada de saltos)."""
+        steps = max(2, int(PIP_GLIDE / PIP_FRAME))
+        for n in range(1, steps + 1):
+            if not still():
+                return
+            k = 1 - (1 - n / steps) ** 3  # ease-out cúbico
+            x, y, w, h = (round(a + (b - a) * k) for a, b in zip(start, end, strict=True))
+            windows.place_window(hwnd, x, y, w, h)
+            time.sleep(PIP_FRAME)
+
+    def _to_corner(self, current) -> None:
+        windows, hwnd = self._window(current)
+        screen_w, screen_h = windows.screen_size()
+        full = (0, 0, screen_w, screen_h)
+        # Primero su tamaño de ventana = la pantalla entera: al salir de pantalla completa ya no salta al centro con
+        # el tamaño de siempre (antes se veía ir al centro y luego encogerse de golpe).
+        self.mpv.command("set_property", "geometry", f"{screen_w}x{screen_h}+0+0")
+        for prop, value in (("border", False), ("ontop", True), ("keepaspect-window", False), ("fullscreen", False)):
+            self.mpv.command("set_property", prop, value)
+        windows.place_window(hwnd, *full)
+        still = lambda: self.pip and self.current is current  # noqa: E731
+        self._glide(windows, hwnd, full, self._pip_rect(windows), still)
+        if still():
+            self._show_pip_controls()
 
     def exit_pip(self) -> None:
-        """De vuelta a pantalla completa (Volver al video)."""
+        """De vuelta a pantalla completa (Volver al video): el mismo camino, de la esquina a toda la pantalla."""
         if not self.pip:
             return
         self.pip = False
-        for prop, value in (("ontop", False), ("border", True), ("fullscreen", True)):
+        self._cancel_pip_timer()
+        self._overlay(1, None)
+        current = self.current
+        if current is not None and current.process is not None and current.process.poll() is None:
+            windows, hwnd = self._window(current)
+            screen_w, screen_h = windows.screen_size()
+            here = windows.window_rect(hwnd)
+            start = (here[0], here[1], here[2] - here[0], here[3] - here[1]) if here else self._pip_rect(windows)
+            self._glide(windows, hwnd, start, (0, 0, screen_w, screen_h), lambda: not self.pip)
+        for prop, value in (("fullscreen", True), ("ontop", False), ("border", True)):
             self.mpv.command("set_property", prop, value)
         log.info("Video a pantalla completa otra vez")
+
+    # --- los tres botones del video en pequeño (como el PiP del iPhone) -------------------------------------------
+    def _cancel_pip_timer(self) -> None:
+        timer = getattr(self, "_pip_timer", None)
+        if timer:
+            timer.cancel()
+        self._pip_timer = None
+
+    def _show_pip_controls(self) -> None:
+        """Los tres botones unos segundos (en pausa se quedan): luego solo el video."""
+        if not self.pip:
+            return
+        paused = bool(self._value("pause"))
+        self._overlay(1, player_ui.pip_ass(paused))
+        self._cancel_pip_timer()
+        if not paused:
+            self._pip_timer = threading.Timer(PIP_CONTROLS_SECONDS, self._hide_pip_controls)
+            self._pip_timer.daemon = True
+            self._pip_timer.start()
+
+    def _hide_pip_controls(self) -> None:
+        if self.pip and not self._value("pause"):
+            self._overlay(1, None)
+            player_ui.targets["hud"] = []
+
+    def _pip_tap(self, x: float, y: float) -> None:
+        """Un toque en el video en pequeño: un botón, o enseñar los botones."""
+        action = player_ui.hit("hud", x, y)
+        if action == "pip:expand":
+            current = self.current
+            self.exit_pip()
+            if current is not None and current.process is not None:
+                windows, hwnd = self._window(current)
+                windows.focus(hwnd)
+        elif action == "pip:close":
+            self._user_quit = True
+            self._quit()
+        elif action == "pip:play":
+            paused = not bool(self._value("pause"))
+            self.mpv.command("set_property", "pause", paused)
+            self._ask("pause", paused)
+            self._show_pip_controls()
+        else:
+            self._show_pip_controls()
 
     def _curtain(self, opacity: float) -> None:
         """El negro del fundido de entrada (debajo de la barra, los avisos y los paneles)."""

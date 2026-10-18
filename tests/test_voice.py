@@ -85,3 +85,26 @@ def test_volume_by_voice(library, monkeypatch):
 
 def test_time_left_needs_something_playing(library):
     assert not VoiceController(library).handle_text("cuánto le falta").ok
+
+
+def test_what_people_say_after_a_courtesy_is_understood():
+    """«Alexa, pídele a Orbital que por favor…», «quiero que abras…», «¿puedes subir el volumen?»: el subjuntivo de tú y los
+    infinitivos después de una cortesía no se entendían (sí «ponga»), y Alexa los manda tal cual por el texto libre."""
+    from orbital.voice import parse_text
+
+    cases = {
+        "quiero que abras hades": ("LaunchGameIntent", {"game": "hades"}),
+        "necesito que pongas algo de terror": ("RecommendIntent", {"genre": "terror"}),
+        "me puedes subir el volumen": ("VolumeIntent", {"volume": "sube"}),
+        "podrias bajar el volumen": ("VolumeIntent", {"volume": "baja"}),
+        "puedes pausar": ("PauseIntent", {}),
+        "puedes quitar los subtitulos": ("SubtitlesOffIntent", {}),
+        "adelantar cinco minutos": ("SeekIntent", {"seek": "adelanta", "amount": "5", "unit": "minutos"}),
+        "quiero que cierres el juego": ("CloseGameIntent", {}),
+        "ve al inicio": ("NavigateIntent", {"direction": "inicio"}),
+        "regresa al inicio": ("NavigateIntent", {"direction": "inicio"}),
+        "pidele a orbital que pongas the office temporada 2 episodio 3":
+            ("WatchEpisodeIntent", {"series": "the office", "season": "2", "episode": "3"}),
+    }
+    for said, expected in cases.items():
+        assert parse_text(said) == expected, said

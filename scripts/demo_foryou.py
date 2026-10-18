@@ -90,9 +90,21 @@ class DemoTrakt:
         pool = S if kind == "series" else M
         return [pool[k] for k in first] + [v for k, v in pool.items() if k not in first]
 
-    def popular(self, kind, limit=30):
+    def popular(self, kind, limit=30, years=None):
+        if years:  # Por año: lo de ese año y, si no hay, lo de siempre (el demo tiene pocos títulos)
+            pool = S if kind == "series" else M
+            found = [v for v in pool.values() if v["year"] == int(years)]
+            if found:
+                return found
         return [S[k] for k in ("breaking", "stranger", "tlou", "bear", "succession", "blackmirror", "dark", "saul")] if kind == "series" \
             else [M[k] for k in ("oppen", "dune2", "inter", "inception", "spider", "batman", "parasite", "madmax")]
+
+    def related(self, kind, imdb, limit=15):
+        return [S[k] for k in ("dark", "blackmirror", "silo", "stranger", "andor", "succession")] if kind == "series" \
+            else [M[k] for k in ("arrival", "inter", "br", "prestige", "dune1")]
+
+    def last_watched(self):
+        return {**S["severance"], "watched_at": time.time() - 2 * 86400}
 
     def calendar(self, start, days=15):
         """Estrenos de mentiras alrededor de hoy: uno esta noche, tres juntos de madrugada mañana (como Paramount+)…"""
@@ -198,6 +210,17 @@ def install(catalog) -> None:
         return [foryou.video_item((S if kind == "series" else M)[k], f"En {name}") for k in picks]
 
     fy._platform = platform
+
+    # «Nuevo en tus plataformas» y los estudios, sin TMDB: títulos del demo.
+    def fresh(kind):
+        picks = {"series": ["wednesday", "andor", "penguin", "squid", "shogun", "lotus"], "movie": ["glass", "inside2", "dune2", "poor"]}[kind]
+        names = ["Netflix", "Disney+", "HBO Max"]
+        return [foryou.video_item((S if kind == "series" else M)[k], f"Nuevo en {names[n % 3]}") for n, k in enumerate(picks)]
+
+    studios = {41077: ["past", "poor", "arrival"], 3: ["inside2", "spider"], 10342: ["spider", "inside2"], 420: ["spider", "dune1"],
+               1: ["br", "dune2"], 3172: ["glass", "prestige"], 521: ["inside2", "spider"], 90733: ["parasite", "past"]}
+    fy._fresh = fresh
+    fy._studio = lambda company_id, name: [foryou.video_item(M[k], name) for k in studios.get(company_id, ["inter"])]
 
     # El Top 10 de Netflix y lo más visto por plataforma (JustWatch), sin internet: puestos, sube y baja y «Nuevo».
     def chart(keys, kind):

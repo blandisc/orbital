@@ -67,6 +67,17 @@ export function rowOffset(widths, c, { gap, grow = 0, visible }) {
   return Math.min(lefts[Math.max(0, c - 1)] ?? 0, max);
 }
 
+/** Fila centrada (Tus plataformas, Premios…): la enfocada al centro de lo visible, como el carrusel centrado del iPhone,
+ *  pero sin hueco: las primeras arrancan pegadas a la izquierda y las últimas no se pasan del final (antes la primera
+ *  quedaba al centro con un espacio muerto a la izquierda). La enfocada crece desde su centro. */
+export function centeredOffset(widths, c, { gap, grow = 0, visible }) {
+  let left = 0;
+  for (let i = 0; i < c; i++) left += (widths[i] ?? 0) + gap;
+  const total = widths.reduce((sum, w) => sum + w, 0) + gap * Math.max(0, widths.length - 1) + grow;
+  const centered = left + grow / 2 + (widths[c] ?? 0) / 2 - visible / 2;
+  return Math.min(Math.max(0, centered), Math.max(0, total - visible));
+}
+
 /** El emulador alternativo (p. ej. Eden cuando el predeterminado es Ryujinx). */
 export const alternativeRunner = (item) => item?.runners?.find((r) => r.id !== item.runner) ?? null;
 
@@ -81,7 +92,8 @@ export const isSeries = (item) => item?.source === "cinemeta" && String(item?.id
   || item?.kind === "series";
 
 /** Las apps y la multimedia no muestran "Sin jugar todavía". */
-export const isGame = (item) => !!item && !isWatchable(item) && item.category !== "media" && item.category !== "apps" && item.source !== "genre";
+export const isGame = (item) => !!item && !isWatchable(item) && item.category !== "media" && item.category !== "apps" && item.source !== "genre"
+  && item.source !== "collection";
 
 /**
  * Texto del botón principal. `runningId`: lo que está abierto ahora (se vuelve a él, no se relanza).
@@ -93,7 +105,9 @@ export const primaryLabel = (item, runningId = null) => {
     return item.category === "apps" || item.category === "media" ? "Volver a la app" : "Volver al juego";
   }
   if (item?.source === "search") return "Buscar";
-  if (item?.source === "genre") return "Ver títulos"; // Por género: lleva a su estante
+  if (item?.source === "genre") return "Ver títulos"; // Por género: abre su lista
+  // Una tarjeta de colección (plataforma, premio, estudio, año, lista) abre su lista; «Porque viste X», su ficha.
+  if (item?.source === "collection") return item.collection?.type === "seed" ? "Ficha" : "Ver la lista";
   if (item?.category === "apps" || item?.category === "media") return "Abrir"; // YouTube, Stremio: no se «juegan»
   if (item?.extra?.installed === false) return "Instalar"; // de tu cuenta de Steam, sin instalar: abre su instalación
   if (isSeries(item)) return item.progress > 0 ? "Continuar" : "Ver la serie";
@@ -113,8 +127,9 @@ export const SECTIONS = [
   // Lo tuyo primero (Seguir viendo). Buscar es un atajo (botón Vista o la píldora de arriba), así
   // que la fila de apps (Buscar, YouTube…) va al final.
   // Con la curaduría de Para ti (core/curation.js) entre lo tuyo y lo popular: Top 10, plataformas, tus listas.
-  { id: "media", title: "Películas y series", rows: (id) => ["continue", "mylist", "media", "movies", "series"].includes(id) || id.startsWith("curated:"),
-    order: ["curated:spotlight", "continue", "mylist", "curated:*", "movies", "series", "media"] },
+  // Como Para ti › Listas del iPhone (core/media-plan.js): el mismo orden y los mismos nombres. «Seguir viendo» vive en el
+  // Inicio y Mi lista en «Listas de Stremio». Sin la fila «Multimedia» (Buscar, Stremio, YouTube): el usuario ya no la usa; Buscar es ⧉.
+  { id: "media", title: "Películas y series", rows: (id) => id.startsWith("curated:"), order: ["curated:spotlight", "curated:*"] },
   // TV en vivo: los canales de México (su propia vista, sin filas de biblioteca). Siempre a la vista: aunque
   // la lista aún no llegue, la sección dice qué está pasando en vez de desaparecer de la barra.
   { id: "tv", title: "TV en vivo", rows: () => false, always: true },

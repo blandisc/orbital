@@ -24,7 +24,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import __version__, companion
 from . import quick as system_audio
@@ -35,7 +35,7 @@ from .api.play import humane_error  # noqa: F401 - se importa desde aquí
 from .api.ui import SETTINGS  # noqa: F401
 from .catalog import Catalog
 from .config import Config
-from .foryou import SERVICE_ERRORS
+from .foryou import SERVICE_ERRORS, TV_ONLY_PREFIXES
 from .library import trakt
 from .remote_input import RemoteInput
 from .shell import ConsoleShell
@@ -283,6 +283,15 @@ class CompanionPlayerAction(BaseModel):
     level: int | None = None  # "volume": el nivel exacto (0-100)
 
 
+class CompanionGame(BaseModel):
+    action: str  # "resume" | "home" | "close"
+
+
+class CompanionConsole(BaseModel):
+    power_mode: str | None = None  # "efficiency" | "balanced" | "performance"
+    close_app: str | None = Field(None, max_length=80)  # el nombre de la lista de memoria («Chrome»)
+
+
 class CompanionInput(BaseModel):
     action: str  # up, down, left, right, select, back, home, menu, search, options, pageleft, pageright
 
@@ -507,6 +516,7 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         catalog = main_app.state.catalog
         saw_phone()  # lo que el iPhone pide cada 5 s abierto (antes solo contaba /api/companion, que pide al emparejarse)
         return {"playing": companion.now_playing(catalog), "inbox": companion.inbox_pending(catalog.state),
+                "game": companion.game_now(catalog, main_app.state.shell),  # el modo acompañante (None sin juego)
                 "ui": main_app.state.ui_state,  # qué pantalla y si hay un campo de texto (el iPhone enseña «Escribir»)
                 "volume": _volume()}  # {"level", "muted"}: la barra de volumen del control del iPhone
 
@@ -553,6 +563,36 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         companion.remote_text(main_app.state.catalog, body.text, body.submit)
         return {"ok": True}
 
+    @public.get("/api/art/{item_id:path}")
+    def companion_art(item_id: str, kind: str = "cover", w: int | None = None):
+        """El arte de un juego para el iPhone (portada, fondo, logo): lo mismo que la tele, con el token del puerto público."""
+        return library.art_response(main_app.state.catalog, item_id, kind, w)
+
+    @public.get("/api/companion/console")
+    def companion_console() -> dict:
+        """Cómo está la consola mientras juegas (el iPhone lo pide cada ~30 s): batería, energía, wifi, mandos, memoria."""
+        return companion.console_state(main_app.state.catalog)
+
+    @public.post("/api/companion/console")
+    def companion_console_set(body: CompanionConsole) -> dict:
+        """Del iPhone: modo de energía o cerrar un programa (nunca el juego ni Orbital)."""
+        try:
+            return companion.console_action(main_app.state.catalog, body.power_mode, body.close_app)
+        except LookupError as exc:
+            raise HTTPException(404, str(exc))
+        except (ValueError, PermissionError) as exc:
+            raise HTTPException(409, str(exc))
+
+    @public.post("/api/companion/game")
+    def companion_game(body: CompanionGame) -> dict:
+        """Volver al juego, ir al Inicio o cerrarlo desde el iPhone."""
+        try:
+            return {"game": companion.game_action(main_app.state.catalog, main_app.state.shell, body.action)}
+        except companion.NothingPlaying as exc:
+            raise HTTPException(409, str(exc))
+        except ValueError as exc:
+            raise HTTPException(400, str(exc))
+
     @public.post("/api/companion/player")
     def companion_player(body: CompanionPlayerAction) -> dict:
         """Un botón de la tarjeta «Viendo en la TV»: pausa, adelantar, siguiente episodio o canal…"""
@@ -590,7 +630,8 @@ def _foryou_public_routes(public: FastAPI, main_app: FastAPI) -> None:
     @public.get("/api/foryou")
     def overview() -> dict:
         data = foryou_of().overview()
-        data["lists"] = [row for row in data["lists"] if not _is_game_list(row["id"])]
+        # Ni juegos ni lo que solo arma la TV (premios, estudios, años…): el iPhone calcula los suyos.
+        data["lists"] = [row for row in data["lists"] if not _is_game_list(row["id"]) and not row["id"].startswith(TV_ONLY_PREFIXES)]
         data["mosaic"] = [item for item in data["mosaic"] if item.get("kind") != "game"]
         return data
 

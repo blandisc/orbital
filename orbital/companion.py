@@ -285,3 +285,125 @@ def inbox_pending(state) -> list[dict]:
 
 def inbox_ack(state, ids: list[str]) -> int:
     return state.inbox_ack([i for i in ids if isinstance(i, str)][:INBOX_LIMIT * 2])
+
+
+# --- modo acompañante de juegos (el iPhone mientras juegas) -----------------------------------------------------------
+GAME_ACTIONS = {"resume", "home", "close"}
+POWER_MODES = ("efficiency", "balanced", "performance")
+BATTERY_LEVELS = {0: "empty", 1: "low", 2: "medium", 3: "full"}
+
+
+def _system(item) -> str:
+    """De dónde es el juego, en una palabra: steam, geforcenow, o el sistema del emulador (switch, gba, ps2…)."""
+    if item is None:
+        return "other"
+    if item.source == "geforcenow" or item.id.startswith("gfn:"):
+        return "geforcenow"
+    if item.category == "steam" or item.source == "steam":
+        return "steam"
+    return str(getattr(item, "system", None) or item.source or "other")
+
+
+def game_now(catalog, shell) -> dict | None:
+    """El juego abierto para el iPhone (None si no hay, o si es un video: ese va en «playing»)."""
+    running = catalog.launcher.status()
+    if not running or str(running.get("id", "")).startswith("media:"):
+        return None
+    item_id = running["id"]
+    item = catalog.get(item_id)
+    art = {}
+    for kind, attr in (("cover", "art_path"), ("hero", "hero_path"), ("logo", "logo_path")):
+        if item is not None and getattr(item, attr, None):
+            art[kind] = f"/api/art/{quote(item_id, safe=':')}?kind={kind}"
+    paused = bool(getattr(shell, "paused", None))
+    closes_at = None
+    since = getattr(shell, "paused_since", None)
+    limit = getattr(getattr(shell, "sessions", None), "game_idle_minutes", 0) * 60
+    if paused and since is not None and limit:
+        closes_at = int(time.time() + max(0.0, limit - (time.monotonic() - since)))
+    return {"id": item_id, "title": running.get("title") or (item.title if item else ""), "system": _system(item),
+            "runner": running.get("runner") or "", "art": art, "started": int(running.get("started") or 0),
+            "paused": paused, "closes_at": closes_at}
+
+
+def game_action(catalog, shell, action: str) -> dict | None:
+    """«Volver al juego», «Ir al Inicio» o «Cerrar» desde el iPhone. Devuelve el juego como queda."""
+    if action not in GAME_ACTIONS:
+        raise ValueError("Acción desconocida")
+    if game_now(catalog, shell) is None:
+        raise NothingPlaying("No hay ningún juego abierto")
+    if action == "resume":
+        shell.resume()
+    elif action == "home":
+        if not getattr(shell, "paused", None):
+            shell.home()  # al frente el juego: se congela y Orbital sale (como Home en el mando)
+    else:
+        shell.stop_game()
+    return game_now(catalog, shell)
+
+
+def _battery_level(value) -> str:
+    if value in ("wired", "full", "medium", "low", "empty"):
+        return value
+    return BATTERY_LEVELS.get(value, "wired") if isinstance(value, int) else "wired"
+
+
+def console_state(catalog) -> dict:
+    """Cómo está la consola (el iPhone lo pide cada ~30 s mientras juegas): batería, energía, brillo, wifi, mandos y
+    memoria (con los programas que se pueden cerrar; nunca el juego ni Orbital)."""
+    from . import gamepad, health, memory, quick, system
+
+    snap = quick.snapshot()
+    wifi = system.wifi() or {}
+    running = catalog.launcher.status() or {}
+    protect = {running["pid"]} if running.get("pid") else set()
+    apps = memory.usage(limit=6, protect_pids=protect)
+    free = health.free_ram_mb()
+    return {
+        "battery": snap.get("battery"), "power_mode": snap.get("power_mode"), "brightness": snap.get("brightness"),
+        "wifi": {"ssid": wifi.get("ssid"), "signal": wifi.get("signal")} if wifi else None,
+        "controllers": [{"kind": c.get("kind", "other"), "battery": _battery_level(c.get("battery"))}
+                        for c in gamepad.connected_controllers()],
+        "memory": {"free_gb": round(free / 1024, 1) if free is not None else None,
+                   "apps": [{"name": a.name, "gb": round(a.mb / 1024, 1), "closable": a.closable} for a in apps]},
+    }
+
+
+def console_action(catalog, power_mode: str | None = None, close_app: str | None = None) -> dict:
+    """Del iPhone: cambiar el modo de energía o cerrar un programa que se come la memoria (nunca el juego ni Orbital)."""
+    from . import memory, quick
+
+    if power_mode is not None:
+        if power_mode not in POWER_MODES:
+            raise ValueError("Modo de energía desconocido")
+        quick.set_power_mode(power_mode)
+    if close_app is not None:
+        running = catalog.launcher.status() or {}
+        protect = {running["pid"]} if running.get("pid") else set()
+        found = next((a for a in memory.usage(limit=200, protect_pids=protect) if a.name.lower() == close_app.lower()
+                      or a.exe == close_app.lower()), None)
+        if found is None:
+            raise LookupError("Ese programa ya no está abierto")
+        memory.close(found.exe, protect_pids=protect)
+    return console_state(catalog)
+
+
+def captures_since(started: float) -> int:
+    """Cuántas capturas se tomaron desde que empezó el juego (para la tarjeta de resumen del iPhone)."""
+    from . import capture
+
+    try:
+        return sum(1 for c in capture.gallery(limit=200) if c.get("time", 0) >= started)
+    except OSError:
+        return 0
+
+
+def note_played(state, item_id: str, title: str, seconds: float, *, total_seconds: float = 0, crashed: bool = False,
+                low_memory: bool = False, captures: int = 0) -> dict | None:
+    """Al cerrarse un juego, un pendiente en la bandeja del iPhone (la tarjeta de resumen). Solo con iPhone conectado."""
+    if not state.settings().get("companion_seen"):
+        return None
+    item = {"id": uuid.uuid4().hex[:12], "action": "played", "meta_id": item_id, "video_id": str(int(time.time())),
+            "title": title, "seconds": int(seconds), "total_seconds": int(total_seconds), "crashed": bool(crashed),
+            "low_memory": bool(low_memory), "captures": int(captures), "at": int(time.time())}
+    return state.inbox_add(item, INBOX_LIMIT)

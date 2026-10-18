@@ -6,7 +6,7 @@ import { api } from "./core/api.js";
 import { h, svg } from "./core/dom.js";
 import { ICONS } from "./core/icons.js";
 import { closedMessage, crashMessage } from "./core/format.js";
-import { createInput, GLYPHS } from "./core/input.js";
+import { createInput, ERASE_WORD, GLYPHS } from "./core/input.js";
 import { alternativeRunner, clampFocus, isSeries, isWatchable, itemAt, primaryLabel, restoreFocus, rowJump, searchLibrary, SECTIONS, sectionRows, visibleSections } from "./core/library.js";
 import { haptics, rumble } from "./core/haptics.js";
 import { footerHints, gamesHints, homeHints, legendOf, tvHints } from "./core/hints.js";
@@ -29,6 +29,7 @@ import { createTitle, titleRef } from "./components/title.js";
 import { createToast } from "./components/toast.js";
 import { createPhoneLink } from "./components/phone-link.js";
 import { createArtPicker } from "./components/art-picker.js";
+import { createListScreen, SORTS } from "./components/list-screen.js";
 import { createTv } from "./components/tv.js";
 import { createTraktLink } from "./components/trakt-link.js";
 import { createViewer } from "./components/viewer.js";
@@ -37,7 +38,10 @@ import { createLaunching } from "./app/launching.js";
 import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
-import { curatedLists, curatedRows, GENRE_SHELVES, genreRows, nextAiring, spotlightRow } from "./core/curation.js";
+import { curatedItem, GENRE_SHELVES, genreRows, nextAiring, spotlightRow } from "./core/curation.js";
+import { fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows } from "./core/media-plan.js";
+import { genres as genreNames } from "./core/format.js";
+import { trimmedLogo } from "./core/foryou.js";
 
 const state = createState();
 // La Gamepad API no enseña el mando hasta la primera pulsación: se arranca con la última forma de
@@ -139,10 +143,8 @@ const ui = {
     onTitle: (ref) => openTitle(ref), // una serie nueva: su ficha
     onLaunch: (item) => launch(item),
     onMore: (item) => openMenu(forYouMenu(item)),
-    onConnect: () => runCommand({ type: "trakt-link" }),
     onFocus: (item) => forYouFocused(item),
     onEdge: () => { sound.play("error"); rumble("edge"); },
-    onToggle: () => { sound.play("open"); renderHints(); }, // el selector Mosaico | Listas, con el dedo
   }),
   tv: createTv({
     onFocus: () => tvFocused(),
@@ -160,6 +162,16 @@ const ui = {
     onMove: () => sound.play("move"),
     onPicked: (target) => { sound.play("select"); ui.toast.show(`Listo: arte nuevo para ${target.title}`); loadLibrary(); },
     onClose: () => { sound.play("back"); renderHints(); },
+  }),
+  // Una lista abierta de Películas y series (una tarjeta: plataforma, premio, estudio, año, tu lista, un género).
+  listScreen: createListScreen({
+    onMove: () => sound.play("move"),
+    onPick: (item) => openTitle(item),
+    onMore: (item) => openMenu(gameMenu(item, { running: state.running, phone: state.phone })),
+    onSort: (screen) => openMenu(listSortMenu(screen)),
+    onClose: () => { sound.play("back"); renderHints(); },
+    ratings: (items) => api.forYouRatings(items).then((r) => r.ratings || {}),
+    watched: () => api.forYouWatched().then((r) => r.ids || []),
   }),
   launch: createLaunchOverlay({ backGlyph: () => glyphs().back }),
   viewer: createViewer({
@@ -182,7 +194,7 @@ const touchBack = h("button", { class: "touch-back", type: "button", "aria-label
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.listScreen.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -255,7 +267,8 @@ function returnToMenu(from) {
   }, 0);
 }
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
-const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.search];
+// La ficha va antes que la lista abierta: un título abierto desde una lista queda encima, y B regresa a la lista.
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.search];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 /** Qué hay al frente, para el control del iPhone: la pantalla, si hay un campo de texto («Escribir»), la sección y la
@@ -327,6 +340,7 @@ function renderHints() {
     inert: ui.sheet.inert,
     atHome: !r && !c,
     longRow: (state.rows[r]?.items.length ?? 0) >= LONG_ROW,
+    groups: state.section === "media" && state.rows.some((row) => row.group),
     running: state.running?.managed ? state.running : null,
     rows: state.rows.length,
   }));
@@ -346,6 +360,7 @@ function setFocus(r, c, { silent = false, edge = null, repeat = false } = {}) {
   ui.shelf.setFocus(next.r, next.c);
   if (moved || silent) {
     const item = current();
+    preloadAround(next.r, next.c);
     ui.hero.update(item, glyphs(), { runningId: state.running?.id });
     ui.backdrop.show(item?.hero || item?.image, { poster: !!item && !item.hero, pixel: !!item?.extra?.hero_lowres });
     const count = state.rows[next.r]?.items.length ?? 1;
@@ -353,6 +368,22 @@ function setFocus(r, c, { silent = false, edge = null, repeat = false } = {}) {
   }
   if (moved && !silent) sound.play("move");
   renderHints();
+}
+
+/** Lo que el héroe enseñará al moverte (logo y fondo de las vecinas y de la fila de abajo), pedido antes: así el título
+ *  estilizado ya está cuando llegas (antes se pedía al enfocarlo y una serie nueva tardaba en verse). */
+const preloaded = new Set();
+function preloadAround(r, c) {
+  const rows = state.rows || [];
+  const near = [...(rows[r]?.items.slice(c + 1, c + 5) || []), ...(rows[r + 1]?.items.slice(0, 3) || [])];
+  for (const item of near) {
+    for (const url of [item?.extra?.logo && trimmedLogo(item.extra.logo), item?.hero]) {
+      if (!url || preloaded.has(url)) continue;
+      if (preloaded.size > 400) preloaded.clear();
+      preloaded.add(url);
+      new Image().src = url;
+    }
+  }
 }
 
 function setModality(modality) {
@@ -420,7 +451,7 @@ function renderView() {
 function forYouFocused(item) {
   if (!inForYou()) return;
   if (item) ui.backdrop.show(item.hero || item.image || null);
-  const node = document.querySelector(".foryou-mosaic__tile--on, .foryou-lists .card--focused");
+  const node = document.querySelector(".foryou-mosaic__tile--on");
   if (node) {
     const r = node.getBoundingClientRect();
     ui.backdrop.light((r.left + r.width / 2) / innerWidth, (r.top + r.height / 2) / innerHeight);
@@ -737,34 +768,135 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
   }
 }
 
-// ---------------------------------------------------------------- Películas y series: curaduría
-// Las listas de Para ti como estantes de la sección (core/curation.js). Se piden en segundo plano y se ponen al día cada
-// media hora; si Para ti no contesta, la sección queda como estaba.
+// ---------------------------------------------------------------- Películas y series: como Para ti › Listas del iPhone
+// El orden, los nombres y las tarjetas del iPhone (core/media-plan.js). Se piden en segundo plano en dos tandas (primero
+// lo que se ve arriba, luego las colecciones) y se ponen al día cada media hora; si Para ti no contesta, queda como estaba.
 let curated = [];
 let curating = null;
+let mediaLists = [];
+const mediaItems = {}; // keyOf(lista, tipo) → títulos
+const mediaYears = {}; // year:AAAA → películas de ese año (se piden al verlas)
+let mediaGenres = {};
+let yearsLoaded = 0;
+let mediaFilter = storage.get("orbital.media.filter", "all"); // ☰ › Mostrar: Todo · Series · Películas
+const MEDIA_FILTERS = [["all", "Todo"], ["series", "Series"], ["movie", "Películas"]];
+
+const fetchList = async (id, kind) => (await api.forYouList(id, kind).catch(() => ({ items: [] }))).items || [];
+async function fetchMany(wanted, into = mediaItems) {
+  const queue = [...wanted];
+  await Promise.all(Array.from({ length: 4 }, async () => {
+    for (let w = queue.shift(); w; w = queue.shift()) into[keyOf(w.id, w.kind)] = await fetchList(w.id, w.kind);
+  }));
+}
+/** Lo de arriba primero (Destacados, lo general, Porque viste, lo nuevo, las plataformas); las colecciones, después. */
+const LATER = (w) => /^(award|studio|list|addon):/.test(w.id) || ["watchlist", "mine", "mylist", "estrenos"].includes(w.id);
+
+async function loadYears(count = 6) {
+  const years = mediaLists.filter((l) => l.collection === "year").slice(yearsLoaded, yearsLoaded + count);
+  yearsLoaded += years.length;
+  await Promise.all(years.map(async (l) => { mediaYears[l.id] = await fetchList(l.id, "movie"); }));
+  return years.length;
+}
 
 async function loadCuration() {
   if (curating) return curating;
   curating = (async () => {
     try {
-      const picked = curatedLists((await api.forYou()).lists);
-      const itemsById = {};
-      const queue = [...picked];
-      await Promise.all(Array.from({ length: 4 }, async () => {
-        for (let l = queue.shift(); l; l = queue.shift()) {
-          itemsById[l.id] = (await api.forYouList(l.id).catch(() => ({ items: [] }))).items || [];
-        }
-      }));
+      mediaLists = ((await api.forYou()).lists || []).filter((l) => l.group !== "games");
+      const wanted = fetchPlan(mediaLists);
+      await fetchMany(wanted.filter((w) => !LATER(w)));
+      buildCuration();
+      await fetchMany(wanted.filter(LATER));
+      yearsLoaded = 0;
+      await loadYears(8);
       const byGenre = {};
       await Promise.all(GENRE_SHELVES.map(async (g) => {
         byGenre[g.genre] = (await api.genre(g.kind, g.genre).catch(() => ({ items: [] }))).items || [];
       }));
-      const spotlight = spotlightRow(picked, itemsById);
-      applyCuration([...(spotlight ? [spotlight] : []), ...curatedRows(picked, itemsById), ...genreRows(byGenre)]);
-    } catch { /* sin Para ti: la sección sigue con lo tuyo y lo popular */ }
+      mediaGenres = byGenre;
+      buildCuration();
+    } catch { /* sin Para ti: la sección sigue con lo que tenía */ }
     finally { curating = null; }
   })();
   return curating;
+}
+
+function buildCuration() {
+  // Destacados, como hoy: el N.º 1 de cada plataforma, con su arte ancho.
+  const spot = mediaLists.filter((l) => l.id === "chart:netflix" || l.id.startsWith("jw:") || (l.brand && l.source === "TMDB"));
+  const spotlight = spotlightRow(spot, Object.fromEntries(spot.map((l) => [l.id, itemsOf(mediaItems, l)])));
+  const genres = genreRows(mediaGenres)[0];
+  applyCuration([...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears }),
+    ...(genres?.id === "curated:genres" ? [{ ...genres, group: "genres" }] : [])]);
+}
+
+/** Por año: al acercarte al final de lo que ya llegó, se piden los siguientes años. */
+let yearsBusy = false;
+function moreYears() {
+  const row = state.rows?.[state.focus.r];
+  if (yearsBusy || row?.group !== "years" || state.focus.c < row.items.length - 4) return;
+  yearsBusy = true;
+  loadYears(8).then((n) => { if (n) buildCuration(); }).finally(() => { yearsBusy = false; });
+}
+
+/** Una tarjeta de colección: su lista completa (list-screen), como en el iPhone. «Porque viste X»: la ficha de X. */
+function openCollection(item) {
+  const c = item.collection || {};
+  if (c.type === "seed") return openTitle(curatedItem({ meta_id: item.meta_id, kind: item.kind, title: item.title, image: c.posters?.[0] }));
+  sound.play("open");
+  const cached = (id, kind) => (mediaItems[keyOf(id, kind)] ? Promise.resolve(mediaItems[keyOf(id, kind)]) : fetchList(id, kind));
+  if (c.type === "platform") {
+    ui.listScreen.open({ id: `platform:${c.brand}`, title: c.name, meta: "Lo más visto de la semana y de hoy", media: { logo: c.logo },
+      tabs: c.hub.rankings.map((r) => ({ id: `${r.listId}:${r.kind}`, label: r.label, ranked: r.ranked, brand: c.brand,
+        load: () => cached(r.listId, r.kind).then((items) => items.map(curatedItem)) })) });
+    return renderHints();
+  }
+  const l = c.list || {};
+  const kinds = l.split ? (c.type === "year" ? [["movie", "Películas"], ["series", "Series"]] : [["series", "Series"], ["movie", "Películas"]])
+    : [[l.kinds?.[0] ?? null, ""]];
+  // Un premio: su estatuilla; un estudio: su logo en blanco. Un año: el título ya es el número grande.
+  const media = c.type === "award" ? { statue: c.statue } : c.type === "studio" && c.logo ? { logo: c.logo, mono: true } : {};
+  ui.listScreen.open({ id: l.id, title: l.title, meta: l.meta || "", source: c.source, media, metal: c.type === "award" ? c.tint || "gold" : null,
+    tabs: kinds.map(([kind, label]) => ({ id: kind || "all", label, load: () => cached(l.id, kind).then((items) => items.map(curatedItem)) })) });
+  return renderHints();
+}
+
+/** Un género (Por género): su lista completa, como las demás. */
+function openGenre(item) {
+  sound.play("open");
+  const items = mediaGenres[item.genre] || [];
+  ui.listScreen.open({ id: `genre:${item.genre}`, title: item.title, meta: "Lo más visto en el catálogo", media: {},
+    tabs: [{ id: "all", label: "", load: () => Promise.resolve(items) }] });
+  renderHints();
+}
+
+/** «Ordenar y filtrar» de una lista abierta (como el botón del iPhone). Un ranking solo se filtra. */
+function listSortMenu(s) {
+  const st = s.settings;
+  const check = (on) => (on ? "✓" : "");
+  const options = [];
+  if (!s.ranked) {
+    options.push({ heading: true, label: "Ordenar" },
+      ...SORTS.map((o) => ({ icon: "list", label: o.label, value: check(st.sort === o.id), command: { type: "list-sort", value: o.id } })));
+  }
+  options.push({ heading: true, label: "Filtrar" });
+  // Como el iPhone: Series o Películas siempre (salvo que la lista ya venga partida en esas pestañas), género y lo visto.
+  if (!s.kindTabs) {
+    options.push(...MEDIA_FILTERS.map(([k, label]) => ({ icon: "trailer", label, value: check(st.kind === k), command: { type: "list-kind", value: k } })));
+  }
+  if (s.genres().length) options.push({ icon: "spark", label: "Género", value: st.genreLabel || "Todos", command: { type: "list-genre-menu" } });
+  options.push({ icon: "show", label: "Ocultar lo que ya vi", hint: "Según Trakt", value: check(st.hideWatched), command: { type: "list-watched" } });
+  return { title: "Ordenar y filtrar", options };
+}
+
+/** ☰ en Películas y series: «Ir a…» y «Mostrar» (los botones de la barra del iPhone), luego el menú de siempre. */
+function mediaMenu() {
+  const base = mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa });
+  const here = state.rows?.[state.focus.r]?.group;
+  return { ...base, options: [
+    { icon: "list", label: "Ir a…", hint: GROUPS.find((g) => g.id === here)?.label || "", command: { type: "media-goto" } },
+    { icon: "trailer", label: "Mostrar", value: MEDIA_FILTERS.find(([k]) => k === mediaFilter)?.[1], command: { type: "media-show" } },
+    ...base.options] };
 }
 
 function applyCuration(rows) {
@@ -943,6 +1075,41 @@ async function runCommand(command, context = null) {
       }
       case "phone-send":
         return sendToPhone(command);
+      case "media-goto": { // Ir a…: los grupos de la sección, con una palomita en el que estás
+        const here = state.rows?.[state.focus.r]?.group;
+        const present = GROUPS.filter((g) => state.rows.some((row) => row.group === g.id));
+        return openMenu({ title: "Ir a…", options: present.map((g) => ({ icon: "list", label: g.label, value: g.id === here ? "✓" : "",
+          command: { type: "media-goto-row", group: g.id } })) }, nested(context));
+      }
+      case "media-goto-row": {
+        const to = state.rows.findIndex((row) => row.group === command.group);
+        if (to >= 0) { sound.play("select"); setFocus(to, state.memory[state.rows[to].id] ?? 0); }
+        return;
+      }
+      case "media-show":
+        return openMenu({ title: "Mostrar", options: MEDIA_FILTERS.map(([k, label]) => ({ icon: "trailer", label, value: k === mediaFilter ? "✓" : "",
+          command: { type: "media-filter", value: k } })) }, nested(context));
+      case "media-filter":
+        mediaFilter = command.value;
+        storage.set("orbital.media.filter", mediaFilter);
+        sound.play("select");
+        return buildCuration();
+      case "list-sort":
+        return ui.listScreen.sorter.setSort(command.value);
+      case "list-kind":
+        return ui.listScreen.sorter.setKind(command.value);
+      case "list-watched":
+        return ui.listScreen.sorter.setHideWatched(!ui.listScreen.sorter.settings.hideWatched);
+      case "list-genre-menu": {
+        const s = ui.listScreen.sorter;
+        const current = s.settings.genre;
+        return openMenu({ title: "Género", options: [
+          { icon: "spark", label: "Todos", value: current ? "" : "✓", command: { type: "list-genre", value: null } },
+          ...s.genres().map((g) => ({ icon: "spark", label: genreNames([g])[0], value: g === current ? "✓" : "",
+            command: { type: "list-genre", value: g, label: genreNames([g])[0] } }))] }, nested(context));
+      }
+      case "list-genre":
+        return ui.listScreen.sorter.setGenre(command.value, command.label || null);
       case "media-art": // elegir otro póster o fondo de una película o serie
         sound.play("open");
         ui.artPicker.open({ kind: command.kind === "series" ? "series" : "movie", metaId: command.metaId, title: command.title });
@@ -1240,7 +1407,7 @@ function handleAction(action, { repeat = false } = {}) {
     }
   }
   // Vistas a pantalla completa (OVERLAYS): la de más arriba se queda con el botón.
-  if (OVERLAYS.some((view) => view.handle(action))) return renderHints();
+  if (OVERLAYS.some((view) => view.handle(action, { repeat }))) return renderHints();
   if (inForYou()) return handleForYou(action, { repeat });
   if (inTv()) return handleTv(action, { repeat });
   if (inHome()) return handleHome(action, { repeat });
@@ -1251,17 +1418,23 @@ function handleAction(action, { repeat = false } = {}) {
     case "up": { const t = rowJump(state.rows, state.memory, r, -1); return setFocus(t.r, t.c); }
     case "down": { const t = rowJump(state.rows, state.memory, r, 1); return setFocus(t.r, t.c); }
     case "left": return setFocus(r, c - 1, { edge: "left", repeat });
-    case "right": return setFocus(r, c + 1, { edge: "right", repeat });
+    case "right": { const moved = setFocus(r, c + 1, { edge: "right", repeat }); moreYears(); return moved; }
     case "prevsection": return stepSection(-1);
     case "nextsection": return stepSection(1);
-    case "pageleft": return setFocus(r, c - 5, { edge: "left", repeat });
-    case "pageright": return setFocus(r, c + 5, { edge: "right", repeat });
-    case "select": {
-      if (item?.source === "genre") { // Por género: la tarjeta lleva a su estante
-        const to = state.rows.findIndex((row) => row.id === `curated:genre:${item.genre}`);
-        if (to >= 0) { sound.play("select"); return setFocus(to, state.memory[state.rows[to].id] ?? 0); }
-        return rumble("edge");
+    case "pageleft":
+    case "pageright": {
+      // Películas y series: LT/RT pasan de grupo en grupo (Plataformas, Premios, Estudios…), como de consola en Juegos.
+      if (state.section === "media" && state.rows.some((row) => row.group)) {
+        const to = groupJump(state.rows, r, action === "pageright" ? 1 : -1);
+        if (to == null) { if (!repeat) rumble("edge"); return; }
+        sound.play("move");
+        return setFocus(to, state.memory[state.rows[to].id] ?? 0);
       }
+      return setFocus(r, c + (action === "pageright" ? 5 : -5), { edge: action === "pageright" ? "right" : "left", repeat });
+    }
+    case "select": {
+      if (item?.source === "genre") return openGenre(item); // Por género: su lista completa
+      if (item?.source === "collection") return openCollection(item);
       return launch(item);
     }
     case "search": return openSearch();
@@ -1273,9 +1446,11 @@ function handleAction(action, { repeat = false } = {}) {
       return rumble("edge");
     }
     case "options":
-      if (item?.source === "genre") { sound.play("error"); return rumble("edge"); } // un género no tiene opciones
+      if (item?.source === "genre" || item?.source === "collection") { sound.play("error"); return rumble("edge"); } // una lista no tiene opciones
       return openMenu(gameMenu(item, { running: state.running, phone: state.phone }));
-    case "menu": return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));
+    case "menu":
+      if (state.section === "media") return openMenu(mediaMenu());
+      return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));
     case "back":
     case "home": // B: al principio de la sección; si ya estás ahí, a la sección Inicio
       if (r || c) { sound.play("back"); setFocus(0, 0, { silent: true }); }
@@ -1389,6 +1564,10 @@ function handleEvent(event) {
     return ui.traktLink.failed(event.message);
   } else if (event.type === "foryou-changed") {
     return ui.foryou.load({ force: true });
+  } else if (event.type === "pip") { // Home con un video: se fue a la esquina; cómo regresarlo
+    return ui.toast.show(`${event.title} sigue en pequeño · Home lo regresa a pantalla completa`);
+  } else if (event.type === "studio-logos") { // llegaron los logos de los estudios: la fila de Estudios los enseña
+    return loadCuration();
   } else if (event.type === "tv-changed") { // terminó de revisar los canales
     return ui.tv.load({ force: true });
   } else if (event.type === "closed") {
@@ -1420,7 +1599,8 @@ createInput({
   onAction: handleAction,
   onModality: setModality,
   // Con un teclado físico, en Buscar se escribe directo (las letras no son atajos ahí).
-  onText: (char) => { (ui.login.isOpen ? ui.login.type(char) : ui.search.type(char)); renderHints(); }, // Enter salta a resultados: «Abrir»
+  // Conectar Stremio no borra por palabras (es un correo o una contraseña): ahí Retroceso mantenido sigue de letra en letra.
+  onText: (char) => { (ui.login.isOpen ? ui.login.type(char === ERASE_WORD ? "" : char) : ui.search.type(char)); renderHints(); }, // Enter salta a resultados: «Abrir»
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
 });
 // Protector de pantalla (Ajustes › Pantalla y sonido): tras un rato sin tocar nada, el mosaico de Para ti a pantalla

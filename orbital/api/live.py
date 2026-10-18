@@ -16,6 +16,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from .. import voice_log
 from .deps import Deps
 
 log = logging.getLogger(__name__)
@@ -110,6 +111,7 @@ def router(d: Deps, is_local) -> APIRouter:
     async def run_voice(body: VoiceRequest, remote: bool) -> dict:
         if remote and body.source != "iphone":  # «Alexa se usó hace…» solo con Alexa, no con Siri ni el iPhone
             d.alexa_last = time.time()
+        started = time.monotonic()
         if body.intent:
             result = await run_in_threadpool(d.voice.handle_intent, body.intent, body.slots)
         elif body.text:
@@ -118,7 +120,12 @@ def router(d: Deps, is_local) -> APIRouter:
             raise HTTPException(422, "Envía 'intent' o 'text'")
         for event in result.events:
             d.hub.publish(event)
-        return result.as_dict()
+        out = result.as_dict()
+        # voz.log: qué se dijo y qué se entendió, para saber qué frases fallan de verdad.
+        voice_log.record({"source": body.source or ("alexa" if remote else "local"), "intent": body.intent, "slots": body.slots,
+                          "text": body.text, "understood": out.get("intent"), "ok": out.get("ok"), "speech": out.get("speech"),
+                          "ms": round((time.monotonic() - started) * 1000)})
+        return out
 
     d.extra["run_voice"] = run_voice
 

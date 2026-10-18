@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  factLine, iconName, kindLabel, listMeta, nearestTile, nextUnseen, playOf, posterRatio, primaryAction, railEntries, rankOf,
+  factLine, iconName, kindLabel, nearestTile, nextUnseen, playOf, posterRatio, primaryAction, rankOf,
 } from "../../orbital/web/js/core/foryou.js";
 
 const series = { key: "video:tt1", kind: "series", title: "Severance", detail: "Sigue T2 E6", meta_id: "tt1", video_id: "tt1:2:6", episode: "T2 E6" };
@@ -56,37 +56,10 @@ test("al cambiar de columna se llega a la pieza que está a la misma altura", ()
   assert.equal(nearestTile(tiles, 300, 300), 2);
 });
 
-test("el riel agrupa las listas con su encabezado", () => {
-  const lists = [{ id: "recs", group: "video" }, { id: "trend", group: "video" }, { id: "mygames", group: "games" }];
-  assert.deepEqual(railEntries(lists).map((e) => e.heading ?? e.id), ["Series y películas", "recs", "trend", "Juegos", "mygames"]);
-  assert.deepEqual(railEntries(null), []);
-});
-
-test("el encabezado de una lista dice cuántos y de dónde", () => {
-  assert.equal(listMeta({ group: "video", source: "Trakt", meta: "Lo más visto esta semana" }, 12, "series"),
-    "12 series · Trakt · Lo más visto esta semana");
-  assert.equal(listMeta({ group: "games", source: "", meta: "Favoritos" }, 1), "1 juego · Favoritos");
-  assert.equal(listMeta({ group: "video", source: "TMDB" }, 3, "movie"), "3 películas · TMDB");
-});
-
 test("mosaico: todas en vertical, con las cajas de GBA casi cuadradas", () => {
   const gba = { key: "game:emu:gba:1", kind: "game", item: { source: "gba" } };
   assert.equal(posterRatio(gba), 1);
   assert.equal(posterRatio({ key: "video:tt1", kind: "movie" }), 2 / 3);
-});
-
-test("próximos estrenos: por día en el orden que llegan y la semana con sus siete días", async () => {
-  const { calendarDays, calendarWeek, localDay } = await import("../../orbital/web/js/core/foryou.js");
-  const ep = (day, title, label) => ({ day, title, day_label: label, day_sub: "x" });
-  const items = [ep("2026-10-15", "Severance", "Hoy"), ep("2026-10-16", "Andor", "Mañana"), ep("2026-10-16", "Silo", "Mañana"), ep("2026-10-18", "Futurama", "Domingo 18")];
-  const days = calendarDays(items);
-  assert.deepEqual(days.map((d) => [d.title, d.entries.map((e) => e.n)]), [["Hoy", [0]], ["Mañana", [1, 2]], ["Domingo 18", [3]]]);
-  const week = calendarWeek(items, "2026-10-15");
-  assert.equal(week.length, 7);
-  assert.deepEqual(week.map((c) => c.title).slice(0, 3), ["Hoy", "Mañana", "Sábado"]);
-  assert.deepEqual(week.map((c) => c.entries.length), [1, 2, 0, 1, 0, 0, 0]);
-  assert.equal(calendarWeek([], "2026-12-30")[2].day, "2027-01-01"); // cambia de año
-  assert.equal(localDay(new Date(2026, 0, 5)), "2026-01-05");
 });
 
 test("Top 10: el sube y baja debajo del puesto, sin inventar flechas", async () => {
@@ -97,15 +70,6 @@ test("Top 10: el sube y baja debajo del puesto, sin inventar flechas", async () 
   assert.equal(trendOf({ rank: 3, movement: 0, new: false }), null); // igual que antes: nada
   assert.equal(trendOf({ rank: 3, movement: null, new: false }), null); // sin con qué comparar: nada
   assert.equal(trendOf({ movement: 4 }), null); // sin puesto no es Top 10
-});
-
-test("el respaldo de TMDB de una plataforma se esconde si su lista con puesto ya trae series y películas", () => {
-  const lists = [
-    { id: "jw:disney", group: "video" },
-    { id: "disney", group: "video", fallback_for: "jw:disney", covered: ["movie"] },
-    { id: "netflix", group: "video", fallback_for: "chart:netflix", covered: ["movie", "series"] },
-  ];
-  assert.deepEqual(railEntries(lists).filter((e) => !e.heading).map((e) => e.id), ["jw:disney", "disney"]);
 });
 
 test("en un motivo, solo el nombre de la plataforma lleva su estilo", async () => {

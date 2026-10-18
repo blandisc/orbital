@@ -14,6 +14,7 @@ import http.client
 import json
 import os
 import threading
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -74,14 +75,30 @@ def _post(req) -> bytes:
         return res.read(1_000_000)
 
 
-def call_orbital(intent: str, slots: dict[str, str] | None = None) -> dict:
-    """Envía el intent a Orbital. Devuelve {"ok", "speech"}; lanza Unreachable si no hay conexión.
-    El plazo es total: un túnel que gotea un byte cada medio segundo ya no la deja colgada 20 s."""
+RETRY_WITHIN = 2.5  # s: si la conexión falló así de rápido (el túnel despertando), se intenta una vez más
+
+
+def call_orbital(intent: str | None, slots: dict[str, str] | None = None, *, text: str | None = None) -> dict:
+    """Envía el intent (o la frase tal cual, `text`) a Orbital. Devuelve {"ok", "speech"}; lanza Unreachable si no hay
+    conexión. Si la conexión falla rápido (el túnel despertando) se intenta una vez más: antes un tropiezo del túnel era
+    «No pude conectar con tu consola» aunque estuviera encendida."""
+    started = time.monotonic()
+    try:
+        return _call_orbital(intent, slots, text)
+    except Unreachable:
+        if time.monotonic() - started > RETRY_WITHIN:
+            raise
+        return _call_orbital(intent, slots, text)
+
+
+def _call_orbital(intent: str | None, slots: dict[str, str] | None, text: str | None) -> dict:
+    """Un intento. El plazo es total: un túnel que gotea un byte cada medio segundo ya no la deja colgada 20 s."""
     if not ORBITAL_URL or not ORBITAL_TOKEN:
         return {"ok": False, "speech": "La skill no está configurada: falta la dirección o el token de tu consola."}
+    payload = {"text": text} if text is not None else {"intent": intent, "slots": slots or {}}
     req = urllib.request.Request(
         f"{ORBITAL_URL}/api/voice",
-        data=json.dumps({"intent": intent, "slots": slots or {}}).encode(),
+        data=json.dumps(payload).encode(),
         headers={"Content-Type": "application/json", "Authorization": f"Bearer {ORBITAL_TOKEN}"},
         method="POST",
     )
@@ -166,7 +183,7 @@ def _handle(event: dict) -> dict:
     request = request if isinstance(request, dict) else {}
     kind = request.get("type")
     if kind == "LaunchRequest":
-        # "Alexa, abre mi consola": muestra la interfaz si saliste al escritorio.
+        # "Alexa, abre Orbital": muestra la interfaz si saliste al escritorio.
         answer = call_orbital("OpenOrbitalIntent")
         if not answer["ok"] and answer["speech"] != "Listo.":
             return speak(answer["speech"])  # token rechazado, demasiados intentos…: dilo, no «listo»
@@ -186,6 +203,13 @@ def _handle(event: dict) -> dict:
         return speak("Hasta luego.")
     if name == "AMAZON.FallbackIntent":
         return speak(FALLBACK, end=False)
+    if name == "FreeTextIntent":
+        # Lo que Alexa no supo acomodar en otro intent («por favor pon…», «quiero que abras…»): la frase tal cual a la
+        # consola, que la entiende con el mismo intérprete del iPhone (antes Alexa decía «No entendí» sin preguntarle).
+        query = slot_values(intent).get("query", "")
+        if not query:
+            return speak(FALLBACK, end=False)
+        return speak(call_orbital(None, text=query)["speech"])
     if name == "AMAZON.NavigateHomeIntent":
         name, slots = "NavigateIntent", {"direction": "home"}
     elif name in BUILT_IN:

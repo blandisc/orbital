@@ -3,6 +3,7 @@ import { bytes, duration, genres, lastPlayed, percent } from "../core/format.js"
 import { ICONS, systemIconName } from "../core/icons.js";
 import { alternativeRunner, isGame, isSeries, isWatchable, primaryLabel, runnerName } from "../core/library.js";
 import { alexaTip } from "../core/hints.js";
+import { trimmedLogo } from "../core/foryou.js";
 import { Button } from "./button.js";
 import { appIcon } from "./card.js";
 
@@ -67,10 +68,19 @@ export function createHero({ onAction }) {
 
     title.textContent = item.title;
     title.classList.toggle("hero__title--long", item.title.length > 28);
+    // Un premio: su nombre con remate y su metal, como el logo de un título (Óscar en oro, Emmy en plata…).
+    const award = item.source === "collection" && item.collection?.type === "award" ? item.collection.tint || "gold" : null;
+    title.classList.toggle("award-wordmark", !!award);
+    title.classList.toggle("award-wordmark--gold", award === "gold");
+    title.classList.toggle("award-wordmark--silver", award === "silver");
+    title.classList.toggle("award-wordmark--bronze", award === "bronze");
+    if (award) title.textContent = item.title.toLocaleUpperCase("es"); // en mayúsculas: es su logotipo
     title.hidden = false;
     logo.hidden = true;
-    if (extra.logo) logo.src = extra.logo;
+    // El logo recortado y guardado por Orbital (/api/foryou/logo), no el original de internet: carga al instante.
+    if (extra.logo) logo.src = trimmedLogo(extra.logo);
     else logo.removeAttribute("src");
+    logo.classList.toggle("hero__logo--mono", !!extra.logoMono); // el logo de un estudio, en blanco
     description.textContent = extra.description || "";
     description.hidden = !extra.description;
 
@@ -91,6 +101,10 @@ export function createHero({ onAction }) {
       if (extra.update) list.push(h("span", { class: "hero__fact--warning" }, "Actualización pendiente"));
     }
     if (item.favorite) list.push(h("span", { class: "hero__fact--favorite" }, svg(ICONS.star), "Favorito"));
+    if (item.source === "collection") { // una tarjeta de colección: qué es y cuántos tiene, no «Sin jugar todavía»
+      const c = item.collection || {};
+      list.splice(0, list.length, ...[c.detail, c.count != null && `${c.count} títulos`].filter(Boolean).map((text) => h("span", {}, text)));
+    }
     mount(facts, list.flatMap((node, i) => (i ? [h("span", { class: "hero__fact-sep", "aria-hidden": "true" }, "·"), node] : [node])));
 
     const alt = alternativeRunner(item);
@@ -103,9 +117,10 @@ export function createHero({ onAction }) {
       sheet && Button({ label: sheet, glyph: glyphs.alt, onPress: () => onAction("alt") }),
       !sheet && alt && item.id !== runningId && Button({ label: `Con ${alt.name}`, glyph: glyphs.alt, yields: true, ariaLabel: `Abrir con ${alt.name}`, onPress: () => onAction("alt") }),
       // Antes era "☰", el mismo glifo del botón Menú del mando: se confundían.
-      item.source !== "genre" && Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction("options") }));
-    voice.hidden = !alexa || !tips;
-    if (alexa && tips) mount(voice, svg(ICONS.assistant), h("span", {}, alexaTip(item, { runningId })));
+      item.source !== "genre" && item.source !== "collection" && Button({ label: "Opciones", glyph: glyphs.options, onPress: () => onAction("options") }));
+    const tip = alexa && tips ? alexaTip(item, { runningId }) : null;
+    voice.hidden = !tip;
+    if (tip) mount(voice, svg(ICONS.assistant), h("span", {}, tip));
     fit();
   }
 

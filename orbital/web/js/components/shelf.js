@@ -1,8 +1,9 @@
 import { h, mount } from "../core/dom.js";
-import { rowOffset } from "../core/library.js";
+import { centeredOffset, rowOffset } from "../core/library.js";
 import { swipeArea, swipeSteps } from "../core/swipe.js";
 import { tokenPx } from "../core/tokens.js";
 import { Card, RankedCard } from "./card.js";
+import { CollectionCard, SourceBadge } from "./collection-card.js";
 
 /**
  * Filas de tarjetas. Muestra una fila a la vez (la siguiente asoma) y desplaza la
@@ -53,6 +54,8 @@ export function createShelf({ onPick, onSwipe }) {
           onPress: () => onPick(r, c), showAgo: row.id === "recent" || row.id === "jump", pop: item.id === popId, wide: !!row.spotlight,
           onRatio: () => r === focus.r && place(), // la portada real cambió el ancho
         };
+        // Una tarjeta de colección (plataforma, premio, estudio, año, lista): la abre completa, como en el iPhone.
+        if (item.collection) return { card: CollectionCard(item, options) };
         return row.ranked ? RankedCard(item, { ...options, brand: row.brand }) : { card: Card(item, options) };
       });
       const cards = built.map((b) => b.card);
@@ -64,9 +67,11 @@ export function createShelf({ onPick, onSwipe }) {
       // Una plataforma: su logo en vez de su nombre (como en el iPhone); el nombre queda para el lector de pantalla.
       const logo = row.logo && h("img", { class: "shelf__logo", src: row.logo, alt: row.label || "", decoding: "async" });
       logo?.addEventListener("error", () => logo.replaceWith(row.label || ""), { once: true });
-      const rowEl = h("div", { class: ["shelf__row", row.spotlight && "shelf__row--spotlight"] },
-        h("h2", { class: "shelf__heading" }, logo, row.title, dots || count), track);
-      return { rowEl, track, cards, els, count, dots, ranked: !!row.ranked };
+      // De dónde viene (Trakt, Stremio, tu Orbital): el sello junto al título, como en el iPhone.
+      const seal = row.seal ? SourceBadge(row.seal) : null;
+      const rowEl = h("div", { class: ["shelf__row", row.spotlight && "shelf__row--spotlight", row.centered && "shelf__row--centered"] },
+        h("h2", { class: "shelf__heading" }, logo, row.title, seal, dots || count), track);
+      return { rowEl, track, cards, els, count, dots, ranked: !!row.ranked, centered: !!row.centered };
     });
     mount(rowsEl, rowEls.map((x) => x.rowEl));
     if (!introduced) {
@@ -108,7 +113,7 @@ export function createShelf({ onPick, onSwipe }) {
     // Con la cifra del Top 10, cada pieza es más ancha que su póster: se mide lo que de verdad ocupa.
     const widths = row.ranked ? row.els.map((node) => node.offsetWidth) : row.cards.map((card) => metrics.cardHeight * Number(card.dataset.ratio));
     const grow = (widths[focus.c] ?? 0) * (metrics.scale - 1);
-    const x = rowOffset(widths, focus.c, { gap: metrics.gap, grow, visible: metrics.visible });
+    const x = (row.centered ? centeredOffset : rowOffset)(widths, focus.c, { gap: metrics.gap, grow, visible: metrics.visible });
     row.track.style.transform = `translateX(${-x}px)`;
   }
 

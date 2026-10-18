@@ -71,11 +71,11 @@
 - [ ] Tras jugar algo de Steam, sus horas se actualizan en Orbital (unos segundos después de cerrar).
 
 ### Voz (cuando Alexa esté configurada)
-- [ ] "Alexa, pídele a mi consola que abra Zelda".
+- [ ] "Alexa, pídele a Orbital que abra Zelda".
 - [ ] "…que quiero ver The Office" → episodios en Orbital.
 - [ ] "…que busque Dune" → búsqueda de Orbital ya escrita.
 - [ ] "…que salga al escritorio" / "…que abra la consola".
-- [ ] "Alexa, pregúntale a mi consola qué está abierto".
+- [ ] "Alexa, pregúntale a Orbital qué está abierto".
 - [ ] "…que ponga Interstellar": arranca en el reproductor de Orbital sin tocar el control.
 - [ ] Con un video puesto: "…que pause", "…que adelante 5 minutos", "…que ponga subtítulos en español", "…que cambie el audio a inglés".
 - [ ] Con una serie puesta: "…que ponga el siguiente episodio".

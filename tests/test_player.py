@@ -558,6 +558,24 @@ def test_sticks_wake_the_controls_and_move_in_panels():
     assert p.menu.column.key == "sub"
 
 
+def test_the_player_stick_has_hysteresis_like_the_interface():
+    """Antes un solo umbral: el stick que rondaba el borde se soltaba y se volvía a apretar solo (el foco del panel
+    brincaba). Ahora se activa al 55 % y se suelta por debajo del 35 %, y en diagonal no alterna."""
+    from orbital import gamepad
+
+    state = gamepad.stick_bits((19000, 0, 0, 0))
+    assert state[0] == gamepad.STICK_RIGHT
+    state = gamepad.stick_bits((15000, 0, 0, 0), state)  # bajó un poco: sigue empujado
+    assert state[0] == gamepad.STICK_RIGHT
+    state = gamepad.stick_bits((16000, 14000, 0, 0), state)  # casi diagonal: no cambia de eje
+    assert state[0] == gamepad.STICK_RIGHT
+    state = gamepad.stick_bits((2000, 26000, 0, 0), state)  # ahora sí, claramente arriba
+    assert state[0] == gamepad.STICK_UP
+    state = gamepad.stick_bits((0, 9000, 0, 0), state)  # soltado
+    assert state[0] == 0
+    assert gamepad.stick_bits((15000, 0, 0, 0), state)[0] == 0  # suelto, el 45 % no basta para volver a empujar
+
+
 def test_sources_panel_explains_instant():
     panel = player_ui.more_panel(sources=[{"id": 1, "label": "Español · 1080p · Al instante", "current": True}])
     assert "Al instante: Real-Debrid" in player_ui.panel_ass(panel)
@@ -748,14 +766,49 @@ def test_the_video_fades_in_from_black_without_a_transparent_window(monkeypatch)
     assert mpv.overlays.get(player.CURTAIN_ID) is None  # la TV en vivo no lleva fundido
 
 
-def test_the_small_video_leaves_fullscreen_stays_on_top_and_comes_back(monkeypatch):
+def test_the_small_video_glides_to_the_corner_and_back_with_only_three_buttons(monkeypatch):
+    """Home durante un video: la ventana sale de pantalla completa YA con el tamaño de la pantalla (antes saltaba al centro)
+    y se desliza, frenando, a la esquina de abajo a la derecha; en chiquito solo tres botones, como el PiP del iPhone."""
     p, mpv = make_player()
     p.current.process = type("Proc", (), {"poll": lambda self: None, "pid": 1})()
-    monkeypatch.setattr(p, "_place_pip", lambda current: None)
+    placed = []
+
+    class Win:
+        screen_size = staticmethod(lambda: (1920, 1080))
+        place_window = staticmethod(lambda hwnd, x, y, w, h, topmost=True: placed.append((x, y, w, h)))
+        window_rect = staticmethod(lambda hwnd: (placed[-1][0], placed[-1][1], placed[-1][0] + placed[-1][2], placed[-1][1] + placed[-1][3]))
+        focus = staticmethod(lambda hwnd: True)
+
+    monkeypatch.setattr(p, "_window", lambda current: (Win, 7))
+    monkeypatch.setattr(player.time, "sleep", lambda s: None)
+    class Timer:  # los botones se irían solos a los 3 s: aquí no corre el reloj
+        def __init__(self, *a, **kw):
+            self.daemon = True
+
+        def start(self):
+            pass
+
+        def cancel(self):
+            pass
+
+    monkeypatch.setattr(player.threading, "Timer", Timer)
+    monkeypatch.setattr(player.threading, "Thread", lambda target, args=(), **kw: type("T", (), {"start": lambda self: target(*args)})())
     assert p.enter_pip() and p.pip
-    assert ("set_property", "fullscreen", False) in mpv.sent and ("set_property", "ontop", True) in mpv.sent
-    p.exit_pip()
-    assert not p.pip and mpv.sent[-1] == ("set_property", "fullscreen", True)
+    geometry = mpv.sent.index(("set_property", "geometry", "1920x1080+0+0"))
+    assert geometry < mpv.sent.index(("set_property", "fullscreen", False))  # primero el tamaño, luego salir
+    assert ("set_property", "ontop", True) in mpv.sent
+    assert placed[0] == (0, 0, 1920, 1080) and placed[-1] == (1287, 699, 576, 324)  # de toda la pantalla a la esquina
+    widths = [w for _, _, w, _ in placed]
+    assert widths == sorted(widths, reverse=True) and len(placed) > 10  # se encoge poco a poco, nunca de golpe
+    # En chiquito: los tres botones (y no la barra completa del reproductor, ni aunque se pida).
+    p.show_hud()
+    assert [t[4] for t in player.player_ui.targets["hud"]] == ["pip:expand", "pip:close", "pip:play"]
+    p._pip_tap(960, 540)  # pausa
+    assert mpv.props["pause"] is True
+    placed.clear()
+    placed.append((1287, 699, 576, 324))
+    p._pip_tap(156, 156)  # volver a pantalla completa
+    assert not p.pip and placed[-1] == (0, 0, 1920, 1080) and ("set_property", "fullscreen", True) in mpv.sent[-3:]
 
 
 def test_a_new_file_is_not_mistaken_for_the_end_of_the_previous_one():

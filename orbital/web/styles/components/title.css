@@ -51,6 +51,16 @@
 }
 .title__facts { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); color: var(--color-text); font-size: var(--text-md); font-variant-numeric: tabular-nums; }
 .title__fact { display: inline-flex; gap: var(--space-3); min-width: 0; }
+/* Calificaciones (RatingsRow del iPhone): cada servicio con su logotipo en sus colores de marca y su número. */
+.title__ratings { display: flex; align-items: center; gap: var(--space-5); min-height: 1.6rem; font-size: var(--text-md); font-variant-numeric: tabular-nums; }
+.title__rating { display: inline-flex; align-items: center; gap: var(--space-2); font-weight: var(--weight-bold); }
+.title__rating-mark {
+  display: inline-grid; place-items: center; height: 1.35rem; padding: 0 .4rem; border-radius: var(--radius-xs);
+  font-size: var(--text-2xs); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight); line-height: 1;
+}
+.title__rating-mark--imdb { background: var(--color-rating-imdb); color: var(--color-rating-imdb-ink); }
+.title__rating-mark--tmdb { background: linear-gradient(90deg, var(--color-rating-tmdb-start), var(--color-rating-tmdb-end)); color: var(--color-rating-tmdb-ink); }
+.title__rating-mark--trakt { width: 1.35rem; padding: 0; border-radius: 50%; background: var(--color-source-trakt); box-shadow: inset 0 0 0 .3rem var(--color-source-trakt), inset 0 0 0 .42rem var(--color-text); }
 .title__sep { opacity: .5; }
 .title__fact--start .title__sep { display: none; } /* empieza renglón: sin punto delante */
 /* Lo que hay para ver (antes de elegir): 4K · HDR · Inglés, Español · Al instante. */

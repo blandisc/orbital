@@ -1,8 +1,0 @@
-/* «Para ti» · listas (js/components/foryou-lists.js): las piezas de una vista con secciones
-   (rail.css, browse.css, detail-panel.css), como Juegos. Aquí solo lo propio. */
-.foryou-lists { height: 100%; }
-/* La semana de «Próximos estrenos» usa todo el ancho (siete columnas): sin la ficha de la derecha. */
-.foryou-lists--wide { --browse-sheet: 0px; }
-.foryou-lists--wide .detail-panel { display: none; }
-/* Una lista que explica algo (Conectar Trakt, agregar claves): el texto y su botón. */
-.foryou-lists__info { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-5); }

@@ -46,6 +46,22 @@ def router(d: Deps) -> APIRouter:
             log.warning("Para ti: no pude cargar %s: %s", id, exc)
             raise HTTPException(502, "No pude cargar esta lista. Revisa tu conexión e inténtalo de nuevo.")
 
+    @r.get("/ratings")
+    def ratings(ids: str = "") -> dict:
+        """«movie:tt1,series:tt2» → {"tt1": 8.1, …}: la calificación de IMDb (ordenar una lista)."""
+        wanted = [tuple(p.split(":", 1)) for p in ids[:4000].split(",") if p.count(":") == 1]
+        return {"ratings": foryou.imdb_ratings([(k, i) for k, i in wanted])}
+
+    @r.get("/title-ratings")
+    def title_ratings(kind: str, id: str) -> dict:
+        """IMDb, TMDB y Trakt de un título (la ficha, como el iPhone)."""
+        return foryou.title_ratings(kind, id[:20])
+
+    @r.get("/watched")
+    def watched() -> dict:
+        """Los IMDb de lo que ya viste en Trakt (para «Ocultar lo que ya vi»)."""
+        return {"ids": foryou.watched_ids()}
+
     @r.get("/details")
     def details(key: str, kind: str | None = None) -> dict:
         try:

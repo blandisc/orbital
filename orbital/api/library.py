@@ -80,17 +80,7 @@ def router(d: Deps) -> APIRouter:
 
     @r.get("/api/art/{item_id:path}")
     def art(item_id: str, kind: str = "cover", w: int | None = None) -> FileResponse:
-        # Solo se sirven imágenes que el escaneo asoció a un elemento: nunca rutas arbitrarias.
-        item = catalog.get(item_id)
-        paths = {"hero": "hero_path", "logo": "logo_path", "icon": "icon_path"}
-        path = None if item is None else getattr(item, paths.get(kind, "art_path"))
-        if not path or not Path(path).is_file():
-            raise HTTPException(404)
-        if w is not None and kind in ("cover", "hero"):  # la tarjeta pide la imagen a su tamaño (thumbs.py)
-            path = thumbs.thumbnail(Path(path), max(120, min(1280, w)), catalog.thumbs_dir())
-        # Windows no siempre conoce .webp: sin esto salía como «application/octet-stream».
-        media_type = "image/webp" if str(path).lower().endswith(".webp") else None
-        return FileResponse(path, media_type=media_type, headers={"Cache-Control": "max-age=86400"})
+        return art_response(catalog, item_id, kind, w)
 
     @r.get("/api/img")
     def web_art(u: str, w: int = 480):
@@ -105,6 +95,21 @@ def router(d: Deps) -> APIRouter:
         return FileResponse(path, media_type=image_type(path), headers={"Cache-Control": "max-age=604800"})
 
     return r
+
+
+def art_response(catalog, item_id: str, kind: str = "cover", w: int | None = None) -> FileResponse:
+    """El arte de un elemento (la tele y, con token, el iPhone). Solo imágenes que el escaneo asoció a un elemento: nunca
+    rutas arbitrarias."""
+    item = catalog.get(item_id)
+    paths = {"hero": "hero_path", "logo": "logo_path", "icon": "icon_path"}
+    path = None if item is None else getattr(item, paths.get(kind, "art_path"))
+    if not path or not Path(path).is_file():
+        raise HTTPException(404)
+    if w is not None and kind in ("cover", "hero"):  # la tarjeta pide la imagen a su tamaño (thumbs.py)
+        path = thumbs.thumbnail(Path(path), max(120, min(1280, w)), catalog.thumbs_dir())
+    # Windows no siempre conoce .webp: sin esto salía como «application/octet-stream».
+    media_type = "image/webp" if str(path).lower().endswith(".webp") else None
+    return FileResponse(path, media_type=media_type, headers={"Cache-Control": "max-age=86400"})
 
 
 def image_type(path: Path) -> str:

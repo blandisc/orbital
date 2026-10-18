@@ -1,0 +1,971 @@
+{
+ "_": "Los premios de Para ti › Listas (iPhone) y Películas y series (TV): los ganadores, del más reciente al más viejo. IMDb comprobado contra Cinemeta (nombre y año); origen Wikipedia. award_year = año de la ceremonia. La TV lo lee tal cual (orbital/foryou.py); el iPhone genera AwardsData.swift de aquí. Las estatuillas: orbital/web/img/awards/<id>.png. tint: gold | silver | bronze (el halo).",
+ "awards": [
+  {
+   "id": "oscar",
+   "kind": "movie",
+   "title": "Óscar",
+   "category": "Mejor película",
+   "tint": "gold",
+   "winners": [
+    {
+     "imdb": "tt28607951",
+     "title": "Anora",
+     "year": 2024,
+     "award_year": 2025
+    },
+    {
+     "imdb": "tt15398776",
+     "title": "Oppenheimer",
+     "year": 2023,
+     "award_year": 2024
+    },
+    {
+     "imdb": "tt6710474",
+     "title": "Everything Everywhere All at Once",
+     "year": 2022,
+     "award_year": 2023
+    },
+    {
+     "imdb": "tt10366460",
+     "title": "CODA",
+     "year": 2021,
+     "award_year": 2022
+    },
+    {
+     "imdb": "tt9770150",
+     "title": "Nomadland",
+     "year": 2020,
+     "award_year": 2021
+    },
+    {
+     "imdb": "tt6751668",
+     "title": "Parasite",
+     "year": 2019,
+     "award_year": 2020
+    },
+    {
+     "imdb": "tt6966692",
+     "title": "Green Book",
+     "year": 2018,
+     "award_year": 2019
+    },
+    {
+     "imdb": "tt5580390",
+     "title": "The Shape of Water",
+     "year": 2017,
+     "award_year": 2018
+    },
+    {
+     "imdb": "tt4975722",
+     "title": "Moonlight",
+     "year": 2016,
+     "award_year": 2017
+    },
+    {
+     "imdb": "tt1895587",
+     "title": "Spotlight",
+     "year": 2015,
+     "award_year": 2016
+    },
+    {
+     "imdb": "tt2562232",
+     "title": "Birdman",
+     "year": 2014,
+     "award_year": 2015
+    },
+    {
+     "imdb": "tt2024544",
+     "title": "12 Years a Slave",
+     "year": 2013,
+     "award_year": 2014
+    },
+    {
+     "imdb": "tt1024648",
+     "title": "Argo",
+     "year": 2012,
+     "award_year": 2013
+    },
+    {
+     "imdb": "tt1655442",
+     "title": "The Artist",
+     "year": 2011,
+     "award_year": 2012
+    },
+    {
+     "imdb": "tt1504320",
+     "title": "The King's Speech",
+     "year": 2010,
+     "award_year": 2011
+    },
+    {
+     "imdb": "tt0887912",
+     "title": "The Hurt Locker",
+     "year": 2008,
+     "award_year": 2010
+    },
+    {
+     "imdb": "tt1010048",
+     "title": "Slumdog Millionaire",
+     "year": 2008,
+     "award_year": 2009
+    },
+    {
+     "imdb": "tt0477348",
+     "title": "No Country for Old Men",
+     "year": 2007,
+     "award_year": 2008
+    },
+    {
+     "imdb": "tt0407887",
+     "title": "The Departed",
+     "year": 2006,
+     "award_year": 2007
+    },
+    {
+     "imdb": "tt0375679",
+     "title": "Crash",
+     "year": 2004,
+     "award_year": 2006
+    },
+    {
+     "imdb": "tt0405159",
+     "title": "Million Dollar Baby",
+     "year": 2004,
+     "award_year": 2005
+    },
+    {
+     "imdb": "tt0167260",
+     "title": "The Lord of the Rings: The Return of the King",
+     "year": 2003,
+     "award_year": 2004
+    },
+    {
+     "imdb": "tt0299658",
+     "title": "Chicago",
+     "year": 2002,
+     "award_year": 2003
+    },
+    {
+     "imdb": "tt0268978",
+     "title": "A Beautiful Mind",
+     "year": 2001,
+     "award_year": 2002
+    },
+    {
+     "imdb": "tt0172495",
+     "title": "Gladiator",
+     "year": 2000,
+     "award_year": 2001
+    },
+    {
+     "imdb": "tt0169547",
+     "title": "American Beauty",
+     "year": 1999,
+     "award_year": 2000
+    }
+   ]
+  },
+  {
+   "id": "emmy",
+   "kind": "series",
+   "title": "Emmy",
+   "category": "Mejor serie de drama",
+   "tint": "silver",
+   "winners": [
+    {
+     "imdb": "tt31938062",
+     "title": "The Pitt",
+     "year": 2025,
+     "award_year": 2025
+    },
+    {
+     "imdb": "tt2788316",
+     "title": "Shōgun",
+     "year": 2024,
+     "award_year": 2024
+    },
+    {
+     "imdb": "tt7660850",
+     "title": "Succession",
+     "year": 2018,
+     "award_year": 2023
+    },
+    {
+     "imdb": "tt7660850",
+     "title": "Succession",
+     "year": 2018,
+     "award_year": 2022
+    },
+    {
+     "imdb": "tt4786824",
+     "title": "The Crown",
+     "year": 2016,
+     "award_year": 2021
+    },
+    {
+     "imdb": "tt7660850",
+     "title": "Succession",
+     "year": 2018,
+     "award_year": 2020
+    },
+    {
+     "imdb": "tt0944947",
+     "title": "Game of Thrones",
+     "year": 2011,
+     "award_year": 2019
+    },
+    {
+     "imdb": "tt0944947",
+     "title": "Game of Thrones",
+     "year": 2011,
+     "award_year": 2018
+    },
+    {
+     "imdb": "tt5834204",
+     "title": "The Handmaid's Tale",
+     "year": 2017,
+     "award_year": 2017
+    },
+    {
+     "imdb": "tt0944947",
+     "title": "Game of Thrones",
+     "year": 2011,
+     "award_year": 2016
+    },
+    {
+     "imdb": "tt0944947",
+     "title": "Game of Thrones",
+     "year": 2011,
+     "award_year": 2015
+    },
+    {
+     "imdb": "tt0903747",
+     "title": "Breaking Bad",
+     "year": 2008,
+     "award_year": 2014
+    },
+    {
+     "imdb": "tt0903747",
+     "title": "Breaking Bad",
+     "year": 2008,
+     "award_year": 2013
+    },
+    {
+     "imdb": "tt1796960",
+     "title": "Homeland",
+     "year": 2011,
+     "award_year": 2012
+    },
+    {
+     "imdb": "tt0804503",
+     "title": "Mad Men",
+     "year": 2007,
+     "award_year": 2011
+    },
+    {
+     "imdb": "tt0804503",
+     "title": "Mad Men",
+     "year": 2007,
+     "award_year": 2010
+    },
+    {
+     "imdb": "tt0804503",
+     "title": "Mad Men",
+     "year": 2007,
+     "award_year": 2009
+    },
+    {
+     "imdb": "tt0804503",
+     "title": "Mad Men",
+     "year": 2007,
+     "award_year": 2008
+    },
+    {
+     "imdb": "tt0141842",
+     "title": "The Sopranos",
+     "year": 1999,
+     "award_year": 2007
+    },
+    {
+     "imdb": "tt0285331",
+     "title": "24",
+     "year": 2001,
+     "award_year": 2006
+    },
+    {
+     "imdb": "tt0411008",
+     "title": "Lost",
+     "year": 2004,
+     "award_year": 2005
+    },
+    {
+     "imdb": "tt0141842",
+     "title": "The Sopranos",
+     "year": 1999,
+     "award_year": 2004
+    },
+    {
+     "imdb": "tt0200276",
+     "title": "The West Wing",
+     "year": 1999,
+     "award_year": 2003
+    },
+    {
+     "imdb": "tt0200276",
+     "title": "The West Wing",
+     "year": 1999,
+     "award_year": 2002
+    },
+    {
+     "imdb": "tt0200276",
+     "title": "The West Wing",
+     "year": 1999,
+     "award_year": 2001
+    }
+   ]
+  },
+  {
+   "id": "globe",
+   "kind": "movie",
+   "title": "Globos de Oro",
+   "category": "Mejor película dramática",
+   "tint": "gold",
+   "winners": [
+    {
+     "imdb": "tt14905854",
+     "title": "Hamnet",
+     "year": 2025,
+     "award_year": 2026
+    },
+    {
+     "imdb": "tt8999762",
+     "title": "The Brutalist",
+     "year": 2024,
+     "award_year": 2025
+    },
+    {
+     "imdb": "tt15398776",
+     "title": "Oppenheimer",
+     "year": 2023,
+     "award_year": 2024
+    },
+    {
+     "imdb": "tt14208870",
+     "title": "The Fabelmans",
+     "year": 2022,
+     "award_year": 2023
+    },
+    {
+     "imdb": "tt10293406",
+     "title": "The Power of the Dog",
+     "year": 2021,
+     "award_year": 2022
+    },
+    {
+     "imdb": "tt9770150",
+     "title": "Nomadland",
+     "year": 2020,
+     "award_year": 2021
+    },
+    {
+     "imdb": "tt8579674",
+     "title": "1917",
+     "year": 2019,
+     "award_year": 2020
+    },
+    {
+     "imdb": "tt1727824",
+     "title": "Bohemian Rhapsody",
+     "year": 2018,
+     "award_year": 2019
+    },
+    {
+     "imdb": "tt5027774",
+     "title": "Three Billboards Outside Ebbing, Missouri",
+     "year": 2017,
+     "award_year": 2018
+    },
+    {
+     "imdb": "tt4975722",
+     "title": "Moonlight",
+     "year": 2016,
+     "award_year": 2017
+    },
+    {
+     "imdb": "tt1663202",
+     "title": "The Revenant",
+     "year": 2015,
+     "award_year": 2016
+    },
+    {
+     "imdb": "tt1065073",
+     "title": "Boyhood",
+     "year": 2014,
+     "award_year": 2015
+    },
+    {
+     "imdb": "tt2024544",
+     "title": "12 Years a Slave",
+     "year": 2013,
+     "award_year": 2014
+    },
+    {
+     "imdb": "tt1024648",
+     "title": "Argo",
+     "year": 2012,
+     "award_year": 2013
+    },
+    {
+     "imdb": "tt1033575",
+     "title": "The Descendants",
+     "year": 2011,
+     "award_year": 2012
+    },
+    {
+     "imdb": "tt1285016",
+     "title": "The Social Network",
+     "year": 2010,
+     "award_year": 2011
+    },
+    {
+     "imdb": "tt0499549",
+     "title": "Avatar",
+     "year": 2009,
+     "award_year": 2010
+    },
+    {
+     "imdb": "tt1010048",
+     "title": "Slumdog Millionaire",
+     "year": 2008,
+     "award_year": 2009
+    },
+    {
+     "imdb": "tt0783233",
+     "title": "Atonement",
+     "year": 2007,
+     "award_year": 2008
+    },
+    {
+     "imdb": "tt0449467",
+     "title": "Babel",
+     "year": 2006,
+     "award_year": 2007
+    },
+    {
+     "imdb": "tt0388795",
+     "title": "Brokeback Mountain",
+     "year": 2005,
+     "award_year": 2006
+    },
+    {
+     "imdb": "tt0338751",
+     "title": "The Aviator",
+     "year": 2004,
+     "award_year": 2005
+    },
+    {
+     "imdb": "tt0167260",
+     "title": "The Lord of the Rings: The Return of the King",
+     "year": 2003,
+     "award_year": 2004
+    },
+    {
+     "imdb": "tt0274558",
+     "title": "The Hours",
+     "year": 2002,
+     "award_year": 2003
+    },
+    {
+     "imdb": "tt0268978",
+     "title": "A Beautiful Mind",
+     "year": 2001,
+     "award_year": 2002
+    }
+   ]
+  },
+  {
+   "id": "palm",
+   "kind": "movie",
+   "title": "Cannes",
+   "category": "Palma de Oro",
+   "tint": "gold",
+   "winners": [
+    {
+     "imdb": "tt35410859",
+     "title": "Fjord",
+     "year": 2026,
+     "award_year": 2026
+    },
+    {
+     "imdb": "tt36491653",
+     "title": "It Was Just an Accident",
+     "year": 2025,
+     "award_year": 2025
+    },
+    {
+     "imdb": "tt28607951",
+     "title": "Anora",
+     "year": 2024,
+     "award_year": 2024
+    },
+    {
+     "imdb": "tt17009710",
+     "title": "Anatomy of a Fall",
+     "year": 2023,
+     "award_year": 2023
+    },
+    {
+     "imdb": "tt7322224",
+     "title": "Triangle of Sadness",
+     "year": 2022,
+     "award_year": 2022
+    },
+    {
+     "imdb": "tt10944760",
+     "title": "Titane",
+     "year": 2021,
+     "award_year": 2021
+    },
+    {
+     "imdb": "tt6751668",
+     "title": "Parasite",
+     "year": 2019,
+     "award_year": 2019
+    },
+    {
+     "imdb": "tt8075192",
+     "title": "Shoplifters",
+     "year": 2018,
+     "award_year": 2018
+    },
+    {
+     "imdb": "tt4995790",
+     "title": "The Square",
+     "year": 2017,
+     "award_year": 2017
+    },
+    {
+     "imdb": "tt5168192",
+     "title": "I, Daniel Blake",
+     "year": 2016,
+     "award_year": 2016
+    },
+    {
+     "imdb": "tt4082068",
+     "title": "Dheepan",
+     "year": 2015,
+     "award_year": 2015
+    },
+    {
+     "imdb": "tt2758880",
+     "title": "Winter Sleep",
+     "year": 2014,
+     "award_year": 2014
+    },
+    {
+     "imdb": "tt2278871",
+     "title": "Blue Is the Warmest Colour",
+     "year": 2013,
+     "award_year": 2013
+    },
+    {
+     "imdb": "tt1602620",
+     "title": "Amour",
+     "year": 2012,
+     "award_year": 2012
+    },
+    {
+     "imdb": "tt0478304",
+     "title": "The Tree of Life",
+     "year": 2011,
+     "award_year": 2011
+    },
+    {
+     "imdb": "tt1588895",
+     "title": "Uncle Boonmee Who Can Recall His Past Lives",
+     "year": 2010,
+     "award_year": 2010
+    },
+    {
+     "imdb": "tt1149362",
+     "title": "The White Ribbon",
+     "year": 2009,
+     "award_year": 2009
+    },
+    {
+     "imdb": "tt1068646",
+     "title": "The Class",
+     "year": 2008,
+     "award_year": 2008
+    },
+    {
+     "imdb": "tt1032846",
+     "title": "4 Months, 3 Weeks and 2 Days",
+     "year": 2007,
+     "award_year": 2007
+    },
+    {
+     "imdb": "tt0460989",
+     "title": "The Wind That Shakes the Barley",
+     "year": 2006,
+     "award_year": 2006
+    },
+    {
+     "imdb": "tt0456396",
+     "title": "The Child",
+     "year": 2005,
+     "award_year": 2005
+    },
+    {
+     "imdb": "tt0361596",
+     "title": "Fahrenheit 9/11",
+     "year": 2004,
+     "award_year": 2004
+    },
+    {
+     "imdb": "tt0363589",
+     "title": "Elephant",
+     "year": 2003,
+     "award_year": 2003
+    },
+    {
+     "imdb": "tt0253474",
+     "title": "The Pianist",
+     "year": 2002,
+     "award_year": 2002
+    },
+    {
+     "imdb": "tt0208990",
+     "title": "The Son's Room",
+     "year": 2001,
+     "award_year": 2001
+    },
+    {
+     "imdb": "tt0168629",
+     "title": "Dancer in the Dark",
+     "year": 2000,
+     "award_year": 2000
+    }
+   ]
+  },
+  {
+   "id": "bafta",
+   "kind": "movie",
+   "title": "BAFTA",
+   "category": "Mejor película",
+   "tint": "bronze",
+   "winners": [
+    {
+     "imdb": "tt30144839",
+     "title": "One Battle After Another",
+     "year": 2025,
+     "award_year": 2026
+    },
+    {
+     "imdb": "tt20215234",
+     "title": "Conclave",
+     "year": 2024,
+     "award_year": 2025
+    },
+    {
+     "imdb": "tt15398776",
+     "title": "Oppenheimer",
+     "year": 2023,
+     "award_year": 2024
+    },
+    {
+     "imdb": "tt1016150",
+     "title": "All Quiet on the Western Front",
+     "year": 2022,
+     "award_year": 2023
+    },
+    {
+     "imdb": "tt10293406",
+     "title": "The Power of the Dog",
+     "year": 2021,
+     "award_year": 2022
+    },
+    {
+     "imdb": "tt9770150",
+     "title": "Nomadland",
+     "year": 2020,
+     "award_year": 2021
+    },
+    {
+     "imdb": "tt8579674",
+     "title": "1917",
+     "year": 2019,
+     "award_year": 2020
+    },
+    {
+     "imdb": "tt6155172",
+     "title": "Roma",
+     "year": 2018,
+     "award_year": 2019
+    },
+    {
+     "imdb": "tt5027774",
+     "title": "Three Billboards Outside Ebbing, Missouri",
+     "year": 2017,
+     "award_year": 2018
+    },
+    {
+     "imdb": "tt3783958",
+     "title": "La La Land",
+     "year": 2016,
+     "award_year": 2017
+    },
+    {
+     "imdb": "tt1663202",
+     "title": "The Revenant",
+     "year": 2015,
+     "award_year": 2016
+    },
+    {
+     "imdb": "tt1065073",
+     "title": "Boyhood",
+     "year": 2014,
+     "award_year": 2015
+    },
+    {
+     "imdb": "tt2024544",
+     "title": "12 Years a Slave",
+     "year": 2013,
+     "award_year": 2014
+    },
+    {
+     "imdb": "tt1024648",
+     "title": "Argo",
+     "year": 2012,
+     "award_year": 2013
+    },
+    {
+     "imdb": "tt1655442",
+     "title": "The Artist",
+     "year": 2011,
+     "award_year": 2012
+    },
+    {
+     "imdb": "tt1504320",
+     "title": "The King's Speech",
+     "year": 2010,
+     "award_year": 2011
+    },
+    {
+     "imdb": "tt0887912",
+     "title": "The Hurt Locker",
+     "year": 2008,
+     "award_year": 2010
+    },
+    {
+     "imdb": "tt1010048",
+     "title": "Slumdog Millionaire",
+     "year": 2008,
+     "award_year": 2009
+    },
+    {
+     "imdb": "tt0783233",
+     "title": "Atonement",
+     "year": 2007,
+     "award_year": 2008
+    },
+    {
+     "imdb": "tt0436697",
+     "title": "The Queen",
+     "year": 2006,
+     "award_year": 2007
+    },
+    {
+     "imdb": "tt0388795",
+     "title": "Brokeback Mountain",
+     "year": 2005,
+     "award_year": 2006
+    },
+    {
+     "imdb": "tt0338751",
+     "title": "The Aviator",
+     "year": 2004,
+     "award_year": 2005
+    },
+    {
+     "imdb": "tt0167260",
+     "title": "The Lord of the Rings: The Return of the King",
+     "year": 2003,
+     "award_year": 2004
+    },
+    {
+     "imdb": "tt0253474",
+     "title": "The Pianist",
+     "year": 2002,
+     "award_year": 2003
+    },
+    {
+     "imdb": "tt0120737",
+     "title": "The Lord of the Rings: The Fellowship of the Ring",
+     "year": 2001,
+     "award_year": 2002
+    }
+   ]
+  },
+  {
+   "id": "ariel",
+   "kind": "movie",
+   "title": "Ariel",
+   "category": "Cine mexicano",
+   "tint": "bronze",
+   "winners": [
+    {
+     "imdb": "tt37660509",
+     "title": "En el camino",
+     "year": 2025,
+     "award_year": 2026
+    },
+    {
+     "imdb": "tt30320410",
+     "title": "Sujo",
+     "year": 2024,
+     "award_year": 2025
+    },
+    {
+     "imdb": "tt26315142",
+     "title": "Tótem",
+     "year": 2023,
+     "award_year": 2024
+    },
+    {
+     "imdb": "tt14030846",
+     "title": "El norte sobre el vacío",
+     "year": 2022,
+     "award_year": 2023
+    },
+    {
+     "imdb": "tt10366574",
+     "title": "Noche de fuego",
+     "year": 2021,
+     "award_year": 2022
+    },
+    {
+     "imdb": "tt11394282",
+     "title": "Sin señas particulares",
+     "year": 2020,
+     "award_year": 2021
+    },
+    {
+     "imdb": "tt4323594",
+     "title": "Ya no estoy aquí",
+     "year": 2019,
+     "award_year": 2020
+    },
+    {
+     "imdb": "tt6155172",
+     "title": "Roma",
+     "year": 2018,
+     "award_year": 2019
+    },
+    {
+     "imdb": "tt3278224",
+     "title": "Sueño en otro idioma",
+     "year": 2017,
+     "award_year": 2018
+    },
+    {
+     "imdb": "tt4636042",
+     "title": "Las elegidas",
+     "year": 2015,
+     "award_year": 2016
+    },
+    {
+     "imdb": "tt3499048",
+     "title": "Güeros",
+     "year": 2014,
+     "award_year": 2015
+    },
+    {
+     "imdb": "tt2042583",
+     "title": "La jaula de oro",
+     "year": 2013,
+     "award_year": 2014
+    },
+    {
+     "imdb": "tt1525346",
+     "title": "El premio",
+     "year": 2011,
+     "award_year": 2013
+    },
+    {
+     "imdb": "tt2011183",
+     "title": "Pastorela",
+     "year": 2011,
+     "award_year": 2012
+    },
+    {
+     "imdb": "tt1692190",
+     "title": "El infierno",
+     "year": 2010,
+     "award_year": 2011
+    },
+    {
+     "imdb": "tt1143148",
+     "title": "Cinco días sin Nora",
+     "year": 2008,
+     "award_year": 2010
+    },
+    {
+     "imdb": "tt1101675",
+     "title": "Lake Tahoe",
+     "year": 2008,
+     "award_year": 2009
+    },
+    {
+     "imdb": "tt0841925",
+     "title": "Luz silenciosa",
+     "year": 2007,
+     "award_year": 2008
+    },
+    {
+     "imdb": "tt0457430",
+     "title": "El laberinto del fauno",
+     "year": 2006,
+     "award_year": 2007
+    },
+    {
+     "imdb": "tt0407246",
+     "title": "Temporada de patos",
+     "year": 2004,
+     "award_year": 2005
+    },
+    {
+     "imdb": "tt0278293",
+     "title": "El misterio del Trinidad",
+     "year": 2003,
+     "award_year": 2004
+    },
+    {
+     "imdb": "tt0313196",
+     "title": "El crimen del padre Amaro",
+     "year": 2002,
+     "award_year": 2003
+    },
+    {
+     "imdb": "tt0318380",
+     "title": "Cuentos de hadas para dormir cocodrilos",
+     "year": 2002,
+     "award_year": 2002
+    },
+    {
+     "imdb": "tt0245712",
+     "title": "Amores perros",
+     "year": 2000,
+     "award_year": 2001
+    },
+    {
+     "imdb": "tt0221344",
+     "title": "La ley de Herodes",
+     "year": 1999,
+     "award_year": 2000
+    }
+   ]
+  }
+ ]
+}

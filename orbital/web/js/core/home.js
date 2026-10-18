@@ -3,7 +3,7 @@
  * el servidor:
  *   · destacado: lo último que jugaste o viste (lo abierto, primero); al bajar por la lista de la
  *     derecha, el destacado enseña lo enfocado;
- *   · a la derecha («Donde te quedaste»): lo que sigue de esa lista, sin repetir el destacado;
+ *   · a la derecha («Seguir viendo»): lo que sigue de esa lista, sin repetir el destacado;
  *   · tus consolas: cada sistema con su foto, cuántos juegos, el último que jugaste y los nuevos.
  */
 import { isWatchable } from "./library.js";
@@ -12,7 +12,7 @@ export const CARDS = 4;
 
 /** El título de la columna de la derecha (antes «También tenías», que no decía qué era). */
 export function queueTitle() {
-  return "Donde te quedaste"; // sirve igual para series, películas y juegos (antes cambiaba: «Seguir viendo y jugando»)
+  return "Seguir viendo"; // como el iPhone (vocabulario compartido); sirve para series, películas y juegos
 }
 
 /** El mismo título dos veces (la serie a medias y su episodio siguiente, un juego en dos consolas): una sola. */

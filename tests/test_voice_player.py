@@ -322,7 +322,7 @@ def test_the_usual_is_what_you_were_watching(library, monkeypatch):
     ("ciérralo", ("CloseGameIntent", {})),
 ])
 def test_mexican_phrasing(text, expected):
-    """«Pídele a mi consola que LE SUBA AL volumen»: como se dice de verdad."""
+    """«Pídele a Orbital que LE SUBA AL volumen»: como se dice de verdad."""
     assert parse_text(text) == expected
 
 

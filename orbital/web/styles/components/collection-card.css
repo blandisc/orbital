@@ -1,0 +1,105 @@
+/* Tarjetas de colección (js/components/collection-card.js): las del iPhone en la tele. Miden como una portada (alto de
+   --card-height, ancho por su proporción) para que la fila las mida igual; el foco y el atenuado son los de .card. */
+.card--collection {
+  display: block; overflow: hidden; isolation: isolate;
+  background: var(--color-surface-raised); box-shadow: var(--shadow-card);
+}
+/* El halo de su color (plataforma, premio, estudio): una luz baja detrás del abanico. */
+.collection__glow {
+  position: absolute; inset: auto 12% -18% 12%; height: 55%; z-index: var(--z-behind); pointer-events: none;
+  background: radial-gradient(50% 60% at 50% 100%, var(--halo, var(--color-hairline)), transparent 72%); opacity: .55;
+}
+.card--focused .collection__glow { opacity: .9; }
+/* El foco de .card (anillo y brillo), con el halo de su color si tiene; sin esto la sombra de arriba le ganaba. */
+.card--collection.card--focused { box-shadow: var(--ring-focus), 0 1.4rem 3.2rem -.6rem color-mix(in oklab, var(--halo, var(--art-accent)) 55%, transparent); }
+
+/* El abanico (FanCard): tres pósters, el del medio al frente y los de los lados inclinados detrás. */
+.collection__fan { position: absolute; left: 50%; top: 10%; width: 0; height: 64%; }
+.collection__fan .collection__poster { position: absolute; top: 0; height: 100%; width: auto; aspect-ratio: 2 / 3; box-shadow: var(--shadow-drop); }
+.collection__fan .collection__poster--1 { z-index: var(--z-raised); transform: translateX(-50%); }
+.collection__fan .collection__poster--2 { transform: translateX(-118%) translateY(6%) rotate(-10deg); transform-origin: bottom right; }
+.collection__fan .collection__poster--3 { transform: translateX(18%) translateY(6%) rotate(10deg); transform-origin: bottom left; }
+.card--award .collection__fan { left: 42%; }
+.collection__poster { display: block; border-radius: var(--radius-sm); object-fit: cover; background: var(--gradient-card); }
+.collection__poster--missing { visibility: hidden; }
+
+.collection__foot {
+  position: absolute; inset: auto var(--space-3) var(--space-3) var(--space-3); z-index: var(--z-above);
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-1); text-align: center;
+}
+.collection__foot--start { align-items: flex-start; text-align: left; right: 38%; }
+.collection__logo { display: block; max-width: 70%; max-height: 2rem; object-fit: contain; filter: drop-shadow(0 0 .9rem var(--halo, transparent)); }
+/* El logo de un estudio (TMDB los da en sus colores, casi siempre oscuros): en blanco y con sombra para leerse sobre
+   los pósters (sin placa: el filtro también la pintaría de blanco). */
+.collection__logo--mono { max-height: 2.2rem; filter: brightness(0) invert(1) drop-shadow(0 .15rem .5rem color-mix(in oklab, var(--color-bg) 85%, transparent)); }
+.collection__name {
+  font-size: var(--text-md); font-weight: var(--weight-bold); line-height: 1.1; letter-spacing: var(--tracking-tight);
+  text-shadow: var(--shadow-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+}
+.collection__detail { color: var(--color-text-muted); font-size: var(--type-caption); line-height: 1.2; }
+/* Un estudio: su nombre en cápsula al frente (como el iPhone). */
+.collection__capsule {
+  padding: var(--space-1) var(--space-3); border-radius: var(--radius-pill); background: var(--color-badge-bg);
+  font-size: var(--text-sm); font-weight: var(--weight-bold); box-shadow: var(--shadow-badge); white-space: nowrap;
+}
+/* Un premio: la estatuilla real recortada al frente, abajo a la derecha, con su halo. */
+.collection__statue {
+  position: absolute; right: 4%; bottom: 0; z-index: var(--z-above); height: 82%; width: auto;
+  filter: drop-shadow(0 .4rem .8rem color-mix(in oklab, var(--color-bg) 70%, transparent)) drop-shadow(0 0 1.1rem var(--halo, transparent));
+}
+
+/* Por año (YearCard): cuatro pósters en mosaico y el número grande encima. */
+.collection__grid { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; }
+.collection__grid .collection__poster { width: 100%; height: 100%; border-radius: 0; }
+.card--year::before {
+  content: ""; position: absolute; inset: 0; z-index: var(--z-raised); pointer-events: none; background: var(--gradient-art-base);
+}
+.collection__year {
+  position: absolute; inset: auto var(--space-3) var(--space-2) var(--space-3); z-index: var(--z-above);
+  font-size: var(--text-3xl); font-weight: var(--weight-bold); line-height: 1; letter-spacing: var(--tracking-rank);
+  font-variant-numeric: tabular-nums; text-shadow: var(--shadow-text-strong);
+}
+
+/* Una lista tuya (ListCard): dos pósters en pila, su nombre, su sello y cuántos. */
+.card--list, .card--seed { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4); }
+.collection__stack { position: relative; flex: none; height: 82%; aspect-ratio: 1 / 1.15; }
+.collection__stack .collection__poster { position: absolute; top: 0; height: 100%; width: auto; aspect-ratio: 2 / 3; box-shadow: var(--shadow-drop); }
+.collection__stack .collection__poster--1 { left: 0; transform: rotate(-8deg); transform-origin: bottom left; }
+.collection__stack .collection__poster--2 { left: 22%; }
+.collection__text { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.card--list .collection__name { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.collection__meta { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); }
+.collection__count { font-variant-numeric: tabular-nums; }
+/* «Porque viste X» (BecauseCard): lo que viste, con su nombre al lado; lo relacionado sigue en la fila. */
+.card--seed .collection__poster { flex: none; height: 100%; width: auto; aspect-ratio: 2 / 3; }
+
+/* El nombre de un premio (AwardWordmark; las mayúsculas las pone el JS, son parte del logotipo): con remate, espaciado y el degradado de su metal, como el logo de
+   un título. También en el héroe (.hero__title) y en la lista abierta (.list-screen__title). */
+.award-wordmark {
+  font-family: var(--font-award); font-weight: var(--weight-regular); letter-spacing: var(--tracking-award);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--metal) 45%, var(--color-text)) 0%, var(--metal) 55%,
+    color-mix(in oklab, var(--metal) 70%, var(--color-bg)) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none;
+  filter: drop-shadow(0 .1em .25em color-mix(in oklab, var(--color-bg) 70%, transparent));
+}
+.award-wordmark--gold { --metal: var(--color-award-gold); }
+.award-wordmark--silver { --metal: var(--color-award-silver); }
+.award-wordmark--bronze { --metal: var(--color-award-bronze); }
+.collection__foot .award-wordmark { font-size: var(--text-md); line-height: 1.1; }
+
+/* El sello de origen (SourceBadge): el nombre del servicio en mayúsculas sobre su color. */
+.source-badge {
+  display: inline-flex; align-items: center; padding: .1rem .45rem; border-radius: var(--radius-xs);
+  color: var(--color-text); font-size: var(--text-2xs); font-weight: var(--weight-bold); letter-spacing: var(--tracking-label);
+  line-height: 1.3; white-space: nowrap;
+}
+.source-badge--trakt { background: var(--color-source-trakt); }
+.source-badge--stremio { background: var(--color-source-stremio); }
+.source-badge--orbital { background: var(--color-source-orbital); }
+
+/* Fila centrada (Tus plataformas, Premios, Estudios, Por año): la enfocada al centro y al frente; las de los lados, más
+   chicas y apagadas (como el carrusel centrado del iPhone), y debajo el reflejo de la fila actual. */
+.shelf__row--centered .card--collection { transform-origin: 50% 100%; }
+.shelf__row--centered .card--collection.card--focused { transform: scale(var(--card-focus-scale)); margin-inline: calc(var(--card-height) * var(--ratio) * (var(--card-focus-scale) - 1) / 2); }
+.shelf__row--current.shelf__row--centered .card--collection:not(.card--focused) { transform: scale(.9); opacity: .55; }
+.shelf__row--current.shelf__row--centered .shelf__track { -webkit-box-reflect: below var(--space-2) linear-gradient(transparent 70%, color-mix(in oklab, var(--color-text) 14%, transparent)); }

@@ -2,7 +2,7 @@ import { api } from "../core/api.js";
 import { h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
 import { motion } from "../core/motion.js";
-import { typingGlyphs } from "../core/input.js";
+import { ERASE_WORD, typingGlyphs } from "../core/input.js";
 import { storage } from "../core/storage.js";
 import { Card } from "./card.js";
 import { createKeyboard } from "./keyboard.js";
@@ -188,6 +188,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       cleared = "";
       // Por caracteres completos: un emoji a medias rompía la búsqueda («URI malformed»).
       if (key === "delete") text = Array.from(text).slice(0, -1).join("");
+      else if (key === "delete-word") text = text.trimEnd().replace(/\S+$/u, ""); // mantener borrar: palabra por palabra
       else if (key === "space") text = text && !text.endsWith(" ") ? `${text} ` : text;
       else if (Array.from(text).length < MAX_CHARS) text += key.toLowerCase();
     }
@@ -221,6 +222,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     }
     typedPhysically = true;
     if (char === "\b") press("delete");
+    else if (char === ERASE_WORD) press("delete-word");
     else if (char === "\n") { // Enter: a los resultados; ya en ellos, abre el enfocado
       if (zone === "results") open();
       else { goToResults(); onMove?.(); }
@@ -275,7 +277,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     render();
   }
 
-  function handle(action) {
+  function handle(action, { repeat = false } = {}) {
     if (el.hidden || el.classList.contains("search--leaving")) return false;
     if (action === "search") { close(); return true; } // el mismo atajo la cierra
     if (action === "back") { // B vuelve: de los resultados al teclado; del teclado, cierra (X borra)
@@ -284,7 +286,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       render();
       return true;
     }
-    if (action === "alt") { press("delete"); return true; }
+    // X borra una letra; mantenido, palabra por palabra (y cada vez más rápido).
+    if (action === "alt") { press(repeat ? "delete-word" : "delete"); return true; }
     if (action === "options") { press("space"); return true; }
     if (action === "menu") { dictate(); return true; }
     // Atajo para buscar: RT (AvPág) busca ya desde cualquier tecla y salta a los resultados; LT

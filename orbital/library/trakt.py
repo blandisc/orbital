@@ -95,9 +95,12 @@ def entry(raw: dict | None, kind: str) -> dict | None:
     runtime = _positive(raw.get("runtime"))
     episodes = _positive(raw.get("aired_episodes"))
     genres = [str(g).replace("-", " ").title() for g in raw.get("genres") or [] if isinstance(g, str)][:4]  # «Science Fiction»
+    rating = raw.get("rating")
     return {"kind": kind, "imdb": imdb, "title": title.strip(), "year": year, "runtime": runtime, "genres": genres,
             "episodes": episodes, "overview": str(raw.get("overview") or "").strip(),
-            "trakt_id": ids.get("trakt") if isinstance(ids.get("trakt"), int) else None}
+            "trakt_id": ids.get("trakt") if isinstance(ids.get("trakt"), int) else None,
+            # La calificación de Trakt (0–10): para ordenar una lista «Mejor calificadas en Trakt», como en el iPhone.
+            "rating": round(float(rating), 1) if isinstance(rating, (int, float)) and rating > 0 else None}
 
 
 def _when(value) -> float | None:
@@ -307,9 +310,49 @@ class Trakt:
         key = "movie" if kind == "movie" else "show"
         return [e for e in (entry(r.get(key), kind) for r in rows if isinstance(r, dict)) if e] if isinstance(rows, list) else []
 
-    def popular(self, kind: str, limit: int = 30) -> list[dict]:
-        rows = self._get(f"/{KINDS[kind]}/popular", auth=False, limit=limit, extended="full")
+    def popular(self, kind: str, limit: int = 30, years: int | None = None) -> list[dict]:
+        """Lo más popular; con `years`, de ese año (Por año)."""
+        params = {"limit": limit, "extended": "full", **({"years": int(years)} if years else {})}
+        rows = self._get(f"/{KINDS[kind]}/popular", auth=False, **params)
         return [e for e in (entry(r, kind) for r in rows) if e] if isinstance(rows, list) else []
+
+    def rating(self, kind: str, imdb: str) -> float | None:
+        """La calificación de Trakt de un título (0–10; para la ficha, como el iPhone). None si no la tiene."""
+        if not isinstance(imdb, str) or not imdb.startswith("tt") or not imdb[2:].isdigit():
+            return None
+        raw = self._get(f"/{KINDS[kind]}/{imdb}", auth=False, extended="full")
+        found = entry(raw, kind) if isinstance(raw, dict) else None
+        return found.get("rating") if found else None
+
+    def watched_ids(self) -> list[str]:
+        """Los IMDb de lo que ya viste (películas y series), para «Ocultar lo que ya vi» en una lista."""
+        found: list[str] = []
+        for kind, key in (("movies", "movie"), ("shows", "show")):
+            rows = self._get(f"/sync/watched/{kind}")
+            for row in rows if isinstance(rows, list) else []:
+                raw = row.get(key) if isinstance(row, dict) else None
+                imdb = (raw.get("ids") or {}).get("imdb") if isinstance(raw, dict) and isinstance(raw.get("ids"), dict) else None
+                if isinstance(imdb, str) and imdb.startswith("tt"):
+                    found.append(imdb)
+        return found
+
+    def related(self, kind: str, imdb: str, limit: int = 15) -> list[dict]:
+        """Lo que Trakt relaciona con un título («Porque viste X»), como el iPhone."""
+        if not isinstance(imdb, str) or not imdb.startswith("tt") or not imdb[2:].isdigit():
+            return []
+        rows = self._get(f"/{KINDS[kind]}/{imdb}/related", auth=False, limit=limit, extended="full")
+        return [e for e in (entry(r, kind) for r in rows) if e] if isinstance(rows, list) else []
+
+    def last_watched(self) -> dict | None:
+        """Lo último que viste (una película, o la serie de tu último episodio), para «Porque viste X»."""
+        rows = self._get("/sync/history", limit=10, extended="full")
+        for row in rows if isinstance(rows, list) else []:
+            if not isinstance(row, dict):
+                continue
+            found = entry(row.get("movie"), "movie") if row.get("type") == "movie" else entry(row.get("show"), "series")
+            if found:
+                return {**found, "watched_at": _when(row.get("watched_at"))}
+        return None
 
     def calendar(self, start: str, days: int = 15) -> list[dict]:
         """Los episodios que salen de las series que sigues, desde `start` (AAAA-MM-DD, en hora universal) y `days` días:

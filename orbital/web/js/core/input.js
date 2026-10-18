@@ -70,9 +70,19 @@ export function stickDirection(x, y, previous = null) {
  */
 export const usablePad = (pad) => !!pad && pad.mapping === "standard";
 
+/** Un stick se cuenta en el centro (para «armarlo») por debajo de esto. */
+export const STICK_REST = .2;
+/** Un stick empujado igual más de esto, sin moverse nada, se da por pegado (deriva, un control quitado a medias): deja de
+ *  contar hasta que vuelva al centro. Mantener a propósito para recorrer una fila dura menos (LT/RT saltan más lejos). */
+export const STICK_STUCK_MS = 4000;
+
 /** Acciones activas según el estado de los mandos (botones + stick izquierdo). `memory` guarda
- * la dirección del stick de cada mando entre frames (para la histéresis). */
-export function padActions(pads, memory = new Map()) {
+ * la dirección del stick de cada mando entre frames (para la histéresis) y si ya se le vio en el centro.
+ *
+ * Un stick no cuenta hasta verlo en el centro una vez desde que el mando se conectó: algunos mandos llegan
+ * con el eje cargado hasta que se mueve por primera vez, y al conectarlo el foco se iba solo a la derecha
+ * como si el stick estuviera pegado. Si de verdad lo estabas empujando, cuenta en cuanto lo sueltas. */
+export function padActions(pads, memory = new Map(), now = typeof performance === "undefined" ? 0 : performance.now()) {
   const active = new Set();
   pads.forEach((pad, i) => {
     if (!usablePad(pad)) return;
@@ -80,8 +90,25 @@ export function padActions(pads, memory = new Map()) {
       if (pad.buttons[index]?.pressed) active.add(action);
     }
     const [x = 0, y = 0] = pad.axes;
+    const armedKey = `armed:${i}:${pad.id ?? ""}`;
+    if (!memory.get(armedKey)) {
+      if (Math.hypot(x, y) >= STICK_REST) return; // todavía sin verlo en reposo
+      memory.set(armedKey, true);
+    }
     const direction = stickDirection(x, y, memory.get(i) || null);
     memory.set(i, direction);
+    // ¿Pegado? La misma dirección con el stick quieto (mismos valores, casi) por más de STICK_STUCK_MS.
+    const heldKey = `held:${i}:${pad.id ?? ""}`;
+    const held = memory.get(heldKey);
+    const still = held && held.direction === direction && Math.abs(held.x - x) < .02 && Math.abs(held.y - y) < .02;
+    if (!direction) memory.delete(heldKey);
+    else if (!still) memory.set(heldKey, { direction, x, y, since: now });
+    else if (now - held.since > STICK_STUCK_MS) {
+      memory.set(armedKey, false); // pegado: no cuenta hasta verlo otra vez en el centro
+      memory.delete(heldKey);
+      memory.set(i, null);
+      return;
+    }
     if (direction) active.add(direction);
   });
   return active;
@@ -92,7 +119,9 @@ export function padActions(pads, memory = new Map()) {
  * acelera: tras `accelerateAfter` repeticiones el paso baja a `fastRate` (filas largas).
  */
 export class Repeater {
-  constructor({ delay = 380, rate = 110, fastRate = 60, accelerateAfter = 8 } = {}) {
+  /** `canRepeat(acción)`: qué se repite al mantener (moverse; y borrar mientras escribes, ver createInput). */
+  constructor({ delay = 380, rate = 110, fastRate = 60, accelerateAfter = 8, canRepeat = (action) => REPEATABLE.has(action) } = {}) {
+    this.canRepeat = canRepeat;
     this.delay = delay;
     this.rate = rate;
     this.fastRate = fastRate;
@@ -128,7 +157,7 @@ export class Repeater {
         this.held.set(action, now + this.delay);
         this.repeats.set(action, 0);
         fire.push(action);
-      } else if (REPEATABLE.has(action) && now >= this.held.get(action)) {
+      } else if (this.canRepeat(action) && now >= this.held.get(action)) {
         const count = (this.repeats.get(action) || 0) + 1;
         this.repeats.set(action, count);
         this.held.set(action, now + (count >= this.accelerateAfter ? this.fastRate : this.rate));
@@ -138,6 +167,12 @@ export class Repeater {
     return fire;
   }
 }
+
+/** La rueda o el panel táctil: lo mínimo para contar como un paso (en píxeles de desplazamiento). */
+export const WHEEL_MIN = 12;
+
+/** Borrar la última palabra (Retroceso mantenido; Ctrl+W). */
+export const ERASE_WORD = "\u0017";
 
 // Escribiendo: Retroceso borra, Enter busca o avanza de campo, Tab cambia de campo.
 const TYPING_KEYS = { Backspace: "\b", Enter: "\n", Tab: "\t" };
@@ -154,10 +189,11 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
   document.addEventListener("keydown", (event) => {
     if (onText && typing() && (isTextKey(event) || TYPING_KEYS[event.key])) {
       event.preventDefault();
-      // Escribiendo solo se repite borrar: un Enter sostenido saltaba a los resultados y abría el primero.
+      // Escribiendo solo se repite borrar: un Enter sostenido saltaba a los resultados y abría el primero. Mantener
+      // Retroceso borra palabra por palabra («\u0017», como Ctrl+W), no letra por letra.
       if (event.repeat && event.key !== "Backspace") return;
       onModality("keyboard");
-      onText(TYPING_KEYS[event.key] || event.key);
+      onText(event.key === "Backspace" && event.repeat ? ERASE_WORD : TYPING_KEYS[event.key] || event.key);
       return;
     }
     const action = keyToAction(event.key);
@@ -195,20 +231,24 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
   let lastWheel = 0;
   document.addEventListener("wheel", (event) => {
     const now = performance.now();
+    // Un toque mínimo o en diagonal del panel táctil no mueve nada (ese ruido empujaba el foco de lado solo).
+    const ax = Math.abs(event.deltaX), ay = Math.abs(event.deltaY);
+    if (Math.max(ax, ay) < WHEEL_MIN || (Math.min(ax, ay) > 0 && Math.max(ax, ay) / Math.min(ax, ay) < 1.6)) return;
     if (now - lastWheel < 120) return;
     lastWheel = now;
-    const vertical = Math.abs(event.deltaY) > Math.abs(event.deltaX);
+    const vertical = ay > ax;
     onAction(vertical ? (event.deltaY > 0 ? "down" : "up") : (event.deltaX > 0 ? "right" : "left"), { repeat: false });
   }, { passive: true });
 
-  const repeater = new Repeater();
+  // Con el teclado de Buscar abierto, mantener X (Retroceso) también se repite: borra palabra por palabra, rápido.
+  const repeater = new Repeater({ canRepeat: (action) => REPEATABLE.has(action) || (action === "alt" && typing()) });
   const sticks = new Map();
   // Durante un momento tras recuperar el foco, lo que llegue presionado se ignora.
   let swallowUntil = 0;
   window.addEventListener("focus", () => { swallowUntil = performance.now() + 250; });
   const loop = (now) => {
     const pads = navigator.getGamepads ? [...navigator.getGamepads()] : [];
-    const active = padActions(pads, sticks);
+    const active = padActions(pads, sticks, now);
     if (now < swallowUntil) repeater.swallow([...active].filter((a) => !repeater.held.has(a)));
     const fire = repeater.update(active, now);
     if (active.size) lastPad = now;

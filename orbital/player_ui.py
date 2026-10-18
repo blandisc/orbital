@@ -362,7 +362,6 @@ class Hud:
     facts: str = ""  # "2024 · ★ 8.5 · Ciencia ficción" (en pausa)
     description: str = ""  # sinopsis (en pausa)
     seeking: str = ""  # "+10 s" / "−1 min" mientras adelantas: solo la barra y la burbuja
-    focus: int | None = None  # con el stick: el botón enfocado de la fila de abajo (A lo elige)
     pip: bool = False  # Home lo pone en pequeño (Ajustes): se dice arriba, que si no nadie lo descubre
 
 
@@ -464,8 +463,7 @@ def hud_ass(hud: Hud) -> str:
              ("◀ ▶", "Adelantar"), *([("LT RT", "Episodio")] if hud.series else []), ("B", "Mantén: salir")]
     while len(items) > 4 and hints_width(items) > W - 2 * MARGIN:
         items.pop(-2)  # si no caben (4:3): primero LT/RT, luego ◀▶
-    bottom = focus_hints(hud, 1022, paused=False) if hud.focus is not None else \
-        _touch_bar(hud, 1000, paused=False) if TOUCH else hints(items, 1022, right=W - MARGIN)
+    bottom = _touch_bar(hud, 1000, paused=False) if TOUCH else hints(items, 1022, right=W - MARGIN)
     lines += [bar, _times(hud, BAR_Y + 28), bottom]
     return "\n".join(lines)
 
@@ -500,20 +498,16 @@ def paused_ass(hud: Hud) -> str:
         lines.append(text(MARGIN, y + 4, esc(line), 26, SOFT))
         y += 40
     y += 30
-    if hud.focus is None:  # con el stick, los mismos botones van en la fila de abajo (no dos veces)
-        lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes")], MARGIN, y))
+    lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes")], MARGIN, y))
     bar, _ = progress_bar(hud)
     more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), *([("LT RT", "Episodio")] if hud.series else []),
             ("B", "Mantén: salir")]
     room = max(260, W - 2 * MARGIN - hints_width(more) - 48)
     if TOUCH:
         room = max(260, W - 2 * MARGIN - pills_width(_touch_items(hud, paused=True)) - 48)
-    if hud.focus is not None:
-        room = 0  # la fila del stick ocupa todo el ancho (la línea de audio está en X)
-    bottom = focus_hints(hud, 1022, paused=True) if hud.focus is not None else \
-        _touch_bar(hud, 1000, paused=True) if TOUCH else hints(more, 1022, right=W - MARGIN)
+    bottom = _touch_bar(hud, 1000, paused=True) if TOUCH else hints(more, 1022, right=W - MARGIN)
     lines += [bar, _times(hud, BAR_Y + 28)]
-    if room >= 260:  # con la fila del stick a veces no cabe la línea de audio: se quita (está en X)
+    if room >= 260:  # si no cabe la línea de audio, se quita (está en X)
         lines.append(text(MARGIN, 1022, esc(fit(info_line(hud), 22, min(1200, room), "semi")), 22, MUTED, weight="semi", align=4))
     lines.append(bottom)
     return "\n".join(lines)
@@ -557,62 +551,6 @@ def pills(items: Sequence[tuple[str, object]], y: float, *, right: float | None 
         targets[layer].append((x, y, w, h, action))
         x += w + gap
     return "\n".join(out)
-
-
-def nav_items(hud: Hud, *, paused: bool) -> list[tuple[str, str, str]]:
-    """Con el stick: los mismos botones de siempre (glifo, nombre, qué hace), para recorrerlos y elegir con A. Adelantar,
-    Volumen y Episodio abren sus opciones. La cruceta y los botones siguen siendo atajos."""
-    return [("A", "Continuar" if paused else "Pausa", "a"), ("X", "Audio y subtítulos", "x"),
-            ("Y", "Episodios" if hud.series else "Fuentes", "y"), ("◀ ▶", "Adelantar", "seek"), ("↑ ↓", "Volumen", "volume"),
-            *([("LT RT", "Episodio", "episode")] if hud.series else []), ("B", "Mantén: salir", "quit")]
-
-
-def focus_hints(hud: Hud, y: float, *, paused: bool, size: int = 22) -> str:
-    """La fila de siempre con el enfocado resaltado (claro). A ya no lleva su glifo: con el stick, A es «elegir»."""
-    items = nav_items(hud, paused=paused)
-    focus = max(0, min(len(items) - 1, hud.focus or 0))
-    gap, inner, pad = 22, 12, 18
-    parts = []
-    for key, label, _ in items:
-        gw = 0.0 if key == "A" else glyph(0, 0, key)[1]
-        parts.append((key, label, gw, text_width(label, size, "semi")))
-    total = sum((gw + inner if gw else 0) + tw + 2 * pad for _, _, gw, tw in parts) + gap * (len(parts) - 1)
-    x = max(MARGIN, W - MARGIN - total)
-    out = []
-    for i, (key, label, gw, tw) in enumerate(parts):
-        w = (gw + inner if gw else 0) + tw + 2 * pad
-        on = i == focus
-        if on:
-            out.append(rrect(x, y - 26, w, 52, 26, TEXT, "00"))
-        if gw:
-            shape, _ = glyph(x + pad, y, key)
-            out.append(shape)
-        out.append(text(x + pad + (gw + inner if gw else 0), y, esc(label), size, ON_LIGHT if on else SOFT, weight="semi", align=4))
-        x += w + gap
-    return "\n".join(out)
-
-
-def seek_panel() -> Panel:
-    """Adelantar (con el stick): cuánto, y A lo hace."""
-    steps = [(-300, "−5 min"), (-60, "−1 min"), (-30, "−30 s"), (-10, "−10 s"), (10, "+10 s"), (30, "+30 s"), (60, "+1 min"), (300, "+5 min")]
-    return Panel("seek", [Column("seek", [{"label": label, "action": ("seekby", value), "current": False} for value, label in steps], 4)], 0)
-
-
-def volume_panel(level: int, muted: bool) -> Panel:
-    """Volumen (con el stick): silenciar o un nivel; el actual, marcado."""
-    levels = [10, 25, 40, 55, 70, 85, 100]
-    near = min(levels, key=lambda v: abs(v - level))
-    options = [{"label": "Quitar silencio" if muted else "Silenciar", "action": ("mute", None), "current": False}]
-    options += [{"label": f"{v} %", "action": ("volumeto", v), "current": not muted and v == near} for v in levels]
-    return Panel("volume", [_column("volume", options)], 0)
-
-
-def episode_panel() -> Panel:
-    """Episodio (con el stick): el anterior, el siguiente o la lista."""
-    return Panel("episode", [Column("episode", [
-        {"label": "Siguiente episodio", "action": ("epstep", 1), "current": False},
-        {"label": "Episodio anterior", "action": ("epstep", -1), "current": False},
-        {"label": "Ver la lista…", "action": ("episodes", None), "current": False}], 0)], 0)
 
 
 def _touch_items(hud: Hud, *, paused: bool) -> list[tuple[str, object]]:
@@ -1004,6 +942,53 @@ def volume_ass(volume: float, muted: bool = False) -> str:
     if fill:
         parts.append(rrect(track_x, track_top + track_h - fill, track_w, fill, track_w / 2, TEXT))
     parts.append(speaker(x + w / 2 + 4, y + h - 46, level, muted))
+    return "\n".join(parts)
+
+
+def _line_path(x1: float, y1: float, x2: float, y2: float, t: float) -> str:
+    """Una línea gruesa (un rectángulo girado) de (x1, y1) a (x2, y2)."""
+    dx, dy = x2 - x1, y2 - y1
+    length = math.hypot(dx, dy) or 1.0
+    nx, ny = -dy / length * t / 2, dx / length * t / 2
+    return (f"m {x1 + nx:.1f} {y1 + ny:.1f} l {x2 + nx:.1f} {y2 + ny:.1f} l {x2 - nx:.1f} {y2 - ny:.1f} "
+            f"l {x1 - nx:.1f} {y1 - ny:.1f}")
+
+
+PIP_BUTTON = 92  # radio de los botones de la esquina, en el lienzo (la ventana chica lo reduce a ~22 px)
+PIP_PLAY = 132  # radio del botón del centro
+
+
+def pip_ass(paused: bool) -> str:
+    """El video en pequeño, como el PiP del iPhone: solo tres botones sobre un velo tenue. Arriba a la izquierda,
+    volver a pantalla completa; arriba a la derecha, cerrar; al centro, pausa o reproducir. Nada de la barra completa
+    del reproductor (en chiquito no se leía y no tenía sentido)."""
+    targets["hud"] = []
+    cx, cy = W / 2, H / 2
+    corner = PIP_BUTTON + 64
+    veil = rrect(0, 0, W, H, 0, PANEL, "B0")  # un velo tenue: el video se sigue viendo
+    parts = [veil]
+    # Volver a pantalla completa: las cuatro esquinas de un marco (el ícono de siempre).
+    ex, ey, s, t = corner, corner, 34, 14
+    parts.append(circle(ex, ey, PIP_BUTTON, PANEL, "50"))
+    for sx, sy in ((-1, -1), (1, -1), (-1, 1), (1, 1)):
+        x0, y0 = ex + sx * s, ey + sy * s
+        parts.append(_shape(_line_path(x0, y0, x0 - sx * 26, y0, t), TEXT))
+        parts.append(_shape(_line_path(x0, y0, x0, y0 - sy * 26, t), TEXT))
+    targets["hud"].append((ex - PIP_BUTTON, ey - PIP_BUTTON, 2 * PIP_BUTTON, 2 * PIP_BUTTON, "pip:expand"))
+    # Cerrar: una ✕.
+    qx, qy = W - corner, corner
+    parts.append(circle(qx, qy, PIP_BUTTON, PANEL, "50"))
+    parts.append(_shape(_line_path(qx - 34, qy - 34, qx + 34, qy + 34, 14), TEXT))
+    parts.append(_shape(_line_path(qx + 34, qy - 34, qx - 34, qy + 34, 14), TEXT))
+    targets["hud"].append((qx - PIP_BUTTON, qy - PIP_BUTTON, 2 * PIP_BUTTON, 2 * PIP_BUTTON, "pip:close"))
+    # Pausa / reproducir, al centro y más grande.
+    parts.append(circle(cx, cy, PIP_PLAY, PANEL, "40"))
+    if paused:
+        parts.append(_shape(f"m {cx - 38:.1f} {cy - 62:.1f} l {cx + 66:.1f} {cy:.1f} l {cx - 38:.1f} {cy + 62:.1f}", TEXT))
+    else:
+        parts.append(rrect(cx - 52, cy - 60, 34, 120, 8, TEXT))
+        parts.append(rrect(cx + 18, cy - 60, 34, 120, 8, TEXT))
+    targets["hud"].append((cx - PIP_PLAY, cy - PIP_PLAY, 2 * PIP_PLAY, 2 * PIP_PLAY, "pip:play"))
     return "\n".join(parts)
 
 
