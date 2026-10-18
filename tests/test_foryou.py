@@ -813,3 +813,17 @@ def test_because_you_watched_follows_the_iphone_rotation_and_lets_you_pick(make_
     monkeypatch.setattr(fy, "_related", lambda s: [{"imdb": "x"}])
     days = [fy._seed_of_day(seeds, foryou_mod.date.fromordinal(n))["imdb"] for n in range(738000, 738006)]
     assert len(set(days[:5])) == 5 and days[5] == days[0] and all(int(d[2:]) <= 5 for d in days)  # rota entre los primeros 5
+
+
+def test_para_ti_remembers_on_disk_what_it_brought_for_when_there_is_no_internet(tmp_path):
+    """Modo sin internet: lo traído queda en disco; al arrancar sin conexión, Para ti enseña eso (vencido)."""
+    path = tmp_path / "foryou-cache.json"
+    first = foryou_mod.Cache(path=path)
+    assert first.get("trakt:trend:series", 60, lambda: [{"title": "Dark"}]) == [{"title": "Dark"}]
+    first._save()  # (normalmente, unos segundos después)
+
+    def offline():
+        raise foryou_mod.trakt_api.TraktError("sin internet")
+
+    later = foryou_mod.Cache(clock=lambda: time.time() + 10_000, path=path)  # otro arranque, ya vencido
+    assert later.get("trakt:trend:series", 60, offline) == [{"title": "Dark"}]

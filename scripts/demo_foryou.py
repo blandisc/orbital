@@ -154,6 +154,9 @@ class DemoTmdb:
         return {brand: {"id": i, "logo": f"https://image.tmdb.org/t/p/w154/{self.LOGOS[brand]}.jpg"}
                 for i, brand in enumerate(self.PLATFORMS, start=1)}
 
+    def company_logo(self, company_id):  # sin internet: los estudios van con su nombre
+        return None
+
     def discover(self, kind, provider_id, region):
         brand = list(self.PLATFORMS)[provider_id - 1]
         return [{"id": n, "key": k} for n, k in enumerate(self.PLATFORMS[brand]) if (k in S) == (kind == "series")]

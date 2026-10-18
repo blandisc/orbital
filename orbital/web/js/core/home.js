@@ -6,7 +6,7 @@
  *   · a la derecha («Continuar»): lo que sigue de esa lista, sin repetir el destacado;
  *   · tus consolas: cada sistema con su foto, cuántos juegos, el último que jugaste y los nuevos.
  */
-import { isWatchable } from "./library.js";
+import { isWatchable, needsInternet } from "./library.js";
 
 export const CARDS = 4;
 
@@ -128,15 +128,17 @@ export function consoleList(rows) {
 const HALFWAY_DAYS = 3; // un episodio que dejaste hace más ya no le gana al juego de hoy
 const recent = (item, now) => !item.last_played || now / 1000 - item.last_played < HALFWAY_DAYS * 86400;
 
-export function buildHome(rows, { runningId = null, now = Date.now() } = {}) {
+export function buildHome(rows, { runningId = null, now = Date.now(), offline = false } = {}) {
   const jump = rows.find((r) => r.id === "jump")?.items ?? [];
   const favorites = rows.find((r) => r.id === "favorites")?.items ?? [];
-  // Sin nada a medias (primera vez): tus favoritos ocupan su lugar.
-  const pool = jump.length ? jump : favorites;
+  // Sin nada a medias (primera vez): tus favoritos ocupan su lugar. Sin internet, primero lo que sí funciona (tus juegos):
+  // el destacado no puede ser un episodio que no se puede ver.
+  const all = jump.length ? jump : favorites;
+  const pool = offline ? [...all.filter((i) => !needsInternet(i)), ...all.filter((i) => needsInternet(i))] : all;
   // El destacado: lo abierto; si no, el episodio o la película a medias (lo que más importa retomar:
   // antes un juego abierto un segundo lo mandaba a las tarjetas); si no, lo último.
   const running = runningId ? pool.find((i) => i.id === runningId) : null;
-  const halfway = pool.find((i) => isWatchable(i) && i.progress > 0 && i.progress < 1 && recent(i, now));
+  const halfway = !offline && pool.find((i) => isWatchable(i) && i.progress > 0 && i.progress < 1 && recent(i, now));
   const first = running ?? halfway;
   const ordered = first ? [first, ...pool.filter((i) => i !== first)] : pool;
   const list = consoleList(rows);

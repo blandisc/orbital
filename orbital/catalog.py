@@ -167,6 +167,8 @@ class Catalog:
         self.watch = Watch(config, self.state, self.credentials, stremio_client or stremio_api.StremioAPI(),
                            cinemeta_client or cinemeta.Cinemeta(), self.store, self.events, self.sessions,
                            self.launcher)
+        if cache and isinstance(self.watch.cinemeta, cinemeta.Cinemeta):
+            self.watch.cinemeta.keep_on_disk(cache / "cinemeta-fichas.json")  # sin internet, las fichas que ya abriste
         self.foryou = ForYou(config, self)  # «Para ti»: recomendaciones (no sale a internet hasta que se pide)
         self.watch.scrobbler.trakt = lambda: self.foryou.trakt  # lo que ves, a Trakt (se pide en cada aviso)
         self.tv = LiveTV(config, self)  # «TV en vivo»: canales y su salud (no sale a internet hasta que arranca)

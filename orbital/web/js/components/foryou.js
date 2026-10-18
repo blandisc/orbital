@@ -102,7 +102,7 @@ export function createForYou({ onWatch, onTitle, onLaunch, onMore, onFocus, onEd
     if (!data) return [end];
     if (mosaic.ambient) return [{ glyph: g.select, label: "Elegir" }, end];
     const item = mosaic.current;
-    return [item?.action && { glyph: g.select, label: item.action }, item && { glyph: g.options, label: "Más" }, end].filter(Boolean);
+    return [item?.action && { glyph: g.select, label: item.action }, item && { glyph: g.options, label: "Opciones" }, end].filter(Boolean);
   }
 
   /** «No me interesa»: se quita de todos lados y no vuelve. */

@@ -63,7 +63,8 @@ export function titleActions(details, { kind = "movie", phone = false } = {}) {
     : { id: "mylist", icon: "plus", label: "Guardar" });
   // Una serie sin episodios (ni uno en el que ibas) no tiene fuente que elegir: el botón no hacía nada.
   const playable = (details.kind || kind) !== "series" || resume?.video_id || (details.seasons || []).some((s) => s.episodes?.length);
-  if (playable) out.push({ id: "sources", icon: "swap", label: "Elegir fuente", short: "Fuente" });
+  // La fuente con el ícono de lista, como el iPhone (list.bullet) en todos lados.
+  if (playable) out.push({ id: "sources", icon: "list", label: "Elegir fuente", short: "Fuente" });
   // Solo con un iPhone conectado (si no, ni aparecen): el episodio que sigue o el enfocado.
   if (playable && phone) {
     out.push({ id: "phone-open", icon: "phone", label: "Enviar al iPhone", short: "Al iPhone" },

@@ -28,6 +28,9 @@ API_URL = "https://api.strem.io"
 METAHUB_BACKGROUND = "https://images.metahub.space/background/medium/{id}/img"
 METAHUB_POSTER = "https://images.metahub.space/poster/medium/{id}/img"
 
+
+# Sin cuenta: qué hacer, en una frase (se muestra tal cual; antes «Stremio no respondió bien (…). Inténtalo de nuevo»).
+NOT_LINKED = "Para eso, conecta tu cuenta de Stremio en Ajustes › Cuentas."
 
 class StremioError(Exception):
     pass

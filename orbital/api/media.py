@@ -34,6 +34,8 @@ def stremio_message(exc: Exception) -> str:
     if expired_session(exc):
         return "Tu sesión de Stremio caducó: vuelve a conectarla en Ajustes › Cuentas."
     text = str(exc)
+    if text == stremio_api.NOT_LINKED:
+        return text
     return text if any(c in text for c in "áéíóúñ¿") else f"Stremio no respondió bien ({text}). Inténtalo de nuevo."
 
 

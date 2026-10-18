@@ -4,7 +4,7 @@ import { rankOf, trendOf, trimmedLogo } from "../core/foryou.js";
 import { SYSTEMS, systemColor, systemOf } from "../core/home.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { sized } from "../core/images.js";
-import { clampRatio, coverRatio } from "../core/library.js";
+import { clampRatio, coverRatio, needsInternet } from "../core/library.js";
 import { Badge } from "./ui.js";
 
 /** Portada de un juego/app. Si no hay imagen (o falla), muestra el ícono de su tipo y el título. */
@@ -107,6 +107,7 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   } else {
     card.append(fallback());
   }
+  if (needsInternet(item)) card.classList.add("needs-internet"); // sin internet se atenúa (base.css)
   if (item.chosen) card.classList.add("card--chosen"); // «Porque viste»: el título del que salen las sugerencias
   card.append(...[badge, rank, trend, live, chip, label, logo, meta, progress].filter(Boolean));
   return card;

@@ -13,6 +13,7 @@ se pide al primer complemento de tu lista que sabe de ese título.
 
 from __future__ import annotations
 
+import json
 import logging
 import threading
 import time
@@ -20,6 +21,7 @@ import urllib.error
 import urllib.request
 from collections.abc import Callable
 from datetime import UTC, datetime
+from pathlib import Path
 from urllib.parse import quote
 
 from ..net import NET_ERRORS, read_json
@@ -53,6 +55,42 @@ class Cinemeta:
         self.localize: Callable[[str, dict], dict] | None = None  # la ficha en el idioma de Orbital
         self._cache: dict[str, tuple[float, dict]] = {}
         self._lock = threading.Lock()
+        # Modo sin internet: las fichas que ya abriste quedan en disco (`saved`); sin conexión se enseña lo guardado.
+        self.saved: Path | None = None
+        self._save_timer: threading.Timer | None = None
+
+    def keep_on_disk(self, path: Path) -> None:
+        """Guarda las fichas en `path` y carga las de la vez pasada (sin internet, se ven igual)."""
+        self.saved = path
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+        except (OSError, ValueError):
+            raw = {}
+        with self._lock:
+            for url, entry in raw.items() if isinstance(raw, dict) else []:
+                if isinstance(entry, list) and len(entry) == 2 and isinstance(entry[1], dict):
+                    self._cache.setdefault(url, (float(entry[0]), entry[1]))
+
+    def _save_later(self) -> None:
+        if self.saved is None or self._save_timer is not None:
+            return
+        self._save_timer = threading.Timer(5.0, self._save)
+        self._save_timer.daemon = True
+        self._save_timer.start()
+
+    def _save(self) -> None:
+        self._save_timer = None
+        if self.saved is None:
+            return
+        with self._lock:  # solo fichas (/meta/): las listas cambian a diario y ocupan más
+            data = {url: [at, d] for url, (at, d) in self._cache.items() if "/meta/" in url}
+        try:
+            self.saved.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.saved.with_suffix(".tmp")
+            tmp.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            tmp.replace(self.saved)
+        except OSError as exc:
+            log.info("No pude guardar las fichas: %s", exc)
 
     def _get(self, path: str, base: str | None = None) -> dict:
         url = f"{base or self.base}{path}"
@@ -65,6 +103,8 @@ class Cinemeta:
             with urllib.request.urlopen(req, timeout=self.timeout) as res:
                 data = read_json(res, timeout=self.timeout)
         except NET_ERRORS as exc:
+            if hit and not (isinstance(exc, urllib.error.HTTPError) and exc.code == 404):
+                return hit[1]  # sin internet: la de la última vez (vencida, pero es la misma ficha)
             raise CinemetaError(f"No pude leer el catálogo de Stremio: {exc}") from exc
         if not isinstance(data, dict):
             raise CinemetaError("Respuesta inesperada de Cinemeta")
@@ -75,6 +115,8 @@ class Cinemeta:
                         sorted(self._cache, key=lambda k: self._cache[k][0])[:CACHE_MAX // 4]:
                     self._cache.pop(key, None)
             self._cache[url] = (time.time(), data)
+        if "/meta/" in url:
+            self._save_later()
         return data
 
     def catalog(self, kind: str) -> list[dict]:

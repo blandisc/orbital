@@ -3,7 +3,7 @@ import { duration, endsAt, lastPlayed, shortAgo } from "../core/format.js";
 import { kicker, platformColor, stageKind, SYSTEMS, systemColor, systemOf, thumbOf } from "../core/home.js";
 import { ICONS, platformMark, systemIconName } from "../core/icons.js";
 import { sized } from "../core/images.js";
-import { alternativeRunner, clampRatio, coverRatio, isGame, isSeries, isWatchable, primaryLabel } from "../core/library.js";
+import { alternativeRunner, clampRatio, coverRatio, isGame, isSeries, isWatchable, needsInternet, primaryLabel } from "../core/library.js";
 import { Button } from "./button.js";
 import { Badge, PlatformMark, Progress } from "./ui.js";
 
@@ -124,7 +124,7 @@ export function RowTile(item, { focusId, onPress, airing = null }) {
   const thumb = thumbOf(item);
   const system = thumb.kind === "console" ? SYSTEMS[systemOf(item)] : null;
   const total = !watch && item.playtime >= 600 ? duration(item.playtime) : null;
-  const node = tile(focusId, "tile--row", onPress, item.title,
+  const node = tile(focusId, ["tile--row", needsInternet(item) && "needs-internet"], onPress, item.title,
     h("span", { class: ["tile--row__thumb", system && "tile--row__thumb--console"] },
       thumb.src && artOr(sized(thumb.src, 240), sized(thumb.fallback, 240), ["tile--row__art", thumb.kind === "crop" && "tile--row__art--crop"]),
       system && art(`img/consoles/${system.photo}`, ["tile--row__console", system.logo && "tile--row__console--logo"]),
@@ -145,7 +145,7 @@ export function RowTile(item, { focusId, onPress, airing = null }) {
  * (lo dice la leyenda: «X · Seguir Pikmin 2»): la tarjeta queda cuadrada, sin hueco. */
 export function ConsoleTile(system, { focusId, index = 0, onPress }) {
   return h("div", {
-    class: ["tile", "tile--console", system.logo && "tile--console-logo"], role: "button", tabindex: "-1", "data-focus-id": focusId, onClick: onPress,
+    class: ["tile", "tile--console", system.logo && "tile--console-logo", system.system === "geforcenow" && "needs-internet"], role: "button", tabindex: "-1", "data-focus-id": focusId, onClick: onPress,
     "aria-label": `${system.name}: ${system.count} juegos`, style: { "--i": index, "--glow": systemColor(system.system) },
   },
   h("span", { class: "tile--console__glow" }),
