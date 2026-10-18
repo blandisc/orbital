@@ -163,3 +163,7 @@
 .card__label { position: absolute; left: var(--inset-poster); right: var(--inset-poster); bottom: var(--inset-poster); z-index: var(--z-raised);
   font-family: var(--font-sans); font-size: var(--type-section); font-weight: var(--weight-bold); letter-spacing: var(--tracking-tight);
   line-height: 1.15; text-shadow: var(--shadow-text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .1em; }
+
+/* «Porque viste»: el título del que salen las sugerencias de abajo, con un aro del acento (como el iPhone) mientras
+   el foco está en otra parte. */
+.card--chosen:not(.card--focused) { box-shadow: 0 0 0 .16rem var(--color-tinted-bg), 0 0 0 .3rem var(--color-accent); }

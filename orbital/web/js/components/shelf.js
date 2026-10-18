@@ -69,11 +69,8 @@ export function createShelf({ onPick, onSwipe }) {
       logo?.addEventListener("error", () => logo.replaceWith(row.label || ""), { once: true });
       // De dónde viene (Trakt, Stremio, tu Orbital): el sello junto al título, como en el iPhone.
       const seal = row.seal ? SourceBadge(row.seal) : null;
-      // «Porque viste»: tus últimos cinco en chiquito, el de ahora marcado (X en su tarjeta pasa al siguiente).
-      const seeds = row.seeds && h("span", { class: "shelf__seeds", "aria-label": "Viste hace poco" },
-        row.seeds.map((s) => h("img", { class: ["shelf__seed", s.on && "shelf__seed--on"], src: s.image, alt: s.title, title: s.title, decoding: "async" })));
       const rowEl = h("div", { class: ["shelf__row", row.spotlight && "shelf__row--spotlight", row.centered && "shelf__row--centered"] },
-        h("h2", { class: "shelf__heading" }, logo, row.title, seal, seeds, dots || count), track);
+        h("h2", { class: "shelf__heading" }, logo, row.title, seal, dots || count), track);
       return { rowEl, track, cards, els, count, dots, ranked: !!row.ranked, centered: !!row.centered };
     });
     mount(rowsEl, rowEls.map((x) => x.rowEl));

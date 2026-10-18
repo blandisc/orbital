@@ -349,10 +349,10 @@ class Trakt:
         rows = self._get(f"/{KINDS[kind]}/{imdb}/related", auth=False, limit=limit, extended="full")
         return [e for e in (entry(r, kind) for r in rows) if e] if isinstance(rows, list) else []
 
-    def recent_watched(self, limit: int = 5) -> list[dict]:
+    def recent_watched(self, limit: int = 12) -> list[dict]:
         """Los últimos títulos distintos que viste (una película, o la serie de un episodio), el más reciente primero,
-        para «Porque viste X» (cambia cada día entre ellos, como el iPhone)."""
-        rows = self._get("/sync/history", limit=60, extended="full")
+        para «Porque viste X»: los 12 que el iPhone deja elegir (ForYou.recentSeeds: historial de 40)."""
+        rows = self._get("/sync/history", limit=40, extended="full")
         found: list[dict] = []
         for row in rows if isinstance(rows, list) else []:
             if not isinstance(row, dict):

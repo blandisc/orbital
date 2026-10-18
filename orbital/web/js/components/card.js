@@ -107,6 +107,7 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   } else {
     card.append(fallback());
   }
+  if (item.chosen) card.classList.add("card--chosen"); // «Porque viste»: el título del que salen las sugerencias
   card.append(...[badge, rank, trend, live, chip, label, logo, meta, progress].filter(Boolean));
   return card;
 }

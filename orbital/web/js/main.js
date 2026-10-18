@@ -364,6 +364,7 @@ function setFocus(r, c, { silent = false, edge = null, repeat = false } = {}) {
   }
   state.focus = next;
   const rowId = state.rows[next.r]?.id;
+  if (rowId === "curated:because-seeds") chooseBecause(state.rows[next.r].items[next.c]?.seed);
   if (rowId) state.memory[rowId] = next.c;
   ui.shelf.setFocus(next.r, next.c);
   if (moved || silent) {
@@ -440,7 +441,6 @@ function applySettings(settings) {
 // ---------------------------------------------------------------- Inicio
 /** X en el Inicio: la ficha (videos) o el otro emulador (juegos). */
 function altLabel(item) {
-  if (item?.collection?.type === "seed" && item.collection.seeds > 1) return "Otro título";
   if (isWatchable(item)) return isSeries(item) || item.extra?.kind === "series" ? "Episodios" : "Ficha";
   const alt = alternativeRunner(item);
   return alt ? `Con ${alt.name}` : null;
@@ -821,18 +821,18 @@ const MEDIA_FILTERS = [["all", "Todo"], ["series", "Series"], ["movie", "Pelícu
 const today = () => new Date().toLocaleDateString("sv");
 const becauseChoice = () => { const c = storage.get("orbital.because", null); return c?.day === today() ? c.imdb : null; };
 
-/** X en la tarjeta de «Porque viste»: el siguiente de tus últimos cinco; la fila se pone al día. */
-async function nextBecause() {
-  const because = mediaLists.find((l) => l.id === "because");
-  const { seed, seeds } = becauseSeed(because, becauseChoice());
-  if (seeds.length < 2) return false;
-  const next = seeds[(seeds.findIndex((s) => s.meta_id === seed?.meta_id) + 1) % seeds.length];
-  storage.set("orbital.because", { day: today(), imdb: next.meta_id });
-  sound.play("move");
-  const { listId } = becauseSeed(because, next.meta_id);
-  if (!mediaItems[keyOf(listId, null)]) mediaItems[keyOf(listId, null)] = await fetchList(listId, null);
-  buildCuration();
-  return true;
+/** «Porque viste»: al enfocar otro de tus títulos en la fila de arriba, las sugerencias de abajo pasan a ser las suyas
+ * (un momento después de pararte: recorrer la fila no pide nada por cada uno). */
+let becauseTimer = 0;
+function chooseBecause(imdb) {
+  clearTimeout(becauseTimer);
+  if (!imdb || imdb === becauseSeed(mediaLists.find((l) => l.id === "because"), becauseChoice()).seed?.meta_id) return;
+  becauseTimer = setTimeout(async () => {
+    storage.set("orbital.because", { day: today(), imdb });
+    const { listId } = becauseSeed(mediaLists.find((l) => l.id === "because"), imdb);
+    if (!mediaItems[keyOf(listId, null)]) mediaItems[keyOf(listId, null)] = await fetchList(listId, null);
+    buildCuration();
+  }, 350);
 }
 
 const fetchList = async (id, kind) => (await api.forYouList(id, kind).catch(() => ({ items: [] }))).items || [];
@@ -1519,7 +1519,6 @@ function handleAction(action, { repeat = false } = {}) {
     case "search": return openSearch();
     case "alt": {
       if (isWatchable(item)) return openTitle(item); // X = la ficha, en todas las pantallas
-      if (item?.collection?.type === "seed" && item.collection.seeds > 1) return void nextBecause();
       const alt = alternativeRunner(item);
       if (alt) return launch(item, alt.id);
       sound.play("error"); // X sin nada que hacer: un "no" suave en vez de silencio

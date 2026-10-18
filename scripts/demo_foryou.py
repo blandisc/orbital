@@ -12,13 +12,23 @@ from orbital.library import charts as charts_api
 from orbital.library import cinemeta as cinemeta_api
 from orbital.library import trakt as trakt_api
 
+# Los géneros de Trakt de algunos títulos (para ver «Misterio y ciencia ficción, como Dark» en la demo).
+GENRES = {"tt15239678": ["Science Fiction", "Adventure", "Drama"], "tt2543164": ["Science Fiction", "Drama", "Mystery"],
+          "tt0816692": ["Science Fiction", "Adventure", "Drama"], "tt1856101": ["Science Fiction", "Thriller", "Mystery"],
+          "tt0482571": ["Mystery", "Thriller", "Drama"], "tt1160419": ["Science Fiction", "Adventure"],
+          "tt5753856": ["Mystery", "Science Fiction", "Drama"], "tt2085059": ["Science Fiction", "Thriller", "Drama"],
+          "tt14688458": ["Science Fiction", "Mystery", "Drama"], "tt4574334": ["Science Fiction", "Horror", "Drama"],
+          "tt9253284": ["Science Fiction", "Action", "Drama"], "tt7660850": ["Drama", "Comedy"],
+          "tt11280740": ["Mystery", "Science Fiction", "Drama"], "tt14452776": ["Comedy", "Drama"], "tt2788316": ["Drama", "History", "War"]}
 
 def _m(imdb, title, year, runtime):
-    return {"kind": "movie", "imdb": imdb, "title": title, "year": year, "runtime": runtime, "episodes": None, "overview": "", "trakt_id": None}
+    return {"kind": "movie", "imdb": imdb, "title": title, "year": year, "runtime": runtime, "episodes": None, "overview": "", "trakt_id": None,
+            "genres": GENRES.get(imdb, [])}
 
 
 def _s(imdb, title, year, episodes, trakt_id=None):
-    return {"kind": "series", "imdb": imdb, "title": title, "year": year, "runtime": None, "episodes": episodes, "overview": "", "trakt_id": trakt_id}
+    return {"kind": "series", "imdb": imdb, "title": title, "year": year, "runtime": None, "episodes": episodes, "overview": "", "trakt_id": trakt_id,
+            "genres": GENRES.get(imdb, [])}
 
 
 MOVIES = {

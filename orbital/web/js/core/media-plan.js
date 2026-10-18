@@ -93,17 +93,17 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
 
   const because = byId.because;
   if (because?.seed) {
-    // Cada día, otro de tus últimos cinco; X en su tarjeta pasa al siguiente (como el iPhone, que deja elegir).
+    // Como el iPhone («Mini pósters»): arriba tus últimos títulos para elegir de cuál (← → en la fila; cada día otro de los
+    // primeros cinco) y debajo lo que Trakt relaciona con el elegido, en su orden. El porqué es la semilla.
     const { seed: s, listId, seeds } = becauseSeed(because, becauseChoice);
-    const related = itemsOf(itemsById, { ...because, id: listId }, filter).filter((i) => i.meta_id !== s.meta_id); // sin el mismo título
-    // Su propio fondo y su logo (antes el héroe enseñaba el fondo del primer relacionado y el nombre en texto).
-    const art = (kind) => `https://images.metahub.space/${kind}/medium/${s.meta_id}/img`;
-    const seed = card("collection:because", s.title, { type: "seed", name: s.title, posters: [s.image], seeds: seeds.length,
-      detail: seeds.length > 1 ? "Viste hace poco" : "Lo último que viste" }, { meta_id: s.meta_id, kind: s.kind, image: art("background"), hero: art("background"),
-      extra: { eyebrow: "Porque viste", description: "", logo: art("logo") } });
+    const related = itemsOf(itemsById, { ...because, id: listId }, filter).filter((i) => i.meta_id !== s.meta_id);
+    if (seeds.length > 1) {
+      rows.push({ id: "curated:because-seeds", title: "Porque viste", seal: "trakt", group: "because", seeds: true,
+        items: seeds.map((x) => ({ ...curatedItem({ meta_id: x.meta_id, kind: x.kind, title: x.title, image: x.image, why: "Viste hace poco" }),
+          id: `seed:${x.meta_id}`, seed: x.meta_id, chosen: x.meta_id === s.meta_id })) });
+    }
     if (related.length) {
-      rows.push({ id: "curated:because", title: `Porque viste ${s.title}`, seal: "trakt", group: "because", items: [seed, ...related.slice(0, 20).map(curatedItem)],
-        seeds: seeds.length > 1 ? seeds.map((x) => ({ image: x.image, title: x.title, on: x.meta_id === s.meta_id })) : null });
+      rows.push({ id: "curated:because", title: `Porque viste ${s.title}`, seal: "trakt", group: "because", items: related.slice(0, 15).map(curatedItem) });
     }
   }
   for (const [id, seal] of [["recs", "trakt"], ["trend", "trakt"], ["popular", "trakt"], ["cinemeta", "stremio"]]) {

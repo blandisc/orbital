@@ -55,9 +55,9 @@ test("Películas y series lleva el orden del iPhone (Para ti › Listas) y sus n
   assert.equal(byId["curated:fresh"].seal, "orbital");
   // Lo partido (Series · Películas) se intercala.
   assert.deepEqual(byId["curated:recs"].items.map((i) => i.meta_id), ["a", "b"]);
-  // «Porque viste X»: primero la tarjeta de lo que viste, luego lo relacionado.
-  assert.equal(byId["curated:because"].items[0].collection.type, "seed");
-  assert.equal(byId["curated:because"].items[1].meta_id, "r1");
+  // «Porque viste X»: lo relacionado (con una sola semilla no hay fila para elegir).
+  assert.equal(byId["curated:because"].items[0].meta_id, "r1");
+  assert.equal(byId["curated:because-seeds"], undefined);
   // Filas de tarjetas centradas, como el carrusel del iPhone.
   assert.deepEqual(rows.filter((r) => r.centered).map((r) => r.group), ["platforms", "awards", "studios", "years"]);
 });
@@ -139,18 +139,18 @@ test("una fila no repite su nombre en cada título: en «En tendencia», sin «E
   assert.equal(curatedItem(it).extra.eyebrow, "En tendencia");
 });
 
-test("«Porque viste»: el de hoy, o el que elegiste con X entre tus últimos cinco", async () => {
+test("«Porque viste»: como el iPhone, arriba tus títulos para elegir y abajo lo relacionado con el elegido", async () => {
   const { becauseSeed, mediaRows } = await import("../../orbital/web/js/core/media-plan.js");
   const s = (id, title) => ({ meta_id: id, kind: "series", title, image: `p/${id}` });
   const because = { id: "because", title: "Porque viste Severance", seed: s("tt1", "Severance"), seeds: [s("tt1", "Severance"), s("tt2", "The Bear"), s("tt3", "Dark")] };
   assert.equal(becauseSeed(because).listId, "because");
   assert.equal(becauseSeed(because, "tt2").listId, "because:tt2");
-  assert.equal(becauseSeed(because, "tt9").listId, "because"); // ya no está entre los cinco: el de hoy
+  assert.equal(becauseSeed(because, "tt9").listId, "because"); // ya no está entre tus títulos: el de hoy
   const items = { "because:": [{ meta_id: "r1", kind: "series", title: "Hoy" }], "because:tt2:": [{ meta_id: "r2", kind: "series", title: "Hacks" }] };
-  const row = mediaRows([because], items, { becauseChoice: "tt2" })[0];
+  const [seeds, row] = mediaRows([because], items, { becauseChoice: "tt2" });
+  assert.equal(seeds.title, "Porque viste");
+  assert.deepEqual(seeds.items.map((x) => [x.seed, x.chosen]), [["tt1", false], ["tt2", true], ["tt3", false]]);
   assert.equal(row.title, "Porque viste The Bear");
-  assert.equal(row.items[0].collection.name, "The Bear");
-  assert.equal(row.items[1].meta_id, "r2");
-  assert.deepEqual(row.seeds.map((x) => x.on), [false, true, false]);
-  assert.equal(mediaRows([because], items)[0].items[1].meta_id, "r1");
+  assert.deepEqual(row.items.map((x) => x.meta_id), ["r2"]);
+  assert.equal(mediaRows([because], items)[1].items[0].meta_id, "r1");
 });
