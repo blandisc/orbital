@@ -89,6 +89,18 @@ def focus(hwnd: int) -> bool:
     return user32.GetForegroundWindow() == hwnd
 
 
+def is_minimized(hwnd: int) -> bool:
+    return bool(WIN and hwnd and user32.IsIconic(hwnd))
+
+
+def on_a_monitor(hwnd: int) -> bool:
+    """¿La ventana cae en alguna pantalla conectada? Al pasar de la tele a la pantalla de la Legion (o al revés) con la
+    consola dormida, una ventana puede quedarse en la pantalla que ya no está: abierta, pero en ningún lado."""
+    if not WIN or not hwnd:
+        return True
+    return bool(user32.MonitorFromWindow(wintypes.HWND(hwnd), 0))  # MONITOR_DEFAULTTONULL
+
+
 def minimize(hwnd: int) -> None:
     if is_window(hwnd):
         user32.ShowWindow(hwnd, SW_MINIMIZE)

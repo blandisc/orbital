@@ -75,6 +75,8 @@ class ConsoleShell:
         self._refocus_at = 0.0  # la última vez que se le devolvió el foco al video (ver _video_lost_focus)
         self._legion_last = 0.0
         self._legion_left: dict | None = None  # el juego que dejaste con Legion L (para el 2.º toque)
+        self._last_buttons: dict[int, int] = {}  # por puerto, para ver cuándo se presiona algo (wake_on_button)
+        self._woke_at = -999.0
         self.health = None  # HealthMonitor (memoria); se crea en start()
         self._stop = threading.Event()
 
@@ -345,9 +347,33 @@ class ConsoleShell:
         self.win.focus(video)
         return True
 
+    WAKE_EVERY = 2.0  # s: un botón trae a Orbital al frente a lo más una vez en ese rato
+
+    def wake_on_button(self, slot: int, buttons: int, now: float) -> bool:
+        """Los controles de la Legion Go no tienen Home: si otra ventana le quitó el foco a Orbital (el escritorio, una app)
+        y no hay nada abierto por Orbital, cualquier botón la trae al frente. Nunca encima de algo a pantalla completa
+        (un juego abierto por fuera de Orbital), de Stremio, de Legion Space o si saliste al escritorio a propósito."""
+        pressed = buttons and not self._last_buttons.get(slot)
+        self._last_buttons[slot] = buttons
+        kiosk = self.kiosk
+        if not pressed or kiosk is None or getattr(kiosk, "exited_by_user", False) or now - self._woke_at < self.WAKE_EVERY:
+            return False
+        if self.catalog.launcher.status():
+            return False  # un juego, un video o una app de Orbital: Home y Legion L ya saben volver
+        fg = self.win.foreground()
+        exe = self.win.exe_name(self.win.pid_of(fg)) if fg else ""
+        if not fg or self.is_orbital(fg) or exe in (LEGION_SPACE, PLAYER_EXE) or exe in REMOTE_APPS or self.win.is_fullscreen(fg):
+            return False  # Stremio y el reproductor usan el mando a través de Orbital (A pausa)
+        self._woke_at = now
+        log.info("Botón del mando con otra ventana al frente y nada abierto: Orbital al frente")
+        kiosk.open()
+        return True
+
     def on_buttons(self, slot: int, buttons: int, now: float, send=send_key) -> None:
         """Stremio no tiene soporte de mando: mientras está al frente, A pausa, la cruceta
         adelanta/regresa y sube/baja volumen, Y pantalla completa, B vuelve."""
+        if self.wake_on_button(slot, buttons, now):
+            return
         exe = self.foreground_exe(now)
         if buttons and exe != PLAYER_EXE and self._video_lost_focus(now):
             return  # el foco vuelve al video; la siguiente lectura del mando ya le llega a él
@@ -534,6 +560,11 @@ class ConsoleShell:
         if player is not None and getattr(player, "playing", False):
             player.pause()
         self.notify({"type": "resumed", "minutes": int(slept // 60)})
+        if self.kiosk is not None and hasattr(self.kiosk, "ensure_shown"):
+            # La pantalla pudo cambiar dormida (de la tele a la de la Legion): que la ventana se vea, y al frente si no
+            # había nada abierto. Unos segundos después: Windows acomoda las pantallas al despertar.
+            front = not self.catalog.launcher.status()
+            threading.Timer(4.0, lambda: self.kiosk.ensure_shown(front=front)).start()
 
     def _watch_foreground(self) -> None:
         last = previous = 0

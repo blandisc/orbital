@@ -38,6 +38,7 @@ class FakeWindows:
     def suspend(self, pids): self.suspended |= set(pids); return len(pids)
     def resume(self, pids): self.suspended -= set(pids); self.resumed.append(set(pids)); return len(pids)
     def app_windows(self): return [{"hwnd": h, "title": t, "exe": e} for h, (t, _, e) in self.windows.items()]
+    def is_fullscreen(self, h): return h == GAME  # el juego, a pantalla completa
 
     def focus(self, h):
         self.fg = h
@@ -428,3 +429,37 @@ def test_the_keyboard_has_a_home_too():
     assert hotkey.LABEL == "Ctrl + Inicio" and hotkey.VK_HOME == 0x24 and hotkey.MOD_CONTROL == 0x0002
     home.on_home()
     assert calls == ["home"]
+
+
+def test_any_button_brings_orbital_back_when_nothing_is_open():
+    """Los controles de la Legion Go no tienen Home: con otra ventana al frente (el escritorio, una app) y nada abierto,
+    cualquier botón trae a Orbital. Una vez por pulsación (mantenerlo no la vuelve a pedir)."""
+    shell, win, _ = make()
+    win.fg = DESKTOP_APP
+    assert shell.wake_on_button(0, 0, 10.0) is False  # sin botón
+    assert shell.wake_on_button(0, 0x1000, 10.1) is True and win.fg == ORBITAL  # A
+    win.fg = DESKTOP_APP
+    assert shell.wake_on_button(0, 0x1000, 10.2) is False  # sigue apretado: no cuenta otra vez
+    assert shell.wake_on_button(0, 0, 10.3) is False
+    assert shell.wake_on_button(0, 0x1000, 10.4) is False  # a menos de 2 s
+    assert shell.wake_on_button(0, 0, 13.0) is False and shell.wake_on_button(0, 0x1000, 13.1) is True
+
+
+def test_a_button_never_pulls_orbital_over_a_game_legion_space_or_the_desktop_you_chose():
+    shell, win, _ = make()
+    win.fg = GAME  # un juego abierto por fuera de Orbital, a pantalla completa
+    assert shell.wake_on_button(0, 0x1000, 10.0) is False and win.fg == GAME
+    win.fg = LEGION
+    shell.wake_on_button(0, 0, 20.0)
+    assert shell.wake_on_button(0, 0x1000, 20.1) is False
+    win.windows[DESKTOP_APP] = ("Stremio", 30, "stremio-shell-ng.exe")  # Stremio usa el mando a través de Orbital
+    win.fg = DESKTOP_APP
+    shell.wake_on_button(0, 0, 30.0)
+    assert shell.wake_on_button(0, 0x1000, 30.1) is False
+    busy, win2, _ = make(MANAGED)  # algo abierto por Orbital: Home y Legion L ya saben volver
+    win2.fg = DESKTOP_APP
+    assert busy.wake_on_button(0, 0x1000, 10.0) is False and win2.fg == DESKTOP_APP
+    away, win3, _ = make()
+    away.kiosk.exited_by_user = True  # «Salir al escritorio»
+    win3.fg = DESKTOP_APP
+    assert away.wake_on_button(0, 0x1000, 10.0) is False
