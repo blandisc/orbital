@@ -238,6 +238,11 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8730)
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="orbital-demo-") as tmp:
+        # Los diagnósticos del demo (entrada.log, voz.log) en su carpeta temporal, nunca en los de la consola de verdad.
+        from orbital import input_log, voice_log
+
+        input_log.default_path = lambda: Path(tmp) / "entrada.log"
+        voice_log.default_path = lambda: Path(tmp) / "voz.log"
         uvicorn.run(build(Path(tmp)), host="127.0.0.1", port=args.port, log_level="warning",
                     timeout_graceful_shutdown=2)  # con /api/events abierto no terminaba nunca
 
