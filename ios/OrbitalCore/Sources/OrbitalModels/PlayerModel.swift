@@ -381,8 +381,32 @@ public final class PlayerModel: ObservableModel {
         guard let request, !addedExternalSubtitle else { return }
         addedExternalSubtitle = true
         var url = request.localSubtitles.first { $0.lastPathComponent.hasPrefix(language) }
-        if url == nil && request.localFile == nil { url = await finder.subtitles(kind: request.kind, videoID: request.videoID, language: language).first }
+        // También para una descarga (si hay red): con la huella del archivo, el subtítulo de esa copia exacta.
+        if url == nil {
+            let file = request.localFile.flatMap(FileFingerprint.of)
+            url = await finder.subtitles(kind: request.kind, videoID: request.videoID, language: language, file: file).first
+        }
         if let url { await engine.addSubtitle(url: url, language: language) }
+    }
+
+    /// «Buscar en internet» (Subtítulos del reproductor): todo lo que hay en OpenSubtitles y tus complementos, por idioma.
+    public private(set) var foundSubtitles: [SubtitleOption]? { didSet { changed() } }
+    public private(set) var searchingSubtitles = false { didSet { changed() } }
+
+    public func searchSubtitles() async {
+        guard let request, !searchingSubtitles else { return }
+        searchingSubtitles = true
+        defer { searchingSubtitles = false }
+        let file = request.localFile.flatMap(FileFingerprint.of)
+        foundSubtitles = await finder.subtitleOptions(kind: request.kind, videoID: request.videoID, file: file)
+    }
+
+    /// Suma el que elegiste y lo activa.
+    public func addFoundSubtitle(_ option: SubtitleOption) async {
+        userTouched()
+        knownSubtitleIDs = Set(snapshot.subtitleTracks.map(\.id))
+        addedExternalSubtitle = true
+        await engine.addSubtitle(url: option.url, language: option.language)
     }
 
     /// El motor ya sumó el subtítulo externo: se activa.

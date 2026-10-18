@@ -14,10 +14,15 @@ struct RemoteSheet: View {
     /// completa de la pantalla, iOS la deja de vidrio translúcido como la corta (a la altura completa la vuelve opaca).
     @State private var fullHeight: CGFloat = DS.Remote.padHeight * 4
     @State private var text = ""
+    /// Lo que ya tiene la TV de lo que escribiste (para mandar solo la diferencia).
+    @State private var sentText = ""
     @StateObject private var speech = SpeechInput()
     @State private var reply: OrbitalRemote.VoiceReply?
     @State private var asking = false
     @State private var showsGuide = false
+    @State private var showsScares = false
+    /// En el reproductor o la TV en vivo, el pad va plegado (lo de arriba es lo que se usa); se abre a mano.
+    @State private var showsPad = false
     @EnvironmentObject private var env: AppEnvironment
 
     var body: some View {
@@ -49,7 +54,9 @@ struct RemoteSheet: View {
         // Vidrio en las dos alturas (la estirada no llega a la altura completa, que iOS volvería opaca).
         .presentationBackground { Rectangle().fill(.clear).glassEffect(.regular, in: Rectangle()) }
         .animation(DS.Motion.base(false), value: large)
-        .onDisappear { speech.cancel() }
+        .onDisappear { speech.cancel(); model.setRemoteOpen(false) }
+        .onAppear { model.setRemoteOpen(true) }   // con el control abierto, la TV se consulta más seguido
+        .task(id: model.now?.metaID) { await model.loadScares() }   // el mapa de sustos de la película que suena
         // Los botones de volumen del iPhone suben y bajan la TV mientras el control está abierto (como el del Apple TV).
         .background { if model.isConfigured { HardwareVolumeButtons { up in Task { await model.changeVolume(by: up ? 5 : -5) } } } }
         #if DEBUG
@@ -122,9 +129,23 @@ struct RemoteSheet: View {
                 }
             }
         } else if let now = model.now {
-            NowPlayingCard(now: now, fetchedAt: model.fetchedAt, busy: model.busy,
-                           onAction: { action, delta in Task { await model.control(action, delta: delta) } },
-                           onContinueHere: { onContinueHere(now) }, framed: false)
+            VStack(alignment: .leading, spacing: DS.Space.s3) {
+                NowPlayingCard(now: now, fetchedAt: model.fetchedAt, busy: model.busy,
+                               onAction: { action, delta in Task { await model.control(action, delta: delta) } },
+                               onContinueHere: { onContinueHere(now) }, framed: false, scares: model.scares ?? [])
+                // Una película con mapa de sustos: un toque lo abre aquí mismo (la línea de tiempo, el siguiente y el aviso).
+                if let scares = model.scares {
+                    if showsScares { ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares).transition(.opacity.combined(with: .move(edge: .top))) }
+                    Button { withAnimation(DS.Motion.base(false)) { showsScares.toggle() } } label: {
+                        Label(showsScares ? "Ocultar los sustos" : "Mapa de sustos · \(scares.count)", systemImage: showsScares ? "chevron.up" : "bolt.heart")
+                            .recipe(.footnote, color: DS.text).fontWeight(.semibold)
+                            .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+                            .background(DS.fill, in: Capsule())
+                    }
+                    .buttonStyle(.plain).frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("remote-scares")
+                }
+            }
         } else {
             HStack(spacing: DS.Space.s2) {
                 OrbitalMark(size: DS.Size.markSmall).foregroundStyle(DS.text)
@@ -133,67 +154,179 @@ struct RemoteSheet: View {
         }
     }
 
-    /// El control completo: el pad, las teclas de la consola y escribir.
+    /// El control completo, según lo que hay al frente en la TV:
+    /// - **Reproduciendo**: la línea de tiempo (con sus sustos), ±10, pausa, siguiente, subtítulos y audio; el pad plegado.
+    /// - **En vivo**: canal anterior y siguiente; el pad plegado.
+    /// - **Escribiendo** (la búsqueda o la cuenta de la TV): el campo primero, con el teclado; luego el pad.
+    /// - **Navegando**: el pad, las secciones y las teclas con lo que hace cada una en esa pantalla.
+    /// Arriba siempre la voz; el volumen en todas.
     @ViewBuilder private func full(_ model: TVNowModel) -> some View {
         VStack(spacing: DS.Space.s4) {
             if model.remoteOutdated { DSNotice(text: "Actualiza tu Orbital para usar el control completo.", tone: .warn) }
-            // La voz, como Alexa: lo mismo que «Oye Siri, dile a Orbital…».
-            HStack(spacing: DS.Space.s2) {
-                VoiceCommandBar(listening: speech.listening, transcript: speech.transcript, reply: reply, denied: speech.denied,
-                                heardNothing: speech.heardNothing, asking: asking) { listen(model) }
-                // Lo que puedes decir: donde surge la duda (de vidrio, como el resto del control).
-                Button { showsGuide = true } label: {
-                    Image(systemName: "questionmark").font(DS.TextRecipe.cardTitle.font.weight(.semibold)).foregroundStyle(DS.text)
-                        .frame(width: DS.Remote.keyHeight, height: DS.Remote.keyHeight)
-                        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-                }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(Text("Lo que puedes decir"))
-                    .accessibilityIdentifier("remote-voice-guide")
-            }
-            // El volumen de la TV (el de Windows, como Alexa): − · barra · +, y silencio.
-            VolumeControl(level: model.volume?.level, muted: model.volume?.muted ?? false,
-                          down: { Task { await model.changeVolume(by: -5) } }, up: { Task { await model.changeVolume(by: 5) } },
-                          mute: { Task { await model.toggleMute() } })
-            if model.volumeOutdated { DSNotice(text: "Actualiza tu Orbital para cambiar el volumen desde aquí.", tone: .warn) }
+            voice(model)
             if let choices = reply?.choices, !choices.isEmpty {
                 VoiceChoices(choices: choices) { choice in answer(model) { await $0.choose(choice) } }
                     .transition(.opacity)
             }
-            // Como el mando: arriba los gatillos de sección (LB / RB), al centro el pad (A al tocar), luego B · X · Y y abajo
-            // LT / RT, Inicio, ☰ y ⧉. Cada tecla dice lo que hace en la pantalla de la TV (su leyenda), si la consola lo dice.
-            HStack(spacing: DS.Space.s2) {
-                key(model, "chevron.left.2", "LB", nil, Text("Anterior"), .prevsection)
-                if let section = model.section {
-                    Text(verbatim: section).recipe(.caption, color: DS.textMuted).lineLimit(1).fixedSize()
+            switch model.context {
+            case .player:
+                if let now = model.now { playerDeck(model, now) }
+                volume(model)
+                foldedPad(model)
+            case .live:
+                liveDeck(model)
+                volume(model)
+                foldedPad(model)
+            case .typing:
+                typing(model, autoFocus: true)
+                navigation(model)
+                volume(model)
+            case .browse:
+                volume(model)
+                navigation(model)
+                typing(model, autoFocus: model.textField == true)
+            }
+        }
+        .animation(DS.Motion.base(false), value: model.context)
+    }
+
+    private func voice(_ model: TVNowModel) -> some View {
+        // La voz, como Alexa: lo mismo que «Oye Siri, dile a Orbital…».
+        HStack(spacing: DS.Space.s2) {
+            VoiceCommandBar(listening: speech.listening, transcript: speech.transcript, reply: reply, denied: speech.denied,
+                            heardNothing: speech.heardNothing, asking: asking) { listen(model) }
+            // Lo que puedes decir: donde surge la duda (como el resto de las teclas).
+            Button { showsGuide = true } label: {
+                Image(systemName: "questionmark").font(DS.TextRecipe.cardTitle.font.weight(.semibold)).foregroundStyle(DS.text)
+                    .frame(width: DS.Remote.keyHeight, height: DS.Remote.keyHeight)
+                    .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("Lo que puedes decir"))
+            .accessibilityIdentifier("remote-voice-guide")
+        }
+    }
+
+    @ViewBuilder private func volume(_ model: TVNowModel) -> some View {
+        // El volumen de la TV (el de Windows, como Alexa): − · barra · +, y silencio.
+        VolumeControl(level: model.volume?.level, muted: model.volume?.muted ?? false,
+                      down: { Task { await model.changeVolume(by: -5) } }, up: { Task { await model.changeVolume(by: 5) } },
+                      mute: { Task { await model.toggleMute() } })
+        if model.volumeOutdated { DSNotice(text: "Actualiza tu Orbital para cambiar el volumen desde aquí.", tone: .warn) }
+    }
+
+    /// Reproduciendo: la línea de tiempo (o el mapa de sustos), los botones del reproductor y sus pistas.
+    @ViewBuilder private func playerDeck(_ model: TVNowModel, _ now: OrbitalRemote.NowPlaying) -> some View {
+        if let scares = model.scares {
+            ScarePanel(now: now, fetchedAt: model.fetchedAt, scares: scares)
+        } else {
+            TimelineView(.periodic(from: model.fetchedAt, by: DS.NowPlaying.progressTick)) { context in
+                let position = now.paused ? now.position : min(now.duration, now.position + max(0, context.date.timeIntervalSince(model.fetchedAt)))
+                ScareTimeline(position: position, duration: now.duration)
+            }
+        }
+        HStack(spacing: DS.Space.s2) {
+            RemoteKey(symbol: "gobackward.10", title: Text("−10 s")) { Task { await model.control("skip", delta: -10) } }
+            RemoteKey(symbol: now.paused ? "play.fill" : "pause.fill", title: now.paused ? Text("Reanudar") : Text("Pausa")) { Task { await model.control("toggle") } }
+            RemoteKey(symbol: "goforward.10", title: Text("+10 s")) { Task { await model.control("skip", delta: 10) } }
+            if now.kind == "series" { RemoteKey(symbol: "forward.end.fill", title: Text("Siguiente")) { Task { await model.control("next") } } }
+        }
+        // Las pistas: si la consola las manda, se eligen aquí; si no, X y Y con lo que la TV diga que hacen.
+        HStack(spacing: DS.Space.s2) {
+            trackMenu(model, title: Text("Subtítulos"), symbol: "captions.bubble", action: "subtitles", tracks: now.subtitleTracks, fallback: .alt, legendKey: "alt")
+            trackMenu(model, title: Text("Audio"), symbol: "waveform", action: "audio", tracks: now.audioTracks, fallback: .options, legendKey: "options")
+            RemoteKey(symbol: "xmark", title: Text("Salir")) { Task { await model.control("stop") } }
+        }
+    }
+
+    @ViewBuilder private func trackMenu(_ model: TVNowModel, title: Text, symbol: String, action: String, tracks: [OrbitalRemote.NowPlaying.Track],
+                                        fallback: OrbitalRemote.InputAction, legendKey: String) -> some View {
+        if tracks.isEmpty {
+            key(model, symbol, nil, legendKey, title, fallback)
+        } else {
+            Menu {
+                ForEach(tracks) { t in
+                    Button { Task { await model.control(action, track: t.id) } } label: {
+                        if t.selected { Label(t.label, systemImage: "checkmark") } else { Text(verbatim: t.label) }
+                    }
                 }
-                key(model, "chevron.right.2", "RB", nil, Text("Siguiente"), .nextsection)
-            }
-            TouchPad(selectLabel: model.legend["select"]) { action in Task { await model.press(action) } }
-                .animation(DS.Motion.base(false), value: model.legend["select"])
-                // Por el alto de la pantalla (no de la hoja: la hoja mide lo que mide el control).
-                .frame(height: max(DS.Remote.padHeight, UIScreen.main.bounds.height * DS.Remote.padShare))
-            HStack(spacing: DS.Space.s2) {
-                key(model, "chevron.backward", "B", "back", Text("Atrás"), .back, hold: .home)   // mantener: al inicio
-                key(model, "square.on.square", "X", "alt", Text("Acción X"), .alt)
-                key(model, "ellipsis", "Y", "options", Text("Opciones"), .options)
-            }
-            HStack(spacing: DS.Space.s2) {
-                key(model, "backward.end", "LT", "page", Text("−5"), .pageleft)
-                key(model, "house", nil, nil, Text("Inicio"), .home)
-                key(model, "line.3.horizontal", "☰", "menu", Text("Menú"), .menu)
-                key(model, "magnifyingglass", "⧉", "search", Text("Buscar"), .search)
-                key(model, "forward.end", "RT", "page", Text("+5"), .pageright)
-            }
-            // Siempre: si la TV no tiene un campo abierto, escribir abre su búsqueda con ese texto.
-            RemoteTextField(text: $text, autoFocus: model.textField == true) { let typed = text; Task { await model.type(typed, submit: true) } }
-                .task(id: text) {
-                    // Mientras escribes, la TV lo va enseñando (sin mandar cada letra por separado).
-                    guard !text.isEmpty else { return }
-                    try? await Task.sleep(nanoseconds: DS.Remote.typeDebounce)
-                    guard !Task.isCancelled else { return }
-                    await model.type(text, submit: false)
+            } label: {
+                VStack(spacing: DS.Space.s1) {
+                    Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font)
+                    Text(verbatim: tracks.first(where: \.selected)?.label ?? "—").recipe(.caption, color: DS.textMuted).lineLimit(1)
                 }
+                .foregroundStyle(DS.text)
+                .frame(maxWidth: .infinity, minHeight: DS.Remote.keyHeight)
+                .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            }
+            .accessibilityLabel(title)
+        }
+    }
+
+    /// En vivo: canal anterior y siguiente, grandes, y silencio.
+    private func liveDeck(_ model: TVNowModel) -> some View {
+        HStack(spacing: DS.Space.s2) {
+            RemoteKey(symbol: "chevron.up", title: Text("Canal anterior")) { Task { await model.control("previous") } }
+            RemoteKey(symbol: "chevron.down", title: Text("Canal siguiente")) { Task { await model.control("next") } }
+            key(model, "list.bullet.rectangle", "Y", "options", Text("Guía"), .options)
+        }
+    }
+
+    /// El pad plegado (reproduciendo o en vivo): un renglón que lo abre para moverte por los menús de la TV.
+    @ViewBuilder private func foldedPad(_ model: TVNowModel) -> some View {
+        Button { withAnimation(DS.Motion.base(false)) { showsPad.toggle() } } label: {
+            Label(showsPad ? "Ocultar el pad" : "Moverte por la TV", systemImage: showsPad ? "chevron.up" : "hand.point.up.left")
+                .recipe(.footnote, color: DS.text).fontWeight(.semibold)
+                .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
+                .background(DS.fill, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("remote-pad-toggle")
+        if showsPad { navigation(model).transition(.opacity.combined(with: .move(edge: .top))) }
+    }
+
+    /// Navegar la interfaz de la TV: las secciones (LB / RB), el pad (A al tocar) y las teclas con lo que hace cada una.
+    @ViewBuilder private func navigation(_ model: TVNowModel) -> some View {
+        HStack(spacing: DS.Space.s2) {
+            key(model, "chevron.left.2", "LB", nil, Text("Anterior"), .prevsection)
+            if let section = model.section {
+                Text(verbatim: section).recipe(.caption, color: DS.textMuted).lineLimit(1).fixedSize()
+            }
+            key(model, "chevron.right.2", "RB", nil, Text("Siguiente"), .nextsection)
+        }
+        TouchPad(selectLabel: model.legend["select"]) { action in Task { await model.press(action) } }
+            .animation(DS.Motion.base(false), value: model.legend["select"])
+            // Por el alto de la pantalla (no de la hoja: la hoja mide lo que mide el control).
+            .frame(height: max(DS.Remote.padHeight, UIScreen.main.bounds.height * DS.Remote.padShare))
+        HStack(spacing: DS.Space.s2) {
+            key(model, "chevron.backward", "B", "back", Text("Atrás"), .back, hold: .home)   // mantener: al inicio
+            key(model, "square.on.square", "X", "alt", Text("Acción X"), .alt)
+            key(model, "ellipsis", "Y", "options", Text("Opciones"), .options)
+        }
+        HStack(spacing: DS.Space.s2) {
+            key(model, "backward.end", "LT", "page", Text("−5"), .pageleft)
+            key(model, "house", nil, nil, Text("Inicio"), .home)
+            key(model, "line.3.horizontal", "☰", "menu", Text("Menú"), .menu)
+            key(model, "magnifyingglass", "⧉", "search", Text("Buscar"), .search)
+            key(model, "forward.end", "RT", "page", Text("+5"), .pageright)
+        }
+    }
+
+    /// Escribir en la TV: si no tiene un campo abierto, abre su búsqueda con ese texto.
+    private func typing(_ model: TVNowModel, autoFocus: Bool) -> some View {
+        RemoteTextField(text: $text, autoFocus: autoFocus) {
+            let change = RemoteTyping.delta(from: sentText, to: text); sentText = text
+            Task { await model.type(change, submit: true) }
+        }
+        .task(id: text) {
+            // Mientras escribes, la TV lo va enseñando: solo lo que cambió desde lo último que se mandó (la tele agrega cada
+            // letra; mandar todo otra vez lo repetía).
+            try? await Task.sleep(nanoseconds: DS.Remote.typeDebounce)
+            guard !Task.isCancelled else { return }
+            let change = RemoteTyping.delta(from: sentText, to: text)
+            guard !change.isEmpty else { return }
+            sentText = text
+            await model.type(change, submit: false)
         }
     }
 }

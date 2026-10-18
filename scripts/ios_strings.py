@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Buscando…": "Searching…", "Buscar subtítulos": "Search subtitles", "En internet": "Online", "Línea de tiempo": "Timeline", "Mapa de sustos · %@": "Jump scare map · %@", "Moverte por la TV": "Move around the TV", "No encontré subtítulos para este video.": "I couldn't find subtitles for this video.", "Ocultar el pad": "Hide the pad", "Ocultar los sustos": "Hide the scares", "Tiempos de Where's The Jump": "Times from Where's The Jump", "Vibra unos segundos antes de cada susto": "Vibrates a few seconds before each scare", "Ya no quedan sustos": "No scares left",
     "Año (lo más nuevo primero)": "Year (newest first)", "Calidad y tamaño en equilibrio": "Balanced quality and size",
     "Atmos · 5.1": "Atmos · 5.1", "Calidad, idioma y tamaño, a tu gusto": "Quality, language and size, your way", "Cambiarla por esta fuente": "Replace it with this source", "Compartir el archivo": "Share the file", "Compresión eficiente: se ve igual y ocupa menos.": "Efficient compression: looks the same, takes less space.", "De Real-Debrid · la recomendada va primero": "From Real-Debrid · the recommended one comes first", "Dejar la que tengo": "Keep the one I have", "Del servicio de streaming: buena calidad y tamaño medio.": "From the streaming service: good quality, medium size.", "Descargado · listo para ver sin conexión": "Downloaded · ready to watch offline", "Descargando %lld episodios": "Downloading %lld episodes", "Destacado": "Featured", "Donde te quedaste": "Where you left off", "Elegir la fuente": "Choose the source", "En amarillo, las pesadas: con datos móviles te avisamos antes.": "Heavy ones are yellow: on cellular we ask first.", "Filtrar Destacado": "Filter Featured", "Grabada en el cine: mala imagen. Va hasta abajo.": "Recorded in a theater: poor picture. It goes last.", "Guardamos una sola copia. La que tienes es %@; si la cambias, se borra y se baja la nueva.": "We keep a single copy. Yours is %@; if you replace it, it’s deleted and the new one downloads.", "HDR · DV": "HDR · DV", "La copia íntegra del disco: la mejor imagen y la más pesada.": "The full disc copy: best picture, heaviest file.", "La mejor para el iPhone: calidad y tamaño en equilibrio": "Best for iPhone: balanced quality and size", "La recomendada": "The recommended one", "La que elegimos por calidad, idioma y tamaño. Es la que arranca sola.": "Our pick for quality, language and size. It’s the one that starts on its own.", "La resolución. 4K se luce en la TV; en el iPhone, 1080p ya se ve nítido.": "The resolution. 4K shines on the TV; on iPhone, 1080p already looks sharp.", "Los siguientes %@ episodios": "The next %@ episodes", "Mejor resultado": "Top result", "Más contraste y color. DV es Dolby Vision: el iPhone lo reproduce.": "More contrast and color. DV is Dolby Vision: iPhone plays it.", "Para verlos sin conexión, uno tras otro": "To watch offline, one after another", "Películas %@": "Movies %@", "Popular esta semana": "Popular this week", "Qué significa cada etiqueta": "What each tag means", "Series %@": "Shows %@", "Sonido envolvente. Con audífonos AirPods, Atmos se oye espacial.": "Surround sound. With AirPods, Atmos sounds spatial.", "Ya está en tu Real-Debrid: empieza sin esperar.": "Already in your Real-Debrid: starts right away.", "Ya la tienes descargada": "You already downloaded it",
     "Afinemos": "Let's fine-tune", "De las series que sigues": "From the shows you follow", "Encuéntrala": "Find it",
@@ -75,11 +76,11 @@ TRANSLATIONS = {
     "Tendencia": "Trending", "Top 10": "Top 10",
     "Hola": "Hi", "Hola, %@": "Hi, %@", "Cómo te llamamos": "What we call you", "Tu nombre": "Your name",
     "Actualiza tu Orbital para cambiar el volumen desde aquí.": "Update your Orbital to change the volume from here.",
-    "Alexa, pídele a mi consola que…": "Alexa, ask my console to…", "Bajar volumen": "Volume down", "Subir volumen": "Volume up", "Quitar silencio": "Unmute",
+    "Alexa, pídele a Orbital que…": "Alexa, ask Orbital to…", "Bajar volumen": "Volume down", "Subir volumen": "Volume up", "Quitar silencio": "Unmute",
     "Descargar funciona aunque estés fuera de casa.": "Downloading works even away from home.",
     "Estira el control hacia arriba y toca «Dile a Orbital». Se detiene solo cuando terminas.": "Pull the remote up and tap “Tell Orbital”. It stops on its own when you finish.",
     "Las frases de abajo funcionan igual en los tres.": "The phrases below work the same in all three.", "Oye Siri, habla con Orbital": "Hey Siri, talk to Orbital",
-    "Sin «pídele a mi consola», Alexa intenta hacerlo ella sola.": "Without “ask my console”, Alexa tries to do it herself.",
+    "Sin «pídele a Orbital», Alexa intenta hacerlo ella sola.": "Without “ask Orbital”, Alexa tries to do it herself.",
     "Y cuando pregunte, la orden. Directo: «Oye Siri, pausa Orbital».": "Then, when asked, the command. Direct: “Hey Siri, pause Orbital”.",
     "Saltar resumen": "Skip recap",
     "Lo mejor disponible": "Best available",
@@ -132,8 +133,8 @@ TRANSLATIONS = {
     "Todavía nada: aparece cuando veas algo en el iPhone.": "Nothing yet: it shows up once you watch something on the iPhone.",
     "Abrir en Infuse": "Open in Infuse", "Abrir siempre en Infuse": "Always open in Infuse", "Adelantar 10 segundos": "Forward 10 seconds",
     "Alexa": "Alexa", "Qué le puedes decir a Alexa": "What you can say to Alexa", "Cómo pedírselo": "How to ask", "Buscar una frase": "Search a phrase",
-    "Copiar": "Copy", "Si Alexa dice que no puede, empieza con «pídele a mi consola que…»: sin eso, Alexa intenta hacerlo ella sola.":
-        "If Alexa says she can't, start with “pídele a mi consola que…” (ask my console to…): without it, Alexa tries to do it herself.",
+    "Copiar": "Copy", "Si Alexa dice que no puede, empieza con «pídele a Orbital que…»: sin eso, Alexa intenta hacerlo ella sola.":
+        "If Alexa says she can't, start with “pídele a Orbital que…” (ask Orbital to…): without it, Alexa tries to do it herself.",
     "Próximos estrenos": "Upcoming episodes", "Por día": "By day", "Semana": "Week", "Hoy": "Today", "Mañana": "Tomorrow",
     "Sale hoy": "Out today", "Desde la madrugada": "Overnight", "Nada este día": "Nothing this day",
     "No sale nada en los próximos 14 días de las series que sigues.": "Nothing comes out in the next 14 days from the shows you follow.",
@@ -272,7 +273,7 @@ TRANSLATIONS = {
     "Di «Oye Siri, habla con Orbital» y, cuando pregunte, la orden. Para lo de siempre, directo: «Oye Siri, pausa Orbital» o «Oye Siri, reanuda Orbital».": "Say “Hey Siri, talk to Orbital” and, when it asks, the command. For the everyday ones, directly: “Hey Siri, pause Orbital” or “Hey Siri, resume Orbital”.",
     "Dónde hablarle": "Where to talk to it",
     "El iPhone tiene que estar en la misma red que la consola (o con Tailscale), y Orbital abierta en la TV.": "The iPhone has to be on the same network as the console (or on Tailscale), with Orbital open on the TV.",
-    "Empieza con «Alexa, pídele a mi consola que…»: sin eso, Alexa intenta hacerlo ella sola.": "Start with “Alexa, pídele a mi consola que…”: without it, Alexa tries to do it herself.",
+    "Empieza con «Alexa, pídele a Orbital que…»: sin eso, Alexa intenta hacerlo ella sola.": "Start with “Alexa, pídele a Orbital que…”: without it, Alexa tries to do it herself.",
     "En el control": "In the remote",
     "Las frases de abajo funcionan igual en los tres: las entiende tu Orbital.": "The phrases below work the same in all three: your Orbital understands them. They are in Spanish.",
     "Las teclas del mando, dichas solas.": "The controller buttons, said on their own.",

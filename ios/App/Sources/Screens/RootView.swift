@@ -60,6 +60,11 @@ struct RootView: View {
             if env.services.orbital.isConfigured { _ = try? await env.services.connectOrbital() }
         }
         .task { env.tvNow.setActive(scenePhase == .active) }
+        .task(priority: .utility) {
+            // Buscar, adelantado: lo popular de hoy y el color de su n.º 1 (el fondo de Buscar ya no tarda en aparecer).
+            await env.catalog.load()
+            await ArtTint().load(env.catalog.popular.first?.poster)
+        }
         .onChange(of: scenePhase) { _, phase in
             // «Viendo en la TV» y lo que la TV dejó para el iPhone se sondean mientras la app está activa; al irse a segundo
             // plano se le pide a iOS despertarla luego (mejor esfuerzo).

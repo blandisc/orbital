@@ -62,3 +62,28 @@ struct WideCard: View {
         .accessibilityElement(children: .combine)
     }
 }
+
+/// Un pendiente de tu watchlist: el póster chico y, a su lado, año y género, el nombre y el arranque de la sinopsis (te
+/// recuerda por qué lo guardaste). Van en dos renglones que se deslizan juntos: distinto de los pósters de «Mi lista».
+struct WatchlistCard: View {
+    let title: String
+    let poster: String?
+    var facts: String = ""
+    var overview: String = ""
+
+    var body: some View {
+        HStack(alignment: .top, spacing: DS.Space.s3) {
+            PosterView(url: poster, title: title).frame(width: DS.Editorial.watchlistPoster)
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                if !facts.isEmpty { Text(verbatim: facts).recipe(.caption, color: DS.eyebrow).fontWeight(.semibold).lineLimit(1) }
+                Text(verbatim: title).recipe(.cardTitle).lineLimit(2)
+                if !overview.isEmpty { Text(verbatim: overview).recipe(.caption, color: DS.textMuted).lineLimit(3) }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(DS.Space.s2)
+        .frame(width: DS.Editorial.watchlistWidth, alignment: .leading)
+        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+}

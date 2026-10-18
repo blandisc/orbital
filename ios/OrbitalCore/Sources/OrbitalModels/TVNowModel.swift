@@ -26,6 +26,20 @@ public final class TVNowModel: ObservableModel {
     public private(set) var legend: [String: String] = [:] { didSet { if oldValue != legend { changed() } } }
     /// La sección de la TV al frente, para «‹ Sección ›».
     public private(set) var section: String? { didSet { if oldValue != section { changed() } } }
+    /// La pantalla de la TV al frente (la manda la consola; nil en versiones viejas): el control se arma según ella.
+    public private(set) var screen: String? { didSet { if oldValue != screen { changed() } } }
+    /// Los sustos de la película que suena en la TV (Where's The Jump); nil: no hay mapa (o no es película).
+    public private(set) var scares: [JumpScare]? { didSet { if oldValue != scares { changed() } } }
+    private var scaresFor: String?
+
+    /// Qué control conviene: lo que suena, la TV en vivo, escribir o moverse por la interfaz.
+    public enum Context: Equatable, Sendable { case player, live, typing, browse }
+    public var context: Context {
+        if textField == true || screen == "search" || screen == "login" { return .typing }
+        // Con algo sonando, el reproductor manda salvo que la TV diga que estás en su interfaz (un menú, una ficha).
+        if let now, screen == nil || screen == "player" || screen == "live" { return now.live ? .live : .player }
+        return .browse
+    }
     /// El volumen de la TV (si la consola lo dice) y si tu Orbital todavía no sabe cambiarlo desde el iPhone.
     public private(set) var volume: OrbitalRemote.Volume? { didSet { if oldValue != volume { changed() } } }
     public private(set) var volumeOutdated = false { didSet { if oldValue != volumeOutdated { changed() } } }
@@ -66,13 +80,13 @@ public final class TVNowModel: ObservableModel {
         failures = 0
         self.active = active
         guard active else { return }
-        // Al volver de segundo plano, lo último que se supo puede ser viejo: la tarjeta no se queda esperando el primer sondeo.
-        if now != nil, Date().timeIntervalSince(fetchedAt) > 2 * Double(intervalNanoseconds) / 1_000_000_000 { now = nil }
+        // Al volver de segundo plano se pregunta ya (el primer sondeo va sin espera); lo último que se supo se queda mientras
+        // tanto: antes se borraba y el accesorio parpadeaba («de repente desaparece»).
         guard services.orbital.isConfigured else { now = nil; return }
         pollTask = Task { [weak self] in
             while let self, !Task.isCancelled {
                 await self.tick()
-                try? await Task.sleep(nanoseconds: self.intervalNanoseconds)
+                try? await Task.sleep(nanoseconds: self.remoteOpen ? Self.remoteInterval : self.intervalNanoseconds)
             }
         }
     }
@@ -85,6 +99,36 @@ public final class TVNowModel: ObservableModel {
     }
 
     static let freshSeconds: TimeInterval = 3
+    static let failuresToHide = 3
+    static let hideAfter: TimeInterval = 15
+    /// Con el control abierto se pregunta más seguido (la leyenda y el avance siguen a la TV).
+    static let remoteInterval: UInt64 = 1_500_000_000
+    private var remoteOpen = false
+
+    /// El control se abrió o se cerró: con él abierto, el sondeo va más rápido.
+    public func setRemoteOpen(_ open: Bool) {
+        guard remoteOpen != open else { return }
+        remoteOpen = open
+        if active { setActive(true) }
+    }
+
+    /// Los sustos de lo que suena (una película con id de IMDb), una vez por título y guardados para la próxima.
+    public func loadScares() async {
+        guard let now, !now.live, now.kind == "movie", let imdb = now.metaID, imdb.hasPrefix("tt") else { scares = nil; scaresFor = nil; return }
+        guard scaresFor != imdb else { return }
+        scaresFor = imdb
+        let key = "jumpscares.\(imdb)"
+        if let data = services.kv.data(key), let saved = try? JSONDecoder().decode([JumpScare].self, from: data) { scares = saved.isEmpty ? nil : saved; return }
+        scares = nil
+        // El nombre en inglés y el año (Cinemeta), como los escribe el sitio.
+        let meta = try? await services.cinemeta.meta(kind: "movie", id: imdb)
+        let title = meta?["name"]?.string ?? now.title
+        let year = (meta?["year"]?.string ?? meta?["releaseInfo"]?.string).flatMap { Int($0.prefix(4)) }
+        let found = await services.jumpScares.scares(title: title, year: year, imdb: imdb)
+        guard scaresFor == imdb else { return }
+        if let found { services.kv.set(key, data: try? JSONEncoder().encode(found)) }
+        scares = (found?.isEmpty ?? true) ? nil : found
+    }
 
     private func tick() async {
         do {
@@ -94,6 +138,7 @@ public final class TVNowModel: ObservableModel {
             textField = snapshot.textField
             legend = snapshot.legend
             section = snapshot.section
+            screen = snapshot.screen
             if let v = snapshot.volume { volume = v }
             failures = 0
             fetchedAt = Date()
@@ -111,7 +156,9 @@ public final class TVNowModel: ObservableModel {
             // Sin red, la consola apagada o una versión vieja: la tarjeta se va sin ruido (se reintenta solo), pero no por un
             // solo tropiezo (un sondeo lento que vence a los 12 s tampoco cuenta doble).
             failures += 1
-            if failures >= 2 { now = nil; game = nil }
+            // Unos tropiezos seguidos (Wi‑Fi que se duerme, un sondeo lento) no lo esconden: solo tras varios y un rato sin
+            // respuesta.
+            if failures >= Self.failuresToHide, Date().timeIntervalSince(fetchedAt) > Self.hideAfter { now = nil; game = nil }
         }
     }
 
@@ -153,12 +200,12 @@ public final class TVNowModel: ObservableModel {
     }
 
     /// Un botón de la tarjeta: `toggle · pause · play · skip (delta en segundos) · next · previous · stop · mute`.
-    public func control(_ action: String, delta: Double? = nil) async {
+    public func control(_ action: String, delta: Double? = nil, track: String? = nil) async {
         guard !busy else { return }
         busy = true
         defer { busy = false }
         do {
-            now = try await services.orbital.control(action: action, delta: delta)
+            now = try await services.orbital.control(action: action, delta: delta, track: track)
             fetchedAt = Date()
             tokenProblem = false
         } catch OrbitalRemote.Failure.badToken {

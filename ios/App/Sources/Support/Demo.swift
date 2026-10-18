@@ -18,7 +18,9 @@ enum Demo {
     /// `-demo-no-tv`: sin Orbital conectada (para probar el QR: `xcrun simctl openurl booted "orbital-ios://pair?u=https%3A%2F%2Ftv.demo.invalid&t=demo"`).
     static var noTV: Bool { ProcessInfo.processInfo.arguments.contains("-demo-no-tv") }
     /// `-demo-tv-now`: la tarjeta «Viendo en la TV» con datos de mentira (para verla en el simulador).
-    static var tvNow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tv-now") }
+    static var tvNow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tv-now") || horror }
+    /// `-demo-tv-horror`: en la TV suena Insidious (con mapa de sustos de verdad) y la TV está en su reproductor.
+    static var horror: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tv-horror") }
     /// `-demo-game`: la consola de mentira tiene un juego abierto (modo acompañante).
     static var game: Bool { ProcessInfo.processInfo.arguments.contains("-demo-game") }
 
@@ -74,6 +76,22 @@ enum Demo {
     static var mode: String? { value(after: "-demo-mode") }
     /// `-demo-lang en`: idioma de la app.
     static var language: String? { value(after: "-demo-lang") }
+    /// `-demo-downloads`: Descargas con una película, dos episodios y una a medias (para ver y deslizar los renglones).
+    static var downloads: [DownloadItem] {
+        guard ProcessInfo.processInfo.arguments.contains("-demo-downloads") else { return [] }
+        func item(_ kind: String, _ meta: String, _ video: String, _ title: String, _ sub: String, _ state: DownloadState, _ release: String) -> DownloadItem {
+            var d = DownloadItem(id: DownloadItem.makeID(metaID: meta, videoID: video), kind: kind, metaID: meta, videoID: video, title: title, originalTitle: title,
+                                 subtitle: sub, poster: "https://images.metahub.space/poster/medium/\(meta)/img", addon: "Torrentio", release: release,
+                                 sourceIndex: 0, expectedBytes: 2_400_000_000, relativePath: "\(meta)/\(video).mkv", createdAt: 0)
+            d.state = state; d.writtenBytes = state == .done ? 2_400_000_000 : 900_000_000
+            return d
+        }
+        return [item("movie", "tt1160419", "tt1160419", "Dune", "", .done, "Dune.2021.1080p.WEB-DL"),
+                item("movie", "tt15239678", "tt15239678", "Dune: Parte dos", "", .paused, "Dune.Part.Two.2160p.WEB-DL"),
+                item("series", "tt0386676", "tt0386676:2:5", "The Office", "T2 · E5", .done, "The.Office.S02E05.720p"),
+                item("series", "tt0386676", "tt0386676:2:6", "The Office", "T2 · E6", .done, "The.Office.S02E06.720p")]
+    }
+
     /// `-demo-search dune`: escribe eso en Buscar (pestaña Ver).
     static var search: String? { value(after: "-demo-search") }
     /// `-demo-open settings|sources|play`: lo que se abre encima de la ficha o de Inicio.
@@ -351,6 +369,16 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         }
         guard Demo.tvNow else {
             return HTTPResponse(status: 200, data: JSON.object(["playing": .null, "inbox": .array(inbox)]).serialized())
+        }
+        if Demo.horror {
+            let movie: JSON = .object(["kind": .string("movie"), "live": .bool(false), "meta_id": .string("tt1591095"), "video_id": .string("tt1591095"),
+                                       "title": .string("Insidious"), "poster": .string("https://images.metahub.space/poster/medium/tt1591095/img"),
+                                       "position": .double(1300 + nowPlayingPosition), "duration": .double(6180), "paused": .bool(nowPlayingPaused),
+                                       "tracks": ["audio": [["id": "1", "label": "Inglés 5.1", "selected": true], ["id": "2", "label": "Español", "selected": false]],
+                                                  "subtitles": [["id": "0", "label": "Sin subtítulos", "selected": false], ["id": "3", "label": "Español", "selected": true]]]])
+            let playerUI: JSON = ["screen": "player", "text_field": false, "section": "Películas y series", "legend": ["alt": "Subtítulos", "options": "Audio"],
+                                  "volume": ["level": .int(demoVolume), "muted": .bool(demoMuted)]]
+            return HTTPResponse(status: 200, data: JSON.object(["playing": movie, "inbox": .array(inbox), "ui": playerUI]).serialized())
         }
         let playing: JSON = .object(["kind": .string("series"), "live": .bool(false), "meta_id": .string("tt0386676"),
                                      "video_id": .string("tt0386676:2:5"), "title": .string("The Office"),

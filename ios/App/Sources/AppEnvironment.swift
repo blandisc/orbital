@@ -13,6 +13,8 @@ final class AppEnvironment: ObservableObject {
     /// «Viendo en la TV» y lo que la TV le deja al iPhone («Enviar» / «Descargar en el iPhone»): un solo sondeo para toda la app,
     /// no uno por pantalla (así una descarga mandada desde la TV arranca aunque estés en otra pestaña).
     private(set) var tvNow: TVNowModel!
+    /// Lo popular de Buscar: uno para toda la app, pedido al abrirla (Buscar ya lo encuentra listo, con su color).
+    private(set) var catalog: CatalogModel!
     private(set) var inbox: InboxModel!
     private var servicesSubscription: ObservableModel.Subscription?
     let connectivity = Connectivity.shared
@@ -108,6 +110,7 @@ final class AppEnvironment: ObservableObject {
         inbox = InboxModel(services)
         tvNow = TVNowModel(services)
         tvNow.inbox = inbox
+        catalog = CatalogModel(services)
         inbox.onEvent = { [weak self] event in self?.announce(event) }
         Task { await services.downloads.start() }
         let settings = services.settings
@@ -128,7 +131,7 @@ final class AppEnvironment: ObservableObject {
             Demo.prefillScrobble(kv)
             let services = Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),
                                     downloadTransport: transport, downloadsRoot: FileManager.default.temporaryDirectory.appendingPathComponent("demo-downloads"),
-                                    freeSpace: { DiskSpace.freeBytes() })
+                                    savedDownloads: Demo.downloads, freeSpace: { DiskSpace.freeBytes() })
             services.forYouFromConsole = Demo.console   // la ruta de la consola, para verla con la Orbital de mentira
             return services
         }

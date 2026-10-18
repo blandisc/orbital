@@ -258,18 +258,24 @@ struct CenteredCarousel<Item, ID: Hashable, Card: View>: View {
 struct Reflection: ViewModifier {
     var weight: Color?
     func body(content: Content) -> some View {
-        VStack(spacing: DS.Collections.reflectionGap) {
-            content
-                .shadow(color: (weight ?? .clear).opacity(DS.Collections.weightTint), radius: DS.Collections.weight, y: DS.Collections.weightY)
-            content
-                .scaleEffect(x: 1, y: -1)
-                .frame(height: DS.Collections.reflection, alignment: .top)
-                .clipped()
-                .blur(radius: DS.Collections.reflectionBlur)
-                .mask(LinearGradient(colors: [DS.text.opacity(DS.Collections.reflectionOpacity), .clear], startPoint: .top, endPoint: .bottom))
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-        }
+        content
+            .shadow(color: (weight ?? .clear).opacity(DS.Collections.weightTint), radius: DS.Collections.weight, y: DS.Collections.weightY)
+            // La copia volteada va encima del mismo tamaño que el original (un `overlay` le da su ancho y alto): antes se le daban
+            // 44 pt de alto y un póster, que guarda su proporción, se encogía a lo ancho (el reflejo «estrecho»). Su borde de
+            // arriba se pega al de abajo del original y solo se ve una franja que se desvanece.
+            .overlay(alignment: .bottom) {
+                content
+                    .scaleEffect(x: 1, y: -1)
+                    .blur(radius: DS.Collections.reflectionBlur)
+                    .mask(alignment: .top) {
+                        LinearGradient(colors: [DS.text.opacity(DS.Collections.reflectionOpacity), .clear], startPoint: .top, endPoint: .bottom)
+                            .frame(height: DS.Collections.reflection)
+                    }
+                    .alignmentGuide(.bottom) { d in d[.top] - DS.Collections.reflectionGap }
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+            .padding(.bottom, DS.Collections.reflection + DS.Collections.reflectionGap)
     }
 }
 

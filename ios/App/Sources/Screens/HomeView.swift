@@ -56,12 +56,7 @@ struct HomeView: View {
                 }
                 // Primero lo pendiente (tu watchlist), luego lo que sale y al final lo que guardaste; cada renglón con su porqué
                 // arriba, su sello de origen y su reflejo (el peso del carrusel de arriba).
-                if !model.traktPending.isEmpty {
-                    Rail(title: "Tu watchlist", count: model.traktPending.count, route: HomeListRoute(id: "watchlist"),
-                         eyebrow: Text("Lo que dejaste pendiente"), source: .trakt) {
-                        ForEach(model.traktPending) { s in TitleLink(route: s.route).reflected() }
-                    }
-                }
+                if !model.traktPending.isEmpty { watchlist(model) }
                 if !model.upcoming.isEmpty { upcoming(model) }
                 if !model.myList.isEmpty {
                     Rail(title: "Mi lista", count: model.myList.count, route: HomeListRoute(id: "mylist"),
@@ -300,6 +295,33 @@ struct HomeView: View {
                             }
                             Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { Task { await model.dismiss(item) } }
                         }
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+        }
+    }
+
+    /// «Tu watchlist»: tarjetas con póster, datos y sinopsis en dos renglones que se deslizan juntos (cada renglón de Inicio
+    /// con su forma: el destacado en carrusel, lo que sigues en panorámicas, lo pendiente en fichas y Mi lista en pósters).
+    private func watchlist(_ model: HomeModel) -> some View {
+        let language = env.services.appSettings.uiLanguage
+        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+            NavigationLink(value: HomeListRoute(id: "watchlist")) {
+                DSSectionHead(title: Text("Tu watchlist"), count: model.traktPending.count, chevron: true, source: .trakt, eyebrow: Text("Lo que dejaste pendiente"))
+            }
+            .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHGrid(rows: [GridItem(.fixed(DS.Editorial.watchlistPoster / DS.Poster.aspect + 2 * DS.Space.s2), spacing: DS.Space.s3),
+                                 GridItem(.fixed(DS.Editorial.watchlistPoster / DS.Poster.aspect + 2 * DS.Space.s2))], spacing: DS.Space.s3) {
+                    ForEach(model.traktPending) { s in
+                        let facts = [s.year.map(String.init), Vocabulary.genres(s.genres, language: language).first].compactMap { $0 }.joined(separator: " · ")
+                        NavigationLink(value: s.route) {
+                            WatchlistCard(title: s.title, poster: s.poster, facts: facts, overview: s.overview).titleZoomSource(s.route)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .scrollTargetLayout()

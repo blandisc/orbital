@@ -78,15 +78,37 @@ struct DecideView: View {
         }
     }
 
+    /// Tres carteles lado a lado (la elegida, resaltada); debajo, su nombre, sus datos y por qué verla; luego Ver, Barajar
+    /// (otras tres) y «⋯».
     @ViewBuilder private func proposal(_ m: DecideModel) -> some View {
         if let s = m.pick {
             let facts = why(s, m)
-            CoverCard(art: s.wide, logo: s.logo, title: s.title, why: facts.isEmpty ? Text(badgeKey(s.reason)) : Text(verbatim: facts),
-                      detail: facts.isEmpty ? nil : Text(badgeKey(s.reason)),
-                      height: stage == .quick ? DS.Decide.cardHeight : DS.Decide.compactCardHeight)   // al elegir, más chica: caben las opciones
-                .onTapGesture { dismiss(); open(s.route) }
-            // Por qué verla: el arranque de su sinopsis.
-            if stage == .quick, let pitch = pitch(s) { Text(verbatim: pitch).recipe(.footnote, color: DS.textMuted).lineLimit(2) }
+            HStack(spacing: DS.Space.s3) {
+                ForEach(m.picks) { option in
+                    let chosen = option.imdb == s.imdb
+                    Button { withAnimation(DS.Motion.base(false)) { m.select(option) } } label: {
+                        PosterView(url: option.poster, title: option.title)
+                            .overlay(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                                .strokeBorder(chosen ? DS.accent : .clear, lineWidth: DS.Decide.chosenStroke))
+                            .scaleEffect(chosen ? 1 : DS.Decide.otherScale)
+                            .opacity(chosen ? 1 : DS.Decide.otherOpacity)
+                    }
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityLabel(Text(verbatim: option.title))
+                    .accessibilityAddTraits(chosen ? .isSelected : [])
+                }
+            }
+            .frame(maxHeight: stage == .quick ? nil : DS.Decide.trioCompactHeight)
+            .sensoryFeedback(.selection, trigger: s.imdb)
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                Text(verbatim: s.title).recipe(.cardTitle).lineLimit(1)
+                Text(verbatim: facts.isEmpty ? "" : facts).recipe(.footnote, color: DS.accent).fontWeight(.semibold).lineLimit(1)
+                // Por qué verla: el arranque de su sinopsis.
+                if stage == .quick, let pitch = pitch(s) { Text(verbatim: pitch).recipe(.footnote, color: DS.textMuted).lineLimit(2) }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture { dismiss(); open(s.route) }
             HStack(spacing: DS.Space.s3) {
                 Button {
                     dismiss()
@@ -106,9 +128,12 @@ struct DecideView: View {
         } else if m.exhausted {
             DSNotice(text: "No encontré una con eso: prueba con otro filtro o más tiempo.")
         } else {
-            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous).fill(DS.fill)
-                .frame(height: DS.Decide.cardHeight)
-                .overlay { ProgressView() }
+            HStack(spacing: DS.Space.s3) {
+                ForEach(0..<DecideModel.trio, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous).fill(DS.fill).aspectRatio(DS.Poster.aspect, contentMode: .fit)
+                }
+            }
+            .overlay { ProgressView() }
         }
     }
 

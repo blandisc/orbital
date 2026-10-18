@@ -698,6 +698,10 @@ final class ArtTint: ObservableObject {
     /// Lo último que se pidió: gana siempre (un arte anterior que llega tarde no pinta encima del de ahora).
     private var requested: String?
 
+    init() {}
+    /// Con el color ya sabido de ese arte (si se calculó antes): la pantalla aparece ya pintada, sin esperar ni fundirse.
+    init(cachedFor url: String?) { colors = url.flatMap { Self.cache[$0] } }
+
     func load(_ url: String?) async {
         requested = url
         guard let url, let u = URL(string: url) else { colors = nil; return }

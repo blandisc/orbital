@@ -28,7 +28,7 @@ struct DownloadsView: View {
             }
             if !model.active.isEmpty {
                 Section { ForEach(model.active) { row($0, model) } } header: { DSSectionHead(title: "Descargando", count: model.active.count) }
-                    .listRowBackground(DS.surface)
+                    .downloadCard()
             }
             // Listo para ver: series (una fila cada una; dentro, sus temporadas y episodios) y películas, aparte.
             if !model.readySeries.isEmpty {
@@ -40,7 +40,7 @@ struct DownloadsView: View {
                 } header: {
                     DSSectionHead(title: Text("Series"), trailing: Text(verbatim: bytes(model.readySeries.reduce(0) { $0 + $1.bytes })))
                 }
-                .listRowBackground(DS.surface)
+                .downloadCard()
             }
             if !model.readyMovies.isEmpty {
                 Section {
@@ -52,7 +52,7 @@ struct DownloadsView: View {
                 } header: {
                     DSSectionHead(title: Text("Películas"), trailing: Text(verbatim: bytes(model.readyMovies.reduce(0) { $0 + $1.bytes })))
                 }
-                .listRowBackground(DS.surface)
+                .downloadCard()
             }
             if !model.items.isEmpty {
                 Section {
@@ -74,6 +74,7 @@ struct DownloadsView: View {
                 }
             }
         }
+        .listRowSpacing(DS.Space.s2)
         .tint(DS.accent)   // interruptores y botones de la lista: el acento (lo interactivo)
         .scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
         .navigationTitle("Descargas").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
@@ -209,12 +210,13 @@ struct DownloadSeriesView: View {
                             .swipeActions { Button("Borrar", role: .destructive) { Task { for item in season.items { await observer.model.remove(item.id) } } }.tint(DS.danger) }
                         }
                     }
-                    .listRowBackground(DS.surface)
+                    .downloadCard()
                 }
             } else if let season = group?.seasons.first {
                 DownloadSeasonView(observer: observer, metaID: metaID, season: season.number)
             }
         }
+        .listRowSpacing(DS.Space.s2)
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle(Text(verbatim: group?.title ?? "")).navigationBarTitleDisplayMode(.inline)
     }
@@ -254,8 +256,9 @@ struct DownloadSeasonView: View {
                     }
                 }
             } header: { if season > 0 { Text("Temporada \(season)") } }
-            .listRowBackground(DS.surface)
+            .downloadCard()
         }
+        .listRowSpacing(DS.Space.s2)
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle(Text(verbatim: group?.title ?? "")).navigationBarTitleDisplayMode(.inline)
     }
@@ -273,3 +276,14 @@ struct DownloadedFile: Transferable {
         }
     }
 }
+
+extension View {
+    /// Cada renglón que se desliza para borrar es su propia tarjeta redondeada (con aire entre una y otra): al deslizar se
+    /// mueve completa, con sus esquinas (con el fondo de la sección, la orilla quedaba recta, como tapada).
+    func downloadCard() -> some View {
+        listRowBackground(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous).fill(DS.surface))
+            .listRowSeparator(.hidden)
+            .listSectionSpacing(DS.Space.s4)
+    }
+}
+

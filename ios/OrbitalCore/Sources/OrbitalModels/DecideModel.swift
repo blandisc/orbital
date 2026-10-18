@@ -19,6 +19,9 @@ public final class DecideModel: ObservableModel {
     }
 
     public private(set) var pick: Suggestion? { didSet { changed() } }
+    /// Las tres que se proponen a la vez (carteles lado a lado); `pick` es la elegida de ellas.
+    public private(set) var picks: [Suggestion] = [] { didSet { changed() } }
+    public static let trio = 3
     /// Por qué esta: la duración y lo que coincide («58 min · ligera»).
     public private(set) var minutes: Int? { didSet { changed() } }
     /// La calificación de IMDb de la propuesta, si se conoce.
@@ -165,8 +168,23 @@ public final class DecideModel: ObservableModel {
     /// La siguiente que cabe. Lo que ya trae su género, duración, año y calificación se decide al momento; lo demás se le
     /// pregunta a Cinemeta, unas cuantas a la vez, con un tiempo máximo: si se acaba, la más cercana.
     public func next() async {
-        await search()
-        await enrichPick()
+        var found: [Suggestion] = []
+        for _ in 0..<Self.trio {
+            await search()
+            guard let p = pick, !found.contains(where: { $0.imdb == p.imdb }) else { break }
+            found.append(p)
+        }
+        // Las tres con sus datos (duración, calificación), de una vez; la primera queda elegida.
+        await describe(found)
+        picks = found
+        if let first = found.first { select(first) } else { pick = nil }
+    }
+
+    /// Tocar uno de los tres carteles: esa es la propuesta.
+    public func select(_ s: Suggestion) {
+        pick = s
+        minutes = s.runtime ?? details[s.imdb]?.minutes
+        imdbRating = details[s.imdb]?.rating
     }
 
     private func search() async {
@@ -237,6 +255,19 @@ public final class DecideModel: ObservableModel {
             var skipped = notTodayRaw()
             skipped[pick.imdb] = services.now().timeIntervalSince1970
             services.kv.set(Self.skipKey, data: try? JSONEncoder().encode(skipped))
+            // Solo esa se cambia por otra; las otras dos se quedan.
+            let current = pick.imdb
+            let others = picks.filter { $0.imdb != current }
+            await search()
+            if let fresh = self.pick, !others.contains(where: { $0.imdb == fresh.imdb }) {
+                await describe([fresh])
+                picks = picks.map { $0.imdb == current ? fresh : $0 }
+                select(fresh)
+            } else {
+                picks = others
+                if let first = others.first { select(first) }
+            }
+            return
         }
         await next()
     }

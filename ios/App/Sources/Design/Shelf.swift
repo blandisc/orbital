@@ -77,13 +77,12 @@ struct RankedPosterCard: View {
     }
 
     private var numberAndPoster: some View {
-        HStack(alignment: .bottom, spacing: -DS.Space.s5) {
+        // El «10», del mismo tamaño que las demás: sus cifras más juntas y el póster le tapa un poco más el cero (como Netflix).
+        HStack(alignment: .bottom, spacing: rank >= 10 ? -DS.Size.rankTwoDigitsOverlap : -DS.Space.s5) {
             Text(verbatim: "\(rank)").font(DS.Size.rankFont).foregroundStyle(tint.map { $0.opacity(DS.PlatformFan.numberTint) } ?? DS.ink500)
                 .shadow(color: tint ?? .clear, radius: DS.PlatformFan.numberGlow)
                 .tracking(rank >= 10 ? DS.Size.rankTwoDigitsTracking : 0)
                 .lineLimit(1).fixedSize()
-                .scaleEffect(x: rank >= 10 ? DS.Size.rankTwoDigits : 1, anchor: .trailing)   // el «10», más angosto
-                .frame(width: DS.Size.rankColumn, alignment: .trailing)   // todas las cifras en la misma columna
                 .padding(.bottom, -DS.Space.s3)   // la cifra se apoya en la base del póster (sin el hueco del renglón)
                 .accessibilityHidden(true)
             PosterView(url: poster, title: title).frame(width: width)

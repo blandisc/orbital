@@ -518,13 +518,13 @@
         }
       }
     },
-    "Alexa, pídele a mi consola que…": {
+    "Alexa, pídele a Orbital que…": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Alexa, ask my console to…"
+            "value": "Alexa, ask Orbital to…"
           }
         }
       }
@@ -903,6 +903,17 @@
         }
       }
     },
+    "Buscando…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Searching…"
+          }
+        }
+      }
+    },
     "Buscar": {
       "extractionState": "manual",
       "localizations": {
@@ -932,6 +943,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Search movies and series"
+          }
+        }
+      }
+    },
+    "Buscar subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search subtitles"
           }
         }
       }
@@ -2619,13 +2641,13 @@
         }
       }
     },
-    "Empieza con «Alexa, pídele a mi consola que…»: sin eso, Alexa intenta hacerlo ella sola.": {
+    "Empieza con «Alexa, pídele a Orbital que…»: sin eso, Alexa intenta hacerlo ella sola.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Start with “Alexa, pídele a mi consola que…”: without it, Alexa tries to do it herself."
+            "value": "Start with “Alexa, pídele a Orbital que…”: without it, Alexa tries to do it herself."
           }
         }
       }
@@ -2692,6 +2714,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "In the remote"
+          }
+        }
+      }
+    },
+    "En internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Online"
           }
         }
       }
@@ -4258,6 +4291,17 @@
         }
       }
     },
+    "Línea de tiempo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timeline"
+          }
+        }
+      }
+    },
     "Manda una orden a tu Orbital, como a Alexa: «pon The Office», «pausa», «abre Zelda».": {
       "extractionState": "manual",
       "localizations": {
@@ -4265,6 +4309,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Send a command to your Orbital, like to Alexa: “play The Office”, “pause”, “open Zelda”."
+          }
+        }
+      }
+    },
+    "Mapa de sustos · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jump scare map · %@"
           }
         }
       }
@@ -4452,6 +4507,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Engine"
+          }
+        }
+      }
+    },
+    "Moverte por la TV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move around the TV"
           }
         }
       }
@@ -4672,6 +4738,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't find another one: try another mood or more time."
+          }
+        }
+      }
+    },
+    "No encontré subtítulos para este video.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find subtitles for this video."
           }
         }
       }
@@ -5105,6 +5182,17 @@
         }
       }
     },
+    "Ocultar el pad": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide the pad"
+          }
+        }
+      }
+    },
     "Ocultar lo que ya vi": {
       "extractionState": "manual",
       "localizations": {
@@ -5112,6 +5200,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hide what I've watched"
+          }
+        }
+      }
+    },
+    "Ocultar los sustos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide the scares"
           }
         }
       }
@@ -6348,13 +6447,13 @@
         }
       }
     },
-    "Si Alexa dice que no puede, empieza con «pídele a mi consola que…»: sin eso, Alexa intenta hacerlo ella sola.": {
+    "Si Alexa dice que no puede, empieza con «pídele a Orbital que…»: sin eso, Alexa intenta hacerlo ella sola.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "If Alexa says she can't, start with “pídele a mi consola que…” (ask my console to…): without it, Alexa tries to do it herself."
+            "value": "If Alexa says she can't, start with “pídele a Orbital que…” (ask Orbital to…): without it, Alexa tries to do it herself."
           }
         }
       }
@@ -6590,13 +6689,13 @@
         }
       }
     },
-    "Sin «pídele a mi consola», Alexa intenta hacerlo ella sola.": {
+    "Sin «pídele a Orbital», Alexa intenta hacerlo ella sola.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Without “ask my console”, Alexa tries to do it herself."
+            "value": "Without “ask Orbital”, Alexa tries to do it herself."
           }
         }
       }
@@ -6960,6 +7059,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Finish the command"
+          }
+        }
+      }
+    },
+    "Tiempos de Where's The Jump": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Times from Where's The Jump"
           }
         }
       }
@@ -7712,6 +7822,17 @@
         }
       }
     },
+    "Vibra unos segundos antes de cada susto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vibrates a few seconds before each scare"
+          }
+        }
+      }
+    },
     "Viendo": {
       "extractionState": "manual",
       "localizations": {
@@ -7851,6 +7972,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "You already downloaded it"
+          }
+        }
+      }
+    },
+    "Ya no quedan sustos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No scares left"
           }
         }
       }

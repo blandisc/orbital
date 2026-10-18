@@ -86,3 +86,20 @@ final class StreamFinderTests: XCTestCase {
         XCTAssertEqual(subs.map(\.absoluteString), ["https://s.example/es.srt", "https://s.example/es2.srt"])
     }
 }
+
+final class FileFingerprintTests: XCTestCase {
+    func testOpenSubtitlesHashIsSizePlusHeadAndTailSums() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("fp-\(UUID().uuidString).bin")
+        var data = Data(count: 200_000)
+        data[0] = 1          // primer bloque: +1
+        data[199_992] = 2    // último bloque: +2 (en el byte menos significativo de su palabra)
+        try data.write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let fp = try XCTUnwrap(FileFingerprint.of(url))
+        XCTAssertEqual(fp.size, 200_000)
+        XCTAssertEqual(fp.hash, String(format: "%016llx", UInt64(200_000 + 1 + 2)))
+        let small = FileManager.default.temporaryDirectory.appendingPathComponent("fp-small.bin")
+        try Data(count: 10).write(to: small)
+        XCTAssertNil(FileFingerprint.of(small))
+    }
+}

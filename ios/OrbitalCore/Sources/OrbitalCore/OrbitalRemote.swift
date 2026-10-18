@@ -116,6 +116,17 @@ public struct OrbitalRemote: Sendable {
         public var logo: String?
         /// Lo que se pinta: en vivo, el logotipo del canal (si no hay, el póster); si no, el póster.
         public var art: String? { live ? (logo ?? poster) : poster }
+        /// Las pistas de audio y subtítulos del reproductor (versiones de la consola que las mandan); vacío: no se sabe.
+        public var audioTracks: [Track] = [], subtitleTracks: [Track] = []
+
+        public struct Track: Sendable, Equatable, Identifiable {
+            public var id: String, label: String, selected: Bool
+            public init(id: String, label: String, selected: Bool) { self.id = id; self.label = label; self.selected = selected }
+            static func parse(_ json: JSON) -> Track? {
+                guard let id = json["id"].flatMap({ $0.string ?? $0.intValue.map(String.init) }) else { return nil }
+                return Track(id: id, label: json["label"]?.nonEmptyString ?? json["lang"]?.nonEmptyString ?? id, selected: json["selected"]?.bool ?? false)
+            }
+        }
 
         public init(kind: String, live: Bool, metaID: String? = nil, videoID: String? = nil, title: String,
                     episodeLabel: String = "", poster: String? = nil, position: Double = 0, duration: Double = 0,
@@ -139,6 +150,8 @@ public struct OrbitalRemote: Sendable {
                               channel: json["channel"]?.string, number: json["number"]?.intValue, category: json["category"]?.string,
                               muted: json["muted"]?.bool ?? false, season: json["season"]?.intValue, episode: json["episode"]?.intValue)
             now.logo = json["logo"]?.nonEmptyString
+            now.audioTracks = (json["tracks"]?["audio"]?.array ?? []).compactMap(Track.parse)
+            now.subtitleTracks = (json["tracks"]?["subtitles"]?.array ?? []).compactMap(Track.parse)
             return now
         }
     }
@@ -267,6 +280,8 @@ public struct OrbitalRemote: Sendable {
         public var legend: [String: String]
         /// La sección de la TV al frente («Inicio», «Juegos», «Películas y series», «Apps»).
         public var section: String?
+        /// La pantalla al frente: «search», «login», «menu», «title», «sources», «player», «live» o la sección («home»…).
+        public var screen: String?
 
         public init(playing: NowPlaying?, inbox: [InboxItem], textField: Bool? = nil, legend: [String: String] = [:], section: String? = nil) {
             self.playing = playing; self.inbox = inbox; self.textField = textField; self.legend = legend; self.section = section
@@ -282,6 +297,7 @@ public struct OrbitalRemote: Sendable {
                                 textField: json?["ui"]?["text_field"]?.bool,
                                 legend: (json?["ui"]?["legend"]?.object ?? [:]).compactMapValues { $0.nonEmptyString },
                                 section: json?["ui"]?["section"]?.nonEmptyString)
+        snapshot.screen = json?["ui"]?["screen"]?.nonEmptyString
         snapshot.volume = Volume.parse(json?["ui"]?["volume"] ?? json?["volume"])
         snapshot.game = Game.parse(json?["game"]).map(absolute)
         return snapshot
@@ -391,9 +407,10 @@ public struct OrbitalRemote: Sendable {
     /// Un botón de la tarjeta: `toggle · pause · play · skip (con delta en segundos) · next · previous · stop · mute`.
     /// Devuelve lo que quedó viendo (nil si se detuvo).
     @discardableResult
-    public func control(action: String, delta: Double? = nil) async throws -> NowPlaying? {
+    public func control(action: String, delta: Double? = nil, track: String? = nil) async throws -> NowPlaying? {
         var body: [String: JSON] = ["action": .string(action)]
         if let delta { body["delta"] = .double(delta) }
+        if let track { body["track"] = .string(track) }
         let json = try await send("api/companion/player", method: "POST", body: JSON.object(body).serialized())
         guard let playing = json?["playing"], !playing.isNull else { return nil }
         return NowPlaying.parse(playing).map(absolute)
@@ -434,3 +451,14 @@ public struct OrbitalRemote: Sendable {
         }
     }
 }
+
+/// «Escribir en la TV»: la tele agrega cada letra que recibe al campo con foco (y «\u{8}» borra una). Mandar el texto completo
+/// en cada cambio lo repetía («hola» → «holahola mundo»): se manda solo la diferencia con lo ya enviado.
+public enum RemoteTyping {
+    /// Borrados («\u{8}») hasta lo que tienen en común y luego lo nuevo.
+    public static func delta(from sent: String, to text: String) -> String {
+        let common = zip(sent, text).prefix { $0 == $1 }.count
+        return String(repeating: "\u{8}", count: sent.count - common) + String(text.dropFirst(common))
+    }
+}
+

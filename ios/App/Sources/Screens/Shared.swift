@@ -149,6 +149,8 @@ struct NowPlayingCard: View {
     let onContinueHere: () -> Void
     /// Con su caja (en Inicio). En la hoja del control remoto, sin caja: la hoja ya es el contenedor.
     var framed = true
+    /// Los sustos de la película (si hay mapa): marcados en la barra de avance.
+    var scares: [JumpScare] = []
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var tap = 0
 
@@ -190,7 +192,8 @@ struct NowPlayingCard: View {
                     Text(timeLeftText(minutes: left)).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint).lineLimit(1)
                 }
                 TimelineView(.periodic(from: fetchedAt, by: DS.NowPlaying.progressTick)) { context in
-                    DSProgress(fraction: now.duration > 0 ? interpolatedPosition(at: context.date) / now.duration : 0)
+                    if scares.isEmpty { DSProgress(fraction: now.duration > 0 ? interpolatedPosition(at: context.date) / now.duration : 0) }
+                    else { ScareTimeline(position: interpolatedPosition(at: context.date), duration: now.duration, scares: scares) }
                 }
             }
         }
@@ -225,7 +228,7 @@ struct NowPlayingCard: View {
             actionButton(symbol: "gobackward.10", text: "Retroceder 10 segundos", labeled: labeled) { act("skip", -10) }
             actionButton(symbol: now.paused ? "play.fill" : "pause.fill", text: now.paused ? "Reanudar" : "Pausa", prominent: true, labeled: labeled) { act("toggle") }
             actionButton(symbol: "goforward.10", text: "Adelantar 10 segundos", labeled: labeled) { act("skip", 10) }
-            actionButton(symbol: "forward.end.fill", text: "Siguiente episodio", labeled: labeled) { act("next") }
+            if now.kind == "series" { actionButton(symbol: "forward.end.fill", text: "Siguiente episodio", labeled: labeled) { act("next") } }
         }
         moreMenu
     }

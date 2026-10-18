@@ -662,6 +662,25 @@ struct VideoSettingsPanel: View {
             ForEach(others) { chip($0, selected: s.selectedSubtitle == $0.id) }
             PanelChip(title: Text("Sin subtítulos"), selected: s.selectedSubtitle == nil) { Task { await model.selectSubtitle(nil) } }
         }
+        // Sin el que buscas (o el video no trae ninguno): OpenSubtitles, integrado; con una descarga, los de esa copia exacta.
+        PanelGroupTitle(title: "En internet")
+        if let found = model.foundSubtitles {
+            if found.isEmpty { Text("No encontré subtítulos para este video.").recipe(.footnote) }
+            FlowChips {
+                ForEach(subtitleLanguages(found, mine: mine), id: \.self) { code in
+                    let options = found.filter { $0.language == code }
+                    PanelChip(title: Text(verbatim: "\(languageName(code)) · \(options.count)"), selected: false, symbol: "arrow.down.circle") {
+                        if let first = options.first { Task { await model.addFoundSubtitle(first) } }
+                    }
+                }
+            }
+        } else {
+            PanelChip(title: model.searchingSubtitles ? Text("Buscando…") : Text("Buscar subtítulos"), selected: false, symbol: "magnifyingglass") {
+                Task { await model.searchSubtitles() }
+            }
+            .disabled(model.searchingSubtitles)
+            .accessibilityIdentifier("player-search-subtitles")
+        }
         PanelGroupTitle(title: "Tamaño")
         FlowChips {
             ForEach(["small", "medium", "large"], id: \.self) { size in
@@ -671,6 +690,23 @@ struct VideoSettingsPanel: View {
                 .accessibilityLabel(size == "small" ? Text("Chico") : size == "large" ? Text("Grande") : Text("Mediano"))
             }
         }
+    }
+
+    /// Los idiomas encontrados, el tuyo primero y luego por cuántos hay.
+    private func subtitleLanguages(_ found: [SubtitleOption], mine: [String]) -> [String] {
+        var counts: [String: Int] = [:]
+        for o in found { counts[o.language, default: 0] += 1 }
+        let yours = Set(mine.flatMap { [$0, Streams.languageCodes[$0] ?? $0] })
+        return counts.keys.sorted { a, b in
+            let ya = yours.contains(a), yb = yours.contains(b)
+            return ya != yb ? ya : (counts[a] ?? 0) > (counts[b] ?? 0)
+        }
+    }
+
+    /// «spa» → «Español» (en el idioma de la app).
+    private func languageName(_ code: String) -> String {
+        let two = Streams.languageCodes.first { $0.value == code }?.key ?? code
+        return locale.localizedString(forLanguageCode: two)?.capitalized(with: locale) ?? code
     }
 
     private func chip(_ track: MediaTrack, selected: Bool) -> some View {

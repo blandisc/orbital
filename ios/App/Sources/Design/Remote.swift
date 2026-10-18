@@ -277,3 +277,102 @@ struct VolumeControl: View {
         .accessibilityValue(level.map { Text("\($0) %") } ?? Text(""))
     }
 }
+
+// MARK: sustos (Where's The Jump)
+
+/// La línea de tiempo de lo que suena con sus sustos marcados: una raya por susto (los fuertes, más altos y en rojo), lo que
+/// llevas relleno y un punto donde vas. Sin sustos, una barra de avance normal.
+struct ScareTimeline: View {
+    let position: Double
+    let duration: Double
+    var scares: [JumpScare] = []
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let x = { (t: Double) in duration > 0 ? CGFloat(min(1, max(0, t / duration))) * w : 0 }
+            ZStack(alignment: .leading) {
+                Capsule().fill(DS.fill).frame(height: DS.Remote.timelineBar)
+                Capsule().fill(DS.text).frame(width: x(position), height: DS.Remote.timelineBar)
+                ForEach(Array(scares.enumerated()), id: \.offset) { _, scare in
+                    Capsule()
+                        .fill(scare.time <= position ? DS.textFaint : (scare.major ? DS.danger : DS.warning))
+                        .frame(width: DS.Remote.scareMarkWidth, height: scare.major ? DS.Remote.scareMarkMajor : DS.Remote.scareMark)
+                        .offset(x: x(scare.time) - DS.Remote.scareMarkWidth / 2)
+                }
+                Circle().fill(DS.paper).frame(width: DS.Remote.playhead, height: DS.Remote.playhead)
+                    .shadow(color: DS.scrimStrong, radius: DS.Space.s1)
+                    .offset(x: x(position) - DS.Remote.playhead / 2)
+            }
+            .frame(height: geo.size.height)
+        }
+        .frame(height: DS.Remote.scareMarkMajor)
+        .accessibilityElement()
+        .accessibilityLabel(Text("Línea de tiempo"))
+        .accessibilityValue(scares.isEmpty ? Text("") : Text("\(scares.filter { $0.time > position }.count) sustos por delante"))
+    }
+}
+
+/// El mapa de sustos de la película que suena en la TV: la línea de tiempo, cuánto falta para el siguiente (y si es fuerte),
+/// cuántos quedan y «Avisarme» (vibra unos segundos antes de cada uno, con el control abierto). Sin spoilers: no dice qué pasa.
+struct ScarePanel: View {
+    let now: OrbitalRemote.NowPlaying
+    let fetchedAt: Date
+    let scares: [JumpScare]
+    @AppStorage("scare-warnings") private var warn = true
+
+    var body: some View {
+        TimelineView(.periodic(from: fetchedAt, by: DS.Remote.scareTick)) { context in
+            let position = now.paused ? now.position : min(now.duration, now.position + max(0, context.date.timeIntervalSince(fetchedAt)))
+            ScareStatus(position: position, duration: now.duration, scares: scares, warn: $warn)
+        }
+    }
+}
+
+private struct ScareStatus: View {
+    let position: Double
+    let duration: Double
+    let scares: [JumpScare]
+    @Binding var warn: Bool
+    @State private var buzz = 0
+
+    var body: some View {
+        let next = scares.first { $0.time > position }
+        let left = scares.filter { $0.time > position }
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            HStack(alignment: .firstTextBaseline) {
+                Label("Sustos", systemImage: "bolt.heart").recipe(.cardTitle)
+                Spacer()
+                Text("\(left.count) por delante · \(left.filter(\.major).count) fuertes").recipe(.caption, color: DS.textMuted)
+            }
+            ScareTimeline(position: position, duration: duration, scares: scares)
+            HStack(spacing: DS.Space.s3) {
+                if let next {
+                    let seconds = Int(next.time - position)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(verbatim: clock(seconds)).recipe(.title, color: seconds <= Int(DS.Remote.scareLead) ? DS.danger : DS.text).monospacedDigit()
+                            .contentTransition(.numericText(countsDown: true))
+                        (next.major ? Text("para el siguiente · fuerte") : Text("para el siguiente · leve")).recipe(.caption, color: DS.textMuted)
+                    }
+                } else {
+                    Label("Ya no quedan sustos", systemImage: "checkmark.circle").recipe(.secondary, color: DS.good)
+                }
+                Spacer()
+                Toggle(isOn: $warn) { Label("Avisarme", systemImage: "iphone.radiowaves.left.and.right").recipe(.footnote, color: DS.text) }
+                    .toggleStyle(.button).buttonStyle(.bordered).tint(warn ? DS.accent : DS.textMuted)
+                    .accessibilityHint(Text("Vibra unos segundos antes de cada susto"))
+            }
+            Text("Tiempos de Where's The Jump").recipe(.caption, color: DS.textFaint)
+        }
+        .padding(DS.Space.s4)
+        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        // Unos segundos antes de cada susto: una vibración fuerte (una sola por susto).
+        .onChange(of: next.map { $0.time - position <= DS.Remote.scareLead } ?? false) { _, soon in if soon, warn { buzz += 1 } }
+        .sensoryFeedback(.warning, trigger: buzz)
+    }
+
+    private func clock(_ seconds: Int) -> String {
+        let s = max(0, seconds)
+        return s >= 3600 ? String(format: "%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60) : String(format: "%d:%02d", s / 60, s % 60)
+    }
+}

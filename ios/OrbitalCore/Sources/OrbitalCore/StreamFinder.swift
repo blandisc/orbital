@@ -82,19 +82,72 @@ public actor StreamFinder {
     }
 
     /// URLs de subtítulos en tu idioma de tus complementos (OpenSubtitles…), por si el video no trae.
-    public func subtitles(kind: String, videoID: String, language: String) async -> [URL] {
+    public func subtitles(kind: String, videoID: String, language: String, file: FileFingerprint? = nil) async -> [URL] {
         let codes: Set<String> = [language, Streams.languageCodes[language] ?? language]
-        let serving = (try? await registry.serving("subtitles", kind: kind, itemID: videoID)) ?? []
-        var urls: [URL] = []
-        for addon in serving {
-            guard let url = URL(string: "\(addon.base)/subtitles/\(kind)/\(uriComponent(videoID)).json"),
-                  let subs = (try? await http.getJSON(url, timeout: 15))?["subtitles"]?.array else { continue }
-            for sub in subs {
-                guard let text = sub["url"]?.string, let u = URL(string: text), ["http", "https"].contains(u.scheme?.lowercased() ?? ""),
-                      let lang = sub["lang"]?.string, codes.contains(lang) else { continue }
-                urls.append(u)
+        return await subtitleOptions(kind: kind, videoID: videoID, file: file).filter { codes.contains($0.language) }.map(\.url)
+    }
+
+    /// OpenSubtitles (su complemento público de Stremio), siempre: los subtítulos no dependen de que tengas uno instalado.
+    public static let builtInSubtitles = "https://opensubtitles-v3.strem.io"
+
+    /// Todos los subtítulos que hay para un video, de tus complementos y de OpenSubtitles; con la huella del archivo (una
+    /// descarga), los que van sincronizados con esa copia exacta salen primero.
+    public func subtitleOptions(kind: String, videoID: String, file: FileFingerprint? = nil) async -> [SubtitleOption] {
+        var bases = ((try? await registry.serving("subtitles", kind: kind, itemID: videoID)) ?? []).map(\.base)
+        if !bases.contains(where: { $0.contains("opensubtitles") }) { bases.append(Self.builtInSubtitles) }
+        let extra = file.map { "/videoHash=\($0.hash)&videoSize=\($0.size)" } ?? ""
+        var out: [SubtitleOption] = []
+        await withTaskGroup(of: [SubtitleOption].self) { group in
+            for base in bases {
+                group.addTask { [http] in
+                    guard let url = URL(string: "\(base)/subtitles/\(kind)/\(uriComponent(videoID))\(extra).json"),
+                          let subs = (try? await http.getJSON(url, timeout: 15))?["subtitles"]?.array else { return [] }
+                    return subs.compactMap { sub in
+                        guard let text = sub["url"]?.string, let u = URL(string: text), ["http", "https"].contains(u.scheme?.lowercased() ?? ""),
+                              let lang = sub["lang"]?.string else { return nil }
+                        return SubtitleOption(url: u, language: lang)
+                    }
+                }
             }
+            for await found in group { out += found }
         }
-        return urls
+        var seen = Set<URL>()
+        return out.filter { seen.insert($0.url).inserted }
     }
 }
+
+/// Un subtítulo que se puede sumar al video: de dónde bajarlo y en qué idioma (código de OpenSubtitles: «spa», «eng»).
+public struct SubtitleOption: Sendable, Equatable, Identifiable {
+    public var url: URL
+    public var language: String
+    public var id: URL { url }
+    public init(url: URL, language: String) { self.url = url; self.language = language }
+}
+
+/// La huella de OpenSubtitles de un archivo (su tamaño más la suma de los primeros y últimos 64 KB): encuentra los
+/// subtítulos hechos para esa copia exacta, que van a tiempo.
+public struct FileFingerprint: Sendable, Equatable {
+    public var hash: String
+    public var size: Int64
+
+    public static func of(_ url: URL) -> FileFingerprint? {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
+        defer { try? handle.close() }
+        guard let end = try? handle.seekToEnd(), end >= 65_536 else { return nil }
+        let chunk = 65_536
+        var sum = UInt64(end)
+        func add(_ data: Data) {
+            data.withUnsafeBytes { raw in
+                for i in stride(from: 0, to: raw.count - 7, by: 8) { sum = sum &+ raw.loadUnaligned(fromByteOffset: i, as: UInt64.self).littleEndian }
+            }
+        }
+        try? handle.seek(toOffset: 0)
+        guard let head = try? handle.read(upToCount: chunk) else { return nil }
+        add(head)
+        try? handle.seek(toOffset: end - UInt64(chunk))
+        guard let tail = try? handle.read(upToCount: chunk) else { return nil }
+        add(tail)
+        return FileFingerprint(hash: String(format: "%016llx", sum), size: Int64(end))
+    }
+}
+

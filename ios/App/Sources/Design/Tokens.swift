@@ -220,6 +220,8 @@ enum DS {
 
     /// La dirección «Editorial» (A + una portada): espacio entre secciones, la portada y la pieza panorámica.
     enum Editorial {
+        /// La tarjeta de un pendiente de tu watchlist (dos renglones que se deslizan juntos).
+        static let watchlistWidth: CGFloat = 300, watchlistPoster: CGFloat = 64
         static let sectionGap: CGFloat = 36, coverHeight: CGFloat = 200, wideWidth: CGFloat = 250, veilStart: CGFloat = 0.35
 
         /// Hasta dónde crece el logo en la portada y en la pieza panorámica.
@@ -283,6 +285,8 @@ enum DS {
     /// propuesta y los mínimos de calificación que se ofrecen.
     enum Decide {
         static let quickHeight: CGFloat = 470, moreShare: CGFloat = 0.72, cardHeight: CGFloat = 230, compactCardHeight: CGFloat = 130
+        /// Los tres carteles: el elegido con su borde; los otros, un poco más chicos y tenues; al elegir filtros, más bajos.
+        static let chosenStroke: CGFloat = 3, otherScale: CGFloat = 0.92, otherOpacity: Double = 0.7, trioCompactHeight: CGFloat = 150
         /// La frase de por qué verla: al menos estos caracteres antes de cortar en el primer punto.
         static let pitchMin = 40
         static let ratingSteps: [Double] = [0, 6, 7, 8]
@@ -368,6 +372,11 @@ enum DS {
 
     /// El control completo de la TV (`TouchPad`, `RemoteKey`).
     enum Remote {
+        /// La línea de tiempo con sustos: alto de la barra, de la marca leve y de la fuerte; el punto donde vas.
+        static let timelineBar: CGFloat = 6, scareMark: CGFloat = 12, scareMarkMajor: CGFloat = 20, scareMarkWidth: CGFloat = 3
+        static let playhead: CGFloat = 14
+        /// Cuántos segundos antes de un susto vibra (si pediste el aviso) y cada cuánto se revisa.
+        static let scareLead: Double = 5, scareTick: Double = 0.5
         /// Cuánto se mantiene una tecla para su segunda acción (mantener «Atrás»: al inicio).
         static let holdSeconds: Double = 0.6
         /// La barra del volumen de la TV en el control.
@@ -407,8 +416,8 @@ enum DS {
         static let rankNumber = CGFloat(DesignTokens.Size.rankNumber)
         /// La cifra de un Top 10: enorme y pesada; no crece con Dynamic Type (es un adorno, el puesto ya se dice en la etiqueta).
         static var rankFont: Font { .system(size: rankNumber, weight: .black, design: .rounded) }
-        /// El ancho de la columna de la cifra (el de un dígito): el «10» se angosta para caber y no empuja su póster.
-        static let rankColumn = rankNumber * 0.62, rankTwoDigits: CGFloat = 0.62, rankTwoDigitsTracking = -rankNumber * 0.08
+        /// El «10»: sus cifras más juntas y el póster encima de parte del cero (no empuja el póster ni se achata).
+        static let rankTwoDigitsTracking = -rankNumber * 0.12, rankTwoDigitsOverlap = rankNumber * 0.42
         static let logoHero = CGFloat(DesignTokens.Size.logoHero)
         /// El anillo de la pieza enfocada del mosaico y la línea fina de las demás.
         static let focusRing: CGFloat = 2.5, hairline: CGFloat = 0.5

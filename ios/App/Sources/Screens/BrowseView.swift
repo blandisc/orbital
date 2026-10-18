@@ -15,7 +15,7 @@ struct BrowseView: View {
     /// Los resultados: todo, solo películas o solo series.
     @State private var kind: String = ""
     /// Los colores del n.º 1 de hoy: el fondo de la pantalla y las cifras del Top 10 toman su tono (como Inicio).
-    @StateObject private var tint = ArtTint()
+    @StateObject private var tint: ArtTint
     /// El póster que ilustra cada género (el primero de su catálogo), según van llegando.
 
     /// Cuántos de lo más popular van en el carrusel con puesto (un Top 10).
@@ -23,7 +23,8 @@ struct BrowseView: View {
 
     init() {
         let services = AppEnvironment.shared.services
-        _catalog = StateObject(wrappedValue: ModelObserver(CatalogModel(services)))
+        _catalog = StateObject(wrappedValue: ModelObserver(AppEnvironment.shared.catalog))
+        _tint = StateObject(wrappedValue: ArtTint(cachedFor: AppEnvironment.shared.catalog.popular.first?.poster))
         _search = StateObject(wrappedValue: ModelObserver(SearchModel(services)))
     }
 
@@ -61,7 +62,7 @@ struct BrowseView: View {
             #if DEBUG
             if Demo.isOn, let text = Demo.search { query = text }
             #endif
-            await catalog.model.load()
+            if catalog.model.popular.isEmpty { await catalog.model.load() }   // ya se pidió al abrir la app
         }
         .refreshable { await catalog.model.load() }
     }

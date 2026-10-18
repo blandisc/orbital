@@ -169,4 +169,12 @@ final class OrbitalRemoteTests: XCTestCase {
         XCTAssertEqual(reply, OrbitalRemote.VoiceReply(ok: true, speech: "Poniendo The Office."))
         XCTAssertEqual(http.bodies(for: "https://tv.example/api/voice").first.flatMap { JSON.parse($0)?["text"]?.string }, "pon The Office")
     }
+
+    func testTypingSendsOnlyWhatChanged() {
+        XCTAssertEqual(RemoteTyping.delta(from: "", to: "hola"), "hola")
+        XCTAssertEqual(RemoteTyping.delta(from: "hola", to: "hola mundo"), " mundo")
+        XCTAssertEqual(RemoteTyping.delta(from: "hola", to: "ho"), "\u{8}\u{8}")
+        XCTAssertEqual(RemoteTyping.delta(from: "dune", to: "duna"), "\u{8}a")
+        XCTAssertEqual(RemoteTyping.delta(from: "dune", to: "dune"), "")
+    }
 }
