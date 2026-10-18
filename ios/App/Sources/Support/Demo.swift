@@ -519,6 +519,7 @@ extension Demo {
 }
 #endif
 
+#if DEBUG
 extension DemoHTTPClient {
     /// Microsoft y OneDrive de mentira: un código que se acepta al primer intento y una carpeta con dos títulos.
     static func oneDriveDemo(_ url: URL) -> HTTPResponse {
@@ -548,3 +549,4 @@ extension DemoHTTPClient {
         return HTTPResponse(status: 404, data: Data())
     }
 }
+#endif
