@@ -24,6 +24,9 @@ const WIDE_PX = 720;
 const COLS = 6;
 const GROW = 2.3; // cuánto más ancha es la columna enfocada
 const DRIFT = [16, 12, 19, 14, 17, 13]; // px/s de cada columna en el ambiente (cada una a su ritmo)
+// Al abrir, todas las columnas parejas; al entrar al ambiente (si siguen parejas) las de turno impar suben estas
+// separaciones con la animación y de ahí sigue la deriva (como el iPhone: DesignTokens.Mosaic.ambientLiftGaps).
+const AMBIENT_LIFT_GAPS = 5;
 const IDLE_MS = 3000; // quieto 3 s: el mosaico empieza a subir solo (el iPhone igual: DesignTokens.Mosaic.idleSeconds)
 const RAMP_MS = 2400; // y arranca suave: de quieto a su ritmo en ~2,4 s, sin tirón
 const ALIVE_MS = 2200;
@@ -298,6 +301,10 @@ export function createForYouMosaic({ onFocus, onPick }) {
     if (!running || mode === "ambient" || reduced() || !pool.length) return;
     mode = "ambient";
     ambientSince = performance.now();
+    if (columns.length && columns.every((col) => col.offset === columns[0].offset)) {
+      columns.forEach((col, c) => { if (c % 2) col.offset += gap() * AMBIENT_LIFT_GAPS; });
+      columns.forEach((col, c) => fill(col, c));
+    }
     paint();
     setTimeout(() => { if (mode === "ambient") el.classList.add("foryou-mosaic--drifting"); }, 560);
   }
@@ -384,7 +391,7 @@ export function createForYouMosaic({ onFocus, onPick }) {
       const track = h("div", { class: "foryou-mosaic__track" });
       const node = h("div", { class: "foryou-mosaic__col", style: { "--i": c } }, track);
       el.append(node);
-      return { el: node, track, tiles: [], offset: c % 2 ? 60 : 0, x: 0, w: 0 };
+      return { el: node, track, tiles: [], offset: 0, x: 0, w: 0 }; // parejas al abrir (el escalón llega con el ambiente)
     });
     focus = { col: Math.min(focus.col, COLS - 1), row: 0 };
     mode = "focus";
