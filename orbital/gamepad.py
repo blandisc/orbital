@@ -134,19 +134,39 @@ def with_triggers(left: int, right: int) -> int:
 # Los sticks (cualquiera de los dos) como dirección, en bits aparte de la cruceta: en el reproductor
 # despiertan los controles y mueven el foco de los paneles, pero no adelantan ni suben el volumen.
 STICK_UP, STICK_DOWN, STICK_LEFT, STICK_RIGHT = 0x40000, 0x80000, 0x100000, 0x200000
-STICK_PUSHED = 20000  # de 32767: más de la mitad (un stick con deriva no cuenta)
+# Como la interfaz (core/input.js): se activa al 55 % del recorrido y se suelta por debajo del 35 % (histéresis). Antes
+# era un solo umbral al 61 %: un stick que rondaba el borde se soltaba y se volvía a apretar solo, y en un panel el foco
+# brincaba o se trababa. Y la dirección se conserva hasta que cambia con claridad (en diagonal ya no alterna).
+STICK_PUSHED = 18000  # de 32767
+STICK_RELEASED = 11500
+STICK_REST = 6500  # en el centro: lo que hace falta ver una vez para que un stick recién conectado cuente
+
+
+def _direction(x: int, y: int) -> int:
+    if abs(x) >= abs(y):
+        return STICK_RIGHT if x > 0 else STICK_LEFT
+    return STICK_UP if y > 0 else STICK_DOWN  # en XInput, arriba es positivo
+
+
+def stick_bits(axes: tuple[int, ...], previous: tuple[int, ...] = ()) -> tuple[int, ...]:
+    """(lx, ly, rx, ry) y lo de cada stick en la vuelta anterior -> la dirección de cada uno (0 = suelto), con histéresis."""
+    out = []
+    for n, (x, y) in enumerate(zip(axes[::2], axes[1::2], strict=False)):
+        before = previous[n] if n < len(previous) else 0
+        push = max(abs(x), abs(y))
+        if before:
+            now = _direction(x, y)
+            out.append(0 if push < STICK_RELEASED else now if push >= STICK_PUSHED and now != before else before)
+        else:
+            out.append(_direction(x, y) if push >= STICK_PUSHED else 0)
+    return tuple(out)
 
 
 def with_sticks(*axes: int) -> int:
-    """(lx, ly, rx, ry) -> la dirección de cada stick empujado, por su eje dominante."""
+    """(lx, ly, rx, ry) -> la dirección de cada stick empujado, por su eje dominante (sin memoria)."""
     bits = 0
-    for x, y in zip(axes[::2], axes[1::2], strict=False):
-        if max(abs(x), abs(y)) < STICK_PUSHED:
-            continue
-        if abs(x) >= abs(y):
-            bits |= STICK_RIGHT if x > 0 else STICK_LEFT
-        else:
-            bits |= STICK_UP if y > 0 else STICK_DOWN  # en XInput, arriba es positivo
+    for b in stick_bits(axes):
+        bits |= b
     return bits
 
 VK_SPACE, VK_ESCAPE, VK_LEFT, VK_UP, VK_RIGHT, VK_DOWN, VK_F11 = 0x20, 0x1B, 0x25, 0x26, 0x27, 0x28, 0x7A
@@ -309,6 +329,8 @@ class GamepadWatcher:
         state = _XInputState()
         vendor = _load_vendor()
         was_connected = [False] * 4
+        sticks_armed = [False] * 4  # ya se le vio el stick en el centro desde que se conectó
+        stick_state: list[tuple[int, ...]] = [()] * 4  # la dirección de cada stick en la vuelta anterior (histéresis)
         while not self._stop.is_set():
             now = time.monotonic()
             if self._redetect.is_set():
@@ -338,7 +360,17 @@ class GamepadWatcher:
                     if connected:
                         pad = state.Gamepad
                         buttons |= with_triggers(pad.bLeftTrigger, pad.bRightTrigger)
-                        buttons |= with_sticks(pad.sThumbLX, pad.sThumbLY, pad.sThumbRX, pad.sThumbRY)
+                        axes = (pad.sThumbLX, pad.sThumbLY, pad.sThumbRX, pad.sThumbRY)
+                        # Un stick recién conectado no cuenta hasta verlo en el centro (algunos llegan con el eje cargado
+                        # y el reproductor lo tomaba como empujado sin parar).
+                        if not sticks_armed[slot] and max(abs(a) for a in axes) < STICK_REST:
+                            sticks_armed[slot] = True
+                        if sticks_armed[slot]:
+                            stick_state[slot] = stick_bits(axes, stick_state[slot])
+                            for bit in stick_state[slot]:
+                                buttons |= bit
+                    else:
+                        sticks_armed[slot], stick_state[slot] = False, ()
                     try:
                         self.on_buttons(slot, buttons, now)
                     except Exception:  # noqa: BLE001

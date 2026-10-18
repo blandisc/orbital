@@ -72,8 +72,8 @@ export function createHero({ onAction }) {
     logo.hidden = true;
     // El logo recortado y guardado por Orbital (/api/foryou/logo), no el original de internet: carga al instante.
     if (extra.logo) logo.src = trimmedLogo(extra.logo);
-    logo.classList.toggle("hero__logo--mono", !!extra.logoMono); // el logo de un estudio, en blanco
     else logo.removeAttribute("src");
+    logo.classList.toggle("hero__logo--mono", !!extra.logoMono); // el logo de un estudio, en blanco
     description.textContent = extra.description || "";
     description.hidden = !extra.description;
 

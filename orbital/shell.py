@@ -151,7 +151,14 @@ class ConsoleShell:
         if (state.settings().get("video_home", "pip") if state is not None else "pip") != "pip":
             return False
         enter = getattr(self.player, "enter_pip", None)
-        return bool(enter and enter())
+        if not (enter and enter()):
+            return False
+        # Orbital dice cómo regresar (antes, ya en chiquito, no se sabía): Home lo vuelve a pantalla completa.
+        events = getattr(self.catalog, "events", None)
+        current = getattr(self.player, "current", None)
+        if events is not None:
+            events.publish({"type": "pip", "title": getattr(current, "title", "") or "El video"})
+        return True
 
     def resume(self) -> bool:
         """Vuelve al juego (descongelándolo). Devuelve False si no hay juego abierto."""

@@ -1007,6 +1007,53 @@ def volume_ass(volume: float, muted: bool = False) -> str:
     return "\n".join(parts)
 
 
+def _line_path(x1: float, y1: float, x2: float, y2: float, t: float) -> str:
+    """Una línea gruesa (un rectángulo girado) de (x1, y1) a (x2, y2)."""
+    dx, dy = x2 - x1, y2 - y1
+    length = math.hypot(dx, dy) or 1.0
+    nx, ny = -dy / length * t / 2, dx / length * t / 2
+    return (f"m {x1 + nx:.1f} {y1 + ny:.1f} l {x2 + nx:.1f} {y2 + ny:.1f} l {x2 - nx:.1f} {y2 - ny:.1f} "
+            f"l {x1 - nx:.1f} {y1 - ny:.1f}")
+
+
+PIP_BUTTON = 92  # radio de los botones de la esquina, en el lienzo (la ventana chica lo reduce a ~22 px)
+PIP_PLAY = 132  # radio del botón del centro
+
+
+def pip_ass(paused: bool) -> str:
+    """El video en pequeño, como el PiP del iPhone: solo tres botones sobre un velo tenue. Arriba a la izquierda,
+    volver a pantalla completa; arriba a la derecha, cerrar; al centro, pausa o reproducir. Nada de la barra completa
+    del reproductor (en chiquito no se leía y no tenía sentido)."""
+    targets["hud"] = []
+    cx, cy = W / 2, H / 2
+    corner = PIP_BUTTON + 64
+    veil = rrect(0, 0, W, H, 0, PANEL, "B0")  # un velo tenue: el video se sigue viendo
+    parts = [veil]
+    # Volver a pantalla completa: las cuatro esquinas de un marco (el ícono de siempre).
+    ex, ey, s, t = corner, corner, 34, 14
+    parts.append(circle(ex, ey, PIP_BUTTON, PANEL, "50"))
+    for sx, sy in ((-1, -1), (1, -1), (-1, 1), (1, 1)):
+        x0, y0 = ex + sx * s, ey + sy * s
+        parts.append(_shape(_line_path(x0, y0, x0 - sx * 26, y0, t), TEXT))
+        parts.append(_shape(_line_path(x0, y0, x0, y0 - sy * 26, t), TEXT))
+    targets["hud"].append((ex - PIP_BUTTON, ey - PIP_BUTTON, 2 * PIP_BUTTON, 2 * PIP_BUTTON, "pip:expand"))
+    # Cerrar: una ✕.
+    qx, qy = W - corner, corner
+    parts.append(circle(qx, qy, PIP_BUTTON, PANEL, "50"))
+    parts.append(_shape(_line_path(qx - 34, qy - 34, qx + 34, qy + 34, 14), TEXT))
+    parts.append(_shape(_line_path(qx + 34, qy - 34, qx - 34, qy + 34, 14), TEXT))
+    targets["hud"].append((qx - PIP_BUTTON, qy - PIP_BUTTON, 2 * PIP_BUTTON, 2 * PIP_BUTTON, "pip:close"))
+    # Pausa / reproducir, al centro y más grande.
+    parts.append(circle(cx, cy, PIP_PLAY, PANEL, "40"))
+    if paused:
+        parts.append(_shape(f"m {cx - 38:.1f} {cy - 62:.1f} l {cx + 66:.1f} {cy:.1f} l {cx - 38:.1f} {cy + 62:.1f}", TEXT))
+    else:
+        parts.append(rrect(cx - 52, cy - 60, 34, 120, 8, TEXT))
+        parts.append(rrect(cx + 18, cy - 60, 34, 120, 8, TEXT))
+    targets["hud"].append((cx - PIP_PLAY, cy - PIP_PLAY, 2 * PIP_PLAY, 2 * PIP_PLAY, "pip:play"))
+    return "\n".join(parts)
+
+
 def curtain_ass(opacity: float) -> str:
     """Un negro de pantalla completa con esa opacidad (1 = tapa todo, 0 = transparente): el fundido de entrada del video."""
     alpha = max(0, min(255, round((1 - opacity) * 255)))

@@ -148,6 +148,8 @@ class PlayerScreen:
         current = self.current
         if current is None or self.menu is not None:
             return
+        if getattr(self, "pip", False):  # en pequeño: solo los tres botones, nunca la barra completa
+            return self._show_pip_controls()
         if self._is_live():
             return self._show_live_hud()
         hud = self._hud(current, seeking, position=position, paused=paused)
@@ -490,6 +492,8 @@ class PlayerScreen:
         enseñar / esconder los botones. La primera vez cambia los glifos del mando por botones."""
         if self.current is None:
             return
+        if getattr(self, "pip", False):
+            return self._pip_tap(x, y)
         self._quiet_episodes = 0
         if player_ui.set_touch(True):
             self._redraw_for_input()

@@ -70,8 +70,15 @@ export function stickDirection(x, y, previous = null) {
  */
 export const usablePad = (pad) => !!pad && pad.mapping === "standard";
 
+/** Un stick se cuenta en el centro (para «armarlo») por debajo de esto. */
+export const STICK_REST = .2;
+
 /** Acciones activas según el estado de los mandos (botones + stick izquierdo). `memory` guarda
- * la dirección del stick de cada mando entre frames (para la histéresis). */
+ * la dirección del stick de cada mando entre frames (para la histéresis) y si ya se le vio en el centro.
+ *
+ * Un stick no cuenta hasta verlo en el centro una vez desde que el mando se conectó: algunos mandos llegan
+ * con el eje cargado hasta que se mueve por primera vez, y al conectarlo el foco se iba solo a la derecha
+ * como si el stick estuviera pegado. Si de verdad lo estabas empujando, cuenta en cuanto lo sueltas. */
 export function padActions(pads, memory = new Map()) {
   const active = new Set();
   pads.forEach((pad, i) => {
@@ -80,6 +87,11 @@ export function padActions(pads, memory = new Map()) {
       if (pad.buttons[index]?.pressed) active.add(action);
     }
     const [x = 0, y = 0] = pad.axes;
+    const armedKey = `armed:${i}:${pad.id ?? ""}`;
+    if (!memory.get(armedKey)) {
+      if (Math.hypot(x, y) >= STICK_REST) return; // todavía sin verlo en reposo
+      memory.set(armedKey, true);
+    }
     const direction = stickDirection(x, y, memory.get(i) || null);
     memory.set(i, direction);
     if (direction) active.add(direction);

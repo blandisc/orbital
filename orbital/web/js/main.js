@@ -1566,6 +1566,8 @@ function handleEvent(event) {
     return ui.traktLink.failed(event.message);
   } else if (event.type === "foryou-changed") {
     return ui.foryou.load({ force: true });
+  } else if (event.type === "pip") { // Home con un video: se fue a la esquina; cómo regresarlo
+    return ui.toast.show(`${event.title} sigue en pequeño · Home lo regresa a pantalla completa`);
   } else if (event.type === "studio-logos") { // llegaron los logos de los estudios: la fila de Estudios los enseña
     return loadCuration();
   } else if (event.type === "tv-changed") { // terminó de revisar los canales

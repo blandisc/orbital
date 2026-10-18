@@ -20,8 +20,23 @@ test("teclas", () => {
 test("botones y stick del mando", () => {
   assert.deepEqual([...padActions([pad([0, 3])])].sort(), ["options", "select"]);
   // En diagonal manda el eje dominante: nunca fila y columna a la vez.
-  assert.deepEqual([...padActions([pad([], [0.9, -0.8])])], ["right"]);
-  assert.deepEqual([...padActions([pad([], [0.3, 0.2]), null])], []);
+  const memory = new Map();
+  padActions([pad()], memory); // el stick se ve en reposo: ya cuenta
+  assert.deepEqual([...padActions([pad([], [0.9, -0.8])], memory)], ["right"]);
+  const calm = new Map([["armed:0:", true]]);
+  assert.deepEqual([...padActions([pad([], [0.3, 0.2]), null], calm)], []); // dentro de la zona muerta
+});
+
+test("un mando que llega con el stick cargado no mueve el foco solo (como si estuviera pegado)", () => {
+  const memory = new Map();
+  // Al conectarse reporta el eje a la derecha sin que nadie lo toque: no cuenta…
+  assert.deepEqual([...padActions([pad([], [1, 0])], memory)], []);
+  assert.deepEqual([...padActions([pad([], [1, 0])], memory)], []);
+  // …pero los botones sí, desde el primer instante.
+  assert.deepEqual([...padActions([pad([0], [1, 0])], memory)], ["select"]);
+  // En cuanto se ve en el centro, el stick funciona normal.
+  assert.deepEqual([...padActions([pad([], [0, 0])], memory)], []);
+  assert.deepEqual([...padActions([pad([], [.8, 0])], memory)], ["right"]);
 });
 
 test("stick con histéresis: se activa al 55 % y se suelta por debajo del 35 %", () => {
@@ -31,6 +46,7 @@ test("stick con histéresis: se activa al 55 % y se suelta por debajo del 35 %",
   assert.equal(stickDirection(.3, 0, "right"), null);
   assert.equal(stickDirection(.1, .7, "right"), "down"); // cambió claramente de eje
   const memory = new Map();
+  padActions([pad()], memory);
   assert.deepEqual([...padActions([pad([], [.6, 0])], memory)], ["right"]);
   assert.deepEqual([...padActions([pad([], [.45, 0])], memory)], ["right"]);
 });

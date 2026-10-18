@@ -405,10 +405,13 @@ def test_home_during_a_video_sends_it_to_a_corner_and_back(tmp_path):
     shell, win, _ = make(player_running)
     shell.catalog.player = PipPlayer()
     shell.catalog.state = State(tmp_path / "state.json")
+    published = []
+    shell.catalog.events = type("Events", (), {"publish": lambda self, event: published.append(event)})()
     win.windows[DESKTOP_APP] = ("Interstellar", 30, "mpv.exe")
     win.fg = DESKTOP_APP
     shell.home()
     assert win.fg == ORBITAL and shell.player.calls == ["pip"]  # sin pausa
+    assert published == [{"type": "pip", "title": "El video"}]  # Orbital dice cómo regresarlo
     shell.home()
     assert win.fg == DESKTOP_APP and shell.player.calls[-2:] == ["full", "progress"]
     shell.catalog.state.set_setting("video_home", "pause")
