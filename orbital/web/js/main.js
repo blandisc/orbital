@@ -143,10 +143,8 @@ const ui = {
     onTitle: (ref) => openTitle(ref), // una serie nueva: su ficha
     onLaunch: (item) => launch(item),
     onMore: (item) => openMenu(forYouMenu(item)),
-    onConnect: () => runCommand({ type: "trakt-link" }),
     onFocus: (item) => forYouFocused(item),
     onEdge: () => { sound.play("error"); rumble("edge"); },
-    onToggle: () => { sound.play("open"); renderHints(); }, // el selector Mosaico | Listas, con el dedo
   }),
   tv: createTv({
     onFocus: () => tvFocused(),
@@ -453,7 +451,7 @@ function renderView() {
 function forYouFocused(item) {
   if (!inForYou()) return;
   if (item) ui.backdrop.show(item.hero || item.image || null);
-  const node = document.querySelector(".foryou-mosaic__tile--on, .foryou-lists .card--focused");
+  const node = document.querySelector(".foryou-mosaic__tile--on");
   if (node) {
     const r = node.getBoundingClientRect();
     ui.backdrop.light((r.left + r.width / 2) / innerWidth, (r.top + r.height / 2) / innerHeight);
