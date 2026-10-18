@@ -73,6 +73,9 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 .icon { display: block; width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 .icon--fill { fill: currentColor; stroke: none; }
 
+/* Sin internet (main.js · setOnline): lo que necesita conexión se ve apagado; tus juegos, como siempre. */
+body[data-offline] .needs-internet { opacity: .4; filter: grayscale(.7); }
+
 /* Pantalla táctil (Legion Go sin dock): sin glifos de botones ni pie de controles; botón Atrás a mano. */
 [data-input="touch"] .glyph { display: none; }
 /* El atajo de Buscar, siempre: con el dibujo del mando (disco y aro), no como tecla de teclado (se veía crudo). */

@@ -623,7 +623,8 @@ function handleGames(action, { repeat = false } = {}) {
 }
 
 function renderHome() {
-  ui.home.render(state.allRows, { runningId: state.running?.id, glyphs: glyphs(), hidden: state.hidden, airing: state.airing, nextUp: state.nextUp });
+  ui.home.render(state.allRows, { runningId: state.running?.id, glyphs: glyphs(), hidden: state.hidden, airing: state.airing, nextUp: state.nextUp,
+    offline: state.online === false });
 }
 
 /** Lo que sale hoy de tus series (Trakt): el Inicio lo marca «Sale hoy · 19:00». Cada media hora; sin Trakt, nada. */
@@ -710,6 +711,12 @@ function goToSection(id, direction = 0) {
   state.section = id;
   state.rows = sectionRows(state.allRows, id);
   renderView();
+  // Sin internet, al entrar a lo que vive en línea: qué se ve y qué no (una vez por sección hasta que vuelva la conexión).
+  if (state.online === false && ["media", "tv"].includes(id) && !state.offlineToldFor?.has(id)) {
+    (state.offlineToldFor ??= new Set()).add(id);
+    ui.toast.show(id === "tv" ? "Sin internet: la TV en vivo vuelve cuando haya conexión"
+      : "Sin internet: ves lo último que se guardó; para ver algo necesitas conexión");
+  }
   ui.shelf.setRows(state.rows, emptyFor(id, { emptyTitle: "Nada por aquí todavía", emptyText: "" }));
   const saved = state.sectionFocus[id] || {};
   const { r, c } = restoreFocus(state.rows, { rowId: saved.rowId, itemId: saved.itemId, r: 0, c: 0 });
@@ -1031,7 +1038,28 @@ async function pollSystem() {
     const system = await api.system();
     state.wifi = system.wifi;
     ui.status.setSystem(system);
+    setOnline(system.online !== false);
   } catch { /* idem */ }
+}
+
+/** Modo sin internet: tus juegos siguen; lo que necesita conexión se atenúa (base.css) y lo dice al abrirlo. Al volver la
+ * conexión, todo se pone al día solo. */
+function setOnline(online) {
+  if (state.online === online) return;
+  const was = state.online;
+  state.online = online;
+  if (online) state.offlineToldFor = null;
+  document.body.toggleAttribute("data-offline", !online);
+  if (was === undefined && online) return; // al arrancar con internet: nada que decir
+  if (online) {
+    ui.toast.show("Volvió el internet: películas, series y TV en vivo otra vez");
+    loadCuration();
+    ui.tv.load({ force: true });
+    ui.foryou.load({ force: true });
+  } else {
+    ui.toast.show("Sin internet: tus juegos siguen aquí");
+  }
+  if (inHome()) renderHome(); // el destacado: algo que sí funcione
 }
 
 // ---------------------------------------------------------------- películas y series

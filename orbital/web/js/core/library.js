@@ -87,6 +87,11 @@ export const runnerName = (item, runnerId) =>
 /** Algo de tu biblioteca de Stremio (película o serie). */
 export const isWatchable = (item) => item?.source === "stremio" || item?.source === "cinemeta";
 
+/** Lo que no funciona sin internet: películas y series (se ven en línea), los juegos en la nube, las apps web, la TV en
+ * vivo y un juego de Steam sin instalar (instalarlo baja de internet). Lo demás —tus juegos y emuladores— sí. */
+export const needsInternet = (item) => !!item && (isWatchable(item) || item.source === "geforcenow" || item.id === "media:stremio"
+  || item.category === "continue" || item.extra?.installed === false || /^https?:/i.test(item.uri || "") || item.kind === "channel");
+
 /** Serie del catálogo de Stremio (su ficha muestra los episodios). */
 export const isSeries = (item) => item?.source === "cinemeta" && String(item?.id ?? "").startsWith("cinemeta:series:")
   || item?.kind === "series";

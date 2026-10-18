@@ -4,7 +4,7 @@
  */
 import { api } from "../core/api.js";
 import { rumble } from "../core/haptics.js";
-import { alternativeRunner, isWatchable, runnerName } from "../core/library.js";
+import { alternativeRunner, isWatchable, needsInternet, runnerName } from "../core/library.js";
 import { switchMenu } from "../core/menus.js";
 import { sound } from "../core/sound.js";
 import { gameInTheWay, takeLaunchLock } from "../core/store.js";
@@ -12,6 +12,15 @@ import { gameInTheWay, takeLaunchLock } from "../core/store.js";
 const SLOW = Symbol("lento"); // el servidor no contestó a tiempo (sigue abriendo)
 
 export function createLaunching({ state, ui, current, openMenu, openTitle, openSearch, pollStatus, focusedRect = () => ui.shelf.focused() }) {
+  /** Sin internet, lo que lo necesita lo dice al instante (antes la pantalla de carga se quedaba y luego fallaba). */
+  function offlineBlock(title) {
+    if (state.online !== false) return false;
+    sound.play("error");
+    rumble("edge");
+    ui.toast.show(`Sin internet: ${title || "esto"} necesita conexión. Tus juegos siguen aquí.`, { error: true });
+    return true;
+  }
+
   // Un lanzamiento esperando al servidor (el primer arranque puede tardar más que el candado de 3 s
   // y la pantalla de carga de 8 s): otro A no abre una segunda copia del emulador.
   let inFlight = false;
@@ -27,6 +36,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
   }
 
   async function playStremio({ kind, id, video_id: videoId = null, title, item, source = null, keep = false, from_start: fromStart = false }) {
+    if (offlineBlock(title)) return;
     if (!takeLaunchLock(state)) return;
     sound.play("open");
     rumble("launch");
@@ -83,6 +93,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
    */
   async function playChannel(channel, category = "todos", { confirmed = false, keep = false } = {}) {
     if (!channel) return;
+    if (offlineBlock(channel.name)) return;
     const running = !confirmed && gameInTheWay(state.running, "media:player");
     if (running) return openMenu(switchMenu({ running, title: channel.name, command: { type: "tv", channel, category } }));
     if (!takeLaunchLock(state)) return;
@@ -149,6 +160,7 @@ export function createLaunching({ state, ui, current, openMenu, openTitle, openS
       return playStremio({ kind: watchExtra.kind, id: watchExtra.meta_id, video_id: watchExtra.video_id, title: item.title, item });
     }
     if (isWatchable(item)) return openTitle(item); // del catálogo: primero la ficha
+    if (needsInternet(item) && offlineBlock(item.title)) return; // la nube, una app web, instalar de Steam
     if (!runner && item.id === state.running?.id) return resumeRunning(); // sigue abierto: se continúa
     const inTheWay = !confirmed && gameInTheWay(state.running, item.id);
     if (inTheWay) return openMenu(switchMenu({ running: inTheWay, title: item.title, command: { type: "launch", id: item.id, runner } }));

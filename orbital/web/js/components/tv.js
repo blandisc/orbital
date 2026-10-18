@@ -84,7 +84,7 @@ export function createTv({ onFocus, onPick }) {
     const logo = channel.logo && h("img", { class: "tv__logo", src: channel.logo, alt: "", loading: "lazy", decoding: "async" });
     logo?.addEventListener("error", () => logo.replaceWith(fallback), { once: true });
     return h("button", {
-      class: ["tile", "tv__tile", isShaky(channel) && "tile--dimmed"], type: "button", tabindex: "-1", "data-focus-id": id,
+      class: ["tile", "tv__tile", "needs-internet", isShaky(channel) && "tile--dimmed"], type: "button", tabindex: "-1", "data-focus-id": id,
       "aria-label": channelLabel(channel), onClick: () => onPick?.(targets.get(id), id),
     }, channel.synthetic ? Chip("24/7", { className: "tv__number" }) : channel.number && Chip(String(channel.number), { className: "tv__number" }),
     channel.id === playing ? Badge("Al aire", { className: "tv__flag" })

@@ -130,11 +130,61 @@ class Cache:
     """Lo que se trajo de internet, con fecha. Si al renovar falla la red se queda lo de antes; dos
     peticiones a la vez por lo mismo esperan a una sola descarga."""
 
-    def __init__(self, clock: Callable[[], float] = time.time) -> None:
+    SAVE_DELAY = 5.0  # s: varias listas que llegan juntas se guardan de una vez
+
+    def __init__(self, clock: Callable[[], float] = time.time, path: Path | None = None) -> None:
         self.clock = clock
         self._data: dict[str, tuple[float, Any]] = {}
         self._locks: dict[str, threading.Lock] = {}
         self._lock = threading.Lock()
+        # Modo sin internet: lo último que se trajo queda en disco. Al arrancar sin conexión, Para ti y Películas y series
+        # enseñan eso (vencido, pero mejor que nada); con conexión, se renueva como siempre.
+        self.path = path
+        self._save_timer: threading.Timer | None = None
+        if path is not None:
+            self._load()
+
+    def _load(self) -> None:
+        try:
+            raw = json.loads(self.path.read_text(encoding="utf-8")) if self.path and self.path.exists() else {}
+        except (OSError, ValueError) as exc:
+            log.info("Para ti: no pude leer lo guardado (%s): empiezo de cero", exc)
+            return
+        for key, entry in raw.items() if isinstance(raw, dict) else []:
+            if isinstance(entry, list) and len(entry) == 2 and isinstance(entry[0], (int, float)):
+                self._data[key] = (float(entry[0]), entry[1])
+
+    def _schedule_save(self) -> None:
+        if self.path is None:
+            return
+        with self._lock:
+            if self._save_timer is not None:
+                return
+            self._save_timer = threading.Timer(self.SAVE_DELAY, self._save)
+            self._save_timer.daemon = True
+            self._save_timer.start()
+
+    def _save(self) -> None:
+        with self._lock:
+            self._save_timer = None
+            data = dict(self._data)
+        path = self.path
+        if path is None:
+            return
+        out = {}
+        for key, (when, value) in data.items():
+            try:
+                json.dumps(value)  # solo lo que se puede guardar tal cual (listas y fichas)
+            except (TypeError, ValueError):
+                continue
+            out[key] = [when, value]
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
+            tmp.replace(path)
+        except OSError as exc:
+            log.info("Para ti: no pude guardar lo traído: %s", exc)
 
     def get(self, key: str, ttl: float, load: Callable[[], Any], *, stale: bool = False) -> Any:
         """`stale`: si ya venció, devuelve lo de antes al instante y lo renueva en segundo plano (el iPhone y la TV
@@ -161,6 +211,7 @@ class Cache:
                 raise
             with self._lock:
                 self._data[key] = (self.clock(), value)
+            self._schedule_save()
             return value
 
     def _refresh(self, key: str, load: Callable[[], Any], lock: threading.Lock) -> None:
@@ -168,6 +219,7 @@ class Cache:
             value = load()
             with self._lock:
                 self._data[key] = (self.clock(), value)
+            self._schedule_save()
         except SERVICE_ERRORS as exc:  # sin red: se queda lo de antes
             log.warning("Para ti: no pude renovar %s: %s", key, exc)
         finally:
@@ -302,8 +354,8 @@ class ForYou:
         self.settings = config.para_ti
         self.catalog = catalog
         self.region = self.settings.region
-        self.cache = Cache()
         folder = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "orbital" / "cache" if getattr(config, "source", None) else None
+        self.cache = Cache(path=folder / "foryou-cache.json" if folder else None)
         self.snapshots = charts_api.ChartSnapshots(folder / "charts.sqlite" if folder else None)
         self._build()
         self._link: trakt_api.DeviceCode | None = None

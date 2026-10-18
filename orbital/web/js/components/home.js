@@ -71,14 +71,14 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
   /** Qué es lo enfocado (no dónde está): un juego o una consola. */
   const identity = (t) => (t?.item?.id ?? (t?.console ? `console:${t.console.id ?? t.console.system ?? t.console.name}` : null));
 
-  function render(rows, { runningId = null, glyphs = {}, hidden = 0, airing = {}, nextUp = null } = {}) {
+  function render(rows, { runningId = null, glyphs = {}, hidden = 0, airing = {}, nextUp = null, offline = false } = {}) {
     options = { runningId, glyphs };
     hiddenCount = hidden;
     staged = undefined; // se vuelve a pintar con los datos nuevos
     // Al recargar (volver de un juego, deshacer), lo enfocado puede cambiar de lugar: el foco lo sigue
     // a él, no a la posición (antes quedaba sobre otro juego y Y abría el menú equivocado).
     const keep = identity(targets.get(focusId));
-    model = buildHome(rows, { runningId });
+    model = buildHome(rows, { runningId, offline });
     targets = new Map();
     const pick = (id) => () => onPick?.(targets.get(id), id);
 
