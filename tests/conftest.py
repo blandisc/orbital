@@ -335,3 +335,18 @@ def _voice_log_in_tmp(monkeypatch, tmp_path):
     from orbital import voice_log
 
     monkeypatch.setattr(voice_log, "default_path", lambda: tmp_path / "voz.log")
+
+
+@pytest.fixture(autouse=True)
+def _no_real_app_closing(monkeypatch, request):
+    """Ninguna prueba cierra programas de verdad (el modo acompañante del iPhone puede cerrar uno para liberar memoria).
+    test_memory prueba el cierre mismo, con taskkill simulado."""
+    from orbital import memory
+
+    if request.module.__name__.endswith("test_memory"):
+        return
+
+    def refuse(exe, protect_pids=None):
+        raise AssertionError(f"una prueba intentó cerrar {exe} de verdad")
+
+    monkeypatch.setattr(memory, "close", refuse)

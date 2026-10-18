@@ -14,7 +14,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 
-from . import emulator_clock, focus, health, system
+from . import companion, emulator_clock, focus, health, system
 from .config import Config
 from .events import EventBus
 from .launcher import Launcher
@@ -323,4 +323,12 @@ class Sessions:
         if end:  # el reproductor anotó cómo terminó: "Terminaste Interstellar"
             event.update(title=end["title"], finished=end["finished"], **({"live": True} if end.get("live") else {}))
         self.events.publish(event)
+        if not item_id.startswith(("media:", "app:")):  # un juego: su resumen en la bandeja del iPhone (modo acompañante)
+            try:
+                companion.note_played(self.state, item_id, event["title"], seconds,
+                                      total_seconds=float(self.state.history(item_id).get("playtime") or 0),
+                                      crashed=bool(event.get("crashed")), low_memory=bool(event.get("low_memory")),
+                                      captures=companion.captures_since(time.time() - seconds))
+            except Exception:  # noqa: BLE001 - el resumen del iPhone nunca estorba al cierre
+                log.debug("No pude anotar el resumen para el iPhone", exc_info=True)
 

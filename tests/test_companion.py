@@ -221,7 +221,7 @@ def test_companion_now_is_null_without_anything_open(library):
     main = create_app(library.config, library)
     with TestClient(create_public_app(library.config, main)) as c:
         r = c.get("/api/companion/now", headers={"Authorization": "Bearer secreto"})
-        assert r.status_code == 200 and r.json() == {"playing": None, "inbox": [], "ui": {"screen": "home", "text_field": False},
+        assert r.status_code == 200 and r.json() == {"playing": None, "inbox": [], "game": None, "ui": {"screen": "home", "text_field": False},
                                              "volume": {"level": r.json()["volume"]["level"], "muted": False}}
 
 
@@ -420,3 +420,112 @@ def test_keep_watching_on_the_iphone_carries_the_exact_second():
     item = companion.send_to_phone(watch, config(), "open", "series", "tt", "tt:2:5", connected=lambda c: True, position=845.37)
     assert item["action"] == "open" and item["position"] == 845.4
     assert "position" not in _send(watch, "open", video_id="tt:1:1")  # «Enviar» sigue igual: desde donde ibas
+
+
+# --- modo acompañante de juegos ---------------------------------------------------------------------------------------
+class _Shell:
+    def __init__(self, paused=False):
+        self.paused = {1} if paused else set()
+        self.paused_since = __import__("time").monotonic() - 60 if paused else None
+        self.sessions = type("S", (), {"game_idle_minutes": 30})()
+        self.calls = []
+
+    def resume(self):
+        self.calls.append("resume")
+        self.paused, self.paused_since = set(), None
+
+    def home(self):
+        self.calls.append("home")
+
+    def stop_game(self):
+        self.calls.append("close")
+
+
+def _play_game(library):
+    library.launcher.track("steam:1145360", "Hades", None, runner="Steam")
+
+
+def test_the_iphone_sees_the_game_and_when_it_would_close_by_itself(library):
+    from orbital import companion as comp
+
+    assert comp.game_now(library, _Shell()) is None
+    _play_game(library)
+    game = comp.game_now(library, _Shell(paused=True))
+    assert game["id"] == "steam:1145360" and game["title"] == "Hades" and game["system"] == "steam" and game["runner"] == "Steam"
+    assert game["paused"] is True and game["closes_at"] > __import__("time").time() + 25 * 60  # 30 min, ya pasó 1
+    assert comp.game_now(library, _Shell())["closes_at"] is None  # jugando no se cierra solo
+
+
+def test_the_iphone_can_resume_go_home_or_close_the_game(library):
+    from orbital import companion as comp
+
+    shell = _Shell(paused=True)
+    with pytest.raises(comp.NothingPlaying):
+        comp.game_action(library, shell, "resume")
+    _play_game(library)
+    assert comp.game_action(library, shell, "resume")["paused"] is False
+    comp.game_action(library, shell, "home")
+    comp.game_action(library, shell, "close")
+    assert shell.calls == ["resume", "home", "close"]
+    with pytest.raises(ValueError):
+        comp.game_action(library, shell, "formatear")
+
+
+def test_console_state_and_closing_an_app_never_the_game(library, monkeypatch):
+    from orbital import companion as comp
+    from orbital import gamepad, health, memory, system
+
+    apps = [memory.AppUsage("chrome.exe", "Chrome", 2355, closable=True), memory.AppUsage("steam.exe", "Steam", 900)]
+    closed = []
+    monkeypatch.setattr(memory, "usage", lambda limit=6, protect_pids=None: apps[:limit])
+    monkeypatch.setattr(memory, "close", lambda exe, protect_pids=None: closed.append((exe, protect_pids)) or 2355)
+    monkeypatch.setattr(health, "free_ram_mb", lambda: 6246)
+    monkeypatch.setattr(system, "wifi", lambda: {"ssid": "Casa", "signal": 82, "other": 1})
+    monkeypatch.setattr(gamepad, "connected_controllers", lambda: [{"kind": "legion", "battery": 2}, {"kind": "xbox", "battery": None}])
+    _play_game(library)
+    monkeypatch.setattr(library.launcher, "status", lambda: {"id": "steam:1145360", "title": "Hades", "managed": True, "pid": 4242})
+    state = comp.console_state(library)
+    assert state["power_mode"] == "balanced" and state["wifi"] == {"ssid": "Casa", "signal": 82}
+    assert state["controllers"] == [{"kind": "legion", "battery": "medium"}, {"kind": "xbox", "battery": "wired"}]
+    assert state["memory"] == {"free_gb": 6.1, "apps": [{"name": "Chrome", "gb": 2.3, "closable": True},
+                                                        {"name": "Steam", "gb": 0.9, "closable": False}]}
+    assert comp.console_action(library, power_mode="performance")["power_mode"] == "performance"
+    comp.console_action(library, close_app="Chrome")
+    assert closed[0] == ("chrome.exe", {4242})  # con el juego protegido
+    with pytest.raises(ValueError):
+        comp.console_action(library, power_mode="turbo")
+    with pytest.raises(LookupError):
+        comp.console_action(library, close_app="Photoshop")
+
+
+def test_a_closed_game_leaves_its_summary_for_the_iphone(library):
+    from orbital import companion as comp
+
+    assert comp.note_played(library.state, "steam:1145360", "Hades", 1800) is None  # sin iPhone conectado, nada
+    library.state.set_setting("companion_seen", 1)
+    first = comp.note_played(library.state, "steam:1145360", "Hades", 1800, total_seconds=172800, captures=2)
+    assert {k: first[k] for k in ("action", "title", "seconds", "total_seconds", "captures", "crashed")} == \
+        {"action": "played", "title": "Hades", "seconds": 1800, "total_seconds": 172800, "captures": 2, "crashed": False}
+    __import__("time").sleep(1.05)
+    second = comp.note_played(library.state, "steam:1145360", "Hades", 600)
+    assert second["id"] != first["id"]  # dos sesiones, dos tarjetas (no se juntan como un pendiente repetido)
+
+
+def test_the_public_port_serves_the_companion_with_the_token(library, monkeypatch):
+    from orbital import gamepad, health, memory, system
+
+    monkeypatch.setattr(memory, "usage", lambda limit=6, protect_pids=None: [])
+    monkeypatch.setattr(health, "free_ram_mb", lambda: 4096)
+    monkeypatch.setattr(system, "wifi", lambda: None)
+    monkeypatch.setattr(gamepad, "connected_controllers", list)
+    _play_game(library)
+    main = create_app(library.config, library)
+    auth = {"Authorization": "Bearer secreto"}
+    with TestClient(create_public_app(library.config, main)) as c:
+        assert c.get("/api/companion/console").status_code == 401
+        assert c.get("/api/companion/now", headers=auth).json()["game"]["id"] == "steam:1145360"
+        assert c.get("/api/companion/console", headers=auth).json()["memory"]["free_gb"] == 4.0
+        assert c.post("/api/companion/console", json={"power_mode": "efficiency"}, headers=auth).json()["power_mode"] == "efficiency"
+        assert c.post("/api/companion/console", json={"close_app": "Nada"}, headers=auth).status_code == 404
+        assert c.post("/api/companion/game", json={"action": "formatear"}, headers=auth).status_code == 400
+        assert c.get("/api/art/steam:1145360?kind=cover").status_code == 401  # el arte también pide el token
