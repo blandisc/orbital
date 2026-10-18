@@ -34,6 +34,7 @@ from .library import cinemeta, detect, emulators, esde, geforcenow, steam, steam
 from .library.media import KINDS, MediaStore, low_res, placeholder
 from .library.models import LibraryItem
 from .library.scraper import Scraper, Target
+from .library_watch import LibraryWatcher
 from .sessions import QUICK_EXIT, Sessions  # noqa: F401
 from .state import State
 from .store import ItemStore
@@ -388,6 +389,8 @@ class Catalog:
         self.state.mark_seen([i.id for i in found if i.category in ("emulators", "steam")])
         self.store.replace(found)
         self._save_snapshot(found)
+        if self.library_watch is not None:
+            self.library_watch.accept()  # lo que hay ahora ya está escaneado: el vigilante no lo vuelve a pedir
         log.info("Catálogo: %d elementos", len(found))
         self.warm_covers()
         self.scrape_art(background=True)
@@ -428,6 +431,32 @@ class Catalog:
                 targets.append(Target(item.system, item.media_key, item.title, kinds))
         return targets
 
+    # --- juegos nuevos con Orbital abierto (library_watch.py) ------------------
+    library_watch: LibraryWatcher | None = None  # el vigilante de carpetas (solo en la Orbital de verdad: server.py lo arranca)
+
+    def watched_folders(self) -> list[tuple[Path, bool]]:
+        """Las carpetas donde aparecen juegos: las de cada emulador (con subcarpetas si el emulador las recorre) y las de
+        Steam (sus appmanifest: un juego recién instalado)."""
+        out: list[tuple[Path, bool]] = []
+        for emu in self.emulators:
+            out += [(d, bool(emu.recursive)) for d in emulators.rom_dirs(emu, self.esde)]
+        if self.steam_root:
+            out += [(f, False) for f in steam.library_folders(self.steam_root)]
+        return out
+
+    def rescan_for_new(self) -> list[LibraryItem]:
+        """Algo cambió en las carpetas de juegos: vuelve a buscar (con su portada, logo y datos) y avisa a la tele con el
+        nombre de lo que llegó. Devuelve los juegos nuevos."""
+        before = {i.id for i in self.store.all()}
+        self.refresh()
+        new = [i for i in self.store.all() if i.id not in before and i.category in ("emulators", "steam")]
+        self.notify({"type": "library-changed"})
+        if new:
+            names = ", ".join(i.title for i in new[:3]) + (f" y {len(new) - 3} más" if len(new) > 3 else "")
+            log.info("Juegos nuevos: %s", names)
+            self.notify({"type": "toast", "message": f"Nuevo en tu biblioteca: {names}"})
+        return new
+
     def scrape_art(self, background: bool = False) -> int:
         """Busca el arte que falte; si consiguió algo, vuelve a escanear para mostrarlo."""
         if not self.config.art.scrape:
@@ -456,6 +485,7 @@ class Catalog:
         if added:
             log.info("Scraper: %d imágenes nuevas", added)
             self.refresh()
+            self.notify({"type": "library-changed"})  # la tele enseña la portada nueva (antes, hasta recargar)
         return added
 
     def replace_art(self, item_id: str, kind: str) -> bool:

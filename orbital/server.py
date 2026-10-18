@@ -37,6 +37,7 @@ from .catalog import Catalog
 from .config import Config
 from .foryou import SERVICE_ERRORS, TV_ONLY_PREFIXES
 from .library import trakt
+from .library_watch import LibraryWatcher
 from .remote_input import RemoteInput
 from .shell import ConsoleShell
 from .voice import VoiceController
@@ -140,6 +141,9 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
                     catalog.scanning = False
                     d.hub.publish_threadsafe({"type": "library-changed"})
                 shell.start()
+                # Juegos nuevos con Orbital abierto: vigila las carpetas de juegos (antes solo se buscaba al arrancar).
+                catalog.library_watch = LibraryWatcher(catalog.watched_folders, catalog.rescan_for_new)
+                catalog.library_watch.start()
                 try:  # de qué trata cada juego de Steam y GeForce NOW: con calma, después de todo lo demás
                     time.sleep(STORE_DELAY)
                     catalog.warm_store()
@@ -169,6 +173,8 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             with contextlib.suppress(Exception):
                 await run_in_threadpool(player.stop)
         catalog.tv.stop()
+        if catalog.library_watch is not None:
+            catalog.library_watch.stop()
         d.extra["emulator_updates"].stop()
         if problems:
             logging.getLogger("orbital").removeHandler(problems)
