@@ -503,7 +503,7 @@ def test_y_never_blocks_the_controller_while_sources_load():
     assert p.menu is None
 
 
-def test_two_quick_rt_presses_go_two_episodes_ahead():
+def test_from_the_phone_two_quick_episode_presses_go_two_episodes_ahead():
     import time as _t
 
     p, mpv = make_player()
@@ -511,27 +511,31 @@ def test_two_quick_rt_presses_go_two_episodes_ahead():
     asked = []
     p.on_episode = lambda meta, delta: asked.append(delta) or True
     p.EPISODE_WAIT = .1
-    p.press("rt")
-    p.press("rt")
+    p.phone_button("pageright")  # en el teléfono no se mantiene: cada toque cuenta
+    p.phone_button("pageright")
     assert "2 episodios adelante" in mpv.overlays[3]
     _t.sleep(.4)
     assert asked == [2]
 
 
-def test_b_cancels_an_accidental_episode_change():
-    """Un gatillo rozado sin querer: B lo deshace antes de que cargue (antes, a los 0,7 s cambiaba)."""
+def test_changing_episode_with_the_triggers_needs_a_hold_like_b():
+    """Un gatillo rozado no cambia nada (dice cómo se hace); mantenido, el anillo se llena y cambia."""
     import time as _t
 
     p, mpv = make_player()
     p.current.meta = {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1"}
     asked = []
     p.on_episode = lambda meta, delta: asked.append(delta) or True
-    p.EPISODE_WAIT = .2
+    p.EPISODE_HOLD, p.HOLD_SHOW_AFTER = .3, .05
     p.press("rt")
-    assert "B cancela" in mpv.overlays[3]
-    p.press("b")
-    _t.sleep(.4)
-    assert asked == [] and "Sigues en este episodio" in mpv.overlays[3]
+    p.press("rt-up")
+    _t.sleep(.5)
+    assert asked == [] and "Mantén RT" in mpv.overlays[3]
+    p.press("lt")  # mantenido (sin soltar)
+    _t.sleep(.2)
+    assert "Episodio anterior" in mpv.overlays[6]
+    _t.sleep(.5)
+    assert asked == [-1] and mpv.overlays[6] is None
     assert ("quit",) not in mpv.sent
 
 

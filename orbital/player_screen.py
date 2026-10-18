@@ -521,6 +521,16 @@ class PlayerScreen:
         if button == "b" and self.remote.held("b"):
             self._hold_to_quit()
             return
+        if button in ("lt-up", "rt-up"):
+            hold = getattr(self, "_episode_hold", None)
+            if hold is not None:  # soltaste antes de llenarse: no cambia, y dice cómo se hace
+                self._episode_hold = None
+                self._overlay(self.HOLD, None)
+                key = hold[0].upper()
+                self.toast(f"Mantén {key}: episodio {'siguiente' if hold[0] == 'rt' else 'anterior'}", 2.4)
+            return
+        if button in ("lt", "rt") and self.remote.held(button):
+            return  # mantenido: lo cuenta el anillo del episodio (y en un panel o en la TV en vivo, una vez)
         if button.startswith("stick-"):
             # Un stick: en un panel mueve el foco como la cruceta; si no, solo enseña los controles. Ya no recorre los
             # botones de abajo (el usuario prefiere solo los atajos), ni adelanta ni sube el volumen: un empujón sin
@@ -583,7 +593,7 @@ class PlayerScreen:
         elif button in ("lt", "rt"):
             meta = getattr(self.current, "meta", None) or {}
             if meta.get("kind") == "series" and self.on_episode:
-                self._queue_episode(meta, -1 if button == "lt" else 1)
+                self._hold_episode(button, meta)
         elif button in ("up", "down"):
             self._change_volume(1 if button == "up" else -1)
 
@@ -650,6 +660,30 @@ class PlayerScreen:
                 time.sleep(1 / self.HOLD_FPS)
 
         threading.Thread(target=run, daemon=True, name="hold-to-quit").start()
+
+    EPISODE_HOLD = .8  # s con LT/RT mantenido para cambiar de episodio (un roce del gatillo ya no cambia nada)
+
+    def _hold_episode(self, button: str, meta: dict) -> None:
+        """LT/RT como B: hay que mantenerlo. El anillo se llena y, lleno, carga el episodio anterior o el siguiente."""
+        started = time.monotonic()
+        self._episode_hold = (button, started)
+        label = "Episodio siguiente" if button == "rt" else "Episodio anterior"
+
+        def run() -> None:
+            time.sleep(self.HOLD_SHOW_AFTER)
+            while getattr(self, "_episode_hold", None) == (button, started):
+                progress = (time.monotonic() - started) / self.EPISODE_HOLD
+                self._overlay(self.HOLD, player_ui.quit_hold_ass(min(1.0, progress), button.upper(), label))
+                if progress >= 1:
+                    self._episode_hold = None
+                    self._overlay(self.HOLD, None)
+                    self.toast(f"{label}…", 3)
+                    self._episode_steps = 1 if button == "rt" else -1
+                    self._step_episodes(meta)
+                    return
+                time.sleep(1 / self.HOLD_FPS)
+
+        threading.Thread(target=run, daemon=True, name="hold-episode").start()
 
     def _hold_to_quit(self) -> None:
         """B sigue mantenido: la barra avanza y, llena, sale. Solo si la pulsación empezó aquí (no la
@@ -754,6 +788,10 @@ class PlayerScreen:
                 self.hide_hud()
             else:
                 self._quit()
+            return
+        meta = getattr(self.current, "meta", None) or {}
+        if action in ("pageleft", "pageright") and self.menu is None and not self._is_live()                 and meta.get("kind") == "series" and self.on_episode:
+            self._queue_episode(meta, -1 if action == "pageleft" else 1)  # en el teléfono no se mantiene: directo
             return
         button = {"select": "a", "alt": "x", "options": "y", "menu": "x", "pageleft": "lt", "pageright": "rt",
                   "prevsection": "lb", "nextsection": "rb"}.get(action, action)

@@ -460,7 +460,7 @@ def hud_ass(hud: Hud) -> str:
     lines.append(text(MARGIN, 878, esc(fit(info_line(hud), 22, min(1300, W - 2 * MARGIN), "semi")), 22, MUTED, weight="semi"))
     # A primero, como en todo Orbital; luego lo que se descubre (◀▶, LT/RT) y B al final.
     items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes"),
-             ("◀ ▶", "Adelantar"), *([("LT RT", "Episodio")] if hud.series else []), ("B", "Mantén: salir")]
+             ("◀ ▶", "Adelantar"), *([("LT RT", "Mantén: episodio")] if hud.series else []), ("B", "Mantén: salir")]
     while len(items) > 4 and hints_width(items) > W - 2 * MARGIN:
         items.pop(-2)  # si no caben (4:3): primero LT/RT, luego ◀▶
     bottom = _touch_bar(hud, 1000, paused=False) if TOUCH else hints(items, 1022, right=W - MARGIN)
@@ -500,7 +500,7 @@ def paused_ass(hud: Hud) -> str:
     y += 30
     lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes")], MARGIN, y))
     bar, _ = progress_bar(hud)
-    more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), *([("LT RT", "Episodio")] if hud.series else []),
+    more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), *([("LT RT", "Mantén: episodio")] if hud.series else []),
             ("B", "Mantén: salir")]
     room = max(260, W - 2 * MARGIN - hints_width(more) - 48)
     if TOUCH:
@@ -880,15 +880,15 @@ def toast_ass(message: str, top: float = NOTICE_Y) -> str:
     return "\n".join([rrect(x, top, w, 54, 27, PANEL, "30"), text(x + 22, top + 27, esc(message), 24, weight="semi", align=4)])
 
 
-def quit_hold_ass(progress: float) -> str:
-    """B mantenido: el botón B arriba a la derecha con un anillo fino que se llena (y «Salir» al lado).
-    Sin caja: discreto sobre el video."""
+def quit_hold_ass(progress: float, key: str = "B", label: str = "Salir") -> str:
+    """Un botón mantenido (B: salir; LT/RT: otro episodio): el botón arriba a la derecha con un anillo fino que se
+    llena (y lo que hace al lado). Sin caja: discreto sobre el video."""
     progress = max(0.0, min(1.0, progress)) if math.isfinite(progress) else 0.0
     cx, cy, r = W - MARGIN - 30, BUFFER_Y + 28, 30  # debajo del aviso, no encima
-    shape, gw = glyph(cx - 20, cy, "B", 40)
+    shape, gw = glyph(cx - (20 if len(key) == 1 else 26), cy, key, 40)
     return "\n".join([circle(cx, cy, r + 6, PANEL, "70", blur=6),
                       ring(cx, cy, r, 3, 1.0, TEXT, "C8"), ring(cx, cy, r, 3, progress, TEXT), shape,
-                      text(cx - r - 16, cy, "Salir", 24, SOFT, weight="semi", align=6)])
+                      text(cx - r - 16, cy, esc(label), 24, SOFT, weight="semi", align=6)])
 
 
 def arc(cx: float, cy: float, r: float, thickness: float, start: float, end: float, color: str, alpha: str = "00") -> str:

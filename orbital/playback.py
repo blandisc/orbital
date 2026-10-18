@@ -291,8 +291,8 @@ class PlayerRemote:
                DPAD_UP: "up", DPAD_DOWN: "down", LB: "lb", RB: "rb", LT: "lt", RT: "rt",
                STICK_UP: "stick-up", STICK_DOWN: "stick-down", STICK_LEFT: "stick-left", STICK_RIGHT: "stick-right"}
     REPEAT = {DPAD_LEFT, DPAD_RIGHT, DPAD_UP, DPAD_DOWN, LB, RB, STICK_UP, STICK_DOWN, STICK_LEFT, STICK_RIGHT,
-              B_BUTTON}  # B mantenido: la barra de "Mantén para salir" se va llenando
-    RELEASE = {B_BUTTON}  # al soltar B llega "b-up" (la barra se va si soltaste antes)
+              B_BUTTON, LT, RT}  # B, LT y RT mantenidos: el anillo de «Salir» / «Episodio» se va llenando
+    RELEASE = {B_BUTTON, LT, RT}  # al soltar llega "b-up" / "lt-up" / "rt-up" (el anillo se va si soltaste antes)
 
     def __init__(self, on_press, delay: float = .35, rate: float = .15) -> None:
         self.on_press = on_press
