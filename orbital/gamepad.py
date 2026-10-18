@@ -140,6 +140,7 @@ STICK_UP, STICK_DOWN, STICK_LEFT, STICK_RIGHT = 0x40000, 0x80000, 0x100000, 0x20
 STICK_PUSHED = 18000  # de 32767
 STICK_RELEASED = 11500
 STICK_REST = 6500  # en el centro: lo que hace falta ver una vez para que un stick recién conectado cuente
+STICK_STUCK = 4.0  # s empujado y sin moverse: se da por pegado (como la interfaz, core/input.js)
 
 
 def _direction(x: int, y: int) -> int:
@@ -331,6 +332,7 @@ class GamepadWatcher:
         was_connected = [False] * 4
         sticks_armed = [False] * 4  # ya se le vio el stick en el centro desde que se conectó
         stick_state: list[tuple[int, ...]] = [()] * 4  # la dirección de cada stick en la vuelta anterior (histéresis)
+        stick_since: list[tuple[float, tuple[int, ...]] | None] = [None] * 4  # desde cuándo está empujado y quieto
         while not self._stop.is_set():
             now = time.monotonic()
             if self._redetect.is_set():
@@ -367,6 +369,17 @@ class GamepadWatcher:
                             sticks_armed[slot] = True
                         if sticks_armed[slot]:
                             stick_state[slot] = stick_bits(axes, stick_state[slot])
+                            # Pegado: empujado y quieto (casi los mismos valores) más de STICK_STUCK s: deja de contar
+                            # hasta verlo en el centro (si no, los controles del reproductor no se iban nunca).
+                            pushed = any(stick_state[slot])
+                            since = stick_since[slot]
+                            same = pushed and since is not None and all(abs(a - b) < 600 for a, b in zip(axes, since[1], strict=True))
+                            if not pushed:
+                                stick_since[slot] = None
+                            elif since is None or not same:
+                                stick_since[slot] = (now, axes)
+                            elif now - since[0] > STICK_STUCK:
+                                sticks_armed[slot], stick_state[slot], stick_since[slot] = False, (), None
                             for bit in stick_state[slot]:
                                 buttons |= bit
                     else:

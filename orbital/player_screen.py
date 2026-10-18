@@ -139,7 +139,7 @@ class PlayerScreen:
             ends=player_ui.ends_at(position, duration), now=clock(),
             chapters=[float(c["time"]) for c in chapters], chapter_titles=[str(c.get("title") or "") for c in chapters],
             facts=meta.get("facts", ""), description=meta.get("description", ""), seeking=seeking,
-            focus=getattr(self, "_hud_focus", None), pip=bool(getattr(self, "pip_on_home", False)))
+            pip=bool(getattr(self, "pip_on_home", False)))
 
     def show_hud(self, seeking: str = "", *, position: float | None = None, paused: bool | None = None) -> None:
         """Barra inferior: se queda en pausa; reproduciendo, se va sola a los pocos segundos.
@@ -171,51 +171,10 @@ class PlayerScreen:
         if self._value("pause") and self._hud_visible and self.menu is None:
             self.show_hud()
 
-    def _stick_focus(self, button: str) -> None:
-        """◀ ▶ con el stick: el foco recorre los botones de abajo (empieza en Pausa/Continuar); ▲ ▼ solo enseñan la barra."""
-        if self._is_live() or self.current is None:
-            self.show_hud()
-            return
-        paused = bool(self._value("pause"))
-        items = player_ui.nav_items(self._hud(self.current), paused=paused)
-        focus = getattr(self, "_hud_focus", None)
-        if button in ("stick-left", "stick-right"):
-            if focus is None:
-                focus = 0  # Pausa / Continuar (el primero, como siempre)
-            else:
-                focus = max(0, min(len(items) - 1, focus + (1 if button == "stick-right" else -1)))
-            self._hud_focus = focus
-        self.show_hud()
-
-    def _focused_action(self) -> str | None:
-        """A con un botón enfocado por el stick: hace lo de ese botón. Devuelve cuál (None si no había foco)."""
-        focus = getattr(self, "_hud_focus", None)
-        if focus is None or not self._hud_visible or self.menu is not None or self._card is not None or self.current is None:
-            return None
-        paused = bool(self._value("pause"))
-        items = player_ui.nav_items(self._hud(self.current), paused=paused)
-        action = items[max(0, min(len(items) - 1, focus))][2]
-        if action == "a":
-            return None  # Pausa / Continuar: lo de siempre de A
-        if action == "quit":
-            self._user_quit = True
-            self._quit()
-        elif action in ("x", "y"):
-            self.press(action)
-        elif action == "seek":
-            self._open_panel(player_ui.seek_panel())
-        elif action == "volume":
-            now = (getattr(self, "system_volume", None) or [lambda: {"level": self._value("volume"), "muted": self._value("mute")}])[0]() or {}
-            self._open_panel(player_ui.volume_panel(int(now.get("level") or 0), bool(now.get("muted"))))
-        elif action == "episode":
-            self._open_panel(player_ui.episode_panel())
-        return action
-
     def hide_hud(self) -> None:
         if self._hud_timer:
             self._hud_timer.cancel()
         self._hud_visible = False
-        self._hud_focus = None  # el foco del stick se va con la barra
         self._overlay(1, None)
 
     def _hide_hud_if_playing(self) -> None:
@@ -312,36 +271,6 @@ class PlayerScreen:
         prop, value = option["action"]
         if prop == "category":  # la guía de canales: otra categoría, y se pasa a su lista de canales
             self._show_category(value)
-            return
-        if prop == "volumeto":  # se queda en el panel: oyes el cambio y sigues ajustando
-            system = getattr(self, "system_volume", None)
-            if system:
-                after = system[1](level=int(value), muted=False) or {"level": value}
-                self._show_notice(player_ui.volume_ass(after.get("level", value), muted=bool(after.get("muted"))), 1.6, layer=self.VOLUME)
-            else:
-                self.mpv.command("set_property", "volume", int(value))
-            for o in self.menu.column.options if self.menu else []:
-                o["current"] = o is option
-            self._draw_panel()
-            return
-        if prop == "mute":
-            self.close_menu()
-            self.toggle_mute()
-            return
-        if prop == "seekby":
-            self.close_menu()
-            self.mpv.command("seek", int(value), "relative")
-            self.show_hud(seeking=player_ui.seek_label(int(value)), position=self._expected_position(int(value)))
-            return
-        if prop == "epstep":
-            self.close_menu()
-            meta = getattr(self.current, "meta", None) or {}
-            if meta.get("kind") == "series" and self.on_episode:
-                self._queue_episode(meta, int(value))
-            return
-        if prop == "episodes":
-            self.close_menu()
-            self._open_more_soon()
             return
         if prop == "subscale":  # se queda en el panel: ves el cambio y sigues ajustando
             self.sub_scale = value
@@ -593,18 +522,13 @@ class PlayerScreen:
             self._hold_to_quit()
             return
         if button.startswith("stick-"):
-            # Un stick: en un panel mueve el foco como la cruceta; si no, recorre los botones de abajo (A elige; la
-            # cruceta sigue siendo atajo). No adelanta ni sube el volumen: un empujón sin querer no cambia nada.
+            # Un stick: en un panel mueve el foco como la cruceta; si no, solo enseña los controles. Ya no recorre los
+            # botones de abajo (el usuario prefiere solo los atajos), ni adelanta ni sube el volumen: un empujón sin
+            # querer (o un stick con deriva) no cambia nada.
             if self.menu is not None:
                 self._menu_press(button.removeprefix("stick-"))
             elif self._card is None:
-                self._stick_focus(button)
-            return
-        if button == "b" and getattr(self, "_hud_focus", None) is not None and self.menu is None and self._card is None:
-            self._hud_focus = None  # B quita el foco del stick (otra B ya es «Mantén: salir»)
-            self.show_hud()
-            return
-        if button == "a" and self._focused_action() is not None:
+                self.show_hud()
             return
         if button != "y":
             self._more_token = None  # el panel Y que se estaba buscando ya no se abre
