@@ -551,8 +551,17 @@ function renderGames() {
 }
 
 /** La ficha (dentro de Juegos) muestra el juego enfocado; el fondo toma su color (luz de ambiente). */
+/** Entraste a una consola en Juegos: su tarjeta de Inicio deja de anunciar lo nuevo. */
+function consoleOpened(id) {
+  const row = id && state.allRows.find((r) => r.id === id);
+  if (!row || !row.items.some((i) => i.new && (i.added ?? Infinity) > (row.opened ?? 0))) return;
+  row.opened = Date.now() / 1000;
+  api.consoleOpened(id).catch(() => {});
+}
+
 function gamesFocused(target) {
   if (!inGames()) return;
+  consoleOpened(ui.games.console?.id);
   const item = target?.item ?? target?.console?.last ?? null;
   if (item) ui.backdrop.show(item.hero || item.image || null);
   const node = document.querySelector(`.games [data-focus-id="${ui.games.focusId}"]`);

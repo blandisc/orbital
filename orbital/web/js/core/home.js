@@ -115,7 +115,8 @@ export function consoleList(rows) {
       logo: !!SYSTEMS[system]?.logo,
       cover: last?.image ?? row.items[0]?.image ?? null, // sin foto de consola (Steam): la portada del último
       last,
-      fresh: row.items.filter((i) => i.new).length,
+      // Lo que llegó desde la última vez que entraste a esa consola (antes contaba 7 días aunque ya hubieras entrado).
+      fresh: row.items.filter((i) => i.new && (i.added ?? Infinity) > (row.opened ?? 0)).length,
       folder: row.empty ? row.folder ?? null : undefined, // instalado, sin juegos: dónde ponerlos
     });
   }

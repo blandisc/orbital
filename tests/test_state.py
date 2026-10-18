@@ -105,3 +105,12 @@ def test_new_games_are_only_the_ones_that_arrive_later():
     assert state.first_seen("a") == 0  # lo que ya tenías al estrenar la función no es "nuevo"
     state.mark_seen(["a", "b", "c"], now=200)
     assert state.first_seen("c") == 200 and state.first_seen("a") == 0
+
+
+def test_opening_a_console_is_remembered(tmp_path):
+    from orbital.state import State
+
+    state = State(tmp_path / "s.json")
+    assert state.opened("steam") == 0
+    state.mark_opened("steam", now=300)
+    assert State(tmp_path / "s.json").opened("steam") == 300

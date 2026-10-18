@@ -558,8 +558,9 @@ class Catalog:
                     games = [i for i in items if i.category == "emulators" and i.source == emu.id]
                     if games:
                         with_games.add(emu.system or emu.id)
-                        rows.append({"id": f"emulators:{emu.id}", "title": emu.name,
-                                     "items": [self.describe(i) for i in games]})
+                        row_id = f"emulators:{emu.id}"
+                        rows.append({"id": row_id, "title": emu.name, "items": [self.describe(i) for i in games],
+                                     "opened": self.state.opened(row_id)})
                     elif emu.system and emulators.executable_found(emu):
                         folder = emulators.rom_dirs(emu, self.esde)
                         empty.append({"id": f"emulators:{emu.id}", "title": emu.name, "items": [], "empty": True,
@@ -573,7 +574,7 @@ class Catalog:
             else:
                 members = [i for i in items if i.category == cat["id"]]
             if members:
-                rows.append({**cat, "items": [self.describe(i) for i in members]})
+                rows.append({**cat, "items": [self.describe(i) for i in members], "opened": self.state.opened(cat["id"])})
         return rows
 
     def grouped_items(self, row_id: str) -> list[LibraryItem]:

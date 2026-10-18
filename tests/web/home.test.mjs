@@ -130,3 +130,10 @@ test("el próximo estreno de tus series: el primero que no ha salido", async () 
   assert.deepEqual(nextAiring(items, today), { title: "The Simpsons", episode: "T38 E3", when: "Mañana · 6:00 p. m.", meta_id: undefined });
   assert.equal(nextAiring([], today), null);
 });
+
+test("«+N nuevos» se apaga en cuanto entras a esa consola (no espera los 7 días)", () => {
+  const row = { id: "steam", opened: 0, items: [{ id: "a", title: "A", new: true, added: 500 }, { id: "b", title: "B", new: true, added: 900 }] };
+  assert.equal(buildHome([row]).consoles[0].fresh, 2);
+  assert.equal(buildHome([{ ...row, opened: 600 }]).consoles[0].fresh, 1); // solo lo que llegó después de entrar
+  assert.equal(buildHome([{ ...row, opened: 1000 }]).consoles[0].fresh, 0);
+});
