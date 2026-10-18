@@ -104,6 +104,7 @@ export function createHero({ onAction }) {
       if (bytes(extra.size)) list.push(h("span", {}, bytes(extra.size)));
       if (extra.update) list.push(h("span", { class: "hero__fact--warning" }, "Actualización pendiente"));
     }
+    if (extra.port) list.push(h("span", {}, "Versión para PC")); // un port (gow3_pc…): en la sección de su consola, sin emulador
     if (item.favorite) list.push(h("span", { class: "hero__fact--favorite" }, svg(ICONS.star), "Favorito"));
     if (item.source === "collection") { // una tarjeta de colección: qué es y cuántos tiene, no «Sin jugar todavía»
       const c = item.collection || {};

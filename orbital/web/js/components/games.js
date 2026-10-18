@@ -131,7 +131,7 @@ export function createGames({ onFocus, onPick, onAction }) {
       // Bajo el logo, como la ficha de una película: año, géneros y quién lo hizo.
       facts: [extra.year, genres(extra.genres || []).slice(0, 2).join(", "), extra.developer].filter(Boolean),
       favorite: !!item.favorite,
-      platform: { icon: systemIconName(item), mark: platformMark(item), text: [item.subtitle, runner].filter(Boolean).join(" · ") },
+      platform: { icon: systemIconName(item), mark: platformMark(item), text: [item.subtitle, extra.port ? "Versión para PC" : runner].filter(Boolean).join(" · ") },
       stats: [
         ["Última vez", item.last_played ? lastPlayed(item.last_played).replace(/^Jugado /, "") : item.playtime >= 60 ? null : "Sin jugar"],
         ["Jugado", item.playtime >= 60 ? duration(item.playtime) : null],

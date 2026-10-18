@@ -163,10 +163,13 @@ def scan(
     dirs = rom_dirs(emu, esde)
     if not dirs:
         log.warning("%s no tiene rom_dirs ni system de ES-DE", emu.name)
+    emulator_exes = {exe.name.lower() for exe in exes.values() if exe}
+    ports = _ports(emu, dirs, emulator_exes, media, esde)
     if emu.system == "ps4":
-        return _scan_ps4(emu, dirs, candidates, exes, media)
+        return sorted([*_scan_ps4(emu, dirs, candidates, exes, media), *ports], key=lambda i: i.title.lower())
     if emu.system == "ps3":
-        return _scan_ps3(emu, dirs, candidates, exes, media)
+        return sorted([*_scan_ps3(emu, dirs, candidates, exes, media), *ports], key=lambda i: i.title.lower())
+    items += ports
     for root in dirs:
         if not root.is_dir():
             log.warning("Carpeta de ROMs no encontrada para %s: %s", emu.name, root)
@@ -181,9 +184,9 @@ def scan(
             if entry.suffix.lower() == ".lnk":
                 # Acceso directo que abre este emulador con un juego ("Call of Duty.lnk" -> Xenia + paquete):
                 # se usa el juego al que apunta; el nombre y la portada siguen siendo los del .lnk en ES-DE.
-                rom = _shortcut_rom(entry, {exe.name.lower() for exe in exes.values() if exe})
+                rom = _shortcut_rom(entry, emulator_exes)
                 if rom is None:
-                    continue
+                    continue  # no abre un emulador: si abre un programa, es un port (ver _ports)
             elif exts and entry.suffix.lower() not in exts:
                 continue
             if any(word in entry.name.lower() for word in excluded):
@@ -285,6 +288,42 @@ def _scan_ps3(emu: EmulatorConfig, dirs: list[Path], candidates: list[EmulatorCo
             art_path=art["cover"] or (str(game.icon) if game.icon else None),
             hero_path=art["hero"] or (str(game.background) if game.background else None), logo_path=art["logo"],
             system=emu.system, media_key=key, extra={**game_extra(own), "added": added_at(game.boot)}))
+    return items
+
+
+PORT_RUNNER = "pc"
+
+
+def _ports(emu: EmulatorConfig, dirs: list[Path], emulator_exes: set[str], media: MediaStore | None,
+           esde: EsdeLibrary | None) -> list[LibraryItem]:
+    """Ports para PC de un juego de consola (God of War III de PS4 con gow3_pc, Ship of Harkinian de N64…): un acceso
+    directo en la carpeta de esa consola que abre un programa, no un emulador. Sale en la sección de su consola y se
+    abre directo (Orbital sigue al juego aunque lo abra un lanzador que luego se cierra)."""
+    items: list[LibraryItem] = []
+    for root in dirs:
+        try:
+            links = sorted(p for p in root.iterdir() if p.suffix.lower() == ".lnk" and p.is_file())
+        except OSError:
+            continue
+        system = emu.system if esde and emu.system and root == esde.system_dir(emu.system) else None
+        for lnk in links:
+            shortcut = read_lnk(lnk)
+            target = Path(shortcut.target) if shortcut and shortcut.target else None
+            if target is None or target.suffix.lower() != ".exe" or target.name.lower() in emulator_exes or not target.is_file():
+                continue
+            meta = esde.meta(system, lnk) if system else None
+            if meta and meta.hidden:
+                continue
+            key = lnk.stem
+            art = pick_art(media, esde, emu.system, key, lnk, system)
+            own = media.meta(emu.system, key) if media and emu.system else None
+            cwd = shortcut.working_dir if shortcut and shortcut.working_dir else str(target.parent)
+            items.append(LibraryItem(
+                id=_item_id(emu.id, lnk), title=game_title(meta.name if meta else None, lnk, own), category="emulators",
+                source=emu.id, subtitle=emu.name, runners=[Runner(PORT_RUNNER, "PC", [str(target), *shortcut.argv()], cwd)],
+                default_runner=PORT_RUNNER, favorite=bool(meta and meta.favorite), art_path=art["cover"], hero_path=art["hero"],
+                logo_path=art["logo"], system=emu.system, media_key=key if emu.system else None,
+                extra={**game_extra(own), "added": added_at(lnk), "port": True}))
     return items
 
 
