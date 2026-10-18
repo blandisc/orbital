@@ -121,15 +121,17 @@ public final class PlayerModel: ObservableModel {
     private var choicesAt = Date.distantPast
     private var nextLocal: LocalEpisode?
     private let skipSegments: @Sendable (String) async -> SkipSegments?
+    private let scareMap: @Sendable (String, String) async -> [JumpScare]?
     static let choicesLifetime: TimeInterval = StreamFinder.cacheSeconds   // los enlaces de Real-Debrid caducan
 
     public init(engine: PlayerEngine, finder: StreamFinder, watch: WatchService, titlePrefs: TitlePreferences, settings: SettingsStore,
                 clock: @escaping @Sendable () -> Date = { Date() }, onCellular: @escaping @Sendable () -> Bool = { false },
                 episodeLabel: @escaping @Sendable (Int, Int) -> String = { "T\($0) · E\($1)" },
                 localEpisode: @escaping @Sendable (String, String) async -> LocalEpisode? = { _, _ in nil },
-                skipSegments: @escaping @Sendable (String) async -> SkipSegments? = { _ in nil }) {
+                skipSegments: @escaping @Sendable (String) async -> SkipSegments? = { _ in nil },
+                scareMap: @escaping @Sendable (_ imdb: String, _ title: String) async -> [JumpScare]? = { _, _ in nil }) {
         self.engine = engine; self.finder = finder; self.watch = watch; self.titlePrefs = titlePrefs; self.settings = settings
-        self.clock = clock; self.onCellular = onCellular; self.episodeLabel = episodeLabel; self.localEpisode = localEpisode; self.skipSegments = skipSegments; self.lastSave = clock()
+        self.clock = clock; self.onCellular = onCellular; self.episodeLabel = episodeLabel; self.localEpisode = localEpisode; self.skipSegments = skipSegments; self.scareMap = scareMap; self.lastSave = clock()
         super.init()
     }
 
@@ -162,12 +164,17 @@ public final class PlayerModel: ObservableModel {
         upNext = nil; upNextDeadline = nil; upNextDismissed = false; skipIntroTo = nil; reachedEnd = false; finalReported = false
         notice = nil; attempts = 0; lastSave = clock(); snapshot = EngineSnapshot(state: .loading); source = nil; sourceChoices = []
         acceptingSnapshots = false; retrying = false; nextLocal = nil; choicesAt = .distantPast
+        // Lo encontrado «En internet» y el mapa de sustos eran del video anterior.
+        foundSubtitles = nil; addedSubtitleURLs = []; subtitleSearchFailed = false; scares = nil
+        Task { [weak self] in await self?.loadScares() }
     }
 
     /// Justo antes de cargar: de aquí en adelante lo que diga el motor es del video nuevo.
     private func startLoading() {
         loadSegmentsIfNeeded()
         acceptingSnapshots = true; retrying = false; hasPlayed = false; tracksApplied = false
+        // Otra fuente: el subtítulo externo (OpenSubtitles) se vuelve a sumar; antes se perdía al cambiar de fuente.
+        addedExternalSubtitle = false; knownSubtitleIDs = []
         scrobbleStarted = false   // otra carga (otra fuente, otro episodio): cuando suene, Trakt recibe el avance donde va
         startupDeadline = clock().addingTimeInterval(PlaybackRules.startupTimeout)
     }
@@ -319,7 +326,8 @@ public final class PlayerModel: ObservableModel {
     /// Cada aviso reserva los segundos vistos que le tocan (dos avisos a la vez no cuentan los mismos segundos dos veces) y los
     /// devuelve si no se pudieron guardar ni encolar.
     private func report(_ phase: PlaybackPhase) async {
-        guard var event = event() else { return }
+        // Un archivo que te pasaron y no se reconoció («file:…»): no es un título de Stremio, no se guarda nada allá.
+        guard var event = event(), !event.metaID.hasPrefix("file:") else { return }
         let reserved: Double
         if case .started = phase { reserved = 0 } else { reserved = watchedUnsaved; watchedUnsaved -= reserved }
         event.watched = reserved
@@ -391,21 +399,43 @@ public final class PlayerModel: ObservableModel {
 
     /// «Buscar en internet» (Subtítulos del reproductor): todo lo que hay en OpenSubtitles y tus complementos, por idioma.
     public private(set) var foundSubtitles: [SubtitleOption]? { didSet { changed() } }
+    /// Los sustos de la película que suena (Where's The Jump), marcados en la barra; nil: no hay mapa.
+    public private(set) var scares: [JumpScare]? { didSet { changed() } }
+
+    public func loadScares() async {
+        guard let r = request, r.kind == "movie", r.metaID.hasPrefix("tt") else { scares = nil; return }
+        let id = r.metaID
+        let found = await scareMap(id, r.originalTitle)
+        guard request?.metaID == id else { return }
+        scares = found
+    }
     public private(set) var searchingSubtitles = false { didSet { changed() } }
 
     public func searchSubtitles() async {
         guard let request, !searchingSubtitles else { return }
+        let mine = generation
         searchingSubtitles = true
         defer { searchingSubtitles = false }
         let file = request.localFile.flatMap(FileFingerprint.of)
-        foundSubtitles = await finder.subtitleOptions(kind: request.kind, videoID: request.videoID, file: file)
+        let found = await finder.subtitleOptions(kind: request.kind, videoID: request.videoID, file: file)
+        guard generation == mine else { return }   // ya es otro video: no se le cuelgan los de este
+        // Nada (o sin red): se queda el botón para volver a intentar, con el aviso.
+        foundSubtitles = found.isEmpty ? nil : found
+        subtitleSearchFailed = found.isEmpty
     }
 
-    /// Suma el que elegiste y lo activa.
-    public func addFoundSubtitle(_ option: SubtitleOption) async {
+    /// No se encontró nada en la última búsqueda (o no había red).
+    public private(set) var subtitleSearchFailed = false { didSet { changed() } }
+    /// Los que ya se sumaron (no se suma dos veces el mismo).
+    public private(set) var addedSubtitleURLs: Set<URL> = [] { didSet { changed() } }
+
+    /// Suma el siguiente de ese idioma que aún no se sumó y lo activa.
+    public func addFoundSubtitle(language: String) async {
+        guard let option = foundSubtitles?.first(where: { $0.language == language && !addedSubtitleURLs.contains($0.url) }) else { return }
         userTouched()
         knownSubtitleIDs = Set(snapshot.subtitleTracks.map(\.id))
         addedExternalSubtitle = true
+        addedSubtitleURLs.insert(option.url)
         await engine.addSubtitle(url: option.url, language: option.language)
     }
 

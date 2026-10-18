@@ -306,7 +306,7 @@ struct TVAccessory: View {
                 Button(action: toggle) { Image(systemName: now.paused ? "play.fill" : "pause.fill") }
                     .buttonStyle(.plain).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
                     .disabled(busy)
-                    .accessibilityLabel(now.paused ? Text("Reanudar") : Text("Pausa"))
+                    .accessibilityLabel(now.paused ? Text("Continuar") : Text("Pausa"))
             }
         }
         .padding(.horizontal, DS.Space.s3)

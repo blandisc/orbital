@@ -92,7 +92,7 @@ struct SourceBadge: View {
     let source: ListSource
     var body: some View {
         Text(verbatim: source.name.uppercased())
-            .font(DS.TextRecipe.caption.font.weight(.heavy)).tracking(DS.Collections.badgeRadius / 10)
+            .font(DS.TextRecipe.caption.font.weight(.bold)).tracking(DS.Collections.badgeRadius / 10)   // negrita, como `.source-badge` de la TV
             .foregroundStyle(DS.paper)
             .padding(.horizontal, DS.Space.s1 + DS.Size.hairline).padding(.vertical, DS.Size.hairline)
             .background(source.color, in: RoundedRectangle(cornerRadius: DS.Collections.badgeRadius, style: .continuous))

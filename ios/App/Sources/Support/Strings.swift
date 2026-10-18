@@ -112,8 +112,17 @@ enum Strings {
     /// «termina a las 23:21» / «ends at 11:21 PM» (como la TV): la hora (en el formato del idioma de la app) en que acabarías si empiezas ahora.
     static func endsAt(minutesLeft: Int, now: Date = Date(), language: String) -> String {
         let end = Vocabulary.endTime(minutesLeft: minutesLeft, now: now)
-        let time = end.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(Locale(identifier: language)))
+        let time = clock(end, language: language)
         return String(format: tr("termina a las %@", language: language), time)
+    }
+
+    /// La hora en 12 horas, como la TV y como se dice en México: «9:05 p. m.» (en inglés, «9:05 PM»).
+    static func clock(_ date: Date, language: String) -> String {
+        let c = Calendar.current.dateComponents([.hour, .minute], from: date)
+        let h = c.hour ?? 0, m = c.minute ?? 0
+        let hour = h % 12 == 0 ? 12 : h % 12
+        let suffix = language.hasPrefix("en") ? (h < 12 ? "AM" : "PM") : (h < 12 ? "a. m." : "p. m.")
+        return String(format: "%d:%02d %@", hour, m, suffix)
     }
 
     /// «Película» / «Serie» en el idioma de la app.

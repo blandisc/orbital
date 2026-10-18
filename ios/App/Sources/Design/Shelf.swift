@@ -81,7 +81,7 @@ struct RankedPosterCard: View {
         HStack(alignment: .bottom, spacing: rank >= 10 ? -DS.Size.rankTwoDigitsOverlap : -DS.Space.s5) {
             Text(verbatim: "\(rank)").font(DS.Size.rankFont).foregroundStyle(tint.map { $0.opacity(DS.PlatformFan.numberTint) } ?? DS.ink500)
                 .shadow(color: tint ?? .clear, radius: DS.PlatformFan.numberGlow)
-                .tracking(rank >= 10 ? DS.Size.rankTwoDigitsTracking : 0)
+                .tracking(DS.Size.rankTracking)
                 .lineLimit(1).fixedSize()
                 .padding(.bottom, -DS.Space.s3)   // la cifra se apoya en la base del póster (sin el hueco del renglón)
                 .accessibilityHidden(true)

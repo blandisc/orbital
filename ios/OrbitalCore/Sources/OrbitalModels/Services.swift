@@ -23,6 +23,19 @@ public final class Services: ObservableModel {
     /// IntroDB: dónde saltar la intro y el resumen (y cuándo empiezan los créditos).
     public var introDB: IntroDB { IntroDB(http: http) }
     public var jumpScares: JumpScares { JumpScares(http: http) }
+
+    /// Los sustos de una película (id de IMDb), guardados la primera vez; nil si no hay mapa. El nombre en inglés y el año
+    /// salen de Cinemeta (como los escribe el sitio); si no contesta, el que se da.
+    public func scares(imdb: String, fallbackTitle: String) async -> [JumpScare]? {
+        let key = "jumpscares.\(imdb)"
+        if let data = kv.data(key), let saved = try? JSONDecoder().decode([JumpScare].self, from: data) { return saved.isEmpty ? nil : saved }
+        let meta = try? await cinemeta.meta(kind: "movie", id: imdb)
+        let title = meta?["name"]?.string ?? fallbackTitle
+        let year = (meta?["year"]?.string ?? meta?["releaseInfo"]?.string).flatMap { Int($0.prefix(4)) }
+        let found = await jumpScares.scares(title: title, year: year, imdb: imdb)
+        if let found { kv.set(key, data: try? JSONEncoder().encode(found)) }
+        return (found?.isEmpty ?? true) ? nil : found
+    }
     /// TMDB directo (la ficha rica: elenco, saga, «Más como esto»…); sin clave, `configured` es false.
     public private(set) var tmdb: Tmdb { didSet { changed() } }
     public private(set) var trakt: Trakt? { didSet { changed() } }

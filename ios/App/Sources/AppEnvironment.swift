@@ -154,6 +154,7 @@ final class AppEnvironment: ObservableObject {
             case .notEnoughSpace: notify(format: "No hay espacio para descargar %@ (desde la TV)", name)
             case .other: notify(format: "No pude descargar %@ (desde la TV)", name)
             }
+        case .played(let item): ui.played = item   // el resumen de la sesión de juego, en su hoja
         }
     }
 
@@ -206,6 +207,8 @@ final class AppEnvironment: ObservableObject {
 
     /// Infuse volvió (`orbital-ios://infuse-done?...`): se guarda dónde te quedaste. Infuse ya avisa a Trakt por su cuenta.
     func handle(url: URL) async {
+        // Un video que te pasaron (AirDrop, Archivos, «Abrir con…»).
+        if url.isFileURL { return await openFile(url) }
         // El QR de «Conectar iPhone» en la TV: queda conectada sin escribir nada.
         if let pair = OrbitalRemote.pairing(url) { return await pairWithOrbital(address: pair.address, token: pair.token) }
         // El widget «Lo siguiente para ti»: reproducir donde ibas o abrir la ficha.
@@ -227,6 +230,44 @@ final class AppEnvironment: ObservableObject {
             if session.duration == 0, seconds > 60 { askFinished = r }
         }
     }
+
+    /// Un video de fuera: se copia a la app (los de hace días se borran), se reconoce por el nombre del archivo (Cinemeta: nombre,
+    /// año, temporada y episodio) y se reproduce. Reconocido, el reproductor le busca subtítulos en OpenSubtitles con la huella
+    /// del archivo (los de esa copia exacta) y guarda tu avance en Stremio; sin reconocer, se ve igual, sin guardar nada.
+    private func openFile(_ url: URL) async {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        let folder = AppFiles.support.appendingPathComponent("Importados", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let old = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
+        for file in old where ((try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast) < Date().addingTimeInterval(-Self.importedDays * 86_400) {
+            try? FileManager.default.removeItem(at: file)
+        }
+        let target = folder.appendingPathComponent(url.lastPathComponent)
+        if target.standardizedFileURL != url.standardizedFileURL {
+            try? FileManager.default.removeItem(at: target)
+            do { try FileManager.default.copyItem(at: url, to: target) } catch { notify("No pude abrir ese archivo."); return }
+        }
+        let parsed = ReleaseName.parse(url.lastPathComponent)
+        let kind = parsed.isSeries ? "series" : "movie"
+        let found = ((try? await services.cinemeta.searchAll(parsed.title)) ?? []).filter { $0.kind == kind }
+        let match = found.first { r in parsed.year.map { r.year.hasPrefix(String($0)) } ?? true } ?? (parsed.year == nil ? found.first : nil)
+        var request: PlayRequest
+        if let match {
+            let video = parsed.isSeries ? "\(match.metaID):\(parsed.season ?? 1):\(parsed.episode ?? 1)" : match.metaID
+            request = PlayRequest(kind: kind, metaID: match.metaID, videoID: video, originalTitle: match.title, displayTitle: match.title,
+                                  episodeLabel: parsed.isSeries ? Strings.episode(season: parsed.season, episode: parsed.episode ?? 1, language: services.appSettings.uiLanguage) : "",
+                                  poster: match.poster, year: match.year, localFile: target)
+        } else {
+            request = PlayRequest(kind: "movie", metaID: "file:\(target.lastPathComponent)", videoID: "file:\(target.lastPathComponent)",
+                                  originalTitle: parsed.title, displayTitle: parsed.title, localFile: target)
+        }
+        request.fromStart = match == nil
+        play(request)
+    }
+
+    /// Cuántos días se queda un video que te pasaron antes de borrarse solo.
+    static let importedDays: Double = 3
 
     /// `orbital-ios://play?kind=&id=&video=` abre el reproductor en ese episodio (donde ibas); `orbital-ios://title?kind=&id=` abre la ficha.
     /// Sin episodio conocido, o si la ficha no carga, se cae a la ficha.
@@ -371,6 +412,8 @@ final class AppUI: ObservableObject {
     @Published var askFinished: PlayRequest?
     @Published var banner: AppEnvironment.Banner?
     @Published var handoff: AppEnvironment.TVHandoff?
+    /// Se cerró un juego en la consola: su resumen (una hoja).
+    @Published var played: OrbitalRemote.InboxItem?
     @Published var openTab: Int?
     /// El Centro de control pidió el control de tu Orbital.
     @Published var openRemote = false

@@ -158,7 +158,7 @@ public struct OrbitalRemote: Sendable {
 
     /// Algo que la TV le dejó al iPhone («Enviar al iPhone» o «Descargar en el iPhone»), a la espera de que la app actúe.
     public struct InboxItem: Sendable, Equatable, Codable, Identifiable {
-        public enum Action: String, Sendable, Codable { case open, download }
+        public enum Action: String, Sendable, Codable { case open, download, played }
         public var id: String
         public var kind: String
         public var metaID: String
@@ -172,6 +172,19 @@ public struct OrbitalRemote: Sendable {
         public var at: Double
         /// «Seguir en el iPhone»: el segundo exacto donde iba en la TV (nil con «Enviar al iPhone»).
         public var position: Double?
+        /// `played` (se cerró un juego): cuánto jugaste esta vez y en total, si se cerró solo o por falta de memoria, y las capturas.
+        public var played: Session?
+
+        public struct Session: Sendable, Equatable, Codable {
+            public var seconds: Double, totalSeconds: Double?
+            public var crashed: Bool, lowMemory: Bool
+            public var captures: Int
+            /// El arte del juego en tu Orbital (su portada ancha), ya con la dirección completa.
+            public var art: String?
+            public init(seconds: Double, totalSeconds: Double? = nil, crashed: Bool = false, lowMemory: Bool = false, captures: Int = 0, art: String? = nil) {
+                self.seconds = seconds; self.totalSeconds = totalSeconds; self.crashed = crashed; self.lowMemory = lowMemory; self.captures = captures; self.art = art
+            }
+        }
 
         public init(id: String, kind: String, metaID: String, videoID: String? = nil, title: String, episodeLabel: String = "",
                     poster: String? = nil, action: Action, at: Double = 0, season: Int? = nil, episode: Int? = nil, position: Double? = nil) {
@@ -189,7 +202,13 @@ public struct OrbitalRemote: Sendable {
                              poster: json["poster"]?.nonEmptyString, action: action, at: at,
                              season: json["season"]?.intValue, episode: json["episode"]?.intValue,
                              position: json["position"]?.doubleValue.flatMap { $0 > 0 ? $0 : nil })
+                .with(played: action == .played ? Session(seconds: json["seconds"]?.doubleValue ?? 0, totalSeconds: json["total_seconds"]?.doubleValue,
+                                                          crashed: json["crashed"]?.bool ?? false, lowMemory: json["low_memory"]?.bool ?? false,
+                                                          captures: json["captures"]?.intValue ?? json["captures"]?.array?.count ?? 0,
+                                                          art: "/api/art/\(uriComponent(metaID))?kind=hero") : nil)
         }
+
+        func with(played: Session?) -> InboxItem { var copy = self; copy.played = played; return copy }
 
         /// «The Office T2 · E5» (o solo el título, si es una película).
         public var displayName: String { episodeLabel.isEmpty ? title : "\(title) \(episodeLabel)" }
@@ -293,7 +312,7 @@ public struct OrbitalRemote: Sendable {
         let json = try await send("api/companion/now", method: "GET", body: nil)
         var playing: NowPlaying?
         if let raw = json?["playing"], !raw.isNull { playing = NowPlaying.parse(raw).map(absolute) }
-        var snapshot = Snapshot(playing: playing, inbox: (json?["inbox"]?.array ?? []).compactMap(InboxItem.parse),
+        var snapshot = Snapshot(playing: playing, inbox: (json?["inbox"]?.array ?? []).compactMap(InboxItem.parse).map(absolute),
                                 textField: json?["ui"]?["text_field"]?.bool,
                                 legend: (json?["ui"]?["legend"]?.object ?? [:]).compactMapValues { $0.nonEmptyString },
                                 section: json?["ui"]?["section"]?.nonEmptyString)
@@ -417,6 +436,12 @@ public struct OrbitalRemote: Sendable {
     }
 
     /// Una imagen que la consola sirve ella misma («/api/img?…») se pide a su dirección.
+    private func absolute(_ item: InboxItem) -> InboxItem {
+        guard var session = item.played, let art = session.art, art.hasPrefix("/"), let base else { return item }
+        session.art = URL(string: art, relativeTo: base)?.absoluteString
+        return item.with(played: session)
+    }
+
     private func absolute(_ now: NowPlaying) -> NowPlaying {
         var n = now
         func fix(_ s: String?) -> String? {

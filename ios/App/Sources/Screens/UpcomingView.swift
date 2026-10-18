@@ -83,7 +83,7 @@ func dayName(_ day: Date, locale: Locale, calendar: Calendar = .current) -> Text
 
 /// La hora de aquí («20:00»), o «Desde la madrugada» (lo de streaming sale de noche).
 func airingTime(_ a: Airing, locale: Locale) -> Text {
-    a.atDawn ? Text("Desde la madrugada") : Text(verbatim: a.aired.formatted(.dateTime.hour().minute().locale(locale)))
+    a.atDawn ? Text("Desde la madrugada") : Text(verbatim: Strings.clock(a.aired, language: locale.language.languageCode?.identifier ?? "es"))   // 12 horas, como la TV
 }
 
 /// Un día de la tira de la semana: su nombre corto, el número y un punto si sale algo.

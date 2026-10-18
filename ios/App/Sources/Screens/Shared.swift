@@ -226,7 +226,7 @@ struct NowPlayingCard: View {
             actionButton(symbol: now.muted ? "speaker.slash.fill" : "speaker.wave.2.fill", text: "Sin sonido", labeled: labeled) { act("mute") }
         } else {
             actionButton(symbol: "gobackward.10", text: "Retroceder 10 segundos", labeled: labeled) { act("skip", -10) }
-            actionButton(symbol: now.paused ? "play.fill" : "pause.fill", text: now.paused ? "Reanudar" : "Pausa", prominent: true, labeled: labeled) { act("toggle") }
+            actionButton(symbol: now.paused ? "play.fill" : "pause.fill", text: now.paused ? "Continuar" : "Pausa", prominent: true, labeled: labeled) { act("toggle") }
             actionButton(symbol: "goforward.10", text: "Adelantar 10 segundos", labeled: labeled) { act("skip", 10) }
             if now.kind == "series" { actionButton(symbol: "forward.end.fill", text: "Siguiente episodio", labeled: labeled) { act("next") } }
         }

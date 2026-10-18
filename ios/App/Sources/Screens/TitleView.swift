@@ -9,6 +9,7 @@ struct TitleView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.openURL) private var openURL
     @StateObject private var observer: ModelObserver<TitleModel>
     @StateObject private var tint = ArtTint()
     @State private var sourcesFor: SourcesTarget?
@@ -112,7 +113,7 @@ struct TitleView: View {
             if env.services.orbital.isConfigured {
                 Button { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: model.continueVideoID, title: model.title) } } label: { Image(systemName: "tv") }
                     .disabled(model.continueVideoID == nil)
-                    .accessibilityLabel(Text("En la TV"))
+                    .accessibilityLabel(Text("Ver en la TV"))
             }
             // «Guardar» vive en la rejilla de acciones; arriba, compartir (la ficha de IMDb, que abre en cualquier app).
             if model.metaID.hasPrefix("tt"), let url = URL(string: "https://www.imdb.com/title/\(model.metaID)/") {
@@ -131,6 +132,24 @@ struct TitleView: View {
                 Label { primaryLabel(label, model).lineLimit(typeSize.isAccessibilitySize ? 2 : 1) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
             }
             .dsArtButton(tint.colors).controlSize(.large).disabled(model.continueVideoID == nil)   // el color del arte, como en la TV
+            // Como los botones de la ficha de la TV (`core/watch.js`): «Desde el principio» si ibas a medias y «Tráiler» si hay.
+            let trailer = model.extras?.trailer
+            if label.isResume || trailer != nil {
+                HStack(spacing: DS.Space.s2) {
+                    if label.isResume {
+                        Button { start(model, videoID: nil, fromStart: true) } label: {
+                            Label("Desde el principio", systemImage: "arrow.counterclockwise").frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.glass).accessibilityIdentifier("title-restart")
+                    }
+                    if let url = trailer?.url {
+                        Button { openURL(url) } label: { Label("Tráiler", systemImage: "play.rectangle").frame(maxWidth: .infinity) }
+                            .buttonStyle(.glass).accessibilityIdentifier("title-trailer")
+                    }
+                }
+                .font(DS.TextRecipe.footnote.font.weight(.semibold))
+                .lineLimit(1)
+            }
             GlassEffectContainer(spacing: DS.Space.s3) {
                 VStack(spacing: DS.Space.s2) {
                     ActionGrid(actions: [
@@ -287,9 +306,10 @@ struct TitleView: View {
     }
 
     // MARK: acciones
-    private func start(_ model: TitleModel, videoID: String?, source: Source? = nil) {
+    private func start(_ model: TitleModel, videoID: String?, source: Source? = nil, fromStart: Bool = false) {
         guard var request = model.playRequest(videoID: videoID) else { return }
         request.sourceIndex = source?.index
+        request.fromStart = fromStart
         if env.services.appSettings.preferInfuse { Task { await env.playExternal(request, source: source) } } else { env.play(request) }
     }
 

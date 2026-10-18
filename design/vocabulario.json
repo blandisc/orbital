@@ -5,7 +5,8 @@
     { "texto": "Continuar", "en": ["tv", "ios"], "nota": "Solo un video a medias. Un juego abierto: «Volver al juego»." },
     { "texto": "Ver la serie", "en": ["tv", "ios"], "evitar": ["Ver serie"] },
     { "texto": "Elegir fuente", "en": ["tv", "ios"], "evitar": ["Elegir Fuente", "Escoger fuente"] },
-    { "texto": "Ver en la TV", "en": ["ios"], "evitar": ["Ver en TV", "Ver en la tele", "Mandar a la TV"] }
+    { "texto": "Ver en la TV", "en": ["ios"], "evitar": ["Ver en TV", "Ver en la tele", "Mandar a la TV"] },
+    { "texto": "Guardar", "en": ["tv", "ios"], "nota": "La acción de un título (botón «Guardar» / «Guardado»: Mi lista, tu watchlist o tus listas). «Mi lista» es el lugar, no el botón." }
   ],
   "nombres": [
     { "texto": "Mi lista", "en": ["tv", "ios"], "evitar": ["mi lista", "Mi Lista"], "nota": "Nombre propio de tu biblioteca de Stremio: siempre con M." },

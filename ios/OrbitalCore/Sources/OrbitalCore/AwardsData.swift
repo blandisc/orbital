@@ -1,4 +1,4 @@
-// Generado de awards.json (ganadores comprobados contra Cinemeta: nombre y año). No editar a mano.
+// Generado de design/awards.json con scripts/ios_awards.py (ganadores comprobados contra Cinemeta: nombre y año). No editar a mano.
 public enum Awards {
     public static let all: [AwardCollection] = [
         AwardCollection(id: "oscar", kind: "movie", winners: [

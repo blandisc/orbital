@@ -2256,6 +2256,17 @@
         }
       }
     },
+    "Desde el principio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From the beginning"
+          }
+        }
+      }
+    },
     "Desde la TV": {
       "extractionState": "manual",
       "localizations": {
@@ -2538,6 +2549,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The iPhone has to be on the same network as the console (or on Tailscale), with Orbital open on the TV."
+          }
+        }
+      }
+    },
+    "El juego se cerró solo: no fuiste tú. Si se repite, revisa sus ajustes en la consola.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The game closed on its own: it wasn't you. If it happens again, check its settings on the console."
           }
         }
       }
@@ -4753,6 +4775,17 @@
         }
       }
     },
+    "No encontré subtítulos (o no hay conexión). Vuelve a intentar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find subtitles (or there's no connection). Try again."
+          }
+        }
+      }
+    },
     "No encontré subtítulos para este video.": {
       "extractionState": "manual",
       "localizations": {
@@ -4914,6 +4947,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I couldn't open the downloaded file."
+          }
+        }
+      }
+    },
+    "No pude abrir ese archivo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't open that file."
           }
         }
       }
@@ -6293,6 +6337,17 @@
         }
       }
     },
+    "Se cerró por falta de memoria: cierra otras apps de la consola antes de volver a jugar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It closed because memory ran out: close other console apps before playing again."
+          }
+        }
+      }
+    },
     "Se crea en Trakt (privada) y este título entra en ella.": {
       "extractionState": "manual",
       "localizations": {
@@ -6454,6 +6509,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Popular series"
+          }
+        }
+      }
+    },
+    "Sesión terminada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session over"
           }
         }
       }
@@ -7382,6 +7448,17 @@
         }
       }
     },
+    "Tráiler": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trailer"
+          }
+        }
+      }
+    },
     "Tráiler y extras": {
       "extractionState": "manual",
       "localizations": {
@@ -7877,6 +7954,17 @@
         }
       }
     },
+    "Volver a buscar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search again"
+          }
+        }
+      }
+    },
     "Volver a intentar": {
       "extractionState": "manual",
       "localizations": {
@@ -7994,6 +8082,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "No scares left"
+          }
+        }
+      }
+    },
+    "capturas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "captures"
+          }
+        }
+      }
+    },
+    "en total": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in total"
+          }
+        }
+      }
+    },
+    "esta vez": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "this time"
           }
         }
       }

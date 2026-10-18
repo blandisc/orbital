@@ -19,6 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Desde el principio": "From the beginning", "No encontré subtítulos (o no hay conexión). Vuelve a intentar.": "I couldn't find subtitles (or there's no connection). Try again.", "No pude abrir ese archivo.": "I couldn't open that file.", "Tráiler": "Trailer", "Volver a buscar": "Search again",
+    "El juego se cerró solo: no fuiste tú. Si se repite, revisa sus ajustes en la consola.": "The game closed on its own: it wasn't you. If it happens again, check its settings on the console.", "Se cerró por falta de memoria: cierra otras apps de la consola antes de volver a jugar.": "It closed because memory ran out: close other console apps before playing again.", "Sesión terminada": "Session over", "esta vez": "this time", "en total": "in total", "capturas": "captures",
     "Conectando con tu Orbital…": "Connecting to your Orbital…",
     "Buscando…": "Searching…", "Buscar subtítulos": "Search subtitles", "En internet": "Online", "Línea de tiempo": "Timeline", "Mapa de sustos · %@": "Jump scare map · %@", "Moverte por la TV": "Move around the TV", "No encontré subtítulos para este video.": "I couldn't find subtitles for this video.", "Ocultar el pad": "Hide the pad", "Ocultar los sustos": "Hide the scares", "Tiempos de Where's The Jump": "Times from Where's The Jump", "Vibra unos segundos antes de cada susto": "Vibrates a few seconds before each scare", "Ya no quedan sustos": "No scares left",
     "Año (lo más nuevo primero)": "Year (newest first)", "Calidad y tamaño en equilibrio": "Balanced quality and size",

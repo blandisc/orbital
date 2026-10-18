@@ -22,7 +22,8 @@ final class PlayerHolder: ObservableObject {
                                 let file = await services.downloads.fileURL(item)
                                 return LocalEpisode(file: file, subtitles: item.subtitleFiles.map { file.deletingLastPathComponent().appendingPathComponent($0) })
                             },
-                            skipSegments: { videoID in await services.introDB.segments(videoID: videoID) })   // saltar intro y resumen (IntroDB, como Infuse)
+                            skipSegments: { videoID in await services.introDB.segments(videoID: videoID) },   // saltar intro y resumen (IntroDB, como Infuse)
+                            scareMap: { imdb, title in await services.scares(imdb: imdb, fallbackTitle: title) })   // el mapa de sustos
         subscription = model.onChange { [weak self] in self?.objectWillChange.send() }
         // Episodios descargados que se encadenan solos: cada uno visto se atiende al pasar al siguiente (borrar / bajar el que sigue).
         model.onFinishedLocal = { finished in
@@ -49,6 +50,7 @@ struct PlayerScreen: View {
     @State private var panel = false
     @Environment(\.verticalSizeClass) private var verticalSize
     @State private var scrubbing: Double?
+    @AppStorage("scare-warnings") private var scareWarnings = true
     @State private var finished = false
     @StateObject private var pip = PictureInPicture()
     @State private var nowPlaying = NowPlaying()
@@ -382,7 +384,7 @@ struct PlayerScreen: View {
             if model.snapshot.state == .loading || model.snapshot.state == .buffering {
                 ProgressView().tint(DS.text).controlSize(.large).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
             } else {
-                DSIconButton(symbol: model.snapshot.state == .playing ? "pause.fill" : "play.fill", label: model.snapshot.state == .playing ? "Pausa" : "Reproducir", prominent: true) { Task { await model.togglePlay() }; pulse() }
+                DSIconButton(symbol: model.snapshot.state == .playing ? "pause.fill" : "play.fill", label: model.snapshot.state == .playing ? "Pausa" : "Continuar", prominent: true) { Task { await model.togglePlay() }; pulse() }
             }
             DSIconButton(symbol: "goforward.10", label: "Adelantar 10 segundos") { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }
         }
@@ -393,6 +395,12 @@ struct PlayerScreen: View {
         // Buscar arrastrando (gesto de pantalla completa) mueve el pulgar igual que arrastrar el slider a mano.
         let shown = scrubbing ?? (dragAxis == .horizontal ? seekPreview : nil) ?? model.snapshot.position
         return VStack(spacing: DS.Space.s1) {
+            // Los sustos (Where's The Jump), marcados sobre la barra; vibra unos segundos antes si pediste el aviso.
+            if let scares = model.scares {
+                ScareMarks(position: shown, duration: duration, scares: scares)
+                    .padding(.horizontal, DS.Remote.playhead / 2)
+                    .scareWarning(position: model.snapshot.position, scares: scares, enabled: scareWarnings && model.snapshot.state == .playing)
+            }
             Slider(value: Binding(get: { shown }, set: { scrubbing = $0 }), in: 0...duration) { editing in
                 if editing { hideTask?.cancel(); controlsVisible = true; return }   // mientras arrastras, nada se esconde
                 if let target = scrubbing { Task { await model.seek(to: target); scrubbing = nil } }
@@ -665,17 +673,22 @@ struct VideoSettingsPanel: View {
         // Sin el que buscas (o el video no trae ninguno): OpenSubtitles, integrado; con una descarga, los de esa copia exacta.
         PanelGroupTitle(title: "En internet")
         if let found = model.foundSubtitles {
-            if found.isEmpty { Text("No encontré subtítulos para este video.").recipe(.footnote) }
             FlowChips {
                 ForEach(subtitleLanguages(found, mine: mine), id: \.self) { code in
                     let options = found.filter { $0.language == code }
-                    PanelChip(title: Text(verbatim: "\(languageName(code)) · \(options.count)"), selected: false, symbol: "arrow.down.circle") {
-                        if let first = options.first { Task { await model.addFoundSubtitle(first) } }
+                    let added = options.filter { model.addedSubtitleURLs.contains($0.url) }.count
+                    // Cada toque suma el siguiente de ese idioma (si el primero no va a tiempo, el otro): «Español · 2 de 12».
+                    PanelChip(title: added == 0 ? Text(verbatim: "\(languageName(code)) · \(options.count)") : Text(verbatim: "\(languageName(code)) · \(added)/\(options.count)"),
+                              selected: added > 0, symbol: added == options.count ? "checkmark" : "arrow.down.circle") {
+                        Task { await model.addFoundSubtitle(language: code) }
                     }
+                    .disabled(added == options.count)
                 }
             }
         } else {
-            PanelChip(title: model.searchingSubtitles ? Text("Buscando…") : Text("Buscar subtítulos"), selected: false, symbol: "magnifyingglass") {
+            if model.subtitleSearchFailed { Text("No encontré subtítulos (o no hay conexión). Vuelve a intentar.").recipe(.footnote) }
+            PanelChip(title: model.searchingSubtitles ? Text("Buscando…") : (model.subtitleSearchFailed ? Text("Volver a buscar") : Text("Buscar subtítulos")),
+                      selected: false, symbol: "magnifyingglass") {
                 Task { await model.searchSubtitles() }
             }
             .disabled(model.searchingSubtitles)

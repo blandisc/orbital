@@ -76,6 +76,21 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLName: com.example.orbital.ios.infuse-callback
             CFBundleURLSchemes: [orbital-ios]
+        # Abrir videos que te pasen (AirDrop, Archivos, «Abrir con…»): se copian a la app y se reproducen; si se reconoce cuál es
+        # (por el nombre del archivo), con sus subtítulos de OpenSubtitles.
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Video
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [public.movie, public.mpeg-4, com.apple.quicktime-movie, public.avi, org.matroska.mkv]
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: org.matroska.mkv
+            UTTypeDescription: Video Matroska
+            UTTypeConformsTo: [public.movie]
+            UTTypeTagSpecification:
+              public.filename-extension: [mkv]
+              public.mime-type: [video/x-matroska]
+        LSSupportsOpeningDocumentsInPlace: false
         # Para poder preguntar si Infuse está instalado.
         LSApplicationQueriesSchemes: [infuse]
         # Los complementos de Stremio pueden dar enlaces http (no solo https) para el video.

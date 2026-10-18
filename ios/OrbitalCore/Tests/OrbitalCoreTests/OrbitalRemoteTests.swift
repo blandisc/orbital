@@ -88,6 +88,22 @@ final class OrbitalRemoteTests: XCTestCase {
         catch { XCTAssertEqual((error as? OrbitalRemote.Failure)?.description, "No hay nada en la TV ahora mismo") }
     }
 
+    func testAClosedGameArrivesAsASessionSummary() async throws {
+        let http = FakeHTTP()
+        http.json["https://tv.example/api/companion/now"] = .object(["playing": .null, "inbox": .array([
+            .object(["id": "g1", "action": "played", "meta_id": "steam:1145360", "video_id": "1760000000", "title": "Hades", "seconds": .int(4320),
+                     "total_seconds": .int(123_000), "crashed": false, "low_memory": true, "captures": .int(3), "at": .int(1_760_000_000)]),
+        ])])
+        let snapshot = try await OrbitalRemote(http: http, address: "tv.example", token: "x").snapshot()
+        let item = try XCTUnwrap(snapshot.inbox.first)
+        XCTAssertEqual(item.action, .played)
+        XCTAssertEqual(item.played?.seconds, 4320)
+        XCTAssertEqual(item.played?.totalSeconds, 123_000)
+        XCTAssertEqual(item.played?.lowMemory, true)
+        XCTAssertEqual(item.played?.captures, 3)
+        XCTAssertEqual(item.played?.art?.hasSuffix("/api/art/steam%3A1145360?kind=hero"), true, "\(item.played?.art ?? "")")
+    }
+
     func testNowBringsTheInboxTheTVLeftForTheIPhone() async throws {
         let http = FakeHTTP()
         http.json["https://tv.example/api/companion/now"] = .object(["playing": .null, "inbox": .array([

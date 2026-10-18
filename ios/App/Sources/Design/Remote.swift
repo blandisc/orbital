@@ -334,7 +334,6 @@ private struct ScareStatus: View {
     let duration: Double
     let scares: [JumpScare]
     @Binding var warn: Bool
-    @State private var buzz = 0
 
     var body: some View {
         let next = scares.first { $0.time > position }
@@ -366,13 +365,72 @@ private struct ScareStatus: View {
         }
         .padding(DS.Space.s4)
         .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-        // Unos segundos antes de cada susto: una vibración fuerte (una sola por susto).
-        .onChange(of: next.map { $0.time - position <= DS.Remote.scareLead } ?? false) { _, soon in if soon, warn { buzz += 1 } }
-        .sensoryFeedback(.warning, trigger: buzz)
+
     }
 
     private func clock(_ seconds: Int) -> String {
         let s = max(0, seconds)
         return s >= 3600 ? String(format: "%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60) : String(format: "%d:%02d", s / 60, s % 60)
+    }
+}
+
+/// Solo las marcas de los sustos (sin barra), para ponerlas sobre la barra de avance del reproductor del iPhone.
+struct ScareMarks: View {
+    let position: Double
+    let duration: Double
+    let scares: [JumpScare]
+
+    var body: some View {
+        GeometryReader { geo in
+            ForEach(Array(scares.enumerated()), id: \.offset) { _, scare in
+                Capsule()
+                    .fill(scare.time <= position ? DS.textFaint : (scare.major ? DS.danger : DS.warning))
+                    .frame(width: DS.Remote.scareMarkWidth, height: scare.major ? DS.Remote.scareMark : DS.Remote.scareMark / 2)
+                    .position(x: duration > 0 ? CGFloat(min(1, scare.time / duration)) * geo.size.width : 0, y: geo.size.height / 2)
+            }
+        }
+        .frame(height: DS.Remote.scareMark)
+        .accessibilityElement()
+        .accessibilityLabel(Text("Sustos"))
+        .accessibilityValue(Text("\(scares.filter { $0.time > position }.count) sustos por delante"))
+    }
+}
+
+extension View {
+    /// Vibra unos segundos antes de cada susto (una vez por susto, aunque dos vengan juntos).
+    func scareWarning(position: Double, scares: [JumpScare], enabled: Bool) -> some View {
+        modifier(ScareWarning(position: position, scares: scares, enabled: enabled))
+    }
+}
+
+private struct ScareWarning: ViewModifier {
+    let position: Double
+    let scares: [JumpScare]
+    let enabled: Bool
+    @State private var warned: Double?
+    @State private var buzz = 0
+
+    func body(content: Content) -> some View {
+        // El siguiente que está a menos de `scareLead` segundos: su tiempo identifica el aviso (dos seguidos vibran dos veces).
+        let soon = scares.first { $0.time > position && $0.time - position <= DS.Remote.scareLead }?.time
+        content
+            .onChange(of: soon) { _, time in if enabled, let time, time != warned { warned = time; buzz += 1 } }
+            .sensoryFeedback(.warning, trigger: buzz)
+    }
+}
+
+/// El aviso de los sustos con el control abierto, se vea o no el panel: sigue el avance (interpolado entre sondeos) y vibra.
+struct ScareWatcher: View {
+    let now: OrbitalRemote.NowPlaying
+    let fetchedAt: Date
+    let scares: [JumpScare]
+    @AppStorage("scare-warnings") private var warn = true
+
+    var body: some View {
+        TimelineView(.periodic(from: fetchedAt, by: DS.Remote.scareTick)) { context in
+            let position = now.paused ? now.position : min(now.duration, now.position + max(0, context.date.timeIntervalSince(fetchedAt)))
+            Color.clear.scareWarning(position: position, scares: scares, enabled: warn && !now.paused)
+        }
+        .accessibilityHidden(true)
     }
 }

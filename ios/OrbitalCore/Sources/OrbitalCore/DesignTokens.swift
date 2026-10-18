@@ -64,6 +64,13 @@ public enum DesignTokens {
     /// En oscuro se hunde hacia el grafito; en claro se vuelve un velo de color muy suave sobre el papel.
     public enum Projection { public static let darkMix = 0.55, lightMix = 0.84, fadeTo = 0.62 }
 
+    /// El color de cada plataforma («otra»: Apple TV+ y las demás, plata). Igual que `platforms` en design/tokens.json.
+    public enum Platform {
+        public static let hex: [String: String] = ["netflix": "#e60a14", "disney": "#456eff", "hbo": "#7a3dff", "prime": "#1a99ff",
+                                                   "paramount": "#0063ff", "otra": "#c7c7d1"]
+        public static func color(_ brand: String) -> String { hex[brand] ?? hex["otra"]! }
+    }
+
     /// Contraste WCAG entre dos colores «#rrggbb» (1…21).
     public static func contrast(_ a: String, _ b: String) -> Double {
         func luminance(_ hex: String) -> Double {

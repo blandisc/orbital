@@ -57,6 +57,7 @@ struct RemoteSheet: View {
         .onDisappear { speech.cancel(); model.setRemoteOpen(false) }
         .onAppear { model.setRemoteOpen(true) }   // con el control abierto, la TV se consulta más seguido
         .task(id: model.now?.metaID) { await model.loadScares() }   // el mapa de sustos de la película que suena
+        .background { if let scares = model.scares, let now = model.now { ScareWatcher(now: now, fetchedAt: model.fetchedAt, scares: scares) } }
         // Los botones de volumen del iPhone suben y bajan la TV mientras el control está abierto (como el del Apple TV).
         .background { if model.isConfigured { HardwareVolumeButtons { up in Task { await model.changeVolume(by: up ? 5 : -5) } } } }
         #if DEBUG
@@ -123,7 +124,7 @@ struct RemoteSheet: View {
                 }
                 Spacer(minLength: DS.Space.s2)
                 if !now.live {
-                    DSIconButton(symbol: now.paused ? "play.fill" : "pause.fill", label: now.paused ? "Reanudar" : "Pausa", prominent: true) {
+                    DSIconButton(symbol: now.paused ? "play.fill" : "pause.fill", label: now.paused ? "Continuar" : "Pausa", prominent: true) {
                         Task { await model.control("toggle") }
                     }
                 }
@@ -238,7 +239,7 @@ struct RemoteSheet: View {
         }
         HStack(spacing: DS.Space.s2) {
             RemoteKey(symbol: "gobackward.10", title: Text("−10 s")) { Task { await model.control("skip", delta: -10) } }
-            RemoteKey(symbol: now.paused ? "play.fill" : "pause.fill", title: now.paused ? Text("Reanudar") : Text("Pausa")) { Task { await model.control("toggle") } }
+            RemoteKey(symbol: now.paused ? "play.fill" : "pause.fill", title: now.paused ? Text("Continuar") : Text("Pausa")) { Task { await model.control("toggle") } }
             RemoteKey(symbol: "goforward.10", title: Text("+10 s")) { Task { await model.control("skip", delta: 10) } }
             if now.kind == "series" { RemoteKey(symbol: "forward.end.fill", title: Text("Siguiente")) { Task { await model.control("next") } } }
         }

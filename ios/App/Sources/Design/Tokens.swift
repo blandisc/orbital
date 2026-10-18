@@ -267,16 +267,7 @@ enum DS {
 
     /// El color de cada plataforma (su tarjeta en abanico, el brillo de su logo y de los números de sus rankings).
     enum PlatformTint {
-        static func color(_ brand: String) -> Color {
-            switch brand {
-            case "netflix": Color(red: 0.9, green: 0.04, blue: 0.08)
-            case "disney": Color(red: 0.27, green: 0.43, blue: 1)
-            case "hbo": Color(red: 0.48, green: 0.24, blue: 1)
-            case "prime": Color(red: 0.1, green: 0.6, blue: 1)
-            case "paramount": Color(red: 0, green: 0.39, blue: 1)
-            default: Color(red: 0.78, green: 0.78, blue: 0.82)   // Apple TV+ y las demás: plata
-            }
-        }
+        static func color(_ brand: String) -> Color { Palette.color(hex: DesignTokens.Platform.color(brand)) ?? .clear }   // design/tokens.json › platforms
     }
 
     /// «Tus plataformas»: la tarjeta con su top 3 en abanico y su página de rankings.
@@ -415,9 +406,11 @@ enum DS {
         static let platformLogo = CGFloat(DesignTokens.Size.platformLogo)
         static let rankNumber = CGFloat(DesignTokens.Size.rankNumber)
         /// La cifra de un Top 10: enorme y pesada; no crece con Dynamic Type (es un adorno, el puesto ya se dice en la etiqueta).
-        static var rankFont: Font { .system(size: rankNumber, weight: .black, design: .rounded) }
+        /// Como la TV (`.card-ranked__number`): la letra de siempre en negrita y las cifras juntas (`--tracking-rank: -.08em`).
+        static var rankFont: Font { .system(size: rankNumber, weight: .bold) }
+        static let rankTracking = -rankNumber * 0.08
         /// El «10»: sus cifras más juntas y el póster encima de parte del cero (no empuja el póster ni se achata).
-        static let rankTwoDigitsTracking = -rankNumber * 0.12, rankTwoDigitsOverlap = rankNumber * 0.42
+        static let rankTwoDigitsOverlap = rankNumber * 0.42
         static let logoHero = CGFloat(DesignTokens.Size.logoHero)
         /// El anillo de la pieza enfocada del mosaico y la línea fina de las demás.
         static let focusRing: CGFloat = 2.5, hairline: CGFloat = 0.5

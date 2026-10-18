@@ -338,7 +338,11 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         }
         // La bandeja de mentira: lo que «dejó» la TV, hasta que la app avisa que ya lo atendió.
         var inbox: [JSON] = []
-        if let action = Demo.inbox, !inboxAcked {
+        if Demo.inbox == "played", !inboxAcked {   // `-demo-inbox played`: se cerró un juego (el resumen de la sesión)
+            inbox = [.object(["id": "demo-played", "action": "played", "meta_id": "steam:1245620", "video_id": "1", "title": "Elden Ring",
+                              "seconds": .int(4380), "total_seconds": .int(312_000), "crashed": false, "low_memory": true, "captures": .int(3),
+                              "at": .double(Date().timeIntervalSince1970)])]
+        } else if let action = Demo.inbox, !inboxAcked {
             let open = action == "open"
             inbox = [.object(["id": "demo-inbox", "kind": .string(open ? "movie" : "series"), "meta_id": .string(open ? "tt1160419" : "tt0386676"),
                               "video_id": .string(open ? "tt1160419" : "tt0386676:2:5"), "title": .string(open ? "Dune" : "The Office"),

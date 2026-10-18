@@ -119,17 +119,10 @@ public final class TVNowModel: ObservableModel {
         guard let now, !now.live, now.kind == "movie", let imdb = now.metaID, imdb.hasPrefix("tt") else { scares = nil; scaresFor = nil; return }
         guard scaresFor != imdb else { return }
         scaresFor = imdb
-        let key = "jumpscares.\(imdb)"
-        if let data = services.kv.data(key), let saved = try? JSONDecoder().decode([JumpScare].self, from: data) { scares = saved.isEmpty ? nil : saved; return }
         scares = nil
-        // El nombre en inglés y el año (Cinemeta), como los escribe el sitio.
-        let meta = try? await services.cinemeta.meta(kind: "movie", id: imdb)
-        let title = meta?["name"]?.string ?? now.title
-        let year = (meta?["year"]?.string ?? meta?["releaseInfo"]?.string).flatMap { Int($0.prefix(4)) }
-        let found = await services.jumpScares.scares(title: title, year: year, imdb: imdb)
+        let found = await services.scares(imdb: imdb, fallbackTitle: now.title)
         guard scaresFor == imdb else { return }
-        if let found { services.kv.set(key, data: try? JSONEncoder().encode(found)) }
-        scares = (found?.isEmpty ?? true) ? nil : found
+        scares = found
     }
 
     private func tick() async {
