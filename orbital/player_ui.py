@@ -102,6 +102,19 @@ FONT_SEMI = "Segoe UI Semibold"
 # \fs en ASS es la altura de la línea, no la del cuerpo como en CSS: con el mismo número la letra sale
 # ~25 % más chica. Los tamaños de este archivo son «como en CSS» y se convierten al dibujar.
 FS = 1.32
+# Ajustes › Tamaño del texto, también en el reproductor (antes solo en la interfaz): la letra crece un poco, y los anchos
+# que se miden (fit, wrap) crecen igual, así lo que no cabe se recorta bien.
+TEXT_SCALES = {"normal": 1.0, "large": 1.08, "xlarge": 1.16}
+_text_scale = 1.0
+
+
+def set_text_size(name: str | None) -> bool:
+    """El tamaño del texto de Ajustes (normal | large | xlarge). True si cambió (hay que redibujar)."""
+    global _text_scale
+    scale = TEXT_SCALES.get(str(name or "normal"), 1.0)
+    changed = scale != _text_scale
+    _text_scale = scale
+    return changed
 
 LANGUAGES = {
     "en": "Inglés", "eng": "Inglés", "es": "Español", "spa": "Español", "es-419": "Español latino",
@@ -245,7 +258,7 @@ def text(x: float, y: float, value: str, size: int, color: str = TEXT, *, weight
     """Texto ya escapado (o con etiquetas). weight: regular | semi | bold."""
     font = FONT_SEMI if weight == "semi" else FONT
     bold = 1 if weight == "bold" else 0
-    return (f"{{\\an{align}\\pos({x:.0f},{y:.0f})\\fn{font}\\fs{round(size * FS)}\\b{bold}\\bord0\\shad0\\q2"
+    return (f"{{\\an{align}\\pos({x:.0f},{y:.0f})\\fn{font}\\fs{round(size * FS * _text_scale)}\\b{bold}\\bord0\\shad0\\q2"
             f"\\1c{color}\\1a&H{alpha}&}}{value}")
 
 
@@ -264,7 +277,7 @@ def text_width(value: str, size: int, weight: str = "regular") -> float:
             w += .55
         else:
             w += .52
-    return w * size * (1.05 if weight != "regular" else 1)
+    return w * size * _text_scale * (1.05 if weight != "regular" else 1)
 
 
 def wrap(value: str, size: int, width: float, lines: int) -> list[str]:
@@ -885,7 +898,9 @@ def quit_hold_ass(progress: float, key: str = "B", label: str = "Salir") -> str:
     """Un botón mantenido (B: salir; LT/RT: otro episodio): el botón arriba a la derecha con un anillo fino que se
     llena (y lo que hace al lado). Sin caja: discreto sobre el video."""
     progress = max(0.0, min(1.0, progress)) if math.isfinite(progress) else 0.0
-    cx, cy, r = W - MARGIN - 30, BUFFER_Y + 28, 30  # debajo del aviso, no encima
+    # Abajo a la derecha, cerca de donde la barra dice «B Mantén: salir» (antes arriba, lejos de su pista): justo encima de
+    # la línea de tiempo, que ahí está vacío en pausa y reproduciendo (sobre la leyenda la tapaba).
+    cx, cy, r = W - MARGIN - 30, H - 220, 30
     shape, gw = glyph(cx - (20 if len(key) == 1 else 26), cy, key, 40)
     return "\n".join([circle(cx, cy, r + 6, PANEL, "70", blur=6),
                       ring(cx, cy, r, 3, 1.0, TEXT, "C8"), ring(cx, cy, r, 3, progress, TEXT), shape,

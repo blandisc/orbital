@@ -1382,9 +1382,17 @@ async function undoHide(undo = state.undoHide) {
   }
 }
 
+let holdTimer = 0;
 function handleAction(action, { repeat = false } = {}) {
   // Con el planeta en pantalla no se ve nada: un Enter abría un juego (o el menú) a ciegas.
   if (boot.blocking) return;
+  // Mantener una flecha: las filas se deslizan más rápido para seguirle el paso (antes el foco avanzaba cada 60 ms y la
+  // animación duraba 360: se veía arrastrado). base.css: body[data-holding].
+  if (repeat) {
+    document.body.dataset.holding = "";
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => { delete document.body.dataset.holding; }, 260);
+  }
   if (saver.wake()) return; // con el protector de pantalla, el primer botón solo lo quita
   spotlightIdle = Date.now(); // el carrusel de Destacados espera mientras te mueves
   // Y justo después de ocultar algo: deshacer (si no hay un menú u otra vista encima).

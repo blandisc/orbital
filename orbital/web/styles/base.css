@@ -27,6 +27,9 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Manteniendo una flecha (main.js): todo lo que se desliza va al paso de la repetición. */
+body[data-holding] { --duration-slow: var(--duration-fast); }
+
 /* El cursor solo mientras se mueve el ratón (input.js pone data-pointer y lo quita a los 3 s); también sobre botones. */
 body:not([data-pointer]), body:not([data-pointer]) * { cursor: none; }
 
