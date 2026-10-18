@@ -59,6 +59,10 @@ const GENRES = {
   "Sci-Fi": "Ciencia ficción", "Science Fiction": "Ciencia ficción", Sport: "Deportes", Thriller: "Suspenso",
   War: "Bélica", Western: "Western", "Reality-TV": "Reality", "Talk-Show": "Talk show", "Game-Show": "Concurso",
   News: "Noticias", Short: "Corto",
+  // Los de los juegos (ScreenScraper / la tienda de Steam en inglés)
+  Shooter: "Disparos", Fighting: "Pelea", Platform: "Plataformas", Platformer: "Plataformas", Puzzle: "Rompecabezas",
+  Racing: "Carreras", RPG: "Rol", "Role-playing (RPG)": "Rol", "Role-Playing": "Rol", Strategy: "Estrategia",
+  Simulation: "Simulación", Simulator: "Simulación", Sports: "Deportes", Casual: "Casual", Indie: "Indie",
 };
 
 /** Géneros de Cinemeta (en inglés) en español; los desconocidos se dejan igual. */

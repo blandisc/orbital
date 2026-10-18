@@ -172,6 +172,21 @@ def no_side_effects() -> None:
     updater.Updater.apply = lambda self, progress=lambda m: None: (False, "En el demo no se actualiza.")
 
 
+# Lo que en la consola de verdad traen la tienda de Steam o ScreenScraper (la ficha de un juego en Juegos).
+GAME_INFO = {
+    "Hades": {"description": "Desafía al dios de los muertos mientras te abres paso a golpes fuera del Inframundo en este "
+                             "roguelike de acción de los creadores de Bastion y Transistor.",
+              "genres": ["Action", "Indie", "RPG"], "developer": "Supergiant Games", "year": "2020", "controller": "full",
+              "size": 15_300_000_000},
+    "Hollow Knight": {"description": "Forja tu camino en Hollow Knight, una aventura de acción clásica en un vasto mundo "
+                                     "interconectado de insectos y héroes.",
+                      "genres": ["Action", "Adventure", "Indie"], "developer": "Team Cherry", "year": "2017",
+                      "controller": "full", "size": 9_100_000_000},
+    "Mario Party Superstars": {"description": "Cinco tableros clásicos de Nintendo 64 y cien minijuegos de toda la serie.",
+                               "genres": ["Party"], "developer": "NDcube", "year": "2021", "players": "4"},
+}
+
+
 def build(tmp: Path):
     apps = tmp / "Steam" / "steamapps"
     apps.mkdir(parents=True)
@@ -217,6 +232,7 @@ def build(tmp: Path):
     def refresh_with_gba_art(*args, **kwargs):  # cada vez que se vuelve a leer la biblioteca
         found = refresh(*args, **kwargs)
         for item in catalog.store.all():
+            item.extra.update(GAME_INFO.get(item.title, {}))  # la ficha de un juego: sin Internet, datos de muestra
             if item.system == "gba" and item.title in GBA_ART:
                 item.image = LIBRETRO + GBA_ART[item.title]
                 item.extra.pop("placeholder_cover", None)
