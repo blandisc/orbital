@@ -119,3 +119,15 @@ test("la hoja de Fuente: la recomendada sola arriba y el resto por calidad, como
   assert.deepEqual(order.map((x) => x.id), ["a", "b", "f", "d", "c", "e"]); // ↑↓ va en el orden en que se ven
   assert.deepEqual(sourceGroups([]), { groups: [], order: [] });
 });
+
+test("la ficha: «Ver» arriba a todo lo ancho, los demás abajo; ← → los recorre y al final se pasa a los episodios", async () => {
+  const { actionStep } = await import("../../orbital/web/js/core/watch.js");
+  assert.equal(actionStep(5, 0, "down"), 1); // del principal, a los de abajo
+  assert.equal(actionStep(5, 3, "up"), 0);
+  assert.equal(actionStep(5, 2, "right"), 3);
+  assert.equal(actionStep(5, 4, "right"), "episodes"); // del último, a los episodios (a la derecha)
+  assert.equal(actionStep(5, 2, "down"), "episodes");
+  assert.equal(actionStep(5, 0, "left"), null);
+  assert.equal(actionStep(5, 0, "up"), null);
+  assert.equal(actionStep(1, 0, "down"), "episodes"); // solo «Ver»
+});

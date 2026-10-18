@@ -86,7 +86,13 @@
 .title__progress-bar { flex: none; width: 9rem; height: .35rem; border-radius: var(--radius-pill); background: var(--color-progress-track); overflow: hidden; }
 .title__progress-label { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .title__progress-fill { display: block; height: 100%; background: var(--color-progress); }
-.title__actions { display: flex; flex-wrap: nowrap; gap: var(--space-3); min-width: 0; margin-top: var(--space-4); min-height: var(--control-height); }
+/* Como el iPhone: «Ver» / «Continuar» en su renglón, a todo lo ancho; abajo los demás en partes iguales, llenando el renglón
+   (siempre caben en la columna: antes, con siete, la fila se metía debajo de los episodios). */
+.title__actions {
+  display: grid; grid-template-columns: repeat(var(--title-actions, 4), minmax(0, 1fr)); gap: var(--space-3) var(--space-2);
+  min-width: 0; margin-top: var(--space-4);
+}
+.title__actions > .title__action--primary { grid-column: 1 / -1; justify-content: center; }
 .title__action {
   display: inline-flex; align-items: center; gap: var(--space-3);
   min-height: var(--control-height); padding: 0 var(--space-6) 0 var(--space-5); border-radius: var(--radius-md);
@@ -103,15 +109,17 @@
    la vista (antes solo ícono, y el nombre salía en otra línea al enfocarlo). Miden lo mismo enfocados o no. */
 .title__actions { align-items: flex-start; }
 .title__action--icon {
-  flex: 0 1 5.6rem; min-width: 4.6rem; flex-direction: column; gap: var(--space-2); min-height: 0; padding: 0; background: none;
+  min-width: 0; flex-direction: column; gap: var(--space-2); min-height: 0; padding: 0; background: none;
   font-size: var(--text-sm); color: var(--color-text-muted);
 }
+/* Prendido («Guardada»): la caja con el color del arte, como en el iPhone. */
+.title__action--on .title__action-tile { background: var(--color-primary-art); color: var(--inverse-fg); }
 .title__action-tile {
   display: grid; place-items: center; width: 100%; height: var(--control-height); border-radius: var(--radius-md); background: var(--color-fill);
   color: var(--color-text); transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 /* Entero: si no cabe en un renglón, dos (nunca «Al iPho…»). */
-.title__action-name { max-width: 100%; text-align: center; line-height: 1.2; font-size: var(--text-xs); text-wrap: balance; overflow-wrap: anywhere;
+.title__action-name { max-width: 100%; text-align: center; line-height: 1.2; font-size: var(--text-xs); text-wrap: balance; overflow-wrap: anywhere; white-space: normal;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 [data-input="touch"] .title__action--primary { flex-shrink: 0; }
 /* Foco invertido (como el menú): se ve desde el sofá. */

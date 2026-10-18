@@ -59,7 +59,7 @@ export function titleActions(details, { kind = "movie", phone = false } = {}) {
   // + para agregar y ✓ cuando ya está, como el iPhone (la ★ en Juegos es «favorito»: dos cosas con el mismo ícono).
   // «Guardar» es la acción y «Mi lista» el lugar (design/vocabulario.json), como el iPhone.
   out.push(details.in_library
-    ? { id: "mylist", icon: "check", label: "Guardada" }
+    ? { id: "mylist", icon: "check", label: "Guardada", active: true }
     : { id: "mylist", icon: "plus", label: "Guardar" });
   // Una serie sin episodios (ni uno en el que ibas) no tiene fuente que elegir: el botón no hacía nada.
   const playable = (details.kind || kind) !== "series" || resume?.video_id || (details.seasons || []).some((s) => s.episodes?.length);
@@ -113,6 +113,20 @@ const RES_ORDER = ["4K", "1080p", "720p", "480p"];
  * resolución, HDR, sonido, idiomas y si alguna arranca al instante. Solo cuenta lo que se puede
  * ver de verdad (las primeras fuentes, ya ordenadas por tus preferencias).
  */
+/**
+ * A dónde va el foco entre los botones de la ficha: el principal («Ver», «Continuar») en su renglón, a todo lo ancho, y
+ * abajo los demás repartidos (como el iPhone). ↓ del principal baja a los de abajo; ↑ de ellos sube al principal; ← → los
+ * recorre; y del último a la derecha (o ↓ desde abajo) se pasa a los episodios, que están a la derecha.
+ * Devuelve el índice nuevo, "episodes" o null (no hay a dónde: el foco rebota).
+ */
+export function actionStep(count, index, act) {
+  if (act === "right") return index < count - 1 ? index + 1 : "episodes";
+  if (act === "left") return index > 0 ? index - 1 : null;
+  if (act === "down") return index === 0 && count > 1 ? 1 : "episodes";
+  if (act === "up") return index > 0 ? 0 : null;
+  return null;
+}
+
 /** La hoja de Fuente, como el iPhone: la recomendada sola arriba y el resto por calidad (4K, 1080p, 720p, Otras),
  * cada grupo en el orden de tus preferencias. Devuelve los grupos y `order`: las fuentes en el orden en que se ven. */
 export function sourceGroups(sources = []) {

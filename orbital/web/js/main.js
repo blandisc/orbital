@@ -62,6 +62,9 @@ const current = () => (inForYou() || inTv() ? null : inHome() ? ui.home.current?
   : inGames() ? ui.games.current?.item ?? null
     : itemAt(state.rows, state.focus.r, state.focus.c));
 const glyphs = () => GLYPHS[state.modality];
+// El atajo de Buscar se ve siempre, también tras tocar la pantalla: el del control (o teclado) que usaste antes. Antes, al
+// tocar «Películas y series» desaparecía y no volvía hasta picar un botón del mando.
+const searchGlyphs = () => ({ ...glyphs(), search: GLYPHS[state.modality === "touch" ? state.lastPhysical || "gamepad" : state.modality].search });
 
 // ---------------------------------------------------------------- componentes
 const ui = {
@@ -148,7 +151,8 @@ const ui = {
   }),
   tv: createTv({
     onFocus: () => tvFocused(),
-    onPick: (target, id) => (ui.tv.focusId === id ? tvActivate(target) : ui.tv.focus(id)),
+    // Una categoría cambia los canales al primer toque (antes el primero solo la marcaba y parecía trabada).
+    onPick: (target, id) => (ui.tv.focusId === id || target?.kind === "filter" ? (ui.tv.focus(id), tvActivate(target)) : ui.tv.focus(id)),
   }),
   traktLink: createTraktLink({
     onMove: () => sound.play("move"),
@@ -404,6 +408,7 @@ function preloadAround(r, c) {
 function setModality(modality) {
   if (state.modality === modality) return;
   state.modality = modality;
+  if (modality !== "touch") state.lastPhysical = modality;
   document.body.dataset.input = modality;
   storage.set("orbital.modality", modality);
   renderSections();
@@ -685,7 +690,7 @@ function homeActivate(target, action = "select") {
 
 // ---------------------------------------------------------------- datos
 function renderSections() {
-  ui.status.setSections(visibleSections(state.allRows), state.section, glyphs());
+  ui.status.setSections(visibleSections(state.allRows), state.section, searchGlyphs());
 }
 
 /** Cambia de sección (LB/RB) recordando dónde estabas en la que dejas. */
@@ -977,8 +982,25 @@ setInterval(() => {
   setFocus(state.focus.r, (state.focus.c + 1) % row.items.length, { silent: true });
 }, 1000);
 
+/** B en la pantalla de carga: se cierra lo que se estaba abriendo. Si aún no arrancaba (buscando la fuente de un video,
+ * el emulador cargando), se cierra en cuanto aparezca: durante un minuto, eso que cancelaste no se queda abierto. */
+function cancelLaunch() {
+  const title = ui.launch.title || state.launchingTitle;
+  state.cancelled = state.launchingId ? { id: state.launchingId, until: Date.now() + 60_000 } : null;
+  state.launchingTitle = null;
+  state.launchLockedUntil = 0;
+  ui.launch.hide();
+  sound.play("back");
+  api.stop().catch(() => {});
+  ui.toast.show(title ? `Cancelé ${title}` : "Cancelado");
+}
+
 /** Lo que está abierto: llega solo por SSE ("status") al cambiar; se pregunta tras abrir o cerrar algo. */
 function applyStatus(running) {
+  if (running && state.cancelled && running.id === state.cancelled.id && Date.now() < state.cancelled.until) {
+    state.cancelled = null; // lo que cancelaste terminó de arrancar: se cierra
+    api.stop().catch(() => {});
+  }
   const changed = running?.id !== state.running?.id;
   state.running = running;
   ui.status.setRunning(running);
@@ -1434,12 +1456,10 @@ function handleAction(action, { repeat = false } = {}) {
     return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));
   }
   if (ui.launch.visible) {
-    if (action === "back") { // B: no esperar más (muestra ya el juego o lo que haya)
-      if (ui.launch.holding) api.reveal().catch(() => {});
-      else if (state.launchingTitle) ui.toast.show(`Sigo buscando ${state.launchingTitle}: se abrirá solo`);
-      ui.launch.hide();
+    if (action === "back") { // B: cancelar, por si lo abriste sin querer (antes solo escondía la pantalla y se abría igual)
+      cancelLaunch();
     } else if (action === "select") {
-      sound.play("error"); // A no hace nada aquí: que se note (la pantalla dice «B Ocultar»)
+      sound.play("error"); // A no hace nada aquí: que se note (la pantalla dice «B Cancelar»)
       rumble("edge");
     }
     return;

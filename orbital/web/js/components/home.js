@@ -97,7 +97,9 @@ export function createHome({ onFocus, onPick, onAction, outside = () => [] }) {
     // Listo antes de abrir: el fondo de cada tarjeta (lo usan la pantalla de carga y la ficha) se pide de una vez.
     model.cards.forEach((item) => { const art = item.hero || item.image; if (art) new Image().src = art; });
     // Bajo el título, el próximo estreno de tus series (como el widget del iPhone): «The Simpsons T38 E3 · Mañana · 6:00 p. m.».
-    const upcoming = nextUp && h("div", { class: "home__next" }, svg(ICONS.calendar),
+    // Si esa serie ya está abajo con «Sale hoy», la píldora no lo repite.
+    const repeated = nextUp && model.cards.some((item) => airing?.[item.extra?.meta_id] && nextUp.title?.startsWith(item.title));
+    const upcoming = nextUp && !repeated && h("div", { class: "home__next" }, svg(ICONS.calendar),
       h("span", { class: "home__next-text" }, [nextUp.title, nextUp.episode].filter(Boolean).join(" ")), h("span", { class: "home__next-when" }, `· ${nextUp.when}`));
     mount(queue, queued.length > 0 && SectionHead(queueTitle(queued), { className: "home__queue-head" }),
       queued.length > 0 && upcoming,

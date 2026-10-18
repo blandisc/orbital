@@ -4,6 +4,8 @@
   grid-row: 2 / 4; min-height: 0; overflow: hidden;
   padding: var(--space-5) var(--page-gutter) var(--space-5);
 }
+/* Con el dedo, abajo van «Atrás» y «Menú» (base.css): más altos que el pie que reemplazan; las consolas no quedan debajo. */
+[data-input="touch"] .home { padding-bottom: calc(var(--space-5) + var(--space-4)); }
 /* Todo el Inicio se desliza junto: arriba llena la pantalla; al bajar a Tus consolas, sube lo justo.
    Lo que sale por arriba se desvanece (no queda cortado en seco). */
 .home__scroll { position: relative; display: flex; flex-direction: column; gap: var(--space-5); transition: transform var(--duration-slow) var(--ease-out); }
@@ -48,7 +50,9 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
 .home--compact .tile--console__cover { max-height: 3.3rem; }
 .home--compact .tile--console__text { padding-top: var(--space-2); padding-bottom: var(--space-3); }
 .home__consoles { flex: none; display: flex; flex-direction: column; gap: var(--space-3); }
-.home__consoles-viewport { overflow: hidden; padding: .6rem 1rem; margin: -1.6rem -1rem -.6rem; } /* espacio para el anillo y el crecer; arriba, el alto que la pista guarda para crecer queda bajo el título (sin hueco) */
+/* Espacio para el anillo y el crecer. Antes la fila se subía 1.6rem bajo el título (sin hueco) y la consola enfocada, al
+   crecer, tapaba «7 sistemas · 21 juegos»: ahora solo se sube lo del anillo. */
+.home__consoles-viewport { overflow: hidden; padding: .6rem 1rem; margin: -.6rem -1rem; }
 /* Tarjetas cuadradas (7 enteras y la octava asomando: así se nota que hay más; el borde se desvanece hacia ese lado).
    La enfocada crece hacia arriba (la fila guarda ese alto: nada brinca). */
 .home__consoles-track {

@@ -6,7 +6,7 @@ import { trimmedLogo } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
 import { Glyph } from "./glyph.js";
 import { motion } from "../core/motion.js";
-import { availability, episodeStates, titleActions, titleProgress } from "../core/watch.js";
+import { actionStep, availability, episodeStates, titleActions, titleProgress } from "../core/watch.js";
 
 /**
  * La ficha de una película o serie, a pantalla completa y con el mando (como Netflix o Apple TV):
@@ -109,8 +109,12 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     action = Math.min(action, Math.max(0, buttons.length - 1));
     // El principal lleva el botón del mando que lo hace (A / Enter), como todo Orbital; los demás, su ícono en una caja y su
     // nombre corto debajo, siempre a la vista (antes solo ícono, y el nombre aparecía al enfocarlo).
+    // Los de abajo llenan su renglón en partes iguales (antes cada uno medía lo suyo y, con siete —Continuar, Desde el
+    // inicio, Tráiler, Guardar, Fuente, Al iPhone, Descargar—, la fila se metía debajo de los episodios).
+    actions.style.setProperty("--title-actions", String(Math.max(1, buttons.filter((b) => !b.primary).length)));
     mount(actions, buttons.map((b, i) => h("button", {
-      class: ["title__action", b.primary ? "title__action--primary" : "title__action--icon", zone === "actions" && i === action && "title__action--focused"],
+      class: ["title__action", b.primary ? "title__action--primary" : "title__action--icon", b.active && "title__action--on",
+        zone === "actions" && i === action && "title__action--focused"],
       type: "button", "data-id": b.id, "aria-label": b.label, title: b.label,
       onClick: () => { zone = "actions"; action = i; run(b); },
     }, b.primary
@@ -452,10 +456,14 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     const series = kindOf() === "series" && seasons().length > 0;
     let moved = false;
     if (zone === "actions") {
-      if (act === "left" && action > 0) { action--; moved = true; }
-      else if (act === "right" && action < buttons.length - 1) { action++; moved = true; }
-      else if (act === "down" && series) { zone = "episodes"; onMove?.(); render(); return true; }
-      else if (act === "select" && buttons[action]) run(buttons[action]);
+      if (["left", "right", "up", "down"].includes(act)) {
+        const next = actionStep(buttons.length, action, act);
+        if (next === "episodes") {
+          if (!series) return true;
+          zone = "episodes"; onMove?.(); render(); return true;
+        }
+        if (next !== null) { action = next; moved = true; }
+      } else if (act === "select" && buttons[action]) run(buttons[action]);
       else if (act === "options" && hasTarget()) sources();
       else if ((act === "prevsection" || act === "nextsection") && series) {
         // Cambiar de temporada desde los botones baja a los episodios: si no, el cambio no se ve.
@@ -467,8 +475,10 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
       if (act === "up") {
         if (index === 0) { zone = "actions"; moved = true; render(); } else moved = setIndex(index - 1);
       } else if (act === "down") moved = setIndex(index + 1);
-      else if (["prevsection", "left"].includes(act)) moved = setSeason(season - 1);
-      else if (["nextsection", "right"].includes(act)) moved = setSeason(season + 1);
+      // ← regresa a los botones, que están a la izquierda (antes cambiaba de temporada; para eso están LB/RB).
+      else if (act === "left") { zone = "actions"; moved = true; render(); }
+      else if (act === "prevsection") moved = setSeason(season - 1);
+      else if (act === "nextsection") moved = setSeason(season + 1);
       // Series largas (Los Simpson tiene 35 temporadas): LT/RT saltan de 5 en 5, como en las filas largas.
       else if (act === "pageleft") moved = setSeason(season - 5);
       else if (act === "pageright") moved = setSeason(season + 5);
