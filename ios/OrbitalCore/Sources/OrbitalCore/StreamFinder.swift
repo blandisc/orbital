@@ -20,9 +20,16 @@ public actor StreamFinder {
     private var answers: [String: (expires: Date, answers: Answers, failed: Bool)] = [:]
     private var asking: [String: Task<Answers, Error>] = [:]
 
-    public init(http: HTTPClient, registry: AddonRegistry, clock: @escaping @Sendable () -> Date = { Date() }) {
-        self.http = http; self.registry = registry; self.clock = clock
+    /// Tus copias propias (OneDrive): van antes que las de los complementos, son tuyas y arrancan al instante.
+    public typealias LocalSources = @Sendable (_ kind: String, _ videoID: String) async -> [Source]
+    private let local: LocalSources?
+
+    public init(http: HTTPClient, registry: AddonRegistry, clock: @escaping @Sendable () -> Date = { Date() }, local: LocalSources? = nil) {
+        self.http = http; self.registry = registry; self.clock = clock; self.local = local
     }
+
+    /// Cambió tu carpeta o tu cuenta de OneDrive: lo recordado ya no vale.
+    public func forget() { cache = [:] }
 
     private func fetch(_ addon: Addon, kind: String, videoID: String) async -> [JSON]? {
         // nil si la red falló (para no recordar «no hay» 10 minutos)
@@ -38,7 +45,16 @@ public actor StreamFinder {
     public func find(kind: String, videoID: String, prefs: Preferences, purpose: Purpose = .watch, onlyPlayable: Bool = true, fresh: Bool = false) async throws -> [Source] {
         let key = "\(kind):\(videoID):\(prefs.audio):\(prefs.quality):\(purpose):\(onlyPlayable)"
         if !fresh, let hit = cache[key], clock() < hit.expires { return hit.sources }
-        let (serving, results) = try await ask(kind: kind, videoID: videoID, fresh: fresh)
+        async let mine = local?(kind, videoID) ?? []
+        let asked: Answers
+        do { asked = try await ask(kind: kind, videoID: videoID, fresh: fresh) }
+        catch {
+            // Sin complementos (o sin red para ellos), tus copias igual sirven.
+            let own = await mine
+            if own.isEmpty { throw error }
+            return Streams.rank(own, prefs: prefs, kind: kind, purpose: purpose)
+        }
+        let (serving, results) = asked
         let failed = results.contains { $0 == nil }
         var sources: [Source] = [], seen = Set<Int>()
         for (addon, streams) in zip(serving, results) {
@@ -52,7 +68,12 @@ public actor StreamFinder {
                 sources.append(source); seen.insert(index)
             }
         }
-        let ranked = Streams.rank(sources, prefs: prefs, kind: kind, purpose: purpose)
+        var ranked = Streams.rank(sources, prefs: prefs, kind: kind, purpose: purpose)
+        let own = await mine
+        if !own.isEmpty {
+            let top = ranked.first?.score ?? 0
+            ranked = Streams.rank(own, prefs: prefs, kind: kind, purpose: purpose).map { var s = $0; s.score = max(s.score, top + 1); return s } + ranked
+        }
         if failed && ranked.isEmpty { return ranked }  // la red falló y no hay nada: no se recuerda
         if cache.count >= Self.cacheMax { for k in cache.sorted(by: { $0.value.expires < $1.value.expires }).prefix(Self.cacheMax / 2).map(\.key) { cache[k] = nil } }
         cache[key] = (clock().addingTimeInterval(failed ? Self.retryFailed : Self.cacheSeconds), ranked)
@@ -103,6 +124,7 @@ public actor StreamFinder {
     public func best(kind: String, videoID: String, prefs: Preferences, binge: String? = nil, skip: Set<Int> = [], purpose: Purpose = .watch) async throws -> Source? {
         let found = try await find(kind: kind, videoID: videoID, prefs: prefs, purpose: purpose).filter { !skip.contains($0.index) }
         guard let first = found.first else { return nil }
+        if first.addon == OneDriveLibrary.addonName { return first }   // tu copia siempre gana
         if let binge, let same = found.first(where: { $0.binge == binge && $0.score > first.score - 700 }) { return same }
         return first
     }

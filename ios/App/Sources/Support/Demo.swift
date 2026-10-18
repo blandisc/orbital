@@ -35,6 +35,9 @@ enum Demo {
     static var scrobble: Bool { ProcessInfo.processInfo.arguments.contains("-demo-scrobble") }
     /// `-demo-because`: Trakt de mentira con historial y relacionados, para ver «Porque viste» en Para ti.
     static var because: Bool { ProcessInfo.processInfo.arguments.contains("-demo-because") }
+    /// `-demo-onedrive off|unlinked|linked`: OneDrive de mentira (Microsoft y la carpeta responden aquí; nada sale a tu cuenta).
+    /// `linked` ya trae la carpeta «Películas» revisada: Dune Part Two (2024) y Severance T1 sale como fuente.
+    static var oneDrive: String? { value(after: "-demo-onedrive") }
 
     /// Lo último que «se le contó a Trakt», para ver la fila de Ajustes sin ver nada antes.
     static func prefillScrobble(_ kv: KeyValueStore) {
@@ -124,6 +127,7 @@ enum Demo {
         if scrobble || airings || because { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa: nada sale a Trakt
         if !noTV { secrets.set(SecretKey.orbitalToken, "demo") }      // una Orbital de mentira ya conectada («Ver en la TV»)
         if tmdb { secrets.set(SecretKey.tmdbKey, "DEMO") }            // TMDB de mentira: la ficha rica sin clave de verdad
+        if oneDrive == "linked" { secrets.set(SecretKey.oneDriveTokens, #"{"access_token":"DEMO","refresh_token":"DEMO","expires_at":4102444800}"#) }
         return secrets
     }
 }
@@ -170,6 +174,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             return HTTPResponse(status: url.path == "/users/settings" ? 200 : 404, data: user.serialized())
         }
         if url.host == "api.themoviedb.org", Demo.tmdb { return tmdbDemo(url) }
+        if Demo.oneDrive != nil, url.host == "login.microsoftonline.com" || url.host == "graph.microsoft.com" { return Self.oneDriveDemo(url) }
         if url.host == "tv.demo.invalid", Demo.tvNow || Demo.inbox != nil || Demo.game, url.path.hasPrefix("/api/companion/") {
             return lock.withLock { nowPlaying(path: url.path, body: request.body.flatMap(JSON.parse)) }
         }
@@ -513,3 +518,33 @@ extension Demo {
     static var yearInReview: YearInReview { DemoHTTPClient.demoYear }
 }
 #endif
+
+extension DemoHTTPClient {
+    /// Microsoft y OneDrive de mentira: un código que se acepta al primer intento y una carpeta con dos títulos.
+    static func oneDriveDemo(_ url: URL) -> HTTPResponse {
+        func ok(_ json: JSON) -> HTTPResponse { HTTPResponse(status: 200, data: json.serialized()) }
+        let path = url.path.removingPercentEncoding ?? url.path
+        if path.hasSuffix("/devicecode") {
+            return ok(["device_code": "demo", "user_code": "ORB-7421", "verification_uri": "https://www.microsoft.com/link", "interval": 2, "expires_in": 900])
+        }
+        if path.hasSuffix("/token") { return ok(["access_token": "DEMO", "refresh_token": "DEMO", "expires_in": 3600]) }
+        if path.hasSuffix("/root/children") {
+            return ok(["value": [["id": "f1", "name": "Documentos", "folder": ["childCount": 12]], ["id": "f2", "name": "Fotos", "folder": ["childCount": 840]],
+                                 ["id": "f3", "name": "Películas", "folder": ["childCount": 2]]]])
+        }
+        if path.hasSuffix("Películas:/children") {
+            return ok(["value": [["id": "s1", "name": "Severance", "folder": ["childCount": 2]],
+                                 ["id": "m1", "name": "Dune Part Two (2024) 2160p HDR.mkv", "size": 41_200_000_000, "file": [:]]]])
+        }
+        if path.hasSuffix("Películas/Severance:/children") {
+            return ok(["value": [["id": "e1", "name": "Severance.S01E01.1080p.WEB-DL.mkv", "size": 2_100_000_000, "file": [:]],
+                                 ["id": "e2", "name": "Severance.S01E02.1080p.WEB-DL.mkv", "size": 2_000_000_000, "file": [:]]]])
+        }
+        if path.contains(":/children") { return ok(["value": []]) }
+        if path.contains("/me/drive/items/") {
+            // Un video público de muestra: se reproduce de verdad sin tocar ninguna cuenta.
+            return ok(["@microsoft.graph.downloadUrl": "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8"])
+        }
+        return HTTPResponse(status: 404, data: Data())
+    }
+}

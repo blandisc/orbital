@@ -70,6 +70,11 @@ struct SettingsView: View {
                         SettingsRow(title: "Trakt", symbol: "checkmark.seal", tint: DS.ListTint.chart, value: traktValue(model))
                     }
                 }
+                // Tus películas y series de OneDrive como una fuente más (como en la TV).
+                NavigationLink { OneDriveSettings() } label: {
+                    SettingsRow(title: "OneDrive", symbol: "cloud", tint: DS.ListTint.library,
+                                value: env.services.oneDrive.linked ? Text("Conectado") : Text("Sin conectar"))
+                }
                 NavigationLink { VoiceGuideView() } label: {
                     SettingsRow(title: "Voz y Siri", symbol: "waveform", tint: DS.ListTint.bookmark)
                 }

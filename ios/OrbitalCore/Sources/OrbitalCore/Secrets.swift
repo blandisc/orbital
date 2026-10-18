@@ -18,6 +18,7 @@ public enum SecretKey {
     public static let traktClientID = "trakt_client_id"
     public static let traktClientSecret = "trakt_client_secret"
     public static let orbitalToken = "orbital_token"     // el token de tu Orbital (el mismo de Alexa): «Ver en la TV»
+    public static let oneDriveTokens = "onedrive_tokens"  // la sesión de OneDrive (Files.Read)
 }
 
 public final class InMemorySecrets: SecretsStore, @unchecked Sendable {

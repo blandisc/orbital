@@ -27,7 +27,8 @@ struct SourcesSheet: View {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     Text("Fuente").recipe(.title)
-                    Text("De Real-Debrid · por calidad, la recomendada primero").recipe(.footnote)
+                    if model.rows.contains(where: \.own) { Text("Tu OneDrive primero; luego Real-Debrid, por calidad").recipe(.footnote) }
+                    else { Text("De Real-Debrid · por calidad, la recomendada primero").recipe(.footnote) }
                 }
                 Spacer()
                 // Qué quiere decir cada etiqueta (4K, DV, REMUX, Al instante…).
@@ -127,11 +128,13 @@ struct SourceRowView: View {
         HStack(alignment: .center, spacing: DS.Space.s3) {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 Text(row.headline).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
-                if row.recommended { Text("La elegimos por tu idioma, la calidad y el tamaño").recipe(.caption) }
+                if row.own { Text("Tu copia en OneDrive").recipe(.caption) }
+                else if row.recommended { Text("La elegimos por tu idioma, la calidad y el tamaño").recipe(.caption) }
                 // Las que no caben se deslizan de lado (dentro del renglón, hasta su orilla).
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: DS.Space.s1) {
-                        if row.recommended { DSChip(text: "Recomendada", tone: .good) }
+                        if row.own { DSChip(text: "Tu OneDrive", tone: .good) }
+                        else if row.recommended { DSChip(text: "Recomendada", tone: .good) }
                         if row.cached { DSChip(text: "Al instante", tone: .good) }
                         if let gb = row.sizeGB { DSChipText(text: gb >= 1 ? String(format: "%.1f GB", gb) : String(format: "%.0f MB", gb * 1000), tone: row.heavy ? .warn : .normal) }
                         QualityBadges(items: QualityBadges.items(resolution: row.resolution, hdr: row.hdr, audio: row.audio))

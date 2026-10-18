@@ -48,6 +48,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var becauseStyle = "posters"        // «Porque viste» (Para ti): «posters» (mini pósters) | «deck» (mazo de cartas)
     public var avatar = "planet"               // tu avatar (Assets › Avatars)
     public var displayName = ""                // cómo te saluda Inicio («Hola, Fer»); vacío: el de tu Trakt
+    public var oneDriveClientID = ""           // el «ID de la aplicación» de Microsoft Entra (no es secreto; la sesión va en el Keychain)
+    public var oneDriveFolder = ""             // la carpeta de OneDrive con tus películas y series («Videos/Películas»)
 
     public init() {}
 
@@ -78,12 +80,14 @@ public struct AppSettings: Codable, Equatable, Sendable {
         releaseAlerts = try c.decodeIfPresent(Bool.self, forKey: .releaseAlerts) ?? releaseAlerts
         avatar = try c.decodeIfPresent(String.self, forKey: .avatar) ?? avatar
         displayName = try c.decodeIfPresent(String.self, forKey: .displayName) ?? displayName
+        oneDriveClientID = try c.decodeIfPresent(String.self, forKey: .oneDriveClientID) ?? oneDriveClientID
+        oneDriveFolder = try c.decodeIfPresent(String.self, forKey: .oneDriveFolder) ?? oneDriveFolder
     }
 
     enum Keys: String, CodingKey {
         case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
         case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
-        case homeDeck, homeTime, avatar, displayName, latinSpanish, becauseStyle, releaseAlerts
+        case homeDeck, homeTime, avatar, displayName, latinSpanish, becauseStyle, releaseAlerts, oneDriveClientID, oneDriveFolder
     }
     public var traktEnabled: Bool { !traktClientID.isEmpty }
 

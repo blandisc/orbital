@@ -12,6 +12,8 @@ public struct SourceRow: Equatable, Identifiable, Sendable {
     public var hdr: [String]
     public var tags: [String]
     public var addon: String
+    /// Tu copia de OneDrive (no de un complemento).
+    public var own: Bool { addon == OneDriveLibrary.addonName }
     /// Para las insignias (como Infuse): la resolución y el sonido (Atmos, TrueHD, 7.1…).
     public var resolution = ""
     public var audio: [String] = []
@@ -70,7 +72,7 @@ public final class SourcesModel: ObservableModel {
             let headline = [s.resolution.isEmpty ? "SD" : s.resolution, langs, s.tags.first(where: { ["REMUX", "WEB-DL", "BluRay"].contains($0) }), s.tags.contains("x265") ? "x265" : nil]
                 .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
             return SourceRow(id: s.index, headline: headline, recommended: i == 0, cached: s.cached, sizeGB: s.size > 0 ? Double(s.size) / 1e9 : nil,
-                             heavy: Int64(s.size) > limit, hdr: s.hdr, tags: s.tags.filter { $0 != "x265" && !["REMUX", "WEB-DL", "BluRay", "Atmos", "5.1"].contains($0) }, addon: s.addon,
+                             heavy: Int64(s.size) > limit, hdr: s.hdr, tags: s.tags.filter { $0 != "x265" && !["REMUX", "WEB-DL", "BluRay", "Atmos", "5.1", OneDriveLibrary.addonName].contains($0) }, addon: s.addon,
                              resolution: s.resolution, audio: s.audioBadges, release: s.release)
         }
     }

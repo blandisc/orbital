@@ -18,6 +18,9 @@ public final class Services: ObservableModel {
 
     public private(set) var registry: AddonRegistry { didSet { changed() } }
     public private(set) var finder: StreamFinder { didSet { changed() } }
+    /// Tu OneDrive (la cuenta) y tu carpeta ya reconocida: sus videos salen como fuentes.
+    public let oneDrive: OneDrive
+    public let oneDriveLibrary: OneDriveLibrary
     public private(set) var cinemeta: Cinemeta { didSet { changed() } }
     public private(set) var localizer: Localizer { didSet { changed() } }
     /// IntroDB: dónde saltar la intro y el resumen (y cuándo empiezan los créditos).
@@ -97,8 +100,11 @@ public final class Services: ObservableModel {
         self.stremio = stremio
         let registry = AddonRegistry(http: http, account: stremio, auth: { secrets.get(SecretKey.stremioAuth) },
                                      own: { (secrets.get(SecretKey.ownAddons) ?? "").split(separator: "\n").map(String.init) }, clock: clock)
-        let finder = StreamFinder(http: http, registry: registry, clock: clock)
         let cinemeta = Cinemeta(http: http, registry: registry, clock: clock)
+        let oneDrive = OneDrive(http: http, secrets: secrets, clientID: { settings.value.oneDriveClientID }, clock: clock)
+        let oneDriveLibrary = OneDriveLibrary(drive: oneDrive, cinemeta: cinemeta, kv: kv, folder: { settings.value.oneDriveFolder }, clock: clock)
+        let finder = StreamFinder(http: http, registry: registry, clock: clock, local: { kind, videoID in await oneDriveLibrary.sources(kind: kind, videoID: videoID) })
+        self.oneDrive = oneDrive; self.oneDriveLibrary = oneDriveLibrary
         let tmdb = Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "", language: "es-MX")
         let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
         let trakt = Services.makeTrakt(http: http, secrets: secrets, settings: settings.value, clock: clock)

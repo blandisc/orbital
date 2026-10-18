@@ -45,6 +45,17 @@
         }
       }
     },
+    "%@ sin ficha: revisa que su nombre diga el título (y el año).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ without a match: check that the file name says the title (and the year)."
+          }
+        }
+      }
+    },
     "%@ · %@": {
       "extractionState": "manual",
       "localizations": {
@@ -657,6 +668,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Off"
+          }
+        }
+      }
+    },
+    "Aparece un código para escribir en microsoft.com/link. Solo pide leer tus archivos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A code appears to type at microsoft.com/link. It only asks to read your files."
           }
         }
       }
@@ -1959,6 +1981,17 @@
         }
       }
     },
+    "Conectar OneDrive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect OneDrive"
+          }
+        }
+      }
+    },
     "Conectar Trakt": {
       "extractionState": "manual",
       "localizations": {
@@ -2065,6 +2098,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Copy"
+          }
+        }
+      }
+    },
+    "Copiar el código y abrir Microsoft": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy the code and open Microsoft"
           }
         }
       }
@@ -2674,6 +2718,17 @@
         }
       }
     },
+    "Desconectar OneDrive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect OneDrive"
+          }
+        }
+      }
+    },
     "Desconectar Trakt": {
       "extractionState": "manual",
       "localizations": {
@@ -2971,6 +3026,17 @@
         }
       }
     },
+    "Dónde están tus películas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where your movies are"
+          }
+        }
+      }
+    },
     "Dónde hablarle": {
       "extractionState": "manual",
       "localizations": {
@@ -3176,6 +3242,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pick another title to get recommendations from"
+          }
+        }
+      }
+    },
+    "Elige una": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose one"
           }
         }
       }
@@ -3422,6 +3499,17 @@
         }
       }
     },
+    "En tu OneDrive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On your OneDrive"
+          }
+        }
+      }
+    },
     "En tu lista": {
       "extractionState": "manual",
       "localizations": {
@@ -3554,6 +3642,17 @@
         }
       }
     },
+    "Episodios": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Episodes"
+          }
+        }
+      }
+    },
     "Episodios de estas semanas y películas recién llegadas": {
       "extractionState": "manual",
       "localizations": {
@@ -3583,6 +3682,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stremio error"
+          }
+        }
+      }
+    },
+    "Escribe este código en %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type this code at %@"
           }
         }
       }
@@ -4221,6 +4331,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "No ranking for this service today."
+          }
+        }
+      }
+    },
+    "Id. de aplicación (cliente)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Application (client) ID"
           }
         }
       }
@@ -4984,6 +5105,17 @@
         }
       }
     },
+    "Lo que encontré": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What I found"
+          }
+        }
+      }
+    },
     "Lo que guardaste": {
       "extractionState": "manual",
       "localizations": {
@@ -5365,6 +5497,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "My List"
+          }
+        }
+      }
+    },
+    "Microsoft no aceptó el código.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microsoft didn't accept the code."
           }
         }
       }
@@ -5853,6 +5996,17 @@
         }
       }
     },
+    "No hay más carpetas aquí.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No more folders here."
+          }
+        }
+      }
+    },
     "No hay nada aquí todavía.": {
       "extractionState": "manual",
       "localizations": {
@@ -6293,6 +6447,28 @@
         }
       }
     },
+    "OneDrive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OneDrive"
+          }
+        }
+      }
+    },
+    "OneDrive conectado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OneDrive connected"
+          }
+        }
+      }
+    },
     "Opciones": {
       "extractionState": "manual",
       "localizations": {
@@ -6300,6 +6476,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Options"
+          }
+        }
+      }
+    },
+    "Orbital solo lee: nunca cambia ni borra nada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orbital only reads: it never changes or deletes anything"
           }
         }
       }
@@ -7151,6 +7338,17 @@
         }
       }
     },
+    "Rechazaste la conexión en Microsoft.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You declined the connection at Microsoft."
+          }
+        }
+      }
+    },
     "Rechazaste la conexión en Trakt.": {
       "extractionState": "manual",
       "localizations": {
@@ -7360,6 +7558,28 @@
         }
       }
     },
+    "Revisada %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checked %@"
+          }
+        }
+      }
+    },
+    "Revisar ahora": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check now"
+          }
+        }
+      }
+    },
     "Sale el %@": {
       "extractionState": "manual",
       "localizations": {
@@ -7521,6 +7741,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "They are saved with the download: you can watch them offline too."
+          }
+        }
+      }
+    },
+    "Se ven al instante y se pueden descargar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They play instantly and can be downloaded"
           }
         }
       }
@@ -7994,6 +8225,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Only on the iPhone"
+          }
+        }
+      }
+    },
+    "Solo mira la carpeta que elijas después": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It only looks at the folder you choose next"
+          }
+        }
+      }
+    },
+    "Solo se mira esa carpeta y sus subcarpetas. Cada video se reconoce por su nombre («Dune Part Two (2024).mkv», «Severance S01E03.mkv»).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only that folder and its subfolders are read. Each video is recognized by its name (“Dune Part Two (2024).mkv”, “Severance S01E03.mkv”)."
           }
         }
       }
@@ -8746,6 +8999,28 @@
         }
       }
     },
+    "Tu OneDrive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your OneDrive"
+          }
+        }
+      }
+    },
+    "Tu OneDrive primero; luego Real-Debrid, por calidad": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your OneDrive first; then Real-Debrid, by quality"
+          }
+        }
+      }
+    },
     "Tu Orbital": {
       "extractionState": "manual",
       "localizations": {
@@ -8863,6 +9138,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your password isn't stored: only the session key, in your iPhone's Keychain."
+          }
+        }
+      }
+    },
+    "Tu copia en OneDrive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your copy on OneDrive"
           }
         }
       }
@@ -8988,6 +9274,39 @@
         }
       }
     },
+    "Tus videos de OneDrive dejan de salir como fuente. Lo descargado se queda.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your OneDrive videos stop showing up as sources. Downloads stay."
+          }
+        }
+      }
+    },
+    "Tus videos salen primero en «Fuente» de su película o episodio: se ven al instante y se pueden descargar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your videos show up first under “Source” for their movie or episode: they play instantly and can be downloaded."
+          }
+        }
+      }
+    },
+    "Tus videos se ven directo, sin bajarlos completos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your videos play directly, without downloading them fully"
+          }
+        }
+      }
+    },
     "Tuyo": {
       "extractionState": "manual",
       "localizations": {
@@ -9072,6 +9391,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Just one, from your suggestions, that you haven't seen."
+          }
+        }
+      }
+    },
+    "Usa la misma de la TV. Si aún no la tienes: en entra.microsoft.com › Registros de aplicaciones › Nuevo registro, ponle «Orbital», elige «Cuentas personales de Microsoft» y créala. En «Autenticación» activa «Permitir flujos de clientes públicos». Copia su «Id. de aplicación (cliente)».": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the same one as the TV. If you don't have it yet: at entra.microsoft.com › App registrations › New registration, name it “Orbital”, choose “Personal Microsoft accounts” and create it. Under “Authentication”, turn on “Allow public client flows”. Copy its “Application (client) ID”."
+          }
+        }
+      }
+    },
+    "Usar esta carpeta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use this folder"
           }
         }
       }
@@ -9721,6 +10062,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "How long do you want to play?"
+          }
+        }
+      }
+    },
+    "¿Desconectar OneDrive?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect OneDrive?"
           }
         }
       }
