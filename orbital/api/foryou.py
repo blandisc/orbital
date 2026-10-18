@@ -52,6 +52,11 @@ def router(d: Deps) -> APIRouter:
         wanted = [tuple(p.split(":", 1)) for p in ids[:4000].split(",") if p.count(":") == 1]
         return {"ratings": foryou.imdb_ratings([(k, i) for k, i in wanted])}
 
+    @r.get("/title-extras")
+    def title_extras(kind: str, id: str) -> dict:
+        """Frase, clasificación, créditos y «Más como esto» de un título (la ficha, como el iPhone)."""
+        return foryou.title_extras(kind, id[:20])
+
     @r.get("/title-ratings")
     def title_ratings(kind: str, id: str) -> dict:
         """IMDb, TMDB y Trakt de un título (la ficha, como el iPhone)."""

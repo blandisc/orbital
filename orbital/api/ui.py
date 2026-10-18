@@ -91,7 +91,8 @@ def router(d: Deps) -> APIRouter:
                 "close_previous": d.config.sessions.close_previous, "screensaver_minutes": 10, "video_home": "pip", **catalog.state.settings(),
                 "stremio_linked": catalog.stremio_linked, "alexa": d.alexa_ready, "alexa_last": d.alexa_last,
                 # «Para ti»: Ajustes › Cuentas enseña Trakt, TMDB y RAWG (y si su clave ya está).
-                "trakt": catalog.foryou.status()["trakt"], "para_ti": catalog.foryou.status()}
+                "trakt": catalog.foryou.status()["trakt"], "para_ti": catalog.foryou.status(),
+                "onedrive": catalog.onedrive.status()}  # tus videos de OneDrive (Ajustes › Cuentas)
 
     @r.post("/api/settings")
     def set_settings(body: dict) -> dict:

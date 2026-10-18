@@ -1,5 +1,6 @@
 import { api } from "../core/api.js";
 import { Chip } from "./ui.js";
+import { Card } from "./card.js";
 import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { genres, runtime } from "../core/format.js";
 import { trimmedLogo } from "../core/foryou.js";
@@ -23,6 +24,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
   logo.addEventListener("error", () => { logo.hidden = true; name.hidden = false; }); // sin Internet o 404
+  const tagline = h("p", { class: "title__tagline", hidden: true }); // la frase de la película (TMDB), como el iPhone
   const facts = h("div", { class: "title__facts" });
   // IMDb · TMDB · Trakt, cada una con el logotipo de su servicio (RatingsRow del iPhone). Guarda su alto mientras llegan.
   const ratings = h("div", { class: "title__ratings", "aria-label": "Calificaciones" });
@@ -39,16 +41,24 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   tabs.addEventListener("scroll", () => markTabEdges(), { passive: true });
   const list = h("div", { class: "title__episodes", role: "group" });
   const browser = h("div", { class: "title__browser" }, tabs, list);
+  // Al bajar desde los botones: «Más como esto» (lo que Trakt relaciona), y solo eso (la ficha del iPhone, adaptada).
+  const moreRow = h("div", { class: "title__more-row", role: "group" });
+  const more = h("div", { class: "title__more", hidden: true }, h("h2", { class: "title__more-head" }, "Más como esto"), moreRow);
+  // El orden del iPhone: logo y frase; qué es (Serie · clasificación · año · géneros · duración); lo disponible; las
+  // calificaciones; Ver y sus botones; la sinopsis; y quién la hizo («Creada por» / «Dirección · Guion», «Con»).
   const el = h("section", { class: "title", hidden: true, "aria-label": "Ficha" },
     backdrop,
-    h("div", { class: "title__info" }, logo, name, facts, ratings, avail, description, people, progress, actions, status),
-    browser);
+    h("div", { class: "title__info" }, logo, name, tagline, facts, avail, ratings, progress, actions, description, people, status),
+    browser, more);
 
   let item = null;
   let details = null;
   let buttons = [];
-  let zone = "actions"; // "actions" | "episodes"
+  let zone = "actions"; // "actions" | "episodes" | "more"
   let action = 0;
+  let extras = null; // frase, clasificación, créditos y «Más como esto» (title-extras)
+  let moreItems = [];
+  let moreIndex = 0;
   let season = 0;
   let index = 0;
   let states = new Map(); // video_id -> { watched, progress, upcoming }
@@ -72,7 +82,8 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     // Cada dato con su «·» delante, en un solo bloque: el punto nunca queda colgando al final del
     // renglón; si un dato empieza renglón, su punto se oculta (title--fact-start).
     // Sin «★ 8.1»: la de IMDb va en su renglón, con TMDB y Trakt (como el iPhone).
-    mount(facts, [info.year, length, genres(info.genres || []).join(", ")]
+    const kindName = (info.kind || item?.kind) === "series" ? "Serie" : (info.kind || item?.kind) === "movie" ? "Película" : null;
+    mount(facts, [kindName, extras?.certification, info.year, genres(info.genres || []).slice(0, 2).join(", "), length]
       .filter(Boolean).map((t, i) => h("span", { class: "title__fact" }, i > 0 && h("span", { class: "title__sep", "aria-hidden": "true" }, "·"), t)));
     requestAnimationFrame(() => {
       let top = null;
@@ -82,12 +93,47 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
       }
     });
     description.textContent = info.description || "";
+    tagline.textContent = extras?.tagline || "";
+    tagline.hidden = !extras?.tagline;
+    // Como los créditos del cine, en una línea: «Creada por …» (series) o «Dirección … · Guion …», y «Con …».
+    const series = (info.kind || item?.kind) === "series";
+    const leads = (extras?.directors?.length ? extras.directors : info.directors || []).slice(0, 2);
+    const cast = (extras?.cast?.length ? extras.cast : info.cast || []).slice(0, 3);
+    const writer = !series && extras?.writers?.[0];
     const lines = [
-      info.cast?.length > 0 && h("span", {}, h("em", {}, "Con "), info.cast.slice(0, 4).join(", ")),
-      info.directors?.length > 0 && h("span", {}, h("em", {}, "Dirección "), info.directors.join(", ")),
+      leads.length > 0 && h("span", {}, h("em", {}, series ? "Creada por " : "Dirección "), leads.join(", "),
+        writer && h("em", {}, " · Guion "), writer || null),
+      cast.length > 0 && h("span", {}, h("em", {}, "Con "), cast.join(", ")),
     ].filter(Boolean);
     mount(people, lines);
     people.hidden = !lines.length;
+  }
+
+  /** Lo que llega aparte (TMDB y Trakt): la frase, la clasificación, los créditos y «Más como esto». */
+  function applyExtras(x) {
+    extras = x || null;
+    if (details) fillInfo({ ...details, title: details.title || item.title, background: details.background || item.hero || item.image,
+      ...(item.extra?.logo ? { logo: item.extra.logo } : {}) });
+    moreItems = (x?.more || []).filter((m) => m.meta_id && m.meta_id !== item?.meta_id);
+    moreIndex = 0;
+    mount(moreRow, moreItems.map((m, i) => {
+      const card = Card(m, { onPress: () => (zone === "more" && i === moreIndex ? openMore() : (zone = "more", moreIndex = i, render(), onMove?.())) });
+      return card;
+    }));
+    more.hidden = !moreItems.length;
+    onChange();
+  }
+
+  function paintMore() {
+    [...moreRow.children].forEach((card, i) => card.classList.toggle("card--focused", zone === "more" && i === moreIndex));
+    const node = moreRow.children[moreIndex];
+    if (node && zone === "more") moreRow.scrollTo({ left: Math.max(0, node.offsetLeft - moreRow.clientWidth * .3), behavior: motion("smooth") });
+  }
+
+  /** Abre la sugerencia enfocada: su ficha, en esta misma pantalla. */
+  function openMore() {
+    const m = moreItems[moreIndex];
+    if (m) open({ kind: m.kind, meta_id: m.meta_id, title: m.title, image: m.image, hero: m.hero, extra: m.extra });
   }
 
   /** Las calificaciones (0–10): IMDb «8.1», TMDB y Trakt en por ciento, como el iPhone. */
@@ -191,6 +237,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   function render() {
     renderActions();
     renderProgress();
+    paintMore();
     el.classList.toggle("title--series", kindOf() === "series" && seasons().length > 0);
     el.dataset.zone = zone;
     if (kindOf() === "series" && seasons().length) {
@@ -330,6 +377,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
       if (mine !== token) return;
       if (!data || typeof data !== "object" || (!data.id && !data.title)) throw new Error("La ficha llegó incompleta. Intenta de nuevo.");
       details = data;
+      api.titleExtras(kind, id).then((x) => { if (mine === token) applyExtras(x); }).catch(() => {});
       showRatings({ imdb: Number(data.rating) || null }, mine);
       api.titleRatings(kind, id).then((r) => showRatings({ ...r, imdb: r?.imdb ?? (Number(data.rating) || null) }, mine)).catch(() => {});
       fillInfo({ ...data, title: data.title || item.title, background: data.background || item.hero || item.image,
@@ -423,6 +471,10 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     cancelExit();
     zone = "actions";
     action = 0;
+    extras = null;
+    moreItems = [];
+    mount(moreRow);
+    more.hidden = true;
     season = 0;
     index = 0;
     states = new Map();
@@ -448,16 +500,28 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     if (act === "search") { close(); return false; } // S: buscar otra cosa (la ficha se cierra y se abre Buscar)
     if (act === "back") {
       // Con el mando, B primero sube de los episodios a los botones; con el dedo, «Atrás» cierra (ese paso no se veía).
-      if (zone === "episodes" && !touching()) { zone = "actions"; onMove?.(); render(); return true; }
+      if ((zone === "episodes" || zone === "more") && !touching()) { zone = "actions"; onMove?.(); render(); return true; }
       close();
       return true;
     }
     if (!details) return true;
     const series = kindOf() === "series" && seasons().length > 0;
     let moved = false;
+    if (zone === "more") {
+      if (act === "left" && moreIndex > 0) { moreIndex--; moved = true; }
+      else if (act === "right" && moreIndex < moreItems.length - 1) { moreIndex++; moved = true; }
+      else if (act === "up") { zone = "actions"; moved = true; render(); }
+      else if (act === "select") openMore();
+      if (moved) { paintMore(); el.dataset.zone = zone; onMove?.(); }
+      return true;
+    }
     if (zone === "actions") {
       if (["left", "right", "up", "down"].includes(act)) {
         const next = actionStep(buttons.length, action, act);
+        // ↓ desde los botones de abajo: «Más como esto»; → desde el último: los episodios (están a la derecha).
+        if (next === "episodes" && act === "down" && moreItems.length && action > 0) {
+          zone = "more"; moreIndex = Math.min(moreIndex, moreItems.length - 1); onMove?.(); render(); return true;
+        }
         if (next === "episodes") {
           if (!series) return true;
           zone = "episodes"; onMove?.(); render(); return true;
@@ -499,13 +563,15 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     return hintsFor(g);
   };
   const hintsFor = (g) => (details?.error ? [{ glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }]
+    : zone === "more"
+    ? [{ glyph: g.select, label: "Ver la ficha" }, { glyph: g.back, label: "Atrás", end: true }]
     : zone === "episodes"
     ? [episode() && { glyph: g.select, label: "Ver" }, episode() && { glyph: g.options, label: "Fuente" }, { glyph: g.section, label: "Temporada" },
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : !details ? [{ glyph: g.back, label: "Atrás", end: true }] // cargando: nada que pulsar todavía
     : [{ glyph: g.select, label: buttons[action]?.label?.split(" · ")[0] || "Ver" }, hasTarget() && { glyph: g.options, label: "Elegir fuente" },
-      kindOf() === "series" && seasons().length && { glyph: g.rows, label: "Episodios" },
+      moreItems.length ? { glyph: g.rows, label: "Más como esto" } : kindOf() === "series" && seasons().length && { glyph: g.rows, label: "Episodios" },
       kindOf() === "series" && seasons().length > 1 && { glyph: g.section, label: "Temporada", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
 

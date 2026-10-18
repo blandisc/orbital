@@ -28,7 +28,7 @@ from pydantic import BaseModel, Field
 
 from . import __version__, companion
 from . import quick as system_audio
-from .api import diagnostics, foryou, library, live, media, play, quick, tv, ui, update
+from .api import diagnostics, foryou, library, live, media, onedrive, play, quick, tv, ui, update
 from .api.deps import Deps
 from .api.live import SseHub, VoiceRequest
 from .api.play import humane_error  # noqa: F401 - se importa desde aquí
@@ -204,7 +204,7 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
 
     for part in (library.router(d), play.router(d), media.router(d), ui.router(d),
                  live.router(d, is_local_request), diagnostics.router(d), quick.router(d),
-                 update.router(d, updater), foryou.router(d), tv.router(d)):
+                 update.router(d, updater), foryou.router(d), tv.router(d), onedrive.router(d)):
         app.include_router(part)
     _companion_routes(app, config)
     _remote_input_routes(app, config)

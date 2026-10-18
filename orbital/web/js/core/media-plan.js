@@ -13,7 +13,7 @@ const CENTERED = new Set(["platforms", "awards", "studios", "years"]);
 
 /** Los grupos de «Ir a…» (☰), en orden; LT/RT pasan de uno a otro. */
 export const GROUPS = [
-  { id: "spotlight", label: "Destacados" }, { id: "because", label: "Porque viste" }, { id: "general", label: "Recomendadas y populares" },
+  { id: "spotlight", label: "Destacados" }, { id: "onedrive", label: "Tu OneDrive" }, { id: "because", label: "Porque viste" }, { id: "general", label: "Recomendadas y populares" },
   { id: "fresh", label: "Nuevo en tus plataformas" }, { id: "platforms", label: "Tus plataformas" }, { id: "awards", label: "Premios" },
   { id: "studios", label: "Estudios" }, { id: "years", label: "Por año" }, { id: "estrenos", label: "Próximos estrenos" },
   { id: "lists", label: "Tus listas" }, { id: "genres", label: "Por género" },
@@ -91,6 +91,8 @@ export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = 
   const inRow = (title) => (item) => curatedItem(item, { rowTitle: title });
   const plain = (id, title, items, extra) => { if (items.length) rows.push({ id: `curated:${id}`, title, items: items.slice(0, 20).map(inRow(title)), ...extra }); };
 
+  // Tus videos de OneDrive (la carpeta que elegiste): lo tuyo va arriba, antes de las sugerencias.
+  if (byId.onedrive) plain("onedrive", "En tu OneDrive", itemsOf(itemsById, byId.onedrive, filter), { seal: "orbital", group: "onedrive" });
   const because = byId.because;
   if (because?.seed) {
     // Como el iPhone («Mini pósters»): arriba tus últimos títulos para elegir de cuál (← → en la fila; cada día otro de los

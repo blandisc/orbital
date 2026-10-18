@@ -129,3 +129,26 @@ def test_steam_game_opens_with_steam_already_in_the_background(library, monkeypa
     library.config.steam.silent_start = False
     library.sessions.launch(item.id)
     assert len(calls) == 1  # apagado en config.yaml: como antes
+
+
+def test_without_es_de_each_console_reads_its_folder_in_your_roms(tmp_path, monkeypatch):
+    """Orbital sin ES-DE: los emuladores de tu carpeta de emuladores y los juegos de ROMs\<consola> (como antes, sin ES-DE)."""
+    from conftest import FakeLauncher
+
+    from orbital.catalog import Catalog
+    from orbital.library import detect
+
+    emus = tmp_path / "Emuladores" / "mGBA"
+    emus.mkdir(parents=True)
+    (emus / "mGBA.exe").write_bytes(b"MZ")
+    roms = tmp_path / "ROMs" / "gba"
+    roms.mkdir(parents=True)
+    (roms / "Pokemon - Emerald Version (USA, Europe).gba").write_bytes(b"")
+    monkeypatch.setattr(detect, "default_search_dirs", lambda extra=None, esde_exe=None: [detect.SearchDir(tmp_path / "Emuladores")])
+    cfg = parse_config({"server": {"token": "t"}, "steam": {"path": str(tmp_path / "sin-steam")}, "stremio": {"enabled": False},
+                        "esde": {"enabled": False}, "detect": {"enabled": True, "roms": str(tmp_path / "ROMs")}})
+    catalog = Catalog(cfg, FakeLauncher())
+    catalog.refresh()
+    games = [i for i in catalog.store.all() if i.category == "emulators"]
+    assert [g.system for g in games] == ["gba"] and "Emerald" in games[0].title
+    assert not any(i.id == "app:esde" for i in catalog.store.all())

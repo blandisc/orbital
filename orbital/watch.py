@@ -188,6 +188,7 @@ class Watch:
         self.credentials = credentials
         self.stremio_client = stremio_client
         self.cinemeta = cinemeta_client
+        self.onedrive = None  # OneDriveLibrary (catalog.py la pone): «Tu OneDrive» como fuente
         self.trailer_available = youtube_available  # «Tráiler» solo si el video existe (las pruebas lo cambian)
         self.store = store
         self.events = events
@@ -450,10 +451,14 @@ class Watch:
             log.info("%s recordará %s: %s", meta.get("title") or meta["meta_id"], kind, lang or "sin subtítulos")
 
     def stream_sources(self, kind: str, video_id: str, prefs: streams.Preferences | None = None) -> list[streams.Source]:
-        """Fuentes de tus addons, ordenadas por tus preferencias (la primera es la recomendada)."""
+        """Fuentes de tus addons, ordenadas por tus preferencias (la primera es la recomendada). Si está en tu OneDrive,
+        «Tu OneDrive» va primero (es tuya y arranca sin esperar a Real-Debrid)."""
+        mine = self.onedrive.source(kind, video_id) if self.onedrive is not None else None
         if not self.has_addons:
+            if mine:
+                return [mine]
             raise stremio_api.StremioError(stremio_api.NOT_LINKED)
-        return self.streams.find(kind, video_id, prefs or self.stream_prefs)
+        return ([mine] if mine else []) + self.streams.find(kind, video_id, prefs or self.stream_prefs)
 
     def _wire_player(self) -> None:
         """Lo que el reproductor le pregunta al catálogo (siguiente episodio, otras fuentes…)."""
@@ -528,7 +533,7 @@ class Watch:
         (misma calidad e idioma: así lo hace Stremio con bingeGroup)."""
         found = [s for s in self.stream_sources(kind, video_id, prefs) if s.index not in (skip or set())]
         if self.native_player:  # solo las que el reproductor de Orbital puede abrir (una ftp:// atoraba el respaldo)
-            found = [s for s in found if player.stream_url(s.stream)]
+            found = [s for s in found if player.stream_url(s.stream) or s.stream.get("onedrive")]
         if not found:
             return None
         if binge:
@@ -571,14 +576,21 @@ class Watch:
         saved_prefs, saved_subs = self.language_for(meta_id)
         prefs = prefs or saved_prefs
         subtitles = saved_subs if subtitles is None else subtitles
-        source = self.streams.get(kind, video_id, prefs, index)
+        from .onedrive_library import INDEX as ONEDRIVE_INDEX
+
+        source = self.onedrive.source(kind, video_id) if index == ONEDRIVE_INDEX and self.onedrive is not None \
+            else self.streams.get(kind, video_id, prefs, index)
         if source is None:  # la lista caducó o se pidió con otro idioma: se vuelve a buscar una vez
             self.stream_sources(kind, video_id, prefs)
             source = self.streams.get(kind, video_id, prefs, index)
         if source is None:
             raise ValueError("Esa fuente ya no está disponible; vuelve a cargar las fuentes")
         mpv_exe = player.find_mpv() if self.config.stremio.player == "orbital" else None
-        url = player.stream_url(source.stream)
+        # «Tu OneDrive»: Microsoft da una dirección temporal del archivo (se pide al momento de ver).
+        url = self.onedrive.stream_url(source) if source.stream.get("onedrive") and self.onedrive is not None \
+            else player.stream_url(source.stream)
+        if source.stream.get("onedrive") and not mpv_exe:
+            mpv_exe = player.find_mpv()  # Stremio no sabe abrir tu OneDrive: siempre el reproductor de Orbital
         if mpv_exe and url:
             self.play_native(mpv_exe, url, kind, meta_id, video_id, title, keep=keep, source=source,
                              from_start=from_start, audio=prefs.audio, subtitles=subtitles, sub_pick=sub_pick)

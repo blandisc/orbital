@@ -37,13 +37,16 @@ export function titleActions(details, { kind = "movie", phone = false } = {}) {
   if (details.error) return [{ id: "retry", label: "Reintentar", icon: "refresh", primary: true }];
   const resume = details.resume;
   const out = [];
+  // Como el iPhone: el principal y, debajo, Guardar · Descargar · Tráiler · Fuente; luego lo de la tele (Desde el inicio,
+  // que en el iPhone es un enlace bajo «Continuar», y Al iPhone).
+  let restart = null;
   if ((details.kind || kind) === "series") {
     const first = (details.seasons || []).find((s) => s.season !== 0)?.episodes[0];
     if (resume?.video_id) {
       const started = resume.position > 0;
       out.push({ id: "play", video_id: resume.video_id, primary: true, icon: "play",
         label: `${started ? "Continuar" : "Ver"} ${resume.label || ""}`.trim() });
-      if (started) out.push({ id: "restart", video_id: resume.video_id, icon: "refresh", label: "Desde el principio", short: "Desde el inicio" });
+      if (started) restart = { id: "restart", video_id: resume.video_id, icon: "refresh", label: "Desde el principio", short: "Desde el inicio" };
     } else if (first) {
       // El primero de verdad (hay series que empiezan en la temporada 2 o en el episodio 0).
       const firstSeason = (details.seasons || []).find((s) => s.season !== 0)?.season ?? 1;
@@ -51,11 +54,10 @@ export function titleActions(details, { kind = "movie", phone = false } = {}) {
     }
   } else if (resume?.position > 0) {
     out.push({ id: "play", primary: true, icon: "play", label: "Continuar" });
-    out.push({ id: "restart", icon: "refresh", label: "Desde el principio", short: "Desde el inicio" });
+    restart = { id: "restart", icon: "refresh", label: "Desde el principio", short: "Desde el inicio" };
   } else {
     out.push({ id: "play", primary: true, icon: "play", label: "Ver" });
   }
-  if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
   // + para agregar y ✓ cuando ya está, como el iPhone (la ★ en Juegos es «favorito»: dos cosas con el mismo ícono).
   // «Guardar» es la acción y «Mi lista» el lugar (design/vocabulario.json), como el iPhone.
   out.push(details.in_library
@@ -63,13 +65,13 @@ export function titleActions(details, { kind = "movie", phone = false } = {}) {
     : { id: "mylist", icon: "plus", label: "Guardar" });
   // Una serie sin episodios (ni uno en el que ibas) no tiene fuente que elegir: el botón no hacía nada.
   const playable = (details.kind || kind) !== "series" || resume?.video_id || (details.seasons || []).some((s) => s.episodes?.length);
+  // Solo con un iPhone conectado (si no, ni aparecen): el episodio que sigue o el enfocado.
+  if (playable && phone) out.push({ id: "phone-download", icon: "download", label: "Descargar en el iPhone", short: "Descargar" });
+  if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
   // La fuente con el ícono de lista, como el iPhone (list.bullet) en todos lados.
   if (playable) out.push({ id: "sources", icon: "list", label: "Elegir fuente", short: "Fuente" });
-  // Solo con un iPhone conectado (si no, ni aparecen): el episodio que sigue o el enfocado.
-  if (playable && phone) {
-    out.push({ id: "phone-open", icon: "phone", label: "Enviar al iPhone", short: "Al iPhone" },
-      { id: "phone-download", icon: "download", label: "Descargar en el iPhone", short: "Descargar" });
-  }
+  if (restart) out.push(restart);
+  if (playable && phone) out.push({ id: "phone-open", icon: "phone", label: "Enviar al iPhone", short: "Al iPhone" });
   return out;
 }
 

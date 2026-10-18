@@ -75,6 +75,9 @@ class DetectConfig:
 
     enabled: bool = True
     dirs: list[str] = field(default_factory=list)  # carpetas extra donde buscar
+    # La carpeta de tus juegos, una subcarpeta por consola (ROMs\switch, ROMs\gc…). Sin ES-DE, de aquí sale la de cada
+    # emulador detectado; con ES-DE (si está encendido), la suya.
+    roms: str | None = None
 
 
 @dataclass

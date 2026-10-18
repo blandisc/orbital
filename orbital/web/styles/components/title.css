@@ -40,6 +40,22 @@
 .title__info > .title__actions, .title__info > .title__status { animation-delay: var(--delay-3); }
 /* Nada se encoge: un título o una sinopsis encogidos se rebanaban a media línea (con letra grande). */
 .title__info > * { flex-shrink: 0; }
+/* La frase de la película, bajo el logo (como el iPhone): en cursiva y discreta. */
+.title__tagline { margin: calc(-1 * var(--space-2)) 0 0; color: var(--color-text-muted); font-size: var(--text-md); font-style: italic;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* «Más como esto»: al bajar desde los botones, sube desde abajo sobre la ficha (solo eso: las sugerencias). */
+.title__more {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: var(--z-raised);
+  display: grid; gap: var(--space-3);
+  padding: var(--space-10) var(--page-gutter) calc(3.4rem + var(--space-4) + var(--safe-y));
+  background: linear-gradient(180deg, transparent, var(--color-tinted-bg) 28%);
+  transform: translateY(100%); transition: transform var(--duration-slow) var(--ease-out);
+}
+.title[data-zone="more"] .title__more { transform: none; }
+.title[data-zone="more"] .title__info, .title[data-zone="more"] .title__browser { opacity: .35; transition: opacity var(--duration-base) var(--ease-out); }
+.title__more-head { margin: 0; font-size: var(--type-section); font-weight: var(--weight-bold); }
+.title__more-row { display: flex; gap: var(--card-gap); overflow-x: auto; scrollbar-width: none; padding: var(--space-3) var(--space-2); align-items: flex-end; }
+.title__more-row > .card { flex: none; }
 @media (max-height: 820px) {
   [data-text-size="xlarge"] .title__name, [data-text-size="xlarge"] .title__description { -webkit-line-clamp: 2; }
   [data-text-size="xlarge"] .title__people { display: none; }

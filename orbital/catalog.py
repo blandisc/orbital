@@ -31,10 +31,12 @@ from .focus import READY_TIMEOUT, bring_app_to_front, bring_game_to_front, game_
 from .foryou import ForYou
 from .launcher import Launcher
 from .library import cinemeta, detect, emulators, esde, geforcenow, steam, steam_store, stremio, stremio_api, wiki_games
+from .library import onedrive as onedrive_api
 from .library.media import KINDS, MediaStore, low_res, placeholder
 from .library.models import LibraryItem
 from .library.scraper import Scraper, Target
 from .library_watch import NAMES_ONLY, LibraryWatcher
+from .onedrive_library import OneDriveLibrary
 from .sessions import QUICK_EXIT, Sessions  # noqa: F401
 from .state import State
 from .store import ItemStore
@@ -169,6 +171,10 @@ class Catalog:
                            self.launcher)
         if cache and isinstance(self.watch.cinemeta, cinemeta.Cinemeta):
             self.watch.cinemeta.keep_on_disk(cache / "cinemeta-fichas.json")  # sin internet, las fichas que ya abriste
+        # Tus videos de OneDrive (la carpeta que eliges en Ajustes): fila propia y fuente recomendada (onedrive_library.py).
+        self.onedrive = OneDriveLibrary(onedrive_api.OneDrive(self.credentials), self.watch.cinemeta, self.state,
+                                        cache / "onedrive-library.json" if cache else None, publish=self.notify)
+        self.watch.onedrive = self.onedrive
         self.foryou = ForYou(config, self)  # «Para ti»: recomendaciones (no sale a internet hasta que se pide)
         self.watch.scrobbler.trakt = lambda: self.foryou.trakt  # lo que ves, a Trakt (se pide en cada aviso)
         self.tv = LiveTV(config, self)  # «TV en vivo»: canales y su salud (no sale a internet hasta que arranca)
@@ -322,6 +328,12 @@ class Catalog:
             self.emulators = detect.merge(self.config.emulators, result.emulators)
             self.detected = result.found
         self.emulators += self._esde_emulators()
+        if not self.esde and self.config.detect.roms:
+            # Sin ES-DE: cada consola en su subcarpeta de tu carpeta de ROMs (la misma convención: switch, gc, xbox360…).
+            roms = Path(expand(self.config.detect.roms))
+            for emu in self.emulators:
+                if not emu.rom_dirs and emu.system:
+                    emu.rom_dirs = [str(roms / emu.system)]
         for emu, alternatives in emulators.split_alternatives(self.emulators):
             try:
                 found += emulators.scan(emu, self.esde, alternatives, self.media)

@@ -609,6 +609,27 @@ class ForYou:
         with ThreadPoolExecutor(max_workers=12) as pool:
             return {imdb: rating for imdb, rating in pool.map(one, pairs) if rating}
 
+    def title_extras(self, kind: str, imdb: str) -> dict:
+        """La ficha como el iPhone: frase, clasificación, quién la hizo (TMDB) y «Más como esto» (lo que Trakt relaciona, ya
+        con IMDb para abrirlo). Lo que no se pueda (sin clave, sin red) queda vacío; se recuerda (también sin internet)."""
+        kind = kind if kind in ("movie", "series") else "movie"
+        empty = {"tagline": None, "certification": None, "directors": [], "writers": [], "cast": [], "more": []}
+        if not isinstance(imdb, str) or not re.fullmatch(r"tt[0-9]{1,12}", imdb):
+            return empty
+        out = dict(empty)
+        if self.tmdb.configured:
+            def load_tmdb() -> dict:
+                tmdb_id = self.tmdb.find_id(imdb, kind)
+                return self.tmdb.extras(kind, tmdb_id, self.region) if tmdb_id else {}
+            try:
+                out.update(self.cache.get(f"extras:{kind}:{imdb}", SLOW_TTL, load_tmdb) or {})
+            except Exception:  # noqa: BLE001 - lo de TMDB es un extra: la ficha se ve sin él
+                log.info("Ficha: no pude leer los extras de %s", imdb)
+        if self.trakt.configured:
+            related = self._related({"imdb": imdb, "kind": kind})
+            out["more"] = [video_item(e, "Más como esto") for e in related[:15]]
+        return out
+
     def title_ratings(self, kind: str, imdb: str) -> dict:
         """Las calificaciones de la ficha, como el iPhone (RatingsRow): IMDb (de Cinemeta), TMDB y Trakt, en 0–10. Las que no
         se pueden saber (sin clave, sin red, sin votos) quedan en None; se recuerdan un día."""

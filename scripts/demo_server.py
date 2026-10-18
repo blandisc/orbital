@@ -9,6 +9,7 @@ abrir nada de verdad (el lanzador solo anota). No interfiere con el Orbital real
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import tempfile
 import time
@@ -229,9 +230,13 @@ def build(tmp: Path):
     # «Para ti»: horas y un favorito (para «Tu más jugado» y «Tu favorito») y servicios de mentiras.
     refresh = catalog.refresh
 
+    long_names = os.environ.get("ORBITAL_DEMO_LONG") == "1"  # pruebas: nombres larguísimos (¿algo se corta o se encima?)
+
     def refresh_with_gba_art(*args, **kwargs):  # cada vez que se vuelve a leer la biblioteca
         found = refresh(*args, **kwargs)
-        for item in catalog.store.all():
+        for n, item in enumerate(catalog.store.all()):
+            if long_names and n % 3 == 0 and not item.title.endswith("Descargables"):
+                item.title = f"{item.title}: Edición Definitiva del Coleccionista con Todos los Contenidos Descargables"
             item.extra.update(GAME_INFO.get(item.title, {}))  # la ficha de un juego: sin Internet, datos de muestra
             if item.system == "gba" and item.title in GBA_ART:
                 item.image = LIBRETRO + GBA_ART[item.title]

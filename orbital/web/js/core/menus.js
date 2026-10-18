@@ -639,8 +639,9 @@ export function settingsPage(page, settings) {
           : settings.trakt && { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: "Configurar", hint: "Primero, la clave de Trakt (abajo)",
             command: { type: "keys", service: "trakt" } },
         phoneRow(settings.companion_seen),
+        onedriveRow(settings.onedrive),
         settings.para_ti && { heading: true, label: "Claves de Para ti" },
-        ...(settings.para_ti ? Object.keys(KEY_FORMS).map((service) => keyRow(service, settings.para_ti)) : []),
+        ...(settings.para_ti ? Object.keys(KEY_FORMS).filter((s) => s !== "onedrive").map((service) => keyRow(service, settings.para_ti)) : []),
       ].filter(Boolean),
     };
   }
@@ -674,6 +675,12 @@ export const KEY_FORMS = {
     lead: "En rawg.io/apidocs crea una cuenta y pulsa «Get API key»: copia la clave que aparece.",
     fields: [{ name: "key", label: "Clave de RAWG", secret: true }],
   },
+  onedrive: {
+    service: "onedrive", label: "Clave de OneDrive", icon: "cloud", hint: "Para ver tus películas guardadas en OneDrive",
+    title: "Clave de OneDrive", submitLabel: "Guardar",
+    lead: "En entra.microsoft.com › Registros de aplicaciones › Nuevo registro: ponle «Orbital», elige «Cuentas personales de Microsoft» y créala. En «Autenticación» activa «Permitir flujos de clientes públicos». Copia su «Id. de aplicación (cliente)».",
+    fields: [{ name: "id", label: "Id. de aplicación (cliente)", secret: false }],
+  },
   trakt: {
     service: "trakt", label: "Clave de Trakt", icon: "spark", mark: "img/ratings/trakt.svg", hint: "Para conectar Trakt: tendencias, tus listas y recomendaciones",
     title: "Clave de Trakt", submitLabel: "Guardar",
@@ -681,6 +688,42 @@ export const KEY_FORMS = {
     fields: [{ name: "id", label: "Client ID", secret: false }, { name: "secret", label: "Client Secret (si tu aplicación tiene)", secret: true, optional: true }],
   },
 };
+
+/** OneDrive en Cuentas: primero su clave (el Id. de la aplicación), luego conectar y elegir la carpeta de tus videos. */
+export function onedriveRow(status) {
+  if (!status) return null;
+  const base = { icon: "cloud", label: "OneDrive" };
+  if (!status.configured) return { ...base, value: "Configurar", hint: "Primero, su clave (el Id. de la aplicación)", command: { type: "keys", service: "onedrive" } };
+  if (!status.linked) return { ...base, value: "Conectar", hint: "Tus películas guardadas ahí", command: { type: "onedrive-link" } };
+  const found = status.scanning ? "Buscando tus videos…" : status.folder ? `${status.titles} títulos en «${status.folder}»` : "Elige la carpeta de tus videos";
+  return { ...base, value: "✓ Conectada", ok: true, hint: status.error || found, command: { type: "onedrive-account" } };
+}
+
+/** OneDrive conectado: la carpeta, buscar de nuevo y desconectar (Cancelar primero). */
+export function onedriveMenu(status) {
+  return {
+    title: "OneDrive", subtitle: "Orbital solo lee la carpeta que elijas: nunca cambia ni borra nada.",
+    options: [
+      { icon: "close", label: "Cancelar", command: { type: "close" } },
+      { icon: "folder", label: "Carpeta de tus videos", value: status?.folder || "Elegir", command: { type: "onedrive-folder", path: "" } },
+      status?.folder && { icon: "refresh", label: "Buscar de nuevo", hint: "Lo nuevo que subiste", command: { type: "onedrive-scan" } },
+      { icon: "cloud", label: "Clave de OneDrive", value: "✓ Guardada", ok: true, command: { type: "keys-menu", service: "onedrive" } },
+      { icon: "minus", label: "Desconectar", danger: true, command: { type: "onedrive-unlink" } },
+    ].filter(Boolean),
+  };
+}
+
+/** Elegir la carpeta: «Usar esta carpeta» y sus subcarpetas (A entra). */
+export function onedriveFolderMenu(path, folders) {
+  return {
+    title: path ? path.split("/").at(-1) : "Tu OneDrive", subtitle: path ? `OneDrive › ${path.split("/").join(" › ")}` : "Elige dónde están tus películas y series",
+    options: [
+      path && { icon: "check", label: "Usar esta carpeta", command: { type: "onedrive-use", path } },
+      ...folders.map((f) => ({ icon: "folder", label: f.name, value: f.count ? String(f.count) : "", command: { type: "onedrive-folder", path: f.path } })),
+      !folders.length && { icon: "info", label: "Aquí no hay más carpetas", inert: true },
+    ].filter(Boolean),
+  };
+}
 
 /** El iPhone en Cuentas: conectado si la app habló con Orbital en los últimos 60 días (sigue abriendo el QR, para
  *  conectar otro o volver a conectarlo). Antes decía siempre «Conectar», aunque ya estuviera. */
