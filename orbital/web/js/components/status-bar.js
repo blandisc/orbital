@@ -84,6 +84,7 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
   let edges = null;
   let chasing = 0;
   let last = 0;
+  let settle = 0;
   const target = () => {
     const tab = tabs.querySelector(".status-bar__tab--active");
     if (!tab) return null;
@@ -123,6 +124,9 @@ export function createStatusBar({ onBrand, onSection, onSearch, onAlexa }) {
     const still = document.documentElement.dataset.motion === "reduce";
     if (travel && edges && !still) {
       if (!chasing) { last = performance.now(); chasing = requestAnimationFrame(chase); }
+      // Seguro: si la ventana deja de pintar a medio viaje (tapada, minimizada), la píldora no se queda a medias.
+      clearTimeout(settle);
+      settle = setTimeout(() => { if (chasing) { cancelAnimationFrame(chasing); chasing = 0; placePill(false); } }, 900);
       return;
     }
     if (chasing) return; // va viajando: la persecución ya sigue a la pestaña (también si cambia de tamaño)

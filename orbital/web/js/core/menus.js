@@ -834,7 +834,7 @@ export const SHORTCUTS = {
   orbital: [["Abrir", "A"], ["Atrás", "B"], ["Opciones", "Y"], ["Otro emulador o la ficha", "X"],
     ["Cambiar de sección", "LB / RB"], ["Buscar", "Vista ⧉"], ["Menú", "☰"]],
   player: [["Pausa", "A"], ["Adelantar", "◀ ▶"], ["Audio y subtítulos", "X"], ["Episodios y fuente", "Y"],
-    ["Capítulo · episodio", "LB/RB · LT/RT"], ["Volumen", "▲ ▼"], ["Salir", "Mantén B"]],
+    ["Capítulo · episodio", "LB/RB · mantén LT/RT"], ["Volumen", "▲ ▼"], ["Salir", "Mantén B"]],
 };
 
 /** «Cómo se usa»: una sola hoja en tres partes, con los atajos del mando que tienes. */

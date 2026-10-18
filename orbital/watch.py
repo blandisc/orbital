@@ -372,7 +372,7 @@ class Watch:
         """"Quitar de Seguir viendo": en tu cuenta de Stremio (desaparece también en Stremio)."""
         auth = self.credentials.get(STREMIO_KEY)
         if not auth:
-            raise stremio_api.StremioError("Conecta tu cuenta de Stremio en Ajustes")
+            raise stremio_api.StremioError(stremio_api.NOT_LINKED)
         raw = self.stremio_client.library_item(auth, meta_id)
         if raw:
             self.stremio_client.save_library_item(auth, stremio_api.dismissed(raw, time.time()))
@@ -452,7 +452,7 @@ class Watch:
     def stream_sources(self, kind: str, video_id: str, prefs: streams.Preferences | None = None) -> list[streams.Source]:
         """Fuentes de tus addons, ordenadas por tus preferencias (la primera es la recomendada)."""
         if not self.has_addons:
-            raise stremio_api.StremioError("Conecta tu cuenta de Stremio en Ajustes")
+            raise stremio_api.StremioError(stremio_api.NOT_LINKED)
         return self.streams.find(kind, video_id, prefs or self.stream_prefs)
 
     def _wire_player(self) -> None:
@@ -967,7 +967,7 @@ class Watch:
         """Añadir o quitar de Mi lista (tu biblioteca de Stremio: se ve igual en Stremio)."""
         auth = self.credentials.get(STREMIO_KEY)
         if not auth:
-            raise stremio_api.StremioError("Conecta tu cuenta de Stremio en Ajustes")
+            raise stremio_api.StremioError(stremio_api.NOT_LINKED)
         try:
             info = self.cinemeta.meta(kind, meta_id, localized=False)  # Stremio guarda el título original
         except cinemeta.CinemetaError:
