@@ -146,6 +146,17 @@ struct RemoteSheet: View {
                     .accessibilityIdentifier("remote-scares")
                 }
             }
+        } else if !model.answered {
+            // La TV todavía no contesta (recién abierta la app): no se dice «nada sonando» antes de saberlo.
+            HStack(spacing: DS.Space.s3) {
+                RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous).fill(DS.fill)
+                    .frame(width: DS.Size.thumbSmall, height: DS.Size.thumbSmall / DS.Poster.aspect)
+                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                    Text("Conectando con tu Orbital…").recipe(.cardTitle)
+                    ProgressView().controlSize(.small)
+                }
+                Spacer(minLength: 0)
+            }
         } else {
             HStack(spacing: DS.Space.s2) {
                 OrbitalMark(size: DS.Size.markSmall).foregroundStyle(DS.text)

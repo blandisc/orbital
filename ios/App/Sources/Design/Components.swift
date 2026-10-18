@@ -699,13 +699,33 @@ final class ArtTint: ObservableObject {
     private var requested: String?
 
     init() {}
-    /// Con el color ya sabido de ese arte (si se calculó antes): la pantalla aparece ya pintada, sin esperar ni fundirse.
-    init(cachedFor url: String?) { colors = url.flatMap { Self.cache[$0] } }
+    /// Con el color ya sabido de ese arte (si se calculó antes, en esta sesión o en otra): la pantalla aparece ya pintada,
+    /// sin esperar ni fundirse.
+    init(cachedFor url: String?) { colors = url.flatMap(Self.known) }
+
+    /// El color de un arte si ya se sabe: de memoria o del que se guardó en el teléfono (los últimos).
+    static func known(_ url: String) -> ArtColors? {
+        if let hit = cache[url] { return hit }
+        guard let saved = UserDefaults.standard.dictionary(forKey: diskKey)?[url] as? [Int], saved.count == 6 else { return nil }
+        let found = ArtColors(((saved[0], saved[1], saved[2]), (saved[3], saved[4], saved[5])))
+        cache[url] = found
+        return found
+    }
+
+    private static let diskKey = "art-tint-colors"
+
+    /// Se guarda en el teléfono (unos cuantos): la próxima vez que abras la app, la pantalla ya sale con su color.
+    private static func save(_ url: String, _ palette: (tint: ArtPalette.RGB, accent: ArtPalette.RGB)) {
+        var saved = UserDefaults.standard.dictionary(forKey: diskKey) ?? [:]
+        if saved.count >= cacheLimit { saved.removeAll() }
+        saved[url] = [palette.tint.r, palette.tint.g, palette.tint.b, palette.accent.r, palette.accent.g, palette.accent.b]
+        UserDefaults.standard.set(saved, forKey: diskKey)
+    }
 
     func load(_ url: String?) async {
         requested = url
         guard let url, let u = URL(string: url) else { colors = nil; return }
-        if let hit = Self.cache[url] { colors = hit; return }
+        if let hit = Self.known(url) { colors = hit; return }
         // Basta una miniatura para sacar el tono dominante: nunca se decodifica el fondo completo.
         let palette: (tint: ArtPalette.RGB, accent: ArtPalette.RGB)?
         if let thumb = await ImagePipeline.shared.image(u, maxPixel: DS.Image.tintPixels) {
@@ -716,6 +736,7 @@ final class ArtTint: ObservableObject {
         let found = ArtColors(palette)
         if Self.cache.count >= Self.cacheLimit { Self.cache.removeAll() }
         Self.cache[url] = found
+        Self.save(url, palette)
         colors = found
     }
 }

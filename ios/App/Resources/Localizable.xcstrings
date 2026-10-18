@@ -1607,6 +1607,17 @@
         }
       }
     },
+    "Conectando con tu Orbital…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecting to your Orbital…"
+          }
+        }
+      }
+    },
     "Conectando…": {
       "extractionState": "manual",
       "localizations": {

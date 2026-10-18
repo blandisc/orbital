@@ -60,10 +60,21 @@ struct RootView: View {
             if env.services.orbital.isConfigured { _ = try? await env.services.connectOrbital() }
         }
         .task { env.tvNow.setActive(scenePhase == .active) }
-        .task(priority: .utility) {
-            // Buscar, adelantado: lo popular de hoy y el color de su n.º 1 (el fondo de Buscar ya no tarda en aparecer).
+        .task(priority: .userInitiated) {
+            // Buscar, adelantado y primero (antes que la fila de imágenes de Inicio): el color de su n.º 1 y los pósters del
+            // Top 10 de la copia guardada; luego lo de hoy, y si cambió, otra vez.
+            @MainActor func warm() async {
+                await ArtTint().load(env.catalog.popular.first?.poster)
+                let pixels = DS.Image.card * ImagePipeline.screenScale   // el mismo tamaño que pinta el póster
+                let urls = env.catalog.popular.prefix(DS.Size.searchPrefetch).compactMap { $0.poster.flatMap(URL.init(string:)) }
+                await withTaskGroup(of: Void.self) { group in
+                    for url in urls { group.addTask { _ = await ImagePipeline.shared.image(url, maxPixel: pixels) } }
+                }
+            }
+            let before = env.catalog.popular.first?.poster
+            await warm()
             await env.catalog.load()
-            await ArtTint().load(env.catalog.popular.first?.poster)
+            if env.catalog.popular.first?.poster != before { await warm() }
         }
         .onChange(of: scenePhase) { _, phase in
             // «Viendo en la TV» y lo que la TV dejó para el iPhone se sondean mientras la app está activa; al irse a segundo

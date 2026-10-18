@@ -424,13 +424,15 @@ enum DS {
         /// El alto del logo en la franja del mosaico.
         static let captionLogo: CGFloat = 34
         /// El arte redondo del accesorio «En la TV».
-        static let accessoryArt: CGFloat = 32
+        static let accessoryArt: CGFloat = 38   // alto del póster en el accesorio de abajo
         /// La columna del símbolo en los renglones de una guía («Lo que puedes decir»): alinea los textos.
         static let iconColumn: CGFloat = 24
         /// El alto de un mosaico con arte (géneros de Explora).
         static let artTileHeight: CGFloat = 96
         /// Hasta cuántas temporadas se enseñan como filtros; con más, un menú.
         static let seasonChipsMax = 4
+        /// Cuántos pósters de lo popular se piden al abrir la app (los del Top 10 de Buscar).
+        static let searchPrefetch = 10
         /// El mejor resultado de Buscar, en grande.
         static let searchTopHeight: CGFloat = 200
         /// «Los siguientes N episodios» del panel de Descargar.

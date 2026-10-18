@@ -219,7 +219,8 @@ struct GameAccessory: View {
     var body: some View {
         Button(action: open) {
             HStack(spacing: DS.Space.s3) {
-                PosterView(url: game.cover ?? game.hero, title: game.title, aspect: 1).frame(width: DS.Size.accessoryArt).clipShape(Circle())
+                PosterView(url: game.cover ?? game.hero, title: game.title, aspect: DS.Poster.aspect)
+                    .frame(height: DS.Size.accessoryArt).clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
                 VStack(alignment: .leading, spacing: 0) {
                     Text(verbatim: game.title).recipe(.cardTitle).lineLimit(1)
                     if placement != .inline {

@@ -284,7 +284,10 @@ struct TVAccessory: View {
     /// El arte y el nombre (lo que se toca para abrir el control remoto).
     private var info: some View {
         HStack(spacing: DS.Space.s3) {
-            PosterView(url: now.art, title: now.title, aspect: 1).frame(width: DS.Size.accessoryArt).clipShape(Circle())
+            // El póster como póster (vertical, esquinas suaves); el logo de un canal en vivo, cuadrado. Nunca en círculo.
+            PosterView(url: now.art, title: now.title, aspect: now.live ? 1 : DS.Poster.aspect)
+                .frame(height: DS.Size.accessoryArt)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             VStack(alignment: .leading, spacing: 0) {
                 Text(now.live ? (now.channel ?? now.title) : now.title).recipe(.cardTitle).lineLimit(1)
                 if placement != .inline {

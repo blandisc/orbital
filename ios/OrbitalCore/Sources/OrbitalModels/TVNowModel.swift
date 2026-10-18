@@ -26,6 +26,8 @@ public final class TVNowModel: ObservableModel {
     public private(set) var legend: [String: String] = [:] { didSet { if oldValue != legend { changed() } } }
     /// La sección de la TV al frente, para «‹ Sección ›».
     public private(set) var section: String? { didSet { if oldValue != section { changed() } } }
+    /// Ya contestó la TV desde que la app se abrió: antes de eso «nada sonando» no se sabe (el control dice «Conectando…»).
+    public private(set) var answered = false { didSet { if oldValue != answered { changed() } } }
     /// La pantalla de la TV al frente (la manda la consola; nil en versiones viejas): el control se arma según ella.
     public private(set) var screen: String? { didSet { if oldValue != screen { changed() } } }
     /// Los sustos de la película que suena en la TV (Where's The Jump); nil: no hay mapa (o no es película).
@@ -142,6 +144,7 @@ public final class TVNowModel: ObservableModel {
             if let v = snapshot.volume { volume = v }
             failures = 0
             fetchedAt = Date()
+            answered = true
             tokenProblem = false
             if !snapshot.inbox.isEmpty { await inbox?.process(snapshot.inbox) }
             // Mientras hay juego, cómo está la consola (cada medio minuto; sin juego no se pide).
