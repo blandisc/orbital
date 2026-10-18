@@ -152,6 +152,8 @@ class KioskWindow:
 
     REOPEN_DELAY = 1.5  # s antes de reabrir una ventana que se cerró sola
     MAX_REOPENS = 3  # por minuto: si Edge falla de verdad, no entramos en un ciclo
+    GUARD_EVERY = 20.0  # s entre revisiones de que la ventana se vea (ver ensure_shown)
+    GUARD_MISSES = 2  # revisiones seguidas sin ventana (con Edge vivo) antes de reabrirla
 
     def __init__(self, url: str, browser: str | None = None, profile_dir: Path | None = None,
                  keep_open: bool = True, on_closed=None, hide_taskbar: bool = True) -> None:
@@ -163,6 +165,8 @@ class KioskWindow:
         self.keep_open = keep_open  # consola: si la ventana se cierra sin "Salir al escritorio", vuelve
         self.on_closed = on_closed  # sin keep_open: cerraste la ventana (Orbital se cierra)
         self._reopens: list[float] = []
+        self._misses = 0  # revisiones seguidas sin ventana visible
+        self._guard: threading.Thread | None = None
         self.hide_taskbar = hide_taskbar  # modo consola: la barra de Windows no se asoma al abrir un juego
         self._lock = threading.Lock()
 
@@ -194,7 +198,65 @@ class KioskWindow:
                 threading.Thread(target=self._brand, args=(self._process,), daemon=True, name="kiosk-icon").start()
             if self.keep_open or self.on_closed:
                 threading.Thread(target=self._watch, args=(self._process,), daemon=True).start()
+            if self._guard is None and sys.platform == "win32":
+                self._guard = threading.Thread(target=self._guard_loop, daemon=True, name="kiosk-guard")
+                self._guard.start()
             return True
+
+    def window(self) -> int:
+        """La ventana visible de la interfaz (de los procesos de Edge con el perfil de Orbital), o 0."""
+        from . import windows
+
+        profile = f"--user-data-dir={self.profile_dir}".lower()
+        pids = {pid for pid, (exe, _parent) in windows.processes().items()
+                if exe in ("msedge.exe", "chrome.exe") and profile in windows.command_line(pid).lower()}
+        return windows.main_window(pids)
+
+    def ensure_shown(self, front: bool = False) -> str:
+        """Que la interfaz se vea: al despertar la consola y cada GUARD_EVERY s. El 18 de octubre, al despertar tras pasar
+        de la tele a la pantalla de la Legion, Edge seguía vivo pero sin ventana a la vista, y como su proceso no murió,
+        _watch nunca la reabrió: «Orbital no abre». Ahora: fuera de toda pantalla, se regresa a la principal; sin ventana
+        (con Edge vivo) dos revisiones seguidas, se reabre. Con `front`, además al frente (al despertar sin juego).
+        Devuelve qué hizo: ok · moved · reopened · waiting · skip."""
+        from . import windows
+
+        if sys.platform != "win32" or self.exited_by_user or not self.is_open:
+            return "skip"  # saliste al escritorio, o Edge ya no está (de eso se encarga _watch)
+        hwnd = self.window()
+        if not hwnd:
+            self._misses += 1
+            if self._misses < self.GUARD_MISSES:
+                return "waiting"
+            self._misses = 0
+            log.warning("La ventana de Orbital no se ve aunque Edge sigue abierto: la reabro")
+            self.restart()
+            return "reopened"
+        self._misses = 0
+        result = "ok"
+        if not windows.is_minimized(hwnd) and not windows.on_a_monitor(hwnd):
+            width, height = windows.screen_size()
+            windows.place_window(hwnd, 0, 0, width, height, topmost=False)
+            log.info("La ventana de Orbital estaba fuera de la pantalla (cambió la pantalla): la regreso a la principal")
+            result = "moved"
+        if front:
+            system.bring_to_front()
+        return result
+
+    def restart(self) -> bool:
+        """Cierra esta ventana (sin contar como «Salir al escritorio») y abre una nueva."""
+        with self._lock:
+            proc, self._process = self._process, None  # _watch ve otra ventana: no la reabre por su cuenta
+        if proc is not None:
+            self._kill(proc)
+        return self.open()
+
+    def _guard_loop(self) -> None:
+        while True:
+            time.sleep(self.GUARD_EVERY)
+            try:
+                self.ensure_shown()
+            except Exception:  # noqa: BLE001 - el guardián nunca tumba a Orbital
+                log.exception("No pude revisar la ventana de Orbital")
 
     APP_ID = "Orbital.Consola"
     ICON = Path(__file__).parent / "web" / "icons" / "orbital.ico"
@@ -262,15 +324,19 @@ class KioskWindow:
             self.exited_by_user = True
         if proc is None or proc.poll() is not None:
             return False
-        if sys.platform == "win32":
-            # /T cierra también los procesos hijos de Edge (renderizadores, GPU...).
-            subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True,
-                           creationflags=subprocess.CREATE_NO_WINDOW)  # type: ignore[attr-defined]
-        else:
-            proc.terminate()
-        try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-        mark_clean_exit(self.profile_dir)
+        self._kill(proc)
         return True
+
+    def _kill(self, proc: subprocess.Popen) -> None:
+        if proc.poll() is None:
+            if sys.platform == "win32":
+                # /T cierra también los procesos hijos de Edge (renderizadores, GPU...).
+                subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True,
+                               creationflags=subprocess.CREATE_NO_WINDOW)  # type: ignore[attr-defined]
+            else:
+                proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+        mark_clean_exit(self.profile_dir)

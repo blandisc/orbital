@@ -316,6 +316,12 @@ class Trakt:
         rows = self._get(f"/{KINDS[kind]}/popular", auth=False, **params)
         return [e for e in (entry(r, kind) for r in rows) if e] if isinstance(rows, list) else []
 
+    def search(self, kind: str, query: str, limit: int = 15) -> list[dict]:
+        """Buscar sin sesión (respaldo de Buscar cuando Cinemeta falla, como el iPhone). Solo lo que trae IMDb."""
+        key = "movie" if kind == "movie" else "show"
+        rows = self._get(f"/search/{key}", auth=False, query=query, limit=limit, extended="full")
+        return [e for e in (entry(r.get(key), kind) for r in rows if isinstance(r, dict)) if e] if isinstance(rows, list) else []
+
     def rating(self, kind: str, imdb: str) -> float | None:
         """La calificación de Trakt de un título (0–10; para la ficha, como el iPhone). None si no la tiene."""
         if not isinstance(imdb, str) or not imdb.startswith("tt") or not imdb[2:].isdigit():
@@ -343,16 +349,25 @@ class Trakt:
         rows = self._get(f"/{KINDS[kind]}/{imdb}/related", auth=False, limit=limit, extended="full")
         return [e for e in (entry(r, kind) for r in rows) if e] if isinstance(rows, list) else []
 
-    def last_watched(self) -> dict | None:
-        """Lo último que viste (una película, o la serie de tu último episodio), para «Porque viste X»."""
-        rows = self._get("/sync/history", limit=10, extended="full")
+    def recent_watched(self, limit: int = 12) -> list[dict]:
+        """Los últimos títulos distintos que viste (una película, o la serie de un episodio), el más reciente primero,
+        para «Porque viste X»: los 12 que el iPhone deja elegir (ForYou.recentSeeds: historial de 40)."""
+        rows = self._get("/sync/history", limit=40, extended="full")
+        found: list[dict] = []
         for row in rows if isinstance(rows, list) else []:
             if not isinstance(row, dict):
                 continue
-            found = entry(row.get("movie"), "movie") if row.get("type") == "movie" else entry(row.get("show"), "series")
-            if found:
-                return {**found, "watched_at": _when(row.get("watched_at"))}
-        return None
+            e = entry(row.get("movie"), "movie") if row.get("type") == "movie" else entry(row.get("show"), "series")
+            if e and all(f["imdb"] != e["imdb"] for f in found):
+                found.append({**e, "watched_at": _when(row.get("watched_at"))})
+                if len(found) >= limit:
+                    break
+        return found
+
+    def last_watched(self) -> dict | None:
+        """Lo último que viste (una película, o la serie de tu último episodio)."""
+        recent = self.recent_watched(1)
+        return recent[0] if recent else None
 
     def calendar(self, start: str, days: int = 15) -> list[dict]:
         """Los episodios que salen de las series que sigues, desde `start` (AAAA-MM-DD, en hora universal) y `days` días:

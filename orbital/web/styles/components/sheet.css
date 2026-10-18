@@ -47,6 +47,9 @@
   transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 .sheet__icon:empty { background: transparent; }
+/* El logotipo real de una cuenta o servicio: sobre la misma caja, a su tamaño. */
+.sheet__mark { width: 1.6rem; height: 1.6rem; object-fit: contain; }
+.sheet__icon--mark { background: var(--color-surface-raised); }
 .sheet__icon .icon, .sheet__icon svg { width: 1.25rem; height: 1.25rem; }
 .sheet__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .2rem; }
 .sheet__label { min-width: 0; line-height: 1.2; }
@@ -61,6 +64,9 @@
 /* El valor nunca aplasta el nombre: a lo más 55 % y, si es largo, en varias líneas (alineado a la derecha). */
 .sheet__value { flex: 0 1 auto; max-width: 55%; margin-left: auto; padding-left: var(--space-3); font-weight: var(--weight-medium); text-align: right; text-wrap: balance; color: var(--color-text-muted); align-self: center; } /* parte solo entre palabras: «Start+Select+Home» entero */
 .sheet__value--choice { flex: none; max-width: none; white-space: nowrap; }
+/* Un estado que ya está bien (✓ Conectada, ✓ Guardada): su color, para verlo de un vistazo. */
+.sheet__value--ok { color: var(--color-ok); }
+.sheet__item--focused .sheet__value--ok { color: inherit; }
 .sheet__value--choice {
   display: inline-flex; align-items: center; gap: var(--space-1); padding: .3rem .4rem; border-radius: var(--radius-pill);
   background: var(--color-fill); color: var(--color-text);

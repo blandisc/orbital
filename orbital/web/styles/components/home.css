@@ -4,6 +4,8 @@
   grid-row: 2 / 4; min-height: 0; overflow: hidden;
   padding: var(--space-5) var(--page-gutter) var(--space-5);
 }
+/* Con el dedo, abajo van «Atrás» y «Menú» (base.css): más altos que el pie que reemplazan; las consolas no quedan debajo. */
+[data-input="touch"] .home { padding-bottom: calc(var(--space-5) + var(--space-4)); }
 /* Todo el Inicio se desliza junto: arriba llena la pantalla; al bajar a Tus consolas, sube lo justo.
    Lo que sale por arriba se desvanece (no queda cortado en seco). */
 .home__scroll { position: relative; display: flex; flex-direction: column; gap: var(--space-5); transition: transform var(--duration-slow) var(--ease-out); }
@@ -33,37 +35,36 @@ body[data-view="home"] .hero, body[data-view="home"] .shelf { display: none; }
   padding: var(--space-2); margin: calc(-1 * var(--space-2));
 }
 .home__rows > [hidden] { display: none; } /* los que no caben (home.js · fitRows): mejor 3 legibles que 4 aplastados */
-/* La enfocada ocupa dos lugares (home.js · growRows): las demás se recorren y, con cuatro, una sale por arriba o por abajo. */
-.home__rows { transition: grid-template-rows var(--duration-enter) var(--ease-out); }
-/* Crecida, la separación la pone cada tarjeta (la que sale mide cero y no deja hueco; el espacio de la cuadrícula sí lo dejaba). */
-.home__rows--grown { align-content: stretch; row-gap: 0; }
-.home__rows--grown > .tile--row { margin-bottom: var(--space-2); }
+/* La enfocada se resalta y crece un poco en su lugar: los cuatro renglones siguen a la vista (antes crecía al doble y
+   sacaba a otro de la columna). */
 .home__rows > .tile--row { min-height: 0; transition: transform var(--duration-base) var(--ease-spring), opacity var(--duration-base) var(--ease-out),
-  padding var(--duration-enter) var(--ease-out), background var(--duration-base) var(--ease-out); }
-.home__rows--grown > .tile--row-out { opacity: 0; padding-block: 0; margin-bottom: 0; box-shadow: none; }
-.home__rows--grown > .tile--focused .tile--row__thumb { max-height: none; }
-.home__rows--grown > .tile--focused .tile--row__title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.home__rows--grown > .tile--focused .tile--row__more { display: flex; }
-/* La caja (GBA) en la crecida: entera, sobre su propia imagen desenfocada. */
-.tile--row__thumb--case::before { content: ""; position: absolute; inset: -1rem; background: var(--thumb-art) center / cover;
-  filter: blur(var(--blur-case)) saturate(1.2) brightness(.7); opacity: 0; transition: opacity var(--duration-base) var(--ease-out); }
-.home__rows--grown > .tile--focused .tile--row__thumb--case::before { opacity: 1; }
-.home__rows--grown > .tile--focused .tile--row__art--crop { object-fit: contain; padding: var(--space-2) 0; }
+  background var(--duration-base) var(--ease-out); }
+.home__rows > .tile--row.tile--focused { transform: scale(1.025); }
 
 /* Abajo: tus consolas en una fila que se desplaza si no caben (6 a la vista). */
 /* Compactas (home.js · fit): cuando enteras no caben junto a lo de arriba, foto más chica y sin el tercer renglón. */
-.home--compact .home__consoles-track > .tile--console { min-height: 0; }
-.home--compact .tile--console__media { height: 3.6rem; padding-top: var(--space-2); }
+.home--compact { --console-size: 7.4rem; }
+.home--compact .tile--console__media { padding-top: var(--space-2); }
 .home--compact .tile--console__photo { max-height: 3.1rem; }
 .home--compact .tile--console__logo { height: 2.4rem; }
 .home--compact .tile--console__cover { max-height: 3.3rem; }
-.home--compact .tile--console__foot { display: none; }
 .home--compact .tile--console__text { padding-top: var(--space-2); padding-bottom: var(--space-3); }
 .home__consoles { flex: none; display: flex; flex-direction: column; gap: var(--space-3); }
-.home__consoles-viewport { overflow: hidden; padding: .6rem 1rem; margin: -.6rem -1rem; } /* espacio para el anillo y el crecer (también la última) */
-.home__consoles-track { display: flex; gap: var(--tile-gap); transition: transform var(--duration-slow) var(--ease-out); }
-/* 6 enteras y la séptima asomando (así se nota que hay más); el borde se desvanece hacia ese lado. */
-.home__consoles-track > .tile--console { flex: 0 0 calc((100% - 6 * var(--tile-gap)) / 6.35); height: auto; min-height: 11rem; }
+/* Espacio para el anillo y el crecer. Antes la fila se subía 1.6rem bajo el título (sin hueco) y la consola enfocada, al
+   crecer, tapaba «7 sistemas · 21 juegos»: ahora solo se sube lo del anillo. */
+.home__consoles-viewport { overflow: hidden; padding: .6rem 1rem; margin: -.6rem -1rem; }
+/* Tarjetas cuadradas (7 enteras y la octava asomando: así se nota que hay más; el borde se desvanece hacia ese lado).
+   La enfocada crece hacia arriba (la fila guarda ese alto: nada brinca). */
+.home__consoles-track {
+  --console-size: 9.6rem; --console-grow: 1.4rem;
+  display: flex; align-items: flex-end; height: calc(var(--console-size) + var(--console-grow));
+  gap: var(--tile-gap); transition: transform var(--duration-slow) var(--ease-out);
+}
+.home__consoles-track > .tile--console {
+  flex: 0 0 calc((100% - 7 * var(--tile-gap)) / 7.35); height: var(--console-size);
+  transition: height var(--duration-base) var(--ease-spring), box-shadow var(--duration-base) var(--ease-out);
+}
+.home__consoles-track > .tile--console.tile--focused { height: calc(var(--console-size) + var(--console-grow)); transform: none; }
 .home__consoles-viewport { --fade-left: var(--mask-solid); --fade-right: var(--mask-solid); -webkit-mask-image: linear-gradient(90deg, var(--fade-left) 0, var(--mask-solid) 8%, var(--mask-solid) 86%, var(--fade-right) 100%); mask-image: linear-gradient(90deg, var(--fade-left) 0, var(--mask-solid) 8%, var(--mask-solid) 86%, var(--fade-right) 100%); }
 .home__consoles-viewport--more { --fade-right: transparent; }
 .home__consoles-viewport--before { --fade-left: transparent; }
@@ -85,12 +86,12 @@ body[data-view="home"] .backdrop { transition: --art-tint var(--duration-tint) v
    (antes 760 px: la TV al 300 % —720 px— se compactaba y quedaba un hueco abajo). */
 @media (max-height: 600px) {
   .home__scroll { gap: var(--space-3); }
-  .home__consoles-track > .tile--console { min-height: 9.2rem; }
+  .home__consoles-track { --console-size: 8.4rem; }
   .tile--console__text { padding-bottom: var(--space-3); }
 }
 /* Angostas: 4 consolas a la vista; muy angostas, solo el destacado. */
 @media (max-width: 1000px) {
-  .home__consoles-track > .tile--console { flex-basis: calc((100% - 4 * var(--tile-gap)) / 4.35); }
+  .home__consoles-track > .tile--console { flex-basis: calc((100% - 5 * var(--tile-gap)) / 5.35); }
 }
 @media (max-width: 760px) {
   .home__top { grid-template-columns: 1fr; }
@@ -99,7 +100,9 @@ body[data-view="home"] .backdrop { transition: --art-tint var(--duration-tint) v
 }
 
 /* El próximo estreno (bajo «Seguir viendo»): discreto, en una línea; si no cabe, se corta el nombre con «…» (la fecha siempre se ve). */
-.home__next { flex: none; display: flex; align-items: center; padding: 0 var(--space-2); gap: var(--space-2); min-width: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+.home__next { flex: none; display: inline-flex; align-self: flex-start; align-items: center; max-width: 100%; padding: var(--space-1) var(--space-4) var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill); background: var(--color-fill); gap: var(--space-2); min-width: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+/* El próximo estreno, en su píldora: separado de la lista (antes parecía un renglón más). */
 .home__next .icon { flex: none; width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 .home__next-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text); }
 .home__next-when { flex: none; white-space: nowrap; }

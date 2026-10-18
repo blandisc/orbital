@@ -1,5 +1,6 @@
 import { h, mount, svg } from "../core/dom.js";
 import { ICONS } from "../core/icons.js";
+import { PlatformMark } from "./ui.js";
 import { settler } from "../core/motion.js";
 import { Button } from "./button.js";
 
@@ -9,8 +10,9 @@ import { Button } from "./button.js";
  * de dónde es, hasta cuatro datos, la descripción y sus acciones.
  *
  * update(ficha | null) con ficha = {
- *   key, title, art?, artKind?: "wide" | "poster" | "pixel", logo?, logoDark?,
- *   platform: { icon, text }, stats: [[etiqueta, valor]], description?,
+ *   key, title, art?, artKind?: "wide" | "poster" | "pixel", standIn?: { photo, glow } (sin arte: la foto de su consola),
+ *   logo?, logoDark?, facts?: [texto] (año · géneros · quién lo hizo), favorite?,
+ *   platform: { icon, mark?, text } (mark: la marca real, platformMark), stats: [[etiqueta, valor]], description?,
  *   actions: [{ id, label, glyph, primary?, yields?, ariaLabel? }] | note: «No lo tienes» }
  * onAction(id, ficha): un botón de la ficha (lo mismo que A, X o Y).
  */
@@ -26,17 +28,23 @@ export function createDetailPanel({ onAction }) {
     h("span", { class: "detail-panel__stat-label" }, label), h("span", { class: "detail-panel__stat-value" }, value));
 
   function fill(d) {
-    const picture = d.art ? h("img", { class: ["detail-panel__img", d.artKind && `detail-panel__img--${d.artKind}`], src: d.art, alt: "" }) : null;
-    picture?.addEventListener("error", () => picture.remove(), { once: true });
+    const picture = d.standIn
+      ? h("span", { class: "detail-panel__stand-in", style: { "--glow": d.standIn.glow } },
+        h("img", { class: "detail-panel__stand-in-photo", src: d.standIn.photo, alt: "" }))
+      : d.art ? h("img", { class: ["detail-panel__img", d.artKind && `detail-panel__img--${d.artKind}`], src: d.art, alt: "" }) : null;
+    if (!d.standIn) picture?.addEventListener("error", () => picture.remove(), { once: true });
     // De dónde es, en una píldora sobre el arte (Steam, GOG, Serie · 2022).
     mount(art, picture, d.platform && h("span", { class: "tile__platform tile__platform--pill detail-panel__store" },
-      svg(ICONS[d.platform.icon] || ICONS.apps), d.platform.text));
+      PlatformMark(d.platform.mark, svg(ICONS[d.platform.icon] || ICONS.apps)), d.platform.text));
     const name = () => h("h2", { class: "detail-panel__title" }, d.title);
     const logo = d.logo ? h("img", { class: ["detail-panel__logo", d.logoDark && "detail-panel__logo--dark"], src: d.logo, alt: d.title }) : null;
     logo?.addEventListener("error", () => logo.replaceWith(name()), { once: true });
     const stats = (d.stats || []).filter(([, v]) => v);
+    const facts = [d.favorite && h("span", { class: "detail-panel__favorite" }, "★ Favorito"), ...(d.facts || [])].filter(Boolean);
     mount(body,
       logo || name(),
+      facts.length > 0 && h("div", { class: "detail-panel__facts" },
+        facts.map((f, i) => h("span", { class: "detail-panel__fact" }, i > 0 && h("span", { class: "detail-panel__sep", "aria-hidden": "true" }, "·"), f))),
       stats.length > 0 && h("div", { class: "detail-panel__stats" }, stats.map(stat)),
       h("p", { class: "detail-panel__description" }, d.description || ""),
       d.actions?.length

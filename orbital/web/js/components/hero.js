@@ -1,11 +1,12 @@
 import { h, mount, svg } from "../core/dom.js";
-import { bytes, duration, genres, lastPlayed, percent } from "../core/format.js";
-import { ICONS, systemIconName } from "../core/icons.js";
+import { bytes, duration, genres, lastPlayed, percent, runtime } from "../core/format.js";
+import { ICONS, platformMark, systemIconName } from "../core/icons.js";
 import { alternativeRunner, isGame, isSeries, isWatchable, primaryLabel, runnerName } from "../core/library.js";
 import { alexaTip } from "../core/hints.js";
 import { trimmedLogo } from "../core/foryou.js";
 import { Button } from "./button.js";
 import { appIcon } from "./card.js";
+import { PlatformMark } from "./ui.js";
 
 /** Información grande del juego seleccionado: sistema, título, datos y acciones. */
 /** Sin subtítulo propio, el nombre de la categoría en palabras (no «media» en minúsculas). */
@@ -63,7 +64,10 @@ export function createHero({ onAction }) {
     // Apps: su propio ícono (el de ES-DE, el de GeForce NOW…), no el genérico de cuadritos.
     const icon = appIcon(item);
     const above = `${extra.eyebrow || item.subtitle || item.category}${runner}`;
-    mount(eyebrow, icon ? h("img", { class: "hero__eyebrow-icon", src: icon, alt: "" }) : svg(ICONS[systemIconName(item)]),
+    // Una colección: su propio ícono (un premio, la estatuilla; las demás, una lista), no el de Apps.
+    const collectionIcon = item.source === "collection" ? (item.collection?.type === "award" ? "trophy" : "list") : null;
+    mount(eyebrow, icon ? h("img", { class: "hero__eyebrow-icon", src: icon, alt: "" })
+      : collectionIcon ? svg(ICONS[collectionIcon]) : PlatformMark(platformMark(item), svg(ICONS[systemIconName(item)])),
       h("span", {}, above));
 
     title.textContent = item.title;
@@ -88,7 +92,7 @@ export function createHero({ onAction }) {
     const said = item.source === "stremio" ? (item.subtitle || "").split(" · ").find((p) => p.startsWith("quedan")) : null;
     const left = said && !above.includes(said) ? said : null;
     const list = item.source === "cinemeta" ? [
-      extra.year, extra.rating && `★ ${extra.rating}`, genres(extra.genres).slice(0, 2).join(", "), extra.runtime,
+      extra.year, extra.rating && `★ ${extra.rating}`, genres(extra.genres).slice(0, 2).join(", "), runtime(extra.runtime),
     ].filter(Boolean).map((text) => h("span", {}, text)) : item.source === "stremio" ? [
       left && left.replace(/^q/, "Q"), extra.rating && `★ ${extra.rating}`, genres(extra.genres).slice(0, 2).join(", "),
       lastPlayed(item.last_played, Date.now(), "Visto"),
@@ -100,6 +104,7 @@ export function createHero({ onAction }) {
       if (bytes(extra.size)) list.push(h("span", {}, bytes(extra.size)));
       if (extra.update) list.push(h("span", { class: "hero__fact--warning" }, "Actualización pendiente"));
     }
+    if (extra.port) list.push(h("span", {}, "Versión para PC")); // un port (gow3_pc…): en la sección de su consola, sin emulador
     if (item.favorite) list.push(h("span", { class: "hero__fact--favorite" }, svg(ICONS.star), "Favorito"));
     if (item.source === "collection") { // una tarjeta de colección: qué es y cuántos tiene, no «Sin jugar todavía»
       const c = item.collection || {};

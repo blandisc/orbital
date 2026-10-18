@@ -10,7 +10,7 @@ export function lastPlayed(ts, now = Date.now(), verb = "Jugado") {
   if (s < 86400) return `${verb} hace ${Math.round(s / 3600)} h`;
   const days = Math.round(s / 86400);
   if (days === 1) return `${verb} ayer`;
-  if (days < 30) return `${verb} hace ${days} días`;
+  if (days < 30) return `${verb} hace ${days} d`; // como shortAgo: un solo formato en toda la app
   return `${verb} el ${new Date(ts * 1000).toLocaleDateString("es")}`;
 }
 
@@ -29,6 +29,12 @@ export function shortAgo(ts, now = Date.now()) {
 }
 
 export const percent = (fraction) => (fraction >= .005 ? `${Math.round(fraction * 100)} %` : null); // "0 %" no dice nada
+
+/** Lo que dura una película o un episodio como lo dice Orbital: «169 min» (Cinemeta) → «2 h 49 min». */
+export function runtime(text) {
+  const minutes = /^\s*(\d+)\s*min\s*$/i.exec(String(text ?? ""));
+  return minutes ? duration(Number(minutes[1]) * 60) : text || null;
+}
 
 export function duration(seconds) {
   if (!seconds || seconds < 60) return null;
@@ -53,6 +59,10 @@ const GENRES = {
   "Sci-Fi": "Ciencia ficción", "Science Fiction": "Ciencia ficción", Sport: "Deportes", Thriller: "Suspenso",
   War: "Bélica", Western: "Western", "Reality-TV": "Reality", "Talk-Show": "Talk show", "Game-Show": "Concurso",
   News: "Noticias", Short: "Corto",
+  // Los de los juegos (ScreenScraper / la tienda de Steam en inglés)
+  Shooter: "Disparos", Fighting: "Pelea", Platform: "Plataformas", Platformer: "Plataformas", Puzzle: "Rompecabezas",
+  Racing: "Carreras", RPG: "Rol", "Role-playing (RPG)": "Rol", "Role-Playing": "Rol", Strategy: "Estrategia",
+  Simulation: "Simulación", Simulator: "Simulación", Sports: "Deportes", Casual: "Casual", Indie: "Indie",
 };
 
 /** Géneros de Cinemeta (en inglés) en español; los desconocidos se dejan igual. */

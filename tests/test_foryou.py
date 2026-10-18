@@ -98,7 +98,7 @@ def test_titles_without_imdb_are_skipped():
 def test_a_library_game_plays_from_here():
     item = game_item({"id": "steam:1145360", "title": "Hades", "playtime": 48 * 3600, "extra": {"logo": "/l.png"}}, "Tu más jugado")
     assert item["detail"] == "48 h jugadas" and item["action"] == "Jugar" and item["logo"] == "/l.png"
-    assert game_item({"id": "x", "title": "Celeste", "playtime": 0}, "Sin estrenar")["detail"] == "Nunca lo has abierto"
+    assert game_item({"id": "x", "title": "Celeste", "playtime": 0}, "Sin jugar")["detail"] == "Nunca lo has abierto"
 
 
 # ---------------------------------------------------------------- caché
@@ -298,7 +298,7 @@ def test_your_games_favorites_most_played_unopened_and_one_at_random(library, ma
     picks = make_foryou(trakt_keys=False).local_games(seed=1)
     by = {p["title"]: p["why"] for p in picks}
     assert by["Hollow Knight"] == "Tu favorito" and by["Hades"] == "Tu más jugado"
-    assert "Sin estrenar" in by.values()  # las ROMs que nunca abriste
+    assert "Sin jugar" in by.values()  # las ROMs que nunca abriste
     assert all(p["kind"] == "game" and p["item"]["id"] == p["id"] for p in picks)
 
 
@@ -425,7 +425,7 @@ def test_keys_written_in_settings_are_checked_saved_and_removed(library, make_fo
 
 
 def test_steam_games_carry_their_store_capsule_for_the_mosaic():
-    item = game_item({"id": "steam:1313140", "title": "Cult of the Lamb", "playtime": 0, "extra": {}}, "Sin estrenar")
+    item = game_item({"id": "steam:1313140", "title": "Cult of the Lamb", "playtime": 0, "extra": {}}, "Sin jugar")
     assert item["steam_appid"] == 1313140 and item["wide"].endswith("/1313140/capsule_616x353.jpg")
     gba = game_item({"id": "emu:gba:1", "title": "Kirby", "playtime": 0, "extra": {"hero_lowres": True}}, "Al azar")
     assert gba["wide"] is None and gba["hero_weak"]
@@ -790,3 +790,26 @@ def test_the_title_shows_imdb_tmdb_and_trakt_like_the_iphone(make_foryou, net, l
     assert fy.title_ratings("series", "nada") == {"imdb": None, "tmdb": None, "trakt": None}
     # Sin claves de TMDB ni Trakt: solo IMDb, y la ficha no truena.
     assert make_foryou(trakt_keys=False).title_ratings("movie", "tt1")["tmdb"] is None
+
+
+def test_because_you_watched_follows_the_iphone_rotation_and_lets_you_pick(make_foryou, net, monkeypatch):
+    """Como el iPhone: tus últimos títulos distintos para elegir; cada día otro de los primeros cinco (si no tiene
+    relacionados, el siguiente); la TV pide «because:<imdb>» para elegir otro."""
+    show = lambda title, imdb: {"type": "episode", "show": {"title": title, "year": 2020, "ids": {"imdb": imdb}}}  # noqa: E731
+    net.on("GET", r"/sync/history\?", (200, [show("Severance", "tt11280740"), show("Severance", "tt11280740"),  # repetida: una vez
+                                              {"type": "movie", "movie": {"title": "Anora", "year": 2024, "ids": {"imdb": "tt28607951"}}},
+                                              show("The Bear", "tt14452776")]))
+    net.on("GET", r"/shows/tt14452776/related", (200, [{"title": "Hacks", "year": 2021, "ids": {"imdb": "tt11815682"}},
+                                                       {"title": "The Bear", "year": 2022, "ids": {"imdb": "tt14452776"}}]))
+    fy = make_foryou(linked=True)
+    because = next(r for r in fy.lists() if r["id"] == "because")
+    assert [s["title"] for s in because["seeds"]] == ["Severance", "Anora", "The Bear"]
+    assert because["seeds"][1]["kind"] == "movie"
+    assert because["seed"]["title"] == "The Bear"  # las otras dos no tienen relacionados: pasa a la siguiente
+    assert [i["title"] for i in fy.list_items("because:tt14452776")] == ["Hacks"]  # sin ella misma, en el orden de Trakt
+    with pytest.raises(KeyError):
+        fy.list_items("because:tt0000001")  # solo de tus últimos títulos
+    seeds = [{"imdb": f"tt{n}", "title": str(n)} for n in range(1, 13)]
+    monkeypatch.setattr(fy, "_related", lambda s: [{"imdb": "x"}])
+    days = [fy._seed_of_day(seeds, foryou_mod.date.fromordinal(n))["imdb"] for n in range(738000, 738006)]
+    assert len(set(days[:5])) == 5 and days[5] == days[0] and all(int(d[2:]) <= 5 for d in days)  # rota entre los primeros 5

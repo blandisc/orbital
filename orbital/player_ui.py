@@ -37,7 +37,7 @@ MARGIN = 96
 TOUCH = False  # con el dedo: botones que se tocan en vez de glifos del mando
 KEYBOARD = False  # con teclado: los glifos dicen la tecla, no el botón del mando
 # El botón del mando -> su tecla (las pistas son las mismas; solo cambia lo que dice cada glifo).
-KEY_NAMES = {"A": "Espacio", "B": "Esc", "◀ ▶": "← →", "LT RT": "[ ]", "LB RB": "RePág AvPág"}
+KEY_NAMES = {"A": "Espacio", "B": "Esc", "◀ ▶": "← →", "LT RT": "[ ]", "LB RB": "RePág AvPág", "Home": "Ctrl Inicio"}
 # Dónde quedó cada cosa tocable, por capa: (x, y, ancho, alto, acción). Se rehace al dibujar la capa.
 targets: dict[str, list[tuple[float, float, float, float, object]]] = {"hud": [], "panel": [], "card": []}
 
@@ -102,6 +102,19 @@ FONT_SEMI = "Segoe UI Semibold"
 # \fs en ASS es la altura de la línea, no la del cuerpo como en CSS: con el mismo número la letra sale
 # ~25 % más chica. Los tamaños de este archivo son «como en CSS» y se convierten al dibujar.
 FS = 1.32
+# Ajustes › Tamaño del texto, también en el reproductor (antes solo en la interfaz): la letra crece un poco, y los anchos
+# que se miden (fit, wrap) crecen igual, así lo que no cabe se recorta bien.
+TEXT_SCALES = {"normal": 1.0, "large": 1.08, "xlarge": 1.16}
+_text_scale = 1.0
+
+
+def set_text_size(name: str | None) -> bool:
+    """El tamaño del texto de Ajustes (normal | large | xlarge). True si cambió (hay que redibujar)."""
+    global _text_scale
+    scale = TEXT_SCALES.get(str(name or "normal"), 1.0)
+    changed = scale != _text_scale
+    _text_scale = scale
+    return changed
 
 LANGUAGES = {
     "en": "Inglés", "eng": "Inglés", "es": "Español", "spa": "Español", "es-419": "Español latino",
@@ -245,7 +258,7 @@ def text(x: float, y: float, value: str, size: int, color: str = TEXT, *, weight
     """Texto ya escapado (o con etiquetas). weight: regular | semi | bold."""
     font = FONT_SEMI if weight == "semi" else FONT
     bold = 1 if weight == "bold" else 0
-    return (f"{{\\an{align}\\pos({x:.0f},{y:.0f})\\fn{font}\\fs{round(size * FS)}\\b{bold}\\bord0\\shad0\\q2"
+    return (f"{{\\an{align}\\pos({x:.0f},{y:.0f})\\fn{font}\\fs{round(size * FS * _text_scale)}\\b{bold}\\bord0\\shad0\\q2"
             f"\\1c{color}\\1a&H{alpha}&}}{value}")
 
 
@@ -264,7 +277,7 @@ def text_width(value: str, size: int, weight: str = "regular") -> float:
             w += .55
         else:
             w += .52
-    return w * size * (1.05 if weight != "regular" else 1)
+    return w * size * _text_scale * (1.05 if weight != "regular" else 1)
 
 
 def wrap(value: str, size: int, width: float, lines: int) -> list[str]:
@@ -460,7 +473,7 @@ def hud_ass(hud: Hud) -> str:
     lines.append(text(MARGIN, 878, esc(fit(info_line(hud), 22, min(1300, W - 2 * MARGIN), "semi")), 22, MUTED, weight="semi"))
     # A primero, como en todo Orbital; luego lo que se descubre (◀▶, LT/RT) y B al final.
     items = [("A", "Pausa"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes"),
-             ("◀ ▶", "Adelantar"), *([("LT RT", "Episodio")] if hud.series else []), ("B", "Mantén: salir")]
+             ("◀ ▶", "Adelantar"), *([("LT RT", "Mantén: episodio")] if hud.series else []), ("B", "Mantén: salir")]
     while len(items) > 4 and hints_width(items) > W - 2 * MARGIN:
         items.pop(-2)  # si no caben (4:3): primero LT/RT, luego ◀▶
     bottom = _touch_bar(hud, 1000, paused=False) if TOUCH else hints(items, 1022, right=W - MARGIN)
@@ -500,7 +513,7 @@ def paused_ass(hud: Hud) -> str:
     y += 30
     lines.append(buttons([("A", "Continuar"), ("X", "Audio y subtítulos"), ("Y", "Episodios" if hud.series else "Fuentes")], MARGIN, y))
     bar, _ = progress_bar(hud)
-    more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), *([("LT RT", "Episodio")] if hud.series else []),
+    more = [("◀ ▶", "Adelantar"), ("↑ ↓", "Volumen"), *([("LT RT", "Mantén: episodio")] if hud.series else []),
             ("B", "Mantén: salir")]
     room = max(260, W - 2 * MARGIN - hints_width(more) - 48)
     if TOUCH:
@@ -760,7 +773,8 @@ class LiveHud:
 
 
 # Qué dice y de qué color es cada estado del canal.
-LIVE_STATUS = {"live": ("En vivo", GLYPH["A"]), "tuning": ("Sintonizando…", MUTED), "nosignal": ("Sin señal", GLYPH["B"])}
+LIVE = ass_color(PALETTE["teal-300"])  # «En vivo» del mismo color en toda la app (--color-live; antes verde aquí y rojo en TV)
+LIVE_STATUS = {"live": ("En vivo", LIVE), "tuning": ("Sintonizando…", MUTED), "nosignal": ("Sin señal", GLYPH["B"])}
 
 
 def live_info_line(hud: LiveHud) -> str:
@@ -880,15 +894,17 @@ def toast_ass(message: str, top: float = NOTICE_Y) -> str:
     return "\n".join([rrect(x, top, w, 54, 27, PANEL, "30"), text(x + 22, top + 27, esc(message), 24, weight="semi", align=4)])
 
 
-def quit_hold_ass(progress: float) -> str:
-    """B mantenido: el botón B arriba a la derecha con un anillo fino que se llena (y «Salir» al lado).
-    Sin caja: discreto sobre el video."""
+def quit_hold_ass(progress: float, key: str = "B", label: str = "Salir") -> str:
+    """Un botón mantenido (B: salir; LT/RT: otro episodio): el botón arriba a la derecha con un anillo fino que se
+    llena (y lo que hace al lado). Sin caja: discreto sobre el video."""
     progress = max(0.0, min(1.0, progress)) if math.isfinite(progress) else 0.0
-    cx, cy, r = W - MARGIN - 30, BUFFER_Y + 28, 30  # debajo del aviso, no encima
-    shape, gw = glyph(cx - 20, cy, "B", 40)
+    # Abajo a la derecha, cerca de donde la barra dice «B Mantén: salir» (antes arriba, lejos de su pista): justo encima de
+    # la línea de tiempo, que ahí está vacío en pausa y reproduciendo (sobre la leyenda la tapaba).
+    cx, cy, r = W - MARGIN - 30, H - 220, 30
+    shape, gw = glyph(cx - (20 if len(key) == 1 else 26), cy, key, 40)
     return "\n".join([circle(cx, cy, r + 6, PANEL, "70", blur=6),
                       ring(cx, cy, r, 3, 1.0, TEXT, "C8"), ring(cx, cy, r, 3, progress, TEXT), shape,
-                      text(cx - r - 16, cy, "Salir", 24, SOFT, weight="semi", align=6)])
+                      text(cx - r - 16, cy, esc(label), 24, SOFT, weight="semi", align=6)])
 
 
 def arc(cx: float, cy: float, r: float, thickness: float, start: float, end: float, color: str, alpha: str = "00") -> str:

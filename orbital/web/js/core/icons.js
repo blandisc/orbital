@@ -75,6 +75,7 @@ export const ICONS = {
   watching: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.75a8.25 8.25 0 1 1-8.25 8.25"/><path d="M10.4 9.1v5.8l4.7-2.9z"/><circle cx="6.17" cy="6.17" r="1.6" fill="currentColor" stroke="none"/></svg>',
   bookmark: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V4.5a1 1 0 0 1 1-1z"/><circle cx="12" cy="9.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
   calendar: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="15.5" cy="15" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  menu: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15M4.5 12h15M4.5 17h15"/></svg>',
   list: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6.5h9.5M10 12h9.5M10 17.5h5.5M4.75 6.5h.01M4.75 12h.01M4.75 17.5h.01"/><circle cx="19.25" cy="17.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
   trend: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 17.5l5.5-5.5 4 4 5.25-5.25"/><circle cx="20" cy="8.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
   fresh: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M12 12.75v4.5M9.75 15h4.5"/></svg>',
@@ -102,6 +103,22 @@ export const ICONS = {
   tv: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7.5" width="18" height="11" rx="2.2"/><path d="M8.5 3.5 12 7l3.5-3.5M8.5 21.5h7"/></svg>',
   trophy: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5.2a3 3 0 0 0 3 4M16 6h2.8a3 3 0 0 1-3 4M12 13v4M8.5 20.5h7M10 17h4"/><circle cx="12" cy="8" r="1.6" fill="currentColor" stroke="none"/></svg>',
 };
+
+/** La marca real de su plataforma (a color, la misma en todas las pantallas): el logo de Stremio para películas y
+ * series, los de Steam y GeForce NOW, y la foto de la consola para un juego retro. null: va el ícono de líneas. */
+export function platformMark(item) {
+  if (!item) return null;
+  const file = (name) => `img/consoles/${name}`;
+  if (["stremio", "cinemeta"].includes(item.source) || item.category === "media") return file("stremio.svg");
+  if (item.source === "geforcenow" || item.category === "geforcenow") return file("geforcenow.svg");
+  if (item.category === "steam" || item.source === "steam") return file("steam.svg");
+  const text = `${item.source} ${item.subtitle} ${item.system ?? ""}`.toLowerCase();
+  const marks = [["switch", "switch.png"], ["gamecube", "gc.png"], ["wii", "wii.png"], ["gba", "gba.png"], ["game boy", "gba.png"],
+    ["xbox 360", "xbox360.png"], ["xbox360", "xbox360.png"], ["xbox", "xbox.png"], ["psp", "psp.png"], ["ps4", "ps4.png"],
+    ["playstation 4", "ps4.png"], ["ps3", "ps3.png"], ["playstation 3", "ps3.png"]];
+  const found = marks.find(([key]) => text.includes(key)) ?? (/gc/.test(text) ? ["gc", "gc.png"] : null);
+  return found ? file(found[1]) : null;
+}
 
 /** Ícono del sistema de un elemento de la biblioteca. */
 export function systemIconName(item) {

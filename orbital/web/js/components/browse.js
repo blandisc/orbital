@@ -41,17 +41,26 @@ export function fillFilters(container, options, { current, targets, onPick }) {
 }
 
 /**
- * Los filtros siempre en una fila: si no caben (pantalla de la Legion Go, letra grande), la barra se
- * compacta y, si aún no, la letra baja un punto. Se mide, no se adivina por el ancho de la pantalla.
+ * Los filtros siempre en una fila: si no caben (pantalla de la Legion Go, letra grande), la barra se compacta; si aún
+ * no, la letra baja un punto; y si ni así, se desvanecen al final (el enfocado se desliza a la vista: showFilter). Se
+ * mide, no se adivina por el ancho de la pantalla.
  */
 export function fitBar(bar, filters) {
-  bar.classList.remove("browse__bar--compact", "browse__bar--tight");
-  const wraps = () => {
-    const pills = filters.children;
-    return pills.length > 1 && pills[pills.length - 1].offsetTop > pills[0].offsetTop + 2;
-  };
-  if (wraps()) bar.classList.add("browse__bar--compact");
-  if (wraps()) bar.classList.add("browse__bar--tight");
+  bar.classList.remove("browse__bar--compact", "browse__bar--tight", "browse__bar--fade");
+  const overflows = () => filters.scrollWidth > filters.clientWidth + 1;
+  for (const step of ["browse__bar--compact", "browse__bar--tight", "browse__bar--fade"]) {
+    if (overflows()) bar.classList.add(step);
+  }
+}
+
+/** El filtro enfocado, a la vista dentro de su renglón (cuando no caben todos). */
+export function showFilter(filters, node) {
+  if (!node || !filters.contains(node)) return;
+  const left = node.offsetLeft - filters.offsetLeft;
+  const room = filters.clientWidth * .86; // lo que no cubre el desvanecido
+  if (left < filters.scrollLeft + filters.clientWidth * .12) filters.scrollLeft = Math.max(0, left - filters.clientWidth * .12);
+  else if (left + node.offsetWidth > filters.scrollLeft + room) filters.scrollLeft = left + node.offsetWidth - room + 8;
+  filters.classList.toggle("browse__filters--scrolled", filters.scrollLeft > 0);
 }
 
 /** La portada enfocada siempre a la vista: la cuadrícula se recorre lo justo. */

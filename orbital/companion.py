@@ -81,7 +81,8 @@ class NothingPlaying(Exception):
     """Nada se está viendo ahora mismo: no hay «Viendo en la TV» que enseñar ni que controlar."""
 
 
-PLAYER_ACTIONS = {"toggle", "pause", "play", "skip", "next", "previous", "stop", "mute", "volume"}
+PLAYER_ACTIONS = {"toggle", "pause", "play", "skip", "next", "previous", "stop", "mute", "volume", "subtitles", "audio",
+                  "channel_up", "channel_down", "guide"}
 
 # El control remoto del iPhone (la hoja «Viendo en la TV» estirada): las mismas acciones que el mando en la interfaz
 # (input.js: KEYMAP/PADMAP). Van a lo que está al frente: la interfaz de Orbital o el reproductor.
@@ -107,11 +108,12 @@ def remote_input(catalog, shell, action: str) -> str:
     return front
 
 
-def remote_text(catalog, text: str, submit: bool) -> None:
+def remote_text(catalog, text: str, submit: bool, replace: bool = False) -> None:
     """«Escribir» del control del iPhone: el texto va al campo con foco (la búsqueda, o la cuenta de Stremio); sin
-    campo abierto, abre la búsqueda con él. `submit`: como Enter."""
+    campo abierto, abre la búsqueda con él. `submit`: como Enter. `replace`: el texto reemplaza todo el campo (el
+    iPhone manda el campo entero en cada cambio); si no, se agrega letra por letra."""
     text = str(text or "")[:REMOTE_TEXT_MAX]
-    catalog.events.publish({"type": "text", "text": text, "submit": bool(submit)})
+    catalog.events.publish({"type": "text", "text": text, "submit": bool(submit), "replace": bool(replace)})
 
 
 def _front(catalog, shell) -> str:
@@ -133,7 +135,22 @@ def now_playing(catalog) -> dict | None:
     running = catalog.launcher.status()
     if running is None or running.get("id") != "media:player":
         return None
-    return catalog.watch.player.now_playing()
+    player = catalog.watch.player
+    now = player.now_playing()
+    if now is not None:
+        now["tracks"] = player.phone_tracks()  # el iPhone elige audio y subtítulos
+    return now
+
+
+def ui_state(catalog, shell, reported: dict) -> dict:
+    """Qué pantalla tiene la TV para el control del iPhone: la que cuenta la interfaz, salvo con el reproductor al
+    frente: entonces "player" (o "live", la TV en vivo) y la leyenda del reproductor (X = Audio y subtítulos…)."""
+    if _front(catalog, shell) != "player":
+        return reported
+    player = catalog.watch.player
+    segment = player.segment
+    return {**reported, "screen": "live" if segment is not None and segment.live else "player", "text_field": False,
+            "legend": player.phone_legend()}
 
 
 def set_volume(delta: float | None = None, level: int | None = None) -> dict | None:
@@ -149,7 +166,8 @@ def set_volume(delta: float | None = None, level: int | None = None) -> dict | N
     return quick.set_volume(target, muted=False if target > now["level"] or level is not None else None)
 
 
-def control_player(catalog, action: str, delta: float | None = None, level: int | None = None) -> dict | None:
+def control_player(catalog, action: str, delta: float | None = None, level: int | None = None,
+                   track: int | str | None = None) -> dict | None:
     """Un botón de la tarjeta del iPhone. Devuelve lo que quedó viendo (None si se detuvo).
 
     Lanza `NothingPlaying` si no hay nada abierto, y `ValueError` (en palabras) si la acción no
@@ -173,6 +191,17 @@ def control_player(catalog, action: str, delta: float | None = None, level: int 
     if action == "stop":
         player.stop()
         return None
+    if action in ("subtitles", "audio"):
+        player.phone_track(action, track)
+        return now_playing(catalog)
+    if action in ("channel_up", "channel_down", "guide"):
+        if not live:
+            raise ValueError("Esto no es TV en vivo")
+        if action == "guide":
+            player.open_channels()
+        else:
+            _zap_channel(catalog, segment.meta, 1 if action == "channel_up" else -1)
+        return now_playing(catalog)
     if action == "mute":
         player.toggle_mute()  # el de Windows (el mismo de la TV y de Alexa), no uno aparte del reproductor
         return now_playing(catalog)

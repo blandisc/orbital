@@ -351,7 +351,7 @@ def test_iphone_remote_text_and_what_the_tv_shows(public):
     events = []
     main.state.catalog.events.subscribe(events.append)
     assert client.post("/api/companion/text", json={"text": "dune", "submit": True}, headers=auth).status_code == 200
-    assert {"type": "text", "text": "dune", "submit": True} in events
+    assert {"type": "text", "text": "dune", "submit": True, "replace": False} in events
     assert client.get("/api/companion/now", headers=auth).json()["ui"] == {"screen": "home", "text_field": False}
 
 

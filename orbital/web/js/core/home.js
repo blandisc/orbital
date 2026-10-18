@@ -3,16 +3,17 @@
  * el servidor:
  *   · destacado: lo último que jugaste o viste (lo abierto, primero); al bajar por la lista de la
  *     derecha, el destacado enseña lo enfocado;
- *   · a la derecha («Seguir viendo»): lo que sigue de esa lista, sin repetir el destacado;
+ *   · a la derecha («Continuar»): lo que sigue de esa lista, sin repetir el destacado;
  *   · tus consolas: cada sistema con su foto, cuántos juegos, el último que jugaste y los nuevos.
  */
 import { isWatchable } from "./library.js";
 
 export const CARDS = 4;
 
-/** El título de la columna de la derecha (antes «También tenías», que no decía qué era). */
-export function queueTitle() {
-  return "Seguir viendo"; // como el iPhone (vocabulario compartido); sirve para series, películas y juegos
+/** El título de la columna de la derecha: «Seguir viendo» si todo es video (como el iPhone); con juegos, «Continuar»
+ * (un juego bajo «Seguir viendo» no se lee bien). */
+export function queueTitle(items = []) {
+  return items.some((item) => !isWatchable(item)) ? "Continuar" : "Seguir viendo";
 }
 
 /** El mismo título dos veces (la serie a medias y su episodio siguiente, un juego en dos consolas): una sola. */
@@ -115,7 +116,8 @@ export function consoleList(rows) {
       logo: !!SYSTEMS[system]?.logo,
       cover: last?.image ?? row.items[0]?.image ?? null, // sin foto de consola (Steam): la portada del último
       last,
-      fresh: row.items.filter((i) => i.new).length,
+      // Lo que llegó desde la última vez que entraste a esa consola (antes contaba 7 días aunque ya hubieras entrado).
+      fresh: row.items.filter((i) => i.new && (i.added ?? Infinity) > (row.opened ?? 0)).length,
       folder: row.empty ? row.folder ?? null : undefined, // instalado, sin juegos: dónde ponerlos
     });
   }

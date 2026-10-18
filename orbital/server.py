@@ -37,6 +37,7 @@ from .catalog import Catalog
 from .config import Config
 from .foryou import SERVICE_ERRORS, TV_ONLY_PREFIXES
 from .library import trakt
+from .library_watch import LibraryWatcher
 from .remote_input import RemoteInput
 from .shell import ConsoleShell
 from .voice import VoiceController
@@ -140,6 +141,9 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
                     catalog.scanning = False
                     d.hub.publish_threadsafe({"type": "library-changed"})
                 shell.start()
+                # Juegos nuevos con Orbital abierto: vigila las carpetas de juegos (antes solo se buscaba al arrancar).
+                catalog.library_watch = LibraryWatcher(catalog.watched_folders, catalog.rescan_for_new)
+                catalog.library_watch.start()
                 try:  # de qué trata cada juego de Steam y GeForce NOW: con calma, después de todo lo demás
                     time.sleep(STORE_DELAY)
                     catalog.warm_store()
@@ -169,6 +173,8 @@ def create_app(config: Config, catalog: Catalog | None = None, kiosk=None, short
             with contextlib.suppress(Exception):
                 await run_in_threadpool(player.stop)
         catalog.tv.stop()
+        if catalog.library_watch is not None:
+            catalog.library_watch.stop()
         d.extra["emulator_updates"].stop()
         if problems:
             logging.getLogger("orbital").removeHandler(problems)
@@ -281,6 +287,7 @@ class CompanionPlayerAction(BaseModel):
     action: str
     delta: float | None = None  # "skip": segundos (±10, ±30); "volume": cuánto sube o baja (±5)
     level: int | None = None  # "volume": el nivel exacto (0-100)
+    track: int | str | None = None  # "subtitles" / "audio": el id de playing.tracks ("no": sin subtítulos)
 
 
 class CompanionGame(BaseModel):
@@ -299,6 +306,7 @@ class CompanionInput(BaseModel):
 class CompanionText(BaseModel):
     text: str
     submit: bool = False
+    replace: bool = False  # el texto reemplaza todo el campo (si no, se agrega)
 
 
 class CompanionSend(BaseModel):
@@ -517,7 +525,9 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         saw_phone()  # lo que el iPhone pide cada 5 s abierto (antes solo contaba /api/companion, que pide al emparejarse)
         return {"playing": companion.now_playing(catalog), "inbox": companion.inbox_pending(catalog.state),
                 "game": companion.game_now(catalog, main_app.state.shell),  # el modo acompañante (None sin juego)
-                "ui": main_app.state.ui_state,  # qué pantalla y si hay un campo de texto (el iPhone enseña «Escribir»)
+                # qué pantalla y si hay un campo de texto (el iPhone enseña «Escribir»); con el reproductor al frente,
+                # "player"/"live" y su leyenda
+                "ui": companion.ui_state(catalog, main_app.state.shell, main_app.state.ui_state),
                 "volume": _volume()}  # {"level", "muted"}: la barra de volumen del control del iPhone
 
     @public.get("/api/tv/logo")
@@ -560,7 +570,7 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
         """«Escribir» del control del iPhone: el texto al campo con foco de la tele (sin QR)."""
         if not remote_allowed():
             raise HTTPException(429, "Más despacio")
-        companion.remote_text(main_app.state.catalog, body.text, body.submit)
+        companion.remote_text(main_app.state.catalog, body.text, body.submit, body.replace)
         return {"ok": True}
 
     @public.get("/api/art/{item_id:path}")
@@ -597,7 +607,7 @@ def create_public_app(config: Config, main_app: FastAPI, guard: FailedTokens | N
     def companion_player(body: CompanionPlayerAction) -> dict:
         """Un botón de la tarjeta «Viendo en la TV»: pausa, adelantar, siguiente episodio o canal…"""
         try:
-            now = companion.control_player(main_app.state.catalog, body.action, body.delta, body.level)
+            now = companion.control_player(main_app.state.catalog, body.action, body.delta, body.level, body.track)
         except companion.NothingPlaying as exc:
             raise HTTPException(409, str(exc))
         except ValueError as exc:

@@ -1,11 +1,12 @@
 import { api } from "../core/api.js";
 import { Chip } from "./ui.js";
 import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
-import { genres } from "../core/format.js";
+import { genres, runtime } from "../core/format.js";
 import { trimmedLogo } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
+import { Glyph } from "./glyph.js";
 import { motion } from "../core/motion.js";
-import { availability, episodeStates, titleActions, titleProgress } from "../core/watch.js";
+import { actionStep, availability, episodeStates, titleActions, titleProgress } from "../core/watch.js";
 
 /**
  * La ficha de una película o serie, a pantalla completa y con el mando (como Netflix o Apple TV):
@@ -15,6 +16,8 @@ import { availability, episodeStates, titleActions, titleProgress } from "../cor
  *     con su barra, los que no se han estrenado atenuados con su fecha;
  *   · A ve (Orbital elige la mejor fuente y arranca) · Y elige la fuente · B vuelve.
  */
+const touching = () => document.body.dataset.input === "touch";
+
 export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {} }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
@@ -31,9 +34,6 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   const progress = h("div", { class: "title__progress", hidden: true },
     h("span", { class: "title__progress-bar" }, progressFill), progressLabel);
   const actions = h("div", { class: "title__actions", role: "toolbar" });
-  // El nombre del botón secundario enfocado, en su propia línea: los botones no cambian de tamaño
-  // (antes el enfocado se ensanchaba y todo el renglón brincaba, y el principal se cortaba).
-  const caption = h("div", { class: "title__action-caption", "aria-hidden": "true" });
   const status = h("div", { class: "title__status", role: "status" });
   const tabs = h("div", { class: "title__tabs", role: "tablist" });
   tabs.addEventListener("scroll", () => markTabEdges(), { passive: true });
@@ -41,7 +41,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   const browser = h("div", { class: "title__browser" }, tabs, list);
   const el = h("section", { class: "title", hidden: true, "aria-label": "Ficha" },
     backdrop,
-    h("div", { class: "title__info" }, logo, name, facts, ratings, avail, description, people, progress, actions, caption, status),
+    h("div", { class: "title__info" }, logo, name, facts, ratings, avail, description, people, progress, actions, status),
     browser);
 
   let item = null;
@@ -68,11 +68,11 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     if (info.logo) logo.src = trimmedLogo(info.logo);
     else logo.removeAttribute("src");
     name.hidden = !!info.logo;
-    const runtime = info.runtime || "";
+    const length = runtime(info.runtime) || "";
     // Cada dato con su «·» delante, en un solo bloque: el punto nunca queda colgando al final del
     // renglón; si un dato empieza renglón, su punto se oculta (title--fact-start).
     // Sin «★ 8.1»: la de IMDb va en su renglón, con TMDB y Trakt (como el iPhone).
-    mount(facts, [info.year, runtime, genres(info.genres || []).join(", ")]
+    mount(facts, [info.year, length, genres(info.genres || []).join(", ")]
       .filter(Boolean).map((t, i) => h("span", { class: "title__fact" }, i > 0 && h("span", { class: "title__sep", "aria-hidden": "true" }, "·"), t)));
     requestAnimationFrame(() => {
       let top = null;
@@ -93,37 +93,33 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   /** Las calificaciones (0–10): IMDb «8.1», TMDB y Trakt en por ciento, como el iPhone. */
   function showRatings(r, mine) {
     if (mine !== token) return;
-    const mark = {
-      imdb: h("span", { class: "title__rating-mark title__rating-mark--imdb" }, "IMDb"),
-      tmdb: h("span", { class: "title__rating-mark title__rating-mark--tmdb" }, "TMDB"),
-      trakt: h("span", { class: "title__rating-mark title__rating-mark--trakt", "aria-hidden": "true" }),
-    };
+    // Los logotipos de cada servicio (img/ratings/*.svg, en sus colores de marca, como el iPhone).
+    const mark = (id) => h("img", { class: `title__rating-mark title__rating-mark--${id}`, src: `img/ratings/${id}.svg`, alt: "" });
     const shown = [
       r?.imdb && ["imdb", Number(r.imdb).toFixed(1), "IMDb"],
       r?.tmdb && ["tmdb", `${Math.round(r.tmdb * 10)} %`, "TMDB"],
       r?.trakt && ["trakt", `${Math.round(r.trakt * 10)} %`, "Trakt"],
     ].filter(Boolean);
-    mount(ratings, shown.map(([id, value, label]) => h("span", { class: "title__rating", "aria-label": `${label} ${value}` }, mark[id],
+    mount(ratings, shown.map(([id, value, label]) => h("span", { class: "title__rating", "aria-label": `${label} ${value}` }, mark(id),
       h("span", { class: "title__rating-value" }, value))));
   }
 
   function renderActions() {
     buttons = titleActions(details, { kind: kindOf(), title: item?.title, phone: canSendPhone() });
     action = Math.min(action, Math.max(0, buttons.length - 1));
+    // El principal lleva el botón del mando que lo hace (A / Enter), como todo Orbital; los demás, su ícono en una caja y su
+    // nombre corto debajo, siempre a la vista (antes solo ícono, y el nombre aparecía al enfocarlo).
+    // Los de abajo llenan su renglón en partes iguales (antes cada uno medía lo suyo y, con siete —Continuar, Desde el
+    // inicio, Tráiler, Guardar, Fuente, Al iPhone, Descargar—, la fila se metía debajo de los episodios).
+    actions.style.setProperty("--title-actions", String(Math.max(1, buttons.filter((b) => !b.primary).length)));
     mount(actions, buttons.map((b, i) => h("button", {
-      class: ["title__action", b.primary && "title__action--primary", zone === "actions" && i === action && "title__action--focused"],
+      class: ["title__action", b.primary ? "title__action--primary" : "title__action--icon", b.active && "title__action--on",
+        zone === "actions" && i === action && "title__action--focused"],
       type: "button", "data-id": b.id, "aria-label": b.label, title: b.label,
       onClick: () => { zone = "actions"; action = i; run(b); },
-    }, svg(ICONS[b.icon] || ICONS.play), h("span", {}, b.label), b.hint && h("small", {}, b.hint))));
-    const focused = zone === "actions" ? buttons[action] : null;
-    caption.textContent = focused && !focused.primary ? focused.label : "";
-    const button = focused && !focused.primary ? actions.children[action] : null;
-    // Debajo del botón enfocado, sin salirse por la derecha.
-    caption.style.transform = "";
-    if (button) {
-      const room = actions.clientWidth - caption.offsetWidth; // la línea mide lo que su texto (max-content)
-      caption.style.transform = `translateX(${Math.max(0, Math.min(button.offsetLeft - actions.offsetLeft, room))}px)`;
-    }
+    }, b.primary
+      ? [glyphs.select ? Glyph(glyphs.select, { small: true }) : svg(ICONS[b.icon] || ICONS.play), h("span", {}, b.label), b.hint && h("small", {}, b.hint)]
+      : [h("span", { class: "title__action-tile" }, svg(ICONS[b.icon] || ICONS.play)), h("span", { class: "title__action-name" }, b.short || b.label)])));
   }
 
   function renderTabs() {
@@ -161,7 +157,8 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
           st.upcoming && "episode--upcoming"],
         type: "button", role: "listitem",
         onClick: () => {
-          if (zone === "episodes" && i === index) return play(ep);
+          // Con el dedo, un toque lo pone (no hay foco que mover primero); con el ratón, el segundo clic.
+          if ((zone === "episodes" && i === index) || touching()) return play(ep);
           zone = "episodes";
           setIndex(i);
           render();
@@ -293,7 +290,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
       await api.setInLibrary(kind, d.id, add);
       d.in_library = add;
       if (mine === token) { renderActions(); onChange(); }
-      onNotice(add ? `${d.title} está en Mi lista` : `Quité ${d.title} de Mi lista`);
+      onNotice(add ? `Guardé ${d.title} en Mi lista` : `Quité ${d.title} de Mi lista`);
     } catch (err) {
       onNotice(err.message, true);
     }
@@ -448,8 +445,10 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   function handle(act) {
     if (el.hidden || el.classList.contains("title--leaving")) return false;
     if (act === "menu") return false; // ☰ abre el menú desde cualquier pantalla (como en Xbox)
+    if (act === "search") { close(); return false; } // S: buscar otra cosa (la ficha se cierra y se abre Buscar)
     if (act === "back") {
-      if (zone === "episodes") { zone = "actions"; onMove?.(); render(); return true; }
+      // Con el mando, B primero sube de los episodios a los botones; con el dedo, «Atrás» cierra (ese paso no se veía).
+      if (zone === "episodes" && !touching()) { zone = "actions"; onMove?.(); render(); return true; }
       close();
       return true;
     }
@@ -457,10 +456,14 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
     const series = kindOf() === "series" && seasons().length > 0;
     let moved = false;
     if (zone === "actions") {
-      if (act === "left" && action > 0) { action--; moved = true; }
-      else if (act === "right" && action < buttons.length - 1) { action++; moved = true; }
-      else if (act === "down" && series) { zone = "episodes"; onMove?.(); render(); return true; }
-      else if (act === "select" && buttons[action]) run(buttons[action]);
+      if (["left", "right", "up", "down"].includes(act)) {
+        const next = actionStep(buttons.length, action, act);
+        if (next === "episodes") {
+          if (!series) return true;
+          zone = "episodes"; onMove?.(); render(); return true;
+        }
+        if (next !== null) { action = next; moved = true; }
+      } else if (act === "select" && buttons[action]) run(buttons[action]);
       else if (act === "options" && hasTarget()) sources();
       else if ((act === "prevsection" || act === "nextsection") && series) {
         // Cambiar de temporada desde los botones baja a los episodios: si no, el cambio no se ve.
@@ -472,8 +475,10 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
       if (act === "up") {
         if (index === 0) { zone = "actions"; moved = true; render(); } else moved = setIndex(index - 1);
       } else if (act === "down") moved = setIndex(index + 1);
-      else if (["prevsection", "left"].includes(act)) moved = setSeason(season - 1);
-      else if (["nextsection", "right"].includes(act)) moved = setSeason(season + 1);
+      // ← regresa a los botones, que están a la izquierda (antes cambiaba de temporada; para eso están LB/RB).
+      else if (act === "left") { zone = "actions"; moved = true; render(); }
+      else if (act === "prevsection") moved = setSeason(season - 1);
+      else if (act === "nextsection") moved = setSeason(season + 1);
       // Series largas (Los Simpson tiene 35 temporadas): LT/RT saltan de 5 en 5, como en las filas largas.
       else if (act === "pageleft") moved = setSeason(season - 5);
       else if (act === "pageright") moved = setSeason(season + 5);
@@ -487,7 +492,13 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   }
 
   /** Pistas del pie según dónde está el foco. */
-  const hints = (g) => (details?.error ? [{ glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }]
+  let glyphs = {};
+  const hints = (g) => {
+    if (g.select !== glyphs.select) { glyphs = g; if (!el.hidden) renderActions(); } // cambió el mando: su botón A
+    glyphs = g;
+    return hintsFor(g);
+  };
+  const hintsFor = (g) => (details?.error ? [{ glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }]
     : zone === "episodes"
     ? [episode() && { glyph: g.select, label: "Ver" }, episode() && { glyph: g.options, label: "Fuente" }, { glyph: g.section, label: "Temporada" },
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },

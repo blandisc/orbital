@@ -43,7 +43,7 @@ export function titleActions(details, { kind = "movie", phone = false } = {}) {
       const started = resume.position > 0;
       out.push({ id: "play", video_id: resume.video_id, primary: true, icon: "play",
         label: `${started ? "Continuar" : "Ver"} ${resume.label || ""}`.trim() });
-      if (started) out.push({ id: "restart", video_id: resume.video_id, icon: "refresh", label: "Desde el principio" });
+      if (started) out.push({ id: "restart", video_id: resume.video_id, icon: "refresh", label: "Desde el principio", short: "Desde el inicio" });
     } else if (first) {
       // El primero de verdad (hay series que empiezan en la temporada 2 o en el episodio 0).
       const firstSeason = (details.seasons || []).find((s) => s.season !== 0)?.season ?? 1;
@@ -51,21 +51,23 @@ export function titleActions(details, { kind = "movie", phone = false } = {}) {
     }
   } else if (resume?.position > 0) {
     out.push({ id: "play", primary: true, icon: "play", label: "Continuar" });
-    out.push({ id: "restart", icon: "refresh", label: "Desde el principio" });
+    out.push({ id: "restart", icon: "refresh", label: "Desde el principio", short: "Desde el inicio" });
   } else {
     out.push({ id: "play", primary: true, icon: "play", label: "Ver" });
   }
   if (details.trailer) out.push({ id: "trailer", icon: "trailer", label: "Tráiler" });
+  // + para agregar y ✓ cuando ya está, como el iPhone (la ★ en Juegos es «favorito»: dos cosas con el mismo ícono).
+  // «Guardar» es la acción y «Mi lista» el lugar (design/vocabulario.json), como el iPhone.
   out.push(details.in_library
-    ? { id: "mylist", icon: "check", label: "En Mi lista" }
-    : { id: "mylist", icon: "star", label: "Mi lista" });
+    ? { id: "mylist", icon: "check", label: "Guardada", active: true }
+    : { id: "mylist", icon: "plus", label: "Guardar" });
   // Una serie sin episodios (ni uno en el que ibas) no tiene fuente que elegir: el botón no hacía nada.
   const playable = (details.kind || kind) !== "series" || resume?.video_id || (details.seasons || []).some((s) => s.episodes?.length);
-  if (playable) out.push({ id: "sources", icon: "swap", label: "Elegir fuente" });
+  if (playable) out.push({ id: "sources", icon: "swap", label: "Elegir fuente", short: "Fuente" });
   // Solo con un iPhone conectado (si no, ni aparecen): el episodio que sigue o el enfocado.
   if (playable && phone) {
-    out.push({ id: "phone-open", icon: "phone", label: "Enviar al iPhone" },
-      { id: "phone-download", icon: "download", label: "Descargar en el iPhone" });
+    out.push({ id: "phone-open", icon: "phone", label: "Enviar al iPhone", short: "Al iPhone" },
+      { id: "phone-download", icon: "download", label: "Descargar en el iPhone", short: "Descargar" });
   }
   return out;
 }
@@ -111,6 +113,35 @@ const RES_ORDER = ["4K", "1080p", "720p", "480p"];
  * resolución, HDR, sonido, idiomas y si alguna arranca al instante. Solo cuenta lo que se puede
  * ver de verdad (las primeras fuentes, ya ordenadas por tus preferencias).
  */
+/**
+ * A dónde va el foco entre los botones de la ficha: el principal («Ver», «Continuar») en su renglón, a todo lo ancho, y
+ * abajo los demás repartidos (como el iPhone). ↓ del principal baja a los de abajo; ↑ de ellos sube al principal; ← → los
+ * recorre; y del último a la derecha (o ↓ desde abajo) se pasa a los episodios, que están a la derecha.
+ * Devuelve el índice nuevo, "episodes" o null (no hay a dónde: el foco rebota).
+ */
+export function actionStep(count, index, act) {
+  if (act === "right") return index < count - 1 ? index + 1 : "episodes";
+  if (act === "left") return index > 0 ? index - 1 : null;
+  if (act === "down") return index === 0 && count > 1 ? 1 : "episodes";
+  if (act === "up") return index > 0 ? 0 : null;
+  return null;
+}
+
+/** La hoja de Fuente, como el iPhone: la recomendada sola arriba y el resto por calidad (4K, 1080p, 720p, Otras),
+ * cada grupo en el orden de tus preferencias. Devuelve los grupos y `order`: las fuentes en el orden en que se ven. */
+export function sourceGroups(sources = []) {
+  if (!sources.length) return { groups: [], order: [] };
+  const [best, ...rest] = sources;
+  const groups = [{ id: "best", title: "Recomendada", note: "La elegimos por tu idioma, la calidad y el tamaño", items: [best] }];
+  for (const res of ["4K", "1080p", "720p"]) {
+    const items = rest.filter((s) => s.resolution === res);
+    if (items.length) groups.push({ id: res, title: res, items });
+  }
+  const other = rest.filter((s) => !["4K", "1080p", "720p"].includes(s.resolution));
+  if (other.length) groups.push({ id: "other", title: "Otras", items: other });
+  return { groups, order: groups.flatMap((g) => g.items) };
+}
+
 export function availability(sources = [], { top = 12 } = {}) {
   const list = sources.slice(0, top);
   if (!list.length) return [];

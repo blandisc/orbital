@@ -99,7 +99,8 @@ test("la columna de la derecha dice qué es y no repite el destacado", async () 
   const { buildHome, queueTitle } = await import("../../orbital/web/js/core/home.js");
   const video = (id, title) => ({ id, title, source: "cinemeta", progress: .5, last_played: Date.now() / 1000 });
   const game = (id, title) => ({ id, title, system: "steam", category: "games", last_played: Date.now() / 1000 });
-  assert.equal(queueTitle([video("a", "A"), game("g", "G")]), "Seguir viendo");
+  assert.equal(queueTitle([video("a", "A"), game("g", "G")]), "Continuar"); // con juegos: «Seguir viendo» no se lee bien
+  assert.equal(queueTitle([video("a", "A")]), "Seguir viendo"); // solo video: como el iPhone
   // La serie a medias y su siguiente episodio son la misma: no sale dos veces (ni junto al destacado).
   const home = buildHome([{ id: "jump", items: [video("s1", "Futurama"), video("s2", "Futurama"), game("g", "Hades"), game("g2", "Hades")] }]);
   assert.equal(home.feature.title, "Futurama");
@@ -129,4 +130,11 @@ test("el próximo estreno de tus series: el primero que no ha salido", async () 
   const items = [{ title: "Viejo", day: "2026-10-10" }, { title: "The Simpsons", day: "2026-10-18", day_label: "Mañana", time: "6:00 p. m.", episode_label: "T38 E3" }];
   assert.deepEqual(nextAiring(items, today), { title: "The Simpsons", episode: "T38 E3", when: "Mañana · 6:00 p. m.", meta_id: undefined });
   assert.equal(nextAiring([], today), null);
+});
+
+test("«+N nuevos» se apaga en cuanto entras a esa consola (no espera los 7 días)", () => {
+  const row = { id: "steam", opened: 0, items: [{ id: "a", title: "A", new: true, added: 500 }, { id: "b", title: "B", new: true, added: 900 }] };
+  assert.equal(buildHome([row]).consoles[0].fresh, 2);
+  assert.equal(buildHome([{ ...row, opened: 600 }]).consoles[0].fresh, 1); // solo lo que llegó después de entrar
+  assert.equal(buildHome([{ ...row, opened: 1000 }]).consoles[0].fresh, 0);
 });

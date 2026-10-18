@@ -10,15 +10,23 @@
 .detail-panel--idle { visibility: hidden; }
 /* El arte se funde con la ficha (una máscara, no una capa encima: ninguna foto deja un borde). */
 .detail-panel__art {
-  position: relative; flex: none; height: 40%; overflow: hidden;
+  /* El arte ocupa lo que deja el texto (nunca menos de un tercio): con poco texto, mucho arte y sin hueco; con más,
+     se encoge en vez de cortar la descripción a media línea. */
+  position: relative; flex: 1 1 0; min-height: 22%; overflow: hidden;
   -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) 45%, transparent 100%); mask-image: linear-gradient(180deg, var(--mask-solid) 45%, transparent 100%);
   transition: opacity var(--duration-base) var(--ease-out);
 }
 .detail-panel__img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* Sin arte de fondo propio: la foto de su consola sobre el color de la consola (como su portada de respaldo). */
+.detail-panel__stand-in {
+  display: grid; place-items: center; width: 100%; height: 100%;
+  background: radial-gradient(70% 80% at 50% 45%, color-mix(in oklab, var(--glow) 50%, transparent) 0%, transparent 75%), var(--color-surface-raised);
+}
+.detail-panel__stand-in-photo { width: 52%; max-height: 62%; object-fit: contain; filter: var(--shadow-drop-lg); }
 .detail-panel__img--pixel { image-rendering: pixelated; }
 .detail-panel__img--poster { object-fit: contain; background: var(--color-backdrop-deep); }
 .detail-panel__body {
-  position: relative; flex: 1 1 auto; min-height: 0; margin-top: -1.6rem;
+  position: relative; flex: none; min-height: 0; margin-top: -1.6rem;
   display: flex; flex-direction: column; gap: var(--space-4); padding: 0 var(--space-8) var(--space-6);
   transition: opacity var(--duration-fast) var(--ease-out), transform var(--duration-base) var(--ease-out);
 }
@@ -30,9 +38,14 @@
   font-family: var(--font-sans); font-size: var(--type-title); font-weight: var(--weight-bold); line-height: 1.1; letter-spacing: var(--tracking-tight); text-wrap: balance;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding-bottom: .12em; flex: none;
 }
+/* Año · géneros · quién lo hizo (y ★ Favorito), como la ficha de una película. */
+.detail-panel__facts { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); color: var(--color-text-muted); font-size: var(--text-md); }
+.detail-panel__fact { display: inline-flex; gap: var(--space-2); }
+.detail-panel__sep { opacity: .5; }
+.detail-panel__favorite { color: var(--color-favorite); font-weight: var(--weight-medium); }
 .detail-panel__store { position: absolute; left: var(--space-5); top: var(--space-5); z-index: var(--z-raised); }
 .detail-panel__stats {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); gap: var(--space-3);
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(6.6rem, 1fr)); gap: var(--space-3); /* «hace 32 min» entero: si no caben, dos renglones */
   padding: var(--space-4) 0; border-block: 1px solid var(--color-hairline);
 }
 .detail-panel__stat { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
@@ -40,7 +53,7 @@
 .detail-panel__stat-value { font-size: var(--text-md); font-weight: var(--weight-medium); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .detail-panel__description {
   color: var(--color-text-muted); font-size: var(--text-sm); line-height: 1.5;
-  display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
 }
 .detail-panel__description:empty { display: none; }
 .detail-panel__actions { margin-top: auto; } /* .button-row: una fila, nunca se corta */
@@ -48,3 +61,7 @@
   margin-top: auto; align-self: flex-start; padding: var(--space-3) var(--space-5); border-radius: var(--radius-pill);
   background: var(--color-fill); color: var(--color-text-muted); font-size: var(--text-md);
 }
+/* Pantalla baja (Legion Go, 800 px) o botones de dedo: la descripción en tres renglones, para que los botones de abajo
+   siempre quepan enteros (con el dedo se cortaban «Jugar» y «Opciones»). */
+@media (max-height: 860px) { .detail-panel__description { -webkit-line-clamp: 3; } }
+[data-input="touch"] .detail-panel__description { -webkit-line-clamp: 3; }

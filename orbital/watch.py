@@ -17,7 +17,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import companion, player
+from . import companion, player, player_ui
 from .config import Config
 from .credentials import Credentials
 from .events import EventBus
@@ -474,6 +474,7 @@ class Watch:
         p.on_language = self._remember_language
         p.pip_on_home = self.setting("video_home", "pip") == "pip"  # la barra dice «Home · Ver en pequeño»
         p.sub_scale = float(self.setting("sub_scale", 1.0) or 1.0)
+        player_ui.set_text_size(self.setting("text_size", "normal"))  # la letra del reproductor sigue a Ajustes
 
     def _send_to_phone(self, meta: dict, action: str, position: float | None = None) -> str:
         """Y › «Seguir en el iPhone» (el mismo minuto) / «Enviar al iPhone» / «Descargar en el iPhone» con lo que se está

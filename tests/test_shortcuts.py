@@ -59,12 +59,13 @@ def test_xbox360_shortcut_and_installed_game_are_one_card(tmp_path):
     roms = tmp_path / "roms"
     roms.mkdir()
     make_lnk(roms / "Call of Duty - Black Ops II.lnk", exe, f'--fullscreen "{pkg}"')
-    make_lnk(roms / "Bloc de notas.lnk", r"C:\Windows\notepad.exe", "")  # no es de este emulador: se ignora
+    make_lnk(roms / "Bloc de notas.lnk", r"C:\Windows\notepad.exe", "")  # otro programa: un port para PC
     emu = EmulatorConfig(id="xbox360", name="Xbox 360", executable=str(exe), system="xbox360",
                          args=["--fullscreen", "{rom}"], rom_dirs=[str(roms)], extensions=[".iso", ".xex"])
     items = emulators.scan(emu)
-    assert [i.title for i in items] == ["Call of Duty - Black Ops II", "Minecraft"]  # el .lnk manda en el nombre
-    assert items[0].runners[0].argv == [str(exe), "--fullscreen", str(pkg)]
+    assert [i.title for i in items] == ["Bloc de notas", "Call of Duty - Black Ops II", "Minecraft"]  # el .lnk manda en el nombre
+    assert items[1].runners[0].argv == [str(exe), "--fullscreen", str(pkg)]
+    assert items[0].default_runner == "pc"
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="crea un .lnk con Windows")
@@ -119,3 +120,26 @@ def test_geforce_now_shortcuts_without_powershell(tmp_path, monkeypatch):
     games = geforcenow.read_shortcuts([desktop])
     assert [(g["title"], g["cms_id"]) for g in games] == [("Fortnite", "100013311")]
     assert games[0]["target"].lower() == str(exe).lower()
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="crea un .lnk con Windows")
+def test_a_pc_port_shortcut_shows_up_in_its_consoles_section(tmp_path):
+    """God of War III de PS4 con gow3_pc: su acceso directo en ROMs/ps4 sale en PlayStation 4 y abre el port directo."""
+    port = tmp_path / "GoW3-PC" / "Play God of War III.exe"
+    port.parent.mkdir()
+    port.write_bytes(b"MZ")
+    roms = tmp_path / "ROMs" / "ps4"
+    roms.mkdir(parents=True)
+    make_lnk(roms / "God of War III Remastered.lnk", port, "")
+    emu_exe = tmp_path / "shadPS4" / "shadPS4.exe"
+    emu_exe.parent.mkdir()
+    emu_exe.write_bytes(b"MZ")
+    make_lnk(roms / "Abre shadPS4.lnk", emu_exe, "")  # abre el emulador sin juego: no es un port
+    cfg = EmulatorConfig(id="ps4", name="PlayStation 4", system="ps4", executable=str(emu_exe), args=["{rom}"],
+                         rom_dirs=[str(roms)], extensions=[])
+    items = emulators.scan(cfg)
+    assert [i.title for i in items] == ["God of War III Remastered"]
+    game = items[0]
+    assert game.source == "ps4" and game.default_runner == "pc" and game.extra["port"]
+    assert game.runners[0].argv == [str(port)] and game.runners[0].name == "PC"
+    assert game.runners[0].cwd.lower() == str(port.parent).lower()

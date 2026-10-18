@@ -9,7 +9,7 @@ import threading
 from fastapi import APIRouter, HTTPException
 from fastapi.concurrency import run_in_threadpool
 
-from .. import __version__, system
+from .. import __version__, input_log, system
 from .deps import Deps
 
 # Ajustes que se pueden cambiar desde la interfaz (y sus valores válidos).
@@ -117,6 +117,14 @@ def router(d: Deps) -> APIRouter:
                         text_field=body.get("text_field") is True,
                         section=section if isinstance(section, str) and len(section) < 40 else None,
                         legend=dict(list(clean.items())[:16]))
+        return {"ok": True}
+
+    @r.post("/api/ui/trace")
+    def trace_input(body: dict) -> dict:
+        """Diagnóstico de la entrada desde la interfaz (entrada.log): lo que reporta el mando, teclas, rueda y acciones."""
+        entries = body.get("entries") if isinstance(body, dict) else None
+        clean = [{"from": "ui", **e} for e in entries[:400] if isinstance(e, dict)] if isinstance(entries, list) else []
+        input_log.record(clean)
         return {"ok": True}
 
     @r.post("/api/ui/exit")

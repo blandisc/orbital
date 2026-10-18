@@ -19,7 +19,13 @@
 .collection__fan .collection__poster--1 { z-index: var(--z-raised); transform: translateX(-50%); }
 .collection__fan .collection__poster--2 { transform: translateX(-118%) translateY(6%) rotate(-10deg); transform-origin: bottom right; }
 .collection__fan .collection__poster--3 { transform: translateX(18%) translateY(6%) rotate(10deg); transform-origin: bottom left; }
-.card--award .collection__fan { left: 42%; }
+.card--award .collection__fan { left: 42%; top: 7%; height: 56%; }
+/* El nombre del premio sobre una franja que oscurece los pósters (antes «GLOBO DE ORO» y «CANNES» quedaban tapados):
+   encima de los pósters, debajo de la estatuilla y del texto. */
+.card--award::after {
+  content: ""; position: absolute; inset: 48% 0 0 0; z-index: var(--z-raised); pointer-events: none; border-radius: 0 0 var(--card-radius) var(--card-radius);
+  background: linear-gradient(0deg, var(--color-scrim) 30%, transparent); /* oscurece sin dibujar un recuadro */
+}
 .collection__poster { display: block; border-radius: var(--radius-sm); object-fit: cover; background: var(--gradient-card); }
 .collection__poster--missing { visibility: hidden; }
 
@@ -102,4 +108,5 @@
 .shelf__row--centered .card--collection { transform-origin: 50% 100%; }
 .shelf__row--centered .card--collection.card--focused { transform: scale(var(--card-focus-scale)); margin-inline: calc(var(--card-height) * var(--ratio) * (var(--card-focus-scale) - 1) / 2); }
 .shelf__row--current.shelf__row--centered .card--collection:not(.card--focused) { transform: scale(.9); opacity: .55; }
-.shelf__row--current.shelf__row--centered .shelf__track { -webkit-box-reflect: below var(--space-2) linear-gradient(transparent 70%, color-mix(in oklab, var(--color-text) 14%, transparent)); }
+/* Un reflejo corto y tenue: solo insinuado, sin meterse bajo el título de la fila de abajo. */
+.shelf__row--current.shelf__row--centered .shelf__track { -webkit-box-reflect: below var(--space-1) linear-gradient(transparent 84%, color-mix(in oklab, var(--color-text) 9%, transparent)); }

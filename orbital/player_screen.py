@@ -407,14 +407,38 @@ class PlayerScreen:
         if len(args) >= 2 and args[0] == "orbital-key":
             self.key(args[1])
             return
-        if not args or args[0] != "orbital-tap" or len(args) < 5:
+        if not args or args[0] not in ("orbital-tap", "orbital-drag", "orbital-drop") or len(args) < 5:
             return
         try:
             x, y, w, h = (float(a) for a in args[1:5])
         except ValueError:
             return
         if w > 0 and h > 0:
-            self.tap(x / w * player_ui.W, y / h * player_ui.H)
+            x, y = x / w * player_ui.W, y / h * player_ui.H
+            if args[0] == "orbital-tap":
+                self._scrub = None
+                self.tap(x, y)
+            else:
+                self._drag(x, final=args[0] == "orbital-drop")
+
+    SCRUB_EVERY = .12  # s entre búsquedas mientras arrastras (la barra sí sigue al ratón en cada movimiento)
+
+    def _drag(self, x: float, final: bool) -> None:
+        """Arrastrar la bolita de la barra (tocaste la barra y no soltaste): la barra sigue al ratón y el video busca
+        (a cuadros clave mientras arrastras, para que responda; exacto al soltar)."""
+        scrub = getattr(self, "_scrub", None)
+        duration = self.mpv.get("duration")
+        if scrub is None or not isinstance(duration, (int, float)) or duration <= 0:
+            return
+        x0, width, last = scrub
+        target = max(0.0, min(1.0, (x - x0) / width)) * duration
+        now = time.monotonic()
+        if final or now - last >= self.SCRUB_EVERY:
+            self.mpv.command("seek", target, "absolute" if final else "absolute+keyframes")
+            self._ask("time-pos", target)
+            last = now
+        self._scrub = None if final else (x0, width, last)
+        self.show_hud(position=target)
 
     def tap(self, x: float, y: float) -> None:
         """Un toque en (x, y) del lienzo: lo que hay ahí (un botón, la barra, una opción del panel), o
@@ -460,6 +484,7 @@ class PlayerScreen:
                 self.mpv.command("seek", target, "absolute")
                 self._ask("time-pos", target)
                 self.show_hud(position=target)
+                self._scrub = (x0, width, time.monotonic())  # si no sueltas, arrastras la bolita (_drag)
             return
         if action == "quit":
             self._user_quit = True
@@ -521,6 +546,16 @@ class PlayerScreen:
         if button == "b" and self.remote.held("b"):
             self._hold_to_quit()
             return
+        if button in ("lt-up", "rt-up"):
+            hold = getattr(self, "_episode_hold", None)
+            if hold is not None:  # soltaste antes de llenarse: no cambia, y dice cómo se hace
+                self._episode_hold = None
+                self._overlay(self.HOLD, None)
+                key = hold[0].upper()
+                self.toast(f"Mantén {key}: episodio {'siguiente' if hold[0] == 'rt' else 'anterior'}", 2.4)
+            return
+        if button in ("lt", "rt") and self.remote.held(button):
+            return  # mantenido: lo cuenta el anillo del episodio (y en un panel o en la TV en vivo, una vez)
         if button.startswith("stick-"):
             # Un stick: en un panel mueve el foco como la cruceta; si no, solo enseña los controles. Ya no recorre los
             # botones de abajo (el usuario prefiere solo los atajos), ni adelanta ni sube el volumen: un empujón sin
@@ -563,8 +598,7 @@ class PlayerScreen:
             if self._hud_visible and not self._value("pause"):
                 self.hide_hud()
             self._quit_hold = time.monotonic()
-            self._overlay(self.HOLD, player_ui.quit_hold_ass(0))
-            self._animate_hold(self._quit_hold)
+            self._animate_hold(self._quit_hold)  # el anillo sale solo si lo mantienes (un toque solo oculta)
         elif button == "x":
             self.open_tracks()
         elif button == "y":
@@ -584,7 +618,7 @@ class PlayerScreen:
         elif button in ("lt", "rt"):
             meta = getattr(self.current, "meta", None) or {}
             if meta.get("kind") == "series" and self.on_episode:
-                self._queue_episode(meta, -1 if button == "lt" else 1)
+                self._hold_episode(button, meta)
         elif button in ("up", "down"):
             self._change_volume(1 if button == "up" else -1)
 
@@ -632,12 +666,14 @@ class PlayerScreen:
             self.toast("Volumen")
 
     QUIT_HOLD = 1.5  # s con B mantenido para salir
+    HOLD_SHOW_AFTER = .25  # s mantenido B antes de dibujar el anillo de salir
     HOLD_FPS = 30  # el anillo de «Salir» se llena con su propio reloj (antes, a saltos: solo con cada repetición de B)
 
     def _animate_hold(self, started: float) -> None:
         """Redibuja el anillo a 30 cuadros por segundo mientras B siga mantenido. Solo dibuja: salir lo sigue decidiendo
         `_hold_to_quit` con la repetición de B (soltar a tiempo nunca sale)."""
         def run() -> None:
+            time.sleep(self.HOLD_SHOW_AFTER)  # un toque de B no enseña el anillo: parecía que B hacía dos cosas
             while getattr(self, "_quit_hold", None) == started:
                 progress = (time.monotonic() - started) / self.QUIT_HOLD
                 self._overlay(self.HOLD, player_ui.quit_hold_ass(min(1.0, progress)))
@@ -649,6 +685,30 @@ class PlayerScreen:
                 time.sleep(1 / self.HOLD_FPS)
 
         threading.Thread(target=run, daemon=True, name="hold-to-quit").start()
+
+    EPISODE_HOLD = .8  # s con LT/RT mantenido para cambiar de episodio (un roce del gatillo ya no cambia nada)
+
+    def _hold_episode(self, button: str, meta: dict) -> None:
+        """LT/RT como B: hay que mantenerlo. El anillo se llena y, lleno, carga el episodio anterior o el siguiente."""
+        started = time.monotonic()
+        self._episode_hold = (button, started)
+        label = "Episodio siguiente" if button == "rt" else "Episodio anterior"
+
+        def run() -> None:
+            time.sleep(self.HOLD_SHOW_AFTER)
+            while getattr(self, "_episode_hold", None) == (button, started):
+                progress = (time.monotonic() - started) / self.EPISODE_HOLD
+                self._overlay(self.HOLD, player_ui.quit_hold_ass(min(1.0, progress), button.upper(), label))
+                if progress >= 1:
+                    self._episode_hold = None
+                    self._overlay(self.HOLD, None)
+                    self.toast(f"{label}…", 3)
+                    self._episode_steps = 1 if button == "rt" else -1
+                    self._step_episodes(meta)
+                    return
+                time.sleep(1 / self.HOLD_FPS)
+
+        threading.Thread(target=run, daemon=True, name="hold-episode").start()
 
     def _hold_to_quit(self) -> None:
         """B sigue mantenido: la barra avanza y, llena, sale. Solo si la pulsación empezó aquí (no la
@@ -700,6 +760,48 @@ class PlayerScreen:
         self._ask("time-pos", target)
         return target
 
+    def phone_legend(self) -> dict:
+        """Lo que hace cada botón del control del iPhone con el reproductor al frente (las mismas acciones de
+        /api/companion/input), para que el iPhone diga «Subtítulos» y no la leyenda de la interfaz."""
+        if self._is_live():
+            return {"up": "Canal siguiente", "down": "Canal anterior", "options": "Canales", "alt": "Audio",
+                    "left": "Bajar volumen", "right": "Subir volumen", "select": "Silencio", "back": "Salir"}
+        segment = self.segment
+        meta = (segment.meta if segment is not None else None) or getattr(self.current, "meta", None) or {}
+        series = meta.get("kind") == "series" and self.on_episode is not None
+        legend = {"select": "Continuar" if self._value("pause") else "Pausa", "alt": "Audio y subtítulos",
+                  "options": "Episodios" if series else "Fuentes", "left": "Atrasar", "right": "Adelantar",
+                  "up": "Subir volumen", "down": "Bajar volumen", "back": "Salir"}
+        if series:
+            legend |= {"pageleft": "Episodio anterior", "pageright": "Episodio siguiente"}
+        return legend
+
+    def phone_tracks(self) -> dict:
+        """Las pistas de audio y subtítulos para el iPhone: {audio: [{id, label, lang, selected}], subtitles: [...]}."""
+        tracks = self.mpv.get("track-list") or []
+
+        def of(kind: str) -> list[dict]:
+            return [{"id": t["id"], "label": player_ui.track_label(t), "lang": t.get("lang") or None,
+                     "selected": bool(t.get("selected"))} for t in tracks if t.get("type") == kind and "id" in t]
+        return {"audio": of("audio"), "subtitles": of("sub")}
+
+    def phone_track(self, kind: str, track: int | str | None = None) -> None:
+        """Del iPhone: «subtitles» o «audio». Sin `track`, la siguiente pista (los subtítulos pasan por «Sin
+        subtítulos»); con `track` (un id de phone_tracks, o "no" para quitar los subtítulos), esa."""
+        listed = self.phone_tracks()["subtitles" if kind == "subtitles" else "audio"]
+        prop = "sid" if kind == "subtitles" else "aid"
+        choices = ([{"id": "no", "label": "Sin subtítulos"}] if kind == "subtitles" else []) + listed
+        if track is None:
+            if len(choices) < 2:
+                raise ValueError("No hay otra pista" if kind == "audio" else "Este video no trae subtítulos")
+            here = next((i for i, c in enumerate(choices) if c.get("selected")), 0)
+            chosen = choices[(here + 1) % len(choices)]
+        else:
+            chosen = next((c for c in choices if str(c["id"]) == str(track)), None)
+            if chosen is None:
+                raise ValueError("Esa pista ya no está")
+        self._choose({"action": (prop, chosen["id"]), "label": chosen["label"], "lang": chosen.get("lang") or ""})
+
     def phone_button(self, action: str) -> None:
         """Un botón del control del iPhone con el reproductor al frente: como el mando, salvo B, que sale sin mantener
         (en el teléfono no hay «mantener B»): con un panel o los controles a la vista, primero los quita."""
@@ -711,6 +813,10 @@ class PlayerScreen:
                 self.hide_hud()
             else:
                 self._quit()
+            return
+        meta = getattr(self.current, "meta", None) or {}
+        if action in ("pageleft", "pageright") and self.menu is None and not self._is_live()                 and meta.get("kind") == "series" and self.on_episode:
+            self._queue_episode(meta, -1 if action == "pageleft" else 1)  # en el teléfono no se mantiene: directo
             return
         button = {"select": "a", "alt": "x", "options": "y", "menu": "x", "pageleft": "lt", "pageright": "rt",
                   "prevsection": "lb", "nextsection": "rb"}.get(action, action)

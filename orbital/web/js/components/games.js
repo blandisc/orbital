@@ -1,12 +1,12 @@
 import { h, mount } from "../core/dom.js";
-import { duration, lastPlayed, shortAgo } from "../core/format.js";
-import { consoleGames, FILTERS, gameConsoles, pickConsole, stepConsole } from "../core/games.js";
-import { systemColor } from "../core/home.js";
-import { systemIconName } from "../core/icons.js";
+import { bytes, duration, genres, lastPlayed, shortAgo } from "../core/format.js";
+import { consoleGames, filtersFor, gameConsoles, pickConsole, stepConsole } from "../core/games.js";
+import { SYSTEMS, systemColor, systemOf } from "../core/home.js";
+import { platformMark, systemIconName } from "../core/icons.js";
 import { alternativeRunner, primaryLabel, systemRatio } from "../core/library.js";
 import { measureFocusables, nextFocus } from "../core/spatial.js";
 import { dragScroll } from "../core/swipe.js";
-import { BrowseHead, fillFilters, fitBar, keepInView, replay } from "./browse.js";
+import { BrowseHead, fillFilters, fitBar, keepInView, replay, showFilter } from "./browse.js";
 import { Card } from "./card.js";
 import { createDetailPanel } from "./detail-panel.js";
 import { createRail } from "./rail.js";
@@ -47,7 +47,8 @@ export function createGames({ onFocus, onPick, onAction }) {
   const targets = new Map();
 
   const current = () => list.find((c) => c.id === consoleId) ?? null;
-  const activeFilter = () => `filter:${Math.max(0, FILTERS.findIndex((f) => f.id === (filterOf[consoleId] ?? "recent")))}`;
+  const filterNow = () => (filtersFor(consoleId).some((f) => f.id === filterOf[consoleId]) ? filterOf[consoleId] : "recent");
+  const activeFilter = () => `filter:${Math.max(0, filtersFor(consoleId).findIndex((f) => f.id === filterNow()))}`;
   const index = () => Math.max(0, list.findIndex((c) => c.id === consoleId));
   const media = (c) => (c.photo ? { photo: c.photo, logo: !!c.logo } : c.cover ? { cover: c.cover } : { icon: "gamepad" });
   const plural = (n) => `${n} juego${n === 1 ? "" : "s"}`;
@@ -84,7 +85,7 @@ export function createGames({ onFocus, onPick, onAction }) {
   // --- la consola: encabezado, filtros, portadas ----------------------------------------------
   function renderConsole() {
     const c = current();
-    const filter = filterOf[consoleId] ?? "recent";
+    const filter = filterNow();
     games = c ? consoleGames(rows, consoleId, filter) : [];
     const last = c?.last;
     const ago = last && shortAgo(last.last_played);
@@ -94,7 +95,7 @@ export function createGames({ onFocus, onPick, onAction }) {
       meta: [plural(c.count), ago && `jugaste ${last.title} ${ago === "ahora" || ago === "ayer" ? ago : `hace ${ago}`}`].filter(Boolean).join(" · "),
     }));
     // Con el dedo, un toque basta: la píldora se enfoca y se aplica a la vez.
-    fillFilters(filters, FILTERS, { current: filter, targets, onPick: (t, id) => { focusId = id; onPick?.(t, id); } });
+    fillFilters(filters, filtersFor(consoleId), { current: filter, targets, onPick: (t, id) => { focusId = id; onPick?.(t, id); } });
     fitBar(bar, filters);
     mount(grid, games.length ? games.map((item, i) => {
       targets.set(`game:${i}`, { kind: "game", item, console: c });
@@ -117,18 +118,27 @@ export function createGames({ onFocus, onPick, onAction }) {
   /** La ficha de un juego: arte, logo, de dónde es, sus datos y A / X / Y. */
   function detail(item) {
     const extra = item.extra || {};
-    const runner = item.runners?.find((r) => r.id === item.runner)?.name;
+    // Con qué se abre, solo si hay de dónde elegir (con un solo emulador, «Nintendo Switch · Emu» no decía nada).
+    const runner = item.runners?.length > 1 ? item.runners.find((r) => r.id === item.runner)?.name : null;
     const alt = alternativeRunner(item);
     const g = options.glyphs;
     return {
       key: item.id, item, title: item.title, logo: extra.logo,
       art: item.hero || item.image, artKind: extra.hero_lowres ? "pixel" : !item.hero ? "poster" : null,
-      platform: { icon: systemIconName(item), text: [item.subtitle, runner].filter(Boolean).join(" · ") },
+      // Sin arte de fondo propio: la foto de su consola sobre su color (como su portada de respaldo), no el genérico.
+      standIn: extra.placeholder_hero && SYSTEMS[systemOf(item)]?.photo
+        ? { photo: `img/consoles/${SYSTEMS[systemOf(item)].photo}`, glow: systemColor(systemOf(item)) } : null,
+      // Bajo el logo, como la ficha de una película: año, géneros y quién lo hizo.
+      facts: [extra.year, genres(extra.genres || []).slice(0, 2).join(", "), extra.developer].filter(Boolean),
+      favorite: !!item.favorite,
+      platform: { icon: systemIconName(item), mark: platformMark(item), text: [item.subtitle, extra.port ? "Versión para PC" : runner].filter(Boolean).join(" · ") },
       stats: [
         ["Última vez", item.last_played ? lastPlayed(item.last_played).replace(/^Jugado /, "") : item.playtime >= 60 ? null : "Sin jugar"],
         ["Jugado", item.playtime >= 60 ? duration(item.playtime) : null],
         ["Jugadores", extra.players ? (Number(extra.players) > 1 ? `1 a ${extra.players}` : "1") : null],
-        ["Año", extra.year],
+        // Steam: si se juega con mando y cuánto ocupa (lo de consola siempre es con mando y no se mide).
+        ["Mando", { full: "Completo", partial: "Parcial" }[extra.controller] ?? null],
+        ["En disco", item.category === "steam" ? bytes(extra.size) : null],
       ],
       description: extra.description,
       actions: [
@@ -148,6 +158,7 @@ export function createGames({ onFocus, onPick, onAction }) {
       else if (!node.classList.contains("rail__item--current")) node.removeAttribute("aria-current");
     }
     const target = targets.get(focusId);
+    if (focusId.startsWith("filter:")) showFilter(filters, filters.querySelector(`[data-focus-id="${focusId}"]`));
     if (target?.kind === "game") memory[consoleId] = target.item.id;
     // Aún sin juego enfocado (filtros, riel): la ficha del primero, nunca vacía.
     const shown = target?.kind === "game" ? target.item : games[0] ?? null;

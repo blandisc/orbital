@@ -39,7 +39,7 @@ import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
 import { curatedItem, GENRE_SHELVES, genreRows, nextAiring, spotlightRow } from "./core/curation.js";
-import { fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows } from "./core/media-plan.js";
+import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows } from "./core/media-plan.js";
 import { genres as genreNames } from "./core/format.js";
 import { trimmedLogo } from "./core/foryou.js";
 
@@ -62,6 +62,9 @@ const current = () => (inForYou() || inTv() ? null : inHome() ? ui.home.current?
   : inGames() ? ui.games.current?.item ?? null
     : itemAt(state.rows, state.focus.r, state.focus.c));
 const glyphs = () => GLYPHS[state.modality];
+// El atajo de Buscar se ve siempre, también tras tocar la pantalla: el del control (o teclado) que usaste antes. Antes, al
+// tocar «Películas y series» desaparecía y no volvía hasta picar un botón del mando.
+const searchGlyphs = () => ({ ...glyphs(), search: GLYPHS[state.modality === "touch" ? state.lastPhysical || "gamepad" : state.modality].search });
 
 // ---------------------------------------------------------------- componentes
 const ui = {
@@ -148,7 +151,8 @@ const ui = {
   }),
   tv: createTv({
     onFocus: () => tvFocused(),
-    onPick: (target, id) => (ui.tv.focusId === id ? tvActivate(target) : ui.tv.focus(id)),
+    // Una categoría cambia los canales al primer toque (antes el primero solo la marcaba y parecía trabada).
+    onPick: (target, id) => (ui.tv.focusId === id || target?.kind === "filter" ? (ui.tv.focus(id), tvActivate(target)) : ui.tv.focus(id)),
   }),
   traktLink: createTraktLink({
     onMove: () => sound.play("move"),
@@ -191,10 +195,13 @@ const ui = {
 // Con el dedo no hay botón B: en las vistas encima (buscar, ficha, fuentes, menú) aparece "Atrás".
 const touchBack = h("button", { class: "touch-back", type: "button", "aria-label": "Atrás", onClick: () => handleAction("back") },
   svg(ICONS.back), h("span", {}, "Atrás"));
+// …y en las pantallas de siempre, «Menú» abajo a la derecha (el pie con ☰ no se ve con el dedo; antes solo el logo lo abría).
+const touchMenu = h("button", { class: "touch-back touch-back--menu", type: "button", "aria-label": "Menú", onClick: () => handleAction("menu") },
+  svg(ICONS.menu), h("span", {}, "Menú"));
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.listScreen.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.listScreen.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -290,9 +297,9 @@ function reportUi() {
 }
 
 /** «Escribir» del control del iPhone: al campo con foco (la cuenta de Stremio o la búsqueda); sin campo, abre la búsqueda. */
-function remoteText(text, submit) {
-  if (ui.login.isOpen) for (const char of text) ui.login.type(char);
-  else if (ui.search.isOpen) for (const char of text) ui.search.type(char);
+function remoteText(text, submit, replace = false) {
+  if (ui.login.isOpen) replace ? ui.login.setText(text) : [...text].forEach((char) => ui.login.type(char));
+  else if (ui.search.isOpen) replace ? ui.search.setText(text) : [...text].forEach((char) => ui.search.type(char));
   else if (text) openSearch(text);
   if (submit) (ui.login.isOpen ? ui.login : ui.search).type(String.fromCharCode(10)); // Enter
   renderHints();
@@ -343,6 +350,7 @@ function renderHints() {
     groups: state.section === "media" && state.rows.some((row) => row.group),
     running: state.running?.managed ? state.running : null,
     rows: state.rows.length,
+    heroButtons: !!item, // el héroe enseña los botones de lo enfocado
   }));
 }
 
@@ -356,6 +364,7 @@ function setFocus(r, c, { silent = false, edge = null, repeat = false } = {}) {
   }
   state.focus = next;
   const rowId = state.rows[next.r]?.id;
+  if (rowId === "curated:because-seeds") chooseBecause(state.rows[next.r].items[next.c]?.seed);
   if (rowId) state.memory[rowId] = next.c;
   ui.shelf.setFocus(next.r, next.c);
   if (moved || silent) {
@@ -369,6 +378,17 @@ function setFocus(r, c, { silent = false, edge = null, repeat = false } = {}) {
   if (moved && !silent) sound.play("move");
   renderHints();
 }
+
+/** Diagnóstico de la entrada (entrada.log en la consola): se junta y se manda cada 2 s. Para encontrar de dónde salen
+ *  toques repetidos o un stick que «se pega» (lo que llega del mando, las teclas y lo que se disparó, con el foco). */
+const traced = [];
+function traceInput(entry) {
+  if (traced.length < 400) traced.push(entry);
+}
+setInterval(() => {
+  if (!traced.length) return;
+  api.traceInput(traced.splice(0)).catch(() => {});
+}, 2000);
 
 /** Lo que el héroe enseñará al moverte (logo y fondo de las vecinas y de la fila de abajo), pedido antes: así el título
  *  estilizado ya está cuando llegas (antes se pedía al enfocarlo y una serie nueva tardaba en verse). */
@@ -389,6 +409,7 @@ function preloadAround(r, c) {
 function setModality(modality) {
   if (state.modality === modality) return;
   state.modality = modality;
+  if (modality !== "touch") state.lastPhysical = modality;
   document.body.dataset.input = modality;
   storage.set("orbital.modality", modality);
   renderSections();
@@ -540,8 +561,17 @@ function renderGames() {
 }
 
 /** La ficha (dentro de Juegos) muestra el juego enfocado; el fondo toma su color (luz de ambiente). */
+/** Entraste a una consola en Juegos: su tarjeta de Inicio deja de anunciar lo nuevo. */
+function consoleOpened(id) {
+  const row = id && state.allRows.find((r) => r.id === id);
+  if (!row || !row.items.some((i) => i.new && (i.added ?? Infinity) > (row.opened ?? 0))) return;
+  row.opened = Date.now() / 1000;
+  api.consoleOpened(id).catch(() => {});
+}
+
 function gamesFocused(target) {
   if (!inGames()) return;
+  consoleOpened(ui.games.console?.id);
   const item = target?.item ?? target?.console?.last ?? null;
   if (item) ui.backdrop.show(item.hero || item.image || null);
   const node = document.querySelector(`.games [data-focus-id="${ui.games.focusId}"]`);
@@ -660,10 +690,16 @@ function homeActivate(target, action = "select") {
 
 // ---------------------------------------------------------------- datos
 function renderSections() {
-  ui.status.setSections(visibleSections(state.allRows), state.section, glyphs());
+  ui.status.setSections(visibleSections(state.allRows), state.section, searchGlyphs());
 }
 
 /** Cambia de sección (LB/RB) recordando dónde estabas en la que dejas. */
+/** Qué dice una sección vacía: Películas y series, mientras llega su curaduría, que está cargando. */
+function emptyFor(section, fallback = null) {
+  if (section === "media") return { emptyTitle: "Cargando películas y series…", emptyText: "La primera vez tarda unos segundos." };
+  return fallback ?? {};
+}
+
 function goToSection(id, direction = 0) {
   if (id === state.section) return;
   const list = visibleSections(state.allRows);
@@ -674,7 +710,7 @@ function goToSection(id, direction = 0) {
   state.section = id;
   state.rows = sectionRows(state.allRows, id);
   renderView();
-  ui.shelf.setRows(state.rows, { emptyTitle: "Nada por aquí todavía", emptyText: "" });
+  ui.shelf.setRows(state.rows, emptyFor(id, { emptyTitle: "Nada por aquí todavía", emptyText: "" }));
   const saved = state.sectionFocus[id] || {};
   const { r, c } = restoreFocus(state.rows, { rowId: saved.rowId, itemId: saved.itemId, r: 0, c: 0 });
   state.focus = { r: -1, c: -1 }; // fuerza a redibujar héroe y fondo
@@ -734,8 +770,8 @@ async function loadLibrary({ refresh = false, keepId = null } = {}) {
     renderSections();
     state.hidden = data.hidden || 0;
     ui.shelf.setRows(state.rows, {
-      emptyTitle: "Aún no encontré juegos",
-      emptyText: "Instala Steam o pon tus emuladores en Descargas, el Escritorio o C:\\Emuladores, y abre ☰ → Actualizar biblioteca.",
+      emptyTitle: state.section === "media" ? emptyFor("media").emptyTitle : "Aún no encontré juegos",
+      emptyText: state.section === "media" ? emptyFor("media").emptyText : "Instala Steam o pon tus emuladores en Descargas, el Escritorio o C:\\Emuladores, y abre ☰ → Actualizar biblioteca.",
       popId: state.popId,
     });
     state.popId = null;
@@ -781,6 +817,24 @@ let yearsLoaded = 0;
 let mediaFilter = storage.get("orbital.media.filter", "all"); // ☰ › Mostrar: Todo · Series · Películas
 const MEDIA_FILTERS = [["all", "Todo"], ["series", "Series"], ["movie", "Películas"]];
 
+// «Porque viste»: el que elegiste con X se queda hasta mañana (luego vuelve el del día, que ya es otro).
+const today = () => new Date().toLocaleDateString("sv");
+const becauseChoice = () => { const c = storage.get("orbital.because", null); return c?.day === today() ? c.imdb : null; };
+
+/** «Porque viste»: al enfocar otro de tus títulos en la fila de arriba, las sugerencias de abajo pasan a ser las suyas
+ * (un momento después de pararte: recorrer la fila no pide nada por cada uno). */
+let becauseTimer = 0;
+function chooseBecause(imdb) {
+  clearTimeout(becauseTimer);
+  if (!imdb || imdb === becauseSeed(mediaLists.find((l) => l.id === "because"), becauseChoice()).seed?.meta_id) return;
+  becauseTimer = setTimeout(async () => {
+    storage.set("orbital.because", { day: today(), imdb });
+    const { listId } = becauseSeed(mediaLists.find((l) => l.id === "because"), imdb);
+    if (!mediaItems[keyOf(listId, null)]) mediaItems[keyOf(listId, null)] = await fetchList(listId, null);
+    buildCuration();
+  }, 350);
+}
+
 const fetchList = async (id, kind) => (await api.forYouList(id, kind).catch(() => ({ items: [] }))).items || [];
 async function fetchMany(wanted, into = mediaItems) {
   const queue = [...wanted];
@@ -804,6 +858,8 @@ async function loadCuration() {
     try {
       mediaLists = ((await api.forYou()).lists || []).filter((l) => l.group !== "games");
       const wanted = fetchPlan(mediaLists);
+      const chosen = becauseSeed(mediaLists.find((l) => l.id === "because"), becauseChoice()).listId;
+      if (chosen !== "because") wanted.push({ id: chosen, kind: null }); // el que elegiste hoy con X
       await fetchMany(wanted.filter((w) => !LATER(w)));
       buildCuration();
       await fetchMany(wanted.filter(LATER));
@@ -826,7 +882,7 @@ function buildCuration() {
   const spot = mediaLists.filter((l) => l.id === "chart:netflix" || l.id.startsWith("jw:") || (l.brand && l.source === "TMDB"));
   const spotlight = spotlightRow(spot, Object.fromEntries(spot.map((l) => [l.id, itemsOf(mediaItems, l)])));
   const genres = genreRows(mediaGenres)[0];
-  applyCuration([...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears }),
+  applyCuration([...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice() }),
     ...(genres?.id === "curated:genres" ? [{ ...genres, group: "genres" }] : [])]);
 }
 
@@ -926,8 +982,25 @@ setInterval(() => {
   setFocus(state.focus.r, (state.focus.c + 1) % row.items.length, { silent: true });
 }, 1000);
 
+/** B en la pantalla de carga: se cierra lo que se estaba abriendo. Si aún no arrancaba (buscando la fuente de un video,
+ * el emulador cargando), se cierra en cuanto aparezca: durante un minuto, eso que cancelaste no se queda abierto. */
+function cancelLaunch() {
+  const title = ui.launch.title || state.launchingTitle;
+  state.cancelled = state.launchingId ? { id: state.launchingId, until: Date.now() + 60_000 } : null;
+  state.launchingTitle = null;
+  state.launchLockedUntil = 0;
+  ui.launch.hide();
+  sound.play("back");
+  api.stop().catch(() => {});
+  ui.toast.show(title ? `Cancelé ${title}` : "Cancelado");
+}
+
 /** Lo que está abierto: llega solo por SSE ("status") al cambiar; se pregunta tras abrir o cerrar algo. */
 function applyStatus(running) {
+  if (running && state.cancelled && running.id === state.cancelled.id && Date.now() < state.cancelled.until) {
+    state.cancelled = null; // lo que cancelaste terminó de arrancar: se cierra
+    api.stop().catch(() => {});
+  }
   const changed = running?.id !== state.running?.id;
   state.running = running;
   ui.status.setRunning(running);
@@ -1117,7 +1190,7 @@ async function runCommand(command, context = null) {
       case "mylist":
         await api.setInLibrary(command.kind, command.metaId, command.add);
         sound.play("select");
-        ui.toast.show(command.add ? `${command.title} está en Mi lista` : `Quité ${command.title} de Mi lista`);
+        ui.toast.show(command.add ? `Guardé ${command.title} en Mi lista` : `Quité ${command.title} de Mi lista`);
         return loadLibrary();
       case "dismiss":
         await api.dismiss(command.id);
@@ -1361,9 +1434,17 @@ async function undoHide(undo = state.undoHide) {
   }
 }
 
+let holdTimer = 0;
 function handleAction(action, { repeat = false } = {}) {
   // Con el planeta en pantalla no se ve nada: un Enter abría un juego (o el menú) a ciegas.
   if (boot.blocking) return;
+  // Mantener una flecha: las filas se deslizan más rápido para seguirle el paso (antes el foco avanzaba cada 60 ms y la
+  // animación duraba 360: se veía arrastrado). base.css: body[data-holding].
+  if (repeat) {
+    document.body.dataset.holding = "";
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => { delete document.body.dataset.holding; }, 260);
+  }
   if (saver.wake()) return; // con el protector de pantalla, el primer botón solo lo quita
   spotlightIdle = Date.now(); // el carrusel de Destacados espera mientras te mueves
   // Y justo después de ocultar algo: deshacer (si no hay un menú u otra vista encima).
@@ -1375,12 +1456,10 @@ function handleAction(action, { repeat = false } = {}) {
     return openMenu(mainMenu({ running: state.running, hiddenCount: state.hidden, canExit: state.canExit, alexa: state.alexa }));
   }
   if (ui.launch.visible) {
-    if (action === "back") { // B: no esperar más (muestra ya el juego o lo que haya)
-      if (ui.launch.holding) api.reveal().catch(() => {});
-      else if (state.launchingTitle) ui.toast.show(`Sigo buscando ${state.launchingTitle}: se abrirá solo`);
-      ui.launch.hide();
+    if (action === "back") { // B: cancelar, por si lo abriste sin querer (antes solo escondía la pantalla y se abría igual)
+      cancelLaunch();
     } else if (action === "select") {
-      sound.play("error"); // A no hace nada aquí: que se note (la pantalla dice «B Ocultar»)
+      sound.play("error"); // A no hace nada aquí: que se note (la pantalla dice «B Cancelar»)
       rumble("edge");
     }
     return;
@@ -1516,7 +1595,7 @@ function handleEvent(event) {
   }
   if (event.type === "launch-ready") return ui.launch.reveal();
   if (event.type === "input") return handleAction(event.action); // el control remoto del iPhone, como el mando
-  if (event.type === "text") return remoteText(String(event.text || ""), !!event.submit);
+  if (event.type === "text") return remoteText(String(event.text || ""), !!event.submit, !!event.replace);
   if (event.type === "settings") return event.settings && applySettings(event.settings);
   if (event.type === "health") { // memoria casi llena
     // Con la ventana tapada (un juego o un video encima) no sale nada: ni sonido ni repintado, que
@@ -1602,6 +1681,7 @@ createInput({
   // Conectar Stremio no borra por palabras (es un correo o una contraseña): ahí Retroceso mantenido sigue de letra en letra.
   onText: (char) => { (ui.login.isOpen ? ui.login.type(char === ERASE_WORD ? "" : char) : ui.search.type(char)); renderHints(); }, // Enter salta a resultados: «Abrir»
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
+  onTrace: (entry) => traceInput(entry),
 });
 // Protector de pantalla (Ajustes › Pantalla y sonido): tras un rato sin tocar nada, el mosaico de Para ti a pantalla
 // completa, solo con la hora (como el de Game Glance, con tus juegos y películas). Nunca con un juego o un video al frente

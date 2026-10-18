@@ -77,20 +77,34 @@ const heroOf = (first, eyebrow) => ({ image: first?.hero || first?.image, hero: 
  * Las filas de la sección, en el orden del iPhone. `filter`: "all" | "series" | "movie" (☰ › Mostrar).
  * Cada fila lleva `group` (Ir a…, LT/RT) y, si es de tarjetas, `cards`; las generales, su `seal`.
  */
-export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = {} } = {}) {
+/** «Porque viste»: el título de hoy, o el que elegiste con X (si es de tus últimos cinco), y la lista de sus parecidos. */
+export function becauseSeed(because, chosen = null) {
+  const seeds = because?.seeds?.length ? because.seeds : because?.seed ? [because.seed] : [];
+  const picked = chosen && chosen !== because?.seed?.meta_id ? seeds.find((s) => s.meta_id === chosen) : null;
+  return picked ? { seed: picked, listId: `because:${picked.meta_id}`, seeds } : { seed: because?.seed || null, listId: "because", seeds };
+}
+
+export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = {}, becauseChoice = null } = {}) {
   const byId = Object.fromEntries(lists.filter((l) => l?.id).map((l) => [l.id, l]));
   const rows = [];
-  const plain = (id, title, items, extra) => { if (items.length) rows.push({ id: `curated:${id}`, title, items: items.slice(0, 20).map(curatedItem), ...extra }); };
+  // El rótulo de cada título no repite el nombre de su fila (en «En tendencia», cada tarjeta decía «En tendencia»).
+  const inRow = (title) => (item) => curatedItem(item, { rowTitle: title });
+  const plain = (id, title, items, extra) => { if (items.length) rows.push({ id: `curated:${id}`, title, items: items.slice(0, 20).map(inRow(title)), ...extra }); };
 
   const because = byId.because;
   if (because?.seed) {
-    const related = itemsOf(itemsById, because, filter);
-    // Su propio fondo y su logo (antes el héroe enseñaba el fondo del primer relacionado y el nombre en texto).
-    const art = (kind) => `https://images.metahub.space/${kind}/medium/${because.seed.meta_id}/img`;
-    const seed = card("collection:because", because.seed.title, { type: "seed", name: because.seed.title, posters: [because.seed.image],
-      detail: "Lo último que viste" }, { meta_id: because.seed.meta_id, kind: because.seed.kind, image: art("background"), hero: art("background"),
-      extra: { eyebrow: "Porque viste", description: "", logo: art("logo") } });
-    if (related.length) rows.push({ id: "curated:because", title: because.title, seal: "trakt", group: "because", items: [seed, ...related.slice(0, 20).map(curatedItem)] });
+    // Como el iPhone («Mini pósters»): arriba tus últimos títulos para elegir de cuál (← → en la fila; cada día otro de los
+    // primeros cinco) y debajo lo que Trakt relaciona con el elegido, en su orden. El porqué es la semilla.
+    const { seed: s, listId, seeds } = becauseSeed(because, becauseChoice);
+    const related = itemsOf(itemsById, { ...because, id: listId }, filter).filter((i) => i.meta_id !== s.meta_id);
+    if (seeds.length > 1) {
+      rows.push({ id: "curated:because-seeds", title: "Porque viste", seal: "trakt", group: "because", seeds: true,
+        items: seeds.map((x) => ({ ...curatedItem({ meta_id: x.meta_id, kind: x.kind, title: x.title, image: x.image, why: "Viste hace poco" }),
+          id: `seed:${x.meta_id}`, seed: x.meta_id, chosen: x.meta_id === s.meta_id })) });
+    }
+    if (related.length) {
+      rows.push({ id: "curated:because", title: `Porque viste ${s.title}`, seal: "trakt", group: "because", items: related.slice(0, 15).map(curatedItem) });
+    }
   }
   for (const [id, seal] of [["recs", "trakt"], ["trend", "trakt"], ["popular", "trakt"], ["cinemeta", "stremio"]]) {
     if (byId[id]) plain(id, byId[id].title, itemsOf(itemsById, byId[id], filter), { seal, group: "general" });

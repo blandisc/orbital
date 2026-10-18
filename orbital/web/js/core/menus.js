@@ -41,7 +41,7 @@ export function gameMenu(item, { running = null, phone = false } = {}) {
   if (watch) {
     options.push(watch.in_library
       ? { icon: "check", label: "Quitar de Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: false, title: item.title } }
-      : { icon: "plus", label: "Añadir a Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: true, title: item.title } });
+      : { icon: "plus", label: "Guardar en Mi lista", command: { type: "mylist", kind: watch.kind, metaId: watch.meta_id, add: true, title: item.title } });
   }
   // Un video de Seguir viendo se puede llevar al iPhone (el episodio que sigue): solo si hay uno conectado.
   if (phone && !isOpen && watch) {
@@ -205,6 +205,10 @@ export function stopMenu({ title, runner }) {
  * Como se pierde lo no guardado, se pregunta; "Volver a…" va primero (A sin querer = nada se pierde).
  */
 export function switchMenu({ running, title, command }) {
+  // Lo que quieres abrir ya es lo que está abierto: solo volver a él (antes «¿Cerrar X? Para abrir X»).
+  if (running.title === title) {
+    return { title: `${title} ya está abierto`, options: [{ icon: "play", label: `Volver a ${title}`, command: { type: "resume" } }], cancel: { type: "close" } };
+  }
   return {
     title: `¿Cerrar ${running.title}?`,
     subtitle: `Para abrir ${title}. Lo que no hayas guardado se perderá.`,
@@ -442,7 +446,7 @@ const SETTING_PAGES = {
     ["sub_scale", "Letra de los subtítulos", null]] },
   display: { title: "Pantalla y sonido", icon: "display", hint: "Texto, márgenes, sonidos y vibración", options: [
     ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],
-    ["reduce_motion", "Reducir movimiento", null], ["voice_tips", "Frases para Alexa", null],
+    ["reduce_motion", "Reducir movimiento", null], ["voice_tips", "Frases para Alexa", "Ejemplos de qué decirle, en pantalla"],
     ["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null],
     ["screensaver_minutes", "Protector de pantalla", "El mosaico de Para ti tras ese rato sin usarla"]] },
   sessions: { title: "Juegos y videos", icon: "gamepad", hint: "Qué se cierra solo y cuándo", options: [
@@ -624,13 +628,15 @@ export function settingsPage(page, settings) {
     return {
       title: "Cuentas", crumb: "Cuentas",
       options: [
-        { icon: "trailer", label: "Stremio", value: settings.stremio_linked ? "Conectada" : "Conectar",
+        { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: settings.stremio_linked ? "✓ Conectada" : "Conectar",
+          ok: !!settings.stremio_linked,
           command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
           hint: settings.stremio_linked ? "Seguir viendo y fuentes" : "Para películas y series" },
-        settings.trakt?.configured ? { icon: "spark", label: "Trakt", value: settings.trakt.linked ? "Conectada" : "Conectar",
+        settings.trakt?.configured ? { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: settings.trakt.linked ? "✓ Conectada" : "Conectar",
+          ok: !!settings.trakt.linked,
           command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
           hint: settings.trakt.linked ? scrobbleHint(settings.trakt.scrobble) : "Listas y recomendaciones" }
-          : settings.trakt && { icon: "spark", label: "Trakt", value: "Configurar", hint: "Primero, la aplicación de Trakt",
+          : settings.trakt && { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: "Configurar", hint: "Primero, la clave de Trakt (abajo)",
             command: { type: "keys", service: "trakt" } },
         phoneRow(settings.companion_seen),
         settings.para_ti && { heading: true, label: "Claves de Para ti" },
@@ -657,7 +663,7 @@ export function settingsPage(page, settings) {
  */
 export const KEY_FORMS = {
   tmdb: {
-    service: "tmdb", label: "TMDB", icon: "movie", hint: "Plataformas y sinopsis en español",
+    service: "tmdb", label: "TMDB", icon: "movie", mark: "img/ratings/tmdb.svg", hint: "Plataformas y sinopsis en español",
     title: "Clave de TMDB", submitLabel: "Guardar",
     lead: "En themoviedb.org crea una cuenta, entra a Ajustes › API, pide una clave (uso personal) y copia la «Clave de la API».",
     fields: [{ name: "key", label: "Clave de la API de TMDB", secret: true }],
@@ -669,8 +675,8 @@ export const KEY_FORMS = {
     fields: [{ name: "key", label: "Clave de RAWG", secret: true }],
   },
   trakt: {
-    service: "trakt", label: "Aplicación de Trakt", icon: "spark", hint: "Tendencias, tus listas y recomendaciones",
-    title: "Aplicación de Trakt", submitLabel: "Guardar",
+    service: "trakt", label: "Clave de Trakt", icon: "spark", mark: "img/ratings/trakt.svg", hint: "Para conectar Trakt: tendencias, tus listas y recomendaciones",
+    title: "Clave de Trakt", submitLabel: "Guardar",
     lead: "En developer.trakt.tv crea una aplicación (en «Redirect URIs» escribe https://localhost; lo demás puede quedar vacío) y copia su Client ID. Las aplicaciones nuevas no tienen Client Secret: déjalo vacío.",
     fields: [{ name: "id", label: "Client ID", secret: false }, { name: "secret", label: "Client Secret (si tu aplicación tiene)", secret: true, optional: true }],
   },
@@ -682,18 +688,18 @@ export function phoneRow(seen, now = Date.now()) {
   const fresh = Number(seen) > 0 && now / 1000 - Number(seen) < 60 * 86400;
   if (!fresh) return { icon: "phone", label: "iPhone", value: "Conectar", hint: "Con un código QR", command: { type: "phone-link" } };
   const ago = shortAgo(seen, now);
-  return { icon: "phone", label: "iPhone", value: "Conectado", command: { type: "phone-link" },
+  return { icon: "phone", label: "iPhone", value: "✓ Conectado", ok: true, command: { type: "phone-link" },
     hint: ago === "ahora" ? "Lo usaste ahora" : ago === "ayer" ? "Lo usaste ayer" : `Lo usaste hace ${ago}` };
 }
 
-/** Un renglón de Cuentas: «Agregar» o «Lista» (escrita aquí: cambiar o quitar; o en config.yaml: se puede escribir otra).
+/** Un renglón de Cuentas: «Agregar» o «✓ Guardada» (escrita aquí: cambiar o quitar; o en config.yaml: se puede escribir otra).
  *  Antes decía «En config.yaml», que no le dice nada a quien no lo armó. */
 function keyRow(service, status) {
   const form = KEY_FORMS[service];
   const ready = service === "trakt" ? !!status.trakt?.configured : !!status[service];
   const saved = (status.saved || []).includes(service);
-  return { icon: form.icon, label: form.label, hint: form.hint,
-    value: saved || ready ? "Lista" : "Agregar",
+  return { icon: form.icon, mark: form.mark, label: form.label, hint: form.hint,
+    value: saved || ready ? "✓ Guardada" : "Agregar", ok: saved || ready,
     command: saved ? { type: "keys-menu", service } : { type: "keys", service } };
 }
 
@@ -820,6 +826,10 @@ function gameRows(legion) {
       ["Panel rápido", "Mantén Home + LB"], ["Captura", "Mantén Home + RB"]];
 }
 
+/** Con teclado: Ctrl + Inicio es el Home de la consola (atajo global, orbital/hotkey.py), aunque el juego tenga el foco. */
+const KEYBOARD_ROWS = [["Ir a Orbital · volver al juego", "Ctrl + Inicio"], ["Video en pequeño", "Ctrl + Inicio"],
+  ["Cerrar lo abierto", "Ctrl + Inicio, luego M → Cerrar"], ["Abrir · atrás", "Enter · Esc"], ["Buscar", "S"], ["Menú", "M"]];
+
 export const SHORTCUTS = {
   orbital: [["Abrir", "A"], ["Atrás", "B"], ["Opciones", "Y"], ["Otro emulador o la ficha", "X"],
     ["Cambiar de sección", "LB / RB"], ["Buscar", "Vista ⧉"], ["Menú", "☰"]],
@@ -834,8 +844,10 @@ export function controlsMenu(controllers = []) {
   const section = (title, rows) => [{ heading: true, label: title }, ...rows.map(([label, value]) => row(label, value))];
   return {
     title: "Cómo se usa", crumb: "Cómo se usa",
-    options: [...section("En un juego", gameRows(legion)), ...section("En Orbital", SHORTCUTS.orbital),
-      ...section("Viendo algo", SHORTCUTS.player),
+    // Sin mando conectado, lo del teclado va primero (y Ctrl + Inicio es su Home).
+    options: [...(controllers.length ? [] : section("Con teclado", KEYBOARD_ROWS)),
+      ...section("En un juego", gameRows(legion)), ...section("En Orbital", SHORTCUTS.orbital),
+      ...section("Viendo algo", SHORTCUTS.player), ...(controllers.length ? section("Con teclado", KEYBOARD_ROWS) : []),
       // La guía de 5 pasos existía pero nada la abría.
       { icon: "play", label: "Guía paso a paso", hint: "Lo esencial en 5 pantallas", command: { type: "tour", step: 0 } }],
   };

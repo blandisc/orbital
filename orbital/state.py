@@ -38,7 +38,9 @@ class State:
         self._lock = threading.Lock()
         # "dismissed": sugerencias de «Para ti» que dijiste «No me interesa» (clave → cuándo).
         # "inbox": lo que la TV le manda al iPhone y él aún no recoge (id → pendiente; ver companion.py).
-        self._data: dict = {"history": {}, "prefs": {}, "settings": {}, "seen": {}, "dismissed": {}, "inbox": {}}
+        # "opened": cuándo entraste por última vez a cada consola (fila → cuándo): lo nuevo deja de anunciarse.
+        self._data: dict = {"history": {}, "prefs": {}, "settings": {}, "seen": {}, "dismissed": {}, "inbox": {},
+                            "opened": {}}
         self._frozen = False  # no se pudo leer el archivo: se vive en memoria y NO se pisa
         if path and path.exists():
             self._load(path)
@@ -141,6 +143,16 @@ class State:
             for item_id in fresh:
                 seen[item_id] = 0 if first_run else (now or time.time())
             self._save()
+
+    def mark_opened(self, row_id: str, now: float | None = None) -> None:
+        """Entraste a esa consola: lo que llegó antes ya no cuenta como «nuevo» en su tarjeta."""
+        with self._lock:
+            self._data["opened"][row_id[:80]] = now or time.time()
+            self._save()
+
+    def opened(self, row_id: str) -> float:
+        with self._lock:
+            return self._data["opened"].get(row_id, 0)
 
     def first_seen(self, item_id: str) -> float | None:
         with self._lock:

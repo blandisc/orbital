@@ -129,6 +129,7 @@ def test_now_playing_formats_the_episode_label(library):
 def test_now_playing_live_channel_has_no_progress(library):
     _play_channel(library)
     now = companion.now_playing(library)
+    now.pop("tracks")
     assert now == {"kind": "tv", "live": True, "channel": "Canal 2", "title": "Canal 2", "number": 2,
                    "category": "Noticias", "paused": False, "muted": False, "logo": "/api/tv/logo?id=c2"}
 
@@ -201,6 +202,61 @@ def test_control_player_next_channel_zaps(library, monkeypatch):
     assert calls == [("c3", "todos")]
     companion.control_player(library, "previous")
     assert calls[-1] == ("c1", "todos")
+
+
+def test_now_playing_lists_the_audio_and_subtitle_tracks(library):
+    _play_movie(library)
+    tracks = companion.now_playing(library)["tracks"]
+    assert [(t["id"], t["lang"], t["selected"]) for t in tracks["audio"]] == [(1, "eng", True), (2, "spa", False)]
+    assert tracks["subtitles"][0] == {"id": 1, "label": "Inglés", "lang": "eng", "selected": True}
+
+
+def test_the_iphone_cycles_subtitles_through_none_and_picks_a_track(library):
+    p, mpv = _play_movie(library)
+    companion.control_player(library, "subtitles")  # inglés → español (forzados)
+    assert ("set_property", "sid", 2) in mpv.sent
+    companion.control_player(library, "audio", track=2)
+    assert ("set_property", "aid", 2) in mpv.sent
+    companion.control_player(library, "subtitles", track="no")
+    assert ("set_property", "sid", "no") in mpv.sent
+    with pytest.raises(ValueError):
+        companion.control_player(library, "audio", track=9)
+
+
+def test_live_tv_changes_channel_and_opens_the_guide_from_the_iphone(library, monkeypatch):
+    p, _ = _play_channel(library)
+    calls, guide = [], []
+    monkeypatch.setattr(library.tv, "guide", lambda meta, category=None: {
+        "category": "todos", "channels": [{"id": "c1", "current": False}, {"id": "c2", "current": True}]})
+    monkeypatch.setattr(library.tv, "tune", lambda meta, cid, category=None: calls.append(cid) or True)
+    monkeypatch.setattr(p, "open_channels", lambda category=None: guide.append(True))
+    companion.control_player(library, "channel_up")
+    companion.control_player(library, "guide")
+    assert calls == ["c1"] and guide == [True]
+    _play_movie(library)
+    with pytest.raises(ValueError):
+        companion.control_player(library, "channel_down")
+
+
+def test_with_the_player_in_front_the_iphone_sees_the_player_legend(library):
+    p, _ = _play_episode(library)
+    p.on_episode = lambda meta, step: None
+    shell = SimpleNamespace(win=SimpleNamespace(foreground=lambda: 99), is_orbital=lambda hwnd: False)
+    ui = companion.ui_state(library, shell, {"screen": "home", "text_field": True, "legend": {"alt": "Buscar"}})
+    assert ui["screen"] == "player" and ui["text_field"] is False
+    assert ui["legend"]["alt"] == "Audio y subtítulos" and ui["legend"]["pageright"] == "Episodio siguiente"
+    _play_channel(library)
+    ui = companion.ui_state(library, shell, {"screen": "home"})
+    assert ui["screen"] == "live" and ui["legend"]["up"] == "Canal siguiente"
+    orbital_front = SimpleNamespace(win=SimpleNamespace(foreground=lambda: 1), is_orbital=lambda hwnd: True)
+    assert companion.ui_state(library, orbital_front, {"screen": "home"}) == {"screen": "home"}
+
+
+def test_text_can_replace_the_whole_field(library):
+    events = []
+    library.events.publish = events.append
+    companion.remote_text(library, "hola mundo", False, replace=True)
+    assert events == [{"type": "text", "text": "hola mundo", "submit": False, "replace": True}]
 
 
 def test_control_player_unknown_action_is_rejected(library):

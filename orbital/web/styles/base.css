@@ -27,7 +27,11 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-body[data-input="gamepad"] { cursor: none; }
+/* Manteniendo una flecha (main.js): todo lo que se desliza va al paso de la repetición. */
+body[data-holding] { --duration-slow: var(--duration-fast); }
+
+/* El cursor solo mientras se mueve el ratón (input.js pone data-pointer y lo quita a los 3 s); también sobre botones. */
+body:not([data-pointer]), body:not([data-pointer]) * { cursor: none; }
 
 button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
 
@@ -70,7 +74,11 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 .icon--fill { fill: currentColor; stroke: none; }
 
 /* Pantalla táctil (Legion Go sin dock): sin glifos de botones ni pie de controles; botón Atrás a mano. */
-[data-input="touch"] .glyph, [data-input="touch"] .status-bar__search-glyph { display: none; }
+[data-input="touch"] .glyph { display: none; }
+/* El atajo de Buscar, siempre: con el dibujo del mando (disco y aro), no como tecla de teclado (se veía crudo). */
+[data-input="touch"] .status-bar__search-glyph .glyph {
+  display: inline-grid; border-radius: var(--radius-pill); background: var(--glyph-bg); box-shadow: inset 0 0 0 1.5px var(--glyph-ring);
+}
 [data-input="touch"] .hints { visibility: hidden; }
 .touch-back {
   position: fixed; left: var(--page-gutter); bottom: var(--space-5); z-index: calc(var(--z-launch) + 1);
@@ -81,6 +89,12 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 }
 .touch-back svg { width: 1.3rem; height: 1.3rem; }
 [data-input="touch"][data-overlay="true"] .touch-back { display: inline-flex; animation: fade-in var(--duration-base) var(--ease-out); }
+/* «Menú», abajo a la derecha, solo sin nada encima (con una vista encima va «Atrás»). */
+.touch-back--menu { left: auto; right: var(--page-gutter); }
+/* En la ficha de una película o serie, «Atrás» arriba a la izquierda (como el iPhone): abajo caía sobre sus botones. */
+body:has(.title:not([hidden])) .touch-back:not(.touch-back--menu) { top: calc(var(--space-5) + var(--safe-y, 0px)); bottom: auto; }
+[data-input="touch"][data-overlay="true"] .touch-back--menu { display: none; }
+[data-input="touch"]:not([data-overlay="true"]) .touch-back--menu { display: inline-flex; }
 /* Dedos: objetivos de al menos ~44 px. */
 [data-input="touch"] .button, [data-input="touch"] .status-bar__tab, [data-input="touch"] .sheet__item,
 [data-input="touch"] .status-bar__search, [data-input="touch"] .assistant, [data-input="touch"] .title__tab { min-height: 2.9rem; }

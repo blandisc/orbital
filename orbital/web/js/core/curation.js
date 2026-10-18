@@ -8,9 +8,12 @@ const BRAND_FALLBACK = new Set(["netflix", "disney", "hbo", "prime", "appletv", 
 
 const KIND_LABEL = { movie: "Película", series: "Serie" };
 
-/** Una sugerencia de Para ti con la forma de un título del catálogo: la tarjeta, la ficha (X) y el héroe la entienden. */
-export function curatedItem(item) {
+/** Una sugerencia de Para ti con la forma de un título del catálogo: la tarjeta, la ficha (X) y el héroe la entienden.
+ * `rowTitle`: el nombre de la fila donde va; su porqué («En tendencia») no se repite si es el mismo. */
+export function curatedItem(item, { rowTitle = null } = {}) {
   const kind = item.kind === "series" ? "series" : "movie";
+  const fold = (text) => String(text || "").toLowerCase().split(" · ")[0].trim();
+  const why = item.why && !(rowTitle && fold(rowTitle).startsWith(fold(item.why))) ? item.why : undefined;
   return {
     id: `cinemeta:${kind}:${item.meta_id}`, title: item.title, source: "cinemeta", kind, meta_id: item.meta_id,
     image: item.image, hero: item.hero, rank: item.rank ?? undefined, trend: item.trend ?? undefined,
@@ -18,7 +21,7 @@ export function curatedItem(item) {
     year: item.year ?? undefined, rating: item.rating ?? undefined, genres: item.genres ?? undefined,
     award_year: item.award_year ?? undefined, day_label: item.day_label ?? undefined,
     subtitle: [KIND_LABEL[kind], item.year].filter(Boolean).join(" · "),
-    extra: { kind, meta_id: item.meta_id, year: item.year, description: item.overview || "", logo: item.logo, eyebrow: item.why || undefined },
+    extra: { kind, meta_id: item.meta_id, year: item.year, description: item.overview || "", logo: item.logo, eyebrow: why },
   };
 }
 

@@ -17,14 +17,13 @@ import difflib
 import json
 import logging
 import os
-import sys
 import threading
 import time
 from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import quote
 
-from . import music, player
+from . import player
 from .config import Config, expand
 from .credentials import Credentials
 from .events import EventBus
@@ -35,6 +34,7 @@ from .library import cinemeta, detect, emulators, esde, geforcenow, steam, steam
 from .library.media import KINDS, MediaStore, low_res, placeholder
 from .library.models import LibraryItem
 from .library.scraper import Scraper, Target
+from .library_watch import NAMES_ONLY, LibraryWatcher
 from .sessions import QUICK_EXIT, Sessions  # noqa: F401
 from .state import State
 from .store import ItemStore
@@ -343,10 +343,14 @@ class Catalog:
             in_cloud = {str(i.steam_appid) for i in gfn_games if i.steam_appid}  # ya en GeForce NOW: no repetido en Steam
         else:
             in_cloud = set()
-        # El resto de tu cuenta de Steam sin instalar (los que la tienda dice que son juegos): con «Instalar».
+        # Todo lo de tu cuenta de Steam sin instalar (los que la tienda dice que son juegos) también está en Steam, con
+        # «Instalar»: lo que se juega en la nube sigue además en GeForce NOW (antes solo ahí, y «Papers, Please» parecía
+        # no estar en tu Steam).
         for appid in self._steam_owned:
-            if appid not in cloud and appid not in in_cloud and (name := self.steam_store.game_name(appid)):
-                found.append(steam.uninstalled_item(appid, name))
+            playable = appid in cloud or appid in in_cloud
+            name = (cloud.get(appid) or {}).get("title") if appid in cloud else None
+            if (name := name or self.steam_store.game_name(appid)) and steam._is_game(appid, name):
+                found.append(steam.uninstalled_item(appid, name, cloud=playable))
         for app in self.config.apps:
             is_uri = "://" in app.target
             found.append(
@@ -359,12 +363,6 @@ class Catalog:
                     argv=[] if is_uri else [app.target, *app.args],
                 )
             )
-        if sys.platform == "win32" and not any(a.id == "applemusic" for a in self.config.apps):
-            installed = music.apple_music_installed()
-            found.append(LibraryItem(
-                id="app:applemusic", title="Apple Music", category="apps", source="app",
-                subtitle="Música" if installed else "Instalar desde Microsoft Store",
-                uri=music.APPLE_MUSIC_URI if installed else music.APPLE_MUSIC_STORE))
         found += self.watch.stremio_items
         found += self.watch.cinemeta_items
         for item in found:
@@ -391,6 +389,8 @@ class Catalog:
         self.state.mark_seen([i.id for i in found if i.category in ("emulators", "steam")])
         self.store.replace(found)
         self._save_snapshot(found)
+        if self.library_watch is not None:
+            self.library_watch.accept()  # lo que hay ahora ya está escaneado: el vigilante no lo vuelve a pedir
         log.info("Catálogo: %d elementos", len(found))
         self.warm_covers()
         self.scrape_art(background=True)
@@ -431,6 +431,32 @@ class Catalog:
                 targets.append(Target(item.system, item.media_key, item.title, kinds))
         return targets
 
+    # --- juegos nuevos con Orbital abierto (library_watch.py) ------------------
+    library_watch: LibraryWatcher | None = None  # el vigilante de carpetas (solo en la Orbital de verdad: server.py lo arranca)
+
+    def watched_folders(self) -> list[tuple[Path, bool | str]]:
+        """Las carpetas donde aparecen juegos: las de cada emulador (con subcarpetas si el emulador las recorre) y las de
+        Steam (sus appmanifest: un juego recién instalado)."""
+        out: list[tuple[Path, bool | str]] = []
+        for emu in self.emulators:
+            out += [(d, bool(emu.recursive)) for d in emulators.rom_dirs(emu, self.esde)]
+        if self.steam_root:
+            out += [(f, NAMES_ONLY) for f in steam.library_folders(self.steam_root)]
+        return out
+
+    def rescan_for_new(self) -> list[LibraryItem]:
+        """Algo cambió en las carpetas de juegos: vuelve a buscar (con su portada, logo y datos) y avisa a la tele con el
+        nombre de lo que llegó. Devuelve los juegos nuevos."""
+        before = {i.id for i in self.store.all()}
+        self.refresh()
+        new = [i for i in self.store.all() if i.id not in before and i.category in ("emulators", "steam")]
+        self.notify({"type": "library-changed"})
+        if new:
+            names = ", ".join(i.title for i in new[:3]) + (f" y {len(new) - 3} más" if len(new) > 3 else "")
+            log.info("Juegos nuevos: %s", names)
+            self.notify({"type": "toast", "message": f"Nuevo en tu biblioteca: {names}"})
+        return new
+
     def scrape_art(self, background: bool = False) -> int:
         """Busca el arte que falte; si consiguió algo, vuelve a escanear para mostrarlo."""
         if not self.config.art.scrape:
@@ -459,6 +485,7 @@ class Catalog:
         if added:
             log.info("Scraper: %d imágenes nuevas", added)
             self.refresh()
+            self.notify({"type": "library-changed"})  # la tele enseña la portada nueva (antes, hasta recargar)
         return added
 
     def replace_art(self, item_id: str, kind: str) -> bool:
@@ -558,8 +585,9 @@ class Catalog:
                     games = [i for i in items if i.category == "emulators" and i.source == emu.id]
                     if games:
                         with_games.add(emu.system or emu.id)
-                        rows.append({"id": f"emulators:{emu.id}", "title": emu.name,
-                                     "items": [self.describe(i) for i in games]})
+                        row_id = f"emulators:{emu.id}"
+                        rows.append({"id": row_id, "title": emu.name, "items": [self.describe(i) for i in games],
+                                     "opened": self.state.opened(row_id)})
                     elif emu.system and emulators.executable_found(emu):
                         folder = emulators.rom_dirs(emu, self.esde)
                         empty.append({"id": f"emulators:{emu.id}", "title": emu.name, "items": [], "empty": True,
@@ -573,7 +601,7 @@ class Catalog:
             else:
                 members = [i for i in items if i.category == cat["id"]]
             if members:
-                rows.append({**cat, "items": [self.describe(i) for i in members]})
+                rows.append({**cat, "items": [self.describe(i) for i in members], "opened": self.state.opened(cat["id"])})
         return rows
 
     def grouped_items(self, row_id: str) -> list[LibraryItem]:

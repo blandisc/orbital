@@ -239,3 +239,19 @@ def test_foryou_details_and_dismiss_by_tunnel_need_a_token_and_hide_games(public
     assert public_foryou.post("/api/foryou/dismiss", json={"key": "video:tt0386676"}).status_code == 401
     assert public_foryou.post("/api/foryou/dismiss", json={"key": "video:tt0386676"}, headers=auth).json() == {"ok": True}
     assert public_foryou.post("/api/foryou/dismiss", json={"key": "nope"}, headers=auth).status_code == 422
+
+
+def test_the_interface_input_trace_lands_in_entrada_log(library, tmp_path):
+    """Diagnóstico: lo que llega del mando a la interfaz y lo que se disparó, para encontrar toques repetidos."""
+    import json as _json
+
+    from fastapi.testclient import TestClient
+
+    from orbital import input_log
+    from orbital.server import create_app
+
+    with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 5000)) as c:
+        entries = [{"src": "pad", "i": 0, "pressed": [1], "focus": False}, {"src": "action", "from": "pad", "action": "back"}]
+        assert c.post("/api/ui/trace", json={"entries": entries}).json() == {"ok": True}
+    lines = [_json.loads(x) for x in input_log.default_path().read_text(encoding="utf-8").splitlines()]
+    assert [x["src"] for x in lines] == ["pad", "action"] and lines[0]["from"] == "ui" and lines[0]["focus"] is False

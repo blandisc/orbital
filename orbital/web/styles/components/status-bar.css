@@ -75,7 +75,9 @@
 }
 /* .1em abajo: el centro óptico de la palabra con el ícono (sin él quedaba baja). */
 .status-bar__tab-label > span { min-width: 0; overflow: hidden; padding-bottom: .1em; }
-.status-bar__tab:hover { color: var(--color-text); }
+/* Al pasar el ratón, la que no está activa se aclara; la activa conserva su tinta oscura sobre la píldora blanca (antes, al
+   tocarla o hacerle clic, el hover la pintaba de blanco: «TV en vivo» desaparecía, y con el dedo el hover se queda). */
+.status-bar__tab:not(.status-bar__tab--active):hover { color: var(--color-text); }
 /* El texto cambia de color cuando la píldora ya llegó a él (no antes: se veía gris sobre blanco a medio camino). */
 .status-bar__tab--active { color: var(--color-on-primary); transition: color var(--duration-fast) var(--ease-out) var(--delay-2); }
 .status-bar__tab--active .status-bar__tab-label {

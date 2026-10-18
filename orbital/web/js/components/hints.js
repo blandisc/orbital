@@ -24,6 +24,7 @@ export function createHints({ onAction } = {}) {
     else node.querySelectorAll(".glyph").forEach((g, i) => actions[i] && press(g, actions[i]));
     return node;
   };
-  const render = (items) => mount(el, items.map(item));
+  // `offscreen`: no se dibuja (la barra de arriba ya lo enseña); sigue en la lista para el control del iPhone.
+  const render = (items) => mount(el, items.filter((i) => !i.offscreen).map(item));
   return { el, render };
 }

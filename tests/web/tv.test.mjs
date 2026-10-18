@@ -117,11 +117,11 @@ test("el pie de TV en vivo dice qué hace cada botón ahí", () => {
   const g = GLYPHS.gamepad;
   const labels = (hints) => hints.map((x) => x.label);
   const onChannel = tvHints(g, { kind: "channel" }, { categories: 3, atStart: false });
-  assert.deepEqual(labels(onChannel), ["Ver", "Categoría", "Actualizar", "Buscar", "Categorías", "Menú"]);
+  assert.deepEqual(labels(onChannel), ["Ver", "Categoría", "Actualizar", "Buscar", "Atrás", "Menú"]);
   assert.equal(onChannel[0].glyph, "A");
   assert.equal(onChannel.find((x) => x.label === "Categoría").glyph, "LT RT"); // LB RB son las secciones, como en toda la app
   assert.equal(onChannel.find((x) => x.label === "Actualizar").glyph, "X");
-  assert.equal(tvHints(g, { kind: "channel" }, { categories: 3, atStart: true }).find((x) => x.glyph === "B").label, "Inicio");
+  assert.equal(tvHints(g, { kind: "channel" }, { categories: 3, atStart: true }).find((x) => x.glyph === "B").label, "Atrás"); // B siempre dice «Atrás», como en toda la app
   // Con una sola categoría no se enseña «Categoría» (pistas que no aplican, no).
   assert.ok(!labels(tvHints(g, { kind: "channel" }, { categories: 1 })).includes("Categoría"));
   assert.deepEqual(labels(tvHints(g, { kind: "filter" }, { categories: 3 })).slice(0, 1), ["Elegir"]);
@@ -130,7 +130,9 @@ test("el pie de TV en vivo dice qué hace cada botón ahí", () => {
   assert.equal(air[0].label, "Volver al canal");
   assert.deepEqual(air.find((x) => x.glyph === "Home"), { glyph: "Home", label: "Volver a Azteca 7" });
   assert.ok(!tvHints(g, { kind: "channel" }, { categories: 3 }).some((x) => x.glyph === "Home")); // sin canal al aire, sin Home
-  assert.ok(!tvHints(GLYPHS.keyboard, { kind: "channel" }, { categories: 3, running: { title: "X" } }).some((x) => x.label === "Volver a X")); // sin mando no hay Home
+  // Con teclado, Home es Ctrl + Inicio (atajo global de la consola): el pie lo dice, para saber qué tecla picar.
+  assert.deepEqual(tvHints(GLYPHS.keyboard, { kind: "channel" }, { categories: 3, running: { title: "X" } }).find((x) => x.label === "Volver a X"),
+    { glyph: "Ctrl Inicio", label: "Volver a X" });
   // Sin canales no hay nada que ver: solo actualizar y volver.
   const empty = labels(tvHints(g, null, { empty: true, categories: 1 }));
   assert.ok(!empty.includes("Ver") && empty.includes("Actualizar"));

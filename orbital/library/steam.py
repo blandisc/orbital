@@ -17,6 +17,10 @@ log = logging.getLogger(__name__)
 
 # Herramientas que Steam instala como "apps" pero no son juegos.
 _NOT_GAMES = ("proton", "steam linux runtime", "steamworks common", "steamvr")
+# Lo que la tienda llama «juego» pero no se juega: servidores, herramientas, pruebas, demos y reproductores (salían en la
+# fila de Steam: «Left 4 Dead 2 Dedicated Server», «Halo MCC Mod Uploader», «Resident Evil 6 Benchmark Tool»…).
+_NOT_GAME_WORDS = re.compile(r"\b(dedicated server|sdk|mod tools?|mod uploader|benchmark( tool)?|playtest|demo|"
+                             r"stress test|performance test|video player|source filmmaker|soundtrack|ost|test server)\b", re.I)
 _NOT_GAME_IDS = {"228980", "1070560", "1391110", "1628350"}
 
 CDN = "https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/{name}.jpg"
@@ -74,7 +78,7 @@ def library_folders(steam_root: Path) -> list[Path]:
 
 def _is_game(appid: str, name: str) -> bool:
     lowered = name.lower()
-    return appid not in _NOT_GAME_IDS and not any(word in lowered for word in _NOT_GAMES)
+    return appid not in _NOT_GAME_IDS and not any(word in lowered for word in _NOT_GAMES) and not _NOT_GAME_WORDS.search(name)
 
 
 def user_stats(steam_root: Path) -> dict[str, dict]:
@@ -154,14 +158,15 @@ def owned_appids(steam_root: Path) -> set[str]:
     return {a for a in found if a not in _NOT_GAME_IDS}
 
 
-def uninstalled_item(appid: str, title: str) -> LibraryItem:
-    """Un juego de tu cuenta que no está instalado: «Instalar» abre la instalación de Steam."""
+def uninstalled_item(appid: str, title: str, *, cloud: bool = False) -> LibraryItem:
+    """Un juego de tu cuenta que no está instalado: «Instalar» abre la instalación de Steam. `cloud`: también se juega
+    en GeForce NOW (ahí está, en su fila)."""
     return LibraryItem(
         id=f"steam:{appid}",
         title=title,
         category="steam",
         source="steam",
-        subtitle="Steam · Sin instalar",
+        subtitle="Steam · Sin instalar · En GeForce NOW" if cloud else "Steam · Sin instalar",
         image=CDN.format(appid=appid, name="library_600x900"),
         hero=CDN.format(appid=appid, name="library_hero"),
         steam_appid=int(appid),

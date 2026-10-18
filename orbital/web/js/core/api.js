@@ -88,6 +88,7 @@ export const api = {
   stremioLogin: (email, password, signal) => post("/api/stremio/login", { email, password }, { signal, timeout: 20000 }),
   stremioLogout: () => post("/api/stremio/logout"),
   setSettings: (changes) => post("/api/settings", changes),
+  consoleOpened: (row) => post("/api/library/opened", { row }),
   stremioSources: (kind, id, video) =>
     request(`/api/stremio/sources?kind=${kind}&id=${encodeURIComponent(id)}${video ? `&video=${encodeURIComponent(video)}` : ""}`),
   focusWindow: (id) => post("/api/windows/focus", { id }),
@@ -99,6 +100,7 @@ export const api = {
   forYouDismiss: (key) => post("/api/foryou/dismiss", { key }),
   forYouRatings: (items) => request(`/api/foryou/ratings?ids=${encodeURIComponent(items.map((i) => `${i.kind}:${i.meta_id}`).join(","))}`),
   forYouWatched: () => request("/api/foryou/watched"),
+  traceInput: (entries) => post("/api/ui/trace", { entries }),
   titleRatings: (kind, id) => request(`/api/foryou/title-ratings?kind=${kind}&id=${encodeURIComponent(id)}`),
   forYouToday: () => request("/api/foryou/today"),
   forYouKeys: (service, values, signal) => post("/api/foryou/keys", { service, values }, { signal, timeout: 20000 }),

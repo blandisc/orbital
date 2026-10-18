@@ -87,7 +87,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
       el.style.setProperty("--orbit-unsquash", String(1 / squash));
     });
     label.textContent = "Abriendo";
-    mount(leave, KeyHint(backGlyph(), "Ocultar"));
+    mount(leave, KeyHint(backGlyph(), "Cancelar")); // por si lo abriste sin querer (antes «Ocultar»: seguía abriéndose)
     title.textContent = item.title;
     subtitle.textContent = detail || "";
     holding = false;
@@ -160,6 +160,7 @@ export function createLaunchOverlay({ timeout = 8000, backGlyph = () => "B" } = 
 
   return {
     el, show, hold, keep, reveal, hide, status,
+    get title() { return title.textContent || ""; }, // lo que se está abriendo («Cancelé X»)
     get holding() { return holding; },
     get visible() { return !el.hidden && !el.classList.contains("launch--leaving"); },
   };

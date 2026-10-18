@@ -113,17 +113,3 @@ test("borrar en Buscar: una pulsación borra una letra; mantener, palabra por pa
   typing.on = false;
   assert.deepEqual(r.update(held, 400), []); // fuera de Buscar, X (la ficha) no se repite
 });
-
-test("un stick pegado a media sesión deja de mover el foco hasta que vuelve al centro", () => {
-  const memory = new Map();
-  padActions([pad()], memory, 0); // en reposo: armado
-  assert.deepEqual([...padActions([pad([], [1, 0])], memory, 100)], ["right"]);
-  assert.deepEqual([...padActions([pad([], [1, 0])], memory, 3000)], ["right"]); // aún podría ser a propósito
-  assert.deepEqual([...padActions([pad([], [1, 0])], memory, 4200)], []); // 4 s exactamente igual: pegado
-  assert.deepEqual([...padActions([pad([], [1, 0])], memory, 6000)], []);
-  padActions([pad()], memory, 6100); // vuelve al centro
-  assert.deepEqual([...padActions([pad([], [.9, 0])], memory, 6200)], ["right"]);
-  // Mantenerlo moviéndose (una persona) no cuenta como pegado.
-  assert.deepEqual([...padActions([pad([], [.95, .1])], memory, 9000)], ["right"]);
-  assert.deepEqual([...padActions([pad([], [.9, .05])], memory, 12000)], ["right"]);
-});

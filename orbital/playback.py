@@ -147,12 +147,44 @@ KEY_BINDINGS = "".join(f"{key} {'repeatable ' if repeat else ''}script-message o
     ("[", "lt", False), ("]", "rt", False)))
 
 
+# El ratón (o el dedo) mantenido: input.conf solo sabe «bajó», así que un script mínimo de mpv avisa también por dónde
+# va mientras lo arrastras y dónde lo soltaste. Así se arrastra la bolita de la barra para moverte en el video.
+# Reemplaza al MBTN_LEFT de TOUCH_BINDINGS (que queda por si mpv no trae Lua).
+MOUSE_SCRIPT = """-- Orbital: el botón del ratón con bajar, arrastrar y soltar (lo escribe Orbital; se reescribe cada vez).
+local held = false
+local function pos()
+  local m = mp.get_property_native("mouse-pos") or {}
+  local d = mp.get_property_native("osd-dimensions") or {}
+  return tostring(m.x or 0), tostring(m.y or 0), tostring(d.w or 0), tostring(d.h or 0)
+end
+mp.add_forced_key_binding("MBTN_LEFT", "orbital-mouse", function(e)
+  local x, y, w, h = pos()
+  if e.event == "down" then
+    held = true
+    mp.commandv("script-message", "orbital-tap", x, y, w, h)
+  elseif e.event == "up" and held then
+    held = false
+    mp.commandv("script-message", "orbital-drop", x, y, w, h)
+  end
+end, {complex = true})
+mp.observe_property("mouse-pos", "native", function()
+  if held then
+    local x, y, w, h = pos()
+    mp.commandv("script-message", "orbital-drag", x, y, w, h)
+  end
+end)
+"""
+MOUSE_SCRIPT_NAME = "orbital-mouse.lua"
+
+
 def input_conf() -> str | None:
-    """Archivo de atajos de mpv de Orbital (se reescribe cada vez; vive junto a los datos de Orbital)."""
+    """Archivo de atajos de mpv de Orbital (se reescribe cada vez; vive junto a los datos de Orbital), con el script del
+    ratón al lado (MOUSE_SCRIPT; build_command lo carga si está)."""
     path = Path(os.environ.get("LOCALAPPDATA", "")) / "orbital" / "mpv-input.conf"
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(TOUCH_BINDINGS + KEY_BINDINGS, encoding="utf-8")
+        path.with_name(MOUSE_SCRIPT_NAME).write_text(MOUSE_SCRIPT, encoding="utf-8")
         return str(path)
     except OSError:
         return None
@@ -198,6 +230,7 @@ def build_command(mpv: str, url: str, title: str, *, start: float = 0, audio: st
         # salir). idle: si una fuente falla, mpv no se cierra; Orbital carga otra en la misma ventana.
         "--keep-open=yes", "--idle=yes", "--osc=no", "--input-default-bindings=yes",
         *([f"--input-conf={bindings}"] if bindings else []),
+        *([f"--script={script}"] if bindings and (script := Path(bindings).with_name(MOUSE_SCRIPT_NAME)).is_file() else []),
         f"--title={title}", f"--force-media-title={title}",
         f"--alang={','.join(build_lang_list(audio))}", *subtitle_options(subtitles, audio),
         "--sub-auto=fuzzy", *cache, "--hwdec=auto-safe",
@@ -291,8 +324,8 @@ class PlayerRemote:
                DPAD_UP: "up", DPAD_DOWN: "down", LB: "lb", RB: "rb", LT: "lt", RT: "rt",
                STICK_UP: "stick-up", STICK_DOWN: "stick-down", STICK_LEFT: "stick-left", STICK_RIGHT: "stick-right"}
     REPEAT = {DPAD_LEFT, DPAD_RIGHT, DPAD_UP, DPAD_DOWN, LB, RB, STICK_UP, STICK_DOWN, STICK_LEFT, STICK_RIGHT,
-              B_BUTTON}  # B mantenido: la barra de "Mantén para salir" se va llenando
-    RELEASE = {B_BUTTON}  # al soltar B llega "b-up" (la barra se va si soltaste antes)
+              B_BUTTON, LT, RT}  # B, LT y RT mantenidos: el anillo de «Salir» / «Episodio» se va llenando
+    RELEASE = {B_BUTTON, LT, RT}  # al soltar llega "b-up" / "lt-up" / "rt-up" (el anillo se va si soltaste antes)
 
     def __init__(self, on_press, delay: float = .35, rate: float = .15) -> None:
         self.on_press = on_press

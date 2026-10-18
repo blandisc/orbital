@@ -9,7 +9,7 @@ const seasons = [
 ];
 
 test("película: Ver, o Continuar con lo que queda y Desde el principio", () => {
-  assert.deepEqual(titleActions({ kind: "movie", resume: null }).map((a) => a.label), ["Ver", "Mi lista", "Elegir fuente"]);
+  assert.deepEqual(titleActions({ kind: "movie", resume: null }).map((a) => a.label), ["Ver", "Guardar", "Elegir fuente"]);
   const half = titleActions({ kind: "movie", resume: { position: 3600, duration: 7200 } });
   assert.deepEqual(half.map((a) => a.id), ["play", "restart", "mylist", "sources"]);
   assert.equal(half[0].label, "Continuar");
@@ -68,7 +68,7 @@ test("qué hay disponible, antes de elegir", async () => {
 test("tráiler y Mi lista en la ficha", async () => {
   const { titleActions } = await import("../../orbital/web/js/core/watch.js");
   const labels = titleActions({ kind: "movie", resume: null, trailer: "abc", in_library: true }).map((a) => a.label);
-  assert.deepEqual(labels, ["Ver", "Tráiler", "En Mi lista", "Elegir fuente"]);
+  assert.deepEqual(labels, ["Ver", "Tráiler", "Guardada", "Elegir fuente"]);
 });
 
 test("serie sin episodios: sin «Elegir fuente» (no había nada que elegir)", () => {
@@ -80,7 +80,7 @@ test("ficha: «Enviar al iPhone» y «Descargar en el iPhone» solo con un iPhon
   const movie = { kind: "movie", resume: null };
   assert.ok(!titleActions(movie).some((a) => a.id.startsWith("phone-")));
   assert.deepEqual(titleActions(movie, { phone: true }).map((a) => a.label),
-    ["Ver", "Mi lista", "Elegir fuente", "Enviar al iPhone", "Descargar en el iPhone"]);
+    ["Ver", "Guardar", "Elegir fuente", "Enviar al iPhone", "Descargar en el iPhone"]);
   assert.deepEqual(titleActions(movie, { phone: true }).slice(-2).map((a) => a.id), ["phone-open", "phone-download"]);
   // Una serie sin episodios no tiene qué mandar; con error, solo Reintentar.
   assert.ok(!titleActions({ kind: "series", seasons: [], resume: null }, { phone: true }).some((a) => a.id.startsWith("phone-")));
@@ -105,6 +105,29 @@ test("«termina a las…»: la hora en que acabas (en el Inicio; en la ficha ya 
   assert.equal(endsAt(30, now), null);
   assert.equal(endsAt(undefined, now), null);
   const movie = { source: "stremio", subtitle: "Película · quedan 1 h 43 min", progress: .2, extra: { kind: "movie", left: 6180 } };
-  assert.equal(detailOf(movie, now), "quedan 1 h 43 min · termina a las 1:13 a. m.");
-  assert.equal(detailOf({ ...movie, extra: { kind: "movie" } }, now), "quedan 1 h 43 min");
+  assert.equal(detailOf(movie, now), "Quedan 1 h 43 min · termina a las 1:13 a. m.");
+  assert.equal(detailOf({ ...movie, extra: { kind: "movie" } }, now), "Quedan 1 h 43 min");
+});
+
+test("la hoja de Fuente: la recomendada sola arriba y el resto por calidad, como el iPhone", async () => {
+  const { sourceGroups } = await import("../../orbital/web/js/core/watch.js");
+  const s = (id, resolution) => ({ id, resolution });
+  const { groups, order } = sourceGroups([s("a", "1080p"), s("b", "4K"), s("c", "720p"), s("d", "1080p"), s("e", null), s("f", "4K")]);
+  assert.deepEqual(groups.map((g) => [g.title, g.items.map((x) => x.id).join("")]),
+    [["Recomendada", "a"], ["4K", "bf"], ["1080p", "d"], ["720p", "c"], ["Otras", "e"]]);
+  assert.match(groups[0].note, /idioma, la calidad y el tamaño/);
+  assert.deepEqual(order.map((x) => x.id), ["a", "b", "f", "d", "c", "e"]); // ↑↓ va en el orden en que se ven
+  assert.deepEqual(sourceGroups([]), { groups: [], order: [] });
+});
+
+test("la ficha: «Ver» arriba a todo lo ancho, los demás abajo; ← → los recorre y al final se pasa a los episodios", async () => {
+  const { actionStep } = await import("../../orbital/web/js/core/watch.js");
+  assert.equal(actionStep(5, 0, "down"), 1); // del principal, a los de abajo
+  assert.equal(actionStep(5, 3, "up"), 0);
+  assert.equal(actionStep(5, 2, "right"), 3);
+  assert.equal(actionStep(5, 4, "right"), "episodes"); // del último, a los episodios (a la derecha)
+  assert.equal(actionStep(5, 2, "down"), "episodes");
+  assert.equal(actionStep(5, 0, "left"), null);
+  assert.equal(actionStep(5, 0, "up"), null);
+  assert.equal(actionStep(1, 0, "down"), "episodes"); // solo «Ver»
 });

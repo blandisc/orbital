@@ -503,7 +503,7 @@ def test_y_never_blocks_the_controller_while_sources_load():
     assert p.menu is None
 
 
-def test_two_quick_rt_presses_go_two_episodes_ahead():
+def test_from_the_phone_two_quick_episode_presses_go_two_episodes_ahead():
     import time as _t
 
     p, mpv = make_player()
@@ -511,27 +511,31 @@ def test_two_quick_rt_presses_go_two_episodes_ahead():
     asked = []
     p.on_episode = lambda meta, delta: asked.append(delta) or True
     p.EPISODE_WAIT = .1
-    p.press("rt")
-    p.press("rt")
+    p.phone_button("pageright")  # en el teléfono no se mantiene: cada toque cuenta
+    p.phone_button("pageright")
     assert "2 episodios adelante" in mpv.overlays[3]
     _t.sleep(.4)
     assert asked == [2]
 
 
-def test_b_cancels_an_accidental_episode_change():
-    """Un gatillo rozado sin querer: B lo deshace antes de que cargue (antes, a los 0,7 s cambiaba)."""
+def test_changing_episode_with_the_triggers_needs_a_hold_like_b():
+    """Un gatillo rozado no cambia nada (dice cómo se hace); mantenido, el anillo se llena y cambia."""
     import time as _t
 
     p, mpv = make_player()
     p.current.meta = {"kind": "series", "meta_id": "tt1", "video_id": "tt1:1:1"}
     asked = []
     p.on_episode = lambda meta, delta: asked.append(delta) or True
-    p.EPISODE_WAIT = .2
+    p.EPISODE_HOLD, p.HOLD_SHOW_AFTER = .3, .05
     p.press("rt")
-    assert "B cancela" in mpv.overlays[3]
-    p.press("b")
-    _t.sleep(.4)
-    assert asked == [] and "Sigues en este episodio" in mpv.overlays[3]
+    p.press("rt-up")
+    _t.sleep(.5)
+    assert asked == [] and "Mantén RT" in mpv.overlays[3]
+    p.press("lt")  # mantenido (sin soltar)
+    _t.sleep(.2)
+    assert "Episodio anterior" in mpv.overlays[6]
+    _t.sleep(.5)
+    assert asked == [-1] and mpv.overlays[6] is None
     assert ("quit",) not in mpv.sent
 
 
@@ -549,7 +553,7 @@ def test_sticks_wake_the_controls_and_move_in_panels():
     assert gamepad.with_sticks(0, 0, 0, 0) == 0
     assert gamepad.with_sticks(5000, -3000, 0, 0) == 0  # deriva: no cuenta
     assert gamepad.with_sticks(0, 30000, 0, 0) == gamepad.STICK_UP
-    assert gamepad.with_sticks(0, 0, -25000, 8000) == gamepad.STICK_LEFT  # el derecho también
+    assert gamepad.with_sticks(0, 0, -25000, 8000) == gamepad.STICK_LEFT  # la función sabe leer los dos (el ciclo solo usa el izquierdo)
     p, mpv = make_player()
     p.press("stick-right")  # sin panel: solo enciende los controles, no adelanta
     assert mpv.overlays.get(1) and not any(c[0] == "seek" for c in mpv.sent)
@@ -776,6 +780,7 @@ def test_the_small_video_glides_to_the_corner_and_back_with_only_three_buttons(m
     class Win:
         screen_size = staticmethod(lambda: (1920, 1080))
         place_window = staticmethod(lambda hwnd, x, y, w, h, topmost=True: placed.append((x, y, w, h)))
+        glide_window = staticmethod(lambda hwnd, x, y, w, h: placed.append((x, y, w, h)))
         window_rect = staticmethod(lambda hwnd: (placed[-1][0], placed[-1][1], placed[-1][0] + placed[-1][2], placed[-1][1] + placed[-1][3]))
         focus = staticmethod(lambda hwnd: True)
 
@@ -797,6 +802,7 @@ def test_the_small_video_glides_to_the_corner_and_back_with_only_three_buttons(m
     geometry = mpv.sent.index(("set_property", "geometry", "1920x1080+0+0"))
     assert geometry < mpv.sent.index(("set_property", "fullscreen", False))  # primero el tamaño, luego salir
     assert ("set_property", "ontop", True) in mpv.sent
+    assert mpv.props["pause"] is False  # se detuvo mientras se movía y siguió al llegar
     assert placed[0] == (0, 0, 1920, 1080) and placed[-1] == (1287, 699, 576, 324)  # de toda la pantalla a la esquina
     widths = [w for _, _, w, _ in placed]
     assert widths == sorted(widths, reverse=True) and len(placed) > 10  # se encoge poco a poco, nunca de golpe
@@ -896,3 +902,35 @@ def test_subtitles_from_the_internet_are_downloaded_apart_and_mpv_gets_the_file(
     p.current = player.Playback("Otro video", None, 0, {})
     pending[0]()
     assert len(mpv.sent) == sent  # llegó cuando ya era otro video: no se le pone
+
+
+def test_dragging_the_knob_with_the_mouse_moves_through_the_video():
+    """Click en la barra y, sin soltar, arrastrar: el video busca mientras arrastras (a cuadros clave) y exacto al soltar."""
+    from orbital import player_ui
+
+    player_ui.set_touch(False)
+    p, mpv = make_player()
+    p.SCRUB_EVERY = 0
+    p._on_mpv_message(["orbital-tap", "960", "300", "1920", "1080"])  # los botones (y la barra que se toca)
+    bar = next(t for t in player_ui.targets["hud"] if isinstance(t[4], tuple) and t[4][0] == "seek")
+    _, x0, width = bar[4]
+    y = bar[1] + bar[3] / 2
+    sx = lambda frac: str((x0 + width * frac) / player_ui.W * 1920)  # noqa: E731
+    sy = str(y / player_ui.H * 1080)
+    p._on_mpv_message(["orbital-tap", sx(.5), sy, "1920", "1080"])
+    p._on_mpv_message(["orbital-drag", sx(.25), sy, "1920", "1080"])
+    assert any(c[0] == "seek" and c[2] == "absolute+keyframes" and abs(c[1] - 1500) < 2 for c in mpv.sent)
+    p._on_mpv_message(["orbital-drop", sx(.75), sy, "1920", "1080"])
+    assert mpv.sent[-1][0] == "seek" and mpv.sent[-1][2] == "absolute" and abs(mpv.sent[-1][1] - 4500) < 2
+    sent = len(mpv.sent)
+    p._on_mpv_message(["orbital-drag", sx(.1), sy, "1920", "1080"])  # ya soltaste: moverlo no busca
+    assert not any(c[0] == "seek" for c in mpv.sent[sent:])
+
+
+def test_mpv_loads_the_mouse_script_next_to_the_bindings(tmp_path):
+    conf = tmp_path / "mpv-input.conf"
+    conf.write_text("", encoding="utf-8")
+    (tmp_path / player.MOUSE_SCRIPT_NAME).write_text(player.MOUSE_SCRIPT, encoding="utf-8")
+    cmd = player.build_command("mpv.exe", "http://a", "T", bindings=str(conf))
+    assert f"--script={tmp_path / player.MOUSE_SCRIPT_NAME}" in cmd
+    assert 'mp.add_forced_key_binding("MBTN_LEFT"' in player.MOUSE_SCRIPT and "orbital-drop" in player.MOUSE_SCRIPT

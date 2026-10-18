@@ -152,6 +152,14 @@ export function createLogin({ onDone, onMove, onClose }) {
     renderFields();
   }
 
+  /** El iPhone manda el campo entero: lo reemplaza. */
+  function setText(value) {
+    if (el.hidden || busy) return;
+    fields[active].value = String(value);
+    message.textContent = "";
+    renderFields();
+  }
+
   // Ctrl+V: una clave de 32 letras no se teclea con el mando (se copia en el navegador y se pega aquí).
   document.addEventListener("paste", (event) => {
     if (!shown() || busy) return;
@@ -257,6 +265,6 @@ export function createLogin({ onDone, onMove, onClose }) {
 
   // Saliendo ya no cuenta como abierta (la leyenda del login se quedaba en Inicio).
   const shown = () => !el.hidden && !el.classList.contains("screen--leaving");
-  return { el, open, close, handle, hints, type, remoteArrived, get isOpen() { return shown(); },
+  return { el, open, close, handle, hints, type, setText, remoteArrived, get isOpen() { return shown(); },
     get typing() { return shown() && !busy; } };
 }

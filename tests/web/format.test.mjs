@@ -11,7 +11,7 @@ test("lastPlayed en lenguaje natural", () => {
   assert.equal(lastPlayed(ago(25 * 60), NOW), "Jugado hace 25 min");
   assert.equal(lastPlayed(ago(2 * 3600), NOW), "Jugado hace 2 h");
   assert.equal(lastPlayed(ago(26 * 3600), NOW), "Jugado ayer");
-  assert.equal(lastPlayed(ago(5 * 86400), NOW), "Jugado hace 5 días");
+  assert.equal(lastPlayed(ago(5 * 86400), NOW), "Jugado hace 5 d"); // el mismo formato que shortAgo
 });
 
 test("duration", () => {
@@ -78,4 +78,12 @@ test("la hora va en 12 horas, como se dice en México", async () => {
   assert.equal(clock(new Date(2026, 9, 16, 21, 5)), "9:05 p. m.");
   assert.equal(clock(new Date(2026, 9, 16, 0, 30)), "12:30 a. m.");
   assert.equal(clock(new Date(2026, 9, 16, 12, 0)), "12:00 p. m.");
+});
+
+test("lo que dura un video: «169 min» de Cinemeta se dice «2 h 49 min»", async () => {
+  const { runtime } = await import("../../orbital/web/js/core/format.js");
+  assert.equal(runtime("169 min"), "2 h 49 min");
+  assert.equal(runtime("45 min"), "45 min");
+  assert.equal(runtime("2h 10min"), "2h 10min"); // otro formato: se deja como viene
+  assert.equal(runtime(""), null);
 });

@@ -12,20 +12,22 @@ import { createKeyboard } from "./keyboard.js";
  *   · tus juegos y apps aparecen al instante (se buscan aquí, en tu biblioteca);
  *   · resultados vivos desde la 2ª letra (Cinemeta tolera errores: "ofice" -> The Office),
  *     agrupados: Tus juegos, Películas, Series;
- *   · teclado alfabético grande (no QWERTY): A escribe, X borra, Y espacio, B vuelve, ↑ a los
- *     resultados; con la caja vacía, tus búsquedas recientes;
+ *   · teclado QWERTY grande, el mismo de Conectar Stremio y del iPhone (antes alfabético: dos teclados distintos en la
+ *     misma consola): A escribe, X borra, Y espacio, B vuelve, ↑ a los resultados; con la caja vacía, tus búsquedas
+ *     recientes;
  *   · con un teclado físico se escribe directo;
  *   · dictado: decirlo en voz alta (reconocimiento de voz de Edge, español de México).
  */
-const layout = (cleared, dictateGlyph = "") => [
-  [..."ABCDEFGHIJ"],
-  [..."KLMNÑOPQRS"],
-  [..."TUVWXYZ123"],
-  [..."4567890-.'"],
+const layout = (cleared, dictateGlyph = "", listening = false) => [
+  [..."1234567890"],
+  [..."QWERTYUIOP"],
+  [..."ASDFGHJKLÑ"],
+  [..."ZXCVBNM-.'"],
   [{ key: "space", label: "Espacio", span: 4 }, { key: "delete", label: "Borrar", span: 3 },
     { key: "clear", label: cleared ? "Deshacer" : "Borrar todo", span: 3, tone: "action" }],
   // Acciones claras con dedo o con mando: salir, dictar y ver los resultados.
-  [{ key: "back", label: "Atrás", span: 2, tone: "action" }, { key: "dictate", label: "Dictar", span: 3, icon: "mic", glyph: dictateGlyph },
+  [{ key: "back", label: "Atrás", span: 2, tone: "action" }, // Escuchando: la tecla se ilumina y lo dice (antes no cambiaba y no se sabía si te oía).
+    { key: "dictate", label: listening ? "Escuchando…" : "Dictar", span: 3, icon: "mic", glyph: dictateGlyph, on: listening },
     { key: "go", label: "Buscar", span: 5, tone: "go" }],
 ];
 const MIN_CHARS = 2;
@@ -34,12 +36,13 @@ const DEBOUNCE_MS = 260;
 const RECENT_KEY = "orbital.search.recent";
 const RECENT_MAX = 8;
 
-const GROUPS = { game: "En tu consola", movie: "Películas", series: "Series" };
-const groupOf = (item) => (item.kind === "movie" || item.kind === "series" ? item.kind : "game");
+const GROUPS = { game: "En tu consola", movie: "Películas", series: "Series", list: "Listas" };
+// Una lista (un estudio como Blumhouse, un premio…) no es algo «en tu consola»: va en su propio grupo, al final.
+const groupOf = (item) => (item.source === "collection" ? "list" : item.kind === "movie" || item.kind === "series" ? item.kind : "game");
 
-/** Juegos primero, luego películas y luego series; cada grupo en el orden de relevancia que trae. */
+/** Juegos primero, luego películas, series y listas; cada grupo en el orden de relevancia que trae. */
 export function groupResults(list) {
-  const order = ["game", "movie", "series"];
+  const order = ["game", "movie", "series", "list"];
   return [...list].map((item, i) => ({ item, i })).sort((a, b) =>
     order.indexOf(groupOf(a.item)) - order.indexOf(groupOf(b.item)) || a.i - b.i).map(({ item }) => item);
 }
@@ -73,6 +76,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   let pending = ""; // la búsqueda que ya va en camino (no se repite al pulsar Buscar otra vez)
   let typedPhysically = false; // con teclado físico, Enter busca en vez de pulsar la tecla en pantalla
   let listening = null;
+  let shownListening = false;
   let cancelExit = () => {};
 
   let shownCleared = false; // la tecla «Borrar todo» dice «Deshacer» justo después de usarla
@@ -84,7 +88,11 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     query.scrollLeft = query.scrollWidth; // larga: se ve lo último que escribiste
     placeholder.hidden = !!text;
     const undo = !text && !!cleared;
-    if (undo !== shownCleared) { shownCleared = undo; keyboard.setLayout(layout(undo, dictateGlyph)); }
+    if (undo !== shownCleared || !!listening !== shownListening) {
+      shownCleared = undo;
+      shownListening = !!listening;
+      keyboard.setLayout(layout(undo, dictateGlyph, shownListening));
+    }
     keyboard.active = zone === "keys";
     focusables.forEach((node, i) => node.classList.toggle(node.classList.contains("card") ? "card--focused" : "search__recent--focused",
       zone === "results" && i === resultIndex));
@@ -99,18 +107,16 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   function showResults(list) {
     items = groupResults(list);
     focusables = [];
-    const nodes = [];
-    let group = null;
+    // Cada grupo con su nombre ENCIMA de sus portadas, derecho (antes girado 90° entre las portadas).
+    const sets = [];
     items.forEach((item, i) => {
-      if (groupOf(item) !== group) {
-        group = groupOf(item);
-        nodes.push(h("span", { class: "search__group", "aria-hidden": "true" }, GROUPS[group]));
-      }
+      if (!sets.length || sets.at(-1).group !== groupOf(item)) sets.push({ group: groupOf(item), cards: [] });
       const card = Card(item, { caption: true, onPress: () => { zone = "results"; resultIndex = i; open(); } });
       focusables.push(card);
-      nodes.push(card);
+      sets.at(-1).cards.push(card);
     });
-    mount(results, nodes);
+    mount(results, sets.map((s) => h("div", { class: "search__set" },
+      h("span", { class: "search__group", "aria-hidden": "true" }, GROUPS[s.group]), h("div", { class: "search__set-cards" }, s.cards))));
     results.classList.remove("search__results--recent");
     if (zone === "results") resultIndex = Math.min(resultIndex, Math.max(0, items.length - 1));
     if (!items.length && zone === "results") zone = "keys";
@@ -139,7 +145,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     render();
   }
 
-  const count = (n) => `${n} resultado${n === 1 ? "" : "s"} · ↑ para elegir`;
+  // Con el dedo no hay «↑»: se toca el resultado.
+  const count = (n) => `${n} resultado${n === 1 ? "" : "s"} · ${document.body.dataset.input === "touch" ? "toca uno para abrirlo" : "↑ para elegir"}`;
 
   function schedule(delay = DEBOUNCE_MS) {
     clearTimeout(timer);
@@ -231,6 +238,16 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     else press(char);
   }
 
+  /** El iPhone manda el campo entero: lo reemplaza (en vez de agregarlo letra por letra). */
+  function setText(value) {
+    if (el.hidden || el.classList.contains("search--leaving")) return;
+    typedPhysically = true;
+    cleared = "";
+    text = Array.from(String(value).toLowerCase()).slice(0, MAX_CHARS).join("");
+    render();
+    schedule();
+  }
+
   function dictate() {
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Recognition) return setHint("El dictado no está disponible aquí. Usa el teclado o pídeselo a Alexa.");
@@ -240,7 +257,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     rec.interimResults = true;
     rec.maxAlternatives = 1;
     rec.onresult = (event) => {
-      text = [...event.results].map((r) => r[0].transcript).join("").trim().slice(0, MAX_CHARS);
+      // Sin el punto que Edge le pone al final («Severance.»): se busca lo que dijiste, no una frase.
+      text = [...event.results].map((r) => r[0].transcript).join("").trim().replace(/[.。]+$/u, "").slice(0, MAX_CHARS);
       render();
       schedule();
     };
@@ -252,7 +270,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       return setHint("No te escuché. Intenta de nuevo."); // el micrófono no arrancó: sin «Te escucho…» para siempre
     }
     listening = rec;
-    setHint("Te escucho…");
+    setHint("Habla ahora: termina solo cuando te callas (o toca Dictar)");
     render();
   }
 
@@ -343,19 +361,20 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     const g = typingGlyphs(pad);
     if (g.menu !== dictateGlyph) { // el mando cambió (Legion, Xbox, teclado): la tecla Dictar enseña su botón
       dictateGlyph = g.menu || "";
-      keyboard.setLayout(layout(shownCleared, dictateGlyph));
+      keyboard.setLayout(layout(shownCleared, dictateGlyph, !!listening));
     }
     const page = String(pad?.page || "").split(" "); // LT RT con mando, RePág AvPág con teclado
     const go = page[1];
     return [
       { glyph: g.select, label: zone === "results" ? "Abrir" : "Escribir" },
-      zone === "keys" && go && { glyph: go, label: "Buscar" },
-      g.menu && { glyph: g.menu, label: "Dictar" }, // otra vez: deja de escuchar
+      // Buscar, Dictar y Espacio ya están en el teclado con su botón: no se repiten en el pie (como mucho cinco pistas).
+      zone === "keys" && go && { glyph: go, label: "Buscar", offscreen: true },
+      g.menu && { glyph: g.menu, label: "Dictar", offscreen: true }, // otra vez: deja de escuchar
       // LT salta a los resultados (antes había que subir seis filas del teclado sin saberlo).
       zone === "keys" && items.length && page[0] && { glyph: page[0], label: "Resultados" },
       zone === "results" && page[1] && { glyph: page[1], label: "Teclado" },
       zone === "keys" && { glyph: g.alt, label: "Borrar", secondary: true },
-      zone === "keys" && { glyph: g.options, label: "Espacio", secondary: true },
+      zone === "keys" && { glyph: g.options, label: "Espacio", offscreen: true },
       { glyph: g.back, label: "Atrás", end: true },
     ].filter(Boolean);
   };
@@ -365,6 +384,6 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     if (!el.hidden && text.trim().length >= MIN_CHARS) schedule();
   }
 
-  return { el, open: show, close, handle, hints, refresh, type, get isOpen() { return !el.hidden && !el.classList.contains("search--leaving"); },
+  return { el, open: show, close, handle, hints, refresh, type, setText, get isOpen() { return !el.hidden && !el.classList.contains("search--leaving"); },
     get typing() { return !el.hidden && !el.classList.contains("search--leaving"); } };
 }

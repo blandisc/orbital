@@ -12,13 +12,23 @@ from orbital.library import charts as charts_api
 from orbital.library import cinemeta as cinemeta_api
 from orbital.library import trakt as trakt_api
 
+# Los géneros de Trakt de algunos títulos (para ver «Misterio y ciencia ficción, como Dark» en la demo).
+GENRES = {"tt15239678": ["Science Fiction", "Adventure", "Drama"], "tt2543164": ["Science Fiction", "Drama", "Mystery"],
+          "tt0816692": ["Science Fiction", "Adventure", "Drama"], "tt1856101": ["Science Fiction", "Thriller", "Mystery"],
+          "tt0482571": ["Mystery", "Thriller", "Drama"], "tt1160419": ["Science Fiction", "Adventure"],
+          "tt5753856": ["Mystery", "Science Fiction", "Drama"], "tt2085059": ["Science Fiction", "Thriller", "Drama"],
+          "tt14688458": ["Science Fiction", "Mystery", "Drama"], "tt4574334": ["Science Fiction", "Horror", "Drama"],
+          "tt9253284": ["Science Fiction", "Action", "Drama"], "tt7660850": ["Drama", "Comedy"],
+          "tt11280740": ["Mystery", "Science Fiction", "Drama"], "tt14452776": ["Comedy", "Drama"], "tt2788316": ["Drama", "History", "War"]}
 
 def _m(imdb, title, year, runtime):
-    return {"kind": "movie", "imdb": imdb, "title": title, "year": year, "runtime": runtime, "episodes": None, "overview": "", "trakt_id": None}
+    return {"kind": "movie", "imdb": imdb, "title": title, "year": year, "runtime": runtime, "episodes": None, "overview": "", "trakt_id": None,
+            "genres": GENRES.get(imdb, [])}
 
 
 def _s(imdb, title, year, episodes, trakt_id=None):
-    return {"kind": "series", "imdb": imdb, "title": title, "year": year, "runtime": None, "episodes": episodes, "overview": "", "trakt_id": trakt_id}
+    return {"kind": "series", "imdb": imdb, "title": title, "year": year, "runtime": None, "episodes": episodes, "overview": "", "trakt_id": trakt_id,
+            "genres": GENRES.get(imdb, [])}
 
 
 MOVIES = {
@@ -103,8 +113,16 @@ class DemoTrakt:
         return [S[k] for k in ("dark", "blackmirror", "silo", "stranger", "andor", "succession")] if kind == "series" \
             else [M[k] for k in ("arrival", "inter", "br", "prestige", "dune1")]
 
+    def rating(self, kind, imdb):  # la ficha: la calificación de Trakt (de mentiras, estable por título)
+        return round(7 + (sum(map(ord, imdb)) % 25) / 10, 1)
+
     def last_watched(self):
         return {**S["severance"], "watched_at": time.time() - 2 * 86400}
+
+    def recent_watched(self, limit=5):
+        """Tus últimos cinco (para «Porque viste», que cambia cada día entre ellos)."""
+        picks = [S["severance"], S["bear"], M["dune2"], S["dark"], S["shogun"]][:limit]
+        return [{**e, "watched_at": time.time() - (n + 2) * 86400} for n, e in enumerate(picks)]
 
     def calendar(self, start, days=15):
         """Estrenos de mentiras alrededor de hoy: uno esta noche, tres juntos de madrugada mañana (como Paramount+)…"""
@@ -140,8 +158,8 @@ class DemoTmdb:
         brand = list(self.PLATFORMS)[provider_id - 1]
         return [{"id": n, "key": k} for n, k in enumerate(self.PLATFORMS[brand]) if (k in S) == (kind == "series")]
 
-    def details(self, kind, tmdb_id):
-        raise LookupError  # no se usa: el demo responde en _platform
+    def details(self, kind, tmdb_id):  # solo la calificación (la ficha); lo demás el demo lo responde en _platform
+        return {"rating": round(6.8 + (tmdb_id % 22) / 10, 1)}
 
     _cinemeta = cinemeta_api.Cinemeta()
 
@@ -161,6 +179,9 @@ class DemoTmdb:
         "oppen": "La historia del físico J. Robert Oppenheimer y su papel en el desarrollo de la bomba atómica.",
     }
     BY_IMDB = {e["imdb"]: k for k, e in {**M, **S}.items()}
+
+    def find_id(self, imdb, kind):  # la ficha: TMDB de mentiras (cualquier título)
+        return sum(map(ord, imdb))
 
     def find(self, imdb, kind):
         key = self.BY_IMDB.get(imdb)

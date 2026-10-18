@@ -107,7 +107,7 @@ export function createArtPicker({ onMove, onPicked, onClose }) {
     return true;
   }
 
-  const hints = (g) => [{ glyph: g.select, label: "Elegir" }, { glyph: g.back, label: "Cerrar", end: true }];
+  const hints = (g) => [{ glyph: g.select, label: "Elegir" }, { glyph: g.back, label: "Atrás", end: true }];
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

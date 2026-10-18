@@ -21,8 +21,10 @@ def test_b_hides_the_controls_and_holding_it_leaves():
     p, mpv = make_player()
     p.press("a")  # pausa: la barra se queda
     assert mpv.overlays[1]
-    p.press("b")  # en pausa el «En pausa» se queda (si no, parecía colgado); empieza el anillo de «Salir»
-    assert mpv.overlays[1] and "Salir" in mpv.overlays[6] and ("quit",) not in mpv.sent
+    p.press("b")  # en pausa el «En pausa» se queda (si no, parecía colgado); un toque aún no enseña el anillo
+    assert mpv.overlays[1] and not mpv.overlays.get(6) and ("quit",) not in mpv.sent
+    time.sleep(p.HOLD_SHOW_AFTER + .1)  # mantenido: ya sale el anillo de «Salir»
+    assert "Salir" in mpv.overlays[6] and ("quit",) not in mpv.sent
     p.press("b-up")  # soltaste antes: no sale
     assert mpv.overlays[6] is None and ("quit",) not in mpv.sent
     p.press("a")  # reproduciendo, B sí oculta los controles
@@ -369,7 +371,7 @@ def test_the_quit_ring_fills_smoothly_on_its_own_clock():
     original = p._overlay
     p._overlay = lambda layer, ass: (drawn.append((layer, ass)) if layer == p.HOLD else None, original(layer, ass))[1]
     p.press("b")
-    time.sleep(.3)
+    time.sleep(p.HOLD_SHOW_AFTER + .3)  # un toque no lo enseña; mantenido, sí
     rings = [a for layer, a in drawn if a]
     assert len(rings) >= 5  # varios cuadros sin que llegue otra repetición de B
     p.press("b-up")

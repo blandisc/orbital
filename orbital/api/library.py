@@ -39,6 +39,15 @@ def router(d: Deps) -> APIRouter:
     def refresh() -> dict:
         return {"count": catalog.refresh(), "rows": catalog.grouped(), "hidden": catalog.hidden_count()}
 
+    @r.post("/api/library/opened")
+    def opened(body: dict) -> dict:
+        """Entraste a una consola (Juegos): su tarjeta de Inicio deja de decir «+62 nuevos»."""
+        row_id = body.get("row") if isinstance(body, dict) else None
+        if not isinstance(row_id, str) or not row_id:
+            raise HTTPException(422, "Falta la consola")
+        catalog.state.mark_opened(row_id)
+        return {"ok": True}
+
     @r.post("/api/prefs")
     def prefs(body: PrefsRequest) -> dict:
         try:

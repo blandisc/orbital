@@ -89,6 +89,18 @@ def focus(hwnd: int) -> bool:
     return user32.GetForegroundWindow() == hwnd
 
 
+def is_minimized(hwnd: int) -> bool:
+    return bool(WIN and hwnd and user32.IsIconic(hwnd))
+
+
+def on_a_monitor(hwnd: int) -> bool:
+    """¿La ventana cae en alguna pantalla conectada? Al pasar de la tele a la pantalla de la Legion (o al revés) con la
+    consola dormida, una ventana puede quedarse en la pantalla que ya no está: abierta, pero en ningún lado."""
+    if not WIN or not hwnd:
+        return True
+    return bool(user32.MonitorFromWindow(wintypes.HWND(hwnd), 0))  # MONITOR_DEFAULTTONULL
+
+
 def minimize(hwnd: int) -> None:
     if is_window(hwnd):
         user32.ShowWindow(hwnd, SW_MINIMIZE)
@@ -346,6 +358,28 @@ def screen_size() -> tuple[int, int]:
     if not WIN:
         return 1920, 1080
     return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+
+
+def glide_window(hwnd: int, x: int, y: int, width: int, height: int) -> bool:
+    """Un paso de una animación de la ventana: sin esperar a que su programa termine de redibujarse (SWP_ASYNCWINDOWPOS) y
+    sin copiar lo de antes (SWP_NOCOPYBITS). Si no alcanza a dibujar un paso, se lo salta: el movimiento no tropieza."""
+    if not WIN or not hwnd:
+        return False
+    flags = 0x4000 | 0x0100 | 0x0010 | 0x0004  # ASYNCWINDOWPOS | NOCOPYBITS | NOACTIVATE | NOZORDER
+    return bool(user32.SetWindowPos(wintypes.HWND(hwnd), None, int(x), int(y), int(width), int(height), flags))
+
+
+def wait_frame(fallback: float = .016) -> None:
+    """Espera al siguiente cuadro de la pantalla (DwmFlush: lo que Windows compone a 60 Hz). Una animación que avanza
+    con esto se mueve a la par del refresco; time.sleep(0.016) en Windows duerme a saltos de ~15.6 ms y unos cuadros
+    duraban el doble (el tirón del video en pequeño)."""
+    if WIN:
+        try:
+            if ctypes.windll.dwmapi.DwmFlush() == 0:  # type: ignore[attr-defined]
+                return
+        except OSError:
+            pass
+    time.sleep(fallback)
 
 
 def place_window(hwnd: int, x: int, y: int, width: int, height: int, topmost: bool = True) -> bool:

@@ -2,9 +2,10 @@
    logo), pestañas en píldora, filtros activos en cápsula y la cuadrícula de pósters con su nombre. El marco (fondo,
    margen, entrada y salida) es .screen. */
 .list-screen { display: flex; flex-direction: column; gap: var(--space-5); }
-.list-screen__head { display: flex; align-items: flex-end; gap: var(--space-6); min-height: 6rem; }
-.list-screen__media { flex: none; display: grid; place-items: end center; height: 7rem; }
-.list-screen__statue { height: 100%; width: auto; filter: drop-shadow(0 0 1.6rem color-mix(in oklab, var(--color-award-gold) 45%, transparent)); }
+.list-screen__head { display: flex; align-items: flex-end; gap: var(--space-6); min-height: 6rem; padding-bottom: var(--space-8); }
+/* La estatuilla, un poco más chica: ya no se encima con la primera fila (que crece al enfocarla). */
+.list-screen__media { flex: none; align-self: center; display: grid; place-items: center; height: 6rem; }
+.list-screen__statue { height: 6rem; width: auto; filter: drop-shadow(0 0 1.6rem color-mix(in oklab, var(--color-award-gold) 45%, transparent)); }
 .list-screen__logo { max-height: 4rem; max-width: 14rem; object-fit: contain; }
 .list-screen__logo--mono { filter: brightness(0) invert(1); } /* el logo de un estudio, en blanco */
 .list-screen__heading { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
@@ -19,10 +20,12 @@
 .list-screen__tabs { display: flex; gap: var(--space-2); }
 .list-screen__tab {
   padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill); color: var(--color-text-muted);
-  font-size: var(--text-md); font-weight: var(--weight-medium); background: transparent; box-shadow: inset 0 0 0 1px var(--color-hairline);
+  font-size: var(--text-md); font-weight: var(--weight-medium); background: transparent;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-spring);
 }
-.list-screen__tab--on { background: var(--color-text); color: var(--color-bg); box-shadow: none; }
-.list-screen__tab--focused { box-shadow: var(--ring-focus); }
+/* La gramática de toda la app (Juegos, TV): lo elegido con relleno tenue; el foco, invertido. Sin contornos blancos. */
+.list-screen__tab--on { background: var(--color-fill-hover); color: var(--color-text); }
+.list-screen__tab--focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
 .list-screen__status { margin: 0; color: var(--color-text-muted); font-size: var(--text-md); }
 .list-screen__viewport {
   flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 3.2rem 1rem 1rem; margin: 0 -1rem; /* arriba, lugar para la enfocada (crece) */

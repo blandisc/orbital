@@ -59,6 +59,8 @@
 .tile__platform--pill { padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2); border-radius: var(--radius-pill);
   background: var(--color-badge-bg); -webkit-backdrop-filter: blur(var(--blur-glass)); backdrop-filter: blur(var(--blur-glass));
   color: var(--color-text); font-weight: var(--weight-medium); white-space: nowrap; max-width: calc(100% - 2 * var(--space-4)); overflow: hidden; text-overflow: ellipsis; }
+/* La marca real de la plataforma (PlatformMark): logo o foto de la consola, a color, del alto de la letra. */
+.platform-mark { flex: none; width: 1.35rem; height: 1.35rem; object-fit: contain; filter: var(--shadow-drop-sm); }
 .tile__platform svg { flex: none; width: 1.15rem; height: 1.15rem; fill: none; stroke: var(--platform-ink, currentColor); stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
 
 /* Badge grande: sobre arte a sangre (el mosaico de Para ti). */
