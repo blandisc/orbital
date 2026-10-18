@@ -2421,17 +2421,6 @@
         }
       }
     },
-    "Donde te quedaste": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Where you left off"
-          }
-        }
-      }
-    },
     "Día por día": {
       "extractionState": "manual",
       "localizations": {
@@ -4221,6 +4210,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Anything"
+          }
+        }
+      }
+    },
+    "Lo que tienes a medias": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you have halfway"
           }
         }
       }

@@ -277,7 +277,7 @@ struct HomeView: View {
     private func continueRail(_ model: HomeModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             NavigationLink(value: HomeListRoute(id: "continue")) {
-                DSSectionHead(title: Text("Seguir viendo"), count: model.continueWatching.count, chevron: true, eyebrow: Text("Donde te quedaste"))
+                DSSectionHead(title: Text("Seguir viendo"), count: model.continueWatching.count, chevron: true, eyebrow: Text("Lo que tienes a medias"))
             }
             .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
             .accessibilityIdentifier("home-all-continue")
