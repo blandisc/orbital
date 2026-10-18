@@ -32,7 +32,12 @@ public final class HomeModel: ObservableModel {
     /// Solo películas («movie»), solo series («series») o todo (nil).
     public var spotlightKind: String? { didSet { if oldValue != spotlightKind { changed() } } }
     public var spotlightShown: [Suggestion] { spotlightKind.map { k in spotlight.filter { $0.kind == k } } ?? spotlight }
-    static let spotlightLimit = 16
+    /// «Para ti»: tus recomendaciones de Trakt (películas y series entreveradas), lo personal que antes iba arriba.
+    public private(set) var forYouPicks: [Suggestion] = [] { didSet { changed() } }
+    /// El Top 10 de Netflix en tu país, series y películas por separado (cada una con su propio 1 al 10).
+    public private(set) var netflixSeries: [Suggestion] = [] { didSet { changed() } }
+    public private(set) var netflixMovies: [Suggestion] = [] { didSet { changed() } }
+    static let spotlightLimit = 16, rowLimit = 20
     public private(set) var isLoading = false { didSet { changed() } }
     /// Lo que sale de tus series en los próximos días (Trakt): «Sale hoy» (portada) y «Sale pronto» en Inicio.
     public private(set) var upcoming: [Airing] = [] { didSet { changed() } }
@@ -120,15 +125,25 @@ public final class HomeModel: ObservableModel {
         if !cancelled, lists.contains(where: { !$0.isEmpty }) {
             spotlight = Self.mixSpotlight(lists, excluding: Set(continueWatching.map(\.metaID)), limit: Self.spotlightLimit)
         }
+        async let rm = try? forYou.items(listID: "recs", kind: "movie"), rs = try? forYou.items(listID: "recs", kind: "series")
+        async let nm = try? forYou.items(listID: "chart:netflix", kind: "movie"), ns = try? forYou.items(listID: "chart:netflix", kind: "series")
+        let (recsM, recsS, topM, topS) = await (rm, rs, nm, ns)
+        if !Task.isCancelled {
+            let seen = Set(spotlight.map(\.imdb) + continueWatching.map(\.metaID))
+            let picks = Self.mixSpotlight([recsM ?? [], recsS ?? []], excluding: seen, limit: Self.rowLimit)
+            if !picks.isEmpty { forYouPicks = picks }
+            if let topS, !topS.isEmpty { netflixSeries = Array(topS.prefix(10)) }
+            if let topM, !topM.isEmpty { netflixMovies = Array(topM.prefix(10)) }
+        }
         publishWidget(airings: cancelled ? nil : fetchedAirings)   // los estrenos también van al widget mediano
     }
 
     /// Las listas de «Destacado», en el orden en que se entreveran: tendencia, para ti y popular, cada una en película y serie.
     private func spotlightLists(_ forYou: ForYou) async -> [[Suggestion]] {
+        // Lo de todos (no lo tuyo): tendencia y popular, películas y series. Lo tuyo va abajo, en «Para ti».
         async let tm = try? forYou.items(listID: "trend", kind: "movie"), ts = try? forYou.items(listID: "trend", kind: "series")
-        async let rm = try? forYou.items(listID: "recs", kind: "movie"), rs = try? forYou.items(listID: "recs", kind: "series")
         async let pm = try? forYou.items(listID: "popular", kind: "movie"), ps = try? forYou.items(listID: "popular", kind: "series")
-        let trakt = await [tm ?? [], ts ?? [], rm ?? [], rs ?? [], pm ?? [], ps ?? []]
+        let trakt = await [tm ?? [], ts ?? [], pm ?? [], ps ?? []]
         if trakt.contains(where: { !$0.isEmpty }) { return trakt }
         // Sin Trakt: lo popular de hoy en Stremio (Cinemeta), para que Inicio no abra vacío.
         async let cm = try? services.cinemeta.catalog("movie"), cs = try? services.cinemeta.catalog("series")

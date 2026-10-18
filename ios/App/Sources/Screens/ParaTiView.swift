@@ -383,6 +383,31 @@ struct ListsView: View {
                 // Al final, las listas: las de Trakt y las de Stremio, aparte.
                 if !traktLists.isEmpty { listGroup(title: "Listas de Trakt", source: .trakt, cards: traktLists).modifier(SectionSpy(section: .trakt, active: $activeSection)) }
                 if !stremioCards.isEmpty { listGroup(title: "Listas de Stremio", source: .stremio, cards: stremioCards).modifier(SectionSpy(section: .stremio, active: $activeSection)) }
+                // Tu año (lo que viste, día por día): aquí a la vista, no escondido en tu perfil.
+                if collections.model.traktLinked {
+                    VStack(alignment: .leading, spacing: DS.Space.s3) {
+                        DSSectionHead(title: Text("Tu año"), source: .trakt, eyebrow: Text("Lo que viste, día por día"))
+                        NavigationLink { YearView() } label: {
+                            HStack(spacing: DS.Space.s3) {
+                                Image(systemName: "square.grid.3x3.fill").font(DS.TextRecipe.title.font).foregroundStyle(DS.accent)
+                                    .frame(width: DS.Collections.yearIcon, height: DS.Collections.yearIcon)
+                                    .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                                VStack(alignment: .leading, spacing: DS.Space.s1) {
+                                    Text("Tu año en Orbital").recipe(.cardTitle)
+                                    Text("Horas, tus días más intensos, lo que más viste y tu mapa de calor").recipe(.footnote).lineLimit(2)
+                                }
+                                Spacer(minLength: 0)
+                                Image(systemName: "chevron.right").foregroundStyle(DS.textMuted)
+                            }
+                            .padding(DS.Space.s3)
+                            .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("paraTi-your-year")
+                    }
+                    .padding(.horizontal, DS.Space.gutter)
+                    .modifier(SectionSpy(section: .yourYear, active: $activeSection))
+                }
             }
             .padding(.top, DS.Space.s2)
             .padding(.bottom, DS.Space.s14)   // aire bajo la última fila: la barra de pestañas no la tapa
@@ -433,7 +458,8 @@ struct ListsView: View {
                     jumps += 1
                     withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(section, anchor: .top) }
                 } label: {
-                    if activeSection == section { Label { section.title } icon: { Image(systemName: "checkmark") } } else { section.title }
+                    // Cada sección con su ícono; la que ves, con ✓ al lado.
+                    Label { activeSection == section ? section.title + Text(verbatim: "  ✓") : section.title } icon: { Image(systemName: section.symbol) }
                 }
             }
         } label: { Image(systemName: "list.bullet.indent") }
@@ -452,6 +478,7 @@ struct ListsView: View {
         case .studios: collections.model.tmdbReady
         case .years: collections.model.traktLinked
         case .airings: !model.airings.isEmpty
+        case .yourYear: collections.model.traktLinked
         }
     }
 
@@ -551,6 +578,8 @@ struct ListsView: View {
                 ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb], reflected: true) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Tu watchlist» todo está ahí: el marcador sobra
             }
         }
+        // Los Top 10 (y los rankings de plataformas), con sus pósters pedidos en cuanto llega la lista.
+        .task(id: items.first?.imdb) { if plan.style == .top10 || plan.style == .platform { ImagePipeline.shared.prefetchPosters(items.prefix(DS.Size.searchPrefetch).map(\.poster)) } }
     }
 
     /// Sin ninguna fuente tuya: lo más popular de Stremio y una invitación (un botón, no una tarjeta gris).

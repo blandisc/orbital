@@ -130,12 +130,14 @@ struct DSSectionHead: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                if let eyebrow { eyebrow.recipe(.eyebrow, color: DS.eyebrow).lineLimit(2) }   // con letra grande, en dos renglones (no «En tendencia y…»)
+                // Un solo lugar para el porqué de una sección en toda la app: arriba del título, en ámbar (como una revista).
+                // Antes unas lo ponían arriba en ámbar y otras abajo en gris.
+                if let line = eyebrow ?? meta { line.recipe(.eyebrow, color: DS.eyebrow).lineLimit(2).multilineTextAlignment(.leading) }
                 HStack(alignment: .center, spacing: DS.Space.s2) {
                     title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
                     if let source { SourceBadge(source: source) }
                 }
-                if let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }
+                if eyebrow != nil, let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }
             }
             Spacer(minLength: DS.Space.s2)
             if let trailing {

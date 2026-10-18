@@ -11,7 +11,7 @@ final class PlayerPanelUITests: XCTestCase {
         app.tap()
         let settings = app.buttons["Audio y subtítulos"]
         XCTAssertTrue(settings.waitForExistence(timeout: 10), "el botón dice qué hace")
-        XCTAssertTrue(app.buttons["En la TV"].exists, "y el de la TV también")
+        XCTAssertTrue(app.buttons["Ver en la TV"].exists, "y el de la TV también")
         settings.tap()
         XCTAssertTrue(app.staticTexts["Ajustes del video"].waitForExistence(timeout: 5), "abre el panel")
         app.buttons["panel-subtitles"].tap()

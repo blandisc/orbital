@@ -184,3 +184,70 @@ struct Toast: View {
         .accessibilityElement(children: .contain)
     }
 }
+
+/// El ícono de Infuse (el de su app, de la App Store; se busca una vez y se recuerda). Sin red, el de «abrir en otra app».
+struct InfuseIcon: View {
+    @AppStorage("infuse-icon-url") private var url = ""
+
+    var body: some View {
+        Group {
+            if let u = URL(string: url), !url.isEmpty {
+                RemoteImage(url: u, maxPoints: DS.PlayerPanel.icon) { phase in
+                    if case .success(let image) = phase { image.resizable().scaledToFit() } else { fallback }
+                }
+            } else { fallback }
+        }
+        .frame(width: DS.PlayerPanel.appIcon, height: DS.PlayerPanel.appIcon)
+        .clipShape(RoundedRectangle(cornerRadius: DS.PlayerPanel.appIcon * DS.PlayerPanel.appIconCorner, style: .continuous))
+        .task { if url.isEmpty { url = await Self.lookup() ?? "" } }
+        .accessibilityHidden(true)
+    }
+
+    private var fallback: some View { Image(systemName: "arrow.up.forward.app").resizable().scaledToFit() }
+
+    /// El ícono que la App Store publica para Infuse (com.firecore.infuse).
+    static func lookup() async -> String? {
+        guard let url = URL(string: "https://itunes.apple.com/lookup?bundleId=com.firecore.infuse"),
+              let (data, _) = try? await URLSession.shared.data(from: url),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let first = (json["results"] as? [[String: Any]])?.first else { return nil }
+        return (first["artworkUrl100"] ?? first["artworkUrl60"]) as? String
+    }
+}
+
+/// Reproducir o pausar: el botón grande del centro (papel, círculo) entre ±10, que son más chicos y de vidrio.
+struct PlayPauseButton: View {
+    let playing: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: playing ? "pause.fill" : "play.fill")
+                .font(.system(size: DS.PlayerPanel.playGlyph, weight: .bold))   // ds-exception: el glifo del botón grande se mide con el botón, no con Dynamic Type
+                .contentTransition(.symbolEffect(.replace))
+                .foregroundStyle(DS.onPrimary)
+                .frame(width: DS.PlayerPanel.playButton, height: DS.PlayerPanel.playButton)
+                .background(DS.primary, in: Circle())
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(playing ? Text("Pausa") : Text("Continuar"))
+    }
+}
+
+/// ±10 s junto al botón grande.
+struct SkipButton: View {
+    let forward: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: forward ? "goforward.10" : "gobackward.10").font(DS.TextRecipe.title.font.weight(.semibold))
+                .foregroundStyle(DS.text)
+                .frame(width: DS.PlayerPanel.sideButton, height: DS.PlayerPanel.sideButton)
+                .glassEffect(.regular.interactive(), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(forward ? Text("Adelantar 10 segundos") : Text("Retroceder 10 segundos"))
+    }
+}

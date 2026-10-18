@@ -50,10 +50,17 @@ struct PlayerScreen: View {
     @State private var panel = false
     @Environment(\.verticalSizeClass) private var verticalSize
     @State private var scrubbing: Double?
+    /// A dónde se pidió ir y el video todavía no llega.
+    @State private var pendingSeek: Double?
     @AppStorage("scare-warnings") private var scareWarnings = true
     @State private var finished = false
     @StateObject private var pip = PictureInPicture()
+    @State private var tilt = DeviceTilt()
     @State private var nowPlaying = NowPlaying()
+    /// En vertical, a qué altura va el video (lo mueves arrastrándolo; se recuerda) y su valor mientras arrastras.
+    @AppStorage("player-portrait-center") private var portraitCenter = Double(DS.PlayerPanel.portraitCenter)
+    @State private var portraitDrag: Double?
+    @State private var portraitAtDragStart: Double = 0
     /// Pellizcar para llenar la pantalla (recorta los bordes) o ver el cuadro completo.
     @State private var fillsScreen = false
 
@@ -72,6 +79,9 @@ struct PlayerScreen: View {
     @State private var seekPositionAtDragStart: Double?
     @State private var seekPreview: Double?
     @State private var isFastForwarding = false
+    /// El ícono que aparece un momento al centro tras un doble toque (pausa, ±10 s).
+    @State private var flashSymbol: String?
+    @State private var flashTask: Task<Void, Never>?
     @State private var rateBeforeFastForward: Float = 1
 
     /// Lo que suena ahora: cambia al pasar solo al siguiente episodio (el `request` es solo con el que se abrió).
@@ -83,14 +93,19 @@ struct PlayerScreen: View {
             DS.video.ignoresSafeArea()
             // En vertical con el panel abierto, el video sube a la parte de arriba (la hoja ocupa la de abajo).
             GeometryReader { geo in
+                let rect = videoRect(in: geo.size)
                 ZStack {
                     holder.engine.surface
                     if dragAxis != .horizontal {
                         // Mientras buscas arrastrando, el subtítulo se quita: la burbuja ya dice el tiempo y no hay con qué encimarlo.
-                        holder.engine.subtitleOverlay(lifted: controlsVisible, heightFraction: env.services.appSettings.subtitleHeightFraction)
+                        // Sube con los controles solo en horizontal (en vertical los controles van fuera del video: si subía,
+                        // quedaba a media imagen).
+                        holder.engine.subtitleOverlay(lifted: controlsVisible && landscape, heightFraction: env.services.appSettings.subtitleHeightFraction)
                             .transition(.opacity)
                     }
                 }
+                .frame(width: rect.width, height: rect.height)
+                .offset(x: rect.minX, y: rect.minY)
                 .overlay(alignment: .bottom) {
                     // En vertical con el panel: bajo el video, qué es y dónde vas (llena el espacio y orienta).
                     if panel && !landscape {
@@ -101,19 +116,17 @@ struct PlayerScreen: View {
                         .padding(.bottom, DS.Space.s4)
                     }
                 }
-                // En horizontal, el video se recorre a la izquierda del panel: el subtítulo nunca queda debajo de él.
-                .frame(width: panel && landscape ? max(0, geo.size.width - DS.PlayerPanel.width - DS.Space.s4 * 2) : geo.size.width,
-                       height: panel && !landscape ? geo.size.height * DS.PlayerPanel.videoShare : geo.size.height)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-            .ignoresSafeArea()
+            .ignoresSafeArea(edges: landscape ? .all : [])   // en vertical el video respeta la isla y el indicador de inicio
             gestureLayer(model)
             SystemVolumeControl(volume: $requestedVolume)
                 .frame(width: DS.Gesture.indicatorBarWidth, height: DS.Gesture.indicatorBarWidth)
                 .allowsHitTesting(false).accessibilityHidden(true)
             statusOverlays(model)
             gestureOverlays
-            if controlsVisible && !(panel && landscape) { controls(model).transition(.opacity) }
+            // En vertical los controles van bajo el video (no tapan nada): siempre a la vista.
+            if (controlsVisible || !landscape) && !(panel && landscape) && !(panel && !landscape) { controls(model).transition(.opacity) }
             if panel && landscape {
                 // Tocar fuera del panel lo cierra; el video sigue a la vista (el cambio de subtítulos se ve al momento).
                 Color.clear.contentShape(Rectangle()).onTapGesture { panel = false }
@@ -138,6 +151,15 @@ struct PlayerScreen: View {
         .animation(DS.Motion.base(reduceMotion), value: dragAxis)
         .task {
             lockLandscape()
+            // Girar el teléfono gira el video (aunque tengas el candado de rotación).
+            tilt.onChange = { pose in
+                switch pose {
+                case .portrait: rotate(allowed: .allButUpsideDown, to: .portrait)
+                case .landscapeLeft: rotate(allowed: .allButUpsideDown, to: .landscapeLeft)
+                case .landscapeRight: rotate(allowed: .allButUpsideDown, to: .landscapeRight)
+                }
+            }
+            tilt.start()
             // La sesión de video, siempre (la voz del control la deja en otro modo y con el volumen bajado).
             try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
             try? AVAudioSession.sharedInstance().setActive(true)
@@ -169,6 +191,11 @@ struct PlayerScreen: View {
         }
         .onChange(of: scenePhase) { _, phase in if phase != .active { Task { await model.appDidEnterBackground() } } }
         .onChange(of: model.phase) { _, phase in if phase == .closed { finish() } }
+        // El video ya llegó (o pasó un momento): el pulgar vuelve a seguir el avance real.
+        .onChange(of: model.snapshot.position) { _, position in
+            if let target = pendingSeek, abs(position - target) < DS.Gesture.seekArrived { pendingSeek = nil }
+        }
+        .task(id: pendingSeek) { if pendingSeek != nil { try? await Task.sleep(nanoseconds: DS.Timing.seekPatience); pendingSeek = nil } }
         .onChange(of: voiceOver) { _, on in if on { controlsVisible = true } }   // con VoiceOver, los controles no se esconden
         .alert("¿Sigues viendo?", isPresented: Binding(get: { model.stillWatchingPrompt }, set: { _ in })) {
             Button("Seguir") { Task { await model.confirmStillWatching() } }
@@ -180,7 +207,7 @@ struct PlayerScreen: View {
             settingsPanel(model).fittedSheet().presentationDragIndicator(.visible)
         }
         .onDisappear {
-            UIApplication.shared.isIdleTimerDisabled = false; pip.stop(); nowPlaying.stop(); unlockPortrait()
+            UIApplication.shared.isIdleTimerDisabled = false; pip.stop(); nowPlaying.stop(); tilt.stop(); unlockPortrait()
             UIScreen.main.brightness = CGFloat(originalBrightness)   // el brillo es del sistema: no se queda en lo que dejó el gesto
         }
     }
@@ -188,9 +215,14 @@ struct PlayerScreen: View {
     // MARK: gestos
     private func gestureLayer(_ model: PlayerModel) -> some View {
         GeometryReader { geo in
+            // Como Infuse: doble toque al centro pausa o sigue; en las orillas, ±10 s.
             HStack(spacing: 0) {
-                Color.clear.contentShape(Rectangle()).onTapGesture(count: 2) { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
-                Color.clear.contentShape(Rectangle()).onTapGesture(count: 2) { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }
+                Color.clear.contentShape(Rectangle()).frame(width: geo.size.width * DS.Gesture.edgeShare)
+                    .onTapGesture(count: 2) { Task { await model.skip(-PlaybackRules.skipSeconds) }; flash("gobackward.10") }
+                Color.clear.contentShape(Rectangle())
+                    .onTapGesture(count: 2) { Task { await model.togglePlay() }; flash(model.snapshot.state == .playing ? "pause.fill" : "play.fill") }
+                Color.clear.contentShape(Rectangle()).frame(width: geo.size.width * DS.Gesture.edgeShare)
+                    .onTapGesture(count: 2) { Task { await model.skip(PlaybackRules.skipSeconds) }; flash("goforward.10") }
             }
             .contentShape(Rectangle())
             .onTapGesture { controlsVisible.toggle(); if controlsVisible { scheduleHide() } }
@@ -221,6 +253,8 @@ struct PlayerScreen: View {
                     hideTask?.cancel()
                     dragAxis = PlayerGestures.dominantAxis(dx: dx, dy: dy)
                     switch dragAxis {
+                    case .vertical where !landscape:
+                        portraitAtDragStart = portraitCenter   // en vertical, arrastrar arriba o abajo mueve el video
                     case .vertical:
                         let kind = PlayerGestures.verticalGesture(startX: Double(value.startLocation.x), screenWidth: Double(size.width))
                         verticalKind = kind
@@ -233,6 +267,9 @@ struct PlayerScreen: View {
                     }
                 }
                 switch dragAxis {
+                case .vertical where !landscape:
+                    let range = DS.PlayerPanel.portraitCenterRange
+                    portraitDrag = min(max(portraitAtDragStart + dy / Double(size.height), Double(range.lowerBound)), Double(range.upperBound))
                 case .vertical:
                     guard let kind = verticalKind else { return }
                     let start = kind == .brightness ? brightnessAtDragStart : volumeAtDragStart
@@ -247,7 +284,8 @@ struct PlayerScreen: View {
                 }
             }
             .onEnded { _ in
-                if dragAxis == .horizontal, let target = seekPreview { Task { await model.seek(to: target) } }
+                if let moved = portraitDrag { portraitCenter = moved; portraitDrag = nil }
+                if dragAxis == .horizontal, let target = seekPreview { pendingSeek = target; Task { await model.seek(to: target) } }
                 dragAxis = .undecided; verticalKind = nil; seekPositionAtDragStart = nil; seekPreview = nil
                 scheduleIndicatorHide()
                 if controlsVisible { scheduleHide() }
@@ -269,6 +307,12 @@ struct PlayerScreen: View {
         }
         if isFastForwarding {
             VStack { DSSpeedPill(); Spacer() }.padding(.top, DS.Space.s14).transition(.opacity).allowsHitTesting(false)
+        }
+        if let flashSymbol, !controlsVisible {
+            Image(systemName: flashSymbol).font(DS.TextRecipe.display.font).foregroundStyle(DS.text)
+                .frame(width: DS.Size.touchTarget * 2, height: DS.Size.touchTarget * 2)
+                .glassEffect(.regular, in: Circle())
+                .transition(.scale.combined(with: .opacity)).allowsHitTesting(false).accessibilityHidden(true)
         }
     }
 
@@ -323,6 +367,17 @@ struct PlayerScreen: View {
 
     private func pulse() { controlsVisible = true; scheduleHide() }
 
+    /// Un ícono grande que aparece y se va (el doble toque se nota sin abrir los controles).
+    private func flash(_ symbol: String) {
+        flashTask?.cancel()
+        withAnimation(DS.Motion.base(reduceMotion)) { flashSymbol = symbol }
+        flashTask = Task {
+            try? await Task.sleep(nanoseconds: DS.Timing.gestureIndicatorHold)
+            guard !Task.isCancelled else { return }
+            withAnimation(DS.Motion.base(reduceMotion)) { flashSymbol = nil }
+        }
+    }
+
     private func scheduleHide() {
         hideTask?.cancel()
         hideTask = Task {
@@ -339,7 +394,10 @@ struct PlayerScreen: View {
         case .failed(let message):
             VStack(spacing: DS.Space.s4) {
                 DSNotice(verbatim: env.message(message), tone: .error)
-                HStack { Button("Cerrar") { Task { await close() } }.buttonStyle(.glass); Button("Abrir en Infuse") { Task { await openInInfuse() } }.dsPrimaryButton() }
+                HStack {
+                    Button("Cerrar") { Task { await close() } }.buttonStyle(.glass)
+                    Button { Task { await openInInfuse() } } label: { Label { Text("Abrir en Infuse") } icon: { InfuseIcon() } }.dsPrimaryButton()
+                }
             }.padding(DS.Space.s6)
         default: if !controlsVisible, model.snapshot.state == .buffering || model.snapshot.state == .loading { ProgressView().tint(DS.text) }   // con controles, va en el centro
         }
@@ -351,56 +409,90 @@ struct PlayerScreen: View {
     }
 
     // MARK: controles
+    /// Horizontal: arriba ✕, el nombre completo y AirPlay; al centro ±10 y el botón grande; abajo la barra y, a la derecha,
+    /// Audio y subtítulos, Ventana y Ver en la TV (antes iban todos arriba y cortaban el nombre del episodio).
+    /// Vertical: lo mismo pero bajo el video (que va arriba): nada tapa la imagen ni los subtítulos.
     private func controls(_ model: PlayerModel) -> some View {
-        ZStack {
-            LinearGradient(colors: [DS.scrim, .clear, DS.scrim], startPoint: .top, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
-            VStack {
-                HStack(spacing: DS.Space.s3) {
-                    DSIconButton(symbol: "chevron.down", label: "Cerrar") { Task { await close() } }
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(current.displayTitle).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).lineLimit(1)
-                        if !current.episodeLabel.isEmpty { Text(current.episodeLabel).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted).lineLimit(1) }
+        GeometryReader { geo in
+            if landscape {
+                ZStack {
+                    LinearGradient(colors: [DS.scrim, .clear, DS.scrim], startPoint: .top, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
+                    VStack(spacing: DS.Space.s3) {
+                        topBar(model)
+                        Spacer()
+                        if model.phase != .preparing { transport(model) }
+                        Spacer()
+                        if model.snapshot.duration > 0 { scrubber(model) }
+                        HStack(spacing: DS.Space.s2) { Spacer(); actions(model) }
                     }
-                    Spacer()
-                    if model.skipIntroTo != nil {
-                        Button(model.skipKind == .recap ? "Saltar resumen" : "Saltar intro", systemImage: "forward.fill") { Task { await model.skipIntro() } }.buttonStyle(.glass)
-                    }
-                    // Cada botón dice qué hace (si no cabe, solo el ícono; VoiceOver dice el nombre).
-                    // Un video que te pasaron (sin reconocer) no lo puede poner la TV.
-                    if env.services.orbital.isConfigured, model.request?.metaID.hasPrefix("file:") != true {
-                        PlayerLabelButton(title: "Ver en la TV", symbol: "tv") { Task { await continueOnTV() } }
-                    }
-                    if pip.isPossible { PlayerLabelButton(title: "Ventana", symbol: "pip.enter") { pip.toggle() } }
-                    PlayerLabelButton(title: "Audio y subtítulos", symbol: "captions.bubble") { panel = true }
-                    AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
-                        .accessibilityLabel(Text("AirPlay"))
+                    .padding(DS.Space.s6)
                 }
-                Spacer()
-                if model.phase != .preparing { transport(model) }
-                Spacer()
-                if model.snapshot.duration > 0 { scrubber(model) }
+            } else {
+                let rect = videoRect(in: geo.size)
+                ZStack(alignment: .top) {
+                    topBar(model).padding(.horizontal, DS.Space.gutter).padding(.top, DS.Space.s2)
+                    VStack(spacing: DS.Space.s5) {
+                        if model.snapshot.duration > 0 { scrubber(model) }
+                        if model.phase != .preparing { transport(model) }
+                        HStack(spacing: DS.Space.s2) { actions(model) }
+                        // Cómo mover el video (una sola vez a la vista, sin estorbar).
+                        Label("Arrastra el video para subirlo o bajarlo", systemImage: "arrow.up.and.down").recipe(.caption, color: DS.textFaint)
+                    }
+                    .padding(.horizontal, DS.Space.gutter)
+                    .offset(y: rect.maxY + DS.Space.s4)
+                }
+                .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
             }
-            .padding(DS.Space.s6)
         }
     }
 
-    /// Retroceder, pausa y adelantar (solo cuando ya hay video: mientras busca fuente no hacen nada).
-    private func transport(_ model: PlayerModel) -> some View {
-        HStack(spacing: DS.Space.s10) {
-            DSIconButton(symbol: "gobackward.10", label: "Retroceder 10 segundos") { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
-            if model.snapshot.state == .loading || model.snapshot.state == .buffering {
-                ProgressView().tint(DS.text).controlSize(.large).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
-            } else {
-                DSIconButton(symbol: model.snapshot.state == .playing ? "pause.fill" : "play.fill", label: model.snapshot.state == .playing ? "Pausa" : "Continuar", prominent: true) { Task { await model.togglePlay() }; pulse() }
+    private func topBar(_ model: PlayerModel) -> some View {
+        HStack(alignment: .top, spacing: DS.Space.s3) {
+            DSIconButton(symbol: "xmark", label: "Cerrar") { Task { await close() } }
+                .accessibilityIdentifier("player-close")
+            // El nombre y el episodio completos (dos renglones si hace falta), sin botones que los corten.
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                Text(current.displayTitle).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(1)
+                if !current.episodeLabel.isEmpty { Text(current.episodeLabel).recipe(.footnote).lineLimit(2) }
             }
-            DSIconButton(symbol: "goforward.10", label: "Adelantar 10 segundos") { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }
+            .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
+            if model.skipIntroTo != nil {
+                Button(model.skipKind == .recap ? "Saltar resumen" : "Saltar intro", systemImage: "forward.fill") { Task { await model.skipIntro() } }.buttonStyle(.glass)
+            }
+            AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
+                .accessibilityLabel(Text("AirPlay"))
+        }
+    }
+
+    /// Lo que se hace con el video (cada botón dice qué hace; si no cabe, solo el ícono y VoiceOver dice el nombre).
+    @ViewBuilder private func actions(_ model: PlayerModel) -> some View {
+        PlayerLabelButton(title: "Audio y subtítulos", symbol: "captions.bubble") { panel = true }
+        if pip.isPossible { PlayerLabelButton(title: "Ventana", symbol: "pip.enter") { pip.toggle() } }
+        // Un video que te pasaron (sin reconocer) no lo puede poner la TV.
+        if env.services.orbital.isConfigured, model.request?.metaID.hasPrefix("file:") != true {
+            PlayerLabelButton(title: "Ver en la TV", symbol: "tv") { Task { await continueOnTV() } }
+        }
+    }
+
+    /// Retroceder, el botón grande y adelantar (solo cuando ya hay video: mientras busca fuente no hacen nada).
+    private func transport(_ model: PlayerModel) -> some View {
+        HStack(spacing: DS.Space.s8) {
+            SkipButton(forward: false) { Task { await model.skip(-PlaybackRules.skipSeconds) }; pulse() }
+            if model.snapshot.state == .loading || model.snapshot.state == .buffering {
+                ProgressView().tint(DS.text).controlSize(.large).frame(width: DS.PlayerPanel.playButton, height: DS.PlayerPanel.playButton)
+            } else {
+                PlayPauseButton(playing: model.snapshot.state == .playing) { Task { await model.togglePlay() }; pulse() }
+            }
+            SkipButton(forward: true) { Task { await model.skip(PlaybackRules.skipSeconds) }; pulse() }
         }
     }
 
     private func scrubber(_ model: PlayerModel) -> some View {
         let duration = max(model.snapshot.duration, 1)
         // Buscar arrastrando (gesto de pantalla completa) mueve el pulgar igual que arrastrar el slider a mano.
-        let shown = scrubbing ?? (dragAxis == .horizontal ? seekPreview : nil) ?? model.snapshot.position
+        // Mientras el video llega a donde soltaste (una descarga tarda en buscar), el pulgar se queda ahí: antes regresaba al
+        // punto viejo y parecía que no te hacía caso.
+        let shown = scrubbing ?? (dragAxis == .horizontal ? seekPreview : nil) ?? pendingSeek ?? model.snapshot.position
         return VStack(spacing: DS.Space.s1) {
             // Los sustos (Where's The Jump), marcados sobre la barra; vibra unos segundos antes si pediste el aviso.
             if let scares = model.scares {
@@ -410,7 +502,7 @@ struct PlayerScreen: View {
             }
             Slider(value: Binding(get: { shown }, set: { scrubbing = $0 }), in: 0...duration) { editing in
                 if editing { hideTask?.cancel(); controlsVisible = true; return }   // mientras arrastras, nada se esconde
-                if let target = scrubbing { Task { await model.seek(to: target); scrubbing = nil } }
+                if let target = scrubbing { pendingSeek = target; scrubbing = nil; Task { await model.seek(to: target) } }
                 pulse()
             }
             .tint(DS.accent)   // el avance, en el acento (como en toda la app)
@@ -422,10 +514,8 @@ struct PlayerScreen: View {
             HStack {
                 Text(verbatim: clock(shown)).recipe(.data)
                 Spacer()
-                // Lo que falta y a qué hora terminas (la misma cuenta que la ficha), con números tabulares como todos los datos.
-                // El «−» es lo que falta del video (como el slider); la hora de fin sí cuenta la velocidad (a 2× acabas antes).
-                let left = max(0, duration - shown), real = left / Double(max(model.rate, 0.25))
-                Text(verbatim: "−\(clock(left)) · \(Strings.endsAt(minutesLeft: Int((real / 60).rounded(.up)), now: env.services.now(), language: env.services.appSettings.uiLanguage))").recipe(.data)
+                // Lo que falta (sin la hora a la que terminas: no la querías).
+                Text(verbatim: "−\(clock(max(0, duration - shown)))").recipe(.data)
             }
         }
     }
@@ -436,9 +526,12 @@ struct PlayerScreen: View {
     }
 
     // MARK: salir
+    /// Cerrar: la pantalla se va al momento y lo demás (guardar dónde ibas en Stremio y Trakt) sigue por detrás. Antes se
+    /// esperaba a la red y había que tocar dos o tres veces.
     private func close() async {
-        await holder.model.close()
+        let model = holder.model
         finish()
+        await model.close()
     }
 
     private func finish() {
@@ -465,6 +558,19 @@ struct PlayerScreen: View {
     }
 
     private var landscape: Bool { verticalSize == .compact }
+
+    /// Dónde va el video. Horizontal: toda la pantalla (o a la izquierda del panel). Vertical: arriba, a todo lo ancho y en su
+    /// proporción (no apachurrado), a la altura que lo dejes al arrastrarlo; con el panel abierto, la mitad de arriba.
+    private func videoRect(in size: CGSize) -> CGRect {
+        if landscape {
+            return CGRect(x: 0, y: 0, width: panel ? max(0, size.width - DS.PlayerPanel.width - DS.Space.s4 * 2) : size.width, height: size.height)
+        }
+        if panel { return CGRect(x: 0, y: 0, width: size.width, height: size.height * DS.PlayerPanel.videoShare) }
+        let height = min(size.width / DS.Poster.stillAspect, size.height * DS.PlayerPanel.videoShare)
+        let center = size.height * (portraitDrag ?? portraitCenter)
+        let y = min(max(0, center - height / 2), max(0, size.height - height))
+        return CGRect(x: 0, y: y, width: size.width, height: height)
+    }
 
     /// «12:34 de 22:00».
     private func positionText(_ model: PlayerModel) -> String {
@@ -610,7 +716,7 @@ struct VideoSettingsPanel: View {
         }
         .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
         .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.PlayerPanel.rowRadius, style: .continuous))
-        Button(action: openInInfuse) { Label("Abrir en Infuse", systemImage: "arrow.up.forward.app") }
+        Button(action: openInInfuse) { Label { Text("Abrir en Infuse") } icon: { InfuseIcon() } }
             .buttonStyle(.borderless).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted)
             .frame(maxWidth: .infinity).padding(.top, DS.Space.s2)
     }
@@ -635,7 +741,7 @@ struct VideoSettingsPanel: View {
     @ViewBuilder private var audio: some View {
         let s = model.snapshot
         header("Audio", back: true)
-        ForEach(s.audioTracks) { track in
+        ForEach(s.audioTracks.sorted { $0.id < $1.id }) { track in
             choiceRow(selected: s.selectedAudio == track.id, title: Text(verbatim: TrackChooser.label(track, locale: locale, technical: false)),
                       detail: Text(verbatim: TrackChooser.technical(track))) { Task { await model.selectAudio(track.id) } }
         }
@@ -665,8 +771,10 @@ struct VideoSettingsPanel: View {
         let s = model.snapshot
         let settings = env.services.appSettings
         let mine = [settings.subtitles, settings.audio].filter { !$0.isEmpty }
-        let yours = s.subtitleTracks.filter { t in mine.contains { TrackChooser.matches(t, $0) } }
-        let others = s.subtitleTracks.filter { t in !yours.contains(t) }
+        // En un orden fijo (por pista): el motor a veces las manda en otro orden y las cápsulas brincaban de lugar.
+        let tracks = s.subtitleTracks.sorted { $0.id < $1.id }
+        let yours = tracks.filter { t in mine.contains { TrackChooser.matches(t, $0) } }
+        let others = tracks.filter { t in !yours.contains(t) }
         header("Subtítulos", back: true)
         if !yours.isEmpty {
             PanelGroupTitle(title: "Tu idioma")

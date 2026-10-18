@@ -28,6 +28,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var audio = "es"                    // idioma de audio preferido de las fuentes
     public var subtitles = "es"                // idioma de subtítulos («» = sin subtítulos)
     public var onlyForcedSubtitles = false
+    /// Audio en español latino (no de España) cuando un video trae los dos.
+    public var latinSpanish = false
     public var quality = "1080p"               // calidad al ver: «4K», «1080p», «720p»
     public var cellularQuality = "1080p"       // calidad máxima con datos móviles
     public var wifiOnlyDownloads = true
@@ -55,6 +57,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         audio = try c.decodeIfPresent(String.self, forKey: .audio) ?? audio
         subtitles = try c.decodeIfPresent(String.self, forKey: .subtitles) ?? subtitles
         onlyForcedSubtitles = try c.decodeIfPresent(Bool.self, forKey: .onlyForcedSubtitles) ?? onlyForcedSubtitles
+        latinSpanish = try c.decodeIfPresent(Bool.self, forKey: .latinSpanish) ?? latinSpanish
         quality = try c.decodeIfPresent(String.self, forKey: .quality) ?? quality
         cellularQuality = try c.decodeIfPresent(String.self, forKey: .cellularQuality) ?? cellularQuality
         wifiOnlyDownloads = try c.decodeIfPresent(Bool.self, forKey: .wifiOnlyDownloads) ?? wifiOnlyDownloads
@@ -76,7 +79,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     enum Keys: String, CodingKey {
         case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
         case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
-        case homeDeck, homeTime, avatar, displayName
+        case homeDeck, homeTime, avatar, displayName, latinSpanish
     }
     public var traktEnabled: Bool { !traktClientID.isEmpty }
 
@@ -160,6 +163,9 @@ public final class TitlePreferences: @unchecked Sendable {
         let saved = lock.withLock { resumes[metaID] }
         return saved?.videoID == videoID ? saved : nil
     }
+
+    /// Las pistas con que dejaste el título (cualquier episodio): para el siguiente se usan las mismas.
+    public func lastChoice(metaID: String) -> ResumeChoice? { lock.withLock { resumes[metaID] } }
 
     public func remember(metaID: String, choice: ResumeChoice) {
         lock.withLock {

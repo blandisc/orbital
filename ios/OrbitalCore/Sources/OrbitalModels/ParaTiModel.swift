@@ -105,7 +105,11 @@ public final class ParaTiModel: ObservableModel {
     /// El carrusel del destacado: varias de la misma lista de donde sale el primero (el Top 10 de Netflix, tus
     /// recomendaciones…), cada una con su motivo («N.º 2 en Netflix»).
     public var featuredSlides: [Featured] {
-        let loaded = visibleShelves.map { (plan: $0, items: items(for: $0)) }
+        // Abre con lo tuyo (tus recomendaciones, lo que es tendencia para ti), lo que antes iba arriba en Inicio; el Top 10 de
+        // Netflix, que abría aquí, ahora va en Inicio.
+        let loaded = visibleShelves.enumerated()
+            .sorted { (Self.featuredPriority($0.element), $0.offset) < (Self.featuredPriority($1.element), $1.offset) }   // estable: no cambia entre vistas
+            .map { (plan: $0.element, items: items(for: $0.element)) }
         if let pick = ShelfPlanner.featuredSlides(loaded, rotation: featuredRotation) {
             return pick.items.map { Featured(item: $0, shelfID: pick.plan.id, reason: Self.reason(of: $0, in: pick.plan)) }
         }
@@ -115,6 +119,16 @@ public final class ParaTiModel: ObservableModel {
             return pick.items.map { Featured(item: $0, shelfID: nil, reason: Self.reason(of: $0, in: pick.plan)) }
         }
         return []
+    }
+
+    /// Qué estante da el destacado: tus recomendaciones primero, luego lo que sigues y la tendencia; los Top 10 al final.
+    static func featuredPriority(_ plan: ShelfPlan) -> Int {
+        let ids = plan.listIDs.isEmpty ? [plan.list.id] : plan.listIDs
+        if ids.contains(where: { $0.hasPrefix("recs") || $0.hasPrefix("because") }) { return 0 }
+        if ids.contains(where: { $0 == "mine" || $0 == "watchlist" }) { return 1 }
+        if ids.contains(where: { $0.hasPrefix("trend") }) { return 2 }
+        if plan.style == .top10 { return 9 }
+        return 5
     }
 
     static func reason(of item: Suggestion, in plan: ShelfPlan) -> FeaturedReason {

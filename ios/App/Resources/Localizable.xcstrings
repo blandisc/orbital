@@ -705,6 +705,17 @@
         }
       }
     },
+    "Arrastra el video para subirlo o bajarlo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag the video to move it up or down"
+          }
+        }
+      }
+    },
     "Arriba": {
       "extractionState": "manual",
       "localizations": {
@@ -3257,6 +3268,17 @@
         }
       }
     },
+    "Español latino": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Latin American Spanish"
+          }
+        }
+      }
+    },
     "Especial": {
       "extractionState": "manual",
       "localizations": {
@@ -3682,6 +3704,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hi, %@"
+          }
+        }
+      }
+    },
+    "Horas, tus días más intensos, lo que más viste y tu mapa de calor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hours, your busiest days, what you watched most and your heat map"
           }
         }
       }
@@ -4390,6 +4423,17 @@
         }
       }
     },
+    "Lo más visto en tu país esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most watched in your country this week"
+          }
+        }
+      }
+    },
     "Lo más visto esta semana": {
       "extractionState": "manual",
       "localizations": {
@@ -4500,6 +4544,17 @@
         }
       }
     },
+    "Lo que todo el mundo está viendo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What everyone is watching"
+          }
+        }
+      }
+    },
     "Lo que viste": {
       "extractionState": "manual",
       "localizations": {
@@ -4507,6 +4562,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What you watched"
+          }
+        }
+      }
+    },
+    "Lo que viste, día por día": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you watched, day by day"
           }
         }
       }
@@ -5398,6 +5464,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Couldn't load this person from TMDB."
+          }
+        }
+      }
+    },
+    "No pude traer los episodios de Los Simpson.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't get The Simpsons episodes."
           }
         }
       }
@@ -6399,6 +6476,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recommended"
+          }
+        }
+      }
+    },
+    "Recomendadas con lo que ves": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommended from what you watch"
           }
         }
       }
@@ -7690,6 +7778,17 @@
         }
       }
     },
+    "Top 10 en Netflix": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top 10 on Netflix"
+          }
+        }
+      }
+    },
     "Top 10 · Películas": {
       "extractionState": "manual",
       "localizations": {
@@ -7954,6 +8053,17 @@
         }
       }
     },
+    "Tu año en Orbital": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your year on Orbital"
+          }
+        }
+      }
+    },
     "Tu contraseña no se guarda: solo la clave de sesión, en el Keychain de tu iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -8108,6 +8218,28 @@
         }
       }
     },
+    "Un Simpson al azar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A random Simpsons"
+          }
+        }
+      }
+    },
+    "Un Simpson al azar (T5–T15)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A random Simpsons (S5–S15)"
+          }
+        }
+      }
+    },
     "Una para ahora · desliza hacia arriba para elegir": {
       "extractionState": "manual",
       "localizations": {
@@ -8192,6 +8324,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Watch now"
+          }
+        }
+      }
+    },
+    "Ver aquí": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch here"
           }
         }
       }

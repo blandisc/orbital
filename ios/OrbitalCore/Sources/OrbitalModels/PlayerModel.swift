@@ -349,9 +349,10 @@ public final class PlayerModel: ObservableModel {
         guard !tracksApplied, !s.audioTracks.isEmpty || !s.subtitleTracks.isEmpty, let request else { return }
         tracksApplied = true
         // «Continuar»: las mismas pistas con que lo dejaste; lo que no se encuentre, con la regla de siempre.
-        if !request.fromStart, let choice = titlePrefs.resumeChoice(metaID: request.metaID, videoID: request.videoID), await applyResumeTracks(choice, s) { return }
+        // También en el siguiente episodio de la serie (antes solo en el mismo episodio exacto).
+        if !request.fromStart, let choice = titlePrefs.lastChoice(metaID: request.metaID), await applyResumeTracks(choice, s) { return }
         let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
-        let audio = TrackChooser.audio(s.audioTracks, language: langs.prefs.audio)
+        let audio = TrackChooser.audio(s.audioTracks, language: langs.prefs.audio, latin: settings.value.latinSpanish)
         if let audio, audio.id != s.selectedAudio { await engine.selectAudio(audio.id) }
         if TrackChooser.wrongAudio(s.audioTracks, language: langs.prefs.audio) { notice = .audioNotInYourLanguage }
         let audioLanguage = PlaybackRules.languageCode(audio?.language) ?? langs.prefs.audio
@@ -368,12 +369,16 @@ public final class PlayerModel: ObservableModel {
     /// Las pistas guardadas, si están en este video. true si los subtítulos quedaron como los dejaste (el audio, si se
     /// encuentra, también); false para elegir con la regla de siempre.
     private func applyResumeTracks(_ choice: ResumeChoice, _ s: EngineSnapshot) async -> Bool {
-        func same(_ track: MediaTrack, _ saved: ResumeChoice.Track) -> Bool { track.language == saved.language && track.title == saved.title }
+        // La misma pista (idioma y nombre); si en este archivo se llama distinto (otro episodio, otra fuente), la del mismo idioma.
+        func find(_ tracks: [MediaTrack], _ saved: ResumeChoice.Track) -> MediaTrack? {
+            tracks.first { $0.language == saved.language && $0.title == saved.title }
+                ?? tracks.first { PlaybackRules.languageCode($0.language) != nil && PlaybackRules.languageCode($0.language) == PlaybackRules.languageCode(saved.language) && !$0.isForced }
+        }
         guard let sub = choice.subtitle else { return false }
-        if let audio = choice.audio, let track = s.audioTracks.first(where: { same($0, audio) }), track.id != s.selectedAudio { await engine.selectAudio(track.id) }
+        if let audio = choice.audio, let track = find(s.audioTracks, audio), track.id != s.selectedAudio { await engine.selectAudio(track.id) }
         knownSubtitleIDs = Set(s.subtitleTracks.map(\.id))
         if sub.off { await engine.selectSubtitle(nil); return true }
-        guard let track = s.subtitleTracks.first(where: { same($0, sub) }) else { return false }
+        guard let track = find(s.subtitleTracks, sub) else { return false }
         await engine.selectSubtitle(track.id)
         return true
     }
@@ -479,6 +484,14 @@ public final class PlayerModel: ObservableModel {
 
     /// Abre un video y le pone la velocidad elegida (el motor empieza cada video en 1).
     private func loadVideo(_ url: URL, at start: Double) async throws {
+        if let request {
+            // Lo que ya sabes que quieres, desde el primer cuadro: el audio y los subtítulos con que lo dejaste (o tus idiomas).
+            let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
+            let choice = request.fromStart ? nil : titlePrefs.lastChoice(metaID: request.metaID)
+            let audio = [choice?.audio?.language, settings.value.latinSpanish && langs.prefs.audio == "es" ? "es-419" : nil, langs.prefs.audio].compactMap { $0 }.filter { !$0.isEmpty }
+            let subs = choice?.subtitle?.off == true ? [] : [choice?.subtitle?.language, langs.subtitles].compactMap { $0 }.filter { !$0.isEmpty }
+            await engine.prepare(audioLanguages: audio, subtitleLanguages: subs, externalSubtitles: request.localSubtitles)
+        }
         try await engine.load(url: url, startAt: start)
         if rate != 1 { await engine.setRate(rate) }
     }
@@ -645,6 +658,8 @@ public final class PlayerModel: ObservableModel {
         generation += 1                       // cualquier carga o cambio de episodio en curso queda sin efecto
         consuming?.cancel(); consuming = nil
         let finished = reachedEnd || (snapshot.duration > 0 && snapshot.position >= snapshot.duration * StremioLibrary.watchedAt)
+        // Primero se calla (la pantalla ya se fue); guardar en la red puede tardar.
+        await engine.pause()
         if !finalReported { await report(.stopped(finished: finished)) }
         phase = .closed
         await engine.stop()

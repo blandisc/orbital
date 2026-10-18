@@ -89,6 +89,10 @@ enum DS {
     /// Brillo, volumen y buscar arrastrando (como Infuse): el umbral que decide el eje (el mismo número que usa
     /// `PlayerGestures`, la aritmética pura) y el tamaño del indicador.
     enum Gesture {
+        /// La franja de cada orilla donde el doble toque salta ±10 s (al centro, pausa o sigue).
+        static let edgeShare: CGFloat = 0.28
+        /// A cuántos segundos del destino ya se da por llegado un salto (el pulgar vuelve a seguir el avance).
+        static let seekArrived: Double = 2
         static let axisThreshold = CGFloat(DesignTokens.Gesture.axisThreshold)
         static let indicatorBarHeight: CGFloat = 120
         static let indicatorBarWidth: CGFloat = 5
@@ -209,6 +213,8 @@ enum DS {
 
     /// El panel «Ajustes del video» del reproductor: a la derecha en horizontal, hoja ajustada en vertical.
     enum PlayerPanel {
+        /// El ícono de una app (Infuse) junto a su botón: tamaño y redondeo como los íconos de iOS.
+        static let appIcon: CGFloat = 20, appIconCorner: CGFloat = 0.225
         static let width: CGFloat = 420, radius: CGFloat = 30, rowRadius: CGFloat = 16, icon: CGFloat = 32
         /// El ancho del valor de la velocidad («1.25×») entre − y +.
         static let speedValue: CGFloat = 52
@@ -216,6 +222,10 @@ enum DS {
         static let sampleSizes: [String: CGFloat] = ["small": 12, "medium": 15, "large": 19]
         /// En vertical con el panel abierto, la parte de arriba de la pantalla que queda para el video.
         static let videoShare: CGFloat = 0.5
+        /// En vertical: dónde va el centro del video (parte de la altura; se mueve arrastrando) y entre qué límites.
+        static let portraitCenter: CGFloat = 0.32, portraitCenterRange: ClosedRange<CGFloat> = 0.2...0.62
+        /// El botón de reproducir, más grande que ±10 (lo que más se toca).
+        static let playButton: CGFloat = 72, playGlyph: CGFloat = 30, sideButton: CGFloat = 52
     }
 
     /// La dirección «Editorial» (A + una portada): espacio entre secciones, la portada y la pieza panorámica.
@@ -294,6 +304,8 @@ enum DS {
     }
 
     enum Collections {
+        /// El ícono de la tarjeta «Tu año» al final de Para ti.
+        static let yearIcon: CGFloat = 60
         static let emblem: CGFloat = 70, glow: CGFloat = 16
         /// El sello de dónde viene una lista (Trakt, Stremio, tu Orbital).
         static let stremio = Color(red: 0.54, green: 0.35, blue: 0.67), orbital = Color(red: 0.24, green: 0.48, blue: 0.85)
@@ -469,6 +481,8 @@ enum DS {
 
     /// Esperas de la interfaz (nanosegundos para `Task.sleep`).
     enum Timing {
+        /// Lo más que el pulgar espera en el destino de un salto antes de volver al avance real.
+        static let seekPatience: UInt64 = 4_000_000_000
         /// Entre que se cierra una hoja y se abre otra (el resumen del juego tras cerrar su hoja).
         static let sheetHandoff: UInt64 = 600_000_000
         /// Cuánto espera una confirmación («¿Ver en la TV?») antes de cerrarse sola.

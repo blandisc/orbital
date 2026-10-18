@@ -19,9 +19,9 @@ struct SaveView: View {
                     Text(verbatim: m.title).recipe(.footnote).lineLimit(1)
                 }
                 .padding(.bottom, DS.Space.s2)
-                CheckRow(title: Text("Mi lista"), symbol: "rectangle.stack", color: DS.ListTint.library, checked: m.inLibrary) { Task { await m.toggleLibrary() } }
+                CheckRow(title: Text("Mi lista") + Text(verbatim: " (Stremio)").foregroundStyle(DS.textMuted), symbol: "rectangle.stack", color: DS.ListTint.library, checked: m.inLibrary) { Task { await m.toggleLibrary() } }
                 if m.traktAvailable {
-                    CheckRow(title: Text("Tu watchlist"), symbol: "bookmark", color: DS.ListTint.bookmark, checked: m.inWatchlist) { Task { await m.toggleWatchlist() } }
+                    CheckRow(title: Text("Tu watchlist") + Text(verbatim: " (Trakt)").foregroundStyle(DS.textMuted), symbol: "bookmark", color: DS.ListTint.bookmark, checked: m.inWatchlist) { Task { await m.toggleWatchlist() } }
                     PanelGroupTitle(title: "Tus listas de Trakt")
                     if let lists = m.lists {
                         ForEach(lists) { list in

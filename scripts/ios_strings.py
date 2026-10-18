@@ -19,6 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Horas, tus días más intensos, lo que más viste y tu mapa de calor": "Hours, your busiest days, what you watched most and your heat map", "Lo más visto en tu país esta semana": "Most watched in your country this week", "Lo que todo el mundo está viendo": "What everyone is watching", "Lo que viste, día por día": "What you watched, day by day", "No pude traer los episodios de Los Simpson.": "I couldn't get The Simpsons episodes.", "Recomendadas con lo que ves": "Recommended from what you watch", "Top 10 en Netflix": "Top 10 on Netflix", "Tu año en Orbital": "Your year on Orbital", "Un Simpson al azar": "A random Simpsons", "Un Simpson al azar (T5–T15)": "A random Simpsons (S5–S15)", "Ver aquí": "Watch here", "En tendencia": "Trending", "Popular": "Popular", "Tu año": "Your year",
+    "Español latino": "Latin American Spanish", "Arrastra el video para subirlo o bajarlo": "Drag the video to move it up or down",
     "Ahorro": "Saver", "Equilibrado": "Balanced", "Rendimiento": "Performance",
     "Esperando Wi‑Fi": "Waiting for Wi‑Fi", "Esperando conexión": "Waiting for connection", "En espera": "On hold",
     "termina a la %@": "ends at %@", "Buscar subtítulos": "Search subtitles", "Subtítulos": "Subtitles", "Buscando subtítulos…": "Searching subtitles…", "Se guardan con la descarga: también los ves sin conexión.": "They are saved with the download: you can watch them offline too.", "No encontré subtítulos para este video (o no hay conexión).": "I couldn't find subtitles for this video (or there's no connection).", "Subtítulos guardados con la descarga.": "Subtitles saved with the download.", "No pude bajar ese subtítulo: prueba otro.": "I couldn't download that subtitle: try another one.",
@@ -336,7 +338,7 @@ TRANSLATIONS = {
     "Viendo en la TV": "Watching on TV",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
-IGNORE = {"Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB · RB", "LT · RT", "ZL · ZR", "Start · Select", "Stick C", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
+IGNORE = {"The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB · RB", "LT · RT", "ZL · ZR", "Start · Select", "Stick C", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
           "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max",
           "Icons/", "Avatars/", "Awards/", "AppIconPreview/day", "AppIconPreview/night", "AppIconNight"}  # el nombre de un ícono en el catálogo
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.

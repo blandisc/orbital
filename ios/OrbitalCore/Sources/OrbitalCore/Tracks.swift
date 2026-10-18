@@ -43,9 +43,24 @@ public enum TrackChooser {
     }
 
     /// El audio en tu idioma; si no hay, el que viene marcado por defecto; si no, el primero.
-    public static func audio(_ tracks: [MediaTrack], language: String) -> MediaTrack? {
+    public static func audio(_ tracks: [MediaTrack], language: String, latin: Bool = false) -> MediaTrack? {
         let audios = tracks.filter { $0.kind == .audio }
-        return audios.first { matches($0, language) } ?? audios.first(where: \.isDefault) ?? audios.first
+        let mine = audios.filter { matches($0, language) }
+        // Español latino: de las de español, la latina (etiqueta es-419/es-MX o «Latino» en su nombre) antes que la de España.
+        if latin, language == "es", let latino = mine.first(where: isLatinSpanish) ?? mine.first(where: { !isCastilian($0) }) { return latino }
+        return mine.first ?? audios.first(where: \.isDefault) ?? audios.first
+    }
+
+    static func isLatinSpanish(_ t: MediaTrack) -> Bool {
+        let lang = (t.language ?? "").lowercased().replacingOccurrences(of: "_", with: "-")
+        let name = (t.title ?? "").lowercased()
+        return ["es-419", "es-mx", "es-la", "lat"].contains(lang) || ["latino", "latin", "latam", "méxico", "mexico", "lat."].contains { name.contains($0) }
+    }
+
+    static func isCastilian(_ t: MediaTrack) -> Bool {
+        let lang = (t.language ?? "").lowercased().replacingOccurrences(of: "_", with: "-")
+        let name = (t.title ?? "").lowercased()
+        return lang == "es-es" || ["castellano", "castilian", "españa", "spain", "european"].contains { name.contains($0) }
     }
 
     /// Los subtítulos según el modo; nil = sin subtítulos.

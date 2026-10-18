@@ -211,7 +211,11 @@ struct SettingsView: View {
             Picker("Idioma de la app y de las fichas", selection: Binding(get: { s.uiLanguage }, set: { v in model.update { $0.uiLanguage = v } })) {
                 Text("Español").tag("es"); Text("English").tag("en")
             }
-            Picker("Audio", selection: Binding(get: { s.audio }, set: { v in model.update { $0.audio = v } })) { languageOptions }
+            // «Español latino» es español, prefiriendo la pista latina cuando el video trae las dos.
+            Picker("Audio", selection: Binding(get: { s.audio == "es" && s.latinSpanish ? "es-419" : s.audio },
+                                               set: { v in model.update { $0.audio = v == "es-419" ? "es" : v; $0.latinSpanish = v == "es-419" } })) {
+                Text("Español").tag("es"); Text("Español latino").tag("es-419"); Text("English").tag("en")
+            }
         }
         .listRowBackground(DS.surface)
         Section("Subtítulos") {

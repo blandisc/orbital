@@ -45,8 +45,27 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
 
     func load(url: URL, startAt: Double) async throws {
         hub.send(EngineSnapshot(state: .loading))
-        try await engine.load(url: url, startPosition: startAt)
+        var options = LoadOptions()
+        // Los subtítulos de texto también como pista nativa: así salen en la ventana de PiP y en AirPlay (sin esto, en PiP no
+        // había subtítulos).
+        options.prepareNativeSubtitles = true
+        options.preferredAudioLanguages = preferredAudio
+        options.preferredSubtitleLanguages = preferredSubtitles
+        options.externalSubtitles = declaredExternal.map { ExternalSubtitleTrack(url: $0, name: $0.deletingPathExtension().lastPathComponent, language: Self.language(of: $0)) }
+        try await engine.load(url: url, startPosition: startAt, options: options)
         engine.play()
+    }
+
+    private var preferredAudio: [String] = [], preferredSubtitles: [String] = [], declaredExternal: [URL] = []
+
+    func prepare(audioLanguages: [String], subtitleLanguages: [String], externalSubtitles: [URL]) async {
+        preferredAudio = audioLanguages; preferredSubtitles = subtitleLanguages; declaredExternal = externalSubtitles
+    }
+
+    /// «es-1.srt» → «es» (los subtítulos de una descarga empiezan con su idioma).
+    private static func language(of url: URL) -> String? {
+        let head = url.deletingPathExtension().lastPathComponent.split(separator: "-").first.map(String.init) ?? ""
+        return head.count == 2 || head.count == 3 ? head : nil
     }
 
     var pictureInPicture: PictureInPictureContent? {

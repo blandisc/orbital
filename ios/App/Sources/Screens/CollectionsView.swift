@@ -4,12 +4,21 @@ import OrbitalModels
 
 /// Los grupos de Para ti › Listas, en orden (el menú «Ir a una sección» los lista así).
 enum CollectionSection: CaseIterable, Hashable {
-    case forYou, platforms, studios, awards, years, airings, trakt, stremio
+    case forYou, platforms, studios, awards, years, airings, trakt, stremio, yourYear
     var title: Text {
         switch self {
         case .forYou: Text("Para ti"); case .trakt: Text("Listas de Trakt"); case .stremio: Text("Listas de Stremio")
         case .platforms: Text("Plataformas"); case .awards: Text("Premios"); case .studios: Text("Estudios"); case .years: Text("Por año")
-        case .airings: Text("Próximos estrenos")
+        case .airings: Text("Próximos estrenos"); case .yourYear: Text("Tu año")
+        }
+    }
+
+    /// Un ícono por sección en el índice de arriba (más fácil de encontrar de un vistazo).
+    var symbol: String {
+        switch self {
+        case .forYou: "sparkles"; case .platforms: "play.tv"; case .studios: "film.stack"; case .awards: "trophy"
+        case .years: "calendar"; case .airings: "calendar.badge.clock"; case .trakt: "list.bullet.rectangle"; case .stremio: "rectangle.stack"
+        case .yourYear: "square.grid.3x3.fill"
         }
     }
 }

@@ -82,6 +82,14 @@ final class ImagePipeline: @unchecked Sendable {
 
     /// La imagen reducida a `maxPixel`: de memoria, de disco o de la red. Varias peticiones comparten el trabajo; si
     /// todas las que esperaban se cancelan, el trabajo también.
+    /// Pide de antemano los pósters de una tira (un Top 10): cuando llegas a verlos ya están (antes salían de a poco).
+    func prefetchPosters(_ urls: [String]) {
+        Task { @MainActor in
+            let pixels = DS.Image.card * Self.screenScale   // el tamaño con que los pinta `PosterView`
+            for case let url? in urls.map(URL.init(string:)) { Task.detached(priority: .utility) { _ = await self.image(url, maxPixel: pixels) } }
+        }
+    }
+
     func image(_ requested: URL, maxPixel: CGFloat) async -> UIImage? {
         let url = Self.resolve(requested, maxPixel)
         let k = key(url, maxPixel)

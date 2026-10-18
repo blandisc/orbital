@@ -188,7 +188,12 @@ final class AppEnvironment: ObservableObject {
     func applyAppearance() {
         let style: UIUserInterfaceStyle = switch colorScheme { case .light: .light; case .dark: .dark; default: .unspecified }
         for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
-            for window in scene.windows where window.overrideUserInterfaceStyle != style { window.overrideUserInterfaceStyle = style }
+            for window in scene.windows where window.overrideUserInterfaceStyle != style {
+                // Con un fundido (como Ajustes): de golpe, toda la app se redibujaba en un cuadro y se sentía trabado.
+                UIView.transition(with: window, duration: DesignTokens.Motion.slow, options: [.transitionCrossDissolve, .allowUserInteraction]) {
+                    window.overrideUserInterfaceStyle = style
+                }
+            }
         }
     }
 
@@ -340,6 +345,27 @@ final class AppEnvironment: ObservableObject {
     }
 
     /// «Ver en la TV»: tu Orbital pone el título (la fuente recomendada, donde ibas; el avance vive en Stremio).
+    /// Un episodio de Los Simpson al azar, de la temporada 5 a la 15 (las buenas), aquí o en la TV.
+    func randomSimpsons(onTV: Bool) async {
+        let id = Self.simpsons
+        guard let meta = try? await services.cinemeta.meta(kind: "series", id: id) else { return notify("No pude traer los episodios de Los Simpson.") }
+        let pool = CinemetaParsing.seasons(meta).filter { Self.simpsonsSeasons.contains($0.season) }
+            .flatMap { season in season.episodes.map { (season.season, $0) } }
+        guard let (season, episode) = pool.randomElement() else { return notify("No pude traer los episodios de Los Simpson.") }
+        let language = services.appSettings.uiLanguage
+        let label = Strings.episode(season: season, episode: episode.episode, language: language) + (episode.hasTitle ? " · \(episode.title)" : "")
+        let name = meta["name"]?.string ?? "The Simpsons"
+        if onTV {
+            await playOnTV(kind: "series", metaID: id, videoID: episode.id, title: name)
+        } else {
+            play(PlayRequest(kind: "series", metaID: id, videoID: episode.id, originalTitle: name, displayTitle: name, episodeLabel: label,
+                             poster: String(format: ForYou.metahubPoster, id), meta: meta, fromStart: true))
+        }
+    }
+
+    static let simpsons = "tt0096697"
+    static let simpsonsSeasons = 5...15
+
     func playOnTV(kind: String, metaID: String, videoID: String?, title: String) async {
         do {
             try await services.orbital.play(kind: kind, metaID: metaID, videoID: videoID, title: title)

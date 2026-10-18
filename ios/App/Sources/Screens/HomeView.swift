@@ -14,6 +14,8 @@ struct HomeView: View {
     @State private var heroSlot: Int?
     @State private var scrolledDown = false
     @State private var placingHero = false
+    /// El Top 10 de Netflix: series (por omisión) o películas.
+    @State private var netflixMovies = false
     /// El alto de cada renglón de «Tu watchlist», que crece con el tamaño de letra.
     @ScaledMetric(relativeTo: .body) private var watchRow = DS.Editorial.watchlistRow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -59,6 +61,14 @@ struct HomeView: View {
                 }
                 // Primero lo pendiente (tu watchlist), luego lo que sale y al final lo que guardaste; cada renglón con su porqué
                 // arriba, su sello de origen y su reflejo (el peso del carrusel de arriba).
+                // Lo tuyo: tus recomendaciones (lo personal ya no va arriba, donde está lo de todos).
+                if !model.forYouPicks.isEmpty {
+                    Rail(title: "Para ti", route: nil, eyebrow: Text("Recomendadas con lo que ves"), source: .trakt) {
+                        ForEach(model.forYouPicks) { s in TitleLink(route: s.route, reflected: true) }
+                    }
+                }
+                // El Top 10 de Netflix en tu país (lo que abría Para ti): series o películas, cada una con su 1 al 10.
+                if !model.netflixSeries.isEmpty || !model.netflixMovies.isEmpty { netflixTop(model) }
                 if !model.traktPending.isEmpty { watchlist(model) }
                 if !model.upcoming.isEmpty { upcoming(model) }
                 if !model.myList.isEmpty {
@@ -94,6 +104,20 @@ struct HomeView: View {
                 }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
             }
+            // Un Simpson al azar (T5–T15), aquí o en la TV.
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Section("Un Simpson al azar (T5–T15)") {
+                    Button("Ver aquí", systemImage: "iphone") { Task { await env.randomSimpsons(onTV: false) } }
+                    if env.services.orbital.isConfigured {
+                        Button("Ver en la TV", systemImage: "tv") { Task { await env.randomSimpsons(onTV: true) } }
+                    }
+                    }
+                } label: { Image(systemName: "dice") }
+                .accessibilityLabel(Text("Un Simpson al azar"))
+                .accessibilityIdentifier("home-random-simpsons")
+            }
+            ToolbarSpacer(.fixed, placement: .topBarTrailing)
             ToolbarItem(placement: .topBarTrailing) { ProfileButton(avatar: look.avatar) }
         }
         .titleDestinations()
@@ -189,7 +213,7 @@ struct HomeView: View {
         let middle = (copies / 2) * items.count
         return VStack(spacing: DS.Space.s3) {
             HStack(alignment: .lastTextBaseline) {
-                DSSectionHead(title: Text("Destacado"), eyebrow: Text("En tendencia y para ti"))
+                DSSectionHead(title: Text("En tendencia"), eyebrow: Text("Lo que todo el mundo está viendo"))
                 Spacer(minLength: DS.Space.s2)
                 kindFilter(model)
             }
@@ -278,7 +302,7 @@ struct HomeView: View {
         switch reason {
         case .trending: Text("En tendencia")
         case .recommended: Text("Para ti")
-        case .popular: Text("De lo más popular")
+        case .popular: Text("Popular")
         default: Text("Destacado")
         }
     }
@@ -346,6 +370,35 @@ struct HomeView: View {
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
         }
+    }
+
+    private func netflixTop(_ model: HomeModel) -> some View {
+        let movies = netflixMovies && !model.netflixMovies.isEmpty || model.netflixSeries.isEmpty
+        let items = movies ? model.netflixMovies : model.netflixSeries
+        return VStack(alignment: .leading, spacing: DS.Space.s3) {
+            HStack(alignment: .lastTextBaseline) {
+                DSSectionHead(title: Text("Top 10 en Netflix"), eyebrow: Text("Lo más visto en tu país esta semana"))
+                Spacer(minLength: DS.Space.s2)
+                if !model.netflixSeries.isEmpty, !model.netflixMovies.isEmpty {
+                    Picker(selection: $netflixMovies) { Text("Series").tag(false); Text("Películas").tag(true) } label: { EmptyView() }
+                        .pickerStyle(.segmented).fixedSize()
+                }
+            }
+            .padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .bottom, spacing: DS.Space.s3) {
+                    ForEach(Array(items.enumerated()), id: \.element.id) { i, s in
+                        NavigationLink(value: s.route) { RankedPosterCard(rank: s.rank ?? i + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: DS.PlatformTint.color("netflix")).titleZoomSource(s.route) }
+                            .buttonStyle(.plain)
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+            .id(movies)   // al cambiar, desde el n.º 1
+        }
+        .task(id: items.first?.imdb) { ImagePipeline.shared.prefetchPosters(items.map(\.poster)) }
     }
 
     /// «T2 E5 · quedan 20 min».
