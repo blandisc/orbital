@@ -65,7 +65,7 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UIBackgroundModes: [audio, fetch, processing]   # audio: sigue sonando con la pantalla apagada y en PiP · fetch y processing: mirar lo que dejó la TV (mejor esfuerzo)
-        BGTaskSchedulerPermittedIdentifiers: [mx.iracheta.orbital.inbox]
+        BGTaskSchedulerPermittedIdentifiers: [mx.iracheta.orbital.inbox, mx.iracheta.orbital.releases]
         ITSAppUsesNonExemptEncryption: false
         CADisableMinimumFrameDurationOnPhone: true   # 120 Hz en las pantallas ProMotion (la inercia del mosaico, el carrusel)
         NSSupportsLiveActivities: true          # descargas en la pantalla bloqueada y la Dynamic Island

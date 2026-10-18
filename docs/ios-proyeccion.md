@@ -83,7 +83,9 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `DataLine` | Datos con números tabulares (no una monoespaciada); quita del final lo que no cabe | Destacados, ficha, descargas |
 | `Eyebrow` | Rótulo pequeño (acento o sobre el arte) | Destacados |
 | `HeroActions` | Las acciones de un destacado en un renglón; si no caben (letra grande, iPhone SE), apiladas | Inicio (carrusel), Para ti › Listas |
-| `ActionGrid` + `ProjectionAction` | Acciones secundarias iguales con ícono y nombre (se apilan con letra grande) | Ficha (Mi lista, Descargar, Fuentes) |
+| `CircleActionLabel` | Acción de la ficha: círculo con su ícono y el nombre debajo; activa con el color del arte; con anillo de avance (Descargar). Tocar hace lo principal, mantener presionado el resto (`Menu` con `primaryAction`) | Ficha (Guardar, Descargar, Tráiler, Fuente) |
+| `Glyphs/donut` (catálogo de imágenes) | La dona de Los Simpson, con el trazo de los íconos propios (solo iPhone; los de `Icons/` vienen de la TV) | Inicio › un Simpson al azar (el dado es «¿Qué vemos?») |
+| `DownloadRing` | El anillo de avance de una descarga | Ficha (Descargar) y la fila de cada episodio |
 | `StillCard` | Pieza 16:9 con avance, nombre y datos | Inicio › Todo lo que sigues |
 | `PageDots` | Puntos de un carrusel | Inicio |
 | `MovementBadge` | ▲ ▼ / Nuevo bajo un puesto | Rankings de plataformas (Buscar › Lo más popular usa `RankedPosterCard`) |
@@ -128,7 +130,6 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `PersonPhoto`, `PersonFace` | La cara de alguien (o sus iniciales), con nombre y personaje | Ficha › Reparto y equipo, Persona |
 | `VideoClipCard` | Tráiler o extra de YouTube con ▶ | Ficha |
 | `BrandLogos`, `TmdbPoster` | Dónde verlo; un título de TMDB (saga, «Más como esto», filmografía) que abre su ficha | Ficha, Persona |
-| `DownloadPanel` | Descargar estirado de su botón (gota de vidrio): la recomendada, los siguientes episodios, elegir la fuente | Ficha |
 | `SourcesGlossary`, `SourceRowView` | Qué significa cada etiqueta de las fuentes (Al instante, DV, REMUX…); un renglón de fuente que se toca y cuyas etiquetas se deslizan | Fuentes |
 | `WatchlistCard` | Un pendiente de tu watchlist: póster chico, año y género, nombre y sinopsis (dos renglones que se deslizan juntos) | Inicio › Tu watchlist |
 | `posterReflection(_:title:width:)` | El reflejo de solo el póster (no de la tarjeta con su texto ni su zoom) | Inicio y Para ti › renglones |

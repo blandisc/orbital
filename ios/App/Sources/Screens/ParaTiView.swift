@@ -159,7 +159,7 @@ struct SuggestionActions: View {
 
     var body: some View {
         if includeWatch { Button("Ver", systemImage: "play.fill") { Task { await env.play(suggestion) } } }
-        Button("Mi lista", systemImage: "plus") { Task { await env.addToLibrary(suggestion) } }
+        Button("Guardar", systemImage: "plus") { Task { await env.addToLibrary(suggestion) } }
         Button("Descargar", systemImage: "arrow.down.circle") { Task { await env.download(suggestion) } }
         if env.services.orbital.isConfigured {
             Button("Ver en la TV", systemImage: "tv") { Task { await env.playOnTV(kind: suggestion.kind, metaID: suggestion.imdb, videoID: env.videoID(for: suggestion), title: suggestion.title) } }
@@ -484,9 +484,12 @@ struct ListsView: View {
 
     /// «Porque viste X»: una tarjeta propia (no una fila más) con lo que viste y lo relacionado.
     private func becauseCard(_ because: (seed: TraktEntry, items: [Suggestion])) -> some View {
-        BecauseCard(seedTitle: because.seed.title, seedPoster: String(format: ForYou.metahubPoster, because.seed.imdb),
-                    choices: model.becauseSeeds.map { ($0.imdb, $0.title) },
-                    choose: { id in if let seed = model.becauseSeeds.first(where: { $0.imdb == id }) { Task { await model.chooseBecause(seed) } } }) {
+        let fromHistory = model.becauseSeeds.map { BecauseSeed(id: $0.imdb, title: $0.title, poster: String(format: ForYou.metahubPoster, $0.imdb)) }
+        let seeds = fromHistory.contains { $0.id == because.seed.imdb } ? fromHistory
+            : [BecauseSeed(id: because.seed.imdb, title: because.seed.title, poster: String(format: ForYou.metahubPoster, because.seed.imdb))] + fromHistory
+        return BecauseCard(style: BecauseStyle(rawValue: env.services.appSettings.becauseStyle) ?? .posters,
+                           seeds: seeds, selected: because.seed.imdb,
+                           choose: { id in if let seed = model.becauseSeeds.first(where: { $0.imdb == id }) { Task { await model.chooseBecause(seed) } } }) {
             ForEach(because.items) { s in
                 ShelfPoster(suggestion: s, style: .plain, inList: model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb], width: DS.Collections.relatedPoster) { dismissed in Task { await model.dismiss(dismissed) } }
             }

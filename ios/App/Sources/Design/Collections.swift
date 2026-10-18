@@ -137,52 +137,142 @@ struct ListCard: View {
     }
 }
 
-/// «Porque viste X»: el póster de lo que viste a la izquierda y, al lado, lo que Trakt relaciona (se desliza).
+/// Un título de lo que viste, para elegir «Porque vi…».
+struct BecauseSeed: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let poster: String?
+}
+
+/// «Porque viste»: lo último que viste arriba y lo que Trakt relaciona con el elegido abajo. Se elige de dos formas (Ajustes ›
+/// Inicio y Para ti): `posters`, una fila de mini pósters (el elegido crece) y `deck`, un mazo de cartas que se avienta a
+/// un lado para pasar al siguiente. Sin elegir, cambia solo cada día.
+enum BecauseStyle: String { case posters, deck }
+
 struct BecauseCard<Related: View>: View {
-    let seedTitle: String
-    let seedPoster: String?
-    /// Lo último que viste, para elegir «Porque vi…» (id, nombre); vacío: sin menú.
-    var choices: [(id: String, title: String)] = []
+    let style: BecauseStyle
+    let seeds: [BecauseSeed]
+    let selected: String
     var choose: (String) -> Void = { _ in }
     @ViewBuilder var related: () -> Related
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var index: Int { seeds.firstIndex { $0.id == selected } ?? 0 }
+    private var current: BecauseSeed? { seeds.indices.contains(index) ? seeds[index] : seeds.first }
 
     var body: some View {
-        HStack(alignment: .top, spacing: DS.Space.s3) {
-            PosterView(url: seedPoster, title: seedTitle).frame(width: DS.Collections.seedPoster)
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text("Porque viste").recipe(.eyebrow, color: DS.accent)
-                if choices.count > 1 {
-                    // «Porque vi esto»: tú eliges de qué; sin elegir, cambia solo cada día.
-                    Menu {
-                        Section("Recomiéndame por…") {
-                            ForEach(choices, id: \.id) { c in
-                                Button { choose(c.id) } label: {
-                                    if c.title == seedTitle { Label(c.title, systemImage: "checkmark") } else { Text(verbatim: c.title) }
-                                }
-                            }
-                        }
-                    } label: {
-                        // La flechita va pegada al final del nombre (dentro del mismo texto): con un nombre largo ya no queda un
-                        // hueco entre el primer renglón y ella.
-                        (Text(verbatim: seedTitle + "\u{00A0}") + Text(Image(systemName: "chevron.up.chevron.down")).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted))
-                            .recipe(.cardTitle).lineLimit(2).multilineTextAlignment(.leading)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityHint(Text("Elige otro título para recomendarte por él"))
-                    .accessibilityIdentifier("because-choose")
-                } else {
-                    Text(verbatim: seedTitle).recipe(.cardTitle).lineLimit(2)
-                }
-                Text(choices.count > 1 ? "Toca el nombre para elegir otro de lo que viste" : "Lo que Trakt relaciona con lo último que viste").recipe(.caption).lineLimit(2)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: DS.Space.s2) { related() }
-                        .environment(\.posterCaptions, false)
-                }
-                .padding(.top, DS.Space.s1)
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            switch style {
+            case .posters: postersHeader
+            case .deck: deckHeader
             }
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: DS.Space.s2) { related() }
+                    .environment(\.posterCaptions, false)
+            }
+            .id(selected)   // otro título: las relacionadas entran desde el principio
+            .transition(.opacity)
         }
         .padding(DS.Space.s3)
         .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .animation(DS.Motion.base(reduceMotion), value: selected)
+        .sensoryFeedback(.selection, trigger: selected)
+    }
+
+    // MARK: mini pósters
+    private var postersHeader: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            Text("Porque viste").recipe(.eyebrow, color: DS.accent)
+            if seeds.count > 1 {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .bottom, spacing: DS.Space.s2) {
+                        ForEach(seeds) { seed in
+                            let on = seed.id == current?.id
+                            Button { choose(seed.id) } label: {
+                                PosterView(url: seed.poster, title: seed.title)
+                                    .frame(width: on ? DS.Collections.miniPosterOn : DS.Collections.miniPoster)
+                                    .overlay(RoundedRectangle(cornerRadius: DS.Radius.md).strokeBorder(on ? DS.accent : .clear, lineWidth: DS.SettingsLook.optionRing))
+                                    .opacity(on ? 1 : DS.Collections.miniOff)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(Text(verbatim: seed.title))
+                            .accessibilityAddTraits(on ? .isSelected : [])
+                        }
+                    }
+                }
+                .accessibilityIdentifier("because-posters")
+            }
+            Text(verbatim: current?.title ?? "").recipe(.cardTitle).lineLimit(2)
+        }
+    }
+
+    // MARK: mazo
+    private var deckHeader: some View {
+        HStack(alignment: .center, spacing: DS.Space.s4) {
+            BecauseDeck(seeds: seeds, index: index) { step in
+                guard !seeds.isEmpty else { return }
+                choose(seeds[(index + step + seeds.count) % seeds.count].id)
+            }
+            VStack(alignment: .leading, spacing: DS.Space.s2) {
+                Text("Porque viste").recipe(.eyebrow, color: DS.accent)
+                Text(verbatim: current?.title ?? "").recipe(.cardTitle).lineLimit(3)
+                if seeds.count > 1 {
+                    Text("Avienta la carta para cambiar").recipe(.caption)
+                    HStack(spacing: DS.Space.s2) {
+                        Button { choose(seeds[(index - 1 + seeds.count) % seeds.count].id) } label: { Image(systemName: "chevron.left") }
+                            .accessibilityLabel(Text("Anterior"))
+                        Button { choose(seeds[(index + 1) % seeds.count].id) } label: { Image(systemName: "chevron.right") }
+                            .accessibilityLabel(Text("Siguiente"))
+                    }
+                    .buttonStyle(.glass).buttonBorderShape(.circle)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+/// El mazo de «Porque viste»: la carta de arriba es el título elegido y debajo se asoman los siguientes. Arrastrarla a un
+/// lado (o tocarla) la avienta y queda la siguiente.
+struct BecauseDeck: View {
+    let seeds: [BecauseSeed]
+    let index: Int
+    let step: (Int) -> Void
+    @State private var drag: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let count = min(DS.Collections.deckDepth, seeds.count)
+        let shown = (0..<count).map { seeds[(index + $0) % max(1, seeds.count)] }
+        ZStack {
+            ForEach(Array(shown.enumerated()).reversed(), id: \.element.id) { depth, seed in
+                let top = depth == 0
+                PosterView(url: seed.poster, title: seed.title)
+                    .frame(width: DS.Collections.deckPoster)
+                    .shadow(color: DS.scrim, radius: DS.Space.s2, y: DS.Space.s1)
+                    .scaleEffect(1 - CGFloat(depth) * DS.Collections.deckShrink)
+                    .rotationEffect(.degrees(Double(depth) * DS.Collections.deckTurn + (top ? Double(drag) / Double(DS.Collections.deckThrow) * DS.Collections.deckTurn * 2 : 0)))
+                    .offset(x: CGFloat(depth) * DS.Collections.deckShift + (top ? drag : 0), y: CGFloat(depth) * DS.Collections.deckShift)
+                    .transition(.asymmetric(insertion: .opacity, removal: .move(edge: .leading).combined(with: .opacity)))
+            }
+        }
+        .frame(width: DS.Collections.deckPoster + DS.Collections.deckShift * CGFloat(DS.Collections.deckDepth), alignment: .topLeading)
+        .contentShape(Rectangle())
+        .gesture(DragGesture(minimumDistance: DS.Space.s2)
+            .onChanged { drag = $0.translation.width }
+            .onEnded { value in
+                let thrown = abs(value.translation.width) > DS.Collections.deckThrow
+                withAnimation(DS.Motion.base(reduceMotion)) {
+                    drag = 0
+                    if thrown { step(value.translation.width < 0 ? 1 : -1) }
+                }
+            })
+        .onTapGesture { withAnimation(DS.Motion.base(reduceMotion)) { step(1) } }
+        .accessibilityElement()
+        .accessibilityLabel(Text(verbatim: seeds.indices.contains(index) ? seeds[index].title : ""))
+        .accessibilityHint(Text("Desliza hacia arriba o abajo para cambiar el título"))
+        .accessibilityAdjustableAction { direction in step(direction == .increment ? 1 : -1) }
+        .accessibilityIdentifier("because-deck")
     }
 }
 

@@ -8,12 +8,15 @@ struct SourcesSheet: View {
     @State private var purpose: Purpose
     /// La fuente elegida y para qué (Ver o Descargar, como quedó el selector de la hoja).
     let choose: (Source, Purpose) -> Void
+    /// Abrir una fuente con Infuse (mantener presionada), si quien abre la hoja lo permite.
+    var infuse: ((Source) -> Void)?
     @EnvironmentObject private var env: AppEnvironment
 
-    init(model: TitleModel, videoID: String, purpose: Purpose, choose: @escaping (Source, Purpose) -> Void) {
+    init(model: TitleModel, videoID: String, purpose: Purpose, choose: @escaping (Source, Purpose) -> Void, infuse: ((Source) -> Void)? = nil) {
         _observer = StateObject(wrappedValue: ModelObserver(SourcesModel(AppEnvironment.shared.services, kind: model.kind, metaID: model.metaID, videoID: videoID)))
         _purpose = State(initialValue: purpose)
         self.choose = choose
+        self.infuse = infuse
     }
 
     @State private var showsGlossary = false
@@ -23,8 +26,8 @@ struct SourcesSheet: View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
-                    Text("Fuentes").recipe(.title)
-                    Text("De Real-Debrid · la recomendada va primero").recipe(.footnote)
+                    Text("Fuente").recipe(.title)
+                    Text("De Real-Debrid · por calidad, la recomendada primero").recipe(.footnote)
                 }
                 Spacer()
                 // Qué quiere decir cada etiqueta (4K, DV, REMUX, Al instante…).
@@ -39,10 +42,12 @@ struct SourcesSheet: View {
                 VStack(spacing: DS.Space.s2) {
                     if model.isLoading { ProgressView().frame(maxWidth: .infinity).padding(DS.Space.s6) }
                     if let error = model.error { DSNotice(verbatim: env.message(error), tone: .warn) }
-                    ForEach(model.rows) { row in
-                        // `model.purpose`: para lo que se cargó la lista (no la pestaña recién tocada, que aún carga). Tocar el
-                        // renglón elige; las etiquetas se deslizan de lado sin elegir.
-                        SourceRowView(row: row, purpose: purpose) { if let source = model.source(row.id) { choose(source, model.purpose) } }
+                    // La recomendada arriba, con su porqué; luego el resto agrupado por calidad (4K, 1080p, 720p, otras).
+                    if let best = model.rows.first(where: \.recommended) { sourceRow(best, model) }
+                    ForEach(groups(model.rows.filter { !$0.recommended }), id: \.0) { group, rows in
+                        Text(LocalizedStringKey(group)).recipe(.caption, color: DS.textFaint).fontWeight(.semibold)
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(.top, DS.Space.s2)
+                        ForEach(rows) { sourceRow($0, model) }
                     }
                 }
             }
@@ -56,6 +61,26 @@ struct SourcesSheet: View {
         .padding(.vertical, DS.Space.s4)
         .task(id: purpose) { await model.load(purpose, onCellular: env.connectivity.isCellular) }
         .sheet(isPresented: $showsGlossary) { SourcesGlossary().fittedSheet().presentationDragIndicator(.visible) }
+    }
+
+    /// Tocar elige (para lo que se cargó la lista: `model.purpose`, no la pestaña recién tocada que aún carga); mantener
+    /// presionada da el nombre del archivo y las otras formas de usarla.
+    private func sourceRow(_ row: SourceRow, _ model: SourcesModel) -> some View {
+        SourceRowView(row: row, purpose: purpose) { if let source = model.source(row.id) { choose(source, model.purpose) } }
+            .contextMenu {
+                if !row.release.isEmpty { Text(verbatim: row.release) }
+                Button("Ver aquí", systemImage: "play.fill") { if let s = model.source(row.id) { choose(s, .watch) } }
+                Button("Descargar", systemImage: "arrow.down.circle") { if let s = model.source(row.id) { choose(s, .download) } }
+                if let infuse { Button("Abrir con Infuse", systemImage: "arrow.up.forward.app") { if let s = model.source(row.id) { infuse(s) } } }
+            }
+    }
+
+    /// Los grupos de calidad en orden, sin los vacíos.
+    private func groups(_ rows: [SourceRow]) -> [(String, [SourceRow])] {
+        ["4K", "1080p", "720p", "Otras"].compactMap { g in
+            let found = rows.filter { $0.group == g }
+            return found.isEmpty ? nil : (g, found)
+        }
     }
 }
 
@@ -102,6 +127,7 @@ struct SourceRowView: View {
         HStack(alignment: .center, spacing: DS.Space.s3) {
             VStack(alignment: .leading, spacing: DS.Space.s2) {
                 Text(row.headline).recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
+                if row.recommended { Text("La elegimos por tu idioma, la calidad y el tamaño").recipe(.caption) }
                 // Las que no caben se deslizan de lado (dentro del renglón, hasta su orilla).
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: DS.Space.s1) {

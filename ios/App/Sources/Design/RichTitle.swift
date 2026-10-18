@@ -31,9 +31,12 @@ struct RatingsRow: View {
     let imdb: String?
     let tmdb: Double?
     let trakt: Double?
+    /// Al centro (la ficha).
+    var centered = false
 
     var body: some View {
         HStack(spacing: DS.Space.s4) {
+            if centered { Spacer(minLength: 0) }
             if let imdb, !imdb.isEmpty { rating(RatingMark(service: .imdb), Text(verbatim: imdb)) }
             if let tmdb { rating(RatingMark(service: .tmdb), Text(verbatim: "\(Int((tmdb * 10).rounded())) %")) }
             if let trakt { rating(RatingMark(service: .trakt), Text(verbatim: "\(Int((trakt * 10).rounded())) %")) }

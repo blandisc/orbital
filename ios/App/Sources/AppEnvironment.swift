@@ -54,9 +54,26 @@ final class AppEnvironment: ObservableObject {
         var position: Double
         static func == (a: TVHandoff, b: TVHandoff) -> Bool { a.request.id == b.request.id && a.position == b.position }
     }
-    struct Banner: Equatable { var text: String; var tone: DSNotice.Tone; var action: BannerAction? }
-    /// Lo que hace el botón de un aviso.
-    enum BannerAction: Equatable { case downloads }
+    struct Banner: Equatable {
+        var text: String; var tone: DSNotice.Tone; var action: BannerAction?
+        /// Un segundo renglón («1080p · 2.4 GB») y el nombre del botón (por omisión, «Ver»).
+        var detail: String? = nil
+        var actionTitle: String? = nil
+    }
+    /// Lo que hace el botón de un aviso: ir a Descargas, o lo que pidió quien avisó (`perform`, con su número).
+    enum BannerAction: Equatable { case downloads, perform(Int) }
+    /// Lo que corre el botón de un aviso con `.perform` (solo el del aviso a la vista).
+    private(set) var bannerPerform: (() -> Void)?
+    private var bannerSerial = 0
+
+    /// Un aviso con un botón propio: «Guardada en Mi lista · Cambiar», «Bajando la recomendada · Otra».
+    func notify(_ text: String, detail: String? = nil, tone: DSNotice.Tone = .success, actionTitle: String, perform: @escaping () -> Void) {
+        let language = services.appSettings.uiLanguage
+        bannerSerial += 1
+        bannerPerform = perform
+        banner = Banner(text: Strings.message(text, language: language), tone: tone, action: .perform(bannerSerial),
+                        detail: detail.map { Strings.message($0, language: language) }, actionTitle: Strings.tr(actionTitle, language: language))
+    }
     /// Una pestaña que un aviso pide abrir («Ver» en «Descargando…»).
     var openTab: Int? { get { ui.openTab } set { ui.openTab = newValue } }
     static let downloadsTab = 3
@@ -130,7 +147,8 @@ final class AppEnvironment: ObservableObject {
             SettingsStore(kv).update {
                 if let language = Demo.language { $0.uiLanguage = language }
                 if !Demo.noTV { $0.orbitalAddress = "tv.demo.invalid" }
-                if Demo.scrobble || Demo.airings { $0.traktClientID = "demo" }
+                if Demo.scrobble || Demo.airings || Demo.because { $0.traktClientID = "demo" }
+                if let style = Demo.value(after: "-demo-because-style") { $0.becauseStyle = style }
             }
             Demo.prefillScrobble(kv)
             let services = Services(http: DemoHTTPClient(), secrets: Demo.secrets(), kv: kv, pending: InMemoryPendingStore(),
@@ -411,11 +429,13 @@ final class AppEnvironment: ObservableObject {
         await play(kind: s.kind, metaID: s.imdb, videoID: videoID(for: s), title: s.title, originalTitle: s.title, episodeLabel: label, poster: s.poster)
     }
 
-    /// «Mi lista» desde Para ti.
+    /// «Guardar» desde el menú de un póster: lo mismo que el círculo de la ficha (Mi lista, con un aviso que se deshace).
     func addToLibrary(_ s: Suggestion) async {
         do {
             try await services.watch.setInLibrary(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster, add: true)
-            notify("Agregada a tu lista.", tone: .success)
+            notify("Guardada en Mi lista", detail: "Stremio", actionTitle: "Deshacer") { [weak self] in
+                Task { try? await self?.services.watch.setInLibrary(kind: s.kind, metaID: s.imdb, title: s.title, poster: s.poster, add: false) }
+            }
         } catch { notify(format: "No pude cambiar tu lista de Stremio: %@", message("\(error)")) }   // la causa, también traducida
     }
 
@@ -423,7 +443,13 @@ final class AppEnvironment: ObservableObject {
     func download(_ s: Suggestion) async {
         let outcome = await services.queueDownload(kind: s.kind, metaID: s.imdb, videoID: videoID(for: s), title: s.title, originalTitle: s.title, subtitle: "", poster: s.poster)
         switch outcome {
-        case .queued: notify("Descargando", tone: .success, action: .downloads)
+        case .queued:
+            // Como el círculo de la ficha: qué se está bajando (calidad y tamaño) y a la mano, Descargas.
+            let item = await services.downloads.item(DownloadItem.makeID(metaID: s.imdb, videoID: videoID(for: s)))
+            let size = item?.expectedBytes.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) }
+            let detail = [item?.quality, size].compactMap { $0 }.joined(separator: " · ")
+            banner = Banner(text: Strings.message("Bajando la recomendada", language: services.appSettings.uiLanguage), tone: .success, action: .downloads,
+                            detail: detail.isEmpty ? nil : detail)
         case .noSources: notify("No hay fuentes de Real-Debrid para descargar.")
         case .notEnoughSpace(let text), .failed(let text): notify(text)
         case .already: notify("Ya está descargado.", tone: .info)
@@ -451,6 +477,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // Se registra antes de que termine de arrancar la app (lo exige iOS).
         InboxBackgroundTask.register()
+        ReleaseNotifier.register()
+        ReleaseNotifier.registerCategory(language: AppEnvironment.shared.services.appSettings.uiLanguage)
         // Los avisos de la app (tu tiempo de juego, la batería de la consola) se ven también con la app abierta.
         UNUserNotificationCenter.current().delegate = self
         return true
@@ -459,6 +487,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                             withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         completionHandler([.banner, .sound])
+    }
+
+    /// Tocar un aviso o uno de sus botones («Ya está para ver»: Ver, Ver en la TV, Descargar).
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+                                            withCompletionHandler completionHandler: @escaping () -> Void) {
+        Task { @MainActor in
+            await ReleaseNotifier.handle(response)
+            completionHandler()
+        }
     }
 
     func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask { Self.orientations }

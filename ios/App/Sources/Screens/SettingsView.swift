@@ -40,14 +40,17 @@ struct SettingsView: View {
                 NavigationLink { page("Apariencia") { appearance(model) } } label: {
                     SettingsRow(title: "Apariencia", symbol: "circle.lefthalf.filled", tint: DS.ListTint.spark, value: appearanceName(s.appearance))
                 }
-                NavigationLink { page("Inicio") { home(model) } } label: {
-                    SettingsRow(title: "Inicio", symbol: "house", tint: DS.ListTint.watching, value: s.homeDeck == DeckStyle.fan.rawValue ? Text("Abanico") : Text("Coverflow"))
+                NavigationLink { page("Inicio y Para ti") { home(model) } } label: {
+                    SettingsRow(title: "Inicio y Para ti", symbol: "house", tint: DS.ListTint.watching, value: s.homeDeck == DeckStyle.fan.rawValue ? Text("Abanico") : Text("Coverflow"))
                 }
                 NavigationLink { page("Idioma y subtítulos") { language(model) } } label: {
                     SettingsRow(title: "Idioma y subtítulos", symbol: "captions.bubble", tint: DS.ListTint.library, value: s.uiLanguage == "en" ? Text(verbatim: "English") : Text(verbatim: "Español"))
                 }
                 NavigationLink { page("Reproducción") { playback(model) } } label: {
                     SettingsRow(title: "Reproducción", symbol: "play.circle", tint: DS.ListTint.list, value: Text(verbatim: s.quality))
+                }
+                NavigationLink { page("Avisos") { alerts(model) } } label: {
+                    SettingsRow(title: "Avisos", symbol: "bell.badge", tint: DS.ListTint.flame, value: s.releaseAlerts ? Text("Estrenos") : Text("Apagados"))
                 }
                 NavigationLink { page("Descargas") { downloads(model) } } label: {
                     SettingsRow(title: "Descargas", symbol: "arrow.down.circle", tint: DS.ListTint.calendar, value: s.wifiOnlyDownloads ? Text("Solo con Wi‑Fi") : Text("Siempre"))
@@ -198,7 +201,16 @@ struct SettingsView: View {
             .padding(.vertical, DS.Space.s2)
         } header: { Text("Cuánto falta") } footer: { Text("Cómo te dice la tarjeta lo que te queda por ver.") }
         .listRowBackground(DS.surface)
-        .sensoryFeedback(.selection, trigger: s.homeDeck + s.homeTime)
+        Section {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
+                StyleOption(label: "Mini pósters", selected: s.becauseStyle != BecauseStyle.deck.rawValue, action: { model.update { $0.becauseStyle = BecauseStyle.posters.rawValue } }) { BecauseStylePreview(style: .posters) }
+                StyleOption(label: "Mazo de cartas", selected: s.becauseStyle == BecauseStyle.deck.rawValue, action: { model.update { $0.becauseStyle = BecauseStyle.deck.rawValue } }) { BecauseStylePreview(style: .deck) }
+            }
+            .padding(.vertical, DS.Space.s2)
+            .accessibilityIdentifier("because-options")
+        } header: { Text("Porque viste") } footer: { Text("Cómo eliges, en Para ti, de qué título quieres recomendaciones.") }
+        .listRowBackground(DS.surface)
+        .sensoryFeedback(.selection, trigger: s.homeDeck + s.homeTime + s.becauseStyle)
     }
 
     private func timeName(_ style: TimeStyle) -> LocalizedStringKey {
@@ -250,6 +262,29 @@ struct SettingsView: View {
             Toggle("Borrar al terminar de verlo", isOn: Binding(get: { s.deleteWhenWatched }, set: { v in model.update { $0.deleteWhenWatched = v } }))
         }
         .listRowBackground(DS.surface)
+    }
+
+    /// «Ya está para ver»: un aviso cuando un episodio de lo que sigues en Trakt ya tiene fuente (no a la hora en que sale).
+    @ViewBuilder private func alerts(_ model: SettingsModel) -> some View {
+        let s = model.settings
+        Section {
+            Toggle("Cuando un estreno ya está para ver", isOn: Binding(get: { s.releaseAlerts }, set: { v in
+                model.update { $0.releaseAlerts = v }
+                guard v else { return }
+                Task {
+                    if await ReleaseNotifier.requestPermission() { await ReleaseNotifier.check() }
+                    else { model.update { $0.releaseAlerts = false }; env.notify("Activa los avisos de Orbital en Ajustes del iPhone.", tone: .warn) }
+                }
+            }))
+            .accessibilityIdentifier("release-alerts")
+        } footer: {
+            Text("De las series que sigues en Trakt. Te avisa cuando ya hay fuente en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; varios el mismo día llegan juntos.")
+        }
+        .listRowBackground(DS.surface)
+        .disabled(!env.services.appSettings.traktEnabled)
+        if !env.services.appSettings.traktEnabled {
+            Section { Text("Conecta Trakt para saber qué series sigues.").recipe(.footnote) }.listRowBackground(DS.surface)
+        }
     }
 
     @ViewBuilder private func suggestions(_ model: SettingsModel) -> some View {

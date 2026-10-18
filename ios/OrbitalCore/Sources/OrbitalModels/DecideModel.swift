@@ -67,9 +67,20 @@ public final class DecideModel: ObservableModel {
         self.sources = sources.filter { !$0.items.isEmpty }
         self.time = Self.contextTime(services.now())
         super.init()
-        // Lo que ya viste se pide desde que se abre la hoja: al decidir ya está (o casi).
-        if let trakt = services.trakt, trakt.linked { watchedTask = Task { try? await trakt.watchedIDs() } }
+        // Lo que ya viste: el de la última vez (guardado) sirve desde ya; el de hoy se pide aparte y se guarda para la próxima.
+        // Antes se esperaba a Trakt (hasta 4 s) antes de enseñar nada.
+        watched = services.kv.data(Self.watchedKey).flatMap { try? JSONDecoder().decode([String].self, from: $0) }.map(Set.init)
+        if let trakt = services.trakt, trakt.linked {
+            let kv = services.kv
+            watchedTask = Task { [weak self] in
+                let fresh = try? await trakt.watchedIDs()
+                if let fresh { kv.set(Self.watchedKey, data: try? JSONEncoder().encode(Array(fresh))); self?.watched = fresh }
+                return fresh
+            }
+        }
     }
+
+    static let watchedKey = "decide-watched"
 
     private var watchedTask: Task<Set<String>?, Never>?
 
@@ -131,9 +142,11 @@ public final class DecideModel: ObservableModel {
 
     /// Nivel 1: la propuesta rápida (lo que sigues primero si cabe; si no, al azar entre lo tuyo).
     public func quick() async {
-        await prepare()
         let following = pool.filter { $0.reason == .watching }.shuffled()
         order = following + pool.filter { $0.reason != .watching }.shuffled()
+        // Los carteles de las primeras candidatas empiezan a bajar ya (mientras se decide).
+        if let warm = warmPosters { let first = order.prefix(Self.trio * 3).map(\.poster); Task { await warm(first) } }
+        await prepare()
         await next()
     }
 
@@ -199,6 +212,11 @@ public final class DecideModel: ObservableModel {
         }
         picks = found
         if let first = found.first { select(first) } else { pick = nil; exhausted = true }
+        // La duración y la calificación llegan después (Cinemeta): los carteles ya no las esperan.
+        if found.contains(where: { details[$0.imdb] == nil }) {
+            await describe(found)
+            if let current = pick { select(current) }
+        }
         // Los que siguen, desde ya.
         upcoming = (key, Task { [weak self] in await self?.trio() ?? [] })
     }
@@ -210,7 +228,6 @@ public final class DecideModel: ObservableModel {
             guard let p = await search(), !found.contains(where: { $0.imdb == p.imdb }) else { break }
             found.append(p)
         }
-        await describe(found)
         if let warm = warmPosters {
             let posters = found.compactMap(\.poster)
             await withTaskGroup(of: Void.self) { group in
@@ -288,11 +305,11 @@ public final class DecideModel: ObservableModel {
     }
 
     static let chunk = 12
-    static let watchedWait: Double = 4
+    static let watchedWait: Double = 1.5
     /// Lo más que se busca antes de proponer la más cercana (segundos).
     static let budget: TimeInterval = 6
     /// Lo más que se espera a los carteles antes de enseñar los tres (segundos).
-    static let posterWait: Double = 2.5
+    static let posterWait: Double = 1.2
 
     /// Volver a las preguntas.
     public func reset() async { pick = nil; exhausted = false; upcoming = nil }

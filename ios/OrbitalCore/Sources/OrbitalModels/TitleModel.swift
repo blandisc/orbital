@@ -232,6 +232,15 @@ public final class TitleModel: ObservableModel {
         return runtime > 0 ? runtime : nil
     }
 
+    /// Cuánto llevas visto de lo que pone el botón principal (0…1); nil si no ibas a medias.
+    public var resumeFraction: Double? {
+        guard continueLabel.isResume else { return nil }
+        let state = StremioLibrary.state(of: raw)
+        let duration = asInt(state["duration"]), offset = asInt(state["timeOffset"])
+        guard duration > 0, offset > 0 else { return nil }
+        return min(1, Double(offset) / Double(duration))
+    }
+
     public func playRequest(videoID: String? = nil, fromStart: Bool = false) -> PlayRequest? {
         guard let video = videoID ?? continueVideoID else { return nil }
         var label = ""
@@ -348,6 +357,26 @@ public final class TitleModel: ObservableModel {
         await services.downloads.resume(DownloadItem.makeID(metaID: metaID, videoID: videoID))
         await refreshState()
     }
+
+    /// Pausar o cancelar (borrar lo bajado) una descarga de este título.
+    public func pauseDownload(_ videoID: String) async {
+        await services.downloads.pause(DownloadItem.makeID(metaID: metaID, videoID: videoID))
+        await refreshState()
+    }
+
+    public func cancelDownload(_ videoID: String) async {
+        await services.downloads.remove(DownloadItem.makeID(metaID: metaID, videoID: videoID))
+        await refreshState()
+    }
+
+    /// «T2 E5» de un episodio de esta serie; nil en una película.
+    public func episodeLabel(_ videoID: String) -> String? {
+        guard kind == "series", let found = episode(videoID) else { return nil }
+        return services.episodeLabel(found.0, found.1.episode)
+    }
+
+    /// El video que bajaría «Descargar» de un toque: la película, o el episodio que sigue en una serie.
+    public var downloadTarget: String? { kind == "movie" ? metaID : continueVideoID }
 
     /// La copia que ya tienes (o se está bajando) de este video, para preguntar antes de cambiarla por otra fuente.
     public func existingDownload(_ videoID: String) async -> DownloadItem? { await services.downloads.item(DownloadItem.makeID(metaID: metaID, videoID: videoID)) }

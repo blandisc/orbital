@@ -113,7 +113,7 @@ struct HomeView: View {
                         Button("Ver en la TV", systemImage: "tv") { Task { await env.randomSimpsons(onTV: true) } }
                     }
                     }
-                } label: { Image(systemName: "dice") }
+                } label: { Image("Glyphs/donut") }   // la dona de Los Simpson (el dado es «¿Qué vemos?», en Para ti)
                 .accessibilityLabel(Text("Un Simpson al azar"))
                 .accessibilityIdentifier("home-random-simpsons")
             }
@@ -297,10 +297,10 @@ struct HomeView: View {
         }
     }
 
-    /// Por qué está en Destacado.
-    private func reasonText(_ reason: SuggestionReason) -> Text {
+    /// Por qué está en el carrusel. Lo de tendencia no lleva nada: ya lo dice el título de la sección («En tendencia»).
+    private func reasonText(_ reason: SuggestionReason) -> Text? {
         switch reason {
-        case .trending: Text("En tendencia")
+        case .trending: nil
         case .recommended: Text("Para ti")
         case .popular: Text("Popular")
         default: Text("Destacado")
@@ -400,6 +400,7 @@ struct HomeView: View {
                 }
             }
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .contentMargins(.vertical, DS.PlatformFan.pillStroke, for: .scrollContent)   // el borde de la elegida no se recorta
             .sensoryFeedback(.selection, trigger: service.brand)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .bottom, spacing: DS.Space.s3) {

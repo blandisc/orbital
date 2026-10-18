@@ -155,6 +155,17 @@
         }
       }
     },
+    "%lld estrenos ya para ver": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld new episodes ready to watch"
+          }
+        }
+      }
+    },
     "%lld min": {
       "extractionState": "manual",
       "localizations": {
@@ -386,6 +397,17 @@
         }
       }
     },
+    "Abrir con Infuse": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open with Infuse"
+          }
+        }
+      }
+    },
     "Abrir el control de Orbital": {
       "extractionState": "manual",
       "localizations": {
@@ -437,6 +459,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "X action"
+          }
+        }
+      }
+    },
+    "Activa los avisos de Orbital en Ajustes del iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on Orbital notifications in iPhone Settings."
           }
         }
       }
@@ -617,6 +650,17 @@
         }
       }
     },
+    "Apagados": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Off"
+          }
+        }
+      }
+    },
     "Aparece un código para escribir en trakt.tv/activate. Con Trakt conectado se avisa de lo que ves y salen tu watchlist y tus listas.": {
       "extractionState": "manual",
       "localizations": {
@@ -793,6 +837,17 @@
         }
       }
     },
+    "Avienta la carta para cambiar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flick the card to change"
+          }
+        }
+      }
+    },
     "Avisarme": {
       "extractionState": "manual",
       "localizations": {
@@ -800,6 +855,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Warn me"
+          }
+        }
+      }
+    },
+    "Avisos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications"
           }
         }
       }
@@ -855,6 +921,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "A–Z"
+          }
+        }
+      }
+    },
+    "Bajando %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading %@"
+          }
+        }
+      }
+    },
+    "Bajando la recomendada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading the recommended one"
           }
         }
       }
@@ -932,6 +1020,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Delete when watched"
+          }
+        }
+      }
+    },
+    "Borrar la descarga": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the download"
           }
         }
       }
@@ -1101,6 +1200,17 @@
         }
       }
     },
+    "Cadena": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network"
+          }
+        }
+      }
+    },
     "Calculado en el iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -1152,6 +1262,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Minimum rating"
+          }
+        }
+      }
+    },
+    "Cambiar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change"
           }
         }
       }
@@ -1229,6 +1350,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cancel"
+          }
+        }
+      }
+    },
+    "Cancelar la descarga": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel the download"
           }
         }
       }
@@ -1365,6 +1497,17 @@
         }
       }
     },
+    "Clasificación": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rating"
+          }
+        }
+      }
+    },
     "Clave de TMDB": {
       "extractionState": "manual",
       "localizations": {
@@ -1482,6 +1625,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Efficient compression: looks the same, takes less space."
+          }
+        }
+      }
+    },
+    "Con": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With"
           }
         }
       }
@@ -1625,6 +1779,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Connect Trakt or your Orbital"
+          }
+        }
+      }
+    },
+    "Conecta Trakt para saber qué series sigues.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Trakt so we know which shows you follow."
           }
         }
       }
@@ -1915,6 +2080,17 @@
         }
       }
     },
+    "Creada por": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Created by"
+          }
+        }
+      }
+    },
     "Crear": {
       "extractionState": "manual",
       "localizations": {
@@ -1959,6 +2135,17 @@
         }
       }
     },
+    "Cuando un estreno ya está para ver": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When a new episode is ready to watch"
+          }
+        }
+      }
+    },
     "Cuenta": {
       "extractionState": "manual",
       "localizations": {
@@ -1977,6 +2164,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Time left"
+          }
+        }
+      }
+    },
+    "Cómo eliges, en Para ti, de qué título quieres recomendaciones.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How you pick, in For You, which title to get recommendations from."
           }
         }
       }
@@ -2058,6 +2256,17 @@
         }
       }
     },
+    "De Real-Debrid · por calidad, la recomendada primero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From Real-Debrid · by quality, recommended first"
+          }
+        }
+      }
+    },
     "De Trakt": {
       "extractionState": "manual",
       "localizations": {
@@ -2087,6 +2296,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "From the shows you follow"
+          }
+        }
+      }
+    },
+    "De las series que sigues en Trakt. Te avisa cuando ya hay fuente en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; varios el mismo día llegan juntos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For the shows you follow on Trakt. It tells you once there's a Real-Debrid source, with buttons to watch here, on the TV or download it. From 11 PM to 8 AM it waits until morning; several on the same day arrive together."
           }
         }
       }
@@ -2230,6 +2450,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Smart downloads"
+          }
+        }
+      }
+    },
+    "Descargada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloaded"
           }
         }
       }
@@ -2509,6 +2740,17 @@
         }
       }
     },
+    "Desliza hacia arriba o abajo para cambiar el título": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe up or down to change the title"
+          }
+        }
+      }
+    },
     "Desliza hacia arriba o abajo para ir de un día con algo visto a otro": {
       "extractionState": "manual",
       "localizations": {
@@ -2575,6 +2817,17 @@
         }
       }
     },
+    "Detalles": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        }
+      }
+    },
     "Di «Oye Siri, habla con Orbital» y, cuando pregunte, la orden. Para lo de siempre, directo: «Oye Siri, pausa Orbital» o «Oye Siri, reanuda Orbital».": {
       "extractionState": "manual",
       "localizations": {
@@ -2626,6 +2879,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Address (orbital.yourdomain.com)"
+          }
+        }
+      }
+    },
+    "Disponible": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available"
+          }
+        }
+      }
+    },
+    "Duración": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runtime"
           }
         }
       }
@@ -2846,6 +3121,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choose this episode's source"
+          }
+        }
+      }
+    },
+    "Elegir la fuente…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the source…"
           }
         }
       }
@@ -3444,6 +3730,39 @@
         }
       }
     },
+    "Estreno": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Release"
+          }
+        }
+      }
+    },
+    "Estrenos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New episodes"
+          }
+        }
+      }
+    },
+    "Estudio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Studio"
+          }
+        }
+      }
+    },
     "Estudios": {
       "extractionState": "manual",
       "localizations": {
@@ -3510,6 +3829,17 @@
         }
       }
     },
+    "Fuente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source"
+          }
+        }
+      }
+    },
     "Fuentes": {
       "extractionState": "manual",
       "localizations": {
@@ -3561,6 +3891,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Large"
+          }
+        }
+      }
+    },
+    "Guardada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved"
+          }
+        }
+      }
+    },
+    "Guardada en Mi lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved to My list"
           }
         }
       }
@@ -3939,6 +4291,17 @@
         }
       }
     },
+    "Inicio y Para ti": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home and For You"
+          }
+        }
+      }
+    },
     "Intenso": {
       "extractionState": "manual",
       "localizations": {
@@ -4045,6 +4408,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The emulator's usual layout."
+          }
+        }
+      }
+    },
+    "La elegimos por tu idioma, la calidad y el tamaño": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Picked for your language, quality and size"
           }
         }
       }
@@ -4309,6 +4683,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Done."
+          }
+        }
+      }
+    },
+    "Lleva %lld %": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld % done"
           }
         }
       }
@@ -4687,6 +5072,17 @@
         }
       }
     },
+    "Los siguientes %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The next %@"
+          }
+        }
+      }
+    },
     "Los siguientes %lld episodios": {
       "extractionState": "manual",
       "localizations": {
@@ -4742,6 +5138,17 @@
         }
       }
     },
+    "Mantén presionado para elegir en qué lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touch and hold to choose which list"
+          }
+        }
+      }
+    },
     "Mapa de sustos · %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -4771,6 +5178,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mark season as watched"
+          }
+        }
+      }
+    },
+    "Mazo de cartas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Card deck"
           }
         }
       }
@@ -4892,6 +5310,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "My List"
+          }
+        }
+      }
+    },
+    "Mini pósters": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mini posters"
           }
         }
       }
@@ -6315,6 +6744,17 @@
         }
       }
     },
+    "Primer episodio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First episode"
+          }
+        }
+      }
+    },
     "Probando otra fuente (%lld)…": {
       "extractionState": "manual",
       "localizations": {
@@ -6410,6 +6850,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "I want something"
+          }
+        }
+      }
+    },
+    "Quitada de Mi lista": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removed from My list"
           }
         }
       }
@@ -6575,6 +7026,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recommend based on…"
+          }
+        }
+      }
+    },
+    "Reintentar": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry"
           }
         }
       }
@@ -8262,6 +8724,17 @@
         }
       }
     },
+    "Tus listas de Trakt…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Trakt lists…"
+          }
+        }
+      }
+    },
     "Tus plataformas": {
       "extractionState": "manual",
       "localizations": {
@@ -8335,6 +8808,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "A random Simpsons (S5–S15)"
+          }
+        }
+      }
+    },
+    "Un estreno ya está para ver": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A new episode is ready to watch"
           }
         }
       }
@@ -8449,6 +8933,17 @@
         }
       }
     },
+    "Ver en Descargas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See in Downloads"
+          }
+        }
+      }
+    },
     "Ver en la TV": {
       "extractionState": "manual",
       "localizations": {
@@ -8511,6 +9006,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Show the lists"
+          }
+        }
+      }
+    },
+    "Ver sin internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watch offline"
           }
         }
       }
@@ -8680,6 +9186,28 @@
         }
       }
     },
+    "Ya está para ver": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready to watch"
+          }
+        }
+      }
+    },
+    "Ya está para ver · «%@»": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready to watch · “%@”"
+          }
+        }
+      }
+    },
     "Ya la tienes descargada": {
       "extractionState": "manual",
       "localizations": {
@@ -8735,6 +9263,17 @@
         }
       }
     },
+    "menos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "less"
+          }
+        }
+      }
+    },
     "min": {
       "extractionState": "manual",
       "localizations": {
@@ -8742,6 +9281,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "min"
+          }
+        }
+      }
+    },
+    "más": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "more"
           }
         }
       }

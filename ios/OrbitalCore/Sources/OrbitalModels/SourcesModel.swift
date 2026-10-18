@@ -15,6 +15,17 @@ public struct SourceRow: Equatable, Identifiable, Sendable {
     /// Para las insignias (como Infuse): la resolución y el sonido (Atmos, TrueHD, 7.1…).
     public var resolution = ""
     public var audio: [String] = []
+    /// El nombre del archivo (para quien lo quiera ver: mantener presionada la fuente).
+    public var release = ""
+    /// El grupo en la hoja: «4K», «1080p», «720p» u «Otras».
+    public var group: String {
+        switch resolution.lowercased() {
+        case "4k", "2160p": return "4K"
+        case "1080p", "1440p": return "1080p"
+        case "720p": return "720p"
+        default: return "Otras"
+        }
+    }
 }
 
 /// La lista de fuentes de un episodio o película, «Ver» o «Descargar» (se ordenan distinto).
@@ -60,7 +71,7 @@ public final class SourcesModel: ObservableModel {
                 .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
             return SourceRow(id: s.index, headline: headline, recommended: i == 0, cached: s.cached, sizeGB: s.size > 0 ? Double(s.size) / 1e9 : nil,
                              heavy: Int64(s.size) > limit, hdr: s.hdr, tags: s.tags.filter { $0 != "x265" && !["REMUX", "WEB-DL", "BluRay", "Atmos", "5.1"].contains($0) }, addon: s.addon,
-                             resolution: s.resolution, audio: s.audioBadges)
+                             resolution: s.resolution, audio: s.audioBadges, release: s.release)
         }
     }
 

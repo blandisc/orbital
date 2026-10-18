@@ -1,6 +1,7 @@
 #if DEBUG
 import Foundation
 import OrbitalCore
+import OrbitalModels
 
 /// Modo demostración (solo en Debug, con el argumento `-demo`): una cuenta de Stremio falsa con biblioteca y un complemento
 /// que da videos de prueba públicos. Cinemeta y los pósteres son los de verdad. Nada se guarda en el Keychain ni en disco:
@@ -32,6 +33,8 @@ enum Demo {
 
     /// `-demo-scrobble`: Trakt «conectado» con un último scrobble de mentira (para ver la fila de Ajustes › Trakt en el simulador).
     static var scrobble: Bool { ProcessInfo.processInfo.arguments.contains("-demo-scrobble") }
+    /// `-demo-because`: Trakt de mentira con historial y relacionados, para ver «Porque viste» en Para ti.
+    static var because: Bool { ProcessInfo.processInfo.arguments.contains("-demo-because") }
 
     /// Lo último que «se le contó a Trakt», para ver la fila de Ajustes sin ver nada antes.
     static func prefillScrobble(_ kv: KeyValueStore) {
@@ -118,7 +121,7 @@ enum Demo {
     static func secrets() -> InMemorySecrets {
         let secrets = InMemorySecrets()
         if !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") { secrets.set(SecretKey.stremioAuth, "DEMO") }
-        if scrobble || airings { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa: nada sale a Trakt
+        if scrobble || airings || because { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa: nada sale a Trakt
         if !noTV { secrets.set(SecretKey.orbitalToken, "demo") }      // una Orbital de mentira ya conectada («Ver en la TV»)
         if tmdb { secrets.set(SecretKey.tmdbKey, "DEMO") }            // TMDB de mentira: la ficha rica sin clave de verdad
         return secrets
@@ -161,6 +164,7 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
         if url.host == "demo.orbital.invalid" { return addon(url.path) }
         if url.host == "api.trakt.tv", url.path.hasPrefix("/calendars/my/shows") { return calendarDemo() }
+        if url.host == "api.trakt.tv", Demo.because, let found = Self.becauseDemo(url.path) { return HTTPResponse(status: 200, data: found.serialized()) }
         if url.host == "api.trakt.tv" {   // con `-demo-scrobble` Trakt es de mentira: ni una petición sale a internet
             let user: JSON = url.path == "/users/settings" ? ["user": ["username": "demo"]] : [:]
             return HTTPResponse(status: url.path == "/users/settings" ? 200 : 404, data: user.serialized())
@@ -176,6 +180,41 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             return HTTPResponse(status: 200, data: JSON.object(["ok": true]).serialized())
         }
         return try await real.send(request)
+    }
+
+    /// `-demo-release-alert`: pide permiso y manda el aviso de ejemplo unos segundos después (para verlo con la app cerrada).
+    @MainActor static func postReleaseAlert(language: String) {
+        guard Demo.isOn, ProcessInfo.processInfo.arguments.contains("-demo-release-alert") else { return }
+        Task {
+            guard await ReleaseNotifier.requestPermission() else { return }
+            try? await Task.sleep(for: .seconds(4))
+            await ReleaseNotifier.post([releaseAlert], language: language)
+        }
+    }
+
+    /// Un aviso «Ya está para ver» de ejemplo (`-demo-release-alert`).
+    static let releaseAlert = ReleaseAlerts.Alert(id: "tt14452776:4:2", metaID: "tt14452776", show: "The Bear", season: 4, episode: 2, episodeTitle: "Bolognese",
+                                                  poster: "https://images.metahub.space/poster/medium/tt14452776/img",
+                                                  art: "https://images.metahub.space/background/medium/tt14452776/img", quality: "1080p", instant: true, minutes: 34)
+
+    /// «Porque viste» de mentira: lo último que viste (cinco series) y lo que Trakt relaciona con cada una.
+    static let becauseShows: [(String, String, [(String, String)])] = [
+        ("tt0472954", "It's Always Sunny in Philadelphia", [("tt0367279", "Arrested Development"), ("tt0290988", "Trailer Park Boys"), ("tt1759761", "Veep"), ("tt0387764", "Peep Show")]),
+        ("tt0386676", "The Office", [("tt1266020", "Parks and Recreation"), ("tt2467372", "Brooklyn Nine-Nine"), ("tt4477976", "Superstore"), ("tt3526078", "Schitt's Creek")]),
+        ("tt14452776", "The Bear", [("tt15677150", "Shrinking"), ("tt11815682", "Hacks"), ("tt14403178", "Beef"), ("tt5687612", "Fleabag")]),
+        ("tt11280740", "Severance", [("tt14688458", "Silo"), ("tt2085059", "Black Mirror"), ("tt5753856", "Dark"), ("tt0475784", "Westworld")]),
+        ("tt0903747", "Breaking Bad", [("tt3032476", "Better Call Saul"), ("tt5071412", "Ozark"), ("tt2707408", "Narcos"), ("tt0306414", "The Wire")]),
+    ]
+
+    static func becauseDemo(_ path: String) -> JSON? {
+        func show(_ id: String, _ title: String) -> JSON { ["title": .string(title), "year": 2020, "ids": ["imdb": .string(id), "trakt": 1]] }
+        if path == "/sync/history" {
+            return .array(becauseShows.map { ["type": "episode", "show": show($0.0, $0.1)] })
+        }
+        if path.hasPrefix("/shows/"), path.hasSuffix("/related"), let found = becauseShows.first(where: { path.contains($0.0) }) {
+            return .array(found.2.map { show($0.0, $0.1) })
+        }
+        return nil
     }
 
     /// TMDB de mentira (`-demo-tmdb`): cualquier título es el 1; su ficha trae reparto (con caras de metahub), tráiler, saga,

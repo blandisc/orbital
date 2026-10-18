@@ -324,6 +324,8 @@ struct TitleLogo: View {
     let title: String
     var size: Size = .tile
     var dark = false
+    /// Centrado (la ficha): el logo y, si no hay, el nombre, al centro.
+    var centered = false
     /// Si el logo resultó oscuro al medirlo (un logo negro sobre la sala oscura no se lee): se pinta claro.
     @State private var measuredDark = false
     /// El logo sin su margen transparente (metahub los trae con ~25 % vacío arriba y abajo: el rótulo se veía flotando).
@@ -340,7 +342,7 @@ struct TitleLogo: View {
                 }
                 // Su alto real (por su proporción, con el tope de siempre): una caja más alta que el logo dejaba un hueco
                 // entre el rótulo y el logo.
-                .frame(maxWidth: DS.Size.cardMax, maxHeight: fittedHeight, alignment: .bottomLeading)
+                .frame(maxWidth: DS.Size.cardMax, maxHeight: fittedHeight, alignment: centered ? .bottom : .bottomLeading)
                 .shadow(color: DS.scrim, radius: DS.Space.s1)
                 .task(id: url) {
                     trimmed = LogoTrim.cached(u)
@@ -365,7 +367,8 @@ struct TitleLogo: View {
     private var name: some View {
         // En una pieza, una sola línea (con puntos suspensivos si no cabe): en una columna angosta dos líneas se encimaban con el dato.
         Text(title).font((size == .hero ? DS.TextRecipe.section : DS.TextRecipe.cardTitle).font.weight(.bold)).foregroundStyle(DS.text)
-            .lineLimit(size == .hero ? 2 : 1).frame(maxWidth: .infinity, alignment: .leading)
+            .lineLimit(size == .hero ? 2 : 1).multilineTextAlignment(centered ? .center : .leading)
+            .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
     }
 }
 

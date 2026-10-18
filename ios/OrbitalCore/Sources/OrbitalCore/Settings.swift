@@ -44,6 +44,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var appearance = "system"           // «system» | «light» | «dark»: el modo de la app (por omisión, el del iPhone)
     public var homeDeck = "coverflow"          // el carrusel de Inicio: «coverflow» | «fan» (abanico)
     public var homeTime = "pill"               // cuánto falta en la tarjeta: «pill» | «edge» | «fill» | «arc»
+    public var releaseAlerts = false           // avisar cuando un episodio de lo que sigues ya se puede ver («Ya está para ver»)
+    public var becauseStyle = "posters"        // «Porque viste» (Para ti): «posters» (mini pósters) | «deck» (mazo de cartas)
     public var avatar = "planet"               // tu avatar (Assets › Avatars)
     public var displayName = ""                // cómo te saluda Inicio («Hola, Fer»); vacío: el de tu Trakt
 
@@ -72,6 +74,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         appearance = try c.decodeIfPresent(String.self, forKey: .appearance) ?? appearance
         homeDeck = try c.decodeIfPresent(String.self, forKey: .homeDeck) ?? homeDeck
         homeTime = try c.decodeIfPresent(String.self, forKey: .homeTime) ?? homeTime
+        becauseStyle = try c.decodeIfPresent(String.self, forKey: .becauseStyle) ?? becauseStyle
+        releaseAlerts = try c.decodeIfPresent(Bool.self, forKey: .releaseAlerts) ?? releaseAlerts
         avatar = try c.decodeIfPresent(String.self, forKey: .avatar) ?? avatar
         displayName = try c.decodeIfPresent(String.self, forKey: .displayName) ?? displayName
     }
@@ -79,7 +83,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     enum Keys: String, CodingKey {
         case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
         case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
-        case homeDeck, homeTime, avatar, displayName, latinSpanish
+        case homeDeck, homeTime, avatar, displayName, latinSpanish, becauseStyle, releaseAlerts
     }
     public var traktEnabled: Bool { !traktClientID.isEmpty }
 

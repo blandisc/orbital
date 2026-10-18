@@ -492,6 +492,14 @@ public actor Trakt {
         return out
     }
 
+    /// Buscar películas y series por nombre (el respaldo de Buscar cuando Cinemeta no contesta). No pide tu sesión.
+    public func search(_ query: String, limit: Int = 20) async throws -> [TraktEntry] {
+        let rows = try await get("/search/movie,show", auth: false, [("query", query), ("limit", String(limit)), ("extended", "full")])?.array ?? []
+        return rows.compactMap { row in
+            row["type"]?.string == "movie" ? TraktParsing.entry(row["movie"], kind: "movie") : TraktParsing.entry(row["show"], kind: "series")
+        }
+    }
+
     /// Los títulos que Trakt relaciona con uno («Porque viste X»).
     public func related(kind: String, imdb: String, limit: Int = 15) async throws -> [TraktEntry] {
         guard Self.isIMDb(imdb) else { return [] }

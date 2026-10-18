@@ -84,8 +84,11 @@ struct RootView: View {
             // «Viendo en la TV» y lo que la TV dejó para el iPhone se sondean mientras la app está activa; al irse a segundo
             // plano se le pide a iOS despertarla luego (mejor esfuerzo).
             env.tvNow.setActive(phase == .active)
-            if phase == .active { Task { _ = await env.services.watch.flushPending() } }
-            if phase == .background { InboxBackgroundTask.schedule() }
+            if phase == .active { Task { _ = await env.services.watch.flushPending() }; Task { await ReleaseNotifier.check() } }
+            #if DEBUG
+            if phase == .active { DemoHTTPClient.postReleaseAlert(language: env.services.appSettings.uiLanguage) }
+            #endif
+            if phase == .background { InboxBackgroundTask.schedule(); ReleaseNotifier.schedule() }
         }
     }
 }
@@ -230,8 +233,8 @@ struct BannerView: View {
 
     var body: some View {
         if let banner = ui.banner {
-            Toast(symbol: symbol(banner.tone), color: color(banner.tone), title: Text(verbatim: banner.text),
-                  actionTitle: banner.action == nil ? nil : "Ver", action: banner.action.map { a in { run(a) } },
+            Toast(symbol: symbol(banner.tone), color: color(banner.tone), title: Text(verbatim: banner.text), detail: banner.detail.map { Text(verbatim: $0) },
+                  actionTitle: banner.action == nil ? nil : banner.actionTitle.map { LocalizedStringKey($0) } ?? "Ver", action: banner.action.map { a in { run(a) } },
                   dismiss: { env.banner = nil })
                 .id(banner.text)
                 .transition(.move(edge: .top).combined(with: .opacity))
@@ -240,7 +243,10 @@ struct BannerView: View {
     }
 
     private func run(_ action: AppEnvironment.BannerAction) {
-        switch action { case .downloads: env.openTab = AppEnvironment.downloadsTab }
+        switch action {
+        case .downloads: env.openTab = AppEnvironment.downloadsTab
+        case .perform: env.bannerPerform?()
+        }
     }
 
     private func symbol(_ tone: DSNotice.Tone) -> String {

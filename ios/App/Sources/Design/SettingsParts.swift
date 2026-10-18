@@ -156,3 +156,32 @@ struct CheckRow: View {
         .sensoryFeedback(.selection, trigger: checked)
     }
 }
+
+/// «Porque viste» en chiquito: la fila de mini pósters (uno crece) o el mazo de cartas.
+struct BecauseStylePreview: View {
+    let style: BecauseStyle
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous)
+        Group {
+            switch style {
+            case .posters:
+                HStack(alignment: .bottom, spacing: DS.Space.s1) {
+                    shape.fill(DS.accent).frame(width: DS.SettingsLook.previewPosterOn, height: DS.SettingsLook.previewPosterOn / DS.Poster.aspect)
+                    ForEach(0..<3, id: \.self) { _ in shape.fill(DS.fillStrong).frame(width: DS.SettingsLook.previewPoster, height: DS.SettingsLook.previewPoster / DS.Poster.aspect) }
+                }
+            case .deck:
+                ZStack {
+                    ForEach((0..<3).reversed(), id: \.self) { depth in
+                        shape.fill(depth == 0 ? DS.accent : DS.fillStrong)
+                            .frame(width: DS.SettingsLook.previewPosterOn, height: DS.SettingsLook.previewPosterOn / DS.Poster.aspect)
+                            .rotationEffect(.degrees(Double(depth) * DS.Collections.deckTurn * 2))
+                            .offset(x: CGFloat(depth) * DS.Collections.deckShift)
+                    }
+                }
+            }
+        }
+        .frame(height: DS.SettingsLook.deckPreviewHeight)
+        .accessibilityHidden(true)
+    }
+}

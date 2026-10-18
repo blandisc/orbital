@@ -56,11 +56,18 @@ public struct TitleExtras: Sendable, Equatable {
     public var collection: (name: String, parts: [TmdbTitle])?
     public var providers: [Brand] = []          // dónde verlo en tu país (suscripción)
     public var studios: [Brand] = []            // la cadena (series) o el estudio (películas)
+    /// La frase de la película («Long live the fighters.»), en tu idioma si TMDB la tiene.
+    public var tagline: String?
+    /// El estreno (película) o el primer episodio (serie), «2024-03-01».
+    public var releaseDate: String?
+    /// Los idiomas que se hablan (códigos ISO 639-1: «en», «es»).
+    public var languages: [String] = []
 
     public static func == (a: TitleExtras, b: TitleExtras) -> Bool {
         a.tmdbID == b.tmdbID && a.cast == b.cast && a.crew == b.crew && a.certification == b.certification && a.rating == b.rating
             && a.trailer == b.trailer && a.extras == b.extras && a.recommendations == b.recommendations && a.collection?.name == b.collection?.name
             && a.collection?.parts == b.collection?.parts && a.providers == b.providers && a.studios == b.studios
+            && a.tagline == b.tagline && a.releaseDate == b.releaseDate && a.languages == b.languages
     }
 }
 
@@ -154,6 +161,9 @@ extension Tmdb {
         out.providers = providers.compactMap { p in p["provider_name"]?.nonEmptyString.map { Brand(name: $0, logo: image(p["logo_path"], size: "w154")) } }
         let studios = raw["networks"]?.array ?? raw["production_companies"]?.array ?? []
         out.studios = studios.prefix(3).compactMap { s in s["name"]?.nonEmptyString.map { Brand(name: $0, logo: image(s["logo_path"], size: "w154")) } }
+        out.tagline = raw["tagline"]?.nonEmptyString?.trimmingCharacters(in: .whitespacesAndNewlines)
+        out.releaseDate = (raw["release_date"]?.nonEmptyString ?? raw["first_air_date"]?.nonEmptyString)
+        out.languages = (raw["spoken_languages"]?.array ?? []).compactMap { $0["iso_639_1"]?.nonEmptyString }
         return out
     }
 

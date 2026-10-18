@@ -106,11 +106,14 @@ struct PlatformPill: View {
         let tint = DS.PlatformTint.color(brand)
         Button(action: action) {
             HStack(spacing: DS.Space.s2) {
-                PlatformLogoTile(url: logo, name: name, size: DS.PlatformFan.pillLogo, radius: DS.PlatformFan.pillLogoRadius, tint: tint, glow: 0)
-                Text(verbatim: name).font(DS.TextRecipe.footnote.font).fontWeight(selected ? .semibold : .regular).lineLimit(1)
+                // El logo en círculo, concéntrico con la cápsula y con el mismo aire alrededor: antes era un cuadrito de esquinas
+                // rectas que casi tocaba el borde redondo y parecía cortado.
+                PlatformLogoTile(url: logo, name: name, size: DS.PlatformFan.pillLogo, radius: DS.PlatformFan.pillLogo / 2, tint: tint, glow: 0)
+                    .overlay(Circle().strokeBorder(DS.hairline, lineWidth: DS.Size.hairline))
+                Text(verbatim: name).font(DS.TextRecipe.footnote.font).fontWeight(selected ? .semibold : .regular).lineLimit(1).fixedSize()
             }
             .foregroundStyle(DS.text)
-            .padding(.leading, DS.Space.s1).padding(.trailing, DS.Space.s3).padding(.vertical, DS.Space.s1)
+            .padding(.leading, DS.PlatformFan.pillInset).padding(.trailing, DS.Space.s4).padding(.vertical, DS.PlatformFan.pillInset)
             .background(selected ? tint.opacity(DS.PlatformFan.tintTop) : DS.fill, in: Capsule())
             .overlay(Capsule().strokeBorder(selected ? tint : .clear, lineWidth: DS.PlatformFan.pillStroke))
         }

@@ -76,8 +76,14 @@ enum DS {
     static let subtitleText = Color.white       // subtítulos: blanco puro sobre el video, como cualquier reproductor
     static let subtitleShadow = Color.black.opacity(DesignTokens.Opacity.subtitleShadow)
 
-    /// El círculo de avance de una descarga junto a un episodio (el del sistema mide 58 pt: se encoge al tamaño de un ícono).
-    enum Gauge { static let episodeScale = CGFloat(DesignTokens.Size.gaugeScale) }
+    /// Las acciones de la ficha (Guardar, Descargar, Tráiler, Fuente): el círculo, el grueso del anillo de avance. El anillo es el mismo en la fila de un episodio (`ring`).
+    enum TitleAction {
+        static let circle: CGFloat = 48, ring: CGFloat = 3, ringSmall: CGFloat = 26, ringSmallLine: CGFloat = 2.5
+        /// Cuántos renglones de sinopsis antes de «más».
+        static let synopsisLines = 3
+        /// El alto del arte de la ficha (proporción ancho / alto) y el ancho máximo del logo centrado.
+        static let heroAspect: CGFloat = 0.9, logoWidth: CGFloat = 0.66
+    }
 
     /// Subtítulos: medidas relativas a la letra o al video (la letra misma sale de Ajustes › Tamaño de subtítulos).
     enum Subtitle {
@@ -272,6 +278,8 @@ enum DS {
         /// La vista previa del carrusel: tres tarjetas chicas que se deslizan solas, de ida y vuelta.
         static let deckPreviewHeight: CGFloat = 120, deckPreviewCard = CGSize(width: 58, height: 86), deckPreviewStep: CGFloat = 50
         static let deckPreviewBlur: CGFloat = 1.5, deckPreviewDrop: CGFloat = 6, deckPreviewSpeed: Double = 0.9
+        /// La vista previa de «Porque viste»: los mini pósters (el elegido, más grande).
+        static let previewPoster: CGFloat = 22, previewPosterOn: CGFloat = 32
         /// La vista previa de cuánto falta: una tarjeta del tamaño real, reducida.
         static let timePreviewCard = CGSize(width: 300, height: 190), timePreviewScale: CGFloat = 0.5
         static let optionRadius: CGFloat = 18, optionRing: CGFloat = 2
@@ -316,6 +324,10 @@ enum DS {
         static let stackPoster: CGFloat = 40, stackWidth: CGFloat = 54, stackAngle: Double = 8
         /// «Porque viste»: el póster de lo que viste y los relacionados.
         static let seedPoster: CGFloat = 104, relatedPoster: CGFloat = 64
+        /// «Porque viste» en mini pósters: el tamaño de cada uno, el elegido (crece) y qué tan apagados los demás.
+        static let miniPoster: CGFloat = 44, miniPosterOn: CGFloat = 58, miniOff: Double = 0.55
+        /// «Porque viste» en mazo: la carta de arriba, cuánto se corre y gira cada una de abajo, y cuánto hay que arrastrar.
+        static let deckPoster: CGFloat = 96, deckShift: CGFloat = 6, deckTurn: Double = 3, deckShrink: CGFloat = 0.05, deckThrow: CGFloat = 40, deckDepth = 3
         /// «Por año»: la tarjeta (cuatro pósters) y su número.
         static let yearWidth: CGFloat = 150, yearHeight: CGFloat = 150
         /// La línea (desde arriba de lo visible, bajo la barra) que decide qué grupo marca el índice.
@@ -347,8 +359,8 @@ enum DS {
         static let width: CGFloat = 168, height: CGFloat = 176, radius: CGFloat = 22
         static let poster: CGFloat = 66, posterTop: CGFloat = 26, angle: Double = 15, spread: CGFloat = 8, lift: CGFloat = 6
         static let logo: CGFloat = 34, logoRadius: CGFloat = 10, glow: CGFloat = 18
-        /// La pastilla de una plataforma (el Top 10 de Inicio): el logo chico, sus esquinas y el borde de la elegida.
-        static let pillLogo: CGFloat = 22, pillLogoRadius: CGFloat = 6, pillStroke: CGFloat = 1.5
+        /// La pastilla de una plataforma (el Top 10 de Inicio): el logo (en círculo), el aire alrededor y el borde de la elegida.
+        static let pillLogo: CGFloat = 26, pillInset: CGFloat = 5, pillStroke: CGFloat = 1.5
         static let tintTop: Double = 0.42, tintEdge: Double = 0.45
         /// El logo grande de la página de la plataforma y su halo.
         static let headerLogo: CGFloat = 72, headerGlow: CGFloat = 44
@@ -417,6 +429,8 @@ enum DS {
         static let headerWordmark: CGFloat = 26
         /// Lo más que se encoge un número de «Tu año» para caber en su tarjeta.
         static let statScale: CGFloat = 0.6
+        /// Una sinopsis más larga que esto (caracteres) se corta con «más».
+        static let synopsisFold = 160
         /// Cuánto hay que bajar para que el título grande se encoja (y el de Inicio diga otra cosa).
         static let titleCollapse: CGFloat = 8
         static let touchTarget = CGFloat(DesignTokens.Size.touchTarget), thumbSmall = CGFloat(DesignTokens.Size.thumbSmall)
@@ -501,6 +515,8 @@ enum DS {
         static let longPressDelay = DesignTokens.Timing.longPressDelay
         /// Cada cuánto, como pronto, le pide iOS a la app mirar en segundo plano lo que dejó la TV (iOS decide si y cuándo corre).
         static let inboxRefresh: TimeInterval = 15 * 60
+        /// Cada cuánto (como mínimo) iOS despierta la app para ver si un estreno ya se puede ver.
+        static let releaseRefresh: TimeInterval = 30 * 60
         /// Cuánto se queda a la vista el indicador de brillo o volumen tras soltar, antes de desvanecerse.
         static let gestureIndicatorHold = UInt64(DesignTokens.Timing.gestureIndicatorHold * 1e9)
         /// Quieto en el mosaico: a los 30 s el ambiente despierta solo; sobre una pieza, a los 2,2 s cobra vida.
@@ -514,6 +530,8 @@ enum DS {
         static let card: CGFloat = 200, mosaic: CGFloat = 192, logo: CGFloat = 240, platformLogo: CGFloat = 96, bleed: CGFloat = 480
         /// Basta una miniatura para sacar el color medio del fondo.
         static let tintPixels: CGFloat = 48
+        /// La imagen de un aviso («Ya está para ver»): el lado más largo y la calidad del JPEG.
+        static let notification = 1000, notificationQuality: CGFloat = 0.82
     }
 
     enum Poster {

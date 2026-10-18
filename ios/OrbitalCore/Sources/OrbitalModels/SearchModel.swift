@@ -37,7 +37,7 @@ public final class SearchModel: ObservableModel {
         error = nil   // un error de la búsqueda anterior no tapa lo que está cargando
         defer { if ticket == latest { isSearching = false } }
         do {
-            let found = try await services.cinemeta.searchAll(query)
+            let found = try await find(query)
             guard ticket == latest else { return }
             results = found.map { Result(kind: $0.kind, metaID: $0.metaID, title: $0.title, originalTitle: $0.title, poster: $0.poster, year: $0.year) }
             error = nil
@@ -58,6 +58,20 @@ public final class SearchModel: ObservableModel {
             results = []; self.error = "\(error)"; searchedQuery = query
         }
     }
+
+    /// Cinemeta, con un reintento (a veces contesta con un error pasajero, como un 550); si sigue sin contestar, Trakt
+    /// (si está configurado). Solo si los dos fallan se dice que no se pudo.
+    private func find(_ query: String) async throws -> [SearchResult] {
+        do { return try await services.cinemeta.searchAll(query) } catch where !Task.isCancelled {
+            try? await Task.sleep(nanoseconds: Self.retryDelay)
+            do { return try await services.cinemeta.searchAll(query) } catch where !Task.isCancelled {
+                guard let trakt = services.trakt, trakt.configured, let found = try? await trakt.search(query), !found.isEmpty else { throw error }
+                return found.map { SearchResult(kind: $0.kind, metaID: $0.imdb, title: $0.title, poster: String(format: ForYou.metahubPoster, $0.imdb), year: $0.year.map(String.init) ?? "") }
+            }
+        }
+    }
+
+    static let retryDelay: UInt64 = 600_000_000
 
     /// Lo buscado en esta sesión (las últimas `memoryLimit` búsquedas), por texto en minúsculas.
     private var memory: [String: [Result]] = [:]
