@@ -249,7 +249,7 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
     { glyph: g.select, label: "Ver" },
     { glyph: g.menu, label: ranked() ? "Filtrar" : "Ordenar y filtrar" },
     list?.tabs.length > 1 && { glyph: g.section, label: "Cambiar" },
-    { glyph: g.back, label: "Volver", end: true },
+    { glyph: g.back, label: "Atrás", end: true },
   ].filter(Boolean);
 
   return { el, open, close, handle, hints, sorter: api, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };

@@ -55,3 +55,18 @@ test("la leyenda del pie, como {acción: texto}, para el control del iPhone", as
   const list = [{ glyph: "A", label: "Ver" }, { glyph: "X", label: "Mi lista" }, { glyph: "LB RB", label: "Sección" }, { glyph: "?", label: "Nada" }];
   assert.deepEqual(legendOf(list, glyphs), { select: "Ver", alt: "Mi lista", section: "Sección" });
 });
+
+test("la leyenda: como mucho cinco pistas a la vista, B siempre «Atrás»; lo de la barra de arriba solo va al iPhone", async () => {
+  const { gamesHints, homeHints, tvHints, legendOf } = await import("../../orbital/web/js/core/hints.js");
+  const g = { select: "A", alt: "X", back: "B", options: "Y", rows: "↑↓", search: "S", section: "LB RB", page: "LT RT", menu: "☰", home: "Home" };
+  const seen = (list) => list.filter((i) => !i.offscreen);
+  const media = footerHints(g, { atHome: false, groups: true, rows: 3, primary: "Ver la serie", alt: "Episodios" });
+  assert.ok(seen(media).length <= 5, seen(media).map((i) => i.label).join(", "));
+  assert.equal(legendOf(media, g).section, "Sección"); // el iPhone sigue sabiendo qué hace LB/RB
+  for (const list of [media, gamesHints(g, { kind: "game" }), tvHints(g, { kind: "channel" }, { categories: 2, atStart: false }),
+    homeHints(g, { kind: "console", console: { last: null } })]) {
+    assert.ok(seen(list).length <= 5);
+    const back = list.find((i) => i.glyph === "B");
+    if (back) assert.equal(back.label, "Atrás");
+  }
+});

@@ -66,7 +66,7 @@ export function createPhoneLink({ onMove, onClose }) {
     return true;
   }
 
-  const hints = (g) => [{ glyph: g.options, label: "Otra vez" }, { glyph: g.back, label: "Cerrar", end: true }];
+  const hints = (g) => [{ glyph: g.options, label: "Otra vez" }, { glyph: g.back, label: "Atrás", end: true }];
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }

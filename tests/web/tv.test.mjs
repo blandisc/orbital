@@ -117,11 +117,11 @@ test("el pie de TV en vivo dice qué hace cada botón ahí", () => {
   const g = GLYPHS.gamepad;
   const labels = (hints) => hints.map((x) => x.label);
   const onChannel = tvHints(g, { kind: "channel" }, { categories: 3, atStart: false });
-  assert.deepEqual(labels(onChannel), ["Ver", "Categoría", "Actualizar", "Buscar", "Categorías", "Menú"]);
+  assert.deepEqual(labels(onChannel), ["Ver", "Categoría", "Actualizar", "Buscar", "Atrás", "Menú"]);
   assert.equal(onChannel[0].glyph, "A");
   assert.equal(onChannel.find((x) => x.label === "Categoría").glyph, "LT RT"); // LB RB son las secciones, como en toda la app
   assert.equal(onChannel.find((x) => x.label === "Actualizar").glyph, "X");
-  assert.equal(tvHints(g, { kind: "channel" }, { categories: 3, atStart: true }).find((x) => x.glyph === "B").label, "Inicio");
+  assert.equal(tvHints(g, { kind: "channel" }, { categories: 3, atStart: true }).find((x) => x.glyph === "B").label, "Atrás"); // B siempre dice «Atrás», como en toda la app
   // Con una sola categoría no se enseña «Categoría» (pistas que no aplican, no).
   assert.ok(!labels(tvHints(g, { kind: "channel" }, { categories: 1 })).includes("Categoría"));
   assert.deepEqual(labels(tvHints(g, { kind: "filter" }, { categories: 3 })).slice(0, 1), ["Elegir"]);

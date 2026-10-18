@@ -37,7 +37,7 @@
 .title__info > .title__logo--flying { animation: none; transform-origin: top left; }
 .title__info > .title__facts, .title__info > .title__avail, .title__info > .title__description { animation-delay: var(--delay-1); }
 .title__info > .title__people, .title__info > .title__progress { animation-delay: var(--delay-2); }
-.title__info > .title__actions, .title__info > .title__action-caption, .title__info > .title__status { animation-delay: var(--delay-3); }
+.title__info > .title__actions, .title__info > .title__status { animation-delay: var(--delay-3); }
 /* Nada se encoge: un título o una sinopsis encogidos se rebanaban a media línea (con letra grande). */
 .title__info > * { flex-shrink: 0; }
 @media (max-height: 820px) {
@@ -96,26 +96,32 @@
 }
 .title__action .icon { width: 1.3rem; height: 1.3rem; flex: none; }
 .title__action span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.title__action--primary { flex-shrink: 1; }
+.title__action--primary { flex: none; } /* el principal nunca se corta: ceden los de al lado */
 .title__action small { color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-regular); }
 .title__action--primary { padding-inline: var(--space-6) var(--space-8); }
-/* Los secundarios (Desde el principio, Tráiler, Mi lista, Elegir fuente) son siempre solo ícono, del
-   mismo tamaño enfocados o no: su nombre sale debajo (.title__action-caption). Antes el enfocado se
-   ensanchaba y todo el renglón brincaba. */
-.title__action:not(.title__action--primary) { padding-inline: var(--space-4); font-size: var(--text-md); }
-.title__action:not(.title__action--primary) span { display: none; }
-.title__action-caption { width: max-content; max-width: 100%; min-height: 1.5em; margin-top: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); white-space: nowrap; }
-/* Con el dedo no hay foco que enseñe el nombre: los botones lo llevan escrito. */
-[data-input="touch"] .title__action:not(.title__action--primary) span { display: inline; }
-[data-input="touch"] .title__action-caption { display: none; }
+/* Los secundarios (Desde el inicio, Tráiler, Mi lista, Fuente…): su ícono en una caja y su nombre corto debajo, siempre a
+   la vista (antes solo ícono, y el nombre salía en otra línea al enfocarlo). Miden lo mismo enfocados o no. */
+.title__actions { align-items: flex-start; }
+.title__action--icon {
+  flex: 0 1 5.6rem; min-width: 4.6rem; flex-direction: column; gap: var(--space-2); min-height: 0; padding: 0; background: none;
+  font-size: var(--text-sm); color: var(--color-text-muted);
+}
+.title__action-tile {
+  display: grid; place-items: center; width: 100%; height: var(--control-height); border-radius: var(--radius-md); background: var(--color-fill);
+  color: var(--color-text); transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+/* Entero: si no cabe en un renglón, dos (nunca «Al iPho…»). */
+.title__action-name { max-width: 100%; text-align: center; line-height: 1.2; font-size: var(--text-xs); text-wrap: balance; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 [data-input="touch"] .title__actions { flex-wrap: wrap; }
 [data-input="touch"] .title__action--primary { flex-shrink: 0; }
 /* Foco invertido (como el menú): se ve desde el sofá. */
 .title__action--focused { background: var(--inverse-bg); color: var(--inverse-fg); transform: scale(var(--inverse-scale)); }
+.title__action--icon.title__action--focused { background: none; color: var(--color-text); }
+.title__action--icon.title__action--focused .title__action-tile { background: var(--inverse-bg); color: var(--inverse-fg); }
 .title__action--focused small { color: inherit; opacity: .7; }
 /* «Ver» / «Continuar» con el color del arte del título (como el Jugar de Game Glance). */
 .title__action--primary.title__action--focused { background: var(--color-primary-art); }
-.title[data-zone="episodes"] .title__action--primary { box-shadow: inset 0 0 0 2px var(--color-hairline-strong); }
 
 /* Derecha: temporadas (LB/RB) y episodios (↑/↓) */
 .title__browser { display: none; flex-direction: column; min-height: 0; overflow: hidden; animation: rise-in var(--duration-enter) var(--ease-out) var(--delay-1) backwards; }
@@ -176,9 +182,10 @@
 .episode--watched .episode__title { color: var(--color-text-muted); }
 .episode--upcoming { opacity: .55; }
 /* Foco: fila invertida (texto oscuro sobre claro), visible desde el sofá; antes era un velo al 10 %. */
-.episode--focused, .episode--focused:hover { background: var(--color-primary); color: var(--color-on-primary); }
-.episode--focused .episode__overview, .episode--focused .episode__title, .episode--focused .episode__date { color: inherit; }
-.episode--focused .episode__overview { opacity: .75; }
+/* El episodio enfocado se resalta sin volverse una losa blanca: un relleno y su texto a todo color. */
+.episode--focused, .episode--focused:hover { background: var(--color-fill-hover); }
+.episode--focused .episode__title { color: var(--color-text); }
+.episode--focused .episode__overview { color: var(--color-text-muted); }
 
 /* Angosta o vertical: la identidad arriba (compacta) y los episodios debajo. */
 @media (max-width: 820px), (max-aspect-ratio: 1/1) {

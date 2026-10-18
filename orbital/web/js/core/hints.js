@@ -1,6 +1,10 @@
 /**
  * Qué controles mostrar en el pie (lógica pura, con pruebas en tests/web).
  *
+ * Una sola gramática: como mucho cinco pistas a la vista, B siempre «Atrás» y Menú al final. Lo que la barra de arriba
+ * ya enseña con su botón (Buscar, LB/RB · Sección) y lo obvio (↑↓) va con `offscreen`: la tele no lo dibuja, pero el
+ * control del iPhone sí lo recibe (legendOf) para rotular sus botones.
+ *
  * Jugar, "Con Eden" y Opciones ya están en los botones del héroe con su glifo, así que el
  * pie no los repite: solo enseña cómo moverse y cómo volver.
  */
@@ -17,9 +21,9 @@ export function footerHints(glyphs, { sheetOpen = false, adjustable = false, ine
     // Lo que hace A con la tarjeta enfocada («Continuar», «Ver»…) y X (su ficha): como en Inicio y Juegos.
     primary && { glyph: glyphs.select, label: primary },
     alt && glyphs.alt && { glyph: glyphs.alt, label: alt, secondary: true },
-    rows > 1 && { glyph: glyphs.rows, label: "Cambiar de fila" },
-    glyphs.search && { glyph: glyphs.search, label: "Buscar", secondary: true },
-    glyphs.section && { glyph: glyphs.section, label: "Sección", secondary: true },
+    rows > 1 && { glyph: glyphs.rows, label: "Cambiar de fila", offscreen: true },
+    glyphs.search && { glyph: glyphs.search, label: "Buscar", offscreen: true },
+    glyphs.section && { glyph: glyphs.section, label: "Sección", offscreen: true },
     // Películas y series: LT/RT pasan de grupo (Plataformas, Premios…) en vez de saltar de 5 en 5.
     groups ? { glyph: glyphs.page, label: "Grupo", secondary: true } : longRow && { glyph: glyphs.page, label: "Saltar 5", secondary: true },
     !atHome && { glyph: glyphs.back, label: "Atrás", secondary: true },
@@ -79,7 +83,7 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
   } else {
     list.push({ glyph: glyphs.select, label: target?.setup ? "Qué revisar" : "Ir a Juegos" });
   }
-  if (glyphs.section && sections > 1) list.push({ glyph: glyphs.section, label: "Sección", secondary: true });
+  if (glyphs.section && sections > 1) list.push({ glyph: glyphs.section, label: "Sección", offscreen: true });
   if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${running.title}` });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
   return list;
@@ -92,8 +96,8 @@ export function gamesHints(glyphs, target) {
   else if (target?.kind === "rail") list.push({ glyph: glyphs.rows, label: "Otra consola" }, { glyph: glyphs.select, label: "Ver sus juegos" });
   // Un juego enfocado: la ficha de la derecha ya enseña Jugar, Con … y Opciones; el pie no los repite.
   if (glyphs.page && target?.kind !== "rail") list.push({ glyph: glyphs.page, label: "Otra consola" });
-  if (glyphs.search) list.push({ glyph: glyphs.search, label: "Buscar", secondary: true });
-  if (glyphs.section) list.push({ glyph: glyphs.section, label: "Sección", secondary: true });
+  if (glyphs.search) list.push({ glyph: glyphs.search, label: "Buscar", offscreen: true });
+  if (glyphs.section) list.push({ glyph: glyphs.section, label: "Sección", offscreen: true });
   // B: primero al primer juego; desde ahí, a Inicio. Siempre dice «Atrás», como en el resto de Orbital.
   list.push({ glyph: glyphs.back, label: "Atrás", secondary: true });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
@@ -111,8 +115,8 @@ export function tvHints(glyphs, target, { empty = false, categories = 1, atStart
   else if (!empty && target?.kind === "filter") list.push({ glyph: glyphs.select, label: "Elegir" });
   if (!empty && categories > 1 && glyphs.page) list.push({ glyph: glyphs.page, label: "Categoría" });
   list.push({ glyph: glyphs.alt, label: "Actualizar", secondary: true });
-  if (glyphs.search) list.push({ glyph: glyphs.search, label: "Buscar", secondary: true });
-  list.push({ glyph: glyphs.back, label: atStart ? "Inicio" : "Categorías", secondary: true }); // de los canales, B vuelve a la lista de categorías
+  if (glyphs.search) list.push({ glyph: glyphs.search, label: "Buscar", offscreen: true });
+  list.push({ glyph: glyphs.back, label: "Atrás", secondary: true }); // de los canales, B vuelve a las categorías; de ahí, al Inicio
   // Con un canal al aire, recuerda cómo volver a él (Home solo existe en el mando).
   if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${running.title}` });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });

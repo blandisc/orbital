@@ -4,6 +4,7 @@ import { cssUrl, h, hideAfterExit, mount, svg } from "../core/dom.js";
 import { genres, runtime } from "../core/format.js";
 import { trimmedLogo } from "../core/foryou.js";
 import { ICONS } from "../core/icons.js";
+import { Glyph } from "./glyph.js";
 import { motion } from "../core/motion.js";
 import { availability, episodeStates, titleActions, titleProgress } from "../core/watch.js";
 
@@ -31,9 +32,6 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   const progress = h("div", { class: "title__progress", hidden: true },
     h("span", { class: "title__progress-bar" }, progressFill), progressLabel);
   const actions = h("div", { class: "title__actions", role: "toolbar" });
-  // El nombre del botón secundario enfocado, en su propia línea: los botones no cambian de tamaño
-  // (antes el enfocado se ensanchaba y todo el renglón brincaba, y el principal se cortaba).
-  const caption = h("div", { class: "title__action-caption", "aria-hidden": "true" });
   const status = h("div", { class: "title__status", role: "status" });
   const tabs = h("div", { class: "title__tabs", role: "tablist" });
   tabs.addEventListener("scroll", () => markTabEdges(), { passive: true });
@@ -41,7 +39,7 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   const browser = h("div", { class: "title__browser" }, tabs, list);
   const el = h("section", { class: "title", hidden: true, "aria-label": "Ficha" },
     backdrop,
-    h("div", { class: "title__info" }, logo, name, facts, ratings, avail, description, people, progress, actions, caption, status),
+    h("div", { class: "title__info" }, logo, name, facts, ratings, avail, description, people, progress, actions, status),
     browser);
 
   let item = null;
@@ -107,20 +105,15 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   function renderActions() {
     buttons = titleActions(details, { kind: kindOf(), title: item?.title, phone: canSendPhone() });
     action = Math.min(action, Math.max(0, buttons.length - 1));
+    // El principal lleva el botón del mando que lo hace (A / Enter), como todo Orbital; los demás, su ícono en una caja y su
+    // nombre corto debajo, siempre a la vista (antes solo ícono, y el nombre aparecía al enfocarlo).
     mount(actions, buttons.map((b, i) => h("button", {
-      class: ["title__action", b.primary && "title__action--primary", zone === "actions" && i === action && "title__action--focused"],
+      class: ["title__action", b.primary ? "title__action--primary" : "title__action--icon", zone === "actions" && i === action && "title__action--focused"],
       type: "button", "data-id": b.id, "aria-label": b.label, title: b.label,
       onClick: () => { zone = "actions"; action = i; run(b); },
-    }, svg(ICONS[b.icon] || ICONS.play), h("span", {}, b.label), b.hint && h("small", {}, b.hint))));
-    const focused = zone === "actions" ? buttons[action] : null;
-    caption.textContent = focused && !focused.primary ? focused.label : "";
-    const button = focused && !focused.primary ? actions.children[action] : null;
-    // Debajo del botón enfocado, sin salirse por la derecha.
-    caption.style.transform = "";
-    if (button) {
-      const room = actions.clientWidth - caption.offsetWidth; // la línea mide lo que su texto (max-content)
-      caption.style.transform = `translateX(${Math.max(0, Math.min(button.offsetLeft - actions.offsetLeft, room))}px)`;
-    }
+    }, b.primary
+      ? [glyphs.select ? Glyph(glyphs.select, { small: true }) : svg(ICONS[b.icon] || ICONS.play), h("span", {}, b.label), b.hint && h("small", {}, b.hint)]
+      : [h("span", { class: "title__action-tile" }, svg(ICONS[b.icon] || ICONS.play)), h("span", { class: "title__action-name" }, b.short || b.label)])));
   }
 
   function renderTabs() {
@@ -484,7 +477,13 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   }
 
   /** Pistas del pie según dónde está el foco. */
-  const hints = (g) => (details?.error ? [{ glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }]
+  let glyphs = {};
+  const hints = (g) => {
+    if (g.select !== glyphs.select) { glyphs = g; if (!el.hidden) renderActions(); } // cambió el mando: su botón A
+    glyphs = g;
+    return hintsFor(g);
+  };
+  const hintsFor = (g) => (details?.error ? [{ glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }]
     : zone === "episodes"
     ? [episode() && { glyph: g.select, label: "Ver" }, episode() && { glyph: g.options, label: "Fuente" }, { glyph: g.section, label: "Temporada" },
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },

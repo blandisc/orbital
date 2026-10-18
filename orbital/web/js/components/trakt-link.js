@@ -90,7 +90,7 @@ export function createTraktLink({ onMove, onClose }) {
     return true; // nada más que hacer aquí: el resto de botones no se escapan a lo de atrás
   }
 
-  const hints = (g) => [{ glyph: g.options, label: "Otro código" }, { glyph: g.back, label: "Cancelar", end: true }];
+  const hints = (g) => [{ glyph: g.options, label: "Otro código" }, { glyph: g.back, label: "Atrás", end: true }];
 
   return { el, open, close, failed, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("screen--leaving"); } };
 }
