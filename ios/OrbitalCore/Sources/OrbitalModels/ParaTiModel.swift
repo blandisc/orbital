@@ -208,8 +208,9 @@ public final class ParaTiModel: ObservableModel {
         }
         async let fetchedLists = try? remote.lists()
         async let fetchedMosaic = try? remote.mosaic()
-        // Si la consola no contesta, se cae a la lógica local sin esperar el calendario: este se pide solo si contestó.
-        guard let newLists = await fetchedLists, let newMosaic = await fetchedMosaic else { return false }
+        // Si la consola no contesta, se cae a la lógica local. Con sus listas basta para empezar: los estantes ya no esperan
+        // al mosaico (antes sí, y el destacado tardaba lo que tardara el mosaico).
+        guard let newLists = await fetchedLists else { return false }
         async let fetchedKeys = try? remote.watchlistKeys()
         async let fetchedBecause = forYou.becauseYouWatched(seed: chosenSeed)
         async let fetchedAirings = try? forYou.calendar()   // el calendario sale de tu Trakt (la consola trae la lista «estrenos», que aquí no se pinta como estante)
@@ -218,21 +219,24 @@ public final class ParaTiModel: ObservableModel {
         traktLinked = newLists.contains { $0.id == "watchlist" || $0.id == "mine" }
         lists = newLists
         shelves = ShelfPlanner.plan(newLists)
-        // El nuevo se guarda para la próxima vez; si ya se veía el guardado, no se cambia bajo tu dedo («Actualizar» lo trae).
-        await forYou.saveMosaic(newMosaic)
-        if !showedSaved || mosaic.isEmpty { mosaic = newMosaic }
         isGeneric = false
-        error = mosaic.isEmpty && lists.isEmpty ? "Tu Orbital no tiene sugerencias todavía." : nil
         async let shelvesLoaded: Void = loadShelves()
+        async let platformsLoaded: Void = loadNewOnPlatforms()
+        // El mosaico, cuando llegue: se guarda para la próxima vez; si ya se veía el guardado, no se cambia bajo tu dedo.
+        if let newMosaic = await fetchedMosaic {
+            await forYou.saveMosaic(newMosaic)
+            if !showedSaved || mosaic.isEmpty { mosaic = newMosaic }
+        }
+        error = mosaic.isEmpty && lists.isEmpty ? "Tu Orbital no tiene sugerencias todavía." : nil
         watchlistKeys = await fetchedKeys ?? []
         if let fetched = await fetchedAirings, !Task.isCancelled {
             airings = fetched; airingDays = ForYou.calendarDays
             services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno» también con la consola
         }
-        await shelvesLoaded
         because = await fetchedBecause
         becauseSeeds = await forYou.recentSeeds()
-        await loadNewOnPlatforms()
+        await shelvesLoaded
+        await platformsLoaded
         rebuildBadges()
         await topUpMosaic()
         saveSnapshot()

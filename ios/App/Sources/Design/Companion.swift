@@ -45,12 +45,12 @@ struct GameNowCard: View {
 /// Una tarjeta del carrusel del acompañante: su título con glifo y su contenido, todas del mismo alto.
 struct CompanionPanel<Content: View>: View {
     let title: LocalizedStringKey
-    let symbol: String
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            Label(title, systemImage: symbol).recipe(.cardTitle)
+            // Sin ícono: las secciones de la app no llevan (la regla de `DSSectionHead`).
+            Text(title).recipe(.cardTitle)
             content()
             Spacer(minLength: 0)
         }
@@ -69,7 +69,7 @@ struct ConsoleStatePanel: View {
     private var language: String { AppEnvironment.shared.services.appSettings.uiLanguage }
 
     var body: some View {
-        CompanionPanel(title: "La consola", symbol: "gamecontroller") {
+        CompanionPanel(title: "La consola") {
             if let s = state {
                 if let percent = s.batteryPercent {
                     VStack(alignment: .leading, spacing: DS.Space.s1) {
@@ -124,7 +124,7 @@ struct GuidePanel: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        CompanionPanel(title: "Guía", symbol: "book") {
+        CompanionPanel(title: "Guía") {
             Text("Para el jefe que te atoró o el objeto que no encuentras.").recipe(.footnote)
             link("Guías en YouTube", "play.rectangle", "https://www.youtube.com/results?search_query=" + query("guía"))
             link("Buscar en la web", "magnifyingglass", "https://www.google.com/search?q=" + query("guía"))
@@ -150,7 +150,7 @@ struct GuidePanel: View {
 struct NotesPanel: View {
     @Binding var text: String
     var body: some View {
-        CompanionPanel(title: "Notas", symbol: "note.text") {
+        CompanionPanel(title: "Notas") {
             TextField("Dónde te quedaste, qué te falta…", text: $text, axis: .vertical)
                 .lineLimit(DS.Companion.noteLines, reservesSpace: true)
                 .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.text)
@@ -167,7 +167,7 @@ struct TimerPanel: View {
     let cancel: () -> Void
 
     var body: some View {
-        CompanionPanel(title: "Temporizador", symbol: "timer") {
+        CompanionPanel(title: "Temporizador") {
             if let endsAt, endsAt > .now {
                 Text(timerInterval: Date.now...endsAt, countsDown: true).recipe(.title).monospacedDigit()
                 Text("Te aviso al terminar; no cierro nada.").recipe(.caption)
@@ -187,7 +187,7 @@ struct TimerPanel: View {
 struct ControlsPanel: View {
     let system: String
     var body: some View {
-        CompanionPanel(title: "Controles", symbol: "gamecontroller.fill") {
+        CompanionPanel(title: "Controles") {
             if let map = Self.maps[system] {
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     ForEach(map, id: \.0) { original, yours in

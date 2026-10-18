@@ -251,13 +251,11 @@ struct NowPlayingCard: View {
     }
 
     private var moreMenu: some View {
-        Menu {
+        DSMoreMenu {
             Button("Salir del video", systemImage: "xmark.circle") { act("stop") }
             if !now.live { Button("Seguir aquí", systemImage: "iphone") { onContinueHere() } }
-        } label: { Image(systemName: "ellipsis.circle") }
-        .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
+        }
         .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? nil : .infinity)
-        .accessibilityLabel(Text("Más"))
     }
 
     @ViewBuilder private func actionButton(symbol: String, text: LocalizedStringKey, prominent: Bool = false, labeled: Bool, action: @escaping () -> Void) -> some View {

@@ -173,13 +173,24 @@ public actor ForYou {
         return (try? await remember("tmdb:platforms", ttl: Self.slowTTL) { try await tmdb.platforms(region: region()) }) ?? [:]
     }
 
+    /// Tus listas de Trakt (recordadas un rato); vacío sin Trakt.
+    private func traktListsRemembered(_ linked: Bool) async -> [(id: String, name: String)] {
+        guard linked, let trakt else { return [] }
+        return (try? await remember("trakt:lists", ttl: Self.mineTTL) { try await trakt.lists() }) ?? []
+    }
+
     public func lists() async -> [ForYouList] {
+        // Las tres consultas a la vez (antes en fila: tus listas de Trakt, luego los catálogos, luego las plataformas).
+        let linked = trakt?.linked == true
+        async let ownLists = traktListsRemembered(linked)
+        async let catalogs = addonCatalogs()
+        async let platformsFound = platforms()
         var out: [ForYouList] = []
-        if let trakt, trakt.linked {
+        if linked {
             out += [ForYouList(id: "watchlist", title: "", group: .mine, brand: nil, logo: nil, splitsKinds: false),
                     ForYouList(id: "mine", title: "", group: .mine, brand: nil, logo: nil, splitsKinds: false),
                     ForYouList(id: "estrenos", title: "", group: .mine, brand: nil, logo: nil, splitsKinds: false)]
-            let own = (try? await remember("trakt:lists", ttl: Self.mineTTL) { try await trakt.lists() }) ?? []
+            let own = await ownLists
             out += own.prefix(8).map { ForYouList(id: "list:\($0.id)", title: $0.name, group: .mine, brand: nil, logo: nil, splitsKinds: false) }
             out.append(ForYouList(id: "recs", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: true))
         }
@@ -188,7 +199,7 @@ public actor ForYou {
                     ForYouList(id: "popular", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: true)]
         }
         // Los catálogos de tus complementos de Stremio (como `addon_catalogs` en la TV).
-        for entry in await addonCatalogs() {
+        for entry in await catalogs {
             out.append(ForYouList(id: entry.id, title: entry.title, group: .discover, brand: nil, logo: nil, splitsKinds: entry.kinds.count > 1,
                                   source: "Stremio", meta: "De \(entry.addon)"))
         }
@@ -203,7 +214,7 @@ public actor ForYou {
                                       splitsKinds: true, source: "JustWatch", meta: "Tendencia en JustWatch · \(country)"))
             }
         }
-        let found = await platforms()
+        let found = await platformsFound
         for p in Tmdb.platforms where found[p.brand] != nil {
             out.append(ForYouList(id: p.brand, title: p.name, group: .platforms, brand: p.brand, logo: found[p.brand]?.logo, splitsKinds: true))
         }
@@ -304,8 +315,11 @@ public actor ForYou {
     /// Los catálogos de tus complementos que agregan algo: uno por nombre, con sus tipos y de qué complemento salen (las
     /// mismas reglas que la TV). Sin Stremio conectado o sin red: ninguno.
     func addonCatalogs() async -> [AddonCatalog] {
-        guard let addons, let installed = try? await addons.addons() else { return [] }
-        let covered: Set<String> = await platforms().isEmpty ? [] : Set(Tmdb.platforms.map { Charts.fold($0.name) })
+        guard let addons else { return [] }
+        async let installedTask = try? addons.addons()   // los dos a la vez (antes en fila)
+        async let platformsFound = platforms()
+        guard let installed = await installedTask else { return [] }
+        let covered: Set<String> = await platformsFound.isEmpty ? [] : Set(Tmdb.platforms.map { Charts.fold($0.name) })
         var found: [String: AddonCatalog] = [:], order: [String] = []
         for addon in installed where addon.url.hasPrefix("https://") {
             let name = addon.name, lower = name.lowercased()

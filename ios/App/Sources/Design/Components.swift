@@ -476,6 +476,18 @@ extension View {
     func dsIconButtonLook() -> some View { modifier(IconButtonLook()) }
 }
 
+/// «Más»: el mismo menú en toda la app, un círculo con «…» (vidrio; sólido donde el vidrio no se lleva bien). Antes había cuatro
+/// (con texto, borde, otro ícono…).
+struct DSMoreMenu<Content: View>: View {
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        Menu { content() } label: { Image(systemName: "ellipsis") }
+            .dsIconButtonLook().buttonBorderShape(.circle).controlSize(.large)
+            .accessibilityLabel(Text("Más"))
+    }
+}
+
 /// Un botón redondo con un ícono (más, descargar, cerrar): el botón nativo con vidrio de iOS 26, ya con su tamaño táctil de 44 pt.
 struct DSIconButton: View {
     let symbol: String

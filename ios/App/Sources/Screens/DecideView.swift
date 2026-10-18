@@ -129,12 +129,10 @@ struct DecideView: View {
                 Button { Task { await m.next() } } label: { Label("Barajar", systemImage: "shuffle").frame(maxWidth: .infinity) }
                     .buttonStyle(.glass).controlSize(.large).disabled(m.isLoading)
                     .accessibilityIdentifier("decide-shuffle")
-                Menu {
+                DSMoreMenu {
                     Button("No me interesa", systemImage: "hand.thumbsdown", role: .destructive) { Task { await m.notInterested() } }
                     Button("Ver la ficha", systemImage: "info.circle") { dismiss(); open(s.route) }
-                } label: { Image(systemName: "ellipsis") }
-                    .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
-                    .accessibilityLabel(Text("Más"))
+                }
             }
         } else if m.exhausted {
             DSEmptyState(symbol: "dice", title: Text("No encontré una con eso"), message: Text("Prueba con otro filtro o más tiempo."))

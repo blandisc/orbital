@@ -293,10 +293,8 @@ struct MosaicCaption<More: View>: View {
             .accessibilityHint(open == nil ? Text(verbatim: "") : Text("Abre la ficha"))
             .accessibilityIdentifier("mosaic-caption-open")
             Spacer(minLength: DS.Space.s2)
-            Menu { more() } label: { Image(systemName: "ellipsis") }
-                .buttonStyle(.bordered).buttonBorderShape(.circle).controlSize(.large).tint(DS.text)
-                .accessibilityLabel(Text("Más"))
-            Button(action: watch) { Image(systemName: isSeries ? "chevron.right" : "play.fill") }
+            DSMoreMenu { more() }
+            Button(action: watch) { Image(systemName: "play.fill") }   // como en toda la app (antes, una flecha en las series)
                 .dsArtButton(accent).buttonBorderShape(.circle).controlSize(.large)
                 .accessibilityLabel(isSeries ? Text("Ver la serie") : Text("Ver"))
         }

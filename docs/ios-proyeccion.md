@@ -87,6 +87,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `Glyphs/donut` (catálogo de imágenes) | La dona de Los Simpson, con el trazo de los íconos propios (solo iPhone; los de `Icons/` vienen de la TV) | Inicio › un Simpson al azar (el dado es «¿Qué vemos?») |
 | `DSKindFilter` | El filtro de tipo de toda la app: Todo · Películas · Series (o Películas · Series), segmentado y siempre en ese orden | Inicio (destacado y Top 10), Para ti › Listas, plataforma, colección por año, Buscar (con cuántas), «¿Qué vemos?» |
 | `DSEmptyState` | Un área entera vacía: el vacío nativo con ícono, qué pasa y qué hacer. Regla: área vacía → esto; renglón vacío → texto chico; error → `DSNotice` | Descargas, Buscar, listas con filtros, Próximos estrenos, Inicio, «¿Qué vemos?», Tu año, Para ti |
+| `DSMoreMenu` | «Más»: el mismo menú en toda la app, círculo con «…» (vidrio, sólido donde no se lleva) | Destacado de Para ti, «¿Qué vemos?», pie del mosaico, «Viendo en la TV» |
 | `DownloadRing` | El anillo de avance de una descarga | Ficha (Descargar) y la fila de cada episodio |
 | `StillCard` | Pieza 16:9 con avance, nombre y datos | Inicio › Todo lo que sigues |
 | `PageDots` | Puntos de un carrusel | Inicio |

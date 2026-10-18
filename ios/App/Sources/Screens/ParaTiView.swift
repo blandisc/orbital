@@ -636,10 +636,7 @@ struct ListsView: View {
     }
 
     private func moreMenu(_ s: Suggestion) -> some View {
-        Menu { SuggestionActions(suggestion: s, includeWatch: false) { dismissed in Task { await model.dismiss(dismissed) } } } label: {
-            Label("Más", systemImage: "ellipsis").lineLimit(1)
-        }
-        .buttonStyle(.glass)
+        DSMoreMenu { SuggestionActions(suggestion: s, includeWatch: false) { dismissed in Task { await model.dismiss(dismissed) } } }
     }
 
     private func reasonKey(_ reason: ParaTiModel.FeaturedReason) -> LocalizedStringKey {
