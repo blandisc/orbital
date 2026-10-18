@@ -65,6 +65,13 @@ class ArtChoice(BaseModel):
     url: str | None = Field(default=None, max_length=300)
 
 
+def trakt_meta(e: dict) -> dict:
+    """Un resultado de Trakt en la forma de Cinemeta (para search_results): el póster de siempre (metahub, por IMDb)."""
+    year = str(e.get("year") or "")
+    return {"id": e["imdb"], "name": e["title"], "releaseInfo": year, "genres": e.get("genres") or [],
+            "description": e.get("overview") or "", "poster": f"https://images.metahub.space/poster/medium/{e['imdb']}/img"}
+
+
 def router(d: Deps) -> APIRouter:
     r = APIRouter(prefix="/api/stremio")
     catalog = d.catalog
@@ -76,12 +83,29 @@ def router(d: Deps) -> APIRouter:
             return {"results": []}
         # Películas y series a la vez (antes una tras otra: con internet lento, el doble de espera).
         with ThreadPoolExecutor(max_workers=2) as pool:
-            movies = pool.submit(catalog.cinemeta.search, "movie", q)
-            series = pool.submit(catalog.cinemeta.search, "series", q)
+            movies = pool.submit(search_kind, "movie", q)
+            series = pool.submit(search_kind, "series", q)
             try:
                 return {"results": cinemeta.search_results(q, movies.result(), series.result())}
             except cinemeta.CinemetaError:
                 raise HTTPException(502, "Sin conexión con el catálogo de películas y series. Tus juegos siguen aquí.")
+
+    def search_kind(kind: str, q: str) -> list[dict]:
+        """Cinemeta; si falla (un «HTTP 550» pasajero), una vez más; y si sigue, la búsqueda de Trakt (sin sesión), como
+        el iPhone. Lanza CinemetaError solo si todo falló."""
+        error: cinemeta.CinemetaError | None = None
+        for _ in range(2):
+            try:
+                return catalog.cinemeta.search(kind, q)
+            except cinemeta.CinemetaError as exc:
+                error = exc
+        trakt = getattr(getattr(catalog, "foryou", None), "trakt", None)
+        if trakt is not None and trakt.configured:
+            try:
+                return [trakt_meta(e) for e in trakt.search(kind, q)]
+            except Exception:  # noqa: BLE001 - Trakt también caído: se dice lo de Cinemeta
+                pass
+        raise error or cinemeta.CinemetaError("Sin resultados")
 
     @r.get("/genre")
     def genre(kind: str = "movie", genre: str = "") -> dict:

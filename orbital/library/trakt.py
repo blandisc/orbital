@@ -316,6 +316,12 @@ class Trakt:
         rows = self._get(f"/{KINDS[kind]}/popular", auth=False, **params)
         return [e for e in (entry(r, kind) for r in rows) if e] if isinstance(rows, list) else []
 
+    def search(self, kind: str, query: str, limit: int = 15) -> list[dict]:
+        """Buscar sin sesión (respaldo de Buscar cuando Cinemeta falla, como el iPhone). Solo lo que trae IMDb."""
+        key = "movie" if kind == "movie" else "show"
+        rows = self._get(f"/search/{key}", auth=False, query=query, limit=limit, extended="full")
+        return [e for e in (entry(r.get(key), kind) for r in rows if isinstance(r, dict)) if e] if isinstance(rows, list) else []
+
     def rating(self, kind: str, imdb: str) -> float | None:
         """La calificación de Trakt de un título (0–10; para la ficha, como el iPhone). None si no la tiene."""
         if not isinstance(imdb, str) or not imdb.startswith("tt") or not imdb[2:].isdigit():

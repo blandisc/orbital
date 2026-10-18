@@ -80,7 +80,9 @@ const heroOf = (first, eyebrow) => ({ image: first?.hero || first?.image, hero: 
 export function mediaRows(lists = [], itemsById = {}, { filter = "all", years = {} } = {}) {
   const byId = Object.fromEntries(lists.filter((l) => l?.id).map((l) => [l.id, l]));
   const rows = [];
-  const plain = (id, title, items, extra) => { if (items.length) rows.push({ id: `curated:${id}`, title, items: items.slice(0, 20).map(curatedItem), ...extra }); };
+  // El rótulo de cada título no repite el nombre de su fila (en «En tendencia», cada tarjeta decía «En tendencia»).
+  const inRow = (title) => (item) => curatedItem(item, { rowTitle: title });
+  const plain = (id, title, items, extra) => { if (items.length) rows.push({ id: `curated:${id}`, title, items: items.slice(0, 20).map(inRow(title)), ...extra }); };
 
   const because = byId.because;
   if (because?.seed) {

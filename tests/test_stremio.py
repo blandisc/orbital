@@ -468,3 +468,33 @@ def test_genre_shelves_come_from_the_catalog(make_client, library, monkeypatch):
     items = c.get("/api/stremio/genre", params={"kind": "movie", "genre": "Horror"}).json()["items"]
     assert items[0]["id"] == "cinemeta:movie:tt0000001" and items[0]["title"] == "Scream"
     assert c.get("/api/stremio/genre", params={"kind": "movie", "genre": "Lo que sea"}).status_code == 400
+
+
+def test_search_retries_cinemeta_and_then_falls_back_to_trakt(linked, monkeypatch):
+    """Un «HTTP 550» pasajero de Cinemeta: se intenta otra vez y, si sigue, se busca en Trakt (sin sesión), como el iPhone."""
+    from fastapi.testclient import TestClient
+
+    from orbital.library import cinemeta as cinemeta_mod
+    from orbital.server import create_app
+
+    calls = []
+
+    def flaky(self, kind, query):
+        calls.append(kind)
+        raise cinemeta_mod.CinemetaError("HTTP Error 550")
+
+    monkeypatch.setattr(cinemeta_mod.Cinemeta, "search", flaky)
+
+    class FakeTrakt:
+        configured = True
+
+        def search(self, kind, query):
+            return [{"imdb": "tt0386676", "title": "The Office", "year": 2005, "genres": ["Comedy"], "overview": ""}] \
+                if kind == "series" else []
+
+    monkeypatch.setattr(linked.foryou, "trakt", FakeTrakt())
+    with TestClient(create_app(linked.config, linked), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 1)) as c:
+        data = c.get("/api/stremio/search", params={"q": "office"}).json()
+    assert calls.count("series") == 2 and calls.count("movie") == 2  # una vez más antes de rendirse
+    assert [r["title"] for r in data["results"]] == ["The Office"]
+    assert "metahub.space/poster" in data["results"][0]["image"]

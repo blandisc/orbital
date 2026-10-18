@@ -130,3 +130,11 @@ test("filas centradas: la enfocada al centro, sin hueco a la izquierda ni pasars
   assert.equal(centeredOffset(widths, 7, { gap: 10, visible: 400 }), 870 - 400); // la última, sin aire de más
   assert.equal(centeredOffset([100, 100], 1, { gap: 10, visible: 400 }), 0); // si caben todas, no se mueve
 });
+
+test("una fila no repite su nombre en cada título: en «En tendencia», sin «En tendencia» encima", async () => {
+  const { curatedItem } = await import("../../orbital/web/js/core/curation.js");
+  const it = { kind: "series", meta_id: "tt1", title: "Dark", why: "En tendencia" };
+  assert.equal(curatedItem(it, { rowTitle: "En tendencia" }).extra.eyebrow, undefined);
+  assert.equal(curatedItem(it, { rowTitle: "Recomendadas" }).extra.eyebrow, "En tendencia");
+  assert.equal(curatedItem(it).extra.eyebrow, "En tendencia");
+});
