@@ -56,6 +56,9 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
       : list.media?.logo ? h("img", { class: ["list-screen__logo", list.media.mono && "list-screen__logo--mono"], src: list.media.logo, alt: "" }) : null);
     media.hidden = !media.firstChild;
     title.textContent = list.title;
+    // Un premio: su nombre con remate y su metal (award-wordmark, de collection-card).
+    title.className = ["list-screen__title", list.metal && "award-wordmark", list.metal && `award-wordmark--${list.metal}`].filter(Boolean).join(" ");
+    if (list.metal) title.textContent = list.title.toLocaleUpperCase("es"); // en mayúsculas: es su logotipo
     mount(meta, [list.source && SourceBadge(list.source), list.meta && h("span", {}, list.meta)].filter(Boolean));
   }
 

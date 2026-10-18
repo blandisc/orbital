@@ -45,6 +45,9 @@
   /* Tipografía: la de Windows, usando sus ejes de tamaño óptico */
   --font-sans: "Segoe UI Variable Display", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   --font-text: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  /* El nombre de un premio (Óscar, Emmy…), como en su ceremonia: con remate, en mayúsculas espaciadas. */
+  --font-award: "Didot", "Bodoni MT", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --tracking-award: .14em;
   /* Legible a 3 m: a 1080p el texto secundario no baja de ~18 px ni el cuerpo de ~23 px.
      --text-scale lo sube Ajustes → Pantalla → Tamaño del texto (solo el texto, no el diseño). */
   --text-scale: 1;

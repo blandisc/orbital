@@ -26,6 +26,14 @@ const HALO = {
   studio: "var(--color-studio-halo)",
 };
 
+/** El nombre de un premio estilizado, como el logo de un título: con remate, en mayúsculas y con el degradado de su metal
+ *  (oro, plata para el Emmy, bronce para el BAFTA y el Ariel). En la tarjeta, arriba en el héroe y en su lista. */
+const METAL = { gold: "award-wordmark award-wordmark--gold", silver: "award-wordmark award-wordmark--silver",
+  bronze: "award-wordmark award-wordmark--bronze" };
+export function AwardWordmark(name, tint = "gold", extra = "") {
+  return h("span", { class: [METAL[tint] || METAL.gold, extra], "aria-label": name }, String(name).toLocaleUpperCase("es"));
+}
+
 /** El sello de origen junto a un título (Trakt, Stremio o tu Orbital), como SourceBadge del iPhone. */
 const SOURCE = {
   trakt: ["source-badge source-badge--trakt", "Trakt"], stremio: ["source-badge source-badge--stremio", "Stremio"],
@@ -69,7 +77,7 @@ function body(c) {
       return [h("span", { class: "collection__glow", "aria-hidden": "true" }), fan(posters),
         c.statue && h("img", { class: "collection__statue", src: c.statue, alt: "", decoding: "async" }),
         h("span", { class: "collection__foot collection__foot--start" },
-          h("span", { class: "collection__name" }, c.name), c.detail && h("span", { class: "collection__detail" }, c.detail))];
+          AwardWordmark(c.name, c.tint), c.detail && h("span", { class: "collection__detail" }, c.detail))];
     case "year":
       return [h("span", { class: "collection__grid", "aria-hidden": "true" }, posters.slice(0, 4).map(poster)),
         h("span", { class: "collection__year" }, c.name)];

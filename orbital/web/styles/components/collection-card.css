@@ -73,6 +73,20 @@
 /* «Porque viste X» (BecauseCard): lo que viste, con su nombre al lado; lo relacionado sigue en la fila. */
 .card--seed .collection__poster { flex: none; height: 100%; width: auto; aspect-ratio: 2 / 3; }
 
+/* El nombre de un premio (AwardWordmark; las mayúsculas las pone el JS, son parte del logotipo): con remate, espaciado y el degradado de su metal, como el logo de
+   un título. También en el héroe (.hero__title) y en la lista abierta (.list-screen__title). */
+.award-wordmark {
+  font-family: var(--font-award); font-weight: var(--weight-regular); letter-spacing: var(--tracking-award);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--metal) 45%, var(--color-text)) 0%, var(--metal) 55%,
+    color-mix(in oklab, var(--metal) 70%, var(--color-bg)) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none;
+  filter: drop-shadow(0 .1em .25em color-mix(in oklab, var(--color-bg) 70%, transparent));
+}
+.award-wordmark--gold { --metal: var(--color-award-gold); }
+.award-wordmark--silver { --metal: var(--color-award-silver); }
+.award-wordmark--bronze { --metal: var(--color-award-bronze); }
+.collection__foot .award-wordmark { font-size: var(--text-md); line-height: 1.1; }
+
 /* El sello de origen (SourceBadge): el nombre del servicio en mayúsculas sobre su color. */
 .source-badge {
   display: inline-flex; align-items: center; padding: .1rem .45rem; border-radius: var(--radius-xs);

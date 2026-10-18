@@ -856,7 +856,7 @@ function openCollection(item) {
     : [[l.kinds?.[0] ?? null, ""]];
   // Un premio: su estatuilla; un estudio: su logo en blanco. Un año: el título ya es el número grande.
   const media = c.type === "award" ? { statue: c.statue } : c.type === "studio" && c.logo ? { logo: c.logo, mono: true } : {};
-  ui.listScreen.open({ id: l.id, title: l.title, meta: l.meta || "", source: c.source, media,
+  ui.listScreen.open({ id: l.id, title: l.title, meta: l.meta || "", source: c.source, media, metal: c.type === "award" ? c.tint || "gold" : null,
     tabs: kinds.map(([kind, label]) => ({ id: kind || "all", label, load: () => cached(l.id, kind).then((items) => items.map(curatedItem)) })) });
   return renderHints();
 }

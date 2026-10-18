@@ -68,6 +68,13 @@ export function createHero({ onAction }) {
 
     title.textContent = item.title;
     title.classList.toggle("hero__title--long", item.title.length > 28);
+    // Un premio: su nombre con remate y su metal, como el logo de un título (Óscar en oro, Emmy en plata…).
+    const award = item.source === "collection" && item.collection?.type === "award" ? item.collection.tint || "gold" : null;
+    title.classList.toggle("award-wordmark", !!award);
+    title.classList.toggle("award-wordmark--gold", award === "gold");
+    title.classList.toggle("award-wordmark--silver", award === "silver");
+    title.classList.toggle("award-wordmark--bronze", award === "bronze");
+    if (award) title.textContent = item.title.toLocaleUpperCase("es"); // en mayúsculas: es su logotipo
     title.hidden = false;
     logo.hidden = true;
     // El logo recortado y guardado por Orbital (/api/foryou/logo), no el original de internet: carga al instante.
