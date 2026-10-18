@@ -561,15 +561,25 @@ class OrbitalPlayer(PlayerScreen):
         return screen_w - width - margin, screen_h - height - margin, width, height
 
     def _glide(self, windows, hwnd, start: tuple, end: tuple, still) -> None:
-        """La ventana de un lugar a otro en PIP_GLIDE segundos, con una curva que frena al llegar (nada de saltos)."""
-        steps = max(2, int(PIP_GLIDE / PIP_FRAME))
-        for n in range(1, steps + 1):
-            if not still():
-                return
-            k = 1 - (1 - n / steps) ** 3  # ease-out cúbico
-            x, y, w, h = (round(a + (b - a) * k) for a, b in zip(start, end, strict=True))
-            windows.place_window(hwnd, x, y, w, h)
-            time.sleep(PIP_FRAME)
+        """La ventana de un lugar a otro en PIP_GLIDE segundos, con una curva que frena al llegar. Por tiempo (no por pasos)
+        y sin esperar a que mpv redibuje cada uno (glide_window): antes cada paso cambiaba el tamaño y esperaba, y al
+        encogerse se trababa. Mientras se mueve, el video se detiene un instante (sin decodificar mientras se redimensiona)."""
+        was_paused = bool(self._value("pause"))
+        if not was_paused:
+            self.mpv.command("set_property", "pause", True)
+        started = time.monotonic()
+        try:
+            while still():
+                t = min(1.0, (time.monotonic() - started) / PIP_GLIDE)
+                k = 1 - (1 - t) ** 3  # ease-out cúbico
+                x, y, w, h = (round(a + (b - a) * k) for a, b in zip(start, end, strict=True))
+                windows.glide_window(hwnd, x, y, w, h)
+                if t >= 1:
+                    break
+                time.sleep(PIP_FRAME)
+        finally:
+            if not was_paused:
+                self.mpv.command("set_property", "pause", False)
 
     def _to_corner(self, current) -> None:
         windows, hwnd = self._window(current)

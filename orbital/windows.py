@@ -348,6 +348,15 @@ def screen_size() -> tuple[int, int]:
     return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
 
 
+def glide_window(hwnd: int, x: int, y: int, width: int, height: int) -> bool:
+    """Un paso de una animación de la ventana: sin esperar a que su programa termine de redibujarse (SWP_ASYNCWINDOWPOS) y
+    sin copiar lo de antes (SWP_NOCOPYBITS). Si no alcanza a dibujar un paso, se lo salta: el movimiento no tropieza."""
+    if not WIN or not hwnd:
+        return False
+    flags = 0x4000 | 0x0100 | 0x0010 | 0x0004  # ASYNCWINDOWPOS | NOCOPYBITS | NOACTIVATE | NOZORDER
+    return bool(user32.SetWindowPos(wintypes.HWND(hwnd), None, int(x), int(y), int(width), int(height), flags))
+
+
 def place_window(hwnd: int, x: int, y: int, width: int, height: int, topmost: bool = True) -> bool:
     """Pone la ventana en ese lugar y tamaño (encima de todo, sin quitarle el foco a nadie): el video en pequeño."""
     if not WIN or not hwnd:

@@ -776,6 +776,7 @@ def test_the_small_video_glides_to_the_corner_and_back_with_only_three_buttons(m
     class Win:
         screen_size = staticmethod(lambda: (1920, 1080))
         place_window = staticmethod(lambda hwnd, x, y, w, h, topmost=True: placed.append((x, y, w, h)))
+        glide_window = staticmethod(lambda hwnd, x, y, w, h: placed.append((x, y, w, h)))
         window_rect = staticmethod(lambda hwnd: (placed[-1][0], placed[-1][1], placed[-1][0] + placed[-1][2], placed[-1][1] + placed[-1][3]))
         focus = staticmethod(lambda hwnd: True)
 
@@ -797,6 +798,7 @@ def test_the_small_video_glides_to_the_corner_and_back_with_only_three_buttons(m
     geometry = mpv.sent.index(("set_property", "geometry", "1920x1080+0+0"))
     assert geometry < mpv.sent.index(("set_property", "fullscreen", False))  # primero el tamaño, luego salir
     assert ("set_property", "ontop", True) in mpv.sent
+    assert mpv.props["pause"] is False  # se detuvo mientras se movía y siguió al llegar
     assert placed[0] == (0, 0, 1920, 1080) and placed[-1] == (1287, 699, 576, 324)  # de toda la pantalla a la esquina
     widths = [w for _, _, w, _ in placed]
     assert widths == sorted(widths, reverse=True) and len(placed) > 10  # se encoge poco a poco, nunca de golpe
