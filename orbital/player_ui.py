@@ -37,7 +37,7 @@ MARGIN = 96
 TOUCH = False  # con el dedo: botones que se tocan en vez de glifos del mando
 KEYBOARD = False  # con teclado: los glifos dicen la tecla, no el botón del mando
 # El botón del mando -> su tecla (las pistas son las mismas; solo cambia lo que dice cada glifo).
-KEY_NAMES = {"A": "Espacio", "B": "Esc", "◀ ▶": "← →", "LT RT": "[ ]", "LB RB": "RePág AvPág"}
+KEY_NAMES = {"A": "Espacio", "B": "Esc", "◀ ▶": "← →", "LT RT": "[ ]", "LB RB": "RePág AvPág", "Home": "Ctrl Inicio"}
 # Dónde quedó cada cosa tocable, por capa: (x, y, ancho, alto, acción). Se rehace al dibujar la capa.
 targets: dict[str, list[tuple[float, float, float, float, object]]] = {"hud": [], "panel": [], "card": []}
 

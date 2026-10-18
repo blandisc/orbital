@@ -24,7 +24,8 @@ export const REPEATABLE = new Set(["up", "down", "left", "right", "pageleft", "p
 
 export const GLYPHS = {
   gamepad: { select: "A", back: "B", alt: "X", options: "Y", menu: "☰", search: "⧉", rows: "↕", page: "LT RT", section: "LB RB", home: "Home" },
-  keyboard: { select: "Enter", back: "Esc", alt: "X", options: "Y", menu: "M", search: "S", rows: "↑↓", page: "RePág AvPág", section: "Q E" },
+  // home: el Home del teclado es Ctrl + Inicio (atajo global de la consola, orbital/hotkey.py).
+  keyboard: { select: "Enter", back: "Esc", alt: "X", options: "Y", menu: "M", search: "S", rows: "↑↓", page: "RePág AvPág", section: "Q E", home: "Ctrl Inicio" },
 };
 // Escribiendo con un teclado físico las letras son texto: M, X y Y no pueden ser atajos ahí. Enter
 // busca o avanza, Tab cambia de campo y las acciones van a teclas que no escriben.

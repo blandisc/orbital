@@ -130,7 +130,9 @@ test("el pie de TV en vivo dice qué hace cada botón ahí", () => {
   assert.equal(air[0].label, "Volver al canal");
   assert.deepEqual(air.find((x) => x.glyph === "Home"), { glyph: "Home", label: "Volver a Azteca 7" });
   assert.ok(!tvHints(g, { kind: "channel" }, { categories: 3 }).some((x) => x.glyph === "Home")); // sin canal al aire, sin Home
-  assert.ok(!tvHints(GLYPHS.keyboard, { kind: "channel" }, { categories: 3, running: { title: "X" } }).some((x) => x.label === "Volver a X")); // sin mando no hay Home
+  // Con teclado, Home es Ctrl + Inicio (atajo global de la consola): el pie lo dice, para saber qué tecla picar.
+  assert.deepEqual(tvHints(GLYPHS.keyboard, { kind: "channel" }, { categories: 3, running: { title: "X" } }).find((x) => x.label === "Volver a X"),
+    { glyph: "Ctrl Inicio", label: "Volver a X" });
   // Sin canales no hay nada que ver: solo actualizar y volver.
   const empty = labels(tvHints(g, null, { empty: true, categories: 1 }));
   assert.ok(!empty.includes("Ver") && empty.includes("Actualizar"));

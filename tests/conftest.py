@@ -358,3 +358,11 @@ def _input_log_in_tmp(monkeypatch, tmp_path):
     from orbital import input_log
 
     monkeypatch.setattr(input_log, "default_path", lambda: tmp_path / "entrada.log")
+
+
+@pytest.fixture(autouse=True)
+def _no_real_global_hotkey(monkeypatch):
+    """Ninguna prueba registra Ctrl + Inicio como atajo global de Windows de verdad."""
+    from orbital import hotkey
+
+    monkeypatch.setattr(hotkey.KeyboardHome, "start", lambda self: False)

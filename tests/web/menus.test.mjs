@@ -154,7 +154,11 @@ test("tu consola: dos renglones, y Stremio se conecta ahí mismo", () => {
 
 test("cómo se usa: una hoja, con el mando que tienes", () => {
   const legion = controlsMenu([{ slot: 1, kind: "legion", close: "Start + Select" }]);
-  assert.deepEqual(legion.options.filter((o) => o.heading).map((o) => o.label), ["En un juego", "En Orbital", "Viendo algo"]);
+  assert.deepEqual(legion.options.filter((o) => o.heading).map((o) => o.label), ["En un juego", "En Orbital", "Viendo algo", "Con teclado"]);
+  // Sin mando conectado, lo del teclado va primero: Ctrl + Inicio es su Home.
+  const keyboardOnly = controlsMenu([]);
+  assert.equal(keyboardOnly.options[0].label, "Con teclado");
+  assert.equal(keyboardOnly.options[1].value, "Ctrl + Inicio");
   const byLabel = (menu) => Object.fromEntries(menu.options.filter((o) => !o.heading).map((o) => [o.label, o.value]));
   assert.equal(byLabel(legion)["Cerrar el juego"], "Mantén Start + Select");
   assert.equal(byLabel(controlsMenu([]))["Cerrar el juego"], "Mantén Start + Select + Home");

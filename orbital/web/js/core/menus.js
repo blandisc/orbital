@@ -820,6 +820,10 @@ function gameRows(legion) {
       ["Panel rápido", "Mantén Home + LB"], ["Captura", "Mantén Home + RB"]];
 }
 
+/** Con teclado: Ctrl + Inicio es el Home de la consola (atajo global, orbital/hotkey.py), aunque el juego tenga el foco. */
+const KEYBOARD_ROWS = [["Ir a Orbital · volver al juego", "Ctrl + Inicio"], ["Video en pequeño", "Ctrl + Inicio"],
+  ["Cerrar lo abierto", "Ctrl + Inicio, luego M → Cerrar"], ["Abrir · atrás", "Enter · Esc"], ["Buscar", "S"], ["Menú", "M"]];
+
 export const SHORTCUTS = {
   orbital: [["Abrir", "A"], ["Atrás", "B"], ["Opciones", "Y"], ["Otro emulador o la ficha", "X"],
     ["Cambiar de sección", "LB / RB"], ["Buscar", "Vista ⧉"], ["Menú", "☰"]],
@@ -834,8 +838,10 @@ export function controlsMenu(controllers = []) {
   const section = (title, rows) => [{ heading: true, label: title }, ...rows.map(([label, value]) => row(label, value))];
   return {
     title: "Cómo se usa", crumb: "Cómo se usa",
-    options: [...section("En un juego", gameRows(legion)), ...section("En Orbital", SHORTCUTS.orbital),
-      ...section("Viendo algo", SHORTCUTS.player),
+    // Sin mando conectado, lo del teclado va primero (y Ctrl + Inicio es su Home).
+    options: [...(controllers.length ? [] : section("Con teclado", KEYBOARD_ROWS)),
+      ...section("En un juego", gameRows(legion)), ...section("En Orbital", SHORTCUTS.orbital),
+      ...section("Viendo algo", SHORTCUTS.player), ...(controllers.length ? section("Con teclado", KEYBOARD_ROWS) : []),
       // La guía de 5 pasos existía pero nada la abría.
       { icon: "play", label: "Guía paso a paso", hint: "Lo esencial en 5 pantallas", command: { type: "tour", step: 0 } }],
   };

@@ -417,3 +417,14 @@ def test_home_during_a_video_sends_it_to_a_corner_and_back(tmp_path):
     shell.catalog.state.set_setting("video_home", "pause")
     shell.home()
     assert shell.player.calls[-1] == "pause"
+
+
+def test_the_keyboard_has_a_home_too():
+    """Con teclado no había cómo volver a Orbital desde un juego: Ctrl + Inicio es el Home (atajo global de Windows)."""
+    from orbital import hotkey
+
+    calls = []
+    home = hotkey.KeyboardHome(lambda: calls.append("home"))
+    assert hotkey.LABEL == "Ctrl + Inicio" and hotkey.VK_HOME == 0x24 and hotkey.MOD_CONTROL == 0x0002
+    home.on_home()
+    assert calls == ["home"]

@@ -437,6 +437,10 @@ class ConsoleShell:
             self.overlay = overlay if overlay.start() else None
         self.gamepad = GamepadWatcher(self.on_gamepad, self.on_buttons)
         self.gamepad.start()  # sin XInput, Legion L sigue funcionando
+        # El Home del teclado (Ctrl + Inicio): como Home en el mando o un toque de Legion L, aunque el juego tenga el foco.
+        from .hotkey import KeyboardHome
+        self.keyboard_home = KeyboardHome(self.home)
+        self.keyboard_home.start()
         # Memoria (RAM y la de video que usa DWM): se anota cada 5 min y avisa si los juegos no van a poder
         # abrir. Nunca en pleno juego o video: el aviso espera a que Orbital vuelva al frente.
         from .health import HealthMonitor
