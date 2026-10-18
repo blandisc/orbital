@@ -353,9 +353,11 @@ class ConsoleShell:
         """Los controles de la Legion Go no tienen Home: si otra ventana le quitó el foco a Orbital (el escritorio, una app)
         y no hay nada abierto por Orbital, cualquier botón la trae al frente. Nunca encima de algo a pantalla completa
         (un juego abierto por fuera de Orbital), de Stremio, de Legion Space o si saliste al escritorio a propósito."""
+        if not hasattr(self, "_last_buttons"):  # pruebas que arman el shell sin __init__
+            self._last_buttons, self._woke_at = {}, -999.0
         pressed = buttons and not self._last_buttons.get(slot)
         self._last_buttons[slot] = buttons
-        kiosk = self.kiosk
+        kiosk = getattr(self, "kiosk", None)
         if not pressed or kiosk is None or getattr(kiosk, "exited_by_user", False) or now - self._woke_at < self.WAKE_EVERY:
             return False
         if self.catalog.launcher.status():
