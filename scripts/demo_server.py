@@ -112,6 +112,10 @@ def demo_meta(kind: str, meta_id: str) -> dict | None:
                                "released": "2030-01-01T00:00:00.000Z" if future else f"20{10 + season}-0{ep}-01T00:00:00.000Z",
                                "overview": f"Lo que pasa en el episodio {ep} de la temporada {season}."})
         meta["videos"] = videos
+    if os.environ.get("ORBITAL_DEMO_LONG") == "1":  # pruebas: la ficha y sus episodios con nombres larguísimos
+        meta["name"] += ": La Saga Completa en Versión Extendida del Director"
+        for video in meta.get("videos", []):
+            video["title"] = video["name"] = f"{video['name']}: El Regreso del Viajero que Nunca Supo Volver a Casa"
     return meta
 
 
