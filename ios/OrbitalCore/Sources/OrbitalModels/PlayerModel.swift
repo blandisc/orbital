@@ -505,6 +505,25 @@ public final class PlayerModel: ObservableModel {
         if hasPlayed, abs(target - snapshot.position) >= PlaybackRules.rescrobbleJump { rescrobbleAfterSeek = true }
         await engine.seek(to: target)
     }
+    /// Mientras arrastras la barra: la escena sigue al dedo. Se busca el último punto pedido apenas termina la búsqueda
+    /// anterior (nunca dos a la vez); en una descarga es casi inmediato, en internet se espera un momento entre búsquedas
+    /// para no pedir un trozo nuevo por cada punto del arrastre.
+    public func scrub(to seconds: Double) {
+        scrubTarget = max(0, min(seconds, snapshot.duration > 0 ? snapshot.duration : seconds))
+        guard scrubTask == nil else { return }
+        let local = request?.localFile != nil
+        scrubTask = Task { [weak self] in
+            while let self, let target = self.scrubTarget {
+                self.scrubTarget = nil
+                await self.engine.seek(to: target)
+                if !local { try? await Task.sleep(nanoseconds: PlaybackRules.streamScrubInterval) }
+            }
+            self?.scrubTask = nil
+        }
+    }
+    private var scrubTarget: Double?
+    private var scrubTask: Task<Void, Never>?
+
     public func skip(_ delta: Double) async { await seek(to: snapshot.position + delta) }
 
     /// Cambia de fuente en el mismo punto. Si la lista de fuentes es vieja (los enlaces de Real-Debrid caducan) se pide de nuevo.

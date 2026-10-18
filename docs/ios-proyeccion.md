@@ -109,6 +109,7 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `SettingsRow`, `ProfileCard` | Renglón de Ajustes con su ícono de color y su valor actual; tu perfil arriba (el avatar con lápiz) | Ajustes |
 | `StyleOption`, `DeckStylePreview`, `TimeStylePreview` | Elegir un estilo viéndolo: el carrusel que se mueve solo y cuánto falta sobre una tarjeta | Ajustes › Inicio |
 | `PlayerLabelButton` | Botón del reproductor con su nombre («En la TV», «Ventana», «Audio y subtítulos»); si no cabe, solo el ícono | Reproductor |
+| `PlatformPill` | Una plataforma en cápsula (logo chico y nombre); la elegida con su color tenue y su borde | Inicio › Top 10 (elegir de qué servicio) |
 | `PanelRow`, `PanelIcon`, `PanelChip`, `PanelGroupTitle`, `FlowChips`, `SpeedStepper` | El panel «Ajustes del video»: renglones con su valor (ícono del sistema solo en su color, como Ajustes), opciones en cápsula (con glifo opcional) y la velocidad − 1× + | Reproductor, «Decide por mí» (a la derecha en horizontal, hoja ajustada en vertical) |
 | `Toast` | El único aviso pasajero: arriba, en vidrio, glifo de color, texto y su acción («Pasó a tu Orbital · Deshacer», «Descargando… · Ver»); las notas fijas de una pantalla siguen siendo `DSNotice` | Toda la app |
 | `FanCard`, `CollectionCard`, `AwardCard`, `AwardEmblem` | La tarjeta en abanico (plataformas y colecciones) con su emblema al frente; un premio con su estatuilla real | Para ti › Listas |

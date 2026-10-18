@@ -9,6 +9,7 @@ public enum PlaybackRules {
     public static let upNextAt: TimeInterval = 30            // s antes del final (o al empezar los créditos): tarjeta
     public static let upNextCountdown: TimeInterval = 8
     public static let stillWatchingAfter = 3                 // episodios seguidos sin tocar la pantalla → «¿Sigues viendo?»
+    public static let streamScrubInterval: UInt64 = 250_000_000   // ns entre búsquedas al arrastrar la barra de un video de internet
     public static let maxSourceRetries = 4                   // «otra fuente si falla»
     public static let skipSeconds: Double = 10               // los botones y el doble toque de ±10 s
     public static let fastForwardRate: Float = 2             // mantener el dedo en el gesto de 2×

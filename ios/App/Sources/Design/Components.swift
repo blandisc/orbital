@@ -165,6 +165,7 @@ struct RemoteImage<Content: View>: View {
     @ViewBuilder let content: (RemoteImagePhase) -> Content
     @State private var loaded: UIImage?
     @State private var didFail = false
+    @Environment(\.perfTag) private var perfTag
 
     init(url: URL, maxPoints: CGFloat, @ViewBuilder content: @escaping (RemoteImagePhase) -> Content) {
         self.url = url; self.maxPoints = maxPoints; self.content = content
@@ -184,13 +185,24 @@ struct RemoteImage<Content: View>: View {
 
     private func load() async {
         let pixels = maxPoints * ImagePipeline.screenScale
-        if let hit = ImagePipeline.shared.cached(url, maxPixel: pixels) { loaded = hit; return }
+        if let hit = ImagePipeline.shared.cached(url, maxPixel: pixels) { loaded = hit; if let perfTag { Perf.mark(perfTag + ".image") }; return }
         loaded = nil   // otra URL en la misma vista: no se queda la imagen de antes mientras llega (o si falla) la nueva
         if ImagePipeline.shared.recentlyFailed(url, maxPixel: pixels) { didFail = true; return }
         didFail = false
+        // Un fondo grande: primero su versión ligera (llega en una fracción) y encima la buena cuando esté.
+        if pixels > CGFloat(Artwork.smallBackgroundPixels), let preview = Artwork.preview(url.absoluteString).flatMap(URL.init(string:)) {
+            async let full = ImagePipeline.shared.image(url, maxPixel: pixels)
+            if let quick = await ImagePipeline.shared.image(preview, maxPixel: CGFloat(Artwork.smallBackgroundPixels)), !Task.isCancelled {
+                if loaded == nil { loaded = quick; if let perfTag { Perf.mark(perfTag + ".image") } }
+            }
+            let image = await full
+            if Task.isCancelled { return }
+            if let image { loaded = image; if let perfTag { Perf.mark(perfTag + ".sharp") } } else if loaded == nil { didFail = true }
+            return
+        }
         let image = await ImagePipeline.shared.image(url, maxPixel: pixels)
         if Task.isCancelled { return }
-        if let image { loaded = image } else { didFail = true }
+        if let image { loaded = image; if let perfTag { Perf.mark(perfTag + ".image") } } else { didFail = true }
     }
 }
 

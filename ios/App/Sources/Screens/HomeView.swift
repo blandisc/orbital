@@ -15,7 +15,7 @@ struct HomeView: View {
     @State private var scrolledDown = false
     @State private var placingHero = false
     /// El Top 10 de Netflix: series (por omisión) o películas.
-    @State private var netflixMovies = false
+    @State private var topMovies = false
     /// El alto de cada renglón de «Tu watchlist», que crece con el tamaño de letra.
     @ScaledMetric(relativeTo: .body) private var watchRow = DS.Editorial.watchlistRow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -53,9 +53,9 @@ struct HomeView: View {
                         .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
                 }
                 // Abre con «Destacado» (lo que se está viendo esta semana, para ti); lo que dejaste a medias va justo debajo.
-                if !model.spotlight.isEmpty { spotlightCarousel(model) }
+                if !model.spotlight.isEmpty { spotlightCarousel(model).perfTag("home.hero") }
                 if !model.continueWatching.isEmpty {
-                    continueRail(model)
+                    continueRail(model).perfTag("home.rail")
                 } else if !model.isLoading, model.spotlight.isEmpty {
                     DSNotice(text: "Aquí aparece lo que vas viendo, en el iPhone y en Orbital.").padding(.horizontal, DS.Space.gutter)
                 }
@@ -67,8 +67,8 @@ struct HomeView: View {
                         ForEach(model.forYouPicks) { s in TitleLink(route: s.route, reflected: true) }
                     }
                 }
-                // El Top 10 de Netflix en tu país (lo que abría Para ti): series o películas, cada una con su 1 al 10.
-                if !model.netflixSeries.isEmpty || !model.netflixMovies.isEmpty { netflixTop(model) }
+                // El Top 10 de un servicio (Netflix, Disney+, HBO Max…), elegido con su pastilla: series o películas, cada una con su 1 al 10.
+                if model.hasAnyTop { topTen(model) }
                 if !model.traktPending.isEmpty { watchlist(model) }
                 if !model.upcoming.isEmpty { upcoming(model) }
                 if !model.myList.isEmpty {
@@ -372,23 +372,43 @@ struct HomeView: View {
         }
     }
 
-    private func netflixTop(_ model: HomeModel) -> some View {
-        let movies = netflixMovies && !model.netflixMovies.isEmpty || model.netflixSeries.isEmpty
-        let items = movies ? model.netflixMovies : model.netflixSeries
+    private func topTen(_ model: HomeModel) -> some View {
+        let service = model.topService
+        let series = model.top(kind: "series"), films = model.top(kind: "movie")
+        let movies = topMovies && !films.isEmpty || series.isEmpty
+        let items = movies ? films : series
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
             HStack(alignment: .lastTextBaseline) {
-                DSSectionHead(title: Text("Top 10 en Netflix"), eyebrow: Text("Lo más visto en tu país esta semana"))
+                DSSectionHead(title: Text("Top 10 en \(service.name)"),
+                              eyebrow: service.weekly ? Text("Lo más visto en tu país esta semana") : Text("Lo más visto hoy · JustWatch"))
                 Spacer(minLength: DS.Space.s2)
-                if !model.netflixSeries.isEmpty, !model.netflixMovies.isEmpty {
-                    Picker(selection: $netflixMovies) { Text("Series").tag(false); Text("Películas").tag(true) } label: { EmptyView() }
+                if !series.isEmpty, !films.isEmpty {
+                    Picker(selection: $topMovies) { Text("Series").tag(false); Text("Películas").tag(true) } label: { EmptyView() }
                         .pickerStyle(.segmented).fixedSize()
                 }
             }
             .padding(.horizontal, DS.Space.gutter)
+            // De qué servicio: una pastilla por cada uno, con su logo (la elegida, con su color).
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DS.Space.s2) {
+                    ForEach(HomeModel.topServices) { s in
+                        PlatformPill(name: s.name, logo: s.logo, brand: s.brand, selected: s.brand == service.brand) {
+                            Task { await model.selectTop(s.brand) }
+                        }
+                        .accessibilityIdentifier("top-\(s.brand)")
+                    }
+                }
+            }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .sensoryFeedback(.selection, trigger: service.brand)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .bottom, spacing: DS.Space.s3) {
+                    if items.isEmpty {
+                        if model.loadingTop { ShelfSkeleton() }
+                        else { DSNotice(text: "Hoy no hay ranking de este servicio.").frame(width: DS.Size.cardMax) }
+                    }
                     ForEach(Array(items.enumerated()), id: \.element.id) { i, s in
-                        NavigationLink(value: s.route) { RankedPosterCard(rank: s.rank ?? i + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: DS.PlatformTint.color("netflix")).titleZoomSource(s.route) }
+                        NavigationLink(value: s.route) { RankedPosterCard(rank: s.rank ?? i + 1, title: s.title, poster: s.poster, movement: s.movement, isNew: s.isNew, tint: DS.PlatformTint.color(service.brand)).titleZoomSource(s.route) }
                             .buttonStyle(.plain)
                     }
                 }
@@ -396,8 +416,10 @@ struct HomeView: View {
             }
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
-            .id(movies)   // al cambiar, desde el n.º 1
+            .id("\(service.brand)-\(movies)")   // al cambiar, desde el n.º 1
+            .transition(.opacity)
         }
+        .animation(DS.Motion.base(reduceMotion), value: service.brand)
         .task(id: items.first?.imdb) { ImagePipeline.shared.prefetchPosters(items.map(\.poster)) }
     }
 

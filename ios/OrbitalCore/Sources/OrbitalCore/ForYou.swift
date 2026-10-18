@@ -45,7 +45,7 @@ public struct Suggestion: Sendable, Equatable, Identifiable {
     }
 }
 
-public enum ForYouGroup: String, Sendable { case mine, discover, platforms }
+public enum ForYouGroup: String, Sendable, Codable { case mine, discover, platforms }
 
 /// Un día de «Próximos estrenos» con lo que sale (vacío en la semana: «Nada este día»).
 public struct AiringDay: Sendable, Equatable, Identifiable {
@@ -93,7 +93,7 @@ public struct Airing: Sendable, Equatable, Identifiable {
     public func episodeLabel(_ episode: (Int, Int) -> String) -> String { count > 1 ? "\(episode(season, first))–E\(last)" : episode(season, first) }
 }
 
-public struct ForYouList: Sendable, Equatable, Identifiable {
+public struct ForYouList: Sendable, Equatable, Identifiable, Codable {
     public var id: String
     public var title: String           // nombre propio (listas de Trakt, plataformas); vacío = la interfaz lo nombra
     public var group: ForYouGroup
@@ -509,6 +509,13 @@ public actor ForYou {
     }
 
     static let mosaicKey = "foryou-mosaic"
+
+    /// Una lista de sugerencias para guardar en el teléfono (Inicio la enseña al abrir mientras llega la nueva).
+    public static func encode(_ list: [Suggestion]) -> Data? { try? JSONEncoder().encode(list.map(SavedSuggestion.init)) }
+    public static func decode(_ data: Data?) -> [Suggestion] {
+        guard let data, let saved = try? JSONDecoder().decode([SavedSuggestion].self, from: data) else { return [] }
+        return saved.map(\.suggestion)
+    }
 
     /// Una de cada fuente por turno (así el mosaico no es solo recomendaciones), sin repetir.
     public static func interleave(_ batches: [[Suggestion]], limit: Int) -> [Suggestion] {

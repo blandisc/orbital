@@ -347,6 +347,8 @@ enum DS {
         static let width: CGFloat = 168, height: CGFloat = 176, radius: CGFloat = 22
         static let poster: CGFloat = 66, posterTop: CGFloat = 26, angle: Double = 15, spread: CGFloat = 8, lift: CGFloat = 6
         static let logo: CGFloat = 34, logoRadius: CGFloat = 10, glow: CGFloat = 18
+        /// La pastilla de una plataforma (el Top 10 de Inicio): el logo chico, sus esquinas y el borde de la elegida.
+        static let pillLogo: CGFloat = 22, pillLogoRadius: CGFloat = 6, pillStroke: CGFloat = 1.5
         static let tintTop: Double = 0.42, tintEdge: Double = 0.45
         /// El logo grande de la página de la plataforma y su halo.
         static let headerLogo: CGFloat = 72, headerGlow: CGFloat = 44

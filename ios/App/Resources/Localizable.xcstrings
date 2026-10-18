@@ -3807,6 +3807,17 @@
         }
       }
     },
+    "Hoy no hay ranking de este servicio.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No ranking for this service today."
+          }
+        }
+      }
+    },
     "Identificador de la aplicación (client id)": {
       "extractionState": "manual",
       "localizations": {
@@ -4496,6 +4507,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Most watched this week"
+          }
+        }
+      }
+    },
+    "Lo más visto hoy · JustWatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Most watched today · JustWatch"
           }
         }
       }

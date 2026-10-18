@@ -12,6 +12,8 @@ enum Demo {
     static var startTab: Int? { value(after: "-start-tab").flatMap(Int.init) }
     static var startMode: String? { value(after: "-start-mode") }
     /// `-demo-no-idle`: el mosaico no se mueve solo (las pruebas de arrastre miden solo lo que hace el dedo).
+    /// Lo guardado (Inicio, el mosaico, los colores) sobrevive entre aperturas, como en el iPhone de verdad (para medir).
+    static var persist: Bool { ProcessInfo.processInfo.arguments.contains("-demo-persist") }
     static var noIdle: Bool { ProcessInfo.processInfo.arguments.contains("-demo-no-idle") }
 
     static let addonURL = "https://demo.orbital.invalid/manifest.json"

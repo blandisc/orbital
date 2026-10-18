@@ -162,10 +162,10 @@ struct BecauseCard<Related: View>: View {
                             }
                         }
                     } label: {
-                        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s1) {
-                            Text(verbatim: seedTitle).recipe(.cardTitle).lineLimit(2).multilineTextAlignment(.leading)
-                            Image(systemName: "chevron.up.chevron.down").font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted)
-                        }
+                        // La flechita va pegada al final del nombre (dentro del mismo texto): con un nombre largo ya no queda un
+                        // hueco entre el primer renglón y ella.
+                        (Text(verbatim: seedTitle + "\u{00A0}") + Text(Image(systemName: "chevron.up.chevron.down")).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textMuted))
+                            .recipe(.cardTitle).lineLimit(2).multilineTextAlignment(.leading)
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint(Text("Elige otro título para recomendarte por él"))

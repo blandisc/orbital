@@ -31,7 +31,7 @@ struct RootView: View {
     var body: some View {
         Group {
             switch session.model.state {
-            case .signedIn: MainTabs()
+            case .signedIn: MainTabs().onAppear { Perf.mark("app.tabs") }
             default: LoginView(session: session.model)
             }
         }

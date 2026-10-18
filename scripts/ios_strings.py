@@ -21,6 +21,7 @@ OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 TRANSLATIONS = {
     "Horas, tus días más intensos, lo que más viste y tu mapa de calor": "Hours, your busiest days, what you watched most and your heat map", "Lo más visto en tu país esta semana": "Most watched in your country this week", "Lo que todo el mundo está viendo": "What everyone is watching", "Lo que viste, día por día": "What you watched, day by day", "No pude traer los episodios de Los Simpson.": "I couldn't get The Simpsons episodes.", "Recomendadas con lo que ves": "Recommended from what you watch", "Top 10 en Netflix": "Top 10 on Netflix", "Tu año en Orbital": "Your year on Orbital", "Un Simpson al azar": "A random Simpsons", "Un Simpson al azar (T5–T15)": "A random Simpsons (S5–S15)", "Ver aquí": "Watch here", "En tendencia": "Trending", "Popular": "Popular", "Tu año": "Your year",
     "Desliza hacia arriba o abajo para ir de un día con algo visto a otro": "Swipe up or down to move between days you watched something", "Día anterior con algo visto": "Previous day you watched something", "Día siguiente con algo visto": "Next day you watched something", "Elige otro título para recomendarte por él": "Pick another title to get recommendations from", "Ese día no viste nada.": "You didn't watch anything that day.", "Recomiéndame por…": "Recommend based on…", "Toca el nombre para elegir otro de lo que viste": "Tap the name to pick something else you watched",
+    "Hoy no hay ranking de este servicio.": "No ranking for this service today.", "Lo más visto hoy · JustWatch": "Most watched today · JustWatch",
     "Español latino": "Latin American Spanish", "Arrastra el video para subirlo o bajarlo": "Drag the video to move it up or down",
     "Ahorro": "Saver", "Equilibrado": "Balanced", "Rendimiento": "Performance",
     "Esperando Wi‑Fi": "Waiting for Wi‑Fi", "Esperando conexión": "Waiting for connection", "En espera": "On hold",
@@ -379,7 +380,7 @@ def used_literals() -> dict[str, str]:
     for f in files:
         f = Path(f).as_posix()  # en Windows glob da «\»: sin esto el modo demo y Platform/ se colaban
         # El modo demo (solo Debug) no se traduce; de Design/ solo se saltan los tokens y el banco de pruebas (las piezas sí llevan texto).
-        if "/Platform/" in f or f.endswith(("/Support/Demo.swift", "Previews.swift", "/Design/Tokens.swift", "/Design/MosaicBench.swift", "/Design/ModelObserver.swift")):
+        if "/Platform/" in f or f.endswith(("/Support/Demo.swift", "/Support/Perf.swift", "Previews.swift", "/Design/Tokens.swift", "/Design/MosaicBench.swift", "/Design/ModelObserver.swift")):
             continue
         for number, line in enumerate(Path(f).read_text(encoding="utf-8").splitlines(), 1):
             stripped = line.strip()

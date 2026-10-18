@@ -54,6 +54,7 @@ struct BrowseView: View {
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(for: GenreRoute.self) { GenreView(genre: $0.genre, model: catalog.model) }
         .task(id: query) {
+            if query.count >= 2 { Perf.begin("search") }
             try? await Task.sleep(nanoseconds: DS.Timing.searchDebounce)    // espera a que termines de escribir
             guard !Task.isCancelled else { return }
             await search.model.search(query)
@@ -92,6 +93,7 @@ struct BrowseView: View {
                 CoverCard(art: String(format: ForYou.metahubBackground, top.metaID), logo: Artwork.logoURL(metaID: top.metaID), title: top.title,
                           why: Text("Mejor resultado"), detail: yearAndKind(year: top.year, kind: top.kind), height: DS.Size.searchTopHeight)
             }
+            .perfTag("search.top")
             .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
             .simultaneousGesture(TapGesture().onEnded { model.remember(query) })
         }
@@ -109,6 +111,7 @@ struct BrowseView: View {
             ForEach(shown.first?.metaID.hasPrefix("tt") == true ? Array(shown.dropFirst()) : shown) { r in
                 TitleLink(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster), width: DS.Poster.gridMinimum,
                           detail: yearAndKind(year: r.year, kind: r.kind))
+                    .perfTag("search.grid")
                     .simultaneousGesture(TapGesture().onEnded { model.remember(query) })
             }
         }

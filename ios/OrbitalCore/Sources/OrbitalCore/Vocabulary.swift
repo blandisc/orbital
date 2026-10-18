@@ -91,6 +91,12 @@ public enum Artwork {
         return url
     }
 
+    /// Una versión ligera de la misma imagen para enseñar mientras llega la buena (el fondo «medium» de metahub son
+    /// 1920×1080 y ~1 MB; el «small», 480×270 y ~20 KB): nil si no hay una más ligera.
+    public static func preview(_ url: String) -> String? {
+        url.contains("images.metahub.space/background/medium/") ? url.replacingOccurrences(of: "/background/medium/", with: "/background/small/") : nil
+    }
+
     /// Hasta aquí alcanza el fondo «small» de metahub (480 px de ancho) sin verse borroso en una pieza.
     public static let smallBackgroundPixels = 600
 

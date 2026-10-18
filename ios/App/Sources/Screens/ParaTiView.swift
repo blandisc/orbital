@@ -346,9 +346,9 @@ struct ListsView: View {
                 // Para ti: lo general (el destacado, «Porque viste», las sugerencias), cada fila con su sello.
                 VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                     let slides = model.featuredSlides
-                    if !slides.isEmpty { featuredCarousel(slides) }
+                    if !slides.isEmpty { featuredCarousel(slides).perfTag("paraTi.hero") }
                     if let because = model.because { becauseCard(because) }
-                    ForEach(generalShelves) { plan in shelf(plan).id(plan.id) }
+                    ForEach(generalShelves) { plan in shelf(plan).id(plan.id).perfTag("paraTi.shelf") }
                     // Lo nuevo en tus plataformas (TMDB): series con episodios recientes y películas recién llegadas.
                     if !model.newOnPlatforms.isEmpty {
                         // En panorámicas (otro formato: se reconoce sin leerla), con la plataforma en la esquina.

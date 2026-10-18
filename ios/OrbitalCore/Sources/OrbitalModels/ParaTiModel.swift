@@ -76,7 +76,34 @@ public final class ParaTiModel: ObservableModel {
     public private(set) var source: Source = .phone { didSet { changed() } }
     private let services: Services
 
-    public init(_ services: Services) { self.services = services; super.init() }
+    public init(_ services: Services) {
+        self.services = services
+        super.init()
+        restoreSnapshot()
+    }
+
+    // MARK: lo de la última vez
+    /// Los estantes de la última vez (sus listas y lo que traían), guardados en el teléfono: Para ti abre con ellos al instante
+    /// y cada uno se cambia por el nuevo en cuanto llega (antes, la pestaña abría vacía hasta que contestaba la red).
+    static let snapshotKey = "paraTi-snapshot"
+    private struct Snapshot: Codable { var console: Bool; var kind: String; var lists: [ForYouList]; var rails: [String: Data] }
+
+    private func restoreSnapshot() {
+        guard let data = services.kv.data(Self.snapshotKey), let saved = try? JSONDecoder().decode(Snapshot.self, from: data),
+              saved.kind == kind else { return }
+        source = saved.console ? .console : .phone
+        lists = saved.lists
+        shelves = ShelfPlanner.plan(saved.lists)
+        railItems = saved.rails.mapValues { ForYou.decode($0) }.filter { !$0.value.isEmpty }
+        staleKeys = Set(railItems.keys)   // se ven, pero se piden de nuevo
+    }
+
+    private func saveSnapshot() {
+        guard !Task.isCancelled, !lists.isEmpty else { return }
+        let rails = railItems.compactMapValues { ForYou.encode(Array($0.prefix(Self.snapshotRowLimit))) }
+        services.kv.set(Self.snapshotKey, data: try? JSONEncoder().encode(Snapshot(console: source == .console, kind: kind, lists: lists, rails: rails)))
+    }
+    static let snapshotRowLimit = 20
 
     public var traktLists: [ForYouList] { lists.filter { $0.group != .platforms } }
     public var platformLists: [ForYouList] { lists.filter { $0.group == .platforms } }
@@ -208,19 +235,16 @@ public final class ParaTiModel: ObservableModel {
         await loadNewOnPlatforms()
         rebuildBadges()
         await topUpMosaic()
+        saveSnapshot()
         return true
     }
 
+    /// Todo a la vez: los estantes empiezan en cuanto llegan las listas (antes esperaban al mosaico, que son varias
+    /// peticiones a Trakt) y «Porque viste», lo nuevo en tus plataformas y el calendario aparecen cada uno al llegar.
     private func loadFromPhone() async {
         if source != .phone { railItems = [:] }
         source = .phone
         let forYou = services.forYou
-        async let linked = forYou.traktLinked
-        async let newLists = forYou.lists()
-        async let keys = forYou.watchlistKeys()
-        async let newAirings = try? forYou.calendar()
-        async let newBecause = forYou.becauseYouWatched(seed: chosenSeed)
-        async let newMosaic = forYou.mosaic()
         // Al abrir la app, el de la última vez (guardado en el teléfono): el mosaico aparece al instante. El nuevo no lo
         // reemplaza en ese momento (lo movería bajo tu dedo): queda guardado para la próxima vez; «Actualizar» lo trae ya.
         var showedSaved = false
@@ -228,29 +252,51 @@ public final class ParaTiModel: ObservableModel {
             let saved = await forYou.cachedMosaic()
             if !saved.isEmpty { mosaic = saved; showedSaved = true }
         }
-        let fresh = await newMosaic
-        if !showedSaved, !fresh.isEmpty || mosaic.isEmpty { mosaic = fresh }
+        let keepSaved = showedSaved
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await self.phoneShelves(forYou) }
+            group.addTask { await self.phoneMosaic(forYou, keepSaved: keepSaved) }
+            group.addTask { await self.phoneTrakt(forYou) }
+            group.addTask { await self.phoneBecause(forYou) }
+            group.addTask { await self.loadNewOnPlatforms() }
+        }
+        rebuildBadges()
+        // El aviso, solo si de verdad no hay nada que enseñar (las listas con puesto existen siempre, pero sin red llegan vacías).
+        if mosaic.isEmpty && shelves.allSatisfy({ items(for: $0).isEmpty }) { error = services.appSettings.traktEnabled ? nil : "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias." }
+        else { error = nil }
+        await topUpMosaic()
+        saveSnapshot()
+    }
+
+    private func phoneShelves(_ forYou: ForYou) async {
+        lists = await forYou.lists()
+        shelves = ShelfPlanner.plan(lists)
+        await loadShelves()
+    }
+
+    private func phoneMosaic(_ forYou: ForYou, keepSaved: Bool) async {
+        let fresh = await forYou.mosaic()
+        if !keepSaved, !fresh.isEmpty || mosaic.isEmpty { mosaic = fresh }
         // Sin Trakt ni TMDB el mosaico no quedaría vacío: lo más popular de Stremio (Cinemeta no pide claves).
         isGeneric = mosaic.isEmpty
         if isGeneric { mosaic = await popular() }
-        lists = await newLists
-        shelves = ShelfPlanner.plan(lists)
-        async let shelvesLoaded: Void = loadShelves()
+    }
+
+    private func phoneTrakt(_ forYou: ForYou) async {
+        async let linked = forYou.traktLinked
+        async let keys = forYou.watchlistKeys()
+        async let newAirings = try? forYou.calendar()
         traktLinked = await linked
         watchlistKeys = await keys
         if let fetched = await newAirings, !Task.isCancelled {   // sin respuesta (o cancelado), el widget conserva lo que tenía
             airings = fetched; airingDays = ForYou.calendarDays
             services.publishWidget(airings: airings)   // el widget mediano enseña «Próximo estreno»
         }
-        await shelvesLoaded
-        because = await newBecause
+    }
+
+    private func phoneBecause(_ forYou: ForYou) async {
+        because = await forYou.becauseYouWatched(seed: chosenSeed)
         becauseSeeds = await forYou.recentSeeds()
-        await loadNewOnPlatforms()
-        rebuildBadges()
-        // El aviso, solo si de verdad no hay nada que enseñar (las listas con puesto existen siempre, pero sin red llegan vacías).
-        if mosaic.isEmpty && shelves.allSatisfy({ items(for: $0).isEmpty }) { error = services.appSettings.traktEnabled ? nil : "Conecta Trakt o agrega una clave de TMDB en Ajustes para ver sugerencias." }
-        else { error = nil }
-        await topUpMosaic()
     }
 
     /// Con pocas sugerencias el mosaico repetía la misma portada en toda la pantalla: se completa con lo que ya

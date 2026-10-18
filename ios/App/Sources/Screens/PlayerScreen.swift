@@ -280,6 +280,7 @@ struct PlayerScreen: View {
                 case .horizontal:
                     guard let start = seekPositionAtDragStart else { return }
                     seekPreview = PlayerGestures.seekTarget(startPosition: start, duration: model.snapshot.duration, dragWidth: dx, screenWidth: Double(size.width))
+                    if let target = seekPreview { model.scrub(to: target) }
                 case .undecided: break
                 }
             }
@@ -409,8 +410,8 @@ struct PlayerScreen: View {
     }
 
     // MARK: controles
-    /// Horizontal: arriba ✕, el nombre completo y AirPlay; al centro ±10 y el botón grande; abajo la barra y, a la derecha,
-    /// Audio y subtítulos, Ventana y Ver en la TV (antes iban todos arriba y cortaban el nombre del episodio).
+    /// Horizontal: arriba ✕, el nombre, Audio y subtítulos, Ventana, Ver en la TV y AirPlay; al centro ±10 y el botón
+    /// grande; abajo solo la barra.
     /// Vertical: lo mismo pero bajo el video (que va arriba): nada tapa la imagen ni los subtítulos.
     private func controls(_ model: PlayerModel) -> some View {
         GeometryReader { geo in
@@ -418,12 +419,11 @@ struct PlayerScreen: View {
                 ZStack {
                     LinearGradient(colors: [DS.scrim, .clear, DS.scrim], startPoint: .top, endPoint: .bottom).ignoresSafeArea().allowsHitTesting(false)
                     VStack(spacing: DS.Space.s3) {
-                        topBar(model)
+                        topBar(model, withActions: true)
                         Spacer()
                         if model.phase != .preparing { transport(model) }
                         Spacer()
                         if model.snapshot.duration > 0 { scrubber(model) }
-                        HStack(spacing: DS.Space.s2) { Spacer(); actions(model) }
                     }
                     .padding(DS.Space.s6)
                 }
@@ -446,7 +446,9 @@ struct PlayerScreen: View {
         }
     }
 
-    private func topBar(_ model: PlayerModel) -> some View {
+    /// `withActions` (horizontal): Audio y subtítulos, Ventana y Ver en la TV van arriba, junto a AirPlay; abajo solo queda
+    /// la barra.
+    private func topBar(_ model: PlayerModel, withActions: Bool = false) -> some View {
         HStack(alignment: .top, spacing: DS.Space.s3) {
             DSIconButton(symbol: "xmark", label: "Cerrar") { Task { await close() } }
                 .accessibilityIdentifier("player-close")
@@ -459,6 +461,7 @@ struct PlayerScreen: View {
             if model.skipIntroTo != nil {
                 Button(model.skipKind == .recap ? "Saltar resumen" : "Saltar intro", systemImage: "forward.fill") { Task { await model.skipIntro() } }.buttonStyle(.glass)
             }
+            if withActions { actions(model) }
             AirPlayButton().frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget).glassEffect(.regular, in: Circle())
                 .accessibilityLabel(Text("AirPlay"))
         }
@@ -500,7 +503,8 @@ struct PlayerScreen: View {
                     .padding(.horizontal, DS.Remote.playhead / 2)
                     .scareWarning(position: model.snapshot.position, scares: scares, enabled: scareWarnings && model.snapshot.state == .playing)
             }
-            Slider(value: Binding(get: { shown }, set: { scrubbing = $0 }), in: 0...duration) { editing in
+            // La escena sigue al dedo mientras arrastras (antes solo cambiaba al soltar).
+            Slider(value: Binding(get: { shown }, set: { scrubbing = $0; model.scrub(to: $0) }), in: 0...duration) { editing in
                 if editing { hideTask?.cancel(); controlsVisible = true; return }   // mientras arrastras, nada se esconde
                 if let target = scrubbing { pendingSeek = target; scrubbing = nil; Task { await model.seek(to: target) } }
                 pulse()

@@ -125,7 +125,8 @@ final class AppEnvironment: ObservableObject {
         #if DEBUG
         // Modo demostración: nada toca tu Keychain, tus ajustes ni tus descargas.
         if Demo.isOn {
-            let kv = InMemoryKeyValueStore()
+            // `-demo-persist`: lo guardado sobrevive entre aperturas (como en tu iPhone), para medir abrir la app de nuevo.
+            let kv: KeyValueStore = Demo.persist ? UserDefaultsKeyValueStore(prefix: "orbital-demo.") : InMemoryKeyValueStore()
             SettingsStore(kv).update {
                 if let language = Demo.language { $0.uiLanguage = language }
                 if !Demo.noTV { $0.orbitalAddress = "tv.demo.invalid" }

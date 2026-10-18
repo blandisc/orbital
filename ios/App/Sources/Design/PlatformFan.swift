@@ -92,3 +92,29 @@ struct PlatformLogoTile: View {
         Text(verbatim: String(name.prefix(1))).recipe(.cardTitle).frame(maxWidth: .infinity, maxHeight: .infinity).background(tint)
     }
 }
+
+/// Una plataforma en cápsula (su logo y su nombre) para elegir de cuál es una lista: la elegida, con el color de la
+/// plataforma de fondo tenue y su borde (el Top 10 de Inicio).
+struct PlatformPill: View {
+    let name: String
+    let logo: String?
+    let brand: String
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        let tint = DS.PlatformTint.color(brand)
+        Button(action: action) {
+            HStack(spacing: DS.Space.s2) {
+                PlatformLogoTile(url: logo, name: name, size: DS.PlatformFan.pillLogo, radius: DS.PlatformFan.pillLogoRadius, tint: tint, glow: 0)
+                Text(verbatim: name).font(DS.TextRecipe.footnote.font).fontWeight(selected ? .semibold : .regular).lineLimit(1)
+            }
+            .foregroundStyle(DS.text)
+            .padding(.leading, DS.Space.s1).padding(.trailing, DS.Space.s3).padding(.vertical, DS.Space.s1)
+            .background(selected ? tint.opacity(DS.PlatformFan.tintTop) : DS.fill, in: Capsule())
+            .overlay(Capsule().strokeBorder(selected ? tint : .clear, lineWidth: DS.PlatformFan.pillStroke))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
