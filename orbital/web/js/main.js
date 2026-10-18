@@ -290,9 +290,9 @@ function reportUi() {
 }
 
 /** «Escribir» del control del iPhone: al campo con foco (la cuenta de Stremio o la búsqueda); sin campo, abre la búsqueda. */
-function remoteText(text, submit) {
-  if (ui.login.isOpen) for (const char of text) ui.login.type(char);
-  else if (ui.search.isOpen) for (const char of text) ui.search.type(char);
+function remoteText(text, submit, replace = false) {
+  if (ui.login.isOpen) replace ? ui.login.setText(text) : [...text].forEach((char) => ui.login.type(char));
+  else if (ui.search.isOpen) replace ? ui.search.setText(text) : [...text].forEach((char) => ui.search.type(char));
   else if (text) openSearch(text);
   if (submit) (ui.login.isOpen ? ui.login : ui.search).type(String.fromCharCode(10)); // Enter
   renderHints();
@@ -1527,7 +1527,7 @@ function handleEvent(event) {
   }
   if (event.type === "launch-ready") return ui.launch.reveal();
   if (event.type === "input") return handleAction(event.action); // el control remoto del iPhone, como el mando
-  if (event.type === "text") return remoteText(String(event.text || ""), !!event.submit);
+  if (event.type === "text") return remoteText(String(event.text || ""), !!event.submit, !!event.replace);
   if (event.type === "settings") return event.settings && applySettings(event.settings);
   if (event.type === "health") { // memoria casi llena
     // Con la ventana tapada (un juego o un video encima) no sale nada: ni sonido ni repintado, que

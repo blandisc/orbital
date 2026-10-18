@@ -231,6 +231,16 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     else press(char);
   }
 
+  /** El iPhone manda el campo entero: lo reemplaza (en vez de agregarlo letra por letra). */
+  function setText(value) {
+    if (el.hidden || el.classList.contains("search--leaving")) return;
+    typedPhysically = true;
+    cleared = "";
+    text = Array.from(String(value).toLowerCase()).slice(0, MAX_CHARS).join("");
+    render();
+    schedule();
+  }
+
   function dictate() {
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Recognition) return setHint("El dictado no está disponible aquí. Usa el teclado o pídeselo a Alexa.");
@@ -365,6 +375,6 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     if (!el.hidden && text.trim().length >= MIN_CHARS) schedule();
   }
 
-  return { el, open: show, close, handle, hints, refresh, type, get isOpen() { return !el.hidden && !el.classList.contains("search--leaving"); },
+  return { el, open: show, close, handle, hints, refresh, type, setText, get isOpen() { return !el.hidden && !el.classList.contains("search--leaving"); },
     get typing() { return !el.hidden && !el.classList.contains("search--leaving"); } };
 }

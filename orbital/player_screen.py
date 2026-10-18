@@ -700,6 +700,48 @@ class PlayerScreen:
         self._ask("time-pos", target)
         return target
 
+    def phone_legend(self) -> dict:
+        """Lo que hace cada botón del control del iPhone con el reproductor al frente (las mismas acciones de
+        /api/companion/input), para que el iPhone diga «Subtítulos» y no la leyenda de la interfaz."""
+        if self._is_live():
+            return {"up": "Canal siguiente", "down": "Canal anterior", "options": "Canales", "alt": "Audio",
+                    "left": "Bajar volumen", "right": "Subir volumen", "select": "Silencio", "back": "Salir"}
+        segment = self.segment
+        meta = (segment.meta if segment is not None else None) or getattr(self.current, "meta", None) or {}
+        series = meta.get("kind") == "series" and self.on_episode is not None
+        legend = {"select": "Continuar" if self._value("pause") else "Pausa", "alt": "Audio y subtítulos",
+                  "options": "Episodios" if series else "Fuentes", "left": "Atrasar", "right": "Adelantar",
+                  "up": "Subir volumen", "down": "Bajar volumen", "back": "Salir"}
+        if series:
+            legend |= {"pageleft": "Episodio anterior", "pageright": "Episodio siguiente"}
+        return legend
+
+    def phone_tracks(self) -> dict:
+        """Las pistas de audio y subtítulos para el iPhone: {audio: [{id, label, lang, selected}], subtitles: [...]}."""
+        tracks = self.mpv.get("track-list") or []
+
+        def of(kind: str) -> list[dict]:
+            return [{"id": t["id"], "label": player_ui.track_label(t), "lang": t.get("lang") or None,
+                     "selected": bool(t.get("selected"))} for t in tracks if t.get("type") == kind and "id" in t]
+        return {"audio": of("audio"), "subtitles": of("sub")}
+
+    def phone_track(self, kind: str, track: int | str | None = None) -> None:
+        """Del iPhone: «subtitles» o «audio». Sin `track`, la siguiente pista (los subtítulos pasan por «Sin
+        subtítulos»); con `track` (un id de phone_tracks, o "no" para quitar los subtítulos), esa."""
+        listed = self.phone_tracks()["subtitles" if kind == "subtitles" else "audio"]
+        prop = "sid" if kind == "subtitles" else "aid"
+        choices = ([{"id": "no", "label": "Sin subtítulos"}] if kind == "subtitles" else []) + listed
+        if track is None:
+            if len(choices) < 2:
+                raise ValueError("No hay otra pista" if kind == "audio" else "Este video no trae subtítulos")
+            here = next((i for i, c in enumerate(choices) if c.get("selected")), 0)
+            chosen = choices[(here + 1) % len(choices)]
+        else:
+            chosen = next((c for c in choices if str(c["id"]) == str(track)), None)
+            if chosen is None:
+                raise ValueError("Esa pista ya no está")
+        self._choose({"action": (prop, chosen["id"]), "label": chosen["label"], "lang": chosen.get("lang") or ""})
+
     def phone_button(self, action: str) -> None:
         """Un botón del control del iPhone con el reproductor al frente: como el mando, salvo B, que sale sin mantener
         (en el teléfono no hay «mantener B»): con un panel o los controles a la vista, primero los quita."""
