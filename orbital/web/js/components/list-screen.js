@@ -86,14 +86,15 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
     return out;
   }
 
-  function paintChips() {
-    const active = [
-      settings.sort !== "default" && !ranked() && SORTS.find((s) => s.id === settings.sort)?.label,
-      settings.kind !== "all" && KIND_LABEL[settings.kind],
-      settings.genre && settings.genreLabel,
+  const activeFilters = () => [
+    settings.sort !== "default" && !ranked() && SORTS.find((s) => s.id === settings.sort)?.label,
+    settings.kind !== "all" && KIND_LABEL[settings.kind],
+    settings.genre && settings.genreLabel,
       settings.hideWatched && "Sin lo que ya viste",
-    ].filter(Boolean);
-    mount(chips, active.map((text) => h("span", { class: "list-screen__chip" }, text)));
+  ].filter(Boolean);
+
+  function paintChips() {
+    mount(chips, activeFilters().map((text) => h("span", { class: "list-screen__chip" }, text)));
   }
 
   function paintGrid() {
@@ -247,7 +248,8 @@ export function createListScreen({ onPick, onMore, onSort, onMove, onClose, rati
 
   const hints = (g) => [
     { glyph: g.select, label: "Ver" },
-    { glyph: g.menu, label: ranked() ? "Filtrar" : "Ordenar y filtrar" },
+    // Cuántos hay puestos, también en el pie (las fichas de arriba dicen cuáles).
+    { glyph: g.menu, label: `${ranked() ? "Filtrar" : "Ordenar y filtrar"}${activeFilters().length ? ` · ${activeFilters().length}` : ""}` },
     list?.tabs.length > 1 && { glyph: g.section, label: "Cambiar" },
     { glyph: g.back, label: "Atrás", end: true },
   ].filter(Boolean);

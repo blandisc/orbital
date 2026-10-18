@@ -64,8 +64,10 @@ export function createHero({ onAction }) {
     // Apps: su propio ícono (el de ES-DE, el de GeForce NOW…), no el genérico de cuadritos.
     const icon = appIcon(item);
     const above = `${extra.eyebrow || item.subtitle || item.category}${runner}`;
+    // Una colección: su propio ícono (un premio, la estatuilla; las demás, una lista), no el de Apps.
+    const collectionIcon = item.source === "collection" ? (item.collection?.type === "award" ? "trophy" : "list") : null;
     mount(eyebrow, icon ? h("img", { class: "hero__eyebrow-icon", src: icon, alt: "" })
-      : PlatformMark(platformMark(item), svg(ICONS[systemIconName(item)])),
+      : collectionIcon ? svg(ICONS[collectionIcon]) : PlatformMark(platformMark(item), svg(ICONS[systemIconName(item)])),
       h("span", {}, above));
 
     title.textContent = item.title;
