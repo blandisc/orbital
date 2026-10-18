@@ -143,7 +143,7 @@ test("Por género: tarjetas con arte que llevan a su estante, y el destacado no 
   assert.equal(terror.image, "img/genres/genre-horror.jpg");
   assert.equal(primaryLabel(terror), "Ver títulos");
   assert.equal(isGame(terror), false);
-  assert.equal(alexaTip(terror), "«Alexa, pídele a mi consola que ponga algo de terror»");
+  assert.equal(alexaTip(terror), "«Alexa, pídele a Orbital que ponga algo de terror»");
   // Destacados: el N.º 1 de cada plataforma, sin repetir.
   const picked = [{ id: "chart:netflix", brand: "netflix", title: "Top 10" }, { id: "jw:prime", brand: "prime", title: "Prime" }];
   const spot = spotlightRow(picked, { "chart:netflix": [{ meta_id: "tt1", kind: "series", title: "A", hero: "h1" }], "jw:prime": [{ meta_id: "tt2", kind: "movie", title: "B", hero: "h2" }] });

@@ -166,7 +166,7 @@ def _handle(event: dict) -> dict:
     request = request if isinstance(request, dict) else {}
     kind = request.get("type")
     if kind == "LaunchRequest":
-        # "Alexa, abre mi consola": muestra la interfaz si saliste al escritorio.
+        # "Alexa, abre Orbital": muestra la interfaz si saliste al escritorio.
         answer = call_orbital("OpenOrbitalIntent")
         if not answer["ok"] and answer["speech"] != "Listo.":
             return speak(answer["speech"])  # token rechazado, demasiados intentos…: dilo, no «listo»

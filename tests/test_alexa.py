@@ -101,7 +101,7 @@ def test_bad_token_message(skill, monkeypatch):
 # --------------------------------------------------------------------- modelo de voz
 def test_interaction_model_is_valid():
     lm = MODEL["interactionModel"]["languageModel"]
-    assert lm["invocationName"] == "mi consola"
+    assert lm["invocationName"] == "orbital"  # Alexa: el nombre con que se invoca va en minúsculas
     types = {t["name"] for t in lm["types"]}
     seen = {}
     slot_types = {}  # Regla de Alexa: un nombre de slot = un solo tipo en todo el modelo
