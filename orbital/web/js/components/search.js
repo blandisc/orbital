@@ -18,7 +18,7 @@ import { createKeyboard } from "./keyboard.js";
  *   · con un teclado físico se escribe directo;
  *   · dictado: decirlo en voz alta (reconocimiento de voz de Edge, español de México).
  */
-const layout = (cleared, dictateGlyph = "") => [
+const layout = (cleared, dictateGlyph = "", listening = false) => [
   [..."1234567890"],
   [..."QWERTYUIOP"],
   [..."ASDFGHJKLÑ"],
@@ -26,7 +26,8 @@ const layout = (cleared, dictateGlyph = "") => [
   [{ key: "space", label: "Espacio", span: 4 }, { key: "delete", label: "Borrar", span: 3 },
     { key: "clear", label: cleared ? "Deshacer" : "Borrar todo", span: 3, tone: "action" }],
   // Acciones claras con dedo o con mando: salir, dictar y ver los resultados.
-  [{ key: "back", label: "Atrás", span: 2, tone: "action" }, { key: "dictate", label: "Dictar", span: 3, icon: "mic", glyph: dictateGlyph },
+  [{ key: "back", label: "Atrás", span: 2, tone: "action" }, // Escuchando: la tecla se ilumina y lo dice (antes no cambiaba y no se sabía si te oía).
+    { key: "dictate", label: listening ? "Escuchando…" : "Dictar", span: 3, icon: "mic", glyph: dictateGlyph, on: listening },
     { key: "go", label: "Buscar", span: 5, tone: "go" }],
 ];
 const MIN_CHARS = 2;
@@ -75,6 +76,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
   let pending = ""; // la búsqueda que ya va en camino (no se repite al pulsar Buscar otra vez)
   let typedPhysically = false; // con teclado físico, Enter busca en vez de pulsar la tecla en pantalla
   let listening = null;
+  let shownListening = false;
   let cancelExit = () => {};
 
   let shownCleared = false; // la tecla «Borrar todo» dice «Deshacer» justo después de usarla
@@ -86,7 +88,11 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     query.scrollLeft = query.scrollWidth; // larga: se ve lo último que escribiste
     placeholder.hidden = !!text;
     const undo = !text && !!cleared;
-    if (undo !== shownCleared) { shownCleared = undo; keyboard.setLayout(layout(undo, dictateGlyph)); }
+    if (undo !== shownCleared || !!listening !== shownListening) {
+      shownCleared = undo;
+      shownListening = !!listening;
+      keyboard.setLayout(layout(undo, dictateGlyph, shownListening));
+    }
     keyboard.active = zone === "keys";
     focusables.forEach((node, i) => node.classList.toggle(node.classList.contains("card") ? "card--focused" : "search__recent--focused",
       zone === "results" && i === resultIndex));
@@ -251,7 +257,8 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     rec.interimResults = true;
     rec.maxAlternatives = 1;
     rec.onresult = (event) => {
-      text = [...event.results].map((r) => r[0].transcript).join("").trim().slice(0, MAX_CHARS);
+      // Sin el punto que Edge le pone al final («Severance.»): se busca lo que dijiste, no una frase.
+      text = [...event.results].map((r) => r[0].transcript).join("").trim().replace(/[.。]+$/u, "").slice(0, MAX_CHARS);
       render();
       schedule();
     };
@@ -263,7 +270,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
       return setHint("No te escuché. Intenta de nuevo."); // el micrófono no arrancó: sin «Te escucho…» para siempre
     }
     listening = rec;
-    setHint("Te escucho…");
+    setHint("Habla ahora: termina solo cuando te callas (o toca Dictar)");
     render();
   }
 
@@ -354,7 +361,7 @@ export function createSearch({ onOpen, onMove, onClose, localSearch = () => [], 
     const g = typingGlyphs(pad);
     if (g.menu !== dictateGlyph) { // el mando cambió (Legion, Xbox, teclado): la tecla Dictar enseña su botón
       dictateGlyph = g.menu || "";
-      keyboard.setLayout(layout(shownCleared, dictateGlyph));
+      keyboard.setLayout(layout(shownCleared, dictateGlyph, !!listening));
     }
     const page = String(pad?.page || "").split(" "); // LT RT con mando, RePág AvPág con teclado
     const go = page[1];

@@ -29,7 +29,7 @@ export function footerHints(glyphs, { sheetOpen = false, adjustable = false, ine
     groups ? { glyph: glyphs.page, label: "Grupo", secondary: true } : longRow && { glyph: glyphs.page, label: "Saltar 5", secondary: true },
     !atHome && { glyph: glyphs.back, label: "Atrás", secondary: true },
     // Con un juego abierto, recuerda cómo volver a él (Home solo existe en el mando).
-    running && glyphs.home && { glyph: glyphs.home, label: `Volver a ${running.title}` },
+    running && glyphs.home && { glyph: glyphs.home, label: `Volver a ${shortTitle(running.title)}` },
     { glyph: glyphs.menu, label: "Menú", end: true },
   ].filter(Boolean);
 }
@@ -85,7 +85,7 @@ export function homeHints(glyphs, target, { running = null, primary = "Abrir", a
     list.push({ glyph: glyphs.select, label: target?.setup ? "Qué revisar" : "Ir a Juegos" });
   }
   if (glyphs.section && sections > 1) list.push({ glyph: glyphs.section, label: "Sección", offscreen: true });
-  if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${running.title}` });
+  if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${shortTitle(running.title)}` });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
   return list;
 }
@@ -119,7 +119,7 @@ export function tvHints(glyphs, target, { empty = false, categories = 1, atStart
   if (glyphs.search) list.push({ glyph: glyphs.search, label: "Buscar", offscreen: true });
   list.push({ glyph: glyphs.back, label: "Atrás", secondary: true }); // de los canales, B vuelve a las categorías; de ahí, al Inicio
   // Con un canal al aire, recuerda cómo volver a él (Home solo existe en el mando).
-  if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${running.title}` });
+  if (running && glyphs.home) list.push({ glyph: glyphs.home, label: `Volver a ${shortTitle(running.title)}` });
   list.push({ glyph: glyphs.menu, label: "Menú", end: true });
   return list;
 }

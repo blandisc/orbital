@@ -1,6 +1,8 @@
 /* Search: buscar películas y series con el mando (resultados vivos + teclado alfabético). */
 .search {
   position: fixed; inset: 0; z-index: var(--z-overlay);
+  /* La enfocada crece (scale) hacia arriba y a los lados: los resultados y cada grupo le dejan ese lugar. */
+  --focus-grow: calc(var(--card-height) * (var(--card-focus-scale) - 1));
   /* minmax(0, 1fr): una búsqueda larga no ensancha la cuadrícula (el teclado se salía de la pantalla). */
   display: grid; grid-template-rows: auto auto 1fr; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); overflow: hidden;
   /* Portadas y teclas un poco más compactas que en el resto: resultados + teclado + pie caben siempre
@@ -29,7 +31,8 @@
 /* Larga: se ve el final, lo que estás escribiendo (search.js la desplaza al final). */
 .search__query { min-width: 0; white-space: pre; overflow: hidden; }
 .search__placeholder { color: var(--color-text-faint); }
-.search__caret { flex: none; width: 3px; height: 1.1em; margin-left: 2px; border-radius: 2px; background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
+/* Pegado al texto: el campo separa sus piezas (gap) y el cursor parecía un espacio después de lo escrito. */
+.search__caret { flex: none; width: 3px; height: 1.1em; margin-left: calc(2px - var(--space-3)); border-radius: 2px; background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
 @keyframes caret { 50% { opacity: 0; } }
 /* Dictando: la línea respira con el acento del juego. */
 .search__field--listening { border-color: var(--color-accent); animation: listening var(--duration-breathe) ease-in-out infinite; }
@@ -39,8 +42,6 @@
 /* Resultados: la misma tarjeta que en el inicio, en una fila con desplazamiento. */
 .search__results {
   display: flex; align-items: flex-end; gap: var(--card-gap);
-  /* La enfocada crece (scale) hacia arriba y a los lados: el relleno le deja ese lugar, si no se recortaba. */
-  --focus-grow: calc(var(--card-height) * (var(--card-focus-scale) - 1));
   min-height: calc(var(--card-height) * var(--card-focus-scale) + var(--space-4));
   /* Arriba: lo que crece, lo que sube (translateY .35rem del foco) y el anillo. */
   padding: calc(var(--focus-grow) + .2rem) calc(var(--focus-grow) / 2 + var(--space-2)) 4.6rem; /* abajo: el pie (la enfocada, en dos líneas); arriba ya da aire el nombre del grupo */
@@ -54,7 +55,8 @@
 .search .keyboard { align-self: end; justify-self: center; min-height: 0; }
 
 /* Cada grupo (En tu consola · Películas · Series · Listas): su nombre encima de sus portadas, derecho. No se enfoca. */
-.search__set { flex: none; display: flex; flex-direction: column; gap: var(--space-2); }
+/* Entre el nombre y las portadas, lo que crece la enfocada: antes lo tapaba («Series» quedaba detrás de la portada). */
+.search__set { flex: none; display: flex; flex-direction: column; gap: calc(var(--space-2) + var(--focus-grow)); }
 .search__set-cards { display: flex; align-items: flex-end; gap: var(--card-gap); }
 .search__group {
   flex: none; color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium); line-height: 1.2;
