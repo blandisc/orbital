@@ -62,12 +62,14 @@ export function createSheet({ onCommand, onMove, onClose }) {
       type: "button",
       role: "menuitem",
       onClick: (event) => tapReady(event) && !busy() && choose(i),
-    }, h("span", { class: "sheet__icon" }, ICONS[option.icon] ? svg(ICONS[option.icon]) : null),
+    }, // Una cuenta o servicio lleva su logotipo real (Stremio, Trakt, TMDB); lo demás, su ícono.
+    h("span", { class: ["sheet__icon", option.mark && "sheet__icon--mark"] },
+      option.mark ? h("img", { class: "sheet__mark", src: option.mark, alt: "" }) : ICONS[option.icon] ? svg(ICONS[option.icon]) : null),
     // Una descripción larga va debajo del nombre (en la misma línea lo aplastaba); un dato corto, a la derecha.
     h("span", { class: "sheet__text" }, h("span", { class: "sheet__label" }, option.label),
       below(option) && h("small", { class: "sheet__hint sheet__hint--below" }, option.hint)),
     // ‹ › solo en lo que se cambia con A o ◀/▶ (un estado, como "Conectada", no lleva flechas).
-    option.value !== undefined && h("span", { class: ["sheet__value", choice(option) && "sheet__value--choice"] },
+    option.value !== undefined && h("span", { class: ["sheet__value", choice(option) && "sheet__value--choice", option.ok && "sheet__value--ok"] },
       choice(option)
         // Con el dedo, ‹ y › se tocan por separado (antes el toque siempre hacía lo de A: subir o silenciar).
         ? [h("span", { class: "sheet__chev", "aria-hidden": "true", onClick: (e) => tapChev(e, i, "left") }, svg(ICONS.back)), option.value,

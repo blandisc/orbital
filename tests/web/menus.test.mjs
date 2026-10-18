@@ -103,8 +103,8 @@ test("ajustes: nombres de sofá, cada opción con su valor y A pasa al siguiente
   assert.deepEqual(accounts.options[1].command, { type: "phone-link" }); // un QR para la cámara del iPhone
   const keys = settingsPage("accounts", { stremio_linked: true, trakt: { configured: false },
     para_ti: { trakt: { configured: false }, tmdb: true, rawg: false, saved: ["tmdb"] } });
-  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Stremio", "Conectada"], ["Trakt", "Configurar"], ["iPhone", "Conectar"], ["Claves de Para ti", undefined],
-    ["TMDB", "Lista"], ["RAWG", "Agregar"], ["Aplicación de Trakt", "Agregar"]]);
+  assert.deepEqual(keys.options.map((o) => [o.label, o.value]), [["Stremio", "✓ Conectada"], ["Trakt", "Configurar"], ["iPhone", "Conectar"], ["Claves de Para ti", undefined],
+    ["TMDB", "✓ Guardada"], ["RAWG", "Agregar"], ["Clave de Trakt", "Agregar"]]);
   assert.deepEqual(keys.options[4].command, { type: "keys-menu", service: "tmdb" });
   assert.deepEqual(keys.options[1].command, { type: "keys", service: "trakt" }); // sin la aplicación, Trakt lleva a escribirla
   assert.deepEqual(keys.options[5].command, { type: "keys", service: "rawg" });
@@ -324,7 +324,7 @@ test("cuentas: el iPhone dice si ya está conectado (antes siempre «Conectar»)
   const now = Date.UTC(2026, 9, 16, 12);
   assert.equal(phoneRow(undefined, now).value, "Conectar");
   const recent = phoneRow(now / 1000 - 2 * 3600, now);
-  assert.equal(recent.value, "Conectado");
+  assert.equal(recent.value, "✓ Conectado");
   assert.equal(recent.hint, "Lo usaste hace 2 h");
   assert.equal(recent.command.type, "phone-link"); // sigue abriendo el QR (otro iPhone, o volver a conectarlo)
   assert.equal(phoneRow(now / 1000 - 90 * 86400, now).value, "Conectar"); // hace meses: como si no

@@ -442,7 +442,7 @@ const SETTING_PAGES = {
     ["sub_scale", "Letra de los subtítulos", null]] },
   display: { title: "Pantalla y sonido", icon: "display", hint: "Texto, márgenes, sonidos y vibración", options: [
     ["text_size", "Tamaño del texto", null], ["safe_area", "Márgenes de la TV", "Si se corta el borde, súbelo"],
-    ["reduce_motion", "Reducir movimiento", null], ["voice_tips", "Frases para Alexa", null],
+    ["reduce_motion", "Reducir movimiento", null], ["voice_tips", "Frases para Alexa", "Ejemplos de qué decirle, en pantalla"],
     ["sounds", "Sonidos", null], ["haptics", "Vibración del mando", null],
     ["screensaver_minutes", "Protector de pantalla", "El mosaico de Para ti tras ese rato sin usarla"]] },
   sessions: { title: "Juegos y videos", icon: "gamepad", hint: "Qué se cierra solo y cuándo", options: [
@@ -624,13 +624,15 @@ export function settingsPage(page, settings) {
     return {
       title: "Cuentas", crumb: "Cuentas",
       options: [
-        { icon: "trailer", label: "Stremio", value: settings.stremio_linked ? "Conectada" : "Conectar",
+        { icon: "trailer", mark: "img/consoles/stremio.svg", label: "Stremio", value: settings.stremio_linked ? "✓ Conectada" : "Conectar",
+          ok: !!settings.stremio_linked,
           command: { type: settings.stremio_linked ? "stremio-account" : "stremio-login" },
           hint: settings.stremio_linked ? "Seguir viendo y fuentes" : "Para películas y series" },
-        settings.trakt?.configured ? { icon: "spark", label: "Trakt", value: settings.trakt.linked ? "Conectada" : "Conectar",
+        settings.trakt?.configured ? { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: settings.trakt.linked ? "✓ Conectada" : "Conectar",
+          ok: !!settings.trakt.linked,
           command: { type: settings.trakt.linked ? "trakt-account" : "trakt-link" },
           hint: settings.trakt.linked ? scrobbleHint(settings.trakt.scrobble) : "Listas y recomendaciones" }
-          : settings.trakt && { icon: "spark", label: "Trakt", value: "Configurar", hint: "Primero, la aplicación de Trakt",
+          : settings.trakt && { icon: "spark", mark: "img/ratings/trakt.svg", label: "Trakt", value: "Configurar", hint: "Primero, la clave de Trakt (abajo)",
             command: { type: "keys", service: "trakt" } },
         phoneRow(settings.companion_seen),
         settings.para_ti && { heading: true, label: "Claves de Para ti" },
@@ -657,7 +659,7 @@ export function settingsPage(page, settings) {
  */
 export const KEY_FORMS = {
   tmdb: {
-    service: "tmdb", label: "TMDB", icon: "movie", hint: "Plataformas y sinopsis en español",
+    service: "tmdb", label: "TMDB", icon: "movie", mark: "img/ratings/tmdb.svg", hint: "Plataformas y sinopsis en español",
     title: "Clave de TMDB", submitLabel: "Guardar",
     lead: "En themoviedb.org crea una cuenta, entra a Ajustes › API, pide una clave (uso personal) y copia la «Clave de la API».",
     fields: [{ name: "key", label: "Clave de la API de TMDB", secret: true }],
@@ -669,8 +671,8 @@ export const KEY_FORMS = {
     fields: [{ name: "key", label: "Clave de RAWG", secret: true }],
   },
   trakt: {
-    service: "trakt", label: "Aplicación de Trakt", icon: "spark", hint: "Tendencias, tus listas y recomendaciones",
-    title: "Aplicación de Trakt", submitLabel: "Guardar",
+    service: "trakt", label: "Clave de Trakt", icon: "spark", mark: "img/ratings/trakt.svg", hint: "Para conectar Trakt: tendencias, tus listas y recomendaciones",
+    title: "Clave de Trakt", submitLabel: "Guardar",
     lead: "En developer.trakt.tv crea una aplicación (en «Redirect URIs» escribe https://localhost; lo demás puede quedar vacío) y copia su Client ID. Las aplicaciones nuevas no tienen Client Secret: déjalo vacío.",
     fields: [{ name: "id", label: "Client ID", secret: false }, { name: "secret", label: "Client Secret (si tu aplicación tiene)", secret: true, optional: true }],
   },
@@ -682,18 +684,18 @@ export function phoneRow(seen, now = Date.now()) {
   const fresh = Number(seen) > 0 && now / 1000 - Number(seen) < 60 * 86400;
   if (!fresh) return { icon: "phone", label: "iPhone", value: "Conectar", hint: "Con un código QR", command: { type: "phone-link" } };
   const ago = shortAgo(seen, now);
-  return { icon: "phone", label: "iPhone", value: "Conectado", command: { type: "phone-link" },
+  return { icon: "phone", label: "iPhone", value: "✓ Conectado", ok: true, command: { type: "phone-link" },
     hint: ago === "ahora" ? "Lo usaste ahora" : ago === "ayer" ? "Lo usaste ayer" : `Lo usaste hace ${ago}` };
 }
 
-/** Un renglón de Cuentas: «Agregar» o «Lista» (escrita aquí: cambiar o quitar; o en config.yaml: se puede escribir otra).
+/** Un renglón de Cuentas: «Agregar» o «✓ Guardada» (escrita aquí: cambiar o quitar; o en config.yaml: se puede escribir otra).
  *  Antes decía «En config.yaml», que no le dice nada a quien no lo armó. */
 function keyRow(service, status) {
   const form = KEY_FORMS[service];
   const ready = service === "trakt" ? !!status.trakt?.configured : !!status[service];
   const saved = (status.saved || []).includes(service);
-  return { icon: form.icon, label: form.label, hint: form.hint,
-    value: saved || ready ? "Lista" : "Agregar",
+  return { icon: form.icon, mark: form.mark, label: form.label, hint: form.hint,
+    value: saved || ready ? "✓ Guardada" : "Agregar", ok: saved || ready,
     command: saved ? { type: "keys-menu", service } : { type: "keys", service } };
 }
 

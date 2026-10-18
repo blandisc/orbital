@@ -36,6 +36,7 @@
   --color-danger: var(--palette-red-400);
   --color-warning: var(--palette-amber-300);
   --color-live: var(--palette-teal-300);
+  --color-ok: var(--palette-teal-300); /* un estado que ya está bien: «✓ Conectada», «✓ Guardada» */
   --color-brand-moon: var(--palette-teal-300); /* la luna de «orbital»: el único color fijo de la marca (la luna del logotipo) */
   /* El nombre de una plataforma dentro de un motivo del mosaico («N.º 1 en Prime Video»): su color de marca, en el tono
      que se lee sobre la insignia clara de la pieza enfocada (≥ 4,5:1 sobre el papel). Solo para ese nombre. */

@@ -144,7 +144,7 @@ letras que bajan: g, p, j, y).
 | `sources` | Elegir fuente de un video. |
 | `search` | Buscar con el teclado en pantalla y resultados vivos. |
 | `login` | Conectar Stremio con el teclado en pantalla. |
-| `sheet` | Hojas laterales (menús, ajustes, atajos). Encabezados de sección (`heading: true`) que no se enfocan; se desplaza con el foco. |
+| `sheet` | Hojas laterales (menús, ajustes, atajos). Encabezados de sección (`heading: true`) que no se enfocan; se desplaza con el foco. Una cuenta o servicio lleva su logotipo real (`mark`: Stremio, Trakt, TMDB) en lugar del ícono, y un estado que ya está bien (`ok`: «✓ Conectada», «✓ Guardada») va en `--color-ok`. |
 | `toast` | Aviso corto arriba a la derecha (nunca encima de una hoja). |
 | `launch-overlay` | Pantalla de carga al abrir algo. |
 | `viewer` | Visor de capturas. |
