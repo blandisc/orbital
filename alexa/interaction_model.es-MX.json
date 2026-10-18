@@ -24,6 +24,33 @@
           "samples": []
         },
         {
+          "name": "FreeTextIntent",
+          "slots": [
+            {
+              "name": "query",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "por favor {query}",
+            "{query} por favor",
+            "quiero que {query}",
+            "necesito que {query}",
+            "puedes {query}",
+            "podrías {query}",
+            "me ayudas a {query}",
+            "ayúdame a {query}",
+            "haz que {query}",
+            "oye {query}",
+            "a ver {query}",
+            "intenta {query}",
+            "trata de {query}",
+            "me gustaría {query}",
+            "hazme el favor de {query}",
+            "te pido que {query}"
+          ]
+        },
+        {
           "name": "LaunchGameIntent",
           "slots": [
             {

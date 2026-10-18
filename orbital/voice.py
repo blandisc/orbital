@@ -333,10 +333,31 @@ _CLITIC_VERBS = {
 }
 
 
+# «Quiero que ABRAS Hades», «necesito que PONGAS el canal de los Simpson», «puedes subir el volumen»: lo que va después de
+# una cortesía. El subjuntivo de tú (y casi todos los infinitivos) no se entendía (sí «ponga»): se lleva al imperativo.
+_LEAD_IN = re.compile(r"^(?:(?:quiero|necesito|me gustaria|te pido|quisiera)\s+que|(?:puedes|podrias|podras|me puedes|me podrias)"
+                      r"|(?:hazme el favor de|ayudame a|me ayudas a|trata de|intenta))\s+")
+_TU = {"abras": "abre", "pongas": "pon", "subas": "sube", "bajes": "baja", "quites": "quita", "adelantes": "adelanta",
+       "atrases": "atrasa", "regreses": "regresa", "cierres": "cierra", "sigas": "sigue", "continues": "continua",
+       "busques": "busca", "reproduzcas": "reproduce", "juegues": "juega", "inicies": "inicia", "lances": "lanza",
+       "pauses": "pausa", "pares": "para", "detengas": "deten", "vayas": "ve", "muestres": "muestra", "vuelvas": "vuelve",
+       "saltes": "salta", "cambies": "cambia", "enciendas": "enciende", "prendas": "prende", "apagues": "apaga",
+       "silencies": "silencia", "actives": "activa", "desactives": "desactiva", "sintonices": "sintoniza",
+       "recomiendes": "recomienda", "avances": "avanza", "digas": "di", "captures": "captura", "tomes": "toma",
+       # El infinitivo después de «puedes…» («¿puedes subir el volumen?»): antes solo se entendían poner, abrir y buscar.
+       "subir": "sube", "bajar": "baja", "quitar": "quita", "adelantar": "adelanta", "atrasar": "atrasa", "regresar": "regresa",
+       "pausar": "pausa", "parar": "para", "detener": "deten", "cambiar": "cambia", "saltar": "salta", "silenciar": "silencia",
+       "activar": "activa", "desactivar": "desactiva", "prender": "prende", "encender": "enciende", "apagar": "apaga",
+       "sintonizar": "sintoniza", "recomendar": "recomienda", "avanzar": "avanza", "capturar": "captura", "tomar": "toma"}
+
+
 def _plain(clean: str) -> str:
+    clean = _LEAD_IN.sub("", clean, count=1)
     words = clean.split()
     while words and words[0] in ("le", "me", "se", "nos", "que"):
         words = words[1:]
+    if words:
+        words[0] = _TU.get(words[0], words[0])
     text = " ".join(_CLITIC_VERBS.get(w, w) for w in words)
     text = re.sub(r"\b(?:tantito|un poquito|un poco|mas)$", "", text).strip()
     text = re.sub(r"^(sube|suba|baja|baje)\s+al\s+volumen", r"\1 el volumen", text)
@@ -364,6 +385,8 @@ _SAY_AS = [
     (re.compile(r"^ver\s+(?!a\b)"), "quiero ver "),
     (re.compile(r"^(regresale|regresele|atrasale|adelantale|adelantele)\s+(?:tantito|un poquito|un poco)$"), r"\1"),
     (re.compile(r"^(?:callate|callese|silenciala|silencialo|sin sonido)$"), "silencio"),
+    # «ve al inicio», «regresa al inicio»: la contracción no se entendía (sí «ve a inicio»).
+    (re.compile(r"^(?:ve|vete|vaya|ir|regresa|regrese|vuelve|vuelva)\s+al\s+(?:inicio|principio)$"), "ve a inicio"),
     (re.compile(r"^cuanto\s+(?:tiempo\s+)?(?:le\s+)?(?:falta|queda)\s+(?:para\s+que\s+)?(?:acabe|termine|se acabe)$"), "cuanto falta"),
 ]
 # Episodios como se dicen: «quinta temporada», «el quinto capítulo», «T5 E3», «s05e03», «5x03».
@@ -884,6 +907,11 @@ class VoiceController:
         if "error" in box:
             raise box["error"]
         return box.get("value")
+
+    def _free_text_intent(self, slots: dict) -> VoiceResult:
+        """Lo que Alexa no supo acomodar en otro intent («por favor pon…»): la frase tal cual, con el intérprete de texto
+        (la skill la manda como `text`; esto es por si llega como intent)."""
+        return self.handle_text(slots.get("query") or "")
 
     def _upcoming_intent(self, slots: dict) -> VoiceResult:
         """«¿Qué sale hoy?»: lo que sale de las series que sigues (Trakt), hoy y los próximos días."""

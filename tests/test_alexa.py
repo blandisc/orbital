@@ -387,3 +387,54 @@ def test_iphone_choosing_a_series_opens_its_page_on_the_tv(public, monkeypatch):
                     headers={"Authorization": "Bearer secreto"})
     assert r.status_code == 200 and r.json()["opened"] == "title"
     assert {"type": "open-view", "view": {"serie": "tt0386676"}, "message": "Abriendo The Office"} in events
+
+
+def test_every_voice_request_is_written_down_to_find_what_fails(public, tmp_path):
+    """voz.log: qué se dijo, qué entendió Orbital y si salió bien (antes no quedaba rastro de lo que fallaba)."""
+    from orbital import voice_log
+
+    client, _ = public
+    auth = {"Authorization": "Bearer secreto"}
+    client.post("/api/voice", json={"text": "abre hades"}, headers=auth)
+    client.post("/api/voice", json={"text": "blablá sin sentido"}, headers=auth)
+    entries = voice_log.read()
+    assert [e["text"] for e in entries] == ["abre hades", "blablá sin sentido"]
+    assert entries[0]["ok"] is True and entries[0]["source"] == "alexa" and entries[0]["ms"] >= 0
+    assert entries[1]["ok"] is False
+
+
+def test_what_alexa_could_not_fit_goes_to_the_console_as_free_text(skill, monkeypatch):
+    """«Alexa, pídele a Orbital que por favor ponga Interstellar»: antes caía en «No entendí» sin preguntarle a la consola."""
+    sent = []
+
+    def fake_urlopen(req, timeout):
+        sent.append(json.loads(req.data))
+        return io.BytesIO(json.dumps({"ok": True, "speech": "Poniendo Interstellar."}).encode())
+
+    monkeypatch.setattr(skill.urllib.request, "urlopen", fake_urlopen)
+    out = skill.lambda_handler(intent_event("FreeTextIntent", {"query": {"name": "query", "value": "ponga Interstellar"}}))
+    assert sent == [{"text": "ponga Interstellar"}]
+    assert out["response"]["outputSpeech"]["text"] == "Poniendo Interstellar."
+    out = skill.lambda_handler(intent_event("FreeTextIntent", {"query": {"name": "query"}}))
+    assert "No entendí" in out["response"]["outputSpeech"]["text"] and len(sent) == 1  # vacío: nada que mandar
+
+
+def test_a_quick_tunnel_hiccup_is_retried_once(skill, monkeypatch):
+    calls = []
+
+    def flaky(req, timeout):
+        calls.append(1)
+        if len(calls) == 1:
+            raise skill.urllib.error.URLError("el túnel despertando")
+        return io.BytesIO(json.dumps({"ok": True, "speech": "Abriendo Hades."}).encode())
+
+    monkeypatch.setattr(skill.urllib.request, "urlopen", flaky)
+    out = skill.lambda_handler(intent_event("LaunchGameIntent", {"game": {"name": "game", "value": "hades"}}))
+    assert out["response"]["outputSpeech"]["text"] == "Abriendo Hades." and len(calls) == 2
+
+
+def test_the_free_text_intent_is_in_the_model_with_carrier_phrases():
+    lm = MODEL["interactionModel"]["languageModel"]
+    free = next(i for i in lm["intents"] if i["name"] == "FreeTextIntent")
+    assert free["slots"] == [{"name": "query", "type": "AMAZON.SearchQuery"}]
+    assert "por favor {query}" in free["samples"] and all("{query}" in s and s != "{query}" for s in free["samples"])

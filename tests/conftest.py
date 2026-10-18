@@ -327,3 +327,11 @@ def _no_real_studio_logos(monkeypatch):
     from orbital.foryou import ForYou
 
     monkeypatch.setattr(ForYou, "_studio_logos", lambda self: {})
+
+
+@pytest.fixture(autouse=True)
+def _voice_log_in_tmp(monkeypatch, tmp_path):
+    """El registro de la voz de las pruebas va a una carpeta temporal, nunca al voz.log de verdad."""
+    from orbital import voice_log
+
+    monkeypatch.setattr(voice_log, "default_path", lambda: tmp_path / "voz.log")
