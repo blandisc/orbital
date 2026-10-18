@@ -27,7 +27,8 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-body[data-input="gamepad"] { cursor: none; }
+/* El cursor solo mientras se mueve el ratón (input.js pone data-pointer y lo quita a los 3 s); también sobre botones. */
+body:not([data-pointer]), body:not([data-pointer]) * { cursor: none; }
 
 button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
 

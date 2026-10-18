@@ -74,6 +74,9 @@ export const usablePad = (pad) => !!pad && pad.mapping === "standard";
 /** Un stick se cuenta en el centro (para «armarlo») por debajo de esto. */
 export const STICK_REST = .2;
 
+/** ms quieto el ratón antes de esconder el cursor. */
+export const POINTER_IDLE = 3000;
+
 /** Acciones activas según el estado de los mandos (botones + stick izquierdo). `memory` guarda
  * la dirección del stick de cada mando entre frames (para la histéresis) y si ya se le vio en el centro.
  *
@@ -205,6 +208,14 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
   // saltaba entre "A" y "Enter" todo el tiempo.
   let lastPad = -Infinity;
   let mouseFrom = null;
+  // El cursor solo se ve mientras mueves el ratón: a los 3 s quieto se esconde, en cualquier modo (antes solo con el
+  // mando: al mover el ratón la leyenda pasaba a teclado y el cursor se quedaba en la tele).
+  let pointerTimer = 0;
+  document.addEventListener("mousemove", () => {
+    document.body.dataset.pointer = "on";
+    clearTimeout(pointerTimer);
+    pointerTimer = setTimeout(() => { delete document.body.dataset.pointer; }, POINTER_IDLE);
+  }, { passive: true });
   document.addEventListener("mousemove", (event) => {
     const now = performance.now();
     if (now - lastTouch < 1000 || now - lastPad < 2000) { mouseFrom = null; return; }
