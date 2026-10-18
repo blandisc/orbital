@@ -1142,8 +1142,14 @@ function onSwipe({ r = state.focus.r, dc = 0, dr = 0 }) {
 }
 
 function pick(r, c) {
-  // Ratón/táctil: el primer toque selecciona, el segundo abre.
-  if (r === state.focus.r && c === state.focus.c) return launch(current());
+  // Ratón/táctil: el primer toque selecciona, el segundo abre, igual que A: una lista o un género abren su lista (antes
+  // se trataban como un juego y, con uno abierto, preguntaba «¿Cerrar Hades? Para abrir Óscar»).
+  if (r === state.focus.r && c === state.focus.c) {
+    const item = current();
+    if (item?.source === "genre") return openGenre(item);
+    if (item?.source === "collection") return openCollection(item);
+    return launch(item);
+  }
   setFocus(r, c);
 }
 

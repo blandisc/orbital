@@ -55,6 +55,11 @@ SHOWS = {
 }
 M, S = MOVIES, SHOWS
 
+if __import__("os").environ.get("ORBITAL_DEMO_LONG") == "1":  # pruebas: nombres larguísimos (¿algo se corta o se encima?)
+    for n, entry in enumerate([*MOVIES.values(), *SHOWS.values()]):
+        if n % 3 == 0:
+            entry["title"] = f"{entry['title']}: La Saga Completa en Versión Extendida del Director"
+
 
 class DemoTrakt:
     configured = True

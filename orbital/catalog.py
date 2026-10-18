@@ -328,6 +328,12 @@ class Catalog:
             self.emulators = detect.merge(self.config.emulators, result.emulators)
             self.detected = result.found
         self.emulators += self._esde_emulators()
+        if not self.esde and self.config.detect.roms:
+            # Sin ES-DE: cada consola en su subcarpeta de tu carpeta de ROMs (la misma convención: switch, gc, xbox360…).
+            roms = Path(expand(self.config.detect.roms))
+            for emu in self.emulators:
+                if not emu.rom_dirs and emu.system:
+                    emu.rom_dirs = [str(roms / emu.system)]
         for emu, alternatives in emulators.split_alternatives(self.emulators):
             try:
                 found += emulators.scan(emu, self.esde, alternatives, self.media)

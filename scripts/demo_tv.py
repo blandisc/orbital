@@ -34,6 +34,8 @@ CHANNELS = [
     ("Canal Educativo", "Education", "720p"), ("Ciencia Hoy", "Education;Science", "720p"),
     ("Sin Categoría Uno", "Undefined", "480p"), ("Sin Categoría Dos", "Undefined", "720p"),
 ]
+if __import__("os").environ.get("ORBITAL_DEMO_LONG") == "1":  # pruebas: nombres larguísimos
+    CHANNELS = [(f"{n} Internacional Señal Premium en Alta Definición" if i % 3 == 0 else n, c, q) for i, (n, c, q) in enumerate(CHANNELS)]
 SHAKY = "Frontera TV"  # ya falló una vez: sale al final de su lista, atenuado y con su aviso (con otro fallo se ocultaría)
 COLORS = [(224, 82, 99), (66, 133, 244), (244, 180, 0), (15, 157, 88), (171, 71, 188), (255, 112, 67)]
 
