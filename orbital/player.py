@@ -65,6 +65,8 @@ from .playback import (  # noqa: F401 - el resto de Orbital y las pruebas las pi
     LIVE_SETTLE,
     LIVE_STARTUP_TIMEOUT,
     LIVE_USER_AGENT,
+    MOUSE_SCRIPT,
+    MOUSE_SCRIPT_NAME,
     OSD_STYLE,
     RB,
     RECAP,

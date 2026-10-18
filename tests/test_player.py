@@ -902,3 +902,35 @@ def test_subtitles_from_the_internet_are_downloaded_apart_and_mpv_gets_the_file(
     p.current = player.Playback("Otro video", None, 0, {})
     pending[0]()
     assert len(mpv.sent) == sent  # llegó cuando ya era otro video: no se le pone
+
+
+def test_dragging_the_knob_with_the_mouse_moves_through_the_video():
+    """Click en la barra y, sin soltar, arrastrar: el video busca mientras arrastras (a cuadros clave) y exacto al soltar."""
+    from orbital import player_ui
+
+    player_ui.set_touch(False)
+    p, mpv = make_player()
+    p.SCRUB_EVERY = 0
+    p._on_mpv_message(["orbital-tap", "960", "300", "1920", "1080"])  # los botones (y la barra que se toca)
+    bar = next(t for t in player_ui.targets["hud"] if isinstance(t[4], tuple) and t[4][0] == "seek")
+    _, x0, width = bar[4]
+    y = bar[1] + bar[3] / 2
+    sx = lambda frac: str((x0 + width * frac) / player_ui.W * 1920)  # noqa: E731
+    sy = str(y / player_ui.H * 1080)
+    p._on_mpv_message(["orbital-tap", sx(.5), sy, "1920", "1080"])
+    p._on_mpv_message(["orbital-drag", sx(.25), sy, "1920", "1080"])
+    assert any(c[0] == "seek" and c[2] == "absolute+keyframes" and abs(c[1] - 1500) < 2 for c in mpv.sent)
+    p._on_mpv_message(["orbital-drop", sx(.75), sy, "1920", "1080"])
+    assert mpv.sent[-1][0] == "seek" and mpv.sent[-1][2] == "absolute" and abs(mpv.sent[-1][1] - 4500) < 2
+    sent = len(mpv.sent)
+    p._on_mpv_message(["orbital-drag", sx(.1), sy, "1920", "1080"])  # ya soltaste: moverlo no busca
+    assert not any(c[0] == "seek" for c in mpv.sent[sent:])
+
+
+def test_mpv_loads_the_mouse_script_next_to_the_bindings(tmp_path):
+    conf = tmp_path / "mpv-input.conf"
+    conf.write_text("", encoding="utf-8")
+    (tmp_path / player.MOUSE_SCRIPT_NAME).write_text(player.MOUSE_SCRIPT, encoding="utf-8")
+    cmd = player.build_command("mpv.exe", "http://a", "T", bindings=str(conf))
+    assert f"--script={tmp_path / player.MOUSE_SCRIPT_NAME}" in cmd
+    assert 'mp.add_forced_key_binding("MBTN_LEFT"' in player.MOUSE_SCRIPT and "orbital-drop" in player.MOUSE_SCRIPT

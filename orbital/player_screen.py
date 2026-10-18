@@ -407,14 +407,38 @@ class PlayerScreen:
         if len(args) >= 2 and args[0] == "orbital-key":
             self.key(args[1])
             return
-        if not args or args[0] != "orbital-tap" or len(args) < 5:
+        if not args or args[0] not in ("orbital-tap", "orbital-drag", "orbital-drop") or len(args) < 5:
             return
         try:
             x, y, w, h = (float(a) for a in args[1:5])
         except ValueError:
             return
         if w > 0 and h > 0:
-            self.tap(x / w * player_ui.W, y / h * player_ui.H)
+            x, y = x / w * player_ui.W, y / h * player_ui.H
+            if args[0] == "orbital-tap":
+                self._scrub = None
+                self.tap(x, y)
+            else:
+                self._drag(x, final=args[0] == "orbital-drop")
+
+    SCRUB_EVERY = .12  # s entre búsquedas mientras arrastras (la barra sí sigue al ratón en cada movimiento)
+
+    def _drag(self, x: float, final: bool) -> None:
+        """Arrastrar la bolita de la barra (tocaste la barra y no soltaste): la barra sigue al ratón y el video busca
+        (a cuadros clave mientras arrastras, para que responda; exacto al soltar)."""
+        scrub = getattr(self, "_scrub", None)
+        duration = self.mpv.get("duration")
+        if scrub is None or not isinstance(duration, (int, float)) or duration <= 0:
+            return
+        x0, width, last = scrub
+        target = max(0.0, min(1.0, (x - x0) / width)) * duration
+        now = time.monotonic()
+        if final or now - last >= self.SCRUB_EVERY:
+            self.mpv.command("seek", target, "absolute" if final else "absolute+keyframes")
+            self._ask("time-pos", target)
+            last = now
+        self._scrub = None if final else (x0, width, last)
+        self.show_hud(position=target)
 
     def tap(self, x: float, y: float) -> None:
         """Un toque en (x, y) del lienzo: lo que hay ahí (un botón, la barra, una opción del panel), o
@@ -460,6 +484,7 @@ class PlayerScreen:
                 self.mpv.command("seek", target, "absolute")
                 self._ask("time-pos", target)
                 self.show_hud(position=target)
+                self._scrub = (x0, width, time.monotonic())  # si no sueltas, arrastras la bolita (_drag)
             return
         if action == "quit":
             self._user_quit = True
