@@ -511,13 +511,16 @@ class ForYou:
         los premios, los estudios y los años. `collection` dice qué tarjeta lleva (award, studio, year) en la TV."""
         out: list[dict] = []
         if self.trakt.linked:
-            seed = self._last_watched()
-            if seed:
+            seeds = self._recent_seeds()
+            if seeds:
+                # Cada día, otro de tus últimos cinco (antes siempre el último: una semana con la misma serie, la misma
+                # fila). La TV deja elegir de cuál con `seeds` (la lista «because:<imdb>»), como el iPhone.
+                seed = self._seed_of_day(seeds)
+                card = lambda s: {"meta_id": s["imdb"], "kind": s["kind"], "title": s["title"],  # noqa: E731
+                                  "image": METAHUB.format(kind="poster", imdb=s["imdb"]), "watched_at": s.get("watched_at")}
                 out.append({"id": "because", "title": f"Porque viste {seed['title']}", "icon": "spark", "source": "Trakt",
-                            "meta": "Lo que Trakt relaciona con lo último que viste",
-                            "seed": {"meta_id": seed["imdb"], "kind": seed["kind"], "title": seed["title"],
-                                     "image": METAHUB.format(kind="poster", imdb=seed["imdb"]),
-                                     "watched_at": seed.get("watched_at")}})
+                            "meta": "Lo que Trakt relaciona con algo que viste hace poco",
+                            "seed": card(seed), "seeds": [card(s) for s in seeds]})
         if self.tmdb.configured and any(b in self.platforms() for b in FRESH_BRANDS):
             out.append({"id": "fresh", "title": "Nuevo en tus plataformas", "icon": "fresh", "source": "TMDB",
                         "meta": "Episodios de estas dos semanas y películas recién llegadas", "split": True})
@@ -613,12 +616,18 @@ class ForYou:
             threading.Thread(target=load, daemon=True, name="studio-logos").start()
         return found or {}
 
-    def _last_watched(self) -> dict | None:
+    def _recent_seeds(self) -> list[dict]:
+        """Tus últimos cinco títulos distintos (Trakt), para «Porque viste X»."""
         try:
-            return self.cache.get("trakt:last", MINE_TTL, self.trakt.last_watched)
+            return self.cache.get("trakt:recent", MINE_TTL, self.trakt.recent_watched)
         except SERVICE_ERRORS as exc:
             log.info("Para ti: no pude leer lo último que viste: %s", exc)
-            return None
+            return []
+
+    @staticmethod
+    def _seed_of_day(seeds: list[dict], today: date | None = None) -> dict:
+        """El de hoy: uno distinto cada día, en orden (mañana, el siguiente)."""
+        return seeds[(today or date.today()).toordinal() % len(seeds)]
 
     def _country(self) -> str:
         return {"MX": "México", "US": "Estados Unidos", "ES": "España", "AR": "Argentina", "CO": "Colombia",
@@ -703,10 +712,14 @@ class ForYou:
                 f"jw:{brand}", kind, charts_api.fetch_justwatch_chart(brand, self.region, kind)))
             name = charts_api.JUSTWATCH_PACKAGES[brand][1]
             return [self._chart_item(e, kind, name) for e in entries]
-        if list_id == "because":
-            seed = self._last_watched()
-            if not seed:
+        if list_id == "because" or list_id.startswith("because:"):
+            seeds = self._recent_seeds()
+            if not seeds:
                 return []
+            wanted = list_id.removeprefix("because:") if ":" in list_id else None
+            seed = next((s for s in seeds if s["imdb"] == wanted), None) if wanted else self._seed_of_day(seeds)
+            if seed is None:
+                raise KeyError(list_id)  # solo de tus últimos cinco
             why = f"Porque viste {seed['title']}" if len(seed["title"]) <= 18 else "Porque viste algo parecido"
             return [video_item(e, why) for e in self.cache.get(f"trakt:related:{seed['imdb']}", RECS_TTL,
                                                                 lambda: t.related(seed["kind"], seed["imdb"], 20))]

@@ -114,8 +114,9 @@ export function createHero({ onAction }) {
     const alt = alternativeRunner(item);
     // Películas y series: X abre la ficha (episodios, desde el principio, elegir fuente). Antes no se
     // enseñaba aquí y con el dedo no había forma de llegar a ella.
-    const sheet = isWatchable(item) && item.id !== runningId
-      ? (isSeries(item) || item.extra?.kind === "series" ? "Episodios" : "Ficha") : null;
+    // «Porque viste»: X pasa a otro de tus últimos cinco (como el iPhone, que deja elegir de cuál).
+    const sheet = item.collection?.type === "seed" && item.collection.seeds > 1 ? "Otro título"
+      : isWatchable(item) && item.id !== runningId ? (isSeries(item) || item.extra?.kind === "series" ? "Episodios" : "Ficha") : null;
     mount(actions,
       Button({ label: primaryLabel(item, runningId), glyph: glyphs.select, variant: "primary", art: true, onPress: () => onAction("select") }),
       sheet && Button({ label: sheet, glyph: glyphs.alt, onPress: () => onAction("alt") }),

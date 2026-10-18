@@ -138,3 +138,19 @@ test("una fila no repite su nombre en cada título: en «En tendencia», sin «E
   assert.equal(curatedItem(it, { rowTitle: "Recomendadas" }).extra.eyebrow, "En tendencia");
   assert.equal(curatedItem(it).extra.eyebrow, "En tendencia");
 });
+
+test("«Porque viste»: el de hoy, o el que elegiste con X entre tus últimos cinco", async () => {
+  const { becauseSeed, mediaRows } = await import("../../orbital/web/js/core/media-plan.js");
+  const s = (id, title) => ({ meta_id: id, kind: "series", title, image: `p/${id}` });
+  const because = { id: "because", title: "Porque viste Severance", seed: s("tt1", "Severance"), seeds: [s("tt1", "Severance"), s("tt2", "The Bear"), s("tt3", "Dark")] };
+  assert.equal(becauseSeed(because).listId, "because");
+  assert.equal(becauseSeed(because, "tt2").listId, "because:tt2");
+  assert.equal(becauseSeed(because, "tt9").listId, "because"); // ya no está entre los cinco: el de hoy
+  const items = { "because:": [{ meta_id: "r1", kind: "series", title: "Hoy" }], "because:tt2:": [{ meta_id: "r2", kind: "series", title: "Hacks" }] };
+  const row = mediaRows([because], items, { becauseChoice: "tt2" })[0];
+  assert.equal(row.title, "Porque viste The Bear");
+  assert.equal(row.items[0].collection.name, "The Bear");
+  assert.equal(row.items[1].meta_id, "r2");
+  assert.deepEqual(row.seeds.map((x) => x.on), [false, true, false]);
+  assert.equal(mediaRows([because], items)[0].items[1].meta_id, "r1");
+});

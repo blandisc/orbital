@@ -109,6 +109,11 @@ class DemoTrakt:
     def last_watched(self):
         return {**S["severance"], "watched_at": time.time() - 2 * 86400}
 
+    def recent_watched(self, limit=5):
+        """Tus últimos cinco (para «Porque viste», que cambia cada día entre ellos)."""
+        picks = [S["severance"], S["bear"], M["dune2"], S["dark"], S["shogun"]][:limit]
+        return [{**e, "watched_at": time.time() - (n + 2) * 86400} for n, e in enumerate(picks)]
+
     def calendar(self, start, days=15):
         """Estrenos de mentiras alrededor de hoy: uno esta noche, tres juntos de madrugada mañana (como Paramount+)…"""
         import datetime as dt

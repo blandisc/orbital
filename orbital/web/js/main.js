@@ -39,7 +39,7 @@ import { createState } from "./core/store.js";
 import { createDeferred } from "./core/deferred.js";
 import { storage } from "./core/storage.js";
 import { curatedItem, GENRE_SHELVES, genreRows, nextAiring, spotlightRow } from "./core/curation.js";
-import { fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows } from "./core/media-plan.js";
+import { becauseSeed, fetchPlan, GROUPS, groupJump, itemsOf, keyOf, mediaRows } from "./core/media-plan.js";
 import { genres as genreNames } from "./core/format.js";
 import { trimmedLogo } from "./core/foryou.js";
 
@@ -435,6 +435,7 @@ function applySettings(settings) {
 // ---------------------------------------------------------------- Inicio
 /** X en el Inicio: la ficha (videos) o el otro emulador (juegos). */
 function altLabel(item) {
+  if (item?.collection?.type === "seed" && item.collection.seeds > 1) return "Otro título";
   if (isWatchable(item)) return isSeries(item) || item.extra?.kind === "series" ? "Episodios" : "Ficha";
   const alt = alternativeRunner(item);
   return alt ? `Con ${alt.name}` : null;
@@ -811,6 +812,24 @@ let yearsLoaded = 0;
 let mediaFilter = storage.get("orbital.media.filter", "all"); // ☰ › Mostrar: Todo · Series · Películas
 const MEDIA_FILTERS = [["all", "Todo"], ["series", "Series"], ["movie", "Películas"]];
 
+// «Porque viste»: el que elegiste con X se queda hasta mañana (luego vuelve el del día, que ya es otro).
+const today = () => new Date().toLocaleDateString("sv");
+const becauseChoice = () => { const c = storage.get("orbital.because", null); return c?.day === today() ? c.imdb : null; };
+
+/** X en la tarjeta de «Porque viste»: el siguiente de tus últimos cinco; la fila se pone al día. */
+async function nextBecause() {
+  const because = mediaLists.find((l) => l.id === "because");
+  const { seed, seeds } = becauseSeed(because, becauseChoice());
+  if (seeds.length < 2) return false;
+  const next = seeds[(seeds.findIndex((s) => s.meta_id === seed?.meta_id) + 1) % seeds.length];
+  storage.set("orbital.because", { day: today(), imdb: next.meta_id });
+  sound.play("move");
+  const { listId } = becauseSeed(because, next.meta_id);
+  if (!mediaItems[keyOf(listId, null)]) mediaItems[keyOf(listId, null)] = await fetchList(listId, null);
+  buildCuration();
+  return true;
+}
+
 const fetchList = async (id, kind) => (await api.forYouList(id, kind).catch(() => ({ items: [] }))).items || [];
 async function fetchMany(wanted, into = mediaItems) {
   const queue = [...wanted];
@@ -834,6 +853,8 @@ async function loadCuration() {
     try {
       mediaLists = ((await api.forYou()).lists || []).filter((l) => l.group !== "games");
       const wanted = fetchPlan(mediaLists);
+      const chosen = becauseSeed(mediaLists.find((l) => l.id === "because"), becauseChoice()).listId;
+      if (chosen !== "because") wanted.push({ id: chosen, kind: null }); // el que elegiste hoy con X
       await fetchMany(wanted.filter((w) => !LATER(w)));
       buildCuration();
       await fetchMany(wanted.filter(LATER));
@@ -856,7 +877,7 @@ function buildCuration() {
   const spot = mediaLists.filter((l) => l.id === "chart:netflix" || l.id.startsWith("jw:") || (l.brand && l.source === "TMDB"));
   const spotlight = spotlightRow(spot, Object.fromEntries(spot.map((l) => [l.id, itemsOf(mediaItems, l)])));
   const genres = genreRows(mediaGenres)[0];
-  applyCuration([...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears }),
+  applyCuration([...(spotlight ? [{ ...spotlight, group: "spotlight" }] : []), ...mediaRows(mediaLists, mediaItems, { filter: mediaFilter, years: mediaYears, becauseChoice: becauseChoice() }),
     ...(genres?.id === "curated:genres" ? [{ ...genres, group: "genres" }] : [])]);
 }
 
@@ -1478,6 +1499,7 @@ function handleAction(action, { repeat = false } = {}) {
     case "search": return openSearch();
     case "alt": {
       if (isWatchable(item)) return openTitle(item); // X = la ficha, en todas las pantallas
+      if (item?.collection?.type === "seed" && item.collection.seeds > 1) return void nextBecause();
       const alt = alternativeRunner(item);
       if (alt) return launch(item, alt.id);
       sound.play("error"); // X sin nada que hacer: un "no" suave en vez de silencio

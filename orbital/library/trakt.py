@@ -349,16 +349,25 @@ class Trakt:
         rows = self._get(f"/{KINDS[kind]}/{imdb}/related", auth=False, limit=limit, extended="full")
         return [e for e in (entry(r, kind) for r in rows) if e] if isinstance(rows, list) else []
 
-    def last_watched(self) -> dict | None:
-        """Lo último que viste (una película, o la serie de tu último episodio), para «Porque viste X»."""
-        rows = self._get("/sync/history", limit=10, extended="full")
+    def recent_watched(self, limit: int = 5) -> list[dict]:
+        """Los últimos títulos distintos que viste (una película, o la serie de un episodio), el más reciente primero,
+        para «Porque viste X» (cambia cada día entre ellos, como el iPhone)."""
+        rows = self._get("/sync/history", limit=60, extended="full")
+        found: list[dict] = []
         for row in rows if isinstance(rows, list) else []:
             if not isinstance(row, dict):
                 continue
-            found = entry(row.get("movie"), "movie") if row.get("type") == "movie" else entry(row.get("show"), "series")
-            if found:
-                return {**found, "watched_at": _when(row.get("watched_at"))}
-        return None
+            e = entry(row.get("movie"), "movie") if row.get("type") == "movie" else entry(row.get("show"), "series")
+            if e and all(f["imdb"] != e["imdb"] for f in found):
+                found.append({**e, "watched_at": _when(row.get("watched_at"))})
+                if len(found) >= limit:
+                    break
+        return found
+
+    def last_watched(self) -> dict | None:
+        """Lo último que viste (una película, o la serie de tu último episodio)."""
+        recent = self.recent_watched(1)
+        return recent[0] if recent else None
 
     def calendar(self, start: str, days: int = 15) -> list[dict]:
         """Los episodios que salen de las series que sigues, desde `start` (AAAA-MM-DD, en hora universal) y `days` días:

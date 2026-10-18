@@ -790,3 +790,23 @@ def test_the_title_shows_imdb_tmdb_and_trakt_like_the_iphone(make_foryou, net, l
     assert fy.title_ratings("series", "nada") == {"imdb": None, "tmdb": None, "trakt": None}
     # Sin claves de TMDB ni Trakt: solo IMDb, y la ficha no truena.
     assert make_foryou(trakt_keys=False).title_ratings("movie", "tt1")["tmdb"] is None
+
+
+def test_because_you_watched_changes_every_day_among_your_last_five_and_you_can_pick(make_foryou, net):
+    """Como el iPhone: cada día, otro de tus últimos cinco títulos; la TV pide «because:<imdb>» para elegir otro."""
+    show = lambda title, imdb: {"type": "episode", "show": {"title": title, "year": 2020, "ids": {"imdb": imdb}}}  # noqa: E731
+    net.on("GET", r"/sync/history\?", (200, [show("Severance", "tt11280740"), show("Severance", "tt11280740"),  # repetida: una vez
+                                              {"type": "movie", "movie": {"title": "Anora", "year": 2024, "ids": {"imdb": "tt28607951"}}},
+                                              show("The Bear", "tt14452776")]))
+    net.on("GET", r"/shows/tt14452776/related", (200, [{"title": "Hacks", "year": 2021, "ids": {"imdb": "tt11815682"}}]))
+    fy = make_foryou(linked=True)
+    because = next(r for r in fy.lists() if r["id"] == "because")
+    assert [s["title"] for s in because["seeds"]] == ["Severance", "Anora", "The Bear"]
+    assert because["seeds"][1]["kind"] == "movie"
+    seeds = [{"imdb": s["meta_id"]} for s in because["seeds"]]
+    days = [fy._seed_of_day(seeds, foryou_mod.date.fromordinal(n))["imdb"] for n in range(738000, 738004)]
+    assert len(set(days[:3])) == 3 and days[3] == days[0]  # un día cada uno, y vuelve a empezar
+    assert because["seed"]["meta_id"] == fy._seed_of_day(seeds)["imdb"]  # hoy toca este
+    assert [i["title"] for i in fy.list_items("because:tt14452776")] == ["Hacks"]
+    with pytest.raises(KeyError):
+        fy.list_items("because:tt0000001")  # solo de tus últimos cinco
