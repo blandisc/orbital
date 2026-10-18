@@ -4,10 +4,12 @@ import Foundation
 public enum PlaybackRules {
     public static let startupTimeout: TimeInterval = 45      // s sin imagen: esa fuente no sirve, se prueba otra
     public static let saveEvery: TimeInterval = 60           // s entre guardados del avance en Stremio
+    public static let rememberChoiceAfter: Double = 60       // s vistos: desde ahí se recuerda la fuente y las pistas (como la TV)
     public static let upNextLookahead: TimeInterval = 180    // s antes del final: se busca ya el siguiente episodio
     public static let upNextAt: TimeInterval = 30            // s antes del final (o al empezar los créditos): tarjeta
     public static let upNextCountdown: TimeInterval = 8
     public static let stillWatchingAfter = 3                 // episodios seguidos sin tocar la pantalla → «¿Sigues viendo?»
+    public static let streamScrubInterval: UInt64 = 250_000_000   // ns entre búsquedas al arrastrar la barra de un video de internet
     public static let maxSourceRetries = 4                   // «otra fuente si falla»
     public static let skipSeconds: Double = 10               // los botones y el doble toque de ±10 s
     public static let fastForwardRate: Float = 2             // mantener el dedo en el gesto de 2×
@@ -216,7 +218,13 @@ public actor WatchService {
     }
 
     private func scrobble(_ event: ProgressEvent, _ phase: PlaybackPhase) async {
-        guard let trakt, trakt.linked, let target = TraktTarget(videoID: event.videoID, kind: event.kind), event.duration > 0 else { return }
+        guard let trakt, trakt.linked else { return }
+        guard let target = TraktTarget(videoID: event.videoID, kind: event.kind) else {
+            // Sin IMDb (un complemento con sus propios ids) Trakt no lo reconoce: se dice una vez, al empezar, en vez de callar.
+            if case .started = phase { scrobbleLog?.recordFailure("«\(Self.scrobbleTitle(event))» no tiene ficha de IMDb: Trakt no lo puede registrar.") }
+            return
+        }
+        guard event.duration > 0 else { return }
         let percent = min(100, max(0, event.position / event.duration * 100))
         let action: ScrobbleAction
         switch phase {

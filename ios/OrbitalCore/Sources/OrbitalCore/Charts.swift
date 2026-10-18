@@ -88,7 +88,7 @@ public actor Charts {
     public func netflix(kind: String) async throws -> [ChartEntry] {
         let kind = kind == "movie" ? "movie" : "series"
         let country = region().uppercased()
-        return try await cached("netflix:\(country):\(kind)", ttl: Self.netflixTTL) {
+        return try await cached("netflix2:\(country):\(kind)", ttl: Self.netflixTTL) {
             let base = Self.netflixPage(country: country, kind: kind)
             let latest = try await page(base)
             guard !latest.rows.isEmpty else { return [] }
@@ -165,7 +165,8 @@ public actor Charts {
             for (i, item) in marked.enumerated() {
                 let title = Self.showTitle(item.row.title)
                 group.addTask {
-                    if let tmdb, tmdb.configured { return (i, try? await tmdb.searchIMDb(kind: kind, title: title)) }
+                    // TMDB primero; si no lo encuentra (le pasaba a uno o dos del Top 10), Cinemeta: antes ese puesto se perdía.
+                    if let tmdb, tmdb.configured, let found = try? await tmdb.searchIMDb(kind: kind, title: title) { return (i, found) }
                     let metas = (try? await cinemeta.search(kind, query: title)) ?? []
                     return (i, Self.bestMatch(title, metas)?["id"]?.string)
                 }
@@ -188,9 +189,16 @@ public actor Charts {
         return title.replacingOccurrences(of: pattern, with: "", options: [.regularExpression, .caseInsensitive]).trimmingCharacters(in: .whitespaces)
     }
 
+    /// El que se llama igual (el más nuevo, si hay varios: un Top 10 es de ahora); si no, uno que contenga el nombre; si no,
+    /// el más nuevo de los primeros resultados (antes, el primero aunque fuera de hace 30 años).
     static func bestMatch(_ title: String, _ metas: [JSON]) -> JSON? {
         let target = fold(title)
-        return metas.first { fold($0["name"]?.string ?? "") == target } ?? metas.first
+        func year(_ m: JSON) -> Int { Int(CinemetaParsing.describe(m).year.prefix(4)) ?? 0 }
+        func newest(_ list: [JSON]) -> JSON? { list.max { year($0) < year($1) } }
+        let names = metas.map { fold($0["name"]?.string ?? "") }
+        if let exact = newest(zip(metas, names).filter { $0.1 == target }.map(\.0)) { return exact }
+        if let loose = newest(zip(metas, names).filter { $0.1.count >= 4 && ($0.1.contains(target) || target.contains($0.1)) }.map(\.0)) { return loose }
+        return newest(Array(metas.prefix(3)))
     }
 
     /// Para comparar títulos sin pensar en mayúsculas o signos (como `_fold` en la TV).

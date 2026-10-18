@@ -1,7 +1,7 @@
 import Foundation
 import OrbitalCore
 
-public struct CatalogItem: Equatable, Identifiable, Sendable {
+public struct CatalogItem: Equatable, Identifiable, Sendable, Codable {
     public var id: String { "\(kind):\(metaID)" }
     public var kind: String, metaID: String, title: String, originalTitle: String, poster: String?, year: String
 }
@@ -15,7 +15,17 @@ public final class CatalogModel: ObservableModel {
     public private(set) var error: String? { didSet { changed() } }
     private let services: Services
 
-    public init(_ services: Services) { self.services = services; super.init() }
+    /// La última copia de lo popular: Buscar la enseña al instante y la cambia cuando llega la de hoy.
+    static let cacheKey = "catalog-popular"
+    private struct Cache: Codable { var movies: [CatalogItem]; var series: [CatalogItem] }
+
+    public init(_ services: Services) {
+        self.services = services
+        super.init()
+        if let data = services.kv.data(Self.cacheKey), let cache = try? JSONDecoder().decode(Cache.self, from: data) {
+            movies = cache.movies; series = cache.series
+        }
+    }
 
     /// Cuántos de cada tipo se traducen para Buscar (la lista con puesto enseña 5, películas y series alternadas).
     static let translatedForSearch = 6
@@ -30,13 +40,16 @@ public final class CatalogModel: ObservableModel {
         guard !Task.isCancelled else { return }   // se fue de la pantalla a medias: se queda lo que ya había, sin error falso
         error = (movieMetas == nil && seriesMetas == nil) ? "No pude leer el catálogo de Stremio. Revisa tu conexión." : nil
         guard movieMetas != nil || seriesMetas != nil else { return }
+        // Sin copia anterior, lo de Cinemeta tal cual mientras se traduce; con copia, se queda la traducida (no parpadea).
         if movies.isEmpty { movies = Self.items("movie", movieMetas ?? []) }
         if series.isEmpty { series = Self.items("series", seriesMetas ?? []) }
         let top = Self.translatedForSearch
         async let tm = translated("movie", movieMetas ?? [], first: top), ts = translated("series", seriesMetas ?? [], first: top)
         let (newMovies, newSeries) = await (tm, ts)
         guard !Task.isCancelled else { return }
-        movies = newMovies; series = newSeries
+        if !newMovies.isEmpty { movies = newMovies }
+        if !newSeries.isEmpty { series = newSeries }
+        services.kv.set(Self.cacheKey, data: try? JSONEncoder().encode(Cache(movies: Array(movies.prefix(Self.translatedForSearch)), series: Array(series.prefix(Self.translatedForSearch)))))
     }
 
     /// Los géneros de «Explora» (nombres de Cinemeta, en inglés: la pantalla los traduce con `Vocabulary.genres`).

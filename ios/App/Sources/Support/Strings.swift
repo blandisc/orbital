@@ -1,12 +1,24 @@
 import Foundation
+import Synchronization
 import OrbitalCore
 
 /// Textos que no pasan por `Text(...)` (SwiftUI ya usa el idioma de la app en los `Text`). Se buscan en el
 /// catálogo `Localizable.xcstrings` con el idioma elegido en Ajustes, que puede ser distinto del del sistema.
 enum Strings {
     static func tr(_ key: String, language: String) -> String {
-        guard let path = Bundle.main.path(forResource: language, ofType: "lproj"), let bundle = Bundle(path: path) else { return key }
+        guard let bundle = bundle(language) else { return key }
         return bundle.localizedString(forKey: key, value: key, table: nil)
+    }
+
+    /// El paquete de cada idioma, buscado una sola vez (antes se buscaba en disco con cada texto).
+    private static let bundles = Mutex<[String: Bundle?]>([:])
+    private static func bundle(_ language: String) -> Bundle? {
+        bundles.withLock { cache in
+            if let hit = cache[language] { return hit }
+            let found = Bundle.main.path(forResource: language, ofType: "lproj").flatMap(Bundle.init(path:))
+            cache[language] = found
+            return found
+        }
     }
 
     /// Un texto que el modelo arma en español (un error, un aviso) en el idioma de la app. Los fijos son su clave; los que
@@ -100,10 +112,28 @@ enum Strings {
     /// «termina a las 23:21» / «ends at 11:21 PM» (como la TV): la hora (en el formato del idioma de la app) en que acabarías si empiezas ahora.
     static func endsAt(minutesLeft: Int, now: Date = Date(), language: String) -> String {
         let end = Vocabulary.endTime(minutesLeft: minutesLeft, now: now)
-        let time = end.formatted(Date.FormatStyle(date: .omitted, time: .shortened).locale(Locale(identifier: language)))
-        return String(format: tr("termina a las %@", language: language), time)
+        let time = clock(end, language: language)
+        // «a la 1:05», «a las 2:05» (en español la una va en singular).
+        let one = Calendar.current.component(.hour, from: end) % 12 == 1
+        return String(format: tr(one ? "termina a la %@" : "termina a las %@", language: language), time)
+    }
+
+    /// La hora en 12 horas, como la TV y como se dice en México: «9:05 p. m.» (en inglés, «9:05 PM»).
+    static func clock(_ date: Date, language: String) -> String {
+        let c = Calendar.current.dateComponents([.hour, .minute], from: date)
+        let h = c.hour ?? 0, m = c.minute ?? 0
+        let hour = h % 12 == 0 ? 12 : h % 12
+        let suffix = language.hasPrefix("en") ? (h < 12 ? "AM" : "PM") : (h < 12 ? "a. m." : "p. m.")
+        return String(format: "%d:%02d %@", hour, m, suffix)
     }
 
     /// «Película» / «Serie» en el idioma de la app.
     static func kind(_ kind: String, language: String) -> String { tr(kind == "movie" ? "Película" : "Serie", language: language) }
+
+    /// «45 min», «1 h», «1 h 12 min» (lo que llevas jugando, cuánto le queda a la batería).
+    static func duration(_ minutes: Int) -> String {
+        let (h, m) = Vocabulary.hoursAndMinutes(max(0, minutes))
+        if h == 0 { return "\(m) min" }
+        return m == 0 ? "\(h) h" : "\(h) h \(m) min"
+    }
 }

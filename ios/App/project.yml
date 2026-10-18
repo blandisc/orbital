@@ -48,6 +48,7 @@ targets:
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: AppIconNight   # Ajustes › Apariencia › Ícono: Cielo nocturno
         SWIFT_EMIT_LOC_STRINGS: YES
         LOCALIZATION_PREFERS_STRING_CATALOGS: YES
         STRING_CATALOG_GENERATE_SYMBOLS: NO
@@ -64,8 +65,9 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UIBackgroundModes: [audio, fetch, processing]   # audio: sigue sonando con la pantalla apagada y en PiP · fetch y processing: mirar lo que dejó la TV (mejor esfuerzo)
-        BGTaskSchedulerPermittedIdentifiers: [mx.iracheta.orbital.inbox]
+        BGTaskSchedulerPermittedIdentifiers: [mx.iracheta.orbital.inbox, mx.iracheta.orbital.releases]
         ITSAppUsesNonExemptEncryption: false
+        CADisableMinimumFrameDurationOnPhone: true   # 120 Hz en las pantallas ProMotion (la inercia del mosaico, el carrusel)
         NSSupportsLiveActivities: true          # descargas en la pantalla bloqueada y la Dynamic Island
         # El micrófono del control: le das órdenes a tu Orbital con la voz (como Alexa).
         NSMicrophoneUsageDescription: "Para darle órdenes de voz a tu Orbital, como a Alexa."
@@ -74,6 +76,21 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLName: com.example.orbital.ios.infuse-callback
             CFBundleURLSchemes: [orbital-ios]
+        # Abrir videos que te pasen (AirDrop, Archivos, «Abrir con…»): se copian a la app y se reproducen; si se reconoce cuál es
+        # (por el nombre del archivo), con sus subtítulos de OpenSubtitles.
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Video
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [public.movie, public.mpeg-4, com.apple.quicktime-movie, public.avi, org.matroska.mkv]
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: org.matroska.mkv
+            UTTypeDescription: Video Matroska
+            UTTypeConformsTo: [public.movie]
+            UTTypeTagSpecification:
+              public.filename-extension: [mkv]
+              public.mime-type: [video/x-matroska]
+        LSSupportsOpeningDocumentsInPlace: false
         # Para poder preguntar si Infuse está instalado.
         LSApplicationQueriesSchemes: [infuse]
         # Los complementos de Stremio pueden dar enlaces http (no solo https) para el video.

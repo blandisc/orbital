@@ -14,6 +14,8 @@ public struct PlayRequest: Sendable {
     public var year: String?
     public var meta: JSON?                 // la ficha original: de ahí salen el siguiente episodio y las duraciones
     public var fromStart = false
+    /// El segundo exacto donde empezar («Seguir en el iPhone» desde la TV); sin él, donde te quedaste.
+    public var startPosition: Double?
     public var localFile: URL?             // una descarga: se reproduce sin red
     public var localSubtitles: [URL] = []
     public var binge: String?              // el grupo de la fuente anterior (misma calidad e idioma)
@@ -66,6 +68,12 @@ public final class PlayerModel: ObservableModel {
     public private(set) var sourceChoices: [Source] = [] { didSet { changed() } }
     public private(set) var upNext: UpNext? { didSet { changed() } }
     public private(set) var skipIntroTo: Double? { didSet { changed() } }
+    /// Qué se salta con el botón: la intro o el resumen («Anteriormente en…»).
+    public enum SkipKind: Sendable, Equatable { case intro, recap }
+    public private(set) var skipKind: SkipKind = .intro { didSet { changed() } }
+    /// Las marcas de la comunidad (IntroDB) del video que suena: intro, resumen y créditos.
+    public private(set) var segments: SkipSegments? { didSet { changed() } }
+    private var segmentsFor: String?
     public private(set) var stillWatchingPrompt = false { didSet { changed() } }
     public private(set) var notice: PlayerNotice? { didSet { changed() } }
     /// Velocidad de reproducción elegida (sigue igual en el siguiente episodio y al cambiar de fuente).
@@ -101,6 +109,9 @@ public final class PlayerModel: ObservableModel {
     private var knownSubtitleIDs = Set<Int>()
     private var preloadedNext = false
     private var upNextDeadline: Date?
+    private var lastTick: Date?
+    /// El panel de ajustes del video está abierto (la tarjeta de «Siguiente» no se ve).
+    public var panelOpen = false
     private var upNextDismissed = false
     private var autoAdvances = 0
     private var reachedEnd = false
@@ -112,14 +123,18 @@ public final class PlayerModel: ObservableModel {
     private var closing = false
     private var choicesAt = Date.distantPast
     private var nextLocal: LocalEpisode?
+    private let skipSegments: @Sendable (String) async -> SkipSegments?
+    private let scareMap: @Sendable (String, String) async -> [JumpScare]?
     static let choicesLifetime: TimeInterval = StreamFinder.cacheSeconds   // los enlaces de Real-Debrid caducan
 
     public init(engine: PlayerEngine, finder: StreamFinder, watch: WatchService, titlePrefs: TitlePreferences, settings: SettingsStore,
                 clock: @escaping @Sendable () -> Date = { Date() }, onCellular: @escaping @Sendable () -> Bool = { false },
                 episodeLabel: @escaping @Sendable (Int, Int) -> String = { "T\($0) · E\($1)" },
-                localEpisode: @escaping @Sendable (String, String) async -> LocalEpisode? = { _, _ in nil }) {
+                localEpisode: @escaping @Sendable (String, String) async -> LocalEpisode? = { _, _ in nil },
+                skipSegments: @escaping @Sendable (String) async -> SkipSegments? = { _ in nil },
+                scareMap: @escaping @Sendable (_ imdb: String, _ title: String) async -> [JumpScare]? = { _, _ in nil }) {
         self.engine = engine; self.finder = finder; self.watch = watch; self.titlePrefs = titlePrefs; self.settings = settings
-        self.clock = clock; self.onCellular = onCellular; self.episodeLabel = episodeLabel; self.localEpisode = localEpisode; self.lastSave = clock()
+        self.clock = clock; self.onCellular = onCellular; self.episodeLabel = episodeLabel; self.localEpisode = localEpisode; self.skipSegments = skipSegments; self.scareMap = scareMap; self.lastSave = clock()
         super.init()
     }
 
@@ -152,11 +167,17 @@ public final class PlayerModel: ObservableModel {
         upNext = nil; upNextDeadline = nil; upNextDismissed = false; skipIntroTo = nil; reachedEnd = false; finalReported = false
         notice = nil; attempts = 0; lastSave = clock(); snapshot = EngineSnapshot(state: .loading); source = nil; sourceChoices = []
         acceptingSnapshots = false; retrying = false; nextLocal = nil; choicesAt = .distantPast
+        // Lo encontrado «En internet» y el mapa de sustos eran del video anterior.
+        foundSubtitles = nil; addedSubtitleURLs = []; subtitleSearchFailed = false; scares = nil
+        Task { [weak self] in await self?.loadScares() }
     }
 
     /// Justo antes de cargar: de aquí en adelante lo que diga el motor es del video nuevo.
     private func startLoading() {
+        loadSegmentsIfNeeded()
         acceptingSnapshots = true; retrying = false; hasPlayed = false; tracksApplied = false
+        // Otra fuente: el subtítulo externo (OpenSubtitles) se vuelve a sumar; antes se perdía al cambiar de fuente.
+        addedExternalSubtitle = false; knownSubtitleIDs = []
         scrobbleStarted = false   // otra carga (otra fuente, otro episodio): cuando suene, Trakt recibe el avance donde va
         startupDeadline = clock().addingTimeInterval(PlaybackRules.startupTimeout)
     }
@@ -166,7 +187,7 @@ public final class PlayerModel: ObservableModel {
         guard let request else { return }
         if let file = request.localFile {
             var start = startAt ?? 0
-            if startAt == nil && !request.fromStart { start = await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) }
+            if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) } }
             guard mine == generation, !closing else { return }
             startLoading()
             do { try await loadVideo(file, at: start) } catch { fail("No pude abrir el archivo descargado.") }
@@ -180,13 +201,16 @@ public final class PlayerModel: ObservableModel {
                 choicesAt = clock()
                 guard mine == generation, !closing else { return }
                 if let chosen = request.sourceIndex, failedSources.isEmpty, let pick = sourceChoices.first(where: { $0.index == chosen }) { found = pick }
+                // «Continuar»: la fuente con la que lo dejaste, si sigue ahí (como en la TV).
+                else if failedSources.isEmpty, !request.fromStart, let key = titlePrefs.resumeChoice(metaID: request.metaID, videoID: request.videoID)?.source,
+                        let pick = sourceChoices.first(where: { $0.key == key }) { found = pick }
                 else { found = try await finder.best(kind: request.kind, videoID: request.videoID, prefs: langs.prefs, binge: request.binge, skip: failedSources) }
             } catch { guard mine == generation else { return }; return fail("No pude pedir las fuentes: \(error)") }
             guard mine == generation, !closing else { return }
             guard let found else { return fail(failedSources.isEmpty ? "No hay fuentes de Real-Debrid para este título." : "Ninguna fuente funcionó.") }
             source = found
             var start = startAt ?? 0
-            if startAt == nil && !request.fromStart { start = await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) }
+            if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) } }
             guard mine == generation, !closing else { return }
             guard let url = found.playbackURL else { failedSources.insert(found.index); continue }
             startLoading()
@@ -241,7 +265,8 @@ public final class PlayerModel: ObservableModel {
     /// pausar → `pause`; volver a sonar, aunque sea tras pasar por «cargando» (pausa, salto y seguir), → `start`; y un salto grande → `start`
     /// con el avance nuevo (su «Viendo ahora» calcula cuándo terminas con el último aviso).
     private func scrobbleIfNeeded(_ s: EngineSnapshot) async {
-        guard let known = event()?.duration, known > 0 else { return }
+        // Ya se dijo «terminé» (p. ej. «¿Sigues viendo?» pausa después): una pausa ahí dejaría en Trakt un «en pausa» de algo visto.
+        guard !finalReported, let known = event()?.duration, known > 0 else { return }
         if !scrobbleStarted {
             guard s.state == .playing else { return }
             scrobbleStarted = true; scrobblePlaying = true; rescrobbleAfterSeek = false
@@ -259,10 +284,13 @@ public final class PlayerModel: ObservableModel {
     public func tick() async {
         guard phase != .closed, !closing else { return }
         let now = clock()
+        defer { lastTick = now }
         if let deadline = startupDeadline, now >= deadline, !hasPlayed, phase == .preparing, !retrying { return await retryWithAnotherSource()?.value ?? () }
         if snapshot.state == .playing {
             if now.timeIntervalSince(lastSave) >= PlaybackRules.saveEvery { await report(.tick) }
             if var card = upNext, let deadline = upNextDeadline {
+                // Con el panel de ajustes abierto la tarjeta no se ve: la cuenta se detiene (no cambia de episodio a escondidas).
+                if panelOpen { upNextDeadline = deadline.addingTimeInterval(now.timeIntervalSince(lastTick ?? now)); lastTick = now; return }
                 card.secondsLeft = max(0, Int(deadline.timeIntervalSince(now).rounded(.up)))
                 upNext = card
                 if now >= deadline { await advance(auto: true)?.value }
@@ -304,11 +332,13 @@ public final class PlayerModel: ObservableModel {
     /// Cada aviso reserva los segundos vistos que le tocan (dos avisos a la vez no cuentan los mismos segundos dos veces) y los
     /// devuelve si no se pudieron guardar ni encolar.
     private func report(_ phase: PlaybackPhase) async {
-        guard var event = event() else { return }
+        // Un archivo que te pasaron y no se reconoció («file:…»): no es un título de Stremio, no se guarda nada allá.
+        guard var event = event(), !event.metaID.hasPrefix("file:") else { return }
         let reserved: Double
         if case .started = phase { reserved = 0 } else { reserved = watchedUnsaved; watchedUnsaved -= reserved }
         event.watched = reserved
         if case .stopped = phase { finalReported = true }
+        if case .started = phase {} else { rememberChoice() }
         let outcome = await watch.report(event, phase: phase)
         if case .started = phase { return }
         if outcome.savedToStremio || outcome.queued { lastSave = clock() } else { watchedUnsaved += reserved }
@@ -318,8 +348,11 @@ public final class PlayerModel: ObservableModel {
     private func applyTracksOnce(_ s: EngineSnapshot) async {
         guard !tracksApplied, !s.audioTracks.isEmpty || !s.subtitleTracks.isEmpty, let request else { return }
         tracksApplied = true
+        // «Continuar»: las mismas pistas con que lo dejaste; lo que no se encuentre, con la regla de siempre.
+        // También en el siguiente episodio de la serie (antes solo en el mismo episodio exacto).
+        if !request.fromStart, let choice = titlePrefs.lastChoice(metaID: request.metaID), await applyResumeTracks(choice, s) { return }
         let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
-        let audio = TrackChooser.audio(s.audioTracks, language: langs.prefs.audio)
+        let audio = TrackChooser.audio(s.audioTracks, language: langs.prefs.audio, latin: settings.value.latinSpanish)
         if let audio, audio.id != s.selectedAudio { await engine.selectAudio(audio.id) }
         if TrackChooser.wrongAudio(s.audioTracks, language: langs.prefs.audio) { notice = .audioNotInYourLanguage }
         let audioLanguage = PlaybackRules.languageCode(audio?.language) ?? langs.prefs.audio
@@ -333,12 +366,88 @@ public final class PlayerModel: ObservableModel {
         }
     }
 
+    /// Las pistas guardadas, si están en este video. true si los subtítulos quedaron como los dejaste (el audio, si se
+    /// encuentra, también); false para elegir con la regla de siempre.
+    private func applyResumeTracks(_ choice: ResumeChoice, _ s: EngineSnapshot) async -> Bool {
+        // La misma pista (idioma y nombre); si en este archivo se llama distinto (otro episodio, otra fuente), la del mismo idioma.
+        func find(_ tracks: [MediaTrack], _ saved: ResumeChoice.Track) -> MediaTrack? {
+            tracks.first { $0.language == saved.language && $0.title == saved.title }
+                ?? tracks.first { PlaybackRules.languageCode($0.language) != nil && PlaybackRules.languageCode($0.language) == PlaybackRules.languageCode(saved.language) && !$0.isForced }
+        }
+        guard let sub = choice.subtitle else { return false }
+        if let audio = choice.audio, let track = find(s.audioTracks, audio), track.id != s.selectedAudio { await engine.selectAudio(track.id) }
+        knownSubtitleIDs = Set(s.subtitleTracks.map(\.id))
+        if sub.off { await engine.selectSubtitle(nil); return true }
+        guard let track = find(s.subtitleTracks, sub) else { return false }
+        await engine.selectSubtitle(track.id)
+        return true
+    }
+
+    /// Junto a «dónde ibas»: la fuente y las pistas que tienes puestas (para «Continuar»).
+    private func rememberChoice() {
+        guard let request, snapshot.position >= PlaybackRules.rememberChoiceAfter else { return }
+        func pick(_ tracks: [MediaTrack], _ selected: Int?) -> ResumeChoice.Track? {
+            guard !tracks.isEmpty else { return nil }
+            guard let selected, let t = tracks.first(where: { $0.id == selected }) else { return ResumeChoice.Track(off: true) }
+            return ResumeChoice.Track(language: t.language, title: t.title)
+        }
+        let audio = pick(snapshot.audioTracks, snapshot.selectedAudio).flatMap { $0.off ? nil : $0 }
+        titlePrefs.remember(metaID: request.metaID, choice: ResumeChoice(videoID: request.videoID, source: source?.key, audio: audio,
+                                                                        subtitle: pick(snapshot.subtitleTracks, snapshot.selectedSubtitle)))
+    }
+
     private func addExternalSubtitle(language: String) async {
         guard let request, !addedExternalSubtitle else { return }
         addedExternalSubtitle = true
         var url = request.localSubtitles.first { $0.lastPathComponent.hasPrefix(language) }
-        if url == nil && request.localFile == nil { url = await finder.subtitles(kind: request.kind, videoID: request.videoID, language: language).first }
+        // También para una descarga (si hay red): con la huella del archivo, el subtítulo de esa copia exacta.
+        if url == nil {
+            let file = request.localFile.flatMap(FileFingerprint.of)
+            url = await finder.subtitles(kind: request.kind, videoID: request.videoID, language: language, file: file).first
+        }
         if let url { await engine.addSubtitle(url: url, language: language) }
+    }
+
+    /// «Buscar en internet» (Subtítulos del reproductor): todo lo que hay en OpenSubtitles y tus complementos, por idioma.
+    public private(set) var foundSubtitles: [SubtitleOption]? { didSet { changed() } }
+    /// Los sustos de la película que suena (Where's The Jump), marcados en la barra; nil: no hay mapa.
+    public private(set) var scares: [JumpScare]? { didSet { changed() } }
+
+    public func loadScares() async {
+        guard let r = request, r.kind == "movie", r.metaID.hasPrefix("tt") else { scares = nil; return }
+        let id = r.metaID
+        let found = await scareMap(id, r.originalTitle)
+        guard request?.metaID == id else { return }
+        scares = found
+    }
+    public private(set) var searchingSubtitles = false { didSet { changed() } }
+
+    public func searchSubtitles() async {
+        guard let request, !searchingSubtitles else { return }
+        let mine = generation
+        searchingSubtitles = true
+        defer { searchingSubtitles = false }
+        let file = request.localFile.flatMap(FileFingerprint.of)
+        let found = await finder.subtitleOptions(kind: request.kind, videoID: request.videoID, file: file)
+        guard generation == mine else { return }   // ya es otro video: no se le cuelgan los de este
+        // Nada (o sin red): se queda el botón para volver a intentar, con el aviso.
+        foundSubtitles = found.isEmpty ? nil : found
+        subtitleSearchFailed = found.isEmpty
+    }
+
+    /// No se encontró nada en la última búsqueda (o no había red).
+    public private(set) var subtitleSearchFailed = false { didSet { changed() } }
+    /// Los que ya se sumaron (no se suma dos veces el mismo).
+    public private(set) var addedSubtitleURLs: Set<URL> = [] { didSet { changed() } }
+
+    /// Suma el siguiente de ese idioma que aún no se sumó y lo activa.
+    public func addFoundSubtitle(language: String) async {
+        guard let option = foundSubtitles?.first(where: { $0.language == language && !addedSubtitleURLs.contains($0.url) }) else { return }
+        userTouched()
+        knownSubtitleIDs = Set(snapshot.subtitleTracks.map(\.id))
+        addedExternalSubtitle = true
+        addedSubtitleURLs.insert(option.url)
+        await engine.addSubtitle(url: option.url, language: option.language)
     }
 
     /// El motor ya sumó el subtítulo externo: se activa.
@@ -375,6 +484,14 @@ public final class PlayerModel: ObservableModel {
 
     /// Abre un video y le pone la velocidad elegida (el motor empieza cada video en 1).
     private func loadVideo(_ url: URL, at start: Double) async throws {
+        if let request {
+            // Lo que ya sabes que quieres, desde el primer cuadro: el audio y los subtítulos con que lo dejaste (o tus idiomas).
+            let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
+            let choice = request.fromStart ? nil : titlePrefs.lastChoice(metaID: request.metaID)
+            let audio = [choice?.audio?.language, settings.value.latinSpanish && langs.prefs.audio == "es" ? "es-419" : nil, langs.prefs.audio].compactMap { $0 }.filter { !$0.isEmpty }
+            let subs = choice?.subtitle?.off == true ? [] : [choice?.subtitle?.language, langs.subtitles].compactMap { $0 }.filter { !$0.isEmpty }
+            await engine.prepare(audioLanguages: audio, subtitleLanguages: subs, externalSubtitles: request.localSubtitles)
+        }
         try await engine.load(url: url, startAt: start)
         if rate != 1 { await engine.setRate(rate) }
     }
@@ -388,6 +505,25 @@ public final class PlayerModel: ObservableModel {
         if hasPlayed, abs(target - snapshot.position) >= PlaybackRules.rescrobbleJump { rescrobbleAfterSeek = true }
         await engine.seek(to: target)
     }
+    /// Mientras arrastras la barra: la escena sigue al dedo. Se busca el último punto pedido apenas termina la búsqueda
+    /// anterior (nunca dos a la vez); en una descarga es casi inmediato, en internet se espera un momento entre búsquedas
+    /// para no pedir un trozo nuevo por cada punto del arrastre.
+    public func scrub(to seconds: Double) {
+        scrubTarget = max(0, min(seconds, snapshot.duration > 0 ? snapshot.duration : seconds))
+        guard scrubTask == nil else { return }
+        let local = request?.localFile != nil
+        scrubTask = Task { [weak self] in
+            while let self, let target = self.scrubTarget {
+                self.scrubTarget = nil
+                await self.engine.seek(to: target)
+                if !local { try? await Task.sleep(nanoseconds: PlaybackRules.streamScrubInterval) }
+            }
+            self?.scrubTask = nil
+        }
+    }
+    private var scrubTarget: Double?
+    private var scrubTask: Task<Void, Never>?
+
     public func skip(_ delta: Double) async { await seek(to: snapshot.position + delta) }
 
     /// Cambia de fuente en el mismo punto. Si la lista de fuentes es vieja (los enlaces de Real-Debrid caducan) se pide de nuevo.
@@ -410,11 +546,28 @@ public final class PlayerModel: ObservableModel {
     }
 
     // MARK: intro y siguiente episodio
+    /// Las marcas de IntroDB del video que va a sonar (una vez por video; otra fuente del mismo no las vuelve a pedir).
+    private func loadSegmentsIfNeeded() {
+        guard let videoID = request?.videoID, segmentsFor != videoID else { return }
+        segmentsFor = videoID
+        segments = nil
+        let fetch = skipSegments
+        Task { [weak self] in
+            let found = await fetch(videoID)
+            guard let self, self.request?.videoID == videoID else { return }
+            self.segments = found
+        }
+    }
+
+    /// «Saltar intro» / «Saltar resumen»: primero los capítulos del archivo; si no los trae, las marcas de la comunidad.
     private func updateSkipIntro(_ s: EngineSnapshot) {
         let sorted = s.chapters.sorted { $0.time < $1.time }
         for (i, chapter) in sorted.enumerated() where PlaybackRules.chapterKind(chapter.title) == .intro {
             let end = i + 1 < sorted.count ? sorted[i + 1].time : s.duration
-            if s.position >= chapter.time && s.position < end - 1 { skipIntroTo = end; return }
+            if s.position >= chapter.time && s.position < end - 1 { skipKind = .intro; skipIntroTo = end; return }
+        }
+        for (kind, range) in [(SkipKind.recap, segments?.recap), (.intro, segments?.intro)] {
+            if let range, s.position >= range.lowerBound, s.position < range.upperBound - 1 { skipKind = kind; skipIntroTo = range.upperBound; return }
         }
         skipIntroTo = nil
     }
@@ -443,7 +596,9 @@ public final class PlayerModel: ObservableModel {
         }
         let current = s.chapters.sorted { $0.time < $1.time }.last { $0.time <= s.position }
         // «Opening Credits» al principio no son los créditos del final: solo cuentan en la segunda mitad.
-        let inCredits = (current.map { PlaybackRules.chapterKind($0.title) == .credits } ?? false) && s.position > s.duration / 2
+        // Los créditos: por capítulo del archivo o por la marca de la comunidad (IntroDB).
+        let inCredits = ((current.map { PlaybackRules.chapterKind($0.title) == .credits } ?? false) || (segments?.credits.map { s.position >= $0.lowerBound } ?? false))
+            && s.position > s.duration / 2
         let near = PlaybackRules.shouldShowUpNext(position: s.position, duration: s.duration, inCredits: inCredits)
         if upNext == nil && !upNextDismissed && near {
             upNextDeadline = now.addingTimeInterval(PlaybackRules.upNextCountdown)
@@ -522,6 +677,8 @@ public final class PlayerModel: ObservableModel {
         generation += 1                       // cualquier carga o cambio de episodio en curso queda sin efecto
         consuming?.cancel(); consuming = nil
         let finished = reachedEnd || (snapshot.duration > 0 && snapshot.position >= snapshot.duration * StremioLibrary.watchedAt)
+        // Primero se calla (la pantalla ya se fue); guardar en la red puede tardar.
+        await engine.pause()
         if !finalReported { await report(.stopped(finished: finished)) }
         phase = .closed
         await engine.stop()

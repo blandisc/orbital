@@ -28,12 +28,32 @@ public struct DownloadGroup: Identifiable, Equatable, Sendable {
         }
     }
 
+    /// Una serie por temporadas (en orden). Una película, o episodios sin temporada, quedan en la temporada 0.
+    public var seasons: [DownloadSeason] {
+        var order: [Int] = [], bySeason: [Int: [DownloadItem]] = [:]
+        for item in items {
+            let season = Self.episodeKey(item.videoID).0
+            if bySeason[season] == nil { order.append(season) }
+            bySeason[season, default: []].append(item)
+        }
+        return order.sorted().map { DownloadSeason(metaID: metaID, number: $0, items: bySeason[$0] ?? []) }
+    }
+
     /// «tt0386676:2:5» → (2, 5); una película o un id sin temporada va primero.
     static func episodeKey(_ videoID: String) -> (Int, Int) {
         let parts = videoID.split(separator: ":")
         guard parts.count >= 3, let s = Int(parts[parts.count - 2]), let e = Int(parts[parts.count - 1]) else { return (0, 0) }
         return (s, e)
     }
+}
+
+/// Una temporada descargada de una serie: sus episodios en orden y cuánto ocupan.
+public struct DownloadSeason: Identifiable, Equatable, Sendable {
+    public var id: String { "\(metaID):\(number)" }
+    public var metaID: String
+    public var number: Int
+    public var items: [DownloadItem]
+    public var bytes: Int64 { items.reduce(0) { $0 + $1.writtenBytes } }
 }
 
 @MainActor
@@ -52,18 +72,67 @@ public final class DownloadsModel: ObservableModel {
     public func run() async {
         items = await services.downloads.all
         freeBytes = freeSpace()
-        for await snapshot in services.downloads.makeUpdates() { items = snapshot; freeBytes = freeSpace() }
+        // El avance llega muchas veces por segundo: se pinta como mucho cada `progressInterval`; un cambio de verdad (una
+        // descarga nueva, en pausa, terminada o borrada) se pinta en el acto.
+        var lastPaint = Date.distantPast
+        for await snapshot in services.downloads.makeUpdates() {
+            let now = Date()
+            if Self.shape(snapshot) == Self.shape(items), now.timeIntervalSince(lastPaint) < Self.progressInterval { continue }
+            items = snapshot; freeBytes = freeSpace(); lastPaint = now
+        }
     }
+
+    /// Cada cuánto se pinta el avance (segundos).
+    static let progressInterval = 0.5
+    private static func shape(_ items: [DownloadItem]) -> [String] { items.map { "\($0.id)|\($0.state)" } }
 
     public var active: [DownloadItem] { items.filter { $0.state != .done } }
     public var ready: [DownloadItem] { items.filter { $0.state == .done } }
     /// Lo listo para ver, agrupado por título (los episodios de una serie en un solo renglón).
     public var readyGroups: [DownloadGroup] { DownloadGroup.group(ready) }
+    /// Lo listo, separado: series (cada una, una fila; dentro, sus temporadas) y películas.
+    public var readySeries: [DownloadGroup] { readyGroups.filter { $0.kind == "series" } }
+    public var readyMovies: [DownloadGroup] { readyGroups.filter { $0.kind != "series" } }
     public var usedBytes: Int64 { items.reduce(0) { $0 + $1.writtenBytes } }
 
     public func pause(_ id: String) async { await services.downloads.pause(id) }
     public func resume(_ id: String) async { await services.downloads.resume(id) }
-    public func remove(_ id: String) async { await services.downloads.remove(id) }
+    public func remove(_ id: String) async { await services.downloads.remove(id); Self.clearShared() }
+
+    /// «Buscar subtítulos» de una descarga: lo que hay en OpenSubtitles y tus complementos, con la huella del archivo (los de
+    /// esa copia exacta primero).
+    public func subtitleOptions(_ item: DownloadItem) async -> [SubtitleOption] {
+        let file = await services.downloads.fileURL(item)
+        return await services.finder.subtitleOptions(kind: item.kind, videoID: item.videoID, file: FileFingerprint.of(file))
+    }
+
+    /// Baja ese subtítulo y lo guarda con la descarga (sin conexión también sale). Nombre «es-2.srt»: el reproductor elige por
+    /// el idioma del principio del nombre.
+    public func saveSubtitle(_ item: DownloadItem, _ option: SubtitleOption) async -> Bool {
+        guard let response = try? await services.http.send(HTTPRequest(url: option.url, timeout: 20)), response.status == 200, !response.data.isEmpty else { return false }
+        let two = Streams.languageCodes.first { $0.value == option.language }?.key ?? option.language
+        let count = item.subtitleFiles.filter { ($0 as NSString).lastPathComponent.hasPrefix(two) }.count
+        return await services.downloads.addSubtitle(id: item.id, name: "\(two)-\(count + 1).srt", data: response.data)
+    }
+
+    /// Donde se ponen los enlaces para compartir. Se vacía al borrar una descarga y al abrir la app: un enlace olvidado
+    /// mantenía ocupados los gigas del archivo borrado.
+    public static let sharedFolder = FileManager.default.temporaryDirectory.appendingPathComponent("Compartir", isDirectory: true)
+    public static func clearShared() { try? FileManager.default.removeItem(at: sharedFolder) }
+
+    /// El archivo para compartir (AirDrop, Archivos, otra app) con un nombre que se entiende («Dune (1080p).mkv»): un enlace
+    /// duro en la carpeta temporal, sin copiar los gigas.
+    public func exportURL(_ item: DownloadItem) async -> URL? {
+        let file = await services.downloads.fileURL(item)
+        guard FileManager.default.fileExists(atPath: file.path) else { return nil }
+        let base = [item.title, item.subtitle.isEmpty ? nil : item.subtitle].compactMap { $0 }.joined(separator: " · ")
+        let name = (item.quality.map { "\(base) (\($0))" } ?? base).replacingOccurrences(of: "/", with: "-")
+        let folder = Self.sharedFolder
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let link = folder.appendingPathComponent(name).appendingPathExtension(file.pathExtension)
+        try? FileManager.default.removeItem(at: link)
+        do { try FileManager.default.linkItem(at: file, to: link); return link } catch { return file }
+    }
 
     /// Para ver una descarga sin conexión.
     public func playRequest(_ item: DownloadItem) async -> PlayRequest {

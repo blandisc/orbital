@@ -56,6 +56,9 @@ public struct SearchResult: Sendable, Equatable, Identifiable {
     public var poster: String?
     public var year: String
     public var id: String { "\(kind):\(metaID)" }
+    public init(kind: String, metaID: String, title: String, poster: String?, year: String) {
+        self.kind = kind; self.metaID = metaID; self.title = title; self.poster = poster; self.year = year
+    }
 }
 
 /// Cinemeta: el catálogo público de Stremio (no necesita cuenta). La ficha original siempre viene de aquí,

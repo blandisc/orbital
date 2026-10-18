@@ -2,17 +2,25 @@ import SwiftUI
 import OrbitalCore
 import OrbitalModels
 
-/// La ficha de una película o serie: continuar, Mi lista, descargar, watchlist de Trakt, temporadas y episodios.
+/// La ficha de una película o serie: continuar, guardar (en Mi lista, tu watchlist o tus listas), descargar, temporadas y episodios.
 struct TitleView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let route: TitleRoute
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.openURL) private var openURL
     @StateObject private var observer: ModelObserver<TitleModel>
     @StateObject private var tint = ArtTint()
     @State private var sourcesFor: SourcesTarget?
-    @State private var downloadMenu = false
+    /// La sinopsis completa (tocar «más»).
+    @State private var fullSynopsis = false
+    /// Elegiste otra fuente para algo que ya tienes descargado: ¿cambiarla?
+    @State private var replacing: Replacement?
+
+    struct Replacement { var source: Source; var videoID: String; var existing: DownloadItem }
+    @State private var saving = false
 
     struct SourcesTarget: Identifiable { var videoID: String; var purpose: Purpose; var id: String { "\(videoID)-\(purpose)" } }
 
@@ -26,65 +34,93 @@ struct TitleView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 hero(model)
-                VStack(alignment: .leading, spacing: DS.Space.s4) {
+                VStack(alignment: .leading, spacing: DS.Space.s5) {
+                    facts(model)
                     actions(model)
                     if let message = model.message { DSNotice(verbatim: env.message(message), tone: .error) }
-                    if model.traktAvailable { watchlistToggle(model) }
                     if let error = model.error, model.overview.isEmpty { DSNotice(verbatim: env.message(error), tone: .warn) }
-                    if !model.overview.isEmpty { Text(model.overview).font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted) }
+                    synopsis(model)
+                    creditLine(model)
                     if model.kind == "series" { episodes(model) }
-                    credits(model)
+                    if let extras = model.extras { rich(extras).padding(.horizontal, -DS.Space.gutter) } else { credits(model) }
+                    details(model)
                 }
                 .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s10)
-                .padding(.top, scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: las acciones no se le pegan
+                .padding(.top, scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: los datos no se le pegan
             }
         }
+        // El color del arte solo como un brillo arriba (antes toda la ficha se lavaba de ese tono): el arte manda.
         .background(Backdrop(tint: tint.colors))
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)     // el arte llega hasta arriba y la barra flota encima
         .toolbar { topBar(model) }
         .task { await model.followDownloads() }
-        .task { await model.loadConsoleDetails() }     // la sinopsis en español, si tu Orbital está conectada
+        .task { await model.loadConsoleDetails() }
+        .task { await model.loadExtras() }     // la ficha rica: elenco con foto, saga, tráiler, frase y detalles (TMDB)
         .onChange(of: env.watchedSomething) { Task { await model.refreshState() } }   // vuelves de ver: avance, visto y «Continuar» al día
         .task {
             await model.load()
+            Task { await model.loadBestSource() }   // aparte: las fuentes tardan y no detienen el color del fondo
             #if DEBUG
             if Demo.isOn, Demo.open == "play" { start(model, videoID: nil) }
             if Demo.isOn, Demo.open == "sources", let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
             if Demo.isOn, Demo.open == "download" || Demo.open == "download-here" { await report(model.download([model.continueVideoID ?? model.metaID]), model); if Demo.open == "download" { dismiss() } }
+            if Demo.isOn, Demo.open == "download-tap" { await downloadRecommended(model) }
             #endif
             await tint.load(model.background ?? model.poster)
         }
         .sheet(item: $sourcesFor) { target in
-            SourcesSheet(model: model, videoID: target.videoID, purpose: target.purpose) { source, purpose in
+            SourcesSheet(model: model, videoID: target.videoID, purpose: target.purpose, choose: { source, purpose in
                 sourcesFor = nil
                 handle(source: source, videoID: target.videoID, purpose: purpose, model: model)   // lo que quedó en el selector de la hoja
-            }
+            }, infuse: { source in
+                sourcesFor = nil
+                if let request = model.playRequest(videoID: target.videoID) { Task { await env.playExternal(request, source: source) } }
+            })
             .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
-        .confirmationDialog("Descargar", isPresented: $downloadMenu, titleVisibility: .visible) {
-            if model.kind == "series" {
-                Button("Los siguientes 3 episodios") { Task { await report(model.downloadNext(3), model) } }
-                Button("Elegir la fuente de este episodio") { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .download) } }
-            }
-            Button("Descargar con la fuente recomendada") { Task { await report(model.download([model.continueVideoID ?? model.metaID]), model) } }
+        .sheet(isPresented: $saving) { SaveView(observer: observer).fittedSheet() }
+        .confirmationDialog("Ya la tienes descargada", isPresented: Binding(get: { replacing != nil }, set: { if !$0 { replacing = nil } }), titleVisibility: .visible, presenting: replacing) { r in
+            Button("Cambiarla por esta fuente") { Task { await report(model.download([r.videoID], source: r.source, replace: true), model) } }
+            Button("Dejar la que tengo", role: .cancel) {}
+        } message: { r in
+            let what = r.existing.quality ?? (r.existing.addon.isEmpty ? nil : r.existing.addon)
+            if let what { Text("Guardamos una sola copia. La que tienes es \(what); si la cambias, se borra y se baja la nueva.") }
+            else { Text("Guardamos una sola copia: si la cambias, se borra la que tienes y se baja la nueva.") }
         }
     }
 
     // MARK: partes
-    /// Arte a sangre que se funde con el fondo, el logo del título (o su nombre) y, debajo, de dónde es y hasta cuatro datos
-    /// (año · género · duración · calificación, como `detail-panel.js`).
+    /// El arte a sangre, más alto, con el logo (o el nombre) al centro y la frase de la película debajo, como un cartel de cine.
     private func hero(_ model: TitleModel) -> some View {
-        BleedArt(url: model.background ?? model.poster, title: model.title, aspect: DS.Poster.heroAspect) {
-            VStack(alignment: .leading, spacing: DS.Space.s2) {
-                TitleLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title, size: .hero, dark: model.logoIsDark)
-                let language = env.services.appSettings.uiLanguage
-                let facts = [Strings.kind(model.kind, language: language)]
-                    + Vocabulary.titleFacts(year: model.info.year, genres: Vocabulary.genres(model.info.genres, language: language), runtime: model.info.runtime, rating: model.info.rating)
-                Text(verbatim: Vocabulary.factLine(facts)).recipe(.secondary, color: DS.onArtSecondary).lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
+        BleedArt(url: model.background ?? model.poster, title: model.title, aspect: DS.TitleAction.heroAspect) {
+            VStack(spacing: DS.Space.s2) {
+                TitleLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title, size: .hero, dark: model.logoIsDark, centered: true)
+                    .containerRelativeFrame(.horizontal) { width, _ in width * DS.TitleAction.logoWidth }
+                if let tagline = model.extras?.tagline {
+                    Text(verbatim: tagline).font(DS.TextRecipe.secondary.font.italic()).foregroundStyle(DS.onArtSecondary)
+                        .multilineTextAlignment(.center).lineLimit(2)
+                }
             }
+            .frame(maxWidth: .infinity)
         }
         .ignoresSafeArea(edges: .top)
+    }
+
+    /// Bajo el arte, al centro: qué es, año, géneros y duración; lo mejor disponible (4K · HDR · Atmos) y las calificaciones.
+    private func facts(_ model: TitleModel) -> some View {
+        let language = env.services.appSettings.uiLanguage
+        let facts = [Strings.kind(model.kind, language: language)] + [model.extras?.certification].compactMap { $0 }
+            + Vocabulary.titleFacts(year: model.info.year, genres: Vocabulary.genres(model.info.genres, language: language), runtime: model.info.runtime, rating: "")
+        return VStack(spacing: DS.Space.s3) {
+            Text(verbatim: Vocabulary.factLine(facts)).recipe(.footnote).multilineTextAlignment(.center).lineLimit(typeSize.isAccessibilitySize ? 4 : 2)
+            if let best = model.bestSource {
+                QualityBadges(items: QualityBadges.items(resolution: best.resolution, hdr: best.hdr, audio: best.audioBadges))
+                    .accessibilityLabel(Text("Lo mejor disponible"))
+            }
+            RatingsRow(imdb: model.info.rating, tmdb: model.extras?.rating, trakt: model.traktRating, centered: true)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     /// Mi lista y En la TV: botones de ícono en la barra de arriba (con su nombre para VoiceOver).
@@ -93,9 +129,9 @@ struct TitleView: View {
             if env.services.orbital.isConfigured {
                 Button { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: model.continueVideoID, title: model.title) } } label: { Image(systemName: "tv") }
                     .disabled(model.continueVideoID == nil)
-                    .accessibilityLabel(Text("En la TV"))
+                    .accessibilityLabel(Text("Ver en la TV"))
             }
-            // Mi lista vive en la rejilla de acciones; arriba, compartir (la ficha de IMDb, que abre en cualquier app).
+            // «Guardar» vive en la rejilla de acciones; arriba, compartir (la ficha de IMDb, que abre en cualquier app).
             if model.metaID.hasPrefix("tt"), let url = URL(string: "https://www.imdb.com/title/\(model.metaID)/") {
                 ShareLink(item: url, subject: Text(verbatim: model.title)) { Image(systemName: "square.and.arrow.up") }
                     .accessibilityLabel(Text("Compartir"))
@@ -103,55 +139,150 @@ struct TitleView: View {
         }
     }
 
-    /// El botón principal (papel), a qué hora terminas y, debajo, las acciones secundarias en una rejilla (Mi lista,
-    /// Descargar, Fuentes). En la TV está arriba, en la barra.
+    private var artAccent: Color { tint.colors?.accent ?? DS.accent }
+
+    /// El botón principal (con el color del arte), la línea de lo que llevas visto y, debajo, cuatro círculos: Guardar,
+    /// Descargar, Tráiler y Fuente. Cada círculo cambia en su lugar (Guardada, el anillo de la descarga): nada brinca.
     private func actions(_ model: TitleModel) -> some View {
         let label = model.continueLabel
-        return VStack(spacing: DS.Space.s3) {
-            Button { start(model, videoID: nil) } label: {
-                Label { primaryLabel(label, model).lineLimit(typeSize.isAccessibilitySize ? 2 : 1) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
+        return VStack(spacing: DS.Space.s4) {
+            VStack(spacing: DS.Space.s2) {
+                Button { start(model, videoID: nil) } label: {
+                    Label { primaryLabel(label, model).lineLimit(typeSize.isAccessibilitySize ? 2 : 1) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
+                }
+                .dsArtButton(tint.colors).controlSize(.large).disabled(model.continueVideoID == nil)   // el color del arte, como en la TV
+                .accessibilityIdentifier("title-play")
+                if let fraction = model.resumeFraction {
+                    DSProgress(fraction: fraction).padding(.horizontal, DS.Space.s5).accessibilityHidden(true)
+                }
+                // «Desde el principio» (como la TV, `core/watch.js`), discreto: solo si ibas a medias.
+                if label.isResume {
+                    Button("Desde el principio", systemImage: "arrow.counterclockwise") { start(model, videoID: nil, fromStart: true) }
+                        .font(DS.TextRecipe.footnote.font).buttonStyle(.borderless).tint(DS.textMuted)
+                        .accessibilityIdentifier("title-restart")
+                }
             }
-            .dsArtButton(tint.colors).controlSize(.large).disabled(model.continueVideoID == nil)   // el color del arte, como en la TV
-            if let minutes = model.minutesToFinish {
-                DataLine(parts: [Strings.endsAt(minutesLeft: minutes, now: env.services.now(), language: env.services.appSettings.uiLanguage)])
+            HStack(alignment: .top, spacing: DS.Space.s2) {   // rectángulos que llenan el renglón (antes círculos con hueco)
+                saveAction(model).frame(maxWidth: .infinity)
+                downloadAction(model).frame(maxWidth: .infinity)
+                if let url = model.extras?.trailer?.url {
+                    Button { openURL(url) } label: { ActionTileLabel(title: Text("Tráiler"), symbol: "play.rectangle", tint: artAccent) }
+                        .buttonStyle(.plain).frame(maxWidth: .infinity).accessibilityIdentifier("title-trailer")
+                }
+                Button { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) } } label: {
+                    ActionTileLabel(title: Text("Fuente"), symbol: "list.bullet", tint: artAccent)
+                }
+                .buttonStyle(.plain).frame(maxWidth: .infinity).disabled(model.continueVideoID == nil).accessibilityIdentifier("title-sources")
             }
-            ActionGrid(actions: [
-                ProjectionAction(id: "list", title: model.inLibrary ? "En Mi lista" : "Mi lista", symbol: model.inLibrary ? "checkmark" : "plus", active: model.inLibrary) { Task { await model.toggleLibrary() } },
-                downloadAction(model),
-                ProjectionAction(id: "sources", title: "Elegir fuente", symbol: "list.bullet", disabled: model.continueVideoID == nil) {
-                    if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
-                },
-            ])
+            .animation(DS.Motion.base(reduceMotion), value: model.isSaved)
         }
     }
 
-    /// En una película dice cómo va su descarga; en una serie abre el menú (siguientes episodios, elegir fuente).
-    private func downloadAction(_ model: TitleModel) -> ProjectionAction {
-        switch model.kind == "movie" ? model.downloadState(model.metaID) : nil {
-        case .done?:
-            return ProjectionAction(id: "download", title: "Descargado", symbol: "checkmark.circle", active: true) { env.notify("Ya está descargado. Lo encuentras en Descargas.", tone: .info) }
-        case .downloading?, .queued?:
-            let percent = model.downloadFraction(model.metaID).map { Int($0 * 100) }
-            return ProjectionAction(id: "download", title: percent.map { LocalizedStringKey("\($0) %") } ?? "Descargando", symbol: "arrow.down.circle.dotted", active: true) {
-                env.notify("Descargando. Lo verás en Descargas.", tone: .info)
+    /// Guardar: un toque la guarda en Mi lista (con un aviso que deja cambiar); mantener presionado elige dónde.
+    private func saveAction(_ model: TitleModel) -> some View {
+        Menu {
+            Button { Task { await model.toggleLibrary() } } label: {
+                Label { Text("Mi lista") + Text(verbatim: " (Stremio)") } icon: { Image(systemName: model.inLibrary ? "checkmark" : "rectangle.stack") }
             }
-        default:
-            return ProjectionAction(id: "download", title: "Descargar", symbol: "arrow.down.circle") { downloadMenu = true }
+            if model.traktAvailable {
+                Button { Task { await model.toggleWatchlist() } } label: {
+                    Label { Text("Tu watchlist") + Text(verbatim: " (Trakt)") } icon: { Image(systemName: model.inWatchlist ? "checkmark" : "bookmark") }
+                }
+                Button("Tus listas de Trakt…", systemImage: "list.bullet") { saving = true }
+            }
+        } label: {
+            ActionTileLabel(title: model.isSaved ? Text("Guardada") : Text("Guardar"), symbol: model.isSaved ? "checkmark" : "plus", active: model.isSaved, tint: artAccent)
+        } primaryAction: {
+            Task { await quickSave(model) }
+        }
+        .menuStyle(.button).buttonStyle(.plain)
+        .sensoryFeedback(.success, trigger: model.isSaved) { _, saved in saved }
+        .accessibilityIdentifier("title-save")
+        .accessibilityHint(Text("Mantén presionado para elegir en qué lista"))
+    }
+
+    private func quickSave(_ model: TitleModel) async {
+        if !model.isSaved {
+            await model.toggleLibrary()
+            guard model.inLibrary else { return }   // falló: lo dice el mensaje de la ficha
+            env.notify("Guardada en Mi lista", detail: "Stremio", actionTitle: "Cambiar") { saving = true }
+        } else if model.inLibrary && !model.inWatchlist && !model.inSomeList && !(model.lists ?? []).contains(where: \.contains) {
+            await model.toggleLibrary()
+            env.notify("Quitada de Mi lista", tone: .info, actionTitle: "Deshacer") { Task { await model.toggleLibrary() } }
+        } else {
+            saving = true   // está en varias listas: que elijas de cuál quitarla
+        }
+    }
+
+    /// Descargar: un toque baja la recomendada y el círculo se vuelve el anillo de su avance; tocar el anillo da sus opciones.
+    @ViewBuilder private func downloadAction(_ model: TitleModel) -> some View {
+        let target = model.downloadTarget
+        let fraction = model.downloadFraction(target)
+        Group {
+            switch model.downloadState(target) {
+            case .downloading?, .queued?:
+                Menu {
+                    if let fraction { Text("Lleva \(Int(fraction * 100)) %") }
+                    Button("Pausar", systemImage: "pause.fill") { if let target { Task { await model.pauseDownload(target) } } }
+                    Button("Ver en Descargas", systemImage: "arrow.down.circle") { env.openTab = AppEnvironment.downloadsTab }
+                    Button("Cancelar la descarga", systemImage: "xmark", role: .destructive) { if let target { Task { await model.cancelDownload(target) } } }
+                } label: {
+                    ActionTileLabel(title: fraction.map { Text(verbatim: "\(Int($0 * 100)) %") } ?? Text("En espera"), symbol: "pause.fill", active: true, progress: fraction ?? 0, tint: artAccent)
+                }
+            case .paused?, .failed?:
+                let failed = model.downloadState(target) == .failed
+                Menu {
+                    Button("Ver en Descargas", systemImage: "arrow.down.circle") { env.openTab = AppEnvironment.downloadsTab }
+                    Button("Cancelar la descarga", systemImage: "xmark", role: .destructive) { if let target { Task { await model.cancelDownload(target) } } }
+                } label: {
+                    ActionTileLabel(title: failed ? Text("Reintentar") : Text("En pausa"), symbol: failed ? "arrow.clockwise" : "play.fill", active: true, progress: fraction, tint: failed ? DS.warning : artAccent)
+                } primaryAction: {
+                    if let target { Task { await model.resumeDownload(target) } }
+                }
+            case .done?:
+                Menu {
+                    Button("Ver sin internet", systemImage: "play.fill") { start(model, videoID: target) }
+                    Button("Ver en Descargas", systemImage: "arrow.down.circle") { env.openTab = AppEnvironment.downloadsTab }
+                    Button("Borrar la descarga", systemImage: "trash", role: .destructive) { if let target { Task { await model.cancelDownload(target) } } }
+                } label: {
+                    ActionTileLabel(title: Text("Descargada"), symbol: "checkmark", active: true, tint: artAccent)
+                }
+            default:
+                Menu {
+                    Button("Elegir la fuente…", systemImage: "list.bullet") { if let target { sourcesFor = SourcesTarget(videoID: target, purpose: .download) } }
+                    if model.kind == "series" {
+                        Button("Los siguientes \(DS.Size.downloadNext)", systemImage: "square.stack.3d.down.right") { Task { await report(model.downloadNext(DS.Size.downloadNext), model) } }
+                    }
+                } label: {
+                    ActionTileLabel(title: Text("Descargar"), symbol: "arrow.down.circle", tint: artAccent)
+                } primaryAction: {
+                    Task { await downloadRecommended(model) }
+                }
+            }
+        }
+        .menuStyle(.button).buttonStyle(.plain)
+        .disabled(target == nil)
+        .accessibilityIdentifier("title-download")
+    }
+
+    /// Un toque: la recomendada (la mejor en calidad, idioma y tamaño), y un aviso que dice cuál y deja elegir otra.
+    private func downloadRecommended(_ model: TitleModel, videoID: String? = nil) async {
+        guard let target = videoID ?? model.downloadTarget else { return }
+        let outcome = await model.download([target])
+        guard case .queued = outcome else { return await report(outcome, model) }
+        let item = await model.existingDownload(target)
+        let size = item?.expectedBytes.map { ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) }
+        let detail = [item?.quality, size].compactMap { $0 }.joined(separator: " · ")
+        let what = model.episodeLabel(target)
+        env.notify(what.map { String(format: Strings.tr("Bajando %@", language: env.services.appSettings.uiLanguage), $0) } ?? "Bajando la recomendada",
+                   detail: detail.isEmpty ? nil : detail, actionTitle: "Otra") {
+            sourcesFor = SourcesTarget(videoID: target, purpose: .download)
         }
     }
 
     private func primaryLabel(_ label: (isResume: Bool, season: Int?, episode: Int?), _ model: TitleModel) -> Text {
         if let s = label.season, let e = label.episode { return label.isResume ? Text("Continuar T\(s) E\(e)") : Text("Ver T\(s) E\(e)") }
         return label.isResume ? Text("Continuar") : Text("Ver")   // los nombres de la TV (`core/watch.js`)
-    }
-
-    private func watchlistToggle(_ model: TitleModel) -> some View {
-        Toggle(isOn: Binding(get: { model.inWatchlist }, set: { _ in Task { await model.toggleWatchlist() } })) {
-            Label("En tu watchlist", systemImage: "bookmark")
-        }
-        .font(DS.TextRecipe.secondary.font).foregroundStyle(DS.text)
-        .padding(DS.Space.s3).background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
-        .sensoryFeedback(.success, trigger: model.inWatchlist)
     }
 
     @ViewBuilder private func episodes(_ model: TitleModel) -> some View {
@@ -166,14 +297,155 @@ struct TitleView: View {
                 DSOptionMenu(items: chips, label: label, selection: selection)
             }
         }
-        VStack(spacing: 0) {
+        // Cuántos llevas de esta temporada y marcarla completa (como en Infuse y Trakt).
+        let progress = model.seasonProgress
+        if progress.total > 0 {
+            HStack {
+                Text("\(progress.watched) de \(progress.total) vistos").recipe(.footnote)
+                Spacer()
+                if progress.watched < progress.total {
+                    Button("Marcar temporada como vista", systemImage: "checkmark.circle") { Task { await model.markSeasonWatched() } }
+                        .font(DS.TextRecipe.footnote.font).buttonStyle(.borderless)
+                }
+            }
+        }
+        LazyVStack(spacing: 0) {   // perezosa: una serie larga no arma (ni pide imágenes de) todos sus episodios a la vez
             ForEach(model.rows) { row in
-                EpisodeRowView(row: row, play: { start(model, videoID: row.id) }, download: { Task { await report(model.download([row.id]), model) } },
+                EpisodeRowView(row: row, play: { start(model, videoID: row.id) }, download: { Task { await downloadRecommended(model, videoID: row.id) } },
                                markWatched: { Task { await model.markWatched(row.id) } }, chooseSource: { sourcesFor = SourcesTarget(videoID: row.id, purpose: .watch) },
+                               resumeDownload: { Task { await model.resumeDownload(row.id) } },
                                downloadFraction: model.downloadFraction(row.id),
                                playOnTV: env.services.orbital.isConfigured ? { Task { await env.playOnTV(kind: model.kind, metaID: model.metaID, videoID: row.id, title: model.title) } } : nil)
                 Divider().overlay(DS.hairline)
             }
+        }
+    }
+
+    /// La sinopsis en tres renglones y «más» para leerla completa.
+    @ViewBuilder private func synopsis(_ model: TitleModel) -> some View {
+        if !model.overview.isEmpty {
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                Text(model.overview).recipe(.secondary, color: DS.text).lineLimit(fullSynopsis ? nil : DS.TitleAction.synopsisLines)
+                if model.overview.count > DS.Size.synopsisFold {
+                    Button(fullSynopsis ? "menos" : "más") { withAnimation(DS.Motion.base(reduceMotion)) { fullSynopsis.toggle() } }
+                        .font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(artAccent).buttonStyle(.plain)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// Como los créditos del cine, en una línea: «Dirección Denis Villeneuve · Guion Jon Spaihts» y «Con …».
+    @ViewBuilder private func creditLine(_ model: TitleModel) -> some View {
+        let crew = model.extras?.crew ?? []
+        let directors = crew.filter { $0.role == "Director" || $0.role == "Creator" }.map(\.name)
+        let writers = crew.filter { $0.role == "Screenplay" || $0.role == "Writer" }.map(\.name)
+        let leads = (model.extras?.cast.prefix(3).map(\.name)) ?? Array(model.credits.cast.prefix(3))
+        let lead = directors.isEmpty ? model.credits.directors : directors
+        if !lead.isEmpty || !leads.isEmpty {
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                if !lead.isEmpty {
+                    let who = model.kind == "series" ? Text("Creada por") : Text("Dirección")
+                    let line = who.foregroundStyle(DS.textFaint) + Text(verbatim: " " + lead.prefix(2).joined(separator: ", ")).foregroundStyle(DS.text)
+                    if let writer = writers.first, model.kind == "movie" {
+                        line + Text(verbatim: " · ").foregroundStyle(DS.textFaint) + Text("Guion").foregroundStyle(DS.textFaint) + Text(verbatim: " " + writer).foregroundStyle(DS.text)
+                    } else { line }
+                }
+                if !leads.isEmpty {
+                    Text("Con").foregroundStyle(DS.textFaint) + Text(verbatim: " " + leads.joined(separator: ", ")).foregroundStyle(DS.text)
+                }
+            }
+            .font(DS.TextRecipe.footnote.font)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// Al final, los datos de referencia: estreno, duración, idiomas, lo disponible, clasificación y estudio.
+    @ViewBuilder private func details(_ model: TitleModel) -> some View {
+        let rows = detailRows(model)
+        if !rows.isEmpty {
+            VStack(alignment: .leading, spacing: DS.Space.s3) {
+                DSSectionHead(title: "Detalles")
+                Grid(alignment: .leading, horizontalSpacing: DS.Space.s4, verticalSpacing: DS.Space.s2) {
+                    ForEach(rows, id: \.0) { label, value in
+                        GridRow {
+                            Text(LocalizedStringKey(label)).recipe(.footnote, color: DS.textFaint)
+                            Text(verbatim: value).recipe(.footnote, color: DS.text)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static let day: DateFormatter = { let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd"; return f }()
+
+    private func detailRows(_ model: TitleModel) -> [(String, String)] {
+        let locale = env.uiLocale
+        var rows: [(String, String)] = []
+        if let raw = model.extras?.releaseDate, let date = Self.day.date(from: raw) {
+            rows.append((model.kind == "series" ? "Primer episodio" : "Estreno", date.formatted(Date.FormatStyle(date: .long, time: .omitted).locale(locale))))
+        }
+        if !model.info.runtime.isEmpty { rows.append(("Duración", model.info.runtime)) }
+        let languages = (model.extras?.languages ?? []).compactMap { locale.localizedString(forLanguageCode: $0)?.capitalized(with: locale) }
+        if !languages.isEmpty { rows.append(("Idiomas", languages.prefix(4).joined(separator: ", "))) }
+        if let best = model.bestSource {
+            let items = QualityBadges.items(resolution: best.resolution, hdr: best.hdr, audio: best.audioBadges)
+            if !items.isEmpty { rows.append(("Disponible", items.joined(separator: " · "))) }
+        }
+        if let rating = model.extras?.certification { rows.append(("Clasificación", rating)) }
+        if let studios = model.extras?.studios, !studios.isEmpty { rows.append((model.kind == "series" ? "Cadena" : "Estudio", studios.map(\.name).joined(separator: ", "))) }
+        return rows
+    }
+
+    /// Lo de TMDB, como Infuse: tráiler y extras, reparto con cara (toca para ver su trabajo), la saga y
+    /// «Más como esto». Cada sección con el encabezado de toda la app; las tiras van de borde a borde.
+    @ViewBuilder private func rich(_ x: TitleExtras) -> some View {
+        VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
+            if let trailer = x.trailer {
+                section(title: "Tráiler y extras") {
+                    VideoClipCard(clip: trailer)
+                    ForEach(x.extras) { VideoClipCard(clip: $0) }
+                }
+            }
+            let people = x.crew + x.cast
+            if !people.isEmpty {
+                section(title: "Reparto y equipo") {
+                    ForEach(people) { p in
+                        NavigationLink(value: PersonRoute(id: p.personID, name: p.name)) { PersonFace(name: p.name, role: crewRole(p.role), photo: p.photo) }
+                            .buttonStyle(.plain)
+                    }
+                }
+            }
+            if let saga = x.collection {
+                section(title: "La saga", meta: Text(verbatim: saga.name)) { ForEach(saga.parts) { TmdbPoster(title: $0) } }
+            }
+            if !x.recommendations.isEmpty {
+                section(title: "Más como esto") { ForEach(x.recommendations) { TmdbPoster(title: $0) } }
+            }
+        }
+    }
+
+    private func section<Content: View>(title: LocalizedStringKey, meta: Text? = nil, count: Int? = nil, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: title, count: count, meta: meta).padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.scrollTargetLayout().environment(\.posterCaptions, false)
+            }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+        }
+    }
+
+    /// El trabajo de alguien del equipo, en español (TMDB lo manda en inglés); un personaje se queda tal cual.
+    private func crewRole(_ role: String) -> String {
+        let language = env.services.appSettings.uiLanguage
+        switch role {
+        case "Director": return Strings.tr("Dirección", language: language)
+        case "Screenplay", "Writer": return Strings.tr("Guion", language: language)
+        case "Novel": return Strings.tr("Novela", language: language)
+        case "Creator": return Strings.tr("Creación", language: language)
+        default: return role
         }
     }
 
@@ -195,22 +467,29 @@ struct TitleView: View {
     }
 
     // MARK: acciones
-    private func start(_ model: TitleModel, videoID: String?, source: Source? = nil) {
+    private func start(_ model: TitleModel, videoID: String?, source: Source? = nil, fromStart: Bool = false) {
         guard var request = model.playRequest(videoID: videoID) else { return }
         request.sourceIndex = source?.index
+        request.fromStart = fromStart
         if env.services.appSettings.preferInfuse { Task { await env.playExternal(request, source: source) } } else { env.play(request) }
     }
 
     private func handle(source: Source, videoID: String, purpose: Purpose, model: TitleModel) {
         switch purpose {
         case .watch: start(model, videoID: videoID, source: source)
-        case .download: Task { await report(model.download([videoID], source: source), model) }   // la fuente que elegiste
+        case .download:
+            // Ya hay una copia (o se está bajando): una sola por película o episodio, así que se pregunta si cambiarla.
+            Task {
+                if let existing = await model.existingDownload(videoID) { replacing = Replacement(source: source, videoID: videoID, existing: existing); return }
+                await report(model.download([videoID], source: source), model)   // la fuente que elegiste
+            }
         }
     }
 
     private func report(_ outcome: TitleModel.DownloadOutcome, _ model: TitleModel) async {
         switch outcome {
-        case .queued(let n): if n == 1 { env.notify("Descargando. Lo verás en Descargas.", tone: .success) } else { env.notify(format: "Descargando %lld episodios. Los verás en Descargas.", n, tone: .success) }
+        // Una sola: lo dice el botón o el renglón (su avance), sin aviso encima. Varias: un aviso breve.
+        case .queued(let n): if n > 1 { env.notify(format: "Descargando %lld episodios", n, tone: .success, action: .downloads) }
         case .noSources: env.notify("No hay fuentes de Real-Debrid para descargar.")
         case .notEnoughSpace(let text): env.notify(text)
         case .already: env.notify("Ya está descargado.", tone: .info)
@@ -233,6 +512,7 @@ struct EpisodeRowView: View {
     let download: () -> Void
     let markWatched: () -> Void
     let chooseSource: () -> Void
+    var resumeDownload: () -> Void = {}
     var downloadFraction: Double?
     var playOnTV: (() -> Void)?
 
@@ -263,7 +543,7 @@ struct EpisodeRowView: View {
         .contextMenu {
             Button("Marcar como visto", systemImage: "checkmark.circle", action: markWatched)
             Button("Descargar", systemImage: "arrow.down.circle", action: download)
-            Button("Elegir fuente", systemImage: "list.bullet", action: chooseSource)
+            Button("Elegir la fuente…", systemImage: "list.bullet", action: chooseSource)
             if let playOnTV { Button("Ver en la TV", systemImage: "tv", action: playOnTV) }
         }
     }
@@ -277,11 +557,20 @@ struct EpisodeRowView: View {
     }
 
     @ViewBuilder private var stateIcon: some View {
-        if row.watched { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good) }
-        else if row.download == .done { Image(systemName: "arrow.down.circle.fill").foregroundStyle(DS.good) }
+        if row.watched { Image(systemName: "checkmark.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("Visto")) }
+        else if row.download == .done { Image(systemName: "arrow.down.circle.fill").foregroundStyle(DS.good).accessibilityLabel(Text("Descargado")) }
         else if row.download == .downloading || row.download == .queued {
-            if let downloadFraction { Gauge(value: downloadFraction) { EmptyView() }.gaugeStyle(.accessoryCircularCapacity).tint(DS.primary).scaleEffect(DS.Gauge.episodeScale) }
-            else { ProgressView() }
+            // El mismo anillo que el círculo de Descargar de la ficha.
+            DownloadRing(fraction: downloadFraction ?? 0, lineWidth: DS.TitleAction.ringSmallLine)
+                .frame(width: DS.TitleAction.ringSmall, height: DS.TitleAction.ringSmall)
+        }
+        else if row.download == .paused || row.download == .failed {
+            // En pausa o falló: seguir donde iba (no empezar de cero con otra fuente).
+            Button(action: resumeDownload) {
+                Image(systemName: row.download == .failed ? "arrow.clockwise" : "play.circle").foregroundStyle(row.download == .failed ? DS.warning : DS.textMuted)
+                    .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+            }
+            .buttonStyle(.plain).accessibilityLabel(row.download == .failed ? Text("Reintentar") : Text("Reanudar"))
         }
         else { Button(action: download) { Image(systemName: "arrow.down.circle").foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget) }.buttonStyle(.plain).accessibilityLabel(Text("Descargar")) }
     }

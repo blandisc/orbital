@@ -29,20 +29,51 @@ func badgeKey(_ reason: SuggestionReason) -> LocalizedStringKey {
     }
 }
 
-/// Una fila horizontal de portadas con su título.
+extension EnvironmentValues {
+    /// El nombre bajo cada póster: sí en cuadrículas, no en las tiras de una sección (el póster ya lo dice).
+    @Entry var posterCaptions = true
+}
+
+/// Arriba a la derecha de cada pestaña: tu avatar, que abre Ajustes (en todas igual: siempre se sabe dónde están).
+struct ProfileButton: View {
+    @EnvironmentObject private var env: AppEnvironment
+    var avatar: String?
+    var body: some View {
+        NavigationLink(value: SettingsRoute()) { AvatarImage(id: avatar ?? env.services.appSettings.avatar) }
+            .accessibilityLabel(Text("Ajustes"))
+    }
+}
+
+/// Una lista de Inicio abierta completa desde su encabezado («Mi lista 12 ›»).
+struct HomeListRoute: Hashable { var id: String }
+
+/// Una fila horizontal de portadas con su título; con `route`, el encabezado dice cuántos hay y abre la lista completa.
 struct Rail<Content: View>: View {
     let title: LocalizedStringKey
     var trailing: LocalizedStringKey?
-    var logo: String?
-    var icon: OrbitalIcon?
+    var count: Int?
+    var route: HomeListRoute?
+    /// El porqué arriba del título y de dónde viene (su sello).
+    var eyebrow: Text?
+    var source: ListSource?
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: title, trailing: trailing, logo: logo, icon: icon).padding(.horizontal, DS.Space.gutter)
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.padding(.horizontal, DS.Space.gutter)
+            Group {
+                if let route {
+                    NavigationLink(value: route) { DSSectionHead(title: Text(title), trailing: trailing.map { Text($0) }, count: count, chevron: true, source: source, eyebrow: eyebrow) }
+                        .buttonStyle(.plain)
+                } else {
+                    DSSectionHead(title: Text(title), trailing: trailing.map { Text($0) }, count: count, source: source, eyebrow: eyebrow)
+                }
             }
+            .padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s3) { content() }.scrollTargetLayout().environment(\.posterCaptions, false)
+            }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
         }
     }
 }
@@ -59,18 +90,38 @@ struct TitleLink: View {
     var width: CGFloat = DS.Poster.railWidth
     /// Un renglón más debajo del nombre («2021 · Película»): distingue títulos que se llaman igual.
     var detail: Text?
+    /// Con el reflejo del póster debajo (los renglones de Inicio y Para ti).
+    var reflected = false
+    @Environment(\.posterCaptions) private var captions
 
     var body: some View {
+        link.modifier(OptionalPosterReflection(on: reflected && !captions, url: route.poster, title: route.title, width: width))
+    }
+
+    private var link: some View {
         NavigationLink(value: route) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 PosterCard(title: route.title, poster: route.poster, badge: badge, bookmarked: bookmarked, rank: rank, progress: progress, width: width)
                     .titleZoomSource(route)
-                Text(route.title).recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading)
-                if let detail { detail.recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading) }
+                // En una tira (Editorial) el póster habla solo; en una cuadrícula (resultados, géneros) el nombre ayuda a distinguir.
+                if captions {
+                    Text(route.title).recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading)
+                    if let detail { detail.recipe(.footnote).lineLimit(1).frame(width: width, alignment: .leading) }
+                }
             }
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("title-link")   // para las pruebas de interfaz
+    }
+}
+
+private struct OptionalPosterReflection: ViewModifier {
+    let on: Bool
+    let url: String?
+    let title: String
+    let width: CGFloat
+    func body(content: Content) -> some View {
+        if on { content.posterReflection(url, title: title, width: width) } else { content }
     }
 }
 
@@ -114,6 +165,8 @@ struct NowPlayingCard: View {
     let onContinueHere: () -> Void
     /// Con su caja (en Inicio). En la hoja del control remoto, sin caja: la hoja ya es el contenedor.
     var framed = true
+    /// Los sustos de la película (si hay mapa): marcados en la barra de avance.
+    var scares: [JumpScare] = []
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var tap = 0
 
@@ -122,7 +175,7 @@ struct NowPlayingCard: View {
             Label(now.live ? "En la TV · En vivo" : "Viendo en la TV", systemImage: "tv")
                 .font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted)
             HStack(alignment: .center, spacing: DS.Space.s3) {
-                PosterView(url: now.poster, title: now.title, aspect: DS.Poster.aspect).frame(width: DS.Poster.nowPlayingWidth)
+                PosterView(url: now.art, title: now.title, aspect: DS.Poster.aspect).frame(width: DS.Poster.nowPlayingWidth)
                 info
                 Spacer(minLength: 0)
             }
@@ -155,7 +208,8 @@ struct NowPlayingCard: View {
                     Text(timeLeftText(minutes: left)).font(DS.TextRecipe.caption.font).foregroundStyle(DS.textFaint).lineLimit(1)
                 }
                 TimelineView(.periodic(from: fetchedAt, by: DS.NowPlaying.progressTick)) { context in
-                    DSProgress(fraction: now.duration > 0 ? interpolatedPosition(at: context.date) / now.duration : 0)
+                    if scares.isEmpty { DSProgress(fraction: now.duration > 0 ? interpolatedPosition(at: context.date) / now.duration : 0) }
+                    else { ScareTimeline(position: interpolatedPosition(at: context.date), duration: now.duration, scares: scares) }
                 }
             }
         }
@@ -163,8 +217,8 @@ struct NowPlayingCard: View {
 
     /// Mientras no está en pausa, el avance se calcula a partir del último sondeo (no salta cada 5 s).
     private func interpolatedPosition(at date: Date) -> Double {
-        guard !now.paused, !now.live else { return now.position }
-        return min(now.duration, now.position + max(0, date.timeIntervalSince(fetchedAt)))
+        guard !now.live else { return now.position }
+        return now.position(at: date, since: fetchedAt)
     }
 
     @ViewBuilder private var controls: some View {
@@ -183,26 +237,25 @@ struct NowPlayingCard: View {
 
     @ViewBuilder private func buttons(labeled: Bool) -> some View {
         if now.live {
-            actionButton(symbol: "chevron.up", text: "Canal anterior", labeled: labeled) { act("previous") }
-            actionButton(symbol: "chevron.down", text: "Canal siguiente", labeled: labeled) { act("next") }
+            // Igual que el control remoto: arriba es el siguiente canal, abajo el anterior.
+            actionButton(symbol: "chevron.up", text: "Canal siguiente", labeled: labeled) { act("next") }
+            actionButton(symbol: "chevron.down", text: "Canal anterior", labeled: labeled) { act("previous") }
             actionButton(symbol: now.muted ? "speaker.slash.fill" : "speaker.wave.2.fill", text: "Sin sonido", labeled: labeled) { act("mute") }
         } else {
             actionButton(symbol: "gobackward.10", text: "Retroceder 10 segundos", labeled: labeled) { act("skip", -10) }
-            actionButton(symbol: now.paused ? "play.fill" : "pause.fill", text: now.paused ? "Reanudar" : "Pausa", prominent: true, labeled: labeled) { act("toggle") }
+            actionButton(symbol: now.paused ? "play.fill" : "pause.fill", text: now.paused ? "Continuar" : "Pausa", prominent: true, labeled: labeled) { act("toggle") }
             actionButton(symbol: "goforward.10", text: "Adelantar 10 segundos", labeled: labeled) { act("skip", 10) }
-            actionButton(symbol: "forward.end.fill", text: "Siguiente episodio", labeled: labeled) { act("next") }
+            if now.kind == "series" { actionButton(symbol: "forward.end.fill", text: "Siguiente episodio", labeled: labeled) { act("next") } }
         }
         moreMenu
     }
 
     private var moreMenu: some View {
-        Menu {
+        DSMoreMenu {
             Button("Salir del video", systemImage: "xmark.circle") { act("stop") }
             if !now.live { Button("Seguir aquí", systemImage: "iphone") { onContinueHere() } }
-        } label: { Image(systemName: "ellipsis.circle") }
-        .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
+        }
         .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? nil : .infinity)
-        .accessibilityLabel(Text("Más"))
     }
 
     @ViewBuilder private func actionButton(symbol: String, text: LocalizedStringKey, prominent: Bool = false, labeled: Bool, action: @escaping () -> Void) -> some View {
@@ -253,7 +306,7 @@ struct FromTVCard: View {
                         Spacer(minLength: DS.Space.s2)
                         Button(action: onDismiss) { Image(systemName: "xmark").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
                             .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.small)
-                            .accessibilityLabel(Text("Descartar"))
+                            .accessibilityLabel(Text("Quitar"))
                     }
                     Spacer(minLength: DS.Space.s2)
                     TitleLogo(url: Artwork.logoURL(metaID: item.metaID), title: item.title)

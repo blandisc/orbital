@@ -49,42 +49,7 @@ struct Eyebrow: View {
     }
 }
 
-/// Una acción de la rejilla de acciones de la ficha.
-struct ProjectionAction: Identifiable {
-    let id: String
-    let title: LocalizedStringKey
-    let symbol: String
-    var active = false
-    var disabled = false
-    let action: () -> Void
-}
 
-/// Las acciones secundarias de una ficha (Mi lista, Descargar, Fuentes…): botones nativos con relleno del sistema, del mismo
-/// ancho, con ícono arriba y nombre abajo. Con letra de accesibilidad se apilan en renglones.
-struct ActionGrid: View {
-    let actions: [ProjectionAction]
-    @Environment(\.dynamicTypeSize) private var typeSize
-
-    var body: some View {
-        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: DS.Space.s2)) : AnyLayout(HStackLayout(spacing: DS.Space.s2))
-        layout {
-            ForEach(actions) { item in
-                Button(action: item.action) {
-                    VStack(spacing: DS.Space.s1) {
-                        Image(systemName: item.symbol).font(DS.TextRecipe.cardTitle.font).symbolVariant(item.active ? .fill : .none)
-                        Text(item.title).font(DS.TextRecipe.footnote.font).lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
-                    .padding(.vertical, DS.Space.s2)
-                }
-                .buttonStyle(.bordered).buttonBorderShape(.roundedRectangle(radius: DS.Radius.lg))
-                .tint(item.active ? DS.accent : DS.text)
-                .disabled(item.disabled)
-                .sensoryFeedback(.selection, trigger: item.active)
-            }
-        }
-    }
-}
 
 /// Una pieza ancha 16:9 de un riel (lo que tenías a medias, episodios nuevos): el arte con su avance y, debajo, el nombre y
 /// una línea de datos.
@@ -93,7 +58,8 @@ struct StillCard: View {
     let art: String?
     var data: [String] = []
     var progress: Double?
-    var width: CGFloat = DS.Poster.stillWidth
+    /// `nil`: el ancho de su columna (la cuadrícula de «Todo lo que sigues»).
+    var width: CGFloat? = DS.Poster.stillWidth
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
@@ -111,18 +77,24 @@ struct StillCard: View {
     }
 }
 
-/// Los puntos de un carrusel (el nativo de las páginas de iOS, en pequeño): dónde estás y cuántas hay.
+/// Los puntos de un carrusel: dónde estás (una gota alargada que brinca de punto a punto) y cuántas hay.
 struct PageDots: View {
     let count: Int
     let index: Int
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         if count > 1 {
+            // El activo es una gota alargada (como el de la TV) que brinca de punto a punto con un resorte: se estira al
+            // salir y se asienta al llegar.
             HStack(spacing: DS.Space.s2) {
                 ForEach(0..<count, id: \.self) { i in
-                    Circle().fill(i == index ? DS.text : DS.fillStrong).frame(width: DS.Size.pageDot, height: DS.Size.pageDot)
+                    Capsule().fill(i == index ? DS.text : DS.fillStrong)
+                        .frame(width: i == index ? DS.Size.pageDot * DS.Size.pageDotStretch : DS.Size.pageDot, height: DS.Size.pageDot)
                 }
             }
+            .animation(reduceMotion ? nil : .spring(response: DS.Size.pageDotSpring, dampingFraction: DS.Size.pageDotDamping), value: index)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text("\(index + 1) de \(count)"))
         }
@@ -147,34 +119,6 @@ struct DSOptionMenu<Item: Hashable & Identifiable>: View {
         }
         .buttonStyle(.bordered).buttonBorderShape(.capsule).tint(DS.text)
         .sensoryFeedback(.selection, trigger: selection)
-    }
-}
-
-/// Un renglón con su puesto (lo más popular, la cartelera de una plataforma): el número en SF Mono, el póster chico, el nombre
-/// y un dato; a la derecha, opcional, cuánto subió o bajó.
-struct RankedRow: View {
-    let rank: Int
-    let title: String
-    let poster: String?
-    var detail: Text?
-    /// Cuántos lugares subió (positivo) o bajó (negativo); nil si no se sabe.
-    var movement: Int?
-    var isNew = false
-
-    var body: some View {
-        HStack(spacing: DS.Space.s3) {
-            Text(verbatim: "\(rank)").recipe(.data).frame(minWidth: DS.Space.s5, alignment: .leading)
-            PosterView(url: poster, title: title).frame(width: DS.Poster.rowWidth)
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text(title).recipe(.body).lineLimit(1)
-                if let detail { detail.recipe(.footnote).lineLimit(1) }
-            }
-            Spacer(minLength: DS.Space.s2)
-            if isNew || movement != nil { MovementBadge(movement: movement, isNew: isNew) }
-        }
-        .frame(minHeight: DS.Size.touchTarget)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
     }
 }
 
@@ -203,7 +147,7 @@ extension Label where Title == Text, Icon == Image {
 /// Un mosaico con arte y un nombre encima (géneros de Explora): el arte se tiñe de oscuro abajo para que el nombre se lea.
 struct ArtTile: View {
     let title: Text
-    /// El arte: una imagen del catálogo de la app (los géneros, `scripts/genre_art.py`) o, si no, una de internet.
+    /// El arte: una imagen del catálogo de la app (los géneros: arte de Grok Imagine, dirección cinematográfica) o, si no, una de internet.
     var asset: String? = nil
     var art: String? = nil
 
@@ -237,7 +181,10 @@ struct TVAccessory: View {
     /// El arte y el nombre (lo que se toca para abrir el control remoto).
     private var info: some View {
         HStack(spacing: DS.Space.s3) {
-            PosterView(url: now.poster, title: now.title, aspect: 1).frame(width: DS.Size.accessoryArt).clipShape(Circle())
+            // El póster como póster (vertical, esquinas suaves); el logo de un canal en vivo, cuadrado. Nunca en círculo.
+            PosterView(url: now.art, title: now.title, aspect: now.live ? 1 : DS.Poster.aspect)
+                .frame(height: DS.Size.accessoryArt)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm, style: .continuous))
             VStack(alignment: .leading, spacing: 0) {
                 Text(now.live ? (now.channel ?? now.title) : now.title).recipe(.cardTitle).lineLimit(1)
                 if placement != .inline {
@@ -256,38 +203,11 @@ struct TVAccessory: View {
                 Button(action: toggle) { Image(systemName: now.paused ? "play.fill" : "pause.fill") }
                     .buttonStyle(.plain).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
                     .disabled(busy)
-                    .accessibilityLabel(now.paused ? Text("Reanudar") : Text("Pausa"))
+                    .accessibilityLabel(now.paused ? Text("Continuar") : Text("Pausa"))
             }
         }
         .padding(.horizontal, DS.Space.s3)
         .accessibilityElement(children: .contain)
-    }
-}
-
-/// El accesorio cuando la TV no reproduce nada: el mismo lugar abre el control completo de tu Orbital (siempre se entra por
-/// aquí, con video o sin él).
-struct TVRemoteAccessory: View {
-    let openRemote: () -> Void
-    @Environment(\.tabViewBottomAccessoryPlacement) private var placement
-
-    var body: some View {
-        Button(action: openRemote) {
-            HStack(spacing: DS.Space.s3) {
-                Image(systemName: "av.remote").font(DS.TextRecipe.cardTitle.font)
-                    .frame(width: DS.Size.accessoryArt, height: DS.Size.accessoryArt)
-                    .background(DS.fill, in: Circle())
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Control de tu Orbital").recipe(.cardTitle).lineLimit(1)
-                    if placement != .inline { Text("Nada en la TV ahora").recipe(.footnote, color: DS.textMuted).lineLimit(1) }
-                }
-                Spacer(minLength: DS.Space.s2)
-                Image(systemName: "chevron.up").font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.textMuted)
-            }
-            .padding(.horizontal, DS.Space.s3)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityHint(Text("Control remoto"))
     }
 }
 
@@ -320,6 +240,8 @@ private struct TitleDestinations: ViewModifier {
             .navigationDestination(for: TitleRoute.self) { route in
                 TitleView(route: route).navigationTransition(.zoom(sourceID: route, in: zoom))
             }
+            .navigationDestination(for: TmdbRoute.self) { TmdbTitleView(title: $0.title) }   // recomendaciones, saga, filmografía
+            .navigationDestination(for: PersonRoute.self) { PersonView(route: $0) }
     }
 }
 
@@ -351,6 +273,8 @@ struct MosaicCaption<More: View>: View {
     var accent: ArtColors?
     /// Una serie abre su ficha («Ver la serie»).
     var isSeries = false
+    /// Tocar el logo o los datos abre la ficha (serie o película).
+    var open: (() -> Void)?
     let watch: () -> Void
     @Environment(\.colorScheme) private var scheme
     @ViewBuilder var more: () -> More
@@ -363,11 +287,14 @@ struct MosaicCaption<More: View>: View {
                 TitleLogo(url: scheme == .dark ? logo : nil, title: title).frame(maxHeight: DS.Size.captionLogo, alignment: .leading)
                 if !data.isEmpty { DataLine(parts: data) }
             }
+            // Un toque, no un arrastre: arrastrar desde el pie sigue moviendo el mosaico de atrás.
+            .onTapGesture { open?() }
+            .accessibilityAddTraits(open == nil ? [] : .isButton)
+            .accessibilityHint(open == nil ? Text(verbatim: "") : Text("Abre la ficha"))
+            .accessibilityIdentifier("mosaic-caption-open")
             Spacer(minLength: DS.Space.s2)
-            Menu { more() } label: { Image(systemName: "ellipsis") }
-                .buttonStyle(.bordered).buttonBorderShape(.circle).controlSize(.large).tint(DS.text)
-                .accessibilityLabel(Text("Más"))
-            Button(action: watch) { Image(systemName: isSeries ? "chevron.right" : "play.fill") }
+            DSMoreMenu { more() }
+            Button(action: watch) { Image(systemName: "play.fill") }   // como en toda la app (antes, una flecha en las series)
                 .dsArtButton(accent).buttonBorderShape(.circle).controlSize(.large)
                 .accessibilityLabel(isSeries ? Text("Ver la serie") : Text("Ver"))
         }

@@ -91,7 +91,8 @@ struct DSProgress: View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 Rectangle().fill(DS.track)
-                Rectangle().fill(DS.accent).frame(width: geo.size.width * min(1, max(0, fraction)))   // el acento es avance
+                // Sin avance no se dibuja (una forma de ancho cero, dentro del vidrio y girada en 3D en el carrusel, cerraba la app).
+                if fraction > 0 { Rectangle().fill(DS.accent).frame(width: max(DS.Size.hairline, geo.size.width * min(1, fraction))) }   // el acento es avance
             }
         }
         .frame(height: DS.Space.s1).clipShape(Capsule())
@@ -99,26 +100,56 @@ struct DSProgress: View {
     }
 }
 
-/// Título de una zona con su dato a la derecha.
+/// El encabezado de toda sección de la app (dirección «Editorial»): el título grande, a la derecha «Ver todo» si abre la
+/// lista completa (o un dato corto), y debajo una línea gris solo cuando ayuda a decidir. Sin íconos: el color lo pone el
+/// arte de abajo. Una sola pieza: todas las secciones se ven igual.
 struct DSSectionHead: View {
-    let title: LocalizedStringKey
-    var trailing: LocalizedStringKey?
-    /// El logo de la plataforma (Netflix, Disney+…), si la lista es de una: siempre a la misma altura que en los chips.
-    var logo: String?
-    /// El ícono de la lista (el mismo de la TV), si no hay logo.
-    var icon: OrbitalIcon?
+    let title: Text
+    var trailing: Text?
     var action: (() -> Void)?
+    /// Cuántos hay (en gris), en listas que son herramienta (Descargas); en un escaparate, mejor «Ver todo».
+    var count: Int?
+    /// Abre la lista completa: «Ver todo».
+    var chevron = false
+    /// La línea gris de abajo.
+    var meta: Text?
+    /// De dónde viene (Trakt, Stremio, tu Orbital): su sello junto al título.
+    var source: ListSource?
+    /// El porqué, en una línea ámbar arriba del título («Lo que dejaste pendiente»), como en una revista.
+    var eyebrow: Text?
+
+    init(title: Text, trailing: Text? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil) {
+        self.title = title; self.trailing = trailing; self.action = action; self.count = count; self.chevron = chevron; self.meta = meta; self.source = source
+        self.eyebrow = eyebrow
+    }
+
+    init(title: LocalizedStringKey, trailing: LocalizedStringKey? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil) {
+        self.init(title: Text(title), trailing: trailing.map { Text($0) }, action: action, count: count, chevron: chevron, meta: meta, source: source, eyebrow: eyebrow)
+    }
 
     var body: some View {
-        HStack(alignment: .center, spacing: DS.Space.s2) {
-            if let logo { DSPlatformLogo(url: logo) } else if let icon { ListIcon(icon: icon).foregroundStyle(DS.textMuted) }
-            Text(title).recipe(.section)
-            Spacer()
-            if let trailing {
-                if let action { Button(action: action) { Text(trailing) }.font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
-                else { Text(trailing).font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted) }
+        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
+            VStack(alignment: .leading, spacing: DS.Space.s1) {
+                // Un solo lugar para el porqué de una sección en toda la app: arriba del título, en ámbar (como una revista).
+                // Antes unas lo ponían arriba en ámbar y otras abajo en gris.
+                if let line = eyebrow ?? meta { line.recipe(.eyebrow, color: DS.eyebrow).lineLimit(2).multilineTextAlignment(.leading) }
+                HStack(alignment: .center, spacing: DS.Space.s2) {
+                    title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
+                    if let source { SourceBadge(source: source) }
+                }
+                if eyebrow != nil, let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }
             }
+            Spacer(minLength: DS.Space.s2)
+            if let trailing {
+                if let action { Button(action: action) { trailing }.font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted) }
+                else { trailing.font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted) }
+            }
+            if chevron { Text("Ver todo").recipe(.secondary, color: DS.textMuted) }
+            else if let count { Text(verbatim: "\(count)").recipe(.secondary, color: DS.textMuted) }
         }
+        .textCase(nil)   // también como encabezado de una lista (Descargas): sin las mayúsculas del sistema
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
     }
 }
@@ -134,30 +165,45 @@ struct RemoteImage<Content: View>: View {
     @ViewBuilder let content: (RemoteImagePhase) -> Content
     @State private var loaded: UIImage?
     @State private var didFail = false
+    @Environment(\.perfTag) private var perfTag
 
     init(url: URL, maxPoints: CGFloat, @ViewBuilder content: @escaping (RemoteImagePhase) -> Content) {
         self.url = url; self.maxPoints = maxPoints; self.content = content
-        _loaded = State(initialValue: ImagePipeline.shared.cached(url, maxPixel: maxPoints * ImagePipeline.screenScale))
     }
 
     var body: some View {
         content(phase).task(id: url) { await load() }
     }
 
+    /// La caché se consulta al pintar, no al crear la vista: SwiftUI crea la vista cada vez que se pinta su padre (cada
+    /// póster de cada estante), pero solo la vuelve a pintar si cambió algo suyo.
     private var phase: RemoteImagePhase {
         if let loaded { return .success(Image(uiImage: loaded)) }
+        if let hit = ImagePipeline.shared.cached(url, maxPixel: maxPoints * ImagePipeline.screenScale) { return .success(Image(uiImage: hit)) }
         return didFail ? .failure : .loading
     }
 
     private func load() async {
         let pixels = maxPoints * ImagePipeline.screenScale
-        if let hit = ImagePipeline.shared.cached(url, maxPixel: pixels) { loaded = hit; return }
+        if let hit = ImagePipeline.shared.cached(url, maxPixel: pixels) { loaded = hit; if let perfTag { Perf.mark(perfTag + ".image") }; return }
         loaded = nil   // otra URL en la misma vista: no se queda la imagen de antes mientras llega (o si falla) la nueva
         if ImagePipeline.shared.recentlyFailed(url, maxPixel: pixels) { didFail = true; return }
         didFail = false
+        // Un fondo o un póster: primero su versión ligera (llega en una fracción) y encima la buena cuando esté.
+        // (También si la buena ya está en el disco: decodificar 1920 px tarda; la ligera sale casi al instante.)
+        if let preview = Artwork.preview(url.absoluteString), pixels > CGFloat(preview.pixels), let quickURL = URL(string: preview.url) {
+            async let full = ImagePipeline.shared.image(url, maxPixel: pixels)
+            if let quick = await ImagePipeline.shared.image(quickURL, maxPixel: CGFloat(preview.pixels), urgent: true), !Task.isCancelled {
+                if loaded == nil { loaded = quick; if let perfTag { Perf.mark(perfTag + ".image") } }
+            }
+            let image = await full
+            if Task.isCancelled { return }
+            if let image { loaded = image; if let perfTag { Perf.mark(perfTag + ".sharp") } } else if loaded == nil { didFail = true }
+            return
+        }
         let image = await ImagePipeline.shared.image(url, maxPixel: pixels)
         if Task.isCancelled { return }
-        if let image { loaded = image } else { didFail = true }
+        if let image { loaded = image; if let perfTag { Perf.mark(perfTag + ".image") } } else { didFail = true }
     }
 }
 
@@ -279,6 +325,8 @@ struct TitleLogo: View {
     let title: String
     var size: Size = .tile
     var dark = false
+    /// Centrado (la ficha): el logo y, si no hay, el nombre, al centro.
+    var centered = false
     /// Si el logo resultó oscuro al medirlo (un logo negro sobre la sala oscura no se lee): se pinta claro.
     @State private var measuredDark = false
     /// El logo sin su margen transparente (metahub los trae con ~25 % vacío arriba y abajo: el rótulo se veía flotando).
@@ -295,7 +343,7 @@ struct TitleLogo: View {
                 }
                 // Su alto real (por su proporción, con el tope de siempre): una caja más alta que el logo dejaba un hueco
                 // entre el rótulo y el logo.
-                .frame(maxWidth: DS.Size.cardMax, maxHeight: fittedHeight, alignment: .bottomLeading)
+                .frame(maxWidth: DS.Size.cardMax, maxHeight: fittedHeight, alignment: centered ? .bottom : .bottomLeading)
                 .shadow(color: DS.scrim, radius: DS.Space.s1)
                 .task(id: url) {
                     trimmed = LogoTrim.cached(u)
@@ -320,7 +368,8 @@ struct TitleLogo: View {
     private var name: some View {
         // En una pieza, una sola línea (con puntos suspensivos si no cabe): en una columna angosta dos líneas se encimaban con el dato.
         Text(title).font((size == .hero ? DS.TextRecipe.section : DS.TextRecipe.cardTitle).font.weight(.bold)).foregroundStyle(DS.text)
-            .lineLimit(size == .hero ? 2 : 1).frame(maxWidth: .infinity, alignment: .leading)
+            .lineLimit(size == .hero ? 2 : 1).multilineTextAlignment(centered ? .center : .leading)
+            .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
     }
 }
 
@@ -356,7 +405,7 @@ struct HeroCard<Actions: View>: View {
     }
 }
 
-/// Un renglón de lista (`RowTile` en la TV): miniatura ancha, nombre y dato. «También tenías» en Inicio.
+/// Un renglón de lista (`RowTile` en la TV): miniatura ancha, nombre y dato. 
 struct RowTile: View {
     let title: String
     let thumb: String?
@@ -391,8 +440,51 @@ extension View {
 
     /// El botón principal de un título con arte (Ver, Continuar): toma el color claro del arte, con texto oscuro, como
     /// `--color-primary-art` en la TV. Sin colores, el neutro casi papel de la TV.
-    func dsArtButton(_ colors: ArtColors?) -> some View {
-        buttonStyle(.glassProminent).tint((colors ?? .neutral).accent).foregroundStyle(DS.backdropDeep)
+    func dsArtButton(_ colors: ArtColors?) -> some View { modifier(ArtButton(colors: colors)) }
+}
+
+/// Botones sólidos (sin vidrio) en lo que se gira en 3D: el carrusel de Inicio en coverflow deformaba el vidrio.
+private struct SolidButtonsKey: EnvironmentKey { static let defaultValue = false }
+extension EnvironmentValues {
+    var solidButtons: Bool {
+        get { self[SolidButtonsKey.self] }
+        set { self[SolidButtonsKey.self] = newValue }
+    }
+}
+
+private struct ArtButton: ViewModifier {
+    let colors: ArtColors?
+    @Environment(\.solidButtons) private var solid
+    func body(content: Content) -> some View {
+        if solid {
+            content.buttonStyle(.borderedProminent).buttonBorderShape(.capsule).tint((colors ?? .neutral).accent).foregroundStyle(DS.backdropDeep)
+        } else {
+            content.buttonStyle(.glassProminent).tint((colors ?? .neutral).accent).foregroundStyle(DS.backdropDeep)
+        }
+    }
+}
+
+/// El botón de ícono secundario: de vidrio; sólido donde el vidrio no se lleva bien (`solidButtons`).
+private struct IconButtonLook: ViewModifier {
+    @Environment(\.solidButtons) private var solid
+    func body(content: Content) -> some View {
+        if solid { content.buttonStyle(.bordered).tint(DS.paper) } else { content.buttonStyle(.glass) }
+    }
+}
+
+extension View {
+    func dsIconButtonLook() -> some View { modifier(IconButtonLook()) }
+}
+
+/// «Más»: el mismo menú en toda la app, un círculo con «…» (vidrio; sólido donde el vidrio no se lleva bien). Antes había cuatro
+/// (con texto, borde, otro ícono…).
+struct DSMoreMenu<Content: View>: View {
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        Menu { content() } label: { Image(systemName: "ellipsis") }
+            .dsIconButtonLook().buttonBorderShape(.circle).controlSize(.large)
+            .accessibilityLabel(Text("Más"))
     }
 }
 
@@ -406,10 +498,42 @@ struct DSIconButton: View {
     var body: some View {
         Group {
             if prominent { Button(action: action) { Image(systemName: symbol) }.dsPrimaryButton() }
-            else { Button(action: action) { Image(systemName: symbol) }.buttonStyle(.glass) }
+            else { Button(action: action) { Image(systemName: symbol) }.dsIconButtonLook() }
         }
         .buttonBorderShape(.circle).controlSize(.large)
         .accessibilityLabel(Text(label))
+    }
+}
+
+/// Un botón de ícono que pide confirmación: el primer toque lo abre en una cápsula que dice qué hará («¿Ver en la TV?»),
+/// el segundo lo hace; si no lo tocas otra vez, se cierra solo.
+struct ConfirmIconButton: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let symbol: String
+    let prompt: LocalizedStringKey
+    let label: LocalizedStringKey
+    let action: () -> Void
+    @State private var asking = false
+
+    var body: some View {
+        Button {
+            if asking { asking = false; action() } else { withAnimation(DS.Motion.base(reduceMotion)) { asking = true } }
+        } label: {
+            HStack(spacing: DS.Space.s2) {
+                Image(systemName: symbol)
+                if asking { Text(prompt).lineLimit(1).fixedSize().transition(.opacity.combined(with: .move(edge: .leading))) }
+            }
+        }
+        .dsIconButtonLook()
+        .buttonBorderShape(asking ? .capsule : .circle).controlSize(.large)
+        .accessibilityLabel(Text(label))
+        .accessibilityHint(asking ? Text("Toca otra vez para confirmar") : Text(prompt))
+        .sensoryFeedback(.selection, trigger: asking)
+        .task(id: asking) {
+            guard asking else { return }
+            try? await Task.sleep(nanoseconds: DS.Timing.confirm)
+            withAnimation(DS.Motion.base(reduceMotion)) { asking = false }
+        }
     }
 }
 
@@ -435,7 +559,7 @@ struct DSNotice: View {
     }
 
     private var symbol: String {
-        switch tone { case .info: "info.circle"; case .success: "checkmark.circle.fill"; case .warn: "wifi.slash"; case .error: "exclamationmark.triangle.fill" }
+        switch tone { case .info: "info.circle"; case .success: "checkmark.circle.fill"; case .warn: "exclamationmark.triangle"; case .error: "exclamationmark.triangle.fill" }
     }
 
     private var color: Color {
@@ -460,6 +584,53 @@ struct DSSegmented<Value: Hashable>: View {
         } label: { EmptyView() }
         .pickerStyle(.segmented)
         .sensoryFeedback(.selection, trigger: current)
+    }
+}
+
+/// Cuando un área entera no tiene nada (Descargas vacía, sin resultados, nada con estos filtros): siempre esto, el vacío nativo
+/// de iOS con un ícono, qué pasa y, si lo hay, qué hacer. Regla de la app: un área vacía → `DSEmptyState`; un renglón vacío
+/// dentro de una sección → texto chico; un error o sin conexión → `DSNotice`.
+struct DSEmptyState<Actions: View>: View {
+    let symbol: String
+    let title: Text
+    var message: Text?
+    @ViewBuilder var actions: () -> Actions
+
+    var body: some View {
+        ContentUnavailableView {
+            Label { title } icon: { Image(systemName: symbol) }
+        } description: {
+            if let message { message }
+        } actions: {
+            actions().buttonStyle(.glass).controlSize(.large)
+        }
+    }
+}
+
+extension DSEmptyState where Actions == EmptyView {
+    init(symbol: String, title: Text, message: Text? = nil) {
+        self.init(symbol: symbol, title: title, message: message) { EmptyView() }
+    }
+}
+
+/// El filtro de tipo de toda la app: Todo · Películas · Series (o solo Películas · Series), siempre el mismo control y en
+/// ese orden (antes había cinco: cápsulas, un menú, pestañas grandes, un segmentado y un botón en la barra).
+/// `kind`: "" es todo, «movie» o «series». `counts`: cuántas hay de cada uno (Buscar).
+struct DSKindFilter: View {
+    @Binding var kind: String
+    var includeAll = true
+    var counts: (movies: Int, series: Int)?
+
+    var body: some View {
+        DSSegmented(options: options, selection: $kind)
+            .accessibilityLabel(Text("Series o películas"))
+            .accessibilityIdentifier("kind-filter")
+    }
+
+    private var options: [(String, LocalizedStringKey)] {
+        let movies: LocalizedStringKey = counts.map { "Películas \($0.movies)" } ?? "Películas"
+        let series: LocalizedStringKey = counts.map { "Series \($0.series)" } ?? "Series"
+        return (includeAll ? [("", "Todo")] : []) + [("movie", movies), ("series", series)]
     }
 }
 
@@ -566,15 +737,21 @@ struct ArtColors: Equatable {
 /// suave sobre el papel. Sin arte, el fondo liso del modo.
 struct Backdrop: View {
     var tint: ArtColors?
+    /// La ficha: toda la pantalla del color del arte (no solo un velo arriba), en los dos modos.
+    var immersive = false
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
             DS.bg
-            if let tint {
+            if immersive, let tint {
+                LinearGradient(colors: [tint.tint, tint.tint.mix(with: DS.backdropDeep, by: DS.Backdrop.immersiveDeep)], startPoint: .top, endPoint: .bottom)
+                RadialGradient(colors: [tint.accent.opacity(DS.Backdrop.immersiveGlow), .clear], center: DS.Backdrop.lowGlowCenter, startRadius: 0, endRadius: DS.Backdrop.immersiveGlowRadius)
+            } else if let tint {
                 let tone = scheme == .dark ? tint.tint : tint.accent.mix(with: DS.paper, by: DS.Backdrop.lightMix)
                 LinearGradient(stops: [.init(color: tone, location: 0), .init(color: DS.bg, location: DS.Backdrop.fadeTo)], startPoint: .top, endPoint: .bottom)
+                RadialGradient(colors: [tone.opacity(DS.Backdrop.lowGlow), .clear], center: DS.Backdrop.lowGlowCenter, startRadius: 0, endRadius: DS.Backdrop.lowGlowRadius)
             }
         }
         .ignoresSafeArea()
@@ -599,10 +776,34 @@ final class ArtTint: ObservableObject {
     /// Lo último que se pidió: gana siempre (un arte anterior que llega tarde no pinta encima del de ahora).
     private var requested: String?
 
+    init() {}
+    /// Con el color ya sabido de ese arte (si se calculó antes, en esta sesión o en otra): la pantalla aparece ya pintada,
+    /// sin esperar ni fundirse.
+    init(cachedFor url: String?) { colors = url.flatMap(Self.known) }
+
+    /// El color de un arte si ya se sabe: de memoria o del que se guardó en el teléfono (los últimos).
+    static func known(_ url: String) -> ArtColors? {
+        if let hit = cache[url] { return hit }
+        guard let saved = UserDefaults.standard.dictionary(forKey: diskKey)?[url] as? [Int], saved.count == 6 else { return nil }
+        let found = ArtColors(((saved[0], saved[1], saved[2]), (saved[3], saved[4], saved[5])))
+        cache[url] = found
+        return found
+    }
+
+    private static let diskKey = "art-tint-colors"
+
+    /// Se guarda en el teléfono (unos cuantos): la próxima vez que abras la app, la pantalla ya sale con su color.
+    private static func save(_ url: String, _ palette: (tint: ArtPalette.RGB, accent: ArtPalette.RGB)) {
+        var saved = UserDefaults.standard.dictionary(forKey: diskKey) ?? [:]
+        if saved.count >= cacheLimit { saved.removeAll() }
+        saved[url] = [palette.tint.r, palette.tint.g, palette.tint.b, palette.accent.r, palette.accent.g, palette.accent.b]
+        UserDefaults.standard.set(saved, forKey: diskKey)
+    }
+
     func load(_ url: String?) async {
         requested = url
         guard let url, let u = URL(string: url) else { colors = nil; return }
-        if let hit = Self.cache[url] { colors = hit; return }
+        if let hit = Self.known(url) { colors = hit; return }
         // Basta una miniatura para sacar el tono dominante: nunca se decodifica el fondo completo.
         let palette: (tint: ArtPalette.RGB, accent: ArtPalette.RGB)?
         if let thumb = await ImagePipeline.shared.image(u, maxPixel: DS.Image.tintPixels) {
@@ -613,6 +814,7 @@ final class ArtTint: ObservableObject {
         let found = ArtColors(palette)
         if Self.cache.count >= Self.cacheLimit { Self.cache.removeAll() }
         Self.cache[url] = found
+        Self.save(url, palette)
         colors = found
     }
 }
@@ -635,9 +837,11 @@ enum LogoTrim {
 }
 
 enum LogoTone {
-    private static var cache: [URL: Bool] = [:]
+    // En el hilo principal, como `LogoTrim`: varios logos a la vez (el carrusel de Inicio enseña tres) escribían el diccionario
+    // desde hilos distintos y la app se cerraba.
+    @MainActor private static var cache: [URL: Bool] = [:]
 
-    static func isDark(_ url: URL) async -> Bool {
+    @MainActor static func isDark(_ url: URL) async -> Bool {
         if let hit = cache[url] { return hit }
         guard let thumb = await ImagePipeline.shared.image(url, maxPixel: DS.Image.tintPixels),
               let tone = await Task.detached(priority: .utility, operation: { thumb.opaqueTone }).value else { return false }
@@ -706,5 +910,62 @@ extension UIImage {
         var pixel = [UInt8](repeating: 0, count: 4)
         CIContext().render(output, toBitmap: &pixel, rowBytes: 4, bounds: CGRect(x: 0, y: 0, width: 1, height: 1), format: .RGBA8, colorSpace: nil)
         return UIColor(red: CGFloat(pixel[0]) / 255, green: CGFloat(pixel[1]) / 255, blue: CGFloat(pixel[2]) / 255, alpha: 1)  // ds-exception: el color sale de los píxeles del póster, no es un valor de diseño
+    }
+}
+
+/// El espacio del iPhone como en Ajustes › Almacenamiento: una barra con lo de Orbital (series y películas, en su color),
+/// lo demás del teléfono en gris y lo libre vacío; abajo, la leyenda. Con poco espacio libre, el dato se pone en ámbar.
+struct StorageBar: View {
+    struct Part: Identifiable { let id: String; let label: Text; let bytes: Int64; let color: Color }
+    let parts: [Part]
+    let free: Int64
+    let total: Int64
+    let format: (Int64) -> String
+
+    var body: some View {
+        let others = max(0, total - free - parts.reduce(0) { $0 + $1.bytes })
+        let low = total > 0 && Double(free) / Double(total) < DS.Storage.lowFraction
+        VStack(alignment: .leading, spacing: DS.Space.s2) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Espacio").recipe(.cardTitle).fontWeight(.semibold)
+                Spacer()
+                Text("\(format(free)) libres de \(format(total))").recipe(.footnote, color: low ? DS.warning : DS.textMuted)
+            }
+            GeometryReader { geo in
+                HStack(spacing: DS.Storage.gap) {
+                    ForEach(parts) { part in segment(part.bytes, width: geo.size.width, color: part.color) }
+                    segment(others, width: geo.size.width, color: DS.textFaint)
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(DS.fill)
+                .clipShape(Capsule())
+            }
+            .frame(height: DS.Storage.height)
+            // En renglón; si no cabe (letra grande, iPhone chico), uno debajo del otro: sin «Series…».
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: DS.Space.s3) { legends }
+                VStack(alignment: .leading, spacing: DS.Space.s1) { legends }
+            }
+        }
+        .padding(.vertical, DS.Space.s1)
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder private var legends: some View {
+        ForEach(parts) { part in legend(part.label + Text(verbatim: " \(format(part.bytes))"), color: part.color) }
+        legend(Text("Otras apps"), color: DS.textFaint)
+    }
+
+    private func segment(_ bytes: Int64, width: CGFloat, color: Color) -> some View {
+        let fraction = total > 0 ? CGFloat(bytes) / CGFloat(total) : 0
+        return Rectangle().fill(color).frame(width: bytes > 0 ? max(DS.Storage.minSegment, width * fraction) : 0)
+    }
+
+    private func legend(_ text: Text, color: Color) -> some View {
+        HStack(spacing: DS.Space.s1) {
+            Circle().fill(color).frame(width: DS.Storage.dot, height: DS.Storage.dot)
+            text.recipe(.caption, color: DS.textMuted).lineLimit(1)
+        }
     }
 }

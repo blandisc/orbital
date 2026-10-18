@@ -14,6 +14,23 @@ public enum TraktError: Error, Sendable, CustomStringConvertible {
 }
 
 /// Una película o serie de Trakt, con su id de IMDb (sin él no se podría ver).
+/// Algo que viste según tu historial de Trakt: cuándo, qué (película o episodio de una serie), cuánto dura y sus géneros.
+public struct TraktPlay: Sendable, Equatable {
+    public var at: Date
+    public var kind: String          // movie | series
+    public var imdb: String
+    public var title: String
+    public var minutes: Int
+    public var genres: [String]
+    /// El episodio (temporada, número y nombre), si fue de una serie.
+    public var season: Int?, episode: Int?, episodeTitle: String?
+    public init(at: Date, kind: String, imdb: String, title: String, minutes: Int, genres: [String],
+                season: Int? = nil, episode: Int? = nil, episodeTitle: String? = nil) {
+        self.at = at; self.kind = kind; self.imdb = imdb; self.title = title; self.minutes = minutes; self.genres = genres
+        self.season = season; self.episode = episode; self.episodeTitle = episodeTitle
+    }
+}
+
 public struct TraktEntry: Sendable, Equatable, Identifiable {
     public var kind: String          // movie | series
     public var imdb: String
@@ -24,6 +41,10 @@ public struct TraktEntry: Sendable, Equatable, Identifiable {
     public var overview: String
     public var traktID: Int?
     public var next: (season: Int, episode: Int)?
+    /// Los géneros de Trakt («comedy», «science-fiction»), con `extended=full`.
+    public var genres: [String] = []
+    /// La calificación de Trakt (0 a 10), con `extended=full`.
+    public var rating: Double?
     public var id: String { imdb }
 
     public static func == (a: TraktEntry, b: TraktEntry) -> Bool {
@@ -101,9 +122,26 @@ public enum TraktParsing {
               let title = raw["title"]?.string?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
         func positive(_ j: JSON?) -> Int? { j?.intValue.flatMap { $0 > 0 ? $0 : nil } }
         func isInt(_ j: JSON?) -> Int? { if case .int(let i)? = j { return i }; return nil }
-        return TraktEntry(kind: kind, imdb: imdb, title: title, year: isInt(raw["year"]), runtime: positive(raw["runtime"]),
-                          episodes: positive(raw["aired_episodes"]), overview: (raw["overview"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
-                          traktID: isInt(ids["trakt"]))
+        var entry = TraktEntry(kind: kind, imdb: imdb, title: title, year: isInt(raw["year"]), runtime: positive(raw["runtime"]),
+                               episodes: positive(raw["aired_episodes"]), overview: (raw["overview"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
+                               traktID: isInt(ids["trakt"]))
+        entry.genres = (raw["genres"]?.array ?? []).compactMap(\.string)
+        entry.rating = raw["rating"]?.doubleValue.flatMap { $0 > 0 ? $0 : nil }
+        return entry
+    }
+
+    /// Una fila del historial: una película o un episodio, con su `watched_at`. Sin IMDb o sin fecha: nada.
+    public static func play(_ row: JSON) -> TraktPlay? {
+        guard let stamp = row["watched_at"]?.string, let at = date(stamp) else { return nil }
+        let isMovie = row["type"]?.string == "movie"
+        let item = isMovie ? row["movie"] : row["show"]
+        guard let item, let imdb = item["ids"]?["imdb"]?.string, imdb.hasPrefix("tt"), let title = item["title"]?.string else { return nil }
+        let minutes = (isMovie ? item["runtime"]?.intValue : row["episode"]?["runtime"]?.intValue ?? item["runtime"]?.intValue) ?? 0
+        let genres = (item["genres"]?.array ?? []).compactMap(\.string)
+        let ep = isMovie ? nil : row["episode"]
+        let episodeTitle = ep?["title"]?.string?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return TraktPlay(at: at, kind: isMovie ? "movie" : "series", imdb: imdb, title: title, minutes: max(0, minutes), genres: genres,
+                         season: ep?["season"]?.intValue, episode: ep?["number"]?.intValue, episodeTitle: episodeTitle?.isEmpty == false ? episodeTitle : nil)
     }
 
     /// Una fila del calendario de Trakt («first_aired» en hora universal). Sin IMDb, fecha o número de episodio: nada.
@@ -177,6 +215,9 @@ public actor Trakt {
         let tokens = Tokens(access_token: session.accessToken, refresh_token: nil, expires_at: session.expiresAt)
         secrets.set(SecretKey.traktTokens, (try? JSONEncoder().encode(tokens)).flatMap { String(data: $0, encoding: .utf8) })
     }
+
+    /// El token de la sesión de ahora (para no volver a adoptar la misma sesión de tu Orbital en cada arranque).
+    public nonisolated var accessToken: String? { tokens()?.access_token }
 
     private nonisolated func tokens() -> Tokens? {
         guard let raw = secrets.get(SecretKey.traktTokens), let data = raw.data(using: .utf8),
@@ -272,10 +313,13 @@ public actor Trakt {
     }
 
     private func get(_ path: String, auth: Bool = true, _ params: [(String, String)] = []) async throws -> JSON? {
-        let (status, data) = try await call("GET", path, auth: auth, params: params)
+        var (status, data) = try await call("GET", path, auth: auth, params: params)
         if status == 401 && auth {
-            secrets.set(SecretKey.traktTokens, nil)
-            throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.")
+            // Como en las escrituras: una sesión nueva UNA vez (renovar, o pedírsela a tu Orbital) antes de darla por perdida. Antes
+            // un 401 al leer borraba la sesión prestada y el scrobble se apagaba sin decir nada.
+            try await renewAfterRejection()
+            (status, data) = try await call("GET", path, auth: auth, params: params)
+            if status == 401 { secrets.set(SecretKey.traktTokens, nil); throw TraktError.auth("Trakt cerró tu sesión: vuelve a conectarla en Ajustes.") }
         }
         guard status == 200 else { throw TraktError.http(status) }
         return data
@@ -315,6 +359,13 @@ public actor Trakt {
         adopt(fresh)
     }
 
+    /// La calificación de la comunidad de Trakt (0–10) y cuántos votaron; nil si nadie ha votado.
+    public func rating(kind: String, imdb: String) async throws -> (rating: Double, votes: Int)? {
+        let path = "/\(kind == "movie" ? "movies" : "shows")/\(imdb)/ratings"
+        guard let row = try await get(path, auth: false), let rating = row["rating"]?.doubleValue, rating > 0 else { return nil }
+        return (rating, row["votes"]?.intValue ?? 0)
+    }
+
     // MARK: listas (lectura)
     public func username() async throws -> String {
         let user = try await get("/users/settings")?["user"]
@@ -340,6 +391,23 @@ public actor Trakt {
         }
     }
 
+    /// Qué títulos (IMDb) tiene una de tus listas: para marcar ✓ en «Guardar en…» (sin datos extra: es rápido).
+    public func listMembers(_ id: String) async throws -> Set<String> {
+        guard Self.isListID(id) else { throw TraktError.invalid("Lista inválida") }
+        let rows = try await get("/users/me/lists/\(id)/items")?.array ?? []
+        return Set(rows.compactMap { ($0["movie"] ?? $0["show"])?["ids"]?["imdb"]?.string })
+    }
+
+    /// Todo lo que ya viste (películas y series con al menos un episodio), por IMDb: «Decide por mí» no te propone eso.
+    public func watchedIDs() async throws -> Set<String> {
+        async let movies = get("/sync/watched/movies")
+        async let shows = get("/sync/watched/shows", [("extended", "noseasons")])
+        let rows = (try await movies?.array ?? []) + (try await shows?.array ?? [])
+        return Set(rows.compactMap { ($0["movie"] ?? $0["show"])?["ids"]?["imdb"]?.string })
+    }
+
+    static func isListID(_ id: String) -> Bool { !id.isEmpty && id.allSatisfy(\.isASCII) && id.allSatisfy(\.isNumber) }
+
     public func listItems(_ id: String) async throws -> [TraktEntry] {
         guard !id.isEmpty, id.allSatisfy(\.isASCII), id.allSatisfy(\.isNumber) else { throw TraktError.invalid("Lista inválida") }
         return TraktParsing.typed(try await get("/users/me/lists/\(id)/items", [("extended", "full")])?.array)
@@ -351,8 +419,11 @@ public actor Trakt {
         return (rows?.array ?? []).compactMap { TraktParsing.entry($0[key], kind: kind) }
     }
 
-    public func popular(kind: String, limit: Int = 30) async throws -> [TraktEntry] {
-        let rows = try await get("/\(TraktParsing.kinds[kind]!)/popular", auth: false, [("limit", String(limit)), ("extended", "full")])
+    /// Lo más popular; con `years` («2024» o «1990-1999»), solo de esos años («Por año» en Colecciones).
+    public func popular(kind: String, limit: Int = 30, years: String? = nil) async throws -> [TraktEntry] {
+        var params = [("limit", String(limit)), ("extended", "full")]
+        if let years { params.append(("years", years)) }
+        let rows = try await get("/\(TraktParsing.kinds[kind]!)/popular", auth: false, params)
         return (rows?.array ?? []).compactMap { TraktParsing.entry($0, kind: kind) }
     }
 
@@ -371,16 +442,69 @@ public actor Trakt {
             if let show = TraktParsing.entry(row["show"], kind: "series"), show.traktID != nil, seen.insert(show.imdb).inserted { shows.append(show) }
             if shows.count >= limit { break }
         }
-        var found: [TraktEntry] = []
-        for var show in shows {
-            do {
-                let progress = try await get("/shows/\(show.traktID!)/progress/watched", [("hidden", "false"), ("specials", "false")])
-                if let next = progress?["next_episode"], let s = next["season"]?.intValue, let n = next["number"]?.intValue { show.next = (s, n); found.append(show) }
-            } catch let error as TraktError {
-                if case .auth = error { throw error }  // una serie que falla no tumba las demás
+        // El avance de cada serie, todas a la vez (una tras otra eran ~12 viajes seguidos: el mosaico esperaba segundos).
+        let results = try await withThrowingTaskGroup(of: (Int, TraktEntry?).self) { group in
+            for (i, show) in shows.enumerated() {
+                group.addTask {
+                    do {
+                        let progress = try await self.get("/shows/\(show.traktID!)/progress/watched", [("hidden", "false"), ("specials", "false")])
+                        guard let next = progress?["next_episode"], let s = next["season"]?.intValue, let n = next["number"]?.intValue else { return (i, nil) }
+                        var found = show
+                        found.next = (s, n)
+                        return (i, found)
+                    } catch let error as TraktError {
+                        if case .auth = error { throw error }  // una serie que falla no tumba las demás
+                        return (i, nil)
+                    }
+                }
             }
+            var out = [TraktEntry?](repeating: nil, count: shows.count)
+            for try await (i, entry) in group { out[i] = entry }
+            return out
         }
-        return found
+        return results.compactMap { $0 }
+    }
+
+    /// Lo que viste entre dos fechas (cada película y cada episodio con su día y hora), por páginas: «Tu año» y «Porque viste».
+    public func plays(since: Date, until: Date, maxPages: Int = 20) async throws -> [TraktPlay] {
+        let f = ISO8601DateFormatter()
+        var out: [TraktPlay] = []
+        for page in 1...max(1, maxPages) {
+            let rows = try await get("/sync/history", [("start_at", f.string(from: since)), ("end_at", f.string(from: until)),
+                                                       ("extended", "full"), ("limit", String(Self.historyPage)), ("page", String(page))])?.array ?? []
+            out += rows.compactMap(TraktParsing.play)
+            if rows.count < Self.historyPage { break }
+        }
+        return out
+    }
+
+    static let historyPage = 250
+
+    /// Lo último que viste (película o serie), lo más reciente primero, sin repetir.
+    public func recentlyWatched(limit: Int = 5) async throws -> [TraktEntry] {
+        let rows = try await get("/sync/history", [("limit", "40"), ("extended", "full")])?.array ?? []
+        var seen = Set<String>(), out: [TraktEntry] = []
+        for row in rows {
+            let entry = row["type"]?.string == "movie" ? TraktParsing.entry(row["movie"], kind: "movie") : TraktParsing.entry(row["show"], kind: "series")
+            if let entry, seen.insert(entry.imdb).inserted { out.append(entry) }
+            if out.count >= limit { break }
+        }
+        return out
+    }
+
+    /// Buscar películas y series por nombre (el respaldo de Buscar cuando Cinemeta no contesta). No pide tu sesión.
+    public func search(_ query: String, limit: Int = 20) async throws -> [TraktEntry] {
+        let rows = try await get("/search/movie,show", auth: false, [("query", query), ("limit", String(limit)), ("extended", "full")])?.array ?? []
+        return rows.compactMap { row in
+            row["type"]?.string == "movie" ? TraktParsing.entry(row["movie"], kind: "movie") : TraktParsing.entry(row["show"], kind: "series")
+        }
+    }
+
+    /// Los títulos que Trakt relaciona con uno («Porque viste X»).
+    public func related(kind: String, imdb: String, limit: Int = 15) async throws -> [TraktEntry] {
+        guard Self.isIMDb(imdb) else { return [] }
+        let rows = try await get("/\(kind == "movie" ? "movies" : "shows")/\(imdb)/related", auth: false, [("limit", String(limit)), ("extended", "full")])
+        return (rows?.array ?? []).compactMap { TraktParsing.entry($0, kind: kind) }
     }
 
     // MARK: escritura
@@ -389,6 +513,23 @@ public actor Trakt {
         let body: JSON = series ? ["shows": [["ids": ["imdb": .string(imdb)]]]] : ["movies": [["ids": ["imdb": .string(imdb)]]]]
         let (status, _) = try await write(add ? "/sync/watchlist" : "/sync/watchlist/remove", body)
         guard status == 200 || status == 201 else { throw TraktError.http(status) }
+    }
+
+    /// Pone o quita un título de una de tus listas.
+    public func setListItem(listID: String, imdb: String, series: Bool, add: Bool) async throws {
+        guard Self.isIMDb(imdb), Self.isListID(listID) else { throw TraktError.invalid("Título inválido") }
+        let body: JSON = series ? ["shows": [["ids": ["imdb": .string(imdb)]]]] : ["movies": [["ids": ["imdb": .string(imdb)]]]]
+        let (status, _) = try await write("/users/me/lists/\(listID)/items\(add ? "" : "/remove")", body)
+        guard status == 200 || status == 201 else { throw TraktError.http(status) }
+    }
+
+    /// Una lista nueva (privada); devuelve su id.
+    public func createList(name: String) async throws -> (id: String, name: String) {
+        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty else { throw TraktError.invalid("Ponle nombre a la lista") }
+        let (status, json) = try await write("/users/me/lists", ["name": .string(clean), "privacy": "private"])
+        guard status == 200 || status == 201, let id = json?["ids"]?["trakt"]?.intValue else { throw TraktError.http(status) }
+        return (String(id), clean)
     }
 
     /// Avisa a Trakt de lo que reproduces. `progress` va de 0 a 100; por encima de ~80 % al parar, Trakt lo marca visto.

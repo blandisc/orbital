@@ -1,0 +1,159 @@
+import SwiftUI
+import OrbitalCore
+
+/// Cómo se ordena una lista abierta.
+enum ListSort: String, CaseIterable {
+    case added, imdb, trakt, newest, oldest, title
+    var label: LocalizedStringKey {
+        switch self {
+        case .added: "Como viene la lista"; case .imdb: "Mejor calificadas en IMDb"; case .trakt: "Mejor calificadas en Trakt"
+        case .newest: "Año (lo más nuevo primero)"; case .oldest: "Año: más viejas"; case .title: "A–Z"
+        }
+    }
+}
+
+/// Lo que se filtra en una lista abierta: series o películas, un género, y ocultar lo que ya viste.
+struct ListFilter: Equatable {
+    var kind: String?
+    var genre: String?
+    var hideWatched = false
+    var isActive: Bool { kind != nil || genre != nil || hideWatched }
+
+    func apply(_ items: [Suggestion], sort: ListSort, watched: Set<String>, imdb: [String: Double] = [:]) -> [Suggestion] {
+        let kept = items.filter { s in
+            (kind == nil || s.kind == kind)
+                && (genre == nil || s.genres.contains { $0.lowercased() == genre })
+                && (!hideWatched || !watched.contains(s.imdb))
+        }
+        switch sort {
+        case .added: return kept
+        case .imdb: return kept.sorted { (imdb[$0.imdb] ?? 0) > (imdb[$1.imdb] ?? 0) }
+        case .trakt: return kept.sorted { ($0.traktRating ?? 0) > ($1.traktRating ?? 0) }
+        case .newest: return kept.sorted { ($0.year ?? 0) > ($1.year ?? 0) }
+        case .oldest: return kept.sorted { ($0.year ?? Int.max) < ($1.year ?? Int.max) }
+        case .title: return kept.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+        }
+    }
+}
+
+/// El nombre de un género de Trakt («science-fiction») en el idioma de la app.
+@MainActor func genreName(_ slug: String) -> String {
+    let english = ["science-fiction", "science fiction", "sci-fi"].contains(slug) ? "Sci-Fi" : slug.split(separator: "-").map { $0.capitalized }.joined(separator: " ")
+    return Vocabulary.genres([english], language: AppEnvironment.shared.services.appSettings.uiLanguage).first ?? english
+}
+
+/// Una lista abierta en cuadrícula de pósters, con el botón de ordenar y filtrar arriba a la derecha y lo filtrado en
+/// cápsulas que se quitan con ✕. Cada lista recuerda su orden.
+struct SortableGrid<Cell: View>: View {
+    let listID: String
+    let items: [Suggestion]
+    /// Lo que ya viste (para «Ocultar lo que ya vi»); nil si no hay Trakt.
+    var watched: (() async -> Set<String>)?
+    /// Las calificaciones de IMDb (se piden al elegir ese orden).
+    var imdbRatings: (([Suggestion]) async -> [String: Double])?
+    @ViewBuilder var cell: (Suggestion) -> Cell
+    @State private var sort: ListSort
+    @State private var filter = ListFilter()
+    @State private var seen: Set<String> = []
+    @State private var imdb: [String: Double] = [:]
+    @State private var rating = false
+
+    init(listID: String, items: [Suggestion], watched: (() async -> Set<String>)? = nil,
+         imdbRatings: (([Suggestion]) async -> [String: Double])? = nil, @ViewBuilder cell: @escaping (Suggestion) -> Cell) {
+        self.listID = listID; self.items = items; self.watched = watched; self.imdbRatings = imdbRatings; self.cell = cell
+        _sort = State(initialValue: UserDefaults.standard.string(forKey: "list-sort.\(listID)").flatMap(ListSort.init(rawValue:)) ?? .added)
+    }
+
+    var body: some View {
+        let shown = filter.apply(items, sort: sort, watched: seen, imdb: imdb)
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            if filter.isActive { activeChips }
+            if rating { ProgressView().frame(maxWidth: .infinity) }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
+                ForEach(shown) { s in cell(s) }
+            }
+            .padding(.horizontal, DS.Space.gutter)
+            if shown.isEmpty, !items.isEmpty { DSEmptyState(symbol: "line.3.horizontal.decrease.circle", title: Text("Nada con estos filtros"), message: Text("Cambia el orden o lo que ocultas.")) }
+        }
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { menu } }
+        .onChange(of: sort) { _, new in UserDefaults.standard.set(new.rawValue, forKey: "list-sort.\(listID)") }
+        .task(id: filter.hideWatched) { if filter.hideWatched, let watched { seen = await watched() } }
+        .task(id: sort) {
+            guard sort == .imdb, let imdbRatings else { return }
+            rating = true
+            imdb = await imdbRatings(items)
+            rating = false
+        }
+    }
+
+    private var genres: [String] {
+        var counts: [String: Int] = [:]
+        for s in items { for g in s.genres { counts[g.lowercased(), default: 0] += 1 } }
+        return counts.sorted { $0.value > $1.value }.prefix(12).map(\.key)
+    }
+
+    /// Los órdenes que tienen sentido aquí: IMDb si se puede pedir; Trakt si la lista trae su calificación.
+    private var sorts: [ListSort] {
+        ListSort.allCases.filter { s in
+            switch s {
+            case .imdb: imdbRatings != nil
+            case .trakt: items.contains { $0.traktRating != nil }
+            // Como la TV: sin «Como viene» (sin orden elegido, la lista va como llega) ni «más viejas».
+            case .added, .oldest: false
+            default: true
+            }
+        }
+    }
+
+    private var menu: some View {
+        Menu {
+            // Elegir otra vez el orden activo lo quita (la lista vuelve a ir como llega).
+            Menu {
+                ForEach(sorts, id: \.self) { option in
+                    Button { sort = sort == option ? .added : option } label: {
+                        if sort == option { Label(option.label, systemImage: "checkmark") } else { Text(option.label) }
+                    }
+                }
+            } label: { Label("Ordenar", systemImage: "arrow.up.arrow.down") }
+            Picker(selection: $filter.kind) {
+                Text("Todo").tag(String?.none)
+                Text("Series").tag(String?.some("series"))
+                Text("Películas").tag(String?.some("movie"))
+            } label: { Label("Series o películas", systemImage: "film.stack") }
+            .pickerStyle(.menu)
+            if !genres.isEmpty {
+                Picker(selection: $filter.genre) {
+                    Text("Todos").tag(String?.none)
+                    ForEach(genres, id: \.self) { Text(verbatim: genreName($0)).tag(String?.some($0)) }
+                } label: { Label("Género", systemImage: "theatermasks") }
+                .pickerStyle(.menu)
+            }
+            if watched != nil { Toggle(isOn: $filter.hideWatched) { Label("Ocultar lo que ya vi", systemImage: "eye.slash") } }
+        } label: {
+            Image(systemName: filter.isActive || sort != .added ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+        }
+        .accessibilityLabel(Text("Ordenar y filtrar"))
+        .accessibilityIdentifier("list-controls")
+    }
+
+    private var activeChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: DS.Space.s2) {
+                if let kind = filter.kind { chip(kind == "movie" ? Text("Películas") : Text("Series")) { filter.kind = nil } }
+                if let genre = filter.genre { chip(Text(verbatim: genreName(genre))) { filter.genre = nil } }
+                if filter.hideWatched { chip(Text("Sin lo que ya vi")) { filter.hideWatched = false } }
+            }
+        }
+        .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+    }
+
+    private func chip(_ title: Text, remove: @escaping () -> Void) -> some View {
+        Button(action: remove) {
+            HStack(spacing: DS.Space.s1) { title; Image(systemName: "xmark").font(DS.TextRecipe.caption.font.weight(.bold)) }
+                .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.backdropDeep)
+                .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
+                .background(DS.paper, in: Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+}

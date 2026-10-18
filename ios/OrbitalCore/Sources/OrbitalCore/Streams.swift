@@ -22,6 +22,41 @@ public struct Source: Sendable, Equatable, Identifiable {
 
     public var id: Int { index }
 
+    /// «Lo mejor disponible» (el encabezado de la ficha, como Infuse): la de más resolución y, entre esas, la de más
+    /// insignias (DV, HDR, Atmos…). Los tráileres y las de cámara no cuentan.
+    public static func best(_ sources: [Source]) -> Source? {
+        let rank = ["4K": 4, "1440p": 3, "1080p": 2, "720p": 1]
+        return sources.filter { !$0.tags.contains("Tráiler") && !$0.tags.contains("CAM") }
+            .max { a, b in
+                let ra = rank[a.resolution] ?? 0, rb = rank[b.resolution] ?? 0
+                return ra != rb ? ra < rb : a.hdr.count + a.audioBadges.count < b.hdr.count + b.audioBadges.count
+            }
+    }
+
+    /// El sonido, para las insignias (como Infuse): Atmos, TrueHD, DTS‑HD, DD+, 7.1 o 5.1. Aparte de `tags` (que son las de
+    /// la TV, iguales en los dos lados).
+    public var audioBadges: [String] {
+        let blob = [release, stream["title"]?.string ?? "", stream["name"]?.string ?? "", stream["description"]?.string ?? ""].joined(separator: " ")
+        let range = NSRange(blob.startIndex..., in: blob)
+        var found = Self.audioPatterns.filter { $0.1.firstMatch(in: blob, range: range) != nil }.map(\.0)
+        if found.contains("7.1") { found.removeAll { $0 == "5.1" } }
+        if found.contains("DTS-HD") { found.removeAll { $0 == "DTS" } }
+        return found
+    }
+
+    static let audioPatterns: [(String, NSRegularExpression)] = [
+        ("Atmos", Streams.r(#"\batmos\b"#)), ("TrueHD", Streams.r(#"\btrue-?hd\b"#)), ("DTS-HD", Streams.r(#"\bdts-?hd\b"#)),
+        ("DTS", Streams.r(#"\bdts\b"#)), ("DD+", Streams.r(#"\b(ddp|dd\+|e-?ac-?3)"#)), ("7.1", Streams.r(#"\b7\.1\b"#)), ("5.1", Streams.r(#"\b5\.1\b"#)),
+    ]
+
+    /// Una huella estable de esta fuente (su índice cambia de una búsqueda a otra), la misma de la TV (`streams.py`):
+    /// el torrent y su archivo o, si no es torrent, complemento + nombre + tamaño. Para volver a la misma al «Continuar».
+    public var key: String {
+        if let hash = stream["infoHash"]?.string { return "\(addon)|\(hash.lowercased())|\(stream["fileIdx"]?.intValue.map(String.init) ?? "")" }
+        let name = release.isEmpty ? (stream["title"]?.string ?? stream["name"]?.string ?? "") : release
+        return "\(addon)|\(name)|\(size)"
+    }
+
     /// La URL http(s) para reproducir. Los `infoHash` (torrent sin Real-Debrid) no se ofrecen en iOS.
     public var playbackURL: URL? {
         guard let text = stream["url"]?.nonEmptyString, let url = URL(string: text),

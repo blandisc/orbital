@@ -77,10 +77,10 @@ final class MosaicRuntime: ObservableObject {
         serial = 0
         // Cada columna empieza un poco más abajo según su turno: una entrada escalonada, como en la TV.
         columns = (0..<self.columnCount).map { c in MosaicColumn(offset: c % 2 == 1 ? gap * 5 : 0) }
-        focus = MosaicFocus(col: min(focus?.col ?? 0, self.columnCount - 1), row: 0)
+        focus = nil   // empieza sin nada elegido: se recorre libre y se elige tocando
         mode = .focus
         aliveTileID = nil
-        relayoutAndFill(reveal: true)
+        relayoutAndFill()
     }
 
     /// Más sugerencias de las mismas (completar el mosaico con lo de los estantes): entran a la fila sin rearmar nada,
@@ -104,7 +104,7 @@ final class MosaicRuntime: ObservableObject {
         let existing = columns.flatMap(\.tiles)
         columns = (0..<count).map { _ in MosaicColumn() }
         for (i, tile) in existing.enumerated() { columns[i % count].tiles.append(tile) }
-        focus = MosaicFocus(col: min(focus?.col ?? 0, count - 1), row: 0)
+        focus = nil
         relayoutAndFill()
     }
 
@@ -141,13 +141,6 @@ final class MosaicRuntime: ObservableObject {
         commit(force: true)
     }
 
-    /// La pieza de la columna `c` más cerca del centro de lo que se ve.
-    private func centerRow(_ c: Int) -> Int? {
-        guard columns.indices.contains(c), !columns[c].tiles.isEmpty else { return nil }
-        let middle = columns[c].offset + size.height / 2
-        return columns[c].tiles.indices.min { abs(columns[c].tiles[$0].top + columns[c].tiles[$0].height / 2 - middle) < abs(columns[c].tiles[$1].top + columns[c].tiles[$1].height / 2 - middle) }
-    }
-
     /// Si la enfocada ya no se ve (bajaste, o el ambiente la subió), el foco pasa a la del centro de su columna.
     private func refocusIfOffscreen() {
         guard let f = focus, columns.indices.contains(f.col) else { return }
@@ -156,7 +149,8 @@ final class MosaicRuntime: ObservableObject {
             let t = column.tiles[f.row]
             return t.top + t.height > column.offset && t.top < column.offset + size.height
         }()
-        if !visible, let row = centerRow(f.col) { focus = MosaicFocus(col: f.col, row: row) }
+        // Se fue de la vista: queda sin elegir (no se elige sola otra mientras recorres).
+        if !visible { focus = nil; aliveTileID = nil; relayoutAndFill() }
     }
 
     /// La enfocada, entera a la vista (como `reveal()` en la TV).
@@ -190,8 +184,8 @@ final class MosaicRuntime: ObservableObject {
         guard mode == .ambient else { return false }
         mode = .focus
         aliveTileID = nil
-        // Como `wake()` en la TV: se enfoca lo que quedó al centro (no la pieza de antes, que el ambiente ya subió).
-        if let col = focus?.col, let row = centerRow(col) { focus = MosaicFocus(col: col, row: row) }
+        // Al despertar no se elige nada solo (la de antes el ambiente ya la subió): se recorre libre y se elige tocando.
+        focus = nil
         relayoutAndFill()
         return true
     }
@@ -233,7 +227,7 @@ final class MosaicRuntime: ObservableObject {
         pool.remove(imdb: imdb)
         for c in columns.indices { columns[c].tiles.removeAll { $0.item.imdb == imdb } }
         if let focus, let count = columns[safe: focus.col]?.tiles.count, focus.row >= count {
-            self.focus = MosaicFocus(col: focus.col, row: max(0, count - 1))
+            self.focus = nil
         }
         relayoutAndFill()
     }
@@ -261,7 +255,8 @@ struct Mosaic: View {
     @State private var lastDragTranslation: Double = 0
     @State private var dragging = false
     /// La inercia en curso (al soltar): se detiene en cuanto el dedo vuelve a tocar.
-    @State private var inertia: Task<Void, Never>?
+    /// La inercia al soltar, cuadro a cuadro al ritmo de la pantalla (hasta 120 Hz).
+    @State private var inertia = FrameTicker()
     @State private var activity = 0
     /// Lo que ya colocó `runtime`: si lo nuevo es solo un subconjunto (una «no me interesa» que el
     /// propio `runtime.dismiss` ya quitó), no se vuelve a armar todo —eso perdería el foco y el lugar.
@@ -288,7 +283,7 @@ struct Mosaic: View {
                 DragGesture(minimumDistance: DS.Gesture.axisThreshold)
                     .onChanged { value in
                         // Una sola vez al empezar (no en cada cuadro: eso reevaluaba todo el mosaico a 120 Hz).
-                        if !dragging { dragging = true; inertia?.cancel(); inertia = nil; touch() }
+                        if !dragging { dragging = true; inertia.stop(); touch() }
                         let delta = value.translation.height - lastDragTranslation
                         lastDragTranslation = value.translation.height
                         runtime.scrollBy(-delta)
@@ -339,7 +334,7 @@ struct Mosaic: View {
             #endif
             try? await Task.sleep(nanoseconds: DS.Timing.mosaicIdle)
             // Mientras sigue la inercia o el dedo está encima, no es «quieto».
-            if !Task.isCancelled, inertia == nil, !dragging { withAnimation(DS.Motion.enter(reduceMotion)) { runtime.goAmbient() } }
+            if !Task.isCancelled, !inertia.isRunning, !dragging { withAnimation(DS.Motion.enter(reduceMotion)) { runtime.goAmbient() } }
         }
         .task(id: aliveToken) {
             guard runtime.mode == .focus, !reduceMotion, let id = runtime.focus else { return }
@@ -365,7 +360,7 @@ struct Mosaic: View {
         range = min(range.lowerBound, column.tiles.count)..<min(range.upperBound, column.tiles.count)
         return MosaicColumnLayer(
             column: c, frame: column.frame, first: range.lowerBound, tiles: Array(column.tiles[range]),
-            focusRow: runtime.focus?.col == c ? runtime.focus?.row : nil, focusMode: runtime.mode == .focus,
+            focusRow: runtime.focus?.col == c ? runtime.focus?.row : nil, focusMode: runtime.mode == .focus && runtime.focus != nil,   // sin nada elegido, nada se oscurece
             aliveID: runtime.aliveTileID, watchlist: watchlistKeys, reduceMotion: reduceMotion,
             onFocus: { col, row in touch(); withAnimation(DS.Motion.spring(reduceMotion)) { runtime.focusTile(col: col, row: row) } },
             onOpen: { onOpen?($0) },
@@ -375,20 +370,14 @@ struct Mosaic: View {
     /// Inercia como una lista de iOS: la velocidad del dedo se va apagando cuadro por cuadro (llegan piezas por el camino,
     /// sin huecos) y un toque nuevo la detiene. Con «Reducir movimiento», se queda donde soltaste.
     private func fling(velocity start: Double) {
-        inertia?.cancel()
+        inertia.stop()
         guard !reduceMotion, abs(start) > DesignTokens.Mosaic.flingStopSpeed else { runtime.endScroll(); return }
-        inertia = Task { @MainActor in
-            var velocity = start
-            var last = Date()
-            while !Task.isCancelled, abs(velocity) > DesignTokens.Mosaic.flingStopSpeed {
-                try? await Task.sleep(nanoseconds: DS.Timing.mosaicFlingFrame)
-                guard !Task.isCancelled else { return }
-                let now = Date(), dt = now.timeIntervalSince(last)
-                last = now
-                runtime.scrollBy(velocity * dt)
-                velocity *= pow(DesignTokens.Mosaic.flingDecayPerSecond, dt)
-            }
-            if !Task.isCancelled { runtime.endScroll(); inertia = nil; touch() }
+        var velocity = start
+        inertia.start { dt in
+            runtime.scrollBy(velocity * dt)
+            velocity *= pow(DesignTokens.Mosaic.flingDecayPerSecond, dt)
+            guard abs(velocity) > DesignTokens.Mosaic.flingStopSpeed else { runtime.endScroll(); touch(); return false }
+            return true
         }
     }
 
@@ -533,14 +522,15 @@ private struct MosaicTileCell: View {
     /// La TV (y el iPad si se vuelve a pedir): la enfocada crece y lleva su etiqueta, logo y dato encima.
     private var framed: some View {
         ZStack(alignment: .bottomLeading) {
-            PosterView(url: focused || tile.shape == .wide ? tile.item.wide : tile.item.poster, title: tile.item.title, aspect: nil, maxPoints: DS.Image.mosaic)
+            // Elegir no cambia de imagen: bajarla y decodificarla en ese momento trababa el mosaico.
+            PosterView(url: tile.shape == .wide ? tile.item.wide : tile.item.poster, title: tile.item.title, aspect: nil, maxPoints: DS.Image.mosaic)
             if focused { LinearGradient(colors: [.clear, DS.scrimStrong], startPoint: .center, endPoint: .bottom) }
             // Como en la TV: el ícono de serie / película solo en la pieza enfocada (en todas tapaba los logos de las portadas)
             // y sin puesto (el puesto es de su lista, en Listas).
             if focused { VStack { HStack { kindIcon; Spacer() }; Spacer() }.padding(DS.Space.s3) }
             if focused {
                 VStack(alignment: .leading, spacing: DS.Space.s2) {
-                    DSBadge(text: inWatchlist ? "En tu lista" : badgeKey(tile.item.reason))
+                    DSBadge(text: inWatchlist ? "En tu watchlist" : badgeKey(tile.item.reason))
                     TitleLogo(url: tile.item.logo, title: tile.item.title)
                     ViewThatFits(in: .horizontal) {   // si no cabe, se quitan partes del medio antes de cortar
                         ForEach(Array(factVariants(tile.item).enumerated()), id: \.offset) { _, text in text.lineLimit(1).fixedSize(horizontal: true, vertical: false) }
@@ -562,5 +552,42 @@ private struct MosaicTileCell: View {
             // Sin enfoque, solo el glifo con una sombra suave (con 20 piezas a la vista una caja en cada una domina).
             .background { if focused { Circle().fill(DS.primary) } }
             .shadow(color: focused ? .clear : DS.scrim, radius: DS.Space.s1)
+    }
+}
+
+/// Llama a una función en cada cuadro de la pantalla (`CADisplayLink`, hasta 120 Hz) con el tiempo desde el anterior,
+/// hasta que la función devuelve `false` o se detiene. Una pausa fija (`Task.sleep`) no cae con los cuadros y se veía trabado.
+@MainActor
+final class FrameTicker {
+    private var link: CADisplayLink?
+    private var onFrame: ((Double) -> Bool)?
+    private var last: CFTimeInterval = 0
+    private lazy var target = Target(self)
+
+    var isRunning: Bool { link != nil }
+
+    func start(_ frame: @escaping (Double) -> Bool) {
+        stop()
+        onFrame = frame
+        last = 0
+        let link = CADisplayLink(target: target, selector: #selector(Target.tick(_:)))
+        link.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120)
+        link.add(to: .main, forMode: .common)
+        self.link = link
+    }
+
+    func stop() { link?.invalidate(); link = nil; onFrame = nil }
+
+    fileprivate func tick(_ link: CADisplayLink) {
+        let dt = last == 0 ? link.duration : link.targetTimestamp - last
+        last = link.targetTimestamp
+        if onFrame?(dt) == false { stop() }
+    }
+
+    /// `CADisplayLink` retiene a su destino: un objeto aparte (con referencia débil) para no retener al reloj.
+    private final class Target: NSObject {
+        weak var owner: FrameTicker?
+        init(_ owner: FrameTicker) { self.owner = owner }
+        @objc func tick(_ link: CADisplayLink) { MainActor.assumeIsolated { owner?.tick(link) } }
     }
 }

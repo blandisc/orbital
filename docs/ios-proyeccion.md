@@ -83,22 +83,64 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 | `DataLine` | Datos con números tabulares (no una monoespaciada); quita del final lo que no cabe | Destacados, ficha, descargas |
 | `Eyebrow` | Rótulo pequeño (acento o sobre el arte) | Destacados |
 | `HeroActions` | Las acciones de un destacado en un renglón; si no caben (letra grande, iPhone SE), apiladas | Inicio (carrusel), Para ti › Listas |
-| `ActionGrid` + `ProjectionAction` | Acciones secundarias iguales con ícono y nombre (se apilan con letra grande) | Ficha (Mi lista, Descargar, Fuentes) |
-| `StillCard` | Pieza 16:9 con avance, nombre y datos | «También tenías» |
+| `ActionTileLabel` | Acción de la ficha: rectángulo que llena su parte del renglón, ícono arriba y nombre abajo; activa con el color del arte; con anillo de avance alrededor del ícono (Descargar). Tocar hace lo principal, mantener presionado el resto (`Menu` con `primaryAction`) | Ficha (Guardar, Descargar, Tráiler, Fuente) |
+| `Glyphs/donut` (catálogo de imágenes) | La dona de Los Simpson, con el trazo de los íconos propios (solo iPhone; los de `Icons/` vienen de la TV) | Inicio › un Simpson al azar (el dado es «¿Qué vemos?») |
+| `DSKindFilter` | El filtro de tipo de toda la app: Todo · Películas · Series (o Películas · Series), segmentado y siempre en ese orden | Inicio (destacado y Top 10), Para ti › Listas, plataforma, colección por año, Buscar (con cuántas), «¿Qué vemos?» |
+| `DSEmptyState` | Un área entera vacía: el vacío nativo con ícono, qué pasa y qué hacer. Regla: área vacía → esto; renglón vacío → texto chico; error → `DSNotice` | Descargas, Buscar, listas con filtros, Próximos estrenos, Inicio, «¿Qué vemos?», Tu año, Para ti |
+| `DSMoreMenu` | «Más»: el mismo menú en toda la app, círculo con «…» (vidrio, sólido donde no se lleva) | Destacado de Para ti, «¿Qué vemos?», pie del mosaico, «Viendo en la TV» |
+| `DownloadRing` | El anillo de avance de una descarga | Ficha (Descargar) y la fila de cada episodio |
+| `StillCard` | Pieza 16:9 con avance, nombre y datos | Inicio › Todo lo que sigues |
 | `PageDots` | Puntos de un carrusel | Inicio |
-| `RankedRow` + `MovementBadge` | Renglón con puesto, póster chico y ▲ ▼ / Nuevo | Buscar › Lo más popular (y la Cartelera) |
+| `MovementBadge` | ▲ ▼ / Nuevo bajo un puesto | Rankings de plataformas (Buscar › Lo más popular usa `RankedPosterCard`) |
 | `ArtTile` | Mosaico con arte y nombre | Buscar › Explora (géneros) |
 | `DSOptionMenu` | Menú nativo para elegir entre muchas opciones | Temporadas (más de `DS.Size.seasonChipsMax`) |
 | `TouchPad`, `RemoteKey`, `RemoteTextField` | El control completo de tu Orbital: pad (deslizar = flechas, tocar = A), teclas de la consola y escribir en la TV | `RemoteSheet` (la hoja del accesorio, estirada) |
 | `VoiceCommandBar`, `VoiceChoices` | La voz del control: el micrófono con lo que oyó, la respuesta y lo que entendió; y, si tu Orbital no supo cuál, las opciones para tocar (`VoiceAssistant.choose`) | `RemoteSheet` |
 | `VoiceGuideView` | «Lo que puedes decir»: dónde hablarle (control, Siri, Alexa), lo que solo hace el iPhone, las frases de la consola (alexa/commands.json) y qué hacer si no funciona | Ajustes › Voz y el «?» junto al micrófono del control |
-| `OrbitalIcon`, `ListIcon` | Los íconos de las listas, los mismos de la TV (icons.js → `node scripts/list_icons.mjs` → Assets.xcassets/Icons; tests/web/list-icons.test.mjs los mantiene iguales) | `Shelf`, `DSSectionHead`/`Rail`, la pestaña Para ti |
-| `TVRemoteAccessory` | El accesorio cuando la TV no reproduce nada: abre el control completo | Toda la app, con tu Orbital conectada |
+| `OrbitalIcon` | Los íconos propios de Orbital, los mismos de la TV (icons.js → `node scripts/list_icons.mjs` → Assets.xcassets/Icons; tests/web/list-icons.test.mjs los mantiene iguales). En el iPhone solo como marca | La pestaña Para ti |
+| `DeckCard`, `deckTransition`, `TimeStyle`, `ProgressFillLabel` | El carrusel de «Seguir viendo»: tarjetas con lo que sigue a los lados (coverflow o abanico, más chicas y desenfocadas) y cuánto falta (píldora de vidrio, borde, botón que se llena u órbita); lo elige el usuario en Ajustes › Inicio | `HomeView` |
+| `AvatarImage`, `AvatarPicker` | Tu avatar (Assets › Avatars, 12 espaciales) y su selector | `HomeView` (junto al saludo), Ajustes › Inicio |
+| Botón «Control de tu Orbital» (`av.remote`) | Sin nada en la TV, abre el control completo desde la barra de Inicio (el accesorio solo aparece mientras la TV reproduce, y no dentro de fichas ni Ajustes) | Inicio, con tu Orbital conectada |
 | `fittedSheet()` / `subtitle(_:)` | Hoja a la medida de su contenido; subtítulo de la barra solo cuando dice algo | Hojas cortas; Inicio, Para ti, Descargas |
 | `TVAccessory` | Lo que suena en tu Orbital, en el accesorio de la barra | Toda la app (iOS 26.1+) |
 | `Shelf`, `RankedPosterCard`, `PosterCard`, `TitleLink`, `Rail` | Estantes, Top 10, pósters | Para ti, Inicio, Buscar |
 | `Mosaic` | El mosaico que sube despacio (como `foryou-mosaic.js` de la TV) | Para ti |
 | `DSSegmented`, `DSChipRow`, `DSIconButton`, `DSNotice`, `DSProgress` | Controles nativos con los tokens de Orbital | Varias |
+| `DSSectionHead` | El encabezado de toda sección («Editorial»): título grande, «Ver todo» si abre la lista completa (o un dato corto) y una línea gris solo si ayuda; sin íconos | Todas las pantallas (también `Shelf` y las listas de Descargas) |
+| `CoverCard`, `WideCard` | La portada de una sección (lo más importante en grande, con su porqué en ámbar) y la pieza panorámica con su dato en la esquina | Inicio › Sale hoy / Sale pronto |
+| `posterCaptions` (entorno) | El nombre bajo el póster: sí en cuadrículas, no en las tiras de una sección | Tiras y cuadrículas |
+| `ProfileButton` | Tu avatar arriba a la derecha de cada pestaña: abre Ajustes | Inicio, Para ti, Buscar, Descargas |
+| `StorageBar` | El espacio del iPhone: series, películas, otras apps y libre (ámbar con poco espacio) | Descargas |
+| `SettingsRow`, `ProfileCard` | Renglón de Ajustes con su ícono de color y su valor actual; tu perfil arriba (el avatar con lápiz) | Ajustes |
+| `StyleOption`, `DeckStylePreview`, `TimeStylePreview` | Elegir un estilo viéndolo: el carrusel que se mueve solo y cuánto falta sobre una tarjeta | Ajustes › Inicio |
+| `PlayerLabelButton` | Botón del reproductor con su nombre («En la TV», «Ventana», «Audio y subtítulos»); si no cabe, solo el ícono | Reproductor |
+| `PlatformPill` | Una plataforma en cápsula (logo chico y nombre); la elegida con su color tenue y su borde | Inicio › Top 10 (elegir de qué servicio) |
+| `PanelRow`, `PanelIcon`, `PanelChip`, `PanelGroupTitle`, `FlowChips`, `SpeedStepper` | El panel «Ajustes del video»: renglones con su valor (ícono del sistema solo en su color, como Ajustes), opciones en cápsula (con glifo opcional) y la velocidad − 1× + | Reproductor, «Decide por mí» (a la derecha en horizontal, hoja ajustada en vertical) |
+| `Toast` | El único aviso pasajero: arriba, en vidrio, glifo de color, texto y su acción («Pasó a tu Orbital · Deshacer», «Descargando… · Ver»); las notas fijas de una pantalla siguen siendo `DSNotice` | Toda la app |
+| `FanCard`, `CollectionCard`, `AwardCard`, `AwardEmblem` | La tarjeta en abanico (plataformas y colecciones) con su emblema al frente; un premio con su estatuilla real | Para ti › Listas |
+| `ListCard`, `SourceBadge` | Una lista tuya (pila de pósters, nombre, sello y cuántos) y el sello de origen (Trakt, Stremio, Orbital) junto a un título | Para ti › Listas |
+| `BecauseCard` | «Porque viste X»: el póster de lo que viste y lo relacionado al lado | Para ti › Listas |
+| `YearCard` | Un año con cuatro de sus películas y el número grande | Para ti › Por año |
+| `SortableGrid` | Una lista abierta con ordenar y filtrar (series o películas, género, ocultar lo visto) arriba a la derecha | Listas, premios, años |
+| `StudioEmblem` | El logo del estudio en blanco (como la TV); sin logo, su nombre en cápsula | Para ti › Estudios |
+| `GameNowCard`, `CompanionPanel`, `ConsoleStatePanel`, `GuidePanel`, `NotesPanel`, `TimerPanel`, `ControlsPanel` | Modo acompañante: el juego en la consola (volver, inicio, cerrar) y su carrusel (la consola, guía, notas, temporizador, controles de emulador) | Inicio, mientras juegas |
+| `AppMark` | El logotipo como en la TV y la computadora (`OrbitalWordmark`: planeta, «orbital» y su luna) en lugar del saludo | Inicio |
+| `CenteredCarousel`, `reflected()` | Tira centrada (la del medio al frente, las de los lados más chicas) y el reflejo que da peso | Para ti › Plataformas, Premios, Estudios, Por año |
+| `ConfirmIconButton` | Botón de ícono que se abre para confirmar («¿Ver en la TV?») | Inicio › carrusel |
+| `CheckRow` | Renglón con ✓ para elegir varias (en qué listas va un título) | Ficha › Guardar en… |
+| `QualityBadges` | Insignias con contorno: 4K · DV · HDR10+ · ATMOS · TRUEHD | Fuentes (ficha y reproductor) |
+| `RatingsRow`, `RatingMark` | IMDb · TMDB · Trakt con el logotipo de cada servicio en sus colores (guarda su alto: no brinca) | Ficha |
+| `PersonPhoto`, `PersonFace` | La cara de alguien (o sus iniciales), con nombre y personaje | Ficha › Reparto y equipo, Persona |
+| `VideoClipCard` | Tráiler o extra de YouTube con ▶ | Ficha |
+| `BrandLogos`, `TmdbPoster` | Dónde verlo; un título de TMDB (saga, «Más como esto», filmografía) que abre su ficha | Ficha, Persona |
+| `SourcesGlossary`, `SourceRowView` | Qué significa cada etiqueta de las fuentes (Al instante, DV, REMUX…); un renglón de fuente que se toca y cuyas etiquetas se deslizan | Fuentes |
+| `WatchlistCard` | Un pendiente de tu watchlist: póster chico, año y género, nombre y sinopsis (dos renglones que se deslizan juntos) | Inicio › Tu watchlist |
+| `posterReflection(_:title:width:)` | El reflejo de solo el póster (no de la tarjeta con su texto ni su zoom) | Inicio y Para ti › renglones |
+| `ScareTimeline`, `ScareMarks`, `ScarePanel`, `ScareWatcher`, `scareWarning(…)` | El mapa de sustos (Where's The Jump): la línea con cada susto (rojo los fuertes), el siguiente con su cuenta, «Avisarme» y la vibración unos segundos antes | Control (corto y estirado), reproductor |
+| `VolumeControl`, `RemoteKey`, `TouchPad`, `VoiceCommandBar` | El control de la TV: todas sus piezas con el mismo relleno, esquinas y alto | Control |
+| `GameSessionSummary` | Al cerrar un juego: cuánto jugaste esta vez y en total, capturas y si se cerró solo | Hoja al terminar |
+| `ActivityPoster` | El póster en la actividad en vivo de las descargas (del App Group) | Pantalla bloqueada, Dynamic Island |
+| `DownloadedFile` | Un archivo descargado para compartir (AirDrop, Archivos) con su nombre legible | Descargas › mantener |
 
 ### Recetas de pantalla
 
@@ -106,6 +148,13 @@ tabulares**, como `tabular-nums` en la TV. `DesignTests` prohíbe `DS.font(…)`
 - `.onArt()`: lo que va sobre el arte, como en la sala oscura.
 - `.bottomAccessory(isEnabled:)`: el accesorio de la barra solo cuando hay algo (iOS 26.1+; en 26.0, la tarjeta en Inicio).
 - `.tint(DS.accent)` en listas y formularios: lo interactivo (interruptores, botones de la lista) en el acento.
+
+### Regla de íconos
+
+- **Secciones**: sin ícono. El color lo pone el arte.
+- **Renglones de ajustes** (Ajustes, «Ajustes del video»): símbolo del sistema (SF Symbols) solo en su color de `DS.ListTint`, sin fondo.
+- **Botones y controles**: símbolo del sistema en blanco (o el color del texto), con su nombre cuando no es obvio.
+- **Íconos propios de Orbital** (`OrbitalIcon`): solo como marca (la pestaña «Para ti»).
 
 ## 5. Movimiento con causa
 

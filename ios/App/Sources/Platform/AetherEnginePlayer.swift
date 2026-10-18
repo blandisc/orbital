@@ -45,8 +45,27 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
 
     func load(url: URL, startAt: Double) async throws {
         hub.send(EngineSnapshot(state: .loading))
-        try await engine.load(url: url, startPosition: startAt)
+        var options = LoadOptions()
+        // Los subtítulos de texto también como pista nativa: así salen en la ventana de PiP y en AirPlay (sin esto, en PiP no
+        // había subtítulos).
+        options.prepareNativeSubtitles = true
+        options.preferredAudioLanguages = preferredAudio
+        options.preferredSubtitleLanguages = preferredSubtitles
+        options.externalSubtitles = declaredExternal.map { ExternalSubtitleTrack(url: $0, name: $0.deletingPathExtension().lastPathComponent, language: Self.language(of: $0)) }
+        try await engine.load(url: url, startPosition: startAt, options: options)
         engine.play()
+    }
+
+    private var preferredAudio: [String] = [], preferredSubtitles: [String] = [], declaredExternal: [URL] = []
+
+    func prepare(audioLanguages: [String], subtitleLanguages: [String], externalSubtitles: [URL]) async {
+        preferredAudio = audioLanguages; preferredSubtitles = subtitleLanguages; declaredExternal = externalSubtitles
+    }
+
+    /// «es-1.srt» → «es» (los subtítulos de una descarga empiezan con su idioma).
+    private static func language(of url: URL) -> String? {
+        let head = url.deletingPathExtension().lastPathComponent.split(separator: "-").first.map(String.init) ?? ""
+        return head.count == 2 || head.count == 3 ? head : nil
     }
 
     var pictureInPicture: PictureInPictureContent? {
@@ -62,9 +81,16 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     func subtitleOverlay(lifted: Bool, heightFraction: Double) -> AnyView {
         AnyView(AetherSubtitleOverlay(engine: engine, clock: engine.clock, lifted: lifted, heightFraction: heightFraction, fills: fills))
     }
-    func setPictureInPictureActive(_ active: Bool) { engine.pictureInPictureActive = active }
+    func setPictureInPictureActive(_ active: Bool) {
+        engine.pictureInPictureActive = active
+        // En la ventana de PiP el subtítulo que dibujamos encima del video no existe: AVKit dibuja el suyo (la pista de
+        // texto nativa del motor) mientras la ventana está fuera, y al volver a la app se quita (vuelve el nuestro).
+        // No hay equivalente para subtítulos de imagen (PGS); los que se agregan después de cargar entran al rearmar (`addSubtitle`).
+        engine.setNativeSubtitleRendering(active)
+    }
 
-    func setRate(_ rate: Float) async { engine.setRate(rate) }
+    func setRate(_ rate: Float) async { engine.setRate(rate); currentRate = rate }
+    private var currentRate: Float = 1
 
     func play() async { engine.play() }
     func pause() async { engine.pause() }
@@ -73,8 +99,15 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     // Los ids de pista son los de AetherEngine (`TrackInfo.id`), no la posición en la lista.
     func selectAudio(_ id: Int?) async { if let id { engine.selectAudioTrack(index: id) } }
     func selectSubtitle(_ id: Int?) async { if let id { engine.selectSubtitleTrack(index: id) } else { engine.clearSubtitle() } }
+    /// Un subtítulo sumado a media reproducción el motor solo lo entrega para dibujarlo encima: no llega a la ventana de
+    /// PiP. Se rearma la sesión en el mismo punto (conserva las pistas, la elegida y si iba en pausa) y así entra como pista
+    /// nativa, igual que los que se declaran al cargar. Cuesta un instante de carga, una sola vez por subtítulo.
     func addSubtitle(url: URL, language: String?) async {
-        _ = engine.addExternalSubtitleTrack(ExternalSubtitleTrack(url: url, name: language ?? "Externo", language: language))
+        let track = engine.addExternalSubtitleTrack(ExternalSubtitleTrack(url: url, name: language ?? "Externo", language: language))
+        guard engine.sessionReloadRefusal == nil else { return }
+        engine.selectSubtitleTrack(index: track.id)
+        try? await engine.reloadAtCurrentPosition()
+        if currentRate != 1 { engine.setRate(currentRate) }
     }
 
     private func publish() {

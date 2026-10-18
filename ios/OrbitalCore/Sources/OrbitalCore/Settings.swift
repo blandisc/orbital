@@ -28,6 +28,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var audio = "es"                    // idioma de audio preferido de las fuentes
     public var subtitles = "es"                // idioma de subtítulos («» = sin subtítulos)
     public var onlyForcedSubtitles = false
+    /// Audio en español latino (no de España) cuando un video trae los dos.
+    public var latinSpanish = false
     public var quality = "1080p"               // calidad al ver: «4K», «1080p», «720p»
     public var cellularQuality = "1080p"       // calidad máxima con datos móviles
     public var wifiOnlyDownloads = true
@@ -40,6 +42,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var subtitleSize = "medium"         // «small» | «medium» | «large»: el tamaño de la letra de los subtítulos
     public var orbitalAddress = ""             // tu Orbital por el túnel («orbital.midominio.com»); el token va en el Keychain
     public var appearance = "system"           // «system» | «light» | «dark»: el modo de la app (por omisión, el del iPhone)
+    public var homeDeck = "coverflow"          // el carrusel de Inicio: «coverflow» | «fan» (abanico)
+    public var homeTime = "pill"               // cuánto falta en la tarjeta: «pill» | «edge» | «fill» | «arc»
+    public var releaseAlerts = false           // avisar cuando un episodio de lo que sigues ya se puede ver («Ya está para ver»)
+    public var becauseStyle = "posters"        // «Porque viste» (Para ti): «posters» (mini pósters) | «deck» (mazo de cartas)
+    public var avatar = "planet"               // tu avatar (Assets › Avatars)
+    public var displayName = ""                // cómo te saluda Inicio («Hola, Fer»); vacío: el de tu Trakt
 
     public init() {}
 
@@ -51,6 +59,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         audio = try c.decodeIfPresent(String.self, forKey: .audio) ?? audio
         subtitles = try c.decodeIfPresent(String.self, forKey: .subtitles) ?? subtitles
         onlyForcedSubtitles = try c.decodeIfPresent(Bool.self, forKey: .onlyForcedSubtitles) ?? onlyForcedSubtitles
+        latinSpanish = try c.decodeIfPresent(Bool.self, forKey: .latinSpanish) ?? latinSpanish
         quality = try c.decodeIfPresent(String.self, forKey: .quality) ?? quality
         cellularQuality = try c.decodeIfPresent(String.self, forKey: .cellularQuality) ?? cellularQuality
         wifiOnlyDownloads = try c.decodeIfPresent(Bool.self, forKey: .wifiOnlyDownloads) ?? wifiOnlyDownloads
@@ -63,11 +72,18 @@ public struct AppSettings: Codable, Equatable, Sendable {
         subtitleSize = try c.decodeIfPresent(String.self, forKey: .subtitleSize) ?? subtitleSize
         orbitalAddress = try c.decodeIfPresent(String.self, forKey: .orbitalAddress) ?? orbitalAddress
         appearance = try c.decodeIfPresent(String.self, forKey: .appearance) ?? appearance
+        homeDeck = try c.decodeIfPresent(String.self, forKey: .homeDeck) ?? homeDeck
+        homeTime = try c.decodeIfPresent(String.self, forKey: .homeTime) ?? homeTime
+        becauseStyle = try c.decodeIfPresent(String.self, forKey: .becauseStyle) ?? becauseStyle
+        releaseAlerts = try c.decodeIfPresent(Bool.self, forKey: .releaseAlerts) ?? releaseAlerts
+        avatar = try c.decodeIfPresent(String.self, forKey: .avatar) ?? avatar
+        displayName = try c.decodeIfPresent(String.self, forKey: .displayName) ?? displayName
     }
 
     enum Keys: String, CodingKey {
         case uiLanguage, audio, subtitles, onlyForcedSubtitles, quality, cellularQuality, wifiOnlyDownloads, autoNextDownload
         case deleteWhenWatched, warnCellularOverGB, region, preferInfuse, traktClientID, subtitleSize, orbitalAddress, appearance
+        case homeDeck, homeTime, avatar, displayName, latinSpanish, becauseStyle, releaseAlerts
     }
     public var traktEnabled: Bool { !traktClientID.isEmpty }
 
@@ -103,6 +119,24 @@ public final class SettingsStore: @unchecked Sendable {
     }
 }
 
+/// Con qué dejaste un video: la huella de la fuente y la pista exacta de audio y de subtítulos (Latinoamérica y no España,
+/// los forzados…). `subtitle` nil = no se sabe; con `off`, los apagaste.
+public struct ResumeChoice: Codable, Equatable, Sendable {
+    public struct Track: Codable, Equatable, Sendable {
+        public var off = false
+        public var language: String?
+        public var title: String?
+        public init(off: Bool = false, language: String? = nil, title: String? = nil) { self.off = off; self.language = language; self.title = title }
+    }
+    public var videoID: String
+    public var source: String?
+    public var audio: Track?
+    public var subtitle: Track?
+    public init(videoID: String, source: String? = nil, audio: Track? = nil, subtitle: Track? = nil) {
+        self.videoID = videoID; self.source = source; self.audio = audio; self.subtitle = subtitle
+    }
+}
+
 /// Cada serie o película recuerda el audio y los subtítulos que elegiste viéndola (como en Orbital).
 public final class TitlePreferences: @unchecked Sendable {
     struct Saved: Codable { var audio: String?; var subtitles: String? }
@@ -111,9 +145,13 @@ public final class TitlePreferences: @unchecked Sendable {
     private let lock = NSLock()
     private var all: [String: Saved]
 
+    static let resumeKey = "resume-choices"
+    private var resumes: [String: ResumeChoice]
+
     public init(_ kv: KeyValueStore) {
         self.kv = kv
         all = kv.data(Self.key).flatMap { try? JSONDecoder().decode([String: Saved].self, from: $0) } ?? [:]
+        resumes = kv.data(Self.resumeKey).flatMap { try? JSONDecoder().decode([String: ResumeChoice].self, from: $0) } ?? [:]
     }
 
     /// Idioma de audio y subtítulos para un título: el que elegiste viéndolo o, si nunca cambiaste, el de Ajustes.
@@ -122,6 +160,23 @@ public final class TitlePreferences: @unchecked Sendable {
         var prefs = settings.preferences(onCellular: onCellular)
         if let audio = saved?.audio, !audio.isEmpty { prefs.audio = audio }
         return (prefs, saved?.subtitles ?? settings.subtitles)
+    }
+
+    /// «Continuar»: con qué fuente y qué pistas dejaste ese video (la regla de la TV), o nil si es otro video.
+    public func resumeChoice(metaID: String, videoID: String) -> ResumeChoice? {
+        let saved = lock.withLock { resumes[metaID] }
+        return saved?.videoID == videoID ? saved : nil
+    }
+
+    /// Las pistas con que dejaste el título (cualquier episodio): para el siguiente se usan las mismas.
+    public func lastChoice(metaID: String) -> ResumeChoice? { lock.withLock { resumes[metaID] } }
+
+    public func remember(metaID: String, choice: ResumeChoice) {
+        lock.withLock {
+            guard resumes[metaID] != choice else { return }
+            resumes[metaID] = choice
+            kv.set(Self.resumeKey, data: try? JSONEncoder().encode(resumes))
+        }
     }
 
     /// Cambiaste el audio o los subtítulos en el reproductor: ese título lo recuerda. `code` es el de la pista.

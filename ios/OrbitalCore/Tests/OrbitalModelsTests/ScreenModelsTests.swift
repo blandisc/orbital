@@ -69,6 +69,13 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(again.continueWatching.map(\.metaID), ["tt0386676"])
     }
 
+    func testSpotlightInterleavesListsWithoutRepeatsOrWhatYouAreWatching() {
+        func s(_ id: String, _ kind: String) -> Suggestion { Suggestion(kind: kind, imdb: id, title: id, poster: "", wide: "", reason: .trending) }
+        let trend = [s("tt1", "movie"), s("tt2", "movie")], series = [s("tt3", "series"), s("tt1", "movie")], popular = [s("tt4", "movie"), s("tt5", "movie")]
+        let mixed = HomeModel.mixSpotlight([trend, series, popular], excluding: ["tt4"], limit: 4)
+        XCTAssertEqual(mixed.map(\.imdb), ["tt1", "tt3", "tt2", "tt5"])   // una de cada lista por vuelta; tt1 no se repite; tt4 ya la ves
+    }
+
     func testHomeTitlesAreLocalizedButOriginalsKept() async throws {
         let rig = try ServicesRig(tmdbKey: "K")
         rig.services.settings.update { $0.uiLanguage = "es" }
@@ -256,6 +263,8 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertEqual(model.watchlistKeys, ["tt11280740"])
         XCTAssertEqual(model.visibleShelves.map(\.id), ["recs", "watchlist"], "el orden de la TV: Recomendadas y luego Tu watchlist; lo vacío no se pinta")
         let recs = try XCTUnwrap(model.visibleShelves.first)
+        XCTAssertEqual(model.items(for: recs).map(\.imdb), ["tt2788316", "tt13238346"], "«Todo»: la serie y la película, alternadas")
+        await model.setKind("series")
         XCTAssertEqual(model.items(for: recs).map(\.imdb), ["tt2788316"])
         let watchlist = try XCTUnwrap(model.visibleShelves.last)
         XCTAssertEqual(model.items(for: watchlist).map(\.imdb), ["tt11280740"])
@@ -356,6 +365,20 @@ final class ScreenModelsTests: XCTestCase {
         XCTAssertTrue(model.lists.contains { $0.id == "jw:disney" }, "y las tendencias de Disney+")
         await model.dismiss(model.mosaic[0])
         XCTAssertTrue(rig.http.calls.contains("https://tv.example/api/foryou/dismiss"), "«No me interesa» también se le avisa a la TV")
+    }
+
+    /// Cambiar un ajuste avisa a quien escucha a los servicios (la app entera se vuelve a pintar): antes el modo oscuro o el
+    /// carrusel de Inicio no cambiaban hasta reabrir la app.
+    @MainActor func testChangingASettingTellsTheApp() throws {
+        let rig = try ServicesRig()
+        let model = SettingsModel(rig.services)
+        var told = 0
+        let subscription = rig.services.onChange { told += 1 }
+        model.update { $0.appearance = "light" }
+        model.update { $0.homeDeck = "fan" }
+        XCTAssertEqual(told, 2)
+        XCTAssertEqual(rig.services.appSettings.homeDeck, "fan")
+        subscription.cancel()
     }
 
     func testConnectingYourOrbitalKeepsTheTokenInTheKeychainAndChecksIt() async throws {
@@ -528,5 +551,9 @@ final class CatalogAndSourcesTests: XCTestCase {
         let episodes = DownloadGroup.group([item("tt9", "tt9:2:1", bytes: 1), item("tt9", "tt9:1:3", bytes: 1), item("tt9", "tt9:1:1", bytes: 1)])
         XCTAssertEqual(episodes.first?.items.map(\.videoID), ["tt9:1:1", "tt9:1:3", "tt9:2:1"], "en orden de temporada y episodio")
         XCTAssertEqual(groups.first?.bytes, 4)
+        let seasons = try! XCTUnwrap(episodes.first).seasons
+        XCTAssertEqual(seasons.map(\.number), [1, 2], "por temporada, no archivo por archivo")
+        XCTAssertEqual(seasons.map { $0.items.count }, [2, 1])
+        XCTAssertEqual(seasons.first?.bytes, 2)
     }
 }

@@ -51,6 +51,9 @@ final class DesignTests: XCTestCase {
                                            "badge": DesignTokens.Opacity.badge, "onArtSecondary": DesignTokens.Opacity.onArtSecondary]
         for (key, value) in opacities { XCTAssertEqual(num(opacity[key]?.object?["value"]), value, "Opacity.\(key)") }
 
+        let platforms = try group("platforms")
+        for (brand, hex) in DesignTokens.Platform.hex { XCTAssertEqual(platforms[brand]?.string, hex, "Platform.\(brand)") }
+
         // Los papeles en oscuro: el color de la paleta (o el del iPhone, si la diferencia está explicada).
         let roles = try group("roles")
         for role in DesignTokens.Role.allCases {
@@ -124,5 +127,19 @@ final class DesignTests: XCTestCase {
             }
         }
         XCTAssertTrue(problems.isEmpty, "Valores sueltos en las pantallas (usa un token o márcalo con «ds-exception: motivo»):\n" + problems.joined(separator: "\n"))
+    }
+
+    /// Los premios del iPhone son los de design/awards.json (los mismos que lee la TV): si cambia uno, se regenera con
+    /// scripts/ios_awards.py.
+    func testAwardsMatchTheSharedJSON() throws {
+        let data = try Data(contentsOf: repo.appendingPathComponent("design/awards.json"))
+        let json = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let awards = try XCTUnwrap(json["awards"] as? [[String: Any]])
+        XCTAssertEqual(awards.map { $0["id"] as? String }, Awards.all.map(\.id), "corre python3 scripts/ios_awards.py")
+        for (shared, mine) in zip(awards, Awards.all) {
+            let winners = (shared["winners"] as? [[String: Any]]) ?? []
+            XCTAssertEqual(winners.map { $0["imdb"] as? String }, mine.winners.map(\.imdb), "\(mine.id): corre python3 scripts/ios_awards.py")
+            XCTAssertEqual(winners.map { $0["award_year"] as? Int }, mine.winners.map(\.awardYear), mine.id)
+        }
     }
 }

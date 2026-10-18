@@ -19,6 +19,8 @@ final class SpeechInput: ObservableObject {
     private var silence: Task<Void, Never>?
     private var onFinish: ((String) -> Void)?
     private let voice = AVSpeechSynthesizer()
+    /// Al terminar de hablar se suelta el «bajar la música» (`duckOthers`): se avisa para que el control vuelva a mezclar.
+    private let spoken = SpokenWatcher()
     /// Pidiendo permisos: un segundo toque en ese rato no arranca otra vez (instalaría dos veces el micrófono y truena).
     private var starting = false
 
@@ -95,6 +97,7 @@ final class SpeechInput: ObservableObject {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
         let utterance = AVSpeechUtterance(string: text)
         utterance.voice = AVSpeechSynthesisVoice(language: language.hasPrefix("en") ? "en-US" : "es-MX")
+        voice.delegate = spoken
         voice.speak(utterance)
     }
 
@@ -116,5 +119,13 @@ final class SpeechInput: ObservableObject {
         request = nil; task = nil
         listening = false
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        NotificationCenter.default.post(name: .orbitalAudioReleased, object: nil)
+    }
+}
+
+/// Avisa cuando la voz terminó de hablar (para devolverle la música a su volumen).
+final class SpokenWatcher: NSObject, AVSpeechSynthesizerDelegate {
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        DispatchQueue.main.async { NotificationCenter.default.post(name: .orbitalAudioReleased, object: nil) }
     }
 }

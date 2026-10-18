@@ -18,6 +18,8 @@ public final class InboxModel: ObservableModel {
         /// Llegó algo para abrir: la tarjeta «Desde la TV» ya está en Inicio.
         case received(String)
         case downloadFailed(String, reason: Reason)
+        /// Se cerró un juego en la consola: el resumen de la sesión.
+        case played(OrbitalRemote.InboxItem)
     }
     public enum Reason: Equatable { case noSources, notEnoughSpace, other }
 
@@ -53,6 +55,7 @@ public final class InboxModel: ObservableModel {
             switch item.action {
             case .download: done = await download(item)
             case .open: receive(item); done = true
+            case .played: onEvent?(.played(item)); done = true
             }
             if done { handled.insert(item.id); acked.append(item.id) }
         }

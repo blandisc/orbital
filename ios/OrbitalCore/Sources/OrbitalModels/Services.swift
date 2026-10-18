@@ -20,6 +20,24 @@ public final class Services: ObservableModel {
     public private(set) var finder: StreamFinder { didSet { changed() } }
     public private(set) var cinemeta: Cinemeta { didSet { changed() } }
     public private(set) var localizer: Localizer { didSet { changed() } }
+    /// IntroDB: dónde saltar la intro y el resumen (y cuándo empiezan los créditos).
+    public var introDB: IntroDB { IntroDB(http: http) }
+    public var jumpScares: JumpScares { JumpScares(http: http) }
+
+    /// Los sustos de una película (id de IMDb), guardados la primera vez; nil si no hay mapa. El nombre en inglés y el año
+    /// salen de Cinemeta (como los escribe el sitio); si no contesta, el que se da.
+    public func scares(imdb: String, fallbackTitle: String) async -> [JumpScare]? {
+        let key = "jumpscares.\(imdb)"
+        if let data = kv.data(key), let saved = try? JSONDecoder().decode([JumpScare].self, from: data) { return saved.isEmpty ? nil : saved }
+        let meta = try? await cinemeta.meta(kind: "movie", id: imdb)
+        let title = meta?["name"]?.string ?? fallbackTitle
+        let year = (meta?["year"]?.string ?? meta?["releaseInfo"]?.string).flatMap { Int($0.prefix(4)) }
+        let found = await jumpScares.scares(title: title, year: year, imdb: imdb)
+        if let found { kv.set(key, data: try? JSONEncoder().encode(found)) }
+        return (found?.isEmpty ?? true) ? nil : found
+    }
+    /// TMDB directo (la ficha rica: elenco, saga, «Más como esto»…); sin clave, `configured` es false.
+    public private(set) var tmdb: Tmdb { didSet { changed() } }
     public private(set) var trakt: Trakt? { didSet { changed() } }
     public private(set) var forYou: ForYou { didSet { changed() } }
     /// «Para ti» de tu Orbital (la consola), cuando está conectada; `ParaTiModel` decide si la usa.
@@ -55,9 +73,13 @@ public final class Services: ObservableModel {
     /// Cambia cuando se reconfiguran claves (para que las pantallas se actualicen).
     public private(set) var generation = 0 { didSet { changed() } }
 
+    /// Un ajuste cambió (apariencia, idioma, cómo se ve Inicio…): quien escucha a los servicios (la app entera) se vuelve a
+    /// pintar. Antes nadie se enteraba y el modo oscuro o el carrusel no cambiaban hasta reabrir la app.
+    public func settingsDidChange() { changed() }
+
     private let downloadTransport: DownloadTransport
     private let downloadsRoot: URL
-    private let freeSpace: @Sendable () -> Int64
+    let freeSpace: @Sendable () -> Int64
     private let clock: @Sendable () -> Date
     private let onDownloadsChange: @Sendable ([DownloadItem]) -> Void
 
@@ -78,9 +100,9 @@ public final class Services: ObservableModel {
         let finder = StreamFinder(http: http, registry: registry, clock: clock)
         let cinemeta = Cinemeta(http: http, registry: registry, clock: clock)
         let tmdb = Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "", language: "es-MX")
-        let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock)
+        let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
         let trakt = Services.makeTrakt(http: http, secrets: secrets, settings: settings.value, clock: clock)
-        self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt
+        self.registry = registry; self.finder = finder; self.cinemeta = cinemeta; self.localizer = localizer; self.trakt = trakt; self.tmdb = tmdb
         self.forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock),
                              addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
         self.forYouRemote = RemoteForYou(remote: { OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "") }, clock: clock)
@@ -146,14 +168,19 @@ public final class Services: ObservableModel {
         var got: [String] = []
         if !keys.tmdbKey.isEmpty, (secrets.get(SecretKey.tmdbKey) ?? "").isEmpty { secrets.set(SecretKey.tmdbKey, keys.tmdbKey); got.append("TMDB") }
         if !keys.traktClientID.isEmpty, settings.value.traktClientID.isEmpty { settings.update { $0.traktClientID = keys.traktClientID }; got.append("Trakt") }
-        if keys.region.count == 2 { settings.update { $0.region = keys.region } }
-        reconfigure()
-        // Trakt sin conectar en el iPhone (o con la sesión prestada de antes): la de la consola.
-        if let session = keys.traktSession, let trakt, !trakt.linked || trakt.borrowed {
+        let regionChanged = keys.region.count == 2 && keys.region != settings.value.region
+        if regionChanged { settings.update { $0.region = keys.region } }
+        // Solo se rearma si algo cambió: rearmar tira las cachés (traducciones, listas) y vuelve a pintar toda la app, y esto
+        // corre en cada arranque.
+        var needsReconfigure = !got.isEmpty || regionChanged
+        if needsReconfigure { reconfigure(); needsReconfigure = false }
+        // Trakt sin conectar en el iPhone (o con la sesión prestada de antes): la de la consola, si es otra.
+        if let session = keys.traktSession, let trakt, !trakt.linked || (trakt.borrowed && trakt.accessToken != session.accessToken) {
             trakt.adopt(session)
             if !got.contains("Trakt") { got.append("Trakt") }
-            reconfigure()
+            needsReconfigure = true
         }
+        if needsReconfigure { reconfigure() }
         return got
     }
 
@@ -172,7 +199,8 @@ public final class Services: ObservableModel {
         let s = settings.value
         let tmdb = Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "", language: "es-MX")
         let settings = settings, secrets = secrets
-        localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock)
+        localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
+        self.tmdb = tmdb
         trakt = Services.makeTrakt(http: http, secrets: secrets, settings: s, clock: clock)
         let charts = Charts(http: http, tmdb: tmdb, cinemeta: cinemeta, kv: kv, region: { settings.value.region }, clock: clock)
         forYou = ForYou(trakt: trakt, tmdb: tmdb, charts: charts, addons: registry, http: http, region: { settings.value.region }, kv: kv, clock: clock)
@@ -185,6 +213,7 @@ public final class Services: ObservableModel {
         pending.save(PendingWork())
         scrobbleLog.clear()
         kv.set("home-cache", data: nil)
+        kv.set("recent-searches", data: nil)   // lo que buscaste no pasa a la siguiente cuenta
     }
 
     /// Los complementos o la cuenta cambiaron: se vuelve a preguntar todo.

@@ -19,6 +19,109 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "Horas, tus días más intensos, lo que más viste y tu mapa de calor": "Hours, your busiest days, what you watched most and your heat map", "Lo más visto en tu país esta semana": "Most watched in your country this week", "Lo que todo el mundo está viendo": "What everyone is watching", "Lo que viste, día por día": "What you watched, day by day", "No pude traer los episodios de Los Simpson.": "I couldn't get The Simpsons episodes.", "Recomendadas con lo que ves": "Recommended from what you watch", "Top 10 en Netflix": "Top 10 on Netflix", "Tu año en Orbital": "Your year on Orbital", "Un Simpson al azar": "A random Simpsons", "Un Simpson al azar (T5–T15)": "A random Simpsons (S5–S15)", "Ver aquí": "Watch here", "En tendencia": "Trending", "Popular": "Popular", "Tu año": "Your year",
+    "Desliza hacia arriba o abajo para ir de un día con algo visto a otro": "Swipe up or down to move between days you watched something", "Día anterior con algo visto": "Previous day you watched something", "Día siguiente con algo visto": "Next day you watched something", "Elige otro título para recomendarte por él": "Pick another title to get recommendations from", "Ese día no viste nada.": "You didn't watch anything that day.", "Recomiéndame por…": "Recommend based on…", "Toca el nombre para elegir otro de lo que viste": "Tap the name to pick something else you watched",
+    "Hoy no hay ranking de este servicio.": "No ranking for this service today.", "Lo más visto hoy · JustWatch": "Most watched today · JustWatch",
+    "Abrir con Infuse": "Open with Infuse", "Activa los avisos de Orbital en Ajustes del iPhone.": "Turn on Orbital notifications in iPhone Settings.", "Apagados": "Off", "Avienta la carta para cambiar": "Flick the card to change", "Bajando %@": "Downloading %@", "Bajando la recomendada": "Downloading the recommended one", "Borrar la descarga": "Delete the download", "Cancelar la descarga": "Cancel the download", "Clasificación": "Rating", "Con": "With", "Conecta Trakt para saber qué series sigues.": "Connect Trakt so we know which shows you follow.", "Creada por": "Created by", "Cuando un estreno ya está para ver": "When a new episode is ready to watch", "Cómo eliges, en Para ti, de qué título quieres recomendaciones.": "How you pick, in For You, which title to get recommendations from.", "De Real-Debrid · por calidad, la recomendada primero": "From Real-Debrid · by quality, recommended first", "De las series que sigues en Trakt. Te avisa cuando ya hay fuente en Real-Debrid, con botones para verlo aquí, en la TV o bajarlo. De las 23 a las 8 el aviso espera a la mañana; varios el mismo día llegan juntos.": "For the shows you follow on Trakt. It tells you once there's a Real-Debrid source, with buttons to watch here, on the TV or download it. From 11 PM to 8 AM it waits until morning; several on the same day arrive together.", "Descargada": "Downloaded", "Desliza hacia arriba o abajo para cambiar el título": "Swipe up or down to change the title", "Detalles": "Details", "Duración": "Runtime", "Elegir la fuente…": "Choose the source…", "Estrenos": "New episodes", "Fuente": "Source", "Guardada": "Saved", "Guardada en Mi lista": "Saved to My list", "Inicio y Para ti": "Home and For You", "La elegimos por tu idioma, la calidad y el tamaño": "Picked for your language, quality and size", "Lleva %lld %": "%lld % done", "Los siguientes %@": "The next %@", "Mantén presionado para elegir en qué lista": "Touch and hold to choose which list", "Mazo de cartas": "Card deck", "Mini pósters": "Mini posters", "Primer episodio": "First episode", "Quitada de Mi lista": "Removed from My list", "Reintentar": "Retry", "Tus listas de Trakt…": "Your Trakt lists…", "Ver en Descargas": "See in Downloads", "Ver sin internet": "Watch offline", "Un estreno ya está para ver": "A new episode is ready to watch", "%lld estrenos ya para ver": "%lld new episodes ready to watch", "Ya está para ver": "Ready to watch", "Ya está para ver · «%@»": "Ready to watch · “%@”", "Cambiar": "Change", "Avisos": "Notifications", "Estudio": "Studio", "Cadena": "Network", "Disponible": "Available", "Estreno": "Release", "menos": "less", "más": "more",
+    "Empieza en un momento…": "Starting in a moment…", "Ver ya": "Watch now", "Otro": "Another",
+    "Cambia el orden o lo que ocultas.": "Change the sort or what you hide.", "Conecta Trakt": "Connect Trakt", "Este título no está en Stremio": "This title isn't on Stremio", "Nada con estos filtros": "Nothing with these filters", "Nada con «%@». Prueba con otro nombre.": "Nothing for “%@”. Try another name.", "Nada de ese tipo": "Nothing of that type", "Nada en los próximos 14 días": "Nothing in the next 14 days", "Nada por aquí por ahora": "Nothing here yet", "No encontré una con eso": "I couldn't find one like that", "No sale nada de las series que sigues.": "Nothing coming from the shows you follow.", "Películas %@": "Movies %@", "Prueba con otro filtro o más tiempo.": "Try another filter or more time.", "Prueba con «Todo».": "Try “All”.", "Series %@": "Shows %@", "Sin resultados": "No results", "Todavía nada": "Nothing yet",
+    "Bloquear": "Lock", "Pantalla bloqueada": "Screen locked", "Toca para desbloquear": "Tap to unlock",
+    "Español latino": "Latin American Spanish", "Arrastra el video para subirlo o bajarlo": "Drag the video to move it up or down",
+    "Ahorro": "Saver", "Equilibrado": "Balanced", "Rendimiento": "Performance",
+    "Esperando Wi‑Fi": "Waiting for Wi‑Fi", "Esperando conexión": "Waiting for connection", "En espera": "On hold",
+    "termina a la %@": "ends at %@", "Buscar subtítulos": "Search subtitles", "Subtítulos": "Subtitles", "Buscando subtítulos…": "Searching subtitles…", "Se guardan con la descarga: también los ves sin conexión.": "They are saved with the download: you can watch them offline too.", "No encontré subtítulos para este video (o no hay conexión).": "I couldn't find subtitles for this video (or there's no connection).", "Subtítulos guardados con la descarga.": "Subtitles saved with the download.", "No pude bajar ese subtítulo: prueba otro.": "I couldn't download that subtitle: try another one.",
+    "Cargando": "Charging", "Sustos": "Scares", "Avisarme": "Warn me", "Silencio": "Mute", "Arriba": "Up", "Abajo": "Down", "Izquierda": "Left", "Derecha": "Right", "Mantener": "Hold",
+    "%@ de batería": "%@ of battery", "%@ GB libres": "%@ GB free",
+    "%lld por delante · %lld fuertes": "%lld ahead · %lld big", "%lld sustos por delante": "%lld scares ahead", "Con datos móviles te avisamos antes de usar fuentes de más de %lld GB.": "On cellular we ask before using sources over %lld GB.", "De lo más popular": "Among the most popular", "Dejan de salir tu watchlist, tus listas y lo que sigues; lo que veas ya no se marca en Trakt.": "Your watchlist, lists and shows stop appearing; what you watch is no longer marked on Trakt.", "Desconectar": "Disconnect", "En tendencia y para ti": "Trending and for you", "Guardamos una sola copia: si la cambias, se borra la que tienes y se baja la nueva.": "We keep a single copy: if you replace it, yours is deleted and the new one downloads.", "Nada de ese tipo: prueba con «Todo».": "Nothing of that kind: try “All”.", "Reintentar la descarga": "Retry the download", "Se borra lo que tenías pendiente de subir y tus búsquedas recientes. Tus descargas se quedan en el iPhone.": "Pending uploads and your recent searches are deleted. Your downloads stay on the iPhone.", "Seguir la descarga": "Resume the download", "para el siguiente · fuerte": "to the next one · big", "para el siguiente · leve": "to the next one · mild", "síguela en mi iPhone": "continue it on my iPhone", "¿Desconectar Trakt?": "Disconnect Trakt?",
+    "Desde el principio": "From the beginning", "No encontré subtítulos (o no hay conexión). Vuelve a intentar.": "I couldn't find subtitles (or there's no connection). Try again.", "No pude abrir ese archivo.": "I couldn't open that file.", "Tráiler": "Trailer", "Volver a buscar": "Search again",
+    "El juego se cerró solo: no fuiste tú. Si se repite, revisa sus ajustes en la consola.": "The game closed on its own: it wasn't you. If it happens again, check its settings on the console.", "Se cerró por falta de memoria: cierra otras apps de la consola antes de volver a jugar.": "It closed because memory ran out: close other console apps before playing again.", "Sesión terminada": "Session over", "esta vez": "this time", "en total": "in total", "capturas": "captures",
+    "Conectando con tu Orbital…": "Connecting to your Orbital…",
+    "Buscando…": "Searching…", "Buscar subtítulos": "Search subtitles", "En internet": "Online", "Línea de tiempo": "Timeline", "Mapa de sustos · %lld": "Jump scare map · %lld", "Moverte por la TV": "Move around the TV", "No encontré subtítulos para este video.": "I couldn't find subtitles for this video.", "Ocultar el pad": "Hide the pad", "Ocultar los sustos": "Hide the scares", "Tiempos de Where's The Jump": "Times from Where's The Jump", "Vibra unos segundos antes de cada susto": "Vibrates a few seconds before each scare", "Ya no quedan sustos": "No scares left",
+    "Año (lo más nuevo primero)": "Year (newest first)", "Calidad y tamaño en equilibrio": "Balanced quality and size",
+    "Atmos · 5.1": "Atmos · 5.1", "Calidad, idioma y tamaño, a tu gusto": "Quality, language and size, your way", "Cambiarla por esta fuente": "Replace it with this source", "Compartir el archivo": "Share the file", "Compresión eficiente: se ve igual y ocupa menos.": "Efficient compression: looks the same, takes less space.", "De Real-Debrid · la recomendada va primero": "From Real-Debrid · the recommended one comes first", "Dejar la que tengo": "Keep the one I have", "Del servicio de streaming: buena calidad y tamaño medio.": "From the streaming service: good quality, medium size.", "Descargado · listo para ver sin conexión": "Downloaded · ready to watch offline", "Descargando %lld episodios": "Downloading %lld episodes", "Destacado": "Featured", "Lo que tienes a medias": "What you have halfway", "Elegir la fuente": "Choose the source", "En amarillo, las pesadas: con datos móviles te avisamos antes.": "Heavy ones are yellow: on cellular we ask first.", "Filtrar Destacado": "Filter Featured", "Grabada en el cine: mala imagen. Va hasta abajo.": "Recorded in a theater: poor picture. It goes last.", "Guardamos una sola copia. La que tienes es %@; si la cambias, se borra y se baja la nueva.": "We keep a single copy. Yours is %@; if you replace it, it’s deleted and the new one downloads.", "HDR · DV": "HDR · DV", "La copia íntegra del disco: la mejor imagen y la más pesada.": "The full disc copy: best picture, heaviest file.", "La mejor para el iPhone: calidad y tamaño en equilibrio": "Best for iPhone: balanced quality and size", "La recomendada": "The recommended one", "La que elegimos por calidad, idioma y tamaño. Es la que arranca sola.": "Our pick for quality, language and size. It’s the one that starts on its own.", "La resolución. 4K se luce en la TV; en el iPhone, 1080p ya se ve nítido.": "The resolution. 4K shines on the TV; on iPhone, 1080p already looks sharp.", "Los siguientes %lld episodios": "The next %lld episodes", "Mejor resultado": "Top result", "Más contraste y color. DV es Dolby Vision: el iPhone lo reproduce.": "More contrast and color. DV is Dolby Vision: iPhone plays it.", "Para verlos sin conexión, uno tras otro": "To watch offline, one after another", "Películas %lld": "Movies %lld", "Popular esta semana": "Popular this week", "Qué significa cada etiqueta": "What each tag means", "Series %lld": "Shows %lld", "Sonido envolvente. Con audífonos AirPods, Atmos se oye espacial.": "Surround sound. With AirPods, Atmos sounds spatial.", "Ya está en tu Real-Debrid: empieza sin esperar.": "Already in your Real-Debrid: starts right away.", "Ya la tienes descargada": "You already downloaded it",
+    "Afinemos": "Let's fine-tune", "De las series que sigues": "From the shows you follow", "Encuéntrala": "Find it",
+    "Dime con precisión qué quieres: de qué lista, de qué época y qué tan bien calificada.": "Tell me exactly what you want: which list, which era and how well rated.",
+    "Lo que guardaste": "What you saved", "Seguir viendo: todas, %@": "Continue watching: all, %@", "Todas": "All", "Ver la ficha": "See details",
+    "Abre el acompañante del juego": "Opens the game companion", "Seguir viendo: ver las %@": "Continue watching: see all %@", "Ver las %@": "See all %@",
+    "A la consola le queda %lld %% de batería.": "The console has %lld %% battery left.", "Actualiza tu Orbital para ver la batería, los controles y la memoria.": "Update your Orbital to see its battery, controllers and memory.",
+    "Batería baja en la consola": "Console battery low", "Buscar en la web": "Search the web", "Cerrar %@": "Close %@",
+    "Cerrar el juego": "Close the game", "Dónde te quedaste, qué te falta…": "Where you left off, what's missing…", "El juego se va a cerrar": "The game is about to close",
+    "En pausa en la consola": "Paused on the console", "Guía": "Guide", "Guías de la comunidad de Steam": "Steam community guides", "Guías en YouTube": "Guides on YouTube",
+    "Ir al inicio": "Go home", "Jugando en la consola": "Playing on the console", "La consola": "The console", "La distribución habitual del emulador.": "The emulator's usual layout.",
+    "Le queda %lld %%: conéctala antes de que se apague.": "%lld %% left: plug it in before it shuts down.", "Llevas %@": "%@ in", "Llevas %@ en %@.": "You've played %@ of %@.",
+    "Pantalla táctil": "Touch screen", "Para el jefe que te atoró o el objeto que no encuentras.": "For the boss you're stuck on or the item you can't find.",
+    "Se cumplió tu tiempo": "Time's up", "Stick derecho": "Right stick", "Te aviso al terminar; no cierro nada.": "I'll tell you when it's over; I won't close anything.",
+    "Volver al juego": "Back to the game", "¿Cerrar el juego?": "Close the game?", "¿Cuánto quieres jugar?": "How long do you want to play?",
+    "Calificación mínima": "Minimum rating", "Cualquiera": "Any", "De dónde": "From where", "De todo lo sugerido": "From everything suggested",
+    "Desliza hasta arriba para más precisión: de qué lista, época y calificación": "Swipe all the way up for more precision: which list, era and rating",
+    "Elige y toca «Decide por mí»": "Choose and tap «Decide for me»", "Lo que sea": "Anything", "No encontré una con eso: prueba con otro filtro o más tiempo.": "I couldn't find one with that: try another filter or more time.",
+    "Una para ahora · desliza hacia arriba para elegir": "One for now · swipe up to choose", "Época": "Era", "Antes de los 90": "Before the 90s", "Barajar": "Shuffle",
+    "Buscaste hace poco": "Recent searches", "Lo más popular de cada uno": "The most popular of each", "Lo que más se ve hoy en Stremio, películas y series": "What's most watched today on Stremio, movies and shows",
+    "Con géneros elegidos, el ánimo no cuenta.": "With genres picked, the mood doesn't count.", "Géneros": "Genres", "Incluir lo que ya vi": "Include what I've watched",
+    "Ir a una sección": "Go to a section", "Mejor calificadas en IMDb": "Top rated on IMDb", "Mejor calificadas en Trakt": "Top rated on Trakt",
+    "Menos opciones": "Fewer options", "Más opciones": "More options", "Qué": "What", "Toca otra vez para confirmar": "Tap again to confirm",
+    "Todo lo que estás viendo": "Everything you're watching", "Todo lo que estás viendo · %@": "Everything you're watching · %@", "¿Ver en la TV?": "Watch on the TV?",
+    "Listas de Trakt": "Trakt lists", "Listas de Stremio": "Stremio lists", "Próximos estrenos": "Upcoming",
+    "Abre el control de tu Orbital.": "Opens your Orbital's remote.", "Abrir el control de Orbital": "Open the Orbital remote", "Control de Orbital": "Orbital remote",
+    "Episodios de estas semanas y películas recién llegadas": "This week's episodes and newly arrived movies", "Estudios": "Studios",
+    "Lo más visto": "Most watched", "Lo más visto de cada uno": "The most watched from each", "Nuevo en tus plataformas": "New on your platforms",
+    "Año: más nuevas": "Year: newest", "Año: más viejas": "Year: oldest", "A–Z": "A–Z", "Como viene la lista": "As the list comes", "De %@": "From %@",
+    "Género": "Genre", "Listas de Stremio": "Stremio lists", "Listas de Trakt": "Trakt lists", "Lo que Trakt relaciona con lo último que viste": "What Trakt relates to what you watched last",
+    "Mostrar": "Show", "Nada con estos filtros.": "Nothing with these filters.", "Ocultar lo que ya vi": "Hide what I've watched", "Ordenar y filtrar": "Sort and filter",
+    "Porque viste": "Because you watched", "Series o películas": "Shows or movies", "Sin lo que ya vi": "Without what I've watched", "Ordenar": "Sort", "Todos": "All",
+    "Tus series": "Your shows", "Tu watchlist": "Your watchlist", "Mi lista": "My list",
+    "Cine mexicano": "Mexican cinema", "De Trakt": "From Trakt", "Globos de Oro": "Golden Globes", "Lo más popular de cada año": "The most popular of each year",
+    "Los ganadores, del más reciente": "The winners, newest first", "Mejor película": "Best Picture", "Mejor película dramática": "Best Motion Picture – Drama",
+    "Mejor serie de drama": "Outstanding Drama Series", "Palma de Oro": "Palme d'Or", "Plataformas": "Platforms", "Por año": "By year", "Premios": "Awards",
+    "Tus listas": "Your lists", "Óscar": "Oscar", "Ariel": "Ariel", "Emmy": "Emmy", "Cannes": "Cannes", "%lld títulos": "%lld titles",
+    "Complementos, TMDB, país": "Add-ons, TMDB, country", "Crear": "Create", "Desde tu Orbital": "From your Orbital", "Guardar en…": "Save to…",
+    "No pude cambiar tu lista de Trakt: %@": "I couldn't change your Trakt list: %@", "No pude crear la lista: %@": "I couldn't create the list: %@",
+    "Nombre": "Name", "Nueva lista": "New list", "Nueva lista…": "New list…", "Ponle nombre a la lista": "Give the list a name",
+    "Se crea en Trakt (privada) y este título entra en ella.": "It's created on Trakt (private) and this title goes in it.",
+    "Todo lo que sigues": "Everything you're watching", "Todo lo que sigues · %@": "Everything you're watching · %@", "Tus listas de Trakt": "Your Trakt lists",
+    "Avanzado": "Advanced", "Guardar": "Save", "Guardado": "Saved", "Ver": "View", "Pasó a tu Orbital": "Moved to your Orbital",
+    "Cambiar lo que quiero": "Change what I want", "Conecta Trakt (en tu Orbital o en Ajustes) para ver tu año.": "Connect Trakt (on your Orbital or in Settings) to see your year.",
+    "De lo último que viste": "From what you watched lately", "Decide por mí": "Decide for me", "Día por día": "Day by day", "En pareja": "As a couple",
+    "Hoy no": "Not today", "Las dos": "Both", "Lo que más viste": "What you watched most", "Lo que viste": "What you watched",
+    "No encontré otra con eso: prueba otro ánimo o más tiempo.": "I couldn't find another one: try another mood or more time.",
+    "Otra": "Another", "Para pensar": "Thought-provoking", "Porque viste %@": "Because you watched %@", "Quiero algo": "I want something",
+    "Sale el %@": "Out %@", "Sale mañana": "Out tomorrow", "Sale hoy": "Out today", "Tu %@": "Your %@", "Tu año": "Your year",
+    "Una sola, de tus sugerencias, que no hayas visto.": "Just one, from your suggestions, that you haven't seen.", "¿Qué vemos?": "What should we watch?",
+    "Tengo": "I have", "30 min": "30 min", "1 h": "1 h", "2 h o más": "2 h or more", "Ligero": "Light", "Intenso": "Intense",
+    "vistas": "watched", "racha más larga": "longest streak", "tu género": "your genre", "%lld días": "%lld days",
+    "%lld películas · %lld episodios": "%lld movies · %lld episodes", "%lld días con algo visto": "%lld days with something watched",
+    "Tendencia": "Trending", "Top 10": "Top 10",
+    "Hola": "Hi", "Hola, %@": "Hi, %@", "Cómo te llamamos": "What we call you", "Tu nombre": "Your name",
+    "Actualiza tu Orbital para cambiar el volumen desde aquí.": "Update your Orbital to change the volume from here.",
+    "Alexa, pídele a Orbital que…": "Alexa, ask Orbital to…", "Bajar volumen": "Volume down", "Subir volumen": "Volume up", "Quitar silencio": "Unmute",
+    "Descargar funciona aunque estés fuera de casa.": "Downloading works even away from home.",
+    "Estira el control hacia arriba y toca «Dile a Orbital». Se detiene solo cuando terminas.": "Pull the remote up and tap “Tell Orbital”. It stops on its own when you finish.",
+    "Las frases de abajo funcionan igual en los tres.": "The phrases below work the same in all three.", "Oye Siri, habla con Orbital": "Hey Siri, talk to Orbital",
+    "Sin «pídele a Orbital», Alexa intenta hacerlo ella sola.": "Without “ask Orbital”, Alexa tries to do it herself.",
+    "Y cuando pregunte, la orden. Directo: «Oye Siri, pausa Orbital».": "Then, when asked, the command. Direct: “Hey Siri, pause Orbital”.",
+    "Saltar resumen": "Skip recap",
+    "Lo mejor disponible": "Best available",
+    "Sale pronto": "Coming up", "Ver todo": "See all", "Sale hoy": "Out today",
+    "Más lento": "Slower", "Más rápido": "Faster",
+    "%@ de %@": "%@ of %@",
+    "Ajustes del video": "Video settings", "Archivo descargado": "Downloaded file", "La que tienes": "Current", "Pasó a tu Orbital": "Moved to your Orbital",
+    "Tamaño": "Size", "Tarda en empezar": "Slow to start", "Tu idioma": "Your language", "Ventana": "Window", "Idiomas": "Languages", "Otros": "Others",
+    "Otras": "Others", "Al instante": "Instant", "Atrás": "Back", "%@ · sigue en %@": "%@ · continues at %@", "Deshacer": "Undo",
+    "Creación": "Created by", "Dónde verlo": "Where to watch", "Este título no está en Stremio.": "This title isn't on Stremio.", "Filmografía": "Filmography",
+    "La saga": "The saga", "Marcar temporada como vista": "Mark season as watched", "Más como esto": "More like this",
+    "No pude traer a esta persona de TMDB.": "Couldn't load this person from TMDB.", "Reparto y equipo": "Cast and crew", "Tráiler y extras": "Trailer and extras",
+    "Novela": "Novel", "%lld de %lld vistos": "%lld of %lld watched",
+    "Sus rankings de hoy": "Their charts today", "%lld descargando": "%lld downloading", "Descarga inteligente": "Smart downloads",
+    "En la TV: %@": "On TV: %@", "Sale hoy: %@": "Out today: %@", "%lld por terminar": "%lld to finish", "Inicio": "Home",
+    "Otras apps": "Other apps", "Espacio": "Storage", "%@ libres de %@": "%@ free of %@",
+    "%lld episodio": "%lld episode", "%lld temporadas": "%lld seasons", "Temporada %lld": "Season %lld", "Temporada %@": "Season %@", "Series": "Shows", "Películas": "Movies",
+    # Repensado: Ajustes por páginas, un solo filtro en Para ti, Buscar integrado
+    "Cambiar avatar": "Change avatar", "Conectado": "Connected", "Conectado: %@": "Connected: %@", "Conectando…": "Connecting…",
+    "Conexiones": "Connections", "Cómo se acomodan las tarjetas de «Seguir viendo».": "How the Continue Watching cards are arranged.",
+    "Cómo te dice la tarjeta lo que te queda por ver.": "How the card tells you how much is left.", "Idioma y subtítulos": "Language and subtitles",
+    "Por género": "By genre", "Reproducción": "Playback", "Siempre": "Always", "Sin conectar": "Not connected", "Tu avatar": "Your avatar",
+    "Tu perfil": "Your profile", "Ver el mosaico": "Show the mosaic", "Ver las listas": "Show the lists", "Voz y Siri": "Voice and Siri",
+    "Ícono de la app": "App icon",
     # Proyección: modo claro y oscuro
     "Falta el archivo parcial": "The partial file is missing", "No se pudo reproducir": "Could not play",
     "Puesto %lld": "No. %lld", "Puesto %@": "No. %@", "Control remoto": "Remote control", "Esta semana en México": "This week in Mexico", "Las que estás viendo": "Shows you're watching", "Tendencia en JustWatch · México": "JustWatch trend · Mexico",
@@ -47,8 +150,8 @@ TRANSLATIONS = {
     "Todavía nada: aparece cuando veas algo en el iPhone.": "Nothing yet: it shows up once you watch something on the iPhone.",
     "Abrir en Infuse": "Open in Infuse", "Abrir siempre en Infuse": "Always open in Infuse", "Adelantar 10 segundos": "Forward 10 seconds",
     "Alexa": "Alexa", "Qué le puedes decir a Alexa": "What you can say to Alexa", "Cómo pedírselo": "How to ask", "Buscar una frase": "Search a phrase",
-    "Copiar": "Copy", "Si Alexa dice que no puede, empieza con «pídele a mi consola que…»: sin eso, Alexa intenta hacerlo ella sola.":
-        "If Alexa says she can't, start with “pídele a mi consola que…” (ask my console to…): without it, Alexa tries to do it herself.",
+    "Copiar": "Copy", "Si Alexa dice que no puede, empieza con «pídele a Orbital que…»: sin eso, Alexa intenta hacerlo ella sola.":
+        "If Alexa says she can't, start with “pídele a Orbital que…” (ask Orbital to…): without it, Alexa tries to do it herself.",
     "Próximos estrenos": "Upcoming episodes", "Por día": "By day", "Semana": "Week", "Hoy": "Today", "Mañana": "Tomorrow",
     "Sale hoy": "Out today", "Desde la madrugada": "Overnight", "Nada este día": "Nothing this day",
     "No sale nada en los próximos 14 días de las series que sigues.": "Nothing comes out in the next 14 days from the shows you follow.",
@@ -164,7 +267,7 @@ TRANSLATIONS = {
     "Sin subtítulos": "No subtitles", "Solo con Wi‑Fi": "Wi‑Fi only", "Solo subtítulos forzados": "Forced subtitles only", "Stremio al día": "Stremio up to date",
     "Stremio conectado": "Stremio connected", "Subtítulos": "Subtitles", "Sugerencias": "Suggestions", "Sí, marcar como visto": "Yes, mark as watched",
     "TMDB pone las fichas en español y busca lo popular en Netflix, Disney+ y HBO Max.": "TMDB provides translated titles and finds what's popular on Netflix, Disney+ and HBO Max.",
-    "T%lld E%lld": "S%lld E%lld", "E%lld": "E%lld", "Temporada %lld": "Season %lld", "Todo": "All", "Trakt al día": "Trakt up to date", "Trakt conectado": "Trakt connected",
+    "T%lld E%lld": "S%lld E%lld", "E%lld": "E%lld", "Temporada %lld": "Season %lld", "Temporada %@": "Season %@", "Todo": "All", "Trakt al día": "Trakt up to date", "Trakt conectado": "Trakt connected",
     "Trakt no aceptó el código.": "Trakt didn't accept the code.", "Trakt: %@": "Trakt: %@",
     "Tu contraseña no se guarda: solo la clave de sesión, en el Keychain de tu iPhone.": "Your password isn't stored: only the session key, in your iPhone's Keychain.",
     "Tu watchlist": "Your watchlist", "Tuyo": "Yours", "Ver": "Watch", "Ver ahora": "Watch now", "Viendo": "Watching", "Visto": "Watched", "Volver a intentar": "Try again",
@@ -187,7 +290,7 @@ TRANSLATIONS = {
     "Di «Oye Siri, habla con Orbital» y, cuando pregunte, la orden. Para lo de siempre, directo: «Oye Siri, pausa Orbital» o «Oye Siri, reanuda Orbital».": "Say “Hey Siri, talk to Orbital” and, when it asks, the command. For the everyday ones, directly: “Hey Siri, pause Orbital” or “Hey Siri, resume Orbital”.",
     "Dónde hablarle": "Where to talk to it",
     "El iPhone tiene que estar en la misma red que la consola (o con Tailscale), y Orbital abierta en la TV.": "The iPhone has to be on the same network as the console (or on Tailscale), with Orbital open on the TV.",
-    "Empieza con «Alexa, pídele a mi consola que…»: sin eso, Alexa intenta hacerlo ella sola.": "Start with “Alexa, pídele a mi consola que…”: without it, Alexa tries to do it herself.",
+    "Empieza con «Alexa, pídele a Orbital que…»: sin eso, Alexa intenta hacerlo ella sola.": "Start with “Alexa, pídele a Orbital que…”: without it, Alexa tries to do it herself.",
     "En el control": "In the remote",
     "Las frases de abajo funcionan igual en los tres: las entiende tu Orbital.": "The phrases below work the same in all three: your Orbital understands them. They are in Spanish.",
     "Las teclas del mando, dichas solas.": "The controller buttons, said on their own.",
@@ -204,6 +307,32 @@ TRANSLATIONS = {
     "Solo en el iPhone": "Only on the iPhone",
     "Toca «En la TV», estira la hoja hacia arriba y toca el micrófono. Habla con calma: cuando terminas, se detiene solo y te contesta en voz alta.": "Tap “On TV”, pull the sheet up and tap the microphone. Speak calmly: when you finish it stops on its own and answers out loud.",
     "Voz": "Voice",
+    "«%@» no tiene ficha de IMDb: Trakt no lo puede registrar.": "“%@” has no IMDb page: Trakt can’t record it.",
+    "Carrusel": "Carousel",
+    "Coverflow": "Coverflow",
+    "Abanico": "Fan",
+    "Cuánto falta": "Time left",
+    "Píldora de vidrio": "Glass pill",
+    "El borde avanza": "Progress border",
+    "Botón que se llena": "Filling button",
+    "Arco orbital": "Orbit arc",
+    "Cómo se acomodan las tarjetas de «Seguir viendo», cómo se dice cuánto te falta y tu avatar.": "How the “Continue watching” cards are laid out, how the time left is shown, and your avatar.",
+    "%lld min": "%lld min",
+    "Quedan %lld min": "%lld min left",
+    "min": "min",
+    "Hoy en tu país": "Today in your country",
+    "JustWatch · hoy": "JustWatch · today",
+    "Lo más popular · Películas": "Most popular · Movies",
+    "Lo más popular · Series": "Most popular · Series",
+    "Netflix · esta semana": "Netflix · this week",
+    "Rankings de %@": "%@ rankings",
+    "Sus rankings": "Its rankings",
+    "Tendencia hoy · Películas": "Trending today · Movies",
+    "Tendencia hoy · Series": "Trending today · Series",
+    "Top 10 · Películas": "Top 10 · Movies",
+    "Top 10 · Series": "Top 10 · Series",
+    "Tus plataformas": "Your platforms",
+    "Clásico": "Classic", "Cielo nocturno": "Night sky",
     "Ponerla en la TV": "Play it on the TV", "Poniendo %@.": "Playing %@.", "Abriendo %@ en la TV.": "Opening %@ on the TV.",
     "Sigue aquí.": "Continuing here.", "Abre Orbital y toca «Seguir aquí».": "Open Orbital and tap “Continue here”.",
     "Entendí: «%@»": "I heard: “%@”", "«Pon The Office», «pausa», «descárgalo»": "“Play The Office”, “pause”, “download it”",
@@ -215,20 +344,24 @@ TRANSLATIONS = {
     "Viendo en la TV": "Watching on TV",
 }
 # Textos que no se traducen: nombres propios, ids y formatos.
-IGNORE = {"Content-Type", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
+IGNORE = {"The Simpsons", "Content-Type", "L · R", "L1 · R1", "L2 · R2", "LB · RB", "LT · RT", "ZL · ZR", "Start · Select", "Stick C", "IMDb %.1f", "Trakt %.1f", "T\\($0) · E\\($1)", "AVPlayer", "AirPlay", "Client Secret", "AetherEngine", "BluRay", "WEB-DL", "Orbital", "Trakt", "English", "Español", "1080p", "720p", "4K", "TMDB", "Infuse", "Stremio", "Real-Debrid",
           "REMUX", "Atmos", "Dolby Vision", "Netflix", "Disney+", "HBO Max",
-          "Icons/"}  # el nombre de un ícono en el catálogo
+          "Icons/", "Glyphs/donut", "Avatars/", "Awards/", "AppIconPreview/day", "AppIconPreview/night", "AppIconNight"}  # el nombre de un ícono en el catálogo
 # Textos que se arman en código (modelos) y llegan a la pantalla: se traducen si coinciden con una clave.
 CODE_KEYS = {k for k in TRANSLATIONS}
 
 INT_HINT = re.compile(r"^(Int\(|count\b|card\.secondsLeft|row\.number|season\.season|\bs\b|\be\b|\bh\b|\bm\b|\bn\b|episode\b|fraction|state\.remaining)")
+# Enteros que pueden ir en cualquier parte de la expresión («model.results.filter {…}.count», «nextCount», «session.captures»):
+# SwiftUI arma la clave con %lld y, si aquí saliera %@, el inglés no se encontraría nunca.
+INT_ANYWHERE = re.compile(r"(\.count\b|Count\b|\bminutes\b|\bpercent\b|\.captures\b|\badded\b)")
 
 
 def to_format(literal: str) -> str:
     """El literal de Swift con `\\(…)` → la clave que genera SwiftUI (%lld para enteros, %@ para el resto)."""
     def repl(m: re.Match) -> str:
         expr = m.group(1)
-        return "%lld" if INT_HINT.match(expr) else "%@"
+        # Una llamada («Strings.duration(minutes)») da texto aunque lleve un entero adentro.
+        return "%lld" if INT_HINT.match(expr) or ("(" not in expr and INT_ANYWHERE.search(expr)) else "%@"
     # Interpolaciones sin paréntesis anidados profundos (el código de la app no usa más de un nivel).
     out, i = "", 0
     while i < len(literal):
@@ -251,7 +384,7 @@ def used_literals() -> dict[str, str]:
     for f in files:
         f = Path(f).as_posix()  # en Windows glob da «\»: sin esto el modo demo y Platform/ se colaban
         # El modo demo (solo Debug) no se traduce; de Design/ solo se saltan los tokens y el banco de pruebas (las piezas sí llevan texto).
-        if "/Platform/" in f or f.endswith(("/Support/Demo.swift", "Previews.swift", "/Design/Tokens.swift", "/Design/MosaicBench.swift", "/Design/ModelObserver.swift")):
+        if "/Platform/" in f or f.endswith(("/Support/Demo.swift", "/Support/Perf.swift", "Previews.swift", "/Design/Tokens.swift", "/Design/MosaicBench.swift", "/Design/ModelObserver.swift")):
             continue
         for number, line in enumerate(Path(f).read_text(encoding="utf-8").splitlines(), 1):
             stripped = line.strip()
@@ -259,7 +392,10 @@ def used_literals() -> dict[str, str]:
                 continue
             for m in lit.finditer(line):
                 text = m.group(1)
-                if len(text) < 3 or not re.match(r"^[A-ZÁÉÍÓÚÑ¿]", text) or text in IGNORE:
+                # Con mayúscula, o una frase en minúsculas que empieza con texto o con un número («\\(n) por delante»): las dos
+                # salen en pantalla (antes las de minúscula se saltaban y se quedaban sin inglés).
+                sentence = re.match(r"^(\\\([^)]*\)\s)?[a-záéíóúñ]+ [a-záéíóúñ]", text) is not None and "Text(" in line
+                if len(text) < 3 or (not re.match(r"^[A-ZÁÉÍÓÚÑ¿]", text) and not sentence) or text in IGNORE:
                     continue
                 if re.fullmatch(r"[A-Z0-9_ ]+", text) and len(text) < 6:
                     continue

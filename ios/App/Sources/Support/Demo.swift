@@ -1,6 +1,7 @@
 #if DEBUG
 import Foundation
 import OrbitalCore
+import OrbitalModels
 
 /// Modo demostración (solo en Debug, con el argumento `-demo`): una cuenta de Stremio falsa con biblioteca y un complemento
 /// que da videos de prueba públicos. Cinemeta y los pósteres son los de verdad. Nada se guarda en el Keychain ni en disco:
@@ -12,13 +13,19 @@ enum Demo {
     static var startTab: Int? { value(after: "-start-tab").flatMap(Int.init) }
     static var startMode: String? { value(after: "-start-mode") }
     /// `-demo-no-idle`: el mosaico no se mueve solo (las pruebas de arrastre miden solo lo que hace el dedo).
+    /// Lo guardado (Inicio, el mosaico, los colores) sobrevive entre aperturas, como en el iPhone de verdad (para medir).
+    static var persist: Bool { ProcessInfo.processInfo.arguments.contains("-demo-persist") }
     static var noIdle: Bool { ProcessInfo.processInfo.arguments.contains("-demo-no-idle") }
 
     static let addonURL = "https://demo.orbital.invalid/manifest.json"
     /// `-demo-no-tv`: sin Orbital conectada (para probar el QR: `xcrun simctl openurl booted "orbital-ios://pair?u=https%3A%2F%2Ftv.demo.invalid&t=demo"`).
     static var noTV: Bool { ProcessInfo.processInfo.arguments.contains("-demo-no-tv") }
     /// `-demo-tv-now`: la tarjeta «Viendo en la TV» con datos de mentira (para verla en el simulador).
-    static var tvNow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tv-now") }
+    static var tvNow: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tv-now") || horror }
+    /// `-demo-tv-horror`: en la TV suena Insidious (con mapa de sustos de verdad) y la TV está en su reproductor.
+    static var horror: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tv-horror") }
+    /// `-demo-game`: la consola de mentira tiene un juego abierto (modo acompañante).
+    static var game: Bool { ProcessInfo.processInfo.arguments.contains("-demo-game") }
 
     /// `-demo-inbox download|open`: tu Orbital de mentira dejó algo para el iPhone («Descargar en el iPhone» o «Enviar al iPhone»):
     /// con `download` se ve la descarga de prueba y el aviso; con `open`, la tarjeta «Desde la TV» en Inicio.
@@ -26,13 +33,15 @@ enum Demo {
 
     /// `-demo-scrobble`: Trakt «conectado» con un último scrobble de mentira (para ver la fila de Ajustes › Trakt en el simulador).
     static var scrobble: Bool { ProcessInfo.processInfo.arguments.contains("-demo-scrobble") }
+    /// `-demo-because`: Trakt de mentira con historial y relacionados, para ver «Porque viste» en Para ti.
+    static var because: Bool { ProcessInfo.processInfo.arguments.contains("-demo-because") }
 
     /// Lo último que «se le contó a Trakt», para ver la fila de Ajustes sin ver nada antes.
     static func prefillScrobble(_ kv: KeyValueStore) {
         if scrobble { ScrobbleLog(kv: kv).recordSent(title: "The Office T2 · E5", action: .pause, at: Date().addingTimeInterval(-180)) }
     }
 
-    private static func value(after flag: String) -> String? {
+    static func value(after flag: String) -> String? {
         let args = ProcessInfo.processInfo.arguments
         guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
         return args[i + 1]
@@ -72,6 +81,22 @@ enum Demo {
     static var mode: String? { value(after: "-demo-mode") }
     /// `-demo-lang en`: idioma de la app.
     static var language: String? { value(after: "-demo-lang") }
+    /// `-demo-downloads`: Descargas con una película, dos episodios y una a medias (para ver y deslizar los renglones).
+    static var downloads: [DownloadItem] {
+        guard ProcessInfo.processInfo.arguments.contains("-demo-downloads") else { return [] }
+        func item(_ kind: String, _ meta: String, _ video: String, _ title: String, _ sub: String, _ state: DownloadState, _ release: String) -> DownloadItem {
+            var d = DownloadItem(id: DownloadItem.makeID(metaID: meta, videoID: video), kind: kind, metaID: meta, videoID: video, title: title, originalTitle: title,
+                                 subtitle: sub, poster: "https://images.metahub.space/poster/medium/\(meta)/img", addon: "Torrentio", release: release,
+                                 sourceIndex: 0, expectedBytes: 2_400_000_000, relativePath: "\(meta)/\(video).mkv", createdAt: 0)
+            d.state = state; d.writtenBytes = state == .done ? 2_400_000_000 : 900_000_000
+            return d
+        }
+        return [item("movie", "tt1160419", "tt1160419", "Dune", "", .done, "Dune.2021.1080p.WEB-DL"),
+                item("movie", "tt15239678", "tt15239678", "Dune: Parte dos", "", .paused, "Dune.Part.Two.2160p.WEB-DL"),
+                item("series", "tt0386676", "tt0386676:2:5", "The Office", "T2 · E5", .done, "The.Office.S02E05.720p"),
+                item("series", "tt0386676", "tt0386676:2:6", "The Office", "T2 · E6", .done, "The.Office.S02E06.720p")]
+    }
+
     /// `-demo-search dune`: escribe eso en Buscar (pestaña Ver).
     static var search: String? { value(after: "-demo-search") }
     /// `-demo-open settings|sources|play`: lo que se abre encima de la ficha o de Inicio.
@@ -84,6 +109,8 @@ enum Demo {
     /// `-demo-appearance light|dark`: fuerza el modo claro u oscuro (para las capturas de los dos).
     static var appearance: String? { value(after: "-demo-appearance") }
     static var console: Bool { ProcessInfo.processInfo.arguments.contains("-demo-console") }
+    /// `-demo-tmdb`: TMDB de mentira (elenco, saga, tráiler, dónde verlo) para ver la ficha rica sin clave.
+    static var tmdb: Bool { ProcessInfo.processInfo.arguments.contains("-demo-tmdb") }
     /// `-demo-mosaic-focus 3`: en «Para ti» › Mosaico, enfoca esa sugerencia (su índice en `model.mosaic`) al abrir.
     static var mosaicFocus: Int? { value(after: "-demo-mosaic-focus").flatMap(Int.init) }
 
@@ -94,8 +121,9 @@ enum Demo {
     static func secrets() -> InMemorySecrets {
         let secrets = InMemorySecrets()
         if !ProcessInfo.processInfo.arguments.contains("-demo-signed-out") { secrets.set(SecretKey.stremioAuth, "DEMO") }
-        if scrobble || airings { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa: nada sale a Trakt
+        if scrobble || airings || because { secrets.set(SecretKey.traktTokens, #"{"access_token":"DEMO","expires_at":4102444800}"#) }   // sesión falsa: nada sale a Trakt
         if !noTV { secrets.set(SecretKey.orbitalToken, "demo") }      // una Orbital de mentira ya conectada («Ver en la TV»)
+        if tmdb { secrets.set(SecretKey.tmdbKey, "DEMO") }            // TMDB de mentira: la ficha rica sin clave de verdad
         return secrets
     }
 }
@@ -129,17 +157,20 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     private var nowPlayingTicked = Date()
     private var nowPlayingPaused = false
     private var inboxAcked = false
+    private var demoVolume = 40, demoMuted = false
 
     func send(_ request: HTTPRequest) async throws -> HTTPResponse {
         let url = request.url
         if url.host == "api.strem.io" { return try await stremio(url.lastPathComponent, body: request.body.flatMap(JSON.parse)) }
         if url.host == "demo.orbital.invalid" { return addon(url.path) }
         if url.host == "api.trakt.tv", url.path.hasPrefix("/calendars/my/shows") { return calendarDemo() }
+        if url.host == "api.trakt.tv", Demo.because, let found = Self.becauseDemo(url.path) { return HTTPResponse(status: 200, data: found.serialized()) }
         if url.host == "api.trakt.tv" {   // con `-demo-scrobble` Trakt es de mentira: ni una petición sale a internet
             let user: JSON = url.path == "/users/settings" ? ["user": ["username": "demo"]] : [:]
             return HTTPResponse(status: url.path == "/users/settings" ? 200 : 404, data: user.serialized())
         }
-        if url.host == "tv.demo.invalid", Demo.tvNow || Demo.inbox != nil, url.path.hasPrefix("/api/companion/") {
+        if url.host == "api.themoviedb.org", Demo.tmdb { return tmdbDemo(url) }
+        if url.host == "tv.demo.invalid", Demo.tvNow || Demo.inbox != nil || Demo.game, url.path.hasPrefix("/api/companion/") {
             return lock.withLock { nowPlaying(path: url.path, body: request.body.flatMap(JSON.parse)) }
         }
         if url.host == "tv.demo.invalid" {
@@ -150,6 +181,87 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         }
         return try await real.send(request)
     }
+
+    /// `-demo-release-alert`: pide permiso y manda el aviso de ejemplo unos segundos después (para verlo con la app cerrada).
+    @MainActor static func postReleaseAlert(language: String) {
+        guard Demo.isOn, ProcessInfo.processInfo.arguments.contains("-demo-release-alert") else { return }
+        Task {
+            guard await ReleaseNotifier.requestPermission() else { return }
+            try? await Task.sleep(for: .seconds(4))
+            await ReleaseNotifier.post([releaseAlert], language: language)
+        }
+    }
+
+    /// Un aviso «Ya está para ver» de ejemplo (`-demo-release-alert`).
+    static let releaseAlert = ReleaseAlerts.Alert(id: "tt14452776:4:2", metaID: "tt14452776", show: "The Bear", season: 4, episode: 2, episodeTitle: "Bolognese",
+                                                  poster: "https://images.metahub.space/poster/medium/tt14452776/img",
+                                                  art: "https://images.metahub.space/background/medium/tt14452776/img", quality: "1080p", instant: true, minutes: 34)
+
+    /// «Porque viste» de mentira: lo último que viste (cinco series) y lo que Trakt relaciona con cada una.
+    static let becauseShows: [(String, String, [(String, String)])] = [
+        ("tt0472954", "It's Always Sunny in Philadelphia", [("tt0367279", "Arrested Development"), ("tt0290988", "Trailer Park Boys"), ("tt1759761", "Veep"), ("tt0387764", "Peep Show")]),
+        ("tt0386676", "The Office", [("tt1266020", "Parks and Recreation"), ("tt2467372", "Brooklyn Nine-Nine"), ("tt4477976", "Superstore"), ("tt3526078", "Schitt's Creek")]),
+        ("tt14452776", "The Bear", [("tt15677150", "Shrinking"), ("tt11815682", "Hacks"), ("tt14403178", "Beef"), ("tt5687612", "Fleabag")]),
+        ("tt11280740", "Severance", [("tt14688458", "Silo"), ("tt2085059", "Black Mirror"), ("tt5753856", "Dark"), ("tt0475784", "Westworld")]),
+        ("tt0903747", "Breaking Bad", [("tt3032476", "Better Call Saul"), ("tt5071412", "Ozark"), ("tt2707408", "Narcos"), ("tt0306414", "The Wire")]),
+    ]
+
+    static func becauseDemo(_ path: String) -> JSON? {
+        func show(_ id: String, _ title: String) -> JSON { ["title": .string(title), "year": 2020, "ids": ["imdb": .string(id), "trakt": 1]] }
+        if path == "/sync/history" {
+            return .array(becauseShows.map { ["type": "episode", "show": show($0.0, $0.1)] })
+        }
+        if path.hasPrefix("/shows/"), path.hasSuffix("/related"), let found = becauseShows.first(where: { path.contains($0.0) }) {
+            return .array(found.2.map { show($0.0, $0.1) })
+        }
+        return nil
+    }
+
+    /// TMDB de mentira (`-demo-tmdb`): cualquier título es el 1; su ficha trae reparto (con caras de metahub), tráiler, saga,
+    /// recomendaciones y dónde verlo; una persona trae su biografía y su trabajo.
+    private func tmdbDemo(_ url: URL) -> HTTPResponse {
+        let path = url.path.replacingOccurrences(of: "/3", with: "")
+        let body: JSON
+        if path.hasPrefix("/find/") {
+            body = ["movie_results": [["id": 1]], "tv_results": [["id": 1]]]
+        } else if path.hasPrefix("/person/") {
+            body = ["id": 1, "name": "Steve Carell", "birthday": "1962-08-16", "place_of_birth": "Concord, Massachusetts",
+                    "biography": "Actor, comediante y productor estadounidense. Conocido por Michael Scott en The Office, y por Foxcatcher, Little Miss Sunshine y The Big Short.",
+                    "combined_credits": ["cast": [["id": 2, "media_type": "tv", "name": "The Office", "poster_path": "/o.jpg", "popularity": 90, "character": "Michael Scott"],
+                                                  ["id": 3, "media_type": "movie", "title": "Foxcatcher", "poster_path": "/f.jpg", "popularity": 40, "character": "John du Pont"]]]]
+        } else if path.hasPrefix("/watch/providers/") {
+            body = ["results": [["provider_id": 8, "provider_name": "Netflix"], ["provider_id": 337, "provider_name": "Disney Plus"], ["provider_id": 1899, "provider_name": "HBO Max"]]]
+        } else if path.hasPrefix("/discover/") {
+            // Colecciones › Estudios y «Nuevo en tus plataformas»: ids 100+ que la ficha de abajo vuelve títulos reales.
+            let offset = abs(url.query?.hashValue ?? 0) % Self.demoIMDb.count
+            body = ["results": .array((0..<8).map { ["id": .int(100 + (offset + $0) % Self.demoIMDb.count)] })]
+        } else if let id = Int(url.lastPathComponent), id >= 100, Self.demoIMDb.indices.contains(id - 100) {
+            let pick = Self.demoIMDb[id - 100]
+            body = ["id": .int(id), "title": .string(pick.1), "name": .string(pick.1), "imdb_id": .string(pick.0), "release_date": "2024-03-01", "first_air_date": "2024-03-01"]
+        } else if path.hasPrefix("/collection/") {
+            body = ["name": "Dune: colección", "parts": [["id": 5, "title": "Dune", "release_date": "2021-09-15", "poster_path": "/d1.jpg"],
+                                                        ["id": 6, "title": "Dune: Part Two", "release_date": "2024-02-27", "poster_path": "/d2.jpg"]]]
+        } else {
+            body = ["id": 1, "vote_average": .double(8.6), "vote_count": 4000, "belongs_to_collection": ["id": 9],
+                    "networks": [["name": "NBC"]], "created_by": [["id": 7, "name": "Greg Daniels"]],
+                    "credits": ["cast": [["id": 1, "name": "Steve Carell", "character": "Michael Scott"], ["id": 2, "name": "Rainn Wilson", "character": "Dwight Schrute"],
+                                         ["id": 3, "name": "John Krasinski", "character": "Jim Halpert"], ["id": 4, "name": "Jenna Fischer", "character": "Pam Beesly"]], "crew": []],
+                    "content_ratings": ["results": [["iso_3166_1": "MX", "rating": "B"]]],
+                    "videos": ["results": [["site": "YouTube", "key": "LHOtME2DL4g", "type": "Trailer", "name": "Tráiler"],
+                                           ["site": "YouTube", "key": "gO8N3L_aERg", "type": "Featurette", "name": "Así se hizo"]]],
+                    "recommendations": ["results": [["id": 8, "name": "Parks and Recreation", "first_air_date": "2009-04-09", "poster_path": "/p.jpg"],
+                                                    ["id": 10, "name": "Brooklyn Nine-Nine", "first_air_date": "2013-09-17", "poster_path": "/b.jpg"]]],
+                    "watch/providers": ["results": ["MX": ["flatrate": [["provider_name": "Prime Video"], ["provider_name": "Netflix"]]]]]]
+        }
+        return HTTPResponse(status: 200, data: body.serialized())
+    }
+
+    /// Títulos reales para el TMDB de mentira (sus pósters salen de metahub).
+    static let demoIMDb: [(String, String)] = [
+        ("tt11280740", "Severance"), ("tt15239678", "Dune: Part Two"), ("tt6710474", "Everything Everywhere All at Once"), ("tt14452776", "The Bear"),
+        ("tt5788792", "Moonlight"), ("tt13623632", "Alien: Romulus"), ("tt8111088", "The Mandalorian"), ("tt2560140", "Attack on Titan"),
+        ("tt0386676", "The Office"), ("tt7660850", "Succession"), ("tt10986410", "Ted Lasso"), ("tt5180504", "The Witcher"),
+    ]
 
     /// Un overview de «Para ti» de mentira con varios estantes (Lo tuyo, Top 10 de Netflix con puesto, una plataforma, tendencias y el
     /// catálogo de un complemento), para ver el feed de Listas completo sin una consola real (`-demo-console`).
@@ -240,6 +352,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
     private static let nowPlayingDuration = 1_320.0
 
     /// `/api/companion/now` y `/api/companion/player`: una serie de mentira, viendo su episodio 5 de la temporada 2.
+    private var demoGamePaused = false, demoGameOpen = true, demoPowerMode = "balanced"
+
     private func nowPlaying(path: String, body: JSON?) -> HTTPResponse {
         let now = Date()
         if !nowPlayingPaused { nowPlayingPosition = min(Self.nowPlayingDuration, nowPlayingPosition + now.timeIntervalSince(nowPlayingTicked)) }
@@ -250,6 +364,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
             case "play": nowPlayingPaused = false
             case "toggle": nowPlayingPaused.toggle()
             case "skip": nowPlayingPosition = min(Self.nowPlayingDuration, max(0, nowPlayingPosition + Double(body?["delta"]?.intValue ?? 0)))
+            case "volume": demoVolume = max(0, min(100, demoVolume + Int(body?["delta"]?.doubleValue ?? 0))); demoMuted = false
+            case "mute": demoMuted.toggle()
             default: break
             }
         }
@@ -263,7 +379,11 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         }
         // La bandeja de mentira: lo que «dejó» la TV, hasta que la app avisa que ya lo atendió.
         var inbox: [JSON] = []
-        if let action = Demo.inbox, !inboxAcked {
+        if Demo.inbox == "played", !inboxAcked {   // `-demo-inbox played`: se cerró un juego (el resumen de la sesión)
+            inbox = [.object(["id": "demo-played", "action": "played", "meta_id": "steam:1245620", "video_id": "1", "title": "Elden Ring",
+                              "seconds": .int(4380), "total_seconds": .int(312_000), "crashed": false, "low_memory": true, "captures": .int(3),
+                              "at": .double(Date().timeIntervalSince1970)])]
+        } else if let action = Demo.inbox, !inboxAcked {
             let open = action == "open"
             inbox = [.object(["id": "demo-inbox", "kind": .string(open ? "movie" : "series"), "meta_id": .string(open ? "tt1160419" : "tt0386676"),
                               "video_id": .string(open ? "tt1160419" : "tt0386676:2:5"), "title": .string(open ? "Dune" : "The Office"),
@@ -271,8 +391,39 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
                               "poster": .string("https://images.metahub.space/poster/medium/\(open ? "tt1160419" : "tt0386676")/img"),
                               "action": .string(open ? "open" : "download"), "at": .double(Date().timeIntervalSince1970)])]
         }
+        // El modo acompañante de mentira: Elden Ring abierto, la consola con su batería, controles y memoria.
+        if Demo.game {
+            if path == "/api/companion/game", let action = body?["action"]?.string {
+                switch action { case "home": demoGamePaused = true; case "resume": demoGamePaused = false; case "close": demoGameOpen = false; default: break }
+            }
+            if path == "/api/companion/console" {
+                if let mode = body?["power_mode"]?.string { demoPowerMode = mode }
+                let state: JSON = ["battery": ["percent": 58, "plugged": false, "minutes_left": 130], "power_mode": .string(demoPowerMode), "brightness": 70,
+                                   "wifi": ["ssid": "Casa 5G", "signal": 82],
+                                   "controllers": [["kind": "legion", "battery": "full"], ["kind": "xbox", "battery": "low"]],
+                                   "memory": ["free_gb": .double(6.1), "apps": [["name": "Chrome", "gb": .double(2.3), "closable": true], ["name": "Discord", "gb": .double(0.8), "closable": true]]]]
+                return HTTPResponse(status: 200, data: state.serialized())
+            }
+            let game: JSON = demoGameOpen ? .object(["id": "steam:1245620", "title": "Elden Ring", "system": "steam",
+                                                     "art": ["cover": "https://cdn.cloudflare.steamstatic.com/steam/apps/1245620/library_600x900.jpg",
+                                                             "hero": "https://cdn.cloudflare.steamstatic.com/steam/apps/1245620/library_hero.jpg",
+                                                             "logo": "https://cdn.cloudflare.steamstatic.com/steam/apps/1245620/logo.png"],
+                                                     "started": .double(Date().timeIntervalSince1970 - 72 * 60), "paused": .bool(demoGamePaused), "closes_at": .null]) : .null
+            if path == "/api/companion/game" { return HTTPResponse(status: 200, data: JSON.object(["game": game]).serialized()) }
+            return HTTPResponse(status: 200, data: JSON.object(["playing": .null, "inbox": .array(inbox), "game": game]).serialized())
+        }
         guard Demo.tvNow else {
             return HTTPResponse(status: 200, data: JSON.object(["playing": .null, "inbox": .array(inbox)]).serialized())
+        }
+        if Demo.horror {
+            let movie: JSON = .object(["kind": .string("movie"), "live": .bool(false), "meta_id": .string("tt1591095"), "video_id": .string("tt1591095"),
+                                       "title": .string("Insidious"), "poster": .string("https://images.metahub.space/poster/medium/tt1591095/img"),
+                                       "position": .double(1300 + nowPlayingPosition), "duration": .double(6180), "paused": .bool(nowPlayingPaused),
+                                       "tracks": ["audio": [["id": "1", "label": "Inglés 5.1", "selected": true], ["id": "2", "label": "Español", "selected": false]],
+                                                  "subtitles": [["id": "0", "label": "Sin subtítulos", "selected": false], ["id": "3", "label": "Español", "selected": true]]]])
+            let playerUI: JSON = ["screen": "player", "text_field": false, "section": "Películas y series", "legend": ["alt": "Subtítulos", "options": "Audio"],
+                                  "volume": ["level": .int(demoVolume), "muted": .bool(demoMuted)]]
+            return HTTPResponse(status: 200, data: JSON.object(["playing": movie, "inbox": .array(inbox), "ui": playerUI]).serialized())
         }
         let playing: JSON = .object(["kind": .string("series"), "live": .bool(false), "meta_id": .string("tt0386676"),
                                      "video_id": .string("tt0386676:2:5"), "title": .string("The Office"),
@@ -281,7 +432,8 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         // La pantalla de la TV de mentira: en su ficha, con la leyenda del pie (como la manda la consola de verdad).
         let ui: JSON = ["screen": "title", "text_field": false, "section": "Películas y series",
                         "legend": ["select": "Reproducir", "back": "Atrás", "alt": "Mi lista", "options": "Más", "menu": "Menú", "search": "Buscar",
-                                   "page": "De 5 en 5", "section": "Secciones"]]
+                                   "page": "De 5 en 5", "section": "Secciones"],
+                        "volume": ["level": .int(demoVolume), "muted": .bool(demoMuted)]]
         return HTTPResponse(status: 200, data: JSON.object(["playing": playing, "inbox": .array(inbox), "ui": ui]).serialized())
     }
 
@@ -331,5 +483,33 @@ final class DemoHTTPClient: HTTPClient, @unchecked Sendable {
         ]
         return HTTPResponse(status: 200, data: JSON.object(["streams": .array(streams)]).serialized())
     }
+
+    /// «Tu año» con un historial inventado (siempre el mismo): unas noches de serie, unas de película, rachas.
+    static var demoYear: YearInReview {
+        let cal = Calendar.current, now = Date()
+        let start = cal.date(from: cal.dateComponents([.year], from: now)) ?? now
+        let days = cal.dateComponents([.day], from: start, to: now).day ?? 0
+        let shows = [("tt0903747", "Breaking Bad"), ("tt5180504", "The Witcher"), ("tt11280740", "Severance")]
+        let movies = [("tt15239678", "Dune: Part Two", ["science-fiction", "adventure"]), ("tt6710474", "Everything Everywhere All at Once", ["science-fiction", "comedy"]),
+                      ("tt1160419", "Dune", ["science-fiction", "drama"])]
+        var plays: [TraktPlay] = []
+        for d in 0...max(days, 0) {
+            let seed = (d * 7919) % 23
+            guard let day = cal.date(byAdding: .day, value: d, to: start), seed < 13 else { continue }
+            if seed % 3 != 0 {
+                let show = shows[(d / 9) % shows.count]
+                for e in 0..<(1 + seed % 3) { plays.append(TraktPlay(at: day.addingTimeInterval(Double(e) * 3600), kind: "series", imdb: show.0, title: show.1, minutes: 50, genres: ["drama"],
+                                                                         season: 1 + d / 60, episode: 1 + (d + e) % 10, episodeTitle: "Episodio \(1 + (d + e) % 10)")) }
+            }
+            if seed % 4 == 0 {
+                let movie = movies[(d / 5) % movies.count]
+                plays.append(TraktPlay(at: day.addingTimeInterval(7200), kind: "movie", imdb: movie.0, title: movie.1, minutes: 140, genres: movie.2))
+            }
+        }
+        return YearInReview.make(plays, year: cal.component(.year, from: now), calendar: cal)
+    }
+}
+extension Demo {
+    static var yearInReview: YearInReview { DemoHTTPClient.demoYear }
 }
 #endif

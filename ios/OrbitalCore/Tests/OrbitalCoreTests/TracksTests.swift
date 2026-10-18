@@ -53,3 +53,15 @@ final class TracksTests: XCTestCase {
         XCTAssertEqual(TrackChooser.label(MediaTrack(id: 5, kind: .subtitle, language: "ger", title: "GER (srt)")), "Alemán", "«GER (srt)» lo inventa el motor")
     }
 }
+
+final class LatinSpanishTests: XCTestCase {
+    func testLatinSpanishIsPreferredOverCastilian() {
+        let tracks = [MediaTrack(id: 1, kind: .audio, language: "eng", isDefault: true),
+                      MediaTrack(id: 2, kind: .audio, language: "spa", title: "Castellano"),
+                      MediaTrack(id: 3, kind: .audio, language: "spa", title: "Latino")]
+        XCTAssertEqual(TrackChooser.audio(tracks, language: "es", latin: true)?.id, 3)
+        XCTAssertEqual(TrackChooser.audio(tracks, language: "es")?.id, 2, "sin la opción, la primera en español (como antes)")
+        let tagged = [MediaTrack(id: 1, kind: .audio, language: "es-ES"), MediaTrack(id: 2, kind: .audio, language: "es-419")]
+        XCTAssertEqual(TrackChooser.audio(tagged, language: "es", latin: true)?.id, 2)
+    }
+}

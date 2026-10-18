@@ -37,9 +37,14 @@ public protocol PlayerEngine: AnyObject, Sendable {
     func addSubtitle(url: URL, language: String?) async
     /// Velocidad (1 = normal). El motor la regresa a 1 con cada video nuevo; el modelo la vuelve a poner.
     func setRate(_ rate: Float) async
+    /// Lo que conviene saber antes de abrir el video: el idioma del audio y de los subtítulos que quieres (se eligen desde el
+    /// primer cuadro) y los subtítulos externos que ya se tienen (una descarga), declarados al cargar para que también salgan
+    /// en la ventana de PiP.
+    func prepare(audioLanguages: [String], subtitleLanguages: [String], externalSubtitles: [URL]) async
     var snapshots: AsyncStream<EngineSnapshot> { get }
 }
 
 public extension PlayerEngine {
     func setRate(_ rate: Float) async {}
+    func prepare(audioLanguages: [String], subtitleLanguages: [String], externalSubtitles: [URL]) async {}
 }

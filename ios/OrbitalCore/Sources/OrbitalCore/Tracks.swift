@@ -43,9 +43,24 @@ public enum TrackChooser {
     }
 
     /// El audio en tu idioma; si no hay, el que viene marcado por defecto; si no, el primero.
-    public static func audio(_ tracks: [MediaTrack], language: String) -> MediaTrack? {
+    public static func audio(_ tracks: [MediaTrack], language: String, latin: Bool = false) -> MediaTrack? {
         let audios = tracks.filter { $0.kind == .audio }
-        return audios.first { matches($0, language) } ?? audios.first(where: \.isDefault) ?? audios.first
+        let mine = audios.filter { matches($0, language) }
+        // Español latino: de las de español, la latina (etiqueta es-419/es-MX o «Latino» en su nombre) antes que la de España.
+        if latin, language == "es", let latino = mine.first(where: isLatinSpanish) ?? mine.first(where: { !isCastilian($0) }) { return latino }
+        return mine.first ?? audios.first(where: \.isDefault) ?? audios.first
+    }
+
+    static func isLatinSpanish(_ t: MediaTrack) -> Bool {
+        let lang = (t.language ?? "").lowercased().replacingOccurrences(of: "_", with: "-")
+        let name = (t.title ?? "").lowercased()
+        return ["es-419", "es-mx", "es-la", "lat"].contains(lang) || ["latino", "latin", "latam", "méxico", "mexico", "lat."].contains { name.contains($0) }
+    }
+
+    static func isCastilian(_ t: MediaTrack) -> Bool {
+        let lang = (t.language ?? "").lowercased().replacingOccurrences(of: "_", with: "-")
+        let name = (t.title ?? "").lowercased()
+        return lang == "es-es" || ["castellano", "castilian", "españa", "spain", "european"].contains { name.contains($0) }
     }
 
     /// Los subtítulos según el modo; nil = sin subtítulos.
@@ -69,7 +84,7 @@ public enum TrackChooser {
     }
 
     /// «Español · AC3 5.1»: nombre legible de una pista (los idiomas, con el nombre del idioma de la app).
-    public static func label(_ track: MediaTrack, locale: Locale = Locale(identifier: "es")) -> String {
+    public static func label(_ track: MediaTrack, locale: Locale = Locale(identifier: "es"), technical: Bool = true) -> String {
         var parts: [String] = []
         let english = locale.identifier.hasPrefix("en")
         // Los motores ponen «Track 1 (aac)» cuando el archivo no dice nada: eso no ayuda a elegir.
@@ -89,10 +104,17 @@ public enum TrackChooser {
             if let title, !names.contains(title.lowercased()) { parts.append(title) }
         } else if let title { parts.append(title) }
         else { parts.append(english ? "Track \(track.id + 1)" : "Pista \(track.id + 1)") }
-        let tech = [track.codec?.uppercased(), track.channels].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
-        if !tech.isEmpty { parts.append(tech) }
+        let tech = Self.technical(track)
+        if technical, !tech.isEmpty { parts.append(tech) }
         if track.isForced { parts.append(english ? "forced" : "forzados") }
         return parts.joined(separator: " · ")
+    }
+}
+
+extension TrackChooser {
+    /// El formato de una pista («AC3 5.1»), aparte del nombre (el panel lo pone en gris debajo).
+    public static func technical(_ track: MediaTrack) -> String {
+        [track.codec?.uppercased(), track.channels].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
     }
 }
 

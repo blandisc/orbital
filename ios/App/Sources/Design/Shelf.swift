@@ -10,12 +10,13 @@ struct ShelfRoute: Hashable { var id: String }
 struct Shelf<Content: View>: View {
     let title: Text
     var meta: Text?
-    /// El logo de la plataforma (siempre a la misma altura) o, si no hay, un ícono de la fuente.
-    var logo: String?
-    var icon: OrbitalIcon?
     /// Sin ruta, el encabezado no es un botón (los estantes de relleno).
     var route: ShelfRoute?
     var loading = false
+    /// De dónde viene (su sello junto al título).
+    var source: ListSource?
+    /// El porqué arriba del título, en ámbar (va en lugar de `meta`, abajo).
+    var eyebrow: Text?
     @ViewBuilder var content: () -> Content
 
     var body: some View {
@@ -26,6 +27,7 @@ struct Shelf<Content: View>: View {
                     if loading { ShelfSkeleton() } else { content() }
                 }
                 .scrollTargetLayout()
+                .environment(\.posterCaptions, false)
             }
             .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
             .scrollTargetBehavior(.viewAligned)
@@ -39,19 +41,7 @@ struct Shelf<Content: View>: View {
     }
 
     private func headerRow(chevron: Bool) -> some View {
-        HStack(spacing: DS.Space.s3) {
-            if let logo, !logo.isEmpty { DSPlatformLogo(url: logo) }
-            else if let icon { ListIcon(icon: icon).foregroundStyle(DS.textMuted) }
-            VStack(alignment: .leading, spacing: DS.Space.s1) {
-                title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
-                if let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }
-            }
-            Spacer(minLength: DS.Space.s2)
-            if chevron { Image(systemName: "chevron.right").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.textMuted).accessibilityHidden(true) }
-        }
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isHeader)
+        DSSectionHead(title: title, chevron: chevron, meta: meta, source: source, eyebrow: eyebrow)
     }
 }
 
@@ -76,6 +66,8 @@ struct RankedPosterCard: View {
     /// Cuánto se movió y si es nuevo (el Top 10 real de la TV): va bajo el póster.
     var movement: Int?
     var isNew = false
+    /// El color de la plataforma: la cifra toma un tono suyo y su brillo (la página de rankings). Sin él, gris.
+    var tint: Color?
 
     var body: some View {
         VStack(alignment: .trailing, spacing: DS.Space.s1) {
@@ -85,8 +77,12 @@ struct RankedPosterCard: View {
     }
 
     private var numberAndPoster: some View {
-        HStack(alignment: .bottom, spacing: -DS.Space.s5) {
-            Text(verbatim: "\(rank)").font(DS.Size.rankFont).foregroundStyle(DS.ink500).lineLimit(1).fixedSize()
+        // El «10», del mismo tamaño que las demás: sus cifras más juntas y el póster le tapa un poco más el cero (como Netflix).
+        HStack(alignment: .bottom, spacing: rank >= 10 ? -DS.Size.rankTwoDigitsOverlap : -DS.Space.s5) {
+            Text(verbatim: "\(rank)").font(DS.Size.rankFont).foregroundStyle(tint.map { $0.opacity(DS.PlatformFan.numberTint) } ?? DS.ink500)
+                .shadow(color: tint ?? .clear, radius: DS.PlatformFan.numberGlow)
+                .tracking(DS.Size.rankTracking)
+                .lineLimit(1).fixedSize()
                 .padding(.bottom, -DS.Space.s3)   // la cifra se apoya en la base del póster (sin el hueco del renglón)
                 .accessibilityHidden(true)
             PosterView(url: poster, title: title).frame(width: width)

@@ -38,6 +38,26 @@ final class ForYouTests: XCTestCase {
         XCTAssertTrue(items[0].poster.contains("images.metahub.space/poster/medium/"))
     }
 
+    /// El mosaico se guarda en el teléfono para pintarse al instante la próxima vez (sin lo que marcaste «No me interesa»).
+    func testTheMosaicIsSavedForAnInstantNextLaunch() async {
+        let http = FakeHTTP(); stubTrakt(http)
+        let forYou = makeForYou(http)
+        let fresh = await forYou.mosaic()
+        let cached = await forYou.cachedMosaic()
+        XCTAssertEqual(cached, fresh, "vuelve igual: motivo, póster, episodio que sigue")
+        await forYou.dismiss(fresh[0].imdb)
+        let after = await forYou.cachedMosaic()
+        XCTAssertFalse(after.contains { $0.imdb == fresh[0].imdb })
+    }
+
+    func testASavedSuggestionKeepsEverything() {
+        var s = Suggestion(kind: "series", imdb: "tt1", title: "Uno", year: 2024, poster: "p", wide: "w", logo: "l", reason: .inList("Terror"), next: (2, 5), rank: 3)
+        s.movement = -1; s.isNew = true
+        let back = SavedSuggestion(s).suggestion
+        XCTAssertEqual(back, s)
+        XCTAssertEqual(back.rank, 3); XCTAssertEqual(back.movement, -1); XCTAssertTrue(back.isNew); XCTAssertEqual(back.logo, "l")
+    }
+
     func testListsShowMineBeforeDiscover() async {
         let http = FakeHTTP(); stubTrakt(http)
         http.json["https://api.themoviedb.org/3/watch/providers/movie?watch_region=MX&api_key=K&language=es-MX"] = ["results": [["provider_id": 8, "provider_name": "Netflix", "logo_path": "/n.jpg"]]]
@@ -147,6 +167,21 @@ final class ForYouTests: XCTestCase {
         let week = AiringDay.week(airings, from: Clock().now, calendar: mexico)
         XCTAssertEqual(week.count, 7)
         XCTAssertEqual(week.map { $0.airings.count }, [1, 1, 0, 0, 0, 0, 0], "los días sin nada también están")
+    }
+
+    func testTheNextWeeksOfTheCalendarComeWhenAsked() async throws {
+        let http = FakeHTTP()
+        var mexico = Calendar(identifier: .gregorian)
+        mexico.timeZone = TimeZone(secondsFromGMT: -6 * 3600)!
+        // Hoy es el 9: las dos semanas que siguen empiezan el 23 (se pide desde el 22, en hora universal).
+        http.json["\(api)/calendars/my/shows/2025-10-22/16?extended=full"] = [
+            ["first_aired": "2025-10-22T20:00:00.000Z", "episode": ["season": 1, "number": 1], "show": ["title": "Antes", "ids": ["imdb": "tt0000001", "trakt": 1]]],
+            ["first_aired": "2025-10-30T20:00:00.000Z", "episode": ["season": 3, "number": 2], "show": ["title": "Muy lejos", "ids": ["imdb": "tt0000002", "trakt": 2]]]]
+        let airings = try await makeForYou(http).calendar(skip: 14, days: 14, calendar: mexico)
+        XCTAssertEqual(airings.map(\.series.title), ["Muy lejos"], "lo del 22 ya estaba en las primeras dos semanas")
+        let strip = AiringDay.week(airings, from: Clock().now, calendar: mexico, days: 28)
+        XCTAssertEqual(strip.count, 28, "la tira llega hasta donde se cargó")
+        XCTAssertEqual(strip.firstIndex { !$0.airings.isEmpty }, 21)
     }
 
     func testNoUpcomingEpisodesWithoutTrakt() async throws {

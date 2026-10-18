@@ -5,37 +5,56 @@ import OrbitalModels
 /// Un género de «Explora» al que se navega (nombre de Cinemeta, en inglés).
 struct GenreRoute: Hashable { var genre: String }
 
-/// «Buscar» (la pestaña de búsqueda nativa de iOS 26): sin escribir, lo más popular hoy con su puesto y los géneros para
+/// «Buscar» (la pestaña de búsqueda nativa de iOS 26): sin escribir, el Top 10 de hoy en carrusel y los géneros para
 /// explorar; al escribir, los resultados en cuadrícula.
 struct BrowseView: View {
     @EnvironmentObject private var env: AppEnvironment
     @StateObject private var catalog: ModelObserver<CatalogModel>
     @StateObject private var search: ModelObserver<SearchModel>
     @State private var query = ""
+    /// Los resultados: todo, solo películas o solo series.
+    @State private var kind: String = ""
+    /// Los colores del n.º 1 de hoy: el fondo de la pantalla y las cifras del Top 10 toman su tono (como Inicio).
+    @StateObject private var tint: ArtTint
     /// El póster que ilustra cada género (el primero de su catálogo), según van llegando.
 
-    /// Cuántos de lo más popular van en la lista con puesto.
-    private static let popularCount = 5
+    /// Cuántos de lo más popular van en el carrusel con puesto (un Top 10).
+    private static let popularCount = 10
 
     init() {
         let services = AppEnvironment.shared.services
-        _catalog = StateObject(wrappedValue: ModelObserver(CatalogModel(services)))
+        _catalog = StateObject(wrappedValue: ModelObserver(AppEnvironment.shared.catalog))
+        _tint = StateObject(wrappedValue: ArtTint(cachedFor: AppEnvironment.shared.catalog.popular.first?.poster))
         _search = StateObject(wrappedValue: ModelObserver(SearchModel(services)))
     }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DS.Space.s8) {
+            VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 if query.trimmingCharacters(in: .whitespaces).count >= 2 { results } else { suggestions }
             }
+            .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio y Para ti
             .padding(.bottom, DS.Space.s8)
         }
-        .background(Backdrop())
+        .background(Backdrop(tint: tint.colors))
+        .task(id: catalog.model.popular.first?.poster) { await tint.load(catalog.model.popular.first?.poster) }
         .navigationTitle("Buscar").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .searchable(text: $query, prompt: Text("Películas y series"))
+        // Nombres propios: sin autocorrector ni mayúscula automática («Shōgun» no se vuelve «Shotgun»); al deslizar los
+        // resultados, el teclado se va para verlos.
+        .autocorrectionDisabled()
+        .textInputAutocapitalization(.never)
+        .scrollDismissesKeyboard(.immediately)
+        .onChange(of: query) { kind = "" }   // otra búsqueda empieza con «Todo» (un filtro viejo dejaba la pantalla en blanco)
+        // El campo vive abajo (pestaña de búsqueda, como Trakt); al escribir, el título se queda arriba y los resultados
+        // empiezan bajo él (antes la barra se escondía y lo de arriba chocaba con la hora).
+        .searchPresentationToolbarBehavior(.avoidHidingContent)
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
         .titleDestinations()
+        .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(for: GenreRoute.self) { GenreView(genre: $0.genre, model: catalog.model) }
         .task(id: query) {
+            if query.count >= 2 { Perf.begin("search") }
             try? await Task.sleep(nanoseconds: DS.Timing.searchDebounce)    // espera a que termines de escribir
             guard !Task.isCancelled else { return }
             await search.model.search(query)
@@ -44,7 +63,7 @@ struct BrowseView: View {
             #if DEBUG
             if Demo.isOn, let text = Demo.search { query = text }
             #endif
-            await catalog.model.load()
+            if catalog.model.popular.isEmpty { await catalog.model.load() }   // ya se pidió al abrir la app
         }
         .refreshable { await catalog.model.load() }
     }
@@ -55,16 +74,43 @@ struct BrowseView: View {
         // «Sin resultados» solo cuando ya contestó la búsqueda de lo que está escrito (no durante la espera de la última letra).
         let answered = !model.isSearching && model.searchedQuery == query.trimmingCharacters(in: .whitespacesAndNewlines)
         if let error = model.error, answered { DSNotice(verbatim: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
-        else if model.results.isEmpty && answered { ContentUnavailableView.search(text: query) }
+        else if model.results.isEmpty && answered { DSEmptyState(symbol: "magnifyingglass", title: Text("Sin resultados"), message: Text("Nada con «\(query)». Prueba con otro nombre.")) }
+        let shown = kind.isEmpty ? model.results : model.results.filter { $0.kind == kind }
+        let movieCount = model.results.filter { $0.kind == "movie" }.count, seriesCount = model.results.filter { $0.kind == "series" }.count
+        if model.results.count > 1 || !kind.isEmpty {
+            // Todo · Películas · Series (cuántas de cada una): el filtro de toda la app.
+            DSKindFilter(kind: $kind, counts: (movieCount, seriesCount)).padding(.horizontal, DS.Space.gutter)
+        }
+        // El que mejor coincide, en grande (con su arte), como el primer resultado de Apple TV.
+        if let top = shown.first, top.metaID.hasPrefix("tt") {
+            let route = TitleRoute(kind: top.kind, metaID: top.metaID, title: top.title, poster: top.poster)
+            NavigationLink(value: route) {
+                CoverCard(art: String(format: ForYou.metahubBackground, top.metaID), logo: Artwork.logoURL(metaID: top.metaID), title: top.title,
+                          why: Text("Mejor resultado"), detail: yearAndKind(year: top.year, kind: top.kind), height: DS.Size.searchTopHeight)
+            }
+            .perfTag("search.top")
+            .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
+            .simultaneousGesture(TapGesture().onEnded { model.remember(query) })
+        }
+        if answered, !model.results.isEmpty, shown.isEmpty {
+            DSEmptyState(symbol: "line.3.horizontal.decrease.circle", title: Text("Nada de ese tipo"), message: Text("Prueba con «Todo»."))
+        }
         LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
-            ForEach(model.results) { r in
+            if !answered && model.results.isEmpty && model.error == nil {
+                // Mientras llega: pósters vacíos en su lugar (antes, una ruedita sobre la barra de arriba).
+                ForEach(0..<9, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: DS.Radius.md).fill(DS.fill).aspectRatio(DS.Poster.aspect, contentMode: .fit)
+                }
+                .accessibilityHidden(true)
+            }
+            ForEach(shown.first?.metaID.hasPrefix("tt") == true ? Array(shown.dropFirst()) : shown) { r in
                 TitleLink(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster), width: DS.Poster.gridMinimum,
                           detail: yearAndKind(year: r.year, kind: r.kind))
+                    .perfTag("search.grid")
                     .simultaneousGesture(TapGesture().onEnded { model.remember(query) })
             }
         }
         .padding(.horizontal, DS.Space.gutter)
-        .overlay { if !answered && model.results.isEmpty && model.error == nil { ProgressView() } }
     }
 
     // MARK: sin escribir
@@ -77,37 +123,50 @@ struct BrowseView: View {
         explore
     }
 
+    /// Lo que buscaste, en cápsulas bajo el título (un toque lo vuelve a buscar); «Borrar» al final.
     private var recent: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
-            DSSectionHead(title: "Búsquedas recientes", trailing: "Borrar") { search.model.clearRecent() }
-            ForEach(search.model.recent, id: \.self) { text in
-                Button { query = text } label: { Label(text, systemImage: "clock.arrow.circlepath").recipe(.body, color: DS.textMuted) }
-                    .frame(minHeight: DS.Size.touchTarget)
-            }
-        }
-        .padding(.horizontal, DS.Space.gutter)
-    }
-
-    /// «Lo más popular hoy»: renglones con su puesto (películas y series alternadas, de Cinemeta).
-    private func popular(_ model: CatalogModel) -> some View {
-        VStack(alignment: .leading, spacing: DS.Space.s2) {
-            DSSectionHead(title: "Lo más popular hoy")
-            let shown = Array(model.popular.prefix(Self.popularCount))
-            ForEach(Array(shown.enumerated()), id: \.element.id) { index, item in
-                NavigationLink(value: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)) {
-                    RankedRow(rank: index + 1, title: item.title, poster: item.poster, detail: yearAndKind(year: item.year, kind: item.kind))
+            Text("Buscaste hace poco").recipe(.footnote).padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DS.Space.s2) {
+                    ForEach(search.model.recent, id: \.self) { text in
+                        PanelChip(title: Text(verbatim: text), selected: false, symbol: "clock.arrow.circlepath") { query = text }
+                    }
+                    Button("Borrar") { search.model.clearRecent() }
+                        .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.textMuted).buttonStyle(.borderless)
                 }
-                .buttonStyle(.plain)
-                if index < shown.count - 1 { Divider().overlay(DS.hairline) }
             }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
         }
-        .padding(.horizontal, DS.Space.gutter)
     }
 
-    /// «Explora»: los géneros en mosaicos con el arte de su título más popular.
+    /// «Lo más popular hoy»: el Top 10 de Stremio en carrusel, con la cifra grande (el mismo lenguaje que los rankings de
+    /// tus plataformas). Películas y series alternadas, de Cinemeta.
+    private func popular(_ model: CatalogModel) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            DSSectionHead(title: "Lo más popular hoy", meta: Text("Lo que más se ve hoy en Stremio, películas y series"), source: .stremio)
+                .padding(.horizontal, DS.Space.gutter)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                    ForEach(Array(model.popular.prefix(Self.popularCount).enumerated()), id: \.element.id) { index, item in
+                        let route = TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)
+                        NavigationLink(value: route) {
+                            RankedPosterCard(rank: index + 1, title: item.title, poster: item.poster, tint: tint.colors?.accent).titleZoomSource(route)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+        }
+    }
+
+    /// «Por género»: los géneros en mosaicos con su arte, bajo un encabezado igual al de arriba (una sola pantalla, no dos).
     private var explore: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: "Explora")
+            DSSectionHead(title: "Por género", meta: Text("Lo más popular de cada uno"))
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible(), spacing: DS.Space.s3)], spacing: DS.Space.s3) {
                 ForEach(CatalogModel.exploreGenres, id: \.self) { genre in
                     NavigationLink(value: GenreRoute(genre: genre)) { ArtTile(title: Text(verbatim: genreName(genre)), asset: Self.genreAsset(genre)) }
@@ -120,7 +179,7 @@ struct BrowseView: View {
 
     private func genreName(_ genre: String) -> String { Vocabulary.genres([genre], language: env.services.appSettings.uiLanguage).first ?? genre }
 
-    /// El arte fijo de cada género (`scripts/genre_art.py`, en el catálogo de la app): se ve al instante, sin red.
+    /// El arte fijo de cada género (Grok Imagine, en el catálogo de la app): se ve al instante, sin red.
     static func genreAsset(_ genre: String) -> String { "genre-" + genre.lowercased().filter { $0.isLetter || $0.isNumber } }
 }
 

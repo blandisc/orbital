@@ -15,6 +15,10 @@ public struct Suggestion: Sendable, Equatable, Identifiable {
     public var year: Int?
     public var runtime: Int?
     public var overview: String
+    /// Los géneros, si la fuente los trae (Trakt): «Decide por mí» no tiene que pedirlos.
+    public var genres: [String] = []
+    /// La calificación de Trakt (0 a 10), si la fuente la trae: «Mejor calificadas en Trakt» en una lista.
+    public var traktRating: Double?
     public var poster: String
     public var wide: String
     /// Logo del título (metahub), como en la TV; si no carga o no hay, la interfaz cae al nombre en texto.
@@ -41,7 +45,7 @@ public struct Suggestion: Sendable, Equatable, Identifiable {
     }
 }
 
-public enum ForYouGroup: String, Sendable { case mine, discover, platforms }
+public enum ForYouGroup: String, Sendable, Codable { case mine, discover, platforms }
 
 /// Un día de «Próximos estrenos» con lo que sale (vacío en la semana: «Nada este día»).
 public struct AiringDay: Sendable, Equatable, Identifiable {
@@ -89,7 +93,7 @@ public struct Airing: Sendable, Equatable, Identifiable {
     public func episodeLabel(_ episode: (Int, Int) -> String) -> String { count > 1 ? "\(episode(season, first))–E\(last)" : episode(season, first) }
 }
 
-public struct ForYouList: Sendable, Equatable, Identifiable {
+public struct ForYouList: Sendable, Equatable, Identifiable, Codable {
     public var id: String
     public var title: String           // nombre propio (listas de Trakt, plataformas); vacío = la interfaz lo nombra
     public var group: ForYouGroup
@@ -119,7 +123,7 @@ public actor ForYou {
     public static let dawnHour = 6
     public static let metahubPoster = "https://images.metahub.space/poster/medium/%@/img"
     public static let metahubBackground = "https://images.metahub.space/background/medium/%@/img"
-    static let metahubLogo = "https://images.metahub.space/logo/medium/%@/img"
+    public static let metahubLogo = "https://images.metahub.space/logo/medium/%@/img"
 
     private let trakt: Trakt?
     private let tmdb: Tmdb?
@@ -169,13 +173,24 @@ public actor ForYou {
         return (try? await remember("tmdb:platforms", ttl: Self.slowTTL) { try await tmdb.platforms(region: region()) }) ?? [:]
     }
 
+    /// Tus listas de Trakt (recordadas un rato); vacío sin Trakt.
+    private func traktListsRemembered(_ linked: Bool) async -> [(id: String, name: String)] {
+        guard linked, let trakt else { return [] }
+        return (try? await remember("trakt:lists", ttl: Self.mineTTL) { try await trakt.lists() }) ?? []
+    }
+
     public func lists() async -> [ForYouList] {
+        // Las tres consultas a la vez (antes en fila: tus listas de Trakt, luego los catálogos, luego las plataformas).
+        let linked = trakt?.linked == true
+        async let ownLists = traktListsRemembered(linked)
+        async let catalogs = addonCatalogs()
+        async let platformsFound = platforms()
         var out: [ForYouList] = []
-        if let trakt, trakt.linked {
+        if linked {
             out += [ForYouList(id: "watchlist", title: "", group: .mine, brand: nil, logo: nil, splitsKinds: false),
                     ForYouList(id: "mine", title: "", group: .mine, brand: nil, logo: nil, splitsKinds: false),
                     ForYouList(id: "estrenos", title: "", group: .mine, brand: nil, logo: nil, splitsKinds: false)]
-            let own = (try? await remember("trakt:lists", ttl: Self.mineTTL) { try await trakt.lists() }) ?? []
+            let own = await ownLists
             out += own.prefix(8).map { ForYouList(id: "list:\($0.id)", title: $0.name, group: .mine, brand: nil, logo: nil, splitsKinds: false) }
             out.append(ForYouList(id: "recs", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: true))
         }
@@ -184,7 +199,7 @@ public actor ForYou {
                     ForYouList(id: "popular", title: "", group: .discover, brand: nil, logo: nil, splitsKinds: true)]
         }
         // Los catálogos de tus complementos de Stremio (como `addon_catalogs` en la TV).
-        for entry in await addonCatalogs() {
+        for entry in await catalogs {
             out.append(ForYouList(id: entry.id, title: entry.title, group: .discover, brand: nil, logo: nil, splitsKinds: entry.kinds.count > 1,
                                   source: "Stremio", meta: "De \(entry.addon)"))
         }
@@ -199,7 +214,7 @@ public actor ForYou {
                                       splitsKinds: true, source: "JustWatch", meta: "Tendencia en JustWatch · \(country)"))
             }
         }
-        let found = await platforms()
+        let found = await platformsFound
         for p in Tmdb.platforms where found[p.brand] != nil {
             out.append(ForYouList(id: p.brand, title: p.name, group: .platforms, brand: p.brand, logo: found[p.brand]?.logo, splitsKinds: true))
         }
@@ -212,10 +227,56 @@ public actor ForYou {
         return try await raw(listID: listID, kind: kind).filter { !dismissed.contains($0.imdb) }
     }
 
+    /// «Porque viste X»: lo último que viste (película o serie) y lo que Trakt relaciona con él, sin lo que ya descartaste.
+    ///
+    /// Sin elegir, cambia solo: cada día con otro de lo último que viste (antes era siempre lo más reciente, y si veías la
+    /// misma serie varios días se quedaba clavado). `seed` (un id de IMDb): «Porque vi esto», el que elegiste tú.
+    public func becauseYouWatched(seed chosen: String? = nil, calendar: Calendar = .current) async -> (seed: TraktEntry, items: [Suggestion])? {
+        let seeds = await recentSeeds()
+        guard !seeds.isEmpty else { return nil }
+        let start: Int
+        if let chosen, let i = seeds.firstIndex(where: { $0.imdb == chosen }) { start = i }
+        else { start = (calendar.ordinality(of: .day, in: .era, for: clock()) ?? 0) % min(seeds.count, Self.becauseRotation) }
+        // Si el elegido no tiene relacionados, el siguiente.
+        for seed in seeds[start...] + seeds[..<start] {
+            if let found = await related(to: seed) { return found }
+        }
+        return nil
+    }
+
+    /// Lo último que viste (títulos distintos): de dónde sale «Porque viste» y lo que se puede elegir.
+    public func recentSeeds() async -> [TraktEntry] {
+        guard let trakt, trakt.linked else { return [] }
+        return (try? await remember("trakt:recent:\(Self.becauseChoices)", ttl: Self.mineTTL) { try await trakt.recentlyWatched(limit: Self.becauseChoices) }) ?? []
+    }
+
+    /// «Porque viste» con cualquier título (también uno que no esté en lo último que viste: desde su ficha).
+    public func related(to seed: TraktEntry) async -> (seed: TraktEntry, items: [Suggestion])? {
+        guard let trakt else { return nil }
+        let related = (try? await remember("trakt:related:\(seed.imdb)", ttl: Self.recsTTL) { try await trakt.related(kind: seed.kind, imdb: seed.imdb) }) ?? []
+        let items = related.map { suggestion($0, .recommended) }.filter { !dismissed.contains($0.imdb) }
+        return items.isEmpty ? nil : (seed, items)
+    }
+
+    /// Cuántos de lo último que viste se ofrecen para «Porque vi…», y entre cuántos rota solo, uno por día.
+    static let becauseChoices = 12, becauseRotation = 5
+
+    /// «Tu año»: lo que viste desde el 1 de enero, del historial de Trakt (se guarda unas horas: son varias páginas).
+    public func yearInReview(calendar: Calendar = .current) async -> YearInReview? {
+        guard let trakt, trakt.linked else { return nil }
+        let now = clock()
+        guard let start = calendar.date(from: calendar.dateComponents([.year], from: now)) else { return nil }
+        guard let plays = try? await remember("trakt:year:\(calendar.component(.year, from: now))", ttl: Self.recsTTL, { try await trakt.plays(since: start, until: now) }) else { return nil }
+        return YearInReview.make(plays, year: calendar.component(.year, from: now), calendar: calendar)
+    }
+
     private func suggestion(_ e: TraktEntry, _ reason: SuggestionReason) -> Suggestion {
-        Suggestion(kind: e.kind, imdb: e.imdb, title: e.title, year: e.year, runtime: e.runtime, overview: e.overview,
-                   poster: String(format: Self.metahubPoster, e.imdb), wide: String(format: Self.metahubBackground, e.imdb),
-                   logo: String(format: Self.metahubLogo, e.imdb), reason: reason, next: e.next)
+        var s = Suggestion(kind: e.kind, imdb: e.imdb, title: e.title, year: e.year, runtime: e.runtime, overview: e.overview,
+                           poster: String(format: Self.metahubPoster, e.imdb), wide: String(format: Self.metahubBackground, e.imdb),
+                           logo: String(format: Self.metahubLogo, e.imdb), reason: reason, next: e.next)
+        s.genres = e.genres
+        s.traktRating = e.rating
+        return s
     }
 
     private func raw(listID: String, kind: String) async throws -> [Suggestion] {
@@ -254,8 +315,11 @@ public actor ForYou {
     /// Los catálogos de tus complementos que agregan algo: uno por nombre, con sus tipos y de qué complemento salen (las
     /// mismas reglas que la TV). Sin Stremio conectado o sin red: ninguno.
     func addonCatalogs() async -> [AddonCatalog] {
-        guard let addons, let installed = try? await addons.addons() else { return [] }
-        let covered: Set<String> = await platforms().isEmpty ? [] : Set(Tmdb.platforms.map { Charts.fold($0.name) })
+        guard let addons else { return [] }
+        async let installedTask = try? addons.addons()   // los dos a la vez (antes en fila)
+        async let platformsFound = platforms()
+        guard let installed = await installedTask else { return [] }
+        let covered: Set<String> = await platformsFound.isEmpty ? [] : Set(Tmdb.platforms.map { Charts.fold($0.name) })
         var found: [String: AddonCatalog] = [:], order: [String] = []
         for addon in installed where addon.url.hasPrefix("https://") {
             let name = addon.name, lower = name.lowercased()
@@ -311,32 +375,78 @@ public actor ForYou {
         guard let tmdb, let info = await platforms()[platform.brand] else { return [] }
         return try await remember("tmdb:\(platform.brand):\(kind)", ttl: Self.popularTTL) {
             let rows = try await tmdb.discover(kind: kind, providerID: info.id, region: region()).prefix(20)
-            let details = await withTaskGroup(of: (Int, TmdbDetails?).self) { group in
-                for (i, row) in rows.enumerated() {
-                    group.addTask { (i, try? await tmdb.details(kind: kind, tmdbID: row["id"]!.intValue!)) }  // una que falla se salta
-                }
-                var out = [TmdbDetails?](repeating: nil, count: rows.count)
-                for await (i, d) in group { out[i] = d }
-                return out
-            }
-            return details.compactMap { d -> Suggestion? in
-                guard let d, let imdb = d.imdb, !d.title.isEmpty else { return nil }
-                return Suggestion(kind: kind, imdb: imdb, title: d.title, year: d.year, runtime: d.runtime, overview: d.overview,
-                                  poster: d.poster ?? String(format: Self.metahubPoster, imdb), wide: d.backdrop ?? String(format: Self.metahubBackground, imdb),
-                                  logo: String(format: Self.metahubLogo, imdb), reason: .onPlatform(platform.name), next: nil)
-            }
+            return await Self.suggestions(Array(rows), kind: kind, reason: .onPlatform(platform.name), tmdb: tmdb)
         }
+    }
+
+    /// Filas de TMDB → sugerencias (cada una necesita su IMDb: se piden sus detalles a la vez; la que falla se salta).
+    static func suggestions(_ rows: [JSON], kind: String, reason: SuggestionReason, tmdb: Tmdb) async -> [Suggestion] {
+        let details = await withTaskGroup(of: (Int, TmdbDetails?).self) { group in
+            for (i, row) in rows.enumerated() {
+                guard let id = row["id"]?.intValue else { continue }
+                group.addTask { (i, try? await tmdb.details(kind: kind, tmdbID: id)) }
+            }
+            var out = [TmdbDetails?](repeating: nil, count: rows.count)
+            for await (i, d) in group { out[i] = d }
+            return out
+        }
+        return details.compactMap { d -> Suggestion? in
+            guard let d, let imdb = d.imdb, !d.title.isEmpty else { return nil }
+            return Suggestion(kind: kind, imdb: imdb, title: d.title, year: d.year, runtime: d.runtime, overview: d.overview,
+                              poster: d.poster ?? String(format: metahubPoster, imdb), wide: d.backdrop ?? String(format: metahubBackground, imdb),
+                              logo: String(format: metahubLogo, imdb), reason: reason, next: nil)
+        }
+    }
+
+    /// «Nuevo en tus plataformas»: lo nuevo de cada plataforma que tienes en tu país (series con episodios recientes y
+    /// películas recién estrenadas), alternando plataformas, con «En Netflix» como motivo. Sin TMDB: nada.
+    public func newOnPlatforms(kind: String) async -> [Suggestion] {
+        guard let tmdb, tmdb.configured else { return [] }
+        let found = await platforms()
+        let available = Tmdb.platforms.filter { found[$0.brand] != nil }
+        let region = region(), now = clock()
+        let platforms = available.compactMap { p in found[p.brand].map { (name: p.name, id: $0.id) } }
+        return (try? await remember("tmdb:new:\(kind):\(region)", ttl: Self.popularTTL) {
+            let lists = await withTaskGroup(of: (Int, [Suggestion]).self) { group in
+                for (i, p) in platforms.enumerated() {
+                    group.addTask {
+                        let rows = (try? await tmdb.fresh(kind: kind, providerID: p.id, region: region, now: now)) ?? []
+                        return (i, await Self.suggestions(Array(rows.prefix(Self.freshPerPlatform)), kind: kind, reason: .onPlatform(p.name), tmdb: tmdb))
+                    }
+                }
+                var out: [(Int, [Suggestion])] = []
+                for await r in group { out.append(r) }
+                return out.sorted { $0.0 < $1.0 }.map(\.1)
+            }
+            var mixed: [Suggestion] = [], seen = Set<String>()
+            for i in 0..<(lists.map(\.count).max() ?? 0) {
+                for list in lists where i < list.count && seen.insert(list[i].imdb).inserted { mixed.append(list[i]) }
+            }
+            return mixed
+        }) ?? []
+    }
+
+    static let freshPerPlatform = 10
+
+    /// Lo más popular de un estudio (Colecciones › Estudios).
+    public func studioItems(companyID: Int, name: String) async -> [Suggestion] {
+        guard let tmdb, tmdb.configured else { return [] }
+        return (try? await remember("tmdb:studio:\(companyID)", ttl: Self.slowTTL) {
+            let rows = try await tmdb.studio(companyID: companyID).prefix(20)
+            return await Self.suggestions(Array(rows), kind: "movie", reason: .console(name), tmdb: tmdb)
+        }) ?? []
     }
 
     // MARK: próximos estrenos
     /// Lo que sale hoy y los próximos 14 días de las series que sigues en Trakt, con la hora de aquí. Sin Trakt: nada.
-    public func calendar(calendar: Calendar = .current) async throws -> [Airing] {
+    /// `skip` días después de hoy y los `days` siguientes (las semanas que siguen, al deslizar la tira de «Próximos estrenos»).
+    public func calendar(skip: Int = 0, days: Int = calendarDays, calendar: Calendar = .current) async throws -> [Airing] {
         guard let trakt, trakt.linked else { return [] }
         let now = clock()
         // Trakt va en hora universal: se pide desde un día antes para no perder lo de hoy.
-        let start = Self.dayString(calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: now))!, calendar: calendar)
-        let rows = try await remember("trakt:calendar:\(start)", ttl: Self.recsTTL) { try await trakt.calendar(start: start, days: Self.calendarDays + 2) }
-        return Self.airings(rows, now: now, calendar: calendar).filter { !dismissed.contains($0.series.imdb) }
+        let start = Self.dayString(calendar.date(byAdding: .day, value: skip - 1, to: calendar.startOfDay(for: now))!, calendar: calendar)
+        let rows = try await remember("trakt:calendar:\(start):\(days)", ttl: Self.recsTTL) { try await trakt.calendar(start: start, days: days + 2) }
+        return Self.airings(rows, now: now, calendar: calendar, skip: skip, days: days).filter { !dismissed.contains($0.series.imdb) }
     }
 
     static func dayString(_ date: Date, calendar: Calendar) -> String {
@@ -346,10 +456,10 @@ public actor ForYou {
         return f.string(from: date)
     }
 
-    /// Agrupa por serie y día (en la hora de aquí), de hoy a 14 días, en orden de hora y luego de nombre.
-    public static func airings(_ rows: [TraktAiring], now: Date, calendar: Calendar) -> [Airing] {
-        let today = calendar.startOfDay(for: now)
-        guard let end = calendar.date(byAdding: .day, value: calendarDays, to: today) else { return [] }
+    /// Agrupa por serie y día (en la hora de aquí), de hoy (más `skip`) a `days` días, en orden de hora y luego de nombre.
+    public static func airings(_ rows: [TraktAiring], now: Date, calendar: Calendar, skip: Int = 0, days: Int = calendarDays) -> [Airing] {
+        guard let today = calendar.date(byAdding: .day, value: skip, to: calendar.startOfDay(for: now)),
+              let end = calendar.date(byAdding: .day, value: days, to: today) else { return [] }
         var groups: [Airing] = [], index: [String: Int] = [:]
         for row in rows {
             let day = calendar.startOfDay(for: row.aired)
@@ -394,7 +504,31 @@ public actor ForYou {
             for await (i, b) in group { out[i] = b }
             return out
         }
-        return Self.interleave(batches, limit: Self.mosaicSize)
+        let mosaic = Self.interleave(batches, limit: Self.mosaicSize)
+        if !mosaic.isEmpty { kv.set(Self.mosaicKey, data: try? JSONEncoder().encode(mosaic.map(SavedSuggestion.init))) }
+        return mosaic
+    }
+
+    /// El último mosaico, guardado en el teléfono: al abrir la app se pinta al instante mientras llega el nuevo (sin red,
+    /// se queda ese). Sin lo que marcaste «No me interesa» desde entonces.
+    /// Guarda un mosaico que llegó de otra fuente (tu Orbital): la próxima vez aparece al instante, como el del iPhone.
+    public func saveMosaic(_ mosaic: [Suggestion]) {
+        guard !mosaic.isEmpty else { return }
+        kv.set(Self.mosaicKey, data: try? JSONEncoder().encode(mosaic.map(SavedSuggestion.init)))
+    }
+
+    public func cachedMosaic() -> [Suggestion] {
+        guard let data = kv.data(Self.mosaicKey), let saved = try? JSONDecoder().decode([SavedSuggestion].self, from: data) else { return [] }
+        return saved.map(\.suggestion).filter { !dismissed.contains($0.imdb) }
+    }
+
+    static let mosaicKey = "foryou-mosaic"
+
+    /// Una lista de sugerencias para guardar en el teléfono (Inicio la enseña al abrir mientras llega la nueva).
+    public static func encode(_ list: [Suggestion]) -> Data? { try? JSONEncoder().encode(list.map(SavedSuggestion.init)) }
+    public static func decode(_ data: Data?) -> [Suggestion] {
+        guard let data, let saved = try? JSONDecoder().decode([SavedSuggestion].self, from: data) else { return [] }
+        return saved.map(\.suggestion)
     }
 
     /// Una de cada fuente por turno (así el mosaico no es solo recomendaciones), sin repetir.
@@ -411,5 +545,109 @@ public actor ForYou {
     public func watchlistKeys() async -> Set<String> {
         guard let trakt, trakt.linked else { return [] }
         return Set(((try? await remember("trakt:watchlist", ttl: Self.mineTTL) { try await trakt.watchlist() }) ?? []).map(\.imdb))
+    }
+
+    /// Qué títulos (IMDb) están en alguna de tus listas de Trakt: la ficha dice «Guardado» sin abrir «Guardar en…». Se pide
+    /// una vez y lo comparten todas las fichas (las mismas listas que ya pide Para ti).
+    public func listKeys() async -> Set<String> {
+        guard let trakt, trakt.linked else { return [] }
+        return (try? await remember("trakt:listkeys", ttl: Self.mineTTL) {
+            let lists = try await trakt.lists()
+            return await withTaskGroup(of: Set<String>.self) { group in
+                for list in lists.prefix(Self.listKeysMax) { group.addTask { (try? await trakt.listMembers(list.id)) ?? [] } }
+                var all = Set<String>()
+                for await ids in group { all.formUnion(ids) }
+                return all
+            }
+        }) ?? []
+    }
+
+    static let listKeysMax = 12
+}
+
+/// Una sugerencia tal como se guarda en el teléfono (`Suggestion` lleva una tupla y un motivo con datos).
+struct SavedSuggestion: Codable {
+    var kind, imdb, title, overview, poster, wide: String
+    var year, runtime, rank, movement, nextSeason, nextEpisode: Int?
+    var logo: String?
+    var reason: String
+    var reasonText: String?
+    var isNew: Bool
+
+    init(_ s: Suggestion) {
+        kind = s.kind; imdb = s.imdb; title = s.title; overview = s.overview; poster = s.poster; wide = s.wide
+        year = s.year; runtime = s.runtime; rank = s.rank; movement = s.movement; logo = s.logo; isNew = s.isNew
+        nextSeason = s.next?.season; nextEpisode = s.next?.episode
+        switch s.reason {
+        case .recommended: reason = "recommended"
+        case .watching: reason = "watching"
+        case .inWatchlist: reason = "inWatchlist"
+        case .inList(let name): reason = "inList"; reasonText = name
+        case .trending: reason = "trending"
+        case .popular: reason = "popular"
+        case .onPlatform(let name): reason = "onPlatform"; reasonText = name
+        case .console(let text): reason = "console"; reasonText = text
+        }
+    }
+
+    var suggestion: Suggestion {
+        let why: SuggestionReason = switch reason {
+        case "watching": .watching
+        case "inWatchlist": .inWatchlist
+        case "inList": .inList(reasonText ?? "")
+        case "trending": .trending
+        case "popular": .popular
+        case "onPlatform": .onPlatform(reasonText ?? "")
+        case "console": .console(reasonText ?? "")
+        default: .recommended
+        }
+        var s = Suggestion(kind: kind, imdb: imdb, title: title, year: year, runtime: runtime, overview: overview, poster: poster, wide: wide,
+                           logo: logo, reason: why)
+        if let nextSeason, let nextEpisode { s.next = (nextSeason, nextEpisode) }
+        s.rank = rank; s.movement = movement; s.isNew = isNew
+        return s
+    }
+}
+
+
+/// «Tu año»: lo que viste en el año, día por día (película, serie o las dos), horas, racha más larga, tu género y lo que más viste.
+public struct YearInReview: Sendable, Equatable {
+    public enum Day: Sendable, Equatable { case movies, series, both }
+    public struct Top: Sendable, Equatable, Identifiable { public var imdb: String; public var kind: String; public var title: String; public var plays: Int; public var id: String { imdb } }
+    public var year: Int
+    public var days: [Date: Day]
+    public var hours: Int
+    public var movies: Int
+    public var episodes: Int
+    public var longestStreak: Int
+    public var topGenre: String?
+    public var top: [Top]
+    /// Lo que viste cada día (en el orden en que lo viste): al tocar un día del mapa.
+    public var plays: [Date: [TraktPlay]] = [:]
+
+    public static func make(_ plays: [TraktPlay], year: Int, calendar: Calendar) -> YearInReview {
+        var days: [Date: Day] = [:], minutes = 0, movies = 0, episodes = 0
+        var genres: [String: Int] = [:], counts: [String: Top] = [:]
+        var byDay: [Date: [TraktPlay]] = [:]
+        for p in plays {
+            let day = calendar.startOfDay(for: p.at)
+            byDay[day, default: []].append(p)
+            let kind: Day = p.kind == "movie" ? .movies : .series
+            days[day] = days[day].map { $0 == kind ? $0 : .both } ?? kind
+            minutes += p.minutes
+            if p.kind == "movie" { movies += 1 } else { episodes += 1 }
+            for g in p.genres { genres[g, default: 0] += 1 }
+            counts[p.imdb, default: Top(imdb: p.imdb, kind: p.kind, title: p.title, plays: 0)].plays += 1
+        }
+        // La racha más larga: días seguidos con algo visto.
+        var longest = 0, run = 0, previous: Date?
+        for day in days.keys.sorted() {
+            if let previous, let next = calendar.date(byAdding: .day, value: 1, to: previous), calendar.isDate(next, inSameDayAs: day) { run += 1 } else { run = 1 }
+            longest = max(longest, run); previous = day
+        }
+        let top = counts.values.sorted { ($0.plays, $1.title) > ($1.plays, $0.title) }.prefix(10)
+        return YearInReview(year: year, days: days, hours: Int((Double(minutes) / 60).rounded()), movies: movies, episodes: episodes,
+                            longestStreak: longest, topGenre: genres.max { ($0.value, $1.key) < ($1.value, $0.key) }?.key, top: Array(top),
+                            plays: byDay.mapValues { $0.sorted { $0.at < $1.at } })
     }
 }

@@ -84,6 +84,10 @@ public actor RemoteForYou {
                            logo: row["logo"]?.string.flatMap { $0.isEmpty ? nil : $0 }, reason: reason(listID: listID, why: row["why"]?.string), next: Self.nextFrom(row),
                            rank: row["rank"]?.intValue)
         // El Top 10 real de la TV (`chart:*`, `jw:*`): cuánto se movió y si es nuevo.
+        // Género y duración (minutos), si la consola los manda: «Decide por mí» no tiene que pedirlos a Cinemeta.
+        s.genres = (row["genres"]?.array ?? []).compactMap(\.string)
+        s.runtime = row["runtime"]?.intValue.flatMap { $0 > 0 ? $0 : nil }
+        s.traktRating = row["rating"]?.doubleValue.flatMap { $0 > 0 ? $0 : nil }
         s.movement = row["movement"]?.intValue
         s.isNew = row["new"]?.bool ?? false
         return s

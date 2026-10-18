@@ -146,10 +146,13 @@ final class TraktTests: XCTestCase {
         XCTAssertGreaterThan(total, 0.9)
     }
 
+    /// Un 401 al leer primero intenta renovar la sesión (como al escribir); si Trakt también rechaza la renovación, se desconecta.
     func testAuthErrorOnReadClearsSession() async {
         let http = FakeHTTP(), secrets = InMemorySecrets()
         http.statuses["\(api)/users/me/lists"] = 401
         http.json["\(api)/users/me/lists"] = [:]
+        http.statuses["\(api)/oauth/token"] = 401
+        http.json["\(api)/oauth/token"] = ["error": "invalid_grant"]
         let trakt = makeTrakt(http, secrets: secrets)
         do { _ = try await trakt.lists(); XCTFail() } catch { XCTAssertFalse(trakt.linked) }
     }

@@ -183,6 +183,55 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.titlePrefs.languages(for: "tt0386676", settings: rig.settings.value).subtitles, "")
     }
 
+    /// La regla de la TV: «Continuar» vuelve con la misma fuente y la misma pista de subtítulos con que lo dejaste.
+    func testContinueUsesTheSourceAndSubtitlesYouLeftItWith() async throws {
+        let rig = try twoSources()
+        rig.settings.update { $0.audio = "en"; $0.subtitles = "en" }
+        await rig.model.begin(rig.request())
+        let second = try XCTUnwrap(rig.model.sourceChoices.first { $0.playbackURL?.absoluteString.contains("second") == true })
+        let latino = MediaTrack(id: 12, kind: .subtitle, language: "spa", title: "Latinoamérica")
+        rig.titlePrefs.remember(metaID: "tt0386676", choice: ResumeChoice(videoID: "tt0386676:1:1", source: second.key,
+                                                                          subtitle: .init(language: "spa", title: "Latinoamérica")))
+        await rig.model.begin(rig.request())
+        XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://rd.example/second.mkv", "la fuente con la que lo dejaste")
+        await rig.model.handle(rig.playing(0, audio: [eng], subs: [subEn, subEs, latino], selectedAudio: 1))
+        XCTAssertTrue(rig.engine.calls.contains("sub 12"), "la misma pista (Latinoamérica, no la otra en español)")
+        XCTAssertFalse(rig.engine.calls.contains("sub 10"), "no la de Ajustes")
+        await rig.model.begin(rig.request(fromStart: true))
+        XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://rd.example/best.mkv", "«Desde el principio» elige como siempre")
+    }
+
+    func testClosingRemembersTheSourceAndTracksYouHad() async throws {
+        let rig = try twoSources()
+        await rig.model.begin(rig.request())
+        await rig.model.handle(rig.playing(120, audio: [eng, spa], subs: [subEn, subEs], selectedAudio: 2, selectedSubtitle: 11))
+        await rig.model.close()
+        let choice = try XCTUnwrap(rig.titlePrefs.resumeChoice(metaID: "tt0386676", videoID: "tt0386676:1:1"))
+        XCTAssertEqual(choice.source, rig.model.sourceChoices.first?.key ?? choice.source)
+        XCTAssertEqual(choice.audio?.language, "spa")
+        XCTAssertEqual(choice.subtitle?.language, "spa")
+        XCTAssertNil(rig.titlePrefs.resumeChoice(metaID: "tt0386676", videoID: "tt0386676:1:2"), "es de ese episodio, no del siguiente")
+    }
+
+    /// IntroDB: sin capítulos en el archivo, «Saltar resumen» y «Saltar intro» salen de las marcas de la comunidad, y los
+    /// créditos marcados adelantan «Siguiente episodio».
+    func testCommunityMarksSkipTheRecapAndIntro() async throws {
+        let rig = try twoSources()
+        let model = PlayerModel(engine: rig.engine, finder: rig.finder, watch: rig.watch, titlePrefs: rig.titlePrefs, settings: rig.settings, clock: { rig.clock.now },
+                                skipSegments: { _ in SkipSegments(intro: 60...120, recap: 0...45, credits: 1200...1320) })
+        await model.begin(rig.request())
+        await model.handle(rig.playing(10))
+        try await Task.sleep(nanoseconds: 50_000_000)   // las marcas llegan aparte
+        await model.handle(rig.playing(11))
+        XCTAssertEqual(model.skipKind, .recap)
+        XCTAssertEqual(model.skipIntroTo, 45)
+        await model.handle(rig.playing(70))
+        XCTAssertEqual(model.skipKind, .intro)
+        XCTAssertEqual(model.skipIntroTo, 120)
+        await model.handle(rig.playing(300))
+        XCTAssertNil(model.skipIntroTo)
+    }
+
     func testAsksYourAddonsForSubtitlesWhenTheVideoHasNone() async throws {
         let rig = try twoSources()
         rig.settings.update { $0.audio = "en"; $0.subtitles = "es" }

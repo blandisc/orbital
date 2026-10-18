@@ -33,6 +33,13 @@ public final class TitleModel: ObservableModel {
     public private(set) var rows: [EpisodeRow] = [] { didSet { changed() } }
     public private(set) var inLibrary = false { didSet { changed() } }
     public private(set) var inWatchlist = false { didSet { changed() } }
+    /// Tus listas de Trakt y si este título está en cada una («Guardar en…»); `nil` mientras no se han pedido.
+    public private(set) var lists: [SavedList]? { didSet { changed() } }
+    public private(set) var loadingLists = false { didSet { changed() } }
+    /// ¿Está guardado en algún lado? (Mi lista, tu watchlist o una de tus listas): el botón dice «Guardado».
+    public var isSaved: Bool { inLibrary || inWatchlist || (lists.map { $0.contains(where: \.contains) } ?? inSomeList) }
+    /// Está en alguna de tus listas de Trakt (sin abrir «Guardar en…»; al abrirla manda lo que diga cada lista).
+    public private(set) var inSomeList = false { didSet { changed() } }
     public private(set) var traktAvailable = false { didSet { changed() } }
     public private(set) var isLoading = false { didSet { changed() } }
     public private(set) var error: String? { didSet { changed() } }
@@ -40,6 +47,12 @@ public final class TitleModel: ObservableModel {
     /// La sinopsis que dio tu Orbital (en español cuando puede) y si su logo es oscuro (se pinta blanco); nil si no hay consola.
     public private(set) var consoleOverview: String? { didSet { changed() } }
     public private(set) var logoIsDark = false { didSet { changed() } }
+    /// La ficha rica de TMDB (elenco con foto, saga, tráiler…); nil sin clave de TMDB o mientras llega.
+    public private(set) var extras: TitleExtras? { didSet { changed() } }
+    /// «Lo mejor disponible» entre las fuentes del episodio o película que toca (como el encabezado de Infuse).
+    public private(set) var bestSource: Source? { didSet { changed() } }
+    /// La calificación de Trakt (0–10), si alguien votó.
+    public private(set) var traktRating: Double? { didSet { changed() } }
 
     private let services: Services
     private var meta: JSON?                // la ficha ORIGINAL
@@ -81,6 +94,9 @@ public final class TitleModel: ObservableModel {
     public func load() async {
         isLoading = true
         defer { isLoading = false }
+        // Lo tuyo en Stremio (avance, vistos) se pide a la vez que la ficha: no espera a Cinemeta ni a la traducción.
+        let watch = services.watch, id = metaID
+        let state = Task { await watch.rawItem(metaID: id) }
         do {
             let original = try await services.cinemeta.meta(kind: kind, id: metaID)
             meta = original
@@ -97,13 +113,46 @@ public final class TitleModel: ObservableModel {
             seasons = CinemetaParsing.seasons(local)
             error = nil
         } catch where !Task.isCancelled { self.error = "\(error)" } catch {}   // cancelado al salir: sin error falso
-        await refreshState()
+        await refreshState(prefetched: await state.value)
     }
 
     /// La sinopsis de la ficha: la de tu Orbital si contestó (viene en español), si no la de Cinemeta de siempre.
     public var overview: String { consoleOverview ?? info.description }
 
     /// Pide a tu Orbital la sinopsis y el tipo de logo (`/api/foryou/details`). Sin consola o sin respuesta no cambia nada.
+    /// Lo de la ficha rica: TMDB (elenco, saga, tráiler, dónde verlo…) y la calificación de Trakt, a la vez.
+    public func loadExtras() async {
+        guard metaID.hasPrefix("tt") else { return }
+        let tmdb = services.tmdb, trakt = services.trakt, kind = kind, metaID = metaID, region = services.appSettings.region
+        async let rating = try? trakt?.rating(kind: kind, imdb: metaID)
+        if tmdb.configured, let id = try? await tmdb.findID(imdb: metaID, kind: kind) {
+            extras = try? await tmdb.extras(kind: kind, tmdbID: id, region: region)
+        }
+        traktRating = await rating?.rating
+    }
+
+    /// Busca las fuentes del video que toca (el mismo pedido que «Elegir fuente», así luego sale de la caché) y se queda con
+    /// la mejor para el encabezado. Sin fuentes o sin red, no se enseña nada.
+    public func loadBestSource() async {
+        guard let videoID = continueVideoID else { return }
+        let prefs = services.titlePrefs.languages(for: metaID, settings: services.appSettings).prefs
+        guard let found = try? await services.finder.find(kind: kind, videoID: videoID, prefs: prefs, purpose: .watch), !Task.isCancelled else { return }
+        bestSource = Source.best(found)
+    }
+
+    /// Un título de TMDB (recomendación, saga, filmografía) → su id de IMDb, para abrir su ficha.
+    public static func imdbID(of title: TmdbTitle, services: Services) async -> String? {
+        try? await services.tmdb.details(kind: title.kind, tmdbID: title.tmdbID).imdb
+    }
+
+    /// Marca como vistos los episodios de la temporada elegida que te faltan (como «Marcar como visto» en cada uno).
+    public func markSeasonWatched() async {
+        for row in rows where !row.watched { await markWatched(row.id) }
+    }
+
+    /// «4 de 10 vistos» de la temporada elegida.
+    public var seasonProgress: (watched: Int, total: Int) { (rows.filter(\.watched).count, rows.count) }
+
     public func loadConsoleDetails() async {
         let remote = services.orbital
         guard remote.isConfigured, metaID.hasPrefix("tt") else { return }
@@ -113,14 +162,23 @@ public final class TitleModel: ObservableModel {
     }
 
     /// Lo que cambia viendo, descargando o marcando: lo tuyo en Stremio, Trakt y las descargas.
-    public func refreshState() async {
-        raw = await services.watch.rawItem(metaID: metaID)
+    public func refreshState() async { await refreshState(prefetched: nil) }
+
+    /// Lo tuyo en Stremio, Trakt y las descargas: las cuatro consultas a la vez.
+    private func refreshState(prefetched: JSON??) async {
+        let forYou = services.forYou, downloads = services.downloads, watch = services.watch, id = metaID
+        async let linked = forYou.traktLinked
+        async let keys = forYou.watchlistKeys()
+        async let listed = forYou.listKeys()
+        async let queue = downloads.all
+        if let prefetched { raw = prefetched } else { raw = await watch.rawItem(metaID: id) }
         let ids = meta.map(CinemetaParsing.seasonVideoIDs) ?? []
         watched = StremioLibrary.parseWatched(raw?["state"]?["watched"]?.string, videoIDs: ids)
         inLibrary = StremioLibrary.isInLibrary(raw)
-        traktAvailable = await services.forYou.traktLinked
-        inWatchlist = await services.forYou.watchlistKeys().contains(metaID)
-        applyDownloads(await services.downloads.all)
+        traktAvailable = await linked
+        inWatchlist = await keys.contains(metaID)
+        inSomeList = await listed.contains(metaID)
+        applyDownloads(await queue)
         if let state = StremioLibrary.state(of: raw)["video_id"]?.string, kind == "series", let season = seasons.first(where: { $0.episodes.contains { $0.id == state } }) { selectedSeason = season.season }
         else if !seasons.contains(where: { $0.season == selectedSeason }) { selectedSeason = seasons.first { !$0.isSpecials }?.season ?? seasons.first?.season ?? 1 }
         buildRows()
@@ -174,6 +232,15 @@ public final class TitleModel: ObservableModel {
         return runtime > 0 ? runtime : nil
     }
 
+    /// Cuánto llevas visto de lo que pone el botón principal (0…1); nil si no ibas a medias.
+    public var resumeFraction: Double? {
+        guard continueLabel.isResume else { return nil }
+        let state = StremioLibrary.state(of: raw)
+        let duration = asInt(state["duration"]), offset = asInt(state["timeOffset"])
+        guard duration > 0, offset > 0 else { return nil }
+        return min(1, Double(offset) / Double(duration))
+    }
+
     public func playRequest(videoID: String? = nil, fromStart: Bool = false) -> PlayRequest? {
         guard let video = videoID ?? continueVideoID else { return nil }
         var label = ""
@@ -205,6 +272,48 @@ public final class TitleModel: ObservableModel {
         } catch { inWatchlist = !want; message = "No pude cambiar tu watchlist de Trakt: \(error)" }
     }
 
+    // MARK: tus listas de Trakt
+    /// Tus listas y en cuáles está este título (una consulta por lista: suelen ser pocas).
+    public func loadLists() async {
+        guard let trakt = services.trakt, trakt.linked, metaID.hasPrefix("tt") else { lists = []; return }
+        loadingLists = true
+        defer { loadingLists = false }
+        let all = (try? await trakt.lists()) ?? []
+        let id = metaID
+        lists = await withTaskGroup(of: (Int, SavedList).self) { group in
+            for (i, l) in all.enumerated() {
+                group.addTask { (i, SavedList(id: l.id, name: l.name, contains: ((try? await trakt.listMembers(l.id)) ?? []).contains(id))) }
+            }
+            var out: [(Int, SavedList)] = []
+            for await r in group { out.append(r) }
+            return out.sorted { $0.0 < $1.0 }.map(\.1)
+        }
+    }
+
+    public func toggleList(_ listID: String) async {
+        guard let trakt = services.trakt, var all = lists, let i = all.firstIndex(where: { $0.id == listID }) else { return }
+        let want = !all[i].contains
+        all[i].contains = want
+        lists = all
+        do {
+            try await trakt.setListItem(listID: listID, imdb: metaID, series: kind == "series", add: want)
+            await services.forYou.clearCache()
+        } catch {
+            if var back = lists, let j = back.firstIndex(where: { $0.id == listID }) { back[j].contains = !want; lists = back }
+            message = "No pude cambiar tu lista de Trakt: \(error)"
+        }
+    }
+
+    /// Una lista nueva en Trakt, ya con este título.
+    public func createList(named name: String) async {
+        guard let trakt = services.trakt, trakt.linked else { return }
+        do {
+            let made = try await trakt.createList(name: name)
+            lists = (lists ?? []) + [SavedList(id: made.id, name: made.name, contains: false)]
+            await toggleList(made.id)
+        } catch { message = "No pude crear la lista: \(error)" }
+    }
+
     /// Marca un episodio (o la película) como visto en Stremio y en Trakt. Se relee el item antes de escribir: lo que
     /// hayas hecho en otro dispositivo no se pisa, y marcar un episodio anterior no mueve tu punto de «Seguir viendo».
     public func markWatched(_ videoID: String) async {
@@ -218,12 +327,12 @@ public final class TitleModel: ObservableModel {
 
     /// Descarga uno o varios episodios con la fuente que mejor sirve para guardar (1080p, moderada).
     @discardableResult
-    public func download(_ videoIDs: [String], source: Source? = nil) async -> DownloadOutcome {
+    public func download(_ videoIDs: [String], source: Source? = nil, replace: Bool = false) async -> DownloadOutcome {
         var queued = 0
         for video in videoIDs {
             var label = ""
             if let found = episode(video) { label = services.episodeLabel(found.0, found.1.episode) + (found.1.hasTitle ? " · \(found.1.title)" : "") }
-            switch await services.queueDownload(kind: kind, metaID: metaID, videoID: video, title: title, originalTitle: originalTitle, subtitle: label, poster: poster, source: source) {
+            switch await services.queueDownload(kind: kind, metaID: metaID, videoID: video, title: title, originalTitle: originalTitle, subtitle: label, poster: poster, source: source, replace: replace) {
             case .queued: queued += 1
             case .noSources: if queued == 0 { return .noSources } else { continue }
             case .already: if videoIDs.count == 1 { return .already } else { continue }
@@ -243,5 +352,41 @@ public final class TitleModel: ObservableModel {
         return await download(Array(ids.dropFirst(i).prefix(count)))
     }
 
+    /// Seguir una descarga en pausa o que falló (donde iba, con la misma fuente), en vez de empezarla de cero.
+    public func resumeDownload(_ videoID: String) async {
+        await services.downloads.resume(DownloadItem.makeID(metaID: metaID, videoID: videoID))
+        await refreshState()
+    }
+
+    /// Pausar o cancelar (borrar lo bajado) una descarga de este título.
+    public func pauseDownload(_ videoID: String) async {
+        await services.downloads.pause(DownloadItem.makeID(metaID: metaID, videoID: videoID))
+        await refreshState()
+    }
+
+    public func cancelDownload(_ videoID: String) async {
+        await services.downloads.remove(DownloadItem.makeID(metaID: metaID, videoID: videoID))
+        await refreshState()
+    }
+
+    /// «T2 E5» de un episodio de esta serie; nil en una película.
+    public func episodeLabel(_ videoID: String) -> String? {
+        guard kind == "series", let found = episode(videoID) else { return nil }
+        return services.episodeLabel(found.0, found.1.episode)
+    }
+
+    /// El video que bajaría «Descargar» de un toque: la película, o el episodio que sigue en una serie.
+    public var downloadTarget: String? { kind == "movie" ? metaID : continueVideoID }
+
+    /// La copia que ya tienes (o se está bajando) de este video, para preguntar antes de cambiarla por otra fuente.
+    public func existingDownload(_ videoID: String) async -> DownloadItem? { await services.downloads.item(DownloadItem.makeID(metaID: metaID, videoID: videoID)) }
+
     public func clearMessage() { message = nil }
+}
+
+/// Una de tus listas de Trakt, con si el título que ves está en ella.
+public struct SavedList: Identifiable, Equatable, Sendable {
+    public let id: String
+    public let name: String
+    public var contains: Bool
 }

@@ -13,7 +13,7 @@ final class MosaicUITests: XCTestCase {
 
     /// Con `idle: false` el mosaico no se mueve solo: lo que se mida es solo del dedo.
     private func launch(idle: Bool = false) {
-        app.launchArguments = ["-demo", "-demo-tab", "1", "-demo-appearance", "dark"] + (idle ? [] : ["-demo-no-idle"])
+        app.launchArguments = ["-demo", "-demo-tab", "1", "-demo-mode", "mosaic", "-demo-appearance", "dark"] + (idle ? [] : ["-demo-no-idle"])
         app.launch()
         XCTAssertTrue(mosaic.waitForExistence(timeout: 20), "el mosaico aparece")
         XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 20), "con piezas")
@@ -73,7 +73,11 @@ final class MosaicUITests: XCTestCase {
 
     func testDraggingThatStartsOnTheChosenTileScrolls() {
         launch()
-        let tile = tiles.element(boundBy: 4)
+        // Una pieza a media pantalla (las piezas van por columnas: un índice fijo puede quedar fuera de la vista).
+        let screen = app.windows.firstMatch.frame
+        guard let tile = tiles.allElementsBoundByIndex.first(where: { $0.frame.midY > screen.height * 0.35 && $0.frame.midY < screen.height * 0.6 }) else {
+            return XCTFail("no hay una pieza a media pantalla")
+        }
         tile.tap()
         sleep(1)
         let p = probe()
