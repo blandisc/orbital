@@ -113,6 +113,21 @@ const RES_ORDER = ["4K", "1080p", "720p", "480p"];
  * resolución, HDR, sonido, idiomas y si alguna arranca al instante. Solo cuenta lo que se puede
  * ver de verdad (las primeras fuentes, ya ordenadas por tus preferencias).
  */
+/** La hoja de Fuente, como el iPhone: la recomendada sola arriba y el resto por calidad (4K, 1080p, 720p, Otras),
+ * cada grupo en el orden de tus preferencias. Devuelve los grupos y `order`: las fuentes en el orden en que se ven. */
+export function sourceGroups(sources = []) {
+  if (!sources.length) return { groups: [], order: [] };
+  const [best, ...rest] = sources;
+  const groups = [{ id: "best", title: "Recomendada", note: "La elegimos por tu idioma, la calidad y el tamaño", items: [best] }];
+  for (const res of ["4K", "1080p", "720p"]) {
+    const items = rest.filter((s) => s.resolution === res);
+    if (items.length) groups.push({ id: res, title: res, items });
+  }
+  const other = rest.filter((s) => !["4K", "1080p", "720p"].includes(s.resolution));
+  if (other.length) groups.push({ id: "other", title: "Otras", items: other });
+  return { groups, order: groups.flatMap((g) => g.items) };
+}
+
 export function availability(sources = [], { top = 12 } = {}) {
   const list = sources.slice(0, top);
   if (!list.length) return [];

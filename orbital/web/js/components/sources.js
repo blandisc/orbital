@@ -3,13 +3,15 @@ import { motion } from "../core/motion.js";
 import { Badge, Chip } from "./ui.js";
 import { Button } from "./button.js";
 import { bytes } from "../core/format.js";
+import { sourceGroups } from "../core/watch.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
 
 /**
  * Elegir la fuente a mano (Y en la ficha): un panel a la derecha, encima de la ficha.
  * Lo normal es no necesitarlo: "Ver" arranca solo con la recomendada. Aquí está todo lo demás,
- * ordenado por tus preferencias y dicho en palabras de persona (lo técnico, en pequeño).
- *   ↑/↓ fuente · A ver · B volver a la ficha
+ * la recomendada arriba y el resto por calidad, dicho en palabras de persona; lo técnico (el nombre del archivo,
+ * el complemento), solo si lo pides con X, como el iPhone.
+ *   ↑/↓ fuente · A ver · X detalles · B volver a la ficha
  */
 const AUDIO_NAMES = { en: "inglés", es: "español" };
 
@@ -30,6 +32,8 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
   let found = [];
   let index = 0;
   let token = 0;
+  let rows = []; // los botones, en el orden de `found` (la lista también lleva los títulos de cada grupo)
+  let details = false; // X: el nombre del archivo y el complemento de cada una
   let cancelExit = () => {};
 
   /** Lo que importa para decidir, en orden: ¿arranca ya?, idioma, calidad de imagen y sonido. */
@@ -44,24 +48,37 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
   }
 
   function render() {
-    mount(list, found.map((src, i) => h("button", {
-      class: ["source", i === index && "source--focused"], type: "button", role: "listitem",
-      onClick: () => (i === index ? play() : setIndex(i)),
-    },
-    h("span", { class: ["source__res", src.resolution === "4K" && "source__res--4k"] }, src.resolution || "SD"),
-    h("span", { class: "source__main" },
-      h("span", { class: "source__chips" }, chips(src)),
-      h("span", { class: "source__release" }, [bytes(src.size), src.addon, src.release].filter(Boolean).join(" · "))),
-    i === 0 && Badge("Recomendada", { className: "source__badge" }))));
+    const { groups, order } = sourceGroups(found);
+    found = order;
+    let i = 0;
+    rows = [];
+    const row = (src) => {
+      const at = i++;
+      const button = h("button", {
+        class: ["source", at === index && "source--focused"], type: "button", role: "listitem",
+        onClick: () => (at === index ? play() : setIndex(at)),
+      },
+      h("span", { class: ["source__res", src.resolution === "4K" && "source__res--4k"] }, src.resolution || "SD"),
+      h("span", { class: "source__main" },
+        h("span", { class: "source__chips" }, chips(src)),
+        h("span", { class: "source__release" }, (details ? [bytes(src.size), src.addon, src.release] : [bytes(src.size)]).filter(Boolean).join(" · "))),
+      at === 0 && Badge("Recomendada", { className: "source__badge" }));
+      rows.push(button);
+      return button;
+    };
+    mount(list, groups.map((g) => h("div", { class: "sources__group", role: "group", "aria-label": g.title },
+      g.id !== "best" && h("div", { class: "sources__group-title" }, g.title),
+      ...g.items.map(row),
+      g.note && h("div", { class: "sources__note" }, g.note))));
   }
 
   function setIndex(i) {
     const next = Math.max(0, Math.min(found.length - 1, i));
     if (next === index) return;
-    list.children[index]?.classList.remove("source--focused");
+    rows[index]?.classList.remove("source--focused");
     index = next;
-    list.children[index]?.classList.add("source--focused");
-    list.children[index]?.scrollIntoView({ block: "nearest", behavior: motion() });
+    rows[index]?.classList.add("source--focused");
+    rows[index]?.scrollIntoView({ block: "nearest", behavior: motion() });
     onMove?.();
   }
 
@@ -80,6 +97,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     cancelExit();
     found = [];
     index = 0;
+    details = false;
     title.textContent = req.title || "";
     subtitle.textContent = "";
     mount(list);
@@ -98,8 +116,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
       found = data.sources;
       if (!title.textContent && data.meta?.title) title.textContent = data.meta.title;
       subtitle.textContent = `Primero las de audio en ${AUDIO_NAMES[data.audio] || data.audio} y ${data.quality}. `
-        + "La recomendada es la que Orbital pone con «Ver». «Al instante»: Real-Debrid ya la tiene guardada "
-        + "y arranca en segundos; «Tarda en empezar»: primero se descarga.";
+        + "La recomendada es la que pone «Ver». «Al instante»: arranca en segundos; «Tarda en empezar»: primero se descarga.";
       status.hidden = !!found.length;
       status.textContent = found.length ? "" : "No encontré dónde ver esto: tus complementos de Stremio no lo tienen.";
       failed = !found.length;
@@ -132,6 +149,11 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
     else if (action === "down") setIndex(index + 1);
     else if (action === "pageleft") setIndex(index - 5);
     else if (action === "pageright") setIndex(index + 5);
+    else if (action === "alt" && found.length) {
+      details = !details;
+      render();
+      onChange?.(); // el pie: «Detalles» / «Menos detalles»
+    }
     else if (action === "select") {
       if (failed && request) open(request); // sin fuentes o con error: A reintenta
       else play();
@@ -142,7 +164,8 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
   /** Pistas del pie mientras la lista de fuentes está abierta. */
   const hints = (g) => (found.length
     ? [{ glyph: g.select, label: "Ver con esta" }, { glyph: g.rows, label: "Otra fuente" },
-      found.length > 7 && { glyph: g.page, label: "Saltar 5", secondary: true }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
+      { glyph: g.alt, label: details ? "Menos detalles" : "Detalles", secondary: true },
+      found.length > 7 && { glyph: g.page, label: "Saltar 5", secondary: true, offscreen: true }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)
     : [failed && { glyph: g.select, label: "Reintentar" }, { glyph: g.back, label: "Atrás", end: true }].filter(Boolean));
 
   return { el, open, close, handle, hints, get isOpen() { return !el.hidden && !el.classList.contains("sources--leaving"); } };

@@ -26,10 +26,15 @@
 .sources__status--problem { color: var(--color-warning); }
 .sources__retry { margin-top: var(--space-4); }
 .sources__list {
-  display: flex; flex-direction: column; gap: var(--space-2); min-height: 0;
+  display: flex; flex-direction: column; gap: var(--space-5); min-height: 0;
   overflow-y: auto; scrollbar-width: none; padding: var(--space-2); margin: calc(-1 * var(--space-2));
   -webkit-mask-image: linear-gradient(180deg, var(--mask-solid) 90%, transparent); mask-image: linear-gradient(180deg, var(--mask-solid) 90%, transparent);
 }
+
+/* Por calidad, como el iPhone: la recomendada sola arriba (con por qué), luego 4K, 1080p, 720p y Otras. */
+.sources__group { display: flex; flex-shrink: 0; flex-direction: column; gap: var(--space-2); }
+.sources__group-title { padding-inline: var(--space-2); color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-medium); letter-spacing: var(--tracking-label); }
+.sources__note { padding-inline: var(--space-2); color: var(--color-text-muted); font-size: var(--text-xs); }
 
 .source {
   position: relative; flex-shrink: 0; /* sin esto, la lista aplastaba las tarjetas en vez de desplazarse */

@@ -108,3 +108,14 @@ test("«termina a las…»: la hora en que acabas (en el Inicio; en la ficha ya 
   assert.equal(detailOf(movie, now), "Quedan 1 h 43 min · termina a las 1:13 a. m.");
   assert.equal(detailOf({ ...movie, extra: { kind: "movie" } }, now), "Quedan 1 h 43 min");
 });
+
+test("la hoja de Fuente: la recomendada sola arriba y el resto por calidad, como el iPhone", async () => {
+  const { sourceGroups } = await import("../../orbital/web/js/core/watch.js");
+  const s = (id, resolution) => ({ id, resolution });
+  const { groups, order } = sourceGroups([s("a", "1080p"), s("b", "4K"), s("c", "720p"), s("d", "1080p"), s("e", null), s("f", "4K")]);
+  assert.deepEqual(groups.map((g) => [g.title, g.items.map((x) => x.id).join("")]),
+    [["Recomendada", "a"], ["4K", "bf"], ["1080p", "d"], ["720p", "c"], ["Otras", "e"]]);
+  assert.match(groups[0].note, /idioma, la calidad y el tamaño/);
+  assert.deepEqual(order.map((x) => x.id), ["a", "b", "f", "d", "c", "e"]); // ↑↓ va en el orden en que se ven
+  assert.deepEqual(sourceGroups([]), { groups: [], order: [] });
+});
