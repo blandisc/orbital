@@ -12,8 +12,16 @@ struct TitleView: View {
     @StateObject private var observer: ModelObserver<TitleModel>
     @StateObject private var tint = ArtTint()
     @State private var sourcesFor: SourcesTarget?
-    @State private var downloadMenu = false
+    /// El panel de Descargar abierto (la gota del botón estirada hacia abajo).
+    @State private var downloadOpen = false
+    @Namespace private var glass
+    /// Elegiste otra fuente para algo que ya tienes descargado: ¿cambiarla?
+    @State private var replacing: Replacement?
+
+    struct Replacement { var source: Source; var videoID: String; var existing: DownloadItem }
     @State private var saving = false
+
+    private var immersive: Bool { tint.colors != nil }
 
     struct SourcesTarget: Identifiable { var videoID: String; var purpose: Purpose; var id: String { "\(videoID)-\(purpose)" } }
 
@@ -37,12 +45,15 @@ struct TitleView: View {
                     if let extras = model.extras { rich(extras).padding(.horizontal, -DS.Space.gutter) } else { credits(model) }
                 }
                 .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s10)
-                .padding(.top, scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: las acciones no se le pegan
+                .padding(.top, immersive || scheme == .dark ? 0 : DS.Space.s4)   // en claro el arte es una tarjeta: las acciones no se le pegan
             }
         }
-        .background(Backdrop(tint: tint.colors))
+        // Con el color del arte, la ficha entera es de ese tono (como un álbum en Música) y se lee como la sala oscura.
+        .background(Backdrop(tint: tint.colors, immersive: true))
+        .environment(\.colorScheme, immersive ? .dark : scheme)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)     // el arte llega hasta arriba y la barra flota encima
+        .toolbarColorScheme(immersive ? .dark : nil, for: .navigationBar)   // la ficha de color se lee como la sala oscura
         .toolbar { topBar(model) }
         .task { await model.followDownloads() }
         .task { await model.loadConsoleDetails() }
@@ -66,11 +77,11 @@ struct TitleView: View {
             .presentationDetents([.large]).presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $saving) { SaveView(observer: observer).fittedSheet() }
-        .confirmationDialog("Descargar", isPresented: $downloadMenu, titleVisibility: .visible) {
-            if model.kind == "series" {
-                Button("Elegir la fuente de este episodio") { if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .download) } }
-            }
-            Button("Descargar con la fuente recomendada") { Task { await report(model.download([model.continueVideoID ?? model.metaID]), model) } }
+        .confirmationDialog("Ya la tienes descargada", isPresented: Binding(get: { replacing != nil }, set: { if !$0 { replacing = nil } }), titleVisibility: .visible, presenting: replacing) { r in
+            Button("Cambiarla por esta fuente") { Task { await report(model.download([r.videoID], source: r.source, replace: true), model) } }
+            Button("Dejar la que tengo", role: .cancel) {}
+        } message: { r in
+            Text("Guardamos una sola copia. La que tienes es \(r.existing.quality ?? r.existing.addon); si la cambias, se borra y se baja la nueva.")
         }
     }
 
@@ -111,8 +122,8 @@ struct TitleView: View {
         }
     }
 
-    /// El botón principal (papel), a qué hora terminas y, debajo, las acciones secundarias en una rejilla (Guardar,
-    /// Descargar, Fuentes). En la TV está arriba, en la barra.
+    /// El botón principal (con el color del arte) y, debajo, las acciones secundarias en una rejilla de vidrio (Guardar,
+    /// Descargar, Fuentes); Descargar se estira en su panel. En la TV está arriba, en la barra.
     private func actions(_ model: TitleModel) -> some View {
         let label = model.continueLabel
         return VStack(spacing: DS.Space.s3) {
@@ -120,31 +131,50 @@ struct TitleView: View {
                 Label { primaryLabel(label, model).lineLimit(typeSize.isAccessibilitySize ? 2 : 1) } icon: { Image(systemName: "play.fill") }.frame(maxWidth: .infinity)
             }
             .dsArtButton(tint.colors).controlSize(.large).disabled(model.continueVideoID == nil)   // el color del arte, como en la TV
-            if let minutes = model.minutesToFinish {
-                DataLine(parts: [Strings.endsAt(minutesLeft: minutes, now: env.services.now(), language: env.services.appSettings.uiLanguage)])
+            GlassEffectContainer(spacing: DS.Space.s3) {
+                VStack(spacing: DS.Space.s2) {
+                    ActionGrid(actions: [
+                        ProjectionAction(id: "list", title: model.isSaved ? "Guardado" : "Guardar", symbol: model.isSaved ? "checkmark" : "plus", active: model.isSaved) { saving = true },
+                        downloadAction(model),
+                        ProjectionAction(id: "sources", title: "Elegir fuente", symbol: "list.bullet", disabled: model.continueVideoID == nil) {
+                            if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
+                        },
+                    ], glass: glass)
+                    if downloadOpen { downloadPanel(model) }
+                }
             }
-            ActionGrid(actions: [
-                ProjectionAction(id: "list", title: model.isSaved ? "Guardado" : "Guardar", symbol: model.isSaved ? "checkmark" : "plus", active: model.isSaved) { saving = true },
-                downloadAction(model),
-                ProjectionAction(id: "sources", title: "Elegir fuente", symbol: "list.bullet", disabled: model.continueVideoID == nil) {
-                    if let v = model.continueVideoID { sourcesFor = SourcesTarget(videoID: v, purpose: .watch) }
-                },
-            ])
+            .animation(DS.Motion.base(false), value: downloadOpen)
         }
     }
 
-    /// En una película dice cómo va su descarga; en una serie abre el menú (siguientes episodios, elegir fuente).
+    private func downloadPanel(_ model: TitleModel) -> some View {
+        let label = model.continueLabel
+        let episode: Text? = label.season.flatMap { s in label.episode.map { e in Text("T\(s) E\(e)") } }
+        let best = model.bestSource.map { QualityBadges.items(resolution: $0.resolution, hdr: $0.hdr, audio: $0.audioBadges) } ?? []
+        return DownloadPanel(
+            episode: episode, best: best, nextCount: model.kind == "series" ? DS.Size.downloadNext : nil,
+            recommended: { downloadOpen = false; Task { await report(model.download([model.continueVideoID ?? model.metaID]), model) } },
+            next: { downloadOpen = false; Task { await report(model.downloadNext(DS.Size.downloadNext), model) } },
+            choose: { downloadOpen = false; sourcesFor = SourcesTarget(videoID: model.continueVideoID ?? model.metaID, purpose: .download) },
+            close: { downloadOpen = false })
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .glassEffectID("download-panel", in: glass)
+    }
+
+    /// En una película dice cómo va su descarga (tocarla lleva a Descargas); si no, abre su panel.
     private func downloadAction(_ model: TitleModel) -> ProjectionAction {
         switch model.kind == "movie" ? model.downloadState(model.metaID) : nil {
         case .done?:
-            return ProjectionAction(id: "download", title: "Descargado", symbol: "checkmark.circle", active: true) { env.notify("Ya está descargado. Lo encuentras en Descargas.", tone: .info, action: .downloads) }
+            return ProjectionAction(id: "download", title: "Descargado", symbol: "checkmark.circle", active: true) { env.openTab = AppEnvironment.downloadsTab }
         case .downloading?, .queued?:
             let percent = model.downloadFraction(model.metaID).map { Int($0 * 100) }
             return ProjectionAction(id: "download", title: percent.map { LocalizedStringKey("\($0) %") } ?? "Descargando", symbol: "arrow.down.circle.dotted", active: true) {
-                env.notify("Descargando. Lo verás en Descargas.", tone: .info, action: .downloads)
+                env.openTab = AppEnvironment.downloadsTab
             }
         default:
-            return ProjectionAction(id: "download", title: "Descargar", symbol: "arrow.down.circle") { downloadMenu = true }
+            return ProjectionAction(id: "download", title: "Descargar", symbol: downloadOpen ? "chevron.down.circle" : "arrow.down.circle", active: downloadOpen) {
+                downloadOpen.toggle()
+            }
         }
     }
 
@@ -188,7 +218,7 @@ struct TitleView: View {
         }
     }
 
-    /// Lo de TMDB, como Infuse: tráiler y extras, reparto con cara (toca para ver su trabajo), dónde verlo, la saga y
+    /// Lo de TMDB, como Infuse: tráiler y extras, reparto con cara (toca para ver su trabajo), la saga y
     /// «Más como esto». Cada sección con el encabezado de toda la app; las tiras van de borde a borde.
     @ViewBuilder private func rich(_ x: TitleExtras) -> some View {
         VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
@@ -206,13 +236,6 @@ struct TitleView: View {
                             .buttonStyle(.plain)
                     }
                 }
-            }
-            if !x.providers.isEmpty || !x.studios.isEmpty {
-                VStack(alignment: .leading, spacing: DS.Space.s3) {
-                    DSSectionHead(title: "Dónde verlo", meta: x.studios.isEmpty ? nil : Text(verbatim: x.studios.map(\.name).joined(separator: " · ")))
-                    if !x.providers.isEmpty { BrandLogos(brands: x.providers) }
-                }
-                .padding(.horizontal, DS.Space.gutter)
             }
             if let saga = x.collection {
                 section(title: "La saga", meta: Text(verbatim: saga.name)) { ForEach(saga.parts) { TmdbPoster(title: $0) } }
@@ -273,13 +296,19 @@ struct TitleView: View {
     private func handle(source: Source, videoID: String, purpose: Purpose, model: TitleModel) {
         switch purpose {
         case .watch: start(model, videoID: videoID, source: source)
-        case .download: Task { await report(model.download([videoID], source: source), model) }   // la fuente que elegiste
+        case .download:
+            // Ya hay una copia (o se está bajando): una sola por película o episodio, así que se pregunta si cambiarla.
+            Task {
+                if let existing = await model.existingDownload(videoID) { replacing = Replacement(source: source, videoID: videoID, existing: existing); return }
+                await report(model.download([videoID], source: source), model)   // la fuente que elegiste
+            }
         }
     }
 
     private func report(_ outcome: TitleModel.DownloadOutcome, _ model: TitleModel) async {
         switch outcome {
-        case .queued(let n): if n == 1 { env.notify("Descargando. Lo verás en Descargas.", tone: .success, action: .downloads) } else { env.notify(format: "Descargando %lld episodios. Los verás en Descargas.", n, tone: .success, action: .downloads) }
+        // Una sola: lo dice el botón o el renglón (su avance), sin aviso encima. Varias: un aviso breve.
+        case .queued(let n): if n > 1 { env.notify(format: "Descargando %lld episodios", n, tone: .success, action: .downloads) }
         case .noSources: env.notify("No hay fuentes de Real-Debrid para descargar.")
         case .notEnoughSpace(let text): env.notify(text)
         case .already: env.notify("Ya está descargado.", tone: .info)

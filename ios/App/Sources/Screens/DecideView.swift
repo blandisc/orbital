@@ -9,11 +9,19 @@ struct DecideView: View {
     @StateObject private var observer: ModelObserver<DecideModel>
     @EnvironmentObject private var env: AppEnvironment
     @Environment(\.dismiss) private var dismiss
-    @State private var level: PresentationDetent = Self.quick
+    /// En qué nivel está la hoja (no el detent: el alto de la corta cambia al medirse y no debe cambiar el nivel).
+    @State private var stage: Stage = .quick
+    enum Stage { case quick, more, precise }
+    /// El alto de la hoja corta: el de su contenido, medido (sin hueco abajo).
+    @State private var quickHeight: CGFloat = DS.Decide.quickHeight
     let open: (TitleRoute) -> Void
 
-    static let quick = PresentationDetent.height(DS.Decide.quickHeight)
+    private var quick: PresentationDetent { .height(quickHeight) }
     static let more = PresentationDetent.fraction(DS.Decide.moreShare)
+    private var detent: Binding<PresentationDetent> {
+        Binding(get: { stage == .quick ? quick : stage == .more ? Self.more : .large },
+                set: { d in stage = d == .large ? .precise : d == Self.more ? .more : .quick })
+    }
 
     init(pool: [Suggestion], sources: [DecideModel.Source] = [], open: @escaping (TitleRoute) -> Void) {
         _observer = StateObject(wrappedValue: ModelObserver(DecideModel(AppEnvironment.shared.services, pool: pool, sources: sources)))
@@ -27,31 +35,30 @@ struct DecideView: View {
                 VStack(alignment: .leading, spacing: DS.Space.s4) {
                     header(m).id("top")
                     proposal(m)
-                    if level != Self.quick { questions(m).transition(.opacity) }
-                    if level == .large { precision(m).transition(.opacity) }
+                    if stage != .quick { questions(m).transition(.opacity) }
+                    if stage == .precise { precision(m).transition(.opacity) }
+                    if stage != .quick {
+                        // Al final de lo que elegiste (no flotando encima de las opciones).
+                        Button { Task { await m.decide(); withAnimation(DS.Motion.base(false)) { proxy.scrollTo("top", anchor: .top) } } } label: {
+                            HStack { if m.isLoading { ProgressView() }; Text(stage == .precise ? "Encuéntrala" : "Decide por mí") }.frame(maxWidth: .infinity)
+                        }
+                        .dsPrimaryButton().controlSize(.large).disabled(m.isLoading)
+                        .accessibilityIdentifier("decide-go")
+                    }
                 }
                 .padding(DS.Space.s5)
-                .padding(.bottom, level == Self.quick ? 0 : DS.Space.s14)
+                // La hoja corta mide lo que su contenido (sin hueco abajo).
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { h in if stage == .quick { quickHeight = h } }
             }
-            .scrollDisabled(level == Self.quick)
-            .safeAreaInset(edge: .bottom) {
-                if level != Self.quick {
-                    Button { Task { await m.decide(); withAnimation(DS.Motion.base(false)) { proxy.scrollTo("top", anchor: .top) } } } label: {
-                        HStack { if m.isLoading { ProgressView() }; Text("Decide por mí") }.frame(maxWidth: .infinity)
-                    }
-                    .dsPrimaryButton().controlSize(.large).disabled(m.isLoading)
-                    .padding(.horizontal, DS.Space.s5).padding(.bottom, DS.Space.s2)
-                    .accessibilityIdentifier("decide-go")
-                }
-            }
+            .scrollDisabled(stage == .quick)
         }
-        .presentationDetents([Self.quick, Self.more, .large], selection: $level)
+        .presentationDetents([quick, Self.more, .large], selection: detent)
         .presentationDragIndicator(.visible)
-        .animation(DS.Motion.base(false), value: level)
+        .animation(DS.Motion.base(false), value: stage)
         .animation(DS.Motion.base(false), value: m.pick?.imdb)
         .task { if m.pick == nil { await m.quick() } }
         #if DEBUG
-        .task { if Demo.isOn, let l = Demo.value(after: "-demo-decide-level") { level = l == "3" ? .large : l == "2" ? Self.more : Self.quick } }
+        .task { if Demo.isOn, let l = Demo.value(after: "-demo-decide-level") { stage = l == "3" ? .precise : l == "2" ? .more : .quick } }
         #endif
     }
 
@@ -59,8 +66,13 @@ struct DecideView: View {
     private func header(_ m: DecideModel) -> some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
-                Text("¿Qué vemos?").recipe(.title)
-                Text(level == Self.quick ? "Una para ahora · desliza hacia arriba para elegir" : "Elige y toca «Decide por mí»").recipe(.footnote)
+                if stage == .precise {
+                    Label("Afinemos", systemImage: "sparkles").recipe(.title)
+                    Text("Dime con precisión qué quieres: de qué lista, de qué época y qué tan bien calificada.").recipe(.footnote)
+                } else {
+                    Text("¿Qué vemos?").recipe(.title)
+                    Text(stage == .quick ? "Una para ahora · desliza hacia arriba para elegir" : "Elige y toca «Decide por mí»").recipe(.footnote)
+                }
             }
             Spacer()
         }
@@ -70,9 +82,11 @@ struct DecideView: View {
         if let s = m.pick {
             let facts = why(s, m)
             CoverCard(art: s.wide, logo: s.logo, title: s.title, why: facts.isEmpty ? Text(badgeKey(s.reason)) : Text(verbatim: facts),
-                      detail: facts.isEmpty ? nil : Text(badgeKey(s.reason)))
-                .frame(height: DS.Decide.cardHeight)
+                      detail: facts.isEmpty ? nil : Text(badgeKey(s.reason)),
+                      height: stage == .quick ? DS.Decide.cardHeight : DS.Decide.compactCardHeight)   // al elegir, más chica: caben las opciones
                 .onTapGesture { dismiss(); open(s.route) }
+            // Por qué verla: el arranque de su sinopsis.
+            if stage == .quick, let pitch = pitch(s) { Text(verbatim: pitch).recipe(.footnote, color: DS.textMuted).lineLimit(2) }
             HStack(spacing: DS.Space.s3) {
                 Button {
                     dismiss()
@@ -82,9 +96,13 @@ struct DecideView: View {
                 Button { Task { await m.next() } } label: { Label("Barajar", systemImage: "shuffle").frame(maxWidth: .infinity) }
                     .buttonStyle(.glass).controlSize(.large).disabled(m.isLoading)
                     .accessibilityIdentifier("decide-shuffle")
+                Menu {
+                    Button("Hoy no", systemImage: "moon.zzz") { Task { await m.skipToday() } }
+                    Button("Ver la ficha", systemImage: "info.circle") { dismiss(); open(s.route) }
+                } label: { Image(systemName: "ellipsis") }
+                    .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
+                    .accessibilityLabel(Text("Más"))
             }
-            Button("Hoy no") { Task { await m.skipToday() } }
-                .font(DS.TextRecipe.footnote.font).buttonStyle(.borderless).foregroundStyle(DS.textMuted)
         } else if m.exhausted {
             DSNotice(text: "No encontré una con eso: prueba con otro filtro o más tiempo.")
         } else {
@@ -94,14 +112,21 @@ struct DecideView: View {
         }
     }
 
-    /// «58 min · terminas 23:15 · IMDb 8.4 · Ligero»: lo que se puede comprobar.
+    /// La primera frase de su sinopsis (o lo que quepa en dos renglones): por qué verla.
+    private func pitch(_ s: Suggestion) -> String? {
+        let text = s.overview.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return nil }
+        if let end = text.firstIndex(where: { ".!?".contains($0) }), text.distance(from: text.startIndex, to: end) > DS.Decide.pitchMin {
+            return String(text[...end])
+        }
+        return text
+    }
+
+    /// «58 min · IMDb 8.4 · Ligero»: lo que se puede comprobar.
     private func why(_ s: Suggestion, _ m: DecideModel) -> String {
         let language = env.services.appSettings.uiLanguage
         var parts: [String] = []
-        if let minutes = m.minutes {
-            parts.append("\(minutes) min")
-            parts.append(Strings.endsAt(minutesLeft: minutes, now: env.services.now(), language: language))
-        }
+        if let minutes = m.minutes { parts.append("\(minutes) min") }
         if let r = m.imdbRating { parts.append(String(format: "IMDb %.1f", r)) }
         else if let r = s.traktRating { parts.append(String(format: "Trakt %.1f", r)) }
         if let mood = m.mood { parts.append(Strings.tr(moodLabel(mood), language: language)) }
@@ -138,14 +163,20 @@ struct DecideView: View {
             }
         }
         if !m.genres.isEmpty { Text("Con géneros elegidos, el ánimo no cuenta.").recipe(.caption) }
-        if level == Self.more {
+        if stage == .more {
             Label("Desliza hasta arriba para más precisión: de qué lista, época y calificación", systemImage: "chevron.compact.up")
                 .recipe(.caption, color: DS.textFaint)
         }
     }
 
     // MARK: nivel 3
-    @ViewBuilder private func precision(_ m: DecideModel) -> some View {
+    private func precision(_ m: DecideModel) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) { precisionGroups(m) }
+            .padding(DS.Space.s4)
+            .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+    }
+
+    @ViewBuilder private func precisionGroups(_ m: DecideModel) -> some View {
         if !m.sources.isEmpty {
             PanelGroupTitle(title: "De dónde")
             FlowChips {

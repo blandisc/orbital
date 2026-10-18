@@ -15,9 +15,16 @@ struct DownloadActivityAttributes: ActivityAttributes {
         var waiting: Bool
         /// El idioma de la app («es» / «en»): la pantalla bloqueada habla como la app, no como el sistema.
         var language: String
+        /// El episodio («T2 · E5 · Trojan's Horse»), en su propio renglón: el nombre no se corta por él.
+        var detail: String = ""
+        /// El póster ya reducido, en el App Group (la extensión no baja imágenes): su nombre de archivo.
+        var poster: String?
+        /// Terminó: «Descargado» (no «descargando» al 100 %).
+        var done = false
 
-        init(title: String, fraction: Double, remaining: Int, waiting: Bool, language: String) {
+        init(title: String, fraction: Double, remaining: Int, waiting: Bool, language: String, detail: String = "", poster: String? = nil, done: Bool = false) {
             self.title = title; self.fraction = fraction; self.remaining = remaining; self.waiting = waiting; self.language = language
+            self.detail = detail; self.poster = poster; self.done = done
         }
 
         /// Una actividad que arrancó una versión anterior no trae `language`: se lee igual (en español), no se queda sin dibujar.
@@ -28,6 +35,9 @@ struct DownloadActivityAttributes: ActivityAttributes {
             remaining = try c.decode(Int.self, forKey: .remaining)
             waiting = try c.decode(Bool.self, forKey: .waiting)
             language = try c.decodeIfPresent(String.self, forKey: .language) ?? "es"
+            detail = try c.decodeIfPresent(String.self, forKey: .detail) ?? ""
+            poster = try c.decodeIfPresent(String.self, forKey: .poster)
+            done = try c.decodeIfPresent(Bool.self, forKey: .done) ?? false
         }
     }
 }

@@ -59,10 +59,12 @@ struct ProjectionAction: Identifiable {
     let action: () -> Void
 }
 
-/// Las acciones secundarias de una ficha (Mi lista, Descargar, Fuentes…): botones nativos con relleno del sistema, del mismo
-/// ancho, con ícono arriba y nombre abajo. Con letra de accesibilidad se apilan en renglones.
+/// Las acciones secundarias de una ficha (Guardar, Descargar, Fuentes…): botones de vidrio del mismo ancho, con ícono arriba
+/// y nombre abajo. Con letra de accesibilidad se apilan en renglones. Con `glass` (el espacio de un `GlassEffectContainer`),
+/// cada botón es una gota que se puede fundir con lo que nace de ella (Descargar → su panel).
 struct ActionGrid: View {
     let actions: [ProjectionAction]
+    var glass: Namespace.ID?
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
@@ -72,17 +74,83 @@ struct ActionGrid: View {
                 Button(action: item.action) {
                     VStack(spacing: DS.Space.s1) {
                         Image(systemName: item.symbol).font(DS.TextRecipe.cardTitle.font).symbolVariant(item.active ? .fill : .none)
-                        Text(item.title).font(DS.TextRecipe.footnote.font).lineLimit(1)
+                            .contentTransition(.symbolEffect(.replace))
+                        Text(item.title).font(DS.TextRecipe.footnote.font).lineLimit(1).contentTransition(.numericText())
                     }
+                    .foregroundStyle(item.active ? DS.accent : DS.text)
                     .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget)
                     .padding(.vertical, DS.Space.s2)
+                    .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                    .glassID(item.id, in: glass)
                 }
-                .buttonStyle(.bordered).buttonBorderShape(.roundedRectangle(radius: DS.Radius.lg))
-                .tint(item.active ? DS.accent : DS.text)
+                .buttonStyle(.plain)
                 .disabled(item.disabled)
+                .opacity(item.disabled ? DesignTokens.Opacity.disabled : 1)
                 .sensoryFeedback(.selection, trigger: item.active)
+                .accessibilityAddTraits(item.active ? .isSelected : [])
             }
         }
+    }
+}
+
+extension View {
+    /// `glassEffectID` solo si hay espacio (fuera de un contenedor de vidrio no hace nada).
+    @ViewBuilder func glassID(_ id: String, in space: Namespace.ID?) -> some View {
+        if let space { glassEffectID(id, in: space) } else { self }
+    }
+}
+
+/// Descargar, abierto desde su botón de la ficha: la gota se estira hacia abajo en este panel (vidrio líquido) con lo que
+/// se puede bajar: la fuente recomendada, los siguientes episodios (en una serie) y elegir la fuente a mano. Un solo lugar
+/// para descargar (antes: un menú arriba y otro selector en «Fuentes»).
+struct DownloadPanel: View {
+    /// «T2 E5» o nada (película).
+    var episode: Text?
+    /// Lo mejor que hay (4K · DV · Atmos), si ya se sabe.
+    var best: [String] = []
+    /// Una serie: ofrecer los siguientes episodios.
+    var nextCount: Int?
+    let recommended: () -> Void
+    var next: (() -> Void)?
+    let choose: () -> Void
+    let close: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DS.Space.s1) {
+            HStack {
+                Text("Descargar").recipe(.cardTitle)
+                if let episode { episode.recipe(.footnote) }
+                Spacer()
+                Button(action: close) { Image(systemName: "xmark").font(DS.TextRecipe.footnote.font.weight(.semibold)) }
+                    .buttonStyle(.plain).foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+                    .accessibilityLabel(Text("Cerrar"))
+            }
+            option(symbol: "sparkles", title: Text("La recomendada"), detail: Text("Calidad y tamaño en equilibrio"), action: recommended)
+                .accessibilityIdentifier("download-recommended")
+            if let nextCount, let next {
+                option(symbol: "square.stack.3d.down.forward", title: Text("Los siguientes \(nextCount) episodios"), detail: Text("Para verlos sin conexión, uno tras otro"), action: next)
+            }
+            option(symbol: "slider.horizontal.3", title: Text("Elegir la fuente"), detail: best.isEmpty ? Text("Calidad, idioma y tamaño, a tu gusto") : Text(verbatim: best.joined(separator: " · ")), action: choose)
+                .accessibilityIdentifier("download-choose")
+        }
+        .padding(.leading, DS.Space.s4).padding(.trailing, DS.Space.s1).padding(.vertical, DS.Space.s2)
+    }
+
+    private func option(symbol: String, title: Text, detail: Text, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: DS.Space.s3) {
+                Image(systemName: symbol).font(DS.TextRecipe.cardTitle.font).foregroundStyle(DS.accent).frame(width: DS.Size.touchTarget)
+                VStack(alignment: .leading, spacing: 0) {
+                    title.recipe(.secondary, color: DS.text).fontWeight(.semibold)
+                    detail.recipe(.caption, color: DS.textMuted).lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "arrow.down.circle").foregroundStyle(DS.textMuted).frame(width: DS.Size.touchTarget)
+            }
+            .frame(minHeight: DS.Size.touchTarget)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -112,18 +180,24 @@ struct StillCard: View {
     }
 }
 
-/// Los puntos de un carrusel (el nativo de las páginas de iOS, en pequeño): dónde estás y cuántas hay.
+/// Los puntos de un carrusel: dónde estás (una gota alargada que brinca de punto a punto) y cuántas hay.
 struct PageDots: View {
     let count: Int
     let index: Int
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         if count > 1 {
+            // El activo es una gota alargada (como el de la TV) que brinca de punto a punto con un resorte: se estira al
+            // salir y se asienta al llegar.
             HStack(spacing: DS.Space.s2) {
                 ForEach(0..<count, id: \.self) { i in
-                    Circle().fill(i == index ? DS.text : DS.fillStrong).frame(width: DS.Size.pageDot, height: DS.Size.pageDot)
+                    Capsule().fill(i == index ? DS.text : DS.fillStrong)
+                        .frame(width: i == index ? DS.Size.pageDot * DS.Size.pageDotStretch : DS.Size.pageDot, height: DS.Size.pageDot)
                 }
             }
+            .animation(reduceMotion ? nil : .spring(response: DS.Size.pageDotSpring, dampingFraction: DS.Size.pageDotDamping), value: index)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text("\(index + 1) de \(count)"))
         }

@@ -142,8 +142,12 @@ struct RemoteSheet: View {
                 VoiceCommandBar(listening: speech.listening, transcript: speech.transcript, reply: reply, denied: speech.denied,
                                 heardNothing: speech.heardNothing, asking: asking) { listen(model) }
                 // Lo que puedes decir: donde surge la duda (de vidrio, como el resto del control).
-                Button { showsGuide = true } label: { Image(systemName: "questionmark").font(DS.TextRecipe.cardTitle.font.weight(.semibold)) }
-                    .buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
+                Button { showsGuide = true } label: {
+                    Image(systemName: "questionmark").font(DS.TextRecipe.cardTitle.font.weight(.semibold)).foregroundStyle(DS.text)
+                        .frame(width: DS.Remote.keyHeight, height: DS.Remote.keyHeight)
+                        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+                }
+                    .buttonStyle(.plain)
                     .accessibilityLabel(Text("Lo que puedes decir"))
                     .accessibilityIdentifier("remote-voice-guide")
             }

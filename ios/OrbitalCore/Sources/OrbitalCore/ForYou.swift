@@ -123,7 +123,7 @@ public actor ForYou {
     public static let dawnHour = 6
     public static let metahubPoster = "https://images.metahub.space/poster/medium/%@/img"
     public static let metahubBackground = "https://images.metahub.space/background/medium/%@/img"
-    static let metahubLogo = "https://images.metahub.space/logo/medium/%@/img"
+    public static let metahubLogo = "https://images.metahub.space/logo/medium/%@/img"
 
     private let trakt: Trakt?
     private let tmdb: Tmdb?

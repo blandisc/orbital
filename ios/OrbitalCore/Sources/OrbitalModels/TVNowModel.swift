@@ -121,7 +121,22 @@ public final class TVNowModel: ObservableModel {
         catch OrbitalRemote.Failure.outdated { remoteOutdated = true }
         catch OrbitalRemote.Failure.badToken { tokenProblem = true }
         catch {}
+        refreshSoon()
     }
+
+    /// Tras una tecla, la pantalla de la TV cambió: lo que hace cada botón (la leyenda) se pide enseguida, no al siguiente
+    /// sondeo; varias teclas seguidas piden una sola vez.
+    private func refreshSoon() {
+        settleTask?.cancel()
+        settleTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: Self.settleNanoseconds)
+            guard !Task.isCancelled else { return }
+            await self?.tick()
+        }
+    }
+
+    private var settleTask: Task<Void, Never>?
+    static let settleNanoseconds: UInt64 = 400_000_000
 
     /// Una orden de voz a tu Orbital (el micrófono del control, Siri): lo que contestó, o por qué no se pudo.
     public func say(_ text: String) async -> OrbitalRemote.VoiceReply {

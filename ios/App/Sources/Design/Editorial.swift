@@ -11,6 +11,8 @@ struct CoverCard: View {
     let title: String
     let why: Text
     var detail: Text?
+    /// Su alto (¿Qué vemos? la achica al elegir; Buscar, para el mejor resultado).
+    var height: CGFloat = DS.Editorial.coverHeight
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
@@ -25,7 +27,7 @@ struct CoverCard: View {
             .padding(DS.Space.s4)
             .onArt()
         }
-        .frame(height: DS.Editorial.coverHeight)
+        .frame(height: height)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .accessibilityElement(children: .combine)
     }

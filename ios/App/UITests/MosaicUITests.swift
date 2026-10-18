@@ -13,7 +13,7 @@ final class MosaicUITests: XCTestCase {
 
     /// Con `idle: false` el mosaico no se mueve solo: lo que se mida es solo del dedo.
     private func launch(idle: Bool = false) {
-        app.launchArguments = ["-demo", "-demo-tab", "1", "-demo-appearance", "dark"] + (idle ? [] : ["-demo-no-idle"])
+        app.launchArguments = ["-demo", "-demo-tab", "1", "-demo-mode", "mosaic", "-demo-appearance", "dark"] + (idle ? [] : ["-demo-no-idle"])
         app.launch()
         XCTAssertTrue(mosaic.waitForExistence(timeout: 20), "el mosaico aparece")
         XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 20), "con piezas")

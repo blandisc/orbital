@@ -12,6 +12,8 @@ struct BrowseView: View {
     @StateObject private var catalog: ModelObserver<CatalogModel>
     @StateObject private var search: ModelObserver<SearchModel>
     @State private var query = ""
+    /// Los resultados: todo, solo películas o solo series.
+    @State private var kind: String = ""
     /// Los colores del n.º 1 de hoy: el fondo de la pantalla y las cifras del Top 10 toman su tono (como Inicio).
     @StateObject private var tint = ArtTint()
     /// El póster que ilustra cada género (el primero de su catálogo), según van llegando.
@@ -37,6 +39,12 @@ struct BrowseView: View {
         .task(id: catalog.model.popular.first?.poster) { await tint.load(catalog.model.popular.first?.poster) }
         .navigationTitle("Buscar").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .searchable(text: $query, prompt: Text("Películas y series"))
+        // Nombres propios: sin autocorrector ni mayúscula automática («Shōgun» no se vuelve «Shotgun»); al deslizar los
+        // resultados, el teclado se va para verlos.
+        .autocorrectionDisabled()
+        .textInputAutocapitalization(.never)
+        .scrollDismissesKeyboard(.immediately)
+        .onChange(of: query) { _, text in if text.isEmpty { kind = "" } }
         // El campo vive abajo (pestaña de búsqueda, como Trakt); al escribir, el título se queda arriba y los resultados
         // empiezan bajo él (antes la barra se escondía y lo de arriba chocaba con la hora).
         .searchPresentationToolbarBehavior(.avoidHidingContent)
@@ -65,6 +73,26 @@ struct BrowseView: View {
         let answered = !model.isSearching && model.searchedQuery == query.trimmingCharacters(in: .whitespacesAndNewlines)
         if let error = model.error, answered { DSNotice(verbatim: env.message(error), tone: .warn).padding(.horizontal, DS.Space.gutter) }
         else if model.results.isEmpty && answered { ContentUnavailableView.search(text: query) }
+        let shown = kind.isEmpty ? model.results : model.results.filter { $0.kind == kind }
+        if model.results.count > 1 {
+            // Todo · Películas · Series (cuántas de cada una), como en Para ti.
+            HStack(spacing: DS.Space.s2) {
+                PanelChip(title: Text("Todo"), selected: kind.isEmpty) { kind = "" }
+                PanelChip(title: Text("Películas \(model.results.filter { $0.kind == "movie" }.count)"), selected: kind == "movie", symbol: "film") { kind = "movie" }
+                PanelChip(title: Text("Series \(model.results.filter { $0.kind == "series" }.count)"), selected: kind == "series", symbol: "tv") { kind = "series" }
+            }
+            .padding(.horizontal, DS.Space.gutter)
+        }
+        // El que mejor coincide, en grande (con su arte), como el primer resultado de Apple TV.
+        if let top = shown.first, top.metaID.hasPrefix("tt") {
+            let route = TitleRoute(kind: top.kind, metaID: top.metaID, title: top.title, poster: top.poster)
+            NavigationLink(value: route) {
+                CoverCard(art: String(format: ForYou.metahubBackground, top.metaID), logo: Artwork.logoURL(metaID: top.metaID), title: top.title,
+                          why: Text("Mejor resultado"), detail: yearAndKind(year: top.year, kind: top.kind), height: DS.Size.searchTopHeight)
+            }
+            .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
+            .simultaneousGesture(TapGesture().onEnded { model.remember(query) })
+        }
         LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
             if !answered && model.results.isEmpty && model.error == nil {
                 // Mientras llega: pósters vacíos en su lugar (antes, una ruedita sobre la barra de arriba).
@@ -73,7 +101,7 @@ struct BrowseView: View {
                 }
                 .accessibilityHidden(true)
             }
-            ForEach(model.results) { r in
+            ForEach(shown.first?.metaID.hasPrefix("tt") == true ? Array(shown.dropFirst()) : shown) { r in
                 TitleLink(route: TitleRoute(kind: r.kind, metaID: r.metaID, title: r.title, poster: r.poster), width: DS.Poster.gridMinimum,
                           detail: yearAndKind(year: r.year, kind: r.kind))
                     .simultaneousGesture(TapGesture().onEnded { model.remember(query) })

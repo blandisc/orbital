@@ -110,9 +110,9 @@ struct MainTabs: View {
             Tab("Buscar", systemImage: "magnifyingglass", value: 2, role: .search) { NavigationStack(path: $paths[2]) { BrowseView() }.tint(DS.primary) }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
-        // El accesorio solo cuando hace falta: mientras la TV reproduce algo y en la pantalla de arriba de cada pestaña (en una
-        // ficha o en Ajustes se va: no hay doble fila abajo). Sin nada en la TV, el control se abre con el botón junto al avatar.
-        .bottomAccessory(isEnabled: (tvNow.model.now != nil || tvNow.model.game != nil) && paths[tab].isEmpty) {
+        // El accesorio mientras la TV reproduce algo o corre un juego, en cualquier pantalla (antes se iba al entrar a una
+        // ficha y parecía que a veces no salía). Sin nada en la TV, el control se abre con el botón junto al avatar.
+        .bottomAccessory(isEnabled: tvNow.model.now != nil || tvNow.model.game != nil) {
             // Un juego en la consola: su acompañante (como el control lo es de lo que suena).
             if let game = tvNow.model.game {
                 GameAccessory(game: game) { showGame = true }
@@ -138,6 +138,11 @@ struct MainTabs: View {
             }
         }
         .onChange(of: tvNow.model.game == nil) { _, ended in if ended { showGame = false } }
+        // Los avisos del juego, con la hoja abierta o no.
+        .onChange(of: tvNow.model.game?.closesAt) { _, _ in CompanionAlerts.scheduleCloseWarning(env, game: tvNow.model.game) }
+        .onChange(of: tvNow.model.console?.batteryPercent) { _, percent in
+            if let game = tvNow.model.game { CompanionAlerts.warnBattery(env, game: game, percent: percent, plugged: tvNow.model.console?.plugged ?? true) }
+        }
         #if DEBUG
         .onChange(of: tvNow.model.game?.id) { _, id in if id != nil, Demo.isOn, Demo.open == "game" { showGame = true } }   // `-demo-open game`
         #endif
@@ -215,7 +220,7 @@ struct BannerView: View {
     }
 
     private func symbol(_ tone: DSNotice.Tone) -> String {
-        switch tone { case .info: "info"; case .success: "checkmark"; case .warn: "wifi.slash"; case .error: "exclamationmark" }
+        switch tone { case .info: "info.circle.fill"; case .success: "checkmark.circle.fill"; case .warn: "exclamationmark.triangle.fill"; case .error: "xmark.octagon.fill" }
     }
 
     private func color(_ tone: DSNotice.Tone) -> Color {

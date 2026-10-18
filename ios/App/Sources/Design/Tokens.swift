@@ -49,6 +49,8 @@ enum DS {
     static let accent = role(.accent)
     /// «En vivo» (el único teal, como en la TV).
     static let live = role(.live)
+    /// La línea del porqué arriba de un encabezado (ámbar, como el «porqué» de las portadas).
+    static let eyebrow = role(.warning)
     /// La luna de la marca (turquesa, igual en los dos modos).
     static let brandMoon = role(.brandMoon)
     /// Lo que salió bien o ya está (visto, descargado, conectado): el papel, como la TV.
@@ -280,7 +282,9 @@ enum DS {
     /// «¿Qué vemos?»: el alto de la hoja corta (la propuesta rápida), la parte de la pantalla de la estirada, el alto de la
     /// propuesta y los mínimos de calificación que se ofrecen.
     enum Decide {
-        static let quickHeight: CGFloat = 470, moreShare: CGFloat = 0.72, cardHeight: CGFloat = 230
+        static let quickHeight: CGFloat = 470, moreShare: CGFloat = 0.72, cardHeight: CGFloat = 230, compactCardHeight: CGFloat = 130
+        /// La frase de por qué verla: al menos estos caracteres antes de cortar en el primer punto.
+        static let pitchMin = 40
         static let ratingSteps: [Double] = [0, 6, 7, 8]
     }
 
@@ -314,6 +318,8 @@ enum DS {
         static let sideShrink: CGFloat = 0.1, sideFade: Double = 0.18
         static let reflection: CGFloat = 44, reflectionGap: CGFloat = 4, reflectionOpacity: Double = 0.3, reflectionBlur: CGFloat = 1.5
         static let weight: CGFloat = 18, weightY: CGFloat = 12, weightTint: Double = 0.35
+        /// El aire entre Plataformas, Estudios, Premios y Por año (menos que entre secciones: el reflejo ya separa).
+        static let groupGap: CGFloat = 20
         /// El halo de los estudios (neutro: cada estudio es de muchos colores).
         static let studio = Color(red: 0.55, green: 0.56, blue: 0.62)
         /// El logo del estudio en su cápsula.
@@ -384,6 +390,8 @@ enum DS {
 
     /// Medidas fijas.
     enum Size {
+        /// La gota de los puntos de un carrusel: cuánto se alarga la activa y su resorte (respuesta y amortiguación).
+        static let pageDotStretch: CGFloat = 2.6, pageDotSpring: Double = 0.38, pageDotDamping: Double = 0.62
         /// El logotipo arriba de Inicio (el tamaño de la letra de «orbital»).
         static let headerWordmark: CGFloat = 26
         /// Lo más que se encoge un número de «Tu año» para caber en su tarjeta.
@@ -399,6 +407,8 @@ enum DS {
         static let rankNumber = CGFloat(DesignTokens.Size.rankNumber)
         /// La cifra de un Top 10: enorme y pesada; no crece con Dynamic Type (es un adorno, el puesto ya se dice en la etiqueta).
         static var rankFont: Font { .system(size: rankNumber, weight: .black, design: .rounded) }
+        /// El ancho de la columna de la cifra (el de un dígito): el «10» se angosta para caber y no empuja su póster.
+        static let rankColumn = rankNumber * 0.62, rankTwoDigits: CGFloat = 0.62, rankTwoDigitsTracking = -rankNumber * 0.08
         static let logoHero = CGFloat(DesignTokens.Size.logoHero)
         /// El anillo de la pieza enfocada del mosaico y la línea fina de las demás.
         static let focusRing: CGFloat = 2.5, hairline: CGFloat = 0.5
@@ -412,6 +422,10 @@ enum DS {
         static let artTileHeight: CGFloat = 96
         /// Hasta cuántas temporadas se enseñan como filtros; con más, un menú.
         static let seasonChipsMax = 4
+        /// El mejor resultado de Buscar, en grande.
+        static let searchTopHeight: CGFloat = 200
+        /// «Los siguientes N episodios» del panel de Descargar.
+        static let downloadNext = 3
         /// Los puntos de un carrusel.
         static let pageDot = CGFloat(DesignTokens.Size.pageDot)
     }
@@ -423,6 +437,9 @@ enum DS {
         static let scrimStart = DesignTokens.Widget.scrimStart, scrimStartWide = DesignTokens.Widget.scrimStartWide
         static let logoHeight = CGFloat(DesignTokens.Widget.logoHeight), textShadowRadius = CGFloat(DesignTokens.Widget.textShadowRadius)
         static let fallbackRefresh = DesignTokens.Widget.fallbackRefreshHours * 3600
+        /// La actividad en vivo de descargas: el póster (pixeles con que se guarda, ancho en la pantalla bloqueada y en la isla).
+        static let activityPosterPixels: CGFloat = 240, activityPoster: CGFloat = 52, islandPoster: CGFloat = 44
+        static let posterRadius: CGFloat = 8
     }
 
     /// El fondo de pantalla: tono del arte, estrellas del espacio vivo y el fundido del arte a sangre.
@@ -439,6 +456,9 @@ enum DS {
         static let lowGlow: Double = 0.22
         static let lowGlowCenter = UnitPoint(x: 0.85, y: 0.75)
         static let lowGlowRadius: CGFloat = 420
+        /// La ficha inmersiva (como un álbum en Música): toda la pantalla del tono del arte, que se hunde hacia el pie.
+        static let immersiveDeep: Double = 0.55, immersiveGlow: Double = 0.35
+        static let immersiveGlowRadius: CGFloat = 520
     }
 
     /// Esperas de la interfaz (nanosegundos para `Task.sleep`).

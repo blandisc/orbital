@@ -115,18 +115,22 @@ struct DSSectionHead: View {
     var meta: Text?
     /// De dónde viene (Trakt, Stremio, tu Orbital): su sello junto al título.
     var source: ListSource?
+    /// El porqué, en una línea ámbar arriba del título («Lo que dejaste pendiente»), como en una revista.
+    var eyebrow: Text?
 
-    init(title: Text, trailing: Text? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil) {
+    init(title: Text, trailing: Text? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil) {
         self.title = title; self.trailing = trailing; self.action = action; self.count = count; self.chevron = chevron; self.meta = meta; self.source = source
+        self.eyebrow = eyebrow
     }
 
-    init(title: LocalizedStringKey, trailing: LocalizedStringKey? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil) {
-        self.init(title: Text(title), trailing: trailing.map { Text($0) }, action: action, count: count, chevron: chevron, meta: meta, source: source)
+    init(title: LocalizedStringKey, trailing: LocalizedStringKey? = nil, action: (() -> Void)? = nil, count: Int? = nil, chevron: Bool = false, meta: Text? = nil, source: ListSource? = nil, eyebrow: Text? = nil) {
+        self.init(title: Text(title), trailing: trailing.map { Text($0) }, action: action, count: count, chevron: chevron, meta: meta, source: source, eyebrow: eyebrow)
     }
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
+                if let eyebrow { eyebrow.recipe(.eyebrow, color: DS.eyebrow).lineLimit(1) }
                 HStack(alignment: .center, spacing: DS.Space.s2) {
                     title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
                     if let source { SourceBadge(source: source) }
@@ -655,13 +659,18 @@ struct ArtColors: Equatable {
 /// suave sobre el papel. Sin arte, el fondo liso del modo.
 struct Backdrop: View {
     var tint: ArtColors?
+    /// La ficha: toda la pantalla del color del arte (no solo un velo arriba), en los dos modos.
+    var immersive = false
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
             DS.bg
-            if let tint {
+            if immersive, let tint {
+                LinearGradient(colors: [tint.tint, tint.tint.mix(with: DS.backdropDeep, by: DS.Backdrop.immersiveDeep)], startPoint: .top, endPoint: .bottom)
+                RadialGradient(colors: [tint.accent.opacity(DS.Backdrop.immersiveGlow), .clear], center: DS.Backdrop.lowGlowCenter, startRadius: 0, endRadius: DS.Backdrop.immersiveGlowRadius)
+            } else if let tint {
                 let tone = scheme == .dark ? tint.tint : tint.accent.mix(with: DS.paper, by: DS.Backdrop.lightMix)
                 LinearGradient(stops: [.init(color: tone, location: 0), .init(color: DS.bg, location: DS.Backdrop.fadeTo)], startPoint: .top, endPoint: .bottom)
                 RadialGradient(colors: [tone.opacity(DS.Backdrop.lowGlow), .clear], center: DS.Backdrop.lowGlowCenter, startRadius: 0, endRadius: DS.Backdrop.lowGlowRadius)

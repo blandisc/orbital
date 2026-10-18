@@ -4,6 +4,15 @@ public enum DownloadState: String, Sendable, Codable { case queued, downloading,
 
 /// Una descarga para ver sin conexión. NO guarda la URL de la fuente ni la del complemento (llevan tu clave de
 /// Real-Debrid): la URL de la fuente vive en el Keychain bajo `SecretKey.download(id)`.
+extension DownloadItem {
+    /// La calidad de la copia, del nombre del archivo de su fuente («4K», «1080p»…): distingue qué versión tienes.
+    public var quality: String? {
+        let name = release.lowercased()
+        if name.contains("2160p") || name.contains("4k") || name.contains("uhd") { return "4K" }
+        return ["1440p", "1080p", "720p", "480p"].first { name.contains($0) }
+    }
+}
+
 public struct DownloadItem: Sendable, Codable, Equatable, Identifiable {
     public var id: String                 // «metaID|videoID»
     public var kind: String
@@ -259,8 +268,10 @@ public actor Downloads {
             let file = fileURL(item)
             try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
             let onDisk = (try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? Int64) ?? 0
-            // Se reanuda donde está el archivo parcial de verdad.
-            item.writtenBytes = onDisk
+            // Se reanuda donde está el archivo parcial de verdad. En segundo plano lo bajado vive en los datos de reanudación
+            // del sistema, no en el archivo: el avance no se regresa a cero al retomarla (al bloquear el iPhone parecía que
+            // se reiniciaba); el primer avance real lo corrige si de verdad empezó de nuevo.
+            item.writtenBytes = max(onDisk, item.writtenBytes)
             item.state = .downloading
             items[item.id] = item
             active += 1

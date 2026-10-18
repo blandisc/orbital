@@ -6,7 +6,9 @@ extension Services {
     /// camino de «Descargar» de la ficha y también el de lo que la TV manda con «Descargar en el iPhone»: «Solo con
     /// Wi‑Fi» lo respeta el transporte de descargas (la cola espera a tener Wi‑Fi), no quien la llena.
     public func queueDownload(kind: String, metaID: String, videoID: String, title: String, originalTitle: String,
-                              subtitle: String, poster: String?, source chosen: Source? = nil) async -> TitleModel.DownloadOutcome {
+                              subtitle: String, poster: String?, source chosen: Source? = nil, replace: Bool = false) async -> TitleModel.DownloadOutcome {
+        // Cambiar la copia que ya tienes por otra fuente: una sola copia por película o episodio (la de antes se borra).
+        if replace { await downloads.remove(DownloadItem.makeID(metaID: metaID, videoID: videoID)) }
         let langs = titlePrefs.languages(for: metaID, settings: appSettings)
         do {
             // La que elegiste en «Elegir la fuente» (si tiene enlace); si no, la que mejor sirve para guardar.

@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 import OrbitalCore
 import OrbitalModels
 
@@ -45,7 +46,7 @@ struct DownloadsView: View {
                 Section {
                     ForEach(model.readyMovies) { g in
                         if let item = g.items.first {
-                            readyRow(title: g.title, poster: g.poster, data: [bytes(g.bytes)], item: item, model: model)
+                            readyRow(title: g.title, poster: g.poster, data: [item.quality, bytes(g.bytes)].compactMap { $0 }, item: item, model: model)
                         }
                     }
                 } header: {
@@ -100,7 +101,7 @@ struct DownloadsView: View {
             PosterView(url: item.poster, title: item.title).frame(width: DS.Size.thumbSmall)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(item.title).recipe(.cardTitle).lineLimit(1)
-                DataLine(parts: [item.subtitle, status(item)].compactMap { $0 }, color: item.state == .failed ? DS.danger : nil)
+                DataLine(parts: [item.subtitle.isEmpty ? nil : item.subtitle, item.quality, status(item)].compactMap { $0 }, color: item.state == .failed ? DS.danger : nil)
                 if let progress = item.progress { DSProgress(fraction: progress) }
             }
             Spacer(minLength: DS.Space.s2)
@@ -110,6 +111,7 @@ struct DownloadsView: View {
             case .done: EmptyView()
             }
         }
+        .padding(.vertical, DS.Space.s1)
         .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
     }
 
@@ -133,6 +135,7 @@ struct DownloadsView: View {
                 DataLine(parts: [g.seasons.count > 1 ? seasonsText(g.seasons.count) : seasonText(g.seasons.first?.number), episodesText(g.items.count), bytes(g.bytes)].compactMap { $0 })
             }
         }
+        .padding(.vertical, DS.Space.s1)
     }
 
     func readyRow(title: String, poster: String?, data: [String], item: DownloadItem, model: DownloadsModel) -> some View {
@@ -149,7 +152,17 @@ struct DownloadsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .padding(.vertical, DS.Space.s1)   // aire arriba y abajo: al deslizar para borrar, el póster no se corta en las esquinas
         .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }   // rojo, como en iOS (el tinte de la app lo dejaba blanco)
+        .contextMenu { fileMenu(item, title: title, model: model) }
+    }
+
+    /// Lo que se hace con el archivo, como con cualquier otro: compartirlo (AirDrop, Guardar en Archivos, otra app) o borrarlo.
+    @ViewBuilder func fileMenu(_ item: DownloadItem, title: String, model: DownloadsModel) -> some View {
+        ShareLink(item: DownloadedFile(item: item, model: model), preview: SharePreview(Text(verbatim: title))) {
+            Label("Compartir el archivo", systemImage: "square.and.arrow.up")
+        }
+        Button("Borrar", systemImage: "trash", role: .destructive) { Task { await model.remove(item.id) } }
     }
 
     private func episodesText(_ count: Int) -> String {
@@ -225,7 +238,7 @@ struct DownloadSeasonView: View {
                         HStack(spacing: DS.Space.s3) {
                             VStack(alignment: .leading, spacing: DS.Space.s1) {
                                 Text(verbatim: item.subtitle.isEmpty ? item.title : item.subtitle).recipe(.cardTitle).lineLimit(2)
-                                DataLine(parts: [item.writtenBytes.formatted(.byteCount(style: .file))])
+                                DataLine(parts: [item.quality, item.writtenBytes.formatted(.byteCount(style: .file))].compactMap { $0 })
                             }
                             Spacer(minLength: DS.Space.s2)
                             Image(systemName: "play.circle.fill").font(DS.TextRecipe.section.font).foregroundStyle(DS.text).accessibilityHidden(true)
@@ -234,11 +247,29 @@ struct DownloadSeasonView: View {
                     }
                     .buttonStyle(.plain)
                     .swipeActions { Button("Borrar", role: .destructive) { Task { await model.remove(item.id) } }.tint(DS.danger) }
+                    .contextMenu {
+                        ShareLink(item: DownloadedFile(item: item, model: model), preview: SharePreview(Text(verbatim: item.subtitle.isEmpty ? item.title : item.subtitle))) {
+                            Label("Compartir el archivo", systemImage: "square.and.arrow.up")
+                        }
+                    }
                 }
             } header: { if season > 0 { Text("Temporada \(season)") } }
             .listRowBackground(DS.surface)
         }
         .scrollContentBackground(.hidden).background(Backdrop())
         .navigationTitle(Text(verbatim: group?.title ?? "")).navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// Un archivo descargado para compartir: se prepara al compartir (con su nombre legible), no al dibujar la lista.
+struct DownloadedFile: Transferable {
+    let item: DownloadItem
+    let model: DownloadsModel
+
+    static var transferRepresentation: some TransferRepresentation {
+        FileRepresentation(exportedContentType: .movie) { file in
+            guard let url = await file.model.exportURL(file.item) else { throw CocoaError(.fileNoSuchFile) }
+            return SentTransferredFile(url, allowAccessingOriginalFile: true)
+        }
     }
 }

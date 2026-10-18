@@ -100,6 +100,20 @@ public final class DownloadsModel: ObservableModel {
     public func remove(_ id: String) async { await services.downloads.remove(id) }
 
     /// Para ver una descarga sin conexión.
+    /// El archivo para compartir (AirDrop, Archivos, otra app) con un nombre que se entiende («Dune (1080p).mkv»): un enlace
+    /// duro en la carpeta temporal, sin copiar los gigas.
+    public func exportURL(_ item: DownloadItem) async -> URL? {
+        let file = await services.downloads.fileURL(item)
+        guard FileManager.default.fileExists(atPath: file.path) else { return nil }
+        let base = [item.title, item.subtitle.isEmpty ? nil : item.subtitle].compactMap { $0 }.joined(separator: " · ")
+        let name = (item.quality.map { "\(base) (\($0))" } ?? base).replacingOccurrences(of: "/", with: "-")
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Compartir", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let link = folder.appendingPathComponent(name).appendingPathExtension(file.pathExtension)
+        try? FileManager.default.removeItem(at: link)
+        do { try FileManager.default.linkItem(at: file, to: link); return link } catch { return file }
+    }
+
     public func playRequest(_ item: DownloadItem) async -> PlayRequest {
         let file = await services.downloads.fileURL(item)
         let subs = item.subtitleFiles.map { file.deletingLastPathComponent().appendingPathComponent($0) }

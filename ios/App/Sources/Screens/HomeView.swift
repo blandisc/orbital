@@ -47,23 +47,28 @@ struct HomeView: View {
                         .padding(.horizontal, DS.Space.gutter)
                         .transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))
                 }
+                // Abre con «Destacado» (lo que se está viendo esta semana, para ti); lo que dejaste a medias va justo debajo.
+                if !model.spotlight.isEmpty { spotlightCarousel(model) }
                 if !model.continueWatching.isEmpty {
-                    heroCarousel(model)
-                } else if !model.isLoading {
+                    continueRail(model)
+                } else if !model.isLoading, model.spotlight.isEmpty {
                     DSNotice(text: "Aquí aparece lo que vas viendo, en el iPhone y en Orbital.").padding(.horizontal, DS.Space.gutter)
                 }
-                if !model.myList.isEmpty {
-                    Rail(title: "Mi lista", count: model.myList.count, route: HomeListRoute(id: "mylist")) {
-                        ForEach(model.myList) { item in
-                            TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster))
-                        }
+                // Primero lo pendiente (tu watchlist), luego lo que sale y al final lo que guardaste; cada renglón con su porqué
+                // arriba, su sello de origen y su reflejo (el peso del carrusel de arriba).
+                if !model.traktPending.isEmpty {
+                    Rail(title: "Tu watchlist", count: model.traktPending.count, route: HomeListRoute(id: "watchlist"),
+                         eyebrow: Text("Lo que dejaste pendiente"), source: .trakt) {
+                        ForEach(model.traktPending) { s in TitleLink(route: s.route).reflected() }
                     }
                 }
                 if !model.upcoming.isEmpty { upcoming(model) }
-                if !model.traktPending.isEmpty {
-                    // «Tu watchlist» (Trakt), con el nombre de la TV; dentro, todo está en tu watchlist: la etiqueta sobra.
-                    Rail(title: "Tu watchlist", count: model.traktPending.count, route: HomeListRoute(id: "watchlist")) {
-                        ForEach(model.traktPending) { s in TitleLink(route: s.route) }
+                if !model.myList.isEmpty {
+                    Rail(title: "Mi lista", count: model.myList.count, route: HomeListRoute(id: "mylist"),
+                         eyebrow: Text("Lo que guardaste"), source: .stremio) {
+                        ForEach(model.myList) { item in
+                            TitleLink(route: TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster)).reflected()
+                        }
                     }
                 }
             }
@@ -124,16 +129,13 @@ struct HomeView: View {
         if ifStale { await home.model.refreshIfStale() } else { await home.model.refresh() }
         let work = env.services.pending.load()      // una sola lectura por actualización, no una por cada pintado
         pendingCount = work.progress.count + work.traktWatched.count
-        await tint.load(currentHero.flatMap { $0.background ?? $0.poster })
+        await tint.load(currentHero?.wide)
     }
 
     /// El título con la barra encogida: lo más útil que haya.
     private var scrolledTitle: Text {
-        if let now = tvNow.model.now { return Text("En la TV: \(now.live ? (now.channel ?? now.title) : now.title)") }
         if let airing = home.model.airingToday { return Text("Sale hoy: \(airing.series.title)") }
-        let left = home.model.continueWatching.count
-        if left > 1 { return Text("\(left) por terminar") }
-        return Text("Inicio")
+        return Text(verbatim: "")   // sin nada que decir, solo el logotipo
     }
 
     /// Solo cuando hay algo que decir: «N cambios por subir» (lo que viste sin internet). Al día, nada (no hace falta decirlo).
@@ -158,26 +160,34 @@ struct HomeView: View {
 
     private static var hasTabAccessory: Bool { if #available(iOS 26.1, *) { true } else { false } }
 
-    /// Cuántos de «Seguir viendo» van en el carrusel (los últimos); los demás, en «Ver las N» junto a los puntos.
-    private static let heroCount = 5
+    /// Cuántos de «Destacado» van en el carrusel.
+    private static let heroCount = 10
+
+    private func spotlightItems(_ model: HomeModel) -> [Suggestion] { Array(model.spotlightShown.prefix(Self.heroCount)) }
 
     /// El que está al frente del carrusel (el fondo toma su color).
-    private var currentHero: HomeItem? {
-        let items = Array(home.model.continueWatching.prefix(Self.heroCount))
+    private var currentHero: Suggestion? {
+        let items = spotlightItems(home.model)
         guard !items.isEmpty else { return nil }
         return items[(heroSlot ?? 0) % items.count]
     }
 
-    /// «Seguir viendo»: tarjetas en carrusel (`DeckCard`) con las que siguen a los lados, más chicas y desenfocadas, en
-    /// coverflow o abanico (Ajustes › Inicio); el fondo de la pantalla toma el color del que está al frente.
-    private func heroCarousel(_ model: HomeModel) -> some View {
-        let items = Array(model.continueWatching.prefix(Self.heroCount))
+    /// «Destacado»: tarjetas en carrusel infinito (`DeckCard`) con las de los lados más chicas y desenfocadas, en coverflow o
+    /// abanico (Ajustes › Inicio); arriba, el filtro de películas o series. El fondo toma el color del que está al frente.
+    private func spotlightCarousel(_ model: HomeModel) -> some View {
+        let items = spotlightItems(model)
         let deck = DeckStyle(rawValue: look.homeDeck) ?? .coverflow
         // Una vuelta infinita: las mismas tarjetas repetidas muchas veces y se empieza a la mitad; al llegar a la última
         // sigue la primera (y hacia atrás igual). Con una sola, no hay vuelta.
         let copies = items.count > 1 ? DS.Deck.loopCopies : 1
         let middle = (copies / 2) * items.count
         return VStack(spacing: DS.Space.s3) {
+            HStack(alignment: .lastTextBaseline) {
+                DSSectionHead(title: Text("Destacado"), eyebrow: Text("Lo más visto esta semana"))
+                Spacer(minLength: DS.Space.s2)
+                kindFilter(model)
+            }
+            .padding(.horizontal, DS.Space.gutter)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: DS.Deck.spacing) {
                     ForEach(0..<(copies * items.count), id: \.self) { slot in
@@ -194,66 +204,114 @@ struct HomeView: View {
             .scrollClipDisabled()
             .scrollPosition(id: $heroSlot, anchor: .center)   // centrada: las de los lados asoman igual
             .onAppear { if heroSlot == nil || (heroSlot ?? 0) >= copies * items.count { heroSlot = middle } }
-            .onChange(of: items.map(\.id)) { heroSlot = middle }   // cambió lo que sigues viendo: de vuelta al primero
-            // Los puntos al centro y, en el mismo renglón a la derecha, «Ver todo» (como cada sección): sin un botón más que
-            // agregue altura ni cambie de lugar.
+            .onChange(of: items.map(\.id)) { heroSlot = middle }   // cambió el filtro o la lista: de vuelta al primero
             PageDots(count: items.count, index: items.isEmpty ? 0 : (heroSlot ?? middle) % items.count)
                 .frame(maxWidth: .infinity)
-                .overlay(alignment: .trailing) {
-                    if model.continueWatching.count > Self.heroCount {
-                        NavigationLink(value: HomeListRoute(id: "continue")) {
-                            HStack(spacing: DS.Space.s1) {
-                                Text("Ver las \(model.continueWatching.count)").recipe(.secondary, color: DS.textMuted)
-                                Image(systemName: "chevron.right").font(DS.TextRecipe.caption.font.weight(.semibold)).foregroundStyle(DS.textMuted)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.trailing, DS.Space.gutter)
-                        .accessibilityLabel(Text("Seguir viendo: ver las \(model.continueWatching.count)"))
-                        .accessibilityIdentifier("home-all-continue")
-                    }
-                }
         }
-        .task(id: heroSlot) { await tint.load(currentHero.flatMap { $0.background ?? $0.poster }) }   // se cancela si pasas a otro
+        .task(id: heroSlot) { await tint.load(currentHero?.wide) }   // se cancela si pasas a otro
         .sensoryFeedback(.selection, trigger: heroSlot)
     }
 
-    private func hero(_ item: HomeItem) -> some View {
-        // La tarjeta abre la ficha con su propio toque; «Continuar» va aparte (un botón dentro de un NavigationLink puede
-        // abrir la ficha en vez de reproducir).
-        DeckCard(title: item.title, background: item.background ?? item.poster, logo: Artwork.logoURL(metaID: item.metaID),
-                 eyebrow: item.nextUp ? Text("Sigue") : Text("Seguir viendo"), data: heroData(item), progress: item.progress,
-                 minutesLeft: item.leftMinutes, timeStyle: TimeStyle(rawValue: look.homeTime) ?? .pill,
-                 open: { openTitle = route(item) }) {
-            if look.homeTime == TimeStyle.fill.rawValue {
-                // El botón que se llena tiene ancho fijo: siempre cabe en un renglón con el de la TV.
-                HStack(spacing: DS.Space.s3) { heroButtons(item) }
-            } else {
-                HeroActions { heroButtons(item) }   // con letra grande, uno debajo del otro
+    /// Todo · Películas · Series: un botón chico (como el de Para ti), sin otro renglón.
+    private func kindFilter(_ model: HomeModel) -> some View {
+        Menu {
+            Picker(selection: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 })) {
+                Label("Todo", systemImage: "square.grid.2x2").tag("")
+                Label("Películas", systemImage: "film").tag("movie")
+                Label("Series", systemImage: "tv").tag("series")
+            } label: { EmptyView() }
+        } label: {
+            HStack(spacing: DS.Space.s1) {
+                Text(model.spotlightKind == "movie" ? "Películas" : model.spotlightKind == "series" ? "Series" : "Todo")
+                    .recipe(.footnote, color: DS.text).fontWeight(.semibold)
+                Image(systemName: "chevron.down").font(DS.TextRecipe.caption.font.weight(.bold)).foregroundStyle(DS.textMuted)
             }
+            .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s1)
+            .background(DS.fill, in: Capsule())
         }
-        .contentShape(Rectangle())
-        .onTapGesture { openTitle = route(item) }
+        .accessibilityLabel(Text("Filtrar Destacado"))
+        .accessibilityIdentifier("home-kind-filter")
     }
 
-    @ViewBuilder private func heroButtons(_ item: HomeItem) -> some View {
-        continueButton(item)
+    private func hero(_ s: Suggestion) -> some View {
+        // La tarjeta abre la ficha con su propio toque; «Ver» va aparte (un botón dentro de un NavigationLink puede abrir la
+        // ficha en vez de reproducir).
+        DeckCard(title: s.title, background: s.wide, logo: s.logo ?? Artwork.logoURL(metaID: s.imdb),
+                 eyebrow: reasonText(s.reason), data: heroData(s), open: { openTitle = s.route }) {
+            HeroActions { heroButtons(s) }   // con letra grande, uno debajo del otro
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { openTitle = s.route }
+    }
+
+    @ViewBuilder private func heroButtons(_ s: Suggestion) -> some View {
+        WithArtColors(url: s.wide) { colors in
+            Button {
+                if s.kind == "series" { openTitle = s.route } else { Task { await env.play(s) } }
+            } label: {
+                Label { s.kind == "series" ? Text("Ver la serie") : Text("Ver") } icon: { Image(systemName: "play.fill") }.lineLimit(1)
+            }
+            .dsArtButton(colors)
+        }
         if env.services.orbital.isConfigured {
             // Un toque lo explica («¿Ver en la TV?»), el segundo lo manda: solo el ícono no decía qué hacía.
             ConfirmIconButton(symbol: "tv", prompt: "¿Ver en la TV?", label: "Ver en la TV") {
-                Task { await env.playOnTV(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title) }
+                Task { await env.playOnTV(kind: s.kind, metaID: s.imdb, videoID: s.kind == "movie" ? s.imdb : nil, title: s.title) }
             }
         }
     }
 
-    /// «T2 · E5 · quedan 20 min · termina a las 23:21».
-    private func heroData(_ item: HomeItem) -> [String] {
+    /// Por qué está en Destacado.
+    private func reasonText(_ reason: SuggestionReason) -> Text {
+        switch reason {
+        case .trending: Text("En tendencia")
+        case .recommended: Text("Para ti")
+        case .popular: Text("Popular esta semana")
+        default: Text("Destacado")
+        }
+    }
+
+    /// «Película · 2024 · Drama».
+    private func heroData(_ s: Suggestion) -> [String] {
         let language = env.services.appSettings.uiLanguage
-        var parts: [String] = []
-        if let episode = item.episode { parts.append(Strings.episode(season: item.season, episode: episode, language: language)) }
-        // «quedan N min» lo dice el indicador de la tarjeta (píldora, borde, botón u órbita); aquí, a qué hora terminas.
-        if item.leftMinutes > 0 { parts.append(Strings.endsAt(minutesLeft: item.leftMinutes, now: env.services.now(), language: language)) }
-        return parts
+        return [Strings.kind(s.kind, language: language), s.year.map(String.init), Vocabulary.genres(s.genres, language: language).first].compactMap { $0 }
+    }
+
+    /// «Seguir viendo»: lo que dejaste a medias (o el siguiente episodio), en piezas anchas con su avance. Tocar una sigue
+    /// donde ibas; mantenerla: la ficha, la TV o quitarla.
+    private func continueRail(_ model: HomeModel) -> some View {
+        VStack(alignment: .leading, spacing: DS.Space.s3) {
+            NavigationLink(value: HomeListRoute(id: "continue")) {
+                DSSectionHead(title: Text("Seguir viendo"), count: model.continueWatching.count, chevron: true, eyebrow: Text("Donde te quedaste"))
+            }
+            .buttonStyle(.plain).padding(.horizontal, DS.Space.gutter)
+            .accessibilityIdentifier("home-all-continue")
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(alignment: .top, spacing: DS.Space.s3) {
+                    ForEach(model.continueWatching) { item in
+                        Button { Task { await env.play(item) } } label: {
+                            StillCard(title: item.title, art: item.background ?? item.poster, data: continueData(item), progress: item.progress)
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            Button("Ver la ficha", systemImage: "info.circle") { openTitle = route(item) }
+                            if env.services.orbital.isConfigured {
+                                Button("Ver en la TV", systemImage: "tv") { Task { await env.playOnTV(kind: item.kind, metaID: item.metaID, videoID: item.videoID, title: item.title) } }
+                            }
+                            Button("Quitar de Seguir viendo", systemImage: "xmark.circle") { Task { await model.dismiss(item) } }
+                        }
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+        }
+    }
+
+    /// «T2 E5 · quedan 20 min».
+    private func continueData(_ item: HomeItem) -> [String] {
+        progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes).components(separatedBy: " · ")
     }
 
     /// «Sale hoy» (A + una portada): lo de hoy en grande con su hora; lo demás, en panorámicas. Sin nada hoy, «Sale pronto».
@@ -261,7 +319,8 @@ struct HomeView: View {
         let today = model.airingToday
         let rest = model.upcoming.filter { $0.id != today?.id }
         VStack(alignment: .leading, spacing: DS.Space.s3) {
-            DSSectionHead(title: today == nil ? Text("Sale pronto") : Text("Sale hoy")).padding(.horizontal, DS.Space.gutter)
+            DSSectionHead(title: today == nil ? Text("Sale pronto") : Text("Sale hoy"), source: .trakt, eyebrow: Text("De las series que sigues"))
+                .padding(.horizontal, DS.Space.gutter)
             if let today {
                 NavigationLink(value: today.series.route) {
                     CoverCard(art: today.series.wide, logo: Artwork.logoURL(metaID: today.series.imdb), title: today.series.title,
@@ -313,24 +372,5 @@ struct HomeView: View {
         }
         .background(Backdrop(tint: tint.colors))
         .navigationTitle(Text("Seguir viendo")).navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func continueButton(_ item: HomeItem) -> some View {
-        // Como la TV: «Continuar» si ibas a medias; si toca el siguiente episodio, «Ver T3 E6». Con el color de su propio arte.
-        let text = item.nextUp && item.episode != nil ? Text("Ver \(Strings.episode(season: item.season, episode: item.episode ?? 0, language: env.services.appSettings.uiLanguage))") : Text("Continuar")
-        return Group {
-            if look.homeTime == TimeStyle.fill.rawValue, let progress = item.progress {
-                // Estilo «botón»: «Continuar» se llena con lo que llevas y dice cuánto falta.
-                Button { Task { await env.play(item) } } label: { ProgressFillLabel(text: text, minutes: item.leftMinutes, fraction: progress) }
-                    .buttonStyle(.plain)
-            } else {
-                WithArtColors(url: item.background ?? item.poster) { colors in
-                    Button { Task { await env.play(item) } } label: {
-                        Label { text } icon: { Image(systemName: "play.fill") }.lineLimit(1)
-                    }
-                    .dsArtButton(colors)
-                }
-            }
-        }
     }
 }

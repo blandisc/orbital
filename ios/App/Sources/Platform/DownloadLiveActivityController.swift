@@ -1,5 +1,6 @@
 import ActivityKit
 import Foundation
+import UIKit
 import OrbitalCore
 
 /// Arranca, actualiza y termina la actividad en vivo de las descargas según la cola. iOS limita cuántas
@@ -33,11 +34,12 @@ final class DownloadLiveActivityController {
         let written = pending.reduce(Int64(0)) { $0 + $1.writtenBytes }
         let expected = pending.reduce(Int64(0)) { $0 + max($1.expectedBytes ?? 0, $1.writtenBytes) }
         let state = DownloadActivityAttributes.ContentState(
-            title: current.subtitle.isEmpty ? current.title : "\(current.title) · \(current.subtitle)",
+            title: current.title,
             fraction: expected > 0 ? min(1, Double(written) / Double(expected)) : 0,
-            remaining: pending.count, waiting: !pending.contains { $0.state == .downloading }, language: language())
-        if let last, last.title == state.title, last.remaining == state.remaining, last.waiting == state.waiting, last.language == state.language,
-           abs(last.fraction - state.fraction) < 0.01 { return }
+            remaining: pending.count, waiting: !pending.contains { $0.state == .downloading }, language: language(),
+            detail: current.subtitle, poster: await posterFile(current))
+        if let last, last.title == state.title, last.detail == state.detail, last.poster == state.poster, last.remaining == state.remaining,
+           last.waiting == state.waiting, last.language == state.language, abs(last.fraction - state.fraction) < 0.01 { return }
         last = state
         let content = ActivityContent(state: state, staleDate: nil)
         if let current = activity {
@@ -63,8 +65,21 @@ final class DownloadLiveActivityController {
         seenState = nil
         guard let activity else { return }
         let done = items.filter { $0.state == .done }.max { ($0.finishedAt ?? 0) < ($1.finishedAt ?? 0) }
-        let final = DownloadActivityAttributes.ContentState(title: done?.title ?? last?.title ?? "", fraction: 1, remaining: 0, waiting: false, language: language())
+        var final = DownloadActivityAttributes.ContentState(title: done?.title ?? last?.title ?? "", fraction: 1, remaining: 0, waiting: false, language: language(),
+                                                           detail: done?.subtitle ?? last?.detail ?? "", poster: last?.poster, done: true)
+        if let done { final.poster = await posterFile(done) ?? final.poster }
         await activity.end(ActivityContent(state: final, staleDate: nil), dismissalPolicy: .default)
         self.activity = nil; last = nil
+    }
+
+    /// El póster de lo que baja, reducido y guardado en el App Group (la actividad no puede bajar imágenes): una vez por título.
+    private func posterFile(_ item: DownloadItem) async -> String? {
+        guard let poster = item.poster, let url = URL(string: poster) else { return nil }
+        let name = "activity-\(item.metaID.replacingOccurrences(of: "/", with: "-")).jpg"
+        guard let target = WidgetStore.imageURL(name) else { return nil }
+        if FileManager.default.fileExists(atPath: target.path) { return name }
+        guard let image = await ImagePipeline.shared.image(url, maxPixel: DS.Widget.activityPosterPixels),
+              let data = image.jpegData(compressionQuality: DesignTokens.Widget.jpegQuality) else { return nil }
+        return (try? data.write(to: target, options: .atomic)) != nil ? name : nil
     }
 }

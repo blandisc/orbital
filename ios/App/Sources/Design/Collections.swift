@@ -9,16 +9,20 @@ struct CollectionCard<Emblem: View>: View {
     let name: String
     let posters: [String?]
     let tint: Color
+    /// Con su nombre y dato debajo (Premios); sin ellos cuando el emblema ya lo dice (Estudios).
+    var captioned = true
     @ViewBuilder var emblem: () -> Emblem
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s2) {
             FanCard(name: name, posters: posters, tint: tint, emblem: emblem).reflected(weight: tint)
-            VStack(alignment: .leading, spacing: 0) {
-                title.recipe(.cardTitle).lineLimit(1)
-                detail.recipe(.caption).lineLimit(1)
+            if captioned {
+                VStack(alignment: .leading, spacing: 0) {
+                    title.recipe(.cardTitle).lineLimit(1)
+                    detail.recipe(.caption).lineLimit(1)
+                }
+                .padding(.horizontal, DS.Space.s1)
             }
-            .padding(.horizontal, DS.Space.s1)
         }
         .frame(width: DS.PlatformFan.width, alignment: .leading)
         .accessibilityElement(children: .combine)
@@ -200,15 +204,17 @@ struct StudioEmblem: View {
             if let url = logo.flatMap(URL.init(string:)) {
                 RemoteImage(url: url, maxPoints: DS.Collections.studioLogoWidth) { phase in
                     switch phase {
-                    case .success(let image): image.resizable().scaledToFit()
-                    default: nameText
+                    // El logo en blanco (como la TV: brightness(0) invert(1)), sin cápsula.
+                    case .success(let image): image.resizable().scaledToFit().brightness(-1).colorInvert()
+                    default: nameText.padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2).background(DS.paper, in: Capsule())
                     }
                 }
                 .frame(width: DS.Collections.studioLogoWidth, height: DS.Collections.studioLogoHeight)
-            } else { nameText }
+            } else {
+                // Sin logo, el nombre en cápsula.
+                nameText.padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2).background(DS.paper, in: Capsule())
+            }
         }
-        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s2)
-        .background(DS.paper, in: Capsule())
         .shadow(color: DS.scrimStrong, radius: DS.Space.s2)
         .padding(.horizontal, DS.Space.s2)
         .accessibilityHidden(true)

@@ -7,7 +7,7 @@ enum ListSort: String, CaseIterable {
     var label: LocalizedStringKey {
         switch self {
         case .added: "Como viene la lista"; case .imdb: "Mejor calificadas en IMDb"; case .trakt: "Mejor calificadas en Trakt"
-        case .newest: "Año: más nuevas"; case .oldest: "Año: más viejas"; case .title: "A–Z"
+        case .newest: "Año (lo más nuevo primero)"; case .oldest: "Año: más viejas"; case .title: "A–Z"
         }
     }
 }
@@ -98,6 +98,8 @@ struct SortableGrid<Cell: View>: View {
             switch s {
             case .imdb: imdbRatings != nil
             case .trakt: items.contains { $0.traktRating != nil }
+            // Como la TV: sin «Como viene» (sin orden elegido, la lista va como llega) ni «más viejas».
+            case .added, .oldest: false
             default: true
             }
         }
@@ -105,10 +107,14 @@ struct SortableGrid<Cell: View>: View {
 
     private var menu: some View {
         Menu {
-            Picker(selection: $sort) {
-                ForEach(sorts, id: \.self) { Text($0.label).tag($0) }
+            // Elegir otra vez el orden activo lo quita (la lista vuelve a ir como llega).
+            Menu {
+                ForEach(sorts, id: \.self) { option in
+                    Button { sort = sort == option ? .added : option } label: {
+                        if sort == option { Label(option.label, systemImage: "checkmark") } else { Text(option.label) }
+                    }
+                }
             } label: { Label("Ordenar", systemImage: "arrow.up.arrow.down") }
-            .pickerStyle(.menu)
             Picker(selection: $filter.kind) {
                 Text("Todo").tag(String?.none)
                 Text("Series").tag(String?.some("series"))

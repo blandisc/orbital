@@ -29,7 +29,8 @@ public final class ParaTiModel: ObservableModel {
     /// De dónde salió lo que ves: la consola (misma curaduría que la TV) o este iPhone (lógica local).
     public enum Source: Equatable, Sendable { case console, phone }
 
-    public var mode: Mode = .mosaic { didSet { changed() } }
+    /// Abre en Listas (lo que más se usa); el mosaico, con el botón de arriba.
+    public var mode: Mode = .lists { didSet { changed() } }
     public private(set) var mosaic: [Suggestion] = [] { didSet { changed() } }
     public private(set) var lists: [ForYouList] = [] { didSet { changed() } }
     /// Los estantes del feed de Listas, en su orden (`ShelfPlanner`). Los vacíos se descartan al terminar de cargar.

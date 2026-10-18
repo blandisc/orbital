@@ -441,6 +441,17 @@
         }
       }
     },
+    "Afinemos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let's fine-tune"
+          }
+        }
+      }
+    },
     "Agregada a tu lista.": {
       "extractionState": "manual",
       "localizations": {
@@ -628,6 +639,17 @@
         }
       }
     },
+    "Atmos · 5.1": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atmos · 5.1"
+          }
+        }
+      }
+    },
     "Atrás": {
       "extractionState": "manual",
       "localizations": {
@@ -690,6 +712,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Add to My List"
+          }
+        }
+      }
+    },
+    "Año (lo más nuevo primero)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Year (newest first)"
           }
         }
       }
@@ -958,6 +991,28 @@
         }
       }
     },
+    "Calidad y tamaño en equilibrio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Balanced quality and size"
+          }
+        }
+      }
+    },
+    "Calidad, idioma y tamaño, a tu gusto": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quality, language and size, your way"
+          }
+        }
+      }
+    },
     "Calificación mínima": {
       "extractionState": "manual",
       "localizations": {
@@ -998,6 +1053,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Change what I want"
+          }
+        }
+      }
+    },
+    "Cambiarla por esta fuente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Replace it with this source"
           }
         }
       }
@@ -1233,6 +1299,17 @@
         }
       }
     },
+    "Compartir el archivo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share the file"
+          }
+        }
+      }
+    },
     "Complementos": {
       "extractionState": "manual",
       "localizations": {
@@ -1251,6 +1328,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Add-ons, TMDB, country"
+          }
+        }
+      }
+    },
+    "Compresión eficiente: se ve igual y ocupa menos.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Efficient compression: looks the same, takes less space."
           }
         }
       }
@@ -1794,6 +1882,17 @@
         }
       }
     },
+    "De Real-Debrid · la recomendada va primero": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From Real-Debrid · the recommended one comes first"
+          }
+        }
+      }
+    },
     "De Trakt": {
       "extractionState": "manual",
       "localizations": {
@@ -1812,6 +1911,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "From where"
+          }
+        }
+      }
+    },
+    "De las series que sigues": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From the shows you follow"
           }
         }
       }
@@ -1882,6 +1992,28 @@
         }
       }
     },
+    "Dejar la que tengo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep the one I have"
+          }
+        }
+      }
+    },
+    "Del servicio de streaming: buena calidad y tamaño medio.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From the streaming service: good quality, medium size."
+          }
+        }
+      }
+    },
     "Descarga en el iPhone lo que se ve en la TV.": {
       "extractionState": "manual",
       "localizations": {
@@ -1915,6 +2047,17 @@
         }
       }
     },
+    "Descargado · listo para ver sin conexión": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloaded · ready to watch offline"
+          }
+        }
+      }
+    },
     "Descargando": {
       "extractionState": "manual",
       "localizations": {
@@ -1944,6 +2087,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Downloading %@ on the iPhone."
+          }
+        }
+      }
+    },
+    "Descargando %lld episodios": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading %lld episodes"
           }
         }
       }
@@ -2179,6 +2333,17 @@
         }
       }
     },
+    "Destacado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Featured"
+          }
+        }
+      }
+    },
     "Di «Oye Siri, habla con Orbital» y, cuando pregunte, la orden. Para lo de siempre, directo: «Oye Siri, pausa Orbital» o «Oye Siri, reanuda Orbital».": {
       "extractionState": "manual",
       "localizations": {
@@ -2201,6 +2366,17 @@
         }
       }
     },
+    "Dime con precisión qué quieres: de qué lista, de qué época y qué tan bien calificada.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tell me exactly what you want: which list, which era and how well rated."
+          }
+        }
+      }
+    },
     "Dirección": {
       "extractionState": "manual",
       "localizations": {
@@ -2219,6 +2395,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Address (orbital.yourdomain.com)"
+          }
+        }
+      }
+    },
+    "Donde te quedaste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where you left off"
           }
         }
       }
@@ -2388,6 +2575,17 @@
         }
       }
     },
+    "Elegir la fuente": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the source"
+          }
+        }
+      }
+    },
     "Elegir la fuente de este episodio": {
       "extractionState": "manual",
       "localizations": {
@@ -2461,6 +2659,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "In My List"
+          }
+        }
+      }
+    },
+    "En amarillo, las pesadas: con datos móviles te avisamos antes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heavy ones are yellow: on cellular we ask first."
           }
         }
       }
@@ -2659,6 +2868,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "In “%@”"
+          }
+        }
+      }
+    },
+    "Encuéntrala": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Find it"
           }
         }
       }
@@ -2927,6 +3147,17 @@
         }
       }
     },
+    "Filtrar Destacado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filter Featured"
+          }
+        }
+      }
+    },
     "Fuentes": {
       "extractionState": "manual",
       "localizations": {
@@ -2960,6 +3191,17 @@
         }
       }
     },
+    "Grabada en el cine: mala imagen. Va hasta abajo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recorded in a theater: poor picture. It goes last."
+          }
+        }
+      }
+    },
     "Grande": {
       "extractionState": "manual",
       "localizations": {
@@ -2978,6 +3220,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Saved"
+          }
+        }
+      }
+    },
+    "Guardamos una sola copia. La que tienes es %@; si la cambias, se borra y se baja la nueva.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We keep a single copy. Yours is %@; if you replace it, it’s deleted and the new one downloads."
           }
         }
       }
@@ -3099,6 +3352,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Genres"
+          }
+        }
+      }
+    },
+    "HDR · DV": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HDR · DV"
           }
         }
       }
@@ -3356,6 +3620,17 @@
         }
       }
     },
+    "La copia íntegra del disco: la mejor imagen y la más pesada.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The full disc copy: best picture, heaviest file."
+          }
+        }
+      }
+    },
     "La descarga falló (código %@).": {
       "extractionState": "manual",
       "localizations": {
@@ -3389,6 +3664,28 @@
         }
       }
     },
+    "La mejor para el iPhone: calidad y tamaño en equilibrio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Best for iPhone: balanced quality and size"
+          }
+        }
+      }
+    },
+    "La que elegimos por calidad, idioma y tamaño. Es la que arranca sola.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Our pick for quality, language and size. It’s the one that starts on its own."
+          }
+        }
+      }
+    },
     "La que tienes": {
       "extractionState": "manual",
       "localizations": {
@@ -3400,6 +3697,17 @@
         }
       }
     },
+    "La recomendada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The recommended one"
+          }
+        }
+      }
+    },
     "La recomendada está arriba.": {
       "extractionState": "manual",
       "localizations": {
@@ -3407,6 +3715,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The recommended one is at the top."
+          }
+        }
+      }
+    },
+    "La resolución. 4K se luce en la TV; en el iPhone, 1080p ya se ve nítido.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The resolution. 4K shines on the TV; on iPhone, 1080p already looks sharp."
           }
         }
       }
@@ -3807,6 +4126,17 @@
         }
       }
     },
+    "Lo que guardaste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What you saved"
+          }
+        }
+      }
+    },
     "Lo que más se ve hoy en Stremio, películas y series": {
       "extractionState": "manual",
       "localizations": {
@@ -3902,6 +4232,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The winners, newest first"
+          }
+        }
+      }
+    },
+    "Los siguientes %@ episodios": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The next %@ episodes"
           }
         }
       }
@@ -4016,6 +4357,17 @@
         }
       }
     },
+    "Mejor resultado": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Top result"
+          }
+        }
+      }
+    },
     "Mejor serie de drama": {
       "extractionState": "manual",
       "localizations": {
@@ -4122,6 +4474,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "More like this"
+          }
+        }
+      }
+    },
+    "Más contraste y color. DV es Dolby Vision: el iPhone lo reproduce.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More contrast and color. DV is Dolby Vision: iPhone plays it."
           }
         }
       }
@@ -5017,6 +5380,17 @@
         }
       }
     },
+    "Para verlos sin conexión, uno tras otro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To watch offline, one after another"
+          }
+        }
+      }
+    },
     "Pasó a tu Orbital": {
       "extractionState": "manual",
       "localizations": {
@@ -5112,6 +5486,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Movies"
+          }
+        }
+      }
+    },
+    "Películas %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies %@"
           }
         }
       }
@@ -5233,6 +5618,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Popular"
+          }
+        }
+      }
+    },
+    "Popular esta semana": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popular this week"
           }
         }
       }
@@ -5486,6 +5882,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "What you can say to Alexa"
+          }
+        }
+      }
+    },
+    "Qué significa cada etiqueta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What each tag means"
           }
         }
       }
@@ -5853,6 +6260,17 @@
         }
       }
     },
+    "Seguir viendo: todas, %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue watching: all, %@"
+          }
+        }
+      }
+    },
     "Seguir viendo: ver las %@": {
       "extractionState": "manual",
       "localizations": {
@@ -5893,6 +6311,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Series"
+          }
+        }
+      }
+    },
+    "Series %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows %@"
           }
         }
       }
@@ -6201,6 +6630,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Forced subtitles only"
+          }
+        }
+      }
+    },
+    "Sonido envolvente. Con audífonos AirPods, Atmos se oye espacial.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Surround sound. With AirPods, Atmos sounds spatial."
           }
         }
       }
@@ -6553,6 +6993,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tap “On TV”, pull the sheet up and tap the microphone. Speak calmly: when you finish it stops on its own and answers out loud."
+          }
+        }
+      }
+    },
+    "Todas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
           }
         }
       }
@@ -7206,6 +7657,17 @@
         }
       }
     },
+    "Ver la ficha": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See details"
+          }
+        }
+      }
+    },
     "Ver la serie": {
       "extractionState": "manual",
       "localizations": {
@@ -7367,6 +7829,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Already downloaded. You'll find it in Downloads."
+          }
+        }
+      }
+    },
+    "Ya está en tu Real-Debrid: empieza sin esperar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already in your Real-Debrid: starts right away."
+          }
+        }
+      }
+    },
+    "Ya la tienes descargada": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You already downloaded it"
           }
         }
       }

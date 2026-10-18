@@ -318,12 +318,12 @@ public final class TitleModel: ObservableModel {
 
     /// Descarga uno o varios episodios con la fuente que mejor sirve para guardar (1080p, moderada).
     @discardableResult
-    public func download(_ videoIDs: [String], source: Source? = nil) async -> DownloadOutcome {
+    public func download(_ videoIDs: [String], source: Source? = nil, replace: Bool = false) async -> DownloadOutcome {
         var queued = 0
         for video in videoIDs {
             var label = ""
             if let found = episode(video) { label = services.episodeLabel(found.0, found.1.episode) + (found.1.hasTitle ? " · \(found.1.title)" : "") }
-            switch await services.queueDownload(kind: kind, metaID: metaID, videoID: video, title: title, originalTitle: originalTitle, subtitle: label, poster: poster, source: source) {
+            switch await services.queueDownload(kind: kind, metaID: metaID, videoID: video, title: title, originalTitle: originalTitle, subtitle: label, poster: poster, source: source, replace: replace) {
             case .queued: queued += 1
             case .noSources: if queued == 0 { return .noSources } else { continue }
             case .already: if videoIDs.count == 1 { return .already } else { continue }
@@ -342,6 +342,9 @@ public final class TitleModel: ObservableModel {
         guard let from, let i = ids.firstIndex(of: from) else { return .noSources }
         return await download(Array(ids.dropFirst(i).prefix(count)))
     }
+
+    /// La copia que ya tienes (o se está bajando) de este video, para preguntar antes de cambiarla por otra fuente.
+    public func existingDownload(_ videoID: String) async -> DownloadItem? { await services.downloads.item(DownloadItem.makeID(metaID: metaID, videoID: videoID)) }
 
     public func clearMessage() { message = nil }
 }

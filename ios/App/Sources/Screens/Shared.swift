@@ -53,16 +53,19 @@ struct Rail<Content: View>: View {
     var trailing: LocalizedStringKey?
     var count: Int?
     var route: HomeListRoute?
+    /// El porqué arriba del título y de dónde viene (su sello).
+    var eyebrow: Text?
+    var source: ListSource?
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             Group {
                 if let route {
-                    NavigationLink(value: route) { DSSectionHead(title: title, trailing: trailing, count: count, chevron: true) }
+                    NavigationLink(value: route) { DSSectionHead(title: Text(title), trailing: trailing.map { Text($0) }, count: count, chevron: true, source: source, eyebrow: eyebrow) }
                         .buttonStyle(.plain)
                 } else {
-                    DSSectionHead(title: title, trailing: trailing, count: count)
+                    DSSectionHead(title: Text(title), trailing: trailing.map { Text($0) }, count: count, source: source, eyebrow: eyebrow)
                 }
             }
             .padding(.horizontal, DS.Space.gutter)

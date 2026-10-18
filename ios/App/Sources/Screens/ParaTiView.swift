@@ -105,6 +105,7 @@ struct ParaTiView: View {
         .task {
             #if DEBUG
             if Demo.isOn, Demo.open == "lists" || Demo.mode == "lists" { m.mode = .lists }
+            if Demo.isOn, Demo.mode == "mosaic" { m.mode = .mosaic }
             if Demo.isOn, Demo.open == "decide" { Task { try? await Task.sleep(for: .seconds(4)); deciding = true } }   // cuando ya cargó lo que se sugiere
             if let start = Demo.startMode { m.mode = start == "lists" ? .lists : .mosaic }
             #endif
@@ -265,8 +266,8 @@ struct ListsView: View {
     @State private var openTitle: TitleRoute?
     /// Los colores del arte del destacado: su «Ver» toma el color claro, como en la TV.
     @StateObject private var featuredTint = ArtTint()
-    /// El que está al frente del carrusel del destacado.
-    @State private var featuredID: String?
+    /// La posición del carrusel del destacado (vuelta infinita: la tarjeta es la posición módulo cuántas hay).
+    @State private var featuredSlot: Int?
     /// Premios, tus listas de Trakt y «Por año».
     @StateObject private var collections = ModelObserver(CollectionsModel(AppEnvironment.shared.services))
     /// El grupo que estás viendo (el índice de arriba lo marca).
@@ -343,9 +344,15 @@ struct ListsView: View {
                     ForEach(generalShelves) { plan in shelf(plan).id(plan.id) }
                     // Lo nuevo en tus plataformas (TMDB): series con episodios recientes y películas recién llegadas.
                     if !model.newOnPlatforms.isEmpty {
-                        Shelf(title: Text("Nuevo en tus plataformas"), meta: Text("Episodios de estas semanas y películas recién llegadas")) {
+                        // En panorámicas (otro formato: se reconoce sin leerla), con la plataforma en la esquina.
+                        Shelf(title: Text("Nuevo en tus plataformas"), eyebrow: Text("Episodios de estas semanas y películas recién llegadas")) {
                             ForEach(model.newOnPlatforms) { s in
-                                ShelfPoster(suggestion: s, style: .plain, inList: model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb]) { dismissed in Task { await model.dismiss(dismissed) } }
+                                NavigationLink(value: s.route) {
+                                    WideCard(art: s.wide, logo: s.logo, title: s.title, badge: Text(badgeKey(s.reason)),
+                                             caption: Text(verbatim: s.title))
+                                }
+                                .buttonStyle(.plain)
+                                .contextMenu { SuggestionActions(suggestion: s) { dismissed in Task { await model.dismiss(dismissed) } } }
                             }
                         }
                     }
@@ -353,10 +360,13 @@ struct ListsView: View {
                 }
                 .modifier(SectionSpy(section: .forYou, active: $activeSection))
                 // Las colecciones (con su carácter: en carrusel, con peso y reflejo), justo después de lo general.
-                if !model.platformHubs.isEmpty { platforms.modifier(SectionSpy(section: .platforms, active: $activeSection)) }
-                awards.modifier(SectionSpy(section: .awards, active: $activeSection))
-                if collections.model.tmdbReady { studiosSection.modifier(SectionSpy(section: .studios, active: $activeSection)) }
-                if collections.model.traktLinked { yearsSection.modifier(SectionSpy(section: .years, active: $activeSection)) }
+                // Plataformas, Estudios, Premios y Por año, juntas y con el mismo aire entre ellas (el reflejo ya separa).
+                VStack(alignment: .leading, spacing: DS.Collections.groupGap) {
+                    if !model.platformHubs.isEmpty { platforms.modifier(SectionSpy(section: .platforms, active: $activeSection)) }
+                    if collections.model.tmdbReady { studiosSection.modifier(SectionSpy(section: .studios, active: $activeSection)) }
+                    awards.modifier(SectionSpy(section: .awards, active: $activeSection))
+                    if collections.model.traktLinked { yearsSection.modifier(SectionSpy(section: .years, active: $activeSection)) }
+                }
                 if !model.airings.isEmpty {   // vacío → no se pinta (el calendario completo ya existe: `UpcomingView`)
                     Shelf(title: Text("Próximos estrenos"), meta: Text("Lo que sale de las series que sigues"), route: ShelfRoute(id: "estrenos"), source: .trakt) {
                         ForEach(model.airings.prefix(12)) { AiringCard(airing: $0) }
@@ -487,7 +497,7 @@ struct ListsView: View {
             CenteredCarousel(items: collections.model.studios.map { StudioItem(id: $0.id, name: $0.name) }, id: \.id, cardWidth: DS.PlatformFan.width) { studio in
                 NavigationLink(value: CollectionRoute(kind: .studio, id: String(studio.id))) {
                     CollectionCard(title: Text(verbatim: studio.name), detail: Text("Lo más visto"), name: studio.name,
-                                   posters: (collections.model.studioItems[studio.id] ?? []).prefix(3).map { Optional($0.poster) }, tint: DS.Collections.studio) {
+                                   posters: (collections.model.studioItems[studio.id] ?? []).prefix(3).map { Optional($0.poster) }, tint: DS.Collections.studio, captioned: false) {
                         StudioEmblem(name: studio.name, logo: collections.model.studioLogos[studio.id])
                     }
                 }
@@ -526,10 +536,12 @@ struct ListsView: View {
 
     private func shelf(_ plan: ShelfPlan) -> some View {
         let items = model.items(for: plan)
-        return Shelf(title: shelfTitle(plan), meta: shelfMeta(plan),
-                     route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty, source: shelfSource(plan)) {
+        // El porqué arriba del título (como una revista) y los pósters con su reflejo: los renglones con más carácter.
+        return Shelf(title: shelfTitle(plan),
+                     route: ShelfRoute(id: plan.id), loading: model.isLoading(shelf: plan) && items.isEmpty, source: shelfSource(plan), eyebrow: shelfMeta(plan)) {
             ForEach(items) { s in
                 ShelfPoster(suggestion: s, style: plan.style, inList: plan.id != "watchlist" && model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb]) { dismissed in Task { await model.dismiss(dismissed) } }   // en «Tu watchlist» todo está ahí: el marcador sobra
+                    .reflected()
             }
         }
     }
@@ -555,21 +567,26 @@ struct ListsView: View {
     // MARK: destacado
     /// Varias de la misma lista del destacado, para pasar con el dedo (como «Seguir viendo» en Inicio), con sus puntos.
     private func featuredCarousel(_ slides: [ParaTiModel.Featured]) -> some View {
-        let current = slides.first { $0.item.id == featuredID } ?? slides[0]
+        // Una vuelta infinita, como el carrusel de Inicio: las mismas tarjetas repetidas y se empieza a la mitad.
+        let copies = slides.count > 1 ? DS.Deck.loopCopies : 1
+        let middle = (copies / 2) * slides.count
+        let index = (featuredSlot ?? middle) % slides.count
+        let current = slides[index]
         return VStack(spacing: DS.Space.s3) {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 0) {
-                    ForEach(slides, id: \.item.id) { featuredTile($0).containerRelativeFrame(.horizontal) }
+                    ForEach(0..<(copies * slides.count), id: \.self) { slot in featuredTile(slides[slot % slides.count]).containerRelativeFrame(.horizontal) }
                 }
                 .scrollTargetLayout()
             }
             .scrollTargetBehavior(.paging)
-            .scrollPosition(id: $featuredID)
-            if slides.count > 1 { PageDots(count: slides.count, index: slides.firstIndex { $0.item.id == current.item.id } ?? 0) }
+            .scrollPosition(id: $featuredSlot)
+            .onAppear { if featuredSlot == nil || (featuredSlot ?? 0) >= copies * slides.count { featuredSlot = middle } }
+            if slides.count > 1 { PageDots(count: slides.count, index: index) }
         }
         .task(id: current.item.wide) { await featuredTint.load(current.item.wide) }   // «Ver» toma el color del que está al frente
-        .sensoryFeedback(.selection, trigger: featuredID)
-        .onChange(of: slides.first?.item.id) { featuredID = nil }   // «Actualizar» o Series ↔ Películas: de vuelta al primero
+        .sensoryFeedback(.selection, trigger: featuredSlot)
+        .onChange(of: slides.map(\.item.id)) { featuredSlot = middle }   // «Actualizar» o Series ↔ Películas: de vuelta al primero
     }
 
     private func featuredTile(_ featured: ParaTiModel.Featured) -> some View {

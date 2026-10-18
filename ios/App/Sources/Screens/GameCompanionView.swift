@@ -43,8 +43,6 @@ struct GameCompanionView: View {
             await m.refreshConsole()
         }
         .onChange(of: notes) { _, text in env.services.kv.set(notesKey, data: text.data(using: .utf8)) }
-        .onChange(of: m.console?.batteryPercent) { _, percent in warnBattery(percent, plugged: m.console?.plugged ?? true) }
-        .onChange(of: game.closesAt) { _, at in scheduleCloseWarning(at) }
     }
 
     private var notesKey: String { "game-notes.\(game.id)" }
@@ -65,30 +63,43 @@ struct GameCompanionView: View {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [timerKey])
     }
 
+    private var language: String { env.services.appSettings.uiLanguage }
+
+    private func notify(id: String, title: String, body: String, at: Date?) {
+        CompanionAlerts.notify(id: id, title: title, body: body, at: at)
+    }
+}
+
+/// Los avisos del modo acompañante, con la hoja abierta o no (los vigila la app entera, no la hoja): batería baja de la
+/// consola y diez minutos antes de que un juego en pausa se cierre solo.
+@MainActor
+enum CompanionAlerts {
     /// A la batería baja de la consola, una vez por juego: vibración y aviso.
-    private func warnBattery(_ percent: Int?, plugged: Bool) {
+    static func warnBattery(_ env: AppEnvironment, game: OrbitalRemote.Game, percent: Int?, plugged: Bool) {
         guard let percent, !plugged, percent <= DS.Companion.lowBattery else { return }
         let key = "game-battery-warned.\(game.id).\(Int(game.started?.timeIntervalSince1970 ?? 0))"
         guard env.services.kv.data(key) == nil else { return }
         env.services.kv.set(key, data: Data([1]))
+        let language = env.services.appSettings.uiLanguage
         env.notify(format: "A la consola le queda %lld %% de batería.", percent, tone: .warn)
         notify(id: key, title: Strings.tr("Batería baja en la consola", language: language),
                body: String(format: Strings.tr("Le queda %lld %%: conéctala antes de que se apague.", language: language), percent), at: nil)
     }
 
-    /// Diez minutos antes de que un juego en pausa se cierre solo.
-    private func scheduleCloseWarning(_ at: Date?) {
+    /// Diez minutos antes de que un juego en pausa se cierre solo (sin pausa, nada pendiente).
+    static func scheduleCloseWarning(_ env: AppEnvironment, game: OrbitalRemote.Game?) {
+        let center = UNUserNotificationCenter.current()
+        guard let game else { return }
         let id = "game-closing.\(game.id)"
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
-        guard let at else { return }
+        center.removePendingNotificationRequests(withIdentifiers: [id])
+        guard let at = game.closesAt else { return }
+        let language = env.services.appSettings.uiLanguage
         notify(id: id, title: Strings.tr("El juego se va a cerrar", language: language),
                body: String(format: Strings.tr("%@ lleva rato en pausa: se cierra solo en 10 minutos.", language: language), game.title),
                at: at.addingTimeInterval(-DS.Companion.closeWarning))
     }
 
-    private var language: String { env.services.appSettings.uiLanguage }
-
-    private func notify(id: String, title: String, body: String, at: Date?) {
+    static func notify(id: String, title: String, body: String, at: Date?) {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
             guard granted else { return }

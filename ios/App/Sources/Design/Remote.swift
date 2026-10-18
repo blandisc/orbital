@@ -10,6 +10,7 @@ struct TouchPad: View {
     var selectLabel: String?
     let onAction: (OrbitalRemote.InputAction) -> Void
     @State private var origin: CGPoint?
+    @State private var gestureStart: CGPoint?
     @State private var moved = false
     @State private var touch: CGPoint?
     @State private var ticks = 0
@@ -31,6 +32,9 @@ struct TouchPad: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
+                        // Un toque nuevo empieza de cero: si la hoja canceló el anterior (sin `onEnded`), su origen viejo
+                        // convertía este toque en flecha y la A no llegaba («le toco varias veces y no abre»).
+                        if gestureStart != value.startLocation { gestureStart = value.startLocation; origin = nil; moved = false }
                         touch = value.location
                         let start = origin ?? value.startLocation
                         if origin == nil { origin = start }
@@ -43,7 +47,7 @@ struct TouchPad: View {
                     .onEnded { value in
                         let total = hypot(value.translation.width, value.translation.height)
                         if !moved, total < DS.Remote.tapSlop { fire(.select) }
-                        origin = nil; moved = false
+                        origin = nil; moved = false; gestureStart = nil
                         withAnimation(DS.Motion.base(reduceMotion)) { touch = nil }
                     }
             )
@@ -265,8 +269,9 @@ struct VolumeControl: View {
         .font(DS.TextRecipe.cardTitle.font.weight(.semibold))
         .foregroundStyle(DS.text)
         .buttonStyle(.plain)
-        .padding(.horizontal, DS.Space.s4).frame(height: DS.Size.touchTarget)
-        .glassEffect(.regular, in: Capsule())
+        // Como las teclas y «Dile a Orbital»: el mismo relleno, esquinas y alto (antes era una cápsula de vidrio, distinta).
+        .padding(.horizontal, DS.Space.s4).frame(minHeight: DS.Remote.keyHeight)
+        .background(DS.fill, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         .sensoryFeedback(.selection, trigger: level)
         .accessibilityElement(children: .contain)
         .accessibilityValue(level.map { Text("\($0) %") } ?? Text(""))

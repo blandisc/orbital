@@ -26,6 +26,13 @@ public final class HomeModel: ObservableModel {
     public private(set) var continueWatching: [HomeItem] = [] { didSet { changed() } }
     public private(set) var myList: [HomeItem] = [] { didSet { changed() } }
     public private(set) var traktPending: [Suggestion] = [] { didSet { changed() } }
+    /// «Destacado»: lo que abre Inicio. Lo en tendencia, lo popular de la semana y lo recomendado para ti, películas y series
+    /// entreveradas, sin lo que ya estás viendo.
+    public private(set) var spotlight: [Suggestion] = [] { didSet { changed() } }
+    /// Solo películas («movie»), solo series («series») o todo (nil).
+    public var spotlightKind: String? { didSet { if oldValue != spotlightKind { changed() } } }
+    public var spotlightShown: [Suggestion] { spotlightKind.map { k in spotlight.filter { $0.kind == k } } ?? spotlight }
+    static let spotlightLimit = 16
     public private(set) var isLoading = false { didSet { changed() } }
     /// Lo que sale de tus series en los próximos días (Trakt): «Sale hoy» (portada) y «Sale pronto» en Inicio.
     public private(set) var upcoming: [Airing] = [] { didSet { changed() } }
@@ -79,6 +86,7 @@ public final class HomeModel: ObservableModel {
             self.error = "\(error)"
         } catch {}
         let forYou = services.forYou
+        async let mix = spotlightLists(forYou)
         async let airings = try? forYou.calendar(), pending = try? forYou.items(listID: "watchlist")
         let (fetchedPending, fetchedAirings) = await (pending, airings)
         // Cancelado o sin respuesta de Trakt: no se vacía «Tu watchlist» ni el «Próximo estreno» del widget (nil = se queda el
@@ -89,7 +97,51 @@ public final class HomeModel: ObservableModel {
             else if !(await forYou.traktLinked) { traktPending = [] }   // desconectaste Trakt: ya no hay watchlist que enseñar
         }
         if !cancelled, let fetchedAirings { upcoming = Array(fetchedAirings.prefix(10)) }
+        let lists = await mix
+        if !cancelled, lists.contains(where: { !$0.isEmpty }) {
+            spotlight = Self.mixSpotlight(lists, excluding: Set(continueWatching.map(\.metaID)), limit: Self.spotlightLimit)
+        }
         publishWidget(airings: cancelled ? nil : fetchedAirings)   // los estrenos también van al widget mediano
+    }
+
+    /// Las listas de «Destacado», en el orden en que se entreveran: tendencia, para ti y popular, cada una en película y serie.
+    private func spotlightLists(_ forYou: ForYou) async -> [[Suggestion]] {
+        async let tm = try? forYou.items(listID: "trend", kind: "movie"), ts = try? forYou.items(listID: "trend", kind: "series")
+        async let rm = try? forYou.items(listID: "recs", kind: "movie"), rs = try? forYou.items(listID: "recs", kind: "series")
+        async let pm = try? forYou.items(listID: "popular", kind: "movie"), ps = try? forYou.items(listID: "popular", kind: "series")
+        let trakt = await [tm ?? [], ts ?? [], rm ?? [], rs ?? [], pm ?? [], ps ?? []]
+        if trakt.contains(where: { !$0.isEmpty }) { return trakt }
+        // Sin Trakt: lo popular de hoy en Stremio (Cinemeta), para que Inicio no abra vacío.
+        async let cm = try? services.cinemeta.catalog("movie"), cs = try? services.cinemeta.catalog("series")
+        let (movies, series) = await (cm, cs)
+        return [Self.popularSuggestions("movie", movies ?? []), Self.popularSuggestions("series", series ?? [])]
+    }
+
+    private static func popularSuggestions(_ kind: String, _ metas: [JSON]) -> [Suggestion] {
+        metas.compactMap { meta in
+            guard let id = meta["id"]?.string, id.hasPrefix("tt"), let name = meta["name"]?.string else { return nil }
+            let info = CinemetaParsing.describe(meta)
+            var s = Suggestion(kind: kind, imdb: id, title: name, year: Int(info.year.prefix(4)), overview: info.description,
+                               poster: String(format: ForYou.metahubPoster, id), wide: String(format: ForYou.metahubBackground, id),
+                               logo: String(format: ForYou.metahubLogo, id), reason: .popular)
+            s.genres = info.genres
+            return s
+        }
+    }
+
+    /// Entrevera las listas (una de cada una por vuelta), sin repetir y sin lo que ya estás viendo.
+    public static func mixSpotlight(_ lists: [[Suggestion]], excluding: Set<String>, limit: Int) -> [Suggestion] {
+        var seen = excluding, out: [Suggestion] = []
+        let longest = lists.map(\.count).max() ?? 0
+        for i in 0..<longest {
+            for list in lists where i < list.count && out.count < limit {
+                let s = list[i]
+                guard !seen.contains(s.imdb) else { continue }
+                seen.insert(s.imdb); out.append(s)
+            }
+            if out.count >= limit { break }
+        }
+        return out
     }
 
     /// Los títulos en tu idioma (Stremio guarda el original) y con lo que hace falta para seguir viendo.

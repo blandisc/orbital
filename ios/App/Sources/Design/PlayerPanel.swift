@@ -153,23 +153,27 @@ struct Toast: View {
     let dismiss: () -> Void
 
     var body: some View {
-        HStack(spacing: DS.Space.s3) {
-            Image(systemName: symbol).font(DS.TextRecipe.footnote.font.weight(.semibold)).foregroundStyle(DS.backdropDeep)
-                .frame(width: DS.PlayerPanel.icon, height: DS.PlayerPanel.icon).background(color, in: Circle())
+        // Una píldora chica y discreta (como los avisos de iOS): el ícono en su color, el texto en una línea y «Ver ›» como enlace.
+        HStack(spacing: DS.Space.s2) {
+            Image(systemName: symbol).font(DS.TextRecipe.footnote.font.weight(.bold)).foregroundStyle(color)
             VStack(alignment: .leading, spacing: 0) {
-                title.recipe(.secondary, color: DS.text).fontWeight(.semibold).lineLimit(2)
-                if let detail { detail.recipe(.footnote).lineLimit(1) }
+                title.recipe(.footnote, color: DS.text).fontWeight(.semibold).lineLimit(1)
+                if let detail { detail.recipe(.caption).lineLimit(1) }
             }
-            Spacer(minLength: DS.Space.s2)
             if let actionTitle, let action {
-                Button(actionTitle) { action(); dismiss() }.buttonStyle(.glassProminent).tint(DS.paper).foregroundStyle(DS.backdropDeep)
+                Button { action(); dismiss() } label: {
+                    HStack(spacing: DS.Space.s1) { Text(actionTitle).fontWeight(.semibold); Image(systemName: "chevron.right").font(DS.TextRecipe.caption.font.weight(.bold)) }
+                        .font(DS.TextRecipe.footnote.font).foregroundStyle(DS.accent)
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, DS.Space.s1)
             }
         }
-        .padding(.leading, DS.Space.s3).padding(.trailing, DS.Space.s2).padding(.vertical, DS.Space.s2)
-        .frame(minHeight: DS.PlayerPanel.icon + 2 * DS.Space.s2)
+        .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
         .glassEffect(.regular, in: Capsule())
         .contentShape(Capsule())
         .onTapGesture(perform: dismiss)
+        .frame(maxWidth: .infinity)   // al centro, del ancho de lo que dice
         .padding(.horizontal, DS.Space.s4)
         .task { try? await Task.sleep(nanoseconds: seconds); dismiss() }
         .accessibilityElement(children: .contain)

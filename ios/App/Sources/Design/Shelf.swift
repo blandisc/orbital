@@ -15,6 +15,8 @@ struct Shelf<Content: View>: View {
     var loading = false
     /// De dónde viene (su sello junto al título).
     var source: ListSource?
+    /// El porqué arriba del título, en ámbar (va en lugar de `meta`, abajo).
+    var eyebrow: Text?
     @ViewBuilder var content: () -> Content
 
     var body: some View {
@@ -39,7 +41,7 @@ struct Shelf<Content: View>: View {
     }
 
     private func headerRow(chevron: Bool) -> some View {
-        DSSectionHead(title: title, chevron: chevron, meta: meta, source: source)
+        DSSectionHead(title: title, chevron: chevron, meta: meta, source: source, eyebrow: eyebrow)
     }
 }
 
@@ -78,7 +80,10 @@ struct RankedPosterCard: View {
         HStack(alignment: .bottom, spacing: -DS.Space.s5) {
             Text(verbatim: "\(rank)").font(DS.Size.rankFont).foregroundStyle(tint.map { $0.opacity(DS.PlatformFan.numberTint) } ?? DS.ink500)
                 .shadow(color: tint ?? .clear, radius: DS.PlatformFan.numberGlow)
+                .tracking(rank >= 10 ? DS.Size.rankTwoDigitsTracking : 0)
                 .lineLimit(1).fixedSize()
+                .scaleEffect(x: rank >= 10 ? DS.Size.rankTwoDigits : 1, anchor: .trailing)   // el «10», más angosto
+                .frame(width: DS.Size.rankColumn, alignment: .trailing)   // todas las cifras en la misma columna
                 .padding(.bottom, -DS.Space.s3)   // la cifra se apoya en la base del póster (sin el hueco del renglón)
                 .accessibilityHidden(true)
             PosterView(url: poster, title: title).frame(width: width)

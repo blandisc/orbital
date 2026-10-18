@@ -321,7 +321,7 @@ final class AppEnvironment: ObservableObject {
     func download(_ s: Suggestion) async {
         let outcome = await services.queueDownload(kind: s.kind, metaID: s.imdb, videoID: videoID(for: s), title: s.title, originalTitle: s.title, subtitle: "", poster: s.poster)
         switch outcome {
-        case .queued: notify("Descargando. Lo verás en Descargas.", tone: .success, action: .downloads)
+        case .queued: notify("Descargando", tone: .success, action: .downloads)
         case .noSources: notify("No hay fuentes de Real-Debrid para descargar.")
         case .notEnoughSpace(let text), .failed(let text): notify(text)
         case .already: notify("Ya está descargado.", tone: .info)
