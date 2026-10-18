@@ -93,17 +93,14 @@ export function createTitle({ onPlay, onSources, onMove, onClose, onChange = () 
   /** Las calificaciones (0–10): IMDb «8.1», TMDB y Trakt en por ciento, como el iPhone. */
   function showRatings(r, mine) {
     if (mine !== token) return;
-    const mark = {
-      imdb: h("span", { class: "title__rating-mark title__rating-mark--imdb" }, "IMDb"),
-      tmdb: h("span", { class: "title__rating-mark title__rating-mark--tmdb" }, "TMDB"),
-      trakt: h("span", { class: "title__rating-mark title__rating-mark--trakt", "aria-hidden": "true" }),
-    };
+    // Los logotipos de cada servicio (img/ratings/*.svg, en sus colores de marca, como el iPhone).
+    const mark = (id) => h("img", { class: `title__rating-mark title__rating-mark--${id}`, src: `img/ratings/${id}.svg`, alt: "" });
     const shown = [
       r?.imdb && ["imdb", Number(r.imdb).toFixed(1), "IMDb"],
       r?.tmdb && ["tmdb", `${Math.round(r.tmdb * 10)} %`, "TMDB"],
       r?.trakt && ["trakt", `${Math.round(r.trakt * 10)} %`, "Trakt"],
     ].filter(Boolean);
-    mount(ratings, shown.map(([id, value, label]) => h("span", { class: "title__rating", "aria-label": `${label} ${value}` }, mark[id],
+    mount(ratings, shown.map(([id, value, label]) => h("span", { class: "title__rating", "aria-label": `${label} ${value}` }, mark(id),
       h("span", { class: "title__rating-value" }, value))));
   }
 

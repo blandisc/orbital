@@ -103,6 +103,9 @@ class DemoTrakt:
         return [S[k] for k in ("dark", "blackmirror", "silo", "stranger", "andor", "succession")] if kind == "series" \
             else [M[k] for k in ("arrival", "inter", "br", "prestige", "dune1")]
 
+    def rating(self, kind, imdb):  # la ficha: la calificación de Trakt (de mentiras, estable por título)
+        return round(7 + (sum(map(ord, imdb)) % 25) / 10, 1)
+
     def last_watched(self):
         return {**S["severance"], "watched_at": time.time() - 2 * 86400}
 
@@ -140,8 +143,8 @@ class DemoTmdb:
         brand = list(self.PLATFORMS)[provider_id - 1]
         return [{"id": n, "key": k} for n, k in enumerate(self.PLATFORMS[brand]) if (k in S) == (kind == "series")]
 
-    def details(self, kind, tmdb_id):
-        raise LookupError  # no se usa: el demo responde en _platform
+    def details(self, kind, tmdb_id):  # solo la calificación (la ficha); lo demás el demo lo responde en _platform
+        return {"rating": round(6.8 + (tmdb_id % 22) / 10, 1)}
 
     _cinemeta = cinemeta_api.Cinemeta()
 
@@ -161,6 +164,9 @@ class DemoTmdb:
         "oppen": "La historia del físico J. Robert Oppenheimer y su papel en el desarrollo de la bomba atómica.",
     }
     BY_IMDB = {e["imdb"]: k for k, e in {**M, **S}.items()}
+
+    def find_id(self, imdb, kind):  # la ficha: TMDB de mentiras (cualquier título)
+        return sum(map(ord, imdb))
 
     def find(self, imdb, kind):
         key = self.BY_IMDB.get(imdb)
