@@ -23,6 +23,8 @@ import threading
 import time
 from collections.abc import Callable
 
+from . import input_log
+
 log = logging.getLogger(__name__)
 
 GUIDE = 0x0400
@@ -140,7 +142,6 @@ STICK_UP, STICK_DOWN, STICK_LEFT, STICK_RIGHT = 0x40000, 0x80000, 0x100000, 0x20
 STICK_PUSHED = 18000  # de 32767
 STICK_RELEASED = 11500
 STICK_REST = 6500  # en el centro: lo que hace falta ver una vez para que un stick recién conectado cuente
-STICK_STUCK = 4.0  # s empujado y sin moverse: se da por pegado (como la interfaz, core/input.js)
 
 
 def _direction(x: int, y: int) -> int:
@@ -332,7 +333,7 @@ class GamepadWatcher:
         was_connected = [False] * 4
         sticks_armed = [False] * 4  # ya se le vio el stick en el centro desde que se conectó
         stick_state: list[tuple[int, ...]] = [()] * 4  # la dirección de cada stick en la vuelta anterior (histéresis)
-        stick_since: list[tuple[float, tuple[int, ...]] | None] = [None] * 4  # desde cuándo está empujado y quieto
+        traced: list[tuple | None] = [None] * 4  # lo último anotado en entrada.log, por lugar
         while not self._stop.is_set():
             now = time.monotonic()
             if self._redetect.is_set():
@@ -353,6 +354,18 @@ class GamepadWatcher:
                     self._detectors[slot] = detector = ComboDetector(combo=detector.combo)
                 was_connected[slot] = connected
                 buttons = state.Gamepad.wButtons if connected else 0
+                if connected:  # diagnóstico (entrada.log): lo que reporta XInput, solo cuando cambia
+                    pad = state.Gamepad
+                    sig = (buttons, pad.bLeftTrigger // 32, pad.bRightTrigger // 32,
+                           *(round(a / 4096) for a in (pad.sThumbLX, pad.sThumbLY, pad.sThumbRX, pad.sThumbRY)))
+                    if traced[slot] != sig:
+                        traced[slot] = sig
+                        input_log.record([{"from": "xinput", "slot": slot, "buttons": f"{buttons:04x}",
+                                           "lt": pad.bLeftTrigger, "rt": pad.bRightTrigger,
+                                           "lx": pad.sThumbLX, "ly": pad.sThumbLY, "rx": pad.sThumbRX, "ry": pad.sThumbRY}])
+                elif traced[slot] is not None:
+                    traced[slot] = None
+                    input_log.record([{"from": "xinput", "slot": slot, "gone": True}])
                 for event in detector.update(buttons, now):
                     try:
                         self.on_event(event)
@@ -369,17 +382,6 @@ class GamepadWatcher:
                             sticks_armed[slot] = True
                         if sticks_armed[slot]:
                             stick_state[slot] = stick_bits(axes, stick_state[slot])
-                            # Pegado: empujado y quieto (casi los mismos valores) más de STICK_STUCK s: deja de contar
-                            # hasta verlo en el centro (si no, los controles del reproductor no se iban nunca).
-                            pushed = any(stick_state[slot])
-                            since = stick_since[slot]
-                            same = pushed and since is not None and all(abs(a - b) < 600 for a, b in zip(axes, since[1], strict=True))
-                            if not pushed:
-                                stick_since[slot] = None
-                            elif since is None or not same:
-                                stick_since[slot] = (now, axes)
-                            elif now - since[0] > STICK_STUCK:
-                                sticks_armed[slot], stick_state[slot], stick_since[slot] = False, (), None
                             for bit in stick_state[slot]:
                                 buttons |= bit
                     else:

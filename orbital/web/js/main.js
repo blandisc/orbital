@@ -370,6 +370,17 @@ function setFocus(r, c, { silent = false, edge = null, repeat = false } = {}) {
   renderHints();
 }
 
+/** Diagnóstico de la entrada (entrada.log en la consola): se junta y se manda cada 2 s. Para encontrar de dónde salen
+ *  toques repetidos o un stick que «se pega» (lo que llega del mando, las teclas y lo que se disparó, con el foco). */
+const traced = [];
+function traceInput(entry) {
+  if (traced.length < 400) traced.push(entry);
+}
+setInterval(() => {
+  if (!traced.length) return;
+  api.traceInput(traced.splice(0)).catch(() => {});
+}, 2000);
+
 /** Lo que el héroe enseñará al moverte (logo y fondo de las vecinas y de la fila de abajo), pedido antes: así el título
  *  estilizado ya está cuando llegas (antes se pedía al enfocarlo y una serie nueva tardaba en verse). */
 const preloaded = new Set();
@@ -1602,6 +1613,7 @@ createInput({
   // Conectar Stremio no borra por palabras (es un correo o una contraseña): ahí Retroceso mantenido sigue de letra en letra.
   onText: (char) => { (ui.login.isOpen ? ui.login.type(char === ERASE_WORD ? "" : char) : ui.search.type(char)); renderHints(); }, // Enter salta a resultados: «Abrir»
   typing: () => !ui.sheet.isOpen && (ui.login.typing || (ui.search.typing && !ui.title.isOpen && !ui.sources.isOpen)),
+  onTrace: (entry) => traceInput(entry),
 });
 // Protector de pantalla (Ajustes › Pantalla y sonido): tras un rato sin tocar nada, el mosaico de Para ti a pantalla
 // completa, solo con la hora (como el de Game Glance, con tus juegos y películas). Nunca con un juego o un video al frente

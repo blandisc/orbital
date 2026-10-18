@@ -350,3 +350,11 @@ def _no_real_app_closing(monkeypatch, request):
         raise AssertionError(f"una prueba intentó cerrar {exe} de verdad")
 
     monkeypatch.setattr(memory, "close", refuse)
+
+
+@pytest.fixture(autouse=True)
+def _input_log_in_tmp(monkeypatch, tmp_path):
+    """El diagnóstico de la entrada de las pruebas va a una carpeta temporal, nunca al entrada.log de verdad."""
+    from orbital import input_log
+
+    monkeypatch.setattr(input_log, "default_path", lambda: tmp_path / "entrada.log")

@@ -72,9 +72,6 @@ export const usablePad = (pad) => !!pad && pad.mapping === "standard";
 
 /** Un stick se cuenta en el centro (para «armarlo») por debajo de esto. */
 export const STICK_REST = .2;
-/** Un stick empujado igual más de esto, sin moverse nada, se da por pegado (deriva, un control quitado a medias): deja de
- *  contar hasta que vuelva al centro. Mantener a propósito para recorrer una fila dura menos (LT/RT saltan más lejos). */
-export const STICK_STUCK_MS = 4000;
 
 /** Acciones activas según el estado de los mandos (botones + stick izquierdo). `memory` guarda
  * la dirección del stick de cada mando entre frames (para la histéresis) y si ya se le vio en el centro.
@@ -82,7 +79,7 @@ export const STICK_STUCK_MS = 4000;
  * Un stick no cuenta hasta verlo en el centro una vez desde que el mando se conectó: algunos mandos llegan
  * con el eje cargado hasta que se mueve por primera vez, y al conectarlo el foco se iba solo a la derecha
  * como si el stick estuviera pegado. Si de verdad lo estabas empujando, cuenta en cuanto lo sueltas. */
-export function padActions(pads, memory = new Map(), now = typeof performance === "undefined" ? 0 : performance.now()) {
+export function padActions(pads, memory = new Map()) {
   const active = new Set();
   pads.forEach((pad, i) => {
     if (!usablePad(pad)) return;
@@ -97,18 +94,6 @@ export function padActions(pads, memory = new Map(), now = typeof performance ==
     }
     const direction = stickDirection(x, y, memory.get(i) || null);
     memory.set(i, direction);
-    // ¿Pegado? La misma dirección con el stick quieto (mismos valores, casi) por más de STICK_STUCK_MS.
-    const heldKey = `held:${i}:${pad.id ?? ""}`;
-    const held = memory.get(heldKey);
-    const still = held && held.direction === direction && Math.abs(held.x - x) < .02 && Math.abs(held.y - y) < .02;
-    if (!direction) memory.delete(heldKey);
-    else if (!still) memory.set(heldKey, { direction, x, y, since: now });
-    else if (now - held.since > STICK_STUCK_MS) {
-      memory.set(armedKey, false); // pegado: no cuenta hasta verlo otra vez en el centro
-      memory.delete(heldKey);
-      memory.set(i, null);
-      return;
-    }
     if (direction) active.add(direction);
   });
   return active;
@@ -168,9 +153,6 @@ export class Repeater {
   }
 }
 
-/** La rueda o el panel táctil: lo mínimo para contar como un paso (en píxeles de desplazamiento). */
-export const WHEEL_MIN = 12;
-
 /** Borrar la última palabra (Retroceso mantenido; Ctrl+W). */
 export const ERASE_WORD = "\u0017";
 
@@ -185,7 +167,9 @@ export const isTextKey = (event) => event.key.length === 1 && !event.ctrlKey && 
  * onAction(acción, { repeat }) — `repeat`: viene de mantener el botón (sin rebote ni vibración).
  * Mientras `typing()` es verdadero (el teclado de Buscar), las letras van a onText y no son atajos.
  */
-export function createInput({ onAction, onModality, onText = null, typing = () => false }) {
+export function createInput({ onAction, onModality, onText = null, typing = () => false, onTrace = null }) {
+  // Diagnóstico (entrada.log): lo que llega en bruto y lo que se dispara, con si Orbital tenía el foco.
+  const trace = (entry) => onTrace?.({ ms: Date.now(), focus: document.hasFocus(), hidden: document.hidden, ...entry });
   document.addEventListener("keydown", (event) => {
     if (onText && typing() && (isTextKey(event) || TYPING_KEYS[event.key])) {
       event.preventDefault();
@@ -196,6 +180,7 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
       onText(event.key === "Backspace" && event.repeat ? ERASE_WORD : TYPING_KEYS[event.key] || event.key);
       return;
     }
+    trace({ src: "key", key: event.key, repeat: event.repeat });
     const action = keyToAction(event.key);
     if (!action) return;
     event.preventDefault();
@@ -203,6 +188,7 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
     // en ☰ → Apagar mandaba suspender y luego abría un juego).
     if (event.repeat && !REPEATABLE.has(action)) return;
     onModality("keyboard");
+    trace({ src: "action", from: "key", action, repeat: event.repeat });
     onAction(action, { repeat: event.repeat });
   });
   // Un toque también genera eventos de ratón después: no deben devolver al modo teclado.
@@ -231,13 +217,13 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
   let lastWheel = 0;
   document.addEventListener("wheel", (event) => {
     const now = performance.now();
-    // Un toque mínimo o en diagonal del panel táctil no mueve nada (ese ruido empujaba el foco de lado solo).
-    const ax = Math.abs(event.deltaX), ay = Math.abs(event.deltaY);
-    if (Math.max(ax, ay) < WHEEL_MIN || (Math.min(ax, ay) > 0 && Math.max(ax, ay) / Math.min(ax, ay) < 1.6)) return;
     if (now - lastWheel < 120) return;
     lastWheel = now;
-    const vertical = ay > ax;
-    onAction(vertical ? (event.deltaY > 0 ? "down" : "up") : (event.deltaX > 0 ? "right" : "left"), { repeat: false });
+    const vertical = Math.abs(event.deltaY) > Math.abs(event.deltaX);
+    const wheeled = vertical ? (event.deltaY > 0 ? "down" : "up") : (event.deltaX > 0 ? "right" : "left");
+    trace({ src: "wheel", dx: Math.round(event.deltaX), dy: Math.round(event.deltaY), mode: event.deltaMode });
+    trace({ src: "action", from: "wheel", action: wheeled, repeat: false });
+    onAction(wheeled, { repeat: false });
   }, { passive: true });
 
   // Con el teclado de Buscar abierto, mantener X (Retroceso) también se repite: borra palabra por palabra, rápido.
@@ -246,14 +232,27 @@ export function createInput({ onAction, onModality, onText = null, typing = () =
   // Durante un momento tras recuperar el foco, lo que llegue presionado se ignora.
   let swallowUntil = 0;
   window.addEventListener("focus", () => { swallowUntil = performance.now() + 250; });
+  const seen = new Map(); // mando → lo último anotado (solo se anotan los cambios)
   const loop = (now) => {
     const pads = navigator.getGamepads ? [...navigator.getGamepads()] : [];
-    const active = padActions(pads, sticks, now);
+    if (onTrace) {
+      pads.forEach((pad, i) => {
+        if (!pad) { if (seen.has(i)) { seen.delete(i); trace({ src: "pad", i, gone: true }); } return; }
+        const pressed = pad.buttons.map((b, n) => (b.pressed ? n : -1)).filter((n) => n >= 0);
+        const axes = pad.axes.map((a) => Math.round(a * 10) / 10);
+        const sig = `${pad.id}|${pad.mapping}|${pressed}|${axes}`;
+        if (seen.get(i) !== sig) { seen.set(i, sig); trace({ src: "pad", i, id: pad.id, mapping: pad.mapping, pressed, axes }); }
+      });
+    }
+    const active = padActions(pads, sticks);
     if (now < swallowUntil) repeater.swallow([...active].filter((a) => !repeater.held.has(a)));
     const fire = repeater.update(active, now);
     if (active.size) lastPad = now;
     if (fire.length) onModality("gamepad");
-    fire.forEach((action) => onAction(action, { repeat: repeater.isRepeat(action) }));
+    fire.forEach((action) => {
+      trace({ src: "action", from: "pad", action, repeat: repeater.isRepeat(action) });
+      onAction(action, { repeat: repeater.isRepeat(action) });
+    });
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
