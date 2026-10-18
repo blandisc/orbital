@@ -105,7 +105,7 @@ SYNTHETIC_RESYNC_AFTER = 60.0  # s en pausa tras los que un canal de Orbital reg
 # hacían crecer la memoria de dibujo de Windows). Al abrirlo desde Orbital espera a que Orbital termine su salida a negro.
 PIP_WIDTH = .3  # del ancho de la pantalla: el video en pequeño (Home durante un video)
 PIP_MARGIN = .03
-PIP_GLIDE = .34  # s: lo que tarda en irse a la esquina (o volver), con una curva que frena al llegar
+PIP_GLIDE = .42  # s: lo que tarda en irse a la esquina (o volver), con una curva que frena al llegar
 PIP_FRAME = .016  # un paso de la animación (~60 por segundo)
 PIP_CONTROLS_SECONDS = 3.0  # los tres botones del video en pequeño, antes de irse solos
 CURTAIN_ID = 9
@@ -152,6 +152,26 @@ def fetch_subtitle(url: str) -> str:
 
 def in_background(work) -> None:
     threading.Thread(target=work, daemon=True, name="subtítulos").start()
+
+
+def glide_curve(t: float) -> float:
+    """La curva del video en pequeño: cubic-bezier(.32, .72, 0, 1), la de los paneles de Apple. Arranca suave (sin el
+    tirón del ease-out cúbico, que salía a toda velocidad) y se asienta largo."""
+    x1, y1, x2, y2 = .32, .72, 0.0, 1.0
+    if t <= 0 or t >= 1:
+        return max(0.0, min(1.0, t))
+
+    def bez(a: float, b: float, s: float) -> float:
+        return 3 * a * (1 - s) ** 2 * s + 3 * b * (1 - s) * s ** 2 + s ** 3
+
+    lo, hi = 0.0, 1.0
+    for _ in range(30):  # el s de la curva cuya x es t (bisección: siempre converge)
+        mid = (lo + hi) / 2
+        if bez(x1, x2, mid) < t:
+            lo = mid
+        else:
+            hi = mid
+    return bez(y1, y2, (lo + hi) / 2)
 
 
 class OrbitalPlayer(PlayerScreen):
@@ -571,12 +591,13 @@ class OrbitalPlayer(PlayerScreen):
         try:
             while still():
                 t = min(1.0, (time.monotonic() - started) / PIP_GLIDE)
-                k = 1 - (1 - t) ** 3  # ease-out cúbico
+                k = glide_curve(t)
                 x, y, w, h = (round(a + (b - a) * k) for a, b in zip(start, end, strict=True))
                 windows.glide_window(hwnd, x, y, w, h)
                 if t >= 1:
                     break
-                time.sleep(PIP_FRAME)
+                wait = getattr(windows, "wait_frame", None)  # a la par del refresco de la pantalla
+                wait() if wait else time.sleep(PIP_FRAME)
         finally:
             if not was_paused:
                 self.mpv.command("set_property", "pause", False)

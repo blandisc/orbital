@@ -357,6 +357,19 @@ def glide_window(hwnd: int, x: int, y: int, width: int, height: int) -> bool:
     return bool(user32.SetWindowPos(wintypes.HWND(hwnd), None, int(x), int(y), int(width), int(height), flags))
 
 
+def wait_frame(fallback: float = .016) -> None:
+    """Espera al siguiente cuadro de la pantalla (DwmFlush: lo que Windows compone a 60 Hz). Una animación que avanza
+    con esto se mueve a la par del refresco; time.sleep(0.016) en Windows duerme a saltos de ~15.6 ms y unos cuadros
+    duraban el doble (el tirón del video en pequeño)."""
+    if WIN:
+        try:
+            if ctypes.windll.dwmapi.DwmFlush() == 0:  # type: ignore[attr-defined]
+                return
+        except OSError:
+            pass
+    time.sleep(fallback)
+
+
 def place_window(hwnd: int, x: int, y: int, width: int, height: int, topmost: bool = True) -> bool:
     """Pone la ventana en ese lugar y tamaño (encima de todo, sin quitarle el foco a nadie): el video en pequeño."""
     if not WIN or not hwnd:
