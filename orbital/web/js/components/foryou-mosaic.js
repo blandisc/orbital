@@ -72,6 +72,15 @@ export function createForYouMosaic({ onFocus, onPick }) {
   let last = 0;
 
   const reduced = () => document.documentElement.dataset.motion === "reduce";
+  // Cambió el ancho (la ventana arrancó chica y luego pasó a pantalla completa, o de la Legion Go a la tele): las columnas
+  // se vuelven a repartir a todo lo ancho. Antes se quedaban del primer tamaño y la mitad de la pantalla quedaba vacía.
+  let measured = 0;
+  new ResizeObserver(() => {
+    const { W } = size();
+    if (!W || Math.abs(W - measured) < 2 || !columns.length) { measured = W || measured; return; }
+    measured = W;
+    if (pool.length) paint();
+  }).observe(el);
   const gap = () => parseFloat(getComputedStyle(document.documentElement).fontSize) * .85;
   // Aire para el anillo de foco (--ring-focus sobresale ~.34rem): sin esto se corta a la izquierda y arriba.
   const ring = () => gap() * .5;

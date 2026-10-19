@@ -4,7 +4,8 @@ body[data-view="foryou"] .backdrop__layer, body[data-view="foryou"] .backdrop__s
 body[data-view="foryou"] .backdrop { transition: --art-tint var(--duration-tint) var(--ease-out); background: var(--color-backdrop-deep); }
 body[data-view="foryou"] .backdrop__space { opacity: 1; }
 
-.foryou { grid-row: 2 / 4; position: relative; min-height: 0; padding: var(--space-4) var(--page-gutter) var(--space-2); }
+/* El mosaico va de orilla a orilla: los pósters también pasan por los lados (antes quedaba el margen de la página vacío). */
+.foryou { grid-row: 2 / 4; position: relative; min-height: 0; padding: var(--space-4) 0 var(--space-2); }
 .foryou__stage { position: relative; height: 100%; min-height: 0; }
 
 .foryou__notice { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
