@@ -128,13 +128,15 @@ struct DSSectionHead: View {
     }
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: DS.Space.s2) {
+        // Lo de la derecha («Ver todo», el número) va a la altura del título, no de la línea ámbar de arriba.
+        HStack(alignment: .sectionTitle, spacing: DS.Space.s2) {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 // Un solo lugar para el porqué de una sección en toda la app: arriba del título, en ámbar (como una revista).
                 // Antes unas lo ponían arriba en ámbar y otras abajo en gris.
                 if let line = eyebrow ?? meta { line.recipe(.eyebrow, color: DS.eyebrow).lineLimit(2).multilineTextAlignment(.leading) }
                 HStack(alignment: .center, spacing: DS.Space.s2) {
                     title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
+                        .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
                     if let source { SourceBadge(source: source) }
                 }
                 if eyebrow != nil, let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }
@@ -144,7 +146,7 @@ struct DSSectionHead: View {
                 if let action { Button(action: action) { trailing }.font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted) }
                 else { trailing.font(DS.TextRecipe.secondary.font).foregroundStyle(DS.textMuted) }
             }
-            if chevron { Text("Ver todo").recipe(.secondary, color: DS.textMuted) }
+            if chevron { SeeAllLabel() }
             else if let count { Text(verbatim: "\(count)").recipe(.secondary, color: DS.textMuted) }
         }
         .textCase(nil)   // también como encabezado de una lista (Descargas): sin las mayúsculas del sistema
@@ -620,25 +622,15 @@ struct DSKindFilter: View {
     @Binding var kind: String
     var includeAll = true
     var counts: (movies: Int, series: Int)?
-    /// Discreto, a la derecha del título de su sección (Inicio, Para ti): el nombre de lo elegido y su chevron, en un menú.
+    /// Chico, a la derecha del título de su sección (Inicio, Top 10, Para ti): el switch en cápsula.
     var compact = false
 
     var body: some View {
         Group {
             if compact {
-                Menu {
-                    Picker(selection: $kind) { ForEach(options, id: \.0) { Text($0.1).tag($0.0) } } label: { EmptyView() }
-                } label: {
-                    HStack(spacing: DS.Space.s1) {
-                        Text(options.first { $0.0 == kind }?.1 ?? "Todo").font(DS.TextRecipe.footnote.font.weight(.semibold))
-                        Image(systemName: "chevron.down").font(DS.TextRecipe.caption.font.weight(.semibold))
-                    }
-                    .foregroundStyle(DS.textMuted)
-                    .frame(minHeight: DS.Size.touchTarget)
-                    .contentShape(Rectangle())
-                }
-                .fixedSize()
-                .sensoryFeedback(.selection, trigger: kind)
+                // El switch chico del Top 10 (cápsula con lo elegido resaltado), a la derecha del título de su sección.
+                DSSegmented(options: options, selection: $kind).fixedSize()
+                    .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
             } else {
                 DSSegmented(options: options, selection: $kind)
             }
@@ -987,5 +979,26 @@ struct StorageBar: View {
             Circle().fill(color).frame(width: DS.Storage.dot, height: DS.Storage.dot)
             text.recipe(.caption, color: DS.textMuted).lineLimit(1)
         }
+    }
+}
+
+extension VerticalAlignment {
+    /// El centro del título de una sección: ahí se alinea lo de la derecha (aunque arriba haya una línea ámbar).
+    private enum SectionTitle: AlignmentID { static func defaultValue(in d: ViewDimensions) -> CGFloat { d[VerticalAlignment.center] } }
+    static let sectionTitle = VerticalAlignment(SectionTitle.self)
+}
+
+/// «Ver todo ›»: en una cápsula tenue, a la altura del título (la misma en toda la app).
+struct SeeAllLabel: View {
+    var body: some View {
+        HStack(spacing: DS.Space.s1) {
+            Text("Ver todo").font(DS.TextRecipe.footnote.font.weight(.semibold))
+            Image(systemName: "chevron.forward").font(DS.TextRecipe.caption.font.weight(.bold))
+        }
+        .foregroundStyle(DS.text)
+        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s1)
+        .background(DS.fill, in: Capsule())
+        .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
+        .accessibilityLabel(Text("Ver todo"))
     }
 }

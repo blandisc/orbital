@@ -331,8 +331,8 @@ struct ListsView: View {
                     // Como Inicio: el título de lo destacado y, discreto a su derecha, Todo · Películas · Series.
                     if model.hasKindSplit || !slides.isEmpty {
                       VStack(alignment: .leading, spacing: DS.Space.s3) {
-                        HStack(alignment: .lastTextBaseline) {
-                            if !slides.isEmpty { DSSectionHead(title: Text("Destacado"), eyebrow: Text("Lo número 1 en tus plataformas")) }
+                        HStack(alignment: .sectionTitle) {
+                            if !slides.isEmpty { DSSectionHead(title: Text("Destacado"), eyebrow: Text("El N.º 1 de cada plataforma")) }
                             Spacer(minLength: DS.Space.s2)
                             if model.hasKindSplit {
                                 DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },

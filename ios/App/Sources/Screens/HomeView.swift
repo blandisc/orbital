@@ -75,7 +75,7 @@ struct HomeView: View {
                 // arriba, su sello de origen y su reflejo (el peso del carrusel de arriba).
                 // Lo tuyo: tus recomendaciones (lo personal ya no va arriba, donde está lo de todos).
                 if !model.forYouPicks.isEmpty {
-                    Rail(title: "Para ti", route: nil, eyebrow: Text("Recomendadas con lo que ves"), source: .trakt) {
+                    Rail(title: "Para ti", route: HomeListRoute(id: "foryou"), eyebrow: Text("Recomendadas con lo que ves"), source: .trakt) {
                         ForEach(model.forYouPicks) { s in TitleLink(route: s.route, reflected: true) }
                     }
                 }
@@ -143,7 +143,8 @@ struct HomeView: View {
     }
 
     private func titleGrid(_ route: HomeListRoute) -> some View {
-        let routes = route.id == "watchlist" ? home.model.traktPending.map(\.route) : home.model.myList.map(self.route)
+        let routes = route.id == "watchlist" ? home.model.traktPending.map(\.route)
+            : route.id == "foryou" ? home.model.forYouPicks.map(\.route) : home.model.myList.map(self.route)
         return ScrollView {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
                 ForEach(routes, id: \.metaID) { TitleLink(route: $0, width: DS.Poster.gridMinimum) }
@@ -151,7 +152,7 @@ struct HomeView: View {
             .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)
         }
         .background(Backdrop(tint: tint.colors))
-        .navigationTitle(route.id == "watchlist" ? Text("Tu watchlist") : Text("Mi lista")).navigationBarTitleDisplayMode(.inline)
+        .navigationTitle(route.id == "watchlist" ? Text("Tu watchlist") : route.id == "foryou" ? Text("Para ti") : Text("Mi lista")).navigationBarTitleDisplayMode(.inline)
     }
 
     /// Lo de Stremio, lo pendiente por subir y el tono del fondo (al abrir, al deslizar hacia abajo y al volver de ver algo).
@@ -220,8 +221,8 @@ struct HomeView: View {
         let middle = (copies / 2) * items.count
         return VStack(spacing: DS.Space.s3) {
             // El filtro, discreto a la derecha del título (un menú: Todo · Películas · Series), como en Para ti y el Top 10.
-            HStack(alignment: .lastTextBaseline) {
-                DSSectionHead(title: Text("En tendencia"), eyebrow: Text("Lo que todo el mundo está viendo"))
+            HStack(alignment: .sectionTitle) {
+                DSSectionHead(title: Text("En tendencia"), eyebrow: Text("Lo que todos están viendo"))
                 Spacer(minLength: DS.Space.s2)
                 kindFilter(model)
             }
@@ -378,7 +379,7 @@ struct HomeView: View {
         let movies = topMovies && !films.isEmpty || series.isEmpty
         let items = movies ? films : series
         return VStack(alignment: .leading, spacing: DS.Space.s3) {
-            HStack(alignment: .lastTextBaseline) {
+            HStack(alignment: .sectionTitle) {
                 DSSectionHead(title: Text("Top 10 en \(service.name)"),
                               eyebrow: service.weekly ? Text("Lo más visto en tu país esta semana") : Text("Lo más visto hoy · JustWatch"))
                     .lineLimit(1).minimumScaleFactor(DS.Size.titleShrink)
