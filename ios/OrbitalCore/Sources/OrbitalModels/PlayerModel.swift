@@ -136,6 +136,9 @@ public final class PlayerModel: ObservableModel {
     private let scareMap: @Sendable (String, String) async -> [JumpScare]?
     /// Tu copia de un video (Mi media), si la hay: se usa antes que las fuentes cuando `request.ownCopy`.
     public var ownSource: (@Sendable (_ videoID: String, _ preferred: Int?) async -> Source?)?
+    /// Cuántas veces se pidió tu copia en este video: dos (su enlace dura ~1 h; si se venció a media película se pide otro), luego Real-Debrid.
+    private var ownAttempts = 0
+    static let maxOwnAttempts = 2
     static let choicesLifetime: TimeInterval = StreamFinder.cacheSeconds   // los enlaces de Real-Debrid caducan
 
     public init(engine: PlayerEngine, finder: StreamFinder, watch: WatchService, titlePrefs: TitlePreferences, settings: SettingsStore,
@@ -153,6 +156,7 @@ public final class PlayerModel: ObservableModel {
     /// Empieza a reproducir. Devuelve cuando el motor ya recibió la fuente (el video puede tardar unos segundos).
     public func begin(_ request: PlayRequest) async {
         subtitleDelay = 0
+        ownAttempts = 0
         guard !closing, phase != .closed else { return }
         generation += 1
         let mine = generation
@@ -208,7 +212,8 @@ public final class PlayerModel: ObservableModel {
         let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
         while true {
             let found: Source?
-            if request.ownCopy, failedSources.isEmpty, let own = await ownSource?(request.videoID, request.sourceIndex) {
+            if request.ownCopy, ownAttempts < Self.maxOwnAttempts, let own = await ownSource?(request.videoID, request.sourceIndex) {
+                ownAttempts += 1
                 guard mine == generation, !closing else { return }
                 source = own
                 var start = startAt ?? 0

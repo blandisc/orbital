@@ -36,7 +36,10 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.engine.loads.map(\.url.absoluteString), ["https://onedrive.example/own.mkv"])
         await rig.model.handle(rig.playing(0, state: .failed("403")))
         await rig.model.waitForTransition()
-        XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://rd.example/best.mkv", "tu copia falló: la de Real-Debrid")
+        XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://onedrive.example/own.mkv", "su enlace dura ~1 h: primero se pide otro de tu copia")
+        await rig.model.handle(rig.playing(0, state: .failed("403")))
+        await rig.model.waitForTransition()
+        XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://rd.example/best.mkv", "tu copia volvió a fallar: la de Real-Debrid")
     }
 
     func testWithoutMiMediaYourCopyIsNotUsed() async throws {

@@ -3411,6 +3411,17 @@
         }
       }
     },
+    "Elegir carpeta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose folder"
+          }
+        }
+      }
+    },
     "Elegir fuente": {
       "extractionState": "manual",
       "localizations": {
@@ -3451,6 +3462,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choose the source…"
+          }
+        }
+      }
+    },
+    "Elige la carpeta de tus películas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the folder with your movies"
           }
         }
       }
@@ -7250,6 +7272,28 @@
         }
       }
     },
+    "Películas: %@ · Series: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies: %@ · Shows: %@"
+          }
+        }
+      }
+    },
+    "Películas: %lld · Series: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movies: %lld · Shows: %lld"
+          }
+        }
+      }
+    },
     "Pendientes en Trakt": {
       "extractionState": "manual",
       "localizations": {
@@ -8691,6 +8735,17 @@
         }
       }
     },
+    "Solo se mira esa carpeta y sus subcarpetas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only that folder and its subfolders are read."
+          }
+        }
+      }
+    },
     "Solo se mira esa carpeta y sus subcarpetas. Cada video se reconoce por su nombre («Dune Part Two (2024).mkv», «Severance S01E03.mkv»).": {
       "extractionState": "manual",
       "localizations": {
@@ -9072,6 +9127,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Times from Where's The Jump"
+          }
+        }
+      }
+    },
+    "Toca el del centro para volver a como venían.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap the middle one to go back to how they came."
           }
         }
       }
@@ -10557,6 +10623,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "“Play The Office”, “pause”, “download it”"
+          }
+        }
+      }
+    },
+    "«Ver» usa la mejor; «Descargar», la de 1080p.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Watch” uses the best one; “Download”, the 1080p one."
           }
         }
       }

@@ -94,6 +94,10 @@ enum DS {
         static let synopsisLines = 3
         /// El alto del arte de la ficha (proporción ancho / alto) y el ancho máximo del logo centrado.
         static let heroAspect: CGFloat = 0.9, logoWidth: CGFloat = 0.66
+        /// En un teléfono bajito (SE) el arte es más ancho que alto: «Ver» y sus botones quedan a la vista sin deslizar.
+        static let heroAspectShort: CGFloat = 1.3, shortScreen: CGFloat = 700
+        /// Ancho bajo el cual el título de la barra va en su propio renglón (no cabe junto a cuatro botones: «Para…»).
+        static let narrowScreen: CGFloat = 400
     }
 
     /// Subtítulos: medidas relativas a la letra o al video (la letra misma sale de Ajustes › Tamaño de subtítulos).

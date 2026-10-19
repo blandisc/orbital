@@ -198,7 +198,7 @@ public actor OneDrive {
     }
 
     // MARK: archivos
-    private func get(_ urlOrPath: String) async throws -> JSON {
+    private func get(_ urlOrPath: String, retried: Bool = false) async throws -> JSON {
         guard let url = URL(string: urlOrPath.hasPrefix("http") ? urlOrPath : "\(Self.graph)\(urlOrPath)") else { throw OneDriveError.message("Carpeta inválida") }
         let response: HTTPResponse
         do { response = try await http.send(HTTPRequest(url: url, headers: ["Authorization": "Bearer \(try await access())"], timeout: 15)) }
@@ -206,7 +206,15 @@ public actor OneDrive {
         catch { throw OneDriveError.message("No pude conectar con OneDrive.") }
         switch response.status {
         case 200: guard let json = JSON.parse(response.data), json.object != nil else { fallthrough }; return json
-        case 401: throw OneDriveError.auth("Tu sesión de OneDrive caducó: vuelve a conectarla en Ajustes.")
+        case 401:
+            // El permiso se venció antes de tiempo: se renueva una vez; si tampoco sirve, la sesión se olvida (Ajustes vuelve a «Conectar»).
+            if !retried, var t = tokens(), !(t.refresh_token ?? "").isEmpty {
+                t.expires_at = 0
+                secrets.set(SecretKey.oneDriveTokens, (try? JSONEncoder().encode(t)).flatMap { String(data: $0, encoding: .utf8) })
+                return try await get(urlOrPath, retried: true)
+            }
+            unlink()
+            throw OneDriveError.auth("Tu sesión de OneDrive caducó: vuelve a conectarla en Ajustes.")
         case 404: throw OneDriveError.message("Esa carpeta ya no está en tu OneDrive.")
         default: throw OneDriveError.message("OneDrive respondió HTTP \(response.status)")
         }

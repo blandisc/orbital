@@ -656,7 +656,7 @@ struct PlayerScreen: View {
     }
 
     private func settingsPanel(_ model: PlayerModel) -> some View {
-        VideoSettingsPanel(model: model, close: { panel = false }, openInInfuse: { Task { await openInInfuse() } })
+        VideoSettingsPanel(model: model, close: { panel = false }, openInInfuse: { Task { await openInInfuse() } }, drawsSubtitles: holder.engine.drawsSubtitles)
     }
 
     private func openInInfuse() async {
@@ -726,13 +726,15 @@ struct VideoSettingsPanel: View {
     let model: PlayerModel
     let close: () -> Void
     let openInInfuse: () -> Void
+    /// Si la app dibuja los subtítulos (y entonces se pueden adelantar o atrasar).
+    var drawsSubtitles = true
     @EnvironmentObject private var env: AppEnvironment
     @StateObject private var observer: ModelObserver<PlayerModel>
     @State private var page: Page = .hub
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(model: PlayerModel, close: @escaping () -> Void, openInInfuse: @escaping () -> Void) {
-        self.model = model; self.close = close; self.openInInfuse = openInInfuse
+    init(model: PlayerModel, close: @escaping () -> Void, openInInfuse: @escaping () -> Void, drawsSubtitles: Bool = true) {
+        self.model = model; self.close = close; self.openInInfuse = openInInfuse; self.drawsSubtitles = drawsSubtitles
         _observer = StateObject(wrappedValue: ModelObserver(model))
     }
 
@@ -885,7 +887,9 @@ struct VideoSettingsPanel: View {
             .disabled(model.searchingSubtitles)
             .accessibilityIdentifier("player-search-subtitles")
         }
-        // Sincronía (como Infuse): si las líneas salen antes o después de lo que se dice.
+        // Sincronía (como Infuse): si las líneas salen antes o después de lo que se dice. Solo con subtítulos puestos y si los
+        // dibuja la app (AVPlayer pinta los suyos y no se pueden mover).
+        if s.selectedSubtitle != nil, drawsSubtitles {
         PanelGroupTitle(title: "Sincronía")
         FlowChips {
             PanelChip(title: Text("Antes"), selected: false, symbol: "minus") { model.nudgeSubtitles(by: -PlayerModel.subtitleStep) }
@@ -894,6 +898,8 @@ struct VideoSettingsPanel: View {
                       selected: model.subtitleDelay != 0) { model.resetSubtitleDelay() }
             PanelChip(title: Text("Después"), selected: false, symbol: "plus") { model.nudgeSubtitles(by: PlayerModel.subtitleStep) }
                 .accessibilityLabel(Text("Atrasar medio segundo"))
+        }
+        if model.subtitleDelay != 0 { Text("Toca el del centro para volver a como venían.").recipe(.caption) }
         }
         PanelGroupTitle(title: "Tamaño")
         FlowChips {

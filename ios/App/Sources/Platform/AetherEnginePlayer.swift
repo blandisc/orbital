@@ -78,6 +78,7 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     private var fills = false
 
     /// AetherEngine no pinta subtítulos: entrega las líneas y la app las dibuja encima del video (su README: «your UI paints them»).
+    var drawsSubtitles: Bool { true }
     func subtitleOverlay(lifted: Bool, heightFraction: Double, delay: Double) -> AnyView {
         AnyView(AetherSubtitleOverlay(engine: engine, clock: engine.clock, lifted: lifted, heightFraction: heightFraction, fills: fills, delay: delay))
     }

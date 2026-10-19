@@ -135,7 +135,10 @@ public final class DownloadsModel: ObservableModel {
     }
 
     /// Para ver una descarga sin conexión.
-    public func playRequest(_ item: DownloadItem) async -> PlayRequest {
+    public func playRequest(_ item: DownloadItem) async -> PlayRequest { await Self.playRequest(item, services: services) }
+
+    /// Lo mismo, para quien no tiene la pantalla de Descargas a mano (Mi media: lo que ya está en el iPhone se ve de ahí).
+    public static func playRequest(_ item: DownloadItem, services: Services) async -> PlayRequest {
         let file = await services.downloads.fileURL(item)
         let subs = item.subtitleFiles.map { file.deletingLastPathComponent().appendingPathComponent($0) }
         // La ficha (para el siguiente episodio y los datos) es opcional: sin red o con una que no contesta (Wi‑Fi del avión),

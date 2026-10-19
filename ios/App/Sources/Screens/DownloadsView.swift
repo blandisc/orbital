@@ -26,13 +26,8 @@ struct DownloadsView: View {
     var body: some View {
         let model = observer.model
         Group {
-            if showsMedia && part == .media { MiMediaView(observer: media) } else { phoneList(model) }
-        }
-        .safeAreaInset(edge: .top) {
-            if showsMedia {
-                DSSegmented(options: [(Part.phone, "En el iPhone"), (.media, "Mi media")], selection: $part)
-                    .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2)
-            }
+            // El selector va dentro de lo que se desliza (como primer renglón): fijo arriba se encimaba con el contenido.
+            if showsMedia && part == .media { MiMediaView(observer: media) { switcher } } else { phoneList(model) }
         }
         .navigationTitle("Descargas").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .subtitle(downloadingCount(model) == 0 ? nil : Text("\(downloadingCount(model)) descargando"))   // solo las que bajan (no las en pausa)   // el espacio, en su barra
@@ -57,10 +52,16 @@ struct DownloadsView: View {
         }
     }
 
+    /// «En el iPhone | Mi media» (con OneDrive conectado).
+    private var switcher: some View {
+        DSSegmented(options: [(Part.phone, "En el iPhone"), (.media, "Mi media")], selection: $part)
+    }
+
     /// En el iPhone: lo que se baja y lo listo para ver sin conexión.
     private func phoneList(_ model: DownloadsModel) -> some View {
         let settings = env.services.appSettings
         return List {
+            if showsMedia { Section { switcher }.listRowBackground(Color.clear).listRowInsets(EdgeInsets()) }
             if !model.items.isEmpty {
                 Section {
                     StorageBar(parts: [.init(id: "series", label: Text("Series"), bytes: model.items.filter { $0.kind == "series" }.reduce(0) { $0 + $1.writtenBytes }, color: DS.ListTint.series),

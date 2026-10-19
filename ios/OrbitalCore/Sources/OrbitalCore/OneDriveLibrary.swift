@@ -91,6 +91,10 @@ public actor OneDriveLibrary {
             let files = try await drive.videos(path)
             let fixes = self.fixes
             var found: [String: Fix?] = [:]
+            // Lo ya reconocido en la revisión anterior no se vuelve a buscar (y un corte de red no lo manda a «Sin ficha»).
+            if let previous = saved, previous.folder == path {
+                for e in previous.entries { found[Self.key(e.file.info)] = .some(Fix(imdb: e.imdb, name: e.name ?? e.file.info.title, poster: e.poster, year: e.year)) }
+            }
             var entries: [Entry] = [], unmatched: [OneDriveFile] = []
             for file in files {
                 let key = Self.key(file.info)
@@ -101,7 +105,8 @@ public actor OneDriveLibrary {
                 else { unmatched.append(file) }
             }
             let index = Index(folder: path, scannedAt: clock(), entries: entries, unmatched: unmatched.count, unmatchedFiles: unmatched)
-            save(index)
+            // Cambiaste de carpeta o desconectaste mientras se revisaba: esto ya no es tu biblioteca.
+            if folder() == path, drive.linked { save(index) }
             return index
         }
         scanning = task
@@ -204,7 +209,9 @@ public actor OneDriveLibrary {
 
     /// Un enlace nuevo para una descarga de Mi media cuyo enlace caducó (se busca por el nombre del archivo).
     public func refreshURL(release: String) async -> URL? {
-        guard let entry = saved?.entries.first(where: { $0.file.name == release }) else { return nil }
+        // Por la ruta (dos carpetas pueden tener un archivo con el mismo nombre); las descargas viejas guardaron solo el nombre.
+        let entries = saved?.entries ?? []
+        guard let entry = entries.first(where: { $0.file.path == release }) ?? entries.first(where: { $0.file.name == release }) else { return nil }
         return try? await drive.streamURL(entry.file.id)
     }
 
@@ -224,7 +231,19 @@ public actor OneDriveLibrary {
 
     /// Lo que dice el nombre del archivo (sin dirección: para mostrar).
     public nonisolated static func describe(_ file: OneDriveFile) -> Source {
-        source(file, url: URL(string: "https://onedrive.invalid/\(file.id)")!)
+        let key = "\(file.id)|\(file.name)|\(file.size)"
+        if let hit = described.get(key) { return hit }
+        let found = source(file, url: URL(string: "https://onedrive.invalid/\(file.id)")!)
+        described.set(key, found)
+        return found
+    }
+    /// Leer el nombre de un archivo (expresiones regulares) cuesta: se recuerda (ordenar versiones y pintar pósters lo piden mucho).
+    private static let described = Memo()
+    private final class Memo: @unchecked Sendable {
+        private let lock = NSLock()
+        private var values: [String: Source] = [:]
+        func get(_ key: String) -> Source? { lock.withLock { values[key] } }
+        func set(_ key: String, _ value: Source) { lock.withLock { if values.count > 20_000 { values.removeAll() }; values[key] = value } }
     }
 
     /// Una fuente como las de los complementos: el nombre del archivo da la calidad, el HDR y el idioma; es tuya, así que
@@ -241,7 +260,7 @@ public actor OneDriveLibrary {
         var src = Streams.parse(stream, addon: addonName, transportURL: "onedrive", index: index)
         src.cached = true
         src.size = file.size
-        src.release = file.name
+        src.release = file.path   // la ruta: así una descarga renueva su enlace con el archivo exacto
         return src
     }
 }

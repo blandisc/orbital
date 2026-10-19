@@ -93,7 +93,8 @@ struct TitleView: View {
     // MARK: partes
     /// El arte a sangre, más alto, con el logo (o el nombre) al centro y la frase de la película debajo, como un cartel de cine.
     private func hero(_ model: TitleModel) -> some View {
-        BleedArt(url: model.background ?? model.poster, title: model.title, aspect: DS.TitleAction.heroAspect) {
+        BleedArt(url: model.background ?? model.poster, title: model.title,
+                 aspect: UIScreen.main.bounds.height < DS.TitleAction.shortScreen ? DS.TitleAction.heroAspectShort : DS.TitleAction.heroAspect) {
             VStack(spacing: DS.Space.s2) {
                 TitleLogo(url: model.info.logo ?? Artwork.logoURL(metaID: model.metaID), title: model.title, size: .hero, dark: model.logoIsDark, centered: true)
                     .containerRelativeFrame(.horizontal) { width, _ in width * DS.TitleAction.logoWidth }

@@ -16,6 +16,8 @@ protocol VideoPlayerEngine: PlayerEngine {
     @MainActor func setPictureInPictureActive(_ active: Bool)
     /// Los subtítulos encima del video, si el motor no los pinta solo (AVPlayer sí; AetherEngine no).
     @MainActor func subtitleOverlay(lifted: Bool, heightFraction: Double, delay: Double) -> AnyView
+    /// Si los subtítulos los dibuja la app (y por eso se pueden adelantar o atrasar).
+    var drawsSubtitles: Bool { get }
 }
 
 /// Reparte cada «foto» del motor a quien la pida (`snapshots` entrega un flujo nuevo en cada acceso).
@@ -74,6 +76,7 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
     @MainActor func setFillsScreen(_ fill: Bool) { layerView.playerLayer.videoGravity = fill ? .resizeAspectFill : .resizeAspect }
     @MainActor func setPictureInPictureActive(_ active: Bool) {}
     @MainActor func subtitleOverlay(lifted: Bool, heightFraction: Double, delay: Double) -> AnyView { AnyView(EmptyView()) }   // AVPlayerLayer pinta los suyos
+    var drawsSubtitles: Bool { false }
 
     init() {
         player.automaticallyWaitsToMinimizeStalling = true

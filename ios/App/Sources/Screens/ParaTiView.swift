@@ -60,7 +60,9 @@ struct ParaTiView: View {
         .padding(.top, DS.Space.s3)   // el mismo aire bajo el título que Inicio
         .background(Backdrop(tint: m.mode == .mosaic ? tint.colors : nil))
         .task(id: m.mode == .mosaic ? focusedArt : nil) { await tint.load(m.mode == .mosaic ? focusedArt : nil) }
-        .navigationTitle("Para ti").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones
+        .navigationTitle("Para ti")
+        // El título grande en el renglón de los botones; en un teléfono angosto (SE, mini) no cabe junto a ellos y va en su renglón.
+        .toolbarTitleDisplayMode(UIScreen.main.bounds.width < DS.TitleAction.narrowScreen ? .large : .inlineLarge)
         .toolbar {
             // «Decide por mí»: una sola propuesta, por tiempo y ánimo.
             ToolbarItem(placement: .topBarTrailing) {

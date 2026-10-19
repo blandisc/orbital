@@ -9,8 +9,10 @@ struct MiMediaFolderRoute: Hashable { let path: String }
 
 /// Descargas › Mi media: tu carpeta de OneDrive como biblioteca (como Infuse). Lo recién agregado, filtros, sagas, todas
 /// tus películas y series, y lo que no se reconoció para corregirlo. Lo que bajas al iPhone sale en «En el iPhone».
-struct MiMediaView: View {
+struct MiMediaView<Top: View>: View {
     @ObservedObject var observer: ModelObserver<MiMediaModel>
+    /// Lo que va arriba de todo, deslizándose con lo demás («En el iPhone | Mi media»).
+    @ViewBuilder var top: () -> Top
     @EnvironmentObject private var env: AppEnvironment
     @State private var fixing: OneDriveFile?
 
@@ -18,7 +20,13 @@ struct MiMediaView: View {
         let model = observer.model
         ScrollView {
             LazyVStack(alignment: .leading, spacing: DS.Space.s6) {
-                if !model.ready {
+                top().padding(.horizontal, DS.Space.gutter)
+                if model.needsFolder {
+                    DSEmptyState(symbol: "folder", title: Text("Elige la carpeta de tus películas"),
+                                 message: Text("Solo se mira esa carpeta y sus subcarpetas.")) {
+                        NavigationLink { OneDriveSettings() } label: { Text("Elegir carpeta") }.dsPrimaryButton()
+                    }
+                } else if !model.ready {
                     DSEmptyState(symbol: "cloud", title: Text("Conecta tu OneDrive"),
                                  message: Text("Tus películas y series de OneDrive, aquí: se ven al instante y se bajan al iPhone.")) {
                         NavigationLink { OneDriveSettings() } label: { Text("Conectar OneDrive") }.dsPrimaryButton()
@@ -52,19 +60,18 @@ struct MiMediaView: View {
         }
         .refreshable { await model.rescan() }
         .task { await model.load() }
+        .task { await model.followDownloads() }
         .sheet(item: $fixing) { file in FixMatchSheet(info: file.info, fileName: file.name, model: model) }
     }
 
     /// Tu carpeta: cuántos títulos, cuándo se revisó, revisar ahora y más (orden, carpetas, ajustes).
     private func header(_ model: MiMediaModel) -> some View {
         HStack(spacing: DS.Space.s3) {
-            Image(systemName: "cloud.fill").font(DS.TextRecipe.section.font).foregroundStyle(DS.accent)
             VStack(alignment: .leading, spacing: 0) {
                 Text("Tu OneDrive · \((model.folder as NSString).lastPathComponent)").recipe(.cardTitle).lineLimit(1)
+                Text("Películas: \(model.movies) · Series: \(model.series)").recipe(.caption).lineLimit(1)
                 if model.scanning { Text("Revisando…").recipe(.caption) }
-                else if let at = model.scannedAt {
-                    Text("\(model.movies) películas · \(model.series) series · \(at, format: .relative(presentation: .named))").recipe(.caption)
-                }
+                else if let at = model.scannedAt { Text("Revisada \(at, format: .relative(presentation: .named))").recipe(.caption).lineLimit(1) }
             }
             Spacer(minLength: DS.Space.s2)
             DSMoreMenu {
@@ -137,14 +144,17 @@ struct MiMediaView: View {
     }
 }
 
-/// Un título de Mi media: ver, bajar al iPhone, sus versiones (película) o sus episodios con los que faltan (serie), los
-/// datos del archivo y «Corregir ficha».
+/// Un título de Mi media: ver (donde ibas), bajar al iPhone, sus versiones (película) o sus episodios con los que faltan
+/// (serie), los datos del archivo y «Corregir ficha». Con el color de su arte, como la ficha.
 struct MiMediaTitleView: View {
     @ObservedObject var observer: ModelObserver<MiMediaModel>
     let id: String
     @EnvironmentObject private var env: AppEnvironment
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var tint = ArtTint()
     @State private var seasons: [(season: Int, rows: [MiMediaModel.EpisodeRow])] = []
     @State private var season = 0
+    @State private var next: String?
     @State private var fixing = false
     /// El idioma de la app (no el del iPhone) para fechas e idiomas.
     private var appLocale: Locale { Locale(identifier: env.services.appSettings.uiLanguage) }
@@ -163,18 +173,28 @@ struct MiMediaTitleView: View {
                     .padding(.horizontal, DS.Space.gutter).padding(.vertical, DS.Space.s4)
                 }
                 .task(id: t.entries.count) {
+                    next = await model.continueVideo(t)
                     guard t.kind == "series" else { return }
                     seasons = await model.episodes(t)
-                    if !seasons.contains(where: { $0.season == season }) { season = seasons.first?.season ?? 0 }
+                    let wanted = next.flatMap { v in seasons.first { $0.rows.contains { $0.id == v } }?.season }
+                    if let wanted { season = wanted } else if !seasons.contains(where: { $0.season == season }) { season = seasons.first?.season ?? 0 }
                 }
+                .task { await tint.load(String(format: ForYou.metahubBackground, t.imdb)) }
                 .sheet(isPresented: $fixing) {
-                    if let first = t.entries.first { FixMatchSheet(info: first.file.info, fileName: first.file.name, model: model) }
+                    if let first = t.entries.first {
+                        // Al corregir cambia la ficha (y su id): se regresa a Mi media, donde ya sale con la buena.
+                        FixMatchSheet(info: first.file.info, fileName: first.file.name, model: model) { result in
+                            await model.fix(t, to: result)
+                            dismiss()
+                        }
+                    }
                 }
             } else {
                 DSEmptyState(symbol: "film", title: Text("Ya no está en tu carpeta"))
             }
         }
-        .scrollContentBackground(.hidden).background(Backdrop())
+        .task { await model.followDownloads() }
+        .scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -184,24 +204,31 @@ struct MiMediaTitleView: View {
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text("En tu OneDrive").recipe(.eyebrow, color: DS.eyebrow)
                 Text(verbatim: t.name).recipe(.title).lineLimit(3)
-                DataLine(parts: [t.kind == "series" ? env.message("Serie") : env.message("Película"), t.year ?? "", ByteCountFormatter.string(fromByteCount: Int64(t.bytes), countStyle: .file)])
+                DataLine(parts: [Strings.kind(t.kind, language: env.services.appSettings.uiLanguage), t.year ?? "", ByteCountFormatter.string(fromByteCount: Int64(t.bytes), countStyle: .file)])
             }
         }
     }
 
-    /// Ver (tu copia, la mejor) y bajar al iPhone (la de 1080p). En una serie: el primer episodio que tienes y la temporada.
+    private func episodeName(_ videoID: String) -> String {
+        let parts = videoID.split(separator: ":")
+        guard parts.count >= 3, let s = Int(parts[parts.count - 2]), let e = Int(parts[parts.count - 1]) else { return "" }
+        return env.services.episodeLabel(s, e)
+    }
+
+    /// Ver (donde ibas: tu copia, o la del iPhone si ya la bajaste) y bajar al iPhone (la de 1080p). En una serie, la temporada.
     @ViewBuilder private func actions(_ t: OneDriveLibrary.Title, _ model: MiMediaModel) -> some View {
-        let first = t.kind == "series" ? seasons.first(where: { $0.season == season })?.rows.first(where: { !$0.missing })?.id ?? t.entries.first?.videoID : t.imdb
+        let target = next ?? (t.kind == "movie" ? t.imdb : t.entries.first?.videoID)
         HStack(spacing: DS.Space.s3) {
-            Button { if let first { play(t, videoID: first, model) } } label: {
-                ActionTileLabel(title: t.kind == "series" ? Text("Ver") : Text("Ver"), symbol: "play.fill")
+            Button { if let target { play(t, videoID: target, model) } } label: {
+                ActionTileLabel(title: t.kind == "series" && target != nil ? Text("Ver \(episodeName(target ?? ""))") : Text("Ver"), symbol: "play.fill")
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.plain).disabled(target == nil)
             if t.kind == "series" {
                 let rows = seasons.first(where: { $0.season == season })?.rows ?? []
-                let pending = rows.filter { !$0.missing && (model.onPhone[$0.id] ?? -1) < 0 }
+                let pending = rows.filter { !$0.missing && model.onPhone[$0.id] == nil }
                 Button { Task { for r in pending { await report(model.download(t, videoID: r.id)) } } } label: {
-                    ActionTileLabel(title: Text("Bajar temporada"), symbol: "arrow.down.circle", active: pending.isEmpty && !rows.isEmpty)
+                    ActionTileLabel(title: pending.isEmpty && !rows.isEmpty ? Text("En el iPhone") : Text("Bajar temporada"),
+                                    symbol: pending.isEmpty && !rows.isEmpty ? "checkmark.circle" : "arrow.down.circle", active: pending.isEmpty && !rows.isEmpty)
                 }
                 .buttonStyle(.plain).disabled(pending.isEmpty)
             } else {
@@ -221,24 +248,30 @@ struct MiMediaTitleView: View {
             DSSectionHead(title: t.entries.count > 1 ? Text("Versiones en tu carpeta") : Text("El archivo"))
             ForEach(t.entries, id: \.file.id) { e in
                 let d = e.details
+                // Solo los idiomas que dice el nombre (sin ninguno, el lector supone inglés: eso no se enseña).
+                let languages = d.languages == ["en"] ? [] : d.languages
                 VStack(alignment: .leading, spacing: DS.Space.s1) {
                     HStack {
                         Text(verbatim: ([d.resolution] + d.hdr + d.audioBadges).filter { !$0.isEmpty }.joined(separator: " · ")).recipe(.cardTitle)
                         Spacer()
                         Text(verbatim: ByteCountFormatter.string(fromByteCount: Int64(e.file.size), countStyle: .file)).recipe(.data)
                     }
-                    DataLine(parts: [d.languages.map { appLocale.localizedString(forLanguageCode: $0)?.capitalized(with: appLocale) ?? $0 }.joined(separator: ", "),
+                    DataLine(parts: [languages.map { appLocale.localizedString(forLanguageCode: $0)?.capitalized(with: appLocale) ?? $0 }.joined(separator: ", "),
                                      e.file.added.map { env.message("Agregada") + " " + $0.formatted(Date.RelativeFormatStyle(presentation: .named, locale: appLocale)) } ?? ""])
                     Text(verbatim: e.file.path).recipe(.caption, color: DS.textFaint).lineLimit(2)
+                    if t.entries.count > 1 {
+                        HStack(spacing: DS.Space.s2) {
+                            Button("Ver esta", systemImage: "play.fill") { play(t, videoID: e.videoID, version: e, model) }
+                            Button("Bajar esta", systemImage: "arrow.down.circle") { Task { await report(model.download(t, videoID: e.videoID, entry: e)) } }
+                                .disabled(model.onPhone[e.videoID] != nil)
+                        }
+                        .buttonStyle(.bordered).controlSize(.small)
+                    }
                 }
                 .padding(DS.Space.s3)
                 .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-                .contextMenu {
-                    Button("Ver esta", systemImage: "play.fill") { play(t, videoID: e.videoID, version: e, model) }
-                    Button("Bajar esta", systemImage: "arrow.down.circle") { Task { await report(model.download(t, videoID: e.videoID, entry: e)) } }
-                }
             }
-            if t.entries.count > 1 { Text("Para ver se usa la mejor; para bajar, la de 1080p. Mantén presionada una para elegirla.").recipe(.caption) }
+            if t.entries.count > 1 { Text("«Ver» usa la mejor; «Descargar», la de 1080p.").recipe(.caption) }
         }
     }
 
@@ -246,13 +279,14 @@ struct MiMediaTitleView: View {
     private func episodes(_ t: OneDriveLibrary.Title, _ model: MiMediaModel) -> some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             if seasons.count > 1 {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: DS.Space.s2) {
-                        ForEach(seasons, id: \.season) { s in
-                            if s.season == season { Button("Temporada \(s.season)") { season = s.season }.buttonStyle(.borderedProminent).foregroundStyle(DS.onPrimary) }
-                            else { Button("Temporada \(s.season)") { season = s.season }.buttonStyle(.bordered) }
-                        }
-                    }
+                let chips = seasons.map { SeasonChip(season: $0.season, isSpecials: $0.season == 0) }
+                let selection = Binding(get: { SeasonChip(season: season, isSpecials: season == 0) }, set: { season = $0.season })
+                let label = { (s: SeasonChip) in s.isSpecials ? Text("Especiales") : Text("Temporada \(s.season)") }
+                // Como la ficha: hasta 4 temporadas como filtros a la vista; con más, un menú.
+                if chips.count <= DS.Size.seasonChipsMax {
+                    DSChipRow(items: chips, label: label, selection: selection).padding(.horizontal, -DS.Space.gutter)
+                } else {
+                    DSOptionMenu(items: chips, label: label, selection: selection)
                 }
             }
             if seasons.isEmpty { ProgressView().frame(maxWidth: .infinity) }
@@ -262,16 +296,26 @@ struct MiMediaTitleView: View {
 
     private func episodeRow(_ t: OneDriveLibrary.Title, _ row: MiMediaModel.EpisodeRow, _ model: MiMediaModel) -> some View {
         let best = row.versions.first
+        let name = row.episode.hasTitle ? row.episode.title : String(format: Strings.tr("Episodio %lld", language: env.services.appSettings.uiLanguage), row.episode.episode)
         return HStack(spacing: DS.Space.s3) {
-            Text(verbatim: "\(row.episode.episode)").recipe(.data, color: DS.textMuted)
-            VStack(alignment: .leading, spacing: 0) {
-                Text(verbatim: row.episode.hasTitle ? row.episode.title : String(format: Strings.tr("Episodio %lld", language: env.services.appSettings.uiLanguage), row.episode.episode)).recipe(.secondary, color: row.missing ? DS.textMuted : DS.text).lineLimit(1)
-                if row.missing { Text("No está en tu carpeta").recipe(.caption) }
-                else if let best {
-                    DataLine(parts: [best.details.resolution, ByteCountFormatter.string(fromByteCount: Int64(best.file.size), countStyle: .file)])
+            // Tocar el episodio lo pone (un botón de verdad: VoiceOver lo anuncia); lo de la derecha es aparte.
+            Button { if !row.missing { play(t, videoID: row.id, model) } } label: {
+                HStack(spacing: DS.Space.s3) {
+                    Text(verbatim: "\(row.episode.episode)").recipe(.data, color: DS.textMuted)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(verbatim: name).recipe(.secondary, color: row.missing ? DS.textMuted : DS.text).lineLimit(1)
+                        if row.missing { Text("No está en tu carpeta").recipe(.caption) }
+                        else if let best {
+                            DataLine(parts: [best.details.resolution, ByteCountFormatter.string(fromByteCount: Int64(best.file.size), countStyle: .file)])
+                        }
+                    }
+                    Spacer(minLength: DS.Space.s2)
                 }
+                .contentShape(Rectangle())
             }
-            Spacer(minLength: DS.Space.s2)
+            .buttonStyle(.plain)
+            .disabled(row.missing)
+            .accessibilityHint(row.missing ? Text("No está en tu carpeta") : Text("Ver"))
             if row.missing {
                 NavigationLink(value: TitleRoute(kind: "series", metaID: t.imdb, title: t.name, poster: t.poster)) { Text("Buscar fuente") }.buttonStyle(.bordered)
             } else if let state = model.onPhone[row.id] {
@@ -282,8 +326,6 @@ struct MiMediaTitleView: View {
             }
         }
         .padding(.vertical, DS.Space.s2)
-        .contentShape(Rectangle())
-        .onTapGesture { if !row.missing { play(t, videoID: row.id, model) } }
         .opacity(row.missing ? DesignTokens.Opacity.disabled : 1)
     }
 
@@ -306,7 +348,11 @@ struct MiMediaTitleView: View {
     }
 
     private func play(_ t: OneDriveLibrary.Title, videoID: String, version: OneDriveLibrary.Entry? = nil, _ model: MiMediaModel) {
-        Task { env.play(await model.playRequest(t, videoID: videoID, version: version)) }
+        Task {
+            let request = await model.playRequest(t, videoID: videoID, version: version)
+            // Con Infuse elegido: lo que ya está en el iPhone se abre allá; tu copia de OneDrive se ve aquí (Infuse no la conoce).
+            if env.services.appSettings.preferInfuse, request.localFile != nil { await env.playExternal(request) } else { env.play(request) }
+        }
     }
 
     private func report(_ outcome: TitleModel.DownloadOutcome) async {
@@ -325,6 +371,8 @@ struct FixMatchSheet: View {
     let info: OneDriveName
     let fileName: String
     let model: MiMediaModel
+    /// Qué hacer al elegir (por omisión, corregir solo ese nombre).
+    var choose: ((SearchResult) async -> Void)?
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
     @State private var results: [SearchResult] = []
@@ -342,7 +390,7 @@ struct FixMatchSheet: View {
                     if searching { ProgressView().frame(maxWidth: .infinity) }
                     else if results.isEmpty { Text("Sin resultados: prueba con el título en inglés.").recipe(.footnote) }
                     ForEach(results) { r in
-                        Button { Task { await model.fix(info, to: r); dismiss() } } label: {
+                        Button { Task { if let choose { await choose(r) } else { await model.fix(info, to: r) }; dismiss() } } label: {
                             HStack(spacing: DS.Space.s3) {
                                 PosterView(url: r.poster, title: r.title).frame(width: DS.Size.thumbSmall)
                                 VStack(alignment: .leading, spacing: 0) {
