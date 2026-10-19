@@ -83,3 +83,23 @@ def test_unreadable_secrets_do_not_crash(tmp_path):
     path = tmp_path / "secrets.json"
     path.write_text('{"format": "orbital-dpapi-1", "data": "AAAA"}', encoding="utf-8")
     assert Credentials(path).get("stremio_auth") is None
+
+
+def test_a_click_with_orbital_open_does_not_die_on_a_log_in_use(tmp_path, monkeypatch):
+    """El clic en el ícono con Orbital abierta: Windows no deja mover vigilante.log (lo tiene abierto la que corre). Antes
+    eso mataba al clic sin decir nada; ahora escribe al final del mismo archivo."""
+    from pathlib import Path
+
+    from orbital import runtime
+
+    log = tmp_path / "vigilante.log"
+    log.write_text("lo de la Orbital que ya corre\n", encoding="utf-8")
+
+    def in_use(self, target):
+        raise PermissionError(32, "El proceso no tiene acceso al archivo porque está siendo utilizado por otro proceso")
+    monkeypatch.setattr(Path, "replace", in_use)
+    stream = runtime.RotatingStream(log)
+    stream.write("Clic: Orbital ya estaba abierta\n")
+    stream.close()
+    text = log.read_text(encoding="utf-8")
+    assert "lo de la Orbital que ya corre" in text and "Clic: Orbital ya estaba abierta" in text
