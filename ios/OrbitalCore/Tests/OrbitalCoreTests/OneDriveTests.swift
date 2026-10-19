@@ -79,51 +79,69 @@ final class OneDriveTests: XCTestCase {
         XCTAssertFalse(drive.linked)
     }
 
-    func testLibraryMatchesNamesAndOffersYourCopyFirst() async throws {
+    func testLibraryGroupsTitlesWithVersionsAndPicksPerPurpose() async throws {
         let http = FakeHTTP(), clock = Clock()
         let drive = linkedDrive(http, clock: clock)
         http.json[children("Pelis")] = ["value": [
-            ["id": "a1", "name": "Dune Part Two (2024) 2160p.mkv", "size": 40_000_000_000, "file": [:]],
-            ["id": "a2", "name": "Severance.S01E03.mkv", "size": 900_000_000, "file": [:]],
-            ["id": "a3", "name": "Severance.S01E04.mkv", "size": 900_000_000, "file": [:]]]]
+            ["id": "a1", "name": "Dune Part Two (2024) 2160p HDR.mkv", "size": 40_000_000_000, "file": [:], "createdDateTime": "2026-10-16T20:00:00Z"],
+            ["id": "a0", "name": "Dune Part Two (2024) 1080p.mkv", "size": 8_000_000_000, "file": [:], "createdDateTime": "2026-10-16T20:00:00Z"],
+            ["id": "a2", "name": "Severance.S01E03.mkv", "size": 900_000_000, "file": [:], "createdDateTime": "2026-10-17T09:00:00.123Z"],
+            ["id": "a3", "name": "Severance.S01E04.mkv", "size": 900_000_000, "file": [:]],
+            ["id": "a4", "name": "Vacaciones 2019.mp4", "size": 100, "file": [:]]]]
         http.json["https://v3-cinemeta.strem.io/catalog/movie/top/search=Dune%20Part%20Two.json"] = ["metas": [
             ["id": "tt0000001", "type": "movie", "name": "Dune", "releaseInfo": "2021"],
-            ["id": "tt15239678", "type": "movie", "name": "Dune: Part Two", "releaseInfo": "2024"]]]
+            ["id": "tt15239678", "type": "movie", "name": "Dune: Part Two", "releaseInfo": "2024", "poster": "https://p/dune.jpg"]]]
         http.json["https://v3-cinemeta.strem.io/catalog/series/top/search=Severance.json"] = ["metas": [["id": "tt11280740", "type": "series", "name": "Severance", "releaseInfo": "2022-"]]]
-        http.json["\(OneDrive.graph)/me/drive/items/a1?$select=id,@microsoft.graph.downloadUrl"] = ["id": "a1", "@microsoft.graph.downloadUrl": "https://public.onedrive.example/a1"]
-        http.json["\(OneDrive.graph)/me/drive/items/a2?$select=id,@microsoft.graph.downloadUrl"] = ["id": "a2", "@microsoft.graph.downloadUrl": "https://public.onedrive.example/a2"]
+        http.json["https://v3-cinemeta.strem.io/catalog/movie/top/search=Vacaciones.json"] = ["metas": [["id": "tt9", "type": "movie", "name": "Vacation", "releaseInfo": "2015"]]]
+        http.json["\(OneDrive.graph)/me/drive/items/a0?$select=id,@microsoft.graph.downloadUrl"] = ["@microsoft.graph.downloadUrl": "https://public.onedrive.example/a0"]
+        http.json["\(OneDrive.graph)/me/drive/items/a1?$select=id,@microsoft.graph.downloadUrl"] = ["@microsoft.graph.downloadUrl": "https://public.onedrive.example/a1"]
 
-        let kv = InMemoryKeyValueStore()
-        let library = OneDriveLibrary(drive: drive, cinemeta: Cinemeta(http: http), kv: kv, folder: { "Pelis" }, clock: { clock.now })
+        let library = OneDriveLibrary(drive: drive, cinemeta: Cinemeta(http: http), kv: InMemoryKeyValueStore(), folder: { "Pelis" }, clock: { clock.now })
         let index = try await library.scan()
-        XCTAssertEqual(index.entries.map(\.videoID), ["tt15239678", "tt11280740:1:3", "tt11280740:1:4"])
+        XCTAssertEqual(index.entries.count, 4)
+        XCTAssertEqual(index.unmatchedFiles?.map(\.name), ["Vacaciones 2019.mp4"], "con año, solo una ficha de ese año (±1): si no, sin ficha")
         XCTAssertEqual(http.calls.filter { $0.contains("search=Severance") }.count, 1, "una serie se busca una vez, no por episodio")
 
-        let movie = await library.sources(kind: "movie", videoID: "tt15239678")
-        XCTAssertEqual(movie.first?.playbackURL?.absoluteString, "https://public.onedrive.example/a1")
-        XCTAssertEqual(movie.first?.resolution, "4K")
-        XCTAssertTrue(movie.first?.cached ?? false)
-        let episode = await library.sources(kind: "series", videoID: "tt11280740:1:3")
-        XCTAssertEqual(episode.count, 1)
-        let none = await library.sources(kind: "series", videoID: "tt11280740:2:1")
-        XCTAssertTrue(none.isEmpty)
+        let titles = library.titles()
+        XCTAssertEqual(titles.map(\.id), ["series:tt11280740", "movie:tt15239678"], "lo más reciente primero")
+        XCTAssertEqual(titles.last?.name, "Dune: Part Two")
+        XCTAssertEqual(titles.last?.entries.map(\.file.id), ["a1", "a0"], "la mejor versión primero")
+        XCTAssertEqual(titles.last?.bestResolution, "4K")
+        XCTAssertEqual(library.pick("tt15239678", purpose: .watch)?.file.id, "a1", "para ver, la mejor")
+        XCTAssertEqual(library.pick("tt15239678", purpose: .download)?.file.id, "a0", "para bajar al iPhone, la de 1080p")
+        let watch = await library.source("tt15239678", purpose: .watch)
+        XCTAssertEqual(watch?.playbackURL?.absoluteString, "https://public.onedrive.example/a1")
+        XCTAssertEqual(watch?.addon, OneDriveLibrary.addonName)
+        let chosen = await library.source("tt15239678", purpose: .watch, preferring: OneDriveLibrary.describe(index.entries.first { $0.file.id == "a0" }!.file).index)
+        XCTAssertEqual(chosen?.playbackURL?.absoluteString, "https://public.onedrive.example/a0", "la versión que elegiste")
+        XCTAssertEqual(library.versions("tt11280740:1:3").count, 1)
+        let refreshed = await library.refreshURL(release: "Dune Part Two (2024) 1080p.mkv")
+        XCTAssertEqual(refreshed?.absoluteString, "https://public.onedrive.example/a0", "una descarga de Mi media renueva su enlace por el nombre del archivo")
+    }
 
-        // En la lista de fuentes, tu copia va primero aunque un complemento tenga una «mejor».
-        http.json["https://a.example/manifest.json"] = ["name": "Torrentio", "resources": ["stream"], "types": ["movie", "series"], "idPrefixes": ["tt"]]
-        http.json["https://a.example/stream/movie/tt15239678.json"] = ["streams": [["name": "T\n1080p [RD+]", "title": "Dune 1080p Latino\n💾 2.1 GB 🇲🇽", "url": "https://rd.example/a"]]]
-        let registry = AddonRegistry(http: http, account: nil, own: { ["https://a.example"] }, clock: { clock.now })
-        let finder = StreamFinder(http: http, registry: registry, clock: { clock.now }, local: { await library.sources(kind: $0, videoID: $1) })
-        let found = try await finder.find(kind: "movie", videoID: "tt15239678", prefs: Preferences(audio: "es", quality: "1080p"))
-        XCTAssertEqual(found.map(\.addon), ["OneDrive", "Torrentio"])
-        let best = try await finder.best(kind: "movie", videoID: "tt15239678", prefs: Preferences(audio: "es", quality: "1080p"), binge: "otro")
-        XCTAssertEqual(best?.addon, "OneDrive")
+    func testAFixIsRememberedForEveryFileWithThatName() async throws {
+        let http = FakeHTTP(), clock = Clock(), kv = InMemoryKeyValueStore()
+        let drive = linkedDrive(http, clock: clock)
+        http.json[children("Pelis")] = ["value": [["id": "a4", "name": "Vacaciones 2019.mp4", "size": 100, "file": [:]]]]
+        http.json["https://v3-cinemeta.strem.io/catalog/movie/top/search=Vacaciones.json"] = ["metas": []]
+        let library = OneDriveLibrary(drive: drive, cinemeta: Cinemeta(http: http), kv: kv, folder: { "Pelis" }, clock: { clock.now })
+        let first = try await library.scan()
+        XCTAssertEqual(first.unmatched, 1)
+        let info = try XCTUnwrap(first.unmatchedFiles?.first?.info)
+        await library.fix(info, to: .init(imdb: "tt0085995", name: "National Lampoon's Vacation", poster: nil, year: "1983"))
+        XCTAssertEqual(library.titles().map(\.imdb), ["tt0085995"], "al momento, sin volver a leer la carpeta")
+        XCTAssertEqual(library.saved?.unmatched, 0)
+        let again = try await library.scan()
+        XCTAssertEqual(again.entries.map(\.imdb), ["tt0085995"], "y en la siguiente revisión")
+        XCTAssertEqual(http.calls.filter { $0.contains("search=Vacaciones") }.count, 1, "lo corregido ya no se busca")
     }
 
     func testWithoutAFolderNothingIsAsked() async {
         let http = FakeHTTP()
         let library = OneDriveLibrary(drive: linkedDrive(http), cinemeta: Cinemeta(http: http), kv: InMemoryKeyValueStore(), folder: { "" })
-        let found = await library.sources(kind: "movie", videoID: "tt1")
-        XCTAssertTrue(found.isEmpty)
+        let refreshed = await library.refreshIfStale()
+        XCTAssertFalse(refreshed)
+        XCTAssertNil(library.saved)
         XCTAssertTrue(http.calls.isEmpty)
     }
 }

@@ -15,7 +15,7 @@ protocol VideoPlayerEngine: PlayerEngine {
     /// La ventana de PiP se abrió o se cerró (el motor sigue decodificando video en segundo plano mientras tanto).
     @MainActor func setPictureInPictureActive(_ active: Bool)
     /// Los subtítulos encima del video, si el motor no los pinta solo (AVPlayer sí; AetherEngine no).
-    @MainActor func subtitleOverlay(lifted: Bool, heightFraction: Double) -> AnyView
+    @MainActor func subtitleOverlay(lifted: Bool, heightFraction: Double, delay: Double) -> AnyView
 }
 
 /// Reparte cada «foto» del motor a quien la pida (`snapshots` entrega un flujo nuevo en cada acceso).
@@ -73,7 +73,7 @@ final class AVPlayerEngine: VideoPlayerEngine, @unchecked Sendable {
     @MainActor var pictureInPicture: PictureInPictureContent? { player.currentItem == nil ? nil : .playerLayer(layerView.playerLayer) }
     @MainActor func setFillsScreen(_ fill: Bool) { layerView.playerLayer.videoGravity = fill ? .resizeAspectFill : .resizeAspect }
     @MainActor func setPictureInPictureActive(_ active: Bool) {}
-    @MainActor func subtitleOverlay(lifted: Bool, heightFraction: Double) -> AnyView { AnyView(EmptyView()) }   // AVPlayerLayer pinta los suyos
+    @MainActor func subtitleOverlay(lifted: Bool, heightFraction: Double, delay: Double) -> AnyView { AnyView(EmptyView()) }   // AVPlayerLayer pinta los suyos
 
     init() {
         player.automaticallyWaitsToMinimizeStalling = true

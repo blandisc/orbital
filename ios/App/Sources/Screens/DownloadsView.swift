@@ -11,15 +11,56 @@ struct DownloadsView: View {
     @StateObject private var tint = ArtTint()
     /// La descarga a la que se le buscan subtítulos.
     @State private var subtitlesFor: DownloadItem?
+    /// Mi media (tu OneDrive como biblioteca) junto a lo que ya está en el iPhone.
+    @StateObject private var media = ModelObserver(MiMediaModel(AppEnvironment.shared.services))
+    enum Part: Hashable { case phone, media }
+    @State private var part: Part = .phone
 
     init() {
         _observer = StateObject(wrappedValue: ModelObserver(DownloadsModel(AppEnvironment.shared.services, freeSpace: { DiskSpace.freeBytes() })))
     }
 
+    /// Con OneDrive conectado: «En el iPhone | Mi media» arriba.
+    private var showsMedia: Bool { env.services.oneDrive.linked }
+
     var body: some View {
         let model = observer.model
+        Group {
+            if showsMedia && part == .media { MiMediaView(observer: media) } else { phoneList(model) }
+        }
+        .safeAreaInset(edge: .top) {
+            if showsMedia {
+                DSSegmented(options: [(Part.phone, "En el iPhone"), (.media, "Mi media")], selection: $part)
+                    .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2)
+            }
+        }
+        .navigationTitle("Descargas").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
+        .subtitle(downloadingCount(model) == 0 ? nil : Text("\(downloadingCount(model)) descargando"))   // solo las que bajan (no las en pausa)   // el espacio, en su barra
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
+        .titleDestinations()
+        .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
+        .navigationDestination(for: DownloadSeriesRoute.self) { DownloadSeriesView(observer: observer, metaID: $0.metaID) }
+        .navigationDestination(for: DownloadSeasonRoute.self) { DownloadSeasonView(observer: observer, metaID: $0.metaID, season: $0.season) }
+        .navigationDestination(for: MiMediaTitleRoute.self) { MiMediaTitleView(observer: media, id: $0.id) }
+        .navigationDestination(for: MiMediaFolderRoute.self) { MiMediaFolderView(observer: media, path: $0.path) }
+        .task {
+            #if DEBUG
+            if Demo.isOn, Demo.media { part = .media }
+            #endif
+            await model.run()
+        }
+        .task(id: model.items.map { "\($0.id)\($0.state)" }) { await media.model.refreshPhone() }   // lo que bajas de Mi media se marca allá
+        .sheet(item: $subtitlesFor) { item in DownloadSubtitlesSheet(item: item, model: model).fittedSheet().presentationDragIndicator(.visible) }
+        .task(id: model.active.first?.metaID) {
+            // El arte de metahub solo existe para ids de IMDb; con otro id, fondo liso.
+            await tint.load(model.active.first.flatMap { $0.metaID.hasPrefix("tt") ? String(format: ForYou.metahubBackground, $0.metaID) : nil })
+        }
+    }
+
+    /// En el iPhone: lo que se baja y lo listo para ver sin conexión.
+    private func phoneList(_ model: DownloadsModel) -> some View {
         let settings = env.services.appSettings
-        List {
+        return List {
             if !model.items.isEmpty {
                 Section {
                     StorageBar(parts: [.init(id: "series", label: Text("Series"), bytes: model.items.filter { $0.kind == "series" }.reduce(0) { $0 + $1.writtenBytes }, color: DS.ListTint.series),
@@ -48,7 +89,7 @@ struct DownloadsView: View {
                 Section {
                     ForEach(model.readyMovies) { g in
                         if let item = g.items.first {
-                            readyRow(title: g.title, poster: g.poster, data: [item.quality, bytes(g.bytes)].compactMap { $0 }, item: item, model: model)
+                            readyRow(title: g.title, poster: g.poster, data: [fromMedia(item), item.quality, bytes(g.bytes)].compactMap { $0 }, item: item, model: model)
                         }
                     }
                 } header: {
@@ -75,20 +116,10 @@ struct DownloadsView: View {
         .listRowSpacing(DS.Space.s2)
         .tint(DS.accent)   // interruptores y botones de la lista: el acento (lo interactivo)
         .scrollContentBackground(.hidden).background(Backdrop(tint: tint.colors))
-        .navigationTitle("Descargas").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
-        .subtitle(downloadingCount(model) == 0 ? nil : Text("\(downloadingCount(model)) descargando"))   // solo las que bajan (no las en pausa)   // el espacio, en su barra
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { ProfileButton() } }
-        .titleDestinations()
-        .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
-        .navigationDestination(for: DownloadSeriesRoute.self) { DownloadSeriesView(observer: observer, metaID: $0.metaID) }
-        .navigationDestination(for: DownloadSeasonRoute.self) { DownloadSeasonView(observer: observer, metaID: $0.metaID, season: $0.season) }
-        .task { await model.run() }
-        .sheet(item: $subtitlesFor) { item in DownloadSubtitlesSheet(item: item, model: model).fittedSheet().presentationDragIndicator(.visible) }
-        .task(id: model.active.first?.metaID) {
-            // El arte de metahub solo existe para ids de IMDb; con otro id, fondo liso.
-            await tint.load(model.active.first.flatMap { $0.metaID.hasPrefix("tt") ? String(format: ForYou.metahubBackground, $0.metaID) : nil })
-        }
     }
+
+    /// Lo que vino de tu OneDrive (Mi media), para distinguirlo de lo de Real-Debrid.
+    private func fromMedia(_ item: DownloadItem) -> String? { item.addon == OneDriveLibrary.addonName ? env.message("De Mi media") : nil }
 
     private func downloadingCount(_ model: DownloadsModel) -> Int { model.active.filter { $0.state == .downloading || $0.state == .queued }.count }
 
@@ -103,7 +134,7 @@ struct DownloadsView: View {
             PosterView(url: item.poster, title: item.title).frame(width: DS.Size.thumbSmall)
             VStack(alignment: .leading, spacing: DS.Space.s1) {
                 Text(item.title).recipe(.cardTitle).lineLimit(1)
-                DataLine(parts: [item.subtitle.isEmpty ? nil : item.subtitle, item.quality, status(item)].compactMap { $0 }, color: item.state == .failed ? DS.danger : nil)
+                DataLine(parts: [fromMedia(item), item.subtitle.isEmpty ? nil : item.subtitle, item.quality, status(item)].compactMap { $0 }, color: item.state == .failed ? DS.danger : nil)
             }
             Spacer(minLength: DS.Space.s2)
             // El avance es el mismo anillo de la ficha y de la fila de un episodio, con pausar o reanudar adentro.

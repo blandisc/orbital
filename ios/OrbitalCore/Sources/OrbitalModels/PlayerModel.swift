@@ -20,6 +20,8 @@ public struct PlayRequest: Sendable {
     public var localSubtitles: [URL] = []
     public var binge: String?              // el grupo de la fuente anterior (misma calidad e idioma)
     public var sourceIndex: Int?           // una fuente elegida en la lista
+    /// Desde Mi media: primero tu copia de OneDrive (también para el siguiente episodio); si falla, Real-Debrid.
+    public var ownCopy = false
 
     public init(kind: String, metaID: String, videoID: String, originalTitle: String, displayTitle: String, episodeLabel: String = "", poster: String? = nil,
                 year: String? = nil, meta: JSON? = nil, fromStart: Bool = false, localFile: URL? = nil, localSubtitles: [URL] = [], binge: String? = nil, sourceIndex: Int? = nil) {
@@ -76,6 +78,13 @@ public final class PlayerModel: ObservableModel {
     private var segmentsFor: String?
     public private(set) var stillWatchingPrompt = false { didSet { changed() } }
     public private(set) var notice: PlayerNotice? { didSet { changed() } }
+    /// Sincronía de los subtítulos (s): positivo los atrasa, negativo los adelanta (como Infuse). Vuelve a 0 con cada video.
+    public private(set) var subtitleDelay: Double = 0 { didSet { changed() } }
+    public static let subtitleStep = 0.5, subtitleMaxDelay = 10.0
+    public func nudgeSubtitles(by seconds: Double) {
+        subtitleDelay = max(-Self.subtitleMaxDelay, min(Self.subtitleMaxDelay, (subtitleDelay + seconds).rounded(toPlaces: 1)))
+    }
+    public func resetSubtitleDelay() { subtitleDelay = 0 }
     /// Velocidad de reproducción elegida (sigue igual en el siguiente episodio y al cambiar de fuente).
     public private(set) var rate: Float = 1 { didSet { changed() } }
     public static let rates: [Float] = [0.75, 1, 1.25, 1.5, 2]
@@ -125,6 +134,8 @@ public final class PlayerModel: ObservableModel {
     private var nextLocal: LocalEpisode?
     private let skipSegments: @Sendable (String) async -> SkipSegments?
     private let scareMap: @Sendable (String, String) async -> [JumpScare]?
+    /// Tu copia de un video (Mi media), si la hay: se usa antes que las fuentes cuando `request.ownCopy`.
+    public var ownSource: (@Sendable (_ videoID: String, _ preferred: Int?) async -> Source?)?
     static let choicesLifetime: TimeInterval = StreamFinder.cacheSeconds   // los enlaces de Real-Debrid caducan
 
     public init(engine: PlayerEngine, finder: StreamFinder, watch: WatchService, titlePrefs: TitlePreferences, settings: SettingsStore,
@@ -141,6 +152,7 @@ public final class PlayerModel: ObservableModel {
     // MARK: arranque
     /// Empieza a reproducir. Devuelve cuando el motor ya recibió la fuente (el video puede tardar unos segundos).
     public func begin(_ request: PlayRequest) async {
+        subtitleDelay = 0
         guard !closing, phase != .closed else { return }
         generation += 1
         let mine = generation
@@ -196,6 +208,16 @@ public final class PlayerModel: ObservableModel {
         let langs = titlePrefs.languages(for: request.metaID, settings: settings.value, onCellular: onCellular())
         while true {
             let found: Source?
+            if request.ownCopy, failedSources.isEmpty, let own = await ownSource?(request.videoID, request.sourceIndex) {
+                guard mine == generation, !closing else { return }
+                source = own
+                var start = startAt ?? 0
+                if startAt == nil && !request.fromStart { if let exact = request.startPosition { start = exact } else { start = await watch.resumePosition(metaID: request.metaID, videoID: request.videoID) } }
+                guard mine == generation, !closing, let url = own.playbackURL else { failedSources.insert(own.index); continue }
+                startLoading()
+                do { try await loadVideo(url, at: start); return }
+                catch { guard mine == generation else { return }; failedSources.insert(own.index); notice = .triedAnotherSource(attempt: 1); acceptingSnapshots = false; continue }
+            }
             do {
                 sourceChoices = try await finder.find(kind: request.kind, videoID: request.videoID, prefs: langs.prefs)
                 choicesAt = clock()
@@ -686,4 +708,9 @@ public final class PlayerModel: ObservableModel {
 
     /// Al pasar a segundo plano: se guarda ya (iOS puede suspender la app).
     public func appDidEnterBackground() async { if hasPlayed, phase != .closed, !closing { await report(.tick) } }
+}
+
+extension Double {
+    /// Redondeo a décimas (los pasos de la sincronía no acumulan 0.30000000000000004).
+    func rounded(toPlaces places: Int) -> Double { let f = pow(10, Double(places)); return (self * f).rounded() / f }
 }

@@ -222,6 +222,7 @@ struct MainTabs: View {
         tab = Demo.tab
         if Demo.open == "settings" || Demo.open == "year" { paths[tab].append(SettingsRoute()) }
         if let title = Demo.title { paths[tab].append(TitleRoute(kind: title.kind, metaID: title.id, title: "", poster: nil)) }
+        if let id = Demo.mediaTitle { paths[tab].append(MiMediaTitleRoute(id: id)) }
         #endif
     }
 }

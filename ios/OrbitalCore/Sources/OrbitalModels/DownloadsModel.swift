@@ -170,7 +170,11 @@ public final class DownloadsModel: ObservableModel {
         if settings.autoNextDownload, item.kind == "series", let meta = try? await services.cinemeta.meta(kind: item.kind, id: item.metaID) {
             for next in await services.downloads.nextToDownload(metaID: item.metaID, meta: meta) {
                 let langs = services.titlePrefs.languages(for: item.metaID, settings: settings)
-                guard let source = try? await services.finder.best(kind: item.kind, videoID: next, prefs: langs.prefs, purpose: .download), let url = source.playbackURL else { continue }
+                // De Mi media: el siguiente también de tu OneDrive (si lo tienes); si no, de Real-Debrid.
+                let own = item.addon == OneDriveLibrary.addonName ? await services.oneDriveLibrary.source(next, purpose: .download) : nil
+                var found = own
+                if found == nil { found = try? await services.finder.best(kind: item.kind, videoID: next, prefs: langs.prefs, purpose: .download) }
+                guard let source = found, let url = source.playbackURL else { continue }
                 let download = DownloadItem(id: DownloadItem.makeID(metaID: item.metaID, videoID: next), kind: item.kind, metaID: item.metaID, videoID: next, title: item.title,
                                             originalTitle: item.originalTitle, subtitle: Self.episodeLabel(next, meta: meta, services: services), poster: item.poster, addon: source.addon, release: source.release, sourceIndex: source.index,
                                             expectedBytes: source.size > 0 ? Int64(source.size) : nil,

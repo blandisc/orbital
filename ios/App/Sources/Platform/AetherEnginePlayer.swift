@@ -78,8 +78,8 @@ final class AetherEnginePlayer: VideoPlayerEngine, @unchecked Sendable {
     private var fills = false
 
     /// AetherEngine no pinta subtítulos: entrega las líneas y la app las dibuja encima del video (su README: «your UI paints them»).
-    func subtitleOverlay(lifted: Bool, heightFraction: Double) -> AnyView {
-        AnyView(AetherSubtitleOverlay(engine: engine, clock: engine.clock, lifted: lifted, heightFraction: heightFraction, fills: fills))
+    func subtitleOverlay(lifted: Bool, heightFraction: Double, delay: Double) -> AnyView {
+        AnyView(AetherSubtitleOverlay(engine: engine, clock: engine.clock, lifted: lifted, heightFraction: heightFraction, fills: fills, delay: delay))
     }
     func setPictureInPictureActive(_ active: Bool) {
         engine.pictureInPictureActive = active
@@ -139,11 +139,13 @@ struct AetherSubtitleOverlay: View {
     let lifted: Bool
     let heightFraction: Double
     let fills: Bool
+    /// La sincronía elegida (s): con +1 cada línea sale un segundo después.
+    var delay: Double = 0
 
     var body: some View {
         GeometryReader { geo in
             let video = videoRect(in: geo.size)
-            let now = clock.sourceTime
+            let now = clock.sourceTime - delay
             let active = engine.subtitleCues.filter { $0.startTime <= now && now < $0.endTime }
             ZStack(alignment: .topLeading) {
                 ForEach(active.filter { if case .image = $0.body { true } else { false } }) { cue in

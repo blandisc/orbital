@@ -38,6 +38,9 @@ enum Demo {
     /// `-demo-onedrive off|unlinked|linked`: OneDrive de mentira (Microsoft y la carpeta responden aquí; nada sale a tu cuenta).
     /// `linked` ya trae la carpeta «Películas» revisada: Dune Part Two (2024) y Severance T1 sale como fuente.
     static var oneDrive: String? { value(after: "-demo-onedrive") }
+    /// `-demo-media`: Descargas abre en Mi media; `-demo-media-title movie:tt…` abre ese título.
+    static var media: Bool { ProcessInfo.processInfo.arguments.contains("-demo-media") }
+    static var mediaTitle: String? { value(after: "-demo-media-title") }
 
     /// Lo último que «se le contó a Trakt», para ver la fila de Ajustes sin ver nada antes.
     static func prefillScrobble(_ kv: KeyValueStore) {
@@ -535,11 +538,15 @@ extension DemoHTTPClient {
         }
         if path.hasSuffix("Películas:/children") {
             return ok(["value": [["id": "s1", "name": "Severance", "folder": ["childCount": 2]],
-                                 ["id": "m1", "name": "Dune Part Two (2024) 2160p HDR.mkv", "size": 41_200_000_000, "file": [:]]]])
+                                 ["id": "m1", "name": "Dune Part Two (2024) 2160p HDR Atmos.mkv", "size": 41_200_000_000, "file": [:], "createdDateTime": "2026-10-16T20:00:00Z"],
+                                 ["id": "m2", "name": "Dune Part Two (2024) 1080p WEB-DL 5.1.mkv", "size": 8_400_000_000, "file": [:], "createdDateTime": "2026-10-16T20:05:00Z"],
+                                 ["id": "m3", "name": "The.Matrix.1999.1080p.BluRay.x264.mkv", "size": 9_800_000_000, "file": [:], "createdDateTime": "2026-08-02T10:00:00Z"],
+                                 ["id": "m4", "name": "Vacaciones en la playa 2019.mp4", "size": 1_200_000_000, "file": [:], "createdDateTime": "2026-07-01T10:00:00Z"]]])
         }
         if path.hasSuffix("Películas/Severance:/children") {
-            return ok(["value": [["id": "e1", "name": "Severance.S01E01.1080p.WEB-DL.mkv", "size": 2_100_000_000, "file": [:]],
-                                 ["id": "e2", "name": "Severance.S01E02.1080p.WEB-DL.mkv", "size": 2_000_000_000, "file": [:]]]])
+            return ok(["value": [["id": "e1", "name": "Severance.S01E01.1080p.WEB-DL.mkv", "size": 2_100_000_000, "file": [:], "createdDateTime": "2026-10-17T09:00:00Z"],
+                                 ["id": "e2", "name": "Severance.S01E02.1080p.WEB-DL.mkv", "size": 2_000_000_000, "file": [:], "createdDateTime": "2026-10-17T09:00:00Z"],
+                                 ["id": "e4", "name": "Severance.S01E04.2160p.mkv", "size": 6_800_000_000, "file": [:], "createdDateTime": "2026-10-17T09:00:00Z"]]])
         }
         if path.contains(":/children") { return ok(["value": []]) }
         if path.contains("/me/drive/items/") {

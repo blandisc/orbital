@@ -81,7 +81,6 @@ public final class OneDriveModel: ObservableModel {
     public func unlink() async {
         services.oneDrive.unlink()
         services.oneDriveLibrary.forget()
-        await services.finder.forget()
         index = nil
         state = computed()
     }
@@ -105,7 +104,7 @@ public final class OneDriveModel: ObservableModel {
         guard !folder.isEmpty, services.oneDrive.linked else { return }
         scanning = true; scanError = nil
         defer { scanning = false }
-        do { index = try await services.oneDriveLibrary.scan(); await services.finder.forget() }
+        do { index = try await services.oneDriveLibrary.scan() }
         catch let error as OneDriveError {
             scanError = error.description
             if case .auth = error { state = computed() }

@@ -103,7 +103,7 @@ public final class Services: ObservableModel {
         let cinemeta = Cinemeta(http: http, registry: registry, clock: clock)
         let oneDrive = OneDrive(http: http, secrets: secrets, clientID: { settings.value.oneDriveClientID }, clock: clock)
         let oneDriveLibrary = OneDriveLibrary(drive: oneDrive, cinemeta: cinemeta, kv: kv, folder: { settings.value.oneDriveFolder }, clock: clock)
-        let finder = StreamFinder(http: http, registry: registry, clock: clock, local: { kind, videoID in await oneDriveLibrary.sources(kind: kind, videoID: videoID) })
+        let finder = StreamFinder(http: http, registry: registry, clock: clock)
         self.oneDrive = oneDrive; self.oneDriveLibrary = oneDriveLibrary
         let tmdb = Tmdb(http: http, key: secrets.get(SecretKey.tmdbKey) ?? "", language: "es-MX")
         let localizer = Localizer(tmdb: tmdb, language: { settings.value.uiLanguage }, clock: clock, store: kv)
@@ -114,7 +114,7 @@ public final class Services: ObservableModel {
         self.forYouRemote = RemoteForYou(remote: { OrbitalRemote(http: http, address: settings.value.orbitalAddress, token: secrets.get(SecretKey.orbitalToken) ?? "") }, clock: clock)
         self.watch = WatchService(stremio: stremio, authKey: { secrets.get(SecretKey.stremioAuth) }, cinemeta: cinemeta, trakt: trakt, pending: pending, clock: clock, gate: flushGate, scrobbleLog: scrobbleLog)
         self.downloads = Downloads(transport: downloadTransport, secrets: secrets, root: downloadsRoot, saved: savedDownloads, freeSpace: freeSpace,
-                                   refresh: Services.refresher(finder: finder, settings: settings, titlePrefs: titlePrefs),
+                                   refresh: Services.refresher(finder: finder, settings: settings, titlePrefs: titlePrefs, library: oneDriveLibrary),
                                    subtitles: Services.subtitleFetcher(http: http, finder: finder, settings: settings, titlePrefs: titlePrefs),
                                    clock: clock, onChange: onDownloadsChange)
         super.init()
@@ -133,8 +133,10 @@ public final class Services: ObservableModel {
     }
 
     /// Un enlace nuevo de Real-Debrid para una descarga cuyo enlace caducó: el mismo complemento y la misma fuente.
-    static func refresher(finder: StreamFinder, settings: SettingsStore, titlePrefs: TitlePreferences) -> @Sendable (DownloadItem) async -> URL? {
+    static func refresher(finder: StreamFinder, settings: SettingsStore, titlePrefs: TitlePreferences, library: OneDriveLibrary? = nil) -> @Sendable (DownloadItem) async -> URL? {
         { item in
+            // De Mi media: un enlace nuevo del mismo archivo de tu OneDrive.
+            if item.addon == OneDriveLibrary.addonName { return await library?.refreshURL(release: item.release) }
             let prefs = titlePrefs.languages(for: item.metaID, settings: settings.value).prefs
             guard let sources = try? await finder.find(kind: item.kind, videoID: item.videoID, prefs: prefs, purpose: .download, fresh: true) else { return nil }
             // El número de fuente sale del enlace: si el enlace cambió, el número también. Se busca la misma fuente por su nombre de

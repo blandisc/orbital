@@ -88,7 +88,6 @@ struct ParaTiView: View {
         .titleDestinations()
         .navigationDestination(for: SettingsRoute.self) { _ in SettingsView() }
         .navigationDestination(item: $openTitle) { TitleView(route: $0) }
-        .task { await m.refreshOneDrive() }   // «En tu OneDrive»: tu carpeta, si hace falta revisarla
         .task {
             #if DEBUG
             if Demo.isOn, Demo.open == "lists" || Demo.mode == "lists" { m.mode = .lists }
@@ -333,14 +332,6 @@ struct ListsView: View {
                     }
                     let slides = model.featuredSlides
                     if !slides.isEmpty { featuredCarousel(slides).perfTag("paraTi.hero") }
-                    // Tus películas y series de OneDrive (Ajustes › OneDrive), arriba de «Porque viste», como en la TV.
-                    let mine = model.oneDrive
-                    if !mine.isEmpty {
-                        Shelf(title: Text("En tu OneDrive"), eyebrow: Text("Se ven al instante y se pueden descargar")) {
-                            ForEach(mine) { s in ShelfPoster(suggestion: s, style: .plain, inList: model.watchlistKeys.contains(s.imdb)) { _ in } }
-                        }
-                        .accessibilityIdentifier("onedrive-shelf")
-                    }
                     if let because = model.because { becauseCard(because) }
                     ForEach(generalShelves) { plan in shelf(plan).id(plan.id).perfTag("paraTi.shelf") }
                     // Lo nuevo en tus plataformas (TMDB): series con episodios recientes y películas recién llegadas.

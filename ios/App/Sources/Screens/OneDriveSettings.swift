@@ -87,7 +87,7 @@ struct OneDriveSettings: View {
                         }
                         .disabled(model.scanning)
                     } header: { Text("Lo que encontré") } footer: {
-                        Text("Tus videos salen primero en «Fuente» de su película o episodio: se ven al instante y se pueden descargar.")
+                        Text("Tus películas y series salen en Descargas › Mi media: se ven al instante y se bajan al iPhone.")
                     }
                     .listRowBackground(DS.surface)
                 }
@@ -101,7 +101,7 @@ struct OneDriveSettings: View {
         }
         .confirmationDialog("¿Desconectar OneDrive?", isPresented: $confirmUnlink, titleVisibility: .visible) {
             Button("Desconectar", role: .destructive) { Task { await model.unlink() } }
-        } message: { Text("Tus videos de OneDrive dejan de salir como fuente. Lo descargado se queda.") }
+        } message: { Text("Mi media se vacía. Lo que ya bajaste al iPhone se queda.") }
     }
 }
 

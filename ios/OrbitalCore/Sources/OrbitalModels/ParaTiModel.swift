@@ -53,21 +53,6 @@ public final class ParaTiModel: ObservableModel {
     /// Lo último que viste: para elegir «Porque vi…».
     public private(set) var becauseSeeds: [TraktEntry] = [] { didSet { changed() } }
 
-    /// Revisa tu carpeta de OneDrive si hace falta y vuelve a pintar «En tu OneDrive».
-    public func refreshOneDrive() async {
-        if await services.oneDriveLibrary.refreshIfStale() { changed() }
-    }
-
-    /// «En tu OneDrive»: lo que reconoció tu carpeta (una vez cada título; lo más nuevo de la carpeta primero), como la TV.
-    public var oneDrive: [Suggestion] {
-        guard let entries = services.oneDriveLibrary.saved?.entries else { return [] }
-        var seen = Set<String>()
-        return entries.reversed().compactMap { e in
-            guard seen.insert(e.imdb).inserted, kind == "all" || kind == e.kind else { return nil }
-            return Suggestion(kind: e.kind, imdb: e.imdb, title: e.file.info.title, year: e.file.info.year,
-                              poster: String(format: ForYou.metahubPoster, e.imdb), wide: "", reason: .inList(OneDriveLibrary.displayName))
-        }
-    }
     /// El que elegiste (nil: cambia solo cada día).
     private var chosenSeed: String?
 

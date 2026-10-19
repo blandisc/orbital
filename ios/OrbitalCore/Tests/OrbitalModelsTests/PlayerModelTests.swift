@@ -23,6 +23,29 @@ final class PlayerModelTests: XCTestCase {
         XCTAssertEqual(rig.model.phase, .playing)
     }
 
+    /// Desde Mi media: tu copia de OneDrive primero; si falla, Real-Debrid en el mismo punto.
+    func testMiMediaPlaysYourOwnCopyFirstAndFallsBackToRealDebrid() async throws {
+        let rig = try twoSources()
+        let own = OneDriveLibrary.source(OneDriveFile(id: "f1", name: "Show.S01E01.2160p.mkv", path: "Series/Show.S01E01.2160p.mkv", size: 5_000_000_000,
+                                                      info: OneDriveName(kind: "series", title: "Show", season: 1, episode: 1)),
+                                         url: URL(string: "https://onedrive.example/own.mkv")!)
+        rig.model.ownSource = { _, _ in own }
+        var request = rig.request()
+        request.ownCopy = true
+        await rig.model.begin(request)
+        XCTAssertEqual(rig.engine.loads.map(\.url.absoluteString), ["https://onedrive.example/own.mkv"])
+        await rig.model.handle(rig.playing(0, state: .failed("403")))
+        await rig.model.waitForTransition()
+        XCTAssertEqual(rig.engine.loads.last?.url.absoluteString, "https://rd.example/best.mkv", "tu copia falló: la de Real-Debrid")
+    }
+
+    func testWithoutMiMediaYourCopyIsNotUsed() async throws {
+        let rig = try twoSources()
+        rig.model.ownSource = { _, _ in XCTFail("solo desde Mi media"); return nil }
+        await rig.model.begin(rig.request())
+        XCTAssertEqual(rig.engine.loads.first?.url.absoluteString, "https://rd.example/best.mkv")
+    }
+
     func testFromStartIgnoresSavedPosition() async throws {
         let rig = try Rig(remote: ["_id": "tt0386676", "state": ["video_id": "tt0386676:1:1", "timeOffset": 300_000, "duration": 1_320_000]])
         _ = try twoSources(rig)

@@ -81,14 +81,16 @@ public struct OneDriveName: Sendable, Equatable, Codable {
 }
 
 /// Un video de tu carpeta de OneDrive.
-public struct OneDriveFile: Sendable, Equatable, Codable {
+public struct OneDriveFile: Sendable, Equatable, Codable, Identifiable {
     public var id: String
     public var name: String
     public var path: String
     public var size: Int
     public var info: OneDriveName
-    public init(id: String, name: String, path: String, size: Int, info: OneDriveName) {
-        self.id = id; self.name = name; self.path = path; self.size = size; self.info = info
+    /// Cuándo lo subiste (para «Recién agregado»).
+    public var added: Date?
+    public init(id: String, name: String, path: String, size: Int, info: OneDriveName, added: Date? = nil) {
+        self.id = id; self.name = name; self.path = path; self.size = size; self.info = info; self.added = added
     }
 }
 
@@ -212,7 +214,7 @@ public actor OneDrive {
 
     static func childrenPath(_ path: String) -> String {
         let clean = path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        let select = "$select=id,name,size,folder,file&$top=200"
+        let select = "$select=id,name,size,folder,file,createdDateTime&$top=200"
         return clean.isEmpty ? "/me/drive/root/children?\(select)" : "/me/drive/root:/\(uriComponent(clean, safe: "/")):/children?\(select)"
     }
 
@@ -247,12 +249,28 @@ public actor OneDrive {
                 let child = folder.isEmpty ? name : "\(folder)/\(name)"
                 if r["folder"]?.object != nil, depth < Self.depth { try await walk(child, depth + 1) }
                 else if r["file"]?.object != nil, let id = r["id"]?.nonEmptyString, let info = OneDriveName.parse(name, now: clock()) {
-                    found.append(OneDriveFile(id: id, name: name, path: child, size: r["size"]?.intValue ?? 0, info: info))
+                    let added = r["createdDateTime"]?.string.flatMap { ISO8601DateFormatter().date(from: $0.replacingOccurrences(of: #"\.\d+"#, with: "", options: .regularExpression)) }
+                    found.append(OneDriveFile(id: id, name: name, path: child, size: r["size"]?.intValue ?? 0, info: info, added: added))
                 }
             }
         }
         try await walk(path.trimmingCharacters(in: CharacterSet(charactersIn: "/")), 0)
         return found
+    }
+
+    /// Lo que hay en una carpeta, para verla tal cual (la vista de carpetas de Mi media): carpetas y videos.
+    public func listing(_ path: String) async throws -> (folders: [OneDriveFolder], videos: [OneDriveFile]) {
+        let base = path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        var folders: [OneDriveFolder] = [], videos: [OneDriveFile] = []
+        for r in try await children(base) {
+            guard let name = r["name"]?.nonEmptyString else { continue }
+            let child = base.isEmpty ? name : "\(base)/\(name)"
+            if r["folder"]?.object != nil { folders.append(OneDriveFolder(name: name, path: child, count: r["folder"]?["childCount"]?.intValue ?? 0)) }
+            else if r["file"]?.object != nil, let id = r["id"]?.nonEmptyString, let info = OneDriveName.parse(name, now: clock()) {
+                videos.append(OneDriveFile(id: id, name: name, path: child, size: r["size"]?.intValue ?? 0, info: info))
+            }
+        }
+        return (folders, videos)
     }
 
     /// La dirección temporal del archivo (~1 h), para que el reproductor lo lea por partes o se descargue.

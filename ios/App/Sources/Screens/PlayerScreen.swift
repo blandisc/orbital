@@ -14,6 +14,7 @@ final class PlayerHolder: ObservableObject {
         let services = AppEnvironment.shared.services
         let engine = PlayerEngines.make()
         self.engine = engine
+        let library = services.oneDriveLibrary
         model = PlayerModel(engine: engine, finder: services.finder, watch: services.watch, titlePrefs: services.titlePrefs, settings: services.settings,
                             onCellular: { Connectivity.shared.isCellular }, episodeLabel: services.episodeLabel,
                             localEpisode: { metaID, videoID in
@@ -24,6 +25,7 @@ final class PlayerHolder: ObservableObject {
                             },
                             skipSegments: { videoID in await services.introDB.segments(videoID: videoID) },   // saltar intro y resumen (IntroDB, como Infuse)
                             scareMap: { imdb, title in await services.scares(imdb: imdb, fallbackTitle: title) })   // el mapa de sustos
+        model.ownSource = { videoID, preferred in await library.source(videoID, purpose: .watch, preferring: preferred) }   // Mi media: tu copia primero
         subscription = model.onChange { [weak self] in self?.objectWillChange.send() }
         // Episodios descargados que se encadenan solos: cada uno visto se atiende al pasar al siguiente (borrar / bajar el que sigue).
         model.onFinishedLocal = { finished in
@@ -105,7 +107,7 @@ struct PlayerScreen: View {
                         // Mientras buscas arrastrando, el subtítulo se quita: la burbuja ya dice el tiempo y no hay con qué encimarlo.
                         // Sube con los controles solo en horizontal (en vertical los controles van fuera del video: si subía,
                         // quedaba a media imagen).
-                        holder.engine.subtitleOverlay(lifted: controlsVisible && landscape, heightFraction: env.services.appSettings.subtitleHeightFraction)
+                        holder.engine.subtitleOverlay(lifted: controlsVisible && landscape, heightFraction: env.services.appSettings.subtitleHeightFraction, delay: model.subtitleDelay)
                             .transition(.opacity)
                     }
                 }
@@ -882,6 +884,16 @@ struct VideoSettingsPanel: View {
             }
             .disabled(model.searchingSubtitles)
             .accessibilityIdentifier("player-search-subtitles")
+        }
+        // Sincronía (como Infuse): si las líneas salen antes o después de lo que se dice.
+        PanelGroupTitle(title: "Sincronía")
+        FlowChips {
+            PanelChip(title: Text("Antes"), selected: false, symbol: "minus") { model.nudgeSubtitles(by: -PlayerModel.subtitleStep) }
+                .accessibilityLabel(Text("Adelantar medio segundo"))
+            PanelChip(title: model.subtitleDelay == 0 ? Text("A tiempo") : Text(verbatim: String(format: "%+.1f s", model.subtitleDelay)),
+                      selected: model.subtitleDelay != 0) { model.resetSubtitleDelay() }
+            PanelChip(title: Text("Después"), selected: false, symbol: "plus") { model.nudgeSubtitles(by: PlayerModel.subtitleStep) }
+                .accessibilityLabel(Text("Atrasar medio segundo"))
         }
         PanelGroupTitle(title: "Tamaño")
         FlowChips {

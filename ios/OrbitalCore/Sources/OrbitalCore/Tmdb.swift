@@ -157,6 +157,14 @@ public struct Tmdb: Sendable {
         return rows.first?["id"]?.intValue.flatMap { $0 > 0 ? $0 : nil }
     }
 
+    /// La saga de una película («Dune: colección»), si TMDB la tiene: su id y su nombre en tu idioma.
+    public func collection(imdb: String) async throws -> (id: Int, name: String)? {
+        guard let id = try await findID(imdb: imdb, kind: "movie") else { return nil }
+        let data = try await get("/movie/\(id)")
+        guard let saga = data["belongs_to_collection"], let sagaID = saga["id"]?.intValue, let name = saga["name"]?.nonEmptyString else { return nil }
+        return (sagaID, name)
+    }
+
     /// La ficha de un título de IMDb (lo de Trakt llega con sinopsis en inglés).
     public func find(imdb: String, kind: String) async throws -> TmdbDetails? {
         guard let id = try await findID(imdb: imdb, kind: kind) else { return nil }
