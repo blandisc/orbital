@@ -93,7 +93,7 @@ export function miMediaItem(t, now = Date.now() / 1000) {
   const kind = t.kind === "series" ? "series" : "movie";
   return { ...curatedItem({ meta_id: t.imdb, kind, title: t.title, year: t.year, why: fresh ? "Nuevo" : "En tu OneDrive",
     image: `https://images.metahub.space/poster/medium/${t.imdb}/img`, hero: `https://images.metahub.space/background/medium/${t.imdb}/img` }),
-  day_label: fresh ? "Nuevo" : undefined, added: t.added || null,
+  day_label: fresh ? "Nuevo" : undefined, added: t.added || null, own: true, // su ficha: «Versiones en tu carpeta», lo que falta…
   subtitle: kind === "series" ? `${t.episodes} ${t.episodes === 1 ? "episodio" : "episodios"} tuyos` : String(t.year || "Película") };
 }
 

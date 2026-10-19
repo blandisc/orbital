@@ -119,6 +119,8 @@ const ui = {
     onSources: (play) => openSources(play),
     onPerson: (person) => openPerson(person),
     onDownload: (body, job) => downloadTitle(body, job),
+    onVersions: (play, versions) => openMenu(versionsMenu(play, versions)),
+    onFix: (title) => fixTitle(title),
     downloadOf: (videoId) => downloadsByVideo.get(videoId) || null,
     canPrefetch: () => state.stremioLinked,
     canSendPhone: () => state.phone,
@@ -177,7 +179,7 @@ const ui = {
   listScreen: createListScreen({
     onMove: () => sound.play("move"),
     onPick: (item) => openListItem(item),
-    onMore: (item) => openMenu(gameMenu(item, { running: state.running, phone: state.phone })),
+    onMore: (item) => openMenu(item.file ? looseMenu(item) : gameMenu(item, { running: state.running, phone: state.phone })),
     onSort: (screen) => openMenu(listSortMenu(screen)),
     onClose: (list) => { sound.play("back"); renderHints(); backFromPerson(list); },
     ratings: (items) => api.forYouRatings(items).then((r) => r.ratings || {}),
@@ -980,7 +982,7 @@ function openMiMedia() {
   const watched = new Set(lib.watched || []);
   const sagas = (lib.sagas || []).flatMap((s) => s.imdbs.map((id) => byImdb.get(id) && { ...byImdb.get(id), day_label: s.name }).filter(Boolean));
   const loose = (lib.unmatched || []).map((f) => ({ id: `onedrive-file:${f.id}`, title: f.name.replace(/\.[a-z0-9]{2,4}$/i, ""), source: "onedrive-file",
-    subtitle: "Sin ficha · se ve tal cual", file: { id: f.id, name: f.name } }));
+    subtitle: "Sin ficha · Y para corregir", file: { id: f.id, name: f.name, kind: f.kind, title: f.title } }));
   const movies = all.filter((i) => i.kind === "movie").length;
   const tab = (id, label, items) => items.length && { id, label, load: () => Promise.resolve(items) };
   sound.play("open");
@@ -990,6 +992,67 @@ function openMiMedia() {
       tab("series", "Series", all.filter((i) => i.kind === "series")), tab("unwatched", "Sin ver", all.filter((i) => !watched.has(i.meta_id))),
       tab("sagas", "Sagas", sagas), tab("loose", "Sin ficha", loose)].filter(Boolean) });
   renderHints();
+}
+
+/** «Versiones en tu carpeta» (como el iPhone): resolución, HDR, audio, idiomas y tamaño; A ve esa. */
+function versionsMenu(play, versions) {
+  const lang = { es: "Español", en: "Inglés" };
+  const gb = (b) => (b >= 1e9 ? `${(b / 1e9).toFixed(1)} GB` : `${Math.round(b / 1e6)} MB`);
+  return { title: "Versiones en tu carpeta", subtitle: "La primera es la que pone «Ver»", options: versions.map((v, i) => ({
+    icon: i === 0 ? "check" : "play",
+    label: [v.resolution || "SD", ...(v.hdr || []).map((t) => (t === "DV" ? "Dolby Vision" : t)), v.audio, ...(v.languages || []).map((l) => lang[l] || l)]
+      .filter(Boolean).join(" · "),
+    value: v.size ? gb(v.size) : "", hint: v.path || v.name,
+    command: { type: "own-play", play: { ...play, own: true, file_id: v.id } } })) };
+}
+
+/** «Corregir ficha»: buscar el título correcto (del mismo tipo) y elegirlo. Vale para todos los archivos con ese nombre. */
+function fixTitle({ kind, imdb = null, title, fileId = null }) {
+  if (ui.title.isOpen) ui.title.close();
+  sound.play("open");
+  let busy = false; // un A de más no la corrige dos veces
+  ui.search.open(title || "", { pick: { kind, onPick: async (result) => {
+    if (busy) return;
+    busy = true;
+    const ref = titleRef(result);
+    if (!ref?.meta_id?.startsWith("tt")) return ui.toast.show("Elige una película o serie", { error: true });
+    try {
+      const res = await api.onedriveFix({ kind: ref.kind, imdb: ref.meta_id, name: result.title, year: Number(result.year || result.extra?.year) || null,
+        file_id: fileId, current: imdb });
+      sound.play("select");
+      ui.toast.show(`Listo: ${res.changed === 1 ? "ese archivo es" : `esos ${res.changed} archivos son`} ${result.title}`);
+      miMedia = await api.onedriveLibrary().catch(() => miMedia);
+      buildCuration();
+      openTitle({ ...curatedItem({ meta_id: ref.meta_id, kind: ref.kind, title: result.title, image: result.image }), own: true });
+    } catch (err) {
+      sound.play("error");
+      ui.toast.show(err.message, { error: true });
+    }
+  } } });
+  renderHints();
+}
+
+/** Y sobre uno «Sin ficha»: verlo tal cual o corregir su ficha. */
+function looseMenu(item) {
+  return { title: item.title, subtitle: "Sin ficha", options: [
+    { icon: "play", label: "Ver tal cual", command: { type: "od-play-file", id: item.file.id, name: item.title } },
+    { icon: "search", label: "Corregir ficha", hint: "Busca qué es y elígelo", command: { type: "od-fix-loose", id: item.file.id, kind: item.file.kind || "movie", title: item.file.title || item.title } },
+  ] };
+}
+
+/** Ver carpetas: tu OneDrive tal cual (carpetas y videos), en una hoja; B sube a la de antes. */
+async function folderMenu(path) {
+  try {
+    const res = await api.onedriveListing(path);
+    const options = [...res.folders.map((f) => ({ icon: "folder", label: f.name, value: f.count ? String(f.count) : "",
+      command: { type: "od-folder", path: f.path } })),
+    ...res.videos.map((v) => ({ icon: "play", label: v.name.replace(/\.[a-z0-9]{2,4}$/i, ""), hint: v.size ? `${(v.size / 1e9).toFixed(1)} GB` : "",
+      command: { type: "od-play-file", id: v.id, name: v.name } }))];
+    return { title: res.path.split("/").pop() || "OneDrive", crumb: res.path, subtitle: `OneDrive › ${res.path || "inicio"}`,
+      options: options.length ? options : [{ icon: "info", label: "Esta carpeta no tiene videos", command: { type: "stay" } }] };
+  } catch (err) {
+    return { title: "Ver carpetas", options: [{ icon: "info", label: err.message || "No pude abrir tu OneDrive", command: { type: "stay" } }] };
+  }
 }
 
 // ---------------------------------------------------------------- descargas (ver sin internet)
@@ -1173,6 +1236,11 @@ function listSortMenu(s) {
   }
   if (s.genres().length) options.push({ icon: "spark", label: "Género", value: st.genreLabel || "Todos", command: { type: "list-genre-menu" } });
   options.push({ icon: "show", label: "Ocultar lo que ya vi", hint: "Según Trakt", value: check(st.hideWatched), command: { type: "list-watched" } });
+  if (s.id === "mimedia") { // Mi media: tu OneDrive tal cual y volver a revisar la carpeta
+    options.push({ heading: true, label: "Tu OneDrive" },
+      { icon: "folder", label: "Ver carpetas", hint: "Tu OneDrive tal cual, para abrir cualquier video", command: { type: "od-folder", path: "" } },
+      { icon: "refresh", label: "Buscar de nuevo", hint: "Lo nuevo que subiste", command: { type: "od-rescan" } });
+  }
   return { title: "Ordenar y filtrar", options };
 }
 
@@ -1499,6 +1567,21 @@ async function runCommand(command, context = null) {
         if (stillThere(context)) ui.sheet.open(settingsPage(command.page, state.settings), { index: context?.index ?? 0, stack: context?.stack ?? [] });
         return renderHints();
       }
+      case "own-play":
+        ui.sheet.close();
+        return watch(command.play);
+      case "od-folder":
+        return openMenu(await folderMenu(command.path), nested(context));
+      case "od-play-file":
+        ui.sheet.close();
+        return openListItem({ file: { id: command.id, name: command.name }, title: command.name });
+      case "od-fix-loose":
+        ui.sheet.close();
+        return fixTitle({ kind: command.kind, title: command.title, fileId: command.id });
+      case "od-rescan":
+        ui.sheet.close();
+        await api.onedriveScan().catch(() => {});
+        return ui.toast.show("Revisando tu carpeta de OneDrive · Mi media se actualiza sola");
       case "download-play":
         ui.sheet.close();
         return launch(command.item);

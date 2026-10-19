@@ -28,6 +28,15 @@ def already_running(url: str) -> bool:
 
 
 def show_running(url: str) -> None:
+    # Windows solo deja pasar al frente a quien abriste (este proceso): se le cede ese permiso al Orbital que ya corre,
+    # si no su ventana solo parpadeaba en la barra de tareas y el ícono «no hacía nada».
+    if sys.platform == "win32":
+        try:
+            import ctypes
+
+            ctypes.windll.user32.AllowSetForegroundWindow(-1)  # type: ignore[attr-defined]  # ASFW_ANY
+        except (AttributeError, OSError):
+            pass
     req = urllib.request.Request(url + "/api/ui/show", data=b"{}", method="POST",
                                  headers={"Content-Type": "application/json"})
     try:

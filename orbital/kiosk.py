@@ -178,6 +178,15 @@ class KioskWindow:
         with self._lock:
             self.exited_by_user = False
             if self.is_open:
+                # El ícono de Orbital con Orbital ya abierto: SU ventana (la de Edge con el perfil de Orbital, no la primera
+                # que diga «Orbital» en su título) al frente; si Edge sigue vivo sin ventana, se reabre.
+                hwnd = self.window() if sys.platform == "win32" else 0
+                if hwnd:
+                    return system.focus_window(hwnd)
+                if sys.platform == "win32":
+                    log.warning("Pediste Orbital y Edge seguía abierto sin ventana: la reabro")
+                    threading.Thread(target=self.restart, daemon=True).start()
+                    return True
                 return system.bring_to_front()
             exe = find_browser(self.browser)
             if not exe:
@@ -268,7 +277,8 @@ class KioskWindow:
 
         profile = f"--user-data-dir={self.profile_dir}".lower()
         startup = Path(os.environ.get("APPDATA", "")) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / "Orbital.lnk"
-        command = f'explorer.exe "{startup}"' if startup.exists() else f'"{sys.executable}" -m orbital'
+        frozen = getattr(sys, "frozen", False)  # Orbital.exe se abre solo (sin «-m orbital»)
+        command = f'explorer.exe "{startup}"' if startup.exists() else f'"{sys.executable}"' if frozen else f'"{sys.executable}" -m orbital'
         done = False
         for wait in (1, 2, 3, 4, 10, 20):
             time.sleep(wait)

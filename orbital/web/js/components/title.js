@@ -20,7 +20,8 @@ import { actionStep, availability, episodeStates, titleActions, titleProgress } 
  */
 const touching = () => document.body.dataset.input === "touch";
 
-export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload = null, downloadOf = () => null, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {} }) {
+export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload = null, downloadOf = () => null,
+  onVersions = () => {}, onFix = () => {}, onMove, onClose, onChange = () => {}, canPrefetch = () => false, canSendPhone = () => false, onSendPhone = () => {}, onNotice = () => {} }) {
   const backdrop = h("div", { class: "title__backdrop" });
   const logo = h("img", { class: "title__logo", alt: "" });
   const name = h("h1", { class: "title__name" });
@@ -66,6 +67,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
   let moreIndex = 0;
   let castItems = [];
   let castIndex = 0;
+  let own = null; // desde Mi media: { have: Set(video_id), versions: [...] } (tu carpeta de OneDrive)
   let season = 0;
   let index = 0;
   let states = new Map(); // video_id -> { watched, progress, upcoming }
@@ -138,6 +140,18 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
     onChange();
   }
 
+  /** Mi media: qué videos de este título están en tu carpeta y sus versiones (para la ficha, como el iPhone). */
+  async function loadOwn(info) {
+    try {
+      const res = await api.onedriveTitle(info.kind, info.meta_id);
+      if (item?.meta_id !== info.meta_id || el.hidden) return; // ya abriste otra ficha
+      own = { have: new Set(res.have || []), versions: res.versions || [] };
+      renderActions();
+      if (kindOf() === "series" && seasons().length) renderList();
+      onChange();
+    } catch { /* sin OneDrive: la ficha de siempre */ }
+  }
+
   /** La persona enfocada del reparto: su pantalla (foto, biografía y filmografía), encima de la ficha. */
   function openPerson() {
     const p = castItems[castIndex];
@@ -179,7 +193,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
   function renderActions() {
     const t = details && !details.error ? target() : null;
     buttons = titleActions(details, { kind: kindOf(), title: item?.title, phone: canSendPhone(),
-      download: onDownload && t ? downloadOf(t.video_id) : undefined });
+      download: onDownload && t ? downloadOf(t.video_id) : undefined, own: own && { versions: own.versions.length } });
     action = Math.min(action, Math.max(0, buttons.length - 1));
     // El principal lleva el botón del mando que lo hace (A / Enter), como todo Orbital; los demás, su ícono en una caja y su
     // nombre corto debajo, siempre a la vista (antes solo ícono, y el nombre aparecía al enfocarlo).
@@ -253,6 +267,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
           h("span", { style: { width: `${Math.round(st.progress * 100)}%` } }))),
       h("span", { class: "episode__text" },
         h("strong", { class: "episode__title" }, ep.title),
+        own && !st.upcoming && (own.have.has(ep.id) ? Chip("En tu carpeta", { tone: "good" }) : Chip("No está en tu carpeta")),
         downloadChip(downloadOf(ep.id)),
         st.upcoming ? h("span", { class: "episode__date" }, st.upcoming)
           : ep.overview && h("span", { class: "episode__overview" }, ep.overview)));
@@ -346,7 +361,8 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
 
   function play(ep = null, { fromStart = false } = {}) {
     const t = target(ep);
-    if (t) onPlay({ ...t, from_start: fromStart });
+    // Desde Mi media: tu copia si está en tu carpeta; si no («No está en tu carpeta»), se busca fuente como siempre.
+    if (t) onPlay({ ...t, from_start: fromStart, own: !!own?.have.has(t.video_id) });
   }
 
   function run(button) {
@@ -357,6 +373,8 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
     else if (button.id.startsWith("phone-")) sendPhone(button.id.slice(6), episodeById(button.video_id));
     else if (button.id === "trailer") trailer();
     else if (button.id === "download") download();
+    else if (button.id === "versions") { const t = target(); if (t && own) onVersions({ ...t, own: true }, own.versions); }
+    else if (button.id === "fix") onFix({ kind: kindOf(), imdb: details?.id || item.meta_id, title: details?.title || item.title });
     else if (button.id === "retry") load();
   }
 
@@ -522,6 +540,8 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
     extras = null;
     moreItems = [];
     castItems = [];
+    own = null;
+    if (info.own) loadOwn(info);
     mount(moreRow);
     mount(castRow);
     more.hidden = true;
@@ -628,7 +648,7 @@ export function createTitle({ onPlay, onSources, onPerson = () => {}, onDownload
     : zone === "cast"
     ? [{ glyph: g.select, label: "Ver a la persona" }, { glyph: g.back, label: "Atrás", end: true }]
     : zone === "episodes"
-    ? [episode() && { glyph: g.select, label: "Ver" }, episode() && { glyph: g.options, label: "Fuente" },
+    ? [episode() && { glyph: g.select, label: own && !own.have.has(episode().id) ? "Buscar fuente" : "Ver" }, episode() && { glyph: g.options, label: "Fuente" },
       episode() && onDownload && { glyph: g.alt, label: downloadOf(episode().id) ? "Descarga" : "Descargar" }, { glyph: g.section, label: "Temporada" },
       seasons().length > 5 && { glyph: g.page, label: "Saltar 5", secondary: true },
       { glyph: g.back, label: "Atrás", end: true }].filter(Boolean)

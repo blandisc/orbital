@@ -135,6 +135,10 @@ export const api = {
   onedriveTitles: () => request("/api/onedrive/titles"),
   onedriveLibrary: () => request("/api/onedrive/library", { timeout: 30000 }),
   onedrivePlayFile: (id, name) => post("/api/onedrive/play-file", { id, name }),
+  onedrivePlay: (body) => post("/api/onedrive/play", body),
+  onedriveTitle: (kind, imdb) => request(`/api/onedrive/title?kind=${kind}&imdb=${encodeURIComponent(imdb)}`),
+  onedriveFix: (body) => post("/api/onedrive/fix", body),
+  onedriveListing: (path = "") => request(`/api/onedrive/listing?path=${encodeURIComponent(path)}`, { timeout: 20000 }),
   // «TV en vivo»
   tv: () => request("/api/tv"),
   tvPlay: (id, category = "todos", keep = false) => post("/api/tv/play", { id, category, keep }),

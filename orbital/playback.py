@@ -100,10 +100,15 @@ def mpv_background(mpv: str) -> tuple[str, ...]:
 
 
 def find_mpv() -> str | None:
-    """mpv de Orbital (%LOCALAPPDATA%\\orbital\\mpv) o el del sistema."""
-    local = Path(os.environ.get("LOCALAPPDATA", "")) / "orbital" / "mpv" / "mpv.exe"
-    if local.exists():
-        return str(local)
+    """mpv de Orbital: el que viene dentro de Orbital.exe (carpeta mpv junto al programa), el de
+    %LOCALAPPDATA%/orbital/mpv o el del sistema."""
+    import sys
+
+    candidates = [Path(sys.executable).parent / "mpv" / "mpv.exe"] if getattr(sys, "frozen", False) else []
+    candidates.append(Path(os.environ.get("LOCALAPPDATA", "")) / "orbital" / "mpv" / "mpv.exe")
+    for local in candidates:
+        if local.exists():
+            return str(local)
     from shutil import which
 
     return which("mpv")

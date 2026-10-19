@@ -183,8 +183,16 @@ def test_panels_subtitle_size_and_more():
     p.press("down")
     p.press("a")  # Tamaño: Normal -> Grande (se queda en el panel)
     assert p.sub_scale == 1.25 and p.menu is not None and ("set_property", "sub-scale", 1.25) in mpv.sent
+    p.press("right")  # Sincronía (como el iPhone): Antes · A tiempo · Después, de medio segundo
+    assert p.menu.column.key == "sync"
+    p.press("up")
+    p.press("a")  # Antes: −0,5 s (se queda en el panel)
+    assert p.sub_delay == -0.5 and ("set_property", "sub-delay", -0.5) in mpv.sent and p.menu is not None
+    p.press("down")
+    p.press("a")  # la de en medio vuelve a cero
+    assert p.sub_delay == 0.0
     p.press("right")  # ya es la última columna: no se sale
-    assert p.menu.column.key == "size"
+    assert p.menu.column.key == "sync"
     p.press("y")  # dentro de un panel, X y Y lo cierran (no saltan al otro)
     assert p.menu is None
     p.press("y")  # Y: Fuentes (y Reproducción)

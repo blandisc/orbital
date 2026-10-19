@@ -616,7 +616,7 @@ class Panel:
         return next((c for c in self.columns if c.key == key), None)
 
 
-TAB_NAMES = {"audio": "Audio", "sub": "Subtítulos", "size": "Tamaño de los subtítulos", "episodes": "Episodios",
+TAB_NAMES = {"audio": "Audio", "sub": "Subtítulos", "size": "Tamaño de los subtítulos", "sync": "Sincronía", "episodes": "Episodios",
              "source": "Fuentes", "playback": "Reproducción", "category": "Categoría", "channels": "Canales",
              "seek": "Adelantar", "volume": "Volumen", "episode": "Episodio"}
 PANEL_ROWS = 6  # filas visibles por columna; el resto se desplaza con el foco
@@ -720,12 +720,25 @@ def _column(key: str, options: list[dict]) -> Column:
     return Column(key, options, next((i for i, o in enumerate(options) if o.get("current")), 0))
 
 
-def tracks_panel(tracks: list[dict], sub_scale: float, extra_subs: list[dict] | None = None, focus: str = "audio") -> Panel:
-    """X: Audio · Subtítulos · Tamaño de los subtítulos, en columnas (el video sigue)."""
+SUB_STEP = .5  # s por paso de «Sincronía»
+
+
+def sync_options(delay: float) -> list[dict]:
+    """Sincronía de los subtítulos (como el iPhone): Antes · A tiempo (o «+1.0 s») · Después, de medio segundo en medio
+    segundo. La de en medio vuelve a cero."""
+    middle = "A tiempo" if abs(delay) < .05 else f"{delay:+.1f} s".replace(".", ",")
+    return [{"label": "Antes", "hint": "−0,5 s", "action": ("subdelay", -SUB_STEP), "current": False},
+            {"label": middle, "hint": "" if abs(delay) < .05 else "Volver a cero", "action": ("subdelay", 0.0), "current": True},
+            {"label": "Después", "hint": "+0,5 s", "action": ("subdelay", SUB_STEP), "current": False}]
+
+
+def tracks_panel(tracks: list[dict], sub_scale: float, extra_subs: list[dict] | None = None, focus: str = "audio",
+                 sub_delay: float = 0.0) -> Panel:
+    """X: Audio · Subtítulos · Tamaño · Sincronía de los subtítulos, en columnas (el video sigue)."""
     sizes = [{"label": name, "action": ("subscale", value), "current": abs(value - sub_scale) < .01}
              for value, name in SUB_SCALES]
     columns = [_column("audio", track_options("audio", tracks)), _column("sub", track_options("sub", tracks, extra_subs)),
-               _column("size", sizes)]
+               _column("size", sizes), _column("sync", sync_options(sub_delay))]
     return Panel("tracks", columns, next((i for i, c in enumerate(columns) if c.key == focus), 0))
 
 

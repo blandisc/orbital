@@ -109,7 +109,7 @@ def test_audio_menu_lists_tracks_and_switches():
     p.press("x")
     assert p.menu.kind == "tracks" and p.menu.column.key == "audio" and [o["label"] for o in p.menu.options] == [
         "Inglés · 5.1 · E-AC3", "Español · Latino · Estéreo · AAC"]
-    assert [c.key for c in p.menu.columns] == ["audio", "sub", "size"]
+    assert [c.key for c in p.menu.columns] == ["audio", "sub", "size", "sync"]
     assert p.menu.index == 0 and "Tamaño de los subtítulos" in mpv.overlays[2] and mpv.overlays.get(1) is None
     p.press("down")
     p.press("a")

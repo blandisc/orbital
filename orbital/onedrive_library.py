@@ -15,6 +15,25 @@ from .library import cinemeta, onedrive, streams
 log = logging.getLogger(__name__)
 
 FOLDER_KEY = "onedrive_folder"
+RES_RANK = {"4K": 4, "1440p": 3, "1080p": 2, "720p": 1}
+AUDIO_WORDS = (("Atmos", ("atmos",)), ("7.1", ("7.1", "7 1ch")), ("5.1", ("5.1", "ddp5", "dd5", "6ch")))
+LANG_WORDS = {"es": ("spanish", "español", "espanol", "latino", "castellano", "spa", "lat"), "en": ("english", "eng")}
+
+
+def describe_file(name: str) -> dict:
+    """Lo que dice el nombre de un archivo: resolución, HDR, audio e idiomas («Versiones en tu carpeta»)."""
+    import re as _re
+
+    low = name.lower()
+    words = set(_re.split(r"[^a-z0-9.]+", low))
+    resolution = next((r for r, keys in (("4K", ("2160", "4k", "uhd")), ("1440p", ("1440",)), ("1080p", ("1080",)), ("720p", ("720",)))
+                       if any(k in low for k in keys)), "")
+    hdr = [t for t, keys in (("DV", ("dovi", ".dv.", " dv ", "dolby.vision")), ("HDR", ("hdr",))) if any(k in low for k in keys)]
+    audio = next((a for a, keys in AUDIO_WORDS if any(k in low for k in keys)), "")
+    languages = [code for code, keys in LANG_WORDS.items() if words & set(keys) or any(k in low for k in keys if len(k) > 3)]
+    return {"resolution": resolution, "hdr": hdr, "audio": audio, "languages": languages}
+
+
 RESCAN_EVERY = 6 * 3600  # s: lo nuevo que subas aparece solo
 INDEX = 9_000  # el número de fuente de «Tu OneDrive» (las de los complementos van de 0 en adelante)
 ADDON = "Tu OneDrive"
@@ -155,7 +174,7 @@ class OneDriveLibrary:
         for f in self.files:
             if not f.get("imdb"):
                 unmatched.append({"id": f["id"], "name": f["name"], "path": f.get("path") or f["name"], "size": f.get("size") or 0,
-                                  "added": f.get("added")})
+                                  "added": f.get("added"), "kind": f["kind"], "title": f["title"], "year": f.get("year")})
                 continue
             key = (f["kind"], f["imdb"])
             t = titles.setdefault(key, {"kind": f["kind"], "imdb": f["imdb"], "title": f.get("show_title") or f["title"],
@@ -172,32 +191,84 @@ class OneDriveLibrary:
                 "scanning": self.scanning, "error": self.error}
 
     def file_url(self, file_id: str) -> str | None:
-        """La dirección temporal de un archivo de tu carpeta (uno «Sin ficha», para verlo tal cual)."""
-        if not any(f.get("id") == file_id for f in self.files):
-            return None
-        return self.client.stream_url(file_id)
+        """La dirección temporal de un archivo de tu OneDrive (uno «Sin ficha» o de Ver carpetas, para verlo tal cual)."""
+        return self.client.stream_url(file_id) if self.client.linked else None
 
-    def file_for(self, kind: str, video_id: str) -> dict | None:
-        """El archivo de ese título (película) o episodio («tt123:1:3»)."""
+    def versions(self, kind: str, video_id: str) -> list[dict]:
+        """Las versiones de ese título (película) o episodio («tt123:1:3») en tu carpeta, la mejor primero: más resolución
+        (4K > 1440p > 1080p > 720p) y, entre iguales, la más grande. Como «Versiones en tu carpeta» del iPhone."""
         parts = str(video_id).split(":")
-        imdb = parts[0]
+        found = []
         for f in self.files:
-            if f.get("imdb") != imdb or f["kind"] != kind:
+            if f.get("imdb") != parts[0] or f["kind"] != kind:
                 continue
             if kind == "movie" or (len(parts) == 3 and f.get("season") == int(parts[1]) and f.get("episode") == int(parts[2])):
-                return f
-        return None
+                found.append({**f, **describe_file(f["name"])})
+        return sorted(found, key=lambda f: (-RES_RANK.get(f["resolution"], 0), -(f.get("size") or 0)))
 
-    def source(self, kind: str, video_id: str) -> streams.Source | None:
-        """«Tu OneDrive» como fuente (la recomendada: está en tu nube, arranca sin esperar)."""
-        f = self.file_for(kind, video_id) if self.client.linked else None
+    def file_for(self, kind: str, video_id: str) -> dict | None:
+        """El mejor archivo de ese título o episodio (None si no está en tu carpeta)."""
+        found = self.versions(kind, video_id)
+        return found[0] if found else None
+
+    def have(self, kind: str, imdb: str) -> list[str]:
+        """Los videos de ese título que están en tu carpeta («tt123» o «tt123:1:3»): los episodios que faltan se marcan."""
+        out = []
+        for f in self.files:
+            if f.get("imdb") == imdb and f["kind"] == kind:
+                vid = imdb if kind == "movie" else f"{imdb}:{f.get('season')}:{f.get('episode')}"
+                if vid not in out:
+                    out.append(vid)
+        return out
+
+    def source(self, kind: str, video_id: str, file_id: str | None = None) -> streams.Source | None:
+        """Tu copia como fuente: la mejor versión, o la que elegiste (`file_id`)."""
+        found = self.versions(kind, video_id) if self.client.linked else []
+        f = next((v for v in found if v["id"] == file_id), None) if file_id else (found[0] if found else None)
         if not f:
             return None
-        name = f["name"].lower()
-        resolution = next((r for r, words in (("4K", ("2160", "4k", "uhd")), ("1080p", ("1080",)), ("720p", ("720",)))
-                           if any(w in name for w in words)), "")
-        return streams.Source(index=INDEX, addon=ADDON, stream={"onedrive": f["id"]}, transport_url="", resolution=resolution,
-                              size=int(f.get("size") or 0), cached=True, release=f["name"], score=10_000)
+        return streams.Source(index=INDEX, addon=ADDON, stream={"onedrive": f["id"]}, transport_url="", resolution=f["resolution"],
+                              hdr=f["hdr"], size=int(f.get("size") or 0), cached=True, release=f["name"], score=10_000,
+                              languages=f["languages"])
+
+    # --- corregir ficha y carpetas (como el iPhone) ------------------------------------------------------------------
+    @staticmethod
+    def key_of(f: dict) -> str:
+        return f"{f['kind']}|{_norm(f['title'])}|{f.get('year') or ''}"
+
+    def fix(self, *, kind: str, imdb: str, name: str, year: int | None = None, file_id: str | None = None,
+            current: str | None = None) -> int:
+        """«Corregir ficha»: esos archivos son este título. Se guarda por el nombre (kind|título|año), así vale para todos los
+        archivos que se llaman igual y para las siguientes revisiones. `file_id` (uno «Sin ficha») o `current` (el IMDb que
+        tenía mal). Devuelve cuántos archivos cambiaron."""
+        if kind not in ("movie", "series") or not str(imdb).startswith("tt"):
+            raise ValueError("Ficha inválida")
+        keys = {self.key_of(f) for f in self.files if (file_id and f["id"] == file_id) or (current and f.get("imdb") == current)}
+        if not keys:
+            raise ValueError("No encontré esos archivos en tu carpeta")
+        hit = {"imdb": imdb, "title": name, "year": year, "fixed": True}
+        changed = 0
+        for key in keys:
+            self.matches[key] = hit
+        for f in self.files:
+            if self.key_of(f) in keys:
+                f.update(imdb=imdb, show_title=name, show_year=year, kind=kind if f["kind"] == kind else f["kind"])
+                changed += 1
+        self._save()
+        self.publish({"type": "onedrive-changed"})
+        return changed
+
+    def listing(self, path: str = "") -> dict:
+        """Ver carpetas: lo que hay en una carpeta de tu OneDrive tal cual (carpetas y videos), para abrir uno aunque no
+        tenga ficha. Empieza en tu carpeta de películas."""
+        path = "/".join(p for p in str(path or self.folder).replace("\\", "/").split("/") if p and p not in (".", ".."))
+        rows = self.client.children(path)
+        folders = [{"name": r["name"], "path": f"{path}/{r['name']}".strip("/"), "count": (r.get("folder") or {}).get("childCount", 0)}
+                   for r in rows if r.get("folder") and r.get("name")]
+        videos = [{"id": r["id"], "name": r["name"], "size": r.get("size") or 0} for r in rows
+                  if r.get("file") is not None and r.get("name") and onedrive.parse_name(r["name"])]
+        return {"path": path, "folders": sorted(folders, key=lambda f: f["name"].lower()),
+                "videos": sorted(videos, key=lambda v: v["name"].lower())}
 
     def stream_url(self, source: streams.Source) -> str | None:
         item = source.stream.get("onedrive") if source and isinstance(source.stream, dict) else None

@@ -207,7 +207,7 @@ class PlayerScreen:
         if self._fallback_subs and self._subs_lang:
             extra.append({"label": f"Buscar en {player_ui.language(self._subs_lang).lower()}…",
                           "action": ("fetch", self._subs_lang), "current": False})
-        self._open_panel(player_ui.tracks_panel(tracks, self.sub_scale, extra, focus))
+        self._open_panel(player_ui.tracks_panel(tracks, self.sub_scale, extra, focus, sub_delay=self.sub_delay))
 
     def open_more(self, still_wanted=lambda: True) -> None:
         meta = getattr(self.current, "meta", None) or {}
@@ -271,6 +271,17 @@ class PlayerScreen:
         prop, value = option["action"]
         if prop == "category":  # la guía de canales: otra categoría, y se pasa a su lista de canales
             self._show_category(value)
+            return
+        if prop == "subdelay":  # Sincronía: se queda en el panel (se ajusta paso a paso); vuelve a cero con cada video
+            self.sub_delay = 0.0 if not value else round(self.sub_delay + value, 1)
+            self.mpv.command("set_property", "sub-delay", self.sub_delay)
+            column = self.menu.find("sync") if self.menu else None
+            if column:
+                column.options = player_ui.sync_options(self.sub_delay)
+                column.index = 0 if value < 0 else 2 if value > 0 else 1
+            self.toast("Subtítulos a tiempo" if not self.sub_delay else
+                       f"Subtítulos {abs(self.sub_delay):.1f} s {'antes' if self.sub_delay < 0 else 'después'}".replace(".", ","), 2)
+            self._draw_panel()
             return
         if prop == "subscale":  # se queda en el panel: ves el cambio y sigues ajustando
             self.sub_scale = value

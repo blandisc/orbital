@@ -37,9 +37,20 @@ def bring_to_front(title: str = WINDOW_TITLE) -> bool:
             return True
 
         user32.EnumWindows(enum, 0)
-        if not found:
-            return False
-        hwnd = found[0]
+        return focus_window(found[0]) if found else False
+    except Exception:  # noqa: BLE001 - es una ayuda; nunca debe romper nada
+        log.exception("No se pudo traer Orbital al frente")
+        return False
+
+
+def focus_window(hwnd: int) -> bool:
+    """Esa ventana al frente (restaurada si estaba minimizada). Solo Windows."""
+    if sys.platform != "win32" or not hwnd:
+        return False
+    try:
+        import ctypes
+
+        user32 = ctypes.windll.user32  # type: ignore[attr-defined]
         if user32.IsIconic(hwnd):
             user32.ShowWindow(hwnd, 9)  # SW_RESTORE
         # Windows bloquea SetForegroundWindow desde procesos en segundo plano; pulsar Alt

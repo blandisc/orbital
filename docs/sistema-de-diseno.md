@@ -165,6 +165,11 @@ letras que bajan: g, p, j, y).
   - Teclas, opciones, filtros, Buscar y Alexa: **foco invertido** (`--inverse-bg/fg`, crece `--inverse-scale`).
   - Clase: los componentes con foco propio usan su modificador BEM (`card--focused`, `sheet__item--focused`);
     la navegación espacial marca lo demás con `.is-focused`. Lo enfocado lleva `aria-current`.
+- **«Atrás» con el dedo** (sin botón B): en todo lo que va encima (Buscar, ficha, fuentes, listas, persona, menús, ¿Qué vemos?,
+  Tu año, conectar cuentas) va **siempre arriba a la derecha**, el mismo lugar en cada pantalla; lo que use esa esquina (el
+  encabezado de Buscar, de una lista, de una hoja o de Fuentes, las temporadas de la ficha) le deja `--touch-back-room`.
+  «Menú» (sin nada encima) va abajo a la derecha: arriba está la barra con la hora. Excepción: el reproductor, cuyos botones
+  van en la barra de abajo («Salir» al final) para no tapar el video.
 - **Pistas del pie**: dicen lo que hace cada botón *aquí*; nada de pistas que no apliquen (p. ej. «Cambiar
   de fila» con una sola fila).
 

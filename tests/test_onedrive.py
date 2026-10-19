@@ -97,13 +97,25 @@ def test_your_onedrive_videos_get_their_title_and_become_the_recommended_source(
     assert again.titles() and again.scan() == 3 and len(cine.calls) == searched  # lo ya reconocido no se vuelve a buscar
 
 
-def test_onedrive_goes_first_in_the_sources_list(library):
+def test_onedrive_is_not_a_source_anymore_it_plays_from_mi_media(library, monkeypatch):
+    """Como el iPhone: tu copia ya no sale en «Fuente»; se ve desde Mi media (play_own), con el respaldo de siempre."""
+    import pytest as _pytest
+
+    from orbital import player
+    from orbital.library import stremio_api
+
     lib = onedrive_library.OneDriveLibrary(FakeClient(), FakeCinemeta(), State())
     lib.state.data["onedrive_folder"] = "Películas"
     lib.scan()
     library.watch.onedrive = lib
-    found = library.watch.stream_sources("movie", "tt15239678")  # sin complementos de Stremio: solo la tuya
-    assert [s.addon for s in found] == ["Tu OneDrive"]
+    with _pytest.raises(stremio_api.StremioError):
+        library.watch.stream_sources("movie", "tt15239678")  # sin complementos de Stremio: nada (ya no la tuya)
+    played = []
+    monkeypatch.setattr(player, "find_mpv", lambda: "mpv.exe")
+    monkeypatch.setattr(library.watch, "play_native", lambda *a, **k: played.append((a, k)))
+    res = library.watch.play_own("movie", "tt15239678", "tt15239678", "Dune")
+    (args, kwargs), = played
+    assert args[1] == "https://descarga.example/A1" and kwargs["own"] is True and res["label"] == "Tu copia · 4K"
 
 
 def test_connecting_onedrive_with_a_code_like_trakt(monkeypatch):
@@ -157,9 +169,46 @@ def test_mi_media_newest_first_with_what_was_not_recognized(tmp_path):
     assert mine["titles"][0]["episodes"] == 1 and mine["titles"][1]["files"] == 1
     assert [f["id"] for f in mine["unmatched"]] == ["C1"]  # «Sin ficha»: se puede ver tal cual
     assert lib.file_url("C1") == "https://descarga.example/C1"
-    assert lib.file_url("ZZ") is None  # solo archivos de tu carpeta
+    assert lib.file_url("ZZ") == "https://descarga.example/ZZ"  # Ver carpetas: cualquier video de tu OneDrive
 
 
 def test_the_upload_date_comes_from_onedrive():
     assert onedrive.added_at("2026-10-12T03:04:05Z") == 1791774245.0
     assert onedrive.added_at(None) is None and onedrive.added_at("nada") is None
+
+
+def test_versions_best_first_and_fixing_a_title_by_its_name():
+    class Two(FakeClient):
+        def videos(self, folder):
+            found = super().videos(folder)
+            extra = "Dune Part Two (2024) 1080p WEB-DL Atmos Latino.mkv"
+            found.append({"id": "A2", "name": extra, "path": extra, "size": 3, **onedrive.parse_name(extra)})
+            return found
+    lib = onedrive_library.OneDriveLibrary(Two(), FakeCinemeta(), State())
+    lib.state.data["onedrive_folder"] = "Películas"
+    lib.scan()
+    versions = lib.versions("movie", "tt15239678")
+    assert [v["id"] for v in versions] == ["A1", "A2"]  # la 4K primero
+    assert (versions[1]["resolution"], versions[1]["audio"], versions[1]["languages"]) == ("1080p", "Atmos", ["es"])
+    assert lib.source("movie", "tt15239678", "A2").stream == {"onedrive": "A2"}
+    assert lib.have("series", "tt11280740") == ["tt11280740:1:3"]
+    # «Corregir ficha» de lo que no se reconoció: vale por el nombre (y para la siguiente revisión).
+    assert lib.fix(kind="movie", imdb="tt0000777", name="Cumpleaños", year=2019, file_id="C1") == 1
+    assert any(t["imdb"] == "tt0000777" for t in lib.library()["titles"]) and not lib.library()["unmatched"]
+    lib.scan()
+    assert any(t["imdb"] == "tt0000777" for t in lib.library()["titles"])
+    with pytest.raises(ValueError):
+        lib.fix(kind="movie", imdb="tt1", name="X", file_id="nada")
+
+
+def test_see_folders_shows_your_onedrive_as_it_is():
+    class Folders(FakeClient):
+        def children(self, path):
+            return [{"name": "Series", "folder": {"childCount": 4}}, {"id": "V1", "name": "Viaje.mp4", "file": {}, "size": 9},
+                    {"id": "T1", "name": "notas.txt", "file": {}}]
+    lib = onedrive_library.OneDriveLibrary(Folders(), FakeCinemeta(), State())
+    lib.state.data["onedrive_folder"] = "Películas"
+    out = lib.listing()
+    assert out["path"] == "Películas" and out["folders"][0]["path"] == "Películas/Series"
+    assert [v["id"] for v in out["videos"]] == ["V1"]  # solo videos
+    assert lib.listing("Películas/../Series")["path"] == "Películas/Series"
