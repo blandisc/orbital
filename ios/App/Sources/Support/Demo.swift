@@ -107,7 +107,7 @@ enum Demo {
     static var search: String? { value(after: "-demo-search") }
     /// `-demo-open settings|sources|play`: lo que se abre encima de la ficha o de Inicio.
     static var open: String? { value(after: "-demo-open") }
-    /// `-demo-gesture brightness|volume|seek|fastforward`: simula el gesto a medio camino (sin tocar la pantalla),
+    /// `-demo-gesture brightness|volume|seek|fastforward|next-subtitle`: simula el gesto a medio camino (sin tocar la pantalla),
     /// para capturar su indicador en el simulador.
     static var gesture: String? { value(after: "-demo-gesture") }
     /// `-demo-console`: simula que tu Orbital de mentira sí contesta «Para ti» (con una lista de ejemplo con puesto),

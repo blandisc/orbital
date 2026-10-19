@@ -74,4 +74,42 @@ final class SubtitleVersionsTests: XCTestCase {
         XCTAssertEqual(SubtitlePick(language: "es", group: "zzz").best(in: ep2)?.id, "track-7")
         XCTAssertNil(SubtitlePick(language: "fr").best(in: ep2))
     }
+
+    // MARK: «Siguiente subtítulo» (botón del reproductor)
+    private func cycleFixture() -> [SubtitleVersion] {
+        let tracks = [MediaTrack(id: 1, kind: .subtitle, language: "spa", title: "Español"),
+                      MediaTrack(id: 2, kind: .subtitle, language: "spa", title: "Español (SDH)"),
+                      MediaTrack(id: 3, kind: .subtitle, language: "spa", isForced: true)]
+        let found = [opt(1, "spa", "Show.S01E01.WEB-DL-GRP", downloads: 5), opt(2, "spa", "x", hi: true),
+                     opt(3, "spa", "y", forced: true), opt(4, "spa", "Show.S01E01.HDTV-LOL", downloads: 100)]
+        return SubtitleVersions.ranked(language: "es", tracks: tracks, found: found, release: "Show.S01E01.1080p.WEB-DL-GRP.mkv")
+    }
+
+    func testNextVersionWithNoneSelectedIsTheBest() {
+        let versions = cycleFixture()
+        XCTAssertEqual(SubtitleVersions.next(after: nil, in: versions)?.id, "track-1")
+        // Una puesta que no está en la lista (p. ej. un SDH o de otro idioma): también la mejor.
+        XCTAssertEqual(SubtitleVersions.next(after: "track-2", in: versions)?.id, "track-1")
+        XCTAssertNil(SubtitleVersions.next(after: nil, in: []))
+    }
+
+    func testNextVersionStepsAndWrapsAround() {
+        let versions = cycleFixture()
+        XCTAssertEqual(versions.map(\.id), ["track-1", "https://subs.example/1", "https://subs.example/4"])
+        var id: String? = nil
+        var seen: [String] = []
+        for _ in 0..<4 { id = SubtitleVersions.next(after: id, in: versions)?.id; seen.append(id ?? "") }
+        XCTAssertEqual(seen, ["track-1", "https://subs.example/1", "https://subs.example/4", "track-1"])
+        // Una sola versión: se queda en ella.
+        XCTAssertEqual(SubtitleVersions.next(after: "track-1", in: [versions[0]])?.id, "track-1")
+    }
+
+    func testNextVersionNeverLandsOnHearingImpairedOrForced() {
+        let versions = cycleFixture()
+        var id: String? = nil
+        for _ in 0..<(versions.count * 2) {
+            id = SubtitleVersions.next(after: id, in: versions)?.id
+            XCTAssertFalse(["track-2", "track-3", "https://subs.example/2", "https://subs.example/3"].contains(id ?? ""))
+        }
+    }
 }

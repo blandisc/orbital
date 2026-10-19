@@ -73,6 +73,11 @@ struct PlayerScreen: View {
     /// Cada toque en la tira de probar subtítulos reinicia su tiempo para irse.
     @State private var tryStripTouches = 0
     @State private var zoomToast: VideoZoom?
+    /// El aviso del botón de subtítulos («Español · 3 de 7» y por qué); se va solo.
+    @State private var subtitleToast = false
+    @State private var subtitleToastTask: Task<Void, Never>?
+    /// La página con que abre el panel (mantener el botón de subtítulos lo abre en Subtítulos).
+    @State private var panelPage: VideoSettingsPanel.Page = .hub
     @State private var zoomToastTask: Task<Void, Never>?
 
     // MARK: gestos como Infuse (brillo, volumen, buscar arrastrando, 2×)
@@ -400,7 +405,10 @@ struct PlayerScreen: View {
         if isFastForwarding {
             VStack { DSSpeedPill(); Spacer() }.padding(.top, DS.Space.s14).transition(.opacity).allowsHitTesting(false)
         }
-        if let zoomToast {
+        if subtitleToast, let info = subtitleInfo(holder.model) {
+            VStack { DSToastPill(text: LocalizedStringKey(info.title), detail: info.reason); Spacer() }.padding(.top, DS.Space.s14)
+                .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
+        } else if let zoomToast {
             VStack { DSToastPill(text: LocalizedStringKey(zoomToast.title)); Spacer() }.padding(.top, DS.Space.s14)
                 .transition(.opacity).allowsHitTesting(false).accessibilityHidden(true)
         }
@@ -456,6 +464,7 @@ struct PlayerScreen: View {
         case "volume": verticalKind = .volume; indicator = (.volume, "speaker.wave.2.fill", 0.4); indicatorVisible = true
         case "seek": dragAxis = .horizontal; seekPositionAtDragStart = model.snapshot.position; seekPreview = model.snapshot.position + 80
         case "fastforward": startFastForward(model)
+        case "next-subtitle": nextSubtitle(model)   // el botón de subtítulos, un toque
         default: break
         }
     }
@@ -572,6 +581,9 @@ struct PlayerScreen: View {
             }
             .frame(maxWidth: .infinity, minHeight: DS.Size.touchTarget, alignment: .leading)
             if withActions { actions(model) }
+            SubtitleCycleButton(on: model.snapshot.selectedSubtitle != nil, loading: model.loadingSubtitle,
+                                next: { nextSubtitle(model) }, openList: { panelPage = .subtitles; panel = true })
+                .accessibilityIdentifier("player-next-subtitle")
             DSIconButton(symbol: zoom.symbol, label: LocalizedStringKey(zoom.title)) { setZoom(zoom.next) }
                 .accessibilityHint(Text("Cambia el zoom del video"))
                 .accessibilityIdentifier("player-zoom")
@@ -580,21 +592,49 @@ struct PlayerScreen: View {
         }
     }
 
-    /// La tira de «probar subtítulos»: ‹ › entre versiones del idioma, «Inglés · 2 de 12» y por qué, ±0.5 s y «Este va bien».
-    /// Se va sola si no la tocas.
-    private func subtitleTryStrip(_ model: PlayerModel, language: String) -> some View {
+    /// Un toque en el botón de subtítulos: la versión siguiente, sin pausar; los controles se quedan (para seguir tocando),
+    /// el aviso arriba y la tira abajo (‹ anterior y «Este va bien»).
+    private func nextSubtitle(_ model: PlayerModel) {
+        pulse()
+        tryStripTouches += 1
+        let settings = env.services.appSettings
+        var languages: [String] = []
+        for code in [settings.subtitles, settings.audio, settings.uiLanguage].compactMap(SubtitleLanguage.code) where !languages.contains(code) { languages.append(code) }
+        Task {
+            guard await model.cycleSubtitle(languages: languages) != nil else { return }
+            subtitleToastTask?.cancel()
+            withAnimation(DS.Motion.base(reduceMotion)) { subtitleToast = true; zoomToast = nil }
+            UIAccessibility.post(notification: .announcement, argument: subtitleInfo(model)?.title)
+            subtitleToastTask = Task {
+                try? await Task.sleep(nanoseconds: DS.Timing.gestureIndicatorHold)
+                guard !Task.isCancelled else { return }
+                withAnimation(DS.Motion.base(reduceMotion)) { subtitleToast = false }
+            }
+        }
+    }
+
+    /// «Español · 3 de 7» y por qué está esa versión («WEB-DL · coincide con tu copia», «Del video»…); nil sin subtítulos.
+    private func subtitleInfo(_ model: PlayerModel, language: String? = nil) -> (title: String, reason: Text)? {
+        let s = model.snapshot
+        guard let language = language ?? model.tryingSubtitles
+                ?? s.selectedSubtitle.flatMap({ id in SubtitleLanguage.code(s.subtitleTracks.first { $0.id == id }?.language) }) else { return nil }
         let versions = model.subtitleVersions(language: language)
         let at = versions.firstIndex { $0.id == model.selectedVersionID }
         let name = Locale(identifier: env.services.appSettings.uiLanguage).localizedString(forLanguageCode: language)?.capitalized ?? language
         let title = at.map { String(localized: "\(name) · \($0 + 1) de \(versions.count)") } ?? name
-        let reason: Text = {
-            guard let at else { return Text("Cargando…") }
-            let v = versions[at]
-            if v.fromVideo { return Text("Del video") }
-            if v.matchesCopy { return Text("Coincide con tu copia") }
-            if let d = v.downloads, d > 0 { return Text("\(d.formatted(.number.notation(.compactName))) descargas") }
-            return Text("De internet")
-        }()
+        guard let at else { return (title, Text("Cargando…")) }
+        let v = versions[at]
+        if v.fromVideo { return (title, Text("Del video")) }
+        let source = v.traits.source
+        if v.matchesCopy { return (title, source.map { Text("\($0) · coincide con tu copia") } ?? Text("Coincide con tu copia")) }
+        if let d = v.downloads, d > 0 { return (title, Text("\(d.formatted(.number.notation(.compactName))) descargas")) }
+        return (title, Text("De internet"))
+    }
+
+    /// La tira de «probar subtítulos»: ‹ › entre versiones del idioma, «Inglés · 2 de 12» y por qué, ±0.5 s y «Este va bien».
+    /// Se va sola si no la tocas.
+    private func subtitleTryStrip(_ model: PlayerModel, language: String) -> some View {
+        let (title, reason) = subtitleInfo(model, language: language) ?? (language, Text("Cargando…"))
         func touched() { tryStripTouches += 1 }
         return GeometryReader { geo in
             let rect = videoRect(in: geo.size)
@@ -632,7 +672,7 @@ struct PlayerScreen: View {
 
     /// Lo que se hace con el video (cada botón dice qué hace; si no cabe, solo el ícono y VoiceOver dice el nombre).
     @ViewBuilder private func actions(_ model: PlayerModel) -> some View {
-        PlayerLabelButton(title: "Audio y subtítulos", symbol: "captions.bubble") { panel = true }
+        PlayerLabelButton(title: "Audio y subtítulos", symbol: "captions.bubble") { panelPage = .hub; panel = true }
         PlayerLabelButton(title: "Bloquear", symbol: "lock") { lock() }
             .accessibilityIdentifier("player-lock")
         if pip.isPossible { PlayerLabelButton(title: "Ventana", symbol: "pip.enter") { pip.toggle() } }
@@ -761,7 +801,7 @@ struct PlayerScreen: View {
     }
 
     private func settingsPanel(_ model: PlayerModel) -> some View {
-        VideoSettingsPanel(model: model, close: { panel = false }, openInInfuse: { Task { await openInInfuse() } }, drawsSubtitles: holder.engine.drawsSubtitles)
+        VideoSettingsPanel(model: model, page: panelPage, close: { panel = false }, openInInfuse: { Task { await openInInfuse() } }, drawsSubtitles: holder.engine.drawsSubtitles)
     }
 
     private func openInInfuse() async {
@@ -892,7 +932,8 @@ struct VideoSettingsPanel: View {
     @State private var moreLanguages = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(model: PlayerModel, close: @escaping () -> Void, openInInfuse: @escaping () -> Void, drawsSubtitles: Bool = true) {
+    init(model: PlayerModel, page: Page = .hub, close: @escaping () -> Void, openInInfuse: @escaping () -> Void, drawsSubtitles: Bool = true) {
+        _page = State(initialValue: page)
         self.model = model; self.close = close; self.openInInfuse = openInInfuse; self.drawsSubtitles = drawsSubtitles
         _observer = StateObject(wrappedValue: ModelObserver(model))
     }

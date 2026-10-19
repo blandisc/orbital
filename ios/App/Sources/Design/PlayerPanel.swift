@@ -354,6 +354,33 @@ struct SubtitleTryStrip: View {
     }
 }
 
+/// El botón de subtítulos de los controles del reproductor: un toque pone la versión siguiente (sin pausar ni abrir nada),
+/// mantenerlo abre la lista de Subtítulos. Mientras baja una versión de internet, enseña que carga.
+struct SubtitleCycleButton: View {
+    let on: Bool
+    let loading: Bool
+    let next: () -> Void
+    let openList: () -> Void
+
+    var body: some View {
+        ZStack {
+            if loading { ProgressView().tint(DS.text) }
+            else { Image(systemName: on ? "captions.bubble.fill" : "captions.bubble").font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text) }
+        }
+        .frame(width: DS.Size.touchTarget, height: DS.Size.touchTarget)
+        .glassEffect(.regular.interactive(), in: Circle())
+        .contentShape(Circle())
+        .onTapGesture(perform: next)
+        .onLongPressGesture(minimumDuration: DS.Timing.longPressDelay, perform: openList)
+        .accessibilityElement()
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel(Text("Siguiente subtítulo"))
+        .accessibilityHint(Text("Mantén presionado para ver la lista de subtítulos"))
+        .accessibilityAction(.default, next)
+        .accessibilityAction(named: Text("Lista de subtítulos"), openList)
+    }
+}
+
 /// «Más idiomas…»: todos los idiomas, con buscador.
 struct LanguageSearchList: View {
     let codes: [String]

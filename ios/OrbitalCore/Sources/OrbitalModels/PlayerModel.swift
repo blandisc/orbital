@@ -502,7 +502,9 @@ public final class PlayerModel: ObservableModel {
     public var subtitlePicks: SubtitlePicks?
     /// Los subtítulos de internet ya sumados al video → su pista en el motor.
     public private(set) var addedTracks: [URL: Int] = [:] { didSet { changed() } }
-    private var pendingSubtitleURL: URL?
+    private var pendingSubtitleURL: URL? { didSet { changed() } }
+    /// Se está bajando un subtítulo de internet para ponerlo (el botón de subtítulos enseña que carga).
+    public var loadingSubtitle: Bool { pendingSubtitleURL != nil }
     /// La tira para probar versiones sobre el video (el idioma que se está probando); nil: no se ve.
     public private(set) var tryingSubtitles: String? { didSet { changed() } }
 
@@ -565,6 +567,32 @@ public final class PlayerModel: ObservableModel {
             addedSubtitleURLs.insert(option.url)
             await engine.addSubtitle(url: option.url, language: option.language)
         }
+    }
+
+    /// El botón de subtítulos de los controles (un toque): la versión siguiente del idioma puesto, sin pausar ni abrir nada;
+    /// sin subtítulos, la mejor de tu idioma (`languages`: los tuyos, en orden). La primera vez busca también en internet, en
+    /// segundo plano, para que haya más versiones en la vuelta. Enseña la tira (‹ anterior y «Este va bien»).
+    /// Devuelve la versión puesta (nil: no hay ninguna en ese idioma).
+    @discardableResult
+    public func cycleSubtitle(languages: [String]) async -> SubtitleVersion? {
+        userTouched()
+        if foundSubtitles == nil, !searchingSubtitles, !subtitleSearchFailed { Task { await ensureSubtitleSearch() } }
+        let s = snapshot
+        let playing = s.selectedSubtitle.flatMap { id in SubtitleLanguage.code(s.subtitleTracks.first { $0.id == id }?.language) }
+        let language = playing ?? languages.first { !subtitleVersions(language: $0).isEmpty } ?? languages.first
+        guard let language else { return nil }
+        var versions = subtitleVersions(language: language)
+        if versions.isEmpty {   // el video no trae ese idioma: se espera a lo de internet
+            await ensureSubtitleSearch()
+            versions = subtitleVersions(language: language)
+        }
+        guard let next = SubtitleVersions.next(after: playing == nil ? nil : selectedVersionID, in: versions) else { return nil }
+        tryingSubtitles = language
+        await apply(next)
+        if let request {
+            titlePrefs.remember(metaID: request.metaID, subtitleTrack: Streams.languageCodes[next.language] ?? next.language)
+        }
+        return next
     }
 
     /// ‹ › de la tira: la versión anterior o la siguiente del mismo idioma.

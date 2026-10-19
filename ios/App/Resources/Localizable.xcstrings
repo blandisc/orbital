@@ -11242,6 +11242,50 @@
           }
         }
       }
+    },
+    "Siguiente subtítulo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next subtitle"
+          }
+        }
+      }
+    },
+    "Mantén presionado para ver la lista de subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press and hold to see the subtitle list"
+          }
+        }
+      }
+    },
+    "Lista de subtítulos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subtitle list"
+          }
+        }
+      }
+    },
+    "%@ · coincide con tu copia": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · matches your copy"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

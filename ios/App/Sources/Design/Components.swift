@@ -744,10 +744,15 @@ struct DSSpeedPill: View {
 }
 
 /// Un aviso breve en una cápsula de vidrio (p. ej. el modo de zoom del reproductor al cambiarlo).
+/// `detail`: un segundo renglón más tenue (p. ej. por qué está ahí esa versión de subtítulos).
 struct DSToastPill: View {
     let text: LocalizedStringKey
+    var detail: Text? = nil
     var body: some View {
-        Text(text).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text)
+        VStack(spacing: 0) {
+            Text(text).font(DS.TextRecipe.secondary.font.weight(.semibold)).foregroundStyle(DS.text).contentTransition(.numericText())
+            if let detail { detail.recipe(.caption).lineLimit(1) }
+        }
             .padding(.horizontal, DS.Space.s4).padding(.vertical, DS.Space.s2)
             .glassEffect(.regular, in: Capsule())
     }

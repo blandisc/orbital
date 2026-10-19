@@ -134,6 +134,14 @@ public enum SubtitleVersions {
             .map(\.v)
         return embedded + internet
     }
+
+    /// «Siguiente subtítulo» (botón del reproductor): la versión que sigue a la puesta en la lista ya ordenada; tras la última,
+    /// vuelve a la primera. Sin ninguna puesta (o la puesta no está en la lista), la primera: la mejor de tu idioma.
+    public static func next(after currentID: String?, in versions: [SubtitleVersion]) -> SubtitleVersion? {
+        guard !versions.isEmpty else { return nil }
+        guard let currentID, let at = versions.firstIndex(where: { $0.id == currentID }) else { return versions[0] }
+        return versions[(at + 1) % versions.count]
+    }
 }
 
 /// Lo que elegiste con «Este va bien» en una serie: el idioma y la copia (grupo o nombre) del subtítulo, para escoger el
