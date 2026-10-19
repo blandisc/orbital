@@ -19,6 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "ios/App/Resources/Localizable.xcstrings"
 
 TRANSLATIONS = {
+    "CH %@": "CH %@",
+    "Lo último que viste": "Last watched",
     "Calendario del mes": "Month calendar", "Ese día no sale nada de lo que sigues.": "Nothing you follow comes out that day.", "Mes anterior": "Previous month", "Mes siguiente": "Next month", "Nada sale": "Nothing out", "te recomendamos:": "we recommend:",
     "El N.º 1 de cada plataforma": "No. 1 on each platform", "Lo que todos están viendo": "What everyone's watching",
     "Lo número 1 en tus plataformas": "The number 1 on your platforms",

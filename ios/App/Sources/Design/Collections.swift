@@ -159,7 +159,7 @@ struct BecauseCard<Related: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Space.s3) {
             deckHeader
-            Text("te recomendamos:").recipe(.secondary)
+            Text("te recomendamos:").recipe(.body, color: DS.textMuted)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: DS.Space.s2) { related() }
                     .environment(\.posterCaptions, false)
@@ -169,7 +169,7 @@ struct BecauseCard<Related: View>: View {
         }
         .padding(DS.Space.s3)
         .background(DS.surface, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
-        .animation(DS.Motion.base(reduceMotion), value: selected)
+        .animation(reduceMotion ? nil : .snappy(duration: DS.Collections.deckSettle), value: selected)
         .sensoryFeedback(.selection, trigger: selected)
     }
 
@@ -181,10 +181,10 @@ struct BecauseCard<Related: View>: View {
                 choose(seeds[(index + step + seeds.count) % seeds.count].id)
             }
             VStack(alignment: .leading, spacing: DS.Space.s2) {
-                Text("Porque viste").recipe(.footnote)
+                Text("Porque viste").recipe(.secondary)
                 Text(verbatim: current?.title ?? "").recipe(.title).lineLimit(3)
                 if seeds.count > 1 {
-                    Text("Avienta la carta para cambiar").recipe(.caption)
+                    Text("Avienta la carta para cambiar").recipe(.footnote)
                     HStack(spacing: DS.Space.s2) {
                         Button { choose(seeds[(index - 1 + seeds.count) % seeds.count].id) } label: { Image(systemName: "chevron.left") }
                             .accessibilityLabel(Text("Anterior"))
@@ -220,7 +220,7 @@ struct BecauseDeck: View {
                     .scaleEffect(1 - CGFloat(depth) * DS.Collections.deckShrink)
                     .rotationEffect(.degrees(Double(depth) * DS.Collections.deckTurn + (top ? Double(drag) / Double(DS.Collections.deckThrow) * DS.Collections.deckTurn * 2 : 0)))
                     .offset(x: CGFloat(depth) * DS.Collections.deckShift + (top ? drag : 0), y: CGFloat(depth) * DS.Collections.deckShift)
-                    .transition(.asymmetric(insertion: .opacity, removal: .move(edge: .leading).combined(with: .opacity)))
+                    .transition(.asymmetric(insertion: .opacity, removal: .opacity))
             }
         }
         .frame(width: DS.Collections.deckPoster + DS.Collections.deckShift * CGFloat(DS.Collections.deckDepth), alignment: .topLeading)
@@ -228,18 +228,29 @@ struct BecauseDeck: View {
         .gesture(DragGesture(minimumDistance: DS.Space.s2)
             .onChanged { drag = $0.translation.width }
             .onEnded { value in
-                let thrown = abs(value.translation.width) > DS.Collections.deckThrow
-                withAnimation(DS.Motion.base(reduceMotion)) {
-                    drag = 0
-                    if thrown { step(value.translation.width < 0 ? 1 : -1) }
-                }
+                // Se avienta si pasó el umbral o si el dedo iba rápido (como en una pila de cartas real).
+                let thrown = abs(value.translation.width) > DS.Collections.deckThrow || abs(value.predictedEndTranslation.width) > DS.Collections.deckThrow * 3
+                if thrown { fly(value.translation.width < 0 ? -1 : 1) }
+                else { withAnimation(.snappy(duration: DS.Collections.deckSettle)) { drag = 0 } }
             })
-        .onTapGesture { withAnimation(DS.Motion.base(reduceMotion)) { step(1) } }
+        .onTapGesture { fly(-1) }
         .accessibilityElement()
         .accessibilityLabel(Text(verbatim: seeds.indices.contains(index) ? seeds[index].title : ""))
         .accessibilityHint(Text("Desliza hacia arriba o abajo para cambiar el título"))
         .accessibilityAdjustableAction { direction in step(direction == .increment ? 1 : -1) }
         .accessibilityIdentifier("because-deck")
+    }
+
+    /// La carta de arriba sale volando hacia ese lado y las de abajo suben (−1: a la izquierda, pasa a la siguiente).
+    private func fly(_ direction: CGFloat) {
+        guard !reduceMotion else { step(direction < 0 ? 1 : -1); return }
+        withAnimation(.easeIn(duration: DS.Collections.deckFly)) { drag = direction * DS.Collections.deckFlyDistance }
+        DispatchQueue.main.asyncAfter(deadline: .now() + DS.Collections.deckFly) {
+            withAnimation(.snappy(duration: DS.Collections.deckSettle)) {
+                drag = 0
+                step(direction < 0 ? 1 : -1)
+            }
+        }
     }
 }
 

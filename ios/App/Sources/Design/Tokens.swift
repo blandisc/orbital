@@ -80,16 +80,34 @@ enum DS {
     /// «Un Simpson al azar»: la ruleta de episodios (ancho de cada imagen, espacio, cuánto gira y cuánto se queda el elegido
     /// antes de empezar), la dona y el amarillo de Los Simpson.
     enum Simpsons {
-        // Un cambio de canal de un segundo en la tele morada de la sala: aparece (0.15 s), tres clics con estática (~0.4 s),
-        // se queda en el elegido (0.25 s) y la pantalla crece hasta llenar el iPhone (0.2 s).
+        // Un cambio de canal (≈1.2 s): aparece con rebote (0.25 s), tres clics con estática y su número de canal (~0.35 s),
+        // se queda y brilla (0.3 s) y la imagen crece desde la pantalla hasta llenar el iPhone (0.35 s).
         static let reelLength = 3, warmWait: Double = 0.25
-        static let appear: Double = 0.15, staticBurst: Double = 0.06, flip: Double = 0.07, settle: Double = 0.15, hold: Double = 0.25, zoom: Double = 0.2
-        static let screen: CGFloat = 240, screenAspect: CGFloat = 4 / 3, screenRadius: CGFloat = 26, tvRadius: CGFloat = 36
-        static let knobSize: CGFloat = 22, knobTurn: Double = 60, appearScale: CGFloat = 0.9, zoomScale: CGFloat = 3.2
-        static let ghost: Double = 0.35, staticLine: CGFloat = 3, captionHeight: CGFloat = 96, glow: CGFloat = 420
+        static let appear: Double = 0.25, bounce: Double = 0.35, staticBurst: Double = 0.08, flip: Double = 0.1
+        static let settle: Double = 0.15, flashOff: Double = 0.08, hold: Double = 0.3, zoom: Double = 0.35, handoff: Double = 0.05
+        static let channels = [3, 7, 12]
+        // La tele.
+        static let screen: CGFloat = 220, screenAspect: CGFloat = 4 / 3, screenRadius: CGFloat = 28, screenFrame: CGFloat = 3
+        static let tvRadius: CGFloat = 38, bezel: CGFloat = 18, tvGlow: CGFloat = 40
+        static let knobSize: CGFloat = 24, knobMark: CGFloat = 3, knobTurn: Double = 45
+        static let grilleLines = 4, grilleLine: CGFloat = 3, grilleGap: CGFloat = 4
+        static let antennaWidth: CGFloat = 170, antennaHeight: CGFloat = 92, antennaLine: CGFloat = 3, antennaTip: CGFloat = 5
+        static let antennaBase: CGFloat = 16, antennaWobble: Double = -4
+        static let legSpan: CGFloat = 200, legWidth: CGFloat = 12, legHeight: CGFloat = 16
+        static let appearScale: CGFloat = 0.82, tvBehind: CGFloat = 1.15, ghost: Double = 0.35, flash: Double = 0.35, osdGlow: CGFloat = 6
+        static let staticLine: CGFloat = 3, captionHeight: CGFloat = 96, glow: CGFloat = 420
         static let amarillo = Color(red: 1, green: 0.85, blue: 0.12)    // el amarillo de Los Simpson
-        static let tvBody = Color(red: 0.55, green: 0.38, blue: 0.68)   // la tele morada de la sala
-        static let knob = Color(red: 0.33, green: 0.2, blue: 0.42)
+        static let tvBody = Color(red: 0.6, green: 0.42, blue: 0.74)    // la tele morada de la sala
+        static let tvShade = Color(red: 0.42, green: 0.27, blue: 0.55)
+        static let knob = Color(red: 0.3, green: 0.18, blue: 0.4)
+        static let antenna = Color(red: 0.62, green: 0.62, blue: 0.66)
+        static let osd = Color(red: 0.35, green: 1, blue: 0.45)          // el número de canal verde de las teles viejas
+    }
+
+    /// Lo que va a la derecha del título de una sección («Ver todo ›», «Todo ⌄», «📅 Octubre», el switch Películas · Series):
+    /// todo del mismo alto que el segmentado del sistema (32 pt a la vista) y con 44 pt para tocar, como pide Apple.
+    enum HeaderControl {
+        static let height: CGFloat = 32, padding: CGFloat = 14, iconGap: CGFloat = 5
     }
 
     /// El calendario de estrenos (Sale hoy › el mes): cada día pintado con el color del arte de lo que sale.
@@ -352,10 +370,12 @@ enum DS {
         /// La tarjeta de una lista: su pila de pósters.
         static let stackPoster: CGFloat = 40, stackWidth: CGFloat = 54, stackAngle: Double = 8
         /// «Porque viste»: el póster de lo que viste y los relacionados.
-        static let seedPoster: CGFloat = 104, relatedPoster: CGFloat = 64
+        static let seedPoster: CGFloat = 104, relatedPoster: CGFloat = 92
         /// «Porque viste» en mini pósters: el tamaño de cada uno, el elegido (crece) y qué tan apagados los demás.
         /// «Porque viste» en mazo: la carta de arriba, cuánto se corre y gira cada una de abajo, y cuánto hay que arrastrar.
-        static let deckPoster: CGFloat = 96, deckShift: CGFloat = 6, deckTurn: Double = 3, deckShrink: CGFloat = 0.05, deckThrow: CGFloat = 40, deckDepth = 3
+        static let deckPoster: CGFloat = 112, deckShift: CGFloat = 7, deckTurn: Double = 3, deckShrink: CGFloat = 0.05, deckThrow: CGFloat = 40, deckDepth = 3
+        /// Aventar la carta: sale volando de lado en 0.22 s y las de abajo suben con un resorte ágil.
+        static let deckFly: Double = 0.22, deckFlyDistance: CGFloat = 340, deckSettle: Double = 0.28
         /// «Por año»: la tarjeta (cuatro pósters) y su número.
         static let yearWidth: CGFloat = 150, yearHeight: CGFloat = 150
         /// La línea (desde arriba de lo visible, bajo la barra) que decide qué grupo marca el índice.

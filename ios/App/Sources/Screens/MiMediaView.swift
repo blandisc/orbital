@@ -20,7 +20,7 @@ struct MiMediaView<Top: View>: View {
         let model = observer.model
         ScrollView {
             LazyVStack(alignment: .leading, spacing: DS.Space.s6) {
-                top().padding(.horizontal, DS.Space.gutter)
+                top()
                 if model.needsFolder {
                     DSEmptyState(symbol: "folder", title: Text("Elige la carpeta de tus películas"),
                                  message: Text("Solo se mira esa carpeta y sus subcarpetas.")) {

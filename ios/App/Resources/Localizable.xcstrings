@@ -1365,6 +1365,17 @@
         }
       }
     },
+    "CH %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CH %@"
+          }
+        }
+      }
+    },
     "Cada video se reconoce por su nombre: «Dune Part Two (2024).mkv», «Severance S01E03.mkv».": {
       "extractionState": "manual",
       "localizations": {
@@ -5585,6 +5596,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "The latest you uploaded"
+          }
+        }
+      }
+    },
+    "Lo último que viste": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last watched"
           }
         }
       }

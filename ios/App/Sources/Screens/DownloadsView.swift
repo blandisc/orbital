@@ -26,8 +26,12 @@ struct DownloadsView: View {
     var body: some View {
         let model = observer.model
         Group {
-            // El selector va dentro de lo que se desliza (como primer renglón): fijo arriba se encimaba con el contenido.
-            if showsMedia && part == .media { MiMediaView(observer: media) { switcher } } else { phoneList(model) }
+            if showsMedia && part == .media { MiMediaView(observer: media) { EmptyView() } } else { phoneList(model) }
+        }
+        // El selector, fijo arriba en una barra del sistema (con el desvanecido del contenido debajo): igual en las dos vistas,
+        // así al cambiar no brinca ni se mueve nada.
+        .safeAreaBar(edge: .top) {
+            if showsMedia { switcher.padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s2) }
         }
         .navigationTitle("Descargas").toolbarTitleDisplayMode(.inlineLarge)   // el título grande en el renglón de los botones: no se pierde un renglón arriba
         .subtitle(downloadingCount(model) == 0 ? nil : Text("\(downloadingCount(model)) descargando"))   // solo las que bajan (no las en pausa)   // el espacio, en su barra
@@ -61,7 +65,6 @@ struct DownloadsView: View {
     private func phoneList(_ model: DownloadsModel) -> some View {
         let settings = env.services.appSettings
         return List {
-            if showsMedia { Section { switcher }.listRowBackground(Color.clear).listRowInsets(EdgeInsets()) }
             if !model.items.isEmpty {
                 Section {
                     StorageBar(parts: [.init(id: "series", label: Text("Series"), bytes: model.items.filter { $0.kind == "series" }.reduce(0) { $0 + $1.writtenBytes }, color: DS.ListTint.series),

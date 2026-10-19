@@ -20,6 +20,9 @@ struct HomeView: View {
     @State private var rollingSimpsons = false
     /// Sale hoy › el mes completo.
     @State private var showingCalendar = false
+    @Namespace private var simpsonsZoom
+    @State private var continueSort: ListSort = .added
+    @State private var continueKind = ""
     /// El alto de cada renglón de «Tu watchlist», que crece con el tamaño de letra.
     @ScaledMetric(relativeTo: .body) private var watchRow = DS.Editorial.watchlistRow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -95,7 +98,7 @@ struct HomeView: View {
                 }
             }
             .padding(.top, DS.Space.s3)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
-            .padding(.bottom, DS.Space.s4)      // la barra de pestañas ya deja su espacio: más aquí era aire muerto al final
+            .padding(.bottom, DS.Space.s2)      // la barra de pestañas ya deja su espacio: más aquí era aire muerto al final
             .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
             .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
         }
@@ -106,7 +109,7 @@ struct HomeView: View {
         // Arriba, el ícono y «Orbital» (el carácter de la app); al bajar, en medio, lo más útil que haya (lo que suena en la TV…).
         .navigationTitle(scrolledDown ? scrolledTitle : Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
         .subtitle(syncText)
-        .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette() }
+        .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette().navigationTransition(.zoom(sourceID: "simpsons", in: simpsonsZoom)) }
         .sheet(isPresented: $showingCalendar) {
             ReleaseCalendarView { route in showingCalendar = false; openTitle = route }
                 .presentationDetents([.large]).presentationDragIndicator(.visible)
@@ -127,6 +130,7 @@ struct HomeView: View {
             // Un Simpson al azar (T5–T15): un toque, la ruleta, y empieza en el iPhone.
             ToolbarItem(placement: .topBarTrailing) {
                 Button { rollingSimpsons = true } label: { Image("Glyphs/donut").renderingMode(.original) }
+                    .matchedTransitionSource(id: "simpsons", in: simpsonsZoom)   // la tele sale de la dona
                     .accessibilityLabel(Text("Un Simpson al azar"))
                     .accessibilityIdentifier("home-random-simpsons")
             }
@@ -148,14 +152,13 @@ struct HomeView: View {
         if route.id == "continue" { allContinue(home.model) } else { titleGrid(route) }
     }
 
+    /// Con orden y filtros (películas o series, género, ocultar lo visto), como toda lista abierta desde «Ver todo».
     private func titleGrid(_ route: HomeListRoute) -> some View {
-        let routes = route.id == "watchlist" ? home.model.traktPending.map(\.route)
-            : route.id == "foryou" ? home.model.forYouPicks.map(\.route) : home.model.myList.map(self.route)
+        let items: [Suggestion] = route.id == "watchlist" ? home.model.traktPending
+            : route.id == "foryou" ? home.model.forYouPicks : home.model.myList.map(suggestion)
         return ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: DS.Poster.gridMinimum), spacing: DS.Space.s3)], spacing: DS.Space.s4) {
-                ForEach(routes, id: \.metaID) { TitleLink(route: $0, width: DS.Poster.gridMinimum) }
-            }
-            .padding(.horizontal, DS.Space.gutter).padding(.bottom, DS.Space.s14)
+            SortableGrid(listID: "home:\(route.id)", items: items) { s in TitleLink(route: s.route, width: DS.Poster.gridMinimum) }
+                .padding(.bottom, DS.Space.s14)
         }
         .background(Backdrop(tint: tint.colors))
         .navigationTitle(route.id == "watchlist" ? Text("Tu watchlist") : route.id == "foryou" ? Text("Para ti") : Text("Mi lista")).navigationBarTitleDisplayMode(.inline)
@@ -181,6 +184,12 @@ struct HomeView: View {
     }
 
     private func route(_ item: HomeItem) -> TitleRoute { TitleRoute(kind: item.kind, metaID: item.metaID, title: item.title, poster: item.poster) }
+
+    /// Un título de Mi lista como sugerencia (para ordenarlo y filtrarlo como las demás listas).
+    private func suggestion(_ item: HomeItem) -> Suggestion {
+        Suggestion(kind: item.kind, imdb: item.metaID, title: item.title, poster: item.poster ?? String(format: ForYou.metahubPoster, item.metaID),
+                   wide: item.background ?? "", reason: .inList("Mi lista"))
+    }
 
     /// Cómo se ve Inicio (carrusel, tiempo, avatar), en vivo: al cambiarlo en Ajustes, Inicio se vuelve a pintar.
     private var look: AppSettings {
@@ -408,10 +417,12 @@ struct HomeView: View {
                             .accessibilityIdentifier("top-\(s.brand)")
                         }
                     }
+                    .padding(.vertical, DS.PlatformFan.pillStroke)   // el borde de la elegida no se recorta
                     .scrollTargetLayout()
                 }
                 .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
-                .contentMargins(.vertical, DS.PlatformFan.pillStroke, for: .scrollContent)   // el borde de la elegida no se recorta
+                // Un riel: solo de lado. Antes la fila tenía unos puntos de más y se podía mover arriba y abajo.
+                .scrollBounceBehavior(.basedOnSize, axes: .vertical)
                 .scrollTargetBehavior(.viewAligned)
                 // Un riel fijo: tocar una pastilla no recorre la fila (antes saltaba para dejarla al borde). Solo al abrir, si la
                 // guardada está lejos, se acerca.
@@ -497,9 +508,11 @@ struct HomeView: View {
 
     /// «Seguir viendo» completo: todo (el carrusel solo trae los últimos), en piezas anchas con su avance.
     private func allContinue(_ model: HomeModel) -> some View {
-        ScrollView {
+        let kept = model.continueWatching.filter { continueKind.isEmpty || $0.kind == continueKind }
+        let shown = continueSort == .title ? kept.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending } : kept
+        return ScrollView {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: DS.Space.s3), GridItem(.flexible())], spacing: DS.Space.s4) {
-                ForEach(model.continueWatching) { item in
+                ForEach(shown) { item in
                     NavigationLink(value: route(item)) {
                         StillCard(title: item.title, art: item.background ?? item.poster,
                                   data: progressFact(season: item.season, episode: item.episode, leftMinutes: item.leftMinutes).components(separatedBy: " · "),
@@ -513,5 +526,22 @@ struct HomeView: View {
         }
         .background(Backdrop(tint: tint.colors))
         .navigationTitle(Text("Seguir viendo")).navigationBarTitleDisplayMode(.inline)
+        // Ordenar y filtrar, como toda lista abierta desde «Ver todo».
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Picker("Ordenar", selection: $continueSort) {
+                        Text("Lo último que viste").tag(ListSort.added)
+                        Text("A–Z").tag(ListSort.title)
+                    }
+                    Picker("Mostrar", selection: $continueKind) {
+                        Text("Todo").tag("")
+                        Text("Películas").tag("movie")
+                        Text("Series").tag("series")
+                    }
+                } label: { Image(systemName: "line.3.horizontal.decrease") }
+                .accessibilityLabel(Text("Ordenar y filtrar"))
+            }
+        }
     }
 }

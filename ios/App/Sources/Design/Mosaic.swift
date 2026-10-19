@@ -40,6 +40,8 @@ final class MosaicRuntime: ObservableObject {
     private var serial = 0
     private var size: (width: Double, height: Double) = (0, 0)
     private var columnCount = 1
+    /// Lo que le falta subir a cada columna para el escalón del ambiente (se consume con la deriva).
+    private var pendingLift: [Double] = []
 
     var isEmpty: Bool { pool.items.isEmpty }
     var current: Suggestion? {
@@ -196,8 +198,9 @@ final class MosaicRuntime: ObservableObject {
         aliveTileID = nil
         // Si siguen parejas (la primera vez, o tras recorrerlas con el dedo), las de turno impar suben un poco antes de
         // que empiece la deriva; quien llama lo anima.
+        // El escalón no brinca: se suma a la deriva, a su misma velocidad, hasta completarse.
         if let first = columns.first?.offset, columns.allSatisfy({ $0.offset == first }) {
-            for c in columns.indices where c % 2 == 1 { columns[c].offset += geometry.gap * DesignTokens.Mosaic.ambientLiftGaps }
+            pendingLift = columns.indices.map { $0 % 2 == 1 ? geometry.gap * DesignTokens.Mosaic.ambientLiftGaps : 0 }
         }
         relayoutAndFill()
     }
@@ -206,7 +209,9 @@ final class MosaicRuntime: ObservableObject {
     func driftTick(_ dt: Double, speeds: [Double]) {
         guard mode == .ambient else { return }
         for c in columns.indices {
-            columns[c].offset += (speeds.indices.contains(c) ? speeds[c] : geometry.gap) * dt
+            let lift = pendingLift.indices.contains(c) ? min(pendingLift[c], DesignTokens.Mosaic.driftPerSecond * dt) : 0
+            if lift > 0 { pendingLift[c] -= lift }
+            columns[c].offset += (speeds.indices.contains(c) ? speeds[c] : geometry.gap) * dt + lift
             let removed = geometry.prune(&columns[c], viewportHeight: size.height)
             if removed > 0, c == focus?.col, var f = focus { f.row = max(0, f.row - removed); focus = f }   // la misma pieza sigue enfocada
         }

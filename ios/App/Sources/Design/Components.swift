@@ -136,7 +136,9 @@ struct DSSectionHead: View {
                 if let line = eyebrow ?? meta { line.recipe(.eyebrow, color: DS.eyebrow).lineLimit(2).multilineTextAlignment(.leading) }
                 HStack(alignment: .center, spacing: DS.Space.s2) {
                     title.recipe(.section).lineLimit(2).multilineTextAlignment(.leading)
-                        .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
+                        // El centro que se ve (la mitad de las mayúsculas sobre la línea base), no el de la caja del texto:
+                        // así lo de la derecha no queda alto.
+                        .alignmentGuide(.sectionTitle) { $0[.firstTextBaseline] - UIFont.preferredFont(forTextStyle: .title2).capHeight / 2 }
                     if let source { SourceBadge(source: source) }
                 }
                 if eyebrow != nil, let meta { meta.recipe(.footnote).lineLimit(2).multilineTextAlignment(.leading) }
@@ -641,6 +643,7 @@ struct DSKindFilter: View {
             } else if compact {
                 // El switch chico del Top 10 (cápsula con lo elegido resaltado), a la derecha del título de su sección.
                 DSSegmented(options: options, selection: $kind).fixedSize()
+                    .frame(minHeight: DS.Size.touchTarget)   // el mismo renglón que las cápsulas («Ver todo», «Todo ⌄»)
                     .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
             } else {
                 DSSegmented(options: options, selection: $kind)
@@ -1011,17 +1014,19 @@ struct DSCapsuleLabel: View {
     var symbolFirst = true
 
     var body: some View {
-        HStack(spacing: DS.Space.s1) {
+        HStack(spacing: DS.HeaderControl.iconGap) {
             if symbolFirst { icon }
-            title.font(DS.TextRecipe.footnote.font.weight(.semibold))
+            title.font(DS.TextRecipe.secondary.font.weight(.semibold))
             if !symbolFirst { icon }
         }
         .foregroundStyle(DS.text)
-        .padding(.horizontal, DS.Space.s3).padding(.vertical, DS.Space.s1)
-        .background(DS.fill, in: Capsule())
-        .contentShape(Capsule())
+        .padding(.horizontal, DS.HeaderControl.padding)
+        .frame(height: DS.HeaderControl.height)
+        .background(DS.fillStrong, in: Capsule())
+        .frame(minHeight: DS.Size.touchTarget)   // se ve de 32 pt; se toca en 44
+        .contentShape(Rectangle())
         .alignmentGuide(.sectionTitle) { $0[VerticalAlignment.center] }
     }
 
-    private var icon: some View { Image(systemName: symbol).font(DS.TextRecipe.caption.font.weight(.bold)) }
+    private var icon: some View { Image(systemName: symbol).font(DS.TextRecipe.footnote.font.weight(.bold)).imageScale(.small) }
 }

@@ -382,9 +382,13 @@ final class AppEnvironment: ObservableObject {
     func drawSimpsons(reelLength: Int, quiet: Bool = false) async -> SimpsonsDraw? {
         let id = Self.simpsons
         guard let meta = try? await services.cinemeta.meta(kind: "series", id: id) else { if !quiet { notify("No pude traer los episodios de Los Simpson.") }; return nil }
-        let pool = CinemetaParsing.seasons(meta).filter { Self.simpsonsSeasons.contains($0.season) }
-            .flatMap { season in season.episodes.map { (season: season.season, episode: $0) } }
-        guard pool.count > 1, let chosen = pool.randomElement() else { notify("No pude traer los episodios de Los Simpson."); return nil }
+        // Leer ~700 episodios cuesta: fuera del hilo principal (si no, la animación de la tele se trababa).
+        let seasons = Self.simpsonsSeasons
+        let pool = await Task.detached(priority: .userInitiated) {
+            CinemetaParsing.seasons(meta).filter { seasons.contains($0.season) }
+                .flatMap { season in season.episodes.map { (season: season.season, episode: $0) } }
+        }.value
+        guard pool.count > 1, let chosen = pool.randomElement() else { if !quiet { notify("No pude traer los episodios de Los Simpson.") }; return nil }
         let others = (0..<max(0, reelLength - 1)).compactMap { _ in pool.randomElement() }
         return SimpsonsDraw(meta: meta, name: meta["name"]?.string ?? "The Simpsons", reel: others + [chosen])
     }
@@ -397,9 +401,15 @@ final class AppEnvironment: ObservableObject {
         nextSimpsons = draw
     }
     private var nextSimpsons: SimpsonsDraw?
+    nonisolated static let simpsonsRefill: Double = 15
     /// El que ya estaba listo (y se prepara el siguiente), o uno nuevo.
     func takeSimpsons() async -> SimpsonsDraw? {
-        if let ready = nextSimpsons { nextSimpsons = nil; Task { await prefetchSimpsons() }; return ready }
+        if let ready = nextSimpsons {
+            nextSimpsons = nil
+            // El siguiente se prepara después (no mientras la tele se anima).
+            Task { try? await Task.sleep(nanoseconds: UInt64(Self.simpsonsRefill * 1_000_000_000)); await prefetchSimpsons() }
+            return ready
+        }
         return await drawSimpsons(reelLength: DS.Simpsons.reelLength)
     }
 
