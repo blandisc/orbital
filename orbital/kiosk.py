@@ -268,7 +268,8 @@ class KioskWindow:
 
         profile = f"--user-data-dir={self.profile_dir}".lower()
         startup = Path(os.environ.get("APPDATA", "")) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / "Orbital.lnk"
-        command = f'explorer.exe "{startup}"' if startup.exists() else f'"{sys.executable}" -m orbital'
+        frozen = getattr(sys, "frozen", False)  # Orbital.exe se abre solo (sin «-m orbital»)
+        command = f'explorer.exe "{startup}"' if startup.exists() else f'"{sys.executable}"' if frozen else f'"{sys.executable}" -m orbital'
         done = False
         for wait in (1, 2, 3, 4, 10, 20):
             time.sleep(wait)
