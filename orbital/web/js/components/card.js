@@ -1,6 +1,6 @@
 import { h, svg } from "../core/dom.js";
 import { shortAgo } from "../core/format.js";
-import { rankOf, trendOf, trimmedLogo } from "../core/foryou.js";
+import { logoUrl as titleLogo, rankOf, trendOf, trimmedLogo } from "../core/foryou.js";
 import { SYSTEMS, systemColor, systemOf } from "../core/home.js";
 import { ICONS, systemIconName } from "../core/icons.js";
 import { sized } from "../core/images.js";
@@ -56,7 +56,7 @@ export function Card(item, { onPress, onRatio, showAgo = false, caption = false,
   // Un nombre sobre el arte (Por género: «Terror»), como las tarjetas de Explora del iPhone.
   const label = item.label ? h("span", { class: "card__label" }, item.label) : null;
   // Ancha: el logo del título sobre el arte (sin él, el arte de fondo no dice qué es); si no carga, el nombre.
-  const logoUrl = item.extra?.logo || (/^tt\d+$/.test(item.meta_id ?? "") ? `/api/foryou/logo/${item.meta_id}` : null);
+  const logoUrl = item.extra?.logo || (/^tt\d+$/.test(item.meta_id ?? "") ? titleLogo(item.meta_id) : null);
   const logo = wide && logoUrl ? h("img", { class: "card__logo", src: trimmedLogo(logoUrl), alt: item.title, decoding: "async" }) : null;
   logo?.addEventListener("error", () => logo.replaceWith(h("span", { class: "card__label" }, item.title)), { once: true });
   const icon = appIcon(item);

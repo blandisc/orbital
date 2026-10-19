@@ -350,6 +350,30 @@ def game_item(described: dict, why: str) -> dict:
     }
 
 
+def whiten_if_dark(png: bytes) -> bytes:
+    """Un logo oscuro (negro sobre transparente, como el de Severance) en blanco: sobre los fondos de Orbital no se veía en
+    la ficha ni en el héroe. Los de color se dejan como vienen."""
+    try:
+        import io
+
+        from PIL import Image
+
+        image = Image.open(io.BytesIO(png)).convert("RGBA")
+        small = image.copy()
+        small.thumbnail((96, 96))
+        visible = [px[:3] for px in small.getdata() if isinstance(px, tuple) and len(px) == 4 and px[3] > 128]
+        if not visible or sum(.2126 * r + .7152 * g + .0722 * b for r, g, b in visible) / len(visible) >= 64:
+            return png
+        alpha = image.getchannel("A")
+        white = Image.new("RGBA", image.size, (255, 255, 255, 255))
+        white.putalpha(alpha)
+        out = io.BytesIO()
+        white.save(out, "PNG")
+        return out.getvalue()
+    except Exception:  # noqa: BLE001 - sin Pillow o un PNG raro: el logo como venía
+        return png
+
+
 class ForYou:
     def __init__(self, config, catalog) -> None:
         self.settings = config.para_ti
@@ -1209,7 +1233,7 @@ class ForYou:
 
         if not re.fullmatch(r"tt[0-9]{1,12}", imdb or ""):
             return None
-        path = self.logo_dir / f"{imdb}.png" if self.logo_dir else None
+        path = self.logo_dir / f"{imdb}.v2.png" if self.logo_dir else None  # v2: los oscuros ya vienen en blanco
         try:
             if path is not None and path.is_file():
                 return path.read_bytes()
@@ -1220,7 +1244,7 @@ class ForYou:
         if time.monotonic() - self._logo_misses.get(imdb, -1e9) < LOGO_RETRY:
             return None
         try:
-            png = iptv_logos.trim(iptv_logos.download_logo(METAHUB.format(kind="logo", imdb=imdb)))
+            png = whiten_if_dark(iptv_logos.trim(iptv_logos.download_logo(METAHUB.format(kind="logo", imdb=imdb))))
         except (iptv_logos.LogoError, *NET_ERRORS) as exc:
             log.debug("Sin logo de %s: %s", imdb, exc)
             if len(self._logo_misses) > 2000:

@@ -624,7 +624,7 @@ def test_title_logos_lose_their_transparent_padding_and_are_kept(library, make_f
     assert Image.open(io.BytesIO(png)).size == (60, 10)
     assert asked == ["https://images.metahub.space/logo/medium/tt10574558/img"]
     assert fy.trimmed_logo("tt10574558") == png and len(asked) == 1  # del disco
-    assert (tmp_path / "title-logos" / "tt10574558.png").read_bytes() == png
+    assert (tmp_path / "title-logos" / "tt10574558.v2.png").read_bytes() == png
     assert fy.trimmed_logo("tt404") is None and fy.trimmed_logo("tt404") is None and len(asked) == 2  # no insiste
     assert fy.trimmed_logo("../etc") is None and len(asked) == 2  # solo ids de IMDb
     with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 5000)) as c:

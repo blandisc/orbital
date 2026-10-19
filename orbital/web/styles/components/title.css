@@ -135,8 +135,9 @@
   display: grid; place-items: center; width: 100%; height: var(--control-height); border-radius: var(--radius-md); background: var(--color-fill);
   color: var(--color-text); transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
-/* Entero: si no cabe en un renglón, dos (nunca «Al iPho…»). */
-.title__action-name { max-width: 100%; text-align: center; line-height: 1.2; font-size: var(--text-xs); text-wrap: balance; overflow-wrap: anywhere; white-space: normal;
+/* Entero: si no cabe en un renglón, dos (nunca «Al iPho…»). Con la clase del botón delante: «.title__action span» (una
+   línea con «…», para los textos del principal) le ganaba y salía «Bajar al iPho…». */
+.title__action .title__action-name { max-width: 100%; text-align: center; line-height: 1.2; font-size: var(--text-xs); text-wrap: balance; overflow-wrap: anywhere; white-space: normal;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 [data-input="touch"] .title__action--primary { flex-shrink: 0; }
 /* Foco invertido (como el menú): se ve desde el sofá. */
@@ -145,7 +146,8 @@
 .title__action--icon.title__action--focused .title__action-tile { background: var(--inverse-bg); color: var(--inverse-fg); }
 .title__action--focused small { color: inherit; opacity: .7; }
 /* «Ver» / «Continuar» con el color del arte del título (como el Jugar de Game Glance). */
-.title__action--primary.title__action--focused { background: var(--color-primary-art); }
+/* El principal ocupa todo el ancho: enfocado no crece (se salía de la columna, más ancho que los botones de abajo y el texto). */
+.title__action--primary.title__action--focused { background: var(--color-primary-art); transform: none; box-shadow: var(--shadow-lifted); }
 
 /* Derecha: temporadas (LB/RB) y episodios (↑/↓) */
 .title__browser { display: none; flex-direction: column; min-height: 0; overflow: hidden; animation: rise-in var(--duration-enter) var(--ease-out) var(--delay-1) backwards; }
