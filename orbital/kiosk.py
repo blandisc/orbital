@@ -178,6 +178,15 @@ class KioskWindow:
         with self._lock:
             self.exited_by_user = False
             if self.is_open:
+                # El ícono de Orbital con Orbital ya abierto: SU ventana (la de Edge con el perfil de Orbital, no la primera
+                # que diga «Orbital» en su título) al frente; si Edge sigue vivo sin ventana, se reabre.
+                hwnd = self.window() if sys.platform == "win32" else 0
+                if hwnd:
+                    return system.focus_window(hwnd)
+                if sys.platform == "win32":
+                    log.warning("Pediste Orbital y Edge seguía abierto sin ventana: la reabro")
+                    threading.Thread(target=self.restart, daemon=True).start()
+                    return True
                 return system.bring_to_front()
             exe = find_browser(self.browser)
             if not exe:
