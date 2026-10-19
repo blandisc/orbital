@@ -32,6 +32,7 @@ import { createArtPicker } from "./components/art-picker.js";
 import { createListScreen, SORTS } from "./components/list-screen.js";
 import { createDecide } from "./components/decide.js";
 import { createYear } from "./components/year.js";
+import { createCalendar } from "./components/calendar.js";
 import { createTv } from "./components/tv.js";
 import { createTraktLink } from "./components/trakt-link.js";
 import { createViewer } from "./components/viewer.js";
@@ -200,6 +201,14 @@ const ui = {
     onMove: () => { sound.play("move"); renderHints(); },
     onClose: () => { sound.play("back"); renderHints(); },
   }),
+  // Próximos estrenos en vista calendario (como «Sale hoy › el mes» del iPhone).
+  calendar: createCalendar({
+    load: (month) => api.forYouCalendar(month),
+    onPick: (item) => openTitle(item),
+    onChange: () => renderHints(),
+    onMove: () => { sound.play("move"); renderHints(); },
+    onClose: () => { sound.play("back"); renderHints(); },
+  }),
   launch: createLaunchOverlay({ backGlyph: () => glyphs().back }),
   viewer: createViewer({
     // B regresa a la lista de Capturas, en la que estabas viendo (antes saltaba hasta Inicio).
@@ -224,7 +233,7 @@ const touchMenu = h("button", { class: "touch-back touch-back--menu", type: "but
 ui.launch.el.addEventListener("click", () => handleAction("back")); // tocar la pantalla de carga = B
 
 document.getElementById("app").replaceWith(
-  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.listScreen.el, ui.decide.el, ui.year.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
+  touchBack, touchMenu, ui.backdrop.el, ui.status.el, ui.hero.el, ui.foryou.el, ui.tv.el, ui.home.el, ui.games.el, ui.shelf.el, ui.hints.el, ui.search.el, ui.title.el, ui.sources.el, ui.login.el, ui.traktLink.el, ui.phoneLink.el, ui.artPicker.el, ui.listScreen.el, ui.decide.el, ui.year.el, ui.calendar.el, ui.sheet.el, ui.launch.el, ui.viewer.el, ui.toast.el,
 );
 
 // ---------------------------------------------------------------- render
@@ -306,7 +315,7 @@ function returnToMenu(from) {
 }
 let menuBusy = null; // { until }: una opción del menú todavía corriendo (ver sheet.onCommand)
 // La ficha va antes que la lista abierta: un título abierto desde una lista queda encima, y B regresa a la lista.
-const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.year, ui.search];
+const OVERLAYS = [ui.viewer, ui.login, ui.traktLink, ui.phoneLink, ui.artPicker, ui.sources, ui.title, ui.listScreen, ui.decide, ui.year, ui.calendar, ui.search];
 const topOverlay = () => OVERLAYS.find((view) => view.isOpen) ?? null;
 
 /** Qué hay al frente, para el control del iPhone: la pantalla, si hay un campo de texto («Escribir»), la sección y la
@@ -960,7 +969,7 @@ function openCollection(item) {
     return renderHints();
   }
   const l = c.list || {};
-  if (l.id === "estrenos") return openUpcoming(l, cached);
+  if (l.id === "estrenos") { ui.calendar.open(); return renderHints(); } // el mes, como el iPhone
   if (l.id === "mimedia") return openMiMedia();
   const kinds = l.split ? (c.type === "year" ? [["movie", "Películas"], ["series", "Series"]] : [["series", "Series"], ["movie", "Películas"]])
     : [[l.kinds?.[0] ?? null, ""]];
@@ -1141,22 +1150,6 @@ function downloadMenu(item) {
   options.push({ icon: "close", label: job.status === "done" ? "Quitar la descarga" : "Cancelar la descarga", danger: true,
     hint: job.status === "done" ? "Libera espacio" : "", command: { type: "download-remove", id: job.id, title: job.title } });
   return { title: job.title, subtitle: job.detail || (job.status === "done" ? "Lista para ver sin internet" : ""), options };
-}
-
-/** Próximos estrenos por semana (como «Semana» del iPhone): una pestaña por día («Hoy 18», «Mañana 19», «Lunes 20»)
- *  y en cada póster su hora. */
-async function openUpcoming(l, cached) {
-  const items = await cached(l.id, null).catch(() => []);
-  const days = [];
-  for (const i of items) {
-    let d = days.find((x) => x.day === i.day);
-    if (!d) days.push(d = { day: i.day, label: /[0-9]/.test(i.day_label) ? i.day_label : `${i.day_label} ${Number(String(i.day).slice(8, 10))}`, items: [] });
-    d.items.push({ ...curatedItem(i), day_label: i.time, subtitle: [i.episode_label, i.network].filter(Boolean).join(" · ") });
-  }
-  ui.listScreen.open({ id: l.id, title: l.title, meta: l.meta || "", source: "trakt", media: {},
-    tabs: days.length ? days.map((d) => ({ id: d.day, label: d.label, load: () => Promise.resolve(d.items) }))
-      : [{ id: "all", label: "", load: () => Promise.resolve([]) }] });
-  return renderHints();
 }
 
 /** «¿Qué vemos?»: tres propuestas que caben en tu tiempo (como el 🎲 del iPhone). */

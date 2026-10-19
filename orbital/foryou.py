@@ -1002,12 +1002,36 @@ class ForYou:
         start = (now - timedelta(days=1)).date().isoformat()  # Trakt va en hora universal: un día antes, para no perder lo de hoy
         rows = self.cache.get(f"trakt:calendar:{start}", RECS_TTL, lambda: self.trakt.calendar(start, CALENDAR_DAYS + 2))
         today = now.date()
-        last = today + timedelta(days=CALENDAR_DAYS)
+        return self._airings(rows, today, today + timedelta(days=CALENDAR_DAYS), today)
+
+    def calendar_month(self, year: int, month: int, now: datetime | None = None) -> dict:
+        """El mes completo (como «Sale hoy › el mes» del iPhone): lo que sale cada día de las series que sigues, también
+        los días que ya pasaron. Trakt da hasta 31 días por pedido: el mes va en dos mitades (con un día de más a cada lado
+        por la hora universal)."""
+        now = now or datetime.now().astimezone()
+        first = date(year, month, 1)
+        following = date(year + (month == 12), month % 12 + 1, 1)
+        start = first - timedelta(days=1)
+        span = (following - first).days + 2
+        rows: list[dict] = []
+        for offset, days in ((0, 16), (16, span - 16)):
+            begin = (start + timedelta(days=offset)).isoformat()
+            ttl = RECS_TTL if following > now.date() else SLOW_TTL  # un mes que ya pasó no cambia
+            rows += self.cache.get(f"trakt:calendar:{begin}:{days}", ttl, lambda b=begin, d=days: self.trakt.calendar(b, d))
+        return {"month": f"{year:04d}-{month:02d}", "today": now.date().isoformat(),
+                "items": self._airings(rows, first, following, now.date())}
+
+    def _airings(self, rows: list[dict], first: date, end: date, today: date) -> list[dict]:
+        """Los estrenos entre dos fechas (con la hora de aquí); varios de la misma serie el mismo día, en uno («E4–E6»)."""
         groups: dict[tuple, dict] = {}
+        seen: set[tuple] = set()
         for row in rows:
+            if (row["imdb"], row["season"], row["episode"]) in seen:  # las dos mitades se tocan en un día
+                continue
+            seen.add((row["imdb"], row["season"], row["episode"]))
             when = datetime.fromtimestamp(row["aired"]).astimezone()
             day = when.date()
-            if not today <= day < last:
+            if not first <= day < end:
                 continue
             key = (day, row["imdb"])
             group = groups.get(key)
