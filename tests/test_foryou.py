@@ -542,6 +542,27 @@ def test_upcoming_episodes_by_day_with_local_time(make_foryou, net):
     assert lists["estrenos"]["views"][1]["label"] == "Semana"
 
 
+def test_the_month_calendar_includes_past_days_and_asks_trakt_in_two_halves(make_foryou, net):
+    """Vista calendario (como «Sale hoy › el mes» del iPhone): el mes entero, también lo que ya salió."""
+    from datetime import datetime
+
+    fy = make_foryou(linked=True)
+    now = datetime(2026, 10, 15, 12, 0).astimezone()
+    utc = lambda local: local.astimezone(tz=__import__("datetime").timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")  # noqa: E731
+    row = lambda title, imdb, s, e, when: {"first_aired": utc(when), "episode": {"season": s, "number": e, "title": ""},  # noqa: E731
+                                           "show": {**show(title, imdb), "network": "HBO"}}
+    rows = [row("Pasada", "tt1", 1, 1, datetime(2026, 10, 2, 20, 0).astimezone()),
+            row("Hoy", "tt2", 2, 3, datetime(2026, 10, 15, 21, 0).astimezone()),
+            row("Fin de mes", "tt3", 1, 9, datetime(2026, 10, 31, 20, 0).astimezone()),
+            row("Noviembre", "tt4", 1, 1, datetime(2026, 11, 2, 20, 0).astimezone())]
+    net.on("GET", r"/calendars/my/shows/", (200, rows))
+    month = fy.calendar_month(2026, 10, now=now)
+    assert month["month"] == "2026-10" and month["today"] == "2026-10-15"
+    assert [(i["title"], i["day"]) for i in month["items"]] == [("Pasada", "2026-10-02"), ("Hoy", "2026-10-15"), ("Fin de mes", "2026-10-31")]
+    asked = [c for c in net.calls if "/calendars/my/shows/" in c[1]]
+    assert len(asked) == 2 and "/2026-09-30/16" in asked[0][1] and "/2026-10-16/17" in asked[1][1]
+
+
 def test_airing_today_is_empty_without_trakt_or_network(make_foryou, net):
     fy = make_foryou(trakt_keys=False)
     assert fy.airing_today() == {}
@@ -624,7 +645,7 @@ def test_title_logos_lose_their_transparent_padding_and_are_kept(library, make_f
     assert Image.open(io.BytesIO(png)).size == (60, 10)
     assert asked == ["https://images.metahub.space/logo/medium/tt10574558/img"]
     assert fy.trimmed_logo("tt10574558") == png and len(asked) == 1  # del disco
-    assert (tmp_path / "title-logos" / "tt10574558.png").read_bytes() == png
+    assert (tmp_path / "title-logos" / "tt10574558.v2.png").read_bytes() == png
     assert fy.trimmed_logo("tt404") is None and fy.trimmed_logo("tt404") is None and len(asked) == 2  # no insiste
     assert fy.trimmed_logo("../etc") is None and len(asked) == 2  # solo ids de IMDb
     with TestClient(create_app(library.config, library), base_url="http://127.0.0.1:8710", client=("127.0.0.1", 5000)) as c:

@@ -82,7 +82,7 @@ test("en un motivo, solo el nombre de la plataforma lleva su estilo", async () =
 
 test("los logos de metahub se piden a Orbital, que les quita el aire transparente", async () => {
   const { trimmedLogo } = await import("../../orbital/web/js/core/foryou.js");
-  assert.equal(trimmedLogo("https://images.metahub.space/logo/medium/tt10574558/img"), "/api/foryou/logo/tt10574558");
+  assert.equal(trimmedLogo("https://images.metahub.space/logo/medium/tt10574558/img"), "/api/foryou/logo/tt10574558?v=2"); // v2: los oscuros en blanco
   assert.equal(trimmedLogo("https://cdn.akamai.steamstatic.com/steam/apps/1/logo.png"), "https://cdn.akamai.steamstatic.com/steam/apps/1/logo.png");
   assert.equal(trimmedLogo(null), null);
 });

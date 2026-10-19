@@ -350,6 +350,30 @@ def game_item(described: dict, why: str) -> dict:
     }
 
 
+def whiten_if_dark(png: bytes) -> bytes:
+    """Un logo oscuro (negro sobre transparente, como el de Severance) en blanco: sobre los fondos de Orbital no se veía en
+    la ficha ni en el héroe. Los de color se dejan como vienen."""
+    try:
+        import io
+
+        from PIL import Image
+
+        image = Image.open(io.BytesIO(png)).convert("RGBA")
+        small = image.copy()
+        small.thumbnail((96, 96))
+        visible = [px[:3] for px in small.getdata() if isinstance(px, tuple) and len(px) == 4 and px[3] > 128]
+        if not visible or sum(.2126 * r + .7152 * g + .0722 * b for r, g, b in visible) / len(visible) >= 64:
+            return png
+        alpha = image.getchannel("A")
+        white = Image.new("RGBA", image.size, (255, 255, 255, 255))
+        white.putalpha(alpha)
+        out = io.BytesIO()
+        white.save(out, "PNG")
+        return out.getvalue()
+    except Exception:  # noqa: BLE001 - sin Pillow o un PNG raro: el logo como venía
+        return png
+
+
 class ForYou:
     def __init__(self, config, catalog) -> None:
         self.settings = config.para_ti
@@ -978,12 +1002,36 @@ class ForYou:
         start = (now - timedelta(days=1)).date().isoformat()  # Trakt va en hora universal: un día antes, para no perder lo de hoy
         rows = self.cache.get(f"trakt:calendar:{start}", RECS_TTL, lambda: self.trakt.calendar(start, CALENDAR_DAYS + 2))
         today = now.date()
-        last = today + timedelta(days=CALENDAR_DAYS)
+        return self._airings(rows, today, today + timedelta(days=CALENDAR_DAYS), today)
+
+    def calendar_month(self, year: int, month: int, now: datetime | None = None) -> dict:
+        """El mes completo (como «Sale hoy › el mes» del iPhone): lo que sale cada día de las series que sigues, también
+        los días que ya pasaron. Trakt da hasta 31 días por pedido: el mes va en dos mitades (con un día de más a cada lado
+        por la hora universal)."""
+        now = now or datetime.now().astimezone()
+        first = date(year, month, 1)
+        following = date(year + (month == 12), month % 12 + 1, 1)
+        start = first - timedelta(days=1)
+        span = (following - first).days + 2
+        rows: list[dict] = []
+        for offset, days in ((0, 16), (16, span - 16)):
+            begin = (start + timedelta(days=offset)).isoformat()
+            ttl = RECS_TTL if following > now.date() else SLOW_TTL  # un mes que ya pasó no cambia
+            rows += self.cache.get(f"trakt:calendar:{begin}:{days}", ttl, lambda b=begin, d=days: self.trakt.calendar(b, d))
+        return {"month": f"{year:04d}-{month:02d}", "today": now.date().isoformat(),
+                "items": self._airings(rows, first, following, now.date())}
+
+    def _airings(self, rows: list[dict], first: date, end: date, today: date) -> list[dict]:
+        """Los estrenos entre dos fechas (con la hora de aquí); varios de la misma serie el mismo día, en uno («E4–E6»)."""
         groups: dict[tuple, dict] = {}
+        seen: set[tuple] = set()
         for row in rows:
+            if (row["imdb"], row["season"], row["episode"]) in seen:  # las dos mitades se tocan en un día
+                continue
+            seen.add((row["imdb"], row["season"], row["episode"]))
             when = datetime.fromtimestamp(row["aired"]).astimezone()
             day = when.date()
-            if not today <= day < last:
+            if not first <= day < end:
                 continue
             key = (day, row["imdb"])
             group = groups.get(key)
@@ -1209,7 +1257,7 @@ class ForYou:
 
         if not re.fullmatch(r"tt[0-9]{1,12}", imdb or ""):
             return None
-        path = self.logo_dir / f"{imdb}.png" if self.logo_dir else None
+        path = self.logo_dir / f"{imdb}.v2.png" if self.logo_dir else None  # v2: los oscuros ya vienen en blanco
         try:
             if path is not None and path.is_file():
                 return path.read_bytes()
@@ -1220,7 +1268,7 @@ class ForYou:
         if time.monotonic() - self._logo_misses.get(imdb, -1e9) < LOGO_RETRY:
             return None
         try:
-            png = iptv_logos.trim(iptv_logos.download_logo(METAHUB.format(kind="logo", imdb=imdb)))
+            png = whiten_if_dark(iptv_logos.trim(iptv_logos.download_logo(METAHUB.format(kind="logo", imdb=imdb))))
         except (iptv_logos.LogoError, *NET_ERRORS) as exc:
             log.debug("Sin logo de %s: %s", imdb, exc)
             if len(self._logo_misses) > 2000:

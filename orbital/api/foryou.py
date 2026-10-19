@@ -96,6 +96,26 @@ def router(d: Deps) -> APIRouter:
         foryou.skip_today(body.key.removeprefix("video:"))
         return {"ok": True}
 
+    @r.get("/calendar")
+    def calendar_month(month: str = "") -> dict:
+        """El mes de estrenos de las series que sigues (vista calendario), como el iPhone. `month`: AAAA-MM (si no, este)."""
+        import re as _re
+        from datetime import date as _date
+
+        today = _date.today()
+        m = _re.fullmatch(r"(\d{4})-(\d{2})", month or "")
+        year, mon = (int(m[1]), int(m[2])) if m else (today.year, today.month)
+        if not 1 <= mon <= 12 or abs((year - today.year) * 12 + mon - today.month) > 24:
+            raise HTTPException(400, "Mes inválido")
+        if not foryou.trakt.linked:
+            raise HTTPException(409, "Conecta Trakt (Ajustes › Cuentas) para ver lo que sale de tus series.")
+        try:
+            return foryou.calendar_month(year, mon)
+        except trakt.TraktAuthError as exc:
+            raise HTTPException(409, str(exc))
+        except SERVICE_ERRORS:
+            raise HTTPException(502, "No pude leer tu calendario de Trakt. Revisa tu conexión e inténtalo de nuevo.")
+
     @r.get("/year")
     def year() -> dict:
         """«Tu año»: lo que viste este año según Trakt (horas, racha, tu género, el mapa y lo que más viste)."""

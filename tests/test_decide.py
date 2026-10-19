@@ -107,3 +107,23 @@ def test_subtitle_sync_like_the_iphone():
     assert player_ui.sync_options(1.0)[1]["label"] == "+1,0 s" and player_ui.sync_options(-0.5)[1]["label"] == "-0,5 s"
     panel = player_ui.tracks_panel([], 1.0, sub_delay=0.5)
     assert panel.find("sync").options[1]["hint"] == "Volver a cero"
+
+
+def test_a_dark_logo_comes_back_white_and_a_colored_one_untouched():
+    import io
+
+    from PIL import Image
+
+    from orbital.foryou import whiten_if_dark
+
+    def png(color):
+        img = Image.new("RGBA", (20, 10), (0, 0, 0, 0))
+        for x in range(4, 16):
+            img.putpixel((x, 5), color)
+        out = io.BytesIO()
+        img.save(out, "PNG")
+        return out.getvalue()
+    dark = Image.open(io.BytesIO(whiten_if_dark(png((10, 10, 10, 255))))).convert("RGBA")
+    assert dark.getpixel((8, 5)) == (255, 255, 255, 255) and dark.getpixel((0, 0))[3] == 0
+    red = png((220, 30, 30, 255))
+    assert whiten_if_dark(red) == red

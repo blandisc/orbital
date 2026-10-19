@@ -60,8 +60,16 @@ export function createShelf({ onPick, onSwipe }) {
       });
       const cards = built.map((b) => b.card);
       const els = built.map((b) => b.el ?? b.card);
-      const track = h("div", { class: "shelf__track", role: "group" }, els);
-      const count = h("span", { class: "shelf__count" }, String(row.items.length));
+      // «Porque viste» (row.stage): lo que viste fijo a la izquierda (su arte, su nombre y tus títulos en miniatura, que son
+      // las primeras tarjetas de la fila) y lo relacionado a la derecha, que se recorre sin tapar el escenario.
+      const seeds = row.stage ? Math.min(row.stage.seeds, els.length) : 0;
+      const track = h("div", { class: "shelf__track", role: "group" }, els.slice(seeds));
+      const stage = row.stage && h("div", { class: "shelf__stage" },
+        h("span", { class: "shelf__stage-art", style: { backgroundImage: `url("${row.stage.image}")` } }),
+        h("strong", { class: "shelf__stage-title" }, row.stage.title),
+        h("span", { class: "shelf__stage-seeds", role: "group", "aria-label": "Tus últimos títulos" }, els.slice(0, seeds)));
+      const rest = stage && h("div", { class: "shelf__stage-rest" }, track);
+      const count = h("span", { class: "shelf__count" }, String(row.items.length - seeds));
       // Destacados: puntos en vez del contador (uno por pieza; el actual, alargado), como el carrusel del iPhone.
       const dots = row.spotlight && h("span", { class: "shelf__dots", "aria-hidden": "true" }, row.items.map(() => h("i")));
       // Una plataforma: su logo en vez de su nombre (como en el iPhone); el nombre queda para el lector de pantalla.
@@ -69,9 +77,9 @@ export function createShelf({ onPick, onSwipe }) {
       logo?.addEventListener("error", () => logo.replaceWith(row.label || ""), { once: true });
       // De dónde viene (Trakt, Stremio, tu Orbital): el sello junto al título, como en el iPhone.
       const seal = row.seal ? SourceBadge(row.seal) : null;
-      const rowEl = h("div", { class: ["shelf__row", row.spotlight && "shelf__row--spotlight", row.centered && "shelf__row--centered"] },
-        h("h2", { class: "shelf__heading" }, logo, row.title, seal, dots || count), track);
-      return { rowEl, track, cards, els, count, dots, ranked: !!row.ranked, centered: !!row.centered };
+      const rowEl = h("div", { class: ["shelf__row", row.spotlight && "shelf__row--spotlight", row.centered && "shelf__row--centered", stage && "shelf__row--stage"] },
+        h("h2", { class: "shelf__heading" }, logo, row.title, seal, dots || count), stage ? h("div", { class: "shelf__stage-row" }, stage, rest) : track);
+      return { rowEl, track, cards, els, count, dots, ranked: !!row.ranked, centered: !!row.centered, seeds, rest };
     });
     mount(rowsEl, rowEls.map((x) => x.rowEl));
     if (!introduced) {
@@ -88,11 +96,12 @@ export function createShelf({ onPick, onSwipe }) {
     if (!rowEls.length) return;
     if (!metrics) measure();
     rowsEl.style.transform = `translateY(${-r * metrics.rowHeight}px)`;
-    rowEls.forEach(({ rowEl, track, cards, count, dots }, index) => {
+    rowEls.forEach(({ rowEl, track, cards, count, dots, seeds }, index) => {
       const isCurrent = index === r;
       rowEl.classList.toggle("shelf__row--current", isCurrent);
-      // En la fila actual, en cuál vas: "3 / 15" (solo si hay más de uno).
-      count.textContent = isCurrent && cards.length > 1 ? `${c + 1} / ${cards.length}` : String(cards.length);
+      // En la fila actual, en cuál vas: "3 / 15" (solo si hay más de uno; en «Porque viste», entre lo relacionado).
+      const shown = cards.length - seeds;
+      count.textContent = isCurrent && shown > 1 && c >= seeds ? `${c - seeds + 1} / ${shown}` : String(shown);
       dots?.querySelectorAll("i").forEach((dot, i) => dot.classList.toggle("on", i === (isCurrent ? c : 0)));
       cards.forEach((card, col) => {
         const focused = isCurrent && col === c;
@@ -110,6 +119,14 @@ export function createShelf({ onPick, onSwipe }) {
   function place() {
     const row = rowEls[focus.r];
     if (!row || !metrics) return;
+    if (row.seeds) { // escenario: solo se recorre lo relacionado, en el ancho que deja el escenario
+      const cards = row.cards.slice(row.seeds);
+      const c = focus.c - row.seeds;
+      const widths = cards.map((card) => metrics.cardHeight * Number(card.dataset.ratio));
+      const x = c < 0 ? 0 : rowOffset(widths, c, { gap: metrics.gap, grow: (widths[c] ?? 0) * (metrics.scale - 1), visible: row.rest.clientWidth });
+      row.track.style.transform = `translateX(${-x}px)`;
+      return;
+    }
     // Con la cifra del Top 10, cada pieza es más ancha que su póster: se mide lo que de verdad ocupa.
     const widths = row.ranked ? row.els.map((node) => node.offsetWidth) : row.cards.map((card) => metrics.cardHeight * Number(card.dataset.ratio));
     const grow = (widths[focus.c] ?? 0) * (metrics.scale - 1);

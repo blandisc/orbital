@@ -182,7 +182,9 @@
   --touch-back-room: 9rem; /* con el dedo: lo que aparta un encabezado para que «Atrás» (arriba a la derecha) no lo tape */
   --person-head-photo: 8.5rem;
   --year-cell: .95rem; /* Tu año: cada día del mapa (53 semanas caben a lo ancho) */
-  --decide-poster-height: 16rem; /* ¿Qué vemos?: los tres carteles */
+  --decide-poster-height: 16rem;
+  --because-stage-width: 30rem; /* «Porque viste»: el escenario fijo de la izquierda */
+  --because-seed-height: 5.4rem; /* sus miniaturas (tus últimos títulos) */ /* ¿Qué vemos?: los tres carteles */
   --year-top-height: 8.6rem; /* Tu año: los pósters de «Lo que más viste» (caben bajo el mapa) */
   --key-height: 3.2rem;
   --tv-rail-width: 15rem; /* TV en vivo: la lista de categorías */
