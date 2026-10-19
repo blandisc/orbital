@@ -93,7 +93,7 @@ struct HomeView: View {
                 }
             }
             .padding(.top, DS.Space.s3)         // el destacado no se pega al saludo (el mismo aire que Para ti y Buscar)
-            .padding(.bottom, DS.Space.s14)     // la última fila respira: la barra de pestañas no la tapa
+            .padding(.bottom, DS.Space.s4)      // la barra de pestañas ya deja su espacio: más aquí era aire muerto al final
             .animation(DS.Motion.enter(reduceMotion), value: tvNow.model.now != nil)
             .animation(DS.Motion.enter(reduceMotion), value: inbox.model.fromTV.map(\.id))
         }
@@ -105,6 +105,7 @@ struct HomeView: View {
         .navigationTitle(scrolledDown ? scrolledTitle : Text(verbatim: "")).toolbarTitleDisplayMode(.inline)
         .subtitle(syncText)
         .fullScreenCover(isPresented: $rollingSimpsons) { SimpsonsRoulette() }
+        .task(priority: .utility) { await env.prefetchSimpsons() }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) { AppMark() }
                 .sharedBackgroundVisibility(.hidden)
@@ -218,9 +219,10 @@ struct HomeView: View {
         let copies = items.count > 1 ? DS.Deck.loopCopies : 1
         let middle = (copies / 2) * items.count
         return VStack(spacing: DS.Space.s3) {
-            // El filtro de tres opciones, a todo lo ancho bajo el título (como en Para ti y Buscar): junto al título lo apretaba.
-            VStack(alignment: .leading, spacing: DS.Space.s3) {
+            // El filtro, discreto a la derecha del título (un menú: Todo · Películas · Series), como en Para ti y el Top 10.
+            HStack(alignment: .lastTextBaseline) {
                 DSSectionHead(title: Text("En tendencia"), eyebrow: Text("Lo que todo el mundo está viendo"))
+                Spacer(minLength: DS.Space.s2)
                 kindFilter(model)
             }
             .padding(.horizontal, DS.Space.gutter)
@@ -256,7 +258,7 @@ struct HomeView: View {
 
     /// Todo · Películas · Series: un botón chico (como el de Para ti), sin otro renglón.
     private func kindFilter(_ model: HomeModel) -> some View {
-        DSKindFilter(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }))
+        DSKindFilter(kind: Binding(get: { model.spotlightKind ?? "" }, set: { model.spotlightKind = $0.isEmpty ? nil : $0 }), compact: true)
             .accessibilityIdentifier("home-kind-filter")
     }
 
@@ -379,10 +381,11 @@ struct HomeView: View {
             HStack(alignment: .lastTextBaseline) {
                 DSSectionHead(title: Text("Top 10 en \(service.name)"),
                               eyebrow: service.weekly ? Text("Lo más visto en tu país esta semana") : Text("Lo más visto hoy · JustWatch"))
+                    .lineLimit(1).minimumScaleFactor(DS.Size.titleShrink)
                 Spacer(minLength: DS.Space.s2)
-                if !series.isEmpty, !films.isEmpty {
-                    DSKindFilter(kind: Binding(get: { topMovies ? "movie" : "series" }, set: { topMovies = $0 == "movie" }), includeAll: false).fixedSize()
-                }
+                // Siempre ocupa su lugar (oculto si el servicio solo tiene uno de los dos): al cambiar de servicio nada brinca.
+                DSKindFilter(kind: Binding(get: { movies ? "movie" : "series" }, set: { topMovies = $0 == "movie" }), includeAll: false, compact: true)
+                    .opacity(!series.isEmpty && !films.isEmpty ? 1 : 0).disabled(series.isEmpty || films.isEmpty)
             }
             .padding(.horizontal, DS.Space.gutter)
             // De qué servicio: una pastilla por cada uno, con su logo (la elegida, con su color). Ancladas: al deslizar se
@@ -403,8 +406,9 @@ struct HomeView: View {
                 .contentMargins(.horizontal, DS.Space.gutter, for: .scrollContent)
                 .contentMargins(.vertical, DS.PlatformFan.pillStroke, for: .scrollContent)   // el borde de la elegida no se recorta
                 .scrollTargetBehavior(.viewAligned)
+                // Un riel fijo: tocar una pastilla no recorre la fila (antes saltaba para dejarla al borde). Solo al abrir, si la
+                // guardada está lejos, se acerca.
                 .onAppear { proxy.scrollTo(pillAnchor(service.brand), anchor: .leading) }
-                .onChange(of: service.brand) { _, brand in withAnimation(DS.Motion.base(reduceMotion)) { proxy.scrollTo(pillAnchor(brand), anchor: .leading) } }
             }
             .sensoryFeedback(.selection, trigger: service.brand)
             ScrollView(.horizontal, showsIndicators: false) {

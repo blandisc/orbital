@@ -103,7 +103,7 @@ struct SimpsonsRoulette: View {
             completion: { withAnimation(DS.Motion.base(reduceMotion)) { landed = true } }
         }
         autoplay = Task {
-            try? await Task.sleep(nanoseconds: UInt64((reduceMotion ? 0 : DS.Simpsons.spin) + DS.Simpsons.hold) * 1_000_000_000)
+            try? await Task.sleep(nanoseconds: UInt64(((reduceMotion ? 0 : DS.Simpsons.spin) + DS.Simpsons.hold) * 1_000_000_000))
             if !Task.isCancelled { start() }
         }
     }

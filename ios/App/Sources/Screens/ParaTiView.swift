@@ -327,13 +327,22 @@ struct ListsView: View {
             VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
                 // Para ti: lo general (el destacado, «Porque viste», las sugerencias), cada fila con su sello.
                 VStack(alignment: .leading, spacing: DS.Editorial.sectionGap) {
-                    if model.hasKindSplit {
-                        DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
-                                                   set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }))
-                            .padding(.horizontal, DS.Space.gutter)
-                    }
                     let slides = model.featuredSlides
-                    if !slides.isEmpty { featuredCarousel(slides).perfTag("paraTi.hero") }
+                    // Como Inicio: el título de lo destacado y, discreto a su derecha, Todo · Películas · Series.
+                    if model.hasKindSplit || !slides.isEmpty {
+                      VStack(alignment: .leading, spacing: DS.Space.s3) {
+                        HStack(alignment: .lastTextBaseline) {
+                            if !slides.isEmpty { DSSectionHead(title: Text("Destacado"), eyebrow: Text("Lo número 1 en tus plataformas")) }
+                            Spacer(minLength: DS.Space.s2)
+                            if model.hasKindSplit {
+                                DSKindFilter(kind: Binding(get: { model.kind == KindFilter.all.rawValue ? "" : model.kind },
+                                                           set: { new in Task { await model.setKind(new.isEmpty ? KindFilter.all.rawValue : new) } }), compact: true)
+                            }
+                        }
+                        .padding(.horizontal, DS.Space.gutter)
+                        if !slides.isEmpty { featuredCarousel(slides).perfTag("paraTi.hero") }
+                      }
+                    }
                     if let because = model.because { becauseCard(because) }
                     ForEach(generalShelves) { plan in shelf(plan).id(plan.id).perfTag("paraTi.shelf") }
                     // Lo nuevo en tus plataformas (TMDB): series con episodios recientes y películas recién llegadas.
@@ -477,7 +486,13 @@ struct ListsView: View {
             : [BecauseSeed(id: because.seed.imdb, title: because.seed.title, poster: String(format: ForYou.metahubPoster, because.seed.imdb))] + fromHistory
         return BecauseCard(style: BecauseStyle(rawValue: env.services.appSettings.becauseStyle) ?? .posters,
                            seeds: seeds, selected: because.seed.imdb,
-                           choose: { id in if let seed = model.becauseSeeds.first(where: { $0.imdb == id }) { Task { await model.chooseBecause(seed) } } }) {
+                           choose: { id in if let seed = model.becauseSeeds.first(where: { $0.imdb == id }) { Task { await model.chooseBecause(seed) } } },
+                           switchStyle: { style in
+                               withAnimation(DS.Motion.base(reduceMotion)) {
+                                   env.services.settings.update { $0.becauseStyle = style.rawValue }
+                                   env.services.settingsDidChange()
+                               }
+                           }) {
             ForEach(because.items) { s in
                 ShelfPoster(suggestion: s, style: .plain, inList: model.watchlistKeys.contains(s.imdb), badge: model.badges[s.imdb], width: DS.Collections.relatedPoster) { dismissed in Task { await model.dismiss(dismissed) } }
             }

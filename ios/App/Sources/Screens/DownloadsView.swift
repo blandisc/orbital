@@ -20,8 +20,8 @@ struct DownloadsView: View {
         _observer = StateObject(wrappedValue: ModelObserver(DownloadsModel(AppEnvironment.shared.services, freeSpace: { DiskSpace.freeBytes() })))
     }
 
-    /// Con OneDrive conectado: «En el iPhone | Mi media» arriba.
-    private var showsMedia: Bool { env.services.oneDrive.linked }
+    /// «En el iPhone | Mi media» siempre arriba: sin OneDrive, Mi media explica cómo conectarlo (antes no se veía en absoluto).
+    private var showsMedia: Bool { true }
 
     var body: some View {
         let model = observer.model

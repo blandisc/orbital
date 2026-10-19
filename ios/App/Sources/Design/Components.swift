@@ -620,11 +620,31 @@ struct DSKindFilter: View {
     @Binding var kind: String
     var includeAll = true
     var counts: (movies: Int, series: Int)?
+    /// Discreto, a la derecha del título de su sección (Inicio, Para ti): el nombre de lo elegido y su chevron, en un menú.
+    var compact = false
 
     var body: some View {
-        DSSegmented(options: options, selection: $kind)
-            .accessibilityLabel(Text("Series o películas"))
-            .accessibilityIdentifier("kind-filter")
+        Group {
+            if compact {
+                Menu {
+                    Picker(selection: $kind) { ForEach(options, id: \.0) { Text($0.1).tag($0.0) } } label: { EmptyView() }
+                } label: {
+                    HStack(spacing: DS.Space.s1) {
+                        Text(options.first { $0.0 == kind }?.1 ?? "Todo").font(DS.TextRecipe.footnote.font.weight(.semibold))
+                        Image(systemName: "chevron.down").font(DS.TextRecipe.caption.font.weight(.semibold))
+                    }
+                    .foregroundStyle(DS.textMuted)
+                    .frame(minHeight: DS.Size.touchTarget)
+                    .contentShape(Rectangle())
+                }
+                .fixedSize()
+                .sensoryFeedback(.selection, trigger: kind)
+            } else {
+                DSSegmented(options: options, selection: $kind)
+            }
+        }
+        .accessibilityLabel(Text("Series o películas"))
+        .accessibilityIdentifier("kind-filter")
     }
 
     private var options: [(String, LocalizedStringKey)] {

@@ -78,7 +78,8 @@ struct RankedPosterCard: View {
 
     private var numberAndPoster: some View {
         // El «10», del mismo tamaño que las demás: sus cifras más juntas y el póster le tapa un poco más el cero (como Netflix).
-        HStack(alignment: .bottom, spacing: rank >= 10 ? -DS.Size.rankTwoDigitsOverlap : -DS.Space.s5) {
+        // El «1» es angosto: el póster casi lo tapaba; con él, apenas se encima.
+        HStack(alignment: .bottom, spacing: rank >= 10 ? -DS.Size.rankTwoDigitsOverlap : rank == 1 ? -DS.Space.s1 : -DS.Space.s5) {
             Text(verbatim: "\(rank)").font(DS.Size.rankFont).foregroundStyle(tint.map { $0.opacity(DS.PlatformFan.numberTint) } ?? DS.ink500)
                 .shadow(color: tint ?? .clear, radius: DS.PlatformFan.numberGlow)
                 .tracking(DS.Size.rankTracking)

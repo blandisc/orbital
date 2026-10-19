@@ -5358,6 +5358,17 @@
         }
       }
     },
+    "Lo número 1 en tus plataformas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The number 1 on your platforms"
+          }
+        }
+      }
+    },
     "Lo que Trakt relaciona con lo último que viste": {
       "extractionState": "manual",
       "localizations": {

@@ -389,6 +389,9 @@ final class AppEnvironment: ObservableObject {
         return SimpsonsDraw(meta: meta, name: meta["name"]?.string ?? "The Simpsons", reel: others + [chosen])
     }
 
+    /// La lista de episodios de Los Simpson, pedida antes de que toques la dona: así la ruleta dura un segundo y no espera a la red.
+    func prefetchSimpsons() async { _ = try? await services.cinemeta.meta(kind: "series", id: Self.simpsons) }
+
     /// El elegido, en el iPhone y desde el principio.
     func playSimpsons(_ draw: SimpsonsDraw) {
         let (season, episode) = draw.chosen

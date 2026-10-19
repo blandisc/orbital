@@ -80,8 +80,9 @@ enum DS {
     /// «Un Simpson al azar»: la ruleta de episodios (ancho de cada imagen, espacio, cuánto gira y cuánto se queda el elegido
     /// antes de empezar), la dona y el amarillo de Los Simpson.
     enum Simpsons {
-        static let card: CGFloat = 200, gap: CGFloat = 14, reelLength = 22, warmWait: Double = 1.5
-        static let spin: Double = 3.2, hold: Double = 2.4, donut: CGFloat = 72, donutTurns: Double = 720
+        // Un segundo de transición al episodio (no un juego de 7 s): el carrete gira 0.7 s y el elegido se ve 0.3 s.
+        static let card: CGFloat = 200, gap: CGFloat = 14, reelLength = 10, warmWait: Double = 0.2
+        static let spin: Double = 0.7, hold: Double = 0.3, donut: CGFloat = 72, donutTurns: Double = 360
         static let chosenScale: CGFloat = 1.08, revealScale: CGFloat = 0.92, glow: CGFloat = 420
         static let amarillo = Color(red: 1, green: 0.85, blue: 0.12)   // el amarillo de Los Simpson
     }
@@ -453,6 +454,8 @@ enum DS {
         /// Cuánto hay que bajar para que el título grande se encoja (y el de Inicio diga otra cosa).
         static let titleCollapse: CGFloat = 8
         static let touchTarget = CGFloat(DesignTokens.Size.touchTarget), thumbSmall = CGFloat(DesignTokens.Size.thumbSmall)
+        /// Cuánto puede encogerse un título de sección largo («Top 10 en Paramount+») antes de cortarse: así no brinca a dos renglones.
+        static let titleShrink: CGFloat = 0.8
         static let cardMax = CGFloat(DesignTokens.Size.cardMax), grabber = CGFloat(DesignTokens.Size.grabber), grabberHeight = CGFloat(DesignTokens.Size.grabberHeight)
         static let logo = CGFloat(DesignTokens.Size.logo)
         /// La letra de «orbital» en la marca grande (la bienvenida) y el planeta solo, junto a un título o en el widget.
