@@ -366,5 +366,5 @@ scripts/         # instalación en Windows y servicio systemd
 - [ ] Temas B2 Green CRT y A-Prime (solo falta su archivo de tokens).
 - [ ] Portadas de SteamGridDB para lo que ES-DE no tenga.
 - [ ] Control de volumen y suspensión por voz.
-- [x] Empaquetar como `.exe` (PyInstaller, con mpv adentro): `python scripts/build_exe.py` → `distOrbital` (y «Instalar Orbital.cmd»).
+- [x] Empaquetar como `.exe` (PyInstaller, con mpv adentro): `python scripts/build_exe.py` → `dist/Orbital` (y «Instalar Orbital.cmd»).
 - [ ] Que Orbital.exe se actualice solo (sin git).
