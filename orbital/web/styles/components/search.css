@@ -7,14 +7,14 @@
   display: grid; grid-template-rows: auto auto 1fr; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); overflow: hidden;
   /* Portadas y teclas un poco más compactas que en el resto: resultados + teclado + pie caben siempre
      en la pantalla (antes el teclado bajaba hasta las pistas del pie). */
-  --card-height: min(10.6rem, 17vh); --key-height: min(2.85rem, 5.3vh);
+  --card-height: min(13rem, 18.5vh); --key-height: min(2.85rem, 5.3vh); /* pósters más grandes (antes 10.6rem / 17vh) */
   padding: calc(var(--space-10) + var(--safe-y)) var(--page-gutter) calc(3.4rem + var(--space-4) + var(--safe-y)); /* libre el carril del pie */
   background: var(--color-tinted-bg);
   animation: fade-in var(--duration-slow) var(--ease-out);
 }
 /* Letra más grande = pies de resultado más altos: la portada cede para que el teclado no los tape. */
 [data-text-size="large"] .search, [data-text-size="xlarge"] .search {
-  --card-height: min(10.6rem, 15.5vh); --key-height: min(2.85rem, 4.8vh); gap: var(--space-3);
+  --card-height: min(12rem, 16.5vh); --key-height: min(2.85rem, 4.8vh); gap: var(--space-3);
   padding-top: calc(var(--space-6) + var(--safe-y));
 }
 [data-text-size="xlarge"] .search__results { padding-bottom: 5.6rem; } /* el pie de la enfocada, más alto */
@@ -30,7 +30,11 @@
 .search__field .icon { width: 1.8rem; height: 1.8rem; color: var(--color-text-muted); flex: none; }
 /* Larga: se ve el final, lo que estás escribiendo (search.js la desplaza al final). */
 .search__query { min-width: 0; white-space: pre; overflow: hidden; }
-.search__placeholder { color: var(--color-text-faint); }
+/* Vacío: el texto de ayuda empieza justo donde está el cursor (como un campo de iOS): antes empezaba un poco a la derecha y lo
+   que escribías aparecía corrido a la izquierda. La caja vacía de lo escrito no ocupa lugar. */
+.search__placeholder { color: var(--color-text-faint); margin-left: calc(-1 * var(--space-3) - 3px); }
+.search__query:empty { display: none; }
+.search__query:empty + .search__caret { margin-left: 0; }
 /* Pegado al texto: el campo separa sus piezas (gap) y el cursor parecía un espacio después de lo escrito. */
 .search__caret { flex: none; width: 3px; height: 1.1em; margin-left: calc(2px - var(--space-3)); border-radius: 2px; background: var(--color-text); animation: caret var(--duration-pulse) steps(1) infinite; }
 @keyframes caret { 50% { opacity: 0; } }
@@ -53,6 +57,10 @@
 
 /* El teclado es el componente común (keyboard.css): aquí solo dónde va. */
 .search .keyboard { align-self: end; justify-self: center; min-height: 0; }
+/* Con el dedo: sin pie de controles, el teclado ocupa ese lugar y todo el ancho, con teclas que se aciertan sin mirar. */
+[data-input="touch"] .search { padding-bottom: calc(var(--space-4) + var(--safe-y)); --key-height: min(3.5rem, 6.4vh); }
+[data-input="touch"] .search .keyboard { width: min(72rem, 100%); }
+[data-input="touch"] .search .keyboard__key { font-size: var(--text-xl); }
 
 /* Cada grupo (En tu consola · Películas · Series · Listas): su nombre encima de sus portadas, derecho. No se enfoca. */
 /* Entre el nombre y las portadas, lo que crece la enfocada: antes lo tapaba («Series» quedaba detrás de la portada). */

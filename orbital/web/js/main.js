@@ -459,10 +459,20 @@ function applySettings(settings) {
   root.dataset.motion = settings.reduce_motion ? "reduce" : "full";
   sound.enabled = settings.sounds !== false;
   haptics.enabled = settings.haptics !== false;
-  ui.hero.tips = settings.voice_tips !== false;
+  ui.hero.tips = settings.voice_tips !== false && !onTheDevice();
   if (state.libraryLoaded) ui.hero.update(current(), glyphs(), { immediate: true, runningId: state.running?.id });
   if (inGames()) renderGames(); // los ajustes pueden cambiar glifos y textos
 }
+
+/** ¿En la pantalla de la consola (sin tele)? La de la Legion Go es 16:10 y una tele 16:9. Ahí las frases para Alexa junto a
+ *  cada título sobran (estás con el mando en la mano): solo queda el botón de Alexa arriba a la derecha. */
+function onTheDevice() { return screen.width / screen.height < 1.7; }
+let deviceScreen = onTheDevice();
+addEventListener("resize", () => { // conectaste (o quitaste) la tele
+  if (onTheDevice() === deviceScreen || !state.settings) return;
+  deviceScreen = onTheDevice();
+  applySettings(state.settings);
+});
 
 // ---------------------------------------------------------------- Inicio
 /** X en el Inicio: la ficha (videos) o el otro emulador (juegos). */

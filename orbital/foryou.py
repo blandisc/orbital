@@ -742,6 +742,9 @@ class ForYou:
 
     def _with_art(self, item: dict) -> dict:
         """El póster o fondo que elegiste para ese título («Cambiar el arte»), en lugar del de siempre."""
+        name = self.catalog.names.name(item.get("kind"), item.get("meta_id")) if getattr(self.catalog, "names", None) else None
+        if name and name != item.get("title"):  # el mismo nombre que en la ficha y en Buscar (tu idioma)
+            item = {**item, "title": name}
         art = self.catalog.watch.art_for(item.get("meta_id")) if item.get("meta_id") else {}
         if not art:
             return item
