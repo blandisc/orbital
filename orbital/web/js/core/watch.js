@@ -132,10 +132,15 @@ export function actionStep(count, index, act) {
 
 /** La hoja de Fuente, como el iPhone: la recomendada sola arriba y el resto por calidad (4K, 1080p, 720p, Otras),
  * cada grupo en el orden de tus preferencias. Devuelve los grupos y `order`: las fuentes en el orden en que se ven. */
+/** Tu copia en OneDrive (el servidor la pone primero): se dice así, como el iPhone, y no «Idioma desconocido». */
+export const OWN_SOURCE = "Tu OneDrive";
+export const isOwnSource = (src) => src?.addon === OWN_SOURCE;
+
 export function sourceGroups(sources = []) {
   if (!sources.length) return { groups: [], order: [] };
   const [best, ...rest] = sources;
-  const groups = [{ id: "best", title: "Recomendada", note: "La elegimos por tu idioma, la calidad y el tamaño", items: [best] }];
+  const note = isOwnSource(best) ? "Tu copia en OneDrive" : "La elegimos por tu idioma, la calidad y el tamaño";
+  const groups = [{ id: "best", title: "Recomendada", note, items: [best] }];
   for (const res of ["4K", "1080p", "720p"]) {
     const items = rest.filter((s) => s.resolution === res);
     if (items.length) groups.push({ id: res, title: res, items });

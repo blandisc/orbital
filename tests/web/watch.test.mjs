@@ -118,6 +118,8 @@ test("la hoja de Fuente: la recomendada sola arriba y el resto por calidad, como
   assert.match(groups[0].note, /idioma, la calidad y el tamaño/);
   assert.deepEqual(order.map((x) => x.id), ["a", "b", "f", "d", "c", "e"]); // ↑↓ va en el orden en que se ven
   assert.deepEqual(sourceGroups([]), { groups: [], order: [] });
+  // Tu copia de OneDrive va primero y se dice así (como el iPhone), no «la elegimos por tu idioma».
+  assert.equal(sourceGroups([{ id: "o", addon: "Tu OneDrive", resolution: "1080p" }, s("a", "4K")]).groups[0].note, "Tu copia en OneDrive");
 });
 
 test("la ficha: «Ver» arriba a todo lo ancho, los demás abajo; ← → los recorre y al final se pasa a los episodios", async () => {

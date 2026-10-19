@@ -42,7 +42,8 @@ body[data-view="tv"] .backdrop__space { opacity: 1; }
 .tv__now-eyebrow { color: var(--color-text-muted); font-size: var(--type-eyebrow); font-weight: var(--weight-medium); }
 .tv__now-eyebrow--live { color: var(--color-live); }
 .tv__now-title { margin: 0; font-family: var(--font-sans); font-size: var(--type-display); font-weight: var(--weight-bold); letter-spacing: var(--tracking-display);
-  line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .1em; }
+  line-height: 1.1; overflow: hidden; padding-bottom: .1em; overflow-wrap: break-word;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; } /* un nombre largo, en dos líneas (antes: «Cine de Barrio Int…») */
 .tv__now-meta { color: var(--color-text-muted); font-size: var(--text-md); }
 .tv__now-hint { color: var(--color-text-faint-strong); font-size: var(--text-sm); }
 

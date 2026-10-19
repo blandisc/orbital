@@ -3,7 +3,7 @@ import { motion } from "../core/motion.js";
 import { Badge, Chip } from "./ui.js";
 import { Button } from "./button.js";
 import { bytes } from "../core/format.js";
-import { sourceGroups } from "../core/watch.js";
+import { isOwnSource, sourceGroups } from "../core/watch.js";
 import { h, hideAfterExit, mount } from "../core/dom.js";
 
 /**
@@ -38,6 +38,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
 
   /** Lo que importa para decidir, en orden: ¿arranca ya?, idioma, calidad de imagen y sonido. */
   function chips(src) {
+    if (isOwnSource(src)) return [Chip("Tu OneDrive", { tone: "good" }), Chip("Al instante", { tone: "good" })];
     return [
       src.cached ? Chip("Al instante", { tone: "good" })
         : src.debrid ? Chip("Tarda en empezar", { tone: "warn" }) : null,
@@ -115,7 +116,7 @@ export function createSources({ onPlay, onMove, onClose, onChange }) {
       if (!Array.isArray(data?.sources)) throw new Error("No pude leer las fuentes. Intenta de nuevo.");
       found = data.sources;
       if (!title.textContent && data.meta?.title) title.textContent = data.meta.title;
-      subtitle.textContent = `Primero las de audio en ${AUDIO_NAMES[data.audio] || data.audio} y ${data.quality}. `
+      subtitle.textContent = (isOwnSource(found[0]) ? "Tu OneDrive primero; luego, por calidad. " : "") + `Primero las de audio en ${AUDIO_NAMES[data.audio] || data.audio} y ${data.quality}. `
         + "La recomendada es la que pone «Ver». «Al instante»: arranca en segundos; «Tarda en empezar»: primero se descarga.";
       status.hidden = !!found.length;
       status.textContent = found.length ? "" : "No encontré dónde ver esto: tus complementos de Stremio no lo tienen.";
